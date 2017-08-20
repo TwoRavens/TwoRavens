@@ -22,13 +22,18 @@ if(production) {
 if(!production){
     packageList<-c("Rcpp","VGAM", "AER", "dplyr", "quantreg", "geepack", "maxLik", "Amelia", "Rook","jsonlite","rjson", "devtools", "DescTools", "nloptr","XML")
 
-   ## install missing packages, and update if newer version available
-   for(i in 1:length(packageList)){
+    # Find an available repository on CRAN
+    availableRepos <- getCRANmirrors()
+    flag <- availableRepos$Country=="USA" & grepl("https",availableRepos$URL,)
+    useRepos <- sample(availableRepos$URL[flag],1)
+
+    ## install missing packages, and update if newer version available
+    for(i in 1:length(packageList)){
        if (!require(packageList[i],character.only = TRUE)){
-           install.packages(packageList[i], repos="http://lib.stat.cmu.edu/R/CRAN/")
+           install.packages(packageList[i], repos=useRepos)
        }
-   }
-   update.packages(ask = FALSE, dependencies = c('Suggests'), oldPkgs=packageList, repos="http://lib.stat.cmu.edu/R/CRAN/")
+    }
+    update.packages(ask = FALSE, dependencies = c('Suggests'), oldPkgs=packageList, repos=useRepos)
 }
 
 library(Rook)
