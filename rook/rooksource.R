@@ -24,12 +24,12 @@ if(!production){
 
     # Find an available repository on CRAN
     availableRepos <- getCRANmirrors()
-    flag <- availableRepos$Country=="USA" & grepl("https",availableRepos$URL,)
+    flag <- availableRepos$Country=="USA" & grepl("https", availableRepos$URL)
     useRepos <- sample(availableRepos$URL[flag],1)
 
     ## install missing packages, and update if newer version available
     for(i in 1:length(packageList)){
-       if (!require(packageList[i],character.only = TRUE)){
+       if (!require(packageList[i], character.only = TRUE)){
            install.packages(packageList[i], repos=useRepos)
        }
     }
