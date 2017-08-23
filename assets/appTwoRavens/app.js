@@ -15,8 +15,14 @@ import {bars, barsNode, barsSubset, density, densityNode, selVarColor} from './p
 // for both the data and metadata, if the file id is supplied; or the
 // local files if nothing is supplied.
 
-var production = false;
-var rappURL = (production ? 'https://beta.dataverse.org' : 'http://0.0.0.0:8000') + '/custom/';
+let production = false;
+
+let rappTestUrl = 'http://127.0.0.1:8080/rook-custom/'; // via Django -> to RApache/rook
+//let rappTestUrl = 'http://0.0.0.0:8000/custom/'; // Direct to RApache/rook
+
+let rappProductionURL = 'https://beta.dataverse.org/custom/';
+
+let rappURL = (production ? rappProductionURL : rappTestUrl);
 
 // for debugging
 export function cdb(msg) {
