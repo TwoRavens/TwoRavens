@@ -189,7 +189,7 @@ export function main(fileid, hostname, ddiurl, dataurl) {
     let metadataurl = ddiurl || (fileid ? `${dataverseurl}/api/meta/datafile/${fileid}` : data + '.xml');
     // read pre-processed metadata and data
     let pURL = dataurl ? `${dataurl}&format=prep` : data + '.json';
-
+    cdb('pURL: ' + pURL);
     // loads all external data: metadata (DVN's ddi), preprocessed (for plotting distributions), and zeligmodels (produced by Zelig) and initiates the data download to the server
     var url, p, v, callback;
     readPreprocess(url = pURL, p = preprocess, v = null, callback = function() {
@@ -1929,6 +1929,7 @@ export function subsetSelect(btn) {
 }
 
 function readPreprocess(url, p, v, callback) {
+  cdb('readPreprocess: ' + url );
 
     d3.json(url, (err, json) => {
         if (err)

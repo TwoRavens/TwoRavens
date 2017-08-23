@@ -14,7 +14,11 @@ urlpatterns = (
         views.view_rook_route,
         name='view_rook_route'),
 
-    url(r'^web-pack$',
-        views_test.view_webpack_test,
-        name='view_webpack_test'),
+    url(r'^(?P<app_name_in_url>\w{5,25})$',
+        views.view_rook_route,
+        name='view_rook_route'),
+
+    #url(r'^web-pack$',
+    #    views_test.view_webpack_test,
+    #    name='view_webpack_test'),
 )

@@ -132,7 +132,7 @@ class Body {
         return m('main',
                  m("nav#navbar.navbar.navbar-default.navbar-fixed-top[role=navigation]",
                    m("a.navbar-brand[style=margin-left: 0]",
-                     m("img[src=images/TwoRavens.png][alt=TwoRavens][width=100][style=margin-left: 2em; margin-top: -0.5em]", {
+                     m("img[src=/static/images/TwoRavens.png][alt=TwoRavens][width=100][style=margin-left: 2em; margin-top: -0.5em]", {
                        onmouseover: _ => this.about = true,
                        onmouseout: _ => this.about = false})),
                    m('#navbarNav[style=padding: 0.5em]',
