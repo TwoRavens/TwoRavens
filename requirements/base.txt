@@ -1,0 +1,5 @@
+Django==1.11.4
+django-model-utils==3.0.0
+jsonfield==2.0.2
+requests==2.18.4
+whitenoise==3.3.0

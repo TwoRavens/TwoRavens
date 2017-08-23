@@ -1,14 +1,12 @@
 var path = require('path');
-var webpack = require('webpack');   // for django-webpack
-var BundleTracker = require('webpack-bundle-tracker');     // for django-webpack
 
 var ExtractTextPlugin = require('extract-text-webpack-plugin');
 
 module.exports = {
-    entry: './assets/appTwoRavens/index.js',
+    entry: './src/index.js',
     output: {
-        filename: 'tworavens_app.js',
-        path: path.resolve(__dirname, 'assets', 'build')
+        filename: 'app.js',
+        path: path.resolve(__dirname, 'build')
     },
     devtool: 'eval-source-map',
     module: {
@@ -19,8 +17,7 @@ module.exports = {
             options: {
                 presets: ['es2015']
             }
-          },
-          {
+        }, {
             test: /\.css$/,
             use: ExtractTextPlugin.extract({
                 use: 'css-loader'
@@ -28,7 +25,6 @@ module.exports = {
         }]
     },
     plugins: [
-        new ExtractTextPlugin('tworavens_styles.css'),
-        new BundleTracker({filename: './webpack-stats.json'})
+        new ExtractTextPlugin('styles.css')
     ]
 };
