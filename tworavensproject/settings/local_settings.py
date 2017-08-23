@@ -46,6 +46,7 @@ TIME_ZONE = 'America/New_York'
 
 R_DEV_SERVER_BASE = 'http://0.0.0.0:8000/custom/'
 
+RECORD_R_SERVICE_ROUTING = True # log R service requests/response JSON to db
 
 # static assets
 #WEBPACK_LOADER['DEFAULT'].update({

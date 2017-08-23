@@ -141,6 +141,7 @@ STATICFILES_DIRS = [join(BASE_DIR, 'assets')]
 # https://warehouse.python.org/project/whitenoise/
 #STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
+RECORD_R_SERVICE_ROUTING = False # log R service requests/response JSON to db
 
 WEBPACK_LOADER = {
     'DEFAULT': {

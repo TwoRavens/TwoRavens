@@ -1,6 +1,6 @@
-import '../bootstrap/css/bootstrap-theme.min.css';
-import '../app.css';
-import '../Ladda/dist/ladda-themeless.min.css';
+import '../pkgs/bootstrap/css/bootstrap-theme.min.css';
+import '../css/app.css';
+import '../pkgs/Ladda/dist/ladda-themeless.min.css';
 
 import m from 'mithril';
 

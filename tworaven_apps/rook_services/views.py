@@ -36,10 +36,12 @@ def view_rook_route(request, app_name_in_url):
 
     # Begin object to capture request
     #
-    call_capture = TestCallCapture(\
-                    app_name=rook_app_info.name,
-                    outgoing_url=rook_app_url,
-                    request=request.POST['solaJSON'])
+    call_capture = None
+    if settings.RECORD_R_SERVICE_ROUTING:
+        call_capture = TestCallCapture(\
+                        app_name=rook_app_info.name,
+                        outgoing_url=rook_app_url,
+                        request=request.POST['solaJSON'])
 
     # Call zelig
     #
@@ -48,13 +50,14 @@ def view_rook_route(request, app_name_in_url):
 
     # Save request result
     #
-    call_capture.response = r.text
-    call_capture.status_code = r.status_code
-    if r.status_code == 200:
-        call_capture.success = True
-    else:
-        call_capture.success = False
-    call_capture.save()
+    if settings.RECORD_R_SERVICE_ROUTING:
+        call_capture.response = r.text
+        call_capture.status_code = r.status_code
+        if r.status_code == 200:
+            call_capture.success = True
+        else:
+            call_capture.success = False
+        call_capture.save()
 
     # Return the response to the user
     #
