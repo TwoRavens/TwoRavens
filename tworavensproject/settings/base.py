@@ -145,7 +145,7 @@ STATICFILES_DIRS = [join(BASE_DIR, 'assets')]
 WEBPACK_LOADER = {
     'DEFAULT': {
         'CACHE': not DEBUG,
-        'BUNDLE_DIR_NAME': 'webpack_bundles/', # must end with slash
+        'BUNDLE_DIR_NAME': 'build/', # must end with slash
         'STATS_FILE': join(BASE_DIR, 'webpack-stats.json'),
         'POLL_INTERVAL': 0.1,
         'TIMEOUT': None,
