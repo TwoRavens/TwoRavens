@@ -7,7 +7,7 @@ var ExtractTextPlugin = require('extract-text-webpack-plugin');
 module.exports = {
     entry: './assets/appTwoRavens/index.js',
     output: {
-        filename: 'tworavens_app.js',
+        filename: 'tworavens_app-[hash].js',
         path: path.resolve(__dirname, 'assets', 'build')
     },
     devtool: 'eval-source-map',
@@ -28,7 +28,7 @@ module.exports = {
         }]
     },
     plugins: [
-        new ExtractTextPlugin('tworavens_styles.css'),
+        new ExtractTextPlugin('tworavens_styles-[hash].css'),
         new BundleTracker({filename: './webpack-stats.json'})
     ]
 };

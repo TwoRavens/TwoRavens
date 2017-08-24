@@ -35,11 +35,11 @@ def view_rp_test(request):
         node_length = request.POST.get('nodeLength', 'not set by client (err?)')
 
     if request.user.is_authenticated:
-        print ('authenticated')
+        print('authenticated')
         # Do something for authenticated users.
 
     else:
-        print ('anonymous')
+        print('anonymous')
 
     user_msg = ('\nnode length: {1}. hello ({0})').format(\
                     dt.now(),

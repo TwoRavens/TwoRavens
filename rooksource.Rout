@@ -1,0 +1,196 @@
+
+R version 3.4.1 (2017-06-30) -- "Single Candle"
+Copyright (C) 2017 The R Foundation for Statistical Computing
+Platform: x86_64-apple-darwin15.6.0 (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> ##
+> ##  rooksource.R
+> ##
+> ##  8/19/15
+> ##
+> 
+> 
+> production<-FALSE     ## Toggle:  TRUE - Production, FALSE - Local Development
+> addPrivacy<-TRUE      ## Toggle:  TRUE - Add .apps for differential privacy, FALSE - Do not add privacy .apps
+> 
+> 
+> if(production){
++     sink(file = stderr(), type = "output")
++     print("system time at source: ")
++     print(Sys.time())
++ }
+> 
+> if(production) {
++     setwd("/var/www/html/dataexplore/rook")
++ }
+> 
+> if(!production){
++     packageList<-c("Rcpp","VGAM", "AER", "dplyr", "quantreg", "geepack", "maxLik", "Amelia", "Rook","jsonlite","rjson", "devtools", "DescTools", "nloptr","XML")
++ 
++     # Find an available repository on CRAN
++     availableRepos <- getCRANmirrors()
++     flag <- availableRepos$Country=="USA" & grepl("https",availableRepos$URL,)
++     useRepos <- sample(availableRepos$URL[flag],1)
++ 
++     ## install missing packages, and update if newer version available
++     for(i in 1:length(packageList)){
++        if (!require(packageList[i],character.only = TRUE)){
++            install.packages(packageList[i], repos=useRepos)
++        }
++     }
++     update.packages(ask = FALSE, dependencies = c('Suggests'), oldPkgs=packageList, repos=useRepos)
++ }
+Loading required package: Rcpp
+Loading required package: VGAM
+Loading required package: stats4
+Loading required package: splines
+Loading required package: AER
+Loading required package: car
+
+Attaching package: ‘car’
+
+The following object is masked from ‘package:VGAM’:
+
+    logit
+
+Loading required package: lmtest
+Loading required package: zoo
+
+Attaching package: ‘zoo’
+
+The following objects are masked from ‘package:base’:
+
+    as.Date, as.Date.numeric
+
+
+Attaching package: ‘lmtest’
+
+The following object is masked from ‘package:VGAM’:
+
+    lrtest
+
+Loading required package: sandwich
+Loading required package: survival
+
+Attaching package: ‘AER’
+
+The following object is masked from ‘package:VGAM’:
+
+    tobit
+
+Loading required package: dplyr
+
+Attaching package: ‘dplyr’
+
+The following object is masked from ‘package:car’:
+
+    recode
+
+The following objects are masked from ‘package:stats’:
+
+    filter, lag
+
+The following objects are masked from ‘package:base’:
+
+    intersect, setdiff, setequal, union
+
+Loading required package: quantreg
+Loading required package: SparseM
+
+Attaching package: ‘SparseM’
+
+The following object is masked from ‘package:base’:
+
+    backsolve
+
+
+Attaching package: ‘quantreg’
+
+The following object is masked from ‘package:survival’:
+
+    untangle.specials
+
+Loading required package: geepack
+Loading required package: maxLik
+Loading required package: miscTools
+
+Please cite the 'maxLik' package as:
+Henningsen, Arne and Toomet, Ott (2011). maxLik: A package for maximum likelihood estimation in R. Computational Statistics 26(3), 443-458. DOI 10.1007/s00180-010-0217-1.
+
+If you have questions, suggestions, or comments regarding the 'maxLik' package, please use a forum or 'tracker' at maxLik's R-Forge site:
+https://r-forge.r-project.org/projects/maxlik/
+Loading required package: Amelia
+## 
+## Amelia II: Multiple Imputation
+## (Version 1.7.4, built: 2015-12-05)
+## Copyright (C) 2005-2017 James Honaker, Gary King and Matthew Blackwell
+## Refer to http://gking.harvard.edu/amelia/ for more information
+## 
+Loading required package: Rook
+Loading required package: jsonlite
+Loading required package: rjson
+
+Attaching package: ‘rjson’
+
+The following objects are masked from ‘package:jsonlite’:
+
+    fromJSON, toJSON
+
+Loading required package: devtools
+Loading required package: DescTools
+
+Attaching package: ‘DescTools’
+
+The following object is masked from ‘package:car’:
+
+    Recode
+
+Loading required package: nloptr
+Loading required package: XML
+> 
+> library(Rook)
+> library(rjson)
+> library(jsonlite)
+> library(devtools)
+> library(DescTools)
+> 
+> if (!production) {
++     if(!("Zelig" %in% rownames(installed.packages()))) {
++         install_github("IQSS/Zelig")
++     } else if(package_version(packageVersion("Zelig"))$major != 5) {
++         install_github("IQSS/Zelig")
++     }
++ }
+> 
+> #!/usr/bin/env Rscript
+> 
+> library(Zelig)
+
+Attaching package: ‘Zelig’
+
+The following objects are masked from ‘package:DescTools’:
+
+    Median, Mode
+
+> source(paste(getwd(),"/preprocess/preprocess.R",sep="")) # load preprocess function
+Error in file(filename, "r", encoding = encoding) : 
+  cannot open the connection
+Calls: source -> source -> file
+In addition: Warning message:
+In file(filename, "r", encoding = encoding) :
+  cannot open file '/Users/ramanprasad/Documents/github-rp/TwoRavens/preprocess/preprocess.R': No such file or directory
+Execution halted

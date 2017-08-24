@@ -1,4 +1,5 @@
 import requests
+from requests.exceptions import ConnectionError
 
 from django.shortcuts import render
 from django.conf import settings
@@ -43,29 +44,34 @@ def view_rook_route(request, app_name_in_url):
                         outgoing_url=rook_app_url,
                         request=request.POST['solaJSON'])
 
-    # Call zelig
+    # Call R services
     #
-    r = requests.post(rook_app_url,
-                      data=app_data)
+    try:
+        r = requests.post(rook_app_url,
+                          data=app_data)
+    except ConnectionError:
+        err_msg = 'R Server not responding: %s' % rook_app_url
+        call_capture.add_error_message(err_msg)
+        call_capture.save()
+        resp_dict = dict(message=err_msg)
+        return JsonResponse(resp_dict)
 
     # Save request result
     #
     if settings.RECORD_R_SERVICE_ROUTING:
-        call_capture.response = r.text
-        call_capture.status_code = r.status_code
         if r.status_code == 200:
-            call_capture.success = True
+            call_capture.add_success_message(r.text, r.status_code)
         else:
-            call_capture.success = False
+            call_capture.add_error_message(r.text, r.status_code)
         call_capture.save()
 
     # Return the response to the user
     #
-    print (40 * '=')
-    print (r.text)
+    print(40 * '=')
+    print(r.text)
     #d = r.json()
-    #print (json.dumps(d, indent=4))
-    print (r.status_code)
+    #print(json.dumps(d, indent=4))
+    print(r.status_code)
 
     return HttpResponse(r.text)
 
@@ -89,11 +95,11 @@ def view_rp_test(request):
         node_length = request.POST.get('nodeLength', 'not set by client (err?)')
 
     if request.user.is_authenticated:
-        print ('authenticated')
+        print('authenticated')
         # Do something for authenticated users.
 
     else:
-        print ('anonymous')
+        print('anonymous')
 
     user_msg = ('\nnode length: {1}. hello ({0})').format(\
                     dt.now(),

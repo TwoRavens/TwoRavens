@@ -14,6 +14,9 @@ rook/test.json
 data/preprocessSubset*.txt
 .DS_Store
 test_setup_local/*
+assets/build/tworavens_app-*.js
+assets/build/tworavens_styles-*.css
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

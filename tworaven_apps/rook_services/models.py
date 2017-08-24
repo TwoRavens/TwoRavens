@@ -30,3 +30,15 @@ class TestCallCapture(TimeStampedModel):
 
     def response_json(self):
         return format_json_for_admin(self.response)
+
+    def add_error_message(self, msg, status_code='n/a'):
+        """Shortcut to populate fields for a failed response"""
+        self.success = True
+        self.response = msg
+        self.status_code = status_code
+
+    def add_success_message(self, msg, status_code=200):
+        """Shortcut to populate fields for a successful response"""
+        self.success = True
+        self.response = msg
+        self.status_code = status_code
