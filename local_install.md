@@ -1,6 +1,6 @@
 # Local Installation Instructions
 
-This is 1st run at dev. install instructions, tested on a Mac (OS 10.12.6)
+This is a 1st run at dev. install instructions, tested on a Mac (OS 10.12.6)
 
 ## Get the repository
 
@@ -101,11 +101,13 @@ Mac:
 ### See if Django is configured ok and create the database
 
 This command is run within the ```TwoRavens``` directory with the virtualenv activated:
+
     ```
     python manage.py check
     ```
 
 If there are no errors, create the database:
+
     ```
     fab init_db
     ```
@@ -116,6 +118,7 @@ If there are no errors, create the database:
 ## Run the Django dev server and webpack
 
 The following command will start the Django webserver as well as webpack.
+
     ```
     fab run
     ```
@@ -133,24 +136,28 @@ The following command will start the Django webserver as well as webpack.
 
 Download and install R at https://www.r-project.org. Execute the following with R to install R packages:
 
-```
-install.packages(c("VGAM", "AER", "dplyr", "quantreg", "geepack", "maxLik", "Amelia", "Rook","jsonlite","rjson", "devtools", "DescTools", "Zelig"))
-```
+    ```
+    install.packages(c("VGAM", "AER", "dplyr", "quantreg", "geepack", "maxLik", "Amelia", "Rook","jsonlite","rjson", "devtools", "DescTools", "Zelig"))
+    ```
 
 Note: this requires libssl-dev on Ubuntu 17.04.
 
 Then set your working directory to ~TwoRavens/rook, for example:
 
-```
-setwd("/Users/vjdorazio/Desktop/github/TwoRavens/rook")
-```
+    ```
+    setwd("/Users/vjdorazio/Desktop/github/TwoRavens/rook")
+    ```
 
 Then source rooksource.R to get the app up:
 
-```
-source("rooksource.R")
-```
+    ```
+    source("rooksource.R")
+    ```
 
 Note that this may install many packages, depending on what already exists. If it asks, just say that you want to install things from the source. The local server with the apps should be up and R should say something like:
 
 *Server started on host...*
+
+- Try the app again:
+  - Go to: http://127.0.0.1:8080/
+  - Hit shift+refresh on the browser
