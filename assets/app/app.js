@@ -20,6 +20,9 @@ let production = false;
 let rappTestUrl = 'http://127.0.0.1:8080/rook-custom/'; // via Django -> to RApache/rook
 //let rappTestUrl = 'http://0.0.0.0:8000/custom/'; // Direct to RApache/rook
 
+// example url for TA2
+//let ta2call_url = 'http://127.0.0.1:8080/ta2-interface/'; // via Django -> to TA2
+
 let rappProductionURL = 'https://beta.dataverse.org/custom/';
 
 let rappURL = (production ? rappProductionURL : rappTestUrl);

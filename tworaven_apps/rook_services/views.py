@@ -81,6 +81,10 @@ NUM_CLICKS_KEY = 'NUM_CLICKS_KEY'
 @csrf_exempt
 def view_rp_test(request):
 
+    d = {'name' : 'ta2'}
+    d = dict(name='ta2',
+             status_code=55)
+    return JsonResponse(d)
     # session test for num clicks
     #
     num_clicks = request.session.get(NUM_CLICKS_KEY, 0)

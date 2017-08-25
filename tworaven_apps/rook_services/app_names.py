@@ -9,6 +9,7 @@ Constants used to track the app names and url between the frontend and rook
 #
 # example: ('ZELIG_APP', 'zeligapp', 'zeligapp')
 #
+#                   standard     frontend   backend
 ROOK_APP_NAMES = [('ZELIG_APP', 'zeligapp', 'zeligapp'),    # run models
                   ('DATA_APP', 'dataapp', 'dataapp'),       # session id?
                   ('SUBSET_APP', 'subsetapp', 'subsetapp'), # subset file

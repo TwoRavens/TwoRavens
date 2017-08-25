@@ -5,7 +5,7 @@ var BundleTracker = require('webpack-bundle-tracker');     // for django-webpack
 var ExtractTextPlugin = require('extract-text-webpack-plugin');
 
 module.exports = {
-    entry: './assets/appTwoRavens/index.js',
+    entry: './assets/app/index.js',
     output: {
         filename: 'tworavens_app-[hash].js',
         path: path.resolve(__dirname, 'assets', 'build')
