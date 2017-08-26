@@ -953,7 +953,10 @@ function layout(v) {
     // initialize the event
     click_ev.initEvent("click", true /* bubble */, true /* cancelable */);
     // trigger the event
-    document.getElementById("dvArc82").dispatchEvent(click_ev);
+    if(d3m){
+        let clickID = "dvArc"+findNodeIndex(mytarget);
+        document.getElementById(clickID).dispatchEvent(click_ev);
+    }
 }
 
 
