@@ -188,7 +188,9 @@ export function main(fileid, hostname, ddiurl, dataurl) {
     
 
     //set start from user input, then assume locations are consistent based on d3m directory structure (alternatively can make each of these locations be set by user)
-    var start = 'data/d3m/o_4550';
+    var start = 'data/d3m/o_196seed';
+    let d3mDataName = start.split('/');
+    d3mDataName = d3mDataName[d3mDataName.length-1];
     let d3mData = start+'/data/trainData.csv';
     let d3mTarget = start+'/data/trainTargets.csv';
     let d3mPS = start+'/problemSchema.json';
@@ -204,10 +206,10 @@ export function main(fileid, hostname, ddiurl, dataurl) {
     if(d3m) {
         pURL = d3mPreprocess;
         zparams.zdataurl = start+'/data/trainDatamerged.tsv';
+        zparams.zdata = d3mDataName;
     } else if (!production) {
         zparams.zdataurl = 'data/fearonLaitin.tsv';
     }
-    console.log(dataurl);
     // loads all external data: metadata (DVN's ddi), preprocessed (for plotting distributions), and zeligmodels (produced by Zelig) and initiates the data download to the server
     var url, p, v, callback;
     
@@ -222,8 +224,11 @@ export function main(fileid, hostname, ddiurl, dataurl) {
                // for now the metadataurl is still Fearon & Laitin
             var varsXML = xml.documentElement.getElementsByTagName("var");
             var temp = xml.documentElement.getElementsByTagName("fileName");
-            zparams.zdata = temp[0].childNodes[0].nodeValue;
-
+               
+               if(!d3m) {
+               zparams.zdata = temp[0].childNodes[0].nodeValue;}
+               
+              
             var cite = xml.documentElement.getElementsByTagName("biblCit");
             zparams.zdatacite = cite[0].childNodes[0].nodeValue;
             // clean citation so POST is valid json
@@ -232,7 +237,9 @@ export function main(fileid, hostname, ddiurl, dataurl) {
                 .replace(/\%/g, "-");
 
             // dataset name trimmed to 12 chars
-            var dataname = zparams.zdata.replace(/\.(.*)/, ''); // drop file extension
+               var dataname = zparams.zdata;
+               if(!d3m){
+               dataname = zparams.zdata.replace(/\.(.*)/, '');} // drop file extension
             d3.select("#dataName")
                 .html(dataname);
             $('#cite div.panel-body').text(zparams.zdatacite);
