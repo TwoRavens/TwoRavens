@@ -109,6 +109,7 @@ source("rookzelig.R")
 source("rookutils.R")
 source("rookdata.R")
 source("rookwrite.R")
+source("rookpreprocess.R")
 if(addPrivacy){
     source("rookprivate.R")
 }
@@ -124,6 +125,7 @@ if(!production){
     R.server$add(app = transform.app, name="transformapp")
     R.server$add(app = data.app, name="dataapp")
     R.server$add(app = write.app, name="writeapp")
+    R.server$add(app = preprocess.app, name="preprocessapp")
     
         ## These add the .apps for the privacy budget allocator interface
     if(addPrivacy){
