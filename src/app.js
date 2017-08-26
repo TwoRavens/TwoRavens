@@ -16,6 +16,7 @@ import {bars, barsNode, barsSubset, density, densityNode, selVarColor} from './p
 // local files if nothing is supplied.
 
 var production = false;
+var d3m = true;
 var rappURL = (production ? 'https://beta.dataverse.org' : 'http://0.0.0.0:8000') + '/custom/';
 
 // for debugging
@@ -101,6 +102,7 @@ var estimated = false;
 var rightClickLast = false;
 var selInteract = false;
 var callHistory = []; // transform and subset calls
+let mytarget = "";
 
 var svg, width, height, div, estimateLadda, selectLadda;
 var arc3, arc4;
@@ -113,7 +115,7 @@ export const reset = function reloadPage() {
 }
 
 
-var dataurl;
+var dataurl = "";
 export function main(fileid, hostname, ddiurl, dataurl) {
     dataurl = dataurl;
     if (production && fileid == "") {
@@ -183,18 +185,42 @@ export function main(fileid, hostname, ddiurl, dataurl) {
         d3.select("#collapseLog div.panel-body").selectAll("p")
             .remove();
     });
+    
 
+    //set start from user input, then assume locations are consistent based on d3m directory structure (alternatively can make each of these locations be set by user)
+    var start = 'data/d3m/o_4550';
+    let d3mData = start+'/data/trainData.csv';
+    let d3mTarget = start+'/data/trainTargets.csv';
+    let d3mPS = start+'/problemSchema.json';
+    let d3mDS = start+'/data/dataSchema.json';
+    let d3mPreprocess = start+'/preprocess.json';
+    
     // default to California PUMS subset
     let data = 'data/' + (false ? 'PUMS5small' : 'fearonLaitin');
     let metadataurl = ddiurl || (fileid ? `${dataverseurl}/api/meta/datafile/${fileid}` : data + '.xml');
     // read pre-processed metadata and data
     let pURL = dataurl ? `${dataurl}&format=prep` : data + '.json';
-
+    
+    if(d3m) {
+        pURL = d3mPreprocess;
+        zparams.zdataurl = start+'/data/trainDatamerged.tsv';
+    } else if (!production) {
+        zparams.zdataurl = 'data/fearonLaitin.tsv';
+    }
+    console.log(dataurl);
     // loads all external data: metadata (DVN's ddi), preprocessed (for plotting distributions), and zeligmodels (produced by Zelig) and initiates the data download to the server
     var url, p, v, callback;
+    
+    // this assumes we have to generate a preprocess.json. there's no check if it already exists. execution pauses until preprocess.json is written. the preprocess.json includes the target metadata. the column names in target data are returned in the runPreprocess json.
+    runPreprocess(d3mData, d3mTarget, d3mPreprocess, callback = function() {
     readPreprocess(url = pURL, p = preprocess, v = null, callback = function() {
         d3.xml(metadataurl, "application/xml", xml => {
-            var vars = xml.documentElement.getElementsByTagName("var");
+               
+            var vars = Object.keys(p); // this doesn't come from xml, but from preprocessed json
+            
+            // the labels, citations, and file name come from the 'xml' (metadataurl), which is the file from the data repo. but, TwoRavens should function using only the data that comes from our preprocess script, which is the 'json' (pURL)
+               // for now the metadataurl is still Fearon & Laitin
+            var varsXML = xml.documentElement.getElementsByTagName("var");
             var temp = xml.documentElement.getElementsByTagName("fileName");
             zparams.zdata = temp[0].childNodes[0].nodeValue;
 
@@ -216,10 +242,12 @@ export function main(fileid, hostname, ddiurl, dataurl) {
             // temporary values for hold that correspond to histogram bins
             hold = [.6, .2, .9, .8, .1, .3, .4];
             for (var i = 0; i < vars.length; i++) {
-                valueKey[i] = vars[i].attributes.name.nodeValue;
-                lablArray[i] = vars[i].getElementsByTagName("labl").length == 0 ?
-                    "no label" :
-                    vars[i].getElementsByTagName("labl")[0].childNodes[0].nodeValue;
+               // valueKey[i] = vars[i].attributes.name.nodeValue;
+                valueKey[i] = vars[i];
+                //lablArray[i] = varsXML[i].getElementsByTagName("labl").length == 0 ?
+                //    "no label" :
+                 //   varsXML[i].getElementsByTagName("labl")[0].childNodes[0].nodeValue;
+                lablArray[i]="no label";
                 var datasetcount = d3.layout.histogram()
                     .bins(barnumber).frequency(false)
                     ([0, 0, 0, 0, 0]);
@@ -266,8 +294,14 @@ export function main(fileid, hostname, ddiurl, dataurl) {
                     dataDownload();
                 });
             });
+               // looks like here is where we'll read in problem schema
+               d3.json(d3mPS, (err, data) => {
+                       console.log("prob schema data: ");
+                       mytarget=data.target.field;
+                       });
         });
     });
+                  });
 }
 
 let $fill = (obj, op, d1, d2) => d3.select(obj).transition()
@@ -434,7 +468,10 @@ function layout(v) {
             });
         }
     } else {
-        if (allNodes.length > 2) {
+        if(d3m) {
+            console.log(mytarget);
+            nodes = [findNode(mytarget)];
+        } else if (allNodes.length > 2) {
             nodes = [allNodes[0], allNodes[1], allNodes[2]];
             links = [{
                 source: nodes[1],
@@ -911,6 +948,12 @@ function layout(v) {
 
     restart(); // initializes force.layout()
     fakeClick();
+    
+    var click_ev = document.createEvent("MouseEvents");
+    // initialize the event
+    click_ev.initEvent("click", true /* bubble */, true /* cancelable */);
+    // trigger the event
+    document.getElementById("dvArc82").dispatchEvent(click_ev);
 }
 
 
@@ -1012,6 +1055,7 @@ export function estimate(btn) {
     var solajsonout = "solaJSON=" + jsonout;
     cdb("urlcall out: ", urlcall);
     cdb("POST out: ", solajsonout);
+    console.log("estimate: ", solajsonout);
 
     zparams.allVars = valueKey.slice(10, 25); // because the URL is too long...
     jsonout = JSON.stringify(zparams);
@@ -1088,6 +1132,117 @@ export function estimate(btn) {
     makeCorsRequest(urlcall, btn, estimateSuccess, estimateFail, solajsonout);
 }
 
+export function runPreprocess(dataloc, targetloc, preprocessloc, callback) {
+    var tojson = {data:dataloc, target:targetloc, preprocess:preprocessloc}
+    var jsonout = JSON.stringify(tojson);
+    
+    var urlcall = rappURL + "preprocessapp"; //base.concat(jsonout);
+    var solajsonout = "solaJSON=" + jsonout;
+    cdb("urlcall out: ", urlcall);
+    cdb("POST out: ", solajsonout);
+    
+    function preprocessSuccess(btn, json) {
+        cdb("json in: ", json);
+        console.log(json);
+        if (typeof callback == 'function') callback();
+    }
+    
+    function preprocessFail(btn) {
+        console.log("preprocess failed");
+    }
+    makeCorsRequest(urlcall, "nobutton", preprocessSuccess, preprocessFail, solajsonout);
+}
+
+
+export function ta2stuff(btn) {
+    if (production && zparams.zsessionid == '') {
+        alert("Warning: Data download is not complete. Try again soon.");
+        return;
+    }
+    
+    
+    
+    zPop();
+    // write links to file & run R CMD
+    // package the output as JSON
+    // add call history and package the zparams object as JSON
+    zparams.callHistory = callHistory;
+    
+    
+    
+    var jsonout = JSON.stringify(zparams);
+    
+    var urlcall = rappURL + "zeligapp"; //base.concat(jsonout);
+    var solajsonout = "solaJSON=" + jsonout;
+    cdb("urlcall out: ", urlcall);
+    cdb("POST out: ", solajsonout);
+    
+    zparams.allVars = valueKey.slice(10, 25); // because the URL is too long...
+    jsonout = JSON.stringify(zparams);
+    var selectorurlcall = rappURL + "selectorapp";
+    
+    function ta2stuffSuccess(btn, json) {
+        estimateLadda.stop(); // stop spinner
+        allResults.push(json);
+        cdb("json in: ", json);
+        
+        if (!estimated) byId("results").removeChild(byId("resultsHolder"));
+        
+        estimated = true;
+        d3.select("#results")
+        .style("display", "block");
+        
+        d3.select("#resultsView")
+        .style("display", "block");
+        
+        d3.select("#modelView")
+        .style("display", "block");
+        
+        // programmatic click on Results button
+        $("#btnResults").trigger("click");
+        
+        let model = "Model".concat(modelCount = modelCount + 1);
+        
+        function modCol() {
+            d3.select("#modelView")
+            .selectAll("p")
+            .style('background-color', hexToRgba(varColor));
+        }
+        modCol();
+        
+        d3.select("#modelView")
+        .insert("p", ":first-child") // top stack for results
+        .attr("id", model)
+        .text(model)
+        .style('background-color', hexToRgba(selVarColor))
+        .on("click", function() {
+            var a = this.style.backgroundColor.replace(/\s*/g, "");
+            var b = hexToRgba(selVarColor).replace(/\s*/g, "");
+            if (a.substr(0, 17) == b.substr(0, 17))
+            return; // escape function if displayed model is clicked
+            modCol();
+            d3.select(this)
+            .style('background-color', hexToRgba(selVarColor));
+            viz(this.id);
+            });
+        
+        let rCall = [];
+        rCall[0] = json.call;
+        showLog("estimate", rCall);
+        
+        viz(model);
+    }
+    
+    function ta2stuffFail(btn) {
+        estimateLadda.stop(); // stop spinner
+        estimated = true;
+    }
+    
+    estimateLadda.start(); // start spinner
+    makeCorsRequest(urlcall, btn, ta2stuffSuccess, ta2stuffFail, solajsonout);
+}
+
+
 function dataDownload() {
     zPop();
     // write links to file & run R CMD
@@ -1103,6 +1258,7 @@ function dataDownload() {
     cdb("POST out: ", solajsonout);
 
     let downloadSuccess = (btn, json) => {
+        console.log('datadownload: ', json);
         cdb('dataDownload json in: ', json);
         zparams.zsessionid = json.sessionid[0];
         // set link URL
@@ -1929,14 +2085,14 @@ export function subsetSelect(btn) {
 }
 
 function readPreprocess(url, p, v, callback) {
-
+    
     d3.json(url, (err, json) => {
         if (err)
             return console.warn(err);
         cdb('inside readPreprocess function');
         cdb(json);
 
-        priv = json.dataset.priv || priv;
+        priv = json.dataset.private || priv;
         // copy object
         Object.keys(json.variables).forEach(k => p[k] = json.variables[k]);
         if (typeof callback == 'function') callback();

@@ -1,0 +1,25 @@
+{
+    "datasets": [
+        "o_4550_dataset"
+    ],
+    "descriptionFile": "problemDescription.txt",
+    "metric": "F1Macro",
+    "outputType": "classLabel",
+    "problemId": "o_4550_problem",
+    "redacted": true,
+    "target": {
+        "classes": [
+            "c-CS-m",
+            "c-CS-s",
+            "c-SC-m",
+            "c-SC-s",
+            "t-CS-m",
+            "t-CS-s",
+            "t-SC-m",
+            "t-SC-s"
+        ],
+        "field": "class"
+    },
+    "taskSubType": "multiClassClassification",
+    "taskType": "classification"
+}
