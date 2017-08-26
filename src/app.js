@@ -196,6 +196,7 @@ export function main(fileid, hostname, ddiurl, dataurl) {
     let d3mPS = start+'/problemSchema.json';
     let d3mDS = start+'/data/dataSchema.json';
     let d3mPreprocess = start+'/preprocess.json';
+    let probDesc=start;
     
     // default to California PUMS subset
     let data = 'data/' + (false ? 'PUMS5small' : 'fearonLaitin');
@@ -305,6 +306,14 @@ export function main(fileid, hostname, ddiurl, dataurl) {
                d3.json(d3mPS, (err, data) => {
                        console.log("prob schema data: ");
                        mytarget=data.target.field;
+                       probDesc = start+'/'+data.descriptionFile;
+                       
+                       let aTag = document.createElement('a');
+                       aTag.setAttribute('href',probDesc);
+                       aTag.setAttribute('id',"probdesc");
+                       aTag.setAttribute('target',"_blank");
+                       aTag.textContent = "Problem Description";
+                       document.getElementById("ticker").appendChild(aTag);
                        });
         });
     });
