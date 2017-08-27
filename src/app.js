@@ -448,10 +448,22 @@ let splice = (color, text, ...args) => {
 
 export let clickVar;
 
+
+
 function layout(v) {
     var myValues = [];
     nodes = [];
     links = [];
+
+    var vis = d3.select("#whitespace").append("svg")
+        .attr("width", width)
+        .attr("height", height);
+
+    vis.append("path")
+        .style("fill", "#ccf")
+        .style("stroke", "#ccf")
+        .style("stroke-width", 2.5*allR)
+        .style('stroke-linejoin','round');
 
     if (v == layoutAdd || v == layoutMove) {
         for (var j = 0; j < zparams.zvars.length; j++) {
@@ -556,6 +568,24 @@ function layout(v) {
         mousedown_node = null,
         mouseup_node = null;
 
+    //hullg = svg.append("g");
+
+    // show convex hull
+    var hull = svg.append("path")
+        .attr("class", "hull")
+        .style('fill', '#4682b4')
+        .style('stroke-width',40)
+        .style('stroke-linejoin','round')
+        .style("opacity", .2);
+
+
+
+
+//vis.style("opacity", 1e-6)
+ // .transition()
+ //   .duration(1000)
+  //  .style("opacity", 0.2);
+
     function resetMouseVars() {
         mousedown_node = null;
         mouseup_node = null;
@@ -564,6 +594,31 @@ function layout(v) {
 
     // update force layout (called automatically each iteration)
     function tick() {
+
+        console.log(nodes[0].time);
+
+        var coords = nodes.map(function(d) {  return [ d.x, d.y]; }); 
+        var nodenames = nodes.map(n => n.name); 
+        var cutlocation = 0;
+
+        // find coordinates of independent variables by removing each dependent variable in turn
+        for (var j = 0; j < zparams.zdv.length; j++) {
+            cutlocation = nodenames.indexOf(zparams.zdv[j]) ;
+            coords.splice(cutlocation,1);
+            nodenames.splice(cutlocation,1);
+        };      
+
+        // draw convex hull around independent variables, if three or more
+        if(coords.length > 2){   // Or: nodes.length - zparams.zdv.length
+            vis.style("opacity", 0.2)
+            vis.selectAll("path")
+                .data([d3.geom.hull(coords)])
+              //.data([d3.geom.hull(nodes.map(function(d) {  return [ d.x, d.y ]; }))])  // This would be all nodes
+                .attr("d", function(d) { return "M" + d.join("L") + "Z"; });
+        }else{ 
+            vis.style("opacity", 0);
+        };
+
         // draw directed edges with proper padding from node centers
         path.attr('d', d => {
             var deltaX = d.target.x - d.source.x,
@@ -628,8 +683,12 @@ function layout(v) {
         // nodes.index is floating and depends on updates to nodes.  a variables index changes when new variables are added.
         circle.call(force.drag);
         if (forcetoggle[0] == "true") {
-            force.gravity(0.1);
-            force.charge(-800);
+            force.gravity(0.15);
+            //force.charge(-800);  // Previous constant value
+            force.charge(function(node) {
+                return zparams.zdv.indexOf(node.name) > -1  ? -6000 : -400;  // -1 is the value if no index position found
+            });
+            force.start();
             force.linkStrength(1);
         } else {
             force.gravity(0);
