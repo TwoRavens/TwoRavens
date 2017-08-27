@@ -618,8 +618,9 @@ function layout(v) {
                 .attr("d", function(d) { return "M" + d.join("L") + "Z"; });
 
             if(depcoords.length>0){  
-                var p = d3.geom.polygon(indcoords).centroid();
-                var q = depcoords[0];
+                //var p = d3.geom.polygon(indcoords).centroid();  // Seems to go strange sometimes
+                var p = jamescentroid(indcoords);
+                var q = depcoords[0];                             // Note, only using first dep var currently
                 var ldeltaX = q[0] - p[0],
                     ldeltaY = q[1] - p[1],
                     ldist = Math.sqrt(ldeltaX * ldeltaX + ldeltaY * ldeltaY),
@@ -2231,4 +2232,19 @@ export let fakeClick = () => {
     d3.select(ws)
         .classed('active', false);
 };
+
+
+function jamescentroid(coord){
+                var minx = coord[0][0],
+                    maxx = coord[0][0],
+                    miny = coord[0][1],
+                    maxy = coord[0][1];
+                for(var j = 1; j<coord.length; j++){
+                    if (coord[j][0] < minx) minx = coord[j][0];
+                    if (coord[j][1] < miny) miny = coord[j][1];
+                    if (coord[j][0] > maxx) maxx = coord[j][0];
+                    if (coord[j][1] > maxy) maxy = coord[j][1];
+                };
+                return[(minx + maxx)/2, (miny + maxy)/2];
+            };
 
