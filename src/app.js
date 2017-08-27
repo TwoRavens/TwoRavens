@@ -557,9 +557,14 @@ function layout(v) {
         .attr('class', 'link dragline hidden')
         .attr('d', 'M0,0L0,0');
 
+
+//var line = d3.svg.line()
+  //  .interpolate("cardinal");
+
     // handles to link and node element groups
     var path = svg.append('svg:g').selectAll('path'),
         circle = svg.append('svg:g').selectAll('g');
+        //line = svg.append('svg:g').selectAll('line');
 
     // mouse event vars
     var selected_node = null,
@@ -568,23 +573,10 @@ function layout(v) {
         mousedown_node = null,
         mouseup_node = null;
 
-    //hullg = svg.append("g");
-
-    // show convex hull
-    var hull = svg.append("path")
-        .attr("class", "hull")
-        .style('fill', '#4682b4')
-        .style('stroke-width',40)
-        .style('stroke-linejoin','round')
-        .style("opacity", .2);
-
-
-
-
-//vis.style("opacity", 1e-6)
- // .transition()
- //   .duration(1000)
-  //  .style("opacity", 0.2);
+   var line = svg.append("line")
+        .style('fill', 'none')
+        .style('stroke','#ccf')
+        .style('stroke-width', 5);
 
     function resetMouseVars() {
         mousedown_node = null;
@@ -595,26 +587,45 @@ function layout(v) {
     // update force layout (called automatically each iteration)
     function tick() {
 
-        console.log(nodes[0].time);
+        var indcoords = nodes.map(function(d) {  return [ d.x, d.y]; }); 
+        var depcoords = new Array(zparams.zdv.length);
 
-        var coords = nodes.map(function(d) {  return [ d.x, d.y]; }); 
         var nodenames = nodes.map(n => n.name); 
         var cutlocation = 0;
 
         // find coordinates of independent variables by removing each dependent variable in turn
         for (var j = 0; j < zparams.zdv.length; j++) {
             cutlocation = nodenames.indexOf(zparams.zdv[j]) ;
-            coords.splice(cutlocation,1);
+            depcoords[j] = indcoords[cutlocation];
+            indcoords.splice(cutlocation,1);
             nodenames.splice(cutlocation,1);
         };      
 
         // draw convex hull around independent variables, if three or more
-        if(coords.length > 2){   // Or: nodes.length - zparams.zdv.length
-            vis.style("opacity", 0.2)
+        if(indcoords.length > 2){   // Or: nodes.length - zparams.zdv.length
+            vis.style("opacity", 0.3)
             vis.selectAll("path")
-                .data([d3.geom.hull(coords)])
-              //.data([d3.geom.hull(nodes.map(function(d) {  return [ d.x, d.y ]; }))])  // This would be all nodes
+                .data([d3.geom.hull(indcoords)])
                 .attr("d", function(d) { return "M" + d.join("L") + "Z"; });
+
+            if(depcoords.length>0){  
+                var p = d3.geom.polygon(indcoords).centroid();
+                var q = depcoords[0];
+                var ldeltaX = q[0] - p[0],
+                    ldeltaY = q[1] - p[1],
+                    ldist = Math.sqrt(ldeltaX * ldeltaX + ldeltaY * ldeltaY),
+                    lnormX = ldeltaX / ldist,
+                    lnormY = ldeltaY / ldist,
+                    lsourcePadding = allR + 5,
+                    ltargetPadding = allR + 5;
+
+                line.attr("x1", p[0] + (lsourcePadding * lnormX))
+                    .attr("y1", p[1] + (lsourcePadding * lnormY))
+                    .attr("x2", q[0]- (ltargetPadding * lnormX))
+                    .attr("y2", q[1]- (ltargetPadding * lnormY));
+                //circle.attr("cx", p[0]).attr("cy", p[1]);
+        };
+
         }else{ 
             vis.style("opacity", 0);
         };
@@ -635,6 +646,8 @@ function layout(v) {
             return `M${sourceX},${sourceY}L${targetX},${targetY}`;
         });
         circle.attr('transform', d => 'translate(' + d.x + ',' + d.y + ')');
+
+
     }
 
     clickVar = function() {
@@ -2209,3 +2222,4 @@ export let fakeClick = () => {
     d3.select(ws)
         .classed('active', false);
 };
+
