@@ -43,7 +43,9 @@ def run():
     clear_js()  # clear any dev css/js files
 
     commands = [
-        'npm start',    # start webpack
+        # start webpack
+        #'./node_modules/.bin/webpack --watch'
+        'npm start',
         #'python manage.py runserver 8080'
         #'celery -A firmament worker --loglevel=info -B'
     ]
@@ -54,6 +56,12 @@ def run():
     finally:
         for proc in proc_list:
             os.kill(proc.pid, signal.SIGKILL)
+
+def webpack_prod():
+    """Generate the webpack dist files for prod"""
+
+    cmd_webpack = './node_modules/.bin/webpack --config webpack.config-prod.js --watch'
+    local(cmd_webpack)
 
 def clear_js():
     """Delete old webpack dev. build files"""
@@ -122,3 +130,8 @@ def test_front_matter():
     pass
     #from firmament.models import Volume
     #Volume.objects.first().generate_front_matter()
+
+def ubuntu_help():
+    """Set up directories for ubuntu 16.04 (in progress)"""
+    from tworavensproject.setup.ubuntu_setup import TwoRavensSetup
+    trs = TwoRavensSetup()

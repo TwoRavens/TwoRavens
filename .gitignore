@@ -38,3 +38,4 @@ pip-delete-this-directory.txt
 
 # C extensions
 *.so
+webpack-stats.json

@@ -6,39 +6,39 @@ from os.path import join, normpath, isdir, isfile
 
 from .base import *
 
-#DEBUG = True
+DEBUG = True # False - will be False
 
-SECRET_KEY = 'ye-local-laptop-secret-key'
+ROOT_URLCONF = 'tworavensproject.urls_prod'
 
-LOCAL_SETUP_DIR = join(BASE_DIR, 'test_setup_local')
+APACHE_WEB_DIRECTORY = '/var/www/html'
+
+SECRET_KEY = 'ye-dev-container-secret-key'
+
+LOCAL_SETUP_DIR = join(BASE_DIR, 'srv', 'webapps', 'tworavens_files')
 if not isdir(LOCAL_SETUP_DIR):
     makedirs(LOCAL_SETUP_DIR)
 
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': join(LOCAL_SETUP_DIR, 'two_ravens1.db3'),
+        'NAME': join(LOCAL_SETUP_DIR, 'two_ravens.db3'),
     }
 }
 
 SESSION_COOKIE_NAME = 'two_ravens_local'
 
 # where static files are collected
-STATIC_ROOT = join(LOCAL_SETUP_DIR, 'staticfiles')
-if not isdir(STATIC_ROOT):
-    makedirs(STATIC_ROOT)
-
-TEST_DIRECT_STATIC = join(BASE_DIR, 'assets')
+STATIC_ROOT = join(APACHE_WEB_DIRECTORY, '2ravens', 'static')
 
 # http://django-debug-toolbar.readthedocs.org/en/latest/installation.html
-INTERNAL_IPS = ('127.0.0.1',)
+INTERNAL_IPS = ('127.0.0.1', '0.0.0.0')
 
 #INSTALLED_APPS += ['debug_toolbar']
 ########## END TOOLBAR CONFIGURATION
 
 #MIDDLEWARE += ['debug_toolbar.middleware.DebugToolbarMiddleware']
 
-MEDIA_ROOT = join(LOCAL_SETUP_DIR, "media")
+MEDIA_ROOT = join(APACHE_WEB_DIRECTORY, "media")
 
 MEDIA_URL = '/media/'
 

@@ -29,7 +29,6 @@ ALLOWED_HOSTS = []
 
 
 # Application definition
-
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -153,3 +152,7 @@ WEBPACK_LOADER = {
         'IGNORE': ['.+\.hot-update.js', '.+\.map']
     }
 }
+
+if DEBUG is False:  # Generate
+    WEBPACK_LOADER['DEFAULT']['BUNDLE_DIR_NAME'] = 'dist/',
+    WEBPACK_LOADER['DEFAULT']['STATS_FILE'] = os.path.join(BASE_DIR, 'webpack-stats-prod.json')
