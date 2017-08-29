@@ -31,8 +31,10 @@ SESSION_COOKIE_NAME = 'two_ravens_local'
 STATIC_ROOT = join(APACHE_WEB_DIRECTORY, '2ravens', 'static')
 
 # http://django-debug-toolbar.readthedocs.org/en/latest/installation.html
-INTERNAL_IPS = ('127.0.0.1', '0.0.0.0')
+INTERNAL_IPS = ('127.0.0.1',
+                '0.0.0.0')
 
+ALLOWED_HOSTS = ('0.0.0.0',)
 #INSTALLED_APPS += ['debug_toolbar']
 ########## END TOOLBAR CONFIGURATION
 
