@@ -14,7 +14,7 @@ APACHE_WEB_DIRECTORY = '/var/www/html'
 
 SECRET_KEY = 'ye-dev-container-secret-key'
 
-LOCAL_SETUP_DIR = join(BASE_DIR, 'srv', 'webapps', 'tworavens_files')
+LOCAL_SETUP_DIR = join('/srv', 'webapps', 'tworavens_files')
 if not isdir(LOCAL_SETUP_DIR):
     makedirs(LOCAL_SETUP_DIR)
 
