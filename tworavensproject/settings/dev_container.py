@@ -6,7 +6,8 @@ from os.path import join, normpath, isdir, isfile
 
 from .base import *
 
-DEBUG = True # False - will be False
+DEBUG = False
+#DEBUG = True   # for debugging
 
 WSGI_APPLICATION = 'tworavensproject.wsgi_dev_container.application'
 
