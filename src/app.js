@@ -16,7 +16,7 @@ import {bars, barsNode, barsSubset, density, densityNode, selVarColor} from './p
 // local files if nothing is supplied.
 
 var production = false;
-var d3m = true;
+var d3m = false;
 var rappURL = (production ? 'https://beta.dataverse.org' : 'http://0.0.0.0:8000') + '/custom/';
 
 // for debugging
