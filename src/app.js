@@ -16,7 +16,7 @@ import {bars, barsNode, barsSubset, density, densityNode, selVarColor} from './p
 // local files if nothing is supplied.
 
 var production = false;
-var d3m = false;
+var d3m = true;
 var rappURL = (production ? 'https://beta.dataverse.org' : 'http://0.0.0.0:8000') + '/custom/';
 
 // for debugging
@@ -497,8 +497,8 @@ function layout(v) {
         }
     } else {
         if(d3m) {
-            console.log(mytarget);
-            nodes = [findNode(mytarget)];
+            //nodes = [findNode(mytarget)];               // Only add dependent variable on startup
+            nodes = allNodes.slice(1,allNodes.length);    // Add all but first variable on startup (assumes 0 position is d3m index variable)
         } else if (allNodes.length > 2) {
             nodes = [allNodes[0], allNodes[1], allNodes[2]];
             links = [{
@@ -602,6 +602,11 @@ function layout(v) {
         var nodenames = nodes.map(n => n.name); 
         var cutlocation = 0;
 
+        console.log(nodes);
+        console.log(zparams);
+
+
+
         // find coordinates of independent variables by removing each dependent variable in turn
         for (var j = 0; j < zparams.zdv.length; j++) {
             cutlocation = nodenames.indexOf(zparams.zdv[j]) ;
@@ -614,7 +619,7 @@ function layout(v) {
         if(indcoords.length > 2){   // Or: nodes.length - zparams.zdv.length
             vis.style("opacity", 0.3)
             vis.selectAll("path")
-                .data([d3.geom.hull(indcoords)])
+                .data([d3.geom.hull(indcoords)])   // returns null if less than three coordinates
                 .attr("d", function(d) { return "M" + d.join("L") + "Z"; });
 
             if(depcoords.length>0){  
@@ -633,8 +638,8 @@ function layout(v) {
                     .attr("y1", p[1] + (lsourcePadding * lnormY))
                     .attr("x2", q[0]- (ltargetPadding * lnormX))
                     .attr("y2", q[1]- (ltargetPadding * lnormY));
-                //circle.attr("cx", p[0]).attr("cy", p[1]);
-        };
+                //circle.attr("cx", p[0]).attr("cy", p[1]);       // placeholder for arrowhead if not set up as arrow
+            };
 
         }else{ 
             vis.style("opacity", 0);
