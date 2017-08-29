@@ -8,6 +8,8 @@ from .base import *
 
 DEBUG = True # False - will be False
 
+WSGI_APPLICATION = 'tworavensproject.wsgi_dev_container.application'
+
 ROOT_URLCONF = 'tworavensproject.urls_prod'
 
 APACHE_WEB_DIRECTORY = '/var/www/html'
