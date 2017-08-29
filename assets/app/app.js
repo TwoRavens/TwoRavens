@@ -21,7 +21,6 @@ import {bars, barsNode, barsSubset, density, densityNode, selVarColor} from './p
 //let rappURL = 'http://127.0.0.1:8080/rook-custom/'; // via Django -> to RApache/rook
 //let rappURL = 'http://0.0.0.0:8000/custom/'; // Direct to RApache/rook
 
-
 // for debugging
 export function cdb(msg) {
     if (!production){

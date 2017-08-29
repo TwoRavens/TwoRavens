@@ -5,10 +5,13 @@ var BundleTracker = require('webpack-bundle-tracker');     // for django-webpack
 var ExtractTextPlugin = require('extract-text-webpack-plugin');
 
 module.exports = {
+    context: __dirname,
+
     entry: './assets/app/index.js',
+
     output: {
-        filename: 'tworavens_app-[hash].js',
-        path: path.resolve(__dirname, 'assets', 'build')
+        path: path.resolve(__dirname, 'assets', 'build'),
+        filename: 'tworavens_app-[hash].js'
     },
     devtool: 'eval-source-map',
     module: {
