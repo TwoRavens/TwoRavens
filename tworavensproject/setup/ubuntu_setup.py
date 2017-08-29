@@ -37,18 +37,18 @@ class TwoRavensSetup:
 
     def __init__(self, **kwargs):
         """set up for RAapche"""
-        init_dirs()
-        create_app_directories()
-        update_rook_files()
+        self.init_dirs()
+        self.create_app_directories()
+        self.update_rook_files()
 
     def init_dirs(self):
         """(1) Check/Create directories"""
-        msgt(init_dirs.__doc__)
+        msgt(self.init_dirs.__doc__)
 
         # Check for the TwoRavens repository
         #
-        if not isdir(TWORAVENS_ORIG_ROOK_DIR):
-            msgx('Directory not found: %s' %  TWORAVENS_ORIG_ROOK_DIR)
+        if not isdir(TWORAVENS_GIT_REPO):
+            msgx('Directory not found: %s' %  TWORAVENS_GIT_REPO)
 
         # needs to be created for new install
         #
@@ -58,21 +58,21 @@ class TwoRavensSetup:
 
     def update_apache_conf(self):
         """Install the rApache config file"""
-        msgt(update_apache_conf.__doc__)
+        msgt(self.update_apache_conf.__doc__)
 
 
     def create_app_directories(self):
         """(2) Creating application directories on the filesystem"""
-        msgt(create_application_directories.__doc__)
+        msgt(self.create_app_directories.__doc__)
 
         app_dirnames = ['pic_dir', 'preprocess_dir', 'log_dir']
 
         for app_dir in app_dirnames:
             full_dirname = join(APACHE_WEB_DIRECTORY, 'custom', app_dir)
-            self.make_dir(app_dir)
+            self.make_dir(full_dirname)
 
             # update the permissions
-            perm_cmd = 'chown -R %s %s'.format(\
+            perm_cmd = 'chown -R {0} {1}'.format(\
                             APACHE_USERNAME,
                             full_dirname)
             msg('update permissions: %s' % perm_cmd)
@@ -81,9 +81,9 @@ class TwoRavensSetup:
 
     def update_rook_files(self):
         """(3) Configure R files, set them to production mode, update variables"""
-        msgt(update_rook_files.__doc__)
+        msgt(self.update_rook_files.__doc__)
 
-        r_files = [x for x in os.listdir(TWORAVENS_ORIG_ROOK_DIR)
+        rook_files = [x for x in os.listdir(TWORAVENS_GIT_REPO_ROOK_DIR)
                    if x.endswith('.R')]
 
         for rook_file in rook_files:
@@ -94,11 +94,11 @@ class TwoRavensSetup:
 
             # read/update content
             content = open(orig_file, 'r').read()
-            content = update_rook_file_content(content)
+            content = self.update_rook_file_content(content)
 
             # write new file
             new_file_location = join(TWORAVENS_WORKING_ROOK_DIRECTORY, rook_file)
-            open(new_file_location, 'w').write()
+            open(new_file_location, 'w').write(content)
 
 
     def update_rook_file_content(self, content):
