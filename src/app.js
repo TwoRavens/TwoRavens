@@ -37,6 +37,8 @@ export let inspect = obj => {
 var colors = d3.scale.category20();
 export let csColor = '#419641';
 export let dvColor = '#28a4c9';
+export let gr1Color = '#CCCCFF';
+export let gr2Color = '#FFCCCC';
 var grayColor = '#c0c0c0';
 export let nomColor = '#ff6600';
 export let varColor = '#f0f8ff'; // d3.rgb("aliceblue");
@@ -82,6 +84,8 @@ export let zparams = {
     zmodel: "",
     zvars: [],
     zdv: [],
+    zgroup1: [],
+    zgroup2: [],       // hard coding to two groups for present experiments, but will eventually make zgroup array of arrays, with zgroup.lenght the number of groups
     zdataurl: "",
     zsubset: [],
     zsetx: [],
@@ -469,8 +473,8 @@ function layout(v) {
         .attr("height", height);
 
     vis.append("path")
-        .style("fill", "#ccf")
-        .style("stroke", "#ccf")
+        .style("fill", gr1Color)
+        .style("stroke", gr1Color)
         .style("stroke-width", 2.5*allR)
         .style('stroke-linejoin','round');
 
@@ -499,6 +503,12 @@ function layout(v) {
         if(d3m) {
             //nodes = [findNode(mytarget)];               // Only add dependent variable on startup
             nodes = allNodes.slice(1,allNodes.length);    // Add all but first variable on startup (assumes 0 position is d3m index variable)
+            for (let j = 0; j < nodes.length; j++) { //populate zvars array
+                console.log(mytarget);
+                if (nodes[j].name != mytarget) {
+                    zparams.zgroup1.push(nodes[j].name);  // write all names (except d3m index and the dependent variable) to zgroup1 array
+                };
+            };
         } else if (allNodes.length > 2) {
             nodes = [allNodes[0], allNodes[1], allNodes[2]];
             links = [{
@@ -596,35 +606,43 @@ function layout(v) {
     // update force layout (called automatically each iteration)
     function tick() {
 
-        var indcoords = nodes.map(function(d) {  return [ d.x, d.y]; }); 
-        var depcoords = new Array(zparams.zdv.length);
+        function findcoords(findnames,allnames,coords){
+            var foundcoords = new Array(findnames.length);
+            var addlocation = 0;
+            if(findnames.length>0){
+                for (var j = 0; j < findnames.length; j++) {
+                    addlocation = allnames.indexOf(findnames[j]);
+                    foundcoords[j] = coords[addlocation];  
+                };
+            };
+            return (foundcoords);
+        };
 
-        var nodenames = nodes.map(n => n.name); 
-        var cutlocation = 0;
+        var coords = nodes.map(function(d) {  return [ d.x, d.y]; }); 
+        //var gr1coords = new Array(zparams.zgroup1.length);  
+        //var gr2coords = new Array(zparams.zgroup2.length); 
+        //var depcoords = new Array(zparams.zdv.length);
 
-        console.log(nodes);
-        console.log(zparams);
+        var gr1coords = findcoords(zparams.zgroup1, zparams.zvars, coords);        
+        var gr2coords = findcoords(zparams.zgroup2, zparams.zvars, coords);        
+        var depcoords = findcoords(zparams.zdv, zparams.zvars, coords);     
 
-
-
-        // find coordinates of independent variables by removing each dependent variable in turn
-        for (var j = 0; j < zparams.zdv.length; j++) {
-            cutlocation = nodenames.indexOf(zparams.zdv[j]) ;
-            depcoords[j] = indcoords[cutlocation];
-            indcoords.splice(cutlocation,1);
-            nodenames.splice(cutlocation,1);
-        };      
+        console.log(zparams.zvars);
+        console.log(gr1coords); 
+        console.log(zparams.zgroup1);       
+        //console.log(gr2coords);        
+        //console.log(depcoords);        
 
         // draw convex hull around independent variables, if three or more
-        if(indcoords.length > 2){   // Or: nodes.length - zparams.zdv.length
+        if(gr1coords.length > 2){   // Or: nodes.length - zparams.zdv.length
             vis.style("opacity", 0.3)
             vis.selectAll("path")
-                .data([d3.geom.hull(indcoords)])   // returns null if less than three coordinates
+                .data([d3.geom.hull(gr1coords)])   // returns null if less than three coordinates
                 .attr("d", function(d) { return "M" + d.join("L") + "Z"; });
 
             if(depcoords.length>0){  
                 //var p = d3.geom.polygon(indcoords).centroid();  // Seems to go strange sometimes
-                var p = jamescentroid(indcoords);
+                var p = jamescentroid(gr1coords);
                 var q = depcoords[0];                             // Note, only using first dep var currently
                 var ldeltaX = q[0] - p[0],
                     ldeltaY = q[1] - p[1],
@@ -643,6 +661,7 @@ function layout(v) {
 
         }else{ 
             vis.style("opacity", 0);
+            line.style("opacity", 0);
         };
 
         // draw directed edges with proper padding from node centers
@@ -675,13 +694,22 @@ function layout(v) {
         if (nodes.map(n => n.name).includes(text)) {
             nodes.splice(node.index, 1);
             spliceLinksForNode(node);
-            splice(node.strokeColor, text, [dvColor, 'zdv'], [csColor, 'zcross'], [timeColor, 'ztime'], [nomColor, 'znom']);
+            splice(node.strokeColor, text, [dvColor, 'zdv'], [csColor, 'zcross'], [timeColor, 'ztime'], [nomColor, 'znom']);    
+
+            if(zparams.zgroup1.indexOf(node.name) > -1){                               // remove node name from group lists (should use adaptation of splice-by-color)
+                    zparams.zgroup1.splice(zparams.zgroup1.indexOf(node.name),1);
+            };
+            if(zparams.zgroup2.indexOf(node.name) > -1){
+                    zparams.zgroup2.splice(zparams.zgroup2.indexOf(node.name),1);
+            };
+
             nodeReset(node);
             legend();
         } else {
             nodes.push(node);
             if (nodes.length === 0) nodes[0].reflexive = true;
         }
+        zparams.zvars = nodes.map(n => n.name)    // adding this to keep it current (or should we rely on nodes.map(n => n.name) for variable list?)
         panelPlots();
         restart();
     }
@@ -711,10 +739,10 @@ function layout(v) {
         // nodes.index is floating and depends on updates to nodes.  a variables index changes when new variables are added.
         circle.call(force.drag);
         if (forcetoggle[0] == "true") {
-            force.gravity(0.15);
+            force.gravity(0.1);
             //force.charge(-800);  // Previous constant value
             force.charge(function(node) {
-                return zparams.zdv.indexOf(node.name) > -1  ? -6000 : -400;  // -1 is the value if no index position found
+                return zparams.zgroup1.indexOf(node.name) > -1  ? -200 : -1000;  // -1 is the value if no index position found
             });
             force.start();
             force.linkStrength(1);
@@ -1966,6 +1994,14 @@ function setColors(n, c) {
                 findNodeIndex(n.name, true).nature = "nominal";
                 transform(n.name, t = null, typeTransform = true);
             }
+            if (key == 'zdv'){                                              // remove group memberships from dv's
+                if(zparams.zgroup1.indexOf(n.name) > -1){
+                    zparams.zgroup1.splice(zparams.zgroup1.indexOf(n.name),1);
+                };
+                if(zparams.zgroup2.indexOf(n.name) > -1){
+                    zparams.zgroup2.splice(zparams.zgroup2.indexOf(n.name),1);
+                };
+            }
         };
         [[dvColor, 'zdv'], [csColor, 'zcross'], [timeColor, 'ztime'], [nomColor, 'znom']].forEach(push);
     } else if (n.strokeWidth == '4') {
@@ -1985,7 +2021,16 @@ function setColors(n, c) {
                 transform(n.name, t = null, typeTransform = true);
             }
             n.strokeColor = c;
-            if (dvColor == c) zparams.zdv.push(n.name);
+            if (dvColor == c){ 
+                var dvname = n.name;
+                zparams.zdv.push(dvname);
+                if(zparams.zgroup1.indexOf(dvname) > -1){                     // remove group memberships from dv's
+                    zparams.zgroup1.splice(zparams.zgroup1.indexOf(dvname),1);
+                };
+                if(zparams.zgroup2.indexOf(dvname) > -1){
+                    zparams.zgroup2.splice(zparams.zgroup2.indexOf(dvname),1);
+                };
+            }
             else if (csColor == c) zparams.zcross.push(n.name);
             else if (timeColor == c) zparams.ztime.push(n.name);
             else if (nomColor == c) {
