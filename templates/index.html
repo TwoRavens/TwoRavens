@@ -9,13 +9,33 @@
     <link rel="stylesheet" href="{% static "pkgs/bootstrap/css/bootstrap.css" %}">
     <!--<link rel="stylesheet" href="{% static "build/tworavens_styles.css" %}"-->
     {% render_bundle 'main' 'css' %}
-
-
     <script src="{% static "pkgs/Ladda/dist/spin.min.js" %}"></script>
     <script src="{% static "pkgs/Ladda/dist/ladda.min.js" %}"></script>
     <script src="{% static "js/jquery/jquery.min.js" %}"></script>
     <script src="{% static "pkgs/bootstrap/js/bootstrap.min.js" %}"></script>
     <script src="{% static "js/d3/d3.v3.min.js" %}"></script>
+    <script>
+            // --------------------------------
+            // Set the url for service calls
+            // --------------------------------
+          {% if debug %}
+              /*
+                  Dev settings - see /templates/index.html to set manually
+              */
+              let production = false;
+              let rappURL = 'http://127.0.0.1:8080/rook-custom/'; // via Django -> to RApache/rook
+              //let rappURL = 'http://0.0.0.0:8000/custom/'; // Direct to RApache/rook
+              //let twoRavensMode = 'd3m';
+          {% else %}
+              /*
+                 Prod settings - from the django settings file
+              */
+              let production = true;
+              let rappURL = '{{ DATAVERSE_URL }}';  // from the django conf file
+              //let twoRavensMode = '{{ TWORAVENS_MODE }}';
+               //'https://beta.dataverse.org/custom/';
+          {% endif %}
+        </script>
   </head>
   <body>
     {% render_bundle 'main' 'js' %}

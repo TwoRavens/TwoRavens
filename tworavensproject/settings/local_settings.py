@@ -33,6 +33,9 @@ TEST_DIRECT_STATIC = join(BASE_DIR, 'assets')
 # http://django-debug-toolbar.readthedocs.org/en/latest/installation.html
 INTERNAL_IPS = ('127.0.0.1',)
 
+ALLOWED_HOSTS = ('localhost',
+                 '127.0.0.1',)
+
 #INSTALLED_APPS += ['debug_toolbar']
 ########## END TOOLBAR CONFIGURATION
 
