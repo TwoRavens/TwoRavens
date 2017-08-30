@@ -109,7 +109,7 @@ var callHistory = []; // transform and subset calls
 let mytarget = "";
 
 var svg, width, height, div, estimateLadda, selectLadda;
-var arc3, arc4;
+var arc1, arc3, arc4;
 
 let byId = id => document.getElementById(id);
 
@@ -166,7 +166,9 @@ export function main(fileid, hostname, ddiurl, dataurl) {
         .outerRadius(allR + 20)
         .startAngle(start)
         .endAngle(end);
-    let [arc0, arc1, arc2] = [arc(0, 3.2), arc(0, 1), arc(1.1, 2.2)];
+    let [arc0, arc2] = [arc(0, 3.2), arc(1.1, 2.2)];  
+    //arc1 = arc(1.3, 2.3);
+    arc1 = arc(0,1);
     arc3 = arc(2.3, 3.3);
     arc4 = arc(4.3, 5.3);
 
@@ -627,9 +629,9 @@ function layout(v) {
         var gr2coords = findcoords(zparams.zgroup2, zparams.zvars, coords);        
         var depcoords = findcoords(zparams.zdv, zparams.zvars, coords);     
 
-        console.log(zparams.zvars);
-        console.log(gr1coords); 
-        console.log(zparams.zgroup1);       
+        //console.log(zparams.zvars);
+        //console.log(gr1coords); 
+        //console.log(zparams.zgroup1);       
         //console.log(gr2coords);        
         //console.log(depcoords);        
 
@@ -863,6 +865,38 @@ function layout(v) {
             .attr("xlink:href", append("#nomArc"))
             .text("Nominal");
 
+
+        g.append("path")
+            .attr("id", append('gr1Arc'))
+            .attr("d", arc1)
+            .style("fill", gr1Color)
+            .attr("fill-opacity", 0)
+            .on('mouseover', function(d) {
+                fillThis(this, .3, 0, 100);
+                fill(d, 'gr1Text', .9, 0, 100);
+            })
+            .on('mouseout', function(d) {
+                fillThis(this, 0, 100, 500);
+                fill(d, 'gr1Text', 0, 100, 500);
+            })
+            .on('click', d => {
+                setColors(d, gr1Color);
+                legend(gr1Color);
+                restart();
+            });
+
+        g.append("text")
+            .attr("id", append('gr1Text'))
+            .attr("x", 6)
+            .attr("dy", 11.5)
+            .attr("fill-opacity", 0)
+            .append("textPath")
+            .attr("xlink:href", append('#gr1Arc'))
+            .text("Groups");
+
+
+
+
         g.append('svg:circle')
             .attr('class', 'node')
             .attr('r', allR)
@@ -973,7 +1007,10 @@ function layout(v) {
                 transformVar = valueKey[d.id];
 
                 fill(d, "dvArc", .1, 0, 100);
-                fill(d, "dvText", .5, 0, 100);
+                fill(d, "dvText", .5, 0, 100);       
+                fill(d, "gr1Arc", .1, 0, 100);
+                fill(d, "gr1Text", .5, 0, 100);                
+         
                 if (d.defaultNumchar == "numeric") {
                     fill(d, "nomArc", .1, 0, 100);
                     fill(d, "nomText", .5, 0, 100);
@@ -987,7 +1024,7 @@ function layout(v) {
             })
             .on('mouseout', d => {
                 summaryHold || tabLeft(subset ? 'tab2' : 'tab1');
-                'csArc csText timeArc timeText dvArc dvText nomArc nomText'.split(' ').map(x => fill(d, x, 0, 100, 500));
+                'csArc csText timeArc timeText dvArc dvText nomArc nomText gr1Arc gr1Text'.split(' ').map(x => fill(d, x, 0, 100, 500));
                 m.redraw();
             });
 
@@ -1981,6 +2018,17 @@ export let hexToRgba = hex => {
 // takes node and color and updates zparams
 function setColors(n, c) {
     if (n.strokeWidth == '1') {
+        if (c == gr1Color){
+            console.log("found here!")
+            var tempindex = zparams.zgroup1.indexOf(n.name);
+            console.log(tempindex);
+            if (tempindex > -1){
+                zparams.zgroup1.splice(tempindex,1);
+            }else{
+                zparams.zgroup1.push(n.name);
+            };
+            console.log(zparams.zgroup1);
+        }else{
         // adding time, cs, dv, nom to node with no stroke
         n.strokeWidth = '4';
         n.strokeColor = c;
@@ -2004,6 +2052,7 @@ function setColors(n, c) {
             }
         };
         [[dvColor, 'zdv'], [csColor, 'zcross'], [timeColor, 'ztime'], [nomColor, 'znom']].forEach(push);
+        }
     } else if (n.strokeWidth == '4') {
         if (c == n.strokeColor) { // deselecting time, cs, dv, nom
             n.strokeWidth = '1';
@@ -2055,6 +2104,9 @@ export function borderState() {
     zparams.znom.length > 0 ?
         $('#nomButton .rectColor svg circle').attr('stroke', nomColor) :
         $('#nomButton').css('border-color', '#ccc');
+    zparams.zgroup1.length > 0 ?
+        $('#gr1Button .rectColor svg circle').attr('stroke', gr1Color) :
+        $('#gr1Button').css('border-color', '#ccc');
 }
 
 // small appearance resets, but perhaps this will become a hard reset back to all original allNode values?
