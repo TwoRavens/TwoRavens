@@ -133,7 +133,9 @@ export function main(fileid, hostname, ddiurl, dataurl) {
         // file id supplied; assume we are dealing with dataverse and cook a standard dataverse data access url
         // with the fileid supplied and the hostname we have supplied or configured
         dataurl = dataverseurl + "/api/access/datafile/" + fileid;
-        dataurl = dataurl + "?key=" + apikey;
+
+        // rp; temporarily remove this
+        //dataurl = dataurl + "?key=" + apikey;
     }
 
     svg = d3.select("#whitespace");

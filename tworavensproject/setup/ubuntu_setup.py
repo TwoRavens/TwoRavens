@@ -8,6 +8,7 @@ For now, replicating much of logic in the file above
 """
 import os, sys
 from os.path import isfile, isdir, join
+import shutil
 
 def msg(s): print(s)
 def dashes(char='-'): msg(40*char)
@@ -99,6 +100,14 @@ class TwoRavensSetup:
             # write new file
             new_file_location = join(TWORAVENS_WORKING_ROOK_DIRECTORY, rook_file)
             open(new_file_location, 'w').write(content)
+
+        # Copy directories: preprocess and privacyfunctions
+        #
+        for rook_dir in ['preprocess', 'privacyfunctions']:
+            orig_dir = join(TWORAVENS_GIT_REPO_ROOK_DIR, rook_dir)
+            dest_dir = TWORAVENS_WORKING_ROOK_DIRECTORY
+            shutil.copy(orig_dir, dest_dir)
+            msg('Directory copied.\nsrc: %s\ndest: %s' % (orig_dir, dest_dir))
 
 
     def update_rook_file_content(self, content):

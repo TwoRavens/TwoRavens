@@ -60,7 +60,8 @@ def run():
 def webpack_prod():
     """Generate the webpack dist files for prod"""
 
-    cmd_webpack = './node_modules/.bin/webpack --config webpack.config-prod.js --watch'
+    #cmd_webpack = './node_modules/.bin/webpack --config webpack.config-prod.js --watch'
+    cmd_webpack = './node_modules/.bin/webpack --config webpack.prod.config.js'
     local(cmd_webpack)
 
 def clear_js():
