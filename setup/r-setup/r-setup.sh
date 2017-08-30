@@ -11,10 +11,16 @@ sleep 5
 # Use an alternative CRAN repository mirror, if r-project.org
 # is not available or slow to access from where you are.
 CRANREPO="http://cran.r-project.org"; export CRANREPO
-# Set this to your local R Library directory, if different:
-RLIBDIR=/usr/lib64/R/library; export RLIBDIR
 
-echo 
+
+# Set this to your local R Library directory, if different:
+#RLIBDIR=/usr/lib64/R/library; export RLIBDIR
+
+# for docker image.  In R interpreter: .libPaths()
+RLIBDIR=/usr/local/lib/R/site-library; export RLIBDIR
+
+
+echo
 echo -n "Checking if R Library directory exists..."
 if [ "x"$RLIBDIR != "x" ] && [ -d $RLIBDIR ]
 then
@@ -71,16 +77,16 @@ do
 	    echo
 	    /bin/rm ${RPACK}'_'${RPACKVERSION}'.tar.gz'
 	else
-	    echo 
+	    echo
 	    echo "FATAL ERROR: package ${RPACK} failed to install!"
-	    echo 
+	    echo
 	    echo "Please consult the log file RINSTALL.${RPACK}.LOG for error messages that may explain the reason for the failure."
 	    echo "This will likely be some missing dependency - a gcc compiler not installed, or a wrong version of it, or a missing dev. library..."
 	    echo "Try to fix the problem, and run the script again."
 	    echo
-	    exit 1; 
+	    exit 1;
 	fi
-	
+
 	echo;
     else
 	echo
@@ -90,8 +96,8 @@ do
 done
 
 
-echo 
-echo "checking Rserve configuration:" 
+echo
+echo "checking Rserve configuration:"
 
 /usr/sbin/groupadd -g 97 -o -r rserve >/dev/null 2>/dev/null || :
 /usr/sbin/useradd -g rserve -o -r -d $RLIBDIR -s /bin/bash \
@@ -103,7 +109,7 @@ if [ ! -f /etc/Rserv.conf ]
 then
     echo "installing Rserv configuration file."
     install -o rserve -g rserve Rserv.conf /etc/Rserv.conf
-    echo 
+    echo
 fi
 
 if [ ! -f /etc/Rserv.pwd ]
@@ -128,7 +134,7 @@ then
     echo
 fi
 
-echo 
+echo
 echo "Successfully installed Dataverse R framework."
 echo
 
