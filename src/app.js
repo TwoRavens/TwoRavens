@@ -629,11 +629,14 @@ function layout(v) {
         var gr2coords = findcoords(zparams.zgroup2, zparams.zvars, coords);        
         var depcoords = findcoords(zparams.zdv, zparams.zvars, coords);     
 
-        //console.log(zparams.zvars);
-        //console.log(gr1coords); 
-        //console.log(zparams.zgroup1);       
-        //console.log(gr2coords);        
-        //console.log(depcoords);        
+        // d3.geom.hull returns null for two points, and fails if three points are in a line, 
+        // so this puts a couple points slightly off the line
+        if (gr1coords.length == 2){
+            var deltax = gr1coords[0][0]- gr1coords[1][0];
+            var deltay = gr1coords[0][1]- gr1coords[1][1];
+            gr1coords.push([(gr1coords[0][0] + gr1coords[1][0])/2 + deltay/20, (gr1coords[0][1]+ gr1coords[1][1])/2 + deltax/20]);
+            gr1coords.push([(gr1coords[0][0] + gr1coords[1][0])/2 - deltay/20, (gr1coords[0][1]+ gr1coords[1][1])/2 - deltax/20]);
+        }      
 
         // draw convex hull around independent variables, if three or more
         if(gr1coords.length > 2){   // Or: nodes.length - zparams.zdv.length
