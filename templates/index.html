@@ -24,6 +24,7 @@
               */
               let production = false;
               let rappURL = 'http://127.0.0.1:8080/rook-custom/'; // via Django -> to RApache/rook
+              let DATAVERSE_URL = 'https://beta.dataverse.org';
               //let rappURL = 'http://0.0.0.0:8000/custom/'; // Direct to RApache/rook
               //let twoRavensMode = 'd3m';
           {% else %}
@@ -32,6 +33,7 @@
               */
               let production = true;
               let rappURL = '{{ DATAVERSE_URL }}';  // from the django conf file
+              let DATAVERSE_URL = 'http://dataverse.harvard.edu';
               //let twoRavensMode = '{{ TWORAVENS_MODE }}';
                //'https://beta.dataverse.org/custom/';
           {% endif %}

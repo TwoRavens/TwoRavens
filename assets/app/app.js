@@ -126,7 +126,7 @@ export function main(fileid, hostname, ddiurl, dataurl) {
 
     let dataverseurl = '';
     if (hostname) dataverseurl = "https://" + hostname;
-    else if (production) dataverseurl = "%PRODUCTION_DATAVERSE_URL%";
+    else if (production) dataverseurl = DATAVERSE_URL;
     else dataverseurl = "http://localhost:8080";
 
     if (fileid && !dataurl) {
