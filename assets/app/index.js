@@ -15,7 +15,9 @@ let or = function(side, val, y='block', n='none') {
 };
 
 let leftpanel = function() {
-    return m(Panel, {side: 'left', title: 'Data Selection'},
+    return m(Panel, {
+	           side: 'left', 
+	           title: 'Data Selection'},
              m(".btn-toolbar[role=toolbar][style=margin-left: .5em; margin-top: .5em]",
                m(".btn-group",
                  m(`button#btnVariables.btn.${or('left', 'tab1', 'active', 'btn-default')}[type=button]`, {
