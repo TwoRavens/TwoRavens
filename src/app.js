@@ -37,8 +37,11 @@ export let inspect = obj => {
 var colors = d3.scale.category20();
 export let csColor = '#419641';
 export let dvColor = '#28a4c9';
-export let gr1Color = '#CCCCFF';
-export let gr2Color = '#FFCCCC';
+export let gr1Color = '#24a4c9';//#ccccff';
+var gr1Opacity = [0,1];
+export let gr2Color = '#ffcccc';
+var gr2Opacity = [0,1];
+
 var grayColor = '#c0c0c0';
 export let nomColor = '#ff6600';
 export let varColor = '#f0f8ff'; // d3.rgb("aliceblue");
@@ -67,6 +70,9 @@ const layoutMove = "move";
 
 // Radius of circle
 var allR = 40;
+
+var ind1 = [(allR+30) * Math.cos(1.3), -1*(allR+30) * Math.sin(1.3),5] // cx, cy, r  values for indicator lights
+var ind2 = [(allR+30) * Math.cos(1.1), -1*(allR+30) * Math.sin(1.1),5] // cx, cy, r  values for indicator lights
 
 // space index
 var myspace = 0;
@@ -110,6 +116,7 @@ let mytarget = "";
 
 var svg, width, height, div, estimateLadda, selectLadda;
 var arc1, arc3, arc4;
+//var ind1, ind2;
 
 let byId = id => document.getElementById(id);
 
@@ -161,6 +168,7 @@ export function main(fileid, hostname, ddiurl, dataurl) {
     var barPadding = 0.35;
     var barnumber = 7;
 
+    // arcs for denoting pebble characteristics
     let arc = (start, end) => d3.svg.arc()
         .innerRadius(allR + 5)
         .outerRadius(allR + 20)
@@ -171,6 +179,14 @@ export function main(fileid, hostname, ddiurl, dataurl) {
     arc1 = arc(0,1);
     arc3 = arc(2.3, 3.3);
     arc4 = arc(4.3, 5.3);
+
+    // indicators for showing membership above arcs
+ //   let indicator = (degree) => d3.svg.circle()
+ //       .cx( allR )//(allR+35) * Math.sin(degree))
+ //       .cy( allR )//(allR+35) * Math.cos(degree))
+ //       .r(3);
+ //   ind1 = indicator(1);
+ //   ind2 = indicator(1.2);
 
     // From .csv
     var dataset2 = [];
@@ -608,16 +624,53 @@ function layout(v) {
     // update force layout (called automatically each iteration)
     function tick() {
 
-        function findcoords(findnames,allnames,coords){
-            var foundcoords = new Array(findnames.length);
+        function findcoords(findnames,allnames,coords,lengthen){
+            var fcoords = new Array(findnames.length);   // found coordinates
             var addlocation = 0;
             if(findnames.length>0){
                 for (var j = 0; j < findnames.length; j++) {
                     addlocation = allnames.indexOf(findnames[j]);
-                    foundcoords[j] = coords[addlocation];  
+                    fcoords[j] = coords[addlocation];  
                 };
             };
-            return (foundcoords);
+
+            if(lengthen){
+                // d3.geom.hull returns null for two points, and fails if three points are in a line, 
+                // so this puts a couple points slightly off the line for two points, or around a singleton. 
+                if (fcoords.length == 2){
+                    var deltax = fcoords[0][0]- fcoords[1][0];
+                    var deltay = fcoords[0][1]- fcoords[1][1];
+                    fcoords.push([(fcoords[0][0] + fcoords[1][0])/2 + deltay/20, (fcoords[0][1]+ fcoords[1][1])/2 + deltax/20]);
+                    fcoords.push([(fcoords[0][0] + fcoords[1][0])/2 - deltay/20, (fcoords[0][1]+ fcoords[1][1])/2 - deltax/20]);
+                }      
+                if (fcoords.length == 1){
+                    var delta = allR * 0.2;
+                    fcoords.push([fcoords[0][0] + delta, fcoords[0][1]]);
+                    fcoords.push([fcoords[0][0] - delta, fcoords[0][1]]);
+                    fcoords.push([fcoords[0][0], fcoords[0][1] + delta]);
+                    fcoords.push([fcoords[0][0], fcoords[0][1] - delta]); 
+                }
+            }
+            return (fcoords);
+        };
+
+        // d3.geom.hull returns null for two points, and fails if three points are in a line, 
+        // so this puts a couple points slightly off the line for two points, or around a singleton. 
+        function lengthencoords(coords){
+            if (coords.length == 2){
+                var deltax = coords[0][0]- coords[1][0];
+                var deltay = coords[0][1]- coords[1][1];
+                coords.push([(coords[0][0] + coords[1][0])/2 + deltay/20, (coords[0][1]+ coords[1][1])/2 + deltax/20]);
+                coords.push([(coords[0][0] + coords[1][0])/2 - deltay/20, (coords[0][1]+ coords[1][1])/2 - deltax/20]);
+            }      
+            if (coords.length == 1){
+                var delta = allR * 0.2;
+                coords.push([coords[0][0] + delta, coords[0][1]]);
+                coords.push([coords[0][0] - delta, coords[0][1]]);
+                coords.push([coords[0][0], coords[0][1] + delta]);
+                coords.push([coords[0][0], coords[0][1] - delta]); 
+            }
+            return (coords);
         };
 
         var coords = nodes.map(function(d) {  return [ d.x, d.y]; }); 
@@ -625,21 +678,18 @@ function layout(v) {
         //var gr2coords = new Array(zparams.zgroup2.length); 
         //var depcoords = new Array(zparams.zdv.length);
 
-        var gr1coords = findcoords(zparams.zgroup1, zparams.zvars, coords);        
-        var gr2coords = findcoords(zparams.zgroup2, zparams.zvars, coords);        
-        var depcoords = findcoords(zparams.zdv, zparams.zvars, coords);     
+        var gr1coords = findcoords(zparams.zgroup1, zparams.zvars, coords, true);        
+        var gr2coords = findcoords(zparams.zgroup2, zparams.zvars, coords, true);        
+        var depcoords = findcoords(zparams.zdv, zparams.zvars, coords, false);     
 
-        // d3.geom.hull returns null for two points, and fails if three points are in a line, 
-        // so this puts a couple points slightly off the line
-        if (gr1coords.length == 2){
-            var deltax = gr1coords[0][0]- gr1coords[1][0];
-            var deltay = gr1coords[0][1]- gr1coords[1][1];
-            gr1coords.push([(gr1coords[0][0] + gr1coords[1][0])/2 + deltay/20, (gr1coords[0][1]+ gr1coords[1][1])/2 + deltax/20]);
-            gr1coords.push([(gr1coords[0][0] + gr1coords[1][0])/2 - deltay/20, (gr1coords[0][1]+ gr1coords[1][1])/2 - deltax/20]);
-        }      
+        //(0<gr1coords.length & gr1coords.length<3) && gr1coords = lengthencoords(gr1coords);
+        //(0<gr1coords.length & gr2coords.length<3) && gr1coords = lengthencoords(gr1coords);
 
-        // draw convex hull around independent variables, if three or more
-        if(gr1coords.length > 2){   // Or: nodes.length - zparams.zdv.length
+
+        // draw convex hull around independent variables, if three or more coordinates given
+        // note, d3.geom.hull returns null if shorter coordinate set than 3, 
+        // so findcoords() function has option to lengthen the coordinates returned to bypass this
+        if(gr1coords.length > 2){   
             vis.style("opacity", 0.3)
             vis.selectAll("path")
                 .data([d3.geom.hull(gr1coords)])   // returns null if less than three coordinates
@@ -685,7 +735,6 @@ function layout(v) {
             return `M${sourceX},${sourceY}L${targetX},${targetY}`;
         });
         circle.attr('transform', d => 'translate(' + d.x + ',' + d.y + ')');
-
 
     }
 
@@ -868,11 +917,10 @@ function layout(v) {
             .attr("xlink:href", append("#nomArc"))
             .text("Nominal");
 
-
         g.append("path")
             .attr("id", append('gr1Arc'))
             .attr("d", arc1)
-            .style("fill", gr1Color)
+            .style("fill",  gr1Color) 
             .attr("fill-opacity", 0)
             .on('mouseover', function(d) {
                 fillThis(this, .3, 0, 100);
@@ -888,6 +936,50 @@ function layout(v) {
                 restart();
             });
 
+        g.append("svg:circle")
+            .attr("id", append('gr1indicator'))
+            .attr("cx", ind1[0] )
+            .attr("cy", ind1[1])
+            .attr("r", ind1[2])
+            .style("fill", gr1Color)  // something like: zparams.zgroup1.indexOf(node.name) > -1  ?  #FFFFFF : gr1Color)
+            .attr("fill-opacity", 0)
+            .style("stroke-opacity", 0)
+            .on('mouseover', function(d) {
+                fillThis(this, .3, 0, 100);
+                //fill(d, 'gr1Text', .9, 0, 100);
+            })
+            .on('mouseout', function(d) {
+                fillThis(this, 0, 100, 500);
+                //fill(d, 'gr1Text', 0, 100, 500);
+            })
+            .on('click', d => {
+                setColors(d, gr1Color);
+                legend(gr1Color);
+                restart();
+            });
+
+        g.append("svg:circle")
+            .attr("id", append('gr2indicator'))
+            .attr("cx", ind2[0] )
+            .attr("cy", ind2[1])
+            .attr("r", ind2[2])
+            .style("fill", gr2Color)
+            .attr("fill-opacity", 0)
+            .style("stroke-opacity", 0)
+            .on('mouseover', function(d) {
+                fillThis(this, .3, 0, 100);
+                fill(d, 'gr2Text', .9, 0, 100);
+            })
+            .on('mouseout', function(d) {
+                fillThis(this, 0, 100, 500);
+                fill(d, 'gr2Text', 0, 100, 500);
+            })
+            .on('click', d => {
+                //setColors(d, gr2Color);
+                //legend(gr2Color);
+                restart();
+            });
+
         g.append("text")
             .attr("id", append('gr1Text'))
             .attr("x", 6)
@@ -896,9 +988,6 @@ function layout(v) {
             .append("textPath")
             .attr("xlink:href", append('#gr1Arc'))
             .text("Groups");
-
-
-
 
         g.append('svg:circle')
             .attr('class', 'node')
@@ -1012,7 +1101,11 @@ function layout(v) {
                 fill(d, "dvArc", .1, 0, 100);
                 fill(d, "dvText", .5, 0, 100);       
                 fill(d, "gr1Arc", .1, 0, 100);
-                fill(d, "gr1Text", .5, 0, 100);                
+                fill(d, "gr1Text", .5, 0, 100);  
+                fill(d, "gr1indicator", .1, 0, 100);
+                fill(d, "gr1indicatorText", .1, 0, 100);              
+                fill(d, "gr2indicator", .1, 0, 100);
+                fill(d, "gr2indicatorText", .1, 0, 100);              
          
                 if (d.defaultNumchar == "numeric") {
                     fill(d, "nomArc", .1, 0, 100);
@@ -1027,7 +1120,7 @@ function layout(v) {
             })
             .on('mouseout', d => {
                 summaryHold || tabLeft(subset ? 'tab2' : 'tab1');
-                'csArc csText timeArc timeText dvArc dvText nomArc nomText gr1Arc gr1Text'.split(' ').map(x => fill(d, x, 0, 100, 500));
+                'csArc csText timeArc timeText dvArc dvText nomArc nomText gr1Arc gr1Text gr1indicator gr1indicatorText gr2indicator gr2indicatorText'.split(' ').map(x => fill(d, x, 0, 100, 500));
                 m.redraw();
             });
 
