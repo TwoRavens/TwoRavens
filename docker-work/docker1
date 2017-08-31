@@ -12,35 +12,55 @@ RUN apt-get -y update && \
 # ---------------------------------------------
 # Install packages including git, apache2, and pip3
 # ---------------------------------------------
-RUN apt-get -y install vim && \
+RUN echo "----------------------------"  && \
+    echo "--> Install basic packages" && \
+    echo "----------------------------"  && \
+    apt-get -y install vim && \
     apt-get -y install wget && \
     apt-get -y install net-tools && \
     apt-get -y install bash && \
+    echo "----------------------------"  && \
+    echo "--> Needed for retrieving R packages" && \
+    echo "----------------------------"  && \
     apt-get -y install libssl-dev && \
     apt-get -y install libcurl4-openssl-dev && \
     apt-get -y install libxml2-dev && \
+    echo "----------------------------"  && \
+    echo "--> To generate rook sessions numbers" && \
+    echo "----------------------------"  && \
     apt-get -y install uuid-runtime && \
+    echo "----------------------------"  && \
+    echo "--> git, apache, python3 (fix later: apache2-dev - to get the apxs package for mod_wsgi)" && \
+    echo "----------------------------"  && \
     apt-get -y install git && \
     apt-get -y install apache2-dev apache2-doc apache2-utils && \
     apt-get -y install python3-pip && \
     ln -sf /usr/bin/python3 /usr/bin/python && \
+    echo "----------------------------"  && \
+    echo "--> virtualenvwrapper" && \
+    echo "----------------------------"  && \
     pip3 install --upgrade pip && \
     pip3 install Fabric3==1.13.1.post1  && \
     pip3 install virtualenvwrapper==4.7.2  && \
-    export WORKON_HOME=/root/virtualenvs >> /root/.bashrc && \
-    export PROJECT_HOME=/root/Devel >> /root/.bashrc && \
-    export VIRTUALENVWRAPPER_PYTHON=/usr/bin/python3 >> /root/.bashrc
+    mkdir -p /root/virtualenvs && \
+    mkdir -p /root/Devel  && \
+    echo WORKON_HOME=/root/virtualenvs >> /root/.bashrc && \
+    echo PROJECT_HOME=/root/Devel >> /root/.bashrc && \
+    echo VIRTUALENVWRAPPER_PYTHON=/usr/bin/python3 >> /root/.bashrc && \
+    echo source /usr/local/bin/virtualenvwrapper.sh >> /root/.bashrc
 
 # ---------------------------------------------
 # Clone the TwoRavens repository--the "rp-django" branch
 # ---------------------------------------------
-RUN mkdir -p /srv/webapps && \
+RUN echo "----------------------------"  && \
+    echo "--> Clone the TwoRavens repository--the "rp-django" branch" && \
+    echo "----------------------------"  && \
+    mkdir -p /srv/webapps && \
     cd /srv/webapps && \
     git clone https://github.com/vjdorazio/TwoRavens.git && \
     cd TwoRavens && \
-    git checkout rp-django && \
-    mkdir -p /root/virtualenvs && \
-    mkdir -p /root/Devel  && \
+    git checkout rp-django
+
 
 EXPOSE 8080
 

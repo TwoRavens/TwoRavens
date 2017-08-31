@@ -5,7 +5,7 @@ ENV DEBIAN_FRONTEND noninteractive
 
 RUN ln -s /usr/bin/python3 /usr/bin/python &&
     pip3 install Fabric3==1.13.1.post1 && \
-    
+
 
 # ---------------------------------------------
 # Virtualenv install

@@ -8,11 +8,6 @@ https://docs.djangoproject.com/en/1.11/howto/deployment/wsgi/
 """
 
 # ------------------------------------------------
-# virtualenvwrapper invocation
-# src: http://modwsgi.readthedocs.io/en/develop/user-guides/virtual-environments.html#daemon-mode-multiple-applications
-# ------------------------------------------------
-print ('why are we here?')
-# ------------------------------------------------
 # defining execfile for python 3 use
 # ------------------------------------------------
 def execfile(filename):

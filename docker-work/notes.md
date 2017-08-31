@@ -16,7 +16,7 @@ Notes:
 
 - run a temp container with this image:
     ```
-    docker run -ti --rm --name=ok docker1:latest
+    docker run -ti --rm --name=ok_ravens1 docker1:latest
     ```
 
 ## Docker 2
