@@ -134,5 +134,49 @@ def test_front_matter():
 
 def ubuntu_help():
     """Set up directories for ubuntu 16.04 (in progress)"""
-    from tworavensproject.setup.ubuntu_setup import TwoRavensSetup
+    from setup.ubuntu_setup import TwoRavensSetup
     trs = TwoRavensSetup()
+
+def virtualenv_start():
+    """Make the virtualenv"""
+    local('ln -s /usr/bin/python3 /usr/bin/python')
+    local('pip3 install virtualenvwrapper==4.7.2')
+    local('mkdir /root/virtualenvs')
+    local('mkdir /root/Devel')
+    local('cp /root/.bashrc /root/.bashrc-org')
+    local("echo 'export WORKON_HOME=/root/virtualenvs' >> /root/.bashrc")
+    local("echo 'export PROJECT_HOME=/root/Devel' >> /root/.bashrc")
+    local("echo 'export VIRTUALENVWRAPPER_PYTHON=/usr/bin/python3' >> /root/.bashrc")
+    local("source /bin/bash /usr/local/bin/virtualenvwrapper.sh")
+    local("source /root/.bashrc")
+    local('cd /srv/webapps/TwoRavens')
+
+    '''
+    mkdir /srv/webapps/scripts
+    pip3 install Fabric3==1.13.1.post1 && \
+    mkdir /root/virtualenvs && \
+    mkdir /root/Devel && \
+    cp /root/.bashrc /root/.bashrc-org && \
+    echo 'export WORKON_HOME=/root/virtualenvs' >> /root/.bashrc && \
+    echo 'export PROJECT_HOME=/root/Devel' >> /root/.bashrc && \
+    echo 'export VIRTUALENVWRAPPER_PYTHON=/usr/bin/python3' >> /root/.bashrc
+
+#RUN export WORKON_HOME=/root/virtualenvs && \
+#    export PROJECT_HOME=/root/Devel && \
+#    export VIRTUALENVWRAPPER_PYTHON=/usr/bin/python3 && \
+#    /bin/bash -c "source /bin/bash /usr/local/bin/virtualenvwrapper.sh"  && \
+#    /bin/bash -c "source /root/.bashrc"
+
+
+# ---------------------------------------------
+# Virtualenv creation
+# ---------------------------------------------
+RUN /bin/bash -c "source /bin/bash /usr/local/bin/virtualenvwrapper.sh"  && \
+    /bin/bash -c "source /root/.bashrc"
+    cd /srv/webapps/TwoRavens && \
+    mkvirtualenv -p python3 2ravens && \
+    pip3 install -r requirements/prod.txt && \
+    echo 'export DJANGO_SETTINGS_MODULE=tworavensproject.settings.dev_container' >> /root/virtualenvs/2ravens/bin/postactivate && \
+    source /root/virtualenvs/2ravens/bin/postactivate && \
+    fab init_db
+'''

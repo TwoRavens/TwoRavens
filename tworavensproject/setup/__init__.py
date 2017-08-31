@@ -1,3 +1,0 @@
-"""
-Helper scripts for installation
-"""
