@@ -27,7 +27,7 @@ apt-get -y install uuid-runtime
 echo "# ---------------------------------------------"
 echo "--> apache (fix later: apache2-dev - to get the apxs package for mod_wsgi)"
 # --------------------------------------------
-apt-get -y install apache2-dev apache2-doc apache2-utils
+apt-get -y install apache2 apache2-dev apache2-doc apache2-utils
 
 echo "# ---------------------------------------------"
 echo "--> python3"

@@ -23,6 +23,7 @@ RUN echo "----------------------------"  && \
 
 RUN ["chmod", "+x", "/srv/webapps/TwoRavens/setup/init_scripts/setup_01_pkgs.sh"]
 RUN /bin/bash -c "/srv/webapps/TwoRavens/setup/init_scripts/setup_01_pkgs.sh"
+RUN ["chmod", "-x", "/srv/webapps/TwoRavens/setup/init_scripts/setup_01_pkgs.sh"]
 
 EXPOSE 8080
 
