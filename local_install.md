@@ -233,12 +233,12 @@ These commands will:
 
 ### Commands
 
-# (1) Update requirements
+- Update requirements
     ```
     pip install -r requirements/dev.txt
     ```
 
-# (2) Migrate database changes (if needed)
+- Migrate database changes (if needed)
     ```
     fab init_db
     ```
