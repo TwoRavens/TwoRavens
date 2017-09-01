@@ -1,0 +1,30 @@
+FROM ubuntu:16.04
+MAINTAINER Raman Prasad (raman_prasad@harvard.edu)
+
+ENV DEBIAN_FRONTEND noninteractive
+
+
+RUN echo "----------------------------"  && \
+    echo "--> apt-utils" && \
+    echo "----------------------------"  && \
+    apt-get -y update && \
+    apt-get install -y --no-install-recommends apt-utils
+
+
+RUN echo "----------------------------"  && \
+    echo "--> Install git and clone the TwoRavens repository" && \
+    echo "----------------------------"  && \
+    apt-get -y install git && \
+    mkdir -p /srv/webapps && \
+    cd /srv/webapps && \
+    git clone https://github.com/vjdorazio/TwoRavens.git && \
+    cd TwoRavens && \
+    git checkout rp-django
+
+RUN ["chmod", "+x", "/srv/webapps/TwoRavens/setup/init_scripts/setup_01_pkgs.sh"]
+RUN /bin/bash -c "/srv/webapps/TwoRavens/setup/init_scripts/setup_01_pkgs.sh"
+RUN ["chmod", "-x", "/srv/webapps/TwoRavens/setup/init_scripts/setup_01_pkgs.sh"]
+
+EXPOSE 8080
+
+ENV DEBIAN_FRONTEND teletype

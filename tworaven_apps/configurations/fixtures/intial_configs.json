@@ -1,0 +1,34 @@
+[
+{
+    "model": "configurations.appconfiguration",
+    "pk": 1,
+    "fields": {
+        "created": "2017-09-01T22:10:52.681Z",
+        "modified": "2017-09-01T23:04:42.951Z",
+        "name": "Default configuration",
+        "is_active": false,
+        "production": false,
+        "d3m_mode": false,
+        "privacy_mode": false,
+        "rook_app_url": "http://127.0.0.1:8080/rook-custom/",
+        "dataverse_url": "https://beta.dataverse.org",
+        "description": "Basic dev configuration.  Rook calls are routed through Django."
+    }
+},
+{
+    "model": "configurations.appconfiguration",
+    "pk": 2,
+    "fields": {
+        "created": "2017-09-01T22:15:48.937Z",
+        "modified": "2017-09-01T22:50:26.900Z",
+        "name": "D3M Dev configuration",
+        "is_active": false,
+        "production": false,
+        "d3m_mode": true,
+        "privacy_mode": false,
+        "rook_app_url": "http://127.0.0.1:8080/rook-custom/",
+        "dataverse_url": "https://beta.dataverse.org",
+        "description": "Rook calls routed through Django"
+    }
+}
+]

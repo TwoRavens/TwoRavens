@@ -1,0 +1,57 @@
+FROM docker1:latest
+MAINTAINER Raman Prasad (raman_prasad@harvard.edu)
+
+ENV DEBIAN_FRONTEND noninteractive
+
+RUN echo "----------------------------"  && \
+    echo "--> two ravens user" && \
+    echo "----------------------------"  && \
+    useradd -m -c "Two Ravens web user" 2ravens_user -s /bin/bash && \
+    usermod -a -G www-data 2ravens_user && \
+    usermod -a -G www-data root && \
+    echo "----------------------------"  && \
+    echo "--> virtualenvwrapper" && \
+    echo "----------------------------"  && \
+    pip3 install --upgrade pip && \
+    pip3 install Fabric3==1.13.1.post1  && \
+    pip3 install virtualenvwrapper==4.7.2  && \
+    mkdir -p /srv/.virtualenvs && \
+    chown -R 2ravens_user:www-data /srv/.virtualenvs && \
+    chmod -R og-r /srv/.virtualenvs && \
+    echo "----------------------------"  && \
+    mkdir -p /srv/Devel  && \
+    chown -R 2ravens_user:www-data /srv/Devel && \
+    chmod -R og-r /srv/Devel && \
+    echo "----------------------------"  && \
+    chown -R 2ravens_user:www-data /srv/webapps && \
+    chmod -R og-r /srv/webapps && \
+    echo "----------------------------"  && \
+    echo "--> set virtualenvwrapper vars for root" && \
+    echo "----------------------------"  && \
+    echo WORKON_HOME=/srv/.virtualenvs >> /root/.profile && \
+    echo PROJECT_HOME=/srv/Devel >> /root/.profile && \
+    echo VIRTUALENVWRAPPER_PYTHON=/usr/bin/python3 >> /root/.profile && \
+    echo VIRTUALENVWRAPPER_SCRIPT=/usr/local/bin/virtualenvwrapper.sh >> /root/.profile && \
+    echo source /usr/local/bin/virtualenvwrapper.sh >> /root/.profile && \
+    echo "----------------------------"  && \
+    echo "--> set virtualenvwrapper vars for 2ravens_user" && \
+    echo "----------------------------"  && \
+    echo WORKON_HOME=/srv/.virtualenvs >> /home/2ravens_user/.profile && \
+    echo PROJECT_HOME=/srv/Devel >> /home/2ravens_user/.profile && \
+    echo VIRTUALENVWRAPPER_PYTHON=/usr/bin/python3 >> /home/2ravens_user/.profile && \
+    echo VIRTUALENVWRAPPER_SCRIPT=/usr/local/bin/virtualenvwrapper.sh >> /home/2ravens_user/.profile && \
+    echo source /usr/local/bin/virtualenvwrapper.sh >> /home/2ravens_user/.profile
+
+# ---------------------------------------------
+# Virtualenv install
+# ---------------------------------------------
+#RUN cd /srv/webapps/TwoRavens && \
+#    git pull
+
+RUN /bin/bash -c "cd /srv/webapps/TwoRavens && git pull"
+RUN ["chmod", "+x", "/srv/webapps/TwoRavens/setup/init_scripts/setup_2ravens_ubuntu.sh"]
+RUN /bin/bash -c "/srv/webapps/TwoRavens/setup/init_scripts/setup_2ravens_ubuntu.sh"
+
+EXPOSE 8080
+
+ENV DEBIAN_FRONTEND teletype

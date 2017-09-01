@@ -1,0 +1,47 @@
+{% load render_bundle from webpack_loader %}
+{% load static %}
+<!doctype html>
+<html>
+  <head>
+    <title>TwoRavens</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="{% static "pkgs/bootstrap/css/bootstrap.css" %}">
+    <!--<link rel="stylesheet" href="{% static "build/tworavens_styles.css" %}"-->
+    {% render_bundle 'main' 'css' %}
+    <script src="{% static "pkgs/Ladda/dist/spin.min.js" %}"></script>
+    <script src="{% static "pkgs/Ladda/dist/ladda.min.js" %}"></script>
+    <script src="{% static "js/jquery/jquery.min.js" %}"></script>
+    <script src="{% static "pkgs/bootstrap/js/bootstrap.min.js" %}"></script>
+    <script src="{% static "js/d3/d3.v3.min.js" %}"></script>
+    <script>
+        {% if app_config %}
+          // ----------------------------
+          // global js settings from db
+          // ----------------------------
+          const rappURL = '{{ app_config.rook_app_url }}';
+          const DATAVERSE_URL = '{{ app_config.dataverse_url }}';
+          const production = {{ app_config.production }};
+          const privacyMode = {{ app_config.privacy_mode }};
+          const d3m_mode = {{ app_config.d3m_mode }};
+        {% else %}
+          // ----------------------------
+          // default settings if nothing in db
+          //  - see /templates/index.html to set manually
+          // ----------------------------
+          const rappURL = 'http://127.0.0.1:8080/rook-custom/'; // via Django -> to RApache/rook
+          //let rappURL = 'http://0.0.0.0:8000/custom/'; // Direct to RApache/rook
+          const DATAVERSE_URL = 'https://beta.dataverse.org';
+          const production = false;
+          const privacyMode = false;        // configure default functionality for PSI tool
+          const d3m_mode = false;             // configure default functionality for d3m
+        {% endif %}
+    </script>
+  </head>
+  <body>
+    {% render_bundle 'main' 'js' %}
+
+    <!--script src="{% static "build/tworavens_app.js" %}"></script-->
+
+  </body>
+</html>
