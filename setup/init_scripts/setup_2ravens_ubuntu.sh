@@ -68,8 +68,11 @@ echo ">> Set postactivate script"
 # ------------------------------------
 #source /srv/.virtualenvs/2ravens/bin/activate
 echo DJANGO_SETTINGS_MODULE=tworavensproject.settings.dev_container >> /srv/.virtualenvs/2ravens/bin/postactivate
+
+source /srv/.virtualenvs/2ravens/bin/activate
 source /srv/.virtualenvs/2ravens/bin/postactivate
 
+deactivate
 workon 2ravens
 pip freeze
 # ------------------------------------

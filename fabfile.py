@@ -14,7 +14,12 @@ import re
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 FAB_BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'tworavens.settings.local_settings')
+if FAB_BASE_DIR == '/srv/webapps/TwoRavens':
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE',
+                          'tworavensproject.settings.dev_container')
+else:
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE',
+                          'tworavensproject.settings.local_settings')
 try:
     django.setup()
 except Exception as e:
