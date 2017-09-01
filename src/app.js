@@ -508,6 +508,16 @@ function layout(v) {
     nodes = [];
     links = [];
 
+    var line = svg.append("line")
+        .style('fill', 'none')
+        .style('stroke', gr1Color)
+        .style('stroke-width', 5);
+
+    var line2 = svg.append("line")
+        .style('fill', 'none')
+        .style('stroke', gr2Color)
+        .style('stroke-width', 5);
+
     var vis = d3.select("#whitespace").append("svg")
         .attr("width", width)
         .attr("height", height);
@@ -637,16 +647,6 @@ function layout(v) {
         mousedown_node = null,
         mouseup_node = null;
 
-   var line = svg.append("line")
-        .style('fill', 'none')
-        .style('stroke', gr1Color)
-        .style('stroke-width', 5);
-
-    var line2 = svg.append("line")
-        .style('fill', 'none')
-        .style('stroke', gr2Color)
-        .style('stroke-width', 5);
-
     function resetMouseVars() {
         mousedown_node = null;
         mouseup_node = null;
@@ -744,9 +744,14 @@ function layout(v) {
                 var sign = Math.sign( zparams.zgroup1.indexOf(n.name) +0.5 );  // 1 if n in group, -1 if n not in group;
                 var ldeltaX = p[0] - n.x,
                     ldeltaY = p[1] - n.y,
-                    ldist = Math.sqrt(ldeltaX * ldeltaX + ldeltaY * ldeltaY),
-                    lnormX = ldeltaX / ldist,
+                    ldist = Math.sqrt(ldeltaX * ldeltaX + ldeltaY * ldeltaY);
+                    lnormX = 0,
+                    lnormY = 0;
+
+                if (ldist > 0){
+                    lnormX = ldeltaY / ldist;
                     lnormY = ldeltaY / ldist;
+                };
 
                 n.x += Math.min(lnormX , ldeltaX/100 ) * k * sign   * force.alpha();
                 n.y += Math.min(lnormY , ldeltaY/100 ) * k * sign   * force.alpha();
@@ -789,8 +794,13 @@ function layout(v) {
                 var ldeltaX = p[0] - n.x,
                     ldeltaY = p[1] - n.y,
                     ldist = Math.sqrt(ldeltaX * ldeltaX + ldeltaY * ldeltaY),
-                    lnormX = ldeltaX / ldist,
+                    lnormX = 0,
+                    lnormY = 0;
+
+                if (ldist > 0){
+                    lnormX = ldeltaY / ldist;
                     lnormY = ldeltaY / ldist;
+                };
 
                 n.x += Math.min(lnormX , ldeltaX/100 ) * k * sign   * force.alpha();
                 n.y += Math.min(lnormY , ldeltaY/100 ) * k * sign   * force.alpha();
@@ -884,10 +894,9 @@ function layout(v) {
             force.start();
             force.linkStrength(1);
             k = 4;                                            // strength parameter for group attraction/repulsion   
-            if((zparams.zgroup1.length > 0) & (zparams.zgroup2.length > 0 > 2)){  // scale down by number of active groups
+            if((zparams.zgroup1.length > 0) & (zparams.zgroup2.length > 0 )){  // scale down by number of active groups
                 k = 2.5;
             }
-
         } else {
             force.gravity(0);
             force.charge(0);
@@ -1031,13 +1040,9 @@ function layout(v) {
 
         g.append("path")
             .attr("id", append('gr1indicator'))
-            //.attr("cx", ind1[0] )
-            //.attr("cy", ind1[1])
-            //.attr("r", ind1[2])
             .attr("d", arcInd1)
             .style("fill", gr1Color)  // something like: zparams.zgroup1.indexOf(node.name) > -1  ?  #FFFFFF : gr1Color)
             .attr("fill-opacity", 0)
-            //.style("stroke-opacity", 0)
             .on('mouseover', function(d) {
                 fillThis(this, .3, 0, 100);
                 fill(d, "grArc", .1, 0, 100);
@@ -1056,13 +1061,9 @@ function layout(v) {
 
          g.append("path")
             .attr("id", append('gr2indicator'))
-            //.attr("cx", ind2[0] )
-            //.attr("cy", ind2[1])
-            //.attr("r", ind2[2])
             .attr("d", arcInd2)
             .style("fill", gr2Color)  // something like: zparams.zgroup1.indexOf(node.name) > -1  ?  #FFFFFF : gr1Color)
             .attr("fill-opacity", 0)
-            //.style("stroke-opacity", 0)
             .on('mouseover', function(d) {
                 fillThis(this, .3, 0, 100);
                 fill(d, "grArc", .1, 0, 100);
