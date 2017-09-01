@@ -618,12 +618,12 @@ function layout(v) {
 
    var line = svg.append("line")
         .style('fill', 'none')
-        .style('stroke','#ccf')
+        .style('stroke', gr1Color)
         .style('stroke-width', 5);
 
-    var line2 = svg.append("line2")
+    var line2 = svg.append("line")
         .style('fill', 'none')
-        .style('stroke','#ccf')
+        .style('stroke', gr2Color')
         .style('stroke-width', 5);
 
     function resetMouseVars() {
