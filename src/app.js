@@ -623,7 +623,7 @@ function layout(v) {
 
     var line2 = svg.append("line")
         .style('fill', 'none')
-        .style('stroke', gr2Color')
+        .style('stroke', gr2Color)
         .style('stroke-width', 5);
 
     function resetMouseVars() {
