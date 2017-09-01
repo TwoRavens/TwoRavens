@@ -1,3 +1,6 @@
+[(I'm already set-up, I just want to run the local dev. environment again)](#running-the-local-environment-after-setup)
+
+
 # Local Installation Instructions
 
 This is a 1st run at dev. install instructions, tested on a Mac (OS 10.12.6)
@@ -22,7 +25,7 @@ Mac:
 #### Install the NPM libraries for TwoRavens
 
 - `cd` into the TwoRavens repository
-  - This should have the file ```webpack.config.js```
+  - This directory contains the file ```webpack.config.js```
 - Run the following command which will create a directory named `node_modules` and install npm packages:
    ```
    npm install
@@ -63,13 +66,13 @@ Mac:
 
 ### Make a virtualenv and install requirements
 
-- Open a Terminal and ```cd``` into the TwoRavens repository.
+- From the Terminal and within the TwoRavens repository.
 - Run the following commands (May take a couple of minutes)
 
     ```
     mkvirtualenv -p python3 2ravens  
     pip install -r requirements/dev.txt  
-    # note: within the virtualenv pip defaults to pip3
+    # note: within the virtualenv, pip defaults to pip3
     ```
 
 - Mac note: If you run into Xcode (or other errors) when running the install, google it.  
@@ -159,7 +162,78 @@ Note that this may install many packages, depending on what already exists. If i
   ```
   *Server started on host...*
   ```
-  
+
 - Try the app again:
   - Go to: http://127.0.0.1:8080/
   - Hit shift+refresh on the browser
+
+## Running the Local Environment after Setup
+
+### Run the server
+
+
+1. Open a Terminal and ```cd``` into the TwoRavens directory
+2. Activate the virtual environment and run the server
+    ```
+    workon geoconnect
+    # the next line runs the django server AND starts webpack to monitor .js changes
+    fab run
+    ```
+3. Start an R interactive shell
+  1. Set your working directory to ~TwoRavens/rook, for example:
+    ```
+    setwd("/Users/vjdorazio/Desktop/github/TwoRavens/rook")
+    ```
+  1. Source rooksource.R to get the app up:
+    ```
+    source("rooksource.R")
+    ```
+
+
+
+
+### Run the python shell (if needed)
+
+1. Open a Terminal and ```cd``` into the TwoRavens directory
+2. Activate the virtual environment and run the shell
+
+    ```
+    workon 2ravens
+    python manage.py shell
+    ```
+
+### Access the database via command line
+
+1. Open a Terminal and ```cd``` into the TwoRavens directory
+2. Activate the virtual environment and run the shell
+
+    ```
+    workon 2ravens
+    python manage.py dbshell
+    ```
+
+## Subsequent updates
+
+If you run a ```git pull``` to update your repo, please run the commands below to include possible pip requirements and database changes.  
+
+These commands will:
+  1. Update/add packages specified in updated requirements files.
+  1. Apply updates to the database structure.  (New tables, columns, updated fields, etc)
+
+### Preliminaries
+
+  1. Open a Terminal and ```cd``` into the TwoRavens directory
+  2. Activate the virtual environment and run the shell
+
+### Commands
+
+```
+# (1) Update requirements
+```
+pip install -r requirements/local.txt
+```
+
+# (2) Migrate database changes (if needed)
+```
+python manage.py migrate
+```
