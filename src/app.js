@@ -19,7 +19,7 @@ import {bars, barsNode, barsSubset, density, densityNode, selVarColor} from './p
 
 //  Set some globals that change functionality
 var production = false;     // true: try to find all data and metadata and rook apps from live server resources, or false: find them in local versions
-var d3m = false;             // configure default functionality for d3m 
+var d3m = true;             // configure default functionality for d3m 
 var privacy = false;        // configure default functionality for PSI tool
 
 var rappURL = (production ? 'https://beta.dataverse.org' : 'http://0.0.0.0:8000') + '/custom/';
@@ -701,6 +701,8 @@ function layout(v) {
             return (coords);
         };
 
+        var k = 4;  // strength parameter for group attraction/repulsion
+
         var coords = nodes.map(function(d) {  return [ d.x, d.y]; }); 
         var gr1coords = findcoords(zparams.zgroup1, zparams.zvars, coords, true);        
         var gr2coords = findcoords(zparams.zgroup2, zparams.zvars, coords, true);        
@@ -715,9 +717,10 @@ function layout(v) {
                 .data([d3.geom.hull(gr1coords)])   // returns null if less than three coordinates
                 .attr("d", function(d) { return "M" + d.join("L") + "Z"; });
 
+            //var p = d3.geom.polygon(indcoords).centroid();  // Seems to go strange sometimes
+            var p = jamescentroid(gr1coords);
+
             if(depcoords.length>0){  
-                //var p = d3.geom.polygon(indcoords).centroid();  // Seems to go strange sometimes
-                var p = jamescentroid(gr1coords);
                 var q = depcoords[0];                             // Note, only using first dep var currently
                 var ldeltaX = q[0] - p[0],
                     ldeltaY = q[1] - p[1],
@@ -734,6 +737,19 @@ function layout(v) {
                 //circle.attr("cx", p[0]).attr("cy", p[1]);       // placeholder for arrowhead if not set up as arrow
             };
 
+            // group members attract each other, repulse non-group members
+            nodes.forEach(n => {
+                var sign = Math.sign( zparams.zgroup1.indexOf(n.name) +0.5 );  // 1 if n in group, -1 if n not in group;
+                var ldeltaX = p[0] - n.x,
+                    ldeltaY = p[1] - n.y,
+                    ldist = Math.sqrt(ldeltaX * ldeltaX + ldeltaY * ldeltaY),
+                    lnormX = ldeltaX / ldist,
+                    lnormY = ldeltaY / ldist;
+
+                n.x += Math.min(lnormX , ldeltaX/100 ) * k * sign   * force.alpha();
+                n.y += Math.min(lnormY , ldeltaY/100 ) * k * sign   * force.alpha();
+            });
+
         }else{ 
             vis.style("opacity", 0);
             line.style("opacity", 0);
@@ -745,9 +761,10 @@ function layout(v) {
                 .data([d3.geom.hull(gr2coords)])   // returns null if less than three coordinates
                 .attr("d", function(d) { return "M" + d.join("L") + "Z"; });
 
+            //var p = d3.geom.polygon(indcoords).centroid();  // Seems to go strange sometimes
+            var p = jamescentroid(gr2coords);
+
             if(depcoords.length>0){  
-                //var p = d3.geom.polygon(indcoords).centroid();  // Seems to go strange sometimes
-                var p = jamescentroid(gr2coords);
                 var q = depcoords[0];                             // Note, only using first dep var currently
                 var ldeltaX = q[0] - p[0],
                     ldeltaY = q[1] - p[1],
@@ -763,6 +780,20 @@ function layout(v) {
                     .attr("y2", q[1]- (ltargetPadding * lnormY));
                 //circle.attr("cx", p[0]).attr("cy", p[1]);       // placeholder for arrowhead if not set up as arrow
             };
+
+            // group members attract each other, repulse non-group members
+            nodes.forEach(n => {
+                var sign = Math.sign( zparams.zgroup2.indexOf(n.name) +0.5 );  // 1 if n in group, -1 if n not in group;
+                var ldeltaX = p[0] - n.x,
+                    ldeltaY = p[1] - n.y,
+                    ldist = Math.sqrt(ldeltaX * ldeltaX + ldeltaY * ldeltaY),
+                    lnormX = ldeltaX / ldist,
+                    lnormY = ldeltaY / ldist;
+
+                n.x += Math.min(lnormX , ldeltaX/100 ) * k * sign   * force.alpha();
+                n.y += Math.min(lnormY , ldeltaY/100 ) * k * sign   * force.alpha();
+            });
+
 
         }else{ 
             vis2.style("opacity", 0);
@@ -846,7 +877,7 @@ function layout(v) {
             force.gravity(0.1);
             //force.charge(-800);  // Previous constant value
             force.charge(function(node) {
-                return zparams.zgroup1.indexOf(node.name) > -1  ? -300 : -1000;  // -1 is the value if no index position found
+                return zparams.zgroup1.indexOf(node.name) > -1  ? -400 : -1000;  // -1 is the value if no index position found
             });
             force.start();
             force.linkStrength(1);
