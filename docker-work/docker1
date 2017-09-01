@@ -48,7 +48,7 @@ RUN echo "----------------------------"  && \
     echo PROJECT_HOME=/root/Devel >> /root/.bashrc && \
     echo VIRTUALENVWRAPPER_PYTHON=/usr/bin/python3 >> /root/.bashrc
 
-RUN /bin/bash -c "source /usr/local/bin/virtualenvwrapper.sh"
+#RUN /bin/bash -c "source /usr/local/bin/virtualenvwrapper.sh"
 
 # ---------------------------------------------
 # Clone the TwoRavens repository--the "rp-django" branch
