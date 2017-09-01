@@ -55,9 +55,9 @@ RUN cd /srv/webapps/TwoRavens/setup/r-setup && \
 # Virtualenv install
 # ---------------------------------------------
 RUN pip3 install virtualenvwrapper && \
-    mkdir ~/virtualenvs && \
+    mkdir ~/.virtualenvs && \
     cp ~/.bashrc ~/.bashrc-org && \
-    echo 'export WORKON_HOME=/root/virtualenvs' >> ~/.bashrc && \
+    echo 'export WORKON_HOME=/srv/.virtualenvs' >> ~/.bashrc && \
     echo 'export VIRTUALENVWRAPPER_PYTHON=/usr/bin/python3' >> ~/.bashrc && \
     source /usr/local/bin/virtualenvwrapper.sh && \
     source ~/.bashrc
@@ -68,8 +68,8 @@ RUN pip3 install virtualenvwrapper && \
 RUN cd /srv/webapps/TwoRavens && \
     mkvirtualenv -p python3 2ravens && \
     pip install -r requirements/prod.txt && \
-    echo 'export DJANGO_SETTINGS_MODULE=tworavensproject.settings.dev_container' >> /root/virtualenvs/2ravens/bin/postactivate && \
-    source /root/virtualenvs/2ravens/bin/postactivate && \
+    echo 'export DJANGO_SETTINGS_MODULE=tworavensproject.settings.dev_container' >> /srv/.virtualenvs/2ravens/bin/postactivate && \
+    source /srv/.virtualenvs/2ravens/bin/postactivate && \
     fab init_db
 
 # ---------------------------------------------

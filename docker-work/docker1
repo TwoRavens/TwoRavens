@@ -35,19 +35,8 @@ RUN echo "----------------------------"  && \
     apt-get -y install git && \
     apt-get -y install apache2-dev apache2-doc apache2-utils && \
     apt-get -y install python3-pip && \
-    ln -sf /usr/bin/python3 /usr/bin/python && \
-    echo "----------------------------"  && \
-    echo "--> virtualenvwrapper" && \
-    echo "----------------------------"  && \
-    pip3 install --upgrade pip && \
-    pip3 install Fabric3==1.13.1.post1  && \
-    pip3 install virtualenvwrapper==4.7.2  && \
-    mkdir -p /root/virtualenvs && \
-    mkdir -p /root/Devel  && \
-    echo WORKON_HOME=/root/virtualenvs >> /root/.bashrc && \
-    echo PROJECT_HOME=/root/Devel >> /root/.bashrc && \
-    echo VIRTUALENVWRAPPER_PYTHON=/usr/bin/python3 >> /root/.bashrc && \
-    echo VIRTUALENVWRAPPER_SCRIPT=/usr/local/bin/virtualenvwrapper.sh >> /root/.bashrc
+    ln -sf /usr/bin/python3 /usr/bin/python
+
 
 # ---------------------------------------------
 # Clone the TwoRavens repository--the "rp-django" branch

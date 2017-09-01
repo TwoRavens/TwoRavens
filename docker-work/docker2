@@ -3,40 +3,51 @@ MAINTAINER Raman Prasad (raman_prasad@harvard.edu)
 
 ENV DEBIAN_FRONTEND noninteractive
 
-RUN ln -s /usr/bin/python3 /usr/bin/python &&
-    pip3 install Fabric3==1.13.1.post1 && \
-
+RUN echo "----------------------------"  && \
+    echo "--> two ravens user" && \
+    echo "----------------------------"  && \
+    useradd -m -c "Two Ravens web user" 2ravens_user -s /bin/bash && \
+    usermod -a -G www-data 2ravens_user && \
+    usermod -a -G www-data root && \
+    echo "----------------------------"  && \
+    echo "--> virtualenvwrapper" && \
+    echo "----------------------------"  && \
+    pip3 install --upgrade pip && \
+    pip3 install Fabric3==1.13.1.post1  && \
+    pip3 install virtualenvwrapper==4.7.2  && \
+    mkdir -p /srv/.virtualenvs && \
+    chown -R 2ravens_user:www-data /srv/.virtualenvs && \
+    chmod -R og-r /srv/.virtualenvs && \
+    echo "----------------------------"  && \
+    mkdir -p /srv/Devel  && \
+    chown -R 2ravens_user:www-data /srv/Devel && \
+    chmod -R og-r /srv/Devel && \
+    echo "----------------------------"  && \
+    chown -R 2ravens_user:www-data /srv/webapps && \
+    chmod -R og-r /srv/webapps && \
+    echo "----------------------------"  && \
+    echo "--> set virtualenvwrapper vars for root" && \
+    echo "----------------------------"  && \
+    echo WORKON_HOME=/srv/.virtualenvs >> /root/.profile && \
+    echo PROJECT_HOME=/srv/Devel >> /root/.profile && \
+    echo VIRTUALENVWRAPPER_PYTHON=/usr/bin/python3 >> /root/.profile && \
+    echo VIRTUALENVWRAPPER_SCRIPT=/usr/local/bin/virtualenvwrapper.sh >> /root/.profile && \
+    echo "----------------------------"  && \
+    echo "--> set virtualenvwrapper vars for 2ravens_user" && \
+    echo "----------------------------"  && \
+    echo WORKON_HOME=/srv/.virtualenvs >> /home/2ravens_user/.profile && \
+    echo PROJECT_HOME=/srv/Devel >> /home/2ravens_user/.profile && \
+    echo VIRTUALENVWRAPPER_PYTHON=/usr/bin/python3 >> /home/2ravens_user/.profile && \
+    echo VIRTUALENVWRAPPER_SCRIPT=/usr/local/bin/virtualenvwrapper.sh >> /home/2ravens_user/.profile
 
 # ---------------------------------------------
 # Virtualenv install
 # ---------------------------------------------
-RUN ln -s /usr/bin/python3 /usr/bin/python && \
-    pip3 install virtualenvwrapper==4.7.2 && \
-    pip3 install Fabric3==1.13.1.post1 && \
-    mkdir /root/virtualenvs && \
-    mkdir /root/Devel && \
-    cp /root/.bashrc /root/.bashrc-org && \
-    echo 'export WORKON_HOME=/root/virtualenvs' >> /root/.bashrc && \
-    echo 'export PROJECT_HOME=/root/Devel' >> /root/.bashrc && \
-    echo 'export VIRTUALENVWRAPPER_PYTHON=/usr/bin/python3' >> /root/.bashrc
+#RUN cd /srv/webapps/TwoRavens && \
+#    git pull
 
-#RUN export WORKON_HOME=/root/virtualenvs && \
-#    export PROJECT_HOME=/root/Devel && \
-#    export VIRTUALENVWRAPPER_PYTHON=/usr/bin/python3 && \
-#    /bin/bash -c "source /bin/bash /usr/local/bin/virtualenvwrapper.sh"  && \
-#    /bin/bash -c "source /root/.bashrc"
-
-
-# ---------------------------------------------
-# Virtualenv creation
-# ---------------------------------------------
-RUN /bin/bash -c "source /bin/bash /usr/local/bin/virtualenvwrapper.sh"  && \
-    /bin/bash -c "source /root/.bashrc"cd /srv/webapps/TwoRavens && \
-    mkvirtualenv -p python3 2ravens && \
-    pip3 install -r requirements/prod.txt && \
-    echo 'export DJANGO_SETTINGS_MODULE=tworavensproject.settings.dev_container' >> /root/virtualenvs/2ravens/bin/postactivate && \
-    source /root/virtualenvs/2ravens/bin/postactivate && \
-    fab init_db
+RUN /bin/bash -c "cd /srv/webapps/TwoRavens && git pull"
+# && cd /srv/webapps/TwoRavens/setup/init_scripts && source setup_2ravens_ubuntu.sh"
 
 EXPOSE 8080
 

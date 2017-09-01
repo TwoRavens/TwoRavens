@@ -14,7 +14,7 @@ def execfile(filename):
     globals = dict( __file__ = filename )
     exec( open(filename).read(), globals )
 
-python_home = '/root/virtualenvs/2ravens'
+python_home = '/srv/.virtualenvs/2ravens'
 
 activate_this = python_home + '/bin/activate_this.py'
 execfile(activate_this)   #, dict(__file__=activate_this))
