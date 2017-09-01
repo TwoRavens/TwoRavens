@@ -701,12 +701,15 @@ function layout(v) {
             return (coords);
         };
 
-        var k = 4;  // strength parameter for group attraction/repulsion
-
         var coords = nodes.map(function(d) {  return [ d.x, d.y]; }); 
         var gr1coords = findcoords(zparams.zgroup1, zparams.zvars, coords, true);        
         var gr2coords = findcoords(zparams.zgroup2, zparams.zvars, coords, true);        
-        var depcoords = findcoords(zparams.zdv, zparams.zvars, coords, false);     
+        var depcoords = findcoords(zparams.zdv, zparams.zvars, coords, false);  
+
+        var k = 4;                                            // strength parameter for group attraction/repulsion   
+        if((gr1coords.length > 2) & (gr2coords.length > 2)){  // scale down by number of active groups
+            k = 2.5;
+        }
 
         // draw convex hull around independent variables, if three or more coordinates given
         // note, d3.geom.hull returns null if shorter coordinate set than 3, 
