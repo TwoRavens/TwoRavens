@@ -877,7 +877,7 @@ function layout(v) {
             force.gravity(0.1);
             //force.charge(-800);  // Previous constant value
             force.charge(function(node) {
-                return zparams.zgroup1.indexOf(node.name) > -1  ? -400 : -1000;  // -1 is the value if no index position found
+                return ((zparams.zgroup1.indexOf(node.name) < 0 ) & (zparams.zgroup2.indexOf(node.name) < 0 ))   ? -800 : -400;  // -1 is the value if no index position found
             });
             force.start();
             force.linkStrength(1);
@@ -2296,10 +2296,10 @@ export function borderState() {
         $('#nomButton .rectColor svg circle').attr('stroke', nomColor) :
         $('#nomButton').css('border-color', '#ccc');
     zparams.zgroup1.length > 0 ?
-        $('#gr1Button .rectColor svg circle').attr('stroke', gr1Color).attr('fill', gr1Color) :
+        $('#gr1Button .rectColor svg circle').attr('stroke', gr1Color).attr('fill', gr1Color).attr('fill-opacity', 0.6).attr('stroke-opacity', 0) :
         $('#gr1Button').css('border-color', '#ccc');
     zparams.zgroup1.length > 0 ?
-        $('#gr2Button .rectColor svg circle').attr('stroke', gr2Color).attr('fill', gr2Color) :
+        $('#gr2Button .rectColor svg circle').attr('stroke', gr2Color).attr('fill', gr2Color).attr('fill-opacity', 0.6).attr('stroke-opacity', 0) :
         $('#gr2Button').css('border-color', '#ccc');
 }
 
