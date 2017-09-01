@@ -13,6 +13,7 @@ import re
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 FAB_BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(FAB_BASE_DIR)
 
 if FAB_BASE_DIR == '/srv/webapps/TwoRavens':
     os.environ.setdefault('DJANGO_SETTINGS_MODULE',

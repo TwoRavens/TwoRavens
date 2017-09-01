@@ -73,7 +73,7 @@ class TwoRavensSetup:
             self.make_dir(full_dirname)
 
             # update the permissions
-            perm_cmd = 'chown -R {0} {1}'.format(\
+            perm_cmd = 'chown -R :{0} {1}'.format(\
                             APACHE_USERNAME,
                             full_dirname)
             msg('update permissions: %s' % perm_cmd)
@@ -105,9 +105,10 @@ class TwoRavensSetup:
         #
         for rook_dir in ['preprocess', 'privacyfunctions']:
             orig_dir = join(TWORAVENS_GIT_REPO_ROOK_DIR, rook_dir)
-            dest_dir = TWORAVENS_WORKING_ROOK_DIRECTORY
-            shutil.copy(orig_dir, dest_dir)
-            msg('Directory copied.\nsrc: %s\ndest: %s' % (orig_dir, dest_dir))
+            dest_dir = join(TWORAVENS_WORKING_ROOK_DIRECTORY, rook_dir)
+            msg('\nDirectory copy...\nsrc: %s\ndest: %s' % (orig_dir, dest_dir))
+            shutil.copytree(orig_dir, dest_dir)
+            msg('Directory copied.')
 
 
     def update_rook_file_content(self, content):
