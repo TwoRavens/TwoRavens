@@ -117,7 +117,7 @@ export const reset = function reloadPage() {
 
 
 var dataurl;
-export function main(fileid, hostname, ddiurl, dataurl) {
+export function main(fileid, hostname, ddiurl, dataurl, apikey) {
     dataurl = dataurl;
     if (production && fileid == "") {
         alert("Error: No fileid has been provided.");
@@ -135,9 +135,10 @@ export function main(fileid, hostname, ddiurl, dataurl) {
         dataurl = dataverseurl + "/api/access/datafile/" + fileid;
 
         // rp; temporarily remove this
-        //dataurl = dataurl + "?key=" + apikey;
+        dataurl = dataurl + "?key=" + apikey;
     }
-
+    cdb('--dataurl: ' + dataurl);
+    cdb('--dataverseurl: ' + dataverseurl);
     svg = d3.select("#whitespace");
 
     var tempWidth = d3.select("#main.left").style("width");

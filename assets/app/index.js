@@ -16,7 +16,7 @@ let or = function(side, val, y='block', n='none') {
 
 let leftpanel = function() {
     return m(Panel, {
-	           side: 'left', 
+	           side: 'left',
 	           title: 'Data Selection'},
              m(".btn-toolbar[role=toolbar][style=margin-left: .5em; margin-top: .5em]",
                m(".btn-group",
@@ -115,7 +115,10 @@ class Body {
             let val = loc.indexOf(key) > 0 ? loc.substring(loc.indexOf(key) + offset) : '';
             let idx = val.indexOf('&');
             val = idx > 0 ? val.substring(0, idx) : val;
+            val = val.replace('#!/model', '');
+
             console.log(name, ': ', val);
+
             if (replace) val = val
                 .replace(/%25/g, '%')
                 .replace(/%3A/g, ':')
@@ -127,7 +130,8 @@ class Body {
             extract('fileid', 'dfId', 5),
             extract('hostname', 'host', 5),
             extract('ddiurl', 'ddiurl', 7, true),
-            extract('dataurl', 'dataurl', 8, true));
+            extract('dataurl', 'dataurl', 8, true),
+            extract('apikey', 'key', 4));
     }
 
     view() {
