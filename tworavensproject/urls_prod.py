@@ -15,5 +15,5 @@ urlpatterns = [
 
     url(r'^data/', include('tworaven_apps.test_data.urls')),
 
-    url(r'^$', views_test.view_webpack_test, name='home'),
+    url(r'^$', views.view_pebbles_home, name='home'),
 ]

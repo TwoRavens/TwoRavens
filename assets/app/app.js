@@ -15,19 +15,10 @@ import {bars, barsNode, barsSubset, density, densityNode, selVarColor} from './p
 // for both the data and metadata, if the file id is supplied; or the
 // local files if nothing is supplied.
 
-// FOR variables "production" and "rappURL", see /template/index.html
-//
-//let production = false;
-//let rappURL = 'http://127.0.0.1:8080/rook-custom/'; // via Django -> to RApache/rook
-//let rappURL = 'http://0.0.0.0:8000/custom/'; // Direct to RApache/rook
-
-
-//  Set some globals that change functionality
-var production = false;     // true: try to find all data and metadata and rook apps from live server resources, or false: find them in local versions
-var d3m = false;             // configure default functionality for d3m
-var privacy = false;        // configure default functionality for PSI tool
-
-var rappURL = (production ? 'https://beta.dataverse.org' : 'http://0.0.0.0:8000') + '/custom/';
+//-------------------------------------------------
+// NOTE: global variables are now set in the index.html file.
+//    Developers, see /template/index.html
+//-------------------------------------------------
 
 // for debugging
 export function cdb(msg) {
@@ -254,7 +245,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
 
     cdb('pURL: ' + pURL);
 
-    if(d3m) {
+    if(d3m_mode) {
         pURL = d3mPreprocess;
         zparams.zdataurl = start+'/data/trainDatamerged.tsv';
         zparams.zdata = d3mDataName;
@@ -276,7 +267,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
             var varsXML = xml.documentElement.getElementsByTagName("var");
             var temp = xml.documentElement.getElementsByTagName("fileName");
 
-               if(!d3m) {
+               if(!d3m_mode) {
                zparams.zdata = temp[0].childNodes[0].nodeValue;}
 
 
@@ -289,7 +280,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
 
             // dataset name trimmed to 12 chars
                var dataname = zparams.zdata;
-               if(!d3m){
+               if(!d3m_mode){
                dataname = zparams.zdata.replace(/\.(.*)/, '');} // drop file extension
             d3.select("#dataName")
                 .html(dataname);
@@ -556,7 +547,7 @@ function layout(v) {
             });
         }
     } else {
-        if(d3m) {
+        if(d3m_mode) {
             //nodes = [findNode(mytarget)];               // Only add dependent variable on startup
             nodes = allNodes.slice(1,allNodes.length);    // Add all but first variable on startup (assumes 0 position is d3m index variable)
             for (let j = 0; j < nodes.length; j++) { //populate zvars array
@@ -1278,7 +1269,7 @@ function layout(v) {
     // initialize the event
     click_ev.initEvent("click", true /* bubble */, true /* cancelable */);
     // trigger the event
-    if(d3m){
+    if(d3m_mode){
         let clickID = "dvArc"+findNodeIndex(mytarget);
         document.getElementById(clickID).dispatchEvent(click_ev);
     }

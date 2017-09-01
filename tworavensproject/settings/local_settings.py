@@ -6,7 +6,7 @@ from os.path import join, normpath, isdir, isfile
 
 from .base import *
 
-#DEBUG = True
+DEBUG = True
 
 SECRET_KEY = 'ye-local-laptop-secret-key'
 

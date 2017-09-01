@@ -43,11 +43,21 @@ def restart():
     stop()
     run()
 
+def check_config():
+    """If there aren't any db configurations, then load the fixtures"""
+    from tworaven_apps.configurations.models import AppConfiguration
+
+    config_cnt = AppConfiguration.objects.count()
+    if config_cnt == 0:
+        local('python manage.py loaddata tworaven_apps/configurations/fixtures/intial_configs.json')
+    else:
+        print('Configs exist in the db: %d' % config_cnt)
+
 def run():
     """Run the django dev server and webpack--webpack watches the assets directory and rebuilds when appTwoRavens changes"""
-
     clear_js()  # clear any dev css/js files
-
+    check_config()  # make sure the db has something
+    
     commands = [
         # start webpack
         #'./node_modules/.bin/webpack --watch'

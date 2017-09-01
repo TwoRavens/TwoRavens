@@ -188,6 +188,8 @@ Note that this may install many packages, depending on what already exists. If i
     ```
     source("rooksource.R")
     ```
+4. Go to: http://127.0.0.1:8080/
+
 
 
 

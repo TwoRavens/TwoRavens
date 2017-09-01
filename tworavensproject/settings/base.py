@@ -40,6 +40,8 @@ INSTALLED_APPS = [
     #'whitenoise.runserver_nostatic',
     'django.contrib.staticfiles',
 
+    'tworaven_apps.configurations',
+    'tworaven_apps.content_pages',
     'tworaven_apps.rook_services',
     #'tworaven_apps.workspaces',
 
