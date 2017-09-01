@@ -175,19 +175,19 @@ Note that this may install many packages, depending on what already exists. If i
 1. Open a Terminal and ```cd``` into the TwoRavens directory
 2. Activate the virtual environment and run the server
     ```
-    workon geoconnect
+    workon 2ravens
     # the next line runs the django server AND starts webpack to monitor .js changes
     fab run
     ```
 3. Start an R interactive shell
-  1. Set your working directory to ~TwoRavens/rook, for example:
-    ```
-    setwd("/Users/vjdorazio/Desktop/github/TwoRavens/rook")
-    ```
-  1. Source rooksource.R to get the app up:
-    ```
-    source("rooksource.R")
-    ```
+    1. Set your working directory to ~TwoRavens/rook, for example:
+        ```
+        setwd("/Users/vjdorazio/Desktop/github/TwoRavens/rook")
+        ```
+    1. Source rooksource.R to get the app up:
+        ```
+        source("rooksource.R")
+        ```
 4. Go to: http://127.0.0.1:8080/
 
 
@@ -224,18 +224,21 @@ These commands will:
 
 ### Preliminaries
 
-  1. Open a Terminal and ```cd``` into the TwoRavens directory
-  2. Activate the virtual environment and run the shell
+  1. Open a Terminal
+  1. ```cd``` into the TwoRavens directory
+  2. Activate the virtual environment
+      ```
+      workon 2ravens
+      ```
 
 ### Commands
 
-```
 # (1) Update requirements
-```
-pip install -r requirements/local.txt
-```
+    ```
+    pip install -r requirements/dev.txt
+    ```
 
 # (2) Migrate database changes (if needed)
-```
-python manage.py migrate
-```
+    ```
+    fab init_db
+    ```
