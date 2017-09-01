@@ -5,7 +5,7 @@ echo ">> Create the 2ravens virtualenv"
 # ------------------------------------
 echo VIRTUALENVWRAPPER_SCRIPT=/usr/local/bin/virtualenvwrapper.sh >> /root/.bashrc
 source /root/.bashrc
-#source /usr/local/bin/virtualenvwrapper.sh
+source /usr/local/bin/virtualenvwrapper.sh
 cd /srv/webapps/TwoRavens
 mkvirtualenv -p python3 2ravens
 pip3 install -r requirements/prod.txt
