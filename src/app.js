@@ -19,7 +19,7 @@ import {bars, barsNode, barsSubset, density, densityNode, selVarColor} from './p
 
 //  Set some globals that change functionality
 var production = false;     // true: try to find all data and metadata and rook apps from live server resources, or false: find them in local versions
-var d3m = true;             // configure default functionality for d3m 
+var d3m = false;             // configure default functionality for d3m 
 var privacy = false;        // configure default functionality for PSI tool
 
 var rappURL = (production ? 'https://beta.dataverse.org' : 'http://0.0.0.0:8000') + '/custom/';
