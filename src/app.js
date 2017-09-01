@@ -2296,8 +2296,11 @@ export function borderState() {
         $('#nomButton .rectColor svg circle').attr('stroke', nomColor) :
         $('#nomButton').css('border-color', '#ccc');
     zparams.zgroup1.length > 0 ?
-        $('#gr1Button .rectColor svg circle').attr('stroke', gr1Color) :
+        $('#gr1Button .rectColor svg circle').attr('stroke', gr1Color).attr('fill', gr1Color) :
         $('#gr1Button').css('border-color', '#ccc');
+    zparams.zgroup1.length > 0 ?
+        $('#gr2Button .rectColor svg circle').attr('stroke', gr2Color).attr('fill', gr2Color) :
+        $('#gr2Button').css('border-color', '#ccc');
 }
 
 // small appearance resets, but perhaps this will become a hard reset back to all original allNode values?
