@@ -25,6 +25,11 @@ Notes:
 docker build -f docker-work/docker2 -t docker2 .
 ```
 
+- run a temp container with this image:
+    ```
+    docker run -ti --rm --name=ok_ravens2 docker2:latest
+    ```
+
 
 - Running the virtualenv:
     ```

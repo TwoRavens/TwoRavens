@@ -46,8 +46,9 @@ RUN echo "----------------------------"  && \
     mkdir -p /root/Devel  && \
     echo WORKON_HOME=/root/virtualenvs >> /root/.bashrc && \
     echo PROJECT_HOME=/root/Devel >> /root/.bashrc && \
-    echo VIRTUALENVWRAPPER_PYTHON=/usr/bin/python3 >> /root/.bashrc && \
-    echo source /usr/local/bin/virtualenvwrapper.sh >> /root/.bashrc
+    echo VIRTUALENVWRAPPER_PYTHON=/usr/bin/python3 >> /root/.bashrc
+
+RUN /bin/bash -c "source /usr/local/bin/virtualenvwrapper.sh"
 
 # ---------------------------------------------
 # Clone the TwoRavens repository--the "rp-django" branch
