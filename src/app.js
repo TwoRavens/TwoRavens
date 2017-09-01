@@ -36,6 +36,10 @@ export let inspect = obj => {
     return obj;
 };
 
+
+
+var k = 4;                                            // strength parameter for group attraction/repulsion   
+
 // initial color scale used to establish the initial colors of nodes
 // allNodes.push() below establishes a field for the master node array allNodes called "nodeCol" and assigns a color from this scale to that field
 // everything there after should refer to the nodeCol and not the color scale, this enables us to update colors and pass the variable type to R based on its coloring
@@ -706,11 +710,6 @@ function layout(v) {
         var gr2coords = findcoords(zparams.zgroup2, zparams.zvars, coords, true);        
         var depcoords = findcoords(zparams.zdv, zparams.zvars, coords, false);  
 
-        var k = 4;                                            // strength parameter for group attraction/repulsion   
-        if((gr1coords.length > 2) & (gr2coords.length > 2)){  // scale down by number of active groups
-            k = 2.5;
-        }
-
         // draw convex hull around independent variables, if three or more coordinates given
         // note, d3.geom.hull returns null if shorter coordinate set than 3, 
         // so findcoords() function has option to lengthen the coordinates returned to bypass this
@@ -884,10 +883,16 @@ function layout(v) {
             });
             force.start();
             force.linkStrength(1);
+            k = 4;                                            // strength parameter for group attraction/repulsion   
+            if((zparams.zgroup1.length > 0) & (zparams.zgroup2.length > 0 > 2)){  // scale down by number of active groups
+                k = 2.5;
+            }
+
         } else {
             force.gravity(0);
             force.charge(0);
             force.linkStrength(0);
+            k = 0;
         }
         force.resume();
 
