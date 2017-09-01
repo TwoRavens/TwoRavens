@@ -127,7 +127,8 @@ class Body {
             extract('fileid', 'dfId', 5),
             extract('hostname', 'host', 5),
             extract('ddiurl', 'ddiurl', 7, true),
-            extract('dataurl', 'dataurl', 8, true));
+            extract('dataurl', 'dataurl', 8, true),
+            extract('apikey', 'key', 4));
     }
 
     view() {
@@ -149,6 +150,8 @@ class Body {
                        m("button#btnEstimate.btn.btn-default.ladda-button.navbar-right[data-spinner-color=#000000][data-style=zoom-in][style=margin-left: 2em; margin-right: 1em]", {
                          onclick: _ => app.estimate('btnEstimate')},
                          m("span.ladda-label", "Estimate")),
+                       m("button#btnTA2.btn.btn-default.ladda-button.navbar-right[data-spinner-color=#000000][data-style=zoom-in][style=margin-left: 15em; margin-right: 1em]", {
+                           onclick: _ => app.ta2stuff('btnTA2')},"TA2"),
                        m("button#btnReset.btn.btn-default.navbar-right[title=Reset][style=margin-left: 2.0em]", {
                          onclick: app.reset},
                          m("span.glyphicon.glyphicon-repeat[style=color: #818181; font-size: 1em; pointer-events: none]")),
