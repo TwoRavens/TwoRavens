@@ -496,6 +496,16 @@ function layout(v) {
         .style("stroke-width", 2.5*allR)
         .style('stroke-linejoin','round');
 
+    var vis2 = d3.select("#whitespace").append("svg")
+        .attr("width", width)
+        .attr("height", height);
+
+    vis2.append("path")
+        .style("fill", gr2Color)
+        .style("stroke", gr2Color)
+        .style("stroke-width", 2.5*allR)
+        .style('stroke-linejoin','round');
+
     if (v == layoutAdd || v == layoutMove) {
         for (var j = 0; j < zparams.zvars.length; j++) {
             var ii = findNodeIndex(zparams.zvars[j]);
@@ -594,10 +604,6 @@ function layout(v) {
         .attr('class', 'link dragline hidden')
         .attr('d', 'M0,0L0,0');
 
-
-//var line = d3.svg.line()
-  //  .interpolate("cardinal");
-
     // handles to link and node element groups
     var path = svg.append('svg:g').selectAll('path'),
         circle = svg.append('svg:g').selectAll('g');
@@ -611,6 +617,11 @@ function layout(v) {
         mouseup_node = null;
 
    var line = svg.append("line")
+        .style('fill', 'none')
+        .style('stroke','#ccf')
+        .style('stroke-width', 5);
+
+    var line2 = svg.append("line2")
         .style('fill', 'none')
         .style('stroke','#ccf')
         .style('stroke-width', 5);
@@ -674,17 +685,9 @@ function layout(v) {
         };
 
         var coords = nodes.map(function(d) {  return [ d.x, d.y]; }); 
-        //var gr1coords = new Array(zparams.zgroup1.length);  
-        //var gr2coords = new Array(zparams.zgroup2.length); 
-        //var depcoords = new Array(zparams.zdv.length);
-
         var gr1coords = findcoords(zparams.zgroup1, zparams.zvars, coords, true);        
         var gr2coords = findcoords(zparams.zgroup2, zparams.zvars, coords, true);        
         var depcoords = findcoords(zparams.zdv, zparams.zvars, coords, false);     
-
-        //(0<gr1coords.length & gr1coords.length<3) && gr1coords = lengthencoords(gr1coords);
-        //(0<gr1coords.length & gr2coords.length<3) && gr1coords = lengthencoords(gr1coords);
-
 
         // draw convex hull around independent variables, if three or more coordinates given
         // note, d3.geom.hull returns null if shorter coordinate set than 3, 
@@ -717,6 +720,36 @@ function layout(v) {
         }else{ 
             vis.style("opacity", 0);
             line.style("opacity", 0);
+        };
+
+        if(gr2coords.length > 2){   
+            vis2.style("opacity", 0.3)
+            vis2.selectAll("path")
+                .data([d3.geom.hull(gr2coords)])   // returns null if less than three coordinates
+                .attr("d", function(d) { return "M" + d.join("L") + "Z"; });
+
+            if(depcoords.length>0){  
+                //var p = d3.geom.polygon(indcoords).centroid();  // Seems to go strange sometimes
+                var p = jamescentroid(gr2coords);
+                var q = depcoords[0];                             // Note, only using first dep var currently
+                var ldeltaX = q[0] - p[0],
+                    ldeltaY = q[1] - p[1],
+                    ldist = Math.sqrt(ldeltaX * ldeltaX + ldeltaY * ldeltaY),
+                    lnormX = ldeltaX / ldist,
+                    lnormY = ldeltaY / ldist,
+                    lsourcePadding = allR + 5,
+                    ltargetPadding = allR + 5;
+
+                line2.attr("x1", p[0] + (lsourcePadding * lnormX))
+                    .attr("y1", p[1] + (lsourcePadding * lnormY))
+                    .attr("x2", q[0]- (ltargetPadding * lnormX))
+                    .attr("y2", q[1]- (ltargetPadding * lnormY));
+                //circle.attr("cx", p[0]).attr("cy", p[1]);       // placeholder for arrowhead if not set up as arrow
+            };
+
+        }else{ 
+            vis2.style("opacity", 0);
+            line2.style("opacity", 0);
         };
 
         // draw directed edges with proper padding from node centers
@@ -796,7 +829,7 @@ function layout(v) {
             force.gravity(0.1);
             //force.charge(-800);  // Previous constant value
             force.charge(function(node) {
-                return zparams.zgroup1.indexOf(node.name) > -1  ? -200 : -1000;  // -1 is the value if no index position found
+                return zparams.zgroup1.indexOf(node.name) > -1  ? -300 : -1000;  // -1 is the value if no index position found
             });
             force.start();
             force.linkStrength(1);
@@ -923,10 +956,15 @@ function layout(v) {
             .style("fill",  gr1Color) 
             .attr("fill-opacity", 0)
             .on('mouseover', function(d) {
+                console.log(d)
+                fill(d, "gr1indicator", .3, 0, 100);
+                fill(d, "gr2indicator", .3, 0, 100);
                 fillThis(this, .3, 0, 100);
                 fill(d, 'gr1Text', .9, 0, 100);
             })
             .on('mouseout', function(d) {
+                fill(d, "gr1indicator", 0, 100, 500);
+                fill(d, "gr2indicator", 0, 100, 500);
                 fillThis(this, 0, 100, 500);
                 fill(d, 'gr1Text', 0, 100, 500);
             })
@@ -946,11 +984,13 @@ function layout(v) {
             .style("stroke-opacity", 0)
             .on('mouseover', function(d) {
                 fillThis(this, .3, 0, 100);
-                //fill(d, 'gr1Text', .9, 0, 100);
+                fill(d, "gr1Arc", .1, 0, 100);
+                fill(d, 'gr1Text', .9, 0, 100);
             })
             .on('mouseout', function(d) {
                 fillThis(this, 0, 100, 500);
-                //fill(d, 'gr1Text', 0, 100, 500);
+                fill(d, "gr1Arc", 0, 100, 500);
+                fill(d, 'gr1Text', 0, 100, 500);
             })
             .on('click', d => {
                 setColors(d, gr1Color);
@@ -958,25 +998,27 @@ function layout(v) {
                 restart();
             });
 
-        g.append("svg:circle")
+         g.append("svg:circle")
             .attr("id", append('gr2indicator'))
             .attr("cx", ind2[0] )
             .attr("cy", ind2[1])
             .attr("r", ind2[2])
-            .style("fill", gr2Color)
+            .style("fill", gr2Color)  // something like: zparams.zgroup1.indexOf(node.name) > -1  ?  #FFFFFF : gr1Color)
             .attr("fill-opacity", 0)
             .style("stroke-opacity", 0)
             .on('mouseover', function(d) {
                 fillThis(this, .3, 0, 100);
-                fill(d, 'gr2Text', .9, 0, 100);
+                fill(d, "gr1Arc", .1, 0, 100);
+                fill(d, 'gr1Text', .9, 0, 100);
             })
             .on('mouseout', function(d) {
                 fillThis(this, 0, 100, 500);
-                fill(d, 'gr2Text', 0, 100, 500);
+                fill(d, "gr1Arc", 0, 100, 500);
+                fill(d, 'gr1Text', 0, 100, 500);
             })
             .on('click', d => {
-                //setColors(d, gr2Color);
-                //legend(gr2Color);
+                setColors(d, gr2Color);
+                legend(gr2Color);
                 restart();
             });
 
@@ -2115,16 +2157,20 @@ export let hexToRgba = hex => {
 function setColors(n, c) {
     if (n.strokeWidth == '1') {
         if (c == gr1Color){
-            console.log("found here!")
             var tempindex = zparams.zgroup1.indexOf(n.name);
-            console.log(tempindex);
             if (tempindex > -1){
                 zparams.zgroup1.splice(tempindex,1);
-            }else{
+            } else {
                 zparams.zgroup1.push(n.name);
             };
-            console.log(zparams.zgroup1);
-        }else{
+        } else if (c == gr2Color){
+            var tempindex = zparams.zgroup2.indexOf(n.name);
+            if (tempindex > -1){
+                zparams.zgroup2.splice(tempindex,1);
+            } else {
+                zparams.zgroup2.push(n.name);
+            };
+        } else {
         // adding time, cs, dv, nom to node with no stroke
         n.strokeWidth = '4';
         n.strokeColor = c;
