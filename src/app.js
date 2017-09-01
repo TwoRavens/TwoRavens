@@ -1016,7 +1016,7 @@ function layout(v) {
                 fill(d, "gr1indicator", 0, 100, 500);
                 fill(d, "gr2indicator", 0, 100, 500);
                 fillThis(this, 0, 100, 500);
-                fill(d, 'gr1Text', 0, 100, 500);
+                fill(d, 'grText', 0, 100, 500);
             })
             .on('click', d => {
                 setColors(d, gr1Color);
