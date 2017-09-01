@@ -47,7 +47,8 @@ RUN echo "----------------------------"  && \
 #    git pull
 
 RUN /bin/bash -c "cd /srv/webapps/TwoRavens && git pull"
-# && cd /srv/webapps/TwoRavens/setup/init_scripts && source setup_2ravens_ubuntu.sh"
+RUN ["chmod", "+x", "/srv/webapps/TwoRavens/setup/init_scripts/setup_2ravens_ubuntu.sh"]
+RUN /bin/bash -c "/srv/webapps/TwoRavens/setup/init_scripts/setup_2ravens_ubuntu.sh"
 
 EXPOSE 8080
 

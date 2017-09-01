@@ -6,8 +6,7 @@ echo ">> Create the 2ravens virtualenv"
 #source /root/.bashrc
 #source /usr/local/bin/virtualenvwrapper.sh
 source /usr/local/bin/virtualenvwrapper.sh
-su 2ravens_user
-source /usr/local/bin/virtualenvwrapper.sh
+#source /usr/local/bin/virtualenvwrapper.sh
 source /home/2ravens_user/.profile
 cd /srv/webapps/TwoRavens
 mkvirtualenv -p python3 2ravens
