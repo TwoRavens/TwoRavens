@@ -74,6 +74,7 @@ var allR = 40;
 var ind1 = [(allR+30) * Math.cos(1.3), -1*(allR+30) * Math.sin(1.3),5] // cx, cy, r  values for indicator lights
 var ind2 = [(allR+30) * Math.cos(1.1), -1*(allR+30) * Math.sin(1.1),5] // cx, cy, r  values for indicator lights
 
+
 // space index
 var myspace = 0;
 
@@ -115,8 +116,10 @@ var callHistory = []; // transform and subset calls
 let mytarget = "";
 
 var svg, width, height, div, estimateLadda, selectLadda;
-var arc1, arc3, arc4;
-//var ind1, ind2;
+var arc1, arc3, arc4, arcInd1, arcInd2;
+
+var arcInd1Limits = [0,0.3];
+var arcInd2Limits = [0.35,0.65];
 
 let byId = id => document.getElementById(id);
 
@@ -174,11 +177,21 @@ export function main(fileid, hostname, ddiurl, dataurl) {
         .outerRadius(allR + 20)
         .startAngle(start)
         .endAngle(end);
+    let arcInd = (arclimits) => d3.svg.arc()
+        .innerRadius(allR + 22)
+        .outerRadius(allR + 37)
+        .startAngle(arclimits[0])
+        .endAngle(arclimits[1]);
+
     let [arc0, arc2] = [arc(0, 3.2), arc(1.1, 2.2)];  
     //arc1 = arc(1.3, 2.3);
     arc1 = arc(0,1);
     arc3 = arc(2.3, 3.3);
     arc4 = arc(4.3, 5.3);
+
+    arcInd1 = arcInd(arcInd1Limits);
+    arcInd2 = arcInd(arcInd2Limits);
+
 
     // indicators for showing membership above arcs
  //   let indicator = (degree) => d3.svg.circle()
@@ -951,7 +964,7 @@ function layout(v) {
             .text("Nominal");
 
         g.append("path")
-            .attr("id", append('gr1Arc'))
+            .attr("id", append('grArc'))
             .attr("d", arc1)
             .style("fill",  gr1Color) 
             .attr("fill-opacity", 0)
@@ -960,7 +973,7 @@ function layout(v) {
                 fill(d, "gr1indicator", .3, 0, 100);
                 fill(d, "gr2indicator", .3, 0, 100);
                 fillThis(this, .3, 0, 100);
-                fill(d, 'gr1Text', .9, 0, 100);
+                fill(d, 'grText', .9, 0, 100);
             })
             .on('mouseout', function(d) {
                 fill(d, "gr1indicator", 0, 100, 500);
@@ -974,23 +987,24 @@ function layout(v) {
                 restart();
             });
 
-        g.append("svg:circle")
+        g.append("path")
             .attr("id", append('gr1indicator'))
-            .attr("cx", ind1[0] )
-            .attr("cy", ind1[1])
-            .attr("r", ind1[2])
+            //.attr("cx", ind1[0] )
+            //.attr("cy", ind1[1])
+            //.attr("r", ind1[2])
+            .attr("d", arcInd1)
             .style("fill", gr1Color)  // something like: zparams.zgroup1.indexOf(node.name) > -1  ?  #FFFFFF : gr1Color)
             .attr("fill-opacity", 0)
-            .style("stroke-opacity", 0)
+            //.style("stroke-opacity", 0)
             .on('mouseover', function(d) {
                 fillThis(this, .3, 0, 100);
-                fill(d, "gr1Arc", .1, 0, 100);
-                fill(d, 'gr1Text', .9, 0, 100);
+                fill(d, "grArc", .1, 0, 100);
+                fill(d, 'grText', .9, 0, 100);
             })
             .on('mouseout', function(d) {
                 fillThis(this, 0, 100, 500);
-                fill(d, "gr1Arc", 0, 100, 500);
-                fill(d, 'gr1Text', 0, 100, 500);
+                fill(d, "grArc", 0, 100, 500);
+                fill(d, 'grText', 0, 100, 500);
             })
             .on('click', d => {
                 setColors(d, gr1Color);
@@ -998,23 +1012,24 @@ function layout(v) {
                 restart();
             });
 
-         g.append("svg:circle")
+         g.append("path")
             .attr("id", append('gr2indicator'))
-            .attr("cx", ind2[0] )
-            .attr("cy", ind2[1])
-            .attr("r", ind2[2])
+            //.attr("cx", ind2[0] )
+            //.attr("cy", ind2[1])
+            //.attr("r", ind2[2])
+            .attr("d", arcInd2)
             .style("fill", gr2Color)  // something like: zparams.zgroup1.indexOf(node.name) > -1  ?  #FFFFFF : gr1Color)
             .attr("fill-opacity", 0)
-            .style("stroke-opacity", 0)
+            //.style("stroke-opacity", 0)
             .on('mouseover', function(d) {
                 fillThis(this, .3, 0, 100);
-                fill(d, "gr1Arc", .1, 0, 100);
-                fill(d, 'gr1Text', .9, 0, 100);
+                fill(d, "grArc", .1, 0, 100);
+                fill(d, 'grText', .9, 0, 100);
             })
             .on('mouseout', function(d) {
                 fillThis(this, 0, 100, 500);
-                fill(d, "gr1Arc", 0, 100, 500);
-                fill(d, 'gr1Text', 0, 100, 500);
+                fill(d, "grArc", 0, 100, 500);
+                fill(d, 'grText', 0, 100, 500);
             })
             .on('click', d => {
                 setColors(d, gr2Color);
@@ -1023,12 +1038,12 @@ function layout(v) {
             });
 
         g.append("text")
-            .attr("id", append('gr1Text'))
+            .attr("id", append('grText'))
             .attr("x", 6)
             .attr("dy", 11.5)
             .attr("fill-opacity", 0)
             .append("textPath")
-            .attr("xlink:href", append('#gr1Arc'))
+            .attr("xlink:href", append('#grArc'))
             .text("Groups");
 
         g.append('svg:circle')
@@ -1142,12 +1157,12 @@ function layout(v) {
 
                 fill(d, "dvArc", .1, 0, 100);
                 fill(d, "dvText", .5, 0, 100);       
-                fill(d, "gr1Arc", .1, 0, 100);
-                fill(d, "gr1Text", .5, 0, 100);  
-                fill(d, "gr1indicator", .1, 0, 100);
-                fill(d, "gr1indicatorText", .1, 0, 100);              
-                fill(d, "gr2indicator", .1, 0, 100);
-                fill(d, "gr2indicatorText", .1, 0, 100);              
+                fill(d, "grArc", .1, 0, 100);
+                fill(d, "grText", .5, 0, 100);  
+                //fill(d, "gr1indicator", .1, 0, 100);
+                //fill(d, "gr1indicatorText", .1, 0, 100);              
+                //fill(d, "gr2indicator", .1, 0, 100);
+                //fill(d, "gr2indicatorText", .1, 0, 100);              
          
                 if (d.defaultNumchar == "numeric") {
                     fill(d, "nomArc", .1, 0, 100);
@@ -1162,7 +1177,7 @@ function layout(v) {
             })
             .on('mouseout', d => {
                 summaryHold || tabLeft(subset ? 'tab2' : 'tab1');
-                'csArc csText timeArc timeText dvArc dvText nomArc nomText gr1Arc gr1Text gr1indicator gr1indicatorText gr2indicator gr2indicatorText'.split(' ').map(x => fill(d, x, 0, 100, 500));
+                'csArc csText timeArc timeText dvArc dvText nomArc nomText grArc grText'.split(' ').map(x => fill(d, x, 0, 100, 500));
                 m.redraw();
             });
 
