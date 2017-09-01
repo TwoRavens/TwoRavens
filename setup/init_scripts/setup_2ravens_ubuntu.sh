@@ -49,7 +49,7 @@ echo VIRTUALENVWRAPPER_SCRIPT=/usr/local/bin/virtualenvwrapper.sh >> /home/2rave
 echo source /usr/local/bin/virtualenvwrapper.sh >> /home/2ravens_user/.profile
 
 # ------------------------------------
-echo ">> Create the 2ravens virtualenv"
+echo "--> Create the 2ravens virtualenv"
 # ------------------------------------
 #source /root/.bashrc
 #source /usr/local/bin/virtualenvwrapper.sh
@@ -79,7 +79,7 @@ pip freeze
 echo ">> fab init_db"
 # ------------------------------------
 fab init_db
-
+fab ubuntu_help
 # ------------------------------------
 echo ">> Rook setup (coming)"
 # ------------------------------------
