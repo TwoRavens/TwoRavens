@@ -125,7 +125,8 @@ class Body {
             extract('fileid', 'dfId', 5),
             extract('hostname', 'host', 5),
             extract('ddiurl', 'ddiurl', 7, true),
-            extract('dataurl', 'dataurl', 8, true));
+            extract('dataurl', 'dataurl', 8, true),
+            extract('apikey', 'key', 4));
     }
 
     view() {

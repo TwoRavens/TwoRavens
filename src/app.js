@@ -15,8 +15,13 @@ import {bars, barsNode, barsSubset, density, densityNode, selVarColor} from './p
 // for both the data and metadata, if the file id is supplied; or the
 // local files if nothing is supplied.
 
-var production = false;
-var d3m = true;
+
+
+//  Set some globals that change functionality
+var production = false;     // true: try to find all data and metadata and rook apps from live server resources, or false: find them in local versions
+var d3m = true;             // configure default functionality for d3m 
+var privacy = false;        // configure default functionality for PSI tool
+
 var rappURL = (production ? 'https://beta.dataverse.org' : 'http://0.0.0.0:8000') + '/custom/';
 
 // for debugging
@@ -130,7 +135,7 @@ export const reset = function reloadPage() {
 
 
 var dataurl = "";
-export function main(fileid, hostname, ddiurl, dataurl) {
+export function main(fileid, hostname, ddiurl, dataurl, apikey) {
     dataurl = dataurl;
     if (production && fileid == "") {
         alert("Error: No fileid has been provided.");
@@ -545,7 +550,6 @@ function layout(v) {
             //nodes = [findNode(mytarget)];               // Only add dependent variable on startup
             nodes = allNodes.slice(1,allNodes.length);    // Add all but first variable on startup (assumes 0 position is d3m index variable)
             for (let j = 0; j < nodes.length; j++) { //populate zvars array
-                console.log(mytarget);
                 if (nodes[j].name != mytarget) {
                     zparams.zgroup1.push(nodes[j].name);  // write all names (except d3m index and the dependent variable) to zgroup1 array
                 };
@@ -969,7 +973,6 @@ function layout(v) {
             .style("fill",  gr1Color) 
             .attr("fill-opacity", 0)
             .on('mouseover', function(d) {
-                console.log(d)
                 fill(d, "gr1indicator", .3, 0, 100);
                 fill(d, "gr2indicator", .3, 0, 100);
                 fillThis(this, .3, 0, 100);
