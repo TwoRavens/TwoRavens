@@ -1,0 +1,15 @@
+{
+    "datasets": [
+        "o_196_dataset"
+    ],
+    "descriptionFile": "problemDescription.txt",
+    "metric": "meanSquaredError",
+    "outputType": "regressionValue",
+    "problemId": "o_196_problem",
+    "redacted": true,
+    "target": {
+        "field": "class"
+    },
+    "taskSubType": "univariateRegression",
+    "taskType": "regression"
+}

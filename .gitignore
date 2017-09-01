@@ -39,3 +39,4 @@ pip-delete-this-directory.txt
 # C extensions
 *.so
 webpack-stats.json
+data/d3m/o_196seed/data/.Rapp.history

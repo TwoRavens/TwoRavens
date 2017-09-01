@@ -97,11 +97,17 @@ zelig.app <- function(env){
             mydata <- readData(sessionid=mysessionid,logfile=mylogfile)
             write(deparse(bquote(mydata<-read.delim(file=.(paste("data_",mysessionid,".tab",sep=""))))),mylogfile,append=TRUE)
         }else{
+            mydataurl <- everything$zdataurl
+            mydataurl <- paste("../",mydataurl,sep="")
             # This is the Strezhnev Voeten data:
             #   		mydata <- read.delim("../data/session_affinity_scores_un_67_02132013-cow.tab")
             # This is the Fearon Laitin data:
-            mydata <- read.delim("../data/fearonLaitin.tsv")
-            write("mydata <- read.delim(\"../data/fearonLaitin.tsv\")",mylogfile,append=TRUE)
+            print(mydataurl)
+            mydata <- read.delim(mydataurl)
+            print(dim(mydata))
+            writeme <- paste("mydata <- read.delim(\"",mydataurl,"\")", sep="")
+            print(writeme)
+            write(writeme,mylogfile,append=TRUE)
             #mydata <- read.delim("../data/QualOfGovt.tsv")
         }
 	}
@@ -164,7 +170,11 @@ zelig.app <- function(env){
           isobserved<-apply(missmap,1,all)
           usedata<<-usedata[isobserved,]
           print(dim(usedata))
-
+          
+          ## this is obviously dumb, but converts factors to numeric if DV is a factor
+          if(class(usedata[,mydv])=="factor") {
+              usedata[,mydv] <- as.numeric(usedata[,mydv])
+          }
             z.out <- zelig(formula=myformula, model=mymodel, data=usedata)   # maybe just pass variables being used?
             almostCall<-paste(mymodel,"( ",deparse(myformula)," )",sep="")
             write("z.out <- zelig(formula=myformula, model=mymodel, data=usedata)",mylogfile,append=TRUE)

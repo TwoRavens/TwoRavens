@@ -21,6 +21,14 @@ import {bars, barsNode, barsSubset, density, densityNode, selVarColor} from './p
 //let rappURL = 'http://127.0.0.1:8080/rook-custom/'; // via Django -> to RApache/rook
 //let rappURL = 'http://0.0.0.0:8000/custom/'; // Direct to RApache/rook
 
+
+//  Set some globals that change functionality
+var production = false;     // true: try to find all data and metadata and rook apps from live server resources, or false: find them in local versions
+var d3m = false;             // configure default functionality for d3m
+var privacy = false;        // configure default functionality for PSI tool
+
+var rappURL = (production ? 'https://beta.dataverse.org' : 'http://0.0.0.0:8000') + '/custom/';
+
 // for debugging
 export function cdb(msg) {
     if (!production){
@@ -39,6 +47,11 @@ export let inspect = obj => {
 var colors = d3.scale.category20();
 export let csColor = '#419641';
 export let dvColor = '#28a4c9';
+export let gr1Color = '#24a4c9';//#ccccff';
+var gr1Opacity = [0,1];
+export let gr2Color = '#ffcccc';
+var gr2Opacity = [0,1];
+
 var grayColor = '#c0c0c0';
 export let nomColor = '#ff6600';
 export let varColor = '#f0f8ff'; // d3.rgb("aliceblue");
@@ -68,6 +81,10 @@ const layoutMove = "move";
 // Radius of circle
 var allR = 40;
 
+var ind1 = [(allR+30) * Math.cos(1.3), -1*(allR+30) * Math.sin(1.3),5] // cx, cy, r  values for indicator lights
+var ind2 = [(allR+30) * Math.cos(1.1), -1*(allR+30) * Math.sin(1.1),5] // cx, cy, r  values for indicator lights
+
+
 // space index
 var myspace = 0;
 
@@ -84,6 +101,8 @@ export let zparams = {
     zmodel: "",
     zvars: [],
     zdv: [],
+    zgroup1: [],
+    zgroup2: [],       // hard coding to two groups for present experiments, but will eventually make zgroup array of arrays, with zgroup.lenght the number of groups
     zdataurl: "",
     zsubset: [],
     zsetx: [],
@@ -104,9 +123,13 @@ var estimated = false;
 var rightClickLast = false;
 var selInteract = false;
 var callHistory = []; // transform and subset calls
+let mytarget = "";
 
 var svg, width, height, div, estimateLadda, selectLadda;
-var arc3, arc4;
+var arc1, arc3, arc4, arcInd1, arcInd2;
+
+var arcInd1Limits = [0,0.3];
+var arcInd2Limits = [0.35,0.65];
 
 let byId = id => document.getElementById(id);
 
@@ -116,7 +139,7 @@ export const reset = function reloadPage() {
 }
 
 
-var dataurl;
+var dataurl = "";
 export function main(fileid, hostname, ddiurl, dataurl, apikey) {
     dataurl = dataurl;
     if (production && fileid == "") {
@@ -161,14 +184,35 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
     var barPadding = 0.35;
     var barnumber = 7;
 
+    // arcs for denoting pebble characteristics
     let arc = (start, end) => d3.svg.arc()
         .innerRadius(allR + 5)
         .outerRadius(allR + 20)
         .startAngle(start)
         .endAngle(end);
-    let [arc0, arc1, arc2] = [arc(0, 3.2), arc(0, 1), arc(1.1, 2.2)];
+    let arcInd = (arclimits) => d3.svg.arc()
+        .innerRadius(allR + 22)
+        .outerRadius(allR + 37)
+        .startAngle(arclimits[0])
+        .endAngle(arclimits[1]);
+
+    let [arc0, arc2] = [arc(0, 3.2), arc(1.1, 2.2)];
+    //arc1 = arc(1.3, 2.3);
+    arc1 = arc(0,1);
     arc3 = arc(2.3, 3.3);
     arc4 = arc(4.3, 5.3);
+
+    arcInd1 = arcInd(arcInd1Limits);
+    arcInd2 = arcInd(arcInd2Limits);
+
+
+    // indicators for showing membership above arcs
+ //   let indicator = (degree) => d3.svg.circle()
+ //       .cx( allR )//(allR+35) * Math.sin(degree))
+ //       .cy( allR )//(allR+35) * Math.cos(degree))
+ //       .r(3);
+ //   ind1 = indicator(1);
+ //   ind2 = indicator(1.2);
 
     // From .csv
     var dataset2 = [];
@@ -190,19 +234,51 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
             .remove();
     });
 
+
+    //set start from user input, then assume locations are consistent based on d3m directory structure (alternatively can make each of these locations be set by user)
+    var start = 'data/d3m/o_196seed';
+    let d3mDataName = start.split('/');
+    d3mDataName = d3mDataName[d3mDataName.length-1];
+    let d3mData = start+'/data/trainData.csv';
+    let d3mTarget = start+'/data/trainTargets.csv';
+    let d3mPS = start+'/problemSchema.json';
+    let d3mDS = start+'/data/dataSchema.json';
+    let d3mPreprocess = start+'/preprocess.json';
+    let probDesc=start;
+
     // default to California PUMS subset
     let data = 'data/' + (false ? 'PUMS5small' : 'fearonLaitin');
     let metadataurl = ddiurl || (fileid ? `${dataverseurl}/api/meta/datafile/${fileid}` : data + '.xml');
     // read pre-processed metadata and data
     let pURL = dataurl ? `${dataurl}&format=prep` : data + '.json';
+
     cdb('pURL: ' + pURL);
+
+    if(d3m) {
+        pURL = d3mPreprocess;
+        zparams.zdataurl = start+'/data/trainDatamerged.tsv';
+        zparams.zdata = d3mDataName;
+    } else if (!production) {
+        zparams.zdataurl = 'data/fearonLaitin.tsv';
+    }
     // loads all external data: metadata (DVN's ddi), preprocessed (for plotting distributions), and zeligmodels (produced by Zelig) and initiates the data download to the server
     var url, p, v, callback;
+
+    // this assumes we have to generate a preprocess.json. there's no check if it already exists. execution pauses until preprocess.json is written. the preprocess.json includes the target metadata. the column names in target data are returned in the runPreprocess json.
+    runPreprocess(d3mData, d3mTarget, d3mPreprocess, callback = function() {
     readPreprocess(url = pURL, p = preprocess, v = null, callback = function() {
         d3.xml(metadataurl, "application/xml", xml => {
-            var vars = xml.documentElement.getElementsByTagName("var");
+
+            var vars = Object.keys(p); // this doesn't come from xml, but from preprocessed json
+
+            // the labels, citations, and file name come from the 'xml' (metadataurl), which is the file from the data repo. but, TwoRavens should function using only the data that comes from our preprocess script, which is the 'json' (pURL)
+               // for now the metadataurl is still Fearon & Laitin
+            var varsXML = xml.documentElement.getElementsByTagName("var");
             var temp = xml.documentElement.getElementsByTagName("fileName");
-            zparams.zdata = temp[0].childNodes[0].nodeValue;
+
+               if(!d3m) {
+               zparams.zdata = temp[0].childNodes[0].nodeValue;}
+
 
             var cite = xml.documentElement.getElementsByTagName("biblCit");
             zparams.zdatacite = cite[0].childNodes[0].nodeValue;
@@ -212,7 +288,9 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
                 .replace(/\%/g, "-");
 
             // dataset name trimmed to 12 chars
-            var dataname = zparams.zdata.replace(/\.(.*)/, ''); // drop file extension
+               var dataname = zparams.zdata;
+               if(!d3m){
+               dataname = zparams.zdata.replace(/\.(.*)/, '');} // drop file extension
             d3.select("#dataName")
                 .html(dataname);
             $('#cite div.panel-body').text(zparams.zdatacite);
@@ -222,10 +300,12 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
             // temporary values for hold that correspond to histogram bins
             hold = [.6, .2, .9, .8, .1, .3, .4];
             for (var i = 0; i < vars.length; i++) {
-                valueKey[i] = vars[i].attributes.name.nodeValue;
-                lablArray[i] = vars[i].getElementsByTagName("labl").length == 0 ?
-                    "no label" :
-                    vars[i].getElementsByTagName("labl")[0].childNodes[0].nodeValue;
+               // valueKey[i] = vars[i].attributes.name.nodeValue;
+                valueKey[i] = vars[i];
+                //lablArray[i] = varsXML[i].getElementsByTagName("labl").length == 0 ?
+                //    "no label" :
+                 //   varsXML[i].getElementsByTagName("labl")[0].childNodes[0].nodeValue;
+                lablArray[i]="no label";
                 var datasetcount = d3.layout.histogram()
                     .bins(barnumber).frequency(false)
                     ([0, 0, 0, 0, 0]);
@@ -272,8 +352,22 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
                     dataDownload();
                 });
             });
+               // looks like here is where we'll read in problem schema
+               d3.json(d3mPS, (err, data) => {
+                       console.log("prob schema data: ");
+                       mytarget=data.target.field;
+                       probDesc = start+'/'+data.descriptionFile;
+
+                       let aTag = document.createElement('a');
+                       aTag.setAttribute('href',probDesc);
+                       aTag.setAttribute('id',"probdesc");
+                       aTag.setAttribute('target',"_blank");
+                       aTag.textContent = "Problem Description";
+                       document.getElementById("ticker").appendChild(aTag);
+                       });
         });
     });
+                  });
 }
 
 let $fill = (obj, op, d1, d2) => d3.select(obj).transition()
@@ -413,10 +507,32 @@ let splice = (color, text, ...args) => {
 
 export let clickVar;
 
+
+
 function layout(v) {
     var myValues = [];
     nodes = [];
     links = [];
+
+    var vis = d3.select("#whitespace").append("svg")
+        .attr("width", width)
+        .attr("height", height);
+
+    vis.append("path")
+        .style("fill", gr1Color)
+        .style("stroke", gr1Color)
+        .style("stroke-width", 2.5*allR)
+        .style('stroke-linejoin','round');
+
+    var vis2 = d3.select("#whitespace").append("svg")
+        .attr("width", width)
+        .attr("height", height);
+
+    vis2.append("path")
+        .style("fill", gr2Color)
+        .style("stroke", gr2Color)
+        .style("stroke-width", 2.5*allR)
+        .style('stroke-linejoin','round');
 
     if (v == layoutAdd || v == layoutMove) {
         for (var j = 0; j < zparams.zvars.length; j++) {
@@ -440,7 +556,15 @@ function layout(v) {
             });
         }
     } else {
-        if (allNodes.length > 2) {
+        if(d3m) {
+            //nodes = [findNode(mytarget)];               // Only add dependent variable on startup
+            nodes = allNodes.slice(1,allNodes.length);    // Add all but first variable on startup (assumes 0 position is d3m index variable)
+            for (let j = 0; j < nodes.length; j++) { //populate zvars array
+                if (nodes[j].name != mytarget) {
+                    zparams.zgroup1.push(nodes[j].name);  // write all names (except d3m index and the dependent variable) to zgroup1 array
+                };
+            };
+        } else if (allNodes.length > 2) {
             nodes = [allNodes[0], allNodes[1], allNodes[2]];
             links = [{
                 source: nodes[1],
@@ -510,6 +634,7 @@ function layout(v) {
     // handles to link and node element groups
     var path = svg.append('svg:g').selectAll('path'),
         circle = svg.append('svg:g').selectAll('g');
+        //line = svg.append('svg:g').selectAll('line');
 
     // mouse event vars
     var selected_node = null,
@@ -517,6 +642,16 @@ function layout(v) {
         mousedown_link = null,
         mousedown_node = null,
         mouseup_node = null;
+
+   var line = svg.append("line")
+        .style('fill', 'none')
+        .style('stroke', gr1Color)
+        .style('stroke-width', 5);
+
+    var line2 = svg.append("line")
+        .style('fill', 'none')
+        .style('stroke', gr2Color)
+        .style('stroke-width', 5);
 
     function resetMouseVars() {
         mousedown_node = null;
@@ -526,6 +661,124 @@ function layout(v) {
 
     // update force layout (called automatically each iteration)
     function tick() {
+
+        function findcoords(findnames,allnames,coords,lengthen){
+            var fcoords = new Array(findnames.length);   // found coordinates
+            var addlocation = 0;
+            if(findnames.length>0){
+                for (var j = 0; j < findnames.length; j++) {
+                    addlocation = allnames.indexOf(findnames[j]);
+                    fcoords[j] = coords[addlocation];
+                };
+            };
+
+            if(lengthen){
+                // d3.geom.hull returns null for two points, and fails if three points are in a line,
+                // so this puts a couple points slightly off the line for two points, or around a singleton.
+                if (fcoords.length == 2){
+                    var deltax = fcoords[0][0]- fcoords[1][0];
+                    var deltay = fcoords[0][1]- fcoords[1][1];
+                    fcoords.push([(fcoords[0][0] + fcoords[1][0])/2 + deltay/20, (fcoords[0][1]+ fcoords[1][1])/2 + deltax/20]);
+                    fcoords.push([(fcoords[0][0] + fcoords[1][0])/2 - deltay/20, (fcoords[0][1]+ fcoords[1][1])/2 - deltax/20]);
+                }
+                if (fcoords.length == 1){
+                    var delta = allR * 0.2;
+                    fcoords.push([fcoords[0][0] + delta, fcoords[0][1]]);
+                    fcoords.push([fcoords[0][0] - delta, fcoords[0][1]]);
+                    fcoords.push([fcoords[0][0], fcoords[0][1] + delta]);
+                    fcoords.push([fcoords[0][0], fcoords[0][1] - delta]);
+                }
+            }
+            return (fcoords);
+        };
+
+        // d3.geom.hull returns null for two points, and fails if three points are in a line,
+        // so this puts a couple points slightly off the line for two points, or around a singleton.
+        function lengthencoords(coords){
+            if (coords.length == 2){
+                var deltax = coords[0][0]- coords[1][0];
+                var deltay = coords[0][1]- coords[1][1];
+                coords.push([(coords[0][0] + coords[1][0])/2 + deltay/20, (coords[0][1]+ coords[1][1])/2 + deltax/20]);
+                coords.push([(coords[0][0] + coords[1][0])/2 - deltay/20, (coords[0][1]+ coords[1][1])/2 - deltax/20]);
+            }
+            if (coords.length == 1){
+                var delta = allR * 0.2;
+                coords.push([coords[0][0] + delta, coords[0][1]]);
+                coords.push([coords[0][0] - delta, coords[0][1]]);
+                coords.push([coords[0][0], coords[0][1] + delta]);
+                coords.push([coords[0][0], coords[0][1] - delta]);
+            }
+            return (coords);
+        };
+
+        var coords = nodes.map(function(d) {  return [ d.x, d.y]; });
+        var gr1coords = findcoords(zparams.zgroup1, zparams.zvars, coords, true);
+        var gr2coords = findcoords(zparams.zgroup2, zparams.zvars, coords, true);
+        var depcoords = findcoords(zparams.zdv, zparams.zvars, coords, false);
+
+        // draw convex hull around independent variables, if three or more coordinates given
+        // note, d3.geom.hull returns null if shorter coordinate set than 3,
+        // so findcoords() function has option to lengthen the coordinates returned to bypass this
+        if(gr1coords.length > 2){
+            vis.style("opacity", 0.3)
+            vis.selectAll("path")
+                .data([d3.geom.hull(gr1coords)])   // returns null if less than three coordinates
+                .attr("d", function(d) { return "M" + d.join("L") + "Z"; });
+
+            if(depcoords.length>0){
+                //var p = d3.geom.polygon(indcoords).centroid();  // Seems to go strange sometimes
+                var p = jamescentroid(gr1coords);
+                var q = depcoords[0];                             // Note, only using first dep var currently
+                var ldeltaX = q[0] - p[0],
+                    ldeltaY = q[1] - p[1],
+                    ldist = Math.sqrt(ldeltaX * ldeltaX + ldeltaY * ldeltaY),
+                    lnormX = ldeltaX / ldist,
+                    lnormY = ldeltaY / ldist,
+                    lsourcePadding = allR + 5,
+                    ltargetPadding = allR + 5;
+
+                line.attr("x1", p[0] + (lsourcePadding * lnormX))
+                    .attr("y1", p[1] + (lsourcePadding * lnormY))
+                    .attr("x2", q[0]- (ltargetPadding * lnormX))
+                    .attr("y2", q[1]- (ltargetPadding * lnormY));
+                //circle.attr("cx", p[0]).attr("cy", p[1]);       // placeholder for arrowhead if not set up as arrow
+            };
+
+        }else{
+            vis.style("opacity", 0);
+            line.style("opacity", 0);
+        };
+
+        if(gr2coords.length > 2){
+            vis2.style("opacity", 0.3)
+            vis2.selectAll("path")
+                .data([d3.geom.hull(gr2coords)])   // returns null if less than three coordinates
+                .attr("d", function(d) { return "M" + d.join("L") + "Z"; });
+
+            if(depcoords.length>0){
+                //var p = d3.geom.polygon(indcoords).centroid();  // Seems to go strange sometimes
+                var p = jamescentroid(gr2coords);
+                var q = depcoords[0];                             // Note, only using first dep var currently
+                var ldeltaX = q[0] - p[0],
+                    ldeltaY = q[1] - p[1],
+                    ldist = Math.sqrt(ldeltaX * ldeltaX + ldeltaY * ldeltaY),
+                    lnormX = ldeltaX / ldist,
+                    lnormY = ldeltaY / ldist,
+                    lsourcePadding = allR + 5,
+                    ltargetPadding = allR + 5;
+
+                line2.attr("x1", p[0] + (lsourcePadding * lnormX))
+                    .attr("y1", p[1] + (lsourcePadding * lnormY))
+                    .attr("x2", q[0]- (ltargetPadding * lnormX))
+                    .attr("y2", q[1]- (ltargetPadding * lnormY));
+                //circle.attr("cx", p[0]).attr("cy", p[1]);       // placeholder for arrowhead if not set up as arrow
+            };
+
+        }else{
+            vis2.style("opacity", 0);
+            line2.style("opacity", 0);
+        };
+
         // draw directed edges with proper padding from node centers
         path.attr('d', d => {
             var deltaX = d.target.x - d.source.x,
@@ -542,6 +795,7 @@ function layout(v) {
             return `M${sourceX},${sourceY}L${targetX},${targetY}`;
         });
         circle.attr('transform', d => 'translate(' + d.x + ',' + d.y + ')');
+
     }
 
     clickVar = function() {
@@ -555,12 +809,21 @@ function layout(v) {
             nodes.splice(node.index, 1);
             spliceLinksForNode(node);
             splice(node.strokeColor, text, [dvColor, 'zdv'], [csColor, 'zcross'], [timeColor, 'ztime'], [nomColor, 'znom']);
+
+            if(zparams.zgroup1.indexOf(node.name) > -1){                               // remove node name from group lists (should use adaptation of splice-by-color)
+                    zparams.zgroup1.splice(zparams.zgroup1.indexOf(node.name),1);
+            };
+            if(zparams.zgroup2.indexOf(node.name) > -1){
+                    zparams.zgroup2.splice(zparams.zgroup2.indexOf(node.name),1);
+            };
+
             nodeReset(node);
             legend();
         } else {
             nodes.push(node);
             if (nodes.length === 0) nodes[0].reflexive = true;
         }
+        zparams.zvars = nodes.map(n => n.name)    // adding this to keep it current (or should we rely on nodes.map(n => n.name) for variable list?)
         panelPlots();
         restart();
     }
@@ -591,7 +854,11 @@ function layout(v) {
         circle.call(force.drag);
         if (forcetoggle[0] == "true") {
             force.gravity(0.1);
-            force.charge(-800);
+            //force.charge(-800);  // Previous constant value
+            force.charge(function(node) {
+                return zparams.zgroup1.indexOf(node.name) > -1  ? -300 : -1000;  // -1 is the value if no index position found
+            });
+            force.start();
             force.linkStrength(1);
         } else {
             force.gravity(0);
@@ -710,6 +977,88 @@ function layout(v) {
             .attr("xlink:href", append("#nomArc"))
             .text("Nominal");
 
+        g.append("path")
+            .attr("id", append('grArc'))
+            .attr("d", arc1)
+            .style("fill",  gr1Color)
+            .attr("fill-opacity", 0)
+            .on('mouseover', function(d) {
+                fill(d, "gr1indicator", .3, 0, 100);
+                fill(d, "gr2indicator", .3, 0, 100);
+                fillThis(this, .3, 0, 100);
+                fill(d, 'grText', .9, 0, 100);
+            })
+            .on('mouseout', function(d) {
+                fill(d, "gr1indicator", 0, 100, 500);
+                fill(d, "gr2indicator", 0, 100, 500);
+                fillThis(this, 0, 100, 500);
+                fill(d, 'gr1Text', 0, 100, 500);
+            })
+            .on('click', d => {
+                setColors(d, gr1Color);
+                legend(gr1Color);
+                restart();
+            });
+
+        g.append("path")
+            .attr("id", append('gr1indicator'))
+            //.attr("cx", ind1[0] )
+            //.attr("cy", ind1[1])
+            //.attr("r", ind1[2])
+            .attr("d", arcInd1)
+            .style("fill", gr1Color)  // something like: zparams.zgroup1.indexOf(node.name) > -1  ?  #FFFFFF : gr1Color)
+            .attr("fill-opacity", 0)
+            //.style("stroke-opacity", 0)
+            .on('mouseover', function(d) {
+                fillThis(this, .3, 0, 100);
+                fill(d, "grArc", .1, 0, 100);
+                fill(d, 'grText', .9, 0, 100);
+            })
+            .on('mouseout', function(d) {
+                fillThis(this, 0, 100, 500);
+                fill(d, "grArc", 0, 100, 500);
+                fill(d, 'grText', 0, 100, 500);
+            })
+            .on('click', d => {
+                setColors(d, gr1Color);
+                legend(gr1Color);
+                restart();
+            });
+
+         g.append("path")
+            .attr("id", append('gr2indicator'))
+            //.attr("cx", ind2[0] )
+            //.attr("cy", ind2[1])
+            //.attr("r", ind2[2])
+            .attr("d", arcInd2)
+            .style("fill", gr2Color)  // something like: zparams.zgroup1.indexOf(node.name) > -1  ?  #FFFFFF : gr1Color)
+            .attr("fill-opacity", 0)
+            //.style("stroke-opacity", 0)
+            .on('mouseover', function(d) {
+                fillThis(this, .3, 0, 100);
+                fill(d, "grArc", .1, 0, 100);
+                fill(d, 'grText', .9, 0, 100);
+            })
+            .on('mouseout', function(d) {
+                fillThis(this, 0, 100, 500);
+                fill(d, "grArc", 0, 100, 500);
+                fill(d, 'grText', 0, 100, 500);
+            })
+            .on('click', d => {
+                setColors(d, gr2Color);
+                legend(gr2Color);
+                restart();
+            });
+
+        g.append("text")
+            .attr("id", append('grText'))
+            .attr("x", 6)
+            .attr("dy", 11.5)
+            .attr("fill-opacity", 0)
+            .append("textPath")
+            .attr("xlink:href", append('#grArc'))
+            .text("Groups");
+
         g.append('svg:circle')
             .attr('class', 'node')
             .attr('r', allR)
@@ -821,6 +1170,13 @@ function layout(v) {
 
                 fill(d, "dvArc", .1, 0, 100);
                 fill(d, "dvText", .5, 0, 100);
+                fill(d, "grArc", .1, 0, 100);
+                fill(d, "grText", .5, 0, 100);
+                //fill(d, "gr1indicator", .1, 0, 100);
+                //fill(d, "gr1indicatorText", .1, 0, 100);
+                //fill(d, "gr2indicator", .1, 0, 100);
+                //fill(d, "gr2indicatorText", .1, 0, 100);
+
                 if (d.defaultNumchar == "numeric") {
                     fill(d, "nomArc", .1, 0, 100);
                     fill(d, "nomText", .5, 0, 100);
@@ -834,7 +1190,7 @@ function layout(v) {
             })
             .on('mouseout', d => {
                 summaryHold || tabLeft(subset ? 'tab2' : 'tab1');
-                'csArc csText timeArc timeText dvArc dvText nomArc nomText'.split(' ').map(x => fill(d, x, 0, 100, 500));
+                'csArc csText timeArc timeText dvArc dvText nomArc nomText grArc grText'.split(' ').map(x => fill(d, x, 0, 100, 500));
                 m.redraw();
             });
 
@@ -917,6 +1273,15 @@ function layout(v) {
 
     restart(); // initializes force.layout()
     fakeClick();
+
+    var click_ev = document.createEvent("MouseEvents");
+    // initialize the event
+    click_ev.initEvent("click", true /* bubble */, true /* cancelable */);
+    // trigger the event
+    if(d3m){
+        let clickID = "dvArc"+findNodeIndex(mytarget);
+        document.getElementById(clickID).dispatchEvent(click_ev);
+    }
 }
 
 
@@ -1018,6 +1383,7 @@ export function estimate(btn) {
     var solajsonout = "solaJSON=" + jsonout;
     cdb("urlcall out: ", urlcall);
     cdb("POST out: ", solajsonout);
+    console.log("estimate: ", solajsonout);
 
     zparams.allVars = valueKey.slice(10, 25); // because the URL is too long...
     jsonout = JSON.stringify(zparams);
@@ -1094,6 +1460,117 @@ export function estimate(btn) {
     makeCorsRequest(urlcall, btn, estimateSuccess, estimateFail, solajsonout);
 }
 
+export function runPreprocess(dataloc, targetloc, preprocessloc, callback) {
+    var tojson = {data:dataloc, target:targetloc, preprocess:preprocessloc}
+    var jsonout = JSON.stringify(tojson);
+
+    var urlcall = rappURL + "preprocessapp"; //base.concat(jsonout);
+    var solajsonout = "solaJSON=" + jsonout;
+    cdb("urlcall out: ", urlcall);
+    cdb("POST out: ", solajsonout);
+
+    function preprocessSuccess(btn, json) {
+        cdb("json in: ", json);
+        console.log(json);
+        if (typeof callback == 'function') callback();
+    }
+
+    function preprocessFail(btn) {
+        console.log("preprocess failed");
+    }
+    makeCorsRequest(urlcall, "nobutton", preprocessSuccess, preprocessFail, solajsonout);
+}
+
+
+export function ta2stuff(btn) {
+    if (production && zparams.zsessionid == '') {
+        alert("Warning: Data download is not complete. Try again soon.");
+        return;
+    }
+
+
+
+    zPop();
+    // write links to file & run R CMD
+    // package the output as JSON
+    // add call history and package the zparams object as JSON
+    zparams.callHistory = callHistory;
+
+
+
+    var jsonout = JSON.stringify(zparams);
+
+    var urlcall = rappURL + "zeligapp"; //base.concat(jsonout);
+    var solajsonout = "solaJSON=" + jsonout;
+    cdb("urlcall out: ", urlcall);
+    cdb("POST out: ", solajsonout);
+
+    zparams.allVars = valueKey.slice(10, 25); // because the URL is too long...
+    jsonout = JSON.stringify(zparams);
+    var selectorurlcall = rappURL + "selectorapp";
+
+    function ta2stuffSuccess(btn, json) {
+        estimateLadda.stop(); // stop spinner
+        allResults.push(json);
+        cdb("json in: ", json);
+
+        if (!estimated) byId("results").removeChild(byId("resultsHolder"));
+
+        estimated = true;
+        d3.select("#results")
+        .style("display", "block");
+
+        d3.select("#resultsView")
+        .style("display", "block");
+
+        d3.select("#modelView")
+        .style("display", "block");
+
+        // programmatic click on Results button
+        $("#btnResults").trigger("click");
+
+        let model = "Model".concat(modelCount = modelCount + 1);
+
+        function modCol() {
+            d3.select("#modelView")
+            .selectAll("p")
+            .style('background-color', hexToRgba(varColor));
+        }
+        modCol();
+
+        d3.select("#modelView")
+        .insert("p", ":first-child") // top stack for results
+        .attr("id", model)
+        .text(model)
+        .style('background-color', hexToRgba(selVarColor))
+        .on("click", function() {
+            var a = this.style.backgroundColor.replace(/\s*/g, "");
+            var b = hexToRgba(selVarColor).replace(/\s*/g, "");
+            if (a.substr(0, 17) == b.substr(0, 17))
+            return; // escape function if displayed model is clicked
+            modCol();
+            d3.select(this)
+            .style('background-color', hexToRgba(selVarColor));
+            viz(this.id);
+            });
+
+        let rCall = [];
+        rCall[0] = json.call;
+        showLog("estimate", rCall);
+
+        viz(model);
+    }
+
+    function ta2stuffFail(btn) {
+        estimateLadda.stop(); // stop spinner
+        estimated = true;
+    }
+
+    estimateLadda.start(); // start spinner
+    makeCorsRequest(urlcall, btn, ta2stuffSuccess, ta2stuffFail, solajsonout);
+}
+
+
 function dataDownload() {
     zPop();
     // write links to file & run R CMD
@@ -1109,6 +1586,7 @@ function dataDownload() {
     cdb("POST out: ", solajsonout);
 
     let downloadSuccess = (btn, json) => {
+        console.log('datadownload: ', json);
         cdb('dataDownload json in: ', json);
         zparams.zsessionid = json.sessionid[0];
         // set link URL
@@ -1706,6 +2184,21 @@ export let hexToRgba = hex => {
 // takes node and color and updates zparams
 function setColors(n, c) {
     if (n.strokeWidth == '1') {
+        if (c == gr1Color){
+            var tempindex = zparams.zgroup1.indexOf(n.name);
+            if (tempindex > -1){
+                zparams.zgroup1.splice(tempindex,1);
+            } else {
+                zparams.zgroup1.push(n.name);
+            };
+        } else if (c == gr2Color){
+            var tempindex = zparams.zgroup2.indexOf(n.name);
+            if (tempindex > -1){
+                zparams.zgroup2.splice(tempindex,1);
+            } else {
+                zparams.zgroup2.push(n.name);
+            };
+        } else {
         // adding time, cs, dv, nom to node with no stroke
         n.strokeWidth = '4';
         n.strokeColor = c;
@@ -1719,8 +2212,17 @@ function setColors(n, c) {
                 findNodeIndex(n.name, true).nature = "nominal";
                 transform(n.name, t = null, typeTransform = true);
             }
+            if (key == 'zdv'){                                              // remove group memberships from dv's
+                if(zparams.zgroup1.indexOf(n.name) > -1){
+                    zparams.zgroup1.splice(zparams.zgroup1.indexOf(n.name),1);
+                };
+                if(zparams.zgroup2.indexOf(n.name) > -1){
+                    zparams.zgroup2.splice(zparams.zgroup2.indexOf(n.name),1);
+                };
+            }
         };
         [[dvColor, 'zdv'], [csColor, 'zcross'], [timeColor, 'ztime'], [nomColor, 'znom']].forEach(push);
+        }
     } else if (n.strokeWidth == '4') {
         if (c == n.strokeColor) { // deselecting time, cs, dv, nom
             n.strokeWidth = '1';
@@ -1738,7 +2240,16 @@ function setColors(n, c) {
                 transform(n.name, t = null, typeTransform = true);
             }
             n.strokeColor = c;
-            if (dvColor == c) zparams.zdv.push(n.name);
+            if (dvColor == c){
+                var dvname = n.name;
+                zparams.zdv.push(dvname);
+                if(zparams.zgroup1.indexOf(dvname) > -1){                     // remove group memberships from dv's
+                    zparams.zgroup1.splice(zparams.zgroup1.indexOf(dvname),1);
+                };
+                if(zparams.zgroup2.indexOf(dvname) > -1){
+                    zparams.zgroup2.splice(zparams.zgroup2.indexOf(dvname),1);
+                };
+            }
             else if (csColor == c) zparams.zcross.push(n.name);
             else if (timeColor == c) zparams.ztime.push(n.name);
             else if (nomColor == c) {
@@ -1763,6 +2274,9 @@ export function borderState() {
     zparams.znom.length > 0 ?
         $('#nomButton .rectColor svg circle').attr('stroke', nomColor) :
         $('#nomButton').css('border-color', '#ccc');
+    zparams.zgroup1.length > 0 ?
+        $('#gr1Button .rectColor svg circle').attr('stroke', gr1Color) :
+        $('#gr1Button').css('border-color', '#ccc');
 }
 
 // small appearance resets, but perhaps this will become a hard reset back to all original allNode values?
@@ -1935,7 +2449,7 @@ export function subsetSelect(btn) {
 }
 
 function readPreprocess(url, p, v, callback) {
-  cdb('readPreprocess: ' + url );
+    cdb('readPreprocess: ' + url );
 
     d3.json(url, (err, json) => {
         if (err)
@@ -1943,7 +2457,7 @@ function readPreprocess(url, p, v, callback) {
         cdb('inside readPreprocess function');
         cdb(json);
 
-        priv = json.dataset.priv || priv;
+        priv = json.dataset.private || priv;
         // copy object
         Object.keys(json.variables).forEach(k => p[k] = json.variables[k]);
         if (typeof callback == 'function') callback();
@@ -1991,3 +2505,18 @@ export let fakeClick = () => {
     d3.select(ws)
         .classed('active', false);
 };
+
+
+function jamescentroid(coord){
+                var minx = coord[0][0],
+                    maxx = coord[0][0],
+                    miny = coord[0][1],
+                    maxy = coord[0][1];
+                for(var j = 1; j<coord.length; j++){
+                    if (coord[j][0] < minx) minx = coord[j][0];
+                    if (coord[j][1] < miny) miny = coord[j][1];
+                    if (coord[j][0] > maxx) maxx = coord[j][0];
+                    if (coord[j][1] > maxy) maxy = coord[j][1];
+                };
+                return[(minx + maxx)/2, (miny + maxy)/2];
+            };
