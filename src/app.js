@@ -518,11 +518,36 @@ function layout(v) {
         .style('stroke', gr2Color)
         .style('stroke-width', 5);
 
+    var visbackground = d3.select("#whitespace").append("svg")
+        .attr("width", width)
+        .attr("height", height);
+
+    visbackground.append("path")                           // note lines, are behind group hulls of which there is a white and colored semi transparent layer
+        .attr("id", 'gr1background')
+        .style("fill", '#ffffff')
+        .style("stroke", '#ffffff')
+        .style("stroke-width", 2.5*allR)
+        .style('stroke-linejoin','round')
+        .style("opacity", 1);
+
+    var vis2background = d3.select("#whitespace").append("svg")
+        .attr("width", width)
+        .attr("height", height);
+
+    vis2background.append("path")                           
+        .attr("id", 'gr1background')
+        .style("fill", '#ffffff')
+        .style("stroke", '#ffffff')
+        .style("stroke-width", 2.5*allR)
+        .style('stroke-linejoin','round')
+        .style("opacity", 1);
+
     var vis = d3.select("#whitespace").append("svg")
         .attr("width", width)
         .attr("height", height);
 
     vis.append("path")
+        .attr("id", 'gr1hull')
         .style("fill", gr1Color)
         .style("stroke", gr1Color)
         .style("stroke-width", 2.5*allR)
@@ -714,26 +739,39 @@ function layout(v) {
         // note, d3.geom.hull returns null if shorter coordinate set than 3, 
         // so findcoords() function has option to lengthen the coordinates returned to bypass this
         if(gr1coords.length > 2){   
-            vis.style("opacity", 0.3)
+            visbackground.style("opacity", 1);
+            vis.style("opacity", 0.3);
+            var myhull = d3.geom.hull(gr1coords);
+
             vis.selectAll("path")
-                .data([d3.geom.hull(gr1coords)])   // returns null if less than three coordinates
+                .data([myhull])   // returns null if less than three coordinates
+                .attr("d", function(d) { return "M" + d.join("L") + "Z"; });
+            visbackground.selectAll("path")
+                .data([myhull])   // returns null if less than three coordinates
                 .attr("d", function(d) { return "M" + d.join("L") + "Z"; });
 
             //var p = d3.geom.polygon(indcoords).centroid();  // Seems to go strange sometimes
             var p = jamescentroid(gr1coords);
 
             if(depcoords.length>0){  
-                var q = depcoords[0];                             // Note, only using first dep var currently
+                var q = depcoords[0];                         // Note, only using first dep var currently
+                //var r = findboundary(p,q,gr1coords);        // An approach to find the exact boundary, not presently working
+
                 var ldeltaX = q[0] - p[0],
                     ldeltaY = q[1] - p[1],
                     ldist = Math.sqrt(ldeltaX * ldeltaX + ldeltaY * ldeltaY),
-                    lnormX = ldeltaX / ldist,
-                    lnormY = ldeltaY / ldist,
+                    lnormX = 0,
+                    lnormY = 0,
                     lsourcePadding = allR + 5,
                     ltargetPadding = allR + 5;
 
-                line.attr("x1", p[0] + (lsourcePadding * lnormX))
-                    .attr("y1", p[1] + (lsourcePadding * lnormY))
+                if (ldist > 0){
+                    lnormX = ldeltaX / ldist;
+                    lnormY = ldeltaY / ldist;
+                };
+
+                line.attr("x1", p[0] + (lsourcePadding * lnormX))   // or r[0] if findboundary works
+                    .attr("y1", p[1] + (lsourcePadding * lnormY))   // or r[1] if findboundary works
                     .attr("x2", q[0]- (ltargetPadding * lnormX))
                     .attr("y2", q[1]- (ltargetPadding * lnormY));
                 //circle.attr("cx", p[0]).attr("cy", p[1]);       // placeholder for arrowhead if not set up as arrow
@@ -749,7 +787,7 @@ function layout(v) {
                     lnormY = 0;
 
                 if (ldist > 0){
-                    lnormX = ldeltaY / ldist;
+                    lnormX = ldeltaX / ldist;
                     lnormY = ldeltaY / ldist;
                 };
 
@@ -758,14 +796,22 @@ function layout(v) {
             });
 
         }else{ 
+            visbackground.style("opacity", 0);
             vis.style("opacity", 0);
+//            vis.style("opacity", 0);
             line.style("opacity", 0);
         };
 
         if(gr2coords.length > 2){   
-            vis2.style("opacity", 0.3)
+            vis2background.style("opacity", 1);
+            vis2.style("opacity", 0.3);
+            var myhull = d3.geom.hull(gr2coords);
+
             vis2.selectAll("path")
-                .data([d3.geom.hull(gr2coords)])   // returns null if less than three coordinates
+                .data([myhull])   // returns null if less than three coordinates
+                .attr("d", function(d) { return "M" + d.join("L") + "Z"; });
+            vis2background.selectAll("path")
+                .data([myhull])   // returns null if less than three coordinates
                 .attr("d", function(d) { return "M" + d.join("L") + "Z"; });
 
             //var p = d3.geom.polygon(indcoords).centroid();  // Seems to go strange sometimes
@@ -798,7 +844,7 @@ function layout(v) {
                     lnormY = 0;
 
                 if (ldist > 0){
-                    lnormX = ldeltaY / ldist;
+                    lnormX = ldeltaX / ldist;
                     lnormY = ldeltaY / ldist;
                 };
 
@@ -808,6 +854,7 @@ function layout(v) {
 
 
         }else{ 
+            vis2background.style("opacity", 0);
             vis2.style("opacity", 0);
             line2.style("opacity", 0);
         };
@@ -2307,7 +2354,7 @@ export function borderState() {
     zparams.zgroup1.length > 0 ?
         $('#gr1Button .rectColor svg circle').attr('stroke', gr1Color).attr('fill', gr1Color).attr('fill-opacity', 0.6).attr('stroke-opacity', 0) :
         $('#gr1Button').css('border-color', '#ccc');
-    zparams.zgroup1.length > 0 ?
+    zparams.zgroup2.length > 0 ?
         $('#gr2Button .rectColor svg circle').attr('stroke', gr2Color).attr('fill', gr2Color).attr('fill-opacity', 0.6).attr('stroke-opacity', 0) :
         $('#gr2Button').css('border-color', '#ccc');
 }
@@ -2482,7 +2529,6 @@ export function subsetSelect(btn) {
 }
 
 function readPreprocess(url, p, v, callback) {
-    
     d3.json(url, (err, json) => {
         if (err)
             return console.warn(err);
@@ -2538,18 +2584,18 @@ export let fakeClick = () => {
         .classed('active', false);
 };
 
-
+// Find something centerish to the vertices of a convex hull
+// (specifically, the center of the bounding box)
 function jamescentroid(coord){
-                var minx = coord[0][0],
-                    maxx = coord[0][0],
-                    miny = coord[0][1],
-                    maxy = coord[0][1];
-                for(var j = 1; j<coord.length; j++){
-                    if (coord[j][0] < minx) minx = coord[j][0];
-                    if (coord[j][1] < miny) miny = coord[j][1];
-                    if (coord[j][0] > maxx) maxx = coord[j][0];
-                    if (coord[j][1] > maxy) maxy = coord[j][1];
-                };
-                return[(minx + maxx)/2, (miny + maxy)/2];
-            };
-
+    var minx = coord[0][0],
+        maxx = coord[0][0],
+        miny = coord[0][1],
+        maxy = coord[0][1];
+    for(var j = 1; j<coord.length; j++){
+        if (coord[j][0] < minx) minx = coord[j][0];
+        if (coord[j][1] < miny) miny = coord[j][1];
+        if (coord[j][0] > maxx) maxx = coord[j][0];
+        if (coord[j][1] > maxy) maxy = coord[j][1];
+    };
+        return[(minx + maxx)/2, (miny + maxy)/2];
+};
