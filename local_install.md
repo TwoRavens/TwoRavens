@@ -63,9 +63,15 @@ Mac:
         ```
     4. Reference: http://virtualenvwrapper.readthedocs.org/en/latest/install.html#shell-startup-file
 
-* On Ubuntu >= 17.04 (and probably Debian systems), an alternative is:     
+* On Ubuntu 17.04 (and probably Debian systems), an alternative is:     
     ```
     apt install virtualenv
+    
+    ...
+    export WORKON_HOME=$HOME/.virtualenvs
+    export PROJECT_HOME=$HOME/Devel
+    VIRTUALENVWRAPPER_PYTHON=/usr/bin/python3
+    source ~/.local/bin/virtualenvwrapper.sh
     ```
 
 ### Make a virtualenv and install requirements
