@@ -63,6 +63,10 @@ Mac:
         ```
     4. Reference: http://virtualenvwrapper.readthedocs.org/en/latest/install.html#shell-startup-file
 
+* On Ubuntu >= 17.04 (and probably Debian systems), an alternative is:     
+    ```
+    apt install virtualenv
+    ```
 
 ### Make a virtualenv and install requirements
 
