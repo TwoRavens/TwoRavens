@@ -127,6 +127,17 @@ If there are no errors, create the database:
 
 (The command above is a short cut for ```python manage.py migrate```)
 
+### Create a django superuser (optional)
+
+This should only be used in local (laptop) test environments.  After running the command, the admin password will be printed on the screen.
+
+  ```
+  fab create_django_superuser
+  ```
+
+This creates a django super with:
+  - username: ```dev_admin```
+  - password: (printed to Terminal--save it for a later step)
 
 ## Run the Django dev server and webpack
 
@@ -198,7 +209,10 @@ Note that this may install many packages, depending on what already exists. If i
         ```
         source("rooksource.R")
         ```
-4. Go to: http://127.0.0.1:8080/
+4. Go to Two Ravens: http://127.0.0.1:8080/
+  - Go to the Django admin: http://127.0.0.1:8080/admin
+    - username: `dev_admin`
+    - password: [from create superuser step above](#create-a-django-superuser-optional)
 
 
 
