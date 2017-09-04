@@ -1,4 +1,6 @@
 import os
+import random
+import string
 #from os.path import abspath, dirname, join
 
 import signal
@@ -57,7 +59,7 @@ def run():
     """Run the django dev server and webpack--webpack watches the assets directory and rebuilds when appTwoRavens changes"""
     clear_js()  # clear any dev css/js files
     check_config()  # make sure the db has something
-    
+
     commands = [
         # start webpack
         #'./node_modules/.bin/webpack --watch'
@@ -134,6 +136,34 @@ def clear_logs():
         os.remove(fname)
     print('-' * 40)
     print('Deleted %s log file(s)' % len(log_files_names))
+
+
+def create_django_superuser():
+    """(Test only) Create superuser with username: dev_admin. Password is printed to the console."""
+    from django.contrib.auth.models import User
+
+    dev_admin_username = 'dev_admin'
+
+    User.objects.filter(username=dev_admin_username).delete()
+    if User.objects.filter(username=dev_admin_username).count() > 0:
+        print('A "%s" superuser already exists' % dev_admin_username)
+        return
+
+    admin_pw = ''.join(random.choice(string.ascii_lowercase + string.digits)
+                       for _ in range(7))
+
+    new_user = User(username=dev_admin_username,
+                    first_name='Dev',
+                    last_name='Administrator',
+                    is_staff=True,
+                    is_active=True,
+                    is_superuser=True)
+    new_user.set_password(admin_pw)
+    new_user.save()
+
+    print('superuser created: "%s"' % dev_admin_username)
+    print('password: "%s"' % admin_pw)
+
 
 
 def init_db():
