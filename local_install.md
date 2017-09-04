@@ -119,7 +119,7 @@ If there are no errors, create the database:
 
 ### Create a django superuser (optional)
 
-This should only be used in local (laptop) test environments as the password is public.
+This should only be used in local (laptop) test environments.  After running the command, the admin password will be printed on the screen.
 
   ```
   fab create_django_superuser
