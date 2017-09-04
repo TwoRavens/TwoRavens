@@ -202,7 +202,7 @@ Note that this may install many packages, depending on what already exists. If i
 4. Go to Two Ravens: http://127.0.0.1:8080/
   - Go to the Django admin: http://127.0.0.1:8080/admin
     - username: `dev_admin`
-    - password: [from step above]()
+    - password: [from step above](#create-a-django-superuser-optional)
 
 
 
