@@ -2,7 +2,7 @@ from django.conf.urls import url, include
 from django.contrib import admin
 from django.conf import settings
 from django.conf.urls.static import static
-from tworaven_apps.rook_services import views_test
+from tworaven_apps.content_pages import views
 
 admin.site.site_header = 'TwoRavens Administration'
 admin.site.index_title = ('TwoRavens Admin')
