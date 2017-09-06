@@ -1,3 +1,6 @@
+The following is a hypothetical set of messages from a user session for a D3M problem.
+
+
 Note on JSON's from frontend:
 =============================
 The JSON's from the frontend are sent as strings.
