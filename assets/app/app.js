@@ -2530,11 +2530,9 @@ export function subsetSelect(btn) {
 }
 
 function readPreprocess(url, p, v, callback) {
-<<<<<<< HEAD:src/app.js
-=======
+
     cdb('readPreprocess: ' + url );
 
->>>>>>> master:assets/app/app.js
     d3.json(url, (err, json) => {
         if (err)
             return console.warn(err);
