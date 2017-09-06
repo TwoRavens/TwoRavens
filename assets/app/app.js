@@ -15,6 +15,7 @@ import {bars, barsNode, barsSubset, density, densityNode, selVarColor} from './p
 // for both the data and metadata, if the file id is supplied; or the
 // local files if nothing is supplied.
 
+
 //-------------------------------------------------
 // NOTE: global variables are now set in the index.html file.
 //    Developers, see /template/index.html
@@ -31,6 +32,10 @@ export let inspect = obj => {
     console.log(obj);
     return obj;
 };
+
+
+
+var k = 4;                                            // strength parameter for group attraction/repulsion   
 
 // initial color scale used to establish the initial colors of nodes
 // allNodes.push() below establishes a field for the master node array allNodes called "nodeCol" and assigns a color from this scale to that field
@@ -505,11 +510,46 @@ function layout(v) {
     nodes = [];
     links = [];
 
+    var line = svg.append("line")
+        .style('fill', 'none')
+        .style('stroke', gr1Color)
+        .style('stroke-width', 5);
+
+    var line2 = svg.append("line")
+        .style('fill', 'none')
+        .style('stroke', gr2Color)
+        .style('stroke-width', 5);
+
+    var visbackground = d3.select("#whitespace").append("svg")
+        .attr("width", width)
+        .attr("height", height);
+
+    visbackground.append("path")                           // note lines, are behind group hulls of which there is a white and colored semi transparent layer
+        .attr("id", 'gr1background')
+        .style("fill", '#ffffff')
+        .style("stroke", '#ffffff')
+        .style("stroke-width", 2.5*allR)
+        .style('stroke-linejoin','round')
+        .style("opacity", 1);
+
+    var vis2background = d3.select("#whitespace").append("svg")
+        .attr("width", width)
+        .attr("height", height);
+
+    vis2background.append("path")                           
+        .attr("id", 'gr1background')
+        .style("fill", '#ffffff')
+        .style("stroke", '#ffffff')
+        .style("stroke-width", 2.5*allR)
+        .style('stroke-linejoin','round')
+        .style("opacity", 1);
+
     var vis = d3.select("#whitespace").append("svg")
         .attr("width", width)
         .attr("height", height);
 
     vis.append("path")
+        .attr("id", 'gr1hull')
         .style("fill", gr1Color)
         .style("stroke", gr1Color)
         .style("stroke-width", 2.5*allR)
@@ -634,16 +674,6 @@ function layout(v) {
         mousedown_node = null,
         mouseup_node = null;
 
-   var line = svg.append("line")
-        .style('fill', 'none')
-        .style('stroke', gr1Color)
-        .style('stroke-width', 5);
-
-    var line2 = svg.append("line")
-        .style('fill', 'none')
-        .style('stroke', gr2Color)
-        .style('stroke-width', 5);
-
     function resetMouseVars() {
         mousedown_node = null;
         mouseup_node = null;
@@ -702,53 +732,93 @@ function layout(v) {
             return (coords);
         };
 
-        var coords = nodes.map(function(d) {  return [ d.x, d.y]; });
-        var gr1coords = findcoords(zparams.zgroup1, zparams.zvars, coords, true);
-        var gr2coords = findcoords(zparams.zgroup2, zparams.zvars, coords, true);
-        var depcoords = findcoords(zparams.zdv, zparams.zvars, coords, false);
+        var coords = nodes.map(function(d) {  return [ d.x, d.y]; }); 
+        var gr1coords = findcoords(zparams.zgroup1, zparams.zvars, coords, true);        
+        var gr2coords = findcoords(zparams.zgroup2, zparams.zvars, coords, true);        
+        var depcoords = findcoords(zparams.zdv, zparams.zvars, coords, false);  
 
         // draw convex hull around independent variables, if three or more coordinates given
         // note, d3.geom.hull returns null if shorter coordinate set than 3,
         // so findcoords() function has option to lengthen the coordinates returned to bypass this
-        if(gr1coords.length > 2){
-            vis.style("opacity", 0.3)
+        if(gr1coords.length > 2){   
+            visbackground.style("opacity", 1);
+            vis.style("opacity", 0.3);
+            var myhull = d3.geom.hull(gr1coords);
+
             vis.selectAll("path")
-                .data([d3.geom.hull(gr1coords)])   // returns null if less than three coordinates
+                .data([myhull])   // returns null if less than three coordinates
+                .attr("d", function(d) { return "M" + d.join("L") + "Z"; });
+            visbackground.selectAll("path")
+                .data([myhull])   // returns null if less than three coordinates
                 .attr("d", function(d) { return "M" + d.join("L") + "Z"; });
 
-            if(depcoords.length>0){
-                //var p = d3.geom.polygon(indcoords).centroid();  // Seems to go strange sometimes
-                var p = jamescentroid(gr1coords);
-                var q = depcoords[0];                             // Note, only using first dep var currently
+            //var p = d3.geom.polygon(indcoords).centroid();  // Seems to go strange sometimes
+            var p = jamescentroid(gr1coords);
+
+            if(depcoords.length>0){  
+                var q = depcoords[0];                         // Note, only using first dep var currently
+                //var r = findboundary(p,q,gr1coords);        // An approach to find the exact boundary, not presently working
                 var ldeltaX = q[0] - p[0],
                     ldeltaY = q[1] - p[1],
                     ldist = Math.sqrt(ldeltaX * ldeltaX + ldeltaY * ldeltaY),
-                    lnormX = ldeltaX / ldist,
-                    lnormY = ldeltaY / ldist,
+                    lnormX = 0,
+                    lnormY = 0,
                     lsourcePadding = allR + 5,
                     ltargetPadding = allR + 5;
 
-                line.attr("x1", p[0] + (lsourcePadding * lnormX))
-                    .attr("y1", p[1] + (lsourcePadding * lnormY))
+                if (ldist > 0){
+                    lnormX = ldeltaX / ldist;
+                    lnormY = ldeltaY / ldist;
+                };
+
+                line.attr("x1", p[0] + (lsourcePadding * lnormX))   // or r[0] if findboundary works
+                    .attr("y1", p[1] + (lsourcePadding * lnormY))   // or r[1] if findboundary works
                     .attr("x2", q[0]- (ltargetPadding * lnormX))
                     .attr("y2", q[1]- (ltargetPadding * lnormY));
                 //circle.attr("cx", p[0]).attr("cy", p[1]);       // placeholder for arrowhead if not set up as arrow
             };
 
-        }else{
+            // group members attract each other, repulse non-group members
+            nodes.forEach(n => {
+                var sign = Math.sign( zparams.zgroup1.indexOf(n.name) +0.5 );  // 1 if n in group, -1 if n not in group;
+                var ldeltaX = p[0] - n.x,
+                    ldeltaY = p[1] - n.y,
+                    ldist = Math.sqrt(ldeltaX * ldeltaX + ldeltaY * ldeltaY);
+                    lnormX = 0,
+                    lnormY = 0;
+
+                if (ldist > 0){
+                    lnormX = ldeltaX / ldist;
+                    lnormY = ldeltaY / ldist;
+                };
+
+                n.x += Math.min(lnormX , ldeltaX/100 ) * k * sign   * force.alpha();
+                n.y += Math.min(lnormY , ldeltaY/100 ) * k * sign   * force.alpha();
+            });
+
+        }else{ 
+            visbackground.style("opacity", 0);
+
             vis.style("opacity", 0);
+//            vis.style("opacity", 0);
             line.style("opacity", 0);
         };
 
-        if(gr2coords.length > 2){
-            vis2.style("opacity", 0.3)
+        if(gr2coords.length > 2){   
+            vis2background.style("opacity", 1);
+            vis2.style("opacity", 0.3);
+            var myhull = d3.geom.hull(gr2coords);
             vis2.selectAll("path")
-                .data([d3.geom.hull(gr2coords)])   // returns null if less than three coordinates
+                .data([myhull])   // returns null if less than three coordinates
+                .attr("d", function(d) { return "M" + d.join("L") + "Z"; });
+            vis2background.selectAll("path")
+                .data([myhull])   // returns null if less than three coordinates
                 .attr("d", function(d) { return "M" + d.join("L") + "Z"; });
 
-            if(depcoords.length>0){
-                //var p = d3.geom.polygon(indcoords).centroid();  // Seems to go strange sometimes
-                var p = jamescentroid(gr2coords);
+            //var p = d3.geom.polygon(indcoords).centroid();  // Seems to go strange sometimes
+            var p = jamescentroid(gr2coords);
+
+            if(depcoords.length>0){  
                 var q = depcoords[0];                             // Note, only using first dep var currently
                 var ldeltaX = q[0] - p[0],
                     ldeltaY = q[1] - p[1],
@@ -765,7 +835,27 @@ function layout(v) {
                 //circle.attr("cx", p[0]).attr("cy", p[1]);       // placeholder for arrowhead if not set up as arrow
             };
 
-        }else{
+            // group members attract each other, repulse non-group members
+            nodes.forEach(n => {
+                var sign = Math.sign( zparams.zgroup2.indexOf(n.name) +0.5 );  // 1 if n in group, -1 if n not in group;
+                var ldeltaX = p[0] - n.x,
+                    ldeltaY = p[1] - n.y,
+                    ldist = Math.sqrt(ldeltaX * ldeltaX + ldeltaY * ldeltaY),
+                    lnormX = 0,
+                    lnormY = 0;
+
+                if (ldist > 0){
+                    lnormX = ldeltaX / ldist;
+                    lnormY = ldeltaY / ldist;
+                };
+
+                n.x += Math.min(lnormX , ldeltaX/100 ) * k * sign   * force.alpha();
+                n.y += Math.min(lnormY , ldeltaY/100 ) * k * sign   * force.alpha();
+            });
+
+
+        }else{ 
+            vis2background.style("opacity", 0);
             vis2.style("opacity", 0);
             line2.style("opacity", 0);
         };
@@ -847,14 +937,19 @@ function layout(v) {
             force.gravity(0.1);
             //force.charge(-800);  // Previous constant value
             force.charge(function(node) {
-                return zparams.zgroup1.indexOf(node.name) > -1  ? -300 : -1000;  // -1 is the value if no index position found
+                return ((zparams.zgroup1.indexOf(node.name) < 0 ) & (zparams.zgroup2.indexOf(node.name) < 0 ))   ? -800 : -400;  // -1 is the value if no index position found
             });
             force.start();
             force.linkStrength(1);
+            k = 4;                                            // strength parameter for group attraction/repulsion   
+            if((zparams.zgroup1.length > 0) & (zparams.zgroup2.length > 0 )){  // scale down by number of active groups
+                k = 2.5;
+            }
         } else {
             force.gravity(0);
             force.charge(0);
             force.linkStrength(0);
+            k = 0;
         }
         force.resume();
 
@@ -983,7 +1078,7 @@ function layout(v) {
                 fill(d, "gr1indicator", 0, 100, 500);
                 fill(d, "gr2indicator", 0, 100, 500);
                 fillThis(this, 0, 100, 500);
-                fill(d, 'gr1Text', 0, 100, 500);
+                fill(d, 'grText', 0, 100, 500);
             })
             .on('click', d => {
                 setColors(d, gr1Color);
@@ -993,13 +1088,9 @@ function layout(v) {
 
         g.append("path")
             .attr("id", append('gr1indicator'))
-            //.attr("cx", ind1[0] )
-            //.attr("cy", ind1[1])
-            //.attr("r", ind1[2])
             .attr("d", arcInd1)
             .style("fill", gr1Color)  // something like: zparams.zgroup1.indexOf(node.name) > -1  ?  #FFFFFF : gr1Color)
             .attr("fill-opacity", 0)
-            //.style("stroke-opacity", 0)
             .on('mouseover', function(d) {
                 fillThis(this, .3, 0, 100);
                 fill(d, "grArc", .1, 0, 100);
@@ -1018,13 +1109,9 @@ function layout(v) {
 
          g.append("path")
             .attr("id", append('gr2indicator'))
-            //.attr("cx", ind2[0] )
-            //.attr("cy", ind2[1])
-            //.attr("r", ind2[2])
             .attr("d", arcInd2)
             .style("fill", gr2Color)  // something like: zparams.zgroup1.indexOf(node.name) > -1  ?  #FFFFFF : gr1Color)
             .attr("fill-opacity", 0)
-            //.style("stroke-opacity", 0)
             .on('mouseover', function(d) {
                 fillThis(this, .3, 0, 100);
                 fill(d, "grArc", .1, 0, 100);
@@ -2266,8 +2353,11 @@ export function borderState() {
         $('#nomButton .rectColor svg circle').attr('stroke', nomColor) :
         $('#nomButton').css('border-color', '#ccc');
     zparams.zgroup1.length > 0 ?
-        $('#gr1Button .rectColor svg circle').attr('stroke', gr1Color) :
+        $('#gr1Button .rectColor svg circle').attr('stroke', gr1Color).attr('fill', gr1Color).attr('fill-opacity', 0.6).attr('stroke-opacity', 0) :
         $('#gr1Button').css('border-color', '#ccc');
+    zparams.zgroup2.length > 0 ?
+        $('#gr2Button .rectColor svg circle').attr('stroke', gr2Color).attr('fill', gr2Color).attr('fill-opacity', 0.6).attr('stroke-opacity', 0) :
+        $('#gr2Button').css('border-color', '#ccc');
 }
 
 // small appearance resets, but perhaps this will become a hard reset back to all original allNode values?
@@ -2440,8 +2530,11 @@ export function subsetSelect(btn) {
 }
 
 function readPreprocess(url, p, v, callback) {
+<<<<<<< HEAD:src/app.js
+=======
     cdb('readPreprocess: ' + url );
 
+>>>>>>> master:assets/app/app.js
     d3.json(url, (err, json) => {
         if (err)
             return console.warn(err);
@@ -2497,17 +2590,18 @@ export let fakeClick = () => {
         .classed('active', false);
 };
 
-
+// Find something centerish to the vertices of a convex hull
+// (specifically, the center of the bounding box)
 function jamescentroid(coord){
-                var minx = coord[0][0],
-                    maxx = coord[0][0],
-                    miny = coord[0][1],
-                    maxy = coord[0][1];
-                for(var j = 1; j<coord.length; j++){
-                    if (coord[j][0] < minx) minx = coord[j][0];
-                    if (coord[j][1] < miny) miny = coord[j][1];
-                    if (coord[j][0] > maxx) maxx = coord[j][0];
-                    if (coord[j][1] > maxy) maxy = coord[j][1];
-                };
-                return[(minx + maxx)/2, (miny + maxy)/2];
-            };
+    var minx = coord[0][0],
+        maxx = coord[0][0],
+        miny = coord[0][1],
+        maxy = coord[0][1];
+    for(var j = 1; j<coord.length; j++){
+        if (coord[j][0] < minx) minx = coord[j][0];
+        if (coord[j][1] < miny) miny = coord[j][1];
+        if (coord[j][0] > maxx) maxx = coord[j][0];
+        if (coord[j][1] > maxy) maxy = coord[j][1];
+    };
+        return[(minx + maxx)/2, (miny + maxy)/2];
+};
