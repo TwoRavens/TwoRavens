@@ -10,4 +10,4 @@ https://beta.dataverse.org/dataexplore/gui.html?dfId=37&
 
 <br><br>
 
-![Example Page](images/example2Rpage.png)
+![Example Page](assets/images/example2Rpage.png)
