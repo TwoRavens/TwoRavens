@@ -59,6 +59,7 @@ Mac:
         ```
         export WORKON_HOME=$HOME/.virtualenvs
         export PROJECT_HOME=$HOME/Devel
+        VIRTUALENVWRAPPER_PYTHON=/usr/local/bin/python3
         source /usr/local/bin/virtualenvwrapper.sh
         ```
     4. Reference: http://virtualenvwrapper.readthedocs.org/en/latest/install.html#shell-startup-file
