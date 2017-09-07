@@ -101,12 +101,12 @@ let rightpanel = function() {
                    m(`#models[style=display: ${or('right', 'btnModels')}; padding: 6px 12px; text-align: center]`)))));
 };
 
-let ticker = () => {
-    let link = name => m(`a${location.href.endsWith(name) ? '.active' : ''}[href=/${name}][style=padding-right: 0.5em]`, {oncreate: m.route.link}, name[0].toUpperCase() + name.slice(1));
+let ticker = mode => {
+    let link = name => m(`a${name === mode ? '.active' : ''}[href=/${name}][style=margin-right: 0.5em]`, {oncreate: m.route.link}, name[0].toUpperCase() + name.slice(1));
     return m('#ticker[style=background: #F9F9F9; bottom: 0; height: 40px; position: fixed; width: 100%; border-top: 1px solid #ADADAD]',
         link('model'),
         link('explore'),
-        m("a#logID[href=somelink][target=_blank][style=padding-right: 0.5em]", "Replication"));
+        m("a#logID[href=somelink][target=_blank][style=margin-right: 0.5em]", "Replication"));
 };
 
 class Body {
@@ -142,7 +142,8 @@ class Body {
             extract('apikey', 'key', 4));
     }
 
-    view() {
+    view(vnode) {
+        let {mode} = vnode.attrs;
         return m('main',
                  m("nav#navbar.navbar.navbar-default.navbar-fixed-top[role=navigation]",
                    m("a.navbar-brand[style=margin-left: 0]",
@@ -160,9 +161,10 @@ class Body {
                          m(".panel-body")),
                        m("button#btnEstimate.btn.btn-default.ladda-button.navbar-right[data-spinner-color=#000000][data-style=zoom-in][style=margin-left: 2em; margin-right: 1em]", {
                          onclick: _ => app.estimate('btnEstimate')},
-                         m("span.ladda-label", "Estimate")),
+                         m("span.ladda-label", mode ? 'Explore' : 'Estimate')),
                        m("button#btnTA2.btn.btn-default.ladda-button.navbar-right[data-spinner-color=#000000][data-style=zoom-in][style=margin-left: 15em; margin-right: 1em]", {
-                           onclick: _ => app.ta2stuff('btnTA2')},"TA2"),
+                           onclick: _ => app.ta2stuff('btnTA2')}, 
+                           'TA2'),
                        m("button#btnReset.btn.btn-default.navbar-right[title=Reset][style=margin-left: 2.0em]", {
                          onclick: app.reset},
                          m("span.glyphicon.glyphicon-repeat[style=color: #818181; font-size: 1em; pointer-events: none]")),
@@ -192,13 +194,13 @@ class Body {
                        ['gr1Button', 'zgroup1', 'Group 1'],
                        ['gr2Button', 'zgroup2', 'Group 2']]}),
                    m(Subpanel, {title: "History"}),
-                   ticker(),
+                   ticker(mode),
                    leftpanel(),
                    rightpanel()));
     }
 }
 
 m.route(document.body, '/model', {
-    '/model': Body,
-    '/explore': Body
+    '/model': {render: () => m(Body)},
+    '/explore': {render: () => m(Body, {mode: 'explore'})}
 });
