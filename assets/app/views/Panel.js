@@ -18,7 +18,7 @@ class Panel {
     }
 
     view(vnode) {
-	    let {side, title} = vnode.attrs;
+        let {side, title} = vnode.attrs;
         const dot = [m.trust('&#9679;'), m('br')]; 
         let button = (id, width, text) =>
             m(`button#${id}.btn.${or('right', id, 'active', 'btn-default')}[type=button][style=width: ${width}]`, {
