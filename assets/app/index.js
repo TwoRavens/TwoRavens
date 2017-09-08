@@ -16,68 +16,68 @@ let or = function(side, val, y='block', n='none') {
 
 let leftpanel = function() {
     return m(Panel, {
-             side: 'left',
-             title: 'Data Selection'},
-             m(".btn-toolbar[role=toolbar][style=margin-left: .5em; margin-top: .5em]",
-               m(".btn-group",
-                 m(`button#btnVariables.btn.${or('left', 'tab1', 'active', 'btn-default')}[type=button]`, {
-                   title: 'Click variable name to add or remove the variable pebble from the modeling space.',
-                   onclick: _ => app.tabLeft('tab1')},
-                   "Variables"),
-                 m(`button#btnSubset.btn.${or('left', 'tab2', 'active', 'btn-default')}[type=button]`, {
-                   onclick: _ => app.tabLeft('tab2')},
-                   "Subset")),
-               m("button#btnSelect.btn.btn-default.ladda-button[data-spinner-color=#000000][data-style=zoom-in][type=button]", {
-                 style: `display: ${app.subset ? 'block' : 'none'}; float: right; margin-right: 10px`,
-                 onclick: _ => app.subsetSelect('btnSelect'),
-                 title: 'Subset data by the intersection of all selected values.'},
-                 m("span.ladda-label[style=pointer-events: none]", "Select"))),
-             m('.row-fluid' + getClass({side: 'left'}),
-               m('#leftpanelcontent',
-                 m('#leftContentArea[style=height: 453px; overflow: auto]',
-                   m(`#tab1[style=display: ${or('left', 'tab1')}; padding: 10px 8px; text-align: center]`,
-                     m(Search, {placeholder: 'Search variables and labels'}),
-                     m('#varList[style=display: block]', app.valueKey.map((v, i) =>
-                       m(`p#${v.replace(/\W/g, '_')}`, {
-                         style: {
-                           'background-color': app.zparams.zdv.includes(v) ? app.hexToRgba(app.dvColor) :
-                              app.zparams.znom.includes(v) ? app.hexToRgba(app.nomColor) :
-                              app.nodes.map(n => n.name).includes(v) ? app.hexToRgba(plots.selVarColor) :
-                              app.varColor,
-                           'border-color': '#000000',
-                           'border-style': searchIndex && i < searchIndex ? 'solid' : 'none',
-                         },
-                         onclick: app.clickVar,
-                         onmouseover: function() {
-                           $(this).popover('show');
-                           $("body div.popover")
-                              .addClass("variables");
-                           $("body div.popover div.popover-content")
-                              .addClass("form-horizontal");
-                         },
-                         onmouseout: "$(this).popover('hide');",
-                         'data-container': 'body',
-                         'data-content': app.popoverContent(app.findNodeIndex(v, true)),
-                         'data-html': 'true',
-                         'data-original-title': 'Summary Statistics',
-                         'data-placement': 'right',
-                         'data-toggle': 'popover',
-                         'data-trigger': 'hover'},
-                         v)))),
-                   m(`#tab2[style=display: ${or('left', 'tab2')}; margin-top: .5em]`),
-                   m('#tab3[style=height: 350px]',
-                     m(`p[style=padding: .5em 1em; display: ${or('left', 'tab3')}]`, {
-                       title: "Select a variable from within the visualization in the center panel to view its summary statistics."},
-                       m('center',
-                         m('b', app.summary.name),
-                         m('br'),
-                         m('i', app.summary.labl)),
-                       m('table', app.summary.data.map(
-                         tr => m('tr', tr.map(
-                           td => m('td', {
-                             onmouseover: function() {this.style['background-color'] = 'aliceblue'},
-                             onmouseout: function() {this.style['background-color'] = '#f9f9f9'}},
-                             td)))))))))));
+         side: 'left',
+         title: 'Data Selection'},
+         m(".btn-toolbar[role=toolbar][style=margin-left: .5em; margin-top: .5em]",
+           m(".btn-group",
+             m(`button#btnVariables.btn.${or('left', 'tab1', 'active', 'btn-default')}[type=button]`, {
+               title: 'Click variable name to add or remove the variable pebble from the modeling space.',
+               onclick: _ => app.tabLeft('tab1')},
+               "Variables"),
+             m(`button#btnSubset.btn.${or('left', 'tab2', 'active', 'btn-default')}[type=button]`, {
+               onclick: _ => app.tabLeft('tab2')},
+               "Subset")),
+           m("button#btnSelect.btn.btn-default.ladda-button[data-spinner-color=#000000][data-style=zoom-in][type=button]", {
+             style: `display: ${app.subset ? 'block' : 'none'}; float: right; margin-right: 10px`,
+             onclick: _ => app.subsetSelect('btnSelect'),
+             title: 'Subset data by the intersection of all selected values.'},
+             m("span.ladda-label[style=pointer-events: none]", "Select"))),
+         m('.row-fluid' + getClass({side: 'left'}),
+           m('#leftpanelcontent',
+             m('#leftContentArea[style=height: 453px; overflow: auto]',
+               m(`#tab1[style=display: ${or('left', 'tab1')}; padding: 10px 8px; text-align: center]`,
+                 m(Search, {placeholder: 'Search variables and labels'}),
+                 m('#varList[style=display: block]', app.valueKey.map((v, i) =>
+                   m(`p#${v.replace(/\W/g, '_')}`, {
+                     style: {
+                       'background-color': app.zparams.zdv.includes(v) ? app.hexToRgba(app.dvColor) :
+                          app.zparams.znom.includes(v) ? app.hexToRgba(app.nomColor) :
+                          app.nodes.map(n => n.name).includes(v) ? app.hexToRgba(plots.selVarColor) :
+                          app.varColor,
+                       'border-color': '#000000',
+                       'border-style': searchIndex && i < searchIndex ? 'solid' : 'none',
+                     },
+                     onclick: app.clickVar,
+                     onmouseover: function() {
+                       $(this).popover('show');
+                       $("body div.popover")
+                          .addClass("variables");
+                       $("body div.popover div.popover-content")
+                          .addClass("form-horizontal");
+                     },
+                     onmouseout: "$(this).popover('hide');",
+                     'data-container': 'body',
+                     'data-content': app.popoverContent(app.findNodeIndex(v, true)),
+                     'data-html': 'true',
+                     'data-original-title': 'Summary Statistics',
+                     'data-placement': 'right',
+                     'data-toggle': 'popover',
+                     'data-trigger': 'hover'},
+                     v)))),
+               m(`#tab2[style=display: ${or('left', 'tab2')}; margin-top: .5em]`),
+               m('#tab3[style=height: 350px]',
+                 m(`p[style=padding: .5em 1em; display: ${or('left', 'tab3')}]`, {
+                   title: "Select a variable from within the visualization in the center panel to view its summary statistics."},
+                   m('center',
+                     m('b', app.summary.name),
+                     m('br'),
+                     m('i', app.summary.labl)),
+                   m('table', app.summary.data.map(
+                     tr => m('tr', tr.map(
+                       td => m('td', {
+                         onmouseover: function() {this.style['background-color'] = 'aliceblue'},
+                         onmouseout: function() {this.style['background-color'] = '#f9f9f9'}},
+                         td)))))))))));
 };
 
 let rightpanel = function() {
