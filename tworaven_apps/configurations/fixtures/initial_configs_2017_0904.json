@@ -4,9 +4,9 @@
     "pk": 1,
     "fields": {
         "created": "2017-09-01T22:10:52.681Z",
-        "modified": "2017-09-01T23:04:42.951Z",
-        "name": "Default configuration",
-        "is_active": false,
+        "modified": "2017-09-05T19:19:45.394Z",
+        "name": "Dev Default configuration",
+        "is_active": true,
         "production": false,
         "d3m_mode": false,
         "privacy_mode": false,
@@ -29,6 +29,22 @@
         "rook_app_url": "http://127.0.0.1:8080/rook-custom/",
         "dataverse_url": "https://beta.dataverse.org",
         "description": "Rook calls routed through Django"
+    }
+},
+{
+    "model": "configurations.appconfiguration",
+    "pk": 3,
+    "fields": {
+        "created": "2017-09-05T19:20:31.198Z",
+        "modified": "2017-09-05T19:20:31.199Z",
+        "name": "Docker Default configuration",
+        "is_active": false,
+        "production": false,
+        "d3m_mode": false,
+        "privacy_mode": false,
+        "rook_app_url": "http://0.0.0.0:8060/rook-custom/",
+        "dataverse_url": "https://beta.dataverse.org",
+        "description": "Basic dev configuration within docker compose.  Rook calls are routed through nginx which is running on 8060"
     }
 }
 ]

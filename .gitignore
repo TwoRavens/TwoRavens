@@ -40,3 +40,4 @@ pip-delete-this-directory.txt
 *.so
 webpack-stats.json
 data/d3m/o_196seed/data/.Rapp.history
+setup/r-setup/RINSTALL.*.LOG

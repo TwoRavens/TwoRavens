@@ -25,8 +25,7 @@ SECRET_KEY = '&1p0bkm1!)x49#g^fcqlwa8ds_p_r$x@c*+vrpveaq=dhr_rzu'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
-
+SITE_ID = 1
 
 # Application definition
 INSTALLED_APPS = [
@@ -35,7 +34,7 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
-
+    'django.contrib.sites',
     # See: http://whitenoise.evans.io/en/stable/django.html#using-whitenoise-in-development
     #'whitenoise.runserver_nostatic',
     'django.contrib.staticfiles',

@@ -33,8 +33,8 @@ TEST_DIRECT_STATIC = join(BASE_DIR, 'assets')
 # http://django-debug-toolbar.readthedocs.org/en/latest/installation.html
 INTERNAL_IPS = ('127.0.0.1',)
 
-ALLOWED_HOSTS = ('localhost',
-                 '127.0.0.1',)
+ALLOWED_HOSTS = ('*', )
+#('localhost', '127.0.0.1', '0.0.0.0',)
 
 #INSTALLED_APPS += ['debug_toolbar']
 ########## END TOOLBAR CONFIGURATION
@@ -50,6 +50,7 @@ TIME_ZONE = 'America/New_York'
 # TwoRavens R service test
 
 R_DEV_SERVER_BASE = 'http://0.0.0.0:8000/custom/'
+#R_DEV_SERVER_BASE = 'http://0.0.0.0:8060/custom/'
 
 RECORD_R_SERVICE_ROUTING = True # log R service requests/response JSON to db
 

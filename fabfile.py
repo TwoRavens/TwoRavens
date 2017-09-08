@@ -45,13 +45,30 @@ def restart():
     stop()
     run()
 
+def load_docker_config():
+    """Load config pk=3, name 'Docker Default configuration'"""
+    check_config()
+
+    from tworaven_apps.configurations.models import AppConfiguration
+
+    le_config = AppConfiguration.objects.get(pk=3)
+    le_config.is_active = True
+    le_config.save()
+
+    print('new config activated: ')
+    for k, val in le_config.__dict__.items():
+        if not k.startswith('_'):
+            print('     > %s: %s' % (k, val))
+
+
+
 def check_config():
     """If there aren't any db configurations, then load the fixtures"""
     from tworaven_apps.configurations.models import AppConfiguration
 
     config_cnt = AppConfiguration.objects.count()
     if config_cnt == 0:
-        local('python manage.py loaddata tworaven_apps/configurations/fixtures/intial_configs.json')
+        local('python manage.py loaddata tworaven_apps/configurations/fixtures/initial_configs.json')
     else:
         print('Configs exist in the db: %d' % config_cnt)
 
@@ -149,8 +166,9 @@ def create_django_superuser():
         print('A "%s" superuser already exists' % dev_admin_username)
         return
 
-    admin_pw = ''.join(random.choice(string.ascii_lowercase + string.digits)
-                       for _ in range(7))
+    admin_pw = 'admin'
+    #''.join(random.choice(string.ascii_lowercase + string.digits)
+    #                   for _ in range(7))
 
     new_user = User(username=dev_admin_username,
                     first_name='Dev',

@@ -113,7 +113,7 @@ class TwoRavensSetup:
 
     def update_rook_file_content(self, content):
         """Make updates to the rook files--this needs to change in near future
-        with environment variables or at least variables in only 1 R rile"""
+        with environment variables or at least variables in only 1 R file"""
 
         replacements = {}
         # set production flag

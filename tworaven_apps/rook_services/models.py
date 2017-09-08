@@ -12,6 +12,11 @@ class TestCallCapture(TimeStampedModel):
 
     app_name = models.CharField(max_length=255)
 
+    session_id = models.CharField(max_length=255,
+                                  blank=True,
+                                  db_index=True,
+                                  help_text='Used for grouping calls together')
+
     outgoing_url = models.URLField(blank=True)
     request = models.TextField(blank=True)
 
@@ -24,6 +29,8 @@ class TestCallCapture(TimeStampedModel):
 
     class Meta:
         ordering = ('-created',)
+        verbose_name = 'Rook Call Request'
+        verbose_name_plural = 'Rook Call Requests'
 
     def request_json(self):
         return format_json_for_admin(self.request)
