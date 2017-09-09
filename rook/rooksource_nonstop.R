@@ -50,16 +50,17 @@ source(paste(getwd(),"/preprocess/preprocess.R",sep="")) # load preprocess funct
 
 modulesPath<-paste(getwd(),"/privacyfunctions/",sep="")
 
-source(paste(modulesPath,"DPUtilities.R", sep=""))
-source(paste(modulesPath,"GetFunctions.R", sep=""))
-source(paste(modulesPath,"update_parameters.R", sep=""))
-source(paste(modulesPath,"Calculate_stats.R", sep=""))
-source(paste(modulesPath,"Histogramnew.R", sep=""))
-source(paste(modulesPath,"CompositionTheorems.R", sep=""))
-source(paste(modulesPath,"DP_Quantiles.R", sep=""))
-source(paste(modulesPath,"DP_Means.R", sep=""))
-source(paste(modulesPath,"CreateXML.R", sep=""))
-
+if(addPrivacy){
+    source(paste(modulesPath,"DPUtilities.R", sep=""))
+    source(paste(modulesPath,"GetFunctions.R", sep=""))
+    source(paste(modulesPath,"update_parameters.R", sep=""))
+    source(paste(modulesPath,"Calculate_stats.R", sep=""))
+    source(paste(modulesPath,"Histogramnew.R", sep=""))
+    source(paste(modulesPath,"CompositionTheorems.R", sep=""))
+    source(paste(modulesPath,"DP_Quantiles.R", sep=""))
+    source(paste(modulesPath,"DP_Means.R", sep=""))
+    source(paste(modulesPath,"CreateXML.R", sep=""))
+}
 
 
 if(!production){
@@ -101,7 +102,7 @@ source("rooktransform.R")
 source("rookzelig.R")
 source("rookutils.R")
 source("rookdata.R")
-source("rookwrite.R")
+#source("rookwrite.R")   # jh - believe this is a legacy of early exploration of user-level metadata
 source("rookpreprocess.R")
 if(addPrivacy){
     source("rookprivate.R")
@@ -112,7 +113,7 @@ if(!production){
     R.server$add(app = subset.app, name="subsetapp")
     R.server$add(app = transform.app, name="transformapp")
     R.server$add(app = data.app, name="dataapp")
-    R.server$add(app = write.app, name="writeapp")
+    #R.server$add(app = write.app, name="writeapp")    # jh - believe this is a legacy of early exploration of user-level metadata
     R.server$add(app = preprocess.app, name="preprocessapp")
 
         ## These add the .apps for the privacy budget allocator interface
