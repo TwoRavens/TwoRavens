@@ -6,7 +6,8 @@ import m from 'mithril';
 
 import * as app from './app';
 import * as plots from './plots';
-import Panel, {or} from './views/Panel';
+import Panel from './views/Panel';
+import {or} from './views/PanelButton';
 import Search, {searchIndex} from './views/Search';
 import Subpanel from './views/Subpanel';
 
@@ -14,65 +15,61 @@ let leftpanel = () => {
     return m(Panel, {
         side: 'left',
         title: 'Data Selection'},
-        m('#leftpanelcontent',
-          m('#leftContentArea[style=height: 453px; overflow: auto]',
-            m(`#tab1[style=display: ${or('left', 'tab1')}; padding: 10px 8px; text-align: center]`,
-              m(Search, {placeholder: 'Search variables and labels'}),
-              m('#varList[style=display: block]', app.valueKey.map((v, i) =>
-                m(`p#${v.replace(/\W/g, '_')}`, {
-                  style: {
-                    'background-color': app.zparams.zdv.includes(v) ? app.hexToRgba(app.dvColor) :
-                       app.zparams.znom.includes(v) ? app.hexToRgba(app.nomColor) :
-                       app.nodes.map(n => n.name).includes(v) ? app.hexToRgba(plots.selVarColor) :
-                       app.varColor,
-                    'border-color': '#000000',
-                    'border-style': searchIndex && i < searchIndex ? 'solid' : 'none',
-                  },
-                  onclick: app.clickVar,
-                  onmouseover: function() {
-                    $(this).popover('show');
-                    $("body div.popover")
-                       .addClass("variables");
-                    $("body div.popover div.popover-content")
-                       .addClass("form-horizontal");
-                  },
-                  onmouseout: "$(this).popover('hide');",
-                  'data-container': 'body',
-                  'data-content': app.popoverContent(app.findNodeIndex(v, true)),
-                  'data-html': 'true',
-                  'data-original-title': 'Summary Statistics',
-                  'data-placement': 'right',
-                  'data-toggle': 'popover',
-                  'data-trigger': 'hover'},
-                  v)))),
-            m(`#tab2[style=display: ${or('left', 'tab2')}; margin-top: .5em]`),
-            m('#tab3[style=height: 350px]',
-              m(`p[style=padding: .5em 1em; display: ${or('left', 'tab3')}]`, {
-                title: "Select a variable from within the visualization in the center panel to view its summary statistics."},
-                m('center',
-                  m('b', app.summary.name),
-                  m('br'),
-                  m('i', app.summary.labl)),
-                m('table', app.summary.data.map(
-                  tr => m('tr', tr.map(
-                    td => m('td', {
-                      onmouseover: function() {this.style['background-color'] = 'aliceblue'},
-                      onmouseout: function() {this.style['background-color'] = '#f9f9f9'}},
-                      td))))))))));
+        m(`#tab1[style=display: ${or('left', 'tab1')}; padding: 10px 8px; text-align: center]`,
+          m(Search, {placeholder: 'Search variables and labels'}),
+          m('#varList[style=display: block]', app.valueKey.map((v, i) =>
+            m(`p#${v.replace(/\W/g, '_')}`, {
+              style: {
+                'background-color': app.zparams.zdv.includes(v) ? app.hexToRgba(app.dvColor) :
+                   app.zparams.znom.includes(v) ? app.hexToRgba(app.nomColor) :
+                   app.nodes.map(n => n.name).includes(v) ? app.hexToRgba(plots.selVarColor) :
+                   app.varColor,
+                'border-color': '#000000',
+                'border-style': searchIndex && i < searchIndex ? 'solid' : 'none',
+              },
+              onclick: app.clickVar,
+              onmouseover: function() {
+                $(this).popover('show');
+                $("body div.popover")
+                   .addClass("variables");
+                $("body div.popover div.popover-content")
+                   .addClass("form-horizontal");
+              },
+              onmouseout: "$(this).popover('hide');",
+              'data-container': 'body',
+              'data-content': app.popoverContent(app.findNodeIndex(v, true)),
+              'data-html': 'true',
+              'data-original-title': 'Summary Statistics',
+              'data-placement': 'right',
+              'data-toggle': 'popover',
+              'data-trigger': 'hover'},
+              v)))),
+        m(`#tab2[style=display: ${or('left', 'tab2')}; margin-top: .5em]`),
+        m('#tab3[style=height: 350px]',
+          m(`p[style=padding: .5em 1em; display: ${or('left', 'tab3')}]`, {
+            title: "Select a variable from within the visualization in the center panel to view its summary statistics."},
+            m('center',
+              m('b', app.summary.name),
+              m('br'),
+              m('i', app.summary.labl)),
+            m('table', app.summary.data.map(
+              tr => m('tr', tr.map(
+                td => m('td', {
+                  onmouseover: function() {this.style['background-color'] = 'aliceblue'},
+                  onmouseout: function() {this.style['background-color'] = '#f9f9f9'}},
+                  td))))))));
 };
 
 let rightpanel = () => {
     return m(Panel, {
         side: 'right', 
         title: 'Model Selection'},
-        m('#rightpanelcontent',
-          m('#rightContentArea[style=height: 453px; overflow: auto]',
-            m(`#results[style=display: ${or('right', 'btnResults')}; margin-top: .5em]`,
-              m("#resultsView.container[style=float: right; overflow: auto; width: 80%; background-color: white; white-space: nowrap]"),
-              m('#modelView[style=display: none; float: left; width: 20%; background-color: white]'),
-              m("p#resultsHolder[style=padding: .5em 1em]")),
-            m(`#setx[style=display: ${or('right', 'btnSetx')}]`),
-            m(`#models[style=display: ${or('right', 'btnModels')}; padding: 6px 12px; text-align: center]`))));
+        m(`#results[style=display: ${or('right', 'btnResults')}; margin-top: .5em]`,
+          m("#resultsView.container[style=float: right; overflow: auto; width: 80%; background-color: white; white-space: nowrap]"),
+          m('#modelView[style=display: none; float: left; width: 20%; background-color: white]'),
+          m("p#resultsHolder[style=padding: .5em 1em]")),
+        m(`#setx[style=display: ${or('right', 'btnSetx')}]`),
+        m(`#models[style=display: ${or('right', 'btnModels')}; padding: 6px 12px; text-align: center]`));
 };
 
 let ticker = mode => {
