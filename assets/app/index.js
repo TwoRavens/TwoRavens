@@ -75,21 +75,27 @@ let leftpanel = () => {
                   td))))))));
 };
 
-let rightpanel = () => {
-    return m(Panel, {
-        side: 'right', 
-        title: 'Model Selection'},
-        m(".btn-group.btn-group-justified[style=margin-top: .5em]",
-            m(Button, {id: 'btnModels', style: 'width: 33%'}, 'Models'),
-            m(Button, {id: 'btnSetx', style: 'width: 34%'}, 'Set Covar.'),
-            m(Button, {id: 'btnResults', style: 'width: 33%'}, 'Results')),
-        m(`#results[style=display: ${or('right', 'btnResults')}; margin-top: .5em]`,
-          m("#resultsView.container[style=float: right; overflow: auto; width: 80%; background-color: white; white-space: nowrap]"),
-          m('#modelView[style=display: none; float: left; width: 20%; background-color: white]'),
-          m("p#resultsHolder[style=padding: .5em 1em]")),
-        m(`#setx[style=display: ${or('right', 'btnSetx')}]`),
-        m(`#models[style=display: ${or('right', 'btnModels')}; padding: 6px 12px; text-align: center]`));
-};
+let rightpanel = mode => mode ? m(Panel, {
+    side: 'right', 
+    title: 'Result Exploration'},
+    m(".btn-group.btn-group-justified[style=margin-top: .5em]",
+      m(Button, {id: 'btnUnivariate'}, 'Univariate'),
+      m(Button, {id: 'btnBivariate'}, 'Bivariate')),
+    m(`#univariate[style=display: ${or('right', 'btnUnivariate')}]`),
+    m(`#bivariate[style=display: ${or('right', 'btnBivariate')}]`)) :
+    m(Panel, {
+      side: 'right', 
+      title: 'Model Selection'},
+      m(".btn-group.btn-group-justified[style=margin-top: .5em]",
+        m(Button, {id: 'btnModels', style: 'width: 33%'}, 'Models'),
+        m(Button, {id: 'btnSetx', style: 'width: 34%'}, 'Set Covar.'),
+        m(Button, {id: 'btnResults', style: 'width: 33%'}, 'Results')),
+      m(`#results[style=display: ${or('right', 'btnResults')}; margin-top: .5em]`,
+        m("#resultsView.container[style=float: right; overflow: auto; width: 80%; background-color: white; white-space: nowrap]"),
+        m('#modelView[style=display: none; float: left; width: 20%; background-color: white]'),
+        m("p#resultsHolder[style=padding: .5em 1em]")),
+      m(`#setx[style=display: ${or('right', 'btnSetx')}]`),
+      m(`#models[style=display: ${or('right', 'btnModels')}; padding: 6px 12px; text-align: center]`));
 
 let ticker = mode => {
     let link = name => m(`a${name === mode ? '.active' : ''}[href=/${name}][style=margin-right: 0.5em]`, {oncreate: m.route.link}, name[0].toUpperCase() + name.slice(1));
@@ -184,7 +190,7 @@ class Body {
               m(Subpanel, {title: "History"}),
               ticker(mode),
               leftpanel(),
-              rightpanel()));
+              rightpanel(mode)));
     }
 }
 
