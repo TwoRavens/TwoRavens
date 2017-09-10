@@ -7,14 +7,29 @@ import m from 'mithril';
 import * as app from './app';
 import * as plots from './plots';
 import Panel from './views/Panel';
-import {or} from './views/PanelButton';
+import Button, {or} from './views/PanelButton';
 import Search, {searchIndex} from './views/Search';
 import Subpanel from './views/Subpanel';
 
 let leftpanel = () => {
     return m(Panel, {
         side: 'left',
-        title: 'Data Selection'},
+        title: 'Data Selection'},        
+        m(".btn-toolbar[role=toolbar][style=margin-left: .5em; margin-top: .5em]",
+          m(".btn-group",
+            m(Button, {
+              id: 'btnVariables', 
+              id2: 'tab1',
+              title: 'Click variable name to add or remove the variable pebble from the modeling space.'}, 
+              'Variables'),                
+            m(Button, {id: 'btnSubset', id2: 'tab2'}, 'Subset')),
+          m(Button, {
+            id: 'btnSelect',
+            classes: 'btn-default.ladda-button[data-spinner-color=#000000][data-style=zoom-in]',
+            onclick: _ => app.subsetSelect('btnSelect'),
+            style: `display: ${app.subset ? 'block' : 'none'}; float: right; margin-right: 10px`,
+            title: 'Subset data by the intersection of all selected values.'},
+            m('span.ladda-label[style=pointer-events: none]', 'Select'))),         
         m(`#tab1[style=display: ${or('left', 'tab1')}; padding: 10px 8px; text-align: center]`,
           m(Search, {placeholder: 'Search variables and labels'}),
           m('#varList[style=display: block]', app.valueKey.map((v, i) =>
@@ -64,6 +79,10 @@ let rightpanel = () => {
     return m(Panel, {
         side: 'right', 
         title: 'Model Selection'},
+        m(".btn-group.btn-group-justified[style=margin-top: .5em]",
+            m(Button, {id: 'btnModels', style: 'width: 33%'}, 'Models'),
+            m(Button, {id: 'btnSetx', style: 'width: 34%'}, 'Set Covar.'),
+            m(Button, {id: 'btnResults', style: 'width: 33%'}, 'Results')),
         m(`#results[style=display: ${or('right', 'btnResults')}; margin-top: .5em]`,
           m("#resultsView.container[style=float: right; overflow: auto; width: 80%; background-color: white; white-space: nowrap]"),
           m('#modelView[style=display: none; float: left; width: 20%; background-color: white]'),
