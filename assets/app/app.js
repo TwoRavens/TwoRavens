@@ -361,7 +361,9 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
                        aTag.textContent = "Problem Description";
                        document.getElementById("ticker").appendChild(aTag);
                        
-                       startsession();
+                       if(d3m_mode) {
+                            startsession();
+                       }
                        });
         });
     });
