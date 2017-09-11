@@ -348,7 +348,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
                     dataDownload();
                 });
             });
-               // looks like here is where we'll read in problem schema
+               // looks like here is where we'll read in problem schema and we'll make a call to start the session with TA2. if we get this far, data are guaranteed to exist for the frontend
                d3.json(d3mPS, (err, data) => {
                        console.log("prob schema data: ");
                        mytarget=data.target.field;
@@ -360,6 +360,8 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
                        aTag.setAttribute('target',"_blank");
                        aTag.textContent = "Problem Description";
                        document.getElementById("ticker").appendChild(aTag);
+                       
+                       startsession();
                        });
         });
     });
@@ -2587,6 +2589,31 @@ export let fakeClick = () => {
     d3.select(ws)
         .classed('active', false);
 };
+
+
+// this is our call to django to start the session
+function startsession() {
+    let user_agent = "some agent";
+    let version = "some version";
+    let SessionRequest={user_agent,version};
+    
+    var jsonout = JSON.stringify(SessionRequest);
+    
+    var urlcall = rappURL + "startsession";
+    var solajsonout = "SessionRequest=" + jsonout;
+    console.log("solajsonout: ", solajsonout);
+    console.log("urlcall: ", urlcall);
+    
+    function ssSuccess(btn, json) {
+        console.log("session start succeeded");
+    }
+    
+    function ssFail(btn) {
+        console.log("session start failed");
+    }
+    
+   // makeCorsRequest(urlcall, "nobutton", ssSuccess, ssFail, solajsonout);
+}
 
 // Find something centerish to the vertices of a convex hull
 // (specifically, the center of the bounding box)
