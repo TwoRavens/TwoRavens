@@ -13,6 +13,8 @@ urlpatterns = [
 
     url(r'^rook-custom/', include('tworaven_apps.rook_services.urls')),
 
+    url(r'^d3m/', include('tworaven_apps.ta2_interfaces.urls')),
+
     url(r'^data/', include('tworaven_apps.test_data.urls')),
 
     url(r'^$', views.view_pebbles_home, name='home'),

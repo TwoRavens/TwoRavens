@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     'tworaven_apps.configurations',
+    'tworaven_apps.ta2_interfaces',
     'tworaven_apps.content_pages',
     'tworaven_apps.rook_services',
     #'tworaven_apps.workspaces',
