@@ -1,7 +1,8 @@
 from django.shortcuts import render
 from django.http import JsonResponse, HttpResponse, Http404
+from django.views.decorators.csrf import csrf_exempt, csrf_protect
 
-# Create your views here.
+@csrf_exempt
 def view_start_session(request):
     """Call from UI to start gRPC session"""
 
@@ -9,7 +10,7 @@ def view_start_session(request):
                 message='Start Session! test message')
 
     return JsonResponse(info)
-
+@csrf_exempt
 def view_test_call(request):
     """Capture other calls to D3M"""
     info = dict(status='ok',
