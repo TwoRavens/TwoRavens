@@ -2599,20 +2599,20 @@ function startsession() {
     
     var jsonout = JSON.stringify(SessionRequest);
     
-    var urlcall = rappURL + "startsession";
+    var urlcall = d3mURL + "startsession";
     var solajsonout = "SessionRequest=" + jsonout;
     console.log("solajsonout: ", solajsonout);
     console.log("urlcall: ", urlcall);
     
     function ssSuccess(btn, json) {
-        console.log("session start succeeded");
+        console.log(json);
     }
     
     function ssFail(btn) {
         console.log("session start failed");
     }
     
-   // makeCorsRequest(urlcall, "nobutton", ssSuccess, ssFail, solajsonout);
+   makeCorsRequest(urlcall, "nobutton", ssSuccess, ssFail, solajsonout);
 }
 
 // Find something centerish to the vertices of a convex hull
