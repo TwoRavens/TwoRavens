@@ -11,6 +11,7 @@ class AppConfigurationAdmin(admin.ModelAdmin):
                     'd3m_mode',
                     'privacy_mode',
                     'rook_app_url',
+                    'd3m_url',
                     'dataverse_url')
     readonly_fields = ('modified', 'created')
 admin.site.register(AppConfiguration, AppConfigurationAdmin)

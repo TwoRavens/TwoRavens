@@ -75,6 +75,7 @@ def check_config():
 def run():
     """Run the django dev server and webpack--webpack watches the assets directory and rebuilds when appTwoRavens changes"""
     clear_js()  # clear any dev css/js files
+    init_db()
     check_config()  # make sure the db has something
 
     commands = [

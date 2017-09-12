@@ -2,6 +2,8 @@ from django.db import models
 from model_utils.models import TimeStampedModel
 from django.db import transaction
 from tworaven_apps.utils.js_helper import get_js_boolean
+from tworaven_apps.utils.url_helper import add_trailing_slash,\
+    remove_trailing_slash
 
 # for conversion to .js values
 APP_CONFIG_BOOLEAN_FIELDS = (\
@@ -33,12 +35,20 @@ class AppConfiguration(TimeStampedModel):
                     'D3M mode',
                     help_text='.js variable "d3m". Are D3M services active?')
 
+    d3m_url = models.URLField(\
+                    'D3M url',
+                    default='http://127.0.0.1:8080/d3m-service',
+                    help_text=('URL used to make calls that'
+                               ' are converted to gRPC messages'
+                               ' and sent to D3M applications'))
+
     privacy_mode = models.BooleanField(\
                     'Privacy (PSI) mode',
                     help_text='.js variable "privacy". Is the PSI tool available?')
 
     rook_app_url = models.URLField(\
                     'rappURL (rook apps)',
+                    default='http://127.0.0.1:8080/rook-custom/',
                     help_text=(('URL to the rook server.'
                                 ' examples: https://beta.dataverse.org/custom/,'
                                 ' http://127.0.0.1:8080/rook-custom/')))
@@ -54,16 +64,15 @@ class AppConfiguration(TimeStampedModel):
     @transaction.atomic
     def save(self, *args, **kwargs):
 
-        # make sure the rook_app_url has a trailing slash
+        # make sure the rook and d3m urls have a trailing slash
         #
-        if self.rook_app_url and not self.rook_app_url[-1] == '/':
-            self.rook_app_url = '%s/' % self.rook_app_url
+        self.rook_app_url = add_trailing_slash(self.rook_app_url)
+        self.d3m_url = add_trailing_slash(self.d3m_url)
 
-        # make sure the rook_app_url DOESN'T HAVE a trailing slash
+        # make sure the dataverse_url DOESN'T HAVE a trailing slash
         # (This will get worked out soon...)
         #
-        if self.dataverse_url and self.dataverse_url[-1] == '/':
-            self.dataverse_url = self.dataverse_url[:-1]
+        self.dataverse_url = remove_trailing_slash(self.dataverse_url)
 
         if self.is_active:
             # If this is active, set everything else to inactive

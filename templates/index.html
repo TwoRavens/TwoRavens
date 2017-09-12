@@ -28,6 +28,7 @@
           const production = {{ app_config.production }};
           const privacyMode = {{ app_config.privacy_mode }};
           const d3m_mode = {{ app_config.d3m_mode }};
+          const d3mURL = '{{ app_config.d3m_url }}';
         {% else %}
           // ----------------------------
           // default settings if nothing in db
@@ -39,8 +40,8 @@
           const production = false;
           const privacyMode = false;        // configure default functionality for PSI tool
           const d3m_mode = false;             // configure default functionality for d3m
+          const d3mURL = 'http://127.0.0.1:8080/d3m-service/'; // via Django -> TA2
         {% endif %}
-        const d3mURL = 'http://127.0.0.1:8080/d3m-service/'; // via Django -> TA2
     </script>
   </head>
   <body>
