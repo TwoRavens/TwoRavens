@@ -121,6 +121,44 @@ var selInteract = false;
 var callHistory = []; // transform and subset calls
 let mytarget = "";
 
+
+//eventually read this from the schema
+// metrics, tasks, and subtasks as specified in D3M schemas
+let d3mMetrics = {accuracy:"description",
+f1:"description",
+f1Micro:"description",
+f1Macro:"description",
+rocAuc:"description",
+rocAucMicro:"description",
+rocAucMacro:"description",
+meanSquaredError:"description",
+rootMeanSquaredError:"description",
+rootMeanSquaredErrorAvg:"description",
+meanAbsoluteError:"description",
+rSquared:"description",
+normalizedMutualInformation:"description",
+    jaccardSimilarityScore:"description"};
+
+let d3mTaskType = {classification:"description",
+regression:"description",
+similarityMatching:"description",
+linkPrediction:"description",
+vertexNomination:"description",
+communityDetection:"description",
+graphMatching:"description",
+timeseriesForecasting:"description",
+    collaborativeFiltering:"description"};
+
+let d3mTaskSubtype = {binary:"description",
+multiClass:"description",
+multiLabel:"description",
+uniVariate:"description",
+multiVariate:"description",
+overlapping:"description",
+    nonOverlapping:"description"};
+
+
+
 var svg, width, height, div, estimateLadda, selectLadda;
 var arc1, arc3, arc4, arcInd1, arcInd2;
 
@@ -241,7 +279,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
     let d3mDS = start+'/data/dataSchema.json';
     let d3mPreprocess = start+'/preprocess.json';
     let probDesc=start;
-
+    
     // default to California PUMS subset
     let data = 'data/' + (false ? 'PUMS5small' : 'fearonLaitin');
     let metadataurl = ddiurl || (fileid ? `${dataverseurl}/api/meta/datafile/${fileid}` : data + '.xml');
@@ -327,6 +365,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
                 allNodes.push(obj);
             };
 
+              if(!d3m_mode){
             // read the zelig models and populate model list in right panel
             d3.json("data/zelig5models.json", (err, data) => {
                 if (err)
@@ -348,6 +387,8 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
                     dataDownload();
                 });
             });
+               }
+               if(d3m_mode){
                // looks like here is where we'll read in problem schema and we'll make a call to start the session with TA2. if we get this far, data are guaranteed to exist for the frontend
                d3.json(d3mPS, (err, data) => {
                        console.log("prob schema data: ");
@@ -361,10 +402,12 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
                        aTag.textContent = "Problem Description";
                        document.getElementById("ticker").appendChild(aTag);
                        
-                       if(d3m_mode) {
-                            startsession();
-                       }
+                       startsession();
+                       scaffolding(callback = layout);
+                       dataDownload();
+                       
                        });
+               }
         });
     });
                   });
@@ -472,6 +515,9 @@ function scaffolding(callback) {
         .style('height', 2000)
         .style('overfill', 'scroll');
 
+    console.log(mods);
+    console.log(d3mTaskType);
+    if(!d3m_mode){
     d3.select("#models").selectAll("p")
         .data(Object.keys(mods))
         .enter()
@@ -488,6 +534,62 @@ function scaffolding(callback) {
         .attr("onmouseout", "$(this).popover('toggle');")
         .attr("data-original-title", "Model Description")
         .attr("data-content", d => mods[d]);
+    }
+    if(d3m_mode) {
+        
+        toggleRightButtons("tasks");
+        
+        d3.select("#types").selectAll("p")
+        .data(Object.keys(d3mTaskType))
+        .enter()
+        .append("p")
+        .attr("id", "_model_".concat)
+        .text(d => d)
+        .style('background-color', d => varColor)
+        .attr("data-container", "body")
+        .attr("data-toggle", "popover")
+        .attr("data-trigger", "hover")
+        .attr("data-placement", "top")
+        .attr("data-html", "true")
+        .attr("onmouseover", "$(this).popover('toggle');")
+        .attr("onmouseout", "$(this).popover('toggle');")
+        .attr("data-original-title", "Task Description")
+        .attr("data-content", d => d3mTaskType[d]);
+        
+        d3.select("#subtypes").selectAll("p")
+        .data(Object.keys(d3mTaskSubtype))
+        .enter()
+        .append("p")
+        .attr("id", "_model_".concat)
+        .text(d => d)
+        .style('background-color', d => varColor)
+        .attr("data-container", "body")
+        .attr("data-toggle", "popover")
+        .attr("data-trigger", "hover")
+        .attr("data-placement", "top")
+        .attr("data-html", "true")
+        .attr("onmouseover", "$(this).popover('toggle');")
+        .attr("onmouseout", "$(this).popover('toggle');")
+        .attr("data-original-title", "Task Subtype Desc.")
+        .attr("data-content", d => d3mTaskSubtype[d]);
+
+        d3.select("#metrics").selectAll("p")
+        .data(Object.keys(d3mMetrics))
+        .enter()
+        .append("p")
+        .attr("id", "_model_".concat)
+        .text(d => d)
+        .style('background-color', d => varColor)
+        .attr("data-container", "body")
+        .attr("data-toggle", "popover")
+        .attr("data-trigger", "hover")
+        .attr("data-placement", "top")
+        .attr("data-html", "true")
+        .attr("onmouseover", "$(this).popover('toggle');")
+        .attr("onmouseout", "$(this).popover('toggle');")
+        .attr("data-original-title", "Metric Description")
+        .attr("data-content", d => d3mMetrics[d]);
+    }
 
     // call layout() because at this point all scaffolding is up and ready
     if (typeof callback == "function") {
@@ -628,8 +730,9 @@ function layout(v) {
         }
     }
 
-    panelPlots(); // after nodes is populated, add subset and setx panels
-
+    panelPlots(); // after nodes is populated, add subset and (if !d3m_mode) setx panels
+  
+   
     var force = d3.layout.force()
         .nodes(nodes)
         .links(links)
@@ -2226,25 +2329,26 @@ export function panelPlots() {
         }
     }
 
-    d3.select("#setx").selectAll("svg")
+        d3.select("#setx").selectAll("svg")
         .each(function () {
-            d3.select(this);
-            var regstr = /(.+)_setx_(\d+)/;
-            var myname = regstr.exec(this.id);
-            var nodeid = myname[2];
-            myname = myname[1];
-            if (!vars.includes(myname)) {
-                allNodes[nodeid].setxplot = false;
-                let temp = "#".concat(myname, "_setx_", nodeid);
-                d3.select(temp)
-                    .remove();
-                allNodes[nodeid].subsetplot = false;
-                temp = "#".concat(myname, "_tab2_", nodeid);
-                d3.select(temp)
-                    .remove();
-            }
-        });
+              d3.select(this);
+              var regstr = /(.+)_setx_(\d+)/;
+              var myname = regstr.exec(this.id);
+              var nodeid = myname[2];
+              myname = myname[1];
+              if (!vars.includes(myname)) {
+              allNodes[nodeid].setxplot = false;
+              let temp = "#".concat(myname, "_setx_", nodeid);
+              d3.select(temp)
+              .remove();
+              allNodes[nodeid].subsetplot = false;
+              temp = "#".concat(myname, "_tab2_", nodeid);
+              d3.select(temp)
+              .remove();
+              }
+              });
 }
+
 
 // easy functions to collapse panels to base
 function rightpanelMedium() {
@@ -2632,3 +2736,31 @@ function jamescentroid(coord){
     };
         return[(minx + maxx)/2, (miny + maxy)/2];
 };
+
+
+
+
+function toggleRightButtons(set) {
+    if(set=="tasks") {
+        document.getElementById('btnModels').style.display = 'none';
+        document.getElementById('btnSetx').style.display = 'none';
+        document.getElementById('btnResults').style.display = 'none';
+    
+        document.getElementById('btnType').style.display = 'inline';
+        document.getElementById('btnSubtype').style.display = 'inline';
+        document.getElementById('btnMetrics').style.display = 'inline';
+    }
+    if(set=="models") {
+        document.getElementById('btnModels').style.display = 'inline';
+        document.getElementById('btnSetx').style.display = 'inline';
+        document.getElementById('btnResults').style.display = 'inline';
+        
+        document.getElementById('btnType').style.display = 'none';
+        document.getElementById('btnSubtype').style.display = 'none';
+        document.getElementById('btnMetrics').style.display = 'none';
+    }
+
+}
+
+
+
