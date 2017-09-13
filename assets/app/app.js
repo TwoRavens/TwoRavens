@@ -2601,7 +2601,7 @@ function startsession() {
     
     var jsonout = JSON.stringify(SessionRequest);
     
-    var urlcall = d3mURL + "startsession";
+    var urlcall = d3mURL + "/startsession";
     var solajsonout = "SessionRequest=" + jsonout;
     console.log("solajsonout: ", solajsonout);
     console.log("urlcall: ", urlcall);
