@@ -1,15 +1,15 @@
 The following is a hypothetical set of messages from a user session for a D3M problem.
 
 
-Note on JSON's from frontend:
-=============================
+## Note on JSON's from the frontend:
+
 The JSON's from the frontend are sent as strings.
 The JSON strings currently have a name prepended as string to the JSON.   For example the estimate message has "solaJSON=" before the JSON
 The quote character " actually comes as \"
 
 
-Note on Protocol Buffers to/from TA2:
-=====================================
+## Note on Protocol Buffers to/from TA2:
+
 The protocol buffers are encoded binary, so the representation below is not how they appear on the wire.
 
 Note the standards are for messages to be CamelCase, fields to be lower_case_underscore_separated, and values to ALL_CAPS_UNDERSCORE_SEPARATED,
