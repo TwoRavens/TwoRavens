@@ -363,11 +363,12 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
                 for (let key in data.zelig5models)
                     if (data.zelig5models.hasOwnProperty(key))
                         mods[data.zelig5models[key].name[0]] = data.zelig5models[key].description[0];
-
                 resolve();
             });
         }))
         .then(() => new Promise((resolve, reject) => {
+            if (d3m_mode)
+                return resolve();
             d3.json("data/zelig5choicemodels.json", (err, data) => {
                 if (err)
                     return reject(err);
@@ -383,6 +384,8 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
         }))
         .then(() => new Promise((resolve, reject) => {
             // read in problem schema and we'll make a call to start the session with TA2. if we get this far, data are guaranteed to exist for the frontend
+            if (!d3m_mode)
+                return resolve();
             d3.json(d3mPS, (_, data) => {
                 console.log("prob schema data: ");
                 mytarget = data.target.field;
@@ -398,7 +401,12 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
                 UpdateProblemSchemaRequest.metric_type = data.metric;
                 UpdateProblemSchemaRequest.output_type = data.outputType;
                
+                // clicks off the Models button and makes right panel blank on load?  
+                // document.getElementById("btnType").click();
+                
                 startsession();
+                scaffolding(layout);
+                dataDownload();
                 resolve();
             });
         }))
