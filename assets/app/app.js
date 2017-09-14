@@ -110,6 +110,57 @@ var selInteract = false;
 var callHistory = []; // transform and subset calls
 let mytarget = "";
 
+
+//eventually read this from the schema
+// metrics, tasks, and subtasks as specified in D3M schemas
+// MEAN SQUARED ERROR IS SET TO SAME AS RMSE. MSE is in schema but not proto
+let d3mMetrics = { metricUndefined:["description", "METRIC_UNDEFINED" , 0],
+    accuracy : ["description", "ACCURACY" , 1],
+f1:["description", "F1" , 2],
+f1Micro:["description", "F1_MICRO" , 3],
+f1Macro:["description", "F1_MACRO" , 4],
+rocAuc:["description", "ROC_AUC" , 5],
+rocAucMicro:["description", "ROC_AUC_MICRO" , 6],
+rocAucMacro:["description", "ROC_AUC_MACRO" , 7],
+meanSquaredError:["description", "MEAN_SQUARED_ERROR", 8],
+rootMeanSquaredError:["description", "ROOT_MEAN_SQUARED_ERROR" , 8],
+rootMeanSquaredErrorAvg:["description", "ROOT_MEAN_SQUARED_ERROR_AVG" , 9],
+meanAbsoluteError:["description", "MEAN_ABSOLUTE_ERROR" , 10],
+rSquared:["description", "R_SQUARED" , 11],
+normalizedMutualInformation:["description", "NORMALIZED_MUTUAL_INFORMATION" , 12],
+    jaccardSimilarityScore:["description", "JACCARD_SIMILARITY_SCORE" , 13],
+    executionTime:["description", "EXECUTION_TIME" , 14]};
+
+let d3mTaskType = {taskTypeUndefined:["description","TASK_TYPE_UNDEFINED", 0],classification:["description", "CLASSIFICATION" , 1],
+regression:["description", "REGRESSION" , 2],
+similarityMatching:["description", "SIMILARITY_MATCHING" , 3],
+linkPrediction:["description", "LINK_PREDICTION" , 4],
+vertexNomination:["description", "VERTEX_NOMINATION" , 5],
+communityDetection:["description", "COMMUNITY_DETECTION" , 6],
+graphMatching:["description", "GRAPH_MATCHING" , 7],
+timeseriesForecasting:["description", "TIMESERIES_FORECASTING" , 8],
+    collaborativeFiltering:["description", "COLLABORATIVE_FILTERING" , 9]};
+
+let d3mTaskSubtype = {binary:["description", "BINARY" , 2],
+taskSubtypeUndefined:["description", "TASK_SUBTYPE_UNDEFINED", 0],
+subtypeNone:["description","NONE",1],
+multiClass:["description", "MULTICLASS" , 3],
+multiLabel:["description", "MULTILABEL" , 4],
+uniVariate:["description", "UNIVARIATE" , 5],
+multiVariate:["description", "MULTIVARIATE" , 6],
+overlapping:["description", "OVERLAPPING" , 7],
+    nonOverlapping:["description", "NONOVERLAPPING" , 8]};
+
+let UpdateProblemSchemaRequest = {
+task_type: [2,"DEFAULT"],
+task_subtype: [1,"DEFAFULT"],
+output_type: [3,"DEFAULT"],
+    metric_type: [4,"DEFAULT"]};
+
+
+
+
+
 var svg, width, height, div, estimateLadda, selectLadda;
 var arc1, arc3, arc4, arcInd1, arcInd2;
 
@@ -312,6 +363,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
                 for (let key in data.zelig5models)
                     if (data.zelig5models.hasOwnProperty(key))
                         mods[data.zelig5models[key].name[0]] = data.zelig5models[key].description[0];
+
                 resolve();
             });
         }))
@@ -323,6 +375,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
                 for (let key in data.zelig5choicemodels)
                     if (data.zelig5choicemodels.hasOwnProperty(key))
                         mods[data.zelig5choicemodels[key].name[0]] = data.zelig5choicemodels[key].description[0];
+
                 scaffolding(layout);
                 dataDownload();
                 resolve();
@@ -339,8 +392,13 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
                 aTag.setAttribute('target', "_blank");
                 aTag.textContent = "Problem Description";
                 document.getElementById("ticker").appendChild(aTag);
-                if(d3m_mode)
-                    startsession();
+                
+                UpdateProblemSchemaRequest.task_type = data.taskType;
+                UpdateProblemSchemaRequest.task_subtype = data.taskSubType;
+                UpdateProblemSchemaRequest.metric_type = data.metric;
+                UpdateProblemSchemaRequest.output_type = data.outputType;
+               
+                startsession();
                 resolve();
             });
         }))
@@ -448,6 +506,7 @@ function scaffolding(callback) {
         .style('height', 2000)
         .style('overfill', 'scroll');
 
+    if(!d3m_mode){
     d3.select("#models").selectAll("p")
         .data(Object.keys(mods))
         .enter()
@@ -464,10 +523,86 @@ function scaffolding(callback) {
         .attr("onmouseout", "$(this).popover('toggle');")
         .attr("data-original-title", "Model Description")
         .attr("data-content", d => mods[d]);
+    }
+    if(d3m_mode) {
+        
+        //
+        
+        toggleRightButtons("tasks");
+        
+        d3.select("#types").selectAll("p")
+        .data(Object.keys(d3mTaskType))
+        .enter()
+        .append("p")
+        .attr("id", d => d + ".types")
+        .text(d => d)
+        .style('background-color', d => {
+               if (UpdateProblemSchemaRequest.task_type == d.toString()){
+               return hexToRgba(selVarColor);
+               } else {
+               return varColor;
+               }
+               })
+        .attr("data-container", "body")
+        .attr("data-toggle", "popover")
+        .attr("data-trigger", "hover")
+        .attr("data-placement", "top")
+        .attr("data-html", "true")
+        .attr("onmouseover", "$(this).popover('toggle');")
+        .attr("onmouseout", "$(this).popover('toggle');")
+        .attr("data-original-title", "Task Description")
+        .attr("data-content", d => d3mTaskType[d][1]);
+        
+        d3.select("#subtypes").selectAll("p")
+        .data(Object.keys(d3mTaskSubtype))
+        .enter()
+        .append("p")
+        .attr("id", d => d + ".subtypes")
+        .text(d => d)
+        .style('background-color', d => {
+               if (UpdateProblemSchemaRequest.task_subtype == d.toString()){
+               return hexToRgba(selVarColor);
+               } else {
+               return varColor;
+               }
+               })
+        .attr("data-container", "body")
+        .attr("data-toggle", "popover")
+        .attr("data-trigger", "hover")
+        .attr("data-placement", "top")
+        .attr("data-html", "true")
+        .attr("onmouseover", "$(this).popover('toggle');")
+        .attr("onmouseout", "$(this).popover('toggle');")
+        .attr("data-original-title", "Task Subtype Desc.")
+        .attr("data-content", d => d3mTaskSubtype[d][1]);
+
+        d3.select("#metrics").selectAll("p")
+        .data(Object.keys(d3mMetrics))
+        .enter()
+        .append("p")
+        .attr("id", d => d + ".metrics")
+        .text(d => d)
+        .style('background-color', d => {
+               if (UpdateProblemSchemaRequest.metric_type == d.toString()){
+               return hexToRgba(selVarColor);
+               } else {
+               return varColor;
+               }
+               })
+        .attr("data-container", "body")
+        .attr("data-toggle", "popover")
+        .attr("data-trigger", "hover")
+        .attr("data-placement", "top")
+        .attr("data-html", "true")
+        .attr("onmouseover", "$(this).popover('toggle');")
+        .attr("onmouseout", "$(this).popover('toggle');")
+        .attr("data-original-title", "Metric Description")
+        .attr("data-content", d => d3mMetrics[d][1]);
+    }
 
     // call layout() because at this point all scaffolding is up and ready
     if (typeof callback == "function") {
-        callback();
+        callback(false,true);
         m.redraw();
     }
 }
@@ -483,7 +618,7 @@ let splice = (color, text, ...args) => {
 
 export let clickVar;
 
-function layout(v) {
+function layout(v,v2) {
     var myValues = [];
     nodes = [];
     links = [];
@@ -602,8 +737,9 @@ function layout(v) {
         }
     }
 
-    panelPlots(); // after nodes is populated, add subset and setx panels
-
+    panelPlots(); // after nodes is populated, add subset and (if !d3m_mode) setx panels
+  
+   
     var force = d3.layout.force()
         .nodes(nodes)
         .links(links)
@@ -904,6 +1040,62 @@ function layout(v) {
                     }
                 });
             restart();
+        });
+    
+    d3.select("#types").selectAll("p") // models tab
+    //  d3.select("#Display_content")
+    .on("click", function() {
+        var myColor = d3.select(this).style('background-color');
+        d3.select("#types").selectAll("p")
+        .style('background-color', varColor);
+        d3.select(this)
+        .style('background-color', d => {
+               if (d3.rgb(myColor).toString() === varColor.toString()) {
+               UpdateProblemSchemaRequest.task_type = d.toString();
+               return hexToRgba(selVarColor);
+               } else {
+               UpdateProblemSchemaRequest.task_type = "";
+               return varColor;
+               }
+               });
+        restart();
+        });
+    
+    d3.select("#subtypes").selectAll("p")
+    .on("click", function() {
+        var myColor = d3.select(this).style('background-color');
+        d3.select("#subtypes").selectAll("p")
+        .style('background-color', varColor);
+        d3.select(this)
+        .style('background-color', d => {
+               if (d3.rgb(myColor).toString() === varColor.toString()) {
+               UpdateProblemSchemaRequest.task_subtype = d.toString();
+               return hexToRgba(selVarColor);
+               } else {
+               UpdateProblemSchemaRequest.task_subtype = "";
+               return varColor;
+               }
+               });
+        restart();
+        });
+    
+    d3.select("#metrics").selectAll("p") // models tab
+    //  d3.select("#Display_content")
+    .on("click", function() {
+        var myColor = d3.select(this).style('background-color');
+        d3.select("#metrics").selectAll("p")
+        .style('background-color', varColor);
+        d3.select(this)
+        .style('background-color', d => {
+               if (d3.rgb(myColor).toString() === varColor.toString()) {
+               UpdateProblemSchemaRequest.metric_type = d.toString();
+               return hexToRgba(selVarColor);
+               } else {
+               UpdateProblemSchemaRequest.metric_type = "";
+               return varColor;
+               }
+               });
+        restart();
         });
 
     // update graph (called when needed)
@@ -1329,12 +1521,12 @@ function layout(v) {
 
     restart(); // initializes force.layout()
     fakeClick();
-
-    var click_ev = document.createEvent("MouseEvents");
-    // initialize the event
-    click_ev.initEvent("click", true /* bubble */, true /* cancelable */);
-    // trigger the event
-    if(d3m_mode){
+    
+    if(v2 & d3m_mode) {
+        var click_ev = document.createEvent("MouseEvents");
+        // initialize the event
+        click_ev.initEvent("click", true /* bubble */, true /* cancelable */);
+        // trigger the event
         let clickID = "dvArc"+findNodeIndex(mytarget);
         document.getElementById(clickID).dispatchEvent(click_ev);
     }
@@ -1530,89 +1722,7 @@ export function runPreprocess(dataloc, targetloc, preprocessloc) {
         }, _ => console.log('preprocess failed'));
 }
 
-export function ta2stuff(btn) {
-    if (production && zparams.zsessionid == '') {
-        alert("Warning: Data download is not complete. Try again soon.");
-        return;
-    }
-
-    zPop();
-    // write links to file & run R CMD
-    // package the output as JSON
-    // add call history and package the zparams object as JSON
-    zparams.callHistory = callHistory;
-
-    var jsonout = JSON.stringify(zparams);
-    var urlcall = rappURL + "zeligapp"; //base.concat(jsonout);
-    var solajsonout = "solaJSON=" + jsonout;
-    cdb("urlcall out: ", urlcall);
-    cdb("POST out: ", solajsonout);
-
-    zparams.allVars = valueKey.slice(10, 25); // because the URL is too long...
-    jsonout = JSON.stringify(zparams);
-    var selectorurlcall = rappURL + "selectorapp";
-
-    function ta2stuffSuccess(btn, json) {
-        estimateLadda.stop(); // stop spinner
-        allResults.push(json);
-        cdb("json in: ", json);
-
-        if (!estimated) byId("results").removeChild(byId("resultsHolder"));
-
-        estimated = true;
-        d3.select("#results")
-        .style("display", "block");
-
-        d3.select("#resultsView")
-        .style("display", "block");
-
-        d3.select("#modelView")
-        .style("display", "block");
-
-        // programmatic click on Results button
-        $("#btnResults").trigger("click");
-
-        let model = "Model".concat(modelCount = modelCount + 1);
-
-        function modCol() {
-            d3.select("#modelView")
-            .selectAll("p")
-            .style('background-color', hexToRgba(varColor));
-        }
-        modCol();
-
-        d3.select("#modelView")
-        .insert("p", ":first-child") // top stack for results
-        .attr("id", model)
-        .text(model)
-        .style('background-color', hexToRgba(selVarColor))
-        .on("click", function() {
-            var a = this.style.backgroundColor.replace(/\s*/g, "");
-            var b = hexToRgba(selVarColor).replace(/\s*/g, "");
-            if (a.substr(0, 17) == b.substr(0, 17))
-            return; // escape function if displayed model is clicked
-            modCol();
-            d3.select(this)
-            .style('background-color', hexToRgba(selVarColor));
-            viz(this.id);
-            });
-
-        let rCall = [];
-        rCall[0] = json.call;
-        showLog("estimate", rCall);
-
-        viz(model);
-    }
-
-    function ta2stuffFail(btn) {
-        estimateLadda.stop(); // stop spinner
-        estimated = true;
-    }
-
-    estimateLadda.start(); // start spinner
-    makeCorsRequest(urlcall, btn, ta2stuffSuccess, ta2stuffFail, solajsonout);
-}
-
+export let ta2stuff = _ => console.log(UpdateProblemSchemaRequest);
 
 function dataDownload() {
     zPop();
@@ -2182,25 +2292,26 @@ export function panelPlots() {
         }
     }
 
-    d3.select("#setx").selectAll("svg")
+        d3.select("#setx").selectAll("svg")
         .each(function () {
-            d3.select(this);
-            var regstr = /(.+)_setx_(\d+)/;
-            var myname = regstr.exec(this.id);
-            var nodeid = myname[2];
-            myname = myname[1];
-            if (!vars.includes(myname)) {
-                allNodes[nodeid].setxplot = false;
-                let temp = "#".concat(myname, "_setx_", nodeid);
-                d3.select(temp)
-                    .remove();
-                allNodes[nodeid].subsetplot = false;
-                temp = "#".concat(myname, "_tab2_", nodeid);
-                d3.select(temp)
-                    .remove();
-            }
-        });
+              d3.select(this);
+              var regstr = /(.+)_setx_(\d+)/;
+              var myname = regstr.exec(this.id);
+              var nodeid = myname[2];
+              myname = myname[1];
+              if (!vars.includes(myname)) {
+              allNodes[nodeid].setxplot = false;
+              let temp = "#".concat(myname, "_setx_", nodeid);
+              d3.select(temp)
+              .remove();
+              allNodes[nodeid].subsetplot = false;
+              temp = "#".concat(myname, "_tab2_", nodeid);
+              d3.select(temp)
+              .remove();
+              }
+              });
 }
+
 
 // easy functions to collapse panels to base
 function rightpanelMedium() {
@@ -2554,7 +2665,7 @@ function startsession() {
     
     var jsonout = JSON.stringify(SessionRequest);
     
-    var urlcall = d3mURL + "startsession";
+    var urlcall = d3mURL + "/startsession";
     var solajsonout = "SessionRequest=" + jsonout;
     console.log("solajsonout: ", solajsonout);
     console.log("urlcall: ", urlcall);
@@ -2585,3 +2696,32 @@ function jamescentroid(coord){
     };
         return[(minx + maxx)/2, (miny + maxy)/2];
 };
+
+
+
+
+function toggleRightButtons(set) {
+    if(set=="tasks") {
+        document.getElementById('btnModels').style.display = 'none';
+        document.getElementById('btnSetx').style.display = 'none';
+        document.getElementById('btnResults').style.display = 'none';
+    
+        document.getElementById('btnType').style.display = 'inline';
+        document.getElementById('btnSubtype').style.display = 'inline';
+        document.getElementById('btnMetrics').style.display = 'inline';
+    }
+    if(set=="models") {
+        document.getElementById('btnModels').style.display = 'inline';
+        document.getElementById('btnSetx').style.display = 'inline';
+        document.getElementById('btnResults').style.display = 'inline';
+        
+        document.getElementById('btnType').style.display = 'none';
+        document.getElementById('btnSubtype').style.display = 'none';
+        document.getElementById('btnMetrics').style.display = 'none';
+    }
+
+}
+
+
+
+
