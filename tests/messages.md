@@ -74,19 +74,20 @@ SessionResponse {
 ```
 
 - **JSON format**: Message [A2] from TA2 to Django as response to [A1]
-		```json
-		{ "responseInfo": {
-		    "status": {
-		      "code": "OK"
-		    }
-		  },
-		  "userAgent": "ta2_stub 0.1",
-		  "version": "2017.9.x_pre",
-		  "context": {
-		    "sessionId": "f58p9t7"
-		  }
-		}
-		```
+
+    ```json
+    { "responseInfo": {
+        "status": {
+          "code": "OK"
+        }
+      },
+      "userAgent": "ta2_stub 0.1",
+      "version": "2017.9.x_pre",
+      "context": {
+        "sessionId": "f58p9t7"
+      }
+    }
+    ```
 
 ## (B) update problem definition
 
