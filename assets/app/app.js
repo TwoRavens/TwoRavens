@@ -1723,7 +1723,7 @@ export function runPreprocess(dataloc, targetloc, preprocessloc) {
     cdb('POST out: ', json);
     let data = new FormData();
     data.append('solaJSON', json);
-    m.request({method: 'POST', url: url, data: data})
+    return m.request({method: 'POST', url: url, data: data})
         .then(data => {
             console.log('json in: ', data);
             return data;
