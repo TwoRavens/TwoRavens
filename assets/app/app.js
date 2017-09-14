@@ -567,13 +567,10 @@ function scaffolding(callback) {
               if (UpdateProblemSchemaRequest.task_type == d.toString()){
               return 'item-select';
               } else {
+              if(locktoggle) return 'item-default item-lineout';
               return 'item-default';
               }
               })
-        .style('text-decoration', d=> {
-               if(locktoggle & UpdateProblemSchemaRequest.task_type != d.toString()) {
-               return 'line-through';
-               }})
         .attr("data-container", "body")
         .attr("data-toggle", "popover")
         .attr("data-trigger", "hover")
@@ -594,13 +591,10 @@ function scaffolding(callback) {
               if (UpdateProblemSchemaRequest.task_subtype == d.toString()){
               return 'item-select';
               } else {
+              if(locktoggle) return 'item-default item-lineout';
               return 'item-default';
               }
               })
-        .style('text-decoration', d=> {
-               if(locktoggle & UpdateProblemSchemaRequest.task_subtype != d.toString()) {
-               return 'line-through';
-               }})
         .attr("data-container", "body")
         .attr("data-toggle", "popover")
         .attr("data-trigger", "hover")
@@ -621,13 +615,10 @@ function scaffolding(callback) {
               if (UpdateProblemSchemaRequest.metric_type == d.toString()){
                 return 'item-select';
               } else {
+                if(locktoggle) return 'item-default item-lineout';
                 return 'item-default';
               }
               })
-            .style('text-decoration', d=> {
-            if(locktoggle & UpdateProblemSchemaRequest.metric_type != d.toString()) {
-                return 'line-through';
-               }})
         .attr("data-container", "body")
         .attr("data-toggle", "popover")
         .attr("data-trigger", "hover")
@@ -648,13 +639,10 @@ function scaffolding(callback) {
               if (UpdateProblemSchemaRequest.output_type == d.toString()){
               return 'item-select';
               } else {
+              if(locktoggle) return 'item-default item-lineout';
               return 'item-default';
               }
               })
-        .style('text-decoration', d=> {
-               if(locktoggle & UpdateProblemSchemaRequest.output_type != d.toString()) {
-               return 'line-through';
-               }})
         .attr("data-container", "body")
         .attr("data-toggle", "popover")
         .attr("data-trigger", "hover")
@@ -1664,47 +1652,34 @@ export function forceSwitch() {
     }
 }
 
-// can be simplified now that bg color toggles with class
 export function lockDescription() {
     locktoggle = locktoggle ? false : true;
     let temp;
     let i;
     if (!locktoggle) {
         document.getElementById('btnLock').setAttribute("class", "btn btn-default");
-        temp = document.getElementById('metrics').querySelectorAll("p");
+        temp = document.getElementById('rightContentArea').querySelectorAll("p.item-lineout");
         for (i = 0; i < temp.length; i++) {
-            temp[i].style.textDecoration = "none";
+            temp[i].classList.remove("item-lineout");
         }
-        temp = document.getElementById('types').querySelectorAll("p");
-        for (i = 0; i < temp.length; i++) {
-            temp[i].style.textDecoration = "none";
-        }
-        temp = document.getElementById('subtypes').querySelectorAll("p");
-        for (i = 0; i < temp.length; i++) {
-            temp[i].style.textDecoration = "none";
-        }
-        temp = document.getElementById('outputs').querySelectorAll("p");
-        for (i = 0; i < temp.length; i++) {
-            temp[i].style.textDecoration = "none";
-        }
-    } else {
+    } else { 
         document.getElementById('btnLock').setAttribute("class", "btn active");
         temp = document.getElementById('metrics').querySelectorAll("p.item-default");
         console.log(temp);
         for (i = 0; i < temp.length; i++) {
-            temp[i].style.textDecoration = "line-through";
+            temp[i].classList.add("item-lineout");
         }
         temp = document.getElementById('types').querySelectorAll("p.item-default");
         for (i = 0; i < temp.length; i++) {
-            temp[i].style.textDecoration = "line-through";
+            temp[i].classList.add("item-lineout");
         }
         temp = document.getElementById('subtypes').querySelectorAll("p.item-default");
         for (i = 0; i < temp.length; i++) {
-            temp[i].style.textDecoration = "line-through";
+            temp[i].classList.add("item-lineout");
         }
         temp = document.getElementById('outputs').querySelectorAll("p.item-default");
         for (i = 0; i < temp.length; i++) {
-            temp[i].style.textDecoration = "line-through";
+            temp[i].classList.add("item-lineout");
         }
         fakeClick();
     }

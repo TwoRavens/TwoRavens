@@ -411,6 +411,9 @@ p.item-select{
     background-color:rgba(250,128,114,0.5); /*selVarColor*/
 }
 
+p.item-lineout{
+    text-decoration:line-through;
+}
 
 #searchvar{
 /*  background: #fff url(icoX.gif) no-repeat right -10px center;*/
