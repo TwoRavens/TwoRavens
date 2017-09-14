@@ -19,7 +19,7 @@ https://developers.google.com/protocol-buffers/docs/style
 
 But the way I'm describing them seems to be a standard way to textually represent the decoded message.
 You can interpret the following message:
-```idl
+```javascript
 OneMessage{
 	some_field = 3 : "HELLO"
 }
@@ -29,7 +29,7 @@ to read as Message "A", send Field "b" with Value "3" which via the defined code
 Messages are made up of fields, which have predefined types.  However, the type of a field can itself be a message,
 thus messages can be wrapped inside other messages such as:
 
-```idl
+```javascript
 TwoMessage{
 	ThreeMessage{
 		field_d = "some string"            // a string
@@ -47,7 +47,7 @@ Messages
 
 - Message [A1] from Django to TA2 to start session
 
-```idl
+```javascript
 SessionRequest {
     user_agent = "TwoRavensUser";     // or some name ID for us
     version = "2017.8.23";            // version numbering for the protocol buffer defintion, which are presently release dates
@@ -57,7 +57,7 @@ SessionRequest {
 
 - Message [A2] from TA2 to Django as response to [A1]
 
-```idl
+```javascript
 SessionResponse {
     Response {                        // Note "Response" is a common message, used on it's own as a common response to a request, and here embedded with other details
 		Status {
@@ -73,21 +73,20 @@ SessionResponse {
 }
 ```
 
-	- **JSON format**: Message [A2] from TA2 to Django as response to [A1]
-
-			```json
-			{ "responseInfo": {
-			    "status": {
-			      "code": "OK"
-			    }
-			  },
-			  "userAgent": "ta2_stub 0.1",
-			  "version": "2017.9.x_pre",
-			  "context": {
-			    "sessionId": "f58p9t7"
-			  }
-			}
-			```
+- **JSON format**: Message [A2] from TA2 to Django as response to [A1]
+		```json
+		{ "responseInfo": {
+		    "status": {
+		      "code": "OK"
+		    }
+		  },
+		  "userAgent": "ta2_stub 0.1",
+		  "version": "2017.9.x_pre",
+		  "context": {
+		    "sessionId": "f58p9t7"
+		  }
+		}
+		```
 
 ## (B) update problem definition
 
@@ -104,7 +103,7 @@ SessionResponse {
 
 - Message [B2] from Django to TA2 to update problem definition
 
-```idl
+```javascript
 UpdateProblemSchemaRequest{
 		ReplaceProblemSchemaFieldField{
 			task_type = 2 : "REGRESSION"
@@ -123,7 +122,7 @@ UpdateProblemSchemaRequest{
 
 - Message [B3] from TA2 to Django, as possible response to message [B2]
 
-```idl
+```javascript
 Response {  
 	Status {
 		code = 1 : OK
@@ -284,7 +283,7 @@ Response {
 - Message [C2] from Django to TA2 to find solution
   - (this is the RPC CreatePipelines call)
 
-```idl
+```javascript
 message PipelineCreateRequest {
     SessionContext{
     	session_id = "XYZ987"  // Some unique session identifier
@@ -308,7 +307,7 @@ message PipelineCreateRequest {
 
 // Message []
 
-```idl
+```javascript
 message PipelineCreateResult {
     Response {                 // This is the standard response message we often see
 		Status {
@@ -332,7 +331,7 @@ message PipelineCreateResult {
 - Message [C3a] from TA2 to Django, as possible response to message [C2], as pipeline starts
   - (this is the final response to the RPC ExecutePipelines call)
 
-```idl
+```javascript
 message PipelineCreateResult {
 	Response {                 // This reponse message might be omitted second time,
 		Status {               // in which case it would come across as default values
