@@ -124,38 +124,51 @@ let mytarget = "";
 
 //eventually read this from the schema
 // metrics, tasks, and subtasks as specified in D3M schemas
-let d3mMetrics = {accuracy:"description",
-f1:"description",
-f1Micro:"description",
-f1Macro:"description",
-rocAuc:"description",
-rocAucMicro:"description",
-rocAucMacro:"description",
-meanSquaredError:"description",
-rootMeanSquaredError:"description",
-rootMeanSquaredErrorAvg:"description",
-meanAbsoluteError:"description",
-rSquared:"description",
-normalizedMutualInformation:"description",
-    jaccardSimilarityScore:"description"};
+// MEAN SQUARED ERROR IS SET TO SAME AS RMSE. MSE is in schema but not proto
+let d3mMetrics = { metricUndefined:["description", "METRIC_UNDEFINED" , 0],
+    accuracy : ["description", "ACCURACY" , 1],
+f1:["description", "F1" , 2],
+f1Micro:["description", "F1_MICRO" , 3],
+f1Macro:["description", "F1_MACRO" , 4],
+rocAuc:["description", "ROC_AUC" , 5],
+rocAucMicro:["description", "ROC_AUC_MICRO" , 6],
+rocAucMacro:["description", "ROC_AUC_MACRO" , 7],
+meanSquaredError:["description", "MEAN_SQUARED_ERROR", 8],
+rootMeanSquaredError:["description", "ROOT_MEAN_SQUARED_ERROR" , 8],
+rootMeanSquaredErrorAvg:["description", "ROOT_MEAN_SQUARED_ERROR_AVG" , 9],
+meanAbsoluteError:["description", "MEAN_ABSOLUTE_ERROR" , 10],
+rSquared:["description", "R_SQUARED" , 11],
+normalizedMutualInformation:["description", "NORMALIZED_MUTUAL_INFORMATION" , 12],
+    jaccardSimilarityScore:["description", "JACCARD_SIMILARITY_SCORE" , 13],
+    executionTime:["description", "EXECUTION_TIME" , 14]};
 
-let d3mTaskType = {classification:"description",
-regression:"description",
-similarityMatching:"description",
-linkPrediction:"description",
-vertexNomination:"description",
-communityDetection:"description",
-graphMatching:"description",
-timeseriesForecasting:"description",
-    collaborativeFiltering:"description"};
+let d3mTaskType = {taskTypeUndefined:["description","TASK_TYPE_UNDEFINED", 0],classification:["description", "CLASSIFICATION" , 1],
+regression:["description", "REGRESSION" , 2],
+similarityMatching:["description", "SIMILARITY_MATCHING" , 3],
+linkPrediction:["description", "LINK_PREDICTION" , 4],
+vertexNomination:["description", "VERTEX_NOMINATION" , 5],
+communityDetection:["description", "COMMUNITY_DETECTION" , 6],
+graphMatching:["description", "GRAPH_MATCHING" , 7],
+timeseriesForecasting:["description", "TIMESERIES_FORECASTING" , 8],
+    collaborativeFiltering:["description", "COLLABORATIVE_FILTERING" , 9]};
 
-let d3mTaskSubtype = {binary:"description",
-multiClass:"description",
-multiLabel:"description",
-uniVariate:"description",
-multiVariate:"description",
-overlapping:"description",
-    nonOverlapping:"description"};
+let d3mTaskSubtype = {binary:["description", "BINARY" , 2],
+taskSubtypeUndefined:["description", "TASK_SUBTYPE_UNDEFINED", 0],
+subtypeNone:["description","NONE",1],
+multiClass:["description", "MULTICLASS" , 3],
+multiLabel:["description", "MULTILABEL" , 4],
+uniVariate:["description", "UNIVARIATE" , 5],
+multiVariate:["description", "MULTIVARIATE" , 6],
+overlapping:["description", "OVERLAPPING" , 7],
+    nonOverlapping:["description", "NONOVERLAPPING" , 8]};
+
+let UpdateProblemSchemaRequest = {
+task_type: [2,"DEFAULT"],
+task_subtype: [1,"DEFAFULT"],
+output_type: [3,"DEFAULT"],
+    metric_type: [4,"DEFAULT"]};
+
+
 
 
 
@@ -391,7 +404,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
                if(d3m_mode){
                // looks like here is where we'll read in problem schema and we'll make a call to start the session with TA2. if we get this far, data are guaranteed to exist for the frontend
                d3.json(d3mPS, (err, data) => {
-                       console.log("prob schema data: ");
+                       console.log("prob schema data: ", data);
                        mytarget=data.target.field;
                        probDesc = start+'/'+data.descriptionFile;
 
@@ -402,6 +415,12 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
                        aTag.textContent = "Problem Description";
                        document.getElementById("ticker").appendChild(aTag);
                        
+                       UpdateProblemSchemaRequest.task_type=data.taskType;
+                       UpdateProblemSchemaRequest.task_subtype=data.taskSubType;
+                       UpdateProblemSchemaRequest.metric_type=data.metric;
+                       UpdateProblemSchemaRequest.output_type=data.outputType;
+                       
+                       document.getElementById("btnType").click();
                        startsession();
                        scaffolding(callback = layout);
                        dataDownload();
@@ -515,8 +534,6 @@ function scaffolding(callback) {
         .style('height', 2000)
         .style('overfill', 'scroll');
 
-    console.log(mods);
-    console.log(d3mTaskType);
     if(!d3m_mode){
     d3.select("#models").selectAll("p")
         .data(Object.keys(mods))
@@ -537,15 +554,23 @@ function scaffolding(callback) {
     }
     if(d3m_mode) {
         
+        //
+        
         toggleRightButtons("tasks");
         
         d3.select("#types").selectAll("p")
         .data(Object.keys(d3mTaskType))
         .enter()
         .append("p")
-        .attr("id", "_model_".concat)
+        .attr("id", d => d + ".types")
         .text(d => d)
-        .style('background-color', d => varColor)
+        .style('background-color', d => {
+               if (UpdateProblemSchemaRequest.task_type == d.toString()){
+               return hexToRgba(selVarColor);
+               } else {
+               return varColor;
+               }
+               })
         .attr("data-container", "body")
         .attr("data-toggle", "popover")
         .attr("data-trigger", "hover")
@@ -554,15 +579,21 @@ function scaffolding(callback) {
         .attr("onmouseover", "$(this).popover('toggle');")
         .attr("onmouseout", "$(this).popover('toggle');")
         .attr("data-original-title", "Task Description")
-        .attr("data-content", d => d3mTaskType[d]);
+        .attr("data-content", d => d3mTaskType[d][1]);
         
         d3.select("#subtypes").selectAll("p")
         .data(Object.keys(d3mTaskSubtype))
         .enter()
         .append("p")
-        .attr("id", "_model_".concat)
+        .attr("id", d => d + ".subtypes")
         .text(d => d)
-        .style('background-color', d => varColor)
+        .style('background-color', d => {
+               if (UpdateProblemSchemaRequest.task_subtype == d.toString()){
+               return hexToRgba(selVarColor);
+               } else {
+               return varColor;
+               }
+               })
         .attr("data-container", "body")
         .attr("data-toggle", "popover")
         .attr("data-trigger", "hover")
@@ -571,15 +602,21 @@ function scaffolding(callback) {
         .attr("onmouseover", "$(this).popover('toggle');")
         .attr("onmouseout", "$(this).popover('toggle');")
         .attr("data-original-title", "Task Subtype Desc.")
-        .attr("data-content", d => d3mTaskSubtype[d]);
+        .attr("data-content", d => d3mTaskSubtype[d][1]);
 
         d3.select("#metrics").selectAll("p")
         .data(Object.keys(d3mMetrics))
         .enter()
         .append("p")
-        .attr("id", "_model_".concat)
+        .attr("id", d => d + ".metrics")
         .text(d => d)
-        .style('background-color', d => varColor)
+        .style('background-color', d => {
+               if (UpdateProblemSchemaRequest.metric_type == d.toString()){
+               return hexToRgba(selVarColor);
+               } else {
+               return varColor;
+               }
+               })
         .attr("data-container", "body")
         .attr("data-toggle", "popover")
         .attr("data-trigger", "hover")
@@ -588,12 +625,12 @@ function scaffolding(callback) {
         .attr("onmouseover", "$(this).popover('toggle');")
         .attr("onmouseout", "$(this).popover('toggle');")
         .attr("data-original-title", "Metric Description")
-        .attr("data-content", d => d3mMetrics[d]);
+        .attr("data-content", d => d3mMetrics[d][1]);
     }
 
     // call layout() because at this point all scaffolding is up and ready
     if (typeof callback == "function") {
-        callback();
+        callback(false,true);
         m.redraw();
     }
 }
@@ -611,7 +648,7 @@ export let clickVar;
 
 
 
-function layout(v) {
+function layout(v,v2) {
     var myValues = [];
     nodes = [];
     links = [];
@@ -1033,6 +1070,62 @@ function layout(v) {
                     }
                 });
             restart();
+        });
+    
+    d3.select("#types").selectAll("p") // models tab
+    //  d3.select("#Display_content")
+    .on("click", function() {
+        var myColor = d3.select(this).style('background-color');
+        d3.select("#types").selectAll("p")
+        .style('background-color', varColor);
+        d3.select(this)
+        .style('background-color', d => {
+               if (d3.rgb(myColor).toString() === varColor.toString()) {
+               UpdateProblemSchemaRequest.task_type = d.toString();
+               return hexToRgba(selVarColor);
+               } else {
+               UpdateProblemSchemaRequest.task_type = "";
+               return varColor;
+               }
+               });
+        restart();
+        });
+    
+    d3.select("#subtypes").selectAll("p")
+    .on("click", function() {
+        var myColor = d3.select(this).style('background-color');
+        d3.select("#subtypes").selectAll("p")
+        .style('background-color', varColor);
+        d3.select(this)
+        .style('background-color', d => {
+               if (d3.rgb(myColor).toString() === varColor.toString()) {
+               UpdateProblemSchemaRequest.task_subtype = d.toString();
+               return hexToRgba(selVarColor);
+               } else {
+               UpdateProblemSchemaRequest.task_subtype = "";
+               return varColor;
+               }
+               });
+        restart();
+        });
+    
+    d3.select("#metrics").selectAll("p") // models tab
+    //  d3.select("#Display_content")
+    .on("click", function() {
+        var myColor = d3.select(this).style('background-color');
+        d3.select("#metrics").selectAll("p")
+        .style('background-color', varColor);
+        d3.select(this)
+        .style('background-color', d => {
+               if (d3.rgb(myColor).toString() === varColor.toString()) {
+               UpdateProblemSchemaRequest.metric_type = d.toString();
+               return hexToRgba(selVarColor);
+               } else {
+               UpdateProblemSchemaRequest.metric_type = "";
+               return varColor;
+               }
+               });
+        restart();
         });
 
     // update graph (called when needed)
@@ -1458,12 +1551,12 @@ function layout(v) {
 
     restart(); // initializes force.layout()
     fakeClick();
-
-    var click_ev = document.createEvent("MouseEvents");
-    // initialize the event
-    click_ev.initEvent("click", true /* bubble */, true /* cancelable */);
-    // trigger the event
-    if(d3m_mode){
+    
+    if(v2 & d3m_mode) {
+        var click_ev = document.createEvent("MouseEvents");
+        // initialize the event
+        click_ev.initEvent("click", true /* bubble */, true /* cancelable */);
+        // trigger the event
         let clickID = "dvArc"+findNodeIndex(mytarget);
         document.getElementById(clickID).dispatchEvent(click_ev);
     }
@@ -1668,91 +1761,7 @@ export function runPreprocess(dataloc, targetloc, preprocessloc, callback) {
 
 
 export function ta2stuff(btn) {
-    if (production && zparams.zsessionid == '') {
-        alert("Warning: Data download is not complete. Try again soon.");
-        return;
-    }
-
-
-
-    zPop();
-    // write links to file & run R CMD
-    // package the output as JSON
-    // add call history and package the zparams object as JSON
-    zparams.callHistory = callHistory;
-
-
-
-    var jsonout = JSON.stringify(zparams);
-
-    var urlcall = rappURL + "zeligapp"; //base.concat(jsonout);
-    var solajsonout = "solaJSON=" + jsonout;
-    cdb("urlcall out: ", urlcall);
-    cdb("POST out: ", solajsonout);
-
-    zparams.allVars = valueKey.slice(10, 25); // because the URL is too long...
-    jsonout = JSON.stringify(zparams);
-    var selectorurlcall = rappURL + "selectorapp";
-
-    function ta2stuffSuccess(btn, json) {
-        estimateLadda.stop(); // stop spinner
-        allResults.push(json);
-        cdb("json in: ", json);
-
-        if (!estimated) byId("results").removeChild(byId("resultsHolder"));
-
-        estimated = true;
-        d3.select("#results")
-        .style("display", "block");
-
-        d3.select("#resultsView")
-        .style("display", "block");
-
-        d3.select("#modelView")
-        .style("display", "block");
-
-        // programmatic click on Results button
-        $("#btnResults").trigger("click");
-
-        let model = "Model".concat(modelCount = modelCount + 1);
-
-        function modCol() {
-            d3.select("#modelView")
-            .selectAll("p")
-            .style('background-color', hexToRgba(varColor));
-        }
-        modCol();
-
-        d3.select("#modelView")
-        .insert("p", ":first-child") // top stack for results
-        .attr("id", model)
-        .text(model)
-        .style('background-color', hexToRgba(selVarColor))
-        .on("click", function() {
-            var a = this.style.backgroundColor.replace(/\s*/g, "");
-            var b = hexToRgba(selVarColor).replace(/\s*/g, "");
-            if (a.substr(0, 17) == b.substr(0, 17))
-            return; // escape function if displayed model is clicked
-            modCol();
-            d3.select(this)
-            .style('background-color', hexToRgba(selVarColor));
-            viz(this.id);
-            });
-
-        let rCall = [];
-        rCall[0] = json.call;
-        showLog("estimate", rCall);
-
-        viz(model);
-    }
-
-    function ta2stuffFail(btn) {
-        estimateLadda.stop(); // stop spinner
-        estimated = true;
-    }
-
-    estimateLadda.start(); // start spinner
-    makeCorsRequest(urlcall, btn, ta2stuffSuccess, ta2stuffFail, solajsonout);
+    console.log(UpdateProblemSchemaRequest);
 }
 
 
@@ -2761,6 +2770,7 @@ function toggleRightButtons(set) {
     }
 
 }
+
 
 
 
