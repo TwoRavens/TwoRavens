@@ -37,7 +37,7 @@ class AppConfiguration(TimeStampedModel):
 
     d3m_url = models.URLField(\
                     'D3M url',
-                    default='http://127.0.0.1:8080/d3m-service',
+                    default='http://127.0.0.1:8080/d3m-service/',
                     help_text=('URL used to make calls that'
                                ' are converted to gRPC messages'
                                ' and sent to D3M applications'))
@@ -64,15 +64,15 @@ class AppConfiguration(TimeStampedModel):
     @transaction.atomic
     def save(self, *args, **kwargs):
 
-        # make sure the rook and d3m urls have a trailing slash
+        # make sure the rook url has a trailing slash
         #
         self.rook_app_url = add_trailing_slash(self.rook_app_url)
-        self.d3m_url = add_trailing_slash(self.d3m_url)
 
-        # make sure the dataverse_url DOESN'T HAVE a trailing slash
+        # make sure the dataverse_url and d3m urls DON'T HAVE a trailing slash
         # (This will get worked out soon...)
         #
         self.dataverse_url = remove_trailing_slash(self.dataverse_url)
+        self.d3m_url = remove_trailing_slash(self.d3m_url)
 
         if self.is_active:
             # If this is active, set everything else to inactive
