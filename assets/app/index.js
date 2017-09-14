@@ -180,6 +180,9 @@ class Body {
                 m('#m0.item.active',
                   m('svg#whitespace'))),
               m("#spacetools.spaceTool[style=z-index: 16]",
+                m("button#btnLock.btn.active[title=Lock selections of problem description.]", {
+                  onclick: app.lockDescription},
+                  m("span.glyphicon.glyphicon-pencil")),
                 m("button#btnForce.btn.btn-default[title=Pin the variable pebbles to the page.]", {
                   onclick: app.forceSwitch},
                   m("span.glyphicon.glyphicon-pushpin")),

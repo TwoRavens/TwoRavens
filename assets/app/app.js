@@ -74,6 +74,7 @@ var ind2 = [(allR+30) * Math.cos(1.1), -1*(allR+30) * Math.sin(1.1),5] // cx, cy
 var myspace = 0;
 
 var forcetoggle = ["true"];
+var locktoggle = true;
 var priv = true;
 
 export let logArray = [];
@@ -420,7 +421,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
                 } else {alert("Specified output type, " + data.outputType + ", is not valid.")}
                
                 // clicks off the Models button and makes right panel blank on load?  
-                // document.getElementById("btnType").click();
+                 document.getElementById("btnType").click();
                 
                 startsession();
                 scaffolding(layout);
@@ -562,13 +563,17 @@ function scaffolding(callback) {
         .append("p")
         .attr("id", d => d + ".types")
         .text(d => d)
-        .style('background-color', d => {
-               if (UpdateProblemSchemaRequest.task_type == d.toString()){
-               return hexToRgba(selVarColor);
-               } else {
-               return varColor;
-               }
-               })
+        .attr('class', d=> {
+              if (UpdateProblemSchemaRequest.task_type == d.toString()){
+              return 'item-select';
+              } else {
+              return 'item-default';
+              }
+              })
+        .style('text-decoration', d=> {
+               if(locktoggle & UpdateProblemSchemaRequest.task_type != d.toString()) {
+               return 'line-through';
+               }})
         .attr("data-container", "body")
         .attr("data-toggle", "popover")
         .attr("data-trigger", "hover")
@@ -585,13 +590,17 @@ function scaffolding(callback) {
         .append("p")
         .attr("id", d => d + ".subtypes")
         .text(d => d)
-        .style('background-color', d => {
-               if (UpdateProblemSchemaRequest.task_subtype == d.toString()){
-               return hexToRgba(selVarColor);
-               } else {
-               return varColor;
-               }
-               })
+        .attr('class', d=> {
+              if (UpdateProblemSchemaRequest.task_subtype == d.toString()){
+              return 'item-select';
+              } else {
+              return 'item-default';
+              }
+              })
+        .style('text-decoration', d=> {
+               if(locktoggle & UpdateProblemSchemaRequest.task_subtype != d.toString()) {
+               return 'line-through';
+               }})
         .attr("data-container", "body")
         .attr("data-toggle", "popover")
         .attr("data-trigger", "hover")
@@ -608,13 +617,17 @@ function scaffolding(callback) {
         .append("p")
         .attr("id", d => d + ".metrics")
         .text(d => d)
-        .style('background-color', d => {
-               if (UpdateProblemSchemaRequest.metric_type == d.toString()){
-               return hexToRgba(selVarColor);
-               } else {
-               return varColor;
-               }
-               })
+        .attr('class', d=> {
+              if (UpdateProblemSchemaRequest.metric_type == d.toString()){
+                return 'item-select';
+              } else {
+                return 'item-default';
+              }
+              })
+            .style('text-decoration', d=> {
+            if(locktoggle & UpdateProblemSchemaRequest.metric_type != d.toString()) {
+                return 'line-through';
+               }})
         .attr("data-container", "body")
         .attr("data-toggle", "popover")
         .attr("data-trigger", "hover")
@@ -631,13 +644,17 @@ function scaffolding(callback) {
         .append("p")
         .attr("id", d => d + ".outputs")
         .text(d => d)
-        .style('background-color', d => {
-               if (UpdateProblemSchemaRequest.output_type == d.toString()){
-               return hexToRgba(selVarColor);
-               } else {
-               return varColor;
-               }
-               })
+        .attr('class', d=> {
+              if (UpdateProblemSchemaRequest.output_type == d.toString()){
+              return 'item-select';
+              } else {
+              return 'item-default';
+              }
+              })
+        .style('text-decoration', d=> {
+               if(locktoggle & UpdateProblemSchemaRequest.output_type != d.toString()) {
+               return 'line-through';
+               }})
         .attr("data-container", "body")
         .attr("data-toggle", "popover")
         .attr("data-trigger", "hover")
@@ -1095,77 +1112,62 @@ function layout(v,v2) {
     d3.select("#types").selectAll("p") // models tab
     //  d3.select("#Display_content")
     .on("click", function() {
-        var myColor = d3.select(this).style('background-color');
-        d3.select("#types").selectAll("p")
-        .style('background-color', varColor);
-        d3.select(this)
-        .style('background-color', d => {
-               if (d3.rgb(myColor).toString() === varColor.toString()) {
-               UpdateProblemSchemaRequest.task_type = d.toString();
-               return hexToRgba(selVarColor);
-               } else {
-               UpdateProblemSchemaRequest.task_type = "";
-               return varColor;
-               }
-               });
+        if(locktoggle) return;
+        if(this.className=="item-select") {
+            return;
+        } else {
+            d3.select("#types").select("p.item-select")
+            .attr('class', 'item-default');
+            UpdateProblemSchemaRequest.task_type = this.innerHTML.toString();
+            d3.select(this).attr('class',"item-select");
+        }
         restart();
         updateSchema("task_type", UpdateProblemSchemaRequest, d3mTaskType);
         });
     
     d3.select("#subtypes").selectAll("p")
     .on("click", function() {
-        var myColor = d3.select(this).style('background-color');
-        d3.select("#subtypes").selectAll("p")
-        .style('background-color', varColor);
-        d3.select(this)
-        .style('background-color', d => {
-               if (d3.rgb(myColor).toString() === varColor.toString()) {
-               UpdateProblemSchemaRequest.task_subtype = d.toString();
-               return hexToRgba(selVarColor);
-               } else {
-               UpdateProblemSchemaRequest.task_subtype = "";
-               return varColor;
-               }
-               });
+        if(locktoggle) return;
+        if(this.className=="item-select") {
+            return;
+        } else {
+            d3.select("#subtypes").select("p.item-select")
+            .attr('class', 'item-default');
+            UpdateProblemSchemaRequest.task_subtype = this.innerHTML.toString();
+            d3.select(this).attr('class',"item-select");
+        }
         restart();
         updateSchema("task_subtype", UpdateProblemSchemaRequest, d3mTaskSubtype);
         });
     
-    d3.select("#metrics").selectAll("p") // models tab
-    //  d3.select("#Display_content")
+    d3.select("#metrics").selectAll("p")
     .on("click", function() {
-        var myColor = d3.select(this).style('background-color');
-        d3.select("#metrics").selectAll("p")
-        .style('background-color', varColor);
-        d3.select(this)
-        .style('background-color', d => {
-               if (d3.rgb(myColor).toString() === varColor.toString()) {
-               UpdateProblemSchemaRequest.metric_type = d.toString();
-               return hexToRgba(selVarColor);
-               } else {
-               UpdateProblemSchemaRequest.metric_type = ["",""];
-               return varColor;
-               }
-               });
+        if(locktoggle) return;
+        if(this.className=="item-select") {
+            return;
+   //         UpdateProblemSchemaRequest.metric_type = ["",""];
+    //        this.className="item-default";
+        } else {
+            d3.select("#metrics").select("p.item-select")
+            .attr('class', 'item-default');
+            UpdateProblemSchemaRequest.metric_type = this.innerHTML.toString();
+            d3.select(this).attr('class',"item-select");
+        }
         restart();
         updateSchema("metric_type", UpdateProblemSchemaRequest, d3mMetrics);
         });
     
     d3.select("#outputs").selectAll("p")
     .on("click", function() {
-        var myColor = d3.select(this).style('background-color');
-        d3.select("#outputs").selectAll("p")
-        .style('background-color', varColor);
-        d3.select(this)
-        .style('background-color', d => {
-               if (d3.rgb(myColor).toString() === varColor.toString()) {
-               UpdateProblemSchemaRequest.output_type = d.toString();
-               return hexToRgba(selVarColor);
-               } else {
-               UpdateProblemSchemaRequest.ouptput_type = ["",""];
-               return varColor;
-               }
-               });
+        if(locktoggle) return;
+        if(this.className=="item-select") {
+            return;
+        } else {
+            d3.select("#outputs").select("p.item-select")
+            .attr('class', 'item-default');
+            UpdateProblemSchemaRequest.output_type = this.innerHTML.toString();
+            d3.select(this).attr('class',"item-select");
+        }
         restart();
         updateSchema("output_type", UpdateProblemSchemaRequest, d3mOutputType);
         });
@@ -1658,6 +1660,52 @@ export function forceSwitch() {
         byId('btnForce').setAttribute("class", "btn active");
     } else {
         byId('btnForce').setAttribute("class", "btn btn-default");
+        fakeClick();
+    }
+}
+
+// can be simplified now that bg color toggles with class
+export function lockDescription() {
+    locktoggle = locktoggle ? false : true;
+    let temp;
+    let i;
+    if (!locktoggle) {
+        document.getElementById('btnLock').setAttribute("class", "btn btn-default");
+        temp = document.getElementById('metrics').querySelectorAll("p");
+        for (i = 0; i < temp.length; i++) {
+            temp[i].style.textDecoration = "none";
+        }
+        temp = document.getElementById('types').querySelectorAll("p");
+        for (i = 0; i < temp.length; i++) {
+            temp[i].style.textDecoration = "none";
+        }
+        temp = document.getElementById('subtypes').querySelectorAll("p");
+        for (i = 0; i < temp.length; i++) {
+            temp[i].style.textDecoration = "none";
+        }
+        temp = document.getElementById('outputs').querySelectorAll("p");
+        for (i = 0; i < temp.length; i++) {
+            temp[i].style.textDecoration = "none";
+        }
+    } else {
+        document.getElementById('btnLock').setAttribute("class", "btn active");
+        temp = document.getElementById('metrics').querySelectorAll("p.item-default");
+        console.log(temp);
+        for (i = 0; i < temp.length; i++) {
+            temp[i].style.textDecoration = "line-through";
+        }
+        temp = document.getElementById('types').querySelectorAll("p.item-default");
+        for (i = 0; i < temp.length; i++) {
+            temp[i].style.textDecoration = "line-through";
+        }
+        temp = document.getElementById('subtypes').querySelectorAll("p.item-default");
+        for (i = 0; i < temp.length; i++) {
+            temp[i].style.textDecoration = "line-through";
+        }
+        temp = document.getElementById('outputs').querySelectorAll("p.item-default");
+        for (i = 0; i < temp.length; i++) {
+            temp[i].style.textDecoration = "line-through";
+        }
         fakeClick();
     }
 }

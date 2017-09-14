@@ -403,6 +403,13 @@ td {
   fill: none;
 }
 
+p.item-default{
+    background-color:#f0f8ff; /*varColor*/
+}
+
+p.item-select{
+    background-color:rgba(250,128,114,0.5); /*selVarColor*/
+}
 
 
 #searchvar{
