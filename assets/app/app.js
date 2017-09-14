@@ -21,21 +21,10 @@ import {bars, barsNode, barsSubset, density, densityNode, selVarColor} from './p
 //    Developers, see /template/index.html
 //-------------------------------------------------
 
-// for debugging
-export function cdb(msg) {
-    if (!production){
-        console.log(msg);
-    };
-};
+// for debugging - if in production, prints args and returns them
+export let cdb = _ => production || console.log.apply(this, arguments) && arguments;
 
-export let inspect = obj => {
-    console.log(obj);
-    return obj;
-};
-
-
-
-var k = 4;                                            // strength parameter for group attraction/repulsion   
+var k = 4; // strength parameter for group attraction/repulsion   
 
 // initial color scale used to establish the initial colors of nodes
 // allNodes.push() below establishes a field for the master node array allNodes called "nodeCol" and assigns a color from this scale to that field
@@ -143,16 +132,14 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
         throw new Error("Error: No fileid has been provided.");
     }
 
-    let dataverseurl = '';
-    if (hostname) dataverseurl = "https://" + hostname;
-    else if (production) dataverseurl = DATAVERSE_URL;
-    else dataverseurl = "http://localhost:8080";
+    let dataverseurl = hostname ? "https://" + hostname :
+        production ? DATAVERSE_URL :
+        "http://localhost:8080";
 
     if (fileid && !dataurl) {
         // file id supplied; assume we are dealing with dataverse and cook a standard dataverse data access url
         // with the fileid supplied and the hostname we have supplied or configured
         dataurl = dataverseurl + "/api/access/datafile/" + fileid;
-
         // rp; temporarily remove this
         dataurl = dataurl + "?key=" + apikey;
     }
@@ -174,7 +161,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
     var subsetdiv = false;
     var setxdiv = false;
 
-    //Width and height for histgrams
+    // width and height for histgrams
     var barwidth = 1.3 * allR;
     var barheight = 0.5 * allR;
     var barPadding = 0.35;
@@ -201,35 +188,28 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
     arcInd1 = arcInd(arcInd1Limits);
     arcInd2 = arcInd(arcInd2Limits);
 
-
     // indicators for showing membership above arcs
- //   let indicator = (degree) => d3.svg.circle()
- //       .cx( allR )//(allR+35) * Math.sin(degree))
- //       .cy( allR )//(allR+35) * Math.cos(degree))
- //       .r(3);
- //   ind1 = indicator(1);
- //   ind2 = indicator(1.2);
+    // let indicator = (degree) => d3.svg.circle()
+    //     .cx( allR )//(allR+35) * Math.sin(degree))
+    //     .cy( allR )//(allR+35) * Math.cos(degree))
+    //     .r(3);
+    // ind1 = indicator(1);
+    // ind2 = indicator(1.2);
 
-    // From .csv
+    // from .csv
     var dataset2 = [];
     var lablArray = [];
     var hold = [];
     var subsetNodes = [];
 
-
     // collapsable user log
-    $('#collapseLog').on('shown.bs.collapse', () => {
-        d3.select("#collapseLog div.panel-body").selectAll("p")
-            .data(logArray)
-            .enter()
-            .append("p")
-            .text(d => d);
-    });
-    $('#collapseLog').on('hidden.bs.collapse', () => {
-        d3.select("#collapseLog div.panel-body").selectAll("p")
-            .remove();
-    });
-
+    $('#collapseLog').on('shown.bs.collapse', () => d3.select("#collapseLog div.panel-body").selectAll("p")
+        .data(logArray)
+        .enter()
+        .append("p")
+        .text(d => d));
+    $('#collapseLog').on('hidden.bs.collapse', () => d3.select("#collapseLog div.panel-body").selectAll("p")
+        .remove());
 
     //set start from user input, then assume locations are consistent based on d3m directory structure (alternatively can make each of these locations be set by user)
     var start = 'data/d3m/o_196seed';
@@ -242,70 +222,65 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
     let d3mPreprocess = start+'/preprocess.json';
     let probDesc=start;
 
-    // default to California PUMS subset
+    // default to California PUMS subset (should, doesn't actually do that)
     let data = 'data/' + (false ? 'PUMS5small' : 'fearonLaitin');
     let metadataurl = ddiurl || (fileid ? `${dataverseurl}/api/meta/datafile/${fileid}` : data + '.xml');
     // read pre-processed metadata and data
     let pURL = dataurl ? `${dataurl}&format=prep` : data + '.json';
-
     cdb('pURL: ' + pURL);
 
     if(d3m_mode) {
         pURL = d3mPreprocess;
         zparams.zdataurl = start+'/data/trainDatamerged.tsv';
         zparams.zdata = d3mDataName;
-    } else if (!production) {
+    } else if(!production)
         zparams.zdataurl = 'data/fearonLaitin.tsv';
-    }
+
     // loads all external data: metadata (DVN's ddi), preprocessed (for plotting distributions), and zeligmodels (produced by Zelig) and initiates the data download to the server
-    var url, p, v, callback;
+    m.request(pURL)
+        // do nothing if preprocess.json already exists, else runPreprocess
+        .then(null, _ => runPreprocess(d3mData, d3mTarget, d3mPreprocess))
+        .then(_ => readPreprocess(pURL, preprocess))
+        .then(() => new Promise((resolve, reject) => d3.xml(metadataurl, 'application/xml', xml => {
+            let vars = Object.keys(preprocess); // this doesn't come from xml, but from preprocessed json
 
-    // this assumes we have to generate a preprocess.json. there's no check if it already exists. execution pauses until preprocess.json is written. the preprocess.json includes the target metadata. the column names in target data are returned in the runPreprocess json.
-    runPreprocess(d3mData, d3mTarget, d3mPreprocess, callback = function() {
-    readPreprocess(url = pURL, p = preprocess, v = null, callback = function() {
-        d3.xml(metadataurl, "application/xml", xml => {
+            // the labels, citations, and file name come from the 'xml' (metadataurl), which is the file from the data repo 
+            // however, TwoRavens should function using only the data that comes from our preprocess script, which is the 'json' (pURL)
+            // for now the metadataurl is still Fearon & Laitin
+            let temp = xml.documentElement.getElementsByTagName("fileName");
+            if(!d3m_mode)
+                zparams.zdata = temp[0].childNodes[0].nodeValue;
 
-            var vars = Object.keys(p); // this doesn't come from xml, but from preprocessed json
-
-            // the labels, citations, and file name come from the 'xml' (metadataurl), which is the file from the data repo. but, TwoRavens should function using only the data that comes from our preprocess script, which is the 'json' (pURL)
-               // for now the metadataurl is still Fearon & Laitin
-            var varsXML = xml.documentElement.getElementsByTagName("var");
-            var temp = xml.documentElement.getElementsByTagName("fileName");
-
-               if(!d3m_mode) {
-               zparams.zdata = temp[0].childNodes[0].nodeValue;}
-
-
-            var cite = xml.documentElement.getElementsByTagName("biblCit");
-            zparams.zdatacite = cite[0].childNodes[0].nodeValue;
+            let cite = xml.documentElement.getElementsByTagName("biblCit");
             // clean citation so POST is valid json
-            zparams.zdatacite = zparams.zdatacite.replace(/\&/g, "and")
+            zparams.zdatacite = cite[0].childNodes[0].nodeValue
+                .replace(/\&/g, "and")
                 .replace(/\;/g, ",")
                 .replace(/\%/g, "-");
+            $('#cite div.panel-body').text(zparams.zdatacite);
 
             // dataset name trimmed to 12 chars
-               var dataname = zparams.zdata;
-               if(!d3m_mode){
-               dataname = zparams.zdata.replace(/\.(.*)/, '');} // drop file extension
-            d3.select("#dataName")
-                .html(dataname);
-            $('#cite div.panel-body').text(zparams.zdatacite);
+            let dataname = zparams.zdata;
+            if(!d3m_mode)
+                dataname = zparams.zdata.replace(/\.(.*)/, ''); // drop file extension
+            d3.select("#dataName").html(dataname);
 
             // Put dataset name, from meta-data, into page title
             d3.select("title").html("TwoRavens " + dataname);
             // temporary values for hold that correspond to histogram bins
             hold = [.6, .2, .9, .8, .1, .3, .4];
-            for (var i = 0; i < vars.length; i++) {
-               // valueKey[i] = vars[i].attributes.name.nodeValue;
+            for (let i = 0; i < vars.length; i++) {
+                // valueKey[i] = vars[i].attributes.name.nodeValue;
+                // lablArray[i] = varsXML[i].getElementsByTagName("labl").length == 0 ?
+                // "no label" :
+                // varsXML[i].getElementsByTagName("labl")[0].childNodes[0].nodeValue;
+                // let datasetcount = d3.layout.histogram()
+                //     .bins(barnumber).frequency(false)
+                //     ([0, 0, 0, 0, 0]);
                 valueKey[i] = vars[i];
-                //lablArray[i] = varsXML[i].getElementsByTagName("labl").length == 0 ?
-                //    "no label" :
-                 //   varsXML[i].getElementsByTagName("labl")[0].childNodes[0].nodeValue;
-                lablArray[i]="no label";
-                var datasetcount = d3.layout.histogram()
-                    .bins(barnumber).frequency(false)
-                    ([0, 0, 0, 0, 0]);
-                // contains all the preprocessed data we have for the variable, as well as UI data pertinent to that variable, such as setx values (if the user has selected them) and pebble coordinates
+                lablArray[i] = "no label";
+                // contains all the preprocessed data we have for the variable, as well as UI data pertinent to that variable, 
+                // such as setx values (if the user has selected them) and pebble coordinates
                 let obj = {
                     id: i,
                     reflexive: false,
@@ -326,48 +301,49 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
                 jQuery.extend(true, obj, preprocess[valueKey[i]]);
                 allNodes.push(obj);
             };
-
-            // read the zelig models and populate model list in right panel
+            resolve();
+        })))
+        .then(() => new Promise((resolve, reject) => {
+            // read zelig models and populate model list in right panel
             d3.json("data/zelig5models.json", (err, data) => {
                 if (err)
-                    return console.warn(err);
+                    return reject(err);
                 cdb("zelig models json: ", data);
-                for (let key in data.zelig5models) {
+                for (let key in data.zelig5models)
                     if (data.zelig5models.hasOwnProperty(key))
                         mods[data.zelig5models[key].name[0]] = data.zelig5models[key].description[0];
-                }
-                d3.json("data/zelig5choicemodels.json", (err, data) => {
-                    if (err)
-                        return console.warn(err);
-                    cdb("zelig choice models json: ", data);
-                    for (let key in data.zelig5choicemodels) {
-                        if (data.zelig5choicemodels.hasOwnProperty(key))
-                            mods[data.zelig5choicemodels[key].name[0]] = data.zelig5choicemodels[key].description[0];
-                    }
-                    scaffolding(callback = layout);
-                    dataDownload();
-                });
+                resolve();
             });
-               // looks like here is where we'll read in problem schema and we'll make a call to start the session with TA2. if we get this far, data are guaranteed to exist for the frontend
-               d3.json(d3mPS, (err, data) => {
-                       console.log("prob schema data: ");
-                       mytarget=data.target.field;
-                       probDesc = start+'/'+data.descriptionFile;
-
-                       let aTag = document.createElement('a');
-                       aTag.setAttribute('href',probDesc);
-                       aTag.setAttribute('id',"probdesc");
-                       aTag.setAttribute('target',"_blank");
-                       aTag.textContent = "Problem Description";
-                       document.getElementById("ticker").appendChild(aTag);
-                       
-                       if(d3m_mode) {
-                            startsession();
-                       }
-                       });
-        });
-    });
-                  });
+        }))
+        .then(() => new Promise((resolve, reject) => {
+            d3.json("data/zelig5choicemodels.json", (err, data) => {
+                if (err)
+                    return reject(err);
+                cdb("zelig choice models json: ", data);
+                for (let key in data.zelig5choicemodels)
+                    if (data.zelig5choicemodels.hasOwnProperty(key))
+                        mods[data.zelig5choicemodels[key].name[0]] = data.zelig5choicemodels[key].description[0];
+                scaffolding(layout);
+                dataDownload();
+                resolve();
+            })
+        }))
+        .then(() => new Promise((resolve, reject) => {
+            // read in problem schema and we'll make a call to start the session with TA2. if we get this far, data are guaranteed to exist for the frontend
+            d3.json(d3mPS, (_, data) => {
+                console.log("prob schema data: ");
+                mytarget = data.target.field;
+                let aTag = document.createElement('a');
+                aTag.setAttribute('href', `${start}/${data.descriptionFile}`);
+                aTag.setAttribute('id', "probdesc");
+                aTag.setAttribute('target', "_blank");
+                aTag.textContent = "Problem Description";
+                document.getElementById("ticker").appendChild(aTag);
+                if(d3m_mode)
+                    startsession();
+                resolve();
+            });
+        }))
 }
 
 let $fill = (obj, op, d1, d2) => d3.select(obj).transition()
@@ -507,8 +483,6 @@ let splice = (color, text, ...args) => {
 
 export let clickVar;
 
-
-
 function layout(v) {
     var myValues = [];
     nodes = [];
@@ -528,7 +502,7 @@ function layout(v) {
         .attr("width", width)
         .attr("height", height);
 
-    visbackground.append("path")                           // note lines, are behind group hulls of which there is a white and colored semi transparent layer
+    visbackground.append("path") // note lines, are behind group hulls of which there is a white and colored semi transparent layer
         .attr("id", 'gr1background')
         .style("fill", '#ffffff')
         .style("stroke", '#ffffff')
@@ -1397,7 +1371,7 @@ export let findNode = nodeName => {
     This helps handle the new format and (temporarily)
     the older format in production (rp 8.14.2017)
  */
-export function getVariableData(jsonData){
+export function getVariableData(jsonData) {
     /* "new" response:
     {
         "dataset" : {...}
@@ -1542,27 +1516,19 @@ export function estimate(btn) {
     makeCorsRequest(urlcall, btn, estimateSuccess, estimateFail, solajsonout);
 }
 
-export function runPreprocess(dataloc, targetloc, preprocessloc, callback) {
-    var tojson = {data:dataloc, target:targetloc, preprocess:preprocessloc}
-    var jsonout = JSON.stringify(tojson);
-
-    var urlcall = rappURL + "preprocessapp"; //base.concat(jsonout);
-    var solajsonout = "solaJSON=" + jsonout;
-    cdb("urlcall out: ", urlcall);
-    cdb("POST out: ", solajsonout);
-
-    function preprocessSuccess(btn, json) {
-        cdb("json in: ", json);
-        console.log(json);
-        if (typeof callback == 'function') callback();
-    }
-
-    function preprocessFail(btn) {
-        console.log("preprocess failed");
-    }
-    makeCorsRequest(urlcall, "nobutton", preprocessSuccess, preprocessFail, solajsonout);
+export function runPreprocess(dataloc, targetloc, preprocessloc) {
+    let url = rappURL + 'preprocessapp';
+    let json = JSON.stringify({data: dataloc, target: targetloc, preprocess: preprocessloc});
+    cdb('urlcall out: ', url);
+    cdb('POST out: ', json);
+    let data = new FormData();
+    data.append('solaJSON', json);
+    m.request({method: 'POST', url: url, data: data})
+        .then(data => {
+            console.log('json in: ', data);
+            return data;
+        }, _ => console.log('preprocess failed'));
 }
-
 
 export function ta2stuff(btn) {
     if (production && zparams.zsessionid == '') {
@@ -1570,18 +1536,13 @@ export function ta2stuff(btn) {
         return;
     }
 
-
-
     zPop();
     // write links to file & run R CMD
     // package the output as JSON
     // add call history and package the zparams object as JSON
     zparams.callHistory = callHistory;
 
-
-
     var jsonout = JSON.stringify(zparams);
-
     var urlcall = rappURL + "zeligapp"; //base.concat(jsonout);
     var solajsonout = "solaJSON=" + jsonout;
     cdb("urlcall out: ", urlcall);
@@ -2094,28 +2055,23 @@ export function tabLeft(tab) {
     lefttab = tab;
 }
 
-export function tabRight(tabid) {
-
-    let cls = "sidepanel container clearfix";
+export function tabRight(tab) {
     let select = cls => {
         let panel = d3.select("#rightpanel");
         return cls ? panel.attr('class', cls) : panel.attr('class');
     };
-
+    let cls = "sidepanel container clearfix";
     let toggleR = () => {
         select(function() {
             let expand = cls + ' expandpanel';
             return this.getAttribute("class") === expand ? cls : expand;
         });
     };
-
-    if (tabid == "btnModels") select(cls);
-    else if (tabid == "btnSetx") righttab == "btnSetx" || select() == cls && toggleR();
-    else if (tabid == "btnResults") !estimated ? select(cls) :
-        righttab == "btnResults" || select() == cls ? toggleR() : null;
-
-    righttab = tabid;
-
+    if (tab === "btnModels") select(cls);
+    else if (tab === "btnSetx") righttab === "btnSetx" || select() === cls && toggleR();
+    else if (tab === "btnResults") !estimated ? select(cls) :
+        righttab === "btnResults" || select() === cls && toggleR();
+    righttab = tab;
 }
 
 export let summary = {data: []};
@@ -2533,21 +2489,18 @@ export function subsetSelect(btn) {
     makeCorsRequest(urlcall, btn, subsetSelectSuccess, btn => selectLadda.stop(), solajsonout);
 }
 
-function readPreprocess(url, p, v, callback) {
-
-    cdb('readPreprocess: ' + url );
-
-    d3.json(url, (err, json) => {
-        if (err)
-            return console.warn(err);
-        cdb('inside readPreprocess function');
-        cdb(json);
-
-        priv = json.dataset.private || priv;
-        // copy object
-        Object.keys(json.variables).forEach(k => p[k] = json.variables[k]);
-        if (typeof callback == 'function') callback();
-    });
+function readPreprocess(url) {
+    return new Promise((resolve, reject) => {
+        cdb('readPreprocess: ' + url);
+        d3.json(url, (err, res) => {
+            if (err)
+                return reject(err);
+            cdb('readPreprocess result: ' + res);
+            priv = res.dataset.private || priv;
+            Object.keys(res.variables).forEach(k => preprocess[k] = res.variables[k]);
+            resolve();
+        });
+    }); 
 }
 
 // removes all the children svgs inside subset and setx divs
