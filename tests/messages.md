@@ -19,7 +19,7 @@ https://developers.google.com/protocol-buffers/docs/style
 
 But the way I'm describing them seems to be a standard way to textually represent the decoded message.
 You can interpret the following message:
-```
+```idl
 OneMessage{
 	some_field = 3 : "HELLO"
 }
@@ -29,7 +29,7 @@ to read as Message "A", send Field "b" with Value "3" which via the defined code
 Messages are made up of fields, which have predefined types.  However, the type of a field can itself be a message, 
 thus messages can be wrapped inside other messages such as:
 
-```
+```idl
 TwoMessage{
 	ThreeMessage{
 		field_d = "some string"            // a string
@@ -45,7 +45,7 @@ Messages
 
 ### Message [A1] from Django to TA2 to start session
 
-```
+```idl
 SessionRequest {
     user_agent = "TwoRavensUser";     // or some name ID for us
     version = "2017.8.23";            // version numbering for the protocol buffer defintion, which are presently release dates
@@ -55,7 +55,7 @@ SessionRequest {
 
 ### Message [A2] from TA2 to Django as response to [A1]
 
-```
+```idl
 SessionResponse {
     Response {                        // Note "Response" is a common message, used on it's own as a common response to a request, and here embedded with other details
 		Status {
@@ -97,6 +97,7 @@ SessionResponse {
     "metric":"rootMeanSquaredError"
 }
 ```
+
 // Message [B2] from Django to TA2 to update problem definition
 
 ```idl
@@ -118,7 +119,7 @@ UpdateProblemSchemaRequest{
 
 // Message [B3] from TA2 to Django, as possible response to message [B2]
 
-```
+```idl
 Response {  
 	Status {
 		code = 1 : OK
@@ -143,7 +144,7 @@ Response {
 
 // Message [C1] from Frontend to Django to find solution (estimate model/create pipeline)
 
-
+```json
 {  
     \"zdata\":\"o_196seed\",
     \"zedges\":[  
@@ -294,12 +295,14 @@ message PipelineCreateRequest {
     target_features = [8,11,15]; 						// specify a list of targets to predict
     max_pipelines = 1;              					// maximum number of pipelines to return
 }
-
+```
 
 // Message [C3a] from TA2 to Django, as possible response to message [C2], as pipeline starts
 // (this is a possible response to the RPC ExecutePipelines call)
 
 // Message []
+
+```idl
 message PipelineCreateResult {
     Response {                 // This is the standard response message we often see
 		Status {
@@ -318,11 +321,12 @@ message PipelineCreateResult {
 		}
 	}
 }
+```
 
 // Message [C3a] from TA2 to Django, as possible response to message [C2], as pipeline starts
 // (this is the final response to the RPC ExecutePipelines call)
 
-
+```idl
 message PipelineCreateResult {
 	Response {                 // This reponse message might be omitted second time, 
 		Status {               // in which case it would come across as default values
@@ -341,7 +345,7 @@ message PipelineCreateResult {
 		}
 	}
 }
-
+```
 
 
 // Message [C4] from Django to Frontend passing on information from [C3]
