@@ -10,9 +10,9 @@ The quote character " actually comes as \"
 
 Note on Protocol Buffers to/from TA2:
 =====================================
-The protocol buffers are encoded binary, so the representation below is not how they appear on the wire. 
+The protocol buffers are encoded binary, so the representation below is not how they appear on the wire.
 
-Note the standards are for messages to be CamelCase, fields to be lower_case_underscore_separated, and values to ALL_CAPS_UNDERSCORE_SEPARATED, 
+Note the standards are for messages to be CamelCase, fields to be lower_case_underscore_separated, and values to ALL_CAPS_UNDERSCORE_SEPARATED,
 which helps in interpreting a little:
 https://developers.google.com/protocol-buffers/docs/style
 
@@ -25,8 +25,8 @@ OneMessage{
 }
 ```
 
-to read as Message "A", send Field "b" with Value "3" which via the defined codebook enumerates to "HELLO" 
-Messages are made up of fields, which have predefined types.  However, the type of a field can itself be a message, 
+to read as Message "A", send Field "b" with Value "3" which via the defined codebook enumerates to "HELLO"
+Messages are made up of fields, which have predefined types.  However, the type of a field can itself be a message,
 thus messages can be wrapped inside other messages such as:
 
 ```idl
@@ -62,32 +62,33 @@ SessionResponse {
     Response {                        // Note "Response" is a common message, used on it's own as a common response to a request, and here embedded with other details
 		Status {
 			code = 1 : OK
-			details = "" 
+			details = ""
 	}
 }
     user_agent = "TheTA2Name";
     version = "2017.8.23";
     SessionContext{
     	session_id = "XYZ987"  // Some unique session identifier
-    } 
-}
-```
-
-- JSON format: Message [A2] from TA2 to Django as response to [A1]
-
-```json
-{ "responseInfo": {
-    "status": {
-      "code": "OK"
     }
-  },
-  "userAgent": "ta2_stub 0.1",
-  "version": "2017.9.x_pre",
-  "context": {
-    "sessionId": "f58p9t7"
-  }
 }
 ```
+
+	- **JSON format**: Message [A2] from TA2 to Django as response to [A1]
+
+			```json
+			{ "responseInfo": {
+			    "status": {
+			      "code": "OK"
+			    }
+			  },
+			  "userAgent": "ta2_stub 0.1",
+			  "version": "2017.9.x_pre",
+			  "context": {
+			    "sessionId": "f58p9t7"
+			  }
+			}
+			```
+
 ## (B) update problem definition
 
 - Message [B1] from Frontend to Django to update problem definition
@@ -126,7 +127,7 @@ UpdateProblemSchemaRequest{
 Response {  
 	Status {
 		code = 1 : OK
-		details = "" 
+		details = ""
 	}
 }
 ```
@@ -280,21 +281,21 @@ Response {
 
 
 
-- Message [C2] from Django to TA2 to find solution 
+- Message [C2] from Django to TA2 to find solution
   - (this is the RPC CreatePipelines call)
 
 ```idl
 message PipelineCreateRequest {
     SessionContext{
     	session_id = "XYZ987"  // Some unique session identifier
-    } 
+    }
     feature_id = "some name"; // id of feature within dataset
     data_uri = "some uri;   // uri of dataset containing feature
 	task = 2 : "REGRESSION"
 	task_subtype = 1 : "NONE"
 	output_type = 3 : "REAL"
 	metric_type = 11 : "ROOT_MEAN_SQUARED_ERROR"
-    task_description = ""; 
+    task_description = "";
     output_type = 3 : "REAL"
 	metrics = 11 : "ROOT_MEAN_SQUARED_ERROR";           // specify a list of evaluation metrics
     target_features = [8,11,15]; 						// specify a list of targets to predict
@@ -312,7 +313,7 @@ message PipelineCreateResult {
     Response {                 // This is the standard response message we often see
 		Status {
 			code = 0 : OK
-			details = "" 
+			details = ""
 		}
 	}
     progress_info = 1 : "RUNNING";
@@ -333,10 +334,10 @@ message PipelineCreateResult {
 
 ```idl
 message PipelineCreateResult {
-	Response {                 // This reponse message might be omitted second time, 
+	Response {                 // This reponse message might be omitted second time,
 		Status {               // in which case it would come across as default values
 			code = 0 : OK      // which are still 0:OK and empty string ""
-			details = "" 
+			details = ""
 		}
 	}
 	progress_info = 3 : "COMPLETED";
@@ -355,4 +356,3 @@ message PipelineCreateResult {
 
 - Message [C4] from Django to Frontend passing on information from [C3]
   - Do not know what this should look like presently.
-
