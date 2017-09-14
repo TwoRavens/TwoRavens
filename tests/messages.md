@@ -283,6 +283,7 @@ Response {
 - Message [C2] from Django to TA2 to find solution 
   - (this is the RPC CreatePipelines call)
 
+```idl
 message PipelineCreateRequest {
     SessionContext{
     	session_id = "XYZ987"  // Some unique session identifier
