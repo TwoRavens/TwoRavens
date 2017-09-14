@@ -71,7 +71,7 @@ SessionResponse {
 }
 ```
 
-// JSON format: Message [A2] from TA2 to Django as response to [A1]
+#### JSON format: Message [A2] from TA2 to Django as response to [A1]
 
 ```json
 { "responseInfo": {
@@ -87,7 +87,7 @@ SessionResponse {
 }
 ```
 
-// Message [B1] from Frontend to Django to update problem definition
+### Message [B1] from Frontend to Django to update problem definition
 
 ```json
 {  
@@ -98,7 +98,7 @@ SessionResponse {
 }
 ```
 
-// Message [B2] from Django to TA2 to update problem definition
+### Message [B2] from Django to TA2 to update problem definition
 
 ```idl
 UpdateProblemSchemaRequest{
@@ -117,7 +117,7 @@ UpdateProblemSchemaRequest{
 }
 ```
 
-// Message [B3] from TA2 to Django, as possible response to message [B2]
+### Message [B3] from TA2 to Django, as possible response to message [B2]
 
 ```idl
 Response {  
@@ -128,7 +128,7 @@ Response {
 }
 ```
 
-// Message [B4] as possible reponse from Django to frontend  (presently nothing like this exists or is expected from frontend)
+### Message [B4] as possible reponse from Django to frontend  (presently nothing like this exists or is expected from frontend)
 
 ```json
 {
@@ -141,8 +141,7 @@ Response {
 
 
 
-
-// Message [C1] from Frontend to Django to find solution (estimate model/create pipeline)
+### Message [C1] from Frontend to Django to find solution (estimate model/create pipeline)
 
 ```json
 {  
@@ -297,7 +296,7 @@ message PipelineCreateRequest {
 }
 ```
 
-// Message [C3a] from TA2 to Django, as possible response to message [C2], as pipeline starts
+### Message [C3a] from TA2 to Django, as possible response to message [C2], as pipeline starts
 // (this is a possible response to the RPC ExecutePipelines call)
 
 // Message []
@@ -323,7 +322,7 @@ message PipelineCreateResult {
 }
 ```
 
-// Message [C3a] from TA2 to Django, as possible response to message [C2], as pipeline starts
+### Message [C3a] from TA2 to Django, as possible response to message [C2], as pipeline starts
 // (this is the final response to the RPC ExecutePipelines call)
 
 ```idl
@@ -348,6 +347,6 @@ message PipelineCreateResult {
 ```
 
 
-// Message [C4] from Django to Frontend passing on information from [C3]
+### Message [C4] from Django to Frontend passing on information from [C3]
 // Do not know what this should look like presently.
 
