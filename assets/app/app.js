@@ -111,7 +111,7 @@ var callHistory = []; // transform and subset calls
 let mytarget = "";
 
 
-//eventually read this from the schema
+//eventually read this from the schema with real descriptions
 // metrics, tasks, and subtasks as specified in D3M schemas
 // MEAN SQUARED ERROR IS SET TO SAME AS RMSE. MSE is in schema but not proto
 let d3mMetrics = { metricUndefined:["description", "METRIC_UNDEFINED" , 0],
@@ -141,15 +141,25 @@ graphMatching:["description", "GRAPH_MATCHING" , 7],
 timeseriesForecasting:["description", "TIMESERIES_FORECASTING" , 8],
     collaborativeFiltering:["description", "COLLABORATIVE_FILTERING" , 9]};
 
-let d3mTaskSubtype = {binary:["description", "BINARY" , 2],
-taskSubtypeUndefined:["description", "TASK_SUBTYPE_UNDEFINED", 0],
+let d3mTaskSubtype = {taskSubtypeUndefined:["description", "TASK_SUBTYPE_UNDEFINED", 0],
 subtypeNone:["description","NONE",1],
+    binary:["description", "BINARY" , 2],
 multiClass:["description", "MULTICLASS" , 3],
 multiLabel:["description", "MULTILABEL" , 4],
 uniVariate:["description", "UNIVARIATE" , 5],
 multiVariate:["description", "MULTIVARIATE" , 6],
 overlapping:["description", "OVERLAPPING" , 7],
     nonOverlapping:["description", "NONOVERLAPPING" , 8]};
+
+let d3mOutputType = {outputUndefined:["description","OUTPUT_TYPE_UNDEFINED ", 0],
+classLabel:["description","CLASS_LABEL", 1],
+probability:["description","PROBABILITY", 2],
+real:["description","REAL", 3],
+nodeID:["description","NODE_ID", 4],
+vectorClassLabel:["description","VECTOR_CLASS_LABEL", 5],
+    vectorStochastic:["description","VECTOR_STOCHASTIC", 6],
+    vectorReal:["description","VECTOR_REAL", 7],
+    file:["description","FILE",8]};
 
 let UpdateProblemSchemaRequest = {
 task_type: [2,"DEFAULT"],
@@ -387,7 +397,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
             if (!d3m_mode)
                 return resolve();
             d3.json(d3mPS, (_, data) => {
-                console.log("prob schema data: ");
+                console.log("prob schema data: ", data);
                 mytarget = data.target.field;
                 let aTag = document.createElement('a');
                 aTag.setAttribute('href', `${start}/${data.descriptionFile}`);
@@ -396,10 +406,18 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
                 aTag.textContent = "Problem Description";
                 document.getElementById("ticker").appendChild(aTag);
                 
-                UpdateProblemSchemaRequest.task_type = data.taskType;
-                UpdateProblemSchemaRequest.task_subtype = data.taskSubType;
-                UpdateProblemSchemaRequest.metric_type = data.metric;
-                UpdateProblemSchemaRequest.output_type = data.outputType;
+                if(data.taskType in d3mTaskType) {
+                    UpdateProblemSchemaRequest.task_type = data.taskType;//[d3mTaskType[data.taskType][2],d3mTaskType[data.taskType][1]]; console.log(UpdateProblemSchemaRequest);
+                } else {alert("Specified task type, " + data.taskType + ", is not valid.")}
+                if(data.taskSubType in d3mTaskSubtype) {
+                    UpdateProblemSchemaRequest.task_subtype = data.taskSubtype;//[d3mTaskSubtype[data.taskSubType][2],d3mTaskSubtype[data.taskSubType][1]];
+                    } else {alert("Specified task subtype, " + data.taskSubType + ", is not valid.")}
+                if(data.metric in d3mMetrics) {
+                    UpdateProblemSchemaRequest.metric_type = data.metric;//[d3mMetrics[data.metric][2],d3mMetrics[data.metric][1]];
+                } else {alert("Specified metric type, " + data.metric + ", is not valid.")}
+                if(data.outputType in d3mOutputType) {
+                    UpdateProblemSchemaRequest.output_type = data.outputType;//[d3mOutputType[data.outputType][2],d3mOutputType[data.outputType][1]];
+                } else {alert("Specified output type, " + data.outputType + ", is not valid.")}
                
                 // clicks off the Models button and makes right panel blank on load?  
                 // document.getElementById("btnType").click();
@@ -606,6 +624,30 @@ function scaffolding(callback) {
         .attr("onmouseout", "$(this).popover('toggle');")
         .attr("data-original-title", "Metric Description")
         .attr("data-content", d => d3mMetrics[d][1]);
+        
+        d3.select("#outputs").selectAll("p")
+        .data(Object.keys(d3mOutputType))
+        .enter()
+        .append("p")
+        .attr("id", d => d + ".outputs")
+        .text(d => d)
+        .style('background-color', d => {
+               if (UpdateProblemSchemaRequest.output_type == d.toString()){
+               return hexToRgba(selVarColor);
+               } else {
+               return varColor;
+               }
+               })
+        .attr("data-container", "body")
+        .attr("data-toggle", "popover")
+        .attr("data-trigger", "hover")
+        .attr("data-placement", "top")
+        .attr("data-html", "true")
+        .attr("onmouseover", "$(this).popover('toggle');")
+        .attr("onmouseout", "$(this).popover('toggle');")
+        .attr("data-original-title", "Output Description")
+        .attr("data-content", d => d3mOutputType[d][1]);
+
     }
 
     // call layout() because at this point all scaffolding is up and ready
@@ -1067,6 +1109,7 @@ function layout(v,v2) {
                }
                });
         restart();
+        updateSchema("task_type", UpdateProblemSchemaRequest, d3mTaskType);
         });
     
     d3.select("#subtypes").selectAll("p")
@@ -1085,6 +1128,7 @@ function layout(v,v2) {
                }
                });
         restart();
+        updateSchema("task_subtype", UpdateProblemSchemaRequest, d3mTaskSubtype);
         });
     
     d3.select("#metrics").selectAll("p") // models tab
@@ -1099,11 +1143,31 @@ function layout(v,v2) {
                UpdateProblemSchemaRequest.metric_type = d.toString();
                return hexToRgba(selVarColor);
                } else {
-               UpdateProblemSchemaRequest.metric_type = "";
+               UpdateProblemSchemaRequest.metric_type = ["",""];
                return varColor;
                }
                });
         restart();
+        updateSchema("metric_type", UpdateProblemSchemaRequest, d3mMetrics);
+        });
+    
+    d3.select("#outputs").selectAll("p")
+    .on("click", function() {
+        var myColor = d3.select(this).style('background-color');
+        d3.select("#outputs").selectAll("p")
+        .style('background-color', varColor);
+        d3.select(this)
+        .style('background-color', d => {
+               if (d3.rgb(myColor).toString() === varColor.toString()) {
+               UpdateProblemSchemaRequest.output_type = d.toString();
+               return hexToRgba(selVarColor);
+               } else {
+               UpdateProblemSchemaRequest.ouptput_type = ["",""];
+               return varColor;
+               }
+               });
+        restart();
+        updateSchema("output_type", UpdateProblemSchemaRequest, d3mOutputType);
         });
 
     // update graph (called when needed)
@@ -2689,6 +2753,32 @@ function startsession() {
    makeCorsRequest(urlcall, "nobutton", ssSuccess, ssFail, solajsonout);
 }
 
+// this is our call to django to update the problem schema
+function updateSchema(type, updates, lookup) {
+    let ReplaceProblemSchemaField=type;
+    let value = lookup[updates[type]][1];
+    let valuenum = lookup[updates[type]][2];
+    let updateRequest = {ReplaceProblemSchemaField, value, valuenum};
+    
+    let jsonout = JSON.stringify(updateRequest);
+    
+    let urlcall = d3mURL + "/updateproblemschema";
+    let solajsonout = "UpdateProblemSchemaRequest=" + jsonout;
+    console.log("solajsonout: ", solajsonout);
+    console.log("urlcall: ", urlcall);
+    
+    function usSuccess(btn, json) {
+        console.log(json);
+    }
+    
+    function usFail(btn) {
+        console.log("update schema failed");
+    }
+    
+    makeCorsRequest(urlcall, "nobutton", usSuccess, usFail, solajsonout);
+}
+
+
 // Find something centerish to the vertices of a convex hull
 // (specifically, the center of the bounding box)
 function jamescentroid(coord){
@@ -2717,6 +2807,7 @@ function toggleRightButtons(set) {
         document.getElementById('btnType').style.display = 'inline';
         document.getElementById('btnSubtype').style.display = 'inline';
         document.getElementById('btnMetrics').style.display = 'inline';
+        document.getElementById('btnOutputs').style.display = 'inline';
     }
     if(set=="models") {
         document.getElementById('btnModels').style.display = 'inline';
@@ -2726,6 +2817,7 @@ function toggleRightButtons(set) {
         document.getElementById('btnType').style.display = 'none';
         document.getElementById('btnSubtype').style.display = 'none';
         document.getElementById('btnMetrics').style.display = 'none';
+        document.getElementById('btnOutputs').style.display = 'none';
     }
 
 }
