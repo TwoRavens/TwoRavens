@@ -49,3 +49,12 @@ This can be run through the JSON -> gRPC utitlity and sent off to the TA2 servic
    "metric":"ROOT_MEAN_SQUARED_ERROR"
 }
 ```
+
+
+### Summary:
+
+- Frontend sends the JSON in (3)
+- The server side (python):
+  - converts it to the JSON in (2)
+  - uses google's function to convert to gRPC, 
+  - sends it off to TA2
