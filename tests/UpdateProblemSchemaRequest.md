@@ -35,7 +35,7 @@ This can be run through the JSON -> gRPC utitlity and sent off to the TA2 servic
 }
 ```
 
-### (3) Proposed JSON to construct in the front end.  
+### (3) Updated JSON to construct in the front end.  
 
 - This is similar to the original in (1)
 - It uses the names such as "REGRESSION" that are straight from the proto file.
