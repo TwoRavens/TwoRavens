@@ -1842,6 +1842,7 @@ export function estimate(btn) {
                 let urlcall = d3mURL + "/createpipeline";
                 var solajsonout = "CreatePipelines=" + jsonout;
                 
+                console.log(urlcall);
                 console.log(solajsonout);
                 function sendPipelineSuccess(btn, json) {
                     console.log(json);
@@ -2835,6 +2836,28 @@ function startsession() {
     }
     
    makeCorsRequest(urlcall, "nobutton", ssSuccess, ssFail, solajsonout);
+}
+
+export function endsession() {
+    let sessioncontext = "my session context";
+    let SessionContext={sessioncontext};
+    
+    var jsonout = JSON.stringify(SessionContext);
+    
+    var urlcall = d3mURL + "/endsession";
+    var solajsonout = "SessionContext=" + jsonout;
+    console.log("solajsonout: ", solajsonout);
+    console.log("urlcall: ", urlcall);
+    
+    function endSuccess(btn, json) {
+        console.log(json);
+    }
+    
+    function endFail(btn) {
+        console.log("end session failed");
+    }
+    
+    makeCorsRequest(urlcall, "nobutton", endSuccess, endFail, solajsonout);
 }
 
 // this is our call to django to update the problem schema

@@ -170,6 +170,9 @@ class Body {
                   m("button#btnReset.btn.btn-default.navbar-right[title=Reset][style=margin-left: 2.0em]", {
                     onclick: app.reset},
                     m("span.glyphicon.glyphicon-repeat[style=color: #818181; font-size: 1em; pointer-events: none]")),
+                  m("button#btnEndSession.btn.btn-default.navbar-right[title=End Session][style=margin-left: 2.0em]", {
+                    onclick: _=> app.endsession()},
+                    m("span.ladda-label", 'End Session')),
                   m('#transformations.transformTool', {
                     title: 'Construct transformations of existing variables using valid R syntax. For example, assuming a variable named d, you can enter "log(d)" or "d^2".'}))),
               m(`#about.panel.panel-default[style=display: ${this.about ? 'block' : 'none'}; left: 140px; position: absolute; width: 500px; z-index: 50]`,
