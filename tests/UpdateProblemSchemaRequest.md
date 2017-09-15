@@ -37,8 +37,9 @@ This can be run through the JSON -> gRPC utitlity and sent off to the TA2 servic
 
 ### (3) Proposed JSON to construct in the front end.  
 
-This is similar to the original in (1) but uses the names such as "REGRESSION" that are straight from the proto file.
-   reference: https://gitlab.datadrivendiscovery.org/d3m/ta3ta2-api/blob/devel/core.proto#L79
+- This is similar to the original in (1)
+- It uses the names such as "REGRESSION" that are straight from the proto file.
+  - As a reference, here's the gRPC proto file: https://gitlab.datadrivendiscovery.org/d3m/ta3ta2-api/blob/devel/core.proto#L79
 
 ```
 {  
