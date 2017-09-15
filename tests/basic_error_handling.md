@@ -26,7 +26,7 @@ Which errors do you want to handle?  How do you want to handle them?
 Part of this may simply be handled in the UI. Should we ask our TA2 partners for a list of what to expect?
 
    - In what cases do we simply pass the responses back to the UI?
-   - A case of a `StartSession` that fails for being the wrong grpc version, we should either:
+   - **Needed**: A case of a `StartSession` that fails for being the wrong grpc version, we should either:
      - warn the user and keep going or
      - inform the user and stop the app
    - What other conditions may occur from `UpdateProblemSchema` and `PipelineCreateRequest`
