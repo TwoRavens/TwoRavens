@@ -409,16 +409,28 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
                 
                 if(data.taskType in d3mTaskType) {
                     UpdateProblemSchemaRequest.task_type = data.taskType;//[d3mTaskType[data.taskType][2],d3mTaskType[data.taskType][1]]; console.log(UpdateProblemSchemaRequest);
-                } else {alert("Specified task type, " + data.taskType + ", is not valid.")}
+                } else {
+                    UpdateProblemSchemaRequest.task_type = "taskTypeUndefined";
+                    alert("Specified task type, " + data.taskType + ", is not valid.");
+                }
                 if(data.taskSubType in d3mTaskSubtype) {
                     UpdateProblemSchemaRequest.task_subtype = data.taskSubtype;//[d3mTaskSubtype[data.taskSubType][2],d3mTaskSubtype[data.taskSubType][1]];
-                    } else {alert("Specified task subtype, " + data.taskSubType + ", is not valid.")}
+                    } else {
+                        UpdateProblemSchemaRequest.task_subtype = "taskSubtypeUndefined";
+                        alert("Specified task subtype, " + data.taskSubType + ", is not valid.")
+                    }
                 if(data.metric in d3mMetrics) {
                     UpdateProblemSchemaRequest.metric_type = data.metric;//[d3mMetrics[data.metric][2],d3mMetrics[data.metric][1]];
-                } else {alert("Specified metric type, " + data.metric + ", is not valid.")}
+                } else {
+                    UpdateProblemSchemaRequest.matric_type = "metricUndefined";
+                    alert("Specified metric type, " + data.metric + ", is not valid.");
+                    }
                 if(data.outputType in d3mOutputType) {
                     UpdateProblemSchemaRequest.output_type = data.outputType;//[d3mOutputType[data.outputType][2],d3mOutputType[data.outputType][1]];
-                } else {alert("Specified output type, " + data.outputType + ", is not valid.")}
+                } else {
+                    UpdateProblemSchemaRequest.output_type = "outputUndefined";
+                    alert("Specified output type, " + data.outputType + ", is not valid.");
+                }
                
                 // clicks off the Models button and makes right panel blank on load?  
                  document.getElementById("btnType").click();
@@ -1802,29 +1814,35 @@ export function estimate(btn) {
 
     estimateLadda.start(); // start spinner
     makeCorsRequest(urlcall, btn, estimateSuccess, estimateFail, solajsonout);
-    } else {
+    } else { // we are in d3m_mode
             zPop();
             zparams.callHistory = callHistory;
             var jsonout = JSON.stringify(zparams);
         console.log(jsonout);
-        //return;
-            
+        
             var urlcall = rappURL + "pipelineapp";
             var solajsonout = "solaJSON=" + jsonout;
             cdb("urlcall out: ", urlcall);
             cdb("POST out: ", solajsonout);
-            console.log("estimate: ", solajsonout);
-            
+        
             function createPipelineSuccess(btn, json) {
                 estimateLadda.stop(); // stop spinner
+                
+                let train_features=json.predictors;
+                let target_features=json.depvar;
+                let task = d3mTaskType[UpdateProblemSchemaRequest.task_type][1];
+                let task_subtype = d3mTaskSubtype[UpdateProblemSchemaRequest.task_subtype][1];
+                let output = d3mOutputType[UpdateProblemSchemaRequest.output_type][1];
+                let metrics = d3mMetrics[UpdateProblemSchemaRequest.metric_type][1];
 
-                let PipelineRequest={json,UpdateProblemSchemaRequest};
+                let PipelineRequest={train_features, target_features, task, task_subtype, output, metrics};
                 
                 let jsonout = JSON.stringify(PipelineRequest);
                 
                 let urlcall = d3mURL + "/createpipeline";
                 var solajsonout = "CreatePipelines=" + jsonout;
                 
+                console.log(solajsonout);
                 function sendPipelineSuccess(btn, json) {
                     console.log(json);
                 }
