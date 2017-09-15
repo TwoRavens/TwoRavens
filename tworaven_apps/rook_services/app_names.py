@@ -15,6 +15,7 @@ ROOK_APP_NAMES = [('ZELIG_APP', 'zeligapp', 'zeligapp'),    # run models
                   ('SUBSET_APP', 'subsetapp', 'subsetapp'), # subset file
                   ('TRANSFORM_APP', 'transformapp', 'transformapp'), # transfor file
                   ('PREPROCESS_APP', 'preprocessapp', 'preprocessapp'), # preprocess
+                  ('PIPELINE_APP', 'pipelineapp', 'pipelineapp'), # format pipeline
                  ]
 
 ROOK_APP_NAMES += [\

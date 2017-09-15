@@ -1662,7 +1662,7 @@ export function lockDescription() {
         for (i = 0; i < temp.length; i++) {
             temp[i].classList.remove("item-lineout");
         }
-    } else { 
+    } else {
         document.getElementById('btnLock').setAttribute("class", "btn active");
         temp = document.getElementById('metrics').querySelectorAll("p.item-default");
         console.log(temp);
@@ -1710,6 +1710,7 @@ function zPop() {
 }
 
 export function estimate(btn) {
+    if(!d3m_mode){
     if (production && zparams.zsessionid == '') {
         alert("Warning: Data download is not complete. Try again soon.");
         return;
@@ -1801,6 +1802,48 @@ export function estimate(btn) {
 
     estimateLadda.start(); // start spinner
     makeCorsRequest(urlcall, btn, estimateSuccess, estimateFail, solajsonout);
+    } else {
+            zPop();
+            zparams.callHistory = callHistory;
+            var jsonout = JSON.stringify(zparams);
+        console.log(jsonout);
+        //return;
+            
+            var urlcall = rappURL + "pipelineapp";
+            var solajsonout = "solaJSON=" + jsonout;
+            cdb("urlcall out: ", urlcall);
+            cdb("POST out: ", solajsonout);
+            console.log("estimate: ", solajsonout);
+            
+            function createPipelineSuccess(btn, json) {
+                estimateLadda.stop(); // stop spinner
+
+                let PipelineRequest={json,UpdateProblemSchemaRequest};
+                
+                let jsonout = JSON.stringify(PipelineRequest);
+                
+                let urlcall = d3mURL + "/createpipeline";
+                var solajsonout = "CreatePipelines=" + jsonout;
+                
+                function sendPipelineSuccess(btn, json) {
+                    console.log(json);
+                }
+                
+                function sendPipelineFail(btn) {
+                    console.log("pipeline to django failed");
+                }
+                
+                makeCorsRequest(urlcall, "nobutton", sendPipelineSuccess, sendPipelineFail, solajsonout);
+            }
+            
+            function createPipelineFail(btn) {
+                estimateLadda.stop(); // stop spinner
+                estimated = true;
+            }
+            
+            estimateLadda.start(); // start spinner
+            makeCorsRequest(urlcall, btn, createPipelineSuccess, createPipelineFail, solajsonout);
+    }
 }
 
 export function runPreprocess(dataloc, targetloc, preprocessloc) {

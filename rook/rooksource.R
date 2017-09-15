@@ -111,6 +111,7 @@ source("rookutils.R")
 source("rookdata.R")
 #source("rookwrite.R")   # jh - believe this is a legacy of early exploration of user-level metadata
 source("rookpreprocess.R")
+source("rookpipeline.R")
 if(addPrivacy){
     source("rookprivate.R")
 }
@@ -127,6 +128,7 @@ if(!production){
     R.server$add(app = data.app, name="dataapp")
     #R.server$add(app = write.app, name="writeapp")  # jh - believe this is a legacy of early exploration of user-level metadata
     R.server$add(app = preprocess.app, name="preprocessapp")
+    R.server$add(app = pipeline.app, name="pipelineapp")
     
         ## These add the .apps for the privacy budget allocator interface
     if(addPrivacy){

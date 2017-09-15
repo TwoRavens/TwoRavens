@@ -96,11 +96,17 @@ buildSetx <- function(setx, varnames) {
     return(call)
 }
 
-buildFormula<-function(dv, linkagelist, varnames=NULL, nomvars){
+buildFormula<-function(dv, linkagelist, varnames=NULL, nomvars, groups=NULL){
 
+    ## this is the code to resolve the linkagelist with a group, which is defined in pipeline. assumption is that the group is a set of predictors. eventually need more args as concept of "group" takes on different meanings. groups default is null, so buildFormula retains previous behavior when groups is not passed.
+    if(!is.null(groups)) {
+        linkagelist <- rbind(linkagelist,cbind(groups, dv))
+    }
+    
     if(is.null(varnames)){
     	varnames<-unique(c(dv,linkagelist))
     }
+
     print(varnames)
 
     k<-length(varnames)
@@ -109,7 +115,8 @@ buildFormula<-function(dv, linkagelist, varnames=NULL, nomvars){
 
     # define relationship matrix
     # relmat[i,j]==1 => "i caused by j"
-
+    
+    print("LINKAGE LIST ")
     print(linkagelist)
     print(nrow(linkagelist))
 
