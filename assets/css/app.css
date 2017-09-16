@@ -83,7 +83,7 @@ circle.node {
 }
 
 text {
-  font: 12px sans-serif;
+ 
   pointer-events: none;
 }
 
@@ -415,6 +415,7 @@ p.item-lineout{
     text-decoration:line-through;
 }
 
+
 #searchvar{
 /*  background: #fff url(icoX.gif) no-repeat right -10px center;*/
   border: 1px solid #999;
@@ -424,3 +425,34 @@ p.item-lineout{
 }
 #searchvar.x  { background-position: right 5px center; } /* (jQ) Show icon */
 #searchvar.onX{ cursor: pointer; }
+
+
+.accordian {
+    width: 100%;
+    overflow: hidden;
+}
+
+.accordian ul {
+    width: 100%;
+    float:left;
+    -webkit-padding-start: 0px;
+}
+
+.accordian li {
+    position: relative;
+    display: block;
+    width:10%;
+    float: left;
+
+    transition: all 0.5s;
+    -webkit-transition: all 0.5s;
+    -moz-transition: all 0.5s;
+}
+
+.noshow {
+    display:none;
+}
+
+.yesshow {
+    display:inline;
+}

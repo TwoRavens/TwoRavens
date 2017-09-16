@@ -411,25 +411,25 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
                     UpdateProblemSchemaRequest.task_type = data.taskType;//[d3mTaskType[data.taskType][2],d3mTaskType[data.taskType][1]]; console.log(UpdateProblemSchemaRequest);
                 } else {
                     UpdateProblemSchemaRequest.task_type = "taskTypeUndefined";
-                    alert("Specified task type, " + data.taskType + ", is not valid.");
+                 //   alert("Specified task type, " + data.taskType + ", is not valid.");
                 }
                 if(data.taskSubType in d3mTaskSubtype) {
                     UpdateProblemSchemaRequest.task_subtype = data.taskSubtype;//[d3mTaskSubtype[data.taskSubType][2],d3mTaskSubtype[data.taskSubType][1]];
                     } else {
                         UpdateProblemSchemaRequest.task_subtype = "taskSubtypeUndefined";
-                        alert("Specified task subtype, " + data.taskSubType + ", is not valid.")
+                   //     alert("Specified task subtype, " + data.taskSubType + ", is not valid.")
                     }
                 if(data.metric in d3mMetrics) {
                     UpdateProblemSchemaRequest.metric_type = data.metric;//[d3mMetrics[data.metric][2],d3mMetrics[data.metric][1]];
                 } else {
                     UpdateProblemSchemaRequest.matric_type = "metricUndefined";
-                    alert("Specified metric type, " + data.metric + ", is not valid.");
+                   // alert("Specified metric type, " + data.metric + ", is not valid.");
                     }
                 if(data.outputType in d3mOutputType) {
                     UpdateProblemSchemaRequest.output_type = data.outputType;//[d3mOutputType[data.outputType][2],d3mOutputType[data.outputType][1]];
                 } else {
                     UpdateProblemSchemaRequest.output_type = "outputUndefined";
-                    alert("Specified output type, " + data.outputType + ", is not valid.");
+                  //  alert("Specified output type, " + data.outputType + ", is not valid.");
                 }
                
                 // clicks off the Models button and makes right panel blank on load?  
@@ -568,6 +568,7 @@ function scaffolding(callback) {
         //
         
         toggleRightButtons("tasks");
+        //toggleRightButtons("all");
         
         d3.select("#types").selectAll("p")
         .data(Object.keys(d3mTaskType))
@@ -2906,15 +2907,52 @@ function jamescentroid(coord){
 
 
 function toggleRightButtons(set) {
-    if(set=="tasks") {
-        document.getElementById('btnModels').style.display = 'none';
-        document.getElementById('btnSetx').style.display = 'none';
-        document.getElementById('btnResults').style.display = 'none';
     
-        document.getElementById('btnType').style.display = 'inline';
-        document.getElementById('btnSubtype').style.display = 'inline';
-        document.getElementById('btnMetrics').style.display = 'inline';
-        document.getElementById('btnOutputs').style.display = 'inline';
+    function setWidths(btns) {
+        let mywidth = 100/btns.length;
+        mywidth = mywidth.toString() + '%';
+        let expandwidth = '35%';
+        let shrinkwidth = 65/(btns.length-1);
+        shrinkwidth = shrinkwidth.toString() + '%';
+        let mylis = document.getElementById('rightpanel').querySelectorAll(".accordian li");
+        // hardly ever runs on the page
+        for (let i = 0; i < mylis.length; i++) {
+            mylis[i].style.width=mywidth;
+            mylis[i].addEventListener('mouseover', function() {
+                                      for(let j = 0; j < mylis.length; j++) {
+                                      mylis[j].style.width=shrinkwidth;
+                                      }
+                                      this.style.width=expandwidth;
+                                      });
+            mylis[i].addEventListener('mouseout', function() {
+                                      for(let j = 0; j < mylis.length; j++) {
+                                      mylis[j].style.width=mywidth;
+                                      }
+                                      });
+        }
+        
+    }
+
+    if(set=="tasks") {
+
+        document.getElementById('btnModels').classList.add("noshow");
+        document.getElementById('btnSetx').classList.add("noshow");
+        document.getElementById('btnResults').classList.add("noshow");
+        
+        
+        let mybtns = document.getElementById('rightpanelbuttons').querySelectorAll(".btn:not(.noshow)");
+        setWidths(mybtns);
+        
+        
+    } else if (set=="all") {
+        // first remove noshow class
+        let mybtns = document.getElementById('rightpanelbuttons').querySelectorAll(".noshow");
+        for (let i = 0; i < mybtns.length; i++) {
+            mybtns[i].classList.remove("noshow");
+        }
+        // then select all the buttons
+        mybtns = document.getElementById('rightpanelbuttons').querySelectorAll(".btn:not(.noshow)");
+        setWidths(mybtns);
     }
     if(set=="models") {
         document.getElementById('btnModels').style.display = 'inline';

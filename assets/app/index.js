@@ -86,14 +86,30 @@ let rightpanel = mode => mode ? m(Panel, {
     m(Panel, {
       side: 'right', 
       title: 'Model Selection'},
-      m(".btn-group.btn-group-justified#modelGroup[style=margin-top: .5em]",
+      m(".accordian[style=margin-top: .5em]",
+        m("ul#rightpanelbuttons",[
+           m("li",[
+              m(Button, {id: 'btnModels', style: 'width: 100%'}, 'Models')]),
+           m("li",[
+              m(Button, {id: 'btnSetx', style: 'width: 100%'}, 'Set Covar.')]),
+           m("li",[
+              m(Button, {id: 'btnResults', style: 'width: 100%'}, 'Results')]),
+           m("li",[
+              m(Button, {id: 'btnType', style: 'width: 100%'}, 'Task Type'),]),
+           m("li",[
+              m(Button, {id: 'btnSubtype', style: 'width: 100%'}, 'Subtype'),]),
+           m("li",[
+              m(Button, {id: 'btnMetrics', style: 'width: 100%'}, 'Metrics')]),
+           m("li",[m(Button, {id: 'btnOutputs', style: 'width: 100%'}, 'Output')]),
+           ])),
+ /*     m(".btn-group.btn-group-justified#modelGroup[style=margin-top: .5em]",
         m(Button, {id: 'btnModels', style: 'width: 33%'}, 'Models'),
         m(Button, {id: 'btnSetx', style: 'width: 34%'}, 'Set Covar.'),
         m(Button, {id: 'btnResults', style: 'width: 33%'}, 'Results'),
         m(Button, {id: 'btnType', style: 'width: 25%; display: none'}, 'Task Type'),
         m(Button, {id: 'btnSubtype', style: 'width: 25%; display: none'}, 'Subtype'),
         m(Button, {id: 'btnMetrics', style: 'width: 25%; display: none'}, 'Metrics'),
-        m(Button, {id: 'btnOutputs', style: 'width: 25%; display: none'}, 'Outputs')),
+        m(Button, {id: 'btnOutputs', style: 'width: 25%; display: none'}, 'Outputs')),   */
       m(`#results[style=display: ${or('right', 'btnResults')}; margin-top: .5em]`,
         m("#resultsView.container[style=float: right; overflow: auto; width: 80%; background-color: white; white-space: nowrap]"),
         m('#modelView[style=display: none; float: left; width: 20%; background-color: white]'),
@@ -105,6 +121,8 @@ let rightpanel = mode => mode ? m(Panel, {
       m(`#metrics[style=display: ${or('right', 'btnMetrics')}; padding: 6px 12px; text-align: center]`),
       m(`#outputs[style=display: ${or('right', 'btnOutputs')}; padding: 6px 12px; text-align: center]`));
 
+
+
 let ticker = mode => {
     let link = name => m(`a${name === mode ? '.active' : ''}[href=/${name}][style=margin-right: 0.5em]`, {oncreate: m.route.link}, name[0].toUpperCase() + name.slice(1));
     return m('#ticker[style=background: #F9F9F9; bottom: 0; height: 40px; position: fixed; width: 100%; border-top: 1px solid #ADADAD]',
@@ -112,6 +130,7 @@ let ticker = mode => {
         link('explore'),
         m("a#logID[href=somelink][target=_blank][style=margin-right: 0.5em]", "Replication"));
 };
+
 
 class Body {
     oninit() {
@@ -165,7 +184,7 @@ class Body {
                     onclick: _ => app.estimate('btnEstimate')},
                     m("span.ladda-label", mode ? 'Explore' : 'Estimate')),
                   m("button#btnTA2.btn.btn-default.ladda-button.navbar-right[data-spinner-color=#000000][data-style=zoom-in][style=margin-left: 15em; margin-right: 1em]", {
-                      onclick: _ => app.ta2stuff('btnTA2')}, 
+                      onclick: _ => app.ta2stuff('btnTA2')},
                       'TA2'),
                   m("button#btnReset.btn.btn-default.navbar-right[title=Reset][style=margin-left: 2.0em]", {
                     onclick: app.reset},
