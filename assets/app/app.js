@@ -1847,6 +1847,7 @@ export function estimate(btn) {
                 console.log(solajsonout);
                 function sendPipelineSuccess(btn, json) {
                     console.log(json);
+                    toggleRightButtons("all");
                 }
                 
                 function sendPipelineFail(btn) {
