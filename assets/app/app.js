@@ -431,10 +431,8 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
                     UpdateProblemSchemaRequest.output_type = "outputUndefined";
                   //  alert("Specified output type, " + data.outputType + ", is not valid.");
                 }
-               
-                // clicks off the Models button and makes right panel blank on load?  
-                 document.getElementById("btnType").click();
                 
+                document.getElementById("btnType").click();
                 startsession();
                 scaffolding(layout);
                 dataDownload();
@@ -568,6 +566,7 @@ function scaffolding(callback) {
         //
         
         toggleRightButtons("tasks");
+
         //toggleRightButtons("all");
         
         d3.select("#types").selectAll("p")
@@ -1848,6 +1847,8 @@ export function estimate(btn) {
                 function sendPipelineSuccess(btn, json) {
                     console.log(json);
                     toggleRightButtons("all");
+                    document.getElementById("btnResults").click();
+                    listpipelines();
                 }
                 
                 function sendPipelineFail(btn) {
@@ -2862,6 +2863,45 @@ export function endsession() {
     makeCorsRequest(urlcall, "nobutton", endSuccess, endFail, solajsonout);
 }
 
+export function listpipelines() {
+    let sessioncontext = "my session context";
+    let PipeLineListRequest={sessioncontext};
+    
+    var jsonout = JSON.stringify(PipeLineListRequest);
+    
+    var urlcall = d3mURL + "/listpipelines";
+    var solajsonout = "PipeLineListRequest=" + jsonout;
+    console.log("solajsonout: ", solajsonout);
+    console.log("urlcall: ", urlcall);
+    
+    function listPipesSuccess(btn, json) {
+        //hardcoded pipes for now
+        let pipes = ["","id1", "id2", "id3", "id4", "id5"]
+        d3.select("#results").selectAll("p")
+        .data(pipes)
+        .enter()
+        .append("p")
+        .attr("id", "_pipe_".concat)
+        .text(d => d)
+        .attr('class', 'item-default')
+        .on("click", function() {
+            if(this.className=="item-select") {
+                return;
+            } else {
+                d3.select("#results").select("p.item-select")
+                .attr('class', 'item-default');
+                d3.select(this).attr('class',"item-select");
+            }});
+        console.log(json);
+    }
+    
+    function listPipesFail(btn) {
+        console.log("list pipelines failed");
+    }
+    
+    makeCorsRequest(urlcall, "nobutton", listPipesSuccess, listPipesFail, solajsonout);
+}
+
 // this is our call to django to update the problem schema
 function updateSchema(type, updates, lookup) {
     let ReplaceProblemSchemaField=type;
@@ -2965,7 +3005,6 @@ function toggleRightButtons(set) {
         document.getElementById('btnMetrics').style.display = 'none';
         document.getElementById('btnOutputs').style.display = 'none';
     }
-
 }
 
 
