@@ -32,7 +32,7 @@ var k = 4; // strength parameter for group attraction/repulsion
 var colors = d3.scale.category20();
 export let csColor = '#419641';
 export let dvColor = '#28a4c9';
-export let gr1Color = '#24a4c9';//#ccccff';
+export let gr1Color = '#14bdcc';  // initially was #24a4c9', but that is dvColor, and we track some properties by color assuming them unique
 var gr1Opacity = [0,1];
 export let gr2Color = '#ffcccc';
 var gr2Opacity = [0,1];
@@ -1056,7 +1056,13 @@ function layout(v,v2) {
                 targetY = d.target.y - (targetPadding * normY);
             return `M${sourceX},${sourceY}L${targetX},${targetY}`;
         });
+
         circle.attr('transform', d => 'translate(' + d.x + ',' + d.y + ')');
+
+        circle.selectAll('circle')           // Shrink/expand pebbles that join/leave groups
+            .transition()
+            .duration(150)
+            .attr('r', d => setPebbleRadius(d));
 
     }
 
@@ -1180,9 +1186,10 @@ function layout(v,v2) {
         if (forcetoggle[0] == "true") {
             force.gravity(0.1);
             //force.charge(-800);  // Previous constant value
-            force.charge(function(node) {
-                return ((zparams.zgroup1.indexOf(node.name) < 0 ) & (zparams.zgroup2.indexOf(node.name) < 0 ))   ? -800 : -400;  // -1 is the value if no index position found
-            });
+           // force.charge(function(node) {
+           //     return ((zparams.zgroup1.indexOf(node.name) < 0 ) & (zparams.zgroup2.indexOf(node.name) < 0 ))   ? -800 : -400;  // -1 is the value if no index position found
+           // });
+            force.charge( d => setPebbleCharge(d, false));
             force.start();
             force.linkStrength(1);
             k = 4;                                            // strength parameter for group attraction/repulsion   
@@ -1383,7 +1390,7 @@ function layout(v,v2) {
 
         g.append('svg:circle')
             .attr('class', 'node')
-            .attr('r', allR)
+            .attr('r', d => setPebbleRadius(d))
             .style('pointer-events', 'inherit')
             .style('fill', d => d.nodeCol)
             .style('opacity', "0.5")
@@ -2944,8 +2951,37 @@ function jamescentroid(coord){
         return[(minx + maxx)/2, (miny + maxy)/2];
 };
 
+// Define each pebble radius.
+// Presently, most pebbles are scaled to radius set by global allR.
+// Members of groups are scaled down if group gets large.
+function setPebbleRadius(d){
+    if((zparams.zgroup1.indexOf(d.name) > -1) || (zparams.zgroup2.indexOf(d.name) > -1)){   // if a member of a group, need to calculate radius size
+        var uppersize = 4
+        var ng1 = (zparams.zgroup1.indexOf(d.name) > -1) ? zparams.zgroup1.length : 1;      // size of group1, if a member of group 1
+        var ng2 = (zparams.zgroup2.indexOf(d.name) > -1) ? zparams.zgroup2.length : 1;      // size of group2, if a member of group 2
+        var maxng = Math.max(ng1,ng2);                                                      // size of the largest group variable is member of
+        return (maxng>uppersize) ? allR*Math.sqrt(uppersize/maxng) : allR;                  // keep total area of pebbles bounded to pi * allR^2 * uppersize, thus shrinking radius for pebbles in larger groups                
+    }else{                                                                                  
+        return allR                                                                         // nongroup members get the common global radius
+    }
+};
 
-
+// Define each pebble charge.
+// This was the previous charge setting:
+//return ((zparams.zgroup1.indexOf(node.name) < 0 ) & (zparams.zgroup2.indexOf(node.name) < 0 ))   ? -800 : -400;  // -1 is the value if no index position found
+function setPebbleCharge(d, override){
+    if(override){
+        return -1000
+    }else if((zparams.zgroup1.indexOf(d.name) > -1) || (zparams.zgroup2.indexOf(d.name) > -1)){ 
+        var uppersize = 4
+        var ng1 = (zparams.zgroup1.indexOf(d.name) > -1) ? zparams.zgroup1.length : 1;      // size of group1, if a member of group 1
+        var ng2 = (zparams.zgroup2.indexOf(d.name) > -1) ? zparams.zgroup2.length : 1;      // size of group2, if a member of group 2
+        var maxng = Math.max(ng1,ng2);                                                      // size of the largest group variable is member of
+        return (maxng>uppersize) ? -400*(uppersize/maxng) : -400;                           // decrease charge as pebbles become smaller, so they can pack together
+    }else{
+        return -800
+    }
+};
 
 function toggleRightButtons(set) {
     
