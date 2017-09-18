@@ -5,8 +5,9 @@ from django.shortcuts import render
 from django.template.loader import render_to_string
 from django.http import JsonResponse, HttpResponse, Http404
 from django.views.decorators.csrf import csrf_exempt, csrf_protect
-from tworaven_apps.ta2_interfaces.ta2_proxy import start_session
-from tworaven_apps.ta2_interfaces.update_problem_schema import \
+from tworaven_apps.ta2_interfaces.req_start_session import start_session
+from tworaven_apps.ta2_interfaces.req_end_session import end_session
+from tworaven_apps.ta2_interfaces.req_update_problem_schema import \
     update_problem_schema
 
 
@@ -20,8 +21,7 @@ def get_grpc_test_json(request, grpc_json_file, info_dict={}):
 def view_grpc_test_links(request):
     """Show an existing list of gRPC related urls"""
     return render(request,
-                  'test_responses/grpc_list.html')
-
+                  'grpc_list.html')
 
 @csrf_exempt
 def view_startsession(request):
@@ -38,7 +38,7 @@ def view_startsession(request):
         rnd_session_id = ''.join(random.choice(string.ascii_lowercase + string.digits)
                          for _ in range(7))
         d = dict(session_id=rnd_session_id)
-        if random.randint(1,10) == 7:
+        if random.randint(1,10) == 3:
             return get_grpc_test_json(request, 'test_responses/startsession_badassertion.json')
         else:
             return get_grpc_test_json(request, 'test_responses/startsession_ok.json', d)
@@ -56,6 +56,53 @@ def view_startsession(request):
     # Let's call the TA2 and start the session!
     #
     json_str = start_session(raven_data_text)
+
+    # Convert JSON str to python dict - err catch here
+    #
+    json_dict = json.loads(json_str)
+
+    return JsonResponse(json_dict, safe=False)
+
+
+
+@csrf_exempt
+def view_endsession(request):
+    """gRPC: Call from UI to END session
+
+    session_id = from UI; originally from startsession commmand
+
+    example string: '{"session_id":"1x3551"}'
+    """
+    django_session_key = request.session._get_or_create_session_key()
+
+    # Test mode, return hardcoded message
+    #
+    if settings.TA2_STATIC_TEST_MODE:
+        rnd_session_id = ''.join(random.choice(string.ascii_lowercase + string.digits)
+                         for _ in range(7))
+        tinfo = dict(session_id=rnd_session_id)
+        if random.randint(1, 3) == 3:
+            return get_grpc_test_json(request, 'test_responses/endsession_badassertion.json')
+
+        return get_grpc_test_json(request,
+                                  'test_responses/endsession_ok.json',
+                                  tinfo)
+
+    # look for the "solaJSON" variable in the POST
+    #
+    if request.POST and 'solaJSON' in request.POST:
+        raven_data_text = request.POST['solaJSON']
+        #elif 'session_id' in request.GET:
+        #    raven_data_text = json.dumps(dict(session_id=request.GET['session_id']))
+    else:
+        return JsonResponse(dict(status="ERROR", message="solaJSON key not found"))
+    #   Example of string(!) -- stringified JSON:
+    #       {"user_agent":"some agent","version":"some version"}
+    #
+    print('raven_data_text', raven_data_text)
+    # Let's call the TA2 and start the session!
+    #
+    json_str = end_session(raven_data_text)
 
     # Convert JSON str to python dict - err catch here
     #

@@ -7,31 +7,29 @@ import json
 from django.conf import settings
 from tworaven_apps.ta2_interfaces import core_pb2
 from tworaven_apps.ta2_interfaces.ta2_connection import TA2Connection
-from tworaven_apps.ta2_interfaces.ta2_util import get_failed_precondition_error
+from tworaven_apps.ta2_interfaces.ta2_util import get_failed_precondition_response
 from google.protobuf.json_format import MessageToJson,\
     Parse, ParseError
 
 
-def start_session(raven_json_str=None):
-    """Start session command
-    This command sends a UserAgent and the protocol version
-    to the TA2 service
+def end_session(raven_json_str):
+    """end session command
+    This command needs a session id from the start_session cmd
+    e.g. string: '{"session_id" : "123556"}'
     """
-    if raven_json_str is None:
-        # Default if the user_agent is not from the UI
-        raven_dict = dict(user_agent=settings.TA2_GPRC_USER_AGENT)
-    else:
-        # The UI has sent JSON in string format that contains the user_agent
-        try:
-            raven_dict = json.loads(raven_json_str)
-        except json.decoder.JSONDecodeError as err_obj:
-            err_msg = 'Failed to convert UI Str to JSON: %s' % (err_obj)
-            return get_failed_precondition_error(err_msg)
+    # The UI has sent JSON in string format that contains the session_id
+    try:
+        raven_dict = json.loads(raven_json_str)
+    except json.decoder.JSONDecodeError as err_obj:
+        err_msg = 'Failed to convert UI Str to JSON for end_session: %s' % (err_obj)
+        return get_failed_precondition_response(err_msg)
 
     # The protocol version always comes from the latest
     # version we have in the repo (just copied in for now)
     #
-    raven_dict['version'] = TA2Connection.get_protocol_version()
+    if not 'session_id' in raven_dict:
+        err_msg = 'No session_id found: %s' % (raven_json_str)
+        return get_failed_precondition_response(err_msg)
 
     # --------------------------------
     # Convert back to string for TA2 call
@@ -42,10 +40,10 @@ def start_session(raven_json_str=None):
     # convert the JSON string to a gRPC request
     # --------------------------------
     try:
-        req = Parse(content, core_pb2.SessionRequest())
+        req = Parse(content, core_pb2.SessionContext())
     except ParseError as err_obj:
         err_msg = 'Failed to convert JSON to gRPC: %s' % (err_obj)
-        return get_failed_precondition_error(err_msg)
+        return get_failed_precondition_response(err_msg)
 
 
     # --------------------------------
@@ -53,7 +51,7 @@ def start_session(raven_json_str=None):
     # --------------------------------
     core_stub, err_msg = TA2Connection.get_grpc_stub()
     if err_msg:
-        return get_failed_precondition_error(err_msg)
+        return get_failed_precondition_response(err_msg)
 
         #return dict(status=core_pb2.FAILED_PRECONDITION,
         #            details=err_msg)
@@ -62,9 +60,9 @@ def start_session(raven_json_str=None):
     # Send the gRPC request
     # --------------------------------
     try:
-        reply = core_stub.StartSession(req)
+        reply = core_stub.EndSession(req)
     except Exception as ex:
-        return get_failed_precondition_error(str(ex))
+        return get_failed_precondition_response(str(ex))
 
 
     # --------------------------------

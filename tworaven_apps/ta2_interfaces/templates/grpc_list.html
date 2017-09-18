@@ -28,8 +28,16 @@
       <div class="col-md-12">
         <hr />
         <ul>
-          <li><a href="{% url 'view_startsession' %}">StartSession {% url 'view_startsession' %}</li>
-          <li><a href="{% url 'view_update_problem_schema' %}">UpdateProblemSchema {% url 'view_update_problem_schema' %}</li>
+          <li><a href="{% url 'view_startsession' %}">StartSession</a>
+              {% url 'view_startsession' %}
+          </li>
+          <li><a href="{% url 'view_update_problem_schema' %}">UpdateProblemSchema</a>
+              {% url 'view_update_problem_schema' %}
+          </li>
+          <li><a href="{% url 'view_endsession' %}">EndSession</a>
+              {% url 'view_endsession' %}
+          </li>
+
         </ul>
       </div>
     </div>

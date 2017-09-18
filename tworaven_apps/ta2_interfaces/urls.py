@@ -12,6 +12,10 @@ urlpatterns = (
         views.view_startsession,
         name='view_startsession'),
 
+    url(r'^endsession/?$',
+        views.view_endsession,
+        name='view_endsession'),
+
     url(r'^updateproblemschema/?$',
         views.view_update_problem_schema,
         name='view_update_problem_schema'),

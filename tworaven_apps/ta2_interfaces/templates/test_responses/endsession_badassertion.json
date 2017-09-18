@@ -1,0 +1,6 @@
+{
+  "status": {
+    "code": "FAILED_PRECONDITION",
+    "details": "Unknown session id (randomly generated test error)"
+  }
+}

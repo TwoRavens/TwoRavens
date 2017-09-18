@@ -7,7 +7,7 @@ import json
 from django.conf import settings
 from tworaven_apps.ta2_interfaces import core_pb2
 from tworaven_apps.ta2_interfaces.ta2_connection import TA2Connection
-from tworaven_apps.ta2_interfaces.ta2_util import get_failed_precondition_error
+from tworaven_apps.ta2_interfaces.ta2_util import get_failed_precondition_response
 from google.protobuf.json_format import MessageToJson,\
     Parse, ParseError
 
@@ -31,7 +31,7 @@ def update_problem_schema(info_str=None):
 
     if info_str is None:
         err_msg = 'UI Str for UpdateProblemSchema is None'
-        return get_failed_precondition_error(err_msg)
+        return get_failed_precondition_response(err_msg)
 
     # --------------------------------
     # Convert info string to dict
@@ -40,7 +40,7 @@ def update_problem_schema(info_str=None):
         info_dict = json.loads(info_str)
     except json.decoder.JSONDecodeError as err_obj:
         err_msg = 'Failed to convert UI Str to JSON: %s' % (err_obj)
-        return get_failed_precondition_error(err_msg)
+        return get_failed_precondition_response(err_msg)
 
     # --------------------------------
     # create UpdateProblemSchemaRequest compatible JSON
@@ -61,7 +61,7 @@ def update_problem_schema(info_str=None):
         req = Parse(content, core_pb2.UpdateProblemSchemaRequest())
     except ParseError as err_obj:
         err_msg = 'Failed to convert JSON to gRPC: %s' % (err_obj)
-        return get_failed_precondition_error(err_msg)
+        return get_failed_precondition_response(err_msg)
 
 
     # --------------------------------
@@ -69,7 +69,7 @@ def update_problem_schema(info_str=None):
     # --------------------------------
     core_stub, err_msg = TA2Connection.get_grpc_stub()
     if err_msg:
-        return get_failed_precondition_error(err_msg)
+        return get_failed_precondition_response(err_msg)
 
     # --------------------------------
     # Send the gRPC request
@@ -77,7 +77,7 @@ def update_problem_schema(info_str=None):
     try:
         reply = core_stub.UpdateProblemSchema(req)
     except Exception as ex:
-        return get_failed_precondition_error(str(ex))
+        return get_failed_precondition_response(str(ex))
 
     # --------------------------------
     # Convert the reply to JSON and send it on
