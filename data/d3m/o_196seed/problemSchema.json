@@ -4,12 +4,13 @@
     ],
     "descriptionFile": "problemDescription.txt",
     "metric": "meanSquaredError",
-    "outputType": "regressionValue",
+    "outputType": "real",
     "problemId": "o_196_problem",
     "redacted": true,
     "target": {
         "field": "class"
     },
-    "taskSubType": "univariateRegression",
-    "taskType": "regression"
+    "taskSubType": "uniVariate",
+    "taskType": "regression",
+    "problemSchemaVersion": "2.12"
 }

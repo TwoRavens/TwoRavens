@@ -1,0 +1,8 @@
+{
+  "responseInfo": {
+    "status": {
+      "code": "FAILED_PRECONDITION",
+      "details": "Expecting version 2017.9.x_pre but received version x2017.8.23"
+    }
+  }
+}

@@ -7,3 +7,7 @@ whitenoise==3.3.0
 
 # fabric for dev: to run npm and test server with one command
 Fabric3==1.13.1.post1
+
+# gRPC packages for D3M
+grpcio==1.6.0
+grpcio-tools==1.6.0

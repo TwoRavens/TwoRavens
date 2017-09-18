@@ -1,0 +1,12 @@
+{
+  "responseInfo": {
+    "status": {
+      "code": "OK"
+    }
+  },
+  "userAgent": "ta2_stub 0.1",
+  "version": "2017.9.x_pre",
+  "context": {
+    "sessionId": "{{ session_id }}"
+  }
+}

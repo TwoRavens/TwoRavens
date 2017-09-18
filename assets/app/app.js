@@ -24,7 +24,7 @@ import {bars, barsNode, barsSubset, density, densityNode, selVarColor} from './p
 // for debugging - if in production, prints args and returns them
 export let cdb = _ => production || console.log.apply(this, arguments) && arguments;
 
-var k = 4; // strength parameter for group attraction/repulsion   
+var k = 4; // strength parameter for group attraction/repulsion
 
 // initial color scale used to establish the initial colors of nodes
 // allNodes.push() below establishes a field for the master node array allNodes called "nodeCol" and assigns a color from this scale to that field
@@ -306,7 +306,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
         .then(() => new Promise((resolve, reject) => d3.xml(metadataurl, 'application/xml', xml => {
             let vars = Object.keys(preprocess); // this doesn't come from xml, but from preprocessed json
 
-            // the labels, citations, and file name come from the 'xml' (metadataurl), which is the file from the data repo 
+            // the labels, citations, and file name come from the 'xml' (metadataurl), which is the file from the data repo
             // however, TwoRavens should function using only the data that comes from our preprocess script, which is the 'json' (pURL)
             // for now the metadataurl is still Fearon & Laitin
             let temp = xml.documentElement.getElementsByTagName("fileName");
@@ -341,7 +341,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
                 //     ([0, 0, 0, 0, 0]);
                 valueKey[i] = vars[i];
                 lablArray[i] = "no label";
-                // contains all the preprocessed data we have for the variable, as well as UI data pertinent to that variable, 
+                // contains all the preprocessed data we have for the variable, as well as UI data pertinent to that variable,
                 // such as setx values (if the user has selected them) and pebble coordinates
                 let obj = {
                     id: i,
@@ -406,15 +406,17 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
                 aTag.setAttribute('target', "_blank");
                 aTag.textContent = "Problem Description";
                 document.getElementById("ticker").appendChild(aTag);
-                
+
                 if(data.taskType in d3mTaskType) {
                     UpdateProblemSchemaRequest.task_type = data.taskType;//[d3mTaskType[data.taskType][2],d3mTaskType[data.taskType][1]]; console.log(UpdateProblemSchemaRequest);
                 } else {
                     UpdateProblemSchemaRequest.task_type = "taskTypeUndefined";
                  //   alert("Specified task type, " + data.taskType + ", is not valid.");
                 }
+
                 if(data.taskSubType in d3mTaskSubtype) {
-                    UpdateProblemSchemaRequest.task_subtype = data.taskSubtype;//[d3mTaskSubtype[data.taskSubType][2],d3mTaskSubtype[data.taskSubType][1]];
+                    UpdateProblemSchemaRequest.task_subtype = data.taskSubType;
+                    //[d3mTaskSubtype[data.taskSubType][2],d3mTaskSubtype[data.taskSubType][1]];
                     } else {
                         UpdateProblemSchemaRequest.task_subtype = "taskSubtypeUndefined";
                    //     alert("Specified task subtype, " + data.taskSubType + ", is not valid.")
@@ -431,6 +433,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
                     UpdateProblemSchemaRequest.output_type = "outputUndefined";
                   //  alert("Specified output type, " + data.outputType + ", is not valid.");
                 }
+
                 
                 document.getElementById("btnType").click();
                 startsession();
@@ -562,13 +565,11 @@ function scaffolding(callback) {
         .attr("data-content", d => mods[d]);
     }
     if(d3m_mode) {
-        
+
         //
-        
+
         toggleRightButtons("tasks");
 
-        //toggleRightButtons("all");
-        
         d3.select("#types").selectAll("p")
         .data(Object.keys(d3mTaskType))
         .enter()
@@ -592,7 +593,7 @@ function scaffolding(callback) {
         .attr("onmouseout", "$(this).popover('toggle');")
         .attr("data-original-title", "Task Description")
         .attr("data-content", d => d3mTaskType[d][1]);
-        
+
         d3.select("#subtypes").selectAll("p")
         .data(Object.keys(d3mTaskSubtype))
         .enter()
@@ -640,7 +641,7 @@ function scaffolding(callback) {
         .attr("onmouseout", "$(this).popover('toggle');")
         .attr("data-original-title", "Metric Description")
         .attr("data-content", d => d3mMetrics[d][1]);
-        
+
         d3.select("#outputs").selectAll("p")
         .data(Object.keys(d3mOutputType))
         .enter()
@@ -716,7 +717,7 @@ function layout(v,v2) {
         .attr("width", width)
         .attr("height", height);
 
-    vis2background.append("path")                           
+    vis2background.append("path")
         .attr("id", 'gr1background')
         .style("fill", '#ffffff')
         .style("stroke", '#ffffff')
@@ -805,8 +806,8 @@ function layout(v,v2) {
     }
 
     panelPlots(); // after nodes is populated, add subset and (if !d3m_mode) setx panels
-  
-   
+
+
     var force = d3.layout.force()
         .nodes(nodes)
         .links(links)
@@ -913,15 +914,15 @@ function layout(v,v2) {
             return (coords);
         };
 
-        var coords = nodes.map(function(d) {  return [ d.x, d.y]; }); 
-        var gr1coords = findcoords(zparams.zgroup1, zparams.zvars, coords, true);        
-        var gr2coords = findcoords(zparams.zgroup2, zparams.zvars, coords, true);        
-        var depcoords = findcoords(zparams.zdv, zparams.zvars, coords, false);  
+        var coords = nodes.map(function(d) {  return [ d.x, d.y]; });
+        var gr1coords = findcoords(zparams.zgroup1, zparams.zvars, coords, true);
+        var gr2coords = findcoords(zparams.zgroup2, zparams.zvars, coords, true);
+        var depcoords = findcoords(zparams.zdv, zparams.zvars, coords, false);
 
         // draw convex hull around independent variables, if three or more coordinates given
         // note, d3.geom.hull returns null if shorter coordinate set than 3,
         // so findcoords() function has option to lengthen the coordinates returned to bypass this
-        if(gr1coords.length > 2){   
+        if(gr1coords.length > 2){
             visbackground.style("opacity", 1);
             vis.style("opacity", 0.3);
             var myhull = d3.geom.hull(gr1coords);
@@ -936,7 +937,7 @@ function layout(v,v2) {
             //var p = d3.geom.polygon(indcoords).centroid();  // Seems to go strange sometimes
             var p = jamescentroid(gr1coords);
 
-            if(depcoords.length>0){  
+            if(depcoords.length>0){
                 var q = depcoords[0];                         // Note, only using first dep var currently
                 //var r = findboundary(p,q,gr1coords);        // An approach to find the exact boundary, not presently working
                 var ldeltaX = q[0] - p[0],
@@ -977,7 +978,7 @@ function layout(v,v2) {
                 n.y += Math.min(lnormY , ldeltaY/100 ) * k * sign   * force.alpha();
             });
 
-        }else{ 
+        }else{
             visbackground.style("opacity", 0);
 
             vis.style("opacity", 0);
@@ -985,7 +986,7 @@ function layout(v,v2) {
             line.style("opacity", 0);
         };
 
-        if(gr2coords.length > 2){   
+        if(gr2coords.length > 2){
             vis2background.style("opacity", 1);
             vis2.style("opacity", 0.3);
             var myhull = d3.geom.hull(gr2coords);
@@ -999,7 +1000,7 @@ function layout(v,v2) {
             //var p = d3.geom.polygon(indcoords).centroid();  // Seems to go strange sometimes
             var p = jamescentroid(gr2coords);
 
-            if(depcoords.length>0){  
+            if(depcoords.length>0){
                 var q = depcoords[0];                             // Note, only using first dep var currently
                 var ldeltaX = q[0] - p[0],
                     ldeltaY = q[1] - p[1],
@@ -1035,7 +1036,7 @@ function layout(v,v2) {
             });
 
 
-        }else{ 
+        }else{
             vis2background.style("opacity", 0);
             vis2.style("opacity", 0);
             line2.style("opacity", 0);
@@ -1108,7 +1109,7 @@ function layout(v,v2) {
                 });
             restart();
         });
-    
+
     d3.select("#types").selectAll("p") // models tab
     //  d3.select("#Display_content")
     .on("click", function() {
@@ -1124,7 +1125,7 @@ function layout(v,v2) {
         restart();
         updateSchema("task_type", UpdateProblemSchemaRequest, d3mTaskType);
         });
-    
+
     d3.select("#subtypes").selectAll("p")
     .on("click", function() {
         if(locktoggle) return;
@@ -1139,7 +1140,7 @@ function layout(v,v2) {
         restart();
         updateSchema("task_subtype", UpdateProblemSchemaRequest, d3mTaskSubtype);
         });
-    
+
     d3.select("#metrics").selectAll("p")
     .on("click", function() {
         if(locktoggle) return;
@@ -1156,7 +1157,7 @@ function layout(v,v2) {
         restart();
         updateSchema("metric_type", UpdateProblemSchemaRequest, d3mMetrics);
         });
-    
+
     d3.select("#outputs").selectAll("p")
     .on("click", function() {
         if(locktoggle) return;
@@ -1185,7 +1186,7 @@ function layout(v,v2) {
             });
             force.start();
             force.linkStrength(1);
-            k = 4;                                            // strength parameter for group attraction/repulsion   
+            k = 4;                                            // strength parameter for group attraction/repulsion
             if((zparams.zgroup1.length > 0) & (zparams.zgroup2.length > 0 )){  // scale down by number of active groups
                 k = 2.5;
             }
@@ -1595,7 +1596,7 @@ function layout(v,v2) {
 
     restart(); // initializes force.layout()
     fakeClick();
-    
+
     if(v2 & d3m_mode) {
         var click_ev = document.createEvent("MouseEvents");
         // initialize the event
@@ -1819,15 +1820,15 @@ export function estimate(btn) {
             zparams.callHistory = callHistory;
             var jsonout = JSON.stringify(zparams);
         console.log(jsonout);
-        
+
             var urlcall = rappURL + "pipelineapp";
             var solajsonout = "solaJSON=" + jsonout;
             cdb("urlcall out: ", urlcall);
             cdb("POST out: ", solajsonout);
-        
+
             function createPipelineSuccess(btn, json) {
                 estimateLadda.stop(); // stop spinner
-                
+
                 let train_features=json.predictors;
                 let target_features=json.depvar;
                 let task = d3mTaskType[UpdateProblemSchemaRequest.task_type][1];
@@ -1836,9 +1837,9 @@ export function estimate(btn) {
                 let metrics = d3mMetrics[UpdateProblemSchemaRequest.metric_type][1];
 
                 let PipelineRequest={train_features, target_features, task, task_subtype, output, metrics};
-                
+
                 let jsonout = JSON.stringify(PipelineRequest);
-                
+
                 let urlcall = d3mURL + "/createpipeline";
                 var solajsonout = "CreatePipelines=" + jsonout;
                 
@@ -1850,19 +1851,19 @@ export function estimate(btn) {
                     document.getElementById("btnResults").click();
                     listpipelines();
                 }
-                
+
                 function sendPipelineFail(btn) {
                     console.log("pipeline to django failed");
                 }
-                
+
                 makeCorsRequest(urlcall, "nobutton", sendPipelineSuccess, sendPipelineFail, solajsonout);
             }
-            
+
             function createPipelineFail(btn) {
                 estimateLadda.stop(); // stop spinner
                 estimated = true;
             }
-            
+
             estimateLadda.start(); // start spinner
             makeCorsRequest(urlcall, btn, createPipelineSuccess, createPipelineFail, solajsonout);
     }
@@ -2771,7 +2772,7 @@ function readPreprocess(url) {
             Object.keys(res.variables).forEach(k => preprocess[k] = res.variables[k]);
             resolve();
         });
-    }); 
+    });
 }
 
 // removes all the children svgs inside subset and setx divs
@@ -2822,22 +2823,22 @@ function startsession() {
     let user_agent = "some agent";
     let version = "some version";
     let SessionRequest={user_agent,version};
-    
+
     var jsonout = JSON.stringify(SessionRequest);
-    
+
     var urlcall = d3mURL + "/startsession";
-    var solajsonout = "SessionRequest=" + jsonout;
+    var solajsonout = "solaJSON=" + jsonout;
     console.log("solajsonout: ", solajsonout);
     console.log("urlcall: ", urlcall);
-    
+
     function ssSuccess(btn, json) {
         console.log(json);
     }
-    
+
     function ssFail(btn) {
         console.log("session start failed");
     }
-    
+
    makeCorsRequest(urlcall, "nobutton", ssSuccess, ssFail, solajsonout);
 }
 
@@ -2904,26 +2905,27 @@ export function listpipelines() {
 
 // this is our call to django to update the problem schema
 function updateSchema(type, updates, lookup) {
+    console.log('updateSchema....')
     let ReplaceProblemSchemaField=type;
     let value = lookup[updates[type]][1];
     let valuenum = lookup[updates[type]][2];
     let updateRequest = {ReplaceProblemSchemaField, value, valuenum};
-    
+
     let jsonout = JSON.stringify(updateRequest);
-    
+
     let urlcall = d3mURL + "/updateproblemschema";
     let solajsonout = "UpdateProblemSchemaRequest=" + jsonout;
     console.log("solajsonout: ", solajsonout);
     console.log("urlcall: ", urlcall);
-    
+
     function usSuccess(btn, json) {
         console.log(json);
     }
-    
+
     function usFail(btn) {
         console.log("update schema failed");
     }
-    
+
     makeCorsRequest(urlcall, "nobutton", usSuccess, usFail, solajsonout);
 }
 
@@ -2994,19 +2996,16 @@ function toggleRightButtons(set) {
         // then select all the buttons
         mybtns = document.getElementById('rightpanelbuttons').querySelectorAll(".btn:not(.noshow)");
         setWidths(mybtns);
+
     }
     if(set=="models") {
         document.getElementById('btnModels').style.display = 'inline';
         document.getElementById('btnSetx').style.display = 'inline';
         document.getElementById('btnResults').style.display = 'inline';
-        
+
         document.getElementById('btnType').style.display = 'none';
         document.getElementById('btnSubtype').style.display = 'none';
         document.getElementById('btnMetrics').style.display = 'none';
         document.getElementById('btnOutputs').style.display = 'none';
     }
 }
-
-
-
-
