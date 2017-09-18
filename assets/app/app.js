@@ -360,7 +360,8 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
                     setxvals: ["", ""],
                     grayout: false,
                     group1: false,
-                    group2: false
+                    group2: false,
+                    forefront: false
                 };
                 jQuery.extend(true, obj, preprocess[valueKey[i]]);
                 allNodes.push(obj);
@@ -1191,7 +1192,7 @@ function layout(v,v2) {
         circle.call(force.drag);
         if (forcetoggle[0] == "true") {
             force.gravity(0.1);
-            force.charge(d => setPebbleCharge(d, false));
+            force.charge(d => setPebbleCharge(d));
             force.start();
             force.linkStrength(1);
             k = 4;                                            // strength parameter for group attraction/repulsion   
@@ -1497,6 +1498,7 @@ function layout(v,v2) {
             .on("mouseover", d => {
                 tabLeft('tab3');
                 varSummary(d);
+                d.forefront = true;
 
                 byId('transformations').setAttribute('style', 'display:block');
                 byId("transSel").selectedIndex = d.id;
@@ -1523,6 +1525,7 @@ function layout(v,v2) {
                 m.redraw();
             })
             .on('mouseout', d => {
+                d.forefront = false;
                 summaryHold || tabLeft(subset ? 'tab2' : 'tab1');
                 'csArc csText timeArc timeText dvArc dvText nomArc nomText grArc grText'.split(' ').map(x => fill(d, x, 0, 100, 500));
                 m.redraw();
@@ -2982,10 +2985,11 @@ function setPebbleRadius(d){
 // Define each pebble charge.
 // This was the previous charge setting:
 //return ((zparams.zgroup1.indexOf(node.name) < 0 ) & (zparams.zgroup2.indexOf(node.name) < 0 ))   ? -800 : -400;  // -1 is the value if no index position found
-function setPebbleCharge(d, override){
-    if(override){
-        return -1000
-    }else if(d.group1 || d.group2){ 
+function setPebbleCharge(d){
+    if(d.group1 || d.group2){ 
+        if(d.forefront){                                        // pebbles packed in groups repel others on mouseover
+            return -1000
+        }
         var uppersize = 4
         var ng1 = (d.group1) ? zparams.zgroup1.length : 1;      // size of group1, if a member of group 1
         var ng2 = (d.group2) ? zparams.zgroup2.length : 1;      // size of group2, if a member of group 2
