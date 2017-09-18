@@ -358,7 +358,9 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
                     subsetrange: ["", ""],
                     setxplot: false,
                     setxvals: ["", ""],
-                    grayout: false
+                    grayout: false,
+                    group1: false,
+                    group2: false
                 };
                 jQuery.extend(true, obj, preprocess[valueKey[i]]);
                 allNodes.push(obj);
@@ -772,6 +774,7 @@ function layout(v,v2) {
             nodes = allNodes.slice(1,allNodes.length);    // Add all but first variable on startup (assumes 0 position is d3m index variable)
             for (let j = 0; j < nodes.length; j++) { //populate zvars array
                 if (nodes[j].name != mytarget) {
+                    nodes[j].group1 = true;
                     zparams.zgroup1.push(nodes[j].name);  // write all names (except d3m index and the dependent variable) to zgroup1 array
                 };
             };
@@ -863,6 +866,7 @@ function layout(v,v2) {
 
     // update force layout (called automatically each iteration)
     function tick() {
+
 
         function findcoords(findnames,allnames,coords,lengthen){
             var fcoords = new Array(findnames.length);   // found coordinates
@@ -961,7 +965,7 @@ function layout(v,v2) {
 
             // group members attract each other, repulse non-group members
             nodes.forEach(n => {
-                var sign = Math.sign( zparams.zgroup1.indexOf(n.name) +0.5 );  // 1 if n in group, -1 if n not in group;
+                var sign = (n.group1) ? 1 : -1;    //was: Math.sign( zparams.zgroup1.indexOf(n.name) +0.5 );  // 1 if n in group, -1 if n not in group;
                 var ldeltaX = p[0] - n.x,
                     ldeltaY = p[1] - n.y,
                     ldist = Math.sqrt(ldeltaX * ldeltaX + ldeltaY * ldeltaY);
@@ -1018,7 +1022,7 @@ function layout(v,v2) {
 
             // group members attract each other, repulse non-group members
             nodes.forEach(n => {
-                var sign = Math.sign( zparams.zgroup2.indexOf(n.name) +0.5 );  // 1 if n in group, -1 if n not in group;
+                var sign = (n.group2) ? 1 : -1;  // was: Math.sign( zparams.zgroup2.indexOf(n.name) +0.5 );  // 1 if n in group, -1 if n not in group;
                 var ldeltaX = p[0] - n.x,
                     ldeltaY = p[1] - n.y,
                     ldist = Math.sqrt(ldeltaX * ldeltaX + ldeltaY * ldeltaY),
@@ -1061,7 +1065,7 @@ function layout(v,v2) {
 
         circle.selectAll('circle')           // Shrink/expand pebbles that join/leave groups
             .transition()
-            .duration(150)
+            .duration(100)
             .attr('r', d => setPebbleRadius(d));
 
     }
@@ -1078,11 +1082,13 @@ function layout(v,v2) {
             spliceLinksForNode(node);
             splice(node.strokeColor, text, [dvColor, 'zdv'], [csColor, 'zcross'], [timeColor, 'ztime'], [nomColor, 'znom']);
 
-            if(zparams.zgroup1.indexOf(node.name) > -1){                               // remove node name from group lists (should use adaptation of splice-by-color)
-                    zparams.zgroup1.splice(zparams.zgroup1.indexOf(node.name),1);
+            if(node.group1){                // remove node name from group lists (should use adaptation of splice-by-color)
+                node.group1 = false;
+                zparams.zgroup1.splice(zparams.zgroup1.indexOf(node.name),1);
             };
-            if(zparams.zgroup2.indexOf(node.name) > -1){
-                    zparams.zgroup2.splice(zparams.zgroup2.indexOf(node.name),1);
+            if(node.group2){
+                node.group2 = false;
+                zparams.zgroup2.splice(zparams.zgroup2.indexOf(node.name),1);
             };
 
             nodeReset(node);
@@ -1185,11 +1191,7 @@ function layout(v,v2) {
         circle.call(force.drag);
         if (forcetoggle[0] == "true") {
             force.gravity(0.1);
-            //force.charge(-800);  // Previous constant value
-           // force.charge(function(node) {
-           //     return ((zparams.zgroup1.indexOf(node.name) < 0 ) & (zparams.zgroup2.indexOf(node.name) < 0 ))   ? -800 : -400;  // -1 is the value if no index position found
-           // });
-            force.charge( d => setPebbleCharge(d, false));
+            force.charge(d => setPebbleCharge(d, false));
             force.start();
             force.linkStrength(1);
             k = 4;                                            // strength parameter for group attraction/repulsion   
@@ -1332,6 +1334,7 @@ function layout(v,v2) {
                 fill(d, 'grText', 0, 100, 500);
             })
             .on('click', d => {
+                //d.group1 = !d.group1;      // This might be easier, but currently set in setColors()
                 setColors(d, gr1Color);
                 legend(gr1Color);
                 restart();
@@ -1353,6 +1356,7 @@ function layout(v,v2) {
                 fill(d, 'grText', 0, 100, 500);
             })
             .on('click', d => {
+                //d.group1 = !d.group1;      // This might be easier, but currently set in setColors()
                 setColors(d, gr1Color);
                 legend(gr1Color);
                 restart();
@@ -1374,6 +1378,7 @@ function layout(v,v2) {
                 fill(d, 'grText', 0, 100, 500);
             })
             .on('click', d => {
+                //d.group2 = !d.group2;      // This might be easier, but currently set in setColors()
                 setColors(d, gr2Color);
                 legend(gr2Color);
                 restart();
@@ -2503,15 +2508,19 @@ function setColors(n, c) {
         if (c == gr1Color){
             var tempindex = zparams.zgroup1.indexOf(n.name);
             if (tempindex > -1){
+                n.group1 = false;
                 zparams.zgroup1.splice(tempindex,1);
             } else {
+                n.group1 = true;
                 zparams.zgroup1.push(n.name);
             };
         } else if (c == gr2Color){
             var tempindex = zparams.zgroup2.indexOf(n.name);
             if (tempindex > -1){
+                n.group2 = false;
                 zparams.zgroup2.splice(tempindex,1);
             } else {
+                n.group2 = true;
                 zparams.zgroup2.push(n.name);
             };
         } else {
@@ -2529,10 +2538,12 @@ function setColors(n, c) {
                 transform(n.name, t = null, typeTransform = true);
             }
             if (key == 'zdv'){                                              // remove group memberships from dv's
-                if(zparams.zgroup1.indexOf(n.name) > -1){
+                if(n.group1){
+                    n.group1 = false;
                     zparams.zgroup1.splice(zparams.zgroup1.indexOf(n.name),1);
                 };
-                if(zparams.zgroup2.indexOf(n.name) > -1){
+                if(n.group2){
+                    n.group2 = false;
                     zparams.zgroup2.splice(zparams.zgroup2.indexOf(n.name),1);
                 };
             }
@@ -2559,10 +2570,12 @@ function setColors(n, c) {
             if (dvColor == c){
                 var dvname = n.name;
                 zparams.zdv.push(dvname);
-                if(zparams.zgroup1.indexOf(dvname) > -1){                     // remove group memberships from dv's
+                if(n.group1){                     // remove group memberships from dv's
+                    ngroup1 = false;
                     zparams.zgroup1.splice(zparams.zgroup1.indexOf(dvname),1);
                 };
-                if(zparams.zgroup2.indexOf(dvname) > -1){
+                if(n.group2){
+                    ngroup2 = false;
                     zparams.zgroup2.splice(zparams.zgroup2.indexOf(dvname),1);
                 };
             }
@@ -2955,10 +2968,10 @@ function jamescentroid(coord){
 // Presently, most pebbles are scaled to radius set by global allR.
 // Members of groups are scaled down if group gets large.
 function setPebbleRadius(d){
-    if((zparams.zgroup1.indexOf(d.name) > -1) || (zparams.zgroup2.indexOf(d.name) > -1)){   // if a member of a group, need to calculate radius size
+    if(d.group1 || d.group2){   // if a member of a group, need to calculate radius size
         var uppersize = 4
-        var ng1 = (zparams.zgroup1.indexOf(d.name) > -1) ? zparams.zgroup1.length : 1;      // size of group1, if a member of group 1
-        var ng2 = (zparams.zgroup2.indexOf(d.name) > -1) ? zparams.zgroup2.length : 1;      // size of group2, if a member of group 2
+        var ng1 = (d.group1) ? zparams.zgroup1.length : 1;      // size of group1, if a member of group 1
+        var ng2 = (d.group2) ? zparams.zgroup2.length : 1;      // size of group2, if a member of group 2
         var maxng = Math.max(ng1,ng2);                                                      // size of the largest group variable is member of
         return (maxng>uppersize) ? allR*Math.sqrt(uppersize/maxng) : allR;                  // keep total area of pebbles bounded to pi * allR^2 * uppersize, thus shrinking radius for pebbles in larger groups                
     }else{                                                                                  
@@ -2972,10 +2985,10 @@ function setPebbleRadius(d){
 function setPebbleCharge(d, override){
     if(override){
         return -1000
-    }else if((zparams.zgroup1.indexOf(d.name) > -1) || (zparams.zgroup2.indexOf(d.name) > -1)){ 
+    }else if(d.group1 || d.group2){ 
         var uppersize = 4
-        var ng1 = (zparams.zgroup1.indexOf(d.name) > -1) ? zparams.zgroup1.length : 1;      // size of group1, if a member of group 1
-        var ng2 = (zparams.zgroup2.indexOf(d.name) > -1) ? zparams.zgroup2.length : 1;      // size of group2, if a member of group 2
+        var ng1 = (d.group1) ? zparams.zgroup1.length : 1;      // size of group1, if a member of group 1
+        var ng2 = (d.group2) ? zparams.zgroup2.length : 1;      // size of group2, if a member of group 2
         var maxng = Math.max(ng1,ng2);                                                      // size of the largest group variable is member of
         return (maxng>uppersize) ? -400*(uppersize/maxng) : -400;                           // decrease charge as pebbles become smaller, so they can pack together
     }else{
