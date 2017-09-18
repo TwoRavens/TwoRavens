@@ -290,14 +290,14 @@ message PipelineCreateRequest {
     	session_id = "XYZ987"  // Some unique session identifier
     }
     feature_id = "some name"; // id of feature within dataset
-    data_uri = "some uri;   // uri of dataset containing feature
-	task = 2 : "REGRESSION"
-	task_subtype = 1 : "NONE"
-	output_type = 3 : "REAL"
-	metric_type = 11 : "ROOT_MEAN_SQUARED_ERROR"
+    data_uri = "some uri";   // uri of dataset containing feature
+    task = 2 : "REGRESSION"
+    task_subtype = 1 : "NONE"
+    output_type = 3 : "REAL"
+    metric_type = 11 : "ROOT_MEAN_SQUARED_ERROR"
     task_description = "";
     output_type = 3 : "REAL"
-	metrics = 11 : "ROOT_MEAN_SQUARED_ERROR";           // specify a list of evaluation metrics
+    metrics = 11 : "ROOT_MEAN_SQUARED_ERROR";           // specify a list of evaluation metrics
     target_features = [8,11,15]; 						// specify a list of targets to predict
     max_pipelines = 1;              					// maximum number of pipelines to return
 }
