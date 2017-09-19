@@ -1,0 +1,80 @@
+{% extends "helper_pages_base.html" %}
+{% load static %}
+
+  {% block main_content %}
+  <div class="row">
+
+    <div class="col-sm-12">
+      <a href="{% url 'view_grpc_test_links' %}" class="btn-primary btn-sm">
+        <span class="glyphicon glyphicon-chevron-left" aria-hidden="true"></span>
+  back to helper page</a>
+      <h3>D3M configs</h3>
+
+      <div class="panel panel-default">
+        <div class="panel-heading">default or "latest" config url</div>
+        <div class="panel-body">
+          <b>Default config info in JSON</b>: <a href="{% url 'view_d3m_details_json_latest'%}">{% url 'view_d3m_details_json_latest'%}</a>
+        <br /><br />
+        <ul>
+          <li>The url above retrieves the D3M config listed in the database as the "Default"</li>
+          <li>If a default doesn't exist, the url above returns the last modified D3M config.</li>
+
+          <li><a href="{% url 'admin:configurations_d3mconfiguration_changelist' %}" target="_blank">See editable list of configs in admin</a></li>
+        </ul>
+      </div>
+      </div>
+
+
+      <table class="table table-bordered table-condensed">
+        <thead>
+            <tr>
+              <th class="text-center">&nbsp;&nbsp;#&nbsp;&nbsp;</th>
+              <th class="text-center">List of D3M Configs in the Database</th>
+            </tr>
+        </thead>
+        <tbody>
+          {% for c in configs %}
+          <tr>
+            <td class="text-center">{{ forloop.counter }}</td>
+
+            <td class="text-left">
+              <b>Name:</b> {{ c.name }} {% if c.is_default %}<span class="btn btn-sm btn-success">default</span>{% endif %}
+              <br /><b>Id:</b> {{ c.id }}
+              <br /><b>JSON link:</b> <a href="{% url 'view_d3m_details_json' c.id %}">{% url 'view_d3m_details_json' c.id %}</a>
+              <br /><b>JSON link "pretty":</b> <a href="{% url 'view_d3m_details_json' c.id %}?pretty">{% url 'view_d3m_details_json' c.id %}?pretty</a>
+
+              <!-- check if paths are valid -->
+              {% if c.are_d3m_paths_valid %}
+                <!-- yes: looks good -->
+                <span class="btn btn-sm btn-success">All paths exist!</span>
+              {% else %}
+                <!-- nope: list any bad paths -->
+                <span class="btn btn-sm btn-danger">Not all paths exist!</span>
+                <div style="padding:10px; margin:5px; border:1px solid #ff0000;">
+                  Bad path(s) detected:
+                    <a href="{% url 'admin:configurations_d3mconfiguration_change' c.id %}" target="_blank">edit</a>
+                    <ul>
+                    {% for bad_path in c.get_bad_paths %}
+                      <li>{{ bad_path }}</li>
+                    {% endfor %}
+                    </ul>
+                </div>
+              {% endif %}
+
+                <!-- JSON version of config -->
+                <pre>
+                  {{ c.get_json_string }}
+                </pre>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td class="text-left" colspan="2">No config information available!
+              <br />(try ">fab make_d3m_config")</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endblock %}

@@ -4,7 +4,7 @@ from django.conf import settings
 from django.shortcuts import render
 from django.template.loader import render_to_string
 from django.http import JsonResponse, HttpResponse, Http404
-from django.views.decorators.csrf import csrf_exempt, csrf_protect
+from django.views.decorators.csrf import csrf_exempt
 from tworaven_apps.ta2_interfaces.req_start_session import start_session
 from tworaven_apps.ta2_interfaces.req_end_session import end_session
 from tworaven_apps.ta2_interfaces.req_update_problem_schema import \

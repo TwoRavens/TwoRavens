@@ -82,10 +82,13 @@ class AppConfiguration(TimeStampedModel):
         super(AppConfiguration, self).save(*args, **kwargs)
 
     class Meta:
-        verbose_name = 'Two Ravens Configuration'
-        verbose_name_plural = 'Two Ravens Configurations'
+        verbose_name = 'Two Ravens UI Configuration'
+        verbose_name_plural = 'Two Ravens UI Configurations'
         db_table = 'tworavens_config'
         ordering = ('-is_active', )
+
+    def __str__(self):
+        return self.name
 
     @staticmethod
     def get_config():

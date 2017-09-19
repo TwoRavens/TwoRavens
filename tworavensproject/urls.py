@@ -13,6 +13,8 @@ urlpatterns = [
 
     url(r'^rook-custom/', include('tworaven_apps.rook_services.urls')),
 
+    url(r'^config/', include('tworaven_apps.configurations.urls')),
+
     url(r'^d3m-service/', include('tworaven_apps.ta2_interfaces.urls')),
 
     url(r'^data/', include('tworaven_apps.test_data.urls')),

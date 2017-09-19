@@ -1,45 +1,39 @@
-{% load render_bundle from webpack_loader %}
+{% extends "helper_pages_base.html" %}
 {% load static %}
-<!doctype html>
-<html>
 
-  <head>
-    <title>TwoRavens</title>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="{% static "pkgs/bootstrap/css/bootstrap.css" %}">
-    <!--<link rel="stylesheet" href="{% static "build/tworavens_styles.css" %}"-->
-    {% render_bundle 'main' 'css' %}
-    <script src="{% static "pkgs/Ladda/dist/spin.min.js" %}"></script>
-    <script src="{% static "pkgs/Ladda/dist/ladda.min.js" %}"></script>
-    <script src="{% static "js/jquery/jquery.min.js" %}"></script>
-    <script src="{% static "pkgs/bootstrap/js/bootstrap.min.js" %}"></script>
-    <script src="{% static "js/d3/d3.v3.min.js" %}"></script>
-  </head>
+  {% block main_content %}
+  <div class="row">
 
-  <body>
-    <div class="row">
-      <div class="col-xs-12">
-          <img src="{% static "images/TwoRavens.png" %}" alt="TwoRavens" width="200" />
-      </div>
+    <div class="col-sm-6">
+      <h3>gRPC Requests</h3>
+      <ul>
+        <li><a href="{% url 'view_startsession' %}">StartSession</a>
+            {% url 'view_startsession' %}
+        </li>
+        <li><a href="{% url 'view_update_problem_schema' %}">UpdateProblemSchema</a>
+            {% url 'view_update_problem_schema' %}
+        </li>
+        <li><a href="{% url 'view_endsession' %}">EndSession</a>
+            {% url 'view_endsession' %}
+        </li>
+
+      </ul>
     </div>
-    <div class="row">
+    <div class="col-sm-6">
+      <h3>D3M config info</h3>
+      <ul>
+        <li><a href="{% url 'view_d3m_list' %}">
+              View D3M configs in the database</a>
+        </li>
 
-      <div class="col-md-12">
-        <hr />
-        <ul>
-          <li><a href="{% url 'view_startsession' %}">StartSession</a>
-              {% url 'view_startsession' %}
-          </li>
-          <li><a href="{% url 'view_update_problem_schema' %}">UpdateProblemSchema</a>
-              {% url 'view_update_problem_schema' %}
-          </li>
-          <li><a href="{% url 'view_endsession' %}">EndSession</a>
-              {% url 'view_endsession' %}
-          </li>
 
-        </ul>
-      </div>
+        <li><a href="{% url 'view_d3m_details_json_latest' %}">JSON of the
+              default or latest config information</a>
+              <br />&nbsp; &nbsp; {% url 'view_d3m_details_json_latest' %}
+        </li>
+
+      </ul>
     </div>
-  </body>
-</html>
+
+  </div>
+  {% endblock %}
