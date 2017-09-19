@@ -52,6 +52,15 @@ def make_d3m_config():
 
     TestConfigMaker.make_configs()
 
+def load_d3m_config(config_file):
+    """Load D3M config file, saving it as D3MConfiguration object.  Pass the config file path: fab load_d3m_config:(path to config file)"""
+    from django.core import management
+
+    try:
+        management.call_command('load_config', config_file)
+    except management.base.CommandError as err_obj:
+        print('> Failed to load D3M config.\n%s' % err_obj)
+
 def load_docker_config():
     """Load config pk=3, name 'Docker Default configuration'"""
     check_config()
