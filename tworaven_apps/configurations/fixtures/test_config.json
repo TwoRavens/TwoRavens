@@ -1,0 +1,14 @@
+{
+    "id": 6,
+    "name": "o_196seed",
+    "is_default": true,
+    "dataset_schema": "/Users/ramanprasad/Documents/github-rp/TwoRavens/data/d3m/o_196seed/data/dataSchema.json",
+    "problem_schema": "/Users/ramanprasad/Documents/github-rp/TwoRavens/data/d3m/o_196seed/problemSchema.json",
+    "training_data_root": "/Users/ramanprasad/Documents/github-rp/TwoRavens/data/d3m/o_196seed/data",
+    "executables_root": "/Users/ramanprasad/Documents/github-rp/TwoRavens/test_setup_local/d3m_output_o_196seed/temp",
+    "pipeline_logs_root": "/Users/ramanprasad/Documents/github-rp/TwoRavens/test_setup_local/d3m_output_o_196seed/temp",
+    "temp_storage_root": "/Users/ramanprasad/Documents/github-rp/TwoRavens/test_setup_local/d3m_output_o_196seed/temp",
+    "created": "2017-09-19 01:50:11.257608+00:00",
+    "modified": "2017-09-19 01:50:11.258682+00:00",
+    "config_url": "/config/d3m-config/details/json/6"
+}
