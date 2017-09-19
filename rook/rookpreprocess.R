@@ -7,7 +7,10 @@
 
 preprocess.app <- function(env){
 
-    production<-FALSE     ## Toggle:  TRUE - Production, FALSE - Local Development
+    ## Define paths for output.
+    ## Also set `production` toggle:  TRUE - Production, FALSE - Local Development.
+    source("rookconfig.R") 
+    
     warning<-FALSE
     result <-list()
     ppJSON <- list()
