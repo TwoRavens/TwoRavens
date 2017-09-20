@@ -9,7 +9,7 @@ services:
       - rook-service:rook-service
       - tworavens:tworavens
     ports:
-      - "80:80"
+      - 80:80
     depends_on:
       - tworavens
       - rook-service
@@ -18,7 +18,7 @@ services:
       context: ./
       dockerfile: Dockerfile-rook
     ports:
-      - "8000"
+      - 8000
   tworavens:
     build:
       context: ./
@@ -26,4 +26,6 @@ services:
     links:
       - rook-service
     ports:
-      - "8080"
+      - 8080
+      - 50051:50051
+      # 50051 is for gRPC communication

@@ -1,9 +1,12 @@
 """
 Constants used to track the app names and url between the frontend and rook
 """
+
+HEALTH_CHECK_APP = 'HEALTH_CHECK_APP'
+
 # Used for tracking the routing.
 #
-# Examplee.g ZELIG_APP is the constant used in logs
+# Example ZELIG_APP is the constant used in logs
 #
 # format:  (app name, frontend url suffix, rook url suffix)
 #
@@ -16,6 +19,7 @@ ROOK_APP_NAMES = [('ZELIG_APP', 'zeligapp', 'zeligapp'),    # run models
                   ('TRANSFORM_APP', 'transformapp', 'transformapp'), # transfor file
                   ('PREPROCESS_APP', 'preprocessapp', 'preprocessapp'), # preprocess
                   ('PIPELINE_APP', 'pipelineapp', 'pipelineapp'), # format pipeline
+                  (HEALTH_CHECK_APP, 'healthcheckapp', 'healthcheckapp'), # format pipeline
                  ]
 
 ROOK_APP_NAMES += [\

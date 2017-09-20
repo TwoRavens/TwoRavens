@@ -206,7 +206,7 @@ def create_django_superuser():
 
     dev_admin_username = 'dev_admin'
 
-    User.objects.filter(username=dev_admin_username).delete()
+    #User.objects.filter(username=dev_admin_username).delete()
     if User.objects.filter(username=dev_admin_username).count() > 0:
         print('A "%s" superuser already exists' % dev_admin_username)
         return
@@ -233,6 +233,7 @@ def init_db():
     """Run django check and migrate"""
     local("python manage.py check")
     local("python manage.py migrate")
+    create_django_superuser()
     #local("python manage.py loaddata fixtures/users.json")
     #Series(name_abbreviation="Mass.").save()
 

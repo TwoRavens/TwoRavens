@@ -20,6 +20,19 @@
       </ul>
     </div>
     <div class="col-sm-6">
+      <h3>Health/Monitoring checks</h3>
+      <ul>
+        <li><a href="{% url 'view_monitoring_alive' %}">
+              python app</a>
+              <br />&nbsp; &nbsp; {% url 'view_monitoring_alive' %}
+        </li>
+
+        <li><a href="{% url 'view_rook_route' 'healthcheckapp' %}">rook app</a>
+            <br />&nbsp; &nbsp; {% url 'view_rook_route' 'healthcheckapp' %}
+        </li>
+
+      </ul>
+
       <h3>D3M config info</h3>
       <ul>
         <li><a href="{% url 'view_d3m_list' %}">

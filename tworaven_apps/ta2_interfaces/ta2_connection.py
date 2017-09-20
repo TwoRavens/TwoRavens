@@ -9,7 +9,7 @@ from tworaven_apps.ta2_interfaces import core_pb2_grpc as cpb_grpc
 
 ## PARAMETERS
 # ...to get things going
-settings.TA2_TEST_SERVER_URL = 'localhost:50051'
+#settings.TA2_TEST_SERVER_URL = 'localhost:50051'
 
 _GRPC_CORE_STUB = None
 
