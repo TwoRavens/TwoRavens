@@ -14,3 +14,6 @@ build:
     # Build tworavens UI + python app 
     - docker build -t registry.datadrivendiscovery.org/tworavens/tworavens/tworavens .
     - docker push registry.datadrivendiscovery.org/tworavens/tworavens/tworavens
+    # Build r-service: big, big image
+    - docker build -t registry.datadrivendiscovery.org/tworavens/tworavens/rook-service -f ./Dockerfile-rook .
+    - docker push registry.datadrivendiscovery.org/tworavens/tworavens/rook-service
