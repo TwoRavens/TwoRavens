@@ -1,7 +1,7 @@
 
 from django.shortcuts import render
 #from django.conf import settings
-#from django.http import JsonResponse, HttpResponse, Http404
+from django.http import HttpResponse #JsonResponse, Http404
 from tworaven_apps.configurations.models import AppConfiguration
 
 def view_pebbles_home(request):
@@ -14,3 +14,7 @@ def view_pebbles_home(request):
     return render(request,
                   'index.html',
                   dinfo)
+
+def view_monitoring_alive(request):
+    """For kubernetes liveness check"""
+    return HttpResponse('TwoRavens python server up')

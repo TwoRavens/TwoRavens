@@ -1,0 +1,32 @@
+FROM tworavens/r-service-base:latest
+MAINTAINER Raman Prasad (raman_prasad@harvard.edu)
+
+LABEL organization="Two Ravens" \
+      2ra.vn.version="0.0.1-beta" \
+      2ra.vn.release-date="2017-09-20" \
+      description="Image for the Two Ravens R service which runs on rook."
+
+RUN mkdir -p /var/webapps/TwoRavens
+
+# Copy over the repository
+COPY . /var/webapps/TwoRavens
+
+EXPOSE 8000
+
+WORKDIR /var/webapps/TwoRavens/rook
+
+CMD Rscript rook_nonstop.R
+
+# -----------------------------------------
+# -- Dev notes --
+#
+# build local:
+# >docker build -t rook1 -f ./Dockerfile-rook .
+#
+# shell access:
+# >docker run -ti  -p 8000:8000 rook1 /usr/bin/bash
+#
+# run app
+# >docker run -p 8000:8000 rook1
+# go to: http://0.0.0.0:8000/subsetapp
+# -----------------------------------------

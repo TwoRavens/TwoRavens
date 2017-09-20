@@ -61,7 +61,7 @@ def load_d3m_config(config_file):
     except management.base.CommandError as err_obj:
         print('> Failed to load D3M config.\n%s' % err_obj)
 
-def load_docker_config():
+def load_docker_ui_config():
     """Load config pk=3, name 'Docker Default configuration'"""
     check_config()
 
@@ -84,7 +84,8 @@ def check_config():
 
     config_cnt = AppConfiguration.objects.count()
     if config_cnt == 0:
-        local('python manage.py loaddata tworaven_apps/configurations/fixtures/initial_configs.json')
+        local(('python manage.py loaddata'
+               ' tworaven_apps/configurations/fixtures/initial_configs.json'))
     else:
         print('Configs exist in the db: %d' % config_cnt)
 
@@ -244,47 +245,3 @@ def ubuntu_help():
     """Set up directories for ubuntu 16.04 (in progress)"""
     from setup.ubuntu_setup import TwoRavensSetup
     trs = TwoRavensSetup()
-
-def virtualenv_start():
-    """Make the virtualenv"""
-    local('ln -s /usr/bin/python3 /usr/bin/python')
-    local('pip3 install virtualenvwrapper==4.7.2')
-    local('mkdir /srv/.virtualenvs')
-    local('mkdir /srv/Devel')
-    local('cp /root/.bashrc /root/.bashrc-org')
-    local("echo 'export WORKON_HOME=/srv/.virtualenvs' >> /root/.bashrc")
-    local("echo 'export PROJECT_HOME=/srv/Devel' >> /root/.bashrc")
-    local("echo 'export VIRTUALENVWRAPPER_PYTHON=/usr/bin/python3' >> /root/.bashrc")
-    local("source /bin/bash /usr/local/bin/virtualenvwrapper.sh")
-    local("source /root/.bashrc")
-    local('cd /srv/webapps/TwoRavens')
-
-    '''
-    mkdir /srv/webapps/scripts
-    pip3 install Fabric3==1.13.1.post1 && \
-    mkdir /srv/.virtualenvs && \
-    mkdir /srv/Devel && \
-    cp /root/.bashrc /root/.bashrc-org && \
-    echo 'export WORKON_HOME=/srv/.virtualenvs' >> /root/.bashrc && \
-    echo 'export PROJECT_HOME=/srv/Devel' >> /root/.bashrc && \
-    echo 'export VIRTUALENVWRAPPER_PYTHON=/usr/bin/python3' >> /root/.bashrc
-
-#RUN export WORKON_HOME=/srv/.virtualenvs && \
-#    export PROJECT_HOME=/srv/Devel && \
-#    export VIRTUALENVWRAPPER_PYTHON=/usr/bin/python3 && \
-#    /bin/bash -c "source /bin/bash /usr/local/bin/virtualenvwrapper.sh"  && \
-#    /bin/bash -c "source /root/.bashrc"
-
-
-# ---------------------------------------------
-# Virtualenv creation
-# ---------------------------------------------
-RUN /bin/bash -c "source /bin/bash /usr/local/bin/virtualenvwrapper.sh"  && \
-    /bin/bash -c "source /root/.bashrc"
-    cd /srv/webapps/TwoRavens && \
-    mkvirtualenv -p python3 2ravens && \
-    pip3 install -r requirements/prod.txt && \
-    echo 'export DJANGO_SETTINGS_MODULE=tworavensproject.settings.dev_container' >> /srv/.virtualenvs/2ravens/bin/postactivate && \
-    source /srv/.virtualenvs/2ravens/bin/postactivate && \
-    fab init_db
-'''
