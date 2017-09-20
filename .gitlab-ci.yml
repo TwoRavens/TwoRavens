@@ -1,0 +1,11 @@
+# 1st test with small image
+#
+image: docker:latest
+services:
+  - docker:dind
+
+build:
+  script:
+    - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN registry.datadrivendiscovery.org
+    - docker build -t registry.datadrivendiscovery.org/tworavens/tworavens/nginx -f setup/nginx/Dockerfile ./setup/nginx/
+    - docker push registry.datadrivendiscovery.org/tworavens/tworavens/nginx
