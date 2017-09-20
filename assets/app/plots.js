@@ -3,7 +3,7 @@ export let selVarColor = '#fa8072'; // d3.rgb("salmon");
 
 // function to use d3 to graph density plots with preprocessed data
 export function density(node, div, priv) {
-    div = {subset: '#tab2', setx: '#setx', varSummary: '#tab3'}[div];
+    div = {subset: '#tab2', setxLeft: '#setxLeft', varSummary: '#tab3'}[div];
     if (!div)
         return alert("Error: incorrect div selected for plots");
 
@@ -16,22 +16,29 @@ export function density(node, div, priv) {
 
     var tempWidth = d3.select(div).style("width");
     var width = tempWidth.substring(0, (tempWidth.length - 2));
+    
+    let tw = document.getElementById('main').offsetWidth;
+    
+    console.log("Style ", tw);
     var tempHeight = d3.select(div).style("height");
     var height = tempHeight.substring(0, (tempHeight.length - 2));
     var margin = {
         top: 20,
         right: 20,
         bottom: 53,
-        left: 30
+        left: 10
     };
 
     // Need to fix automatic width and height settings for leftpanel (#tab2, #tab3)
     if (div == "#tab3") {
         width = 0.7 * (width - margin.left - margin.right),
         height = 0.3 * (height - margin.top - margin.bottom);
-    } else if (div == "#tab2" | div == "#setx") {
+    } else if (div == "#tab2") {
         width = 200;
         height = 120;
+    } else if (div == "#setxLeft") {
+        width=tw*.185-margin.left-margin.right; //rightpanel.expand is 40 percent, setxLeft to 50 percent, toggle bar is 16px, padding, it's all about .185
+        height=width*.6; //height to width is .6
     } else {
         width = 0.35 * (width - margin.left - margin.right),
         height = 0.25 * (height - margin.top - margin.bottom);
@@ -138,7 +145,7 @@ export function density(node, div, priv) {
     }
 
     // add z lines and sliders setx
-    if (div == "#setx") {
+    if (div == "#setxLeft") {
         plotsvg.append("text")
             .attr("id", "range")
             .attr("x", 25)
@@ -236,7 +243,7 @@ export function density(node, div, priv) {
             node.subsetrange = brush.extent()[0].toPrecision(4) != brush.extent()[1].toPrecision(4) ?
                 [(brush.extent()[0]).toPrecision(4), (brush.extent()[1]).toPrecision(4)] :
                 ["", ""];
-        } else if (div == "#setx") {
+        } else if (div == "#setxLeft") {
             var value = brush.extent()[0];
             var s = 6;
             if (d3.event.sourceEvent) {
@@ -364,7 +371,7 @@ export function bars(node, div, priv) {
     var maxX = d3.max(xVals);
 
     let mydiv;
-    if (div == "setx") mydiv = "#setx";
+    if (div == "setxLeft") mydiv = "#setxLeft";
     else if (div == "varSummary") mydiv = "#tab3";
     else
         return alert("Error: incorrect div selected for plots");
@@ -378,16 +385,19 @@ export function bars(node, div, priv) {
         top: 20,
         right: 20,
         bottom: 53,
-        left: 50
+        left: 10
     };
+    let tw = document.getElementById('main').offsetWidth;
 
     // Need to fix automatic width and height settings for leftpanel (#tab2, #tab3)
     if (mydiv == "#tab3") {
         width = 0.7 * (width - margin.left - margin.right);
         height = 0.3 * (height - margin.top - margin.bottom);
-    } else if (mydiv == "#setx") {
-        width = 200;
-        height = 120;
+    } else if (mydiv == "#setxLeft") {
+        //width = 200;
+        //height = 120;
+        width=tw*.185-margin.left-margin.right; //rightpanel.expand is 40 percent, setxLeft to 50 percent, toggle bar is 16px, padding, it's all about .185
+        height=width*.6; //height to width is .6
     } else {
         width = 0.35 * (width - margin.left - margin.right);
         height = 0.25 * (height - margin.top - margin.bottom);
@@ -601,7 +611,7 @@ export function bars(node, div, priv) {
         .style("font-size", "12px")
         .text(node.name);
 
-    if (mydiv == "#setx") {
+    if (mydiv == "#setxLeft") {
         plotsvg.append("text")
             .attr("id", "range")
             .attr("x", 25)

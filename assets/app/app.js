@@ -1743,7 +1743,7 @@ export function estimate(btn) {
         alert("Warning: Data download is not complete. Try again soon.");
         return;
     }
-
+      
     zPop();
     // write links to file & run R CMD
     // package the output as JSON
@@ -1762,6 +1762,7 @@ export function estimate(btn) {
     var selectorurlcall = rappURL + "selectorapp";
 
     function estimateSuccess(btn, json) {
+      //  toggleRightButtons("all");
         estimateLadda.stop(); // stop spinner
         allResults.push(json);
         cdb("json in: ", json);
@@ -1777,6 +1778,7 @@ export function estimate(btn) {
 
         d3.select("#modelView")
             .style("display", "block");
+        
 
         // programmatic click on Results button
         $("#btnResults").trigger("click");
@@ -1837,6 +1839,7 @@ export function estimate(btn) {
         console.log(jsonout);
 
             var urlcall = rappURL + "pipelineapp";
+        
             var solajsonout = "solaJSON=" + jsonout;
             cdb("urlcall out: ", urlcall);
             cdb("POST out: ", solajsonout);
@@ -2353,8 +2356,14 @@ export function tabRight(tab) {
             return this.getAttribute("class") === expand ? cls : expand;
         });
     };
+    let toggleRFull = () => {
+        select(function() {
+               let expand = cls + ' expandpanelfull';
+               return this.getAttribute("class") === expand ? cls : expand;
+               });
+    };
     if (tab === "btnModels") select(cls);
-    else if (tab === "btnSetx") righttab === "btnSetx" || select() === cls && toggleR();
+    else if (tab === "btnSetx") righttab === "btnSetx" || select() === cls && toggleRFull();
     else if (tab === "btnResults") !estimated ? select(cls) :
         righttab === "btnResults" || select() === cls && toggleR();
     righttab = tab;
@@ -2449,7 +2458,7 @@ export function panelPlots() {
     });
 
     //remove all plots, could be smarter here
-    d3.select('#setx').selectAll('svg').remove();
+    d3.select('#setxLeft').selectAll('svg').remove();
     d3.select('#tab2').selectAll('svg').remove();
     for (var i = 0; i < vars.length; i++) {
         let node = allNodes[ids[i]];
@@ -2457,27 +2466,27 @@ export function panelPlots() {
         node.subsetplot = false;
         if (node.plottype === "continuous" & node.setxplot == false) {
             node.setxplot = true;
-            density(node, div = "setx", priv);
+            density(node, div = "setxLeft", priv);
             node.subsetplot = true;
             density(node, div = "subset", priv);
         } else if (node.plottype === "bar" & node.setxplot == false) {
             node.setxplot = true;
-            bars(node, div = "setx", priv);
+            bars(node, div = "setxLeft", priv);
             node.subsetplot = true;
             barsSubset(node);
         }
     }
 
-        d3.select("#setx").selectAll("svg")
+        d3.select("#setxLeft").selectAll("svg")
         .each(function () {
               d3.select(this);
-              var regstr = /(.+)_setx_(\d+)/;
+              var regstr = /(.+)_setxLeft_(\d+)/;
               var myname = regstr.exec(this.id);
               var nodeid = myname[2];
               myname = myname[1];
               if (!vars.includes(myname)) {
               allNodes[nodeid].setxplot = false;
-              let temp = "#".concat(myname, "_setx_", nodeid);
+              let temp = "#".concat(myname, "_setxLeft_", nodeid);
               d3.select(temp)
               .remove();
               allNodes[nodeid].subsetplot = false;
@@ -2917,6 +2926,23 @@ export function listpipelines() {
                 d3.select(this).attr('class',"item-select");
             }});
         console.log(json);
+        
+        d3.select("#setxRight").selectAll("p")
+        .data(pipes)
+        .enter()
+        .append("p")
+        .attr("id", "_setxpipe_".concat)
+        .text(d => d)
+        .attr('class', 'item-default')
+        .on("click", function() {
+            if(this.className=="item-select") {
+            return;
+            } else {
+            d3.select("#setxRight").select("p.item-select")
+            .attr('class', 'item-default');
+            d3.select(this).attr('class',"item-select");
+            }});
+        console.log(json);
     }
     
     function listPipesFail(btn) {
@@ -2924,6 +2950,58 @@ export function listpipelines() {
     }
     
     makeCorsRequest(urlcall, "nobutton", listPipesSuccess, listPipesFail, solajsonout);
+}
+
+export function executepipeline() {
+    let sessioncontext = "my session context";
+    let pipelineid = '2';
+    let features = "something";
+    
+    zPop();
+    zparams.callHistory = callHistory;
+    let jsonout = JSON.stringify(zparams);
+    
+//    let    repeated Feature predict_features = 3;  // input feature data to pass to the pipeline
+  //  }
+
+console.log(zparams);
+return;
+
+    let PipeLineExecuteRequest={sessioncontext, pipelineid, features};
+    
+   jsonout = JSON.stringify(PipeLineExecuteRequest);
+    
+    var urlcall = d3mURL + "/executepipeline";
+    var solajsonout = "PipeLineExecuteRequest=" + jsonout;
+    console.log("solajsonout: ", solajsonout);
+    console.log("urlcall: ", urlcall);
+    
+    function executePipeSuccess(btn, json) {
+        //hardcoded pipes for now
+        let pipes = ["","id1", "id2", "id3", "id4", "id5"]
+        d3.select("#results").selectAll("p")
+        .data(pipes)
+        .enter()
+        .append("p")
+        .attr("id", "_pipe_".concat)
+        .text(d => d)
+        .attr('class', 'item-default')
+        .on("click", function() {
+            if(this.className=="item-select") {
+            return;
+            } else {
+            d3.select("#results").select("p.item-select")
+            .attr('class', 'item-default');
+            d3.select(this).attr('class',"item-select");
+            }});
+        console.log(json);
+    }
+    
+    function executePipeFail(btn) {
+        console.log("execute pipelines failed");
+    }
+    
+    makeCorsRequest(urlcall, "nobutton", executePipeSuccess, executePipeFail, solajsonout);
 }
 
 // this is our call to django to update the problem schema
@@ -3001,6 +3079,11 @@ function setPebbleCharge(d){
         return -800
     }
 };
+
+export function expandrightpanel() {
+    document.getElementById('rightpanel').classList.add("expandpanelfull")
+    console.log("HERE");
+}
 
 function toggleRightButtons(set) {
     

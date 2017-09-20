@@ -159,6 +159,7 @@ div.popover.variables div.popover-content.form-horizontal .form-group {
 #rightpanel.closepanel {width:1px;}
 #rightpanel.closepanel #rightpaneltitle, #rightpanel.closepanel div.btn-group-justified, #rightpanel.closepanel div.row-fluid.closepanel {display:none;}
 #rightpanel.expandpanel {width: 40%;}
+#rightpanel.expandpanelfull {width: calc(100% - 300px - 16px);}
 
 div.sidepanel div.panelbar {
     position: absolute;
