@@ -1853,6 +1853,13 @@ export function estimate(btn) {
                 let task_subtype = d3mTaskSubtype[UpdateProblemSchemaRequest.task_subtype][1];
                 let output = d3mOutputType[UpdateProblemSchemaRequest.output_type][1];
                 let metrics = d3mMetrics[UpdateProblemSchemaRequest.metric_type][1];
+                
+                let xtemp = [2,5,3];
+                let ytemp = [1,2,3];
+                let xdata = "varx";
+                let ydata = "varY";
+                bivariatePlot(xtemp, ytemp, xdata, ydata);
+                setxTable(train_features);
 
                 let PipelineRequest={train_features, target_features, task, task_subtype, output, metrics};
 
@@ -3145,3 +3152,219 @@ function toggleRightButtons(set) {
         document.getElementById('btnOutputs').style.display = 'none';
     }
 }
+
+
+
+
+
+// scatterplot function to go to plots.js to be reused
+export function bivariatePlot(x_Axis, y_Axis, x_Axis_name, y_Axis_name) {
+    
+    d3.select("#setxMiddle").html("");
+    d3.select("#setxMiddle").select("svg").remove();
+    
+    console.log("bivariate plot called");
+    // scatter plot
+    
+    let data_plot = [];
+    var nanCount = 0;
+    for (var i = 0; i < 1000; i++) {
+        if (isNaN(x_Axis[i]) || isNaN(y_Axis[i])) {
+            nanCount++;
+        } else {
+            var newNumber1 = x_Axis[i];
+            var newNumber2 = y_Axis[i];
+            data_plot.push({xaxis: newNumber1, yaxis: newNumber2, score: Math.random() * 100});
+            
+        }
+        
+        
+    }
+    
+    
+    var margin = {top: 20, right: 15, bottom: 40, left: 60}
+    , width = 500 - margin.left - margin.right
+    , height = 280 - margin.top - margin.bottom;
+    var padding = 100;
+    
+    var min_x = d3.min(data_plot, function (d, i) {
+                       return data_plot[i].xaxis;
+                       });
+    var max_x = d3.max(data_plot, function (d, i) {
+                       return data_plot[i].xaxis;
+                       });
+    var avg_x = (max_x - min_x) / 10;
+    var min_y = d3.min(data_plot, function (d, i) {
+                       return data_plot[i].yaxis;
+                       });
+    var max_y = d3.max(data_plot, function (d, i) {
+                       return data_plot[i].yaxis;
+                       });
+    var avg_y = (max_y - min_y) / 10;
+    
+    var xScale = d3.scale.linear()
+    .domain([min_x - avg_x, max_x + avg_x])
+    .range([0, width]);
+    
+    var yScale = d3.scale.linear()
+    .domain([min_y - avg_y, max_y + avg_y])
+    .range([height, 0]);
+    
+    var xAxis = d3.svg.axis()
+    .scale(xScale)
+    .orient('bottom')
+    .tickSize(-height);
+    
+    var yAxis = d3.svg.axis()
+    .scale(yScale)
+    .orient('left')
+    .ticks(5)
+    .tickSize(-width);
+    
+    var zoom = d3.behavior.zoom()
+    .x(xScale)
+    .y(yScale)
+    .scaleExtent([1, 10])
+    .on("zoom", zoomed);
+    
+    var chart_scatter = d3.select('#setxMiddle')
+    .append('svg:svg')
+    .attr('width', width + margin.right + margin.left)
+    .attr('height', height + margin.top + margin.bottom)
+    .call(zoom);
+    
+    var main1 = chart_scatter.append('g')
+    .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')')
+    .attr('width', width+ margin.right + margin.left)
+    .attr('height', height + margin.top + margin.bottom)
+    .attr('class', 'main');
+    
+    main1.append('g')
+    .attr('transform', 'translate(0,' + height + ')')
+    .attr('class', 'x axis')
+    .call(xAxis);
+    
+    main1.append('g')
+    .attr('transform', 'translate(0,0)')
+    .attr('class', 'y axis')
+    .call(yAxis);
+    
+    var clip = main1.append("defs").append("svg:clipPath")
+    .attr("id", "clip")
+    .append("svg:rect")
+    .attr("id", "clip-rect")
+    .attr("x", "0")
+    .attr("y", "0")
+    .attr('width', width)
+    .attr('height', height);
+    
+    main1.append("g").attr("clip-path", "url(#clip)")
+    .selectAll("circle")
+    .data(data_plot)
+    .enter()
+    .append("circle")
+    .attr("cx", function (d, i) {
+          return xScale(data_plot[i].xaxis);
+          })
+    .attr("cy", function (d, i) {
+          return yScale(data_plot[i].yaxis);
+          })
+    .attr("r", 2)
+    .style("fill", "#B71C1C")
+    ;
+    chart_scatter.append("text")
+    .attr("text-anchor", "middle")  // this makes it easy to centre the text as the transform is applied to the anchor
+    .attr("transform", "translate(" + padding / 5 + "," + (height / 2) + ")rotate(-90)")  // text is drawn off the screen top left, move down and out and rotate
+    .text(y_Axis_name)
+    .style("fill", "#424242")
+    .style("text-indent","20px")
+    .style("font-size","12px")
+    .style("font-weight","bold");
+    
+    chart_scatter.append("text")
+    .attr("text-anchor", "middle")  // this makes it easy to centre the text as the transform is applied to the anchor
+    .attr("transform", "translate(" + (width / 2) + "," + (height + (padding / 2)) + ")")  // centre below axis
+    .text(x_Axis_name)
+    .style("fill", "#424242")
+    .style("text-indent","20px")
+    .style("font-size","12px")
+    .style("font-weight","bold");
+    
+    function zoomed() {
+        var panX = d3.event.translate[0];
+        var panY = d3.event.translate[1];
+        var scale = d3.event.scale;
+        
+        panX = panX > 10 ? 10 : panX;
+        var maxX = -(scale - 1) * width - 10;
+        panX = panX < maxX ? maxX : panX;
+        
+        panY = panY > 10 ? 10 : panY;
+        var maxY = -(scale - 1) * height - 10;
+        panY = panY < maxY ? maxY : panY;
+        
+        zoom.translate([panX, panY]);
+        
+        
+        main1.select(".x.axis").call(xAxis);
+        main1.select(".y.axis").call(yAxis);
+        main1.selectAll("circle")
+        .attr("cx", function (d, i) {
+              return xScale(data_plot[i].xaxis);
+              })
+        .attr("cy", function (d, i) {
+              return yScale(data_plot[i].yaxis);
+              })
+        .attr("r", 2.5)
+        .style("fill", "#B71C1C")
+        ;
+    }
+    
+  //  d3.select("#NAcount").text("There are " + nanCount + " number of NA values in the relation.");
+    
+    
+}
+
+
+export function setxTable(features) {
+    function tabulate(data, columns) {
+        var table = d3.select('#setxLeftBottom').append('table')
+        var thead = table.append('thead')
+        var	tbody = table.append('tbody');
+        
+        // append the header row
+        thead.append('tr')
+        .selectAll('th')
+        .data(columns).enter()
+        .append('th')
+        .text(function (column) { return column; });
+        
+        // create a row for each object in the data
+        var rows = tbody.selectAll('tr')
+        .data(data)
+        .enter()
+        .append('tr');
+        
+        // create a cell in each row for each column
+        var cells = rows.selectAll('td')
+        .data(function (row) {
+              return columns.map(function (column) {
+                                 return {column: column, value: row[column]};
+                                 });
+              })
+        .enter()
+        .append('td')
+        .text(function (d) { return d.value; });
+        
+        return table;
+    }
+    
+    let mydata = [];
+    for(let i = 0; i<features.length; i++) {
+        mydata.push({"Variables":features[i],"From":1, "To":3});
+    } 
+
+    // render the table(s)
+    tabulate(mydata, ['Variables', 'From', 'To']); // 2 column table
+}
+
