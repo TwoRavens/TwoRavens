@@ -1,3 +1,4 @@
+rp notes
 
 ### snippet to run gRPC start_session from shell
 
