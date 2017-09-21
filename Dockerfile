@@ -7,8 +7,8 @@ LABEL organization="Two Ravens" \
       2ra.vn.release-date="2017-09-20" \
       description="Image for the Two Ravens python service which serves the UI."
 
+#    apt-get upgrade -y  && \
 RUN apt-get update && \
-    apt-get upgrade -y  && \
     apt-get install -y \
     python3-pip \
     sqlite3 \
