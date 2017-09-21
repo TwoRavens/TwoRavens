@@ -166,7 +166,8 @@ let UpdateProblemSchemaRequest = {
 task_type: [2,"DEFAULT"],
 task_subtype: [1,"DEFAFULT"],
 output_type: [3,"DEFAULT"],
-    metric_type: [4,"DEFAULT"]};
+    metric_type: [4,"DEFAULT"],
+    task_description: ""};
 
 
 
@@ -436,12 +437,15 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
                     UpdateProblemSchemaRequest.output_type = "outputUndefined";
                   //  alert("Specified output type, " + data.outputType + ", is not valid.");
                 }
+                
+                UpdateProblemSchemaRequest.task_description = data.descriptionFile;
 
                 
                 document.getElementById("btnType").click();
                 startsession();
                 scaffolding(layout);
-                dataDownload();
+                    zPop(); // called in dataDownload, but required to be called so moved here for d3m_mode
+                //dataDownload();  we do not call dataDownload in d3m_mode. we assume we have the path to the data already
                 resolve();
             });
         }))
@@ -1836,7 +1840,8 @@ export function estimate(btn) {
             zPop();
             zparams.callHistory = callHistory;
             var jsonout = JSON.stringify(zparams);
-        console.log(jsonout);
+            console.log(jsonout);
+            let sessioncontext = zparams.zsessionid;
 
             var urlcall = rappURL + "pipelineapp";
         
@@ -1853,34 +1858,54 @@ export function estimate(btn) {
                 let task_subtype = d3mTaskSubtype[UpdateProblemSchemaRequest.task_subtype][1];
                 let output = d3mOutputType[UpdateProblemSchemaRequest.output_type][1];
                 let metrics = d3mMetrics[UpdateProblemSchemaRequest.metric_type][1];
+                let task_description = UpdateProblemSchemaRequest.task_description;
+                let max_pipelines = 10; //user to specify this eventually?
                 
+                setxTable(train_features);
                 let dvvalues = json.dvvalues;
                 
-                // this is eventually an API call
-                let predvals = json.dvvalues;
-                for(let i =0; i<predvals.length; i++) {
-                    predvals[i] = predvals[i] * (Math.random()+.5);
-                }
-                
-                let xdata = "Actual";
-                let ydata = "Predicted";
-                bivariatePlot(dvvalues, predvals, xdata, ydata);
-                setxTable(train_features);
 
-                let PipelineRequest={train_features, target_features, task, task_subtype, output, metrics};
+                let PipelineCreateRequest={sessioncontext, train_features, task, task_subtype, task_description, output, metrics, target_features, max_pipelines};
 
-                let jsonout = JSON.stringify(PipelineRequest);
+                let jsonout = JSON.stringify(PipelineCreateRequest);
 
                 let urlcall = d3mURL + "/createpipeline";
-                var solajsonout = "CreatePipelines=" + jsonout;
+                var solajsonout = "PipelineCreateRequest=" + jsonout;
                 
                 console.log(urlcall);
                 console.log(solajsonout);
                 function sendPipelineSuccess(btn, json) {
+                    let PipelineCreateResult = json;
                     console.log(json);
                     toggleRightButtons("all");
                     document.getElementById("btnResults").click();
                     listpipelines();
+                    
+                    
+                    // once we know what TA2 does we'll get the pipeline ids from there
+                    //let pipelineid = PipelineCreateResult.pipelineid;
+                    let pipelineid = "id1";
+                    let PipelineExecuteResultsRequest = {sessioncontext, pipelineid};
+                    jsonout = JSON.stringify(PipelineExecuteResultsRequest);
+                    let urlcall = d3mURL + "/getexecutepipelineresults";
+                    var solajsonout = "GetExecutePipelineResults=" + jsonout;
+                    
+                    function getExecutePipeSuccess(btn, json) {
+                        let PipelineExecuteResult =json;
+                        // presumably we'll be reading in results from a path
+                        // for now it's just hardcoded
+                        let predvals = dvvalues;
+                        for(let i =0; i<predvals.length; i++) {
+                            predvals[i] = predvals[i] * (Math.random()+.5);
+                        }
+                        let xdata = "Actual";
+                        let ydata = "Predicted";
+                        bivariatePlot(dvvalues, predvals, xdata, ydata);
+                    }
+                    function getExecutePipeFail (btn) {
+                        console.log("GetExecutePipelineResults failed");
+                    }
+                    makeCorsRequest(urlcall, "nobutton", getExecutePipeSuccess, getExecutePipeFail, solajsonout);
                 }
 
                 function sendPipelineFail(btn) {
@@ -2877,7 +2902,8 @@ function startsession() {
     console.log("urlcall: ", urlcall);
 
     function ssSuccess(btn, json) {
-        console.log(json);
+        zparams.zsessionid=json.context.sessionId;
+        console.log("startsession: ", json);
     }
 
     function ssFail(btn) {
@@ -2888,7 +2914,7 @@ function startsession() {
 }
 
 export function endsession() {
-    let sessioncontext = "my session context";
+    let sessioncontext = zparams.zessionid;
     let SessionContext={sessioncontext};
     
     var jsonout = JSON.stringify(SessionContext);
@@ -2910,7 +2936,7 @@ export function endsession() {
 }
 
 export function listpipelines() {
-    let sessioncontext = "my session context";
+    let sessioncontext = zparams.zsessionid;
     let PipeLineListRequest={sessioncontext};
     
     var jsonout = JSON.stringify(PipeLineListRequest);
@@ -2922,6 +2948,7 @@ export function listpipelines() {
     
     function listPipesSuccess(btn, json) {
         //hardcoded pipes for now
+        let PipelineListResult = json;
         let pipes = ["","id1", "id2", "id3", "id4", "id5"]
         d3.select("#results").selectAll("p")
         .data(pipes)
@@ -2966,23 +2993,40 @@ export function listpipelines() {
 }
 
 export function executepipeline() {
-    let sessioncontext = "my session context";
-    let pipelineid = '2';
-    let features = "something";
+    let sessioncontext = zparams.zsessionid;
+    let pipelineid = document.getElementById('setxRight').querySelector('p.item-select');
+    if(pipelineid == null) {alert("Please select a pipeline to execute on."); return;}
+    pipelineid = pipelineid.innerText;
+    
     
     zPop();
     zparams.callHistory = callHistory;
     let jsonout = JSON.stringify(zparams);
     
-//    let    repeated Feature predict_features = 3;  // input feature data to pass to the pipeline
-  //  }
-
-console.log(zparams);
-return;
-
+    let features = [];
+    
+    //this will just set zparams.zsetx to the mean, which is default for setx plots
+    //note that if setxplot is modified, it will NOT == "" because zparams.zsetx is modified when the setx plot slider is moved for the first time
+    for(let i =0; i<zparams.zvars.length; i++) {
+        let myfeature = [];
+        myfeature[0]=zparams.zvars[i];
+        let mymean = allNodes[findNodeIndex(zparams.zvars[i])].mean;
+        if(zparams.zsetx[i][0]=="") {
+            myfeature[1]=mymean;
+        } else if(zparams.zsetx[i][0]!=mymean){
+            myfeature[1]=zparams.zsetx[i][0];
+        }
+        if(zparams.zsetx[i][1]=="") {
+            myfeature[2]=allNodes[findNodeIndex(zparams.zvars[i])].mean;
+        } else if(zparams.zsetx[i][1]!=mymean){
+            myfeature[2]=zparams.zsetx[i][1];
+        }
+        features.push(myfeature);
+    }
+    
     let PipeLineExecuteRequest={sessioncontext, pipelineid, features};
     
-   jsonout = JSON.stringify(PipeLineExecuteRequest);
+    jsonout = JSON.stringify(PipeLineExecuteRequest);
     
     var urlcall = d3mURL + "/executepipeline";
     var solajsonout = "PipeLineExecuteRequest=" + jsonout;
@@ -2990,23 +3034,8 @@ return;
     console.log("urlcall: ", urlcall);
     
     function executePipeSuccess(btn, json) {
-        //hardcoded pipes for now
-        let pipes = ["","id1", "id2", "id3", "id4", "id5"]
-        d3.select("#results").selectAll("p")
-        .data(pipes)
-        .enter()
-        .append("p")
-        .attr("id", "_pipe_".concat)
-        .text(d => d)
-        .attr('class', 'item-default')
-        .on("click", function() {
-            if(this.className=="item-select") {
-            return;
-            } else {
-            d3.select("#results").select("p.item-select")
-            .attr('class', 'item-default');
-            d3.select(this).attr('class',"item-select");
-            }});
+        let PipelineExecuteResult = json;
+        alert("pipeline executed");
         console.log(json);
     }
     

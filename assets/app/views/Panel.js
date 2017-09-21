@@ -17,7 +17,7 @@ class Panel {
         let {side, title} = vnode.attrs;
         const dot = [m.trust('&#9679;'), m('br')]; 
         return m(getClasses(`#${side}panel.sidepanel.container.clearfix`, this),
-            m(`#toggle${side === 'left' ? 'L' : 'R'}panelicon.panelbar[style=height: calc(100% - 60px)]`,
+            m(`#toggle${side === 'left' ? 'L' : 'R'}panelicon.panelbar[style=height: calc(100%)]`,
               m('span', {onclick: _ => this.closed = !this.closed}, dot, dot, dot, dot)),
             m(`#${side}paneltitle.panel-heading.text-center`,
               m("h3.panel-title", title)),

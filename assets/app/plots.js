@@ -19,7 +19,6 @@ export function density(node, div, priv) {
     
     let tw = document.getElementById('main').offsetWidth;
     
-    console.log("Style ", tw);
     var tempHeight = d3.select(div).style("height");
     var height = tempHeight.substring(0, (tempHeight.length - 2));
     var margin = {
@@ -270,7 +269,7 @@ export function density(node, div, priv) {
             handle.attr("points", _ => (xpos - s) + "," + (-s) + " " + (xpos + s) + "," + (-s) + " " + xpos + "," + (s * 1.3));
             plotsvg.select("text#range")
                 .text(() => "x: ".concat((invx(xpos)).toPrecision(4)));
-            node.setxvals[1] = (invx(xpos)).toPrecision(4);
+            node.setxvals[0] = (invx(xpos)).toPrecision(4);
         }
     }
 
@@ -776,7 +775,7 @@ export function bars(node, div, priv) {
                     return ("x: ".concat(+(invx(xpos)).toPrecision(4).toString()));
                 }
             });
-        node.setxvals[1] = +(invx(xpos)).toPrecision(4);
+        node.setxvals[0] = +(invx(xpos)).toPrecision(4);
     }
 
     // certainly a more clever way to do this, but for now it's basically copied with brush and handle changes to brush2 and handle2 and #range to #range2 and setxvals[0] to setxvals[1]
@@ -1185,3 +1184,6 @@ export function barsNode(node, obj) {
         .attr("height", y)
         .attr("fill", "#1f77b4");
 }
+
+
+
