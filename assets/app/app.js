@@ -1854,11 +1854,17 @@ export function estimate(btn) {
                 let output = d3mOutputType[UpdateProblemSchemaRequest.output_type][1];
                 let metrics = d3mMetrics[UpdateProblemSchemaRequest.metric_type][1];
                 
-                let xtemp = [2,5,3];
-                let ytemp = [1,2,3];
-                let xdata = "varx";
-                let ydata = "varY";
-                bivariatePlot(xtemp, ytemp, xdata, ydata);
+                let dvvalues = json.dvvalues;
+                
+                // this is eventually an API call
+                let predvals = json.dvvalues;
+                for(let i =0; i<predvals.length; i++) {
+                    predvals[i] = predvals[i] * (Math.random()+.5);
+                }
+                
+                let xdata = "Actual";
+                let ydata = "Predicted";
+                bivariatePlot(dvvalues, predvals, xdata, ydata);
                 setxTable(train_features);
 
                 let PipelineRequest={train_features, target_features, task, task_subtype, output, metrics};
@@ -3230,8 +3236,8 @@ export function bivariatePlot(x_Axis, y_Axis, x_Axis_name, y_Axis_name) {
     var chart_scatter = d3.select('#setxMiddle')
     .append('svg:svg')
     .attr('width', width + margin.right + margin.left)
-    .attr('height', height + margin.top + margin.bottom)
-    .call(zoom);
+    .attr('height', height + margin.top + margin.bottom);
+   // .call(zoom); dropping this for now, until the line zooms properly
     
     var main1 = chart_scatter.append('g')
     .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')')
@@ -3239,12 +3245,12 @@ export function bivariatePlot(x_Axis, y_Axis, x_Axis_name, y_Axis_name) {
     .attr('height', height + margin.top + margin.bottom)
     .attr('class', 'main');
     
-    main1.append('g')
+    let gX = main1.append('g')
     .attr('transform', 'translate(0,' + height + ')')
     .attr('class', 'x axis')
     .call(xAxis);
     
-    main1.append('g')
+    let gY = main1.append('g')
     .attr('transform', 'translate(0,0)')
     .attr('class', 'y axis')
     .call(yAxis);
@@ -3290,6 +3296,14 @@ export function bivariatePlot(x_Axis, y_Axis, x_Axis_name, y_Axis_name) {
     .style("font-size","12px")
     .style("font-weight","bold");
     
+    main1.append("line")
+    .attr("x1", xScale(min_x))
+    .attr("y1", yScale(min_x))
+    .attr("x2", xScale(max_x))
+    .attr("y2", yScale(max_x))
+    .attr("stroke-width", 2)
+    .attr("stroke", "black");
+    
     function zoomed() {
         var panX = d3.event.translate[0];
         var panY = d3.event.translate[1];
@@ -3310,6 +3324,7 @@ export function bivariatePlot(x_Axis, y_Axis, x_Axis_name, y_Axis_name) {
         main1.select(".y.axis").call(yAxis);
         main1.selectAll("circle")
         .attr("cx", function (d, i) {
+              console.log("circle x ",xScale(5));
               return xScale(data_plot[i].xaxis);
               })
         .attr("cy", function (d, i) {
@@ -3318,7 +3333,26 @@ export function bivariatePlot(x_Axis, y_Axis, x_Axis_name, y_Axis_name) {
         .attr("r", 2.5)
         .style("fill", "#B71C1C")
         ;
+   
+       // below doesn't work, so I'm just dropping the zoom
+        main1.select("line")
+        .attr("x1", function(d, i) {
+              return xScale(min_x);
+              })
+        .attr("y1", function(d, i) {
+              return xScale(min_x);
+              })
+        .attr("x2", function(d, i) {
+              return xScale(max_x);
+              })
+        .attr("y2", function(d, i) {
+              return yScale(max_x);
+              })
+        .attr("stroke-width", 2)
+        .attr("stroke", "black");
     }
+    
+    
     
   //  d3.select("#NAcount").text("There are " + nanCount + " number of NA values in the relation.");
     
@@ -3362,7 +3396,7 @@ export function setxTable(features) {
     let mydata = [];
     for(let i = 0; i<features.length; i++) {
         mydata.push({"Variables":features[i],"From":1, "To":3});
-    } 
+    }
 
     // render the table(s)
     tabulate(mydata, ['Variables', 'From', 'To']); // 2 column table
