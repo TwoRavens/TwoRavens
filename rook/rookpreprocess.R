@@ -50,17 +50,20 @@ preprocess.app <- function(env){
             result<-list(warning="No target location.")
         }
     }
-    if(!warning){
-        mypreprocessloc <- everything$preprocess
-        if(length(mypreprocessloc) == 0){ # rewrite to check for data file?
-            warning <- TRUE
-            result<-list(warning="No preprocess location.")
-        }
-    }
+
+    ##  preprocess location is now constructed from rookconfig.R 
+
+    #if(!warning){
+    #    mypreprocessloc <- everything$preprocess
+    #    if(length(mypreprocessloc) == 0){ # rewrite to check for data file?
+    #        warning <- TRUE
+    #        result<-list(warning="No preprocess location.")
+    #    }
+    #}
 
 	if(!warning){
         tryCatch({
-            if(!production) {
+            if(d3m_mode) {                                       # Note presently this entire app is only ever called in d3m mode, but we might generalize its function
                 mydataloc2 <- paste("../",mydataloc,sep="")
                 mytargetloc <- paste("../",mytargetloc,sep="")
                 mydata <- read.csv(mydataloc2)
@@ -86,11 +89,16 @@ preprocess.app <- function(env){
     if(production){
         sink()
     }
-    outloc <- paste("../",mypreprocessloc,sep="")
-    mydataloc <- strsplit(x=mydataloc, split='\\.')[[1]]
-    outdata <- paste("../",mydataloc,"merged.tsv",sep="")
+
+    #outloc <- paste("../",mypreprocessloc,sep="")
+    outloc <- paste(rook_output_preprocess, "/preprocess.json")                    # set in rookconfig.R configuration file
+
+    #mydataloc <- strsplit(x=mydataloc, split='\\.')[[1]]
+    #outdata <- paste("../",mydataloc,"merged.tsv",sep="")
+    filenamestub <- sub("(.*\\/)([^.]+)(\\.[[:alnum:]]+$)", "\\2", dataloc)        # extract the filename stub from the provided training data path
+    outdata <- paste(rook_output_data, "/", filenamestub, "merged.tsv",sep="")
+
     write(ppJSON, outloc)
-    #print(outdata[1])
     write.table(mydata, outdata[1], row.names=FALSE, col.names=TRUE, sep="\t")
     response$write(result)
     response$finish()
