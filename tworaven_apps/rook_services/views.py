@@ -18,7 +18,6 @@ def view_rook_route(request, app_name_in_url):
         orig: TwoRavens -> Rook
         view: TwoRavens -> Django 2ravens -> Rook
     """
-
     django_session_key = request.session._get_or_create_session_key()
 
     print('django_session_key', django_session_key)
@@ -26,7 +25,7 @@ def view_rook_route(request, app_name_in_url):
     #
     rook_app_info = RookAppInfo.get_appinfo_from_url(app_name_in_url)
     if rook_app_info is None:
-        raise Http404('unknown rook app: %s' % app_name_in_url)
+        raise Http404('unknown rook app: "{0}" (please add "{0}" to "tworaven_apps/rook_services/app_names.py")'.format(app_name_in_url))
 
     # look for the "solaJSON" variable in the POST
     #
@@ -98,41 +97,8 @@ NUM_CLICKS_KEY = 'NUM_CLICKS_KEY'
 @csrf_exempt
 def view_rp_test(request):
 
-    d = {'name' : 'ta2'}
-    d = dict(name='ta2',
-             status_code=55)
-    return JsonResponse(d)
-    # session test for num clicks
-    #
-    num_clicks = request.session.get(NUM_CLICKS_KEY, 0)
-    num_clicks += 1
-    request.session[NUM_CLICKS_KEY] = num_clicks
-
-    print('num_clicks: ', num_clicks)
-    print('request.session.session_key: ', request.session.session_key)
-
-    node_length = 'not sent'
-    if request.POST:
-        node_length = request.POST.get('nodeLength', 'not set by client (err?)')
-
-    if request.user.is_authenticated:
-        print('authenticated')
-        # Do something for authenticated users.
-
-    else:
-        print('anonymous')
-
-    user_msg = ('\nnode length: {1}. hello ({0})').format(\
-                    dt.now(),
-                    node_length)
-
-    d = dict(status='ok',
-             data=dict(\
-                 num_clicks=num_clicks,
-                 node_length=node_length,
-                 server_time='%s' % dt.now()),
-             message=user_msg)
-
+    d = dict(name='test url',
+             status_code=1)
     return JsonResponse(d)
 
 # example of incoming POST from TwoRavens
@@ -151,7 +117,7 @@ try:
         #print('blank session id....')
         # blank id found, subsitute the django session key
         #
-        raven_data_json[ROOK_ZESSIONID] = django_session_key'
+        raven_data_json[ROOK_ZESSIONID] = django_session_key
         #
         #
         raven_data_text = json.dumps(raven_data_json)

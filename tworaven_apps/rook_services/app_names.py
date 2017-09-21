@@ -4,7 +4,7 @@ Constants used to track the app names and url between the frontend and rook
 
 HEALTH_CHECK_APP = 'HEALTH_CHECK_APP'
 
-# Used for tracking the routing.
+# Used for tracking rook routing.
 #
 # Example ZELIG_APP is the constant used in logs
 #

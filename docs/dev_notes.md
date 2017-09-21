@@ -1,9 +1,42 @@
-rp notes
+# Misc. notes
 
-### snippet to run gRPC start_session from shell
 
+## Adding a new rook app: django
+
+For a new rook app, please add its name to `tworaven_apps/rook_services/app_names.py`.
+
+This will allow better logging/tracking of calls to that app.
+
+Example: if the new app is `pipelineapp`, add this line to the `app_names.py`
+file listed above:
+
+```python
+          ('PIPELINE_APP', 'pipelineapp', 'pipelineapp'), # format pipeline
 ```
-python manage.py dbshell
+
+This is how the new line looks in the context of the `app_names.py` file.
+
+```python
+# Used for tracking rook routing.
+#
+# Example ZELIG_APP is the constant used in logs
+#
+# format:        (app name, frontend url suffix, rook url suffix)
+#
+ROOK_APP_NAMES = [('ZELIG_APP', 'zeligapp', 'zeligapp'),    # run models
+                  ('DATA_APP', 'dataapp', 'dataapp'),       # session id?
+                  ('SUBSET_APP', 'subsetapp', 'subsetapp'), # subset file
+                  ('TRANSFORM_APP', 'transformapp', 'transformapp'), # transfor file
+                  ('PREPROCESS_APP', 'preprocessapp', 'preprocessapp'), # preprocess
+                  ('PIPELINE_APP', 'pipelineapp', 'pipelineapp'), # format pipeline
+                 ]
+```
+
+## snippet to run gRPC start_session from shell
+
+- ```python manage.py dbshell```
+
+```python
 import json
 from tworaven_apps.ta2_interfaces.req_start_session import start_session
 
@@ -13,11 +46,11 @@ start_session(test_req)
 ```
 
 
-### snippet to start_session from shell
+## snippet to start_session from shell
 
-```
-python manage.py dbshell
+- ```python manage.py dbshell```
 
+```python
 from django.conf import settings
 import json
 from tworaven_apps.ta2_interfaces import core_pb2
