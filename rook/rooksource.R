@@ -95,6 +95,8 @@ if(!production){
 
     cat("Type:", typeof(R.server), "Class:", class(R.server))
     R.server$add(app = File$new(getwd()), name = "pic_dir")
+    R.server$add(app = File$new(getwd()), name = "rook-files")
+
     print(R.server)
 
     R.server$start(listen=myInterface, port=myPort)
