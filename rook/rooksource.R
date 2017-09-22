@@ -74,7 +74,7 @@ if(addPrivacy){
 
 if(!production){
     myPort <- "8000"
-    myInterface <- "0.0.0.0"
+    myInterface <- "127.0.0.1"
     status <- -1
     if (as.integer(R.version[["svn rev"]]) > 72310) {
         status <- .Call(tools:::C_startHTTPD, myInterface, myPort)
@@ -95,7 +95,7 @@ if(!production){
 
     cat("Type:", typeof(R.server), "Class:", class(R.server))
     R.server$add(app = File$new(getwd()), name = "pic_dir")
-    R.server$add(app = File$new(getwd()), name = "rook-files")
+    R.server$add(app = File$new(paste(getwd()), "/rook-files/,sep=""), name = "rook-files")
 
     print(R.server)
 
