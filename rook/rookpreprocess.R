@@ -1,6 +1,11 @@
 ##
 ##  rookpreprocess.r
 ##
+##  Used presently only in D3M mode.  
+##  Creates directory structure for storing data related products for Rook, specific to a dataset.
+##  Merges files from seed problems together into one dataset.
+##  Constructs preprocess metadata file.
+##
 ##  8/25/17
 ##
 
@@ -25,7 +30,8 @@ preprocess.app <- function(env){
     response <- Response$new(headers = list( "Access-Control-Allow-Origin"="*"))
 
     valid <- jsonlite::validate(request$POST()$solaJSON)
-    #print(valid)
+    print(valid)
+
     if(!valid) {
         warning <- TRUE
         result <- list(warning="The request is not valid json. Check for special characters.")
@@ -43,6 +49,7 @@ preprocess.app <- function(env){
 			result<-list(warning="No data location.")
 		}
 	}
+
     if(!warning){
         mytargetloc <- everything$target
         if(length(mytargetloc) == 0){ # rewrite to check for data file?
@@ -50,6 +57,7 @@ preprocess.app <- function(env){
             result<-list(warning="No target location.")
         }
     }
+
     if(!warning){
         mydatastub <- everything$datastub
         if(length(mydatastub) == 0){ # rewrite to check for data file?
@@ -57,16 +65,6 @@ preprocess.app <- function(env){
             result<-list(warning="No dataset stub name.")
         }
     }
-
-    ##  preprocess location is now constructed from rookconfig.R 
-
-    #if(!warning){
-    #    mypreprocessloc <- everything$preprocess
-    #    if(length(mypreprocessloc) == 0){ # rewrite to check for data file?
-    #        warning <- TRUE
-    #        result<-list(warning="No preprocess location.")
-    #    }
-    #}
 
 	if(!warning){
         tryCatch({
@@ -89,19 +87,12 @@ preprocess.app <- function(env){
             result <<- list(warning=paste("Preprocess error: ", err))
         })
 	}
-    
 
+    merge_name_stub <- sub("(.*\\/)([^.]+)(\\.[[:alnum:]]+$)", "\\2", mydataloc)   # Extract the filename stub from the provided training data path.  Generally "trainData".
 
-    merge_name_stub <- sub("(.*\\/)([^.]+)(\\.[[:alnum:]]+$)", "\\2", mydataloc)        # extract the filename stub from the provided training data path
-
-    rook_output_data <- paste(pre_path, use_path, mydatastub, "/data/", sep="")                   
-    rook_output_images <- paste(pre_path, use_path, mydatastub, "/images/", sep="")               
-    rook_output_preprocess <- paste(pre_path, use_path, mydatastub, "/preprocess/", sep="")       
-
-    print(rook_output_data)
-    print(rook_output_images)
-    print(rook_output_preprocess)
-
+    rook_output_data <- paste(pre_path, mydatastub, "/data/", sep="")                   
+    rook_output_images <- paste(pre_path, mydatastub, "/images/", sep="")               
+    rook_output_preprocess <- paste(pre_path, mydatastub, "/preprocess/", sep="")       
 
     # R won't write to a directory that doesn't exist.
     if (!dir.exists(rook_output_data)){
@@ -114,20 +105,11 @@ preprocess.app <- function(env){
         dir.create(rook_output_preprocess, recursive = TRUE)
     }
 
-
-
-
-    #outloc <- paste("../",mypreprocessloc,sep="")
-    outloc <- paste(rook_output_preprocess, "preprocess.json", sep="")                    # set in rookconfig.R configuration file
-
-    #mydataloc <- strsplit(x=mydataloc, split='\\.')[[1]]
-    #outdata <- paste("../",mydataloc,"merged.tsv",sep="")
-    filenamestub <- sub("(.*\\/)([^.]+)(\\.[[:alnum:]]+$)", "\\2", mydataloc)        # extract the filename stub from the provided training data path
+    outloc <- paste(rook_output_preprocess, "preprocess.json", sep="")                
     outdata <- paste(rook_output_data, merge_name_stub, "merged.tsv",sep="")
 
     write(ppJSON, outloc)
     write.table(mydata, outdata[1], row.names=FALSE, col.names=TRUE, sep="\t")
-
 
     result<-jsonlite:::toJSON(result)
     
