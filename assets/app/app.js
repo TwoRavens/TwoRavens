@@ -162,12 +162,12 @@ vectorClassLabel:["description","VECTOR_CLASS_LABEL", 5],
     vectorReal:["description","VECTOR_REAL", 7],
     file:["description","FILE",8]};
 
-let UpdateProblemSchemaRequest = {
-task_type: [2,"DEFAULT"],
-task_subtype: [1,"DEFAFULT"],
-output_type: [3,"DEFAULT"],
-    metric_type: [4,"DEFAULT"],
-    task_description: ""};
+let d3mProblemDescription = {
+taskType: [2,"DEFAULT"],
+taskSubtype: [1,"DEFAFULT"],
+outputType: [3,"DEFAULT"],
+    metric: [4,"DEFAULT"],
+    taskDescription: ""};
 
 
 
@@ -412,33 +412,33 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
                 document.getElementById("ticker").appendChild(aTag);
 
                 if(data.taskType in d3mTaskType) {
-                    UpdateProblemSchemaRequest.task_type = data.taskType;//[d3mTaskType[data.taskType][2],d3mTaskType[data.taskType][1]]; console.log(UpdateProblemSchemaRequest);
+                    d3mProblemDescription.taskType = data.taskType;//[d3mTaskType[data.taskType][2],d3mTaskType[data.taskType][1]]; console.log(d3mProblemDescription);
                 } else {
-                    UpdateProblemSchemaRequest.task_type = "taskTypeUndefined";
+                    d3mProblemDescription.taskType = "taskTypeUndefined";
                  //   alert("Specified task type, " + data.taskType + ", is not valid.");
                 }
 
                 if(data.taskSubType in d3mTaskSubtype) {
-                    UpdateProblemSchemaRequest.task_subtype = data.taskSubType;
+                    d3mProblemDescription.taskSubtype = data.taskSubType;
                     //[d3mTaskSubtype[data.taskSubType][2],d3mTaskSubtype[data.taskSubType][1]];
                     } else {
-                        UpdateProblemSchemaRequest.task_subtype = "taskSubtypeUndefined";
+                        d3mProblemDescription.taskSubtype = "taskSubtypeUndefined";
                    //     alert("Specified task subtype, " + data.taskSubType + ", is not valid.")
                     }
                 if(data.metric in d3mMetrics) {
-                    UpdateProblemSchemaRequest.metric_type = data.metric;//[d3mMetrics[data.metric][2],d3mMetrics[data.metric][1]];
+                    d3mProblemDescription.metric = data.metric;//[d3mMetrics[data.metric][2],d3mMetrics[data.metric][1]];
                 } else {
-                    UpdateProblemSchemaRequest.matric_type = "metricUndefined";
+                    d3mProblemDescription.matric_type = "metricUndefined";
                    // alert("Specified metric type, " + data.metric + ", is not valid.");
                     }
                 if(data.outputType in d3mOutputType) {
-                    UpdateProblemSchemaRequest.output_type = data.outputType;//[d3mOutputType[data.outputType][2],d3mOutputType[data.outputType][1]];
+                    d3mProblemDescription.outputType = data.outputType;//[d3mOutputType[data.outputType][2],d3mOutputType[data.outputType][1]];
                 } else {
-                    UpdateProblemSchemaRequest.output_type = "outputUndefined";
+                    d3mProblemDescription.outputType = "outputUndefined";
                   //  alert("Specified output type, " + data.outputType + ", is not valid.");
                 }
                 
-                UpdateProblemSchemaRequest.task_description = data.descriptionFile;
+                d3mProblemDescription.taskDescriptionription = data.descriptionFile;
 
                 
                 document.getElementById("btnType").click();
@@ -584,7 +584,7 @@ function scaffolding(callback) {
         .attr("id", d => d + ".types")
         .text(d => d)
         .attr('class', d=> {
-              if (UpdateProblemSchemaRequest.task_type == d.toString()){
+              if (d3mProblemDescription.taskType == d.toString()){
               return 'item-select';
               } else {
               if(locktoggle) return 'item-default item-lineout';
@@ -608,7 +608,7 @@ function scaffolding(callback) {
         .attr("id", d => d + ".subtypes")
         .text(d => d)
         .attr('class', d=> {
-              if (UpdateProblemSchemaRequest.task_subtype == d.toString()){
+              if (d3mProblemDescription.taskSubtype == d.toString()){
               return 'item-select';
               } else {
               if(locktoggle) return 'item-default item-lineout';
@@ -632,7 +632,7 @@ function scaffolding(callback) {
         .attr("id", d => d + ".metrics")
         .text(d => d)
         .attr('class', d=> {
-              if (UpdateProblemSchemaRequest.metric_type == d.toString()){
+              if (d3mProblemDescription.metric == d.toString()){
                 return 'item-select';
               } else {
                 if(locktoggle) return 'item-default item-lineout';
@@ -656,7 +656,7 @@ function scaffolding(callback) {
         .attr("id", d => d + ".outputs")
         .text(d => d)
         .attr('class', d=> {
-              if (UpdateProblemSchemaRequest.output_type == d.toString()){
+              if (d3mProblemDescription.outputType == d.toString()){
               return 'item-select';
               } else {
               if(locktoggle) return 'item-default item-lineout';
@@ -1136,11 +1136,11 @@ function layout(v,v2) {
         } else {
             d3.select("#types").select("p.item-select")
             .attr('class', 'item-default');
-            UpdateProblemSchemaRequest.task_type = this.innerHTML.toString();
+            d3mProblemDescription.taskType = this.innerHTML.toString();
             d3.select(this).attr('class',"item-select");
         }
         restart();
-        updateSchema("task_type", UpdateProblemSchemaRequest, d3mTaskType);
+        updateSchema("taskType", d3mProblemDescription, d3mTaskType);
         });
 
     d3.select("#subtypes").selectAll("p")
@@ -1151,11 +1151,11 @@ function layout(v,v2) {
         } else {
             d3.select("#subtypes").select("p.item-select")
             .attr('class', 'item-default');
-            UpdateProblemSchemaRequest.task_subtype = this.innerHTML.toString();
+            d3mProblemDescription.taskSubtype = this.innerHTML.toString();
             d3.select(this).attr('class',"item-select");
         }
         restart();
-        updateSchema("task_subtype", UpdateProblemSchemaRequest, d3mTaskSubtype);
+        updateSchema("taskSubtype", d3mProblemDescription, d3mTaskSubtype);
         });
 
     d3.select("#metrics").selectAll("p")
@@ -1163,16 +1163,16 @@ function layout(v,v2) {
         if(locktoggle) return;
         if(this.className=="item-select") {
             return;
-   //         UpdateProblemSchemaRequest.metric_type = ["",""];
+   //         d3mProblemDescription.metric = ["",""];
     //        this.className="item-default";
         } else {
             d3.select("#metrics").select("p.item-select")
             .attr('class', 'item-default');
-            UpdateProblemSchemaRequest.metric_type = this.innerHTML.toString();
+            d3mProblemDescription.metric = this.innerHTML.toString();
             d3.select(this).attr('class',"item-select");
         }
         restart();
-        updateSchema("metric_type", UpdateProblemSchemaRequest, d3mMetrics);
+        updateSchema("metric", d3mProblemDescription, d3mMetrics);
         });
 
     d3.select("#outputs").selectAll("p")
@@ -1183,11 +1183,11 @@ function layout(v,v2) {
         } else {
             d3.select("#outputs").select("p.item-select")
             .attr('class', 'item-default');
-            UpdateProblemSchemaRequest.output_type = this.innerHTML.toString();
+            d3mProblemDescription.outputType = this.innerHTML.toString();
             d3.select(this).attr('class',"item-select");
         }
         restart();
-        updateSchema("output_type", UpdateProblemSchemaRequest, d3mOutputType);
+        updateSchema("outputType", d3mProblemDescription, d3mOutputType);
         });
 
     // update graph (called when needed)
@@ -1837,11 +1837,14 @@ export function estimate(btn) {
     estimateLadda.start(); // start spinner
     makeCorsRequest(urlcall, btn, estimateSuccess, estimateFail, solajsonout);
     } else { // we are in d3m_mode
+        // rpc CreatePipelines(PipelineCreateRequest) returns (stream PipelineCreateResult) {}
             zPop();
             zparams.callHistory = callHistory;
             var jsonout = JSON.stringify(zparams);
             console.log(jsonout);
-            let sessioncontext = zparams.zsessionid;
+        
+            let SessionContext = apiSession(zparams.zsessionid);
+            let uri = zparams.zdataurl;
 
             var urlcall = rappURL + "pipelineapp";
         
@@ -1852,20 +1855,20 @@ export function estimate(btn) {
             function createPipelineSuccess(btn, json) {
                 estimateLadda.stop(); // stop spinner
 
-                let train_features=json.predictors;
-                let target_features=json.depvar;
-                let task = d3mTaskType[UpdateProblemSchemaRequest.task_type][1];
-                let task_subtype = d3mTaskSubtype[UpdateProblemSchemaRequest.task_subtype][1];
-                let output = d3mOutputType[UpdateProblemSchemaRequest.output_type][1];
-                let metrics = d3mMetrics[UpdateProblemSchemaRequest.metric_type][1];
-                let task_description = UpdateProblemSchemaRequest.task_description;
-                let max_pipelines = 10; //user to specify this eventually?
+                let trainFeatures=apiFeature(json.predictors,uri);
+                let targetFeatures=apiFeature(json.depvar,uri);
+                let taskType = d3mTaskType[d3mProblemDescription.taskType][1];
+                let taskSubtype = d3mTaskSubtype[d3mProblemDescription.taskSubtype][1];
+                let outputType = d3mOutputType[d3mProblemDescription.outputType][1];
+                let metric = d3mMetrics[d3mProblemDescription.metric][1];
+                let taskDescription = d3mProblemDescription.taskDescriptionription;
+                let maxPipelines = 10; //user to specify this eventually?
                 
-                setxTable(train_features);
+                setxTable(trainFeatures);
                 let dvvalues = json.dvvalues;
                 
 
-                let PipelineCreateRequest={sessioncontext, train_features, task, task_subtype, task_description, output, metrics, target_features, max_pipelines};
+                let PipelineCreateRequest={SessionContext, trainFeatures, taskType, taskSubtype, taskDescription, outputType, metric, targetFeatures, maxPipelines};
 
                 let jsonout = JSON.stringify(PipelineCreateRequest);
 
@@ -1874,26 +1877,31 @@ export function estimate(btn) {
                 
                 console.log(urlcall);
                 console.log(solajsonout);
-                function sendPipelineSuccess(btn, json) {
-                    let PipelineCreateResult = json;
-                    console.log(json);
+                function sendPipelineSuccess(btn, PipelineCreateResult) {
+                    //rpc GetExecutePipelineResults(PipelineExecuteResultsRequest) returns (stream PipelineExecuteResult) {}
+                    console.log(PipelineCreateResult);
                     toggleRightButtons("all");
                     document.getElementById("btnResults").click();
+                    
+                    // this is our function for the ListPipelines of API
                     listpipelines();
                     
                     
                     // once we know what TA2 does we'll get the pipeline ids from there
                     //let pipelineid = PipelineCreateResult.pipelineid;
                     let pipelineid = "id1";
-                    let PipelineExecuteResultsRequest = {sessioncontext, pipelineid};
+                    let PipelineExecuteResultsRequest = {SessionContext, pipelineid};
                     jsonout = JSON.stringify(PipelineExecuteResultsRequest);
                     let urlcall = d3mURL + "/getexecutepipelineresults";
-                    var solajsonout = "GetExecutePipelineResults=" + jsonout;
+                    var solajsonout = "PipelineExecuteResultsRequest=" + jsonout;
+                    console.log("GetExecutePipelineResults: ");
+                    console.log(solajsonout);
+                    console.log(urlcall);
                     
-                    function getExecutePipeSuccess(btn, json) {
-                        let PipelineExecuteResult =json;
+                    function getExecutePipeSuccess(btn, PipelineExecuteResult) {
                         // presumably we'll be reading in results from a path
                         // for now it's just hardcoded
+                        console.log(PipelineExecuteResult);
                         let predvals = dvvalues;
                         for(let i =0; i<predvals.length; i++) {
                             predvals[i] = predvals[i] * (Math.random()+.5);
@@ -1939,7 +1947,7 @@ export function runPreprocess(dataloc, targetloc, preprocessloc) {
         }, _ => console.log('preprocess failed'));
 }
 
-export let ta2stuff = _ => console.log(UpdateProblemSchemaRequest);
+export let ta2stuff = _ => console.log(d3mProblemDescription);
 
 function dataDownload() {
     zPop();
@@ -2889,6 +2897,7 @@ export let fakeClick = () => {
 
 
 // this is our call to django to start the session
+//rpc StartSession(SessionRequest) returns (SessionResponse) {}
 function startsession() {
     let user_agent = "some agent";
     let version = "some version";
@@ -2897,35 +2906,37 @@ function startsession() {
     var jsonout = JSON.stringify(SessionRequest);
 
     var urlcall = d3mURL + "/startsession";
-    var solajsonout = "solaJSON=" + jsonout;
-    console.log("solajsonout: ", solajsonout);
+    var solajsonout = "SessionRequest=" + jsonout;
+    console.log("SessionRequest: ");
+    console.log(solajsonout);
     console.log("urlcall: ", urlcall);
 
-    function ssSuccess(btn, json) {
-        zparams.zsessionid=json.context.sessionId;
-        console.log("startsession: ", json);
+    function ssSuccess(btn, SessionResponse) {
+        zparams.zsessionid=SessionResponse.context.sessionId;
+        console.log("startsession: ", SessionResponse);
     }
 
     function ssFail(btn) {
-        console.log("session start failed");
+        alert("StartSession has failed.");
     }
 
    makeCorsRequest(urlcall, "nobutton", ssSuccess, ssFail, solajsonout);
 }
 
+//EndSession(SessionContext) returns (Response) {}
 export function endsession() {
-    let sessioncontext = zparams.zessionid;
-    let SessionContext={sessioncontext};
+    let SessionContext= apiSession(zparams.zsessionid);
     
     var jsonout = JSON.stringify(SessionContext);
     
     var urlcall = d3mURL + "/endsession";
     var solajsonout = "SessionContext=" + jsonout;
-    console.log("solajsonout: ", solajsonout);
+    console.log("EndSession: ")
+    console.log(solajsonout);
     console.log("urlcall: ", urlcall);
     
-    function endSuccess(btn, json) {
-        console.log(json);
+    function endSuccess(btn, Response) {
+        console.log(Response);
     }
     
     function endFail(btn) {
@@ -2935,20 +2946,22 @@ export function endsession() {
     makeCorsRequest(urlcall, "nobutton", endSuccess, endFail, solajsonout);
 }
 
+//rpc ListPipelines(PipelineListRequest) returns (PipelineListResult) {}
 export function listpipelines() {
-    let sessioncontext = zparams.zsessionid;
-    let PipeLineListRequest={sessioncontext};
+    let SessionContext = apiSession(zparams.zsessionid);
+    let PipeLineListRequest={SessionContext};
     
     var jsonout = JSON.stringify(PipeLineListRequest);
     
     var urlcall = d3mURL + "/listpipelines";
     var solajsonout = "PipeLineListRequest=" + jsonout;
-    console.log("solajsonout: ", solajsonout);
-    console.log("urlcall: ", urlcall);
+    console.log("PipelineListRequest: ");
+    console.log(solajsonout);
+    console.log(urlcall);
     
-    function listPipesSuccess(btn, json) {
+    function listPipesSuccess(btn, PipelineListResult) {
+        console.log(PipelineListResult);
         //hardcoded pipes for now
-        let PipelineListResult = json;
         let pipes = ["","id1", "id2", "id3", "id4", "id5"]
         d3.select("#results").selectAll("p")
         .data(pipes)
@@ -2965,7 +2978,6 @@ export function listpipelines() {
                 .attr('class', 'item-default');
                 d3.select(this).attr('class',"item-select");
             }});
-        console.log(json);
         
         d3.select("#setxRight").selectAll("p")
         .data(pipes)
@@ -2982,7 +2994,6 @@ export function listpipelines() {
             .attr('class', 'item-default');
             d3.select(this).attr('class',"item-select");
             }});
-        console.log(json);
     }
     
     function listPipesFail(btn) {
@@ -2992,8 +3003,9 @@ export function listpipelines() {
     makeCorsRequest(urlcall, "nobutton", listPipesSuccess, listPipesFail, solajsonout);
 }
 
+// rpc ExecutePipeline(PipelineExecuteRequest) returns (stream PipelineExecuteResult) {}
 export function executepipeline() {
-    let sessioncontext = zparams.zsessionid;
+    let SessionContext = apiSession(zparams.zsessionid);
     let pipelineid = document.getElementById('setxRight').querySelector('p.item-select');
     if(pipelineid == null) {alert("Please select a pipeline to execute on."); return;}
     pipelineid = pipelineid.innerText;
@@ -3003,40 +3015,40 @@ export function executepipeline() {
     zparams.callHistory = callHistory;
     let jsonout = JSON.stringify(zparams);
     
-    let features = [];
+    let features = apiFeature(zparams.zvars,"some uri");
+    let data = [];
     
     //this will just set zparams.zsetx to the mean, which is default for setx plots
     //note that if setxplot is modified, it will NOT == "" because zparams.zsetx is modified when the setx plot slider is moved for the first time
     for(let i =0; i<zparams.zvars.length; i++) {
-        let myfeature = [];
-        myfeature[0]=zparams.zvars[i];
+        let mydata = [];
         let mymean = allNodes[findNodeIndex(zparams.zvars[i])].mean;
         if(zparams.zsetx[i][0]=="") {
-            myfeature[1]=mymean;
+            mydata[0]=mymean;
         } else if(zparams.zsetx[i][0]!=mymean){
-            myfeature[1]=zparams.zsetx[i][0];
+            mydata[0]=zparams.zsetx[i][0];
         }
         if(zparams.zsetx[i][1]=="") {
-            myfeature[2]=allNodes[findNodeIndex(zparams.zvars[i])].mean;
+            mydata[1]=allNodes[findNodeIndex(zparams.zvars[i])].mean;
         } else if(zparams.zsetx[i][1]!=mymean){
-            myfeature[2]=zparams.zsetx[i][1];
+            mydata[1]=zparams.zsetx[i][1];
         }
-        features.push(myfeature);
+        data.push(mydata);
     }
     
-    let PipeLineExecuteRequest={sessioncontext, pipelineid, features};
+    let PipelineExecuteRequest={SessionContext, pipelineid, features, data};
     
-    jsonout = JSON.stringify(PipeLineExecuteRequest);
+    jsonout = JSON.stringify(PipelineExecuteRequest);
     
     var urlcall = d3mURL + "/executepipeline";
-    var solajsonout = "PipeLineExecuteRequest=" + jsonout;
-    console.log("solajsonout: ", solajsonout);
+    var solajsonout = "PipelineExecuteRequest=" + jsonout;
+    console.log("PipelineExecuteRequest: ");
+    console.log(solajsonout);
     console.log("urlcall: ", urlcall);
     
-    function executePipeSuccess(btn, json) {
-        let PipelineExecuteResult = json;
+    function executePipeSuccess(btn, PipelineExecuteResult) {
         alert("pipeline executed");
-        console.log(json);
+        console.log(PipelineExecuteResult);
     }
     
     function executePipeFail(btn) {
@@ -3047,22 +3059,22 @@ export function executepipeline() {
 }
 
 // this is our call to django to update the problem schema
+// rpc UpdateProblemSchema(UpdateProblemSchemaRequest) returns (Response) {}
 function updateSchema(type, updates, lookup) {
-    console.log('updateSchema....')
-    let ReplaceProblemSchemaField=type;
-    let value = lookup[updates[type]][1];
-    let valuenum = lookup[updates[type]][2];
-    let updateRequest = {ReplaceProblemSchemaField, value, valuenum};
+    let ReplaceProblemSchemaField={[type]:lookup[updates[type]][1]};
+//    let valuenum = lookup[updates[type]][2];
+    let UpdateProblemSchemaRequest = {ReplaceProblemSchemaField};
 
-    let jsonout = JSON.stringify(updateRequest);
+    let jsonout = JSON.stringify(UpdateProblemSchemaRequest);
 
     let urlcall = d3mURL + "/updateproblemschema";
     let solajsonout = "UpdateProblemSchemaRequest=" + jsonout;
-    console.log("solajsonout: ", solajsonout);
+    console.log("UpdateProblemSchemaRequest: ");
+    console.log(solajsonout);
     console.log("urlcall: ", urlcall);
 
-    function usSuccess(btn, json) {
-        console.log(json);
+    function usSuccess(btn, Response) {
+        console.log(Response);
     }
 
     function usFail(btn) {
@@ -3429,5 +3441,20 @@ export function setxTable(features) {
 
     // render the table(s)
     tabulate(mydata, ['Variables', 'From', 'To']); // 2 column table
+}
+
+// D3M API HELPERS
+// because these get built in various places, pulling them out for easy manipulation
+function apiFeature (vars, uri) {
+    let out = []
+    for(let i = 0; i < vars.length; i++) {
+        out.push({[vars[i]]:uri});
+    }
+    return out;
+}
+
+// silly but perhaps useful if in the future SessionContext requires more things (as suggest by core)
+function apiSession (context) {
+    return context;
 }
 
