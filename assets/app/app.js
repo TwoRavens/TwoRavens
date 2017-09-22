@@ -274,14 +274,17 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
         .remove());
 
     //set start from user input, then assume locations are consistent based on d3m directory structure (alternatively can make each of these locations be set by user)
-    var start = 'data/d3m/o_196seed';
+    var datastub = 'o_196seed';                 // This needs to be passed to app.js
+    var path = 'data/d3m/'
+    var start = path + datastub;         // This needs to be set by configuration
     let d3mDataName = start.split('/');
     d3mDataName = d3mDataName[d3mDataName.length-1];
     let d3mData = start+'/data/trainData.csv';
     let d3mTarget = start+'/data/trainTargets.csv';
     let d3mPS = start+'/problemSchema.json';
     let d3mDS = start+'/data/dataSchema.json';
-    let d3mPreprocess = start+'/preprocess.json';
+    let d3mPreprocess = path+'output/'+datastub+'/preprocess/preprocess.json';
+    //let d3mPreprocess = '/rook-files/preprocess/preprocess.json'
     let probDesc=start;
 
     // default to California PUMS subset (should, doesn't actually do that)
@@ -290,6 +293,8 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
     // read pre-processed metadata and data
     let pURL = dataurl ? `${dataurl}&format=prep` : data + '.json';
     cdb('pURL: ' + pURL);
+
+    console.log("pURL is: " + pURL);
 
     if(d3m_mode) {
         pURL = d3mPreprocess;
@@ -301,7 +306,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
     // loads all external data: metadata (DVN's ddi), preprocessed (for plotting distributions), and zeligmodels (produced by Zelig) and initiates the data download to the server
     m.request(pURL)
         // do nothing if preprocess.json already exists, else runPreprocess
-        .then(null, _ => runPreprocess(d3mData, d3mTarget, d3mPreprocess))
+        .then(null, _ => runPreprocess(d3mData, d3mTarget, datastub))
         .then(_ => readPreprocess(pURL, preprocess))
         .then(() => new Promise((resolve, reject) => d3.xml(metadataurl, 'application/xml', xml => {
             let vars = Object.keys(preprocess); // this doesn't come from xml, but from preprocessed json
@@ -1884,16 +1889,17 @@ export function estimate(btn) {
     }
 }
 
-export function runPreprocess(dataloc, targetloc, preprocessloc) {
+export function runPreprocess(dataloc, targetloc, datastub) {
     let url = rappURL + 'preprocessapp';
-    let json = JSON.stringify({data: dataloc, target: targetloc, preprocess: preprocessloc});
-    cdb('urlcall out: ', url);
-    cdb('POST out: ', json);
+    console.log("GOING TO RUN THE PREPROCESSAPP");
+    let json = JSON.stringify({data: dataloc, target: targetloc, datastub: datastub}); //, preprocess: preprocessloc});
+    console.log('urlcall out: ', url);
+    console.log('POST out: ', json);
     let data = new FormData();
     data.append('solaJSON', json);
     return m.request({method: 'POST', url: url, data: data})
         .then(data => {
-            console.log('json in: ', data);
+            console.log('json in RIGHT HERE: ', data);
             return data;
         }, _ => console.log('preprocess failed'));
 }
@@ -2786,11 +2792,12 @@ export function subsetSelect(btn) {
 
 function readPreprocess(url) {
     return new Promise((resolve, reject) => {
+        console.log("DID THIS THING HERE!:" + url);
         cdb('readPreprocess: ' + url);
         d3.json(url, (err, res) => {
             if (err)
                 return reject(err);
-            cdb('readPreprocess result: ' + res);
+            console.log('readPreprocess result: ' + res);
             priv = res.dataset.private || priv;
             Object.keys(res.variables).forEach(k => preprocess[k] = res.variables[k]);
             resolve();
