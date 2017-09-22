@@ -275,15 +275,15 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
         .remove());
 
     //set start from user input, then assume locations are consistent based on d3m directory structure (alternatively can make each of these locations be set by user)
+    let configurations = {};
     var start = 'data/d3m/o_196seed';
-    let d3mDataName = start.split('/');
-    d3mDataName = d3mDataName[d3mDataName.length-1];
-    let d3mData = start+'/data/trainData.csv';
-    let d3mTarget = start+'/data/trainTargets.csv';
-    let d3mPS = start+'/problemSchema.json';
-    let d3mDS = start+'/data/dataSchema.json';
+    let d3mRootPath = "";
+    let d3mDataName = "";
+    let d3mData = "";
+    let d3mTarget = "";
     let d3mPreprocess = start+'/preprocess.json';
-    let probDesc=start;
+    let d3mPS = "";
+    let d3mDS = "";
 
     // default to California PUMS subset (should, doesn't actually do that)
     let data = 'data/' + (false ? 'PUMS5small' : 'fearonLaitin');
@@ -300,8 +300,30 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
         zparams.zdataurl = 'data/fearonLaitin.tsv';
 
     // loads all external data: metadata (DVN's ddi), preprocessed (for plotting distributions), and zeligmodels (produced by Zelig) and initiates the data download to the server
+    
+        // do nothing if preprocess.json already exists, else runPreprocess    
+     m.request({
+               method: "POST",
+               url: "/config/d3m-config/json/latest"
+     })
+     .then(function(result) {
+           configurations =  JSON.parse(JSON.stringify(result));
+           d3mRootPath = result["training_data_root"];
+           d3mRootPath = d3mRootPath.replace(/\/data/,'');
+           d3mDataName = configurations.name;
+           d3mData = configurations.training_data_root+"/trainData.csv";
+           d3mTarget = result.training_data_root+"/trainTargets.csv";
+           d3mPS = configurations.problem_schema;
+           d3mDS = configurations.dataset_schema;
+           
+           // doing this for now, assuming everything after TwoRavens is readable
+           d3mPS = d3mPS.split("TwoRavens/").pop();
+           d3mDS = d3mDS.split("TwoRavens/").pop();
+           d3mTarget = d3mTarget.split("TwoRavens/").pop();
+           d3mData = d3mData.split("TwoRavens/").pop();
+           d3mRootPath = d3mRootPath.split("TwoRavens/").pop();
+           
     m.request(pURL)
-        // do nothing if preprocess.json already exists, else runPreprocess
         .then(null, _ => runPreprocess(d3mData, d3mTarget, d3mPreprocess))
         .then(_ => readPreprocess(pURL, preprocess))
         .then(() => new Promise((resolve, reject) => d3.xml(metadataurl, 'application/xml', xml => {
@@ -368,7 +390,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
                 allNodes.push(obj);
             };
             resolve();
-        })))
+                                                            })))})
         .then(() => new Promise((resolve, reject) => {
             // read zelig models and populate model list in right panel
             d3.json("data/zelig5models.json", (err, data) => {
@@ -401,11 +423,12 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
             // read in problem schema and we'll make a call to start the session with TA2. if we get this far, data are guaranteed to exist for the frontend
             if (!d3m_mode)
                 return resolve();
+                                
             d3.json(d3mPS, (_, data) => {
                 console.log("prob schema data: ", data);
                 mytarget = data.target.field;
                 let aTag = document.createElement('a');
-                aTag.setAttribute('href', `${start}/${data.descriptionFile}`);
+                aTag.setAttribute('href', `${d3mRootPath}/${data.descriptionFile}`);
                 aTag.setAttribute('id', "probdesc");
                 aTag.setAttribute('target', "_blank");
                 aTag.textContent = "Problem Description";
@@ -428,7 +451,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
                 if(data.metric in d3mMetrics) {
                     d3mProblemDescription.metric = data.metric;//[d3mMetrics[data.metric][2],d3mMetrics[data.metric][1]];
                 } else {
-                    d3mProblemDescription.matric_type = "metricUndefined";
+                    d3mProblemDescription.metric = "metricUndefined";
                    // alert("Specified metric type, " + data.metric + ", is not valid.");
                     }
                 if(data.outputType in d3mOutputType) {
@@ -438,7 +461,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
                   //  alert("Specified output type, " + data.outputType + ", is not valid.");
                 }
                 
-                d3mProblemDescription.taskDescriptionription = data.descriptionFile;
+                d3mProblemDescription.taskDescription = data.descriptionFile;
 
                 
                 document.getElementById("btnType").click();
@@ -450,6 +473,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
             });
         }))
 }
+
 
 let $fill = (obj, op, d1, d2) => d3.select(obj).transition()
     .attr('fill-opacity', op)
