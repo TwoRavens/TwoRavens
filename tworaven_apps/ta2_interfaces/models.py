@@ -1,3 +1,3 @@
 from django.db import models
 
-GRPC_JSON_KEY = 'grpcJSON'
+GRPC_JSON_KEY = 'grpcrequest'

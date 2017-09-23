@@ -1,11 +1,13 @@
 import json
 
-from django.conf import settings
-from tworaven_apps.ta2_interfaces import core_pb2
-from tworaven_apps.ta2_interfaces.ta2_connection import TA2Connection
-from tworaven_apps.ta2_interfaces.ta2_util import get_failed_precondition_response
 from google.protobuf.json_format import MessageToJson,\
     Parse, ParseError
+from django.conf import settings
+
+from tworaven_apps.ta2_interfaces import core_pb2
+from tworaven_apps.ta2_interfaces.ta2_connection import TA2Connection
+from tworaven_apps.ta2_interfaces.ta2_util import get_grpc_test_json,\
+    get_failed_precondition_response
 
 
 PIPELINE_CREATE_REQUEST = 'PipelineCreateRequest'
@@ -41,6 +43,8 @@ def pipeline_create(info_str=None):
         err_msg = 'Failed to convert JSON to gRPC: %s' % (err_obj)
         return get_failed_precondition_response(err_msg)
 
+    if settings.TA2_STATIC_TEST_MODE:
+        return get_grpc_test_json('test_responses/createpipeline_ok.json')
 
     # --------------------------------
     # Get the connection, return an error if there are channel issues

@@ -12,7 +12,9 @@ from tworaven_apps.ta2_interfaces.models import GRPC_JSON_KEY
 def view_test_form(request):
     """View test form"""
 
-    info_dict = {}
+    info_dict = dict(TA2_STATIC_TEST_MODE=settings.TA2_STATIC_TEST_MODE,
+                     TA2_TEST_SERVER_URL=settings.TA2_TEST_SERVER_URL,
+                     SETTINGS_MODULE=settings.SETTINGS_MODULE)
 
     if request.POST:
 
