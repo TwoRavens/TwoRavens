@@ -293,6 +293,8 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
     let pURL = dataurl ? `${dataurl}&format=prep` : data + '.json';
     cdb('pURL: ' + pURL);
 
+    console.log("pURL is: " + pURL);
+
     if(d3m_mode) {
         pURL = d3mPreprocess;
   //      zparams.zdataurl = start+'/data/trainDatamerged.tsv';
@@ -1993,16 +1995,17 @@ export function estimate(btn) {
     }
 }
 
-export function runPreprocess(dataloc, targetloc, preprocessloc) {
+export function runPreprocess(dataloc, targetloc, datastub) {
     let url = rappURL + 'preprocessapp';
-    let json = JSON.stringify({data: dataloc, target: targetloc, preprocess: preprocessloc});
-    cdb('urlcall out: ', url);
-    cdb('POST out: ', json);
+    console.log("GOING TO RUN THE PREPROCESSAPP");
+    let json = JSON.stringify({data: dataloc, target: targetloc, datastub: datastub}); //, preprocess: preprocessloc});
+    console.log('urlcall out: ', url);
+    console.log('POST out: ', json);
     let data = new FormData();
     data.append('solaJSON', json);
     return m.request({method: 'POST', url: url, data: data})
         .then(data => {
-            console.log('json in: ', data);
+            console.log('json in RIGHT HERE: ', data);
             return data;
         }, _ => console.log('preprocess failed'));
 }
@@ -2901,11 +2904,12 @@ export function subsetSelect(btn) {
 
 function readPreprocess(url) {
     return new Promise((resolve, reject) => {
+        console.log("DID THIS THING HERE!:" + url);
         cdb('readPreprocess: ' + url);
         d3.json(url, (err, res) => {
             if (err)
                 return reject(err);
-            cdb('readPreprocess result: ' + res);
+            console.log('readPreprocess result: ' + res);
             priv = res.dataset.private || priv;
             Object.keys(res.variables).forEach(k => preprocess[k] = res.variables[k]);
             resolve();

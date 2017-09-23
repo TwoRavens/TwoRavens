@@ -5,7 +5,9 @@
 ##
 
 
-production<-FALSE     ## Toggle:  TRUE - Production, FALSE - Local Development
+## Define paths for output.
+## Also set `production` toggle:  TRUE - Production, FALSE - Local Development.
+source("rookconfig.R") 
 addPrivacy<-TRUE      ## Toggle:  TRUE - Add .apps for differential privacy, FALSE - Do not add privacy .apps
 
 
@@ -72,7 +74,7 @@ if(addPrivacy){
 
 if(!production){
     myPort <- "8000"
-    myInterface <- "0.0.0.0"
+    myInterface <- "127.0.0.1"
     status <- -1
     if (as.integer(R.version[["svn rev"]]) > 72310) {
         status <- .Call(tools:::C_startHTTPD, myInterface, myPort)
@@ -93,6 +95,8 @@ if(!production){
 
     cat("Type:", typeof(R.server), "Class:", class(R.server))
     R.server$add(app = File$new(getwd()), name = "pic_dir")
+    R.server$add(app = File$new(paste(getwd()), "/rook-files/,sep=""), name = "rook-files")
+
     print(R.server)
 
     R.server$start(listen=myInterface, port=myPort)
