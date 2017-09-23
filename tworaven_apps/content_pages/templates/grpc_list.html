@@ -7,16 +7,23 @@
     <div class="col-sm-6">
       <h3>gRPC Requests</h3>
       <ul>
-        <li><a href="{% url 'view_startsession' %}">StartSession</a>
-            {% url 'view_startsession' %}
+        <li><a href="{% url 'StartSession' %}">StartSession</a>
+            {% url 'StartSession' %}
         </li>
-        <li><a href="{% url 'view_update_problem_schema' %}">UpdateProblemSchema</a>
-            {% url 'view_update_problem_schema' %}
+        <li><a href="{% url 'UpdateProblemSchema' %}">UpdateProblemSchema</a>
+            {% url 'UpdateProblemSchema' %}
         </li>
-        <li><a href="{% url 'view_endsession' %}">EndSession</a>
-            {% url 'view_endsession' %}
+        <li><a href="{% url 'EndSession' %}">EndSession</a>
+            {% url 'EndSession' %}
         </li>
 
+      </ul>
+
+      <h3>API help</h3>
+      <ul>
+        <li><a href="{% url 'view_test_form' %}">Test form</a>
+            <br />{% url 'view_test_form' %}
+        </li>
       </ul>
     </div>
     <div class="col-sm-6">

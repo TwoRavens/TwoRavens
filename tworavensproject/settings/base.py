@@ -43,6 +43,8 @@ INSTALLED_APPS = [
     'tworaven_apps.ta2_interfaces',
     'tworaven_apps.content_pages',
     'tworaven_apps.rook_services',
+    'tworaven_apps.api_docs',
+
     #'tworaven_apps.workspaces',
 
     # webpack!
@@ -154,6 +156,8 @@ WEBPACK_LOADER = {
         'IGNORE': ['.+\.hot-update.js', '.+\.map']
     }
 }
+
+SERVER_SCHEME = 'http'  # or https
 
 ## D3M - TA2 settings
 #

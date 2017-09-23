@@ -1,5 +1,5 @@
 """
-Code is courtesy of Matthias Grabmair
+Code based on sample by Matthias Grabmair
     - https://gitlab.datadrivendiscovery.org/mgrabmair/ta3ta2-proxy
 """
 import json

@@ -10,15 +10,19 @@ urlpatterns = (
     #
     url(r'^startsession/?$',
         views.view_startsession,
-        name='view_startsession'),
+        name='StartSession'),
 
     url(r'^endsession/?$',
         views.view_endsession,
-        name='view_endsession'),
+        name='EndSession'),
 
     url(r'^updateproblemschema/?$',
         views.view_update_problem_schema,
-        name='view_update_problem_schema'),
+        name='UpdateProblemSchema'),
+
+    url(r'^createpipeline/?$',
+        views.view_create_pipeline,
+        name='PipelineCreateRequest'),
 
     url(r'^',
         views.view_test_call,

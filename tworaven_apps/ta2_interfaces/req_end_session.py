@@ -1,6 +1,4 @@
 """
-Code is courtesy of Matthias Grabmair
-    - https://gitlab.datadrivendiscovery.org/mgrabmair/ta3ta2-proxy
 """
 import json
 
