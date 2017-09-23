@@ -3,10 +3,21 @@ Code is courtesy of Matthias Grabmair
     - https://gitlab.datadrivendiscovery.org/mgrabmair/ta3ta2-proxy
 """
 from google.protobuf.json_format import MessageToJson
+
 from django.conf import settings
+from django.template.loader import render_to_string
 
 from tworaven_apps.ta2_interfaces import core_pb2
 from tworaven_apps.ta2_interfaces.models import GRPC_JSON_KEY
+
+
+
+def get_grpc_test_json(grpc_json_file, info_dict={}):
+    """Return gRPC JSON response"""
+    json_str = render_to_string(grpc_json_file, info_dict)
+
+    return json_str
+    #return JsonResponse(json.loads(json_str), safe=False)
 
 
 def get_grpc_content(request):

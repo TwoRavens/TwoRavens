@@ -5,11 +5,14 @@ Code based on sample by Matthias Grabmair
 import json
 
 from django.conf import settings
-from tworaven_apps.ta2_interfaces import core_pb2
-from tworaven_apps.ta2_interfaces.ta2_connection import TA2Connection
-from tworaven_apps.ta2_interfaces.ta2_util import get_failed_precondition_response
 from google.protobuf.json_format import MessageToJson,\
     Parse, ParseError
+
+from tworaven_apps.ta2_interfaces import core_pb2
+from tworaven_apps.ta2_interfaces.ta2_connection import TA2Connection
+from tworaven_apps.ta2_interfaces.ta2_util import get_grpc_test_json,\
+    get_failed_precondition_response
+
 
 REPLACE_PROBLEM_SCHEMA_FIELD = 'ReplaceProblemSchemaField'
 
@@ -69,6 +72,10 @@ def update_problem_schema(info_str=None):
     except ParseError as err_obj:
         err_msg = 'Failed to convert JSON to gRPC: %s' % (err_obj)
         return get_failed_precondition_response(err_msg)
+
+    if settings.TA2_STATIC_TEST_MODE:
+        return get_grpc_test_json('test_responses/updateproblemschema_ok.json',
+                                  dict())
 
 
     # --------------------------------
