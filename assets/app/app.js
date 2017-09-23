@@ -484,7 +484,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
                                 
                 var jsonout = JSON.stringify(SessionRequest);
                 var urlcall = d3mURL + "/startsession";
-                var solajsonout = "SessionRequest=" + jsonout;
+                var solajsonout = "grpcrequest=" + jsonout;
                 console.log("SessionRequest: ");
                 console.log(solajsonout);
                 console.log("urlcall: ", urlcall);
@@ -1933,7 +1933,7 @@ export function estimate(btn) {
                 let jsonout = JSON.stringify(PipelineCreateRequest);
 
                 let urlcall = d3mURL + "/createpipeline";
-                var solajsonout = "PipelineCreateRequest=" + jsonout;
+                var solajsonout = "grpcrequest=" + jsonout;
                 
                 console.log(urlcall);
                 console.log(solajsonout);
@@ -1953,7 +1953,7 @@ export function estimate(btn) {
                     let PipelineExecuteResultsRequest = {SessionContext, pipelineid};
                     jsonout = JSON.stringify(PipelineExecuteResultsRequest);
                     let urlcall = d3mURL + "/getexecutepipelineresults";
-                    var solajsonout = "PipelineExecuteResultsRequest=" + jsonout;
+                    var solajsonout = "grpcrequest=" + jsonout;
                     console.log("GetExecutePipelineResults: ");
                     console.log(solajsonout);
                     console.log(urlcall);
@@ -2965,7 +2965,7 @@ export function endsession() {
     var jsonout = JSON.stringify(SessionContext);
     
     var urlcall = d3mURL + "/endsession";
-    var solajsonout = "SessionContext=" + jsonout;
+    var solajsonout = "grpcrequest=" + jsonout;
     console.log("EndSession: ")
     console.log(solajsonout);
     console.log("urlcall: ", urlcall);
@@ -2989,7 +2989,7 @@ export function listpipelines() {
     var jsonout = JSON.stringify(PipeLineListRequest);
     
     var urlcall = d3mURL + "/listpipelines";
-    var solajsonout = "PipeLineListRequest=" + jsonout;
+    var solajsonout = "grpcrequest=" + jsonout;
     console.log("PipelineListRequest: ");
     console.log(solajsonout);
     console.log(urlcall);
@@ -3076,7 +3076,7 @@ export function executepipeline() {
     jsonout = JSON.stringify(PipelineExecuteRequest);
     
     var urlcall = d3mURL + "/executepipeline";
-    var solajsonout = "PipelineExecuteRequest=" + jsonout;
+    var solajsonout = "grpcrequest=" + jsonout;
     console.log("PipelineExecuteRequest: ");
     console.log(solajsonout);
     console.log("urlcall: ", urlcall);
@@ -3103,7 +3103,7 @@ function updateSchema(type, updates, lookup) {
     let jsonout = JSON.stringify(UpdateProblemSchemaRequest);
 
     let urlcall = d3mURL + "/updateproblemschema";
-    let solajsonout = "UpdateProblemSchemaRequest=" + jsonout;
+    let solajsonout = "grpcrequest=" + jsonout;
     console.log("UpdateProblemSchemaRequest: ");
     console.log(solajsonout);
     console.log("urlcall: ", urlcall);
