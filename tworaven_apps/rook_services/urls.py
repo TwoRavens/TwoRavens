@@ -10,6 +10,10 @@ urlpatterns = (
         views.view_rp_test,
         name='view_rp_test'),
 
+    url(r'^%s' % views.ROOK_FILES_PATH, # 'rook-files/'
+        views.view_rook_file_passthrough,
+        name='view_rook_file_passthrough'),
+
     url(r'^(?P<app_name_in_url>(\w|-){5,25})$',
         views.view_rook_route,
         name='view_rook_route'),

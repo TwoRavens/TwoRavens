@@ -7,7 +7,7 @@
 
 ## Define paths for output.
 ## Also set `production` toggle:  TRUE - Production, FALSE - Local Development.
-source("rookconfig.R") 
+source("rookconfig.R")
 addPrivacy<-TRUE      ## Toggle:  TRUE - Add .apps for differential privacy, FALSE - Do not add privacy .apps
 
 
@@ -94,8 +94,14 @@ if(!production){
     R.server <- Rhttpd$new()
 
     cat("Type:", typeof(R.server), "Class:", class(R.server))
-    R.server$add(app = File$new(getwd()), name = "pic_dir")
-    R.server$add(app = File$new(paste(getwd()), "/rook-files/,sep=""), name = "rook-files")
+    #R.server$add(app = File$new(getwd()), name = "pic_dir")
+
+    #rookFilesDir = "/Users/ramanprasad/Documents/github-rp/TwoRavens//data/d3m/o_196seed/data"
+    #<- paste(getwd(), "/../data/d3m", sep="");
+    print("--- rookFilesDir")
+    #print(rookFilesDir)
+    #R.server$add(app = File$new(rookFilesDir), name = "rook-files")
+
 
     print(R.server)
 
@@ -137,7 +143,9 @@ if(!production){
     R.server$add(app = pipeline.app, name="pipelineapp")
     R.server$add(app = healthcheck.app, name="healthcheckapp")
 
-        ## These add the .apps for the privacy budget allocator interface
+    # Serve files directly from rook
+    R.server$add(app = File$new(PRE_PATH), name = "rook-files")
+
     if(addPrivacy){
         R.server$add(app = privateStatistics.app, name="privateStatisticsapp")
         R.server$add(app = privateAccuracies.app, name="privateAccuraciesapp")
