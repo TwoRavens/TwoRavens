@@ -43,6 +43,8 @@ INSTALLED_APPS = [
     'tworaven_apps.ta2_interfaces',
     'tworaven_apps.content_pages',
     'tworaven_apps.rook_services',
+    'tworaven_apps.api_docs',
+
     #'tworaven_apps.workspaces',
 
     # webpack!
@@ -154,6 +156,12 @@ WEBPACK_LOADER = {
         'IGNORE': ['.+\.hot-update.js', '.+\.map']
     }
 }
+
+# Swagger Info
+# - This is a dev tool, not an API available to outside sources
+SWAGGER_HOST = '127.0.0.1:8080' # temp, this should come from sites framework
+SWAGGER_SCHEME = 'http'
+
 
 ## D3M - TA2 settings
 #

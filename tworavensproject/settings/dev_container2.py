@@ -14,3 +14,8 @@ WEBPACK_LOADER['DEFAULT'].update(\
 TA2_STATIC_TEST_MODE = False    # return canned responses
 TA2_TEST_SERVER_URL = os.environ.get('TA2_TEST_SERVER_URL', None) # 'localhost:50051'
 TA2_GPRC_USER_AGENT = os.environ.get('TA2_GPRC_USER_AGENT', 'tworavens')
+
+# Swagger Info
+# - This is a dev tool, not an API available to outside sources
+SWAGGER_HOST = '0.0.0.0:8080' # temp, this should come from docker/kubernetes
+SWAGGER_SCHEME = 'http'

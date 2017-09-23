@@ -1,0 +1,118 @@
+---
+swagger: "2.0"
+info:
+  description: "This reference is for development work.\
+    \ These API endpoints are not for general usage--e.g. they are unhelpful\
+    \ without the context of the UI."
+  version: "0.0.2"
+  title: "TwoRavens API Dev Reference"
+  contact:
+    url: "http://2ra.vn/"
+  license:
+    name: "BSD-3-Clause"
+    url: "https://opensource.org/licenses/BSD-3-Clause"
+host: "{{ SWAGGER_HOST }}"
+basePath: ""
+tags:
+- name: "gRPC"
+  description: "Calls from the UI to the TA2 gRPC app; routed through TwoRavens python app."
+- name: "r-service"
+  description: "Calls from the UI to the Rook R service; routed through TwoRavens python app."
+- name: "tworavens"
+  description: "Information about the main application which also serves as a conduit to \
+               \the gRPC and r-service endpoints."
+schemes:
+- "{{ SWAGGER_SCHEME }}"
+
+paths:
+  /monitoring/alive:
+    get:
+      summary: "Health check for the core TwoRavens app."
+      description: "Url that may be used for health check monitoring"
+      tags:
+      - "tworavens"
+      produces:
+      - "application/json"
+      responses:
+        200:
+        description: "Application is running and available."
+        schema:
+        $ref: "#/definitions/BasicStatus"
+
+  /d3m-service/startsession:
+    post:
+      summary: "Start a gRPC session with TA2"
+      description: "Convert JSON to a gRPC SessionRequest object"
+      tags:
+      - "gRPC"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        description: "JSON from the UI"
+        required: true
+        schema:
+          $ref: "#/definitions/SessionRequest"
+      responses:
+        default:
+          description: "successful operation"
+# ------------------------------
+# Define reusable parameters:
+# ------------------------------
+parameters:
+  startDateParam:
+    name: start_date
+    in: query
+    description: Optional. Inclusive start date in YYYY-MM-DD format
+    type: string
+  dataverseAPIKey:
+    name: key
+    in: query
+    description: Dataverse API key.  Required for production use.  See http://guides.dataverse.org/en/latest/api/native-api.html
+    type: string
+  in: query
+  name: coordinates
+  content:
+    application/json:
+      schema:
+        type: object
+        required:
+          - lat
+          - long
+        properties:
+          lat:
+            type: number
+          long:
+            type: number
+# ------------------------------
+# Define response definitions
+# ------------------------------
+definitions:
+  SessionRequest:
+    type: "object"
+    required:
+    - "user_agent"
+    properties:
+      user_agent:
+        type: string
+      version:
+        type: string
+  SessionRequestForm:
+    properties:
+      solaJSON:
+        $ref: "#/definitions/SessionRequest"
+  BasicStatus:
+    properties:
+      status:
+        type: string
+      message:
+        type: string
+  TotalCount:
+    properties:
+      count:
+        type: integer
+      count_string:
+        type: string
