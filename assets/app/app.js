@@ -331,7 +331,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
            zparams.zd3mtarget = d3mTarget;
            
     m.request(pURL)
-        .then(null, _ => runPreprocess(d3mData, d3mTarget, d3mPreprocess))
+        .then(null, _ => runPreprocess(d3mData, d3mTarget, d3mDataName))
         .then(_ => readPreprocess(pURL, preprocess))
         .then(() => new Promise((resolve, reject) => d3.xml(metadataurl, 'application/xml', xml => {
             let vars = Object.keys(preprocess); // this doesn't come from xml, but from preprocessed json
