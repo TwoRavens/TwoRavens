@@ -24,6 +24,10 @@ urlpatterns = (
         views.view_create_pipeline,
         name='PipelineCreateRequest'),
 
+    url(r'^getexecutepipelineresults/?$',
+        views.view_get_execute_pipeline_results,
+        name='PipelineExecuteResultsRequest'),
+
     url(r'^',
         views.view_test_call,
         name='view_test_call'),
