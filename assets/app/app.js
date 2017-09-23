@@ -90,6 +90,8 @@ export let zparams = {
     zgroup1: [],
     zgroup2: [],       // hard coding to two groups for present experiments, but will eventually make zgroup array of arrays, with zgroup.lenght the number of groups
     zdataurl: "",
+    zd3mdata: "", //these take the place of zdataurl for d3m, because data is in two placees. eventually will generalize
+    zd3mtarget: "",
     zsubset: [],
     zsetx: [],
     zmodelcount: 0,
@@ -294,14 +296,14 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
 
     if(d3m_mode) {
         pURL = d3mPreprocess;
-        zparams.zdataurl = start+'/data/trainDatamerged.tsv';
+  //      zparams.zdataurl = start+'/data/trainDatamerged.tsv';
         zparams.zdata = d3mDataName;
     } else if(!production)
         zparams.zdataurl = 'data/fearonLaitin.tsv';
 
     // loads all external data: metadata (DVN's ddi), preprocessed (for plotting distributions), and zeligmodels (produced by Zelig) and initiates the data download to the server
     
-        // do nothing if preprocess.json already exists, else runPreprocess    
+        // do nothing if preprocess.json already exists, else runPreprocess
      m.request({
                method: "POST",
                url: "/config/d3m-config/json/latest"
@@ -322,6 +324,8 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
            d3mTarget = d3mTarget.split("TwoRavens/").pop();
            d3mData = d3mData.split("TwoRavens/").pop();
            d3mRootPath = d3mRootPath.split("TwoRavens/").pop();
+           zparams.zd3mdata = d3mData;
+           zparams.zd3mtarget = d3mTarget;
            
     m.request(pURL)
         .then(null, _ => runPreprocess(d3mData, d3mTarget, d3mPreprocess))
@@ -1868,8 +1872,9 @@ export function estimate(btn) {
             console.log(jsonout);
         
             let SessionContext = apiSession(zparams.zsessionid);
-            let uri = zparams.zdataurl;
-
+            let uri = {features: zparams.zd3mdata, target:zparams.zd3mtarget};
+        
+        
             var urlcall = rappURL + "pipelineapp";
         
             var solajsonout = "solaJSON=" + jsonout;
@@ -1879,8 +1884,8 @@ export function estimate(btn) {
             function createPipelineSuccess(btn, json) {
                 estimateLadda.stop(); // stop spinner
 
-                let trainFeatures=apiFeature(json.predictors,uri);
-                let targetFeatures=apiFeature(json.depvar,uri);
+                let trainFeatures=apiFeature(json.predictors,uri.features);
+                let targetFeatures=apiFeature(json.depvar,uri.target);
                 let taskType = d3mTaskType[d3mProblemDescription.taskType][1];
                 let taskSubtype = d3mTaskSubtype[d3mProblemDescription.taskSubtype][1];
                 let outputType = d3mOutputType[d3mProblemDescription.outputType][1];
@@ -1888,7 +1893,7 @@ export function estimate(btn) {
                 let taskDescription = d3mProblemDescription.taskDescriptionription;
                 let maxPipelines = 10; //user to specify this eventually?
                 
-                setxTable(trainFeatures);
+                setxTable(json.predictors);
                 let dvvalues = json.dvvalues;
                 
 
@@ -3207,6 +3212,10 @@ function toggleRightButtons(set) {
         for (let i = 0; i < mybtns.length; i++) {
             mybtns[i].classList.remove("noshow");
         }
+        
+        // droping models for d3m_mode
+        document.getElementById('btnModels').classList.add("noshow");
+        
         // then select all the buttons
         mybtns = document.getElementById('rightpanelbuttons').querySelectorAll(".btn:not(.noshow)");
         setWidths(mybtns);

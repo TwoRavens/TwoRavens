@@ -88,12 +88,20 @@ pipeline.app <- function(env){
     }
     
     if(!warning){
-        mydataurl <- everything$zdataurl
-        mydataurl <- paste("../",mydataurl,sep="")
-        mydata <- read.delim(mydataurl)
-        writeme <- paste("mydata <- read.delim(\"",mydataurl,"\")", sep="")
-        print(writeme)
-        write(writeme,mylogfile,append=TRUE)
+        ## switching this over to separate data and targets for d3m--not assuming a merged dataset
+        #mydataurl <- everything$zdataurl
+        #mydataurl <- paste("../",mydataurl,sep="")
+        #mydata <- read.delim(mydataurl)
+        #writeme <- paste("mydata <- read.delim(\"",mydataurl,"\")", sep="")
+        #print(writeme)
+        #write(writeme,mylogfile,append=TRUE)
+        
+        mytargeturi <- everything$zd3mtarget
+        mytargeturi <- paste("../",mytargeturi,sep="")
+        mydata <- read.csv(mytargeturi)
+        #writeme <- paste("mydata <- read.delim(\"",mydataurl,"\")", sep="")
+        #print(writeme)
+        #write(writeme,mylogfile,append=TRUE)
     }
 
 	if(!warning){
