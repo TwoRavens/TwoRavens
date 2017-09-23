@@ -20,6 +20,10 @@ urlpatterns = (
         views.view_update_problem_schema,
         name='UpdateProblemSchema'),
 
+    url(r'^createpipeline/?$',
+        views.view_create_pipeline,
+        name='PipelineCreateRequest'),
+
     url(r'^',
         views.view_test_call,
         name='view_test_call'),

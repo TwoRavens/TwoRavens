@@ -17,7 +17,7 @@
       request_url = $('#id_request_type').val();
 
       var jqxhr = $.post(request_url,
-                        { solaJSON : user_content },
+                        { grpcJSON : user_content },
                         function(data) {
 
                             $('#frmResult').html(formatOutput(data));
@@ -43,12 +43,18 @@
 
   // document is ready
   $(function() {
-      $('#id_request_type').on('change', function() {
-          console.log($(this).val());
-          let option_text = $("#id_request_type option[value='" + $(this).val() + "']").text();
-          let var_ex = option_text + '_ex';
 
-          $('#id_content').val(formatJSON(eval(var_ex)));
+      // new command selected
+      $('#id_request_type').on('change', function() {
+          // get the name of the command
+          let option_text = $("#id_request_type option[value='" + $(this).val() + "']").text();
+
+          // create a variable name by adding '_ex'
+          let json_example = option_text + '_ex';
+
+          // display the JSON example in form textbox
+          $('#id_content').val(formatJSON(eval(json_example)));
+
 
       })
   });

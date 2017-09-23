@@ -1,5 +1,5 @@
 """
-Initial code courtesy of Matthias Grabmair
+Initial code courtesy of Matthias Grabmair's example.
     - https://gitlab.datadrivendiscovery.org/mgrabmair/ta3ta2-proxy
 """
 from django.conf import settings
