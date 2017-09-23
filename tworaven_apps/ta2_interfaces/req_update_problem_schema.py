@@ -11,6 +11,8 @@ from tworaven_apps.ta2_interfaces.ta2_util import get_failed_precondition_respon
 from google.protobuf.json_format import MessageToJson,\
     Parse, ParseError
 
+REPLACE_PROBLEM_SCHEMA_FIELD = 'ReplaceProblemSchemaField'
+
 def get_test_info_str():
     """Test data for update_problem_schema call"""
     return '''{"taskType" : "REGRESSION",
@@ -20,6 +22,8 @@ def get_test_info_str():
 
 def update_problem_schema(info_str=None):
     """
+    UpdateProblemSchemaRequest={"ReplaceProblemSchemaField":{"metric":"ROC_AUC"}}
+
     Accept UI input as JSON *string* similar to
      {"taskType" : "REGRESSION",
       "taskSubtype" : "TASK_SUBTYPE_UNDEFINED",
@@ -45,6 +49,9 @@ def update_problem_schema(info_str=None):
     # --------------------------------
     # create UpdateProblemSchemaRequest compatible JSON
     # --------------------------------
+    if REPLACE_PROBLEM_SCHEMA_FIELD in info_dict:
+        info_dict = info_dict[REPLACE_PROBLEM_SCHEMA_FIELD]
+
     updates_list = []
     for key, val in info_dict.items():
         updates_list.append({key : val})

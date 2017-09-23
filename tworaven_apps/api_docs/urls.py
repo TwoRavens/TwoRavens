@@ -3,8 +3,7 @@ from tworaven_apps.api_docs import views
 
 urlpatterns = (
 
-    url(r'^swagger/v1/index.yaml$',
-        views.view_swagger_spec,
-        name='view_swagger_spec'),
-
+    url(r'^test-form$',
+        views.view_test_form,
+        name='view_test_form'),
 )

@@ -7,6 +7,7 @@ from django.conf import settings
 
 from tworaven_apps.ta2_interfaces import core_pb2
 
+
 def get_failed_precondition_response(err_msg):
     """Return a SessionResponse object in JSON format
         with status FAILED_PRECONDITION"""

@@ -157,11 +157,7 @@ WEBPACK_LOADER = {
     }
 }
 
-# Swagger Info
-# - This is a dev tool, not an API available to outside sources
-SWAGGER_HOST = '127.0.0.1:8080' # temp, this should come from sites framework
-SWAGGER_SCHEME = 'http'
-
+SERVER_SCHEME = 'http'  # or https
 
 ## D3M - TA2 settings
 #

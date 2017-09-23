@@ -1,3 +1,3 @@
 from django.db import models
 
-# Create your models here.
+GRPC_JSON_KEY = 'solaJSON' #'grpcJSON'

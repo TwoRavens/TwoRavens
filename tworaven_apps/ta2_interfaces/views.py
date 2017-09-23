@@ -2,6 +2,7 @@ import random, string
 import json
 from django.conf import settings
 from django.shortcuts import render
+from django.views.decorators.http import require_POST, require_GET
 from django.template.loader import render_to_string
 from django.http import JsonResponse, HttpResponse, Http404
 from django.views.decorators.csrf import csrf_exempt
@@ -9,6 +10,7 @@ from tworaven_apps.ta2_interfaces.req_start_session import start_session
 from tworaven_apps.ta2_interfaces.req_end_session import end_session
 from tworaven_apps.ta2_interfaces.req_update_problem_schema import \
     update_problem_schema
+from tworaven_apps.ta2_interfaces.models import GRPC_JSON_KEY
 
 
 def get_grpc_test_json(request, grpc_json_file, info_dict={}):
@@ -43,15 +45,13 @@ def view_startsession(request):
         else:
             return get_grpc_test_json(request, 'test_responses/startsession_ok.json', d)
 
-    # look for the "solaJSON" variable in the POST
-    #
-    if (not request.POST) or (not 'solaJSON' in request.POST):
-        return JsonResponse(dict(status="ERROR", message="solaJSON key not found"))
+    print('request.POST', request.POST)
+    if not (request.POST and GRPC_JSON_KEY in request.POST):
+        return JsonResponse(dict(\
+                    status=False,
+                    message='Key "%s" not found' % GRPC_JSON_KEY))
 
-    #   Example of string(!) -- stringified JSON:
-    #       {"user_agent":"some agent","version":"some version"}
-    #
-    raven_data_text = request.POST['solaJSON']
+    raven_data_text = request.POST[GRPC_JSON_KEY]
 
     # Let's call the TA2 and start the session!
     #
