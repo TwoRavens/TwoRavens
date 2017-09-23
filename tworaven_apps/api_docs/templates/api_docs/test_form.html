@@ -17,7 +17,7 @@
       request_url = $('#id_request_type').val();
 
       var jqxhr = $.post(request_url,
-                        { grpcJSON : user_content },
+                        { {{ GRPC_JSON_KEY }} : user_content},
                         function(data) {
 
                             $('#frmResult').html(formatOutput(data));
