@@ -24,7 +24,7 @@ class Panel {
             vnode.children[0],
             m(getClasses('.row-fluid', this), 
               m(`#${side}panelcontent`,
-                m(`#${side}ContentArea[style=height: 100vh; overflow: auto]`, vnode.children.slice(1)))));
+                m(`#${side}ContentArea[style=height: calc(100vh - 210px); overflow: auto]`, vnode.children.slice(1)))));
     }
 }
 
