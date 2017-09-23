@@ -16,6 +16,9 @@
       user_content = $('#id_content').val();
       request_url = $('#id_request_type').val();
 
+      // clear prior response
+      $('#frmResult').html('Working...');
+
       var jqxhr = $.post(request_url,
                         { {{ GRPC_JSON_KEY }} : user_content},
                         function(data) {

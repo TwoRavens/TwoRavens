@@ -130,9 +130,52 @@ def pipeline_exec_result():
     }
     """
 
+def pipline_list_parse():
+
+    req = core_pb2.PipelineListRequest()
+
+    req.context.session_id = 'session_01'
+
+    content = MessageToJson(req)
+    print(content)
+    """
+    message PipelineListRequest {
+    SessionContext context = 1;}
+    """
+    content = MessageToJson(req)
+    print(content)
+    print('-' * 40)
+
+def pipeline_results_parse():
+
+    res = core_pb2.PipelineListResult()
+
+    res.response_info.status.code = core_pb2.OK
+    res.response_info.status.details = "(static test response)"
+
+    res.pipeline_ids.append('pipeline_01')
+    res.pipeline_ids.append('pipeline_02')
+
+    content = MessageToJson(res)
+
+    content = MessageToJson(res)
+    print('JSON:\n')
+    print(content)
+    print('-' * 40)
+    #content = content.replace('pipelineIds', 'pipeline_ids').replace('sessionId', 'session_id')
+    print(content)
+
+    print('-' * 40)
+    print('gRPC:\n')
+    json_parse(content, core_pb2.PipelineListResult)
+    print('-' * 40)
+
+
 
 if __name__ == '__main__':
-    pipeline_exec_result()
+    pipeline_results_parse()
+    #pipline_list_parse()
+    #pipeline_exec_result()
     #pipeline_execute_parse()
     #pipeline_create_parse()
 #"taskType":"REGRESSION","taskSubtype":"UNIVARIATE","taskDescription":"problemDescription.txt","outputType":"REAL","metric":"MEAN_SQUARED_ERROR","targetFeatures":[{"class":"data/d3m/o_196seed/data/trainDatamerged.tsv"}],"maxPipelines":10}

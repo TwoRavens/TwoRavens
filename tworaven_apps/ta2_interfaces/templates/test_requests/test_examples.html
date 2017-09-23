@@ -4,7 +4,9 @@
 
 let StartSession_ex = { 'user_agent' : 'user_agent' };
 
-let EndSession_ex = { 'session_id' : 'session_id' };
+let EndSession_ex = {
+                      'session_id' : 'session_0'
+                    };
 
 let UpdateProblemSchema_ex = {
                                "ReplaceProblemSchemaField":{
@@ -12,7 +14,7 @@ let UpdateProblemSchema_ex = {
                                }
                             };
 
-let PipelineCreateRequest_ex = {
+let CreatePipelines_ex = {
                         "context": {
                           "session_id": "session_0"
                         },
@@ -41,14 +43,21 @@ let PipelineCreateRequest_ex = {
                         "maxPipelines": 10
                       }
 
-let PipelineExecuteResultsRequest_ex = {
-                                          "context": {
-                                            "session_id": "session_0"
-                                          },
-                                          "pipeline_ids": [
-                                            "pipeline_1",
-                                            "pipeline_2"
-                                          ]
-                                        }
+let GetExecutePipelineResults_ex = {
+                                      "context": {
+                                        "session_id": "session_0"
+                                      },
+                                      "pipeline_ids": [
+                                        "pipeline_1",
+                                        "pipeline_2"
+                                      ]
+                                    }
+
+
+let ListPipelines_ex = {
+                          "context": {
+                            "session_id": "session_0"
+                          }
+                        }
 
 </script>
