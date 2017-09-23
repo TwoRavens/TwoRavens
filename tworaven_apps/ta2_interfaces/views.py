@@ -10,7 +10,10 @@ from tworaven_apps.ta2_interfaces.req_update_problem_schema import \
     update_problem_schema
 from tworaven_apps.ta2_interfaces.req_pipeline_create import \
     pipeline_create
-
+from tworaven_apps.ta2_interfaces.req_get_execute_pipeline import \
+    get_execute_pipeline_results
+from tworaven_apps.ta2_interfaces.req_list_pipelines import \
+    list_pipelines
 from tworaven_apps.ta2_interfaces.ta2_util import get_grpc_content
 
 from tworaven_apps.ta2_interfaces.models import GRPC_JSON_KEY
@@ -45,7 +48,6 @@ def view_startsession(request):
 
 
     return JsonResponse(json_dict, safe=False)
-
 
 
 @csrf_exempt
@@ -116,6 +118,58 @@ def view_create_pipeline(request):
     json_dict = json.loads(json_str)
 
     return JsonResponse(json_dict, safe=False)
+
+@csrf_exempt
+def view_get_execute_pipeline_results(request):
+    """view for GetExecutePipelineResults"""
+    django_session_key = request.session._get_or_create_session_key()
+
+    success, raven_data_or_err = get_grpc_content(request)
+    if not success:
+        return JsonResponse(dict(status=False,
+                                 message=raven_data_or_err))
+
+    # Let's call the TA2!
+    #
+    json_str = get_execute_pipeline_results(raven_data_or_err)
+
+    # Convert JSON str to python dict - err catch here
+    #
+    json_dict = json.loads(json_str)
+
+    return JsonResponse(json_dict, safe=False)
+
+
+@csrf_exempt
+def view_list_pipelines(request):
+    """gRPC: Call from UI to list pipelines
+
+    session_id = from UI; originally from startsession commmand
+
+    example string: '{
+                          "context": {
+                            "session_id": "session_01"
+                          }
+                        }'
+    """
+    django_session_key = request.session._get_or_create_session_key()
+
+
+    success, raven_data_or_err = get_grpc_content(request)
+    if not success:
+        return JsonResponse(dict(status=False,
+                                 message=raven_data_or_err))
+
+    # Let's call the TA2 and start the session!
+    #
+    json_str = list_pipelines(raven_data_or_err)
+
+    # Convert JSON str to python dict - err catch here
+    #
+    json_dict = json.loads(json_str)
+
+    return JsonResponse(json_dict, safe=False)
+
 
 @csrf_exempt
 def view_test_call(request):

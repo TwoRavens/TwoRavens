@@ -62,7 +62,16 @@ fab load_d3m_config:[path to config]
   }
   ```
 
+## Add gRPC request type
 
+Steps during prototyping process.  
+
+example with `PipelineExecuteResultsRequest`
+
+1. figure out the JSON in/out of gRPC via script `tworaven_apps/ta2_interfaces/pipe_test.py`
+1. add url to `tworaven_apps/ta2_interfaces/`
+1. create view for new url in `views.py`
+1. separate file, similar to `req_pipeline_create`
 
 ## Adding a new rook app: django
 

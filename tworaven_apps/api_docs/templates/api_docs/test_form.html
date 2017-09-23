@@ -1,7 +1,7 @@
 {% extends "helper_pages_base.html" %}
 
 {% block extra_js %}
-{% include "api_docs/test_examples.html" %}
+{% include "test_requests/test_examples.html" %}
 <script>
 
   function formatJSON(json_obj){
@@ -15,6 +15,9 @@
   function sendData(){
       user_content = $('#id_content').val();
       request_url = $('#id_request_type').val();
+
+      // clear prior response
+      $('#frmResult').html('Working...');
 
       var jqxhr = $.post(request_url,
                         { {{ GRPC_JSON_KEY }} : user_content},
