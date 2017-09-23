@@ -3,7 +3,7 @@ Help with zelig app names, including routing to the Rook server
 """
 from django.conf import settings
 from tworaven_apps.rook_services.app_names import ROOK_APP_NAMES,\
-    ROOK_APP_FRONTEND_LU
+    ROOK_APP_FRONTEND_LU, HEALTH_CHECK_APP
 
 
 
@@ -21,6 +21,24 @@ class RookAppInfo(object):
         self.name = app_info[0]
         self.frontend_name = app_info[1]
         self.rook_name = app_info[2]
+
+
+    def record_this_call(self):
+        """Should this call be recorded?"""
+        if not settings.RECORD_R_SERVICE_ROUTING:
+            return False
+
+        if self.is_health_check():
+            return False
+
+        return True
+
+    def is_health_check(self):
+        """Is this a call to the health check app?"""
+        if self.name:
+            if self.name == HEALTH_CHECK_APP:
+                return True
+        return False
 
 
     def get_rook_server_url(self):

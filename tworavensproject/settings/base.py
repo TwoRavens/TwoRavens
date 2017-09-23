@@ -43,6 +43,8 @@ INSTALLED_APPS = [
     'tworaven_apps.ta2_interfaces',
     'tworaven_apps.content_pages',
     'tworaven_apps.rook_services',
+    'tworaven_apps.api_docs',
+
     #'tworaven_apps.workspaces',
 
     # webpack!
@@ -155,9 +157,11 @@ WEBPACK_LOADER = {
     }
 }
 
+SERVER_SCHEME = 'http'  # or https
+
 ## D3M - TA2 settings
 #
 # Test work...
 TA2_STATIC_TEST_MODE = True    # return canned responses
-TA2_TEST_SERVER_URL = os.environ.get('TA2_TEST_SERVER_URL', None) # 'localhost:50051'
+TA2_TEST_SERVER_URL = os.environ.get('TA2_TEST_SERVER_URL', 'localhost:50051')
 TA2_GPRC_USER_AGENT = os.environ.get('TA2_GPRC_USER_AGENT', 'tworavens')

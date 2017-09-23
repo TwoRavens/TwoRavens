@@ -116,6 +116,8 @@ source("rookdata.R")
 #source("rookwrite.R")   # jh - believe this is a legacy of early exploration of user-level metadata
 source("rookpreprocess.R")
 source("rookpipeline.R")
+source("rookhealthcheck.R")
+
 if(addPrivacy){
     source("rookprivate.R")
 }
@@ -133,7 +135,8 @@ if(!production){
     #R.server$add(app = write.app, name="writeapp")  # jh - believe this is a legacy of early exploration of user-level metadata
     R.server$add(app = preprocess.app, name="preprocessapp")
     R.server$add(app = pipeline.app, name="pipelineapp")
-    
+    R.server$add(app = healthcheck.app, name="healthcheckapp")
+
         ## These add the .apps for the privacy budget allocator interface
     if(addPrivacy){
         R.server$add(app = privateStatistics.app, name="privateStatisticsapp")
@@ -151,4 +154,3 @@ if(!production){
 #mydata<-read.delim("../data/fearonLaitin.tsv")
 #mydata<-getDataverse(hostname="dvn-build.hmdc.harvard.edu", fileid="2429360")
 #z.out<-zelig(cntryerb~cntryera + dyadidyr, model="ls", data=mydata)
-

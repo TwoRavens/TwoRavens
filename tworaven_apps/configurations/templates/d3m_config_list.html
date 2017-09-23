@@ -54,7 +54,7 @@
                   Bad path(s) detected:
                     <a href="{% url 'admin:configurations_d3mconfiguration_change' c.id %}" target="_blank">edit</a>
                     <ul>
-                    {% for bad_path in c.get_bad_paths %}
+                    {% for bad_path in c.get_bad_paths_with_html %}
                       <li>{{ bad_path }}</li>
                     {% endfor %}
                     </ul>

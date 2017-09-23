@@ -1,0 +1,127 @@
+{% extends "helper_pages_base.html" %}
+
+{% block extra_js %}
+{% include "api_docs/test_examples.html" %}
+<script>
+
+  function formatJSON(json_obj){
+    return JSON.stringify(json_obj, null, 4);
+  }
+
+  function formatOutput(json_obj){
+    return "<pre>" + formatJSON(json_obj) + "</pre>";
+  }
+
+  function sendData(){
+      user_content = $('#id_content').val();
+      request_url = $('#id_request_type').val();
+
+      var jqxhr = $.post(request_url,
+                        { {{ GRPC_JSON_KEY }} : user_content},
+                        function(data) {
+
+                            $('#frmResult').html(formatOutput(data));
+                            //alert(JSON.stringify(data));
+                          })
+                          .done(function() {
+
+                              //alert( "second success" );
+                          })
+                          .fail(function() {
+                            //alert( "error" );
+                           })
+                          .always(function() {
+                              //alert( "finished" );
+                          });
+
+
+      // Set another completion function for the request above
+      jqxhr.always(function() {
+        //alert( "second finished" );
+      });
+  }
+
+  // document is ready
+  $(function() {
+
+      // new command selected
+      $('#id_request_type').on('change', function() {
+          // get the name of the command
+          let option_text = $("#id_request_type option[value='" + $(this).val() + "']").text();
+
+          // create a variable name by adding '_ex'
+          let json_example = option_text + '_ex';
+
+          // display the JSON example in form textbox
+          $('#id_content').val(formatJSON(eval(json_example)));
+
+
+      })
+  });
+
+</script>
+{% endblock %}
+
+{% block main_content %}
+<div class="row">
+  <div class="col-sm-12 col-md-6">
+     <h3>json</h3>
+
+
+     <hr />
+      <form method=post action="{% url 'view_test_form' %}">
+        <table>
+          {% csrf_token %}
+          {{ cform.as_table }}
+
+          <tr>
+            <td colspan="2">
+              <a onclick="sendData()" class="btn btn-default">send data</a>
+              <!--input type="submit" value="Submit" /-->
+            </td>
+          </tr>
+        </table>
+      </form>
+
+      <hr />
+      {% if TA2_STATIC_TEST_MODE %}
+       <span class="btn btn-primary">TEST MODE</span>
+        <br /><b>TA2 test server</b>: None
+        <br />
+        <br />
+         <ul>
+           <li><b>Use</b>: Answers question: Can the JSON sent from UI be converted to gRPC message?</li>
+           <li><b>Invalid JSON</b>: returns a real gRPC error</li>
+           <li><b>Valid JSON</b>: returns a "static" response  (which does not relate to data submitted)</li>
+           <li><b>Source of "static" responses</b>: <code>/ta2_interfaces/templates/test_responses</code>
+        </ul>
+       {% else %}
+         <span class="btn btn-success">External TA2 Server</span>
+         <br /><b>TA2 test server</b>: {{ TA2_TEST_SERVER_URL }}
+
+           <br />
+           <br />
+           <ul>
+             <li><b>Use</b>: Test "round trip" to TA2 server and back</li>
+             <li><b>Invalid JSON</b>: returns a real gRPC error</li>
+             <li><b>Valid JSON</b>: returns TA2 response</li>
+           </ul>
+       {% endif %}
+       <p><b>Settings source </b>: <code>{{ SETTINGS_MODULE }}</code>
+         <br /> - variables in settings:
+            <pre>TA2_STATIC_TEST_MODE = {{ TA2_STATIC_TEST_MODE }}
+TA2_TEST_SERVER_URL = '{{ TA2_TEST_SERVER_URL }}'</pre>
+       </p>
+
+  </div>
+  <div class="col-sm-12 col-md-6">
+      <h3>result</h3>
+      <hr />
+
+      <div id="frmResult">
+      </div>
+  </div>
+</div>
+
+
+{% endblock %}

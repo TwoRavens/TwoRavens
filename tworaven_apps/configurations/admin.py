@@ -14,7 +14,7 @@ class AppConfigurationAdmin(admin.ModelAdmin):
                     'rook_app_url',
                     'd3m_url',
                     'dataverse_url')
-    readonly_fields = ('modified', 'created')
+    readonly_fields = ('modified', 'created',)
 admin.site.register(AppConfiguration, AppConfigurationAdmin)
 
 
@@ -29,5 +29,7 @@ class D3MConfigurationAdmin(admin.ModelAdmin):
                     'training_data_root',
                     'modified',
                     'created',)
-    readonly_fields = ('slug', 'modified', 'created')
+    readonly_fields = ('slug', 'modified', 'created',
+                       'are_paths_valid',
+                       'get_bad_paths_for_admin')
 admin.site.register(D3MConfiguration, D3MConfigurationAdmin)

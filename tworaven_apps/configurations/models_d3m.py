@@ -13,11 +13,12 @@ from tworaven_apps.utils.url_helper import add_trailing_slash,\
     remove_trailing_slash
 
 from tworaven_apps.configurations.util_path_check import are_d3m_paths_valid,\
-    get_bad_paths
+    get_bad_paths, get_bad_paths_for_admin
 
 D3M_FILE_ATTRIBUTES = ('dataset_schema', 'problem_schema')
 D3M_DIR_ATTRIBUTES = ('training_data_root', 'executables_root',
                       'pipeline_logs_root', 'temp_storage_root')
+D3M_REQUIRED = D3M_FILE_ATTRIBUTES + ('training_data_root',)
 
 class D3MConfiguration(TimeStampedModel):
     """
@@ -65,7 +66,9 @@ class D3MConfiguration(TimeStampedModel):
         return self.name
 
     class Meta:
-        ordering = ('is_default', 'name')
+        ordering = ('name', '-modified')
+        verbose_name = 'D3M Configuration'
+        verbose_name_plural = 'D3M Configurations'
 
     @transaction.atomic
     def save(self, *args, **kwargs):
@@ -107,15 +110,80 @@ class D3MConfiguration(TimeStampedModel):
 
         return od
 
+
     def are_d3m_paths_valid(self):
         """Check the paths"""
         return are_d3m_paths_valid(self)
 
-    def get_bad_paths(self):
-        """Return a list of bad paths, used if "are_d3m_paths_valid" fails"""
-        return get_bad_paths(self)
+    def are_paths_valid(self):
+        """Check the paths, show in admin"""
+        if not self.are_d3m_paths_valid():
+            return "<span class='deletelink'>invalid paths</a>"
+        else:
+            return True
+    are_paths_valid.allow_tags = True
 
-    class Meta:
-        ordering = ('name', '-modified')
-        verbose_name = 'D3M Configuration'
-        verbose_name_plural = 'D3M Configurations'
+    def get_bad_paths_for_admin(self):
+        """Formatted for the admin with <br />'s separating the path list"""
+        return get_bad_paths_for_admin(self)
+    get_bad_paths_for_admin.allow_tags = True
+
+    def get_bad_paths_with_html(self):
+        """Return a list of bad paths, used if "are_d3m_paths_valid" fails"""
+        return get_bad_paths(self, with_html=True)
+    get_bad_paths_with_html.allow_tags = True
+
+    def get_bad_paths(self, with_html=False):
+        """Return a list of bad paths, used if "are_d3m_paths_valid" fails"""
+        return get_bad_paths(self, with_html)
+
+    @staticmethod
+    def create_config_from_dict(d3m_dict, is_default=False):
+        """Create a D3MConfiguration from a python dict.
+        success: returns (D3MConfiguration, None)
+        failure: returns (None, 'error message string')
+        """
+
+        d3m_config = D3MConfiguration()
+
+        # Check for required fields
+        #
+        for key in D3M_REQUIRED:
+            val = d3m_dict.get(key, None)
+            if val is None:
+                return None, \
+                       ' "%s" was not defined.  This field is required.' % key
+
+        # Load the fields, defaulting to "" (blank)
+        #
+        for key in D3M_FILE_ATTRIBUTES + D3M_DIR_ATTRIBUTES:
+            val = d3m_dict.get(key, '')
+            d3m_config.__dict__[key] = val
+
+        # config name
+        # ---------------------------------
+        # Is the name in the dict?
+        config_name = d3m_dict.get('name', None)
+        time_now = dt.now().strftime('%Y-%m-%d_%H-%M-%S')
+        if config_name:
+            # Name is in the dict, does it already exist?
+            if D3MConfiguration.objects.filter(name=config_name).count() > 0:
+                # Yes, add a timestamp to name
+                config_name = '%s_%s' % (config_name, time_now)
+        else:
+            # No name, make a timestamped name
+            config_name = 'config_%s' % time_now
+
+        # Set the name
+        d3m_config.name = config_name
+
+        # should this become the default config?
+        #
+        if is_default:
+            d3m_config.is_default = True
+
+        # save it
+        #
+        d3m_config.save()
+
+        return d3m_config, None

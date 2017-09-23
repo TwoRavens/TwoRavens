@@ -90,12 +90,29 @@ pipeline.app <- function(env){
         print(result)
     }
     
+    if(!warning){
+        ## switching this over to separate data and targets for d3m--not assuming a merged dataset
+        #mydataurl <- everything$zdataurl
+        #mydataurl <- paste("../",mydataurl,sep="")
+        #mydata <- read.delim(mydataurl)
+        #writeme <- paste("mydata <- read.delim(\"",mydataurl,"\")", sep="")
+        #print(writeme)
+        #write(writeme,mylogfile,append=TRUE)
+        
+        mytargeturi <- everything$zd3mtarget
+        mytargeturi <- paste("../",mytargeturi,sep="")
+        mydata <- read.csv(mytargeturi)
+        #writeme <- paste("mydata <- read.delim(\"",mydataurl,"\")", sep="")
+        #print(writeme)
+        #write(writeme,mylogfile,append=TRUE)
+    }
 
 	if(!warning){
         tryCatch({
             predictors <- all.vars(myformula[[3]])
             depvar <- all.vars(myformula[[2]])
-            result <- list(predictors=predictors, depvar=depvar)
+            dvvalues <- mydata[,depvar]
+            result <- list(predictors=predictors, depvar=depvar, dvvalues=dvvalues)
         },
         error=function(err){
             warning <<- TRUE

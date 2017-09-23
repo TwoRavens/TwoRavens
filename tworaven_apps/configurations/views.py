@@ -28,7 +28,7 @@ def view_d3m_details_page(request, d3m_config_id):
 @csrf_exempt
 def view_d3m_details_json(request, d3m_config_id):
     """Return the D3m configuration as JSON"""
-    is_pretty = request.GET.get('is_pretty', False)
+    is_pretty = request.GET.get('pretty', False)
 
     # Is there a default config?
     d3m_config = D3MConfiguration.objects.filter(id=d3m_config_id).first()
@@ -50,7 +50,7 @@ def view_d3m_details_json_latest(request):
     """Return the "latest" D3m configuration as JSON.
     "latest" may be most recently added or a "default"
     of some kind"""
-    is_pretty = request.GET.get('is_pretty', False)
+    is_pretty = request.GET.get('pretty', False)
 
     # Is there a default config?
     d3m_config = D3MConfiguration.objects.filter(is_default=True).first()
