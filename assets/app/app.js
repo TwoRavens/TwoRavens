@@ -278,12 +278,11 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
 
     //set start from user input, then assume locations are consistent based on d3m directory structure (alternatively can make each of these locations be set by user)
     let configurations = {};
-    var start = 'data/d3m/o_196seed';
     let d3mRootPath = "";
     let d3mDataName = "";
     let d3mData = "";
     let d3mTarget = "";
-    let d3mPreprocess = start+'/preprocess.json';
+    let d3mPreprocess = "";
     let d3mPS = "";
     let d3mDS = "";
 
@@ -310,7 +309,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
      })
      .then(function(result) {
            configurations =  JSON.parse(JSON.stringify(result));
-           d3mRootPath = result["training_data_root"];
+           d3mRootPath = configurations.training_data_root;
            d3mRootPath = d3mRootPath.replace(/\/data/,'');
            d3mDataName = configurations.name;
            d3mData = configurations.training_data_root+"/trainData.csv";
@@ -324,6 +323,8 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
            d3mTarget = d3mTarget.split("TwoRavens/").pop();
            d3mData = d3mData.split("TwoRavens/").pop();
            d3mRootPath = d3mRootPath.split("TwoRavens/").pop();
+           pURL='data/'+d3mRootPath+'/preprocess.json';
+           d3mPreprocess=pURL;
            zparams.zd3mdata = d3mData;
            zparams.zd3mtarget = d3mTarget;
            
@@ -469,12 +470,42 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
 
                 
                 document.getElementById("btnType").click();
-                startsession();
-                scaffolding(layout);
-                    zPop(); // called in dataDownload, but required to be called so moved here for d3m_mode
-                //dataDownload();  we do not call dataDownload in d3m_mode. we assume we have the path to the data already
                 resolve();
             });
+        }))
+        .then(() => new Promise((resolve, reject) => {
+                if (!d3m_mode)
+                    return resolve();
+                // this is our call to django to start the session
+                //rpc StartSession(SessionRequest) returns (SessionResponse) {}
+                let user_agent = "some agent";
+                let version = "some version";
+                let SessionRequest={user_agent,version};
+                                
+                var jsonout = JSON.stringify(SessionRequest);
+                var urlcall = d3mURL + "/startsession";
+                var solajsonout = "SessionRequest=" + jsonout;
+                console.log("SessionRequest: ");
+                console.log(solajsonout);
+                console.log("urlcall: ", urlcall);
+                                
+                function ssSuccess(btn, SessionResponse) {
+                    zparams.zsessionid=SessionResponse.context.sessionId;
+                    console.log("startsession: ", SessionResponse);
+                                
+                    scaffolding(layout);
+                    zPop(); // called in dataDownload, but required to be called so moved here for d3m_mode
+                                //dataDownload();  we do not call dataDownload in d3m_mode. we assume we have the path to the data already
+                    resolve();
+                }
+                                
+                function ssFail(btn) {
+                    alert("StartSession has failed.");
+                    resolve();
+                }
+                                
+                makeCorsRequest(urlcall, "nobutton", ssSuccess, ssFail, solajsonout);
+    
         }))
 }
 
@@ -2925,32 +2956,7 @@ export let fakeClick = () => {
 };
 
 
-// this is our call to django to start the session
-//rpc StartSession(SessionRequest) returns (SessionResponse) {}
-function startsession() {
-    let user_agent = "some agent";
-    let version = "some version";
-    let SessionRequest={user_agent,version};
 
-    var jsonout = JSON.stringify(SessionRequest);
-
-    var urlcall = d3mURL + "/startsession";
-    var solajsonout = "SessionRequest=" + jsonout;
-    console.log("SessionRequest: ");
-    console.log(solajsonout);
-    console.log("urlcall: ", urlcall);
-
-    function ssSuccess(btn, SessionResponse) {
-        zparams.zsessionid=SessionResponse.context.sessionId;
-        console.log("startsession: ", SessionResponse);
-    }
-
-    function ssFail(btn) {
-        alert("StartSession has failed.");
-    }
-
-   makeCorsRequest(urlcall, "nobutton", ssSuccess, ssFail, solajsonout);
-}
 
 //EndSession(SessionContext) returns (Response) {}
 export function endsession() {
