@@ -1902,7 +1902,7 @@ export function estimate(btn) {
             var jsonout = JSON.stringify(zparams);
             console.log(jsonout);
         
-            let SessionContext = apiSession(zparams.zsessionid);
+            let context = apiSession(zparams.zsessionid);
             let uri = {features: zparams.zd3mdata, target:zparams.zd3mtarget};
         
         
@@ -1917,10 +1917,10 @@ export function estimate(btn) {
 
                 let trainFeatures=apiFeature(json.predictors,uri.features);
                 let targetFeatures=apiFeature(json.depvar,uri.target);
-                let taskType = d3mTaskType[d3mProblemDescription.taskType][1];
+                let task = d3mTaskType[d3mProblemDescription.taskType][1];
                 let taskSubtype = d3mTaskSubtype[d3mProblemDescription.taskSubtype][1];
-                let outputType = d3mOutputType[d3mProblemDescription.outputType][1];
-                let metric = d3mMetrics[d3mProblemDescription.metric][1];
+                let output = d3mOutputType[d3mProblemDescription.outputType][1];
+                let metrics = [d3mMetrics[d3mProblemDescription.metric][1]];
                 let taskDescription = d3mProblemDescription.taskDescriptionription;
                 let maxPipelines = 10; //user to specify this eventually?
                 
@@ -1928,7 +1928,7 @@ export function estimate(btn) {
                 let dvvalues = json.dvvalues;
                 
 
-                let PipelineCreateRequest={SessionContext, trainFeatures, taskType, taskSubtype, taskDescription, outputType, metric, targetFeatures, maxPipelines};
+                let PipelineCreateRequest={context, trainFeatures, task, taskSubtype, taskDescription, output, metrics, targetFeatures, maxPipelines};
 
                 let jsonout = JSON.stringify(PipelineCreateRequest);
 
@@ -1950,7 +1950,7 @@ export function estimate(btn) {
                     // once we know what TA2 does we'll get the pipeline ids from there
                     //let pipelineid = PipelineCreateResult.pipelineid;
                     let pipelineid = "id1";
-                    let PipelineExecuteResultsRequest = {SessionContext, pipelineid};
+                    let PipelineExecuteResultsRequest = {context, pipelineid};
                     jsonout = JSON.stringify(PipelineExecuteResultsRequest);
                     let urlcall = d3mURL + "/getexecutepipelineresults";
                     var solajsonout = "grpcrequest=" + jsonout;
@@ -3487,13 +3487,13 @@ export function setxTable(features) {
 function apiFeature (vars, uri) {
     let out = []
     for(let i = 0; i < vars.length; i++) {
-        out.push({[vars[i]]:uri});
+        out.push({featureId:vars[i],dataUri:uri});
     }
     return out;
 }
 
 // silly but perhaps useful if in the future SessionContext requires more things (as suggest by core)
 function apiSession (context) {
-    return context;
+    return {"session_id":context};
 }
 
