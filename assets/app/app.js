@@ -329,10 +329,9 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
      .then(_ => m.request(pURL))
      // do nothing if preprocess.json already exists, else runPreprocess
      .then(null, _ => runPreprocess(d3mData, d3mTarget, d3mDataName))
-     .then(_ => readPreprocess(pURL, preprocess))
+     .then(data => readPreprocess(data))
      .then(() => new Promise((resolve, reject) => d3.xml(metadataurl, 'application/xml', xml => {
         let vars = Object.keys(preprocess); // this doesn't come from xml, but from preprocessed json
-
             // the labels, citations, and file name come from the 'xml' (metadataurl), which is the file from the data repo
             // however, TwoRavens should function using only the data that comes from our preprocess script, which is the 'json' (pURL)
             // for now the metadataurl is still Fearon & Laitin
@@ -2899,18 +2898,11 @@ export function subsetSelect(btn) {
     makeCorsRequest(urlcall, btn, subsetSelectSuccess, btn => selectLadda.stop(), solajsonout);
 }
 
-function readPreprocess(url) {
-    return new Promise((resolve, reject) => {
-        console.log("DID THIS THING HERE!:" + url);
-        cdb('readPreprocess: ' + url);
-        d3.json(url, (err, res) => {
-            if (err)
-                return reject(err);
-            console.log('readPreprocess result: ' + res);
-            priv = res.dataset.private || priv;
-            Object.keys(res.variables).forEach(k => preprocess[k] = res.variables[k]);
-            resolve();
-        });
+function readPreprocess(data) {
+    return new Promise((resolve, _) => {
+        priv = data.dataset.private || priv;
+        Object.keys(data.variables).forEach(k => preprocess[k] = data.variables[k]);
+        resolve();
     });
 }
 
