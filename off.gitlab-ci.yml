@@ -4,7 +4,7 @@ image: docker:latest
 services:
   - docker:dind
 
-xbuild:
+build:
   script:
     #
     # Docker login
