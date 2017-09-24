@@ -755,10 +755,25 @@ function layout(v,v2) {
     nodes = [];
     links = [];
 
+    svg.append("svg:defs").append("svg:marker")
+    .attr("id", "group-arrow")
+    .attr('viewBox', '-5 -5 15 15')
+    .attr("refX", 2)
+    .attr("refY", 0)
+    .attr("markerWidth", 3)
+    .attr("markerHeight", 3)
+    .attr("orient", "auto")
+    .append("path")
+     .attr('d', 'M0,-5L10,0L0,5')
+    //.attr('d', 'M 0,0 m -5,-5 L 5,0 L -5,5 Z')
+//    .attr("d", "M 0 0 12 6 0 12 3 6")
+    .style("fill", gr1Color);
+
     var line = svg.append("line")
         .style('fill', 'none')
         .style('stroke', gr1Color)
-        .style('stroke-width', 5);
+        .style('stroke-width', 5)
+        .attr("marker-end", "url(#group-arrow)");
 
     var line2 = svg.append("line")
         .style('fill', 'none')
@@ -1011,8 +1026,8 @@ function layout(v,v2) {
                     ldist = Math.sqrt(ldeltaX * ldeltaX + ldeltaY * ldeltaY),
                     lnormX = 0,
                     lnormY = 0,
-                    lsourcePadding = allR + 5,
-                    ltargetPadding = allR + 5;
+                    lsourcePadding = allR + 7,
+                    ltargetPadding = allR + 10;
 
                 if (ldist > 0){
                     lnormX = ldeltaX / ldist;
