@@ -111,7 +111,12 @@ preprocess.app <- function(env){
     write(ppJSON, outloc)
     write.table(mydata, outdata[1], row.names=FALSE, col.names=TRUE, sep="\t")
 
-    result<-jsonlite:::toJSON(result)
+    # Return the preprocess file 
+    if(!warning){
+        result<-ppJSON
+    }
+
+    #result<-jsonlite:::toJSON(result)
     
     print(result)
     if(production){
