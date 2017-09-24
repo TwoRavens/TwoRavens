@@ -172,9 +172,6 @@ outputType: [3,"DEFAULT"],
     taskDescription: ""};
 
 
-
-
-
 var svg, width, height, div, estimateLadda, selectLadda;
 var arc1, arc3, arc4, arcInd1, arcInd2;
 
@@ -297,17 +294,16 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
 
     if(d3m_mode) {
         pURL = d3mPreprocess;
-  //      zparams.zdataurl = start+'/data/trainDatamerged.tsv';
+        // zparams.zdataurl = start+'/data/trainDatamerged.tsv';
         zparams.zdata = d3mDataName;
-    } else if(!production)
+    } else if(!production) {
         zparams.zdataurl = 'data/fearonLaitin.tsv';
+    }
 
     // loads all external data: metadata (DVN's ddi), preprocessed (for plotting distributions), and zeligmodels (produced by Zelig) and initiates the data download to the server
-    
-        // do nothing if preprocess.json already exists, else runPreprocess
-     m.request({
-               method: "POST",
-               url: "/config/d3m-config/json/latest"
+     Promise.resolve(d3m_mode && m.request({
+           method: "POST",
+           url: "/config/d3m-config/json/latest"
      })
      .then(function(result) {
            configurations =  JSON.parse(JSON.stringify(result));
@@ -329,12 +325,13 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
            d3mPreprocess=pURL;
            zparams.zd3mdata = d3mData;
            zparams.zd3mtarget = d3mTarget;
-           
-    m.request(pURL)
-        .then(null, _ => runPreprocess(d3mData, d3mTarget, d3mDataName))
-        .then(_ => readPreprocess(pURL, preprocess))
-        .then(() => new Promise((resolve, reject) => d3.xml(metadataurl, 'application/xml', xml => {
-            let vars = Object.keys(preprocess); // this doesn't come from xml, but from preprocessed json
+     }))
+     .then(_ => m.request(pURL))
+     // do nothing if preprocess.json already exists, else runPreprocess
+     .then(null, _ => runPreprocess(d3mData, d3mTarget, d3mDataName))
+     .then(_ => readPreprocess(pURL, preprocess))
+     .then(() => new Promise((resolve, reject) => d3.xml(metadataurl, 'application/xml', xml => {
+        let vars = Object.keys(preprocess); // this doesn't come from xml, but from preprocessed json
 
             // the labels, citations, and file name come from the 'xml' (metadataurl), which is the file from the data repo
             // however, TwoRavens should function using only the data that comes from our preprocess script, which is the 'json' (pURL)
@@ -397,7 +394,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
                 allNodes.push(obj);
             };
             resolve();
-                                                            })))})
+        })))
         .then(() => new Promise((resolve, reject) => {
             // read zelig models and populate model list in right panel
             d3.json("data/zelig5models.json", (err, data) => {
