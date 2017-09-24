@@ -40,8 +40,8 @@ def get_rook_file_url(req_file_path):
     return rook_file_url
 
 def view_rook_file_passthrough(request):
-    """A bit ugly, dowload the file and then re-serve it
-
+    """A bit ugly, download the file content from rook and
+    send it to the UI
     http://127.0.0.1:8080/rook-custom/rook-files/data/d3m/o_196seed/preprocess.json
     """
     req_file_path = request.get_full_path()
@@ -60,15 +60,15 @@ def view_rook_file_passthrough(request):
 
     # get the filesize and content type
     #
-    filesize = len(file_content)
     content_type = mimetypes.guess_type(filename)[0]
 
     # prepare the response
     #
-    response = HttpResponse(file_content,#fp.read(),
+    response = HttpResponse(file_content,
                             content_type=content_type)
 
-    response['Content-Disposition'] = "attachment; filename={0}".format(filename)
+    #response['Content-Disposition'] = "attachment; filename={0}".format(filename)
+    filesize = len(file_content)
     response['Content-Length'] = filesize
 
     return response
