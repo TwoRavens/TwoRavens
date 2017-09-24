@@ -22,6 +22,30 @@ urlpatterns = (
         views.view_d3m_details_json_latest,
         name='view_d3m_details_json_latest'),
 
+    url(r'^d3m-config/get-dataset-schema/json$',
+        views.view_get_dataset_schema,
+        name='view_get_dataset_schema'),
+
+    url(r'^d3m-config/get-problem-schema/json$',
+        views.view_get_problem_schema,
+        name='view_get_problem_schema'),
+
+    url(r'^d3m-config/get-dataset-schema/json/(?P<d3m_config_id>\d{1,5})$',
+        views.view_get_dataset_schema,
+        name='view_get_dataset_schema_by_id'),
+
+    url(r'^d3m-config/get-problem-schema/json/(?P<d3m_config_id>\d{1,5})$',
+        views.view_get_problem_schema,
+        name='view_get_problem_schema_by_id'),
+
+    url(r'^d3m-config/get-problem-data-file-size$',
+        views.view_get_problem_data_filesize,
+        name='view_get_problem_data_filesize'),
+
+    url(r'^d3m-config/get-problem-data-file-size/(?P<d3m_config_id>\d{1,5})$',
+        views.view_get_problem_data_filesize,
+        name='view_get_problem_data_filesize_by_id'),
+
     #url(r'^(?P<app_name_in_url>\w{5,25})$',
     #    views.view_rook_route,
     #    name='view_rook_route'),
