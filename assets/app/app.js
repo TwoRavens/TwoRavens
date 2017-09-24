@@ -755,10 +755,23 @@ function layout(v,v2) {
     nodes = [];
     links = [];
 
+    svg.append("svg:defs").append("svg:marker")
+        .attr("id", "group-arrow")
+        .attr('viewBox', '0 -5 15 15')
+        .attr("refX", 2.5)
+        .attr("refY", 0)
+        .attr("markerWidth", 3)
+        .attr("markerHeight", 3)
+        .attr("orient", "auto")
+        .append("path")
+        .attr('d', 'M0,-5L10,0L0,5')
+        .style("fill", gr1Color);
+
     var line = svg.append("line")
         .style('fill', 'none')
         .style('stroke', gr1Color)
-        .style('stroke-width', 5);
+        .style('stroke-width', 5)
+        .attr("marker-end", "url(#group-arrow)");
 
     var line2 = svg.append("line")
         .style('fill', 'none')
@@ -1011,8 +1024,8 @@ function layout(v,v2) {
                     ldist = Math.sqrt(ldeltaX * ldeltaX + ldeltaY * ldeltaY),
                     lnormX = 0,
                     lnormY = 0,
-                    lsourcePadding = allR + 5,
-                    ltargetPadding = allR + 5;
+                    lsourcePadding = allR + 7,
+                    ltargetPadding = allR + 10;
 
                 if (ldist > 0){
                     lnormX = ldeltaX / ldist;
@@ -1023,7 +1036,6 @@ function layout(v,v2) {
                     .attr("y1", p[1] + (lsourcePadding * lnormY))   // or r[1] if findboundary works
                     .attr("x2", q[0]- (ltargetPadding * lnormX))
                     .attr("y2", q[1]- (ltargetPadding * lnormY));
-                //circle.attr("cx", p[0]).attr("cy", p[1]);       // placeholder for arrowhead if not set up as arrow
             };
 
             // group members attract each other, repulse non-group members
@@ -1073,14 +1085,13 @@ function layout(v,v2) {
                     ldist = Math.sqrt(ldeltaX * ldeltaX + ldeltaY * ldeltaY),
                     lnormX = ldeltaX / ldist,
                     lnormY = ldeltaY / ldist,
-                    lsourcePadding = allR + 5,
-                    ltargetPadding = allR + 5;
+                    lsourcePadding = allR + 7,
+                    ltargetPadding = allR + 10;
 
                 line2.attr("x1", p[0] + (lsourcePadding * lnormX))
                     .attr("y1", p[1] + (lsourcePadding * lnormY))
                     .attr("x2", q[0]- (ltargetPadding * lnormX))
                     .attr("y2", q[1]- (ltargetPadding * lnormY));
-                //circle.attr("cx", p[0]).attr("cy", p[1]);       // placeholder for arrowhead if not set up as arrow
             };
 
             // group members attract each other, repulse non-group members
