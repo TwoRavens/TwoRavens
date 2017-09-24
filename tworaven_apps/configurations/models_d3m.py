@@ -1,6 +1,7 @@
 """
 https://datadrivendiscovery.org/wiki/display/gov/TA2+Configuration+file+syntax
-See: https://datadrivendiscovery.org/wiki/pages/viewpage.action?spaceKey=gov&title=Dataset+Directory+Structure
+See:
+https://datadrivendiscovery.org/wiki/pages/viewpage.action?spaceKey=gov&title=Dataset+Directory+Structure
 """
 from collections import OrderedDict
 from datetime import datetime as dt

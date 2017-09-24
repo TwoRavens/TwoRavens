@@ -1,4 +1,4 @@
-from os.path import isfile, getsize
+from os.path import isfile, getsize, join
 from tworaven_apps.configurations.models_d3m import D3MConfiguration,\
     D3M_FILE_ATTRIBUTES
 
@@ -23,6 +23,31 @@ def get_latest_d3m_config():
             return None
     return d3m_config
 
+def get_dataset_size(d3m_config):
+    """Make a guess at the data file name and attempt to get the size"""
+    if not d3m_config:
+        return None, 'd3m_config is None'
+
+    data_filename = 'testData.csv'
+    data_filename_zipped = 'testData.csv.gz'
+
+    data_filepath = join(d3m_config.training_data_root,
+                         data_filename)
+    data_filepath_zipped = join(d3m_config.training_data_root,
+                                data_filename_zipped)
+
+    info_dict = {}
+    if isfile(data_filepath):
+        info_dict[data_filename] = getsize(data_filepath)
+    else:
+        info_dict[data_filename] = -1
+
+    if isfile(data_filepath_zipped):
+        info_dict[data_filename_zipped] = getsize(data_filepath_zipped)
+    else:
+        info_dict[data_filename_zipped] = -1
+
+    return info_dict, None
 
 def get_d3m_filepath(d3m_config, file_attr):
     """

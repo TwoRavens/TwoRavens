@@ -9,7 +9,7 @@ from django.http import JsonResponse, HttpResponse, Http404
 from tworaven_apps.configurations.models_d3m import D3MConfiguration,\
     KEY_DATASET_SCHEMA, KEY_PROBLEM_SCHEMA, D3M_FILE_ATTRIBUTES
 from tworaven_apps.configurations.utils import get_latest_d3m_config,\
-    get_d3m_filepath
+    get_d3m_filepath, get_dataset_size
 
 # Create your views here.
 @csrf_exempt
@@ -100,3 +100,24 @@ def view_get_config_file(request, config_key, d3m_config_id=None):
     response = FileResponse(open(filepath, 'rb'))
 
     return response
+
+def view_get_problem_data_filesize(request, d3m_config_id=None):
+    """Attempt to find the size of the problem dataset file
+    (probably only useful for initial test files)
+    """
+    if d3m_config_id is None:
+        d3m_config = get_latest_d3m_config()
+    else:
+        d3m_config = D3MConfiguration.objects.filter(id=d3m_config_id).first()
+
+    if d3m_config is None:
+        raise Http404('Config not found!')
+
+    info_dict, err_msg = get_dataset_size(d3m_config)
+
+    if err_msg:
+        return JsonResponse(dict(success=False,
+                                 message=err_msg))
+
+    return JsonResponse(dict(success=True,
+                             data=info_dict))
