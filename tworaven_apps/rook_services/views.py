@@ -1,48 +1,14 @@
 import requests
-import json
-#from io import BytesIO
-from datetime import datetime as dt
 
 from requests.exceptions import ConnectionError
 
-from django.conf import settings
-from django.shortcuts import render
-from django.http import JsonResponse, HttpResponse, HttpResponseRedirect, Http404
-from django.views.decorators.csrf import csrf_exempt, csrf_protect
+from django.http import JsonResponse, HttpResponse, Http404
+from django.views.decorators.csrf import csrf_exempt
 
 from tworaven_apps.rook_services.models import TestCallCapture
 from tworaven_apps.rook_services.rook_app_info import RookAppInfo
 
-
 ROOK_ZESSIONID = 'zsessionid'
-ROOK_FILES_PATH = 'rook-files/'
-
-def view_rook_file_passthrough(request):
-    """Redirect rook file requests to rook.
-    This is only used in the dev environment!
-    In deployment, nginx acts as proxy to these rook files
-
-    http://127.0.0.1:8080/rook-custom/rook-files/data/d3m/o_196seed/preprocess.json
-    """
-
-    # start with something like: http://127.0.0.1:8080/rook-custom/rook-files/data/d3m/o_196seed/preprocess.json
-    req_file_path = request.get_full_path()
-    idx = req_file_path.find(ROOK_FILES_PATH)
-    if idx > -1:
-        # shorten it to: "rook-files/data/d3m/o_196seed/preprocess.json"
-        req_file_path = req_file_path[idx:]
-
-    # doublecheck there's no prepended "/"
-    if req_file_path.startswith('/') and len(req_file_path) > 1:
-        req_file_path = req_file_path[1:]
-
-    # set the rook url
-    rook_server_url = '{0}{1}'.format(settings.R_DEV_SERVER_BASE,
-                                      req_file_path)
-
-    # redirect
-    return HttpResponseRedirect(rook_server_url)
-
 
 @csrf_exempt
 def view_rook_route(request, app_name_in_url):
