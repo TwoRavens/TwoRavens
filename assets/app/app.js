@@ -757,16 +757,14 @@ function layout(v,v2) {
 
     svg.append("svg:defs").append("svg:marker")
     .attr("id", "group-arrow")
-    .attr('viewBox', '-5 -5 15 15')
-    .attr("refX", 2)
+    .attr('viewBox', '0 -5 15 15')
+    .attr("refX", 2.5)
     .attr("refY", 0)
     .attr("markerWidth", 3)
     .attr("markerHeight", 3)
     .attr("orient", "auto")
     .append("path")
-     .attr('d', 'M0,-5L10,0L0,5')
-    //.attr('d', 'M 0,0 m -5,-5 L 5,0 L -5,5 Z')
-//    .attr("d", "M 0 0 12 6 0 12 3 6")
+    .attr('d', 'M0,-5L10,0L0,5')
     .style("fill", gr1Color);
 
     var line = svg.append("line")
