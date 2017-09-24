@@ -1,14 +1,12 @@
 import requests
-import json
+
 from requests.exceptions import ConnectionError
 
-from django.shortcuts import render
 from django.http import JsonResponse, HttpResponse, Http404
-from django.views.decorators.csrf import csrf_exempt, csrf_protect
+from django.views.decorators.csrf import csrf_exempt
+
 from tworaven_apps.rook_services.models import TestCallCapture
 from tworaven_apps.rook_services.rook_app_info import RookAppInfo
-
-from datetime import datetime as dt
 
 ROOK_ZESSIONID = 'zsessionid'
 

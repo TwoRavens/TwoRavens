@@ -321,7 +321,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
            d3mTarget = d3mTarget.split("TwoRavens/").pop();
            d3mData = d3mData.split("TwoRavens/").pop();
            d3mRootPath = d3mRootPath.split("TwoRavens/").pop();
-           pURL='data/'+d3mRootPath+'/preprocess.json';
+           pURL='rook-custom/rook-files/'+d3mDataName+'/preprocess/preprocess.json';    
            d3mPreprocess=pURL;
            zparams.zd3mdata = d3mData;
            zparams.zd3mtarget = d3mTarget;
