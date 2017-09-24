@@ -10,6 +10,9 @@
     <link rel="stylesheet" href="{% static "pkgs/bootstrap/css/bootstrap.css" %}">
     <!--<link rel="stylesheet" href="{% static "build/tworavens_styles.css" %}"-->
     {% render_bundle 'main' 'css' %}
+    {% block extra_css %}
+    {% endblock %}
+
     <script src="{% static "pkgs/Ladda/dist/spin.min.js" %}"></script>
     <script src="{% static "pkgs/Ladda/dist/ladda.min.js" %}"></script>
     <script src="{% static "js/jquery/jquery.min.js" %}"></script>
