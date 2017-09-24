@@ -131,6 +131,9 @@ class D3MConfiguration(TimeStampedModel):
         od['problem_schema_url'] = reverse('view_get_problem_schema_by_id',
                                            kwargs=dict(d3m_config_id=self.id))
 
+        od['dataset_filesize_url'] = reverse('view_get_problem_data_filesize_by_id',
+                                          kwargs=dict(d3m_config_id=self.id))
+
         od['config_url'] = reverse('view_d3m_details_json',
                                    kwargs=dict(d3m_config_id=self.id))
 
