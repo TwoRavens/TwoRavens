@@ -104,9 +104,9 @@ ROOK_APP_NAMES = [('ZELIG_APP', 'zeligapp', 'zeligapp'),    # run models
                  ]
 ```
 
-## snippet to run gRPC start_session from shell
+## snippet to run gRPC start_session from python shell
 
-- ```python manage.py dbshell```
+- ```python manage.py shell```
 
 ```python
 import json
