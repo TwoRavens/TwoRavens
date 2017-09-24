@@ -3145,7 +3145,7 @@ function jamescentroid(coord){
 // Members of groups are scaled down if group gets large.
 function setPebbleRadius(d){
     if(d.group1 || d.group2){   // if a member of a group, need to calculate radius size
-        var uppersize = 4
+        var uppersize = 7
         var ng1 = (d.group1) ? zparams.zgroup1.length : 1;      // size of group1, if a member of group 1
         var ng2 = (d.group2) ? zparams.zgroup2.length : 1;      // size of group2, if a member of group 2
         var maxng = Math.max(ng1,ng2);                                                      // size of the largest group variable is member of
@@ -3163,7 +3163,7 @@ function setPebbleCharge(d){
         if(d.forefront){                                        // pebbles packed in groups repel others on mouseover
             return -1000
         }
-        var uppersize = 4
+        var uppersize = 7
         var ng1 = (d.group1) ? zparams.zgroup1.length : 1;      // size of group1, if a member of group 1
         var ng2 = (d.group2) ? zparams.zgroup2.length : 1;      // size of group2, if a member of group 2
         var maxng = Math.max(ng1,ng2);                                                      // size of the largest group variable is member of
