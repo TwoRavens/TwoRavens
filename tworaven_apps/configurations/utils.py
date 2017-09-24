@@ -37,17 +37,24 @@ def get_dataset_size(d3m_config):
                                 data_filename_zipped)
 
     info_dict = {}
+    info_found = False
     if isfile(data_filepath):
         info_dict[data_filename] = getsize(data_filepath)
+        info_found = True
     else:
         info_dict[data_filename] = -1
 
     if isfile(data_filepath_zipped):
         info_dict[data_filename_zipped] = getsize(data_filepath_zipped)
+        info_found = True
     else:
         info_dict[data_filename_zipped] = -1
 
-    return info_dict, None
+    if info_found:
+        return info_dict, None
+
+    return None, 'Default data files not found: [%s], [%s]' % \
+                 (data_filepath, data_filepath_zipped)
 
 def get_d3m_filepath(d3m_config, file_attr):
     """
