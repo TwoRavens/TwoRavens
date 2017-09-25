@@ -24,23 +24,23 @@ import {bars, barsNode, barsSubset, density, densityNode, selVarColor} from './p
 // for debugging - if in production, prints args and returns them
 export let cdb = _ => production || console.log.apply(this, arguments) && arguments;
 
-var k = 4; // strength parameter for group attraction/repulsion
+let k = 4; // strength parameter for group attraction/repulsion
 
 // initial color scale used to establish the initial colors of nodes
 // allNodes.push() below establishes a field for the master node array allNodes called "nodeCol" and assigns a color from this scale to that field
 // everything there after should refer to the nodeCol and not the color scale, this enables us to update colors and pass the variable type to R based on its coloring
-var colors = d3.scale.category20();
+let colors = d3.scale.category20();
 export let csColor = '#419641';
 export let dvColor = '#28a4c9';
 export let gr1Color = '#14bdcc';  // initially was #24a4c9', but that is dvColor, and we track some properties by color assuming them unique
-var gr1Opacity = [0,1];
+let gr1Opacity = [0,1];
 export let gr2Color = '#ffcccc';
-var gr2Opacity = [0,1];
+let gr2Opacity = [0,1];
 
-var grayColor = '#c0c0c0';
+let grayColor = '#c0c0c0';
 export let nomColor = '#ff6600';
 export let varColor = '#f0f8ff'; // d3.rgb("aliceblue");
-var taggedColor = '#f5f5f5'; // d3.rgb("whitesmoke");
+let taggedColor = '#f5f5f5'; // d3.rgb("whitesmoke");
 export let timeColor = '#2d6ca2';
 
 export let lefttab = 'tab1'; // current tab in left panel
@@ -64,18 +64,17 @@ const layoutAdd = "add";
 const layoutMove = "move";
 
 // Radius of circle
-var allR = 40;
-
-var ind1 = [(allR+30) * Math.cos(1.3), -1*(allR+30) * Math.sin(1.3),5] // cx, cy, r  values for indicator lights
-var ind2 = [(allR+30) * Math.cos(1.1), -1*(allR+30) * Math.sin(1.1),5] // cx, cy, r  values for indicator lights
+let allR = 40;
+let ind1 = [(allR+30) * Math.cos(1.3), -1*(allR+30) * Math.sin(1.3),5] // cx, cy, r  values for indicator lights
+let ind2 = [(allR+30) * Math.cos(1.1), -1*(allR+30) * Math.sin(1.1),5] // cx, cy, r  values for indicator lights
 
 
 // space index
-var myspace = 0;
+let myspace = 0;
 
-var forcetoggle = ["true"];
-var locktoggle = true;
-var priv = true;
+let forcetoggle = ["true"];
+let locktoggle = true;
+let priv = true;
 
 export let logArray = [];
 export let zparams = {
@@ -100,17 +99,17 @@ export let zparams = {
     zdatacite: ""
 };
 
-var modelCount = 0;
+let modelCount = 0;
 export let valueKey = [];
 export let allNodes = [];
-var allResults = [];
+let allResults = [];
 export let nodes = [];
-var links = [];
-var mods = {};
-var estimated = false;
-var rightClickLast = false;
-var selInteract = false;
-var callHistory = []; // transform and subset calls
+let links = [];
+let mods = {};
+let estimated = false;
+let rightClickLast = false;
+let selInteract = false;
+let callHistory = []; // transform and subset calls
 let mytarget = "";
 
 
@@ -172,11 +171,11 @@ outputType: [3,"DEFAULT"],
     taskDescription: ""};
 
 
-var svg, width, height, div, estimateLadda, selectLadda;
-var arc1, arc3, arc4, arcInd1, arcInd2;
+let svg, width, height, div, estimateLadda, selectLadda;
+let arc1, arc3, arc4, arcInd1, arcInd2;
 
-var arcInd1Limits = [0,0.3];
-var arcInd2Limits = [0.35,0.65];
+let arcInd1Limits = [0,0.3];
+let arcInd2Limits = [0.35,0.65];
 
 let byId = id => document.getElementById(id);
 
@@ -186,7 +185,7 @@ export const reset = function reloadPage() {
 }
 
 
-var dataurl = "";
+let dataurl = "";
 export function main(fileid, hostname, ddiurl, dataurl, apikey) {
     dataurl = dataurl;
     if (production && fileid == "") {
@@ -209,25 +208,25 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
     cdb('--dataverseurl: ' + dataverseurl);
     svg = d3.select("#whitespace");
 
-    var tempWidth = d3.select("#main.left").style("width");
+    let tempWidth = d3.select("#main.left").style("width");
     width = tempWidth.substring(0, tempWidth.length - 2);
     height = $(window).height() - 120; // Hard coding for header and footer and bottom margin.
 
     estimateLadda = Ladda.create(byId("btnEstimate"));
     selectLadda = Ladda.create(byId("btnSelect"));
 
-    var colorTime = false;
-    var colorCS = false;
+    let colorTime = false;
+    let colorCS = false;
 
-    var depVar = false;
-    var subsetdiv = false;
-    var setxdiv = false;
+    let depVar = false;
+    let subsetdiv = false;
+    let setxdiv = false;
 
     // width and height for histgrams
-    var barwidth = 1.3 * allR;
-    var barheight = 0.5 * allR;
-    var barPadding = 0.35;
-    var barnumber = 7;
+    let barwidth = 1.3 * allR;
+    let barheight = 0.5 * allR;
+    let barPadding = 0.35;
+    let barnumber = 7;
 
     // arcs for denoting pebble characteristics
     let arc = (start, end) => d3.svg.arc()
@@ -259,10 +258,10 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
     // ind2 = indicator(1.2);
 
     // from .csv
-    var dataset2 = [];
-    var lablArray = [];
-    var hold = [];
-    var subsetNodes = [];
+    let dataset2 = [];
+    let lablArray = [];
+    let hold = [];
+    let subsetNodes = [];
 
     // collapsable user log
     $('#collapseLog').on('shown.bs.collapse', () => d3.select("#collapseLog div.panel-body").selectAll("p")
