@@ -116,6 +116,12 @@ def run_with_rook():
     run(with_rook=True)
 
 
+def run_ta2_test_server():
+    """Run an external server on 50051 to return gRPC TA2TA3 api calls"""
+
+    run_cmd = 'cd tworaven_apps/ta2_interfaces; python test_server.py'
+    local(run_cmd)
+
 def run(with_rook=False):
     """Run the django dev server and webpack--webpack watches the assets directory and rebuilds when appTwoRavens changes
 
@@ -127,10 +133,7 @@ def run(with_rook=False):
 
     commands = [
         # start webpack
-        #'./node_modules/.bin/webpack --watch'
         'npm start',
-        #'python manage.py runserver 8080'
-        #'celery -A firmament worker --loglevel=info -B'
     ]
 
     if with_rook:

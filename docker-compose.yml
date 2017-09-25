@@ -19,6 +19,9 @@ services:
     build:
       context: ./
       dockerfile: Dockerfile-rook
+    environment:
+      # Note: this variable is also set in Dockerfile-rook
+      - ROOK_USE_PRODUCTION_MODE=yes
     ports:
       - 8000
     volumes:

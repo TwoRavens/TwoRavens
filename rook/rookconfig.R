@@ -1,15 +1,24 @@
 ## This is a configuration file for Rook apps
 
 ## Define modes
-production <- FALSE
+
+# Use production mode if env variable ROOK_USE_PRODUCTION_MODE = "yes"
+#
+production <- identical(Sys.getenv(x='ROOK_USE_PRODUCTION_MODE', unset="no"), "yes")
+
+
 d3m_mode <- TRUE
+addPrivacy<-TRUE      ## Toggle:  TRUE - Add .apps for differential privacy, FALSE - Do not add privacy .apps
+
+# to differentiate older Rapache code
+is_rapache_mode <- FALSE
 
 
 ## Set paths where rook apps can write output
+PRE_PATH <- paste(getwd(), "/rook-files/", sep="")
+
 if(production){
-	PRE_PATH <- "/var/www/rook/rook-files/"
-	server_name <- "http://0.0.0.0"
+	server_name <- ""
 } else {
-	PRE_PATH <- paste(getwd(), "/rook-files/", sep="")
 	server_name <- "http://127.0.0.1:8080"
 }
