@@ -7,6 +7,10 @@ urlpatterns = (
         views.view_monitoring_alive,
         name='view_monitoring_alive'),
 
+    url(r'^d3m-configuration-error$',
+        views.view_d3m_config_error,
+        name='view_d3m_config_error'),
+
     url(r'^$',
         views.view_pebbles_home,
         name='home'),

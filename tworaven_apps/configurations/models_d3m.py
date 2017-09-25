@@ -28,6 +28,8 @@ D3M_DIR_ATTRIBUTES = ('training_data_root', 'executables_root',
                       'pipeline_logs_root', 'temp_storage_root')
 D3M_REQUIRED = D3M_FILE_ATTRIBUTES + ('training_data_root',)
 
+# environment variable name to store a d3m config filepath for startup
+ENV_D3M_CONFIG_FILEPATH = 'ENV_D3M_CONFIG_FILEPATH'
 
 class D3MConfiguration(TimeStampedModel):
     """

@@ -52,8 +52,29 @@ def make_d3m_config():
 
     TestConfigMaker.make_configs()
 
+def load_d3m_config_from_env():
+    """Load docker config file from path specified in the environment variable D3M_CONFIG_FILEPATH. The information in this file becomes the default D3MConfiguration object. If D3M_CONFIG_FILEPATH doesn't exist, display error message and keep running."""
+    from django.core import management
+    from tworaven_apps.configurations.models_d3m import ENV_D3M_CONFIG_FILEPATH
+
+    config_file = os.environ.get(ENV_D3M_CONFIG_FILEPATH, None)
+    if not config_file:
+        print('Environment variable %s not set.' % ENV_D3M_CONFIG_FILEPATH)
+        return
+
+    config_file = config_file.strip()
+    if not os.path.isfile(config_file):
+        print('This config file is not reachable: %s' % config_file)
+        return
+
+    try:
+        management.call_command('load_config', config_file)
+    except management.base.CommandError as err_obj:
+        print('> Failed to load D3M config.\n%s' % err_obj)
+
+
 def load_d3m_config(config_file):
-    """Load D3M config file, saving it as D3MConfiguration object.  Pass the config file path: fab load_d3m_config:(path to config file)"""
+    """Load D3M config file, saving it as the default D3MConfiguration object.  Pass the config file path: fab load_d3m_config:(path to config file)"""
     from django.core import management
 
     try:
@@ -95,6 +116,12 @@ def run_with_rook():
     run(with_rook=True)
 
 
+def run_ta2_test_server():
+    """Run an external server on 50051 to return gRPC TA2TA3 api calls"""
+
+    run_cmd = 'cd tworaven_apps/ta2_interfaces; python test_server.py'
+    local(run_cmd)
+
 def run(with_rook=False):
     """Run the django dev server and webpack--webpack watches the assets directory and rebuilds when appTwoRavens changes
 
@@ -106,10 +133,7 @@ def run(with_rook=False):
 
     commands = [
         # start webpack
-        #'./node_modules/.bin/webpack --watch'
         'npm start',
-        #'python manage.py runserver 8080'
-        #'celery -A firmament worker --loglevel=info -B'
     ]
 
     if with_rook:

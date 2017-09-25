@@ -14,15 +14,18 @@ services:
       - tworavens
       - rook-service
     volumes:
-      - ./data:/raven_volume
+      - ./ravens_volume:/ravens_volume
   rook-service:
     build:
       context: ./
       dockerfile: Dockerfile-rook
+    environment:
+      # Note: this variable is also set in Dockerfile-rook
+      - ROOK_USE_PRODUCTION_MODE=yes
     ports:
       - 8000
     volumes:
-      - ./data:/raven_volume
+      - ./ravens_volume:/ravens_volume
   tworavens:
     build:
       context: ./
@@ -30,11 +33,13 @@ services:
     environment:
       # Example of specifying a TA2 service
       - TA2_TEST_SERVER_URL=rprasad2r.local:50051
+      #- ENV_D3M_CONFIG_FILEPATH=/ravens_volume/config_o_4550seed.json
+      - ENV_D3M_CONFIG_FILEPATH=/ravens_volume/config_o_196seed.json
     links:
       - rook-service
     ports:
-      # 50051 is for gRPC communication
+      # 8080: web service; 50051: gRPC communication
       - 8080
       - 50051:50051
     volumes:
-      - ./data:/raven_volume
+      - ./ravens_volume:/ravens_volume

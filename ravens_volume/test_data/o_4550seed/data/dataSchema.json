@@ -1,0 +1,437 @@
+{
+    "datasetId": "o_4550_dataset",
+    "descriptionFile": "dataDescription.txt",
+    "rawData": false,
+    "redacted": true,
+    "testData": {
+        "numSamples": 215
+    },
+    "testDataSchemaMirrorsTrainDataSchema": true,
+    "trainData": {
+        "numSamples": 865,
+        "trainData": [
+            {
+                "varName": "d3mIndex",
+                "varRole": "index",
+                "varType": "integer"
+            },
+            {
+                "varName": "MouseID",
+                "varRole": "attribute",
+                "varType": "categorical"
+            },
+            {
+                "varName": "DYRK1A_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "ITSN1_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "BDNF_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "NR1_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "NR2A_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "pAKT_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "pBRAF_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "pCAMKII_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "pCREB_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "pELK_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "pERK_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "pJNK_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "PKCA_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "pMEK_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "pNR1_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "pNR2A_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "pNR2B_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "pPKCAB_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "pRSK_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "AKT_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "BRAF_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "CAMKII_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "CREB_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "ELK_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "ERK_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "GSK3B_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "JNK_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "MEK_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "TRKA_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "RSK_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "APP_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "Bcatenin_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "SOD1_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "MTOR_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "P38_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "pMTOR_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "DSCR1_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "AMPKA_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "NR2B_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "pNUMB_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "RAPTOR_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "TIAM1_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "pP70S6_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "NUMB_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "P70S6_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "pGSK3B_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "pPKCG_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "CDK5_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "S6_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "ADARB1_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "AcetylH3K9_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "RRP1_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "BAX_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "ARC_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "ERBB4_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "nNOS_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "Tau_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "GFAP_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "GluR3_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "GluR4_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "IL1B_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "P3525_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "pCASP9_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "PSD95_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "SNCA_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "Ubiquitin_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "pGSK3B_Tyr216_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "SHH_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "BAD_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "BCL2_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "pS6_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "pCFOS_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "SYP_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "H3AcK18_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "EGR1_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "H3MeK4_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "CaNA_N",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "Genotype",
+                "varRole": "attribute",
+                "varType": "categorical"
+            },
+            {
+                "varName": "Treatment",
+                "varRole": "attribute",
+                "varType": "categorical"
+            },
+            {
+                "varName": "Behavior",
+                "varRole": "attribute",
+                "varType": "categorical"
+            }
+        ],
+        "trainTargets": [
+            {
+                "varName": "d3mIndex",
+                "varRole": "index",
+                "varType": "integer"
+            },
+            {
+                "varName": "class",
+                "varRole": "target",
+                "varType": "categorical"
+            }
+        ]
+    }
+}

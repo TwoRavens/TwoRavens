@@ -67,13 +67,22 @@ class Command(BaseCommand):
             # Are the paths valid?
             #
             if not d3m_config.are_d3m_paths_valid():
-                bad_paths = '\n'.join(d3m_config.get_bad_paths())
-                raise CommandError(('The config file "%s" contained at least'
-                                    ' one invalid path:\n%s') % \
-                                    (config_file, bad_paths))
+                bad_paths = d3m_config.get_bad_paths()
+                bad_path_list = '\n'.join(bad_paths)
+                if len(bad_paths) == 1:
+                    path_note = 'an invalid path'
+                else:
+                    path_note = '%d invalid paths' % len(bad_paths)
+                self.stdout.write(\
+                    self.style.WARNING(\
+                        ('WARNING. The config file "%s" contained %s:'
+                         '\n\n%s'
+                         '\n\nThese paths may be on an external volume'
+                         ' which is not yet accessible.\n') % \
+                        (config_file, path_note, bad_path_list)))
 
             # It worked!!
             #
             self.stdout.write(\
-                self.style.SUCCESS('Successfully loaded new D3M configuration:'
-                                   ' "%s"' % d3m_config))
+                self.style.SUCCESS(('Successfully loaded new D3M configuration:'
+                                   ' "%s"') % d3m_config))
