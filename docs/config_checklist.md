@@ -1,7 +1,6 @@
-
 This document lists/describes the configurations needed to deploy the TwoRavens application as 3 containers:
 
-Quick Description of containers
+Quick Description of containers as specified in docker-compose.yml
 
 1. **tworavens**
   - UI and middleware
