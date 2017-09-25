@@ -11,8 +11,9 @@ library(XML)
 
 preprocess<-function(hostname=NULL, fileid=NULL, testdata=NULL, types=NULL, filename=NULL){
     
-  config=jsonlite::fromJSON("config.json")  
-  metadataurl=config$metadata
+  #config=jsonlite::fromJSON("config.json")  
+  #metadataurl=config$metadata
+  metadataurl=NULL
   
   
   histlimit<-13
