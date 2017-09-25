@@ -2,6 +2,51 @@
 
 (This documentation is currently informal/being built during development.)
 
+Contents:
+ - [Saving webpack js/css files for deployment](#saving-webpack-jscss-files-for-deployment)
+ - [Loading D3M config information](#loading-d3m-config-information)
+ - _incomplete_ [Add gRPC request type](#add-grpc-request-type)
+ - [Adding a new rook app: django](#adding-a-new-rook-app-django)
+
+## Saving webpack js/css files for deployment
+
+Webpack files in the build directory are excluded from github.  
+  - **dev environment**: The `fab run` command generates new webpack build files and serves the via the django dev server
+    - build files: `/assets/build/`
+      - deleted and rebuilt with each `fab run`
+  - **deploy environ**: Uses webpack dist files.  
+    - dist files: `/assets/dist/`
+    - specified in `/tworavensproject/settings/dev_container2.py`
+
+        ```python
+        WEBPACK_LOADER['DEFAULT'].update(\
+            dict(BUNDLE_DIR_NAME='dist/',
+                 STATS_FILE=join(BASE_DIR, 'webpack-stats-prod.json'))\
+            )
+        ```
+
+### Create/Save new dist files
+
+To generate webpack files (js/css) for distribution:
+  - open a Terminal
+  - cd into the TwoRavens directory
+  - run `workon 2ravens`
+  - run `fab webpack_prod`
+
+If the mithril app has changed, you should see updated 3 files which will look something like this:
+
+- `git status`
+
+    ```
+    webpack-stats-prod.json
+    assets/dist/tworavens_app-b0db507a31aa89b186b6.js
+    assets/dist/tworavens_styles-b0db507a31aa89b186b6.css
+    ```
+
+The first one, `webpack-stats-prod.json` will be modified, the other two will be new--unless the mithril app files haven't changed.
+
+- Add these 3 files to your github branch
+
 ## Loading D3M config information
 
 D3M config information may be saved in the Django layer and be made available to app.js via API endpoints.
