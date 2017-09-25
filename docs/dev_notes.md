@@ -16,7 +16,7 @@ Webpack files in the build directory are excluded from github.
       - deleted and rebuilt with each `fab run`
   - **deploy environ**: Uses webpack dist files.  
     - dist files: `/assets/dist/`
-    - specified in `/tworavensproject/settings/dev_container2.py`
+    - these settings use the `dist` directory (src: `/tworavensproject/settings/dev_container2.py`)
 
         ```python
         WEBPACK_LOADER['DEFAULT'].update(\
