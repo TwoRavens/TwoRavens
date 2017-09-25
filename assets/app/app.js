@@ -756,7 +756,7 @@ function layout(v,v2) {
     links = [];
 
     svg.append("svg:defs").append("svg:marker")
-        .attr("id", "group-arrow")
+        .attr("id", "group1-arrow")
         .attr('viewBox', '0 -5 15 15')
         .attr("refX", 2.5)
         .attr("refY", 0)
@@ -767,16 +767,29 @@ function layout(v,v2) {
         .attr('d', 'M0,-5L10,0L0,5')
         .style("fill", gr1Color);
 
+    svg.append("svg:defs").append("svg:marker")
+        .attr("id", "group2-arrow")
+        .attr('viewBox', '0 -5 15 15')
+        .attr("refX", 2.5)
+        .attr("refY", 0)
+        .attr("markerWidth", 3)
+        .attr("markerHeight", 3)
+        .attr("orient", "auto")
+        .append("path")
+        .attr('d', 'M0,-5L10,0L0,5')
+        .style("fill", gr2Color);
+
     var line = svg.append("line")
         .style('fill', 'none')
         .style('stroke', gr1Color)
         .style('stroke-width', 5)
-        .attr("marker-end", "url(#group-arrow)");
+        .attr("marker-end", "url(#group1-arrow)");
 
     var line2 = svg.append("line")
         .style('fill', 'none')
         .style('stroke', gr2Color)
-        .style('stroke-width', 5);
+        .style('stroke-width', 5)
+        .attr("marker-end", "url(#group2-arrow)");;
 
     var visbackground = d3.select("#whitespace").append("svg")
         .attr("width", width)
@@ -1002,6 +1015,7 @@ function layout(v,v2) {
         // note, d3.geom.hull returns null if shorter coordinate set than 3,
         // so findcoords() function has option to lengthen the coordinates returned to bypass this
         if(gr1coords.length > 2){
+            line.style("opacity", 1);
             visbackground.style("opacity", 1);
             vis.style("opacity", 0.3);
             var myhull = d3.geom.hull(gr1coords);
@@ -1065,6 +1079,7 @@ function layout(v,v2) {
         };
 
         if(gr2coords.length > 2){
+            line2.style("opacity", 1);
             vis2background.style("opacity", 1);
             vis2.style("opacity", 0.3);
             var myhull = d3.geom.hull(gr2coords);
