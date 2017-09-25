@@ -310,16 +310,10 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
            d3mRootPath = d3mRootPath.replace(/\/data/,'');
            d3mDataName = configurations.name;
            d3mData = configurations.training_data_root+"/trainData.csv";
-           d3mTarget = result.training_data_root+"/trainTargets.csv";
-           d3mPS = configurations.problem_schema;
-           d3mDS = configurations.dataset_schema;
+           d3mTarget = configurations.training_data_root+"/trainTargets.csv";
+           d3mPS = configurations.problem_schema_url;
+           d3mDS = configurations.dataset_schema_url;
            
-           // doing this for now, assuming everything after TwoRavens is readable
-           d3mPS = d3mPS.split("TwoRavens/").pop();
-           d3mDS = d3mDS.split("TwoRavens/").pop();
-           d3mTarget = d3mTarget.split("TwoRavens/").pop();
-           d3mData = d3mData.split("TwoRavens/").pop();
-           d3mRootPath = d3mRootPath.split("TwoRavens/").pop();
            pURL='rook-custom/rook-files/'+d3mDataName+'/preprocess/preprocess.json';    
            d3mPreprocess=pURL;
            zparams.zd3mdata = d3mData;
@@ -429,12 +423,16 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
             d3.json(d3mPS, (_, data) => {
                 console.log("prob schema data: ", data);
                 mytarget = data.target.field;
+                
+                    //This adds a ink to problemDescription.txt in the ticker
+                /*
                 let aTag = document.createElement('a');
                 aTag.setAttribute('href', `${d3mRootPath}/${data.descriptionFile}`);
                 aTag.setAttribute('id', "probdesc");
                 aTag.setAttribute('target', "_blank");
                 aTag.textContent = "Problem Description";
                 document.getElementById("ticker").appendChild(aTag);
+                 */
 
                 if(data.taskType in d3mTaskType) {
                     d3mProblemDescription.taskType = data.taskType;//[d3mTaskType[data.taskType][2],d3mTaskType[data.taskType][1]]; console.log(d3mProblemDescription);
@@ -498,7 +496,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
                                 
                 function ssFail(btn) {
                     alert("StartSession has failed.");
-                    resolve();
+                    reject();
                 }
                                 
                 makeCorsRequest(urlcall, "nobutton", ssSuccess, ssFail, solajsonout);
