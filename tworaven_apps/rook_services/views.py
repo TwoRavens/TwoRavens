@@ -65,8 +65,9 @@ def view_rook_route(request, app_name_in_url):
                           data=app_data)
     except ConnectionError:
         err_msg = 'R Server not responding: %s' % rook_app_url
-        call_capture.add_error_message(err_msg)
-        call_capture.save()
+        if rook_app_info.record_this_call():
+            call_capture.add_error_message(err_msg)
+            call_capture.save()
         resp_dict = dict(message=err_msg)
         return JsonResponse(resp_dict)
 

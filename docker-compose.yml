@@ -13,12 +13,16 @@ services:
     depends_on:
       - tworavens
       - rook-service
+    volumes:
+      - ./data:/raven_volume
   rook-service:
     build:
       context: ./
       dockerfile: Dockerfile-rook
     ports:
       - 8000
+    volumes:
+      - ./data:/raven_volume
   tworavens:
     build:
       context: ./
@@ -29,6 +33,8 @@ services:
     links:
       - rook-service
     ports:
+      # 50051 is for gRPC communication
       - 8080
       - 50051:50051
-      # 50051 is for gRPC communication
+    volumes:
+      - ./data:/raven_volume
