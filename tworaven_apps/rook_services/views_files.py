@@ -55,6 +55,7 @@ def view_rook_file_passthrough(request):
     except urllib.error.HTTPError as ex_obj:
         err_msg = ('Failed to download rook file.'
                    ' HTTPError: %s \n\nurl: %s') % (str(ex_obj), rook_file_url)
+        raise Http404('file not found: %s' % rook_file_url)
         return JsonResponse(dict(status=False,
                                  error_message=err_msg))
     except urllib.error.URLError as ex_obj:
