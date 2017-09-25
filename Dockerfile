@@ -36,7 +36,7 @@ COPY . /var/webapps/TwoRavens
 WORKDIR /var/webapps/TwoRavens
 
 # Install requirements
-RUN pip3 install --no-cache-dir -r requirements/dev.txt && \
+RUN pip3 install --no-cache-dir -r requirements/prod.txt && \
     fab init_db && \
     fab create_django_superuser && \
     fab load_docker_ui_config
@@ -46,7 +46,10 @@ EXPOSE 8080 50051
 WORKDIR /var/webapps/TwoRavens
 
 # Run dev server
-CMD fab init_db && python manage.py runserver 0.0.0.0:8080
+CMD fab init_db && \
+    gunicorn --workers=2 tworavensproject.wsgi_dev_container -b 0.0.0.0:8080
+
+#CMD fab init_db && python manage.py runserver 0.0.0.0:8080
 
 
 # -----------------------------------------
@@ -56,10 +59,10 @@ CMD fab init_db && python manage.py runserver 0.0.0.0:8080
 # >docker build -t ravens1 .
 #
 # shell access:
-# >docker run -ti  -p 8080:8080 ravens1 /usr/bin/bash
+# >docker run -ti  -p 8080:8080 -p 50051:50051 ravens1 /usr/bin/bash
 #
 # run app
-# >docker run -p 8080:8080 ravens1
+# >docker run -p 8080:8080 -p 50051:50051 ravens1
 # go to: http://0.0.0.0:8080
 #
 # - Potentially switch to a python 3.5 base image
