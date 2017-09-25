@@ -516,94 +516,97 @@ let fillThis = (self, op, d1, d2) => $fill(self, op, d1, d2);
 
 // scaffolding is called after all external data are guaranteed to have been read to completion. this populates the left panel with variable names, the right panel with model names, the transformation tool, an the associated mouseovers. its callback is layout(), which initializes the modeling space
 function scaffolding(callback) {
-    // establishing the transformation element
-    d3.select("#transformations")
-        .append("input")
-        .attr("id", "tInput")
-        .attr("class", "form-control")
-        .attr("type", "text")
-        .attr("value", "Variable transformation");
 
-    // variable dropdown
-    d3.select("#transformations")
-        .append("ul")
-        .attr("id", "transSel")
-        .style("display", "none")
-        .style("background-color", varColor)
-        .selectAll('li')
-        .data(["a", "b"]) //set to variables in model space as they're added
-        .enter()
-        .append("li")
-        .text(d => d);
+    if(!d3m_mode){    // No variable transformation in present d3m mode
+        // establishing the transformation element
+        d3.select("#transformations")
+            .append("input")
+            .attr("id", "tInput")
+            .attr("class", "form-control")
+            .attr("type", "text")
+            .attr("value", "Variable transformation");
 
-    // function dropdown
-    d3.select("#transformations")
-        .append("ul")
-        .attr("id", "transList")
-        .style("display", "none")
-        .style("background-color", varColor)
-        .selectAll('li')
-        .data(transformList)
-        .enter()
-        .append("li")
-        .text(d => d);
+        // variable dropdown
+        d3.select("#transformations")
+            .append("ul")
+            .attr("id", "transSel")
+            .style("display", "none")
+            .style("background-color", varColor)
+            .selectAll('li')
+            .data(["a", "b"]) //set to variables in model space as they're added
+            .enter()
+            .append("li")
+            .text(d => d);
 
-    $('#tInput').click(() => {
-        var t = byId('transSel').style.display;
-        if (t !== "none") { // if variable list is displayed when input is clicked...
-            $('#transSel').fadeOut(100);
-            return false;
-        }
-        var t1 = byId('transList').style.display;
-        if (t1 !== "none") { // if function list is displayed when input is clicked...
-            $('#transList').fadeOut(100);
-            return false;
-        }
+        // function dropdown
+        d3.select("#transformations")
+            .append("ul")
+            .attr("id", "transList")
+            .style("display", "none")
+            .style("background-color", varColor)
+            .selectAll('li')
+            .data(transformList)
+            .enter()
+            .append("li")
+            .text(d => d);
 
-        // highlight the text
-        $(this).select();
-        var pos = $('#tInput').offset();
-        pos.top += $('#tInput').width();
-        $('#transSel').fadeIn(100);
-        return false;
-    });
+        $('#tInput').click(() => {
+            var t = byId('transSel').style.display;
+            if (t !== "none") { // if variable list is displayed when input is clicked...
+                $('#transSel').fadeOut(100);
+                return false;
+            }
+            var t1 = byId('transList').style.display;
+            if (t1 !== "none") { // if function list is displayed when input is clicked...
+                $('#transList').fadeOut(100);
+                return false;
+            }
 
-    var n;
-    $('#tInput').keyup(evt => {
-        var t = byId('transSel').style.display;
-        var t1 = byId('transList').style.display;
-        if (t != "none") $('#transSel').fadeOut(100);
-        else if (t1 != "none") $('#transList').fadeOut(100);
-
-        if (evt.keyCode == 13) { // keyup on Enter
-            n = $('#tInput').val();
-            var t = transParse(n=n);
-            if (!t)
-                return;
-            transform(n = t.slice(0, t.length - 1), t = t[t.length - 1], typeTransform = false);
-        }
-    });
-
-    var t;
-    $('#transList li').click(function(evt){
-        // if interact is selected, show variable list again
-        if ($(this).text() == "interact(d,e)") {
-            $('#tInput').val(tvar.concat('*'));
-            selInteract = true;
-            $(this).parent().fandeOut(100);
+            // highlight the text
+            $(this).select();
+            var pos = $('#tInput').offset();
+            pos.top += $('#tInput').width();
             $('#transSel').fadeIn(100);
-            evt.stopPropagation();
-            return;
-        }
+            return false;
+        });
 
-        var tvar = $('#tInput').val();
-        var tfunc = $(this).text().replace("d", "_transvar0");
-        var tcall = $(this).text().replace("d", tvar);
-        $('#tInput').val(tcall);
-        $(this).parent().fadeOut(100);
-        evt.stopPropagation();
-        transform(n = tvar, t = tfunc, typeTransform = false);
-    });
+        var n;
+        $('#tInput').keyup(evt => {
+            var t = byId('transSel').style.display;
+            var t1 = byId('transList').style.display;
+            if (t != "none") $('#transSel').fadeOut(100);
+            else if (t1 != "none") $('#transList').fadeOut(100);
+
+            if (evt.keyCode == 13) { // keyup on Enter
+                n = $('#tInput').val();
+                var t = transParse(n=n);
+                if (!t)
+                    return;
+                transform(n = t.slice(0, t.length - 1), t = t[t.length - 1], typeTransform = false);
+            }
+        });
+
+        var t;
+        $('#transList li').click(function(evt){
+            // if interact is selected, show variable list again
+            if ($(this).text() == "interact(d,e)") {
+                $('#tInput').val(tvar.concat('*'));
+                selInteract = true;
+                $(this).parent().fandeOut(100);
+                $('#transSel').fadeIn(100);
+                evt.stopPropagation();
+                return;
+            }
+
+            var tvar = $('#tInput').val();
+            var tfunc = $(this).text().replace("d", "_transvar0");
+            var tcall = $(this).text().replace("d", tvar);
+            $('#tInput').val(tcall);
+            $(this).parent().fadeOut(100);
+            evt.stopPropagation();
+            transform(n = tvar, t = tfunc, typeTransform = false);
+        });
+    };
 
     d3.select("#models")
         .style('height', 2000)
