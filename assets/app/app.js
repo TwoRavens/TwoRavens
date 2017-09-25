@@ -124,7 +124,7 @@ f1Macro:["description", "F1_MACRO" , 4],
 rocAuc:["description", "ROC_AUC" , 5],
 rocAucMicro:["description", "ROC_AUC_MICRO" , 6],
 rocAucMacro:["description", "ROC_AUC_MACRO" , 7],
-meanSquaredError:["description", "MEAN_SQUARED_ERROR", 8],
+//meanSquaredError:["description", "MEAN_SQUARED_ERROR", 8],
 rootMeanSquaredError:["description", "ROOT_MEAN_SQUARED_ERROR" , 8],
 rootMeanSquaredErrorAvg:["description", "ROOT_MEAN_SQUARED_ERROR_AVG" , 9],
 meanAbsoluteError:["description", "MEAN_ABSOLUTE_ERROR" , 10],
@@ -3066,7 +3066,7 @@ export function executepipeline() {
     zparams.callHistory = callHistory;
     let jsonout = JSON.stringify(zparams);
     
-    let features = apiFeature(zparams.zvars,"some uri");
+    let features = apiFeature(zparams.zvars,"<<DATA_URI>>");
     let data = [];
     
     //this will just set zparams.zsetx to the mean, which is default for setx plots
