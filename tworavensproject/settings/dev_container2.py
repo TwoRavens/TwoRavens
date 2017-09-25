@@ -5,6 +5,7 @@ import os
 R_DEV_SERVER_BASE = os.environ.get('R_DEV_SERVER_BASE',
                                    'http://0.0.0.0:8000/custom/')
 
+TEST_DIRECT_STATIC = STATIC_ROOT
 
 WEBPACK_LOADER['DEFAULT'].update(\
     dict(BUNDLE_DIR_NAME='dist/',

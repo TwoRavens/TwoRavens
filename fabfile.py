@@ -228,6 +228,9 @@ def create_django_superuser():
     print('password: "%s"' % admin_pw)
 
 
+def collect_static():
+    """Run the Django collectstatic command"""
+    local('python manage.py collectstatic --noinput')
 
 def init_db():
     """Run django check and migrate"""

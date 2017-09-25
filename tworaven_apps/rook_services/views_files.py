@@ -52,9 +52,14 @@ def view_rook_file_passthrough(request):
     # Read the file content into memory (assuming small files in dev)
     try:
         file_content = urllib.request.urlopen(rook_file_url).read()
-    except urllib.error.HTTPError as e:
+    except urllib.error.HTTPError as ex_obj:
         err_msg = ('Failed to download rook file.'
-                   ' HTTPError: %s \n\nurl: %s') % (str(e), rook_file_url)
+                   ' HTTPError: %s \n\nurl: %s') % (str(ex_obj), rook_file_url)
+        return JsonResponse(dict(status=False,
+                                 error_message=err_msg))
+    except urllib.error.URLError as ex_obj:
+        err_msg = ('Failed to download rook file.'
+                   ' URLError: %s \n\nurl: %s') % (str(ex_obj), rook_file_url)
         return JsonResponse(dict(status=False,
                                  error_message=err_msg))
 

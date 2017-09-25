@@ -1,6 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 import os, sys, django
+import socket
 from os.path import abspath, dirname, realpath
 
 proj_dir = dirname(dirname(dirname(realpath(__file__))))
@@ -383,9 +384,13 @@ def main():
         data_ext_pb2_grpc.add_DataExtServicer_to_server(
             DataExt(), server)
         """
+        hostname = socket.gethostname()
+        if not hostname:
+            hostname = '[::]'
         run_port = '50051'
-        print('running on port: %s' % run_port)
-        server.add_insecure_port('[::]:%s' % run_port)
+        hostport = '%s:%s' % (hostname, run_port)
+        print('running on port: %s' % hostport)
+        server.add_insecure_port(hostport)
         server.start()
         while True:
             time.sleep(60)
