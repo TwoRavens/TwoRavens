@@ -1,0 +1,67 @@
+{
+    "datasetId": "o_196_dataset",
+    "descriptionFile": "dataDescription.txt",
+    "rawData": false,
+    "redacted": true,
+    "testData": {
+        "numSamples": 100
+    },
+    "testDataSchemaMirrorsTrainDataSchema": true,
+    "trainData": {
+        "numSamples": 298,
+        "trainData": [
+            {
+                "varName": "d3mIndex",
+                "varRole": "index",
+                "varType": "integer"
+            },
+            {
+                "varName": "cylinders",
+                "varRole": "attribute",
+                "varType": "categorical"
+            },
+            {
+                "varName": "displacement",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "horsepower",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "weight",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "acceleration",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "model",
+                "varRole": "attribute",
+                "varType": "categorical"
+            },
+            {
+                "varName": "origin",
+                "varRole": "attribute",
+                "varType": "categorical"
+            }
+        ],
+        "trainTargets": [
+            {
+                "varName": "d3mIndex",
+                "varRole": "index",
+                "varType": "integer"
+            },
+            {
+                "varName": "class",
+                "varRole": "target",
+                "varType": "float"
+            }
+        ]
+    }
+}
