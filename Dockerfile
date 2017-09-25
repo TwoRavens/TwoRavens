@@ -10,6 +10,8 @@ LABEL organization="Two Ravens" \
 #    apt-get upgrade -y  && \
 RUN apt-get update && \
     apt-get install -y \
+    iputils-ping \
+    telnet \
     python3-pip \
     sqlite3 \
     vim && \
@@ -59,11 +61,17 @@ CMD fab init_db && \
 # >docker build -t ravens1 .
 #
 # shell access:
-# >docker run -ti  -p 8080:8080 -p 50051:50051 ravens1 /usr/bin/bash
+# >docker run -ti --rm -p 8080:8080 -p 50051:50051 ravens1 /bin/bash
 #
 # run app
 # >docker run -p 8080:8080 -p 50051:50051 ravens1
 # go to: http://0.0.0.0:8080
+#
+# >run app with custom environment variable
+# docker run -p 8080:8080 -p 50051:50051 -e TA2_TEST_SERVER_URL=rprasad2r.local:50051 ravens1
+#
+# > log into running app
+# docker exec -it [container name] /bin/bash
 #
 # - Potentially switch to a python 3.5 base image
 # -----------------------------------------
