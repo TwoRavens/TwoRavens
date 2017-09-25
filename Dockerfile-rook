@@ -12,7 +12,7 @@ LABEL organization="Two Ravens" \
 #     and assets, be more selective
 # -------------------------------------
 RUN mkdir -p /var/webapps/TwoRavens && \
-    mkdir -p /raven_volume
+    mkdir -p /ravens_volume
 
 # Copy over the repository
 COPY . /var/webapps/TwoRavens
@@ -20,7 +20,7 @@ COPY . /var/webapps/TwoRavens
 # -------------------------------------
 # Create a volume for outside info
 # -------------------------------------
-VOLUME /raven_volume
+VOLUME /ravens_volume
 
 # -------------------------------------
 # Expose port for the web (rook)

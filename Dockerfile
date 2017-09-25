@@ -39,12 +39,12 @@ ENV TA2_TEST_SERVER_URL=localhost:50051
 #   - future: ignore the rook directory, be more selective
 # -------------------------------------
 RUN mkdir -p /var/webapps/TwoRavens && \
-    mkdir -p /raven_volume
+    mkdir -p /ravens_volume
 
 # -------------------------------------
 # Create a volume for outside info
 # -------------------------------------
-VOLUME /raven_volume
+VOLUME /ravens_volume
 
 
 # Copy over the repository
@@ -77,6 +77,7 @@ EXPOSE 8080 50051
 # -------------------------------------
 CMD fab init_db && \
     fab collect_static && \
+    fab load_d3m_config_from_env && \
     gunicorn --workers=2 tworavensproject.wsgi_dev_container -b 0.0.0.0:8080
 
 # Run with the python server

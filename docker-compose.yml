@@ -14,7 +14,7 @@ services:
       - tworavens
       - rook-service
     volumes:
-      - ./data:/raven_volume
+      - ./ravens_volume:/ravens_volume
   rook-service:
     build:
       context: ./
@@ -22,7 +22,7 @@ services:
     ports:
       - 8000
     volumes:
-      - ./data:/raven_volume
+      - ./ravens_volume:/ravens_volume
   tworavens:
     build:
       context: ./
@@ -30,6 +30,7 @@ services:
     environment:
       # Example of specifying a TA2 service
       - TA2_TEST_SERVER_URL=rprasad2r.local:50051
+      - ENV_D3M_CONFIG_FILEPATH=ravens_volume/config_o_196seed.json
     links:
       - rook-service
     ports:
@@ -37,4 +38,4 @@ services:
       - 8080
       - 50051:50051
     volumes:
-      - ./data:/raven_volume
+      - ./ravens_volume:/ravens_volume
