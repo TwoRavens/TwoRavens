@@ -23,6 +23,9 @@ services:
     build:
       context: ./
       dockerfile: Dockerfile
+    environment:
+      # Example of specifying a TA2 service
+      - TA2_TEST_SERVER_URL=rprasad2r.local:50051
     links:
       - rook-service
     ports:

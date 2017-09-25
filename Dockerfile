@@ -25,7 +25,7 @@ ENV DJANGO_SETTINGS_MODULE=tworavensproject.settings.dev_container2
 #
 ENV R_DEV_SERVER_BASE=http://rook-service:8000/custom/
 
-# TA2_TEST_SERVER_URL is a bit problematic right now
+# TA2_TEST_SERVER_URL should be overridden in docker-compose
 #
 ENV TA2_TEST_SERVER_URL=localhost:50051
 
