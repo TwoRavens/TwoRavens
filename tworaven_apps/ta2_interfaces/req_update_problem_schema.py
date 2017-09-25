@@ -3,6 +3,7 @@ Code based on sample by Matthias Grabmair
     - https://gitlab.datadrivendiscovery.org/mgrabmair/ta3ta2-proxy
 """
 import json
+from collections import OrderedDict
 
 from django.conf import settings
 from google.protobuf.json_format import MessageToJson,\
@@ -44,7 +45,7 @@ def update_problem_schema(info_str=None):
     # Convert info string to dict
     # --------------------------------
     try:
-        info_dict = json.loads(info_str)
+        info_dict = json.loads(info_str, object_pairs_hook=OrderedDict)
     except json.decoder.JSONDecodeError as err_obj:
         err_msg = 'Failed to convert UI Str to JSON: %s' % (err_obj)
         return get_failed_precondition_response(err_msg)
