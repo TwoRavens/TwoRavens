@@ -33,11 +33,12 @@ services:
     environment:
       # Example of specifying a TA2 service
       - TA2_TEST_SERVER_URL=rprasad2r.local:50051
-      - ENV_D3M_CONFIG_FILEPATH=ravens_volume/config_o_196seed.json
+      #- ENV_D3M_CONFIG_FILEPATH=/ravens_volume/config_o_4550seed.json
+      - ENV_D3M_CONFIG_FILEPATH=/ravens_volume/config_o_196seed.json
     links:
       - rook-service
     ports:
-      # 50051 is for gRPC communication
+      # 8080: web service; 50051: gRPC communication
       - 8080
       - 50051:50051
     volumes:

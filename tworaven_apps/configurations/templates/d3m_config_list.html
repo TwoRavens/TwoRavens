@@ -22,7 +22,9 @@ table.config-list tr td {
       <div class="panel panel-default">
         <div class="panel-heading">default or "latest" config url</div>
         <div class="panel-body">
-
+          {% if not configs %}<span class="btn btn-danger">
+          No D3M Configurations in the Database.  The links below will NOT work</span>
+          {% endif %}
         <ul>
           <li>The urls below retrieve the D3M config info listed in the database as the "Default"</li>
           <li>If a default doesn't exist, the urls check for the last modified D3M config.</li>
@@ -140,8 +142,11 @@ table.config-list tr td {
           </tr>
           {% empty %}
           <tr>
-            <td class="text-left" colspan="2">No config information available!
-              <br />(try ">fab make_d3m_config")</td>
+            <td class="text-left" colspan="2">
+              <span class="btn btn-danger">
+              No D3M Configurations in the Database!
+              </span>
+              <br />(try ><code>fab make_d3m_config</code>)</td>
           </tr>
           {% endfor %}
         </tbody>
