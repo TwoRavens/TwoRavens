@@ -170,10 +170,36 @@ def pipeline_results_parse():
     json_parse(content, core_pb2.PipelineListResult)
     print('-' * 40)
 
+def execute_pipeline_parse():
+    """...PipelineExecuteRequest"""
 
+    req = core_pb2.PipelineExecuteRequest()
+    req.context.session_id = 'session_01'
+
+    req.pipeline_id = 'pipeline_01'
+
+    feature_names = ('cylinders displacement horsepower'
+                     ' weight acceleration model class').split()
+
+    for feature_name in feature_names:
+        req.predict_features.add(feature_id=feature_name,
+                                 data_uri='<<DATA_URI>>')
+
+    content = MessageToJson(req)
+    print('JSON:\n')
+    print(content)
+    print('-' * 40)
+    #content = content.replace('pipelineIds', 'pipeline_ids').replace('sessionId', 'session_id')
+    print(content)
+
+    print('-' * 40)
+    print('gRPC:\n')
+    json_parse(content, core_pb2.PipelineExecuteRequest)
+    print('-' * 40)
 
 if __name__ == '__main__':
-    pipeline_results_parse()
+    execute_pipeline_parse()
+    #pipeline_results_parse()
     #pipline_list_parse()
     #pipeline_exec_result()
     #pipeline_execute_parse()

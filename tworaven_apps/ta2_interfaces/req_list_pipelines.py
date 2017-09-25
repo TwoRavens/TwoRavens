@@ -1,4 +1,5 @@
 import json
+from collections import OrderedDict
 
 from django.conf import settings
 from google.protobuf.json_format import MessageToJson,\
@@ -26,7 +27,7 @@ def list_pipelines(info_str=None):
     # Is this valid JSON?
     # --------------------------------
     try:
-        info_dict = json.loads(info_str)
+        info_dict = json.loads(info_str, object_pairs_hook=OrderedDict)
     except json.decoder.JSONDecodeError as err_obj:
         err_msg = 'Failed to convert UI Str to JSON: %s' % (err_obj)
         return get_failed_precondition_response(err_msg)

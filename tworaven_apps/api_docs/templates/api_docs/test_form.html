@@ -18,12 +18,26 @@
 
       // clear prior response
       $('#frmResult').html('Working...');
+      $('#interimData').html('');
+      $('#interimData').hide();
 
       var jqxhr = $.post(request_url,
                         { {{ GRPC_JSON_KEY }} : user_content},
                         function(data) {
 
+                          if (data.hasOwnProperty('data2') ) {
+                              $('#interimData').show();
+                              let interimTitle = '<h3>Formatted JSON before gRPC call</h3>'
+                              $('#interimData').html(interimTitle + formatOutput(data.data2));
+                              delete data.data2;
+                          }
+
+                          if (data.hasOwnProperty('grpcResp') ) {
+                            let grpcTitle = '<h3>gRPC response</h3>'
+                            $('#frmResult').html(grpcTitle + formatOutput(data.grpcResp));
+                          }else{
                             $('#frmResult').html(formatOutput(data));
+                          }
                             //alert(JSON.stringify(data));
                           })
                           .done(function() {
@@ -121,6 +135,8 @@ TA2_TEST_SERVER_URL = '{{ TA2_TEST_SERVER_URL }}'</pre>
       <h3>result</h3>
       <hr />
 
+      <div id="interimData">
+      </div>
       <div id="frmResult">
       </div>
   </div>

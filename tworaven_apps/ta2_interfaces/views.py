@@ -1,8 +1,6 @@
 import json
-from django.conf import settings
 from django.shortcuts import render
-from django.views.decorators.http import require_POST, require_GET
-from django.http import JsonResponse, HttpResponse, Http404
+from django.http import JsonResponse    #, HttpResponse, Http404
 from django.views.decorators.csrf import csrf_exempt
 from tworaven_apps.ta2_interfaces.req_start_session import start_session
 from tworaven_apps.ta2_interfaces.req_end_session import end_session
@@ -169,6 +167,7 @@ def view_list_pipelines(request):
     json_dict = json.loads(json_str)
 
     return JsonResponse(json_dict, safe=False)
+
 
 
 @csrf_exempt
