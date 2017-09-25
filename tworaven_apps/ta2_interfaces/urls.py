@@ -1,5 +1,5 @@
 from django.conf.urls import url
-from tworaven_apps.ta2_interfaces import views
+from tworaven_apps.ta2_interfaces import views, view_execute_pipeline
 
 urlpatterns = (
 
@@ -31,6 +31,10 @@ urlpatterns = (
     url(r'^listpipelines/?$',
         views.view_list_pipelines,
         name='ListPipelines'),
+
+    url(r'^executepipeline/?$',
+        view_execute_pipeline.view_execute_pipeline,
+        name='PipelineExecuteRequest'),
 
     url(r'^',
         views.view_test_call,

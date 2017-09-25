@@ -216,7 +216,14 @@ class Core(core_pb2_grpc.CoreServicer):
 
     def ExecutePipeline(self, request, context):
         sessioncontext = request.context
-        assert sessioncontext.session_id in self.sessions
+        if not sessioncontext.session_id in self.sessions:
+            yield core_pb2.PipelineExecuteResult(\
+                response_info=core_pb2.Response(\
+                    status=core_pb2.Status(\
+                     code=core_pb2.FAILED_PRECONDITION,
+                     details="Unknown session id: %s" % sessioncontext.session_id)))
+            return
+
         pipeline_id = request.pipeline_id
 
         logger.info("Got ExecutePipeline request, session=%s",
