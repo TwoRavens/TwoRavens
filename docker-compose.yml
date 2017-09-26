@@ -41,7 +41,7 @@ services:
       - rook-service
     ports:
       # 8080: web service; 50051: gRPC communication
-      - 8080
+      - 8080:8080
       - 50051:50051
     volumes:
       - ./ravens_volume:/ravens_volume
