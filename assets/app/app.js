@@ -520,12 +520,12 @@ let fillThis = (self, op, d1, d2) => $fill(self, op, d1, d2);
 function scaffolding(callback) {
 
     // establishing the transformation element
-    d3.select("#transformations")
-        .append("input")
-        .attr("id", "tInput")
-        .attr("class", "form-control")
-        .attr("type", "text")
-        .attr("value", "Variable transformation");
+//    d3.select("#transformations")
+  //      .append("input")
+   //     .attr("id", "tInput")
+    //    .attr("class", "form-control")
+     //   .attr("type", "text")
+      //  .attr("value", "Variable transformation");
 
     // variable dropdown
     d3.select("#transformations")
@@ -552,7 +552,7 @@ function scaffolding(callback) {
         .text(d => d);
 
     if(!d3m_mode){    // No variable transformation in present d3m mode
-        
+
         $('#tInput').click(() => {
             var t = byId('transSel').style.display;
             if (t !== "none") { // if variable list is displayed when input is clicked...
@@ -1636,24 +1636,26 @@ function layout(v,v2) {
             .append("li")
             .text(d => d);
 
-        $('#transSel li').click(function(evt) {
-            // if 'interaction' is the selected function, don't show the function list again
-            if (selInteract) {
-                var n = $('#tInput').val().concat($(this).text());
-                $('#tInput').val(n);
-                evt.stopPropagation();
-                var t = transParse(n = n);
-                if (!t) return;
-                $(this).parent().fadeOut(100);
-                transform(n = t.slice(0, t.length - 1), t = t[t.length - 1], typeTransform = false);
-                return;
-            }
+        if(!d3m_mode){
+            $('#transSel li').click(function(evt) {
+                // if 'interaction' is the selected function, don't show the function list again
+                if (selInteract) {
+                    var n = $('#tInput').val().concat($(this).text());
+                    $('#tInput').val(n);
+                    evt.stopPropagation();
+                    var t = transParse(n = n);
+                    if (!t) return;
+                    $(this).parent().fadeOut(100);
+                    transform(n = t.slice(0, t.length - 1), t = t[t.length - 1], typeTransform = false);
+                    return;
+                }
 
-            $('#tInput').val($(this).text());
-            $(this).parent().fadeOut(100);
-            $('#transList').fadeIn(100);
-            evt.stopPropagation();
-        });
+                $('#tInput').val($(this).text());
+                $(this).parent().fadeOut(100);
+                $('#transList').fadeIn(100);
+                evt.stopPropagation();
+            });
+        };
 
         // remove old nodes
         circle.exit().remove();
@@ -1770,6 +1772,17 @@ export function forceSwitch() {
         byId('btnForce').setAttribute("class", "btn btn-default");
         fakeClick();
     }
+}
+
+export function helpmaterials(type) {
+    if(type=="video"){
+        var win = window.open("http://2ra.vn/demos/d3mintegrationdemo.mp4", '_blank');
+        win.focus();
+    }else{
+        var win = window.open("http://2ra.vn/papers/tworavens-guide.pdf", '_blank');
+        win.focus();
+    }
+    console.log(type);
 }
 
 export function lockDescription() {
