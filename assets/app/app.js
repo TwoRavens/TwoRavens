@@ -1995,6 +1995,71 @@ export function estimate(btn) {
                     console.log(allPipelineInfo);
                     // to get all pipeline ids: Object.keys(allPipelineInfo)
                     
+                    //////////////////////////
+                   
+                    function tabulate(data, columns, divid) {
+                        var table = d3.select(divid).append('table')
+                        var thead = table.append('thead')
+                        var	tbody = table.append('tbody');
+                        
+                        // append the header row
+                        thead.append('tr')
+                        .selectAll('th')
+                        .data(columns).enter()
+                        .append('th')
+                        .text(function (column) { return column; });
+                        
+                        // create a row for each object in the data
+                        var rows = tbody.selectAll('tr')
+                        .data(data)
+                        .enter()
+                        .append('tr')
+                        .attr('class','item-default');
+                        
+                        // create a cell in each row for each column
+                        var cells = rows.selectAll('td')
+                        .data(function (row) {
+                              return columns.map(function (column) {
+                                                 return {column: column, value: row[column]};
+                                                 });
+                              })
+                        .enter()
+                        .append('td')
+                        .text(function (d) { return d.value; })
+                        .on("click", function() {
+                            let myrow = this.parentElement;
+                            if(myrow.className=="item-select") {
+                                return;
+                            } else {
+                                d3.select(divid).select("tr.item-select")
+                                .attr('class', 'item-default');
+                                d3.select(myrow).attr('class',"item-select");
+                            }});
+        
+                        return table;
+                    }
+                    
+                    let resultstable = [];
+                    for(var key in allPipelineInfo) {
+                        let myid = "";
+                        let mymetric = "";
+                        let myval = "";
+                        let myscores = allPipelineInfo[key].pipelineInfo.scores;
+                        for(var i = 0; i < myscores.length; i++) {
+                            //if(i==0) {myid=key;}
+                             //   else myid="";
+                            myid=key;
+                            mymetric=myscores[i].metric;
+                            myval=+myscores[i].value.toFixed(3);
+                            resultstable.push({"PipelineID":myid,"Metric":mymetric, "Score":myval});
+                        }
+                    }
+                    
+                    // render the table
+                    tabulate(resultstable, ['PipelineID', 'Metric', 'Score'], '#results');
+                    tabulate(resultstable, ['PipelineID', 'Metric', 'Score'], '#setxRight');
+                    /////////////////////////
+                    
                     toggleRightButtons("all");
                     document.getElementById("btnResults").click();
                     
@@ -3049,6 +3114,8 @@ export function listpipelines() {
         console.log(PipelineListResult);
         //hardcoded pipes for now
         let pipes = PipelineListResult.pipelineIds;
+        
+        /*
         pipes.unshift("place");
         console.log(pipes);
         d3.select("#results").selectAll("p")
@@ -3068,6 +3135,8 @@ export function listpipelines() {
             }});
         
         pipes.shift();
+         
+        
         d3.select("#setxRight").selectAll("p")
         .data(pipes)
         .enter()
@@ -3083,6 +3152,7 @@ export function listpipelines() {
             .attr('class', 'item-default');
             d3.select(this).attr('class',"item-select");
             }});
+         */
     }
     
     function listPipesFail(btn) {
@@ -3150,9 +3220,10 @@ export function executepipeline() {
 // this is our call to django to update the problem schema
 // rpc UpdateProblemSchema(UpdateProblemSchemaRequest) returns (Response) {}
 function updateSchema(type, updates, lookup) {
+    let context = apiSession(zparams.zsessionid);
     let ReplaceProblemSchemaField={[type]:lookup[updates[type]][1]};
 //    let valuenum = lookup[updates[type]][2];
-    let UpdateProblemSchemaRequest = {ReplaceProblemSchemaField};
+    let UpdateProblemSchemaRequest = {ReplaceProblemSchemaField,context};
 
     let jsonout = JSON.stringify(UpdateProblemSchemaRequest);
 
