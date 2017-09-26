@@ -1772,6 +1772,17 @@ export function forceSwitch() {
     }
 }
 
+export function helpmaterials(type) {
+    if(type=="video"){
+        var win = window.open("http://2ra.vn/demos/d3mintegrationdemo.mp4", '_blank');
+        win.focus();
+    }else{
+        var win = window.open("http://2ra.vn/papers/tworavens-guide.pdf", '_blank');
+        win.focus();
+    }
+    console.log(type);
+}
+
 export function lockDescription() {
     locktoggle = locktoggle ? false : true;
     let temp;
