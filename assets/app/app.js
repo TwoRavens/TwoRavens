@@ -3165,10 +3165,9 @@ export function listpipelines() {
 // rpc ExecutePipeline(PipelineExecuteRequest) returns (stream PipelineExecuteResult) {}
 export function executepipeline() {
     let context = apiSession(zparams.zsessionid);
-    let pipelineId = document.getElementById('setxRight').querySelector('p.item-select');
-    if(pipelineId == null) {alert("Please select a pipeline to execute on."); return;}
-    pipelineId = pipelineId.innerText;
-    
+    let tablerow = document.getElementById('setxRight').querySelector('tr.item-select');
+    if(tablerow == null) {alert("Please select a pipeline to execute on."); return;}
+    let pipelineId=tablerow.firstChild.innerText;
     
     zPop();
     zparams.callHistory = callHistory;
