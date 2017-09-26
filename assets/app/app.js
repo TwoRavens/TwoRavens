@@ -1968,6 +1968,19 @@ export function estimate(btn) {
                 function sendPipelineSuccess(btn, PipelineCreateResult) {
                     //rpc GetExecutePipelineResults(PipelineExecuteResultsRequest) returns (stream PipelineExecuteResult) {}
                     console.log(PipelineCreateResult);
+                    
+                    
+                    let allPipelineInfo = {};
+                    for (var i = 0; i<PipelineCreateResult.length; i++) {
+                        if(PipelineCreateResult[i].pipelineId in allPipelineInfo) {
+                            allPipelineInfo[PipelineCreateResult[i].pipelineId]=Object.assign(allPipelineInfo[PipelineCreateResult[i].pipelineId],PipelineCreateResult[i]);
+                        } else {
+                            allPipelineInfo[PipelineCreateResult[i].pipelineId]=PipelineCreateResult[i];
+                        }
+                    }
+                    console.log(allPipelineInfo);
+                    // to get all pipeline ids: Object.keys(allPipelineInfo)
+                    
                     toggleRightButtons("all");
                     document.getElementById("btnResults").click();
                     
@@ -1977,7 +1990,7 @@ export function estimate(btn) {
                     
                     // once we know what TA2 does we'll get the pipeline ids from there
                     //let pipelineid = PipelineCreateResult.pipelineid;
-                    let pipeline_ids = ["id1"];
+                    let pipeline_ids = Object.keys(allPipelineInfo);
                     let PipelineExecuteResultsRequest = {context, pipeline_ids};
                     jsonout = JSON.stringify(PipelineExecuteResultsRequest);
                     let urlcall = d3mURL + "/getexecutepipelineresults";
@@ -3005,6 +3018,7 @@ export function endsession() {
 }
 
 //rpc ListPipelines(PipelineListRequest) returns (PipelineListResult) {}
+// pipes is an array of pipeline IDs
 export function listpipelines() {
     let context = apiSession(zparams.zsessionid);
     let PipeLineListRequest={context};
@@ -3020,7 +3034,9 @@ export function listpipelines() {
     function listPipesSuccess(btn, PipelineListResult) {
         console.log(PipelineListResult);
         //hardcoded pipes for now
-        let pipes = ["","id1", "id2", "id3", "id4", "id5"]
+        let pipes = PipelineListResult.pipelineIds;
+        pipes.unshift("place");
+        console.log(pipes);
         d3.select("#results").selectAll("p")
         .data(pipes)
         .enter()
@@ -3037,6 +3053,7 @@ export function listpipelines() {
                 d3.select(this).attr('class',"item-select");
             }});
         
+        pipes.shift();
         d3.select("#setxRight").selectAll("p")
         .data(pipes)
         .enter()
