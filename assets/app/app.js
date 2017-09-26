@@ -1977,8 +1977,8 @@ export function estimate(btn) {
                     
                     // once we know what TA2 does we'll get the pipeline ids from there
                     //let pipelineid = PipelineCreateResult.pipelineid;
-                    let pipelineid = "id1";
-                    let PipelineExecuteResultsRequest = {context, pipelineid};
+                    let pipeline_ids = ["id1"];
+                    let PipelineExecuteResultsRequest = {context, pipeline_ids};
                     jsonout = JSON.stringify(PipelineExecuteResultsRequest);
                     let urlcall = d3mURL + "/getexecutepipelineresults";
                     var solajsonout = "grpcrequest=" + jsonout;
@@ -3006,8 +3006,8 @@ export function endsession() {
 
 //rpc ListPipelines(PipelineListRequest) returns (PipelineListResult) {}
 export function listpipelines() {
-    let SessionContext = apiSession(zparams.zsessionid);
-    let PipeLineListRequest={SessionContext};
+    let context = apiSession(zparams.zsessionid);
+    let PipeLineListRequest={context};
     
     var jsonout = JSON.stringify(PipeLineListRequest);
     
@@ -3063,17 +3063,17 @@ export function listpipelines() {
 
 // rpc ExecutePipeline(PipelineExecuteRequest) returns (stream PipelineExecuteResult) {}
 export function executepipeline() {
-    let SessionContext = apiSession(zparams.zsessionid);
-    let pipelineid = document.getElementById('setxRight').querySelector('p.item-select');
-    if(pipelineid == null) {alert("Please select a pipeline to execute on."); return;}
-    pipelineid = pipelineid.innerText;
+    let context = apiSession(zparams.zsessionid);
+    let pipelineId = document.getElementById('setxRight').querySelector('p.item-select');
+    if(pipelineId == null) {alert("Please select a pipeline to execute on."); return;}
+    pipelineId = pipelineId.innerText;
     
     
     zPop();
     zparams.callHistory = callHistory;
     let jsonout = JSON.stringify(zparams);
     
-    let features = apiFeature(zparams.zvars,"<<DATA_URI>>");
+    let predictFeatures = apiFeature(zparams.zvars,"<<DATA_URI>>");
     let data = [];
     
     //this will just set zparams.zsetx to the mean, which is default for setx plots
@@ -3094,7 +3094,7 @@ export function executepipeline() {
         data.push(mydata);
     }
     
-    let PipelineExecuteRequest={SessionContext, pipelineid, features, data};
+    let PipelineExecuteRequest={context, pipelineId, predictFeatures, data};
     
     jsonout = JSON.stringify(PipelineExecuteRequest);
     
