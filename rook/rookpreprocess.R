@@ -69,9 +69,9 @@ preprocess.app <- function(env){
 	if(!warning){
         tryCatch({
             if(d3m_mode) {                                       # Note presently this entire app is only ever called in d3m mode, but we might generalize its function
-                mydataloc2 <- paste("../",mydataloc,sep="")
-                mytargetloc <- paste("../",mytargetloc,sep="")
-                mydata <- read.csv(mydataloc2)
+                #mydataloc2 <- paste("../",mydataloc,sep="")
+                #mytargetloc <- paste("../",mytargetloc,sep="")
+                mydata <- read.csv(mydataloc)
                 mytarget <- read.csv(mytargetloc)
                 
                 # not robust merging code, but it'll work if there's one overlapping ID to merge on

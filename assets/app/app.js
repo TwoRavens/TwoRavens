@@ -315,8 +315,8 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
            d3mDS = configurations.dataset_schema_url;
            
            // these are the two lines that cut the config paths after "TwoRavens/"
-           d3mTarget = d3mTarget.split("TwoRavens/").pop();
-           d3mData = d3mData.split("TwoRavens/").pop();
+           //d3mTarget = d3mTarget.split("TwoRavens/").pop();
+           //d3mData = d3mData.split("TwoRavens/").pop();
 
            pURL='rook-custom/rook-files/'+d3mDataName+'/preprocess/preprocess.json';    
            d3mPreprocess=pURL;

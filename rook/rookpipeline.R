@@ -100,7 +100,7 @@ pipeline.app <- function(env){
         #write(writeme,mylogfile,append=TRUE)
         
         mytargeturi <- everything$zd3mtarget
-        mytargeturi <- paste("../",mytargeturi,sep="")
+        #        mytargeturi <- paste("../",mytargeturi,sep="")
         mydata <- read.csv(mytargeturi)
         #writeme <- paste("mydata <- read.delim(\"",mydataurl,"\")", sep="")
         #print(writeme)
