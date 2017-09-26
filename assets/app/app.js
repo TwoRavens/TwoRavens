@@ -519,39 +519,40 @@ let fillThis = (self, op, d1, d2) => $fill(self, op, d1, d2);
 // scaffolding is called after all external data are guaranteed to have been read to completion. this populates the left panel with variable names, the right panel with model names, the transformation tool, an the associated mouseovers. its callback is layout(), which initializes the modeling space
 function scaffolding(callback) {
 
+    // establishing the transformation element
+    d3.select("#transformations")
+        .append("input")
+        .attr("id", "tInput")
+        .attr("class", "form-control")
+        .attr("type", "text")
+        .attr("value", "Variable transformation");
+
+    // variable dropdown
+    d3.select("#transformations")
+        .append("ul")
+        .attr("id", "transSel")
+        .style("display", "none")
+        .style("background-color", varColor)
+        .selectAll('li')
+        .data(["a", "b"]) //set to variables in model space as they're added
+        .enter()
+        .append("li")
+        .text(d => d);
+
+    // function dropdown
+    d3.select("#transformations")
+        .append("ul")
+        .attr("id", "transList")
+        .style("display", "none")
+        .style("background-color", varColor)
+        .selectAll('li')
+        .data(transformList)
+        .enter()
+        .append("li")
+        .text(d => d);
+
     if(!d3m_mode){    // No variable transformation in present d3m mode
-        // establishing the transformation element
-        d3.select("#transformations")
-            .append("input")
-            .attr("id", "tInput")
-            .attr("class", "form-control")
-            .attr("type", "text")
-            .attr("value", "Variable transformation");
-
-        // variable dropdown
-        d3.select("#transformations")
-            .append("ul")
-            .attr("id", "transSel")
-            .style("display", "none")
-            .style("background-color", varColor)
-            .selectAll('li')
-            .data(["a", "b"]) //set to variables in model space as they're added
-            .enter()
-            .append("li")
-            .text(d => d);
-
-        // function dropdown
-        d3.select("#transformations")
-            .append("ul")
-            .attr("id", "transList")
-            .style("display", "none")
-            .style("background-color", varColor)
-            .selectAll('li')
-            .data(transformList)
-            .enter()
-            .append("li")
-            .text(d => d);
-
+        
         $('#tInput').click(() => {
             var t = byId('transSel').style.display;
             if (t !== "none") { // if variable list is displayed when input is clicked...
