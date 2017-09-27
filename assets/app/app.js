@@ -3575,7 +3575,7 @@ export function bivariatePlot(x_Axis, y_Axis, x_Axis_name, y_Axis_name) {
 
 export function setxTable(features) {
     function tabulate(data, columns) {
-        var table = d3.select('#setxLeftBottom').append('table')
+        var table = d3.select('#setxRightBottom').append('table')
         var thead = table.append('thead')
         var	tbody = table.append('tbody');
         
@@ -3601,14 +3601,28 @@ export function setxTable(features) {
               })
         .enter()
         .append('td')
-        .text(function (d) { return d.value; });
+        .text(function (d) { return d.value; })
+        .attr('id',function(d,i) {
+              let rowname = this.parentElement.firstChild.innerText;
+              return rowname + d.column;
+              });
         
         return table;
     }
     
+    
     let mydata = [];
     for(let i = 0; i<features.length; i++) {
-        mydata.push({"Variables":features[i],"From":1, "To":3});
+        let myi = i+1;
+        let mysvg = features[i]+"_setxLeft_"+myi;
+        let xval = document.getElementById(mysvg).querySelector('.xval').innerHTML;
+        let x1val = document.getElementById(mysvg).querySelector('.x1val').innerHTML;
+        xval = xval.split("x: ").pop()
+        x1val = x1val.split("x1: ").pop()
+        console.log(xval);
+        console.log(mysvg);
+        
+        mydata.push({"Variables":features[i],"From":xval, "To":x1val});
     }
 
     // render the table(s)
