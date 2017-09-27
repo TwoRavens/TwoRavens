@@ -1,4 +1,10 @@
+"""
+Functions for when the UI sends JSON requests to route to TA2s as gRPC calls
+    - Right now this code is quite redundant. Wait for integration to factor it out,
+     e.g. lots may change--including the "req_" files being part of a separate service
+"""
 import json
+from collections import OrderedDict
 from django.shortcuts import render
 from django.http import JsonResponse    #, HttpResponse, Http404
 from django.views.decorators.csrf import csrf_exempt
@@ -13,6 +19,7 @@ from tworaven_apps.ta2_interfaces.req_get_execute_pipeline import \
 from tworaven_apps.ta2_interfaces.req_list_pipelines import \
     list_pipelines
 from tworaven_apps.ta2_interfaces.ta2_util import get_grpc_content
+from tworaven_apps.call_captures.models import ServiceCallEntry
 
 from tworaven_apps.ta2_interfaces.models import GRPC_JSON_KEY
 
@@ -36,14 +43,27 @@ def view_startsession(request):
         return JsonResponse(dict(status=False,
                                  message=raven_data_or_err))
 
+    # Begin to log D3M call
+    #
+    call_entry = None
+    if ServiceCallEntry.record_d3m_call():
+        call_entry = ServiceCallEntry.get_dm3_entry(\
+                        request_obj=request,
+                        call_type='start_session',
+                        request_msg=raven_data_or_err)
+
     # Let's call the TA2 and start the session!
     #
     json_str = start_session(raven_data_or_err)
 
     # Convert JSON str to python dict - err catch here
     #  - let it blow up for now--should always return JSON
-    json_dict = json.loads(json_str)
+    json_dict = json.loads(json_str, object_pairs_hook=OrderedDict)
 
+    # Save D3M log
+    #
+    if call_entry:
+        call_entry.save_d3m_response(json_dict)
 
     return JsonResponse(json_dict, safe=False)
 
@@ -58,11 +78,19 @@ def view_endsession(request):
     """
     django_session_key = request.session._get_or_create_session_key()
 
-
     success, raven_data_or_err = get_grpc_content(request)
     if not success:
         return JsonResponse(dict(status=False,
                                  message=raven_data_or_err))
+
+    # Begin to log D3M call
+    #
+    call_entry = None
+    if ServiceCallEntry.record_d3m_call():
+        call_entry = ServiceCallEntry.get_dm3_entry(\
+                        request_obj=request,
+                        call_type='end_session',
+                        request_msg=raven_data_or_err)
 
     # Let's call the TA2 and start the session!
     #
@@ -70,7 +98,12 @@ def view_endsession(request):
 
     # Convert JSON str to python dict - err catch here
     #
-    json_dict = json.loads(json_str)
+    json_dict = json.loads(json_str, object_pairs_hook=OrderedDict)
+
+    # Save D3M log
+    #
+    if call_entry:
+        call_entry.save_d3m_response(json_dict)
 
     return JsonResponse(json_dict, safe=False)
 
@@ -86,13 +119,27 @@ def view_update_problem_schema(request):
         return JsonResponse(dict(status=False,
                                  message=raven_data_or_err))
 
+    # Begin to log D3M call
+    #
+    call_entry = None
+    if ServiceCallEntry.record_d3m_call():
+        call_entry = ServiceCallEntry.get_dm3_entry(\
+                        request_obj=request,
+                        call_type='update_problem_schema',
+                        request_msg=raven_data_or_err)
+
     # Let's call the TA2!
     #
     json_str = update_problem_schema(raven_data_or_err)
 
     # Convert JSON str to python dict - err catch here
     #
-    json_dict = json.loads(json_str)
+    json_dict = json.loads(json_str, object_pairs_hook=OrderedDict)
+
+    # Save D3M log
+    #
+    if call_entry:
+        call_entry.save_d3m_response(json_dict)
 
     return JsonResponse(json_dict, safe=False)
 
@@ -107,13 +154,27 @@ def view_create_pipeline(request):
         return JsonResponse(dict(status=False,
                                  message=raven_data_or_err))
 
+    # Begin to log D3M call
+    #
+    call_entry = None
+    if ServiceCallEntry.record_d3m_call():
+        call_entry = ServiceCallEntry.get_dm3_entry(\
+                        request_obj=request,
+                        call_type='create_pipeline',
+                        request_msg=raven_data_or_err)
+
     # Let's call the TA2!
     #
     json_str = pipeline_create(raven_data_or_err)
 
     # Convert JSON str to python dict - err catch here
     #
-    json_dict = json.loads(json_str)
+    json_dict = json.loads(json_str, object_pairs_hook=OrderedDict)
+
+    # Save D3M log
+    #
+    if call_entry:
+        call_entry.save_d3m_response(json_dict)
 
     return JsonResponse(json_dict, safe=False)
 
@@ -127,13 +188,27 @@ def view_get_execute_pipeline_results(request):
         return JsonResponse(dict(status=False,
                                  message=raven_data_or_err))
 
+    # Begin to log D3M call
+    #
+    call_entry = None
+    if ServiceCallEntry.record_d3m_call():
+        call_entry = ServiceCallEntry.get_dm3_entry(\
+                        request_obj=request,
+                        call_type='get_execute_pipeline_results',
+                        request_msg=raven_data_or_err)
+
     # Let's call the TA2!
     #
     json_str = get_execute_pipeline_results(raven_data_or_err)
 
     # Convert JSON str to python dict - err catch here
     #
-    json_dict = json.loads(json_str)
+    json_dict = json.loads(json_str, object_pairs_hook=OrderedDict)
+
+    # Save D3M log
+    #
+    if call_entry:
+        call_entry.save_d3m_response(json_dict)
 
     return JsonResponse(json_dict, safe=False)
 
@@ -158,13 +233,27 @@ def view_list_pipelines(request):
         return JsonResponse(dict(status=False,
                                  message=raven_data_or_err))
 
+    # Begin to log D3M call
+    #
+    call_entry = None
+    if ServiceCallEntry.record_d3m_call():
+        call_entry = ServiceCallEntry.get_dm3_entry(\
+                        request_obj=request,
+                        call_type='list_pipelines',
+                        request_msg=raven_data_or_err)
+
     # Let's call the TA2 and start the session!
     #
     json_str = list_pipelines(raven_data_or_err)
 
     # Convert JSON str to python dict - err catch here
     #
-    json_dict = json.loads(json_str)
+    json_dict = json.loads(json_str, object_pairs_hook=OrderedDict)
+
+    # Save D3M log
+    #
+    if call_entry:
+        call_entry.save_d3m_response(json_dict)
 
     return JsonResponse(json_dict, safe=False)
 

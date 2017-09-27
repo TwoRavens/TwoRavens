@@ -1,11 +1,11 @@
 import json
 from django.http import JsonResponse    #, HttpResponse, Http404
 from django.views.decorators.csrf import csrf_exempt
-
 from tworaven_apps.ta2_interfaces.req_execute_pipeline import \
     execute_pipeline
 from tworaven_apps.ta2_interfaces.ta2_util import get_grpc_content
 from tworaven_apps.configurations.utils import get_latest_d3m_config
+from tworaven_apps.call_captures.models import ServiceCallEntry
 
 
 @csrf_exempt
@@ -26,18 +26,35 @@ def view_execute_pipeline(request):
         return JsonResponse(dict(status=False,
                                  message=raven_data_or_err))
 
+    # Begin to log D3M call
+    #
+    call_entry = None
+    if ServiceCallEntry.record_d3m_call():
+        call_entry = ServiceCallEntry.get_dm3_entry(\
+                        request_obj=request,
+                        call_type='execute_pipeline',
+                        request_msg=raven_data_or_err)
+
     # Let's call the TA2 and start the session!
     #
     fmt_request, json_str_or_err = execute_pipeline(raven_data_or_err)
 
     if fmt_request is None:
+        if call_entry:
+            call_entry.save_d3m_response(json_str_or_err)
         return JsonResponse(dict(status=False,
                                  message=json_str_or_err))
+
 
     # Convert JSON str to python dict - err catch here
     #
     json_dict = {}
     json_dict['grpcResp'] = json.loads(json_str_or_err)
     json_dict['data2'] = json.loads(fmt_request)    # request with updated file uris
+
+    # Save D3M log
+    #
+    if call_entry:
+        call_entry.save_d3m_response(json_dict)
 
     return JsonResponse(json_dict, safe=False)

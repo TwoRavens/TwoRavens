@@ -42,7 +42,7 @@ def execute_pipeline(info_str=None):
     d3m_config = get_latest_d3m_config()
     if not d3m_config:
         err_msg = ('The D3M configuration is not available.'
-                   ' Therefore there is no "temp_storage_root" directory to'
+                   ' Therefore, there is no "temp_storage_root" directory to'
                    ' write the data.')
         return None, get_failed_precondition_response(err_msg)
 

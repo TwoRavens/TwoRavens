@@ -8,6 +8,17 @@ Contents:
  - _incomplete_ [Add gRPC request type](#add-grpc-request-type)
  - [Adding a new rook app: django](#adding-a-new-rook-app-django)
 
+## Run local TA2 test server.
+
+The following command runs a TA2 test server with the core code from the NYU team.  Run this is a new, separate Terminal:
+
+- open a Terminal
+- cd into the TwoRavens directory
+- run `workon 2ravens`
+- run `fab run_ta2_test_server`
+
+
+
 ## Saving webpack js/css files for deployment
 
 Webpack files in the build directory are excluded from github.  
