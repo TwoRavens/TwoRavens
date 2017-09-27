@@ -327,14 +327,14 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
     // do nothing if preprocess.json already exists, else runPreprocess
     .then(null, _ => runPreprocess(d3mData, d3mTarget, d3mDataName))
     .then(data => readPreprocess(data))
-    //.then(() => new Promise((resolve, reject) => d3.xml(metadataurl, 'application/xml', xml => {
+   // .then(() => new Promise((resolve, reject) => d3.xml(metadataurl, 'application/xml', xml => {
     .then(() => new Promise((resolve, reject) => {
-        let vars = Object.keys(preprocess); // this doesn't come from xml, but from preprocessed json
+        let vars = Object.keys(preprocess);
+                            // this doesn't come from xml, but from preprocessed json
         // the labels, citations, and file name come from the 'xml' (metadataurl), which is the file from the data repo
         // however, TwoRavens should function using only the data that comes from our preprocess script, which is the 'json' (pURL)
             // for now the metadataurl is still Fearon & Laitin
-            
-        let temp;
+        let temp="";
         if(!d3m_mode) {
             temp = xml.documentElement.getElementsByTagName("fileName");
             zparams.zdata = temp[0].childNodes[0].nodeValue;
@@ -346,13 +346,14 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
                 .replace(/\%/g, "-");
             $('#cite div.panel-body').text(zparams.zdatacite);
         } else {
-            zparams.zdata = d3mDataname;
-        };
-
+            zparams.zdata = d3mDataName;
+        }
         // dataset name trimmed to 12 chars
         let dataname = zparams.zdata;
-        if(!d3m_mode)
+        if(!d3m_mode) {
             dataname = zparams.zdata.replace(/\.(.*)/, ''); // drop file extension
+        }
+                            
         d3.select("#dataName").html(dataname);
 
         // Put dataset name, from meta-data, into page title
@@ -393,10 +394,13 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
             };
             jQuery.extend(true, obj, preprocess[valueKey[i]]);
             allNodes.push(obj);
+                            
         };
         resolve();
     }))
     .then(() => new Promise((resolve, reject) => {
+        if (d3m_mode)
+            return resolve();
         // read zelig models and populate model list in right panel
         d3.json("data/zelig5models.json", (err, data) => {
             if (err)
