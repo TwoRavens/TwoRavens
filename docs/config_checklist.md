@@ -24,7 +24,12 @@ Quick Description of containers as specified in docker-compose.yml
 
 ### 1. tworavens
 
-These two environment variables are presently in docker-compose.yml
+These three environment variables are presently in docker-compose.yml
+
+- Run without an external TA2 server.  Validate JSON requests but return canned responses
+  - **variable**: TA2_STATIC_TEST_MODE
+  - **example**: TA2_STATIC_TEST_MODE=yes
+  - Note: The default is "no"--do NOT use "TA2_STATIC_TEST_MODE."  A value of "yes" will assume there is no external TA2 server and not bother with the TA2_TEST_SERVER_URL setting, regardless of the TA2_TEST_SERVER_URL value.
 
 - Specify a TA2 server for gRPC communcation
   - **variable**: TA2_TEST_SERVER_URL
