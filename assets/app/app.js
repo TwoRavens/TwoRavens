@@ -124,7 +124,7 @@ f1Macro:["description", "F1_MACRO" , 4],
 rocAuc:["description", "ROC_AUC" , 5],
 rocAucMicro:["description", "ROC_AUC_MICRO" , 6],
 rocAucMacro:["description", "ROC_AUC_MACRO" , 7],
-meanSquaredError:["description", "MEAN_SQUARED_ERROR", 8],
+//meanSquaredError:["description", "MEAN_SQUARED_ERROR", 8],
 rootMeanSquaredError:["description", "ROOT_MEAN_SQUARED_ERROR" , 8],
 rootMeanSquaredErrorAvg:["description", "ROOT_MEAN_SQUARED_ERROR_AVG" , 9],
 meanAbsoluteError:["description", "MEAN_ABSOLUTE_ERROR" , 10],
@@ -300,44 +300,44 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
     }
 
     // loads all external data: metadata (DVN's ddi), preprocessed (for plotting distributions), and zeligmodels (produced by Zelig) and initiates the data download to the server
-     Promise.resolve(d3m_mode && m.request({
-           method: "POST",
-           url: "/config/d3m-config/json/latest"
-     })
-     .then(function(result) {
-           configurations =  JSON.parse(JSON.stringify(result));
-           d3mRootPath = configurations.training_data_root;
-           d3mRootPath = d3mRootPath.replace(/\/data/,'');
-           d3mDataName = configurations.name;
-           d3mData = configurations.training_data_root+"/trainData.csv";
-           d3mTarget = result.training_data_root+"/trainTargets.csv";
-           d3mPS = configurations.problem_schema;
-           d3mDS = configurations.dataset_schema;
+    Promise.resolve(d3m_mode && m.request({
+        method: "POST",
+        url: "/config/d3m-config/json/latest"
+    })
+    .then(function(result) {
+        configurations =  JSON.parse(JSON.stringify(result));
+        d3mRootPath = configurations.training_data_root;
+        d3mRootPath = d3mRootPath.replace(/\/data/,'');
+        d3mDataName = configurations.name;
+        d3mData = configurations.training_data_root+"/trainData.csv";
+        d3mTarget = configurations.training_data_root+"/trainTargets.csv";
+        d3mPS = configurations.problem_schema_url;
+        d3mDS = configurations.dataset_schema_url;
            
-           // doing this for now, assuming everything after TwoRavens is readable
-           d3mPS = d3mPS.split("TwoRavens/").pop();
-           d3mDS = d3mDS.split("TwoRavens/").pop();
-           d3mTarget = d3mTarget.split("TwoRavens/").pop();
-           d3mData = d3mData.split("TwoRavens/").pop();
-           d3mRootPath = d3mRootPath.split("TwoRavens/").pop();
-           pURL='rook-custom/rook-files/'+d3mDataName+'/preprocess/preprocess.json';    
-           d3mPreprocess=pURL;
-           zparams.zd3mdata = d3mData;
-           zparams.zd3mtarget = d3mTarget;
-     }))
-     .then(_ => m.request(pURL))
-     // do nothing if preprocess.json already exists, else runPreprocess
-     .then(null, _ => runPreprocess(d3mData, d3mTarget, d3mDataName))
-     .then(data => readPreprocess(data))
-     .then(() => new Promise((resolve, reject) => d3.xml(metadataurl, 'application/xml', xml => {
-        let vars = Object.keys(preprocess); // this doesn't come from xml, but from preprocessed json
-            // the labels, citations, and file name come from the 'xml' (metadataurl), which is the file from the data repo
-            // however, TwoRavens should function using only the data that comes from our preprocess script, which is the 'json' (pURL)
-            // for now the metadataurl is still Fearon & Laitin
-            let temp = xml.documentElement.getElementsByTagName("fileName");
-            if(!d3m_mode)
-                zparams.zdata = temp[0].childNodes[0].nodeValue;
+        // these are the two lines that cut the config paths after "TwoRavens/"
+        //d3mTarget = d3mTarget.split("TwoRavens/").pop();
+        //d3mData = d3mData.split("TwoRavens/").pop();
 
+        pURL='rook-custom/rook-files/'+d3mDataName+'/preprocess/preprocess.json';    
+        d3mPreprocess=pURL;
+        zparams.zd3mdata = d3mData;
+        zparams.zd3mtarget = d3mTarget;
+    }))
+    .then(_ => m.request(pURL))
+    // do nothing if preprocess.json already exists, else runPreprocess
+    .then(null, _ => runPreprocess(d3mData, d3mTarget, d3mDataName))
+    .then(data => readPreprocess(data))
+   // .then(() => new Promise((resolve, reject) => d3.xml(metadataurl, 'application/xml', xml => {
+    .then(() => new Promise((resolve, reject) => {
+        let vars = Object.keys(preprocess);
+                            // this doesn't come from xml, but from preprocessed json
+        // the labels, citations, and file name come from the 'xml' (metadataurl), which is the file from the data repo
+        // however, TwoRavens should function using only the data that comes from our preprocess script, which is the 'json' (pURL)
+            // for now the metadataurl is still Fearon & Laitin
+        let temp="";
+        if(!d3m_mode) {
+            temp = xml.documentElement.getElementsByTagName("fileName");
+            zparams.zdata = temp[0].childNodes[0].nodeValue;
             let cite = xml.documentElement.getElementsByTagName("biblCit");
             // clean citation so POST is valid json
             zparams.zdatacite = cite[0].childNodes[0].nodeValue
@@ -345,83 +345,90 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
                 .replace(/\;/g, ",")
                 .replace(/\%/g, "-");
             $('#cite div.panel-body').text(zparams.zdatacite);
+        } else {
+            zparams.zdata = d3mDataName;
+        }
+        // dataset name trimmed to 12 chars
+        let dataname = zparams.zdata;
+        if(!d3m_mode) {
+            dataname = zparams.zdata.replace(/\.(.*)/, ''); // drop file extension
+        }
+                            
+        d3.select("#dataName").html(dataname);
 
-            // dataset name trimmed to 12 chars
-            let dataname = zparams.zdata;
-            if(!d3m_mode)
-                dataname = zparams.zdata.replace(/\.(.*)/, ''); // drop file extension
-            d3.select("#dataName").html(dataname);
-
-            // Put dataset name, from meta-data, into page title
-            d3.select("title").html("TwoRavens " + dataname);
-            // temporary values for hold that correspond to histogram bins
-            hold = [.6, .2, .9, .8, .1, .3, .4];
-            for (let i = 0; i < vars.length; i++) {
-                // valueKey[i] = vars[i].attributes.name.nodeValue;
-                // lablArray[i] = varsXML[i].getElementsByTagName("labl").length == 0 ?
-                // "no label" :
-                // varsXML[i].getElementsByTagName("labl")[0].childNodes[0].nodeValue;
-                // let datasetcount = d3.layout.histogram()
-                //     .bins(barnumber).frequency(false)
-                //     ([0, 0, 0, 0, 0]);
-                valueKey[i] = vars[i];
-                lablArray[i] = "no label";
-                // contains all the preprocessed data we have for the variable, as well as UI data pertinent to that variable,
-                // such as setx values (if the user has selected them) and pebble coordinates
-                let obj = {
-                    id: i,
-                    reflexive: false,
-                    name: valueKey[i],
-                    labl: lablArray[i],
-                    data: [5, 15, 20, 0, 5, 15, 20],
-                    count: hold,
-                    nodeCol: colors(i),
-                    baseCol: colors(i),
-                    strokeColor: selVarColor,
-                    strokeWidth: "1",
-                    subsetplot: false,
-                    subsetrange: ["", ""],
-                    setxplot: false,
-                    setxvals: ["", ""],
-                    grayout: false,
-                    group1: false,
-                    group2: false,
-                    forefront: false
-                };
-                jQuery.extend(true, obj, preprocess[valueKey[i]]);
-                allNodes.push(obj);
+        // Put dataset name, from meta-data, into page title
+        d3.select("title").html("TwoRavens " + dataname);
+        // temporary values for hold that correspond to histogram bins
+        hold = [.6, .2, .9, .8, .1, .3, .4];
+        for (let i = 0; i < vars.length; i++) {
+            // valueKey[i] = vars[i].attributes.name.nodeValue;
+            // lablArray[i] = varsXML[i].getElementsByTagName("labl").length == 0 ?
+            // "no label" :
+            // varsXML[i].getElementsByTagName("labl")[0].childNodes[0].nodeValue;
+            // let datasetcount = d3.layout.histogram()
+            //     .bins(barnumber).frequency(false)
+            //     ([0, 0, 0, 0, 0]);
+            valueKey[i] = vars[i];
+            lablArray[i] = "no label";
+            // contains all the preprocessed data we have for the variable, as well as UI data pertinent to that variable,
+            // such as setx values (if the user has selected them) and pebble coordinates
+            let obj = {
+                id: i,
+                reflexive: false,
+                name: valueKey[i],
+                labl: lablArray[i],
+                data: [5, 15, 20, 0, 5, 15, 20],
+                count: hold,
+                nodeCol: colors(i),
+                baseCol: colors(i),
+                strokeColor: selVarColor,
+                strokeWidth: "1",
+                subsetplot: false,
+                subsetrange: ["", ""],
+                setxplot: false,
+                setxvals: ["", ""],
+                grayout: false,
+                group1: false,
+                group2: false,
+                forefront: false
             };
+            jQuery.extend(true, obj, preprocess[valueKey[i]]);
+            allNodes.push(obj);
+                            
+        };
+        resolve();
+    }))
+    .then(() => new Promise((resolve, reject) => {
+        if (d3m_mode)
+            return resolve();
+        // read zelig models and populate model list in right panel
+        d3.json("data/zelig5models.json", (err, data) => {
+            if (err)
+                return reject(err);
+            cdb("zelig models json: ", data);
+            for (let key in data.zelig5models)
+                if (data.zelig5models.hasOwnProperty(key))
+                    mods[data.zelig5models[key].name[0]] = data.zelig5models[key].description[0];
             resolve();
-        })))
-        .then(() => new Promise((resolve, reject) => {
-            // read zelig models and populate model list in right panel
-            d3.json("data/zelig5models.json", (err, data) => {
-                if (err)
-                    return reject(err);
-                cdb("zelig models json: ", data);
-                for (let key in data.zelig5models)
-                    if (data.zelig5models.hasOwnProperty(key))
-                        mods[data.zelig5models[key].name[0]] = data.zelig5models[key].description[0];
-                resolve();
-            });
-        }))
-        .then(() => new Promise((resolve, reject) => {
-            if (d3m_mode)
-                return resolve();
-            d3.json("data/zelig5choicemodels.json", (err, data) => {
-                if (err)
-                    return reject(err);
-                cdb("zelig choice models json: ", data);
-                for (let key in data.zelig5choicemodels)
-                    if (data.zelig5choicemodels.hasOwnProperty(key))
-                        mods[data.zelig5choicemodels[key].name[0]] = data.zelig5choicemodels[key].description[0];
+        });
+    }))
+    .then(() => new Promise((resolve, reject) => {
+        if (d3m_mode)
+            return resolve();
+        d3.json("data/zelig5choicemodels.json", (err, data) => {
+            if (err)
+                return reject(err);
+            cdb("zelig choice models json: ", data);
+            for (let key in data.zelig5choicemodels)
+                if (data.zelig5choicemodels.hasOwnProperty(key))
+                    mods[data.zelig5choicemodels[key].name[0]] = data.zelig5choicemodels[key].description[0];
 
-                scaffolding(layout);
-                dataDownload();
-                resolve();
-            })
-        }))
-        .then(() => new Promise((resolve, reject) => {
+            scaffolding(layout);
+            dataDownload();
+            resolve();
+        })
+    }))
+    .then(() => new Promise((resolve, reject) => {
             // read in problem schema and we'll make a call to start the session with TA2. if we get this far, data are guaranteed to exist for the frontend
             if (!d3m_mode)
                 return resolve();
@@ -429,12 +436,16 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
             d3.json(d3mPS, (_, data) => {
                 console.log("prob schema data: ", data);
                 mytarget = data.target.field;
+                
+                    //This adds a ink to problemDescription.txt in the ticker
+                /*
                 let aTag = document.createElement('a');
                 aTag.setAttribute('href', `${d3mRootPath}/${data.descriptionFile}`);
                 aTag.setAttribute('id', "probdesc");
                 aTag.setAttribute('target', "_blank");
                 aTag.textContent = "Problem Description";
                 document.getElementById("ticker").appendChild(aTag);
+                 */
 
                 if(data.taskType in d3mTaskType) {
                     d3mProblemDescription.taskType = data.taskType;//[d3mTaskType[data.taskType][2],d3mTaskType[data.taskType][1]]; console.log(d3mProblemDescription);
@@ -498,7 +509,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
                                 
                 function ssFail(btn) {
                     alert("StartSession has failed.");
-                    resolve();
+                    reject();
                 }
                                 
                 makeCorsRequest(urlcall, "nobutton", ssSuccess, ssFail, solajsonout);
@@ -516,13 +527,14 @@ let fillThis = (self, op, d1, d2) => $fill(self, op, d1, d2);
 
 // scaffolding is called after all external data are guaranteed to have been read to completion. this populates the left panel with variable names, the right panel with model names, the transformation tool, an the associated mouseovers. its callback is layout(), which initializes the modeling space
 function scaffolding(callback) {
+
     // establishing the transformation element
-    d3.select("#transformations")
-        .append("input")
-        .attr("id", "tInput")
-        .attr("class", "form-control")
-        .attr("type", "text")
-        .attr("value", "Variable transformation");
+//    d3.select("#transformations")
+  //      .append("input")
+   //     .attr("id", "tInput")
+    //    .attr("class", "form-control")
+     //   .attr("type", "text")
+      //  .attr("value", "Variable transformation");
 
     // variable dropdown
     d3.select("#transformations")
@@ -548,62 +560,65 @@ function scaffolding(callback) {
         .append("li")
         .text(d => d);
 
-    $('#tInput').click(() => {
-        var t = byId('transSel').style.display;
-        if (t !== "none") { // if variable list is displayed when input is clicked...
-            $('#transSel').fadeOut(100);
-            return false;
-        }
-        var t1 = byId('transList').style.display;
-        if (t1 !== "none") { // if function list is displayed when input is clicked...
-            $('#transList').fadeOut(100);
-            return false;
-        }
+    if(!d3m_mode){    // No variable transformation in present d3m mode
 
-        // highlight the text
-        $(this).select();
-        var pos = $('#tInput').offset();
-        pos.top += $('#tInput').width();
-        $('#transSel').fadeIn(100);
-        return false;
-    });
+        $('#tInput').click(() => {
+            var t = byId('transSel').style.display;
+            if (t !== "none") { // if variable list is displayed when input is clicked...
+                $('#transSel').fadeOut(100);
+                return false;
+            }
+            var t1 = byId('transList').style.display;
+            if (t1 !== "none") { // if function list is displayed when input is clicked...
+                $('#transList').fadeOut(100);
+                return false;
+            }
 
-    var n;
-    $('#tInput').keyup(evt => {
-        var t = byId('transSel').style.display;
-        var t1 = byId('transList').style.display;
-        if (t != "none") $('#transSel').fadeOut(100);
-        else if (t1 != "none") $('#transList').fadeOut(100);
-
-        if (evt.keyCode == 13) { // keyup on Enter
-            n = $('#tInput').val();
-            var t = transParse(n=n);
-            if (!t)
-                return;
-            transform(n = t.slice(0, t.length - 1), t = t[t.length - 1], typeTransform = false);
-        }
-    });
-
-    var t;
-    $('#transList li').click(function(evt){
-        // if interact is selected, show variable list again
-        if ($(this).text() == "interact(d,e)") {
-            $('#tInput').val(tvar.concat('*'));
-            selInteract = true;
-            $(this).parent().fandeOut(100);
+            // highlight the text
+            $(this).select();
+            var pos = $('#tInput').offset();
+            pos.top += $('#tInput').width();
             $('#transSel').fadeIn(100);
-            evt.stopPropagation();
-            return;
-        }
+            return false;
+        });
 
-        var tvar = $('#tInput').val();
-        var tfunc = $(this).text().replace("d", "_transvar0");
-        var tcall = $(this).text().replace("d", tvar);
-        $('#tInput').val(tcall);
-        $(this).parent().fadeOut(100);
-        evt.stopPropagation();
-        transform(n = tvar, t = tfunc, typeTransform = false);
-    });
+        var n;
+        $('#tInput').keyup(evt => {
+            var t = byId('transSel').style.display;
+            var t1 = byId('transList').style.display;
+            if (t != "none") $('#transSel').fadeOut(100);
+            else if (t1 != "none") $('#transList').fadeOut(100);
+
+            if (evt.keyCode == 13) { // keyup on Enter
+                n = $('#tInput').val();
+                var t = transParse(n=n);
+                if (!t)
+                    return;
+                transform(n = t.slice(0, t.length - 1), t = t[t.length - 1], typeTransform = false);
+            }
+        });
+
+        var t;
+        $('#transList li').click(function(evt){
+            // if interact is selected, show variable list again
+            if ($(this).text() == "interact(d,e)") {
+                $('#tInput').val(tvar.concat('*'));
+                selInteract = true;
+                $(this).parent().fandeOut(100);
+                $('#transSel').fadeIn(100);
+                evt.stopPropagation();
+                return;
+            }
+
+            var tvar = $('#tInput').val();
+            var tfunc = $(this).text().replace("d", "_transvar0");
+            var tcall = $(this).text().replace("d", tvar);
+            $('#tInput').val(tcall);
+            $(this).parent().fadeOut(100);
+            evt.stopPropagation();
+            transform(n = tvar, t = tfunc, typeTransform = false);
+        });
+    };
 
     d3.select("#models")
         .style('height', 2000)
@@ -1630,24 +1645,26 @@ function layout(v,v2) {
             .append("li")
             .text(d => d);
 
-        $('#transSel li').click(function(evt) {
-            // if 'interaction' is the selected function, don't show the function list again
-            if (selInteract) {
-                var n = $('#tInput').val().concat($(this).text());
-                $('#tInput').val(n);
-                evt.stopPropagation();
-                var t = transParse(n = n);
-                if (!t) return;
-                $(this).parent().fadeOut(100);
-                transform(n = t.slice(0, t.length - 1), t = t[t.length - 1], typeTransform = false);
-                return;
-            }
+        if(!d3m_mode){
+            $('#transSel li').click(function(evt) {
+                // if 'interaction' is the selected function, don't show the function list again
+                if (selInteract) {
+                    var n = $('#tInput').val().concat($(this).text());
+                    $('#tInput').val(n);
+                    evt.stopPropagation();
+                    var t = transParse(n = n);
+                    if (!t) return;
+                    $(this).parent().fadeOut(100);
+                    transform(n = t.slice(0, t.length - 1), t = t[t.length - 1], typeTransform = false);
+                    return;
+                }
 
-            $('#tInput').val($(this).text());
-            $(this).parent().fadeOut(100);
-            $('#transList').fadeIn(100);
-            evt.stopPropagation();
-        });
+                $('#tInput').val($(this).text());
+                $(this).parent().fadeOut(100);
+                $('#transList').fadeIn(100);
+                evt.stopPropagation();
+            });
+        };
 
         // remove old nodes
         circle.exit().remove();
@@ -1764,6 +1781,17 @@ export function forceSwitch() {
         byId('btnForce').setAttribute("class", "btn btn-default");
         fakeClick();
     }
+}
+
+export function helpmaterials(type) {
+    if(type=="video"){
+        var win = window.open("http://2ra.vn/demos/d3mintegrationdemo.mp4", '_blank');
+        win.focus();
+    }else{
+        var win = window.open("http://2ra.vn/papers/tworavens-guide.pdf", '_blank');
+        win.focus();
+    }
+    console.log(type);
 }
 
 export function lockDescription() {
@@ -1963,6 +1991,84 @@ export function estimate(btn) {
                 function sendPipelineSuccess(btn, PipelineCreateResult) {
                     //rpc GetExecutePipelineResults(PipelineExecuteResultsRequest) returns (stream PipelineExecuteResult) {}
                     console.log(PipelineCreateResult);
+                    
+                    
+                    let allPipelineInfo = {};
+                    for (var i = 0; i<PipelineCreateResult.length; i++) {
+                        if(PipelineCreateResult[i].pipelineId in allPipelineInfo) {
+                            allPipelineInfo[PipelineCreateResult[i].pipelineId]=Object.assign(allPipelineInfo[PipelineCreateResult[i].pipelineId],PipelineCreateResult[i]);
+                        } else {
+                            allPipelineInfo[PipelineCreateResult[i].pipelineId]=PipelineCreateResult[i];
+                        }
+                    }
+                    console.log(allPipelineInfo);
+                    // to get all pipeline ids: Object.keys(allPipelineInfo)
+                    
+                    //////////////////////////
+                   
+                    function tabulate(data, columns, divid) {
+                        var table = d3.select(divid).append('table')
+                        var thead = table.append('thead')
+                        var	tbody = table.append('tbody');
+                        
+                        // append the header row
+                        thead.append('tr')
+                        .selectAll('th')
+                        .data(columns).enter()
+                        .append('th')
+                        .text(function (column) { return column; });
+                        
+                        // create a row for each object in the data
+                        var rows = tbody.selectAll('tr')
+                        .data(data)
+                        .enter()
+                        .append('tr')
+                        .attr('class','item-default');
+                        
+                        // create a cell in each row for each column
+                        var cells = rows.selectAll('td')
+                        .data(function (row) {
+                              return columns.map(function (column) {
+                                                 return {column: column, value: row[column]};
+                                                 });
+                              })
+                        .enter()
+                        .append('td')
+                        .text(function (d) { return d.value; })
+                        .on("click", function() {
+                            let myrow = this.parentElement;
+                            if(myrow.className=="item-select") {
+                                return;
+                            } else {
+                                d3.select(divid).select("tr.item-select")
+                                .attr('class', 'item-default');
+                                d3.select(myrow).attr('class',"item-select");
+                            }});
+        
+                        return table;
+                    }
+                    
+                    let resultstable = [];
+                    for(var key in allPipelineInfo) {
+                        let myid = "";
+                        let mymetric = "";
+                        let myval = "";
+                        let myscores = allPipelineInfo[key].pipelineInfo.scores;
+                        for(var i = 0; i < myscores.length; i++) {
+                            //if(i==0) {myid=key;}
+                             //   else myid="";
+                            myid=key;
+                            mymetric=myscores[i].metric;
+                            myval=+myscores[i].value.toFixed(3);
+                            resultstable.push({"PipelineID":myid,"Metric":mymetric, "Score":myval});
+                        }
+                    }
+                    
+                    // render the table
+                    tabulate(resultstable, ['PipelineID', 'Metric', 'Score'], '#results');
+                    tabulate(resultstable, ['PipelineID', 'Metric', 'Score'], '#setxRight');
+                    /////////////////////////
+                    
                     toggleRightButtons("all");
                     document.getElementById("btnResults").click();
                     
@@ -1972,8 +2078,8 @@ export function estimate(btn) {
                     
                     // once we know what TA2 does we'll get the pipeline ids from there
                     //let pipelineid = PipelineCreateResult.pipelineid;
-                    let pipelineid = "id1";
-                    let PipelineExecuteResultsRequest = {context, pipelineid};
+                    let pipeline_ids = Object.keys(allPipelineInfo);
+                    let PipelineExecuteResultsRequest = {context, pipeline_ids};
                     jsonout = JSON.stringify(PipelineExecuteResultsRequest);
                     let urlcall = d3mURL + "/getexecutepipelineresults";
                     var solajsonout = "grpcrequest=" + jsonout;
@@ -3000,9 +3106,10 @@ export function endsession() {
 }
 
 //rpc ListPipelines(PipelineListRequest) returns (PipelineListResult) {}
+// pipes is an array of pipeline IDs
 export function listpipelines() {
-    let SessionContext = apiSession(zparams.zsessionid);
-    let PipeLineListRequest={SessionContext};
+    let context = apiSession(zparams.zsessionid);
+    let PipeLineListRequest={context};
     
     var jsonout = JSON.stringify(PipeLineListRequest);
     
@@ -3015,7 +3122,11 @@ export function listpipelines() {
     function listPipesSuccess(btn, PipelineListResult) {
         console.log(PipelineListResult);
         //hardcoded pipes for now
-        let pipes = ["","id1", "id2", "id3", "id4", "id5"]
+        let pipes = PipelineListResult.pipelineIds;
+        
+        /*
+        pipes.unshift("place");
+        console.log(pipes);
         d3.select("#results").selectAll("p")
         .data(pipes)
         .enter()
@@ -3032,6 +3143,9 @@ export function listpipelines() {
                 d3.select(this).attr('class',"item-select");
             }});
         
+        pipes.shift();
+         
+        
         d3.select("#setxRight").selectAll("p")
         .data(pipes)
         .enter()
@@ -3047,6 +3161,7 @@ export function listpipelines() {
             .attr('class', 'item-default');
             d3.select(this).attr('class',"item-select");
             }});
+         */
     }
     
     function listPipesFail(btn) {
@@ -3058,17 +3173,16 @@ export function listpipelines() {
 
 // rpc ExecutePipeline(PipelineExecuteRequest) returns (stream PipelineExecuteResult) {}
 export function executepipeline() {
-    let SessionContext = apiSession(zparams.zsessionid);
-    let pipelineid = document.getElementById('setxRight').querySelector('p.item-select');
-    if(pipelineid == null) {alert("Please select a pipeline to execute on."); return;}
-    pipelineid = pipelineid.innerText;
-    
+    let context = apiSession(zparams.zsessionid);
+    let tablerow = document.getElementById('setxRight').querySelector('tr.item-select');
+    if(tablerow == null) {alert("Please select a pipeline to execute on."); return;}
+    let pipelineId=tablerow.firstChild.innerText;
     
     zPop();
     zparams.callHistory = callHistory;
     let jsonout = JSON.stringify(zparams);
     
-    let features = apiFeature(zparams.zvars,"some uri");
+    let predictFeatures = apiFeature(zparams.zvars,"<<DATA_URI>>");
     let data = [];
     
     //this will just set zparams.zsetx to the mean, which is default for setx plots
@@ -3089,7 +3203,7 @@ export function executepipeline() {
         data.push(mydata);
     }
     
-    let PipelineExecuteRequest={SessionContext, pipelineid, features, data};
+    let PipelineExecuteRequest={context, pipelineId, predictFeatures, data};
     
     jsonout = JSON.stringify(PipelineExecuteRequest);
     
@@ -3114,9 +3228,10 @@ export function executepipeline() {
 // this is our call to django to update the problem schema
 // rpc UpdateProblemSchema(UpdateProblemSchemaRequest) returns (Response) {}
 function updateSchema(type, updates, lookup) {
+    let context = apiSession(zparams.zsessionid);
     let ReplaceProblemSchemaField={[type]:lookup[updates[type]][1]};
 //    let valuenum = lookup[updates[type]][2];
-    let UpdateProblemSchemaRequest = {ReplaceProblemSchemaField};
+    let UpdateProblemSchemaRequest = {ReplaceProblemSchemaField,context};
 
     let jsonout = JSON.stringify(UpdateProblemSchemaRequest);
 
@@ -3460,7 +3575,7 @@ export function bivariatePlot(x_Axis, y_Axis, x_Axis_name, y_Axis_name) {
 
 export function setxTable(features) {
     function tabulate(data, columns) {
-        var table = d3.select('#setxLeftBottom').append('table')
+        var table = d3.select('#setxRightBottom').append('table')
         var thead = table.append('thead')
         var	tbody = table.append('tbody');
         
@@ -3486,14 +3601,28 @@ export function setxTable(features) {
               })
         .enter()
         .append('td')
-        .text(function (d) { return d.value; });
+        .text(function (d) { return d.value; })
+        .attr('id',function(d,i) {
+              let rowname = this.parentElement.firstChild.innerText;
+              return rowname + d.column;
+              });
         
         return table;
     }
     
+    
     let mydata = [];
     for(let i = 0; i<features.length; i++) {
-        mydata.push({"Variables":features[i],"From":1, "To":3});
+        let myi = i+1;
+        let mysvg = features[i]+"_setxLeft_"+myi;
+        let xval = document.getElementById(mysvg).querySelector('.xval').innerHTML;
+        let x1val = document.getElementById(mysvg).querySelector('.x1val').innerHTML;
+        xval = xval.split("x: ").pop()
+        x1val = x1val.split("x1: ").pop()
+        console.log(xval);
+        console.log(mysvg);
+        
+        mydata.push({"Variables":features[i],"From":xval, "To":x1val});
     }
 
     // render the table(s)

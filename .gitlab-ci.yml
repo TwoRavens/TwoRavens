@@ -10,6 +10,10 @@ build:
     # Docker login
     - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN registry.datadrivendiscovery.org
     #
+    # Build r-service: fairly big image
+    - docker build -t registry.datadrivendiscovery.org/tworavens/tworavens/rook-service -f ./Dockerfile-rook .
+    - docker push registry.datadrivendiscovery.org/tworavens/tworavens/rook-service
+    #
     # Build nginx image
     - docker build -t registry.datadrivendiscovery.org/tworavens/tworavens/nginx -f setup/nginx/Dockerfile ./setup/nginx/
     - docker push registry.datadrivendiscovery.org/tworavens/tworavens/nginx

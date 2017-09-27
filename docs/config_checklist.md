@@ -24,7 +24,7 @@ Quick Description of containers as specified in docker-compose.yml
 
 ### 1. tworavens
 
-These two environment variables may be in docker-compose (or kubernetes)
+These two environment variables are presently in docker-compose.yml
 
 - Specify a TA2 server for gRPC communcation
   - **variable**: TA2_TEST_SERVER_URL
@@ -37,9 +37,12 @@ These two environment variables may be in docker-compose (or kubernetes)
   - Note: Every container has the volume `/ravens_volume` which may be linked to an external directory
 
 ### 2. rook-service
+
+This environment variable is also set in docker-compose.yml
+
   - **variable**: ROOK_USE_PRODUCTION_MODE
   - **example**:  ROOK_USE_PRODUCTION_MODE=yes
-  - Note: We want the value to be "yes" so that `rook_nonstop.R` will run. Otherwise, it will fail as a container.
+  - Note: We want the value to be "yes" so that `rookconfig.R` will find the right environment variable and `rook` apps will be set up correctly. Otherwise, it will fail as a container.
 
 ### 3. nginx
   - Nginx serves via port 80 and proxies to the other services

@@ -126,6 +126,13 @@ If there are no errors, create the database:
   fab init_db
   ```
 
+Create a example NIST configuration file as:
+
+  ```
+  fab make_d3m_config
+  ```
+
+
 (The command above is a short cut for ```python manage.py migrate```)
 
 ### Create a django superuser (optional)

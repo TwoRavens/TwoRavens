@@ -13,7 +13,7 @@ def view_test_data(request, input_file_name=None):
     old: It only retrieves files in that directory, not subdirectories
     """
     #return redirect('/static/fearonLaitin.json')
-    DATA_DIR = 'data/'
+    DATA_DIR = 'ravens_volume/'
 
     data_file_dir = join(settings.BASE_DIR, DATA_DIR)
 

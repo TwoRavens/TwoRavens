@@ -198,9 +198,12 @@ class Body {
                   m("button#btnEstimate.btn.btn-default.ladda-button.navbar-right[data-spinner-color=#000000][data-style=zoom-in][style=margin-left: 2em; margin-right: 1em]", {
                     onclick: _ => app.estimate('btnEstimate')},
                     m("span.ladda-label", mode ? 'Explore' : 'Estimate')),
-                  m("button#btnTA2.btn.btn-default.ladda-button.navbar-right[data-spinner-color=#000000][data-style=zoom-in][style=margin-left: 15em; margin-right: 1em]", {
-                      onclick: _ => app.ta2stuff('btnTA2')},
-                      'TA2'),
+                  m("button#btnTA2.btn.btn-default.ladda-button.navbar-right[data-spinner-color=#000000][data-style=zoom-in][style=margin-left: 0.5em; margin-right: 1em]", {
+                    onclick: _ => app.helpmaterials('manual')},
+                    'Help Manual ',m("span.glyphicon.glyphicon-book[style=color: #818181; font-size: 1em; pointer-events: none]")),
+                  m("button#btnTA2.btn.btn-default.ladda-button.navbar-right[data-spinner-color=#000000][data-style=zoom-in][style=margin-left: 15em; margin-right: 0.5em]", {
+                    onclick: _ => app.helpmaterials('video')},
+                    'Help Video ',m("span.glyphicon.glyphicon-expand[style=color: #818181; font-size: 1em; pointer-events: none]")),
                   m("button#btnReset.btn.btn-default.navbar-right[title=Reset][style=margin-left: 2.0em]", {
                     onclick: app.reset},
                     m("span.glyphicon.glyphicon-repeat[style=color: #818181; font-size: 1em; pointer-events: none]")),

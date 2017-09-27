@@ -239,7 +239,7 @@ div.sidepanel div.panelbar span {
     z-index:33;
     height:8%;
     width:14%;
-    right:200px;
+    right:200px; 
     top:14px;
     position:absolute;
 }
@@ -413,6 +413,18 @@ p.item-select{
 }
 
 p.item-lineout{
+    text-decoration:line-through;
+}
+
+tr.item-default{
+    background-color:#f0f8ff; /*varColor*/
+}
+
+tr.item-select{
+    background-color:rgba(250,128,114,0.5); /*selVarColor*/
+}
+
+tr.item-lineout{
     text-decoration:line-through;
 }
 
