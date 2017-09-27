@@ -4,7 +4,6 @@ Code based on sample by Matthias Grabmair
 """
 import json
 import random, string
-
 from google.protobuf.json_format import MessageToJson,\
     Parse, ParseError
 
@@ -69,7 +68,7 @@ def start_session(raven_json_str=None):
     # Get the connection, return an error if there are channel issues
     # --------------------------------
     core_stub, err_msg = TA2Connection.get_grpc_stub()
-    if err_msg:
+    if err_msg: 
         return get_failed_precondition_sess_response(err_msg)
 
         #return dict(status=core_pb2.FAILED_PRECONDITION,

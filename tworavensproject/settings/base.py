@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'tworaven_apps.content_pages',
     'tworaven_apps.rook_services',
     'tworaven_apps.api_docs',
+    'tworaven_apps.call_captures',
 
     #'tworaven_apps.workspaces',
 
@@ -144,7 +145,9 @@ STATICFILES_DIRS = [join(BASE_DIR, 'assets')]
 # https://warehouse.python.org/project/whitenoise/
 #STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-RECORD_R_SERVICE_ROUTING = False # log R service requests/response JSON to db
+RECORD_R_SERVICE_ROUTING = True # log R service requests/response JSON to db
+RECORD_D3M_SERVICE_ROUTING = True # log D3M service requests
+
 
 WEBPACK_LOADER = {
     'DEFAULT': {

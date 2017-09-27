@@ -8,7 +8,8 @@ from django.conf import settings
 from django.template.loader import render_to_string
 
 from tworaven_apps.ta2_interfaces import core_pb2
-from tworaven_apps.ta2_interfaces.models import GRPC_JSON_KEY
+from tworaven_apps.ta2_interfaces.models import GRPC_JSON_KEY,\
+    FAILED_PRECONDITION
 
 
 
@@ -31,7 +32,6 @@ def get_grpc_content(request):
         return False, 'Key "%s" not found' % GRPC_JSON_KEY
 
     return True, request.POST[GRPC_JSON_KEY]
-
 
 
 def get_failed_precondition_response(err_msg):

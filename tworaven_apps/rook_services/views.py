@@ -5,7 +5,7 @@ from requests.exceptions import ConnectionError
 from django.http import JsonResponse, HttpResponse, Http404
 from django.views.decorators.csrf import csrf_exempt
 
-from tworaven_apps.rook_services.models import TestCallCapture
+from tworaven_apps.call_captures.models import ServiceCallEntry
 from tworaven_apps.rook_services.rook_app_info import RookAppInfo
 
 ROOK_ZESSIONID = 'zsessionid'
@@ -18,12 +18,13 @@ def view_rook_route(request, app_name_in_url):
     """
     django_session_key = request.session._get_or_create_session_key()
 
-    print('django_session_key', django_session_key)
     # get the app info
     #
     rook_app_info = RookAppInfo.get_appinfo_from_url(app_name_in_url)
     if rook_app_info is None:
-        raise Http404('unknown rook app: "{0}" (please add "{0}" to "tworaven_apps/rook_services/app_names.py")'.format(app_name_in_url))
+        raise Http404(('unknown rook app: "{0}" (please add "{0}" to '
+                       ' "tworaven_apps/rook_services/app_names.py")').format(\
+                       app_name_in_url))
 
     # look for the "solaJSON" variable in the POST
     #
@@ -50,13 +51,13 @@ def view_rook_route(request, app_name_in_url):
 
     # Begin object to capture request
     #
-    call_capture = None
+    call_entry = None
     if rook_app_info.record_this_call():
-        call_capture = TestCallCapture(\
-                        app_name=rook_app_info.name,
+        call_entry = ServiceCallEntry.get_rook_entry(\
+                        request_obj=request,
+                        call_type=rook_app_info.name,
                         outgoing_url=rook_app_url,
-                        session_id=django_session_key,
-                        request=raven_data_text)
+                        request_msg=raven_data_text)
 
     # Call R services
     #
@@ -66,8 +67,8 @@ def view_rook_route(request, app_name_in_url):
     except ConnectionError:
         err_msg = 'R Server not responding: %s' % rook_app_url
         if rook_app_info.record_this_call():
-            call_capture.add_error_message(err_msg)
-            call_capture.save()
+            call_entry.add_error_message(err_msg)
+            call_entry.save()
         resp_dict = dict(message=err_msg)
         return JsonResponse(resp_dict)
 
@@ -75,10 +76,10 @@ def view_rook_route(request, app_name_in_url):
     #
     if rook_app_info.record_this_call():
         if r.status_code == 200:
-            call_capture.add_success_message(r.text, r.status_code)
+            call_entry.add_success_message(r.text, r.status_code)
         else:
-            call_capture.add_error_message(r.text, r.status_code)
-        call_capture.save()
+            call_entry.add_error_message(r.text, r.status_code)
+        call_entry.save()
 
     # Return the response to the user
     #

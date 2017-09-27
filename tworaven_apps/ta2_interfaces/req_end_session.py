@@ -71,16 +71,12 @@ def end_session(raven_json_str):
                                   'test_responses/endsession_ok.json',
                                   tinfo)
 
-
     # --------------------------------
     # Get the connection, return an error if there are channel issues
     # --------------------------------
     core_stub, err_msg = TA2Connection.get_grpc_stub()
     if err_msg:
         return get_failed_precondition_response(err_msg)
-
-        #return dict(status=core_pb2.FAILED_PRECONDITION,
-        #            details=err_msg)
 
     # --------------------------------
     # Send the gRPC request
