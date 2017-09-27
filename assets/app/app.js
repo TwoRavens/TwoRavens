@@ -300,133 +300,131 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
     }
 
     // loads all external data: metadata (DVN's ddi), preprocessed (for plotting distributions), and zeligmodels (produced by Zelig) and initiates the data download to the server
-     Promise.resolve(d3m_mode && m.request({
-           method: "POST",
-           url: "/config/d3m-config/json/latest"
-     })
-     .then(function(result) {
-           configurations =  JSON.parse(JSON.stringify(result));
-           d3mRootPath = configurations.training_data_root;
-           d3mRootPath = d3mRootPath.replace(/\/data/,'');
-           d3mDataName = configurations.name;
-           d3mData = configurations.training_data_root+"/trainData.csv";
-           d3mTarget = configurations.training_data_root+"/trainTargets.csv";
-           d3mPS = configurations.problem_schema_url;
-           d3mDS = configurations.dataset_schema_url;
+    Promise.resolve(d3m_mode && m.request({
+        method: "POST",
+        url: "/config/d3m-config/json/latest"
+    })
+    .then(function(result) {
+        configurations =  JSON.parse(JSON.stringify(result));
+        d3mRootPath = configurations.training_data_root;
+        d3mRootPath = d3mRootPath.replace(/\/data/,'');
+        d3mDataName = configurations.name;
+        d3mData = configurations.training_data_root+"/trainData.csv";
+        d3mTarget = configurations.training_data_root+"/trainTargets.csv";
+        d3mPS = configurations.problem_schema_url;
+        d3mDS = configurations.dataset_schema_url;
            
-           // these are the two lines that cut the config paths after "TwoRavens/"
-           //d3mTarget = d3mTarget.split("TwoRavens/").pop();
-           //d3mData = d3mData.split("TwoRavens/").pop();
+        // these are the two lines that cut the config paths after "TwoRavens/"
+        //d3mTarget = d3mTarget.split("TwoRavens/").pop();
+        //d3mData = d3mData.split("TwoRavens/").pop();
 
-           pURL='rook-custom/rook-files/'+d3mDataName+'/preprocess/preprocess.json';    
-           d3mPreprocess=pURL;
-           zparams.zd3mdata = d3mData;
-           zparams.zd3mtarget = d3mTarget;
-     }))
-     .then(_ => m.request(pURL))
-     // do nothing if preprocess.json already exists, else runPreprocess
-     .then(null, _ => runPreprocess(d3mData, d3mTarget, d3mDataName))
-     .then(data => readPreprocess(data))
-     .then(() => d3m_mode || new Promise((resolve, reject) => d3.xml(metadataurl, 'application/xml', xml => {
+        pURL='rook-custom/rook-files/'+d3mDataName+'/preprocess/preprocess.json';    
+        d3mPreprocess=pURL;
+        zparams.zd3mdata = d3mData;
+        zparams.zd3mtarget = d3mTarget;
+    }))
+    .then(_ => m.request(pURL))
+    // do nothing if preprocess.json already exists, else runPreprocess
+    .then(null, _ => runPreprocess(d3mData, d3mTarget, d3mDataName))
+    .then(data => readPreprocess(data))
+    //.then(() => new Promise((resolve, reject) => d3.xml(metadataurl, 'application/xml', xml => {
+    .then(() => new Promise((resolve, reject) => {
         let vars = Object.keys(preprocess); // this doesn't come from xml, but from preprocessed json
-            // the labels, citations, and file name come from the 'xml' (metadataurl), which is the file from the data repo
-            // however, TwoRavens should function using only the data that comes from our preprocess script, which is the 'json' (pURL)
+        // the labels, citations, and file name come from the 'xml' (metadataurl), which is the file from the data repo
+        // however, TwoRavens should function using only the data that comes from our preprocess script, which is the 'json' (pURL)
             // for now the metadataurl is still Fearon & Laitin
             
-            let temp;
-            if(!d3m_mode){
-                temp = xml.documentElement.getElementsByTagName("fileName");
-                zparams.zdata = temp[0].childNodes[0].nodeValue;
-            } else {
-                zparams.zdata = d3mDataname;
-            };
+        let temp;
+        if(!d3m_mode) {
+            temp = xml.documentElement.getElementsByTagName("fileName");
+            zparams.zdata = temp[0].childNodes[0].nodeValue;
+            let cite = xml.documentElement.getElementsByTagName("biblCit");
+            // clean citation so POST is valid json
+            zparams.zdatacite = cite[0].childNodes[0].nodeValue
+                .replace(/\&/g, "and")
+                .replace(/\;/g, ",")
+                .replace(/\%/g, "-");
+            $('#cite div.panel-body').text(zparams.zdatacite);
+        } else {
+            zparams.zdata = d3mDataname;
+        };
 
-            if(!d3m_mode){
-                let cite = xml.documentElement.getElementsByTagName("biblCit");
-                // clean citation so POST is valid json
-                zparams.zdatacite = cite[0].childNodes[0].nodeValue
-                    .replace(/\&/g, "and")
-                    .replace(/\;/g, ",")
-                    .replace(/\%/g, "-");
-                $('#cite div.panel-body').text(zparams.zdatacite);
-            };
+        // dataset name trimmed to 12 chars
+        let dataname = zparams.zdata;
+        if(!d3m_mode)
+            dataname = zparams.zdata.replace(/\.(.*)/, ''); // drop file extension
+        d3.select("#dataName").html(dataname);
 
-            // dataset name trimmed to 12 chars
-            let dataname = zparams.zdata;
-            if(!d3m_mode)
-                dataname = zparams.zdata.replace(/\.(.*)/, ''); // drop file extension
-            d3.select("#dataName").html(dataname);
-
-            // Put dataset name, from meta-data, into page title
-            d3.select("title").html("TwoRavens " + dataname);
-            // temporary values for hold that correspond to histogram bins
-            hold = [.6, .2, .9, .8, .1, .3, .4];
-            for (let i = 0; i < vars.length; i++) {
-                // valueKey[i] = vars[i].attributes.name.nodeValue;
-                // lablArray[i] = varsXML[i].getElementsByTagName("labl").length == 0 ?
-                // "no label" :
-                // varsXML[i].getElementsByTagName("labl")[0].childNodes[0].nodeValue;
-                // let datasetcount = d3.layout.histogram()
-                //     .bins(barnumber).frequency(false)
-                //     ([0, 0, 0, 0, 0]);
-                valueKey[i] = vars[i];
-                lablArray[i] = "no label";
-                // contains all the preprocessed data we have for the variable, as well as UI data pertinent to that variable,
-                // such as setx values (if the user has selected them) and pebble coordinates
-                let obj = {
-                    id: i,
-                    reflexive: false,
-                    name: valueKey[i],
-                    labl: lablArray[i],
-                    data: [5, 15, 20, 0, 5, 15, 20],
-                    count: hold,
-                    nodeCol: colors(i),
-                    baseCol: colors(i),
-                    strokeColor: selVarColor,
-                    strokeWidth: "1",
-                    subsetplot: false,
-                    subsetrange: ["", ""],
-                    setxplot: false,
-                    setxvals: ["", ""],
-                    grayout: false,
-                    group1: false,
-                    group2: false,
-                    forefront: false
-                };
-                jQuery.extend(true, obj, preprocess[valueKey[i]]);
-                allNodes.push(obj);
+        // Put dataset name, from meta-data, into page title
+        d3.select("title").html("TwoRavens " + dataname);
+        // temporary values for hold that correspond to histogram bins
+        hold = [.6, .2, .9, .8, .1, .3, .4];
+        for (let i = 0; i < vars.length; i++) {
+            // valueKey[i] = vars[i].attributes.name.nodeValue;
+            // lablArray[i] = varsXML[i].getElementsByTagName("labl").length == 0 ?
+            // "no label" :
+            // varsXML[i].getElementsByTagName("labl")[0].childNodes[0].nodeValue;
+            // let datasetcount = d3.layout.histogram()
+            //     .bins(barnumber).frequency(false)
+            //     ([0, 0, 0, 0, 0]);
+            valueKey[i] = vars[i];
+            lablArray[i] = "no label";
+            // contains all the preprocessed data we have for the variable, as well as UI data pertinent to that variable,
+            // such as setx values (if the user has selected them) and pebble coordinates
+            let obj = {
+                id: i,
+                reflexive: false,
+                name: valueKey[i],
+                labl: lablArray[i],
+                data: [5, 15, 20, 0, 5, 15, 20],
+                count: hold,
+                nodeCol: colors(i),
+                baseCol: colors(i),
+                strokeColor: selVarColor,
+                strokeWidth: "1",
+                subsetplot: false,
+                subsetrange: ["", ""],
+                setxplot: false,
+                setxvals: ["", ""],
+                grayout: false,
+                group1: false,
+                group2: false,
+                forefront: false
             };
+            jQuery.extend(true, obj, preprocess[valueKey[i]]);
+            allNodes.push(obj);
+        };
+        resolve();
+    }))
+    .then(() => new Promise((resolve, reject) => {
+        // read zelig models and populate model list in right panel
+        d3.json("data/zelig5models.json", (err, data) => {
+            if (err)
+                return reject(err);
+            cdb("zelig models json: ", data);
+            for (let key in data.zelig5models)
+                if (data.zelig5models.hasOwnProperty(key))
+                    mods[data.zelig5models[key].name[0]] = data.zelig5models[key].description[0];
             resolve();
-        })))
-        .then(() => new Promise((resolve, reject) => {
-            // read zelig models and populate model list in right panel
-            d3.json("data/zelig5models.json", (err, data) => {
-                if (err)
-                    return reject(err);
-                cdb("zelig models json: ", data);
-                for (let key in data.zelig5models)
-                    if (data.zelig5models.hasOwnProperty(key))
-                        mods[data.zelig5models[key].name[0]] = data.zelig5models[key].description[0];
-                resolve();
-            });
-        }))
-        .then(() => new Promise((resolve, reject) => {
-            if (d3m_mode)
-                return resolve();
-            d3.json("data/zelig5choicemodels.json", (err, data) => {
-                if (err)
-                    return reject(err);
-                cdb("zelig choice models json: ", data);
-                for (let key in data.zelig5choicemodels)
-                    if (data.zelig5choicemodels.hasOwnProperty(key))
-                        mods[data.zelig5choicemodels[key].name[0]] = data.zelig5choicemodels[key].description[0];
+        });
+    }))
+    .then(() => new Promise((resolve, reject) => {
+        if (d3m_mode)
+            return resolve();
+        d3.json("data/zelig5choicemodels.json", (err, data) => {
+            if (err)
+                return reject(err);
+            cdb("zelig choice models json: ", data);
+            for (let key in data.zelig5choicemodels)
+                if (data.zelig5choicemodels.hasOwnProperty(key))
+                    mods[data.zelig5choicemodels[key].name[0]] = data.zelig5choicemodels[key].description[0];
 
-                scaffolding(layout);
-                dataDownload();
-                resolve();
-            })
-        }))
-        .then(() => new Promise((resolve, reject) => {
+            scaffolding(layout);
+            dataDownload();
+            resolve();
+        })
+    }))
+    .then(() => new Promise((resolve, reject) => {
             // read in problem schema and we'll make a call to start the session with TA2. if we get this far, data are guaranteed to exist for the frontend
             if (!d3m_mode)
                 return resolve();
