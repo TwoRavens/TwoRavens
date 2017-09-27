@@ -332,17 +332,24 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
             // the labels, citations, and file name come from the 'xml' (metadataurl), which is the file from the data repo
             // however, TwoRavens should function using only the data that comes from our preprocess script, which is the 'json' (pURL)
             // for now the metadataurl is still Fearon & Laitin
-            let temp = xml.documentElement.getElementsByTagName("fileName");
-            if(!d3m_mode)
+            
+            let temp;
+            if(!d3m_mode){
+                temp = xml.documentElement.getElementsByTagName("fileName");
                 zparams.zdata = temp[0].childNodes[0].nodeValue;
+            } else {
+                zparams.zdata = d3mDataname;
+            };
 
-            let cite = xml.documentElement.getElementsByTagName("biblCit");
-            // clean citation so POST is valid json
-            zparams.zdatacite = cite[0].childNodes[0].nodeValue
-                .replace(/\&/g, "and")
-                .replace(/\;/g, ",")
-                .replace(/\%/g, "-");
-            $('#cite div.panel-body').text(zparams.zdatacite);
+            if(!d3m_mode){
+                let cite = xml.documentElement.getElementsByTagName("biblCit");
+                // clean citation so POST is valid json
+                zparams.zdatacite = cite[0].childNodes[0].nodeValue
+                    .replace(/\&/g, "and")
+                    .replace(/\;/g, ",")
+                    .replace(/\%/g, "-");
+                $('#cite div.panel-body').text(zparams.zdatacite);
+            };
 
             // dataset name trimmed to 12 chars
             let dataname = zparams.zdata;
