@@ -45,6 +45,9 @@
             "predictResultUris": [
                 "{{ FILE_URI }}"
             ],
+            "predictResultData": {
+              {{ FILE_CONTENT|safe }}
+            },
             "output": "REAL",
             "scores": [
                 {
