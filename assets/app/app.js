@@ -21,7 +21,7 @@ import {bars, barsNode, barsSubset, density, densityNode, selVarColor} from './p
 //    Developers, see /template/index.html
 //-------------------------------------------------
 
-// for debugging - if in production, prints args and returns them
+// for debugging - if not in production, prints args and returns them
 export let cdb = _ => production || console.log.apply(this, arguments) && arguments;
 
 let k = 4; // strength parameter for group attraction/repulsion
