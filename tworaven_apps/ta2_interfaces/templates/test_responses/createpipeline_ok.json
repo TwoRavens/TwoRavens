@@ -43,8 +43,11 @@
         "pipelineId": "pipeline_1",
         "pipelineInfo": {
             "predictResultUris": [
-                "file:///out/predict1.csv"
+                "{{ FILE_URI }}"
             ],
+            "predictResultData": {
+              {{ FILE_CONTENT|safe }}
+            },
             "output": "REAL",
             "scores": [
                 {
@@ -68,8 +71,11 @@
         "pipelineId": "pipeline_2",
         "pipelineInfo": {
             "predictResultUris": [
-                "file:///out/predict1.csv"
+              "{{ FILE_URI|safe }}"
             ],
+            "predictResultData": {
+              {{ FILE_CONTENT|safe }}
+            },
             "output": "REAL",
             "scores": [
                 {
