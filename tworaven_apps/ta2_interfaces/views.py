@@ -167,6 +167,7 @@ def view_create_pipeline(request):
     #
     json_str = pipeline_create(raven_data_or_err)
 
+    print('json_str', json_str)
     # Convert JSON str to python dict - err catch here
     #
     json_dict = json.loads(json_str, object_pairs_hook=OrderedDict)

@@ -68,8 +68,11 @@
         "pipelineId": "pipeline_2",
         "pipelineInfo": {
             "predictResultUris": [
-              "{{ FILE_URI }}"
+              "{{ FILE_URI|safe }}"
             ],
+            "predictResultData": {
+              {{ FILE_CONTENT|safe }}
+            },
             "output": "REAL",
             "scores": [
                 {
