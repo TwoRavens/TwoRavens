@@ -10,8 +10,9 @@ from tworaven_apps.ta2_interfaces import core_pb2
 from tworaven_apps.ta2_interfaces.ta2_connection import TA2Connection
 from tworaven_apps.ta2_interfaces.ta2_util import get_grpc_test_json,\
     get_failed_precondition_response
+from tworaven_apps.ta2_interfaces.util_embed_results import ResultUriFormatter
+from tworaven_apps.ta2_interfaces.models import FILE_URI
 from tworaven_apps.utils.csv_to_json import convert_csv_file_to_json
-
 
 PIPELINE_CREATE_REQUEST = 'PipelineCreateRequest'
 
@@ -50,8 +51,17 @@ def pipeline_create(info_str=None):
 
         template_info = get_predict_file_info_dict(info_dict.get('task'))
 
-        return get_grpc_test_json('test_responses/createpipeline_ok.json',
-                                  template_info)
+        template_str = get_grpc_test_json('test_responses/createpipeline_ok.json',
+                                          template_info)
+
+        # These next lines embed file uri content into the JSON
+        formatter = ResultUriFormatter(template_str)
+        if formatter.has_error:
+            return get_failed_precondition_response(formatter.error_message)
+
+        return formatter.get_final_results()
+        #return get_grpc_test_json('test_responses/createpipeline_ok.json',
+        #                          template_info)
 
     # --------------------------------
     # Get the connection, return an error if there are channel issues
@@ -72,21 +82,24 @@ def pipeline_create(info_str=None):
     # Convert the reply to JSON and send it on
     # --------------------------------
     results = map(MessageToJson, reply)
+
     result_str = '['+', '.join(results)+']'
 
+    formatter = ResultUriFormatter(result_str)
+    if formatter.has_error:
+        return get_failed_precondition_response(formatter.error_message)
 
-    return result_str
+    return formatter.get_final_results()
 
 
 def get_predict_file_info_dict(task_type, cnt=1):
     """Create the file uri and embed the file content"""
 
     test_dirpath = join(dirname(abspath(__file__)),
-                         'templates',
-                         'test_responses',
-                         'files')
+                        'templates',
+                        'test_responses',
+                        'files')
 
-    json_str = None
     err_found = False
     if task_type == 'REGRESSION':
         fpath = join(test_dirpath, 'samplePredReg.csv')
@@ -101,14 +114,9 @@ def get_predict_file_info_dict(task_type, cnt=1):
     if not isfile(fpath):
         if not err_found:
             fpath = 'Error creating uri.  File not found: %s' % fpath
-    else:
-        json_str, err_msg = convert_csv_file_to_json(fpath)
 
 
-    dinfo = dict(FILE_URI=fpath)
-    if json_str:
-        dinfo['FILE_CONTENT'] = """ "file_%s" : %s """ % \
-                                (cnt, json_str)
+    dinfo = {FILE_URI : fpath}
 
     return dinfo
 

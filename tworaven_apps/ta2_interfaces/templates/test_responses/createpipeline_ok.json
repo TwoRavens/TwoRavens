@@ -45,9 +45,6 @@
             "predictResultUris": [
                 "{{ FILE_URI }}"
             ],
-            "predictResultData": {
-              {{ FILE_CONTENT|safe }}
-            },
             "output": "REAL",
             "scores": [
                 {
@@ -73,9 +70,6 @@
             "predictResultUris": [
               "{{ FILE_URI|safe }}"
             ],
-            "predictResultData": {
-              {{ FILE_CONTENT|safe }}
-            },
             "output": "REAL",
             "scores": [
                 {

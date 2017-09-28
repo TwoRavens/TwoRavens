@@ -20,6 +20,8 @@ import time
 
 from tworaven_apps.ta2_interfaces import core_pb2
 from tworaven_apps.ta2_interfaces import core_pb2_grpc as core_pb2_grpc
+from tworaven_apps.ta2_interfaces.req_pipeline_create import get_predict_file_info_dict
+from tworaven_apps.ta2_interfaces.models import FILE_URI
 
 """
 import data_ext_pb2 as data_ext_pb2
@@ -42,7 +44,7 @@ class Core(core_pb2_grpc.CoreServicer):
     def StartSession(self, request, context):
         version = core_pb2.DESCRIPTOR.GetOptions().Extensions[
             core_pb2.protocol_version]
-        #import ipdb; ipdb.set_trace()
+
         print('version: %s' % version)
         print('request.version: %s' % request.version)
 
@@ -128,6 +130,7 @@ class Core(core_pb2_grpc.CoreServicer):
             (core_pb2.COMPLETED, 'pipeline_2', True),
         ]
 
+        cnt = 0
         for progress, pipeline_id, send_pipeline in results:
             time.sleep(1)
 
@@ -142,9 +145,15 @@ class Core(core_pb2_grpc.CoreServicer):
                 pipeline_id=pipeline_id,
             )
             if send_pipeline:
+                cnt += 1
+
+                # try to create a legit file uri
+                file_uri_dict = get_predict_file_info_dict('CLASSIFICATION')
+
                 msg.pipeline_info.CopyFrom(
                     core_pb2.Pipeline(
-                        predict_result_uris=['file:///out/predict1.csv'],
+                        #predict_result_uris=['file:///out/predict1.csv'],
+                        predict_result_uris=[file_uri_dict.get(FILE_URI, 'no file uri')],
                         output=output,
                         scores=[
                             core_pb2.Score(

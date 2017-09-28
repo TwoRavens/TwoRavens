@@ -52,10 +52,8 @@ TIME_ZONE = 'America/New_York'
 R_DEV_SERVER_BASE = 'http://0.0.0.0:8000/custom/'
 #R_DEV_SERVER_BASE = 'http://0.0.0.0:8060/custom/'
 
-RECORD_R_SERVICE_ROUTING = True # log R service requests/response JSON to db
+RECORD_R_SERVICE_ROUTING = False # log R service requests/response JSON to db
 
-
-#WEBPACK_LOADER['DEFAULT'].update(\
-#    dict(BUNDLE_DIR_NAME='dist/',
-#         STATS_FILE=join(BASE_DIR, 'webpack-stats-prod.json'))\
-#    )
+TA2_STATIC_TEST_MODE = True
+#TA2_STATIC_TEST_MODE = False
+TA2_TEST_SERVER_URL = os.environ.get('TA2_TEST_SERVER_URL', 'localhost:50051')

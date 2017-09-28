@@ -145,8 +145,8 @@ STATICFILES_DIRS = [join(BASE_DIR, 'assets')]
 # https://warehouse.python.org/project/whitenoise/
 #STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-RECORD_R_SERVICE_ROUTING = True # log R service requests/response JSON to db
-RECORD_D3M_SERVICE_ROUTING = True # log D3M service requests
+RECORD_R_SERVICE_ROUTING = False # log R service requests/response JSON to db
+RECORD_D3M_SERVICE_ROUTING = False # log D3M service requests
 
 
 WEBPACK_LOADER = {
@@ -165,6 +165,6 @@ SERVER_SCHEME = 'http'  # or https
 ## D3M - TA2 settings
 #
 # Test work...
-TA2_STATIC_TEST_MODE = True    # if True, return canned responses, don't try TA2 call
+TA2_STATIC_TEST_MODE = bool(os.environ.get('TA2_STATIC_TEST_MODE', False))   # True: canned
 TA2_TEST_SERVER_URL = os.environ.get('TA2_TEST_SERVER_URL', 'localhost:50051')
 TA2_GPRC_USER_AGENT = os.environ.get('TA2_GPRC_USER_AGENT', 'tworavens')
