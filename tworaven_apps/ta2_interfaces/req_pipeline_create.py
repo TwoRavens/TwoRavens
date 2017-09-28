@@ -1,4 +1,5 @@
 import json
+from os.path import dirname, isfile, join, abspath
 from collections import OrderedDict
 
 from google.protobuf.json_format import MessageToJson,\
@@ -45,7 +46,10 @@ def pipeline_create(info_str=None):
         return get_failed_precondition_response(err_msg)
 
     if settings.TA2_STATIC_TEST_MODE:
-        return get_grpc_test_json('test_responses/createpipeline_ok.json')
+        template_info = dict(FILE_URI=get_predict_file_uri(info_dict.get('task')))
+
+        return get_grpc_test_json('test_responses/createpipeline_ok.json',
+                                  template_info)
 
     # --------------------------------
     # Get the connection, return an error if there are channel issues
@@ -70,6 +74,26 @@ def pipeline_create(info_str=None):
 
 
     return result_str
+
+def get_predict_file_uri(task_type):
+    """Create the actual path to a test file"""
+    test_filepath = join(dirname(abspath(__file__)),
+                         'templates',
+                         'test_responses',
+                         'files')
+
+    if task_type == 'REGRESSION':
+        fpath = join(test_filepath, 'samplePredReg.csv')
+        if not isfile(fpath):
+            return 'Error creating uri.  File not found: %s' % fpath
+    elif task_type == 'CLASSIFICATION':
+        fpath = join(test_filepath, 'models.csv')
+        if not isfile(fpath):
+            return 'Error creating uri.  File not found: %s' % fpath
+    else:
+        return '(no sample file for this task type: %s)' % task_type
+
+    return 'file://%s' % fpath
 
 
 """
