@@ -118,10 +118,10 @@ let rightpanel = mode => mode ? m(Panel, {
         m('#setxLeftAll[style=display:block; float: left; width: 30%; height:100%; background-color: white]',
           m('#setxLeft[style=display:block; float: left; width: 100%; height:95%; overflow:auto; background-color: white]')),
         m('#setxRightAll[style=display:block; float: left; width: 70%; height:100%; background-color: white]',
-          m('#setxRightTop[style=display:block; float: left; width: 100%; height:75%; overflow:auto; background-color: white]',
+          m('#setxRightTop[style=display:block; float: left; width: 100%; height:65%; overflow:auto; background-color: white]',
             m('#setxMiddle[style=display:block; float: left; width: 70%; background-color: white]'),
             m('#setxRight[style=display:block; float: right; width: 30%; background-color: white]')),
-        m('#setxRightBottom[style=display:block; float: left; width: 100%; height:25%; overflow:auto; background-color: white]',
+        m('#setxRightBottom[style=display:block; float: left; width: 100%; height:35%; overflow:auto; background-color: white]',
           m(Button, {
             id: 'btnExecutePipe',
             classes: 'btn-default.ladda-button[data-spinner-color=#000000][data-style=zoom-in]',

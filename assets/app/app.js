@@ -514,7 +514,6 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
                 }
                                 
                 makeCorsRequest(urlcall, "nobutton", ssSuccess, ssFail, solajsonout);
-    
         }))
 }
 
@@ -2044,6 +2043,9 @@ export function estimate(btn) {
                                 d3.select(divid).select("tr.item-select")
                                 .attr('class', 'item-default');
                                 d3.select(myrow).attr('class',"item-select");
+                                if(divid=='#setxRight') {
+                                resultsplotinit(this.innerText);
+                                }
                             }});
         
                         return table;
@@ -2089,67 +2091,11 @@ export function estimate(btn) {
                     console.log(urlcall);
                     
                     function getExecutePipeSuccess(btn, PipelineExecuteResult) {
-                        
-                        function onlyUnique(value, index, self) {
-                            return self.indexOf(value) === index;
-                        }
-                        
-                        // presumably we'll be reading in results from a path
-                        // for now it's just hardcoded
                         console.log(PipelineExecuteResult);
-                        let predvals = dvvalues;
-                        for(let i =0; i<predvals.length; i++) {
-                            predvals[i] = predvals[i] * (Math.random()+.5);
-                        }
+                        // call to initialize the main plot
+                        // dvvalues and predvals should eventually be contained in the pipeline object itself
+                        resultsplotinit("pipeline id", dvvalues);
                         
-                        // this is how to tabulate in javascript. less efficient, perhaps better to write a little python script and handle in Django layer, and just return tabulation
-                        // only do this for classification tasks
-                        if(d3mTaskType[d3mProblemDescription.taskType][1] == "CLASSIFICATION") {
-                            let mycounts = [];
-                            let mypairs = [];
-                            
-                            // this should eventually be just read from the URI in pipeline
-                            dvvalues = [1,1,1,2,3,2,3,3,3,3,3,2,3,2,1,2,3,4,4];
-                            let predvals = [1,2,3,2,3,1,3,3,3,2,2,1,3,3,1,2,3,4,3];
-                            
-                            let myuniques = dvvalues.concat(predvals);
-                            myuniques = myuniques.filter(onlyUnique);
-                            console.log(myuniques);
-                            // create an object with an element for each cell in matrix
-                            for(let i = 0; i < myuniques.length; i++) {
-                                let tempcount = [];
-                                let temppair = [];
-                                for(let j = 0; j < myuniques.length; j++) {
-                                    mycounts.push(0);
-                                    mypairs.push(+myuniques[i]+','+myuniques[j]);
-                                }
-                            }
-                            
-                            console.log(mypairs);
-                            // tabulate
-                            for (let i = 0; i < dvvalues.length; i++) {
-                                let temppair = +dvvalues[i]+','+predvals[i];
-                                console.log(temppair);
-                                let myindex = mypairs.indexOf(temppair);
-                                console.log(myindex);
-                                mycounts[myindex] += 1;
-                            }
-                            console.log(mycounts);
-                            
-                            let fakedata = [], size = myuniques.length;
-                            
-                            while (mycounts.length > 0)
-                                fakedata.push(mycounts.splice(0, size));
-                            
-                            console.log(fakedata);
-                           
-                            confusionmatrix(fakedata, myuniques);
-                        } else {
-                            let xdata = "Actual";
-                            let ydata = "Predicted";
-                            bivariatePlot(dvvalues, predvals, xdata, ydata);
-
-                        }
                     }
                     function getExecutePipeFail (btn) {
                         console.log("GetExecutePipelineResults failed");
@@ -3424,7 +3370,101 @@ function toggleRightButtons(set) {
     }
 }
 
+export function resultsplotinit(pid, dvvalues) {
+    // presumably we'll be reading in results from a path
+    // for now it's just hardcoded
+    console.log(pid);
+    dvvalues = [36.17124, 29.85256,
+    30.35607,34.75843,
+    -3.109451, 10.52477,
+    21.19276,15.21084,
+    29.2771,32.30351,
+    27.21897,13.45531,
+    43.54666,  44.6703,32.41119, 31.73142,20.13344,
+    14.57473,    47.23029,
+    23.14032,    41.12482,
+    26.73446,    21.44579,
+    14.5112,    17.13832,
+    26.41416,    29.27849,
+    46.21855,    30.2051,
+    19.6586,    31.76389,
+    45.25321,    36.26299,
+    10.22691,    9.301741, 13.90198,    24.07165, 45.92711];
 
+    let predvals = dvvalues;
+    
+    function getRandomArbitrary(min, max) {
+        return Math.random() * (max - min) + min;
+    }
+    
+    for(let i =0; i<predvals.length; i++) {
+        predvals[i] = predvals[i] + (getRandomArbitrary(1,10));
+    }
+    
+    // only do this for classification tasks
+    if(d3mTaskType[d3mProblemDescription.taskType][1] == "CLASSIFICATION") {
+        genconfdata("first pipeline id");
+    } else {
+        let xdata = "Actual";
+        let ydata = "Predicted";
+        bivariatePlot(dvvalues, predvals, xdata, ydata);
+        
+    }
+
+}
+export function genconfdata (pid) {
+    // get data from pid
+   // console.log(pid);
+    console.log("HERE GEN CONF");
+    function onlyUnique(value, index, self) {
+        return self.indexOf(value) === index;
+    }
+    
+    let mycounts = [];
+    let mypairs = [];
+    
+    // this should eventually be just read from the URI in pipeline
+    let dvvalues = [1,1,1,2,3,2,3,3,3,3,3,2,3,2,1,2,3,4,4];
+    let predvals = [1,2,3,2,3,1,3,3,3,2,2,1,3,3,1,2,3,4,3];
+    
+    // combine actuals and predicted, and get all unique elements
+    let myuniques = dvvalues.concat(predvals);
+    myuniques = myuniques.filter(onlyUnique);
+  //  console.log(myuniques);
+    
+    // create two arrays: mycounts initialized to 0, mypairs have elements set to all possible pairs of uniques
+    // looked into solutions other than nested fors, but Internet suggest performance is just fine this way
+    for(let i = 0; i < myuniques.length; i++) {
+        let tempcount = [];
+        let temppair = [];
+        for(let j = 0; j < myuniques.length; j++) {
+            mycounts.push(0);
+            mypairs.push(+myuniques[i]+','+myuniques[j]);
+        }
+    }
+    
+  //  console.log(mypairs);
+    // line up actuals and predicted, and increment mycounts at index where mypair has a match for the 'actual,predicted'
+    for (let i = 0; i < dvvalues.length; i++) {
+        let temppair = +dvvalues[i]+','+predvals[i];
+        console.log(temppair);
+        let myindex = mypairs.indexOf(temppair);
+        console.log(myindex);
+        mycounts[myindex] += 1;
+    }
+  //  console.log(mycounts);
+    
+    let confdata = [], size = myuniques.length;
+    
+    // another loop... this builds the array of arrays from the flat array mycounts for input to confusionsmatrix function
+    while (mycounts.length > 0)
+        confdata.push(mycounts.splice(0, size));
+    
+   // console.log(confdata);
+    
+    // call confusionmatrix
+    confusionmatrix(confdata, myuniques);
+}
 export function confusionmatrix(matrixdata, classes) {
     d3.select("#setxMiddle").html("");
     d3.select("#setxMiddle").select("svg").remove();
@@ -3454,7 +3494,7 @@ export function confusionmatrix(matrixdata, classes) {
     
     function Matrix(options) {
 
-        var width = options.width,
+        let width = options.width,
         height = options.height,
         data = options.data,
         container = options.container,
@@ -3462,7 +3502,7 @@ export function confusionmatrix(matrixdata, classes) {
         startColor = options.start_color,
         endColor = options.end_color;
         
-        var widthLegend = options.widthLegend;
+        let widthLegend = options.widthLegend;
         
         if(!data){
             throw new Error('Please pass data');
@@ -3472,43 +3512,43 @@ export function confusionmatrix(matrixdata, classes) {
             throw new Error('It should be a 2-D array');
         }
         
-        var maxValue = d3.max(data, function(layer) { return d3.max(layer, function(d) { return d; }); });
-        var minValue = d3.min(data, function(layer) { return d3.min(layer, function(d) { return d; }); });
+        let maxValue = d3.max(data, function(layer) { return d3.max(layer, function(d) { return d; }); });
+        let minValue = d3.min(data, function(layer) { return d3.min(layer, function(d) { return d; }); });
         
-        var numrows = data.length;
-        var numcols = data[0].length;
+        let numrows = data.length;
+        let numcols = data[0].length;
         
-        var svg = d3.select(container).append("svg")
+        let svg = d3.select(container).append("svg")
         .attr("width", width + margin.left + margin.right)
         .attr("height", height + margin.top + margin.bottom)
         .append("g")
         .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
         
-        var background = svg.append("rect")
+        let background = svg.append("rect")
         .style("stroke", "black")
         .style("stroke-width", "2px")
         .attr("width", width)
         .attr("height", height);
         
-        var x = d3.scale.ordinal()
+        let x = d3.scale.ordinal()
         .domain(d3.range(numcols))
         .rangeBands([0, width]);
         
-        var y = d3.scale.ordinal()
+        let y = d3.scale.ordinal()
         .domain(d3.range(numrows))
         .rangeBands([0, height]);
         
-        var colorMap = d3.scale.linear()
+        let colorMap = d3.scale.linear()
         .domain([minValue,maxValue])
         .range([startColor, endColor]);
         
-        var row = svg.selectAll(".row")
+        let row = svg.selectAll(".row")
         .data(data)
         .enter().append("g")
         .attr("class", "row")
         .attr("transform", function(d, i) { return "translate(0," + y(i) + ")"; });
         
-        var cell = row.selectAll(".cell")
+        let cell = row.selectAll(".cell")
         .data(function(d) { return d; })
         .enter().append("g")
         .attr("class", "cell")
@@ -3531,14 +3571,17 @@ export function confusionmatrix(matrixdata, classes) {
         .data(function(d, i) { return data[i]; })
         .style("fill", colorMap);
         
-        var labels = svg.append('g')
+        // this portion of the code isn't as robust to sizing. column labels not rendering in the right place
+        let labels = svg.append('g')
         .attr('class', "labels");
         
-        var columnLabels = labels.selectAll(".column-label")
+        let columnLabels = labels.selectAll(".column-label")
         .data(labelsData)
         .enter().append("g")
         .attr("class", "column-label")
-        .attr("transform", function(d, i) { return "translate(" + x(i) + "," + height + ")"; });
+        .attr("transform", function(d, i) {
+              let temp = "translate(" + x(i) + "," + height + ")"; // this in particular looks to be the cause
+              return "translate(" + x(i) + "," + height + ")"; });
         
         columnLabels.append("line")
         .style("stroke", "black")
@@ -3556,7 +3599,7 @@ export function confusionmatrix(matrixdata, classes) {
         .attr("transform", "rotate(-60)")
         .text(function(d, i) { return d; });
         
-        var rowLabels = labels.selectAll(".row-label")
+        let rowLabels = labels.selectAll(".row-label")
         .data(labelsData)
         .enter().append("g")
         .attr("class", "row-label")
@@ -3577,12 +3620,12 @@ export function confusionmatrix(matrixdata, classes) {
         .attr("text-anchor", "end")
         .text(function(d, i) { return d; });
         
-        var key = d3.select("#confusionlegend")
+        let key = d3.select("#confusionlegend")
         .append("svg")
         .attr("width", widthLegend)
         .attr("height", height + margin.top + margin.bottom);
         
-        var legend = key
+        let legend = key
         .append("defs")
         .append("svg:linearGradient")
         .attr("id", "gradient")
@@ -3610,11 +3653,12 @@ export function confusionmatrix(matrixdata, classes) {
         .style("fill", "url(#gradient)")
         .attr("transform", "translate(0," + margin.top + ")");
         
-        var y = d3.scale.linear()
+        // this y is for the legend
+        y = d3.scale.linear()
         .range([height, 0])
         .domain([minValue, maxValue]);
         
-        var yAxis = d3.svg.axis()
+        let yAxis = d3.svg.axis()
         .scale(y)
         .orient("right");
         
@@ -3625,7 +3669,7 @@ export function confusionmatrix(matrixdata, classes) {
         
     }
     
-    // The table generation function
+    // The table generation function. Used for the table of performance measures, not the confusion matrix
     function tabulate(data, columns) {
         var table = d3.select("#setxMiddle").append("table")
         .attr("style", "margin-left: " + margin.left +"px"),
@@ -3663,7 +3707,7 @@ export function confusionmatrix(matrixdata, classes) {
     
     
     
-    
+    // this code is all for producing a table with performance measures
     //var confusionMatrix = [[169, 10],[7, 46]];
     var tp = matrixdata[0][0];
     var fn = matrixdata[0][1];
@@ -3697,8 +3741,8 @@ export function confusionmatrix(matrixdata, classes) {
            widthLegend : mainwidth*.05
            });
     
-    // rendering the table
-    var table = tabulate(computedData, ["F1", "PRECISION","RECALL","ACCURACY"]);
+    // not rendering this table for right now, left all the code in place though. maybe we use it eventually
+  //  var table = tabulate(computedData, ["F1", "PRECISION","RECALL","ACCURACY"]);
     
     
 }
