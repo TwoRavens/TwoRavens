@@ -2023,7 +2023,10 @@ export function estimate(btn) {
                         .data(data)
                         .enter()
                         .append('tr')
-                        .attr('class','item-default');
+                        .attr('class',function(d,i) {
+                              if(i==0) return 'item-select';
+                              else return 'item-default';
+                              });
                         
                         // create a cell in each row for each column
                         var cells = rows.selectAll('td')
@@ -2034,7 +2037,9 @@ export function estimate(btn) {
                               })
                         .enter()
                         .append('td')
-                        .text(function (d) { return d.value; })
+                        .text(function (d) {
+                              return d.value;
+                              })
                         .on("click", function() {
                             let myrow = this.parentElement;
                             if(myrow.className=="item-select") {
@@ -2044,7 +2049,7 @@ export function estimate(btn) {
                                 .attr('class', 'item-default');
                                 d3.select(myrow).attr('class',"item-select");
                                 if(divid=='#setxRight') {
-                                resultsplotinit(this.innerText);
+                                    resultsplotinit(allPipelineInfo[this.innerText], dvvalues);
                                 }
                             }});
         
@@ -2075,11 +2080,16 @@ export function estimate(btn) {
                     toggleRightButtons("all");
                     document.getElementById("btnResults").click();
                     
+                    // this initializes the main
+                    
+                    resultsplotinit(allPipelineInfo[resultstable[1].PipelineID], dvvalues);
+                    
+                    // I don't think we need these until we are handling streaming pipelines
+                    // They are set up and called, but don't actually render anything for the user
+                    
                     // this is our function for the ListPipelines of API
                     listpipelines();
                     
-                    
-                    // once we know what TA2 does we'll get the pipeline ids from there
                     //let pipelineid = PipelineCreateResult.pipelineid;
                     let pipeline_ids = Object.keys(allPipelineInfo);
                     let PipelineExecuteResultsRequest = {context, pipeline_ids};
@@ -2094,8 +2104,6 @@ export function estimate(btn) {
                         console.log(PipelineExecuteResult);
                         // call to initialize the main plot
                         // dvvalues and predvals should eventually be contained in the pipeline object itself
-                        resultsplotinit("pipeline id", dvvalues);
-                        
                     }
                     function getExecutePipeFail (btn) {
                         console.log("GetExecutePipelineResults failed");
@@ -3373,37 +3381,16 @@ function toggleRightButtons(set) {
 export function resultsplotinit(pid, dvvalues) {
     // presumably we'll be reading in results from a path
     // for now it's just hardcoded
-    console.log(pid);
-    dvvalues = [36.17124, 29.85256,
-    30.35607,34.75843,
-    -3.109451, 10.52477,
-    21.19276,15.21084,
-    29.2771,32.30351,
-    27.21897,13.45531,
-    43.54666,  44.6703,32.41119, 31.73142,20.13344,
-    14.57473,    47.23029,
-    23.14032,    41.12482,
-    26.73446,    21.44579,
-    14.5112,    17.13832,
-    26.41416,    29.27849,
-    46.21855,    30.2051,
-    19.6586,    31.76389,
-    45.25321,    36.26299,
-    10.22691,    9.301741, 13.90198,    24.07165, 45.92711];
-
-    let predvals = dvvalues;
+    let predfile = pid.pipelineInfo.predictResultData.file_1;
+    let predvals = [];
     
-    function getRandomArbitrary(min, max) {
-        return Math.random() * (max - min) + min;
-    }
-    
-    for(let i =0; i<predvals.length; i++) {
-        predvals[i] = predvals[i] + (getRandomArbitrary(1,10));
+    for(let i = 0; i < predfile.length; i++) {
+        predvals.push(Number(predfile[i].preds));
     }
     
     // only do this for classification tasks
     if(d3mTaskType[d3mProblemDescription.taskType][1] == "CLASSIFICATION") {
-        genconfdata("first pipeline id");
+        genconfdata(dvvalues, predvals);
     } else {
         let xdata = "Actual";
         let ydata = "Predicted";
@@ -3412,10 +3399,16 @@ export function resultsplotinit(pid, dvvalues) {
     }
 
 }
-export function genconfdata (pid) {
-    // get data from pid
-   // console.log(pid);
-    console.log("HERE GEN CONF");
+export function genconfdata (dvvalues, predvals) {
+    // FOR TESTING
+    dvvalues = predvals.slice(0);
+    for(let i = 0; i < dvvalues.length; i++) {
+        var randomnumber = Math.floor(Math.random() * (2 - -2 + 1)) + -2;
+        dvvalues[i] = dvvalues[i] + randomnumber;
+    }
+    
+    // done for testing. drop above when dvvalues are real values returned by R when pipeline is constructed
+    
     function onlyUnique(value, index, self) {
         return self.indexOf(value) === index;
     }
@@ -3424,8 +3417,8 @@ export function genconfdata (pid) {
     let mypairs = [];
     
     // this should eventually be just read from the URI in pipeline
-    let dvvalues = [1,1,1,2,3,2,3,3,3,3,3,2,3,2,1,2,3,4,4];
-    let predvals = [1,2,3,2,3,1,3,3,3,2,2,1,3,3,1,2,3,4,3];
+   // let dvvalues = [1,1,1,2,3,2,3,3,3,3,3,2,3,2,1,2,3,4,4];
+   // let predvals = [1,2,3,2,3,1,3,3,3,2,2,1,3,3,1,2,3,4,3];
     
     // combine actuals and predicted, and get all unique elements
     let myuniques = dvvalues.concat(predvals);
@@ -3446,10 +3439,10 @@ export function genconfdata (pid) {
   //  console.log(mypairs);
     // line up actuals and predicted, and increment mycounts at index where mypair has a match for the 'actual,predicted'
     for (let i = 0; i < dvvalues.length; i++) {
+     //   console.log(dvvalues[i]);
+     //   console.log(predvals[i]);
         let temppair = +dvvalues[i]+','+predvals[i];
-        console.log(temppair);
         let myindex = mypairs.indexOf(temppair);
-        console.log(myindex);
         mycounts[myindex] += 1;
     }
   //  console.log(mycounts);
@@ -3478,6 +3471,7 @@ export function confusionmatrix(matrixdata, classes) {
     condiv.style.display="inline-block";
     condiv.style.width=+(mainwidth*.2)+'px';
     condiv.style.marginLeft='20px';
+    condiv.style.height=+(mainheight*.4)+'px';
     condiv.style.float="left";
     document.getElementById('setxMiddle').appendChild(condiv);
     
@@ -3485,6 +3479,7 @@ export function confusionmatrix(matrixdata, classes) {
     legdiv.id="confusionlegend";
     legdiv.style.width=+(mainwidth*.07)+'px';
     legdiv.style.marginLeft='20px';
+    legdiv.style.height=+(mainheight*.4)+'px';
     legdiv.style.display="inline-block";
     
     document.getElementById('setxMiddle').appendChild(legdiv);
@@ -3580,8 +3575,9 @@ export function confusionmatrix(matrixdata, classes) {
         .enter().append("g")
         .attr("class", "column-label")
         .attr("transform", function(d, i) {
-              let temp = "translate(" + x(i) + "," + height + ")"; // this in particular looks to be the cause
-              return "translate(" + x(i) + "," + height + ")"; });
+             // let temp = "translate(" + x(i) + "," + (height+20) + ")"; // this in particular looks to be the cause
+            //  console.log(temp);
+              return "translate(" + x(i) + "," + (height+30) + ")"; });
         
         columnLabels.append("line")
         .style("stroke", "black")
@@ -3750,7 +3746,7 @@ export function confusionmatrix(matrixdata, classes) {
 
 // scatterplot function to go to plots.js to be reused
 export function bivariatePlot(x_Axis, y_Axis, x_Axis_name, y_Axis_name) {
-    
+  
     d3.select("#setxMiddle").html("");
     d3.select("#setxMiddle").select("svg").remove();
     
@@ -3759,7 +3755,7 @@ export function bivariatePlot(x_Axis, y_Axis, x_Axis_name, y_Axis_name) {
     
     let data_plot = [];
     var nanCount = 0;
-    for (var i = 0; i < 1000; i++) {
+    for (var i = 0; i < x_Axis.length; i++) {
         if (isNaN(x_Axis[i]) || isNaN(y_Axis[i])) {
             nanCount++;
         } else {
@@ -3768,8 +3764,6 @@ export function bivariatePlot(x_Axis, y_Axis, x_Axis_name, y_Axis_name) {
             data_plot.push({xaxis: newNumber1, yaxis: newNumber2, score: Math.random() * 100});
             
         }
-        
-        
     }
     
     
