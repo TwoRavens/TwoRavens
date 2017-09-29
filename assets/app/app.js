@@ -330,34 +330,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
    // .then(() => new Promise((resolve, reject) => d3.xml(metadataurl, 'application/xml', xml => {
     .then(() => new Promise((resolve, reject) => {
         let vars = Object.keys(preprocess);
-                            // this doesn't come from xml, but from preprocessed json
-        // the labels, citations, and file name come from the 'xml' (metadataurl), which is the file from the data repo
-        // however, TwoRavens should function using only the data that comes from our preprocess script, which is the 'json' (pURL)
-            // for now the metadataurl is still Fearon & Laitin
-        let temp="";
-        if(!d3m_mode) {
-            temp = xml.documentElement.getElementsByTagName("fileName");
-            zparams.zdata = temp[0].childNodes[0].nodeValue;
-            let cite = xml.documentElement.getElementsByTagName("biblCit");
-            // clean citation so POST is valid json
-            zparams.zdatacite = cite[0].childNodes[0].nodeValue
-                .replace(/\&/g, "and")
-                .replace(/\;/g, ",")
-                .replace(/\%/g, "-");
-            $('#cite div.panel-body').text(zparams.zdatacite);
-        } else {
-            zparams.zdata = d3mDataName;
-        }
-        // dataset name trimmed to 12 chars
-        let dataname = zparams.zdata;
-        if(!d3m_mode) {
-            dataname = zparams.zdata.replace(/\.(.*)/, ''); // drop file extension
-        }
-                            
-        d3.select("#dataName").html(dataname);
 
-        // Put dataset name, from meta-data, into page title
-        d3.select("title").html("TwoRavens " + dataname);
         // temporary values for hold that correspond to histogram bins
         hold = [.6, .2, .9, .8, .1, .3, .4];
         for (let i = 0; i < vars.length; i++) {
@@ -436,7 +409,31 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
             d3.json(d3mPS, (_, data) => {
                 console.log("prob schema data: ", data);
                 mytarget = data.target.field;
-                
+
+            let temp="";
+            if(!d3m_mode) {
+                temp = xml.documentElement.getElementsByTagName("fileName");     // Note: presently xml is no longer being read from Dataverse metadata anywhere
+                zparams.zdata = temp[0].childNodes[0].nodeValue;
+                let cite = xml.documentElement.getElementsByTagName("biblCit");
+                // clean citation so POST is valid json
+                zparams.zdatacite = cite[0].childNodes[0].nodeValue
+                    .replace(/\&/g, "and")
+                    .replace(/\;/g, ",")
+                    .replace(/\%/g, "-");
+                $('#cite div.panel-body').text(zparams.zdatacite);
+            } else {
+                zparams.zdata = data.datasets[0];             // read the dataset name from the problem schema
+            }
+            // dataset name trimmed to 12 chars
+            let dataname = zparams.zdata;
+            if(!d3m_mode) {
+                dataname = zparams.zdata.replace(/\.(.*)/, ''); // drop file extension
+            }
+                                
+            d3.select("#dataName").html(dataname);
+            // Put dataset name, from meta-data, into page title
+            d3.select("title").html("TwoRavens " + dataname);
+         
                     //This adds a ink to problemDescription.txt in the ticker
                 /*
                 let aTag = document.createElement('a');
