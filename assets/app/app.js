@@ -290,8 +290,8 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
 
     if(d3m_mode) {
         pURL = d3mPreprocess;
-        // zparams.zdataurl = start+'/data/trainDatamerged.tsv';
-        zparams.zdata = d3mDataName;
+        // zparams.zdataurl = start+'/data/trainDatamerged.tsv';   // "start" path no longer exists
+        // zparams.zdata = d3mDataName;   // this is now going to be filled in using problem schema field
     } else if(!production) {
         zparams.zdataurl = 'data/fearonLaitin.tsv';
     }
