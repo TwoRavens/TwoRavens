@@ -274,6 +274,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
 
     //set start from user input, then assume locations are consistent based on d3m directory structure (alternatively can make each of these locations be set by user)
     let configurations = {};
+    let dataschema = {};
     let d3mRootPath = "";
     let d3mDataName = "";
     let d3mData = "";
@@ -475,6 +476,23 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
                 resolve();
             });
         }))
+        .then(() => new Promise((resolve, reject) => { // get the data schema
+                            if (!d3m_mode){return resolve();}
+                            
+                                // this will append the d3m data description for each variable in allNodes
+                            d3.json(d3mDS, (_, data) => {
+                                    dataschema =  JSON.parse(JSON.stringify(data));
+                                    let datavars = dataschema.trainData.trainData;
+                                    for(let i = 0; i < datavars.length; i++) {
+                                        let myi = findNodeIndex(datavars[i].varName);
+                                        let d3mDescription = {d3mDescription:datavars[i]};
+                                        allNodes[myi] = Object.assign(allNodes[myi], d3mDescription);
+                                    }
+                                    console.log("data schema data: ", dataschema);
+                                    resolve();
+                                    })
+                            }))
+
         .then(() => new Promise((resolve, reject) => {
                 if (!d3m_mode)
                     return resolve();
