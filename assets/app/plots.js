@@ -370,7 +370,7 @@ export function bars(node, div, priv) {
         ciLowerVals.sort((a, b) => b.y - a.y); // ?
     } else {
         for (var i = 0; i < keys.length; i++) {
-            console.log("plotvalues in bars");
+           // console.log("plotvalues in bars");
             yVals[i] = node.plotvalues[keys[i]];
             xVals[i] = Number(keys[i]);
             if (priv) {
