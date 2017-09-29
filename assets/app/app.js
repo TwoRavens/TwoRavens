@@ -287,9 +287,6 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
     let metadataurl = ddiurl || (fileid ? `${dataverseurl}/api/meta/datafile/${fileid}` : data + '.xml');
     // read pre-processed metadata and data
     let pURL = dataurl ? `${dataurl}&format=prep` : data + '.json';
-    cdb('pURL: ' + pURL);
-
-    console.log("pURL is: " + pURL);
 
     if(d3m_mode) {
         pURL = d3mPreprocess;
