@@ -2058,17 +2058,6 @@ export function estimate(btn) {
                         return table;
                     }
                     
-                    // want to create a button for deleting a pipeline
-                    let delButton = document.createElement('button');
-                    delButton.width = '100%';
-                    delButton.onclick= deletepipeline();
-                    delButton.title= 'Delete pipeline';
-                    
-                    let myrows = document.getElementById("results").getElementsByTagName('tr');
-                    console.log(myrows.length);
-//                    myrows[3].appendChild(delButton);
-                      
-                      
                     let resultstable = [];
                     for(var key in allPipelineInfo) {
                         let myid = "";
