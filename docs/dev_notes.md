@@ -12,7 +12,7 @@ Contents:
 
 The following command runs a TA2 test server with the core code from the NYU team.  Run this is a new, separate Terminal:
 
-- open a Terminal
+- open a separate Terminal
 - cd into the TwoRavens directory
 - run `workon 2ravens`
 - run `fab run_ta2_test_server`
