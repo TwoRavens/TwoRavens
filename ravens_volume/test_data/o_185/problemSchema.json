@@ -1,0 +1,21 @@
+{
+    "datasets": [
+        "o_185_dataset"
+    ],
+    "descriptionFile": "problemDescription.txt",
+    "metric": "f1Macro",
+    "outputType": "classLabel",
+    "problemId": "o_185_problem",
+    "redacted": true,
+    "target": {
+        "classes": [
+            "0",
+            "1",
+            "2"
+        ],
+        "field": "Hall_of_Fame"
+    },
+    "taskSubType": "multiClass",
+    "taskType": "classification",
+    "problemSchemaVersion": "2.12"
+}
