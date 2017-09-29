@@ -287,14 +287,11 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
     let metadataurl = ddiurl || (fileid ? `${dataverseurl}/api/meta/datafile/${fileid}` : data + '.xml');
     // read pre-processed metadata and data
     let pURL = dataurl ? `${dataurl}&format=prep` : data + '.json';
-    cdb('pURL: ' + pURL);
-
-    console.log("pURL is: " + pURL);
 
     if(d3m_mode) {
         pURL = d3mPreprocess;
-        // zparams.zdataurl = start+'/data/trainDatamerged.tsv';
-        zparams.zdata = d3mDataName;
+        // zparams.zdataurl = start+'/data/trainDatamerged.tsv';   // "start" path no longer exists
+        // zparams.zdata = d3mDataName;   // this is now going to be filled in using problem schema field
     } else if(!production) {
         zparams.zdataurl = 'data/fearonLaitin.tsv';
     }
@@ -330,34 +327,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
    // .then(() => new Promise((resolve, reject) => d3.xml(metadataurl, 'application/xml', xml => {
     .then(() => new Promise((resolve, reject) => {
         let vars = Object.keys(preprocess);
-                            // this doesn't come from xml, but from preprocessed json
-        // the labels, citations, and file name come from the 'xml' (metadataurl), which is the file from the data repo
-        // however, TwoRavens should function using only the data that comes from our preprocess script, which is the 'json' (pURL)
-            // for now the metadataurl is still Fearon & Laitin
-        let temp="";
-        if(!d3m_mode) {
-            temp = xml.documentElement.getElementsByTagName("fileName");
-            zparams.zdata = temp[0].childNodes[0].nodeValue;
-            let cite = xml.documentElement.getElementsByTagName("biblCit");
-            // clean citation so POST is valid json
-            zparams.zdatacite = cite[0].childNodes[0].nodeValue
-                .replace(/\&/g, "and")
-                .replace(/\;/g, ",")
-                .replace(/\%/g, "-");
-            $('#cite div.panel-body').text(zparams.zdatacite);
-        } else {
-            zparams.zdata = d3mDataName;
-        }
-        // dataset name trimmed to 12 chars
-        let dataname = zparams.zdata;
-        if(!d3m_mode) {
-            dataname = zparams.zdata.replace(/\.(.*)/, ''); // drop file extension
-        }
-                            
-        d3.select("#dataName").html(dataname);
 
-        // Put dataset name, from meta-data, into page title
-        d3.select("title").html("TwoRavens " + dataname);
         // temporary values for hold that correspond to histogram bins
         hold = [.6, .2, .9, .8, .1, .3, .4];
         for (let i = 0; i < vars.length; i++) {
@@ -436,7 +406,31 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
             d3.json(d3mPS, (_, data) => {
                 console.log("prob schema data: ", data);
                 mytarget = data.target.field;
-                
+
+            let temp="";
+            if(!d3m_mode) {
+                temp = xml.documentElement.getElementsByTagName("fileName");     // Note: presently xml is no longer being read from Dataverse metadata anywhere
+                zparams.zdata = temp[0].childNodes[0].nodeValue;
+                let cite = xml.documentElement.getElementsByTagName("biblCit");
+                // clean citation so POST is valid json
+                zparams.zdatacite = cite[0].childNodes[0].nodeValue
+                    .replace(/\&/g, "and")
+                    .replace(/\;/g, ",")
+                    .replace(/\%/g, "-");
+                $('#cite div.panel-body').text(zparams.zdatacite);
+            } else {
+                zparams.zdata = data.datasets[0];             // read the dataset name from the problem schema
+            }
+            // dataset name trimmed to 12 chars
+            let dataname = zparams.zdata;
+            if(!d3m_mode) {
+                dataname = zparams.zdata.replace(/\.(.*)/, ''); // drop file extension
+            }
+                                
+            d3.select("#dataName").html(dataname);
+            // Put dataset name, from meta-data, into page title
+            d3.select("title").html("TwoRavens " + dataname);
+         
                     //This adds a ink to problemDescription.txt in the ticker
                 /*
                 let aTag = document.createElement('a');
@@ -2023,7 +2017,10 @@ export function estimate(btn) {
                         .data(data)
                         .enter()
                         .append('tr')
-                        .attr('class','item-default');
+                        .attr('class',function(d,i) {
+                              if(i==0) return 'item-select';
+                              else return 'item-default';
+                              });
                         
                         // create a cell in each row for each column
                         var cells = rows.selectAll('td')
@@ -2034,7 +2031,9 @@ export function estimate(btn) {
                               })
                         .enter()
                         .append('td')
-                        .text(function (d) { return d.value; })
+                        .text(function (d) {
+                              return d.value;
+                              })
                         .on("click", function() {
                             let myrow = this.parentElement;
                             if(myrow.className=="item-select") {
@@ -2044,7 +2043,7 @@ export function estimate(btn) {
                                 .attr('class', 'item-default');
                                 d3.select(myrow).attr('class',"item-select");
                                 if(divid=='#setxRight') {
-                                resultsplotinit(this.innerText);
+                                    resultsplotinit(allPipelineInfo[this.innerText], dvvalues);
                                 }
                             }});
         
@@ -2075,11 +2074,18 @@ export function estimate(btn) {
                     toggleRightButtons("all");
                     document.getElementById("btnResults").click();
                     
+                    // this initializes the main
+                    // this piece here is the first pipeline through: allPipelineInfo[resultstable[1].PipelineID]
+                    resultsplotinit(allPipelineInfo[resultstable[1].PipelineID], dvvalues);
+                    exportpipeline(resultstable[1].PipelineID);
+                    
+                    
+                    // I don't think we need these until we are handling streaming pipelines
+                    // They are set up and called, but don't actually render anything for the user
+                    
                     // this is our function for the ListPipelines of API
                     listpipelines();
                     
-                    
-                    // once we know what TA2 does we'll get the pipeline ids from there
                     //let pipelineid = PipelineCreateResult.pipelineid;
                     let pipeline_ids = Object.keys(allPipelineInfo);
                     let PipelineExecuteResultsRequest = {context, pipeline_ids};
@@ -2094,8 +2100,6 @@ export function estimate(btn) {
                         console.log(PipelineExecuteResult);
                         // call to initialize the main plot
                         // dvvalues and predvals should eventually be contained in the pipeline object itself
-                        resultsplotinit("pipeline id", dvvalues);
-                        
                     }
                     function getExecutePipeFail (btn) {
                         console.log("GetExecutePipelineResults failed");
@@ -3373,37 +3377,16 @@ function toggleRightButtons(set) {
 export function resultsplotinit(pid, dvvalues) {
     // presumably we'll be reading in results from a path
     // for now it's just hardcoded
-    console.log(pid);
-    dvvalues = [36.17124, 29.85256,
-    30.35607,34.75843,
-    -3.109451, 10.52477,
-    21.19276,15.21084,
-    29.2771,32.30351,
-    27.21897,13.45531,
-    43.54666,  44.6703,32.41119, 31.73142,20.13344,
-    14.57473,    47.23029,
-    23.14032,    41.12482,
-    26.73446,    21.44579,
-    14.5112,    17.13832,
-    26.41416,    29.27849,
-    46.21855,    30.2051,
-    19.6586,    31.76389,
-    45.25321,    36.26299,
-    10.22691,    9.301741, 13.90198,    24.07165, 45.92711];
-
-    let predvals = dvvalues;
+    let predfile = pid.pipelineInfo.predictResultData.file_1;
+    let predvals = [];
     
-    function getRandomArbitrary(min, max) {
-        return Math.random() * (max - min) + min;
-    }
-    
-    for(let i =0; i<predvals.length; i++) {
-        predvals[i] = predvals[i] + (getRandomArbitrary(1,10));
+    for(let i = 0; i < predfile.length; i++) {
+        predvals.push(Number(predfile[i].preds));
     }
     
     // only do this for classification tasks
     if(d3mTaskType[d3mProblemDescription.taskType][1] == "CLASSIFICATION") {
-        genconfdata("first pipeline id");
+        genconfdata(dvvalues, predvals);
     } else {
         let xdata = "Actual";
         let ydata = "Predicted";
@@ -3412,10 +3395,16 @@ export function resultsplotinit(pid, dvvalues) {
     }
 
 }
-export function genconfdata (pid) {
-    // get data from pid
-   // console.log(pid);
-    console.log("HERE GEN CONF");
+export function genconfdata (dvvalues, predvals) {
+    // FOR TESTING
+    dvvalues = predvals.slice(0);
+    for(let i = 0; i < dvvalues.length; i++) {
+        var randomnumber = Math.floor(Math.random() * (2 - -2 + 1)) + -2;
+        dvvalues[i] = dvvalues[i] + randomnumber;
+    }
+    
+    // done for testing. drop above when dvvalues are real values returned by R when pipeline is constructed
+    
     function onlyUnique(value, index, self) {
         return self.indexOf(value) === index;
     }
@@ -3424,8 +3413,8 @@ export function genconfdata (pid) {
     let mypairs = [];
     
     // this should eventually be just read from the URI in pipeline
-    let dvvalues = [1,1,1,2,3,2,3,3,3,3,3,2,3,2,1,2,3,4,4];
-    let predvals = [1,2,3,2,3,1,3,3,3,2,2,1,3,3,1,2,3,4,3];
+   // let dvvalues = [1,1,1,2,3,2,3,3,3,3,3,2,3,2,1,2,3,4,4];
+   // let predvals = [1,2,3,2,3,1,3,3,3,2,2,1,3,3,1,2,3,4,3];
     
     // combine actuals and predicted, and get all unique elements
     let myuniques = dvvalues.concat(predvals);
@@ -3446,10 +3435,10 @@ export function genconfdata (pid) {
   //  console.log(mypairs);
     // line up actuals and predicted, and increment mycounts at index where mypair has a match for the 'actual,predicted'
     for (let i = 0; i < dvvalues.length; i++) {
+     //   console.log(dvvalues[i]);
+     //   console.log(predvals[i]);
         let temppair = +dvvalues[i]+','+predvals[i];
-        console.log(temppair);
         let myindex = mypairs.indexOf(temppair);
-        console.log(myindex);
         mycounts[myindex] += 1;
     }
   //  console.log(mycounts);
@@ -3478,6 +3467,7 @@ export function confusionmatrix(matrixdata, classes) {
     condiv.style.display="inline-block";
     condiv.style.width=+(mainwidth*.2)+'px';
     condiv.style.marginLeft='20px';
+    condiv.style.height=+(mainheight*.4)+'px';
     condiv.style.float="left";
     document.getElementById('setxMiddle').appendChild(condiv);
     
@@ -3485,6 +3475,7 @@ export function confusionmatrix(matrixdata, classes) {
     legdiv.id="confusionlegend";
     legdiv.style.width=+(mainwidth*.07)+'px';
     legdiv.style.marginLeft='20px';
+    legdiv.style.height=+(mainheight*.4)+'px';
     legdiv.style.display="inline-block";
     
     document.getElementById('setxMiddle').appendChild(legdiv);
@@ -3580,8 +3571,9 @@ export function confusionmatrix(matrixdata, classes) {
         .enter().append("g")
         .attr("class", "column-label")
         .attr("transform", function(d, i) {
-              let temp = "translate(" + x(i) + "," + height + ")"; // this in particular looks to be the cause
-              return "translate(" + x(i) + "," + height + ")"; });
+             // let temp = "translate(" + x(i) + "," + (height+20) + ")"; // this in particular looks to be the cause
+            //  console.log(temp);
+              return "translate(" + x(i) + "," + (height+30) + ")"; });
         
         columnLabels.append("line")
         .style("stroke", "black")
@@ -3750,7 +3742,7 @@ export function confusionmatrix(matrixdata, classes) {
 
 // scatterplot function to go to plots.js to be reused
 export function bivariatePlot(x_Axis, y_Axis, x_Axis_name, y_Axis_name) {
-    
+  
     d3.select("#setxMiddle").html("");
     d3.select("#setxMiddle").select("svg").remove();
     
@@ -3759,7 +3751,7 @@ export function bivariatePlot(x_Axis, y_Axis, x_Axis_name, y_Axis_name) {
     
     let data_plot = [];
     var nanCount = 0;
-    for (var i = 0; i < 1000; i++) {
+    for (var i = 0; i < x_Axis.length; i++) {
         if (isNaN(x_Axis[i]) || isNaN(y_Axis[i])) {
             nanCount++;
         } else {
@@ -3768,8 +3760,6 @@ export function bivariatePlot(x_Axis, y_Axis, x_Axis_name, y_Axis_name) {
             data_plot.push({xaxis: newNumber1, yaxis: newNumber2, score: Math.random() * 100});
             
         }
-        
-        
     }
     
     
@@ -4000,6 +3990,37 @@ export function setxTable(features) {
     // render the table(s)
     tabulate(mydata, ['Variables', 'From', 'To']); // 2 column table
 }
+
+
+//rpc ExportPipeline(PipelineExportRequest) returns (Response) {}
+export function exportpipeline(pipelineId) {
+    console.log(pipelineId);
+    let context = apiSession(zparams.zsessionid);
+    let pipelineExecUri = "<<EXECUTABLEURI>>"; // uri to persist executable of requested pipeline w/ session preprocessing
+    
+    let PipelineExportRequest={context, pipelineId, pipelineExecUri};
+    
+    let jsonout = JSON.stringify(PipelineExportRequest);
+    
+    let urlcall = d3mURL + "/exportpipeline";
+    let solajsonout = "grpcrequest=" + jsonout;
+    
+    console.log(urlcall);
+    console.log(solajsonout);
+
+    function exportSuccess(btn, Response) {
+        let alertmessage = "Executable for " + pipelineId + " has been written";
+        alert(alertmessage);
+        console.log(Response);
+    }
+    
+    function exportFail(btn) {
+        console.log("export pipeline failed");
+    }
+    
+    makeCorsRequest(urlcall, "nobutton", exportSuccess, exportFail, solajsonout);
+}
+
 
 // D3M API HELPERS
 // because these get built in various places, pulling them out for easy manipulation

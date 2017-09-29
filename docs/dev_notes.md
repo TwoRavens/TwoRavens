@@ -44,6 +44,8 @@ To generate webpack files (js/css) for distribution:
   - run `workon 2ravens`
   - run `fab webpack_prod`
 
+(Note, if this is a fresh clone, you'll first need to run `npm install` as explained in the install instructions.)
+
 If the mithril app has changed, you should see updated 3 files which will look something like this:
 
 - `git status`
