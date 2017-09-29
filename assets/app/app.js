@@ -2043,7 +2043,7 @@ export function estimate(btn) {
                                 .attr('class', 'item-default');
                                 d3.select(myrow).attr('class',"item-select");
                                 if(divid=='#setxRight') {
-                                    resultsplotinit(allPipelineInfo[this.innerText], dvvalues);
+                                    resultsplotinit(allPipelineInfo[myrow.firstChild.innerText], dvvalues);
                                 }
                             }});
         
@@ -3377,6 +3377,7 @@ function toggleRightButtons(set) {
 export function resultsplotinit(pid, dvvalues) {
     // presumably we'll be reading in results from a path
     // for now it's just hardcoded
+    console.log(pid);
     let predfile = pid.pipelineInfo.predictResultData.file_1;
     let predvals = [];
     
@@ -3465,7 +3466,7 @@ export function confusionmatrix(matrixdata, classes) {
     let condiv = document.createElement('div');
     condiv.id="confusioncontainer";
     condiv.style.display="inline-block";
-    condiv.style.width=+(mainwidth*.2)+'px';
+    condiv.style.width=+(mainwidth*.25)+'px';
     condiv.style.marginLeft='20px';
     condiv.style.height=+(mainheight*.4)+'px';
     condiv.style.float="left";
@@ -3746,7 +3747,9 @@ export function bivariatePlot(x_Axis, y_Axis, x_Axis_name, y_Axis_name) {
     d3.select("#setxMiddle").html("");
     d3.select("#setxMiddle").select("svg").remove();
     
-    console.log("bivariate plot called");
+    let mainwidth = document.getElementById('main').clientWidth;
+    let mainheight = document.getElementById('main').clientHeight;
+
     // scatter plot
     
     let data_plot = [];
@@ -3763,9 +3766,9 @@ export function bivariatePlot(x_Axis, y_Axis, x_Axis_name, y_Axis_name) {
     }
     
     
-    var margin = {top: 20, right: 15, bottom: 40, left: 60}
-    , width = 500 - margin.left - margin.right
-    , height = 280 - margin.top - margin.bottom;
+    var margin = {top: 35, right: 35, bottom: 35, left: 35}
+    , width = mainwidth*.25- margin.left - margin.right
+    , height = mainwidth*.25 - margin.top - margin.bottom;
     var padding = 100;
     
     var min_x = d3.min(data_plot, function (d, i) {
@@ -3853,6 +3856,8 @@ export function bivariatePlot(x_Axis, y_Axis, x_Axis_name, y_Axis_name) {
     .attr("r", 2)
     .style("fill", "#B71C1C")
     ;
+    
+    
     chart_scatter.append("text")
     .attr("text-anchor", "middle")  // this makes it easy to centre the text as the transform is applied to the anchor
     .attr("transform", "translate(" + padding / 5 + "," + (height / 2) + ")rotate(-90)")  // text is drawn off the screen top left, move down and out and rotate
@@ -3870,6 +3875,7 @@ export function bivariatePlot(x_Axis, y_Axis, x_Axis_name, y_Axis_name) {
     .style("text-indent","20px")
     .style("font-size","12px")
     .style("font-weight","bold");
+    
     
     main1.append("line")
     .attr("x1", xScale(min_x))
@@ -3937,7 +3943,7 @@ export function bivariatePlot(x_Axis, y_Axis, x_Axis_name, y_Axis_name) {
 
 export function setxTable(features) {
     function tabulate(data, columns) {
-        var table = d3.select('#setxRightBottom').append('table')
+        var table = d3.select('#setxRightBottomLeft').append('table')
         var thead = table.append('thead')
         var	tbody = table.append('tbody');
         
