@@ -54,8 +54,5 @@ R_DEV_SERVER_BASE = 'http://0.0.0.0:8000/custom/'
 
 RECORD_R_SERVICE_ROUTING = True # log R service requests/response JSON to db
 
-
-#WEBPACK_LOADER['DEFAULT'].update(\
-#    dict(BUNDLE_DIR_NAME='dist/',
-#         STATS_FILE=join(BASE_DIR, 'webpack-stats-prod.json'))\
-#    )
+TA2_STATIC_TEST_MODE = True    # if True, return canned responses, don't try TA2 call
+TA2_TEST_SERVER_URL = 'localhost:50051'
