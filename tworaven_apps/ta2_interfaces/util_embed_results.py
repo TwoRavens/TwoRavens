@@ -82,6 +82,10 @@ class ResultUriFormatter(object):
 
         if isinstance(json_info, list):
             formatted_results = self.process_list(json_info)
+        else:
+            assert False, "Need to handle instance: %s" % type(json_info)
+        #elif isinstance(json_info, dict) or isinstance(json_info, OrderedDict):
+        #    print (json_info)
 
         try:
             self.final_results = json.dumps(formatted_results)
@@ -92,6 +96,7 @@ class ResultUriFormatter(object):
     def get_final_results(self):
         """Return the formatted_results"""
         return self.final_results
+    
 
     def process_list(self, result_list):
         """Process the results list from a PipelineCreateResult"""
@@ -105,13 +110,26 @@ class ResultUriFormatter(object):
         # pip_result is a PipelineCreateResult
         #
         for pip_result in result_list:
+
             if 'pipelineInfo' in pip_result:
+                # Handle a list of PipelineCreateResult objects
+                #   - returned by CreatePipelines
+                #
                 if 'predictResultUris' in pip_result['pipelineInfo']:
                     for file_uri in pip_result['pipelineInfo']['predictResultUris']:
                         fmt_cnt += 1
                         embed_result = self.get_embed_result(file_uri, fmt_cnt)
                         pip_result['pipelineInfo'].setdefault('predictResultData', [])
                         pip_result['pipelineInfo']['predictResultData'].append(embed_result)
+            elif 'resultUris' in pip_result:
+                # Handle a list of PipelineExecuteResult objects
+                #   - returned by GetExecutePipelineResults
+                #
+                for file_uri in pip_result['resultUris']:
+                    fmt_cnt += 1
+                    embed_result = self.get_embed_result(file_uri, fmt_cnt)
+                    pip_result.setdefault('resultData', [])
+                    pip_result['resultData'].append(embed_result)
 
             formatted_results.append(pip_result)
 
@@ -126,7 +144,7 @@ class ResultUriFormatter(object):
         """Get the content from the """
         err_msg = None
         py_list = None
-        
+
         if not file_uri:
             err_msg = 'file_uri cannot be None'
 

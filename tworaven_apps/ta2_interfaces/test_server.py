@@ -20,9 +20,8 @@ import time
 
 from tworaven_apps.ta2_interfaces import core_pb2
 from tworaven_apps.ta2_interfaces import core_pb2_grpc as core_pb2_grpc
-from tworaven_apps.ta2_interfaces.req_pipeline_create import get_predict_file_info_dict
 from tworaven_apps.ta2_interfaces.models import FILE_URI
-
+from tworaven_apps.ta2_interfaces.ta2_util import get_predict_file_info_dict
 """
 import data_ext_pb2 as data_ext_pb2
 import data_ext_pb2_grpc as data_ext_pb2_grpc

@@ -2,15 +2,16 @@
 Code is courtesy of Matthias Grabmair
     - https://gitlab.datadrivendiscovery.org/mgrabmair/ta3ta2-proxy
 """
-from google.protobuf.json_format import MessageToJson
+import random
+from os.path import dirname, isfile, join, abspath
 
+from google.protobuf.json_format import MessageToJson
 from django.conf import settings
 from django.template.loader import render_to_string
 
 from tworaven_apps.ta2_interfaces import core_pb2
 from tworaven_apps.ta2_interfaces.models import GRPC_JSON_KEY,\
-    FAILED_PRECONDITION
-
+    FAILED_PRECONDITION, FILE_URI
 
 
 def get_grpc_test_json(grpc_json_file, info_dict={}):
@@ -59,3 +60,34 @@ def get_failed_precondition_sess_response(err_msg):
                             details=err_msg)))
 
     return MessageToJson(grpc_resp)
+
+
+def get_predict_file_info_dict(task_type=None, cnt=1):
+    """Create the file uri and embed the file content"""
+    if not task_type:
+        task_type = random.choice(['REGRESSION', 'CLASSIFICATION'])
+
+    test_dirpath = join(dirname(abspath(__file__)),
+                        'templates',
+                        'test_responses',
+                        'files')
+
+    err_found = False
+    if task_type == 'REGRESSION':
+        fpath = join(test_dirpath, 'samplePredReg.csv')
+
+    elif task_type == 'CLASSIFICATION':
+
+        fpath = join(test_dirpath, 'models.csv')
+    else:
+        err_found = True
+        fpath = '(no sample file for this task type: %s)' % task_type
+
+    if not isfile(fpath):
+        if not err_found:
+            fpath = 'Error creating uri.  File not found: %s' % fpath
+
+
+    dinfo = {FILE_URI : fpath}
+
+    return dinfo

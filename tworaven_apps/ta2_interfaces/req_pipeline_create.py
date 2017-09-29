@@ -1,5 +1,5 @@
 import json
-from os.path import dirname, isfile, join, abspath
+from os.path import join
 from collections import OrderedDict
 
 from google.protobuf.json_format import MessageToJson,\
@@ -9,10 +9,9 @@ from django.conf import settings
 from tworaven_apps.ta2_interfaces import core_pb2
 from tworaven_apps.ta2_interfaces.ta2_connection import TA2Connection
 from tworaven_apps.ta2_interfaces.ta2_util import get_grpc_test_json,\
-    get_failed_precondition_response
+    get_failed_precondition_response,\
+    get_predict_file_info_dict
 from tworaven_apps.ta2_interfaces.util_embed_results import ResultUriFormatter
-from tworaven_apps.ta2_interfaces.models import FILE_URI
-from tworaven_apps.utils.csv_to_json import convert_csv_file_to_json
 
 PIPELINE_CREATE_REQUEST = 'PipelineCreateRequest'
 
@@ -90,36 +89,6 @@ def pipeline_create(info_str=None):
         return get_failed_precondition_response(formatter.error_message)
 
     return formatter.get_final_results()
-
-
-def get_predict_file_info_dict(task_type, cnt=1):
-    """Create the file uri and embed the file content"""
-
-    test_dirpath = join(dirname(abspath(__file__)),
-                        'templates',
-                        'test_responses',
-                        'files')
-
-    err_found = False
-    if task_type == 'REGRESSION':
-        fpath = join(test_dirpath, 'samplePredReg.csv')
-
-    elif task_type == 'CLASSIFICATION':
-
-        fpath = join(test_dirpath, 'models.csv')
-    else:
-        err_found = True
-        fpath = '(no sample file for this task type: %s)' % task_type
-
-    if not isfile(fpath):
-        if not err_found:
-            fpath = 'Error creating uri.  File not found: %s' % fpath
-
-
-    dinfo = {FILE_URI : fpath}
-
-    return dinfo
-
 
 """
 python manage.py shell

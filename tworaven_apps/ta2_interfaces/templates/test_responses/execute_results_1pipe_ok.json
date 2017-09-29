@@ -1,4 +1,5 @@
-{
+[
+  {
     "responseInfo": {
         "status": {
             "code": "OK"
@@ -7,9 +8,7 @@
     "progressInfo": "COMPLETED",
     "pipelineId": "pipeline_1",
     "resultUris": [
-        "file://result_dir/pipeline_results/file_74.txt",
-        "file://result_dir/pipeline_results/file_24.txt",
-        "file://result_dir/pipeline_results/file_14.txt",
-        "file://result_dir/pipeline_results/file_44.txt"
+      "{{ FILE_URI }}"
     ]
-}
+ }
+]
