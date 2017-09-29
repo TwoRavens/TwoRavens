@@ -2020,7 +2020,7 @@ export function estimate(btn) {
                         .attr('class',function(d,i) {
                               if(i==0) return 'item-select';
                               else return 'item-default';
-                              });
+                              })
                         
                         // create a cell in each row for each column
                         var cells = rows.selectAll('td')
@@ -2032,9 +2032,9 @@ export function estimate(btn) {
                         .enter()
                         .append('td')
                         .text(function (d) {
-                              return d.value;
+                            return d.value;
                               })
-                        .on("click", function() {
+                        .on("click", function(d) {
                             let myrow = this.parentElement;
                             if(myrow.className=="item-select") {
                                 return;
@@ -2046,10 +2046,29 @@ export function estimate(btn) {
                                     resultsplotinit(allPipelineInfo[myrow.firstChild.innerText], dvvalues);
                                 }
                             }});
+                        
+                        // this is code to add a checkbox to each row of pipeline results table
+                        /*
+                        d3.select(divid).selectAll("tr")
+                        .append("input")
+                        .attr("type", "checkbox")
+                        .style("float","right");
+                         */
         
                         return table;
                     }
                     
+                    // want to create a button for deleting a pipeline
+                    let delButton = document.createElement('button');
+                    delButton.width = '100%';
+                    delButton.onclick= deletepipeline();
+                    delButton.title= 'Delete pipeline';
+                    
+                    let myrows = document.getElementById("results").getElementsByTagName('tr');
+                    console.log(myrows.length);
+//                    myrows[3].appendChild(delButton);
+                      
+                      
                     let resultstable = [];
                     for(var key in allPipelineInfo) {
                         let myid = "";
@@ -4025,6 +4044,10 @@ export function exportpipeline(pipelineId) {
     }
     
     makeCorsRequest(urlcall, "nobutton", exportSuccess, exportFail, solajsonout);
+}
+
+export function deletepipeline () {
+    console.log("DELETE CALLED");
 }
 
 
