@@ -2,6 +2,9 @@ import m from 'mithril';
 
 import {bars, barsNode, barsSubset, density, densityNode, selVarColor} from './plots.js';
 
+import '../pkgs/hopscotch/dist/js/hopscotch.js';
+//import '../pkgs/hopscotch/dist/js/my_hopscotch_tour.js';
+
 // hostname default - the app will use it to obtain the variable metadata
 // (ddi) and pre-processed data info if the file id is supplied as an
 // argument (for ex., gui.html?dfId=17), but hostname isn't.
