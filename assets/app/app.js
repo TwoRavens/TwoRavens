@@ -2075,8 +2075,10 @@ export function estimate(btn) {
                     document.getElementById("btnResults").click();
                     
                     // this initializes the main
-                    
+                    // this piece here is the first pipeline through: allPipelineInfo[resultstable[1].PipelineID]
                     resultsplotinit(allPipelineInfo[resultstable[1].PipelineID], dvvalues);
+                    exportpipeline(resultstable[1].PipelineID);
+                    
                     
                     // I don't think we need these until we are handling streaming pipelines
                     // They are set up and called, but don't actually render anything for the user
@@ -3988,6 +3990,37 @@ export function setxTable(features) {
     // render the table(s)
     tabulate(mydata, ['Variables', 'From', 'To']); // 2 column table
 }
+
+
+//rpc ExportPipeline(PipelineExportRequest) returns (Response) {}
+export function exportpipeline(pipelineId) {
+    console.log(pipelineId);
+    let context = apiSession(zparams.zsessionid);
+    let pipelineExecUri = "<<EXECUTABLEURI>>"; // uri to persist executable of requested pipeline w/ session preprocessing
+    
+    let PipelineExportRequest={context, pipelineId, pipelineExecUri};
+    
+    let jsonout = JSON.stringify(PipelineExportRequest);
+    
+    let urlcall = d3mURL + "/exportpipeline";
+    let solajsonout = "grpcrequest=" + jsonout;
+    
+    console.log(urlcall);
+    console.log(solajsonout);
+
+    function exportSuccess(btn, Response) {
+        let alertmessage = "Executable for " + pipelineId + " has been written";
+        alert(alertmessage);
+        console.log(Response);
+    }
+    
+    function exportFail(btn) {
+        console.log("export pipeline failed");
+    }
+    
+    makeCorsRequest(urlcall, "nobutton", exportSuccess, exportFail, solajsonout);
+}
+
 
 // D3M API HELPERS
 // because these get built in various places, pulling them out for easy manipulation
