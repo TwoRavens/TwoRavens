@@ -112,6 +112,18 @@ class D3MConfiguration(TimeStampedModel):
         """Return json string"""
         return json.dumps(self.to_dict(), indent=2)
 
+    def to_ta2_config_test(self, mnt_volume='/ravens_volume'):
+        """Return a dict in TA2 format to use with mounted volume"""
+        od = OrderedDict()
+        for name in D3M_FILE_ATTRIBUTES + D3M_DIR_ATTRIBUTES:
+            val = self.__dict__.get(name, '(not set)')
+            idx = val.find(mnt_volume)
+            if idx > -1:
+                val = val[idx:]
+            od[name] = val
+
+        return od
+
     def to_dict(self):
         """Return in an OrderedDict"""
         attrs = ['id', 'name', 'is_default',
