@@ -488,7 +488,6 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
     // do nothing if preprocess.json already exists, else runPreprocess
     .then(null, _ => runPreprocess(d3mData, d3mTarget, d3mDataName))
     .then(data => readPreprocess(data))
-   // .then(() => new Promise((resolve, reject) => d3.xml(metadataurl, 'application/xml', xml => {
     .then(() => new Promise((resolve, reject) => {
         let vars = Object.keys(preprocess);
 
@@ -2188,7 +2187,11 @@ export function runPreprocess(dataloc, targetloc, datastub) {
         .then(data => {
             console.log('json in RIGHT HERE: ', data);
             return data;
-        }, _ => console.log('preprocess failed'));
+        }, _ => {
+            console.log('preprocess failed');
+            alert('preprocess failed. ending user session.');
+            endsession();
+        });
 }
 
 export let ta2stuff = _ => console.log(d3mProblemDescription);
