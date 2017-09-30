@@ -274,6 +274,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
 
     //set start from user input, then assume locations are consistent based on d3m directory structure (alternatively can make each of these locations be set by user)
     let configurations = {};
+    let dataschema = {};
     let d3mRootPath = "";
     let d3mDataName = "";
     let d3mData = "";
@@ -310,6 +311,16 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
         d3mTarget = configurations.training_data_root+"/trainTargets.csv";
         d3mPS = configurations.problem_schema_url;
         d3mDS = configurations.dataset_schema_url;
+          
+          function rewritepaths () {
+            d3mDataName = "r_30";
+            d3mData = "/Users/vjdorazio/Desktop/gitlab/TwoRavens/data/d3m/r_30/data/trainData.csv";
+            d3mTarget = "/Users/vjdorazio/Desktop/gitlab/TwoRavens/data/d3m/r_30/data/trainTargets.csv";
+            d3mPS = "data/d3m/r_30/problemSchema.json";
+            d3mDS = "/data/d3m/r_30/data/dataSchema.json";
+          }
+          console.log(d3mPS);
+         // rewritepaths();
            
         // these are the two lines that cut the config paths after "TwoRavens/"
         //d3mTarget = d3mTarget.split("TwoRavens/").pop();
@@ -475,6 +486,23 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
                 resolve();
             });
         }))
+        .then(() => new Promise((resolve, reject) => { // get the data schema
+                            if (!d3m_mode){return resolve();}
+                            
+                                // this will append the d3m data description for each variable in allNodes
+                            d3.json(d3mDS, (_, data) => {
+                                    dataschema =  JSON.parse(JSON.stringify(data));
+                                    let datavars = dataschema.trainData.trainData;
+                                    for(let i = 0; i < datavars.length; i++) {
+                                        let myi = findNodeIndex(datavars[i].varName);
+                                        let d3mDescription = {d3mDescription:datavars[i]};
+                                        allNodes[myi] = Object.assign(allNodes[myi], d3mDescription);
+                                    }
+                                    console.log("data schema data: ", dataschema);
+                                    resolve();
+                                    })
+                            }))
+
         .then(() => new Promise((resolve, reject) => {
                 if (!d3m_mode)
                     return resolve();
