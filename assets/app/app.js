@@ -312,16 +312,6 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
         d3mPS = configurations.problem_schema_url;
         d3mDS = configurations.dataset_schema_url;
           
-          function rewritepaths () {
-            d3mDataName = "r_30";
-            d3mData = "/Users/vjdorazio/Desktop/gitlab/TwoRavens/data/d3m/r_30/data/trainData.csv";
-            d3mTarget = "/Users/vjdorazio/Desktop/gitlab/TwoRavens/data/d3m/r_30/data/trainTargets.csv";
-            d3mPS = "data/d3m/r_30/problemSchema.json";
-            d3mDS = "/data/d3m/r_30/data/dataSchema.json";
-          }
-          console.log(d3mPS);
-         // rewritepaths();
-           
         // these are the two lines that cut the config paths after "TwoRavens/"
         //d3mTarget = d3mTarget.split("TwoRavens/").pop();
         //d3mData = d3mData.split("TwoRavens/").pop();
