@@ -49,8 +49,8 @@ table.config-list tr td {
                   </td>
               </tr>
               <tr>
-                  <th>Problem data filesize (JSON)</th>
-                    <td><a href="{% url 'view_get_problem_data_filesize'%}">{% url 'view_get_problem_data_filesize'%}</a>
+                  <th>Problem data file info (JSON)</th>
+                    <td><a href="{% url 'view_get_problem_data_info'%}">{% url 'view_get_problem_data_info'%}</a>
                   </td>
               </tr>
 
@@ -98,9 +98,11 @@ table.config-list tr td {
                       </td>
                   </tr>
                   <tr>
-                      <th>Problem dataset size JSON</th>
+                      <th>Problem dataset file info</th>
                       <td>
-                        <a href="{% url 'view_get_problem_data_filesize_by_id' c.id %}">{% url 'view_get_problem_data_filesize_by_id' c.id %}</a>
+                        <a href="{% url 'view_get_problem_data_info_by_id' c.id %}">{% url 'view_get_problem_data_info_by_id' c.id %}</a>
+                        &nbsp; | &nbsp;
+                        <a href="{% url 'view_get_problem_data_info_by_id' c.id %}?pretty">"pretty"</a>
                       </td>
                   </tr>
 
