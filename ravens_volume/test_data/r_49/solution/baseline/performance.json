@@ -1,0 +1,8 @@
+{
+  "train": {
+    "score": {
+      "metric": "accuracy",
+      "value": 0.695364238410596
+    }
+  }
+}
