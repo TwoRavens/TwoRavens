@@ -297,7 +297,22 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
         zparams.zdataurl = 'data/fearonLaitin.tsv';
     }
 
-    // loads all external data: metadata (DVN's ddi), preprocessed (for plotting distributions), and zeligmodels (produced by Zelig) and initiates the data download to the server
+    /*
+    Loads all external data in the following order (logic is not included):
+    1. Retrieve the configuration information
+    2. Set 'configurations'
+    3. Read the problem schema and set 'd3mProblemDescription'
+    4. Read the data schema and set 'dataschema'
+    5. Read in zelig models (not for d3m)
+    6. Read in zeligchoice models (not for d3m)
+    7. Start the user session
+    8. Call runPreprocess(...)
+    9. Call readPreprocess(...)
+    10. Build allNodes[] using preprocessed information
+    11. Add dataschema information to allNodes (when in d3m_mode)
+    12. Call scaffolding() and start her up
+    */
+    
     Promise.resolve(d3m_mode && m.request({
         method: "POST",
         url: "/config/d3m-config/json/latest"
@@ -312,6 +327,9 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
         d3mPS = configurations.problem_schema_url;
         d3mDS = configurations.dataset_schema_url;
           
+          console.log("Configurations: ");
+          console.log(configurations);
+          
         // these are the two lines that cut the config paths after "TwoRavens/"
         //d3mTarget = d3mTarget.split("TwoRavens/").pop();
         //d3mData = d3mData.split("TwoRavens/").pop();
@@ -320,84 +338,6 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
         d3mPreprocess=pURL;
         zparams.zd3mdata = d3mData;
         zparams.zd3mtarget = d3mTarget;
-    }))
-    .then(_ => m.request(pURL))
-    // do nothing if preprocess.json already exists, else runPreprocess
-    .then(null, _ => runPreprocess(d3mData, d3mTarget, d3mDataName))
-    .then(data => readPreprocess(data))
-   // .then(() => new Promise((resolve, reject) => d3.xml(metadataurl, 'application/xml', xml => {
-    .then(() => new Promise((resolve, reject) => {
-        let vars = Object.keys(preprocess);
-
-        // temporary values for hold that correspond to histogram bins
-        hold = [.6, .2, .9, .8, .1, .3, .4];
-        for (let i = 0; i < vars.length; i++) {
-            // valueKey[i] = vars[i].attributes.name.nodeValue;
-            // lablArray[i] = varsXML[i].getElementsByTagName("labl").length == 0 ?
-            // "no label" :
-            // varsXML[i].getElementsByTagName("labl")[0].childNodes[0].nodeValue;
-            // let datasetcount = d3.layout.histogram()
-            //     .bins(barnumber).frequency(false)
-            //     ([0, 0, 0, 0, 0]);
-            valueKey[i] = vars[i];
-            lablArray[i] = "no label";
-            // contains all the preprocessed data we have for the variable, as well as UI data pertinent to that variable,
-            // such as setx values (if the user has selected them) and pebble coordinates
-            let obj = {
-                id: i,
-                reflexive: false,
-                name: valueKey[i],
-                labl: lablArray[i],
-                data: [5, 15, 20, 0, 5, 15, 20],
-                count: hold,
-                nodeCol: colors(i),
-                baseCol: colors(i),
-                strokeColor: selVarColor,
-                strokeWidth: "1",
-                subsetplot: false,
-                subsetrange: ["", ""],
-                setxplot: false,
-                setxvals: ["", ""],
-                grayout: false,
-                group1: false,
-                group2: false,
-                forefront: false
-            };
-            jQuery.extend(true, obj, preprocess[valueKey[i]]);
-            allNodes.push(obj);
-                            
-        };
-        resolve();
-    }))
-    .then(() => new Promise((resolve, reject) => {
-        if (d3m_mode)
-            return resolve();
-        // read zelig models and populate model list in right panel
-        d3.json("data/zelig5models.json", (err, data) => {
-            if (err)
-                return reject(err);
-            cdb("zelig models json: ", data);
-            for (let key in data.zelig5models)
-                if (data.zelig5models.hasOwnProperty(key))
-                    mods[data.zelig5models[key].name[0]] = data.zelig5models[key].description[0];
-            resolve();
-        });
-    }))
-    .then(() => new Promise((resolve, reject) => {
-        if (d3m_mode)
-            return resolve();
-        d3.json("data/zelig5choicemodels.json", (err, data) => {
-            if (err)
-                return reject(err);
-            cdb("zelig choice models json: ", data);
-            for (let key in data.zelig5choicemodels)
-                if (data.zelig5choicemodels.hasOwnProperty(key))
-                    mods[data.zelig5choicemodels[key].name[0]] = data.zelig5choicemodels[key].description[0];
-
-            scaffolding(layout);
-            dataDownload();
-            resolve();
-        })
     }))
     .then(() => new Promise((resolve, reject) => {
             // read in problem schema and we'll make a call to start the session with TA2. if we get this far, data are guaranteed to exist for the frontend
@@ -477,26 +417,46 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
             });
         }))
         .then(() => new Promise((resolve, reject) => { // get the data schema
-                            if (!d3m_mode){return resolve();}
+            if (!d3m_mode){return resolve();}
                             
-                                // this will append the d3m data description for each variable in allNodes
-                            d3.json(d3mDS, (_, data) => {
-                                    dataschema =  JSON.parse(JSON.stringify(data));
-                                    let datavars = dataschema.trainData.trainData;
-                                    for(let i = 0; i < datavars.length; i++) {
-                                        let myi = findNodeIndex(datavars[i].varName);
-                                        let d3mDescription = {d3mDescription:datavars[i]};
-                                        allNodes[myi] = Object.assign(allNodes[myi], d3mDescription);
-                                    }
-                                    console.log("data schema data: ", dataschema);
-                                    resolve();
-                                    })
-                            }))
-
-        .then(() => new Promise((resolve, reject) => {
+            // read the data schema and set dataschema
+            d3.json(d3mDS, (_, data) => {
+                dataschema =  JSON.parse(JSON.stringify(data));
+                console.log("data schema data: ", dataschema);
+                resolve();
+            })
+        }))
+        .then(() => new Promise((resolve, reject) => { // read in zelig models
+            if (d3m_mode)
+                return resolve();
+            // read zelig models and populate model list in right panel
+            d3.json("data/zelig5models.json", (err, data) => {
+                if (err)
+                    return reject(err);
+                cdb("zelig models json: ", data);
+                for (let key in data.zelig5models)
+                    if (data.zelig5models.hasOwnProperty(key))
+                        mods[data.zelig5models[key].name[0]] = data.zelig5models[key].description[0];
+                resolve();
+            });
+        }))
+        .then(() => new Promise((resolve, reject) => { // read in zelig choice models
+            if (d3m_mode)
+                return resolve();
+            d3.json("data/zelig5choicemodels.json", (err, data) => {
+                if (err)
+                    return reject(err);
+                cdb("zelig choice models json: ", data);
+                for (let key in data.zelig5choicemodels) {
+                    if (data.zelig5choicemodels.hasOwnProperty(key))
+                        mods[data.zelig5choicemodels[key].name[0]] = data.zelig5choicemodels[key].description[0];
+                }
+            resolve();
+            })
+        }))
+        .then(() => new Promise((resolve, reject) => { // call to django to start the session
                 if (!d3m_mode)
                     return resolve();
-                // this is our call to django to start the session
                 //rpc StartSession(SessionRequest) returns (SessionResponse) {}
                                 
                 let user_agent = "some agent";
@@ -513,10 +473,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
                 function ssSuccess(btn, SessionResponse) {
                     zparams.zsessionid=SessionResponse.context.sessionId;
                     console.log("startsession: ", SessionResponse);
-                                
-                    scaffolding(layout);
-                    zPop(); // called in dataDownload, but required to be called so moved here for d3m_mode
-                                //dataDownload();  we do not call dataDownload in d3m_mode. we assume we have the path to the data already
+                      
                     resolve();
                 }
                                 
@@ -527,6 +484,75 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
                                 
                 makeCorsRequest(urlcall, "nobutton", ssSuccess, ssFail, solajsonout);
         }))
+    .then(_ => m.request(pURL))
+    // do nothing if preprocess.json already exists, else runPreprocess
+    .then(null, _ => runPreprocess(d3mData, d3mTarget, d3mDataName))
+    .then(data => readPreprocess(data))
+   // .then(() => new Promise((resolve, reject) => d3.xml(metadataurl, 'application/xml', xml => {
+    .then(() => new Promise((resolve, reject) => {
+        let vars = Object.keys(preprocess);
+
+        // temporary values for hold that correspond to histogram bins
+        hold = [.6, .2, .9, .8, .1, .3, .4];
+        for (let i = 0; i < vars.length; i++) {
+            // valueKey[i] = vars[i].attributes.name.nodeValue;
+            // lablArray[i] = varsXML[i].getElementsByTagName("labl").length == 0 ?
+            // "no label" :
+            // varsXML[i].getElementsByTagName("labl")[0].childNodes[0].nodeValue;
+            // let datasetcount = d3.layout.histogram()
+            //     .bins(barnumber).frequency(false)
+            //     ([0, 0, 0, 0, 0]);
+            valueKey[i] = vars[i];
+            lablArray[i] = "no label";
+            // contains all the preprocessed data we have for the variable, as well as UI data pertinent to that variable,
+            // such as setx values (if the user has selected them) and pebble coordinates
+            let obj = {
+                id: i,
+                reflexive: false,
+                name: valueKey[i],
+                labl: lablArray[i],
+                data: [5, 15, 20, 0, 5, 15, 20],
+                count: hold,
+                nodeCol: colors(i),
+                baseCol: colors(i),
+                strokeColor: selVarColor,
+                strokeWidth: "1",
+                subsetplot: false,
+                subsetrange: ["", ""],
+                setxplot: false,
+                setxvals: ["", ""],
+                grayout: false,
+                group1: false,
+                group2: false,
+                forefront: false
+            };
+            jQuery.extend(true, obj, preprocess[valueKey[i]]);
+            allNodes.push(obj);
+        };
+        resolve();
+    }))
+    .then(() => new Promise((resolve, reject) => { // adding in d3mDescription if d3m_mode
+        if(!d3m_mode)
+            return resolve();
+        // adding in d3mDescription to allNodes
+        let datavars = dataschema.trainData.trainData;
+        for(let i = 0; i < datavars.length; i++) {
+            let myi = findNodeIndex(datavars[i].varName);
+            let d3mDescription = {d3mDescription:datavars[i]};
+            allNodes[myi] = Object.assign(allNodes[myi], d3mDescription);
+        }
+        console.log(allNodes);
+        resolve();
+    }))
+    .then(() => new Promise((resolve, reject) => { // final step: start her up
+        scaffolding(layout);
+        if (d3m_mode) {
+            zPop();
+        } else {
+            dataDownload();
+        }
+        resolve();
+    }))
 }
 
 
