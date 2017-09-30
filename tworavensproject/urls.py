@@ -16,7 +16,11 @@ urlpatterns = [
 
     url(r'^d3m-service/', include('tworaven_apps.ta2_interfaces.urls')),
 
-    url(r'^data/', include('tworaven_apps.test_data.urls')),
+    #url(r'^data/', include('tworaven_apps.test_data.urls')),
+
+    url(r'^ravens_volume/', include('tworaven_apps.test_data.urls')),
+
+    url(r'^api-docs/', include('tworaven_apps.api_docs.urls')),
 
     url(r'^', include('tworaven_apps.content_pages.urls')),
 

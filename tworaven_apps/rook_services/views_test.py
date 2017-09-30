@@ -4,7 +4,7 @@ from django.shortcuts import render
 from django.conf import settings
 from django.http import JsonResponse, HttpResponse, Http404
 from django.views.decorators.csrf import csrf_exempt, csrf_protect
-from tworaven_apps.rook_services.models import TestCallCapture
+from tworaven_apps.call_captures.models import ServiceCallEntry
 from tworaven_apps.rook_services.rook_app_info import RookAppInfo
 
 from datetime import datetime as dt

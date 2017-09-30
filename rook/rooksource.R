@@ -5,22 +5,24 @@
 ##
 
 
-production<-FALSE     ## Toggle:  TRUE - Production, FALSE - Local Development
-addPrivacy<-TRUE      ## Toggle:  TRUE - Add .apps for differential privacy, FALSE - Do not add privacy .apps
+## Define paths for output.
+## Also set `production` toggle:  TRUE - Production, FALSE - Local Development.
+source("rookconfig.R")
 
 
-if(production){
+
+if(is_rapache_mode){
     sink(file = stderr(), type = "output")
     print("system time at source: ")
     print(Sys.time())
 }
 
-if(production) {
+if(is_rapache_mode) {
     setwd("/var/www/html/dataexplore/rook")
 }
 
 if(!production){
-    packageList<-c("Rcpp","VGAM", "AER", "dplyr", "quantreg", "geepack", "maxLik", "Amelia", "Rook","jsonlite","rjson", "devtools", "DescTools", "nloptr","XML")
+    packageList<-c("Rcpp","VGAM", "AER", "dplyr", "quantreg", "geepack", "maxLik", "Amelia", "Rook","jsonlite","rjson", "devtools", "DescTools", "nloptr","XML", "Zelig")
 
     # Find an available repository on CRAN
     availableRepos <- getCRANmirrors()
@@ -42,13 +44,13 @@ library(jsonlite)
 library(devtools)
 library(DescTools)
 
-if (!production) {
-    if(!("Zelig" %in% rownames(installed.packages()))) {
-        install_github("IQSS/Zelig")
-    } else if(package_version(packageVersion("Zelig"))$major != 5) {
-        install_github("IQSS/Zelig")
-    }
-}
+#if (!production) {
+#    if(!("Zelig" %in% rownames(installed.packages()))) {
+#        install_github("IQSS/Zelig")
+#    } else if(package_version(packageVersion("Zelig"))$major != 5) {
+#        install_github("IQSS/Zelig")
+#    }
+#}
 
 #!/usr/bin/env Rscript
 
@@ -69,17 +71,21 @@ if(addPrivacy){
 	source(paste(modulesPath,"CreateXML.R", sep=""))
 }
 
+if(production){
+  myPort <- "8000"
+  myInterface <- "0.0.0.0"
+}else {
+  myPort <- "8000"
+  myInterface <- "127.0.0.1"
+}
 
-if(!production){
-    myPort <- "8000"
-    myInterface <- "0.0.0.0"
+if(!is_rapache_mode){
     status <- -1
     if (as.integer(R.version[["svn rev"]]) > 72310) {
         status <- .Call(tools:::C_startHTTPD, myInterface, myPort)
     } else {
         status <- .Call(tools:::startHTTPD, myInterface, myPort)
     }
-
 
     if( status!=0 ){
         print("WARNING: Error setting interface or port")
@@ -92,13 +98,22 @@ if(!production){
     R.server <- Rhttpd$new()
 
     cat("Type:", typeof(R.server), "Class:", class(R.server))
-    R.server$add(app = File$new(getwd()), name = "pic_dir")
+    #R.server$add(app = File$new(getwd()), name = "pic_dir")
+
+    #rookFilesDir = "/Users/ramanprasad/Documents/github-rp/TwoRavens//data/d3m/o_196seed/data"
+    #<- paste(getwd(), "/../data/d3m", sep="");
+    print("--- rookFilesDir")
+    #print(rookFilesDir)
+    #R.server$add(app = File$new(rookFilesDir), name = "rook-files")
+
+
     print(R.server)
 
-    R.server$start(listen=myInterface, port=myPort)
-    R.server$listenAddr <- myInterface
-    R.server$listenPort <- myPort
-
+    if(!production){
+      R.server$start(listen=myInterface, port=myPort)
+      R.server$listenAddr <- myInterface
+      R.server$listenPort <- myPort
+    }
 }
 
 
@@ -119,11 +134,11 @@ if(addPrivacy){
 }
 
 
-if(production){
+if(is_rapache_mode){
     sink()
 }
 
-if(!production){
+if(!is_rapache_mode){
     R.server$add(app = zelig.app, name = "zeligapp")
     R.server$add(app = subset.app, name="subsetapp")
     R.server$add(app = transform.app, name="transformapp")
@@ -133,7 +148,9 @@ if(!production){
     R.server$add(app = pipeline.app, name="pipelineapp")
     R.server$add(app = healthcheck.app, name="healthcheckapp")
 
-        ## These add the .apps for the privacy budget allocator interface
+    # Serve files directly from rook
+    R.server$add(app = File$new(PRE_PATH), name = "rook-files")
+
     if(addPrivacy){
         R.server$add(app = privateStatistics.app, name="privateStatisticsapp")
         R.server$add(app = privateAccuracies.app, name="privateAccuraciesapp")

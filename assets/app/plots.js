@@ -3,7 +3,7 @@ export let selVarColor = '#fa8072'; // d3.rgb("salmon");
 
 // function to use d3 to graph density plots with preprocessed data
 export function density(node, div, priv) {
-    div = {subset: '#tab2', setx: '#setx', varSummary: '#tab3'}[div];
+    div = {subset: '#tab2', setxLeft: '#setxLeft', varSummary: '#tab3'}[div];
     if (!div)
         return alert("Error: incorrect div selected for plots");
 
@@ -16,22 +16,28 @@ export function density(node, div, priv) {
 
     var tempWidth = d3.select(div).style("width");
     var width = tempWidth.substring(0, (tempWidth.length - 2));
+    
+    let tw = document.getElementById('main').offsetWidth;
+    
     var tempHeight = d3.select(div).style("height");
     var height = tempHeight.substring(0, (tempHeight.length - 2));
     var margin = {
         top: 20,
         right: 20,
         bottom: 53,
-        left: 30
+        left: 10
     };
 
     // Need to fix automatic width and height settings for leftpanel (#tab2, #tab3)
     if (div == "#tab3") {
         width = 0.7 * (width - margin.left - margin.right),
         height = 0.3 * (height - margin.top - margin.bottom);
-    } else if (div == "#tab2" | div == "#setx") {
+    } else if (div == "#tab2") {
         width = 200;
         height = 120;
+    } else if (div == "#setxLeft") {
+        width=tw*.185-margin.left-margin.right; //rightpanel.expand is 40 percent, setxLeft to 50 percent, toggle bar is 16px, padding, it's all about .185
+        height=width*.6; //height to width is .6
     } else {
         width = 0.35 * (width - margin.left - margin.right),
         height = 0.25 * (height - margin.top - margin.bottom);
@@ -138,18 +144,23 @@ export function density(node, div, priv) {
     }
 
     // add z lines and sliders setx
-    if (div == "#setx") {
+    if (div == "#setxLeft") {
         plotsvg.append("text")
-            .attr("id", "range")
+            .attr("id", "range") // this is bad practice, id is not unique
+            .attr('class','xval')
             .attr("x", 25)
             .attr("y", height + 40)
             .text(() => "x: ".concat((+node.mean).toPrecision(4)));
 
         plotsvg.append("text")
-            .attr("id", "range2")
+            .attr("id", "range2") // this is bad practice, id is not unique
+            .attr('class','x1val')
             .attr("x", 25)
             .attr("y", height + 50)
-            .text(() => "x1: ".concat((+node.mean).toPrecision(4)));
+            .text( _ => {
+                  let returnval = "x1: ".concat((+node.mean).toPrecision(4));
+               return returnval});
+        
 
         // create tick marks at all zscores in the bounds of the data
         var lineFunction = d3.svg.line()
@@ -236,7 +247,7 @@ export function density(node, div, priv) {
             node.subsetrange = brush.extent()[0].toPrecision(4) != brush.extent()[1].toPrecision(4) ?
                 [(brush.extent()[0]).toPrecision(4), (brush.extent()[1]).toPrecision(4)] :
                 ["", ""];
-        } else if (div == "#setx") {
+        } else if (div == "#setxLeft") {
             var value = brush.extent()[0];
             var s = 6;
             if (d3.event.sourceEvent) {
@@ -262,8 +273,15 @@ export function density(node, div, priv) {
             // create slider symbol and text
             handle.attr("points", _ => (xpos - s) + "," + (-s) + " " + (xpos + s) + "," + (-s) + " " + xpos + "," + (s * 1.3));
             plotsvg.select("text#range")
-                .text(() => "x: ".concat((invx(xpos)).toPrecision(4)));
-            node.setxvals[1] = (invx(xpos)).toPrecision(4);
+            .text(_ => {
+                  let returnval = "x: ".concat((invx(xpos)).toPrecision(4));
+                  let xval = invx(xpos).toPrecision(4);
+                  let mycell = node.name+"From"; // hardcoded here
+                  if(document.getElementById(mycell)) {
+                    document.getElementById(mycell).innerText=xval;
+                  }
+                  return returnval});
+            node.setxvals[0] = (invx(xpos)).toPrecision(4);
         }
     }
 
@@ -295,8 +313,17 @@ export function density(node, div, priv) {
         // create slider symbol and text
         handle2.attr("points", _ => (xpos - s) + "," + s + " " + (xpos + s) + "," + s + " " + xpos + "," + (-s * 1.3));
         plotsvg.select("text#range2")
-            .text(() => "x1: ".concat((invx(xpos)).toPrecision(4)));
+        .text(_ => {
+              let returnval = "x1: ".concat((invx(xpos)).toPrecision(4));
+              let x1val = invx(xpos).toPrecision(4);
+              let mycell = node.name+"To"; // hardcoded here
+              if(document.getElementById(mycell)) {
+                document.getElementById(mycell).innerText=x1val;
+              }
+              return returnval});
         node.setxvals[1] = (invx(xpos)).toPrecision(4);
+        
+        
     }
 }
 
@@ -343,7 +370,7 @@ export function bars(node, div, priv) {
         ciLowerVals.sort((a, b) => b.y - a.y); // ?
     } else {
         for (var i = 0; i < keys.length; i++) {
-            console.log("plotvalues in bars");
+           // console.log("plotvalues in bars");
             yVals[i] = node.plotvalues[keys[i]];
             xVals[i] = Number(keys[i]);
             if (priv) {
@@ -364,7 +391,7 @@ export function bars(node, div, priv) {
     var maxX = d3.max(xVals);
 
     let mydiv;
-    if (div == "setx") mydiv = "#setx";
+    if (div == "setxLeft") mydiv = "#setxLeft";
     else if (div == "varSummary") mydiv = "#tab3";
     else
         return alert("Error: incorrect div selected for plots");
@@ -378,16 +405,19 @@ export function bars(node, div, priv) {
         top: 20,
         right: 20,
         bottom: 53,
-        left: 50
+        left: 10
     };
+    let tw = document.getElementById('main').offsetWidth;
 
     // Need to fix automatic width and height settings for leftpanel (#tab2, #tab3)
     if (mydiv == "#tab3") {
         width = 0.7 * (width - margin.left - margin.right);
         height = 0.3 * (height - margin.top - margin.bottom);
-    } else if (mydiv == "#setx") {
-        width = 200;
-        height = 120;
+    } else if (mydiv == "#setxLeft") {
+        //width = 200;
+        //height = 120;
+        width=tw*.185-margin.left-margin.right; //rightpanel.expand is 40 percent, setxLeft to 50 percent, toggle bar is 16px, padding, it's all about .185
+        height=width*.6; //height to width is .6
     } else {
         width = 0.35 * (width - margin.left - margin.right);
         height = 0.25 * (height - margin.top - margin.bottom);
@@ -601,22 +631,32 @@ export function bars(node, div, priv) {
         .style("font-size", "12px")
         .text(node.name);
 
-    if (mydiv == "#setx") {
+    if (mydiv == "#setxLeft") {
         plotsvg.append("text")
-            .attr("id", "range")
+            .attr("id", "range") // bad practice, not unique
+            .attr('class','xval')
             .attr("x", 25)
             .attr("y", height + 40)
             .text(function() {
                 if (node.nature === "nominal") {
                     var t = Math.round(yValKey.length / 2) - 1;
+                    let mycell = node.name+"From"; // hardcoded here
+                    if(document.getElementById(mycell)) {
+                        document.getElementById(mycell).innerText=yValKey[t].x;
+                    }
                     return ("x: " + yValKey[t].x);
                 } else {
+                    let mycell = node.name+"From"; // hardcoded here
+                    if(document.getElementById(mycell)) {
+                        document.getElementById(mycell).innerText=(+node.mean).toPrecision(4).toString();
+                    }
                     return ("x: ".concat((+node.mean).toPrecision(4).toString()));
                 }
             });
 
         plotsvg.append("text")
-            .attr("id", "range2")
+            .attr("id", "range2") //bad practice, not unique
+            .attr('class','x1val')
             .attr("x", 25)
             .attr("y", height + 50)
             .text(function() {
@@ -761,12 +801,20 @@ export function bars(node, div, priv) {
         plotsvg.select("text#range")
             .text(function() {
                 if (node.nature === "nominal") {
+                    let mycell = node.name+"From"; // hardcoded here
+                    if(document.getElementById(mycell)) {
+                        document.getElementById(mycell).innerText=yValKey[Math.round(invx(xpos))].x;
+                    }
                     return ("x: " + yValKey[Math.round(invx(xpos))].x);
                 } else {
+                    let mycell = node.name+"From"; // hardcoded here
+                    if(document.getElementById(mycell)) {
+                        document.getElementById(mycell).innerText=+(invx(xpos)).toPrecision(4).toString();
+                    }
                     return ("x: ".concat(+(invx(xpos)).toPrecision(4).toString()));
                 }
             });
-        node.setxvals[1] = +(invx(xpos)).toPrecision(4);
+        node.setxvals[0] = +(invx(xpos)).toPrecision(4);
     }
 
     // certainly a more clever way to do this, but for now it's basically copied with brush and handle changes to brush2 and handle2 and #range to #range2 and setxvals[0] to setxvals[1]
@@ -804,8 +852,16 @@ export function bars(node, div, priv) {
         plotsvg.select("text#range2")
             .text(function() {
                 if (node.nature === "nominal") {
+                    let mycell = node.name+"To"; // hardcoded here
+                    if(document.getElementById(mycell)) {
+                        document.getElementById(mycell).innerText=yValKey[Math.round(invx(xpos))].x;
+                    }
                     return ("x1: " + yValKey[Math.round(invx(xpos))].x);
                 } else {
+                    let mycell = node.name+"To"; // hardcoded here
+                    if(document.getElementById(mycell)) {
+                        document.getElementById(mycell).innerText=+(invx(xpos)).toPrecision(4).toString();
+                    }
                     return ("x1: ".concat(+(invx(xpos)).toPrecision(4).toString()));
                 }
             });
@@ -1175,3 +1231,6 @@ export function barsNode(node, obj) {
         .attr("height", y)
         .attr("fill", "#1f77b4");
 }
+
+
+

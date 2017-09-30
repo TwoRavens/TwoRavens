@@ -7,7 +7,10 @@
 
 zelig.app <- function(env){
 
-    production<-FALSE     ## Toggle:  TRUE - Production, FALSE - Local Development
+    ## Define paths for output.
+    ## Also set `production` toggle:  TRUE - Production, FALSE - Local Development.
+    source("rookconfig.R") 
+    
     warning<-FALSE
     result <-list()
 
@@ -28,6 +31,15 @@ zelig.app <- function(env){
     if(!warning) {
         everything <- jsonlite::fromJSON(request$POST()$solaJSON)
         print(everything)
+    }
+    
+    if(!warning){
+        mygroup1 <- everything$zgroup1
+        mygroup2 <- everything$zgroup2
+        if(is.null(mygroup1) | is.null(mygroup2)){
+            warning <- TRUE
+            result <- list(warning="Problem with groups.")
+        }
     }
 
 	if(!warning){
@@ -134,7 +146,7 @@ zelig.app <- function(env){
 
 	if(!warning){
         mynoms <- everything$znom
-		myformula <- buildFormula(dv=mydv, linkagelist=myedges, varnames=NULL, nomvars=mynoms) #names(mydata))
+		myformula <- buildFormula(dv=mydv, linkagelist=myedges, varnames=NULL, nomvars=mynoms, groups=mygroup1) #names(mydata))
 		if(is.null(myformula)){
 			warning <- TRUE
 			result<-list(warning="Problem constructing formula expression.")

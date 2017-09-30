@@ -21,7 +21,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='core.proto',
   package='',
   syntax='proto3',
-  serialized_pb=_b('\n\ncore.proto\x1a google/protobuf/descriptor.proto\"$\n\x0eSessionContext\x12\x12\n\nsession_id\x18\x01 \x01(\t\"4\n\x06Status\x12\x19\n\x04\x63ode\x18\x01 \x01(\x0e\x32\x0b.StatusCode\x12\x0f\n\x07\x64\x65tails\x18\x02 \x01(\t\"#\n\x08Response\x12\x17\n\x06status\x18\x01 \x01(\x0b\x32\x07.Status\"5\n\x0eSessionRequest\x12\x12\n\nuser_agent\x18\x01 \x01(\t\x12\x0f\n\x07version\x18\x02 \x01(\t\"z\n\x0fSessionResponse\x12 \n\rresponse_info\x18\x01 \x01(\x0b\x32\t.Response\x12\x12\n\nuser_agent\x18\x02 \x01(\t\x12\x0f\n\x07version\x18\x03 \x01(\t\x12 \n\x07\x63ontext\x18\x04 \x01(\x0b\x32\x0f.SessionContext\"/\n\x07\x46\x65\x61ture\x12\x12\n\nfeature_id\x18\x01 \x01(\t\x12\x10\n\x08\x64\x61ta_uri\x18\x02 \x01(\t\"\xa3\x02\n\x15PipelineCreateRequest\x12 \n\x07\x63ontext\x18\x01 \x01(\x0b\x32\x0f.SessionContext\x12 \n\x0etrain_features\x18\x02 \x03(\x0b\x32\x08.Feature\x12\x17\n\x04task\x18\x03 \x01(\x0e\x32\t.TaskType\x12\"\n\x0ctask_subtype\x18\x04 \x01(\x0e\x32\x0c.TaskSubtype\x12\x18\n\x10task_description\x18\x05 \x01(\t\x12\x1b\n\x06output\x18\x06 \x01(\x0e\x32\x0b.OutputType\x12\x18\n\x07metrics\x18\x07 \x03(\x0e\x32\x07.Metric\x12!\n\x0ftarget_features\x18\x08 \x03(\x0b\x32\x08.Feature\x12\x15\n\rmax_pipelines\x18\t \x01(\x05\"/\n\x05Score\x12\x17\n\x06metric\x18\x01 \x01(\x0e\x32\x07.Metric\x12\r\n\x05value\x18\x02 \x01(\x02\"\\\n\x08Pipeline\x12\x1b\n\x13predict_result_uris\x18\x01 \x03(\t\x12\x1b\n\x06output\x18\x02 \x01(\x0e\x32\x0b.OutputType\x12\x16\n\x06scores\x18\x03 \x03(\x0b\x32\x06.Score\"\x91\x01\n\x14PipelineCreateResult\x12 \n\rresponse_info\x18\x01 \x01(\x0b\x32\t.Response\x12 \n\rprogress_info\x18\x02 \x01(\x0e\x32\t.Progress\x12\x13\n\x0bpipeline_id\x18\x03 \x01(\t\x12 \n\rpipeline_info\x18\x04 \x01(\x0b\x32\t.Pipeline\"s\n\x16PipelineExecuteRequest\x12 \n\x07\x63ontext\x18\x01 \x01(\x0b\x32\x0f.SessionContext\x12\x13\n\x0bpipeline_id\x18\x02 \x01(\t\x12\"\n\x10predict_features\x18\x03 \x03(\x0b\x32\x08.Feature\"\x85\x01\n\x15PipelineExecuteResult\x12 \n\rresponse_info\x18\x01 \x01(\x0b\x32\t.Response\x12 \n\rprogress_info\x18\x02 \x01(\x0e\x32\t.Progress\x12\x13\n\x0bpipeline_id\x18\x03 \x01(\t\x12\x13\n\x0bresult_uris\x18\x04 \x03(\t\"7\n\x13PipelineListRequest\x12 \n\x07\x63ontext\x18\x01 \x01(\x0b\x32\x0f.SessionContext\"V\n\x15PipelineDeleteRequest\x12 \n\x07\x63ontext\x18\x01 \x01(\x0b\x32\x0f.SessionContext\x12\x1b\n\x13\x64\x65lete_pipeline_ids\x18\x02 \x03(\t\"L\n\x12PipelineListResult\x12 \n\rresponse_info\x18\x01 \x01(\x0b\x32\t.Response\x12\x14\n\x0cpipeline_ids\x18\x02 \x03(\t\"V\n\x1cPipelineCreateResultsRequest\x12 \n\x07\x63ontext\x18\x01 \x01(\x0b\x32\x0f.SessionContext\x12\x14\n\x0cpipeline_ids\x18\x02 \x03(\t\"W\n\x1dPipelineExecuteResultsRequest\x12 \n\x07\x63ontext\x18\x01 \x01(\x0b\x32\x0f.SessionContext\x12\x14\n\x0cpipeline_ids\x18\x02 \x03(\t\"i\n\x15PipelineExportRequest\x12 \n\x07\x63ontext\x18\x01 \x01(\x0b\x32\x0f.SessionContext\x12\x13\n\x0bpipeline_id\x18\x02 \x01(\t\x12\x19\n\x11pipeline_exec_uri\x18\x03 \x01(\t\"\xad\x02\n\x1aUpdateProblemSchemaRequest\x12\x46\n\x07updates\x18\x01 \x03(\x0b\x32\x35.UpdateProblemSchemaRequest.ReplaceProblemSchemaField\x1a\xc6\x01\n\x19ReplaceProblemSchemaField\x12\x1e\n\ttask_type\x18\x01 \x01(\x0e\x32\t.TaskTypeH\x00\x12$\n\x0ctask_subtype\x18\x02 \x01(\x0e\x32\x0c.TaskSubtypeH\x00\x12\x1a\n\x10task_description\x18\x03 \x01(\tH\x00\x12\"\n\x0boutput_type\x18\x04 \x01(\x0e\x32\x0b.OutputTypeH\x00\x12\x19\n\x06metric\x18\x05 \x01(\x0e\x32\x07.MetricH\x00\x42\x08\n\x06update*\x85\x02\n\nStatusCode\x12\x0b\n\x07UNKNOWN\x10\x00\x12\x06\n\x02OK\x10\x01\x12\r\n\tCANCELLED\x10\x02\x12\x13\n\x0fSESSION_UNKNOWN\x10\x03\x12\x11\n\rSESSION_ENDED\x10\x04\x12\x13\n\x0fSESSION_EXPIRED\x10\x05\x12\x14\n\x10INVALID_ARGUMENT\x10\x06\x12\x16\n\x12RESOURCE_EXHAUSTED\x10\x07\x12\x0f\n\x0bUNAVAILABLE\x10\x08\x12\x17\n\x13\x46\x41ILED_PRECONDITION\x10\t\x12\x10\n\x0cOUT_OF_RANGE\x10\n\x12\x11\n\rUNIMPLEMENTED\x10\x0b\x12\x0c\n\x08INTERNAL\x10\x0c\x12\x0b\n\x07\x41\x42ORTED\x10\r*B\n\x08Progress\x12\r\n\tSUBMITTED\x10\x00\x12\x0b\n\x07RUNNING\x10\x01\x12\x0b\n\x07UPDATED\x10\x02\x12\r\n\tCOMPLETED\x10\x03*\xf2\x01\n\x08TaskType\x12\x17\n\x13TASK_TYPE_UNDEFINED\x10\x00\x12\x12\n\x0e\x43LASSIFICATION\x10\x01\x12\x0e\n\nREGRESSION\x10\x02\x12\x17\n\x13SIMILARITY_MATCHING\x10\x03\x12\x13\n\x0fLINK_PREDICTION\x10\x04\x12\x15\n\x11VERTEX_NOMINATION\x10\x05\x12\x17\n\x13\x43OMMUNITY_DETECTION\x10\x06\x12\x12\n\x0eGRAPH_MATCHING\x10\x07\x12\x1a\n\x16TIMESERIES_FORECASTING\x10\x08\x12\x1b\n\x17\x43OLLABORATIVE_FILTERING\x10\t*\xa6\x01\n\x0bTaskSubtype\x12\x1a\n\x16TASK_SUBTYPE_UNDEFINED\x10\x00\x12\x08\n\x04NONE\x10\x01\x12\n\n\x06\x42INARY\x10\x02\x12\x0e\n\nMULTICLASS\x10\x03\x12\x0e\n\nMULTILABEL\x10\x04\x12\x0e\n\nUNIVARIATE\x10\x05\x12\x10\n\x0cMULTIVARIATE\x10\x06\x12\x0f\n\x0bOVERLAPPING\x10\x07\x12\x12\n\x0eNONOVERLAPPING\x10\x08*\xaa\x01\n\nOutputType\x12\x19\n\x15OUTPUT_TYPE_UNDEFINED\x10\x00\x12\x0f\n\x0b\x43LASS_LABEL\x10\x01\x12\x0f\n\x0bPROBABILITY\x10\x02\x12\x08\n\x04REAL\x10\x03\x12\x0b\n\x07NODE_ID\x10\x04\x12\x16\n\x12VECTOR_CLASS_LABEL\x10\x05\x12\x15\n\x11VECTOR_STOCHASTIC\x10\x06\x12\x0f\n\x0bVECTOR_REAL\x10\x07\x12\x08\n\x04\x46ILE\x10\x08*\xbe\x02\n\x06Metric\x12\x14\n\x10METRIC_UNDEFINED\x10\x00\x12\x0c\n\x08\x41\x43\x43URACY\x10\x01\x12\x06\n\x02\x46\x31\x10\x02\x12\x0c\n\x08\x46\x31_MICRO\x10\x03\x12\x0c\n\x08\x46\x31_MACRO\x10\x04\x12\x0b\n\x07ROC_AUC\x10\x05\x12\x11\n\rROC_AUC_MICRO\x10\x06\x12\x11\n\rROC_AUC_MACRO\x10\x07\x12\x1b\n\x17ROOT_MEAN_SQUARED_ERROR\x10\x08\x12\x1f\n\x1bROOT_MEAN_SQUARED_ERROR_AVG\x10\t\x12\x17\n\x13MEAN_ABSOLUTE_ERROR\x10\n\x12\r\n\tR_SQUARED\x10\x0b\x12!\n\x1dNORMALIZED_MUTUAL_INFORMATION\x10\x0c\x12\x1c\n\x18JACCARD_SIMILARITY_SCORE\x10\r\x12\x12\n\x0e\x45XECUTION_TIME\x10\x0e\x32\x9c\x05\n\x04\x43ore\x12\x44\n\x0f\x43reatePipelines\x12\x16.PipelineCreateRequest\x1a\x15.PipelineCreateResult\"\x00\x30\x01\x12\x46\n\x0f\x45xecutePipeline\x12\x17.PipelineExecuteRequest\x1a\x16.PipelineExecuteResult\"\x00\x30\x01\x12<\n\rListPipelines\x12\x14.PipelineListRequest\x1a\x13.PipelineListResult\"\x00\x12@\n\x0f\x44\x65letePipelines\x12\x16.PipelineDeleteRequest\x1a\x13.PipelineListResult\"\x00\x12T\n\x18GetCreatePipelineResults\x12\x1d.PipelineCreateResultsRequest\x1a\x15.PipelineCreateResult\"\x00\x30\x01\x12W\n\x19GetExecutePipelineResults\x12\x1e.PipelineExecuteResultsRequest\x1a\x16.PipelineExecuteResult\"\x00\x30\x01\x12\x35\n\x0e\x45xportPipeline\x12\x16.PipelineExportRequest\x1a\t.Response\"\x00\x12?\n\x13UpdateProblemSchema\x12\x1b.UpdateProblemSchemaRequest\x1a\t.Response\"\x00\x12\x33\n\x0cStartSession\x12\x0f.SessionRequest\x1a\x10.SessionResponse\"\x00\x12*\n\nEndSession\x12\x0f.SessionContext\x1a\t.Response\"\x00:8\n\x10protocol_version\x12\x1c.google.protobuf.FileOptions\x18\xd4\xa6\x03 \x01(\tB\x1bZ\x08pipeline\xa2\xb5\x1a\r2017.9.18_preb\x06proto3')
+  serialized_pb=_b('\n\ncore.proto\x1a google/protobuf/descriptor.proto\"$\n\x0eSessionContext\x12\x12\n\nsession_id\x18\x01 \x01(\t\"4\n\x06Status\x12\x19\n\x04\x63ode\x18\x01 \x01(\x0e\x32\x0b.StatusCode\x12\x0f\n\x07\x64\x65tails\x18\x02 \x01(\t\"#\n\x08Response\x12\x17\n\x06status\x18\x01 \x01(\x0b\x32\x07.Status\"5\n\x0eSessionRequest\x12\x12\n\nuser_agent\x18\x01 \x01(\t\x12\x0f\n\x07version\x18\x02 \x01(\t\"z\n\x0fSessionResponse\x12 \n\rresponse_info\x18\x01 \x01(\x0b\x32\t.Response\x12\x12\n\nuser_agent\x18\x02 \x01(\t\x12\x0f\n\x07version\x18\x03 \x01(\t\x12 \n\x07\x63ontext\x18\x04 \x01(\x0b\x32\x0f.SessionContext\"/\n\x07\x46\x65\x61ture\x12\x12\n\nfeature_id\x18\x01 \x01(\t\x12\x10\n\x08\x64\x61ta_uri\x18\x02 \x01(\t\"\xa3\x02\n\x15PipelineCreateRequest\x12 \n\x07\x63ontext\x18\x01 \x01(\x0b\x32\x0f.SessionContext\x12 \n\x0etrain_features\x18\x02 \x03(\x0b\x32\x08.Feature\x12\x17\n\x04task\x18\x03 \x01(\x0e\x32\t.TaskType\x12\"\n\x0ctask_subtype\x18\x04 \x01(\x0e\x32\x0c.TaskSubtype\x12\x18\n\x10task_description\x18\x05 \x01(\t\x12\x1b\n\x06output\x18\x06 \x01(\x0e\x32\x0b.OutputType\x12\x18\n\x07metrics\x18\x07 \x03(\x0e\x32\x07.Metric\x12!\n\x0ftarget_features\x18\x08 \x03(\x0b\x32\x08.Feature\x12\x15\n\rmax_pipelines\x18\t \x01(\x05\"/\n\x05Score\x12\x17\n\x06metric\x18\x01 \x01(\x0e\x32\x07.Metric\x12\r\n\x05value\x18\x02 \x01(\x02\"\\\n\x08Pipeline\x12\x1b\n\x13predict_result_uris\x18\x01 \x03(\t\x12\x1b\n\x06output\x18\x02 \x01(\x0e\x32\x0b.OutputType\x12\x16\n\x06scores\x18\x03 \x03(\x0b\x32\x06.Score\"\x91\x01\n\x14PipelineCreateResult\x12 \n\rresponse_info\x18\x01 \x01(\x0b\x32\t.Response\x12 \n\rprogress_info\x18\x02 \x01(\x0e\x32\t.Progress\x12\x13\n\x0bpipeline_id\x18\x03 \x01(\t\x12 \n\rpipeline_info\x18\x04 \x01(\x0b\x32\t.Pipeline\"s\n\x16PipelineExecuteRequest\x12 \n\x07\x63ontext\x18\x01 \x01(\x0b\x32\x0f.SessionContext\x12\x13\n\x0bpipeline_id\x18\x02 \x01(\t\x12\"\n\x10predict_features\x18\x03 \x03(\x0b\x32\x08.Feature\"\x85\x01\n\x15PipelineExecuteResult\x12 \n\rresponse_info\x18\x01 \x01(\x0b\x32\t.Response\x12 \n\rprogress_info\x18\x02 \x01(\x0e\x32\t.Progress\x12\x13\n\x0bpipeline_id\x18\x03 \x01(\t\x12\x13\n\x0bresult_uris\x18\x04 \x03(\t\"7\n\x13PipelineListRequest\x12 \n\x07\x63ontext\x18\x01 \x01(\x0b\x32\x0f.SessionContext\"V\n\x15PipelineDeleteRequest\x12 \n\x07\x63ontext\x18\x01 \x01(\x0b\x32\x0f.SessionContext\x12\x1b\n\x13\x64\x65lete_pipeline_ids\x18\x02 \x03(\t\"L\n\x12PipelineListResult\x12 \n\rresponse_info\x18\x01 \x01(\x0b\x32\t.Response\x12\x14\n\x0cpipeline_ids\x18\x02 \x03(\t\"V\n\x1cPipelineCreateResultsRequest\x12 \n\x07\x63ontext\x18\x01 \x01(\x0b\x32\x0f.SessionContext\x12\x14\n\x0cpipeline_ids\x18\x02 \x03(\t\"W\n\x1dPipelineExecuteResultsRequest\x12 \n\x07\x63ontext\x18\x01 \x01(\x0b\x32\x0f.SessionContext\x12\x14\n\x0cpipeline_ids\x18\x02 \x03(\t\"i\n\x15PipelineExportRequest\x12 \n\x07\x63ontext\x18\x01 \x01(\x0b\x32\x0f.SessionContext\x12\x13\n\x0bpipeline_id\x18\x02 \x01(\t\x12\x19\n\x11pipeline_exec_uri\x18\x03 \x01(\t\"\xcf\x02\n\x1aUpdateProblemSchemaRequest\x12\x46\n\x07updates\x18\x01 \x03(\x0b\x32\x35.UpdateProblemSchemaRequest.ReplaceProblemSchemaField\x12 \n\x07\x63ontext\x18\x02 \x01(\x0b\x32\x0f.SessionContext\x1a\xc6\x01\n\x19ReplaceProblemSchemaField\x12\x1e\n\ttask_type\x18\x01 \x01(\x0e\x32\t.TaskTypeH\x00\x12$\n\x0ctask_subtype\x18\x02 \x01(\x0e\x32\x0c.TaskSubtypeH\x00\x12\x1a\n\x10task_description\x18\x03 \x01(\tH\x00\x12\"\n\x0boutput_type\x18\x04 \x01(\x0e\x32\x0b.OutputTypeH\x00\x12\x19\n\x06metric\x18\x05 \x01(\x0e\x32\x07.MetricH\x00\x42\x08\n\x06update*\x85\x02\n\nStatusCode\x12\x0b\n\x07UNKNOWN\x10\x00\x12\x06\n\x02OK\x10\x01\x12\r\n\tCANCELLED\x10\x02\x12\x13\n\x0fSESSION_UNKNOWN\x10\x03\x12\x11\n\rSESSION_ENDED\x10\x04\x12\x13\n\x0fSESSION_EXPIRED\x10\x05\x12\x14\n\x10INVALID_ARGUMENT\x10\x06\x12\x16\n\x12RESOURCE_EXHAUSTED\x10\x07\x12\x0f\n\x0bUNAVAILABLE\x10\x08\x12\x17\n\x13\x46\x41ILED_PRECONDITION\x10\t\x12\x10\n\x0cOUT_OF_RANGE\x10\n\x12\x11\n\rUNIMPLEMENTED\x10\x0b\x12\x0c\n\x08INTERNAL\x10\x0c\x12\x0b\n\x07\x41\x42ORTED\x10\r*B\n\x08Progress\x12\r\n\tSUBMITTED\x10\x00\x12\x0b\n\x07RUNNING\x10\x01\x12\x0b\n\x07UPDATED\x10\x02\x12\r\n\tCOMPLETED\x10\x03*\xf2\x01\n\x08TaskType\x12\x17\n\x13TASK_TYPE_UNDEFINED\x10\x00\x12\x12\n\x0e\x43LASSIFICATION\x10\x01\x12\x0e\n\nREGRESSION\x10\x02\x12\x17\n\x13SIMILARITY_MATCHING\x10\x03\x12\x13\n\x0fLINK_PREDICTION\x10\x04\x12\x15\n\x11VERTEX_NOMINATION\x10\x05\x12\x17\n\x13\x43OMMUNITY_DETECTION\x10\x06\x12\x12\n\x0eGRAPH_MATCHING\x10\x07\x12\x1a\n\x16TIMESERIES_FORECASTING\x10\x08\x12\x1b\n\x17\x43OLLABORATIVE_FILTERING\x10\t*\xa6\x01\n\x0bTaskSubtype\x12\x1a\n\x16TASK_SUBTYPE_UNDEFINED\x10\x00\x12\x08\n\x04NONE\x10\x01\x12\n\n\x06\x42INARY\x10\x02\x12\x0e\n\nMULTICLASS\x10\x03\x12\x0e\n\nMULTILABEL\x10\x04\x12\x0e\n\nUNIVARIATE\x10\x05\x12\x10\n\x0cMULTIVARIATE\x10\x06\x12\x0f\n\x0bOVERLAPPING\x10\x07\x12\x12\n\x0eNONOVERLAPPING\x10\x08*\xaa\x01\n\nOutputType\x12\x19\n\x15OUTPUT_TYPE_UNDEFINED\x10\x00\x12\x0f\n\x0b\x43LASS_LABEL\x10\x01\x12\x0f\n\x0bPROBABILITY\x10\x02\x12\x08\n\x04REAL\x10\x03\x12\x0b\n\x07NODE_ID\x10\x04\x12\x16\n\x12VECTOR_CLASS_LABEL\x10\x05\x12\x15\n\x11VECTOR_STOCHASTIC\x10\x06\x12\x0f\n\x0bVECTOR_REAL\x10\x07\x12\x08\n\x04\x46ILE\x10\x08*\xbe\x02\n\x06Metric\x12\x14\n\x10METRIC_UNDEFINED\x10\x00\x12\x0c\n\x08\x41\x43\x43URACY\x10\x01\x12\x06\n\x02\x46\x31\x10\x02\x12\x0c\n\x08\x46\x31_MICRO\x10\x03\x12\x0c\n\x08\x46\x31_MACRO\x10\x04\x12\x0b\n\x07ROC_AUC\x10\x05\x12\x11\n\rROC_AUC_MICRO\x10\x06\x12\x11\n\rROC_AUC_MACRO\x10\x07\x12\x1b\n\x17ROOT_MEAN_SQUARED_ERROR\x10\x08\x12\x1f\n\x1bROOT_MEAN_SQUARED_ERROR_AVG\x10\t\x12\x17\n\x13MEAN_ABSOLUTE_ERROR\x10\n\x12\r\n\tR_SQUARED\x10\x0b\x12!\n\x1dNORMALIZED_MUTUAL_INFORMATION\x10\x0c\x12\x1c\n\x18JACCARD_SIMILARITY_SCORE\x10\r\x12\x12\n\x0e\x45XECUTION_TIME\x10\x0e\x32\x9c\x05\n\x04\x43ore\x12\x44\n\x0f\x43reatePipelines\x12\x16.PipelineCreateRequest\x1a\x15.PipelineCreateResult\"\x00\x30\x01\x12\x46\n\x0f\x45xecutePipeline\x12\x17.PipelineExecuteRequest\x1a\x16.PipelineExecuteResult\"\x00\x30\x01\x12<\n\rListPipelines\x12\x14.PipelineListRequest\x1a\x13.PipelineListResult\"\x00\x12@\n\x0f\x44\x65letePipelines\x12\x16.PipelineDeleteRequest\x1a\x13.PipelineListResult\"\x00\x12T\n\x18GetCreatePipelineResults\x12\x1d.PipelineCreateResultsRequest\x1a\x15.PipelineCreateResult\"\x00\x30\x01\x12W\n\x19GetExecutePipelineResults\x12\x1e.PipelineExecuteResultsRequest\x1a\x16.PipelineExecuteResult\"\x00\x30\x01\x12\x35\n\x0e\x45xportPipeline\x12\x16.PipelineExportRequest\x1a\t.Response\"\x00\x12?\n\x13UpdateProblemSchema\x12\x1b.UpdateProblemSchemaRequest\x1a\t.Response\"\x00\x12\x33\n\x0cStartSession\x12\x0f.SessionRequest\x1a\x10.SessionResponse\"\x00\x12*\n\nEndSession\x12\x0f.SessionContext\x1a\t.Response\"\x00:8\n\x10protocol_version\x12\x1c.google.protobuf.FileOptions\x18\xd4\xa6\x03 \x01(\tB\x1bZ\x08pipeline\xa2\xb5\x1a\r2017.9.18_preb\x06proto3')
   ,
   dependencies=[google_dot_protobuf_dot_descriptor__pb2.DESCRIPTOR,])
 
@@ -90,8 +90,8 @@ _STATUSCODE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   options=None,
-  serialized_start=2055,
-  serialized_end=2316,
+  serialized_start=2089,
+  serialized_end=2350,
 )
 _sym_db.RegisterEnumDescriptor(_STATUSCODE)
 
@@ -121,8 +121,8 @@ _PROGRESS = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   options=None,
-  serialized_start=2318,
-  serialized_end=2384,
+  serialized_start=2352,
+  serialized_end=2418,
 )
 _sym_db.RegisterEnumDescriptor(_PROGRESS)
 
@@ -176,8 +176,8 @@ _TASKTYPE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   options=None,
-  serialized_start=2387,
-  serialized_end=2629,
+  serialized_start=2421,
+  serialized_end=2663,
 )
 _sym_db.RegisterEnumDescriptor(_TASKTYPE)
 
@@ -227,8 +227,8 @@ _TASKSUBTYPE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   options=None,
-  serialized_start=2632,
-  serialized_end=2798,
+  serialized_start=2666,
+  serialized_end=2832,
 )
 _sym_db.RegisterEnumDescriptor(_TASKSUBTYPE)
 
@@ -278,8 +278,8 @@ _OUTPUTTYPE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   options=None,
-  serialized_start=2801,
-  serialized_end=2971,
+  serialized_start=2835,
+  serialized_end=3005,
 )
 _sym_db.RegisterEnumDescriptor(_OUTPUTTYPE)
 
@@ -353,8 +353,8 @@ _METRIC = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   options=None,
-  serialized_start=2974,
-  serialized_end=3292,
+  serialized_start=3008,
+  serialized_end=3326,
 )
 _sym_db.RegisterEnumDescriptor(_METRIC)
 
@@ -1263,8 +1263,8 @@ _UPDATEPROBLEMSCHEMAREQUEST_REPLACEPROBLEMSCHEMAFIELD = _descriptor.Descriptor(
       name='update', full_name='UpdateProblemSchemaRequest.ReplaceProblemSchemaField.update',
       index=0, containing_type=None, fields=[]),
   ],
-  serialized_start=1854,
-  serialized_end=2052,
+  serialized_start=1888,
+  serialized_end=2086,
 )
 
 _UPDATEPROBLEMSCHEMAREQUEST = _descriptor.Descriptor(
@@ -1281,6 +1281,13 @@ _UPDATEPROBLEMSCHEMAREQUEST = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
+    _descriptor.FieldDescriptor(
+      name='context', full_name='UpdateProblemSchemaRequest.context', index=1,
+      number=2, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
   ],
   extensions=[
   ],
@@ -1294,7 +1301,7 @@ _UPDATEPROBLEMSCHEMAREQUEST = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=1751,
-  serialized_end=2052,
+  serialized_end=2086,
 )
 
 _STATUS.fields_by_name['code'].enum_type = _STATUSCODE
@@ -1345,6 +1352,7 @@ _UPDATEPROBLEMSCHEMAREQUEST_REPLACEPROBLEMSCHEMAFIELD.oneofs_by_name['update'].f
   _UPDATEPROBLEMSCHEMAREQUEST_REPLACEPROBLEMSCHEMAFIELD.fields_by_name['metric'])
 _UPDATEPROBLEMSCHEMAREQUEST_REPLACEPROBLEMSCHEMAFIELD.fields_by_name['metric'].containing_oneof = _UPDATEPROBLEMSCHEMAREQUEST_REPLACEPROBLEMSCHEMAFIELD.oneofs_by_name['update']
 _UPDATEPROBLEMSCHEMAREQUEST.fields_by_name['updates'].message_type = _UPDATEPROBLEMSCHEMAREQUEST_REPLACEPROBLEMSCHEMAFIELD
+_UPDATEPROBLEMSCHEMAREQUEST.fields_by_name['context'].message_type = _SESSIONCONTEXT
 DESCRIPTOR.message_types_by_name['SessionContext'] = _SESSIONCONTEXT
 DESCRIPTOR.message_types_by_name['Status'] = _STATUS
 DESCRIPTOR.message_types_by_name['Response'] = _RESPONSE
@@ -1518,6 +1526,111 @@ google_dot_protobuf_dot_descriptor__pb2.FileOptions.RegisterExtension(protocol_v
 
 DESCRIPTOR.has_options = True
 DESCRIPTOR._options = _descriptor._ParseOptions(descriptor_pb2.FileOptions(), _b('Z\010pipeline\242\265\032\r2017.9.18_pre'))
+
+_CORE = _descriptor.ServiceDescriptor(
+  name='Core',
+  full_name='Core',
+  file=DESCRIPTOR,
+  index=0,
+  options=None,
+  serialized_start=3329,
+  serialized_end=3997,
+  methods=[
+  _descriptor.MethodDescriptor(
+    name='CreatePipelines',
+    full_name='Core.CreatePipelines',
+    index=0,
+    containing_service=None,
+    input_type=_PIPELINECREATEREQUEST,
+    output_type=_PIPELINECREATERESULT,
+    options=None,
+  ),
+  _descriptor.MethodDescriptor(
+    name='ExecutePipeline',
+    full_name='Core.ExecutePipeline',
+    index=1,
+    containing_service=None,
+    input_type=_PIPELINEEXECUTEREQUEST,
+    output_type=_PIPELINEEXECUTERESULT,
+    options=None,
+  ),
+  _descriptor.MethodDescriptor(
+    name='ListPipelines',
+    full_name='Core.ListPipelines',
+    index=2,
+    containing_service=None,
+    input_type=_PIPELINELISTREQUEST,
+    output_type=_PIPELINELISTRESULT,
+    options=None,
+  ),
+  _descriptor.MethodDescriptor(
+    name='DeletePipelines',
+    full_name='Core.DeletePipelines',
+    index=3,
+    containing_service=None,
+    input_type=_PIPELINEDELETEREQUEST,
+    output_type=_PIPELINELISTRESULT,
+    options=None,
+  ),
+  _descriptor.MethodDescriptor(
+    name='GetCreatePipelineResults',
+    full_name='Core.GetCreatePipelineResults',
+    index=4,
+    containing_service=None,
+    input_type=_PIPELINECREATERESULTSREQUEST,
+    output_type=_PIPELINECREATERESULT,
+    options=None,
+  ),
+  _descriptor.MethodDescriptor(
+    name='GetExecutePipelineResults',
+    full_name='Core.GetExecutePipelineResults',
+    index=5,
+    containing_service=None,
+    input_type=_PIPELINEEXECUTERESULTSREQUEST,
+    output_type=_PIPELINEEXECUTERESULT,
+    options=None,
+  ),
+  _descriptor.MethodDescriptor(
+    name='ExportPipeline',
+    full_name='Core.ExportPipeline',
+    index=6,
+    containing_service=None,
+    input_type=_PIPELINEEXPORTREQUEST,
+    output_type=_RESPONSE,
+    options=None,
+  ),
+  _descriptor.MethodDescriptor(
+    name='UpdateProblemSchema',
+    full_name='Core.UpdateProblemSchema',
+    index=7,
+    containing_service=None,
+    input_type=_UPDATEPROBLEMSCHEMAREQUEST,
+    output_type=_RESPONSE,
+    options=None,
+  ),
+  _descriptor.MethodDescriptor(
+    name='StartSession',
+    full_name='Core.StartSession',
+    index=8,
+    containing_service=None,
+    input_type=_SESSIONREQUEST,
+    output_type=_SESSIONRESPONSE,
+    options=None,
+  ),
+  _descriptor.MethodDescriptor(
+    name='EndSession',
+    full_name='Core.EndSession',
+    index=9,
+    containing_service=None,
+    input_type=_SESSIONCONTEXT,
+    output_type=_RESPONSE,
+    options=None,
+  ),
+])
+_sym_db.RegisterServiceDescriptor(_CORE)
+
+DESCRIPTOR.services_by_name['Core'] = _CORE
+
 try:
   # THESE ELEMENTS WILL BE DEPRECATED.
   # Please use the generated *_pb2_grpc.py files instead.

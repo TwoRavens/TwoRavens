@@ -10,18 +10,23 @@
     <link rel="stylesheet" href="{% static "pkgs/bootstrap/css/bootstrap.css" %}">
     <!--<link rel="stylesheet" href="{% static "build/tworavens_styles.css" %}"-->
     {% render_bundle 'main' 'css' %}
+    {% block extra_css %}
+    {% endblock %}
+
     <script src="{% static "pkgs/Ladda/dist/spin.min.js" %}"></script>
     <script src="{% static "pkgs/Ladda/dist/ladda.min.js" %}"></script>
     <script src="{% static "js/jquery/jquery.min.js" %}"></script>
     <script src="{% static "pkgs/bootstrap/js/bootstrap.min.js" %}"></script>
     <script src="{% static "js/d3/d3.v3.min.js" %}"></script>
+    {% block extra_js %}
+    {% endblock %}
   </head>
 
   <body>
   <div class="container">
     <div class="row">
       <div class="col-xs-12">
-          <img src="{% static "images/TwoRavens.png" %}" alt="TwoRavens" width="100" />
+          <a href="/"><img src="{% static "images/TwoRavens.png" %}" alt="TwoRavens" width="100" /></a>
           <hr />
       </div>
     </div>

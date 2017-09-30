@@ -114,7 +114,24 @@ let rightpanel = mode => mode ? m(Panel, {
         m("#resultsView.container[style=float: right; overflow: auto; width: 80%; background-color: white; white-space: nowrap]"),
         m('#modelView[style=display: none; float: left; width: 20%; background-color: white]'),
         m("p#resultsHolder[style=padding: .5em 1em]")),
-      m(`#setx[style=display: ${or('right', 'btnSetx')}]`),
+      m(`#setx[style=display: ${or('right', 'btnSetx')}]`,
+        m('#setxLeftAll[style=display:block; float: left; width: 30%; height:100%; background-color: white]',
+          m('#setxLeft[style=display:block; float: left; width: 100%; height:95%; overflow:auto; background-color: white]')),
+        m('#setxRightAll[style=display:block; float: left; width: 70%; height:100%; background-color: white]',
+          m('#setxRightTop[style=display:block; float: left; width: 100%; height:65%; overflow:auto; background-color: white]',
+            m('#setxMiddle[style=display:block; float: left; width: 70%; height:100%; background-color: white]'),
+            m('#setxRight[style=display:block; float: right; width: 30%; height:100%; background-color: white]')),
+        m('#setxRightBottom[style=display:block; float: left; width: 100%; height:35%; overflow:auto; background-color: white]',
+          m('#setxRightBottomLeft[style=display:block; float: left; width: 30%; height:100%; background-color: white]'),
+          m('#setxRightBottomMiddle[style=display:block; float: left; width: 15%; height:100%; background-color: white]',
+            m(Button, {
+              id: 'btnExecutePipe',
+              classes: 'btn-default.ladda-button[data-spinner-color=#000000][data-style=zoom-in]',
+              onclick: _ => app.executepipeline('btnExecutePipe'),
+              style: `display:inline; float: left; margin-right: 10px`,
+              title: 'Execute pipeline.'},
+              m('span.ladda-label[style=pointer-events: none]', 'Execute'))),
+          m('#setxRightBottomRight[style=display:block; float: left; width: 55%; height:100%; background-color: white]')))),
       m(`#models[style=display: ${or('right', 'btnModels')}; padding: 6px 12px; text-align: center]`),
       m(`#types[style=display: ${or('right', 'btnType')}; padding: 6px 12px; text-align: center]`),
       m(`#subtypes[style=display: ${or('right', 'btnSubtype')}; padding: 6px 12px; text-align: center]`),
@@ -183,9 +200,12 @@ class Body {
                   m("button#btnEstimate.btn.btn-default.ladda-button.navbar-right[data-spinner-color=#000000][data-style=zoom-in][style=margin-left: 2em; margin-right: 1em]", {
                     onclick: _ => app.estimate('btnEstimate')},
                     m("span.ladda-label", mode ? 'Explore' : 'Estimate')),
-                  m("button#btnTA2.btn.btn-default.ladda-button.navbar-right[data-spinner-color=#000000][data-style=zoom-in][style=margin-left: 15em; margin-right: 1em]", {
-                      onclick: _ => app.ta2stuff('btnTA2')},
-                      'TA2'),
+                  m("button#btnTA2.btn.btn-default.ladda-button.navbar-right[data-spinner-color=#000000][data-style=zoom-in][style=margin-left: 0.5em; margin-right: 1em]", {
+                    onclick: _ => app.helpmaterials('manual')},
+                    'Help Manual ',m("span.glyphicon.glyphicon-book[style=color: #818181; font-size: 1em; pointer-events: none]")),
+                  m("button#btnTA2.btn.btn-default.ladda-button.navbar-right[data-spinner-color=#000000][data-style=zoom-in][style=margin-left: 15em; margin-right: 0.5em]", {
+                    onclick: _ => app.helpmaterials('video')},
+                    'Help Video ',m("span.glyphicon.glyphicon-expand[style=color: #818181; font-size: 1em; pointer-events: none]")),
                   m("button#btnReset.btn.btn-default.navbar-right[title=Reset][style=margin-left: 2.0em]", {
                     onclick: app.reset},
                     m("span.glyphicon.glyphicon-repeat[style=color: #818181; font-size: 1em; pointer-events: none]")),

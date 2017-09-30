@@ -6,15 +6,38 @@ LABEL organization="Two Ravens" \
       2ra.vn.release-date="2017-09-20" \
       description="Image for the Two Ravens R service which runs on rook."
 
-RUN mkdir -p /var/webapps/TwoRavens
+# -------------------------------------
+# Copy the repo over
+#   - future: ignore the tworavens django dirs
+#     and assets, be more selective
+# -------------------------------------
+RUN mkdir -p /var/webapps/TwoRavens && \
+    mkdir -p /ravens_volume
 
 # Copy over the repository
 COPY . /var/webapps/TwoRavens
 
+
+# -------------------------------------
+# Set production environment variable
+# -------------------------------------
+ENV ROOK_USE_PRODUCTION_MODE=yes
+
+# -------------------------------------
+# Create a volume for outside info
+# -------------------------------------
+VOLUME /ravens_volume
+
+# -------------------------------------
+# Expose port for the web (rook)
+# -------------------------------------
 EXPOSE 8000
 
 WORKDIR /var/webapps/TwoRavens/rook
 
+# -------------------------------------
+# Run django with "rook_nonstop.R"
+# -------------------------------------
 CMD Rscript rook_nonstop.R
 
 # -----------------------------------------

@@ -106,8 +106,10 @@ class AppConfiguration(TimeStampedModel):
         if not config:
             return None
 
+    def convert_to_dict(self):
+        """Get in dict format for use in .js"""
         js_dict = {}
-        for k, val in  config.__dict__.items():
+        for k, val in  self.__dict__.items():
             if k in APP_CONFIG_BOOLEAN_FIELDS:
                 js_dict[k] = get_js_boolean(val)
             else:

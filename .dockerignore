@@ -1,0 +1,43 @@
+node_modules/
+npm-debug.log
+
+# currently in rook directory
+rook/log_*.txt
+rook/output*.png
+rook/.Rapp.history
+rook/.RData
+rook/.Rhistory
+rook/config.json
+rook/test.json
+
+#build/
+data/preprocessSubset*.txt
+.DS_Store
+test_setup_local/*
+assets/build/tworavens_app-*.js
+assets/build/tworavens_styles-*.css
+
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+
+*.egg-info/
+.installed.cfg
+*.egg
+
+# PyInstaller
+#  Usually these files are written by a python script from a template
+#  before PyInstaller builds the exe, so as to inject date/other infos into it.
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# C extensions
+*.so
+webpack-stats.json
+data/d3m/o_196seed/data/.Rapp.history
+setup/r-setup/RINSTALL.*.LOG

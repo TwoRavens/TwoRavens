@@ -24,12 +24,17 @@ def format_jsonfield_for_admin(json_dict, indent=4):
 
 
 def format_json_for_admin(json_string, indent=4):
-
+    print('format_json_for_admin: ', json_string)
     if not json_string:
         return 'n/a'
 
-    d = json.loads(json_string)
-
+    try:
+        d = json.loads(json_string)
+    except TypeError:
+        return mark_safe('(not JSON)')
+    except json.decoder.JSONDecodeError:
+        return mark_safe('(not JSON)')
+    
     d_pretty = '<pre>%s</pre>' % json.dumps(d, indent=indent)
 
     return mark_safe(d_pretty)

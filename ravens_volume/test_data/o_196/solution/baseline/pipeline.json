@@ -1,0 +1,40 @@
+{
+  "dataset_dir": "data/openml_196_autoMpg/",
+  "feature_extractors": {
+    "cylinders,displacement,horsepower,weight,acceleration,model,origin": {
+      "uuid": "bff688d6a2d511e7a724080027f9f5b6",
+      "feature_extractor": "AnnotatedTabularExtractor",
+      "params": {
+        "categorize": false,
+        "add_missing_indicator": false,
+        "numeric_strategy": "mean",
+        "normalize_text": true
+      }
+    }
+  },
+  "feature_selector": {
+    "feature_selector": "SelectFromLasso",
+    "params": {
+      "threshold": 1e-05,
+      "alpha": 1e-05
+    }
+  },
+  "estimator": {
+    "estimator": "SGDRegressorEstimator",
+    "params": {
+      "l1_ratio": 0.1,
+      "epsilon": 0.01,
+      "fit_intercept": false,
+      "learning_rate": "optimal",
+      "loss": "squared_loss",
+      "power_t": 1.0,
+      "eta0": 0.1,
+      "alpha": 0.001,
+      "penalty": "elasticnet"
+    }
+  },
+  "performance": {
+    "metric": "meanSquaredError",
+    "cv_performance": 9.719002533495386
+  }
+}

@@ -1,0 +1,15 @@
+{
+    "problemId": "r_56_problem",
+    "redacted": true,
+    "descriptionFile": "problemDescription.txt",
+    "taskType": "timeseriesForecasting",
+    "datasets": [
+        "r_56_dataset"
+    ],
+    "target": {
+        "field": "value"
+    },
+    "outputType": "real",
+    "metric": "rootMeanSquaredError",
+    "problemSchemaVersion": "2.12"
+}

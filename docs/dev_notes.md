@@ -1,8 +1,69 @@
-# Misc. notes
+# Dev. notes
+
+(This documentation is currently informal/being built during development.)
+
+Contents:
+ - [Run local TA2 test server](#run-local-ta2-test-server)
+ - [Saving webpack js/css files for deployment](#saving-webpack-jscss-files-for-deployment)
+ - [Loading D3M config information](#loading-d3m-config-information)
+ - _incomplete_ [Add gRPC request type](#add-grpc-request-type)
+ - [Adding a new rook app: django](#adding-a-new-rook-app-django)
+
+## Run local TA2 test server
+
+The following command runs a TA2 test server with the core code from the NYU team.  Run this is a new, separate Terminal:
+
+- open a separate Terminal
+- cd into the TwoRavens directory
+- run `workon 2ravens`
+- run `fab run_ta2_test_server`
+
+
+
+## Saving webpack js/css files for deployment
+
+Webpack files in the build directory are excluded from github.  
+  - **dev environment**: The `fab run` command generates new webpack build files and serves the via the django dev server
+    - build files: `/assets/build/`
+      - deleted and rebuilt with each `fab run`
+  - **deploy environ**: Uses webpack dist files.  
+    - dist files: `/assets/dist/`
+    - these settings use the `dist` directory (src: `/tworavensproject/settings/dev_container2.py`)
+
+        ```python
+        WEBPACK_LOADER['DEFAULT'].update(\
+            dict(BUNDLE_DIR_NAME='dist/',
+                 STATS_FILE=join(BASE_DIR, 'webpack-stats-prod.json'))\
+            )
+        ```
+
+### Create/Save new dist files
+
+To generate webpack files (js/css) for distribution:
+  - open a Terminal
+  - cd into the TwoRavens directory
+  - run `workon 2ravens`
+  - run `fab webpack_prod`
+
+(Note, if this is a fresh clone, you'll first need to run `npm install` as explained in the install instructions.)
+
+If the mithril app has changed, you should see updated 3 files which will look something like this:
+
+- `git status`
+
+    ```
+    webpack-stats-prod.json
+    assets/dist/tworavens_app-b0db507a31aa89b186b6.js
+    assets/dist/tworavens_styles-b0db507a31aa89b186b6.css
+    ```
+
+The first one, `webpack-stats-prod.json` will be modified, the other two will be new--unless the mithril app files haven't changed.
+
+- Add these 3 files to your github branch
 
 ## Loading D3M config information
 
-D3M config information may be saved in the Django layer and be made available to app.js via an API endpoint.
+D3M config information may be saved in the Django layer and be made available to app.js via API endpoints.
 
 Information from multiple configurations may be saved with one of them being marked as the "default".
 
@@ -34,14 +95,16 @@ Upon saving config information, the paths are evaluated (e.g. do they exist?) an
 
 ### Loading a config file
 
-A config file may also be added using this line.  
-- Default: A config file loaded this way will immediately become the default available through:
-  - http://127.0.0.1:8080/config/d3m-config/json/latest
-- This command will FAIL if any of the paths in the config file are unreachable.
+A config file may also be added using this command from the Terminal.  
 
 ```
 fab load_d3m_config:[path to config]
 ```
+
+- Default: A config file loaded this way will immediately become the default available in JSON format via:
+  - http://127.0.0.1:8080/config/d3m-config/json/latest
+- This command will FAIL if any of the paths in the config file are unreachable.
+
 
 - Example config file contents:
   - `name` is optional
@@ -58,7 +121,16 @@ fab load_d3m_config:[path to config]
   }
   ```
 
+## Add gRPC request type
 
+Steps during prototyping process.  
+
+example with `PipelineExecuteResultsRequest`
+
+1. figure out the JSON in/out of gRPC via script `tworaven_apps/ta2_interfaces/pipe_test.py`
+1. add url to `tworaven_apps/ta2_interfaces/`
+1. create view for new url in `views.py`
+1. separate file, similar to `req_pipeline_create`
 
 ## Adding a new rook app: django
 
@@ -91,9 +163,9 @@ ROOK_APP_NAMES = [('ZELIG_APP', 'zeligapp', 'zeligapp'),    # run models
                  ]
 ```
 
-## snippet to run gRPC start_session from shell
+## snippet to run gRPC start_session from python shell
 
-- ```python manage.py dbshell```
+- ```python manage.py shell```
 
 ```python
 import json

@@ -1,15 +1,21 @@
 """
-Code is courtesy of Matthias Grabmair
+Code based on sample by Matthias Grabmair
     - https://gitlab.datadrivendiscovery.org/mgrabmair/ta3ta2-proxy
 """
 import json
+from collections import OrderedDict
 
 from django.conf import settings
-from tworaven_apps.ta2_interfaces import core_pb2
-from tworaven_apps.ta2_interfaces.ta2_connection import TA2Connection
-from tworaven_apps.ta2_interfaces.ta2_util import get_failed_precondition_response
 from google.protobuf.json_format import MessageToJson,\
     Parse, ParseError
+
+from tworaven_apps.ta2_interfaces import core_pb2
+from tworaven_apps.ta2_interfaces.ta2_connection import TA2Connection
+from tworaven_apps.ta2_interfaces.ta2_util import get_grpc_test_json,\
+    get_failed_precondition_response
+
+
+REPLACE_PROBLEM_SCHEMA_FIELD = 'ReplaceProblemSchemaField'
 
 def get_test_info_str():
     """Test data for update_problem_schema call"""
@@ -20,6 +26,8 @@ def get_test_info_str():
 
 def update_problem_schema(info_str=None):
     """
+    UpdateProblemSchemaRequest={"ReplaceProblemSchemaField":{"metric":"ROC_AUC"}}
+
     Accept UI input as JSON *string* similar to
      {"taskType" : "REGRESSION",
       "taskSubtype" : "TASK_SUBTYPE_UNDEFINED",
@@ -37,7 +45,7 @@ def update_problem_schema(info_str=None):
     # Convert info string to dict
     # --------------------------------
     try:
-        info_dict = json.loads(info_str)
+        info_dict = json.loads(info_str, object_pairs_hook=OrderedDict)
     except json.decoder.JSONDecodeError as err_obj:
         err_msg = 'Failed to convert UI Str to JSON: %s' % (err_obj)
         return get_failed_precondition_response(err_msg)
@@ -45,6 +53,9 @@ def update_problem_schema(info_str=None):
     # --------------------------------
     # create UpdateProblemSchemaRequest compatible JSON
     # --------------------------------
+    if REPLACE_PROBLEM_SCHEMA_FIELD in info_dict:
+        info_dict = info_dict[REPLACE_PROBLEM_SCHEMA_FIELD]
+
     updates_list = []
     for key, val in info_dict.items():
         updates_list.append({key : val})
@@ -62,6 +73,10 @@ def update_problem_schema(info_str=None):
     except ParseError as err_obj:
         err_msg = 'Failed to convert JSON to gRPC: %s' % (err_obj)
         return get_failed_precondition_response(err_msg)
+
+    if settings.TA2_STATIC_TEST_MODE:
+        return get_grpc_test_json('test_responses/updateproblemschema_ok.json',
+                                  dict())
 
 
     # --------------------------------

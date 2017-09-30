@@ -83,13 +83,12 @@ circle.node {
 }
 
 text {
- 
-  pointer-events: none;
+    pointer-events: none;
 }
 
 text.id {
-  text-anchor: middle;
-  font-weight: bold;
+    text-anchor: middle;
+    font-weight: bold;
 }
 
 .left {
@@ -105,6 +104,7 @@ text.id {
 
 #main svg {
     width: 100%;
+    min-height: 200px;
     height: 100%;
 }
 
@@ -159,6 +159,7 @@ div.popover.variables div.popover-content.form-horizontal .form-group {
 #rightpanel.closepanel {width:1px;}
 #rightpanel.closepanel #rightpaneltitle, #rightpanel.closepanel div.btn-group-justified, #rightpanel.closepanel div.row-fluid.closepanel {display:none;}
 #rightpanel.expandpanel {width: 40%;}
+#rightpanel.expandpanelfull {width: calc(100% - 300px - 16px);}
 
 div.sidepanel div.panelbar {
     position: absolute;
@@ -238,7 +239,7 @@ div.sidepanel div.panelbar span {
     z-index:33;
     height:8%;
     width:14%;
-    right:200px;
+    right:200px; 
     top:14px;
     position:absolute;
 }
@@ -412,6 +413,18 @@ p.item-select{
 }
 
 p.item-lineout{
+    text-decoration:line-through;
+}
+
+tr.item-default{
+    background-color:#f0f8ff; /*varColor*/
+}
+
+tr.item-select{
+    background-color:rgba(250,128,114,0.5); /*selVarColor*/
+}
+
+tr.item-lineout{
     text-decoration:line-through;
 }
 

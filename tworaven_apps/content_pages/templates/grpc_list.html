@@ -6,17 +6,25 @@
 
     <div class="col-sm-6">
       <h3>gRPC Requests</h3>
+      {% comment %}
       <ul>
-        <li><a href="{% url 'view_startsession' %}">StartSession</a>
-            {% url 'view_startsession' %}
+        <li><a href="{% url 'StartSession' %}">StartSession</a>
+            {% url 'StartSession' %}
         </li>
-        <li><a href="{% url 'view_update_problem_schema' %}">UpdateProblemSchema</a>
-            {% url 'view_update_problem_schema' %}
+        <li><a href="{% url 'UpdateProblemSchema' %}">UpdateProblemSchema</a>
+            {% url 'UpdateProblemSchema' %}
         </li>
-        <li><a href="{% url 'view_endsession' %}">EndSession</a>
-            {% url 'view_endsession' %}
+        <li><a href="{% url 'EndSession' %}">EndSession</a>
+            {% url 'EndSession' %}
         </li>
 
+      </ul>
+      {% endcomment %}
+      <ul>
+        <li><a href="{% url 'view_test_form' %}">gRPC test form</a>
+            <br />This form sends JSON to the same django endpoints used by the UI
+            <br />{% url 'view_test_form' %}
+        </li>
       </ul>
     </div>
     <div class="col-sm-6">
@@ -43,6 +51,12 @@
         <li><a href="{% url 'view_d3m_details_json_latest' %}">JSON of the
               default or latest config information</a>
               <br />&nbsp; &nbsp; {% url 'view_d3m_details_json_latest' %}
+        </li>
+        <li><a href="{% url 'view_get_dataset_schema' %}">dataset schema file contents (default or latest)</a>
+              <br />&nbsp; &nbsp; {% url 'view_get_dataset_schema' %}
+        </li>
+        <li><a href="{% url 'view_get_problem_schema' %}">problem schema file contents (default or latest)</a>
+              <br />&nbsp; &nbsp; {% url 'view_get_problem_schema' %}
         </li>
 
       </ul>

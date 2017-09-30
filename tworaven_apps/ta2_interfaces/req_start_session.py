@@ -1,15 +1,18 @@
 """
-Code is courtesy of Matthias Grabmair
+Code based on sample by Matthias Grabmair
     - https://gitlab.datadrivendiscovery.org/mgrabmair/ta3ta2-proxy
 """
 import json
+import random, string
+from google.protobuf.json_format import MessageToJson,\
+    Parse, ParseError
 
 from django.conf import settings
 from tworaven_apps.ta2_interfaces import core_pb2
 from tworaven_apps.ta2_interfaces.ta2_connection import TA2Connection
-from tworaven_apps.ta2_interfaces.ta2_util import get_failed_precondition_sess_response
-from google.protobuf.json_format import MessageToJson,\
-    Parse, ParseError
+from tworaven_apps.ta2_interfaces.ta2_util import get_grpc_test_json,\
+    get_failed_precondition_sess_response
+
 
 
 def start_session(raven_json_str=None):
@@ -48,11 +51,24 @@ def start_session(raven_json_str=None):
         return get_failed_precondition_sess_response(err_msg)
 
 
+    # In test mode, check if the incoming JSON is legit (in line above)
+    # -- then return canned response
+    #
+    if settings.TA2_STATIC_TEST_MODE:
+        rnd_session_id = ''.join(random.choice(string.ascii_lowercase + string.digits)
+                         for _ in range(7))
+        d = dict(session_id=rnd_session_id)
+        if random.randint(1,10) == 3:
+            return get_grpc_test_json('test_responses/startsession_badassertion.json')
+        else:
+            return get_grpc_test_json('test_responses/startsession_ok.json', d)
+
+
     # --------------------------------
     # Get the connection, return an error if there are channel issues
     # --------------------------------
     core_stub, err_msg = TA2Connection.get_grpc_stub()
-    if err_msg:
+    if err_msg: 
         return get_failed_precondition_sess_response(err_msg)
 
         #return dict(status=core_pb2.FAILED_PRECONDITION,

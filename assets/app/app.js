@@ -21,26 +21,26 @@ import {bars, barsNode, barsSubset, density, densityNode, selVarColor} from './p
 //    Developers, see /template/index.html
 //-------------------------------------------------
 
-// for debugging - if in production, prints args and returns them
+// for debugging - if not in production, prints args and returns them
 export let cdb = _ => production || console.log.apply(this, arguments) && arguments;
 
-var k = 4; // strength parameter for group attraction/repulsion
+let k = 4; // strength parameter for group attraction/repulsion
 
 // initial color scale used to establish the initial colors of nodes
 // allNodes.push() below establishes a field for the master node array allNodes called "nodeCol" and assigns a color from this scale to that field
 // everything there after should refer to the nodeCol and not the color scale, this enables us to update colors and pass the variable type to R based on its coloring
-var colors = d3.scale.category20();
+let colors = d3.scale.category20();
 export let csColor = '#419641';
 export let dvColor = '#28a4c9';
 export let gr1Color = '#14bdcc';  // initially was #24a4c9', but that is dvColor, and we track some properties by color assuming them unique
-var gr1Opacity = [0,1];
+let gr1Opacity = [0,1];
 export let gr2Color = '#ffcccc';
-var gr2Opacity = [0,1];
+let gr2Opacity = [0,1];
 
-var grayColor = '#c0c0c0';
+let grayColor = '#c0c0c0';
 export let nomColor = '#ff6600';
 export let varColor = '#f0f8ff'; // d3.rgb("aliceblue");
-var taggedColor = '#f5f5f5'; // d3.rgb("whitesmoke");
+let taggedColor = '#f5f5f5'; // d3.rgb("whitesmoke");
 export let timeColor = '#2d6ca2';
 
 export let lefttab = 'tab1'; // current tab in left panel
@@ -64,18 +64,17 @@ const layoutAdd = "add";
 const layoutMove = "move";
 
 // Radius of circle
-var allR = 40;
-
-var ind1 = [(allR+30) * Math.cos(1.3), -1*(allR+30) * Math.sin(1.3),5] // cx, cy, r  values for indicator lights
-var ind2 = [(allR+30) * Math.cos(1.1), -1*(allR+30) * Math.sin(1.1),5] // cx, cy, r  values for indicator lights
+let allR = 40;
+let ind1 = [(allR+30) * Math.cos(1.3), -1*(allR+30) * Math.sin(1.3),5] // cx, cy, r  values for indicator lights
+let ind2 = [(allR+30) * Math.cos(1.1), -1*(allR+30) * Math.sin(1.1),5] // cx, cy, r  values for indicator lights
 
 
 // space index
-var myspace = 0;
+let myspace = 0;
 
-var forcetoggle = ["true"];
-var locktoggle = true;
-var priv = true;
+let forcetoggle = ["true"];
+let locktoggle = true;
+let priv = true;
 
 export let logArray = [];
 export let zparams = {
@@ -90,6 +89,8 @@ export let zparams = {
     zgroup1: [],
     zgroup2: [],       // hard coding to two groups for present experiments, but will eventually make zgroup array of arrays, with zgroup.lenght the number of groups
     zdataurl: "",
+    zd3mdata: "", //these take the place of zdataurl for d3m, because data is in two placees. eventually will generalize
+    zd3mtarget: "",
     zsubset: [],
     zsetx: [],
     zmodelcount: 0,
@@ -98,17 +99,17 @@ export let zparams = {
     zdatacite: ""
 };
 
-var modelCount = 0;
+let modelCount = 0;
 export let valueKey = [];
 export let allNodes = [];
-var allResults = [];
+let allResults = [];
 export let nodes = [];
-var links = [];
-var mods = {};
-var estimated = false;
-var rightClickLast = false;
-var selInteract = false;
-var callHistory = []; // transform and subset calls
+let links = [];
+let mods = {};
+let estimated = false;
+let rightClickLast = false;
+let selInteract = false;
+let callHistory = []; // transform and subset calls
 let mytarget = "";
 
 
@@ -123,7 +124,7 @@ f1Macro:["description", "F1_MACRO" , 4],
 rocAuc:["description", "ROC_AUC" , 5],
 rocAucMicro:["description", "ROC_AUC_MICRO" , 6],
 rocAucMacro:["description", "ROC_AUC_MACRO" , 7],
-meanSquaredError:["description", "MEAN_SQUARED_ERROR", 8],
+//meanSquaredError:["description", "MEAN_SQUARED_ERROR", 8],
 rootMeanSquaredError:["description", "ROOT_MEAN_SQUARED_ERROR" , 8],
 rootMeanSquaredErrorAvg:["description", "ROOT_MEAN_SQUARED_ERROR_AVG" , 9],
 meanAbsoluteError:["description", "MEAN_ABSOLUTE_ERROR" , 10],
@@ -162,21 +163,19 @@ vectorClassLabel:["description","VECTOR_CLASS_LABEL", 5],
     vectorReal:["description","VECTOR_REAL", 7],
     file:["description","FILE",8]};
 
-let UpdateProblemSchemaRequest = {
-task_type: [2,"DEFAULT"],
-task_subtype: [1,"DEFAFULT"],
-output_type: [3,"DEFAULT"],
-    metric_type: [4,"DEFAULT"]};
+let d3mProblemDescription = {
+taskType: [2,"DEFAULT"],
+taskSubtype: [1,"DEFAFULT"],
+outputType: [3,"DEFAULT"],
+    metric: [4,"DEFAULT"],
+    taskDescription: ""};
 
 
+let svg, width, height, div, estimateLadda, selectLadda;
+let arc1, arc3, arc4, arcInd1, arcInd2;
 
-
-
-var svg, width, height, div, estimateLadda, selectLadda;
-var arc1, arc3, arc4, arcInd1, arcInd2;
-
-var arcInd1Limits = [0,0.3];
-var arcInd2Limits = [0.35,0.65];
+let arcInd1Limits = [0,0.3];
+let arcInd2Limits = [0.35,0.65];
 
 let byId = id => document.getElementById(id);
 
@@ -186,7 +185,7 @@ export const reset = function reloadPage() {
 }
 
 
-var dataurl = "";
+let dataurl = "";
 export function main(fileid, hostname, ddiurl, dataurl, apikey) {
     dataurl = dataurl;
     if (production && fileid == "") {
@@ -209,25 +208,25 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
     cdb('--dataverseurl: ' + dataverseurl);
     svg = d3.select("#whitespace");
 
-    var tempWidth = d3.select("#main.left").style("width");
+    let tempWidth = d3.select("#main.left").style("width");
     width = tempWidth.substring(0, tempWidth.length - 2);
     height = $(window).height() - 120; // Hard coding for header and footer and bottom margin.
 
     estimateLadda = Ladda.create(byId("btnEstimate"));
     selectLadda = Ladda.create(byId("btnSelect"));
 
-    var colorTime = false;
-    var colorCS = false;
+    let colorTime = false;
+    let colorCS = false;
 
-    var depVar = false;
-    var subsetdiv = false;
-    var setxdiv = false;
+    let depVar = false;
+    let subsetdiv = false;
+    let setxdiv = false;
 
     // width and height for histgrams
-    var barwidth = 1.3 * allR;
-    var barheight = 0.5 * allR;
-    var barPadding = 0.35;
-    var barnumber = 7;
+    let barwidth = 1.3 * allR;
+    let barheight = 0.5 * allR;
+    let barPadding = 0.35;
+    let barnumber = 7;
 
     // arcs for denoting pebble characteristics
     let arc = (start, end) => d3.svg.arc()
@@ -259,10 +258,10 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
     // ind2 = indicator(1.2);
 
     // from .csv
-    var dataset2 = [];
-    var lablArray = [];
-    var hold = [];
-    var subsetNodes = [];
+    let dataset2 = [];
+    let lablArray = [];
+    let hold = [];
+    let subsetNodes = [];
 
     // collapsable user log
     $('#collapseLog').on('shown.bs.collapse', () => d3.select("#collapseLog div.panel-body").selectAll("p")
@@ -274,101 +273,162 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
         .remove());
 
     //set start from user input, then assume locations are consistent based on d3m directory structure (alternatively can make each of these locations be set by user)
-    var start = 'data/d3m/o_196seed';
-    let d3mDataName = start.split('/');
-    d3mDataName = d3mDataName[d3mDataName.length-1];
-    let d3mData = start+'/data/trainData.csv';
-    let d3mTarget = start+'/data/trainTargets.csv';
-    let d3mPS = start+'/problemSchema.json';
-    let d3mDS = start+'/data/dataSchema.json';
-    let d3mPreprocess = start+'/preprocess.json';
-    let probDesc=start;
+    let configurations = {};
+    let dataschema = {};
+    let d3mRootPath = "";
+    let d3mDataName = "";
+    let d3mData = "";
+    let d3mTarget = "";
+    let d3mPreprocess = "";
+    let d3mPS = "";
+    let d3mDS = "";
 
     // default to California PUMS subset (should, doesn't actually do that)
     let data = 'data/' + (false ? 'PUMS5small' : 'fearonLaitin');
     let metadataurl = ddiurl || (fileid ? `${dataverseurl}/api/meta/datafile/${fileid}` : data + '.xml');
     // read pre-processed metadata and data
     let pURL = dataurl ? `${dataurl}&format=prep` : data + '.json';
-    cdb('pURL: ' + pURL);
 
     if(d3m_mode) {
         pURL = d3mPreprocess;
-        zparams.zdataurl = start+'/data/trainDatamerged.tsv';
-        zparams.zdata = d3mDataName;
-    } else if(!production)
+        // zparams.zdataurl = start+'/data/trainDatamerged.tsv';   // "start" path no longer exists
+        // zparams.zdata = d3mDataName;   // this is now going to be filled in using problem schema field
+    } else if(!production) {
         zparams.zdataurl = 'data/fearonLaitin.tsv';
+    }
 
-    // loads all external data: metadata (DVN's ddi), preprocessed (for plotting distributions), and zeligmodels (produced by Zelig) and initiates the data download to the server
-    m.request(pURL)
-        // do nothing if preprocess.json already exists, else runPreprocess
-        .then(null, _ => runPreprocess(d3mData, d3mTarget, d3mPreprocess))
-        .then(_ => readPreprocess(pURL, preprocess))
-        .then(() => new Promise((resolve, reject) => d3.xml(metadataurl, 'application/xml', xml => {
-            let vars = Object.keys(preprocess); // this doesn't come from xml, but from preprocessed json
+    /*
+    Loads all external data in the following order (logic is not included):
+    1. Retrieve the configuration information
+    2. Set 'configurations'
+    3. Read the problem schema and set 'd3mProblemDescription'
+    4. Read the data schema and set 'dataschema'
+    5. Read in zelig models (not for d3m)
+    6. Read in zeligchoice models (not for d3m)
+    7. Start the user session
+    8. Call runPreprocess(...)
+    9. Call readPreprocess(...)
+    10. Build allNodes[] using preprocessed information
+    11. Add dataschema information to allNodes (when in d3m_mode)
+    12. Call scaffolding() and start her up
+    */
+    
+    Promise.resolve(d3m_mode && m.request({
+        method: "POST",
+        url: "/config/d3m-config/json/latest"
+    })
+    .then(function(result) {
+        configurations =  JSON.parse(JSON.stringify(result));
+        d3mRootPath = configurations.training_data_root;
+        d3mRootPath = d3mRootPath.replace(/\/data/,'');
+        d3mDataName = configurations.name;
+        d3mData = configurations.training_data_root+"/trainData.csv";
+        d3mTarget = configurations.training_data_root+"/trainTargets.csv";
+        d3mPS = configurations.problem_schema_url;
+        d3mDS = configurations.dataset_schema_url;
+          
+          console.log("Configurations: ");
+          console.log(configurations);
+          
+        // these are the two lines that cut the config paths after "TwoRavens/"
+        //d3mTarget = d3mTarget.split("TwoRavens/").pop();
+        //d3mData = d3mData.split("TwoRavens/").pop();
 
-            // the labels, citations, and file name come from the 'xml' (metadataurl), which is the file from the data repo
-            // however, TwoRavens should function using only the data that comes from our preprocess script, which is the 'json' (pURL)
-            // for now the metadataurl is still Fearon & Laitin
-            let temp = xml.documentElement.getElementsByTagName("fileName");
-            if(!d3m_mode)
+        pURL='rook-custom/rook-files/'+d3mDataName+'/preprocess/preprocess.json';    
+        d3mPreprocess=pURL;
+        zparams.zd3mdata = d3mData;
+        zparams.zd3mtarget = d3mTarget;
+    }))
+    .then(() => new Promise((resolve, reject) => {
+            // read in problem schema and we'll make a call to start the session with TA2. if we get this far, data are guaranteed to exist for the frontend
+            if (!d3m_mode)
+                return resolve();
+                                
+            d3.json(d3mPS, (_, data) => {
+                console.log("prob schema data: ", data);
+                mytarget = data.target.field;
+
+            let temp="";
+            if(!d3m_mode) {
+                temp = xml.documentElement.getElementsByTagName("fileName");     // Note: presently xml is no longer being read from Dataverse metadata anywhere
                 zparams.zdata = temp[0].childNodes[0].nodeValue;
-
-            let cite = xml.documentElement.getElementsByTagName("biblCit");
-            // clean citation so POST is valid json
-            zparams.zdatacite = cite[0].childNodes[0].nodeValue
-                .replace(/\&/g, "and")
-                .replace(/\;/g, ",")
-                .replace(/\%/g, "-");
-            $('#cite div.panel-body').text(zparams.zdatacite);
-
+                let cite = xml.documentElement.getElementsByTagName("biblCit");
+                // clean citation so POST is valid json
+                zparams.zdatacite = cite[0].childNodes[0].nodeValue
+                    .replace(/\&/g, "and")
+                    .replace(/\;/g, ",")
+                    .replace(/\%/g, "-");
+                $('#cite div.panel-body').text(zparams.zdatacite);
+            } else {
+                zparams.zdata = data.datasets[0];             // read the dataset name from the problem schema
+            }
             // dataset name trimmed to 12 chars
             let dataname = zparams.zdata;
-            if(!d3m_mode)
+            if(!d3m_mode) {
                 dataname = zparams.zdata.replace(/\.(.*)/, ''); // drop file extension
+            }
+                                
             d3.select("#dataName").html(dataname);
-
             // Put dataset name, from meta-data, into page title
             d3.select("title").html("TwoRavens " + dataname);
-            // temporary values for hold that correspond to histogram bins
-            hold = [.6, .2, .9, .8, .1, .3, .4];
-            for (let i = 0; i < vars.length; i++) {
-                // valueKey[i] = vars[i].attributes.name.nodeValue;
-                // lablArray[i] = varsXML[i].getElementsByTagName("labl").length == 0 ?
-                // "no label" :
-                // varsXML[i].getElementsByTagName("labl")[0].childNodes[0].nodeValue;
-                // let datasetcount = d3.layout.histogram()
-                //     .bins(barnumber).frequency(false)
-                //     ([0, 0, 0, 0, 0]);
-                valueKey[i] = vars[i];
-                lablArray[i] = "no label";
-                // contains all the preprocessed data we have for the variable, as well as UI data pertinent to that variable,
-                // such as setx values (if the user has selected them) and pebble coordinates
-                let obj = {
-                    id: i,
-                    reflexive: false,
-                    name: valueKey[i],
-                    labl: lablArray[i],
-                    data: [5, 15, 20, 0, 5, 15, 20],
-                    count: hold,
-                    nodeCol: colors(i),
-                    baseCol: colors(i),
-                    strokeColor: selVarColor,
-                    strokeWidth: "1",
-                    subsetplot: false,
-                    subsetrange: ["", ""],
-                    setxplot: false,
-                    setxvals: ["", ""],
-                    grayout: false,
-                    group1: false,
-                    group2: false,
-                    forefront: false
-                };
-                jQuery.extend(true, obj, preprocess[valueKey[i]]);
-                allNodes.push(obj);
-            };
-            resolve();
-        })))
-        .then(() => new Promise((resolve, reject) => {
+         
+                    //This adds a ink to problemDescription.txt in the ticker
+                /*
+                let aTag = document.createElement('a');
+                aTag.setAttribute('href', `${d3mRootPath}/${data.descriptionFile}`);
+                aTag.setAttribute('id', "probdesc");
+                aTag.setAttribute('target', "_blank");
+                aTag.textContent = "Problem Description";
+                document.getElementById("ticker").appendChild(aTag);
+                 */
+
+                if(data.taskType in d3mTaskType) {
+                    d3mProblemDescription.taskType = data.taskType;//[d3mTaskType[data.taskType][2],d3mTaskType[data.taskType][1]]; console.log(d3mProblemDescription);
+                } else {
+                    d3mProblemDescription.taskType = "taskTypeUndefined";
+                 //   alert("Specified task type, " + data.taskType + ", is not valid.");
+                }
+
+                if(data.taskSubType in d3mTaskSubtype) {
+                    d3mProblemDescription.taskSubtype = data.taskSubType;
+                    //[d3mTaskSubtype[data.taskSubType][2],d3mTaskSubtype[data.taskSubType][1]];
+                    } else {
+                        d3mProblemDescription.taskSubtype = "taskSubtypeUndefined";
+                   //     alert("Specified task subtype, " + data.taskSubType + ", is not valid.")
+                    }
+                if(data.metric in d3mMetrics) {
+                    d3mProblemDescription.metric = data.metric;//[d3mMetrics[data.metric][2],d3mMetrics[data.metric][1]];
+                } else {
+                    d3mProblemDescription.metric = "metricUndefined";
+                   // alert("Specified metric type, " + data.metric + ", is not valid.");
+                    }
+                if(data.outputType in d3mOutputType) {
+                    d3mProblemDescription.outputType = data.outputType;//[d3mOutputType[data.outputType][2],d3mOutputType[data.outputType][1]];
+                } else {
+                    d3mProblemDescription.outputType = "outputUndefined";
+                  //  alert("Specified output type, " + data.outputType + ", is not valid.");
+                }
+                
+                d3mProblemDescription.taskDescription = data.descriptionFile;
+
+                
+                document.getElementById("btnType").click();
+                resolve();
+            });
+        }))
+        .then(() => new Promise((resolve, reject) => { // get the data schema
+            if (!d3m_mode){return resolve();}
+                            
+            // read the data schema and set dataschema
+            d3.json(d3mDS, (_, data) => {
+                dataschema =  JSON.parse(JSON.stringify(data));
+                console.log("data schema data: ", dataschema);
+                resolve();
+            })
+        }))
+        .then(() => new Promise((resolve, reject) => { // read in zelig models
+            if (d3m_mode)
+                return resolve();
             // read zelig models and populate model list in right panel
             d3.json("data/zelig5models.json", (err, data) => {
                 if (err)
@@ -380,72 +440,120 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
                 resolve();
             });
         }))
-        .then(() => new Promise((resolve, reject) => {
+        .then(() => new Promise((resolve, reject) => { // read in zelig choice models
             if (d3m_mode)
                 return resolve();
             d3.json("data/zelig5choicemodels.json", (err, data) => {
                 if (err)
                     return reject(err);
                 cdb("zelig choice models json: ", data);
-                for (let key in data.zelig5choicemodels)
+                for (let key in data.zelig5choicemodels) {
                     if (data.zelig5choicemodels.hasOwnProperty(key))
                         mods[data.zelig5choicemodels[key].name[0]] = data.zelig5choicemodels[key].description[0];
-
-                scaffolding(layout);
-                dataDownload();
-                resolve();
+                }
+            resolve();
             })
         }))
-        .then(() => new Promise((resolve, reject) => {
-            // read in problem schema and we'll make a call to start the session with TA2. if we get this far, data are guaranteed to exist for the frontend
-            if (!d3m_mode)
-                return resolve();
-            d3.json(d3mPS, (_, data) => {
-                console.log("prob schema data: ", data);
-                mytarget = data.target.field;
-                let aTag = document.createElement('a');
-                aTag.setAttribute('href', `${start}/${data.descriptionFile}`);
-                aTag.setAttribute('id', "probdesc");
-                aTag.setAttribute('target', "_blank");
-                aTag.textContent = "Problem Description";
-                document.getElementById("ticker").appendChild(aTag);
-
-                if(data.taskType in d3mTaskType) {
-                    UpdateProblemSchemaRequest.task_type = data.taskType;//[d3mTaskType[data.taskType][2],d3mTaskType[data.taskType][1]]; console.log(UpdateProblemSchemaRequest);
-                } else {
-                    UpdateProblemSchemaRequest.task_type = "taskTypeUndefined";
-                 //   alert("Specified task type, " + data.taskType + ", is not valid.");
+        .then(() => new Promise((resolve, reject) => { // call to django to start the session
+                if (!d3m_mode)
+                    return resolve();
+                //rpc StartSession(SessionRequest) returns (SessionResponse) {}
+                                
+                let user_agent = "some agent";
+                let version = "some version";
+                let SessionRequest={user_agent,version};
+                                
+                var jsonout = JSON.stringify(SessionRequest);
+                var urlcall = d3mURL + "/startsession";
+                var solajsonout = "grpcrequest=" + jsonout;
+                console.log("SessionRequest: ");
+                console.log(solajsonout);
+                console.log("urlcall: ", urlcall);
+                                
+                function ssSuccess(btn, SessionResponse) {
+                    zparams.zsessionid=SessionResponse.context.sessionId;
+                    console.log("startsession: ", SessionResponse);
+                      
+                    resolve();
                 }
-
-                if(data.taskSubType in d3mTaskSubtype) {
-                    UpdateProblemSchemaRequest.task_subtype = data.taskSubType;
-                    //[d3mTaskSubtype[data.taskSubType][2],d3mTaskSubtype[data.taskSubType][1]];
-                    } else {
-                        UpdateProblemSchemaRequest.task_subtype = "taskSubtypeUndefined";
-                   //     alert("Specified task subtype, " + data.taskSubType + ", is not valid.")
-                    }
-                if(data.metric in d3mMetrics) {
-                    UpdateProblemSchemaRequest.metric_type = data.metric;//[d3mMetrics[data.metric][2],d3mMetrics[data.metric][1]];
-                } else {
-                    UpdateProblemSchemaRequest.matric_type = "metricUndefined";
-                   // alert("Specified metric type, " + data.metric + ", is not valid.");
-                    }
-                if(data.outputType in d3mOutputType) {
-                    UpdateProblemSchemaRequest.output_type = data.outputType;//[d3mOutputType[data.outputType][2],d3mOutputType[data.outputType][1]];
-                } else {
-                    UpdateProblemSchemaRequest.output_type = "outputUndefined";
-                  //  alert("Specified output type, " + data.outputType + ", is not valid.");
+                                
+                function ssFail(btn) {
+                    alert("StartSession has failed.");
+                    reject();
                 }
-
-                
-                document.getElementById("btnType").click();
-                startsession();
-                scaffolding(layout);
-                dataDownload();
-                resolve();
-            });
+                                
+                makeCorsRequest(urlcall, "nobutton", ssSuccess, ssFail, solajsonout);
         }))
+    .then(_ => m.request(pURL))
+    // do nothing if preprocess.json already exists, else runPreprocess
+    .then(null, _ => runPreprocess(d3mData, d3mTarget, d3mDataName))
+    .then(data => readPreprocess(data))
+    .then(() => new Promise((resolve, reject) => {
+        let vars = Object.keys(preprocess);
+
+        // temporary values for hold that correspond to histogram bins
+        hold = [.6, .2, .9, .8, .1, .3, .4];
+        for (let i = 0; i < vars.length; i++) {
+            // valueKey[i] = vars[i].attributes.name.nodeValue;
+            // lablArray[i] = varsXML[i].getElementsByTagName("labl").length == 0 ?
+            // "no label" :
+            // varsXML[i].getElementsByTagName("labl")[0].childNodes[0].nodeValue;
+            // let datasetcount = d3.layout.histogram()
+            //     .bins(barnumber).frequency(false)
+            //     ([0, 0, 0, 0, 0]);
+            valueKey[i] = vars[i];
+            lablArray[i] = "no label";
+            // contains all the preprocessed data we have for the variable, as well as UI data pertinent to that variable,
+            // such as setx values (if the user has selected them) and pebble coordinates
+            let obj = {
+                id: i,
+                reflexive: false,
+                name: valueKey[i],
+                labl: lablArray[i],
+                data: [5, 15, 20, 0, 5, 15, 20],
+                count: hold,
+                nodeCol: colors(i),
+                baseCol: colors(i),
+                strokeColor: selVarColor,
+                strokeWidth: "1",
+                subsetplot: false,
+                subsetrange: ["", ""],
+                setxplot: false,
+                setxvals: ["", ""],
+                grayout: false,
+                group1: false,
+                group2: false,
+                forefront: false
+            };
+            jQuery.extend(true, obj, preprocess[valueKey[i]]);
+            allNodes.push(obj);
+        };
+        resolve();
+    }))
+    .then(() => new Promise((resolve, reject) => { // adding in d3mDescription if d3m_mode
+        if(!d3m_mode)
+            return resolve();
+        // adding in d3mDescription to allNodes
+        let datavars = dataschema.trainData.trainData;
+        for(let i = 0; i < datavars.length; i++) {
+            let myi = findNodeIndex(datavars[i].varName);
+            let d3mDescription = {d3mDescription:datavars[i]};
+            allNodes[myi] = Object.assign(allNodes[myi], d3mDescription);
+        }
+        console.log(allNodes);
+        resolve();
+    }))
+    .then(() => new Promise((resolve, reject) => { // final step: start her up
+        scaffolding(layout);
+        if (d3m_mode) {
+            zPop();
+        } else {
+            dataDownload();
+        }
+        resolve();
+    }))
 }
+
 
 let $fill = (obj, op, d1, d2) => d3.select(obj).transition()
     .attr('fill-opacity', op)
@@ -456,13 +564,14 @@ let fillThis = (self, op, d1, d2) => $fill(self, op, d1, d2);
 
 // scaffolding is called after all external data are guaranteed to have been read to completion. this populates the left panel with variable names, the right panel with model names, the transformation tool, an the associated mouseovers. its callback is layout(), which initializes the modeling space
 function scaffolding(callback) {
+
     // establishing the transformation element
-    d3.select("#transformations")
-        .append("input")
-        .attr("id", "tInput")
-        .attr("class", "form-control")
-        .attr("type", "text")
-        .attr("value", "Variable transformation");
+//    d3.select("#transformations")
+  //      .append("input")
+   //     .attr("id", "tInput")
+    //    .attr("class", "form-control")
+     //   .attr("type", "text")
+      //  .attr("value", "Variable transformation");
 
     // variable dropdown
     d3.select("#transformations")
@@ -488,62 +597,65 @@ function scaffolding(callback) {
         .append("li")
         .text(d => d);
 
-    $('#tInput').click(() => {
-        var t = byId('transSel').style.display;
-        if (t !== "none") { // if variable list is displayed when input is clicked...
-            $('#transSel').fadeOut(100);
-            return false;
-        }
-        var t1 = byId('transList').style.display;
-        if (t1 !== "none") { // if function list is displayed when input is clicked...
-            $('#transList').fadeOut(100);
-            return false;
-        }
+    if(!d3m_mode){    // No variable transformation in present d3m mode
 
-        // highlight the text
-        $(this).select();
-        var pos = $('#tInput').offset();
-        pos.top += $('#tInput').width();
-        $('#transSel').fadeIn(100);
-        return false;
-    });
+        $('#tInput').click(() => {
+            var t = byId('transSel').style.display;
+            if (t !== "none") { // if variable list is displayed when input is clicked...
+                $('#transSel').fadeOut(100);
+                return false;
+            }
+            var t1 = byId('transList').style.display;
+            if (t1 !== "none") { // if function list is displayed when input is clicked...
+                $('#transList').fadeOut(100);
+                return false;
+            }
 
-    var n;
-    $('#tInput').keyup(evt => {
-        var t = byId('transSel').style.display;
-        var t1 = byId('transList').style.display;
-        if (t != "none") $('#transSel').fadeOut(100);
-        else if (t1 != "none") $('#transList').fadeOut(100);
-
-        if (evt.keyCode == 13) { // keyup on Enter
-            n = $('#tInput').val();
-            var t = transParse(n=n);
-            if (!t)
-                return;
-            transform(n = t.slice(0, t.length - 1), t = t[t.length - 1], typeTransform = false);
-        }
-    });
-
-    var t;
-    $('#transList li').click(function(evt){
-        // if interact is selected, show variable list again
-        if ($(this).text() == "interact(d,e)") {
-            $('#tInput').val(tvar.concat('*'));
-            selInteract = true;
-            $(this).parent().fandeOut(100);
+            // highlight the text
+            $(this).select();
+            var pos = $('#tInput').offset();
+            pos.top += $('#tInput').width();
             $('#transSel').fadeIn(100);
-            evt.stopPropagation();
-            return;
-        }
+            return false;
+        });
 
-        var tvar = $('#tInput').val();
-        var tfunc = $(this).text().replace("d", "_transvar0");
-        var tcall = $(this).text().replace("d", tvar);
-        $('#tInput').val(tcall);
-        $(this).parent().fadeOut(100);
-        evt.stopPropagation();
-        transform(n = tvar, t = tfunc, typeTransform = false);
-    });
+        var n;
+        $('#tInput').keyup(evt => {
+            var t = byId('transSel').style.display;
+            var t1 = byId('transList').style.display;
+            if (t != "none") $('#transSel').fadeOut(100);
+            else if (t1 != "none") $('#transList').fadeOut(100);
+
+            if (evt.keyCode == 13) { // keyup on Enter
+                n = $('#tInput').val();
+                var t = transParse(n=n);
+                if (!t)
+                    return;
+                transform(n = t.slice(0, t.length - 1), t = t[t.length - 1], typeTransform = false);
+            }
+        });
+
+        var t;
+        $('#transList li').click(function(evt){
+            // if interact is selected, show variable list again
+            if ($(this).text() == "interact(d,e)") {
+                $('#tInput').val(tvar.concat('*'));
+                selInteract = true;
+                $(this).parent().fandeOut(100);
+                $('#transSel').fadeIn(100);
+                evt.stopPropagation();
+                return;
+            }
+
+            var tvar = $('#tInput').val();
+            var tfunc = $(this).text().replace("d", "_transvar0");
+            var tcall = $(this).text().replace("d", tvar);
+            $('#tInput').val(tcall);
+            $(this).parent().fadeOut(100);
+            evt.stopPropagation();
+            transform(n = tvar, t = tfunc, typeTransform = false);
+        });
+    };
 
     d3.select("#models")
         .style('height', 2000)
@@ -580,7 +692,7 @@ function scaffolding(callback) {
         .attr("id", d => d + ".types")
         .text(d => d)
         .attr('class', d=> {
-              if (UpdateProblemSchemaRequest.task_type == d.toString()){
+              if (d3mProblemDescription.taskType == d.toString()){
               return 'item-select';
               } else {
               if(locktoggle) return 'item-default item-lineout';
@@ -604,7 +716,7 @@ function scaffolding(callback) {
         .attr("id", d => d + ".subtypes")
         .text(d => d)
         .attr('class', d=> {
-              if (UpdateProblemSchemaRequest.task_subtype == d.toString()){
+              if (d3mProblemDescription.taskSubtype == d.toString()){
               return 'item-select';
               } else {
               if(locktoggle) return 'item-default item-lineout';
@@ -628,7 +740,7 @@ function scaffolding(callback) {
         .attr("id", d => d + ".metrics")
         .text(d => d)
         .attr('class', d=> {
-              if (UpdateProblemSchemaRequest.metric_type == d.toString()){
+              if (d3mProblemDescription.metric == d.toString()){
                 return 'item-select';
               } else {
                 if(locktoggle) return 'item-default item-lineout';
@@ -652,7 +764,7 @@ function scaffolding(callback) {
         .attr("id", d => d + ".outputs")
         .text(d => d)
         .attr('class', d=> {
-              if (UpdateProblemSchemaRequest.output_type == d.toString()){
+              if (d3mProblemDescription.outputType == d.toString()){
               return 'item-select';
               } else {
               if(locktoggle) return 'item-default item-lineout';
@@ -694,15 +806,41 @@ function layout(v,v2) {
     nodes = [];
     links = [];
 
+    svg.append("svg:defs").append("svg:marker")
+        .attr("id", "group1-arrow")
+        .attr('viewBox', '0 -5 15 15')
+        .attr("refX", 2.5)
+        .attr("refY", 0)
+        .attr("markerWidth", 3)
+        .attr("markerHeight", 3)
+        .attr("orient", "auto")
+        .append("path")
+        .attr('d', 'M0,-5L10,0L0,5')
+        .style("fill", gr1Color);
+
+    svg.append("svg:defs").append("svg:marker")
+        .attr("id", "group2-arrow")
+        .attr('viewBox', '0 -5 15 15')
+        .attr("refX", 2.5)
+        .attr("refY", 0)
+        .attr("markerWidth", 3)
+        .attr("markerHeight", 3)
+        .attr("orient", "auto")
+        .append("path")
+        .attr('d', 'M0,-5L10,0L0,5')
+        .style("fill", gr2Color);
+
     var line = svg.append("line")
         .style('fill', 'none')
         .style('stroke', gr1Color)
-        .style('stroke-width', 5);
+        .style('stroke-width', 5)
+        .attr("marker-end", "url(#group1-arrow)");
 
     var line2 = svg.append("line")
         .style('fill', 'none')
         .style('stroke', gr2Color)
-        .style('stroke-width', 5);
+        .style('stroke-width', 5)
+        .attr("marker-end", "url(#group2-arrow)");;
 
     var visbackground = d3.select("#whitespace").append("svg")
         .attr("width", width)
@@ -928,6 +1066,7 @@ function layout(v,v2) {
         // note, d3.geom.hull returns null if shorter coordinate set than 3,
         // so findcoords() function has option to lengthen the coordinates returned to bypass this
         if(gr1coords.length > 2){
+            line.style("opacity", 1);
             visbackground.style("opacity", 1);
             vis.style("opacity", 0.3);
             var myhull = d3.geom.hull(gr1coords);
@@ -950,8 +1089,8 @@ function layout(v,v2) {
                     ldist = Math.sqrt(ldeltaX * ldeltaX + ldeltaY * ldeltaY),
                     lnormX = 0,
                     lnormY = 0,
-                    lsourcePadding = allR + 5,
-                    ltargetPadding = allR + 5;
+                    lsourcePadding = allR + 7,
+                    ltargetPadding = allR + 10;
 
                 if (ldist > 0){
                     lnormX = ldeltaX / ldist;
@@ -962,7 +1101,6 @@ function layout(v,v2) {
                     .attr("y1", p[1] + (lsourcePadding * lnormY))   // or r[1] if findboundary works
                     .attr("x2", q[0]- (ltargetPadding * lnormX))
                     .attr("y2", q[1]- (ltargetPadding * lnormY));
-                //circle.attr("cx", p[0]).attr("cy", p[1]);       // placeholder for arrowhead if not set up as arrow
             };
 
             // group members attract each other, repulse non-group members
@@ -992,6 +1130,7 @@ function layout(v,v2) {
         };
 
         if(gr2coords.length > 2){
+            line2.style("opacity", 1);
             vis2background.style("opacity", 1);
             vis2.style("opacity", 0.3);
             var myhull = d3.geom.hull(gr2coords);
@@ -1012,14 +1151,13 @@ function layout(v,v2) {
                     ldist = Math.sqrt(ldeltaX * ldeltaX + ldeltaY * ldeltaY),
                     lnormX = ldeltaX / ldist,
                     lnormY = ldeltaY / ldist,
-                    lsourcePadding = allR + 5,
-                    ltargetPadding = allR + 5;
+                    lsourcePadding = allR + 7,
+                    ltargetPadding = allR + 10;
 
                 line2.attr("x1", p[0] + (lsourcePadding * lnormX))
                     .attr("y1", p[1] + (lsourcePadding * lnormY))
                     .attr("x2", q[0]- (ltargetPadding * lnormX))
                     .attr("y2", q[1]- (ltargetPadding * lnormY));
-                //circle.attr("cx", p[0]).attr("cy", p[1]);       // placeholder for arrowhead if not set up as arrow
             };
 
             // group members attract each other, repulse non-group members
@@ -1132,11 +1270,11 @@ function layout(v,v2) {
         } else {
             d3.select("#types").select("p.item-select")
             .attr('class', 'item-default');
-            UpdateProblemSchemaRequest.task_type = this.innerHTML.toString();
+            d3mProblemDescription.taskType = this.innerHTML.toString();
             d3.select(this).attr('class',"item-select");
         }
         restart();
-        updateSchema("task_type", UpdateProblemSchemaRequest, d3mTaskType);
+        updateSchema("taskType", d3mProblemDescription, d3mTaskType);
         });
 
     d3.select("#subtypes").selectAll("p")
@@ -1147,11 +1285,11 @@ function layout(v,v2) {
         } else {
             d3.select("#subtypes").select("p.item-select")
             .attr('class', 'item-default');
-            UpdateProblemSchemaRequest.task_subtype = this.innerHTML.toString();
+            d3mProblemDescription.taskSubtype = this.innerHTML.toString();
             d3.select(this).attr('class',"item-select");
         }
         restart();
-        updateSchema("task_subtype", UpdateProblemSchemaRequest, d3mTaskSubtype);
+        updateSchema("taskSubtype", d3mProblemDescription, d3mTaskSubtype);
         });
 
     d3.select("#metrics").selectAll("p")
@@ -1159,16 +1297,16 @@ function layout(v,v2) {
         if(locktoggle) return;
         if(this.className=="item-select") {
             return;
-   //         UpdateProblemSchemaRequest.metric_type = ["",""];
+   //         d3mProblemDescription.metric = ["",""];
     //        this.className="item-default";
         } else {
             d3.select("#metrics").select("p.item-select")
             .attr('class', 'item-default');
-            UpdateProblemSchemaRequest.metric_type = this.innerHTML.toString();
+            d3mProblemDescription.metric = this.innerHTML.toString();
             d3.select(this).attr('class',"item-select");
         }
         restart();
-        updateSchema("metric_type", UpdateProblemSchemaRequest, d3mMetrics);
+        updateSchema("metric", d3mProblemDescription, d3mMetrics);
         });
 
     d3.select("#outputs").selectAll("p")
@@ -1179,11 +1317,11 @@ function layout(v,v2) {
         } else {
             d3.select("#outputs").select("p.item-select")
             .attr('class', 'item-default');
-            UpdateProblemSchemaRequest.output_type = this.innerHTML.toString();
+            d3mProblemDescription.outputType = this.innerHTML.toString();
             d3.select(this).attr('class',"item-select");
         }
         restart();
-        updateSchema("output_type", UpdateProblemSchemaRequest, d3mOutputType);
+        updateSchema("outputType", d3mProblemDescription, d3mOutputType);
         });
 
     // update graph (called when needed)
@@ -1544,24 +1682,26 @@ function layout(v,v2) {
             .append("li")
             .text(d => d);
 
-        $('#transSel li').click(function(evt) {
-            // if 'interaction' is the selected function, don't show the function list again
-            if (selInteract) {
-                var n = $('#tInput').val().concat($(this).text());
-                $('#tInput').val(n);
-                evt.stopPropagation();
-                var t = transParse(n = n);
-                if (!t) return;
-                $(this).parent().fadeOut(100);
-                transform(n = t.slice(0, t.length - 1), t = t[t.length - 1], typeTransform = false);
-                return;
-            }
+        if(!d3m_mode){
+            $('#transSel li').click(function(evt) {
+                // if 'interaction' is the selected function, don't show the function list again
+                if (selInteract) {
+                    var n = $('#tInput').val().concat($(this).text());
+                    $('#tInput').val(n);
+                    evt.stopPropagation();
+                    var t = transParse(n = n);
+                    if (!t) return;
+                    $(this).parent().fadeOut(100);
+                    transform(n = t.slice(0, t.length - 1), t = t[t.length - 1], typeTransform = false);
+                    return;
+                }
 
-            $('#tInput').val($(this).text());
-            $(this).parent().fadeOut(100);
-            $('#transList').fadeIn(100);
-            evt.stopPropagation();
-        });
+                $('#tInput').val($(this).text());
+                $(this).parent().fadeOut(100);
+                $('#transList').fadeIn(100);
+                evt.stopPropagation();
+            });
+        };
 
         // remove old nodes
         circle.exit().remove();
@@ -1680,6 +1820,17 @@ export function forceSwitch() {
     }
 }
 
+export function helpmaterials(type) {
+    if(type=="video"){
+        var win = window.open("http://2ra.vn/demos/d3mintegrationdemo.mp4", '_blank');
+        win.focus();
+    }else{
+        var win = window.open("http://2ra.vn/papers/tworavens-guide.pdf", '_blank');
+        win.focus();
+    }
+    console.log(type);
+}
+
 export function lockDescription() {
     locktoggle = locktoggle ? false : true;
     let temp;
@@ -1743,7 +1894,7 @@ export function estimate(btn) {
         alert("Warning: Data download is not complete. Try again soon.");
         return;
     }
-
+      
     zPop();
     // write links to file & run R CMD
     // package the output as JSON
@@ -1762,6 +1913,7 @@ export function estimate(btn) {
     var selectorurlcall = rappURL + "selectorapp";
 
     function estimateSuccess(btn, json) {
+      //  toggleRightButtons("all");
         estimateLadda.stop(); // stop spinner
         allResults.push(json);
         cdb("json in: ", json);
@@ -1777,6 +1929,7 @@ export function estimate(btn) {
 
         d3.select("#modelView")
             .style("display", "block");
+        
 
         // programmatic click on Results button
         $("#btnResults").trigger("click");
@@ -1831,12 +1984,18 @@ export function estimate(btn) {
     estimateLadda.start(); // start spinner
     makeCorsRequest(urlcall, btn, estimateSuccess, estimateFail, solajsonout);
     } else { // we are in d3m_mode
+        // rpc CreatePipelines(PipelineCreateRequest) returns (stream PipelineCreateResult) {}
             zPop();
             zparams.callHistory = callHistory;
             var jsonout = JSON.stringify(zparams);
-        console.log(jsonout);
-
+            console.log(jsonout);
+        
+            let context = apiSession(zparams.zsessionid);
+            let uri = {features: zparams.zd3mdata, target:zparams.zd3mtarget};
+        
+        
             var urlcall = rappURL + "pipelineapp";
+        
             var solajsonout = "solaJSON=" + jsonout;
             cdb("urlcall out: ", urlcall);
             cdb("POST out: ", solajsonout);
@@ -1844,27 +2003,159 @@ export function estimate(btn) {
             function createPipelineSuccess(btn, json) {
                 estimateLadda.stop(); // stop spinner
 
-                let train_features=json.predictors;
-                let target_features=json.depvar;
-                let task = d3mTaskType[UpdateProblemSchemaRequest.task_type][1];
-                let task_subtype = d3mTaskSubtype[UpdateProblemSchemaRequest.task_subtype][1];
-                let output = d3mOutputType[UpdateProblemSchemaRequest.output_type][1];
-                let metrics = d3mMetrics[UpdateProblemSchemaRequest.metric_type][1];
+                let trainFeatures=apiFeature(json.predictors,uri.features);
+                let targetFeatures=apiFeature(json.depvar,uri.target);
+                let task = d3mTaskType[d3mProblemDescription.taskType][1];
+                let taskSubtype = d3mTaskSubtype[d3mProblemDescription.taskSubtype][1];
+                let output = d3mOutputType[d3mProblemDescription.outputType][1];
+                let metrics = [d3mMetrics[d3mProblemDescription.metric][1]];
+                let taskDescription = d3mProblemDescription.taskDescriptionription;
+                let maxPipelines = 10; //user to specify this eventually?
+                
+                setxTable(json.predictors);
+                let dvvalues = json.dvvalues;
+                
 
-                let PipelineRequest={train_features, target_features, task, task_subtype, output, metrics};
+                let PipelineCreateRequest={context, trainFeatures, task, taskSubtype, taskDescription, output, metrics, targetFeatures, maxPipelines};
 
-                let jsonout = JSON.stringify(PipelineRequest);
+                let jsonout = JSON.stringify(PipelineCreateRequest);
 
                 let urlcall = d3mURL + "/createpipeline";
-                var solajsonout = "CreatePipelines=" + jsonout;
+                var solajsonout = "grpcrequest=" + jsonout;
                 
                 console.log(urlcall);
                 console.log(solajsonout);
-                function sendPipelineSuccess(btn, json) {
-                    console.log(json);
+                function sendPipelineSuccess(btn, PipelineCreateResult) {
+                    //rpc GetExecutePipelineResults(PipelineExecuteResultsRequest) returns (stream PipelineExecuteResult) {}
+                    console.log(PipelineCreateResult);
+                    
+                    
+                    let allPipelineInfo = {};
+                    for (var i = 0; i<PipelineCreateResult.length; i++) {
+                        if(PipelineCreateResult[i].pipelineId in allPipelineInfo) {
+                            allPipelineInfo[PipelineCreateResult[i].pipelineId]=Object.assign(allPipelineInfo[PipelineCreateResult[i].pipelineId],PipelineCreateResult[i]);
+                        } else {
+                            allPipelineInfo[PipelineCreateResult[i].pipelineId]=PipelineCreateResult[i];
+                        }
+                    }
+                    console.log(allPipelineInfo);
+                    // to get all pipeline ids: Object.keys(allPipelineInfo)
+                    
+                    //////////////////////////
+                   
+                    function tabulate(data, columns, divid) {
+                        var table = d3.select(divid).append('table')
+                        var thead = table.append('thead')
+                        var	tbody = table.append('tbody');
+                        
+                        // append the header row
+                        thead.append('tr')
+                        .selectAll('th')
+                        .data(columns).enter()
+                        .append('th')
+                        .text(function (column) { return column; });
+                        
+                        // create a row for each object in the data
+                        var rows = tbody.selectAll('tr')
+                        .data(data)
+                        .enter()
+                        .append('tr')
+                        .attr('class',function(d,i) {
+                              if(i==0) return 'item-select';
+                              else return 'item-default';
+                              })
+                        
+                        // create a cell in each row for each column
+                        var cells = rows.selectAll('td')
+                        .data(function (row) {
+                              return columns.map(function (column) {
+                                                 return {column: column, value: row[column]};
+                                                 });
+                              })
+                        .enter()
+                        .append('td')
+                        .text(function (d) {
+                            return d.value;
+                              })
+                        .on("click", function(d) {
+                            let myrow = this.parentElement;
+                            if(myrow.className=="item-select") {
+                                return;
+                            } else {
+                                d3.select(divid).select("tr.item-select")
+                                .attr('class', 'item-default');
+                                d3.select(myrow).attr('class',"item-select");
+                                if(divid=='#setxRight') {
+                                    resultsplotinit(allPipelineInfo[myrow.firstChild.innerText], dvvalues);
+                                }
+                            }});
+                        
+                        // this is code to add a checkbox to each row of pipeline results table
+                        /*
+                        d3.select(divid).selectAll("tr")
+                        .append("input")
+                        .attr("type", "checkbox")
+                        .style("float","right");
+                         */
+        
+                        return table;
+                    }
+                    
+                    let resultstable = [];
+                    for(var key in allPipelineInfo) {
+                        let myid = "";
+                        let mymetric = "";
+                        let myval = "";
+                        let myscores = allPipelineInfo[key].pipelineInfo.scores;
+                        for(var i = 0; i < myscores.length; i++) {
+                            //if(i==0) {myid=key;}
+                             //   else myid="";
+                            myid=key;
+                            mymetric=myscores[i].metric;
+                            myval=+myscores[i].value.toFixed(3);
+                            resultstable.push({"PipelineID":myid,"Metric":mymetric, "Score":myval});
+                        }
+                    }
+                    
+                    // render the table
+                    tabulate(resultstable, ['PipelineID', 'Metric', 'Score'], '#results');
+                    tabulate(resultstable, ['PipelineID', 'Metric', 'Score'], '#setxRight');
+                    /////////////////////////
+                    
                     toggleRightButtons("all");
                     document.getElementById("btnResults").click();
+                    
+                    // this initializes the main
+                    // this piece here is the first pipeline through: allPipelineInfo[resultstable[1].PipelineID]
+                    resultsplotinit(allPipelineInfo[resultstable[1].PipelineID], dvvalues);
+                    exportpipeline(resultstable[1].PipelineID);
+                    
+                    
+                    // I don't think we need these until we are handling streaming pipelines
+                    // They are set up and called, but don't actually render anything for the user
+                    
+                    // this is our function for the ListPipelines of API
                     listpipelines();
+                    
+                    //let pipelineid = PipelineCreateResult.pipelineid;
+                    let pipeline_ids = Object.keys(allPipelineInfo);
+                    let PipelineExecuteResultsRequest = {context, pipeline_ids};
+                    jsonout = JSON.stringify(PipelineExecuteResultsRequest);
+                    let urlcall = d3mURL + "/getexecutepipelineresults";
+                    var solajsonout = "grpcrequest=" + jsonout;
+                    console.log("GetExecutePipelineResults: ");
+                    console.log(solajsonout);
+                    console.log(urlcall);
+                    
+                    function getExecutePipeSuccess(btn, PipelineExecuteResult) {
+                        console.log(PipelineExecuteResult);
+                        // call to initialize the main plot
+                        // dvvalues and predvals should eventually be contained in the pipeline object itself
+                    }
+                    function getExecutePipeFail (btn) {
+                        console.log("GetExecutePipelineResults failed");
+                    }
+                    makeCorsRequest(urlcall, "nobutton", getExecutePipeSuccess, getExecutePipeFail, solajsonout);
                 }
 
                 function sendPipelineFail(btn) {
@@ -1884,21 +2175,26 @@ export function estimate(btn) {
     }
 }
 
-export function runPreprocess(dataloc, targetloc, preprocessloc) {
+export function runPreprocess(dataloc, targetloc, datastub) {
     let url = rappURL + 'preprocessapp';
-    let json = JSON.stringify({data: dataloc, target: targetloc, preprocess: preprocessloc});
-    cdb('urlcall out: ', url);
-    cdb('POST out: ', json);
+    console.log("GOING TO RUN THE PREPROCESSAPP");
+    let json = JSON.stringify({data: dataloc, target: targetloc, datastub: datastub}); //, preprocess: preprocessloc});
+    console.log('urlcall out: ', url);
+    console.log('POST out: ', json);
     let data = new FormData();
     data.append('solaJSON', json);
     return m.request({method: 'POST', url: url, data: data})
         .then(data => {
-            console.log('json in: ', data);
+            console.log('json in RIGHT HERE: ', data);
             return data;
-        }, _ => console.log('preprocess failed'));
+        }, _ => {
+            console.log('preprocess failed');
+            alert('preprocess failed. ending user session.');
+            endsession();
+        });
 }
 
-export let ta2stuff = _ => console.log(UpdateProblemSchemaRequest);
+export let ta2stuff = _ => console.log(d3mProblemDescription);
 
 function dataDownload() {
     zPop();
@@ -2353,8 +2649,14 @@ export function tabRight(tab) {
             return this.getAttribute("class") === expand ? cls : expand;
         });
     };
+    let toggleRFull = () => {
+        select(function() {
+               let expand = cls + ' expandpanelfull';
+               return this.getAttribute("class") === expand ? cls : expand;
+               });
+    };
     if (tab === "btnModels") select(cls);
-    else if (tab === "btnSetx") righttab === "btnSetx" || select() === cls && toggleR();
+    else if (tab === "btnSetx") righttab === "btnSetx" || select() === cls && toggleRFull();
     else if (tab === "btnResults") !estimated ? select(cls) :
         righttab === "btnResults" || select() === cls && toggleR();
     righttab = tab;
@@ -2449,7 +2751,7 @@ export function panelPlots() {
     });
 
     //remove all plots, could be smarter here
-    d3.select('#setx').selectAll('svg').remove();
+    d3.select('#setxLeft').selectAll('svg').remove();
     d3.select('#tab2').selectAll('svg').remove();
     for (var i = 0; i < vars.length; i++) {
         let node = allNodes[ids[i]];
@@ -2457,27 +2759,27 @@ export function panelPlots() {
         node.subsetplot = false;
         if (node.plottype === "continuous" & node.setxplot == false) {
             node.setxplot = true;
-            density(node, div = "setx", priv);
+            density(node, div = "setxLeft", priv);
             node.subsetplot = true;
             density(node, div = "subset", priv);
         } else if (node.plottype === "bar" & node.setxplot == false) {
             node.setxplot = true;
-            bars(node, div = "setx", priv);
+            bars(node, div = "setxLeft", priv);
             node.subsetplot = true;
             barsSubset(node);
         }
     }
 
-        d3.select("#setx").selectAll("svg")
+        d3.select("#setxLeft").selectAll("svg")
         .each(function () {
               d3.select(this);
-              var regstr = /(.+)_setx_(\d+)/;
+              var regstr = /(.+)_setxLeft_(\d+)/;
               var myname = regstr.exec(this.id);
               var nodeid = myname[2];
               myname = myname[1];
               if (!vars.includes(myname)) {
               allNodes[nodeid].setxplot = false;
-              let temp = "#".concat(myname, "_setx_", nodeid);
+              let temp = "#".concat(myname, "_setxLeft_", nodeid);
               d3.select(temp)
               .remove();
               allNodes[nodeid].subsetplot = false;
@@ -2784,17 +3086,11 @@ export function subsetSelect(btn) {
     makeCorsRequest(urlcall, btn, subsetSelectSuccess, btn => selectLadda.stop(), solajsonout);
 }
 
-function readPreprocess(url) {
-    return new Promise((resolve, reject) => {
-        cdb('readPreprocess: ' + url);
-        d3.json(url, (err, res) => {
-            if (err)
-                return reject(err);
-            cdb('readPreprocess result: ' + res);
-            priv = res.dataset.private || priv;
-            Object.keys(res.variables).forEach(k => preprocess[k] = res.variables[k]);
-            resolve();
-        });
+function readPreprocess(data) {
+    return new Promise((resolve, _) => {
+        priv = data.dataset.private || priv;
+        Object.keys(data.variables).forEach(k => preprocess[k] = data.variables[k]);
+        resolve();
     });
 }
 
@@ -2841,43 +3137,22 @@ export let fakeClick = () => {
 };
 
 
-// this is our call to django to start the session
-function startsession() {
-    let user_agent = "some agent";
-    let version = "some version";
-    let SessionRequest={user_agent,version};
 
-    var jsonout = JSON.stringify(SessionRequest);
 
-    var urlcall = d3mURL + "/startsession";
-    var solajsonout = "solaJSON=" + jsonout;
-    console.log("solajsonout: ", solajsonout);
-    console.log("urlcall: ", urlcall);
-
-    function ssSuccess(btn, json) {
-        console.log(json);
-    }
-
-    function ssFail(btn) {
-        console.log("session start failed");
-    }
-
-   makeCorsRequest(urlcall, "nobutton", ssSuccess, ssFail, solajsonout);
-}
-
+//EndSession(SessionContext) returns (Response) {}
 export function endsession() {
-    let sessioncontext = "my session context";
-    let SessionContext={sessioncontext};
+    let SessionContext= apiSession(zparams.zsessionid);
     
     var jsonout = JSON.stringify(SessionContext);
     
     var urlcall = d3mURL + "/endsession";
-    var solajsonout = "SessionContext=" + jsonout;
-    console.log("solajsonout: ", solajsonout);
+    var solajsonout = "grpcrequest=" + jsonout;
+    console.log("EndSession: ")
+    console.log(solajsonout);
     console.log("urlcall: ", urlcall);
     
-    function endSuccess(btn, json) {
-        console.log(json);
+    function endSuccess(btn, Response) {
+        console.log(Response);
     }
     
     function endFail(btn) {
@@ -2887,20 +3162,28 @@ export function endsession() {
     makeCorsRequest(urlcall, "nobutton", endSuccess, endFail, solajsonout);
 }
 
+//rpc ListPipelines(PipelineListRequest) returns (PipelineListResult) {}
+// pipes is an array of pipeline IDs
 export function listpipelines() {
-    let sessioncontext = "my session context";
-    let PipeLineListRequest={sessioncontext};
+    let context = apiSession(zparams.zsessionid);
+    let PipeLineListRequest={context};
     
     var jsonout = JSON.stringify(PipeLineListRequest);
     
     var urlcall = d3mURL + "/listpipelines";
-    var solajsonout = "PipeLineListRequest=" + jsonout;
-    console.log("solajsonout: ", solajsonout);
-    console.log("urlcall: ", urlcall);
+    var solajsonout = "grpcrequest=" + jsonout;
+    console.log("PipelineListRequest: ");
+    console.log(solajsonout);
+    console.log(urlcall);
     
-    function listPipesSuccess(btn, json) {
+    function listPipesSuccess(btn, PipelineListResult) {
+        console.log(PipelineListResult);
         //hardcoded pipes for now
-        let pipes = ["","id1", "id2", "id3", "id4", "id5"]
+        let pipes = PipelineListResult.pipelineIds;
+        
+        /*
+        pipes.unshift("place");
+        console.log(pipes);
         d3.select("#results").selectAll("p")
         .data(pipes)
         .enter()
@@ -2916,7 +3199,26 @@ export function listpipelines() {
                 .attr('class', 'item-default');
                 d3.select(this).attr('class',"item-select");
             }});
-        console.log(json);
+        
+        pipes.shift();
+         
+        
+        d3.select("#setxRight").selectAll("p")
+        .data(pipes)
+        .enter()
+        .append("p")
+        .attr("id", "_setxpipe_".concat)
+        .text(d => d)
+        .attr('class', 'item-default')
+        .on("click", function() {
+            if(this.className=="item-select") {
+            return;
+            } else {
+            d3.select("#setxRight").select("p.item-select")
+            .attr('class', 'item-default');
+            d3.select(this).attr('class',"item-select");
+            }});
+         */
     }
     
     function listPipesFail(btn) {
@@ -2926,23 +3228,78 @@ export function listpipelines() {
     makeCorsRequest(urlcall, "nobutton", listPipesSuccess, listPipesFail, solajsonout);
 }
 
-// this is our call to django to update the problem schema
-function updateSchema(type, updates, lookup) {
-    console.log('updateSchema....')
-    let ReplaceProblemSchemaField=type;
-    let value = lookup[updates[type]][1];
-    let valuenum = lookup[updates[type]][2];
-    let updateRequest = {ReplaceProblemSchemaField, value, valuenum};
+// rpc ExecutePipeline(PipelineExecuteRequest) returns (stream PipelineExecuteResult) {}
+export function executepipeline() {
+    let context = apiSession(zparams.zsessionid);
+    let tablerow = document.getElementById('setxRight').querySelector('tr.item-select');
+    if(tablerow == null) {alert("Please select a pipeline to execute on."); return;}
+    let pipelineId=tablerow.firstChild.innerText;
+    
+    zPop();
+    zparams.callHistory = callHistory;
+    let jsonout = JSON.stringify(zparams);
+    
+    let predictFeatures = apiFeature(zparams.zvars,"<<DATA_URI>>");
+    let data = [];
+    
+    //this will just set zparams.zsetx to the mean, which is default for setx plots
+    //note that if setxplot is modified, it will NOT == "" because zparams.zsetx is modified when the setx plot slider is moved for the first time
+    for(let i =0; i<zparams.zvars.length; i++) {
+        let mydata = [];
+        let mymean = allNodes[findNodeIndex(zparams.zvars[i])].mean;
+        if(zparams.zsetx[i][0]=="") {
+            mydata[0]=mymean;
+        } else if(zparams.zsetx[i][0]!=mymean){
+            mydata[0]=zparams.zsetx[i][0];
+        }
+        if(zparams.zsetx[i][1]=="") {
+            mydata[1]=allNodes[findNodeIndex(zparams.zvars[i])].mean;
+        } else if(zparams.zsetx[i][1]!=mymean){
+            mydata[1]=zparams.zsetx[i][1];
+        }
+        data.push(mydata);
+    }
+    
+    let PipelineExecuteRequest={context, pipelineId, predictFeatures, data};
+    
+    jsonout = JSON.stringify(PipelineExecuteRequest);
+    
+    var urlcall = d3mURL + "/executepipeline";
+    var solajsonout = "grpcrequest=" + jsonout;
+    console.log("PipelineExecuteRequest: ");
+    console.log(solajsonout);
+    console.log("urlcall: ", urlcall);
+    
+    function executePipeSuccess(btn, PipelineExecuteResult) {
+        alert("pipeline executed");
+        console.log(PipelineExecuteResult);
+    }
+    
+    function executePipeFail(btn) {
+        console.log("execute pipelines failed");
+    }
+    
+    makeCorsRequest(urlcall, "nobutton", executePipeSuccess, executePipeFail, solajsonout);
+}
 
-    let jsonout = JSON.stringify(updateRequest);
+// this is our call to django to update the problem schema
+// rpc UpdateProblemSchema(UpdateProblemSchemaRequest) returns (Response) {}
+function updateSchema(type, updates, lookup) {
+    let context = apiSession(zparams.zsessionid);
+    let ReplaceProblemSchemaField={[type]:lookup[updates[type]][1]};
+//    let valuenum = lookup[updates[type]][2];
+    let UpdateProblemSchemaRequest = {ReplaceProblemSchemaField,context};
+
+    let jsonout = JSON.stringify(UpdateProblemSchemaRequest);
 
     let urlcall = d3mURL + "/updateproblemschema";
-    let solajsonout = "UpdateProblemSchemaRequest=" + jsonout;
-    console.log("solajsonout: ", solajsonout);
+    let solajsonout = "grpcrequest=" + jsonout;
+    console.log("UpdateProblemSchemaRequest: ");
+    console.log(solajsonout);
     console.log("urlcall: ", urlcall);
 
-    function usSuccess(btn, json) {
-        console.log(json);
+    function usSuccess(btn, Response) {
+        console.log(Response);
     }
 
     function usFail(btn) {
@@ -2974,7 +3331,7 @@ function jamescentroid(coord){
 // Members of groups are scaled down if group gets large.
 function setPebbleRadius(d){
     if(d.group1 || d.group2){   // if a member of a group, need to calculate radius size
-        var uppersize = 4
+        var uppersize = 7
         var ng1 = (d.group1) ? zparams.zgroup1.length : 1;      // size of group1, if a member of group 1
         var ng2 = (d.group2) ? zparams.zgroup2.length : 1;      // size of group2, if a member of group 2
         var maxng = Math.max(ng1,ng2);                                                      // size of the largest group variable is member of
@@ -2992,7 +3349,7 @@ function setPebbleCharge(d){
         if(d.forefront){                                        // pebbles packed in groups repel others on mouseover
             return -1000
         }
-        var uppersize = 4
+        var uppersize = 7
         var ng1 = (d.group1) ? zparams.zgroup1.length : 1;      // size of group1, if a member of group 1
         var ng2 = (d.group2) ? zparams.zgroup2.length : 1;      // size of group2, if a member of group 2
         var maxng = Math.max(ng1,ng2);                                                      // size of the largest group variable is member of
@@ -3001,6 +3358,11 @@ function setPebbleCharge(d){
         return -800
     }
 };
+
+export function expandrightpanel() {
+    document.getElementById('rightpanel').classList.add("expandpanelfull")
+    console.log("HERE");
+}
 
 function toggleRightButtons(set) {
     
@@ -3046,6 +3408,10 @@ function toggleRightButtons(set) {
         for (let i = 0; i < mybtns.length; i++) {
             mybtns[i].classList.remove("noshow");
         }
+        
+        // droping models for d3m_mode
+        document.getElementById('btnModels').classList.add("noshow");
+        
         // then select all the buttons
         mybtns = document.getElementById('rightpanelbuttons').querySelectorAll(".btn:not(.noshow)");
         setWidths(mybtns);
@@ -3062,3 +3428,677 @@ function toggleRightButtons(set) {
         document.getElementById('btnOutputs').style.display = 'none';
     }
 }
+
+export function resultsplotinit(pid, dvvalues) {
+    // presumably we'll be reading in results from a path
+    // for now it's just hardcoded
+    console.log(pid);
+    let predfile = pid.pipelineInfo.predictResultData.file_1;
+    let predvals = [];
+    
+    for(let i = 0; i < predfile.length; i++) {
+        predvals.push(Number(predfile[i].preds));
+    }
+    
+    // only do this for classification tasks
+    if(d3mTaskType[d3mProblemDescription.taskType][1] == "CLASSIFICATION") {
+        genconfdata(dvvalues, predvals);
+    } else {
+        let xdata = "Actual";
+        let ydata = "Predicted";
+        bivariatePlot(dvvalues, predvals, xdata, ydata);
+        
+    }
+
+}
+export function genconfdata (dvvalues, predvals) {
+    // FOR TESTING
+    dvvalues = predvals.slice(0);
+    for(let i = 0; i < dvvalues.length; i++) {
+        var randomnumber = Math.floor(Math.random() * (2 - -2 + 1)) + -2;
+        dvvalues[i] = dvvalues[i] + randomnumber;
+    }
+    
+    // done for testing. drop above when dvvalues are real values returned by R when pipeline is constructed
+    
+    function onlyUnique(value, index, self) {
+        return self.indexOf(value) === index;
+    }
+    
+    let mycounts = [];
+    let mypairs = [];
+    
+    // this should eventually be just read from the URI in pipeline
+   // let dvvalues = [1,1,1,2,3,2,3,3,3,3,3,2,3,2,1,2,3,4,4];
+   // let predvals = [1,2,3,2,3,1,3,3,3,2,2,1,3,3,1,2,3,4,3];
+    
+    // combine actuals and predicted, and get all unique elements
+    let myuniques = dvvalues.concat(predvals);
+    myuniques = myuniques.filter(onlyUnique);
+  //  console.log(myuniques);
+    
+    // create two arrays: mycounts initialized to 0, mypairs have elements set to all possible pairs of uniques
+    // looked into solutions other than nested fors, but Internet suggest performance is just fine this way
+    for(let i = 0; i < myuniques.length; i++) {
+        let tempcount = [];
+        let temppair = [];
+        for(let j = 0; j < myuniques.length; j++) {
+            mycounts.push(0);
+            mypairs.push(+myuniques[i]+','+myuniques[j]);
+        }
+    }
+    
+  //  console.log(mypairs);
+    // line up actuals and predicted, and increment mycounts at index where mypair has a match for the 'actual,predicted'
+    for (let i = 0; i < dvvalues.length; i++) {
+     //   console.log(dvvalues[i]);
+     //   console.log(predvals[i]);
+        let temppair = +dvvalues[i]+','+predvals[i];
+        let myindex = mypairs.indexOf(temppair);
+        mycounts[myindex] += 1;
+    }
+  //  console.log(mycounts);
+    
+    let confdata = [], size = myuniques.length;
+    
+    // another loop... this builds the array of arrays from the flat array mycounts for input to confusionsmatrix function
+    while (mycounts.length > 0)
+        confdata.push(mycounts.splice(0, size));
+    
+   // console.log(confdata);
+    
+    // call confusionmatrix
+    confusionmatrix(confdata, myuniques);
+}
+export function confusionmatrix(matrixdata, classes) {
+    d3.select("#setxMiddle").html("");
+    d3.select("#setxMiddle").select("svg").remove();
+    
+    // adapted from this block: https://bl.ocks.org/arpitnarechania/dbf03d8ef7fffa446379d59db6354bac
+    let mainwidth = document.getElementById('main').clientWidth;
+    let mainheight = document.getElementById('main').clientHeight;
+    
+    let condiv = document.createElement('div');
+    condiv.id="confusioncontainer";
+    condiv.style.display="inline-block";
+    condiv.style.width=+(mainwidth*.25)+'px';
+    condiv.style.marginLeft='20px';
+    condiv.style.height=+(mainheight*.4)+'px';
+    condiv.style.float="left";
+    document.getElementById('setxMiddle').appendChild(condiv);
+    
+    let legdiv = document.createElement('div');
+    legdiv.id="confusionlegend";
+    legdiv.style.width=+(mainwidth*.07)+'px';
+    legdiv.style.marginLeft='20px';
+    legdiv.style.height=+(mainheight*.4)+'px';
+    legdiv.style.display="inline-block";
+    
+    document.getElementById('setxMiddle').appendChild(legdiv);
+    
+    
+    var margin = {top: 20, right: 10, bottom: 0, left: 50};
+    
+    function Matrix(options) {
+
+        let width = options.width,
+        height = options.height,
+        data = options.data,
+        container = options.container,
+        labelsData = options.labels,
+        startColor = options.start_color,
+        endColor = options.end_color;
+        
+        let widthLegend = options.widthLegend;
+        
+        if(!data){
+            throw new Error('Please pass data');
+        }
+        
+        if(!Array.isArray(data) || !data.length || !Array.isArray(data[0])){
+            throw new Error('It should be a 2-D array');
+        }
+        
+        let maxValue = d3.max(data, function(layer) { return d3.max(layer, function(d) { return d; }); });
+        let minValue = d3.min(data, function(layer) { return d3.min(layer, function(d) { return d; }); });
+        
+        let numrows = data.length;
+        let numcols = data[0].length;
+        
+        let svg = d3.select(container).append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+        
+        let background = svg.append("rect")
+        .style("stroke", "black")
+        .style("stroke-width", "2px")
+        .attr("width", width)
+        .attr("height", height);
+        
+        let x = d3.scale.ordinal()
+        .domain(d3.range(numcols))
+        .rangeBands([0, width]);
+        
+        let y = d3.scale.ordinal()
+        .domain(d3.range(numrows))
+        .rangeBands([0, height]);
+        
+        let colorMap = d3.scale.linear()
+        .domain([minValue,maxValue])
+        .range([startColor, endColor]);
+        
+        let row = svg.selectAll(".row")
+        .data(data)
+        .enter().append("g")
+        .attr("class", "row")
+        .attr("transform", function(d, i) { return "translate(0," + y(i) + ")"; });
+        
+        let cell = row.selectAll(".cell")
+        .data(function(d) { return d; })
+        .enter().append("g")
+        .attr("class", "cell")
+        .attr("transform", function(d, i) { return "translate(" + x(i) + ", 0)"; });
+        
+        cell.append('rect')
+        .attr("width", x.rangeBand())
+        .attr("height", y.rangeBand())
+        .style("stroke-width", 0);
+        
+        cell.append("text")
+        .attr("dy", ".32em")
+        .attr("x", x.rangeBand() / 2)
+        .attr("y", y.rangeBand() / 2)
+        .attr("text-anchor", "middle")
+        .style("fill", function(d, i) { return d >= maxValue/2 ? 'white' : 'black'; })
+        .text(function(d, i) { return d; });
+        
+        row.selectAll(".cell")
+        .data(function(d, i) { return data[i]; })
+        .style("fill", colorMap);
+        
+        // this portion of the code isn't as robust to sizing. column labels not rendering in the right place
+        let labels = svg.append('g')
+        .attr('class', "labels");
+        
+        let columnLabels = labels.selectAll(".column-label")
+        .data(labelsData)
+        .enter().append("g")
+        .attr("class", "column-label")
+        .attr("transform", function(d, i) {
+             // let temp = "translate(" + x(i) + "," + (height+20) + ")"; // this in particular looks to be the cause
+            //  console.log(temp);
+              return "translate(" + x(i) + "," + (height+30) + ")"; });
+        
+        columnLabels.append("line")
+        .style("stroke", "black")
+        .style("stroke-width", "1px")
+        .attr("x1", x.rangeBand() / 2)
+        .attr("x2", x.rangeBand() / 2)
+        .attr("y1", 0)
+        .attr("y2", 5);
+        
+        columnLabels.append("text")
+        .attr("x", 30)
+        .attr("y", y.rangeBand() / 2)
+        .attr("dy", ".22em")
+        .attr("text-anchor", "end")
+        .attr("transform", "rotate(-60)")
+        .text(function(d, i) { return d; });
+        
+        let rowLabels = labels.selectAll(".row-label")
+        .data(labelsData)
+        .enter().append("g")
+        .attr("class", "row-label")
+        .attr("transform", function(d, i) { return "translate(" + 0 + "," + y(i) + ")"; });
+        
+        rowLabels.append("line")
+        .style("stroke", "black")
+        .style("stroke-width", "1px")
+        .attr("x1", 0)
+        .attr("x2", -5)
+        .attr("y1", y.rangeBand() / 2)
+        .attr("y2", y.rangeBand() / 2);
+        
+        rowLabels.append("text")
+        .attr("x", -8)
+        .attr("y", y.rangeBand() / 2)
+        .attr("dy", ".32em")
+        .attr("text-anchor", "end")
+        .text(function(d, i) { return d; });
+        
+        let key = d3.select("#confusionlegend")
+        .append("svg")
+        .attr("width", widthLegend)
+        .attr("height", height + margin.top + margin.bottom);
+        
+        let legend = key
+        .append("defs")
+        .append("svg:linearGradient")
+        .attr("id", "gradient")
+        .attr("x1", "100%")
+        .attr("y1", "0%")
+        .attr("x2", "100%")
+        .attr("y2", "100%")
+        .attr("spreadMethod", "pad");
+        
+        legend
+        .append("stop")
+        .attr("offset", "0%")
+        .attr("stop-color", endColor)
+        .attr("stop-opacity", 1);
+        
+        legend
+        .append("stop")
+        .attr("offset", "100%")
+        .attr("stop-color", startColor)
+        .attr("stop-opacity", 1);
+        
+        key.append("rect")
+        .attr("width", widthLegend/2-10)
+        .attr("height", height)
+        .style("fill", "url(#gradient)")
+        .attr("transform", "translate(0," + margin.top + ")");
+        
+        // this y is for the legend
+        y = d3.scale.linear()
+        .range([height, 0])
+        .domain([minValue, maxValue]);
+        
+        let yAxis = d3.svg.axis()
+        .scale(y)
+        .orient("right");
+        
+        key.append("g")
+        .attr("class", "y axis")
+        .attr("transform", "translate(41," + margin.top + ")")
+        .call(yAxis)
+        
+    }
+    
+    // The table generation function. Used for the table of performance measures, not the confusion matrix
+    function tabulate(data, columns) {
+        var table = d3.select("#setxMiddle").append("table")
+        .attr("style", "margin-left: " + margin.left +"px"),
+        thead = table.append("thead"),
+        tbody = table.append("tbody");
+        
+        // append the header row
+        thead.append("tr")
+        .selectAll("th")
+        .data(columns)
+        .enter()
+        .append("th")
+        .text(function(column) { return column; });
+        
+        // create a row for each object in the data
+        var rows = tbody.selectAll("tr")
+        .data(data)
+        .enter()
+        .append("tr");
+        
+        // create a cell in each row for each column
+        var cells = rows.selectAll("td")
+        .data(function(row) {
+              return columns.map(function(column) {
+                                 return {column: column, value: row[column]};
+                                 });
+              })
+        .enter()
+        .append("td")
+        .attr("style", "font-family: Courier") // sets the font style
+        .html(function(d) { return d.value; });
+        
+        return table;
+    }
+    
+    
+    
+    // this code is all for producing a table with performance measures
+    //var confusionMatrix = [[169, 10],[7, 46]];
+    var tp = matrixdata[0][0];
+    var fn = matrixdata[0][1];
+    var fp = matrixdata[1][0];
+    var tn = matrixdata[1][1];
+    
+    var p = tp + fn;
+    var n = fp + tn;
+    
+    var accuracy = (tp+tn)/(p+n);
+    var f1 = 2*tp/(2*tp+fp+fn);
+    var precision = tp/(tp+fp);
+    var recall = tp/(tp+fn);
+    
+    accuracy = Math.round(accuracy * 100) / 100
+    f1 = Math.round(f1 * 100) / 100
+    precision = Math.round(precision * 100) / 100
+    recall = Math.round(recall * 100) / 100
+    
+    var computedData = [];
+    computedData.push({"F1":f1, "PRECISION":precision,"RECALL":recall,"ACCURACY":accuracy});
+    
+    Matrix({
+           container : '#confusioncontainer',
+           data      : matrixdata,
+           labels    : classes,
+           start_color : '#ffffff',
+           end_color : '#e67e22',
+           width : mainwidth * .15,
+           height : mainheight * .25,
+           widthLegend : mainwidth*.05
+           });
+    
+    // not rendering this table for right now, left all the code in place though. maybe we use it eventually
+  //  var table = tabulate(computedData, ["F1", "PRECISION","RECALL","ACCURACY"]);
+    
+    
+}
+
+
+// scatterplot function to go to plots.js to be reused
+export function bivariatePlot(x_Axis, y_Axis, x_Axis_name, y_Axis_name) {
+  
+    d3.select("#setxMiddle").html("");
+    d3.select("#setxMiddle").select("svg").remove();
+    
+    let mainwidth = document.getElementById('main').clientWidth;
+    let mainheight = document.getElementById('main').clientHeight;
+
+    // scatter plot
+    
+    let data_plot = [];
+    var nanCount = 0;
+    for (var i = 0; i < x_Axis.length; i++) {
+        if (isNaN(x_Axis[i]) || isNaN(y_Axis[i])) {
+            nanCount++;
+        } else {
+            var newNumber1 = x_Axis[i];
+            var newNumber2 = y_Axis[i];
+            data_plot.push({xaxis: newNumber1, yaxis: newNumber2, score: Math.random() * 100});
+            
+        }
+    }
+    
+    
+    var margin = {top: 35, right: 35, bottom: 35, left: 35}
+    , width = mainwidth*.25- margin.left - margin.right
+    , height = mainwidth*.25 - margin.top - margin.bottom;
+    var padding = 100;
+    
+    var min_x = d3.min(data_plot, function (d, i) {
+                       return data_plot[i].xaxis;
+                       });
+    var max_x = d3.max(data_plot, function (d, i) {
+                       return data_plot[i].xaxis;
+                       });
+    var avg_x = (max_x - min_x) / 10;
+    var min_y = d3.min(data_plot, function (d, i) {
+                       return data_plot[i].yaxis;
+                       });
+    var max_y = d3.max(data_plot, function (d, i) {
+                       return data_plot[i].yaxis;
+                       });
+    var avg_y = (max_y - min_y) / 10;
+    
+    var xScale = d3.scale.linear()
+    .domain([min_x - avg_x, max_x + avg_x])
+    .range([0, width]);
+    
+    var yScale = d3.scale.linear()
+    .domain([min_y - avg_y, max_y + avg_y])
+    .range([height, 0]);
+    
+    var xAxis = d3.svg.axis()
+    .scale(xScale)
+    .orient('bottom')
+    .tickSize(-height);
+    
+    var yAxis = d3.svg.axis()
+    .scale(yScale)
+    .orient('left')
+    .ticks(5)
+    .tickSize(-width);
+    
+    var zoom = d3.behavior.zoom()
+    .x(xScale)
+    .y(yScale)
+    .scaleExtent([1, 10])
+    .on("zoom", zoomed);
+    
+    var chart_scatter = d3.select('#setxMiddle')
+    .append('svg:svg')
+    .attr('width', width + margin.right + margin.left)
+    .attr('height', height + margin.top + margin.bottom);
+   // .call(zoom); dropping this for now, until the line zooms properly
+    
+    var main1 = chart_scatter.append('g')
+    .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')')
+    .attr('width', width+ margin.right + margin.left)
+    .attr('height', height + margin.top + margin.bottom)
+    .attr('class', 'main');
+    
+    let gX = main1.append('g')
+    .attr('transform', 'translate(0,' + height + ')')
+    .attr('class', 'x axis')
+    .call(xAxis);
+    
+    let gY = main1.append('g')
+    .attr('transform', 'translate(0,0)')
+    .attr('class', 'y axis')
+    .call(yAxis);
+    
+    var clip = main1.append("defs").append("svg:clipPath")
+    .attr("id", "clip")
+    .append("svg:rect")
+    .attr("id", "clip-rect")
+    .attr("x", "0")
+    .attr("y", "0")
+    .attr('width', width)
+    .attr('height', height);
+    
+    main1.append("g").attr("clip-path", "url(#clip)")
+    .selectAll("circle")
+    .data(data_plot)
+    .enter()
+    .append("circle")
+    .attr("cx", function (d, i) {
+          return xScale(data_plot[i].xaxis);
+          })
+    .attr("cy", function (d, i) {
+          return yScale(data_plot[i].yaxis);
+          })
+    .attr("r", 2)
+    .style("fill", "#B71C1C")
+    ;
+    
+    
+    chart_scatter.append("text")
+    .attr("text-anchor", "middle")  // this makes it easy to centre the text as the transform is applied to the anchor
+    .attr("transform", "translate(" + padding / 5 + "," + (height / 2) + ")rotate(-90)")  // text is drawn off the screen top left, move down and out and rotate
+    .text(y_Axis_name)
+    .style("fill", "#424242")
+    .style("text-indent","20px")
+    .style("font-size","12px")
+    .style("font-weight","bold");
+    
+    chart_scatter.append("text")
+    .attr("text-anchor", "middle")  // this makes it easy to centre the text as the transform is applied to the anchor
+    .attr("transform", "translate(" + (width / 2) + "," + (height + (padding / 2)) + ")")  // centre below axis
+    .text(x_Axis_name)
+    .style("fill", "#424242")
+    .style("text-indent","20px")
+    .style("font-size","12px")
+    .style("font-weight","bold");
+    
+    
+    main1.append("line")
+    .attr("x1", xScale(min_x))
+    .attr("y1", yScale(min_x))
+    .attr("x2", xScale(max_x))
+    .attr("y2", yScale(max_x))
+    .attr("stroke-width", 2)
+    .attr("stroke", "black");
+    
+    function zoomed() {
+        var panX = d3.event.translate[0];
+        var panY = d3.event.translate[1];
+        var scale = d3.event.scale;
+        
+        panX = panX > 10 ? 10 : panX;
+        var maxX = -(scale - 1) * width - 10;
+        panX = panX < maxX ? maxX : panX;
+        
+        panY = panY > 10 ? 10 : panY;
+        var maxY = -(scale - 1) * height - 10;
+        panY = panY < maxY ? maxY : panY;
+        
+        zoom.translate([panX, panY]);
+        
+        
+        main1.select(".x.axis").call(xAxis);
+        main1.select(".y.axis").call(yAxis);
+        main1.selectAll("circle")
+        .attr("cx", function (d, i) {
+              console.log("circle x ",xScale(5));
+              return xScale(data_plot[i].xaxis);
+              })
+        .attr("cy", function (d, i) {
+              return yScale(data_plot[i].yaxis);
+              })
+        .attr("r", 2.5)
+        .style("fill", "#B71C1C")
+        ;
+   
+       // below doesn't work, so I'm just dropping the zoom
+        main1.select("line")
+        .attr("x1", function(d, i) {
+              return xScale(min_x);
+              })
+        .attr("y1", function(d, i) {
+              return xScale(min_x);
+              })
+        .attr("x2", function(d, i) {
+              return xScale(max_x);
+              })
+        .attr("y2", function(d, i) {
+              return yScale(max_x);
+              })
+        .attr("stroke-width", 2)
+        .attr("stroke", "black");
+    }
+    
+    
+    
+  //  d3.select("#NAcount").text("There are " + nanCount + " number of NA values in the relation.");
+    
+    
+}
+
+
+export function setxTable(features) {
+    function tabulate(data, columns) {
+        var table = d3.select('#setxRightBottomLeft').append('table')
+        var thead = table.append('thead')
+        var	tbody = table.append('tbody');
+        
+        // append the header row
+        thead.append('tr')
+        .selectAll('th')
+        .data(columns).enter()
+        .append('th')
+        .text(function (column) { return column; });
+        
+        // create a row for each object in the data
+        var rows = tbody.selectAll('tr')
+        .data(data)
+        .enter()
+        .append('tr');
+        
+        // create a cell in each row for each column
+        var cells = rows.selectAll('td')
+        .data(function (row) {
+              return columns.map(function (column) {
+                                 return {column: column, value: row[column]};
+                                 });
+              })
+        .enter()
+        .append('td')
+        .text(function (d) { return d.value; })
+        .attr('id',function(d,i) {
+              let rowname = this.parentElement.firstChild.innerText;
+              return rowname + d.column;
+              });
+        
+        return table;
+    }
+    
+    
+    let mydata = [];
+    for(let i = 0; i<features.length; i++) {
+        let myi = i+1;
+        let mysvg = features[i]+"_setxLeft_"+myi;
+        let xval = document.getElementById(mysvg).querySelector('.xval').innerHTML;
+        let x1val = document.getElementById(mysvg).querySelector('.x1val').innerHTML;
+        xval = xval.split("x: ").pop()
+        x1val = x1val.split("x1: ").pop()
+        console.log(xval);
+        console.log(mysvg);
+        
+        mydata.push({"Variables":features[i],"From":xval, "To":x1val});
+    }
+
+    // render the table(s)
+    tabulate(mydata, ['Variables', 'From', 'To']); // 2 column table
+}
+
+
+//rpc ExportPipeline(PipelineExportRequest) returns (Response) {}
+export function exportpipeline(pipelineId) {
+    console.log(pipelineId);
+    let context = apiSession(zparams.zsessionid);
+    let pipelineExecUri = "<<EXECUTABLEURI>>"; // uri to persist executable of requested pipeline w/ session preprocessing
+    
+    let PipelineExportRequest={context, pipelineId, pipelineExecUri};
+    
+    let jsonout = JSON.stringify(PipelineExportRequest);
+    
+    let urlcall = d3mURL + "/exportpipeline";
+    let solajsonout = "grpcrequest=" + jsonout;
+    
+    console.log(urlcall);
+    console.log(solajsonout);
+
+    function exportSuccess(btn, Response) {
+        let alertmessage = "Executable for " + pipelineId + " has been written";
+        alert(alertmessage);
+        console.log(Response);
+    }
+    
+    function exportFail(btn) {
+        console.log("export pipeline failed");
+    }
+    
+    makeCorsRequest(urlcall, "nobutton", exportSuccess, exportFail, solajsonout);
+}
+
+export function deletepipeline () {
+    console.log("DELETE CALLED");
+}
+
+
+// D3M API HELPERS
+// because these get built in various places, pulling them out for easy manipulation
+function apiFeature (vars, uri) {
+    let out = []
+    for(let i = 0; i < vars.length; i++) {
+        out.push({featureId:vars[i],dataUri:uri});
+    }
+    return out;
+}
+
+// silly but perhaps useful if in the future SessionContext requires more things (as suggest by core)
+function apiSession (context) {
+    return {"session_id":context};
+}
+

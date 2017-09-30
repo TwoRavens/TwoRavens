@@ -1,0 +1,6 @@
+The Personae corpus was collected for experiments in Authorship Attribution and Personality 
+Prediction. It consists of 145 Dutch-language essays, written by 145 different students (BA in Linguistics and 
+Literature at the University of Antwerp, Belgium). Each student also took an online MBTI personality test, 
+allowing personality prediction experiments. The corpus was controlled for topic, register, genre, age, and 
+education level. The original texts are made available, a syntactically annotated version of the texts, and 
+the metadata. The corpus is split into 116 training sample  texts and 29 test sample texts.

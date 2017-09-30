@@ -1,5 +1,10 @@
-from datetime import datetime as dt
+"""
+https://datadrivendiscovery.org/wiki/display/gov/TA2+Configuration+file+syntax
+See:
+https://datadrivendiscovery.org/wiki/pages/viewpage.action?spaceKey=gov&title=Dataset+Directory+Structure
+"""
 from collections import OrderedDict
+from datetime import datetime as dt
 import json
 
 from django.db import models
@@ -15,15 +20,31 @@ from tworaven_apps.utils.url_helper import add_trailing_slash,\
 from tworaven_apps.configurations.util_path_check import are_d3m_paths_valid,\
     get_bad_paths, get_bad_paths_for_admin
 
-D3M_FILE_ATTRIBUTES = ('dataset_schema', 'problem_schema')
+KEY_DATASET_SCHEMA = 'dataset_schema'
+KEY_PROBLEM_SCHEMA = 'problem_schema'
+
+D3M_FILE_ATTRIBUTES = (KEY_DATASET_SCHEMA, KEY_PROBLEM_SCHEMA)
 D3M_DIR_ATTRIBUTES = ('training_data_root', 'executables_root',
                       'pipeline_logs_root', 'temp_storage_root')
 D3M_REQUIRED = D3M_FILE_ATTRIBUTES + ('training_data_root',)
+
+# environment variable name to store a d3m config filepath for startup
+ENV_D3M_CONFIG_FILEPATH = 'ENV_D3M_CONFIG_FILEPATH'
 
 class D3MConfiguration(TimeStampedModel):
     """
     Allow settings of javascript global variables via the database.
     These are used within the index.html template (for now)
+
+    example from: https://datadrivendiscovery.org/wiki/display/gov/TA2+Configuration+file+syntax
+    {
+    "problem_schema": "/baseball/problemSchema.json",
+    "dataset_schema": "/baseball/data/dataSchema.json",
+    "training_data_root": "/baseball/data",
+    "pipeline_logs_root": "/outputs/logs",
+    "executables_root": "/outputs/executables",
+    "temp_storage_root": "/temp"
+    }
     """
     name = models.CharField(max_length=255,
                             help_text='for internal use',
@@ -86,9 +107,22 @@ class D3MConfiguration(TimeStampedModel):
 
         super(D3MConfiguration, self).save(*args, **kwargs)
 
+
     def get_json_string(self, indent=2):
         """Return json string"""
         return json.dumps(self.to_dict(), indent=2)
+
+    def to_ta2_config_test(self, mnt_volume='/ravens_volume'):
+        """Return a dict in TA2 format to use with mounted volume"""
+        od = OrderedDict()
+        for name in D3M_FILE_ATTRIBUTES + D3M_DIR_ATTRIBUTES:
+            val = self.__dict__.get(name, '(not set)')
+            idx = val.find(mnt_volume)
+            if idx > -1:
+                val = val[idx:]
+            od[name] = val
+
+        return od
 
     def to_dict(self):
         """Return in an OrderedDict"""
@@ -104,6 +138,15 @@ class D3MConfiguration(TimeStampedModel):
             if val and name in date_attrs:
                 val = str(val)
             od[name] = val
+
+        od['dataset_schema_url'] = reverse('view_get_dataset_schema_by_id',
+                                           kwargs=dict(d3m_config_id=self.id))
+
+        od['problem_schema_url'] = reverse('view_get_problem_schema_by_id',
+                                           kwargs=dict(d3m_config_id=self.id))
+
+        od['problem_data_info'] = reverse('view_get_problem_data_info_by_id',
+                                          kwargs=dict(d3m_config_id=self.id))
 
         od['config_url'] = reverse('view_d3m_details_json',
                                    kwargs=dict(d3m_config_id=self.id))

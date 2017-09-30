@@ -1,0 +1,32 @@
+[
+    {
+        "responseInfo": {
+            "status": {
+                "code": "OK"
+            }
+        },
+        "progressInfo": "COMPLETED",
+        "pipelineId": "pipeline_1",
+        "resultUris": [
+            "file://result_dir/pipeline_results/file_74.txt",
+            "file://result_dir/pipeline_results/file_24.txt",
+            "file://result_dir/pipeline_results/file_14.txt",
+            "file://result_dir/pipeline_results/file_44.txt"
+        ]
+    },
+    {
+        "responseInfo": {
+            "status": {
+                "code": "OK"
+            }
+        },
+        "progressInfo": "COMPLETED",
+        "pipelineId": "pipeline_2",
+        "resultUris": [
+            "file://result_dir/pipeline_results/file_98.txt",
+            "file://result_dir/pipeline_results/file_55.txt",
+            "file://result_dir/pipeline_results/file_12.txt",
+            "file://result_dir/pipeline_results/file_22.txt"
+        ]
+    }
+]

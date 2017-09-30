@@ -1,0 +1,136 @@
+<script>
+
+
+
+let StartSession_ex = { 'user_agent' : 'user_agent' };
+
+let EndSession_ex = {
+                      'session_id' : 'session_0'
+                    };
+
+let UpdateProblemSchema_ex = {
+                               "context": {
+                                 "session_id": "session_0"
+                               },
+                               "ReplaceProblemSchemaField":{
+                                  "taskType":"SIMILARITY_MATCHING"
+                               }                               
+                            };
+
+let CreatePipelines_ex = {
+                        "context": {
+                          "session_id": "session_0"
+                        },
+                        "trainFeatures": [
+                          {
+                            "featureId": "cylinders",
+                            "dataUri": "data/d3m/o_196seed/data/trainDatamerged.tsv"
+                          },
+                          {
+                            "featureId": "cylinders",
+                            "dataUri": "data/d3m/o_196seed/data/trainDatamerged.tsv"
+                          }
+                        ],
+                        "task": "REGRESSION",
+                        "taskSubtype": "UNIVARIATE",
+                        "output": "REAL",
+                        "metrics": [
+                          "ROOT_MEAN_SQUARED_ERROR"
+                        ],
+                        "targetFeatures": [
+                          {
+                            "featureId": "class",
+                            "dataUri": "data/d3m/o_196seed/data/trainDatamerged.tsv"
+                          }
+                        ],
+                        "maxPipelines": 10
+                      }
+
+let GetExecutePipelineResults_ex = {
+                                      "context": {
+                                        "session_id": "session_0"
+                                      },
+                                      "pipeline_ids": [
+                                        "pipeline_1",
+                                        "pipeline_2"
+                                      ]
+                                    }
+
+
+let ListPipelines_ex = {
+                          "context": {
+                            "session_id": "session_0"
+                          }
+                        }
+
+let PipelineExecuteRequest_ex = {
+                     "context":{
+                        "sessionId":"session_0"
+                     },
+                     "pipelineId":"pipeline_1",
+                     "predictFeatures":[
+                        {
+                           "featureId":"cylinders",
+                           "dataUri":"<<DATA_URI>>"
+                        },
+                        {
+                           "featureId":"displacement",
+                           "dataUri":"<<DATA_URI>>"
+                        },
+                        {
+                           "featureId":"horsepower",
+                           "dataUri":"<<DATA_URI>>"
+                        },
+                        {
+                           "featureId":"weight",
+                           "dataUri":"<<DATA_URI>>"
+                        },
+                        {
+                           "featureId":"acceleration",
+                           "dataUri":"<<DATA_URI>>"
+                        },
+                        {
+                           "featureId":"model",
+                           "dataUri":"<<DATA_URI>>"
+                        },
+                        {
+                           "featureId":"class",
+                           "dataUri":"<<DATA_URI>>"
+                        }
+                     ],
+                     "data":[
+                        [
+                           5.4496644295302,
+                           5.4496644295302
+                        ],
+                        [
+                           192.81711409396,
+                           192.81711409396
+                        ],
+                        [
+                           103.211604095563,
+                           103.211604095563
+                        ],
+                        [
+                           2978.70469798658,
+                           2978.70469798658
+                        ],
+                        [
+                           15.6577181208054,
+                           15.6577181208054
+                        ],
+                        [
+                           76.0771812080537,
+                           76.0771812080537
+                        ],
+                        [
+                           1.5738255033557,
+                           1.5738255033557
+                        ],
+                        [
+                           23.5268456375839,
+                           23.5268456375839
+                        ]
+                     ]
+                  }
+</script>

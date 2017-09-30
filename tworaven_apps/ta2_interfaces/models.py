@@ -1,3 +1,4 @@
 from django.db import models
 
-# Create your models here.
+GRPC_JSON_KEY = 'grpcrequest'
+FAILED_PRECONDITION = 'FAILED_PRECONDITION'

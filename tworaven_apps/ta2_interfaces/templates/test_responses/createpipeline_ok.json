@@ -1,0 +1,92 @@
+[
+    {
+        "responseInfo": {
+            "status": {
+                "code": "OK"
+            }
+        },
+        "pipelineId": "pipeline_1"
+    },
+    {
+        "responseInfo": {
+            "status": {
+                "code": "OK"
+            }
+        },
+        "pipelineId": "pipeline_2"
+    },
+    {
+        "responseInfo": {
+            "status": {
+                "code": "OK"
+            }
+        },
+        "progressInfo": "RUNNING",
+        "pipelineId": "pipeline_2"
+    },
+    {
+        "responseInfo": {
+            "status": {
+                "code": "OK"
+            }
+        },
+        "progressInfo": "RUNNING",
+        "pipelineId": "pipeline_1"
+    },
+    {
+        "responseInfo": {
+            "status": {
+                "code": "OK"
+            }
+        },
+        "progressInfo": "COMPLETED",
+        "pipelineId": "pipeline_1",
+        "pipelineInfo": {
+            "predictResultUris": [
+                "{{ FILE_URI }}"
+            ],
+            "predictResultData": {
+              {{ FILE_CONTENT|safe }}
+            },
+            "output": "REAL",
+            "scores": [
+                {
+                    "metric": "ACCURACY",
+                    "value": 0.800000011920929
+                },
+                {
+                    "metric": "ROC_AUC",
+                    "value": 0.5
+                }
+            ]
+        }
+    },
+    {
+        "responseInfo": {
+            "status": {
+                "code": "OK"
+            }
+        },
+        "progressInfo": "COMPLETED",
+        "pipelineId": "pipeline_2",
+        "pipelineInfo": {
+            "predictResultUris": [
+              "{{ FILE_URI|safe }}"
+            ],
+            "predictResultData": {
+              {{ FILE_CONTENT|safe }}
+            },
+            "output": "REAL",
+            "scores": [
+                {
+                    "metric": "ACCURACY",
+                    "value": 0.800000011920929
+                },
+                {
+                    "metric": "ROC_AUC",
+                    "value": 0.5
+                }
+            ]
+        }
+    }
+]

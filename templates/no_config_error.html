@@ -1,0 +1,39 @@
+{% extends 'helper_pages_base.html' %}
+{% load static %}
+
+{% block main_content %}
+
+<div class="panel panel-default">
+  <div class="panel-heading">D3M configuration was NOT loaded</div>
+  <div class="panel-body">
+    <h4>No D3M configuration information in the database.</h4>
+
+    <p>To fix this, load configuration information:</p>
+    <hr />
+    <ul>
+      <li><b>Through the command line:</b> (2 methods)
+        <ul>
+          <li>Give a config file path:
+            <br /> &nbsp; &gt;<code>fab load_d3m_config:(path to config file)</code>
+          </li>
+          <li>Load it from an environment variable named <b>D3M_CONFIG_FILEPATH</b>:
+            <br /> &nbsp; &gt;<code>fab load_d3m_config_from_env</code>
+          </li>
+          <li>Load test data based on local files in the /data directory:
+            <br /> &nbsp; &gt;<code>fab make_d3m_config</code>
+          </li>
+          make_d3m_config
+      </ul></li>
+      <li><b>Or via the web interface:</b>
+        <ul>
+          <li> &nbsp;<a href="{% url 'admin:configurations_d3mconfiguration_changelist' %}" target="_blank">Config admin</a>
+          </li>
+        </ul></li>
+    </ul>
+
+    <hr>
+    Reference: <a href="{% url 'view_d3m_list' %}">view D3M configuration info </a>
+        (when it's added!)
+  </div>
+</div>
+{% endblock %}
