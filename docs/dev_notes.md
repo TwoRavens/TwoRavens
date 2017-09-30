@@ -95,7 +95,7 @@ Upon saving config information, the paths are evaluated (e.g. do they exist?) an
 
 ### Loading a config file
 
-A config file may also be added using this commmand from the Terminal.  
+A config file may also be added using this command from the Terminal.  
 
 ```
 fab load_d3m_config:[path to config]
