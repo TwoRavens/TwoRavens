@@ -454,28 +454,31 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
             })
         }))
         .then(new Promise((resolve, reject) => { // call to django to start the session
-                if (!d3m_mode)
-                    return resolve();
-                //rpc StartSession(SessionRequest) returns (SessionResponse) {}
-
-                let user_agent = "some agent";
-                let version = "some version";
-                let SessionRequest={user_agent,version};
-
-                let jsonout = JSON.stringify(SessionRequest);
-                let urlcall = d3mURL + "/startsession";
-                let solajsonout = "grpcrequest=" + jsonout;
-                console.log("SessionRequest: ");
-                console.log(solajsonout);
-                console.log("urlcall: ", urlcall);
-
+            if (!d3m_mode)
+                return resolve();
+            //rpc StartSession(SessionRequest) returns (SessionResponse) {}
+            
+            let user_agent = "some agent";
+            let version = "some version";
+            let SessionRequest={user_agent,version};
+            
+            let jsonout = JSON.stringify(SessionRequest);
+            let urlcall = d3mURL + "/startsession";
+            let solajsonout = "grpcrequest=" + jsonout;
+            console.log("SessionRequest: ");
+            console.log(solajsonout);
+            console.log("urlcall: ", urlcall);
+            
+            let request = () => {
                 let success = (btn, SessionResponse) => {
                     if (SessionResponse.context) {
                         console.log("startsession: ", SessionResponse);
                         zparams.zsessionid = SessionResponse.context.sessionId;
-                    } 
+                    } else request();
                 };
                 makeCorsRequest(urlcall, "nobutton", success, _ => null, solajsonout);
+            };
+            request();
         }))
         .then(_ => m.request(pURL))
         // do nothing if preprocess.json already exists, else runPreprocess
