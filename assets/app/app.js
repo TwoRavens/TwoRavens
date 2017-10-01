@@ -76,6 +76,11 @@ let forcetoggle = ["true"];
 let locktoggle = true;
 let priv = true;
 
+// swandive is our graceful fail for d3m
+// swandive set to true if task is in failset
+let swandive = false;
+let failset = ["TIMESERIESFORECASTING","GRAPHMATCHING","LINKPREDICTION","timeSeriesForecasting","graphMatching","linkPrediction"];
+
 export let logArray = [];
 export let zparams = {
     zdata: [],
@@ -112,6 +117,8 @@ let selInteract = false;
 let callHistory = []; // transform and subset calls
 let mytarget = "";
 
+let configurations = {};
+let dataschema = {};
 
 //eventually read this from the schema with real descriptions
 // metrics, tasks, and subtasks as specified in D3M schemas
@@ -273,12 +280,10 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
         .remove());
 
     //set start from user input, then assume locations are consistent based on d3m directory structure (alternatively can make each of these locations be set by user)
-    let configurations = {};
-    let dataschema = {};
     let d3mRootPath = "";
     let d3mDataName = "";
-    let d3mData = "";
-    let d3mTarget = "";
+    let d3mData = null;
+    let d3mTarget = null;
     let d3mPreprocess = "";
     let d3mPS = "";
     let d3mDS = "";
@@ -322,8 +327,8 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
         d3mRootPath = configurations.training_data_root;
         d3mRootPath = d3mRootPath.replace(/\/data/,'');
         d3mDataName = configurations.name;
-        d3mData = configurations.training_data_root+"/trainData.csv";
-        d3mTarget = configurations.training_data_root+"/trainTargets.csv";
+      //  d3mData = configurations.training_data_root+"/trainData.csv";
+       // d3mTarget = configurations.training_data_root+"/trainTargets.csv";
         d3mPS = configurations.problem_schema_url;
         d3mDS = configurations.dataset_schema_url;
           
@@ -336,6 +341,24 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
 
         pURL='rook-custom/rook-files/'+d3mDataName+'/preprocess/preprocess.json';    
         d3mPreprocess=pURL;
+    }))
+    .then(_ => m.request({
+        method: "GET",
+        url: "/config/d3m-config/get-problem-data-file-info"
+    })
+    .then(function(result) {
+        // some simple logic to get the paths right
+        // note that if neither exist, stay as default which is null
+        if(result.data['trainData.csv'].exists==true)
+            d3mData=result.data['trainData.csv'].path;
+        else if(result.data['trainData.csv.gz'].exists==true)
+            d3mData=result.data['trainData.csv.gz'].path;
+          
+        if(result.data['trainTargets.csv'].exists==true)
+            d3mTarget=result.data['trainTargets.csv'].path;
+        else if(result.data['trainTargets.csv.gz'].exists==true)
+            d3mTarget=result.data['trainTargets.csv.gz'].path;
+        
         zparams.zd3mdata = d3mData;
         zparams.zd3mtarget = d3mTarget;
     }))
@@ -413,7 +436,14 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
 
                 
                 document.getElementById("btnType").click();
-                resolve();
+                
+            // making it case insensitive because the case seems to disagree all too often
+                if(failset.indexOf(d3mProblemDescription.taskType.toUpperCase()) == -1)
+                    resolve();
+                else {
+                    swandive=true;
+                    resolve();
+                }
             });
         }))
         .then(() => new Promise((resolve, reject) => { // get the data schema
@@ -422,6 +452,26 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
             // read the data schema and set dataschema
             d3.json(d3mDS, (_, data) => {
                 dataschema =  JSON.parse(JSON.stringify(data));
+                
+                // if swandive, we have to set valueKey here so that left panel can populate
+                if(swandive) {
+                    let datavars = dataschema.trainData.trainData;
+                    if(datavars !== undefined) {
+                        for(let i = 0; i < datavars.length; i++) {
+                            valueKey.push(datavars[i].varName);
+                        }
+                    }
+                    let targetvars = dataschema.trainData.trainTargets;
+                    if(targetvars !== undefined) {
+                        for(let i = 0; i < targetvars.length; i++) {
+                            valueKey.push(targetvars[i].varName);
+                        }
+                    }
+                    if(valueKey.length==0)
+                        // end session if neither trainData nor trainTargets?
+                        alert("no trainData or trainTargest in data description file. valueKey length is 0");
+                }
+                
                 console.log("data schema data: ", dataschema);
                 resolve();
             })
@@ -484,11 +534,20 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
                                 
                 makeCorsRequest(urlcall, "nobutton", ssSuccess, ssFail, solajsonout);
         }))
-    .then(_ => m.request(pURL))
+    .then(_ => m.request(pURL)) // have to let this request be attempted, otherwise resolve structure messes up
     // do nothing if preprocess.json already exists, else runPreprocess
-    .then(null, _ => runPreprocess(d3mData, d3mTarget, d3mDataName))
-    .then(data => readPreprocess(data))
+    .then(null, _ => {
+        if(!swandive)
+            runPreprocess(d3mData, d3mTarget, d3mDataName)
+        })
+    .then(data => {
+        if(!swandive)
+            console.log(data);
+            readPreprocess(data)
+        })
     .then(() => new Promise((resolve, reject) => {
+        if(swandive)
+            resolve();
         let vars = Object.keys(preprocess);
 
         // temporary values for hold that correspond to histogram bins
@@ -531,7 +590,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
         resolve();
     }))
     .then(() => new Promise((resolve, reject) => { // adding in d3mDescription if d3m_mode
-        if(!d3m_mode)
+        if(!d3m_mode || swandive)
             return resolve();
         // adding in d3mDescription to allNodes
         let datavars = dataschema.trainData.trainData;
@@ -543,15 +602,20 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
         console.log(allNodes);
         resolve();
     }))
-    .then(() => new Promise((resolve, reject) => { // final step: start her up
-        scaffolding(layout);
-        if (d3m_mode) {
-            zPop();
+    .then(() =>  { // final step: start her up
+    //  .then(() => new Promise((resolve, reject) => {
+        if(swandive) {
+            scaffolding(swandive);
         } else {
-            dataDownload();
+            scaffolding(layout);
+            if (d3m_mode) {
+                zPop();
+            } else {
+                dataDownload();
+            }
         }
-        resolve();
-    }))
+       // resolve();
+    })
 }
 
 
@@ -564,7 +628,7 @@ let fillThis = (self, op, d1, d2) => $fill(self, op, d1, d2);
 
 // scaffolding is called after all external data are guaranteed to have been read to completion. this populates the left panel with variable names, the right panel with model names, the transformation tool, an the associated mouseovers. its callback is layout(), which initializes the modeling space
 function scaffolding(callback) {
-
+console.log("SCAFFOLDING");
     // establishing the transformation element
 //    d3.select("#transformations")
   //      .append("input")
@@ -787,6 +851,19 @@ function scaffolding(callback) {
     if (typeof callback == "function") {
         callback(false,true);
         m.redraw();
+    } else {
+        m.redraw();
+    }
+    
+    // if swandive, after scaffolding is up, just grey things out
+    if(swandive) {
+    // perhaps want to allow users to unlcok and select things?
+        document.getElementById('btnLock').classList.add('noshow');
+        document.getElementById('btnForce').classList.add('noshow');
+        document.getElementById('btnEraser').classList.add('noshow');
+        document.getElementById('btnSubset').classList.add('noshow');
+        document.getElementById('main').style.backgroundColor='grey';
+        document.getElementById('whitespace').style.backgroundColor='grey';
     }
 }
 
@@ -948,7 +1025,6 @@ function layout(v,v2) {
     }
 
     panelPlots(); // after nodes is populated, add subset and (if !d3m_mode) setx panels
-
 
     var force = d3.layout.force()
         .nodes(nodes)
@@ -1983,7 +2059,178 @@ export function estimate(btn) {
 
     estimateLadda.start(); // start spinner
     makeCorsRequest(urlcall, btn, estimateSuccess, estimateFail, solajsonout);
-    } else { // we are in d3m_mode
+    } else if (swandive) { // d3m_mode and swandive is true
+            zPop();
+            zparams.callHistory = callHistory;
+            var jsonout = JSON.stringify(zparams);
+            console.log(jsonout);
+        
+            let myvki = valueKey.indexOf(mytarget);
+            if(myvki != -1) {
+                valueKey.splice(myvki, 1);
+            }
+        
+            let context = apiSession(zparams.zsessionid);
+            let uri = {features: zparams.zd3mdata, target:zparams.zd3mtarget};
+        
+            let trainFeatures=apiFeature(valueKey,uri.features);
+            let targetFeatures=apiFeature(mytarget,uri.target);
+        
+            let task = d3mTaskType[d3mProblemDescription.taskType][1];
+            let taskSubtype = d3mTaskSubtype[d3mProblemDescription.taskSubtype][1];
+            let output = d3mOutputType[d3mProblemDescription.outputType][1];
+            let metrics = [d3mMetrics[d3mProblemDescription.metric][1]];
+            let taskDescription = d3mProblemDescription.taskDescriptionription;
+            let maxPipelines = 10; //user to specify this eventually?
+                
+            let PipelineCreateRequest={context, trainFeatures, task, taskSubtype, taskDescription, output, metrics, targetFeatures, maxPipelines};
+
+            let jsonout = JSON.stringify(PipelineCreateRequest);
+
+            let urlcall = d3mURL + "/createpipeline";
+            var solajsonout = "grpcrequest=" + jsonout;
+                
+            console.log(urlcall);
+            console.log(solajsonout);
+            function sendPipelineSuccess(btn, PipelineCreateResult) {
+                    //rpc GetExecutePipelineResults(PipelineExecuteResultsRequest) returns (stream PipelineExecuteResult) {}
+                console.log(PipelineCreateResult);
+                estimateLadda.stop(); // stop spinner
+                    
+                    
+                let allPipelineInfo = {};
+                for (var i = 0; i<PipelineCreateResult.length; i++) {
+                    if(PipelineCreateResult[i].pipelineId in allPipelineInfo) {
+                        allPipelineInfo[PipelineCreateResult[i].pipelineId]=Object.assign(allPipelineInfo[PipelineCreateResult[i].pipelineId],PipelineCreateResult[i]);
+                    } else {
+                        allPipelineInfo[PipelineCreateResult[i].pipelineId]=PipelineCreateResult[i];
+                    }
+                }
+                console.log(allPipelineInfo);
+                    // to get all pipeline ids: Object.keys(allPipelineInfo)
+                    
+                    //////////////////////////
+                   
+                    function tabulate(data, columns, divid) {
+                        var table = d3.select(divid).append('table')
+                        var thead = table.append('thead')
+                        var	tbody = table.append('tbody');
+                        
+                        // append the header row
+                        thead.append('tr')
+                        .selectAll('th')
+                        .data(columns).enter()
+                        .append('th')
+                        .text(function (column) { return column; });
+                        
+                        // create a row for each object in the data
+                        var rows = tbody.selectAll('tr')
+                        .data(data)
+                        .enter()
+                        .append('tr')
+                        .attr('class',function(d,i) {
+                              if(i==0) return 'item-select';
+                              else return 'item-default';
+                              })
+                        
+                        // create a cell in each row for each column
+                        var cells = rows.selectAll('td')
+                        .data(function (row) {
+                              return columns.map(function (column) {
+                                                 return {column: column, value: row[column]};
+                                                 });
+                              })
+                        .enter()
+                        .append('td')
+                        .text(function (d) {
+                            return d.value;
+                              })
+                        .on("click", function(d) {
+                            let myrow = this.parentElement;
+                            if(myrow.className=="item-select") {
+                                return;
+                            } else {
+                                d3.select(divid).select("tr.item-select")
+                                .attr('class', 'item-default');
+                                d3.select(myrow).attr('class',"item-select");
+                                if(divid=='#setxRight') {
+                                    resultsplotinit(allPipelineInfo[myrow.firstChild.innerText], dvvalues);
+                                }
+                            }});
+                        
+                        // this is code to add a checkbox to each row of pipeline results table
+                        /*
+                        d3.select(divid).selectAll("tr")
+                        .append("input")
+                        .attr("type", "checkbox")
+                        .style("float","right");
+                         */
+        
+                        return table;
+                    }
+                    
+                    let resultstable = [];
+                    for(var key in allPipelineInfo) {
+                        let myid = "";
+                        let mymetric = "";
+                        let myval = "";
+                        let myscores = allPipelineInfo[key].pipelineInfo.scores;
+                        for(var i = 0; i < myscores.length; i++) {
+                            //if(i==0) {myid=key;}
+                             //   else myid="";
+                            myid=key;
+                            mymetric=myscores[i].metric;
+                            myval=+myscores[i].value.toFixed(3);
+                            resultstable.push({"PipelineID":myid,"Metric":mymetric, "Score":myval});
+                        }
+                    }
+                    
+                    // render the table
+                    tabulate(resultstable, ['PipelineID', 'Metric', 'Score'], '#results');
+                    /////////////////////////
+                    
+                    toggleRightButtons("all");
+                    document.getElementById("btnResults").click();
+                
+                    // export pipeline request
+                    exportpipeline(resultstable[1].PipelineID);
+                    
+                    
+                    // I don't think we need these until we are handling streaming pipelines
+                    // They are set up and called, but don't actually render anything for the user
+                    
+                    // this is our function for the ListPipelines of API
+                    listpipelines();
+                    
+                    //let pipelineid = PipelineCreateResult.pipelineid;
+                    let pipeline_ids = Object.keys(allPipelineInfo);
+                    let PipelineExecuteResultsRequest = {context, pipeline_ids};
+                    jsonout = JSON.stringify(PipelineExecuteResultsRequest);
+                    let urlcall = d3mURL + "/getexecutepipelineresults";
+                    var solajsonout = "grpcrequest=" + jsonout;
+                    console.log("GetExecutePipelineResults: ");
+                    console.log(solajsonout);
+                    console.log(urlcall);
+                    
+                    function getExecutePipeSuccess(btn, PipelineExecuteResult) {
+                        console.log(PipelineExecuteResult);
+                        // call to initialize the main plot
+                        // dvvalues and predvals should eventually be contained in the pipeline object itself
+                    }
+                    function getExecutePipeFail (btn) {
+                        console.log("GetExecutePipelineResults failed");
+                    }
+                    makeCorsRequest(urlcall, "nobutton", getExecutePipeSuccess, getExecutePipeFail, solajsonout);
+                }
+
+                function sendPipelineFail(btn) {
+                    console.log("pipeline to django failed");
+                }
+
+                estimateLadda.start(); // start spinner
+                makeCorsRequest(urlcall, "nobutton", sendPipelineSuccess, sendPipelineFail, solajsonout);
+
+    }else { // we are in d3m_mode no swandive
         // rpc CreatePipelines(PipelineCreateRequest) returns (stream PipelineCreateResult) {}
             zPop();
             zparams.callHistory = callHistory;
@@ -2696,6 +2943,8 @@ function varSummary(d) {
 }
 
 export let popoverContent = d => {
+    if(swandive)
+        return;
     let text = '';
     let [rint, prec] = [d3.format('r'), (val, int) => (+val).toPrecision(int).toString()];
     let div = (field, name, val) => {
@@ -2742,6 +2991,9 @@ function popupX(d) {
 }
 
 export function panelPlots() {
+    if(d3m_mode) {
+        document.getElementById('btnSubset').classList.add('noshow');
+    }
     // build arrays from nodes in main
     let vars = [];
     let ids = [];
@@ -2754,6 +3006,8 @@ export function panelPlots() {
     d3.select('#setxLeft').selectAll('svg').remove();
     d3.select('#tab2').selectAll('svg').remove();
     for (var i = 0; i < vars.length; i++) {
+        if(allNodes[ids[i]].valid==0) // this was a silent error... very frustrating...
+            continue;
         let node = allNodes[ids[i]];
         node.setxplot = false;
         node.subsetplot = false;
@@ -3412,6 +3666,10 @@ function toggleRightButtons(set) {
         // droping models for d3m_mode
         document.getElementById('btnModels').classList.add("noshow");
         
+        // if swandive, dropping setx
+        if(swandive)
+            document.getElementById('btnSetx').classList.add("noshow");
+        
         // then select all the buttons
         mybtns = document.getElementById('rightpanelbuttons').querySelectorAll(".btn:not(.noshow)");
         setWidths(mybtns);
@@ -4036,6 +4294,13 @@ export function setxTable(features) {
     
     let mydata = [];
     for(let i = 0; i<features.length; i++) {
+        if(allNodes[findNodeIndex(features[i])].valid==0) {
+            xval=0;
+            x1val=0;
+            mydata.push({"Variables":features[i],"From":xval, "To":x1val});
+            continue;
+        }
+            
         let myi = i+1;
         let mysvg = features[i]+"_setxLeft_"+myi;
         let xval = document.getElementById(mysvg).querySelector('.xval').innerHTML;
