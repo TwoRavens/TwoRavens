@@ -71,13 +71,34 @@ preprocess.app <- function(env){
             if(d3m_mode) {                                       # Note presently this entire app is only ever called in d3m mode, but we might generalize its function
                 #mydataloc2 <- paste("../",mydataloc,sep="")
                 #mytargetloc <- paste("../",mytargetloc,sep="")
-                mydata <- read.csv(mydataloc)
-                mytarget <- read.csv(mytargetloc)
-                
-                # not robust merging code, but it'll work if there's one overlapping ID to merge on
-                mergeCol <- colnames(mytarget)[which(colnames(mytarget) %in% colnames(mydata))]
-                targetVars <- colnames(mytarget)#[!(which(colnames(mytarget) %in% colnames(mydata)))]
-                mydata <- merge(mydata, mytarget, by=mergeCol)
+                if( identical(tools::file_ext(mydataloc), "csv" ) ){
+                    mydata <- read.csv(mydataloc)
+                } else if (identical(tools::file_ext(mydataloc), "gz" )){
+                    mydata <- read.csv(filegz(mydataloc))
+                } else {
+                    warning <- TRUE
+                    return<-list(warning="Data file extension not recognized as .csv or .gz")
+                }
+
+                if(is.null(mytargetloc)){
+                    print("No target data declared to be merged.")
+                } else {
+                    if( identical(tools::file_ext(mytargetloc), "csv" ) ){
+                        print("did csv")
+                        mytarget <- read.csv(mytargetloc)
+                    } else if( identical(tools::file_ext(mytargetloc), "gz" ) ){
+                        print("did gz")
+                        mytarget <- read.csv(filegz(mytargetloc))
+                    } else {
+                        warning <- TRUE
+                        return<-list(warning="Targe file extension not recognized as .csv or .gz")
+                    }
+                    # not robust merging code, but it'll work if there's one overlapping ID to merge on
+                    mergeCol <- colnames(mytarget)[which(colnames(mytarget) %in% colnames(mydata))]
+                    targetVars <- colnames(mytarget)#[!(which(colnames(mytarget) %in% colnames(mydata)))]
+                    mydata <- merge(mydata, mytarget, by=mergeCol)
+                }
+
                 ppJSON<-preprocess(testdata=mydata)
                 result <- list(targets=targetVars)
             }
