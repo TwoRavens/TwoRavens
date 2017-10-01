@@ -1,14 +1,15 @@
 
-- Notes working with the raven_pod.yaml
+- Notes working with the raven_pod3.yaml
 
 ```
 # start it and add port forwarding
 #
-kubectl apply -f raven_pod.yaml
+kubectl apply -f raven_pod3.yaml
 
 # tworavens + rook port forwarding
 kubectl port-forward raven1 8080:8080 8000:8000
 #kubectl port-forward raven1 8080:8080
+#kubectl port-forward raven1 80:80
 
 # logs
 #
@@ -23,7 +24,7 @@ kubectl exec raven1 date
 
 # delete it
 #
-kubectl delete -f raven_pod.yaml
+kubectl delete -f raven_pod3.yaml
 ```
 
 ## copy files

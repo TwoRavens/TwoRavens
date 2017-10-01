@@ -12,10 +12,10 @@ spec:
   type: NodePort
   selector:
     evalId: TwoRavens
-    run: raven1
+    #run: raven1
   ports:
     - name: http
-      port: 8060
+      port: 8080
       targetPort: 8080
 ---
 # -------------------------
