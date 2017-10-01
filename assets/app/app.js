@@ -312,7 +312,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
     11. Add dataschema information to allNodes (when in d3m_mode)
     12. Call scaffolding() and start her up
     */
-    
+
     Promise.resolve(d3m_mode && m.request({
         method: "POST",
         url: "/config/d3m-config/json/latest"
@@ -326,15 +326,15 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
         d3mTarget = configurations.training_data_root+"/trainTargets.csv";
         d3mPS = configurations.problem_schema_url;
         d3mDS = configurations.dataset_schema_url;
-          
+
           console.log("Configurations: ");
           console.log(configurations);
-          
+
         // these are the two lines that cut the config paths after "TwoRavens/"
         //d3mTarget = d3mTarget.split("TwoRavens/").pop();
         //d3mData = d3mData.split("TwoRavens/").pop();
 
-        pURL='rook-custom/rook-files/'+d3mDataName+'/preprocess/preprocess.json';    
+        pURL='rook-custom/rook-files/'+d3mDataName+'/preprocess/preprocess.json';
         d3mPreprocess=pURL;
         zparams.zd3mdata = d3mData;
         zparams.zd3mtarget = d3mTarget;
@@ -343,7 +343,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
             // read in problem schema and we'll make a call to start the session with TA2. if we get this far, data are guaranteed to exist for the frontend
             if (!d3m_mode)
                 return resolve();
-                                
+
             d3.json(d3mPS, (_, data) => {
                 console.log("prob schema data: ", data);
                 mytarget = data.target.field;
@@ -360,19 +360,18 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
                     .replace(/\%/g, "-");
                 $('#cite div.panel-body').text(zparams.zdatacite);
             } else {
-                zparams.zdata = data.datasets[0];             // read the dataset name from the problem schema
+                zparams.zdata = data.datasets[0]; // read the dataset name from the problem schema
             }
             // dataset name trimmed to 12 chars
             let dataname = zparams.zdata;
             if(!d3m_mode) {
                 dataname = zparams.zdata.replace(/\.(.*)/, ''); // drop file extension
             }
-                                
+
             d3.select("#dataName").html(dataname);
             // Put dataset name, from meta-data, into page title
             d3.select("title").html("TwoRavens " + dataname);
-         
-                    //This adds a ink to problemDescription.txt in the ticker
+                //This adds a ink to problemDescription.txt in the ticker
                 /*
                 let aTag = document.createElement('a');
                 aTag.setAttribute('href', `${d3mRootPath}/${data.descriptionFile}`);
@@ -408,17 +407,17 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
                     d3mProblemDescription.outputType = "outputUndefined";
                   //  alert("Specified output type, " + data.outputType + ", is not valid.");
                 }
-                
+
                 d3mProblemDescription.taskDescription = data.descriptionFile;
 
-                
                 document.getElementById("btnType").click();
                 resolve();
             });
         }))
         .then(() => new Promise((resolve, reject) => { // get the data schema
-            if (!d3m_mode){return resolve();}
-                            
+            if (!d3m_mode)
+                return resolve()
+
             // read the data schema and set dataschema
             d3.json(d3mDS, (_, data) => {
                 dataschema =  JSON.parse(JSON.stringify(data));
@@ -454,104 +453,103 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
             resolve();
             })
         }))
-        .then(() => new Promise((resolve, reject) => { // call to django to start the session
+        .then(new Promise((resolve, reject) => { // call to django to start the session
                 if (!d3m_mode)
                     return resolve();
                 //rpc StartSession(SessionRequest) returns (SessionResponse) {}
-                                
+
                 let user_agent = "some agent";
                 let version = "some version";
                 let SessionRequest={user_agent,version};
-                                
-                var jsonout = JSON.stringify(SessionRequest);
-                var urlcall = d3mURL + "/startsession";
-                var solajsonout = "grpcrequest=" + jsonout;
+
+                let jsonout = JSON.stringify(SessionRequest);
+                let urlcall = d3mURL + "/startsession";
+                let solajsonout = "grpcrequest=" + jsonout;
                 console.log("SessionRequest: ");
                 console.log(solajsonout);
                 console.log("urlcall: ", urlcall);
-                                
-                function ssSuccess(btn, SessionResponse) {
-                    zparams.zsessionid=SessionResponse.context.sessionId;
-                    console.log("startsession: ", SessionResponse);
-                      
-                    resolve();
-                }
-                                
-                function ssFail(btn) {
-                    alert("StartSession has failed.");
-                    reject();
-                }
-                                
-                makeCorsRequest(urlcall, "nobutton", ssSuccess, ssFail, solajsonout);
-        }))
-    .then(_ => m.request(pURL))
-    // do nothing if preprocess.json already exists, else runPreprocess
-    .then(null, _ => runPreprocess(d3mData, d3mTarget, d3mDataName))
-    .then(data => readPreprocess(data))
-    .then(() => new Promise((resolve, reject) => {
-        let vars = Object.keys(preprocess);
 
-        // temporary values for hold that correspond to histogram bins
-        hold = [.6, .2, .9, .8, .1, .3, .4];
-        for (let i = 0; i < vars.length; i++) {
-            // valueKey[i] = vars[i].attributes.name.nodeValue;
-            // lablArray[i] = varsXML[i].getElementsByTagName("labl").length == 0 ?
-            // "no label" :
-            // varsXML[i].getElementsByTagName("labl")[0].childNodes[0].nodeValue;
-            // let datasetcount = d3.layout.histogram()
-            //     .bins(barnumber).frequency(false)
-            //     ([0, 0, 0, 0, 0]);
-            valueKey[i] = vars[i];
-            lablArray[i] = "no label";
-            // contains all the preprocessed data we have for the variable, as well as UI data pertinent to that variable,
-            // such as setx values (if the user has selected them) and pebble coordinates
-            let obj = {
-                id: i,
-                reflexive: false,
-                name: valueKey[i],
-                labl: lablArray[i],
-                data: [5, 15, 20, 0, 5, 15, 20],
-                count: hold,
-                nodeCol: colors(i),
-                baseCol: colors(i),
-                strokeColor: selVarColor,
-                strokeWidth: "1",
-                subsetplot: false,
-                subsetrange: ["", ""],
-                setxplot: false,
-                setxvals: ["", ""],
-                grayout: false,
-                group1: false,
-                group2: false,
-                forefront: false
+                let ok = false;
+                let success = (btn, SessionResponse) => {
+                    if (SessionResponse.context) {
+                        console.log("startsession: ", SessionResponse);
+                        zparams.zsessionid = SessionResponse.context.sessionId;
+                        ok = true;
+                    } else new Promise((resolve) => setTimeout(resolve, 5000)) 
+                        .then(_ => console.log("retrying StartSession"));
+                };
+                do {
+                    makeCorsRequest(urlcall, "nobutton", success, _ => null, solajsonout);
+                } while (!success)
+        }))
+        .then(_ => m.request(pURL))
+        // do nothing if preprocess.json already exists, else runPreprocess
+        .then(null, _ => runPreprocess(d3mData, d3mTarget, d3mDataName))
+        .then(data => readPreprocess(data))
+        .then(() => new Promise((resolve, reject) => {
+            let vars = Object.keys(preprocess);
+
+            // temporary values for hold that correspond to histogram bins
+            hold = [.6, .2, .9, .8, .1, .3, .4];
+            for (let i = 0; i < vars.length; i++) {
+                // valueKey[i] = vars[i].attributes.name.nodeValue;
+                // lablArray[i] = varsXML[i].getElementsByTagName("labl").length == 0 ?
+                // "no label" :
+                // varsXML[i].getElementsByTagName("labl")[0].childNodes[0].nodeValue;
+                // let datasetcount = d3.layout.histogram()
+                //     .bins(barnumber).frequency(false)
+                //     ([0, 0, 0, 0, 0]);
+                valueKey[i] = vars[i];
+                lablArray[i] = "no label";
+                // contains all the preprocessed data we have for the variable, as well as UI data pertinent to that variable,
+                // such as setx values (if the user has selected them) and pebble coordinates
+                let obj = {
+                    id: i,
+                    reflexive: false,
+                    name: valueKey[i],
+                    labl: lablArray[i],
+                    data: [5, 15, 20, 0, 5, 15, 20],
+                    count: hold,
+                    nodeCol: colors(i),
+                    baseCol: colors(i),
+                    strokeColor: selVarColor,
+                    strokeWidth: "1",
+                    subsetplot: false,
+                    subsetrange: ["", ""],
+                    setxplot: false,
+                    setxvals: ["", ""],
+                    grayout: false,
+                    group1: false,
+                    group2: false,
+                    forefront: false
+                };
+                jQuery.extend(true, obj, preprocess[valueKey[i]]);
+                allNodes.push(obj);
             };
-            jQuery.extend(true, obj, preprocess[valueKey[i]]);
-            allNodes.push(obj);
-        };
-        resolve();
-    }))
-    .then(() => new Promise((resolve, reject) => { // adding in d3mDescription if d3m_mode
-        if(!d3m_mode)
-            return resolve();
-        // adding in d3mDescription to allNodes
-        let datavars = dataschema.trainData.trainData;
-        for(let i = 0; i < datavars.length; i++) {
-            let myi = findNodeIndex(datavars[i].varName);
-            let d3mDescription = {d3mDescription:datavars[i]};
-            allNodes[myi] = Object.assign(allNodes[myi], d3mDescription);
-        }
-        console.log(allNodes);
-        resolve();
-    }))
-    .then(() => new Promise((resolve, reject) => { // final step: start her up
-        scaffolding(layout);
-        if (d3m_mode) {
-            zPop();
-        } else {
-            dataDownload();
-        }
-        resolve();
-    }))
+            resolve();
+        }))
+        .then(() => new Promise((resolve, reject) => { // adding in d3mDescription if d3m_mode
+            if(!d3m_mode)
+                return resolve();
+            // adding in d3mDescription to allNodes
+            let datavars = dataschema.trainData.trainData;
+            for(let i = 0; i < datavars.length; i++) {
+                let myi = findNodeIndex(datavars[i].varName);
+                let d3mDescription = {d3mDescription:datavars[i]};
+                allNodes[myi] = Object.assign(allNodes[myi], d3mDescription);
+            }
+            console.log(allNodes);
+            resolve();
+        }))
+        .then(() => new Promise((resolve, reject) => { // final step: start her up
+            scaffolding(layout);
+            if (d3m_mode) {
+                zPop();
+            } else {
+                dataDownload();
+            }
+            resolve();
+        }));
 }
 
 
