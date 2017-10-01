@@ -35,9 +35,10 @@ class AppConfiguration(TimeStampedModel):
                     'D3M mode',
                     help_text='.js variable "d3m". Are D3M services active?')
 
-    d3m_url = models.URLField(\
+    d3m_url = models.CharField(\
                     'D3M url',
-                    default='http://127.0.0.1:8080/d3m-service/',
+                    max_length=255,
+                    default='/d3m-service/',
                     help_text=('URL used to make calls that'
                                ' are converted to gRPC messages'
                                ' and sent to D3M applications'))
@@ -46,9 +47,10 @@ class AppConfiguration(TimeStampedModel):
                     'Privacy (PSI) mode',
                     help_text='.js variable "privacy". Is the PSI tool available?')
 
-    rook_app_url = models.URLField(\
+    rook_app_url = models.CharField(\
                     'rappURL (rook apps)',
-                    default='http://127.0.0.1:8080/rook-custom/',
+                    max_length=255,
+                    default='/rook-custom/',
                     help_text=(('URL to the rook server.'
                                 ' examples: https://beta.dataverse.org/custom/,'
                                 ' http://127.0.0.1:8080/rook-custom/')))
