@@ -68,7 +68,8 @@ RUN pip3 install --no-cache-dir -r requirements/prod.txt && \
 # -------------------------------------
 # Expose ports for the web and gRPC communication
 # -------------------------------------
-EXPOSE 8080 50051
+EXPOSE 8080
+#50051
 
 #WORKDIR /var/webapps/TwoRavens
 
