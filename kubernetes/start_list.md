@@ -1,9 +1,13 @@
 
+
+# Start minikube
+
 ```
 minikube start
 eval $(minikube docker-env)
 ```
 
+# Build docker images
 
 ```
 # from inside the TwoRavens directory
