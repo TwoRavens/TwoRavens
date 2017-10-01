@@ -277,8 +277,8 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
     let dataschema = {};
     let d3mRootPath = "";
     let d3mDataName = "";
-    let d3mData = "";
-    let d3mTarget = "";
+    let d3mData = null;
+    let d3mTarget = null;
     let d3mPreprocess = "";
     let d3mPS = "";
     let d3mDS = "";
@@ -322,8 +322,8 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
         d3mRootPath = configurations.training_data_root;
         d3mRootPath = d3mRootPath.replace(/\/data/,'');
         d3mDataName = configurations.name;
-        d3mData = configurations.training_data_root+"/trainData.csv";
-        d3mTarget = configurations.training_data_root+"/trainTargets.csv";
+      //  d3mData = configurations.training_data_root+"/trainData.csv";
+       // d3mTarget = configurations.training_data_root+"/trainTargets.csv";
         d3mPS = configurations.problem_schema_url;
         d3mDS = configurations.dataset_schema_url;
           
@@ -338,6 +338,23 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
         d3mPreprocess=pURL;
         zparams.zd3mdata = d3mData;
         zparams.zd3mtarget = d3mTarget;
+    }))
+    .then(_ => m.request({
+        method: "GET",
+        url: "/config/d3m-config/get-problem-data-file-info"
+    })
+    .then(function(result) {
+        // some simple logic to get the paths right
+        // note that if neither exist, stay as default which is null
+        if(result.data['trainData.csv'].exists==true)
+            d3mData=result.data['trainData.csv'].path;
+        else if(result.data['trainData.csv.gz'].exists==true)
+            d3mData=result.data['trainData.csv.gz'].path;
+          
+        if(result.data['trainTargets.csv'].exists==true)
+            d3mTarget=result.data['trainTargets.csv'].path;
+        else if(result.data['trainTargets.csv.gz'].exists==true)
+            d3mTarget=result.data['trainTargets.csv.gz'].path;
     }))
     .then(() => new Promise((resolve, reject) => {
             // read in problem schema and we'll make a call to start the session with TA2. if we get this far, data are guaranteed to exist for the frontend
@@ -543,15 +560,16 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
         console.log(allNodes);
         resolve();
     }))
-    .then(() => new Promise((resolve, reject) => { // final step: start her up
+    .then(() =>  { // final step: start her up
+    //  .then(() => new Promise((resolve, reject) => {
         scaffolding(layout);
         if (d3m_mode) {
             zPop();
         } else {
             dataDownload();
         }
-        resolve();
-    }))
+       // resolve();
+    })
 }
 
 
@@ -564,7 +582,7 @@ let fillThis = (self, op, d1, d2) => $fill(self, op, d1, d2);
 
 // scaffolding is called after all external data are guaranteed to have been read to completion. this populates the left panel with variable names, the right panel with model names, the transformation tool, an the associated mouseovers. its callback is layout(), which initializes the modeling space
 function scaffolding(callback) {
-
+console.log("SCAFFOLDING");
     // establishing the transformation element
 //    d3.select("#transformations")
   //      .append("input")
@@ -948,7 +966,6 @@ function layout(v,v2) {
     }
 
     panelPlots(); // after nodes is populated, add subset and (if !d3m_mode) setx panels
-
 
     var force = d3.layout.force()
         .nodes(nodes)
@@ -2742,6 +2759,10 @@ function popupX(d) {
 }
 
 export function panelPlots() {
+    if(d3m_mode) {
+        document.getElementById('btnSubset').classList.add('noshow');
+        return; // we aren't using this in d3m_mode for dry run
+    }
     // build arrays from nodes in main
     let vars = [];
     let ids = [];
