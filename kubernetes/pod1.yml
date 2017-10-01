@@ -12,6 +12,15 @@ spec:
 
   containers:
 
+  - name: rook
+    image: rook:v1
+    #volumeMounts:
+    #- name: shared-data
+    #  mountPath: /var/webapps/TwoRavens/ravens_volume
+    ports:
+    - name: http
+      containerPort: 8000
+      hostPort: 8000
   - name: tworavens
     image: tworavens:v1
     volumeMounts:
@@ -25,14 +34,6 @@ spec:
       containerPort: 50051
       hostPort: 50051
 
-  - name: rook
-    image: rook:v1
-    volumeMounts:
-    - name: shared-data
-      mountPath: /var/webapps/TwoRavens/ravens_volume
-    ports:
-    - name: http
-      containerPort: 8000
-      hostPort: 8000
+
     #command: ["/bin/sh"]
     #args: ["-c", "echo Hello from the debian container > /pod-data/index.html"]
