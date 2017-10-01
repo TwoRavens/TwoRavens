@@ -3,9 +3,23 @@ kind: Pod
 metadata:
   name: raven1
 spec:
+  volumes:
+    # this can point to a volume with test data, etc
+    - name: "raven-data1"
+      hostPath:
+        path: "/Users/ramanprasad/Documents/github-rp/TwoRavens/ravens_volume"
   containers:
     - image: tworavens:v1
       name: raven1
+      # current tworavens has a mount at /ravens_volume
+      volumeMounts:
+        - mountPath: "/ravens_volume"
+          name: "raven-data1"
+      # not sure about these, comment out for test
+      resources:
+        requests:
+          cpu: "500m"
+          memory: "128Mi"
       # liveness is for restart
       livenessProbe:
         httpGet:
@@ -22,7 +36,19 @@ spec:
           port: 8080
         initialDelaySeconds: 10
         periodSeconds: 10
+      # web and gRPC ports
       ports:
         - containerPort: 8080
           name: http
           protocol: TCP
+        - containerPort: 50051
+          name: grpc
+          protocol: TCP
+      # environment variables passed to container
+      env:
+      - name: EVAL_ID
+        value: ravens2
+      - name: TA2_STATIC_TEST_MODE
+        value: "True"
+      - name: ENV_D3M_CONFIG_FILEPATH
+        value: "/ravens_volume/config_o_196seed.json"

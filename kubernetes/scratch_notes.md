@@ -59,6 +59,26 @@ kubectl delete service rook
 kubectl create -f pod1.yml
 kubectl get pod two-containers --output=yaml
 
-kubectl delete pod -f pod1.yml
+kubectl delete pod two-containers
 
+```
+
+## UI
+
+```
+kubectl get services --namespace=kube-system kubernetes-dashboard
+kubectl proxy
+# go to http://localhost:8001/ui
+```
+
+## common
+
+```
+kubectl apply -f obj.yaml
+kubectl delete -f obj.yaml
+
+kubectl logs <pod-name>
+kubectl exec -it <pod-name> -- bash
+kubectl cp <pod-name>:/path/to/remote/file /path/to/local/file
+kubectl cp /path/to/local/file <pod-name>:/path/to/remote/file
 ```
