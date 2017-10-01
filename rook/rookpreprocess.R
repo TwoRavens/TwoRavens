@@ -110,7 +110,7 @@ preprocess.app <- function(env){
                         mytarget <- read.csv(gzfile(mytargetloc), check.names = FALSE)
                     } else {
                         warning <- TRUE
-                        return<-list(warning="Targe file extension not recognized as .csv or .gz")
+                        return<-list(warning="Target file extension not recognized as .csv or .gz")
                     }
                     # not robust merging code, but it'll work if there's one overlapping ID to merge on
                     mergeCol <- colnames(mytarget)[which(colnames(mytarget) %in% colnames(mydata))]
@@ -154,8 +154,6 @@ preprocess.app <- function(env){
     print(merge_name_stub)
     print(outdata)
 
-    print(names(mydata))
-
     write(ppJSON, outloc)
     write.table(mydata, outdata[1], row.names=FALSE, col.names=TRUE, sep="\t")
 
@@ -164,9 +162,7 @@ preprocess.app <- function(env){
         result<-ppJSON
     }
 
-    #result<-jsonlite:::toJSON(result)
-    
-    print(result)
+    #print(result)
     if(production){
         sink()
     }
