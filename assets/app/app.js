@@ -469,18 +469,13 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
                 console.log(solajsonout);
                 console.log("urlcall: ", urlcall);
 
-                let ok = false;
                 let success = (btn, SessionResponse) => {
                     if (SessionResponse.context) {
                         console.log("startsession: ", SessionResponse);
                         zparams.zsessionid = SessionResponse.context.sessionId;
-                        ok = true;
-                    } else new Promise((resolve) => setTimeout(resolve, 5000)) 
-                        .then(_ => console.log("retrying StartSession"));
+                    } 
                 };
-                do {
-                    makeCorsRequest(urlcall, "nobutton", success, _ => null, solajsonout);
-                } while (!success)
+                makeCorsRequest(urlcall, "nobutton", success, _ => null, solajsonout);
         }))
         .then(_ => m.request(pURL))
         // do nothing if preprocess.json already exists, else runPreprocess
