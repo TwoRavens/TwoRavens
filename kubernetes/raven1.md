@@ -5,7 +5,10 @@
 # start it and add port forwarding
 #
 kubectl apply -f raven_pod.yaml
-kubectl port-forward raven1 8080:8080
+
+# tworavens + rook port forwarding
+kubectl port-forward raven1 8080:8080 8000:8000
+#kubectl port-forward raven1 8080:8080
 
 # logs
 #

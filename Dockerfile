@@ -82,9 +82,10 @@ EXPOSE 8080 50051
 # -------------------------------------
 CMD fab init_db && \
     fab collect_static && \
-    fab make_d3m_config_files && \
+    fab make_d3m_config && \
     fab load_d3m_config_from_env && \
-    gunicorn --workers=2 tworavensproject.wsgi_dev_container -b 0.0.0.0:8080
+    python manage.py runserver 0.0.0.0:8080
+#    gunicorn --workers=2 tworavensproject.wsgi_dev_container -b 0.0.0.0:8080
 
 # Run with the python server
 #CMD fab init_db && python manage.py runserver 0.0.0.0:8080
