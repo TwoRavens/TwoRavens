@@ -66,15 +66,36 @@ preprocess.app <- function(env){
         }
     }
 
+    check_ext <- function(filepath){
+        if(!file.exists(filepath)){                                             # if file does not exist
+            if(file.exists(paste(filepath,".gz",sep=""))){                      # check if .csv should be .csv.gz
+                    filepath <- paste(filepath,".gz",sep="")
+                    print(".csv extension swapped for .csv.gz")
+                    print(filepath)
+            } else if (file.exists( tools::file_path_sans_ext(filepath) ) ){    # then check if .csv.gz should be .csv
+                    filepath <- tools::file_path_sans_ext(filepath)
+                    print(".csv.gz extension swapped for .csv")
+                    print(filepath)
+            }
+        }
+        return(filepath)
+    }
+
+
 	if(!warning){
         tryCatch({
+
             if(d3m_mode) {                                       # Note presently this entire app is only ever called in d3m mode, but we might generalize its function
+
+                mydataloc <- check_ext(mydataloc)
+                mytargetloc <- check_ext(mytargetloc)
+
                 #mydataloc2 <- paste("../",mydataloc,sep="")
                 #mytargetloc <- paste("../",mytargetloc,sep="")
                 if( identical(tools::file_ext(mydataloc), "csv" ) ){
                     mydata <- read.csv(mydataloc)
                 } else if (identical(tools::file_ext(mydataloc), "gz" )){
-                    mydata <- read.csv(filegz(mydataloc))
+                    mydata <- read.csv(gzfile(mydataloc))
                 } else {
                     warning <- TRUE
                     return<-list(warning="Data file extension not recognized as .csv or .gz")
@@ -84,11 +105,9 @@ preprocess.app <- function(env){
                     print("No target data declared to be merged.")
                 } else {
                     if( identical(tools::file_ext(mytargetloc), "csv" ) ){
-                        print("did csv")
                         mytarget <- read.csv(mytargetloc)
                     } else if( identical(tools::file_ext(mytargetloc), "gz" ) ){
-                        print("did gz")
-                        mytarget <- read.csv(filegz(mytargetloc))
+                        mytarget <- read.csv(gzfile(mytargetloc))
                     } else {
                         warning <- TRUE
                         return<-list(warning="Targe file extension not recognized as .csv or .gz")
@@ -109,7 +128,9 @@ preprocess.app <- function(env){
         })
 	}
 
-    merge_name_stub <- sub("(.*\\/)([^.]+)(\\.[[:alnum:]]+$)", "\\2", mydataloc)   # Extract the filename stub from the provided training data path.  Generally "trainData".
+    merge_name_stub <- "trainData"
+    # This reg expression stopped working with .csv.gz extensions:
+    #merge_name_stub <- sub("(.*\\/)([^.]+)(\\.[[:alnum:]]+$)", "\\2", mydataloc)   # Extract the filename stub from the provided training data path.  Generally "trainData".
 
     rook_output_data <- paste(PRE_PATH, mydatastub, "/data/", sep="")                   
     rook_output_images <- paste(PRE_PATH, mydatastub, "/images/", sep="")               
@@ -128,6 +149,10 @@ preprocess.app <- function(env){
 
     outloc <- paste(rook_output_preprocess, "preprocess.json", sep="")                
     outdata <- paste(rook_output_data, merge_name_stub, "merged.tsv",sep="")
+
+    print(outloc)
+    print(merge_name_stub)
+    print(outdata)
 
     write(ppJSON, outloc)
     write.table(mydata, outdata[1], row.names=FALSE, col.names=TRUE, sep="\t")
