@@ -19,6 +19,7 @@ kubectl run tworavens --image=tworavens:v1 --port=8080
 kubectl expose deployment tworavens --type=NodePort
 # show service
 #
+
 minikube service tworavens
 ```
 

@@ -4,28 +4,40 @@
 ```
 # start it and add port forwarding
 #
-kubectl apply -f raven_pod4.yaml
+kubectl apply -f raven_pod5.yaml
+
+# view pods
+kubectl get pods --all-namespaces -o wide
+
 
 # tworavens + rook port forwarding
-kubectl port-forward raven1 8060:80
+kubectl port-forward raven-pod1 8060:80
 #kubectl port-forward raven1 8080:8080 8000:8000
 #kubectl port-forward raven1 8080:8080
 #kubectl port-forward raven1 80:80
 
 # logs
 #
-kubectl logs raven1
+kubectl logs raven-pod1
+
+# container specific
+kubectl logs raven-pod1 tworavens
 
 # terminal
 #
-kubectl exec -it raven1 bash
+kubectl exec -it raven-pod1 --container=tworavens bash
+kubectl exec -it raven-pod1 --container=ta2-test bash
 
 # date command
-kubectl exec raven1 date
+kubectl exec raven-pod1 date
 
 # delete it
 #
 kubectl delete -f raven_pod4.yaml
+
+#
+# describe pod (including containers)
+kubectl describe pod/raven-pod1
 ```
 
 ## copy files

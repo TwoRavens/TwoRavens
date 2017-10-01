@@ -20,4 +20,8 @@ docker build -t rook:v2 . -f Dockerfile-rook
 
 # build nginx
 docker build -t nginx:v2 -f ./setup/nginx/Dockerfile-kube ./setup/nginx/
+
+# build TA2 test
+docker build -t ta2-test:v2 -f Dockerfile-TA2-test .
+
 ```
