@@ -68,28 +68,14 @@ RUN pip3 install --no-cache-dir -r requirements/prod.txt && \
 # -------------------------------------
 # Expose ports for the web and gRPC communication
 # -------------------------------------
-EXPOSE 8080
-#50051
+EXPOSE 50051
 
-#WORKDIR /var/webapps/TwoRavens
+WORKDIR /var/webapps/TwoRavens/tworaven_apps/ta2_interfaces
 
 # -------------------------------------
-# Run django with gunicorn
-#   - init_db - creates sqlite db for test run with
-#   - collect_static - django collect static files
-#   - make_d3m_config_files - makes test config files--configs not loaded to DB
-#   - load_d3m_config_from_env - loads TA2 style config specified in env var
-#                                "ENV_D3M_CONFIG_FILEPATH"
+# Run test server
 # -------------------------------------
-CMD fab init_db && \
-    fab collect_static && \
-    fab make_d3m_config && \
-    fab load_d3m_config_from_env && \
-    python manage.py runserver 0.0.0.0:8080
-#    gunicorn --workers=2 tworavensproject.wsgi_dev_container -b 0.0.0.0:8080
-
-# Run with the python server
-#CMD fab init_db && python manage.py runserver 0.0.0.0:8080
+CMD python test_server.py
 
 
 # -----------------------------------------
@@ -98,28 +84,16 @@ CMD fab init_db && \
 # -----------------
 # build local:
 # -----------------
-# >docker build -t ravens1 .
+# >docker build -t ta2-test:v2 -f Dockerfile-TA2-test .
 #
 # -----------------
 # run app
 # -----------------
-# >docker run -p 8080:8080 -p 50051:50051 ravens1
-# go to: http://0.0.0.0:8080
-#
-# -----------------
-# >run app with custom environment variable
-# -----------------
-# docker run -p 8080:8080 -p 50051:50051 -e TA2_TEST_SERVER_URL=rprasad2r.local:50051 ravens1
+# >docker run -p 50051:50051 ta2-test:v2
 #
 # -----------------
 # > log into running app
 # -----------------
 # docker exec -it [container name] /bin/bash
 #
-# -----------------
-# shell access:
-# -----------------
-# >docker run -ti --rm -p 8080:8080 -p 50051:50051 ravens1 /bin/bash
-#
-# - Potentially switch to a python 3.5 base image
 # -----------------------------------------
