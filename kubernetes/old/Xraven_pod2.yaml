@@ -1,7 +1,33 @@
+# -------------------------
+# Expose outside service
+# -------------------------
+apiVersion: v1
+kind: Service
+metadata:
+  name: raven-out
+  labels:
+    evalId: TwoRavens
+spec:
+  # NodePort type allows to expose service outside the cluster
+  type: NodePort
+  selector:
+    evalId: TwoRavens
+    #run: raven1
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+---
+# -------------------------
+# RAVEN POD
+# -------------------------
 apiVersion: v1
 kind: Pod
 metadata:
-  name: raven-pod1
+  name: raven1
+  labels:
+    evalId: TwoRavens
+    main: "yes"
 spec:
   volumes:
     # this can point to a volume with test data, etc
@@ -9,23 +35,7 @@ spec:
       hostPath:
         path: "/Users/ramanprasad/Documents/github-rp/TwoRavens/ravens_volume"
   containers:
-    # -------------------------
-    # NGINX CONTAINER SPECS
-    # -------------------------
-    - image: nginx:v2
-      name: nginx
-      ports:
-        - containerPort: 80
-          name: http
-          protocol: TCP
-      # current tworavens has a mount at /ravens_volume
-      #volumeMounts:
-      #  - mountPath: "/ravens_volume"
-      #    name: "raven-data1"
-    # -------------------------
-    # TWO RAVENS CONTAINER SPECS
-    # -------------------------
-    - image: tworavens:v2
+    - image: tworavens:v1
       name: tworavens
       # current tworavens has a mount at /ravens_volume
       volumeMounts:
@@ -57,6 +67,7 @@ spec:
         - containerPort: 8080
           name: http
           protocol: TCP
+          hostPort: 8080
         - containerPort: 50051
           name: grpc
           protocol: TCP
@@ -65,17 +76,30 @@ spec:
       - name: EVAL_ID
         value: ravens2
       - name: TA2_STATIC_TEST_MODE
-        value: "False"
-      - name: TA2_TEST_SERVER_URL
-        value: "raven-pod1:50051"
+        value: "True"
       - name: ENV_D3M_CONFIG_FILEPATH
         value: "/ravens_volume/config_o_196seed.json"
       - name: R_DEV_SERVER_BASE
-        value: "http://localhost:8000/custom/"
-    # -------------------------
-    # ROOK CONTAINER SPECS
-    # -------------------------
-    - image: rook:v2
+        value: "http://127.0.0.1:8000/custom/"
+---
+# -------------------------
+# ROOK POD
+# -------------------------
+apiVersion: v1
+kind: Pod
+metadata:
+  name: rook1
+  labels:
+    evalId: TwoRavens
+    main: "yes"
+spec:
+  volumes:
+    # this can point to a volume with test data, etc
+    - name: "raven-data1"
+      hostPath:
+        path: "/Users/ramanprasad/Documents/github-rp/TwoRavens/ravens_volume"
+  containers:
+    - image: rook:v1
       name: rook
       # current rook has a mount at /ravens_volume
       volumeMounts:
@@ -86,6 +110,7 @@ spec:
         - containerPort: 8000
           name: http
           protocol: TCP
+          hostPort: 8000
       # liveness is for restart
       livenessProbe:
         httpGet:
@@ -102,16 +127,3 @@ spec:
           port: 8000
         initialDelaySeconds: 20
         periodSeconds: 10
-    # -------------------------
-    # TA2 TEST CONTAINER SPECS
-    # -------------------------
-    #- image: ta2-test:v2
-    - image: ta2-isi:v3
-      name: ta2-test
-      # web port
-      ports:
-        - containerPort: 50051
-          protocol: TCP
-      volumeMounts:
-        - mountPath: "/ravens_volume"
-          name: "raven-data1"
