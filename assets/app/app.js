@@ -498,12 +498,11 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
                 console.log(solajsonout);
                 console.log("urlcall: ", urlcall);
 
-                if(tutorial_mode){ //} && first_load){
-
+                if(tutorial_mode){ // && first_load){
                     var dl_content = "<p>This tool can guide you to solve an empirical problem in the dataset listed above.</p><p>These messages will teach you the steps to take to find and submit a solution.</p>";
                     var reset_content = "<p>You can always start a problem over by using this reset button.</p>"
                     var depvar_id = mytarget + "biggroup";
-                    var type_selected_tour = {
+                    var problem_initialized_tour = {
                       "id": "dataset_launch",
                        "i18n": {
                         "doneBtn":'Ok'
@@ -601,16 +600,10 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
                           },
                     };
                     console.log("Starting Hopscotch Tour");
-
-
-                    hopscotch.startTour(type_selected_tour);
+                    hopscotch.startTour(problem_initialized_tour);
                     console.log("Ending Hopscotch Tour");
                 };
-
-
-
-
-                                
+                         
                 function ssSuccess(btn, SessionResponse) {
                     zparams.zsessionid=SessionResponse.context.sessionId;
                     console.log("startsession: ", SessionResponse);
