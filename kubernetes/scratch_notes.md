@@ -75,8 +75,8 @@ kubectl proxy
 ## common
 
 ```
-kubectl apply -f obj.yaml
-kubectl delete -f obj.yaml
+kubectl apply -f obj.yml
+kubectl delete -f obj.yml
 
 kubectl logs <pod-name>
 kubectl exec -it <pod-name> -- bash

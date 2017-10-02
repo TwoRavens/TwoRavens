@@ -106,7 +106,7 @@ spec:
     # TA2 TEST CONTAINER SPECS
     # -------------------------
     #- image: ta2-test:v2
-    - image: ta2-isi:v3
+    - image: ta2-isi:v2
       name: ta2-test
       # web port
       ports:
