@@ -3,6 +3,7 @@ import m from 'mithril';
 import {bars, barsNode, barsSubset, density, densityNode, selVarColor} from './plots.js';
 
 import '../pkgs/hopscotch/dist/js/hopscotch.js';
+import '../pkgs/hopscotch/dist/css/hopscotch.css';
 //import '../pkgs/hopscotch/dist/js/my_hopscotch_tour.js';
 
 // hostname default - the app will use it to obtain the variable metadata
@@ -28,6 +29,8 @@ import '../pkgs/hopscotch/dist/js/hopscotch.js';
 export let cdb = _ => production || console.log.apply(this, arguments) && arguments;
 
 let k = 4; // strength parameter for group attraction/repulsion
+let tutorial_mode = true;
+let first_load = true;
 
 // initial color scale used to establish the initial colors of nodes
 // allNodes.push() below establishes a field for the master node array allNodes called "nodeCol" and assigns a color from this scale to that field
@@ -494,6 +497,119 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
                 console.log("SessionRequest: ");
                 console.log(solajsonout);
                 console.log("urlcall: ", urlcall);
+
+                if(tutorial_mode){ //} && first_load){
+
+                    var dl_content = "<p>This tool can guide you to solve an empirical problem in the dataset listed above.</p><p>These messages will teach you the steps to take to find and submit a solution.</p>";
+                    var reset_content = "<p>You can always start a problem over by using this reset button.</p>"
+                    var depvar_id = mytarget + "biggroup";
+                    var type_selected_tour = {
+                      "id": "dataset_launch",
+                       "i18n": {
+                        "doneBtn":'Ok'
+                      },
+                      "steps": [
+                        {
+                          "target": "dataName", //document.querySelectorAll("#dataName"),
+                          "placement": "bottom",
+                          "title": "Welcome to TwoRavens Solver",
+                          "content": dl_content,
+                          "showCTAButton":true,
+                          "ctaLabel": "Disable these messages",
+                          "onCTA": function() {
+                            hopscotch.endTour(true);
+                            tutorial_mode = false;
+                          },
+                        },
+                        {
+                          "target": "btnReset", 
+                          "placement": "bottom",
+                          "title": "Restart Any Problem Here",
+                          "content": reset_content,
+                          "showCTAButton":true,
+                          "ctaLabel": "Disable these messages",
+                          "onCTA": function() {
+                            hopscotch.endTour(true);
+                            tutorial_mode = false;
+                          },
+                        },
+                        {
+                          "target": depvar_id, //"classbiggroup", 
+                          "placement": "left",
+                          "title": "Target Variable",
+                          "content": "This is the variable, " + mytarget + ", we are trying to predict.",
+                          "showCTAButton":true,
+                          "ctaLabel": "Disable these messages",
+                          "onCTA": function() {
+                            hopscotch.endTour(true);
+                            tutorial_mode = false;
+                          },
+                        },
+                        {
+                          "target": "gr1hull", 
+                          "placement": "right",
+                          "title": "Explanation Set",
+                          "content": "This set of variables can potentially predict the target.",
+                          "showCTAButton":true,
+                          "ctaLabel": "Disable these messages",
+                          "onCTA": function() {
+                            hopscotch.endTour(true);
+                            tutorial_mode = false;
+                          },
+                        },
+                        {
+                          "target": "displacement", 
+                          "placement": "right",
+                          "title": "Variable List",
+                          "content": "Click on any variable name here to remove it from the problem solution.",
+                          "showCTAButton":true,
+                          "ctaLabel": "Disable these messages",
+                          "onCTA": function() {
+                            hopscotch.endTour(true);
+                            tutorial_mode = false;
+                          },
+                        },
+                        {
+                          "target": "btnEstimate", 
+                          "placement": "left",
+                          "title": "Solve Problem",
+                          "content": "Click the Estimate button to tell the tool to estimate a solution to the problem.",
+                          "showCTAButton":true,
+                          "ctaLabel": "Disable these messages",
+                          "onCTA": function() {
+                            hopscotch.endTour(true);
+                            tutorial_mode = false;
+                          },
+                        },
+                        {
+                          "target": "btnEndSession", 
+                          "placement": "bottom",
+                          "title": "Finish Problem",
+                          "content": "If the solution presented seems acceptable, then finish this problem by clicking this End Session button.",
+                          "showCTAButton":true,
+                          "ctaLabel": "Disable these messages",
+                          "onCTA": function() {
+                            hopscotch.endTour(true);
+                            tutorial_mode = false;
+                          },
+                        }
+                      ],
+                      "showCloseButton":false,
+                      "scrollDuration": 300,
+                      "onEnd":  function() {
+                           first_load = false;
+                          },
+                    };
+                    console.log("Starting Hopscotch Tour");
+
+
+                    hopscotch.startTour(type_selected_tour);
+                    console.log("Ending Hopscotch Tour");
+                };
+
+
+
+
                                 
                 function ssSuccess(btn, SessionResponse) {
                     zparams.zsessionid=SessionResponse.context.sessionId;
