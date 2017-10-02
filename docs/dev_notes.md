@@ -18,8 +18,6 @@ The following command runs a TA2 test server with the core code from the NYU tea
 - run `workon 2ravens`
 - run `fab run_ta2_test_server`
 
-
-
 ## Saving webpack js/css files for deployment
 
 Webpack files in the build directory are excluded from github.  
