@@ -137,7 +137,7 @@ f1Macro:["description", "F1_MACRO" , 4],
 rocAuc:["description", "ROC_AUC" , 5],
 rocAucMicro:["description", "ROC_AUC_MICRO" , 6],
 rocAucMacro:["description", "ROC_AUC_MACRO" , 7],
-//meanSquaredError:["description", "MEAN_SQUARED_ERROR", 8],
+meanSquaredError:["description", "ROOT_MEAN_SQUARED_ERROR", 8],
 rootMeanSquaredError:["description", "ROOT_MEAN_SQUARED_ERROR" , 8],
 rootMeanSquaredErrorAvg:["description", "ROOT_MEAN_SQUARED_ERROR_AVG" , 9],
 meanAbsoluteError:["description", "MEAN_ABSOLUTE_ERROR" , 10],
@@ -633,9 +633,8 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
                 };
                          
                 function ssSuccess(btn, SessionResponse) {
-                    zparams.zsessionid=SessionResponse.context.sessionId;
                     console.log("startsession: ", SessionResponse);
-
+                    zparams.zsessionid=SessionResponse.context.sessionId;
                     resolve();
                 }
 
