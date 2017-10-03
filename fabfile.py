@@ -272,13 +272,3 @@ def init_db():
     create_django_superuser()
     #local("python manage.py loaddata fixtures/users.json")
     #Series(name_abbreviation="Mass.").save()
-
-def test_front_matter():
-    pass
-    #from firmament.models import Volume
-    #Volume.objects.first().generate_front_matter()
-
-def ubuntu_help():
-    """Set up directories for ubuntu 16.04 (in progress)"""
-    from setup.ubuntu_setup import TwoRavensSetup
-    trs = TwoRavensSetup()

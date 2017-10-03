@@ -1,3 +1,4 @@
+import os
 from os.path import isfile, isdir
 import json
 from collections import OrderedDict
@@ -12,34 +13,34 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         """The first (and required) argument to this command is the
         file path to a JSON config file"""
-        parser.add_argument('config_file',
+        parser.add_argument('config_file_path',
                             nargs='+',
                             type=str,
                             help='Path to a config file in JSON format')
 
     def handle(self, *args, **options):
         """Load the config file"""
-        for config_file in options['config_file']:
+        for config_file_path in options['config_file_path']:
 
             # Is this a legit file path?
             #
-            if not isfile(config_file):
-                if isdir(config_file):
+            if not isfile(config_file_path):
+                if isdir(config_file_path):
                     raise CommandError(('Please specify a config file, NOT a'
                                         ' directory:  "%s"') %\
-                                        config_file)
+                                        config_file_path)
                 raise CommandError(('This config file was not found: "%s".'
                                     ' Please check that the path is correct.') %\
-                                    config_file)
+                                    config_file_path)
 
             # Is the file readable?
             #
             try:
-                config_content = open(config_file, 'r').read()
+                config_content = open(config_file_path, 'r').read()
             except:
                 raise CommandError(('Failed to open the config file "%s".'
                                     ' Please check that it is readable.') %\
-                                    config_file)
+                                    config_file_path)
             # Is the file valid JSON?
             #
             try:
@@ -47,10 +48,10 @@ class Command(BaseCommand):
                                          object_pairs_hook=OrderedDict)
             except ValueError as err_obj:
                 raise CommandError(('The config file did not contain valid JSON'
-                                    ' "%s" (ValueError)') % config_file)
+                                    ' "%s" (ValueError)') % config_file_path)
             except TypeError as err_obj:
                 raise CommandError(('The config file did not contain valid JSON'
-                                    ' "%s" (TypeError)') % config_file)
+                                    ' "%s" (TypeError)') % config_file_path)
 
             # Use the dict to create a new D3MConfiguration
             #
@@ -62,7 +63,7 @@ class Command(BaseCommand):
             #
             if err_msg:
                 raise CommandError(('Error in config file "%s".'
-                                    '%s') % (config_file, err_msg))
+                                    '%s') % (config_file_path, err_msg))
 
             # Are the paths valid?
             #
@@ -73,16 +74,22 @@ class Command(BaseCommand):
                     path_note = 'an invalid path'
                 else:
                     path_note = '%d invalid paths' % len(bad_paths)
-                self.stdout.write(\
+                raise CommandError(\
                     self.style.WARNING(\
                         ('WARNING. The config file "%s" contained %s:'
                          '\n\n%s'
                          '\n\nThese paths may be on an external volume'
                          ' which is not yet accessible.\n') % \
-                        (config_file, path_note, bad_path_list)))
+                        (config_file_path, path_note, bad_path_list)))
 
             # It worked!!
             #
             self.stdout.write(\
                 self.style.SUCCESS(('Successfully loaded new D3M configuration:'
-                                   ' "%s"') % d3m_config))
+                                    ' "%s"') % d3m_config))
+
+        # OK!  This 'ain't that pretty at all' but not much time left...
+        #
+        os.system(('cd /var/webapps/TwoRavens;'
+                   'gunicorn --workers=2 tworavensproject.wsgi_dev_container'
+                   ' -b 0.0.0.0:8080;'))
