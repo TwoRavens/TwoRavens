@@ -93,9 +93,9 @@ preprocess.app <- function(env){
                 #mydataloc2 <- paste("../",mydataloc,sep="")
                 #mytargetloc <- paste("../",mytargetloc,sep="")
                 if( identical(tools::file_ext(mydataloc), "csv" ) ){
-                    mydata <- read.csv(mydataloc)
+                    mydata <- read.csv(mydataloc, check.names = FALSE)
                 } else if (identical(tools::file_ext(mydataloc), "gz" )){
-                    mydata <- read.csv(gzfile(mydataloc))
+                    mydata <- read.csv(gzfile(mydataloc), check.names = FALSE)
                 } else {
                     warning <- TRUE
                     return<-list(warning="Data file extension not recognized as .csv or .gz")
@@ -105,12 +105,12 @@ preprocess.app <- function(env){
                     print("No target data declared to be merged.")
                 } else {
                     if( identical(tools::file_ext(mytargetloc), "csv" ) ){
-                        mytarget <- read.csv(mytargetloc)
+                        mytarget <- read.csv(mytargetloc, check.names = FALSE)
                     } else if( identical(tools::file_ext(mytargetloc), "gz" ) ){
-                        mytarget <- read.csv(gzfile(mytargetloc))
+                        mytarget <- read.csv(gzfile(mytargetloc), check.names = FALSE)
                     } else {
                         warning <- TRUE
-                        return<-list(warning="Targe file extension not recognized as .csv or .gz")
+                        return<-list(warning="Target file extension not recognized as .csv or .gz")
                     }
                     # not robust merging code, but it'll work if there's one overlapping ID to merge on
                     mergeCol <- colnames(mytarget)[which(colnames(mytarget) %in% colnames(mydata))]
@@ -162,9 +162,7 @@ preprocess.app <- function(env){
         result<-ppJSON
     }
 
-    #result<-jsonlite:::toJSON(result)
-    
-    print(result)
+    #print(result)
     if(production){
         sink()
     }
