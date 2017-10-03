@@ -4,6 +4,7 @@
 
 ```
 minikube start
+#minikube start --vm-driver=xhyve
 eval $(minikube docker-env)
 ```
 
@@ -75,11 +76,28 @@ kubectl proxy
 ## common
 
 ```
-kubectl apply -f obj.yaml
-kubectl delete -f obj.yaml
+kubectl apply -f obj.yml
+kubectl delete -f obj.yml
 
 kubectl logs <pod-name>
 kubectl exec -it <pod-name> -- bash
 kubectl cp <pod-name>:/path/to/remote/file /path/to/local/file
 kubectl cp /path/to/local/file <pod-name>:/path/to/remote/file
+```
+
+## get script into docker...
+
+```
+docker build -t end1 -f Dockerfile-test .
+
+docker run --rm -p 8080:8080 --name=e1 end1
+
+docker run --rm -p 8080:8080 --name=e1 --entrypoint /bin/bash  end1 -c "ta3_search"
+
+docker run -i -t --rm end1 /bin/bash
+
+docker run --rm -p 8080:8080 --name=e1 --entrypoint /bin/bash  end1 -c "ta3_search ravens_volume/config_r_30.json"
+
+docker exec -ti e1 /bin/bash -c 'ta3_search'
+
 ```

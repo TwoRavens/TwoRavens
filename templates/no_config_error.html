@@ -8,21 +8,46 @@
   <div class="panel-body">
     <h4>No D3M configuration information in the database.</h4>
 
-    <p>To fix this, load configuration information:</p>
+    <p>To fix this, load the configuration information and REFRESH this page:</p>
     <hr />
     <ul>
-      <li><b>Through the command line:</b> (2 methods)
+      <li><b>Integration against a running container</b>
+          <ul>
+            <li>
+              <b>docker</b>
+
+              <p>In this example, the container name is <b>ta3-main</b></p>
+
+              <pre><code>docker exec -ti ta3-main /bin/bash -c 'ta3_search $CONFIG_JSON_PATH'</code></pre>
+            </li>
+            <li>
+              <b>kubernetes</b>
+
+              <p>In this example, the pod is <b>raven-pod1</b> and the container name is <b>ta3-main</b>.</p>
+
+              <pre><code>kubectl exec  -ti raven-pod1 --container ta3-main -- /bin/bash -c 'ta3_search $CONFIG_JSON_PATH'</code></pre>
+
+              <p>Note: the '-ti' is not needed but gives better formatted output if the config has issues such as inaccessible paths.</p>
+
+              <p>Example where <b>/d3m_test_volume</b> is a mounted volume:</p>
+
+              <pre><code>kubectl exec -ti raven-pod1 --container ta3-main -- /bin/bash -c 'ta3_search /d3m_test_volume/kube_test_d3m.json'</code></pre>
+
+            </li>
+          </ul>
+      </li>
+      <li><b>Locally through the command line:</b> (3 methods)
         <ul>
           <li>Give a config file path:
-            <br /> &nbsp; &gt;<code>fab load_d3m_config:(path to config file)</code>
+            <pre><code>fab load_d3m_config:(path to config file)</code></pre>
           </li>
           <li>Load it from an environment variable named <b>D3M_CONFIG_FILEPATH</b>:
-            <br /> &nbsp; &gt;<code>fab load_d3m_config_from_env</code>
+            <pre><code>fab load_d3m_config_from_env</code></pre>
           </li>
-          <li>Load test data based on local files in the /data directory:
-            <br /> &nbsp; &gt;<code>fab make_d3m_config</code>
+          <li>Load test data based on local files in the TwoRavens/ravens_volume directory:
+            <pre><code>fab make_d3m_config</code></pre>
           </li>
-          make_d3m_config
+
       </ul></li>
       <li><b>Or via the web interface:</b>
         <ul>

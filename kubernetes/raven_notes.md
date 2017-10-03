@@ -1,10 +1,37 @@
 
-- Notes working with the raven_pod4.yaml
+
+## Start up
+
+```
+minikube start
+eval $(minikube docker-env)
+```
+
+## Build docker images
+
+```
+# from inside the TwoRavens directory
+
+# build ravens
+docker build -t tworavens:v2 .
+
+# build rook
+docker build -t rook:v2 . -f Dockerfile-rook
+
+# build nginx
+docker build -t nginx:v2 -f ./setup/nginx/Dockerfile-kube ./setup/nginx/
+
+# build TA2 test
+docker build -t ta2-test:v2 -f Dockerfile-TA2-test .
+
+```
+
+## Notes working with the raven_pod5.yml
 
 ```
 # start it and add port forwarding
 #
-kubectl apply -f raven_pod5.yaml
+kubectl apply -f raven_pod5.yml
 
 # view pods
 kubectl get pods --all-namespaces -o wide
@@ -33,7 +60,7 @@ kubectl exec raven-pod1 date
 
 # delete it
 #
-kubectl delete -f raven_pod4.yaml
+kubectl delete -f raven_pod4.yml
 
 #
 # describe pod (including containers)
