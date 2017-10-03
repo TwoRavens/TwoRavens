@@ -1,4 +1,3 @@
-
 ## Run against the ISI docker image
 
 - Use the latest master as of 10/2, 3pm
@@ -19,7 +18,7 @@ docker run --rm --name isi_test  -v /Users/ramanprasad/Documents/github-rp/TwoRa
 
 ### Terminal 2: Run TwoRavens
 
-- cd into TwoRavens, then:
+- cd into TwoRavens, then (all together in same window):
 1. `workon 2ravens`
 2. `export TA2_STATIC_TEST_MODE=False`
 3. `fab run`
