@@ -2,6 +2,10 @@ import m from 'mithril';
 
 import {bars, barsNode, barsSubset, density, densityNode, selVarColor} from './plots.js';
 
+import '../pkgs/hopscotch/dist/js/hopscotch.js';
+import '../pkgs/hopscotch/dist/css/hopscotch.css';
+//import '../pkgs/hopscotch/dist/js/my_hopscotch_tour.js';
+
 // hostname default - the app will use it to obtain the variable metadata
 // (ddi) and pre-processed data info if the file id is supplied as an
 // argument (for ex., gui.html?dfId=17), but hostname isn't.
@@ -25,6 +29,8 @@ import {bars, barsNode, barsSubset, density, densityNode, selVarColor} from './p
 export let cdb = _ => production || console.log.apply(this, arguments) && arguments;
 
 let k = 4; // strength parameter for group attraction/repulsion
+let tutorial_mode = true;
+let first_load = true;
 
 // initial color scale used to establish the initial colors of nodes
 // allNodes.push() below establishes a field for the master node array allNodes called "nodeCol" and assigns a color from this scale to that field
@@ -131,7 +137,7 @@ f1Macro:["description", "F1_MACRO" , 4],
 rocAuc:["description", "ROC_AUC" , 5],
 rocAucMicro:["description", "ROC_AUC_MICRO" , 6],
 rocAucMacro:["description", "ROC_AUC_MACRO" , 7],
-//meanSquaredError:["description", "MEAN_SQUARED_ERROR", 8],
+meanSquaredError:["description", "ROOT_MEAN_SQUARED_ERROR", 8],
 rootMeanSquaredError:["description", "ROOT_MEAN_SQUARED_ERROR" , 8],
 rootMeanSquaredErrorAvg:["description", "ROOT_MEAN_SQUARED_ERROR_AVG" , 9],
 meanAbsoluteError:["description", "MEAN_ABSOLUTE_ERROR" , 10],
@@ -520,10 +526,115 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
                 console.log(solajsonout);
                 console.log("urlcall: ", urlcall);
 
+                if(tutorial_mode){ // && first_load){
+                    var dl_content = "<p>This tool can guide you to solve an empirical problem in the dataset listed above.</p><p>These messages will teach you the steps to take to find and submit a solution.</p>";
+                    var reset_content = "<p>You can always start a problem over by using this reset button.</p>"
+                    var depvar_id = mytarget + "biggroup";
+                    var problem_initialized_tour = {
+                      "id": "dataset_launch",
+                       "i18n": {
+                        "doneBtn":'Ok'
+                      },
+                      "steps": [
+                        {
+                          "target": "dataName", //document.querySelectorAll("#dataName"),
+                          "placement": "bottom",
+                          "title": "Welcome to TwoRavens Solver",
+                          "content": dl_content,
+                          "showCTAButton":true,
+                          "ctaLabel": "Disable these messages",
+                          "onCTA": function() {
+                            hopscotch.endTour(true);
+                            tutorial_mode = false;
+                          },
+                        },
+                        {
+                          "target": "btnReset", 
+                          "placement": "bottom",
+                          "title": "Restart Any Problem Here",
+                          "content": reset_content,
+                          "showCTAButton":true,
+                          "ctaLabel": "Disable these messages",
+                          "onCTA": function() {
+                            hopscotch.endTour(true);
+                            tutorial_mode = false;
+                          },
+                        },
+                        {
+                          "target": depvar_id, //"classbiggroup", 
+                          "placement": "left",
+                          "title": "Target Variable",
+                          "content": "This is the variable, " + mytarget + ", we are trying to predict.",
+                          "showCTAButton":true,
+                          "ctaLabel": "Disable these messages",
+                          "onCTA": function() {
+                            hopscotch.endTour(true);
+                            tutorial_mode = false;
+                          },
+                        },
+                        {
+                          "target": "gr1hull", 
+                          "placement": "right",
+                          "title": "Explanation Set",
+                          "content": "This set of variables can potentially predict the target.",
+                          "showCTAButton":true,
+                          "ctaLabel": "Disable these messages",
+                          "onCTA": function() {
+                            hopscotch.endTour(true);
+                            tutorial_mode = false;
+                          },
+                        },
+                        {
+                          "target": "displacement", 
+                          "placement": "right",
+                          "title": "Variable List",
+                          "content": "Click on any variable name here to remove it from the problem solution.",
+                          "showCTAButton":true,
+                          "ctaLabel": "Disable these messages",
+                          "onCTA": function() {
+                            hopscotch.endTour(true);
+                            tutorial_mode = false;
+                          },
+                        },
+                        {
+                          "target": "btnEstimate", 
+                          "placement": "left",
+                          "title": "Solve Problem",
+                          "content": "Click the Estimate button to tell the tool to estimate a solution to the problem.",
+                          "showCTAButton":true,
+                          "ctaLabel": "Disable these messages",
+                          "onCTA": function() {
+                            hopscotch.endTour(true);
+                            tutorial_mode = false;
+                          },
+                        },
+                        {
+                          "target": "btnEndSession", 
+                          "placement": "bottom",
+                          "title": "Finish Problem",
+                          "content": "If the solution presented seems acceptable, then finish this problem by clicking this End Session button.",
+                          "showCTAButton":true,
+                          "ctaLabel": "Disable these messages",
+                          "onCTA": function() {
+                            hopscotch.endTour(true);
+                            tutorial_mode = false;
+                          },
+                        }
+                      ],
+                      "showCloseButton":false,
+                      "scrollDuration": 300,
+                      "onEnd":  function() {
+                           first_load = false;
+                          },
+                    };
+                    console.log("Starting Hopscotch Tour");
+                    hopscotch.startTour(problem_initialized_tour);
+                    console.log("Ending Hopscotch Tour");
+                };
+                         
                 function ssSuccess(btn, SessionResponse) {
-                    zparams.zsessionid=SessionResponse.context.sessionId;
                     console.log("startsession: ", SessionResponse);
-
+                    zparams.zsessionid=SessionResponse.context.sessionId;
                     resolve();
                 }
 
@@ -2073,15 +2184,15 @@ export function estimate(btn) {
             let context = apiSession(zparams.zsessionid);
             let uri = {features: zparams.zd3mdata, target:zparams.zd3mtarget};
 
-            let trainFeatures=apiFeature(valueKey,uri.features);
-            let targetFeatures=apiFeature(mytarget,uri.target);
+            let trainFeatures=apiFeatureShortPath(valueKey,uri.features);       // putting in short paths (no filename) for current API usage
+            let targetFeatures=apiFeatureShortPath(mytarget,uri.target);        // putting in short paths (no filename) for current API usage
 
             let task = d3mTaskType[d3mProblemDescription.taskType][1];
             let taskSubtype = d3mTaskSubtype[d3mProblemDescription.taskSubtype][1];
             let output = d3mOutputType[d3mProblemDescription.outputType][1];
             let metrics = [d3mMetrics[d3mProblemDescription.metric][1]];
             let taskDescription = d3mProblemDescription.taskDescriptionription;
-            let maxPipelines = 10; //user to specify this eventually?
+            let maxPipelines = 5; //user to specify this eventually?
 
             let PipelineCreateRequest={context, trainFeatures, task, taskSubtype, taskDescription, output, metrics, targetFeatures, maxPipelines};
 
@@ -2250,14 +2361,14 @@ export function estimate(btn) {
             function createPipelineSuccess(btn, json) {
                 estimateLadda.stop(); // stop spinner
 
-                let trainFeatures=apiFeature(json.predictors,uri.features);
-                let targetFeatures=apiFeature(json.depvar,uri.target);
+                let trainFeatures=apiFeatureShortPath(json.predictors,uri.features);    // putting in short paths (no filename) for current API usage
+                let targetFeatures=apiFeatureShortPath(json.depvar,uri.target);         // putting in short paths (no filename) for current API usage
                 let task = d3mTaskType[d3mProblemDescription.taskType][1];
                 let taskSubtype = d3mTaskSubtype[d3mProblemDescription.taskSubtype][1];
                 let output = d3mOutputType[d3mProblemDescription.outputType][1];
                 let metrics = [d3mMetrics[d3mProblemDescription.metric][1]];
                 let taskDescription = d3mProblemDescription.taskDescriptionription;
-                let maxPipelines = 10; //user to specify this eventually?
+                let maxPipelines = 5; //user to specify this eventually?
 
                 setxTable(json.predictors);
                 let dvvalues = json.dvvalues;
@@ -4355,12 +4466,22 @@ export function deletepipeline () {
 // D3M API HELPERS
 // because these get built in various places, pulling them out for easy manipulation
 function apiFeature (vars, uri) {
-    let out = []
+    let out = [];
     for(let i = 0; i < vars.length; i++) {
         out.push({featureId:vars[i],dataUri:uri});
     }
     return out;
 }
+
+function apiFeatureShortPath (vars, uri) {
+    let out = [];
+    let shortUri = uri.substring(0, uri.lastIndexOf("/"));
+    for(let i = 0; i < vars.length; i++) {
+        out.push({featureId:vars[i],dataUri:shortUri});
+    }
+    return out;
+}
+
 
 // silly but perhaps useful if in the future SessionContext requires more things (as suggest by core)
 function apiSession (context) {

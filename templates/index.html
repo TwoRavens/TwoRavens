@@ -7,6 +7,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="{% static "pkgs/bootstrap/css/bootstrap.css" %}">
+    <link rel="stylesheet" href="{% static "pkgs/hopscotch/dist/css/hopscotch.css" %}">
     <!--<link rel="stylesheet" href="{% static "build/tworavens_styles.css" %}"-->
     {% render_bundle 'main' 'css' %}
     <script src="{% static "pkgs/Ladda/dist/spin.min.js" %}"></script>
@@ -14,6 +15,7 @@
     <script src="{% static "js/jquery/jquery.min.js" %}"></script>
     <script src="{% static "pkgs/bootstrap/js/bootstrap.min.js" %}"></script>
     <script src="{% static "js/d3/d3.v3.min.js" %}"></script>
+    <script src="{% static "pkgs/hopscotch/dist/js/hopscotch.js" %}"></script>
     <script>
         {% if app_config %}
           // ----------------------------
