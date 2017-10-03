@@ -2184,15 +2184,15 @@ export function estimate(btn) {
             let context = apiSession(zparams.zsessionid);
             let uri = {features: zparams.zd3mdata, target:zparams.zd3mtarget};
 
-            let trainFeatures=apiFeature(valueKey,uri.features);
-            let targetFeatures=apiFeature(mytarget,uri.target);
+            let trainFeatures=apiFeatureShortPath(valueKey,uri.features);       // putting in short paths (no filename) for current API usage
+            let targetFeatures=apiFeatureShortPath(mytarget,uri.target);        // putting in short paths (no filename) for current API usage
 
             let task = d3mTaskType[d3mProblemDescription.taskType][1];
             let taskSubtype = d3mTaskSubtype[d3mProblemDescription.taskSubtype][1];
             let output = d3mOutputType[d3mProblemDescription.outputType][1];
             let metrics = [d3mMetrics[d3mProblemDescription.metric][1]];
             let taskDescription = d3mProblemDescription.taskDescriptionription;
-            let maxPipelines = 10; //user to specify this eventually?
+            let maxPipelines = 5; //user to specify this eventually?
 
             let PipelineCreateRequest={context, trainFeatures, task, taskSubtype, taskDescription, output, metrics, targetFeatures, maxPipelines};
 
@@ -2361,14 +2361,14 @@ export function estimate(btn) {
             function createPipelineSuccess(btn, json) {
                 estimateLadda.stop(); // stop spinner
 
-                let trainFeatures=apiFeature(json.predictors,uri.features);
-                let targetFeatures=apiFeature(json.depvar,uri.target);
+                let trainFeatures=apiFeatureShortPath(json.predictors,uri.features);    // putting in short paths (no filename) for current API usage
+                let targetFeatures=apiFeatureShortPath(json.depvar,uri.target);         // putting in short paths (no filename) for current API usage
                 let task = d3mTaskType[d3mProblemDescription.taskType][1];
                 let taskSubtype = d3mTaskSubtype[d3mProblemDescription.taskSubtype][1];
                 let output = d3mOutputType[d3mProblemDescription.outputType][1];
                 let metrics = [d3mMetrics[d3mProblemDescription.metric][1]];
                 let taskDescription = d3mProblemDescription.taskDescriptionription;
-                let maxPipelines = 10; //user to specify this eventually?
+                let maxPipelines = 5; //user to specify this eventually?
 
                 setxTable(json.predictors);
                 let dvvalues = json.dvvalues;
@@ -4466,12 +4466,22 @@ export function deletepipeline () {
 // D3M API HELPERS
 // because these get built in various places, pulling them out for easy manipulation
 function apiFeature (vars, uri) {
-    let out = []
+    let out = [];
     for(let i = 0; i < vars.length; i++) {
         out.push({featureId:vars[i],dataUri:uri});
     }
     return out;
 }
+
+function apiFeatureShortPath (vars, uri) {
+    let out = [];
+    let shortUri = uri.substring(0, uri.lastIndexOf("/"));
+    for(let i = 0; i < vars.length; i++) {
+        out.push({featureId:vars[i],dataUri:shortUri});
+    }
+    return out;
+}
+
 
 // silly but perhaps useful if in the future SessionContext requires more things (as suggest by core)
 function apiSession (context) {
