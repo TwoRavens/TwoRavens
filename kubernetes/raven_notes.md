@@ -19,7 +19,7 @@ docker build -t tworavens:v2 .
 docker build -t rook:v2 . -f Dockerfile-rook
 
 # build nginx
-docker build -t nginx:v2 -f ./setup/nginx/Dockerfile-kube ./setup/nginx/
+docker build -t ravens-nginx:v2 -f ./setup/nginx/Dockerfile-kube ./setup/nginx/
 
 # build TA2 test
 docker build -t ta2-test:v2 -f Dockerfile-TA2-test .
@@ -39,6 +39,7 @@ kubectl get pods --all-namespaces -o wide
 
 # tworavens + rook port forwarding
 kubectl port-forward raven-pod1 8060:80
+#kubectl port-forward raven-pod1 8060:80
 #kubectl port-forward raven1 8080:8080 8000:8000
 #kubectl port-forward raven1 8080:8080
 #kubectl port-forward raven1 80:80

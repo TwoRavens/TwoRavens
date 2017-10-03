@@ -36,13 +36,13 @@
           // default settings if nothing in db
           //  - see /templates/index.html to set manually
           // ----------------------------
-          const rappURL = 'http://127.0.0.1:8080/rook-custom/'; // via Django -> to RApache/rook
+          const rappURL = '/rook-custom/'; // via Django -> to RApache/rook
           //let rappURL = 'http://0.0.0.0:8000/custom/'; // Direct to RApache/rook
           const DATAVERSE_URL = 'https://beta.dataverse.org';
           const production = false;
           const privacyMode = false;        // configure default functionality for PSI tool
           const d3m_mode = false;             // configure default functionality for d3m
-          const d3mURL = 'http://127.0.0.1:8080/d3m-service/'; // via Django -> TA2
+          const d3mURL = '/d3m-service/'; // via Django -> TA2
         {% endif %}
     </script>
   </head>
