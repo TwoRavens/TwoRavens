@@ -22,17 +22,17 @@ RUN apt-get update && \
 
 # -------------------------------------
 # Set some environment variables
-#   (This can be overridden in docker compose)
+#   (This can be overridden in docker compose/kubernetes)
+#
+# - DJANGO_SETTINGS_MODULE: Django settings
+# - R_DEV_SERVER_BASE - rook-service docker container
+# - TA2_TEST_SERVER_URL - TA2 test server
+# - CODE_REPOSITORY - repository where code will be copied
 # -------------------------------------
-
-# Django settings
-ENV DJANGO_SETTINGS_MODULE=tworavensproject.settings.dev_container2
-
-# Set the R_DEV_SERVER_BASE to the rook-service docker container
-ENV R_DEV_SERVER_BASE=http://rook-service:8000/custom/
-
-# TA2_TEST_SERVER_URL should be overridden in docker-compose
-ENV TA2_TEST_SERVER_URL=localhost:50051
+ENV DJANGO_SETTINGS_MODULE=tworavensproject.settings.dev_container2 \
+    R_DEV_SERVER_BASE=http://rook-service:8000/custom/ \
+    TA2_TEST_SERVER_URL=localhost:50051 \
+    CODE_REPOSITORY=/var/webapps/TwoRavens
 
 # -------------------------------------
 # Copy the repo over
@@ -41,14 +41,14 @@ ENV TA2_TEST_SERVER_URL=localhost:50051
 RUN mkdir -p /var/webapps/TwoRavens && \
     mkdir -p /ravens_volume
 
+# Copy over the repository
+COPY . $CODE_REPOSITORY/
+
 # -------------------------------------
 # Create a volume for outside info
 # -------------------------------------
 VOLUME /ravens_volume
 
-
-# Copy over the repository
-COPY . /var/webapps/TwoRavens
 
 
 # -------------------------------------
@@ -58,39 +58,59 @@ WORKDIR /var/webapps/TwoRavens
 
 # -------------------------------------
 # Pip install y'all and setup scripts
-#  for db, etc
+#   - init_db - creates sqlite db for test run with
+#   - create_django_superuser - Admin user created for testing
+#   - load_docker_ui_config - sets JS variables for UI d3m_mode is true
+#   - collect_static - django collect static files
+#   - make_d3m_config_files - makes test config files accessible via env variables
+#                             (not used for eval)
+#   - Xmake_d3m_config - not for eval. Loads D3M info based on the test data
+#   - load_d3m_config_from_env - loads TA2 style config specified in env var
+#                                "ENV_D3M_CONFIG_FILEPATH"
 # -------------------------------------
 RUN pip3 install --no-cache-dir -r requirements/prod.txt && \
     fab init_db && \
     fab create_django_superuser && \
-    fab load_docker_ui_config
+    fab load_docker_ui_config && \
+    fab collect_static && \
+    fab load_d3m_config_from_env
+
+#   fab make_d3m_config && \
 
 # -------------------------------------
-# Expose ports for the web and gRPC communication
+# Expose port for web communication
 # -------------------------------------
 EXPOSE 8080
-#50051
-
-#WORKDIR /var/webapps/TwoRavens
 
 # -------------------------------------
-# Run django with gunicorn
-#   - init_db - creates sqlite db for test run with
-#   - collect_static - django collect static files
-#   - make_d3m_config_files - makes test config files--configs not loaded to DB
-#   - load_d3m_config_from_env - loads TA2 style config specified in env var
-#                                "ENV_D3M_CONFIG_FILEPATH"
+# create the "ta3_search" command alias for
+# the integration test.  This command is used against
+# a running container
+#
+# docker exec -ti ta3-main /bin/bash -c 'ta3_search $CONFIG_JSON_PATH'
+#
+#x Xdocker run -i --entrypoint /bin/bash (tworavens image) -c 'ta3_search $CONFIG_JSON_PATH'
+#
+# - Valid configs load and the app runs
+# - Invalid configs fail with error messages
 # -------------------------------------
-CMD fab init_db && \
-    fab collect_static && \
-    fab make_d3m_config && \
-    fab load_d3m_config_from_env && \
+RUN echo '#!/bin/bash'  >> /usr/bin/ta3_search && \
+    echo 'cd $CODE_REPOSITORY;'  >> /usr/bin/ta3_search && \
+    echo 'python manage.py d3m_load_config "$@"'  >> /usr/bin/ta3_search && \
+    chmod u+x /usr/bin/ta3_search && \
+    echo '------- CREATE test_run command ---- (w/o extra build step)' && \
+    echo '#!/bin/bash'  >> /usr/bin/test_run && \
+    echo 'cd $CODE_REPOSITORY;'  >> /usr/bin/test_run && \
+    echo 'python manage.py runserver 8080'  >> /usr/bin/test_run && \
+    chmod u+x /usr/bin/test_run
+
+
+# -------------------------------------
+# Run the python server (django dev or gunicorn)
+# -------------------------------------
+CMD echo 'Starting tworavens python server.' && \
     python manage.py runserver 0.0.0.0:8080
-#    gunicorn --workers=2 tworavensproject.wsgi_dev_container -b 0.0.0.0:8080
-
-# Run with the python server
-#CMD fab init_db && python manage.py runserver 0.0.0.0:8080
-
+#CMD gunicorn --workers=2 tworavensproject.wsgi_dev_container -b 0.0.0.0:8080
 
 # -----------------------------------------
 # -- Dev notes --
