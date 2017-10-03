@@ -42,18 +42,5 @@ webpack-stats.json
 data/d3m/o_196seed/data/.Rapp.history
 setup/r-setup/RINSTALL.*.LOG
 
-ravens_volume/test_data/o_196seed_output/executables_root
-ravens_volume/test_data/o_196seed_output/pipeline_logs_root
-ravens_volume/test_data/o_196seed_output/temp_storage_root
-
-ravens_volume/test_data/o_4550seed_output/executables_root
-ravens_volume/test_data/o_4550seed_output/pipeline_logs_root
-ravens_volume/test_data/o_4550seed_output/temp_storage_root
-
-!ravens_volume/test_data/o_196seed_output/executables_root/.gitkeep
-!ravens_volume/test_data/o_196seed_output/pipeline_logs_root/.gitkeep
-!ravens_volume/test_data/o_196seed_output/temp_storage_root/.gitkeep
-
-!ravens_volume/test_data/o_4550seed_output/executables_root/.gitkeep
-!ravens_volume/test_data/o_4550seed_output/pipeline_logs_root/.gitkeep
-!ravens_volume/test_data/o_4550seed_output/temp_storage_root/.gitkeep
+ravens_volume/test_output/*
+ravens_volume/config_*.json

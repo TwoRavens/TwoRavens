@@ -1,0 +1,543 @@
+{
+    "datasetId": "o_313_dataset",
+    "dataSchemaVersion": "2.07",
+    "descriptionFile": "dataDescription.txt",
+    "rawData": false,
+    "redacted": true,
+    "testData": {
+        "numSamples": 103
+    },
+    "testDataSchemaMirrorsTrainDataSchema": true,
+    "trainData": {
+        "numSamples": 428,
+        "trainData": [
+            {
+                "varName": "d3mIndex",
+                "varRole": "index",
+                "varType": "integer"
+            },
+            {
+                "varName": "LRS-name",
+                "varRole": "attribute",
+                "varType": "categorical"
+            },
+            {
+                "varName": "ID-type",
+                "varRole": "attribute",
+                "varType": "categorical"
+            },
+            {
+                "varName": "Right-Ascension",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "Declination",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "Scale_Factor",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "Blue_base_1",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "Blue_base_2",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "Red_base_1",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "Red_base_2",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "blue-band-flux_1",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "blue-band-flux_2",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "blue-band-flux_3",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "blue-band-flux_4",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "blue-band-flux_5",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "blue-band-flux_6",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "blue-band-flux_7",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "blue-band-flux_8",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "blue-band-flux_9",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "blue-band-flux_10",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "blue-band-flux_11",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "blue-band-flux_12",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "blue-band-flux_13",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "blue-band-flux_14",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "blue-band-flux_15",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "blue-band-flux_16",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "blue-band-flux_17",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "blue-band-flux_18",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "blue-band-flux_19",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "blue-band-flux_20",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "blue-band-flux_21",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "blue-band-flux_22",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "blue-band-flux_23",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "blue-band-flux_24",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "blue-band-flux_25",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "blue-band-flux_26",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "blue-band-flux_27",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "blue-band-flux_28",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "blue-band-flux_29",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "blue-band-flux_30",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "blue-band-flux_31",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "blue-band-flux_32",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "blue-band-flux_33",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "blue-band-flux_34",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "blue-band-flux_35",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "blue-band-flux_36",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "blue-band-flux_37",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "blue-band-flux_38",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "blue-band-flux_39",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "blue-band-flux_40",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "blue-band-flux_41",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "blue-band-flux_42",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "blue-band-flux_43",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "blue-band-flux_44",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "red-band-flux_1",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "red-band-flux_2",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "red-band-flux_3",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "red-band-flux_4",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "red-band-flux_5",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "red-band-flux_6",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "red-band-flux_7",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "red-band-flux_8",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "red-band-flux_9",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "red-band-flux_10",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "red-band-flux_11",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "red-band-flux_12",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "red-band-flux_13",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "red-band-flux_14",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "red-band-flux_15",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "red-band-flux_16",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "red-band-flux_17",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "red-band-flux_18",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "red-band-flux_19",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "red-band-flux_20",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "red-band-flux_21",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "red-band-flux_22",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "red-band-flux_23",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "red-band-flux_24",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "red-band-flux_25",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "red-band-flux_26",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "red-band-flux_27",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "red-band-flux_28",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "red-band-flux_29",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "red-band-flux_30",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "red-band-flux_31",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "red-band-flux_32",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "red-band-flux_33",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "red-band-flux_34",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "red-band-flux_35",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "red-band-flux_36",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "red-band-flux_37",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "red-band-flux_38",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "red-band-flux_39",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "red-band-flux_40",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "red-band-flux_41",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "red-band-flux_42",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "red-band-flux_43",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "red-band-flux_44",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "red-band-flux_45",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "red-band-flux_46",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "red-band-flux_47",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "red-band-flux_48",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "red-band-flux_49",
+                "varRole": "attribute",
+                "varType": "float"
+            }
+        ],
+        "trainTargets": [
+            {
+                "varName": "d3mIndex",
+                "varRole": "index",
+                "varType": "integer"
+            },
+            {
+                "varName": "LRS-class",
+                "varRole": "target",
+                "varType": "categorical"
+            }
+        ]
+    }
+}

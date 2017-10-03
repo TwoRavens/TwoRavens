@@ -3,21 +3,20 @@
 (This documentation is currently informal/being built during development.)
 
 Contents:
+ - [Run local TA2 test server](#run-local-ta2-test-server)
  - [Saving webpack js/css files for deployment](#saving-webpack-jscss-files-for-deployment)
  - [Loading D3M config information](#loading-d3m-config-information)
  - _incomplete_ [Add gRPC request type](#add-grpc-request-type)
  - [Adding a new rook app: django](#adding-a-new-rook-app-django)
 
-## Run local TA2 test server.
+## Run local TA2 test server
 
 The following command runs a TA2 test server with the core code from the NYU team.  Run this is a new, separate Terminal:
 
-- open a Terminal
+- open a separate Terminal
 - cd into the TwoRavens directory
 - run `workon 2ravens`
 - run `fab run_ta2_test_server`
-
-
 
 ## Saving webpack js/css files for deployment
 
@@ -94,7 +93,7 @@ Upon saving config information, the paths are evaluated (e.g. do they exist?) an
 
 ### Loading a config file
 
-A config file may also be added using this commmand from the Terminal.  
+A config file may also be added using this command from the Terminal.  
 
 ```
 fab load_d3m_config:[path to config]
@@ -178,7 +177,7 @@ start_session(test_req)
 
 ## snippet to start_session from shell
 
-- ```python manage.py dbshell```
+- ```python manage.py shell```
 
 ```python
 from django.conf import settings
@@ -187,7 +186,8 @@ from tworaven_apps.ta2_interfaces import core_pb2
 from tworaven_apps.ta2_interfaces.ta2_connection import TA2Connection
 from google.protobuf.json_format import MessageToJson, Parse, ParseError
 
-settings.TA2_TEST_SERVER_URL = 'docker.for.mac.localhost:50051'
+#settings.TA2_TEST_SERVER_URL = 'docker.for.mac.localhost:50051'
+settings.TA2_TEST_SERVER_URL = 'localhost:50051'
 
 content = json.dumps(dict(user_agent='tworavens'))
 req = Parse(content, core_pb2.SessionRequest())

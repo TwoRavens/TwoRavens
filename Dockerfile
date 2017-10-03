@@ -68,17 +68,25 @@ RUN pip3 install --no-cache-dir -r requirements/prod.txt && \
 # -------------------------------------
 # Expose ports for the web and gRPC communication
 # -------------------------------------
-EXPOSE 8080 50051
+EXPOSE 8080
+#50051
 
 #WORKDIR /var/webapps/TwoRavens
 
 # -------------------------------------
 # Run django with gunicorn
+#   - init_db - creates sqlite db for test run with
+#   - collect_static - django collect static files
+#   - make_d3m_config_files - makes test config files--configs not loaded to DB
+#   - load_d3m_config_from_env - loads TA2 style config specified in env var
+#                                "ENV_D3M_CONFIG_FILEPATH"
 # -------------------------------------
 CMD fab init_db && \
     fab collect_static && \
+    fab make_d3m_config && \
     fab load_d3m_config_from_env && \
-    gunicorn --workers=2 tworavensproject.wsgi_dev_container -b 0.0.0.0:8080
+    python manage.py runserver 0.0.0.0:8080
+#    gunicorn --workers=2 tworavensproject.wsgi_dev_container -b 0.0.0.0:8080
 
 # Run with the python server
 #CMD fab init_db && python manage.py runserver 0.0.0.0:8080

@@ -1,0 +1,29 @@
+{
+  "train": {
+    "split": {
+      "type": [
+        "train_test_split",
+        "train_test_split"
+      ],
+      "n_splits": [
+        1,
+        1
+      ],
+      "test_size": [
+        0.1,
+        0.25
+      ],
+      "shuffle": [
+        false,
+        false
+      ]
+    },
+    "score": {
+      "metric": "rootMeanSquaredError",
+      "value": [
+        58.75301338127112,
+        53.59288874532788
+      ]
+    }
+  }
+}

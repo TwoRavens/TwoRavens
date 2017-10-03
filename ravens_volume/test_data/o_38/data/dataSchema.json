@@ -1,0 +1,178 @@
+{
+    "datasetId": "o_38_dataset",
+    "dataSchemaVersion": "2.07",
+    "descriptionFile": "dataDescription.txt",
+    "rawData": false,
+    "redacted": true,
+    "testData": {
+        "numSamples": 754
+    },
+    "testDataSchemaMirrorsTrainDataSchema": true,
+    "trainData": {
+        "numSamples": 3018,
+        "trainData": [
+            {
+                "varName": "d3mIndex",
+                "varRole": "index",
+                "varType": "integer"
+            },
+            {
+                "varName": "age",
+                "varRole": "attribute",
+                "varType": "integer"
+            },
+            {
+                "varName": "sex",
+                "varRole": "attribute",
+                "varType": "categorical"
+            },
+            {
+                "varName": "on_thyroxine",
+                "varRole": "attribute",
+                "varType": "categorical"
+            },
+            {
+                "varName": "query_on_thyroxine",
+                "varRole": "attribute",
+                "varType": "categorical"
+            },
+            {
+                "varName": "on_antithyroid_medication",
+                "varRole": "attribute",
+                "varType": "categorical"
+            },
+            {
+                "varName": "sick",
+                "varRole": "attribute",
+                "varType": "categorical"
+            },
+            {
+                "varName": "pregnant",
+                "varRole": "attribute",
+                "varType": "categorical"
+            },
+            {
+                "varName": "thyroid_surgery",
+                "varRole": "attribute",
+                "varType": "categorical"
+            },
+            {
+                "varName": "I131_treatment",
+                "varRole": "attribute",
+                "varType": "categorical"
+            },
+            {
+                "varName": "query_hypothyroid",
+                "varRole": "attribute",
+                "varType": "categorical"
+            },
+            {
+                "varName": "query_hyperthyroid",
+                "varRole": "attribute",
+                "varType": "categorical"
+            },
+            {
+                "varName": "lithium",
+                "varRole": "attribute",
+                "varType": "categorical"
+            },
+            {
+                "varName": "goitre",
+                "varRole": "attribute",
+                "varType": "categorical"
+            },
+            {
+                "varName": "tumor",
+                "varRole": "attribute",
+                "varType": "categorical"
+            },
+            {
+                "varName": "hypopituitary",
+                "varRole": "attribute",
+                "varType": "categorical"
+            },
+            {
+                "varName": "psych",
+                "varRole": "attribute",
+                "varType": "categorical"
+            },
+            {
+                "varName": "TSH_measured",
+                "varRole": "attribute",
+                "varType": "categorical"
+            },
+            {
+                "varName": "TSH",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "T3_measured",
+                "varRole": "attribute",
+                "varType": "categorical"
+            },
+            {
+                "varName": "T3",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "TT4_measured",
+                "varRole": "attribute",
+                "varType": "categorical"
+            },
+            {
+                "varName": "TT4",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "T4U_measured",
+                "varRole": "attribute",
+                "varType": "categorical"
+            },
+            {
+                "varName": "T4U",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "FTI_measured",
+                "varRole": "attribute",
+                "varType": "categorical"
+            },
+            {
+                "varName": "FTI",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "TBG_measured",
+                "varRole": "attribute",
+                "varType": "categorical"
+            },
+            {
+                "varName": "TBG",
+                "varRole": "attribute",
+                "varType": "float"
+            },
+            {
+                "varName": "referral_source",
+                "varRole": "attribute",
+                "varType": "categorical"
+            }
+        ],
+        "trainTargets": [
+            {
+                "varName": "d3mIndex",
+                "varRole": "index",
+                "varType": "integer"
+            },
+            {
+                "varName": "Class",
+                "varRole": "target",
+                "varType": "categorical"
+            }
+        ]
+    }
+}

@@ -1,0 +1,28 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose --file docker-compose.yml convert
+    kompose.version: 1.1.0 ()
+  creationTimestamp: null
+  labels:
+    io.kompose.service: tworavens
+  name: tworavens
+spec:
+  replicas: 1
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        io.kompose.service: tworavens
+    spec:
+      containers:
+      - image: tworavens
+        name: tworavens
+        ports:
+        - containerPort: 8080
+        - containerPort: 50051
+        resources: {}
+      restartPolicy: Always
+status: {}

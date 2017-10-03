@@ -9,7 +9,7 @@ from django.http import JsonResponse, HttpResponse, Http404
 from tworaven_apps.configurations.models_d3m import D3MConfiguration,\
     KEY_DATASET_SCHEMA, KEY_PROBLEM_SCHEMA, D3M_FILE_ATTRIBUTES
 from tworaven_apps.configurations.utils import get_latest_d3m_config,\
-    get_d3m_filepath, get_dataset_size
+    get_d3m_filepath, get_train_data_info
 
 # Create your views here.
 @csrf_exempt
@@ -71,14 +71,17 @@ def view_d3m_details_json_latest(request):
     # return as JSON!
     return JsonResponse(d3m_config.to_dict())
 
+@csrf_exempt
 def view_get_problem_schema(request, d3m_config_id=None):
     """Return the problem_schema file"""
     return view_get_config_file(request, KEY_PROBLEM_SCHEMA, d3m_config_id)
 
+@csrf_exempt
 def view_get_dataset_schema(request, d3m_config_id=None):
     """Return the dataset_schema file"""
     return view_get_config_file(request, KEY_DATASET_SCHEMA, d3m_config_id)
 
+@csrf_exempt
 def view_get_config_file(request, config_key, d3m_config_id=None):
     """Get contents of a file specified in the config"""
     if not config_key in D3M_FILE_ATTRIBUTES:
@@ -101,10 +104,9 @@ def view_get_config_file(request, config_key, d3m_config_id=None):
 
     return response
 
-def view_get_problem_data_filesize(request, d3m_config_id=None):
-    """Attempt to find the size of the problem dataset file
-    (probably only useful for initial test files)
-    """
+@csrf_exempt
+def view_get_problem_data_info(request, d3m_config_id=None):
+    """Get info on train data and target files, if they exist"""
     if d3m_config_id is None:
         d3m_config = get_latest_d3m_config()
     else:
@@ -113,11 +115,22 @@ def view_get_problem_data_filesize(request, d3m_config_id=None):
     if d3m_config is None:
         raise Http404('Config not found!')
 
-    info_dict, err_msg = get_dataset_size(d3m_config)
+    is_pretty = request.GET.get('pretty', False)
+
+    info_dict, err_msg = get_train_data_info(d3m_config)
 
     if err_msg:
-        return JsonResponse(dict(success=False,
-                                 message=err_msg))
+        resp_dict = dict(success=False,
+                         message=err_msg)
 
-    return JsonResponse(dict(success=True,
-                             data=info_dict))
+    else:
+        resp_dict = dict(success=True,
+                         data=info_dict)
+
+    if is_pretty is not False:   # return this as a formatted string?
+        config_str = '<pre>%s<pre>' % \
+                    (json.dumps(resp_dict,
+                                indent=4))
+        return HttpResponse(config_str)
+
+    return JsonResponse(resp_dict)

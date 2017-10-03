@@ -1,0 +1,20 @@
+{
+    "datasets": [
+        "o_38_dataset"
+    ],
+    "descriptionFile": "problemDescription.txt",
+    "metric": "f1Macro",
+    "outputType": "classLabel",
+    "problemId": "o_38_problem",
+    "redacted": true,
+    "target": {
+        "classes": [
+            "negative",
+            "sick"
+        ],
+        "field": "Class"
+    },
+    "taskSubType": "binary",
+    "taskType": "classification",
+    "problemSchemaVersion": "2.12"
+}

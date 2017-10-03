@@ -1,0 +1,24 @@
+49_facebook is an instance of the Graph Matching problem. It is also
+referred to as the multiple-anonymized-network alignment problem.
+
+In this problem two graphs are given, G1 and G2, representing 
+two social networks. People nowadays are normally involved in multiple
+social networks. Many of these networks can share common structure information 
+(e.g. friendship connections) due to either analogous network establishing 
+purpose or because of similar network features. But the networks are usually
+anonymized for privacy concerns. The task is to take two anonymized networks
+and find correspondence among the users across the two networks.
+
+In this problem, G1 is a subgraph of the Facebook social network. Nodes are attributed 
+and represent the users in this network.
+
+G2 is extracted from the max connected component of G1 with sufficient noise added 
+(some new nodes/edges are randomly introduced and some existing nodes/edges are randomly removed). 
+The nodes of G2 are relabeled. G2 is a proxy for a second anonymized social network (e.g., twitter
+or foursquare) where some of the same users are present.
+
+A partial map of the matching nodes between G1 and G2 are provided in the train data. This 
+map represents "anchor links" or known correspondences between users across the two networks.
+
+The task is to predict the rest of the mapping between the matching nodes in the test data.
+
