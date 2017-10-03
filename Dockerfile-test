@@ -42,14 +42,18 @@ RUN mkdir -p /var/webapps/TwoRavens && \
     mkdir -p /ravens_volume
 
 # -------------------------------------
+# Set an environment variable to the target code repository
+# -------------------------------------
+ENV CODE_REPOSITORY /var/webapps/TwoRavens
+
+# Copy over the repository
+COPY . $CODE_REPOSITORY/
+
+# -------------------------------------
 # Create a volume for outside info
 # -------------------------------------
 VOLUME /ravens_volume
 
-ENV CODE /var/webapps/TwoRavens
-
-# Copy over the repository
-COPY . $CODE/
 
 
 # -------------------------------------
@@ -85,10 +89,22 @@ RUN fab init_db && \
     fab make_d3m_config && \
     fab load_d3m_config_from_env
 
-# alias for interactive shells
-RUN echo 'alias ta3_search="cd $CODE; python manage.py d3m_load_and_run \"$@\""' >> ~/.bashrc
+# -------------------------------------
+# create the "ta3_search" command alias for
+#   the integration test
+#
+# docker run -i --entrypoint /bin/bash (tworavens image) -c 'ta3_search $CONFIG_JSON_PATH'
+#
+# - Valid configs load and the app runs
+# - Invalid configs fail with error messages
+# -------------------------------------
+RUN echo 'alias ta3_search="cd $CODE_REPOSITORY; python manage.py d3m_load_and_run \"$@\""' >> ~/.bashrc
 
-#RUN echo 'alias test_run='cd $CODE; python manage.py d3m_load_and_run "$@"' >> ~/.bashrc
+# -------------------------------------
+# create the "test_run" command to simply
+# run the container
+# -------------------------------------
+RUN echo 'alias test_run="cd $CODE; python manage.py runserver 0.0.0.0:8080"' >> ~/.bashrc
 
 #    python manage.py runserver 0.0.0.0:8080
 #    gunicorn --workers=2 tworavensproject.wsgi_dev_container -b 0.0.0.0:8080
