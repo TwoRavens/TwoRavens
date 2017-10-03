@@ -68,21 +68,33 @@ class Command(BaseCommand):
             #
             if not d3m_config.are_d3m_paths_valid():
                 bad_paths = d3m_config.get_bad_paths()
-                bad_path_list = '\n'.join(bad_paths)
-                if len(bad_paths) == 1:
-                    path_note = 'an invalid path'
-                else:
-                    path_note = '%d invalid paths' % len(bad_paths)
-                self.stdout.write(\
-                    self.style.WARNING(\
-                        ('WARNING. The config file "%s" contained %s:'
-                         '\n\n%s'
-                         '\n\nThese paths may be on an external volume'
-                         ' which is not yet accessible.\n') % \
-                        (config_file, path_note, bad_path_list)))
+                self.warn_invalid_paths(config_file, bad_paths)
 
             # It worked!!
             #
             self.stdout.write(\
                 self.style.SUCCESS(('Successfully loaded new D3M configuration:'
-                                   ' "%s"') % d3m_config))
+                                    ' "%s"') % d3m_config))
+
+    def warn_invalid_paths(self, config_file, bad_paths):
+        """Show bad path message"""
+        err_msg = self.get_bad_path_message(config_file, bad_paths)
+
+        self.stdout.write(err_msg)
+
+    def get_bad_path_message(self, config_file, bad_paths):
+        """Send messsage to stdout"""
+
+        bad_path_list = '\n'.join(bad_paths)
+        if len(bad_paths) == 1:
+            path_note = 'an invalid path'
+        else:
+            path_note = '%d invalid paths' % len(bad_paths)
+
+        return \
+            self.style.WARNING(\
+                ('WARNING. The config file "%s" contained %s:'
+                 '\n\n%s'
+                 '\n\nThese paths may be on an external volume'
+                 ' which is not yet accessible.\n') % \
+                (config_file, path_note, bad_path_list))
