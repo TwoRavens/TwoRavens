@@ -1,21 +1,34 @@
 
 ## Run against the ISI docker image
 
-- Use the latest master as of 10/2, 3pm
+### Bind the /ravens_volume directory
+
+#### Make symlink
+
+This allows the locally running TwoRavens to access ravens_volume as `/ravens_volume`
+  - Find the fullpath to your directory ../TwoRavens/ravens_volume
+  - `cd /; sudo ln -s (full path)/ravens_volume .`
+    - example:
+      - `cd /`
+      - `sudo ln -s /Users/ramanprasad/Documents/github-rp/TwoRavens/ravens_volume .`
+  - `chmod -R +r /ravens_volume`
+
+The new `/ravens_volume` "directory" needs to be cleared via Docker
+  - Open the Docker application (Mac)
+  - Go to "Preferences"
+  - Select File Sharing
+  - Click "+"
+  - Add "" `/ravens_volume`
+
 
 ### Terminal 1:  Run the ISI docker image
 
-- Run this command substituting (raven path) with your local path to `../ravens_volume`:
+- Run this command:
 
 ```
-docker run --rm --name isi_test  -v (raven path):/ravens_volume -v /tmp/dsbox-ta2:/tmp/dsbox-ta2 -p 50051:50051 registry.datadrivendiscovery.org/ta2/isi_ta2:python3
+docker run --rm --name isi_test  -v /ravens_volume:/ravens_volume -v /tmp/dsbox-ta2:/tmp/dsbox-ta2 -p 50051:50051 registry.datadrivendiscovery.org/ta2/isi_ta2:python3
 ```
 
-- Example with path filled in:
-
-```
-docker run --rm --name isi_test  -v /Users/ramanprasad/Documents/github-rp/TwoRavens/ravens_volume_test:/ravens_volume -v /tmp/dsbox-ta2:/tmp/dsbox-ta2 -p 50051:50051 registry.datadrivendiscovery.org/ta2/isi_ta2:python3
-```
 
 ### Terminal 2: Run TwoRavens
 
@@ -39,3 +52,59 @@ docker stop isi_test
 
 - clearing out ISI data
   - `rm -rf /tmp/dsbox-ta2`
+
+
+### Create pipelines test call
+
+- Note: Use a valid session id
+
+```json
+{
+   "context":{
+      "session_id":"390c1687-0596-4484-9fc7-7e42d5aaecec"
+   },
+   "trainFeatures":[
+      {
+         "featureId":"cylinders",
+         "dataUri":"/ravens_volume/test_data/o_196seed/data"
+      },
+      {
+         "featureId":"displacement",
+         "dataUri":"/ravens_volume/test_data/o_196seed/data"
+      },
+      {
+         "featureId":"horsepower",
+         "dataUri":"/ravens_volume/test_data/o_196seed/data"
+      },
+      {
+         "featureId":"weight",
+         "dataUri":"/ravens_volume/test_data/o_196seed/data"
+      },
+      {
+         "featureId":"acceleration",
+         "dataUri":"/ravens_volume/test_data/o_196seed/data"
+      },
+      {
+         "featureId":"model",
+         "dataUri":"/ravens_volume/test_data/o_196seed/data"
+      },
+      {
+         "featureId":"origin",
+         "dataUri":"/ravens_volume/test_data/o_196seed/data"
+      }
+   ],
+   "task":"REGRESSION",
+   "taskSubtype":"UNIVARIATE",
+   "output":"REAL",
+   "metrics":[
+      "ROOT_MEAN_SQUARED_ERROR"
+   ],
+   "targetFeatures":[
+      {
+         "featureId":"class",
+         "dataUri":"/ravens_volume/test_data/o_196seed/data"
+      }
+   ],
+   "maxPipelines":10
+}
+```
