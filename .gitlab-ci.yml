@@ -11,13 +11,13 @@ build:
     - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN registry.datadrivendiscovery.org
     #
     # Build r-service: fairly big image
-    - docker build -t registry.datadrivendiscovery.org/tworavens/tworavens/rook-service -f ./Dockerfile-rook .
-    - docker push registry.datadrivendiscovery.org/tworavens/tworavens/rook-service
+    - docker build -t registry.datadrivendiscovery.org/tworavens/tworavens/rook-service:latest -f ./Dockerfile-rook .
+    - docker push registry.datadrivendiscovery.org/tworavens/tworavens/rook-service:latest
     #
     # Build nginx image
-    - docker build -t registry.datadrivendiscovery.org/tworavens/tworavens/nginx -f setup/nginx/Dockerfile ./setup/nginx/
-    - docker push registry.datadrivendiscovery.org/tworavens/tworavens/nginx
+    - docker build -t registry.datadrivendiscovery.org/tworavens/tworavens/nginx:latest -f setup/nginx/Dockerfile ./setup/nginx/
+    - docker push registry.datadrivendiscovery.org/tworavens/tworavens/nginx:latest
     #
     # Build tworavens UI + python app 
-    - docker build -t registry.datadrivendiscovery.org/tworavens/tworavens .
-    - docker push registry.datadrivendiscovery.org/tworavens/tworavens
+    - docker build -t registry.datadrivendiscovery.org/tworavens/tworavens:latest .
+    - docker push registry.datadrivendiscovery.org/tworavens/tworavens:latest
