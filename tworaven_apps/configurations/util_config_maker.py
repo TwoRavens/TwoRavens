@@ -128,11 +128,11 @@ class TestConfigMaker:
         # test-data deploy case with docker-compose or kubernetes
         #
         if self.config_files_only:
-            config_info = d3m_config.to_ta2_config_test()
+            config_info = d3m_config.to_ta2_config_test(save_shortened_names=True)
             config_content = json.dumps(config_info, indent=4)
             config_path = join(_TEST_BASE_DIR, 'config_%s.json' % self.config_name)
             open(config_path, 'w').write(config_content)
             print('file written: %s' % config_path)
 
             # Remove the db entry!
-            d3m_config.delete()
+            #d3m_config.delete()
