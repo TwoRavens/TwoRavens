@@ -19,5 +19,5 @@ build:
     - docker push registry.datadrivendiscovery.org/tworavens/tworavens/nginx
     #
     # Build tworavens UI + python app 
-    - docker build -t registry.datadrivendiscovery.org/tworavens/tworavens/tworavens .
-    - docker push registry.datadrivendiscovery.org/tworavens/tworavens/tworavens
+    - docker build -t registry.datadrivendiscovery.org/tworavens/tworavens .
+    - docker push registry.datadrivendiscovery.org/tworavens/tworavens
