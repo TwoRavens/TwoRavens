@@ -645,22 +645,20 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
 
                 makeCorsRequest(urlcall, "nobutton", ssSuccess, ssFail, solajsonout);
         }))
-    .then(_ => m.request(pURL)) // have to let this request be attempted, otherwise resolve structure messes up
-    // do nothing if preprocess.json already exists, else runPreprocess
-    .then(null, _ => {
+    .then(_ => m.request(pURL))
+    .then(data => { // success means pURL exists, call readPreprocess()
         if(!swandive)
-            runPreprocess(d3mData, d3mTarget, d3mDataName)
-        })
-    .then(data => {
-        if(!swandive)
-            console.log(data);
             readPreprocess(data)
+        }, _ => { // fail means pURL doesn't exist, call runPreprocess(), which writes preprocess.json and then does what readPreprocess does
+        if(!swandive)
+            runPreprocess(d3mData, d3mTarget, d3mDataName);
         })
     .then(() => new Promise((resolve, reject) => {
         if(swandive)
             resolve();
+        
         let vars = Object.keys(preprocess);
-
+    
         // temporary values for hold that correspond to histogram bins
         hold = [.6, .2, .9, .8, .1, .3, .4];
         for (let i = 0; i < vars.length; i++) {
@@ -2541,9 +2539,14 @@ export function runPreprocess(dataloc, targetloc, datastub) {
     console.log('POST out: ', json);
     let data = new FormData();
     data.append('solaJSON', json);
-    return m.request({method: 'POST', url: url, data: data})
+    return m.request({method: 'POST', url: url, data: data, async:false})
         .then(data => {
             console.log('json in RIGHT HERE: ', data);
+            
+            //two lines from readPreprocess()
+            priv = data.dataset.private || priv;
+            Object.keys(data.variables).forEach(k => preprocess[k] = data.variables[k]);
+            
             return data;
         }, _ => {
             console.log('preprocess failed');
@@ -3452,6 +3455,7 @@ export function subsetSelect(btn) {
 }
 
 function readPreprocess(data) {
+console.log(data);
     return new Promise((resolve, _) => {
         priv = data.dataset.private || priv;
         Object.keys(data.variables).forEach(k => preprocess[k] = data.variables[k]);
