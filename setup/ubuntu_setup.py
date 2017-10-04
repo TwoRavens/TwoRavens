@@ -1,4 +1,5 @@
 """
+-- THIS WAS FOR RAPACHE WHICH IS NO LONGER IN USE ---
 Working on a config file.  Some of this logic will eventually replace:
 
 https://github.com/vjdorazio/TwoRavens/blob/master/install.pl
