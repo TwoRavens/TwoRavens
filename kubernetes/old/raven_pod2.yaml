@@ -77,7 +77,7 @@ spec:
         value: ravens2
       - name: TA2_STATIC_TEST_MODE
         value: "True"
-      - name: ENV_D3M_CONFIG_FILEPATH
+      - name: CONFIG_JSON_PATH
         value: "/ravens_volume/config_o_196seed.json"
       - name: R_DEV_SERVER_BASE
         value: "http://127.0.0.1:8000/custom/"

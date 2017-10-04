@@ -83,7 +83,7 @@ spec:
         - name: TA2_TEST_SERVER_URL
           value: "raven-pod1:50051"
         # Point to the config file
-        - name: ENV_D3M_CONFIG_FILEPATH
+        - name: CONFIG_JSON_PATH
           value: "/d3m_test_volume/config_o_196seed.json"
         # Url to R web service
         - name: R_DEV_SERVER_BASE
@@ -155,7 +155,7 @@ spec:
         - name: EVAL_ID
           value: cra2
         # Points to the config file
-        - name: ENV_D3M_CONFIG_FILEPATH
+        - name: CONFIG_JSON_PATH
           value: "/d3m_test_volume/config_o_196seed.json"
       ports:
         # gRPC port

@@ -66,7 +66,7 @@ WORKDIR /var/webapps/TwoRavens
 #                             (not used for eval)
 #   - Xmake_d3m_config - not for eval. Loads D3M info based on the test data
 #   - load_d3m_config_from_env - loads TA2 style config specified in env var
-#                                "ENV_D3M_CONFIG_FILEPATH"
+#                                "CONFIG_JSON_PATH"
 # -------------------------------------
 RUN pip3 install --no-cache-dir -r requirements/prod.txt && \
     fab init_db && \

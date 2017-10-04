@@ -49,7 +49,7 @@ spec:
       value: ravens2
     - name: TA2_STATIC_TEST_MODE
       value: "True"
-    #- name: ENV_D3M_CONFIG_FILEPATH
+    #- name: CONFIG_JSON_PATH
     #  value: "/var/webapps/TwoRavens/ravens_volume/config_o_196seed.json"
     volumeMounts:
     - mountPath: /ravens_volume

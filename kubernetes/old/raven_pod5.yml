@@ -68,7 +68,7 @@ spec:
         value: "False"
       - name: TA2_TEST_SERVER_URL
         value: "raven-pod1:50051"
-      - name: ENV_D3M_CONFIG_FILEPATH
+      - name: CONFIG_JSON_PATH
         value: "/ravens_volume/config_o_196seed.json"
       - name: R_DEV_SERVER_BASE
         value: "http://localhost:8000/custom/"

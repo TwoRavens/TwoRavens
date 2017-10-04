@@ -14,7 +14,7 @@ spec:
     #       - "/ravens_volume" would be equivalent to "/shared_dir" in the
     #          same_node_template.yml file here: https://datadrivendiscovery.org/wiki/pages/viewpage.action?spaceKey=gov&title=TA3+Submission+Guide
     #
-    #   - TA2 and TA3 have the env variable "ENV_D3M_CONFIG_FILEPATH"
+    #   - TA2 and TA3 have the env variable "CONFIG_JSON_PATH"
     #       which uses this volume to point to config at "/ravens_volume/config_o_196seed.json"
     # ---------------------------------------------------------
     - name: "d3m-test-volume"
@@ -69,7 +69,7 @@ spec:
         - name: TA2_TEST_SERVER_URL
           value: "raven-pod1:50051"
         # Point to the config file
-        - name: ENV_D3M_CONFIG_FILEPATH
+        - name: CONFIG_JSON_PATH
           value: "/d3m_test_volume/config_o_196seed.json"
         # Url to R web service
         - name: R_DEV_SERVER_BASE
@@ -136,7 +136,7 @@ spec:
       name: ta2-main
       env:
         # Points to the config file
-        - name: ENV_D3M_CONFIG_FILEPATH
+        - name: CONFIG_JSON_PATH
           value: "/d3m_test_volume/config_o_196seed.json"
       ports:
         # gRPC port

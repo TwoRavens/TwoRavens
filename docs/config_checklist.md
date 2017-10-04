@@ -37,8 +37,8 @@ These three environment variables are presently in docker-compose.yml
   - Note: The container exposes port `50051` -- other ports aren't reachable without changing the Dockefile itself
 
 - Set a path to load a D3M config file:
-  - **variable**: ENV_D3M_CONFIG_FILEPATH
-  - **example**:  ENV_D3M_CONFIG_FILEPATH=/ravens_volume/config_o_196seed.json
+  - **variable**: CONFIG_JSON_PATH
+  - **example**:  CONFIG_JSON_PATH=/ravens_volume/config_o_196seed.json
   - Note: Every container has the volume `/ravens_volume` which may be linked to an external directory
 
 ### 2. rook-service
