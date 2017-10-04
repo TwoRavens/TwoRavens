@@ -10,13 +10,16 @@ build:
     # Docker login
     - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN registry.datadrivendiscovery.org
     #
-    # Build r-service: fairly big image
-    - docker build -t registry.datadrivendiscovery.org/tworavens/tworavens/rook-service:latest -f ./Dockerfile-rook .
-    - docker push registry.datadrivendiscovery.org/tworavens/tworavens/rook-service:latest
-    #
     # Build nginx image
     - docker build -t registry.datadrivendiscovery.org/tworavens/tworavens/nginx:latest -f setup/nginx/Dockerfile-kube ./setup/nginx/
     - docker push registry.datadrivendiscovery.org/tworavens/tworavens/nginx:latest
+    # does this work? guessing no - tag/push for ta2ta3 repo 
+    - docker tag registry.datadrivendiscovery.org/tworavens/tworavens/nginx:latest registry.datadrivendiscovery.org/cta2ta3/isi_tworavens/nginx:latest
+    - docker push registry.datadrivendiscovery.org/cta2ta3/isi_tworavens/nginx:latest
+    #
+    # Build r-service: fairly big image
+    - docker build -t registry.datadrivendiscovery.org/tworavens/tworavens/rook-service:latest -f ./Dockerfile-rook .
+    - docker push registry.datadrivendiscovery.org/tworavens/tworavens/rook-service:latest
     #
     # Build tworavens UI + python app
     - docker build -t registry.datadrivendiscovery.org/tworavens/tworavens:latest .
