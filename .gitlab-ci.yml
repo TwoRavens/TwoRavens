@@ -15,9 +15,10 @@ build:
     - docker push registry.datadrivendiscovery.org/tworavens/tworavens/rook-service:latest
     #
     # Build nginx image
-    - docker build -t registry.datadrivendiscovery.org/tworavens/tworavens/nginx:latest -f setup/nginx/Dockerfile ./setup/nginx/
+    - docker build -t registry.datadrivendiscovery.org/tworavens/tworavens/nginx:latest -f setup/nginx/Dockerfile-kube ./setup/nginx/
+
     - docker push registry.datadrivendiscovery.org/tworavens/tworavens/nginx:latest
     #
-    # Build tworavens UI + python app 
+    # Build tworavens UI + python app
     - docker build -t registry.datadrivendiscovery.org/tworavens/tworavens:latest .
     - docker push registry.datadrivendiscovery.org/tworavens/tworavens:latest
