@@ -13,9 +13,6 @@ build:
     # Build nginx image
     - docker build -t registry.datadrivendiscovery.org/tworavens/tworavens/nginx:latest -f setup/nginx/Dockerfile-kube ./setup/nginx/
     - docker push registry.datadrivendiscovery.org/tworavens/tworavens/nginx:latest
-    # does this work? guessing no - tag/push for ta2ta3 repo 
-    - docker tag registry.datadrivendiscovery.org/tworavens/tworavens/nginx:latest registry.datadrivendiscovery.org/cta2ta3/isi_tworavens/nginx:latest
-    - docker push registry.datadrivendiscovery.org/cta2ta3/isi_tworavens/nginx:latest
     #
     # Build r-service: fairly big image
     - docker build -t registry.datadrivendiscovery.org/tworavens/tworavens/rook-service:latest -f ./Dockerfile-rook .
