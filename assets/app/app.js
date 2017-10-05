@@ -561,10 +561,22 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
                           },
                         },
                         {
+                          "target": "btnEstimate", 
+                          "placement": "left",
+                          "title": "Solve Problem",
+                          "content": "<p>The current green button is generally the next step to follow to move the system forward.</p><p>Click this Solve button to tell the tool to find a solution to the problem.</p>",
+                          "showCTAButton":true,
+                          "ctaLabel": "Disable these messages",
+                          "onCTA": function() {
+                            hopscotch.endTour(true);
+                            tutorial_mode = false;
+                          },
+                        },
+                        {
                           "target": depvar_id, //"classbiggroup", 
                           "placement": "left",
                           "title": "Target Variable",
-                          "content": "This is the variable, " + mytarget + ", we are trying to predict.",
+                          "content": "This is the variable, " + mytarget + ", we are trying to predict.  This center panel graphically represents the problem currently being attempted.",
                           "showCTAButton":true,
                           "ctaLabel": "Disable these messages",
                           "onCTA": function() {
@@ -588,19 +600,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
                           "target": "displacement", 
                           "placement": "right",
                           "title": "Variable List",
-                          "content": "Click on any variable name here to remove it from the problem solution.",
-                          "showCTAButton":true,
-                          "ctaLabel": "Disable these messages",
-                          "onCTA": function() {
-                            hopscotch.endTour(true);
-                            tutorial_mode = false;
-                          },
-                        },
-                        {
-                          "target": "btnEstimate", 
-                          "placement": "left",
-                          "title": "Solve Problem",
-                          "content": "Click the Estimate button to tell the tool to estimate a solution to the problem.",
+                          "content": "<p>Click on any variable name here if you wish to remove it from the problem solution.</p><p>You likely do not need to adjust the problem representation in the center panel.</p>",
                           "showCTAButton":true,
                           "ctaLabel": "Disable these messages",
                           "onCTA": function() {
@@ -612,7 +612,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
                           "target": "btnEndSession", 
                           "placement": "bottom",
                           "title": "Finish Problem",
-                          "content": "If the solution presented seems acceptable, then finish this problem by clicking this End Session button.",
+                          "content": "If the solution reported back seems acceptable, then finish this problem by clicking this End Session button.",
                           "showCTAButton":true,
                           "ctaLabel": "Disable these messages",
                           "onCTA": function() {
