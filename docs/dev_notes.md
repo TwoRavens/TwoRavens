@@ -12,7 +12,7 @@ Contents:
 ## Run TwoRavens using D3M config from "CONFIG_JSON_PATH" environment variable
 
 The `fab run` command will now attempt to load a D3M config from an environment variable named `CONFIG_JSON_PATH`.  The name of the environment variable is the one used by NIST
-(This is optional--e.g. if there's no env variable, `fab run` acts as before).
+  - This is optional--e.g. if there's no env variable, `fab run` acts as before
 
 ### Example of successful run:
 
