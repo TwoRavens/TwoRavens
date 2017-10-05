@@ -65,7 +65,7 @@ def load_d3m_config_from_env():
     """Load docker config file from path specified in the environment variable D3M_CONFIG_FILEPATH. The information in this file becomes the default D3MConfiguration object. If D3M_CONFIG_FILEPATH doesn't exist, display error message and keep running."""
     from django.core import management
     from tworaven_apps.configurations.models_d3m import CONFIG_JSON_PATH
-    
+
     print('> Attempt to load D3M config from env variable: %s' % CONFIG_JSON_PATH)
     config_file = os.environ.get(CONFIG_JSON_PATH, None)
     if not config_file:
@@ -74,7 +74,7 @@ def load_d3m_config_from_env():
 
     config_file = config_file.strip()
     if not os.path.isfile(config_file):
-        print('This config file is not reachable: %s' % config_file)
+        print('This config file doesn\'t exist (or is not reachable): %s' % config_file)
         return
 
     try:

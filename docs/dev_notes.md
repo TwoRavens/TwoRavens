@@ -9,6 +9,57 @@ Contents:
  - _incomplete_ [Add gRPC request type](#add-grpc-request-type)
  - [Adding a new rook app: django](#adding-a-new-rook-app-django)
 
+## Run TwoRavens using D3M config from "CONFIG_JSON_PATH" environment variable
+
+The `fab run` command will now attempt to load a D3M config from an environment variable named `CONFIG_JSON_PATH`.  The name of the environment variable is the one used by NIST
+(This is optional--e.g. if there's no env variable, `fab run` acts as before).
+
+### Example of successful run:
+
+1. Set environment variable:
+    ```export CONFIG_JSON_PATH=/ravens_volume/config_o_196.json```
+1. ```fab run```
+1. Output in Terminal (which may scroll by)
+
+    ```
+    > Attempt to load D3M config from env variable: CONFIG_JSON_PATH
+    Successfully loaded new D3M configuration: "config_2017-10-05_10-31-43"
+    D3M config values:
+
+    {
+      "id": 8,
+      "name": "config_2017-10-05_10-31-43",
+      "is_default": true,
+      "dataset_schema": "/ravens_volume/test_data/o_196/data/dataSchema.json",
+      "problem_schema": "/ravens_volume/test_data/o_196/problemSchema.json",
+      "training_data_root": "/ravens_volume/test_data/o_196/data",
+      "executables_root": "/ravens_volume/test_output/d3m_output_o_196/executables",
+      "pipeline_logs_root": "/ravens_volume/test_output/d3m_output_o_196/pipeline_logs",
+      "temp_storage_root": "/ravens_volume/test_output/d3m_output_o_196/temp",
+      "created": "2017-10-05 14:31:43.838574+00:00",
+      "modified": "2017-10-05 14:31:43.840352+00:00",
+      "dataset_schema_url": "/config/d3m-config/get-dataset-schema/json/8",
+      "problem_schema_url": "/config/d3m-config/get-problem-schema/json/8",
+      "problem_data_info": "/config/d3m-config/get-problem-data-file-info/8",
+      "config_url": "/config/d3m-config/details/json/8"
+    }
+    ```
+
+### Output from an unsuccessful run:
+
+```
+> Attempt to load D3M config from env variable: CONFIG_JSON_PATH
+This config file doesn't exist (or is not reachable): /ravens_volume/config_o_196.jsonx
+```
+- As mentioned above, fab run will still work.  There may already be an env variable in the database, etc.
+
+### Output if there is no `CONFIG_JSON_PATH` env variable:
+
+```
+> Attempt to load D3M config from env variable: CONFIG_JSON_PATH
+Environment variable CONFIG_JSON_PATH not set.  
+```
+
 ## Run local TA2 test server
 
 The following command runs a TA2 test server with the core code from the NYU team.  Run this is a new, separate Terminal:
