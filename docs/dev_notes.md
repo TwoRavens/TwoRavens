@@ -3,7 +3,8 @@
 (This documentation is currently informal/being built during development.)
 
 Contents:
- - [Run local TA2 test server](#run-local-ta2-test-server)
+ - [Run TwoRavens using D3M config from "CONFIG_JSON_PATH" environment variable](#run-tworavens-using-d3m-config-from-config_json_path-environment-variable)
+ - ~~[Run local TA2 test server](#run-local-ta2-test-server)~~
  - [Saving webpack js/css files for deployment](#saving-webpack-jscss-files-for-deployment)
  - [Loading D3M config information](#loading-d3m-config-information)
  - _incomplete_ [Add gRPC request type](#add-grpc-request-type)
