@@ -110,7 +110,7 @@ class D3MConfiguration(TimeStampedModel):
 
     def get_json_string(self, indent=2):
         """Return json string"""
-        return json.dumps(self.to_dict(), indent=2)
+        return json.dumps(self.to_dict(), indent=indent)
 
     def to_ta2_config_test(self, mnt_volume='/ravens_volume', save_shortened_names=False):
         """Return a dict in TA2 format to use with mounted volume"""

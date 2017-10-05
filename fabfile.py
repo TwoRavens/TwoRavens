@@ -65,7 +65,8 @@ def load_d3m_config_from_env():
     """Load docker config file from path specified in the environment variable D3M_CONFIG_FILEPATH. The information in this file becomes the default D3MConfiguration object. If D3M_CONFIG_FILEPATH doesn't exist, display error message and keep running."""
     from django.core import management
     from tworaven_apps.configurations.models_d3m import CONFIG_JSON_PATH
-
+    
+    print('> Attempt to load D3M config from env variable: %s' % CONFIG_JSON_PATH)
     config_file = os.environ.get(CONFIG_JSON_PATH, None)
     if not config_file:
         print('Environment variable %s not set.' % CONFIG_JSON_PATH)
@@ -139,6 +140,7 @@ def run(with_rook=False):
     clear_js()  # clear any dev css/js files
     init_db()
     check_config()  # make sure the db has something
+    load_d3m_config_from_env() # default the D3M setting to the env variable
 
     commands = [
         # start webpack

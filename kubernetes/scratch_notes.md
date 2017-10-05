@@ -8,6 +8,9 @@ minikube start
 eval $(minikube docker-env)
 ```
 
+```
+docker login registry.datadrivendiscovery.org
+```
 - Run TwoRavens
 
 ```

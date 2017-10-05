@@ -72,9 +72,12 @@ class Command(BaseCommand):
 
             # It worked!!
             #
-            self.stdout.write(\
-                self.style.SUCCESS(('Successfully loaded new D3M configuration:'
-                                    ' "%s"') % d3m_config))
+            success_msg = ('Successfully loaded new D3M configuration: "%s"'
+                           '\nD3M config values: \n\n%s\n\n') % \
+                           (d3m_config,
+                            d3m_config.get_json_string())
+
+            self.stdout.write(self.style.SUCCESS(success_msg))
 
     def warn_invalid_paths(self, config_file, bad_paths):
         """Show bad path message"""
