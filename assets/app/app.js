@@ -2459,6 +2459,10 @@ export function estimate(btn) {
 
                     let resultstable = [];
                     for(var key in allPipelineInfo) {
+                    // don't report the pipeline to user if it has failed
+                        if(allPipelineInfo[key].responseInfo.status.details == "Pipeline Failed")  {
+                            continue;
+                        }
                         let myid = "";
                         let mymetric = "";
                         let myval = "";

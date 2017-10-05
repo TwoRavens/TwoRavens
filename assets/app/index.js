@@ -123,7 +123,7 @@ let rightpanel = mode => mode ? m(Panel, {
             m('#setxMiddle[style=display:block; float: left; width: 70%; height:100%; background-color: white]'),
             m('#setxRight[style=display:block; float: right; width: 30%; height:100%; background-color: white]')),
         m('#setxRightBottom[style=display:block; float: left; width: 100%; height:35%; overflow:auto; background-color: white]',
-          m('#setxRightBottomLeft[style=display:block; float: left; width: 30%; height:100%; background-color: white]'),
+          m('#setxRightBottomLeft[style=display:block; float: left; width: 75%; height:100%; background-color: white]'),
           m('#setxRightBottomMiddle[style=display:block; float: left; width: 15%; height:100%; background-color: white]',
             m(Button, {
               id: 'btnExecutePipe',
@@ -132,7 +132,7 @@ let rightpanel = mode => mode ? m(Panel, {
               style: `display:inline; float: left; margin-right: 10px`,
               title: 'Execute pipeline.'},
               m('span.ladda-label[style=pointer-events: none]', 'Execute'))),
-          m('#setxRightBottomRight[style=display:block; float: left; width: 55%; height:100%; background-color: white]')))),
+          m('#setxRightBottomRight[style=display:block; float: left; width: 10%; height:100%; background-color: white]')))),
       m(`#models[style=display: ${or('right', 'btnModels')}; padding: 6px 12px; text-align: center]`),
       m(`#types[style=display: ${or('right', 'btnType')}; padding: 6px 12px; text-align: center]`),
       m(`#subtypes[style=display: ${or('right', 'btnSubtype')}; padding: 6px 12px; text-align: center]`),
