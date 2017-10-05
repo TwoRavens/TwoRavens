@@ -198,9 +198,9 @@ class Body {
                     "Dataset Name"),
                   m(`#cite.panel.panel-default[style=display: ${this.cite ? 'block' : 'none'}; position: absolute; right: 50%; width: 380px; text-align: left; z-index: 50]`,
                     m(".panel-body")),
-                  m("button#btnEstimate.btn.btn-default.ladda-button.navbar-right[data-spinner-color=#000000][data-style=zoom-in][style=margin-left: 2em; margin-right: 1em]", {
+                  m("button#btnEstimate.btn.btn-success.ladda-button.navbar-right[data-spinner-color=#000000][data-style=zoom-in][style=margin-left: 2em; margin-right: 1em]", {
                     onclick: _ => app.estimate('btnEstimate')},
-                    m("span.ladda-label", mode ? 'Explore' : 'Estimate')),
+                    m("span.ladda-label", mode ? 'Explore' : 'Solve This Problem')),
                   m("button#btnTA2.btn.btn-default.ladda-button.navbar-right[data-spinner-color=#000000][data-style=zoom-in][style=margin-left: 0.5em; margin-right: 1em]", {
                     onclick: _ => app.helpmaterials('manual')},
                     'Help Manual ',m("span.glyphicon.glyphicon-book[style=color: #818181; font-size: 1em; pointer-events: none]")),
@@ -210,9 +210,9 @@ class Body {
                   m("button#btnReset.btn.btn-default.navbar-right[title=Reset][style=margin-left: 2.0em]", {
                     onclick: app.reset},
                     m("span.glyphicon.glyphicon-repeat[style=color: #818181; font-size: 1em; pointer-events: none]")),
-                  m("button#btnEndSession.btn.btn-default.navbar-right[title=End Session][style=margin-left: 2.0em]", {
+                  m("button#btnEndSession.btn.btn-default.navbar-right[title=Mark Problem Finished][style=margin-left: 2.0em]", {
                     onclick: _=> app.endsession()},
-                    m("span.ladda-label", 'End Session')),
+                    m("span.ladda-label", 'Mark Problem Finished')),
                   m('#transformations.transformTool', {
                     title: 'Construct transformations of existing variables using valid R syntax. For example, assuming a variable named d, you can enter "log(d)" or "d^2".'}))),
               m(`#about.panel.panel-default[style=display: ${this.about ? 'block' : 'none'}; left: 140px; position: absolute; width: 500px; z-index: 50]`,

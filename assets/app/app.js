@@ -2207,6 +2207,14 @@ export function estimate(btn) {
                 estimateLadda.stop(); // stop spinner
 
 
+                $("#btnEstimate").removeClass("btn-success");
+                $("#btnEstimate").addClass("btn-default");
+                $("#btnEndSession").removeClass("btn-default");
+                $("#btnEndSession").addClass("btn-success");
+
+
+        
+
                 let allPipelineInfo = {};
                 for (var i = 0; i<PipelineCreateResult.length; i++) {
                     if(PipelineCreateResult[i].pipelineId in allPipelineInfo) {
@@ -2358,6 +2366,11 @@ export function estimate(btn) {
 
             function createPipelineSuccess(btn, json) {
                 estimateLadda.stop(); // stop spinner
+
+                $("#btnEstimate").removeClass("btn-success");
+                $("#btnEstimate").addClass("btn-default");
+                $("#btnEndSession").removeClass("btn-default");
+                $("#btnEndSession").addClass("btn-success");
 
                 let trainFeatures=apiFeatureShortPath(json.predictors,uri.features);    // putting in short paths (no filename) for current API usage
                 let targetFeatures=apiFeatureShortPath(json.depvar,uri.target);         // putting in short paths (no filename) for current API usage
