@@ -3,6 +3,8 @@ from os.path import join
 from collections import OrderedDict
 
 from django.conf import settings
+from django.template.defaultfilters import slugify
+
 from google.protobuf.json_format import MessageToJson,\
     Parse, ParseError
 
@@ -57,7 +59,7 @@ def export_pipeline(info_str=None):
     # get the pipeline id
     pipeline_id, err_msg = get_pipeline_id(info_dict)
     if err_msg:
-        return None, get_failed_precondition_response(err_msg)
+        return get_failed_precondition_response(err_msg)
 
     # dir = d3m_config.executables_root + pipeline_id
     executable_write_dir = join('file://%s' % d3m_config.executables_root,
@@ -68,9 +70,15 @@ def export_pipeline(info_str=None):
     if KEY_PIPELINE_EXEC_URI_FROM_UI in info_dict:
         del info_dict[KEY_PIPELINE_EXEC_URI_FROM_UI]
 
-    info_str = json.dumps(info_dict)
 
-    print('info_str', info_str)
+    try:
+        info_str = json.dumps(info_dict)
+    except TypeError as ex_obj:
+        err_msg = 'Failed to PipelineExportRequest info to JSON: %s' % ex_obj
+        return get_failed_precondition_response(err_msg)
+
+    #print('info_str', info_str)
+
     # --------------------------------
     # convert the JSON string to a gRPC request
     # --------------------------------
@@ -117,8 +125,9 @@ def get_pipeline_id(info_dict):
 
     fmt_pipeline_id = pipeline_id.strip().replace(' ', '')
     if pipeline_id != fmt_pipeline_id:
-         err_msg = ('Spaces found in the pipeline id: %s') % pipeline_id
-         return None, err_msg
+        pipeline_id = slugify(pipeline_id)
+        #err_msg = ('Spaces found in the pipeline id: %s') % pipeline_id
+        #return None, err_msg
 
     return pipeline_id, None
 
