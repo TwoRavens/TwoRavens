@@ -74,9 +74,15 @@ kubectl describe pod/raven-pod1
 
 ## copy files
 
-```
 # to local
 kubectl cp raven1:/var/webapps/TwoRavens/README.md copied-README.md
 
 # pod
 kubectl cp myfile.txt raven1:/ravens_volume/myfile.txt
+```
+
+## run isi
+
+```
+docker run -e CONFIG_JSON_PATH=/ravens_volume/config_o_196.json --rm --name isi_test  -v /ravens_volume:/ravens_volume -v /tmp/dsbox-ta2:/tmp/dsbox-ta2 -p 50051:50051 registry.datadrivendiscovery.org/ta2/isi_ta2:latest
+```
