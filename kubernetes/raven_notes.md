@@ -3,7 +3,8 @@
 ## Start up
 
 ```
-minikube start
+minikube start --vm-driver=xhyve
+#minikube start
 eval $(minikube docker-env)
 ```
 
@@ -36,6 +37,9 @@ kubectl apply -f raven_pod5.yml
 # view pods
 kubectl get pods --all-namespaces -o wide
 
+
+# list secrets
+kubectl get secrets
 
 # tworavens + rook port forwarding
 kubectl port-forward raven-pod1 8060:80
