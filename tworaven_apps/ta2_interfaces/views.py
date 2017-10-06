@@ -294,7 +294,7 @@ def view_export_pipeline(request):
 
     # Let's call the TA2 and start the session!
     #
-    json_str = export_pipeline(raven_data_or_err)
+    json_str = export_pipeline(raven_data_or_err, call_entry)
 
     print('json_str: [%s]' % json_str)
     # Convert JSON str to python dict - err catch here

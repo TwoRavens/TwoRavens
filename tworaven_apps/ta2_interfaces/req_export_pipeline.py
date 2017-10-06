@@ -21,7 +21,7 @@ def get_test_info_str():
     """Test data for update_problem_schema call"""
     return '''{"context":{"session_id":"session_0"},"pipelineId":"pipe1","pipelineExecUri":"<<EXECUTABLE_URI>>"}'''
 
-def export_pipeline(info_str=None):
+def export_pipeline(info_str=None, call_entry=None):
     """Ask a TA2 to ExportPipeline via gRPC"""
     if info_str is None:
         info_str = get_test_info_str()
@@ -78,7 +78,9 @@ def export_pipeline(info_str=None):
         return get_failed_precondition_response(err_msg)
 
     #print('info_str', info_str)
-
+    if call_entry:
+        call_entry.request_msg = info_str
+        
     # --------------------------------
     # convert the JSON string to a gRPC request
     # --------------------------------
