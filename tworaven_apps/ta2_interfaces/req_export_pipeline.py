@@ -13,7 +13,7 @@ from tworaven_apps.ta2_interfaces.ta2_util import get_grpc_test_json,\
 from tworaven_apps.configurations.utils import get_latest_d3m_config
 from tworaven_apps.ta2_interfaces.models import VAL_EXECUTABLE_URI,\
     KEY_PIPELINE_ID,\
-    KEY_PIPELINE_EXEC_URI
+    KEY_PIPELINE_EXEC_URI, KEY_PIPELINE_EXEC_URI_FROM_UI
 
 def get_test_info_str():
     """Test data for update_problem_schema call"""
@@ -65,9 +65,12 @@ def export_pipeline(info_str=None):
 
     # update the dict + info_str
     info_dict[KEY_PIPELINE_EXEC_URI] = executable_write_dir
+    if KEY_PIPELINE_EXEC_URI_FROM_UI in info_dict:
+        del info_dict[KEY_PIPELINE_EXEC_URI_FROM_UI]
 
     info_str = json.dumps(info_dict)
 
+    print('info_str', info_str)
     # --------------------------------
     # convert the JSON string to a gRPC request
     # --------------------------------
