@@ -6,13 +6,13 @@ from django.http import JsonResponse, HttpResponse, Http404
 from django.conf import settings
 
 from tworaven_apps.api_docs.forms import ClientTestForm
-from tworaven_apps.ta2_interfaces.models import GRPC_JSON_KEY
+from tworaven_apps.ta2_interfaces.models import KEY_GRPC_JSON
 
 # Create your views here.
 def view_test_form(request):
     """View test form"""
 
-    info_dict = dict(GRPC_JSON_KEY=GRPC_JSON_KEY,
+    info_dict = dict(KEY_GRPC_JSON=KEY_GRPC_JSON,
                      TA2_STATIC_TEST_MODE=settings.TA2_STATIC_TEST_MODE,
                      TA2_TEST_SERVER_URL=settings.TA2_TEST_SERVER_URL,
                      SETTINGS_MODULE=settings.SETTINGS_MODULE)
@@ -43,7 +43,7 @@ def view_test_form(request):
 
 def make_request(la_url, content):
 
-    payload = {GRPC_JSON_KEY : content}
+    payload = {KEY_GRPC_JSON : content}
 
     print('payload', payload)
     resp = requests.post(la_url, data=payload)

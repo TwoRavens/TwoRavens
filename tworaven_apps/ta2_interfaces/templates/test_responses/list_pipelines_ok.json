@@ -2,7 +2,7 @@
   "responseInfo": {
     "status": {
       "code": "OK",
-      "details": "(static test response)"
+      "details": "(list pipelines test response)"
     }
   },
   "pipelineIds": [

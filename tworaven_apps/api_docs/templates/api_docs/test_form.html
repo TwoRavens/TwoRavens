@@ -22,7 +22,7 @@
       $('#interimData').hide();
 
       var jqxhr = $.post(request_url,
-                        { {{ GRPC_JSON_KEY }} : user_content},
+                        { {{ KEY_GRPC_JSON }} : user_content},
                         function(data) {
 
                           if (data.hasOwnProperty('data2') ) {
