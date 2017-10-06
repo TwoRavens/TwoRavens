@@ -217,9 +217,46 @@ def update_parse():
     json_parse(content, core_pb2.UpdateProblemSchemaRequest)
     print('-' * 40)
 
+def pipeline_export_parse():
+
+    req = core_pb2.PipelineExportRequest()
+    req.context.session_id = 'session_01'
+
+    req.pipeline_id = 'pipeline_1'
+    req.pipeline_exec_uri = 'file:///ravens_volume/pipeline_1'
+
+    content = MessageToJson(req)
+    print('JSON:\n')
+    print(content)
+    print('-' * 40)
+    #content = content.replace('pipelineIds', 'pipeline_ids').replace('sessionId', 'session_id')
+    print(content)
+
+    print('-' * 40)
+    print('gRPC:\n')
+    json_parse(content, core_pb2.PipelineExportRequest)
+    print('-' * 40)
+
+    resp = core_pb2.Response()
+    resp.status.code = core_pb2.OK
+    resp.status.details = 'looking good'
+
+    content = MessageToJson(resp)
+    print('JSON:\n')
+    print(content)
+    print('-' * 40)
+    #content = content.replace('pipelineIds', 'pipeline_ids').replace('sessionId', 'session_id')
+    print(content)
+
+    print('-' * 40)
+    print('gRPC:\n')
+    json_parse(content, core_pb2.Response)
+    print('-' * 40)
 
 if __name__ == '__main__':
-    update_parse()
+    pipeline_export_parse()
+
+    #update_parse()
     #execute_pipeline_parse()
     #pipeline_results_parse()
     #pipline_list_parse()

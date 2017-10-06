@@ -11,6 +11,7 @@ KEY_GRPC_JSON = 'grpcrequest'
 # json keys
 KEY_PIPELINE_ID = 'pipelineId'
 KEY_DATA = 'data'
+KEY_PIPELINE_EXEC_URI = 'pipeline_exec_uri'
 
 # values
 VAL_DATA_URI = '<<DATA_URI>>'

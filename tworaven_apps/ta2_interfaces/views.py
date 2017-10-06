@@ -296,7 +296,7 @@ def view_export_pipeline(request):
     #
     json_str = export_pipeline(raven_data_or_err)
 
-    print('json_str', json_str)
+    print('json_str: [%s]' % json_str)
     # Convert JSON str to python dict - err catch here
     #
     json_dict = json.loads(json_str, object_pairs_hook=OrderedDict)
