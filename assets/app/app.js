@@ -2010,7 +2010,7 @@ export function helpmaterials(type) {
         var win = window.open("http://2ra.vn/demos/d3mintegrationdemo.mp4", '_blank');
         win.focus();
     }else{
-        var win = window.open("http://2ra.vn/papers/tworavens-guide.pdf", '_blank');
+        var win = window.open("http://2ra.vn/papers/tworavens-d3mguide.pdf", '_blank');
         win.focus();
     }
     console.log(type);
