@@ -10,9 +10,7 @@ from tworaven_apps.ta2_interfaces.ta2_util import get_grpc_test_json,\
     get_failed_precondition_response
 from tworaven_apps.configurations.utils import get_latest_d3m_config,\
     write_data_for_execute_pipeline
-
-KEY_DATA = 'data'
-DATA_URI_KEY = '<<DATA_URI>>'
+from tworaven_apps.ta2_interfaces.models import KEY_DATA, VAL_DATA_URI
 
 def get_test_info_str():
     """Test data for update_problem_schema call"""
@@ -34,9 +32,9 @@ def execute_pipeline(info_str=None):
         err_msg = 'UI Str for PipelineListResult is None'
         return None, get_failed_precondition_response(err_msg)
 
-    if info_str.find(DATA_URI_KEY) == -1:
+    if info_str.find(VAL_DATA_URI) == -1:
         err_msg = ('Expected to see place holder for file uri.'
-                   ' Placeholder is "%s"') % DATA_URI_KEY
+                   ' Placeholder is "%s"') % VAL_DATA_URI
         return None, get_failed_precondition_response(err_msg)
 
     d3m_config = get_latest_d3m_config()
@@ -74,8 +72,8 @@ def execute_pipeline(info_str=None):
     # (2) convert it back to a JSON string
     info_str = json.dumps(info_dict)
 
-    # (3) replace the DATA_URI_KEY with the file_uri
-    info_str_formatted = info_str.replace(DATA_URI_KEY, file_uri)
+    # (3) replace the VAL_DATA_URI with the file_uri
+    info_str_formatted = info_str.replace(VAL_DATA_URI, file_uri)
 
     # --------------------------------
     # convert the JSON string to a gRPC request

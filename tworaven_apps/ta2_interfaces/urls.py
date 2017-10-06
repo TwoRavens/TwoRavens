@@ -34,7 +34,11 @@ urlpatterns = (
 
     url(r'^executepipeline/?$',
         view_execute_pipeline.view_execute_pipeline,
-        name='PipelineExecuteRequest'),
+        name='ExecutePipeline'),
+
+    url(r'^exportpipeline/?$',
+        views.view_export_pipeline,
+        name='ExportPipeline'),
 
     url(r'^',
         views.view_test_call,

@@ -3,7 +3,8 @@
 ## Start up
 
 ```
-minikube start
+minikube start --vm-driver=xhyve
+#minikube start
 eval $(minikube docker-env)
 ```
 
@@ -36,6 +37,9 @@ kubectl apply -f raven_pod5.yml
 # view pods
 kubectl get pods --all-namespaces -o wide
 
+
+# list secrets
+kubectl get secrets
 
 # tworavens + rook port forwarding
 kubectl port-forward raven-pod1 8060:80
@@ -70,9 +74,15 @@ kubectl describe pod/raven-pod1
 
 ## copy files
 
-```
 # to local
 kubectl cp raven1:/var/webapps/TwoRavens/README.md copied-README.md
 
 # pod
 kubectl cp myfile.txt raven1:/ravens_volume/myfile.txt
+```
+
+## run isi
+
+```
+docker run -e CONFIG_JSON_PATH=/ravens_volume/config_o_196.json --rm --name isi_test  -v /ravens_volume:/ravens_volume -v /tmp/dsbox-ta2:/tmp/dsbox-ta2 -p 50051:50051 registry.datadrivendiscovery.org/ta2/isi_ta2:latest
+```

@@ -16,6 +16,7 @@ data/preprocessSubset*.txt
 test_setup_local/*
 assets/build/tworavens_app-*.js
 assets/build/tworavens_styles-*.css
+assets/build/*.png
 
 
 # Byte-compiled / optimized / DLL files

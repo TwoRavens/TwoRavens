@@ -549,7 +549,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
                           },
                         },
                         {
-                          "target": "btnReset", 
+                          "target": "btnReset",
                           "placement": "bottom",
                           "title": "Restart Any Problem Here",
                           "content": reset_content,
@@ -561,7 +561,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
                           },
                         },
                         {
-                          "target": "btnEstimate", 
+                          "target": "btnEstimate",
                           "placement": "left",
                           "title": "Solve Problem",
                           "content": "<p>The current green button is generally the next step to follow to move the system forward.</p><p>Click this Solve button to tell the tool to find a solution to the problem.</p>",
@@ -573,7 +573,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
                           },
                         },
                         {
-                          "target": depvar_id, //"classbiggroup", 
+                          "target": depvar_id, //"classbiggroup",
                           "placement": "left",
                           "title": "Target Variable",
                           "content": "This is the variable, " + mytarget + ", we are trying to predict.  This center panel graphically represents the problem currently being attempted.",
@@ -585,7 +585,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
                           },
                         },
                         {
-                          "target": "gr1hull", 
+                          "target": "gr1hull",
                           "placement": "right",
                           "title": "Explanation Set",
                           "content": "This set of variables can potentially predict the target.",
@@ -597,7 +597,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
                           },
                         },
                         {
-                          "target": "displacement", 
+                          "target": "displacement",
                           "placement": "right",
                           "title": "Variable List",
                           "content": "<p>Click on any variable name here if you wish to remove it from the problem solution.</p><p>You likely do not need to adjust the problem representation in the center panel.</p>",
@@ -609,7 +609,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
                           },
                         },
                         {
-                          "target": "btnEndSession", 
+                          "target": "btnEndSession",
                           "placement": "bottom",
                           "title": "Finish Problem",
                           "content": "If the solution reported back seems acceptable, then finish this problem by clicking this End Session button.",
@@ -631,7 +631,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
                     hopscotch.startTour(problem_initialized_tour);
                     console.log("Ending Hopscotch Tour");
                 };
-                         
+
                 function ssSuccess(btn, SessionResponse) {
                     console.log("startsession: ", SessionResponse);
                     zparams.zsessionid=SessionResponse.context.sessionId;
@@ -656,9 +656,9 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
     .then(() => new Promise((resolve, reject) => {
         if(swandive)
             resolve();
-        
+
         let vars = Object.keys(preprocess);
-    
+
         // temporary values for hold that correspond to histogram bins
         hold = [.6, .2, .9, .8, .1, .3, .4];
         for (let i = 0; i < vars.length; i++) {
@@ -2213,7 +2213,7 @@ export function estimate(btn) {
                 $("#btnEndSession").addClass("btn-success");
 
 
-        
+
 
                 let allPipelineInfo = {};
                 for (var i = 0; i<PipelineCreateResult.length; i++) {
@@ -2559,11 +2559,11 @@ export function runPreprocess(dataloc, targetloc, datastub) {
     return m.request({method: 'POST', url: url, data: data, async:false})
         .then(data => {
             console.log('json in RIGHT HERE: ', data);
-            
+
             //two lines from readPreprocess()
             priv = data.dataset.private || priv;
             Object.keys(data.variables).forEach(k => preprocess[k] = data.variables[k]);
-            
+
             return data;
         }, _ => {
             console.log('preprocess failed');
@@ -4454,7 +4454,7 @@ export function setxTable(features) {
 export function exportpipeline(pipelineId) {
     console.log(pipelineId);
     let context = apiSession(zparams.zsessionid);
-    let pipelineExecUri = "<<EXECUTABLEURI>>"; // uri to persist executable of requested pipeline w/ session preprocessing
+    let pipelineExecUri = "<<EXECUTABLE_URI>>"; // uri to persist executable of requested pipeline w/ session preprocessing
 
     let PipelineExportRequest={context, pipelineId, pipelineExecUri};
 
