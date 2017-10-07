@@ -2365,13 +2365,7 @@ export function estimate(btn) {
             cdb("POST out: ", solajsonout);
 
             function createPipelineSuccess(btn, json) {
-                estimateLadda.stop(); // stop spinner
-
-                $("#btnEstimate").removeClass("btn-success");
-                $("#btnEstimate").addClass("btn-default");
-                $("#btnEndSession").removeClass("btn-default");
-                $("#btnEndSession").addClass("btn-success");
-
+                
                 let trainFeatures=apiFeatureShortPath(json.predictors,uri.features);    // putting in short paths (no filename) for current API usage
                 let targetFeatures=apiFeatureShortPath(json.depvar,uri.target);         // putting in short paths (no filename) for current API usage
                 let task = d3mTaskType[d3mProblemDescription.taskType][1];
@@ -2398,6 +2392,13 @@ export function estimate(btn) {
                     //rpc GetExecutePipelineResults(PipelineExecuteResultsRequest) returns (stream PipelineExecuteResult) {}
                     console.log(PipelineCreateResult);
 
+                    // Stop spinner and change green button when createpipeline has finished
+                    estimateLadda.stop(); // stop spinner
+
+                    $("#btnEstimate").removeClass("btn-success");
+                    $("#btnEstimate").addClass("btn-default");
+                    $("#btnEndSession").removeClass("btn-default");
+                    $("#btnEndSession").addClass("btn-success");
 
                     let allPipelineInfo = {};
                     for (var i = 0; i<PipelineCreateResult.length; i++) {
@@ -4467,8 +4468,9 @@ export function exportpipeline(pipelineId) {
     console.log(solajsonout);
 
     function exportSuccess(btn, Response) {
-        let alertmessage = "Executable for " + pipelineId + " has been written";
-        alert(alertmessage);
+        let alertmessage = "Executable for " + pipelineId + " has been written";  
+        //alert(alertmessage);
+        console.log(alertmessage)
         console.log(Response);
     }
 
