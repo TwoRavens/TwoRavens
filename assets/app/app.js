@@ -2500,7 +2500,7 @@ export function estimate(btn) {
 
                     // this initializes the main
                     // this piece here is the first pipeline through: allPipelineInfo[resultstable[1].PipelineID]
-                    resultsplotinit(allPipelineInfo[resultstable[1].PipelineID], dvvalues);
+                    //resultsplotinit(allPipelineInfo[resultstable[1].PipelineID], dvvalues);
                     exportpipeline(resultstable[1].PipelineID);
 
 
