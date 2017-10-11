@@ -35,8 +35,8 @@ services:
       - TA2_STATIC_TEST_MODE=True
       # Example of specifying a TA2 service
       - TA2_TEST_SERVER_URL=rprasad2r.local:50051
-      #- ENV_D3M_CONFIG_FILEPATH=/ravens_volume/config_o_4550seed.json
-      - ENV_D3M_CONFIG_FILEPATH=/ravens_volume/config_o_196seed.json
+      #- CONFIG_JSON_PATH=/ravens_volume/config_o_4550seed.json
+      - CONFIG_JSON_PATH=/ravens_volume/config_o_196seed.json
     links:
       - rook-service
     ports:

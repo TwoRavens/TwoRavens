@@ -1,0 +1,128 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ eval_id }}
+  labels:
+    evalId: {{ eval_id }}
+    main: "yes"
+spec:
+  volumes:
+    # this can point to a volume with test data, etc
+    - name: "shared-vol"
+      hostPath:
+        path: "/Users/ramanprasad/Documents/github-rp/TwoRavens/ravens_volume"
+  containers:
+    # -------------------------------------------------------
+    # NGINX CONTAINER SPECS
+    # -------------------------------------------------------
+    - image: nginx:v2
+      name: nginx
+      ports:
+        - containerPort: 80
+          name: http
+          protocol: TCP
+      #volumeMounts:
+      #  - mountPath: "/shared_dir"
+      #    name: "shared-vol"
+    # -------------------------------------------------------
+    # TWO RAVENS CONTAINER SPECS
+    #   - UI w/ python app that communicates with TA2 and Rook container
+    # -------------------------------------------------------
+    - image: tworavens:v2
+      name: ta3-main
+      # current tworavens has a mount at /ravens_volume
+      volumeMounts:
+        - mountPath: "/ravens_volume"
+          name: "raven-data1"
+          readOnly: false
+        - mountPath: /shared_dir
+          name: shared-vol
+          readOnly: false
+      livenessProbe:
+        httpGet:
+          path: /monitoring/alive
+          port: 8080
+        initialDelaySeconds: 5
+        timeoutSeconds: 1
+        periodSeconds: 10
+        failureThreshold: 3
+      # readiness: ready for traffic
+      readinessProbe:
+        httpGet:
+          path: /monitoring/alive
+          port: 8080
+        initialDelaySeconds: 10
+        periodSeconds: 10
+      # web and gRPC ports
+      ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        #- containerPort: 50051
+        #  name: grpc
+        #  protocol: TCP
+      # environment variables passed to container
+      env:
+      - name: EVAL_ID
+        value: {{ eval_id }}
+      - name: TA2_STATIC_TEST_MODE
+        value: "False"
+      - name: TA2_TEST_SERVER_URL
+        value: "raven-pod1:50051"
+      - name: CONFIG_JSON_PATH
+        value: "/ravens_volume/config_o_196seed.json"
+      - name: R_DEV_SERVER_BASE
+        value: "http://localhost:8000/custom/"
+    # -------------------------------------------------------
+    # ROOK CONTAINER SPECS - Provides R services
+    # -------------------------------------------------------
+    - image: rook:v2
+      name: rook
+      # current rook has a mount at /ravens_volume
+      volumeMounts:
+        - mountPath: "/ravens_volume"
+          name: "raven-data1"
+        - mountPath: /shared_dir
+          name: shared-vol
+          readOnly: false
+      # web port
+      ports:
+        - containerPort: 8000
+          name: http
+          protocol: TCP
+      # liveness is for restart
+      livenessProbe:
+        httpGet:
+          path: /custom/healthcheckapp
+          port: 8000
+        initialDelaySeconds: 5
+        timeoutSeconds: 1
+        periodSeconds: 10
+        failureThreshold: 3
+      # readiness: ready for traffic
+      readinessProbe:
+        httpGet:
+          path: /custom/healthcheckapp
+          port: 8000
+        initialDelaySeconds: 20
+        periodSeconds: 10
+    # -------------------------------------------------------
+    # TA2 TEST CONTAINER SPECS
+    # -------------------------------------------------------
+    #- image: ta2-test:v2
+    - image: ta2-isi:v2
+      name: ta2-main
+      # web port
+      ports:
+        - containerPort: 50051
+          protocol: TCP
+      env:
+        - name: EVAL_ID
+          value: {{ eval_id }}
+      volumeMounts:
+        - mountPath: /shared_dir
+          name: shared-vol
+          readOnly: false
+        - mountPath: "/ravens_volume"
+          name: "raven-data1"
+          readOnly: false

@@ -3,6 +3,8 @@ import json
 import sys
 from os import makedirs
 from os.path import join, normpath, isdir, isfile
+from distutils.util import strtobool
+import socket
 
 from .base import *
 
@@ -54,6 +56,9 @@ R_DEV_SERVER_BASE = 'http://0.0.0.0:8000/custom/'
 
 RECORD_R_SERVICE_ROUTING = False # log R service requests/response JSON to db
 
-TA2_STATIC_TEST_MODE = True
-#TA2_STATIC_TEST_MODE = False
+# export TA2_STATIC_TEST_MODE=False
+TA2_STATIC_TEST_MODE = strtobool(os.environ.get('TA2_STATIC_TEST_MODE', 'False'))   # True: canned responses
+
+# Note: the test server can be run via: https://gitlab.datadrivendiscovery.org/tworavens/TwoRavens/blob/master/docs/dev_notes.md#run-local-ta2-test-server
+#
 TA2_TEST_SERVER_URL = os.environ.get('TA2_TEST_SERVER_URL', 'localhost:50051')

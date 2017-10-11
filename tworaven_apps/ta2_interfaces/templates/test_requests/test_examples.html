@@ -9,6 +9,9 @@ let EndSession_ex = {
                     };
 
 let UpdateProblemSchema_ex = {
+                               "context": {
+                                 "session_id": "session_0"
+                               },
                                "ReplaceProblemSchemaField":{
                                   "taskType":"SIMILARITY_MATCHING"
                                }
@@ -59,6 +62,15 @@ let ListPipelines_ex = {
                             "session_id": "session_0"
                           }
                         }
+
+let ExportPipeline_ex = {
+                           "context":{
+                             "session_id": "session_0"
+                           },
+                           "pipelineId":"pipeline_1",
+                           "pipelineExecUri":"<<EXECUTABLE_URI>>"
+                        }
+
 
 let ExecutePipeline_ex = {
                      "context":{

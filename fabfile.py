@@ -46,8 +46,17 @@ def restart():
     stop()
     run()
 
+def make_d3m_config_files():
+    """Only for Docker! Make *deploy* config files. Useful for docker-compose or kubernetes--NOT for local tests.
+    The resulting config files will have paths specified from "/ravens_volume"
+    """
+    from tworaven_apps.configurations.util_config_maker import TestConfigMaker
+
+    TestConfigMaker.make_deploy_config_files()
+
+
 def make_d3m_config():
-    """Make a D3M config based on local files in the /data directory"""
+    """Make a D3M config based on local files in the /ravens_volume directory"""
     from tworaven_apps.configurations.util_config_maker import TestConfigMaker
 
     TestConfigMaker.make_configs()
@@ -55,16 +64,17 @@ def make_d3m_config():
 def load_d3m_config_from_env():
     """Load docker config file from path specified in the environment variable D3M_CONFIG_FILEPATH. The information in this file becomes the default D3MConfiguration object. If D3M_CONFIG_FILEPATH doesn't exist, display error message and keep running."""
     from django.core import management
-    from tworaven_apps.configurations.models_d3m import ENV_D3M_CONFIG_FILEPATH
+    from tworaven_apps.configurations.models_d3m import CONFIG_JSON_PATH
 
-    config_file = os.environ.get(ENV_D3M_CONFIG_FILEPATH, None)
+    print('> Attempt to load D3M config from env variable: %s' % CONFIG_JSON_PATH)
+    config_file = os.environ.get(CONFIG_JSON_PATH, None)
     if not config_file:
-        print('Environment variable %s not set.' % ENV_D3M_CONFIG_FILEPATH)
+        print('Environment variable %s not set.' % CONFIG_JSON_PATH)
         return
 
     config_file = config_file.strip()
     if not os.path.isfile(config_file):
-        print('This config file is not reachable: %s' % config_file)
+        print('This config file doesn\'t exist (or is not reachable): %s' % config_file)
         return
 
     try:
@@ -130,6 +140,7 @@ def run(with_rook=False):
     clear_js()  # clear any dev css/js files
     init_db()
     check_config()  # make sure the db has something
+    load_d3m_config_from_env() # default the D3M setting to the env variable
 
     commands = [
         # start webpack
@@ -263,13 +274,3 @@ def init_db():
     create_django_superuser()
     #local("python manage.py loaddata fixtures/users.json")
     #Series(name_abbreviation="Mass.").save()
-
-def test_front_matter():
-    pass
-    #from firmament.models import Volume
-    #Volume.objects.first().generate_front_matter()
-
-def ubuntu_help():
-    """Set up directories for ubuntu 16.04 (in progress)"""
-    from setup.ubuntu_setup import TwoRavensSetup
-    trs = TwoRavensSetup()

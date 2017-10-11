@@ -7,6 +7,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="{% static "pkgs/bootstrap/css/bootstrap.css" %}">
+    <link rel="stylesheet" href="{% static "pkgs/hopscotch/dist/css/hopscotch.css" %}">
     <!--<link rel="stylesheet" href="{% static "build/tworavens_styles.css" %}"-->
     {% render_bundle 'main' 'css' %}
     <script src="{% static "pkgs/Ladda/dist/spin.min.js" %}"></script>
@@ -14,6 +15,7 @@
     <script src="{% static "js/jquery/jquery.min.js" %}"></script>
     <script src="{% static "pkgs/bootstrap/js/bootstrap.min.js" %}"></script>
     <script src="{% static "js/d3/d3.v3.min.js" %}"></script>
+    <script src="{% static "pkgs/hopscotch/dist/js/hopscotch.js" %}"></script>
     <script>
         {% if app_config %}
           // ----------------------------
@@ -34,13 +36,13 @@
           // default settings if nothing in db
           //  - see /templates/index.html to set manually
           // ----------------------------
-          const rappURL = 'http://127.0.0.1:8080/rook-custom/'; // via Django -> to RApache/rook
+          const rappURL = '/rook-custom/'; // via Django -> to RApache/rook
           //let rappURL = 'http://0.0.0.0:8000/custom/'; // Direct to RApache/rook
           const DATAVERSE_URL = 'https://beta.dataverse.org';
           const production = false;
           const privacyMode = false;        // configure default functionality for PSI tool
           const d3m_mode = false;             // configure default functionality for d3m
-          const d3mURL = 'http://127.0.0.1:8080/d3m-service/'; // via Django -> TA2
+          const d3mURL = '/d3m-service/'; // via Django -> TA2
         {% endif %}
     </script>
   </head>

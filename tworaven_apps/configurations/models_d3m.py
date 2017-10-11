@@ -29,7 +29,7 @@ D3M_DIR_ATTRIBUTES = ('training_data_root', 'executables_root',
 D3M_REQUIRED = D3M_FILE_ATTRIBUTES + ('training_data_root',)
 
 # environment variable name to store a d3m config filepath for startup
-ENV_D3M_CONFIG_FILEPATH = 'ENV_D3M_CONFIG_FILEPATH'
+CONFIG_JSON_PATH = 'CONFIG_JSON_PATH'
 
 class D3MConfiguration(TimeStampedModel):
     """
@@ -110,7 +110,22 @@ class D3MConfiguration(TimeStampedModel):
 
     def get_json_string(self, indent=2):
         """Return json string"""
-        return json.dumps(self.to_dict(), indent=2)
+        return json.dumps(self.to_dict(), indent=indent)
+
+    def to_ta2_config_test(self, mnt_volume='/ravens_volume', save_shortened_names=False):
+        """Return a dict in TA2 format to use with mounted volume"""
+        od = OrderedDict()
+        for name in D3M_FILE_ATTRIBUTES + D3M_DIR_ATTRIBUTES:
+            val = self.__dict__.get(name, '(not set)')
+            idx = val.find(mnt_volume)
+            if idx > -1:
+                val = val[idx:]
+            od[name] = val
+            if save_shortened_names:
+                self.__dict__[name] = val
+        if save_shortened_names:
+            self.save()
+        return od
 
     def to_dict(self):
         """Return in an OrderedDict"""
@@ -133,7 +148,7 @@ class D3MConfiguration(TimeStampedModel):
         od['problem_schema_url'] = reverse('view_get_problem_schema_by_id',
                                            kwargs=dict(d3m_config_id=self.id))
 
-        od['dataset_filesize_url'] = reverse('view_get_problem_data_filesize_by_id',
+        od['problem_data_info'] = reverse('view_get_problem_data_info_by_id',
                                           kwargs=dict(d3m_config_id=self.id))
 
         od['config_url'] = reverse('view_d3m_details_json',

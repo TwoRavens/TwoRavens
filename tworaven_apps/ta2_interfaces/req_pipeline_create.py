@@ -77,6 +77,11 @@ def pipeline_create(info_str=None):
     except Exception as ex:
         return get_failed_precondition_response(str(ex))
 
+    print('reply', reply)
+    try:
+        print(MessageToJson(reply))
+    except:
+        print('failed unary convert to JSON')
     # --------------------------------
     # Convert the reply to JSON and send it on
     # --------------------------------

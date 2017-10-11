@@ -1,0 +1,171 @@
+# ---------------------------------------------------------
+# Kubernetes file for TA3-TA2 - TwoRavens and ISI
+# ---------------------------------------------------------
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cra2-ta3-nginx
+  labels:
+    evalId: cra2
+    tier: ta3
+spec:
+  # NodePort type allows to expose service outside the cluster
+  type: NodePort
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+  selector:
+    evalId: cra2
+    tier: ta3
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: cra2
+  labels:
+    evalId: cra2
+    main: "yes"
+spec:
+  restartPolicy: Never
+  volumes:
+    # Shared volume mount to both containers
+    - emptyDir: {}
+      name: shared-vol
+    # Test volume
+    - name: "d3m-test-volume"
+      hostPath:
+        path: "/Users/ramanprasad/Documents/github-rp/TwoRavens/ravens_volume"
+      #emptyDir: {}
+  containers:
+    # ---------------------------------------------------------
+    # NGINX CONTAINER SPECS
+    #  - gateway to python server and R services, if needed
+    # ---------------------------------------------------------
+    - image: ravens-nginx:v2
+      name: tworavens-nginx
+      ports:
+        - containerPort: 80
+          name: http
+          protocol: TCP
+    # ---------------------------------------------------------
+    # TWO RAVENS CONTAINER SPECS
+    # ---------------------------------------------------------
+    - image: tworavens:v2
+      name: ta3-main
+      # current tworavens has a mount at /ravens_volume
+      volumeMounts:
+        # TA3 spec
+        - mountPath: /shared_dir
+          name: shared-vol
+          readOnly: false
+        # simulate NIST volume
+        - mountPath: "/d3m_test_volume"
+          name: "d3m-test-volume"
+      # web and gRPC ports
+      ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        - containerPort: 50051
+          name: grpc
+          protocol: TCP
+      # environment variables passed to container
+      env:
+        # TA3 spec
+        - name: EVAL_ID
+          value: cra2
+        # Turn off TA2 test mode (no server; canned response)
+        - name: TA2_STATIC_TEST_MODE
+          value: "False"
+        # Reference to the gRPC server using the pod name and TA2 port
+        - name: TA2_TEST_SERVER_URL
+          value: "raven-pod1:50051"
+        # Point to the config file
+        - name: CONFIG_JSON_PATH
+          value: "/d3m_test_volume/config_o_196seed.json"
+        # Url to R web service
+        - name: R_DEV_SERVER_BASE
+          value: "http://localhost:8000/custom/"
+      # liveness is for restart
+      livenessProbe:
+        httpGet:
+          path: /monitoring/alive
+          port: 8080
+        initialDelaySeconds: 5
+        timeoutSeconds: 1
+        periodSeconds: 10
+        failureThreshold: 3
+      # readiness: ready for traffic
+      readinessProbe:
+        httpGet:
+          path: /monitoring/alive
+          port: 8080
+        initialDelaySeconds: 10
+        periodSeconds: 10
+    # -------------------------
+    # ROOK CONTAINER SPECS
+    # -------------------------
+    - image: rook:v2
+      name: rook
+      # current rook has a mount at /ravens_volume
+      volumeMounts:
+        # TA3 spec
+        - mountPath: /shared_dir
+          name: shared-vol
+          readOnly: false
+        # simulate NIST volume
+        - mountPath: "/d3m_test_volume"
+          name: "d3m-test-volume"
+      # web port
+      ports:
+        - containerPort: 8000
+          name: http
+          protocol: TCP
+      # environment variables passed to container
+      env:
+        # Also set to "yes" in the Dockefile
+        - name: ROOK_USE_PRODUCTION_MODE
+          value: "yes"
+      # liveness is for restart
+      livenessProbe:
+        httpGet:
+          path: /custom/healthcheckapp
+          port: 8000
+        initialDelaySeconds: 5
+        timeoutSeconds: 1
+        periodSeconds: 10
+        failureThreshold: 3
+      # readiness: ready for traffic
+      readinessProbe:
+        httpGet:
+          path: /custom/healthcheckapp
+          port: 8000
+        initialDelaySeconds: 20
+        periodSeconds: 10
+    # -------------------------
+    # TA2 TEST CONTAINER SPECS
+    # -------------------------
+    - image: ta2-cra:v2
+      name: ta2-main
+      command: ['sh', '-c', 'ta2_search /d3m_test_volume/kube_test_d3m.json']
+      env:
+        # TA3 spec
+        - name: EVAL_ID
+          value: cra2
+        # Points to the config file
+        - name: CONFIG_JSON_PATH
+          value: "/d3m_test_volume/config_o_196seed.json"
+      ports:
+        # gRPC port
+        - containerPort: 50051
+          protocol: TCP
+      volumeMounts:
+        # TA3 spec
+        - mountPath: /shared_dir
+          name: shared-vol
+          readOnly: false
+        # simulate NIST volume
+        - mountPath: "/d3m_test_volume"
+          name: "d3m-test-volume"

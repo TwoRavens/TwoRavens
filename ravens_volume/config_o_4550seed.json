@@ -1,8 +1,0 @@
-{
-  "dataset_schema": "/ravens_volume/test_data/o_4550seed/data/dataSchema.json",
-  "problem_schema": "/ravens_volume/test_data/o_4550seed/problemSchema.json",
-  "training_data_root": "/ravens_volume/test_data/o_4550seed/data",
-  "executables_root": "/ravens_volume/test_data/o_4550seed_output/executables_root",
-  "pipeline_logs_root": "/ravens_volume/test_data/o_4550seed_output/pipeline_logs_root",
-  "temp_storage_root": "/ravens_volume/test_data/o_4550seed_output/temp_storage_root"
-}

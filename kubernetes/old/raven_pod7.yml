@@ -1,0 +1,151 @@
+# ---------------------------------------------------------
+# Kubernetes file for TA3-TA2 - TwoRavens and ISI
+# ---------------------------------------------------------
+apiVersion: v1
+kind: Pod
+metadata:
+  name: raven-pod1
+spec:
+  volumes:
+    # ---------------------------------------------------------
+    # This is a volume that originates outside of the containers, attempting
+    # to simulate the NIST mounted volume.
+    #   - TA2 and TA3 mount this volume at "/ravens_volume"
+    #       - "/ravens_volume" would be equivalent to "/shared_dir" in the
+    #          same_node_template.yml file here: https://datadrivendiscovery.org/wiki/pages/viewpage.action?spaceKey=gov&title=TA3+Submission+Guide
+    #
+    #   - TA2 and TA3 have the env variable "CONFIG_JSON_PATH"
+    #       which uses this volume to point to config at "/ravens_volume/config_o_196seed.json"
+    # ---------------------------------------------------------
+    - name: "d3m-test-volume"
+      hostPath:
+        path: "/Users/ramanprasad/Documents/github-rp/TwoRavens/ravens_volume"
+      #emptyDir: {}
+    # ---------------------------------------------------------
+    # TA2 and TA3 have the same mount path for this volume.
+    #   - TA2 writes to this volume/directory within its own container
+    #   - e.g. TA3 can read file URIs that TA2 sends
+    #   - for post eval, will try to use the config temp directories for this
+    #
+    # ---------------------------------------------------------
+    - name: "isi-volume"
+      emptyDir: {}
+  containers:
+    # -------------------------
+    # NGINX CONTAINER SPECS
+    # -------------------------
+    - image: nginx:v2
+      name: nginx
+      ports:
+        - containerPort: 80
+          name: http
+          protocol: TCP
+    # -------------------------
+    # TWO RAVENS CONTAINER SPECS
+    # -------------------------
+    - image: tworavens:v2
+      name: ta3-main
+      # current tworavens has a mount at /ravens_volume
+      volumeMounts:
+        - mountPath: "/d3m_test_volume"
+          name: "d3m-test-volume"
+        - mountPath: /tmp/dsbox-ta2/
+          name: "isi-volume"
+      # web and gRPC ports
+      ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        - containerPort: 50051
+          name: grpc
+          protocol: TCP
+      # environment variables passed to container
+      env:
+        - name: EVAL_ID
+          value: ravens2
+        - name: TA2_STATIC_TEST_MODE
+          value: "False"
+        # Reference to the gRPC server using the pod name and TA2 port
+        - name: TA2_TEST_SERVER_URL
+          value: "raven-pod1:50051"
+        # Point to the config file
+        - name: CONFIG_JSON_PATH
+          value: "/d3m_test_volume/config_o_196seed.json"
+        # Url to R web service
+        - name: R_DEV_SERVER_BASE
+          value: "http://localhost:8000/custom/"
+      # liveness is for restart
+      livenessProbe:
+        httpGet:
+          path: /monitoring/alive
+          port: 8080
+        initialDelaySeconds: 5
+        timeoutSeconds: 1
+        periodSeconds: 10
+        failureThreshold: 3
+      # readiness: ready for traffic
+      readinessProbe:
+        httpGet:
+          path: /monitoring/alive
+          port: 8080
+        initialDelaySeconds: 10
+        periodSeconds: 10
+    # -------------------------
+    # ROOK CONTAINER SPECS
+    # -------------------------
+    - image: rook:v2
+      name: rook
+      # current rook has a mount at /ravens_volume
+      volumeMounts:
+        # simulate NIST volume
+        - mountPath: "/d3m_test_volume"
+          name: "d3m-test-volume"
+        # TA2 shares uris to files on this volume
+        - mountPath: /tmp/dsbox-ta2/
+          name: "isi-volume"
+      # web port
+      ports:
+        - containerPort: 8000
+          name: http
+          protocol: TCP
+      # environment variables passed to container
+      env:
+        # Also set to "yes" in the Dockefile
+        - name: ROOK_USE_PRODUCTION_MODE
+          value: "yes"
+      # liveness is for restart
+      livenessProbe:
+        httpGet:
+          path: /custom/healthcheckapp
+          port: 8000
+        initialDelaySeconds: 5
+        timeoutSeconds: 1
+        periodSeconds: 10
+        failureThreshold: 3
+      # readiness: ready for traffic
+      readinessProbe:
+        httpGet:
+          path: /custom/healthcheckapp
+          port: 8000
+        initialDelaySeconds: 20
+        periodSeconds: 10
+    # -------------------------
+    # TA2 TEST CONTAINER SPECS
+    # -------------------------
+    - image: ta2-isi:v2
+      name: ta2-main
+      env:
+        # Points to the config file
+        - name: CONFIG_JSON_PATH
+          value: "/d3m_test_volume/config_o_196seed.json"
+      ports:
+        # gRPC port
+        - containerPort: 50051
+          protocol: TCP
+      volumeMounts:
+        # simulate NIST volume
+        - mountPath: "/d3m_test_volume"
+          name: "d3m-test-volume"
+        # write files to this volume and share them via uri with TA3
+        - mountPath: /tmp/dsbox-ta2/
+          name: "isi-volume"

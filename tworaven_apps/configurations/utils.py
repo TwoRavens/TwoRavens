@@ -2,6 +2,7 @@ import json
 import random, string
 from datetime import datetime as dt
 from os.path import isdir, isfile, getsize, join
+from collections import OrderedDict
 
 from tworaven_apps.configurations.models_d3m import D3MConfiguration,\
     D3M_FILE_ATTRIBUTES
@@ -26,13 +27,51 @@ def get_latest_d3m_config():
             return None
     return d3m_config
 
+
+def get_train_data_info(d3m_config):
+    """Pull info for train data and train info files
+    {
+        "traindata.csv": {
+            "exists": true,
+            "size": 2353,
+            "fullpath": "thefullpath/traindata.csv"
+        }
+    }"""
+    if not d3m_config:
+        return None, 'd3m_config is None'
+
+    file_info = OrderedDict()
+    fnames = ['trainData.csv', 'trainData.csv.gz',
+              'trainTargets.csv', 'trainTargets.csv.gz']
+
+    for fname in fnames:
+        # For each file, does it exist? size? path?
+        fpath = join(d3m_config.training_data_root,
+                     fname)
+
+        one_file_info = OrderedDict()
+        if isfile(fpath):
+            # file found
+            one_file_info['exists'] = True
+            one_file_info['size'] = getsize(fpath)
+        else:
+            # no file found
+            one_file_info['exists'] = False
+            one_file_info['size'] = -1
+
+        one_file_info['path'] = fpath
+
+        file_info[fname] = one_file_info
+
+    return file_info, None
+
 def get_dataset_size(d3m_config):
     """Make a guess at the data file name and attempt to get the size"""
     if not d3m_config:
         return None, 'd3m_config is None'
 
-    data_filename = 'testData.csv'
-    data_filename_zipped = 'testData.csv.gz'
+    data_filename = 'trainData.csv'
+    data_filename_zipped = 'trainData.csv.gz'
 
     data_filepath = join(d3m_config.training_data_root,
                          data_filename)

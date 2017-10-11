@@ -1,0 +1,8 @@
+{
+    "dataset_schema": "/d3m_test_volume/test_data/o_196/data/dataSchema.json",
+    "problem_schema": "/d3m_test_volume/test_data/o_196/problemSchema.json",
+    "training_data_root": "/d3m_test_volume/test_data/o_196/data",
+    "executables_root": "/d3m_test_volume/test_output/d3m_output_o_196/executables",
+    "pipeline_logs_root": "/d3m_test_volume/test_output/d3m_output_o_196/pipeline_logs",
+    "temp_storage_root": "/d3m_test_volume/test_output/d3m_output_o_196/temp"
+}

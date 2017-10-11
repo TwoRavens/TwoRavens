@@ -1,6 +1,7 @@
 import '../pkgs/bootstrap/css/bootstrap-theme.min.css';
 import '../css/app.css';
 import '../pkgs/Ladda/dist/ladda-themeless.min.css';
+import '../pkgs/hopscotch/dist/css/hopscotch.css';
 
 import m from 'mithril';
 
@@ -119,16 +120,19 @@ let rightpanel = mode => mode ? m(Panel, {
           m('#setxLeft[style=display:block; float: left; width: 100%; height:95%; overflow:auto; background-color: white]')),
         m('#setxRightAll[style=display:block; float: left; width: 70%; height:100%; background-color: white]',
           m('#setxRightTop[style=display:block; float: left; width: 100%; height:65%; overflow:auto; background-color: white]',
-            m('#setxMiddle[style=display:block; float: left; width: 70%; background-color: white]'),
-            m('#setxRight[style=display:block; float: right; width: 30%; background-color: white]')),
+            m('#setxMiddle[style=display:block; float: left; width: 70%; height:100%; background-color: white]'),
+            m('#setxRight[style=display:block; float: right; width: 30%; height:100%; background-color: white]')),
         m('#setxRightBottom[style=display:block; float: left; width: 100%; height:35%; overflow:auto; background-color: white]',
-          m(Button, {
-            id: 'btnExecutePipe',
-            classes: 'btn-default.ladda-button[data-spinner-color=#000000][data-style=zoom-in]',
-            onclick: _ => app.executepipeline('btnExecutePipe'),
-            style: `display:inline; float: left; margin-right: 10px`,
-            title: 'Execute pipeline.'},
-            m('span.ladda-label[style=pointer-events: none]', 'Execute'))))),
+          m('#setxRightBottomLeft[style=display:block; float: left; width: 75%; height:100%; background-color: white]'),
+          m('#setxRightBottomMiddle[style=display:block; float: left; width: 15%; height:100%; background-color: white]',
+            m(Button, {
+              id: 'btnExecutePipe',
+              classes: 'btn-default.ladda-button[data-spinner-color=#000000][data-style=zoom-in]',
+              onclick: _ => app.executepipeline('btnExecutePipe'),
+              style: `display:inline; float: left; margin-right: 10px`,
+              title: 'Execute pipeline.'},
+              m('span.ladda-label[style=pointer-events: none]', 'Execute'))),
+          m('#setxRightBottomRight[style=display:block; float: left; width: 10%; height:100%; background-color: white]')))),
       m(`#models[style=display: ${or('right', 'btnModels')}; padding: 6px 12px; text-align: center]`),
       m(`#types[style=display: ${or('right', 'btnType')}; padding: 6px 12px; text-align: center]`),
       m(`#subtypes[style=display: ${or('right', 'btnSubtype')}; padding: 6px 12px; text-align: center]`),
@@ -194,9 +198,9 @@ class Body {
                     "Dataset Name"),
                   m(`#cite.panel.panel-default[style=display: ${this.cite ? 'block' : 'none'}; position: absolute; right: 50%; width: 380px; text-align: left; z-index: 50]`,
                     m(".panel-body")),
-                  m("button#btnEstimate.btn.btn-default.ladda-button.navbar-right[data-spinner-color=#000000][data-style=zoom-in][style=margin-left: 2em; margin-right: 1em]", {
+                  m("button#btnEstimate.btn.btn-success.ladda-button.navbar-right[data-spinner-color=#000000][data-style=zoom-in][style=margin-left: 2em; margin-right: 1em]", {
                     onclick: _ => app.estimate('btnEstimate')},
-                    m("span.ladda-label", mode ? 'Explore' : 'Estimate')),
+                    m("span.ladda-label", mode ? 'Explore' : 'Solve This Problem')),
                   m("button#btnTA2.btn.btn-default.ladda-button.navbar-right[data-spinner-color=#000000][data-style=zoom-in][style=margin-left: 0.5em; margin-right: 1em]", {
                     onclick: _ => app.helpmaterials('manual')},
                     'Help Manual ',m("span.glyphicon.glyphicon-book[style=color: #818181; font-size: 1em; pointer-events: none]")),
@@ -206,9 +210,9 @@ class Body {
                   m("button#btnReset.btn.btn-default.navbar-right[title=Reset][style=margin-left: 2.0em]", {
                     onclick: app.reset},
                     m("span.glyphicon.glyphicon-repeat[style=color: #818181; font-size: 1em; pointer-events: none]")),
-                  m("button#btnEndSession.btn.btn-default.navbar-right[title=End Session][style=margin-left: 2.0em]", {
+                  m("button#btnEndSession.btn.btn-default.navbar-right[title=Mark Problem Finished][style=margin-left: 2.0em]", {
                     onclick: _=> app.endsession()},
-                    m("span.ladda-label", 'End Session')),
+                    m("span.ladda-label", 'Mark Problem Finished')),
                   m('#transformations.transformTool', {
                     title: 'Construct transformations of existing variables using valid R syntax. For example, assuming a variable named d, you can enter "log(d)" or "d^2".'}))),
               m(`#about.panel.panel-default[style=display: ${this.about ? 'block' : 'none'}; left: 140px; position: absolute; width: 500px; z-index: 50]`,

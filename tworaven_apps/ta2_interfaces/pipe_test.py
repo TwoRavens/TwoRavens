@@ -197,8 +197,67 @@ def execute_pipeline_parse():
     json_parse(content, core_pb2.PipelineExecuteRequest)
     print('-' * 40)
 
+def update_parse():
+
+    req = core_pb2.UpdateProblemSchemaRequest()
+    req.context.session_id = 'session_01'
+
+    req.updates.add(task_type=core_pb2.CLASSIFICATION)
+    req.updates.add(task_type=core_pb2.REGRESSION)
+
+    content = MessageToJson(req)
+    print('JSON:\n')
+    print(content)
+    print('-' * 40)
+    #content = content.replace('pipelineIds', 'pipeline_ids').replace('sessionId', 'session_id')
+    print(content)
+
+    print('-' * 40)
+    print('gRPC:\n')
+    json_parse(content, core_pb2.UpdateProblemSchemaRequest)
+    print('-' * 40)
+
+def pipeline_export_parse():
+
+    req = core_pb2.PipelineExportRequest()
+    req.context.session_id = 'session_01'
+
+    req.pipeline_id = 'pipeline_1'
+    req.pipeline_exec_uri = 'file:///ravens_volume/pipeline_1'
+
+    content = MessageToJson(req)
+    print('JSON:\n')
+    print(content)
+    print('-' * 40)
+    #content = content.replace('pipelineIds', 'pipeline_ids').replace('sessionId', 'session_id')
+    print(content)
+
+    print('-' * 40)
+    print('gRPC:\n')
+    json_parse(content, core_pb2.PipelineExportRequest)
+    print('-' * 40)
+
+    resp = core_pb2.Response()
+    resp.status.code = core_pb2.OK
+    resp.status.details = 'looking good'
+
+    content = MessageToJson(resp)
+    print('JSON:\n')
+    print(content)
+    print('-' * 40)
+    #content = content.replace('pipelineIds', 'pipeline_ids').replace('sessionId', 'session_id')
+    print(content)
+
+    print('-' * 40)
+    print('gRPC:\n')
+    json_parse(content, core_pb2.Response)
+    print('-' * 40)
+
 if __name__ == '__main__':
-    execute_pipeline_parse()
+    pipeline_export_parse()
+
+    #update_parse()
+    #execute_pipeline_parse()
     #pipeline_results_parse()
     #pipline_list_parse()
     #pipeline_exec_result()
