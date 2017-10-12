@@ -15,6 +15,9 @@ KEY_DATA = 'data'
 KEY_PIPELINE_EXEC_URI_FROM_UI = 'pipelineExecUri'
 KEY_PIPELINE_EXEC_URI = 'pipeline_exec_uri'
 
+KEY_USER_AGENT_FROM_UI = 'user_agent'
+KEY_SESSION_ID_FROM_UI = 'session_id'
+
 # values
 VAL_DATA_URI = '<<DATA_URI>>'
 VAL_EXECUTABLE_URI = '<<EXECUTABLE_URI>>'
