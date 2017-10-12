@@ -58,17 +58,19 @@ def start_session(raven_json_str=None):
         rnd_session_id = ''.join(random.choice(string.ascii_lowercase + string.digits)
                          for _ in range(7))
         d = dict(session_id=rnd_session_id)
-        if random.randint(1,10) == 3:
-            return get_grpc_test_json('test_responses/startsession_badassertion.json')
-        else:
-            return get_grpc_test_json('test_responses/startsession_ok.json', d)
+        return get_grpc_test_json('test_responses/startsession_ok.json', d)
+
+        #if random.randint(1,10) == 3:
+        #    return get_grpc_test_json('test_responses/startsession_badassertion.json')
+        #else:
+        #    return get_grpc_test_json('test_responses/startsession_ok.json', d)
 
 
     # --------------------------------
     # Get the connection, return an error if there are channel issues
     # --------------------------------
     core_stub, err_msg = TA2Connection.get_grpc_stub()
-    if err_msg: 
+    if err_msg:
         return get_failed_precondition_sess_response(err_msg)
 
         #return dict(status=core_pb2.FAILED_PRECONDITION,

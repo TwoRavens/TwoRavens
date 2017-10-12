@@ -8,7 +8,7 @@ from django.contrib.auth.models import User
 from django.utils.safestring import mark_safe
 from model_utils.models import TimeStampedModel
 from tworaven_apps.utils.json_helper import format_json_for_admin
-from tworaven_apps.ta2_interfaces.models import VAL_FAILED_PRECONDITION
+from tworaven_apps.ta2_interfaces.models import STATUS_VAL_FAILED_PRECONDITION
 
 # Create your models here.
 ZELIG_APP = 'zelig'
@@ -134,7 +134,7 @@ class ServiceCallEntry(TimeStampedModel):
         if json_dict is None:
             return True
 
-        if str(json_dict).find(VAL_FAILED_PRECONDITION) > -1:
+        if str(json_dict).find(STATUS_VAL_FAILED_PRECONDITION) > -1:
             return True
 
         if not hasattr(json_dict, 'items'):
