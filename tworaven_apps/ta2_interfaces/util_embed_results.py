@@ -95,8 +95,20 @@ class ResultUriFormatter(object):
 
     def get_final_results(self):
         """Return the formatted_results"""
+        assert not self.has_error, \
+               ('(!) Do not use this method if an error has been detected.'
+                ' First check the "has_error" attribute')
+
         return self.final_results
-    
+
+    def get_final_results_as_dict(self):
+        """Return the formatted_results"""
+        assert not self.has_error, \
+               ('(!) Do not use this method if an error has been detected.'
+                ' First check the "has_error" attribute')
+
+        return json.loads(self.final_results, object_pairs_hook=OrderedDict)
+
 
     def process_list(self, result_list):
         """Process the results list from a PipelineCreateResult"""

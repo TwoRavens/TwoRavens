@@ -13,6 +13,7 @@ from tworaven_apps.ta2_interfaces.models import STATUS_VAL_OK,\
 from tworaven_apps.ta2_interfaces.req_pipeline_create import ERR_NO_SESSION_ID,\
     ERR_NO_CONTEXT
 
+
 class CreatePipelinesTest(TestCase):
     def setUp(self):
         # Set it to internal testing mode

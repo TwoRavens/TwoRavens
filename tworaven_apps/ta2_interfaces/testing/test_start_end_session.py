@@ -18,8 +18,6 @@ class StartEndSessionTest(TestCase):
         # Set it to internal testing mode
         settings.TA2_STATIC_TEST_MODE = True
 
-
-
     def test_10_good_start(self):
         """(10) Test start session endpoint used by UI"""
         msgt(self.test_10_good_start.__doc__)
