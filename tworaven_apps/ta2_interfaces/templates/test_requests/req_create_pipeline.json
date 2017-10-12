@@ -1,0 +1,28 @@
+  {
+    "context": {
+      "session_id": "session_0"
+    },
+    "trainFeatures": [
+      {
+        "featureId": "cylinders",
+        "dataUri": "data/d3m/o_196seed/data/trainDatamerged.tsv"
+      },
+      {
+        "featureId": "cylinders",
+        "dataUri": "data/d3m/o_196seed/data/trainDatamerged.tsv"
+      }
+    ],
+    "task": "REGRESSION",
+    "taskSubtype": "UNIVARIATE",
+    "output": "REAL",
+    "metrics": [
+      "ROOT_MEAN_SQUARED_ERROR"
+    ],
+    "targetFeatures": [
+      {
+        "featureId": "class",
+        "dataUri": "data/d3m/o_196seed/data/trainDatamerged.tsv"
+      }
+    ],
+    "maxPipelines": 10
+  }

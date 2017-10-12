@@ -1,4 +1,4 @@
-
+"""Methods used by AppConfiguration"""
 
 def add_trailing_slash(la_url):
     """Add a trailing slash to a url"""

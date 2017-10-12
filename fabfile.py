@@ -274,3 +274,7 @@ def init_db():
     create_django_superuser()
     #local("python manage.py loaddata fixtures/users.json")
     #Series(name_abbreviation="Mass.").save()
+
+def run_grpc_tests():
+    """Run the gRPC tests, equivalent of 'python manage.py test tworaven_apps.ta2_interfaces'"""
+    local('python manage.py test tworaven_apps.ta2_interfaces')

@@ -5,7 +5,8 @@ from django.test import TestCase
 from django.urls import reverse
 from django.conf import settings
 
-from tworaven_apps.ta2_interfaces import core_pb2
+from tworaven_apps.ta2_interfaces.ta2_util import format_info_for_request
+from tworaven_apps.utils.msg_helper import msgt
 from tworaven_apps.ta2_interfaces.models import STATUS_VAL_OK,\
     STATUS_VAL_FAILED_PRECONDITION
 from tworaven_apps.ta2_interfaces.req_start_session import ERR_MSG_NO_USER_AGENT
@@ -16,23 +17,12 @@ class StartEndSessionTest(TestCase):
     def setUp(self):
         # Set it to internal testing mode
         settings.TA2_STATIC_TEST_MODE = True
-        #Animal.objects.create(name="lion", sound="roar")
-        #Animal.objects.create(name="cat", sound="meow")
 
-    def format_info_for_request(self, info_dict):
-        """TwoRavens info is sent from the UI as
-        a JSON string under the key 'grpcrequest'"""
 
-        return dict(grpcrequest=json.dumps(info_dict))
-
-    def msgt(self, m):
-        print('-' * 40)
-        print(m)
-        print('-' * 40)
 
     def test_10_good_start(self):
         """(10) Test start session endpoint used by UI"""
-        self.msgt(self.test_10_good_start.__doc__)
+        msgt(self.test_10_good_start.__doc__)
         # test client
         client = Client()
 
@@ -41,7 +31,7 @@ class StartEndSessionTest(TestCase):
         url = reverse('StartSession')
         info = dict(user_agent='user_agent')
 
-        response = client.post(url, self.format_info_for_request(info))
+        response = client.post(url, format_info_for_request(info))
 
         # 200 response
         #
@@ -69,7 +59,7 @@ class StartEndSessionTest(TestCase):
 
     def test_20_bad_start(self):
         """(20) Test start session endpoint used by UI. Send an unknown field"""
-        self.msgt(self.test_20_bad_start.__doc__)
+        msgt(self.test_20_bad_start.__doc__)
         # test client
         client = Client()
 
@@ -79,7 +69,7 @@ class StartEndSessionTest(TestCase):
         info = dict(user_agent='secret_agent_man',
                     unknown_field='what\'s this?')
 
-        response = client.post(url, self.format_info_for_request(info))
+        response = client.post(url, format_info_for_request(info))
 
         # 200 response
         #
@@ -103,7 +93,7 @@ class StartEndSessionTest(TestCase):
 
     def test_30_bad_start(self):
         """(30) Test start session endpoint used by UI. Don't send a user agent"""
-        self.msgt(self.test_30_bad_start.__doc__)
+        msgt(self.test_30_bad_start.__doc__)
         # test client
         client = Client()
 
@@ -112,7 +102,7 @@ class StartEndSessionTest(TestCase):
         url = reverse('StartSession')
         info = dict()   # don't send any info
 
-        response = client.post(url, self.format_info_for_request(info))
+        response = client.post(url, format_info_for_request(info))
 
         # 200 response
         #
@@ -134,8 +124,8 @@ class StartEndSessionTest(TestCase):
         self.assertTrue(idx > -1)
 
     def test_40_good_end(self):
-        """(40) Test the end session command"""
-        self.msgt(self.test_40_good_end.__doc__)
+        """(40) Test the end session endpoint"""
+        msgt(self.test_40_good_end.__doc__)
         # test client
         client = Client()
 
@@ -144,7 +134,7 @@ class StartEndSessionTest(TestCase):
         url = reverse('EndSession')
         info = dict(session_id='session_0')
 
-        response = client.post(url, self.format_info_for_request(info))
+        response = client.post(url, format_info_for_request(info))
 
         # 200 response
         #
@@ -161,8 +151,8 @@ class StartEndSessionTest(TestCase):
                          STATUS_VAL_OK)
 
     def test_50_bad_end(self):
-        """(50) Test the end session command.  Error: Don't include a session_id"""
-        self.msgt(self.test_50_bad_end.__doc__)
+        """(50) Test the end session endpoint.  Error: Don't include a session_id"""
+        msgt(self.test_50_bad_end.__doc__)
         # test client
         client = Client()
 
@@ -171,7 +161,7 @@ class StartEndSessionTest(TestCase):
         url = reverse('EndSession')
         info = dict(no_session_id='session_0')
 
-        response = client.post(url, self.format_info_for_request(info))
+        response = client.post(url, format_info_for_request(info))
 
         # 200 response
         #
