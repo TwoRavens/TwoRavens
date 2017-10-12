@@ -10,9 +10,8 @@ from tworaven_apps.ta2_interfaces.ta2_util import format_info_for_request,\
 from tworaven_apps.utils.msg_helper import msgt
 from tworaven_apps.ta2_interfaces.models import STATUS_VAL_OK,\
     STATUS_VAL_FAILED_PRECONDITION, STATUS_VAL_COMPLETED
-from tworaven_apps.ta2_interfaces.req_start_session import ERR_MSG_NO_USER_AGENT
-from tworaven_apps.ta2_interfaces.req_end_session import ERR_NO_SESSION_ID
-#from tworaven_apps.ta2_interfaces.models import Animal
+from tworaven_apps.ta2_interfaces.req_pipeline_create import ERR_NO_SESSION_ID,\
+    ERR_NO_CONTEXT
 
 class CreatePipelinesTest(TestCase):
     def setUp(self):
@@ -74,3 +73,74 @@ class CreatePipelinesTest(TestCase):
         #
         self.assertTrue('file_1' in\
                         fifth_resp['pipelineInfo']['predictResultData'][0])
+
+    def test_20_bad_create_no_context(self):
+        """(20) Test create pipelines endpoint used by UI.  No context"""
+        msgt(self.test_20_bad_create_no_context.__doc__)
+        # test client
+        client = Client()
+
+        # url and info for call
+        #
+        url = reverse('CreatePipelines')
+
+        info_dict = load_template_as_dict('test_requests/req_create_pipeline.json')
+
+        del info_dict['context']
+
+        response = client.post(url, format_info_for_request(info_dict))
+
+        # 200 response
+        #
+        self.assertEqual(response.status_code, 200)
+
+        # convert to JSON
+        #
+        print('json_resp', response.content[:250])
+        json_resp = response.json()
+
+        # status code 'OK'
+        #
+        self.assertEqual(json_resp['status']['code'],
+                         STATUS_VAL_FAILED_PRECONDITION)
+
+        # error message found
+        #
+        idx = json_resp['status']['details'].find(ERR_NO_CONTEXT)
+        self.assertTrue(idx > -1)
+
+
+    def test_30_bad_create_no_session_id(self):
+        """(30) Test create pipelines endpoint used by UI.  No session_id"""
+        msgt(self.test_30_bad_create_no_session_id.__doc__)
+        # test client
+        client = Client()
+
+        # url and info for call
+        #
+        url = reverse('CreatePipelines')
+
+        info_dict = load_template_as_dict('test_requests/req_create_pipeline.json')
+
+        del info_dict['context']['session_id']
+
+        response = client.post(url, format_info_for_request(info_dict))
+
+        # 200 response
+        #
+        self.assertEqual(response.status_code, 200)
+
+        # convert to JSON
+        #
+        print('json_resp', response.content[:250])
+        json_resp = response.json()
+
+        # status code 'OK'
+        #
+        self.assertEqual(json_resp['status']['code'],
+                         STATUS_VAL_FAILED_PRECONDITION)
+
+        # error message found
+        #
+        idx = json_resp['status']['details'].find(ERR_NO_SESSION_ID)
+        self.assertTrue(idx > -1)

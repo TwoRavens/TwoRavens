@@ -17,6 +17,7 @@ KEY_PIPELINE_EXEC_URI = 'pipeline_exec_uri'
 
 KEY_USER_AGENT_FROM_UI = 'user_agent'
 KEY_SESSION_ID_FROM_UI = 'session_id'
+KEY_CONTEXT_FROM_UI = 'context'
 
 # values
 VAL_DATA_URI = '<<DATA_URI>>'

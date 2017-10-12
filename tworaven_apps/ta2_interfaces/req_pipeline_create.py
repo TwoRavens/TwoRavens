@@ -12,8 +12,15 @@ from tworaven_apps.ta2_interfaces.ta2_util import get_grpc_test_json,\
     get_failed_precondition_response,\
     get_predict_file_info_dict
 from tworaven_apps.ta2_interfaces.util_embed_results import ResultUriFormatter
+from tworaven_apps.ta2_interfaces.models import KEY_CONTEXT_FROM_UI,\
+    KEY_SESSION_ID_FROM_UI
 
 PIPELINE_CREATE_REQUEST = 'PipelineCreateRequest'
+
+ERR_NO_CONTEXT = 'A "%s" must be included in the request.' % KEY_CONTEXT_FROM_UI
+ERR_NO_SESSION_ID = ('A "%s" must be included in the request,'
+                     ' within the "%s".') %\
+                     (KEY_CONTEXT_FROM_UI, KEY_SESSION_ID_FROM_UI)
 
 def get_test_info_str():
     """Test data for update_problem_schema call"""
@@ -36,6 +43,12 @@ def pipeline_create(info_str=None):
     except json.decoder.JSONDecodeError as err_obj:
         err_msg = 'Failed to convert UI Str to JSON: %s' % (err_obj)
         return get_failed_precondition_response(err_msg)
+    #import ipdb; ipdb.set_trace()
+    if KEY_CONTEXT_FROM_UI not in info_dict:
+        return get_failed_precondition_response(ERR_NO_CONTEXT)
+
+    if KEY_SESSION_ID_FROM_UI not in info_dict[KEY_CONTEXT_FROM_UI]:
+        return get_failed_precondition_response(ERR_NO_SESSION_ID)
 
     # --------------------------------
     # convert the JSON string to a gRPC request
