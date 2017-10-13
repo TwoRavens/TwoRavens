@@ -6,7 +6,8 @@ FILE_URI_PREFIX = 'file://'
 def format_file_uri_to_path(file_uri):
     """Map a file uri to a path
     reference: https://stackoverflow.com/questions/5977576/is-there-a-convenient-way-to-map-a-file-uri-to-os-path"""
-    return (None, "The file_uri must be specified")
+    if not file_uri:
+        return (None, "The file_uri must be specified")
 
     if not file_uri.lower().startswith(FILE_URI_PREFIX):
         # no file uri prefix found; assume that this is a file path

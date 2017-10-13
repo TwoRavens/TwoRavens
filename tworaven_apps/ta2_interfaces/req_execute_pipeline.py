@@ -100,15 +100,15 @@ def execute_pipeline(info_str=None):
 
         # These next lines embed file uri content into the JSON
         embed_util = FileEmbedUtil(template_str)
-        if formatter.has_error:
-            return get_failed_precondition_response(formatter.error_message)
+        if embed_util.has_error:
+            return get_failed_precondition_response(embed_util.error_message)
 
         test_note = ('Test.  An actual result would be the test JSON with'
                      ' the "data" section removed and DATA_URI replaced'
                      ' with a file path to where the "data" section was'
                      ' written.')
 
-        return json.dumps(dict(note=test_note)), formatter.get_final_results()
+        return json.dumps(dict(note=test_note)), embed_util.get_final_results()
         #---
         #return info_str_formatted,\
         #       get_grpc_test_json('test_responses/execute_results_1pipe_ok.json',
@@ -136,8 +136,8 @@ def execute_pipeline(info_str=None):
     result_str = '['+', '.join(results)+']'
 
     embed_util = FileEmbedUtil(result_str)
-    if formatter.has_error:
-        return get_failed_precondition_response(formatter.error_message)
+    if embed_util.has_error:
+        return get_failed_precondition_response(embed_util.error_message)
 
     return info_str_formatted, result_str
 

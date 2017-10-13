@@ -68,10 +68,10 @@ def pipeline_create(info_str=None):
 
         # These next lines embed file uri content into the JSON
         embed_util = FileEmbedUtil(template_str)
-        if formatter.has_error:
-            return get_failed_precondition_response(formatter.error_message)
+        if embed_util.has_error:
+            return get_failed_precondition_response(embed_util.error_message)
 
-        return formatter.get_final_results()
+        return embed_util.get_final_results()
         #return get_grpc_test_json('test_responses/createpipeline_ok.json',
         #                          template_info)
 
@@ -103,10 +103,10 @@ def pipeline_create(info_str=None):
     result_str = '['+', '.join(results)+']'
 
     embed_util = FileEmbedUtil(result_str)
-    if formatter.has_error:
-        return get_failed_precondition_response(formatter.error_message)
+    if embed_util.has_error:
+        return get_failed_precondition_response(embed_util.error_message)
 
-    return formatter.get_final_results()
+    return embed_util.get_final_results()
 
 """
 python manage.py shell

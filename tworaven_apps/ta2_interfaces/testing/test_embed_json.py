@@ -49,13 +49,13 @@ class EmbedJSONTest(TestCase):
 
         # was an error encountered?
         #
-        self.assertEqual(formatter.has_error, False)
+        self.assertEqual(embed_util.has_error, False)
 
         # retrieve the response with the newly embedded data
         #
-        results_list = formatter.get_final_results_as_dict()
+        results_list = embed_util.get_final_results_as_dict()
         results_dict = results_list[0]
-        print(formatter.get_final_results())
+        print(embed_util.get_final_results())
 
         # Is the pipelineInfo key present
         self.assertTrue(KEY_PIPELINE_INFO in results_dict)
@@ -95,18 +95,18 @@ class EmbedJSONTest(TestCase):
 
         # was an error encountered?
         #
-        self.assertEqual(formatter.has_error, False)
+        self.assertEqual(embed_util.has_error, False)
 
         # retrieve the response with the newly embedded data
         #
-        results_list = formatter.get_final_results_as_dict()
+        results_list = embed_util.get_final_results_as_dict()
 
         print(json.dumps(results_list, indent=4))
 
         results_dict = results_list[0]
 
 
-        print(formatter.get_final_results())
+        print(embed_util.get_final_results())
 
         # Is the pipelineInfo key present
         self.assertTrue(KEY_PIPELINE_INFO in results_dict)
@@ -122,3 +122,5 @@ class EmbedJSONTest(TestCase):
         num_data_entries = len(results_dict[KEY_PIPELINE_INFO][KEY_PREDICT_RESULT_DATA])
 
         self.assertEqual(num_uris, num_data_entries)
+
+        self.assertEqual(results_dict[KEY_PIPELINE_INFO][KEY_PREDICT_RESULT_DATA][2]['file_3']['success'], False)

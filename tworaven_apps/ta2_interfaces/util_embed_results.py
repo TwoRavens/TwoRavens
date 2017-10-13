@@ -38,7 +38,7 @@ Example:
 
 """
 import json
-from os.path import getsize
+from os.path import getsize, isfile
 from collections import OrderedDict
 
 from django.conf import settings
@@ -245,11 +245,27 @@ class FileEmbedUtil(object):
 
         (py_list, err_msg) = convert_csv_file_to_json(file_uri, to_string=False)
         if err_msg:
-            ERR_CODE_FAILED_JSON_CONVERSION
-            return {'file_%d' % cnt : py_list}
+            return self.format_embed_err(ERR_CODE_FAILED_JSON_CONVERSION,
+                                         err_msg,
+                                         file_num)
 
+        # It worked!
+        # Send back the data
+        #
+        embed_snippet = OrderedDict()
+        fkey = self.format_file_key(file_num)
+        embed_snippet[fkey] = OrderedDict()
+        embed_snippet[fkey]['success'] = True
+        embed_snippet[fkey]['data'] = py_list
 
-    def format_embed_err(err_code, err_msg, file_num):
+        return embed_snippet
+
+    def format_file_key(self, file_num):
+        """Format the key for an individual file embed"""
+        assert str(file_num).isdigit(), 'The file_num must be digits.'
+        return 'file_%s' % file_num
+
+    def format_embed_err(self, err_code, err_msg, file_num):
         """Format a dict snippet for JSON embedding"""
         info = OrderedDict()
         info['success'] = False
@@ -257,7 +273,8 @@ class FileEmbedUtil(object):
         info['message'] = err_msg
 
         od = OrderedDict()
-        od['file_%d' % file_num] = info
+        fkey = self.format_file_key(file_num)
+        od[fkey] = info
 
         return od
 
