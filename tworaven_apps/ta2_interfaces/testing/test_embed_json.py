@@ -14,7 +14,8 @@ from tworaven_apps.ta2_interfaces.models import STATUS_VAL_OK,\
     STATUS_VAL_FAILED_PRECONDITION, STATUS_VAL_COMPLETED
 from tworaven_apps.ta2_interfaces.req_pipeline_create import ERR_NO_SESSION_ID,\
     ERR_NO_CONTEXT
-from tworaven_apps.ta2_interfaces.util_embed_results import FileEmbedUtil
+from tworaven_apps.ta2_interfaces.util_embed_results import FileEmbedUtil,\
+    ERR_CODE_FILE_NOT_FOUND
 from tworaven_apps.ta2_interfaces.models import TEST_KEY_FILE_URI,\
     KEY_PIPELINE_INFO, KEY_PREDICT_RESULT_DATA, KEY_PREDICT_RESULT_URIS
 
@@ -123,4 +124,6 @@ class EmbedJSONTest(TestCase):
 
         self.assertEqual(num_uris, num_data_entries)
 
-        self.assertEqual(results_dict[KEY_PIPELINE_INFO][KEY_PREDICT_RESULT_DATA][2]['file_3']['success'], False)
+        file3_info = results_dict[KEY_PIPELINE_INFO][KEY_PREDICT_RESULT_DATA][2]['file_3']
+        self.assertEqual(file3_info['success'], False)
+        self.assertEqual(file3_info['err_code'], ERR_CODE_FILE_NOT_FOUND)
