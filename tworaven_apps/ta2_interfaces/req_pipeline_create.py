@@ -11,7 +11,7 @@ from tworaven_apps.ta2_interfaces.ta2_connection import TA2Connection
 from tworaven_apps.ta2_interfaces.ta2_util import get_grpc_test_json,\
     get_failed_precondition_response,\
     get_predict_file_info_dict
-from tworaven_apps.ta2_interfaces.util_embed_results import ResultUriFormatter
+from tworaven_apps.ta2_interfaces.util_embed_results import FileEmbedUtil
 from tworaven_apps.ta2_interfaces.models import KEY_CONTEXT_FROM_UI,\
     KEY_SESSION_ID_FROM_UI
 
@@ -67,7 +67,7 @@ def pipeline_create(info_str=None):
                                           template_info)
 
         # These next lines embed file uri content into the JSON
-        formatter = ResultUriFormatter(template_str)
+        embed_util = FileEmbedUtil(template_str)
         if formatter.has_error:
             return get_failed_precondition_response(formatter.error_message)
 
@@ -102,7 +102,7 @@ def pipeline_create(info_str=None):
 
     result_str = '['+', '.join(results)+']'
 
-    formatter = ResultUriFormatter(result_str)
+    embed_util = FileEmbedUtil(result_str)
     if formatter.has_error:
         return get_failed_precondition_response(formatter.error_message)
 

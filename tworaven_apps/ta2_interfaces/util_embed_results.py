@@ -38,12 +38,26 @@ Example:
 
 """
 import json
+from os.path import getsize
 from collections import OrderedDict
 
+from django.conf import settings
+
 from tworaven_apps.utils.csv_to_json import convert_csv_file_to_json
+from tworaven_apps.utils.url_helper import format_file_uri_to_path
+from tworaven_apps.utils.number_formatting import add_commas_to_number
 
+ERR_CODE_FILE_URI_NOT_SET = 'FILE_URI_NOT_SET'
+ERR_CODE_FILE_URI_BAD_FORMAT = 'FILE_URI_BAD_FORMAT'
+ERR_CODE_FILE_NOT_FOUND = 'FILE_NOT_FOUND'
+ERR_CODE_FILE_NOT_REACHABLE = 'FILE_NOT_REACHABLE'
+ERR_CODE_FILE_NOT_EMBEDDABLE = 'FILE_NOT_EMBEDDABLE'
+ERR_CODE_FILE_TOO_LARGE_TO_EMBED = 'FILE_TOO_LARGE_TO_EMBED'
+ERR_CODE_FAILED_JSON_CONVERSION = 'FAILED_JSON_CONVERSION'
 
-class ResultUriFormatter(object):
+EMBEDDABLE_FILE_TYPES = ('.csv',)
+
+class FileEmbedUtil(object):
     """For a list of given file uris
         - see if it's a .csv file:
         - open the file
@@ -152,24 +166,120 @@ class ResultUriFormatter(object):
         return formatted_results
 
 
-    def get_embed_result(self, file_uri, cnt):
-        """Get the content from the """
-        err_msg = None
+    def get_embed_result(self, file_uri, file_num):
+        """Get the content from the file and format a JSON snippet
+        that includes that content.
+
+        Example responses:
+           "file_1":{
+              "success":true,
+              "data":[
+                 {"preds":"36.17124"},
+                 {"preds":"29.85256"},
+                 {"preds":"30.85256"}
+              ]
+           },
+           "file_2":{
+              "success":false,
+              "err_code":"FILE_NOT_FOUND",
+              "message":"The file was not found."
+           },
+           "file_3":{
+              "success":false,
+              "err_code":"FILE_NOT_REACHABLE",
+              "message":"The file exists but could not be opened."
+           },
+        """
         py_list = None
 
         if not file_uri:
-            err_msg = 'file_uri cannot be None'
+            err_code = ERR_CODE_FILE_URI_NOT_SET
+            err_msg = 'The file_uri cannot be None or an empty string.'
+            return self.format_embed_err(err_code, err_msg, file_num)
 
-        elif not file_uri.lower().endswith('.csv'):
-            err_msg = 'file doesn\'t appear to be a .csv'
+        # Convert the file uri to a path
+        #
+        fpath, err_msg = format_file_uri_to_path(file_uri)
+        if err_msg:
+            return self.format_embed_err(ERR_CODE_FILE_URI_BAD_FORMAT,
+                                         err_msg,
+                                         file_num)
 
-        else:
-            (py_list, err_msg) = convert_csv_file_to_json(file_uri, to_string=False)
-            if py_list:
-                return {'file_%d' % cnt : py_list}
+        # Is this path a file?
+        #
+        if not isfile(fpath):
+            err_msg = 'File not found: %s' % fpath
+            return self.format_embed_err(ERR_CODE_FILE_NOT_FOUND,
+                                         err_msg,
+                                         file_num)
 
-        return {'file_%d' % cnt : err_msg}
+        # Are these file types embeddable?
+        #
+        if not self.is_accepted_file_type(fpath):
+            err_msg = self.get_embed_file_type_err_msg()
+            return self.format_embed_err(ERR_CODE_FILE_NOT_FOUND,
+                                         err_msg,
+                                         file_num)
 
+        # Attempt to get the file size, which may throw an
+        # error if the file is not reachable
+        try:
+            fsize = getsize(fpath)
+        except OSError as ex_obj:
+            err_msg = 'Not able to open file: %s' % fpath
+            return self.format_embed_err(ERR_CODE_FILE_NOT_REACHABLE,
+                                         err_msg,
+                                         file_num)
+
+        # Is the file too large to embed?
+        #
+        if fsize > settings.MAX_EMBEDDABLE_FILE_SIZE:
+            err_msg = ('This file was too large to embed.'
+                       ' Size was %d bytes but the limit is %d bytes.') %\
+                       (add_commas_to_number(fsize),
+                        add_commas_to_number(settings.MAX_EMBEDDABLE_FILE_SIZE))
+            return self.format_embed_err(ERR_CODE_FILE_TOO_LARGE_TO_EMBED,
+                                         err_msg,
+                                         file_num)
+
+
+        (py_list, err_msg) = convert_csv_file_to_json(file_uri, to_string=False)
+        if err_msg:
+            ERR_CODE_FAILED_JSON_CONVERSION
+            return {'file_%d' % cnt : py_list}
+
+
+    def format_embed_err(err_code, err_msg, file_num):
+        """Format a dict snippet for JSON embedding"""
+        info = OrderedDict()
+        info['success'] = False
+        info['err_code'] = err_code
+        info['message'] = err_msg
+
+        od = OrderedDict()
+        od['file_%d' % file_num] = info
+
+        return od
+
+
+    def get_embed_file_type_err_msg(self):
+        """Get the error message that the file type isn't recognized"""
+        return ("The file doesn't appear to be one"
+                " of these types: %s" %\
+                  ', '.join(EMBEDDABLE_FILE_TYPES))
+
+
+    def is_accepted_file_type(self, file_uri):
+        """Check if the file extension is in EMBEDDABLE_FILE_TYPES"""
+        if not file_uri:
+            return False
+
+        file_uri_lcase = file_uri.lower()
+        for ftype in EMBEDDABLE_FILE_TYPES:
+            if file_uri_lcase.endswith(ftype):
+                return True
+
+        return False
 
     def get_formatted_json(self):
         pass
