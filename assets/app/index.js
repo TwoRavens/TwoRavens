@@ -1,7 +1,7 @@
-import '../pkgs/bootstrap/css/bootstrap-theme.min.css';
 import '../css/app.css';
+import '../pkgs/bootstrap/css/bootstrap-theme.min.css';
 import '../pkgs/Ladda/dist/ladda-themeless.min.css';
-import '../pkgs/hopscotch/dist/css/hopscotch.css';
+import '../../node_modules/hopscotch/dist/css/hopscotch.css';
 
 import m from 'mithril';
 

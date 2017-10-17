@@ -57,7 +57,7 @@ R_DEV_SERVER_BASE = 'http://0.0.0.0:8000/custom/'
 RECORD_R_SERVICE_ROUTING = False # log R service requests/response JSON to db
 
 # export TA2_STATIC_TEST_MODE=False
-TA2_STATIC_TEST_MODE = True #False # strtobool(os.environ.get('TA2_STATIC_TEST_MODE', 'False'))   # True: canned responses
+TA2_STATIC_TEST_MODE = strtobool(os.environ.get('TA2_STATIC_TEST_MODE', 'True'))   # True: canned responses
 
 # Note: the test server can be run via: https://gitlab.datadrivendiscovery.org/tworavens/TwoRavens/blob/master/docs/dev_notes.md#run-local-ta2-test-server
 #
