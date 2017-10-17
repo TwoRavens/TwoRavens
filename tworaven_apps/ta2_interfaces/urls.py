@@ -24,10 +24,6 @@ urlpatterns = (
         views.view_create_pipeline,
         name='CreatePipelines'),
 
-    url(r'^getexecutepipelineresults/?$',
-        views.view_get_execute_pipeline_results,
-        name='GetExecutePipelineResults'),
-
     url(r'^listpipelines/?$',
         views.view_list_pipelines,
         name='ListPipelines'),
@@ -35,6 +31,10 @@ urlpatterns = (
     url(r'^executepipeline/?$',
         view_execute_pipeline.view_execute_pipeline,
         name='ExecutePipeline'),
+
+    url(r'^getexecutepipelineresults/?$',
+        views.view_get_execute_pipeline_results,
+        name='GetExecutePipelineResults'),
 
     url(r'^exportpipeline/?$',
         views.view_export_pipeline,

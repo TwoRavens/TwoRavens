@@ -54,7 +54,7 @@ TIME_ZONE = 'America/New_York'
 R_DEV_SERVER_BASE = 'http://0.0.0.0:8000/custom/'
 #R_DEV_SERVER_BASE = 'http://0.0.0.0:8060/custom/'
 
-RECORD_R_SERVICE_ROUTING = True # log R service requests/response JSON to db
+RECORD_R_SERVICE_ROUTING = False # log R service requests/response JSON to db
 
 # export TA2_STATIC_TEST_MODE=False
 TA2_STATIC_TEST_MODE = strtobool(os.environ.get('TA2_STATIC_TEST_MODE', 'True'))   # True: canned responses

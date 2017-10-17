@@ -7,13 +7,14 @@ import csv
 import json
 
 
-def convert_csv_file_to_json(csv_fname):
+def convert_csv_file_to_json(csv_fname, to_string=True):
     """
     Convert a CSV file to a JSON string
 
     return json_string, None
     return None, err_msg
     """
+    #import ipdb; ipdb.set_trace()
     if not csv_fname:
         return (None, 'No file specified')
 
@@ -41,7 +42,10 @@ def convert_csv_file_to_json(csv_fname):
     except TypeError:
         return (None, 'Failed to convert csv content to JSON: %s' % csv_fname)
 
-    return (json_content, None)
+    if to_string:
+        return (json_content, None)
+
+    return (rows, None)
 
 
 def convert_csv_content_to_json(csv_content):

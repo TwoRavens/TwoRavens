@@ -11,7 +11,9 @@ from tworaven_apps.ta2_interfaces import core_pb2
 from tworaven_apps.ta2_interfaces.ta2_connection import TA2Connection
 from tworaven_apps.ta2_interfaces.ta2_util import get_grpc_test_json,\
     get_failed_precondition_response
+from tworaven_apps.ta2_interfaces.models import KEY_SESSION_ID_FROM_UI
 
+ERR_NO_SESSION_ID = 'A "%s" must be included in the request.' % KEY_SESSION_ID_FROM_UI
 
 def end_session(raven_json_str):
     """end session command
@@ -28,9 +30,8 @@ def end_session(raven_json_str):
     # The protocol version always comes from the latest
     # version we have in the repo (just copied in for now)
     #
-    if not 'session_id' in raven_dict:
-        err_msg = 'No session_id found: %s' % (raven_json_str)
-        return get_failed_precondition_response(err_msg)
+    if not KEY_SESSION_ID_FROM_UI in raven_dict:
+        return get_failed_precondition_response(ERR_NO_SESSION_ID)
 
     # --------------------------------
     # Convert back to string for TA2 call
@@ -54,8 +55,8 @@ def end_session(raven_json_str):
         rnd_session_id = ''.join(random.choice(string.ascii_lowercase + string.digits)
                          for _ in range(7))
         tinfo = dict(session_id=rnd_session_id)
-        if random.randint(1, 3) == 3:
-            return get_grpc_test_json('test_responses/endsession_badassertion.json')
+        #if random.randint(1, 3) == 3:
+        #    return get_grpc_test_json('test_responses/endsession_badassertion.json')
 
         return get_grpc_test_json('test_responses/endsession_ok.json',
                                   tinfo)

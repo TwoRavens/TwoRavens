@@ -1,4 +1,4 @@
-
+"""Convert a python boolean to a javascript boolean"""
 
 def get_js_boolean(bool_val):
     """Convenience method for converting

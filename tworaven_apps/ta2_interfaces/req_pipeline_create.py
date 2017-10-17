@@ -1,5 +1,5 @@
 import json
-from os.path import dirname, isfile, join, abspath
+from os.path import join
 from collections import OrderedDict
 
 from google.protobuf.json_format import MessageToJson,\
@@ -9,11 +9,18 @@ from django.conf import settings
 from tworaven_apps.ta2_interfaces import core_pb2
 from tworaven_apps.ta2_interfaces.ta2_connection import TA2Connection
 from tworaven_apps.ta2_interfaces.ta2_util import get_grpc_test_json,\
-    get_failed_precondition_response
-from tworaven_apps.utils.csv_to_json import convert_csv_file_to_json
-
+    get_failed_precondition_response,\
+    get_predict_file_info_dict
+from tworaven_apps.ta2_interfaces.util_embed_results import FileEmbedUtil
+from tworaven_apps.ta2_interfaces.models import KEY_CONTEXT_FROM_UI,\
+    KEY_SESSION_ID_FROM_UI
 
 PIPELINE_CREATE_REQUEST = 'PipelineCreateRequest'
+
+ERR_NO_CONTEXT = 'A "%s" must be included in the request.' % KEY_CONTEXT_FROM_UI
+ERR_NO_SESSION_ID = ('A "%s" must be included in the request,'
+                     ' within the "%s".') %\
+                     (KEY_CONTEXT_FROM_UI, KEY_SESSION_ID_FROM_UI)
 
 def get_test_info_str():
     """Test data for update_problem_schema call"""
@@ -36,6 +43,12 @@ def pipeline_create(info_str=None):
     except json.decoder.JSONDecodeError as err_obj:
         err_msg = 'Failed to convert UI Str to JSON: %s' % (err_obj)
         return get_failed_precondition_response(err_msg)
+    #import ipdb; ipdb.set_trace()
+    if KEY_CONTEXT_FROM_UI not in info_dict:
+        return get_failed_precondition_response(ERR_NO_CONTEXT)
+
+    if KEY_SESSION_ID_FROM_UI not in info_dict[KEY_CONTEXT_FROM_UI]:
+        return get_failed_precondition_response(ERR_NO_SESSION_ID)
 
     # --------------------------------
     # convert the JSON string to a gRPC request
@@ -50,8 +63,17 @@ def pipeline_create(info_str=None):
 
         template_info = get_predict_file_info_dict(info_dict.get('task'))
 
-        return get_grpc_test_json('test_responses/createpipeline_ok.json',
-                                  template_info)
+        template_str = get_grpc_test_json('test_responses/createpipeline_ok.json',
+                                          template_info)
+
+        # These next lines embed file uri content into the JSON
+        embed_util = FileEmbedUtil(template_str)
+        if embed_util.has_error:
+            return get_failed_precondition_response(embed_util.error_message)
+
+        return embed_util.get_final_results()
+        #return get_grpc_test_json('test_responses/createpipeline_ok.json',
+        #                          template_info)
 
     # --------------------------------
     # Get the connection, return an error if there are channel issues
@@ -77,46 +99,14 @@ def pipeline_create(info_str=None):
     # Convert the reply to JSON and send it on
     # --------------------------------
     results = map(MessageToJson, reply)
+
     result_str = '['+', '.join(results)+']'
 
+    embed_util = FileEmbedUtil(result_str)
+    if embed_util.has_error:
+        return get_failed_precondition_response(embed_util.error_message)
 
-    return result_str
-
-
-def get_predict_file_info_dict(task_type, cnt=1):
-    """Create the file uri and embed the file content"""
-
-    test_dirpath = join(dirname(abspath(__file__)),
-                         'templates',
-                         'test_responses',
-                         'files')
-
-    json_str = None
-    err_found = False
-    if task_type == 'REGRESSION':
-        fpath = join(test_dirpath, 'samplePredReg.csv')
-
-    elif task_type == 'CLASSIFICATION':
-
-        fpath = join(test_dirpath, 'models.csv')
-    else:
-        err_found = True
-        fpath = '(no sample file for this task type: %s)' % task_type
-
-    if not isfile(fpath):
-        if not err_found:
-            fpath = 'Error creating uri.  File not found: %s' % fpath
-    else:
-        json_str, err_msg = convert_csv_file_to_json(fpath)
-
-
-    dinfo = dict(FILE_URI=fpath)
-    if json_str:
-        dinfo['FILE_CONTENT'] = """ "file_%s" : %s """ % \
-                                (cnt, json_str)
-
-    return dinfo
-
+    return embed_util.get_final_results()
 
 """
 python manage.py shell

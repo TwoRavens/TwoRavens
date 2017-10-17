@@ -7,10 +7,13 @@ from google.protobuf.json_format import MessageToJson,\
 from tworaven_apps.ta2_interfaces import core_pb2
 from tworaven_apps.ta2_interfaces.ta2_connection import TA2Connection
 from tworaven_apps.ta2_interfaces.ta2_util import get_grpc_test_json,\
-    get_failed_precondition_response
+    get_failed_precondition_response,\
+    get_predict_file_info_dict
 from tworaven_apps.configurations.utils import get_latest_d3m_config,\
     write_data_for_execute_pipeline
+from tworaven_apps.ta2_interfaces.util_embed_results import FileEmbedUtil
 from tworaven_apps.ta2_interfaces.models import KEY_DATA, VAL_DATA_URI
+
 
 def get_test_info_str():
     """Test data for update_problem_schema call"""
@@ -85,9 +88,31 @@ def execute_pipeline(info_str=None):
         return None, get_failed_precondition_response(err_msg)
 
     if settings.TA2_STATIC_TEST_MODE:
-        return info_str_formatted,\
-               get_grpc_test_json('test_responses/execute_results_1pipe_ok.json',
-                                  dict())
+
+        #return info_str_formatted,\
+        #       get_grpc_test_json('test_responses/execute_results_1pipe_ok.json',
+        #                          dict())
+        #---
+        template_info = get_predict_file_info_dict()
+
+        template_str = get_grpc_test_json('test_responses/execute_results_1pipe_ok.json',
+                                          template_info)
+
+        # These next lines embed file uri content into the JSON
+        embed_util = FileEmbedUtil(template_str)
+        if embed_util.has_error:
+            return get_failed_precondition_response(embed_util.error_message)
+
+        test_note = ('Test.  An actual result would be the test JSON with'
+                     ' the "data" section removed and DATA_URI replaced'
+                     ' with a file path to where the "data" section was'
+                     ' written.')
+
+        return json.dumps(dict(note=test_note)), embed_util.get_final_results()
+        #---
+        #return info_str_formatted,\
+        #       get_grpc_test_json('test_responses/execute_results_1pipe_ok.json',
+        #                          dict())
 
     # --------------------------------
     # Get the connection, return an error if there are channel issues
@@ -110,8 +135,13 @@ def execute_pipeline(info_str=None):
     results = map(MessageToJson, reply)
     result_str = '['+', '.join(results)+']'
 
+    embed_util = FileEmbedUtil(result_str)
+    if embed_util.has_error:
+        return get_failed_precondition_response(embed_util.error_message)
 
-    return info_str_formatted, result_str
+    return info_str_formatted, embed_util.get_final_results()
+
+    #return info_str_formatted, result_str
 
 
 """

@@ -147,8 +147,8 @@ STATICFILES_DIRS = [join(BASE_DIR, 'assets')]
 # https://warehouse.python.org/project/whitenoise/
 #STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-RECORD_R_SERVICE_ROUTING = True # log R service requests/response JSON to db
-RECORD_D3M_SERVICE_ROUTING = True # log D3M service requests
+RECORD_R_SERVICE_ROUTING = False # log R service requests/response JSON to db
+RECORD_D3M_SERVICE_ROUTING = False # log D3M service requests
 
 
 WEBPACK_LOADER = {
@@ -170,3 +170,7 @@ SERVER_SCHEME = 'http'  # or https
 TA2_STATIC_TEST_MODE = strtobool(os.environ.get('TA2_STATIC_TEST_MODE', 'True'))   # True: canned responses
 TA2_TEST_SERVER_URL = os.environ.get('TA2_TEST_SERVER_URL', 'localhost:50051')
 TA2_GPRC_USER_AGENT = os.environ.get('TA2_GPRC_USER_AGENT', 'tworavens')
+
+
+# D3M - gRPC file uris
+MAX_EMBEDDABLE_FILE_SIZE = .5 * 500000

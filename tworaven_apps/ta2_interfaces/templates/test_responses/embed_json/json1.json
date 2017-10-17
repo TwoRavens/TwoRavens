@@ -1,0 +1,93 @@
+[
+    {
+        "responseInfo": {
+            "status": {
+                "code": "OK"
+            }
+        },
+        "progressInfo": "COMPLETED",
+        "pipelineId": "pipeline_2",
+        "pipelineInfo": {
+            "predictResultUris": [
+                "/Users/ramanprasad/Documents/github-rp/TwoRavens/tworaven_apps/ta2_interfaces/templates/test_responses/embed_json/data_1_col.csv",
+                "/Users/ramanprasad/Documents/github-rp/TwoRavens/tworaven_apps/ta2_interfaces/templates/test_responses/embed_json/data_2_col.csv",
+                "/Volume/andFile/that/do_not_exist.csv"
+            ],
+            "output": "REAL",
+            "scores": [
+                {
+                    "metric": "ACCURACY",
+                    "value": 0.800000011920929
+                },
+                {
+                    "metric": "ROC_AUC",
+                    "value": 0.5
+                }
+            ],
+            "predictResultData": [
+                {
+                    "file_1": {
+                      "success" : true,
+                      "data" : [
+                        {
+                            "preds": "3"
+                        },
+                        {
+                            "preds": "6"
+                        },
+                        {
+                            "preds": "7"
+                        },
+                        {
+                            "preds": "4"
+                        },
+                        {
+                            "preds": "4"
+                        },
+                        {
+                            "preds": "6"
+                        },
+                        {
+                            "preds": "2"
+                        },
+                        {
+                            "preds": "4"
+                        }
+                    ]
+                  }
+                },
+                {
+                    "file_2": {
+                    "success" : true,
+                    "data" : [
+                        {
+                            "x": "1",
+                            "y": "9"
+                        },
+                        {
+                            "x": "2",
+                            "y": "8"
+                        },
+                        {
+                            "x": "3",
+                            "y": "7"
+                        },
+                        {
+                            "x": "4",
+                            "y": "6"
+                        },
+                        {
+                            "x": "5",
+                            "y": "5"
+                        }
+                    ]}
+                },
+                {
+                    "file_3": {
+                      "success": false,
+                      "message" : "File not found: /Volume/andFile/that/do_not_exist.csv"
+                }}
+            ]
+        }
+    }
+]

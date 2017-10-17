@@ -1,0 +1,30 @@
+[
+    {
+        "responseInfo": {
+            "status": {
+                "code": "OK"
+            }
+        },
+        "progressInfo": "COMPLETED",
+        "pipelineId": "pipeline_2",
+        "pipelineInfo": {
+            "predictResultUris": [
+              "{{ FILE_URI|safe }}",
+              "{{ FILE_URI2|safe }}",
+              "/Volume/andFile/that/do_not_exist.csv",
+              "{{ FILE_URI4|safe }}"
+            ],
+            "output": "REAL",
+            "scores": [
+                {
+                    "metric": "ACCURACY",
+                    "value": 0.800000011920929
+                },
+                {
+                    "metric": "ROC_AUC",
+                    "value": 0.5
+                }
+            ]
+        }
+    }
+]
