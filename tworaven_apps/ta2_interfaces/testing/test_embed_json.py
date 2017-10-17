@@ -74,15 +74,17 @@ class EmbedJSONTest(TestCase):
         self.assertEqual(num_uris, num_data_entries)
 
     def test_20_embed_json_test(self):
-        """(20) Test embedding the results of 3 files within the JSON, where
-        1 file doesn't exist"""
+        """(20) Test embedding the results of 4 files within the JSON, where
+        1 file doesn't exist and another fails to convert"""
         msgt(self.test_20_embed_json_test.__doc__)
 
         # Take a canned response and add a real file uri
         #
         info_dict = {\
             TEST_KEY_FILE_URI: join(TEST_FILE_DIR, 'data_1_col.csv'),
-            '%s2' % TEST_KEY_FILE_URI: join(TEST_FILE_DIR, 'data_2_col.csv')}
+            '%s2' % TEST_KEY_FILE_URI: join(TEST_FILE_DIR, 'data_2_col.csv'),
+            '%s4' % TEST_KEY_FILE_URI: join(TEST_FILE_DIR, 'bad_file.csv'),
+            }
 
         resp_str = render_to_string('test_responses/embed_json/embed_2_files.json',
                                     info_dict)
@@ -97,6 +99,8 @@ class EmbedJSONTest(TestCase):
         # was an error encountered?
         #
         self.assertEqual(embed_util.has_error, False)
+
+        print(embed_util.error_message)
 
         # retrieve the response with the newly embedded data
         #

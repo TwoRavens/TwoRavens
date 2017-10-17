@@ -11,7 +11,8 @@
             "predictResultUris": [
               "{{ FILE_URI|safe }}",
               "{{ FILE_URI2|safe }}",
-              "/Volume/andFile/that/do_not_exist.csv"
+              "/Volume/andFile/that/do_not_exist.csv",
+              "{{ FILE_URI4|safe }}"
             ],
             "output": "REAL",
             "scores": [
