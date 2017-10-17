@@ -243,10 +243,10 @@ class FileEmbedUtil(object):
                                          file_num)
 
 
-        (py_list, err_msg) = convert_csv_file_to_json(file_uri, to_string=False)
-        if err_msg:
+        (py_list, err_msg2) = convert_csv_file_to_json(fpath, to_string=False)
+        if err_msg2:
             return self.format_embed_err(ERR_CODE_FAILED_JSON_CONVERSION,
-                                         err_msg,
+                                         err_msg2,
                                          file_num)
 
         # It worked!

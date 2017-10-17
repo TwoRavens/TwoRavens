@@ -26,7 +26,7 @@ The new `/ravens_volume` "directory" needs to be cleared via Docker
 - Run this command:
 
 ```
-docker run --rm --name isi_test  -v /ravens_volume:/ravens_volume -v /tmp/dsbox-ta2:/tmp/dsbox-ta2 -p 50051:50051 registry.datadrivendiscovery.org/ta2/isi_ta2:python3
+docker run --rm --name isi_test  -v /ravens_volume:/ravens_volume -v /tmp/dsbox-ta2:/tmp/dsbox-ta2 -p 50051:50051 registry.datadrivendiscovery.org/ta2/isi_ta2:latest
 ```
 
 

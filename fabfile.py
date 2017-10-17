@@ -132,6 +132,11 @@ def run_ta2_test_server():
     run_cmd = 'cd tworaven_apps/ta2_interfaces; python test_server.py'
     local(run_cmd)
 
+def run_rook():
+    """Run the rook server via the command line"""
+    rook_run_cmd = 'cd rook; Rscript rook_nonstop.R'
+    local(rook_run_cmd)
+
 def run(with_rook=False):
     """Run the django dev server and webpack--webpack watches the assets directory and rebuilds when appTwoRavens changes
 
@@ -147,9 +152,7 @@ def run(with_rook=False):
         'npm start',
     ]
 
-    if with_rook:
-        rook_run_cmd = 'cd rook; Rscript rook_nonstop.R'
-        commands.append(rook_run_cmd)
+    run_rook()
 
     proc_list = [subprocess.Popen(command, shell=True, stdin=sys.stdin, stdout=sys.stdout, stderr=sys.stderr) for command in commands]
     try:
