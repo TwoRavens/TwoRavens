@@ -123,7 +123,8 @@ def check_config():
 
 def run_with_rook():
     """In addition to the django dev server and webpack, run rook via the Terminal"""
-    run(with_rook=True)
+    run_rook()
+    run()
 
 
 def run_ta2_test_server():
@@ -137,7 +138,7 @@ def run_rook():
     rook_run_cmd = 'cd rook; Rscript rook_nonstop.R'
     local(rook_run_cmd)
 
-def run(with_rook=False):
+def run():
     """Run the django dev server and webpack--webpack watches the assets directory and rebuilds when appTwoRavens changes
 
     with_rook=True - runs rook in "nonstop" mode
@@ -151,8 +152,6 @@ def run(with_rook=False):
         # start webpack
         'npm start',
     ]
-
-    run_rook()
 
     proc_list = [subprocess.Popen(command, shell=True, stdin=sys.stdin, stdout=sys.stdout, stderr=sys.stderr) for command in commands]
     try:
