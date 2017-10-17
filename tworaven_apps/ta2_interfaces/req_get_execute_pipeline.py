@@ -8,7 +8,9 @@ from google.protobuf.json_format import MessageToJson,\
 from tworaven_apps.ta2_interfaces import core_pb2
 from tworaven_apps.ta2_interfaces.ta2_connection import TA2Connection
 from tworaven_apps.ta2_interfaces.ta2_util import get_grpc_test_json,\
-    get_failed_precondition_response
+    get_failed_precondition_response,\
+    get_predict_file_info_dict
+from tworaven_apps.ta2_interfaces.util_embed_results import FileEmbedUtil
 
 def get_test_info_str():
     """Test data for update_problem_schema call"""
@@ -42,8 +44,20 @@ def get_execute_pipeline_results(info_str=None):
         return get_failed_precondition_response(err_msg)
 
     if settings.TA2_STATIC_TEST_MODE:
-        return get_grpc_test_json('test_responses/execute_results_ok.json',
-                                  dict())
+
+        template_info = get_predict_file_info_dict()
+
+        template_str = get_grpc_test_json('test_responses/execute_results_ok.json',
+                                          template_info)
+
+        embed_util = FileEmbedUtil(template_str)
+        if embed_util.has_error:
+            return get_failed_precondition_response(embed_util.error_message)
+
+        return embed_util.get_final_results()
+
+        #return get_grpc_test_json('test_responses/execute_results_ok.json',
+        #                          dict())
 
     # --------------------------------
     # Get the connection, return an error if there are channel issues
@@ -66,7 +80,12 @@ def get_execute_pipeline_results(info_str=None):
     results = map(MessageToJson, reply)
     result_str = '['+', '.join(results)+']'
 
-    return result_str
+    embed_util = FileEmbedUtil(result_str)
+    if embed_util.has_error:
+        return get_failed_precondition_response(embed_util.error_message)
+
+    return embed_util.get_final_results()
+
 
 
 """

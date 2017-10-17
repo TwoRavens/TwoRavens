@@ -20,7 +20,7 @@ import time
 
 from tworaven_apps.ta2_interfaces import core_pb2
 from tworaven_apps.ta2_interfaces import core_pb2_grpc as core_pb2_grpc
-from tworaven_apps.ta2_interfaces.models import FILE_URI
+from tworaven_apps.ta2_interfaces.models import TEST_KEY_FILE_URI
 from tworaven_apps.ta2_interfaces.ta2_util import get_predict_file_info_dict
 """
 import data_ext_pb2 as data_ext_pb2
@@ -152,7 +152,7 @@ class Core(core_pb2_grpc.CoreServicer):
                 msg.pipeline_info.CopyFrom(
                     core_pb2.Pipeline(
                         #predict_result_uris=['file:///out/predict1.csv'],
-                        predict_result_uris=[file_uri_dict.get(FILE_URI, 'no file uri')],
+                        predict_result_uris=[file_uri_dict.get(TEST_KEY_FILE_URI, 'no file uri')],
                         output=output,
                         scores=[
                             core_pb2.Score(
@@ -207,6 +207,8 @@ class Core(core_pb2_grpc.CoreServicer):
         logger.info("Got GetExecutePipelineResults request, session=%s",
                     sessioncontext.session_id)
 
+        file_uri_dict = get_predict_file_info_dict()
+
         for pipeline_id in pipeline_ids:
             time.sleep(1)
             progress_info = random.choice(\
@@ -220,6 +222,7 @@ class Core(core_pb2_grpc.CoreServicer):
                 ),
                 progress_info=progress_info,
                 pipeline_id=pipeline_id,
+                result_uris=[file_uri_dict.get(TEST_KEY_FILE_URI, 'no file uri')]
             )
 
 
@@ -247,12 +250,19 @@ class Core(core_pb2_grpc.CoreServicer):
             pipeline_id=pipeline_id,
         )
         time.sleep(1)
+        # try to create a legit file uri
+        file_uri_dict = get_predict_file_info_dict('CLASSIFICATION')
+        file_uri_dict2 = get_predict_file_info_dict('REGRESSION')
+
         yield core_pb2.PipelineExecuteResult(
             response_info=core_pb2.Response(
                 status=core_pb2.Status(code=core_pb2.OK),
             ),
             progress_info=core_pb2.COMPLETED,
             pipeline_id=pipeline_id,
+            result_uris=[file_uri_dict.get(TEST_KEY_FILE_URI, 'no file uri'),
+                         file_uri_dict2.get(TEST_KEY_FILE_URI, 'no file uri'),
+                         'file:///non-existent-file/should-give-err.csv']
         )
 
 
@@ -392,7 +402,7 @@ def main():
         data_ext_pb2_grpc.add_DataExtServicer_to_server(
             DataExt(), server)
         """
-        hostname = socket.gethostname()
+        hostname = None#socket.gethostname()
         if not hostname:
             hostname = '[::]'
         run_port = '50051'

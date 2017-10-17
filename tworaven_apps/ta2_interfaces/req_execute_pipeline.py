@@ -139,7 +139,9 @@ def execute_pipeline(info_str=None):
     if embed_util.has_error:
         return get_failed_precondition_response(embed_util.error_message)
 
-    return info_str_formatted, result_str
+    return info_str_formatted, embed_util.get_final_results()
+
+    #return info_str_formatted, result_str
 
 
 """
