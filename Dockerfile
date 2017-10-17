@@ -109,6 +109,7 @@ RUN echo '#!/bin/bash'  >> /usr/bin/ta3_search && \
 # Run the python server (django dev or gunicorn)
 # -------------------------------------
 CMD echo 'Starting tworavens python server.' && \
+    fab load_d3m_config_from_env && \
     python manage.py runserver 0.0.0.0:8080
 #CMD gunicorn --workers=2 tworavensproject.wsgi_dev_container -b 0.0.0.0:8080
 
