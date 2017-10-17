@@ -15,14 +15,14 @@ import Subpanel from './views/Subpanel';
 let leftpanel = () => {
     return m(Panel, {
         side: 'left',
-        title: 'Data Selection'},        
+        title: 'Data Selection'},
         m(".btn-toolbar[role=toolbar][style=margin-left: .5em; margin-top: .5em]",
           m(".btn-group",
             m(Button, {
-              id: 'btnVariables', 
+              id: 'btnVariables',
               id2: 'tab1',
-              title: 'Click variable name to add or remove the variable pebble from the modeling space.'}, 
-              'Variables'),                
+              title: 'Click variable name to add or remove the variable pebble from the modeling space.'},
+              'Variables'),
             m(Button, {id: 'btnSubset', id2: 'tab2'}, 'Subset')),
           m(Button, {
             id: 'btnSelect',
@@ -30,7 +30,7 @@ let leftpanel = () => {
             onclick: _ => app.subsetSelect('btnSelect'),
             style: `display: ${app.subset ? 'block' : 'none'}; float: right; margin-right: 10px`,
             title: 'Subset data by the intersection of all selected values.'},
-            m('span.ladda-label[style=pointer-events: none]', 'Select'))),         
+            m('span.ladda-label[style=pointer-events: none]', 'Select'))),
         m(`#tab1[style=display: ${or('left', 'tab1')}; padding: 10px 8px; text-align: center]`,
           m(Search, {placeholder: 'Search variables and labels'}),
           m('#varList[style=display: block]', app.valueKey.map((v, i) =>
@@ -41,7 +41,7 @@ let leftpanel = () => {
                    app.nodes.map(n => n.name).includes(v) ? app.hexToRgba(plots.selVarColor) :
                    app.varColor,
                 'border-color': '#000000',
-                'border-style': searchIndex && i < searchIndex ? 'solid' : 'none',
+                'border-style': searchIndex && i < searchIndex ? 'solid' : 'none'
               },
               onclick: app.clickVar,
               onmouseover: function() {
@@ -77,40 +77,24 @@ let leftpanel = () => {
 };
 
 let rightpanel = mode => mode ? m(Panel, {
-    side: 'right', 
+    side: 'right',
     title: 'Result Exploration'},
-    m(".btn-group.btn-group-justified[style=margin-top: .5em]",
+    m(".accordion",
       m(Button, {id: 'btnUnivariate'}, 'Univariate'),
       m(Button, {id: 'btnBivariate'}, 'Bivariate')),
     m(`#univariate[style=display: ${or('right', 'btnUnivariate')}]`),
     m(`#bivariate[style=display: ${or('right', 'btnBivariate')}]`)) :
     m(Panel, {
-      side: 'right', 
+      side: 'right',
       title: 'Model Selection'},
-      m(".accordian[style=margin-top: .5em]",
-        m("ul#rightpanelbuttons",[
-           m("li",[
-              m(Button, {id: 'btnModels', style: 'width: 100%'}, 'Models')]),
-           m("li",[
-              m(Button, {id: 'btnSetx', style: 'width: 100%'}, 'Set Covar.')]),
-           m("li",[
-              m(Button, {id: 'btnResults', style: 'width: 100%'}, 'Results')]),
-           m("li",[
-              m(Button, {id: 'btnType', style: 'width: 100%'}, 'Task Type'),]),
-           m("li",[
-              m(Button, {id: 'btnSubtype', style: 'width: 100%'}, 'Subtype'),]),
-           m("li",[
-              m(Button, {id: 'btnMetrics', style: 'width: 100%'}, 'Metrics')]),
-           m("li",[m(Button, {id: 'btnOutputs', style: 'width: 100%'}, 'Output')]),
-           ])),
- /*     m(".btn-group.btn-group-justified#modelGroup[style=margin-top: .5em]",
-        m(Button, {id: 'btnModels', style: 'width: 33%'}, 'Models'),
-        m(Button, {id: 'btnSetx', style: 'width: 34%'}, 'Set Covar.'),
-        m(Button, {id: 'btnResults', style: 'width: 33%'}, 'Results'),
-        m(Button, {id: 'btnType', style: 'width: 25%; display: none'}, 'Task Type'),
-        m(Button, {id: 'btnSubtype', style: 'width: 25%; display: none'}, 'Subtype'),
-        m(Button, {id: 'btnMetrics', style: 'width: 25%; display: none'}, 'Metrics'),
-        m(Button, {id: 'btnOutputs', style: 'width: 25%; display: none'}, 'Outputs')),   */
+      m("ul#rightpanelbuttons.accordion[style=padding-left: 0px]",
+        m("li", m(Button, {id: 'btnModels', style: 'width: 100%'}, 'Models')),
+        m("li", m(Button, {id: 'btnSetx', style: 'width: 100%'}, 'Set Covar.')),
+        m("li", m(Button, {id: 'btnResults', style: 'width: 100%'}, 'Results')),
+        m("li", m(Button, {id: 'btnType', style: 'width: 100%'}, 'Task Type')),
+        m("li", m(Button, {id: 'btnSubtype', style: 'width: 100%'}, 'Subtype')),
+        m("li", m(Button, {id: 'btnMetrics', style: 'width: 100%'}, 'Metrics')),
+        m("li",m(Button, {id: 'btnOutputs', style: 'width: 100%'}, 'Output'))),
       m(`#results[style=display: ${or('right', 'btnResults')}; margin-top: .5em]`,
         m("#resultsView.container[style=float: right; overflow: auto; width: 80%; background-color: white; white-space: nowrap]"),
         m('#modelView[style=display: none; float: left; width: 20%; background-color: white]'),
@@ -139,8 +123,6 @@ let rightpanel = mode => mode ? m(Panel, {
       m(`#metrics[style=display: ${or('right', 'btnMetrics')}; padding: 6px 12px; text-align: center]`),
       m(`#outputs[style=display: ${or('right', 'btnOutputs')}; padding: 6px 12px; text-align: center]`));
 
-
-
 let ticker = mode => {
     let link = name => m(`a${name === mode ? '.active' : ''}[href=/${name}][style=margin-right: 0.5em]`, {oncreate: m.route.link}, name[0].toUpperCase() + name.slice(1));
     return m('#ticker[style=background: #F9F9F9; bottom: 0; height: 40px; position: fixed; width: 100%; border-top: 1px solid #ADADAD]',
@@ -148,7 +130,6 @@ let ticker = mode => {
         link('explore'),
         m("a#logID[href=somelink][target=_blank][style=margin-right: 0.5em]", "Replication"));
 };
-
 
 class Body {
     oninit() {

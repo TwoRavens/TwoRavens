@@ -850,9 +850,6 @@ console.log("SCAFFOLDING");
         .attr("data-content", d => mods[d]);
     }
     if(d3m_mode) {
-
-        //
-
         toggleRightButtons("tasks");
 
         d3.select("#types").selectAll("p")
@@ -2095,7 +2092,6 @@ export function estimate(btn) {
     var selectorurlcall = rappURL + "selectorapp";
 
     function estimateSuccess(btn, json) {
-      //  toggleRightButtons("all");
         estimateLadda.stop(); // stop spinner
         allResults.push(json);
         cdb("json in: ", json);
@@ -3739,61 +3735,47 @@ function setPebbleCharge(d){
         var maxng = Math.max(ng1,ng2);                                                      // size of the largest group variable is member of
         return (maxng>uppersize) ? -400*(uppersize/maxng) : -400;                           // decrease charge as pebbles become smaller, so they can pack together
     }else{
-        return -800
+        return -800;
     }
 };
 
 export function expandrightpanel() {
-    document.getElementById('rightpanel').classList.add("expandpanelfull")
+    document.getElementById('rightpanel').classList.add("expandpanelfull");
     console.log("HERE");
 }
 
 function toggleRightButtons(set) {
-
     function setWidths(btns) {
-        let mywidth = 100/btns.length;
-        mywidth = mywidth.toString() + '%';
+        let width = `${100 / btns.length}%`;
         let expandwidth = '35%';
-        let shrinkwidth = 65/(btns.length-1);
-        shrinkwidth = shrinkwidth.toString() + '%';
-        let mylis = document.getElementById('rightpanel').querySelectorAll(".accordian li");
+        let shrinkwidth = `${65 / (btns.length - 1)}%`;
+        let lis = document.getElementById('rightpanel').querySelectorAll(".accordion li");
         // hardly ever runs on the page
-        for (let i = 0; i < mylis.length; i++) {
-            mylis[i].style.width=mywidth;
-            mylis[i].addEventListener('mouseover', function() {
-                                      for(let j = 0; j < mylis.length; j++) {
-                                      mylis[j].style.width=shrinkwidth;
-                                      }
-                                      this.style.width=expandwidth;
-                                      });
-            mylis[i].addEventListener('mouseout', function() {
-                                      for(let j = 0; j < mylis.length; j++) {
-                                      mylis[j].style.width=mywidth;
-                                      }
-                                      });
-        }
+        lis.forEach(li => {
+            li.style.width = width;
+            li.addEventListener('mouseover', function() {
+                lis.forEach(li => li.style.width = shrinkwidth);
+                this.style.width = expandwidth;
+            });
+            li.addEventListener('mouseout', function() {
+                lis.forEach(li => li.style.width = width);
+            });
+        });
 
     }
 
     if(set=="tasks") {
-
         document.getElementById('btnModels').classList.add("noshow");
         document.getElementById('btnSetx').classList.add("noshow");
         document.getElementById('btnResults').classList.add("noshow");
-
-
-        let mybtns = document.getElementById('rightpanelbuttons').querySelectorAll(".btn:not(.noshow)");
-        setWidths(mybtns);
-
-
+        let btns = document.getElementById('rightpanelbuttons').querySelectorAll(".btn:not(.noshow)");
+        setWidths(btns);
     } else if (set=="all") {
         // first remove noshow class
-        let mybtns = document.getElementById('rightpanelbuttons').querySelectorAll(".noshow");
-        for (let i = 0; i < mybtns.length; i++) {
-            mybtns[i].classList.remove("noshow");
-        }
+        let btns = document.getElementById('rightpanelbuttons').querySelectorAll(".noshow");
+        bts.map(b => b.classList.remove("noshow"));
 
-        // droping models for d3m_mode
+        // dropping models for d3m_mode
         document.getElementById('btnModels').classList.add("noshow");
 
         // if swandive, dropping setx
@@ -3801,11 +3783,9 @@ function toggleRightButtons(set) {
             document.getElementById('btnSetx').classList.add("noshow");
 
         // then select all the buttons
-        mybtns = document.getElementById('rightpanelbuttons').querySelectorAll(".btn:not(.noshow)");
-        setWidths(mybtns);
-
-    }
-    if(set=="models") {
+        btns = document.getElementById('rightpanelbuttons').querySelectorAll(".btn:not(.noshow)");
+        setWidths(btns);
+    } else if(set=="models") {
         document.getElementById('btnModels').style.display = 'inline';
         document.getElementById('btnSetx').style.display = 'inline';
         document.getElementById('btnResults').style.display = 'inline';
