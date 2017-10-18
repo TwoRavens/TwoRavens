@@ -95,9 +95,15 @@ class FileEmbedUtil(object):
             return
 
         if isinstance(json_info, list):
-            formatted_results = self.process_list(json_info)
+            formatted_results, err_msg = self.process_list(json_info)
+            if err_msg:
+                self.add_err_msg(err_msg)
+                return
         else:
-            assert False, "Need to handle instance: %s" % type(json_info)
+            self.add_err_msg(('Failed to process info with type:'
+                              ' %s') % type(json_info))
+            #assert False, "Need to handle instance: %s" % type(json_info)
+            return
         #elif isinstance(json_info, dict) or isinstance(json_info, OrderedDict):
         #    print (json_info)
 
@@ -127,8 +133,7 @@ class FileEmbedUtil(object):
     def process_list(self, result_list):
         """Process the results list from a PipelineCreateResult"""
         if not result_list:
-            self.add_err_msg("result_list cannot be None")
-            return
+            return None, "result_list cannot be None"
 
         formatted_results = []
         #result_uris = []
@@ -161,9 +166,9 @@ class FileEmbedUtil(object):
 
         # No changes!
         if fmt_cnt == 0:
-            return result_list
+            return result_list, None
 
-        return formatted_results
+        return formatted_results, None
 
 
     def get_embed_result(self, file_uri, file_num):

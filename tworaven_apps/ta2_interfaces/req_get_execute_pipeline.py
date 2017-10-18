@@ -6,6 +6,7 @@ from google.protobuf.json_format import MessageToJson,\
     Parse, ParseError
 
 from tworaven_apps.ta2_interfaces import core_pb2
+from tworaven_apps.ta2_interfaces.models import VAL_GRPC_STATE_CODE_NONE
 from tworaven_apps.ta2_interfaces.ta2_connection import TA2Connection
 from tworaven_apps.ta2_interfaces.ta2_util import get_grpc_test_json,\
     get_failed_precondition_response,\
@@ -43,6 +44,7 @@ def get_execute_pipeline_results(info_str=None):
         err_msg = 'Failed to convert JSON to gRPC: %s' % (err_obj)
         return get_failed_precondition_response(err_msg)
 
+
     if settings.TA2_STATIC_TEST_MODE:
 
         template_info = get_predict_file_info_dict()
@@ -59,6 +61,7 @@ def get_execute_pipeline_results(info_str=None):
         #return get_grpc_test_json('test_responses/execute_results_ok.json',
         #                          dict())
 
+
     # --------------------------------
     # Get the connection, return an error if there are channel issues
     # --------------------------------
@@ -66,13 +69,28 @@ def get_execute_pipeline_results(info_str=None):
     if err_msg:
         return get_failed_precondition_response(err_msg)
 
+    #print('req: %s' % req)
+
     # --------------------------------
     # Send the gRPC request - returns a stream
     # --------------------------------
     try:
         reply = core_stub.GetExecutePipelineResults(req)
+    except grpc.RpcError as ex:
+        return get_failed_precondition_response(str(ex))
     except Exception as ex:
         return get_failed_precondition_response(str(ex))
+
+    if reply and str(reply) == VAL_GRPC_STATE_CODE_NONE:
+        err_msg = ('Unkown gRPC state.'
+                   ' (Was an ExecutePipeline request sent?)')
+        return get_failed_precondition_response(err_msg)
+
+    try:
+        print(MessageToJson(reply))
+    except:
+        print('failed unary convert to JSON')
+    #print('reply: %s' % reply)
 
     # --------------------------------
     # Convert the reply to JSON and send it on
