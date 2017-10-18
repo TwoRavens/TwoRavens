@@ -191,11 +191,11 @@ class Body {
                   m(`#cite.panel.panel-default[style=display: ${this.cite ? 'block' : 'none'}; position: absolute; right: 50%; width: 380px; text-align: left; z-index: 50]`,
                     m(".panel-body")),
                   m('span',
-                    button('btnEstimate.btn-success', 2, 1, _ => app.estimate(id), m("span.ladda-label", mode ? 'Explore' : 'Solve This Problem'), '150px'),
+                    button('btnEstimate.btn-success', 2, 1, app.estimate, m("span.ladda-label", mode ? 'Explore' : 'Solve This Problem'), '150px'),
                     button('btnTA2.btn-default', .5, 1, _ => app.helpmaterials('manual'), ['Help Manual ', glyph('book')]),
                     button('btnTA2.btn-default', 2, .5, _ => app.helpmaterials('video'), ['Help Video ', glyph('expand')]),
                     button1("btnReset", app.reset, glyph('repeat'), 'Reset'),
-                    button1('btnEndSession', app.endsession(), m("span.ladda-label", 'Mark Problem Finished'), 'Mark Problem Finished'),
+                    button1('btnEndSession', app.endsession, m("span.ladda-label", 'Mark Problem Finished'), 'Mark Problem Finished'),
                     m('#transformations.transformTool', {
                         title: 'Construct transformations of existing variables using valid R syntax. For example, assuming a variable named d, you can enter "log(d)" or "d^2".'})))),
               m(`#about.panel.panel-default[style=display: ${this.about ? 'block' : 'none'}; left: 140px; position: absolute; width: 500px; z-index: 50]`,
