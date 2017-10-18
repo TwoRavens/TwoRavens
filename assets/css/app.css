@@ -441,25 +441,22 @@ tr.item-lineout{
 
 
 .accordion {
-    margin-top: 0.5em;
-    width: 100%;
     overflow: hidden;
+    padding-left: 0px;
 }
-
 .accordion ul {
     float: left;
+    margin-top: 0.5em;
     -webkit-padding-start: 0px;
 }
-
 .accordion li {
-    position: relative;
     display: block;
-    width:10%;
     float: left;
-
+    position: relative;
     transition: all 0.5s;
-    -webkit-transition: all 0.5s;
     -moz-transition: all 0.5s;
+    -webkit-transition: all 0.5s;
+    width: 10%;
 }
 
 .noshow {

@@ -15,8 +15,8 @@ import Subpanel from './views/Subpanel';
 let leftpanel = () => {
     return m(Panel, {
         side: 'left',
-        title: 'Data Selection'},
-        m(".btn-toolbar[role=toolbar][style=margin-left: .5em; margin-top: .5em]",
+        title: 'Data Selection',
+        toolbar: m(".btn-toolbar[role=toolbar][style=margin-left: .5em; margin-top: .5em]",
           m(".btn-group",
             m(Button, {
               id: 'btnVariables',
@@ -30,7 +30,7 @@ let leftpanel = () => {
             onclick: _ => app.subsetSelect('btnSelect'),
             style: `display: ${app.subset ? 'block' : 'none'}; float: right; margin-right: 10px`,
             title: 'Subset data by the intersection of all selected values.'},
-            m('span.ladda-label[style=pointer-events: none]', 'Select'))),
+            m('span.ladda-label[style=pointer-events: none]', 'Select')))},
         m(`#tab1[style=display: ${or('left', 'tab1')}; padding: 10px 8px; text-align: center]`,
           m(Search, {placeholder: 'Search variables and labels'}),
           m('#varList[style=display: block]', app.valueKey.map((v, i) =>
@@ -78,23 +78,22 @@ let leftpanel = () => {
 
 let rightpanel = mode => mode ? m(Panel, {
     side: 'right',
-    title: 'Result Exploration'},
-    m(".accordion",
-      m(Button, {id: 'btnUnivariate'}, 'Univariate'),
-      m(Button, {id: 'btnBivariate'}, 'Bivariate')),
+    title: 'Result Exploration',
+    buttons: [m(Button, {id: 'btnUnivariate'}, 'Univariate'),
+              m(Button, {id: 'btnBivariate'}, 'Bivariate')]},
     m(`#univariate[style=display: ${or('right', 'btnUnivariate')}]`),
     m(`#bivariate[style=display: ${or('right', 'btnBivariate')}]`)) :
+    // mode == null (model mode)
     m(Panel, {
-      side: 'right',
-      title: 'Model Selection'},
-      m("ul#rightpanelbuttons.accordion[style=padding-left: 0px]",
-        m("li", m(Button, {id: 'btnModels', style: 'width: 100%'}, 'Models')),
-        m("li", m(Button, {id: 'btnSetx', style: 'width: 100%'}, 'Set Covar.')),
-        m("li", m(Button, {id: 'btnResults', style: 'width: 100%'}, 'Results')),
-        m("li", m(Button, {id: 'btnType', style: 'width: 100%'}, 'Task Type')),
-        m("li", m(Button, {id: 'btnSubtype', style: 'width: 100%'}, 'Subtype')),
-        m("li", m(Button, {id: 'btnMetrics', style: 'width: 100%'}, 'Metrics')),
-        m("li",m(Button, {id: 'btnOutputs', style: 'width: 100%'}, 'Output'))),
+        side: 'right',
+        title: 'Model Selection',
+        buttons: [m(Button, {id: 'btnModels', style: 'width: 100%'}, 'Models'),
+                  m(Button, {id: 'btnSetx', style: 'width: 100%'}, 'Set Covar.'),
+                  m(Button, {id: 'btnResults', style: 'width: 100%'}, 'Results'),
+                  m(Button, {id: 'btnType', style: 'width: 100%'}, 'Task Type'),
+                  m(Button, {id: 'btnSubtype', style: 'width: 100%'}, 'Subtype'),
+                  m(Button, {id: 'btnMetrics', style: 'width: 100%'}, 'Metrics'),
+                  m(Button, {id: 'btnOutputs', style: 'width: 100%'}, 'Output')]},
       m(`#results[style=display: ${or('right', 'btnResults')}; margin-top: .5em]`,
         m("#resultsView.container[style=float: right; overflow: auto; width: 80%; background-color: white; white-space: nowrap]"),
         m('#modelView[style=display: none; float: left; width: 20%; background-color: white]'),
