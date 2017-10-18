@@ -30,7 +30,7 @@ let leftpanel = () => {
                 style: `display: ${app.subset ? 'block' : 'none'}; float: right; margin-right: 10px`,
                 title: 'Subset data by the intersection of all selected values.'},
               m('span.ladda-label[style=pointer-events: none]', 'Select'))]},
-        m(`#tab1[style=display: ${or('left', 'tab1')}; padding: 10px 8px; text-align: center]`,
+        m(`#tab1[style=display: ${or('left', 'tab1')}; padding: 0 8px; text-align: center]`,
           m(Search, {placeholder: 'Search variables and labels'}),
           m('#varList[style=display: block]', app.valueKey.map((v, i) =>
             m(`p#${v.replace(/\W/g, '_')}`, {
