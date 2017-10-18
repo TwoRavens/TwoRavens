@@ -60,6 +60,7 @@ Below are notes on two possible options for TwoRavens development. (There are ma
 ### Cons
 
 - Code repository seems slower than github.com
+- UI can be confusing with "everything" available.
 - No direct integration with Docker Hub for Docker image storage.  (Is this important?)
     - However, CI scripts can be modified to push images to Dockerhub in addition to having images in the gitlab registry.
 - The ecosystem may seem constraining if the development of 1 part or more parts starts to lag.
@@ -92,6 +93,8 @@ Docker Hub can be synced (one time action) without a user or group's github cred
 
 ### Pros
 
+- Github.com has a more intuitive UI than gitlab.com 
+  - Part of this is fewer features--which may be a positive in that Version Control and Issues are the most often used workflow components.
 - Focused products with many users.  Github, Docker Hub, and TravisCI are well documented, heavily used.
 - Relatively inexpensive
 - Well known integration paths with deployment
