@@ -440,26 +440,23 @@ tr.item-lineout{
 #searchvar.onX{ cursor: pointer; }
 
 
-.accordian {
-    width: 100%;
+.accordion {
     overflow: hidden;
+    padding-left: 0px;
 }
-
-.accordian ul {
-    width: 100%;
-    float:left;
+.accordion ul {
+    float: left;
+    margin-top: 0.5em;
     -webkit-padding-start: 0px;
 }
-
-.accordian li {
-    position: relative;
+.accordion li {
     display: block;
-    width:10%;
     float: left;
-
+    position: relative;
     transition: all 0.5s;
-    -webkit-transition: all 0.5s;
     -moz-transition: all 0.5s;
+    -webkit-transition: all 0.5s;
+    width: 10%;
 }
 
 .noshow {
