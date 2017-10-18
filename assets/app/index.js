@@ -164,10 +164,21 @@ class Body {
 
     view(vnode) {
         let {mode} = vnode.attrs;
+        let $button = (id, left, right, onclick, args, min) => m(
+            `button#${id}.btn.navbar-right`, {
+                onclick: onclick,
+                style: {'margin-left': left + 'em',
+                        'margin-right': right + 'em',
+                        'min-width': min}}, args);
+        let button = (id, left, right, onclick, args, min) => $button(
+            id + '.ladda-button[data-spinner-color=#000000][data-style=zoom-in]', left, right, onclick, args, min);
+        let button1 = (id, onclick, args, title) => $button(
+            id + `.btn-default[title=${title}]`, 2, 0, onclick, args);
+        let glyph = id => m(`span.glyphicon.glyphicon-${id}[style=color: #818181; font-size: 1em; pointer-events: none]`);
         return m('main',
             m("nav#navbar.navbar.navbar-default.navbar-fixed-top[role=navigation]",
-              m("a.navbar-brand[style=margin-left: 0]",
-                m("img[src=/static/images/TwoRavens.png][alt=TwoRavens][width=100][style=margin-left: 2em; margin-top: -0.5em]", {
+              m("a.navbar-brand",
+                m("img[src=/static/images/TwoRavens.png][alt=TwoRavens][width=100][style=margin-left: 1em; margin-top: -0.5em]", {
                   onmouseover: _ => this.about = true,
                   onmouseout: _ => this.about = false})),
               m('#navbarNav[style=padding: 0.5em]',
@@ -179,23 +190,14 @@ class Body {
                     "Dataset Name"),
                   m(`#cite.panel.panel-default[style=display: ${this.cite ? 'block' : 'none'}; position: absolute; right: 50%; width: 380px; text-align: left; z-index: 50]`,
                     m(".panel-body")),
-                  m("button#btnEstimate.btn.btn-success.ladda-button.navbar-right[data-spinner-color=#000000][data-style=zoom-in][style=margin-left: 2em; margin-right: 1em]", {
-                    onclick: _ => app.estimate('btnEstimate')},
-                    m("span.ladda-label", mode ? 'Explore' : 'Solve This Problem')),
-                  m("button#btnTA2.btn.btn-default.ladda-button.navbar-right[data-spinner-color=#000000][data-style=zoom-in][style=margin-left: 0.5em; margin-right: 1em]", {
-                    onclick: _ => app.helpmaterials('manual')},
-                    'Help Manual ',m("span.glyphicon.glyphicon-book[style=color: #818181; font-size: 1em; pointer-events: none]")),
-                  m("button#btnTA2.btn.btn-default.ladda-button.navbar-right[data-spinner-color=#000000][data-style=zoom-in][style=margin-left: 15em; margin-right: 0.5em]", {
-                    onclick: _ => app.helpmaterials('video')},
-                    'Help Video ',m("span.glyphicon.glyphicon-expand[style=color: #818181; font-size: 1em; pointer-events: none]")),
-                  m("button#btnReset.btn.btn-default.navbar-right[title=Reset][style=margin-left: 2.0em]", {
-                    onclick: app.reset},
-                    m("span.glyphicon.glyphicon-repeat[style=color: #818181; font-size: 1em; pointer-events: none]")),
-                  m("button#btnEndSession.btn.btn-default.navbar-right[title=Mark Problem Finished][style=margin-left: 2.0em]", {
-                    onclick: _=> app.endsession()},
-                    m("span.ladda-label", 'Mark Problem Finished')),
-                  m('#transformations.transformTool', {
-                    title: 'Construct transformations of existing variables using valid R syntax. For example, assuming a variable named d, you can enter "log(d)" or "d^2".'}))),
+                  m('span',
+                    button('btnEstimate.btn-success', 2, 1, _ => app.estimate(id), m("span.ladda-label", mode ? 'Explore' : 'Solve This Problem'), '150px'),
+                    button('btnTA2.btn-default', .5, 1, _ => app.helpmaterials('manual'), ['Help Manual ', glyph('book')]),
+                    button('btnTA2.btn-default', 2, .5, _ => app.helpmaterials('video'), ['Help Video ', glyph('expand')]),
+                    button1("btnReset", app.reset, glyph('repeat'), 'Reset'),
+                    button1('btnEndSession', app.endsession(), m("span.ladda-label", 'Mark Problem Finished'), 'Mark Problem Finished'),
+                    m('#transformations.transformTool', {
+                        title: 'Construct transformations of existing variables using valid R syntax. For example, assuming a variable named d, you can enter "log(d)" or "d^2".'})))),
               m(`#about.panel.panel-default[style=display: ${this.about ? 'block' : 'none'}; left: 140px; position: absolute; width: 500px; z-index: 50]`,
                 m('.panel-body',
                   'TwoRavens v0.1 "Dallas" -- The Norse god Odin had two talking ravens as advisors, who would fly out into the world and report back all they observed. In the Norse, their names were "Thought" and "Memory". In our coming release, our thought-raven automatically advises on statistical model selection, while our memory-raven accumulates previous statistical models from Dataverse, to provide cummulative guidance and meta-analysis.'))),
