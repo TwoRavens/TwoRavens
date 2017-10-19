@@ -3773,7 +3773,7 @@ function toggleRightButtons(set) {
     } else if (set=="all") {
         // first remove noshow class
         let btns = document.getElementById('rightpanelbuttons').querySelectorAll(".noshow");
-        bts.map(b => b.classList.remove("noshow"));
+        btns.forEach(b => b.classList.remove("noshow"));
 
         // dropping models for d3m_mode
         document.getElementById('btnModels').classList.add("noshow");
