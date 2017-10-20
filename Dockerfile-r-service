@@ -1,8 +1,8 @@
-FROM tworavens/ravens-r-service-base:latest
+FROM tworavens/r-service-base:latest
 MAINTAINER Raman Prasad (raman_prasad@harvard.edu)
 
 LABEL organization="Two Ravens" \
-      2ra.vn.version="0.0.1-beta" \
+      2ra.vn.version="0.0.2-beta" \
       2ra.vn.release-date="2017-09-20" \
       description="Image for the Two Ravens R service which runs on rook."
 
