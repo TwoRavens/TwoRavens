@@ -30,7 +30,7 @@ minikube service tworavens
 - Run rook-service
 
 ```
-docker build -t rook:v1 . -f Dockerfile-rook
+docker build -t rook:v1 . -f Dockerfile-r-service
 # deploy
 #
 kubectl run rook --image=rook:v1 --port=8000

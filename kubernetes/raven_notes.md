@@ -17,7 +17,7 @@ eval $(minikube docker-env)
 docker build -t tworavens:v2 .
 
 # build rook
-docker build -t rook:v2 . -f Dockerfile-rook
+docker build -t rook:v2 . -f Dockerfile-r-service
 
 # build nginx
 docker build -t ravens-nginx:v2 -f ./setup/nginx/Dockerfile-kube ./setup/nginx/

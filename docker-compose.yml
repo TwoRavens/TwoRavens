@@ -18,9 +18,9 @@ services:
   rook-service:
     build:
       context: ./
-      dockerfile: Dockerfile-rook
+      dockerfile: Dockerfile-r-service
     environment:
-      # Note: this variable is also set in Dockerfile-rook
+      # Note: this variable is also set in Dockerfile-r-service
       - ROOK_USE_PRODUCTION_MODE=yes
     ports:
       - 8000

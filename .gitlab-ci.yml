@@ -19,5 +19,5 @@ build:
     - docker push registry.datadrivendiscovery.org/tworavens/tworavens:latest
     #
     # Build r-service: fairly big image
-    - docker build -t registry.datadrivendiscovery.org/tworavens/tworavens/rook-service:latest -f ./Dockerfile-rook .
+    - docker build -t registry.datadrivendiscovery.org/tworavens/tworavens/rook-service:latest -f ./Dockerfile-r-service .
     - docker push registry.datadrivendiscovery.org/tworavens/tworavens/rook-service:latest

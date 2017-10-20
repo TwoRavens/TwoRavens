@@ -16,7 +16,7 @@ services:
   rook-service:
     build:
       context: ./
-      dockerfile: Dockerfile-rook
+      dockerfile: Dockerfile-r-service
     ports:
       - 8000
   tworavens:
