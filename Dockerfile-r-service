@@ -1,4 +1,4 @@
-FROM tworavens/r-service-base:latest
+FROM tworavens/ravens-r-service-base:latest
 MAINTAINER Raman Prasad (raman_prasad@harvard.edu)
 
 LABEL organization="Two Ravens" \
