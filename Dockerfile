@@ -3,7 +3,7 @@ FROM ubuntu:16.04
 MAINTAINER Raman Prasad (raman_prasad@harvard.edu)
 
 LABEL organization="Two Ravens" \
-      2ra.vn.version="0.0.1-beta" \
+      2ra.vn.version="0.0.3-beta" \
       2ra.vn.release-date="2017-09-20" \
       description="Image for the Two Ravens python service which serves the UI."
 
@@ -64,7 +64,7 @@ WORKDIR /var/webapps/TwoRavens
 #   - collect_static - django collect static files
 #   - make_d3m_config_files - makes test config files accessible via env variables
 #                             (not used for eval)
-#   - Xmake_d3m_config - not for eval. Loads D3M info based on the test data
+#   - make_d3m_config - WARNING: for testing. Loads D3M info based on the test data
 #   - load_d3m_config_from_env - loads TA2 style config specified in env var
 #                                "CONFIG_JSON_PATH"
 # -------------------------------------
@@ -73,6 +73,7 @@ RUN pip3 install --no-cache-dir -r requirements/prod.txt && \
     fab create_django_superuser && \
     fab load_docker_ui_config && \
     fab collect_static && \
+    fab make_d3m_config_files && \
     fab load_d3m_config_from_env
 
 #   fab make_d3m_config && \
