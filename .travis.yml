@@ -7,12 +7,14 @@ python:
 services:
   - docker
 
-before_install:
-  - docker build -t tworavens/ravens-main .
+script:
+- docker build -t tworavens/ravens-main:latest .
   #- docker run -d tworavens/ravens-main /bin/sh -c "python manage.py test"
 
-after_success:
-  - if [ "$TRAVIS_BRANCH" == "master" ]; then
-    docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
-    docker push tworavens/ravens-main;
-    fi
+after_script:
+- docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD"
+- docker push tworavens/ravens-main:latest
+#  - if [ "$TRAVIS_BRANCH" == "master" ]; then
+#    docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
+#    docker push tworavens/ravens-main;
+#    fi
