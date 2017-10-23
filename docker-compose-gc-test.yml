@@ -14,7 +14,7 @@ services:
       - tworavens
       - rook-service
     volumes:
-      - ravens_volume:/ravens_volume
+      - ravens-volume:/ravens_volume
   rook-service:
     build:
       context: ./
@@ -25,7 +25,7 @@ services:
     ports:
       - 8000
     volumes:
-      - ravens_volume:/ravens_volume
+      - ravens-volume:/ravens_volume
   tworavens:
     build:
       context: ./
@@ -43,18 +43,18 @@ services:
       # 8080: web service
       - 8080:8080
     volumes:
-      - ravens_volume:/ravens_volume
+      - ravens-volume:/ravens_volume
   ta2-main:
     image: registry.datadrivendiscovery.org/ta2/isi_ta2:latest
     environment:
       - CONFIG_JSON_PATH=/ravens_volume/config_o_196.json
     volumes:
-      - ravens_volume:/ravens_volume
+      - ravens-volume:/ravens_volume
     ports:
       # 50051: grpc connection
       - 50051:50051
 
 volumes:
-  ravens_volume:
+  ravens-volume:
     external:
       name: /home/prasad/TwoRavens/ravens_volume
