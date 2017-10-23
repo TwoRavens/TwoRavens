@@ -120,25 +120,25 @@ def check_config():
     else:
         print('Configs exist in the db: %d' % config_cnt)
 
-
-def run_with_rook():
-    """In addition to the django dev server and webpack, run rook via the Terminal"""
-    run_rook()
-    run()
-
-
 def run_ta2_test_server():
     """Run an external server on 50051 to return gRPC TA2TA3 api calls"""
 
     run_cmd = 'cd tworaven_apps/ta2_interfaces; python test_server.py'
     local(run_cmd)
 
+def get_run_rook_cmd():
+    """For running the rook server via the command line"""
+    return 'cd rook; Rscript rook_nonstop.R'
+
 def run_rook():
     """Run the rook server via the command line"""
-    rook_run_cmd = 'cd rook; Rscript rook_nonstop.R'
-    local(rook_run_cmd)
+    local(get_run_rook_cmd())
 
-def run():
+def run_with_rook():
+    """In addition to the django dev server and webpack, run rook via the Terminal"""
+    run(with_rook=True)
+
+def run(with_rook=False):
     """Run the django dev server and webpack--webpack watches the assets directory and rebuilds when appTwoRavens changes
 
     with_rook=True - runs rook in "nonstop" mode
@@ -152,6 +152,9 @@ def run():
         # start webpack
         'npm start',
     ]
+
+    if with_rook:
+        commands.append(get_run_rook_cmd())
 
     proc_list = [subprocess.Popen(command, shell=True, stdin=sys.stdin, stdout=sys.stdout, stderr=sys.stderr) for command in commands]
     try:
