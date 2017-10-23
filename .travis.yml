@@ -1,14 +1,15 @@
 sudo: required
 
 language: python
+python:
+  - 3.6
 
 services:
   - docker
 
 before_install:
   - docker build -t tworavens/ravens-main .
-  - docker run -d --rm --name 2r-test tworavens/ravens-main
-  - docker exec 2r-test /bin/bash -c "python manage.py test"
+  #- docker run -d tworavens/ravens-main /bin/sh -c "python manage.py test"
 
 after_success:
   - if [ "$TRAVIS_BRANCH" == "master" ]; then
