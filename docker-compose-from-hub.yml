@@ -1,3 +1,6 @@
+# Pull images from docker hub to run the containers
+#
+#
 version: '3'
 
 services:
@@ -12,7 +15,7 @@ services:
       - tworavens
       - rook-service
     volumes:
-      - /mnt/stateful_partition/ravens_volume:/ravens_volume
+      - ./ravens_volume:/ravens_volume
   rook-service:
     image: tworavens/ravens-r-service:latest
     environment:
@@ -21,7 +24,7 @@ services:
     ports:
       - 8000
     volumes:
-      - /mnt/stateful_partition/ravens_volume:/ravens_volume
+      - ./ravens_volume:/ravens_volume
   tworavens:
     image: tworavens/ravens-main:latest
     environment:
@@ -37,13 +40,13 @@ services:
       # 8080: web service
       - 8080:8080
     volumes:
-      - /mnt/stateful_partition/ravens_volume:/ravens_volume
+      - ./ravens_volume:/ravens_volume
   ta2-main:
     image: registry.datadrivendiscovery.org/ta2/isi_ta2:latest
     environment:
       - CONFIG_JSON_PATH=/ravens_volume/config_o_196.json
     volumes:
-      - /mnt/stateful_partition/ravens_volume:/ravens_volume
+      - ./ravens_volume:/ravens_volume
     ports:
       # 50051: grpc connection
       - 50051:50051

@@ -1,3 +1,7 @@
+# Test to run on google cloud
+#  - pre work was making a symlink from
+#     ~/TwoRavens/ravens_volume to /mnt/stateful_partition/ravens_volume
+#
 version: '3'
 
 services:
