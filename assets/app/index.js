@@ -201,7 +201,7 @@ class Body {
               m(`#about.panel.panel-default[style=display: ${this.about ? 'block' : 'none'}; left: 140px; position: absolute; width: 500px; z-index: 50]`,
                 m('.panel-body',
                   'TwoRavens v0.1 "Dallas" -- The Norse god Odin had two talking ravens as advisors, who would fly out into the world and report back all they observed. In the Norse, their names were "Thought" and "Memory". In our coming release, our thought-raven automatically advises on statistical model selection, while our memory-raven accumulates previous statistical models from Dataverse, to provide cummulative guidance and meta-analysis.'))),
-            m(`#main.left.carousel.slide.svg-leftpanel.svg-rightpanel[style=overflow: auto]`,
+            m(`#main.left.carousel.slide.svg-leftpanel.svg-rightpanel[style=overflow: hidden]`,
               m("#innercarousel.carousel-inner",
                 m('#m0.item.active',
                   m('svg#whitespace'))),
