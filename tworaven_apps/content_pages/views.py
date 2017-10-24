@@ -7,7 +7,6 @@ from tworaven_apps.configurations.utils import get_latest_d3m_config
 def view_pebbles_home(request):
     """Serve up the workspace, the current home page.
     Include global js settings"""
-
     app_config = AppConfiguration.get_config()
 
     dinfo = dict(title='welcome',

@@ -4,7 +4,10 @@
 <html>
 
   <head>
-    <title>{% if title %}{{ title }}{% else %}TwoRavens{% endif %}</title>
+    <title>{% block title_block %}
+        {% if title %}{{ title }}{% else %}TwoRavens{% endif %}
+        {% endblock %}
+    </title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="{% static "pkgs/bootstrap/css/bootstrap.css" %}">

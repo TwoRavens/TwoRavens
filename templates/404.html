@@ -1,0 +1,28 @@
+{% extends 'helper_pages_base.html' %}
+{% load static %}
+
+{% block title_block %}Two Ravens - 404 Error{% endblock %}
+
+{% block main_content %}
+<div class="container">
+      <div class="row">
+          <div class="col-xs-12 col-md-6">
+              <div class="panel panel-default">
+                  <div class="panel-heading">
+                    <img src="{% static "images/TwoRavens.png" %}" alt="TwoRavens" width="100" class="img-responsive" />
+                  </div>
+                  <div class="panel-body"><p>
+                      <p style="font-size: 1.3em; color:inheret;">Sorry! The Page Was Not Found.*
+                          <br />
+                          <br />
+                      Please return to the <a href="/">Homepage</a>.
+                      </p>
+
+                      <p><br /><br />(* Yes, techies, it's a 404 that y'all are experiencing.)<p>
+                  </div>
+          </div>
+      </div>
+
+</div>
+
+{% endblock %}

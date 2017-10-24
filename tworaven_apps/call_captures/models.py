@@ -35,7 +35,9 @@ class ServiceCallEntry(TimeStampedModel):
                                   db_index=True,
                                   help_text='Used for grouping calls together')
 
-    user = models.ForeignKey(User, blank=True, null=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL,
+                             blank=True,
+                             null=True)
 
     outgoing_url = models.URLField(blank=True)
     request_msg = models.TextField(blank=True)

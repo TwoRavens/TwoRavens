@@ -242,7 +242,8 @@ def clear_logs():
 
 def create_django_superuser():
     """(Test only) Create superuser with username: dev_admin. Password is printed to the console."""
-    from django.contrib.auth.models import User
+    from tworaven_apps.raven_auth.models import User
+    #from django.contrib.auth.models import User
 
     dev_admin_username = 'dev_admin'
 
