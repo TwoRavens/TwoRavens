@@ -11,3 +11,5 @@ https://beta.dataverse.org/dataexplore/gui.html?dfId=37&
 <br><br>
 
 ![Example Page](assets/images/example2Rpage.png)
+
+[![Build Status](https://travis-ci.org/TwoRavens/TwoRavens.svg?branch=master)](https://travis-ci.org/TwoRavens/TwoRavens)
