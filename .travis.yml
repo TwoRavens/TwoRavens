@@ -2,12 +2,25 @@ language: python
 
 python:
   - "3.6"
+
+services:
+  - docker
+
 install:
   # Build/test dependencies
   - pip install --no-cache-dir -r requirements/prod.txt
-  
+
 script:
-  # Normal tests
+  # Run django tests.  (Note django settings are an env variable)
   - python manage.py test
-  # Integration tests
-  #- fab -H localhost test:"--tests\=integration"
+  # If tests passed, build docker image
+  - docker build -t tworavens/ravens-main:latest .
+
+after_script:
+  # Push image to dockerhub
+  - if [ "$TRAVIS_BRANCH" == "master" ]; then
+    docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
+    docker push tworavens/ravens-main;
+    fi
+#  - docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD"
+#  - docker push tworavens/ravens-main:latest
