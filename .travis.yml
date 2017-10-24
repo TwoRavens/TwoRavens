@@ -13,10 +13,10 @@ install:
 script:
   # Run django tests.  (Note django settings are an env variable)
   - python manage.py test
-  # If tests passed, build docker image
-  #- docker build -t tworavens/ravens-main:latest .
+  # If tests passed, build docker image--and see if that works
+  - docker build -t tworavens/ravens-main:latest .
 
-# trigger build on dockerhub
+# Don't push the image but instead trigger a build on dockerhub
 after_script: >-
   curl -H "Content-Type: application/json" --data '{"build": true}'
   -X POST https://registry.hub.docker.com/u/tworavens/ravens-main/trigger/9269f094-1951-4d52-ba6d-15b216cec4a4/;
