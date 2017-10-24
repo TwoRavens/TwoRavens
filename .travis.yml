@@ -17,10 +17,14 @@ script:
   - docker build -t tworavens/ravens-main:latest .
 
 after_script:
-  # Push image to dockerhub
+  # trigger build on dockerhub
   - if [ "$TRAVIS_BRANCH" == "master" ]; then
-    docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
-    docker push tworavens/ravens-main;
+    curl -H "Content-Type: application/json" --data '{"build": true}' -X POST https://registry.hub.docker.com/u/tworavens/ravens-main/trigger/9269f094-1951-4d52-ba6d-15b216cec4a4/;
     fi
+  # Push image to dockerhub
+  #- if [ "$TRAVIS_BRANCH" == "master" ]; then
+  #  docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
+  #  docker push tworavens/ravens-main;
+  #  fi
 #  - docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD"
 #  - docker push tworavens/ravens-main:latest
