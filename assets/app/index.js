@@ -175,8 +175,10 @@ class Body {
         let button1 = (id, onclick, args, title) => $button(
             id + `.btn-default[title=${title}]`, 2, 0, onclick, args);
         let glyph = id => m(`span.glyphicon.glyphicon-${id}[style=color: #818181; font-size: 1em; pointer-events: none]`);
-        return m('main',
+        return m(
+            'main',
             m("nav#navbar.navbar.navbar-default.navbar-fixed-top[role=navigation]",
+              {style: mode === 'explore' && 'background-image: -webkit-linear-gradient(top, #fff 0, rgb(227, 242, 254) 100%)'},
               m("a.navbar-brand",
                 m("img[src=/static/images/TwoRavens.png][alt=TwoRavens][width=100][style=margin-left: 1em; margin-top: -0.5em]", {
                   onmouseover: _ => this.about = true,
