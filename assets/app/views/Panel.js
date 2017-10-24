@@ -26,7 +26,7 @@ class Panel {
               buttons.map(b => m('li', b))),
             m(getClasses('.row-fluid', this),
               m(`#${side}panelcontent`,
-                m(`#${side}ContentArea[style=height: calc(100vh - 210px); overflow: auto]`, vnode.children))));
+                m(`#${side}ContentArea[style=height: calc(100vh - 213px); overflow: auto]`, vnode.children))));
     }
 }
 
