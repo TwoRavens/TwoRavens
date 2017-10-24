@@ -12,5 +12,5 @@
 To demo TwoRavens using replication data from Fearon and Laitin's 2003 article, *Ethnicity, Insurgency, and Civil War*:
 https://beta.dataverse.org/dataexplore/gui.html?dfId=37&
 
-![Example Page](https://github.com/TwoRavens/TwoRavens/blob/master/assets/images/example2Rpage.png)
+[![Example Page](https://github.com/TwoRavens/TwoRavens/blob/master/assets/images/example2Rpage.png)](https://beta.dataverse.org/dataexplore/gui.html?dfId=37&)
 
