@@ -14,7 +14,7 @@ script:
   # Run django tests.  (Note django settings are an env variable)
   - python manage.py test
   # If tests passed, build docker image
-  - docker build -t tworavens/ravens-main:latest .
+  #- docker build -t tworavens/ravens-main:latest .
 
 after_script:
   # trigger build on dockerhub
