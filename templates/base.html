@@ -2,7 +2,6 @@
 {% load static %}
 <!doctype html>
 <html>
-
   <head>
     <title>{% block title_block %}
         {% if title %}{{ title }}{% else %}TwoRavens{% endif %}
@@ -11,11 +10,9 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="{% static "pkgs/bootstrap/css/bootstrap.css" %}">
-    <!--<link rel="stylesheet" href="{% static "build/tworavens_styles.css" %}"-->
     {% render_bundle 'main' 'css' %}
     {% block extra_css %}
     {% endblock %}
-
     <script src="{% static "pkgs/Ladda/dist/spin.min.js" %}"></script>
     <script src="{% static "pkgs/Ladda/dist/ladda.min.js" %}"></script>
     <script src="{% static "js/jquery/jquery.min.js" %}"></script>
@@ -26,6 +23,7 @@
   </head>
 
   <body>
+  {% block body_content %}
   <div class="container">
     <div class="row">
       <div class="col-xs-12">
@@ -34,9 +32,9 @@
       </div>
     </div>
     {% block main_content %}
-    (content here)
+
     {% endblock %}
   </div>
-
+  {% endblock %}
   </body>
 </html>

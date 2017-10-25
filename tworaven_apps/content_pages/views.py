@@ -26,7 +26,6 @@ def view_pebbles_home(request):
 def view_d3m_config_error(request):
     """Show this when the app is in D3M mode
     but there's no config info available"""
-
     # Only show this if:
     # (a) in D3M mode
     #
@@ -43,7 +42,7 @@ def view_d3m_config_error(request):
     dinfo = dict(title='D3M configuration error')
 
     return render(request,
-                  'no_config_error.html',
+                  'content_pages/no_config_error.html',
                   dinfo)
 
 
