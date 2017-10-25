@@ -56,7 +56,7 @@ class EmbedJSONTest(TestCase):
         #
         results_list = embed_util.get_final_results_as_dict()
         results_dict = results_list[0]
-        print(embed_util.get_final_results())
+        print(embed_util.get_final_results()[:250])
 
         # Is the pipelineInfo key present
         self.assertTrue(KEY_PIPELINE_INFO in results_dict)
@@ -100,18 +100,15 @@ class EmbedJSONTest(TestCase):
         #
         self.assertEqual(embed_util.has_error, False)
 
-        print(embed_util.error_message)
-
         # retrieve the response with the newly embedded data
         #
         results_list = embed_util.get_final_results_as_dict()
 
-        print(json.dumps(results_list, indent=4))
-
+        #print(json.dumps(results_list, indent=4)[:550])
         results_dict = results_list[0]
 
 
-        print(embed_util.get_final_results())
+        print(embed_util.get_final_results()[:250])
 
         # Is the pipelineInfo key present
         self.assertTrue(KEY_PIPELINE_INFO in results_dict)
