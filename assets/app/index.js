@@ -8,8 +8,9 @@ import m from 'mithril';
 import * as app from './app';
 import * as plots from './plots';
 import Panel from './views/Panel';
-import Button, {or} from './views/PanelButton';
-import Search, {searchIndex} from './views/Search';
+import Button, {when} from './views/PanelButton';
+import List from './views/PanelList';
+import Search from './views/Search';
 import Subpanel from './views/Subpanel';
 
 let leftpanel = () => {
@@ -30,38 +31,14 @@ let leftpanel = () => {
                 style: `display: ${app.subset ? 'block' : 'none'}; float: right; margin-right: 10px`,
                 title: 'Subset data by the intersection of all selected values.'},
               m('span.ladda-label[style=pointer-events: none]', 'Select'))]},
-        m(`#tab1[style=display: ${or('left', 'tab1')}; padding: 0 8px; text-align: center]`,
+        m(`#tab1[style=display: ${when('left', 'tab1')}; padding: 0 8px; text-align: center]`,
           m(Search, {placeholder: 'Search variables and labels'}),
-          m('#varList[style=display: block]', app.valueKey.map((v, i) =>
-            m(`p#${v.replace(/\W/g, '_')}`, {
-              style: {
-                'background-color': app.zparams.zdv.includes(v) ? app.hexToRgba(app.dvColor) :
-                   app.zparams.znom.includes(v) ? app.hexToRgba(app.nomColor) :
-                   app.nodes.map(n => n.name).includes(v) ? app.hexToRgba(plots.selVarColor) :
-                   app.varColor,
-                'border-color': '#000000',
-                'border-style': searchIndex && i < searchIndex ? 'solid' : 'none'
-              },
-              onclick: app.clickVar,
-              onmouseover: function() {
-                $(this).popover('show');
-                $("body div.popover")
-                   .addClass("variables");
-                $("body div.popover div.popover-content")
-                   .addClass("form-horizontal");
-              },
-              onmouseout: "$(this).popover('hide');",
-              'data-container': 'body',
-              'data-content': app.popoverContent(app.findNodeIndex(v, true)),
-              'data-html': 'true',
-              'data-original-title': 'Summary Statistics',
-              'data-placement': 'right',
-              'data-toggle': 'popover',
-              'data-trigger': 'hover'},
-              v)))),
-        m(`#tab2[style=display: ${or('left', 'tab2')}; margin-top: .5em]`),
+          m(List, {
+              items: app.valueKey,
+              title: 'Summary Statistics'})),
+        m(`#tab2[style=display: ${when('left', 'tab2')}; margin-top: .5em]`),
         m('#tab3[style=height: 350px]',
-          m(`p[style=padding: .5em 1em; display: ${or('left', 'tab3')}]`, {
+          m(`p[style=padding: .5em 1em; display: ${when('left', 'tab3')}]`, {
             title: "Select a variable from within the visualization in the center panel to view its summary statistics."},
             m('center',
               m('b', app.summary.name),
@@ -70,10 +47,22 @@ let leftpanel = () => {
             m('table', app.summary.data.map(
               tr => m('tr', tr.map(
                 td => m('td', {
-                  onmouseover: function() {this.style['background-color'] = 'aliceblue'},
-                  onmouseout: function() {this.style['background-color'] = '#f9f9f9'}},
+                    onmouseover: function() {
+                        this.style['background-color'] = 'aliceblue';
+                    },
+                    onmouseout: function() {
+                        this.style['background-color'] = '#f9f9f9';
+                    }},
                   td))))))));
 };
+
+let righttab = (id, btnId, task, title, probDesc) => m(
+    `#${id}[style=display: ${when('right', btnId)}; padding: 6px 12px; text-align: center]`,
+    m(List, {
+        items: Object.keys(task || {}),
+        title: title + ' Description',
+        content: v => task[v][1],
+        probDesc: probDesc}));
 
 let rightpanel = mode => mode ? m(Panel, {
     side: 'right',
@@ -81,8 +70,8 @@ let rightpanel = mode => mode ? m(Panel, {
     buttons: [
         m(Button, {id: 'btnUnivariate'}, 'Univariate'),
         m(Button, {id: 'btnBivariate'}, 'Bivariate')]},
-    m(`#univariate[style=display: ${or('right', 'btnUnivariate')}]`),
-    m(`#bivariate[style=display: ${or('right', 'btnBivariate')}]`)) :
+    m(`#univariate[style=display: ${when('right', 'btnUnivariate')}]`),
+    m(`#bivariate[style=display: ${when('right', 'btnBivariate')}]`)) :
     // mode == null (model mode)
     m(Panel, {
         side: 'right',
@@ -95,17 +84,17 @@ let rightpanel = mode => mode ? m(Panel, {
             m(Button, {id: 'btnSubtype', style: 'width: 100%'}, 'Subtype'),
             m(Button, {id: 'btnMetrics', style: 'width: 100%'}, 'Metrics'),
             m(Button, {id: 'btnOutputs', style: 'width: 100%'}, 'Output')]},
-      m(`#results[style=display: ${or('right', 'btnResults')}; margin-top: .5em]`,
+      m(`#results[style=display: ${when('right', 'btnResults')}; margin-top: .5em]`,
         m("#resultsView.container[style=float: right; overflow: auto; width: 80%; background-color: white; white-space: nowrap]"),
         m('#modelView[style=display: none; float: left; width: 20%; background-color: white]'),
         m("p#resultsHolder[style=padding: .5em 1em]")),
-      m(`#setx[style=display: ${or('right', 'btnSetx')}]`,
+      m(`#setx[style=display: ${when('right', 'btnSetx')}]`,
         m('#setxLeftAll[style=display:block; float: left; width: 30%; height:100%; background-color: white]',
           m('#setxLeft[style=display:block; float: left; width: 100%; height:95%; overflow:auto; background-color: white]')),
         m('#setxRightAll[style=display:block; float: left; width: 70%; height:100%; background-color: white]',
           m('#setxRightTop[style=display:block; float: left; width: 100%; height:65%; overflow:auto; background-color: white]',
             m('#setxMiddle[style=display:block; float: left; width: 70%; height:100%; background-color: white]'),
-            m('#setxRight[style=display:block; float: right; width: 30%; height:100%; background-color: white]')),
+            m('#setxRight[style=display:block; float: right; width: 30%; height:100%; background-color: white]'))),
         m('#setxRightBottom[style=display:block; float: left; width: 100%; height:35%; overflow:auto; background-color: white]',
           m('#setxRightBottomLeft[style=display:block; float: left; width: 75%; height:100%; background-color: white]'),
           m('#setxRightBottomMiddle[style=display:block; float: left; width: 15%; height:100%; background-color: white]',
@@ -116,12 +105,12 @@ let rightpanel = mode => mode ? m(Panel, {
               style: `display:inline; float: left; margin-right: 10px`,
               title: 'Execute pipeline.'},
               m('span.ladda-label[style=pointer-events: none]', 'Execute'))),
-          m('#setxRightBottomRight[style=display:block; float: left; width: 10%; height:100%; background-color: white]')))),
-      m(`#models[style=display: ${or('right', 'btnModels')}; padding: 6px 12px; text-align: center]`),
-      m(`#types[style=display: ${or('right', 'btnType')}; padding: 6px 12px; text-align: center]`),
-      m(`#subtypes[style=display: ${or('right', 'btnSubtype')}; padding: 6px 12px; text-align: center]`),
-      m(`#metrics[style=display: ${or('right', 'btnMetrics')}; padding: 6px 12px; text-align: center]`),
-      m(`#outputs[style=display: ${or('right', 'btnOutputs')}; padding: 6px 12px; text-align: center]`));
+          m('#setxRightBottomRight[style=display:block; float: left; width: 10%; height:100%; background-color: white]'))),
+      righttab('models', 'btnModels'),
+      righttab('types', 'btnType', app.d3mTaskType, 'Task', 'taskType'),
+      righttab('subtypes', 'btnSubtype', app.d3mTaskSubtype, 'Task Subtype', 'taskSubtype'),
+      righttab('metrics', 'btnMetrics', app.d3mMetrics, 'Metric', 'metric', ),
+      righttab('outputs', 'btnOutputs', app.d3mOutputType, 'Output', 'outputType'));
 
 let ticker = mode => {
     let link = name => m(`a${name === mode ? '.active' : ''}[href=/${name}][style=margin-right: 0.5em]`, {oncreate: m.route.link}, name[0].toUpperCase() + name.slice(1));

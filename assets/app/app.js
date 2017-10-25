@@ -76,7 +76,7 @@ let ind2 = [(allR+30) * Math.cos(1.1), -1*(allR+30) * Math.sin(1.1),5] // cx, cy
 let myspace = 0;
 
 let forcetoggle = ["true"];
-let locktoggle = true;
+export let locktoggle = true;
 let priv = true;
 
 // swandive is our graceful fail for d3m
@@ -104,7 +104,7 @@ export let zparams = {
     zmodelcount: 0,
     zplot: [],
     zsessionid: "",
-    zdatacite: ""
+    zdatacite: '...'
 };
 
 let modelCount = 0;
@@ -123,62 +123,68 @@ let mytarget = "";
 let configurations = {};
 let dataschema = {};
 
-//eventually read this from the schema with real descriptions
+// eventually read this from the schema with real descriptions
 // metrics, tasks, and subtasks as specified in D3M schemas
 // MEAN SQUARED ERROR IS SET TO SAME AS RMSE. MSE is in schema but not proto
-let d3mMetrics = { metricUndefined:["description", "METRIC_UNDEFINED" , 0],
-    accuracy : ["description", "ACCURACY" , 1],
-f1:["description", "F1" , 2],
-f1Micro:["description", "F1_MICRO" , 3],
-f1Macro:["description", "F1_MACRO" , 4],
-rocAuc:["description", "ROC_AUC" , 5],
-rocAucMicro:["description", "ROC_AUC_MICRO" , 6],
-rocAucMacro:["description", "ROC_AUC_MACRO" , 7],
-meanSquaredError:["description", "ROOT_MEAN_SQUARED_ERROR", 8],
-rootMeanSquaredError:["description", "ROOT_MEAN_SQUARED_ERROR" , 8],
-rootMeanSquaredErrorAvg:["description", "ROOT_MEAN_SQUARED_ERROR_AVG" , 9],
-meanAbsoluteError:["description", "MEAN_ABSOLUTE_ERROR" , 10],
-rSquared:["description", "R_SQUARED" , 11],
-normalizedMutualInformation:["description", "NORMALIZED_MUTUAL_INFORMATION" , 12],
-    jaccardSimilarityScore:["description", "JACCARD_SIMILARITY_SCORE" , 13],
-    executionTime:["description", "EXECUTION_TIME" , 14]};
-
-let d3mTaskType = {taskTypeUndefined:["description","TASK_TYPE_UNDEFINED", 0],classification:["description", "CLASSIFICATION" , 1],
-regression:["description", "REGRESSION" , 2],
-similarityMatching:["description", "SIMILARITY_MATCHING" , 3],
-linkPrediction:["description", "LINK_PREDICTION" , 4],
-vertexNomination:["description", "VERTEX_NOMINATION" , 5],
-communityDetection:["description", "COMMUNITY_DETECTION" , 6],
-graphMatching:["description", "GRAPH_MATCHING" , 7],
-timeseriesForecasting:["description", "TIMESERIES_FORECASTING" , 8],
-    collaborativeFiltering:["description", "COLLABORATIVE_FILTERING" , 9]};
-
-let d3mTaskSubtype = {taskSubtypeUndefined:["description", "TASK_SUBTYPE_UNDEFINED", 0],
-subtypeNone:["description","NONE",1],
+export let d3mTaskType = {
+    taskTypeUndefined: ["description", "TASK_TYPE_UNDEFINED", 0],
+    classification: ["description", "CLASSIFICATION" , 1],
+    regression: ["description", "REGRESSION" , 2],
+    similarityMatching: ["description", "SIMILARITY_MATCHING" , 3],
+    linkPrediction: ["description", "LINK_PREDICTION" , 4],
+    vertexNomination: ["description", "VERTEX_NOMINATION" , 5],
+    communityDetection: ["description", "COMMUNITY_DETECTION" , 6],
+    graphMatching: ["description", "GRAPH_MATCHING" , 7],
+    timeseriesForecasting: ["description", "TIMESERIES_FORECASTING" , 8],
+    collaborativeFiltering: ["description", "COLLABORATIVE_FILTERING" , 9]
+};
+export let d3mTaskSubtype = {
+    taskSubtypeUndefined:["description", "TASK_SUBTYPE_UNDEFINED", 0],
+    subtypeNone:["description","NONE",1],
     binary:["description", "BINARY" , 2],
-multiClass:["description", "MULTICLASS" , 3],
-multiLabel:["description", "MULTILABEL" , 4],
-uniVariate:["description", "UNIVARIATE" , 5],
-multiVariate:["description", "MULTIVARIATE" , 6],
-overlapping:["description", "OVERLAPPING" , 7],
-    nonOverlapping:["description", "NONOVERLAPPING" , 8]};
-
-let d3mOutputType = {outputUndefined:["description","OUTPUT_TYPE_UNDEFINED ", 0],
-classLabel:["description","CLASS_LABEL", 1],
-probability:["description","PROBABILITY", 2],
-real:["description","REAL", 3],
-nodeID:["description","NODE_ID", 4],
-vectorClassLabel:["description","VECTOR_CLASS_LABEL", 5],
+    multiClass:["description", "MULTICLASS" , 3],
+    multiLabel:["description", "MULTILABEL" , 4],
+    uniVariate:["description", "UNIVARIATE" , 5],
+    multiVariate:["description", "MULTIVARIATE" , 6],
+    overlapping:["description", "OVERLAPPING" , 7],
+    nonOverlapping:["description", "NONOVERLAPPING" , 8]
+};
+export let d3mOutputType = {
+    outputUndefined:["description","OUTPUT_TYPE_UNDEFINED ", 0],
+    classLabel:["description","CLASS_LABEL", 1],
+    probability:["description","PROBABILITY", 2],
+    real:["description","REAL", 3],
+    nodeID:["description","NODE_ID", 4],
+    vectorClassLabel:["description","VECTOR_CLASS_LABEL", 5],
     vectorStochastic:["description","VECTOR_STOCHASTIC", 6],
     vectorReal:["description","VECTOR_REAL", 7],
-    file:["description","FILE",8]};
-
-let d3mProblemDescription = {
-taskType: [2,"DEFAULT"],
-taskSubtype: [1,"DEFAFULT"],
-outputType: [3,"DEFAULT"],
+    file:["description","FILE",8]
+};
+export let d3mMetrics = {
+    metricUndefined:["description", "METRIC_UNDEFINED" , 0],
+    accuracy : ["description", "ACCURACY" , 1],
+    f1:["description", "F1" , 2],
+    f1Micro:["description", "F1_MICRO" , 3],
+    f1Macro:["description", "F1_MACRO" , 4],
+    rocAuc:["description", "ROC_AUC" , 5],
+    rocAucMicro:["description", "ROC_AUC_MICRO" , 6],
+    rocAucMacro:["description", "ROC_AUC_MACRO" , 7],
+    meanSquaredError:["description", "ROOT_MEAN_SQUARED_ERROR", 8],
+    rootMeanSquaredError:["description", "ROOT_MEAN_SQUARED_ERROR" , 8],
+    rootMeanSquaredErrorAvg:["description", "ROOT_MEAN_SQUARED_ERROR_AVG" , 9],
+    meanAbsoluteError:["description", "MEAN_ABSOLUTE_ERROR" , 10],
+    rSquared:["description", "R_SQUARED" , 11],
+    normalizedMutualInformation:["description", "NORMALIZED_MUTUAL_INFORMATION" , 12],
+    jaccardSimilarityScore:["description", "JACCARD_SIMILARITY_SCORE" , 13],
+    executionTime:["description", "EXECUTION_TIME" , 14]
+};
+export let d3mProblemDescription = {
+    taskType: [2,"DEFAULT"],
+    taskSubtype: [1,"DEFAFULT"],
+    outputType: [3,"DEFAULT"],
     metric: [4,"DEFAULT"],
-    taskDescription: ""};
+    taskDescription: ""
+};
 
 
 let svg, width, height, div, estimateLadda, selectLadda;
@@ -831,123 +837,25 @@ console.log("SCAFFOLDING");
         .style('height', 2000)
         .style('overfill', 'scroll');
 
-    if(!d3m_mode){
-    d3.select("#models").selectAll("p")
-        .data(Object.keys(mods))
-        .enter()
-        .append("p")
-        .attr("id", "_model_".concat)
-        .text(d => d)
-        .style('background-color', d => varColor)
-        .attr("data-container", "body")
-        .attr("data-toggle", "popover")
-        .attr("data-trigger", "hover")
-        .attr("data-placement", "top")
-        .attr("data-html", "true")
-        .attr("onmouseover", "$(this).popover('toggle');")
-        .attr("onmouseout", "$(this).popover('toggle');")
-        .attr("data-original-title", "Model Description")
-        .attr("data-content", d => mods[d]);
-    }
-    if(d3m_mode) {
+    if(!d3m_mode) {
+        d3.select("#models").selectAll("p")
+            .data(Object.keys(mods))
+            .enter()
+            .append("p")
+            .attr("id", "_model_".concat)
+            .text(d => d)
+            .style('background-color', d => varColor)
+            .attr("data-container", "body")
+            .attr("data-toggle", "popover")
+            .attr("data-trigger", "hover")
+            .attr("data-placement", "top")
+            .attr("data-html", "true")
+            .attr("onmouseover", "$(this).popover('toggle');")
+            .attr("onmouseout", "$(this).popover('toggle');")
+            .attr("data-original-title", "Model Description")
+            .attr("data-content", d => mods[d]);
+    } else {
         toggleRightButtons("tasks");
-
-        d3.select("#types").selectAll("p")
-        .data(Object.keys(d3mTaskType))
-        .enter()
-        .append("p")
-        .attr("id", d => d + ".types")
-        .text(d => d)
-        .attr('class', d=> {
-              if (d3mProblemDescription.taskType == d.toString()){
-              return 'item-select';
-              } else {
-              if(locktoggle) return 'item-default item-lineout';
-              return 'item-default';
-              }
-              })
-        .attr("data-container", "body")
-        .attr("data-toggle", "popover")
-        .attr("data-trigger", "hover")
-        .attr("data-placement", "top")
-        .attr("data-html", "true")
-        .attr("onmouseover", "$(this).popover('toggle');")
-        .attr("onmouseout", "$(this).popover('toggle');")
-        .attr("data-original-title", "Task Description")
-        .attr("data-content", d => d3mTaskType[d][1]);
-
-        d3.select("#subtypes").selectAll("p")
-        .data(Object.keys(d3mTaskSubtype))
-        .enter()
-        .append("p")
-        .attr("id", d => d + ".subtypes")
-        .text(d => d)
-        .attr('class', d=> {
-              if (d3mProblemDescription.taskSubtype == d.toString()){
-              return 'item-select';
-              } else {
-              if(locktoggle) return 'item-default item-lineout';
-              return 'item-default';
-              }
-              })
-        .attr("data-container", "body")
-        .attr("data-toggle", "popover")
-        .attr("data-trigger", "hover")
-        .attr("data-placement", "top")
-        .attr("data-html", "true")
-        .attr("onmouseover", "$(this).popover('toggle');")
-        .attr("onmouseout", "$(this).popover('toggle');")
-        .attr("data-original-title", "Task Subtype Desc.")
-        .attr("data-content", d => d3mTaskSubtype[d][1]);
-
-        d3.select("#metrics").selectAll("p")
-        .data(Object.keys(d3mMetrics))
-        .enter()
-        .append("p")
-        .attr("id", d => d + ".metrics")
-        .text(d => d)
-        .attr('class', d=> {
-              if (d3mProblemDescription.metric == d.toString()){
-                return 'item-select';
-              } else {
-                if(locktoggle) return 'item-default item-lineout';
-                return 'item-default';
-              }
-              })
-        .attr("data-container", "body")
-        .attr("data-toggle", "popover")
-        .attr("data-trigger", "hover")
-        .attr("data-placement", "top")
-        .attr("data-html", "true")
-        .attr("onmouseover", "$(this).popover('toggle');")
-        .attr("onmouseout", "$(this).popover('toggle');")
-        .attr("data-original-title", "Metric Description")
-        .attr("data-content", d => d3mMetrics[d][1]);
-
-        d3.select("#outputs").selectAll("p")
-        .data(Object.keys(d3mOutputType))
-        .enter()
-        .append("p")
-        .attr("id", d => d + ".outputs")
-        .text(d => d)
-        .attr('class', d=> {
-              if (d3mProblemDescription.outputType == d.toString()){
-              return 'item-select';
-              } else {
-              if(locktoggle) return 'item-default item-lineout';
-              return 'item-default';
-              }
-              })
-        .attr("data-container", "body")
-        .attr("data-toggle", "popover")
-        .attr("data-trigger", "hover")
-        .attr("data-placement", "top")
-        .attr("data-html", "true")
-        .attr("onmouseover", "$(this).popover('toggle');")
-        .attr("onmouseout", "$(this).popover('toggle');")
-        .attr("data-original-title", "Output Description")
-        .attr("data-content", d => d3mOutputType[d][1]);
-
     }
 
     // call layout() because at this point all scaffolding is up and ready
