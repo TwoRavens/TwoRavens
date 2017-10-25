@@ -9,10 +9,12 @@ services:
 install:
   # Build/test dependencies
   - pip install --no-cache-dir -r requirements/prod.txt
-
+  - pip install coveralls
+  
 script:
   # Run django tests.  (Note django settings are an env variable)
   - python manage.py test
+  - coverage run --source=tworaven_apps.ta2_interfaces manage.py test
   # If tests passed, build docker image--and see if that works
   - docker build -t tworavens/ravens-main:latest .
 
@@ -32,3 +34,7 @@ after_script: >-
   #  fi
 #  - docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD"
 #  - docker push tworavens/ravens-main:latest
+
+# send report to coveralls
+after_success:
+  coveralls
