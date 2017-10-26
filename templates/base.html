@@ -9,16 +9,21 @@
     </title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="{% static "pkgs/bootstrap/css/bootstrap.css" %}">
-    {% render_bundle 'main' 'css' %}
     {% block extra_css %}
+    <!-- bootstrap 4 (not on pebbles page) -->
+    <link rel="stylesheet" href="{% static "pkgs/bootstrap4/css/bootstrap.min.css" %}">
+    <link rel="stylesheet" href="{% static "css/non_app.css" %}">
     {% endblock %}
+
+    {% render_bundle 'main' 'css' %}
+
     <script src="{% static "pkgs/Ladda/dist/spin.min.js" %}"></script>
     <script src="{% static "pkgs/Ladda/dist/ladda.min.js" %}"></script>
-    <script src="{% static "js/jquery/jquery.min.js" %}"></script>
-    <script src="{% static "pkgs/bootstrap/js/bootstrap.min.js" %}"></script>
-    <script src="{% static "js/d3/d3.v3.min.js" %}"></script>
     {% block extra_js %}
+    <!-- bootstrap 4 / jquery 3.2 / popper (not on pebbles page) -->
+    <script src="{% static "pkgs/bootstrap4/js/bootstrap.min.js" %}"></script>
+    <script src="{% static "pkgs/bootstrap4/jquery-3.2.1.slim.min.js" %}"></script>
+    <script src="{% static "pkgs/bootstrap4/popper.min.js" %}"></script>
     {% endblock %}
   </head>
 
@@ -26,8 +31,21 @@
   {% block body_content %}
   <div class="container">
     <div class="row">
-      <div class="col-xs-12">
+      <div class="col-8 col-sm-8">
           <a href="/"><img src="{% static "images/TwoRavens.png" %}" alt="TwoRavens" width="100" /></a>
+      </div>
+      <div class="col-4  col-sm-4">
+        {% if user.is_authenticated %}
+          <p class="small">logged in: {{ user.username }}</p>
+        {% else %}
+          <a href="{% url 'signup' %}">Sign Up</a>
+          &nbsp; | &nbsp; <a href="{% url 'login' %}">Log in</a>
+
+        {% endif %}
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-12">
           <hr />
       </div>
     </div>
