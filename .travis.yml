@@ -19,14 +19,14 @@ script:
   - docker build -t tworavens/ravens-main:latest .
 
 # Don't push the image but instead trigger a build on dockerhub
-after_script: >-
-  curl -H "Content-Type: application/json" 
-  --data '{"docker_tag": "master"}' 
-  -X POST https://registry.hub.docker.com/u/tworavens/ravens-main/trigger/9269f094-1951-4d52-ba6d-15b216cec4a4/
+after_script:
+  - if [ "$TRAVIS_BRANCH" == "master" ]; then
+    curl -H "Content-Type: application/json" --data '{"docker_tag": "master"}' -X POST https://registry.hub.docker.com/u/tworavens/ravens-main/trigger/9269f094-1951-4d52-ba6d-15b216cec4a4/;
+    fi
+  #curl -H "Content-Type: application/json" 
+  #--data '{"docker_tag": "master"}' 
+  #-X POST https://registry.hub.docker.com/u/tworavens/ravens-main/trigger/9269f094-1951-4d52-ba6d-15b216cec4a4/
 
-  #- if [ "$TRAVIS_BRANCH" == "master" ]; then
-  #  curl -H "Content-Type: application/json" --data '{"build": true}' -X POST https://registry.hub.docker.com/u/tworavens/ravens-main/trigger/9269f094-1951-4d52-ba6d-15b216cec4a4/;
-  #  fi
   # Push image to dockerhub
   #- if [ "$TRAVIS_BRANCH" == "master" ]; then
   #  docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
