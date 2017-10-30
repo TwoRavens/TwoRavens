@@ -1,4 +1,4 @@
-{% extends 'helper_pages_base.html' %}
+{% extends 'base.html' %}
 {% load static %}
 
 {% block title_block %}Two Ravens - 500 Error{% endblock %}
@@ -7,12 +7,12 @@
 {% block main_content %}
 <div class="container">
       <div class="row">
-          <div class="col-xs-12 col-md-6">
-              <div class="panel panel-default">
-                  <div class="panel-heading">
+          <div class="col-12 col-md-6">
+              <div class="card">
+                  <div class="card-header">
                     <img src="{% static "images/TwoRavens.png" %}" alt="TwoRavens" width="100" class="img-responsive" />
                   </div>
-                  <div class="panel-body"><p>
+                  <div class="card-body"><p>
                     <p style="font-size: 1.3em; color:inheret;">Sorry! An Error Occurred.*
                         <br />
                         <br />

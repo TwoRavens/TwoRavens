@@ -1,7 +1,8 @@
-{% extends "helper_pages_base.html" %}
+{% extends "base.html" %}
 {% load static %}
 
 {% block extra_css %}
+{{ block.super }}
 <style>
 table.config-list tr th,
 table.config-list tr td {
@@ -13,16 +14,17 @@ table.config-list tr td {
   {% block main_content %}
   <div class="row">
 
-    <div class="col-sm-12">
-      <a href="{% url 'view_grpc_test_links' %}" class="btn-primary btn-sm">
+    <div class="col-12">
+      <p><a href="{% url 'view_grpc_test_links' %}" class="btn btn-outline-info btn-sm">
         <span class="glyphicon glyphicon-chevron-left" aria-hidden="true"></span>
   back to helper page</a>
+    </p>
       <h3>D3M configs</h3>
 
-      <div class="panel panel-default">
-        <div class="panel-heading">default or "latest" config url</div>
-        <div class="panel-body">
-          {% if not configs %}<span class="btn btn-danger">
+      <div class="card">
+        <div class="card-header">default or "latest" config url</div>
+        <div class="card-body">
+          {% if not configs %}<span class="btn btn-outline-danger btn-sm">
           No D3M Configurations in the Database.  The links below will NOT work</span>
           {% endif %}
         <ul>
@@ -57,7 +59,10 @@ table.config-list tr td {
           </table>
       </div>
       </div>
-
+      <br /><br />
+      <div class="card">
+        <div class="card-header">D3M Configs in the Database</div>
+        <div class="card-body">
 
       <table class="table table-condensed">
         <thead>
@@ -145,7 +150,7 @@ table.config-list tr td {
           {% empty %}
           <tr>
             <td class="text-left" colspan="2">
-              <span class="btn btn-danger">
+              <span class="btn btn-outline-danger btn-sm">
               No D3M Configurations in the Database!
               </span>
               <br />(try ><code>fab make_d3m_config</code>)</td>
