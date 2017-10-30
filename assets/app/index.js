@@ -20,23 +20,24 @@ function setBackgroundColor(color) {
 }
 
 function leftpanel() {
-    return m(Panel, {
-        side: 'left',
-        title: 'Data Selection',
-        buttons: [
-            m(Button,
-              {id: 'btnVariables',
-               id2: 'tab1',
-               title: 'Click variable name to add or remove the variable pebble from the modeling space.'},
-              'Variables'),
-            m(Button, {id: 'btnSubset', id2: 'tab2'}, 'Subset'),
-            m(Button,
-              {id: 'btnSelect',
-               classes: 'btn-default.ladda-button[data-spinner-color=#000000][data-style=zoom-in]',
-               onclick: _ => app.subsetSelect('btnSelect'),
-               style: `display: ${app.subset ? 'block' : 'none'}; float: right; margin-right: 10px`,
-               title: 'Subset data by the intersection of all selected values.'},
-              m('span.ladda-label[style=pointer-events: none]', 'Select'))]},
+    return m(
+        Panel,
+        {side: 'left',
+         title: 'Data Selection',
+         buttons: [
+             m(Button,
+               {id: 'btnVariables',
+                id2: 'tab1',
+                title: 'Click variable name to add or remove the variable pebble from the modeling space.'},
+               'Variables'),
+             m(Button, {id: 'btnSubset', id2: 'tab2'}, 'Subset'),
+             m(Button,
+               {id: 'btnSelect',
+                classes: 'btn-default.ladda-button[data-spinner-color=#000000][data-style=zoom-in]',
+                onclick: _ => app.subsetSelect('btnSelect'),
+                style: `display: ${app.subset ? 'block' : 'none'}; float: right; margin-right: 10px`,
+                title: 'Subset data by the intersection of all selected values.'},
+               m('span.ladda-label[style=pointer-events: none]', 'Select'))]},
         m(`#tab1[style=display: ${when('left', 'tab1')}; padding: 0 8px; text-align: center]`,
           m(Search, {placeholder: 'Search variables and labels'}),
           m(List, {items: app.valueKey, title: 'Summary Statistics'})),
@@ -49,8 +50,9 @@ function leftpanel() {
               m('br'),
               m('i', app.summary.labl)),
             m('table', app.summary.data.map(
-              tr => m('tr', tr.map(
-                  td => m('td', {onmouseover: setBackgroundColor('aliceblue'), onmouseout: setBackgroundColor('f9f9f9')}, td))))))));
+                tr => m('tr', tr.map(
+                    td => m('td', {onmouseover: setBackgroundColor('aliceblue'), onmouseout: setBackgroundColor('f9f9f9')},
+                            td))))))));
 }
 
 let righttab = (id, btnId, task, title, probDesc) => m(
