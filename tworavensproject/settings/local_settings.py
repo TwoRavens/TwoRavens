@@ -49,6 +49,10 @@ MEDIA_URL = '/media/'
 
 TIME_ZONE = 'America/New_York'
 
+# Test email backend, goes to the console
+#
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
 # TwoRavens R service test
 
 R_DEV_SERVER_BASE = 'http://0.0.0.0:8000/custom/'
