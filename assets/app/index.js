@@ -13,29 +13,33 @@ import List from './views/PanelList';
 import Search from './views/Search';
 import Subpanel from './views/Subpanel';
 
+function setBackgroundColor(color) {
+    return function() {
+        this.style['background-color'] = color;
+    };
+}
+
 let leftpanel = () => {
     return m(Panel, {
         side: 'left',
         title: 'Data Selection',
         buttons: [
-            m(Button, {
-                id: 'btnVariables',
-                id2: 'tab1',
-                title: 'Click variable name to add or remove the variable pebble from the modeling space.'},
+            m(Button,
+              {id: 'btnVariables',
+               id2: 'tab1',
+               title: 'Click variable name to add or remove the variable pebble from the modeling space.'},
               'Variables'),
             m(Button, {id: 'btnSubset', id2: 'tab2'}, 'Subset'),
-            m(Button, {
-                id: 'btnSelect',
-                classes: 'btn-default.ladda-button[data-spinner-color=#000000][data-style=zoom-in]',
-                onclick: _ => app.subsetSelect('btnSelect'),
-                style: `display: ${app.subset ? 'block' : 'none'}; float: right; margin-right: 10px`,
-                title: 'Subset data by the intersection of all selected values.'},
+            m(Button,
+              {id: 'btnSelect',
+               classes: 'btn-default.ladda-button[data-spinner-color=#000000][data-style=zoom-in]',
+               onclick: _ => app.subsetSelect('btnSelect'),
+               style: `display: ${app.subset ? 'block' : 'none'}; float: right; margin-right: 10px`,
+               title: 'Subset data by the intersection of all selected values.'},
               m('span.ladda-label[style=pointer-events: none]', 'Select'))]},
         m(`#tab1[style=display: ${when('left', 'tab1')}; padding: 0 8px; text-align: center]`,
           m(Search, {placeholder: 'Search variables and labels'}),
-          m(List, {
-              items: app.valueKey,
-              title: 'Summary Statistics'})),
+          m(List, {items: app.valueKey, title: 'Summary Statistics'})),
         m(`#tab2[style=display: ${when('left', 'tab2')}; margin-top: .5em]`),
         m('#tab3[style=height: 350px]',
           m(`p[style=padding: .5em 1em; display: ${when('left', 'tab3')}]`, {
@@ -46,30 +50,26 @@ let leftpanel = () => {
               m('i', app.summary.labl)),
             m('table', app.summary.data.map(
               tr => m('tr', tr.map(
-                td => m('td', {
-                    onmouseover: function() {
-                        this.style['background-color'] = 'aliceblue';
-                    },
-                    onmouseout: function() {
-                        this.style['background-color'] = '#f9f9f9';
-                    }},
-                  td))))))));
+                  td => m('td',
+                          {onmouseover: setBackgroundColor('aliceblue'), onmouseout: setBackgroundColor('f9f9f9')},
+                          td))))))));
 };
 
 let righttab = (id, btnId, task, title, probDesc) => m(
     `#${id}[style=display: ${when('right', btnId)}; padding: 6px 12px; text-align: center]`,
-    m(List, {
-        items: Object.keys(task || {}),
-        title: title + ' Description',
-        content: v => task[v][1],
-        probDesc: probDesc}));
+    m(List,
+      {items: Object.keys(task || {}),
+       title: title + ' Description',
+       content: v => task[v][1],
+       probDesc: probDesc}));
 
-let rightpanel = mode => mode ? m(Panel, {
-    side: 'right',
-    title: 'Result Exploration',
-    buttons: [
-        m(Button, {id: 'btnUnivariate'}, 'Univariate'),
-        m(Button, {id: 'btnBivariate'}, 'Bivariate')]},
+let rightpanel = mode => mode ? m(
+    Panel,
+    {side: 'right',
+     title: 'Result Exploration',
+     buttons: [
+         m(Button, {id: 'btnUnivariate'}, 'Univariate'),
+         m(Button, {id: 'btnBivariate'}, 'Bivariate')]},
     m(`#univariate[style=display: ${when('right', 'btnUnivariate')}]`),
     m(`#bivariate[style=display: ${when('right', 'btnBivariate')}]`)) :
     // mode == null (model mode)
@@ -98,12 +98,12 @@ let rightpanel = mode => mode ? m(Panel, {
         m('#setxRightBottom[style=display:block; float: left; width: 100%; height:35%; overflow:auto; background-color: white]',
           m('#setxRightBottomLeft[style=display:block; float: left; width: 75%; height:100%; background-color: white]'),
           m('#setxRightBottomMiddle[style=display:block; float: left; width: 15%; height:100%; background-color: white]',
-            m(Button, {
-              id: 'btnExecutePipe',
-              classes: 'btn-default.ladda-button[data-spinner-color=#000000][data-style=zoom-in]',
-              onclick: _ => app.executepipeline('btnExecutePipe'),
-              style: `display:inline; float: left; margin-right: 10px`,
-              title: 'Execute pipeline.'},
+            m(Button,
+              {id: 'btnExecutePipe',
+               classes: 'btn-default.ladda-button[data-spinner-color=#000000][data-style=zoom-in]',
+               onclick: _ => app.executepipeline('btnExecutePipe'),
+               style: `display:inline; float: left; margin-right: 10px`,
+               title: 'Execute pipeline.'},
               m('span.ladda-label[style=pointer-events: none]', 'Execute'))),
           m('#setxRightBottomRight[style=display:block; float: left; width: 10%; height:100%; background-color: white]'))),
       righttab('models', 'btnModels'),
@@ -156,11 +156,12 @@ class Body {
         let explore = mode === 'explore';
 
         let _navBtn = (id, left, right, onclick, args, min) => m(
-            `button#${id}.btn.navbar-right`, {
-                onclick: onclick,
-                style: {'margin-left': left + 'em',
-                        'margin-right': right + 'em',
-                        'min-width': min}}, args);
+            `button#${id}.btn.navbar-right`,
+            {onclick: onclick,
+             style: {'margin-left': left + 'em',
+                     'margin-right': right + 'em',
+                     'min-width': min}},
+            args);
         let navBtn = (id, left, right, onclick, args, min) => _navBtn(
             id + '.ladda-button[data-spinner-color=#000000][data-style=zoom-in]',
             left, right, onclick, args, min);
