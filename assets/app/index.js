@@ -153,17 +153,24 @@ class Body {
 
     view(vnode) {
         let {mode} = vnode.attrs;
-        let $button = (id, left, right, onclick, args, min) => m(
+        let _navBtn = (id, left, right, onclick, args, min) => m(
             `button#${id}.btn.navbar-right`, {
                 onclick: onclick,
                 style: {'margin-left': left + 'em',
                         'margin-right': right + 'em',
                         'min-width': min}}, args);
-        let button = (id, left, right, onclick, args, min) => $button(
-            id + '.ladda-button[data-spinner-color=#000000][data-style=zoom-in]', left, right, onclick, args, min);
-        let button1 = (id, onclick, args, title) => $button(
+        let navBtn = (id, left, right, onclick, args, min) => _navBtn(
+            id + '.ladda-button[data-spinner-color=#000000][data-style=zoom-in]',
+            left, right, onclick, args, min);
+        let navBtn1 = (id, onclick, args, title) => _navBtn(
             id + `.btn-default[title=${title}]`, 2, 0, onclick, args);
-        let glyph = id => m(`span.glyphicon.glyphicon-${id}[style=color: #818181; font-size: 1em; pointer-events: none]`);
+        let glyph = (icon, unstyled) => m(
+            'span.glyphicon.glyphicon-' + icon +
+                (unstyled ? '' : '[style=color: #818181; font-size: 1em; pointer-events: none]'));
+        let spaceBtn = (id, onclick, title, icon) => m(
+            `button#${id}.btn.btn-default`,
+            {onclick: onclick, title: title},
+            glyph(icon, true));
         return m(
             'main',
             m("nav#navbar.navbar.navbar-default.navbar-fixed-top[role=navigation]",
@@ -182,11 +189,11 @@ class Body {
                   m(`#cite.panel.panel-default[style=display: ${this.cite ? 'block' : 'none'}; position: absolute; right: 50%; width: 380px; text-align: left; z-index: 50]`,
                     m(".panel-body")),
                   m('span',
-                    button('btnEstimate.btn-success', 2, 1, app.estimate, m("span.ladda-label", mode ? 'Explore' : 'Solve This Problem'), '150px'),
-                    button('btnTA2.btn-default', .5, 1, _ => app.helpmaterials('manual'), ['Help Manual ', glyph('book')]),
-                    button('btnTA2.btn-default', 2, .5, _ => app.helpmaterials('video'), ['Help Video ', glyph('expand')]),
-                    button1("btnReset", app.reset, glyph('repeat'), 'Reset'),
-                    button1('btnEndSession', app.endsession, m("span.ladda-label", 'Mark Problem Finished'), 'Mark Problem Finished'),
+                    navBtn('btnEstimate.btn-success', 2, 1, app.estimate, m("span.ladda-label", mode ? 'Explore' : 'Solve This Problem'), '150px'),
+                    navBtn('btnTA2.btn-default', .5, 1, _ => app.helpmaterials('manual'), ['Help Manual ', glyph('book')]),
+                    navBtn('btnTA2.btn-default', 2, .5, _ => app.helpmaterials('video'), ['Help Video ', glyph('expand')]),
+                    navBtn1("btnReset", app.reset, glyph('repeat'), 'Reset'),
+                    navBtn1('btnEndSession', app.endsession, m("span.ladda-label", 'Mark Problem Finished'), 'Mark Problem Finished'),
                     m('#transformations.transformTool', {
                         title: 'Construct transformations of existing variables using valid R syntax. For example, assuming a variable named d, you can enter "log(d)" or "d^2".'})))),
               m(`#about.panel.panel-default[style=display: ${this.about ? 'block' : 'none'}; left: 140px; position: absolute; width: 500px; z-index: 50]`,
@@ -197,15 +204,9 @@ class Body {
                 m('#m0.item.active',
                   m('svg#whitespace'))),
               m("#spacetools.spaceTool[style=z-index: 16]",
-                m("button#btnLock.btn.active[title=Lock selections of problem description.]", {
-                  onclick: app.lockDescription},
-                  m("span.glyphicon.glyphicon-pencil")),
-                m("button#btnForce.btn.btn-default[title=Pin the variable pebbles to the page.]", {
-                  onclick: app.forceSwitch},
-                  m("span.glyphicon.glyphicon-pushpin")),
-                m("button#btnEraser.btn.btn-default[title=Wipe all variables from the modeling space.]", {
-                  onclick: app.erase},
-                  m("span.glyphicon.glyphicon-magnet"))),
+                spaceBtn('btnLock.active', app.lockDescription, 'Lock selection of problem description', 'pencil'),
+                spaceBtn('btnForce', app.forceSwitch, 'Pin the variable pebbles to the page', 'pushpin'),
+                spaceBtn('btnEraser', app.erase, 'Wipe all variables from the modeling space', 'magnet')),
               m(Subpanel, {
                 title: "Legend",
                 buttons: [
