@@ -36,7 +36,11 @@
       </div>
       <div class="col-4  col-sm-4">
         {% if user.is_authenticated %}
-          <p class="small">logged in: {{ user.username }}</p>
+          <p class="small">logged in: {{ user.username }}
+
+            &nbsp; | &nbsp; <a href="{% url 'logout' %}">Log out</a>
+
+          </p>
         {% else %}
           <a href="{% url 'signup' %}">Sign Up</a>
           &nbsp; | &nbsp; <a href="{% url 'login' %}">Log in</a>
