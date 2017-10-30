@@ -50,9 +50,7 @@ let leftpanel = () => {
               m('i', app.summary.labl)),
             m('table', app.summary.data.map(
               tr => m('tr', tr.map(
-                  td => m('td',
-                          {onmouseover: setBackgroundColor('aliceblue'), onmouseout: setBackgroundColor('f9f9f9')},
-                          td))))))));
+                  td => m('td', {onmouseover: setBackgroundColor('aliceblue'), onmouseout: setBackgroundColor('f9f9f9')}, td))))))));
 };
 
 let righttab = (id, btnId, task, title, probDesc) => m(
@@ -73,17 +71,17 @@ let rightpanel = mode => mode ? m(
     m(`#univariate[style=display: ${when('right', 'btnUnivariate')}]`),
     m(`#bivariate[style=display: ${when('right', 'btnBivariate')}]`)) :
     // mode == null (model mode)
-    m(Panel, {
-        side: 'right',
-        title: 'Model Selection',
-        buttons: [
-            m(Button, {id: 'btnModels', style: 'width: 100%'}, 'Models'),
-            m(Button, {id: 'btnSetx', style: 'width: 100%'}, 'Set Covar.'),
-            m(Button, {id: 'btnResults', style: 'width: 100%'}, 'Results'),
-            m(Button, {id: 'btnType', style: 'width: 100%'}, 'Task Type'),
-            m(Button, {id: 'btnSubtype', style: 'width: 100%'}, 'Subtype'),
-            m(Button, {id: 'btnMetrics', style: 'width: 100%'}, 'Metrics'),
-            m(Button, {id: 'btnOutputs', style: 'width: 100%'}, 'Output')]},
+    m(Panel,
+      {side: 'right',
+       title: 'Model Selection',
+       buttons: [
+           m(Button, {id: 'btnModels', style: 'width: 100%'}, 'Models'),
+           m(Button, {id: 'btnSetx', style: 'width: 100%'}, 'Set Covar.'),
+           m(Button, {id: 'btnResults', style: 'width: 100%'}, 'Results'),
+           m(Button, {id: 'btnType', style: 'width: 100%'}, 'Task Type'),
+           m(Button, {id: 'btnSubtype', style: 'width: 100%'}, 'Subtype'),
+           m(Button, {id: 'btnMetrics', style: 'width: 100%'}, 'Metrics'),
+           m(Button, {id: 'btnOutputs', style: 'width: 100%'}, 'Output')]},
       m(`#results[style=display: ${when('right', 'btnResults')}; margin-top: .5em]`,
         m("#resultsView.container[style=float: right; overflow: auto; width: 80%; background-color: white; white-space: nowrap]"),
         m('#modelView[style=display: none; float: left; width: 20%; background-color: white]'),
