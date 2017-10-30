@@ -19,7 +19,7 @@ function setBackgroundColor(color) {
     };
 }
 
-let leftpanel = () => {
+function leftpanel() {
     return m(Panel, {
         side: 'left',
         title: 'Data Selection',
@@ -42,8 +42,8 @@ let leftpanel = () => {
           m(List, {items: app.valueKey, title: 'Summary Statistics'})),
         m(`#tab2[style=display: ${when('left', 'tab2')}; margin-top: .5em]`),
         m('#tab3[style=height: 350px]',
-          m(`p[style=padding: .5em 1em; display: ${when('left', 'tab3')}]`, {
-            title: "Select a variable from within the visualization in the center panel to view its summary statistics."},
+          m(`p[style=padding: .5em 1em; display: ${when('left', 'tab3')}]`,
+            {title: "Select a variable from within the visualization in the center panel to view its summary statistics."},
             m('center',
               m('b', app.summary.name),
               m('br'),
@@ -51,7 +51,7 @@ let leftpanel = () => {
             m('table', app.summary.data.map(
               tr => m('tr', tr.map(
                   td => m('td', {onmouseover: setBackgroundColor('aliceblue'), onmouseout: setBackgroundColor('f9f9f9')}, td))))))));
-};
+}
 
 let righttab = (id, btnId, task, title, probDesc) => m(
     `#${id}[style=display: ${when('right', btnId)}; padding: 6px 12px; text-align: center]`,
@@ -61,15 +61,16 @@ let righttab = (id, btnId, task, title, probDesc) => m(
        content: v => task[v][1],
        probDesc: probDesc}));
 
-let rightpanel = mode => mode ? m(
-    Panel,
-    {side: 'right',
-     title: 'Result Exploration',
-     buttons: [
-         m(Button, {id: 'btnUnivariate'}, 'Univariate'),
-         m(Button, {id: 'btnBivariate'}, 'Bivariate')]},
-    m(`#univariate[style=display: ${when('right', 'btnUnivariate')}]`),
-    m(`#bivariate[style=display: ${when('right', 'btnBivariate')}]`)) :
+function rightpanel(mode) {
+    return mode ?
+        m(Panel,
+          {side: 'right',
+           title: 'Result Exploration',
+           buttons: [
+               m(Button, {id: 'btnUnivariate'}, 'Univariate'),
+               m(Button, {id: 'btnBivariate'}, 'Bivariate')]},
+          m(`#univariate[style=display: ${when('right', 'btnUnivariate')}]`),
+          m(`#bivariate[style=display: ${when('right', 'btnBivariate')}]`)) :
     // mode == null (model mode)
     m(Panel,
       {side: 'right',
@@ -109,6 +110,7 @@ let rightpanel = mode => mode ? m(
       righttab('subtypes', 'btnSubtype', app.d3mTaskSubtype, 'Task Subtype', 'taskSubtype'),
       righttab('metrics', 'btnMetrics', app.d3mMetrics, 'Metric', 'metric', ),
       righttab('outputs', 'btnOutputs', app.d3mOutputType, 'Output', 'outputType'));
+}
 
 let ticker = mode => {
     let link = name => m(`a${name === mode ? '.active' : ''}[href=/${name}][style=margin-right: 0.5em]`, {oncreate: m.route.link}, name[0].toUpperCase() + name.slice(1));
