@@ -13,6 +13,9 @@ from tworaven_apps.utils.json_helper import format_jsonfield_for_admin,\
     format_link_for_admin
 
 KEY_SESSION_WORKSPACE = 'SESSION_WORKSPACE'
+KEY_ZDATA = 'KEY_ZDATA'
+KEY_ALL_NODES = 'KEY_ALL_NODES'
+UI_KEY_ZDATA = 'zdata'
 
 class DataSourceType(TimeStampedModel):
 

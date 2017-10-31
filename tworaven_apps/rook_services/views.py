@@ -7,8 +7,9 @@ from django.views.decorators.csrf import csrf_exempt
 
 from tworaven_apps.call_captures.models import ServiceCallEntry
 from tworaven_apps.rook_services.rook_app_info import RookAppInfo
+from tworaven_apps.rook_services.models import UI_KEY_SOLA_JSON, ROOK_ZESSIONID
+from tworaven_apps.workspaces.util_save_state import WorkspaceUtil
 
-ROOK_ZESSIONID = 'zsessionid'
 
 @csrf_exempt
 def view_rook_route(request, app_name_in_url):
@@ -16,6 +17,10 @@ def view_rook_route(request, app_name_in_url):
         orig: TwoRavens -> Rook
         view: TwoRavens -> Django 2ravens -> Rook
     """
+    # record session metadata, if appropriate
+    WorkspaceUtil.record_state(request)
+
+    # retrieve session key
     django_session_key = request.session._get_or_create_session_key()
 
     # get the app info
@@ -30,10 +35,11 @@ def view_rook_route(request, app_name_in_url):
     #
     if rook_app_info.is_health_check():
         raven_data_text = 'healthcheck'
-    elif (not request.POST) or (not 'solaJSON' in request.POST):
-        return JsonResponse(dict(status="ERROR", message="solaJSON key not found"))
+    elif (not request.POST) or (not UI_KEY_SOLA_JSON in request.POST):
+        return JsonResponse(dict(status="ERROR",
+                                 message="key '%s' not found" % UI_KEY_SOLA_JSON))
     else:
-        raven_data_text = request.POST['solaJSON']
+        raven_data_text = request.POST[UI_KEY_SOLA_JSON]
 
     # Retrieve post data and attempt to insert django session id
     # (if none exists)
@@ -83,8 +89,8 @@ def view_rook_route(request, app_name_in_url):
 
     # Return the response to the user
     #
-    print(40 * '=')
-    print(r.text)
+    #print(40 * '=')
+    #print(r.text)
     #d = r.json()
     #print(json.dumps(d, indent=4))
     print(r.status_code)
