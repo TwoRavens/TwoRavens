@@ -119,7 +119,9 @@ let ticker = mode => {
     return m('#ticker[style=background: #F9F9F9; bottom: 0; height: 40px; position: fixed; width: 100%; border-top: 1px solid #ADADAD]',
         link('model'),
         link('explore'),
-        m("a#logID[href=somelink][target=_blank][style=margin-right: 0.5em]", "Replication"));
+        m("a#logID[href=somelink][target=_blank][style=margin-right: 0.5em]", "Replication"),
+        m("a[href=/dev-raven-links][style=margin-right: 0.5em]", "test"),
+      );
 };
 
 class Body {

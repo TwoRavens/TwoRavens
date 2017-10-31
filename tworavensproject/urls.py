@@ -10,6 +10,8 @@ admin.site.site_title = ('TwoRavens Admin page')
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
 
+    url(r'^auth/', include('tworaven_apps.raven_auth.urls')),
+
     url(r'^rook-custom/', include('tworaven_apps.rook_services.urls')),
 
     url(r'^config/', include('tworaven_apps.configurations.urls')),

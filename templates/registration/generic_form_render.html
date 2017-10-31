@@ -1,0 +1,22 @@
+{% load custom_tags %}
+
+{% if form.non_field_errors %}
+<div class="text-danger">
+  {{ form.non_field_errors }}
+</div>
+{% endif %}
+
+{% for field in form %}
+<div class="form-group">
+  {% if field.errors %}
+    <div class="text-danger">{{ field.errors }}</div>
+  {% endif %}
+
+  <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+  {{ field | addclass:"form-control" }}
+
+  {% if field.help_text %}
+    <small class="form-text text-muted">{{ field.help_text|safe }}</small>
+  {% endif %}
+</div>
+{% endfor %}

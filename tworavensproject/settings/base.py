@@ -29,6 +29,8 @@ DEBUG = True
 
 SITE_ID = 1
 
+AUTH_USER_MODEL = 'raven_auth.User'
+
 # Application definition
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -41,6 +43,7 @@ INSTALLED_APPS = [
     #'whitenoise.runserver_nostatic',
     'django.contrib.staticfiles',
 
+    'tworaven_apps.raven_auth',
     'tworaven_apps.configurations',
     'tworaven_apps.ta2_interfaces',
     'tworaven_apps.content_pages',
@@ -69,6 +72,8 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'tworavensproject.urls'
+
+LOGIN_REDIRECT_URL = 'home'
 
 TEMPLATES = [
     {
@@ -161,6 +166,7 @@ WEBPACK_LOADER = {
         'IGNORE': ['.+\.hot-update.js', '.+\.map']
     }
 }
+
 
 SERVER_SCHEME = 'http'  # or https
 

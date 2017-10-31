@@ -1,0 +1,83 @@
+{% load render_bundle from webpack_loader %}
+{% load static %}
+<!doctype html>
+<html>
+  <head>
+    <title>{% block title_block %}
+        {% if title %}{{ title }}{% else %}TwoRavens{% endif %}
+        {% endblock %}
+    </title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    {% block extra_css %}
+    <!-- bootstrap 4 (not on pebbles page) -->
+    <link rel="stylesheet" href="{% static "pkgs/bootstrap4/css/bootstrap.min.css" %}">
+    <link rel="stylesheet" href="{% static "css/non_app.css" %}">
+    {% endblock %}
+
+    {% render_bundle 'main' 'css' %}
+
+    <script src="{% static "pkgs/Ladda/dist/spin.min.js" %}"></script>
+    <script src="{% static "pkgs/Ladda/dist/ladda.min.js" %}"></script>
+    {% block extra_js %}
+    <!-- bootstrap 4 / jquery 3.2 / popper (not on pebbles page) -->
+    <script src="{% static "pkgs/bootstrap4/jquery-3.2.1.min.js" %}"></script>
+    <script src="{% static "pkgs/bootstrap4/popper.min.js" %}"></script>
+    <script src="{% static "pkgs/bootstrap4/js/bootstrap.min.js" %}"></script>
+    {% endblock %}
+  </head>
+
+  <body>
+  {% block body_content %}
+  <nav class="navbar navbar-expand-lg navbar-light" style="border-bottom:1px solid #ccc;">
+  {#<a class="navbar-brand" href="#">Navbar</a>#}
+  <a href="/" class="navbar-brand"><img src="{% static "images/TwoRavens.png" %}" alt="TwoRavens" width="100" style="margin-left: 1em; margin-top: -0.5em;" /></a>
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+  <div class="collapse navbar-collapse" id="navbarNavDropdown">
+    <ul class="navbar-nav ml-auto">
+      {% comment %}
+      <li class="nav-item active">
+        <a class="nav-link" href="#">Home <span class="sr-only">(current)</span></a>
+      </li>
+      {% endcomment %}
+      <li class="nav-item">
+        <a class="nav-link" href="{% url 'view_dev_raven_links' %}">links</a>
+      </li>
+      {% if user.is_authenticated %}
+
+      <li class="nav-item dropdown">
+        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          {{ user.username }}
+        </a>
+        <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
+          <a class="dropdown-item" href="#">Profile?</a>
+          <a class="dropdown-item" href="#">Saved metadata?</a>
+          <a class="dropdown-item" href="#">Something else here</a>
+        </div>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="{% url 'logout' %}">Log out</a>
+      </li>
+      {% else %}
+      <li class="nav-item">
+        <a class="nav-link" href="{% url 'signup' %}">Sign Up</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="{% url 'login' %}">Log In</a>
+      </li>
+      {% endif %}
+
+
+    </ul>
+  </div>
+</nav>
+  <div class="container"><br />
+    {% block main_content %}
+
+    {% endblock %}
+  </div>
+  {% endblock %}
+  </body>
+</html>

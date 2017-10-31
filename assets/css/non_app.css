@@ -1,0 +1,15 @@
+
+body{
+  font-size: 90%;
+}
+
+a {
+  color: #006699;
+  text-decoration: underline;
+}
+a:hover{
+  color: #ff0000;
+}
+ul.navbar-nav li a.nav-link{
+  xfont-size: 95%;
+}

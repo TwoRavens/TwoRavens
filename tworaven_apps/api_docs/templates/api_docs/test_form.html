@@ -1,6 +1,7 @@
-{% extends "helper_pages_base.html" %}
+{% extends "base.html" %}
 
 {% block extra_js %}
+{{ block.super }}
 {% include "test_requests/test_examples.html" %}
 <script>
 
@@ -9,8 +10,15 @@
   }
 
   function formatOutput(json_obj){
-    return "<pre>" + formatJSON(json_obj) + "</pre>";
+    return "<pre><code>" + formatJSON(json_obj) + "</code></pre>";
   }
+
+  function cardWrap(title, content){
+
+    return '<div class="card"><div class="card-header">' + title + '</div>' +
+           '<div class="card-body">' + content + '</div>';
+  }
+
 
   function sendData(){
       user_content = $('#id_content').val();
@@ -28,15 +36,17 @@
                           if (data.hasOwnProperty('data2') ) {
                               $('#interimData').show();
                               let interimTitle = '<h3>Formatted JSON before gRPC call</h3>'
-                              $('#interimData').html(interimTitle + formatOutput(data.data2));
+                              let outputContent = cardWrap(interimTitle, formatOutput(data.data2));
+                              $('#interimData').html(outputContent);
                               delete data.data2;
                           }
 
                           if (data.hasOwnProperty('grpcResp') ) {
                             let grpcTitle = '<h3>gRPC response</h3>'
-                            $('#frmResult').html(grpcTitle + formatOutput(data.grpcResp));
+                            let outputMainContent = cardWrap(grpcTitle, formatOutput(data.grpcResp));
+                            $('#frmResult').html(outputMainContent);
                           }else{
-                            $('#frmResult').html(formatOutput(data));
+                            $('#frmResult').html(cardWrap('gRPC -> JSON response', formatOutput(data)));
                           }
                             //alert(JSON.stringify(data));
                           })
@@ -81,7 +91,7 @@
 
 {% block main_content %}
 <div class="row">
-  <div class="col-sm-12 col-md-6">
+  <div class="col-12 col-md-6">
      <h3>json</h3>
 
 
@@ -131,7 +141,7 @@ TA2_TEST_SERVER_URL = '{{ TA2_TEST_SERVER_URL }}'</pre>
        </p>
 
   </div>
-  <div class="col-sm-12 col-md-6">
+  <div class="col-12 col-md-6">
       <h3>result</h3>
       <hr />
 
