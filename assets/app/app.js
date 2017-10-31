@@ -884,8 +884,8 @@ function del(arr, idx, find) {
     idx > -1 && arr.splice(idx, 1);
 }
 
-function splice(color, text, ...args) {
-    args.forEach(x => color === x[0] && del(zparams[x[1]], text, true));
+function zparamsReset(text) {
+    'zdv zcross ztime znom'.split(' ').forEach(x => del(zparams[x], text, true));
 }
 
 export let clickVar;
@@ -1311,7 +1311,7 @@ function layout(v,v2) {
             del(nodes, node.index);
             links.filter(l => l.source === node || l.target === node)
                 .map(l => del(links, l, true));
-            splice(node.strokeColor, text, [dvColor, 'zdv'], [csColor, 'zcross'], [timeColor, 'ztime'], [nomColor, 'znom']);
+            zparamsReset(text);
 
             // remove node name from group lists (should use adaptation of splice-by-color)
             node.group1 && del(zparams.zgroup1, node.name, true);
@@ -3150,13 +3150,13 @@ function setColors(n, c) {
             n.strokeWidth = '1';
             n.strokeColor = selVarColor;
             n.nodeCol = colors(n.id);
-            splice(c, n.name, [dvColor, 'zdv'], [csColor, 'zcross'], [timeColor, 'ztime'], [nomColor, 'znom']);
+            zparamsReset(n.name);
             if (nomColor == c && zparams.znom.includes(n.name)) {
                 findNodeIndex(n.name, true).nature = findNodeIndex(n.name, true).defaultNature;
                 transform(n.name, t = null, typeTransform = true);
             }
         } else { // deselecting time, cs, dv, nom AND changing it to time, cs, dv, nom
-            splice(n.strokeColor, n.name, [dvColor, 'zdv'], [csColor, 'zcross'], [timeColor, 'ztime'], [nomColor, 'znom']);
+            zparamsReset(n.name);
             if (nomColor == n.strokeColor && zparams.znom.includes(n.name)) {
                 findNodeIndex(n.name, true).nature = findNodeIndex(n.name, true).defaultNature;
                 transform(n.name, t = null, typeTransform = true);
