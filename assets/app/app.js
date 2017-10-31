@@ -411,7 +411,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
                 aTag.setAttribute('id', "probdesc");
                 aTag.setAttribute('target', "_blank");
                 aTag.textContent = "Problem Description";
-                document.getElementById("ticker").appendChild(aTag);
+                byId("ticker").appendChild(aTag);
                  */
 
                 if(data.taskType in d3mTaskType) {
@@ -444,7 +444,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
                 d3mProblemDescription.taskDescription = data.descriptionFile;
 
 
-                document.getElementById("btnType").click();
+                byId("btnType").click();
 
             // making it case insensitive because the case seems to disagree all too often
                 if(failset.indexOf(d3mProblemDescription.taskType.toUpperCase()) == -1)
@@ -869,23 +869,24 @@ console.log("SCAFFOLDING");
     // if swandive, after scaffolding is up, just grey things out
     if(swandive) {
     // perhaps want to allow users to unlcok and select things?
-        document.getElementById('btnLock').classList.add('noshow');
-        document.getElementById('btnForce').classList.add('noshow');
-        document.getElementById('btnEraser').classList.add('noshow');
-        document.getElementById('btnSubset').classList.add('noshow');
-        document.getElementById('main').style.backgroundColor='grey';
-        document.getElementById('whitespace').style.backgroundColor='grey';
+        byId('btnLock').classList.add('noshow');
+        byId('btnForce').classList.add('noshow');
+        byId('btnEraser').classList.add('noshow');
+        byId('btnSubset').classList.add('noshow');
+        byId('main').style.backgroundColor='grey';
+        byId('whitespace').style.backgroundColor='grey';
     }
 }
 
-let splice = (color, text, ...args) => {
-    args.forEach(x => {
-        if (color != x[0])
-            return;
-        let idx = zparams[x[1]].indexOf(text);
-        idx > -1 && zparams[x[1]].splice(idx, 1);
-    });
-};
+function del(arr, idx, find) {
+    if (find)
+        idx = arr.indexOf(idx);
+    idx > -1 && arr.splice(idx, 1);
+}
+
+function splice(color, text, ...args) {
+    args.forEach(x => color === x[0] && del(zparams[x[1]], text, true));
+}
 
 export let clickVar;
 
@@ -1307,27 +1308,22 @@ function layout(v,v2) {
         let node = findNode(text);
         let getNames = () => nodes.map(n => n.name);
         if (getNames().includes(text)) {
-            nodes.splice(node.index, 1);
+            del(nodes, node.index);
             links.filter(l => l.source === node || l.target === node)
-                .map(l => links.splice(links.indexOf(l), 1));
+                .map(l => del(links, l, true));
             splice(node.strokeColor, text, [dvColor, 'zdv'], [csColor, 'zcross'], [timeColor, 'ztime'], [nomColor, 'znom']);
 
             // remove node name from group lists (should use adaptation of splice-by-color)
-            if (node.group1) {
-                node.group1 = false;
-                zparams.zgroup1.splice(zparams.zgroup1.indexOf(node.name),1);
-            };
-            if (node.group2) {
-                node.group2 = false;
-                zparams.zgroup2.splice(zparams.zgroup2.indexOf(node.name),1);
-            };
+            node.group1 && del(zparams.zgroup1, node.name, true);
+            node.group2 && del(zparams.zgroup2, node.name, true);
+            node.group1 = node.group2 = false;
 
             // node reset - perhaps this will become a hard reset back to all original allNode values?
             node.strokeColor = selVarColor;
             node.strokeWidth = "1";
             node.nodeCol = node.baseCol;
 
-            legend();
+            borderState();
         } else {
             nodes.push(node);
         }
@@ -1461,7 +1457,7 @@ function layout(v,v2) {
                 var obj = JSON.stringify(d);
                 for (var j = 0; j < links.length; j++) {
                     if (obj === JSON.stringify(links[j]))
-                        links.splice(j, 1);
+                        del(links, j);
                 }
             });
 
@@ -1510,6 +1506,7 @@ function layout(v,v2) {
                 setColors(d, dvColor);
                 legend(dvColor);
                 restart();
+                d.group1 = d.group2 = false;
             });
 
         g.append("text")
@@ -1854,7 +1851,7 @@ function layout(v,v2) {
         click_ev.initEvent("click", true /* bubble */, true /* cancelable */);
         // trigger the event
         let clickID = "dvArc"+findNodeIndex(mytarget);
-        document.getElementById(clickID).dispatchEvent(click_ev);
+        byId(clickID).dispatchEvent(click_ev);
     }
 }
 
@@ -1932,27 +1929,27 @@ export function lockDescription() {
     let temp;
     let i;
     if (!locktoggle) {
-        document.getElementById('btnLock').setAttribute("class", "btn btn-default");
-        temp = document.getElementById('rightContentArea').querySelectorAll("p.item-lineout");
+        byId('btnLock').setAttribute("class", "btn btn-default");
+        temp = byId('rightContentArea').querySelectorAll("p.item-lineout");
         for (i = 0; i < temp.length; i++) {
             temp[i].classList.remove("item-lineout");
         }
     } else {
-        document.getElementById('btnLock').setAttribute("class", "btn active");
-        temp = document.getElementById('metrics').querySelectorAll("p.item-default");
+        byId('btnLock').setAttribute("class", "btn active");
+        temp = byId('metrics').querySelectorAll("p.item-default");
         console.log(temp);
         for (i = 0; i < temp.length; i++) {
             temp[i].classList.add("item-lineout");
         }
-        temp = document.getElementById('types').querySelectorAll("p.item-default");
+        temp = byId('types').querySelectorAll("p.item-default");
         for (i = 0; i < temp.length; i++) {
             temp[i].classList.add("item-lineout");
         }
-        temp = document.getElementById('subtypes').querySelectorAll("p.item-default");
+        temp = byId('subtypes').querySelectorAll("p.item-default");
         for (i = 0; i < temp.length; i++) {
             temp[i].classList.add("item-lineout");
         }
-        temp = document.getElementById('outputs').querySelectorAll("p.item-default");
+        temp = byId('outputs').querySelectorAll("p.item-default");
         for (i = 0; i < temp.length; i++) {
             temp[i].classList.add("item-lineout");
         }
@@ -2082,7 +2079,7 @@ export function estimate(btn) {
 
             let myvki = valueKey.indexOf(mytarget);
             if(myvki != -1) {
-                valueKey.splice(myvki, 1);
+                del(valueKey, myvki);
             }
 
             let context = apiSession(zparams.zsessionid);
@@ -2213,7 +2210,7 @@ export function estimate(btn) {
                     /////////////////////////
 
                     toggleRightButtons("all");
-                    document.getElementById("btnResults").click();
+                    byId("btnResults").click();
 
                     // export pipeline request
                     exportpipeline(resultstable[1].PipelineID);
@@ -2403,7 +2400,7 @@ export function estimate(btn) {
                     /////////////////////////
 
                     toggleRightButtons("all");
-                    document.getElementById("btnResults").click();
+                    byId("btnResults").click();
 
                     // this initializes the main
                     // this piece here is the first pipeline through: allPipelineInfo[resultstable[1].PipelineID]
@@ -2605,7 +2602,7 @@ function transParse(n) {
                 continue;
             if ((indexed[i].from >= indexed[j].from) & (indexed[i].to <= indexed[j].to)) {
                 cdb(i, " is nested in ", j);
-                out2.splice(i, 1);
+                del(out2, i);
             }
         }
     }
@@ -3030,7 +3027,7 @@ function popupX(d) {
 
 export function panelPlots() {
     if(d3m_mode) {
-        document.getElementById('btnSubset').classList.add('noshow');
+        byId('btnSubset').classList.add('noshow');
     }
     // build arrays from nodes in main
     let vars = [];
@@ -3107,7 +3104,7 @@ function setColors(n, c) {
             var tempindex = zparams.zgroup1.indexOf(n.name);
             if (tempindex > -1){
                 n.group1 = false;
-                zparams.zgroup1.splice(tempindex,1);
+                del(zparams.zgroup1, tempindex);
             } else {
                 n.group1 = true;
                 zparams.zgroup1.push(n.name);
@@ -3116,7 +3113,7 @@ function setColors(n, c) {
             var tempindex = zparams.zgroup2.indexOf(n.name);
             if (tempindex > -1){
                 n.group2 = false;
-                zparams.zgroup2.splice(tempindex,1);
+                del(zparams.zgroup2, tempindex);
             } else {
                 n.group2 = true;
                 zparams.zgroup2.push(n.name);
@@ -3138,11 +3135,11 @@ function setColors(n, c) {
             if (key == 'zdv'){                                              // remove group memberships from dv's
                 if(n.group1){
                     n.group1 = false;
-                    zparams.zgroup1.splice(zparams.zgroup1.indexOf(n.name),1);
+                    del(zparams.zgroup1, n.name, true);
                 };
                 if(n.group2){
                     n.group2 = false;
-                    zparams.zgroup2.splice(zparams.zgroup2.indexOf(n.name),1);
+                    del(zparams.zgroup2, n.name, true);
                 };
             }
         };
@@ -3170,11 +3167,11 @@ function setColors(n, c) {
                 zparams.zdv.push(dvname);
                 if(n.group1){                     // remove group memberships from dv's
                     ngroup1 = false;
-                    zparams.zgroup1.splice(zparams.zgroup1.indexOf(dvname),1);
+                    del(zparams.zgroup1, dvname, true);
                 };
                 if(n.group2){
                     ngroup2 = false;
-                    zparams.zgroup2.splice(zparams.zgroup2.indexOf(dvname),1);
+                    del(zparams.zgroup2, dvname, true);
                 };
             }
             else if (csColor == c) zparams.zcross.push(n.name);
@@ -3422,9 +3419,6 @@ export let fakeClick = () => {
         .classed('active', false);
 };
 
-
-
-
 //EndSession(SessionContext) returns (Response) {}
 export function endsession() {
     let SessionContext= apiSession(zparams.zsessionid);
@@ -3433,7 +3427,7 @@ export function endsession() {
 
     var urlcall = d3mURL + "/endsession";
     var solajsonout = "grpcrequest=" + jsonout;
-    console.log("EndSession: ")
+    console.log("EndSession: ");
     console.log(solajsonout);
     console.log("urlcall: ", urlcall);
 
@@ -3517,7 +3511,7 @@ export function listpipelines() {
 // rpc ExecutePipeline(PipelineExecuteRequest) returns (stream PipelineExecuteResult) {}
 export function executepipeline() {
     let context = apiSession(zparams.zsessionid);
-    let tablerow = document.getElementById('setxRight').querySelector('tr.item-select');
+    let tablerow = byId('setxRight').querySelector('tr.item-select');
     if(tablerow == null) {alert("Please select a pipeline to execute on."); return;}
     let pipelineId=tablerow.firstChild.innerText;
 
@@ -3646,7 +3640,7 @@ function setPebbleCharge(d){
 };
 
 export function expandrightpanel() {
-    document.getElementById('rightpanel').classList.add("expandpanelfull");
+    byId('rightpanel').classList.add("expandpanelfull");
     console.log("HERE");
 }
 
@@ -3655,7 +3649,7 @@ function toggleRightButtons(set) {
         let width = `${100 / btns.length}%`;
         let expandwidth = '35%';
         let shrinkwidth = `${65 / (btns.length - 1)}%`;
-        let lis = document.getElementById('rightpanel').querySelectorAll(".accordion li");
+        let lis = byId('rightpanel').querySelectorAll(".accordion li");
         // hardly ever runs on the page
         lis.forEach(li => {
             li.style.width = width;
@@ -3671,35 +3665,35 @@ function toggleRightButtons(set) {
     }
 
     if(set=="tasks") {
-        document.getElementById('btnModels').classList.add("noshow");
-        document.getElementById('btnSetx').classList.add("noshow");
-        document.getElementById('btnResults').classList.add("noshow");
-        let btns = document.getElementById('rightpanelbuttons').querySelectorAll(".btn:not(.noshow)");
+        byId('btnModels').classList.add("noshow");
+        byId('btnSetx').classList.add("noshow");
+        byId('btnResults').classList.add("noshow");
+        let btns = byId('rightpanelbuttons').querySelectorAll(".btn:not(.noshow)");
         setWidths(btns);
     } else if (set=="all") {
         // first remove noshow class
-        let btns = document.getElementById('rightpanelbuttons').querySelectorAll(".noshow");
+        let btns = byId('rightpanelbuttons').querySelectorAll(".noshow");
         btns.forEach(b => b.classList.remove("noshow"));
 
         // dropping models for d3m_mode
-        document.getElementById('btnModels').classList.add("noshow");
+        byId('btnModels').classList.add("noshow");
 
         // if swandive, dropping setx
         if(swandive)
-            document.getElementById('btnSetx').classList.add("noshow");
+            byId('btnSetx').classList.add("noshow");
 
         // then select all the buttons
-        btns = document.getElementById('rightpanelbuttons').querySelectorAll(".btn:not(.noshow)");
+        btns = byId('rightpanelbuttons').querySelectorAll(".btn:not(.noshow)");
         setWidths(btns);
     } else if(set=="models") {
-        document.getElementById('btnModels').style.display = 'inline';
-        document.getElementById('btnSetx').style.display = 'inline';
-        document.getElementById('btnResults').style.display = 'inline';
+        byId('btnModels').style.display = 'inline';
+        byId('btnSetx').style.display = 'inline';
+        byId('btnResults').style.display = 'inline';
 
-        document.getElementById('btnType').style.display = 'none';
-        document.getElementById('btnSubtype').style.display = 'none';
-        document.getElementById('btnMetrics').style.display = 'none';
-        document.getElementById('btnOutputs').style.display = 'none';
+        byId('btnType').style.display = 'none';
+        byId('btnSubtype').style.display = 'none';
+        byId('btnMetrics').style.display = 'none';
+        byId('btnOutputs').style.display = 'none';
     }
 }
 
@@ -3789,8 +3783,8 @@ export function confusionmatrix(matrixdata, classes) {
     d3.select("#setxMiddle").select("svg").remove();
 
     // adapted from this block: https://bl.ocks.org/arpitnarechania/dbf03d8ef7fffa446379d59db6354bac
-    let mainwidth = document.getElementById('main').clientWidth;
-    let mainheight = document.getElementById('main').clientHeight;
+    let mainwidth = byId('main').clientWidth;
+    let mainheight = byId('main').clientHeight;
 
     let condiv = document.createElement('div');
     condiv.id="confusioncontainer";
@@ -3799,7 +3793,7 @@ export function confusionmatrix(matrixdata, classes) {
     condiv.style.marginLeft='20px';
     condiv.style.height=+(mainheight*.4)+'px';
     condiv.style.float="left";
-    document.getElementById('setxMiddle').appendChild(condiv);
+    byId('setxMiddle').appendChild(condiv);
 
     let legdiv = document.createElement('div');
     legdiv.id="confusionlegend";
@@ -3808,7 +3802,7 @@ export function confusionmatrix(matrixdata, classes) {
     legdiv.style.height=+(mainheight*.4)+'px';
     legdiv.style.display="inline-block";
 
-    document.getElementById('setxMiddle').appendChild(legdiv);
+    byId('setxMiddle').appendChild(legdiv);
 
 
     var margin = {top: 20, right: 10, bottom: 0, left: 50};
@@ -4076,8 +4070,8 @@ export function bivariatePlot(x_Axis, y_Axis, x_Axis_name, y_Axis_name) {
     d3.select("#setxMiddle").html("");
     d3.select("#setxMiddle").select("svg").remove();
 
-    let mainwidth = document.getElementById('main').clientWidth;
-    let mainheight = document.getElementById('main').clientHeight;
+    let mainwidth = byId('main').clientWidth;
+    let mainheight = byId('main').clientHeight;
 
     // scatter plot
 
@@ -4241,8 +4235,7 @@ export function bivariatePlot(x_Axis, y_Axis, x_Axis_name, y_Axis_name) {
               return yScale(data_plot[i].yaxis);
               })
         .attr("r", 2.5)
-        .style("fill", "#B71C1C")
-        ;
+        .style("fill", "#B71C1C");
 
        // below doesn't work, so I'm just dropping the zoom
         main1.select("line")
@@ -4261,19 +4254,14 @@ export function bivariatePlot(x_Axis, y_Axis, x_Axis_name, y_Axis_name) {
         .attr("stroke-width", 2)
         .attr("stroke", "black");
     }
-
-
-
-  //  d3.select("#NAcount").text("There are " + nanCount + " number of NA values in the relation.");
-
-
+    //  d3.select("#NAcount").text("There are " + nanCount + " number of NA values in the relation.");
 }
 
 
 export function setxTable(features) {
     function tabulate(data, columns) {
-        var table = d3.select('#setxRightBottomLeft').append('table')
-        var thead = table.append('thead')
+        var table = d3.select('#setxRightBottomLeft').append('table');
+        var thead = table.append('thead');
         var	tbody = table.append('tbody');
 
         // append the header row
@@ -4291,18 +4279,18 @@ export function setxTable(features) {
 
         // create a cell in each row for each column
         var cells = rows.selectAll('td')
-        .data(function (row) {
-              return columns.map(function (column) {
-                                 return {column: column, value: row[column]};
-                                 });
-              })
-        .enter()
-        .append('td')
-        .text(function (d) { return d.value; })
-        .attr('id',function(d,i) {
-              let rowname = this.parentElement.firstChild.innerText;
-              return rowname + d.column;
-              });
+            .data(function (row) {
+                return columns.map(function (column) {
+                    return {column: column, value: row[column]};
+                });
+            })
+            .enter()
+            .append('td')
+            .text(function (d) { return d.value; })
+            .attr('id',function(d,i) {
+                let rowname = this.parentElement.firstChild.innerText;
+                return rowname + d.column;
+            });
 
         return table;
     }
@@ -4319,10 +4307,10 @@ export function setxTable(features) {
 
         let myi = i+1;
         let mysvg = features[i]+"_setxLeft_"+myi;
-        let xval = document.getElementById(mysvg).querySelector('.xval').innerHTML;
-        let x1val = document.getElementById(mysvg).querySelector('.x1val').innerHTML;
-        xval = xval.split("x: ").pop()
-        x1val = x1val.split("x1: ").pop()
+        let xval = byId(mysvg).querySelector('.xval').innerHTML;
+        let x1val = byId(mysvg).querySelector('.x1val').innerHTML;
+        xval = xval.split("x: ").pop();
+        x1val = x1val.split("x1: ").pop();
         console.log(xval);
         console.log(mysvg);
 
