@@ -66,11 +66,12 @@ let spaces = [];
 const layoutAdd = "add";
 const layoutMove = "move";
 
-// Radius of circle
+// radius of circle
 let allR = 40;
-let ind1 = [(allR+30) * Math.cos(1.3), -1*(allR+30) * Math.sin(1.3),5] // cx, cy, r  values for indicator lights
-let ind2 = [(allR+30) * Math.cos(1.1), -1*(allR+30) * Math.sin(1.1),5] // cx, cy, r  values for indicator lights
 
+// cx, cy, r values for indicator lights
+let ind1 = [(allR+30) * Math.cos(1.3), -1*(allR+30) * Math.sin(1.3), 5];
+let ind2 = [(allR+30) * Math.cos(1.1), -1*(allR+30) * Math.sin(1.1), 5];
 
 // space index
 let myspace = 0;
