@@ -1,18 +1,26 @@
 {% load custom_tags %}
 
 {% if form.non_field_errors %}
-<div class="text-danger">
-  {{ form.non_field_errors }}
-</div>
+  {% with form_errors=form.non_field_errors %}
+    {% include "registration/generic_form_error_render.html" %}
+  {% endwith %}
 {% endif %}
+
+{% if form.errors %}
+  {% with form_errors=form.errors %}
+    {% include "registration/generic_form_error_render.html" %}
+  {% endwith %}
+{% endif %}
+
 
 {% for field in form %}
 <div class="form-group">
+
+  <label for="{{ field.id_for_label }}">{{ field.label }}</label>
   {% if field.errors %}
     <div class="text-danger">{{ field.errors }}</div>
   {% endif %}
 
-  <label for="{{ field.id_for_label }}">{{ field.label }}</label>
   {{ field | addclass:"form-control" }}
 
   {% if field.help_text %}

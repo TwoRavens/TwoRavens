@@ -49,6 +49,16 @@ MEDIA_URL = '/media/'
 
 TIME_ZONE = 'America/New_York'
 
+
+# For local dev, remove some of the user password requirements
+#
+AUTH_PASSWORD_VALIDATORS = [
+    dict(NAME='django.contrib.auth.password_validation.UserAttributeSimilarityValidator'),
+    #dict(NAME='django.contrib.auth.password_validation.MinimumLengthValidator'),
+    #dict(NAME='django.contrib.auth.password_validation.CommonPasswordValidator'),
+    dict(NAME='django.contrib.auth.password_validation.NumericPasswordValidator'),
+]
+
 # Test email backend, goes to the console
 #
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'

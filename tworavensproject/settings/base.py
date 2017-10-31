@@ -43,15 +43,15 @@ INSTALLED_APPS = [
     #'whitenoise.runserver_nostatic',
     'django.contrib.staticfiles',
 
-    'tworaven_apps.raven_auth',
-    'tworaven_apps.configurations',
-    'tworaven_apps.ta2_interfaces',
-    'tworaven_apps.content_pages',
-    'tworaven_apps.rook_services',
-    'tworaven_apps.api_docs',
-    'tworaven_apps.call_captures',
+    'tworaven_apps.raven_auth', # user model
+    'tworaven_apps.workspaces', # save session state
 
-    #'tworaven_apps.workspaces',
+    'tworaven_apps.configurations', # UI domain/mode configuration
+    'tworaven_apps.ta2_interfaces', # sending UI through to TA2 and back again
+    'tworaven_apps.content_pages',
+    'tworaven_apps.rook_services', # sending UI calls to rook and back again
+    'tworaven_apps.api_docs',
+    'tworaven_apps.call_captures', # capture data sent from UI out to rook/TA2
 
     # webpack!
     'webpack_loader',
@@ -109,18 +109,10 @@ DATABASES = {
 # https://docs.djangoproject.com/en/1.11/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
+    dict(NAME='django.contrib.auth.password_validation.UserAttributeSimilarityValidator'),
+    dict(NAME='django.contrib.auth.password_validation.MinimumLengthValidator'),
+    dict(NAME='django.contrib.auth.password_validation.CommonPasswordValidator'),
+    dict(NAME='django.contrib.auth.password_validation.NumericPasswordValidator'),
 ]
 
 

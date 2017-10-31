@@ -1,0 +1,15 @@
+<div class="alert alert-danger" role="alert">
+  Please scroll down to see the error{{ form_errors|length|pluralize }} below.
+
+  {% if form_errors %}
+    <ul>
+    {% for field_name, err_list in form_errors.items %}
+        <li><strong>{{ field_name|escape }}</strong>
+            {% for err_msg in err_list %}
+            <br />- {{ err_msg }}
+            {% endfor %}
+        </li>
+    {% endfor %}
+  </ul>
+{% endif %}
+</div>
