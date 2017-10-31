@@ -66,11 +66,12 @@ let spaces = [];
 const layoutAdd = "add";
 const layoutMove = "move";
 
-// Radius of circle
+// radius of circle
 let allR = 40;
-let ind1 = [(allR+30) * Math.cos(1.3), -1*(allR+30) * Math.sin(1.3),5] // cx, cy, r  values for indicator lights
-let ind2 = [(allR+30) * Math.cos(1.1), -1*(allR+30) * Math.sin(1.1),5] // cx, cy, r  values for indicator lights
 
+// cx, cy, r values for indicator lights
+let ind1 = [(allR+30) * Math.cos(1.3), -1*(allR+30) * Math.sin(1.3), 5];
+let ind2 = [(allR+30) * Math.cos(1.1), -1*(allR+30) * Math.sin(1.1), 5];
 
 // space index
 let myspace = 0;
@@ -411,7 +412,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
                 aTag.setAttribute('id', "probdesc");
                 aTag.setAttribute('target', "_blank");
                 aTag.textContent = "Problem Description";
-                document.getElementById("ticker").appendChild(aTag);
+                byId("ticker").appendChild(aTag);
                  */
 
                 if(data.taskType in d3mTaskType) {
@@ -432,21 +433,19 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
                     d3mProblemDescription.metric = data.metric;//[d3mMetrics[data.metric][2],d3mMetrics[data.metric][1]];
                 } else {
                     d3mProblemDescription.metric = "metricUndefined";
-                   // alert("Specified metric type, " + data.metric + ", is not valid.");
+                    // alert("Specified metric type, " + data.metric + ", is not valid.");
                     }
                 if(data.outputType in d3mOutputType) {
                     d3mProblemDescription.outputType = data.outputType;//[d3mOutputType[data.outputType][2],d3mOutputType[data.outputType][1]];
                 } else {
                     d3mProblemDescription.outputType = "outputUndefined";
-                  //  alert("Specified output type, " + data.outputType + ", is not valid.");
+                    //  alert("Specified output type, " + data.outputType + ", is not valid.");
                 }
 
                 d3mProblemDescription.taskDescription = data.descriptionFile;
+                byId("btnType").click();
 
-
-                document.getElementById("btnType").click();
-
-            // making it case insensitive because the case seems to disagree all too often
+                // making it case insensitive because the case seems to disagree all too often
                 if(failset.indexOf(d3mProblemDescription.taskType.toUpperCase()) == -1)
                     resolve();
                 else {
@@ -869,23 +868,24 @@ console.log("SCAFFOLDING");
     // if swandive, after scaffolding is up, just grey things out
     if(swandive) {
     // perhaps want to allow users to unlcok and select things?
-        document.getElementById('btnLock').classList.add('noshow');
-        document.getElementById('btnForce').classList.add('noshow');
-        document.getElementById('btnEraser').classList.add('noshow');
-        document.getElementById('btnSubset').classList.add('noshow');
-        document.getElementById('main').style.backgroundColor='grey';
-        document.getElementById('whitespace').style.backgroundColor='grey';
+        byId('btnLock').classList.add('noshow');
+        byId('btnForce').classList.add('noshow');
+        byId('btnEraser').classList.add('noshow');
+        byId('btnSubset').classList.add('noshow');
+        byId('main').style.backgroundColor='grey';
+        byId('whitespace').style.backgroundColor='grey';
     }
 }
 
-let splice = (color, text, ...args) => {
-    args.forEach(x => {
-        if (color != x[0])
-            return;
-        let idx = zparams[x[1]].indexOf(text);
-        idx > -1 && zparams[x[1]].splice(idx, 1);
-    });
-};
+function del(arr, idx, find) {
+    if (find)
+        idx = arr.indexOf(idx);
+    idx > -1 && arr.splice(idx, 1);
+}
+
+function zparamsReset(text) {
+    'zdv zcross ztime znom'.split(' ').forEach(x => del(zparams[x], text, true));
+}
 
 export let clickVar;
 
@@ -1297,37 +1297,41 @@ function layout(v,v2) {
 
     }
 
+    // every time a variable in leftpanel is clicked, nodes updates and background color changes
     clickVar = function() {
-        // every time a variable in leftpanel is clicked, nodes updates and background color changes
         if (findNodeIndex(this.id, true).grayout)
             return;
+
         zparams.zvars = [];
         let text = d3.select(this).text();
         let node = findNode(text);
-        if (nodes.map(n => n.name).includes(text)) {
-            nodes.splice(node.index, 1);
-            spliceLinksForNode(node);
-            splice(node.strokeColor, text, [dvColor, 'zdv'], [csColor, 'zcross'], [timeColor, 'ztime'], [nomColor, 'znom']);
+        let getNames = () => nodes.map(n => n.name);
+        if (getNames().includes(text)) {
+            del(nodes, node.index);
+            links.filter(l => l.source === node || l.target === node)
+                .map(l => del(links, l, true));
+            zparamsReset(text);
 
-            if(node.group1){                // remove node name from group lists (should use adaptation of splice-by-color)
-                node.group1 = false;
-                zparams.zgroup1.splice(zparams.zgroup1.indexOf(node.name),1);
-            };
-            if(node.group2){
-                node.group2 = false;
-                zparams.zgroup2.splice(zparams.zgroup2.indexOf(node.name),1);
-            };
+            // remove node name from group lists (should use adaptation of splice-by-color)
+            node.group1 && del(zparams.zgroup1, node.name, true);
+            node.group2 && del(zparams.zgroup2, node.name, true);
+            node.group1 = node.group2 = false;
 
-            nodeReset(node);
-            legend();
+            // node reset - perhaps this will become a hard reset back to all original allNode values?
+            node.strokeColor = selVarColor;
+            node.strokeWidth = "1";
+            node.nodeCol = node.baseCol;
+
+            borderState();
         } else {
             nodes.push(node);
-            if (nodes.length === 0) nodes[0].reflexive = true;
         }
-        zparams.zvars = nodes.map(n => n.name)    // adding this to keep it current (or should we rely on nodes.map(n => n.name) for variable list?)
+
+        // adding this to keep it current (or should we rely on nodes.map(n => n.name) for variable list?)
+        zparams.zvars = getNames();
         panelPlots();
         restart();
-    }
+    };
 
     d3.select("#models").selectAll("p") // models tab
         //  d3.select("#Display_content")
@@ -1452,7 +1456,7 @@ function layout(v,v2) {
                 var obj = JSON.stringify(d);
                 for (var j = 0; j < links.length; j++) {
                     if (obj === JSON.stringify(links[j]))
-                        links.splice(j, 1);
+                        del(links, j);
                 }
             });
 
@@ -1501,6 +1505,7 @@ function layout(v,v2) {
                 setColors(d, dvColor);
                 legend(dvColor);
                 restart();
+                d.group1 = d.group2 = false;
             });
 
         g.append("text")
@@ -1845,7 +1850,7 @@ function layout(v,v2) {
         click_ev.initEvent("click", true /* bubble */, true /* cancelable */);
         // trigger the event
         let clickID = "dvArc"+findNodeIndex(mytarget);
-        document.getElementById(clickID).dispatchEvent(click_ev);
+        byId(clickID).dispatchEvent(click_ev);
     }
 }
 
@@ -1923,37 +1928,33 @@ export function lockDescription() {
     let temp;
     let i;
     if (!locktoggle) {
-        document.getElementById('btnLock').setAttribute("class", "btn btn-default");
-        temp = document.getElementById('rightContentArea').querySelectorAll("p.item-lineout");
+        byId('btnLock').setAttribute("class", "btn btn-default");
+        temp = byId('rightContentArea').querySelectorAll("p.item-lineout");
         for (i = 0; i < temp.length; i++) {
             temp[i].classList.remove("item-lineout");
         }
     } else {
-        document.getElementById('btnLock').setAttribute("class", "btn active");
-        temp = document.getElementById('metrics').querySelectorAll("p.item-default");
+        byId('btnLock').setAttribute("class", "btn active");
+        temp = byId('metrics').querySelectorAll("p.item-default");
         console.log(temp);
         for (i = 0; i < temp.length; i++) {
             temp[i].classList.add("item-lineout");
         }
-        temp = document.getElementById('types').querySelectorAll("p.item-default");
+        temp = byId('types').querySelectorAll("p.item-default");
         for (i = 0; i < temp.length; i++) {
             temp[i].classList.add("item-lineout");
         }
-        temp = document.getElementById('subtypes').querySelectorAll("p.item-default");
+        temp = byId('subtypes').querySelectorAll("p.item-default");
         for (i = 0; i < temp.length; i++) {
             temp[i].classList.add("item-lineout");
         }
-        temp = document.getElementById('outputs').querySelectorAll("p.item-default");
+        temp = byId('outputs').querySelectorAll("p.item-default");
         for (i = 0; i < temp.length; i++) {
             temp[i].classList.add("item-lineout");
         }
         fakeClick();
     }
 }
-
-export let spliceLinksForNode = node => links
-    .filter(l => l.source === node || l.target === node)
-    .map(x => links.splice(links.indexOf(x), 1));
 
 function zPop() {
     if (dataurl) zparams.zdataurl = dataurl;
@@ -2077,7 +2078,7 @@ export function estimate(btn) {
 
             let myvki = valueKey.indexOf(mytarget);
             if(myvki != -1) {
-                valueKey.splice(myvki, 1);
+                del(valueKey, myvki);
             }
 
             let context = apiSession(zparams.zsessionid);
@@ -2208,7 +2209,7 @@ export function estimate(btn) {
                     /////////////////////////
 
                     toggleRightButtons("all");
-                    document.getElementById("btnResults").click();
+                    byId("btnResults").click();
 
                     // export pipeline request
                     exportpipeline(resultstable[1].PipelineID);
@@ -2398,7 +2399,7 @@ export function estimate(btn) {
                     /////////////////////////
 
                     toggleRightButtons("all");
-                    document.getElementById("btnResults").click();
+                    byId("btnResults").click();
 
                     // this initializes the main
                     // this piece here is the first pipeline through: allPipelineInfo[resultstable[1].PipelineID]
@@ -2600,7 +2601,7 @@ function transParse(n) {
                 continue;
             if ((indexed[i].from >= indexed[j].from) & (indexed[i].to <= indexed[j].to)) {
                 cdb(i, " is nested in ", j);
-                out2.splice(i, 1);
+                del(out2, i);
             }
         }
     }
@@ -2870,15 +2871,18 @@ export let legend = _ => {
 
 // programmatically deselect every selected variable
 export function erase() {
-    leftpanelMedium();
-    rightpanelMedium();
+    d3.select("#leftpanel")
+        .attr("class", "sidepanel container clearfix");
+    d3.select("#rightpanel")
+        .attr("class", "sidepanel container clearfix");
     tabLeft('tab1');
+
     jQuery.fn.d3Click = function() {
         this.children().each(function(i, e) {
-            var mycol = d3.rgb(this.style.backgroundColor);
-            if (mycol.toString() === varColor.toString())
+            let col = d3.rgb(this.style.backgroundColor);
+            if (col.toString() === varColor.toString())
                 return;
-            var evt = document.createEvent("MouseEvents");
+            let evt = document.createEvent("MouseEvents");
             evt.initMouseEvent("click", true, true, window, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
             e.dispatchEvent(evt);
         });
@@ -3025,7 +3029,7 @@ function popupX(d) {
 
 export function panelPlots() {
     if(d3m_mode) {
-        document.getElementById('btnSubset').classList.add('noshow');
+        byId('btnSubset').classList.add('noshow');
     }
     // build arrays from nodes in main
     let vars = [];
@@ -3077,18 +3081,6 @@ export function panelPlots() {
               });
 }
 
-
-// easy functions to collapse panels to base
-function rightpanelMedium() {
-    d3.select("#rightpanel")
-        .attr("class", "sidepanel container clearfix");
-}
-
-function leftpanelMedium() {
-    d3.select("#leftpanel")
-        .attr("class", "sidepanel container clearfix");
-}
-
 // converts color codes
 export let hexToRgba = hex => {
     let int = parseInt(hex.replace('#', ''), 16);
@@ -3102,7 +3094,7 @@ function setColors(n, c) {
             var tempindex = zparams.zgroup1.indexOf(n.name);
             if (tempindex > -1){
                 n.group1 = false;
-                zparams.zgroup1.splice(tempindex,1);
+                del(zparams.zgroup1, tempindex);
             } else {
                 n.group1 = true;
                 zparams.zgroup1.push(n.name);
@@ -3111,7 +3103,7 @@ function setColors(n, c) {
             var tempindex = zparams.zgroup2.indexOf(n.name);
             if (tempindex > -1){
                 n.group2 = false;
-                zparams.zgroup2.splice(tempindex,1);
+                del(zparams.zgroup2, tempindex);
             } else {
                 n.group2 = true;
                 zparams.zgroup2.push(n.name);
@@ -3133,11 +3125,11 @@ function setColors(n, c) {
             if (key == 'zdv'){                                              // remove group memberships from dv's
                 if(n.group1){
                     n.group1 = false;
-                    zparams.zgroup1.splice(zparams.zgroup1.indexOf(n.name),1);
+                    del(zparams.zgroup1, n.name, true);
                 };
                 if(n.group2){
                     n.group2 = false;
-                    zparams.zgroup2.splice(zparams.zgroup2.indexOf(n.name),1);
+                    del(zparams.zgroup2, n.name, true);
                 };
             }
         };
@@ -3148,13 +3140,13 @@ function setColors(n, c) {
             n.strokeWidth = '1';
             n.strokeColor = selVarColor;
             n.nodeCol = colors(n.id);
-            splice(c, n.name, [dvColor, 'zdv'], [csColor, 'zcross'], [timeColor, 'ztime'], [nomColor, 'znom']);
+            zparamsReset(n.name);
             if (nomColor == c && zparams.znom.includes(n.name)) {
                 findNodeIndex(n.name, true).nature = findNodeIndex(n.name, true).defaultNature;
                 transform(n.name, t = null, typeTransform = true);
             }
         } else { // deselecting time, cs, dv, nom AND changing it to time, cs, dv, nom
-            splice(n.strokeColor, n.name, [dvColor, 'zdv'], [csColor, 'zcross'], [timeColor, 'ztime'], [nomColor, 'znom']);
+            zparamsReset(n.name);
             if (nomColor == n.strokeColor && zparams.znom.includes(n.name)) {
                 findNodeIndex(n.name, true).nature = findNodeIndex(n.name, true).defaultNature;
                 transform(n.name, t = null, typeTransform = true);
@@ -3165,11 +3157,11 @@ function setColors(n, c) {
                 zparams.zdv.push(dvname);
                 if(n.group1){                     // remove group memberships from dv's
                     ngroup1 = false;
-                    zparams.zgroup1.splice(zparams.zgroup1.indexOf(dvname),1);
+                    del(zparams.zgroup1, dvname, true);
                 };
                 if(n.group2){
                     ngroup2 = false;
-                    zparams.zgroup2.splice(zparams.zgroup2.indexOf(dvname),1);
+                    del(zparams.zgroup2, dvname, true);
                 };
             }
             else if (csColor == c) zparams.zcross.push(n.name);
@@ -3202,13 +3194,6 @@ export function borderState() {
     zparams.zgroup2.length > 0 ?
         $('#gr2Button .rectColor svg circle').attr('stroke', gr2Color).attr('fill', gr2Color).attr('fill-opacity', 0.6).attr('stroke-opacity', 0) :
         $('#gr2Button').css('border-color', '#ccc');
-}
-
-// small appearance resets, but perhaps this will become a hard reset back to all original allNode values?
-function nodeReset(n) {
-    n.strokeColor = selVarColor;
-    n.strokeWidth = "1";
-    n.nodeCol = n.baseCol;
 }
 
 export function subsetSelect(btn) {
@@ -3424,9 +3409,6 @@ export let fakeClick = () => {
         .classed('active', false);
 };
 
-
-
-
 //EndSession(SessionContext) returns (Response) {}
 export function endsession() {
     let SessionContext= apiSession(zparams.zsessionid);
@@ -3435,7 +3417,7 @@ export function endsession() {
 
     var urlcall = d3mURL + "/endsession";
     var solajsonout = "grpcrequest=" + jsonout;
-    console.log("EndSession: ")
+    console.log("EndSession: ");
     console.log(solajsonout);
     console.log("urlcall: ", urlcall);
 
@@ -3519,7 +3501,7 @@ export function listpipelines() {
 // rpc ExecutePipeline(PipelineExecuteRequest) returns (stream PipelineExecuteResult) {}
 export function executepipeline() {
     let context = apiSession(zparams.zsessionid);
-    let tablerow = document.getElementById('setxRight').querySelector('tr.item-select');
+    let tablerow = byId('setxRight').querySelector('tr.item-select');
     if(tablerow == null) {alert("Please select a pipeline to execute on."); return;}
     let pipelineId=tablerow.firstChild.innerText;
 
@@ -3648,7 +3630,7 @@ function setPebbleCharge(d){
 };
 
 export function expandrightpanel() {
-    document.getElementById('rightpanel').classList.add("expandpanelfull");
+    byId('rightpanel').classList.add("expandpanelfull");
     console.log("HERE");
 }
 
@@ -3657,7 +3639,7 @@ function toggleRightButtons(set) {
         let width = `${100 / btns.length}%`;
         let expandwidth = '35%';
         let shrinkwidth = `${65 / (btns.length - 1)}%`;
-        let lis = document.getElementById('rightpanel').querySelectorAll(".accordion li");
+        let lis = byId('rightpanel').querySelectorAll(".accordion li");
         // hardly ever runs on the page
         lis.forEach(li => {
             li.style.width = width;
@@ -3673,35 +3655,35 @@ function toggleRightButtons(set) {
     }
 
     if(set=="tasks") {
-        document.getElementById('btnModels').classList.add("noshow");
-        document.getElementById('btnSetx').classList.add("noshow");
-        document.getElementById('btnResults').classList.add("noshow");
-        let btns = document.getElementById('rightpanelbuttons').querySelectorAll(".btn:not(.noshow)");
+        byId('btnModels').classList.add("noshow");
+        byId('btnSetx').classList.add("noshow");
+        byId('btnResults').classList.add("noshow");
+        let btns = byId('rightpanelbuttons').querySelectorAll(".btn:not(.noshow)");
         setWidths(btns);
     } else if (set=="all") {
         // first remove noshow class
-        let btns = document.getElementById('rightpanelbuttons').querySelectorAll(".noshow");
+        let btns = byId('rightpanelbuttons').querySelectorAll(".noshow");
         btns.forEach(b => b.classList.remove("noshow"));
 
         // dropping models for d3m_mode
-        document.getElementById('btnModels').classList.add("noshow");
+        byId('btnModels').classList.add("noshow");
 
         // if swandive, dropping setx
         if(swandive)
-            document.getElementById('btnSetx').classList.add("noshow");
+            byId('btnSetx').classList.add("noshow");
 
         // then select all the buttons
-        btns = document.getElementById('rightpanelbuttons').querySelectorAll(".btn:not(.noshow)");
+        btns = byId('rightpanelbuttons').querySelectorAll(".btn:not(.noshow)");
         setWidths(btns);
     } else if(set=="models") {
-        document.getElementById('btnModels').style.display = 'inline';
-        document.getElementById('btnSetx').style.display = 'inline';
-        document.getElementById('btnResults').style.display = 'inline';
+        byId('btnModels').style.display = 'inline';
+        byId('btnSetx').style.display = 'inline';
+        byId('btnResults').style.display = 'inline';
 
-        document.getElementById('btnType').style.display = 'none';
-        document.getElementById('btnSubtype').style.display = 'none';
-        document.getElementById('btnMetrics').style.display = 'none';
-        document.getElementById('btnOutputs').style.display = 'none';
+        byId('btnType').style.display = 'none';
+        byId('btnSubtype').style.display = 'none';
+        byId('btnMetrics').style.display = 'none';
+        byId('btnOutputs').style.display = 'none';
     }
 }
 
@@ -3791,8 +3773,8 @@ export function confusionmatrix(matrixdata, classes) {
     d3.select("#setxMiddle").select("svg").remove();
 
     // adapted from this block: https://bl.ocks.org/arpitnarechania/dbf03d8ef7fffa446379d59db6354bac
-    let mainwidth = document.getElementById('main').clientWidth;
-    let mainheight = document.getElementById('main').clientHeight;
+    let mainwidth = byId('main').clientWidth;
+    let mainheight = byId('main').clientHeight;
 
     let condiv = document.createElement('div');
     condiv.id="confusioncontainer";
@@ -3801,7 +3783,7 @@ export function confusionmatrix(matrixdata, classes) {
     condiv.style.marginLeft='20px';
     condiv.style.height=+(mainheight*.4)+'px';
     condiv.style.float="left";
-    document.getElementById('setxMiddle').appendChild(condiv);
+    byId('setxMiddle').appendChild(condiv);
 
     let legdiv = document.createElement('div');
     legdiv.id="confusionlegend";
@@ -3810,7 +3792,7 @@ export function confusionmatrix(matrixdata, classes) {
     legdiv.style.height=+(mainheight*.4)+'px';
     legdiv.style.display="inline-block";
 
-    document.getElementById('setxMiddle').appendChild(legdiv);
+    byId('setxMiddle').appendChild(legdiv);
 
 
     var margin = {top: 20, right: 10, bottom: 0, left: 50};
@@ -4078,8 +4060,8 @@ export function bivariatePlot(x_Axis, y_Axis, x_Axis_name, y_Axis_name) {
     d3.select("#setxMiddle").html("");
     d3.select("#setxMiddle").select("svg").remove();
 
-    let mainwidth = document.getElementById('main').clientWidth;
-    let mainheight = document.getElementById('main').clientHeight;
+    let mainwidth = byId('main').clientWidth;
+    let mainheight = byId('main').clientHeight;
 
     // scatter plot
 
@@ -4243,8 +4225,7 @@ export function bivariatePlot(x_Axis, y_Axis, x_Axis_name, y_Axis_name) {
               return yScale(data_plot[i].yaxis);
               })
         .attr("r", 2.5)
-        .style("fill", "#B71C1C")
-        ;
+        .style("fill", "#B71C1C");
 
        // below doesn't work, so I'm just dropping the zoom
         main1.select("line")
@@ -4263,19 +4244,14 @@ export function bivariatePlot(x_Axis, y_Axis, x_Axis_name, y_Axis_name) {
         .attr("stroke-width", 2)
         .attr("stroke", "black");
     }
-
-
-
-  //  d3.select("#NAcount").text("There are " + nanCount + " number of NA values in the relation.");
-
-
+    //  d3.select("#NAcount").text("There are " + nanCount + " number of NA values in the relation.");
 }
 
 
 export function setxTable(features) {
     function tabulate(data, columns) {
-        var table = d3.select('#setxRightBottomLeft').append('table')
-        var thead = table.append('thead')
+        var table = d3.select('#setxRightBottomLeft').append('table');
+        var thead = table.append('thead');
         var	tbody = table.append('tbody');
 
         // append the header row
@@ -4293,18 +4269,18 @@ export function setxTable(features) {
 
         // create a cell in each row for each column
         var cells = rows.selectAll('td')
-        .data(function (row) {
-              return columns.map(function (column) {
-                                 return {column: column, value: row[column]};
-                                 });
-              })
-        .enter()
-        .append('td')
-        .text(function (d) { return d.value; })
-        .attr('id',function(d,i) {
-              let rowname = this.parentElement.firstChild.innerText;
-              return rowname + d.column;
-              });
+            .data(function (row) {
+                return columns.map(function (column) {
+                    return {column: column, value: row[column]};
+                });
+            })
+            .enter()
+            .append('td')
+            .text(function (d) { return d.value; })
+            .attr('id',function(d,i) {
+                let rowname = this.parentElement.firstChild.innerText;
+                return rowname + d.column;
+            });
 
         return table;
     }
@@ -4321,10 +4297,10 @@ export function setxTable(features) {
 
         let myi = i+1;
         let mysvg = features[i]+"_setxLeft_"+myi;
-        let xval = document.getElementById(mysvg).querySelector('.xval').innerHTML;
-        let x1val = document.getElementById(mysvg).querySelector('.x1val').innerHTML;
-        xval = xval.split("x: ").pop()
-        x1val = x1val.split("x1: ").pop()
+        let xval = byId(mysvg).querySelector('.xval').innerHTML;
+        let x1val = byId(mysvg).querySelector('.x1val').innerHTML;
+        xval = xval.split("x: ").pop();
+        x1val = x1val.split("x1: ").pop();
         console.log(xval);
         console.log(mysvg);
 
