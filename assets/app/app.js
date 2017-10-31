@@ -433,21 +433,19 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
                     d3mProblemDescription.metric = data.metric;//[d3mMetrics[data.metric][2],d3mMetrics[data.metric][1]];
                 } else {
                     d3mProblemDescription.metric = "metricUndefined";
-                   // alert("Specified metric type, " + data.metric + ", is not valid.");
+                    // alert("Specified metric type, " + data.metric + ", is not valid.");
                     }
                 if(data.outputType in d3mOutputType) {
                     d3mProblemDescription.outputType = data.outputType;//[d3mOutputType[data.outputType][2],d3mOutputType[data.outputType][1]];
                 } else {
                     d3mProblemDescription.outputType = "outputUndefined";
-                  //  alert("Specified output type, " + data.outputType + ", is not valid.");
+                    //  alert("Specified output type, " + data.outputType + ", is not valid.");
                 }
 
                 d3mProblemDescription.taskDescription = data.descriptionFile;
-
-
                 byId("btnType").click();
 
-            // making it case insensitive because the case seems to disagree all too often
+                // making it case insensitive because the case seems to disagree all too often
                 if(failset.indexOf(d3mProblemDescription.taskType.toUpperCase()) == -1)
                     resolve();
                 else {
@@ -2873,15 +2871,18 @@ export let legend = _ => {
 
 // programmatically deselect every selected variable
 export function erase() {
-    leftpanelMedium();
-    rightpanelMedium();
+    d3.select("#leftpanel")
+        .attr("class", "sidepanel container clearfix");
+    d3.select("#rightpanel")
+        .attr("class", "sidepanel container clearfix");
     tabLeft('tab1');
+
     jQuery.fn.d3Click = function() {
         this.children().each(function(i, e) {
-            var mycol = d3.rgb(this.style.backgroundColor);
-            if (mycol.toString() === varColor.toString())
+            let col = d3.rgb(this.style.backgroundColor);
+            if (col.toString() === varColor.toString())
                 return;
-            var evt = document.createEvent("MouseEvents");
+            let evt = document.createEvent("MouseEvents");
             evt.initMouseEvent("click", true, true, window, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
             e.dispatchEvent(evt);
         });
@@ -3078,18 +3079,6 @@ export function panelPlots() {
               .remove();
               }
               });
-}
-
-
-// easy functions to collapse panels to base
-function rightpanelMedium() {
-    d3.select("#rightpanel")
-        .attr("class", "sidepanel container clearfix");
-}
-
-function leftpanelMedium() {
-    d3.select("#leftpanel")
-        .attr("class", "sidepanel container clearfix");
 }
 
 // converts color codes
