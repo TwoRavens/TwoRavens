@@ -23,6 +23,17 @@ def view_pebbles_home(request):
                   'index.html',
                   dinfo)
 
+
+def view_dev_raven_links(request):
+    """Dev homepage (other than pebble page)"""
+
+    dinfo = dict(title="dev links")
+
+    return render(request,
+                  'dev_raven_links.html',
+                  dinfo)
+
+
 def view_d3m_config_error(request):
     """Show this when the app is in D3M mode
     but there's no config info available"""

@@ -42,9 +42,20 @@
         <a class="nav-link" href="#">Home <span class="sr-only">(current)</span></a>
       </li>
       {% endcomment %}
-      {% if user.is_authenticated %}
       <li class="nav-item">
-        <a class="nav-link" href="#">{{ user.username }}</a>
+        <a class="nav-link" href="{% url 'view_dev_raven_links' %}">links</a>
+      </li>
+      {% if user.is_authenticated %}
+
+      <li class="nav-item dropdown">
+        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          {{ user.username }}
+        </a>
+        <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
+          <a class="dropdown-item" href="#">Profile?</a>
+          <a class="dropdown-item" href="#">Saved metadata?</a>
+          <a class="dropdown-item" href="#">Something else here</a>
+        </div>
       </li>
       <li class="nav-item">
         <a class="nav-link" href="{% url 'logout' %}">Log out</a>
@@ -54,20 +65,11 @@
         <a class="nav-link" href="{% url 'signup' %}">Sign Up</a>
       </li>
       <li class="nav-item">
-        <a class="nav-link" href="{% url 'login' %}">Log in</a>
+        <a class="nav-link" href="{% url 'login' %}">Log In</a>
       </li>
       {% endif %}
 
-      <li class="nav-item dropdown">
-        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-          Dropdown link
-        </a>
-        <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
-          <a class="dropdown-item" href="#">Action</a>
-          <a class="dropdown-item" href="#">Another action</a>
-          <a class="dropdown-item" href="#">Something else here</a>
-        </div>
-      </li>
+
     </ul>
   </div>
 </nav>

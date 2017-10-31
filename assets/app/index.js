@@ -120,7 +120,7 @@ let ticker = mode => {
         link('model'),
         link('explore'),
         m("a#logID[href=somelink][target=_blank][style=margin-right: 0.5em]", "Replication"),
-        m("a[href=/auth/test-state][style=margin-right: 0.5em]", "test"),
+        m("a[href=/dev-raven-links][style=margin-right: 0.5em]", "test"),
       );
 };
 
