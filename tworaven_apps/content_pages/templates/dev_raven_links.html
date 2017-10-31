@@ -21,6 +21,7 @@
       </div>
       <br />
 
+      <!-- gRPC related -->
       <div class="card">
         <div class="card-header"><b>gRPC related</b></div>
         <div class="card-body">
@@ -30,6 +31,7 @@
         </div>
       </div>
       <br />
+      <!-- Health/Monitoring checks -->
       <div class="card">
         <div class="card-header"><b>Health/Monitoring checks</b></div>
         <div class="card-body">
@@ -42,29 +44,36 @@
           </ul>
         </div>
       </div>
-    </div>
+      <br />
+      <!-- Error pages -->
+      <div class="card">
+        <div class="card-header"><b>Error pages</b></div>
+        <div class="card-body">
+          <ul>
+            <li><a href="{% url 'view_d3m_config_error_test' %}">D3M config error</a> (trigged when in D3M mode but no D3M configs are loaded)</li>
+            <li><a href="/aint-nothing-here-404">404 trigger</a> (shows formatted page in production)</li>
+            <li><a href="{% url 'view_err_500_test' %}">500 trigger</a> (shows formatted page in production)</li>
+          </ul>
+        </div>
+      </div>
+    </div><!-- end: column -->
+    <!-- start: column -->
     <div class="col-12 col-md-6">
+      <!-- D3M config info -->
       <div class="card">
         <div class="card-header"><b>D3M config info</b></div>
         <div class="card-body">
           <ul>
             <li><a href="{% url 'view_d3m_list' %}">
-                  View D3M configs in the database</a>
-            </li>
-            <li><a href="{% url 'view_d3m_details_json_latest' %}">JSON of the
-                  default or latest config information</a>
-                  <br />&nbsp; &nbsp; {% url 'view_d3m_details_json_latest' %}
-            </li>
-            <li><a href="{% url 'view_get_dataset_schema' %}">dataset schema file contents (default or latest)</a>
-                  <br />&nbsp; &nbsp; {% url 'view_get_dataset_schema' %}
-            </li>
-            <li><a href="{% url 'view_get_problem_schema' %}">problem schema file contents (default or latest)</a>
-                  <br />&nbsp; &nbsp; {% url 'view_get_problem_schema' %}
-            </li>
+                  D3M configs in the database</a>
+                  <p>Includes API endpoints to retrieve JSON config info,
+                  dataset schema file contents, problem schema file contents, etc.</p>
+              </li>
           </ul>
         </div>
       </div>
       <br />
+      <!-- Registration related -->
       <div class="card">
         <div class="card-header"><b>Registration related</b></div>
         <div class="card-body">
@@ -77,6 +86,5 @@
           </ul>
         </div>
       </div>
-
-    </div>
+    </div><!-- end: column -->
 {% endblock %}

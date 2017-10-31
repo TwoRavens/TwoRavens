@@ -2,7 +2,11 @@
 {% load static %}
 
 {% block main_content %}
-
+{% if IS_TEST_PAGE %}
+<div class="alert alert-info" role="alert">
+  This is a test to display the error page--not an actual error.
+</div>
+{% endif %}
 <div class="card">
   <div class="card-header">D3M configuration was NOT loaded</div>
   <div class="card-body">

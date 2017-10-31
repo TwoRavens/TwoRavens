@@ -56,6 +56,20 @@ def view_d3m_config_error(request):
                   'content_pages/no_config_error.html',
                   dinfo)
 
+def view_d3m_config_error_test(request):
+    """Show the error page w/o an actual check"""
+
+    dinfo = dict(title='D3M configuration error',
+                 IS_TEST_PAGE=True)
+
+    return render(request,
+                  'content_pages/no_config_error.html',
+                  dinfo)
+
+def view_err_500_test(request):
+    """Purposely create a 500 error"""
+    # div by 0
+    x = 1/0
 
 def view_monitoring_alive(request):
     """For kubernetes liveness check"""

@@ -26,11 +26,6 @@ from tworaven_apps.call_captures.models import ServiceCallEntry
 from tworaven_apps.ta2_interfaces.models import KEY_GRPC_JSON
 
 
-def view_grpc_test_links(request):
-    """Show an existing list of gRPC related urls"""
-    return render(request,
-                  'grpc_list.html')
-
 @csrf_exempt
 def view_startsession(request):
     """gRPC: Call from UI to start session

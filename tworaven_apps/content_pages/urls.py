@@ -15,6 +15,14 @@ urlpatterns = (
         views.view_d3m_config_error,
         name='view_d3m_config_error'),
 
+    url(r'^d3m-configuration-error-test$',
+        views.view_d3m_config_error_test,
+        name='view_d3m_config_error_test'),
+
+    url(r'^err-500-test$',
+        views.view_err_500_test,
+        name='view_err_500_test'),
+
     url(r'^$',
         views.view_pebbles_home,
         name='home'),
