@@ -1297,37 +1297,46 @@ function layout(v,v2) {
 
     }
 
+    // every time a variable in leftpanel is clicked, nodes updates and background color changes
     clickVar = function() {
-        // every time a variable in leftpanel is clicked, nodes updates and background color changes
         if (findNodeIndex(this.id, true).grayout)
             return;
+
         zparams.zvars = [];
         let text = d3.select(this).text();
         let node = findNode(text);
-        if (nodes.map(n => n.name).includes(text)) {
+        let getNames = () => nodes.map(n => n.name);
+        if (getNames().includes(text)) {
             nodes.splice(node.index, 1);
-            spliceLinksForNode(node);
+            links.filter(l => l.source === node || l.target === node)
+                .map(l => links.splice(links.indexOf(l), 1));
             splice(node.strokeColor, text, [dvColor, 'zdv'], [csColor, 'zcross'], [timeColor, 'ztime'], [nomColor, 'znom']);
 
-            if(node.group1){                // remove node name from group lists (should use adaptation of splice-by-color)
+            // remove node name from group lists (should use adaptation of splice-by-color)
+            if (node.group1) {
                 node.group1 = false;
                 zparams.zgroup1.splice(zparams.zgroup1.indexOf(node.name),1);
             };
-            if(node.group2){
+            if (node.group2) {
                 node.group2 = false;
                 zparams.zgroup2.splice(zparams.zgroup2.indexOf(node.name),1);
             };
 
-            nodeReset(node);
+            // node reset - perhaps this will become a hard reset back to all original allNode values?
+            node.strokeColor = selVarColor;
+            node.strokeWidth = "1";
+            node.nodeCol = node.baseCol;
+
             legend();
         } else {
             nodes.push(node);
-            if (nodes.length === 0) nodes[0].reflexive = true;
         }
-        zparams.zvars = nodes.map(n => n.name)    // adding this to keep it current (or should we rely on nodes.map(n => n.name) for variable list?)
+
+        // adding this to keep it current (or should we rely on nodes.map(n => n.name) for variable list?)
+        zparams.zvars = getNames();
         panelPlots();
         restart();
-    }
+    };
 
     d3.select("#models").selectAll("p") // models tab
         //  d3.select("#Display_content")
@@ -1950,10 +1959,6 @@ export function lockDescription() {
         fakeClick();
     }
 }
-
-export let spliceLinksForNode = node => links
-    .filter(l => l.source === node || l.target === node)
-    .map(x => links.splice(links.indexOf(x), 1));
 
 function zPop() {
     if (dataurl) zparams.zdataurl = dataurl;
@@ -3202,13 +3207,6 @@ export function borderState() {
     zparams.zgroup2.length > 0 ?
         $('#gr2Button .rectColor svg circle').attr('stroke', gr2Color).attr('fill', gr2Color).attr('fill-opacity', 0.6).attr('stroke-opacity', 0) :
         $('#gr2Button').css('border-color', '#ccc');
-}
-
-// small appearance resets, but perhaps this will become a hard reset back to all original allNode values?
-function nodeReset(n) {
-    n.strokeColor = selVarColor;
-    n.strokeWidth = "1";
-    n.nodeCol = n.baseCol;
 }
 
 export function subsetSelect(btn) {
