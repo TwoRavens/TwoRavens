@@ -22,37 +22,56 @@
     {% block extra_js %}
     <!-- bootstrap 4 / jquery 3.2 / popper (not on pebbles page) -->
     <script src="{% static "pkgs/bootstrap4/jquery-3.2.1.min.js" %}"></script>
-    <script src="{% static "pkgs/bootstrap4/js/bootstrap.min.js" %}"></script>
     <script src="{% static "pkgs/bootstrap4/popper.min.js" %}"></script>
+    <script src="{% static "pkgs/bootstrap4/js/bootstrap.min.js" %}"></script>
     {% endblock %}
   </head>
 
   <body>
   {% block body_content %}
-  <div class="container">
-    <div class="row">
-      <div class="col-8 col-sm-8">
-          <a href="/"><img src="{% static "images/TwoRavens.png" %}" alt="TwoRavens" width="100" /></a>
-      </div>
-      <div class="col-4  col-sm-4">
-        {% if user.is_authenticated %}
-          <p class="small">logged in: {{ user.username }}
+  <nav class="navbar navbar-expand-lg navbar-light" style="border-bottom:1px solid #ccc;">
+  {#<a class="navbar-brand" href="#">Navbar</a>#}
+  <a href="/" class="navbar-brand"><img src="{% static "images/TwoRavens.png" %}" alt="TwoRavens" width="100" style="margin-left: 1em; margin-top: -0.5em;" /></a>
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+  <div class="collapse navbar-collapse" id="navbarNavDropdown">
+    <ul class="navbar-nav ml-auto">
+      {% comment %}
+      <li class="nav-item active">
+        <a class="nav-link" href="#">Home <span class="sr-only">(current)</span></a>
+      </li>
+      {% endcomment %}
+      {% if user.is_authenticated %}
+      <li class="nav-item">
+        <a class="nav-link" href="#">{{ user.username }}</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="{% url 'logout' %}">Log out</a>
+      </li>
+      {% else %}
+      <li class="nav-item">
+        <a class="nav-link" href="{% url 'signup' %}">Sign Up</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="{% url 'login' %}">Log in</a>
+      </li>
+      {% endif %}
 
-            &nbsp; | &nbsp; <a href="{% url 'logout' %}">Log out</a>
-
-          </p>
-        {% else %}
-          <a href="{% url 'signup' %}">Sign Up</a>
-          &nbsp; | &nbsp; <a href="{% url 'login' %}">Log in</a>
-
-        {% endif %}
-      </div>
-    </div>
-    <div class="row">
-      <div class="col-12">
-          <hr />
-      </div>
-    </div>
+      <li class="nav-item dropdown">
+        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          Dropdown link
+        </a>
+        <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
+          <a class="dropdown-item" href="#">Action</a>
+          <a class="dropdown-item" href="#">Another action</a>
+          <a class="dropdown-item" href="#">Something else here</a>
+        </div>
+      </li>
+    </ul>
+  </div>
+</nav>
+  <div class="container"><br />
     {% block main_content %}
 
     {% endblock %}
