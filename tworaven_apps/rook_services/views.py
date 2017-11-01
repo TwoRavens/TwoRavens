@@ -9,7 +9,7 @@ from tworaven_apps.call_captures.models import ServiceCallEntry
 from tworaven_apps.rook_services.rook_app_info import RookAppInfo
 from tworaven_apps.rook_services.models import UI_KEY_SOLA_JSON, ROOK_ZESSIONID
 from tworaven_apps.workspaces.util_save_state import WorkspaceUtil
-
+from tworaven_apps.utils.view_helper import get_session_key
 
 @csrf_exempt
 def view_rook_route(request, app_name_in_url):
@@ -21,7 +21,7 @@ def view_rook_route(request, app_name_in_url):
     WorkspaceUtil.record_state(request)
 
     # retrieve session key
-    django_session_key = request.session._get_or_create_session_key()
+    django_session_key = get_session_key(request)
 
     # get the app info
     #

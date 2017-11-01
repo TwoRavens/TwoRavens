@@ -11,3 +11,10 @@ def get_common_view_info(request):
     #            user=request.user)
 
     return info
+
+
+def get_session_key(request):
+    """Common method to get the session key"""
+    assert request, 'request cannot be None'
+
+    return request.session._get_or_create_session_key()

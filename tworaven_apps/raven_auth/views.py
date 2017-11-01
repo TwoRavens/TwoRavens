@@ -6,14 +6,15 @@ from django.contrib.auth.forms import UserCreationForm
 from django.shortcuts import render, redirect
 
 from tworaven_apps.raven_auth.forms import SignUpForm
-from tworaven_apps.utils.view_helper import get_common_view_info
+from tworaven_apps.utils.view_helper import get_common_view_info,\
+    get_session_key
 
 KEY_ADD_CNT = 'ADD_CNT'
 
 def test_state(request):
     """test form"""
-    django_session_key = request.session._get_or_create_session_key()
-
+    django_session_key = get_session_key(request)
+    
     if KEY_ADD_CNT in request.session:
         add_cnt = request.session[KEY_ADD_CNT]
     else:

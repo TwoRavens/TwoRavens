@@ -10,7 +10,6 @@ def view_session_info(request):
     # pull some session info, if there are any
     #
     #import ipdb; ipdb.set_trace()
-
     if KEY_ZDATA in request.session:
         try:
             session_info = json.dumps(request.session[KEY_ZDATA], indent=4)
