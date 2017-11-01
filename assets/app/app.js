@@ -1818,27 +1818,29 @@ function layout(v,v2) {
 
 
 function find($nodes, name) {
-    for (let i in $nodes) {
+    for (let i in $nodes)
         if ($nodes[i].name == name) return $nodes[i].id;
-    }
 }
 
 // returns id
 export function findNodeIndex(name, whole) {
-    for (let node of allNodes) {
+    for (let node of allNodes)
         if (node.name === name) return whole ? node : node.id;
-    }
 }
 
-// every time a variable in leftpanel is clicked, nodes updates and background color changes
-export function clickVar(elem) {
-    elem = elem.target;
-    if (findNodeIndex(elem.id, true).grayout)
-        return;
+function nodeIndex(nodeName) {
+    for (let i in nodes)
+        if (nodes[i].name === nodeName) return i;
+}
 
-    zparams.zvars = [];
-    let text = d3.select(elem).text();
+export function findNode(nodeName) {
+    for (let i in allNodes)
+        if (allNodes[i].name === nodeName) return allNodes[i];
+}
+
+function updateNode(text) {
     let node = findNode(text);
+    zparams.zvars = [];
     let getNames = () => nodes.map(n => n.name);
     if (getNames().includes(text)) {
         del(nodes, node.index);
@@ -1860,42 +1862,40 @@ export function clickVar(elem) {
     } else {
         nodes.push(node);
     }
-
     // adding this to keep it current (or should we rely on nodes.map(n => n.name) for variable list?)
     zparams.zvars = getNames();
+}
+
+// every time a variable in leftpanel is clicked, nodes updates and background color changes
+export function clickVar(elem) {
+    elem = elem.target;
+    if (findNodeIndex(elem.id, true).grayout)
+        return;
+
+    updateNode(d3.select(elem).text());
     panelPlots();
     restart();
-};
-
-let nodeIndex = nodeName => {
-    for (let i in nodes)
-        if (nodes[i].name == nodeName) return i;
-};
-
-export let findNode = nodeName => {
-    for (let i in allNodes)
-        if (allNodes[i].name == nodeName) return allNodes[i];
-};
+}
 
 /*
-    Retrieve the variable list from the preprocess data.
-    This helps handle the new format and (temporarily)
-    the older format in production (rp 8.14.2017)
- */
-export function getVariableData(jsonData) {
+  Retrieve the variable list from the preprocess data.
+  This helps handle the new format and (temporarily)
+  the older format in production (rp 8.14.2017)
+*/
+export function getVariableData(json) {
     /* "new" response:
-    {
-        "dataset" : {...}
-        "variables" : {
-            "var1" : {...}, (etc)
-        }
-    }
-    "old" response
-    {
-         "var1" : {...},
-         (etc)
-    }*/
-    return jsonData.hasOwnProperty('variables') ? jsonData.variables : jsonData;
+       {
+       "dataset" : {...}
+       "variables" : {
+       "var1" : {...}, (etc)
+       }
+       }
+       "old" response
+       {
+       "var1" : {...},
+       (etc)
+       }*/
+    return json.hasOwnProperty('variables') ? json.variables : json;
 }
 
 // function called by force button
