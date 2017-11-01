@@ -13,8 +13,8 @@ KEY_ADD_CNT = 'ADD_CNT'
 
 def test_state(request):
     """test form"""
-    django_session_key = get_session_key(request)
-    
+    session_key = get_session_key(request)
+
     if KEY_ADD_CNT in request.session:
         add_cnt = request.session[KEY_ADD_CNT]
     else:
@@ -28,7 +28,7 @@ def test_state(request):
 
 
     info = dict(title='test page',
-                session_key=django_session_key,
+                session_key=session_key,
                 add_cnt=add_cnt)
 
 

@@ -32,7 +32,7 @@ def view_startsession(request):
     user_agent = can come from UI.
     Version id will originate on the server
     """
-    django_session_key = get_session_key(request)
+    session_key = get_session_key(request)
 
     success, raven_data_or_err = get_grpc_content(request)
     if not success:
@@ -72,7 +72,7 @@ def view_endsession(request):
 
     example string: '{"session_id":"1x3551"}'
     """
-    django_session_key = get_session_key(request)
+    session_key = get_session_key(request)
 
     success, raven_data_or_err = get_grpc_content(request)
     if not success:
@@ -108,7 +108,7 @@ def view_endsession(request):
 @csrf_exempt
 def view_update_problem_schema(request):
     """gRPC: Call from UI to update the problem schema"""
-    django_session_key = get_session_key(request)
+    session_key = get_session_key(request)
 
     success, raven_data_or_err = get_grpc_content(request)
     if not success:
@@ -143,7 +143,7 @@ def view_update_problem_schema(request):
 @csrf_exempt
 def view_create_pipeline(request):
     """gRPC: Call from UI to update the problem schema"""
-    django_session_key = get_session_key(request)
+    session_key = get_session_key(request)
 
     success, raven_data_or_err = get_grpc_content(request)
     if not success:
@@ -178,7 +178,7 @@ def view_create_pipeline(request):
 @csrf_exempt
 def view_get_execute_pipeline_results(request):
     """view for GetExecutePipelineResults"""
-    django_session_key = get_session_key(request)
+    session_key = get_session_key(request)
 
     success, raven_data_or_err = get_grpc_content(request)
     if not success:
@@ -222,7 +222,7 @@ def view_list_pipelines(request):
                           }
                         }'
     """
-    django_session_key = get_session_key(request)
+    session_key = get_session_key(request)
 
 
     success, raven_data_or_err = get_grpc_content(request)
@@ -269,7 +269,7 @@ def view_export_pipeline(request):
                        "pipelineExecUri":"<<EXECUTABLE_URI>>"
                     }
     """
-    django_session_key = get_session_key(request)
+    session_key = get_session_key(request)
 
 
     success, raven_data_or_err = get_grpc_content(request)

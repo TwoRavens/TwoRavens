@@ -3,13 +3,17 @@ from django.urls import reverse
 from django.http import HttpResponse, JsonResponse, Http404, HttpResponseRedirect
 from tworaven_apps.configurations.models import AppConfiguration
 from tworaven_apps.configurations.utils import get_latest_d3m_config
+from tworaven_apps.utils.view_helper import get_session_key
 
 def view_pebbles_home(request):
     """Serve up the workspace, the current home page.
     Include global js settings"""
+    session_key = get_session_key(request)
+
     app_config = AppConfiguration.get_config()
 
-    dinfo = dict(title='welcome',
+    dinfo = dict(title='TwoRavens',
+                 session_key=session_key,
                  app_config=app_config.convert_to_dict())
 
     # Is this D3M Mode?  If so, make sure there is D3M config information

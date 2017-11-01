@@ -21,7 +21,7 @@ def view_rook_route(request, app_name_in_url):
     WorkspaceUtil.record_state(request)
 
     # retrieve session key
-    django_session_key = get_session_key(request)
+    session_key = get_session_key(request)
 
     # get the app info
     #
@@ -48,7 +48,7 @@ def view_rook_route(request, app_name_in_url):
     if raven_data_text.find(blank_session_str) > -1:
         # was converting to JSON, but now just simple text substitution
         #
-        updated_session_str = '%s":"%s"' % (ROOK_ZESSIONID, django_session_key)
+        updated_session_str = '%s":"%s"' % (ROOK_ZESSIONID, session_key)
         raven_data_text = raven_data_text.replace(blank_session_str, updated_session_str)
 
     app_data = dict(solaJSON=raven_data_text)
@@ -123,7 +123,7 @@ try:
         #print('blank session id....')
         # blank id found, subsitute the django session key
         #
-        raven_data_json[ROOK_ZESSIONID] = django_session_key
+        raven_data_json[ROOK_ZESSIONID] = session_key
         #
         #
         raven_data_text = json.dumps(raven_data_json)
