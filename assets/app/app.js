@@ -198,9 +198,9 @@ let byId = id => document.getElementById(id);
 
 // page reload linked to btnReset
 export const reset = function reloadPage() {
-  location.reload();
-}
-
+    location.reload();
+};
+let restart;
 
 let dataurl = "";
 export function main(fileid, hostname, ddiurl, dataurl, apikey) {
@@ -887,8 +887,6 @@ function zparamsReset(text) {
     'zdv zcross ztime znom'.split(' ').forEach(x => del(zparams[x], text, true));
 }
 
-export let clickVar;
-
 function layout(v,v2) {
     var myValues = [];
     nodes = [];
@@ -1297,42 +1295,6 @@ function layout(v,v2) {
 
     }
 
-    // every time a variable in leftpanel is clicked, nodes updates and background color changes
-    clickVar = function() {
-        if (findNodeIndex(this.id, true).grayout)
-            return;
-
-        zparams.zvars = [];
-        let text = d3.select(this).text();
-        let node = findNode(text);
-        let getNames = () => nodes.map(n => n.name);
-        if (getNames().includes(text)) {
-            del(nodes, node.index);
-            links.filter(l => l.source === node || l.target === node)
-                .map(l => del(links, l, true));
-            zparamsReset(text);
-
-            // remove node name from group lists (should use adaptation of splice-by-color)
-            node.group1 && del(zparams.zgroup1, node.name, true);
-            node.group2 && del(zparams.zgroup2, node.name, true);
-            node.group1 = node.group2 = false;
-
-            // node reset - perhaps this will become a hard reset back to all original allNode values?
-            node.strokeColor = selVarColor;
-            node.strokeWidth = "1";
-            node.nodeCol = node.baseCol;
-
-            borderState();
-        } else {
-            nodes.push(node);
-        }
-
-        // adding this to keep it current (or should we rely on nodes.map(n => n.name) for variable list?)
-        zparams.zvars = getNames();
-        panelPlots();
-        restart();
-    };
-
     d3.select("#models").selectAll("p") // models tab
         //  d3.select("#Display_content")
         .on("click", function() {
@@ -1388,8 +1350,8 @@ function layout(v,v2) {
         if(locktoggle) return;
         if(this.className=="item-select") {
             return;
-   //         d3mProblemDescription.metric = ["",""];
-    //        this.className="item-default";
+            // d3mProblemDescription.metric = ["",""];
+            // this.className="item-default";
         } else {
             d3.select("#metrics").select("p.item-select")
             .attr('class', 'item-default');
@@ -1416,7 +1378,7 @@ function layout(v,v2) {
         });
 
     // update graph (called when needed)
-    function restart() {
+    restart = function() {
         // nodes.id is pegged to allNodes, i.e. the order in which variables are read in
         // nodes.index is floating and depends on updates to nodes.  a variables index changes when new variables are added.
         circle.call(force.drag);
@@ -1425,8 +1387,8 @@ function layout(v,v2) {
             force.charge(d => setPebbleCharge(d));
             force.start();
             force.linkStrength(1);
-            k = 4;                                            // strength parameter for group attraction/repulsion
-            if((zparams.zgroup1.length > 0) & (zparams.zgroup2.length > 0 )){  // scale down by number of active groups
+            k = 4; // strength parameter for group attraction/repulsion
+            if ((zparams.zgroup1.length > 0) & (zparams.zgroup2.length > 0 )) { // scale down by number of active groups
                 k = 2.5;
             }
         } else {
@@ -1855,19 +1817,54 @@ function layout(v,v2) {
 }
 
 
-let find = ($nodes, name) => {
-    for (let i in $nodes)
+function find($nodes, name) {
+    for (let i in $nodes) {
         if ($nodes[i].name == name) return $nodes[i].id;
-};
+    }
+}
 
 // returns id
-export let findNodeIndex = (name, all) => {
+export function findNodeIndex(name, whole) {
     for (let node of allNodes) {
-        if (node.name === name) {
-            //cdb('Yes!' + allNodes[i].id);
-            return all? node : node.id;
-        }
+        if (node.name === name) return whole ? node : node.id;
     }
+}
+
+// every time a variable in leftpanel is clicked, nodes updates and background color changes
+export function clickVar(elem) {
+    elem = elem.target;
+    if (findNodeIndex(elem.id, true).grayout)
+        return;
+
+    zparams.zvars = [];
+    let text = d3.select(elem).text();
+    let node = findNode(text);
+    let getNames = () => nodes.map(n => n.name);
+    if (getNames().includes(text)) {
+        del(nodes, node.index);
+        links.filter(l => l.source === node || l.target === node)
+            .map(l => del(links, l, true));
+        zparamsReset(text);
+
+        // remove node name from group lists (should use adaptation of splice-by-color)
+        node.group1 && del(zparams.zgroup1, node.name, true);
+        node.group2 && del(zparams.zgroup2, node.name, true);
+        node.group1 = node.group2 = false;
+
+        // node reset - perhaps this will become a hard reset back to all original allNode values?
+        node.strokeColor = selVarColor;
+        node.strokeWidth = "1";
+        node.nodeCol = node.baseCol;
+
+        borderState();
+    } else {
+        nodes.push(node);
+    }
+
+    // adding this to keep it current (or should we rely on nodes.map(n => n.name) for variable list?)
+    zparams.zvars = getNames();
+    panelPlots();
+    restart();
 };
 
 let nodeIndex = nodeName => {
@@ -2126,83 +2123,81 @@ export function estimate(btn) {
                     }
                 }
                 console.log(allPipelineInfo);
-                    // to get all pipeline ids: Object.keys(allPipelineInfo)
+                // to get all pipeline ids: Object.keys(allPipelineInfo)
 
-                    //////////////////////////
+                function tabulate(data, columns, divid) {
+                    var table = d3.select(divid).append('table');
+                    var thead = table.append('thead');
+                    var	tbody = table.append('tbody');
 
-                    function tabulate(data, columns, divid) {
-                        var table = d3.select(divid).append('table')
-                        var thead = table.append('thead')
-                        var	tbody = table.append('tbody');
-
-                        // append the header row
-                        thead.append('tr')
+                    // append the header row
+                    thead.append('tr')
                         .selectAll('th')
                         .data(columns).enter()
                         .append('th')
                         .text(function (column) { return column; });
 
-                        // create a row for each object in the data
-                        var rows = tbody.selectAll('tr')
+                    // create a row for each object in the data
+                    var rows = tbody.selectAll('tr')
                         .data(data)
                         .enter()
                         .append('tr')
                         .attr('class',function(d,i) {
-                              if(i==0) return 'item-select';
-                              else return 'item-default';
-                              })
+                            if(i==0) return 'item-select';
+                            else return 'item-default';
+                        });
 
-                        // create a cell in each row for each column
-                        var cells = rows.selectAll('td')
+                    // create a cell in each row for each column
+                    var cells = rows.selectAll('td')
                         .data(function (row) {
-                              return columns.map(function (column) {
-                                                 return {column: column, value: row[column]};
-                                                 });
-                              })
+                            return columns.map(function (column) {
+                                return {column: column, value: row[column]};
+                            });
+                        })
                         .enter()
                         .append('td')
                         .text(function (d) {
                             return d.value;
-                              })
+                        })
                         .on("click", function(d) {
                             let myrow = this.parentElement;
                             if(myrow.className=="item-select") {
                                 return;
                             } else {
                                 d3.select(divid).select("tr.item-select")
-                                .attr('class', 'item-default');
+                                    .attr('class', 'item-default');
                                 d3.select(myrow).attr('class',"item-select");
                                 if(divid=='#setxRight') {
                                     resultsplotinit(allPipelineInfo[myrow.firstChild.innerText], dvvalues);
                                 }
                             }});
 
-                        // this is code to add a checkbox to each row of pipeline results table
-                        /*
-                        d3.select(divid).selectAll("tr")
-                        .append("input")
-                        .attr("type", "checkbox")
-                        .style("float","right");
-                         */
+                    // this is code to add a checkbox to each row of pipeline results table
+                    /*
+                      d3.select(divid).selectAll("tr")
+                      .append("input")
+                      .attr("type", "checkbox")
+                      .style("float","right");
+                    */
 
-                        return table;
-                    }
+                    return table;
+                }
 
-                    let resultstable = [];
-                    for(var key in allPipelineInfo) {
-                        let myid = "";
-                        let mymetric = "";
-                        let myval = "";
-                        let myscores = allPipelineInfo[key].pipelineInfo.scores;
-                        for(var i = 0; i < myscores.length; i++) {
-                            //if(i==0) {myid=key;}
-                             //   else myid="";
-                            myid=key;
-                            mymetric=myscores[i].metric;
-                            myval=+myscores[i].value.toFixed(3);
-                            resultstable.push({"PipelineID":myid,"Metric":mymetric, "Score":myval});
-                        }
+                let resultstable = [];
+                for(var key in allPipelineInfo) {
+                    let myid = "";
+                    let mymetric = "";
+                    let myval = "";
+                    let myscores = allPipelineInfo[key].pipelineInfo.scores;
+                    for(var i = 0; i < myscores.length; i++) {
+                        //if(i==0) {myid=key;}
+                        //   else myid="";
+                        myid=key;
+                        mymetric=myscores[i].metric;
+                        myval=+myscores[i].value.toFixed(3);
+                        resultstable.push({"PipelineID":myid,"Metric":mymetric, "Score":myval});
                     }
+                }
 
                     // render the table
                     tabulate(resultstable, ['PipelineID', 'Metric', 'Score'], '#results');
