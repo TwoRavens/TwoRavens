@@ -13,6 +13,8 @@ from tworaven_apps.utils.json_helper import format_jsonfield_for_admin,\
     format_link_for_admin
 
 UI_KEY_ZDATA = 'zdata'
+UI_KEY_ZVARS = 'zvars'
+
 # session keys
 #KEY_SESSION_WORKSPACE = 'SESSION_WORKSPACE'
 SESSION_KEY_ZPARAMS = 'RAVEN_ZPARAMS'

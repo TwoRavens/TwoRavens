@@ -4383,11 +4383,12 @@ export function record_user_metadata(){
 
   var urlcall = '/workspaces/record-user-metadata';
 
-  //var jsonout = JSON.stringify(zparams);
-  var jsonout = JSON.stringify(allNodes);
+  // Save zparams
+  var solajsonout1 = "solaJSON=" + JSON.stringify(zparams);;
+  makeCorsRequest(urlcall, "nobutton", endSuccess, endFail, solajsonout1);
 
-  var solajsonout = "solaJSON=" + jsonout;
-
-  makeCorsRequest(urlcall, "nobutton", endSuccess, endFail, solajsonout);
+  // Save allNodes
+  var solajsonout2 = "solaJSON=" + JSON.stringify(allNodes);;
+  makeCorsRequest(urlcall, "nobutton", endSuccess, endFail, solajsonout2);
 
 }

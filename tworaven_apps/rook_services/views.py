@@ -8,7 +8,7 @@ from django.views.decorators.csrf import csrf_exempt
 from tworaven_apps.call_captures.models import ServiceCallEntry
 from tworaven_apps.rook_services.rook_app_info import RookAppInfo
 from tworaven_apps.rook_services.models import UI_KEY_SOLA_JSON, ROOK_ZESSIONID
-from tworaven_apps.workspaces.util_save_state import WorkspaceUtil
+from tworaven_apps.workspaces.workspace_util import WorkspaceUtil
 from tworaven_apps.utils.view_helper import get_session_key
 
 @csrf_exempt

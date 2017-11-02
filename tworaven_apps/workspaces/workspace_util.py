@@ -7,7 +7,7 @@ from collections import OrderedDict
 from tworaven_apps.rook_services.models import UI_KEY_SOLA_JSON, ROOK_ZESSIONID
 from tworaven_apps.workspaces.models import \
     SESSION_KEY_ZPARAMS, SESSION_KEY_ALL_NODES, SESSION_KEY_LIST,\
-    UI_KEY_ZDATA
+    UI_KEY_ZDATA, UI_KEY_ZVARS
 from tworaven_apps.utils.view_helper import get_session_key
 
 class WorkspaceUtil(object):
@@ -43,7 +43,7 @@ class WorkspaceUtil(object):
         # Save the 'zparams' from the UI
         #   - Identified by existince of 'zdata' key
         # ----------------------------------------------
-        if UI_KEY_ZDATA in json_data:
+        if UI_KEY_ZDATA in json_data or UI_KEY_ZVARS in json_data:
             # save to session!
             self.request_obj.session[SESSION_KEY_ZPARAMS] = json_data
 
@@ -77,9 +77,9 @@ class WorkspaceUtil(object):
         # iterate through key list
         for sess_key in SESSION_KEY_LIST:
             # does it exist?
-            if sess_key in self.request_obj.session:
+            if sess_key in request_obj.session:
                 # yes, delete it
-                del self.request_obj.session[sess_key]
+                del request_obj.session[sess_key]
 
     @staticmethod
     def record_state(request_obj):

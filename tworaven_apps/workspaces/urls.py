@@ -13,4 +13,8 @@ urlpatterns = (
         views.record_user_metadata,
         name='record_user_metadata'),
 
+    url(r'^clear-user-metadata$',
+        views.clear_user_metadata,
+        name='clear_user_metadata'),
+
 )
