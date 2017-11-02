@@ -7,7 +7,7 @@ This is a 1st run at dev. install instructions, tested on a Mac (OS 10.12.6)
 
 ## Get the repository
 
-- Use Github Desktop to pull down the [TwoRavens repository](https://github.com/vjdorazio/TwoRavens)
+- Use Github Desktop to pull down the [TwoRavens repository](https://github.com/TwoRavens/TwoRavens)
 - Alternately, use the command line:
     ```
     git clone git@github.com:vjdorazio/TwoRavens.git
