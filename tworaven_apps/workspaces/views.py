@@ -4,8 +4,9 @@ from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse, HttpResponse, Http404
 from tworaven_apps.workspaces.util_save_state import WorkspaceUtil
-from tworaven_apps.workspaces.models import KEY_SESSION_WORKSPACE,\
-    KEY_ZDATA, KEY_ALL_NODES, UI_KEY_ZDATA
+from tworaven_apps.workspaces.models import \
+    SESSION_KEY_ZPARAMS, SESSION_KEY_ALL_NODES, SESSION_KEY_LIST,\
+    UI_KEY_ZDATA
 
 def view_session_info(request):
     """test to show session info, zdata, etc"""
@@ -13,11 +14,11 @@ def view_session_info(request):
     # pull some session info, if there are any
     #
     #import ipdb; ipdb.set_trace()
-    if KEY_ZDATA in request.session:
+    if SESSION_KEY_ZPARAMS in request.session:
         try:
-            session_info = json.dumps(request.session[KEY_ZDATA], indent=4)
+            session_info = json.dumps(request.session[SESSION_KEY_ZPARAMS], indent=4)
         except TypeError:
-            session_info = request.session[KEY_ZDATA]
+            session_info = request.session[SESSION_KEY_ZPARAMS]
     else:
         session_info = '(nothing saved)'
 

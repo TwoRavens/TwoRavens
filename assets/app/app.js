@@ -4383,9 +4383,10 @@ export function record_user_metadata(){
 
   var urlcall = '/workspaces/record-user-metadata';
 
-  var jsonout = JSON.stringify(zparams);
+  //var jsonout = JSON.stringify(zparams);
+  var jsonout = JSON.stringify(allNodes);
 
-  var solajsonout = "solaJSON=" + jsonout; 
+  var solajsonout = "solaJSON=" + jsonout;
 
   makeCorsRequest(urlcall, "nobutton", endSuccess, endFail, solajsonout);
 
