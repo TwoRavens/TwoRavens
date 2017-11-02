@@ -5,8 +5,12 @@ urlpatterns = (
 
     # We're listing each call here for now but may change in the future
     #
-    url(r'^test-show-workspace/?$',
+    url(r'^test-show-workspace$',
         views.view_session_info,
         name='view_session_info'),
+
+    url(r'^record-user-metadata$',
+        views.record_user_metadata,
+        name='record_user_metadata'),
 
 )

@@ -16,7 +16,7 @@ class WorkspaceUtil(object):
         """Save state based on the Django request object"""
         self.request_obj = request_obj
         self.session_key = get_session_key(request_obj)
-        self.update_session()
+        #self.update_session()
 
     def update_session(self):
         """Update the session information"""
@@ -25,7 +25,9 @@ class WorkspaceUtil(object):
         req = self.request_obj
 
         if UI_KEY_SOLA_JSON in req.POST:
-            self.check_session_for_data(req.POST[UI_KEY_SOLA_JSON])
+            return self.check_session_for_data(req.POST[UI_KEY_SOLA_JSON])
+
+        return False, 'No key for "%s"' % UI_KEY_SOLA_JSON
 
     def check_session_for_data(self, json_data_str):
         if not json_data_str:
@@ -52,6 +54,9 @@ class WorkspaceUtil(object):
 
     @staticmethod
     def record_state(request_obj):
+        """Save app state in the session"""
         assert request_obj, 'request_obj cannot be None'
 
         util = WorkspaceUtil(request_obj)
+
+        return util.update_session()

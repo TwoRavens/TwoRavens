@@ -120,7 +120,15 @@ let ticker = mode => {
         link('model'),
         link('explore'),
         m("a#logID[href=somelink][target=_blank][style=margin-right: 0.5em]", "Replication"),
-        m("a[href=/dev-raven-links][style=margin-right: 0.5em]", "test"),
+        // dev links...
+        m("a[href='/dev-raven-links'][style=margin-right: 0.5em]", "raven-links"),
+        m("a[style=margin-right: 0.5em]",
+          {onclick: app.record_user_metadata},
+          "record-metadata"),
+        //app.record_user_metadata()
+        /*
+        m("a[href='/Home']", {oncreate: m.route.link}, "Go to home page")
+        */
       );
 };
 
