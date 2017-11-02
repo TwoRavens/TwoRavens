@@ -160,6 +160,7 @@ WEBPACK_LOADER = {
     }
 }
 
+SESSION_SAVE_EVERY_REQUEST = True
 
 SERVER_SCHEME = 'http'  # or https
 

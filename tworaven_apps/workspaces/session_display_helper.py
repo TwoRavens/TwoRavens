@@ -2,9 +2,7 @@
 For testing/displaying session info
 """
 import json
-from tworaven_apps.workspaces.models import \
-    SESSION_KEY_ZPARAMS, SESSION_KEY_ALL_NODES, SESSION_KEY_LIST,\
-    UI_KEY_ZDATA
+from tworaven_apps.workspaces.models import SESSION_KEY_LIST
 
 class SessionDisplayInfo(object):
     """Show a single key/val session pair"""
@@ -57,7 +55,7 @@ class SessionDisplayList(object):
         """Based on the session keys, pull session info from the request object"""
         assert request_obj, 'request_obj cannot be None'
 
-        for sess_key in SESSION_KEY_LIST:
+        for sess_key in request_obj.session.keys():#SESSION_KEY_LIST:
             if sess_key in request_obj.session:
                 # pull data
                 sess_data = request_obj.session[sess_key]

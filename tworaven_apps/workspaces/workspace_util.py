@@ -33,21 +33,28 @@ class WorkspaceUtil(object):
     def check_session_for_data(self, json_data_str):
         if not json_data_str:
             return False, 'No json_data_str'
-        #import ipdb; ipdb.set_trace()
+
         try:
             json_data = json.loads(json_data_str, object_pairs_hook=OrderedDict)
         except TypeError:
+            print('failed JSON conversion!')
             return False, 'failed to convert info to JSON'
+
+        req = self.request_obj
 
         # ----------------------------------------------
         # Save the 'zparams' from the UI
         #   - Identified by existince of 'zdata' key
         # ----------------------------------------------
         if UI_KEY_ZDATA in json_data or UI_KEY_ZVARS in json_data:
+            print('saving zparams!', UI_KEY_ZVARS, json_data[UI_KEY_ZVARS])
+            print('current session key: %s' % req.session.session_key)
             # save to session!
-            self.request_obj.session[SESSION_KEY_ZPARAMS] = json_data
+            if SESSION_KEY_ZPARAMS in req.session:
+                req.session.modified = True
+            req.session[SESSION_KEY_ZPARAMS] = json_data
 
-            #print('self.request_obj.session[SESSION_KEY_ZPARAMS]', self.request_obj.session[SESSION_KEY_ZPARAMS])
+
             return True, None
 
         # ----------------------------------------------
@@ -58,7 +65,8 @@ class WorkspaceUtil(object):
         if isinstance(json_data, list):
             if len(json_data) > 0 and 'name' in json_data[0]:
                 # save to session!
-                self.request_obj.session[SESSION_KEY_ALL_NODES] = json_data
+                req.session.modified = True
+                req.session[SESSION_KEY_ALL_NODES] = json_data
                 return True, None
 
 
@@ -85,6 +93,13 @@ class WorkspaceUtil(object):
     def record_state(request_obj):
         """Save app state in the session"""
         assert request_obj, 'request_obj cannot be None'
+
+        if UI_KEY_SOLA_JSON in request_obj.POST:
+            request_obj.session[UI_KEY_SOLA_JSON] = request_obj.POST[UI_KEY_SOLA_JSON]
+            #return self.check_session_for_data(req.POST[UI_KEY_SOLA_JSON])
+
+        return True, None
+
 
         util = WorkspaceUtil(request_obj)
 

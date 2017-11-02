@@ -3,13 +3,13 @@ from collections import OrderedDict
 from django.shortcuts import render
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.cache import never_cache
+
 from django.http import JsonResponse, HttpResponse, Http404, HttpResponseRedirect
 from tworaven_apps.workspaces.workspace_util import WorkspaceUtil
-#from tworaven_apps.workspaces.models import \
-#    SESSION_KEY_ZPARAMS, SESSION_KEY_ALL_NODES, SESSION_KEY_LIST,\
-#    UI_KEY_ZDATA
 from tworaven_apps.workspaces.session_display_helper import SessionDisplayList
 
+@never_cache
 def view_session_info(request):
     """test to show session info, zdata, etc"""
 
@@ -19,7 +19,8 @@ def view_session_info(request):
     display_info = SessionDisplayList(request)
 
     info = dict(title='test session info',
-                display_info_list=display_info.get_list())
+                display_info_list=display_info.get_list(),
+                session_key=request.session.session_key)
 
     return render(request, 'view_session_info.html', info)
 
