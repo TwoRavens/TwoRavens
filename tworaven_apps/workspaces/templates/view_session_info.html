@@ -39,8 +39,11 @@
 
           <div id="collapse{{ forloop.counter }}" class="collapse" role="tabpanel" aria-labelledby="heading{{ forloop.counter }}" data-parent="#accordion">
             <div class="card-body">
-
+              {% if session_info.is_data_formatted %}
               <pre><code>{{ session_info.get_display_data }}</code></pre>
+              {% else %}
+              {{ session_info.get_display_data }}
+              {% endif %}
             </div>
           </div>
         </div>

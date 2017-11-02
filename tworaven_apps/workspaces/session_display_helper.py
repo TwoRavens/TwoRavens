@@ -24,7 +24,7 @@ class SessionDisplayInfo(object):
         if self.session_data:
             self.data_size = len(str(self.session_data))#.get_display_data())
 
-    def is_data_fomatted(self):
+    def is_data_formatted(self):
         """Get the list!"""
         if self.data_formatted:
             return True
@@ -33,7 +33,7 @@ class SessionDisplayInfo(object):
 
     def get_display_data(self):
         """Return display data as string"""
-        if self.is_data_fomatted():
+        if self.is_data_formatted():
             return self.data_formatted
 
         return '%s' % self.session_data
