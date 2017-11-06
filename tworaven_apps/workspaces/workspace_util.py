@@ -23,10 +23,8 @@ class WorkspaceUtil(object):
         """Update the session information"""
         assert self.request_obj, "self.request_obj cannot be None"
 
-        req = self.request_obj
-
-        if UI_KEY_SOLA_JSON in req.POST:
-            return self.check_session_for_data(req.POST[UI_KEY_SOLA_JSON])
+        if UI_KEY_SOLA_JSON in self.request_obj.POST:
+            return self.check_session_for_data(self.request_obj.POST[UI_KEY_SOLA_JSON])
 
         return False, 'No key for "%s"' % UI_KEY_SOLA_JSON
 
@@ -40,22 +38,18 @@ class WorkspaceUtil(object):
             print('failed JSON conversion!')
             return False, 'failed to convert info to JSON'
 
-        req = self.request_obj
-
         # ----------------------------------------------
         # Save the 'zparams' from the UI
         #   - Identified by existince of 'zdata' key
         # ----------------------------------------------
-        if UI_KEY_ZDATA in json_data or UI_KEY_ZVARS in json_data:
-            print('saving zparams!', UI_KEY_ZVARS, json_data[UI_KEY_ZVARS])
-            print('current session key: %s' % req.session.session_key)
-            # save to session!
-            if SESSION_KEY_ZPARAMS in req.session:
-                req.session.modified = True
-            req.session[SESSION_KEY_ZPARAMS] = json_data
-
-
-            return True, None
+        #if UI_KEY_ZDATA in json_data or UI_KEY_ZVARS in json_data:
+        #    print('saving zparams!', UI_KEY_ZVARS, json_data[UI_KEY_ZVARS])
+        #    print('current session key: %s' % req.session.session_key)
+        #    # save to session!
+        #    if SESSION_KEY_ZPARAMS in self.request_obj.session:
+        #        self.request_obj.session.modified = True
+        #    self.request_obj.session[SESSION_KEY_ZPARAMS] = json_data
+        #    return True, None
 
         # ----------------------------------------------
         # Is this 'allNodes'?
@@ -65,11 +59,13 @@ class WorkspaceUtil(object):
         if isinstance(json_data, list):
             if len(json_data) > 0 and 'name' in json_data[0]:
                 # save to session!
-                req.session.modified = True
-                req.session[SESSION_KEY_ALL_NODES] = json_data
+                self.request_obj.session.modified = True
+                self.request_obj.session[SESSION_KEY_ALL_NODES] = json_data
                 return True, None
-
-
+        else:
+            self.request_obj.session.modified = True
+            self.request_obj.session[SESSION_KEY_ZPARAMS] = json_data
+            return True, None
 
         return False, 'No %s info to save' % UI_KEY_ZDATA
         # save allnodes
@@ -94,11 +90,11 @@ class WorkspaceUtil(object):
         """Save app state in the session"""
         assert request_obj, 'request_obj cannot be None'
 
-        if UI_KEY_SOLA_JSON in request_obj.POST:
-            request_obj.session[UI_KEY_SOLA_JSON] = request_obj.POST[UI_KEY_SOLA_JSON]
-            #return self.check_session_for_data(req.POST[UI_KEY_SOLA_JSON])
+        #if UI_KEY_SOLA_JSON in request_obj.POST:
+        #    request_obj.session[UI_KEY_SOLA_JSON] = request_obj.POST[UI_KEY_SOLA_JSON]
+        #    #return self.check_session_for_data(req.POST[UI_KEY_SOLA_JSON])
 
-        return True, None
+        #return True, None
 
 
         util = WorkspaceUtil(request_obj)

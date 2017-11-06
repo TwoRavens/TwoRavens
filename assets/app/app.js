@@ -4380,7 +4380,6 @@ export function record_user_metadata(){
       console.log("Session recording failed.");
   }
 
-
   var urlcall = '/workspaces/record-user-metadata';
 
   // Save zparams
