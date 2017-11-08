@@ -9,12 +9,22 @@ urlpatterns = (
         views.view_session_info,
         name='view_session_info'),
 
-    url(r'^record-user-metadata$',
-        views.record_user_metadata,
-        name='record_user_metadata'),
-
     url(r'^clear-user-metadata$',
         views.clear_user_metadata,
         name='clear_user_metadata'),
 
+    url(r'^record-user-metadata$',
+        views.record_user_metadata,
+        name='record_user_metadata'),
+
 )
+
+"""
+url(r'^record-user-metadata/zdata$',
+    views.record_user_metadata_zdata,
+    name='record_user_metadata_zdata'),
+
+url(r'^record-user-metadata/allnodes$',
+    views.record_user_metadata_allnodes,
+    name='record_user_metadata_allnodes'),
+"""

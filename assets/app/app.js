@@ -4380,14 +4380,12 @@ export function record_user_metadata(){
       console.log("Session recording failed.");
   }
 
+  // Save session data
+  var sess_data = "zparams=" + JSON.stringify(zparams);
+  sess_data += "&allnodes=" + JSON.stringify(allNodes);
+
   var urlcall = '/workspaces/record-user-metadata';
+  makeCorsRequest(urlcall, "nobutton", endSuccess, endFail, sess_data);
 
-  // Save zparams
-  var solajsonout1 = "solaJSON=" + JSON.stringify(zparams);
-  makeCorsRequest(urlcall, "nobutton", endSuccess, endFail, solajsonout1);
-
-  // Save allNodes
-  var solajsonout2 = "solaJSON=" + JSON.stringify(allNodes);
-  //makeCorsRequest(urlcall, "nobutton", endSuccess, endFail, solajsonout2);
 
 }

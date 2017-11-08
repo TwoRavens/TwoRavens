@@ -4,10 +4,7 @@ Save the TwoRavens workspace to a session
 import json
 from collections import OrderedDict
 
-from tworaven_apps.rook_services.models import UI_KEY_SOLA_JSON, ROOK_ZESSIONID
-from tworaven_apps.workspaces.models import \
-    SESSION_KEY_ZPARAMS, SESSION_KEY_ALL_NODES, SESSION_KEY_LIST,\
-    UI_KEY_ZDATA, UI_KEY_ZVARS
+from tworaven_apps.workspaces.models import UI_SESSION_DICT
 from tworaven_apps.utils.view_helper import get_session_key
 
 class WorkspaceUtil(object):
@@ -15,6 +12,7 @@ class WorkspaceUtil(object):
 
     def __init__(self, request_obj):
         """Save state based on the Django request object"""
+
         self.request_obj = request_obj
         self.session_key = get_session_key(request_obj)
         #self.update_session()
@@ -23,14 +21,29 @@ class WorkspaceUtil(object):
         """Update the session information"""
         assert self.request_obj, "self.request_obj cannot be None"
 
-        if UI_KEY_SOLA_JSON in self.request_obj.POST:
-            return self.check_session_for_data(self.request_obj.POST[UI_KEY_SOLA_JSON])
+        session_updated = False
+        keys_updated = []
+        for ui_key, sess_key in UI_SESSION_DICT.items():
+            if ui_key in self.request_obj.POST:
+                ui_data = self.request_obj.POST[ui_key]
+                success, user_msg = self.store_session_data(ui_data, sess_key)
+                if success:
+                    session_updated = True
+                    keys_updated.append(ui_key)
 
-        return False, 'No key for "%s"' % UI_KEY_SOLA_JSON
+        if not session_updated:
+            return False, 'No updates made.'
 
-    def check_session_for_data(self, json_data_str):
+        return True, 'keys updated: %s' % (keys_updated)
+
+
+    def store_session_data(self, json_data_str, sess_key):
+        """Store session data under the appropriate key"""
         if not json_data_str:
             return False, 'No json_data_str'
+
+        if not sess_key:
+            return False, 'No sess_key'
 
         try:
             json_data = json.loads(json_data_str, object_pairs_hook=OrderedDict)
@@ -38,65 +51,37 @@ class WorkspaceUtil(object):
             print('failed JSON conversion!')
             return False, 'failed to convert info to JSON'
 
-        # ----------------------------------------------
-        # Save the 'zparams' from the UI
-        #   - Identified by existince of 'zdata' key
-        # ----------------------------------------------
-        #if UI_KEY_ZDATA in json_data or UI_KEY_ZVARS in json_data:
-        #    print('saving zparams!', UI_KEY_ZVARS, json_data[UI_KEY_ZVARS])
-        #    print('current session key: %s' % req.session.session_key)
-        #    # save to session!
-        #    if SESSION_KEY_ZPARAMS in self.request_obj.session:
-        #        self.request_obj.session.modified = True
-        #    self.request_obj.session[SESSION_KEY_ZPARAMS] = json_data
-        #    return True, None
+        print('storing %s; data: %s' % (sess_key, json_data_str[:50]))
 
-        # ----------------------------------------------
-        # Is this 'allNodes'?
-        # Identify allNodes.  It is a list of dicts, where each dict should
-        # contain the attribute 'name'
-        # ----------------------------------------------
-        if isinstance(json_data, list):
-            if len(json_data) > 0 and 'name' in json_data[0]:
-                # save to session!
-                self.request_obj.session.modified = True
-                self.request_obj.session[SESSION_KEY_ALL_NODES] = json_data
-                return True, None
-        else:
-            self.request_obj.session.modified = True
-            self.request_obj.session[SESSION_KEY_ZPARAMS] = json_data
-            return True, None
+        self.request_obj.session[sess_key] = json_data
+        self.request_obj.session.modified = True
 
-        return False, 'No %s info to save' % UI_KEY_ZDATA
-        # save allnodes
-        #
-        #if SESSION_KEY_ZPARAMS_KEY in req.POST:
-        #    req.session[SESSION_KEY_ALL_NODES] = req.POST[SESSION_KEY_ALL_NODES]
+
+        return True, 'Data stored for key: %s' % sess_key
 
 
     @staticmethod
     def clear_session_data(request_obj):
         """Clear the TwoRavens keys"""
 
+        delete_occurred = False
         # iterate through key list
-        for sess_key in SESSION_KEY_LIST:
+        for sess_key in UI_SESSION_DICT.values():
             # does it exist?
             if sess_key in request_obj.session:
                 # yes, delete it
                 del request_obj.session[sess_key]
+                delete_occurred = True
+
+        if delete_occurred:
+            request_obj.session.modified = True
 
     @staticmethod
     def record_state(request_obj):
         """Save app state in the session"""
         assert request_obj, 'request_obj cannot be None'
-
-        #if UI_KEY_SOLA_JSON in request_obj.POST:
-        #    request_obj.session[UI_KEY_SOLA_JSON] = request_obj.POST[UI_KEY_SOLA_JSON]
-        #    #return self.check_session_for_data(req.POST[UI_KEY_SOLA_JSON])
-
-        #return True, None
-
-
+        print(request_obj.POST)
+        print(request_obj.POST.keys())
         util = WorkspaceUtil(request_obj)
 
         return util.update_session()

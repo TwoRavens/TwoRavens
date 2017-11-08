@@ -12,14 +12,18 @@ from django.utils.text import slugify
 from tworaven_apps.utils.json_helper import format_jsonfield_for_admin,\
     format_link_for_admin
 
-UI_KEY_ZDATA = 'zdata'
-UI_KEY_ZVARS = 'zvars'
+# keys in UI requests
+UI_KEY_ZPARAMS = 'zparams'
+UI_KEY_ALLNODES = 'allnodes'
 
 # session keys
-#KEY_SESSION_WORKSPACE = 'SESSION_WORKSPACE'
-SESSION_KEY_ZPARAMS = 'RAVEN_ZPARAMS'
-SESSION_KEY_ALL_NODES = 'RAVEN_ALL_NODES'
-SESSION_KEY_LIST = [SESSION_KEY_ZPARAMS, SESSION_KEY_ALL_NODES]
+SESSION_KEY_ZPARAMS = 'raven_ZPARAMS'
+SESSION_KEY_ALLNODES = 'raven_ALLNODES'
+
+UI_SESSION_DICT = {UI_KEY_ZPARAMS: SESSION_KEY_ZPARAMS,
+                   UI_KEY_ALLNODES: SESSION_KEY_ALLNODES}
+
+SESSION_KEY_LIST = [SESSION_KEY_ZPARAMS, SESSION_KEY_ALLNODES]
 
 
 class DataSourceType(TimeStampedModel):

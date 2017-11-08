@@ -15,7 +15,6 @@ def view_session_info(request):
 
     # pull some session info, if there are any
     #
-    #import ipdb; ipdb.set_trace()
     display_info = SessionDisplayList(request)
 
     info = dict(title='test session info',
@@ -29,14 +28,10 @@ def view_session_info(request):
 def record_user_metadata(request):
     """Record user metadata"""
 
-    success, err_msg = WorkspaceUtil.record_state(request)
+    success, user_msg = WorkspaceUtil.record_state(request)
 
-    if success is True:
-        info = dict(success=True,
-                    message='session recorded')
-    else:
-        info = dict(success=False,
-                    message=err_msg)
+    info = dict(success=success,
+                message=user_msg)
 
     return JsonResponse(info)
 
