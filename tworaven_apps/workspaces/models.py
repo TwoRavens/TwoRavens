@@ -7,11 +7,23 @@ import jsonfield
 
 from django.conf import settings
 from django.db import models
-from django.contrib.auth.models import User
 from django.utils.text import slugify
 
 from tworaven_apps.utils.json_helper import format_jsonfield_for_admin,\
     format_link_for_admin
+
+# keys in UI requests
+UI_KEY_ZPARAMS = 'zparams'
+UI_KEY_ALLNODES = 'allnodes'
+
+# session keys
+SESSION_KEY_ZPARAMS = 'raven_ZPARAMS'
+SESSION_KEY_ALLNODES = 'raven_ALLNODES'
+
+UI_SESSION_DICT = {UI_KEY_ZPARAMS: SESSION_KEY_ZPARAMS,
+                   UI_KEY_ALLNODES: SESSION_KEY_ALLNODES}
+
+SESSION_KEY_LIST = [SESSION_KEY_ZPARAMS, SESSION_KEY_ALLNODES]
 
 
 class DataSourceType(TimeStampedModel):
@@ -54,7 +66,9 @@ class SavedWorkspace(TimeStampedModel):
                              blank=True,
                              null=True)
 
-    data_source_type = models.ForeignKey(DataSourceType)
+    data_source_type = models.ForeignKey(DataSourceType,
+                                         null=True,
+                                         blank=True)
 
     workspace = jsonfield.JSONField(\
                     load_kwargs=dict(object_pairs_hook=OrderedDict))

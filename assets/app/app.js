@@ -1,6 +1,5 @@
 import hopscotch from 'hopscotch';
 import m from 'mithril';
-
 import {bars, barsNode, barsSubset, density, densityNode, selVarColor} from './plots.js';
 
 // hostname default - the app will use it to obtain the variable metadata
@@ -2262,7 +2261,7 @@ export function estimate(btn) {
             cdb("POST out: ", solajsonout);
 
             function createPipelineSuccess(btn, json) {
-                
+
                 let trainFeatures=apiFeatureShortPath(json.predictors,uri.features);    // putting in short paths (no filename) for current API usage
                 let targetFeatures=apiFeatureShortPath(json.depvar,uri.target);         // putting in short paths (no filename) for current API usage
                 let task = d3mTaskType[d3mProblemDescription.taskType][1];
@@ -4324,7 +4323,7 @@ export function exportpipeline(pipelineId) {
     console.log(solajsonout);
 
     function exportSuccess(btn, Response) {
-        let alertmessage = "Executable for " + pipelineId + " has been written";  
+        let alertmessage = "Executable for " + pipelineId + " has been written";
         //alert(alertmessage);
         console.log(alertmessage)
         console.log(Response);
@@ -4365,4 +4364,28 @@ function apiFeatureShortPath (vars, uri) {
 // silly but perhaps useful if in the future SessionContext requires more things (as suggest by core)
 function apiSession (context) {
     return {"session_id":context};
+}
+
+/**
+ *  record user metadata
+ */
+export function record_user_metadata(){
+  console.log('record_user_metadata');
+
+  function endSuccess(btn, Response) {
+      console.log('Session recorded: ' + Response);
+  }
+
+  function endFail(btn) {
+      console.log("Session recording failed.");
+  }
+
+  // Save session data
+  var sess_data = "zparams=" + JSON.stringify(zparams);
+  sess_data += "&allnodes=" + JSON.stringify(allNodes);
+
+  var urlcall = '/workspaces/record-user-metadata';
+  makeCorsRequest(urlcall, "nobutton", endSuccess, endFail, sess_data);
+
+
 }

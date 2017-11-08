@@ -12,6 +12,8 @@ urlpatterns = [
 
     url(r'^auth/', include('tworaven_apps.raven_auth.urls')),
 
+    url(r'^workspaces/', include('tworaven_apps.workspaces.urls')),
+
     url(r'^rook-custom/', include('tworaven_apps.rook_services.urls')),
 
     url(r'^config/', include('tworaven_apps.configurations.urls')),
@@ -20,7 +22,7 @@ urlpatterns = [
 
     #url(r'^data/', include('tworaven_apps.test_data.urls')),
 
-    url(r'^ravens_volume/', include('tworaven_apps.test_data.urls')),
+    #url(r'^ravens_volume/', include('tworaven_apps.test_data.urls')),
 
     url(r'^api-docs/', include('tworaven_apps.api_docs.urls')),
 
