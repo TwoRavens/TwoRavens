@@ -6,3 +6,10 @@ This is the only tested method to run TwoRavens on Windows, but works on anythin
 2) download and install [VirtualBox](https://www.virtualbox.org/wiki/Downloads)
 
 (you almost certainly want the 64-bit versions)
+
+Once Vagrant is installed, in the terminal enter:
+
+    mkdir 2ravens 
+    cd 2ravens 
+    vagrant init
+    vagrant box add hashicorp/xenial64
