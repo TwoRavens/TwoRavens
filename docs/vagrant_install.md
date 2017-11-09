@@ -14,6 +14,7 @@ Once Vagrant is installed, in the terminal enter:
     vagrant init
     vagrant box add hashicorp/xenial64
     vagrant box update
+    vagrant up
     vagrant ssh
     
 The last command boots you into a virtual machine running Ubuntu Linux. Now we need to install TwoRavens:
