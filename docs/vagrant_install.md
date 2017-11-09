@@ -23,6 +23,6 @@ The last command boots you into a virtual machine running Ubuntu Linux. Next, up
     sudo add-apt-repository 'deb [arch=amd64,i386] https://cran.rstudio.com/bin/linux/ubuntu xenial/'
     sudo apt-get update
     
-Install the dependencies that TwoRvaens relies upon:
+Install the dependencies that TwoRavens relies upon:
 
     sudo apt install libcurl4-openssl-dev libxml2-dev nodejs-legacy npm pkg-config python3-pip r-base
