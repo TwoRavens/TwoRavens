@@ -13,3 +13,9 @@ Once Vagrant is installed, in the terminal enter:
     cd 2ravens 
     vagrant init
     vagrant box add hashicorp/xenial64
+    vagrant box update
+    vagrant ssh
+    
+The last command boots you into a virtual machine running Ubuntu Linux. Now we need to install TwoRavens:
+
+    sudo apt install libcurl4-openssl-dev libxml2-dev nodejs-legacy npm pkg-config python3-pip r-base
