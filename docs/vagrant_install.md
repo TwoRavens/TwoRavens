@@ -17,9 +17,12 @@ Once Vagrant is installed, in the terminal enter:
     vagrant up
     vagrant ssh
     
-The last command boots you into a virtual machine running Ubuntu Linux. Now we need to install TwoRavens:
+The last command boots you into a virtual machine running Ubuntu Linux. Next, update Ubuntu to use the latest version of R:
 
     sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E298A3A825C0D65DFD57CBB651716619E084DAB9
     sudo add-apt-repository 'deb [arch=amd64,i386] https://cran.rstudio.com/bin/linux/ubuntu xenial/'
     sudo apt-get update
+    
+Install the dependencies that TwoRvaens relies upon:
+
     sudo apt install libcurl4-openssl-dev libxml2-dev nodejs-legacy npm pkg-config python3-pip r-base
