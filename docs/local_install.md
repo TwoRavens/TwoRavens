@@ -3,7 +3,7 @@
 
 # Local Installation Instructions
 
-This is a 1st run at dev. install instructions, tested on a Mac (OS 10.12.6)
+This is tested on a Mac (OS 10.12.6).
 
 ## Get the repository
 
@@ -63,17 +63,6 @@ Mac:
         source /usr/local/bin/virtualenvwrapper.sh
         ```
     4. Reference: http://virtualenvwrapper.readthedocs.org/en/latest/install.html#shell-startup-file
-
-* On Ubuntu 17.04 (and probably Debian systems), an alternative is:     
-    ```
-    apt install virtualenv
-    
-    ...
-    export WORKON_HOME=$HOME/.virtualenvs
-    export PROJECT_HOME=$HOME/Devel
-    VIRTUALENVWRAPPER_PYTHON=/usr/bin/python3
-    source ~/.local/bin/virtualenvwrapper.sh
-    ```
 
 ### Make a virtualenv and install requirements
 
@@ -164,17 +153,25 @@ The following command will start the Django webserver as well as webpack.
 
 ## Install R / Run Rook
 
-(directions from @aaron-lebo)
+Download and install R at https://www.r-project.org. If you followed the Vagrant install guide, you've already done this.
 
-Download and install R at https://www.r-project.org. Execute the following with R to install R packages:
+The following must be run within R. On the Vagrant install, this is done via:
+
+    sudo -i R
+
+Then, in the R shell:
 
   ```
-  install.packages(c("VGAM", "AER", "dplyr", "quantreg", "geepack", "maxLik", "Amelia", "Rook","jsonlite","rjson", "devtools", "DescTools", "Zelig"))
+  install.packages(c("VGAM", "AER", "dplyr", "quantreg", "geepack", "maxLik", "Amelia", "Rook","jsonlite","rjson", "devtools", "DescTools", "XML", Zelig"))
   ```
 
-Note: this requires libssl-dev on Ubuntu 17.04.
+Then set your working directory to ~TwoRavens/rook. On the Vagrant install, this is:
 
-Then set your working directory to ~TwoRavens/rook, for example:
+  ```
+  setwd("/home/ubuntu/TwoRavens/rook")
+  ```
+  
+On Mac it will look more like:
 
   ```
   setwd("/Users/vjdorazio/Desktop/github/TwoRavens/rook")
@@ -211,8 +208,15 @@ Note that this may install many packages, depending on what already exists. If i
 3. Start an R interactive shell
     1. Set your working directory to ~TwoRavens/rook, for example:
         ```
+        setwd("/home/ubuntu/TwoRavens/rook")
+        ```
+
+        Or:
+
+        ```
         setwd("/Users/vjdorazio/Desktop/github/TwoRavens/rook")
         ```
+        
     1. Source rooksource.R to get the app up:
         ```
         source("rooksource.R")
@@ -221,9 +225,6 @@ Note that this may install many packages, depending on what already exists. If i
   - Go to the Django admin: http://127.0.0.1:8080/admin
     - username: `dev_admin`
     - password: [from create superuser step above](#create-a-django-superuser-optional)
-
-
-
 
 
 ### Run the python shell (if needed)
