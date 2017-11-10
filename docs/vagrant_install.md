@@ -31,3 +31,19 @@ Install the dependencies that TwoRavens relies upon:
     sudo apt install libcurl4-openssl-dev libxml2-dev nodejs-legacy npm pkg-config python3-pip r-base
     pip3 install --upgrade pip
     pip3 install --user virtualenvwrapper
+
+Add this to the end of ~/.bashrc:
+
+    export WORKON_HOME=$HOME/.virtualenvs
+    export PROJECT_HOME=$HOME/Devel
+    VIRTUALENVWRAPPER_PYTHON=/usr/bin/python3
+    source ~/.local/bin/virtualenvwrapper.sh
+   
+Once that is saved, run:
+
+    source ~/.bashrc
+    
+Clone TwoRavens:
+
+    git clone https://github.com/TwoRavens/TwoRavens.git
+    cd TwoRavens
