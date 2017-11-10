@@ -29,3 +29,5 @@ The last command boots you into a virtual machine running Ubuntu Linux. Next, up
 Install the dependencies that TwoRavens relies upon:
 
     sudo apt install libcurl4-openssl-dev libxml2-dev nodejs-legacy npm pkg-config python3-pip r-base
+    pip3 install --upgrade pip
+    pip3 install virtualenvwrapper
