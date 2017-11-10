@@ -11,7 +11,7 @@ Once Vagrant is installed, in the terminal enter:
 
     mkdir 2ravens 
     cd 2ravens 
-    vagrant box add hashicorp/xenial64
+    vagrant box add ubuntu/xenial64
     vagrant box update
     vagrant init
     
