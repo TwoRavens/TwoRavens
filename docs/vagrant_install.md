@@ -47,10 +47,5 @@ Clone TwoRavens:
 
     git clone https://github.com/TwoRavens/TwoRavens.git
     cd TwoRavens
-
-Make a virtualenv and install requirements:
-
-    mkvirtualenv -p python3 2ravens  
-    pip install -r requirements/dev.txt  
-
-(note: within the virtualenv, pip defaults to pip3)
+    
+Follow the rest of the directions in the regular install [starting here](https://github.com/TwoRavens/TwoRavens/blob/master/docs/local_install.md#make-a-virtualenv-and-install-requirements).
