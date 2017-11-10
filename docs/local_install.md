@@ -3,9 +3,11 @@
 
 # Local Installation Instructions
 
-This is tested on a Mac (OS 10.12.6). For the recommended and easiest route, try the [Vagrant install](https://github.com/TwoRavens/TwoRavens/blob/master/docs/vagrant_install.md), which will allow you to run TwoRavens within a virtual machine on Mac, Windows, or Linux.
+For the recommended and easiest route, try the [Vagrant install](https://github.com/TwoRavens/TwoRavens/blob/master/docs/vagrant_install.md), which will allow you to run TwoRavens within a virtual machine on Mac, Windows, or Linux.
 
 Note: the Vagrant install will also work natively on an Ubnuntu 16.04 (Xenial) system. 
+
+The following is tested on a Mac (OS 10.12.6). 
 
 ## Get the repository
 
