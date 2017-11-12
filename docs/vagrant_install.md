@@ -43,9 +43,10 @@ Once that is saved, run:
 
     source ~/.bashrc
     
-Clone TwoRavens:
+Clone TwoRavens and install the Node dependencies:
 
     git clone https://github.com/TwoRavens/TwoRavens.git
     cd TwoRavens
+    npm install
     
 Follow the rest of the directions in the regular install [starting here](https://github.com/TwoRavens/TwoRavens/blob/master/docs/local_install.md#make-a-virtualenv-and-install-requirements).
