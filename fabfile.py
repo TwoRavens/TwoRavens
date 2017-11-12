@@ -158,7 +158,7 @@ def run(with_rook=False):
 
     proc_list = [subprocess.Popen(command, shell=True, stdin=sys.stdin, stdout=sys.stdout, stderr=sys.stderr) for command in commands]
     try:
-        local("python manage.py runserver 127.0.0.1:8080")
+        local("python manage.py runserver 0.0.0.0:8080")
     finally:
         for proc in proc_list:
             os.kill(proc.pid, signal.SIGKILL)
