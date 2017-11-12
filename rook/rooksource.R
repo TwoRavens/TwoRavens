@@ -71,12 +71,12 @@ if(addPrivacy){
 	source(paste(modulesPath,"CreateXML.R", sep=""))
 }
 
-if(production){
+if(production) {
   myPort <- "8000"
   myInterface <- "0.0.0.0"
-}else {
+} else {
   myPort <- "8000"
-  myInterface <- "127.0.0.1"
+  myInterface <- "0.0.0.0"
 }
 
 if(!is_rapache_mode){
