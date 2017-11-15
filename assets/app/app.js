@@ -2868,7 +2868,7 @@ export function erase() {
     ['#leftpanel', '#rightpanel'].forEach(id => d3.select(id).attr('class', 'sidepanel container clearfix'));
     tabLeft('tab1');
     $("#varList").children().each(function() {
-        if (zparams.zdv.includes(this.id) || zparams.znom.includes(this.id) || zparams.zvars.includes(this.id))
+        if (zparams.zdv.concat(zparams.znom, zparams.zvars).includes(this.id))
             clickVar({target: this});
     });
 }
