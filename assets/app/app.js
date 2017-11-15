@@ -2865,12 +2865,8 @@ export let legend = _ => {
 
 // programmatically deselect every selected variable
 export function erase() {
-    d3.select("#leftpanel")
-        .attr("class", "sidepanel container clearfix");
-    d3.select("#rightpanel")
-        .attr("class", "sidepanel container clearfix");
+    ['#leftpanel', '#rightpanel'].forEach(id => d3.select(id).attr('class', 'sidepanel container clearfix'));
     tabLeft('tab1');
-
     $("#varList").children().each(function(i, e) {
         let col = d3.rgb(this.style.backgroundColor);
         if (col.toString() === varColor.toString())
