@@ -1838,7 +1838,11 @@ export function findNode(name) {
             return n;
 }
 
-function updateNode(node) {
+function updateNode(id) {
+    let node = findNode(id);
+    if (node.grayout)
+        return false;
+
     let name = node.name;
     let names = () => nodes.map(n => n.name);
     if (names().includes(name)) {
@@ -1863,17 +1867,15 @@ function updateNode(node) {
         nodes.push(node);
     }
     zparams.zvars = names();
+    return true;
 }
 
 // every time a variable in leftpanel is clicked, nodes updates and background color changes
 export function clickVar(elem) {
-    let node = findNode(elem.target.id);
-    if (node.grayout)
-        return;
-
-    updateNode(node);
-    panelPlots();
-    restart();
+    if (updateNode(elem.target.id)) {
+        // panelPlots(); is this necessary?
+        restart();
+    }
 }
 
 /*
