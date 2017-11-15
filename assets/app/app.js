@@ -1832,13 +1832,13 @@ function nodeIndex(nodeName) {
         if (nodes[i].name === nodeName) return i;
 }
 
-export function findNode(nodeName) {
-    for (let i in allNodes)
-        if (allNodes[i].name === nodeName) return allNodes[i];
+export function findNode(name) {
+    for (let n of allNodes)
+        if (n.name === name)
+            return n;
 }
 
 function updateNode(node) {
-    zparams.zvars = [];
     let names = () => nodes.map(n => n.name);
     let name = node.name;
     if (names().includes(name)) {
@@ -1848,7 +1848,7 @@ function updateNode(node) {
             .forEach(l => del(links, l, true));
         zparamsReset(name);
 
-        // remove node name from group lists (should use adaptation of splice-by-color)
+        // remove node name from group lists
         node.group1 && del(zparams.zgroup1, name, true);
         node.group2 && del(zparams.zgroup2, name, true);
         node.group1 = node.group2 = false;
