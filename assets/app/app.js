@@ -1839,8 +1839,8 @@ export function findNode(name) {
 }
 
 function updateNode(node) {
-    let names = () => nodes.map(n => n.name);
     let name = node.name;
+    let names = () => nodes.map(n => n.name);
     if (names().includes(name)) {
         del(nodes, node.index);
         links
@@ -1854,9 +1854,9 @@ function updateNode(node) {
         node.group1 = node.group2 = false;
 
         // node reset - perhaps this will become a hard reset back to all original allNode values?
+        node.nodeCol = node.baseCol;
         node.strokeColor = selVarColor;
         node.strokeWidth = '1';
-        node.nodeCol = node.baseCol;
 
         borderState();
     } else {
@@ -2871,17 +2871,12 @@ export function erase() {
         .attr("class", "sidepanel container clearfix");
     tabLeft('tab1');
 
-    jQuery.fn.d3Click = function() {
-        this.children().each(function(i, e) {
-            let col = d3.rgb(this.style.backgroundColor);
-            if (col.toString() === varColor.toString())
-                return;
-            let evt = document.createEvent("MouseEvents");
-            evt.initMouseEvent("click", true, true, window, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
-            e.dispatchEvent(evt);
-        });
-    };
-    $("#varList").d3Click();
+    $("#varList").children().each(function(i, e) {
+        let col = d3.rgb(this.style.backgroundColor);
+        if (col.toString() === varColor.toString())
+            return;
+        clickVar({target: this});
+    });
 }
 
 // http://www.tutorials2learn.com/tutorials/scripts/javascript/xml-parser-javascript.html
