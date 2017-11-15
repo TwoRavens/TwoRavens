@@ -1837,41 +1837,41 @@ export function findNode(nodeName) {
         if (allNodes[i].name === nodeName) return allNodes[i];
 }
 
-function updateNode(text) {
-    let node = findNode(text);
+function updateNode(node) {
     zparams.zvars = [];
-    let getNames = () => nodes.map(n => n.name);
-    if (getNames().includes(text)) {
+    let names = () => nodes.map(n => n.name);
+    let name = node.name;
+    if (names().includes(name)) {
         del(nodes, node.index);
-        links.filter(l => l.source === node || l.target === node)
-            .map(l => del(links, l, true));
-        zparamsReset(text);
+        links
+            .filter(l => l.source === node || l.target === node)
+            .forEach(l => del(links, l, true));
+        zparamsReset(name);
 
         // remove node name from group lists (should use adaptation of splice-by-color)
-        node.group1 && del(zparams.zgroup1, node.name, true);
-        node.group2 && del(zparams.zgroup2, node.name, true);
+        node.group1 && del(zparams.zgroup1, name, true);
+        node.group2 && del(zparams.zgroup2, name, true);
         node.group1 = node.group2 = false;
 
         // node reset - perhaps this will become a hard reset back to all original allNode values?
         node.strokeColor = selVarColor;
-        node.strokeWidth = "1";
+        node.strokeWidth = '1';
         node.nodeCol = node.baseCol;
 
         borderState();
     } else {
         nodes.push(node);
     }
-    // adding this to keep it current (or should we rely on nodes.map(n => n.name) for variable list?)
-    zparams.zvars = getNames();
+    zparams.zvars = names();
 }
 
 // every time a variable in leftpanel is clicked, nodes updates and background color changes
 export function clickVar(elem) {
-    elem = elem.target;
-    if (findNodeIndex(elem.id, true).grayout)
+    let node = findNode(elem.target.id);
+    if (node.grayout)
         return;
 
-    updateNode(d3.select(elem).text());
+    updateNode(node);
     panelPlots();
     restart();
 }
