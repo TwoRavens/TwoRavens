@@ -2858,20 +2858,18 @@ function makeCorsRequest(url, btn, callback, warningcallback, jsonstring) {
     xhr.send(jsonstring);
 }
 
-export let legend = _ => {
+export function legend() {
     borderState();
     m.redraw();
-};
+}
 
 // programmatically deselect every selected variable
 export function erase() {
     ['#leftpanel', '#rightpanel'].forEach(id => d3.select(id).attr('class', 'sidepanel container clearfix'));
     tabLeft('tab1');
-    $("#varList").children().each(function(i, e) {
-        let col = d3.rgb(this.style.backgroundColor);
-        if (col.toString() === varColor.toString())
-            return;
-        clickVar({target: this});
+    $("#varList").children().each(function() {
+        if (zparams.zdv.includes(this.id) || zparams.znom.includes(this.id) || zparams.zvars.includes(this.id))
+            clickVar({target: this});
     });
 }
 
