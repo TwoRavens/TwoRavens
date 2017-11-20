@@ -11,33 +11,46 @@
     <!-- bootstrap 3 --><script src="{% static "pkgs/bootstrap/js/bootstrap.min.js" %}"></script>
     <!-- d3 --><script src="{% static "js/d3/d3.v3.min.js" %}"></script>
     <script>
+
+          // -----------------------------
+          // possible domain settings
+          // -----------------------------
+          const D3M_DOMAIN = 'D3M_DOMAIN';
+          const DATAVERSE_DOMAIN = 'DATAVERSE_DOMAIN';
+          const EVENTDATA_DOMAIN = 'EVENTDATA_DOMAIN';
+
         {% if app_config %}
           // ----------------------------
           // global js settings from db
           // ----------------------------
-          /*
-            -- {{ app_config.name }} --
-            {% if app_config.description %}{{ app_config.description }}{% endif %}
-          */
+          const APP_DOMAIN = '{{ app_config.app_domain }}';
+
           const ROOK_SVC_URL = '{{ app_config.rook_svc_url }}';
           const DATAVERSE_URL = '{{ app_config.dataverse_url }}';
+          const D3M_SVC_URL = '{{ app_config.d3m_svc_url }}';
+
           const production = {{ app_config.production }};
           const privacyMode = {{ app_config.privacy_mode }};
-          const d3m_mode = {{ app_config.d3m_mode }};
-          const d3mURL = '{{ app_config.d3m_url }}';
         {% else %}
           // ----------------------------
           // default settings if nothing in db
           //  - see /templates/index.html to set manually
           // ----------------------------
+          const APP_DOMAIN = DATAVERSE_DOMAIN;
+
           const ROOK_SVC_URL = '/rook-custom/'; // via Django -> to RApache/rook
-          //let ROOK_SVC_URL = 'http://0.0.0.0:8000/custom/'; // Direct to RApache/rook
           const DATAVERSE_URL = 'https://beta.dataverse.org';
+          const D3M_SVC_URL = '/d3m-service/'; // via Django -> TA2
+
           const production = false;
           const privacyMode = false;        // configure default functionality for PSI tool
-          const d3m_mode = false;             // configure default functionality for d3m
-          const d3mURL = '/d3m-service/'; // via Django -> TA2
         {% endif %}
+
+        // Set convenience constants for determining domain
+        //
+        const IS_D3M_DOMAIN = (APP_DOMAIN === D3M_DOMAIN);
+
+
     </script>
   {% endblock %}
 

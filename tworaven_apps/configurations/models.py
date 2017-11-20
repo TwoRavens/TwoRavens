@@ -7,8 +7,13 @@ from tworaven_apps.utils.url_helper import add_trailing_slash,\
 
 # for conversion to .js values
 APP_CONFIG_BOOLEAN_FIELDS = (\
-                'is_active', 'production',
-                'd3m_mode', 'privacy_mode')
+                'is_active', 'production', 'privacy_mode')
+
+D3M_DOMAIN = 'D3M_DOMAIN'
+DATAVERSE_DOMAIN = 'DATAVERSE_DOMAIN'
+EVENTDATA_DOMAIN = 'EVENTDATA_DOMAIN'
+DOMAIN_LIST = [D3M_DOMAIN, DATAVERSE_DOMAIN, EVENTDATA_DOMAIN]
+APP_DOMAINS = [(d, d) for d in DOMAIN_LIST]
 
 class AppConfiguration(TimeStampedModel):
     """
@@ -31,11 +36,11 @@ class AppConfiguration(TimeStampedModel):
                                 ' True -> data, metadata from live'
                                 ' server resources instead of local versions')))
 
-    d3m_mode = models.BooleanField(\
-                    'D3M mode',
-                    help_text='.js variable "d3m". Are D3M services active?')
+    app_domain = models.CharField('App domain',
+                                  max_length=70,
+                                  choices=APP_DOMAINS)
 
-    d3m_url = models.CharField(\
+    d3m_svc_url = models.CharField(\
                     'D3M url',
                     max_length=255,
                     default='/d3m-service/',
@@ -74,7 +79,7 @@ class AppConfiguration(TimeStampedModel):
         # (This will get worked out soon...)
         #
         self.dataverse_url = remove_trailing_slash(self.dataverse_url)
-        self.d3m_url = remove_trailing_slash(self.d3m_url)
+        self.d3m_svc_url = remove_trailing_slash(self.d3m_svc_url)
 
         if self.is_active:
             # If this is active, set everything else to inactive
@@ -107,6 +112,15 @@ class AppConfiguration(TimeStampedModel):
         config = AppConfiguration.objects.filter(is_active=True).first()
         if not config:
             return None
+
+
+    def is_d3m_domain(self):
+        """Check if the APP_DOMAIN is set to D3M"""
+        if self.app_domain == D3M_DOMAIN:
+            return True
+
+        return False
+
 
     def convert_to_dict(self):
         """Get in dict format for use in .js"""

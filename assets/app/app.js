@@ -303,7 +303,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
     // read pre-processed metadata and data
     let pURL = dataurl ? `${dataurl}&format=prep` : data + '.json';
 
-    if(d3m_mode) {
+    if(IS_D3M_DOMAIN) {
         pURL = d3mPreprocess;
         // zparams.zdataurl = start+'/data/trainDatamerged.tsv';   // "start" path no longer exists
         // zparams.zdata = d3mDataName;   // this is now going to be filled in using problem schema field
@@ -323,11 +323,11 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
     8. Call runPreprocess(...)
     9. Call readPreprocess(...)
     10. Build allNodes[] using preprocessed information
-    11. Add dataschema information to allNodes (when in d3m_mode)
+    11. Add dataschema information to allNodes (when in IS_D3M_DOMAIN)
     12. Call scaffolding() and start her up
     */
 
-    Promise.resolve(d3m_mode && m.request({
+    Promise.resolve(IS_D3M_DOMAIN && m.request({
         method: "POST",
         url: "/config/d3m-config/json/latest"
     })
@@ -373,7 +373,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
     }))
     .then(() => new Promise((resolve, reject) => {
             // read in problem schema and we'll make a call to start the session with TA2. if we get this far, data are guaranteed to exist for the frontend
-            if (!d3m_mode)
+            if (!IS_D3M_DOMAIN)
                 return resolve();
 
             d3.json(d3mPS, (_, data) => {
@@ -381,7 +381,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
                 mytarget = data.target.field;
 
             let temp="";
-            if(!d3m_mode) {
+            if(!IS_D3M_DOMAIN) {
                 temp = xml.documentElement.getElementsByTagName("fileName");     // Note: presently xml is no longer being read from Dataverse metadata anywhere
                 zparams.zdata = temp[0].childNodes[0].nodeValue;
                 let cite = xml.documentElement.getElementsByTagName("biblCit");
@@ -396,7 +396,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
             }
             // dataset name trimmed to 12 chars
             let dataname = zparams.zdata;
-            if(!d3m_mode) {
+            if(!IS_D3M_DOMAIN) {
                 dataname = zparams.zdata.replace(/\.(.*)/, ''); // drop file extension
             }
 
@@ -454,7 +454,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
             });
         }))
         .then(() => new Promise((resolve, reject) => { // get the data schema
-            if (!d3m_mode){return resolve();}
+            if (!IS_D3M_DOMAIN){return resolve();}
 
             // read the data schema and set dataschema
             d3.json(d3mDS, (_, data) => {
@@ -484,7 +484,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
             })
         }))
         .then(() => new Promise((resolve, reject) => { // read in zelig models
-            if (d3m_mode)
+            if (IS_D3M_DOMAIN)
                 return resolve();
             // read zelig models and populate model list in right panel
             d3.json("data/zelig5models.json", (err, data) => {
@@ -498,7 +498,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
             });
         }))
         .then(() => new Promise((resolve, reject) => { // read in zelig choice models
-            if (d3m_mode)
+            if (IS_D3M_DOMAIN)
                 return resolve();
             d3.json("data/zelig5choicemodels.json", (err, data) => {
                 if (err)
@@ -512,7 +512,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
             })
         }))
         .then(() => new Promise((resolve, reject) => { // call to django to start the session
-                if (!d3m_mode)
+                if (!IS_D3M_DOMAIN)
                     return resolve();
                 //rpc StartSession(SessionRequest) returns (SessionResponse) {}
 
@@ -521,7 +521,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
                 let SessionRequest={user_agent,version};
 
                 var jsonout = JSON.stringify(SessionRequest);
-                var urlcall = d3mURL + "/startsession";
+                var urlcall = D3M_SVC_URL + "/startsession";
                 var solajsonout = "grpcrequest=" + jsonout;
                 console.log("SessionRequest: ");
                 console.log(solajsonout);
@@ -699,8 +699,8 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
         };
         resolve();
     }))
-    .then(() => new Promise((resolve, reject) => { // adding in d3mDescription if d3m_mode
-        if(!d3m_mode || swandive)
+    .then(() => new Promise((resolve, reject) => { // adding in d3mDescription if IS_D3M_DOMAIN
+        if(!IS_D3M_DOMAIN || swandive)
             return resolve();
         // adding in d3mDescription to allNodes
         let datavars = dataschema.trainData.trainData;
@@ -718,7 +718,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
             scaffolding(swandive);
         } else {
             scaffolding(layout);
-            if (d3m_mode) {
+            if (IS_D3M_DOMAIN) {
                 zPop();
             } else {
                 dataDownload();
@@ -771,7 +771,7 @@ console.log("SCAFFOLDING");
         .append("li")
         .text(d => d);
 
-    if(!d3m_mode){    // No variable transformation in present d3m mode
+    if(!IS_D3M_DOMAIN){    // No variable transformation in present d3m mode
 
         $('#tInput').click(() => {
             var t = byId('transSel').style.display;
@@ -835,7 +835,7 @@ console.log("SCAFFOLDING");
         .style('height', 2000)
         .style('overfill', 'scroll');
 
-    if(!d3m_mode) {
+    if(!IS_D3M_DOMAIN) {
         d3.select("#models").selectAll("p")
             .data(Object.keys(mods))
             .enter()
@@ -994,7 +994,7 @@ function layout(v,v2) {
             });
         }
     } else {
-        if(d3m_mode) {
+        if(IS_D3M_DOMAIN) {
             //nodes = [findNode(mytarget)];               // Only add dependent variable on startup
             nodes = allNodes.slice(1,allNodes.length);    // Add all but first variable on startup (assumes 0 position is d3m index variable)
             for (let j = 0; j < nodes.length; j++) { //populate zvars array
@@ -1032,7 +1032,7 @@ function layout(v,v2) {
         }
     }
 
-    panelPlots(); // after nodes is populated, add subset and (if !d3m_mode) setx panels
+    panelPlots(); // after nodes is populated, add subset and (if !IS_D3M_DOMAIN) setx panels
 
     var force = d3.layout.force()
         .nodes(nodes)
@@ -1735,7 +1735,7 @@ function layout(v,v2) {
             .append("li")
             .text(d => d);
 
-        if(!d3m_mode){
+        if(!IS_D3M_DOMAIN){
             $('#transSel li').click(function(evt) {
                 // if 'interaction' is the selected function, don't show the function list again
                 if (selInteract) {
@@ -1805,7 +1805,7 @@ function layout(v,v2) {
     restart(); // initializes force.layout()
     fakeClick();
 
-    if(v2 & d3m_mode) {
+    if(v2 & IS_D3M_DOMAIN) {
         var click_ev = document.createEvent("MouseEvents");
         // initialize the event
         click_ev.initEvent("click", true /* bubble */, true /* cancelable */);
@@ -1975,7 +1975,7 @@ function zPop() {
 }
 
 export function estimate(btn) {
-    if(!d3m_mode){
+    if(!IS_D3M_DOMAIN){
     if (production && zparams.zsessionid == '') {
         alert("Warning: Data download is not complete. Try again soon.");
         return;
@@ -2068,7 +2068,7 @@ export function estimate(btn) {
 
     estimateLadda.start(); // start spinner
     makeCorsRequest(urlcall, btn, estimateSuccess, estimateFail, solajsonout);
-    } else if (swandive) { // d3m_mode and swandive is true
+    } else if (swandive) { // IS_D3M_DOMAIN and swandive is true
             zPop();
             zparams.callHistory = callHistory;
             var jsonout = JSON.stringify(zparams);
@@ -2096,7 +2096,7 @@ export function estimate(btn) {
 
             let jsonout = JSON.stringify(PipelineCreateRequest);
 
-            let urlcall = d3mURL + "/createpipeline";
+            let urlcall = D3M_SVC_URL + "/createpipeline";
             var solajsonout = "grpcrequest=" + jsonout;
 
             console.log(urlcall);
@@ -2221,7 +2221,7 @@ export function estimate(btn) {
                     let pipeline_ids = Object.keys(allPipelineInfo);
                     let PipelineExecuteResultsRequest = {context, pipeline_ids};
                     jsonout = JSON.stringify(PipelineExecuteResultsRequest);
-                    let urlcall = d3mURL + "/getexecutepipelineresults";
+                    let urlcall = D3M_SVC_URL + "/getexecutepipelineresults";
                     var solajsonout = "grpcrequest=" + jsonout;
                     console.log("GetExecutePipelineResults: ");
                     console.log(solajsonout);
@@ -2245,7 +2245,7 @@ export function estimate(btn) {
                 estimateLadda.start(); // start spinner
                 makeCorsRequest(urlcall, "nobutton", sendPipelineSuccess, sendPipelineFail, solajsonout);
 
-    }else { // we are in d3m_mode no swandive
+    }else { // we are in IS_D3M_DOMAIN no swandive
         // rpc CreatePipelines(PipelineCreateRequest) returns (stream PipelineCreateResult) {}
             zPop();
             zparams.callHistory = callHistory;
@@ -2281,7 +2281,7 @@ export function estimate(btn) {
 
                 let jsonout = JSON.stringify(PipelineCreateRequest);
 
-                let urlcall = d3mURL + "/createpipeline";
+                let urlcall = D3M_SVC_URL + "/createpipeline";
                 var solajsonout = "grpcrequest=" + jsonout;
 
                 console.log(urlcall);
@@ -2413,7 +2413,7 @@ export function estimate(btn) {
                     let pipeline_ids = Object.keys(allPipelineInfo);
                     let PipelineExecuteResultsRequest = {context, pipeline_ids};
                     jsonout = JSON.stringify(PipelineExecuteResultsRequest);
-                    let urlcall = d3mURL + "/getexecutepipelineresults";
+                    let urlcall = D3M_SVC_URL + "/getexecutepipelineresults";
                     var solajsonout = "grpcrequest=" + jsonout;
                     console.log("GetExecutePipelineResults: ");
                     console.log(solajsonout);
@@ -3013,7 +3013,7 @@ function popupX(d) {
 }
 
 export function panelPlots() {
-    if(d3m_mode) {
+    if(IS_D3M_DOMAIN) {
         byId('btnSubset').classList.add('noshow');
     }
     // build arrays from nodes in main
@@ -3400,7 +3400,7 @@ export function endsession() {
 
     var jsonout = JSON.stringify(SessionContext);
 
-    var urlcall = d3mURL + "/endsession";
+    var urlcall = D3M_SVC_URL + "/endsession";
     var solajsonout = "grpcrequest=" + jsonout;
     console.log("EndSession: ");
     console.log(solajsonout);
@@ -3425,7 +3425,7 @@ export function listpipelines() {
 
     var jsonout = JSON.stringify(PipeLineListRequest);
 
-    var urlcall = d3mURL + "/listpipelines";
+    var urlcall = D3M_SVC_URL + "/listpipelines";
     var solajsonout = "grpcrequest=" + jsonout;
     console.log("PipelineListRequest: ");
     console.log(solajsonout);
@@ -3519,7 +3519,7 @@ export function executepipeline() {
 
     jsonout = JSON.stringify(PipelineExecuteRequest);
 
-    var urlcall = d3mURL + "/executepipeline";
+    var urlcall = D3M_SVC_URL + "/executepipeline";
     var solajsonout = "grpcrequest=" + jsonout;
     console.log("PipelineExecuteRequest: ");
     console.log(solajsonout);
@@ -3547,7 +3547,7 @@ function updateSchema(type, updates, lookup) {
 
     let jsonout = JSON.stringify(UpdateProblemSchemaRequest);
 
-    let urlcall = d3mURL + "/updateproblemschema";
+    let urlcall = D3M_SVC_URL + "/updateproblemschema";
     let solajsonout = "grpcrequest=" + jsonout;
     console.log("UpdateProblemSchemaRequest: ");
     console.log(solajsonout);
@@ -3650,7 +3650,7 @@ function toggleRightButtons(set) {
         let btns = byId('rightpanelbuttons').querySelectorAll(".noshow");
         btns.forEach(b => b.classList.remove("noshow"));
 
-        // dropping models for d3m_mode
+        // dropping models for IS_D3M_DOMAIN
         byId('btnModels').classList.add("noshow");
 
         // if swandive, dropping setx
@@ -4307,7 +4307,7 @@ export function exportpipeline(pipelineId) {
 
     let jsonout = JSON.stringify(PipelineExportRequest);
 
-    let urlcall = d3mURL + "/exportpipeline";
+    let urlcall = D3M_SVC_URL + "/exportpipeline";
     let solajsonout = "grpcrequest=" + jsonout;
 
     console.log(urlcall);
