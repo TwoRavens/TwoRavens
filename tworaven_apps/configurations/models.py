@@ -114,12 +114,17 @@ class AppConfiguration(TimeStampedModel):
             return None
 
 
+    def is_dataverse_domain(self):
+        """Check if the APP_DOMAIN is set to DATAVERSE_DOMAIN"""
+        return self.app_domain == DATAVERSE_DOMAIN
+
     def is_d3m_domain(self):
         """Check if the APP_DOMAIN is set to D3M"""
-        if self.app_domain == D3M_DOMAIN:
-            return True
+        return self.app_domain == D3M_DOMAIN
 
-        return False
+    def is_eventdata_domain(self):
+        """Check if the APP_DOMAIN is set to EVENTDATA_DOMAIN"""
+        return self.app_domain == EVENTDATA_DOMAIN
 
 
     def convert_to_dict(self):
