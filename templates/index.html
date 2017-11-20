@@ -13,7 +13,7 @@
     <script>
 
           // -----------------------------
-          // possible domain settings
+          // constants: possible domain settings
           // -----------------------------
           const D3M_DOMAIN = 'D3M_DOMAIN';
           const DATAVERSE_DOMAIN = 'DATAVERSE_DOMAIN';
@@ -46,11 +46,11 @@
           const privacyMode = false;        // configure default functionality for PSI tool
         {% endif %}
 
-        // Set convenience constants for checking the domain
-        //
-        const IS_D3M_DOMAIN = (APP_DOMAIN === D3M_DOMAIN);
-        const IS_DATAVERSE_DOMAIN = (APP_DOMAIN === DATAVERSE_DOMAIN);
-        const IS_EVENTDATA_DOMAIN = (APP_DOMAIN === EVENTDATA_DOMAIN);
+          // Set convenience constants for checking the domain
+          //
+          const IS_D3M_DOMAIN = (APP_DOMAIN === D3M_DOMAIN);
+          const IS_DATAVERSE_DOMAIN = (APP_DOMAIN === DATAVERSE_DOMAIN);
+          const IS_EVENTDATA_DOMAIN = (APP_DOMAIN === EVENTDATA_DOMAIN);
 
 
     </script>
