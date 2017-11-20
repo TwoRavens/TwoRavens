@@ -29,7 +29,7 @@
           const DATAVERSE_URL = '{{ app_config.dataverse_url }}';
           const D3M_SVC_URL = '{{ app_config.d3m_svc_url }}';
 
-          const production = {{ app_config.production }};
+          const PRODUCTION = {{ app_config.production }};
           const privacyMode = {{ app_config.privacy_mode }};
         {% else %}
           // ----------------------------
@@ -42,7 +42,7 @@
           const DATAVERSE_URL = 'https://beta.dataverse.org';
           const D3M_SVC_URL = '/d3m-service/'; // via Django -> TA2
 
-          const production = false;
+          const PRODUCTION = false;
           const privacyMode = false;        // configure default functionality for PSI tool
         {% endif %}
 

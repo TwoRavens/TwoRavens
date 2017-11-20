@@ -21,8 +21,8 @@ import {bars, barsNode, barsSubset, density, densityNode, selVarColor} from './p
 //    Developers, see /template/index.html
 //-------------------------------------------------
 
-// for debugging - if not in production, prints args and returns them
-export let cdb = _ => production || console.log.apply(this, arguments) && arguments;
+// for debugging - if not in PRODUCTION, prints args and returns them
+export let cdb = _ => PRODUCTION || console.log.apply(this, arguments) && arguments;
 
 let k = 4; // strength parameter for group attraction/repulsion
 let tutorial_mode = true;
@@ -204,13 +204,13 @@ let restart;
 let dataurl = "";
 export function main(fileid, hostname, ddiurl, dataurl, apikey) {
     dataurl = dataurl;
-    if (production && fileid == "") {
+    if (PRODUCTION && fileid == "") {
         alert("Error: No fileid has been provided.");
         throw new Error("Error: No fileid has been provided.");
     }
 
     let dataverseurl = hostname ? "https://" + hostname :
-        production ? DATAVERSE_URL :
+        PRODUCTION ? DATAVERSE_URL :
         "http://localhost:8080";
 
     if (fileid && !dataurl) {
@@ -307,7 +307,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
         pURL = d3mPreprocess;
         // zparams.zdataurl = start+'/data/trainDatamerged.tsv';   // "start" path no longer exists
         // zparams.zdata = d3mDataName;   // this is now going to be filled in using problem schema field
-    } else if(!production) {
+    } else if(!PRODUCTION) {
         zparams.zdataurl = 'data/fearonLaitin.tsv';
     }
 
@@ -1881,7 +1881,7 @@ export function clickVar(elem) {
 /*
   Retrieve the variable list from the preprocess data.
   This helps handle the new format and (temporarily)
-  the older format in production (rp 8.14.2017)
+  the older format in PRODUCTION (rp 8.14.2017)
 */
 export function getVariableData(json) {
     /* "new" response:
@@ -1976,7 +1976,7 @@ function zPop() {
 
 export function estimate(btn) {
     if(!IS_D3M_DOMAIN){
-    if (production && zparams.zsessionid == '') {
+    if (PRODUCTION && zparams.zsessionid == '') {
         alert("Warning: Data download is not complete. Try again soon.");
         return;
     }
@@ -2492,7 +2492,7 @@ function dataDownload() {
         cdb('dataDownload json in: ', json);
         zparams.zsessionid = json.sessionid[0];
         // set link URL
-        byId("logID").href = `${production ? ROOK_SVC_URL + 'log_dir/log_' : 'rook/log_' }${zparams.zsessionid}.txt`;
+        byId("logID").href = `${PRODUCTION ? ROOK_SVC_URL + 'log_dir/log_' : 'rook/log_' }${zparams.zsessionid}.txt`;
     };
     let downloadFail = _ => cdb('Data have not been downloaded');
     makeCorsRequest(urlcall, btn, downloadSuccess, downloadFail, solajsonout);
@@ -2623,7 +2623,7 @@ function transParse(n) {
   t = selected transformation
  */
 function transform(n, t, typeTransform) {
-    if (production && zparams.zsessionid == "") {
+    if (PRODUCTION && zparams.zsessionid == "") {
         alert("Warning: Data download is not complete. Try again soon.");
         return;
     }
@@ -3184,7 +3184,7 @@ export function borderState() {
 export function subsetSelect(btn) {
     if (dataurl)
         zparams.zdataurl = dataurl;
-    if (production && zparams.zsessionid == "") {
+    if (PRODUCTION && zparams.zsessionid == "") {
         alert("Warning: Data download is not complete. Try again soon.");
         return;
     }

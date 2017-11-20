@@ -31,17 +31,16 @@ class AppConfiguration(TimeStampedModel):
                                ' will be deactivated--but may be reused'))
 
     production = models.BooleanField(\
-                    'Production',
-                    help_text=(('.js variable "production".'
-                                ' True -> data, metadata from live'
+                    '.js variable "PRODUCTION".',
+                    help_text=((' True -> data, metadata from live'
                                 ' server resources instead of local versions')))
 
-    app_domain = models.CharField('App domain',
+    app_domain = models.CharField('.js variable "APP_DOMAIN"',
                                   max_length=70,
                                   choices=APP_DOMAINS)
 
     d3m_svc_url = models.CharField(\
-                    'D3M url',
+                    '.js variable "D3M_SVC_URL"',
                     max_length=255,
                     default='/d3m-service/',
                     help_text=('URL used to make calls that'
@@ -53,7 +52,7 @@ class AppConfiguration(TimeStampedModel):
                     help_text='.js variable "privacy". Is the PSI tool available?')
 
     rook_svc_url = models.CharField(\
-                    'ROOK_SVC_URL (rook apps)',
+                    '.js variable "ROOK_SVC_URL"',
                     max_length=255,
                     default='/rook-custom/',
                     help_text=(('URL to the rook server.'
@@ -61,7 +60,7 @@ class AppConfiguration(TimeStampedModel):
                                 ' http://127.0.0.1:8080/rook-custom/')))
 
     dataverse_url = models.URLField(\
-                    'dataverse url',
+                    '.js variable "DATAVERSE_URL"',
                     help_text=(('URL to Dataverse'
                                 'examples: https://beta.dataverse.org,'
                                 'https://dataverse.harvard.edu')))

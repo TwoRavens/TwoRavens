@@ -48,7 +48,8 @@ def make_request(la_url, content):
     print('payload', payload)
     resp = requests.post(la_url, data=payload)
 
-    print(resp.text)
+    if resp.text:
+        print(resp.text[:50] + '...')
     print(resp.status_code)
 
     return resp.text
