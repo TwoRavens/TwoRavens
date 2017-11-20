@@ -32,8 +32,8 @@ class AppConfiguration(TimeStampedModel):
 
     production = models.BooleanField(\
                     '.js variable "PRODUCTION".',
-                    help_text=((' True -> data, metadata from live'
-                                ' server resources instead of local versions')))
+                    help_text=(' True -> data, metadata from live'
+                                ' server resources instead of local versions'))
 
     app_domain = models.CharField('.js variable "APP_DOMAIN"',
                                   max_length=70,
