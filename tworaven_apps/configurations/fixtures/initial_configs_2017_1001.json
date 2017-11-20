@@ -11,7 +11,7 @@
         "d3m_mode": false,
         "d3m_url": "/d3m-service",
         "privacy_mode": false,
-        "rook_app_url": "/rook-custom/",
+        "ROOK_SVC_URL": "/rook-custom/",
         "dataverse_url": "https://beta.dataverse.org",
         "description": "Basic dev configuration.  Rook calls are routed through Django."
     }
@@ -28,7 +28,7 @@
         "d3m_mode": true,
         "d3m_url": "/d3m-service",
         "privacy_mode": false,
-        "rook_app_url": "/rook-custom/",
+        "ROOK_SVC_URL": "/rook-custom/",
         "dataverse_url": "https://beta.dataverse.org",
         "description": "Rook calls routed through Django"
     }
@@ -45,7 +45,7 @@
         "d3m_mode": true,
         "d3m_url": "/d3m-service",
         "privacy_mode": false,
-        "rook_app_url": "/rook-custom/",
+        "ROOK_SVC_URL": "/rook-custom/",
         "dataverse_url": "https://beta.dataverse.org",
         "description": "Basic dev configuration within docker compose.  Both Rook and Django calls are routed through nginx which is running on port 80"
     }

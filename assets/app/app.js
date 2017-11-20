@@ -1988,7 +1988,7 @@ export function estimate(btn) {
     zparams.callHistory = callHistory;
     var jsonout = JSON.stringify(zparams);
 
-    var urlcall = rappURL + "zeligapp"; //base.concat(jsonout);
+    var urlcall = ROOK_SVC_URL + "zeligapp"; //base.concat(jsonout);
     var solajsonout = "solaJSON=" + jsonout;
     cdb("urlcall out: ", urlcall);
     cdb("POST out: ", solajsonout);
@@ -1996,7 +1996,7 @@ export function estimate(btn) {
 
     zparams.allVars = valueKey.slice(10, 25); // because the URL is too long...
     jsonout = JSON.stringify(zparams);
-    var selectorurlcall = rappURL + "selectorapp";
+    var selectorurlcall = ROOK_SVC_URL + "selectorapp";
 
     function estimateSuccess(btn, json) {
         estimateLadda.stop(); // stop spinner
@@ -2256,7 +2256,7 @@ export function estimate(btn) {
             let uri = {features: zparams.zd3mdata, target:zparams.zd3mtarget};
 
 
-            var urlcall = rappURL + "pipelineapp";
+            var urlcall = ROOK_SVC_URL + "pipelineapp";
 
             var solajsonout = "solaJSON=" + jsonout;
             cdb("urlcall out: ", urlcall);
@@ -2448,7 +2448,7 @@ export function estimate(btn) {
 }
 
 export function runPreprocess(dataloc, targetloc, datastub) {
-    let url = rappURL + 'preprocessapp';
+    let url = ROOK_SVC_URL + 'preprocessapp';
     console.log("GOING TO RUN THE PREPROCESSAPP");
     let json = JSON.stringify({data: dataloc, target: targetloc, datastub: datastub}); //, preprocess: preprocessloc});
     console.log('urlcall out: ', url);
@@ -2482,7 +2482,7 @@ function dataDownload() {
     var jsonout = JSON.stringify(zparams);
     var btn = "nobutton";
 
-    var urlcall = rappURL + "dataapp";
+    var urlcall = ROOK_SVC_URL + "dataapp";
     var solajsonout = "solaJSON=" + jsonout;
     cdb("urlcall out: ", urlcall);
     cdb("POST out: ", solajsonout);
@@ -2492,7 +2492,7 @@ function dataDownload() {
         cdb('dataDownload json in: ', json);
         zparams.zsessionid = json.sessionid[0];
         // set link URL
-        byId("logID").href = `${production ? rappURL + 'log_dir/log_' : 'rook/log_' }${zparams.zsessionid}.txt`;
+        byId("logID").href = `${production ? ROOK_SVC_URL + 'log_dir/log_' : 'rook/log_' }${zparams.zsessionid}.txt`;
     };
     let downloadFail = _ => cdb('Data have not been downloaded');
     makeCorsRequest(urlcall, btn, downloadSuccess, downloadFail, solajsonout);
@@ -2677,7 +2677,7 @@ function transform(n, t, typeTransform) {
         typeStuff: outtypes
     };
     var jsonout = JSON.stringify(transformstuff);
-    var urlcall = rappURL + "transformapp";
+    var urlcall = ROOK_SVC_URL + "transformapp";
     var solajsonout = "solaJSON=" + jsonout;
     cdb("urlcall out: " + urlcall);
     cdb("POST out: " + solajsonout);
@@ -3234,7 +3234,7 @@ export function subsetSelect(btn) {
     };
 
     var jsonout = JSON.stringify(subsetstuff);
-    var urlcall = rappURL + "subsetapp";
+    var urlcall = ROOK_SVC_URL + "subsetapp";
     var solajsonout = "solaJSON=" + jsonout;
     cdb("urlcall out: ", urlcall);
     cdb("POST out: ", solajsonout);

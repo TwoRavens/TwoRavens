@@ -10,7 +10,7 @@
         "production": false,
         "d3m_mode": false,
         "privacy_mode": false,
-        "rook_app_url": "http://127.0.0.1:8080/rook-custom/",
+        "ROOK_SVC_URL": "http://127.0.0.1:8080/rook-custom/",
         "dataverse_url": "https://beta.dataverse.org",
         "description": "Basic dev configuration.  Rook calls are routed through Django."
     }
@@ -26,7 +26,7 @@
         "production": false,
         "d3m_mode": true,
         "privacy_mode": false,
-        "rook_app_url": "http://127.0.0.1:8080/rook-custom/",
+        "ROOK_SVC_URL": "http://127.0.0.1:8080/rook-custom/",
         "dataverse_url": "https://beta.dataverse.org",
         "description": "Rook calls routed through Django"
     }

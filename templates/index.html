@@ -19,7 +19,7 @@
             -- {{ app_config.name }} --
             {% if app_config.description %}{{ app_config.description }}{% endif %}
           */
-          const rappURL = '{{ app_config.rook_svc_url }}';
+          const ROOK_SVC_URL = '{{ app_config.rook_svc_url }}';
           const DATAVERSE_URL = '{{ app_config.dataverse_url }}';
           const production = {{ app_config.production }};
           const privacyMode = {{ app_config.privacy_mode }};
@@ -30,8 +30,8 @@
           // default settings if nothing in db
           //  - see /templates/index.html to set manually
           // ----------------------------
-          const rappURL = '/rook-custom/'; // via Django -> to RApache/rook
-          //let rappURL = 'http://0.0.0.0:8000/custom/'; // Direct to RApache/rook
+          const ROOK_SVC_URL = '/rook-custom/'; // via Django -> to RApache/rook
+          //let ROOK_SVC_URL = 'http://0.0.0.0:8000/custom/'; // Direct to RApache/rook
           const DATAVERSE_URL = 'https://beta.dataverse.org';
           const production = false;
           const privacyMode = false;        // configure default functionality for PSI tool

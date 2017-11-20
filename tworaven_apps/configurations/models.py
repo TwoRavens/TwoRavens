@@ -48,7 +48,7 @@ class AppConfiguration(TimeStampedModel):
                     help_text='.js variable "privacy". Is the PSI tool available?')
 
     rook_svc_url = models.CharField(\
-                    'rappURL (rook apps)',
+                    'ROOK_SVC_URL (rook apps)',
                     max_length=255,
                     default='/rook-custom/',
                     help_text=(('URL to the rook server.'
