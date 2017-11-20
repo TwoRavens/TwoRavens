@@ -7,8 +7,13 @@ from tworaven_apps.utils.url_helper import add_trailing_slash,\
 
 # for conversion to .js values
 APP_CONFIG_BOOLEAN_FIELDS = (\
-                'is_active', 'production',
-                'd3m_mode', 'privacy_mode')
+                'is_active', 'production', 'privacy_mode')
+
+D3M_DOMAIN = 'D3M_DOMAIN'
+DATAVERSE_DOMAIN = 'DATAVERSE_DOMAIN'
+EVENTDATA_DOMAIN = 'EVENTDATA_DOMAIN'
+DOMAIN_LIST = [D3M_DOMAIN, DATAVERSE_DOMAIN, EVENTDATA_DOMAIN]
+APP_DOMAINS = [(d, d) for d in DOMAIN_LIST]
 
 class AppConfiguration(TimeStampedModel):
     """
@@ -26,17 +31,16 @@ class AppConfiguration(TimeStampedModel):
                                ' will be deactivated--but may be reused'))
 
     production = models.BooleanField(\
-                    'Production',
-                    help_text=(('.js variable "production".'
-                                ' True -> data, metadata from live'
-                                ' server resources instead of local versions')))
+                    '.js variable "PRODUCTION".',
+                    help_text=(' True -> data, metadata from live'
+                                ' server resources instead of local versions'))
 
-    d3m_mode = models.BooleanField(\
-                    'D3M mode',
-                    help_text='.js variable "d3m". Are D3M services active?')
+    app_domain = models.CharField('.js variable "APP_DOMAIN"',
+                                  max_length=70,
+                                  choices=APP_DOMAINS)
 
-    d3m_url = models.CharField(\
-                    'D3M url',
+    d3m_svc_url = models.CharField(\
+                    '.js variable "D3M_SVC_URL"',
                     max_length=255,
                     default='/d3m-service/',
                     help_text=('URL used to make calls that'
@@ -47,8 +51,8 @@ class AppConfiguration(TimeStampedModel):
                     'Privacy (PSI) mode',
                     help_text='.js variable "privacy". Is the PSI tool available?')
 
-    rook_app_url = models.CharField(\
-                    'rappURL (rook apps)',
+    rook_svc_url = models.CharField(\
+                    '.js variable "ROOK_SVC_URL"',
                     max_length=255,
                     default='/rook-custom/',
                     help_text=(('URL to the rook server.'
@@ -56,7 +60,7 @@ class AppConfiguration(TimeStampedModel):
                                 ' http://127.0.0.1:8080/rook-custom/')))
 
     dataverse_url = models.URLField(\
-                    'dataverse url',
+                    '.js variable "DATAVERSE_URL"',
                     help_text=(('URL to Dataverse'
                                 'examples: https://beta.dataverse.org,'
                                 'https://dataverse.harvard.edu')))
@@ -68,13 +72,13 @@ class AppConfiguration(TimeStampedModel):
 
         # make sure the rook url has a trailing slash
         #
-        self.rook_app_url = add_trailing_slash(self.rook_app_url)
+        self.rook_svc_url = add_trailing_slash(self.rook_svc_url)
 
         # make sure the dataverse_url and d3m urls DON'T HAVE a trailing slash
         # (This will get worked out soon...)
         #
         self.dataverse_url = remove_trailing_slash(self.dataverse_url)
-        self.d3m_url = remove_trailing_slash(self.d3m_url)
+        self.d3m_svc_url = remove_trailing_slash(self.d3m_svc_url)
 
         if self.is_active:
             # If this is active, set everything else to inactive
@@ -107,6 +111,20 @@ class AppConfiguration(TimeStampedModel):
         config = AppConfiguration.objects.filter(is_active=True).first()
         if not config:
             return None
+
+
+    def is_dataverse_domain(self):
+        """Check if the APP_DOMAIN is set to DATAVERSE_DOMAIN"""
+        return self.app_domain == DATAVERSE_DOMAIN
+
+    def is_d3m_domain(self):
+        """Check if the APP_DOMAIN is set to D3M"""
+        return self.app_domain == D3M_DOMAIN
+
+    def is_eventdata_domain(self):
+        """Check if the APP_DOMAIN is set to EVENTDATA_DOMAIN"""
+        return self.app_domain == EVENTDATA_DOMAIN
+
 
     def convert_to_dict(self):
         """Get in dict format for use in .js"""

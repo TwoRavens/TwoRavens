@@ -9,10 +9,10 @@ class AppConfigurationAdmin(admin.ModelAdmin):
     list_display = ('name',
                     'is_active',
                     'production',
-                    'd3m_mode',
+                    'app_domain',
                     'privacy_mode',
-                    'rook_app_url',
-                    'd3m_url',
+                    'rook_svc_url',
+                    'd3m_svc_url',
                     'dataverse_url')
     readonly_fields = ('modified', 'created',)
 admin.site.register(AppConfiguration, AppConfigurationAdmin)

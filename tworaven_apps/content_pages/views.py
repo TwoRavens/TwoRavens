@@ -17,7 +17,7 @@ def view_pebbles_home(request):
                  app_config=app_config.convert_to_dict())
 
     # Is this D3M Mode?  If so, make sure there is D3M config information
-    if app_config.d3m_mode:
+    if app_config.is_d3m_domain():
         d3m_config = get_latest_d3m_config()
         if not d3m_config:
             return HttpResponseRedirect(\
@@ -45,7 +45,7 @@ def view_d3m_config_error(request):
     # (a) in D3M mode
     #
     app_config = AppConfiguration.get_config()
-    if not app_config.d3m_mode:
+    if not app_config.is_d3m_domain():
         return HttpResponseRedirect(reverse('home'))
 
     # and (b) not D3M config info is in the db

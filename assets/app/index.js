@@ -121,7 +121,7 @@ let ticker = mode => {
         link('explore'),
         m("a#logID[href=somelink][target=_blank][style=margin-right: 0.5em]", "Replication"),
         // dev links...
-        m("a[href='/dev-raven-links'][style=margin-right: 0.5em]", "raven-links"),
+        m("a[href='/dev-raven-links'][target=_blank][style=margin-right: 0.5em]", "raven-links"),
         m("a[style=margin-right: 0.5em]",
           {onclick: app.record_user_metadata},
           "record-metadata"),
