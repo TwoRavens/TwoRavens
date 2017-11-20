@@ -19,7 +19,7 @@
             -- {{ app_config.name }} --
             {% if app_config.description %}{{ app_config.description }}{% endif %}
           */
-          const rappURL = '{{ app_config.rook_app_url }}';
+          const rappURL = '{{ app_config.rook_svc_url }}';
           const DATAVERSE_URL = '{{ app_config.dataverse_url }}';
           const production = {{ app_config.production }};
           const privacyMode = {{ app_config.privacy_mode }};

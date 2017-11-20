@@ -53,7 +53,7 @@ def view_rook_route(request, app_name_in_url):
 
     app_data = dict(solaJSON=raven_data_text)
 
-    rook_app_url = rook_app_info.get_rook_server_url()
+    rook_svc_url = rook_app_info.get_rook_server_url()
 
     # Begin object to capture request
     #
@@ -62,16 +62,16 @@ def view_rook_route(request, app_name_in_url):
         call_entry = ServiceCallEntry.get_rook_entry(\
                         request_obj=request,
                         call_type=rook_app_info.name,
-                        outgoing_url=rook_app_url,
+                        outgoing_url=rook_svc_url,
                         request_msg=raven_data_text)
 
     # Call R services
     #
     try:
-        r = requests.post(rook_app_url,
+        r = requests.post(rook_svc_url,
                           data=app_data)
     except ConnectionError:
-        err_msg = 'R Server not responding: %s' % rook_app_url
+        err_msg = 'R Server not responding: %s' % rook_svc_url
         if rook_app_info.record_this_call():
             call_entry.add_error_message(err_msg)
             call_entry.save()

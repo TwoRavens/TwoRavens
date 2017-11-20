@@ -27,7 +27,7 @@ class Migration(migrations.Migration):
                 ('d3m_mode', models.BooleanField(help_text='.js variable "d3m". Are D3M services active?', verbose_name='D3M mode')),
                 ('d3m_url', models.CharField(default='/d3m-service/', help_text='URL used to make calls that are converted to gRPC messages and sent to D3M applications', max_length=255, verbose_name='D3M url')),
                 ('privacy_mode', models.BooleanField(help_text='.js variable "privacy". Is the PSI tool available?', verbose_name='Privacy (PSI) mode')),
-                ('rook_app_url', models.CharField(default='/rook-custom/', help_text='URL to the rook server. examples: https://beta.dataverse.org/custom/, http://127.0.0.1:8080/rook-custom/', max_length=255, verbose_name='rappURL (rook apps)')),
+                ('rook_svc_url', models.CharField(default='/rook-custom/', help_text='URL to the rook server. examples: https://beta.dataverse.org/custom/, http://127.0.0.1:8080/rook-custom/', max_length=255, verbose_name='rappURL (rook apps)')),
                 ('dataverse_url', models.URLField(help_text='URL to Dataverseexamples: https://beta.dataverse.org,https://dataverse.harvard.edu', verbose_name='dataverse url')),
                 ('description', models.TextField(blank=True, help_text='optional')),
             ],

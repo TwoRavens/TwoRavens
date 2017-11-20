@@ -11,7 +11,7 @@ class AppConfigurationAdmin(admin.ModelAdmin):
                     'production',
                     'd3m_mode',
                     'privacy_mode',
-                    'rook_app_url',
+                    'rook_svc_url',
                     'd3m_url',
                     'dataverse_url')
     readonly_fields = ('modified', 'created',)

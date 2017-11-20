@@ -47,7 +47,7 @@ class AppConfiguration(TimeStampedModel):
                     'Privacy (PSI) mode',
                     help_text='.js variable "privacy". Is the PSI tool available?')
 
-    rook_app_url = models.CharField(\
+    rook_svc_url = models.CharField(\
                     'rappURL (rook apps)',
                     max_length=255,
                     default='/rook-custom/',
@@ -68,7 +68,7 @@ class AppConfiguration(TimeStampedModel):
 
         # make sure the rook url has a trailing slash
         #
-        self.rook_app_url = add_trailing_slash(self.rook_app_url)
+        self.rook_svc_url = add_trailing_slash(self.rook_svc_url)
 
         # make sure the dataverse_url and d3m urls DON'T HAVE a trailing slash
         # (This will get worked out soon...)
