@@ -202,6 +202,15 @@ export const reset = function reloadPage() {
 let restart;
 
 let dataurl = "";
+
+/**
+   called on app start
+   @param {string} fileid
+   @param {string} hostname
+   @param {string} ddiurl
+   @param {string} dataurl
+   @param {string} apikey
+*/
 export function main(fileid, hostname, ddiurl, dataurl, apikey) {
     dataurl = dataurl;
     if (PRODUCTION && fileid == "") {
