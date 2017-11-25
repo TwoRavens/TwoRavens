@@ -5,7 +5,7 @@
   "main": "index.js",
   "repository": {
     "type": "git",
-    "url": "git://github.com/username/repository.git"
+    "url": "git://github.com/TwoRavens/TwoRavens.git"
   },
   "scripts": {
     "xserve": "http-server -p 8888",
