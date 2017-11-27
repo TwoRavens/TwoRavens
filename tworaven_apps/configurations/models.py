@@ -31,19 +31,20 @@ class AppConfiguration(TimeStampedModel):
                                ' will be deactivated--but may be reused'))
 
     production = models.BooleanField(\
-                    '.js variable "PRODUCTION".',
-                    help_text=(' True -> data, metadata from live'
-                                ' server resources instead of local versions'))
+                    help_text=('.js variable "PRODUCTION".'
+                               ' True -> data, metadata from live'
+                               ' server resources instead of local versions'))
 
-    app_domain = models.CharField('.js variable "APP_DOMAIN"',
+    app_domain = models.CharField(help_text='.js variable "APP_DOMAIN"',
                                   max_length=70,
                                   choices=APP_DOMAINS)
 
     d3m_svc_url = models.CharField(\
-                    '.js variable "D3M_SVC_URL"',
+                    'D3M service url',
                     max_length=255,
-                    default='/d3m-service/',
-                    help_text=('URL used to make calls that'
+                    default='/d3m-service',
+                    help_text=('.js variable "D3M_SVC_URL".'
+                               ' This url is used to make calls that'
                                ' are converted to gRPC messages'
                                ' and sent to D3M applications'))
 
@@ -52,18 +53,20 @@ class AppConfiguration(TimeStampedModel):
                     help_text='.js variable "privacy". Is the PSI tool available?')
 
     rook_svc_url = models.CharField(\
-                    '.js variable "ROOK_SVC_URL"',
+                    'Rook service url',
                     max_length=255,
                     default='/rook-custom/',
-                    help_text=(('URL to the rook server.'
-                                ' examples: https://beta.dataverse.org/custom/,'
-                                ' http://127.0.0.1:8080/rook-custom/')))
+                    help_text=('.js variable "ROOK_SVC_URL".'
+                               ' This url is used to access the rook server.'
+                               ' examples: https://beta.dataverse.org/custom/,'
+                               ' http://127.0.0.1:8080/rook-custom/'))
 
     dataverse_url = models.URLField(\
-                    '.js variable "DATAVERSE_URL"',
-                    help_text=(('URL to Dataverse'
-                                'examples: https://beta.dataverse.org,'
-                                'https://dataverse.harvard.edu')))
+                    'Dataverse url',
+                    help_text=('.js variable "DATAVERSE_URL"'
+                               'URL to Dataverse'
+                               'examples: https://beta.dataverse.org,'
+                               'https://dataverse.harvard.edu'))
 
     description = models.TextField(blank=True, help_text=('optional'))
 
