@@ -4,10 +4,15 @@
   {% if form_errors %}
     <ul>
     {% for field_name, err_list in form_errors.items %}
-        <li><strong>{{ field_name|escape }}</strong>
-            {% for err_msg in err_list %}
-            <br />- {{ err_msg }}
-            {% endfor %}
+        <li>
+          {% if field_name != "__all__" %}
+          <strong>{{ field_name|escape }}</strong>
+            <br />
+          {% endif %}
+          {% for err_msg in err_list %}
+              - {{ err_msg }}{% if not forloop.last %}<br />{% endif %}
+          {% endfor %}
+
         </li>
     {% endfor %}
   </ul>

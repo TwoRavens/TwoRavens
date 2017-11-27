@@ -51,7 +51,13 @@
         <div class="card-header"><b>Error pages</b></div>
         <div class="card-body">
           <ul>
-            <li><a href="{% url 'view_d3m_config_error_test' %}">D3M config error</a> (trigged when in D3M mode but no D3M configs are loaded)</li>
+            <li><a href="{% url 'view_no_domain_config_error_test' %}">App/UI config error (test page)</a>
+              <p>(normally triggered when in no AppConfiguration entries exist--e.g. app doesn't know which domain to use)</p></li>
+            <li><a href="{% url 'view_d3m_config_error_test' %}">D3M config error (test page)</a>
+              <p>(normally triggered when in D3M mode but no D3M configs are loaded)</p></li>
+
+            <hr />
+
             <li><a href="/aint-nothing-here-404">404 trigger</a> (shows formatted page in production)</li>
             <li><a href="{% url 'view_err_500_test' %}">500 trigger</a> (shows formatted page in production)</li>
           </ul>
