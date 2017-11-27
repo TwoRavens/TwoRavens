@@ -223,7 +223,6 @@ let dataurl = '';
    @param {string} apikey
 */
 export function main(fileid, hostname, ddiurl, dataurl, apikey) {
-    dataurl = dataurl;
     if (PRODUCTION && fileid === '') {
         let msg = 'Error: No fileid has been provided.';
         alert(msg);
@@ -235,9 +234,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
         'http://localhost:8080';
     // if file id supplied, assume we are dealing with dataverse and cook a standard dataverse data access url
     // with the fileid supplied and the hostname we have supplied or configured
-    if (fileid && !dataurl) {
-        dataurl = `${dataverseurl}/api/access/datafile/${fileid}?key=${apikey}`;
-    }
+    dataurl = fileid && !dataurl ? `${dataverseurl}/api/access/datafile/${fileid}?key=${apikey}` : dataurl;
     cdb('--dataurl: ' + dataurl);
     cdb('--dataverseurl: ' + dataverseurl);
 
@@ -683,9 +680,8 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
         console.log(allNodes);
         resolve();
     }))
-    .then(() =>  { // final step: start her up
-    //  .then(() => new Promise((resolve, reject) => {
-        if(swandive) {
+    .then(() =>  { // final step: start it up
+        if (swandive) {
             scaffolding(swandive);
         } else {
             scaffolding(layout);
@@ -695,8 +691,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
                 dataDownload();
             }
         }
-       // resolve();
-    })
+    });
 }
 
 
@@ -2804,7 +2799,6 @@ function makeCorsRequest(url, btn, callback, warningcallback, jsonstring) {
 
         try {
             var json = JSON.parse(text); // should wrap in try / catch
-            console.log('JSON', json);
             var names = Object.keys(json);
         } catch (err) {
             estimateLadda.stop();
