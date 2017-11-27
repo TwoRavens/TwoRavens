@@ -215,6 +215,29 @@ let restart;
 let dataurl = '';
 
 /**
+  called by main
+  Loads all external data in the following order (logic is not included):
+  1. Retrieve the configuration information
+  2. Set 'configurations'
+  3. Read the problem schema and set 'd3mProblemDescription'
+  4. Read the data schema and set 'dataschema'
+  5. Read in zelig models (not for d3m)
+  6. Read in zeligchoice models (not for d3m)
+  7. Start the user session
+  8. Call runPreprocess(...)
+  9. Call readPreprocess(...)
+  10. Build allNodes[] using preprocessed information
+  11. Add dataschema information to allNodes (when in IS_D3M_DOMAIN)
+  12. Call scaffolding() and start up
+*/
+async function load() {
+    return IS_D3M_DOMAIN && await m.request({
+        method: "POST",
+        url: "/config/d3m-config/json/latest"
+    });
+}
+
+/**
    called on app start
    @param {string} fileid
    @param {string} hostname
@@ -279,38 +302,19 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
         zparams.zdataurl = 'data/fearonLaitin.tsv';
     }
 
-    /*
-      Loads all external data in the following order (logic is not included):
-      1. Retrieve the configuration information
-      2. Set 'configurations'
-      3. Read the problem schema and set 'd3mProblemDescription'
-      4. Read the data schema and set 'dataschema'
-      5. Read in zelig models (not for d3m)
-      6. Read in zeligchoice models (not for d3m)
-      7. Start the user session
-      8. Call runPreprocess(...)
-      9. Call readPreprocess(...)
-      10. Build allNodes[] using preprocessed information
-      11. Add dataschema information to allNodes (when in IS_D3M_DOMAIN)
-      12. Call scaffolding() and start her up
-    */
-
-    Promise.resolve(IS_D3M_DOMAIN && m.request({
-        method: "POST",
-        url: "/config/d3m-config/json/latest"
-    })
+    load()
     .then(function(result) {
         configurations =  JSON.parse(JSON.stringify(result));
         d3mRootPath = configurations.training_data_root;
         d3mRootPath = d3mRootPath.replace(/\/data/,'');
         d3mDataName = configurations.name;
-      //  d3mData = configurations.training_data_root+"/trainData.csv";
-       // d3mTarget = configurations.training_data_root+"/trainTargets.csv";
+        //  d3mData = configurations.training_data_root+"/trainData.csv";
+        // d3mTarget = configurations.training_data_root+"/trainTargets.csv";
         d3mPS = configurations.problem_schema_url;
         d3mDS = configurations.dataset_schema_url;
 
-          console.log("Configurations: ");
-          console.log(configurations);
+        console.log("Configurations: ");
+        console.log(configurations);
 
         // these are the two lines that cut the config paths after "TwoRavens/"
         //d3mTarget = d3mTarget.split("TwoRavens/").pop();
@@ -318,7 +322,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
 
         pURL='rook-custom/rook-files/'+d3mDataName+'/preprocess/preprocess.json';
         d3mPreprocess=pURL;
-    }))
+    })
     .then(_ => m.request({
         method: "GET",
         url: "/config/d3m-config/get-problem-data-file-info"
@@ -680,7 +684,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
         console.log(allNodes);
         resolve();
     }))
-    .then(() =>  { // final step: start it up
+    .then(() =>  { // final step: start up
         if (swandive) {
             scaffolding(swandive);
         } else {

@@ -25,6 +25,16 @@
               
                 
                 <li><a
+                  href='#load'
+                  class="">
+                  load
+                  
+                </a>
+                
+                </li>
+              
+                
+                <li><a
                   href='#main'
                   class="">
                   main
@@ -71,6 +81,66 @@
         </div>
       </div>
       <div id='split-right' class='relative overflow-auto height-viewport-100'>
+        
+          
+            <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+  <div class='clearfix'>
+    
+    <h3 class='fl m0' id='load'>
+      load
+    </h3>
+    
+    
+  </div>
+  
+
+  <p>called by main
+Loads all external data in the following order (logic is not included):
+1. Retrieve the configuration information
+2. Set 'configurations'
+3. Read the problem schema and set 'd3mProblemDescription'
+4. Read the data schema and set 'dataschema'
+5. Read in zelig models (not for d3m)
+6. Read in zeligchoice models (not for d3m)
+7. Start the user session
+8. Call runPreprocess(...)
+9. Call readPreprocess(...)
+10. Build allNodes[] using preprocessed information
+11. Add dataschema information to allNodes (when in IS_D3M_DOMAIN)
+12. Call scaffolding() and start up</p>
+
+
+  <div class='pre p1 fill-light mt0'>load()</div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+          
         
           
             <section class='p2 mb2 clearfix bg-white minishadow'>
@@ -178,7 +248,7 @@
   </div>
   
 
-  <p>called after all external data are guaranteed to have been read to completion. this populates the left panel with variable names, the right panel with model names, the transformation tool, an the associated mouseovers. its callback is layout(), which initializes the modeling space</p>
+  <p>called after all external data are guaranteed to have been read to completion. this populates the left panel with variable names, the right panel with model names, the transformation tool, and the associated mouseovers. its callback is layout(), which initializes the modeling space</p>
 
 
   <div class='pre p1 fill-light mt0'>scaffolding(callback: any)</div>
