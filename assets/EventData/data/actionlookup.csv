@@ -1,0 +1,21 @@
+EventRootCode,Description,PentaClass
+01,Make Public Statement,0
+02,Appeal,0
+03,Express Intent to Coop,1
+04,Consult,1
+05,Engage in Dip Coop,1
+06,Engage in Material Coop,2
+07,Provide Aid,2
+08,Yield,2
+09,Investigate,3
+10,Demand,3
+11,Disapprove,3
+12,Reject,3
+13,Threaten,3
+14,Protest,4
+15,Exhibit Force Posture,4
+16,Reduce Relations,3
+17,Coerce,4
+18,Assualt,4
+19,Fight,4
+20,Use Unconventional Mass Violence,4

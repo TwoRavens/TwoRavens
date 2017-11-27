@@ -70,6 +70,7 @@ if(addPrivacy){
 	source(paste(modulesPath,"DP_Quantiles.R", sep=""))
 	source(paste(modulesPath,"DP_Means.R", sep=""))
 	source(paste(modulesPath,"CreateXML.R", sep=""))
+
 }
 
 if(production) {
@@ -132,6 +133,10 @@ source("rookhealthcheck.R")
 source("rookexplore.R")
 source("rooktree.R")
 
+# Event Data
+source("eventdata/rooksubset.R")
+source("eventdata/rookformatter.R")
+
 if(addPrivacy){
     source("rookprivate.R")
 }
@@ -152,6 +157,8 @@ if(!is_rapache_mode){
     R.server$add(app = healthcheck.app, name="healthcheckapp")
     R.server$add(app = explore.app, name="exploreapp")
     R.server$add(app = tree.app, name="treeapp")
+
+    R.server$add(app = eventdata_subset.app, name="eventdatasubsetapp")
 
     # Serve files directly from rook
     R.server$add(app = File$new(PRE_PATH), name = "rook-files")

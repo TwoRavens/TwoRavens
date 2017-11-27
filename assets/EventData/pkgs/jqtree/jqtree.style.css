@@ -1,0 +1,30 @@
+ul.jqtree-tree li.jqtree-folder {
+	padding: 0 0 0 14px;
+	margin: 0 0 0 0;
+	min-height: 19px;
+	text-overflow: ellipsis;
+	list-style-type: none;
+	background-image: url(treeview-default-line.png);
+	background-repeat: no-repeat;
+	background-position: 0 0;
+	position: relative;
+}
+ul.jqtree-tree .jqtree-toggler {
+	display: none;
+}
+
+ul.jqtree-tree ul.jqtree_common {
+	margin-left:0
+}
+
+ul.jqtree-tree .jqtree-title {
+	margin-left:0
+}
+
+ul.jqtree-tree li.jqtree-selected > .jqtree-element,
+ul.jqtree-tree li.jqtree-selected > .jqtree-element:hover {
+    background: #eaf0ff;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.7); }
+
+ul.jqtree-tree li.jqtree-folder {
+    margin-bottom: 0; }

@@ -13,6 +13,10 @@ rook/test.json
 rook/rook-files/*
 rook/log_*
 
+# EventData
+assets/EventData/node_modules/
+assets/EventData/build/
+
 #build/
 data/preprocessSubset*.txt
 .DS_Store
@@ -54,3 +58,7 @@ rook/rook-files/o_185/preprocess/preprocess.json
 assets/pkgs/swagger-ui/dist/*.map
 .Rhistory
 ravens_volume/test_data/*/search_config.json
+
+# IDE files
+.idea/
+

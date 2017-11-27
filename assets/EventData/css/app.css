@@ -1,0 +1,1517 @@
+svg {
+  background-color: #FFF;
+  cursor: default;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -o-user-select: none;
+  user-select: none;
+}
+
+.ui-datepicker-prev {
+    display: inline-block;
+    margin-left: 0;
+}
+
+.ui-datepicker-next {
+    display: inline-block;
+    float: right;
+}
+
+
+  #tab5{
+    text-align: center;
+  }
+
+#subset {
+  /*position: absolute;*/
+  float:left;margin-right:.5em;
+  width: 100%;
+  height: 100%;
+  padding: 10px;
+  overflow:scroll;
+  background-color: white;
+  /*-webkit-border-radius: 10px;
+  -moz-border-radius: 10px;
+  border-radius: 10px;
+  -webkit-box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
+  -moz-box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
+  box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);*/
+  pointer-events: none;
+}
+			
+#setx {
+  /*position: absolute;*/
+  float:left;margin-right:.5em;
+  width: 100%;
+  height: 100%;
+  padding: 10px;
+  overflow:scroll;
+  background-color: white;
+  /*-webkit-border-radius: 10px;
+  -moz-border-radius: 10px;
+  border-radius: 10px;
+  -webkit-box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
+  -moz-box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
+  box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);*/
+/*  pointer-events: none;*/
+}
+			
+.hidden {
+  display: none;
+}
+
+.arc path {
+  stroke: #fff;
+}
+
+svg:not(.active):not(.ctrl) {
+  cursor: crosshair;
+}
+
+path.link {
+  fill: none;
+  stroke: #000;
+  stroke-width: 2px;
+  cursor: default;
+}
+
+svg:not(.active):not(.ctrl) path.link {
+  cursor: pointer;
+}
+
+path.link.selected {
+  stroke-dasharray: 10,3;
+}
+
+path.link.dragline {
+  pointer-events: none;
+}
+
+path.link.hidden {
+  stroke-width: 0;
+}
+
+circle.node {
+  stroke-width: 1.5px;
+  cursor: pointer;
+}
+
+text {
+  font: 12px sans-serif;
+  pointer-events: none;
+}
+
+text.id {
+  text-anchor: middle;
+  font-weight: bold;
+}
+
+.left {
+    width: 33.3%;
+    height: 100%; /*was 600px;*/
+    box-sizing: border-box; margin: 0;
+    overflow:scroll;
+}
+
+.navbar-default {
+    height: 62px;
+}
+
+#subsetLocation svg {
+    background-color:transparent;
+    /*width:500px;*/
+    height:386px;   /*was 600px;*/
+}
+
+/*#main.svg-leftpanel svg, #main.svg-rightpanel svg {width: 100%;}  This is size when left/right panel minimized. Was: calc(100% - 300px);}*/
+/*#main.svg-leftpanel.svg-rightpanel svg {width: 100%;}   /*  Was: calc(100% - 300px);} /**/
+/* Above changes fix issue when screen gets very small, and right margin is fixed at 300px, obscuring central display, even while left tab is shrinking below 300px */
+
+
+/* #main.svg-marg-left svg {margin-left:0px;}
+#main.svg-marg-right svg {margin-right:0px;} */
+
+div.popover.variables {
+    max-width:275px;
+    width:275px;
+}
+div.popover {
+    z-index:1050;
+}
+div.popover.variables div.popover-content.form-horizontal {
+    padding:0;
+}
+div.popover.variables div.popover-content.form-horizontal .form-group {
+    margin-bottom:0;
+}
+
+/* Format popover table in variable selector */
+table tr td{
+    padding:0px !important;
+}
+.table > tbody > tr:first-child > td {
+    border: none;
+}
+
+#variableList {
+    z-index:1000;
+}
+#subsetList {
+    z-index:1000;
+}
+
+#leftpanel {
+    border:1px solid #ADADAD;
+    position:fixed;top:72px;left:10px; /* navbar: 62px, spacer: 10px */
+    width: 250px;
+    height:calc(100% - 122px);      /* top: 72px, bottom:50px */
+    background:#F9F9F9;
+    padding: 0 16px 0 0;
+    z-index:25;
+}
+#btnVariables {width:50%;}
+#btnSubset {width:50%;}
+#leftpanel #leftContentArea div {display:none;}
+#leftpanel #leftContentArea div.active {display:block;}
+
+/* Elements to enable/disable on open/close left panel */
+#leftpanel.closepanel {width:1px;}
+#leftpanel.closepanel #leftpaneltitle,
+#leftpanel.closepanel #leftpanelButtons,
+#leftpanel.closepanel #leftpanelContent {display:none;}
+
+#rightpanel {
+    border:1px solid #ADADAD;
+    width:250px;
+    position:fixed;
+    top:72px;
+    right:10px; /* buffer: 10px, scrollbar: 17px */
+    height:calc(100% - 122px);      /* top: 72px, bottom:50px */
+    background:#F9F9F9;
+    padding: 0 0 0 16px;
+    z-index:25;
+}
+
+#rightpanel #rightContentArea div {display:none;}
+#rightpanel #rightContentArea div.active {display:block;}
+
+#rightpanel.closepanel {width:1px;}
+#rightpanel.closepanel #rightpaneltitle,
+#rightpanel.closepanel #queryVariables,
+#rightpanel.closepanel #querySubsets,
+#rightpanel.closepanel #rightpanelButtonBar {display:none;}
+
+
+div.sidepanel div.panelbar {
+    position:absolute;
+    height:100%;
+}
+#leftpanel div#toggleLpanelicon.panelbar {
+  left:calc(100% - 16px);
+}
+#rightpanel div#toggleRpanelicon.panelbar {
+  right:calc(100% - 16px);
+}
+
+div.sidepanel div.panelbar span {
+    display: flex;
+    width: 16px;
+    height: 100%;
+    position:relative;
+    justify-content:center;
+    align-items:center;
+    font-size: .75em;
+    color: #ADADAD;
+    background: #eee;
+}
+
+#stageButton {
+    position:fixed;
+    bottom:61px;
+    right:270px; /* buffer: 10px, scrollbar: 17px */
+    z-index:25;
+}
+
+#boolToggle.btn.active, #boolToggle.btn:active {
+    background-color: transparent;
+    border-color: slategray;
+    color:lightgray;
+}
+#logToggle.btn.active, #logToggle.btn:active {
+    background-color: #428bca;
+    border-color: #357ebd;
+}
+
+#main {
+    margin-left:260px;
+    width:calc(100% - 260px);
+    height: calc(100% - 62px - 40px);
+    margin-top:62px;
+    position: fixed;
+    overflow:auto;
+}
+
+#canvas {
+    width: 100%;
+    height:calc(100% - 62px - 40px);
+    margin:62px 0 0 0;
+    position:fixed;
+    overflow:auto;
+    white-space:nowrap;
+}
+
+#ticker {
+    position:fixed;
+    height:40px;
+    width:100%;
+    background:#F9F9F9;
+    bottom:0;
+    border-top:1px solid #ADADAD;
+    z-index:1000;
+}
+
+#spacetools {
+    z-index: 17;
+}
+.spaceTool {
+    top:0; 
+    right:21%;
+    margin-right:10px; 
+    margin-top:10px; 
+    position:absolute;
+}
+.spaceTool button:first-child {
+    margin-right:1em;
+}
+.spaceTool button span {
+    font-size:1em;
+    color:#818181;
+    pointer-events:none;
+}
+
+#transformations {
+    z-index:33;
+    height:8%;
+    width:14%; 
+    right:200px;
+    top:14px;
+    position:absolute;
+}
+#transformations ul, #transformations ul li {
+    list-style:none;
+    margin-left:0;
+    padding-left:0;
+}
+#transformations ul li {
+    padding:1px 4px;
+    text-align: left;
+}
+#transSel li:hover { background-color:rgba(250, 128, 114, 0.5); cursor:pointer;}
+#transList li:hover { background-color:rgba(250, 128, 114, 0.5); cursor:pointer;}
+
+.legendary {
+    width:10%;
+    position:absolute;
+    bottom:0;
+    right:21%;
+    margin-right:10px;
+    margin-bottom:10px;
+}
+.legendary .clearfix {
+    margin-bottom:4px;
+}
+.legendary .rectColor {
+    float:left;
+    width:20px;
+    height:20px;
+    margin-right:4px;
+    /*opacity: 0.5;*/
+}
+.legendary .rectColor circle {
+    opacity: 0.5;
+}
+.legendary .rectLabel {
+    float:left;
+}
+
+.logbox {
+    width:15%;
+    position:absolute;
+    bottom:0;
+    left:21%;
+    margin-left:10px;
+    margin-bottom:10px;
+}
+.logbox .clearfix {
+    margin-bottom:4px;
+}
+.logbox .rectColor {
+    float:left;
+    width:20px;
+    height:20px;
+    margin-left:4px;
+    opacity: 0.5;
+}
+.logbox .rectLabel {
+    float:left;
+}
+
+#sandbox {
+    width:500px;
+    height:400px;
+}
+
+/* p { padding-left: 15px; } */
+
+path { 
+    fill: steelblue;
+}
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+.brush .extent {
+    stroke: #fff;
+    fill-opacity: .125;
+    shape-rendering: crispEdges;
+}
+
+.handle {
+  fill: #fff;
+  stroke: #000;
+  stroke-opacity: .5;
+  stroke-width: 1.25px;
+  pointer-events: fill;
+}
+
+table, th, td {
+    border-collapse: collapse;
+}
+td {
+    padding:4px;
+}
+
+/* Carousel */
+.carousel-indicators {
+    top:20px;
+    bottom:auto;
+}
+.carousel-indicators li {
+    border: 1px solid #818181;
+}
+.carousel-indicators li.active {
+    background-color: #818181;
+}
+.carousel-indicators li#create, .carousel-indicators li#delete {
+    border: 0;
+    border-radius: 0;
+    background-color: inherit;
+    text-indent:0;
+    font-size:12px;
+    width:12px;
+    height:12px;
+    line-height:12px;
+}
+.carousel-indicators li#create .glyphicon {
+    top:0;
+}
+
+.carousel-linked-nav,
+.item img {
+  display: block; 
+  margin: 0 auto;
+}
+
+.carousel-linked-nav {
+  width:200px;
+  margin: 10px auto;   
+}
+.carousel-linked-nav li {position:relative;}
+
+#carouselLeft {position:absolute;top:50%;left:calc(16px + 20%);z-index:30;font-size:2em;}
+#carouselRight {position:absolute;top:50%;right:calc(16px + 20%);z-index:30;font-size:2em;}
+
+.lowerError {
+    fill: #4682b4;
+}
+
+.upperError {
+  fill: silver;
+  fill-opacity: 0.65;
+}
+
+.line {
+  fill: #4682b4;
+}
+
+.nofill {
+  fill: none;
+}
+
+ /* The Overlay (background) */
+.overlay {
+    /* Height & width depends on how you want to reveal the overlay (see JS below) */   
+    height: 100%;
+    width: 0;
+    position: fixed; /* Stay in place */
+    z-index: 51; /* Sit on top */
+    left: 0;
+    top: 0;
+    background-color: rgb(0,0,0); /* Black fallback color */
+    background-color: rgba(0,0,0, 1.0); /* Black w/opacity */
+    overflow-x: hidden; /* Disable horizontal scroll */
+    transition: 0.5s; /* 0.5 second transition effect to slide in or slide down the overlay (height or width, depending on reveal) */
+}
+.overlay h1{
+ position: relative;
+    top: 10%; /* 25% from the top */
+    width: 100%; /* 100% width */
+    text-align: center; /* Centered text/links */
+    margin-top: 30px;
+    margin-bottom: 7%;
+  
+}
+/* Position the content inside the overlay */
+.overlay-content {
+    position: relative;
+    /*top: 10%; /* 25% from the top */
+    width: 100%; /* 100% width */
+    /*text-align: center;*/ /* Centered text/links */
+    margin-top: 30px; /* 30px top margin to avoid conflict with the close button on smaller screens */
+    height:90%;
+}
+
+/* The navigation links inside the overlay */
+.overlay p {
+    padding: 8px;
+    text-decoration: none;
+    font-size: 36px;
+    color: #818181;
+    /*display: block; /* Display block instead of inline */
+    transition: 0.3s; /* Transition effects on hover (color) */
+    margin-top: 3%;
+}
+
+/* When you mouse over the navigation links, change their color */
+.overlay a:hover, .overlay a:focus {
+    color: #f1f1f1;
+}
+
+/* Position the close button (top right corner) */
+.overlay .closebtn {
+    position: absolute;
+    top: 20px;
+    right: 45px;
+    font-size: 60px;
+}
+
+/* When the height of the screen is less than 450 pixels, change the font-size of the links and position the close button again, so they don't overlap */
+@media screen and (max-height: 450px) {
+    .overlay a {font-size: 20px}
+    .overlay .closebtn {
+        font-size: 40px;
+        top: 15px;
+        right: 35px;
+    }
+}
+
+
+
+/*overlay*/
+
+
+
+
+#btnEventSubset{
+  margin-top: 5%;
+}
+
+/*
+#Year_range{
+
+	width:5px;
+
+}
+*/
+
+
+
+.dropdown {
+  position: relative;
+  
+  /*margin-left: 43%;*/
+  
+}
+
+.dropdown dd,
+.dropdown dt {
+  margin: 0px;
+  padding: 0px;
+  width:100%;
+  text-align: center;
+}
+
+.dropdown ul,
+.dropdownevent ul {
+  margin: 0 0 0 0;
+  width: 272px;
+}
+
+.dropdown dd {
+  position: relative;
+}
+
+.dropdown a,
+.dropdown a:visited {
+  color: #fff;
+  text-decoration: none;
+  outline: none;
+  font-size: 12px;
+}
+
+.dropdown dt a {
+  background-color: #4F6877;
+  display: block;
+  padding: 8px 20px 5px 10px;
+  min-height: 25px;
+  line-height: 24px;
+  overflow: hidden;
+  border: 0;
+  width: 272px;
+  margin-left: 25%;
+}
+
+.dropdown dt a span,
+.dropdownevent dt a span
+.multiSel span {
+  cursor: pointer;
+  display: inline-block;
+  padding: 0 3px 2px 0;
+}
+
+.dropdown dd ul {
+  background-color: #4F6877;
+  border: 0;
+  color: #fff;
+  display: none;
+  left: 25%;
+  padding: 2px 15px 2px 5px;
+  position: absolute;
+  top: 2px;
+  width: 272px;
+  list-style: none;
+  height: 200px;
+  overflow: auto;
+  text-align:left;
+}
+
+.dropdown span.value {
+  display: none;
+}
+
+.dropdown dd ul li a {
+  padding: 5px;
+  display: block;
+}
+
+.dropdown dd ul li a:hover {
+  background-color: #fff;
+}
+
+/*source actor*/
+.dropdownactorl1,.dropdownactorl2,.dropdownactorl3,.dropdownactorl4 {
+  position: relative;
+  float: left;
+  /*margin-left: 43%;*/
+  height:50px;
+  z-index:100;
+  
+}
+
+/*target actor*/
+.tdropdownactorl1,.tdropdownactorl2,.tdropdownactorl3,.tdropdownactorl4 {
+  position: relative;
+  
+  /*margin-left: 43%;*/
+  height:50px;
+  z-index:100;
+  
+}
+
+.dropdownevent{
+ position: relative;
+  
+  /*margin-left: 43%;*/
+  height:50px;
+  z-index:100;
+   
+}
+a {
+  color: #fff;
+  height:40px;
+}
+
+/*source actor*/
+.dropdownactorl1 dd,
+.dropdownactorl1 dt,
+.dropdownactorl2 dd,
+.dropdownactorl2 dt,
+.dropdownactorl3 dd,
+.dropdownactorl3 dt,
+.dropdownactorl4 dd,
+.dropdownactorl4 dt
+{
+  /*margin-left: 43%;*/
+  text-align: center;
+  padding: 0px;
+  width:100%;
+  z-index:100;
+
+}
+
+/*target actor*/
+.tdropdownactorl1 dd,
+.tdropdownactorl1 dt,
+.tdropdownactorl2 dd,
+.tdropdownactorl2 dt,
+.tdropdownactorl3 dd,
+.tdropdownactorl3 dt,
+.tdropdownactorl4 dd,
+.tdropdownactorl4 dt  {
+  /*margin-left: 43%;*/
+  padding: 0px;
+  width:100%;
+  z-index:100;
+  text-align: center;
+}
+
+.dropdownevent dd,
+.dropdownevent dt{
+ padding: 0px;
+  width:100%;
+  z-index:100;
+  text-align: center; 
+}
+
+
+#level1,#level2,#level3 {
+
+  /*margin-left:5%;*/
+  /*width:50%;*/
+  /*text-align: left;*/
+  /*float:left;*/
+
+}
+
+#tlevel1,#tlevel2,#tlevel3 {
+
+   /*margin-left:50%;*/
+  /*text-align: center;*/
+  /*width:50%;*/
+}
+
+#location{
+
+  /*width:50%;*/
+  /*float:center;*/
+}
+
+#toplist{
+
+  display: inline-block;
+}
+
+/*#daterange {
+  text-align: center;
+  margin-left:15%;
+  /*width:20%;
+}
+*/
+
+#event
+{
+  text-align: center;
+  margin-left: 30%;
+}
+
+#historydiv{
+background-color: white;
+width:50%;
+height:24%;
+float:left;
+
+}
+
+#buttondiv{
+  /*position: fixed;*/
+  float: right;
+  /*text-align: center;*/
+  margin-right: 25%;
+}
+.historyp{
+  color: black;
+  font-size: 10pt;
+}
+
+
+
+.area {
+     clip-path: url(#clip);
+ }
+
+.areauser {
+    clip-path: url(#clip);
+}
+
+.zoom {
+  cursor: move;
+  fill: none;
+  pointer-events: all;
+}
+
+
+#datehist,  
+#srchist,
+#tarhist,
+#lochist,
+#eventhist{color: black;
+  font-size: 14pt;
+display: inline;}
+
+#datediv
+{
+  position: relative;
+  /*width:60%;*/
+  /*margin-right: 5%;*/
+  text-align: center;
+}
+
+#eventheading{
+  text-align: center;
+}
+#sourceactorheading {
+  /*margin-left: 5%;*/
+  /*width: 40%;*/
+  /*text-align: center;*/ 
+
+
+}
+
+ #mainlist{
+  width:33%;
+  height: 30%;
+  text-align: center;
+  display: inline-block;
+
+ }
+#targetactorheading {
+  /*margin-left: 5%;*/
+  /*text-align: center;*/
+  /*width: 40%;*/
+  /*margin-left: 50%; */
+
+
+}
+
+
+/*source actor*/
+.dropdownactorl1 ul,
+.dropdownactorl2 ul,
+.dropdownactorl3 ul,
+.dropdownactorl4 ul,
+.tdropdownactorl1 ul,
+.tdropdownactorl2 ul,
+.tdropdownactorl3 ul,
+.tdropdownactorl4 ul,
+.dropdownevent  {
+  margin: 0 0 0 0;
+  width: 272px;
+  /*margin-left: 43%;*/
+  z-index:100;
+}
+
+.dropdownactorl1 dd,
+.dropdownactorl2 dd,
+.dropdownactorl3 dd,
+.dropdownactorl4 dd,
+.tdropdownactorl1 dd,
+.tdropdownactorl2 dd,
+.tdropdownactorl3 dd,
+.tdropdownactorl4 dd,
+.dropdownevent {
+  position: relative;
+  z-index:100;
+}
+
+.dropdownactorl1 a,
+.dropdownactorl1 a:visited,
+.dropdownactorl2 a,
+.dropdownactorl2 a:visited,
+.dropdownactorl3 a,
+.dropdownactorl3 a:visited,
+.dropdownactorl4 a,
+.dropdownactorl4 a:visited,
+.tdropdownactorl1 a,
+.tdropdownactorl1 a:visited,
+.tdropdownactorl2 a,
+.tdropdownactorl2 a:visited,
+.tdropdownactorl3 a,
+.tdropdownactorl3 a:visited,
+.tdropdownactorl4 a,
+.tdropdownactorl4 a:visited,
+.dropdownevent a,
+.dropdownevent a:visited {
+  color: #fff;
+  text-decoration: none;
+  outline: none;
+  font-size: 12px;
+}
+
+.dropdownactorl1 dt a,
+.dropdownactorl2 dt a,
+.dropdownactorl3 dt a,
+.dropdownactorl4 dt a,
+.tdropdownactorl1 dt a,
+.tdropdownactorl2 dt a,
+.tdropdownactorl3 dt a,
+.tdropdownactorl4 dt a,
+.dropdownevent dt a  {
+  background-color: #4F6877;
+  display: block;
+  padding: 8px 20px 5px 10px;
+  min-height: 25px;
+  line-height: 24px;
+  overflow: hidden;
+  border: 0;
+  width: 272px;
+  z-index:100;
+}
+
+.dropdownactorl1 dt a span,
+.dropdownactorl2 dt a span,
+.dropdownactorl3 dt a span,
+.dropdownactorl4 dt a span,
+.tdropdownactorl1 dt a span,
+.tdropdownactorl2 dt a span,
+.tdropdownactorl3 dt a span,
+.tdropdownactorl4 dt a span,
+.multiSel span,
+.multiSelevent span {
+  cursor: pointer;
+  display: inline-block;
+  padding: 0 3px 2px 0;
+}
+
+.dropdownactorl1 dd ul,
+.dropdownactorl2 dd ul,
+.dropdownactorl3 dd ul,
+.dropdownactorl4 dd ul, 
+.tdropdownactorl1 dd ul,
+.tdropdownactorl2 dd ul,
+.tdropdownactorl3 dd ul,
+.tdropdownactorl4 dd ul,
+.dropdownevent dd ul {
+  background-color: #4F6877;
+  border: 0;
+  color: #fff;
+  display: none;
+  /*left: 0px;*/
+  margin-left: 25%;
+  padding: 2px 15px 2px 5px;
+  position: absolute;
+  top: 2px;
+  width: 272px;
+  list-style: none;
+  height: 200px;
+  overflow: auto;
+  text-align:left;
+}
+
+.dropdownactorl1 span.value,
+.dropdownactorl2 span.value,
+.dropdownactorl3 span.value,
+.dropdownactorl4 span.value,
+.tdropdownactorl1 span.value,
+.tdropdownactorl2 span.value,
+.tdropdownactorl3 span.value,
+.tdropdownactorl4 span.value.
+.dropdownevent span.value {
+  display: none;
+}
+
+.dropdownactorl1 dd ul li a,
+.dropdownactorl2 dd ul li a,
+.dropdownactorl3 dd ul li a,
+.dropdownactorl4 dd ul li a,
+.tdropdownactorl1 dd ul li a,
+.tdropdownactorl2 dd ul li a,
+.tdropdownactorl3 dd ul li a,
+.tdropdownactorl4 dd ul li a,
+.dropdownevent dd ul li a 
+ {
+  padding: 5px;
+  display: block;
+}
+
+.dropdownactorl1 dd ul li a:hover,
+.dropdownactorl2 dd ul li a:hover,
+.dropdownactorl3 dd ul li a:hover,
+.dropdownactorl4 dd ul li a:hover,
+.tdropdownactorl1 dd ul li a:hover,
+.tdropdownactorl2 dd ul li a:hover,
+.tdropdownactorl3 dd ul li a:hover,
+.tdropdownactorl4 dd ul li a:hover,
+.dropdownevent dd ul li a:hover {
+  background-color: #fff;
+}
+
+#nxtl1btn {
+/*transform: translateX(10%);*/
+/*float: right;*/
+
+}
+/*
+#srcigo.clicked{
+  background-color: #9ca6b7;
+  
+}*/
+
+
+/*
+* Added for Location
+*/
+.graph_axis_label {
+    font-size:20px;
+}
+
+.graph_collapse {
+    overflow: hidden;
+    display:inline-block; /* or float:left; */
+    height: 44px;
+	width:auto;
+	-webkit-transition: all 0.5s ease;
+}
+
+.graph_close {
+    border: 1px solid #ADADAD;
+    padding-top:3px;
+    background: rgb(249, 249, 249);
+    margin-bottom:5px;
+
+    overflow: hidden;
+    display:inline-block; /* or float:left; */
+    height: 36px;
+	width:480px;
+	-webkit-transition: all 0.5s ease;
+}
+
+.graph_config {
+    width:480px;
+    border: 1px solid #ADADAD;
+    padding-top:3px;
+    background: rgb(249, 249, 249);
+    overflow: hidden;
+    display:inline-block; /* or float:left; */
+    height: 432px;
+	-webkit-transition: all 0.5s ease;
+    margin-bottom:5px;
+}
+
+.countrytable_collapse {
+    overflow: hidden;
+    display:inline-block; /* or float:left; */
+    height: 0;
+    width:auto;
+    -webkit-transition: all 0.5s ease;
+}
+
+.country_table_config {
+    overflow: hidden;
+    float:left; /* or float:left; */
+    width:auto;
+    -webkit-transition: all 1s ease;
+}
+
+.hide_label {
+	display:none;
+}
+
+.graph_container {
+	width:auto;
+	height:500px;
+	overflow-x: scroll;
+	overflow-y: scroll;
+}
+
+.bar {
+	fill: steelblue;
+	cursor: pointer;
+}
+
+.bar_click {
+    fill:white;
+    cursor: pointer;
+    opacity: 0;
+}
+
+
+.bar_all_selected {
+	fill: brown;
+	cursor: pointer;
+}
+
+.bar_some_selected {
+	stroke: #000000; 
+	fill: url(#pattern1);
+	cursor: pointer;
+}
+
+.bar:hover {
+	fill: brown;
+	cursor: pointer;
+}
+
+.bar_all_selected:hover {
+	fill: steelblue;
+	cursor: pointer;
+}
+
+.bar_some_selected:hover {
+	fill: steelblue;
+	cursor: pointer;
+}
+
+.axis path, .axis line {
+  fill: none;
+  stroke: #D4D8DA;
+  stroke-width: 1px;
+  shape-rendering: crispEdges;
+}
+.x path {
+	display: none;
+}
+
+#svg_graph_table tr:nth-child(odd) {
+    background: #ADADAD;
+}
+
+#svg_graph_table tr:nth-child(even) {
+    background: #ADADAD;
+}
+
+.strike_through:hover {
+	text-decoration: line-through;
+}
+
+#svg_graph_table tr:nth-child(odd) {
+    background: #ADADAD;
+}
+
+#svg_graph_table tr:nth-child(even) {
+    background: #ADADAD;
+}
+
+.strike_through:hover {
+	text-decoration: line-through;
+}
+
+/*begin styling for actor*/
+
+#tabDiv {
+	margin-left: 5px;
+	margin-right: 5px;
+}
+
+#sourceTabBtn {
+    width: 50%;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    margin-left: 0;
+
+}
+
+#targetTabBtn {
+    width: 50%;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    margin-left: -1px;
+}
+
+/* style the buttons inside the tab */
+div.actorTab button {
+    position: relative;
+    float: left;
+    border: none !important;
+    outline: none !important;
+}
+
+/* create an active/current tablink class */
+div.actorTab button.active {
+    background-image: none;
+    outline: 0;
+    -webkit-box-shadow: inset 0 3px 5px rgba(0, 0, 0, .125);
+    box-shadow: inset 0 3px 5px rgba(0, 0, 0, .125);
+}
+
+/* style the tab content */
+.actorTabContent {
+    display: none;
+   -webkit-animation: fadeEffect 0.5s;
+    animation: fadeEffect 0.5s;
+}
+
+/* fade in tabs */
+@-webkit-keyframes fadeEffect {
+    from {opacity: 0;}
+    to {opacity: 1;}
+}
+
+@keyframes fadeEffect {
+    from {opacity: 0;}
+    to {opacity: 1;}
+}
+
+#fullContainer {
+	width: 100%;
+	height: calc(100% - 130px);
+	box-sizing: border-box;
+}
+
+.actorTabContent {
+	width: 100%;
+	height: 100%;
+}
+
+.actorLeft {
+	width: 180px;
+	height: 100%;
+	display: inline-block;
+	vertical-align: top;
+}
+
+.actorRight {
+    width:164px;
+    height:100%;
+	display: inline-block;
+	vertical-align: top;
+}
+
+.actorSearch {
+	margin: 5px 0 5px 5px;
+	height: 30px;
+	width: 170px !important;
+}
+
+.actorFullList {
+	display: inline-block;
+	position: absolute;
+	width :180px;
+	height: calc(100% - 212px);
+	overflow-x: auto;
+	overflow-y: scroll;
+	white-space: nowrap;
+}
+
+.actorFilterList {
+	position: absolute;
+	width: 164px;
+	height: calc(100% - 206px);
+    margin-top:3px;
+	overflow-x: auto;
+	overflow-y: scroll;
+	white-space: nowrap;
+}
+
+.clearActorBtn {
+	display: block;
+	margin: 5px 38px 5px 5px;
+    width:calc(100% - 43px);
+	height: 30px;
+}
+
+#actorContainer {
+    float:left;
+    max-width:none;
+    width:calc(100% - 10px);
+    table-layout:fixed;
+	height: calc(100% - 20px);
+	margin-top:10px;
+    margin-left:10px;
+    margin-right:0;
+    padding-right:0;
+}
+
+#actorSelectionDiv {
+	width: 350px !important;
+	border: 1px solid #ADADAD;
+	background: #F9F9F9;
+    height:100%;
+	margin-bottom: 3px;
+}
+
+#actorLinkDiv {
+	float:left;
+    margin-left:10px;
+
+    width:calc(100% - 45px);
+    min-width: 200px;
+    overflow-x:auto;
+    overflow-y:hidden;
+	height: 627px;
+	border: 1px solid #ADADAD;
+    display:block;
+}
+
+.actorBottom {
+	margin: 5px;
+    margin-top:-12px;
+}
+
+.actorNewGroup {
+	float: right;
+}
+
+.actorShowSelected {
+	display: inline-block;
+}
+
+.actorHead4 {
+	margin-bottom: 0px;
+	display: inline-block;
+	font-size: 18px;
+	
+}
+
+.filterExpand {
+	display: inline-block;
+	padding: 0px;
+	height: 20px;
+	width: 20px;
+	vertical-align: middle;
+	outline: none;
+
+	background-image: url(../images/expand.png);
+	background-repeat: no-repeat;
+	background-position: 0px 0px;
+	border: none;
+}
+
+.filterContainer {
+	display: none;
+}
+
+.sourceChk, .targetChk, .actorChk {
+	display: inline-block;
+	vertical-align: text-bottom;
+	margin: 1px 5px 0px 5px !important;
+}
+
+.actorChkLbl {
+	display: inline-block;
+	margin-right: 10px;
+}
+
+#editGroupName {
+	display: inline-block;
+	text-align: center;
+	width: 250px;
+	font-size: 16px;
+	font-weight: 500;
+	line-height: 1.1;
+	padding: 0px;
+	border: none;
+	border-image-width: 0;
+	outline: none;
+	box-shadow: none;
+	background-color: #F9F9F9;
+
+	top:0px;
+}
+
+#deleteGroup {
+	display: inline-block;
+	top:0px;
+	margin-right: 20px;
+
+	padding: 0px;
+	height: 15px;
+	width: 15px;
+	vertical-align: middle;
+	outline: none;
+	background-color: #F9F9F9;
+
+	background-image: url(../images/delete.png);
+	background-repeat: no-repeat;
+	background-position: 0px 0px;
+	border: none;
+}
+
+#linkTitleLeft, #linkTitleRight {
+    width: 50%;
+    float: left;
+    border-bottom: 1px solid #ADADAD;
+}
+
+
+/*styling for link SVG*/
+#actorLinkSVG {
+	background-color: #FFF;
+	cursor: default;
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	-o-user-select: none;
+	user-select: none;
+	height: calc(100% - 19px) !important;
+    width:100%;
+}
+
+path.link {
+	fill: none;
+	stroke: #000;
+	stroke-width: 3px;
+	cursor: pointer;
+}
+
+path.link.dragline {
+	pointer-events: none;
+}
+
+path.link.hidden {
+	stroke-width: 0;
+}
+
+circle.node {
+	stroke-width: 1.5px;
+	cursor: pointer;
+}
+
+text {
+	font: 12px sans-serif;
+	pointer-events: none;
+}
+
+text.id {
+	text-anchor: middle;
+	font-weight: bold;
+}
+
+.SVGtooltip {
+	display: none;
+	position: absolute;
+	text-align: center;
+	padding: 5px;
+	font: 12px sans-serif;
+	background: #ddd;
+	border: 1px solid #F9F9F9;
+	pointer-events: none;
+}
+/*end styling for actor*/
+
+.action_graph_config {
+    border: 1px solid #ADADAD;
+    padding-top:3px;
+    background: rgb(249, 249, 249);
+    overflow: hidden;
+}
+
+#actionMainGraph text,#actionSubGraph text {
+font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+
+font-size: 14px;
+
+line-height: 1.42857143;
+
+color: #333;
+/*
+  text-anchor: end;
+*/
+}
+
+#actionMainGraph .axis {
+/*
+	stroke: red;
+*/
+}
+
+.actionBar_click {
+    fill: white;
+    cursor: pointer;
+    opacity: 0;
+}
+
+.actionBar, .actionBar_none {
+	fill: steelblue;
+	cursor: pointer;
+}
+
+.actionBar_none:hover, .actionBar_none_hover {
+	fill: brown;
+	cursor: pointer;
+}
+
+.actionBar_some {
+	fill: url("#actionPattern");
+	cursor: pointer;
+}
+
+.actionBar_some:hover, .actionBar_some_hover {
+	fill: steelblue;
+	cursor: pointer;
+}
+
+.actionBar_all {
+	fill: brown;
+	cursor: pointer;
+}
+
+.actionBar_all:hover, .actionBar_all_hover {
+	fill: steelblue;
+	cursor: pointer;
+}
+
+/*
+.bar_all_selected {
+	fill: brown;
+	cursor: pointer;
+}
+
+.bar_some_selected {
+	stroke: #000000; 
+	fill: url(#pattern1);
+	cursor: pointer;
+}
+
+.bar:hover {
+	fill: brown;
+	cursor: pointer;
+}
+
+.bar_all_selected:hover {
+	fill: steelblue;
+	cursor: pointer;
+}
+
+.bar_some_selected:hover {
+	fill: steelblue;
+	cursor: pointer;
+}
+
+.axis path, .axis line {
+  fill: none;
+  stroke: #D4D8DA;
+  stroke-width: 1px;
+  shape-rendering: crispEdges;
+}
+.x path {
+	display: none;
+}*/
+
+.glyphicon {
+    color: #818181
+}
