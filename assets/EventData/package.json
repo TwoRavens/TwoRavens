@@ -1,0 +1,43 @@
+{
+  "name": "TwoRavens",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/TwoRavens/EventData.git"
+  },
+  "scripts": {
+    "xserve": "http-server -p 8888",
+    "xstart": "webpack -d --watch & npm run serve",
+    "start": "webpack -d --watch"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "BSD-3-Clause",
+  "dependencies": {
+    "ace-builds": "^1.2.9",
+    "bootstrap": "^3.3.7",
+    "d3": "^4.11.0",
+    "hopscotch": "^0.3.1",
+    "http-server": "^0.10.0",
+    "jqtree": "^1.4.3",
+    "jquery": "^3.2.1",
+    "jquery-datepicker": "^1.11.5",
+    "jquery-ui": "^1.12.1",
+    "jquery-ui-dist": "^1.12.1",
+    "ladda": "^1.0.5",
+    "mithril": "^1.1.1"
+  },
+  "devDependencies": {
+    "babel": "^6.23.0",
+    "babel-core": "^6.24.1",
+    "babel-loader": "^7.1.2",
+    "babel-preset-es2015": "^6.24.1",
+    "css-loader": "^0.28.1",
+    "extract-text-webpack-plugin": "^2.1.0",
+    "file-loader": "^1.1.4",
+    "webpack": "^2.7.0",
+    "webpack-bundle-tracker": "^0.2.0"
+  }
+}
