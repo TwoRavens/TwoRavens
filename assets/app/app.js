@@ -66,11 +66,11 @@ const layoutAdd = "add";
 const layoutMove = "move";
 
 // radius of circle
-let allR = 40;
+const RADIUS = 40;
 
 // cx, cy, r values for indicator lights
-let ind1 = [(allR+30) * Math.cos(1.3), -1*(allR+30) * Math.sin(1.3), 5];
-let ind2 = [(allR+30) * Math.cos(1.1), -1*(allR+30) * Math.sin(1.1), 5];
+let ind1 = [(RADIUS+30) * Math.cos(1.3), -1*(RADIUS+30) * Math.sin(1.3), 5];
+let ind2 = [(RADIUS+30) * Math.cos(1.1), -1*(RADIUS+30) * Math.sin(1.1), 5];
 
 // space index
 let myspace = 0;
@@ -186,12 +186,23 @@ export let d3mProblemDescription = {
     taskDescription: ""
 };
 
-
 let svg, width, height, div, estimateLadda, selectLadda;
-let arc1, arc3, arc4, arcInd1, arcInd2;
 
-let arcInd1Limits = [0,0.3];
-let arcInd2Limits = [0.35,0.65];
+// arcs for denoting pebble characteristics
+const arc = (start, end) => d3.svg.arc()
+    .innerRadius(RADIUS + 5)
+    .outerRadius(RADIUS + 20)
+    .startAngle(start)
+    .endAngle(end);
+const [arc0, arc1, arc2, arc3, arc4] = [arc(0, 3.2), arc(0, 1), arc(1.1, 2.2), arc(2.3, 3.3), arc(4.3, 5.3)];
+const arcInd = (arclimits) => d3.svg.arc()
+    .innerRadius(RADIUS + 22)
+    .outerRadius(RADIUS + 37)
+    .startAngle(arclimits[0])
+    .endAngle(arclimits[1]);
+
+const [arcInd1Limits, arcInd2Limits] = [[0, 0.3], [0.35, 0.65]];
+const [arcInd1, arcInd2] = [arcInd(arcInd1Limits), arcInd(arcInd2Limits)];
 
 let byId = id => document.getElementById(id);
 
@@ -201,7 +212,7 @@ export const reset = function reloadPage() {
 };
 let restart;
 
-let dataurl = "";
+let dataurl = '';
 
 /**
    called on app start
@@ -213,127 +224,78 @@ let dataurl = "";
 */
 export function main(fileid, hostname, ddiurl, dataurl, apikey) {
     dataurl = dataurl;
-    if (PRODUCTION && fileid == "") {
-        alert("Error: No fileid has been provided.");
-        throw new Error("Error: No fileid has been provided.");
+    if (PRODUCTION && fileid === '') {
+        let msg = 'Error: No fileid has been provided.';
+        alert(msg);
+        throw new Error(msg);
     }
 
-    let dataverseurl = hostname ? "https://" + hostname :
+    let dataverseurl = hostname ? 'https://' + hostname :
         PRODUCTION ? DATAVERSE_URL :
-        "http://localhost:8080";
-
+        'http://localhost:8080';
+    // if file id supplied, assume we are dealing with dataverse and cook a standard dataverse data access url
+    // with the fileid supplied and the hostname we have supplied or configured
     if (fileid && !dataurl) {
-        // file id supplied; assume we are dealing with dataverse and cook a standard dataverse data access url
-        // with the fileid supplied and the hostname we have supplied or configured
-        dataurl = dataverseurl + "/api/access/datafile/" + fileid;
-        // rp; temporarily remove this
-        dataurl = dataurl + "?key=" + apikey;
+        dataurl = `${dataverseurl}/api/access/datafile/${fileid}?key=${apikey}`;
     }
     cdb('--dataurl: ' + dataurl);
     cdb('--dataverseurl: ' + dataverseurl);
-    svg = d3.select("#whitespace");
 
-    let tempWidth = d3.select("#main.left").style("width");
+    let tempWidth = d3.select('#main.left').style('width');
     width = tempWidth.substring(0, tempWidth.length - 2);
-    height = $(window).height() - 120; // Hard coding for header and footer and bottom margin.
+    height = $(window).height() - 120; // hard code header, footer, and bottom margin
 
     estimateLadda = Ladda.create(byId("btnEstimate"));
     selectLadda = Ladda.create(byId("btnSelect"));
-
-    let colorTime = false;
-    let colorCS = false;
-
-    let depVar = false;
-    let subsetdiv = false;
-    let setxdiv = false;
-
-    // width and height for histgrams
-    let barwidth = 1.3 * allR;
-    let barheight = 0.5 * allR;
-    let barPadding = 0.35;
-    let barnumber = 7;
-
-    // arcs for denoting pebble characteristics
-    let arc = (start, end) => d3.svg.arc()
-        .innerRadius(allR + 5)
-        .outerRadius(allR + 20)
-        .startAngle(start)
-        .endAngle(end);
-    let arcInd = (arclimits) => d3.svg.arc()
-        .innerRadius(allR + 22)
-        .outerRadius(allR + 37)
-        .startAngle(arclimits[0])
-        .endAngle(arclimits[1]);
-
-    let [arc0, arc2] = [arc(0, 3.2), arc(1.1, 2.2)];
-    //arc1 = arc(1.3, 2.3);
-    arc1 = arc(0,1);
-    arc3 = arc(2.3, 3.3);
-    arc4 = arc(4.3, 5.3);
-
-    arcInd1 = arcInd(arcInd1Limits);
-    arcInd2 = arcInd(arcInd2Limits);
+    svg = d3.select("#whitespace");
 
     // indicators for showing membership above arcs
     // let indicator = (degree) => d3.svg.circle()
-    //     .cx( allR )//(allR+35) * Math.sin(degree))
-    //     .cy( allR )//(allR+35) * Math.cos(degree))
+    //     .cx( RADIUS )//(RADIUS+35) * Math.sin(degree))
+    //     .cy( RADIUS )//(RADIUS+35) * Math.cos(degree))
     //     .r(3);
     // ind1 = indicator(1);
     // ind2 = indicator(1.2);
 
     // from .csv
-    let dataset2 = [];
     let lablArray = [];
     let hold = [];
-    let subsetNodes = [];
 
-    // collapsable user log
-    $('#collapseLog').on('shown.bs.collapse', () => d3.select("#collapseLog div.panel-body").selectAll("p")
-        .data(logArray)
-        .enter()
-        .append("p")
-        .text(d => d));
-    $('#collapseLog').on('hidden.bs.collapse', () => d3.select("#collapseLog div.panel-body").selectAll("p")
-        .remove());
-
-    //set start from user input, then assume locations are consistent based on d3m directory structure (alternatively can make each of these locations be set by user)
-    let d3mRootPath = "";
-    let d3mDataName = "";
+    // assume locations are consistent based on d3m directory structure
+    let d3mRootPath = '';
+    let d3mDataName = '';
     let d3mData = null;
     let d3mTarget = null;
-    let d3mPreprocess = "";
-    let d3mPS = "";
-    let d3mDS = "";
+    let d3mPreprocess = '';
+    let d3mPS = '';
+    let d3mDS = '';
 
-    // default to California PUMS subset (should, doesn't actually do that)
+    // default to Fearon Laitin
     let data = 'data/' + (false ? 'PUMS5small' : 'fearonLaitin');
     let metadataurl = ddiurl || (fileid ? `${dataverseurl}/api/meta/datafile/${fileid}` : data + '.xml');
     // read pre-processed metadata and data
     let pURL = dataurl ? `${dataurl}&format=prep` : data + '.json';
 
-    if(IS_D3M_DOMAIN) {
+    if (IS_D3M_DOMAIN) {
         pURL = d3mPreprocess;
-        // zparams.zdataurl = start+'/data/trainDatamerged.tsv';   // "start" path no longer exists
-        // zparams.zdata = d3mDataName;   // this is now going to be filled in using problem schema field
-    } else if(!PRODUCTION) {
+    } else if (!PRODUCTION) {
         zparams.zdataurl = 'data/fearonLaitin.tsv';
     }
 
     /*
-    Loads all external data in the following order (logic is not included):
-    1. Retrieve the configuration information
-    2. Set 'configurations'
-    3. Read the problem schema and set 'd3mProblemDescription'
-    4. Read the data schema and set 'dataschema'
-    5. Read in zelig models (not for d3m)
-    6. Read in zeligchoice models (not for d3m)
-    7. Start the user session
-    8. Call runPreprocess(...)
-    9. Call readPreprocess(...)
-    10. Build allNodes[] using preprocessed information
-    11. Add dataschema information to allNodes (when in IS_D3M_DOMAIN)
-    12. Call scaffolding() and start her up
+      Loads all external data in the following order (logic is not included):
+      1. Retrieve the configuration information
+      2. Set 'configurations'
+      3. Read the problem schema and set 'd3mProblemDescription'
+      4. Read the data schema and set 'dataschema'
+      5. Read in zelig models (not for d3m)
+      6. Read in zeligchoice models (not for d3m)
+      7. Start the user session
+      8. Call runPreprocess(...)
+      9. Call readPreprocess(...)
+      10. Build allNodes[] using preprocessed information
+      11. Add dataschema information to allNodes (when in IS_D3M_DOMAIN)
+      12. Call scaffolding() and start her up
     */
 
     Promise.resolve(IS_D3M_DOMAIN && m.request({
@@ -746,7 +708,7 @@ let fill = (d, id, op, d1, d2) => $fill('#' + id + d.id, op, d1, d2);
 let fillThis = (self, op, d1, d2) => $fill(self, op, d1, d2);
 
 /**
-  called after all external data are guaranteed to have been read to completion. this populates the left panel with variable names, the right panel with model names, the transformation tool, an the associated mouseovers. its callback is layout(), which initializes the modeling space
+  called after all external data are guaranteed to have been read to completion. this populates the left panel with variable names, the right panel with model names, the transformation tool, and the associated mouseovers. its callback is layout(), which initializes the modeling space
 */
 function scaffolding(callback) {
     console.log("SCAFFOLDING");
@@ -782,10 +744,9 @@ function scaffolding(callback) {
         .append("li")
         .text(d => d);
 
-    if(!IS_D3M_DOMAIN){    // No variable transformation in present d3m mode
-
+    if (!IS_D3M_DOMAIN) { // No variable transformation in present d3m mode
         $('#tInput').click(() => {
-            var t = byId('transSel').style.display;
+            let t = byId('transSel').style.display;
             if (t !== "none") { // if variable list is displayed when input is clicked...
                 $('#transSel').fadeOut(100);
                 return false;
@@ -946,7 +907,7 @@ function layout(v,v2) {
         .attr("id", 'gr1background')
         .style("fill", '#ffffff')
         .style("stroke", '#ffffff')
-        .style("stroke-width", 2.5*allR)
+        .style("stroke-width", 2.5*RADIUS)
         .style('stroke-linejoin','round')
         .style("opacity", 1);
 
@@ -958,7 +919,7 @@ function layout(v,v2) {
         .attr("id", 'gr1background')
         .style("fill", '#ffffff')
         .style("stroke", '#ffffff')
-        .style("stroke-width", 2.5*allR)
+        .style("stroke-width", 2.5*RADIUS)
         .style('stroke-linejoin','round')
         .style("opacity", 1);
 
@@ -970,7 +931,7 @@ function layout(v,v2) {
         .attr("id", 'gr1hull')
         .style("fill", gr1Color)
         .style("stroke", gr1Color)
-        .style("stroke-width", 2.5*allR)
+        .style("stroke-width", 2.5*RADIUS)
         .style('stroke-linejoin','round');
 
     var vis2 = d3.select("#whitespace").append("svg")
@@ -980,7 +941,7 @@ function layout(v,v2) {
     vis2.append("path")
         .style("fill", gr2Color)
         .style("stroke", gr2Color)
-        .style("stroke-width", 2.5*allR)
+        .style("stroke-width", 2.5*RADIUS)
         .style('stroke-linejoin','round');
 
     if (v == layoutAdd || v == layoutMove) {
@@ -1123,7 +1084,7 @@ function layout(v,v2) {
                     fcoords.push([(fcoords[0][0] + fcoords[1][0])/2 - deltay/20, (fcoords[0][1]+ fcoords[1][1])/2 - deltax/20]);
                 }
                 if (fcoords.length == 1){
-                    var delta = allR * 0.2;
+                    var delta = RADIUS * 0.2;
                     fcoords.push([fcoords[0][0] + delta, fcoords[0][1]]);
                     fcoords.push([fcoords[0][0] - delta, fcoords[0][1]]);
                     fcoords.push([fcoords[0][0], fcoords[0][1] + delta]);
@@ -1143,7 +1104,7 @@ function layout(v,v2) {
                 coords.push([(coords[0][0] + coords[1][0])/2 - deltay/20, (coords[0][1]+ coords[1][1])/2 - deltax/20]);
             }
             if (coords.length == 1){
-                var delta = allR * 0.2;
+                var delta = RADIUS * 0.2;
                 coords.push([coords[0][0] + delta, coords[0][1]]);
                 coords.push([coords[0][0] - delta, coords[0][1]]);
                 coords.push([coords[0][0], coords[0][1] + delta]);
@@ -1184,8 +1145,8 @@ function layout(v,v2) {
                     ldist = Math.sqrt(ldeltaX * ldeltaX + ldeltaY * ldeltaY),
                     lnormX = 0,
                     lnormY = 0,
-                    lsourcePadding = allR + 7,
-                    ltargetPadding = allR + 10;
+                    lsourcePadding = RADIUS + 7,
+                    ltargetPadding = RADIUS + 10;
 
                 if (ldist > 0){
                     lnormX = ldeltaX / ldist;
@@ -1246,8 +1207,8 @@ function layout(v,v2) {
                     ldist = Math.sqrt(ldeltaX * ldeltaX + ldeltaY * ldeltaY),
                     lnormX = ldeltaX / ldist,
                     lnormY = ldeltaY / ldist,
-                    lsourcePadding = allR + 7,
-                    ltargetPadding = allR + 10;
+                    lsourcePadding = RADIUS + 7,
+                    ltargetPadding = RADIUS + 10;
 
                 line2.attr("x1", p[0] + (lsourcePadding * lnormX))
                     .attr("y1", p[1] + (lsourcePadding * lnormY))
@@ -1287,8 +1248,8 @@ function layout(v,v2) {
                 dist = Math.sqrt(deltaX * deltaX + deltaY * deltaY),
                 normX = deltaX / dist,
                 normY = deltaY / dist,
-                sourcePadding = d.left ? allR + 5 : allR,
-                targetPadding = d.right ? allR + 5 : allR,
+                sourcePadding = d.left ? RADIUS + 5 : RADIUS,
+                targetPadding = d.right ? RADIUS + 5 : RADIUS,
                 sourceX = d.source.x + (sourcePadding * normX),
                 sourceY = d.source.y + (sourcePadding * normY),
                 targetX = d.target.x - (targetPadding * normX),
@@ -2510,13 +2471,12 @@ function dataDownload() {
 }
 
 function viz(mym) {
-    var mym = +mym.substr(5, 5) - 1;
+    mym = +mym.substr(5, 5) - 1;
 
-    function removeKids(parent) {
+    let removeKids = parent => {
         while (parent.firstChild)
             parent.removeChild(parent.firstChild);
-    }
-
+    };
     removeKids(byId("resultsView"));
 
     let json = allResults[mym];
@@ -2844,6 +2804,7 @@ function makeCorsRequest(url, btn, callback, warningcallback, jsonstring) {
 
         try {
             var json = JSON.parse(text); // should wrap in try / catch
+            console.log('JSON', json);
             var names = Object.keys(json);
         } catch (err) {
             estimateLadda.stop();
@@ -3307,7 +3268,6 @@ export function subsetSelect(btn) {
         }
 
         showLog('subset', rCall);
-        reWriteLog();
 
         d3.select("#innercarousel")
             .append('div')
@@ -3372,21 +3332,6 @@ function rePlot() {
         .selectAll('svg')
         .remove();
     allNodes.forEach(n => n.setxplot = n.subsetplot = false);
-}
-
-let showLog = (val, rCall) => {
-    logArray.push((val + ': ').concat(rCall[0]));
-    m.redraw();
-}
-
-function reWriteLog() {
-    d3.select("#collapseLog div.panel-body").selectAll("p")
-        .remove();
-    d3.select("#collapseLog div.panel-body").selectAll("p")
-        .data(logArray)
-        .enter()
-        .append("p")
-        .text(d => d);
 }
 
 // acts as if the user clicked in whitespace. useful when restart() is outside of scope
@@ -3593,7 +3538,7 @@ function jamescentroid(coord){
 };
 
 // Define each pebble radius.
-// Presently, most pebbles are scaled to radius set by global allR.
+// Presently, most pebbles are scaled to radius set by global RADIUS.
 // Members of groups are scaled down if group gets large.
 function setPebbleRadius(d){
     if(d.group1 || d.group2){   // if a member of a group, need to calculate radius size
@@ -3601,9 +3546,9 @@ function setPebbleRadius(d){
         var ng1 = (d.group1) ? zparams.zgroup1.length : 1;      // size of group1, if a member of group 1
         var ng2 = (d.group2) ? zparams.zgroup2.length : 1;      // size of group2, if a member of group 2
         var maxng = Math.max(ng1,ng2);                                                      // size of the largest group variable is member of
-        return (maxng>uppersize) ? allR*Math.sqrt(uppersize/maxng) : allR;                  // keep total area of pebbles bounded to pi * allR^2 * uppersize, thus shrinking radius for pebbles in larger groups
+        return (maxng>uppersize) ? RADIUS*Math.sqrt(uppersize/maxng) : RADIUS;                  // keep total area of pebbles bounded to pi * RADIUS^2 * uppersize, thus shrinking radius for pebbles in larger groups
     }else{
-        return allR                                                                         // nongroup members get the common global radius
+        return RADIUS;                                                                         // nongroup members get the common global radius
     }
 };
 
@@ -4372,22 +4317,20 @@ function apiSession (context) {
  *  record user metadata
  */
 export function record_user_metadata(){
-  console.log('record_user_metadata');
+    console.log('record_user_metadata');
 
-  function endSuccess(btn, Response) {
-      console.log('Session recorded: ' + Response);
-  }
+    function endSuccess(btn, Response) {
+        console.log('Session recorded: ' + Response);
+    }
 
-  function endFail(btn) {
-      console.log("Session recording failed.");
-  }
+    function endFail(btn) {
+        console.log("Session recording failed.");
+    }
 
-  // Save session data
-  var sess_data = "zparams=" + JSON.stringify(zparams);
-  sess_data += "&allnodes=" + JSON.stringify(allNodes);
+    // Save session data
+    var sess_data = "zparams=" + JSON.stringify(zparams);
+    sess_data += "&allnodes=" + JSON.stringify(allNodes);
 
-  var urlcall = '/workspaces/record-user-metadata';
-  makeCorsRequest(urlcall, "nobutton", endSuccess, endFail, sess_data);
-
-
+    var urlcall = '/workspaces/record-user-metadata';
+    makeCorsRequest(urlcall, "nobutton", endSuccess, endFail, sess_data);
 }
