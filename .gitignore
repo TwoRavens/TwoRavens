@@ -47,4 +47,3 @@ ravens_volume/test_output/*
 ravens_volume/config_*.json
 rook/rook-files/o_185/data/trainDatamerged.tsv
 rook/rook-files/o_185/preprocess/preprocess.json
-tworaven_apps/content_pages/views.py
