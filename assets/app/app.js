@@ -745,16 +745,18 @@ let $fill = (obj, op, d1, d2) => d3.select(obj).transition()
 let fill = (d, id, op, d1, d2) => $fill('#' + id + d.id, op, d1, d2);
 let fillThis = (self, op, d1, d2) => $fill(self, op, d1, d2);
 
-// scaffolding is called after all external data are guaranteed to have been read to completion. this populates the left panel with variable names, the right panel with model names, the transformation tool, an the associated mouseovers. its callback is layout(), which initializes the modeling space
+/**
+  called after all external data are guaranteed to have been read to completion. this populates the left panel with variable names, the right panel with model names, the transformation tool, an the associated mouseovers. its callback is layout(), which initializes the modeling space
+*/
 function scaffolding(callback) {
-console.log("SCAFFOLDING");
+    console.log("SCAFFOLDING");
     // establishing the transformation element
-//    d3.select("#transformations")
-  //      .append("input")
-   //     .attr("id", "tInput")
-    //    .attr("class", "form-control")
-     //   .attr("type", "text")
-      //  .attr("value", "Variable transformation");
+    // d3.select("#transformations")
+    //     .append("input")
+    //     .attr("id", "tInput")
+    //     .attr("class", "form-control")
+    //     .attr("type", "text")
+    //     .attr("value", "Variable transformation");
 
     // variable dropdown
     d3.select("#transformations")
