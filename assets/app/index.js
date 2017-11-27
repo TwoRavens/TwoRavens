@@ -154,7 +154,6 @@ class Body {
                 .replace(/%2F/g, '/');
             return val;
         };
-        // let apikey = extract('apikey', 'key', 4);
         app.main(
             extract('fileid', 'dfId', 5),
             extract('hostname', 'host', 5),
