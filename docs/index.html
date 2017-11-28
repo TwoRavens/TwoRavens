@@ -105,24 +105,108 @@ Loads all external data in the following order (logic is not included):
 5. Read in zelig models (not for d3m)
 6. Read in zeligchoice models (not for d3m)
 7. Start the user session
-8. Call runPreprocess(...)
-9. Call readPreprocess(...)
-10. Build allNodes[] using preprocessed information
-11. Add dataschema information to allNodes (when in IS_D3M_DOMAIN)
-12. Call scaffolding() and start up</p>
+8. Call readPreprocess(...) and (if necessary) runPreprocess(...)
+9. Build allNodes[] using preprocessed information
+10. Add dataschema information to allNodes (when in IS_D3M_DOMAIN)
+11. Call scaffolding() and start up</p>
 
 
-  <div class='pre p1 fill-light mt0'>load()</div>
-  
-  
-
-  
-  
-  
-  
+  <div class='pre p1 fill-light mt0'>load(hold: any, lablArray: any, d3mRootPath: any, d3mDataName: any, d3mPreprocess: any, d3mData: any, d3mTarget: any, d3mPS: any, d3mDS: any, pURL: any)</div>
   
   
 
+  
+  
+  
+  
+  
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Parameters</div>
+    <div class='prose'>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>hold</span> <code class='quiet'>(any)</code>
+	    
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>lablArray</span> <code class='quiet'>(any)</code>
+	    
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>d3mRootPath</span> <code class='quiet'>(any)</code>
+	    
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>d3mDataName</span> <code class='quiet'>(any)</code>
+	    
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>d3mPreprocess</span> <code class='quiet'>(any)</code>
+	    
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>d3mData</span> <code class='quiet'>(any)</code>
+	    
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>d3mTarget</span> <code class='quiet'>(any)</code>
+	    
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>d3mPS</span> <code class='quiet'>(any)</code>
+	    
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>d3mDS</span> <code class='quiet'>(any)</code>
+	    
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>pURL</span> <code class='quiet'>(any)</code>
+	    
+          </div>
+          
+        </div>
+      
+    </div>
   
 
   

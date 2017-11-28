@@ -320,7 +320,6 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
             res[field]
                 .filter(key => res[field].hasOwnProperty(key))
                 .forEach(key => mods[key.name[0]] = key.description[0]);
-
         } catch(_) {
             console.log("can't load " + field);
         }
