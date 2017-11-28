@@ -230,8 +230,9 @@ let dataurl = '';
   11. Call scaffolding() and start up
 */
 async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3mData, d3mTarget, d3mPS, d3mDS, pURL) {
-    if (!IS_D3M_DOMAIN)
+    if (!IS_D3M_DOMAIN) {
         return;
+    }
 
     // 1. Retrieve the configuration information
     let res = await m.request({
@@ -252,10 +253,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
 
     // 3. Read the problem schema and set 'd3mProblemDescription'
     // ...and make a call to start the session with TA2. if we get this far, data are guaranteed to exist for the frontend
-    res = await m.request({
-        method: "GET",
-        url: "/config/d3m-config/get-problem-data-file-info"
-    });
+    res = await m.request("/config/d3m-config/get-problem-data-file-info");
     // some simple logic to get the paths right
     // note that if neither exist, stay as default which is null
     let set = (field, val) => res.data[field].exists ? res.data[field].path :
@@ -264,72 +262,69 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     zparams.zd3mdata = d3mData = set('trainData.csv', d3mData);
     zparams.zd3mtarget = d3mTarget = set('trainTargets.csv', d3mTarget);
 
-    d3.json(d3mPS, (_, data) => {
-        console.log("prob schema data: ", data);
-        mytarget = data.target.field;
+    res = await m.request(d3mPS);
+    console.log("prob schema data: ", res);
+    mytarget = res.target.field;
 
-        if (IS_D3M_DOMAIN) {
-            zparams.zdata = data.datasets[0];
-        } else {
-            // Note: presently xml is no longer being read from Dataverse metadata anywhere
-            let temp = xml.documentElement.getElementsByTagName("fileName");
-            zparams.zdata = temp[0].childNodes[0].nodeValue;
-            let cite = xml.documentElement.getElementsByTagName("biblCit");
-            // clean citation so POST is valid json
-            zparams.zdatacite = cite[0].childNodes[0].nodeValue
-                .replace(/\&/g, "and")
-                .replace(/\;/g, ",")
-                .replace(/\%/g, "-");
-            $('#cite div.panel-body').text(zparams.zdatacite);
-        }
-        // drop file extension
-        let dataname = IS_D3M_DOMAIN ? zparams.zdata : zparams.zdata.replace(/\.(.*)/, '');
-        d3.select("#dataName").html(dataname);
-        // put dataset name, from meta-data, into page title
-        d3.select("title").html("TwoRavens " + dataname);
+    if (IS_D3M_DOMAIN) {
+        zparams.zdata = res.datasets[0];
+    } else {
+        // Note: presently xml is no longer being read from Dataverse metadata anywhere
+        let temp = xml.documentElement.getElementsByTagName("fileName");
+        zparams.zdata = temp[0].childNodes[0].nodeValue;
+        let cite = xml.documentElement.getElementsByTagName("biblCit");
+        // clean citation so POST is valid json
+        zparams.zdatacite = cite[0].childNodes[0].nodeValue
+            .replace(/\&/g, "and")
+            .replace(/\;/g, ",")
+            .replace(/\%/g, "-");
+        $('#cite div.panel-body').text(zparams.zdatacite);
+    }
+    // drop file extension
+    let dataname = IS_D3M_DOMAIN ? zparams.zdata : zparams.zdata.replace(/\.(.*)/, '');
+    d3.select("#dataName").html(dataname);
+    // put dataset name, from meta-data, into page title
+    d3.select("title").html("TwoRavens " + dataname);
 
-        let set = (field, arr) => d3mProblemDescription[field] = data[field] in arr ? data[field] : field + 'Undefined';
-        set('taskType', d3mTaskType);
-        set('taskSubtype', d3mTaskSubtype);
-        set('metric', d3mMetrics);
-        set('outputType', d3mOutputType);
-        d3mProblemDescription.taskDescription = data.descriptionFile;
-        byId("btnType").click();
+    set = (field, arr) => d3mProblemDescription[field] = res[field] in arr ? res[field] : field + 'Undefined';
+    set('taskType', d3mTaskType);
+    set('taskSubtype', d3mTaskSubtype);
+    set('metric', d3mMetrics);
+    set('outputType', d3mOutputType);
+    d3mProblemDescription.taskDescription = res.descriptionFile;
+    byId("btnType").click();
 
-        // making it case insensitive because the case seems to disagree all too often
-        if (failset.includes(d3mProblemDescription.taskType.toUpperCase())) {
-            swandive = true;
-        }
-    });
+    // making it case insensitive because the case seems to disagree all too often
+    if (failset.includes(d3mProblemDescription.taskType.toUpperCase())) {
+        swandive = true;
+    }
 
     // 4. Read the data schema and set 'dataschema'
-    d3.json(d3mDS, (_, data) => {
-        dataschema = JSON.parse(JSON.stringify(data));
-        // if swandive, we have to set valueKey here so that left panel can populate
-        if (swandive) {
-            [dataschema.trainData.trainData, dataschema.trainData.trainTargets]
-                .forEach(vars => vars && vars.forEach(v => valueKey.push(v.varName)));
-            // end session if neither trainData nor trainTargets?
-            valueKey.length === 0 && alert("no trainData or trainTargest in data description file. valueKey length is 0");
-        }
-        console.log("data schema data: ", dataschema);
-    });
+    dataschema = await m.request(d3mDS);
+    // if swandive, we have to set valueKey here so that left panel can populate
+    if (swandive) {
+        [dataschema.trainData.trainData, dataschema.trainData.trainTargets]
+            .forEach(vars => vars && vars.forEach(v => valueKey.push(v.varName)));
+        // end session if neither trainData nor trainTargets?
+        valueKey.length === 0 && alert("no trainData or trainTargest in data description file. valueKey length is 0");
+        return scaffolding(swandive);
+    }
+    console.log("data schema data: ", dataschema);
 
-    let read = field => d3.json(`data/${field}.json`, (err, data) => {
-        if (err) {
-            return;
-        }
-        cdb(field + ' json: ', data);
-        data[field].forEach(key => {
-            if (data[field].hasOwnProperty(key)) {
-                mods[key.name[0]] = key.description[0];
-            }
-        });
-    });
     // 5. Read in zelig models (not for d3m)
-    read('zelig5models');
     // 6. Read in zeligchoice models (not for d3m)
-    read('zelig5choicemodels');
+    for (let field of ['zelig5models', 'zelig5choicemodels']) {
+        try {
+            res = await m.request(`data/${field}.json`);
+            cdb(field + ' json: ', res);
+            res[field]
+                .filter(key => res[field].hasOwnProperty(key))
+                .forEach(key => mods[key.name[0]] = key.description[0]);
+
+        } catch(_) {
+            console.log("can't load " + field);
+        }
+    }
 
     // 7. Start the user session
     // rpc StartSession(SessionRequest) returns (SessionResponse) {}
@@ -371,10 +366,10 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
             onEnd: () => first_load = false,
             steps: [
                 step("dataName", "bottom", "Welcome to TwoRavens Solver",
-                    `<p>This tool can guide you to solve an empirical problem in the dataset listed above.</p>
-                     <p>These messages will teach you the steps to take to find and submit a solution.</p>`),
+                     `<p>This tool can guide you to solve an empirical problem in the dataset listed above.</p>
+                      <p>These messages will teach you the steps to take to find and submit a solution.</p>`),
                 step("btnReset", "bottom", "Restart Any Problem Here",
-                    '<p>You can always start a problem over by using this reset button.</p>'),
+                     '<p>You can always start a problem over by using this reset button.</p>'),
                 step("btnEstimate", "left", "Solve Problem",
                      `<p>The current green button is generally the next step to follow to move the system forward.</p>
                       <p>Click this Solve button to tell the tool to find a solution to the problem.</p>`),
@@ -383,8 +378,8 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
                       This center panel graphically represents the problem currently being attempted.`),
                 step("gr1hull", "right", "Explanation Set", "This set of variables can potentially predict the target."),
                 step("displacement", "right", "Variable List",
-                    `<p>Click on any variable name here if you wish to remove it from the problem solution.</p>
-                     <p>You likely do not need to adjust the problem representation in the center panel.</p>`),
+                     `<p>Click on any variable name here if you wish to remove it from the problem solution.</p>
+                      <p>You likely do not need to adjust the problem representation in the center panel.</p>`),
                 step("btnEndSession", "bottom", "Finish Problem",
                      "If the solution reported back seems acceptable, then finish this problem by clicking this End Session button."),
             ],
@@ -394,11 +389,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
 
     // 8. Call readPreprocess(...) and (if necessary) runPreprocess(...)
     try {
-        res = await m.request(pURL);
-        if (swandive) {
-            return scaffolding(swandive);
-        }
-        readPreprocess(res);
+        readPreprocess(await m.request(pURL));
     } catch(_) {
         runPreprocess(d3mData, d3mTarget, d3mDataName);
     }
@@ -444,13 +435,11 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     }
 
     // 10. Add dataschema information to allNodes (when in IS_D3M_DOMAIN)
-    // adding in d3mDescription to allNodes
     let datavars = dataschema.trainData.trainData;
-    for(let i = 0; i < datavars.length; i++) {
-        let myi = findNodeIndex(datavars[i].varName);
-        let d3mDescription = {d3mDescription:datavars[i]};
-        allNodes[myi] = Object.assign(allNodes[myi], d3mDescription);
-    }
+    datavars.forEach((v, i) => {
+        let myi = findNodeIndex(v.varName);
+        allNodes[myi] = Object.assign(allNodes[myi], {d3mDescription: v});
+    });
     console.log(allNodes);
 
     // 11. Call scaffolding() and start up
