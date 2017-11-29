@@ -327,20 +327,22 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
 
     // 7. Start the user session
     // rpc StartSession(SessionRequest) returns (SessionResponse) {}
-    let user_agent = "some agent";
-    let version = "some version";
-    let SessionRequest = {user_agent, version};
-    var jsonout = JSON.stringify(SessionRequest);
-    var urlcall = D3M_SVC_URL + "/startsession";
-    var solajsonout = "grpcrequest=" + jsonout;
-    console.log('SessionRequest: ', solajsonout);
-    console.log("urlcall: ", urlcall);
-    let ssSuccess = (btn, SessionResponse) => {
-        console.log("startsession: ", SessionResponse);
-        zparams.zsessionid=SessionResponse.context.sessionId;
-    };
-    let ssFail = btn => alert("StartSession has failed.");
-    makeCorsRequest(urlcall, "nobutton", ssSuccess, ssFail, solajsonout);
+    let SessionRequest = {user_agent: 'some agent', version: 'some version'};
+    let url = D3M_SVC_URL + '/startsession';
+    console.log('SessionRequest: ', SessionRequest);
+    console.log("url: ", url);
+    let data = new FormData();
+    data.append('grpcrequest', JSON.stringify(SessionRequest));
+    try {
+        res = await m.request(url, {method: 'POST', data: data});
+        console.log('startsession: ', res);
+        zparams.zsessionid = res.context.sessionId;
+    } catch (err) {
+        estimateLadda.stop();
+        selectLadda.stop();
+        cdb(err);
+        alert('StartSession has failed.');
+    }
 
     // hopscotch tutorial
     if (tutorial_mode) {
