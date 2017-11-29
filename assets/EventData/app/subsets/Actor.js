@@ -50,35 +50,33 @@ let actorCodeLoaded = true;
 let actorDisplayed = false;
 
 function d3actor() {
-    if (!actorDisplayed) {
-        $(document).ready(function () {
-            if (typeof actorCodeLoaded !== "undefined" && actorCodeLoaded) {			//if .js file has loaded, this variable will be true and defined
-                //update display variables
-                $("#actorLinkDiv").css("height", $("#actorSelectionDiv").height() + 2);
+	$(document).ready(function () {
+		if (typeof actorCodeLoaded !== "undefined" && actorCodeLoaded) {			//if .js file has loaded, this variable will be true and defined
+			//update display variables
+			$("#actorLinkDiv").css("height", $("#actorSelectionDiv").height() + 2);
 
-                actorWidth = actorSVG.node().getBoundingClientRect().width;
-                actorHeight = actorSVG.node().getBoundingClientRect().height;
+			actorWidth = actorSVG.node().getBoundingClientRect().width;
+			actorHeight = actorSVG.node().getBoundingClientRect().height;
 
-                boundaryLeft = Math.floor(actorWidth / 2) - 40;
-                boundaryRight = Math.ceil(actorWidth / 2) + 40;
+			boundaryLeft = Math.floor(actorWidth / 2) - 40;
+			boundaryRight = Math.ceil(actorWidth / 2) + 40;
 
-                actorSVG.append("path").attr("id", "centerLine").attr("d", function () {
-                    return "M" + actorWidth / 2 + "," + 0 + "V" + actorHeight;
-                }).attr("stroke", "black");
+			actorSVG.append("path").attr("id", "centerLine").attr("d", function () {
+				return "M" + actorWidth / 2 + "," + 0 + "V" + actorHeight;
+			}).attr("stroke", "black");
 
-                actorForce.force("x", d3.forceX().x(function (d) {
-                    if (d.actor === "source")
-                        return Math.floor(actorWidth / 3);
-                    return Math.floor(2 * actorWidth / 3);
-                }).strength(0.06))
-                    .force("y", d3.forceY().y(function (d) {
-                        return Math.floor(actorHeight / 2);
-                    }).strength(0.05));
-                updateAll();
-                actorDisplayed = true;
-            }
-        });
-    }
+			actorForce.force("x", d3.forceX().x(function (d) {
+				if (d.actor === "source")
+					return Math.floor(actorWidth / 3);
+				return Math.floor(2 * actorWidth / 3);
+			}).strength(0.06))
+				.force("y", d3.forceY().y(function (d) {
+					return Math.floor(actorHeight / 2);
+				}).strength(0.05));
+			updateAll();
+			actorDisplayed = true;
+		}
+	});
 }
 
 //some preparation and activation for gui display
@@ -154,6 +152,16 @@ let changeID = 0;						//number that is updated whenever a node is added/changed
 
 //begin force definitions
 var actorSVG = d3.select("#actorLinkSVG");
+//~ var actorSVG;			//move this to d3actor?
+//~ if (opMode == "subset") {
+	//~ actorSVG = d3.select("#actorLinkSVG");
+//~ }
+//~ else if (opMode == "aggreg") {
+	//~ actorSVG = d3.select("#actorAggregSVG");
+//~ }
+//~ else {
+	//~ actorSVG = d3.select("#actorLinkSVG");
+//~ }
 
 var actorWidth = actorSVG.node().getBoundingClientRect().width;		//not yet set since window has not yet been displayed; defaults to 0
 var actorHeight = actorSVG.node().getBoundingClientRect().height;	//this code is here to remind what is under subset.js
@@ -1062,7 +1070,7 @@ $(".actorSearch").ready(function () {
 //when typing in search box
 $(".actorSearch").on("keyup", function (event) {
     const searchText = $("#" + currentTab + "Search").val().toUpperCase();
-    if (searchText.length % 3 === 0) {
+    if (searchText.length % 3 === 0 && searchText.length > 0) {
         actorSearch(currentTab);
     }
 });
@@ -1246,7 +1254,7 @@ $("#deleteGroup").click(function () {
     }
 });
 
-function actorSearch(actorName) {
+function actorSearch(actorName) {		//bugs: removes pre checked values on search clear, checking partial country after checking org
     const searchText = $("#" + actorName + "Search").val().toUpperCase();
 
     const operator = '$and';

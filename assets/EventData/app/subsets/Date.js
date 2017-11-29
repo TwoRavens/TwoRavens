@@ -17,6 +17,15 @@ var plotSelection;
 
 function d3date(init=false) {
     $("#dateSVG").empty();
+    if (opMode == "subset") {
+		$("#dateInterval").css("display", "block");
+		$("#dateAggregOption").css("display", "none");
+	}
+	else if (opMode == "aggreg") {
+		$("#dateInterval").css("display", "none");
+		$("#dateAggregOption").css("display", "block");
+	}
+	
     var dateSVG = d3.select("#dateSVG");
 
     margin = {top: 20, right: 20, bottom: 110, left: 80};
@@ -120,6 +129,7 @@ function d3date(init=false) {
             return (a['Date'] < b['Date']) ? -1 : 1;
         }
     }
+
     for (let idx in dateData) {
 
         // Ensure data is valid
@@ -128,7 +138,8 @@ function d3date(init=false) {
         let bin = {'Date': new Date(dateData[idx]['<year>'], dateData[idx]['<month>'] - 1, 0), 'Freq': dateData[idx].total};
         data.push(bin);
     }
-    data = data.sort(dateSort);
+    data = data.sort(dateSort);		//here is where date is collected as monthly?
+    //look at: https://bl.ocks.org/cjhin/8872a492d44694ecf5a883642926f19c
 
     // Set calendar ranges
     datemin = d3.min(data, function (d) {
@@ -347,5 +358,14 @@ function setDatefromSlider() {
     $('#todate').val(format(datemaxUser));
 
     // Update plot
-    d3date()
+    d3date();
+}
+
+function dateSort(a, b) {
+	if (a['Date'] === b['Date']) {
+		return 0;
+	}
+	else {
+		return (a['Date'] < b['Date']) ? -1 : 1;
+	}
 }
