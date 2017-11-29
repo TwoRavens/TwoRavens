@@ -118,7 +118,7 @@ let estimated = false;
 let rightClickLast = false;
 let selInteract = false;
 let callHistory = []; // transform and subset calls
-let mytarget = "";
+let mytarget = '';
 
 let configurations = {};
 let dataschema = {};
@@ -215,6 +215,7 @@ let restart;
 let dataurl = '';
 
 /**
+  called by main
   Loads all external data in the following order (logic is not included):
   1. Retrieve the configuration information
   2. Set 'configurations'
@@ -223,17 +224,228 @@ let dataurl = '';
   5. Read in zelig models (not for d3m)
   6. Read in zeligchoice models (not for d3m)
   7. Start the user session
-  8. Call runPreprocess(...)
-  9. Call readPreprocess(...)
-  10. Build allNodes[] using preprocessed information
-  11. Add dataschema information to allNodes (when in IS_D3M_DOMAIN)
-  12. Call scaffolding() and start up
+  8. Call readPreprocess(...) and (if necessary) runPreprocess(...)
+  9. Build allNodes[] using preprocessed information
+  10. Add dataschema information to allNodes (when in IS_D3M_DOMAIN)
+  11. Call scaffolding() and start up
 */
-async function load() {
-    return IS_D3M_DOMAIN && await m.request({
+async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3mData, d3mTarget, d3mPS, d3mDS, pURL) {
+    if (!IS_D3M_DOMAIN) {
+        return;
+    }
+
+    // 1. Retrieve the configuration information
+    let res = await m.request({
         method: "POST",
         url: "/config/d3m-config/json/latest"
     });
+
+    // 2. Set 'configurations'
+    configurations = JSON.parse(JSON.stringify(res));
+    d3mRootPath = configurations.training_data_root.replace(/\/data/,'');
+    d3mDataName = configurations.name;
+    // d3mData = configurations.training_data_root+"/trainData.csv";
+    // d3mTarget = configurations.training_data_root+"/trainTargets.csv";
+    d3mPS = configurations.problem_schema_url;
+    d3mDS = configurations.dataset_schema_url;
+    console.log("Configurations: ", configurations);
+    d3mPreprocess = pURL = `rook-custom/rook-files/${d3mDataName}/preprocess/preprocess.json`;
+
+    // 3. Read the problem schema and set 'd3mProblemDescription'
+    // ...and make a call to start the session with TA2. if we get this far, data are guaranteed to exist for the frontend
+    res = await m.request("/config/d3m-config/get-problem-data-file-info");
+    // some simple logic to get the paths right
+    // note that if neither exist, stay as default which is null
+    let set = (field, val) => res.data[field].exists ? res.data[field].path :
+        res.data[field + '.gz'].exists ? res.data[field + '.gz'].path :
+        val;
+    zparams.zd3mdata = d3mData = set('trainData.csv', d3mData);
+    zparams.zd3mtarget = d3mTarget = set('trainTargets.csv', d3mTarget);
+
+    res = await m.request(d3mPS);
+    console.log("prob schema data: ", res);
+    mytarget = res.target.field;
+
+    if (IS_D3M_DOMAIN) {
+        zparams.zdata = res.datasets[0];
+    } else {
+        // Note: presently xml is no longer being read from Dataverse metadata anywhere
+        let temp = xml.documentElement.getElementsByTagName("fileName");
+        zparams.zdata = temp[0].childNodes[0].nodeValue;
+        let cite = xml.documentElement.getElementsByTagName("biblCit");
+        // clean citation so POST is valid json
+        zparams.zdatacite = cite[0].childNodes[0].nodeValue
+            .replace(/\&/g, "and")
+            .replace(/\;/g, ",")
+            .replace(/\%/g, "-");
+        $('#cite div.panel-body').text(zparams.zdatacite);
+    }
+    // drop file extension
+    let dataname = IS_D3M_DOMAIN ? zparams.zdata : zparams.zdata.replace(/\.(.*)/, '');
+    d3.select("#dataName").html(dataname);
+    // put dataset name, from meta-data, into page title
+    d3.select("title").html("TwoRavens " + dataname);
+
+    set = (field, arr) => d3mProblemDescription[field] = res[field] in arr ? res[field] : field + 'Undefined';
+    set('taskType', d3mTaskType);
+    set('taskSubtype', d3mTaskSubtype);
+    set('metric', d3mMetrics);
+    set('outputType', d3mOutputType);
+    d3mProblemDescription.taskDescription = res.descriptionFile;
+    byId("btnType").click();
+
+    // making it case insensitive because the case seems to disagree all too often
+    if (failset.includes(d3mProblemDescription.taskType.toUpperCase())) {
+        swandive = true;
+    }
+
+    // 4. Read the data schema and set 'dataschema'
+    dataschema = await m.request(d3mDS);
+    // if swandive, we have to set valueKey here so that left panel can populate
+    if (swandive) {
+        [dataschema.trainData.trainData, dataschema.trainData.trainTargets]
+            .forEach(vars => vars && vars.forEach(v => valueKey.push(v.varName)));
+        // end session if neither trainData nor trainTargets?
+        valueKey.length === 0 && alert("no trainData or trainTargest in data description file. valueKey length is 0");
+        return scaffolding(swandive);
+    }
+    console.log("data schema data: ", dataschema);
+
+    // 5. Read in zelig models (not for d3m)
+    // 6. Read in zeligchoice models (not for d3m)
+    for (let field of ['zelig5models', 'zelig5choicemodels']) {
+        try {
+            res = await m.request(`data/${field}.json`);
+            cdb(field + ' json: ', res);
+            res[field]
+                .filter(key => res[field].hasOwnProperty(key))
+                .forEach(key => mods[key.name[0]] = key.description[0]);
+        } catch(_) {
+            console.log("can't load " + field);
+        }
+    }
+
+    // 7. Start the user session
+    // rpc StartSession(SessionRequest) returns (SessionResponse) {}
+    let SessionRequest = {user_agent: 'some agent', version: 'some version'};
+    let url = D3M_SVC_URL + '/startsession';
+    console.log('SessionRequest: ', SessionRequest);
+    console.log("url: ", url);
+    let data = new FormData();
+    data.append('grpcrequest', JSON.stringify(SessionRequest));
+    try {
+        res = await m.request(url, {method: 'POST', data: data});
+        console.log('startsession: ', res);
+        zparams.zsessionid = res.context.sessionId;
+    } catch (err) {
+        estimateLadda.stop();
+        selectLadda.stop();
+        cdb(err);
+        alert('StartSession has failed.');
+    }
+
+    // hopscotch tutorial
+    if (tutorial_mode) {
+        console.log('Starting Hopscotch Tour');
+        let step = (target, placement, title, content) => ({
+            target: target,
+            placement: placement,
+            title: title,
+            content: content,
+            showCTAButton: true,
+            ctaLabel: 'Disable these messages',
+            onCTA: () => {
+                hopscotch.endTour(true);
+                tutorial_mode = false;
+            },
+        });
+        hopscotch.startTour({
+            id: "dataset_launch",
+            i18n: {doneBtn:'Ok'},
+            showCloseButton: false,
+            scrollDuration: 300,
+            onEnd: () => first_load = false,
+            steps: [
+                step("dataName", "bottom", "Welcome to TwoRavens Solver",
+                     `<p>This tool can guide you to solve an empirical problem in the dataset listed above.</p>
+                      <p>These messages will teach you the steps to take to find and submit a solution.</p>`),
+                step("btnReset", "bottom", "Restart Any Problem Here",
+                     '<p>You can always start a problem over by using this reset button.</p>'),
+                step("btnEstimate", "left", "Solve Problem",
+                     `<p>The current green button is generally the next step to follow to move the system forward.</p>
+                      <p>Click this Solve button to tell the tool to find a solution to the problem.</p>`),
+                step(mytarget + 'biggroup', "left", "Target Variable",
+                     `This is the variable, ${mytarget}, we are trying to predict.
+                      This center panel graphically represents the problem currently being attempted.`),
+                step("gr1hull", "right", "Explanation Set", "This set of variables can potentially predict the target."),
+                step("displacement", "right", "Variable List",
+                     `<p>Click on any variable name here if you wish to remove it from the problem solution.</p>
+                      <p>You likely do not need to adjust the problem representation in the center panel.</p>`),
+                step("btnEndSession", "bottom", "Finish Problem",
+                     "If the solution reported back seems acceptable, then finish this problem by clicking this End Session button."),
+            ],
+        });
+        console.log('Ending Hopscotch Tour');
+    }
+
+    // 8. Call readPreprocess(...) and (if necessary) runPreprocess(...)
+    try {
+        readPreprocess(await m.request(pURL));
+    } catch(_) {
+        runPreprocess(d3mData, d3mTarget, d3mDataName);
+    }
+
+    // 9. Build allNodes[] using preprocessed information
+    let vars = Object.keys(preprocess);
+    // temporary values for hold that correspond to histogram bins
+    hold = [.6, .2, .9, .8, .1, .3, .4];
+    for (let i = 0; i < vars.length; i++) {
+        // valueKey[i] = vars[i].attributes.name.nodeValue;
+        // lablArray[i] = varsXML[i].getElementsByTagName("labl").length == 0 ?
+        // "no label" :
+        // varsXML[i].getElementsByTagName("labl")[0].childNodes[0].nodeValue;
+        // let datasetcount = d3.layout.histogram()
+        //     .bins(barnumber).frequency(false)
+        //     ([0, 0, 0, 0, 0]);
+        valueKey[i] = vars[i];
+        lablArray[i] = "no label";
+        // contains all the preprocessed data we have for the variable, as well as UI data pertinent to that variable,
+        // such as setx values (if the user has selected them) and pebble coordinates
+        let obj = {
+            id: i,
+            reflexive: false,
+            name: valueKey[i],
+            labl: lablArray[i],
+            data: [5, 15, 20, 0, 5, 15, 20],
+            count: hold,
+            nodeCol: colors(i),
+            baseCol: colors(i),
+            strokeColor: selVarColor,
+            strokeWidth: "1",
+            subsetplot: false,
+            subsetrange: ["", ""],
+            setxplot: false,
+            setxvals: ["", ""],
+            grayout: false,
+            group1: false,
+            group2: false,
+            forefront: false
+        };
+        jQuery.extend(true, obj, preprocess[valueKey[i]]);
+        allNodes.push(obj);
+    }
+
+    // 10. Add dataschema information to allNodes (when in IS_D3M_DOMAIN)
+    let datavars = dataschema.trainData.trainData;
+    datavars.forEach((v, i) => {
+        let myi = findNodeIndex(v.varName);
+        allNodes[myi] = Object.assign(allNodes[myi], {d3mDescription: v});
+    });
+    console.log(allNodes);
+
+    // 11. Call scaffolding() and start up
+    scaffolding(layout);
+    IS_D3M_DOMAIN ? zPop() : dataDownload();
 }
 
 /**
@@ -277,8 +489,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
     // ind2 = indicator(1.2);
 
     // from .csv
-    let lablArray = [];
-    let hold = [];
+    let [hold, lablArray] = [[], []];
 
     // assume locations are consistent based on d3m directory structure
     let d3mRootPath = '';
@@ -301,402 +512,8 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
         zparams.zdataurl = 'data/fearonLaitin.tsv';
     }
 
-    load()
-    .then(function(result) {
-        configurations =  JSON.parse(JSON.stringify(result));
-        d3mRootPath = configurations.training_data_root;
-        d3mRootPath = d3mRootPath.replace(/\/data/,'');
-        d3mDataName = configurations.name;
-      //  d3mData = configurations.training_data_root+"/trainData.csv";
-       // d3mTarget = configurations.training_data_root+"/trainTargets.csv";
-        d3mPS = configurations.problem_schema_url;
-        d3mDS = configurations.dataset_schema_url;
-
-          console.log("Configurations: ");
-          console.log(configurations);
-
-        // these are the two lines that cut the config paths after "TwoRavens/"
-        //d3mTarget = d3mTarget.split("TwoRavens/").pop();
-        //d3mData = d3mData.split("TwoRavens/").pop();
-
-        pURL='rook-custom/rook-files/'+d3mDataName+'/preprocess/preprocess.json';
-        d3mPreprocess=pURL;
-    })
-    .then(_ => m.request({
-        method: "GET",
-        url: "/config/d3m-config/get-problem-data-file-info"
-    })
-    .then(function(result) {
-        // some simple logic to get the paths right
-        // note that if neither exist, stay as default which is null
-        if(result.data['trainData.csv'].exists==true)
-            d3mData=result.data['trainData.csv'].path;
-        else if(result.data['trainData.csv.gz'].exists==true)
-            d3mData=result.data['trainData.csv.gz'].path;
-
-        if(result.data['trainTargets.csv'].exists==true)
-            d3mTarget=result.data['trainTargets.csv'].path;
-        else if(result.data['trainTargets.csv.gz'].exists==true)
-            d3mTarget=result.data['trainTargets.csv.gz'].path;
-
-        zparams.zd3mdata = d3mData;
-        zparams.zd3mtarget = d3mTarget;
-    }))
-    .then(() => new Promise((resolve, reject) => {
-            // read in problem schema and we'll make a call to start the session with TA2. if we get this far, data are guaranteed to exist for the frontend
-            if (!IS_D3M_DOMAIN)
-                return resolve();
-
-            d3.json(d3mPS, (_, data) => {
-                console.log("prob schema data: ", data);
-                mytarget = data.target.field;
-
-            let temp="";
-            if(!IS_D3M_DOMAIN) {
-                temp = xml.documentElement.getElementsByTagName("fileName");     // Note: presently xml is no longer being read from Dataverse metadata anywhere
-                zparams.zdata = temp[0].childNodes[0].nodeValue;
-                let cite = xml.documentElement.getElementsByTagName("biblCit");
-                // clean citation so POST is valid json
-                zparams.zdatacite = cite[0].childNodes[0].nodeValue
-                    .replace(/\&/g, "and")
-                    .replace(/\;/g, ",")
-                    .replace(/\%/g, "-");
-                $('#cite div.panel-body').text(zparams.zdatacite);
-            } else {
-                zparams.zdata = data.datasets[0];             // read the dataset name from the problem schema
-            }
-            // dataset name trimmed to 12 chars
-            let dataname = zparams.zdata;
-            if(!IS_D3M_DOMAIN) {
-                dataname = zparams.zdata.replace(/\.(.*)/, ''); // drop file extension
-            }
-
-            d3.select("#dataName").html(dataname);
-            // Put dataset name, from meta-data, into page title
-            d3.select("title").html("TwoRavens " + dataname);
-
-                    //This adds a ink to problemDescription.txt in the ticker
-                /*
-                let aTag = document.createElement('a');
-                aTag.setAttribute('href', `${d3mRootPath}/${data.descriptionFile}`);
-                aTag.setAttribute('id', "probdesc");
-                aTag.setAttribute('target', "_blank");
-                aTag.textContent = "Problem Description";
-                byId("ticker").appendChild(aTag);
-                 */
-
-                if(data.taskType in d3mTaskType) {
-                    d3mProblemDescription.taskType = data.taskType;//[d3mTaskType[data.taskType][2],d3mTaskType[data.taskType][1]]; console.log(d3mProblemDescription);
-                } else {
-                    d3mProblemDescription.taskType = "taskTypeUndefined";
-                 //   alert("Specified task type, " + data.taskType + ", is not valid.");
-                }
-
-                if(data.taskSubType in d3mTaskSubtype) {
-                    d3mProblemDescription.taskSubtype = data.taskSubType;
-                    //[d3mTaskSubtype[data.taskSubType][2],d3mTaskSubtype[data.taskSubType][1]];
-                    } else {
-                        d3mProblemDescription.taskSubtype = "taskSubtypeUndefined";
-                   //     alert("Specified task subtype, " + data.taskSubType + ", is not valid.")
-                    }
-                if(data.metric in d3mMetrics) {
-                    d3mProblemDescription.metric = data.metric;//[d3mMetrics[data.metric][2],d3mMetrics[data.metric][1]];
-                } else {
-                    d3mProblemDescription.metric = "metricUndefined";
-                    // alert("Specified metric type, " + data.metric + ", is not valid.");
-                    }
-                if(data.outputType in d3mOutputType) {
-                    d3mProblemDescription.outputType = data.outputType;//[d3mOutputType[data.outputType][2],d3mOutputType[data.outputType][1]];
-                } else {
-                    d3mProblemDescription.outputType = "outputUndefined";
-                    //  alert("Specified output type, " + data.outputType + ", is not valid.");
-                }
-
-                d3mProblemDescription.taskDescription = data.descriptionFile;
-                byId("btnType").click();
-
-                // making it case insensitive because the case seems to disagree all too often
-                if(failset.indexOf(d3mProblemDescription.taskType.toUpperCase()) == -1)
-                    resolve();
-                else {
-                    swandive=true;
-                    resolve();
-                }
-            });
-        }))
-        .then(() => new Promise((resolve, reject) => { // get the data schema
-            if (!IS_D3M_DOMAIN){return resolve();}
-
-            // read the data schema and set dataschema
-            d3.json(d3mDS, (_, data) => {
-                dataschema =  JSON.parse(JSON.stringify(data));
-
-                // if swandive, we have to set valueKey here so that left panel can populate
-                if(swandive) {
-                    let datavars = dataschema.trainData.trainData;
-                    if(datavars !== undefined) {
-                        for(let i = 0; i < datavars.length; i++) {
-                            valueKey.push(datavars[i].varName);
-                        }
-                    }
-                    let targetvars = dataschema.trainData.trainTargets;
-                    if(targetvars !== undefined) {
-                        for(let i = 0; i < targetvars.length; i++) {
-                            valueKey.push(targetvars[i].varName);
-                        }
-                    }
-                    if(valueKey.length==0)
-                        // end session if neither trainData nor trainTargets?
-                        alert("no trainData or trainTargest in data description file. valueKey length is 0");
-                }
-
-                console.log("data schema data: ", dataschema);
-                resolve();
-            })
-        }))
-        .then(() => new Promise((resolve, reject) => { // read in zelig models
-            if (IS_D3M_DOMAIN)
-                return resolve();
-            // read zelig models and populate model list in right panel
-            d3.json("data/zelig5models.json", (err, data) => {
-                if (err)
-                    return reject(err);
-                cdb("zelig models json: ", data);
-                for (let key in data.zelig5models)
-                    if (data.zelig5models.hasOwnProperty(key))
-                        mods[data.zelig5models[key].name[0]] = data.zelig5models[key].description[0];
-                resolve();
-            });
-        }))
-        .then(() => new Promise((resolve, reject) => { // read in zelig choice models
-            if (IS_D3M_DOMAIN)
-                return resolve();
-            d3.json("data/zelig5choicemodels.json", (err, data) => {
-                if (err)
-                    return reject(err);
-                cdb("zelig choice models json: ", data);
-                for (let key in data.zelig5choicemodels) {
-                    if (data.zelig5choicemodels.hasOwnProperty(key))
-                        mods[data.zelig5choicemodels[key].name[0]] = data.zelig5choicemodels[key].description[0];
-                }
-            resolve();
-            })
-        }))
-        .then(() => new Promise((resolve, reject) => { // call to django to start the session
-                if (!IS_D3M_DOMAIN)
-                    return resolve();
-                //rpc StartSession(SessionRequest) returns (SessionResponse) {}
-
-                let user_agent = "some agent";
-                let version = "some version";
-                let SessionRequest={user_agent,version};
-
-                var jsonout = JSON.stringify(SessionRequest);
-                var urlcall = D3M_SVC_URL + "/startsession";
-                var solajsonout = "grpcrequest=" + jsonout;
-                console.log("SessionRequest: ");
-                console.log(solajsonout);
-                console.log("urlcall: ", urlcall);
-
-                if(tutorial_mode){ // && first_load){
-                    var dl_content = "<p>This tool can guide you to solve an empirical problem in the dataset listed above.</p><p>These messages will teach you the steps to take to find and submit a solution.</p>";
-                    var reset_content = "<p>You can always start a problem over by using this reset button.</p>"
-                    var depvar_id = mytarget + "biggroup";
-                    var problem_initialized_tour = {
-                      "id": "dataset_launch",
-                       "i18n": {
-                        "doneBtn":'Ok'
-                      },
-                      "steps": [
-                        {
-                          "target": "dataName", //document.querySelectorAll("#dataName"),
-                          "placement": "bottom",
-                          "title": "Welcome to TwoRavens Solver",
-                          "content": dl_content,
-                          "showCTAButton":true,
-                          "ctaLabel": "Disable these messages",
-                          "onCTA": function() {
-                            hopscotch.endTour(true);
-                            tutorial_mode = false;
-                          },
-                        },
-                        {
-                          "target": "btnReset",
-                          "placement": "bottom",
-                          "title": "Restart Any Problem Here",
-                          "content": reset_content,
-                          "showCTAButton":true,
-                          "ctaLabel": "Disable these messages",
-                          "onCTA": function() {
-                            hopscotch.endTour(true);
-                            tutorial_mode = false;
-                          },
-                        },
-                        {
-                          "target": "btnEstimate",
-                          "placement": "left",
-                          "title": "Solve Problem",
-                          "content": "<p>The current green button is generally the next step to follow to move the system forward.</p><p>Click this Solve button to tell the tool to find a solution to the problem.</p>",
-                          "showCTAButton":true,
-                          "ctaLabel": "Disable these messages",
-                          "onCTA": function() {
-                            hopscotch.endTour(true);
-                            tutorial_mode = false;
-                          },
-                        },
-                        {
-                          "target": depvar_id, //"classbiggroup",
-                          "placement": "left",
-                          "title": "Target Variable",
-                          "content": "This is the variable, " + mytarget + ", we are trying to predict.  This center panel graphically represents the problem currently being attempted.",
-                          "showCTAButton":true,
-                          "ctaLabel": "Disable these messages",
-                          "onCTA": function() {
-                            hopscotch.endTour(true);
-                            tutorial_mode = false;
-                          },
-                        },
-                        {
-                          "target": "gr1hull",
-                          "placement": "right",
-                          "title": "Explanation Set",
-                          "content": "This set of variables can potentially predict the target.",
-                          "showCTAButton":true,
-                          "ctaLabel": "Disable these messages",
-                          "onCTA": function() {
-                            hopscotch.endTour(true);
-                            tutorial_mode = false;
-                          },
-                        },
-                        {
-                          "target": "displacement",
-                          "placement": "right",
-                          "title": "Variable List",
-                          "content": "<p>Click on any variable name here if you wish to remove it from the problem solution.</p><p>You likely do not need to adjust the problem representation in the center panel.</p>",
-                          "showCTAButton":true,
-                          "ctaLabel": "Disable these messages",
-                          "onCTA": function() {
-                            hopscotch.endTour(true);
-                            tutorial_mode = false;
-                          },
-                        },
-                        {
-                          "target": "btnEndSession",
-                          "placement": "bottom",
-                          "title": "Finish Problem",
-                          "content": "If the solution reported back seems acceptable, then finish this problem by clicking this End Session button.",
-                          "showCTAButton":true,
-                          "ctaLabel": "Disable these messages",
-                          "onCTA": function() {
-                            hopscotch.endTour(true);
-                            tutorial_mode = false;
-                          },
-                        }
-                      ],
-                      "showCloseButton":false,
-                      "scrollDuration": 300,
-                      "onEnd":  function() {
-                           first_load = false;
-                          },
-                    };
-                    console.log("Starting Hopscotch Tour");
-                    hopscotch.startTour(problem_initialized_tour);
-                    console.log("Ending Hopscotch Tour");
-                };
-
-                function ssSuccess(btn, SessionResponse) {
-                    console.log("startsession: ", SessionResponse);
-                    zparams.zsessionid=SessionResponse.context.sessionId;
-                    resolve();
-                }
-
-                function ssFail(btn) {
-                    alert("StartSession has failed.");
-                    reject();
-                }
-
-                makeCorsRequest(urlcall, "nobutton", ssSuccess, ssFail, solajsonout);
-        }))
-    .then(_ => m.request(pURL))
-    .then(data => { // success means pURL exists, call readPreprocess()
-        if(!swandive)
-            readPreprocess(data)
-        }, _ => { // fail means pURL doesn't exist, call runPreprocess(), which writes preprocess.json and then does what readPreprocess does
-        if(!swandive)
-            runPreprocess(d3mData, d3mTarget, d3mDataName);
-        })
-    .then(() => new Promise((resolve, reject) => {
-        if(swandive)
-            resolve();
-
-        let vars = Object.keys(preprocess);
-
-        // temporary values for hold that correspond to histogram bins
-        hold = [.6, .2, .9, .8, .1, .3, .4];
-        for (let i = 0; i < vars.length; i++) {
-            // valueKey[i] = vars[i].attributes.name.nodeValue;
-            // lablArray[i] = varsXML[i].getElementsByTagName("labl").length == 0 ?
-            // "no label" :
-            // varsXML[i].getElementsByTagName("labl")[0].childNodes[0].nodeValue;
-            // let datasetcount = d3.layout.histogram()
-            //     .bins(barnumber).frequency(false)
-            //     ([0, 0, 0, 0, 0]);
-            valueKey[i] = vars[i];
-            lablArray[i] = "no label";
-            // contains all the preprocessed data we have for the variable, as well as UI data pertinent to that variable,
-            // such as setx values (if the user has selected them) and pebble coordinates
-            let obj = {
-                id: i,
-                reflexive: false,
-                name: valueKey[i],
-                labl: lablArray[i],
-                data: [5, 15, 20, 0, 5, 15, 20],
-                count: hold,
-                nodeCol: colors(i),
-                baseCol: colors(i),
-                strokeColor: selVarColor,
-                strokeWidth: "1",
-                subsetplot: false,
-                subsetrange: ["", ""],
-                setxplot: false,
-                setxvals: ["", ""],
-                grayout: false,
-                group1: false,
-                group2: false,
-                forefront: false
-            };
-            jQuery.extend(true, obj, preprocess[valueKey[i]]);
-            allNodes.push(obj);
-        };
-        resolve();
-    }))
-    .then(() => new Promise((resolve, reject) => { // adding in d3mDescription if IS_D3M_DOMAIN
-        if(!IS_D3M_DOMAIN || swandive)
-            return resolve();
-        // adding in d3mDescription to allNodes
-        let datavars = dataschema.trainData.trainData;
-        for(let i = 0; i < datavars.length; i++) {
-            let myi = findNodeIndex(datavars[i].varName);
-            let d3mDescription = {d3mDescription:datavars[i]};
-            allNodes[myi] = Object.assign(allNodes[myi], d3mDescription);
-        }
-        console.log(allNodes);
-        resolve();
-    }))
-    .then(() =>  { // final step: start up
-        if (swandive) {
-            scaffolding(swandive);
-        } else {
-            scaffolding(layout);
-            if (IS_D3M_DOMAIN) {
-                zPop();
-            } else {
-                dataDownload();
-            }
-        }
-    });
+    load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3mData, d3mTarget, d3mPS, d3mDS, pURL);
 }
-
 
 let $fill = (obj, op, d1, d2) => d3.select(obj).transition()
     .attr('fill-opacity', op)
