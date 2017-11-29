@@ -486,12 +486,25 @@
 			<div id="aggregEventSelect" style="display:none">
 -->
 				<div id="aggregEventByPenta" style="display:none">
-					<p id="aggregPentaAll" style="width:100%; text-align:left">All</p>
+					<label class="aggChkLbl"><input class="aggChk allCheck" name="aggregPentaAll" id="aggregPentaAll" type="checkbox" value="all" checked>All</label>
+					<div class="separator"></div>
+					<label class="aggChkLbl"><input class="aggChk" name="aggregPenta0" id="aggregPenta0" type="checkbox" value="penta0"checked>Penta 0: Public Statement</label>
+					<div class="separator"></div>
+					<label class="aggChkLbl"><input class="aggChk" name="aggregPenta1" id="aggregPenta1" type="checkbox" value="penta1"checked>Penta 1: Verbal Cooperation</label>
+					<div class="separator"></div>
+					<label class="aggChkLbl"><input class="aggChk" name="aggregPenta2" id="aggregPenta2" type="checkbox" value="penta2"checked>Penta 2: Material Cooperation</label>
+					<div class="separator"></div>
+					<label class="aggChkLbl"><input class="aggChk" name="aggregPenta3" id="aggregPenta3" type="checkbox" value="penta3"checked>Penta 3: Verbal Conflict</label>
+					<div class="separator"></div>
+					<label class="aggChkLbl"><input class="aggChk" name="aggregPenta4" id="aggregPenta4" type="checkbox" value="penta4"checked>Penta 4: Material Conflict</label>
+<!--
+					<p id="aggregPentaAll" class="aggregPentaSelect">All</p>
 					<p id="aggregPenta0" style="width:100%; text-align:left">Penta 0: Public Statement</p>
 					<p id="aggregPenta1" style="width:100%; text-align:left">Penta 1: Verbal Cooperation</p>
 					<p id="aggregPenta2" style="width:100%; text-align:left">Penta 2: Material Cooperation</p>
 					<p id="aggregPenta3" style="width:100%; text-align:left">Penta 3: Verbal Conflict</p>
 					<p id="aggregPenta4" style="width:100%; text-align:left">Penta 4: Material Conflict</p>
+-->
 				</div>
 				<div id="aggregEventByRoot" style="display:none">
 					<p id="aggregRootAll" style="width:100%; text-align:left">All</p>
@@ -522,9 +535,9 @@
 		</div>
 
 		<div id="aggregDataOutput" style="display:inline-block;height:calc(25% - 15px);width:100%;border:1px solid red;">
-			<table style="width:100%">
+			<table id="aggregTable" style="width:100%">
 				<caption>Data Result</caption>
-				<tr style="text-align:center">
+				<tr id="aggregTableHeader">
 					<th id="aggregDataDate">Date</th>
 					<th id="aggregDataSrc">Source</th>
 					<th id="aggregDataTgt">Target</th>
@@ -533,7 +546,11 @@
 					<th id="aggregDataPenta2" class="aggregDataPenta">Penta 2</th>
 					<th id="aggregDataPenta3" class="aggregDataPenta">Penta 3</th>
 					<th id="aggregDataPenta4" class="aggregDataPenta">Penta 4</th>
-					<th id="aggregDataRoot1" class="aggregDataRoot">Root 1</th>
+					<th id="aggregDataRoot1" class="aggregDataRoot" style="display:hidden">Root 1</th>
+				</tr>
+
+				<tr id="aggregTableR1">
+					
 				</tr>
 			</table>
 		</div>

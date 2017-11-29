@@ -872,6 +872,11 @@ function createElement(chkSwitch = true, actorType, columnType, value, index, di
     chkbox.value = value;
     chkbox.className = "actorChk";
     chkbox.checked = filterSet[actorType][columnType].has(value);
+    //~ console.log("check usamiledu");
+    //~ if (value == "USAMILEDU") {
+		//~ console.log(filterSet[actorType][columnType]);
+	//~ }
+    
 
     if (chkSwitch) {
         chkbox.onchange = function () {
@@ -880,6 +885,7 @@ function createElement(chkSwitch = true, actorType, columnType, value, index, di
     }
     else {
         chkbox.onchange = function () {
+			console.log("actor flip");
             actorSelectChanged(this);
         };
     }
@@ -966,6 +972,7 @@ function actorSelectChanged(element) {
         if (window[currentTab + "CurrentNode"].group.indexOf(element.value < 0)) {		//perhaps change to a set
             window[currentTab + "CurrentNode"].group.push(element.value);
             window[currentTab + "CurrentNode"].groupIndices.push(element.id);
+            filterSet[currentTab]["full"].add(element.value);
         }
     }
     else {									//remove from group
@@ -973,6 +980,7 @@ function actorSelectChanged(element) {
         if (index > -1) {
             window[currentTab + "CurrentNode"].group.splice(index, 1);
             window[currentTab + "CurrentNode"].groupIndices.splice(index, 1);
+            filterSet[currentTab]["full"].delete(element.value);
         }
     }
 }
@@ -1070,7 +1078,7 @@ $(".actorSearch").ready(function () {
 //when typing in search box
 $(".actorSearch").on("keyup", function (event) {
     const searchText = $("#" + currentTab + "Search").val().toUpperCase();
-    if (searchText.length % 3 === 0 && searchText.length > 0) {
+    if (searchText.length % 3 === 0) {
         actorSearch(currentTab);
     }
 });
@@ -1307,6 +1315,8 @@ function actorSearch(actorName) {		//bugs: removes pre checked values on search 
         }
     }
 
+	console.log("actor stage");
+	console.log(stagedSubsetData);
     let stagedQuery = buildSubset(stagedSubsetData);
 
     // If no filters are set, don't add any filtering
