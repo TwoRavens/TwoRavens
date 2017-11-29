@@ -1,357 +1,61 @@
-<!doctype html>
-<html>
-<head>
-  <meta charset='utf-8' />
-  <title>TwoRavens 1.0.0 | Documentation</title>
-  <meta name='viewport' content='width=device-width,initial-scale=1'>
-  <link href='assets/bass.css' type='text/css' rel='stylesheet' />
-  <link href='assets/style.css' type='text/css' rel='stylesheet' />
-  <link href='assets/github.css' type='text/css' rel='stylesheet' />
-  <link href='assets/split.css' type='text/css' rel='stylesheet' />
-</head>
-<body class='documentation m0'>
-    <div class='flex'>
-      <div id='split-left' class='overflow-auto fs0 height-viewport-100'>
-        <div class='py1 px2'>
-          <h3 class='mb0 no-anchor'>TwoRavens</h3>
-          <div class='mb1'><code>1.0.0</code></div>
-          <input
-            placeholder='Filter'
-            id='filter-input'
-            class='col12 block input'
-            type='text' />
-          <div id='toc'>
-            <ul class='list-reset h5 py1-ul'>
-              
-                
-                <li><a
-                  href='#main'
-                  class="">
-                  main
-                  
-                </a>
-                
-                </li>
-              
-                
-                <li><a
-                  href='#scaffolding'
-                  class="">
-                  scaffolding
-                  
-                </a>
-                
-                </li>
-              
-                
-                <li><a
-                  href='#transform'
-                  class="">
-                  transform
-                  
-                </a>
-                
-                </li>
-              
-                
-                <li><a
-                  href='#record_user_metadata'
-                  class="">
-                  record_user_metadata
-                  
-                </a>
-                
-                </li>
-              
-            </ul>
-          </div>
-          <div class='mt1 h6 quiet'>
-            <a href='http://documentation.js.org/reading-documentation.html'>Need help reading this?</a>
-          </div>
-        </div>
-      </div>
-      <div id='split-right' class='relative overflow-auto height-viewport-100'>
-        
-          
-            <section class='p2 mb2 clearfix bg-white minishadow'>
+{% extends 'base.html' %}
+{% load render_bundle from webpack_loader %}
+{% load static %}
+{% block extra_css %}
+    <!-- bootstrap 3 -->
+    <link rel="stylesheet" href="{% static "pkgs/bootstrap/css/bootstrap.css" %}">
+{% endblock %}
 
-  
-  <div class='clearfix'>
-    
-    <h3 class='fl m0' id='main'>
-      main
-    </h3>
-    
-    
-  </div>
-  
+{% block extra_js %}
+    <!-- jquery 2.1.1 --><script src="{% static "js/jquery/jquery.min.js" %}"></script>
+    <!-- bootstrap 3 --><script src="{% static "pkgs/bootstrap/js/bootstrap.min.js" %}"></script>
+    <!-- d3 --><script src="{% static "js/d3/d3.v3.min.js" %}"></script>
+    <script>
 
-  <p>called on app start</p>
+          // -----------------------------
+          // constants: possible domain settings
+          // -----------------------------
+          const D3M_DOMAIN = 'D3M_DOMAIN';
+          const DATAVERSE_DOMAIN = 'DATAVERSE_DOMAIN';
+          const EVENTDATA_DOMAIN = 'EVENTDATA_DOMAIN';
+
+        {% if app_config %}
+          // ----------------------------
+          // global js settings from db
+          // ----------------------------
+          const APP_DOMAIN = '{{ app_config.app_domain }}';
+
+          const ROOK_SVC_URL = '{{ app_config.rook_svc_url }}';
+          const DATAVERSE_URL = '{{ app_config.dataverse_url }}';
+          const D3M_SVC_URL = '{{ app_config.d3m_svc_url }}';
+
+          const PRODUCTION = {{ app_config.production }};
+          const privacyMode = {{ app_config.privacy_mode }};
+        {% else %}
+          // ----------------------------
+          // default settings if nothing in db
+          //  - see /templates/index.html to set manually
+          // ----------------------------
+          const APP_DOMAIN = DATAVERSE_DOMAIN;
+
+          const ROOK_SVC_URL = '/rook-custom/'; // via Django -> to RApache/rook
+          const DATAVERSE_URL = 'https://beta.dataverse.org';
+          const D3M_SVC_URL = '/d3m-service/'; // via Django -> TA2
+
+          const PRODUCTION = false;
+          const privacyMode = false;        // configure default functionality for PSI tool
+        {% endif %}
+
+          // Set convenience constants for checking the domain
+          //
+          const IS_D3M_DOMAIN = (APP_DOMAIN === D3M_DOMAIN);
+          const IS_DATAVERSE_DOMAIN = (APP_DOMAIN === DATAVERSE_DOMAIN);
+          const IS_EVENTDATA_DOMAIN = (APP_DOMAIN === EVENTDATA_DOMAIN);
 
 
-  <div class='pre p1 fill-light mt0'>main(fileid: <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>, hostname: <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>, ddiurl: <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>, dataurl: <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>, apikey: <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>)</div>
-  
-  
+    </script>
+  {% endblock %}
 
-  
-  
-  
-  
-  
-  
-
-  
-    <div class='py1 quiet mt1 prose-big'>Parameters</div>
-    <div class='prose'>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>fileid</span> <code class='quiet'>(<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>)</code>
-	    
-          </div>
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>hostname</span> <code class='quiet'>(<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>)</code>
-	    
-          </div>
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>ddiurl</span> <code class='quiet'>(<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>)</code>
-	    
-          </div>
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>dataurl</span> <code class='quiet'>(<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>)</code>
-	    
-          </div>
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>apikey</span> <code class='quiet'>(<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>)</code>
-	    
-          </div>
-          
-        </div>
-      
-    </div>
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-          
-        
-          
-            <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-  <div class='clearfix'>
-    
-    <h3 class='fl m0' id='scaffolding'>
-      scaffolding
-    </h3>
-    
-    
-  </div>
-  
-
-  <p>called after all external data are guaranteed to have been read to completion. this populates the left panel with variable names, the right panel with model names, the transformation tool, an the associated mouseovers. its callback is layout(), which initializes the modeling space</p>
-
-
-  <div class='pre p1 fill-light mt0'>scaffolding(callback: any)</div>
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-    <div class='py1 quiet mt1 prose-big'>Parameters</div>
-    <div class='prose'>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>callback</span> <code class='quiet'>(any)</code>
-	    
-          </div>
-          
-        </div>
-      
-    </div>
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-          
-        
-          
-            <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-  <div class='clearfix'>
-    
-    <h3 class='fl m0' id='transform'>
-      transform
-    </h3>
-    
-    
-  </div>
-  
-
-  <p>n = name of column/node
-t = selected transformation</p>
-
-
-  <div class='pre p1 fill-light mt0'>transform(n: any, t: any, typeTransform: any)</div>
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-    <div class='py1 quiet mt1 prose-big'>Parameters</div>
-    <div class='prose'>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>n</span> <code class='quiet'>(any)</code>
-	    
-          </div>
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>t</span> <code class='quiet'>(any)</code>
-	    
-          </div>
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>typeTransform</span> <code class='quiet'>(any)</code>
-	    
-          </div>
-          
-        </div>
-      
-    </div>
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-          
-        
-          
-            <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-  <div class='clearfix'>
-    
-    <h3 class='fl m0' id='record_user_metadata'>
-      record_user_metadata
-    </h3>
-    
-    
-  </div>
-  
-
-  <p>record user metadata</p>
-
-
-  <div class='pre p1 fill-light mt0'>record_user_metadata()</div>
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-          
-        
-      </div>
-    </div>
-  <script src='assets/anchor.js'></script>
-  <script src='assets/split.js'></script>
-  <script src='assets/site.js'></script>
-</body>
-</html>
+  {% block body_content %}
+      {% render_bundle 'main' 'js' %}
+  {% endblock %}
