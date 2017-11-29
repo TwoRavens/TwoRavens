@@ -7,7 +7,8 @@ from collections import OrderedDict
 from tworaven_apps.workspaces.models import (\
     DataSourceType, SavedWorkspace)
 from tworaven_apps.configurations.models import AppConfiguration
-from tworaven_apps.workspaces.models import UI_SESSION_DICT
+from tworaven_apps.workspaces.models import \
+    (UI_KEY_APP_DOMAIN, UI_KEY_LIST)
 
 from tworaven_apps.utils.view_helper import get_session_key
 
@@ -19,27 +20,72 @@ class WorkspaceRecorder(object):
 
         self.request_obj = request_obj
         self.session_key = get_session_key(request_obj)
-        #self.update_session()
+
+        # Set user
+        if request_obj.user.is_authenticated():
+            self.is_authenticated = True
+            self.loggedin_user = request_obj.user
+        else:
+            self.is_authenticated = False
+            self.loggedin_user = None
+
 
     def update_session(self):
         """Update the session information"""
         assert self.request_obj, "self.request_obj cannot be None"
 
-        session_updated = False
+        if not self.request_obj.POST:
+            return False, "request does not contain POST data"
+
+        # Check the app_domain
+        #
+        if UI_KEY_APP_DOMAIN in self.request_obj.POST:
+            app_domain = self.request_obj.POST[UI_KEY_APP_DOMAIN]
+        else:
+            app_domain = None
+
+        if not app_domain:
+            return False, 'No "app_domain" found in request POST. (%s)' % \
+                   self.request_obj.POST.keys()
+
+        if not AppConfiguration.is_valid_app_domain(app_domain):
+            return False, 'This "app_domain" is not valid: %s' % (app_domain)
+
+        # TO DO:
+        # Look for an existing object with user, domain, and problem id
+        #
+
+        # Initialize object with user and domain
+        #
+        saved_workspace, created = SavedWorkspace.objects.get_or_create(\
+                                                user=self.loggedin_user,
+                                                app_domain=app_domain)
+
+
+        info_found = False
         keys_updated = []
-        for ui_key, sess_key in UI_SESSION_DICT.items():
+        for ui_key in UI_KEY_LIST:
             if ui_key in self.request_obj.POST:
-                ui_data = self.request_obj.POST[ui_key]
-                success, user_msg = self.store_session_data(ui_data, sess_key)
-                if success:
-                    session_updated = True
-                    keys_updated.append(ui_key)
+                # This is a string
+                json_data_str = self.request_obj.POST[ui_key]
 
-        if not session_updated:
-            return False, 'No updates made.'
+                # Attempt to conver to JSON (e.g. python OrderedDict or [])
+                try:
+                    json_data = json.loads(json_data_str,
+                                           object_pairs_hook=OrderedDict)
+                except TypeError:
+                    print('failed JSON conversion!')
+                    return False, 'failed to convert info to JSON'
 
-        return True, 'keys updated: %s' % (keys_updated)
+                saved_workspace.__dict__[ui_key] = json_data
+                info_found = True
+                keys_updated.append(ui_key)
 
+        if info_found:
+            saved_workspace.save()
+            return True, 'keys updated: %s' % (keys_updated)
+
+        return False, "Data keys not found: %s" % (UI_KEY_LIST,)
 
     def store_session_data(self, json_data_str, sess_key):
         """Store session data under the appropriate key"""
@@ -65,27 +111,11 @@ class WorkspaceRecorder(object):
 
 
     @staticmethod
-    def clear_session_data(request_obj):
-        """Clear the TwoRavens keys"""
-
-        delete_occurred = False
-        # iterate through key list
-        for sess_key in UI_SESSION_DICT.values():
-            # does it exist?
-            if sess_key in request_obj.session:
-                # yes, delete it
-                del request_obj.session[sess_key]
-                delete_occurred = True
-
-        if delete_occurred:
-            request_obj.session.modified = True
-
-    @staticmethod
     def record_workspace(request_obj):
         """Save app state in the session"""
         assert request_obj, 'request_obj cannot be None'
-        print(request_obj.POST)
-        print(request_obj.POST.keys())
+        #print(request_obj.POST)
+        #print(request_obj.POST.keys())
         util = WorkspaceRecorder(request_obj)
 
         return util.update_session()

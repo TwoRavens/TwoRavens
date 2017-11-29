@@ -4144,6 +4144,7 @@ export function record_user_metadata(){
     // Save session data
     var sess_data = "zparams=" + JSON.stringify(zparams);
     sess_data += "&allnodes=" + JSON.stringify(allNodes);
+    sess_data += "&app_domain=" + APP_DOMAIN;
 
     //var urlcall = '/workspaces/record-user-metadata';
     var urlcall = '/workspaces/record-user-workspace';

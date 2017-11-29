@@ -9,14 +9,17 @@ from django.conf import settings
 from django.db import models
 from django.utils.text import slugify
 
-from tworaven_apps.configurations.models import APP_DOMAINS
-
+from tworaven_apps.configurations.models import AppConfiguration,\
+    APP_DOMAINS
 from tworaven_apps.utils.json_helper import format_jsonfield_for_admin,\
     format_link_for_admin
 
 # keys in UI requests
 UI_KEY_ZPARAMS = 'zparams'
 UI_KEY_ALLNODES = 'allnodes'
+UI_KEY_APP_DOMAIN = 'app_domain'
+
+UI_KEY_LIST = [UI_KEY_ZPARAMS, UI_KEY_ALLNODES]#, UI_KEY_APP_DOMAIN]
 
 # session keys
 SESSION_KEY_ZPARAMS = 'raven_ZPARAMS'
@@ -68,17 +71,17 @@ class SavedWorkspace(TimeStampedModel):
                              blank=True,
                              null=True)
 
-    domain = models.CharField(max_length=100,
-                              choices=APP_DOMAINS)
+    app_domain = models.CharField(max_length=100,
+                                  choices=APP_DOMAINS)
 
     data_source_type = models.ForeignKey(DataSourceType,
                                          null=True,
                                          blank=True)
 
-    allnodes = jsonfield.JSONField(\
+    zparams = jsonfield.JSONField(\
                     load_kwargs=dict(object_pairs_hook=OrderedDict))
 
-    zparams = jsonfield.JSONField(\
+    allnodes = jsonfield.JSONField(\
                     load_kwargs=dict(object_pairs_hook=OrderedDict))
 
     notes = models.TextField(blank=True)
@@ -91,13 +94,16 @@ class SavedWorkspace(TimeStampedModel):
     def __str__(self):
         """String representation for admin"""
         if self.user:
-            return 'ws %s - %s' % (self.username, self.modified)
+            return 'ws %s - %s' % (self.user, self.modified)
 
         return 'ws %s' % (self.modified)
 
 
     def save(self, *args, **kwargs):
         """Update attributes based on state"""
+        assert AppConfiguration.is_valid_app_domain(self.app_domain), \
+               'The app_domain is invalid: %s' % self.app_domain
+
         if self.user:
             self.is_anonymous = False
         else:
