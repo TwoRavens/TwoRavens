@@ -3,11 +3,12 @@ Code based on sample by Matthias Grabmair
     - https://gitlab.datadrivendiscovery.org/mgrabmair/ta3ta2-proxy
 """
 import json
-import random, string
 from google.protobuf.json_format import MessageToJson,\
     Parse, ParseError
 
 from django.conf import settings
+
+from tworaven_apps.utils import random_info
 from tworaven_apps.ta2_interfaces import core_pb2
 from tworaven_apps.ta2_interfaces.ta2_connection import TA2Connection
 from tworaven_apps.ta2_interfaces.ta2_util import get_grpc_test_json,\
@@ -63,10 +64,9 @@ def start_session(raven_json_str=None):
     # -- then return canned response
     #
     if settings.TA2_STATIC_TEST_MODE:
-        rnd_session_id = ''.join(random.choice(string.ascii_lowercase + string.digits)
-                         for _ in range(7))
-        d = dict(session_id=rnd_session_id)
-        return get_grpc_test_json('test_responses/startsession_ok.json', d)
+        rnd_session_id = random_info.get_alphanumeric_string(7)
+        info_dict = dict(session_id=rnd_session_id)
+        return get_grpc_test_json('test_responses/startsession_ok.json', info_dict)
 
         #if random.randint(1,10) == 3:
         #    return get_grpc_test_json('test_responses/startsession_badassertion.json')

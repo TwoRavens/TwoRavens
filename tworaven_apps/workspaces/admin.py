@@ -23,6 +23,6 @@ class SavedWorkspaceAdmin(admin.ModelAdmin):
     list_filter= ('data_source_type', 'is_anonymous', 'user',)
     readonly_fields = ('is_anonymous',
                        'modified', 'created',
-                       'data_origin_json', 'workspace_json')
+                       'allnodes_json', 'zparams_json')
 
 admin.site.register(SavedWorkspace, SavedWorkspaceAdmin)

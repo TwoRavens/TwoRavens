@@ -9,6 +9,8 @@ from django.conf import settings
 from django.db import models
 from django.utils.text import slugify
 
+from tworaven_apps.configurations.models import APP_DOMAINS
+
 from tworaven_apps.utils.json_helper import format_jsonfield_for_admin,\
     format_link_for_admin
 
@@ -66,14 +68,17 @@ class SavedWorkspace(TimeStampedModel):
                              blank=True,
                              null=True)
 
+    domain = models.CharField(max_length=100,
+                              choices=APP_DOMAINS)
+
     data_source_type = models.ForeignKey(DataSourceType,
                                          null=True,
                                          blank=True)
 
-    workspace = jsonfield.JSONField(\
+    allnodes = jsonfield.JSONField(\
                     load_kwargs=dict(object_pairs_hook=OrderedDict))
 
-    data_origin = jsonfield.JSONField(\
+    zparams = jsonfield.JSONField(\
                     load_kwargs=dict(object_pairs_hook=OrderedDict))
 
     notes = models.TextField(blank=True)
@@ -111,14 +116,14 @@ class SavedWorkspace(TimeStampedModel):
         ordering = ('-modified',)
 
 
-    def data_origin_json(self):
-        if not self.data_origin:
+    def allnodes_json(self):
+        if not self.allnodes:
             return 'n/a'
 
-        return format_jsonfield_for_admin(self.data_origin)
+        return format_jsonfield_for_admin(self.allnodes)
 
-    def workspace_json(self):
-        if not self.workspace:
+    def zparams_json(self):
+        if not self.zparams:
             return 'n/a'
 
-        return format_jsonfield_for_admin(self.workspace)
+        return format_jsonfield_for_admin(self.zparams)

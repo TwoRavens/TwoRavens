@@ -7,6 +7,7 @@ from django.test import TestCase
 from django.urls import reverse
 from django.conf import settings
 
+from tworaven_apps.utils import random_info
 from tworaven_apps.utils.msg_helper import msgt
 from tworaven_apps.configurations.models import AppConfiguration, D3M_DOMAIN
 from tworaven_apps.configurations.util_config_maker import TestConfigMaker
@@ -76,9 +77,9 @@ class D3MLogin(TestCase):
 
         # make a user
         username = 'test_user_%s' %\
-                 (''.join(random.choices(string.ascii_uppercase + string.digits, k=5)))
+                   (random_info.get_alphanumeric_uppercase(5))
 
-        rand_pw = ''.join(random.choices(string.ascii_uppercase + string.digits, k=10))
+        rand_pw = random_info.get_alphanumeric_uppercase(12)
 
         new_user = User(username=username,
                         first_name='One',

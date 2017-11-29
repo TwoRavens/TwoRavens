@@ -138,3 +138,8 @@ class AppConfiguration(TimeStampedModel):
             else:
                 js_dict[k] = val
         return js_dict
+
+    @staticmethod
+    def is_valid_app_domain(domain_name):
+        """Check if the domain name is recognized"""
+        return domain_name in DOMAIN_LIST

@@ -1,12 +1,14 @@
 """
+Make the TA2 endsession request
+JSON req -> gRPC req -> make request -> gRPC req -> JSON req
 """
 import json
-import random, string
-
+import random
 from google.protobuf.json_format import MessageToJson,\
     Parse, ParseError
 
 from django.conf import settings
+from tworaven_apps.utils import random_info
 from tworaven_apps.ta2_interfaces import core_pb2
 from tworaven_apps.ta2_interfaces.ta2_connection import TA2Connection
 from tworaven_apps.ta2_interfaces.ta2_util import get_grpc_test_json,\
@@ -52,8 +54,7 @@ def end_session(raven_json_str):
     # -- then return canned response below
     #
     if settings.TA2_STATIC_TEST_MODE:
-        rnd_session_id = ''.join(random.choice(string.ascii_lowercase + string.digits)
-                         for _ in range(7))
+        rnd_session_id = random_info.get_alphanumeric_string(7)
         tinfo = dict(session_id=rnd_session_id)
         #if random.randint(1, 3) == 3:
         #    return get_grpc_test_json('test_responses/endsession_badassertion.json')
@@ -62,8 +63,7 @@ def end_session(raven_json_str):
                                   tinfo)
 
     if settings.TA2_STATIC_TEST_MODE:
-        rnd_session_id = ''.join(random.choice(string.ascii_lowercase + string.digits)
-                         for _ in range(7))
+        rnd_session_id = random_info.get_alphanumeric_string(7)
         tinfo = dict(session_id=rnd_session_id)
         if random.randint(1, 3) == 3:
             return get_grpc_test_json(request, 'test_responses/endsession_badassertion.json')

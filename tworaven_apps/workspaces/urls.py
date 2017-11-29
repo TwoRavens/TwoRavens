@@ -13,9 +13,15 @@ urlpatterns = (
         views.clear_user_metadata,
         name='clear_user_metadata'),
 
+    # Test version
     url(r'^record-user-metadata$',
         views.record_user_metadata,
         name='record_user_metadata'),
+
+    # Getting to the serious stuff
+    url(r'^record-user-workspace$',
+        views.record_user_workspace,
+        name='record_user_workspace'),
 
 )
 
