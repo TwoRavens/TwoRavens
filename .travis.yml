@@ -20,7 +20,7 @@ install:
 script:
   # Run django tests.  (Note django settings are an env variable)
   - python manage.py test tworaven_apps.ta2_interfaces
-  - coverage run --source=tworaven_apps.ta2_interfaces manage.py test tworaven_apps.ta2_interfaces tworaven_apps.raven_auth
+  - coverage run --source=tworaven_apps.ta2_interfaces manage.py test tworaven_apps.ta2_interfaces
   #- coverage run --source=tworaven_apps.raven_auth manage.py test tworaven_apps.raven_auth
   # If tests passed, build docker image--and see if that works
   - docker build -t tworavens/ravens-main:latest .
