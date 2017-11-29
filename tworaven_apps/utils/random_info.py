@@ -9,6 +9,12 @@ def get_alphanumeric_uppercase(str_length):
     params = dict(uppercase_only=True)
     return get_alphanumeric_string(str_length, **params)
 
+def get_alphanumeric_lowercase(str_length):
+    """Get random alpha numeric string, with lowercase letters"""
+
+    params = dict(uppercase_only=True)
+    return get_alphanumeric_string(str_length, **params)
+
 def get_alphanumeric_mixedcase(str_length):
     """Get random alpha numeric string, with uppercase letters"""
 

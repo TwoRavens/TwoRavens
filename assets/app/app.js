@@ -4145,6 +4145,8 @@ export function record_user_metadata(){
     var sess_data = "zparams=" + JSON.stringify(zparams);
     sess_data += "&allnodes=" + JSON.stringify(allNodes);
 
-    var urlcall = '/workspaces/record-user-metadata';
+    //var urlcall = '/workspaces/record-user-metadata';
+    var urlcall = '/workspaces/record-user-workspace';
+
     makeCorsRequest(urlcall, "nobutton", endSuccess, endFail, sess_data);
 }

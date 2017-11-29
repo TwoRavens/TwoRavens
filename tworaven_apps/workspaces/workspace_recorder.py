@@ -81,7 +81,7 @@ class WorkspaceRecorder(object):
             request_obj.session.modified = True
 
     @staticmethod
-    def record_state(request_obj):
+    def record_workspace(request_obj):
         """Save app state in the session"""
         assert request_obj, 'request_obj cannot be None'
         print(request_obj.POST)

@@ -44,9 +44,10 @@ def clear_user_metadata(request):
     return HttpResponseRedirect(reverse('view_session_info'))
 
 
+@csrf_exempt
 def record_user_workspace(request):
     """Record a user's workspace"""
-    success, user_msg = WorkspaceRecorder.record_state(request)
+    success, user_msg = WorkspaceRecorder.record_workspace(request)
 
     info = dict(success=success,
                 message=user_msg)
