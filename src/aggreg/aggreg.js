@@ -1,3 +1,5 @@
+var aggregMode = "penta";
+
 function updateToAggreg() {
 	opMode = "aggreg";
 	//clear main
@@ -71,6 +73,8 @@ $("#aggregPentaToggle").click(function() {
 	else {
 		d3.select("#aggregPentaToggle").style("background-color", selVarColor);
 		$("#aggregEventByPenta").show();
+		aggregMode = "penta";
+		updateAggregTable();
 	}
 });
 
@@ -80,12 +84,21 @@ $("#aggregRootToggle").click(function() {
 	if ($("#aggregEventByRoot").is(":visible")) {
 		d3.select("#aggregRootToggle").style("background-color", varColor);
 		$("#aggregEventByRoot").hide();
+		aggregMode = "penta";
+		d3.select("#aggregPentaToggle").style("background-color", selVarColor);
+		updateAggregTable();
 	}
 	else {
 		d3.select("#aggregRootToggle").style("background-color", selVarColor);
 		$("#aggregEventByRoot").show();
+		aggregMode = "root";
+		updateAggregTable();
 	}
 });
+
+function linkTable() {
+
+}
 
 function updateAggregTable() {
 	console.log("updating table");

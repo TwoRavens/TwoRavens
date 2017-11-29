@@ -1271,7 +1271,10 @@ function buildSubset(tree){
         }
 
         // Process final sibling
-        if (group.children[group.children.length - 1]['operation'] === 'and') {
+        console.log("group");
+        console.log(group);
+        console.log(group.children);
+        if (group.children.length > 0 && group.children[group.children.length - 1]['operation'] === 'and') {
             semigroup.push(processNode(group.children[group.children.length - 1]));
             group_query['$or'].push({'$and': semigroup.slice()})
 
