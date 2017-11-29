@@ -19,5 +19,6 @@ class LoginViewExtraContext(LoginView):
         # add variable checking for the d3m_domain
         #
         context['is_d3m_domain'] = app_config and app_config.is_d3m_domain()
-
+        context['just_logged_out'] = 'just_logged_out' in self.request.GET
+        
         return context

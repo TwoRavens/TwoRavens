@@ -7,7 +7,13 @@
   <div class="col col-md-6">
     <h3>Login</h3>
 
-    {% if is_d3m_domain %}
+    {% if just_logged_out %}
+    <div class="alert alert-success" role="alert">
+      You have successfully logged out.
+    </div>
+    {% endif %}
+
+    {% if is_d3m_domain and not user.is_authenticated %}
     <div class="alert alert-info" role="alert">
       Please log in to use TwoRavens for D3M.
     </div>
@@ -26,7 +32,7 @@
     {% endif %}
 
     {% if not user.is_authenticated %}
-    <form method="post">
+    <form method="post" action="{% url 'login' %}">
       {% csrf_token %}
 
       {% include "registration/generic_form_render.html" %}

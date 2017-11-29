@@ -1,5 +1,6 @@
 from django.conf.urls import url
 from django.contrib import admin
+from django.core.urlresolvers import reverse
 from django.contrib.auth import views as auth_views
 from tworaven_apps.raven_auth import views, view_login #, get_extra_context
 
@@ -24,8 +25,8 @@ urlpatterns = [
         name='signin'),
 
     url(r'^logout/$',
-        auth_views.LogoutView.as_view(),
-        {'next_page': '/auth/login?just_logged_out'},
+        auth_views.LogoutView.as_view(\
+            **dict(next_page='/auth/login?just_logged_out')),
         name='logout'),
 
     url(r'^test-state/$', views.test_state, name='test_state'),

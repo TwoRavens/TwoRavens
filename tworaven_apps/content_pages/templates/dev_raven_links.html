@@ -99,7 +99,7 @@
           <ul>
             <li><a href="{% url 'signup' %}">Sign Up</a></li>
             <li><a href="{% url 'login' %}">Log in</a></li>
-            <li><a href="{% url 'logout' %}">Log out</a> (forwards to login)</li>
+            <li><a href="{% url 'logout' %}?next=/">Log out</a> (forwards to login)</li>
             <li><a href="{% url 'password_reset' %}">Forgot password</a> (enter email)</li>
             <li><a href="{% url 'password_reset_done' %}">Password reset instructions</a> (after submitting email)</li>
           </ul>
