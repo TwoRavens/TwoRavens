@@ -1,3 +1,5 @@
+let opMode = "subset";
+
 let production = false;
 
 let rappURL = '';
