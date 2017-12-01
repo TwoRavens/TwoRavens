@@ -1,3 +1,4 @@
+"""URLs for the UI to initiate TA2 calls"""
 from django.conf.urls import url
 from tworaven_apps.ta2_interfaces import views, view_execute_pipeline
 
