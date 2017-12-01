@@ -331,10 +331,8 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     let url = D3M_SVC_URL + '/startsession';
     console.log('SessionRequest: ', SessionRequest);
     console.log("url: ", url);
-    let data = new FormData();
-    data.append('grpcrequest', JSON.stringify(SessionRequest));
     try {
-        res = await m.request(url, {method: 'POST', data: data});
+        res = await m.request(url, {method: 'POST', data: SessionRequest});
         console.log('startsession: ', res);
         zparams.zsessionid = res.context.sessionId;
     } catch (err) {
@@ -348,10 +346,10 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     if (tutorial_mode) {
         console.log('Starting Hopscotch Tour');
         let step = (target, placement, title, content) => ({
-            target: target,
-            placement: placement,
-            title: title,
-            content: content,
+            target,
+            placement,
+            title,
+            content,
             showCTAButton: true,
             ctaLabel: 'Disable these messages',
             onCTA: () => {

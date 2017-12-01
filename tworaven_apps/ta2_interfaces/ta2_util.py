@@ -46,7 +46,7 @@ def get_request_body(request):
     if not request.body:
         return False, 'request.body not found'
 
-    return True, request.body
+    return True, request.body.decode('utf-8')
 
 def get_grpc_content(request):
     """"Retrieve the GRPC content from the POST
