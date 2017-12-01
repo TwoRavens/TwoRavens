@@ -29,7 +29,7 @@ def view_workspace_info(request):
     # pull some session info, if there are any
     #
     if request.user.is_authenticated():
-        older_workspaces = SavedWorkspace.objects.filter(request.user)
+        older_workspaces = SavedWorkspace.objects.filter(user=request.user)
     else:
         older_workspaces = None
 

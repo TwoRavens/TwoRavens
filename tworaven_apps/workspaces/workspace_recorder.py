@@ -29,34 +29,34 @@ class WorkspaceRecorder(object):
             self.is_authenticated = False
             self.loggedin_user = None
 
-def get_saved_workspace(self, app_domain):
-    """Retrieve or create a SavedWorkspace object"""
+    def get_saved_workspace(self, app_domain):
+        """Retrieve or create a SavedWorkspace object"""
 
-    params = dict(app_domain=app_domain,
-                  session_key=self.session_key)
+        params = dict(app_domain=app_domain,
+                      session_key=self.session_key)
 
-    # (1) Look for an existing SavedWorkspace by session
-    #
-    saved_workspace = SavedWorkspace.objects.filter(**params).first()
+        # (1) Look for an existing SavedWorkspace by session
+        #
+        saved_workspace = SavedWorkspace.objects.filter(**params).first()
 
-    if saved_workspace:
+        if saved_workspace:
+            return saved_workspace
+
+
+        # (2) Get or create object with domain and user
+        #   - TO DO: Add problem id!!!
+        #
+        assert self.loggedin_user, "Only D3M right now, requires logged in user"
+        params2 = dict(app_domain=app_domain,
+                       user=self.loggedin_user)
+
+        saved_workspace, created = SavedWorkspace.objects.get_or_create(**params2)
+
+        # could be an existing workspace that needs an updated session key
+        #
+        saved_workspace.session_key = self.session_key
+
         return saved_workspace
-
-
-    # (2) Get or create object with domain and user
-    #   - TO DO: Add problem id!!!
-    #
-    assert self.loggedin_user, "Only D3M right now, requires logged in user"
-    params2 = dict(app_domain=app_domain,
-                   user=self.loggedin_user)
-
-    saved_workspace, created = SavedWorkspace.objects.get_or_create(**params2)
-
-    # could be an existing workspace that needs an updated session key
-    #
-    saved_workspace.session_key = self.session_key
-
-    return saved_workspace
 
 
     def update_session(self):
@@ -136,6 +136,6 @@ def get_saved_workspace(self, app_domain):
         assert request_obj, 'request_obj cannot be None'
         #print(request_obj.POST)
         #print(request_obj.POST.keys())
-        util = WorkspaceRecorder(request_obj)
+        wspace_recorder = WorkspaceRecorder(request_obj)
 
-        return util.update_session()
+        return wspace_recorder.update_session()

@@ -11,13 +11,16 @@
     <p><b>session_key</b>: {{ session_key }}</p>
     {% if not current_workspace %}
     <div class="alert alert-warning" role="alert">
-      Sorry, no current workspace info now.
+      Sorry, no current workspace to show.
     </div>
     {% else %}
     <div class="alert alert-success" role="alert">
+        <h4>workspace found!</h4>
       <p>
-        <b>workspace found</b>: {{ workspace.name }}
-        found.</p>
+        <b>name</b>: {{ current_workspace.name }}<br />
+        <b>domain</b>: {{ current_workspace.domain }}<br />
+        <b>user</b>: {{ current_workspace.user }}<br />
+        <b>modified</b>: {{ current_workspace.modified }}<br />
 
       <p>Click on a key name to view data.</p>
     </div>
@@ -26,6 +29,18 @@
     {% endif %}
 
     <div id="accordion" role="tablist">
+        {% if current_workspace.zparams %}
+          {% with json_var=current_workspace.zparams var_name='zparams' %}
+            {% include 'json_var_card.html' %}
+          {% endwith %}
+        {% endif %}
+        {% if current_workspace.zparams %}
+          {% with json_var=current_workspace.allnodes var_name='allnodes' %}
+            {% include 'json_var_card.html' %}
+          {% endwith %}
+        {% endif %}
+    </div>
+    {% comment %}
     {% for info in [current_workspace, ] %}
       {% if session_info %}
         <div class="card">
@@ -50,6 +65,8 @@
         <br />
       {% endif %}
     {% endfor %}
+    {% endcomment %}
+
 </div>
 
   </div>
