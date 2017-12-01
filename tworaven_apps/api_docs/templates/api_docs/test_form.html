@@ -29,8 +29,15 @@
       $('#interimData').html('');
       $('#interimData').hide();
 
+
+      payload = { {{ KEY_GRPC_JSON }} : user_content};
+      if (request_url==='/d3m-service/startsession'){
+        payload = user_content;
+      }
+
       var jqxhr = $.post(request_url,
-                        { {{ KEY_GRPC_JSON }} : user_content},
+                         payload,
+                        //{ {{ KEY_GRPC_JSON }} : user_content},
                         function(data) {
 
                           if (data.hasOwnProperty('data2') ) {

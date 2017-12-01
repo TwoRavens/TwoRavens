@@ -29,7 +29,9 @@ class StartEndSessionTest(TestCase):
         url = reverse('StartSession')
         info = dict(user_agent='user_agent')
 
-        response = client.post(url, format_info_for_request(info))
+        response = client.post(url,
+                               json.dumps(info),
+                               content_type="application/json")
 
         # 200 response
         #
@@ -67,7 +69,9 @@ class StartEndSessionTest(TestCase):
         info = dict(user_agent='secret_agent_man',
                     unknown_field='what\'s this?')
 
-        response = client.post(url, format_info_for_request(info))
+        response = client.post(url,
+                               json.dumps(info),
+                               content_type="application/json")
 
         # 200 response
         #
@@ -98,9 +102,11 @@ class StartEndSessionTest(TestCase):
         # url and info for call
         #
         url = reverse('StartSession')
-        info = dict()   # don't send any info
-
-        response = client.post(url, format_info_for_request(info))
+        info = dict()
+        
+        response = client.post(url,
+                               json.dumps(info),
+                               content_type="application/json")
 
         # 200 response
         #
