@@ -5,9 +5,15 @@ urlpatterns = (
 
     # We're listing each call here for now but may change in the future
     #
-    url(r'^test-show-workspace$',
+    url(r'^test-show-session-info$',
         views.view_session_info,
         name='view_session_info'),
+
+    # We're listing each call here for now but may change in the future
+    #
+    url(r'^test-show-workspace$',
+        views.view_workspace_info,
+        name='view_workspace_info'),
 
     url(r'^clear-user-metadata$',
         views.clear_user_metadata,

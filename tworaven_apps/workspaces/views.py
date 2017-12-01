@@ -9,6 +9,37 @@ from django.http import JsonResponse, HttpResponse, Http404, HttpResponseRedirec
 from tworaven_apps.workspaces.workspace_util import WorkspaceUtil
 from tworaven_apps.workspaces.workspace_recorder import WorkspaceRecorder
 from tworaven_apps.workspaces.session_display_helper import SessionDisplayList
+from tworaven_apps.workspaces.models import SavedWorkspace
+from tworaven_apps.utils.view_helper import get_session_key
+
+
+def view_workspace_info(request):
+    """test to show session info, zdata, etc
+    To Do (?): include domain + problem id in the request?
+    """
+    workspaces = []
+
+    # Look for a workspace matching the session key
+    session_key = get_session_key(request)
+    try:
+        current_workspace = SavedWorkspace.objects.get(session_key=session_key)
+    except SavedWorkspace.DoesNotExist:
+        current_workspace = None
+
+    # pull some session info, if there are any
+    #
+    if request.user.is_authenticated():
+        older_workspaces = SavedWorkspace.objects.filter(request.user)
+    else:
+        older_workspaces = None
+
+    info = dict(title='test session info',
+                current_workspace=current_workspace,
+                older_workspaces=older_workspaces,
+                session_key=request.session.session_key)
+
+    return render(request, 'view_workspace_info.html', info)
+
 
 @never_cache
 def view_session_info(request):

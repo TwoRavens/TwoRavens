@@ -67,6 +67,9 @@ class SavedWorkspace(TimeStampedModel):
     name = models.CharField(max_length=255,
                             blank=True)
 
+    session_key = models.CharField(max_length=255,
+                                   unique=True)
+
     user = models.ForeignKey(settings.AUTH_USER_MODEL,
                              blank=True,
                              null=True)
