@@ -11,14 +11,12 @@ from tworaven_apps.ta2_interfaces.models import KEY_GRPC_JSON
 # Create your views here.
 def view_test_form(request):
     """View test form"""
-
     info_dict = dict(KEY_GRPC_JSON=KEY_GRPC_JSON,
                      TA2_STATIC_TEST_MODE=settings.TA2_STATIC_TEST_MODE,
                      TA2_TEST_SERVER_URL=settings.TA2_TEST_SERVER_URL,
                      SETTINGS_MODULE=settings.SETTINGS_MODULE)
 
     if request.POST:
-
         client_form = ClientTestForm(request.POST)
         if client_form.is_valid():
             content = client_form.cleaned_data['content']
@@ -42,7 +40,7 @@ def view_test_form(request):
 
 
 def make_request(la_url, content):
-
+    """Make the request, mimicking the UI calling the web server"""
     payload = {KEY_GRPC_JSON : content}
 
     print('payload', payload)
