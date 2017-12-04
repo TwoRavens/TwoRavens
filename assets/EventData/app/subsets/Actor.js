@@ -87,12 +87,12 @@ $(document).ready(function () {
     $(".filterExpand").click(function () {
         if (this.value == "expand") {
             this.value = "collapse";
-            $(this).css("background-image", "url(images/collapse.png)");
+            $(this).css("background-image", "url(../images/collapse.png)");
             $(this).next().next("div.filterContainer").show("fast");
         }
         else {
             this.value = "expand";
-            $(this).css("background-image", "url(images/expand.png)");
+            $(this).css("background-image", "url(../images/expand.png)");
             $(this).next().next("div.filterContainer").hide("fast");
         }
     });
@@ -889,6 +889,9 @@ function createElement(chkSwitch = true, actorType, columnType, value, index, di
     displayList.appendChild(chkbox);
     displayList.appendChild(lbl);
     displayList.appendChild(separator);
+
+    // Don't use popovers for icews
+    if (dataset === 'icews') return;
 
     $("#" + lbl.id).mouseover(function () {
         if (!$(this).attr("data-content")) {
