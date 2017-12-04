@@ -4157,6 +4157,15 @@ export function record_user_metadata(){
     domain_identifier = 'TODO: EVENTDATA IDENTIFIER';
   }*/
 
+  if (zparams == null){
+    console.log('No workspace recording. zparams not defined');
+    return;
+  }
+  if (allNodes == null){
+    console.log('No workspace recording. zparams not defined');
+    return;
+  }
+
   // (2) Format workspace data
   //
   let workspace_data = {'app_domain': APP_DOMAIN,
