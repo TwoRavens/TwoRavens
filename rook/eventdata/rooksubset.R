@@ -132,7 +132,11 @@ eventdata_subset.app <- function(env) {
 
     if (!is.null(type) && type == 'raw') {
         result = getData(paste(eventdata_url, '&query=', subsets, sep=""))
-        response$write(result)
+        result['_id'] = NULL
+        fileName = format(Sys.time(), '%Y-%m-%d-%H-%M-%OS4')
+
+        write.csv(result, file=paste('./eventdata/downloads/', fileName, ".csv", sep=""))
+        response$write(paste('{"download":', '"http://127.0.0.1:8000/custom/eventdata-files/', fileName, '.csv"}', sep=""))
         return(response$finish())
     }
 
@@ -198,15 +202,15 @@ eventdata_subset.app <- function(env) {
 
         print("Collecting date frequencies")
         date_frequencies = do.call(data.frame, getData(paste(query_url, '&group=<year>,<month>', sep="")))
-        colnames(date_frequencies) = c('total', '<year>', '<month>')
+        if (nrow(date_frequencies) != 0) colnames(date_frequencies) = c('total', '<year>', '<month>')
 
         print("Collecting country frequencies")
         country_frequencies = do.call(data.frame, getData(paste(query_url, '&group=<country_code>', sep="")))
-        colnames(country_frequencies) = c('total', '<country_code>')
+        if (nrow(country_frequencies) != 0) colnames(country_frequencies) = c('total', '<country_code>')
 
         print("Collecting action codes")
         action_frequencies = do.call(data.frame, getData(paste(query_url, '&group=<root_code>', sep="")))
-        colnames(action_frequencies) = c('total', '<root_code>')
+        if (nrow(action_frequencies) != 0) colnames(action_frequencies) = c('total', '<root_code>')
 
         print("Collecting actor sources")
         actor_source = head(getData(paste(query_url, '&unique=<source>', sep="")), 200)
@@ -277,18 +281,18 @@ eventdata_subset.app <- function(env) {
             '{"$project": {"Year":  {"$substr": ["$<date>", 0, 4]},',
                           '"Month": {"$substr": ["$<date>", 5, 2]}}},',                           # Construct year and month fields
             '{"$group": { "_id": { "year": "$Year", "month": "$Month" }, "total": {"$sum": 1} }}]', sep=""))) # Group by years and months
-        colnames(date_frequencies) = c('total', '<year>', '<month>')
+        if (nrow(date_frequencies) != 0) colnames(date_frequencies) = c('total', '<year>', '<month>')
 
         print("Collecting country frequencies")
         country_frequencies = do.call(data.frame, getData(paste(query_url, '&group=<country>', sep="")))
-        colnames(country_frequencies) = c('total', '<country_code>')
+        if (nrow(country_frequencies) != 0) colnames(country_frequencies) = c('total', '<country_code>')
 
         print("Collecting cameo codes")
         action_frequencies = do.call(data.frame, getData(paste(eventdata_url, '&aggregate=', 
             '[{"$match":', subsets, '},',
             '{"$project": {"RootCode":  {"$substr": ["$<cameo>", 0, 2]}}},',                           # Construct RootCode field
             '{"$group": { "_id": { "root_code": "$RootCode" }, "total": {"$sum": 1} }}]', sep=""))) # Group by RootCode
-        colnames(action_frequencies) = c('total', '<root_code>')
+        if (nrow(action_frequencies) != 0) colnames(action_frequencies) = c('total', '<root_code>')
 
         print("Collecting actor source countries")
         actor_source_country = getData(paste(query_url, '&unique=<src_country>', sep=""))

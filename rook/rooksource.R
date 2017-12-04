@@ -101,12 +101,12 @@ if(!is_rapache_mode){
 
     cat("Type:", typeof(R.server), "Class:", class(R.server))
     #R.server$add(app = File$new(getwd()), name = "pic_dir")
-
-    #rookFilesDir = "/Users/ramanprasad/Documents/github-rp/TwoRavens//data/d3m/o_196seed/data"
     #<- paste(getwd(), "/../data/d3m", sep="");
-    print("--- rookFilesDir")
-    #print(rookFilesDir)
-    #R.server$add(app = File$new(rookFilesDir), name = "rook-files")
+
+    eventdataFilesDir = "eventdata/downloads/"
+    print("--- eventdataFilesDir")
+    print(paste(getwd(), eventdataFilesDir, sep=""))
+    R.server$add(app = File$new(eventdataFilesDir), name = "eventdata-files")
 
 
     print(R.server)
