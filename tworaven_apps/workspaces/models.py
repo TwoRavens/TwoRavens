@@ -67,8 +67,7 @@ class SavedWorkspace(TimeStampedModel):
     name = models.CharField(max_length=255,
                             blank=True)
 
-    session_key = models.CharField(max_length=255,
-                                   unique=True)
+    session_key = models.CharField(max_length=255)
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL,
                              blank=True,
@@ -123,7 +122,7 @@ class SavedWorkspace(TimeStampedModel):
 
     class Meta:
         ordering = ('-modified',)
-
+        unique_together = ('session_key', 'data_source_type')
 
     def allnodes_json(self):
         if not self.allnodes:
