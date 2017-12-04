@@ -1,0 +1,98 @@
+{
+  "<event_id>": {
+    "name": "eid",
+    "format": "."
+  },
+  "<date>": {
+    "name": "story_date",
+    "format": "^\\d{2}\/\\d{2}\/\\d{4}$"
+  },
+  "<year>": {
+    "name": "year",
+    "format": "^\\d{4}$"
+  },
+  "<month>": {
+    "name": "month",
+    "format": "^([1-9]|1[0-2])$"
+  },
+  "<day>": {
+    "name": "day",
+    "format": "^([1-9]|[12]\\d|3[01])$"
+  },
+  "<source>": {
+    "name": "source",
+    "format": "^(\\p{L}\\p{L}\\p{L})*$"
+  },
+  "<src_actor>": {
+    "name": "source_root",
+    "format": "^\\p{L}\\p{L}\\p{L}$"
+  },
+  "<src_agent>": {
+    "name": "source_agent",
+    "format": "^(|\\p{L}\\p{L}\\p{L})$"
+  },
+  "<src_other_agent>": {
+    "name": "source_others",
+    "format": "^(|(\\p{L}\\p{L}\\p{L}(|;))*)$"
+  },
+  "<target>": {
+    "name": "target",
+    "format": "^(\\p{L}\\p{L}\\p{L})*$"
+  },
+  "<tgt_actor>": {
+    "name": "target_root",
+    "format": "^\\p{L}\\p{L}\\p{L}$"
+  },
+  "<tgt_agent>": {
+    "name": "target_agent",
+    "format": "^(|\\p{L}\\p{L}\\p{L})$"
+  },
+  "<tgt_other_agent>": {
+    "name": "target_others",
+    "format": "^(|(\\p{L}\\p{L}\\p{L}(|;))*)$"
+  },
+  "<cameo>": {
+    "name": "code",
+    "format": "^\\d+$"
+  },
+  "<root_code>": {
+    "name": "root_code",
+    "format": "^(|1)\\d$"
+  },
+  "<quad_class>": {
+    "name": "quad_class",
+    "format": "^[0-4]$"
+  },
+  "<goldstein>": {
+    "name": "goldstein",
+    "format": "^[+-]?\\d+\\.?\\d+$"
+  },
+  "<latitude>": {
+    "name": "lat",
+    "format": "^(NA|[+-]?\\d?\\d\\.?\\d+)$"
+  },
+  "<longitude>": {
+    "name": "lon",
+    "format": "^(NA|[+-]?\\d?\\d\\.?\\d+)$"
+  },
+  "<geoname>": {
+    "name": "placename",
+    "format": "^(|[\\p{L}\\s]+)$"
+  },
+  "<country_code>": {
+    "name": "countryname",
+    "format": "^(|\\p{L}\\p{L}\\p{L})$"
+  },
+  "<admin_info>": {
+    "name": "statename",
+    "format": "^(|[\\p{L}\\s]+)$"
+  },
+  "<id>": {
+    "name": "aid",
+    "format": ".*"
+  },
+  "<process>": {
+    "name": "process",
+    "format": ".*"
+  }
+}

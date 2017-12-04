@@ -14,6 +14,9 @@
 # 3. Create a new database using the mongoimport utility in the mongo bin (via cmd from ~/TwoRavens/)
 #      mongoimport -d event_scrape -c phoenix_events --type csv --file ./data/samplePhox.csv --headerline
 #      mongoimport -d event_scrape -c icews_events --type tsv --columnsHaveTypes --fields "Event ID.string(),Event Date.string(),Source Name.string(),Source Sectors.string(),Source Country.string(),Event Text.string(),CAMEO Code.string(),Intensity.string(),Target Name.string(),Target Sectors.string(),Target Country.string(),Story ID.string(),Sentence Number.string(),Publisher.string(),City.string(),District.string(),Province.string(),Country.string(),Latitude.auto(),Longitude.auto()" --file ~/Downloads/events.2014.20160121105408.tab
+#      mongoimport -d event_scrape -c phoenix_swb_events --type csv --file ~/Downloads/PhoenixSWB_1979-2015.csv --headerline
+#      mongoimport -d event_scrape -c phoenix_fbis_events --type csv --file ~/Downloads/PhoenixFBIS_1995-2004.csv --headerline
+#      mongoimport -d event_scrape -c phoenix_nyt_events --type csv --file ~/Downloads/PhoenixNYT_1945-2005.csv --headerline
 #
 #      3a. To check that the csv data is available, run in new CMD:
 #          (connects to mongo server on default port, opens mongo prompt)
@@ -119,8 +122,6 @@ eventdata_subset.app <- function(env) {
         print(gsub(' ', '%20', relabel(url, format), fixed=TRUE))
 
         data = jsonlite::fromJSON(gsub(' ', '%20', relabel(url, format), fixed=TRUE))$data
-
-        print(data)
         return(data)
     }
 
@@ -191,19 +192,24 @@ eventdata_subset.app <- function(env) {
         sink()
     }
 
-    if (dataset == "phoenix") {
+    if (dataset %in% list("phoenix", "phoenix_fbis", "phoenix_nyt", "phoenix_swb")) {
+        print(dataset)
+        print("Success")
 
         # This is a new query, so compute new metadata
         query_url = paste(eventdata_url, '&query=', subsets, sep="")
 
         print("Collecting date frequencies")
-        date_frequencies = getData(paste(query_url, '&group=<year>,<month>', sep=""))
+        date_frequencies = do.call(data.frame, getData(paste(query_url, '&group=<year>,<month>', sep="")))
+        colnames(date_frequencies) = c('total', '<year>', '<month>')
 
         print("Collecting country frequencies")
-        country_frequencies = getData(paste(query_url, '&group=<country_code>', sep=""))
+        country_frequencies = do.call(data.frame, getData(paste(query_url, '&group=<country_code>', sep="")))
+        colnames(country_frequencies) = c('total', '<country_code>')
 
         print("Collecting action codes")
-        action_frequencies = getData(paste(query_url, '&group=<root_code>', sep=""))
+        action_frequencies = do.call(data.frame, getData(paste(query_url, '&group=<root_code>', sep="")))
+        colnames(action_frequencies) = c('total', '<root_code>')
 
         print("Collecting actor sources")
         actor_source = getData(paste(query_url, '&unique=<source>', sep=""))
@@ -269,18 +275,23 @@ eventdata_subset.app <- function(env) {
         query_url = paste(eventdata_url, '&query=', subsets, sep="")
 
         print("Collecting date frequencies")
-        date_frequencies = getData(paste(eventdata_url, '&aggregate=', '[{"$match":', subsets, '},',
+        date_frequencies = do.call(data.frame, getData(paste(eventdata_url, '&aggregate=', 
+            '[{"$match":', subsets, '},',
             '{"$project": {"Year":  {"$substr": ["$<date>", 0, 4]},',
                           '"Month": {"$substr": ["$<date>", 5, 2]}}},',                           # Construct year and month fields
-            '{"$group": { "_id": { "year": "$Year", "month": "$Month" }, "total": {"$sum": 1} }}]', sep=""))  # Group by years and months
-
+            '{"$group": { "_id": { "year": "$Year", "month": "$Month" }, "total": {"$sum": 1} }}]', sep=""))) # Group by years and months
+        colnames(date_frequencies) = c('total', '<year>', '<month>')
+        
         print("Collecting country frequencies")
-        country_frequencies = getData(paste(query_url, '&group=<country>', sep=""))
+        country_frequencies = do.call(data.frame, getData(paste(query_url, '&group=<country>', sep="")))
+        colnames(country_frequencies) = c('total', '<country_code>')
 
         print("Collecting cameo codes")
-        action_frequencies = getData(paste(eventdata_url, '&aggregate=', '[{"$match":', subsets, '},',
+        action_frequencies = do.call(data.frame, getData(paste(eventdata_url, '&aggregate=', 
+            '[{"$match":', subsets, '},',
             '{"$project": {"RootCode":  {"$substr": ["$<cameo>", 0, 2]}}},',                           # Construct RootCode field
-            '{"$group": { "_id": { "root_code": "$RootCode" }, "total": {"$sum": 1} }}]', sep=""))     # Group by RootCode
+            '{"$group": { "_id": { "root_code": "$RootCode" }, "total": {"$sum": 1} }}]', sep=""))) # Group by RootCode
+        colnames(action_frequencies) = c('total', '<root_code>')
 
         print("Collecting actor source countries")
         actor_source_country = getData(paste(query_url, '&unique=<src_country>', sep=""))
@@ -313,5 +324,4 @@ eventdata_subset.app <- function(env) {
         response$write(result)
         return(response$finish())
     }
-
 }

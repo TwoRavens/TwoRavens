@@ -120,14 +120,12 @@ function d3date(init=false) {
             return (a['Date'] < b['Date']) ? -1 : 1;
         }
     }
-
     for (let idx in dateData) {
-        let binLabel = dateData[idx]._id;
 
         // Ensure data is valid
-        if (isNaN(parseInt(binLabel.year))) continue;
+        if (isNaN(parseInt(dateData[idx]['<year>']))) continue;
 
-        let bin = {'Date': new Date(binLabel.year, binLabel.month - 1, 0), 'Freq': dateData[idx].total};
+        let bin = {'Date': new Date(dateData[idx]['<year>'], dateData[idx]['<month>'] - 1, 0), 'Freq': dateData[idx].total};
         data.push(bin);
     }
     data = data.sort(dateSort);
