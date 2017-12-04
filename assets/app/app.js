@@ -1544,6 +1544,10 @@ function layout(v,v2) {
         // remove old nodes
         circle.exit().remove();
         force.start();
+
+        // save workspaces
+        console.log('ok ws');
+        record_user_metadata();
     }
 
     function mousedown(d) {
@@ -4128,11 +4132,12 @@ function apiSession (context) {
 /**
  *  record user metadata
  */
+let recorder_cnt = 0;
 export function record_user_metadata(){
-    console.log('record_user_metadata');
 
     function endSuccess(btn, Response) {
-        console.log('Session recorded: ' + Response);
+        recorder_cnt++;
+        console.log('Session recorded: (cnt: ' + recorder_cnt + ') ' + Response);
     }
 
     function endFail(btn) {
