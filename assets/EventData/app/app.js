@@ -12,7 +12,7 @@ let appname = 'eventdatasubsetapp';
 let subsetURL = rappURL + appname;
 
 // Options: one of ["phoenix", "phoenix_swb", "phoenix_nyt", "phoenix_fbis", "icews"]
-let dataset = 'icews';
+let dataset = 'phoenix_nyt';
 
 // Options: "api" or "local"
 let datasource = 'local';
@@ -33,22 +33,22 @@ if (dataset === "icews") {
     document.getElementById('targetRight').style.visibility = 'hidden';
 }
 
+let query = {
+    'type': 'formatted',
+    'dataset': dataset,
+    'datasource': datasource
+};
+
 let variables;
-if (dataset === 'phoenix') {
-    variables = ["X","GID","Date","Year","Month","Day","Source","SrcActor","SrcAgent","SOthAgent","Target","TgtActor",
-    "TgtAgent","TOthAgent","CAMEO","RootCode","QuadClass","Goldstein","None","Lat","Lon","Geoname","CountryCode",
-    "AdminInfo","ID","URL","sourcetxt"];
+function variableSetup(jsondata) {
+    // Each key has a %-formatted value
+    variables = Object.keys(jsondata.variables);
+
+    reloadLeftpanelVariables();
 }
-else if (['phoenix_nyt', 'phoenix_swb', 'phoenix_fbis'].indexOf(dataset) !== -1) {
-    variables = ["eid", "story_date", "year", "month", "day", "source", "source_root", "source_agent", "source_others", 
-    "target", "target_root", "target_agent", "target_others", "code", "root_code", "quad_class", "goldstein", 
-    "joined_issues", "lat", "lon", "placename", "statename", "countryname", "aid", "process"];
-}
-else if (dataset === 'icews') {
-    variables = ["Event ID", "Event Date", "Source Name", "Source Sectors", "Source Country", "Event Text", 
-    "CAMEO Code", "Intensity", "Target Name", "Target Sectors", "Target Country", "Story ID", "Sentence Number", 
-    "Publisher", "City", "District", "Province", "Country", "Latitude", "Longitude"];
-}
+
+// Initial load of preprocessed data
+makeCorsRequest(subsetURL, query, variableSetup);
 
 let variablesSelected = new Set();
 
@@ -79,7 +79,7 @@ let variableQuery = buildVariables();
 let subsetQuery = buildSubset(subsetData);
 
 console.log("Query: " + JSON.stringify(subsetQuery));
-let query = {
+query = {
     'subsets': JSON.stringify(subsetQuery),
     'variables': JSON.stringify(variableQuery),
     'dataset': dataset,
@@ -99,8 +99,6 @@ editor.setOptions({
 editor.renderer.$cursorLayer.element.style.opacity=0;
 editor.textInput.getElement().disabled=true;
 
-
-reloadLeftpanelVariables();
 $("#searchvar").keyup(reloadLeftpanelVariables);
 
 function reloadLeftpanelVariables() {
@@ -302,10 +300,7 @@ function loadICEWS(jsondata) {
 }
 
 function loadPhoenix(jsondata) {
-
     dateData = jsondata.date_data
-
-    console.log(jsondata)
 
     for (let idx in jsondata.country_data) {
         if (jsondata.country_data[idx]['<country_code>'].length === 3) {
@@ -1164,7 +1159,7 @@ function buildVariables(){
 // Construct mongoDB filter (subsets rows)
 function buildSubset(tree){
 
-    if (subsetData.length === 0) return {};
+    if (tree.length === 0) return {};
     return processGroup({'children': tree});
 
     // Recursively traverse the tree in the right panel. For each node, call processNode
@@ -1241,50 +1236,68 @@ function buildSubset(tree){
 
         if (rule.name === 'Date Subset') {
 
-            let rule_query_inner = {};
-            for (let child_id in rule.children) {
-                let child = rule.children[child_id];
+            // The cline sets have year at the end of the date string, so it takes some additional work
+            if (['phoenix_nyt', 'phoenix_swb', 'phoenix_fbis'].indexOf(dataset) !== -1) {
+                let lower_bound = {};
+                let upper_bound = {};
+                for (let child of rule.children) {
 
-                let phoenixDate = function (date) {
-                    return date.getFullYear().toString() +
-                        pad(date.getMonth()) +
-                        pad(date.getDay());
-                };
-
-                let icewsDate = function (date) {
-                    return date.getFullYear().toString() + '-' +
-                        pad(date.getMonth()) + '-' +
-                        pad(date.getDay())
-                };
-
-                if ('fromDate' in child) {
-
-                    // There is an implicit cast somewhere in the code, and I cannot find it.
-                    child.fromDate = new Date(child.fromDate);
-
-                    if (dataset === "icews") {
-                        rule_query_inner['$gte'] = icewsDate(child.fromDate);
+                    if ('fromDate' in child) {
+                        child.fromDate = new Date(child.fromDate);
+                        // I could break it down to the day, but it would take another 3 lines. Inefficient. This is already bad enough
+                        lower_bound['$or'] = [{'<year>': {'$gt': parseInt(child.fromDate.getFullYear())}},
+                                              {'<year>': parseInt(child.fromDate.getFullYear()), 
+                                               '<month>': {'$gte': parseInt(child.fromDate.getMonth())}}]
+                                              // {'<year>': parseInt(child.fromDate.getFullYear()), 
+                                              //  '<month>': parseInt(child.fromDate.getMonth()),
+                                              //  '<day>': {'$gte': parseInt(child.fromDate.getDay())}}
                     }
-
-                    if (dataset === "phoenix") {
-                        rule_query_inner['$gte'] = phoenixDate(child.fromDate);
+                    if ('toDate' in child) {
+                        child.toDate = new Date(child.toDate);
+                        upper_bound['$or'] = [{'<year>': {'$lt': parseInt(child.toDate.getFullYear())}},
+                                              {'<year>': parseInt(child.toDate.getFullYear()), 
+                                               '<month>': {'$lte': parseInt(child.toDate.getMonth())}}]
+                                              // {'<year>': parseInt(child.toDate.getFullYear()), 
+                                              //  '<month>': parseInt(child.toDate.getMonth()),
+                                              //  '<day>': {'$lte': parseInt(child.toDate.getDay())}}
                     }
                 }
-                if ('toDate' in child) {
-
-                    // There is an implicit cast somewhere in the code, and I cannot find it.
-                    child.toDate = new Date(child.toDate);
-
-                    if (dataset === "icews") {
-                        rule_query_inner['$lte'] = icewsDate(child.toDate);
-                    }
-
-                    if (dataset === "phoenix") {
-                        rule_query_inner['$lte'] = phoenixDate(child.toDate);
-                    }
-                }
+                rule_query['$and'] = [lower_bound, upper_bound];
             }
-            rule_query['<date>'] = rule_query_inner;
+
+            // Just a simple string sort
+            else {
+                let rule_query_inner = {};
+                for (let child of rule.children) {
+
+                    let phoenixDate = function (date) {
+                        return date.getFullYear().toString() +
+                            pad(date.getMonth()) +
+                            pad(date.getDay());
+                    };
+
+                    let icewsDate = function (date) {
+                        return date.getFullYear().toString() + '-' +
+                            pad(date.getMonth()) + '-' +
+                            pad(date.getDay())
+                    };
+
+                    if ('fromDate' in child) {
+                        // There is an implicit cast somewhere in the code, and I cannot find it.
+                        child.fromDate = new Date(child.fromDate);
+                        if (dataset === "icews") rule_query_inner['$gte'] = icewsDate(child.fromDate);
+                        if (dataset === "phoenix") rule_query_inner['$gte'] = phoenixDate(child.fromDate);
+                    }
+
+                    if ('toDate' in child) {
+                        // There is an implicit cast somewhere in the code, and I cannot find it. This normalizes
+                        child.toDate = new Date(child.toDate);
+                        if (dataset === "icews") rule_query_inner['$lte'] = icewsDate(child.toDate);
+                        if (dataset === "phoenix") rule_query_inner['$lte'] = phoenixDate(child.toDate);
+                    }
+                }
+                rule_query['<date>'] = rule_query_inner;
+            }
         }
 
         if (rule.name === 'Location Subset'){
@@ -1301,14 +1314,14 @@ function buildSubset(tree){
             if (dataset === "icews") {
                 rule_query['<country>'] = rule_query_inner;
             }
-            if (dataset === "phoenix") {
+            if (dataset.indexOf('phoenix') !== -1) {
                 rule_query['<country_code>'] = rule_query_inner;
             }
         }
 
         if (rule.name === 'Action Subset'){
             let rule_query_inner = [];
-            if (dataset === "phoenix") {
+            if (dataset.indexOf('phoenix') !== -1) {
                 for (let child_id in rule.children) {
                     rule_query_inner.push(parseInt(rule.children[child_id].name));
                 }

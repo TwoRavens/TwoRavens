@@ -120,14 +120,13 @@ eventdata_subset.app <- function(env) {
 
     getData = function(url) {
         print(gsub(' ', '%20', relabel(url, format), fixed=TRUE))
-
         data = jsonlite::fromJSON(gsub(' ', '%20', relabel(url, format), fixed=TRUE))$data
         return(data)
     }
 
     if (!is.null(type) && type == 'formatted') {
-        warnings = validate(getData(paste(eventdata_url, '&aggregate=[{"$limit":100}]', sep="")), format)
-        response$write(paste('{"warning": "', toString(jsonlite::toJSON(warnings)), '"}'))
+        validations = validate(getData(paste(eventdata_url, '&aggregate=[{"$limit":100}]', sep="")), format)
+        response$write(paste('{"variables": ', toString(jsonlite::toJSON(validations)), '}'))
         return(response$finish())
     }
 
