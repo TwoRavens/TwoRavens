@@ -12,7 +12,7 @@ let appname = 'eventdatasubsetapp';
 let subsetURL = rappURL + appname;
 
 // Options: one of ["phoenix", "phoenix_swb", "phoenix_nyt", "phoenix_fbis", "icews"]
-let dataset = 'phoenix_nyt';
+let dataset = 'phoenix';
 
 // Options: "api" or "local"
 let datasource = 'local';
@@ -244,17 +244,15 @@ function makeCorsRequest(url, post, callback) {
     xhr.send('solaJSON='+ JSON.stringify(post));
 }
 
-// TODO: Change to web link to file
 function download() {
 
     function save(data) {
-        const replacer = (key, value) => value === null ? '' : value // specify how you want to handle null values here
-        const header = Object.keys(data[0])
-        let csv = data.map(row => header.map(fieldName => JSON.stringify(row[fieldName], replacer)).join(','))
-        csv.unshift(header.join(','))
-
-        var blob = new Blob([csv.join('\r\n')], {type: "text/plain;charset=utf-8"});
-        saveAs(blob, "Eventdata_Subset.csv");
+        let a = document.createElement('A');
+        a.href = data.download;
+        a.download = data.download.substr(data.download.lastIndexOf('/') + 1);
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
     }
 
     let variableQuery = buildVariables();
