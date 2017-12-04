@@ -8,7 +8,7 @@ from tworaven_apps.workspaces.models import (\
     DataSourceType, SavedWorkspace)
 from tworaven_apps.configurations.models import AppConfiguration
 from tworaven_apps.workspaces.models import \
-    (UI_KEY_APP_DOMAIN, UI_KEY_LIST)
+    (UI_KEY_APP_DOMAIN, UI_KEY_LIST, UI_KEY_DOMAIN_IDENTIFIER)
 
 from tworaven_apps.utils.view_helper import get_session_key
 
@@ -29,7 +29,7 @@ class WorkspaceRecorder(object):
             self.is_authenticated = False
             self.loggedin_user = None
 
-    def get_saved_workspace(self, app_domain):
+    def get_saved_workspace(self, app_domain, domain_identifier):
         """Retrieve or create a SavedWorkspace object"""
 
         params = dict(app_domain=app_domain,
@@ -38,17 +38,39 @@ class WorkspaceRecorder(object):
         # (1) Look for an existing SavedWorkspace by session
         #
         saved_workspace = SavedWorkspace.objects.filter(**params).first()
-
         if saved_workspace:
-            return saved_workspace
+            return True, saved_workspace
 
 
         # (2) Get or create object with domain and user
         #   - TO DO: Add problem id!!!
-        #
+        # ------------------------------
+
+        # ---------------------------------------
+        # (2a) Parse the domain_identifier and
+        #      Retrieve or create a DataSourceType
+        # sample value:
+        # domain_identifier = {"name": "o_185",
+        #                      "source_url": "/config/d3m-config/details/json/1",
+        #                      "description": "D3M config file"}
+        # ---------------------------------------
+        try:
+            ds_json = json.loads(domain_identifier)
+        except TypeError:
+            return False, 'domain_identifier is not valid JSON: %s' % domain_identifier
+
+        ds_type, _ = DataSourceType.objects.get_or_create(\
+                            name=ds_json['name'],
+                            source_url=ds_json['source_url'])
+
+        ds_type.description = ds_json.get('description', 'n/a')
+
+        ds_type.save()
+
         assert self.loggedin_user, "Only D3M right now, requires logged in user"
         params2 = dict(app_domain=app_domain,
-                       user=self.loggedin_user)
+                       user=self.loggedin_user,
+                       data_source_type=ds_type)
 
         saved_workspace, created = SavedWorkspace.objects.get_or_create(**params2)
 
@@ -56,7 +78,7 @@ class WorkspaceRecorder(object):
         #
         saved_workspace.session_key = self.session_key
 
-        return saved_workspace
+        return True, saved_workspace
 
 
     def update_session(self):
@@ -68,10 +90,9 @@ class WorkspaceRecorder(object):
 
         # Check the app_domain
         #
+        app_domain = None
         if UI_KEY_APP_DOMAIN in self.request_obj.POST:
             app_domain = self.request_obj.POST[UI_KEY_APP_DOMAIN]
-        else:
-            app_domain = None
 
         if not app_domain:
             return False, 'No "app_domain" found in request POST. (%s)' % \
@@ -80,7 +101,23 @@ class WorkspaceRecorder(object):
         if not AppConfiguration.is_valid_app_domain(app_domain):
             return False, 'This "app_domain" is not valid: %s' % (app_domain)
 
-        saved_workspace = self.get_saved_workspace(app_domain)
+        # Check the domainIdentifier
+        #
+        domain_identifier = None
+        if UI_KEY_DOMAIN_IDENTIFIER in self.request_obj.POST:
+            domain_identifier = self.request_obj.POST[UI_KEY_DOMAIN_IDENTIFIER]
+
+        if not domain_identifier:
+            return False, ('No "domainIdentifier" found'
+                           ' in request POST. (%s)' % \
+                           self.request_obj.POST.keys())
+
+
+        success, saved_workspace_or_err = self.get_saved_workspace(app_domain, domain_identifier)
+        if not success:
+            return False, saved_workspace_or_err
+
+        saved_workspace = saved_workspace_or_err
 
         info_found = False
         keys_updated = []
@@ -106,28 +143,6 @@ class WorkspaceRecorder(object):
             return True, 'keys updated: %s' % (keys_updated)
 
         return False, "Data keys not found: %s" % (UI_KEY_LIST,)
-
-    def store_session_data(self, json_data_str, sess_key):
-        """Store session data under the appropriate key"""
-        if not json_data_str:
-            return False, 'No json_data_str'
-
-        if not sess_key:
-            return False, 'No sess_key'
-
-        try:
-            json_data = json.loads(json_data_str, object_pairs_hook=OrderedDict)
-        except TypeError:
-            print('failed JSON conversion!')
-            return False, 'failed to convert info to JSON'
-
-        print('storing %s; data: %s' % (sess_key, json_data_str[:50]))
-
-        self.request_obj.session[sess_key] = json_data
-        self.request_obj.session.modified = True
-
-
-        return True, 'Data stored for key: %s' % sess_key
 
 
     @staticmethod

@@ -18,7 +18,7 @@ from tworaven_apps.utils.json_helper import format_jsonfield_for_admin,\
 UI_KEY_ZPARAMS = 'zparams'
 UI_KEY_ALLNODES = 'allnodes'
 UI_KEY_APP_DOMAIN = 'app_domain'
-
+UI_KEY_DOMAIN_IDENTIFIER = 'domain_identifier'
 UI_KEY_LIST = [UI_KEY_ZPARAMS, UI_KEY_ALLNODES]#, UI_KEY_APP_DOMAIN]
 
 # session keys

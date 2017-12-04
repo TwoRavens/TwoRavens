@@ -143,3 +143,8 @@ class AppConfiguration(TimeStampedModel):
     def is_valid_app_domain(domain_name):
         """Check if the domain name is recognized"""
         return domain_name in DOMAIN_LIST
+
+    @staticmethod
+    def is_d3m_app_domain(domain_name):
+        """Check if the domain name is recognized"""
+        return domain_name == D3M_DOMAIN

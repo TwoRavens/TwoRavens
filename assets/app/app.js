@@ -123,6 +123,8 @@ let mytarget = '';
 let configurations = {};
 let dataschema = {};
 
+export let domainIdentifier = null; // available throughout apps js; used for saving workspace
+
 // eventually read this from the schema with real descriptions
 // metrics, tasks, and subtasks as specified in D3M schemas
 // MEAN SQUARED ERROR IS SET TO SAME AS RMSE. MSE is in schema but not proto
@@ -244,6 +246,13 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     configurations = JSON.parse(JSON.stringify(res));
     d3mRootPath = configurations.training_data_root.replace(/\/data/,'');
     d3mDataName = configurations.name;
+
+    // scopes at app.js level; used for saving workspace
+    domainIdentifier = JSON.stringify({id: configurations.id,
+                                       name: configurations.name,
+                                       source_url: configurations.config_url,
+                                       description: 'D3M config file'});
+
     // d3mData = configurations.training_data_root+"/trainData.csv";
     // d3mTarget = configurations.training_data_root+"/trainTargets.csv";
     d3mPS = configurations.problem_schema_url;
@@ -4148,6 +4157,15 @@ export function record_user_metadata(){
     var sess_data = "zparams=" + JSON.stringify(zparams);
     sess_data += "&allnodes=" + JSON.stringify(allNodes);
     sess_data += "&app_domain=" + APP_DOMAIN;
+
+    if (IS_D3M_DOMAIN){ // domain specific identifier
+      sess_data += "&domain_identifier=" + domainIdentifier;
+    }else if (IS_DATAVERSE_DOMAIN){
+      sess_data += "&domain_identifier=" + 'TODO: DV IDENTIFIER';
+    }else if (IS_EVENTDATA_DOMAIN){
+      sess_data += "&domain_identifier=" + 'TODO: EVENTDATA IDENTIFIER';
+    }
+    console.log(sess_data);
 
     //var urlcall = '/workspaces/record-user-metadata';
     var urlcall = '/workspaces/record-user-workspace';
