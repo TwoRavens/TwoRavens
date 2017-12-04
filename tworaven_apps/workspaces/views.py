@@ -21,8 +21,10 @@ def view_workspace_info(request):
 
     # Look for a workspace matching the session key
     session_key = get_session_key(request)
-    current_workspace = SavedWorkspace.objects.filter(session_key=session_key).first()
-    
+    current_workspace = SavedWorkspace.objects.filter(session_key=session_key\
+                            ).order_by('-modified'\
+                            ).first()
+
     # pull some session info, if there are any
     #
     if request.user.is_authenticated():
