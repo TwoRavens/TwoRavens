@@ -193,8 +193,6 @@ eventdata_subset.app <- function(env) {
     }
 
     if (dataset %in% list("phoenix", "phoenix_fbis", "phoenix_nyt", "phoenix_swb")) {
-        print(dataset)
-        print("Success")
 
         # This is a new query, so compute new metadata
         query_url = paste(eventdata_url, '&query=', subsets, sep="")
@@ -212,7 +210,7 @@ eventdata_subset.app <- function(env) {
         colnames(action_frequencies) = c('total', '<root_code>')
 
         print("Collecting actor sources")
-        actor_source = getData(paste(query_url, '&unique=<source>', sep=""))
+        actor_source = head(getData(paste(query_url, '&unique=<source>', sep="")), 200)
 
         print("Collecting actor source entities")
         actor_source_entities = getData(paste(query_url, '&unique=<src_actor>', sep=""))
@@ -232,7 +230,7 @@ eventdata_subset.app <- function(env) {
         )
 
         print("Collecting actor targets")
-        actor_target = getData(paste(query_url, '&unique=<target>', sep=""))
+        actor_target = head(getData(paste(query_url, '&unique=<target>', sep="")), 200)
 
         print("Collecting actor target entities")
         actor_target_entities = getData(paste(query_url, '&unique=<tgt_actor>', sep=""))
@@ -281,7 +279,7 @@ eventdata_subset.app <- function(env) {
                           '"Month": {"$substr": ["$<date>", 5, 2]}}},',                           # Construct year and month fields
             '{"$group": { "_id": { "year": "$Year", "month": "$Month" }, "total": {"$sum": 1} }}]', sep=""))) # Group by years and months
         colnames(date_frequencies) = c('total', '<year>', '<month>')
-        
+
         print("Collecting country frequencies")
         country_frequencies = do.call(data.frame, getData(paste(query_url, '&group=<country>', sep="")))
         colnames(country_frequencies) = c('total', '<country_code>')

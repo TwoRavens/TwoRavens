@@ -9,9 +9,10 @@ if (!production) {
 }
 
 let appname = 'eventdatasubsetapp';
+let subsetURL = rappURL + appname;
 
-// Options: "phoenix" or "icews"
-let dataset = 'phoenix_fbis';
+// Options: one of ["phoenix", "phoenix_swb", "phoenix_nyt", "phoenix_fbis", "icews"]
+let dataset = 'icews';
 
 // Options: "api" or "local"
 let datasource = 'local';
@@ -20,20 +21,35 @@ let datasource = 'local';
 let subsetKeys = [];
 let subsetKeySelected = "";
 
-if (dataset === "phoenix") {
+if (dataset.indexOf("phoenix") !== -1) {
     subsetKeys = ["Actor", "Date", "Action", "Location", "Coordinates", "Custom"]; // Used to label buttons in the left panel
     subsetKeySelected = "Actor";
 }
 if (dataset === "icews") {
     subsetKeys = ["Actor", "Date", "Action", "Location", "Coordinates", "Custom"]; // Used to label buttons in the left panel
     subsetKeySelected = 'Actor';
+
+    document.getElementById('sourceRight').style.visibility = 'hidden';
+    document.getElementById('targetRight').style.visibility = 'hidden';
 }
 
-let subsetURL = rappURL + appname;
-
-let variables = ["X","GID","Date","Year","Month","Day","Source","SrcActor","SrcAgent","SOthAgent","Target","TgtActor",
+let variables;
+if (dataset === 'phoenix') {
+    variables = ["X","GID","Date","Year","Month","Day","Source","SrcActor","SrcAgent","SOthAgent","Target","TgtActor",
     "TgtAgent","TOthAgent","CAMEO","RootCode","QuadClass","Goldstein","None","Lat","Lon","Geoname","CountryCode",
     "AdminInfo","ID","URL","sourcetxt"];
+}
+else if (['phoenix_nyt', 'phoenix_swb', 'phoenix_fbis'].indexOf(dataset) !== -1) {
+    variables = ["eid", "story_date", "year", "month", "day", "source", "source_root", "source_agent", "source_others", 
+    "target", "target_root", "target_agent", "target_others", "code", "root_code", "quad_class", "goldstein", 
+    "joined_issues", "lat", "lon", "placename", "statename", "countryname", "aid", "process"];
+}
+else if (dataset === 'icews') {
+    variables = ["Event ID", "Event Date", "Source Name", "Source Sectors", "Source Country", "Event Text", 
+    "CAMEO Code", "Intensity", "Target Name", "Target Sectors", "Target Country", "Story ID", "Sentence Number", 
+    "Publisher", "City", "District", "Province", "Country", "Latitude", "Longitude"];
+}
+
 let variablesSelected = new Set();
 
 let varColor = 'rgba(240,248,255, 1.0)';   //d3.rgb("aliceblue");
@@ -322,7 +338,7 @@ function pageSetup(jsondata) {
         return false;
     }
 
-    if (["phoenix", "phoenix_nyt", "phoenix_swb", "phoenix_fbis"].indexOf("phoenix") !== -1) loadPhoenix(jsondata);
+    if (dataset.indexOf("phoenix") !== -1) loadPhoenix(jsondata);
     if (dataset === "icews") loadICEWS(jsondata);
 
     // If first load of data, user may have selected a subset and is waiting. Render page now that data is available
