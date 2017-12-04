@@ -11,7 +11,7 @@ if (!production) {
 let appname = 'eventdatasubsetapp';
 
 // Options: "phoenix" or "icews"
-let dataset = 'icews';
+let dataset = 'phoenix_fbis';
 
 // Options: "api" or "local"
 let datasource = 'local';
@@ -266,7 +266,7 @@ function loadICEWS(jsondata) {
 
     countryData = {};
     for (let idx in jsondata.country_data) {
-        countryData[jsondata.country_data[idx]['_id']['Country']] = jsondata.country_data[idx]['total']
+        countryData[jsondata.country_data[idx]['<country_code>']] = jsondata.country_data[idx]['total']
     }
 
     actionData = {};
@@ -274,7 +274,7 @@ function loadICEWS(jsondata) {
         actionData[i] = 0;
     }
     for (let idx in jsondata.action_data) {
-        actionData[parseInt(jsondata.action_data[idx]._id.root_code)] = jsondata.action_data[idx].total
+        actionData[parseInt(jsondata.action_data[idx]['<root_code>'])] = jsondata.action_data[idx].total
     }
 
     actorData = jsondata.actor_data;
@@ -287,12 +287,13 @@ function loadICEWS(jsondata) {
 
 function loadPhoenix(jsondata) {
 
-    dateData = jsondata.date_data;
+    dateData = jsondata.date_data
+
+    console.log(jsondata)
 
     for (let idx in jsondata.country_data) {
-        // TODO: All data in the database should be in ISO ALPHA-3 spec. This should not be necessary. Data is discarded.
-        if (jsondata.country_data[idx]._id.country_code.length === 3) {
-            countryData[jsondata.country_data[idx]._id.country_code]= jsondata.country_data[idx].total
+        if (jsondata.country_data[idx]['<country_code>'].length === 3) {
+            countryData[jsondata.country_data[idx]['<country_code>']] = jsondata.country_data[idx].total
         }
     }
 
@@ -301,12 +302,11 @@ function loadPhoenix(jsondata) {
         actionData[i] = 0;
     }
     for (let idx in jsondata.action_data) {
-        actionData[jsondata.action_data[idx]._id.root_code] = jsondata.action_data[idx].total
+        actionData[jsondata.action_data[idx]['<root_code>']] = jsondata.action_data[idx].total
     }
 
     actorData = jsondata.actor_data;
     actorDataLoad();
-
 
     d3date(true);
     d3loc();
@@ -322,7 +322,7 @@ function pageSetup(jsondata) {
         return false;
     }
 
-    if (dataset === "phoenix") loadPhoenix(jsondata);
+    if (["phoenix", "phoenix_nyt", "phoenix_swb", "phoenix_fbis"].indexOf("phoenix") !== -1) loadPhoenix(jsondata);
     if (dataset === "icews") loadICEWS(jsondata);
 
     // If first load of data, user may have selected a subset and is waiting. Render page now that data is available
@@ -856,7 +856,7 @@ function getSubsetPreferences() {
         // Make parent node
         let subset = {
             id: String(nodeId++),
-            name: 'Location Subset',
+            name: 'Location Subset', 
             operation: 'and',
             negate: 'false',
             children: []
