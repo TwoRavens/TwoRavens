@@ -2688,27 +2688,6 @@ export function erase() {
     });
 }
 
-/**
-   http://www.tutorials2learn.com/tutorials/scripts/javascript/xml-parser-javascript.html
-*/
-function loadXMLDoc(XMLname) {
-    var xmlDoc;
-    if (window.XMLHttpRequest) {
-        xmlDoc = new window.XMLHttpRequest();
-        xmlDoc.open("GET", XMLname, false);
-        xmlDoc.send("");
-        return xmlDoc.responseXML;
-    }
-    // IE 5 and IE 6
-    else if (ActiveXObject("Microsoft.XMLDOM")) {
-        xmlDoc = new ActiveXObject("Microsoft.XMLDOM");
-        xmlDoc.async = false;
-        xmlDoc.load(XMLname);
-        return xmlDoc;
-    }
-    alert("Error loading document!");
-}
-
 /** needs doc */
 export function tabLeft(tab) {
     byId('tab1').style.display = 'none';
