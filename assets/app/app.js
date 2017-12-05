@@ -546,7 +546,11 @@ let fillThis = (self, op, d1, d2) => $fill(self, op, d1, d2);
 */
 function scaffolding(callback) {
     console.log("SCAFFOLDING");
-    if (!IS_D3M_DOMAIN) { // No variable transformation in present d3m mode
+
+    if (IS_D3M_DOMAIN) {
+        // No variable transformation in present d3m mode
+        toggleRightButtons("tasks");
+    } else {
         $('#tInput').click(() => {
             let t = byId('transSel').style.display;
             if (t !== "none") { // if variable list is displayed when input is clicked...
@@ -603,40 +607,11 @@ function scaffolding(callback) {
             evt.stopPropagation();
             transform(n = tvar, t = tfunc, typeTransform = false);
         });
-    };
-
-    d3.select("#models")
-        .style('height', 2000)
-        .style('overfill', 'scroll');
-
-    if(!IS_D3M_DOMAIN) {
-        d3.select("#models").selectAll("p")
-            .data(Object.keys(mods))
-            .enter()
-            .append("p")
-            .attr("id", "_model_".concat)
-            .text(d => d)
-            .style('background-color', d => varColor)
-            .attr("data-container", "body")
-            .attr("data-toggle", "popover")
-            .attr("data-trigger", "hover")
-            .attr("data-placement", "top")
-            .attr("data-html", "true")
-            .attr("onmouseover", "$(this).popover('toggle');")
-            .attr("onmouseout", "$(this).popover('toggle');")
-            .attr("data-original-title", "Model Description")
-            .attr("data-content", d => mods[d]);
-    } else {
-        toggleRightButtons("tasks");
     }
 
-    // call layout() because at this point all scaffolding is up and ready
-    typeof callback === 'function' && callback(false, true);
-    m.redraw();
-
     // if swandive, after scaffolding is up, just grey things out
-    if(swandive) {
-    // perhaps want to allow users to unlcok and select things?
+    if (swandive) {
+        // perhaps want to allow users to unlcok and select things?
         byId('btnLock').classList.add('noshow');
         byId('btnForce').classList.add('noshow');
         byId('btnEraser').classList.add('noshow');
@@ -644,6 +619,10 @@ function scaffolding(callback) {
         byId('main').style.backgroundColor='grey';
         byId('whitespace').style.backgroundColor='grey';
     }
+
+    // call layout() because at this point all scaffolding is up and ready
+    typeof callback === 'function' && callback(false, true);
+    m.redraw();
 }
 
 /**
