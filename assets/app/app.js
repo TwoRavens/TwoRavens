@@ -207,6 +207,7 @@ const [arcInd1, arcInd2] = [arcInd(arcInd1Limits), arcInd(arcInd2Limits)];
 let byId = id => document.getElementById(id);
 
 // page reload linked to btnReset
+/** needs doc */
 export const reset = function reloadPage() {
     location.reload();
 };
@@ -671,10 +672,12 @@ function del(arr, idx, obj) {
     idx > -1 && arr.splice(idx, 1);
 }
 
+/** needs doc */
 function zparamsReset(text) {
     'zdv zcross ztime znom'.split(' ').forEach(x => del(zparams[x], -1, text));
 }
 
+/** needs doc */
 function layout(v,v2) {
     var myValues = [];
     nodes = [];
@@ -1603,28 +1606,33 @@ function layout(v,v2) {
 }
 
 
+/** needs doc */
 function find($nodes, name) {
     for (let i in $nodes)
         if ($nodes[i].name == name) return $nodes[i].id;
 }
 
 // returns id
+/** needs doc */
 export function findNodeIndex(name, whole) {
     for (let node of allNodes)
         if (node.name === name) return whole ? node : node.id;
 }
 
+/** needs doc */
 function nodeIndex(nodeName) {
     for (let i in nodes)
         if (nodes[i].name === nodeName) return i;
 }
 
+/** needs doc */
 export function findNode(name) {
     for (let n of allNodes)
         if (n.name === name)
             return n;
 }
 
+/** needs doc */
 function updateNode(id) {
     let node = findNode(id);
     if (node.grayout)
@@ -1690,6 +1698,7 @@ export function getVariableData(json) {
 }
 
 // function called by force button
+/** needs doc */
 export function forceSwitch() {
     forcetoggle = [forcetoggle[0] == 'true' ? 'false' : 'true'];
     if (forcetoggle[0] === "false") {
@@ -1700,6 +1709,7 @@ export function forceSwitch() {
     }
 }
 
+/** needs doc */
 export function helpmaterials(type) {
     if(type=="video"){
         var win = window.open("http://2ra.vn/demos/d3mintegrationdemo.mp4", '_blank');
@@ -1711,6 +1721,7 @@ export function helpmaterials(type) {
     console.log(type);
 }
 
+/** needs doc */
 export function lockDescription() {
     locktoggle = locktoggle ? false : true;
     let temp;
@@ -1744,6 +1755,7 @@ export function lockDescription() {
     }
 }
 
+/** needs doc */
 function zPop() {
     if (dataurl) zparams.zdataurl = dataurl;
     zparams.zmodelcount = modelCount;
@@ -1764,6 +1776,7 @@ function zPop() {
     }
 }
 
+/** needs doc */
 export function estimate(btn) {
     if(!IS_D3M_DOMAIN){
     if (PRODUCTION && zparams.zsessionid == '') {
@@ -2237,6 +2250,7 @@ export function estimate(btn) {
     }
 }
 
+/** needs doc */
 export function runPreprocess(dataloc, targetloc, datastub) {
     let url = ROOK_SVC_URL + 'preprocessapp';
     console.log("GOING TO RUN THE PREPROCESSAPP");
@@ -2261,8 +2275,10 @@ export function runPreprocess(dataloc, targetloc, datastub) {
         });
 }
 
+/** needs doc */
 export let ta2stuff = _ => console.log(d3mProblemDescription);
 
+/** needs doc */
 function dataDownload() {
     zPop();
     // write links to file & run R CMD
@@ -2288,6 +2304,7 @@ function dataDownload() {
     makeCorsRequest(urlcall, btn, downloadSuccess, downloadFail, solajsonout);
 }
 
+/** needs doc */
 function viz(mym) {
     mym = +mym.substr(5, 5) - 1;
 
@@ -2357,6 +2374,7 @@ function viz(mym) {
 }
 
 // parses the transformation input. variable names are often nested inside one another, e.g., ethwar, war, wars, and so this is handled
+/** needs doc */
 function transParse(n) {
     var out2 = [];
     var t2 = n;
@@ -2588,6 +2606,7 @@ function transform(n, t, typeTransform) {
 
 // below from http://www.html5rocks.com/en/tutorials/cors/ for cross-origin resource sharing
 // Create the XHR object.
+/** needs doc */
 function createCORSRequest(method, url, callback) {
     var xhr = new XMLHttpRequest();
     if ("withCredentials" in xhr) {
@@ -2607,6 +2626,7 @@ function createCORSRequest(method, url, callback) {
 }
 
 // Make the actual CORS request.
+/** needs doc */
 function makeCorsRequest(url, btn, callback, warningcallback, jsonstring) {
     var xhr = createCORSRequest('POST', url);
     if (!xhr) {
@@ -2649,12 +2669,14 @@ function makeCorsRequest(url, btn, callback, warningcallback, jsonstring) {
     xhr.send(jsonstring);
 }
 
+/** needs doc */
 export function legend() {
     borderState();
     m.redraw();
 }
 
 // programmatically deselect every selected variable
+/** needs doc */
 export function erase() {
     ['#leftpanel', '#rightpanel'].forEach(id => d3.select(id).attr('class', 'sidepanel container clearfix'));
     tabLeft('tab1');
@@ -2665,6 +2687,7 @@ export function erase() {
 }
 
 // http://www.tutorials2learn.com/tutorials/scripts/javascript/xml-parser-javascript.html
+/** needs doc */
 function loadXMLDoc(XMLname) {
     var xmlDoc;
     if (window.XMLHttpRequest) {
@@ -2683,6 +2706,7 @@ function loadXMLDoc(XMLname) {
     alert("Error loading document!");
 }
 
+/** needs doc */
 export function tabLeft(tab) {
     byId('tab1').style.display = 'none';
     byId('tab2').style.display = 'none';
@@ -2695,6 +2719,7 @@ export function tabLeft(tab) {
     lefttab = tab;
 }
 
+/** needs doc */
 export function tabRight(tab) {
     let select = cls => {
         let panel = d3.select("#rightpanel");
@@ -2722,6 +2747,7 @@ export function tabRight(tab) {
 
 export let summary = {data: []};
 
+/** needs doc */
 function varSummary(d) {
     let t1 = 'Mean:, Median:, Most Freq:, Occurrences:, Median Freq:, Occurrences:, Least Freq:, Occurrences:, Std Dev:, Minimum:, Maximum:, Invalid:, Valid:, Uniques:, Herfindahl'.split(', ');
 
@@ -2782,6 +2808,7 @@ export let popoverContent = d => {
     return text;
 }
 
+/** needs doc */
 export function panelPlots() {
     if(IS_D3M_DOMAIN) {
         byId('btnSubset').classList.add('noshow');
@@ -2837,12 +2864,14 @@ export function panelPlots() {
 }
 
 // converts color codes
+/** needs doc */
 export let hexToRgba = hex => {
     let int = parseInt(hex.replace('#', ''), 16);
     return `rgba(${[(int >> 16) & 255, (int >> 8) & 255, int & 255, '0.5'].join(',')})`;
 };
 
 // takes node and color and updates zparams
+/** needs doc */
 function setColors(n, c) {
     if (n.strokeWidth == '1') {
         if (c == gr1Color){
@@ -2930,6 +2959,7 @@ function setColors(n, c) {
     }
 }
 
+/** needs doc */
 export function borderState() {
     zparams.zdv.length > 0 ?
         $('#dvButton .rectColor svg circle').attr('stroke', dvColor) :
@@ -2951,6 +2981,7 @@ export function borderState() {
         $('#gr2Button').css('border-color', '#ccc');
 }
 
+/** needs doc */
 export function subsetSelect(btn) {
     if (dataurl)
         zparams.zdataurl = dataurl;
@@ -3112,6 +3143,7 @@ export function subsetSelect(btn) {
     makeCorsRequest(urlcall, btn, subsetSelectSuccess, btn => selectLadda.stop(), solajsonout);
 }
 
+/** needs doc */
 function readPreprocess(data) {
 console.log(data);
     return new Promise((resolve, _) => {
@@ -3122,6 +3154,7 @@ console.log(data);
 }
 
 // removes all the children svgs inside subset and setx divs
+/** needs doc */
 function rePlot() {
     d3.select('#tab2')
         .selectAll('svg')
@@ -3149,6 +3182,7 @@ export let fakeClick = () => {
 };
 
 //EndSession(SessionContext) returns (Response) {}
+/** needs doc */
 export function endsession() {
     let SessionContext= apiSession(zparams.zsessionid);
 
@@ -3173,6 +3207,7 @@ export function endsession() {
 
 //rpc ListPipelines(PipelineListRequest) returns (PipelineListResult) {}
 // pipes is an array of pipeline IDs
+/** needs doc */
 export function listpipelines() {
     let context = apiSession(zparams.zsessionid);
     let PipeLineListRequest={context};
@@ -3238,6 +3273,7 @@ export function listpipelines() {
 }
 
 // rpc ExecutePipeline(PipelineExecuteRequest) returns (stream PipelineExecuteResult) {}
+/** needs doc */
 export function executepipeline() {
     let context = apiSession(zparams.zsessionid);
     let tablerow = byId('setxRight').querySelector('tr.item-select');
@@ -3318,6 +3354,7 @@ function updateSchema(type, updates, lookup) {
 
 // Find something centerish to the vertices of a convex hull
 // (specifically, the center of the bounding box)
+/** needs doc */
 function jamescentroid(coord){
     var minx = coord[0][0],
         maxx = coord[0][0],
@@ -3335,6 +3372,7 @@ function jamescentroid(coord){
 // Define each pebble radius.
 // Presently, most pebbles are scaled to radius set by global RADIUS.
 // Members of groups are scaled down if group gets large.
+/** needs doc */
 function setPebbleRadius(d){
     if(d.group1 || d.group2){   // if a member of a group, need to calculate radius size
         var uppersize = 7
@@ -3350,6 +3388,7 @@ function setPebbleRadius(d){
 // Define each pebble charge.
 // This was the previous charge setting:
 //return ((zparams.zgroup1.indexOf(node.name) < 0 ) & (zparams.zgroup2.indexOf(node.name) < 0 ))   ? -800 : -400;  // -1 is the value if no index position found
+/** needs doc */
 function setPebbleCharge(d){
     if(d.group1 || d.group2){
         if(d.forefront){                                        // pebbles packed in groups repel others on mouseover
@@ -3365,11 +3404,13 @@ function setPebbleCharge(d){
     }
 };
 
+/** needs doc */
 export function expandrightpanel() {
     byId('rightpanel').classList.add("expandpanelfull");
     console.log("HERE");
 }
 
+/** needs doc */
 function toggleRightButtons(set) {
     function setWidths(btns) {
         let width = `${100 / btns.length}%`;
@@ -3423,6 +3464,7 @@ function toggleRightButtons(set) {
     }
 }
 
+/** needs doc */
 export function resultsplotinit(pid, dvvalues) {
     // presumably we'll be reading in results from a path
     // for now it's just hardcoded
@@ -3443,6 +3485,8 @@ export function resultsplotinit(pid, dvvalues) {
         bivariatePlot(dvvalues, predvals, xdata, ydata);
     }
 }
+
+/** needs doc */
 export function genconfdata (dvvalues, predvals) {
     // FOR TESTING
     dvvalues = predvals.slice(0);
@@ -3494,6 +3538,7 @@ export function genconfdata (dvvalues, predvals) {
     confusionmatrix(confdata, myuniques);
 }
 
+/** needs doc */
 export function confusionmatrix(matrixdata, classes) {
     d3.select("#setxMiddle").html("");
     d3.select("#setxMiddle").select("svg").remove();
@@ -3959,6 +4004,7 @@ export function bivariatePlot(x_Axis, y_Axis, x_Axis_name, y_Axis_name) {
     //  d3.select("#NAcount").text("There are " + nanCount + " number of NA values in the relation.");
 }
 
+/** needs doc */
 export function setxTable(features) {
     function tabulate(data, columns) {
         var table = d3.select('#setxRightBottomLeft').append('table');
@@ -4053,12 +4099,14 @@ export function exportpipeline(pipelineId) {
     makeCorsRequest(urlcall, "nobutton", exportSuccess, exportFail, solajsonout);
 }
 
+/** needs doc */
 export function deletepipeline() {
     console.log("DELETE CALLED");
 }
 
 // D3M API HELPERS
 // because these get built in various places, pulling them out for easy manipulation
+/** needs doc */
 function apiFeature (vars, uri) {
     let out = [];
     for(let i = 0; i < vars.length; i++) {
@@ -4067,6 +4115,7 @@ function apiFeature (vars, uri) {
     return out;
 }
 
+/** needs doc */
 function apiFeatureShortPath (vars, uri) {
     let out = [];
     let shortUri = uri.substring(0, uri.lastIndexOf("/"));
@@ -4078,6 +4127,7 @@ function apiFeatureShortPath (vars, uri) {
 
 
 // silly but perhaps useful if in the future SessionContext requires more things (as suggest by core)
+/** needs doc */
 function apiSession(context) {
     return {session_id: context};
 }
