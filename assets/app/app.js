@@ -661,14 +661,21 @@ function scaffolding(callback) {
     }
 }
 
-function del(arr, idx, find) {
-    if (find)
-        idx = arr.indexOf(idx);
+
+/**
+   deletes the item at index from array.
+   if object is provided, deletes first instance of object from array.
+   @param {Object[]} arr - array
+   @param {number} idx - index
+   @param {Object} [obj] - object
+*/
+function del(arr, idx, obj) {
+    idx = obj ? arr.indexOf(obj) : idx;
     idx > -1 && arr.splice(idx, 1);
 }
 
 function zparamsReset(text) {
-    'zdv zcross ztime znom'.split(' ').forEach(x => del(zparams[x], text, true));
+    'zdv zcross ztime znom'.split(' ').forEach(x => del(zparams[x], -1, text));
 }
 
 function layout(v,v2) {
@@ -875,8 +882,6 @@ function layout(v,v2) {
 
     // update force layout (called automatically each iteration)
     function tick() {
-
-
         function findcoords(findnames,allnames,coords,lengthen){
             var fcoords = new Array(findnames.length);   // found coordinates
             var addlocation = 0;
@@ -1634,12 +1639,12 @@ function updateNode(id) {
         del(nodes, node.index);
         links
             .filter(l => l.source === node || l.target === node)
-            .forEach(l => del(links, l, true));
+            .forEach(l => del(links, -1, l));
         zparamsReset(name);
 
         // remove node name from group lists
-        node.group1 && del(zparams.zgroup1, name, true);
-        node.group2 && del(zparams.zgroup2, name, true);
+        node.group1 && del(zparams.zgroup1, -1, name);
+        node.group2 && del(zparams.zgroup2, -1, name);
         node.group1 = node.group2 = false;
 
         // node reset - perhaps this will become a hard reset back to all original allNode values?
@@ -2894,11 +2899,11 @@ function setColors(n, c) {
             if (key == 'zdv'){                                              // remove group memberships from dv's
                 if(n.group1){
                     n.group1 = false;
-                    del(zparams.zgroup1, n.name, true);
+                    del(zparams.zgroup1, -1, n.name);
                 };
                 if(n.group2){
                     n.group2 = false;
-                    del(zparams.zgroup2, n.name, true);
+                    del(zparams.zgroup2, -1, n.name);
                 };
             }
         };
@@ -2926,11 +2931,11 @@ function setColors(n, c) {
                 zparams.zdv.push(dvname);
                 if(n.group1){                     // remove group memberships from dv's
                     ngroup1 = false;
-                    del(zparams.zgroup1, dvname, true);
+                    del(zparams.zgroup1, -1, dvname);
                 };
                 if(n.group2){
                     ngroup2 = false;
-                    del(zparams.zgroup2, dvname, true);
+                    del(zparams.zgroup2, -1, dvname);
                 };
             }
             else if (csColor == c) zparams.zcross.push(n.name);

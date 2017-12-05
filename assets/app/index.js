@@ -177,14 +177,12 @@ class Body {
             id + '.ladda-button[data-spinner-color=#000000][data-style=zoom-in]',
             left, right, onclick, args, min);
         let navBtn1 = (id, onclick, args, title) => _navBtn(
-            id + `.btn-default[title=${title}]`, 2, 0, onclick, args);
+            `${id}.btn-default[title=${title}]`, 2, 0, onclick, args);
         let glyph = (icon, unstyled) => m(
             'span.glyphicon.glyphicon-' + icon +
                 (unstyled ? '' : '[style=color: #818181; font-size: 1em; pointer-events: none]'));
         let spaceBtn = (id, onclick, title, icon) => m(
-            `button#${id}.btn.btn-default`,
-            {onclick: onclick, title: title},
-            glyph(icon, true));
+            `button#${id}.btn.btn-default`, {onclick, title}, glyph(icon, true));
 
         return m(
             'main',
@@ -220,7 +218,7 @@ class Body {
                   m('svg#whitespace'))),
               m("#spacetools.spaceTool[style=z-index: 16]",
                 spaceBtn('btnLock.active', app.lockDescription, 'Lock selection of problem description', 'pencil'),
-                explore && spaceBtn('btnDisconnect', _ => console.log('disconnect'), 'Delete all connections between nodes', 'remove-circle'),
+                spaceBtn('btnDisconnect', _ => console.log('disconnect'), 'Delete all connections between nodes', 'remove-circle'),
                 explore && spaceBtn('btnJoin', _ => console.log('join'), 'Make all possible connections between nodes', 'link'),
                 spaceBtn('btnForce', app.forceSwitch, 'Pin the variable pebbles to the page', 'pushpin'),
                 spaceBtn('btnEraser', app.erase, 'Wipe all variables from the modeling space', 'magnet')),
