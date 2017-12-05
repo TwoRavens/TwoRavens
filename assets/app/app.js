@@ -3290,31 +3290,28 @@ export function executepipeline() {
     makeCorsRequest(urlcall, "nobutton", executePipeSuccess, executePipeFail, solajsonout);
 }
 
-// this is our call to django to update the problem schema
-// rpc UpdateProblemSchema(UpdateProblemSchemaRequest) returns (Response) {}
+/**
+   call to django to update the problem schema
+   rpc UpdateProblemSchema(UpdateProblemSchemaRequest) returns (Response) {}
+*/
 function updateSchema(type, updates, lookup) {
     let context = apiSession(zparams.zsessionid);
-    let ReplaceProblemSchemaField={[type]:lookup[updates[type]][1]};
-//    let valuenum = lookup[updates[type]][2];
-    let UpdateProblemSchemaRequest = {ReplaceProblemSchemaField,context};
+    let replaceProblemSchemaField = {[type]: lookup[updates[type]][1]};
+    let updateProblemSchemaRequest = {replaceProblemSchemaField, context};
+    let json = JSON.stringify(updateProblemSchemaRequest);
 
-    let jsonout = JSON.stringify(UpdateProblemSchemaRequest);
-
-    let urlcall = D3M_SVC_URL + "/updateproblemschema";
-    let solajsonout = "grpcrequest=" + jsonout;
+    let url = D3M_SVC_URL + "/updateproblemschema";
+    let solajsonout = "grpcrequest=" + json;
     console.log("UpdateProblemSchemaRequest: ");
     console.log(solajsonout);
-    console.log("urlcall: ", urlcall);
+    console.log("urlcall: ", url);
 
-    function usSuccess(btn, Response) {
-        console.log(Response);
-    }
-
-    function usFail(btn) {
-        console.log("update schema failed");
-    }
-
-    makeCorsRequest(urlcall, "nobutton", usSuccess, usFail, solajsonout);
+    makeCorsRequest(
+        url,
+        'nobutton',
+        (_, res) => console.log(res),
+        _ => console.log('update schema failed'),
+        solajsonout);
 }
 
 
