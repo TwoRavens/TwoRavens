@@ -642,12 +642,8 @@ function scaffolding(callback) {
     }
 
     // call layout() because at this point all scaffolding is up and ready
-    if (typeof callback == "function") {
-        callback(false,true);
-        m.redraw();
-    } else {
-        m.redraw();
-    }
+    typeof callback === 'function' && callback(false, true);
+    m.redraw();
 
     // if swandive, after scaffolding is up, just grey things out
     if(swandive) {
@@ -1660,7 +1656,9 @@ function updateNode(id) {
     return true;
 }
 
-// every time a variable in leftpanel is clicked, nodes updates and background color changes
+/**
+   every time a variable in leftpanel is clicked, nodes updates and background color changes
+*/
 export function clickVar(elem) {
     if (updateNode(elem.target.id)) {
         // panelPlots(); is this necessary?
@@ -1668,24 +1666,25 @@ export function clickVar(elem) {
     }
 }
 
-/*
+/**
   Retrieve the variable list from the preprocess data.
   This helps handle the new format and (temporarily)
   the older format in PRODUCTION (rp 8.14.2017)
+  "new" response:
+  {
+  "dataset" : {...}
+  "variables" : {
+  "var1" : {...},
+  (etc)
+  }
+  }
+  "old" response:
+  {
+  "var1" : {...},
+  (etc)
+  }
 */
 export function getVariableData(json) {
-    /* "new" response:
-       {
-       "dataset" : {...}
-       "variables" : {
-       "var1" : {...}, (etc)
-       }
-       }
-       "old" response
-       {
-       "var1" : {...},
-       (etc)
-       }*/
     return json.hasOwnProperty('variables') ? json.variables : json;
 }
 
