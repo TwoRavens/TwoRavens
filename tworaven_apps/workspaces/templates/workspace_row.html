@@ -1,0 +1,46 @@
+{% load workspace_extras %}
+
+
+<tr>
+  {% if not skip_cnt %}
+  <td rowspan="1">{{ forloop.counter }}</td>
+  <td>{{ ws.app_domain }}</td>
+  {% else %}
+  <td rowspan="1">{{ ws.app_domain }}</td>
+  {% endif %}
+
+  <td class="text-left">
+        <b>name:</b> {{ ws.data_source_type }}<br />
+        <b>source_url:</b>
+          <a href="{{ ws.data_source_type.source_url }}">{{ ws.data_source_type.source_url }}</a><br />
+        <b>description:</b> {{ ws.data_source_type.description }}
+  </td>
+  <td>{{ ws.modified }}</td>
+</tr>
+<tr>
+  <td colspan="4">
+    <!-- list vars -->
+    <ul class="list-inline">
+      <li class="list-inline-item"><!-- zdata -->
+        <a class="btn btn-success btn-sm" data-toggle="collapse" href="#var-zdata-{{ forloop.counter }}" aria-expanded="false" aria-controls="var-zdata-{{ forloop.counter }}">zdata</a>
+      </li>
+      <li class="list-inline-item"><!-- allnodes -->
+        <a class="btn btn-success btn-sm" data-toggle="collapse" href="#var-allnodes-{{ forloop.counter }}" aria-expanded="false" aria-controls="var-allnodes-{{ forloop.counter }}">allnodes</a>
+      </li>
+    </ul>
+    <!-- zdata content -->
+    <div class="collapse" id="var-zdata-{{ forloop.counter }}">
+      <div class="card">
+        <div class="card-header"><b>zdata</b></div>
+        <pre><code>{{ ws.zparams|jsonpretty }}</code></pre>
+      </div>
+    </div>
+    <!-- allnodes content -->
+    <div class="collapse" id="var-allnodes-{{ forloop.counter }}">
+      <div class="card">
+        <div class="card-header"><b>allnodes</b></div>
+        <pre><code>{{ ws.allnodes|jsonpretty }}</code></pre>
+      </div>
+    </div>
+  </td>
+</tr>

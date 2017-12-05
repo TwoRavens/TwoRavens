@@ -28,13 +28,15 @@ def view_workspace_info(request):
     # pull some session info, if there are any
     #
     if request.user.is_authenticated():
-        older_workspaces = SavedWorkspace.objects.filter(user=request.user)
+        other_workspaces = SavedWorkspace.objects.filter(user=request.user)
+        if current_workspace:
+            other_workspaces = other_workspaces.exclude(id=current_workspace.id)
     else:
-        older_workspaces = None
+        other_workspaces = None
 
     info = dict(title='test session info',
                 current_workspace=current_workspace,
-                older_workspaces=older_workspaces,
+                other_workspaces=other_workspaces,
                 session_key=request.session.session_key)
 
     return render(request, 'view_workspace_info.html', info)
