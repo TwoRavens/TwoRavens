@@ -226,7 +226,7 @@ let dataurl = '';
   5. Read in zelig models (not for d3m)
   6. Read in zeligchoice models (not for d3m)
   7. Start the user session
-  8. Call readPreprocess(...) and (if necessary) runPreprocess(...)
+  8. Read preprocess data or (if necessary) run preprocess
   9. Build allNodes[] using preprocessed information
   10. Add dataschema information to allNodes (when in IS_D3M_DOMAIN)
   11. Call scaffolding() and start up
@@ -388,11 +388,28 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         console.log('Ending Hopscotch Tour');
     }
 
-    // 8. Call readPreprocess(...) and (if necessary) runPreprocess(...)
+    // 8. read preprocess data or (if necessary) run preprocess
+    let read = res => {
+        priv = res.dataset.private || priv;
+        Object.keys(res.variables).forEach(k => preprocess[k] = res.variables[k]);
+        return res;
+    };
     try {
-        readPreprocess(await m.request(pURL));
+        res = read(await m.request(pURL));
     } catch(_) {
-        runPreprocess(d3mData, d3mTarget, d3mDataName);
+        console.log("GOING TO RUN THE PREPROCESSAPP");
+        let url = ROOK_SVC_URL + 'preprocessapp';
+        let json = JSON.stringify({data: dataloc, target: targetloc, datastub: datastub});;
+        console.log('url out: ', url);
+        console.log('POST out: ', json);
+        let data = new FormData();
+        try {
+            res = read(await m.request({method: 'POST', url: url, data: data}));
+        } catch(_) {
+            console.log('preprocess failed');
+            alert('preprocess failed. ending user session.');
+            endsession();
+        }
     }
 
     // 9. Build allNodes[] using preprocessed information
@@ -2254,31 +2271,6 @@ export function estimate(btn) {
 }
 
 /** needs doc */
-export function runPreprocess(dataloc, targetloc, datastub) {
-    let url = ROOK_SVC_URL + 'preprocessapp';
-    console.log("GOING TO RUN THE PREPROCESSAPP");
-    let json = JSON.stringify({data: dataloc, target: targetloc, datastub: datastub}); //, preprocess: preprocessloc});
-    console.log('urlcall out: ', url);
-    console.log('POST out: ', json);
-    let data = new FormData();
-    data.append('solaJSON', json);
-    return m.request({method: 'POST', url: url, data: data, async:false})
-        .then(data => {
-            console.log('json in RIGHT HERE: ', data);
-
-            //two lines from readPreprocess()
-            priv = data.dataset.private || priv;
-            Object.keys(data.variables).forEach(k => preprocess[k] = data.variables[k]);
-
-            return data;
-        }, _ => {
-            console.log('preprocess failed');
-            alert('preprocess failed. ending user session.');
-            endsession();
-        });
-}
-
-/** needs doc */
 export function ta2stuff() {
     console.log(d3mProblemDescription);
 }
@@ -2612,8 +2604,7 @@ function transform(n, t, typeTransform) {
 }
 
 /**
-   needs doc
-   create the XHR object.
+   create the XHR object
    from http://www.html5rocks.com/en/tutorials/cors/ for cross-origin resource sharing
 */
 function createCORSRequest(method, url, callback) {
@@ -2635,7 +2626,7 @@ function createCORSRequest(method, url, callback) {
 }
 
 /**
-   make the actual CORS request.
+   make the actual CORS request
 */
 function makeCorsRequest(url, btn, callback, warningcallback, jsonstring) {
     var xhr = createCORSRequest('POST', url);
@@ -2687,7 +2678,6 @@ export function legend() {
 
 /**
    programmatically deselect every selected variable
-
 */
 export function erase() {
     ['#leftpanel', '#rightpanel'].forEach(id => d3.select(id).attr('class', 'sidepanel container clearfix'));
@@ -3156,16 +3146,6 @@ export function subsetSelect(btn) {
 
     selectLadda.start(); //start button motion
     makeCorsRequest(urlcall, btn, subsetSelectSuccess, btn => selectLadda.stop(), solajsonout);
-}
-
-/** needs doc */
-function readPreprocess(data) {
-console.log(data);
-    return new Promise((resolve, _) => {
-        priv = data.dataset.private || priv;
-        Object.keys(data.variables).forEach(k => preprocess[k] = data.variables[k]);
-        resolve();
-    });
 }
 
 /**

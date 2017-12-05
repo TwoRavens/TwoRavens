@@ -215,16 +215,6 @@
               
                 
                 <li><a
-                  href='#runpreprocess'
-                  class="">
-                  runPreprocess
-                  
-                </a>
-                
-                </li>
-              
-                
-                <li><a
                   href='#ta2stuff'
                   class="">
                   ta2stuff
@@ -398,16 +388,6 @@
                   href='#subsetselect'
                   class="">
                   subsetSelect
-                  
-                </a>
-                
-                </li>
-              
-                
-                <li><a
-                  href='#readpreprocess'
-                  class="">
-                  readPreprocess
                   
                 </a>
                 
@@ -702,7 +682,7 @@ Loads all external data in the following order (logic is not included):
 5. Read in zelig models (not for d3m)
 6. Read in zeligchoice models (not for d3m)
 7. Start the user session
-8. Call readPreprocess(...) and (if necessary) runPreprocess(...)
+8. Read preprocess data or (if necessary) run preprocess
 9. Build allNodes[] using preprocessed information
 10. Add dataschema information to allNodes (when in IS_D3M_DOMAIN)
 11. Call scaffolding() and start up</p>
@@ -1903,82 +1883,6 @@ the older format in PRODUCTION (rp 8.14.2017)
   
   <div class='clearfix'>
     
-    <h3 class='fl m0' id='runpreprocess'>
-      runPreprocess
-    </h3>
-    
-    
-  </div>
-  
-
-  <p>needs doc</p>
-
-
-  <div class='pre p1 fill-light mt0'>runPreprocess(dataloc: any, targetloc: any, datastub: any)</div>
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-    <div class='py1 quiet mt1 prose-big'>Parameters</div>
-    <div class='prose'>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>dataloc</span> <code class='quiet'>(any)</code>
-	    
-          </div>
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>targetloc</span> <code class='quiet'>(any)</code>
-	    
-          </div>
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>datastub</span> <code class='quiet'>(any)</code>
-	    
-          </div>
-          
-        </div>
-      
-    </div>
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-          
-        
-          
-            <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-  <div class='clearfix'>
-    
     <h3 class='fl m0' id='ta2stuff'>
       ta2stuff
     </h3>
@@ -2279,8 +2183,7 @@ t = selected transformation</p>
   </div>
   
 
-  <p>needs doc
-create the XHR object.
+  <p>create the XHR object
 from <a href="http://www.html5rocks.com/en/tutorials/cors/">http://www.html5rocks.com/en/tutorials/cors/</a> for cross-origin resource sharing</p>
 
 
@@ -2357,7 +2260,7 @@ from <a href="http://www.html5rocks.com/en/tutorials/cors/">http://www.html5rock
   </div>
   
 
-  <p>make the actual CORS request.</p>
+  <p>make the actual CORS request</p>
 
 
   <div class='pre p1 fill-light mt0'>makeCorsRequest(url: any, btn: any, callback: any, warningcallback: any, jsonstring: any)</div>
@@ -3026,66 +2929,6 @@ from <a href="http://www.html5rocks.com/en/tutorials/cors/">http://www.html5rock
         <div class='space-bottom0'>
           <div>
             <span class='code bold'>btn</span> <code class='quiet'>(any)</code>
-	    
-          </div>
-          
-        </div>
-      
-    </div>
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-          
-        
-          
-            <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-  <div class='clearfix'>
-    
-    <h3 class='fl m0' id='readpreprocess'>
-      readPreprocess
-    </h3>
-    
-    
-  </div>
-  
-
-  <p>needs doc</p>
-
-
-  <div class='pre p1 fill-light mt0'>readPreprocess(data: any)</div>
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-    <div class='py1 quiet mt1 prose-big'>Parameters</div>
-    <div class='prose'>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>data</span> <code class='quiet'>(any)</code>
 	    
           </div>
           
