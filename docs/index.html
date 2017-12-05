@@ -105,6 +105,26 @@
               
                 
                 <li><a
+                  href='#bivariateplot'
+                  class="">
+                  bivariatePlot
+                  
+                </a>
+                
+                </li>
+              
+                
+                <li><a
+                  href='#exportpipeline'
+                  class="">
+                  exportpipeline
+                  
+                </a>
+                
+                </li>
+              
+                
+                <li><a
                   href='#record_user_metadata'
                   class="">
                   record_user_metadata
@@ -372,7 +392,9 @@ Loads all external data in the following order (logic is not included):
   </div>
   
 
-  <p>called after all external data are guaranteed to have been read to completion. this populates the left panel with variable names, the right panel with model names, the transformation tool, and the associated mouseovers. its callback is layout(), which initializes the modeling space</p>
+  <p>called after all external data are guaranteed to have been read to completion.
+this populates the left panel with variable names, the right panel with model names, the transformation tool, and the associated mouseovers.
+its callback is layout(), which initializes the modeling space</p>
 
 
   <div class='pre p1 fill-light mt0'>scaffolding(callback: any)</div>
@@ -762,6 +784,150 @@ rpc UpdateProblemSchema(UpdateProblemSchemaRequest) returns (Response) {}</p>
         <div class='space-bottom0'>
           <div>
             <span class='code bold'>lookup</span> <code class='quiet'>(any)</code>
+	    
+          </div>
+          
+        </div>
+      
+    </div>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+          
+        
+          
+            <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+  <div class='clearfix'>
+    
+    <h3 class='fl m0' id='bivariateplot'>
+      bivariatePlot
+    </h3>
+    
+    
+  </div>
+  
+
+  <p>scatterplot function to go to plots.js to be reused</p>
+
+
+  <div class='pre p1 fill-light mt0'>bivariatePlot(x_Axis: any, y_Axis: any, x_Axis_name: any, y_Axis_name: any)</div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Parameters</div>
+    <div class='prose'>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>x_Axis</span> <code class='quiet'>(any)</code>
+	    
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>y_Axis</span> <code class='quiet'>(any)</code>
+	    
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>x_Axis_name</span> <code class='quiet'>(any)</code>
+	    
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>y_Axis_name</span> <code class='quiet'>(any)</code>
+	    
+          </div>
+          
+        </div>
+      
+    </div>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+          
+        
+          
+            <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+  <div class='clearfix'>
+    
+    <h3 class='fl m0' id='exportpipeline'>
+      exportpipeline
+    </h3>
+    
+    
+  </div>
+  
+
+  <p>rpc ExportPipeline(PipelineExportRequest) returns (Response) {}</p>
+
+
+  <div class='pre p1 fill-light mt0'>exportpipeline(pipelineId: any)</div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Parameters</div>
+    <div class='prose'>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>pipelineId</span> <code class='quiet'>(any)</code>
 	    
           </div>
           

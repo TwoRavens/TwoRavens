@@ -521,7 +521,9 @@ let fill = (d, id, op, d1, d2) => $fill('#' + id + d.id, op, d1, d2);
 let fillThis = (self, op, d1, d2) => $fill(self, op, d1, d2);
 
 /**
-  called after all external data are guaranteed to have been read to completion. this populates the left panel with variable names, the right panel with model names, the transformation tool, and the associated mouseovers. its callback is layout(), which initializes the modeling space
+  called after all external data are guaranteed to have been read to completion.
+  this populates the left panel with variable names, the right panel with model names, the transformation tool, and the associated mouseovers.
+  its callback is layout(), which initializes the modeling space
 */
 function scaffolding(callback) {
     console.log("SCAFFOLDING");
@@ -656,7 +658,6 @@ function scaffolding(callback) {
         byId('whitespace').style.backgroundColor='grey';
     }
 }
-
 
 /**
    deletes the item at index from array.
@@ -3440,9 +3441,7 @@ export function resultsplotinit(pid, dvvalues) {
         let xdata = "Actual";
         let ydata = "Predicted";
         bivariatePlot(dvvalues, predvals, xdata, ydata);
-
     }
-
 }
 export function genconfdata (dvvalues, predvals) {
     // FOR TESTING
@@ -3468,7 +3467,6 @@ export function genconfdata (dvvalues, predvals) {
     // combine actuals and predicted, and get all unique elements
     let myuniques = dvvalues.concat(predvals);
     myuniques = myuniques.filter(onlyUnique);
-  //  console.log(myuniques);
 
     // create two arrays: mycounts initialized to 0, mypairs have elements set to all possible pairs of uniques
     // looked into solutions other than nested fors, but Internet suggest performance is just fine this way
@@ -3481,28 +3479,21 @@ export function genconfdata (dvvalues, predvals) {
         }
     }
 
-  //  console.log(mypairs);
     // line up actuals and predicted, and increment mycounts at index where mypair has a match for the 'actual,predicted'
     for (let i = 0; i < dvvalues.length; i++) {
-     //   console.log(dvvalues[i]);
-     //   console.log(predvals[i]);
         let temppair = +dvvalues[i]+','+predvals[i];
         let myindex = mypairs.indexOf(temppair);
         mycounts[myindex] += 1;
     }
-  //  console.log(mycounts);
 
     let confdata = [], size = myuniques.length;
-
     // another loop... this builds the array of arrays from the flat array mycounts for input to confusionsmatrix function
     while (mycounts.length > 0)
         confdata.push(mycounts.splice(0, size));
 
-   // console.log(confdata);
-
-    // call confusionmatrix
     confusionmatrix(confdata, myuniques);
 }
+
 export function confusionmatrix(matrixdata, classes) {
     d3.select("#setxMiddle").html("");
     d3.select("#setxMiddle").select("svg").remove();
@@ -3526,14 +3517,10 @@ export function confusionmatrix(matrixdata, classes) {
     legdiv.style.marginLeft='20px';
     legdiv.style.height=+(mainheight*.4)+'px';
     legdiv.style.display="inline-block";
-
     byId('setxMiddle').appendChild(legdiv);
 
-
     var margin = {top: 20, right: 10, bottom: 0, left: 50};
-
     function Matrix(options) {
-
         let width = options.width,
         height = options.height,
         data = options.data,
@@ -3703,11 +3690,11 @@ export function confusionmatrix(matrixdata, classes) {
         .scale(y)
         .orient("right");
 
-        key.append("g")
-        .attr("class", "y axis")
-        .attr("transform", "translate(41," + margin.top + ")")
-        .call(yAxis)
-
+        key
+            .append("g")
+            .attr("class", "y axis")
+            .attr("transform", "translate(41," + margin.top + ")")
+            .call(yAxis);
     }
 
     // The table generation function. Used for the table of performance measures, not the confusion matrix
@@ -3746,8 +3733,6 @@ export function confusionmatrix(matrixdata, classes) {
         return table;
     }
 
-
-
     // this code is all for producing a table with performance measures
     //var confusionMatrix = [[169, 10],[7, 46]];
     var tp = matrixdata[0][0];
@@ -3783,15 +3768,13 @@ export function confusionmatrix(matrixdata, classes) {
            });
 
     // not rendering this table for right now, left all the code in place though. maybe we use it eventually
-  //  var table = tabulate(computedData, ["F1", "PRECISION","RECALL","ACCURACY"]);
-
-
+    // var table = tabulate(computedData, ["F1", "PRECISION","RECALL","ACCURACY"]);
 }
 
-
-// scatterplot function to go to plots.js to be reused
+/**
+   scatterplot function to go to plots.js to be reused
+*/
 export function bivariatePlot(x_Axis, y_Axis, x_Axis_name, y_Axis_name) {
-
     d3.select("#setxMiddle").html("");
     d3.select("#setxMiddle").select("svg").remove();
 
@@ -3799,7 +3782,6 @@ export function bivariatePlot(x_Axis, y_Axis, x_Axis_name, y_Axis_name) {
     let mainheight = byId('main').clientHeight;
 
     // scatter plot
-
     let data_plot = [];
     var nanCount = 0;
     for (var i = 0; i < x_Axis.length; i++) {
@@ -3863,7 +3845,7 @@ export function bivariatePlot(x_Axis, y_Axis, x_Axis_name, y_Axis_name) {
     .append('svg:svg')
     .attr('width', width + margin.right + margin.left)
     .attr('height', height + margin.top + margin.bottom);
-   // .call(zoom); dropping this for now, until the line zooms properly
+    // .call(zoom); dropping this for now, until the line zooms properly
 
     var main1 = chart_scatter.append('g')
     .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')')
@@ -3895,15 +3877,10 @@ export function bivariatePlot(x_Axis, y_Axis, x_Axis_name, y_Axis_name) {
     .data(data_plot)
     .enter()
     .append("circle")
-    .attr("cx", function (d, i) {
-          return xScale(data_plot[i].xaxis);
-          })
-    .attr("cy", function (d, i) {
-          return yScale(data_plot[i].yaxis);
-          })
+    .attr("cx", (d, i) => xScale(data_plot[i].xaxis))
+    .attr("cy", (d, i) => yScale(data_plot[i].yaxis))
     .attr("r", 2)
-    .style("fill", "#B71C1C")
-    ;
+    .style("fill", "#B71C1C");
 
 
     chart_scatter.append("text")
@@ -3982,7 +3959,6 @@ export function bivariatePlot(x_Axis, y_Axis, x_Axis_name, y_Axis_name) {
     //  d3.select("#NAcount").text("There are " + nanCount + " number of NA values in the relation.");
 }
 
-
 export function setxTable(features) {
     function tabulate(data, columns) {
         var table = d3.select('#setxRightBottomLeft').append('table');
@@ -4046,8 +4022,9 @@ export function setxTable(features) {
     tabulate(mydata, ['Variables', 'From', 'To']); // 2 column table
 }
 
-
-//rpc ExportPipeline(PipelineExportRequest) returns (Response) {}
+/**
+  rpc ExportPipeline(PipelineExportRequest) returns (Response) {}
+*/
 export function exportpipeline(pipelineId) {
     console.log(pipelineId);
     let context = apiSession(zparams.zsessionid);
@@ -4065,7 +4042,6 @@ export function exportpipeline(pipelineId) {
 
     function exportSuccess(btn, Response) {
         let alertmessage = "Executable for " + pipelineId + " has been written";
-        //alert(alertmessage);
         console.log(alertmessage)
         console.log(Response);
     }
@@ -4077,10 +4053,9 @@ export function exportpipeline(pipelineId) {
     makeCorsRequest(urlcall, "nobutton", exportSuccess, exportFail, solajsonout);
 }
 
-export function deletepipeline () {
+export function deletepipeline() {
     console.log("DELETE CALLED");
 }
-
 
 // D3M API HELPERS
 // because these get built in various places, pulling them out for easy manipulation
@@ -4103,13 +4078,13 @@ function apiFeatureShortPath (vars, uri) {
 
 
 // silly but perhaps useful if in the future SessionContext requires more things (as suggest by core)
-function apiSession (context) {
-    return {"session_id":context};
+function apiSession(context) {
+    return {session_id: context};
 }
 
 /**
- *  record user metadata
- */
+   record user metadata
+*/
 export function record_user_metadata(){
     console.log('record_user_metadata');
 
