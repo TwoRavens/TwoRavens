@@ -110,3 +110,30 @@ class WorkspaceRetriever(object):
 
         return False, ('Workspace not found with user:'
                        ' [%s] and  id: [%s]') % (auth_user, ws_id)
+
+"""
+from tworaven_apps.workspaces.models import *
+from tworaven_apps.workspaces.workspace_retriever import WorkspaceRetriever
+import json
+from django.core.serializers.json import json, DjangoJSONEncoder
+
+l = DataSourceType.objects.all()
+dst = None
+for dst in l:
+    jstr = json.dumps(dst.as_json(), cls=DjangoJSONEncoder)
+    print(jstr)
+
+ws = SavedWorkspace.objects.all()[0]
+wstr = json.dumps(ws.as_json(), cls=DjangoJSONEncoder)
+print(wstr)
+
+print()
+
+
+from tworaven_apps.workspaces.models import *
+ws = SavedWorkspace.objects.all()[0]
+ws.as_json()
+ws.user.as_json()
+ws.data_source_type.as_json()
+
+"""
