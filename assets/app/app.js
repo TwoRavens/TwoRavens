@@ -206,8 +206,9 @@ const [arcInd1, arcInd2] = [arcInd(arcInd1Limits), arcInd(arcInd2Limits)];
 
 let byId = id => document.getElementById(id);
 
-// page reload linked to btnReset
-/** needs doc */
+/**
+   page reload linked to btnReset
+*/
 export const reset = function reloadPage() {
     location.reload();
 };
@@ -1612,8 +1613,9 @@ function find($nodes, name) {
         if ($nodes[i].name == name) return $nodes[i].id;
 }
 
-// returns id
-/** needs doc */
+/**
+   returns id
+*/
 export function findNodeIndex(name, whole) {
     for (let node of allNodes)
         if (node.name === name) return whole ? node : node.id;
@@ -1697,8 +1699,9 @@ export function getVariableData(json) {
     return json.hasOwnProperty('variables') ? json.variables : json;
 }
 
-// function called by force button
-/** needs doc */
+/**
+   called by force button
+*/
 export function forceSwitch() {
     forcetoggle = [forcetoggle[0] == 'true' ? 'false' : 'true'];
     if (forcetoggle[0] === "false") {
@@ -2276,7 +2279,9 @@ export function runPreprocess(dataloc, targetloc, datastub) {
 }
 
 /** needs doc */
-export let ta2stuff = _ => console.log(d3mProblemDescription);
+export function ta2stuff() {
+    console.log(d3mProblemDescription);
+}
 
 /** needs doc */
 function dataDownload() {
@@ -2373,8 +2378,10 @@ function viz(mym) {
     m.redraw();
 }
 
-// parses the transformation input. variable names are often nested inside one another, e.g., ethwar, war, wars, and so this is handled
-/** needs doc */
+/**
+   parses the transformation input.
+   variable names are often nested inside one another, e.g., ethwar, war, wars, and so this is handled
+*/
 function transParse(n) {
     var out2 = [];
     var t2 = n;
@@ -2426,9 +2433,9 @@ function transParse(n) {
 }
 
 /**
-  n = name of column/node
-  t = selected transformation
- */
+   n = name of column/node
+   t = selected transformation
+*/
 function transform(n, t, typeTransform) {
     if (PRODUCTION && zparams.zsessionid == "") {
         alert("Warning: Data download is not complete. Try again soon.");
@@ -2604,9 +2611,11 @@ function transform(n, t, typeTransform) {
     makeCorsRequest(urlcall, btn, transformSuccess, transformFail, solajsonout);
 }
 
-// below from http://www.html5rocks.com/en/tutorials/cors/ for cross-origin resource sharing
-// Create the XHR object.
-/** needs doc */
+/**
+   needs doc
+   create the XHR object.
+   from http://www.html5rocks.com/en/tutorials/cors/ for cross-origin resource sharing
+*/
 function createCORSRequest(method, url, callback) {
     var xhr = new XMLHttpRequest();
     if ("withCredentials" in xhr) {
@@ -2625,8 +2634,9 @@ function createCORSRequest(method, url, callback) {
     return xhr;
 }
 
-// Make the actual CORS request.
-/** needs doc */
+/**
+   make the actual CORS request.
+*/
 function makeCorsRequest(url, btn, callback, warningcallback, jsonstring) {
     var xhr = createCORSRequest('POST', url);
     if (!xhr) {
@@ -2675,8 +2685,10 @@ export function legend() {
     m.redraw();
 }
 
-// programmatically deselect every selected variable
-/** needs doc */
+/**
+   programmatically deselect every selected variable
+
+*/
 export function erase() {
     ['#leftpanel', '#rightpanel'].forEach(id => d3.select(id).attr('class', 'sidepanel container clearfix'));
     tabLeft('tab1');
@@ -2686,8 +2698,9 @@ export function erase() {
     });
 }
 
-// http://www.tutorials2learn.com/tutorials/scripts/javascript/xml-parser-javascript.html
-/** needs doc */
+/**
+   http://www.tutorials2learn.com/tutorials/scripts/javascript/xml-parser-javascript.html
+*/
 function loadXMLDoc(XMLname) {
     var xmlDoc;
     if (window.XMLHttpRequest) {
@@ -2863,15 +2876,17 @@ export function panelPlots() {
               });
 }
 
-// converts color codes
-/** needs doc */
+/**
+   converts color codes
+*/
 export let hexToRgba = hex => {
     let int = parseInt(hex.replace('#', ''), 16);
     return `rgba(${[(int >> 16) & 255, (int >> 8) & 255, int & 255, '0.5'].join(',')})`;
 };
 
-// takes node and color and updates zparams
-/** needs doc */
+/**
+   takes node and color and updates zparams
+*/
 function setColors(n, c) {
     if (n.strokeWidth == '1') {
         if (c == gr1Color){
@@ -3153,8 +3168,9 @@ console.log(data);
     });
 }
 
-// removes all the children svgs inside subset and setx divs
-/** needs doc */
+/**
+   removes all the children svgs inside subset and setx divs
+*/
 function rePlot() {
     d3.select('#tab2')
         .selectAll('svg')
@@ -3181,8 +3197,9 @@ export let fakeClick = () => {
         .classed('active', false);
 };
 
-//EndSession(SessionContext) returns (Response) {}
-/** needs doc */
+/**
+   EndSession(SessionContext) returns (Response) {}
+*/
 export function endsession() {
     let SessionContext= apiSession(zparams.zsessionid);
 
@@ -3205,9 +3222,10 @@ export function endsession() {
     makeCorsRequest(urlcall, "nobutton", endSuccess, endFail, solajsonout);
 }
 
-//rpc ListPipelines(PipelineListRequest) returns (PipelineListResult) {}
-// pipes is an array of pipeline IDs
-/** needs doc */
+/**
+   rpc ListPipelines(PipelineListRequest) returns (PipelineListResult) {}
+   pipes is an array of pipeline IDs
+*/
 export function listpipelines() {
     let context = apiSession(zparams.zsessionid);
     let PipeLineListRequest={context};
@@ -3272,8 +3290,9 @@ export function listpipelines() {
     makeCorsRequest(urlcall, "nobutton", listPipesSuccess, listPipesFail, solajsonout);
 }
 
-// rpc ExecutePipeline(PipelineExecuteRequest) returns (stream PipelineExecuteResult) {}
-/** needs doc */
+/**
+   rpc ExecutePipeline(PipelineExecuteRequest) returns (stream PipelineExecuteResult) {}
+*/
 export function executepipeline() {
     let context = apiSession(zparams.zsessionid);
     let tablerow = byId('setxRight').querySelector('tr.item-select');
@@ -3351,11 +3370,11 @@ function updateSchema(type, updates, lookup) {
         solajsonout);
 }
 
-
-// Find something centerish to the vertices of a convex hull
-// (specifically, the center of the bounding box)
-/** needs doc */
-function jamescentroid(coord){
+/**
+   find something centerish to the vertices of a convex hull
+   (specifically, the center of the bounding box)
+*/
+function jamescentroid(coord) {
     var minx = coord[0][0],
         maxx = coord[0][0],
         miny = coord[0][1],
@@ -3369,29 +3388,29 @@ function jamescentroid(coord){
         return[(minx + maxx)/2, (miny + maxy)/2];
 };
 
-// Define each pebble radius.
-// Presently, most pebbles are scaled to radius set by global RADIUS.
-// Members of groups are scaled down if group gets large.
-/** needs doc */
+/**
+   Define each pebble radius.
+   Presently, most pebbles are scaled to radius set by global RADIUS.
+   Members of groups are scaled down if group gets large.
+*/
 function setPebbleRadius(d){
-    if(d.group1 || d.group2){   // if a member of a group, need to calculate radius size
+    if (d.group1 || d.group2){ // if a member of a group, need to calculate radius size
         var uppersize = 7
-        var ng1 = (d.group1) ? zparams.zgroup1.length : 1;      // size of group1, if a member of group 1
-        var ng2 = (d.group2) ? zparams.zgroup2.length : 1;      // size of group2, if a member of group 2
-        var maxng = Math.max(ng1,ng2);                                                      // size of the largest group variable is member of
-        return (maxng>uppersize) ? RADIUS*Math.sqrt(uppersize/maxng) : RADIUS;                  // keep total area of pebbles bounded to pi * RADIUS^2 * uppersize, thus shrinking radius for pebbles in larger groups
-    }else{
-        return RADIUS;                                                                         // nongroup members get the common global radius
+        var ng1 = (d.group1) ? zparams.zgroup1.length : 1; // size of group1, if a member of group 1
+        var ng2 = (d.group2) ? zparams.zgroup2.length : 1; // size of group2, if a member of group 2
+        var maxng = Math.max(ng1, ng2); // size of the largest group variable is member of
+        return (maxng>uppersize) ? RADIUS*Math.sqrt(uppersize/maxng) : RADIUS; // keep total area of pebbles bounded to pi * RADIUS^2 * uppersize, thus shrinking radius for pebbles in larger groups
+    } else {
+        return RADIUS; // nongroup members get the common global radius
     }
 };
 
-// Define each pebble charge.
-// This was the previous charge setting:
-//return ((zparams.zgroup1.indexOf(node.name) < 0 ) & (zparams.zgroup2.indexOf(node.name) < 0 ))   ? -800 : -400;  // -1 is the value if no index position found
-/** needs doc */
+/**
+   Define each pebble charge.
+*/
 function setPebbleCharge(d){
     if(d.group1 || d.group2){
-        if(d.forefront){                                        // pebbles packed in groups repel others on mouseover
+        if(d.forefront){// pebbles packed in groups repel others on mouseover
             return -1000
         }
         var uppersize = 7
@@ -4087,8 +4106,8 @@ export function exportpipeline(pipelineId) {
     console.log(solajsonout);
 
     function exportSuccess(btn, Response) {
-        let alertmessage = "Executable for " + pipelineId + " has been written";
-        console.log(alertmessage)
+        let message = "Executable for " + pipelineId + " has been written";
+        console.log(message);
         console.log(Response);
     }
 
@@ -4104,9 +4123,10 @@ export function deletepipeline() {
     console.log("DELETE CALLED");
 }
 
-// D3M API HELPERS
-// because these get built in various places, pulling them out for easy manipulation
-/** needs doc */
+/**
+   D3M API HELPERS
+   because these get built in various places, pulling them out for easy manipulation
+*/
 function apiFeature (vars, uri) {
     let out = [];
     for(let i = 0; i < vars.length; i++) {
@@ -4125,9 +4145,9 @@ function apiFeatureShortPath (vars, uri) {
     return out;
 }
 
-
-// silly but perhaps useful if in the future SessionContext requires more things (as suggest by core)
-/** needs doc */
+/**
+   silly but perhaps useful if in the future SessionContext requires more things (as suggest by core)
+*/
 function apiSession(context) {
     return {session_id: context};
 }
