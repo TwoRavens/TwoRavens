@@ -1,6 +1,7 @@
 """First pass at saving TwoRaven states"""
 from collections import OrderedDict
 from datetime import datetime as dt
+import json
 
 from model_utils.models import TimeStampedModel
 import jsonfield
@@ -51,6 +52,18 @@ class DataSourceType(TimeStampedModel):
         """Set the slug on save"""
         self.slug = slugify(self.name)
         super(DataSourceType, self).save(*args, **kwargs)
+
+    def as_json(self):
+        """Return as an OrderedDict"""
+        od = OrderedDict()
+
+        params = ['id', 'name', 'is_active', 'slug',
+                  'source_url', 'description',
+                  'created', 'modified']
+        for param in params:
+            od[param] = self.__dict__.get(param)
+
+        return od
 
     class Meta:
         ordering = ('name',)
@@ -123,6 +136,26 @@ class SavedWorkspace(TimeStampedModel):
     class Meta:
         ordering = ('-modified',)
         unique_together = ('session_key', 'data_source_type')
+
+    def as_json(self):
+        """Return as an OrderedDict"""
+        od = OrderedDict()
+
+        params = ['id', 'name',
+                  'session_key', 'user', 'is_anonymous',
+                  'app_domain', 'data_source_type',
+                  'zparams', 'allnodes',
+                  'notes',
+                  'created', 'modified']
+        for param in params:
+            if param == 'data_source_type':
+                od[param] = self.data_source_type.as_json()
+            elif param == 'user':
+                od[param] = self.user.as_json()
+            else:
+                od[param] = self.__dict__.get(param)
+
+        return json.dumps(od)
 
     def allnodes_json(self):
         if not self.allnodes:

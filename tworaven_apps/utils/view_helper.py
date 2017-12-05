@@ -22,6 +22,17 @@ def get_session_key(request):
     return request.session._get_or_create_session_key()
 
 
+def get_authenticated_user(request):
+    """Return the user from the request"""
+    if not request:
+        return False, 'request is None'
+
+    if not request.user.is_authenticated():
+        return False, 'user is not authenticated'
+
+    return True, request.user
+
+
 def get_request_body(request):
     """Retrieve the request body
     Returns either:
