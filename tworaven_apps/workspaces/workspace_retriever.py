@@ -40,13 +40,13 @@ class WorkspaceRetriever(object):
 
 
     @staticmethod
-    def list_workspaces_by_request(request):
+    def list_workspaces_by_request(request, as_json=False):
         """Retrieve a list of all workspaces"""
         success, user_or_err = get_authenticated_user(request)
         if not success:
             return False, user_or_err
 
-        return WorkspaceRetriever.list_workspaces_by_user(user_or_err)
+        return WorkspaceRetriever.list_workspaces_by_user(user_or_err, as_json)
 
 
     @staticmethod
