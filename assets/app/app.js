@@ -52,7 +52,7 @@ export let righttab = 'btnModels'; // current tab in right panel
 
 // transformation toolbar options
 let t, typeTransform;
-let transformList = 'log(d) exp(d) d^2 sqrt(d) interact(d,e)'.split(' ');
+export let transformList = 'log(d) exp(d) d^2 sqrt(d) interact(d,e)'.split(' ');
 let transformVar = '';
 
 // var list for each space contain variables in original data
@@ -546,38 +546,6 @@ let fillThis = (self, op, d1, d2) => $fill(self, op, d1, d2);
 */
 function scaffolding(callback) {
     console.log("SCAFFOLDING");
-    // establishing the transformation element
-    // d3.select("#transformations")
-    //     .append("input")
-    //     .attr("id", "tInput")
-    //     .attr("class", "form-control")
-    //     .attr("type", "text")
-    //     .attr("value", "Variable transformation");
-
-    // variable dropdown
-    d3.select("#transformations")
-        .append("ul")
-        .attr("id", "transSel")
-        .style("display", "none")
-        .style("background-color", varColor)
-        .selectAll('li')
-        .data(["a", "b"]) //set to variables in model space as they're added
-        .enter()
-        .append("li")
-        .text(d => d);
-
-    // function dropdown
-    d3.select("#transformations")
-        .append("ul")
-        .attr("id", "transList")
-        .style("display", "none")
-        .style("background-color", varColor)
-        .selectAll('li')
-        .data(transformList)
-        .enter()
-        .append("li")
-        .text(d => d);
-
     if (!IS_D3M_DOMAIN) { // No variable transformation in present d3m mode
         $('#tInput').click(() => {
             let t = byId('transSel').style.display;

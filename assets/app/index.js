@@ -124,12 +124,7 @@ let ticker = mode => {
         m("a[href='/dev-raven-links'][target=_blank][style=margin-right: 0.5em]", "raven-links"),
         m("a[style=margin-right: 0.5em]",
           {onclick: app.record_user_metadata},
-          "record-metadata"),
-        //app.record_user_metadata()
-        /*
-        m("a[href='/Home']", {oncreate: m.route.link}, "Go to home page")
-        */
-      );
+          "record-metadata"));
 };
 
 class Body {
@@ -179,8 +174,10 @@ class Body {
         let navBtn1 = (id, onclick, args, title) => _navBtn(
             `${id}.btn-default[title=${title}]`, 2, 0, onclick, args);
         let glyph = (icon, unstyled) => m(
-            'span.glyphicon.glyphicon-' + icon +
-                (unstyled ? '' : '[style=color: #818181; font-size: 1em; pointer-events: none]'));
+            `span.glyphicon.glyphicon-${icon}` + (unstyled ? '' : '[style=color: #818181; font-size: 1em; pointer-events: none]'));
+        let transformation = (id, list) => m(
+            `ul#${id}`, {style: {display: 'none', 'background-color': app.varColor}},
+            list.map(x => m('li', x)));
         let spaceBtn = (id, onclick, title, icon) => m(
             `button#${id}.btn.btn-default`, {onclick, title}, glyph(icon, true));
 
@@ -206,9 +203,12 @@ class Body {
                     navBtn('btnTA2.btn-default', .5, 1, _ => app.helpmaterials('manual'), ['Help Manual ', glyph('book')]),
                     navBtn('btnTA2.btn-default', 2, .5, _ => app.helpmaterials('video'), ['Help Video ', glyph('expand')]),
                     navBtn1("btnReset", app.reset, glyph('repeat'), 'Reset'),
-                    navBtn1('btnEndSession', app.endsession, m("span.ladda-label", 'Mark Problem Finished'), 'Mark Problem Finished'),
-                    m('#transformations.transformTool',
-                      {title: 'Construct transformations of existing variables using valid R syntax. For example, assuming a variable named d, you can enter "log(d)" or "d^2".'})))),
+                    navBtn1('btnEndSession', app.endsession, m("span.ladda-label", 'Mark Problem Finished'), 'Mark Problem Finished')),
+                  m('#transformations.transformTool', {
+                      title: `Construct transformations of existing variables using valid R syntax.
+                              For example, assuming a variable named d, you can enter "log(d)" or "d^2".`},
+                    transformation('transSel', ['a', 'b']),
+                    transformation('transList', app.transformList)))),
               m(`#about.panel.panel-default[style=display: ${this.about ? 'block' : 'none'}; left: 140px; position: absolute; width: 500px; z-index: 50]`,
                 m('.panel-body',
                   'TwoRavens v0.1 "Dallas" -- The Norse god Odin had two talking ravens as advisors, who would fly out into the world and report back all they observed. In the Norse, their names were "Thought" and "Memory". In our coming release, our thought-raven automatically advises on statistical model selection, while our memory-raven accumulates previous statistical models from Dataverse, to provide cummulative guidance and meta-analysis.'))),
