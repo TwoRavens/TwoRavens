@@ -21,6 +21,15 @@
 <tr>
   <td colspan="4">
     <!-- list vars -->
+    {% if ws.zparams.zvars %}
+      <b>selected vars:</b>
+        {% for sel_var in ws.zparams.zvars %}
+          <span class="badge badge-info">{{ sel_var }}</span>
+        {% empty %}
+        (no variables selected)
+        {% endfor %}
+      <hr />
+    {% endif %}
     <ul class="list-inline">
       <li class="list-inline-item"><!-- zdata -->
         <button class="btn btn-primary btn-sm" data-toggle="collapse" href="#var-zdata-{{ forloop.counter }}" aria-expanded="false" aria-controls="var-zdata-{{ forloop.counter }}">zdata ({{ ws.zparams|dictsize|intcomma }})
