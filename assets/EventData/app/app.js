@@ -350,6 +350,14 @@ function pageSetup(jsondata) {
         updateData();
     }
 
+    let total_records = 0;
+    for (let record of dateData) {
+        total_records += record['total'];
+    }
+    console.log("Total Records");
+    console.log(total_records);
+
+    document.getElementById('recordCount').innerHTML = total_records + " records";
     return true;
 }
 
