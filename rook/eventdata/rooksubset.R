@@ -18,6 +18,7 @@
 #      mongoimport -d event_scrape -c phoenix_fbis_events --type csv --file ~/Downloads/PhoenixFBIS_1995-2004.csv --headerline
 #      mongoimport -d event_scrape -c phoenix_nyt_events --type csv --file ~/Downloads/PhoenixNYT_1945-2005.csv --headerline
 #
+#          Remove any straggling header documents via db.phoenix_events.remove({"Date": "Date"}), and db.icews_events.remove({"Source Country": "Source Country"})
 #      3a. To check that the csv data is available, run in new CMD:
 #          (connects to mongo server on default port, opens mongo prompt)
 #            mongo
