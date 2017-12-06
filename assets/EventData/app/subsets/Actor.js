@@ -138,8 +138,8 @@ function linkObj(source, target, rev, dup) {
     this.dup = dup;
 }
 
-const actorNodes = [];
-const actorLinks = [];
+let actorNodes = [];
+let actorLinks = [];
 
 let currentTab = "source";
 
@@ -689,20 +689,18 @@ function calcCircleNum(curHeight) {
 //rename group on click, initialize groups
 $(document).ready(function () {
     //default group display on page load, adds default source/target to nodes and SVG
-    $("#editGroupName").ready(function () {
-        actorNodes.push(new nodeObj("Source 0", [], [], actorColors(currentSize), "source", changeID));
-        currentSize++;
-        sourceSize++;
-        sourceActualSize++;
-        changeID++;
-        actorNodes.push(new nodeObj("Target 0", [], [], actorColors(currentSize), "target", changeID));
-        currentSize++;
-        targetSize++;
-        targetActualSize++;
-        changeID++;
-        sourceCurrentNode = actorNodes[0];
-        targetCurrentNode = actorNodes[1];
-    });
+    actorNodes.push(new nodeObj("Source 0", [], [], actorColors(currentSize), "source", changeID));
+    currentSize++;
+    sourceSize++;
+    sourceActualSize++;
+    changeID++;
+    actorNodes.push(new nodeObj("Target 0", [], [], actorColors(currentSize), "target", changeID));
+    currentSize++;
+    targetSize++;
+    targetActualSize++;
+    changeID++;
+    sourceCurrentNode = actorNodes[0];
+    targetCurrentNode = actorNodes[1];
 
     //visual feedback for name changing
     $("#editGroupName").click(function () {
@@ -781,9 +779,6 @@ loadDictionary();
 
 // This code is called when data is loaded. It populates the dictionary and source/target lists
 function actorDataLoad() {
-    document.getElementById("sourceSearch").value = "";
-    document.getElementById("targetSearch").value = "";
-    $("#sourceTabBtn").trigger("click");
 
     const defer = $.Deferred();
 
@@ -807,6 +802,10 @@ function actorDataLoad() {
         }
     }
     defer.resolve();
+
+    document.getElementById("sourceSearch").value = "";
+    document.getElementById("targetSearch").value = "";
+    $("#sourceTabBtn").trigger("click");
 }
 
 
