@@ -4,6 +4,7 @@ npm-debug.log
 # currently in rook directory
 rook/rook-files/
 rook/test.json
+rook/eventdata/downloads/
 #rook/
 #rook/output*.png
 #rook/.Rapp.history

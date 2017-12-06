@@ -183,7 +183,6 @@ function showSubset(subsetKey) {
             rightpanelMargin();
         }
     }
-    document.getElementById('main').focus();
 }
 
 // Initial load of preprocessed data
@@ -258,6 +257,10 @@ function download() {
 
     let variableQuery = buildVariables();
     let subsetQuery = buildSubset(subsetData);
+
+    console.log("Query: " + JSON.stringify(subsetQuery));
+    console.log("Projection: " + JSON.stringify(variableQuery));
+
     query = {
         'subsets': JSON.stringify(subsetQuery),
         'variables': JSON.stringify(variableQuery),
@@ -1157,9 +1160,16 @@ function submitQuery() {
 function buildVariables(){
     let fieldQuery = {};
     let variablelist = [...variablesSelected];
+
+    // Select all fields if none selected
+    if (variablelist.length === 0) {
+        variablelist = variables;
+    }
+
     for (let idx in variablelist) {
         fieldQuery[variablelist[idx]] = 1;
     }
+
     return fieldQuery;
 }
 

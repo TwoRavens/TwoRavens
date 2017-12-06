@@ -137,7 +137,9 @@ eventdata_subset.app <- function(env) {
     }
 
     if (!is.null(type) && type == 'raw') {
-        result = getData(paste(eventdata_url, '&query=', subsets, sep=""))
+        result = getData(paste(eventdata_url, '&aggregate=', 
+            '[{"$match":', subsets, '},',
+             '{"$project":', variables, '}]', sep=""))
         result['_id'] = NULL
         fileName = format(Sys.time(), '%Y-%m-%d-%H-%M-%OS4')
 
