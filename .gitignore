@@ -2,6 +2,12 @@ node_modules/
 npm-debug.log
 
 # currently in rook directory
+<<<<<<< 0aa6a9974e808c6b182540e39bd28172f15e5881
+=======
+rook/rook-files/
+rook/test.json
+rook/eventdata/downloads/
+>>>>>>> Download respects variable projections
 #rook/
 rook/output*.png
 rook/.Rapp.history
