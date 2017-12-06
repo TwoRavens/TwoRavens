@@ -1,10 +1,13 @@
 {% extends 'base.html' %}
+{% load static %}
 {% load humanize %}
 
 {% block title_block %}Session Info{% endblock %}
 
 {% block extra_css %}
 {{ block.super }}
+<link rel="stylesheet" href="{% static "pkgs/open-iconic/font/css/open-iconic-bootstrap.min.css" %}">
+
 <style>
 #tbl_workspace_info th {
   text-align: left;
@@ -16,9 +19,18 @@ table.tbl_workspaces thead th {
 table.tbl_workspaces tbody tr td {
   text-align: left;
 }
+
 </style>
 {% endblock %}
+{% block extra_js %}
+{{ block.super }}
+
+<script src="{% static "js/open_close_btn.js" %}"></script>
+
+{% endblock %}
+
 {% block main_content %}
+
 <div class="row">
   <div class="col-12 col-md-12">
     <h3>TwoRavens Workspace Info</h3>
