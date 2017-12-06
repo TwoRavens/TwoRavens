@@ -196,7 +196,7 @@ function render(blnIsSubgraph, cid) {
                 })
                 .attr("onclick", function (d) {
                     mapGraphSVG[d.rid] = null;
-                    return "javascript:constructSubgraph('" + d.rid + "')";
+                    return "javascript:constructSubgraph('" + d.rid + "', true)";
                 })
                 .attr("id", function (d) {
                     return "tg_rect_" + d.rid;
@@ -218,7 +218,7 @@ function render(blnIsSubgraph, cid) {
                     return y(d.rname);
                 })
                 .attr("onclick", function (d) {
-                    return "javascript:constructSubgraph('" + d.rid + "')";
+                    return "javascript:constructSubgraph('" + d.rid + "', true)";
                 });
 
             g.selectAll(".bar_label")	//these are the labels for the bars
@@ -357,14 +357,14 @@ function render(blnIsSubgraph, cid) {
  * and do the rendering of the sub graph
  *
  **/
-function constructSubgraph(cid) {
+function constructSubgraph(cid, scrollTo) {
 
     // console.log("constructSubgraph for cid : " + cid);
 
     if (mapGraphSVG[cid] != null) {
-
         subgraphAction('expand_collapse_text_' + cid);
 
+        if (scrollTo) document.getElementById('sub_graph_td_div_' + cid).scrollIntoView();
         return;
     }
 
@@ -377,6 +377,7 @@ function constructSubgraph(cid) {
         $("#sub_graph_td_div_" + cid).removeClass('graph_close');
         $("#sub_graph_td_div_" + cid).addClass('graph_config');
 
+        if (scrollTo) document.getElementById('sub_graph_td_div_' + cid).scrollIntoView();
         return;
     }
 
@@ -389,6 +390,8 @@ function constructSubgraph(cid) {
 
     mapGraphSVG[cid] = svg;
     render(true, cid);
+
+    if (scrollTo) document.getElementById('sub_graph_td_div_' + cid).scrollIntoView();
 }
 
 /**

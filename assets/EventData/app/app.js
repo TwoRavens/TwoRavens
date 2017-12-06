@@ -183,6 +183,7 @@ function showSubset(subsetKey) {
             rightpanelMargin();
         }
     }
+    document.getElementById('main').focus();
 }
 
 // Initial load of preprocessed data

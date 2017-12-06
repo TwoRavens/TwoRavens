@@ -156,7 +156,7 @@
     </div>
 
     <div id="subsetLocation" style="display:none">
-        <div style="width:480px;float:left;margin-top:10px;margin-left:10px;">
+        <div tabindex="0" style="outline:none;width:480px;float:left;margin-top:10px;margin-left:10px;">
             <div id="main_graph_td_div" class="graph_config" style='width:480px;border: 1px solid #ADADAD; padding-top:3px; background: rgb(249, 249, 249);'  align='center'>
                 <div class="panel-heading text-center" style="float:left;padding-top:9px" id="regionLabel">
                     <h3 class="panel-title">World Regions</h3>
@@ -170,8 +170,8 @@
         </div>
         <div id="country_table" style="position:fixed;margin-left:10px;margin-top:10px;width:250px;height:calc(100% - 122px);max-height:432px; display:inline-block;background: rgb(249, 249, 249);border: 1px solid #ADADAD;">
             <div style="width:250px;display:inline-block;" id="countryTableHeader">
-                <h3 class="panel-title" style="padding-left:10px;padding-top:12px;float:left;width:calc(100% - 60px)">Selected Countries</h3>
-                <button class="btn btn-default" style="cursor:pointer;float:right;margin-top:5px;margin-right:7px" onclick="d3loc()"><span id="Exp_Col_Country_Icon" style="font-size:1em;color:#818181;" class="glyphicon glyphicon-remove"></span></button>
+                <h3 class="panel-title" style="padding-left:10px;padding-top:12px;float:left;width:calc(100% - 100px)">Selected Countries</h3>
+                <button class="btn btn-default" style="cursor:pointer;float:right;margin-top:5px;margin-right:7px" onclick="d3loc()">Reset</button>
             </div>
             <div style='position:fixed;height:calc(100% - 168px);max-height:386px;overflow-y: scroll;margin-left:5px; width:243px'>
                 <table align='left' id='country_list_tab'></table>
