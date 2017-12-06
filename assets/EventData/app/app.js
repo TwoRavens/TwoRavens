@@ -389,8 +389,6 @@ function pageSetup(jsondata) {
     for (let record of dateData) {
         total_records += record['total'];
     }
-    console.log("Total Records");
-    console.log(total_records);
 
     document.getElementById('recordCount').innerHTML = total_records + " records";
     return true;
@@ -1418,13 +1416,13 @@ function buildSubset(tree){
                 for (let idxsource in rule.children[idx].children[0].children) {
                     sourceList.push(rule.children[idx].children[0].children[idxsource].name);
                 }
-                link_rule['<Source>'] = {'$in': sourceList};
+                link_rule['<source>'] = {'$in': sourceList};
 
                 let targetList = [];
                 for (let idxtarget in rule.children[idx].children[1].children) {
                     targetList.push(rule.children[idx].children[1].children[idxtarget].name)
                 }
-                link_rule['<Target>'] = {'$in': targetList};
+                link_rule['<target>'] = {'$in': targetList};
 
                 link_list.push(link_rule)
             }
