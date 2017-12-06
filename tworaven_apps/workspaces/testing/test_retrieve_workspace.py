@@ -6,115 +6,56 @@ from django.test import TestCase
 from django.urls import reverse
 from django.conf import settings
 from django.template.loader import render_to_string
+from django.core.management import call_command
 
-from tworaven_apps.utils.msg_helper import msgt
+from tworaven_apps.utils.error_messages import *
 
-TEST_FILE_DIR = join(dirname(dirname(abspath(__file__))),
-                     'templates',
-                     'test_responses',
-                     'embed_json')
+from tworaven_apps.utils.msg_helper import msgt, msg
+from tworaven_apps.raven_auth.models import User
+from tworaven_apps.workspaces.models import DataSourceType, SavedWorkspace
+from tworaven_apps.workspaces.workspace_retriever import WorkspaceRetriever
 
+TEST_FIXTURE_FILE = join(dirname(dirname(abspath(__file__))),
+                         'fixtures',
+                         'ws_test_2017_1205',)
 
-class EmbedJSONTest(TestCase):
+class WorkspaceTestBaseFixtures(TestCase):
+
+    #fixtures = ['ws_test_2017_1205.json']
     def setUp(self):
-        # Set it to internal testing mode
-        settings.TA2_STATIC_TEST_MODE = True
-
-    def test_10_embed_json_test(self):
-        """(10) Test embedding the results of 1 file within the JSON"""
-        msgt(self.test_10_embed_json_test.__doc__)
-
-        # Take a canned response and add a real file uri
-        #
-        fpath = join(TEST_FILE_DIR, 'data_1_col.csv')
-        info_dict = {TEST_KEY_FILE_URI: fpath}
-        resp_str = render_to_string('test_responses/embed_json/embed_1_file.json',
-                                    info_dict)
-
-        # Run it through the formatter which should:
-        #   - attempt to open any file uris
-        #   - if they're .csv, convert the data to JSON
-        #   - embed the JSON data under a new key: predictResultData
-        #
-        embed_util = FileEmbedUtil(resp_str)
-
-        # was an error encountered?
-        #
-        self.assertEqual(embed_util.has_error, False)
-
-        # retrieve the response with the newly embedded data
-        #
-        results_list = embed_util.get_final_results_as_dict()
-        results_dict = results_list[0]
-        print(embed_util.get_final_results()[:250])
-
-        # Is the pipelineInfo key present
-        self.assertTrue(KEY_PIPELINE_INFO in results_dict)
-
-        # Is the list of result uris available
-        self.assertTrue(KEY_PREDICT_RESULT_URIS in results_dict[KEY_PIPELINE_INFO])
-
-        # Have predictResultData entries been added?
-        self.assertTrue(KEY_PREDICT_RESULT_DATA in results_dict[KEY_PIPELINE_INFO])
-
-        # Is the # of predictResultData entries equal to the number of predictResultUris?
-        num_uris = len(results_dict[KEY_PIPELINE_INFO][KEY_PREDICT_RESULT_URIS])
-        num_data_entries = len(results_dict[KEY_PIPELINE_INFO][KEY_PREDICT_RESULT_DATA])
-
-        self.assertEqual(num_uris, num_data_entries)
-
-    def test_20_embed_json_test(self):
-        """(20) Test embedding the results of 4 files within the JSON, where
-        1 file doesn't exist and another fails to convert"""
-        msgt(self.test_20_embed_json_test.__doc__)
-
-        # Take a canned response and add a real file uri
-        #
-        info_dict = {\
-            TEST_KEY_FILE_URI: join(TEST_FILE_DIR, 'data_1_col.csv'),
-            '%s2' % TEST_KEY_FILE_URI: join(TEST_FILE_DIR, 'data_2_col.csv'),
-            '%s4' % TEST_KEY_FILE_URI: join(TEST_FILE_DIR, 'bad_file.csv'),
-            }
-
-        resp_str = render_to_string('test_responses/embed_json/embed_2_files.json',
-                                    info_dict)
-
-        # Run it through the formatter which should:
-        #   - attempt to open any file uris
-        #   - if they're .csv, convert the data to JSON
-        #   - embed the JSON data under a new key: predictResultData
-        #
-        embed_util = FileEmbedUtil(resp_str)
-
-        # was an error encountered?
-        #
-        self.assertEqual(embed_util.has_error, False)
-
-        # retrieve the response with the newly embedded data
-        #
-        results_list = embed_util.get_final_results_as_dict()
-
-        #print(json.dumps(results_list, indent=4)[:550])
-        results_dict = results_list[0]
+        # Load fixtures
+        msgt('load fixtures from: %s' % TEST_FIXTURE_FILE)
+        call_command('loaddata', TEST_FIXTURE_FILE, verbosity=0)
 
 
-        print(embed_util.get_final_results()[:250])
+class WorkspaceRetrievalTest(WorkspaceTestBaseFixtures):
 
-        # Is the pipelineInfo key present
-        self.assertTrue(KEY_PIPELINE_INFO in results_dict)
+    def setUp(self):
+        super(WorkspaceRetrievalTest, self).setUp()
 
-        # Is the list of result uris available
-        self.assertTrue(KEY_PREDICT_RESULT_URIS in results_dict[KEY_PIPELINE_INFO])
+    def test_10_list_workspaces_null_user(self):
+        """(10) List workspaces by null user"""
+        msgt(self.test_10_list_workspaces_null_user.__doc__)
 
-        # Have predictResultData entries been added?
-        self.assertTrue(KEY_PREDICT_RESULT_DATA in results_dict[KEY_PIPELINE_INFO])
+        success, ws_list = WorkspaceRetriever.list_workspaces_by_user(None)
+        self.assertEqual(success, False)
+        self.assertEqual(ws_list, ERR_AUTH_USER_IS_NONE)
 
-        # Is the # of predictResultData entries equal to the number of predictResultUris?
-        num_uris = len(results_dict[KEY_PIPELINE_INFO][KEY_PREDICT_RESULT_URIS])
-        num_data_entries = len(results_dict[KEY_PIPELINE_INFO][KEY_PREDICT_RESULT_DATA])
+    def test_20_list_workspaces_valid_user(self):
+        """(20) List workspaces by valid user"""
+        msgt(self.test_20_list_workspaces_valid_user.__doc__)
 
-        self.assertEqual(num_uris, num_data_entries)
+        user = User.objects.get(username='dev_admin')
+        success, ws_list = WorkspaceRetriever.list_workspaces_by_user(user)
+        self.assertEqual(success, True)
+        self.assertEqual(len(ws_list), 3)
 
-        file3_info = results_dict[KEY_PIPELINE_INFO][KEY_PREDICT_RESULT_DATA][2]['file_3']
-        self.assertEqual(file3_info['success'], False)
-        self.assertEqual(file3_info['err_code'], ERR_CODE_FILE_NOT_FOUND)
+        msgt('get workspace by id and user')
+        first_id = ws_list[0].id
+        success, saved_ws = WorkspaceRetriever.get_by_user_and_id(user, first_id)
+        self.assertEqual(success, True)
+
+        msgt('check zvars')
+
+        expected_zvars = ['Number_seasons', 'Games_played', 'At_bats', 'Runs', 'Hits', 'Doubles', 'Triples', 'Home_runs', 'RBIs', 'Walks', 'Strikeouts', 'Batting_average', 'On_base_pct', 'Slugging_pct', 'Fielding_ave', 'Position', 'Hall_of_Fame', 'Player']
+        self.assertEqual(saved_ws.zparams['zvars'], expected_zvars)

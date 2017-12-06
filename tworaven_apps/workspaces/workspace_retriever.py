@@ -1,4 +1,5 @@
 """Used for retrieving SavedWorkspace objects"""
+from tworaven_apps.utils.error_messages import *
 from tworaven_apps.workspaces.models import SavedWorkspace
 from tworaven_apps.utils.view_helper import \
     (get_session_key,
@@ -53,7 +54,7 @@ class WorkspaceRetriever(object):
     def list_workspaces_by_user(auth_user, as_json=False):
         """Retrieve a of workspaces for a user"""
         if not auth_user:
-            return False, 'auth_user is None'
+            return False, ERR_AUTH_USER_IS_NONE
 
         ws_list = workspace_queryset_base().filter(user=auth_user)
 
@@ -71,6 +72,12 @@ class WorkspaceRetriever(object):
     @staticmethod
     def get_by_id_and_request(ws_id, request, as_json=False):
         """Get SavedWorkspace by id"""
+        if ws_id is None:
+            return False, ERR_WORKSPACE_ID_IS_NONE
+
+        if request is None:
+            return False, ERR_REQUEST_OBJ_IS_NONE
+
         success, user_or_err = get_authenticated_user(request)
         if not success:
             return False, user_or_err
@@ -81,10 +88,10 @@ class WorkspaceRetriever(object):
     def get_by_user_and_id(auth_user, ws_id, as_json=False):
         """Get SavedWorkspace by id"""
         if not auth_user:
-            return False, 'auth_user cannot be None'
+            return False, ERR_AUTH_USER_IS_NONE
 
         if not ws_id:
-            return False, 'ws_id cannot be None'
+            return False, ERR_WORKSPACE_ID_IS_NONE
 
         # ---------------------------------
         # Retrieve the workspace
