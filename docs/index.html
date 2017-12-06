@@ -55,16 +55,6 @@
               
                 
                 <li><a
-                  href='#scaffolding'
-                  class="">
-                  scaffolding
-                  
-                </a>
-                
-                </li>
-              
-                
-                <li><a
                   href='#del'
                   class="">
                   del
@@ -675,7 +665,7 @@ Loads all external data in the following order (logic is not included):
 8. Read preprocess data or (if necessary) run preprocess
 9. Build allNodes[] using preprocessed information
 10. Add dataschema information to allNodes (when in IS_D3M_DOMAIN)
-11. Call scaffolding() and start up</p>
+11. Call layout() and start up</p>
 
 
   <div class='pre p1 fill-light mt0'>load(hold: any, lablArray: any, d3mRootPath: any, d3mDataName: any, d3mPreprocess: any, d3mData: any, d3mTarget: any, d3mPS: any, d3mDS: any, pURL: any)</div>
@@ -866,55 +856,6 @@ Loads all external data in the following order (logic is not included):
         </div>
       
     </div>
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-          
-        
-          
-            <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-  <div class='clearfix'>
-    
-    <h3 class='fl m0' id='scaffolding'>
-      scaffolding
-    </h3>
-    
-    
-  </div>
-  
-
-  <p>called after all external data are guaranteed to have been read to completion.
-this populates the transformation tool, and the associated mouseovers.
-also calls layout(), which initializes the modeling space</p>
-
-
-  <div class='pre p1 fill-light mt0'>scaffolding()</div>
-  
-  
-
-  
-  
-  
-  
-  
-  
-
   
 
   

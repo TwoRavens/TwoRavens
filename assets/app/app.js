@@ -229,7 +229,7 @@ let dataurl = '';
   8. Read preprocess data or (if necessary) run preprocess
   9. Build allNodes[] using preprocessed information
   10. Add dataschema information to allNodes (when in IS_D3M_DOMAIN)
-  11. Call scaffolding() and start up
+  11. Call layout() and start up
 */
 async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3mData, d3mTarget, d3mPS, d3mDS, pURL) {
     if (!IS_D3M_DOMAIN) {
@@ -314,8 +314,8 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         byId('btnForce').classList.add('noshow');
         byId('btnEraser').classList.add('noshow');
         byId('btnSubset').classList.add('noshow');
-        byId('main').style.backgroundColor='grey';
-        byId('whitespace').style.backgroundColor='grey';
+        byId('main').style.backgroundColor = 'grey';
+        byId('whitespace').style.backgroundColor = 'grey';
     }
     console.log("data schema data: ", dataschema);
 
@@ -466,8 +466,67 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     });
     console.log(allNodes);
 
-    // 11. Call scaffolding() and start up
-    scaffolding();
+    // 11. Call layout() and start up
+    if (IS_D3M_DOMAIN) {
+        toggleRightButtons("tasks");
+    } else {
+        $('#tInput').click(_ => {
+            if (byId('transSel').style.display !== 'none') { // if variable list is displayed when input is clicked...
+                $('#transSel').fadeOut(100);
+                return false;
+            }
+            if (byId('transList').style.display !== 'none') { // if function list is displayed when input is clicked...
+                $('#transList').fadeOut(100);
+                return false;
+            }
+
+            // highlight the text
+            $(this).select();
+            let pos = $('#tInput').offset();
+            pos.top += $('#tInput').width();
+            $('#transSel').fadeIn(100);
+            return false;
+        });
+
+        $('#tInput').keyup(evt => {
+            let t = byId('transSel').style.display;
+            let t1 = byId('transList').style.display;
+            if (t !== 'none') {
+                $('#transSel').fadeOut(100);
+            } else if (t1 !== 'none') {
+                $('#transList').fadeOut(100);
+            }
+
+            if (evt.keyCode == 13) { // keyup on Enter
+                let t = transParse($('#tInput').val());
+                if (!t) {
+                    return;
+                }
+                transform(t.slice(0, t.length - 1), t[t.length - 1], typeTransform = false);
+            }
+        });
+
+        $('#transList li').click(function(evt) {
+            // if interact is selected, show variable list again
+            if ($(this).text() === 'interact(d,e)') {
+                $('#tInput').val(tvar.concat('*'));
+                selInteract = true;
+                $(this).parent().fadeOut(100);
+                $('#transSel').fadeIn(100);
+                evt.stopPropagation();
+                return;
+            }
+
+            let tvar = $('#tInput').val();
+            let tfunc = $(this).text().replace("d", "_transvar0");
+            let tcall = $(this).text().replace("d", tvar);
+            $('#tInput').val(tcall);
+            $(this).parent().fadeOut(100);
+            evt.stopPropagation();
+            transform(tvar, tfunc, typeTransform = false);
+        });
+    }
+    layout(false, true);
     IS_D3M_DOMAIN ? zPop() : dataDownload();
 }
 
@@ -545,78 +604,6 @@ let $fill = (obj, op, d1, d2) => d3.select(obj).transition()
 let fill = (d, id, op, d1, d2) => $fill('#' + id + d.id, op, d1, d2);
 let fillThis = (self, op, d1, d2) => $fill(self, op, d1, d2);
 
-/**
-  called after all external data are guaranteed to have been read to completion.
-  this populates the transformation tool, and the associated mouseovers.
-  also calls layout(), which initializes the modeling space
-*/
-function scaffolding() {
-    console.log("SCAFFOLDING");
-
-    if (IS_D3M_DOMAIN) {
-        // No variable transformation in present d3m mode
-        toggleRightButtons("tasks");
-    } else {
-        $('#tInput').click(() => {
-            let t = byId('transSel').style.display;
-            if (t !== "none") { // if variable list is displayed when input is clicked...
-                $('#transSel').fadeOut(100);
-                return false;
-            }
-            var t1 = byId('transList').style.display;
-            if (t1 !== "none") { // if function list is displayed when input is clicked...
-                $('#transList').fadeOut(100);
-                return false;
-            }
-
-            // highlight the text
-            $(this).select();
-            var pos = $('#tInput').offset();
-            pos.top += $('#tInput').width();
-            $('#transSel').fadeIn(100);
-            return false;
-        });
-
-        $('#tInput').keyup(evt => {
-            var t = byId('transSel').style.display;
-            var t1 = byId('transList').style.display;
-            if (t != "none") $('#transSel').fadeOut(100);
-            else if (t1 != "none") $('#transList').fadeOut(100);
-
-            if (evt.keyCode == 13) { // keyup on Enter
-                n = $('#tInput').val();
-                var t = transParse(n=n);
-                if (!t)
-                    return;
-                transform(t.slice(0, t.length - 1), t[t.length - 1], typeTransform = false);
-            }
-        });
-
-        $('#transList li').click(function(evt){
-            // if interact is selected, show variable list again
-            if ($(this).text() == "interact(d,e)") {
-                $('#tInput').val(tvar.concat('*'));
-                selInteract = true;
-                $(this).parent().fandeOut(100);
-                $('#transSel').fadeIn(100);
-                evt.stopPropagation();
-                return;
-            }
-
-            var tvar = $('#tInput').val();
-            var tfunc = $(this).text().replace("d", "_transvar0");
-            var tcall = $(this).text().replace("d", tvar);
-            $('#tInput').val(tcall);
-            $(this).parent().fadeOut(100);
-            evt.stopPropagation();
-            transform(tvar, tfunc, typeTransform = false);
-        });
-    }
-
-    // all scaffolding is up and ready
-    layout(false, true);
-    m.redraw();
-}
 
 /**
    deletes the item at index from array.
