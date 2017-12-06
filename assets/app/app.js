@@ -309,7 +309,13 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
             .forEach(vars => vars && vars.forEach(v => valueKey.push(v.varName)));
         // end session if neither trainData nor trainTargets?
         valueKey.length === 0 && alert("no trainData or trainTargest in data description file. valueKey length is 0");
-        return scaffolding(swandive);
+        // perhaps allow users to unlock and select things?
+        byId('btnLock').classList.add('noshow');
+        byId('btnForce').classList.add('noshow');
+        byId('btnEraser').classList.add('noshow');
+        byId('btnSubset').classList.add('noshow');
+        byId('main').style.backgroundColor='grey';
+        byId('whitespace').style.backgroundColor='grey';
     }
     console.log("data schema data: ", dataschema);
 
@@ -461,7 +467,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     console.log(allNodes);
 
     // 11. Call scaffolding() and start up
-    scaffolding(layout);
+    scaffolding();
     IS_D3M_DOMAIN ? zPop() : dataDownload();
 }
 
@@ -541,10 +547,10 @@ let fillThis = (self, op, d1, d2) => $fill(self, op, d1, d2);
 
 /**
   called after all external data are guaranteed to have been read to completion.
-  this populates the left panel with variable names, the right panel with model names, the transformation tool, and the associated mouseovers.
-  its callback is layout(), which initializes the modeling space
+  this populates the transformation tool, and the associated mouseovers.
+  also calls layout(), which initializes the modeling space
 */
-function scaffolding(callback) {
+function scaffolding() {
     console.log("SCAFFOLDING");
 
     if (IS_D3M_DOMAIN) {
@@ -571,7 +577,6 @@ function scaffolding(callback) {
             return false;
         });
 
-        var n;
         $('#tInput').keyup(evt => {
             var t = byId('transSel').style.display;
             var t1 = byId('transList').style.display;
@@ -583,11 +588,10 @@ function scaffolding(callback) {
                 var t = transParse(n=n);
                 if (!t)
                     return;
-                transform(n = t.slice(0, t.length - 1), t = t[t.length - 1], typeTransform = false);
+                transform(t.slice(0, t.length - 1), t[t.length - 1], typeTransform = false);
             }
         });
 
-        var t;
         $('#transList li').click(function(evt){
             // if interact is selected, show variable list again
             if ($(this).text() == "interact(d,e)") {
@@ -605,23 +609,12 @@ function scaffolding(callback) {
             $('#tInput').val(tcall);
             $(this).parent().fadeOut(100);
             evt.stopPropagation();
-            transform(n = tvar, t = tfunc, typeTransform = false);
+            transform(tvar, tfunc, typeTransform = false);
         });
     }
 
-    // if swandive, after scaffolding is up, just grey things out
-    if (swandive) {
-        // perhaps want to allow users to unlcok and select things?
-        byId('btnLock').classList.add('noshow');
-        byId('btnForce').classList.add('noshow');
-        byId('btnEraser').classList.add('noshow');
-        byId('btnSubset').classList.add('noshow');
-        byId('main').style.backgroundColor='grey';
-        byId('whitespace').style.backgroundColor='grey';
-    }
-
-    // call layout() because at this point all scaffolding is up and ready
-    typeof callback === 'function' && callback(false, true);
+    // all scaffolding is up and ready
+    layout(false, true);
     m.redraw();
 }
 
