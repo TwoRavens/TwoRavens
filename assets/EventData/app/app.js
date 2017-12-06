@@ -323,8 +323,8 @@ function loadPhoenix(jsondata) {
 }
 
 function pageSetup(jsondata) {
-    // console.log("Server returned:");
-    // console.log(jsondata);
+    console.log("Server returned:");
+    console.log(jsondata);
 
     if (jsondata.date_data.length === 0) {
         alert("No records match your subset. Plots will not be updated.");
@@ -532,8 +532,17 @@ function callbackDelete(id) {
         qtree.tree('setState', state);
 
         if (node.name.indexOf('Query') !== -1) {
+
+            // Don't use constraints outside of submitted queries
+            let stagedSubsetData = [];
+            for (let child of subsetData) {
+                if (child.name.indexOf("Query") !== -1) {
+                    stagedSubsetData.push(child)
+                }
+            }
+
             let variableQuery = buildVariables();
-            let subsetQuery = buildSubset(subsetData);
+            let subsetQuery = buildSubset(stagedSubsetData);
 
             console.log(JSON.stringify(subsetQuery));
             console.log(JSON.stringify(variableQuery, null, '  '));
