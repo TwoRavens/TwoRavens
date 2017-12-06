@@ -127,7 +127,8 @@ eventdata_subset.app <- function(env) {
 
     getData = function(url) {
         print(gsub(' ', '%20', relabel(url, format), fixed=TRUE))
-        data = jsonlite::fromJSON(gsub(' ', '%20', relabel(url, format), fixed=TRUE))$data
+        data = jsonlite::fromJSON(readLines(gsub(' ', '%20', relabel(url, format), fixed=TRUE)))$data
+        print("CHECK")
         return(data)
     }
 
@@ -222,17 +223,17 @@ eventdata_subset.app <- function(env) {
         if (nrow(action_frequencies) != 0) colnames(action_frequencies) = c('total', '<root_code>')
 
         print("Collecting actor sources")
-        actor_source = head(getData(paste(query_url, '&unique=<source>', sep="")), 200)
+        actor_source = sort(getData(paste(query_url, '&unique=<source>', sep="")))
 
         print("Collecting actor source entities")
-        actor_source_entities = getData(paste(query_url, '&unique=<src_actor>', sep=""))
+        actor_source_entities = sort(getData(paste(query_url, '&unique=<src_actor>', sep="")))
 
         print("Collecting actor source agents/roles")
-        actor_source_role = getData(paste(query_url, '&unique=<src_agent>', sep=""))
+        actor_source_role = sort(getData(paste(query_url, '&unique=<src_agent>', sep="")))
 
         print("Collecting actor source other agents")
         url = relabel(paste(query_url, '&unique=<src_other_agent>', sep=""), format)
-        actor_source_attributes = uniques(jsonlite::fromJSON(url)$data)
+        actor_source_attributes = uniques(jsonlite::fromJSON(readLines(url))$data)
 
         actor_source_values = list(
             full = actor_source,
@@ -242,17 +243,17 @@ eventdata_subset.app <- function(env) {
         )
 
         print("Collecting actor targets")
-        actor_target = head(getData(paste(query_url, '&unique=<target>', sep="")), 200)
+        actor_target = sort(getData(paste(query_url, '&unique=<target>', sep="")))
 
         print("Collecting actor target entities")
-        actor_target_entities = getData(paste(query_url, '&unique=<tgt_actor>', sep=""))
+        actor_target_entities = sort(getData(paste(query_url, '&unique=<tgt_actor>', sep="")))
 
         print("Collecting actor target agents/roles")
-        actor_target_role = getData(paste(query_url, '&unique=<tgt_agent>', sep=""))
+        actor_target_role = sort(getData(paste(query_url, '&unique=<tgt_agent>', sep="")))
 
         print("Collecting actor target other agents")
         url = relabel(paste(query_url, '&unique=<tgt_other_agent>', sep=""), format)
-        actor_target_attributes = uniques(jsonlite::fromJSON(url)$data)
+        actor_target_attributes = uniques(jsonlite::fromJSON(readLines(url))$data)
 
         actor_target_values = list(
             full = actor_target,

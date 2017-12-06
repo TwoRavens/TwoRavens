@@ -168,6 +168,20 @@ const actorColors = d3.scaleOrdinal(d3.schemeCategory20);
 const pebbleBorderColor = '#fa8072';
 const fillRatio = 0.6;
 
+//default group display on page load, adds default source/target to nodes and SVG
+actorNodes.push(new nodeObj("Source 0", [], [], actorColors(currentSize), "source", changeID));
+currentSize++;
+sourceSize++;
+sourceActualSize++;
+changeID++;
+actorNodes.push(new nodeObj("Target 0", [], [], actorColors(currentSize), "target", changeID));
+currentSize++;
+targetSize++;
+targetActualSize++;
+changeID++;
+sourceCurrentNode = actorNodes[0];
+targetCurrentNode = actorNodes[1];
+
 var actorForce = d3.forceSimulation()
     .force("link", d3.forceLink().distance(100).strength(0.5))	//link force to keep nodes together
     .force("x", d3.forceX().x(function (d) {					//grouping by nodes
@@ -189,6 +203,38 @@ let dragTarget = null;			//node that is under the dragged node
 let dragTargetHTML = null;		//html for dragTarget
 
 let mousedownNode = null;		//catch for Chrome, check for mouseup + mousedown and manually trigger click
+
+//rename group on click, initialize groups
+$(document).ready(function () {
+    //visual feedback for name changing
+    $("#editGroupName").click(function () {
+        $("#editGroupName").css("background-color", "white").css("border", "1px solid black");
+    });
+
+    //catch enter and escape key
+    $("#editGroupName").keydown(function (e) {
+        if (e.keyCode == 13 || e.keyCode == 27) {       //enter or escape key pressed
+            $("#editGroupName").focusout();
+            $("#" + currentTab + "TabBtn").focus();     //remove focus
+        }
+    });
+
+    //save changes to group name
+    $("#editGroupName").focusout(function () {
+        let newGroupName = $("#editGroupName").val().trim();
+        if (newGroupName == "") {       //revert to previous name if none entered
+            newGroupName = window[currentTab + "CurrentNode"].name;
+        }
+        //remove visual feedback
+        $("#editGroupName").css("background-color", "#F9F9F9").css("border", "none");
+        //update in nodes data structure
+        window[currentTab + "CurrentNode"].name = newGroupName;
+        //update DOM
+        updateGroupName(newGroupName);
+
+        updateAll();        //update force
+    });
+});
 
 //moves node to back of HTML index in order to allow mouseover detection
 d3.selection.prototype.moveToBack = function () {
@@ -686,52 +732,6 @@ function calcCircleNum(curHeight) {
     return numCircle2;
 }
 
-//rename group on click, initialize groups
-$(document).ready(function () {
-    //default group display on page load, adds default source/target to nodes and SVG
-    actorNodes.push(new nodeObj("Source 0", [], [], actorColors(currentSize), "source", changeID));
-    currentSize++;
-    sourceSize++;
-    sourceActualSize++;
-    changeID++;
-    actorNodes.push(new nodeObj("Target 0", [], [], actorColors(currentSize), "target", changeID));
-    currentSize++;
-    targetSize++;
-    targetActualSize++;
-    changeID++;
-    sourceCurrentNode = actorNodes[0];
-    targetCurrentNode = actorNodes[1];
-
-    //visual feedback for name changing
-    $("#editGroupName").click(function () {
-        $("#editGroupName").css("background-color", "white").css("border", "1px solid black");
-    });
-
-    //catch enter and escape key
-    $("#editGroupName").keydown(function (e) {
-        if (e.keyCode == 13 || e.keyCode == 27) {		//enter or escape key pressed
-            $("#editGroupName").focusout();
-            $("#" + currentTab + "TabBtn").focus();		//remove focus
-        }
-    });
-
-    //save changes to group name
-    $("#editGroupName").focusout(function () {
-        let newGroupName = $("#editGroupName").val().trim();
-        if (newGroupName == "") {		//revert to previous name if none entered
-            newGroupName = window[currentTab + "CurrentNode"].name;
-        }
-        //remove visual feedback
-        $("#editGroupName").css("background-color", "#F9F9F9").css("border", "none");
-        //update in nodes data structure
-        window[currentTab + "CurrentNode"].name = newGroupName;
-        //update DOM
-        updateGroupName(newGroupName);
-
-        updateAll();		//update force
-    });
-});
-
 //update display of group name
 function updateGroupName(newGroupName) {
     $("#editGroupName").attr("placeholder", newGroupName);
@@ -847,6 +847,8 @@ function loadDataHelper(actorType, columnType) {
 
 // creates elements and adds to display
 function createElement(chkSwitch = true, actorType, columnType, value, index, displayList) {
+    if (value === null) return;
+
     // Don't create an element if it is not selected and must be selected
     if (document.getElementById(currentTab + "ShowSelected").checked && !filterSet[actorType][columnType].has(value)) {
         return;
@@ -979,7 +981,7 @@ function actorFilterChanged(element) {
         }
     }
 
-    if (element.name.indexOf("OrgCheck") !== -1) {
+    if (orgs.indexOf(element.value) !== -1) {
         filterListing = filterSet[currentTab]["entities"];
         toggleFilter(element);
 
@@ -1306,6 +1308,8 @@ function actorSearch(actorName) {
     } else {
         subsets = stagedQuery;
     }
+
+    console.log("Actor Filter: " + JSON.stringify(subsets));
 
     // Submit query and update listings
     query = {

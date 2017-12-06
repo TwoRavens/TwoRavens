@@ -228,7 +228,7 @@ div.sidepanel div.panelbar span {
 
 #stageButton {
     position:fixed;
-    bottom:61px;
+    bottom:56px;
     right:270px; /* buffer: 10px, scrollbar: 17px */
     z-index:25;
 }
