@@ -65,6 +65,12 @@ function drawGraphs() {
 	var svgMain = d3.select("#actionMainGraph");
 	actionMainMargin = {top: 0, right: 50, bottom: 50, left: 50};
 
+	if ($('#rightpanel').hasClass('closepanel')) {
+        document.getElementById("actionSVGbin").style.width = "calc(100% - 46px)";
+	} else {
+		document.getElementById("actionSVGbin").style.width = "calc(100% - 276px)";
+	}
+
 	actionMainWidth = +$('#pentaclass_container').width() - actionMainMargin.left - actionMainMargin.right;
 	actionMainHeight = +$('#pentaclass_container').height() - actionMainMargin.top - actionMainMargin.bottom - 38;
 

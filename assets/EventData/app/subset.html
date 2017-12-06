@@ -181,14 +181,14 @@
 
     <div id="subsetAction" style="display:none;">
         <div id="actionSVGbin" style="display:inline-block;margin-top:10px; margin-left:10px; height:calc(100% - 20px); width:calc(100% - 46px)">
-            <div id="pentaclass_container" class="action_graph_config" style="float:left;display:inline-block;vertical-align: top;height:100%;width:calc(50% - 10px)">
+            <div id="pentaclass_container" class="action_graph_config" style="float:left;display:inline-block;vertical-align: top;height:100%;width:calc(35% - 10px)">
                 <div class="panel-heading text-center" style="float:left;padding-top:9px" id="pentaclassLabel">
                     <h3 class="panel-title">Penta Classes</h3>
                 </div><br>
                 <svg id="actionMainGraph" style="background:none" width="100%" height="100%"></svg>
             </div>
 
-            <div id="rootcode_container" class="action_graph_config" style="float:right;display:inline-block;vertical-align: top;height:100%;width:calc(50%)">
+            <div id="rootcode_container" class="action_graph_config" style="float:right;display:inline-block;vertical-align: top;height:100%;width:calc(65%)">
                 <div class="panel-heading text-center" style="float:left;padding-top:9px" id="rootclassLabel">
                     <h3 class="panel-title">Root Classes</h3>
                 </div><br>
@@ -449,6 +449,7 @@ function toggleLeftPanel() {
         $('#main').css('width', 'calc(100% - 260px)');
     }
     if (subsetKeySelected === "Action") {
+        console.log("ACTION");
         drawGraphs();
         updateData();
     }
@@ -472,6 +473,11 @@ function toggleRightPanel() {
     rightPanel.toggleClass('closepanel');
     rightpanelMargin();
 
+    if (subsetKeySelected === "Action") {
+        console.log("ACTION_RIGHT");
+        drawGraphs();
+        updateData();
+    }
 }
 </script>
 <script id="subsetCodeJS" type="text/javascript" src="app.js"></script>

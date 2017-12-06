@@ -27,7 +27,7 @@ if (dataset.indexOf("phoenix") !== -1) {
 }
 if (dataset === "icews") {
     subsetKeys = ["Actor", "Date", "Action", "Location", "Coordinates", "Custom"]; // Used to label buttons in the left panel
-    subsetKeySelected = 'Actor';
+    subsetKeySelected = "Actor";
 
     document.getElementById('sourceRight').style.visibility = 'hidden';
     document.getElementById('targetRight').style.visibility = 'hidden';
@@ -391,8 +391,7 @@ function rightpanelMargin() {
         if ($('#rightpanel').hasClass('closepanel')) {
             document.getElementById("stageButton").style.right = "56px";
         } else {
-            document.getElementById("stageButton").style.right = "286px";
-            
+            document.getElementById("stageButton").style.right = "286px"; 
         }
     } else {
         // No vertical scrollbar
