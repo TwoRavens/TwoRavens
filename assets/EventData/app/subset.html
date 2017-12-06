@@ -54,7 +54,72 @@
                data-style="zoom-in"><span class="ladda-label">Subset</span></label>
         <button class="btn btn-default navbar-right" id="btnReset" title="Reset" onclick="reset()"
                 style="margin-left:2.0em;float:right;"><span style="font-size:1em;color:#818181; pointer-events:none;"
-                                                 class="glyphicon glyphicon-repeat"></span></button>
+                                                 class="glyphicon glyphicon-repeat"></span></button> 
+        <div style="left:calc(50% + 20px);position:fixed;margin-top:6px">
+          <div class="popover-markup" style="display:inline;"> 
+            <a href="#" style="height:30px;" class="trigger btn btn-sm btn-default">
+              <span style="margin-top:3px;font-size:1em;color:#818181; pointer-events:none;"
+                                                 class="glyphicon glyphicon-chevron-down"></span>
+            </a>
+            <div class="head hide">Dataset</div>
+            <div class="content hide">
+              <div class="popoverContentContainer">
+                <div id="optionMenu">
+                  <button id="option" data-option="1" class="btn btn-default">Phoenix - UTDallas</button>
+                  <button id="option" data-option="2" class="btn btn-default">Phoenix - New York Times </button>
+                  <button id="option" data-option="3" class="btn btn-default">Phoenix - CIA Broadcast</button>
+                  <button id="option" data-option="4" class="btn btn-default">Phoenix - BBC Summary</button>
+                  <button id="option" data-option="5" class="btn btn-default">ICEWS</button>
+                </div>
+                <div id="optionView1" class="optionView">
+                  <button id="option" data-option="1" class="btn btn-sm btn-default">
+                    <span style="font-size:1em;color:#818181; pointer-events:none;"
+                                                 class="glyphicon glyphicon-chevron-left"></span>
+                  </button>
+                  <p>A Phoenix-coded event dataset constructed here at The University of Texas at Dallas!</p>
+                  <a onclick="setDataset('phoenix')" class="btn btn-primary btn-sm">Select</a>
+                </div>
+                <div id="optionView2" class="optionView">
+                  <button id="option" data-option="2" class="btn btn-sm btn-default">
+                  <span style="font-size:1em;color:#818181; pointer-events:none;"
+                                                 class="glyphicon glyphicon-chevron-left"></span>
+                  </button>
+                  <div style="margin-left:40px;" class="head"><a href="http://www.clinecenter.illinois.edu/data/event/phoenix/">Phoenix New York Times</a></div>
+                  <p>This data is sourced from the New York Times and collected by the Cline Center for Advanced Social Research.</p>
+                  <a onclick="setDataset('phoenix_nyt')" class="btn btn-primary">Select</a>
+                </div>
+                <div id="optionView3" class="optionView">
+                  <button id="option" data-option="3" class="btn btn-sm btn-default">
+                  <span style="font-size:1em;color:#818181; pointer-events:none;"
+                                                 class="glyphicon glyphicon-chevron-left"></span>
+                  </button>
+                  <div style="margin-left:40px;" class="head"><a href="http://www.clinecenter.illinois.edu/data/event/phoenix/">Phoenix CIA Broadcast</a></div>
+                  <p>This data is sourced from the CIA Foreign Broadcast Information Service and collected by the Cline Center for Advanced Social Research.</p>
+                  <a onclick="setDataset('phoenix_fbis')" class="btn btn-primary">Select</a>
+                </div>
+                <div id="optionView4" class="optionView">
+                  <button id="option" data-option="4" class="btn btn-sm btn-default">
+                  <span style="font-size:1em;color:#818181; pointer-events:none;"
+                                                 class="glyphicon glyphicon-chevron-left"></span>
+                  </button>
+                  <div style="margin-left:40px;" class="head"><a href="http://www.clinecenter.illinois.edu/data/event/phoenix/">Phoenix BBC Summary</a></div>
+                  <p>This data is sourced from the BBC Summary of World Broadcasts and collected by the Cline Center for Advanced Social Research.</p>
+                  <a onclick="setDataset('phoenix_swb')" class="btn btn-primary">Select</a>
+                </div>
+                <div id="optionView5" class="optionView">
+                  <button id="option" data-option="5" class="btn btn-sm btn-default">
+                  <span style="font-size:1em;color:#818181; pointer-events:none;"
+                                                 class="glyphicon glyphicon-chevron-left"></span>
+                  </button>
+                  <div style="margin-left:40px;" class="head"><a href="https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/28075">ICEWS Coded Event Data</a></div>
+                  <p>Event data consists of coded interactions between socio-political actors (i.e., cooperative or hostile actions between individuals, groups, sectors and nation states).</p>
+                  <a onclick="setDataset('phoenix')" class="btn btn-primary">Select</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <h4 style="right:calc(50% - 10px);position:fixed"><span id="datasetLabel" class="label label-default"></span></h4>
     </div>
 
     <div id="about" class="panel panel-default" style="margin-top:62px;width:500px;display:None;z-index:50;">
