@@ -12,7 +12,7 @@
 #      sudo service mongod start
 #
 # 3. Create a new database using the mongoimport utility in the mongo bin (via cmd from ~/TwoRavens/)
-#      mongoimport -d event_scrape -c phoenix_events --type csv --file ./data/samplePhox.csv --headerline
+#      mongoimport -d event_scrape -c phoenix_events --type csv --columnsHaveTypes --fields ".auto(),X.auto(),GID.auto(),Date.string(),Year.auto(),Month.auto(),Day.auto(),Source.auto(),SrcActor.auto(),SrcAgent.auto(),SOthAgent.auto(),Target.auto(),TgtActor.auto(),TgtAgent.auto(),TOthAgent.auto(),CAMEO.auto(),RootCode.auto(),QuadClass.auto(),Goldstein.auto(),None.auto(),Lat.auto(),Lon.auto(),Geoname.auto(),CountryCode.auto(),AdminInfo.auto(),ID.auto(),URL.auto(),sourcetxt.auto()" --file ~/TwoRavens/data/samplePhox.csv
 #      mongoimport -d event_scrape -c icews_events --type tsv --columnsHaveTypes --fields "Event ID.string(),Event Date.string(),Source Name.string(),Source Sectors.string(),Source Country.string(),Event Text.string(),CAMEO Code.string(),Intensity.string(),Target Name.string(),Target Sectors.string(),Target Country.string(),Story ID.string(),Sentence Number.string(),Publisher.string(),City.string(),District.string(),Province.string(),Country.string(),Latitude.auto(),Longitude.auto()" --file ~/Downloads/events.2014.20160121105408.tab
 #      mongoimport -d event_scrape -c phoenix_swb_events --type csv --file ~/Downloads/PhoenixSWB_1979-2015.csv --headerline
 #      mongoimport -d event_scrape -c phoenix_fbis_events --type csv --file ~/Downloads/PhoenixFBIS_1995-2004.csv --headerline
@@ -33,11 +33,16 @@
 #       b. Run source('rooksource.R') to start R server
 #          Note: Rook, the R package that runs the R server, does not seem to recognize file updates,
 #                so the server must be restarted after each edit. There should be a better way.
+# 
+# 5. Start a local spec-api server from the multi-set branch here:
+#      https://github.com/Sayeedsalam/spec-event-data-server/tree/multi_dataset
+#      python ./app_v2.py
+#      The api will now be available on 0.0.0.0:5002
 #
-# 5. Submit query from local python server via eventdata web gui. This script will return the subsetted data
+# 6. Submit query from local python server via eventdata web gui. This script will return the subsetted data
 #
-# 6. Permit CORS on your browser. This doesn't seem to work on Windows
-#      6a. Google Chrome: start with terminal argument
+# 7. Permit CORS on your browser. This doesn't seem to work on Windows
+#      7a. Google Chrome: start with terminal argument
 #             google-chrome --disable-web-security
 #       b. Mozilla Firefox: in about:config settings
 #             security.fileuri.strict_origin_policy - set to False
@@ -93,6 +98,7 @@ eventdata_subset.app <- function(env) {
     # actor: return actor filtering
     # formatted: check if database is properly formatted
     # validate: check if query is valid
+
     type = everything$type
 
     dataset = everything$dataset
