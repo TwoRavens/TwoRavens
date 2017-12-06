@@ -11,13 +11,48 @@ if (!production) {
 let appname = 'eventdatasubsetapp';
 let subsetURL = rappURL + appname;
 
+/* Dataset Selection Popover */
+// Initiate
+$('.optionView').hide();
+
+// Slide
+$(document).on('click', '#option', function (evt) {
+  var optionID = $(this).data('option');  
+  $('#optionMenu').toggle('slide', {direction: 'left'});
+  $('#optionView'+optionID).toggle('slide', {direction: 'right'});
+});
+
+// Popover
+$(function(){
+  $('.popover-markup > .trigger').popover({
+        html: true,
+        placement: "bottom",
+        title: function () {
+            return $(this).parent().find('.head').html();
+        },
+        content: function () {
+            return $(this).parent().find('.content').html();
+        },
+        template: '<div class="popover dashboardPopover"><div class="arrow"></div><div class="popover-inner"><h3 class="popover-title"></h3><div class="popover-content"></div></div></div>'
+    });
+});
+/* END Dataset Selection Popover */
+
+let setDataset = function(dataset) {
+    localStorage.setItem('dataset', dataset);
+    window.location.reload(false);
+}
+
 // Options: one of ["phoenix", "phoenix_swb", "phoenix_nyt", "phoenix_fbis", "icews"]
 let dataset = 'phoenix';
+if (localStorage.getItem("dataset") !== null) {
+    dataset = localStorage.getItem('dataset');
+}
 
 // Options: "api" or "local"
 let datasource = 'local';
 
-// document.getElementById("header").innerHTML = dataset;
+document.getElementById("datasetLabel").innerHTML = dataset + " dataset";
 let subsetKeys = [];
 let subsetKeySelected = "";
 

@@ -1515,3 +1515,53 @@ color: #333;
 .glyphicon {
     color: #818181
 }
+
+/* Dataset Selection Popover */
+.container {
+  width:400px;
+  height:200px;
+}
+.trigger {
+  color:#777;
+}
+.popoverContentContainer {
+  position:relative;
+  top: 0px;
+  left: 0px;
+  width: 100%;
+  height: 220px;
+}
+#optionMenu,
+.optionView {
+    width: 100%;
+    position: absolute;
+    top: 0px;
+    left: 0px;
+}
+#optionMenu button,
+#optionMenu a {
+  width:100%;
+  margin:5px 0;
+}
+.optionView button {
+  float:left;
+}
+.optionView p {
+  color:#777;
+  float:left;
+  width:100%;
+  padding:10px 0 0 0;
+}
+.optionView a {
+  float:left;
+}
+.popover {
+  width:400px;
+}
+.popover-inner {
+  position:relative;
+}
+.popover-title {
+  text-align:center;
+  color:#555;
+}
