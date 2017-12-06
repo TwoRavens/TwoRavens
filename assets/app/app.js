@@ -467,65 +467,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     console.log(allNodes);
 
     // 11. Call layout() and start up
-    if (IS_D3M_DOMAIN) {
-        toggleRightButtons("tasks");
-    } else {
-        $('#tInput').click(_ => {
-            if (byId('transSel').style.display !== 'none') { // if variable list is displayed when input is clicked...
-                $('#transSel').fadeOut(100);
-                return false;
-            }
-            if (byId('transList').style.display !== 'none') { // if function list is displayed when input is clicked...
-                $('#transList').fadeOut(100);
-                return false;
-            }
-
-            // highlight the text
-            $(this).select();
-            let pos = $('#tInput').offset();
-            pos.top += $('#tInput').width();
-            $('#transSel').fadeIn(100);
-            return false;
-        });
-
-        $('#tInput').keyup(evt => {
-            let t = byId('transSel').style.display;
-            let t1 = byId('transList').style.display;
-            if (t !== 'none') {
-                $('#transSel').fadeOut(100);
-            } else if (t1 !== 'none') {
-                $('#transList').fadeOut(100);
-            }
-
-            if (evt.keyCode == 13) { // keyup on Enter
-                let t = transParse($('#tInput').val());
-                if (!t) {
-                    return;
-                }
-                transform(t.slice(0, t.length - 1), t[t.length - 1], typeTransform = false);
-            }
-        });
-
-        $('#transList li').click(function(evt) {
-            // if interact is selected, show variable list again
-            if ($(this).text() === 'interact(d,e)') {
-                $('#tInput').val(tvar.concat('*'));
-                selInteract = true;
-                $(this).parent().fadeOut(100);
-                $('#transSel').fadeIn(100);
-                evt.stopPropagation();
-                return;
-            }
-
-            let tvar = $('#tInput').val();
-            let tfunc = $(this).text().replace("d", "_transvar0");
-            let tcall = $(this).text().replace("d", tvar);
-            $('#tInput').val(tcall);
-            $(this).parent().fadeOut(100);
-            evt.stopPropagation();
-            transform(tvar, tfunc, typeTransform = false);
-        });
-    }
+    IS_D3M_DOMAIN && toggleRightButtons("tasks");
     layout(false, true);
     IS_D3M_DOMAIN ? zPop() : dataDownload();
 }
@@ -603,7 +545,6 @@ let $fill = (obj, op, d1, d2) => d3.select(obj).transition()
     .duration(d2);
 let fill = (d, id, op, d1, d2) => $fill('#' + id + d.id, op, d1, d2);
 let fillThis = (self, op, d1, d2) => $fill(self, op, d1, d2);
-
 
 /**
    deletes the item at index from array.

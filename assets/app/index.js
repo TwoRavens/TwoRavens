@@ -176,7 +176,28 @@ class Body {
         let glyph = (icon, unstyled) => m(
             `span.glyphicon.glyphicon-${icon}` + (unstyled ? '' : '[style=color: #818181; font-size: 1em; pointer-events: none]'));
         let transformation = (id, list) => m(
-            `ul#${id}`, {style: {display: 'none', 'background-color': app.varColor}},
+            `ul#${id}`, {
+                style: {display: 'none', 'background-color': app.varColor},
+                onclick: function(evt) {
+                    // if interact is selected, show variable list again
+                    if ($(this).text() === 'interact(d,e)') {
+                        $('#tInput').val(tvar.concat('*'));
+                        selInteract = true;
+                        $(this).parent().fadeOut(100);
+                        $('#transSel').fadeIn(100);
+                        evt.stopPropagation();
+                        return;
+                    }
+
+                    let tvar = $('#tInput').val();
+                    let tfunc = $(this).text().replace("d", "_transvar0");
+                    let tcall = $(this).text().replace("d", tvar);
+                    $('#tInput').val(tcall);
+                    $(this).parent().fadeOut(100);
+                    evt.stopPropagation();
+                    transform(tvar, tfunc, typeTransform = false);
+                }
+            },
             list.map(x => m('li', x)));
         let spaceBtn = (id, onclick, title, icon) => m(
             `button#${id}.btn.btn-default`, {onclick, title}, glyph(icon, true));
@@ -204,6 +225,43 @@ class Body {
                     navBtn('btnTA2.btn-default', 2, .5, _ => app.helpmaterials('video'), ['Help Video ', glyph('expand')]),
                     navBtn1("btnReset", app.reset, glyph('repeat'), 'Reset'),
                     navBtn1('btnEndSession', app.endsession, m("span.ladda-label", 'Mark Problem Finished'), 'Mark Problem Finished')),
+                  m('#tInput', {
+                      style: {display: 'none'},
+                      onclick: _ => {
+                          if (byId('transSel').style.display !== 'none') { // if variable list is displayed when input is clicked...
+                              $('#transSel').fadeOut(100);
+                              return false;
+                          }
+                          if (byId('transList').style.display !== 'none') { // if function list is displayed when input is clicked...
+                              $('#transList').fadeOut(100);
+                              return false;
+                          }
+
+                          // highlight the text
+                          $(this).select();
+                          let pos = $('#tInput').offset();
+                          pos.top += $('#tInput').width();
+                          $('#transSel').fadeIn(100);
+                          return false;
+                      },
+                      keyup: evt => {
+                          let t = byId('transSel').style.display;
+                          let t1 = byId('transList').style.display;
+                          if (t !== 'none') {
+                              $('#transSel').fadeOut(100);
+                          } else if (t1 !== 'none') {
+                              $('#transList').fadeOut(100);
+                          }
+
+                          if (evt.keyCode == 13) { // keyup on Enter
+                              let t = transParse($('#tInput').val());
+                              if (!t) {
+                                  return;
+                              }
+                              transform(t.slice(0, t.length - 1), t[t.length - 1], typeTransform = false);
+                          }
+                      }
+                  }),
                   m('#transformations.transformTool', {
                       title: `Construct transformations of existing variables using valid R syntax.
                               For example, assuming a variable named d, you can enter "log(d)" or "d^2".`},
