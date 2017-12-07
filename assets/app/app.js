@@ -52,7 +52,7 @@ export let righttab = 'btnModels'; // current tab in right panel
 
 // transformation toolbar options
 let t, typeTransform;
-let transformList = 'log(d) exp(d) d^2 sqrt(d) interact(d,e)'.split(' ');
+export let transformList = 'log(d) exp(d) d^2 sqrt(d) interact(d,e)'.split(' ');
 let transformVar = '';
 
 // var list for each space contain variables in original data
@@ -208,7 +208,9 @@ const [arcInd1, arcInd2] = [arcInd(arcInd1Limits), arcInd(arcInd2Limits)];
 
 let byId = id => document.getElementById(id);
 
-// page reload linked to btnReset
+/**
+   page reload linked to btnReset
+*/
 export const reset = function reloadPage() {
     location.reload();
 };
@@ -226,10 +228,10 @@ let dataurl = '';
   5. Read in zelig models (not for d3m)
   6. Read in zeligchoice models (not for d3m)
   7. Start the user session
-  8. Call readPreprocess(...) and (if necessary) runPreprocess(...)
+  8. Read preprocess data or (if necessary) run preprocess
   9. Build allNodes[] using preprocessed information
   10. Add dataschema information to allNodes (when in IS_D3M_DOMAIN)
-  11. Call scaffolding() and start up
+  11. Call layout() and start up
 */
 async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3mData, d3mTarget, d3mPS, d3mDS, pURL) {
     if (!IS_D3M_DOMAIN) {
@@ -316,7 +318,13 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
             .forEach(vars => vars && vars.forEach(v => valueKey.push(v.varName)));
         // end session if neither trainData nor trainTargets?
         valueKey.length === 0 && alert("no trainData or trainTargest in data description file. valueKey length is 0");
-        return scaffolding(swandive);
+        // perhaps allow users to unlock and select things?
+        byId('btnLock').classList.add('noshow');
+        byId('btnForce').classList.add('noshow');
+        byId('btnEraser').classList.add('noshow');
+        byId('btnSubset').classList.add('noshow');
+        byId('main').style.backgroundColor = 'grey';
+        byId('whitespace').style.backgroundColor = 'grey';
     }
     console.log("data schema data: ", dataschema);
 
@@ -395,11 +403,28 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         console.log('Ending Hopscotch Tour');
     }
 
-    // 8. Call readPreprocess(...) and (if necessary) runPreprocess(...)
+    // 8. read preprocess data or (if necessary) run preprocess
+    let read = res => {
+        priv = res.dataset.private || priv;
+        Object.keys(res.variables).forEach(k => preprocess[k] = res.variables[k]);
+        return res;
+    };
     try {
-        readPreprocess(await m.request(pURL));
+        res = read(await m.request(pURL));
     } catch(_) {
-        runPreprocess(d3mData, d3mTarget, d3mDataName);
+        console.log("GOING TO RUN THE PREPROCESSAPP");
+        let url = ROOK_SVC_URL + 'preprocessapp';
+        let json = JSON.stringify({data: dataloc, target: targetloc, datastub: datastub});;
+        console.log('url out: ', url);
+        console.log('POST out: ', json);
+        let data = new FormData();
+        try {
+            res = read(await m.request({method: 'POST', url: url, data: data}));
+        } catch(_) {
+            console.log('preprocess failed');
+            alert('preprocess failed. ending user session.');
+            endsession();
+        }
     }
 
     // 9. Build allNodes[] using preprocessed information
@@ -450,8 +475,9 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     });
     console.log(allNodes);
 
-    // 11. Call scaffolding() and start up
-    scaffolding(layout);
+    // 11. Call layout() and start up
+    IS_D3M_DOMAIN && toggleRightButtons("tasks");
+    layout(false, true);
     IS_D3M_DOMAIN ? zPop() : dataDownload();
 }
 
@@ -530,156 +556,23 @@ let fill = (d, id, op, d1, d2) => $fill('#' + id + d.id, op, d1, d2);
 let fillThis = (self, op, d1, d2) => $fill(self, op, d1, d2);
 
 /**
-  called after all external data are guaranteed to have been read to completion. this populates the left panel with variable names, the right panel with model names, the transformation tool, and the associated mouseovers. its callback is layout(), which initializes the modeling space
+   deletes the item at index from array.
+   if object is provided, deletes first instance of object from array.
+   @param {Object[]} arr - array
+   @param {number} idx - index
+   @param {Object} [obj] - object
 */
-function scaffolding(callback) {
-    console.log("SCAFFOLDING");
-    // establishing the transformation element
-    // d3.select("#transformations")
-    //     .append("input")
-    //     .attr("id", "tInput")
-    //     .attr("class", "form-control")
-    //     .attr("type", "text")
-    //     .attr("value", "Variable transformation");
-
-    // variable dropdown
-    d3.select("#transformations")
-        .append("ul")
-        .attr("id", "transSel")
-        .style("display", "none")
-        .style("background-color", varColor)
-        .selectAll('li')
-        .data(["a", "b"]) //set to variables in model space as they're added
-        .enter()
-        .append("li")
-        .text(d => d);
-
-    // function dropdown
-    d3.select("#transformations")
-        .append("ul")
-        .attr("id", "transList")
-        .style("display", "none")
-        .style("background-color", varColor)
-        .selectAll('li')
-        .data(transformList)
-        .enter()
-        .append("li")
-        .text(d => d);
-
-    if (!IS_D3M_DOMAIN) { // No variable transformation in present d3m mode
-        $('#tInput').click(() => {
-            let t = byId('transSel').style.display;
-            if (t !== "none") { // if variable list is displayed when input is clicked...
-                $('#transSel').fadeOut(100);
-                return false;
-            }
-            var t1 = byId('transList').style.display;
-            if (t1 !== "none") { // if function list is displayed when input is clicked...
-                $('#transList').fadeOut(100);
-                return false;
-            }
-
-            // highlight the text
-            $(this).select();
-            var pos = $('#tInput').offset();
-            pos.top += $('#tInput').width();
-            $('#transSel').fadeIn(100);
-            return false;
-        });
-
-        var n;
-        $('#tInput').keyup(evt => {
-            var t = byId('transSel').style.display;
-            var t1 = byId('transList').style.display;
-            if (t != "none") $('#transSel').fadeOut(100);
-            else if (t1 != "none") $('#transList').fadeOut(100);
-
-            if (evt.keyCode == 13) { // keyup on Enter
-                n = $('#tInput').val();
-                var t = transParse(n=n);
-                if (!t)
-                    return;
-                transform(n = t.slice(0, t.length - 1), t = t[t.length - 1], typeTransform = false);
-            }
-        });
-
-        var t;
-        $('#transList li').click(function(evt){
-            // if interact is selected, show variable list again
-            if ($(this).text() == "interact(d,e)") {
-                $('#tInput').val(tvar.concat('*'));
-                selInteract = true;
-                $(this).parent().fandeOut(100);
-                $('#transSel').fadeIn(100);
-                evt.stopPropagation();
-                return;
-            }
-
-            var tvar = $('#tInput').val();
-            var tfunc = $(this).text().replace("d", "_transvar0");
-            var tcall = $(this).text().replace("d", tvar);
-            $('#tInput').val(tcall);
-            $(this).parent().fadeOut(100);
-            evt.stopPropagation();
-            transform(n = tvar, t = tfunc, typeTransform = false);
-        });
-    };
-
-    d3.select("#models")
-        .style('height', 2000)
-        .style('overfill', 'scroll');
-
-    if(!IS_D3M_DOMAIN) {
-        d3.select("#models").selectAll("p")
-            .data(Object.keys(mods))
-            .enter()
-            .append("p")
-            .attr("id", "_model_".concat)
-            .text(d => d)
-            .style('background-color', d => varColor)
-            .attr("data-container", "body")
-            .attr("data-toggle", "popover")
-            .attr("data-trigger", "hover")
-            .attr("data-placement", "top")
-            .attr("data-html", "true")
-            .attr("onmouseover", "$(this).popover('toggle');")
-            .attr("onmouseout", "$(this).popover('toggle');")
-            .attr("data-original-title", "Model Description")
-            .attr("data-content", d => mods[d]);
-    } else {
-        toggleRightButtons("tasks");
-    }
-
-    // call layout() because at this point all scaffolding is up and ready
-    if (typeof callback == "function") {
-        callback(false,true);
-        m.redraw();
-    } else {
-        m.redraw();
-    }
-
-    // if swandive, after scaffolding is up, just grey things out
-    if(swandive) {
-    // perhaps want to allow users to unlcok and select things?
-        byId('btnLock').classList.add('noshow');
-        byId('btnForce').classList.add('noshow');
-        byId('btnEraser').classList.add('noshow');
-        byId('btnSubset').classList.add('noshow');
-        byId('main').style.backgroundColor='grey';
-        byId('whitespace').style.backgroundColor='grey';
-    }
-}
-
-function del(arr, idx, find) {
-    if (find)
-        idx = arr.indexOf(idx);
+function del(arr, idx, obj) {
+    idx = obj ? arr.indexOf(obj) : idx;
     idx > -1 && arr.splice(idx, 1);
 }
 
+/** needs doc */
 function zparamsReset(text) {
-    'zdv zcross ztime znom'.split(' ').forEach(x => del(zparams[x], text, true));
+    'zdv zcross ztime znom'.split(' ').forEach(x => del(zparams[x], -1, text));
 }
 
+/** needs doc */
 function layout(v,v2) {
     var myValues = [];
     nodes = [];
@@ -884,8 +777,6 @@ function layout(v,v2) {
 
     // update force layout (called automatically each iteration)
     function tick() {
-
-
         function findcoords(findnames,allnames,coords,lengthen){
             var fcoords = new Array(findnames.length);   // found coordinates
             var addlocation = 0;
@@ -1614,28 +1505,34 @@ function layout(v,v2) {
 }
 
 
+/** needs doc */
 function find($nodes, name) {
     for (let i in $nodes)
         if ($nodes[i].name == name) return $nodes[i].id;
 }
 
-// returns id
+/**
+   returns id
+*/
 export function findNodeIndex(name, whole) {
     for (let node of allNodes)
         if (node.name === name) return whole ? node : node.id;
 }
 
+/** needs doc */
 function nodeIndex(nodeName) {
     for (let i in nodes)
         if (nodes[i].name === nodeName) return i;
 }
 
+/** needs doc */
 export function findNode(name) {
     for (let n of allNodes)
         if (n.name === name)
             return n;
 }
 
+/** needs doc */
 function updateNode(id) {
     let node = findNode(id);
     if (node.grayout)
@@ -1647,12 +1544,12 @@ function updateNode(id) {
         del(nodes, node.index);
         links
             .filter(l => l.source === node || l.target === node)
-            .forEach(l => del(links, l, true));
+            .forEach(l => del(links, -1, l));
         zparamsReset(name);
 
         // remove node name from group lists
-        node.group1 && del(zparams.zgroup1, name, true);
-        node.group2 && del(zparams.zgroup2, name, true);
+        node.group1 && del(zparams.zgroup1, -1, name);
+        node.group2 && del(zparams.zgroup2, -1, name);
         node.group1 = node.group2 = false;
 
         // node reset - perhaps this will become a hard reset back to all original allNode values?
@@ -1668,7 +1565,9 @@ function updateNode(id) {
     return true;
 }
 
-// every time a variable in leftpanel is clicked, nodes updates and background color changes
+/**
+   every time a variable in leftpanel is clicked, nodes updates and background color changes
+*/
 export function clickVar(elem) {
     if (updateNode(elem.target.id)) {
         // panelPlots(); is this necessary?
@@ -1676,28 +1575,31 @@ export function clickVar(elem) {
     }
 }
 
-/*
+/**
   Retrieve the variable list from the preprocess data.
   This helps handle the new format and (temporarily)
   the older format in PRODUCTION (rp 8.14.2017)
+  "new" response:
+  {
+  "dataset" : {...}
+  "variables" : {
+  "var1" : {...},
+  (etc)
+  }
+  }
+  "old" response:
+  {
+  "var1" : {...},
+  (etc)
+  }
 */
 export function getVariableData(json) {
-    /* "new" response:
-       {
-       "dataset" : {...}
-       "variables" : {
-       "var1" : {...}, (etc)
-       }
-       }
-       "old" response
-       {
-       "var1" : {...},
-       (etc)
-       }*/
     return json.hasOwnProperty('variables') ? json.variables : json;
 }
 
-// function called by force button
+/**
+   called by force button
+*/
 export function forceSwitch() {
     forcetoggle = [forcetoggle[0] == 'true' ? 'false' : 'true'];
     if (forcetoggle[0] === "false") {
@@ -1708,6 +1610,7 @@ export function forceSwitch() {
     }
 }
 
+/** needs doc */
 export function helpmaterials(type) {
     if(type=="video"){
         var win = window.open("http://2ra.vn/demos/d3mintegrationdemo.mp4", '_blank');
@@ -1719,6 +1622,7 @@ export function helpmaterials(type) {
     console.log(type);
 }
 
+/** needs doc */
 export function lockDescription() {
     locktoggle = locktoggle ? false : true;
     let temp;
@@ -1752,6 +1656,7 @@ export function lockDescription() {
     }
 }
 
+/** needs doc */
 function zPop() {
     if (dataurl) zparams.zdataurl = dataurl;
     zparams.zmodelcount = modelCount;
@@ -1772,6 +1677,7 @@ function zPop() {
     }
 }
 
+/** needs doc */
 export function estimate(btn) {
     if(!IS_D3M_DOMAIN){
     if (PRODUCTION && zparams.zsessionid == '') {
@@ -2245,32 +2151,12 @@ export function estimate(btn) {
     }
 }
 
-export function runPreprocess(dataloc, targetloc, datastub) {
-    let url = ROOK_SVC_URL + 'preprocessapp';
-    console.log("GOING TO RUN THE PREPROCESSAPP");
-    let json = JSON.stringify({data: dataloc, target: targetloc, datastub: datastub}); //, preprocess: preprocessloc});
-    console.log('urlcall out: ', url);
-    console.log('POST out: ', json);
-    let data = new FormData();
-    data.append('solaJSON', json);
-    return m.request({method: 'POST', url: url, data: data, async:false})
-        .then(data => {
-            console.log('json in RIGHT HERE: ', data);
-
-            //two lines from readPreprocess()
-            priv = data.dataset.private || priv;
-            Object.keys(data.variables).forEach(k => preprocess[k] = data.variables[k]);
-
-            return data;
-        }, _ => {
-            console.log('preprocess failed');
-            alert('preprocess failed. ending user session.');
-            endsession();
-        });
+/** needs doc */
+export function ta2stuff() {
+    console.log(d3mProblemDescription);
 }
 
-export let ta2stuff = _ => console.log(d3mProblemDescription);
-
+/** needs doc */
 function dataDownload() {
     zPop();
     // write links to file & run R CMD
@@ -2296,6 +2182,7 @@ function dataDownload() {
     makeCorsRequest(urlcall, btn, downloadSuccess, downloadFail, solajsonout);
 }
 
+/** needs doc */
 function viz(mym) {
     mym = +mym.substr(5, 5) - 1;
 
@@ -2364,7 +2251,10 @@ function viz(mym) {
     m.redraw();
 }
 
-// parses the transformation input. variable names are often nested inside one another, e.g., ethwar, war, wars, and so this is handled
+/**
+   parses the transformation input.
+   variable names are often nested inside one another, e.g., ethwar, war, wars, and so this is handled
+*/
 function transParse(n) {
     var out2 = [];
     var t2 = n;
@@ -2416,9 +2306,9 @@ function transParse(n) {
 }
 
 /**
-  n = name of column/node
-  t = selected transformation
- */
+   n = name of column/node
+   t = selected transformation
+*/
 function transform(n, t, typeTransform) {
     if (PRODUCTION && zparams.zsessionid == "") {
         alert("Warning: Data download is not complete. Try again soon.");
@@ -2594,8 +2484,10 @@ function transform(n, t, typeTransform) {
     makeCorsRequest(urlcall, btn, transformSuccess, transformFail, solajsonout);
 }
 
-// below from http://www.html5rocks.com/en/tutorials/cors/ for cross-origin resource sharing
-// Create the XHR object.
+/**
+   create the XHR object
+   from http://www.html5rocks.com/en/tutorials/cors/ for cross-origin resource sharing
+*/
 function createCORSRequest(method, url, callback) {
     var xhr = new XMLHttpRequest();
     if ("withCredentials" in xhr) {
@@ -2614,7 +2506,9 @@ function createCORSRequest(method, url, callback) {
     return xhr;
 }
 
-// Make the actual CORS request.
+/**
+   make the actual CORS request
+*/
 function makeCorsRequest(url, btn, callback, warningcallback, jsonstring) {
     var xhr = createCORSRequest('POST', url);
     if (!xhr) {
@@ -2657,12 +2551,15 @@ function makeCorsRequest(url, btn, callback, warningcallback, jsonstring) {
     xhr.send(jsonstring);
 }
 
+/** needs doc */
 export function legend() {
     borderState();
     m.redraw();
 }
 
-// programmatically deselect every selected variable
+/**
+   programmatically deselect every selected variable
+*/
 export function erase() {
     ['#leftpanel', '#rightpanel'].forEach(id => d3.select(id).attr('class', 'sidepanel container clearfix'));
     tabLeft('tab1');
@@ -2672,25 +2569,7 @@ export function erase() {
     });
 }
 
-// http://www.tutorials2learn.com/tutorials/scripts/javascript/xml-parser-javascript.html
-function loadXMLDoc(XMLname) {
-    var xmlDoc;
-    if (window.XMLHttpRequest) {
-        xmlDoc = new window.XMLHttpRequest();
-        xmlDoc.open("GET", XMLname, false);
-        xmlDoc.send("");
-        return xmlDoc.responseXML;
-    }
-    // IE 5 and IE 6
-    else if (ActiveXObject("Microsoft.XMLDOM")) {
-        xmlDoc = new ActiveXObject("Microsoft.XMLDOM");
-        xmlDoc.async = false;
-        xmlDoc.load(XMLname);
-        return xmlDoc;
-    }
-    alert("Error loading document!");
-}
-
+/** needs doc */
 export function tabLeft(tab) {
     byId('tab1').style.display = 'none';
     byId('tab2').style.display = 'none';
@@ -2703,6 +2582,7 @@ export function tabLeft(tab) {
     lefttab = tab;
 }
 
+/** needs doc */
 export function tabRight(tab) {
     let select = cls => {
         let panel = d3.select("#rightpanel");
@@ -2730,6 +2610,7 @@ export function tabRight(tab) {
 
 export let summary = {data: []};
 
+/** needs doc */
 function varSummary(d) {
     let t1 = 'Mean:, Median:, Most Freq:, Occurrences:, Median Freq:, Occurrences:, Least Freq:, Occurrences:, Std Dev:, Minimum:, Maximum:, Invalid:, Valid:, Uniques:, Herfindahl'.split(', ');
 
@@ -2790,25 +2671,7 @@ export let popoverContent = d => {
     return text;
 }
 
-function popupX(d) {
-    var tsf = d3.format(".4r");
-    var rint = d3.format("r");
-    //Create the tooltip label
-    d3.select("#tooltip")
-        .style("left", tempX + "px")
-        .style("top", tempY + "px")
-        .select("#tooltiptext")
-        .html("<div class='form-group'><label class='col-sm-4 control-label'>Mean</label><div class='col-sm-6'><p class='form-control-static'>" + tsf(d.mean) + "</p></div></div>" +
-            "<div class='form-group'><label class='col-sm-4 control-label'>Median</label><div class='col-sm-6'><p class='form-control-static'>" + tsf(d.median) + "</p></div></div>" +
-            "<div class='form-group'><label class='col-sm-4 control-label'>Mode</label><div class='col-sm-6'><p class='form-control-static'>" + d.mode + "</p></div></div>" +
-            "<div class='form-group'><label class='col-sm-4 control-label'>Stand Dev</label><div class='col-sm-6'><p class='form-control-static'>" + tsf(d.sd) + "</p></div></div>" +
-            "<div class='form-group'><label class='col-sm-4 control-label'>Maximum</label><div class='col-sm-6'><p class='form-control-static'>" + tsf(d.max) + "</p></div></div>" +
-            "<div class='form-group'><label class='col-sm-4 control-label'>Minimum</label><div class='col-sm-6'><p class='form-control-static'>" + tsf(d.min) + "</p></div></div>" +
-            "<div class='form-group'><label class='col-sm-4 control-label'>Valid</label><div class='col-sm-6'><p class='form-control-static'>" + rint(d.valid) + "</p></div></div>" +
-            "<div class='form-group'><label class='col-sm-4 control-label'>Invalid</label><div class='col-sm-6'><p class='form-control-static'>" + rint(d.invalid) + "</p></div></div>"
-        );
-}
-
+/** needs doc */
 export function panelPlots() {
     if(IS_D3M_DOMAIN) {
         byId('btnSubset').classList.add('noshow');
@@ -2863,13 +2726,17 @@ export function panelPlots() {
               });
 }
 
-// converts color codes
+/**
+   converts color codes
+*/
 export let hexToRgba = hex => {
     let int = parseInt(hex.replace('#', ''), 16);
     return `rgba(${[(int >> 16) & 255, (int >> 8) & 255, int & 255, '0.5'].join(',')})`;
 };
 
-// takes node and color and updates zparams
+/**
+   takes node and color and updates zparams
+*/
 function setColors(n, c) {
     if (n.strokeWidth == '1') {
         if (c == gr1Color){
@@ -2907,11 +2774,11 @@ function setColors(n, c) {
             if (key == 'zdv'){                                              // remove group memberships from dv's
                 if(n.group1){
                     n.group1 = false;
-                    del(zparams.zgroup1, n.name, true);
+                    del(zparams.zgroup1, -1, n.name);
                 };
                 if(n.group2){
                     n.group2 = false;
-                    del(zparams.zgroup2, n.name, true);
+                    del(zparams.zgroup2, -1, n.name);
                 };
             }
         };
@@ -2939,11 +2806,11 @@ function setColors(n, c) {
                 zparams.zdv.push(dvname);
                 if(n.group1){                     // remove group memberships from dv's
                     ngroup1 = false;
-                    del(zparams.zgroup1, dvname, true);
+                    del(zparams.zgroup1, -1, dvname);
                 };
                 if(n.group2){
                     ngroup2 = false;
-                    del(zparams.zgroup2, dvname, true);
+                    del(zparams.zgroup2, -1, dvname);
                 };
             }
             else if (csColor == c) zparams.zcross.push(n.name);
@@ -2957,6 +2824,7 @@ function setColors(n, c) {
     }
 }
 
+/** needs doc */
 export function borderState() {
     zparams.zdv.length > 0 ?
         $('#dvButton .rectColor svg circle').attr('stroke', dvColor) :
@@ -2978,6 +2846,7 @@ export function borderState() {
         $('#gr2Button').css('border-color', '#ccc');
 }
 
+/** needs doc */
 export function subsetSelect(btn) {
     if (dataurl)
         zparams.zdataurl = dataurl;
@@ -3139,16 +3008,9 @@ export function subsetSelect(btn) {
     makeCorsRequest(urlcall, btn, subsetSelectSuccess, btn => selectLadda.stop(), solajsonout);
 }
 
-function readPreprocess(data) {
-console.log(data);
-    return new Promise((resolve, _) => {
-        priv = data.dataset.private || priv;
-        Object.keys(data.variables).forEach(k => preprocess[k] = data.variables[k]);
-        resolve();
-    });
-}
-
-// removes all the children svgs inside subset and setx divs
+/**
+   removes all the children svgs inside subset and setx divs
+*/
 function rePlot() {
     d3.select('#tab2')
         .selectAll('svg')
@@ -3175,7 +3037,9 @@ export let fakeClick = () => {
         .classed('active', false);
 };
 
-//EndSession(SessionContext) returns (Response) {}
+/**
+   EndSession(SessionContext) returns (Response) {}
+*/
 export function endsession() {
     let SessionContext= apiSession(zparams.zsessionid);
 
@@ -3198,8 +3062,10 @@ export function endsession() {
     makeCorsRequest(urlcall, "nobutton", endSuccess, endFail, solajsonout);
 }
 
-//rpc ListPipelines(PipelineListRequest) returns (PipelineListResult) {}
-// pipes is an array of pipeline IDs
+/**
+   rpc ListPipelines(PipelineListRequest) returns (PipelineListResult) {}
+   pipes is an array of pipeline IDs
+*/
 export function listpipelines() {
     let context = apiSession(zparams.zsessionid);
     let PipeLineListRequest={context};
@@ -3264,7 +3130,9 @@ export function listpipelines() {
     makeCorsRequest(urlcall, "nobutton", listPipesSuccess, listPipesFail, solajsonout);
 }
 
-// rpc ExecutePipeline(PipelineExecuteRequest) returns (stream PipelineExecuteResult) {}
+/**
+   rpc ExecutePipeline(PipelineExecuteRequest) returns (stream PipelineExecuteResult) {}
+*/
 export function executepipeline() {
     let context = apiSession(zparams.zsessionid);
     let tablerow = byId('setxRight').querySelector('tr.item-select');
@@ -3318,37 +3186,35 @@ export function executepipeline() {
     makeCorsRequest(urlcall, "nobutton", executePipeSuccess, executePipeFail, solajsonout);
 }
 
-// this is our call to django to update the problem schema
-// rpc UpdateProblemSchema(UpdateProblemSchemaRequest) returns (Response) {}
+/**
+   call to django to update the problem schema
+   rpc UpdateProblemSchema(UpdateProblemSchemaRequest) returns (Response) {}
+*/
 function updateSchema(type, updates, lookup) {
     let context = apiSession(zparams.zsessionid);
-    let ReplaceProblemSchemaField={[type]:lookup[updates[type]][1]};
-//    let valuenum = lookup[updates[type]][2];
-    let UpdateProblemSchemaRequest = {ReplaceProblemSchemaField,context};
+    let replaceProblemSchemaField = {[type]: lookup[updates[type]][1]};
+    let updateProblemSchemaRequest = {replaceProblemSchemaField, context};
+    let json = JSON.stringify(updateProblemSchemaRequest);
 
-    let jsonout = JSON.stringify(UpdateProblemSchemaRequest);
-
-    let urlcall = D3M_SVC_URL + "/updateproblemschema";
-    let solajsonout = "grpcrequest=" + jsonout;
+    let url = D3M_SVC_URL + "/updateproblemschema";
+    let solajsonout = "grpcrequest=" + json;
     console.log("UpdateProblemSchemaRequest: ");
     console.log(solajsonout);
-    console.log("urlcall: ", urlcall);
+    console.log("urlcall: ", url);
 
-    function usSuccess(btn, Response) {
-        console.log(Response);
-    }
-
-    function usFail(btn) {
-        console.log("update schema failed");
-    }
-
-    makeCorsRequest(urlcall, "nobutton", usSuccess, usFail, solajsonout);
+    makeCorsRequest(
+        url,
+        'nobutton',
+        (_, res) => console.log(res),
+        _ => console.log('update schema failed'),
+        solajsonout);
 }
 
-
-// Find something centerish to the vertices of a convex hull
-// (specifically, the center of the bounding box)
-function jamescentroid(coord){
+/**
+   find something centerish to the vertices of a convex hull
+   (specifically, the center of the bounding box)
+*/
+function jamescentroid(coord) {
     var minx = coord[0][0],
         maxx = coord[0][0],
         miny = coord[0][1],
@@ -3362,27 +3228,29 @@ function jamescentroid(coord){
         return[(minx + maxx)/2, (miny + maxy)/2];
 };
 
-// Define each pebble radius.
-// Presently, most pebbles are scaled to radius set by global RADIUS.
-// Members of groups are scaled down if group gets large.
+/**
+   Define each pebble radius.
+   Presently, most pebbles are scaled to radius set by global RADIUS.
+   Members of groups are scaled down if group gets large.
+*/
 function setPebbleRadius(d){
-    if(d.group1 || d.group2){   // if a member of a group, need to calculate radius size
+    if (d.group1 || d.group2){ // if a member of a group, need to calculate radius size
         var uppersize = 7
-        var ng1 = (d.group1) ? zparams.zgroup1.length : 1;      // size of group1, if a member of group 1
-        var ng2 = (d.group2) ? zparams.zgroup2.length : 1;      // size of group2, if a member of group 2
-        var maxng = Math.max(ng1,ng2);                                                      // size of the largest group variable is member of
-        return (maxng>uppersize) ? RADIUS*Math.sqrt(uppersize/maxng) : RADIUS;                  // keep total area of pebbles bounded to pi * RADIUS^2 * uppersize, thus shrinking radius for pebbles in larger groups
-    }else{
-        return RADIUS;                                                                         // nongroup members get the common global radius
+        var ng1 = (d.group1) ? zparams.zgroup1.length : 1; // size of group1, if a member of group 1
+        var ng2 = (d.group2) ? zparams.zgroup2.length : 1; // size of group2, if a member of group 2
+        var maxng = Math.max(ng1, ng2); // size of the largest group variable is member of
+        return (maxng>uppersize) ? RADIUS*Math.sqrt(uppersize/maxng) : RADIUS; // keep total area of pebbles bounded to pi * RADIUS^2 * uppersize, thus shrinking radius for pebbles in larger groups
+    } else {
+        return RADIUS; // nongroup members get the common global radius
     }
 };
 
-// Define each pebble charge.
-// This was the previous charge setting:
-//return ((zparams.zgroup1.indexOf(node.name) < 0 ) & (zparams.zgroup2.indexOf(node.name) < 0 ))   ? -800 : -400;  // -1 is the value if no index position found
+/**
+   Define each pebble charge.
+*/
 function setPebbleCharge(d){
     if(d.group1 || d.group2){
-        if(d.forefront){                                        // pebbles packed in groups repel others on mouseover
+        if(d.forefront){// pebbles packed in groups repel others on mouseover
             return -1000
         }
         var uppersize = 7
@@ -3395,11 +3263,13 @@ function setPebbleCharge(d){
     }
 };
 
+/** needs doc */
 export function expandrightpanel() {
     byId('rightpanel').classList.add("expandpanelfull");
     console.log("HERE");
 }
 
+/** needs doc */
 function toggleRightButtons(set) {
     function setWidths(btns) {
         let width = `${100 / btns.length}%`;
@@ -3453,6 +3323,7 @@ function toggleRightButtons(set) {
     }
 }
 
+/** needs doc */
 export function resultsplotinit(pid, dvvalues) {
     // presumably we'll be reading in results from a path
     // for now it's just hardcoded
@@ -3471,10 +3342,10 @@ export function resultsplotinit(pid, dvvalues) {
         let xdata = "Actual";
         let ydata = "Predicted";
         bivariatePlot(dvvalues, predvals, xdata, ydata);
-
     }
-
 }
+
+/** needs doc */
 export function genconfdata (dvvalues, predvals) {
     // FOR TESTING
     dvvalues = predvals.slice(0);
@@ -3499,7 +3370,6 @@ export function genconfdata (dvvalues, predvals) {
     // combine actuals and predicted, and get all unique elements
     let myuniques = dvvalues.concat(predvals);
     myuniques = myuniques.filter(onlyUnique);
-  //  console.log(myuniques);
 
     // create two arrays: mycounts initialized to 0, mypairs have elements set to all possible pairs of uniques
     // looked into solutions other than nested fors, but Internet suggest performance is just fine this way
@@ -3512,28 +3382,22 @@ export function genconfdata (dvvalues, predvals) {
         }
     }
 
-  //  console.log(mypairs);
     // line up actuals and predicted, and increment mycounts at index where mypair has a match for the 'actual,predicted'
     for (let i = 0; i < dvvalues.length; i++) {
-     //   console.log(dvvalues[i]);
-     //   console.log(predvals[i]);
         let temppair = +dvvalues[i]+','+predvals[i];
         let myindex = mypairs.indexOf(temppair);
         mycounts[myindex] += 1;
     }
-  //  console.log(mycounts);
 
     let confdata = [], size = myuniques.length;
-
     // another loop... this builds the array of arrays from the flat array mycounts for input to confusionsmatrix function
     while (mycounts.length > 0)
         confdata.push(mycounts.splice(0, size));
 
-   // console.log(confdata);
-
-    // call confusionmatrix
     confusionmatrix(confdata, myuniques);
 }
+
+/** needs doc */
 export function confusionmatrix(matrixdata, classes) {
     d3.select("#setxMiddle").html("");
     d3.select("#setxMiddle").select("svg").remove();
@@ -3557,14 +3421,10 @@ export function confusionmatrix(matrixdata, classes) {
     legdiv.style.marginLeft='20px';
     legdiv.style.height=+(mainheight*.4)+'px';
     legdiv.style.display="inline-block";
-
     byId('setxMiddle').appendChild(legdiv);
 
-
     var margin = {top: 20, right: 10, bottom: 0, left: 50};
-
     function Matrix(options) {
-
         let width = options.width,
         height = options.height,
         data = options.data,
@@ -3734,11 +3594,11 @@ export function confusionmatrix(matrixdata, classes) {
         .scale(y)
         .orient("right");
 
-        key.append("g")
-        .attr("class", "y axis")
-        .attr("transform", "translate(41," + margin.top + ")")
-        .call(yAxis)
-
+        key
+            .append("g")
+            .attr("class", "y axis")
+            .attr("transform", "translate(41," + margin.top + ")")
+            .call(yAxis);
     }
 
     // The table generation function. Used for the table of performance measures, not the confusion matrix
@@ -3777,8 +3637,6 @@ export function confusionmatrix(matrixdata, classes) {
         return table;
     }
 
-
-
     // this code is all for producing a table with performance measures
     //var confusionMatrix = [[169, 10],[7, 46]];
     var tp = matrixdata[0][0];
@@ -3814,15 +3672,13 @@ export function confusionmatrix(matrixdata, classes) {
            });
 
     // not rendering this table for right now, left all the code in place though. maybe we use it eventually
-  //  var table = tabulate(computedData, ["F1", "PRECISION","RECALL","ACCURACY"]);
-
-
+    // var table = tabulate(computedData, ["F1", "PRECISION","RECALL","ACCURACY"]);
 }
 
-
-// scatterplot function to go to plots.js to be reused
+/**
+   scatterplot function to go to plots.js to be reused
+*/
 export function bivariatePlot(x_Axis, y_Axis, x_Axis_name, y_Axis_name) {
-
     d3.select("#setxMiddle").html("");
     d3.select("#setxMiddle").select("svg").remove();
 
@@ -3830,7 +3686,6 @@ export function bivariatePlot(x_Axis, y_Axis, x_Axis_name, y_Axis_name) {
     let mainheight = byId('main').clientHeight;
 
     // scatter plot
-
     let data_plot = [];
     var nanCount = 0;
     for (var i = 0; i < x_Axis.length; i++) {
@@ -3894,7 +3749,7 @@ export function bivariatePlot(x_Axis, y_Axis, x_Axis_name, y_Axis_name) {
     .append('svg:svg')
     .attr('width', width + margin.right + margin.left)
     .attr('height', height + margin.top + margin.bottom);
-   // .call(zoom); dropping this for now, until the line zooms properly
+    // .call(zoom); dropping this for now, until the line zooms properly
 
     var main1 = chart_scatter.append('g')
     .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')')
@@ -3926,15 +3781,10 @@ export function bivariatePlot(x_Axis, y_Axis, x_Axis_name, y_Axis_name) {
     .data(data_plot)
     .enter()
     .append("circle")
-    .attr("cx", function (d, i) {
-          return xScale(data_plot[i].xaxis);
-          })
-    .attr("cy", function (d, i) {
-          return yScale(data_plot[i].yaxis);
-          })
+    .attr("cx", (d, i) => xScale(data_plot[i].xaxis))
+    .attr("cy", (d, i) => yScale(data_plot[i].yaxis))
     .attr("r", 2)
-    .style("fill", "#B71C1C")
-    ;
+    .style("fill", "#B71C1C");
 
 
     chart_scatter.append("text")
@@ -4013,7 +3863,7 @@ export function bivariatePlot(x_Axis, y_Axis, x_Axis_name, y_Axis_name) {
     //  d3.select("#NAcount").text("There are " + nanCount + " number of NA values in the relation.");
 }
 
-
+/** needs doc */
 export function setxTable(features) {
     function tabulate(data, columns) {
         var table = d3.select('#setxRightBottomLeft').append('table');
@@ -4077,8 +3927,9 @@ export function setxTable(features) {
     tabulate(mydata, ['Variables', 'From', 'To']); // 2 column table
 }
 
-
-//rpc ExportPipeline(PipelineExportRequest) returns (Response) {}
+/**
+  rpc ExportPipeline(PipelineExportRequest) returns (Response) {}
+*/
 export function exportpipeline(pipelineId) {
     console.log(pipelineId);
     let context = apiSession(zparams.zsessionid);
@@ -4095,9 +3946,8 @@ export function exportpipeline(pipelineId) {
     console.log(solajsonout);
 
     function exportSuccess(btn, Response) {
-        let alertmessage = "Executable for " + pipelineId + " has been written";
-        //alert(alertmessage);
-        console.log(alertmessage)
+        let message = "Executable for " + pipelineId + " has been written";
+        console.log(message);
         console.log(Response);
     }
 
@@ -4108,13 +3958,15 @@ export function exportpipeline(pipelineId) {
     makeCorsRequest(urlcall, "nobutton", exportSuccess, exportFail, solajsonout);
 }
 
-export function deletepipeline () {
+/** needs doc */
+export function deletepipeline() {
     console.log("DELETE CALLED");
 }
 
-
-// D3M API HELPERS
-// because these get built in various places, pulling them out for easy manipulation
+/**
+   D3M API HELPERS
+   because these get built in various places, pulling them out for easy manipulation
+*/
 function apiFeature (vars, uri) {
     let out = [];
     for(let i = 0; i < vars.length; i++) {
@@ -4123,6 +3975,7 @@ function apiFeature (vars, uri) {
     return out;
 }
 
+/** needs doc */
 function apiFeatureShortPath (vars, uri) {
     let out = [];
     let shortUri = uri.substring(0, uri.lastIndexOf("/"));
@@ -4132,10 +3985,11 @@ function apiFeatureShortPath (vars, uri) {
     return out;
 }
 
-
-// silly but perhaps useful if in the future SessionContext requires more things (as suggest by core)
-function apiSession (context) {
-    return {"session_id":context};
+/**
+   silly but perhaps useful if in the future SessionContext requires more things (as suggest by core)
+*/
+function apiSession(context) {
+    return {session_id: context};
 }
 
 /**
