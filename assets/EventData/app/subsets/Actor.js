@@ -930,11 +930,6 @@ function createElement(chkSwitch = true, actorType, columnType, value, index, di
     chkbox.value = value;
     chkbox.className = "actorChk";
     chkbox.checked = filterSet[actorType][columnType].has(value);
-    //~ console.log("check usamiledu");
-    //~ if (value == "USAMILEDU") {
-		//~ console.log(filterSet[actorType][columnType]);
-	//~ }
-    
 
     if (chkSwitch) {
         chkbox.onchange = function () {

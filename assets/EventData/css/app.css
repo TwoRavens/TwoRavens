@@ -176,10 +176,15 @@ table tr td{
 #leftpanel #leftContentArea div.active {display:block;}
 
 /* Elements to enable/disable on open/close left panel */
+/*
 #leftpanel.closepanel {width:1px;}
 #leftpanel.closepanel #leftpaneltitle,
 #leftpanel.closepanel #leftpanelButtons,
 #leftpanel.closepanel #leftpanelContent {display:none;}
+*/
+
+#leftpanel.closepanel {width:1px;}
+#leftpanel.closepanel #leftPanelAllContent {display:none;}
 
 #rightpanel {
     border:1px solid #ADADAD;
@@ -1209,18 +1214,28 @@ div.actorTab button.active {
 
 .actorFullList {
 	display: inline-block;
+/*
 	position: absolute;
+*/
 	width :180px;
+/*
 	height: calc(100% - 212px);
+*/
+	height: calc(100% - 60px);
 	overflow-x: auto;
 	overflow-y: scroll;
 	white-space: nowrap;
 }
 
 .actorFilterList {
+/*
 	position: absolute;
+*/
 	width: 164px;
+/*
 	height: calc(100% - 206px);
+*/
+	height: calc(100% - 54px);
     margin-top:3px;
 	overflow-x: auto;
 	overflow-y: scroll;
@@ -1268,12 +1283,21 @@ div.actorTab button.active {
 }
 
 .actorBottom {
+/*
 	margin: 5px;
     margin-top:-12px;
+*/
+}
+
+.actorBottomTry {
+	margin-top: -12px;
 }
 
 .actorNewGroup {
+/*
 	float: right;
+*/
+	margin-left: 60px;
 }
 
 .actorShowSelected {
@@ -1305,13 +1329,13 @@ div.actorTab button.active {
 	display: none;
 }
 
-.sourceChk, .targetChk, .actorChk {
+.sourceChk, .targetChk, .actorChk, .aggChk {
 	display: inline-block;
 	vertical-align: text-bottom;
 	margin: 1px 5px 0px 5px !important;
 }
 
-.actorChkLbl {
+.actorChkLbl, .aggChkLbl {
 	display: inline-block;
 	margin-right: 10px;
 }
@@ -1368,6 +1392,7 @@ div.actorTab button.active {
 	-o-user-select: none;
 	user-select: none;
 	height: calc(100% - 19px) !important;
+	display: block;
     width:100%;
 }
 
@@ -1564,4 +1589,20 @@ color: #333;
 .popover-title {
   text-align:center;
   color:#555;
+}
+
+/* Begin aggregation styling */
+.aggregPentaSelect {
+	padding: 10px;
+	width: 300px;
+}
+
+#aggregTable {
+	width:100%;
+	table-layout: fixed;
+}
+
+#aggregTable th {
+	width: 100px;
+	padding: 0px 10px;
 }

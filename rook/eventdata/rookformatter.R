@@ -11,7 +11,7 @@ validate = function(jsonData, format) {
         fieldName = keyFormat$name
 
         logicals = grepl(keyFormat$format, jsonData[,fieldName], perl=TRUE)
-        compliances[[fieldname]] = sum(logicals) / length(jsonData[,fieldName])
+        compliances[[fieldName]] = sum(logicals) / length(jsonData[,fieldName])
     }
 
     return(compliances);
