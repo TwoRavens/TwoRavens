@@ -10,7 +10,7 @@ class User(AbstractUser):
     FIELDS_TO_SERIALIZE = ['id', 'username',
                            'email',
                            'first_name', 'last_name',
-                           'is_active', 'is_staff', 'is_superuser'
+                           'is_active', 'is_staff', 'is_superuser',
                            'last_login', 'date_joined']
 
     def as_json(self, pretty=False):
