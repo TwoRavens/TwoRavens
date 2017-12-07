@@ -150,6 +150,8 @@ var sourceActualSize = 0;				//total number of source nodes present
 var targetActualSize = 0;				//total number of target nodes present
 let changeID = 0;						//number that is updated whenever a node is added/changed, set to actorID
 
+var actorNodeNames = [];				//array list to maintain unique node names
+
 //begin force definitions
 var actorSVG = d3.select("#actorLinkSVG");
 //~ var actorSVG;			//move this to d3actor?
@@ -363,6 +365,7 @@ function dragend(d, i) {
         }
         //~ console.log(actorLinks);
 
+		actorNodeNames.splice(actorNodeNames.indexOf(dragSelect.name), 1);		//remove from name list
         actorNodes.splice(actorNodes.indexOf(dragSelect), 1);		//remove the old node
 
         dragTarget.actorID = changeID;
@@ -378,6 +381,9 @@ function dragend(d, i) {
         showSelected($("#" + currentTab + "ShowSelected")[0]);
 
         updateAll();
+
+        if (opMode == "aggreg")
+			updateAggregTable();
     }
     dragStarted = false;		//now reset all drag variables
     dragSelect = null;
@@ -435,6 +441,8 @@ function updateSVG() {
                 }
             }
             updateAll();
+            if (opMode == "aggreg")
+				updateAggregTable();
         })
         .merge(linkGroup);
 
@@ -592,6 +600,9 @@ function updateSVG() {
         //~ console.log("end links");
 
         resetMouseVars();
+
+        if (opMode == "aggreg")
+			updateAggregTable();
     }	//end of createLink()
 
     //update all names of nodes - changeID and actorID are not updated on name change to save room for other changes; probably unneccesary for a normal user (unlikely they will perform so many changes)
@@ -739,6 +750,53 @@ function calcCircleNum(curHeight) {
         return numCircle1;
     return numCircle2;
 }
+
+//rename group on click, initialize groups
+$(document).ready(function () {
+
+    //visual feedback for name changing
+    $("#editGroupName").click(function () {
+        $("#editGroupName").css("background-color", "white").css("border", "1px solid black");
+    });
+
+    //catch enter and escape key
+    $("#editGroupName").keydown(function (e) {
+        if (e.keyCode == 13 || e.keyCode == 27) {		//enter or escape key pressed
+            $("#editGroupName").focusout();
+            $("#" + currentTab + "TabBtn").focus();		//remove focus
+        }
+    });
+
+    //save changes to group name
+    $("#editGroupName").focusout(function () {
+		var goodName = true;
+        let newGroupName = $("#editGroupName").val().trim();
+        if (newGroupName == "") {		//revert to previous name if none entered
+            newGroupName = window[currentTab + "CurrentNode"].name;
+            goodName = false;
+        }
+        else if (newGroupName != window[currentTab + "CurrentNode"].name && actorNodeNames.indexOf(newGroupName) > -1) {
+			alert("This name has already been used");
+			newGroupName = window[currentTab + "CurrentNode"].name;
+			goodName = false;
+			$("#editGroupName").focusin();
+		}
+		
+        //remove visual feedback
+        $("#editGroupName").css("background-color", "#F9F9F9").css("border", "none");
+        //update in nodes data structure
+        if (goodName) {
+			actorNodeNames.splice(actorNodeNames.indexOf(window[currentTab + "CurrentNode"].name), 1);
+			actorNodeNames.push(newGroupName);
+		}
+		window[currentTab + "CurrentNode"].name = newGroupName;
+        
+        //update DOM
+        updateGroupName(newGroupName);
+
+        updateAll();		//update force
+    });
+});
 
 //update display of group name
 function updateGroupName(newGroupName) {
@@ -1144,7 +1202,14 @@ $(".actorClearAll").click(function (event) {
 
 //adds a new group for source/target
 $(".actorNewGroup").click(function (event) {
-    actorNodes.push(new nodeObj(capitalizeFirst(currentTab) + " " + window[currentTab + "Size"], [], [], actorColors(currentSize), currentTab, changeID));
+	var newName = capitalizeFirst(currentTab) + " " + window[currentTab + "Size"];
+	var nameCount = 1;
+	while (actorNodeNames.indexOf(newName) > -1) {
+		newName = capitalizeFirst(currentTab) + " " + (window[currentTab + "Size"] + nameCount);
+		nameCount ++;
+	}
+    actorNodes.push(new nodeObj(newName, [], [], actorColors(currentSize), currentTab, changeID));
+    actorNodeNames.push(actorNodes[actorNodes.length - 1].name);
     window[currentTab + "Size"]++;
     window[currentTab + "ActualSize"]++;
     currentSize++;
@@ -1228,6 +1293,7 @@ $("#deleteGroup").click(function () {
                 x--;
             }
         }
+        actorNodeNames.splice(actorNodes[cur].name, 1);
         actorNodes.splice(cur, 1);
         window[currentTab + "ActualSize"]--;
 
@@ -1259,6 +1325,8 @@ $("#deleteGroup").click(function () {
         }
         updateAll();
 
+		if (opMode == "aggreg")
+			updateAggregTable();
     }
 });
 
