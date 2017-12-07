@@ -243,6 +243,9 @@ $(document).ready(function () {
         updateGroupName(newGroupName);
 
         updateAll();        //update force
+
+        if (opMode == "aggreg")
+			updateAggregTable();
     });
 });
 
@@ -795,6 +798,9 @@ $(document).ready(function () {
         updateGroupName(newGroupName);
 
         updateAll();		//update force
+
+        if (opMode == "aggreg")
+			updateAggregTable();
     });
 });
 
@@ -1235,6 +1241,8 @@ $(".actorNewGroup").click(function (event) {
         });
     }
     updateAll();
+    if (opMode == "aggreg")
+		updateAggregTable();
     actorTick();
     actorForce.alpha(1).restart();
 });
