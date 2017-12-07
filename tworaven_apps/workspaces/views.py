@@ -6,6 +6,8 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.cache import never_cache
 
 from django.http import JsonResponse, HttpResponse, Http404, HttpResponseRedirect
+from django.contrib.auth.decorators import login_required
+
 from tworaven_apps.workspaces.workspace_util import WorkspaceUtil
 from tworaven_apps.workspaces.workspace_recorder import WorkspaceRecorder
 from tworaven_apps.workspaces.session_display_helper import SessionDisplayList
@@ -13,6 +15,7 @@ from tworaven_apps.workspaces.models import SavedWorkspace
 from tworaven_apps.utils.view_helper import get_session_key
 
 
+@login_required
 def view_workspace_info(request):
     """View current workspace and/or other saved workspaces"""
     # Look for a workspace matching the session key

@@ -5,7 +5,7 @@ urlpatterns = (
 
     # Show saved workspaces for the logged in user
     #
-    url(r'^test-show-workspace$',
+    url(r'^show-workspaces$',
         views.view_workspace_info,
         name='view_workspace_info'),
 
