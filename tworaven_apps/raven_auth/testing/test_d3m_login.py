@@ -35,15 +35,15 @@ class D3MLogin(TestCase):
         app_config = AppConfiguration(**params)
         app_config.save()
 
+        # test client
+        self.client = Client()
+
 
 
 
     def test_10_redirect_to_login(self):
         """(10) Redirect to login when in D3M mode"""
         msgt(self.test_10_redirect_to_login.__doc__)
-
-        # test client
-        client = Client()
 
         # Attempt to go the main workspace
         #
@@ -52,22 +52,22 @@ class D3MLogin(TestCase):
         # --------------------------------
         # Look for 302 redirect
         # --------------------------------
-        response1 = client.get(url)
+        resp1 = self.client.get(url)
 
         # 302 response - redirect
         #
-        self.assertEqual(response1.status_code, 302)
+        self.assertEqual(resp1.status_code, 302)
 
 
         # --------------------------------
         # Follow redirect to login page
         # --------------------------------
-        response2 = client.get(url, follow=True)
+        resp2 = self.client.get(url, follow=True)
 
-        login_found = response2.content.decode('utf-8').find(LOGIN_STR) > -1
+        login_found = resp2.content.decode('utf-8').find(LOGIN_STR) > -1
         self.assertTrue(login_found)
 
-        username_found = response2.content.decode('utf-8').find(USERNAME_STR) > -1
+        username_found = resp2.content.decode('utf-8').find(USERNAME_STR) > -1
         self.assertTrue(username_found)
 
 
@@ -101,11 +101,11 @@ class D3MLogin(TestCase):
         url = reverse('home')
 
         # --------------------------------
-        # Look for 302 redirect
+        # logged in, should be able to reach page
         # --------------------------------
         response1 = client.get(url)
-        #import ipdb; ipdb.set_trace()
-        # 302 response - redirect
+
+        # 200 status code
         #
         self.assertEqual(response1.status_code, 200)
 

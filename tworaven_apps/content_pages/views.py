@@ -8,15 +8,9 @@ from tworaven_apps.utils.view_helper import get_session_key
 def view_pebbles_home(request):
     """Serve up the workspace, the current home page.
     Include global js settings"""
-    session_key = get_session_key(request)
-
     app_config = AppConfiguration.get_config()
     if app_config is None:
         return HttpResponseRedirect(reverse('view_no_domain_config_error'))
-
-    dinfo = dict(title='TwoRavens',
-                 session_key=session_key,
-                 app_config=app_config.convert_to_dict())
 
     # Is this D3M Mode?  If so, make sure:
     #  (1) there is D3M config information
@@ -34,6 +28,11 @@ def view_pebbles_home(request):
             return HttpResponseRedirect(\
                     reverse('login'))
 
+    session_key = get_session_key(request)
+
+    dinfo = dict(title='TwoRavens',
+                 session_key=session_key,
+                 app_config=app_config.convert_to_dict())
 
     return render(request,
                   'index.html',

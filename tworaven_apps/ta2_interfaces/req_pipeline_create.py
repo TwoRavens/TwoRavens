@@ -43,7 +43,7 @@ def pipeline_create(info_str=None):
     except json.decoder.JSONDecodeError as err_obj:
         err_msg = 'Failed to convert UI Str to JSON: %s' % (err_obj)
         return get_failed_precondition_response(err_msg)
-    #import ipdb; ipdb.set_trace()
+
     if KEY_CONTEXT_FROM_UI not in info_dict:
         return get_failed_precondition_response(ERR_NO_CONTEXT)
 

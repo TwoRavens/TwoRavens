@@ -19,6 +19,7 @@ TEST_FIXTURE_FILE = join(dirname(dirname(abspath(__file__))),
                          'fixtures',
                          'ws_test_2017_1205',)
 
+"""
 class WorkspaceTestBaseFixtures(TestCase):
 
     #fixtures = ['ws_test_2017_1205.json']
@@ -26,9 +27,11 @@ class WorkspaceTestBaseFixtures(TestCase):
         # Load fixtures
         msgt('load fixtures from: %s' % TEST_FIXTURE_FILE)
         call_command('loaddata', TEST_FIXTURE_FILE, verbosity=0)
+"""
 
+class WorkspaceRetrievalTest(TestCase):
 
-class WorkspaceRetrievalTest(WorkspaceTestBaseFixtures):
+    fixtures = ['ws_test_2017_1205.json']
 
     def setUp(self):
         super(WorkspaceRetrievalTest, self).setUp()
