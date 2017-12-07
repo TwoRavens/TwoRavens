@@ -18,6 +18,7 @@ from tworaven_apps.ta2_interfaces.util_embed_results import FileEmbedUtil,\
     ERR_CODE_FILE_NOT_FOUND
 from tworaven_apps.ta2_interfaces.models import TEST_KEY_FILE_URI,\
     KEY_PIPELINE_INFO, KEY_PREDICT_RESULT_DATA, KEY_PREDICT_RESULT_URIS
+from tworaven_apps.raven_auth.models import User
 
 TEST_FILE_DIR = join(dirname(dirname(abspath(__file__))),
                      'templates',
@@ -29,6 +30,12 @@ class EmbedJSONTest(TestCase):
     def setUp(self):
         # Set it to internal testing mode
         settings.TA2_STATIC_TEST_MODE = True
+
+        # test client
+        self.client = Client()
+
+        user_obj = User.objects.get_or_create(username='dev_admin')[0]
+        self.client.force_login(user_obj)
 
     def test_10_embed_json_test(self):
         """(10) Test embedding the results of 1 file within the JSON"""
@@ -83,8 +90,7 @@ class EmbedJSONTest(TestCase):
         info_dict = {\
             TEST_KEY_FILE_URI: join(TEST_FILE_DIR, 'data_1_col.csv'),
             '%s2' % TEST_KEY_FILE_URI: join(TEST_FILE_DIR, 'data_2_col.csv'),
-            '%s4' % TEST_KEY_FILE_URI: join(TEST_FILE_DIR, 'bad_file.csv'),
-            }
+            '%s4' % TEST_KEY_FILE_URI: join(TEST_FILE_DIR, 'bad_file.csv')}
 
         resp_str = render_to_string('test_responses/embed_json/embed_2_files.json',
                                     info_dict)

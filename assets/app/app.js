@@ -123,6 +123,8 @@ let mytarget = '';
 let configurations = {};
 let dataschema = {};
 
+export let domainIdentifier = null; // available throughout apps js; used for saving workspace
+
 // eventually read this from the schema with real descriptions
 // metrics, tasks, and subtasks as specified in D3M schemas
 // MEAN SQUARED ERROR IS SET TO SAME AS RMSE. MSE is in schema but not proto
@@ -246,6 +248,13 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     configurations = JSON.parse(JSON.stringify(res));
     d3mRootPath = configurations.training_data_root.replace(/\/data/,'');
     d3mDataName = configurations.name;
+
+    // scopes at app.js level; used for saving workspace
+    domainIdentifier = {name: configurations.name,
+                        source_url: configurations.config_url,
+                        description: 'D3M config file'};
+                        //id: configurations.id};
+
     // d3mData = configurations.training_data_root+"/trainData.csv";
     // d3mTarget = configurations.training_data_root+"/trainTargets.csv";
     d3mPS = configurations.problem_schema_url;
@@ -1435,6 +1444,10 @@ function layout(v,v2) {
         // remove old nodes
         circle.exit().remove();
         force.start();
+
+        // save workspaces
+        console.log('ok ws');
+        record_user_metadata();
     }
 
     function mousedown(d) {
@@ -3980,23 +3993,49 @@ function apiSession(context) {
 }
 
 /**
-   record user metadata
-*/
+ *  record user metadata
+ */
+let recorder_cnt = 0;
+const save_workspace_url = '/workspaces/record-user-workspace';
+
 export function record_user_metadata(){
-    console.log('record_user_metadata');
 
-    function endSuccess(btn, Response) {
-        console.log('Session recorded: ' + Response);
-    }
+  // (1) Set domain identifier: differs for D3M, Dataverse, etc
+  //
+  var domain_identifier = 'unknown!';
+  if (IS_D3M_DOMAIN){ // domain specific identifier
+    domain_identifier = domainIdentifier;
+  }/*else if (IS_DATAVERSE_DOMAIN){
+    domain_identifier = 'TODO: DV IDENTIFIER';
+  }else if (IS_EVENTDATA_DOMAIN){
+    domain_identifier = 'TODO: EVENTDATA IDENTIFIER';
+  }*/
 
-    function endFail(btn) {
-        console.log("Session recording failed.");
-    }
+  if (zparams == null){
+    console.log('No workspace recording. zparams not defined');
+    return;
+  }
+  if (allNodes == null){
+    console.log('No workspace recording. zparams not defined');
+    return;
+  }
 
-    // Save session data
-    var sess_data = "zparams=" + JSON.stringify(zparams);
-    sess_data += "&allnodes=" + JSON.stringify(allNodes);
+  // (2) Format workspace data
+  //
+  let workspace_data = {'app_domain': APP_DOMAIN,
+                        'domain_identifier': domain_identifier,
+                        'allnodes': allNodes,
+                        'zparams': zparams}
 
-    var urlcall = '/workspaces/record-user-metadata';
-    makeCorsRequest(urlcall, "nobutton", endSuccess, endFail, sess_data);
+  //console.log('workspace_data: ' + workspace_data);
+
+  // (3) Save workspace data
+  //
+  try {
+      let res = m.request(save_workspace_url, {method: 'POST', data: workspace_data});
+      recorder_cnt++;
+      console.log('Session recorded: (cnt: ' + recorder_cnt + ') ' + res);
+  } catch (err) {
+      console.log('record_user_metadata failed: ' + err);
+  }
 }

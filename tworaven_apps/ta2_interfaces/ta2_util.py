@@ -37,16 +37,6 @@ def load_template_as_dict(template_name, info_dict={}):
 
     return json.loads(json_string, object_pairs_hook=OrderedDict)
 
-def get_request_body(request):
-    """Retrieve the request body
-    Returns either:
-        (True, content text)
-        (Fales, error message)
-    """
-    if not request.body:
-        return False, 'request.body not found'
-
-    return True, request.body.decode('utf-8')
 
 def get_grpc_content(request):
     """"Retrieve the GRPC content from the POST

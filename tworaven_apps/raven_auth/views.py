@@ -6,6 +6,8 @@ from django.contrib.auth.forms import UserCreationForm
 from django.shortcuts import render, redirect
 
 from tworaven_apps.raven_auth.forms import SignUpForm
+from tworaven_apps.configurations.models import AppConfiguration
+
 from tworaven_apps.utils.view_helper import get_common_view_info,\
     get_session_key
 
@@ -31,7 +33,6 @@ def test_state(request):
                 session_key=session_key,
                 add_cnt=add_cnt)
 
-
     return render(request, 'test_state.html', info)
 
 
@@ -53,3 +54,18 @@ def signup(request):
     info['form'] = form
 
     return render(request, 'registration/signup.html', info)
+
+
+def get_extra_context():
+    """Extra context used by url defn"""
+
+    app_config = AppConfiguration.get_config()
+    print('app_config: %s' % app_config)
+    if app_config is None:
+        return dict(is_d3m_domain=False)
+
+    print('app_config.is_d3m_domain(): %s' % app_config.is_d3m_domain)
+    if app_config.is_d3m_domain():
+        return dict(is_d3m_domain=True)
+
+    return dict(is_d3m_domain=False)

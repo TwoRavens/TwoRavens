@@ -20,8 +20,8 @@ from tworaven_apps.ta2_interfaces.req_list_pipelines import \
     list_pipelines
 from tworaven_apps.ta2_interfaces.req_export_pipeline import \
     export_pipeline
-from tworaven_apps.ta2_interfaces.ta2_util import get_grpc_content,\
-    get_request_body
+from tworaven_apps.ta2_interfaces.ta2_util import get_grpc_content
+from tworaven_apps.utils.view_helper import get_request_body
 from tworaven_apps.call_captures.models import ServiceCallEntry
 from tworaven_apps.utils.view_helper import get_session_key
 

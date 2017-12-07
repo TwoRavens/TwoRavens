@@ -1,0 +1,67 @@
+{% load workspace_extras %}
+{% load humanize %}
+
+
+<tr>
+  {% if not skip_cnt %}
+  <td rowspan="1">{{ forloop.counter }}</td>
+  <td>{{ ws.app_domain }}</td>
+  {% else %}
+  <td rowspan="1">{{ ws.app_domain }}</td>
+  {% endif %}
+
+  <td class="text-left">
+        <b>name:</b> <span style="font-size:150%">{{ ws.data_source_type }}</span><br />
+        <b>API calls</b><br />
+        {% if is_current_workspace %}- <b>by current workspace</b>:
+        <a href="{% url 'view_current_workspace' %}">{% url 'view_current_workspace' %}</a><br />
+        {% endif %}
+        -  <b>by workspace id</b>:
+          <a href="{% url 'view_workspace_by_id_json' ws.id %}">{% url 'view_workspace_by_id_json' ws.id %}</a><br />
+        <b>source_url:</b>
+          <a href="{{ ws.data_source_type.source_url }}">{{ ws.data_source_type.source_url }}</a><br />
+        <b>description:</b> {{ ws.data_source_type.description }}
+  </td>
+  <td>{{ ws.modified }}</td>
+</tr>
+<tr>
+  <td colspan="4">
+    <!-- list vars -->
+
+    {% if ws.zparams.zvars %}
+      <b>selected vars:</b>
+        {% for sel_var in ws.zparams.zvars %}
+          <span class="badge badge-info">{{ sel_var }}</span>
+        {% empty %}
+        (no variables selected)
+        {% endfor %}
+      <hr />
+    {% endif %}
+    <ul class="list-inline">
+      <li class="list-inline-item"><!-- zdata -->
+        <button class="btn btn-primary btn-sm" data-toggle="collapse" href="#var-zdata-{{ forloop.counter }}" aria-expanded="false" aria-controls="var-zdata-{{ forloop.counter }}">zdata ({{ ws.zparams|dictsize|intcomma }})
+
+          &nbsp; <span class="oi oi-chevron-bottom"></span></button>
+      </li>
+      <li class="list-inline-item"><!-- allnodes -->
+        <button class="btn btn-primary btn-sm" data-toggle="collapse" href="#var-allnodes-{{ forloop.counter }}" aria-expanded="false" aria-controls="var-allnodes-{{ forloop.counter }}">allnodes ({{ ws.allnodes|dictsize|intcomma }})
+
+        &nbsp; <span class="oi oi-chevron-bottom"></span></button>
+      </li>
+    </ul>
+    <!-- zdata content -->
+    <div class="collapse" id="var-zdata-{{ forloop.counter }}">
+      <div class="card">
+        <div class="card-header"><b>zdata</b> ({{ ws.zparams|dictsize|intcomma }})</div>
+        <pre><code>{{ ws.zparams|jsonpretty }}</code></pre>
+      </div>
+    </div>
+    <!-- allnodes content -->
+    <div class="collapse" id="var-allnodes-{{ forloop.counter }}">
+      <div class="card">
+        <div class="card-header"><b>allnodes</b> ({{ ws.allnodes|dictsize|intcomma }})</div>
+        <pre><code>{{ ws.allnodes|jsonpretty }}</code></pre>
+      </div>
+    </div>
+  </td>
+</tr>

@@ -1,9 +1,9 @@
 import json
-import random, string
 from datetime import datetime as dt
 from os.path import isdir, isfile, getsize, join
 from collections import OrderedDict
 
+from tworaven_apps.utils import random_info
 from tworaven_apps.configurations.models_d3m import D3MConfiguration,\
     D3M_FILE_ATTRIBUTES
 
@@ -116,8 +116,7 @@ def write_data_for_execute_pipeline(d3m_config, data_info):
         return None, 'temp_storage_root not accessible: [%s]' % \
                      d3m_config.temp_storage_root
 
-    rand_str = ''.join(random.choice(string.ascii_lowercase + string.digits)
-               for _ in range(4))
+    rand_str = random_info.get_alphanumeric_string(4)
 
     # create a file name based on
     #
