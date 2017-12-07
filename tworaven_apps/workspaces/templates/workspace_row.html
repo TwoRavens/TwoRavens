@@ -12,6 +12,12 @@
 
   <td class="text-left">
         <b>name:</b> <span style="font-size:150%">{{ ws.data_source_type }}</span><br />
+        <b>API calls</b><br />
+        {% if is_current_workspace %}- <b>by current workspace</b>:
+        <a href="{% url 'view_current_workspace' %}">{% url 'view_current_workspace' %}</a><br />
+        {% endif %}
+        -  <b>by workspace id</b>:
+          <a href="{% url 'view_workspace_by_id_json' ws.id %}">{% url 'view_workspace_by_id_json' ws.id %}</a><br />
         <b>source_url:</b>
           <a href="{{ ws.data_source_type.source_url }}">{{ ws.data_source_type.source_url }}</a><br />
         <b>description:</b> {{ ws.data_source_type.description }}
@@ -21,6 +27,7 @@
 <tr>
   <td colspan="4">
     <!-- list vars -->
+
     {% if ws.zparams.zvars %}
       <b>selected vars:</b>
         {% for sel_var in ws.zparams.zvars %}

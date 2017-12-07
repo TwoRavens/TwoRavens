@@ -62,7 +62,7 @@ table.tbl_workspaces tbody tr td {
           <th>Last updated</th>
         </tr>
       </thead>
-      {% with ws=current_workspace skip_cnt=1 %}
+      {% with ws=current_workspace skip_cnt=1 is_current_workspace=1 %}
         {% include "workspace_row.html" %}
       {% endwith %}
       </table>

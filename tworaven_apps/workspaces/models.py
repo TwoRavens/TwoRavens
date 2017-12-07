@@ -99,6 +99,8 @@ class SavedWorkspace(TimeStampedModel):
                            'zparams', 'allnodes',
                            'notes',
                            'created', 'modified']
+    FIELDS_TO_SERIALIZE_LITE = [x for x in FIELDS_TO_SERIALIZE
+                                if x not in ('zparams', 'allnodes')]
 
     name = models.CharField(max_length=255,
                             blank=True)
@@ -160,26 +162,12 @@ class SavedWorkspace(TimeStampedModel):
         ordering = ('-modified',)
         unique_together = ('session_key', 'data_source_type')
 
-    def as_json(self, pretty=False):
+    def as_json(self, pretty=False, **kwargs):
         """Return as a JSON string"""
         if pretty:
-            return self.as_dict(as_json_pretty=True)
-        return self.as_dict(as_json=True)
+            return self.as_dict(as_json_pretty=True, **kwargs)
+        return self.as_dict(as_json=True, **kwargs)
 
-    def as_dict(self, **kwargs):
-        """Return as an OrderedDict"""
-
-        od = OrderedDict()
-
-        for param in self.FIELDS_TO_SERIALIZE:
-            od[param] = self.__dict__.get(param)
-
-        if as_json:
-            return json.dumps(od, cls=DjangoJSONEncoder)
-        elif as_json_pretty:
-            return json.dumps(od, cls=DjangoJSONEncoder, indent=4)
-
-        return od
 
     def as_dict(self, **kwargs):
         """Return as an OrderedDict"""
@@ -189,7 +177,7 @@ class SavedWorkspace(TimeStampedModel):
         od = OrderedDict()
 
         for param in self.FIELDS_TO_SERIALIZE:
-            print('param: ', param)
+            #print('param: ', param)
             if param == 'data_source_type':
                 od[param] = self.data_source_type.as_dict()
             elif param == 'user':

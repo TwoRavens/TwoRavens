@@ -19,22 +19,14 @@ TEST_FIXTURE_FILE = join(dirname(dirname(abspath(__file__))),
                          'fixtures',
                          'ws_test_2017_1205',)
 
-"""
-class WorkspaceTestBaseFixtures(TestCase):
-
-    #fixtures = ['ws_test_2017_1205.json']
-    def setUp(self):
-        # Load fixtures
-        msgt('load fixtures from: %s' % TEST_FIXTURE_FILE)
-        call_command('loaddata', TEST_FIXTURE_FILE, verbosity=0)
-"""
 
 class WorkspaceRetrievalTest(TestCase):
 
     fixtures = ['ws_test_2017_1205.json']
 
     def setUp(self):
-        super(WorkspaceRetrievalTest, self).setUp()
+        # test client
+        pass
 
     def test_10_list_workspaces_null_user(self):
         """(10) List workspaces by null user"""
@@ -60,5 +52,37 @@ class WorkspaceRetrievalTest(TestCase):
 
         msgt('check zvars')
 
-        expected_zvars = ['Number_seasons', 'Games_played', 'At_bats', 'Runs', 'Hits', 'Doubles', 'Triples', 'Home_runs', 'RBIs', 'Walks', 'Strikeouts', 'Batting_average', 'On_base_pct', 'Slugging_pct', 'Fielding_ave', 'Position', 'Hall_of_Fame', 'Player']
+        expected_zvars = ['Number_seasons', 'Games_played', 'At_bats', 'Runs',
+                          'Hits', 'Doubles', 'Triples', 'Home_runs', 'RBIs',
+                          'Walks', 'Strikeouts', 'Batting_average',
+                          'On_base_pct', 'Slugging_pct', 'Fielding_ave',
+                          'Position', 'Hall_of_Fame', 'Player']
         self.assertEqual(saved_ws.zparams['zvars'], expected_zvars)
+
+    def test_30_workspace_by_view(self):
+        """(30) Get workspace JSON via view"""
+        msgt(self.test_30_workspace_by_view.__doc__)
+
+        # Get a user
+        user_obj = User.objects.get_or_create(username='dev_admin')[0]
+
+        # Get workspace list for a legit id
+        success, ws_list = WorkspaceRetriever.list_workspaces_by_user(user_obj)
+        ws_id = ws_list[0].id
+
+        # create a web client and login
+        client = Client()
+        client.force_login(user_obj)
+
+        # retrieve the workspace
+        url = reverse('view_workspace_by_id_json',
+                      kwargs=dict(workspace_id=ws_id))
+
+        response1 = client.get(url)
+
+        # 200 status code
+        #
+        self.assertEqual(response1.status_code, 200)
+
+        json_resp = response1.json()
+        self.assertEqual(json_resp.get('success'), True)
