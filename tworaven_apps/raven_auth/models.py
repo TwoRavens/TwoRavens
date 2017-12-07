@@ -8,7 +8,7 @@ from django.core.serializers.json import json, DjangoJSONEncoder
 class User(AbstractUser):
     """New user class to hold extra attributes in the future"""
     FIELDS_TO_SERIALIZE = ['id', 'username',
-                           'email'
+                           'email',
                            'first_name', 'last_name',
                            'is_active', 'is_staff', 'is_superuser'
                            'last_login', 'date_joined']
