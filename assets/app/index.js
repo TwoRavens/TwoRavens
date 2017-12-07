@@ -160,6 +160,7 @@ class Body {
     view(vnode) {
         let {mode} = vnode.attrs;
         let explore = mode === 'explore';
+        app.is_results_mode = mode === 'results';
 
         let _navBtn = (id, left, right, onclick, args, min) => m(
             `button#${id}.btn.navbar-right`,
@@ -298,5 +299,6 @@ class Body {
 
 m.route(document.body, '/model', {
     '/model': {render: () => m(Body)},
-    '/explore': {render: () => m(Body, {mode: 'explore'})}
+    '/explore': {render: () => m(Body, {mode: 'explore'})},
+    '/results': {render: () => m(Body, {mode: 'results'})},
 });

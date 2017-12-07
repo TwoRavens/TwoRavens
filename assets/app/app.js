@@ -15,11 +15,12 @@ import {bars, barsNode, barsSubset, density, densityNode, selVarColor} from './p
 // for both the data and metadata, if the file id is supplied; or the
 // local files if nothing is supplied.
 
-
 //-------------------------------------------------
 // NOTE: global variables are now set in the index.html file.
 //    Developers, see /template/index.html
 //-------------------------------------------------
+
+export let is_results_mode = false;
 
 // for debugging - if not in PRODUCTION, prints args and returns them
 export let cdb = _ => PRODUCTION || console.log.apply(this, arguments) && arguments;
