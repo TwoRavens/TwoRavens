@@ -1572,3 +1572,13 @@ div.hopscotch-bubble .hopscotch-bubble-arrow-container {
 	padding: 10px;
 	width: 300px;
 }
+
+#aggregTable {
+	width:100%;
+	table-layout: fixed;
+}
+
+#aggregTable th {
+	width: 100px;
+	padding: 0px 10px;
+}

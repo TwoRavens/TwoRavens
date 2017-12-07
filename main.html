@@ -193,10 +193,21 @@
 
 			<div id="dateAggregOption" style="display:none">
 				<button id="dateNone" class="dateAggregIntBtn">None</button>
-				<button id="dateWeekly" class="dateAggregIntBtn">Weekly</button>
-				<button id="dateMonthly" class="dateAggregIntBtn">Monthly</button>
-				<button id="dateQuarterly" class="dateAggregIntBtn">Quarterly</button>
-				<button id="dateYearly" class="dateAggregIntBtn">Yearly</button>
+				<input class="aggregDateChk" id="aggregDateNone" type="checkbox" value="none">
+				<div class="separator"></div>
+				<button id="dateWeek" class="dateAggregIntBtn">Weekly</button>
+				<input class="aggregDateChk" id="aggregDateWeek" type="checkbox" value="week">
+				<div class="separator"></div>
+				<button id="dateMonth" class="dateAggregIntBtn">Monthly</button>
+				<input class="aggregDateChk" id="aggregDateMonth" type="checkbox" value="month">
+				<div class="separator"></div>
+				<button id="dateQuarter" class="dateAggregIntBtn">Quarterly</button>
+				<input class="aggregDateChk" id="aggregDateQuarter" type="checkbox" value="quarter">
+				<div class="separator"></div>
+				<button id="dateYear" class="dateAggregIntBtn">Yearly</button>
+				<input class="aggregDateChk" id="aggregDateYear" type="checkbox" value="year">
+				<div class="separator"></div>
+				<!--hide the checkboxes later-->
 			</div>
         </div>
     </div>
@@ -250,8 +261,20 @@
             <tr>
             <td width="350">
             <div id="actorSelectionDiv">
+<!--
                 <div id="actorSelectionTitle" class="panel-heading text-center">
-                    <h3 class="panel-title">Actor Selection</h3>
+					<h3 class="panel-title">Actor Selection</h3>
+-->
+				<div id="actorSelectionTitle" class="panel-heading text-center" style="padding-bottom: 5px;">
+<!--
+					<div style="display:inline;float:left">
+-->
+					<div id="actorPanelTitleDiv">
+						<h3 class="panel-title">Actor Selection</h3>
+					</div>
+                    <div id="actorAggToggleDiv" style="display:none;position:relative;top:-2px;">
+						<label class="aggChkLbl"><input class="aggChk aggActor" name="aggregActorSelect" id="aggregActorSelect" type="checkbox" value="aggregActorUse" checked>Use in aggregation</label>
+					</div>
                 </div>
 
                 <div id="tabDiv" style="overflow:hidden;">
@@ -486,17 +509,17 @@
 			<div id="aggregEventSelect" style="display:none">
 -->
 				<div id="aggregEventByPenta" style="display:none">
-					<label class="aggChkLbl"><input class="aggChk allCheck" name="aggregPentaAll" id="aggregPentaAll" type="checkbox" value="all" checked>All</label>
+					<label class="aggChkLbl"><input class="aggChk  aggChkPentaAll aggAllCheck" name="aggregPentaAll" id="aggregPentaAll" type="checkbox" value="all" checked>All</label>
 					<div class="separator"></div>
-					<label class="aggChkLbl"><input class="aggChk" name="aggregPenta0" id="aggregPenta0" type="checkbox" value="penta0"checked>Penta 0: Public Statement</label>
+					<label class="aggChkLbl"><input class="aggChk  aggChkPenta" name="aggregPenta0" id="aggregPenta0" type="checkbox" value="penta0"checked>Penta 0: Public Statement</label>
 					<div class="separator"></div>
-					<label class="aggChkLbl"><input class="aggChk" name="aggregPenta1" id="aggregPenta1" type="checkbox" value="penta1"checked>Penta 1: Verbal Cooperation</label>
+					<label class="aggChkLbl"><input class="aggChk  aggChkPenta" name="aggregPenta1" id="aggregPenta1" type="checkbox" value="penta1"checked>Penta 1: Verbal Cooperation</label>
 					<div class="separator"></div>
-					<label class="aggChkLbl"><input class="aggChk" name="aggregPenta2" id="aggregPenta2" type="checkbox" value="penta2"checked>Penta 2: Material Cooperation</label>
+					<label class="aggChkLbl"><input class="aggChk  aggChkPenta" name="aggregPenta2" id="aggregPenta2" type="checkbox" value="penta2"checked>Penta 2: Material Cooperation</label>
 					<div class="separator"></div>
-					<label class="aggChkLbl"><input class="aggChk" name="aggregPenta3" id="aggregPenta3" type="checkbox" value="penta3"checked>Penta 3: Verbal Conflict</label>
+					<label class="aggChkLbl"><input class="aggChk  aggChkPenta" name="aggregPenta3" id="aggregPenta3" type="checkbox" value="penta3"checked>Penta 3: Verbal Conflict</label>
 					<div class="separator"></div>
-					<label class="aggChkLbl"><input class="aggChk" name="aggregPenta4" id="aggregPenta4" type="checkbox" value="penta4"checked>Penta 4: Material Conflict</label>
+					<label class="aggChkLbl"><input class="aggChk  aggChkPenta" name="aggregPenta4" id="aggregPenta4" type="checkbox" value="penta4"checked>Penta 4: Material Conflict</label>
 <!--
 					<p id="aggregPentaAll" class="aggregPentaSelect">All</p>
 					<p id="aggregPenta0" style="width:100%; text-align:left">Penta 0: Public Statement</p>
@@ -507,6 +530,7 @@
 -->
 				</div>
 				<div id="aggregEventByRoot" style="display:none">
+<!--
 					<p id="aggregRootAll" style="width:100%; text-align:left">All</p>
 					<p id="aggregRoot1" style="width:100%; text-align:left">Root 1: Make Public Statement</p>
 					<p id="aggregRoot2" style="width:100%; text-align:left">Root 2: Appeal</p>
@@ -528,30 +552,194 @@
 					<p id="aggregRoot18" style="width:100%; text-align:left">Root 18: Assault</p>
 					<p id="aggregRoot19" style="width:100%; text-align:left">Root 19: Fight</p>
 					<p id="aggregRoot20" style="width:100%; text-align:left">Root 20: Use Unconventional Mass Violence</p>
+-->
+					<label class="aggChkLbl"><input class="aggChk aggChkRootAll aggAllCheck" name="aggregRootAll" id="aggregRootAll" type="checkbox" value="all" checked>All</label>
+					<div class="separator"></div>
+					<label class="aggChkLbl"><input class="aggChk aggChkRoot" name="aggregRoot1" id="aggregRoot1" type="checkbox" value="root1"checked>Root 1: Make Public Statement</label>
+					<div class="separator"></div>
+					<label class="aggChkLbl"><input class="aggChk aggChkRoot" name="aggregRoot2" id="aggregRoot2" type="checkbox" value="root2"checked>Root 2: Appeal</label>
+					<div class="separator"></div>
+					<label class="aggChkLbl"><input class="aggChk aggChkRoot" name="aggregRoot3" id="aggregRoot3" type="checkbox" value="root3"checked>Root 3: Express Intent to Coop</label>
+					<div class="separator"></div>
+					<label class="aggChkLbl"><input class="aggChk aggChkRoot" name="aggregRoot4" id="aggregRoot4" type="checkbox" value="root4"checked>Root 4: Consult</label>
+					<div class="separator"></div>
+					<label class="aggChkLbl"><input class="aggChk aggChkRoot" name="aggregRoot5" id="aggregRoot5" type="checkbox" value="root5"checked>Root 5: Engage in Dip Coop</label>
+					<div class="separator"></div>
+					<label class="aggChkLbl"><input class="aggChk aggChkRoot" name="aggregRoot6" id="aggregRoot6" type="checkbox" value="root6"checked>Root 6: Engage in Material Aid</label>
+					<div class="separator"></div>
+					<label class="aggChkLbl"><input class="aggChk aggChkRoot" name="aggregRoot7" id="aggregRoot7" type="checkbox" value="root7"checked>Root 7: Provide Aid</label>
+					<div class="separator"></div>
+					<label class="aggChkLbl"><input class="aggChk aggChkRoot" name="aggregRoot8" id="aggregRoot8" type="checkbox" value="root8"checked>Root 8: Yield</label>
+					<div class="separator"></div>
+					<label class="aggChkLbl"><input class="aggChk aggChkRoot" name="aggregRoot9" id="aggregRoot9" type="checkbox" value="root9"checked>Root 9: Investigate</label>
+					<div class="separator"></div>
+					<label class="aggChkLbl"><input class="aggChk aggChkRoot" name="aggregRoot10" id="aggregRoot10" type="checkbox" value="root10"checked>Root 10: Demand</label>
+					<div class="separator"></div>
+					<label class="aggChkLbl"><input class="aggChk aggChkRoot" name="aggregRoot11" id="aggregRoot11" type="checkbox" value="root11"checked>Root 11: Disapprove</label>
+					<div class="separator"></div>
+					<label class="aggChkLbl"><input class="aggChk aggChkRoot" name="aggregRoot12" id="aggregRoot12" type="checkbox" value="root12"checked>Root 12: Reject</label>
+					<div class="separator"></div>
+					<label class="aggChkLbl"><input class="aggChk aggChkRoot" name="aggregRoot13" id="aggregRoot13" type="checkbox" value="root13"checked>Root 13: Threaten</label>
+					<div class="separator"></div>
+					<label class="aggChkLbl"><input class="aggChk aggChkRoot" name="aggregRoot14" id="aggregRoot14" type="checkbox" value="root14"checked>Root 14: Protest</label>
+					<div class="separator"></div>
+					<label class="aggChkLbl"><input class="aggChk aggChkRoot" name="aggregRoot15" id="aggregRoot15" type="checkbox" value="root15"checked>Root 15: Exhibit Force Posture</label>
+					<div class="separator"></div>
+					<label class="aggChkLbl"><input class="aggChk aggChkRoot" name="aggregRoot16" id="aggregRoot16" type="checkbox" value="root16"checked>Root 16: Reduce Relations</label>
+					<div class="separator"></div>
+					<label class="aggChkLbl"><input class="aggChk aggChkRoot" name="aggregRoot17" id="aggregRoot17" type="checkbox" value="root17"checked>Root 17: Coerce</label>
+					<div class="separator"></div>
+					<label class="aggChkLbl"><input class="aggChk aggChkRoot" name="aggregRoot18" id="aggregRoot18" type="checkbox" value="root18"checked>Root 18: Assault</label>
+					<div class="separator"></div>
+					<label class="aggChkLbl"><input class="aggChk aggChkRoot" name="aggregRoot19" id="aggregRoot19" type="checkbox" value="root19"checked>Root 19: Fight</label>
+					<div class="separator"></div>
+					<label class="aggChkLbl"><input class="aggChk aggChkRoot" name="aggregRoot20" id="aggregRoot20" type="checkbox" value="root20"checked>Root 20: Use Unconventional Mass Violence</label>
 				</div>
 <!--
 			</div>
 -->
 		</div>
 
-		<div id="aggregDataOutput" style="display:inline-block;height:calc(25% - 15px);width:100%;border:1px solid red;">
-			<table id="aggregTable" style="width:100%">
-				<caption>Data Result</caption>
+		<div id="aggregDataOutput" style="display:inline-block;height:calc(25% - 15px);width:100%;border:1px solid red;overflow-y:scroll;overflow-x:auto;">
+			<table id="aggregTable">
+				<caption>Data Results (Preview)</caption>
 				<tr id="aggregTableHeader">
-					<th id="aggregDataDate">Date</th>
-					<th id="aggregDataSrc">Source</th>
-					<th id="aggregDataTgt">Target</th>
-					<th id="aggregDataPenta0" class="aggregDataPenta">Penta 0</th>
-					<th id="aggregDataPenta1" class="aggregDataPenta">Penta 1</th>
-					<th id="aggregDataPenta2" class="aggregDataPenta">Penta 2</th>
-					<th id="aggregDataPenta3" class="aggregDataPenta">Penta 3</th>
-					<th id="aggregDataPenta4" class="aggregDataPenta">Penta 4</th>
-					<th id="aggregDataRoot1" class="aggregDataRoot" style="display:hidden">Root 1</th>
+					<th id="aggregDataDateHead" class="aggregDataDate">Date</th>
+					
+					<th id="aggregDataSrcHead" class="aggregDataSrc aggregDataActor">Source</th>
+					<th id="aggregDataTgtHead" class="aggregDataTgt aggregDataActor">Target</th>
+					
+					<th id="aggregDataPenta0Head" class="aggregDataPenta0 aggregDataPenta">Penta 0</th>
+					<th id="aggregDataPenta1Head" class="aggregDataPenta1 aggregDataPenta">Penta 1</th>
+					<th id="aggregDataPenta2Head" class="aggregDataPenta2 aggregDataPenta">Penta 2</th>
+					<th id="aggregDataPenta3Head" class="aggregDataPenta3 aggregDataPenta">Penta 3</th>
+					<th id="aggregDataPenta4Head" class="aggregDataPenta4 aggregDataPenta">Penta 4</th>
+					
+					<th id="aggregDataRoot1Head" class="aggregDataRoot1 aggregDataRoot" style="display:none;">Root 1</th>
+					<th id="aggregDataRoot2Head" class="aggregDataRoot2 aggregDataRoot" style="display:none;">Root 2</th>
+					<th id="aggregDataRoot3Head" class="aggregDataRoot3 aggregDataRoot" style="display:none;">Root 3</th>
+					<th id="aggregDataRoot4Head" class="aggregDataRoot4 aggregDataRoot" style="display:none;">Root 4</th>
+					<th id="aggregDataRoot5Head" class="aggregDataRoot5 aggregDataRoot" style="display:none;">Root 5</th>
+					<th id="aggregDataRoot6Head" class="aggregDataRoot6 aggregDataRoot" style="display:none;">Root 6</th>
+					<th id="aggregDataRoot7Head" class="aggregDataRoot7 aggregDataRoot" style="display:none;">Root 7</th>
+					<th id="aggregDataRoot8Head" class="aggregDataRoot8 aggregDataRoot" style="display:none;">Root 8</th>
+					<th id="aggregDataRoot9Head" class="aggregDataRoot9 aggregDataRoot" style="display:none;">Root 9</th>
+					<th id="aggregDataRoot10Head" class="aggregDataRoot10 aggregDataRoot" style="display:none;">Root 10</th>
+					<th id="aggregDataRoot11Head" class="aggregDataRoot11 aggregDataRoot" style="display:none;">Root 11</th>
+					<th id="aggregDataRoot12Head" class="aggregDataRoot12 aggregDataRoot" style="display:none;">Root 12</th>
+					<th id="aggregDataRoot13Head" class="aggregDataRoot13 aggregDataRoot" style="display:none;">Root 13</th>
+					<th id="aggregDataRoot14Head" class="aggregDataRoot14 aggregDataRoot" style="display:none;">Root 14</th>
+					<th id="aggregDataRoot15Head" class="aggregDataRoot15 aggregDataRoot" style="display:none;">Root 15</th>
+					<th id="aggregDataRoot16Head" class="aggregDataRoot16 aggregDataRoot" style="display:none;">Root 16</th>
+					<th id="aggregDataRoot17Head" class="aggregDataRoot17 aggregDataRoot" style="display:none;">Root 17</th>
+					<th id="aggregDataRoot18Head" class="aggregDataRoot18 aggregDataRoot" style="display:none;">Root 18</th>
+					<th id="aggregDataRoot19Head" class="aggregDataRoot19 aggregDataRoot" style="display:none;">Root 19</th>
+					<th id="aggregDataRoot20Head" class="aggregDataRoot20 aggregDataRoot" style="display:none;">Root 20</th>
 				</tr>
 
+<!--
 				<tr id="aggregTableR1">
+					<th id="aggregDataDateR1" class="aggregDataDate"></th>
 					
+					<th id="aggregDataSrcR1" class="aggregDataSrc aggregDataActor"></th>
+					<th id="aggregDataTgtR1" class="aggregDataTgt aggregDataActor"></th>
+					
+					<th id="aggregDataPenta0R1" class="aggregDataPenta0 aggregDataPenta">TBD</th>
+					<th id="aggregDataPenta1R1" class="aggregDataPenta1 aggregDataPenta">TBD</th>
+					<th id="aggregDataPenta2R1" class="aggregDataPenta2 aggregDataPenta">TBD</th>
+					<th id="aggregDataPenta3R1" class="aggregDataPenta3 aggregDataPenta">TBD</th>
+					<th id="aggregDataPenta4R1" class="aggregDataPenta4 aggregDataPenta">TBD</th>
+					
+					<th id="aggregDataRoot1R1" class="aggregDataRoot1 aggregDataRoot" style="display:none;">TBD</th>
+					<th id="aggregDataRoot2R1" class="aggregDataRoot2 aggregDataRoot" style="display:none;">TBD</th>
+					<th id="aggregDataRoot3R1" class="aggregDataRoot3 aggregDataRoot" style="display:none;">TBD</th>
+					<th id="aggregDataRoot4R1" class="aggregDataRoot4 aggregDataRoot" style="display:none;">TBD</th>
+					<th id="aggregDataRoot5R1" class="aggregDataRoot5 aggregDataRoot" style="display:none;">TBD</th>
+					<th id="aggregDataRoot6R1" class="aggregDataRoot6 aggregDataRoot" style="display:none;">TBD</th>
+					<th id="aggregDataRoot7R1" class="aggregDataRoot7 aggregDataRoot" style="display:none;">TBD</th>
+					<th id="aggregDataRoot8R1" class="aggregDataRoot8 aggregDataRoot" style="display:none;">TBD</th>
+					<th id="aggregDataRoot9R1" class="aggregDataRoot9 aggregDataRoot" style="display:none;">TBD</th>
+					<th id="aggregDataRoot10R1" class="aggregDataRoot10 aggregDataRoot" style="display:none;">TBD</th>
+					<th id="aggregDataRoot11R1" class="aggregDataRoot11 aggregDataRoot" style="display:none;">TBD</th>
+					<th id="aggregDataRoot12R1" class="aggregDataRoot12 aggregDataRoot" style="display:none;">TBD</th>
+					<th id="aggregDataRoot13R1" class="aggregDataRoot13 aggregDataRoot" style="display:none;">TBD</th>
+					<th id="aggregDataRoot14R1" class="aggregDataRoot14 aggregDataRoot" style="display:none;">TBD</th>
+					<th id="aggregDataRoot15R1" class="aggregDataRoot15 aggregDataRoot" style="display:none;">TBD</th>
+					<th id="aggregDataRoot16R1" class="aggregDataRoot16 aggregDataRoot" style="display:none;">TBD</th>
+					<th id="aggregDataRoot17R1" class="aggregDataRoot17 aggregDataRoot" style="display:none;">TBD</th>
+					<th id="aggregDataRoot18R1" class="aggregDataRoot18 aggregDataRoot" style="display:none;">TBD</th>
+					<th id="aggregDataRoot19R1" class="aggregDataRoot19 aggregDataRoot" style="display:none;">TBD</th>
+					<th id="aggregDataRoot20R1" class="aggregDataRoot20 aggregDataRoot" style="display:none;">TBD</th>
 				</tr>
+
+				<tr id="aggregTableR2">
+					<th id="aggregDataDateR2" class="aggregDataDate"></th>
+					
+					<th id="aggregDataSrcR2" class="aggregDataSrc aggregDataActor"></th>
+					<th id="aggregDataTgtR2" class="aggregDataTgt aggregDataActor"></th>
+					
+					<th id="aggregDataPenta0R2" class="aggregDataPenta0 aggregDataPenta">TBD</th>
+					<th id="aggregDataPenta1R2" class="aggregDataPenta1 aggregDataPenta">TBD</th>
+					<th id="aggregDataPenta2R2" class="aggregDataPenta2 aggregDataPenta">TBD</th>
+					<th id="aggregDataPenta3R2" class="aggregDataPenta3 aggregDataPenta">TBD</th>
+					<th id="aggregDataPenta4R2" class="aggregDataPenta4 aggregDataPenta">TBD</th>
+					
+					<th id="aggregDataRoot1R2" class="aggregDataRoot1 aggregDataRoot" style="display:none;">TBD</th>
+					<th id="aggregDataRoot2R2" class="aggregDataRoot2 aggregDataRoot" style="display:none;">TBD</th>
+					<th id="aggregDataRoot3R2" class="aggregDataRoot3 aggregDataRoot" style="display:none;">TBD</th>
+					<th id="aggregDataRoot4R2" class="aggregDataRoot4 aggregDataRoot" style="display:none;">TBD</th>
+					<th id="aggregDataRoot5R2" class="aggregDataRoot5 aggregDataRoot" style="display:none;">TBD</th>
+					<th id="aggregDataRoot6R2" class="aggregDataRoot6 aggregDataRoot" style="display:none;">TBD</th>
+					<th id="aggregDataRoot7R2" class="aggregDataRoot7 aggregDataRoot" style="display:none;">TBD</th>
+					<th id="aggregDataRoot8R2" class="aggregDataRoot8 aggregDataRoot" style="display:none;">TBD</th>
+					<th id="aggregDataRoot9R2" class="aggregDataRoot9 aggregDataRoot" style="display:none;">TBD</th>
+					<th id="aggregDataRoot10R2" class="aggregDataRoot10 aggregDataRoot" style="display:none;">TBD</th>
+					<th id="aggregDataRoot11R2" class="aggregDataRoot11 aggregDataRoot" style="display:none;">TBD</th>
+					<th id="aggregDataRoot12R2" class="aggregDataRoot12 aggregDataRoot" style="display:none;">TBD</th>
+					<th id="aggregDataRoot13R2" class="aggregDataRoot13 aggregDataRoot" style="display:none;">TBD</th>
+					<th id="aggregDataRoot14R2" class="aggregDataRoot14 aggregDataRoot" style="display:none;">TBD</th>
+					<th id="aggregDataRoot15R2" class="aggregDataRoot15 aggregDataRoot" style="display:none;">TBD</th>
+					<th id="aggregDataRoot16R2" class="aggregDataRoot16 aggregDataRoot" style="display:none;">TBD</th>
+					<th id="aggregDataRoot17R2" class="aggregDataRoot17 aggregDataRoot" style="display:none;">TBD</th>
+					<th id="aggregDataRoot18R2" class="aggregDataRoot18 aggregDataRoot" style="display:none;">TBD</th>
+					<th id="aggregDataRoot19R2" class="aggregDataRoot19 aggregDataRoot" style="display:none;">TBD</th>
+					<th id="aggregDataRoot20R2" class="aggregDataRoot20 aggregDataRoot" style="display:none;">TBD</th>
+				</tr>
+
+				<tr id="aggregTableR3">
+					<th id="aggregDataDateR3" class="aggregDataDate"></th>
+					
+					<th id="aggregDataSrcR3" class="aggregDataSrc aggregDataActor"></th>
+					<th id="aggregDataTgtR3" class="aggregDataTgt aggregDataActor"></th>
+					
+					<th id="aggregDataPenta0R3" class="aggregDataPenta0 aggregDataPenta">TBD</th>
+					<th id="aggregDataPenta1R3" class="aggregDataPenta1 aggregDataPenta">TBD</th>
+					<th id="aggregDataPenta2R3" class="aggregDataPenta2 aggregDataPenta">TBD</th>
+					<th id="aggregDataPenta3R3" class="aggregDataPenta3 aggregDataPenta">TBD</th>
+					<th id="aggregDataPenta4R3" class="aggregDataPenta4 aggregDataPenta">TBD</th>
+					
+					<th id="aggregDataRoot1R3" class="aggregDataRoot1 aggregDataRoot" style="display:none;">TBD</th>
+					<th id="aggregDataRoot2R3" class="aggregDataRoot2 aggregDataRoot" style="display:none;">TBD</th>
+					<th id="aggregDataRoot3R3" class="aggregDataRoot3 aggregDataRoot" style="display:none;">TBD</th>
+					<th id="aggregDataRoot4R3" class="aggregDataRoot4 aggregDataRoot" style="display:none;">TBD</th>
+					<th id="aggregDataRoot5R3" class="aggregDataRoot5 aggregDataRoot" style="display:none;">TBD</th>
+					<th id="aggregDataRoot6R3" class="aggregDataRoot6 aggregDataRoot" style="display:none;">TBD</th>
+					<th id="aggregDataRoot7R3" class="aggregDataRoot7 aggregDataRoot" style="display:none;">TBD</th>
+					<th id="aggregDataRoot8R3" class="aggregDataRoot8 aggregDataRoot" style="display:none;">TBD</th>
+					<th id="aggregDataRoot9R3" class="aggregDataRoot9 aggregDataRoot" style="display:none;">TBD</th>
+					<th id="aggregDataRoot10R3" class="aggregDataRoot10 aggregDataRoot" style="display:none;">TBD</th>
+					<th id="aggregDataRoot11R3" class="aggregDataRoot11 aggregDataRoot" style="display:none;">TBD</th>
+					<th id="aggregDataRoot12R3" class="aggregDataRoot12 aggregDataRoot" style="display:none;">TBD</th>
+					<th id="aggregDataRoot13R3" class="aggregDataRoot13 aggregDataRoot" style="display:none;">TBD</th>
+					<th id="aggregDataRoot14R3" class="aggregDataRoot14 aggregDataRoot" style="display:none;">TBD</th>
+					<th id="aggregDataRoot15R3" class="aggregDataRoot15 aggregDataRoot" style="display:none;">TBD</th>
+					<th id="aggregDataRoot16R3" class="aggregDataRoot16 aggregDataRoot" style="display:none;">TBD</th>
+					<th id="aggregDataRoot17R3" class="aggregDataRoot17 aggregDataRoot" style="display:none;">TBD</th>
+					<th id="aggregDataRoot18R3" class="aggregDataRoot18 aggregDataRoot" style="display:none;">TBD</th>
+					<th id="aggregDataRoot19R3" class="aggregDataRoot19 aggregDataRoot" style="display:none;">TBD</th>
+					<th id="aggregDataRoot20R3" class="aggregDataRoot20 aggregDataRoot" style="display:none;">TBD</th>
+				</tr>
+-->
 			</table>
 		</div>
 	</div>
