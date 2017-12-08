@@ -1,0 +1,69 @@
+---
+swagger: "2.0"
+info:
+  description: "This is a developers reference for TwoRavens work.\
+    \ NOTE: Not for REST-like usage.  Most endpoints only are used by the UI\
+    \ and require the user to be logged in."
+  version: "1.0.0"
+  title: "TwoRavens API doc"
+  termsOfService: "http://swagger.io/terms/"
+  contact:
+    email: "raman_prasad@harvard.edu"
+  license:
+    name: "Apache 2.0"
+    url: "http://www.apache.org/licenses/LICENSE-2.0.html"
+host: "127.0.0.1:8080"
+basePath: "/api/v1"
+tags:
+- name: "workspaces"
+  description: "Retrieve SavedWorkspace information"
+schemes:
+- "http"
+paths:
+  /workspace/{workspaceId}:
+    get:
+      tags:
+      - "workspaces"
+      summary: "Retrieve a workspace by workspace id"
+      description: "Retrieve a JSON representation of a SavedWorkspace object"
+      operationId: "findWorkspaceById"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "workspaceId"
+        in: "path"
+        description: "ID of SavedWorkspace to return"
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "object"
+            $ref: "#/definitions/SavedWorkspace"
+        400:
+          description: "Invalid workspace id"
+        401:
+          description: "Not logged in."
+  /workspace/current:
+    get:
+      tags:
+      - "workspaces"
+      summary: "Retrieve the current workspace by session id and the logged in user"
+      description: "Retrieve a JSON representation of a SavedWorkspace object"
+      operationId: "findWorkspaceCurrent"
+      produces:
+      - "application/json"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "object"
+            $ref: "#/definitions/SavedWorkspace"
+        400:
+          description: "Nothing found for this user and session key"
+        401:
+          description: "Not logged in."
+definitions:
+{% include "swagger/defn_objects.yaml" %}

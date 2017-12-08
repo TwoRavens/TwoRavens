@@ -14,11 +14,7 @@ table.config-list tr td {
   {% block main_content %}
   <div class="row">
 
-    <div class="col-12">
-      <p><a href="{% url 'view_dev_raven_links' %}" class="btn btn-outline-info btn-sm">
-        <span class="glyphicon glyphicon-chevron-left" aria-hidden="true"></span>
-  back to helper page</a>
-    </p>
+      {% include "content_pages/snippet_return_to_links.html" %}
       <h3>D3M configs</h3>
 
       <div class="card">

@@ -9,11 +9,11 @@ https://docs.djangoproject.com/en/1.11/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/1.11/ref/settings/
 """
-
 import os
 from os.path import abspath, dirname, join
 from distutils.util import strtobool
 
+from django.core.urlresolvers import reverse_lazy
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = dirname(dirname(dirname(abspath(__file__))))
@@ -137,6 +137,8 @@ CSRF_COOKIE_NAME = 'CSRF_2R'
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
+
+LOGIN_URL = reverse_lazy('home')    #'/auth/login/'
 
 STATIC_URL = '/static/'
 

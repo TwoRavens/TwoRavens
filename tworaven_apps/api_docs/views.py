@@ -2,13 +2,14 @@ import requests
 from django.urls import reverse
 
 from django.shortcuts import render
-from django.http import JsonResponse, HttpResponse, Http404
 from django.conf import settings
+from django.http import JsonResponse, HttpResponse, Http404
+from django.contrib.auth.decorators import login_required
 
 from tworaven_apps.api_docs.forms import ClientTestForm
 from tworaven_apps.ta2_interfaces.models import KEY_GRPC_JSON
 
-# Create your views here.
+@login_required
 def view_test_form(request):
     """View test form"""
     info_dict = dict(KEY_GRPC_JSON=KEY_GRPC_JSON,

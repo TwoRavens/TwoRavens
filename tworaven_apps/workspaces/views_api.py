@@ -1,4 +1,5 @@
 import json
+import http
 from collections import OrderedDict
 from django.shortcuts import render
 from django.urls import reverse
@@ -39,9 +40,14 @@ def view_workspace_info(request):
     return render(request, 'view_workspace_info.html', info)
 
 
-@login_required
 def view_current_workspace(request):
     """Retrieve a workspace by session_key and user"""
+    if not request.user.is_authenticated():
+        err_msg = ('Not logged in')
+        return JsonResponse(dict(success=False,
+                                 message=err_msg),
+                            status=http.HTTPStatus.UNAUTHORIZED)
+
     # Look for a workspace by session_key and user
     #
     session_key = get_session_key(request)
@@ -52,20 +58,27 @@ def view_current_workspace(request):
     if not current_workspace:
         err_msg = ('No workspace found'
                    ' for session_key [%s] and the current user') % (session_key,)
-        return JsonResponse(dict(success=False, message=err_msg))
+        return JsonResponse(dict(success=False,
+                                 message=err_msg),
+                            status=http.HTTPStatus.BAD_REQUEST)
 
 
-    return JsonResponse(dict(success=True,
-                             data=current_workspace.as_dict(),
-                             message='looks good'))
+    return JsonResponse(current_workspace.as_dict())
 
 
-@login_required
 def view_workspace_by_id_json(request, workspace_id):
     """Retrieve a workspace, if it exists"""
+    if not request.user.is_authenticated():
+        err_msg = ('Not logged in')
+        return JsonResponse(dict(success=False,
+                                 message=err_msg),
+                            status=http.HTTPStatus.UNAUTHORIZED)
+
     if not workspace_id:
         err_msg = ('No workspace id specified')
-        return JsonResponse(dict(success=False, message=err_msg))
+        return JsonResponse(dict(success=False,
+                                 message=err_msg),
+                            status=http.HTTPStatus.BAD_REQUEST)
 
     # Look for a workspace by user and id
     #
@@ -84,6 +97,4 @@ def view_workspace_by_id_json(request, workspace_id):
     current_workspace.session_key = session_key
     current_workspace.save()
 
-    return JsonResponse(dict(success=True,
-                             data=current_workspace.as_dict(),
-                             message='looks good'))
+    return JsonResponse(current_workspace.as_dict())
