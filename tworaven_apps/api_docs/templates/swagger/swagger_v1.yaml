@@ -1,7 +1,9 @@
 ---
 swagger: "2.0"
 info:
-  description: "This is a deveopers reference for TwoRavens work."
+  description: "This is a developers reference for TwoRavens work.\
+    \ NOTE: Not for REST-like usage.  Most endpoints only are used by the UI\
+    \ and require the user to be logged in."
   version: "1.0.0"
   title: "TwoRavens API doc"
   termsOfService: "http://swagger.io/terms/"
@@ -22,7 +24,7 @@ paths:
     get:
       tags:
       - "workspaces"
-      summary: "Retrieve workspaces by workspace id"
+      summary: "Retrieve a workspace by workspace id"
       description: "Retrieve a JSON representation of a SavedWorkspace object"
       operationId: "findWorkspaceById"
       produces:
@@ -42,6 +44,25 @@ paths:
             $ref: "#/definitions/SavedWorkspace"
         400:
           description: "Invalid workspace id"
+        401:
+          description: "Not logged in."
+  /workspace/current:
+    get:
+      tags:
+      - "workspaces"
+      summary: "Retrieve the current workspace by session id and the logged in user"
+      description: "Retrieve a JSON representation of a SavedWorkspace object"
+      operationId: "findWorkspaceCurrent"
+      produces:
+      - "application/json"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "object"
+            $ref: "#/definitions/SavedWorkspace"
+        400:
+          description: "Nothing found for this user and session key"
         401:
           description: "Not logged in."
 definitions:

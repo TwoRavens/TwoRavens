@@ -1,4 +1,5 @@
   User:
+    # corresponds to raven_auth.models.User
     type: "object"
     required:
     - "id"
@@ -6,7 +7,6 @@
     properties:
       id:
         type: "integer"
-        format: "int64"
       username:
         type: "string"
       email:
@@ -30,6 +30,7 @@
         type: "string"
         format: "date-time"
   DataSourceType:
+    # corresponds to workspaces.models.DataSourceType
     type: "object"
     required:
     - "id"
@@ -38,7 +39,6 @@
     properties:
       id:
         type: "integer"
-        format: "int64"
       name:
         type: "string"
       is_active:
@@ -56,6 +56,7 @@
         type: "string"
         format: "date-time"
   SavedWorkspace:
+    # corresponds to workspaces.models.SavedWorkspace
     type: "object"
     required:
     - "id"
@@ -63,7 +64,6 @@
     properties:
       id:
         type: "integer"
-        format: "int64"
       name:
         type: "string"
       user:
