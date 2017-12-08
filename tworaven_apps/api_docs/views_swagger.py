@@ -6,6 +6,6 @@ def view_swagger_doc_v1(request):
   info_dict = dict()
 
   return render(request,
-                'swagger_v1.yaml',
+                'swagger/swagger_v1.yaml',
                 info_dict,
                 content_type='text/yaml')

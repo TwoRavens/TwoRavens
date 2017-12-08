@@ -1,5 +1,5 @@
 from django.conf.urls import url
-from tworaven_apps.workspaces import views, views_api
+from tworaven_apps.workspaces import views
 
 urlpatterns = (
 
@@ -8,14 +8,6 @@ urlpatterns = (
     url(r'^show-workspaces$',
         views.view_workspace_info,
         name='view_workspace_info'),
-
-    url(r'^current$',
-        views_api.view_current_workspace,
-        name='view_current_workspace'),
-
-    url(r'^by-id-json/(?P<workspace_id>\d{1,5})$',
-        views_api.view_workspace_by_id_json,
-        name='view_workspace_by_id_json'),
 
     # We're listing each call here for now but may change in the future
     #

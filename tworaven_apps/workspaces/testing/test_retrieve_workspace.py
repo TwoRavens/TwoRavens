@@ -68,7 +68,8 @@ class WorkspaceRetrievalTest(TestCase):
 
         # Get workspace list for a legit id
         success, ws_list = WorkspaceRetriever.list_workspaces_by_user(user_obj)
-        ws_id = ws_list[0].id
+        expected_workspace = ws_list[0]
+        ws_id = expected_workspace.id
 
         # create a web client and login
         client = Client()
@@ -85,4 +86,9 @@ class WorkspaceRetrievalTest(TestCase):
         self.assertEqual(response1.status_code, 200)
 
         json_resp = response1.json()
-        self.assertEqual(json_resp.get('success'), True)
+        self.assertEqual(json_resp['app_domain'],
+                         expected_workspace.app_domain)
+        self.assertEqual(json_resp['user']['username'],
+                         expected_workspace.user.username)
+        self.assertEqual(json_resp['data_source_type']['name'],
+                         expected_workspace.data_source_type.name)

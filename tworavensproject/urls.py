@@ -24,7 +24,7 @@ urlpatterns = [
 
     #url(r'^ravens_volume/', include('tworaven_apps.test_data.urls')),
 
-    url(r'^api-docs/', include('tworaven_apps.api_docs.urls')),
+    url(r'^api/', include('tworaven_apps.api_docs.urls')),
 
     url(r'^', include('tworaven_apps.content_pages.urls')),
 
