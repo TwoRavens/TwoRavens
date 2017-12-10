@@ -499,6 +499,7 @@ function updateSVG() {
                     mousedownNode = null;
                 })
                 .on("mousedown", function (d) {		//creates link if mouseup did not catch
+					$(".actorChkLbl").popover("hide");
                     createLink(d);
                     nodeClick(d);
                 })
