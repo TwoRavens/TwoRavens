@@ -884,6 +884,7 @@ function actorDataLoad() {
 
 //handles data selection and read asynchronously to help speed up load
 function loadDataHelper(actorType, columnType) {
+	$(".actorChkLbl").popover("hide");
     let lines = actorData[actorType][columnType];
     let displayList;
     let chkSwitch = true;		//enables code for filter
@@ -992,16 +993,16 @@ function createElement(chkSwitch = true, actorType, columnType, value, index, di
                         $(this).attr("data-content", head);
                 }
             }
-
-            setTimeout(function(){
-				$("#" + lbl.id).popover('hide');
-			}, 10000);
         }
-        $(this).popover("toggle");
+        $(this).popover("show");
+        setTimeout(function(){
+			$("#" + lbl.id).popover('hide');
+		}, 10000);
     });
 
     $("#" + lbl.id).mouseout(function () {
-        $(this).popover("toggle");
+        //~ $(this).popover("toggle");
+        $(this).popover('hide');
     });
 
     setTimeout(function(){
@@ -1141,6 +1142,7 @@ $(".actorSearch").ready(function () {
 
 //when typing in search box
 $(".actorSearch").on("keyup", function (event) {
+	$(".actorChkLbl").popover("hide");
     const searchText = $("#" + currentTab + "Search").val().toUpperCase();
     if (searchText.length % 3 === 0) {
         actorSearch(currentTab);
@@ -1250,6 +1252,8 @@ $(".actorNewGroup").click(function (event) {
 		updateAggregTable();
     actorTick();
     actorForce.alpha(1).restart();
+
+    $(".actorChkLbl").popover("hide");
 });
 
 //remove a group if possible
