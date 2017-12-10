@@ -827,6 +827,7 @@ function actorTabSwitch(origin, tab) {
             break;
     }
 
+	$(".actorBottom, .clearActorBtn, #deleteGroup, .actorShowSelectedLbl, #editGroupName, .actorChkLbl").popover('hide');
     updateGroupName(window[currentTab + "CurrentNode"].name);
     document.getElementById(tab).style.display = "inline-block";
     actorTick();
@@ -991,6 +992,10 @@ function createElement(chkSwitch = true, actorType, columnType, value, index, di
                         $(this).attr("data-content", head);
                 }
             }
+
+            setTimeout(function(){
+				$("#" + lbl.id).popover('hide');
+			}, 10000);
         }
         $(this).popover("toggle");
     });
