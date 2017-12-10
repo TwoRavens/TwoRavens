@@ -1195,6 +1195,8 @@ $(".allCheck").click(function (event) {
 
 //adds all of the current matched items into the current selection
 $(".actorSelectAll").click(function (event) {
+	$(".actorBottom, .clearActorBtn, #deleteGroup, .actorShowSelectedLbl, #editGroupName").popover('hide');
+	$(this).popover("hide");
     $("#searchList" + capitalizeFirst(currentTab) + "s").children().each(function () {
         filterSet[currentTab]["full"].add(this.value);
         this.checked = true;
@@ -1203,6 +1205,7 @@ $(".actorSelectAll").click(function (event) {
 
 //clears all of the current matched items from the current selection
 $(".actorClearAll").click(function (event) {
+	$(".actorBottom, .clearActorBtn, #deleteGroup, .actorShowSelectedLbl, #editGroupName").popover("hide");
     $("#searchList" + capitalizeFirst(currentTab) + "s").children().each(function () {
         filterSet[currentTab]["full"].delete(this.value);
         this.checked = false;
@@ -1211,6 +1214,7 @@ $(".actorClearAll").click(function (event) {
 
 //adds a new group for source/target
 $(".actorNewGroup").click(function (event) {
+	$(".actorBottom, .clearActorBtn, #deleteGroup, .actorShowSelectedLbl, #editGroupName").popover("hide");
 	var newName = capitalizeFirst(currentTab) + " " + window[currentTab + "Size"];
 	var nameCount = 1;
 	while (actorNodeNames.indexOf(newName) > -1) {
@@ -1259,6 +1263,7 @@ $(".actorNewGroup").click(function (event) {
 
 //remove a group if possible
 $("#deleteGroup").click(function () {
+	$(".actorBottom, .clearActorBtn, #deleteGroup, .actorShowSelectedLbl, #editGroupName").popover("hide");
     const cur = actorNodes.indexOf(window[currentTab + "CurrentNode"]);
     let prev = cur - 1;
     let next = cur + 1;
