@@ -45,8 +45,8 @@ let setDataset = function(dataset) {
     window.location.reload(false);
 }
 
-// Options: one of ["phoenix", "phoenix_swb", "phoenix_nyt", "phoenix_fbis", "icews"]
-let dataset = 'phoenix';
+// Options: one of ["phoenix_rt", "cline_phoenix_swb", "cline_phoenix_nyt", "cline_phoenix_fbis", "icews"]
+let dataset = 'phoenix_rt';
 if (localStorage.getItem("dataset") !== null) {
     dataset = localStorage.getItem('dataset');
 }
@@ -58,7 +58,7 @@ document.getElementById("datasetLabel").innerHTML = dataset + " dataset";
 let subsetKeys = [];
 let subsetKeySelected = "";
 
-if (dataset.indexOf("phoenix") !== -1) {
+if (["phoenix_rt", "cline_phoenix_swb", "cline_phoenix_nyt", "cline_phoenix_fbis"].indexOf(dataset) !== -1) {
     subsetKeys = ["Actor", "Date", "Action", "Location", "Coordinates", "Custom"]; // Used to label buttons in the left panel
     subsetKeySelected = "Actor";
 }
@@ -175,7 +175,6 @@ function reloadLeftpanelVariables() {
 
             reloadRightPanelVariables()
         });
-
 }
 
 d3.select("#subsetList").selectAll("p")
@@ -205,13 +204,7 @@ function showSubset(subsetKey) {
         if (subsetKeySelected !== ""){
             $("#main").children().hide();
             $("#subset" + subsetKeySelected).css('display', 'inline');
-            if (subsetKeySelected === "Actor") {
-                d3actor();
-            }
-            if (subsetKeySelected === "Action") {
-                drawGraphs();
-                updateData();
-            }
+
             if (subsetKeySelected === "Custom") {
                 $("#stageButton").hide()
             } else {
@@ -267,16 +260,9 @@ function makeCorsRequest(url, post, callback) {
 
     xhr.onerror = function () {
         // note: xhr.readystate should be 4, and status should be 200.
-        if (xhr.status == 0) {
-            // occurs when the url becomes too large
-            alert('There was an error making the request. xmlhttprequest status is 0.');
-        }
-        else if (xhr.readyState != 4) {
-            alert('There was an error making the request. xmlhttprequest readystate is not 4.');
-        }
-        else {
-            alert('There was an error making the request.');
-        }
+        // xhr.status should not be zero
+        alert("There was an error making the data request. \nDebugging information has been logged.");
+        console.log(xhr);
     };
     xhr.send('solaJSON='+ JSON.stringify(post));
 }
@@ -352,7 +338,7 @@ function loadPhoenix(jsondata) {
         actionData[i] = 0;
     }
     for (let idx in jsondata.action_data) {
-        actionData[jsondata.action_data[idx]['<root_code>']] = jsondata.action_data[idx].total
+        actionData[parseInt(jsondata.action_data[idx]['<root_code>'])] = jsondata.action_data[idx].total
     }
 
     actorData = jsondata.actor_data;
@@ -372,8 +358,11 @@ function pageSetup(jsondata) {
         return false;
     }
 
-    if (dataset.indexOf("phoenix") !== -1) loadPhoenix(jsondata);
-    if (dataset === "icews") loadICEWS(jsondata);
+    if (["phoenix_rt", "cline_phoenix_swb", "cline_phoenix_nyt", "cline_phoenix_fbis"].indexOf(dataset) !== -1) 
+        loadPhoenix(jsondata);
+
+    if (dataset === "icews") 
+        loadICEWS(jsondata);
 
     // If first load of data, user may have selected a subset and is waiting. Render page now that data is available
     if (!initialLoad) {
@@ -385,6 +374,10 @@ function pageSetup(jsondata) {
     if (subsetKeySelected === "Action") {
         drawGraphs();
         updateData();
+    }
+
+    if (subsetKeySelected === "Actor") {
+        resizeActorSVG();
     }
 
     let total_records = 0;
@@ -421,7 +414,7 @@ window.onresize = rightpanelMargin;
 $("#btnSubset").trigger("click");		//on load let subset tab show first
 
 function rightpanelMargin() {
-    if (typeof actorCodeLoaded !== "undefined" && actorCodeLoaded){
+    if (subsetKeySelected === "Actor") {
         resizeActorSVG();
     }
 
@@ -643,6 +636,7 @@ function reloadRightPanelVariables() {
 
 // Load stored variables into the rightpanel variable tree on initial page load
 reloadRightPanelVariables();
+$("#btnSubsetLabel").addClass('active');
 
 // Create the query tree
 $(function () {
@@ -952,7 +946,8 @@ function getSubsetPreferences() {
             negate: 'false',
             children: []
         };
-        actionBuffer.sort();
+
+        actionBuffer.sort(function (a,b) { return a - b; });
         // Add each action to the parent node as another rule
         for (let action in actionBuffer) {
             if (actionBuffer[action]) {
@@ -984,7 +979,7 @@ function getSubsetPreferences() {
                 id: String(nodeId++),
                 name: 'Link ' + String(linkId),
                 show_op: linkId !== 0,
-                operation: 'and',
+                operation: 'or',
                 children: [{
                     id: String(nodeId++),
                     name: 'Source: ' + actorLinks[linkId].source.name,
@@ -1001,18 +996,23 @@ function getSubsetPreferences() {
             };
 
             for (let sourceId in actorLinks[linkId].source.group) {
-                link['children'][0]['children'].push({
-                    id: String(nodeId++),
-                    name: actorLinks[linkId].source.group[sourceId],
-                    show_op: false
-                });
+                if (actorLinks[linkId].source.group[sourceId] !== undefined) {
+                    link['children'][0]['children'].push({
+                        id: String(nodeId++),
+                        name: actorLinks[linkId].source.group[sourceId],
+                        show_op: false
+                    });
+                }
             }
+
             for (let targetId in actorLinks[linkId].target.group) {
-                link['children'][1]['children'].push({
-                    id: String(nodeId++),
-                    name: actorLinks[linkId].target.group[targetId],
-                    show_op: false
-                });
+                if (actorLinks[linkId].target.group[targetId] !== undefined) {
+                    link['children'][1]['children'].push({
+                        id: String(nodeId++),
+                        name: actorLinks[linkId].target.group[targetId],
+                        show_op: false
+                    });
+                }
             }
             subset['children'].push(link);
         }
@@ -1083,6 +1083,7 @@ function getSubsetPreferences() {
 
     }
 
+    // This functionality is disabled, because the stage button is hidden
     if (subsetKeySelected === 'Custom') {
         if (validateCustom(editor.getValue())) {
             return {
@@ -1300,7 +1301,7 @@ function buildSubset(tree){
         if (rule.name === 'Date Subset') {
 
             // The cline sets have year at the end of the date string, so it takes some additional work
-            if (['phoenix_nyt', 'phoenix_swb', 'phoenix_fbis'].indexOf(dataset) !== -1) {
+            if (['cline_phoenix_nyt', 'cline_phoenix_swb', 'cline_phoenix_fbis'].indexOf(dataset) !== -1) {
                 let lower_bound = {};
                 let upper_bound = {};
                 for (let child of rule.children) {
@@ -1349,14 +1350,14 @@ function buildSubset(tree){
                         // There is an implicit cast somewhere in the code, and I cannot find it.
                         child.fromDate = new Date(child.fromDate);
                         if (dataset === "icews") rule_query_inner['$gte'] = icewsDate(child.fromDate);
-                        if (dataset === "phoenix") rule_query_inner['$gte'] = phoenixDate(child.fromDate);
+                        if (dataset === "phoenix_rt") rule_query_inner['$gte'] = phoenixDate(child.fromDate);
                     }
 
                     if ('toDate' in child) {
                         // There is an implicit cast somewhere in the code, and I cannot find it. This normalizes
                         child.toDate = new Date(child.toDate);
                         if (dataset === "icews") rule_query_inner['$lte'] = icewsDate(child.toDate);
-                        if (dataset === "phoenix") rule_query_inner['$lte'] = phoenixDate(child.toDate);
+                        if (dataset === "phoenix_rt") rule_query_inner['$lte'] = phoenixDate(child.toDate);
                     }
                 }
                 rule_query['<date>'] = rule_query_inner;
@@ -1377,16 +1378,16 @@ function buildSubset(tree){
             if (dataset === "icews") {
                 rule_query['<country>'] = rule_query_inner;
             }
-            if (dataset.indexOf('phoenix') !== -1) {
+            if (['phoenix_rt', 'cline_phoenix_fbis', 'cline_phoenix_nyt', 'cline_phoenix_swb'].indexOf(dataset) !== -1) {
                 rule_query['<country_code>'] = rule_query_inner;
             }
         }
 
         if (rule.name === 'Action Subset'){
             let rule_query_inner = [];
-            if (dataset.indexOf('phoenix') !== -1) {
+            if (['phoenix_rt', 'cline_phoenix_fbis', 'cline_phoenix_nyt', 'cline_phoenix_swb'].indexOf(dataset) !== -1) {
                 for (let child_id in rule.children) {
-                    rule_query_inner.push(parseInt(rule.children[child_id].name));
+                    rule_query_inner.push(pad(parseInt(rule.children[child_id].name)));
                 }
                 rule_query_inner = {'$in': rule_query_inner};
 

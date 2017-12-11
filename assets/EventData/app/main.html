@@ -13,6 +13,7 @@
 
     <!--Used for rendering date calendar-->
     <link rel="stylesheet" href="../node_modules/jquery-ui/themes/base/datepicker.css">
+    <link rel="stylesheet" href="../pkgs/jquery-datepicker/jquery-ui.css">
 
     <!--NOTE: JQuery-ui must be loaded before bootstrap-->
     <script src="../node_modules/jquery/dist/jquery.min.js"></script>
@@ -79,7 +80,7 @@
                                                  class="glyphicon glyphicon-chevron-left"></span>
                   </button>
                   <p>A Phoenix-coded event dataset constructed here at The University of Texas at Dallas!</p>
-                  <a onclick="setDataset('phoenix')" class="btn btn-primary btn-sm">Select</a>
+                  <a onclick="setDataset('phoenix_rt')" class="btn btn-primary btn-sm">Select</a>
                 </div>
                 <div id="optionView2" class="optionView">
                   <button id="option" data-option="2" class="btn btn-sm btn-default">
@@ -88,7 +89,7 @@
                   </button>
                   <div style="margin-left:40px;" class="head"><a href="http://www.clinecenter.illinois.edu/data/event/phoenix/">Cline New York Times</a></div>
                   <p>This data is sourced from the New York Times and collected by the Cline Center for Advanced Social Research.</p>
-                  <a onclick="setDataset('phoenix_nyt')" class="btn btn-primary">Select</a>
+                  <a onclick="setDataset('cline_phoenix_nyt')" class="btn btn-primary">Select</a>
                 </div>
                 <div id="optionView3" class="optionView">
                   <button id="option" data-option="3" class="btn btn-sm btn-default">
@@ -97,7 +98,7 @@
                   </button>
                   <div style="margin-left:40px;" class="head"><a href="http://www.clinecenter.illinois.edu/data/event/phoenix/">Cline CIA Broadcast</a></div>
                   <p>This data is sourced from the CIA Foreign Broadcast Information Service and collected by the Cline Center for Advanced Social Research.</p>
-                  <a onclick="setDataset('phoenix_fbis')" class="btn btn-primary">Select</a>
+                  <a onclick="setDataset('cline_phoenix_fbis')" class="btn btn-primary">Select</a>
                 </div>
                 <div id="optionView4" class="optionView">
                   <button id="option" data-option="4" class="btn btn-sm btn-default">
@@ -106,7 +107,7 @@
                   </button>
                   <div style="margin-left:40px;" class="head"><a href="http://www.clinecenter.illinois.edu/data/event/phoenix/">Cline BBC Summary</a></div>
                   <p>This data is sourced from the BBC Summary of World Broadcasts and collected by the Cline Center for Advanced Social Research.</p>
-                  <a onclick="setDataset('phoenix_swb')" class="btn btn-primary">Select</a>
+                  <a onclick="setDataset('cline_phoenix_swb')" class="btn btn-primary">Select</a>
                 </div>
                 <div id="optionView5" class="optionView">
                   <button id="option" data-option="5" class="btn btn-sm btn-default">
@@ -140,16 +141,16 @@
 
 			<div id="leftpanelButtons" class="btn-group" data-toggle="buttons" style="margin-left:6px; width:calc(100% - 12px)">
 
-				<label class="btn btn-default active" style="width:50%" onclick="tabLeft('variableTab');"
+				<label class="btn btn-default" style="width:50%" onclick="tabLeft('variableTab');"
 					   title="Click variable name to add variables to data subset (select columns).">
 					<input type="radio" id="btnVariables" style="width:50%;"
-							name="options" autocomplete="off" checked>Variables</input>
+							name="options" autocomplete="off">Variables</input>
 				</label>
 
-				<label class="btn btn-default" style="width:50%" onclick="tabLeft('subsetTab');"
-					   title="Click subset name to configure subset options (select rows).">
+				<label id="btnSubsetLabel" class="btn btn-default active" style="width:50%" 
+             onclick="tabLeft('subsetTab');" title="Click subset name to configure subset options (select rows).">
 					<input type="radio" id="btnSubset" style="width:50%;"
-							name="options" autocomplete="off">Subsets</input>
+							name="options" autocomplete="off" checked>Subsets</input>
 				</label>
 			</div>
 			<div id="leftpanelContent">
@@ -197,13 +198,13 @@
         <h3 class="panel-title">Query Summary</h3>
     </div>
 
-    <div id="queryVariables" style="margin-left:5px;width:232px;height:calc(50% - 39px);overflow-y:auto">
+    <div id="queryVariables" style="margin-left:5px;width:232px;height:calc(35% - 39px);overflow-y:auto">
         <h4 class="panel-title">Variables</h4>
         <div id="variableTree"
              style="margin-left:10px;width:calc(100% - 15px);height:calc(100% - 19px);overflow-y:auto"></div>
     </div>
 
-    <div id="querySubsets" style="width:232px;height:calc(50% - 39px);">
+    <div id="querySubsets" style="width:232px;height:calc(65% - 39px);">
         <h4 class="panel-title" style="margin-left:5px;">Subsets</h4>
         <div id="subsetTree" style="height:calc(100% - 19px);overflow-y:auto"></div>
     </div>
@@ -671,12 +672,8 @@ $('#about div.panel-body').text('TwoRavens v0.1 "Dallas" -- The Norse god Odin h
 
 
 // Open/Close Panels
-$('#leftpanel span').click(function () {
-    toggleLeftPanel();
-});
-$('#rightpanel span').click(function () {
-    toggleRightPanel();
-});
+$('#leftpanel span').click(toggleLeftPanel);
+$('#rightpanel span').click(toggleRightPanel);
 
 function toggleLeftPanel() {
     if (!$('#leftpanel').hasClass('forceclosepanel')) {
@@ -693,12 +690,12 @@ function toggleLeftPanel() {
         $('#main').css('width', 'calc(100% - 260px)');
     }
     if (subsetKeySelected === "Action") {
-        console.log("ACTION");
         drawGraphs();
         updateData();
     }
-
-    resizeActorSVG();
+    if (subsetKeySelected === "Actor") {
+      resizeActorSVG();
+    }
 }
 
 function openRightPanel() {
@@ -716,13 +713,8 @@ function toggleRightPanel() {
 
     rightPanel.toggleClass('closepanel');
     rightpanelMargin();
-
-    if (subsetKeySelected === "Action") {
-        console.log("ACTION_RIGHT");
-        drawGraphs();
-        updateData();
-    }
 }
+
 </script>
 <script id="subsetCodeJS" type="text/javascript" src="app.js"></script>
 

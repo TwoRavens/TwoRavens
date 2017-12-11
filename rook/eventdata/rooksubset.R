@@ -12,11 +12,11 @@
 #      sudo service mongod start
 #
 # 3. Create a new database using the mongoimport utility in the mongo bin (via cmd from ~/TwoRavens/)
-#      mongoimport -d event_scrape -c phoenix_events --type csv --columnsHaveTypes --fields ".auto(),X.auto(),GID.auto(),Date.string(),Year.auto(),Month.auto(),Day.auto(),Source.auto(),SrcActor.auto(),SrcAgent.auto(),SOthAgent.auto(),Target.auto(),TgtActor.auto(),TgtAgent.auto(),TOthAgent.auto(),CAMEO.auto(),RootCode.auto(),QuadClass.auto(),Goldstein.auto(),None.auto(),Lat.auto(),Lon.auto(),Geoname.auto(),AdminInfo.auto(),CountryCode.auto(),ID.auto(),URL.auto(),sourcetxt.auto()" --file ~/TwoRavens/data/samplePhox.csv
-#      mongoimport -d event_scrape -c icews_events --type tsv --columnsHaveTypes --fields "Event ID.string(),Event Date.string(),Source Name.string(),Source Sectors.string(),Source Country.string(),Event Text.string(),CAMEO Code.string(),Intensity.string(),Target Name.string(),Target Sectors.string(),Target Country.string(),Story ID.string(),Sentence Number.string(),Publisher.string(),City.string(),District.string(),Province.string(),Country.string(),Latitude.auto(),Longitude.auto()" --file ~/Downloads/events.2014.20160121105408.tab
-#      mongoimport -d event_scrape -c phoenix_swb_events --type csv --file ~/Downloads/PhoenixSWB_1979-2015.csv --headerline
-#      mongoimport -d event_scrape -c phoenix_fbis_events --type csv --file ~/Downloads/PhoenixFBIS_1995-2004.csv --headerline
-#      mongoimport -d event_scrape -c phoenix_nyt_events --type csv --file ~/Downloads/PhoenixNYT_1945-2005.csv --headerline
+#      mongoimport -d event_scrape -c phoenix_events --type csv --columnsHaveTypes --fields ".auto(),X.auto(),GID.auto(),Date.string(),Year.auto(),Month.auto(),Day.auto(),Source.auto(),SrcActor.auto(),SrcAgent.auto(),SOthAgent.auto(),Target.auto(),TgtActor.auto(),TgtAgent.auto(),TOthAgent.auto(),CAMEO.string(),RootCode.string(),QuadClass.auto(),Goldstein.auto(),None.auto(),Lat.auto(),Lon.auto(),Geoname.auto(),AdminInfo.auto(),CountryCode.auto(),ID.auto(),URL.auto(),sourcetxt.auto()" --file ~/TwoRavens/data/samplePhox.csv
+#      mongoimport -d event_scrape -c icews_events --type tsv --columnsHaveTypes --fields "Event ID.string(),Event Date.string(),Source Name.string(),Source Sectors.string(),Source Country.string(),Event Text.string(),CAMEO Code.string(),Intensity.auto(),Target Name.string(),Target Sectors.string(),Target Country.string(),Story ID.string(),Sentence Number.string(),Publisher.string(),City.string(),District.string(),Province.string(),Country.string(),Latitude.auto(),Longitude.auto()" --file ~/Downloads/events.2014.20160121105408.tab
+#      mongoimport -d event_scrape -c phoenix_swb_events --type csv  --columnsHaveTypes --fields "eid.string(),story_date.string(),year.string(),month.string(),day.string(),source.string(),source_root.string(),source_agent.string(),source_others.string(),target.string(),target_root.string(),target_agent.string(),target_others.string(),code.string(),root_code.string(),quad_class.auto(),goldstein.auto(),joined_issues.string(),lat.string(),lon.string(),placename.string(),statename.string(),countryname.string(),aid.string(),process.string()" --file ~/Downloads/PhoenixSWB_1979-2015.csv
+#      mongoimport -d event_scrape -c phoenix_fbis_events --type csv --columnsHaveTypes --fields "eid.string(),story_date.string(),year.string(),month.string(),day.string(),source.string(),source_root.string(),source_agent.string(),source_others.string(),target.string(),target_root.string(),target_agent.string(),target_others.string(),code.string(),root_code.string(),quad_class.auto(),goldstein.auto(),joined_issues.string(),lat.string(),lon.string(),placename.string(),statename.string(),countryname.string(),aid.string(),process.string()" --file ~/Downloads/PhoenixFBIS_1995-2004.csv
+#      mongoimport -d event_scrape -c phoenix_nyt_events --type csv --columnsHaveTypes --fields "eid.string(),story_date.string(),year.string(),month.string(),day.string(),source.string(),source_root.string(),source_agent.string(),source_others.string(),target.string(),target_root.string(),target_agent.string(),target_others.string(),code.string(),root_code.string(),quad_class.auto(),goldstein.auto(),joined_issues.string(),lat.string(),lon.string(),placename.string(),statename.string(),countryname.string(),aid.string(),process.string()" --file ~/Downloads/PhoenixNYT_1945-2005.csv
 #
 #          Remove any straggling header documents via db.phoenix_events.remove({"Date": "Date"}), and db.icews_events.remove({"Source Country": "Source Country"})
 #      3a. To check that the csv data is available, run in new CMD:
@@ -36,7 +36,7 @@
 #                so the server must be restarted after each edit. There should be a better way.
 # 
 # 5. Start a local spec-api server from the multi-set branch here:
-#      https://github.com/Sayeedsalam/spec-event-data-server/tree/multi_dataset
+#      https://github.com/Sayeedsalam/spec-event-data-server/tree/local
 #      python ./app_v2.py
 #      The api will now be available on 0.0.0.0:5002
 #
@@ -53,9 +53,9 @@ eventdata_subset.app <- function(env) {
     production = FALSE     ## Toggle:  TRUE - Production, FALSE - Local Development
 
     api_key = 'api_key=CD75737EF4CAC292EE17B85AAE4B6'
-    datasource = "api"
+    datasource = 'api'
 
-    server_address = 'http://149.165.168.79:5002/api/data?'
+    server_address = 'http://149.165.156.33:5002/api/data?'
     local_server_address = 'http://0.0.0.0:5002/api/data?'
 
     if (production) {
@@ -121,14 +121,13 @@ eventdata_subset.app <- function(env) {
     }
 
     format = paste(dataset, '_', datasource, sep="")
-    eventdata_url = paste(server_address, api_key, "&dataset=", dataset, sep="")
+    eventdata_url = paste(server_address, api_key, "&datasource=", dataset, sep="")
 
     # ~~~~ Data Retrieval ~~~~
 
     getData = function(url) {
         print(gsub(' ', '%20', relabel(url, format), fixed=TRUE))
         data = jsonlite::fromJSON(readLines(gsub(' ', '%20', relabel(url, format), fixed=TRUE)))$data
-        print("CHECK")
         return(data)
     }
 
@@ -170,13 +169,13 @@ eventdata_subset.app <- function(env) {
 
     # Arguments specific to sources/targets queries
     if (!is.null(type) && type == 'source') {
-        unique_vals = sort(getData(paste(eventdata_url, '&unique=<source>&query=', subsets, sep="")))
+        unique_vals = sort(unlist(getData(paste(eventdata_url, '&unique=<source>&query=', subsets, sep=""))))
         response$write(toString(jsonlite::toJSON(list(source = unique_vals))))
         return(response$finish())
     }
 
     if (!is.null(type) && type == 'target') {
-        unique_vals = sort(getData(paste(eventdata_url, '&unique=<target>&query=', subsets, sep="")))
+        unique_vals = sort(unlist(getData(paste(eventdata_url, '&unique=<target>&query=', subsets, sep=""))))
         response$write(toString(jsonlite::toJSON(list(target = unique_vals))))
         return(response$finish())
     }
@@ -205,7 +204,7 @@ eventdata_subset.app <- function(env) {
         sink()
     }
 
-    if (dataset %in% list("phoenix", "phoenix_fbis", "phoenix_nyt", "phoenix_swb")) {
+    if (dataset %in% list("phoenix_rt", "cline_phoenix_fbis", "cline_phoenix_nyt", "cline_phoenix_swb")) {
 
         # This is a new query, so compute new metadata
         query_url = paste(eventdata_url, '&query=', subsets, sep="")
@@ -223,13 +222,13 @@ eventdata_subset.app <- function(env) {
         if (nrow(action_frequencies) != 0) colnames(action_frequencies) = c('total', '<root_code>')
 
         print("Collecting actor sources")
-        actor_source = sort(getData(paste(query_url, '&unique=<source>', sep="")))
+        actor_source = sort(unlist(getData(paste(query_url, '&unique=<source>', sep=""))))
 
         print("Collecting actor source entities")
-        actor_source_entities = sort(getData(paste(query_url, '&unique=<src_actor>', sep="")))
+        actor_source_entities = sort(unlist(getData(paste(query_url, '&unique=<src_actor>', sep=""))))
 
         print("Collecting actor source agents/roles")
-        actor_source_role = sort(getData(paste(query_url, '&unique=<src_agent>', sep="")))
+        actor_source_role = sort(unlist(getData(paste(query_url, '&unique=<src_agent>', sep=""))))
 
         print("Collecting actor source other agents")
         url = relabel(paste(query_url, '&unique=<src_other_agent>', sep=""), format)
@@ -243,13 +242,13 @@ eventdata_subset.app <- function(env) {
         )
 
         print("Collecting actor targets")
-        actor_target = sort(getData(paste(query_url, '&unique=<target>', sep="")))
+        actor_target = sort(unlist(getData(paste(query_url, '&unique=<target>', sep=""))))
 
         print("Collecting actor target entities")
-        actor_target_entities = sort(getData(paste(query_url, '&unique=<tgt_actor>', sep="")))
+        actor_target_entities = sort(unlist(getData(paste(query_url, '&unique=<tgt_actor>', sep=""))))
 
         print("Collecting actor target agents/roles")
-        actor_target_role = sort(getData(paste(query_url, '&unique=<tgt_agent>', sep="")))
+        actor_target_role = sort(unlist(getData(paste(query_url, '&unique=<tgt_agent>', sep=""))))
 
         print("Collecting actor target other agents")
         url = relabel(paste(query_url, '&unique=<tgt_other_agent>', sep=""), format)

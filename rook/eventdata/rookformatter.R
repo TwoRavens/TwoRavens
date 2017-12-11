@@ -4,6 +4,7 @@
 
 validate = function(jsonData, format) {
     compliances = list();
+    print(format);
 
     jsonFormat = jsonlite::fromJSON(readLines(paste("./eventdata/formats/", format, '.json', sep="")));
 

@@ -1,0 +1,82 @@
+{
+  "<event_id>": {
+    "name": "Event ID",
+    "format": "."
+  },
+  "<date>": {
+    "name": "Event Date",
+    "format": "^\\d{4}-\\d{2}-\\d{2}$"
+  },
+  "<src_name>": {
+    "name": "Source Name",
+    "format": ".*"
+  },
+  "<src_sectors>": {
+    "name": "Source Sectors",
+    "format": ".*"
+  },
+  "<src_country>": {
+    "name": "Source Country",
+    "format": ".*"
+  },
+  "<tgt_name>": {
+    "name": "Target Name",
+    "format": ".*"
+  },
+  "<tgt_sectors>": {
+    "name": "Target Sectors",
+    "format": ".*"
+  },
+  "<tgt_country>": {
+    "name": "Target Country",
+    "format": "."
+  },
+  "<goldstein>": {
+    "name": "Intensity",
+    "format": "^[+-]?\\d*\\.?\\d?+$"
+  },
+  "<latitude>": {
+    "name": "Latitude",
+    "format": "^(|NA|[+-]?\\d*\\.?\\d+)$"
+  },
+  "<longitude": {
+    "name": "Longitude",
+    "format": "^(|NA|[+-]?\\d*\\.?\\d+)$"
+  },
+  "<city>": {
+    "name": "City",
+    "format": ".*"
+  },
+  "<district>": {
+    "name": "District",
+    "format": ".*"
+  },
+  "<province>": {
+    "name": "Province",
+    "format": ".*"
+  },
+  "<country>": {
+    "name": "Country",
+    "format": ".*"
+  },
+  "<cameo>": {
+    "name": "CAMEO Code",
+    "format": "^\\d+$"
+  },
+  "<event_text>": {
+    "name": "Event Text",
+    "format": ".*"
+  },
+  "<id>": {
+    "name": "Story ID",
+    "format": "."
+  },
+  "<sentence_number>": {
+    "name": "Sentence Number",
+    "format": ".*"
+  },
+  "<publisher>": {
+    "name": "Publisher",
+    "format": ".*"
+  }
+}

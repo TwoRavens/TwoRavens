@@ -45,39 +45,33 @@
 	On stage, for each link, use a deep copy of [SELECTED] as the value for what is currently the raw string list.
 */
 
-
-let actorCodeLoaded = true;
 let actorDisplayed = false;
 
-function d3actor() {
-	$(document).ready(function () {
-		if (typeof actorCodeLoaded !== "undefined" && actorCodeLoaded) {			//if .js file has loaded, this variable will be true and defined
-			//update display variables
-			$("#actorLinkDiv").css("height", $("#actorSelectionDiv").height() + 2);
+$(document).ready(function () {
+    //update display variables
+    $("#actorLinkDiv").css("height", $("#actorSelectionDiv").height() + 2);
 
-			actorWidth = actorSVG.node().getBoundingClientRect().width;
-			actorHeight = actorSVG.node().getBoundingClientRect().height;
+    actorWidth = actorSVG.node().getBoundingClientRect().width;
+    actorHeight = actorSVG.node().getBoundingClientRect().height;
 
-			boundaryLeft = Math.floor(actorWidth / 2) - 40;
-			boundaryRight = Math.ceil(actorWidth / 2) + 40;
+    boundaryLeft = Math.floor(actorWidth / 2) - 40;
+    boundaryRight = Math.ceil(actorWidth / 2) + 40;
 
-			actorSVG.append("path").attr("id", "centerLine").attr("d", function () {
-				return "M" + actorWidth / 2 + "," + 0 + "V" + actorHeight;
-			}).attr("stroke", "black");
+    actorSVG.append("path").attr("id", "centerLine").attr("d", function () {
+        return "M" + actorWidth / 2 + "," + 0 + "V" + actorHeight;
+    }).attr("stroke", "black");
 
-			actorForce.force("x", d3.forceX().x(function (d) {
-				if (d.actor === "source")
-					return Math.floor(actorWidth / 3);
-				return Math.floor(2 * actorWidth / 3);
-			}).strength(0.06))
-				.force("y", d3.forceY().y(function (d) {
-					return Math.floor(actorHeight / 2);
-				}).strength(0.05));
-			updateAll();
-			actorDisplayed = true;
-		}
-	});
-}
+    actorForce.force("x", d3.forceX().x(function (d) {
+        if (d.actor === "source")
+            return Math.floor(actorWidth / 3);
+        return Math.floor(2 * actorWidth / 3);
+    }).strength(0.06))
+        .force("y", d3.forceY().y(function (d) {
+            return Math.floor(actorHeight / 2);
+        }).strength(0.05));
+    updateAll();
+    actorDisplayed = true;
+});
 
 //some preparation and activation for gui display
 $(document).ready(function () {
@@ -887,6 +881,7 @@ function actorDataLoad() {
 function loadDataHelper(actorType, columnType) {
 	$(".actorChkLbl").popover("hide");
     let lines = actorData[actorType][columnType];
+    if (!Array.isArray(lines) || lines.length === 0) return;
     let displayList;
     let chkSwitch = true;		//enables code for filter
 
@@ -1031,6 +1026,13 @@ function createElement(chkSwitch = true, actorType, columnType, value, index, di
     }
 }
 
+// This seems to resolve the popovers getting stuck above actors
+$('body').on('click', function (e) {
+   $('*[popover]').each(function () {
+        $(this).remove();
+    });
+});
+
 //when an actor selected, add into currentNode.group
 function actorSelectChanged(element) {
     element.checked = !!(element.checked);
@@ -1120,6 +1122,7 @@ function actorFilterChanged(element) {
 $(".clearActorBtn").click(function (event) {
     clearChecks();
     actorSearch(currentTab);
+    $(this).blur();
 });
 
 // Clear all filters
@@ -1195,12 +1198,12 @@ $(".allCheck").click(function (event) {
 
 //adds all of the current matched items into the current selection
 $(".actorSelectAll").click(function (event) {
-	$(".actorBottom, .clearActorBtn, #deleteGroup, .actorShowSelectedLbl, #editGroupName").popover('hide');
-	$(this).popover("hide");
     $("#searchList" + capitalizeFirst(currentTab) + "s").children().each(function () {
         filterSet[currentTab]["full"].add(this.value);
         this.checked = true;
     });
+    // Lose focus so that popover goes away
+    $(this).blur();
 });
 
 //clears all of the current matched items from the current selection
@@ -1210,6 +1213,7 @@ $(".actorClearAll").click(function (event) {
         filterSet[currentTab]["full"].delete(this.value);
         this.checked = false;
     });
+    $(this).blur();
 });
 
 //adds a new group for source/target
@@ -1258,7 +1262,7 @@ $(".actorNewGroup").click(function (event) {
     actorTick();
     actorForce.alpha(1).restart();
 
-    $(".actorChkLbl").popover("hide");
+    $(this).blur();
 });
 
 //remove a group if possible
@@ -1270,10 +1274,12 @@ $("#deleteGroup").click(function () {
     while (true) {
         if (actorNodes[prev] && actorNodes[prev].actor == currentTab) {
             performUpdate(prev);
+            $(this).blur();
             return;
         }
         else if (actorNodes[next] && actorNodes[next].actor == currentTab) {
             performUpdate(next);
+            $(this).blur();
             return;
         }
         else {
@@ -1443,46 +1449,49 @@ function capitalizeFirst(str) {
 
 function resizeActorSVG() {
     //actor resize on window resize handled here
-    // Only resize actor SVG if actor subset is selected
-    if (subsetKeySelected === 'Actor') {
-        const curHeight = $("#main").height() - 20;		//this is the height of the container
-        const titleHeight = $("#linkTitle").height();			//this is the height of the title div above the SVG
-        let trySize = actorHeight;
-        $("#actorSelectionDiv").css("height", curHeight);	//this constrains the left side
-        if (sourceActualSize <= calcCircleNum(curHeight - titleHeight) && targetActualSize <= calcCircleNum(curHeight - titleHeight)) {		//if link div is empty enough, maintain height alignment
-            $("#actorLinkDiv").css("height", $("#actorSelectionDiv").height() + 2);
-            actorHeight = actorSVG.node().getBoundingClientRect().height;
-            actorSVG.attr("height", actorHeight);
-            d3.select("#centerLine").attr("d", function () {
-                return "M" + actorWidth / 2 + "," + 0 + "V" + actorHeight;
-            });
-            updateAll();
-        }
-        else if (trySize > curHeight) {		//note this is a slow implementation, especially if dragging to resize
-            while (sourceActualSize <= calcCircleNum(trySize) && targetActualSize <= calcCircleNum(trySize)) {		//reduce the size of the SVG to a comfortable viewing size
-                trySize -= 20;		//try half of actorNodeR
-            }
-
-            $("#actorLinkDiv").height(function (n, c) {
-                return c - (actorHeight - trySize);
-            });
-            actorHeight = trySize;
-            actorSVG.attr("height", actorHeight);
-            d3.select("#centerLine").attr("d", function () {
-                return "M" + actorWidth / 2 + "," + 0 + "V" + actorHeight;
-            });
-            updateAll();
-        }
-        let diagramWidth = $("#linkTitle").width();
-        actorWidth = actorSVG.node().getBoundingClientRect().width;
-
-        boundaryLeft = Math.floor(actorWidth / 2) - 20;		//max x coordinate source nodes can move
-        boundaryRight = Math.ceil(actorWidth / 2) + 20;		//max x coordinate target nodes can move
-
-        actorSVG.attr("width", diagramWidth);
+    const curHeight = $("#main").height() - 20;     //this is the height of the container
+    const titleHeight = $("#linkTitle").height();           //this is the height of the title div above the SVG
+    let trySize = actorHeight;
+    $("#actorSelectionDiv").css("height", curHeight);   //this constrains the left side
+    if (sourceActualSize <= calcCircleNum(curHeight - titleHeight) && targetActualSize <= calcCircleNum(curHeight - titleHeight)) {     //if link div is empty enough, maintain height alignment
+        $("#actorLinkDiv").css("height", $("#actorSelectionDiv").height() + 2);
+        actorHeight = actorSVG.node().getBoundingClientRect().height;
+        actorSVG.attr("height", actorHeight);
         d3.select("#centerLine").attr("d", function () {
-            return "M" + diagramWidth / 2 + "," + 0 + "V" + actorHeight;
+            return "M" + actorWidth / 2 + "," + 0 + "V" + actorHeight;
         });
         updateAll();
     }
+    else if (trySize > curHeight) {     //note this is a slow implementation, especially if dragging to resize
+        while (sourceActualSize <= calcCircleNum(trySize) && targetActualSize <= calcCircleNum(trySize)) {      //reduce the size of the SVG to a comfortable viewing size
+            trySize -= 20;      //try half of actorNodeR
+        }
+
+        $("#actorLinkDiv").height(function (n, c) {
+            return c - (actorHeight - trySize);
+        });
+        actorHeight = trySize;
+        actorSVG.attr("height", actorHeight);
+        d3.select("#centerLine").attr("d", function () {
+            return "M" + actorWidth / 2 + "," + 0 + "V" + actorHeight;
+        });
+        updateAll();
+    }
+
+    if ($('#rightpanel').hasClass('closepanel')) {
+        $("#actorLinkDiv").css("width", "calc(100% - 45px)");
+    } else $("#actorLinkDiv").css("width", "calc(100% - 275px)");
+
+    let diagramWidth = $("#actorLinkDiv").width();
+    
+    actorWidth = actorSVG.node().getBoundingClientRect().width;
+
+    boundaryLeft = Math.floor(actorWidth / 2) - 20;     //max x coordinate source nodes can move
+    boundaryRight = Math.ceil(actorWidth / 2) + 20;     //max x coordinate target nodes can move
+
+    actorSVG.attr("width", diagramWidth);
+    d3.select("#centerLine").attr("d", function () {
+        return "M" + diagramWidth / 2 + "," + 0 + "V" + actorHeight;
+    });
+    updateAll();
 }

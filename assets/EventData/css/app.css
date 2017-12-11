@@ -1221,7 +1221,7 @@ div.actorTab button.active {
 /*
 	height: calc(100% - 212px);
 */
-	height: calc(100% - 60px);
+	height: calc(100% - 54px);
 	overflow-x: auto;
 	overflow-y: scroll;
 	white-space: nowrap;
@@ -1283,10 +1283,8 @@ div.actorTab button.active {
 }
 
 .actorBottom {
-/*
-	margin: 5px;
-    margin-top:-12px;
-*/
+  margin-left:2px;
+  margin-top:6px;
 }
 
 .actorBottomTry {
