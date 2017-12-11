@@ -35,7 +35,7 @@ paths:
           schema:
             type: "array"
             items:
-              $ref: "#/definitions/SavedWorkspace"
+              $ref: "#/definitions/SavedWorkspacePartial"
         400:
           description: "Error in retrieval."
         401:
@@ -65,11 +65,9 @@ paths:
             type: "object"
             $ref: "#/definitions/SavedWorkspace"
         400:
-          description: "Invalid workspace id"
+          description: "Workspace not found for this id/user."
         401:
           description: "Not logged in."
-        404:
-          description: "No workspace found for this id/user."
   /workspace/current:
     get:
       tags:
@@ -86,10 +84,8 @@ paths:
             type: "object"
             $ref: "#/definitions/SavedWorkspace"
         400:
-          description: "Nothing found for this user and session key"
+          description: "Workspace not found for this session id and user."
         401:
           description: "Not logged in."
-        404:
-          description: "No current workspace found for this user."
 definitions:
-{% include "swagger/defn_objects.yaml" %}
+{% include "swagger/v1_object_definitions.yaml" %}

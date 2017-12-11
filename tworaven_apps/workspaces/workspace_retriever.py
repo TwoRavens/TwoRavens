@@ -80,7 +80,7 @@ class WorkspaceRetriever(object):
         return True, fmt_list
 
     @staticmethod
-    def get_by_id_and_request(ws_id, request, as_json=False):
+    def get_by_id_and_request(ws_id, request, as_dict=False):
         """Get SavedWorkspace by id"""
         if ws_id is None:
             return False, ERR_WORKSPACE_ID_IS_NONE
@@ -92,10 +92,10 @@ class WorkspaceRetriever(object):
         if not success:
             return False, user_or_err
 
-        return WorkspaceRetriever.get_by_user_and_id(user_or_err, ws_id, as_json)
+        return WorkspaceRetriever.get_by_user_and_id(user_or_err, ws_id, as_dict)
 
     @staticmethod
-    def get_by_user_and_id(auth_user, ws_id, as_json=False):
+    def get_by_user_and_id(auth_user, ws_id, as_dict=False):
         """Get SavedWorkspace by id"""
         if not auth_user:
             return False, ERR_AUTH_USER_IS_NONE
@@ -121,8 +121,8 @@ class WorkspaceRetriever(object):
         # Return the workspace (or error)
         # ---------------------------------
         if workspace:
-            if as_json:
-                return True, workspace.as_json()
+            if as_dict:
+                return True, workspace.as_dict()
             return True, workspace
 
         return False, ('Workspace not found with user:'

@@ -108,22 +108,17 @@ def view_workspace_by_id_json(request, workspace_id):
                                  message=err_msg),
                             status=http.HTTPStatus.UNAUTHORIZED)
 
-    if not workspace_id:
-        err_msg = ('No workspace id specified')
+    success, ws_object_or_err = WorkspaceRetriever.get_by_id_and_request(\
+                                workspace_id,
+                                request,
+                                as_dict=True)
+
+    if not success:
         return JsonResponse(dict(success=False,
-                                 message=err_msg),
+                                 message=ws_object_or_err),
                             status=http.HTTPStatus.BAD_REQUEST)
 
-    # Look for a workspace by user and id
-    #
-    params = dict(user=request.user,
-                  id=workspace_id)
-
-    current_workspace = SavedWorkspace.objects.filter(**params).first()
-    if not current_workspace:
-        err_msg = ('No workspace found'
-                   ' for id [%s] and the current user') % (workspace_id,)
-        return JsonResponse(dict(success=False, message=err_msg))
+    return JsonResponse(ws_object_or_err)
 
     # update the session key
     #

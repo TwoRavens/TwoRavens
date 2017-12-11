@@ -29,6 +29,12 @@
       date_joined:
         type: "string"
         format: "date-time"
+  AppDomain:
+    type: "string"
+    enum:
+    - "D3M_DOMAIN"
+    - "DATAVERSE_DOMAIN"
+    - "EVENTDATA_DOMAIN"
   DataSourceType:
     # corresponds to workspaces.models.DataSourceType
     type: "object"
@@ -73,10 +79,11 @@
         type: "boolean"
       app_domain:
         type: "string"
-        enum:
-        - "D3M_DOMAIN"
-        - "DATAVERSE_DOMAIN"
-        - "EVENTDATA_DOMAIN"
+        $ref: "#/definitions/AppDomain"
+        #enum:
+        #- "D3M_DOMAIN"
+        #- "DATAVERSE_DOMAIN"
+        #- "EVENTDATA_DOMAIN"
       data_source_type:
         type: "object"
         $ref: "#/definitions/DataSourceType"
@@ -84,6 +91,36 @@
         type: "object"
       allnodes:
         type: "object"
+      notes:
+        type: "string"
+      created:
+        type: "string"
+        format: "date-time"
+      modified:
+        type: "string"
+        format: "date-time"
+  SavedWorkspacePartial:
+    # corresponds to workspaces.models.SavedWorkspace
+    type: "object"
+    required:
+    - "id"
+    - "name"
+    properties:
+      id:
+        type: "integer"
+      name:
+        type: "string"
+      user:
+        type: "object"
+        $ref: "#/definitions/User"
+      is_anonymous:
+        type: "boolean"
+      app_domain:
+        type: "string"
+        $ref: "#/definitions/AppDomain"
+      data_source_type:
+        type: "object"
+        $ref: "#/definitions/DataSourceType"
       notes:
         type: "string"
       created:

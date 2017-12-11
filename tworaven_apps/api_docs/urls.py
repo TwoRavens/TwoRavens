@@ -21,7 +21,7 @@ urlpatterns = (
         workspaces_api.view_current_workspace,
         name='view_current_workspace'),
 
-    url(r'^v1/workspace/(?P<workspace_id>\d{1,5})$',
+    url(r'^v1/workspace/(?P<workspace_id>\d{1,7})$',
         workspaces_api.view_workspace_by_id_json,
         name='view_workspace_by_id_json'),
 
