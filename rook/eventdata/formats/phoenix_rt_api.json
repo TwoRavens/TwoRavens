@@ -1,10 +1,6 @@
 {
-  "<event_id>": {
-    "name": "event_id",
-    "format": "."
-  },
   "<date>": {
-    "name": "date",
+    "name": "date8",
     "format": "^\\d{8}$"
   },
   "<year>": {
@@ -84,7 +80,7 @@
     "format": "^(|\\p{L}\\p{L}\\p{L})$"
   },
   "<admin_info>": {
-    "name": "admin_info",
+    "name": "geoname",
     "format": "^(|[\\p{L}\\s]+)$"
   },
   "<id>": {
