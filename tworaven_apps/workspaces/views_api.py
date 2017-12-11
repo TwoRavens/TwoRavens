@@ -42,6 +42,7 @@ def view_workspace_info(request):
     return render(request, 'view_workspace_info.html', info)
 
 
+<<<<<<< HEAD
 def list_user_workspaces(request):
     """Retrieve a workspace by the currently logged-in user"""
     if not request.user.is_authenticated():
@@ -74,6 +75,8 @@ def list_user_workspaces(request):
 
 
 
+=======
+>>>>>>> origin
 def view_current_workspace(request):
     """Retrieve a workspace by session_key and user"""
     if not request.user.is_authenticated():
@@ -94,7 +97,7 @@ def view_current_workspace(request):
                    ' for session_key [%s] and the current user') % (session_key,)
         return JsonResponse(dict(success=False,
                                  message=err_msg),
-                            status=http.HTTPStatus.NOT_FOUND)
+                            status=http.HTTPStatus.BAD_REQUEST)
 
 
     return JsonResponse(current_workspace.as_dict())
@@ -107,6 +110,12 @@ def view_workspace_by_id_json(request, workspace_id):
         return JsonResponse(dict(success=False,
                                  message=err_msg),
                             status=http.HTTPStatus.UNAUTHORIZED)
+
+    if not workspace_id:
+        err_msg = ('No workspace id specified')
+        return JsonResponse(dict(success=False,
+                                 message=err_msg),
+                            status=http.HTTPStatus.BAD_REQUEST)
 
     success, ws_object_or_err = WorkspaceRetriever.get_by_id_and_request(\
                                 workspace_id,

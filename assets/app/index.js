@@ -160,6 +160,7 @@ class Body {
     view(vnode) {
         let {mode} = vnode.attrs;
         let explore = mode === 'explore';
+        app.is_results_mode = mode === 'results';
 
         let _navBtn = (id, left, right, onclick, args, min) => m(
             `button#${id}.btn.navbar-right`,
@@ -276,8 +277,8 @@ class Body {
                   m('svg#whitespace'))),
               m("#spacetools.spaceTool[style=z-index: 16]",
                 spaceBtn('btnLock.active', app.lockDescription, 'Lock selection of problem description', 'pencil'),
-                spaceBtn('btnDisconnect', _ => console.log('disconnect'), 'Delete all connections between nodes', 'remove-circle'),
-                explore && spaceBtn('btnJoin', _ => console.log('join'), 'Make all possible connections between nodes', 'link'),
+                spaceBtn('btnDisconnect', _ => app.restart([]), 'Delete all connections between nodes', 'remove-circle'),
+                spaceBtn('btnJoin', _ => console.log('join'), 'Make all possible connections between nodes', 'link'),
                 spaceBtn('btnForce', app.forceSwitch, 'Pin the variable pebbles to the page', 'pushpin'),
                 spaceBtn('btnEraser', app.erase, 'Wipe all variables from the modeling space', 'magnet')),
               m(Subpanel,
@@ -298,5 +299,6 @@ class Body {
 
 m.route(document.body, '/model', {
     '/model': {render: () => m(Body)},
-    '/explore': {render: () => m(Body, {mode: 'explore'})}
+    '/explore': {render: () => m(Body, {mode: 'explore'})},
+    '/results': {render: () => m(Body, {mode: 'results'})},
 });
