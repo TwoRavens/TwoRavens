@@ -98,8 +98,13 @@
 
 {% block main_content %}
 <div class="row">
-  {% include "content_pages/snippet_return_to_links.html" %}
+  <div class="col-12">
+    {% include "content_pages/snippet_return_to_links.html" %}
+  </div>
+</div>
+<div class="row">
 
+  <!-- start: form column -->
   <div class="col-12 col-md-6">
      <h3>json</h3>
 
@@ -129,7 +134,7 @@
            <li><b>Use</b>: Answers question: Can the JSON sent from UI be converted to gRPC message?</li>
            <li><b>Invalid JSON</b>: returns a real gRPC error</li>
            <li><b>Valid JSON</b>: returns a "static" response  (which does not relate to data submitted)</li>
-           <li><b>Source of "static" responses</b>: <code>/ta2_interfaces/templates/test_responses</code>
+           <li><b>Source of "static" responses</b>: <code>/ta2_interfaces/templates/test_responses</code></li>
         </ul>
        {% else %}
          <span class="btn btn-success">External TA2 Server</span>
@@ -149,7 +154,8 @@
 TA2_TEST_SERVER_URL = '{{ TA2_TEST_SERVER_URL }}'</pre>
        </p>
 
-  </div>
+  </div><!-- end: form column -->
+  <!-- start: result column -->
   <div class="col-12 col-md-6">
       <h3>result</h3>
       <hr />
@@ -158,8 +164,8 @@ TA2_TEST_SERVER_URL = '{{ TA2_TEST_SERVER_URL }}'</pre>
       </div>
       <div id="frmResult">
       </div>
-  </div>
-</div>
+  </div><!-- end: result column -->
+</div><!-- end: row -->
 
 
 {% endblock %}
