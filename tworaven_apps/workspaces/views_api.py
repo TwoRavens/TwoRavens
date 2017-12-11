@@ -106,12 +106,6 @@ def view_workspace_by_id_json(request, workspace_id):
                                  message=err_msg),
                             status=http.HTTPStatus.UNAUTHORIZED)
 
-    if not workspace_id:
-        err_msg = ('No workspace id specified')
-        return JsonResponse(dict(success=False,
-                                 message=err_msg),
-                            status=http.HTTPStatus.BAD_REQUEST)
-
     success, ws_object_or_err = WorkspaceRetriever.get_by_id_and_request(\
                                 workspace_id,
                                 request,
@@ -123,11 +117,3 @@ def view_workspace_by_id_json(request, workspace_id):
                             status=http.HTTPStatus.BAD_REQUEST)
 
     return JsonResponse(ws_object_or_err)
-
-    # update the session key
-    #
-    session_key = get_session_key(request)
-    current_workspace.session_key = session_key
-    current_workspace.save()
-
-    return JsonResponse(current_workspace.as_dict())
