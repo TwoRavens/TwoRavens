@@ -31,6 +31,7 @@ UI_SESSION_DICT = {UI_KEY_ZPARAMS: SESSION_KEY_ZPARAMS,
 
 SESSION_KEY_LIST = [SESSION_KEY_ZPARAMS, SESSION_KEY_ALLNODES]
 
+SERIALIZE_FOR_LIST = 'SERIALIZE_FOR_LIST'
 
 class DataSourceType(TimeStampedModel):
 
@@ -169,6 +170,11 @@ class SavedWorkspace(TimeStampedModel):
         return self.as_dict(as_json=True, **kwargs)
 
 
+    def as_dict_lite(self):
+        """Return an OrderedDict w/ limited params.  No allnodes and zparams"""
+        params = {SERIALIZE_FOR_LIST: True}
+        return self.as_dict(**params)
+
     def as_dict(self, **kwargs):
         """Return as an OrderedDict"""
         as_json = kwargs.get('as_json', False)
@@ -176,7 +182,13 @@ class SavedWorkspace(TimeStampedModel):
 
         od = OrderedDict()
 
-        for param in self.FIELDS_TO_SERIALIZE:
+        serialize_for_list = kwargs.get(SERIALIZE_FOR_LIST, False)
+        if serialize_for_list:
+            fields_to_serialize = self.FIELDS_TO_SERIALIZE_LITE
+        else:
+            fields_to_serialize = self.FIELDS_TO_SERIALIZE
+
+        for param in fields_to_serialize:
             #print('param: ', param)
             if param == 'data_source_type':
                 od[param] = self.data_source_type.as_dict()

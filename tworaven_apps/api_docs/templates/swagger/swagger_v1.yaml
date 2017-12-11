@@ -20,6 +20,28 @@ tags:
 schemes:
 - "http"
 paths:
+  /workspace/list:
+    get:
+      tags:
+      - "workspaces"
+      summary: "Retrieve a list of workspaces for the logged in users"
+      description: "Retrieve a JSON representation of a user's SavedWorkspace objects"
+      operationId: "listWorkspaces"
+      produces:
+      - "application/json"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/SavedWorkspace"
+        400:
+          description: "Error in retrieval."
+        401:
+          description: "Not logged in."
+        404:
+          description: "No workspaces found for this user."
   /workspace/{workspaceId}:
     get:
       tags:
@@ -46,6 +68,8 @@ paths:
           description: "Invalid workspace id"
         401:
           description: "Not logged in."
+        404:
+          description: "No workspace found for this id/user."
   /workspace/current:
     get:
       tags:
@@ -65,5 +89,7 @@ paths:
           description: "Nothing found for this user and session key"
         401:
           description: "Not logged in."
+        404:
+          description: "No current workspace found for this user."
 definitions:
 {% include "swagger/defn_objects.yaml" %}

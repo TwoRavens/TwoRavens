@@ -13,6 +13,10 @@ urlpatterns = (
         views_swagger.view_swagger_doc_v1,
         name='view_swagger_doc_v1'),
 
+    url(r'^v1/workspace/list$',
+        workspaces_api.list_user_workspaces,
+        name='list_user_workspaces'),
+
     url(r'^v1/workspace/current$',
         workspaces_api.view_current_workspace,
         name='view_current_workspace'),
