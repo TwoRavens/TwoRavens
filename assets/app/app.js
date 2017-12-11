@@ -215,7 +215,7 @@ let byId = id => document.getElementById(id);
 export const reset = function reloadPage() {
     location.reload();
 };
-let restart;
+export let restart;
 
 let dataurl = '';
 
@@ -1063,7 +1063,8 @@ function layout(v,v2) {
         });
 
     // update graph (called when needed)
-    restart = function() {
+    restart = function($links) {
+        links = $links || links;
         // nodes.id is pegged to allNodes, i.e. the order in which variables are read in
         // nodes.index is floating and depends on updates to nodes.  a variables index changes when new variables are added.
         circle.call(force.drag);
