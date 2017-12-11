@@ -72,9 +72,6 @@ def list_user_workspaces(request):
 
 
 
-
-=======
->>>>>>> origin
 def view_current_workspace(request):
     """Retrieve a workspace by session_key and user"""
     if not request.user.is_authenticated():
