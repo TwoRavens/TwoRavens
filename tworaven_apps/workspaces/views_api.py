@@ -98,6 +98,10 @@ def view_current_workspace(request):
     return JsonResponse(current_workspace.as_dict())
 
 
+def view_workspace_by_id_base(request):
+    """stub for url"""
+    raise Http404('stub url')
+
 def view_workspace_by_id_json(request, workspace_id):
     """Retrieve a workspace, if it exists"""
     if not request.user.is_authenticated():
