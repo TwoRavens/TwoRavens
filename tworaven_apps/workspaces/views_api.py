@@ -41,8 +41,6 @@ def view_workspace_info(request):
 
     return render(request, 'view_workspace_info.html', info)
 
-
-<<<<<<< HEAD
 def list_user_workspaces(request):
     """Retrieve a workspace by the currently logged-in user"""
     if not request.user.is_authenticated():
