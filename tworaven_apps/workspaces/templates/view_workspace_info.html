@@ -32,9 +32,9 @@ table.tbl_workspaces tbody tr td {
 {% block main_content %}
 
 <div class="row">
-  {% include "content_pages/snippet_return_to_links.html" %}
 
   <div class="col-12 col-md-12">
+    {% include "content_pages/snippet_return_to_links.html" %}
     <h3>Workspace Info</h3>
 
     <div class="card">
@@ -59,6 +59,7 @@ table.tbl_workspaces tbody tr td {
     <table class="table table-bordered table-condensed tbl_workspaces">
       <thead>
         <tr>
+          <th>Id</th>
           <th>App Domain</th>
           <th>Data/Problem</th>
           <th>Last updated</th>
@@ -93,6 +94,7 @@ table.tbl_workspaces tbody tr td {
         <tr>
           <th>#</th>
           {#<th>Name</th>#}
+          <th>Id</th>
           <th>App Domain</th>
           <th>Data/Problem</th>
           <th>Last updated</th>

@@ -5,10 +5,12 @@
 <tr>
   {% if not skip_cnt %}
   <td rowspan="1">{{ forloop.counter }}</td>
-  <td>{{ ws.app_domain }}</td>
+  <td>{{ ws.id }}</td>
   {% else %}
-  <td rowspan="1">{{ ws.app_domain }}</td>
+    <td rowspan="1">{{ ws.id }}</td>
   {% endif %}
+
+  <td>{{ ws.app_domain }}</td>
 
   <td class="text-left">
         <b>name:</b> <span style="font-size:150%">{{ ws.data_source_type }}</span><br />

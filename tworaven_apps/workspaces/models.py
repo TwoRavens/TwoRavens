@@ -2,6 +2,7 @@
 from collections import OrderedDict
 from datetime import datetime as dt
 from django.core.serializers.json import json, DjangoJSONEncoder
+from django.urls import reverse
 
 from model_utils.models import TimeStampedModel
 import jsonfield
@@ -31,6 +32,7 @@ UI_SESSION_DICT = {UI_KEY_ZPARAMS: SESSION_KEY_ZPARAMS,
 
 SESSION_KEY_LIST = [SESSION_KEY_ZPARAMS, SESSION_KEY_ALLNODES]
 
+SERIALIZE_FOR_LIST = 'SERIALIZE_FOR_LIST'
 
 class DataSourceType(TimeStampedModel):
 
@@ -95,6 +97,7 @@ class SavedWorkspace(TimeStampedModel):
 
     FIELDS_TO_SERIALIZE = ['id', 'name',
                            'session_key', 'user', 'is_anonymous',
+                           'api_url',
                            'app_domain', 'data_source_type',
                            'zparams', 'allnodes',
                            'notes',
@@ -169,6 +172,11 @@ class SavedWorkspace(TimeStampedModel):
         return self.as_dict(as_json=True, **kwargs)
 
 
+    def as_dict_lite(self):
+        """Return an OrderedDict w/ limited params.  No allnodes and zparams"""
+        params = {SERIALIZE_FOR_LIST: True}
+        return self.as_dict(**params)
+
     def as_dict(self, **kwargs):
         """Return as an OrderedDict"""
         as_json = kwargs.get('as_json', False)
@@ -176,12 +184,20 @@ class SavedWorkspace(TimeStampedModel):
 
         od = OrderedDict()
 
-        for param in self.FIELDS_TO_SERIALIZE:
+        serialize_for_list = kwargs.get(SERIALIZE_FOR_LIST, False)
+        if serialize_for_list:
+            fields_to_serialize = self.FIELDS_TO_SERIALIZE_LITE
+        else:
+            fields_to_serialize = self.FIELDS_TO_SERIALIZE
+
+        for param in fields_to_serialize:
             #print('param: ', param)
             if param == 'data_source_type':
                 od[param] = self.data_source_type.as_dict()
             elif param == 'user':
                 od[param] = self.user.as_dict()
+            elif param == 'api_url':
+                od[param] = self.get_api_url()
             else:
                 od[param] = self.__dict__.get(param)
 
@@ -191,6 +207,11 @@ class SavedWorkspace(TimeStampedModel):
             return json.dumps(od, cls=DjangoJSONEncoder, indent=4)
 
         return od
+
+    def get_api_url(self):
+        """URL used in API to get object"""
+        return reverse('view_workspace_by_id_json',
+                       kwargs=dict(workspace_id=self.id))
 
     def allnodes_json(self):
         if not self.allnodes:

@@ -10,6 +10,8 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponse, Http404, HttpResponseRedirect
 from tworaven_apps.workspaces.workspace_util import WorkspaceUtil
 from tworaven_apps.workspaces.workspace_recorder import WorkspaceRecorder
+from tworaven_apps.workspaces.workspace_retriever import WorkspaceRetriever,\
+    KW_SESSION_KEY
 from tworaven_apps.workspaces.session_display_helper import SessionDisplayList
 from tworaven_apps.workspaces.models import SavedWorkspace
 from tworaven_apps.utils.view_helper import get_session_key
@@ -38,6 +40,36 @@ def view_workspace_info(request):
                 session_key=request.session.session_key)
 
     return render(request, 'view_workspace_info.html', info)
+
+def list_user_workspaces(request):
+    """Retrieve a workspace by the currently logged-in user"""
+    if not request.user.is_authenticated():
+        err_msg = ('Not logged in')
+        return JsonResponse(dict(success=False,
+                                 message=err_msg),
+                            status=http.HTTPStatus.UNAUTHORIZED)
+
+    params = {KW_SESSION_KEY: get_session_key(request)}
+
+    success, ws_list_or_err = WorkspaceRetriever.list_workspaces_by_request(\
+                                    request,
+                                    as_dict=True,
+                                    **params)
+
+    if not success:
+        return JsonResponse(dict(success=False,
+                                 message=ws_list_or_err),
+                            status=http.HTTPStatus.BAD_REQUEST)
+
+    if not ws_list_or_err:
+        err_msg = ('No workspaces found for this user.')
+        return JsonResponse(dict(success=False,
+                                 message=err_msg),
+                            status=http.HTTPStatus.NOT_FOUND)
+
+    return JsonResponse(ws_list_or_err,
+                        safe=False)
+
 
 
 def view_current_workspace(request):
@@ -74,27 +106,14 @@ def view_workspace_by_id_json(request, workspace_id):
                                  message=err_msg),
                             status=http.HTTPStatus.UNAUTHORIZED)
 
-    if not workspace_id:
-        err_msg = ('No workspace id specified')
+    success, ws_object_or_err = WorkspaceRetriever.get_by_id_and_request(\
+                                workspace_id,
+                                request,
+                                as_dict=True)
+
+    if not success:
         return JsonResponse(dict(success=False,
-                                 message=err_msg),
+                                 message=ws_object_or_err),
                             status=http.HTTPStatus.BAD_REQUEST)
 
-    # Look for a workspace by user and id
-    #
-    params = dict(user=request.user,
-                  id=workspace_id)
-
-    current_workspace = SavedWorkspace.objects.filter(**params).first()
-    if not current_workspace:
-        err_msg = ('No workspace found'
-                   ' for id [%s] and the current user') % (workspace_id,)
-        return JsonResponse(dict(success=False, message=err_msg))
-
-    # update the session key
-    #
-    session_key = get_session_key(request)
-    current_workspace.session_key = session_key
-    current_workspace.save()
-
-    return JsonResponse(current_workspace.as_dict())
+    return JsonResponse(ws_object_or_err)

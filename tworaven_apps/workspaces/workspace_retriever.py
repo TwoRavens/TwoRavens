@@ -5,6 +5,8 @@ from tworaven_apps.utils.view_helper import \
     (get_session_key,
      get_authenticated_user)
 
+KW_SESSION_KEY = 'session_key'
+
 def workspace_queryset_base():
     """All queries in WorkspaceRetriever user this base"""
     return SavedWorkspace.objects.select_related(\
@@ -41,36 +43,44 @@ class WorkspaceRetriever(object):
 
 
     @staticmethod
-    def list_workspaces_by_request(request, as_json=False):
+    def list_workspaces_by_request(request, as_dict=False, **kwargs):
         """Retrieve a list of all workspaces"""
         success, user_or_err = get_authenticated_user(request)
         if not success:
             return False, user_or_err
 
-        return WorkspaceRetriever.list_workspaces_by_user(user_or_err, as_json)
-
+        return WorkspaceRetriever.list_workspaces_by_user(\
+                                            user_or_err,
+                                            as_dict,
+                                            **kwargs)
 
     @staticmethod
-    def list_workspaces_by_user(auth_user, as_json=False):
+    def list_workspaces_by_user(auth_user, as_dict=False, **kwargs):
         """Retrieve a of workspaces for a user"""
         if not auth_user:
             return False, ERR_AUTH_USER_IS_NONE
 
+        session_key = kwargs.get(KW_SESSION_KEY, None)
         ws_list = workspace_queryset_base().filter(user=auth_user)
 
-        if not as_json:
+        if not as_dict:
             return True, ws_list
 
         # Iterate through list and convert each one to json (python list/dict)
         #
         fmt_list = []
         for workspace in ws_list:
-            fmt_list.append(workspace.to_json())
+            ws_dict = workspace.as_dict_lite()
+            ws_dict['is_current_session'] = bool(\
+                                session_key and\
+                                session_key == workspace.session_key)
+
+            fmt_list.append(ws_dict)
 
         return True, fmt_list
 
     @staticmethod
-    def get_by_id_and_request(ws_id, request, as_json=False):
+    def get_by_id_and_request(ws_id, request, as_dict=False):
         """Get SavedWorkspace by id"""
         if ws_id is None:
             return False, ERR_WORKSPACE_ID_IS_NONE
@@ -82,10 +92,10 @@ class WorkspaceRetriever(object):
         if not success:
             return False, user_or_err
 
-        return WorkspaceRetriever.get_by_user_and_id(user_or_err, ws_id, as_json)
+        return WorkspaceRetriever.get_by_user_and_id(user_or_err, ws_id, as_dict)
 
     @staticmethod
-    def get_by_user_and_id(auth_user, ws_id, as_json=False):
+    def get_by_user_and_id(auth_user, ws_id, as_dict=False):
         """Get SavedWorkspace by id"""
         if not auth_user:
             return False, ERR_AUTH_USER_IS_NONE
@@ -111,8 +121,8 @@ class WorkspaceRetriever(object):
         # Return the workspace (or error)
         # ---------------------------------
         if workspace:
-            if as_json:
-                return True, workspace.as_json()
+            if as_dict:
+                return True, workspace.as_dict()
             return True, workspace
 
         return False, ('Workspace not found with user:'
