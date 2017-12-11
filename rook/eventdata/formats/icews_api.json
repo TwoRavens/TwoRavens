@@ -39,7 +39,7 @@
     "name": "Latitude",
     "format": "^(|NA|[+-]?\\d*\\.?\\d+)$"
   },
-  "<longitude": {
+  "<longitude>": {
     "name": "Longitude",
     "format": "^(|NA|[+-]?\\d*\\.?\\d+)$"
   },

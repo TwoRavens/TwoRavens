@@ -52,7 +52,7 @@ if (localStorage.getItem("dataset") !== null) {
 }
 
 // Options: "api" or "local"
-let datasource = 'local';
+let datasource = 'api';
 
 document.getElementById("datasetLabel").innerHTML = dataset + " dataset";
 let subsetKeys = [];
@@ -111,9 +111,17 @@ if (localStorage.getItem("subsetData") !== null) {
     subsetData = JSON.parse(localStorage.getItem('subsetData'));
 }
 
+// Don't use constraints outside of submitted queries
+let stagedSubsetData = [];
+for (let child of subsetData) {
+    if (child.name.indexOf("Query") !== -1) {
+        stagedSubsetData.push(child)
+    }
+}
+
 // Construct queries for current subset tree
 let variableQuery = buildVariables();
-let subsetQuery = buildSubset(subsetData);
+let subsetQuery = buildSubset(stagedSubsetData);
 
 console.log("Query: " + JSON.stringify(subsetQuery));
 query = {
@@ -305,7 +313,9 @@ function loadICEWS(jsondata) {
 
     countryData = {};
     for (let idx in jsondata.country_data) {
-        countryData[jsondata.country_data[idx]['<country_code>']] = jsondata.country_data[idx]['total']
+        if ('<country_code>' in jsondata.country_data[idx]){
+            countryData[jsondata.country_data[idx]['<country_code>']] = jsondata.country_data[idx]['total']
+        }
     }
 
     actionData = {};
@@ -327,10 +337,9 @@ function loadICEWS(jsondata) {
 function loadPhoenix(jsondata) {
     dateData = jsondata.date_data
 
+    countryData = {};
     for (let idx in jsondata.country_data) {
-        if (jsondata.country_data[idx]['<country_code>'].length === 3) {
-            countryData[jsondata.country_data[idx]['<country_code>']] = jsondata.country_data[idx].total
-        }
+        countryData[jsondata.country_data[idx]['<country_code>']] = jsondata.country_data[idx].total
     }
 
     actionData = {};
@@ -574,7 +583,7 @@ function callbackDelete(id) {
         if (node.name.indexOf('Query') !== -1) {
 
             // Don't use constraints outside of submitted queries
-            let stagedSubsetData = [];
+            stagedSubsetData = [];
             for (let child of subsetData) {
                 if (child.name.indexOf("Query") !== -1) {
                     stagedSubsetData.push(child)
@@ -594,6 +603,11 @@ function callbackDelete(id) {
                 'datasource': datasource
             };
             makeCorsRequest(subsetURL, query, pageSetup);
+
+            if (subsetData.length === 0) {
+                groupId = 1;
+                queryId = 1;
+            }
 
             // Store user preferences in local data
             localStorage.setItem('variablesSelected', JSON.stringify([...variablesSelected]));
@@ -893,14 +907,14 @@ function getSubsetPreferences() {
             children: [
                 {
                     id: String(nodeId++),
-                    name: 'From: ' + monthNames[dateminUser.getMonth()] + ' ' + String(dateminUser.getFullYear()),
+                    name: 'From: ' + monthNames[dateminUser.getMonth()] + ' ' + dateminUser.getDate() + ' ' + String(dateminUser.getFullYear()),
                     fromDate: new Date(dateminUser.getTime()),
                     cancellable: false,
                     show_op: false
                 },
                 {
                     id: String(nodeId++),
-                    name: 'To:   ' + monthNames[datemaxUser.getMonth()] + ' ' + String(datemaxUser.getFullYear()),
+                    name: 'To:   ' + monthNames[datemaxUser.getMonth()] + ' ' + datemaxUser.getDate() + ' ' + String(datemaxUser.getFullYear()),
                     toDate: new Date(datemaxUser.getTime()),
                     cancellable: false,
                     show_op: false
@@ -977,7 +991,7 @@ function getSubsetPreferences() {
         for (let linkId in actorLinks) {
             let link = {
                 id: String(nodeId++),
-                name: 'Link ' + String(linkId),
+                name: 'Link ' + String(linkId + 1),
                 show_op: linkId !== 0,
                 operation: 'or',
                 children: [{
@@ -1037,7 +1051,7 @@ function getSubsetPreferences() {
             id: String(nodeId++),
             name: 'Coords Subset',
             operation: 'and',
-            negate: 'false',
+            // negate: 'false',
             children: []
         };
 
@@ -1045,8 +1059,8 @@ function getSubsetPreferences() {
             id: String(nodeId++),
             name: 'Longitude',
             operation: 'and',
-                negate: 'false',
-                children: []
+            // negate: 'false',
+            children: []
         };
 
         longitude.children.push({
@@ -1062,7 +1076,7 @@ function getSubsetPreferences() {
         let latitude = {
             id: String(nodeId++),
             name: 'Latitude',
-            negate: 'false',
+            // negate: 'false',
             children: []
         };
 
@@ -1272,9 +1286,6 @@ function buildSubset(tree){
         }
 
         // Process final sibling
-        console.log("group");
-        console.log(group);
-        console.log(group.children);
         if (group.children.length > 0 && group.children[group.children.length - 1]['operation'] === 'and') {
             semigroup.push(processNode(group.children[group.children.length - 1]));
             group_query['$or'].push({'$and': semigroup.slice()})
@@ -1309,21 +1320,21 @@ function buildSubset(tree){
                     if ('fromDate' in child) {
                         child.fromDate = new Date(child.fromDate);
                         // I could break it down to the day, but it would take another 3 lines. Inefficient. This is already bad enough
-                        lower_bound['$or'] = [{'<year>': {'$gt': parseInt(child.fromDate.getFullYear())}},
-                                              {'<year>': parseInt(child.fromDate.getFullYear()), 
-                                               '<month>': {'$gte': parseInt(child.fromDate.getMonth())}}]
-                                              // {'<year>': parseInt(child.fromDate.getFullYear()), 
-                                              //  '<month>': parseInt(child.fromDate.getMonth()),
-                                              //  '<day>': {'$gte': parseInt(child.fromDate.getDay())}}
+                        lower_bound['$or'] = [{'<year>': {'$gt': pad(parseInt(child.fromDate.getFullYear()))}},
+                                              {'<year>': pad(parseInt(child.fromDate.getFullYear())), 
+                                               '<month>': {'$gte': pad(parseInt(child.fromDate.getMonth() + 1))}}]
+                                              // {'<year>': pad(parseInt(child.fromDate.getFullYear())), 
+                                              //  '<month>': pad(parseInt(child.fromDate.getMonth() + 1)),
+                                              //  '<day>': {'$gte': pad(parseInt(child.fromDate.getDate()))}}
                     }
                     if ('toDate' in child) {
                         child.toDate = new Date(child.toDate);
-                        upper_bound['$or'] = [{'<year>': {'$lt': parseInt(child.toDate.getFullYear())}},
-                                              {'<year>': parseInt(child.toDate.getFullYear()), 
-                                               '<month>': {'$lte': parseInt(child.toDate.getMonth())}}]
-                                              // {'<year>': parseInt(child.toDate.getFullYear()), 
-                                              //  '<month>': parseInt(child.toDate.getMonth()),
-                                              //  '<day>': {'$lte': parseInt(child.toDate.getDay())}}
+                        upper_bound['$or'] = [{'<year>': {'$lt': pad(parseInt(child.toDate.getFullYear()))}},
+                                              {'<year>': pad(parseInt(child.toDate.getFullYear())), 
+                                               '<month>': {'$lte': pad(parseInt(child.toDate.getMonth() + 1))}}]
+                                              // {'<year>': pad(parseInt(child.toDate.getFullYear())), 
+                                              //  '<month>': pad(parseInt(child.toDate.getMonth() + 1)),
+                                              //  '<day>': {'$lte': pad(parseInt(child.toDate.getDate()))}}
                     }
                 }
                 rule_query['$and'] = [lower_bound, upper_bound];
@@ -1336,14 +1347,14 @@ function buildSubset(tree){
 
                     let phoenixDate = function (date) {
                         return date.getFullYear().toString() +
-                            pad(date.getMonth()) +
-                            pad(date.getDay());
+                            pad(date.getMonth() + 1) +
+                            pad(date.getDate());
                     };
 
                     let icewsDate = function (date) {
                         return date.getFullYear().toString() + '-' +
-                            pad(date.getMonth()) + '-' +
-                            pad(date.getDay())
+                            pad(date.getMonth() + 1) + '-' +
+                            pad(date.getDate())
                     };
 
                     if ('fromDate' in child) {

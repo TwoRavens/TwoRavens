@@ -193,7 +193,7 @@ eventdata_subset.app <- function(env) {
     uniques = function(values) {
         accumulator = list()
         for (key in values) {
-            if (key != "") {
+            if (!is.na(key) && key != "") {
                 accumulator = c(accumulator, strsplit(key, ';'))
             }
         }
