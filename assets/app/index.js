@@ -277,8 +277,17 @@ class Body {
                   m('svg#whitespace'))),
               m("#spacetools.spaceTool[style=z-index: 16]",
                 spaceBtn('btnLock.active', app.lockDescription, 'Lock selection of problem description', 'pencil'),
+                spaceBtn('btnJoin', _ => {
+                    let dvs = app.nodes.filter(n => app.zparams.zdv.includes(n.name));
+                    let ivs = app.nodes.filter(n => !dvs.includes(n));
+                    app.restart([].concat(...dvs.map(dv => ivs.map(iv => ({
+                        left: true,
+                        right: false,
+                        target: iv,
+                        source: dv,
+                    })))));
+                }, 'Make all possible connections between nodes', 'link'),
                 spaceBtn('btnDisconnect', _ => app.restart([]), 'Delete all connections between nodes', 'remove-circle'),
-                spaceBtn('btnJoin', _ => console.log('join'), 'Make all possible connections between nodes', 'link'),
                 spaceBtn('btnForce', app.forceSwitch, 'Pin the variable pebbles to the page', 'pushpin'),
                 spaceBtn('btnEraser', app.erase, 'Wipe all variables from the modeling space', 'magnet')),
               m(Subpanel,
