@@ -15,6 +15,9 @@ django.setup()
 import json
 from django.conf import settings
 from tworaven_apps.ta2_interfaces import core_pb2
+# data flow
+from tworaven_apps.ta2_interfaces import dataflow_ext_pb2
+from tworaven_apps.ta2_interfaces import dataflow_ext_pb2_grpc
 from tworaven_apps.ta2_interfaces.ta2_connection import TA2Connection
 from tworaven_apps.ta2_interfaces.ta2_util import get_failed_precondition_response
 from google.protobuf.json_format import MessageToJson,\
@@ -217,6 +220,8 @@ def update_parse():
     json_parse(content, core_pb2.UpdateProblemSchemaRequest)
     print('-' * 40)
 
+
+
 def pipeline_export_parse():
 
     req = core_pb2.PipelineExportRequest()
@@ -253,8 +258,56 @@ def pipeline_export_parse():
     json_parse(content, core_pb2.Response)
     print('-' * 40)
 
+def describe_data_flow():
+
+    req = dataflow_ext_pb2.PipelineReference()
+
+    req.context.session_id = 'session_01'
+    req.pipeline_id = 'pipeline_1'
+
+    content = MessageToJson(req)
+    print('JSON:\n')
+    print(content)
+    print('-' * 40)
+
+    json_parse(content, dataflow_ext_pb2.PipelineReference)
+    print('-' * 40)
+
+    resp = dataflow_ext_pb2.DataflowDescription()
+    #import ipdb; ipdb.set_trace()
+    resp.response_info
+    """
+    resp.Input.name = 'input_name'
+    resp.Input.type =  'input_type'
+    resp.Input.value = 'input_value'
+
+    resp.Output.name = 'output_name'
+    resp.Output.type = 'output_type'
+    resp.Module.id = 'module_id'
+    resp.Module.type = 'module_type'
+    resp.Module.label = 'module_label'
+
+    resp.Module.inputs.extend()
+    """
+
+    #(name='input 1 name',
+    #                       type='input 1 type',
+    #                       value='input 1 value')
+
+    '''
+    resp.Module.inputs.add(name='input 2 name',
+                           type='input 2 type',
+                           value='input 2 value')
+
+    resp.Module.outputs.add(name='output 1 name',
+                            type='output 1 type')
+
+    resp.Module.outputs.add(name='output 2 name',
+                            type='output 2 type')
+    '''
+
 if __name__ == '__main__':
-    pipeline_export_parse()
+    describe_data_flow()
 
     #update_parse()
     #execute_pipeline_parse()
