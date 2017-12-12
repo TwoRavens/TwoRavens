@@ -99,7 +99,7 @@ class CoreServicer(object):
     raise NotImplementedError('Method not implemented!')
 
   def GetCreatePipelineResults(self, request, context):
-    """Obtain results
+    """Obtain results; lists existing pipelines then streams new results as they become available
     """
     context.set_code(grpc.StatusCode.UNIMPLEMENTED)
     context.set_details('Method not implemented!')
