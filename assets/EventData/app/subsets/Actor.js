@@ -315,6 +315,9 @@ function dragend(d, i) {
             }
         }
 
+        // Save the selections to the current 
+        filterSet[currentTab]["full"] = new Set(dragTarget.group);
+
         //update checks in actor selection
         for (var x = 0; x < dragTarget.groupIndices.length; x++)
             $("#" + dragTarget.groupIndices[x]).prop("checked", "true");
@@ -880,6 +883,7 @@ function actorDataLoad() {
 //handles data selection and read asynchronously to help speed up load
 function loadDataHelper(actorType, columnType) {
 	$(".actorChkLbl").popover("hide");
+    $(".popover").popover("hide");
     let lines = actorData[actorType][columnType];
     if (!Array.isArray(lines) || lines.length === 0) return;
     let displayList;
@@ -942,7 +946,6 @@ function createElement(chkSwitch = true, actorType, columnType, value, index, di
     }
     else {
         chkbox.onchange = function () {
-			console.log("actor flip");
             actorSelectChanged(this);
         };
     }
@@ -991,9 +994,6 @@ function createElement(chkSwitch = true, actorType, columnType, value, index, di
             }
         }
         $(this).popover("show");
-        setTimeout(function(){
-			$("#" + lbl.id).popover('hide');
-		}, 10000);
     });
 
     $("#" + lbl.id).mouseout(function () {
@@ -1025,13 +1025,6 @@ function createElement(chkSwitch = true, actorType, columnType, value, index, di
         return "no translation found";
     }
 }
-
-// This seems to resolve the popovers getting stuck above actors
-$('body').on('click', function (e) {
-   $('*[popover]').each(function () {
-        $(this).remove();
-    });
-});
 
 //when an actor selected, add into currentNode.group
 function actorSelectChanged(element) {
@@ -1407,8 +1400,6 @@ function actorSearch(actorName) {		//bugs: removes pre checked values on search 
         }
     }
 
-	console.log("actor stage");
-	console.log(stagedSubsetData);
     let stagedQuery = buildSubset(stagedSubsetData);
 
     // If no filters are set, don't add any filtering

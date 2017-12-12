@@ -493,11 +493,6 @@ if (localStorage.getItem("nodeId") !== null) {
     queryId = localStorage.getItem('queryId');
 }
 
-// Close rightpanel if no prior queries have been submitted
-if (queryId === 1) {
-    toggleRightPanel();
-}
-
 // Define negation toggle, logic dropdown and delete button, as well as their callbacks
 function buttonNegate(id, state) {
     // This state is negated simply because the buttons are visually inverted. An active button appears inactive
