@@ -339,6 +339,8 @@ function loadPhoenix(jsondata) {
 
     countryData = {};
     for (let idx in jsondata.country_data) {
+        let country = jsondata.country_data[idx]['<country_code>'];
+        if (country === "" || country === undefined) continue;
         countryData[jsondata.country_data[idx]['<country_code>']] = jsondata.country_data[idx].total
     }
 
