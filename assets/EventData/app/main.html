@@ -729,6 +729,13 @@ function toggleRightPanel() {
 
 <!--Aggregation code-->
 <script id="aggregCodeJS" type="text/javascript" src="aggreg/aggreg.js"></script>
+<script>
+
+// Close rightpanel if no prior queries have been submitted
+if (queryId === 1) {
+    toggleRightPanel();
+}
+</script>
 </body>
 </html>
 
