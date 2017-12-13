@@ -1679,7 +1679,9 @@ function zPop() {
     }
 }
 
-/** needs doc */
+/**
+    called by clicking 'Solve This Problem' in model mode
+*/
 export function estimate(btn) {
     if(!IS_D3M_DOMAIN){
     if (PRODUCTION && zparams.zsessionid == '') {
@@ -2145,10 +2147,10 @@ export function estimate(btn) {
 }
 
 /**
-   called by click 'Explore' in explore mode
+   called by clicking 'Explore' in explore mode
 */
 export function explore(btn) {
-    console.log("Explore method called");
+    console.log("explore called");
     if (PRODUCTION && zparams.zsessionid == "") {
         return alert("Warning: Data download is not complete. Try again soon.");
     }
@@ -2157,18 +2159,15 @@ export function explore(btn) {
     console.log("zpop: ", zparams);
     // write links to file & run R CMD
 
-    //package the output as JSON
+    // package the output as JSON
     // add call history and package the zparams object as JSON
     zparams.callHistory = callHistory;
     var jsonout = JSON.stringify(zparams);
 
-    //var base = rappURL+"zeligapp?solaJSON="
-    urlcall = rappURL + "exploreapp"; //base.concat(jsonout);
+    let urlcall = ROOK_SVC_URL + "exploreapp";
     var solajsonout = "solaJSON=" + jsonout;
-    //console.log("urlcall out: ", urlcall);
+    console.log("urlcall out: ", urlcall);
     console.log("POST out: ", solajsonout);
-
-    var jsonout = JSON.stringify(zparams);
 
     // explore success method
     function exploreSuccess(btn, json) {
@@ -2230,7 +2229,6 @@ export function explore(btn) {
             .style("color", "#757575")
             .text("MODEL SELECTION :  ");
 
-
         // programmatic click on Results button
         $("#btnBivariate").trigger("click");
         var count = 0;
@@ -2274,7 +2272,7 @@ export function explore(btn) {
                     .style("margin-top", 0)
                     .style("white-space", "pre")
                     .style("display", "inline-block")
-                    .style("float", "left")
+                    .style("float", "left");
 
             }
             d3.select("#modelView")
@@ -2288,29 +2286,20 @@ export function explore(btn) {
                 .style("overflow-y", "hidden")
                 .style("overflow-x", "scroll")
                 .append("button")// top stack for results
-              //      .append("xhtml:button")
+            //      .append("xhtml:button")
                 .attr("class","btn btn-outline-success")
                 .style("padding","4px")
                 .attr("id", model)
                 .text(model_selection_name)
-                .style('background-color', function () {
+                .style('background-color', function() {
                     var color1 = "#FFD54F";
-//console.log(" the count values are : "+ count + " and "+ count1);
-                    if (count == count1) {
-                        //console.log("Color has changed epppiii");
-                        return selVarColor;
-                    }
-                    else {
-                        // console.log("Color has changed as epppiii");
-                        return color1;
-                    }
+                    return count === count1 ? selVarColor : color1;
                 })
                 .style("display", "inline-block")
                 .style("white-space", "pre")
                 .style("margin-top", 0)
                 .style("float", "left")
-                .on("click", function () {
-
+                .on("click", function() {
                     var a = this.style.backgroundColor.replace(/\s*/g, "");
                     var b = hexToRgba(selVarColor).replace(/\s*/g, "");
                     if (a.substr(0, 17) === b.substr(0, 17)) {
@@ -2320,7 +2309,6 @@ export function explore(btn) {
                     modCol();
                     d3.select(this)
                         .style('background-color', selVarColor);
-                    // console.log("json explore viz first",json_explore );
                 })
             ;
         }
@@ -2329,7 +2317,6 @@ export function explore(btn) {
         rCall[0] = json.call;
         logArray.push("explore: ".concat(rCall[0]));
         showLog();
-        //   console.log("json explore viz second",json_explore );
         viz_explore(model, json_explore, model_name);
     }
 
@@ -2337,7 +2324,6 @@ export function explore(btn) {
         estimateLadda.stop();  // stop spinner
         estimated = true;
     }
-
 
     estimateLadda.start();  // start spinner
     makeCorsRequest(urlcall, btn, exploreSuccess, exploreFail, solajsonout);
