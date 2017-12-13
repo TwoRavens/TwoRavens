@@ -128,6 +128,7 @@ source("rookdata.R")
 source("rookpreprocess.R")
 source("rookpipeline.R")
 source("rookhealthcheck.R")
+source("rookexplore.R")
 
 if(addPrivacy){
     source("rookprivate.R")
@@ -147,6 +148,7 @@ if(!is_rapache_mode){
     R.server$add(app = preprocess.app, name="preprocessapp")
     R.server$add(app = pipeline.app, name="pipelineapp")
     R.server$add(app = healthcheck.app, name="healthcheckapp")
+    R.server$add(app = explore.app, name="exploreapp")
 
     # Serve files directly from rook
     R.server$add(app = File$new(PRE_PATH), name = "rook-files")

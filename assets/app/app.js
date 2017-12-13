@@ -2175,9 +2175,7 @@ export function explore(btn) {
         estimateLadda.stop();  // stop spinner
         allResults.push(json);
         var json_explore = json;
-        //     console.log("the allResults is : " +allResults);
         console.log("json in: ", json);
-
 
         var myparent = document.getElementById("rightContentArea");
         if (estimated == false) {
@@ -2197,9 +2195,9 @@ export function explore(btn) {
         d3.select("#result_right")
             .style("display", "block");
         /*
-         d3.select("#resultsView")
-         .style("display", "block");
-         */
+          d3.select("#resultsView")
+          .style("display", "block");
+        */
         d3.select("#scatterplot")
             .style("display", "block");
         d3.select("#heatchart")
@@ -2208,7 +2206,6 @@ export function explore(btn) {
             .style("display", "block");
 
         d3.select("#modelView")
-
             .style("display", "block");
 
         d3.select("#resultsView_tabular")
