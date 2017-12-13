@@ -20,6 +20,8 @@ from tworaven_apps.ta2_interfaces.req_list_pipelines import \
     list_pipelines
 from tworaven_apps.ta2_interfaces.req_export_pipeline import \
     export_pipeline
+from tworaven_apps.ta2_interfaces.req_describe_data_flow import \
+    describe_data_flow
 from tworaven_apps.ta2_interfaces.ta2_util import get_grpc_content
 from tworaven_apps.utils.view_helper import get_request_body
 from tworaven_apps.call_captures.models import ServiceCallEntry
@@ -295,6 +297,39 @@ def view_export_pipeline(request):
     #print('json_str: [%s]' % json_str)
     # Convert JSON str to python dict - err catch here
     #
+    json_dict = json.loads(json_str, object_pairs_hook=OrderedDict)
+
+    # Save D3M log
+    #
+    if call_entry:
+        call_entry.save_d3m_response(json_dict)
+
+    return JsonResponse(json_dict, safe=False)
+
+
+@csrf_exempt
+def view_describe_dataflow(request):
+    """gRPC: Call from UI to DescribeDataflow"""
+    success, raven_data_or_err = get_request_body(request)
+    if not success:
+        return JsonResponse(dict(status=False,
+                                 message=raven_data_or_err))
+
+    # Begin to log D3M call
+    #
+    call_entry = None
+    if ServiceCallEntry.record_d3m_call():
+        call_entry = ServiceCallEntry.get_dm3_entry(\
+                        request_obj=request,
+                        call_type='DescribeDataflow',
+                        request_msg=raven_data_or_err)
+
+    # Let's call the TA2 and start the session!
+    #
+    json_str = describe_data_flow(raven_data_or_err)
+
+    # Convert JSON str to python dict - err catch here
+    #  - let it blow up for now--should always return JSON
     json_dict = json.loads(json_str, object_pairs_hook=OrderedDict)
 
     # Save D3M log

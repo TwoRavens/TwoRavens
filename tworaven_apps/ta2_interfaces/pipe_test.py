@@ -274,37 +274,49 @@ def describe_data_flow():
     print('-' * 40)
 
     resp = dataflow_ext_pb2.DataflowDescription()
+
+
+    resp.response_info.status.code = core_pb2.OK
+    resp.response_info.status.details = "(static test response)"
+    resp.pipeline_id = 'pipeline_1'
+
+    # Add two modules
+    for idx in range(0, 2):
+
+        resp.modules.add(id='module_id %d' % idx,
+                         type='module_type %d' % idx,
+                         label='module_label %d' % idx)
+
+        # For each module, add 2 inputs and 2 outputs
+        for idx2 in range(0, 1):
+            resp.modules[idx].inputs.add()
+            resp.modules[idx].inputs[idx2].name = 'nome %d' % idx2
+            resp.modules[idx].inputs[idx2].type = 'type %d' % idx2
+            resp.modules[idx].inputs[idx2].value = 'value %d' % idx2
+
+            resp.modules[idx].outputs.add()
+            resp.modules[idx].outputs[idx2].name = 'nome %d' % idx2
+            resp.modules[idx].outputs[idx2].type = 'type %d' % idx2
+
+    # Add two connections
+    for idx in range(0, 2):
+        resp.connections.add()
+        resp.connections[idx].from_module_id = 'module %d' % idx
+        resp.connections[idx].from_output_name = 'from_output_name %d' % idx
+        resp.connections[idx].to_module_id = 'to_module_id %d' % idx
+        resp.connections[idx].to_input_name = 'to_input_name %d' % idx
+
+
     #import ipdb; ipdb.set_trace()
-    resp.response_info
-    """
-    resp.Input.name = 'input_name'
-    resp.Input.type =  'input_type'
-    resp.Input.value = 'input_value'
+    content = MessageToJson(resp)
+    print('JSON:\n')
+    print(content)
+    print('-' * 40)
 
-    resp.Output.name = 'output_name'
-    resp.Output.type = 'output_type'
-    resp.Module.id = 'module_id'
-    resp.Module.type = 'module_type'
-    resp.Module.label = 'module_label'
-
-    resp.Module.inputs.extend()
-    """
-
-    #(name='input 1 name',
-    #                       type='input 1 type',
-    #                       value='input 1 value')
-
-    '''
-    resp.Module.inputs.add(name='input 2 name',
-                           type='input 2 type',
-                           value='input 2 value')
-
-    resp.Module.outputs.add(name='output 1 name',
-                            type='output 1 type')
-
-    resp.Module.outputs.add(name='output 2 name',
-                            type='output 2 type')
-    '''
+    print('-' * 40)
+    print('gRPC:\n')
+    json_parse(content, dataflow_ext_pb2.DataflowDescription)
+    print('-' * 40)
 
 if __name__ == '__main__':
     describe_data_flow()

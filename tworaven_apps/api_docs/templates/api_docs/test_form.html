@@ -31,7 +31,10 @@
 
 
       payload = { {{ KEY_GRPC_JSON }} : user_content};
-      if (request_url==='/d3m-service/startsession'){
+
+      var jsonPayloadUrls = ['/d3m-service/startsession',
+                             '/d3m-service/DescribeDataflow'];
+      if (jsonPayloadUrls.indexOf(request_url) > -1){
         payload = user_content;
       }
 

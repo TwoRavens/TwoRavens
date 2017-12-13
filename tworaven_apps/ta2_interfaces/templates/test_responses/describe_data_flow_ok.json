@@ -1,0 +1,61 @@
+{
+  "pipelineId": "{{ pipelineId }}",
+  "modules": [
+    {
+      "id": "module_id 0",
+      "type": "module_type 0",
+      "label": "module_label 0",
+      "inputs": [
+        {
+          "name": "nome 0",
+          "type": "type 0",
+          "value": "value 0"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "nome 0",
+          "type": "type 0"
+        }
+      ]
+    },
+    {
+      "id": "module_id 1",
+      "type": "module_type 1",
+      "label": "module_label 1",
+      "inputs": [
+        {
+          "name": "nome 0",
+          "type": "type 0",
+          "value": "value 0"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "nome 0",
+          "type": "type 0"
+        }
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "fromModuleId": "module 0",
+      "fromOutputName": "from_output_name 0",
+      "toModuleId": "to_module_id 0",
+      "toInputName": "to_input_name 0"
+    },
+    {
+      "fromModuleId": "module 1",
+      "fromOutputName": "from_output_name 1",
+      "toModuleId": "to_module_id 1",
+      "toInputName": "to_input_name 1"
+    }
+  ],
+  "responseInfo": {
+    "status": {
+      "code": "OK",
+      "details": "(static test response)"
+    }
+  }
+}
