@@ -1,0 +1,33 @@
+  #--------------------
+  # start: TA2 paths
+  #--------------------
+  {% url 'StartSession' %}:
+    post:
+      tags:
+      - "ta2"
+      summary: "Start a session"
+      consumes:
+        - application/json
+      parameters:
+        - in: body
+          name: sessionRequest
+          description: Start a session
+          schema:
+            type: object
+            required:
+              - user_agent
+            properties:
+              user_agent:
+                type: string
+              version:
+                type: string
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "object"
+            $ref: "#/definitions/SessionResponse"
+        400:
+          description: "Error in retrieval."
+        401:
+          description: "Not logged in."

@@ -11,10 +11,13 @@ sys.path.append(proj_dir) #here store is root folder(means parent).
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "tworavensproject.settings.local_settings")
 django.setup()
-
+import random
 import json
 from django.conf import settings
 from tworaven_apps.ta2_interfaces import core_pb2
+# data flow
+from tworaven_apps.ta2_interfaces import dataflow_ext_pb2
+from tworaven_apps.ta2_interfaces import dataflow_ext_pb2_grpc
 from tworaven_apps.ta2_interfaces.ta2_connection import TA2Connection
 from tworaven_apps.ta2_interfaces.ta2_util import get_failed_precondition_response
 from google.protobuf.json_format import MessageToJson,\
@@ -217,6 +220,8 @@ def update_parse():
     json_parse(content, core_pb2.UpdateProblemSchemaRequest)
     print('-' * 40)
 
+
+
 def pipeline_export_parse():
 
     req = core_pb2.PipelineExportRequest()
@@ -253,8 +258,121 @@ def pipeline_export_parse():
     json_parse(content, core_pb2.Response)
     print('-' * 40)
 
+def describe_data_flow():
+
+    req = dataflow_ext_pb2.PipelineReference()
+
+    req.context.session_id = 'session_01'
+    req.pipeline_id = 'pipeline_1'
+
+    content = MessageToJson(req)
+    print('JSON:\n')
+    print(content)
+    print('-' * 40)
+
+    json_parse(content, dataflow_ext_pb2.PipelineReference)
+    print('-' * 40)
+
+    resp = dataflow_ext_pb2.DataflowDescription()
+
+
+    resp.response_info.status.code = core_pb2.OK
+    resp.response_info.status.details = "(static test response)"
+    resp.pipeline_id = 'pipeline_1'
+
+    # Add two modules
+    for idx in range(0, 2):
+
+        resp.modules.add(id='module_id %d' % idx,
+                         type='module_type %d' % idx,
+                         label='module_label %d' % idx)
+
+        # For each module, add 2 inputs and 2 outputs
+        for idx2 in range(0, 1):
+            resp.modules[idx].inputs.add()
+            resp.modules[idx].inputs[idx2].name = 'nome %d' % idx2
+            resp.modules[idx].inputs[idx2].type = 'type %d' % idx2
+            resp.modules[idx].inputs[idx2].value = 'value %d' % idx2
+
+            resp.modules[idx].outputs.add()
+            resp.modules[idx].outputs[idx2].name = 'nome %d' % idx2
+            resp.modules[idx].outputs[idx2].type = 'type %d' % idx2
+
+    # Add two connections
+    for idx in range(0, 2):
+        resp.connections.add()
+        resp.connections[idx].from_module_id = 'module %d' % idx
+        resp.connections[idx].from_output_name = 'from_output_name %d' % idx
+        resp.connections[idx].to_module_id = 'to_module_id %d' % idx
+        resp.connections[idx].to_input_name = 'to_input_name %d' % idx
+
+    content = MessageToJson(resp)
+    print('JSON:\n')
+    print(content)
+    print('-' * 40)
+
+    print('-' * 40)
+    print('gRPC:\n')
+    json_parse(content, dataflow_ext_pb2.DataflowDescription)
+    print('-' * 40)
+
+
+def get_dataflow_results():
+    """Figuring out ModuleResult"""
+
+    module_list = []
+
+    for idx in range(0, 4):
+        # initialize object
+        resp = dataflow_ext_pb2.ModuleResult()
+
+        # module_id
+        resp.module_id = 'module_id %d' % idx
+
+        # status
+        statuses_with_execution_time = [dataflow_ext_pb2.ModuleResult.DONE,
+                                        dataflow_ext_pb2.ModuleResult.ERROR]
+
+        statuses = [dataflow_ext_pb2.ModuleResult.PENDING,
+                    dataflow_ext_pb2.ModuleResult.RUNNING] +\
+                    statuses_with_execution_time
+        new_status = statuses[idx]
+        resp.status = new_status
+
+        print('status: %s' % new_status)
+
+        # progress
+        resp.progress = round(random.uniform(0.0, 1.0), 1)
+
+        # outputs
+        for idx2 in range(1, 3):
+            resp.outputs.add(output_name='output_name %d' % idx2,
+                             value='value %d' % idx2)
+
+        # execution_time
+        if 1:   #new_status in statuses_with_execution_time:
+            print('add execution_time')
+            resp.execution_time = round(random.uniform(0.1, 75.0), 1) # seconds
+
+        # response info
+        resp.response_info.status.code = core_pb2.OK
+        resp.response_info.status.details = "we did it, we did it, we really, really did it"
+
+        content = MessageToJson(resp)
+        module_list.append(content)
+        print('JSON:\n')
+        print(content)
+        print('-' * 40)
+
+        print('-' * 40)
+        print('gRPC:\n')
+        json_parse(content, dataflow_ext_pb2.ModuleResult)
+        print('-' * 40)
+    print('\n'.join(module_list))
+
 if __name__ == '__main__':
-    pipeline_export_parse()
+    get_dataflow_results()
+    #describe_data_flow()
 
     #update_parse()
     #execute_pipeline_parse()
@@ -272,4 +390,4 @@ if __name__ == '__main__':
 #print(content)
 
 #req = Parse(content, core_pb2.SessionContext())
-#print(req)
+#print(re

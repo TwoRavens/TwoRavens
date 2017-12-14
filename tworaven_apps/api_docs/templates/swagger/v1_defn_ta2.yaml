@@ -1,0 +1,68 @@
+  # Start: TA3-TA2 definitions
+  SessionRequest:
+    type: "object"
+    required:
+    - "user_agent"
+    properties:
+      user_agent:
+        type: "string"
+      version:
+        type: "string"
+  StatusCode:
+    type: "string"
+    enum:
+    - "UNKNOWN"
+    - "OK"
+    - "CANCELLED"
+    - "SESSION_UNKNOWN"
+    - "SESSION_ENDED"
+    - "SESSION_EXPIRED"
+    - "INVALID_ARGUMENT"
+    - "RESOURCE_EXHAUSTED"
+    - "UNAVAILABLE"
+    - "FAILED_PRECONDITION"
+    - "OUT_OF_RANGE"
+    - "UNIMPLEMENTED"
+    - "INTERNAL"
+    - "ABORTED"
+  Status:
+    type: "object"
+    required:
+    - "code"
+    properties:
+      code:
+        type: "object"
+        $ref: "#/definitions/StatusCode"
+      details:
+        type: "string"
+  Response:
+    # corresponds to raven_auth.models.User
+    type: "object"
+    required:
+    - "status"
+    properties:
+      status:
+        type: "object"
+        $ref: "#/definitions/Status"
+  SessionContext:
+    type: "object"
+    required:
+    - "session_id"
+    properties:
+      session_id:
+        type: "string"
+  SessionResponse:
+    type: "object"
+    required:
+    - "responseInfo"
+    properties:
+      responseInfo:
+        type: object
+        $ref: "#/definitions/Response"
+      user_agent:
+        type: "string"
+      version:
+        type: "string"
+      context:
+        type: object
+        $ref: "#/definitions/SessionContext"

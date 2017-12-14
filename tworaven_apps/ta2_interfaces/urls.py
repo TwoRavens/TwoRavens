@@ -38,6 +38,14 @@ urlpatterns = (
         views.view_export_pipeline,
         name='ExportPipeline'),
 
+    url(r'^DescribeDataflow/?$',
+        views.view_describe_dataflow,
+        name='DescribeDataflow'),
+
+    url(r'^GetDataflowResults/?$',
+        views.view_get_dataflow_results,
+        name='GetDataflowResults'),
+
     url(r'^',
         views.view_test_call,
         name='view_test_call'),
