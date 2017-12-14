@@ -221,7 +221,7 @@ class Body {
                     {style: `display: ${this.cite ? 'block' : 'none'}; position: absolute; right: 50%; width: 380px; text-align: left; z-index: 50`},
                     m(".panel-body")),
                   m('span',
-                    navBtn('btnEstimate.btn-success', 2, 1, app.estimate, m("span.ladda-label", mode ? 'Explore' : 'Solve This Problem'), '150px'),
+                    navBtn('btnEstimate.btn-success', 2, 1, explore ? app.explore : app.estimate, m("span.ladda-label", explore ? 'Explore' : 'Solve This Problem'), '150px'),
                     navBtn('btnTA2.btn-default', .5, 1, _ => app.helpmaterials('manual'), ['Help Manual ', glyph('book')]),
                     navBtn('btnTA2.btn-default', 2, .5, _ => app.helpmaterials('video'), ['Help Video ', glyph('expand')]),
                     navBtn1("btnReset", app.reset, glyph('repeat'), 'Reset'),
@@ -278,14 +278,26 @@ class Body {
               m("#spacetools.spaceTool[style=z-index: 16]",
                 spaceBtn('btnLock.active', app.lockDescription, 'Lock selection of problem description', 'pencil'),
                 spaceBtn('btnJoin', _ => {
-                    let dvs = app.nodes.filter(n => app.zparams.zdv.includes(n.name));
-                    let ivs = app.nodes.filter(n => !dvs.includes(n));
-                    app.restart([].concat(...dvs.map(dv => ivs.map(iv => ({
-                        left: true,
-                        right: false,
-                        target: iv,
-                        source: dv,
-                    })))));
+                    let links = [];
+                    if (explore) {
+                        let is_unique = (n, n1) => links.map(l => l.target === n1 && l.source === n).length == 0;
+                        links = app.nodes.map(n => app.nodes.filter(n1 => n !== n1 && is_unique(n, n1)).map(n1 => ({
+                            left: false,
+                            right: false,
+                            target: n,
+                            source: n1,
+                        })));
+                    } else {
+                        let dvs = app.nodes.filter(n => app.zparams.zdv.includes(n.name));
+                        let ivs = app.nodes.filter(n => !dvs.includes(n));
+                        links = dvs.map(dv => ivs.map(iv => ({
+                            left: true,
+                            right: false,
+                            target: iv,
+                            source: dv,
+                        })));
+                    }
+                    app.restart([].concat(...links));
                 }, 'Make all possible connections between nodes', 'link'),
                 spaceBtn('btnDisconnect', _ => app.restart([]), 'Delete all connections between nodes', 'remove-circle'),
                 spaceBtn('btnForce', app.forceSwitch, 'Pin the variable pebbles to the page', 'pushpin'),
