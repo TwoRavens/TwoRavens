@@ -44,9 +44,6 @@ def describe_data_flow(raven_json_str=None):
     except ParseError as err_obj:
         err_msg = 'Failed to convert JSON to gRPC: %s' % (err_obj)
         return get_failed_precondition_sess_response(err_msg)
-    core_stub, err_msg = TA2Connection.get_grpc_dataflow_stub()
-    if err_msg:
-        return get_failed_precondition_sess_response(err_msg)
 
     # In test mode, return canned response
     #
@@ -58,7 +55,7 @@ def describe_data_flow(raven_json_str=None):
     # --------------------------------
     # Get the connection, return an error if there are channel issues
     # --------------------------------
-    core_stub, err_msg = TA2Connection.get_grpc_dataflow_stub()
+    dataflow_stub, err_msg = TA2Connection.get_grpc_dataflow_stub()
     if err_msg:
         return get_failed_precondition_sess_response(err_msg)
 
@@ -66,7 +63,7 @@ def describe_data_flow(raven_json_str=None):
     # Send the gRPC request
     # --------------------------------
     try:
-        reply = core_stub.DataflowDescription(req)
+        reply = dataflow_stub.DataflowDescription(req)
     except Exception as ex:
         return get_failed_precondition_sess_response(str(ex))
 

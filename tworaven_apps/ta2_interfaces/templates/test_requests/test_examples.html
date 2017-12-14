@@ -27,14 +27,14 @@ let GetExecutePipelineResults_ex = {
                                         "pipeline_1",
                                         "pipeline_2"
                                       ]
-                                    }
+                                    };
 
 
 let ListPipelines_ex = {
                           "context": {
                             "session_id": "session_0"
                           }
-                        }
+                        };
 
 let ExportPipeline_ex = {
                            "context":{
@@ -42,7 +42,7 @@ let ExportPipeline_ex = {
                            },
                            "pipelineId":"pipeline_1",
                            "pipelineExecUri":"<<EXECUTABLE_URI>>"
-                        }
+                        };
 
 
 let ExecutePipeline_ex = {
@@ -114,13 +114,16 @@ let ExecutePipeline_ex = {
                            23.5268456375839
                         ]
                      ]
-                  }
+                  };
 
 let DescribeDataflow_ex = {
-  "context": {
-    "sessionId": "session_0"
-  },
-  "pipelineId": "pipeline_1"
-}
+                            "context": {
+                              "sessionId": "session_0"
+                            },
+                            "pipelineId": "pipeline_1"
+                          };
+
+let GetDataflowResults_ex = DescribeDataflow_ex;
+
 
 </script>

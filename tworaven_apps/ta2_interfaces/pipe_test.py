@@ -11,7 +11,7 @@ sys.path.append(proj_dir) #here store is root folder(means parent).
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "tworavensproject.settings.local_settings")
 django.setup()
-
+import random
 import json
 from django.conf import settings
 from tworaven_apps.ta2_interfaces import core_pb2
@@ -316,8 +316,63 @@ def describe_data_flow():
     json_parse(content, dataflow_ext_pb2.DataflowDescription)
     print('-' * 40)
 
+
+def get_dataflow_results():
+    """Figuring out ModuleResult"""
+
+    module_list = []
+
+    for idx in range(0, 4):
+        # initialize object
+        resp = dataflow_ext_pb2.ModuleResult()
+
+        # module_id
+        resp.module_id = 'module_id %d' % idx
+
+        # status
+        statuses_with_execution_time = [dataflow_ext_pb2.ModuleResult.DONE,
+                                        dataflow_ext_pb2.ModuleResult.ERROR]
+
+        statuses = [dataflow_ext_pb2.ModuleResult.PENDING,
+                    dataflow_ext_pb2.ModuleResult.RUNNING] +\
+                    statuses_with_execution_time
+        new_status = statuses[idx]
+        resp.status = new_status
+
+        print('status: %s' % new_status)
+
+        # progress
+        resp.progress = round(random.uniform(0.0, 1.0), 1)
+
+        # outputs
+        for idx2 in range(1, 3):
+            resp.outputs.add(output_name='output_name %d' % idx2,
+                             value='value %d' % idx2)
+
+        # execution_time
+        if 1:   #new_status in statuses_with_execution_time:
+            print('add execution_time')
+            resp.execution_time = round(random.uniform(0.1, 75.0), 1) # seconds
+
+        # response info
+        resp.response_info.status.code = core_pb2.OK
+        resp.response_info.status.details = "we did it, we did it, we really, really did it"
+
+        content = MessageToJson(resp)
+        module_list.append(content)
+        print('JSON:\n')
+        print(content)
+        print('-' * 40)
+
+        print('-' * 40)
+        print('gRPC:\n')
+        json_parse(content, dataflow_ext_pb2.ModuleResult)
+        print('-' * 40)
+    print('\n'.join(module_list))
+
 if __name__ == '__main__':
-    describe_data_flow()
+    get_dataflow_results()
+    #describe_data_flow()
 
     #update_parse()
     #execute_pipeline_parse()
@@ -335,4 +390,4 @@ if __name__ == '__main__':
 #print(content)
 
 #req = Parse(content, core_pb2.SessionContext())
-#print(req)
+#print(re

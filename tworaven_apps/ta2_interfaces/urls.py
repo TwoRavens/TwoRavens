@@ -42,6 +42,10 @@ urlpatterns = (
         views.view_describe_dataflow,
         name='DescribeDataflow'),
 
+    url(r'^GetDataflowResults/?$',
+        views.view_get_dataflow_results,
+        name='GetDataflowResults'),
+
     url(r'^',
         views.view_test_call,
         name='view_test_call'),
