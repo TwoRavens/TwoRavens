@@ -306,8 +306,6 @@ def describe_data_flow():
         resp.connections[idx].to_module_id = 'to_module_id %d' % idx
         resp.connections[idx].to_input_name = 'to_input_name %d' % idx
 
-
-    #import ipdb; ipdb.set_trace()
     content = MessageToJson(resp)
     print('JSON:\n')
     print(content)
