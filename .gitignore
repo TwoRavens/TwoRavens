@@ -9,6 +9,8 @@ rook/.RData
 rook/.Rhistory
 rook/config.json
 rook/test.json
+rook/rook-files/*
+rook/log_*
 
 #build/
 data/preprocessSubset*.txt
