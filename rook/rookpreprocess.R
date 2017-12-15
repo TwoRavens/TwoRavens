@@ -21,6 +21,7 @@ preprocess.app <- function(env){
     ppJSON <- list()
     mydataloc <- ""
     mydata <- data.frame()
+    preprocessParams <- list()
 
     if(production){
         sink(file = stderr(), type = "output")
@@ -29,65 +30,43 @@ preprocess.app <- function(env){
     request <- Request$new(env)
     response <- Response$new(headers = list( "Access-Control-Allow-Origin"="*"))
 
-    cat("solaJSON", request$POST()$solaJSON)
     valid <- jsonlite::validate(request$POST()$solaJSON)
-
-    cat('\npreprocess.R 2', valid)
 
     if(!valid) {
         warning <- TRUE
         result <- list(warning="The request is not valid json. Check for special characters.")
     }
 
-    cat('\npreprocess.R 3')
-
     if(!warning) {
-        everything <- jsonlite::fromJSON(request$POST()$solaJSON)
-        print(everything)
-        cat('\ntypeof(everything)', typeof(everything))
+        preprocessParams <- jsonlite::fromJSON(request$POST()$solaJSON)
     }
 
-    cat('\npreprocess.R 4')
-
 	if(!warning){
-    cat('\npreprocess.R 4a', everything)
-		mydataloc <- everything$data
-    cat('\npreprocess.R 4b')
+		mydataloc <- preprocessParams$data
 
     if(length(mydataloc) == 0){ # rewrite to check for data file?
-      cat('\npreprocess.R 4c')
-
 			warning <- TRUE
 			result<-list(warning="No data location.")
 		}
-    cat('\npreprocess.R d')
-
 	}
 
-  cat('\npreprocess.R 5')
-
     if(!warning){
-        mytargetloc <- everything$target
+        mytargetloc <- preprocessParams$target
         if(length(mytargetloc) == 0){ # rewrite to check for data file?
             warning <- TRUE
             result<-list(warning="No target location.")
         }
     }
 
-    cat('preprocess.R 6')
-
     if(!warning){
-        mydatastub <- everything$datastub
+        mydatastub <- preprocessParams$datastub
         if(length(mydatastub) == 0){ # rewrite to check for data file?
             warning <- TRUE
             result<-list(warning="No dataset stub name.")
         }
     }
 
-    cat('preprocess.R 7')
-
     check_ext <- function(filepath){
-        cat('preprocess.R 8', filepath)
         if(!file.exists(filepath)){                                             # if file does not exist
             if(file.exists(paste(filepath,".gz",sep=""))){                      # check if .csv should be .csv.gz
                     filepath <- paste(filepath,".gz",sep="")
@@ -99,20 +78,14 @@ preprocess.app <- function(env){
                     print(filepath)
             }
         }
-        cat('preprocess.R 8a')
-
         return(filepath)
     }
-
-  cat('preprocess.R 9')
 
 
 	if(!warning){
         tryCatch({
 
             if(d3m_mode) {                                       # Note presently this entire app is only ever called in d3m mode, but we might generalize its function
-              cat('preprocess.R 10')
-
                 mydataloc <- check_ext(mydataloc)
                 mytargetloc <- check_ext(mytargetloc)
 
