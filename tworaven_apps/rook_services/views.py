@@ -43,23 +43,12 @@ def view_rook_route(request, app_name_in_url):
         raven_data_text = request.POST[UI_KEY_SOLA_JSON]
     else:
         # See if the body is JSON format
-        req_found, raven_data_json = get_request_body_as_json(request)
+        req_found, raven_data_text = get_request_body_as_json(request)
         if not req_found:   # Nope, send an error
             err_msg = ("Neither key '%s' found in POST"
                        " nor JSON in request.body") % UI_KEY_SOLA_JSON
             return JsonResponse(dict(status="ERROR",
                                      message=err_msg))
-        # Just get the request body as text (again)
-        # redundant but ok until solaJSON removed from all calls
-        #
-        #req_found2, raven_data_text = get_request_body(request)
-        rook_svc_url = rook_app_info.get_rook_server_url()
-
-        rservice_req = requests.post(rook_svc_url,
-                                     data=dict(solaJSON=raven_data_json))
-        print('text: ', rservice_req.text)
-        print('status_code: ', rservice_req.status_code)
-        return HttpResponse(rservice_req.text)
 
     # Retrieve post data and attempt to insert django session id
     # (if none exists)
@@ -85,7 +74,7 @@ def view_rook_route(request, app_name_in_url):
                         outgoing_url=rook_svc_url,
                         request_msg=raven_data_text)
 
-    print('rook_svc_url: %s' % rook_svc_url)
+    #print('rook_svc_url: %s' % rook_svc_url)
 
     # Call R services
     #
