@@ -2151,7 +2151,7 @@ export function estimate(btn) {
 */
 export function explore(btn) {
     console.log("explore called");
-    if (PRODUCTION && zparams.zsessionid == "") {
+    if (PRODUCTION && zparams.zsessionid === '') {
         return alert("Warning: Data download is not complete. Try again soon.");
     }
 
@@ -2162,11 +2162,11 @@ export function explore(btn) {
     // package the output as JSON
     // add call history and package the zparams object as JSON
     zparams.callHistory = callHistory;
-    var jsonout = JSON.stringify(zparams);
+    let json = JSON.stringify(zparams);
 
-    let urlcall = ROOK_SVC_URL + "exploreapp";
-    var solajsonout = "solaJSON=" + jsonout;
-    console.log("urlcall out: ", urlcall);
+    let url = ROOK_SVC_URL + "exploreapp";
+    var solajsonout = "solaJSON=" + json;
+    console.log("url out: ", url);
     console.log("POST out: ", solajsonout);
 
     // explore success method
