@@ -74,6 +74,8 @@ def view_rook_route(request, app_name_in_url):
                         outgoing_url=rook_svc_url,
                         request_msg=raven_data_text)
 
+    print('rook_svc_url: %s' % rook_svc_url)
+
     # Call R services
     #
     try:
@@ -104,7 +106,7 @@ def view_rook_route(request, app_name_in_url):
     #print(r.text)
     #d = r.json()
     #print(json.dumps(d, indent=4))
-    print(rservice_req.status_code)
+    print('status code from rook call: %d' % rservice_req.status_code)
 
     return HttpResponse(rservice_req.text)
 

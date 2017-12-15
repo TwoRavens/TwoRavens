@@ -1,7 +1,7 @@
 ##
 ##  rookpreprocess.r
 ##
-##  Used presently only in D3M mode.  
+##  Used presently only in D3M mode.
 ##  Creates directory structure for storing data related products for Rook, specific to a dataset.
 ##  Merges files from seed problems together into one dataset.
 ##  Constructs preprocess metadata file.
@@ -14,8 +14,8 @@ preprocess.app <- function(env){
 
     ## Define paths for output.
     ## Also set `production` toggle:  TRUE - Production, FALSE - Local Development.
-    source("rookconfig.R") 
-    
+    source("rookconfig.R")
+
     warning<-FALSE
     result <-list()
     ppJSON <- list()
@@ -29,26 +29,42 @@ preprocess.app <- function(env){
     request <- Request$new(env)
     response <- Response$new(headers = list( "Access-Control-Allow-Origin"="*"))
 
+    cat("solaJSON", request$POST()$solaJSON)
     valid <- jsonlite::validate(request$POST()$solaJSON)
-    print(valid)
+
+    cat('\npreprocess.R 2', valid)
 
     if(!valid) {
         warning <- TRUE
         result <- list(warning="The request is not valid json. Check for special characters.")
     }
 
+    cat('\npreprocess.R 3')
+
     if(!warning) {
         everything <- jsonlite::fromJSON(request$POST()$solaJSON)
         print(everything)
+        cat('\ntypeof(everything)', typeof(everything))
     }
 
+    cat('\npreprocess.R 4')
+
 	if(!warning){
+    cat('\npreprocess.R 4a', everything)
 		mydataloc <- everything$data
-        if(length(mydataloc) == 0){ # rewrite to check for data file?
+    cat('\npreprocess.R 4b')
+
+    if(length(mydataloc) == 0){ # rewrite to check for data file?
+      cat('\npreprocess.R 4c')
+
 			warning <- TRUE
 			result<-list(warning="No data location.")
 		}
+    cat('\npreprocess.R d')
+
 	}
+
+  cat('\npreprocess.R 5')
 
     if(!warning){
         mytargetloc <- everything$target
@@ -58,6 +74,8 @@ preprocess.app <- function(env){
         }
     }
 
+    cat('preprocess.R 6')
+
     if(!warning){
         mydatastub <- everything$datastub
         if(length(mydatastub) == 0){ # rewrite to check for data file?
@@ -66,7 +84,10 @@ preprocess.app <- function(env){
         }
     }
 
+    cat('preprocess.R 7')
+
     check_ext <- function(filepath){
+        cat('preprocess.R 8', filepath)
         if(!file.exists(filepath)){                                             # if file does not exist
             if(file.exists(paste(filepath,".gz",sep=""))){                      # check if .csv should be .csv.gz
                     filepath <- paste(filepath,".gz",sep="")
@@ -78,14 +99,19 @@ preprocess.app <- function(env){
                     print(filepath)
             }
         }
+        cat('preprocess.R 8a')
+
         return(filepath)
     }
+
+  cat('preprocess.R 9')
 
 
 	if(!warning){
         tryCatch({
 
             if(d3m_mode) {                                       # Note presently this entire app is only ever called in d3m mode, but we might generalize its function
+              cat('preprocess.R 10')
 
                 mydataloc <- check_ext(mydataloc)
                 mytargetloc <- check_ext(mytargetloc)
@@ -132,9 +158,9 @@ preprocess.app <- function(env){
     # This reg expression stopped working with .csv.gz extensions:
     #merge_name_stub <- sub("(.*\\/)([^.]+)(\\.[[:alnum:]]+$)", "\\2", mydataloc)   # Extract the filename stub from the provided training data path.  Generally "trainData".
 
-    rook_output_data <- paste(PRE_PATH, mydatastub, "/data/", sep="")                   
-    rook_output_images <- paste(PRE_PATH, mydatastub, "/images/", sep="")               
-    rook_output_preprocess <- paste(PRE_PATH, mydatastub, "/preprocess/", sep="")       
+    rook_output_data <- paste(PRE_PATH, mydatastub, "/data/", sep="")
+    rook_output_images <- paste(PRE_PATH, mydatastub, "/images/", sep="")
+    rook_output_preprocess <- paste(PRE_PATH, mydatastub, "/preprocess/", sep="")
 
     # R won't write to a directory that doesn't exist.
     if (!dir.exists(rook_output_data)){
@@ -147,7 +173,7 @@ preprocess.app <- function(env){
         dir.create(rook_output_preprocess, recursive = TRUE)
     }
 
-    outloc <- paste(rook_output_preprocess, "preprocess.json", sep="")                
+    outloc <- paste(rook_output_preprocess, "preprocess.json", sep="")
     outdata <- paste(rook_output_data, merge_name_stub, "merged.tsv",sep="")
 
     print(outloc)
@@ -157,7 +183,7 @@ preprocess.app <- function(env){
     write(ppJSON, outloc)
     write.table(mydata, outdata[1], row.names=FALSE, col.names=TRUE, sep="\t")
 
-    # Return the preprocess file 
+    # Return the preprocess file
     if(!warning){
         result<-ppJSON
     }
