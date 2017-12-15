@@ -10,6 +10,8 @@ from tworaven_apps.rook_services.rook_app_info import RookAppInfo
 from tworaven_apps.rook_services.models import UI_KEY_SOLA_JSON, ROOK_ZESSIONID
 from tworaven_apps.workspaces.workspace_util import WorkspaceUtil
 from tworaven_apps.utils.view_helper import get_session_key
+from tworaven_apps.utils.view_helper import get_request_body,\
+    get_request_body_as_json
 
 @csrf_exempt
 def view_rook_route(request, app_name_in_url):
@@ -34,12 +36,19 @@ def view_rook_route(request, app_name_in_url):
     # look for the "solaJSON" variable in the POST
     #
     if rook_app_info.is_health_check():
+        # this is a health check
         raven_data_text = 'healthcheck'
-    elif (not request.POST) or (not UI_KEY_SOLA_JSON in request.POST):
-        return JsonResponse(dict(status="ERROR",
-                                 message="key '%s' not found" % UI_KEY_SOLA_JSON))
-    else:
+    elif request.POST and UI_KEY_SOLA_JSON in request.POST:
+        # this is a POST with a JSON string under the key solaJSON key
         raven_data_text = request.POST[UI_KEY_SOLA_JSON]
+    else:
+        req_found, raven_data_json = get_request_body_as_json(request)
+        if not req_found:
+            err_msg = ("Neither key '%s' found in POST"
+                       " nor JSON in request.body") % UI_KEY_SOLA_JSON
+            return JsonResponse(dict(status="ERROR",
+                                     message=err_msg))
+        req_found2, raven_data_text = get_request_body(request)
 
     # Retrieve post data and attempt to insert django session id
     # (if none exists)
@@ -68,7 +77,7 @@ def view_rook_route(request, app_name_in_url):
     # Call R services
     #
     try:
-        r = requests.post(rook_svc_url,
+        rservice_req = requests.post(rook_svc_url,
                           data=app_data)
     except ConnectionError:
         err_msg = 'R Server not responding: %s' % rook_svc_url
@@ -81,10 +90,12 @@ def view_rook_route(request, app_name_in_url):
     # Save request result
     #
     if rook_app_info.record_this_call():
-        if r.status_code == 200:
-            call_entry.add_success_message(r.text, r.status_code)
+        if rservice_req.status_code == 200:
+            call_entry.add_success_message(rservice_req.text,
+                                           rservice_req.status_code)
         else:
-            call_entry.add_error_message(r.text, r.status_code)
+            call_entry.add_error_message(rservice_req.text,
+                                         rservice_req.status_code)
         call_entry.save()
 
     # Return the response to the user
@@ -93,9 +104,9 @@ def view_rook_route(request, app_name_in_url):
     #print(r.text)
     #d = r.json()
     #print(json.dumps(d, indent=4))
-    print(r.status_code)
+    print(rservice_req.status_code)
 
-    return HttpResponse(r.text)
+    return HttpResponse(rservice_req.text)
 
 
 NUM_CLICKS_KEY = 'NUM_CLICKS_KEY'
