@@ -331,18 +331,19 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
 
     // 5. Read in zelig models (not for d3m)
     // 6. Read in zeligchoice models (not for d3m)
-    for (let field of ['zelig5models', 'zelig5choicemodels']) {
-        try {
-            res = await m.request(`data/${field}.json`);
-            cdb(field + ' json: ', res);
-            res[field]
-                .filter(key => res[field].hasOwnProperty(key))
-                .forEach(key => mods[key.name[0]] = key.description[0]);
-        } catch(_) {
-            console.log("can't load " + field);
-        }
+    if (!IS_D3M_DOMAIN){
+      for (let field of ['zelig5models', 'zelig5choicemodels']) {
+          try {
+              res = await m.request(`data/${field}.json`);
+              cdb(field + ' json: ', res);
+              res[field]
+                  .filter(key => res[field].hasOwnProperty(key))
+                  .forEach(key => mods[key.name[0]] = key.description[0]);
+          } catch(_) {
+              console.log("can't load " + field);
+          }
+      }
     }
-
     // 7. Start the user session
     // rpc StartSession(SessionRequest) returns (SessionResponse) {}
     let SessionRequest = {user_agent: 'some agent', version: 'some version'};
@@ -411,16 +412,26 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         return res;
     };
     try {
+        console.log('attempt to read preprocess file (which may not exist): ' + pURL);
         res = read(await m.request(pURL));
     } catch(_) {
-        console.log("GOING TO RUN THE PREPROCESSAPP");
+        console.log("Ok, preprocess not found, try to RUN THE PREPROCESSAPP");
         let url = ROOK_SVC_URL + 'preprocessapp';
-        let json = JSON.stringify({data: dataloc, target: targetloc, datastub: datastub});;
-        console.log('url out: ', url);
-        console.log('POST out: ', json);
+        var json_input;
+        if (IS_D3M_DOMAIN){
+          // For D3M inputs, change the preprocess input data
+          //
+          json_input = JSON.stringify({data: d3mData, target: d3mTarget, datastub: d3mDataName});
+
+        }else{
+         json_input = JSON.stringify({data: dataloc, target: targetloc, datastub: datastub});
+        }
+
+        console.log('json_input: ', json_input);
+        console.log('url: ', url);
         let data = new FormData();
         try {
-            res = read(await m.request({method: 'POST', url: url, data: data}));
+            res = read(await m.request({method: 'POST', url: url, data: json_input}));
         } catch(_) {
             console.log('preprocess failed');
             alert('preprocess failed. ending user session.');

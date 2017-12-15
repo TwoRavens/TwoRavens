@@ -80,8 +80,7 @@ class WorkspaceUtil(object):
     def record_state(request_obj):
         """Save app state in the session"""
         assert request_obj, 'request_obj cannot be None'
-        print(request_obj.POST)
-        print(request_obj.POST.keys())
+
         util = WorkspaceUtil(request_obj)
 
         return util.update_session()

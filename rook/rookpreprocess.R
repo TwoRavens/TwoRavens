@@ -1,7 +1,7 @@
 ##
 ##  rookpreprocess.r
 ##
-##  Used presently only in D3M mode.  
+##  Used presently only in D3M mode.
 ##  Creates directory structure for storing data related products for Rook, specific to a dataset.
 ##  Merges files from seed problems together into one dataset.
 ##  Constructs preprocess metadata file.
@@ -14,13 +14,14 @@ preprocess.app <- function(env){
 
     ## Define paths for output.
     ## Also set `production` toggle:  TRUE - Production, FALSE - Local Development.
-    source("rookconfig.R") 
-    
+    source("rookconfig.R")
+
     warning<-FALSE
     result <-list()
     ppJSON <- list()
     mydataloc <- ""
     mydata <- data.frame()
+    preprocessParams <- list()
 
     if(production){
         sink(file = stderr(), type = "output")
@@ -30,7 +31,6 @@ preprocess.app <- function(env){
     response <- Response$new(headers = list( "Access-Control-Allow-Origin"="*"))
 
     valid <- jsonlite::validate(request$POST()$solaJSON)
-    print(valid)
 
     if(!valid) {
         warning <- TRUE
@@ -38,20 +38,20 @@ preprocess.app <- function(env){
     }
 
     if(!warning) {
-        everything <- jsonlite::fromJSON(request$POST()$solaJSON)
-        print(everything)
+        preprocessParams <- jsonlite::fromJSON(request$POST()$solaJSON)
     }
 
 	if(!warning){
-		mydataloc <- everything$data
-        if(length(mydataloc) == 0){ # rewrite to check for data file?
+		mydataloc <- preprocessParams$data
+
+    if(length(mydataloc) == 0){ # rewrite to check for data file?
 			warning <- TRUE
 			result<-list(warning="No data location.")
 		}
 	}
 
     if(!warning){
-        mytargetloc <- everything$target
+        mytargetloc <- preprocessParams$target
         if(length(mytargetloc) == 0){ # rewrite to check for data file?
             warning <- TRUE
             result<-list(warning="No target location.")
@@ -59,7 +59,7 @@ preprocess.app <- function(env){
     }
 
     if(!warning){
-        mydatastub <- everything$datastub
+        mydatastub <- preprocessParams$datastub
         if(length(mydatastub) == 0){ # rewrite to check for data file?
             warning <- TRUE
             result<-list(warning="No dataset stub name.")
@@ -86,7 +86,6 @@ preprocess.app <- function(env){
         tryCatch({
 
             if(d3m_mode) {                                       # Note presently this entire app is only ever called in d3m mode, but we might generalize its function
-
                 mydataloc <- check_ext(mydataloc)
                 mytargetloc <- check_ext(mytargetloc)
 
@@ -132,9 +131,9 @@ preprocess.app <- function(env){
     # This reg expression stopped working with .csv.gz extensions:
     #merge_name_stub <- sub("(.*\\/)([^.]+)(\\.[[:alnum:]]+$)", "\\2", mydataloc)   # Extract the filename stub from the provided training data path.  Generally "trainData".
 
-    rook_output_data <- paste(PRE_PATH, mydatastub, "/data/", sep="")                   
-    rook_output_images <- paste(PRE_PATH, mydatastub, "/images/", sep="")               
-    rook_output_preprocess <- paste(PRE_PATH, mydatastub, "/preprocess/", sep="")       
+    rook_output_data <- paste(PRE_PATH, mydatastub, "/data/", sep="")
+    rook_output_images <- paste(PRE_PATH, mydatastub, "/images/", sep="")
+    rook_output_preprocess <- paste(PRE_PATH, mydatastub, "/preprocess/", sep="")
 
     # R won't write to a directory that doesn't exist.
     if (!dir.exists(rook_output_data)){
@@ -147,7 +146,7 @@ preprocess.app <- function(env){
         dir.create(rook_output_preprocess, recursive = TRUE)
     }
 
-    outloc <- paste(rook_output_preprocess, "preprocess.json", sep="")                
+    outloc <- paste(rook_output_preprocess, "preprocess.json", sep="")
     outdata <- paste(rook_output_data, merge_name_stub, "merged.tsv",sep="")
 
     print(outloc)
@@ -157,7 +156,7 @@ preprocess.app <- function(env){
     write(ppJSON, outloc)
     write.table(mydata, outdata[1], row.names=FALSE, col.names=TRUE, sep="\t")
 
-    # Return the preprocess file 
+    # Return the preprocess file
     if(!warning){
         result<-ppJSON
     }
