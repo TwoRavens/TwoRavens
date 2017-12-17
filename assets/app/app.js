@@ -1808,7 +1808,7 @@ export function estimate(btn) {
             let taskSubtype = d3mTaskSubtype[d3mProblemDescription.taskSubtype][1];
             let output = d3mOutputType[d3mProblemDescription.outputType][1];
             let metrics = [d3mMetrics[d3mProblemDescription.metric][1]];
-            let taskDescription = d3mProblemDescription.taskDescriptionription;
+            let taskDescription = d3mProblemDescription.taskDescription;
             let maxPipelines = 5; //user to specify this eventually?
 
             let PipelineCreateRequest={context, trainFeatures, task, taskSubtype, taskDescription, output, metrics, targetFeatures, maxPipelines};
@@ -1965,14 +1965,15 @@ export function estimate(btn) {
             let context = apiSession(zparams.zsessionid);
             let uri = {features: zparams.zd3mdata, target:zparams.zd3mtarget};
 
-
-            var urlcall = ROOK_SVC_URL + "pipelineapp";
+            // pipelineapp is a rook application that returns the dependent variable, the DV values, and the predictors. can think of it was a way to translate the potentially complex grammar from the UI
+            let urlcall = ROOK_SVC_URL + "pipelineapp";
 
             var solajsonout = "solaJSON=" + jsonout;
             cdb("urlcall out: ", urlcall);
             cdb("POST out: ", solajsonout);
-
-            function createPipelineSuccess(btn, json) {
+        
+        
+            async function createPipelineSuccess(btn, json) {
 
                 let trainFeatures=apiFeatureShortPath(json.predictors,uri.features);    // putting in short paths (no filename) for current API usage
                 let targetFeatures=apiFeatureShortPath(json.depvar,uri.target);         // putting in short paths (no filename) for current API usage
@@ -1980,7 +1981,7 @@ export function estimate(btn) {
                 let taskSubtype = d3mTaskSubtype[d3mProblemDescription.taskSubtype][1];
                 let output = d3mOutputType[d3mProblemDescription.outputType][1];
                 let metrics = [d3mMetrics[d3mProblemDescription.metric][1]];
-                let taskDescription = d3mProblemDescription.taskDescriptionription;
+                let taskDescription = d3mProblemDescription.taskDescription;
                 let maxPipelines = 5; //user to specify this eventually?
 
                 setxTable(json.predictors);
@@ -1996,9 +1997,43 @@ export function estimate(btn) {
 
                 console.log(urlcall);
                 console.log(solajsonout);
+                
+                console.log(PipelineCreateRequest);
+                
+                try {
+                    let res = await m.request(urlcall, {method: 'POST', data: PipelineCreateRequest});
+                    console.log('pipelinecreaterequest: ', res);
+                } catch (err) {
+                    estimateLadda.stop();
+                    selectLadda.stop();
+                    console.log(err);
+                    cdb(err);
+                    alert('PipelineCreateRequest has failed.');
+                    return;
+                }
+
+                       /*
+        let SessionRequest = {user_agent: 'some agent', version: 'some version'};
+    let url = D3M_SVC_URL + '/startsession';
+    console.log('SessionRequest: ', SessionRequest);
+    console.log("url: ", url);
+    try {
+        res = await m.request(url, {method: 'POST', data: SessionRequest});
+        console.log('startsession: ', res);
+        zparams.zsessionid = res.context.sessionId;
+    } catch (err) {
+        estimateLadda.stop();
+        selectLadda.stop();
+        cdb(err);
+        alert('StartSession has failed.');
+    }
+    */
+    
+    
+    
                 function sendPipelineSuccess(btn, PipelineCreateResult) {
                     //rpc GetExecutePipelineResults(PipelineExecuteResultsRequest) returns (stream PipelineExecuteResult) {}
-                    console.log(PipelineCreateResult);
+                    console.log('pipelinecreaterequest: ', PipelineCreateResult);
 
                     // Stop spinner and change green button when createpipeline has finished
                     estimateLadda.stop(); // stop spinner
@@ -2137,6 +2172,7 @@ export function estimate(btn) {
                     function getExecutePipeFail (btn) {
                         console.log("GetExecutePipelineResults failed");
                     }
+                    // getexecutepipelineresults is the third to be called
                     makeCorsRequest(urlcall, "nobutton", getExecutePipeSuccess, getExecutePipeFail, solajsonout);
                 }
 
@@ -2144,6 +2180,7 @@ export function estimate(btn) {
                     console.log("pipeline to django failed");
                 }
 
+                //createpipeline is the second to be called
                 makeCorsRequest(urlcall, "nobutton", sendPipelineSuccess, sendPipelineFail, solajsonout);
             }
 
@@ -2153,6 +2190,7 @@ export function estimate(btn) {
             }
 
             estimateLadda.start(); // start spinner
+            //pipelineapp is first to be called
             makeCorsRequest(urlcall, btn, createPipelineSuccess, createPipelineFail, solajsonout);
     }
 }
