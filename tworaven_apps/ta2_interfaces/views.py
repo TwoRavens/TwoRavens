@@ -24,7 +24,6 @@ from tworaven_apps.ta2_interfaces.req_describe_dataflow import \
     describe_data_flow
 from tworaven_apps.ta2_interfaces.req_get_dataflow_results import \
     get_data_flow_results
-from tworaven_apps.ta2_interfaces.ta2_util import get_grpc_content
 from tworaven_apps.utils.view_helper import get_request_body
 from tworaven_apps.call_captures.models import ServiceCallEntry
 from tworaven_apps.utils.view_helper import get_session_key
@@ -185,7 +184,7 @@ def view_get_execute_pipeline_results(request):
     """view for GetExecutePipelineResults"""
     session_key = get_session_key(request)
 
-    success, raven_data_or_err = get_grpc_content(request)
+    success, raven_data_or_err = get_request_body(request)
     if not success:
         return JsonResponse(dict(status=False,
                                  message=raven_data_or_err))
@@ -230,7 +229,7 @@ def view_list_pipelines(request):
     session_key = get_session_key(request)
 
 
-    success, raven_data_or_err = get_grpc_content(request)
+    success, raven_data_or_err = get_request_body(request)
     if not success:
         return JsonResponse(dict(status=False,
                                  message=raven_data_or_err))
@@ -277,7 +276,7 @@ def view_export_pipeline(request):
     session_key = get_session_key(request)
 
 
-    success, raven_data_or_err = get_grpc_content(request)
+    success, raven_data_or_err = get_request_body(request)
     if not success:
         return JsonResponse(dict(status=False,
                                  message=raven_data_or_err))

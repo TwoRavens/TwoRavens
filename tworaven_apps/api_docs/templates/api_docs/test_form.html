@@ -29,18 +29,7 @@
       $('#interimData').html('');
       $('#interimData').hide();
 
-
-      payload = { {{ KEY_GRPC_JSON }} : user_content};
-
-      var jsonPayloadUrls = ['/d3m-service/updateproblemschema',
-                             '/d3m-service/startsession',
-                             '/d3m-service/endsession',
-                             '/d3m-service/createpipeline',
-                             '/d3m-service/DescribeDataflow',
-                             '/d3m-service/GetDataflowResults'];
-      if (jsonPayloadUrls.indexOf(request_url) > -1){
-        payload = user_content;
-      }
+      payload = user_content;
 
       var jqxhr = $.post(request_url,
                          payload,
