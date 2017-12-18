@@ -346,20 +346,11 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     }
     // 7. Start the user session
     // rpc StartSession(SessionRequest) returns (SessionResponse) {}
-    let SessionRequest = {user_agent: 'some agent', version: 'some version'};
-    let url = D3M_SVC_URL + '/startsession';
-    console.log('SessionRequest: ', SessionRequest);
-    console.log("url: ", url);
-    try {
-        res = await m.request(url, {method: 'POST', data: SessionRequest});
-        console.log('startsession: ', res);
-        zparams.zsessionid = res.context.sessionId;
-    } catch (err) {
-        estimateLadda.stop();
-        selectLadda.stop();
-        cdb(err);
-        alert('StartSession has failed.');
-    }
+    makeRequest(
+        D3M_SVC_URL + '/startsession',
+        {user_agent: 'some agent', version: 'some version'},
+        res => zparams.zsessionid = res.context.sessionId;
+        _ => null);
 
     // hopscotch tutorial
     if (tutorial_mode) {
@@ -439,8 +430,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         }
     }
 
-    // 9. Build allNodes[] using preprocessed information
-    let vars = Object.keys(preprocess);
+    // 9. Build allNodes[] using preprocessed information let vars = Object.keys(preprocess);
     // temporary values for hold that correspond to histogram bins
     hold = [.6, .2, .9, .8, .1, .3, .4];
     for (let i = 0; i < vars.length; i++) {
@@ -2775,6 +2765,26 @@ function makeCorsRequest(url, btn, callback, warningcallback, jsonstring) {
     xhr.send(jsonstring);
 }
 
+async function makeRequest(url, data, success, fail) {
+    cdb('url:', url);
+    cdb('POST:', data);
+    try {
+        let res = await m.request(url, {method: 'POST', data: data});
+        cdb('response:', res);
+        if (Object.keys(res)[0] === 'warning') {
+            fail();
+            alert('Warning: ' + res.warning);
+        } else {
+            success(res);
+        }
+    } catch(err) {
+        cdb(err);
+        estimateLadda.stop();
+        selectLadda.stop();
+        alert(`Error: call to ${url} failed`);
+    }
+}
+
 /** needs doc */
 export function legend() {
     borderState();
@@ -3113,23 +3123,7 @@ export function subsetSelect(btn) {
         });
     }
 
-    var subsetstuff = {
-        zdataurl: zparams.zdataurl,
-        zvars: zparams.zvars,
-        zsubset: zparams.zsubset,
-        zsessionid: zparams.zsessionid,
-        zplot: zparams.zplot,
-        callHistory: callHistory,
-        typeStuff: outtypes
-    };
-
-    var jsonout = JSON.stringify(subsetstuff);
-    var urlcall = ROOK_SVC_URL + "subsetapp";
-    var solajsonout = "solaJSON=" + jsonout;
-    cdb("urlcall out: ", urlcall);
-    cdb("POST out: ", solajsonout);
-
-    function subsetSelectSuccess(btn, json) {
+    function success(json) {
         selectLadda.stop(); // stop motion
         $("#btnVariables").trigger("click"); // programmatic clicks
         $("#btnModels").trigger("click");
@@ -3221,15 +3215,24 @@ export function subsetSelect(btn) {
                 }
             }
             rePlot();
-
             layout(layoutAdd);
         });
 
         varOut(grayOuts);
     }
 
-    selectLadda.start(); //start button motion
-    makeCorsRequest(urlcall, btn, subsetSelectSuccess, btn => selectLadda.stop(), solajsonout);
+    selectLadda.start(); // start button motion
+    makeRequest(
+        ROOK_SVC_URL + 'subsetSelect',
+        {zdataurl: zparams.zdataurl,
+         zvars: zparams.zvars,
+         zsubset: zparams.zsubset,
+         zsessionid: zparams.zsessionid,
+         zplot: zparams.zplot,
+         callHistory: callHistory,
+         typeStuff: outtypes},
+        success,
+        selectLadda.stop);
 }
 
 /**
@@ -3429,7 +3432,7 @@ function updateSchema(type, updates, lookup) {
     makeCorsRequest(
         url,
         'nobutton',
-        (_, res) => console.log(res),
+        console.log,
         _ => console.log('update schema failed'),
         solajsonout);
 }
