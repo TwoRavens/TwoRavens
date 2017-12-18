@@ -19,11 +19,42 @@ tags:
   description: "Retrieve SavedWorkspace information"
 - name: "ta2"
   description: "For D3M, API calls used by the UI to initiate requests to a TA2 system"
+- name: "ta3_search"
+  description: "Related to ta3_search command for d3m evalulation"
 schemes:
 - "http"
 paths:
 {% include "swagger/v1_paths_ta2.yaml" %}
 {% include "swagger/v1_paths_workspace.yaml" %}
+  {% url 'view_register_listener' %}:
+    get:
+      tags:
+      - "ta3_search"
+      summary: "Register a web url to receive TA3 search-related messages"
+      description: "web urls registered here will receive TA3 search-related messages"
+      operationId: "ta3_register_listener"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "web_url"
+        in: "query"
+        description: "Url of server to receive messages"
+        required: true
+        type: "string"
+        format: "uri"
+      - name: "name"
+        in: "query"
+        description: "User-friendly name for the listener."
+        required: false
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "object"
+            #$ref: "#/definitions/SavedWorkspace"
+        400:
+          description: "Error with the registration.  See details in the response."
 # ------------------------------
 # Define reusable parameters:
 # ------------------------------
