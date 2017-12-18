@@ -3401,23 +3401,11 @@ export function executepipeline() {
    rpc UpdateProblemSchema(UpdateProblemSchemaRequest) returns (Response) {}
 */
 function updateSchema(type, updates, lookup) {
-    let context = apiSession(zparams.zsessionid);
-    let replaceProblemSchemaField = {[type]: lookup[updates[type]][1]};
-    let updateProblemSchemaRequest = {replaceProblemSchemaField, context};
-    let json = JSON.stringify(updateProblemSchemaRequest);
-
-    let url = D3M_SVC_URL + "/updateproblemschema";
-    let solajsonout = "grpcrequest=" + json;
-    console.log("UpdateProblemSchemaRequest: ");
-    console.log(solajsonout);
-    console.log("urlcall: ", url);
-
-    makeCorsRequest(
-        url,
-        'nobutton',
+    makeRequest(
+        D3M_SVC_URL + "/updateproblemschema",
+        {replaceProblemSchemaField: {[type]: lookup[updates[type]][1]}, context: apiSession(zparams.zsessionid)},
         console.log,
-        _ => console.log('update schema failed'),
-        solajsonout);
+        _ => null);
 }
 
 /**
