@@ -349,8 +349,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     makeRequest(
         D3M_SVC_URL + '/startsession',
         {user_agent: 'some agent', version: 'some version'},
-        res => zparams.zsessionid = res.context.sessionId,
-        _ => null);
+        res => zparams.zsessionid = res.context.sessionId);
 
     // hopscotch tutorial
     if (tutorial_mode) {
@@ -2767,16 +2766,16 @@ function makeCorsRequest(url, btn, callback, warningcallback, jsonstring) {
 }
 
 async function makeRequest(url, data, success, fail) {
-    cdb('url:', url);
-    cdb('POST:', data);
+    console.log('url:', url);
+    console.log('POST:', data);
     try {
         let res = await m.request(url, {method: 'POST', data: data});
-        cdb('response:', res);
+        console.log('response:', res);
         if (Object.keys(res)[0] === 'warning') {
-            fail();
+            fail && fail();
             alert('Warning: ' + res.warning);
         } else {
-            success(res);
+            success && success(res);
         }
     } catch(err) {
         cdb(err);
@@ -3269,7 +3268,7 @@ export let fakeClick = () => {
    EndSession(SessionContext) returns (Response) {}
 */
 export function endsession() {
-    makeRequest(D3M_SVC_URL + '/endsession', apiSession(zparams.zsessionid), _ => null, _ => null);
+    makeRequest(D3M_SVC_URL + '/endsession', apiSession(zparams.zsessionid));
 }
 
 /**
@@ -3403,9 +3402,7 @@ export function executepipeline() {
 function updateSchema(type, updates, lookup) {
     makeRequest(
         D3M_SVC_URL + "/updateproblemschema",
-        {replaceProblemSchemaField: {[type]: lookup[updates[type]][1]}, context: apiSession(zparams.zsessionid)},
-        console.log,
-        _ => null);
+        {replaceProblemSchemaField: {[type]: lookup[updates[type]][1]}, context: apiSession(zparams.zsessionid)});
 }
 
 /**
