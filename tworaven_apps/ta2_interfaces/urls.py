@@ -22,6 +22,10 @@ urlpatterns = (
         views.view_create_pipeline,
         name='CreatePipelines'),
 
+    url(r'^GetCreatePipelineResults/?$',
+        views.view_get_create_pipeline_results,
+        name='GetCreatePipelineResults'),
+
     url(r'^listpipelines/?$',
         views.view_list_pipelines,
         name='ListPipelines'),

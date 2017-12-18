@@ -12,7 +12,7 @@ from tworaven_apps.ta2_interfaces.ta2_util import get_grpc_test_json,\
 
 def get_test_info_str():
     """Test data for update_problem_schema call"""
-    return '''{"context": {"session_id": "session_0"}, {"delete_pipeline_ids": ["pipeline_01", "pipeline_02"]}'''
+    return '''{"context": {"session_id": "session_0"}, "delete_pipeline_ids": ["pipeline_01", "pipeline_02"]}'''
 
 def delete_pipelines(info_str):
     """Ask a TA2 to DeletePipelines via gRPC"""
