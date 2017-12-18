@@ -1,4 +1,4 @@
-from django import forms import ModelForm
+from django import forms
 
 from tworaven_apps.ta3_search.models import MessageListener
 
@@ -14,8 +14,11 @@ class MessageListenerForm(forms.Form):
 
         # Retrieve the object or create new one
         #
+        web_url = self.cleaned_data['web_url']
+        web_url = web_url.strip()
+
         listener_obj, created = MessageListener.objects.get_or_create(\
-                                    web_url=self.cleaned_data['web_url'])
+                                    web_url=web_url)
 
         # if applicable, update the name
         if 'name' in self.cleaned_data:
@@ -25,13 +28,13 @@ class MessageListenerForm(forms.Form):
         listener_obj.is_active = True
 
         # save it
-        listener.save()
+        listener_obj.save()
 
         return listener_obj, created
 
 
 
-class MessageListenerForm(forms.ModelForm):
+class xMessageListenerForm(forms.ModelForm):
     class Meta:
         model = MessageListener
         fields = ['name', 'web_url',]

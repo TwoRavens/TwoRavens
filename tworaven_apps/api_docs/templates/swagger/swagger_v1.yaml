@@ -52,12 +52,13 @@ paths:
           description: "successful operation"
           schema:
             type: "object"
-            #$ref: "#/definitions/SavedWorkspace"
+            $ref: "#/definitions/UserMessage"
         400:
           description: "Error with the registration.  See details in the response."
 # ------------------------------
 # Define reusable parameters:
 # ------------------------------
 definitions:
+{% include "swagger/v1_defn_basic.yaml" %}
 {% include "swagger/v1_defn_workspaces.yaml" %}
 {% include "swagger/v1_defn_ta2.yaml" %}

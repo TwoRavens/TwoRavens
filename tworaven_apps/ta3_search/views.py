@@ -20,8 +20,14 @@ def view_register_listener(request):
     if request.method == 'GET':
         ml_form = MessageListenerForm(request.GET)
         if ml_form.is_valid():
-            new_listener = ml_form.save()
+            new_listener, created = ml_form.get_listener()
             user_msg = 'Listener url registered: %s' % new_listener.web_url
+            if not created:
+                user_msg = '%s. Note: this listener already existed.' % \
+                           user_msg
+
+            user_msg = '%s (updated: %s)' % (user_msg, new_listener.modified) 
+
             return JsonResponse(dict(success=True,
                                      message=user_msg))
         else:
