@@ -430,7 +430,8 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         }
     }
 
-    // 9. Build allNodes[] using preprocessed information let vars = Object.keys(preprocess);
+    // 9. Build allNodes[] using preprocessed information
+    let vars = Object.keys(preprocess);
     // temporary values for hold that correspond to histogram bins
     hold = [.6, .2, .9, .8, .1, .3, .4];
     for (let i = 0; i < vars.length; i++) {
