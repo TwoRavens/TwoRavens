@@ -1,8 +1,14 @@
 from flask import Flask
 app = Flask(__name__)
 
-@app.route("/message")
+import logging
+log = logging.getLogger('werkzeug')
+log.setLevel(logging.ERROR)
+
+
+@app.route("/test")
 def message():
+    print('hello!')
     return 'Hello World!'
 
 

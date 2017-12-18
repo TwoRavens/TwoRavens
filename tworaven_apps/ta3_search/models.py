@@ -50,9 +50,10 @@ class MessageListener(TimeStampedModel):
     def send_shutdown_message(message, is_post=False):
         """Send message to the listeners"""
         for mlistener in MessageListener.objects.filter(is_active=True):
-
+            pass
 
     @staticmethod
     def send_message(message, is_post=False):
         """Send message to the listeners"""
         for mlistener in MessageListener.objects.filter(is_active=True):
+            pass
