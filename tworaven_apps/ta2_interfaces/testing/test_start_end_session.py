@@ -138,7 +138,9 @@ class StartEndSessionTest(TestCase):
         url = reverse('EndSession')
         info = dict(session_id='session_0')
 
-        response = self.client.post(url, format_info_for_request(info))
+        response = self.client.post(url,
+                                    json.dumps(info),
+                                    content_type="application/json")
 
         # 200 response
         #
@@ -163,7 +165,9 @@ class StartEndSessionTest(TestCase):
         url = reverse('EndSession')
         info = dict(no_session_id='session_0')
 
-        response = self.client.post(url, format_info_for_request(info))
+        response = self.client.post(url,
+                                    json.dumps(info),
+                                    content_type="application/json")
 
         # 200 response
         #

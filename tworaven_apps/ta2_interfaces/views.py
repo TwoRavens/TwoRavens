@@ -37,9 +37,8 @@ def view_startsession(request):
     user_agent = can come from UI.
     Version id will originate on the server
     """
-    session_key = get_session_key(request)
+    #session_key = get_session_key(request)
 
-    #success, raven_data_or_err = get_grpc_content(request)
     success, raven_data_or_err = get_request_body(request)
     if not success:
         return JsonResponse(dict(status=False,
@@ -78,9 +77,9 @@ def view_endsession(request):
 
     example string: '{"session_id":"1x3551"}'
     """
-    session_key = get_session_key(request)
+    #session_key = get_session_key(request)
 
-    success, raven_data_or_err = get_grpc_content(request)
+    success, raven_data_or_err = get_request_body(request)
     if not success:
         return JsonResponse(dict(status=False,
                                  message=raven_data_or_err))
