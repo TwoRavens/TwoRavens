@@ -349,7 +349,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     makeRequest(
         D3M_SVC_URL + '/startsession',
         {user_agent: 'some agent', version: 'some version'},
-        res => zparams.zsessionid = res.context.sessionId;
+        res => zparams.zsessionid = res.context.sessionId,
         _ => null);
 
     // hopscotch tutorial
@@ -1961,8 +1961,8 @@ export function estimate(btn) {
             var solajsonout = "solaJSON=" + jsonout;
             cdb("urlcall out: ", urlcall);
             cdb("POST out: ", solajsonout);
-        
-        
+
+
             async function createPipelineSuccess(btn, json) {
 
                 let trainFeatures=apiFeatureShortPath(json.predictors,uri.features);    // putting in short paths (no filename) for current API usage
@@ -1987,9 +1987,9 @@ export function estimate(btn) {
 
                 console.log(urlcall);
                 console.log(solajsonout);
-                
+
                 console.log(PipelineCreateRequest);
-                
+
                 try {
                     let res = await m.request(urlcall, {method: 'POST', data: PipelineCreateRequest});
                     console.log('pipelinecreaterequest: ', res);
@@ -2018,9 +2018,9 @@ export function estimate(btn) {
         alert('StartSession has failed.');
     }
     */
-    
-    
-    
+
+
+
                 function sendPipelineSuccess(btn, PipelineCreateResult) {
                     //rpc GetExecutePipelineResults(PipelineExecuteResultsRequest) returns (stream PipelineExecuteResult) {}
                     console.log('pipelinecreaterequest: ', PipelineCreateResult);
