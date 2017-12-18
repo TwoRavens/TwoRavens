@@ -150,7 +150,7 @@ def view_create_pipeline(request):
     """gRPC: Call from UI to update the problem schema"""
     session_key = get_session_key(request)
 
-    success, raven_data_or_err = get_grpc_content(request)
+    success, raven_data_or_err = get_request_body(request)
     if not success:
         return JsonResponse(dict(status=False,
                                  message=raven_data_or_err))

@@ -37,7 +37,10 @@ class CreatePipelinesTest(TestCase):
         info_dict = load_template_as_dict('test_requests/req_create_pipeline.json')
 
 
-        response = self.client.post(url, format_info_for_request(info_dict))
+        #response = self.client.post(url, format_info_for_request(info_dict))
+        response = self.client.post(url,
+                                    json.dumps(info_dict),
+                                    content_type="application/json")
 
         # 200 response
         #
@@ -91,7 +94,10 @@ class CreatePipelinesTest(TestCase):
 
         del info_dict['context']
 
-        response = self.client.post(url, format_info_for_request(info_dict))
+        #response = self.client.post(url, format_info_for_request(info_dict))
+        response = self.client.post(url,
+                                    json.dumps(info_dict),
+                                    content_type="application/json")
 
         # 200 response
         #
@@ -125,7 +131,10 @@ class CreatePipelinesTest(TestCase):
 
         del info_dict['context']['session_id']
 
-        response = self.client.post(url, format_info_for_request(info_dict))
+        #response = self.client.post(url, format_info_for_request(info_dict))
+        response = self.client.post(url,
+                                    json.dumps(info_dict),
+                                    content_type="application/json")
 
         # 200 response
         #
