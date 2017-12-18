@@ -134,6 +134,8 @@ source("rookhealthcheck.R")
 source("eventdata/rooksubset.R")
 source("eventdata/rookformatter.R")
 
+source("eventdata/rookaggreg.R")
+
 if(addPrivacy){
     source("rookprivate.R")
 }
@@ -154,6 +156,8 @@ if(!is_rapache_mode){
     R.server$add(app = healthcheck.app, name="healthcheckapp")
 
     R.server$add(app = eventdata_subset.app, name="eventdatasubsetapp")
+    
+    R.server$add(app = eventdata_aggreg.app, name="eventdataaggregapp")
 
     # Serve files directly from rook
     R.server$add(app = File$new(PRE_PATH), name = "rook-files")

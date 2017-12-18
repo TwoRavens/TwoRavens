@@ -841,12 +841,14 @@ const loadDictionary = function () {
         dict = data.split('\n');
         dict.length--;	//remove last element(empty line)
         defer.resolve();
-    });
+    }, "text");
     return defer;		//return dictionary load completed
 };
 
+console.log("before dict load");
 // Load dictionary on page open
 loadDictionary();
+console.log("after dict load");
 
 // This code is called when data is loaded. It populates the dictionary and source/target lists
 function actorDataLoad() {
