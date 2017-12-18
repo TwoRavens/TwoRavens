@@ -52,7 +52,7 @@ if (localStorage.getItem("dataset") !== null) {
 }
 
 // Options: "api" or "local"
-let datasource = 'api';
+let datasource = 'local';
 
 document.getElementById("datasetLabel").innerHTML = dataset + " dataset";
 let subsetKeys = [];
