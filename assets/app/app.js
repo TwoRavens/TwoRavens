@@ -22,8 +22,8 @@ import {bars, barsNode, barsSubset, density, densityNode, selVarColor} from './p
 
 export let is_results_mode = false;
 
-// for debugging - if not in PRODUCTION, prints args and returns them
-export let cdb = _ => PRODUCTION || console.log.apply(this, arguments) && arguments;
+// for debugging - if not in PRODUCTION, prints args
+export let cdb = _ => PRODUCTION || console.log(...arguments);
 
 let k = 4; // strength parameter for group attraction/repulsion
 let tutorial_mode = true;
@@ -3269,25 +3269,7 @@ export let fakeClick = () => {
    EndSession(SessionContext) returns (Response) {}
 */
 export function endsession() {
-    let SessionContext= apiSession(zparams.zsessionid);
-
-    var jsonout = JSON.stringify(SessionContext);
-
-    var urlcall = D3M_SVC_URL + "/endsession";
-    var solajsonout = "grpcrequest=" + jsonout;
-    console.log("EndSession: ");
-    console.log(solajsonout);
-    console.log("urlcall: ", urlcall);
-
-    function endSuccess(btn, Response) {
-        console.log(Response);
-    }
-
-    function endFail(btn) {
-        console.log("end session failed");
-    }
-
-    makeCorsRequest(urlcall, "nobutton", endSuccess, endFail, solajsonout);
+    makeRequest(D3M_SVC_URL + '/endsession', apiSession(zparams.zsessionid), _ => null, _ => null);
 }
 
 /**
