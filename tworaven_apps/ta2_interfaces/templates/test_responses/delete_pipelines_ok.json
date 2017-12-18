@@ -1,0 +1,12 @@
+{
+  "responseInfo": {
+    "status": {
+      "code": "OK",
+      "details": "(list pipelines test response)"
+    }
+  },
+  "pipelineIds": [
+    "pipeline_01",
+    "pipeline_02"
+  ]
+}

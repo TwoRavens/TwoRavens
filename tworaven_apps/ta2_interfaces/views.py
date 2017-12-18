@@ -24,6 +24,8 @@ from tworaven_apps.ta2_interfaces.req_describe_dataflow import \
     describe_data_flow
 from tworaven_apps.ta2_interfaces.req_get_dataflow_results import \
     get_data_flow_results
+from tworaven_apps.ta2_interfaces.req_delete_pipelines import \
+    delete_pipelines
 from tworaven_apps.utils.view_helper import get_request_body
 from tworaven_apps.call_captures.models import ServiceCallEntry
 from tworaven_apps.utils.view_helper import get_session_key
@@ -246,6 +248,54 @@ def view_list_pipelines(request):
     # Let's call the TA2 and start the session!
     #
     json_str = list_pipelines(raven_data_or_err)
+
+    # Convert JSON str to python dict - err catch here
+    #
+    json_dict = json.loads(json_str, object_pairs_hook=OrderedDict)
+
+    # Save D3M log
+    #
+    if call_entry:
+        call_entry.save_d3m_response(json_dict)
+
+    return JsonResponse(json_dict, safe=False)
+
+
+
+@csrf_exempt
+def view_delete_pipelines(request):
+    """gRPC: Call from UI to delete pipelines
+
+    session_id = from UI; originally from startsession commmand
+
+    example string: '{
+                      "context": {
+                        "session_id": "session_0"
+                      },
+                      "delete_pipeline_ids" : ["pipeline_01",
+                                               "pipeline_02"]
+                    };'
+    """
+    session_key = get_session_key(request)
+
+
+    success, raven_data_or_err = get_request_body(request)
+    if not success:
+        return JsonResponse(dict(status=False,
+                                 message=raven_data_or_err))
+
+    # Begin to log D3M call
+    #
+    call_entry = None
+    if ServiceCallEntry.record_d3m_call():
+        call_entry = ServiceCallEntry.get_dm3_entry(\
+                        request_obj=request,
+                        call_type='DeletePipelines',
+                        request_msg=raven_data_or_err)
+
+    # Let's call the TA2 and start the session!
+    #
+    json_str = delete_pipelines(raven_data_or_err)
 
     # Convert JSON str to python dict - err catch here
     #
