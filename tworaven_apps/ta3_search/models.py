@@ -31,29 +31,7 @@ class MessageListener(TimeStampedModel):
             time_now = dt.now().strftime('%Y-%m-%d_%H-%M-%S')
             self.name = 'config_%s' % time_now
 
+        if self.web_url.endswith('/'):
+            self.web_url = self.web_url[:-1]
+
         super(MessageListener, self).save(*args, **kwargs)
-
-    @staticmethod
-    def add_listener(web_url, name=None):
-        """Create a MessageListener"""
-        mlistener, created = MessageListener.objects.get_or_create(\
-                                        web_url=web_url)
-        if name:
-            mlistener.name = name
-
-        mlistener.save()
-
-        return True, mlistener
-
-
-    @staticmethod
-    def send_shutdown_message(message, is_post=False):
-        """Send message to the listeners"""
-        for mlistener in MessageListener.objects.filter(is_active=True):
-            pass
-
-    @staticmethod
-    def send_message(message, is_post=False):
-        """Send message to the listeners"""
-        for mlistener in MessageListener.objects.filter(is_active=True):
-            pass
