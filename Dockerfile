@@ -67,6 +67,7 @@ WORKDIR /var/webapps/TwoRavens
 #   - make_d3m_config - WARNING: for testing. Loads D3M info based on the test data
 #   - load_d3m_config_from_env - loads TA2 style config specified in env var
 #                                "CONFIG_JSON_PATH"
+#   - add_ta3_search_listener - add TA3 listener url for terminal window
 # -------------------------------------
 RUN pip3 install --no-cache-dir -r requirements/prod.txt && \
     fab init_db && \
@@ -74,7 +75,8 @@ RUN pip3 install --no-cache-dir -r requirements/prod.txt && \
     fab load_docker_ui_config && \
     fab collect_static && \
     fab make_d3m_config_files && \
-    fab load_d3m_config_from_env
+    fab load_d3m_config_from_env && \
+    fab add_ta3_search_listener
 
 #   fab make_d3m_config && \
 

@@ -147,6 +147,7 @@ def run(with_rook=False):
     init_db()
     check_config()  # make sure the db has something
     load_d3m_config_from_env() # default the D3M setting to the env variable
+    add_ta3_search_listener() # add MessageListener object
 
     commands = [
         # start webpack
@@ -241,10 +242,15 @@ def clear_logs():
 
 def add_ta3_search_listener():
     """Add local web server address for ta3_search messages"""
-    from tworaven_apps.ta3_search.models import MessageListener
+    from tworaven_apps.ta3_search.message_util import MessageUtil
 
     web_url = 'http://0.0.0.0:8001'
+    success, mlistener = MessageUtil.add_listener(web_url, 'ta3 listener')
 
+    user_msg = ('listener registered: %s at %s') % \
+                (mlistener, mlistener.web_url)
+
+    print(user_msg)
 
 def create_django_superuser():
     """(Test only) Create superuser with username: dev_admin. Password is printed to the console."""
