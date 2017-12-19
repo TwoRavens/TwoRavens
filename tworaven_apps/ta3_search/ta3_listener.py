@@ -1,22 +1,22 @@
-"""
-Flask created to log messages to the screen for TA3 search
-"""
-
+"""Flask app to log messages to the screen for TA3 search
+ta3-main sends messages to the app"""
+import logging
 from datetime import datetime as dt
 from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 
-import logging
 log = logging.getLogger('werkzeug')
 log.setLevel(logging.ERROR)
 
 KEY_MESSSAGE = 'message'
 
 def dashes():
+    """Print dashes to console"""
     print('-' * 40)
 
 def show_message(ta3_msg, with_dashes=False):
+    """Print message to console"""
     if with_dashes:
         dashes()
     print(ta3_msg)
@@ -25,6 +25,7 @@ def show_message(ta3_msg, with_dashes=False):
     print('')
 
 def shutdown_server():
+    """reference: http://flask.pocoo.org/snippets/67/"""
     func = request.environ.get('werkzeug.server.shutdown')
     if func is None:
         raise RuntimeError('Not running with the Werkzeug Server')
