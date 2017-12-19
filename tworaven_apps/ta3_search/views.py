@@ -26,7 +26,7 @@ def view_register_listener(request):
                 user_msg = '%s. Note: this listener already existed.' % \
                            user_msg
 
-            user_msg = '%s (updated: %s)' % (user_msg, new_listener.modified) 
+            user_msg = '%s (updated: %s)' % (user_msg, new_listener.modified)
 
             return JsonResponse(dict(success=True,
                                      message=user_msg))
