@@ -1,0 +1,36 @@
+{
+  "dataset_dir": "../openml_185_baseball/",
+  "feature_extractors": {
+    "Player,Number_seasons,Games_played,At_bats,Runs,Hits,Doubles,Triples,Home_runs,RBIs,Walks,Strikeouts,Batting_average,On_base_pct,Slugging_pct,Fielding_ave,Position": {
+      "uuid": "e79dc3808bb211e7a2d5080027f9f5b6",
+      "feature_extractor": "AnnotatedTabularExtractor",
+      "params": {
+        "categorize": true,
+        "add_missing_indicator": true,
+        "numeric_strategy": "median",
+        "normalize_text": false
+      }
+    }
+  },
+  "feature_selector": {
+    "feature_selector": "SelectPercentileClassification",
+    "params": {
+      "percentile": 96,
+      "score_func": "f_classif"
+    }
+  },
+  "estimator": {
+    "estimator": "SGDClassifierEstimator",
+    "params": {
+      "penalty": "elasticnet",
+      "l1_ratio": 0.30000000000000004,
+      "loss": "squared_hinge",
+      "alpha": 1e-07,
+      "fit_intercept": false
+    }
+  },
+  "performance": {
+    "metric": "f1Macro",
+    "cv_performance": 0.6928154370014834
+  }
+}
