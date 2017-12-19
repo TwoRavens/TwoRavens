@@ -2124,29 +2124,22 @@ export function ta2stuff() {
 }
 
 /** needs doc */
-function dataDownload() {
+async function dataDownload() {
     zPop();
     // write links to file & run R CMD
 
-    //package the output as JSON
+    // package the output as JSON
     // add call history and package the zparams object as JSON
-    var jsonout = JSON.stringify(zparams);
-    var btn = "nobutton";
+    let res = await makeRequest(
+        ROOK_SVC_URL + 'dataapp',
+        zparams);
+    if (!res) {
+        return;
+    }
 
-    var urlcall = ROOK_SVC_URL + "dataapp";
-    var solajsonout = "solaJSON=" + jsonout;
-    cdb("urlcall out: ", urlcall);
-    cdb("POST out: ", solajsonout);
-
-    let downloadSuccess = (btn, json) => {
-        console.log('datadownload: ', json);
-        cdb('dataDownload json in: ', json);
-        zparams.zsessionid = json.sessionid[0];
-        // set link URL
-        byId("logID").href = `${PRODUCTION ? ROOK_SVC_URL + 'log_dir/log_' : 'rook/log_' }${zparams.zsessionid}.txt`;
-    };
-    let downloadFail = _ => cdb('Data have not been downloaded');
-    makeCorsRequest(urlcall, btn, downloadSuccess, downloadFail, solajsonout);
+    zparams.zsessionid = res.sessionid[0];
+    // set link URL
+    byId("logID").href = `${PRODUCTION ? ROOK_SVC_URL + 'log_dir/log_' : 'rook/log_' }${zparams.zsessionid}.txt`;
 }
 
 /** needs doc */
@@ -2276,7 +2269,7 @@ function transParse(n) {
    n = name of column/node
    t = selected transformation
 */
-function transform(n, t, typeTransform) {
+async function transform(n, t, typeTransform) {
     if (PRODUCTION && zparams.zsessionid == "") {
         alert("Warning: Data download is not complete. Try again soon.");
         return;
@@ -2320,202 +2313,120 @@ function transform(n, t, typeTransform) {
         }
     }
 
-    //package the output as JSON
-    var transformstuff = {
-        zdataurl: dataurl,
-        zvars: myn.name,
-        zsessionid: zparams.zsessionid,
-        transform: t,
-        callHistory: callHistory,
-        typeTransform: typeTransform,
-        typeStuff: outtypes
-    };
-    var jsonout = JSON.stringify(transformstuff);
-    var urlcall = ROOK_SVC_URL + "transformapp";
-    var solajsonout = "solaJSON=" + jsonout;
-    cdb("urlcall out: " + urlcall);
-    cdb("POST out: " + solajsonout);
-
-    function transformSuccess(btn, json) {
-        estimateLadda.stop();
-        cdb("json in: " + JSON.stringify(json));
-
-        // Is this a typeTransform?
-        if (json.typeTransform[0]) {
-            // Yes. We're updating an existing node
-            d3.json(json.url, (err, data) => {
-                if (err)
-                    return console.warn(err);
-                let node;
-                for (let key in data) {
-                    node = findNodeIndex(key, true);
-		    if (!node)
-		        continue;
-                    jQuery.extend(true, node, data[key]);
-                    node.plottype === "continuous" ? densityNode(node) :
-                        node.plottype === "bar" ? barsNode(node) : null;
-                }
-                fakeClick();
-                panelPlots();
-                node && cdb(node);
-            });
-        } else {
-          /* No, we have a new node here--e.g. the transformed column
-               example response: {
-               "call":["t_year_2"],
-               "url":["data/preprocessSubset_BACCBC78-7DD9-4482-B31D-6EB01C3A0C95.txt"],
-               "trans":["year","_transvar0^2"],
-               "typeTransform":[false]
-             }
-          */
-            callHistory.push({
-                func: "transform",
-                zvars: n,
-                transform: t
-            });
-
-            var subseted = false;
-            var rCall = [];
-
-            rCall[0] = json.call;
-            var newVar = rCall[0][0];
-
-            trans.push(newVar);
-
-            // Read the preprocess file containing values
-            // for the transformed variable
-            //
-            d3.json(json.url, function(error, json) {
-                if (error) return console.warn(error);
-
-                var jsondata = getVariableData(json);
-
-                for (var key in jsondata) {
-                    var myIndex = findNodeIndex(key);
-                    if (typeof myIndex !== "undefined") {
-                        alert("Invalid transformation: this variable name already exists.");
-                        return;
-                    }
-                    // add transformed variable to the current space
-                    var i = allNodes.length;  // get new index
-                    var obj1 = {
-                        id: i,
-                        reflexive: false,
-                        name: key,
-                        labl: "transformlabel",
-                        data: [5, 15, 20, 0, 5, 15, 20],
-                        count: [.6, .2, .9, .8, .1, .3, .4],
-                        nodeCol: colors(i),
-                        baseCol: colors(i),
-                        strokeColor: selVarColor,
-                        strokeWidth: "1",
-                        subsetplot: false,
-                        subsetrange: ["", ""],
-                        setxplot: false,
-                        setxvals: ["", ""],
-                        grayout: false,
-                        defaultInterval: jsondata[key].interval,
-                        defaultNumchar: jsondata[key].numchar,
-                        defaultNature: jsondata[key].nature,
-                        defaultBinary: jsondata[key].binary
-                    };
-
-                    jQuery.extend(true, obj1, jsondata[key]);
-                    allNodes.push(obj1);
-
-                    valueKey.push(newVar);
-                    nodes.push(allNodes[i]);
-                    fakeClick();
-                    panelPlots();
-
-                    if (allNodes[i].plottype === "continuous") {
-                        densityNode(allNodes[i]);
-                    } else if (allNodes[i].plottype === "bar") {
-                        barsNode(allNodes[i]);
-                    }
-
-                    m.redraw();
-                }
-            });
-
-            showLog('transform', rCall);
-        }
-    }
-
-    function transformFail(btn) {
-        alert("transform fail");
-        estimateLadda.stop();
-    }
-
     estimateLadda.start(); // start spinner
-    makeCorsRequest(urlcall, btn, transformSuccess, transformFail, solajsonout);
-}
-
-/**
-   create the XHR object
-   from http://www.html5rocks.com/en/tutorials/cors/ for cross-origin resource sharing
-*/
-function createCORSRequest(method, url, callback) {
-    var xhr = new XMLHttpRequest();
-    if ("withCredentials" in xhr) {
-        // XHR for Chrome/Firefox/Opera/Safari.
-        xhr.open(method, url, true);
-    } else if (typeof XDomainRequest != "undefined") {
-        // XDomainRequest for IE.
-        xhr = new XDomainRequest();
-        xhr.open(method, url);
-    } else {
-        // CORS not supported.
-        xhr = null;
-    }
-    // xhr.setRequestHeader('Content-Type', 'text/plain');
-    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-    return xhr;
-}
-
-/**
-   make the actual CORS request
-*/
-function makeCorsRequest(url, btn, callback, warningcallback, jsonstring) {
-    var xhr = createCORSRequest('POST', url);
-    if (!xhr) {
-        alert('CORS not supported');
+    let json = await makeRequest(
+        ROOK_SVC_URL + 'transformapp',
+        {zdataurl: dataurl,
+         zvars: myn.name,
+         zsessionid: zparams.zsessionid,
+         transform: t,
+         callHistory: callHistory,
+         typeTransform: typeTransform,
+         typeStuff: outtypes});
+    if (!res) {
         return;
     }
-    // Response handlers for asynchronous load
-    // onload or onreadystatechange?
 
-    xhr.onload = function() {
-        var text = xhr.responseText;
-        cdb("text ", text);
+    // Is this a typeTransform?
+    if (json.typeTransform[0]) {
+        // Yes. We're updating an existing node
+        d3.json(json.url, (err, data) => {
+            if (err)
+                return console.warn(err);
+            let node;
+            for (let key in data) {
+                node = findNodeIndex(key, true);
+		            if (!node)
+		                continue;
+                jQuery.extend(true, node, data[key]);
+                node.plottype === "continuous" ? densityNode(node) :
+                    node.plottype === "bar" ? barsNode(node) : null;
+            }
+            fakeClick();
+            panelPlots();
+            node && cdb(node);
+        });
+    } else {
+        /* No, we have a new node here--e.g. the transformed column
+           example response: {
+           "call":["t_year_2"],
+           "url":["data/preprocessSubset_BACCBC78-7DD9-4482-B31D-6EB01C3A0C95.txt"],
+           "trans":["year","_transvar0^2"],
+           "typeTransform":[false]
+           }
+        */
+        callHistory.push({
+            func: "transform",
+            zvars: n,
+            transform: t
+        });
 
-        try {
-            var json = JSON.parse(text); // should wrap in try / catch
-            var names = Object.keys(json);
-        } catch (err) {
-            estimateLadda.stop();
-            selectLadda.stop();
-            cdb(err);
-            alert('Error: Could not parse incoming JSON.');
-        }
+        var subseted = false;
+        var rCall = [];
 
-        if (names[0] == "warning") {
-            warningcallback(btn);
-            alert("Warning: " + json.warning);
-        } else {
-            callback(btn, json);
-        }
-    };
-    xhr.onerror = function() {
-        // note: xhr.readystate should be 4 and status should be 200. a status of 0 occurs when the url is too large
-        xhr.status == 0 ? alert('There was an error making the request. xmlhttprequest status is 0.') :
-            xhr.readyState != 4 ? alert('There was an error making the request. xmlhttprequest readystate is not 4.') :
-            alert('Woops, there was an error making the request.');
-        cdb(xhr);
-        estimateLadda.stop();
-        selectLadda.stop();
-    };
-    xhr.send(jsonstring);
+        rCall[0] = json.call;
+        var newVar = rCall[0][0];
+
+        trans.push(newVar);
+
+        // Read the preprocess file containing values
+        // for the transformed variable
+        //
+        d3.json(json.url, function(error, json) {
+            if (error) return console.warn(error);
+
+            var jsondata = getVariableData(json);
+
+            for (var key in jsondata) {
+                var myIndex = findNodeIndex(key);
+                if (typeof myIndex !== "undefined") {
+                    alert("Invalid transformation: this variable name already exists.");
+                    return;
+                }
+                // add transformed variable to the current space
+                var i = allNodes.length;  // get new index
+                var obj1 = {
+                    id: i,
+                    reflexive: false,
+                    name: key,
+                    labl: "transformlabel",
+                    data: [5, 15, 20, 0, 5, 15, 20],
+                    count: [.6, .2, .9, .8, .1, .3, .4],
+                    nodeCol: colors(i),
+                    baseCol: colors(i),
+                    strokeColor: selVarColor,
+                    strokeWidth: "1",
+                    subsetplot: false,
+                    subsetrange: ["", ""],
+                    setxplot: false,
+                    setxvals: ["", ""],
+                    grayout: false,
+                    defaultInterval: jsondata[key].interval,
+                    defaultNumchar: jsondata[key].numchar,
+                    defaultNature: jsondata[key].nature,
+                    defaultBinary: jsondata[key].binary
+                };
+
+                jQuery.extend(true, obj1, jsondata[key]);
+                allNodes.push(obj1);
+
+                valueKey.push(newVar);
+                nodes.push(allNodes[i]);
+                fakeClick();
+                panelPlots();
+
+                if (allNodes[i].plottype === "continuous") {
+                    densityNode(allNodes[i]);
+                } else if (allNodes[i].plottype === "bar") {
+                    barsNode(allNodes[i]);
+                }
+
+                m.redraw();
+            }
+        });
+
+        showLog('transform', rCall);
+    }
 }
 
 async function makeRequest(url, data) {
@@ -3842,32 +3753,12 @@ export function setxTable(features) {
 /**
   rpc ExportPipeline(PipelineExportRequest) returns (Response) {}
 */
-export function exportpipeline(pipelineId) {
+export async function exportpipeline(pipelineId) {
     console.log(pipelineId);
-    let context = apiSession(zparams.zsessionid);
-    let pipelineExecUri = "<<EXECUTABLE_URI>>"; // uri to persist executable of requested pipeline w/ session preprocessing
-
-    let PipelineExportRequest={context, pipelineId, pipelineExecUri};
-
-    let jsonout = JSON.stringify(PipelineExportRequest);
-
-    let urlcall = D3M_SVC_URL + "/exportpipeline";
-    let solajsonout = "grpcrequest=" + jsonout;
-
-    console.log(urlcall);
-    console.log(solajsonout);
-
-    function exportSuccess(btn, Response) {
-        let message = "Executable for " + pipelineId + " has been written";
-        console.log(message);
-        console.log(Response);
-    }
-
-    function exportFail(btn) {
-        console.log("export pipeline failed");
-    }
-
-    makeCorsRequest(urlcall, "nobutton", exportSuccess, exportFail, solajsonout);
+    let res = await makeRequest(
+        D3M_SVC_URL + 'exportpipeline',
+        {pipelineId, context: apiSession(zparams.zsessionid), pipelineExecUri: '<<EXECUTABLE_URI>>'});
+    res && console.log(`Executable for ${pipelineId} has been written`);
 }
 
 /** needs doc */
