@@ -34,7 +34,7 @@
       - "application/json"
       parameters:
       - name: "workspaceId"
-        in: "path"
+        in: "query"
         description: "ID of SavedWorkspace to return"
         required: true
         type: "integer"

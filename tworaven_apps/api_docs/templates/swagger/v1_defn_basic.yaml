@@ -1,0 +1,22 @@
+  UserSuccessMessage:
+    type: "object"
+    required:
+    - "success"
+    - "message"
+    properties:
+      success:
+        type: "boolean"
+      message:
+        type: "string"
+  UserErrorMessage:
+    type: "object"
+    required:
+    - "success"
+    - "message"
+    properties:
+      success:
+        type: "boolean"
+      message:
+        type: "string"
+      details:
+        type: "object"
