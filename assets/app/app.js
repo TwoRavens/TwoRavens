@@ -1739,7 +1739,7 @@ function tabulate(data, columns, divid) {
 
 }
 
-async function onPipelineCreate(PipelineCreateResult) {
+function onPipelineCreate(PipelineCreateResult) {
     // rpc GetExecutePipelineResults(PipelineExecuteResultsRequest) returns (stream PipelineExecuteResult) {}
     estimateLadda.stop(); // stop spinner
 
@@ -1800,7 +1800,7 @@ async function onPipelineCreate(PipelineCreateResult) {
 
     //let pipelineid = PipelineCreateResult.pipelineid;
     // getexecutepipelineresults is the third to be called
-    await makeRequest(D3M_SVC_URL + '/getexecutepipelineresults', {context, pipeline_ids: Object.keys(allPipelineInfo)});
+    makeRequest(D3M_SVC_URL + '/getexecutepipelineresults', {context, pipeline_ids: Object.keys(allPipelineInfo)});
 }
 function CreatePipelineData(predictors, depvar) {
     let context = apiSession(zparams.zsessionid);
@@ -3109,26 +3109,7 @@ export function executepipeline() {
         data.push(mydata);
     }
 
-    let PipelineExecuteRequest={context, pipelineId, predictFeatures, data};
-
-    jsonout = JSON.stringify(PipelineExecuteRequest);
-
-    var urlcall = D3M_SVC_URL + "/executepipeline";
-    var solajsonout = "grpcrequest=" + jsonout;
-    console.log("PipelineExecuteRequest: ");
-    console.log(solajsonout);
-    console.log("urlcall: ", urlcall);
-
-    function executePipeSuccess(btn, PipelineExecuteResult) {
-        alert("pipeline executed");
-        console.log(PipelineExecuteResult);
-    }
-
-    function executePipeFail(btn) {
-        console.log("execute pipelines failed");
-    }
-
-    makeCorsRequest(urlcall, "nobutton", executePipeSuccess, executePipeFail, solajsonout);
+    makeRequest(D3M_SVC_URL + '/executepipeline', {context, pipelineId, predictFeatures, data});
 }
 
 /**
