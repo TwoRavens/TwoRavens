@@ -1,5 +1,5 @@
 import requests
-
+import json
 from requests.exceptions import ConnectionError
 
 from django.http import JsonResponse, HttpResponse, Http404
@@ -64,6 +64,13 @@ def view_rook_route(request, app_name_in_url):
     elif ROOK_ZESSIONID in raven_data_text:
         if raven_data_text[ROOK_ZESSIONID] in [None, '']:
             raven_data_text[ROOK_ZESSIONID] = session_key
+
+    if not isinstance(raven_data_text, str):
+        try:
+            raven_data_text = json.dumps(raven_data_text)
+        except TypeError:
+            JsonResponse(dict(success=False,
+                              message='Failed to convert data to JSON'))
 
     app_data = dict(solaJSON=raven_data_text)
 
