@@ -51,14 +51,6 @@ preprocess.app <- function(env){
 	}
 
     if(!warning){
-        mytargetloc <- preprocessParams$target
-        if(length(mytargetloc) == 0){ # rewrite to check for data file?
-            warning <- TRUE
-            result<-list(warning="No target location.")
-        }
-    }
-
-    if(!warning){
         mydatastub <- preprocessParams$datastub
         if(length(mydatastub) == 0){ # rewrite to check for data file?
             warning <- TRUE
@@ -87,8 +79,7 @@ preprocess.app <- function(env){
 
             if(d3m_mode) {                                       # Note presently this entire app is only ever called in d3m mode, but we might generalize its function
                 mydataloc <- check_ext(mydataloc)
-                mytargetloc <- check_ext(mytargetloc)
-
+               
                 #mydataloc2 <- paste("../",mydataloc,sep="")
                 #mytargetloc <- paste("../",mytargetloc,sep="")
                 if( identical(tools::file_ext(mydataloc), "csv" ) ){
@@ -100,25 +91,8 @@ preprocess.app <- function(env){
                     return<-list(warning="Data file extension not recognized as .csv or .gz")
                 }
 
-                if(is.null(mytargetloc)){
-                    print("No target data declared to be merged.")
-                } else {
-                    if( identical(tools::file_ext(mytargetloc), "csv" ) ){
-                        mytarget <- read.csv(mytargetloc, check.names = FALSE)
-                    } else if( identical(tools::file_ext(mytargetloc), "gz" ) ){
-                        mytarget <- read.csv(gzfile(mytargetloc), check.names = FALSE)
-                    } else {
-                        warning <- TRUE
-                        return<-list(warning="Target file extension not recognized as .csv or .gz")
-                    }
-                    # not robust merging code, but it'll work if there's one overlapping ID to merge on
-                    mergeCol <- colnames(mytarget)[which(colnames(mytarget) %in% colnames(mydata))]
-                    targetVars <- colnames(mytarget)#[!(which(colnames(mytarget) %in% colnames(mydata)))]
-                    mydata <- merge(mydata, mytarget, by=mergeCol)
-                }
-
                 ppJSON<-preprocess(testdata=mydata)
-                result <- list(targets=targetVars)
+        #        result <- list(targets=targetVars)
             }
         },
         error=function(err){
@@ -127,7 +101,7 @@ preprocess.app <- function(env){
         })
 	}
 
-    merge_name_stub <- "trainData"
+    merge_name <- "trainData.tsv"
     # This reg expression stopped working with .csv.gz extensions:
     #merge_name_stub <- sub("(.*\\/)([^.]+)(\\.[[:alnum:]]+$)", "\\2", mydataloc)   # Extract the filename stub from the provided training data path.  Generally "trainData".
 
@@ -147,10 +121,10 @@ preprocess.app <- function(env){
     }
 
     outloc <- paste(rook_output_preprocess, "preprocess.json", sep="")
-    outdata <- paste(rook_output_data, merge_name_stub, "merged.tsv",sep="")
+    outdata <- paste(rook_output_data, merge_name,sep="")
 
     print(outloc)
-    print(merge_name_stub)
+    print(merge_name)
     print(outdata)
 
     write(ppJSON, outloc)

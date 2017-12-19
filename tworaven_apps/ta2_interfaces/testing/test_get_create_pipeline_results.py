@@ -10,12 +10,12 @@ from tworaven_apps.ta2_interfaces.ta2_util import format_info_for_request,\
 from tworaven_apps.utils.msg_helper import msgt
 from tworaven_apps.ta2_interfaces.models import STATUS_VAL_OK,\
     STATUS_VAL_FAILED_PRECONDITION, STATUS_VAL_COMPLETED
-from tworaven_apps.ta2_interfaces.req_pipeline_create import ERR_NO_SESSION_ID,\
-    ERR_NO_CONTEXT
+from tworaven_apps.ta2_interfaces.req_get_pipeline_create_results import \
+    get_create_pipeline_results, ERR_NO_CONTEXT
 from tworaven_apps.raven_auth.models import User
 
 
-class CreatePipelinesTest(TestCase):
+class GetCreatePipelineResultsTest(TestCase):
     def setUp(self):
         # Set it to internal testing mode
         settings.TA2_STATIC_TEST_MODE = True
@@ -26,18 +26,17 @@ class CreatePipelinesTest(TestCase):
         user_obj = User.objects.get_or_create(username='dev_admin')[0]
         self.client.force_login(user_obj)
 
-    def test_10_good_create(self):
-        """(10) Test create pipelines endpoint used by UI"""
-        msgt(self.test_10_good_create.__doc__)
+    def test_10_good_get_results(self):
+        """(10) Success. Test GetCreatePipelineResults endpoint used by UI"""
+        msgt(self.test_10_good_get_results.__doc__)
 
         # url and info for call
         #
-        url = reverse('CreatePipelines')
+        url = reverse('GetCreatePipelineResults')
 
-        info_dict = load_template_as_dict('test_requests/req_create_pipeline.json')
+        info_dict = {"context": {"session_id": "session_0"},
+                     "pipeline_ids": ["pipeline_01", "pipeline_02"]}
 
-
-        #response = self.client.post(url, format_info_for_request(info_dict))
         response = self.client.post(url,
                                     json.dumps(info_dict),
                                     content_type="application/json")
@@ -82,15 +81,17 @@ class CreatePipelinesTest(TestCase):
         self.assertTrue('file_1' in\
                         fifth_resp['pipelineInfo']['predictResultData'][0])
 
-    def test_20_bad_create_no_context(self):
-        """(20) Test create pipelines endpoint used by UI.  No context"""
-        msgt(self.test_20_bad_create_no_context.__doc__)
+    def test_20_bad_request_no_context(self):
+        """(20) Missing "context" error. Test GetCreatePipelineResults endpoint used by UI."""
+        msgt(self.test_20_bad_request_no_context.__doc__)
 
         # url and info for call
         #
-        url = reverse('CreatePipelines')
+        url = reverse('GetCreatePipelineResults')
 
-        info_dict = load_template_as_dict('test_requests/req_create_pipeline.json')
+        info_dict = {"context": {"session_id": "session_0"},
+                     "pipeline_ids": ["pipeline_01", "pipeline_02"]}
+
 
         del info_dict['context']
 
@@ -105,7 +106,7 @@ class CreatePipelinesTest(TestCase):
 
         # convert to JSON
         #
-        print('json_resp', response.content[:250])
+        #print('json_resp', response.content[:250])
         json_resp = response.json()
 
         # status code 'OK'
@@ -116,41 +117,4 @@ class CreatePipelinesTest(TestCase):
         # error message found
         #
         idx = json_resp['status']['details'].find(ERR_NO_CONTEXT)
-        self.assertTrue(idx > -1)
-
-
-    def test_30_bad_create_no_session_id(self):
-        """(30) Test create pipelines endpoint used by UI.  No session_id"""
-        msgt(self.test_30_bad_create_no_session_id.__doc__)
-
-        # url and info for call
-        #
-        url = reverse('CreatePipelines')
-
-        info_dict = load_template_as_dict('test_requests/req_create_pipeline.json')
-
-        del info_dict['context']['session_id']
-
-        #response = self.client.post(url, format_info_for_request(info_dict))
-        response = self.client.post(url,
-                                    json.dumps(info_dict),
-                                    content_type="application/json")
-
-        # 200 response
-        #
-        self.assertEqual(response.status_code, 200)
-
-        # convert to JSON
-        #
-        print('json_resp', response.content[:250])
-        json_resp = response.json()
-
-        # status code 'OK'
-        #
-        self.assertEqual(json_resp['status']['code'],
-                         STATUS_VAL_FAILED_PRECONDITION)
-
-        # error message found
-        #
-        idx = json_resp['status']['details'].find(ERR_NO_SESSION_ID)
         self.assertTrue(idx > -1)

@@ -22,8 +22,8 @@ import {bars, barsNode, barsSubset, density, densityNode, selVarColor} from './p
 
 export let is_results_mode = false;
 
-// for debugging - if not in PRODUCTION, prints args and returns them
-export let cdb = _ => PRODUCTION || console.log.apply(this, arguments) && arguments;
+// for debugging - if not in PRODUCTION, prints args
+export let cdb = _ => PRODUCTION || console.log(...arguments);
 
 let k = 4; // strength parameter for group attraction/repulsion
 let tutorial_mode = true;
@@ -234,7 +234,7 @@ let dataurl = '';
   10. Add dataschema information to allNodes (when in IS_D3M_DOMAIN)
   11. Call layout() and start up
 */
-async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3mData, d3mTarget, d3mPS, d3mDS, pURL) {
+async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3mData, d3mPS, d3mDS, pURL) {
     if (!IS_D3M_DOMAIN) {
         return;
     }
@@ -244,9 +244,9 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         method: "POST",
         url: "/config/d3m-config/json/latest"
     });
-
+console.log(res);
     // 2. Set 'configurations'
-    configurations = JSON.parse(JSON.stringify(res));
+    configurations = JSON.parse(JSON.stringify(res)); // this is just copying res
     d3mRootPath = configurations.training_data_root.replace(/\/data/,'');
     d3mDataName = configurations.name;
 
@@ -256,30 +256,34 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
                         description: 'D3M config file'};
                         //id: configurations.id};
 
-    // d3mData = configurations.training_data_root+"/trainData.csv";
-    // d3mTarget = configurations.training_data_root+"/trainTargets.csv";
-    d3mPS = configurations.problem_schema_url;
-    d3mDS = configurations.dataset_schema_url;
+    d3mPS = "/config/d3m-config/get-problem-schema/json";
+    d3mDS = "/config/d3m-config/get-dataset-schema/json";
     console.log("Configurations: ", configurations);
     d3mPreprocess = pURL = `rook-custom/rook-files/${d3mDataName}/preprocess/preprocess.json`;
 
     // 3. Read the problem schema and set 'd3mProblemDescription'
     // ...and make a call to start the session with TA2. if we get this far, data are guaranteed to exist for the frontend
     res = await m.request("/config/d3m-config/get-problem-data-file-info");
+    console.log(res);
     // some simple logic to get the paths right
     // note that if neither exist, stay as default which is null
     let set = (field, val) => res.data[field].exists ? res.data[field].path :
         res.data[field + '.gz'].exists ? res.data[field + '.gz'].path :
         val;
-    zparams.zd3mdata = d3mData = set('trainData.csv', d3mData);
-    zparams.zd3mtarget = d3mTarget = set('trainTargets.csv', d3mTarget);
+    
+    zparams.zd3mdata = d3mData = set('learningData.csv', d3mData);
+    zparams.zd3mtarget = set('learningData.csv', d3mData);
+    
+    // hardcoding this, once get-problem-data-file-info is revised this hardcode can go away and use the previous two LOC
+  //  zparams.zd3mdata = d3mData = d3mRootPath+"/dataset_TRAIN/tables/learningData.csv";
+  //  zparams.zd3mtarget = d3mRootPath+"/dataset_TRAIN/tables/learningData.csv";
 
     res = await m.request(d3mPS);
     console.log("prob schema data: ", res);
-    mytarget = res.target.field;
+    mytarget = res.inputs.data[0].targets[0].colName; // easier way to access target name?
 
     if (IS_D3M_DOMAIN) {
-        zparams.zdata = res.datasets[0];
+        zparams.zdata = "none";
     } else {
         // Note: presently xml is no longer being read from Dataverse metadata anywhere
         let temp = xml.documentElement.getElementsByTagName("fileName");
@@ -346,19 +350,9 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     }
     // 7. Start the user session
     // rpc StartSession(SessionRequest) returns (SessionResponse) {}
-    let SessionRequest = {user_agent: 'some agent', version: 'some version'};
-    let url = D3M_SVC_URL + '/startsession';
-    console.log('SessionRequest: ', SessionRequest);
-    console.log("url: ", url);
-    try {
-        res = await m.request(url, {method: 'POST', data: SessionRequest});
-        console.log('startsession: ', res);
+    res = await makeRequest(D3M_SVC_URL + '/startsession', {user_agent: 'some agent', version: 'some version'});
+    if (res) {
         zparams.zsessionid = res.context.sessionId;
-    } catch (err) {
-        estimateLadda.stop();
-        selectLadda.stop();
-        cdb(err);
-        alert('StartSession has failed.');
     }
 
     // hopscotch tutorial
@@ -406,6 +400,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     }
 
     // 8. read preprocess data or (if necessary) run preprocess
+    // NOTE: preprocess.json is now guaranteed to exist...
     let read = res => {
         priv = res.dataset.private || priv;
         Object.keys(res.variables).forEach(k => preprocess[k] = res.variables[k]);
@@ -421,7 +416,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         if (IS_D3M_DOMAIN){
           // For D3M inputs, change the preprocess input data
           //
-          json_input = JSON.stringify({data: d3mData, target: d3mTarget, datastub: d3mDataName});
+          json_input = JSON.stringify({data: d3mData, datastub: d3mDataName});
 
         }else{
          json_input = JSON.stringify({data: dataloc, target: targetloc, datastub: datastub});
@@ -480,9 +475,9 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     }
 
     // 10. Add dataschema information to allNodes (when in IS_D3M_DOMAIN)
-    let datavars = dataschema.trainData.trainData;
+    let datavars = dataschema.dataResources[0].columns;
     datavars.forEach((v, i) => {
-        let myi = findNodeIndex(v.varName);
+        let myi = findNodeIndex(v.colName);
         allNodes[myi] = Object.assign(allNodes[myi], {d3mDescription: v});
     });
     console.log(allNodes);
@@ -540,7 +535,6 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
     let d3mRootPath = '';
     let d3mDataName = '';
     let d3mData = null;
-    let d3mTarget = null;
     let d3mPreprocess = '';
     let d3mPS = '';
     let d3mDS = '';
@@ -557,7 +551,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
         zparams.zdataurl = 'data/fearonLaitin.tsv';
     }
 
-    load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3mData, d3mTarget, d3mPS, d3mDS, pURL);
+    load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3mData, d3mPS, d3mDS, pURL);
 }
 
 let $fill = (obj, op, d1, d2) => d3.select(obj).transition()
@@ -1690,480 +1684,270 @@ function zPop() {
     }
 }
 
+function tabulate(data, columns, divid) {
+    var table = d3.select(divid).append('table');
+    var thead = table.append('thead');
+    var	tbody = table.append('tbody');
+
+    // append the header row
+    thead.append('tr')
+        .selectAll('th')
+        .data(columns).enter()
+        .append('th')
+        .text(function (column) { return column; });
+
+    // create a row for each object in the data
+    var rows = tbody.selectAll('tr')
+        .data(data)
+        .enter()
+        .append('tr')
+        .attr('class',function(d,i) {
+            if(i==0) return 'item-select';
+            else return 'item-default';
+        });
+
+    // create a cell in each row for each column
+    var cells = rows.selectAll('td')
+        .data(function (row) {
+            return columns.map(function (column) {
+                return {column: column, value: row[column]};
+            });
+        })
+        .enter()
+        .append('td')
+        .text(function (d) {
+            return d.value;
+        })
+        .on("click", function(d) {
+            let myrow = this.parentElement;
+            if(myrow.className=="item-select") {
+                return;
+            } else {
+                d3.select(divid).select("tr.item-select")
+                    .attr('class', 'item-default');
+                d3.select(myrow).attr('class',"item-select");
+                if(divid=='#setxRight') {
+                    resultsplotinit(allPipelineInfo[myrow.firstChild.innerText], dvvalues);
+                }
+            }});
+
+    // this is code to add a checkbox to each row of pipeline results table
+    /*
+      d3.select(divid).selectAll("tr")
+      .append("input")
+      .attr("type", "checkbox")
+      .style("float","right");
+    */
+
+    return table;
+
+}
+
+function onPipelineCreate(PipelineCreateResult) {
+    // rpc GetExecutePipelineResults(PipelineExecuteResultsRequest) returns (stream PipelineExecuteResult) {}
+    estimateLadda.stop(); // stop spinner
+
+    $("#btnEstimate").removeClass("btn-success");
+    $("#btnEstimate").addClass("btn-default");
+    $("#btnEndSession").removeClass("btn-default");
+    $("#btnEndSession").addClass("btn-success");
+
+    let allPipelineInfo = {};
+    for (var i = 0; i<PipelineCreateResult.length; i++) {
+        if(PipelineCreateResult[i].pipelineId in allPipelineInfo) {
+            allPipelineInfo[PipelineCreateResult[i].pipelineId]=Object.assign(allPipelineInfo[PipelineCreateResult[i].pipelineId],PipelineCreateResult[i]);
+        } else {
+            allPipelineInfo[PipelineCreateResult[i].pipelineId]=PipelineCreateResult[i];
+        }
+    }
+    console.log(allPipelineInfo);
+    // to get all pipeline ids: Object.keys(allPipelineInfo)
+
+    let resultstable = [];
+    for(var key in allPipelineInfo) {
+        // don't report the pipeline to user if it has failed
+        if(allPipelineInfo[key].responseInfo.status.details == "Pipeline Failed")  {
+            continue;
+        }
+        let myid = "";
+        let mymetric = "";
+        let myval = "";
+        let myscores = allPipelineInfo[key].pipelineInfo.scores;
+        for(var i = 0; i < myscores.length; i++) {
+            //if(i==0) {myid=key;}
+            //   else myid="";
+            myid=key;
+            mymetric=myscores[i].metric;
+            myval=+myscores[i].value.toFixed(3);
+            resultstable.push({"PipelineID":myid,"Metric":mymetric, "Score":myval});
+        }
+    }
+
+    // render the table
+    tabulate(resultstable, ['PipelineID', 'Metric', 'Score'], '#results');
+    tabulate(resultstable, ['PipelineID', 'Metric', 'Score'], '#setxRight');
+    /////////////////////////
+
+    toggleRightButtons("all");
+    byId("btnResults").click();
+
+    // this initializes the main
+    // this piece here is the first pipeline through: allPipelineInfo[resultstable[1].PipelineID]
+    //resultsplotinit(allPipelineInfo[resultstable[1].PipelineID], dvvalues);
+    exportpipeline(resultstable[1].PipelineID);
+
+    // I don't think we need these until we are handling streaming pipelines
+    // They are set up and called, but don't actually render anything for the user
+
+    // this is our function for the ListPipelines of API
+    listpipelines();
+
+    //let pipelineid = PipelineCreateResult.pipelineid;
+    // getexecutepipelineresults is the third to be called
+    makeRequest(D3M_SVC_URL + '/getexecutepipelineresults', {context, pipeline_ids: Object.keys(allPipelineInfo)});
+}
+function CreatePipelineData(predictors, depvar) {
+    let context = apiSession(zparams.zsessionid);
+    let uri = {features: zparams.zd3mdata, target:zparams.zd3mtarget};
+    return {
+        trainFeatures: apiFeatureShortPath(predictors, uri.features), // putting in short paths (no filename) for current API usage
+        targetFeatures: apiFeatureShortPath(depvar, uri.target), // putting in short paths (no filename) for current API usage
+        task: d3mTaskType[d3mProblemDescription.taskType][1],
+        taskSubtype: d3mTaskSubtype[d3mProblemDescription.taskSubtype][1],
+        output: d3mOutputType[d3mProblemDescription.outputType][1],
+        metrics: [d3mMetrics[d3mProblemDescription.metric][1]],
+        taskDescription: d3mProblemDescription.taskDescription,
+        maxPipelines: 5, //user to specify this eventually?
+    };
+}
+
+function downloadIncomplete() {
+    if (PRODUCTION && zparams.zsessionid === '') {
+        alert('Warning: Data download is not complete. Try again soon.');
+        return true;
+    }
+    return false;
+}
+
 /**
     called by clicking 'Solve This Problem' in model mode
 */
-export function estimate(btn) {
-    if(!IS_D3M_DOMAIN){
-    if (PRODUCTION && zparams.zsessionid == '') {
-        alert("Warning: Data download is not complete. Try again soon.");
-        return;
-    }
-
-    zPop();
-    // write links to file & run R CMD
-    // package the output as JSON
-    // add call history and package the zparams object as JSON
-    zparams.callHistory = callHistory;
-    var jsonout = JSON.stringify(zparams);
-
-    var urlcall = ROOK_SVC_URL + "zeligapp"; //base.concat(jsonout);
-    var solajsonout = "solaJSON=" + jsonout;
-    cdb("urlcall out: ", urlcall);
-    cdb("POST out: ", solajsonout);
-    console.log("estimate: ", solajsonout);
-
-    zparams.allVars = valueKey.slice(10, 25); // because the URL is too long...
-    jsonout = JSON.stringify(zparams);
-    var selectorurlcall = ROOK_SVC_URL + "selectorapp";
-
-    function estimateSuccess(btn, json) {
-        estimateLadda.stop(); // stop spinner
-        allResults.push(json);
-        cdb("json in: ", json);
-
-        if (!estimated) byId("results").removeChild(byId("resultsHolder"));
-
-        estimated = true;
-        d3.select("#results")
-            .style("display", "block");
-
-        d3.select("#resultsView")
-            .style("display", "block");
-
-        d3.select("#modelView")
-            .style("display", "block");
-
-
-        // programmatic click on Results button
-        $("#btnResults").trigger("click");
-
-        let model = "Model".concat(modelCount = modelCount + 1);
-
-        function modCol() {
-            d3.select("#modelView")
-                .selectAll("p")
-                .style('background-color', hexToRgba(varColor));
+export async function estimate(btn) {
+    if (!IS_D3M_DOMAIN){
+        if (downloadIncomplete()) {
+            return;
         }
-        modCol();
 
-        d3.select("#modelView")
-            .insert("p", ":first-child") // top stack for results
-            .attr("id", model)
-            .text(model)
-            .style('background-color', hexToRgba(selVarColor))
-            .on("click", function() {
-                var a = this.style.backgroundColor.replace(/\s*/g, "");
-                var b = hexToRgba(selVarColor).replace(/\s*/g, "");
-                if (a.substr(0, 17) == b.substr(0, 17))
-                    return; // escape function if displayed model is clicked
-                modCol();
-                d3.select(this)
-                    .style('background-color', hexToRgba(selVarColor));
-                viz(this.id);
-            });
+        zPop();
+        // write links to file & run R CMD
+        // package the output as JSON
+        // add call history and package the zparams object as JSON
+        zparams.callHistory = callHistory;
+        zparams.allVars = valueKey.slice(10, 25); // because the URL is too long...
 
-        let rCall = [];
-        rCall[0] = json.call;
-        showLog("estimate", rCall);
+        /* UNUSED
+        var selectorurlcall = ROOK_SVC_URL + "selectorapp";
+        function selectorSuccess(btn, json) {
+            d3.select("#ticker")
+                .text("Suggested variables and percent improvement on RMSE: " + json.vars);
+            cdb("selectorSuccess: ", json);
+        }
+        function selectorFail(btn) {
+            alert("Selector Fail");
+        }
+        */
 
-        viz(model);
-    }
+        estimateLadda.start(); // start spinner
+        let json = await makeRequest(ROOK_SVC_URL + 'zeligapp', zparams);
+        if (!json) {
+            estimated = true;
+        } else {
+            allResults.push(json);
+            if (!estimated) byId("results").removeChild(byId("resultsHolder"));
 
-    function estimateFail(btn) {
-        estimateLadda.stop(); // stop spinner
-        estimated = true;
-    }
+            estimated = true;
+            d3.select("#results")
+                .style("display", "block");
 
-    function selectorSuccess(btn, json) {
-        d3.select("#ticker")
-            .text("Suggested variables and percent improvement on RMSE: " + json.vars);
-        cdb("selectorSuccess: ", json);
-    }
+            d3.select("#resultsView")
+                .style("display", "block");
 
-    function selectorFail(btn) {
-        alert("Selector Fail");
-    }
+            d3.select("#modelView")
+                .style("display", "block");
 
-    estimateLadda.start(); // start spinner
-    makeCorsRequest(urlcall, btn, estimateSuccess, estimateFail, solajsonout);
+
+            // programmatic click on Results button
+            $("#btnResults").trigger("click");
+
+            let model = "Model".concat(modelCount = modelCount + 1);
+
+            function modCol() {
+                d3.select("#modelView")
+                    .selectAll("p")
+                    .style('background-color', hexToRgba(varColor));
+            }
+            modCol();
+
+            d3.select("#modelView")
+                .insert("p", ":first-child") // top stack for results
+                .attr("id", model)
+                .text(model)
+                .style('background-color', hexToRgba(selVarColor))
+                .on("click", function() {
+                    var a = this.style.backgroundColor.replace(/\s*/g, "");
+                    var b = hexToRgba(selVarColor).replace(/\s*/g, "");
+                    if (a.substr(0, 17) == b.substr(0, 17))
+                        return; // escape function if displayed model is clicked
+                    modCol();
+                    d3.select(this)
+                        .style('background-color', hexToRgba(selVarColor));
+                    viz(this.id);
+                });
+
+            let rCall = [json.call];
+            showLog('estimate', rCall);
+
+            viz(model);
+        }
     } else if (swandive) { // IS_D3M_DOMAIN and swandive is true
-            zPop();
-            zparams.callHistory = callHistory;
-            var jsonout = JSON.stringify(zparams);
-            console.log(jsonout);
+        zPop();
+        zparams.callHistory = callHistory;
 
-            let myvki = valueKey.indexOf(mytarget);
-            if(myvki != -1) {
-                del(valueKey, myvki);
-            }
+        let myvki = valueKey.indexOf(mytarget);
+        if(myvki != -1) {
+            del(valueKey, myvki);
+        }
 
-            let context = apiSession(zparams.zsessionid);
-            let uri = {features: zparams.zd3mdata, target:zparams.zd3mtarget};
-
-            let trainFeatures=apiFeatureShortPath(valueKey,uri.features);       // putting in short paths (no filename) for current API usage
-            let targetFeatures=apiFeatureShortPath(mytarget,uri.target);        // putting in short paths (no filename) for current API usage
-
-            let task = d3mTaskType[d3mProblemDescription.taskType][1];
-            let taskSubtype = d3mTaskSubtype[d3mProblemDescription.taskSubtype][1];
-            let output = d3mOutputType[d3mProblemDescription.outputType][1];
-            let metrics = [d3mMetrics[d3mProblemDescription.metric][1]];
-            let taskDescription = d3mProblemDescription.taskDescriptionription;
-            let maxPipelines = 5; //user to specify this eventually?
-
-            let PipelineCreateRequest={context, trainFeatures, task, taskSubtype, taskDescription, output, metrics, targetFeatures, maxPipelines};
-
-            let jsonout = JSON.stringify(PipelineCreateRequest);
-
-            let urlcall = D3M_SVC_URL + "/createpipeline";
-            var solajsonout = "grpcrequest=" + jsonout;
-
-            console.log(urlcall);
-            console.log(solajsonout);
-            function sendPipelineSuccess(btn, PipelineCreateResult) {
-                //rpc GetExecutePipelineResults(PipelineExecuteResultsRequest) returns (stream PipelineExecuteResult) {}
-                console.log(PipelineCreateResult);
-                estimateLadda.stop(); // stop spinner
-
-                $("#btnEstimate").removeClass("btn-success");
-                $("#btnEstimate").addClass("btn-default");
-                $("#btnEndSession").removeClass("btn-default");
-                $("#btnEndSession").addClass("btn-success");
-
-                let allPipelineInfo = {};
-                for (var i = 0; i<PipelineCreateResult.length; i++) {
-                    if(PipelineCreateResult[i].pipelineId in allPipelineInfo) {
-                        allPipelineInfo[PipelineCreateResult[i].pipelineId]=Object.assign(allPipelineInfo[PipelineCreateResult[i].pipelineId],PipelineCreateResult[i]);
-                    } else {
-                        allPipelineInfo[PipelineCreateResult[i].pipelineId]=PipelineCreateResult[i];
-                    }
-                }
-                console.log(allPipelineInfo);
-                // to get all pipeline ids: Object.keys(allPipelineInfo)
-
-                function tabulate(data, columns, divid) {
-                    var table = d3.select(divid).append('table');
-                    var thead = table.append('thead');
-                    var	tbody = table.append('tbody');
-
-                    // append the header row
-                    thead.append('tr')
-                        .selectAll('th')
-                        .data(columns).enter()
-                        .append('th')
-                        .text(function (column) { return column; });
-
-                    // create a row for each object in the data
-                    var rows = tbody.selectAll('tr')
-                        .data(data)
-                        .enter()
-                        .append('tr')
-                        .attr('class',function(d,i) {
-                            if(i==0) return 'item-select';
-                            else return 'item-default';
-                        });
-
-                    // create a cell in each row for each column
-                    var cells = rows.selectAll('td')
-                        .data(function (row) {
-                            return columns.map(function (column) {
-                                return {column: column, value: row[column]};
-                            });
-                        })
-                        .enter()
-                        .append('td')
-                        .text(function (d) {
-                            return d.value;
-                        })
-                        .on("click", function(d) {
-                            let myrow = this.parentElement;
-                            if(myrow.className=="item-select") {
-                                return;
-                            } else {
-                                d3.select(divid).select("tr.item-select")
-                                    .attr('class', 'item-default');
-                                d3.select(myrow).attr('class',"item-select");
-                                if(divid=='#setxRight') {
-                                    resultsplotinit(allPipelineInfo[myrow.firstChild.innerText], dvvalues);
-                                }
-                            }});
-
-                    // this is code to add a checkbox to each row of pipeline results table
-                    /*
-                      d3.select(divid).selectAll("tr")
-                      .append("input")
-                      .attr("type", "checkbox")
-                      .style("float","right");
-                    */
-
-                    return table;
-                }
-
-                let resultstable = [];
-                for(var key in allPipelineInfo) {
-                    let myid = "";
-                    let mymetric = "";
-                    let myval = "";
-                    let myscores = allPipelineInfo[key].pipelineInfo.scores;
-                    for(var i = 0; i < myscores.length; i++) {
-                        myid=key;
-                        mymetric=myscores[i].metric;
-                        myval=+myscores[i].value.toFixed(3);
-                        resultstable.push({"PipelineID":myid,"Metric":mymetric, "Score":myval});
-                    }
-                }
-                    // render the table
-                    tabulate(resultstable, ['PipelineID', 'Metric', 'Score'], '#results');
-
-                    toggleRightButtons("all");
-                    byId("btnResults").click();
-
-                    // export pipeline request
-                    exportpipeline(resultstable[1].PipelineID);
-
-                    // I don't think we need these until we are handling streaming pipelines
-                    // They are set up and called, but don't actually render anything for the user
-
-                    // this is our function for the ListPipelines of API
-                    listpipelines();
-
-                    //let pipelineid = PipelineCreateResult.pipelineid;
-                    let pipeline_ids = Object.keys(allPipelineInfo);
-                    let PipelineExecuteResultsRequest = {context, pipeline_ids};
-                    jsonout = JSON.stringify(PipelineExecuteResultsRequest);
-                    let urlcall = D3M_SVC_URL + "/getexecutepipelineresults";
-                    var solajsonout = "grpcrequest=" + jsonout;
-                    console.log("GetExecutePipelineResults: ");
-                    console.log(solajsonout);
-                    console.log(urlcall);
-
-                    function getExecutePipeSuccess(btn, PipelineExecuteResult) {
-                        console.log(PipelineExecuteResult);
-                        // call to initialize the main plot
-                        // dvvalues and predvals should eventually be contained in the pipeline object itself
-                    }
-                    function getExecutePipeFail (btn) {
-                        console.log("GetExecutePipelineResults failed");
-                    }
-                    makeCorsRequest(urlcall, "nobutton", getExecutePipeSuccess, getExecutePipeFail, solajsonout);
-                }
-
-                function sendPipelineFail(btn) {
-                    console.log("pipeline to django failed");
-                }
-
-                estimateLadda.start(); // start spinner
-                makeCorsRequest(urlcall, "nobutton", sendPipelineSuccess, sendPipelineFail, solajsonout);
-
-    }else { // we are in IS_D3M_DOMAIN no swandive
+        estimateLadda.start(); // start spinner
+        let res = await makeRequest(D3M_SVC_URL + '/createpipeline', CreatePipelineData(valueKey, mytarget));
+        res && onPipelineCreate(res);
+    } else { // we are in IS_D3M_DOMAIN no swandive
         // rpc CreatePipelines(PipelineCreateRequest) returns (stream PipelineCreateResult) {}
-            zPop();
-            zparams.callHistory = callHistory;
-            var jsonout = JSON.stringify(zparams);
-            console.log(jsonout);
+        zPop();
+        zparams.callHistory = callHistory;
 
-            let context = apiSession(zparams.zsessionid);
-            let uri = {features: zparams.zd3mdata, target:zparams.zd3mtarget};
+        // pipelineapp is a rook application that returns the dependent variable, the DV values, and the predictors. can think of it was a way to translate the potentially complex grammar from the UI
 
-
-            var urlcall = ROOK_SVC_URL + "pipelineapp";
-
-            var solajsonout = "solaJSON=" + jsonout;
-            cdb("urlcall out: ", urlcall);
-            cdb("POST out: ", solajsonout);
-
-            function createPipelineSuccess(btn, json) {
-
-                let trainFeatures=apiFeatureShortPath(json.predictors,uri.features);    // putting in short paths (no filename) for current API usage
-                let targetFeatures=apiFeatureShortPath(json.depvar,uri.target);         // putting in short paths (no filename) for current API usage
-                let task = d3mTaskType[d3mProblemDescription.taskType][1];
-                let taskSubtype = d3mTaskSubtype[d3mProblemDescription.taskSubtype][1];
-                let output = d3mOutputType[d3mProblemDescription.outputType][1];
-                let metrics = [d3mMetrics[d3mProblemDescription.metric][1]];
-                let taskDescription = d3mProblemDescription.taskDescriptionription;
-                let maxPipelines = 5; //user to specify this eventually?
-
-                setxTable(json.predictors);
-                let dvvalues = json.dvvalues;
-
-
-                let PipelineCreateRequest={context, trainFeatures, task, taskSubtype, taskDescription, output, metrics, targetFeatures, maxPipelines};
-
-                let jsonout = JSON.stringify(PipelineCreateRequest);
-
-                let urlcall = D3M_SVC_URL + "/createpipeline";
-                var solajsonout = "grpcrequest=" + jsonout;
-
-                console.log(urlcall);
-                console.log(solajsonout);
-                function sendPipelineSuccess(btn, PipelineCreateResult) {
-                    //rpc GetExecutePipelineResults(PipelineExecuteResultsRequest) returns (stream PipelineExecuteResult) {}
-                    console.log(PipelineCreateResult);
-
-                    // Stop spinner and change green button when createpipeline has finished
-                    estimateLadda.stop(); // stop spinner
-
-                    $("#btnEstimate").removeClass("btn-success");
-                    $("#btnEstimate").addClass("btn-default");
-                    $("#btnEndSession").removeClass("btn-default");
-                    $("#btnEndSession").addClass("btn-success");
-
-                    let allPipelineInfo = {};
-                    for (var i = 0; i<PipelineCreateResult.length; i++) {
-                        if(PipelineCreateResult[i].pipelineId in allPipelineInfo) {
-                            allPipelineInfo[PipelineCreateResult[i].pipelineId]=Object.assign(allPipelineInfo[PipelineCreateResult[i].pipelineId],PipelineCreateResult[i]);
-                        } else {
-                            allPipelineInfo[PipelineCreateResult[i].pipelineId]=PipelineCreateResult[i];
-                        }
-                    }
-                    console.log(allPipelineInfo);
-                    // to get all pipeline ids: Object.keys(allPipelineInfo)
-
-                    //////////////////////////
-
-                    function tabulate(data, columns, divid) {
-                        var table = d3.select(divid).append('table')
-                        var thead = table.append('thead')
-                        var	tbody = table.append('tbody');
-
-                        // append the header row
-                        thead.append('tr')
-                        .selectAll('th')
-                        .data(columns).enter()
-                        .append('th')
-                        .text(function (column) { return column; });
-
-                        // create a row for each object in the data
-                        var rows = tbody.selectAll('tr')
-                        .data(data)
-                        .enter()
-                        .append('tr')
-                        .attr('class',function(d,i) {
-                              if(i==0) return 'item-select';
-                              else return 'item-default';
-                              })
-
-                        // create a cell in each row for each column
-                        var cells = rows.selectAll('td')
-                        .data(function (row) {
-                              return columns.map(function (column) {
-                                                 return {column: column, value: row[column]};
-                                                 });
-                              })
-                        .enter()
-                        .append('td')
-                        .text(function (d) {
-                            return d.value;
-                              })
-                        .on("click", function(d) {
-                            let myrow = this.parentElement;
-                            if(myrow.className=="item-select") {
-                                return;
-                            } else {
-                                d3.select(divid).select("tr.item-select")
-                                .attr('class', 'item-default');
-                                d3.select(myrow).attr('class',"item-select");
-                                if(divid=='#setxRight') {
-                                    resultsplotinit(allPipelineInfo[myrow.firstChild.innerText], dvvalues);
-                                }
-                            }});
-
-                        // this is code to add a checkbox to each row of pipeline results table
-                        /*
-                        d3.select(divid).selectAll("tr")
-                        .append("input")
-                        .attr("type", "checkbox")
-                        .style("float","right");
-                         */
-
-                        return table;
-                    }
-
-                    let resultstable = [];
-                    for(var key in allPipelineInfo) {
-                    // don't report the pipeline to user if it has failed
-                        if(allPipelineInfo[key].responseInfo.status.details == "Pipeline Failed")  {
-                            continue;
-                        }
-                        let myid = "";
-                        let mymetric = "";
-                        let myval = "";
-                        let myscores = allPipelineInfo[key].pipelineInfo.scores;
-                        for(var i = 0; i < myscores.length; i++) {
-                            //if(i==0) {myid=key;}
-                             //   else myid="";
-                            myid=key;
-                            mymetric=myscores[i].metric;
-                            myval=+myscores[i].value.toFixed(3);
-                            resultstable.push({"PipelineID":myid,"Metric":mymetric, "Score":myval});
-                        }
-                    }
-
-                    // render the table
-                    tabulate(resultstable, ['PipelineID', 'Metric', 'Score'], '#results');
-                    tabulate(resultstable, ['PipelineID', 'Metric', 'Score'], '#setxRight');
-                    /////////////////////////
-
-                    toggleRightButtons("all");
-                    byId("btnResults").click();
-
-                    // this initializes the main
-                    // this piece here is the first pipeline through: allPipelineInfo[resultstable[1].PipelineID]
-                    //resultsplotinit(allPipelineInfo[resultstable[1].PipelineID], dvvalues);
-                    exportpipeline(resultstable[1].PipelineID);
-
-
-                    // I don't think we need these until we are handling streaming pipelines
-                    // They are set up and called, but don't actually render anything for the user
-
-                    // this is our function for the ListPipelines of API
-                    listpipelines();
-
-                    //let pipelineid = PipelineCreateResult.pipelineid;
-                    let pipeline_ids = Object.keys(allPipelineInfo);
-                    let PipelineExecuteResultsRequest = {context, pipeline_ids};
-                    jsonout = JSON.stringify(PipelineExecuteResultsRequest);
-                    let urlcall = D3M_SVC_URL + "/getexecutepipelineresults";
-                    var solajsonout = "grpcrequest=" + jsonout;
-                    console.log("GetExecutePipelineResults: ");
-                    console.log(solajsonout);
-                    console.log(urlcall);
-
-                    function getExecutePipeSuccess(btn, PipelineExecuteResult) {
-                        console.log(PipelineExecuteResult);
-                        // call to initialize the main plot
-                        // dvvalues and predvals should eventually be contained in the pipeline object itself
-                    }
-                    function getExecutePipeFail (btn) {
-                        console.log("GetExecutePipelineResults failed");
-                    }
-                    makeCorsRequest(urlcall, "nobutton", getExecutePipeSuccess, getExecutePipeFail, solajsonout);
-                }
-
-                function sendPipelineFail(btn) {
-                    console.log("pipeline to django failed");
-                }
-
-                makeCorsRequest(urlcall, "nobutton", sendPipelineSuccess, sendPipelineFail, solajsonout);
-            }
-
-            function createPipelineFail(btn) {
-                estimateLadda.stop(); // stop spinner
-                estimated = true;
-            }
-
-            estimateLadda.start(); // start spinner
-            makeCorsRequest(urlcall, btn, createPipelineSuccess, createPipelineFail, solajsonout);
+        estimateLadda.start(); // start spinner
+        let res = await makeRequest(ROOK_SVC_URL + 'pipelineapp', zparams);
+        if (!res) {
+            estimated = true;
+        } else {
+            setxTable(res.predictors);
+            let dvvalues = res.dvvalues;
+            res = await makeRequest(D3M_SVC_URL + '/createpipeline', CreatePipelineData(json.predictors, json.depvar));
+            res = await makeRequest(ROOK_SVC_URL + 'createpipeline', zparams);
+            res && onPipelineCreate(res);
+        }
     }
 }
 
 /**
    called by clicking 'Explore' in explore mode
 */
-export function explore(btn) {
-    console.log("explore called");
-    if (PRODUCTION && zparams.zsessionid === '') {
-        return alert("Warning: Data download is not complete. Try again soon.");
+export async function explore(btn) {
+    if (downloadIncomplete()) {
+        return;
     }
 
     zPop();
@@ -2173,168 +1957,152 @@ export function explore(btn) {
     // package the output as JSON
     // add call history and package the zparams object as JSON
     zparams.callHistory = callHistory;
-    let json = JSON.stringify(zparams);
-
-    let url = ROOK_SVC_URL + "exploreapp";
-    var solajsonout = "solaJSON=" + json;
-    console.log("url out: ", url);
-    console.log("POST out: ", solajsonout);
-
-    // explore success method
-    function exploreSuccess(btn, json) {
-        console.log("ExploreSuccess method called");
-        estimateLadda.stop();  // stop spinner
-        allResults.push(json);
-        var json_explore = json;
-        console.log("json in: ", json);
-
-        var myparent = document.getElementById("rightContentArea");
-        if (estimated == false) {
-            myparent.removeChild(document.getElementById("resultsHolder"));
-        }
-        d3.select("#modelView").html("");
-        //   d3.select("#resultsView_tabular").html("");
-        d3.select("#resultsView_statistics").html("");
-
+    estimateLadda.start();  // start spinner
+    let json = await makeRequest(ROOK_SVC_URL + 'exploreapp', zparams);
+    if (!json) {
         estimated = true;
-        //  d3.select("#results")
-        // .style("display", "block");
+        return;
+    }
 
-        d3.select("#result_left")
-            .style("display", "block");
+    allResults.push(json);
 
-        d3.select("#result_right")
-            .style("display", "block");
-        /*
-          d3.select("#resultsView")
-          .style("display", "block");
-        */
-        d3.select("#scatterplot")
-            .style("display", "block");
-        d3.select("#heatchart")
-            .style("display", "block");
-        d3.select("#modelView_Container")
-            .style("display", "block");
+    var myparent = document.getElementById("rightContentArea");
+    if (estimated == false) {
+        myparent.removeChild(document.getElementById("resultsHolder"));
+    }
+    d3.select("#modelView").html("");
+    //   d3.select("#resultsView_tabular").html("");
+    d3.select("#resultsView_statistics").html("");
 
+    estimated = true;
+    //  d3.select("#results")
+    // .style("display", "block");
+
+    d3.select("#result_left")
+        .style("display", "block");
+
+    d3.select("#result_right")
+        .style("display", "block");
+    /*
+      d3.select("#resultsView")
+      .style("display", "block");
+    */
+    d3.select("#scatterplot")
+        .style("display", "block");
+    d3.select("#heatchart")
+        .style("display", "block");
+    d3.select("#modelView_Container")
+        .style("display", "block");
+
+    d3.select("#modelView")
+        .style("display", "block");
+
+    d3.select("#resultsView_tabular")
+        .style("display", "block");
+
+    d3.select("#resultsView_statistics")
+        .style("display", "block");
+
+    d3.select("#modelView")
+        .style('background-color', hexToRgba(varColor))
+        .style("overflow-y", "hidden")
+        .style("overflow-x", "scroll")
+        .append("span")
+        .style("white-space", "pre")
+        .style("margin-top", 0)
+        .style("float", "left")
+        .style("position", "relative")
+        .style("color", "#757575")
+        .text("MODEL SELECTION :  ");
+
+    // programmatic click on Results button
+    $("#btnBivariate").trigger("click");
+    var count = 0;
+    var count1 = -1;
+    for (var i in json.images) {
+        count1++;
+    }
+    for (var i in json.images) {
+        var value = i;
+        model_selection(value, count); // for entering all the variables
+        count++;
+    }
+    modelCount = modelCount + 1;
+    var model = "Model".concat(modelCount);
+    var model_name = value;
+    console.log(" and our value is  : " + count1);
+
+    function modCol() {
         d3.select("#modelView")
-            .style("display", "block");
+            .selectAll("button")
+        .style('background-color', "#FFD54F");
+    }
 
-        d3.select("#resultsView_tabular")
-            .style("display", "block");
+    function model_selection(model_selection_name, count_value) {
+        if (count_value % 2 == 0 && count_value != 0) {
+            d3.select("#modelView")
+                .append("span")
+                .text("\u00A0 \u00A0 \u00A0 \u00A0   \u00A0 ")
+                .style("margin-top", 0)
+                .style("white-space", "pre")
+                .style("display", "inline-block")
+                .style("float", "left")
+                .append("span")
+                .text("|")
+                .style("margin-top", 0)
+                .style("white-space", "pre")
+                .style("display", "inline-block")
+                .style("float", "left")
+                .append("span")
+                .text("\u00A0 \u00A0 \u00A0 \u00A0   \u00A0 ")
+                .style("margin-top", 0)
+                .style("white-space", "pre")
+                .style("display", "inline-block")
+                .style("float", "left");
 
-        d3.select("#resultsView_statistics")
-            .style("display", "block");
-
+        }
         d3.select("#modelView")
-            .style('background-color', hexToRgba(varColor))
+            .append("span")
+            .text(" \u00A0")
+            .style("margin-top", 0)
+            .style("float", "left")
+
+            .style("display", "inline-block")
+            .style("white-space", "pre")
             .style("overflow-y", "hidden")
             .style("overflow-x", "scroll")
-            .append("span")
+            .append("button")// top stack for results
+        //      .append("xhtml:button")
+            .attr("class","btn btn-outline-success")
+            .style("padding","4px")
+            .attr("id", model)
+            .text(model_selection_name)
+            .style('background-color', function() {
+                var color1 = "#FFD54F";
+                return count === count1 ? selVarColor : color1;
+            })
+            .style("display", "inline-block")
             .style("white-space", "pre")
             .style("margin-top", 0)
             .style("float", "left")
-            .style("position", "relative")
-            .style("color", "#757575")
-            .text("MODEL SELECTION :  ");
-
-        // programmatic click on Results button
-        $("#btnBivariate").trigger("click");
-        var count = 0;
-        var count1 = -1;
-        for (var i in json_explore.images) {
-            count1++;
-        }
-        for (var i in json_explore.images) {
-            var value = i;
-            model_selection(value, count); // for entering all the variables
-            count++;
-        }
-        modelCount = modelCount + 1;
-        var model = "Model".concat(modelCount);
-        var model_name = value;
-        console.log(" and our value is  : " + count1);
-
-        function modCol() {
-            d3.select("#modelView")
-                .selectAll("button")
-                .style('background-color', "#FFD54F");
-        }
-
-        function model_selection(model_selection_name, count_value) {
-            if (count_value % 2 == 0 && count_value != 0) {
-                d3.select("#modelView")
-                    .append("span")
-                    .text("\u00A0 \u00A0 \u00A0 \u00A0   \u00A0 ")
-                    .style("margin-top", 0)
-                    .style("white-space", "pre")
-                    .style("display", "inline-block")
-                    .style("float", "left")
-                    .append("span")
-                    .text("|")
-                    .style("margin-top", 0)
-                    .style("white-space", "pre")
-                    .style("display", "inline-block")
-                    .style("float", "left")
-                    .append("span")
-                    .text("\u00A0 \u00A0 \u00A0 \u00A0   \u00A0 ")
-                    .style("margin-top", 0)
-                    .style("white-space", "pre")
-                    .style("display", "inline-block")
-                    .style("float", "left");
-
-            }
-            d3.select("#modelView")
-                .append("span")
-                .text(" \u00A0")
-                .style("margin-top", 0)
-                .style("float", "left")
-
-                .style("display", "inline-block")
-                .style("white-space", "pre")
-                .style("overflow-y", "hidden")
-                .style("overflow-x", "scroll")
-                .append("button")// top stack for results
-            //      .append("xhtml:button")
-                .attr("class","btn btn-outline-success")
-                .style("padding","4px")
-                .attr("id", model)
-                .text(model_selection_name)
-                .style('background-color', function() {
-                    var color1 = "#FFD54F";
-                    return count === count1 ? selVarColor : color1;
-                })
-                .style("display", "inline-block")
-                .style("white-space", "pre")
-                .style("margin-top", 0)
-                .style("float", "left")
-                .on("click", function() {
-                    var a = this.style.backgroundColor.replace(/\s*/g, "");
-                    var b = hexToRgba(selVarColor).replace(/\s*/g, "");
-                    if (a.substr(0, 17) === b.substr(0, 17)) {
-                        return; //escapes the function early if the displayed model is clicked
-                    }
-                    viz_explore(this.id, json_explore, model_selection_name);
-                    modCol();
-                    d3.select(this)
-                        .style('background-color', selVarColor);
-                })
-            ;
-        }
-
-        var rCall = [];
-        rCall[0] = json.call;
-        logArray.push("explore: ".concat(rCall[0]));
-        showLog();
-        viz_explore(model, json_explore, model_name);
+            .on("click", function() {
+                var a = this.style.backgroundColor.replace(/\s*/g, "");
+                var b = hexToRgba(selVarColor).replace(/\s*/g, "");
+                if (a.substr(0, 17) === b.substr(0, 17)) {
+                    return; //escapes the function early if the displayed model is clicked
+                }
+                viz_explore(this.id, json, model_selection_name);
+                modCol();
+                d3.select(this)
+                    .style('background-color', selVarColor);
+            });
     }
 
-    function exploreFail(btn) {
-        estimateLadda.stop();  // stop spinner
-        estimated = true;
-    }
-
-    estimateLadda.start();  // start spinner
-    makeCorsRequest(urlcall, btn, exploreSuccess, exploreFail, solajsonout);
+    var rCall = [];
+    rCall[0] = json.call;
+    logArray.push("explore: ".concat(rCall[0]));
+    showLog();
+    viz_explore(model, json, model_name);
 }
 
 /** needs doc */
@@ -2343,29 +2111,20 @@ export function ta2stuff() {
 }
 
 /** needs doc */
-function dataDownload() {
+async function dataDownload() {
     zPop();
     // write links to file & run R CMD
 
-    //package the output as JSON
+    // package the output as JSON
     // add call history and package the zparams object as JSON
-    var jsonout = JSON.stringify(zparams);
-    var btn = "nobutton";
+    let res = await makeRequest(ROOK_SVC_URL + 'dataapp', zparams);
+    if (!res) {
+        return;
+    }
 
-    var urlcall = ROOK_SVC_URL + "dataapp";
-    var solajsonout = "solaJSON=" + jsonout;
-    cdb("urlcall out: ", urlcall);
-    cdb("POST out: ", solajsonout);
-
-    let downloadSuccess = (btn, json) => {
-        console.log('datadownload: ', json);
-        cdb('dataDownload json in: ', json);
-        zparams.zsessionid = json.sessionid[0];
-        // set link URL
-        byId("logID").href = `${PRODUCTION ? ROOK_SVC_URL + 'log_dir/log_' : 'rook/log_' }${zparams.zsessionid}.txt`;
-    };
-    let downloadFail = _ => cdb('Data have not been downloaded');
-    makeCorsRequest(urlcall, btn, downloadSuccess, downloadFail, solajsonout);
+    zparams.zsessionid = res.sessionid[0];
+    // set link URL
+    byId("logID").href = `${PRODUCTION ? ROOK_SVC_URL + 'log_dir/log_' : 'rook/log_' }${zparams.zsessionid}.txt`;
 }
 
 /** needs doc */
@@ -2495,11 +2254,11 @@ function transParse(n) {
    n = name of column/node
    t = selected transformation
 */
-function transform(n, t, typeTransform) {
-    if (PRODUCTION && zparams.zsessionid == "") {
-        alert("Warning: Data download is not complete. Try again soon.");
+async function transform(n, t, typeTransform) {
+    if (downloadIncomplete()) {
         return;
     }
+
     if (!typeTransform)
         t = t.replace("+", "_plus_"); // can't send the plus operator
 
@@ -2539,202 +2298,139 @@ function transform(n, t, typeTransform) {
         }
     }
 
-    //package the output as JSON
-    var transformstuff = {
-        zdataurl: dataurl,
-        zvars: myn.name,
-        zsessionid: zparams.zsessionid,
-        transform: t,
-        callHistory: callHistory,
-        typeTransform: typeTransform,
-        typeStuff: outtypes
-    };
-    var jsonout = JSON.stringify(transformstuff);
-    var urlcall = ROOK_SVC_URL + "transformapp";
-    var solajsonout = "solaJSON=" + jsonout;
-    cdb("urlcall out: " + urlcall);
-    cdb("POST out: " + solajsonout);
-
-    function transformSuccess(btn, json) {
-        estimateLadda.stop();
-        cdb("json in: " + JSON.stringify(json));
-
-        // Is this a typeTransform?
-        if (json.typeTransform[0]) {
-            // Yes. We're updating an existing node
-            d3.json(json.url, (err, data) => {
-                if (err)
-                    return console.warn(err);
-                let node;
-                for (let key in data) {
-                    node = findNodeIndex(key, true);
-		    if (!node)
-		        continue;
-                    jQuery.extend(true, node, data[key]);
-                    node.plottype === "continuous" ? densityNode(node) :
-                        node.plottype === "bar" ? barsNode(node) : null;
-                }
-                fakeClick();
-                panelPlots();
-                node && cdb(node);
-            });
-        } else {
-          /* No, we have a new node here--e.g. the transformed column
-               example response: {
-               "call":["t_year_2"],
-               "url":["data/preprocessSubset_BACCBC78-7DD9-4482-B31D-6EB01C3A0C95.txt"],
-               "trans":["year","_transvar0^2"],
-               "typeTransform":[false]
-             }
-          */
-            callHistory.push({
-                func: "transform",
-                zvars: n,
-                transform: t
-            });
-
-            var subseted = false;
-            var rCall = [];
-
-            rCall[0] = json.call;
-            var newVar = rCall[0][0];
-
-            trans.push(newVar);
-
-            // Read the preprocess file containing values
-            // for the transformed variable
-            //
-            d3.json(json.url, function(error, json) {
-                if (error) return console.warn(error);
-
-                var jsondata = getVariableData(json);
-
-                for (var key in jsondata) {
-                    var myIndex = findNodeIndex(key);
-                    if (typeof myIndex !== "undefined") {
-                        alert("Invalid transformation: this variable name already exists.");
-                        return;
-                    }
-                    // add transformed variable to the current space
-                    var i = allNodes.length;  // get new index
-                    var obj1 = {
-                        id: i,
-                        reflexive: false,
-                        name: key,
-                        labl: "transformlabel",
-                        data: [5, 15, 20, 0, 5, 15, 20],
-                        count: [.6, .2, .9, .8, .1, .3, .4],
-                        nodeCol: colors(i),
-                        baseCol: colors(i),
-                        strokeColor: selVarColor,
-                        strokeWidth: "1",
-                        subsetplot: false,
-                        subsetrange: ["", ""],
-                        setxplot: false,
-                        setxvals: ["", ""],
-                        grayout: false,
-                        defaultInterval: jsondata[key].interval,
-                        defaultNumchar: jsondata[key].numchar,
-                        defaultNature: jsondata[key].nature,
-                        defaultBinary: jsondata[key].binary
-                    };
-
-                    jQuery.extend(true, obj1, jsondata[key]);
-                    allNodes.push(obj1);
-
-                    valueKey.push(newVar);
-                    nodes.push(allNodes[i]);
-                    fakeClick();
-                    panelPlots();
-
-                    if (allNodes[i].plottype === "continuous") {
-                        densityNode(allNodes[i]);
-                    } else if (allNodes[i].plottype === "bar") {
-                        barsNode(allNodes[i]);
-                    }
-
-                    m.redraw();
-                }
-            });
-
-            showLog('transform', rCall);
-        }
-    }
-
-    function transformFail(btn) {
-        alert("transform fail");
-        estimateLadda.stop();
-    }
-
     estimateLadda.start(); // start spinner
-    makeCorsRequest(urlcall, btn, transformSuccess, transformFail, solajsonout);
-}
-
-/**
-   create the XHR object
-   from http://www.html5rocks.com/en/tutorials/cors/ for cross-origin resource sharing
-*/
-function createCORSRequest(method, url, callback) {
-    var xhr = new XMLHttpRequest();
-    if ("withCredentials" in xhr) {
-        // XHR for Chrome/Firefox/Opera/Safari.
-        xhr.open(method, url, true);
-    } else if (typeof XDomainRequest != "undefined") {
-        // XDomainRequest for IE.
-        xhr = new XDomainRequest();
-        xhr.open(method, url);
-    } else {
-        // CORS not supported.
-        xhr = null;
-    }
-    // xhr.setRequestHeader('Content-Type', 'text/plain');
-    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-    return xhr;
-}
-
-/**
-   make the actual CORS request
-*/
-function makeCorsRequest(url, btn, callback, warningcallback, jsonstring) {
-    var xhr = createCORSRequest('POST', url);
-    if (!xhr) {
-        alert('CORS not supported');
+    let json = await makeRequest(
+        ROOK_SVC_URL + 'transformapp',
+        {zdataurl: dataurl,
+         zvars: myn.name,
+         zsessionid: zparams.zsessionid,
+         transform: t,
+         callHistory: callHistory,
+         typeTransform: typeTransform,
+         typeStuff: outtypes});
+    if (!json) {
         return;
     }
-    // Response handlers for asynchronous load
-    // onload or onreadystatechange?
 
-    xhr.onload = function() {
-        var text = xhr.responseText;
-        cdb("text ", text);
+    // Is this a typeTransform?
+    if (json.typeTransform[0]) {
+        // Yes. We're updating an existing node
+        d3.json(json.url, (err, data) => {
+            if (err)
+                return console.warn(err);
+            let node;
+            for (let key in data) {
+                node = findNodeIndex(key, true);
+		            if (!node)
+		                continue;
+                jQuery.extend(true, node, data[key]);
+                node.plottype === "continuous" ? densityNode(node) :
+                    node.plottype === "bar" ? barsNode(node) : null;
+            }
+            fakeClick();
+            panelPlots();
+            node && cdb(node);
+        });
+    } else {
+        /* No, we have a new node here--e.g. the transformed column
+           example response: {
+           "call":["t_year_2"],
+           "url":["data/preprocessSubset_BACCBC78-7DD9-4482-B31D-6EB01C3A0C95.txt"],
+           "trans":["year","_transvar0^2"],
+           "typeTransform":[false]
+           }
+        */
+        callHistory.push({
+            func: "transform",
+            zvars: n,
+            transform: t
+        });
 
-        try {
-            var json = JSON.parse(text); // should wrap in try / catch
-            var names = Object.keys(json);
-        } catch (err) {
-            estimateLadda.stop();
-            selectLadda.stop();
-            cdb(err);
-            alert('Error: Could not parse incoming JSON.');
+        var subseted = false;
+        var rCall = [];
+
+        rCall[0] = json.call;
+        var newVar = rCall[0][0];
+
+        trans.push(newVar);
+
+        // Read the preprocess file containing values
+        // for the transformed variable
+        //
+        d3.json(json.url, function(error, json) {
+            if (error) return console.warn(error);
+
+            var jsondata = getVariableData(json);
+
+            for (var key in jsondata) {
+                var myIndex = findNodeIndex(key);
+                if (typeof myIndex !== "undefined") {
+                    alert("Invalid transformation: this variable name already exists.");
+                    return;
+                }
+                // add transformed variable to the current space
+                var i = allNodes.length;  // get new index
+                var obj1 = {
+                    id: i,
+                    reflexive: false,
+                    name: key,
+                    labl: "transformlabel",
+                    data: [5, 15, 20, 0, 5, 15, 20],
+                    count: [.6, .2, .9, .8, .1, .3, .4],
+                    nodeCol: colors(i),
+                    baseCol: colors(i),
+                    strokeColor: selVarColor,
+                    strokeWidth: "1",
+                    subsetplot: false,
+                    subsetrange: ["", ""],
+                    setxplot: false,
+                    setxvals: ["", ""],
+                    grayout: false,
+                    defaultInterval: jsondata[key].interval,
+                    defaultNumchar: jsondata[key].numchar,
+                    defaultNature: jsondata[key].nature,
+                    defaultBinary: jsondata[key].binary
+                };
+
+                jQuery.extend(true, obj1, jsondata[key]);
+                allNodes.push(obj1);
+
+                valueKey.push(newVar);
+                nodes.push(allNodes[i]);
+                fakeClick();
+                panelPlots();
+
+                if (allNodes[i].plottype === "continuous") {
+                    densityNode(allNodes[i]);
+                } else if (allNodes[i].plottype === "bar") {
+                    barsNode(allNodes[i]);
+                }
+
+                m.redraw();
+            }
+        });
+
+        showLog('transform', rCall);
+    }
+}
+
+async function makeRequest(url, data) {
+    console.log('url:', url);
+    console.log('POST:', data);
+    let res;
+    try {
+        res = await m.request(url, {method: 'POST', data: data});
+        console.log('response:', res);
+        if (Object.keys(res)[0] === 'warning') {
+            alert('Warning: ' + res.warning);
         }
-
-        if (names[0] == "warning") {
-            warningcallback(btn);
-            alert("Warning: " + json.warning);
-        } else {
-            callback(btn, json);
-        }
-    };
-    xhr.onerror = function() {
-        // note: xhr.readystate should be 4 and status should be 200. a status of 0 occurs when the url is too large
-        xhr.status == 0 ? alert('There was an error making the request. xmlhttprequest status is 0.') :
-            xhr.readyState != 4 ? alert('There was an error making the request. xmlhttprequest readystate is not 4.') :
-            alert('Woops, there was an error making the request.');
-        cdb(xhr);
-        estimateLadda.stop();
-        selectLadda.stop();
-    };
-    xhr.send(jsonstring);
+    } catch(err) {
+        cdb(err);
+        alert(`Error: call to ${url} failed`);
+    }
+    estimateLadda.stop();
+    selectLadda.stop();
+    return res;
 }
 
 /** needs doc */
@@ -3034,12 +2730,13 @@ export function borderState() {
 
 /** needs doc */
 export function subsetSelect(btn) {
-    if (dataurl)
+    if (dataurl) {
         zparams.zdataurl = dataurl;
-    if (PRODUCTION && zparams.zsessionid == "") {
-        alert("Warning: Data download is not complete. Try again soon.");
+    }
+    if (downloadIncomplete()) {
         return;
     }
+
     zparams.zvars = [];
     zparams.zplot = [];
     var subsetEmpty = true;
@@ -3075,123 +2772,115 @@ export function subsetSelect(btn) {
         });
     }
 
-    var subsetstuff = {
-        zdataurl: zparams.zdataurl,
-        zvars: zparams.zvars,
-        zsubset: zparams.zsubset,
-        zsessionid: zparams.zsessionid,
-        zplot: zparams.zplot,
-        callHistory: callHistory,
-        typeStuff: outtypes
-    };
-
-    var jsonout = JSON.stringify(subsetstuff);
-    var urlcall = ROOK_SVC_URL + "subsetapp";
-    var solajsonout = "solaJSON=" + jsonout;
-    cdb("urlcall out: ", urlcall);
-    cdb("POST out: ", solajsonout);
-
-    function subsetSelectSuccess(btn, json) {
-        selectLadda.stop(); // stop motion
-        $("#btnVariables").trigger("click"); // programmatic clicks
-        $("#btnModels").trigger("click");
-
-        var grayOuts = [];
-        var rCall = [];
-        rCall[0] = json.call;
-
-        // store contents of the pre-subset space
-        zPop();
-        var myNodes = jQuery.extend(true, [], allNodes);
-        var myParams = jQuery.extend(true, {}, zparams);
-        var myTrans = jQuery.extend(true, [], trans);
-        var myForce = jQuery.extend(true, [], forcetoggle);
-        var myPreprocess = jQuery.extend(true, {}, preprocess);
-        var myLog = jQuery.extend(true, [], logArray);
-        var myHistory = jQuery.extend(true, [], callHistory);
-
-        spaces[myspace] = {
-            "allNodes": myNodes,
-            "zparams": myParams,
-            "trans": myTrans,
-            "force": myForce,
-            "preprocess": myPreprocess,
-            "logArray": myLog,
-            "callHistory": myHistory
-        };
-
-        // remove pre-subset svg
-        var selectMe = "#m".concat(myspace);
-        d3.select(selectMe).attr('class', 'item');
-        selectMe = "#whitespace".concat(myspace);
-        d3.select(selectMe).remove();
-
-        myspace = spaces.length;
-        callHistory.push({
-            func: "subset",
-            zvars: jQuery.extend(true, [], zparams.zvars),
-            zsubset: jQuery.extend(true, [], zparams.zsubset),
-            zplot: jQuery.extend(true, [], zparams.zplot)
-        });
-
-        // this is to be used to gray out and remove listeners for variables that have been subsetted out of the data
-        function varOut(v) {
-            // if in nodes, remove gray out in left panel
-            // make unclickable in left panel
-            for (var i = 0; i < v.length; i++) {
-                var selectMe = v[i].replace(/\W/g, "_");
-                byId(selectMe).style.color = hexToRgba(grayColor);
-                selectMe = "p#".concat(selectMe);
-                d3.select(selectMe)
-                    .on("click", null);
-            }
-        }
-
-        showLog('subset', rCall);
-
-        d3.select("#innercarousel")
-            .append('div')
-            .attr('class', 'item active')
-            .attr('id', () => "m".concat(myspace.toString()))
-            .append('svg')
-            .attr('id', 'whitespace');
-        svg = d3.select("#whitespace");
-
-        d3.json(json.url, function(error, json) {
-            if (error){
-                return console.warn(error);
-            }
-            var jsondata = getVariableData(json);
-
-            for (var key in jsondata) {
-                var myIndex = findNodeIndex(key);
-
-                allNodes[myIndex].plotx = undefined;
-                allNodes[myIndex].ploty = undefined;
-                allNodes[myIndex].plotvalues = undefined;
-                allNodes[myIndex].plottype = "";
-
-                jQuery.extend(true, allNodes[myIndex], jsondata[key]);
-                allNodes[myIndex].subsetplot = false;
-                allNodes[myIndex].subsetrange = ["", ""];
-                allNodes[myIndex].setxplot = false;
-                allNodes[myIndex].setxvals = ["", ""];
-
-                if (allNodes[myIndex].valid == 0) {
-                    grayOuts.push(allNodes[myIndex].name);
-                    allNodes[myIndex].grayout = true;
-                }
-            }
-            rePlot();
-
-            layout(layoutAdd);
-        });
-
-        varOut(grayOuts);
+    selectLadda.start(); // start button motion
+    let json = makeRequest(
+        ROOK_SVC_URL + 'subsetSelect',
+        {zdataurl: zparams.zdataurl,
+         zvars: zparams.zvars,
+         zsubset: zparams.zsubset,
+         zsessionid: zparams.zsessionid,
+         zplot: zparams.zplot,
+         callHistory: callHistory,
+         typeStuff: outtypes});
+    selectLadda.stop();
+    if (!json) {
+        return;
     }
 
-    selectLadda.start(); //start button motion
-    makeCorsRequest(urlcall, btn, subsetSelectSuccess, btn => selectLadda.stop(), solajsonout);
+    $("#btnVariables").trigger("click"); // programmatic clicks
+    $("#btnModels").trigger("click");
+
+    var grayOuts = [];
+    var rCall = [];
+    rCall[0] = json.call;
+
+    // store contents of the pre-subset space
+    zPop();
+    var myNodes = jQuery.extend(true, [], allNodes);
+    var myParams = jQuery.extend(true, {}, zparams);
+    var myTrans = jQuery.extend(true, [], trans);
+    var myForce = jQuery.extend(true, [], forcetoggle);
+    var myPreprocess = jQuery.extend(true, {}, preprocess);
+    var myLog = jQuery.extend(true, [], logArray);
+    var myHistory = jQuery.extend(true, [], callHistory);
+
+    spaces[myspace] = {
+        "allNodes": myNodes,
+        "zparams": myParams,
+        "trans": myTrans,
+        "force": myForce,
+        "preprocess": myPreprocess,
+        "logArray": myLog,
+        "callHistory": myHistory
+    };
+
+    // remove pre-subset svg
+    var selectMe = "#m".concat(myspace);
+    d3.select(selectMe).attr('class', 'item');
+    selectMe = "#whitespace".concat(myspace);
+    d3.select(selectMe).remove();
+
+    myspace = spaces.length;
+    callHistory.push({
+        func: "subset",
+        zvars: jQuery.extend(true, [], zparams.zvars),
+        zsubset: jQuery.extend(true, [], zparams.zsubset),
+        zplot: jQuery.extend(true, [], zparams.zplot)
+    });
+
+    // this is to be used to gray out and remove listeners for variables that have been subsetted out of the data
+    function varOut(v) {
+        // if in nodes, remove gray out in left panel
+        // make unclickable in left panel
+        for (var i = 0; i < v.length; i++) {
+            var selectMe = v[i].replace(/\W/g, "_");
+            byId(selectMe).style.color = hexToRgba(grayColor);
+            selectMe = "p#".concat(selectMe);
+            d3.select(selectMe)
+                .on("click", null);
+        }
+    }
+
+    showLog('subset', rCall);
+
+    d3.select("#innercarousel")
+        .append('div')
+        .attr('class', 'item active')
+        .attr('id', () => "m".concat(myspace.toString()))
+        .append('svg')
+        .attr('id', 'whitespace');
+    svg = d3.select("#whitespace");
+
+    d3.json(json.url, function(error, json) {
+        if (error){
+            return console.warn(error);
+        }
+        var jsondata = getVariableData(json);
+
+        for (var key in jsondata) {
+            var myIndex = findNodeIndex(key);
+
+            allNodes[myIndex].plotx = undefined;
+            allNodes[myIndex].ploty = undefined;
+            allNodes[myIndex].plotvalues = undefined;
+            allNodes[myIndex].plottype = "";
+
+            jQuery.extend(true, allNodes[myIndex], jsondata[key]);
+            allNodes[myIndex].subsetplot = false;
+            allNodes[myIndex].subsetrange = ["", ""];
+            allNodes[myIndex].setxplot = false;
+            allNodes[myIndex].setxvals = ["", ""];
+
+            if (allNodes[myIndex].valid == 0) {
+                grayOuts.push(allNodes[myIndex].name);
+                allNodes[myIndex].grayout = true;
+            }
+        }
+        rePlot();
+        layout(layoutAdd);
+    });
+
+    varOut(grayOuts);
 }
 
 /**
@@ -3227,25 +2916,7 @@ export let fakeClick = () => {
    EndSession(SessionContext) returns (Response) {}
 */
 export function endsession() {
-    let SessionContext= apiSession(zparams.zsessionid);
-
-    var jsonout = JSON.stringify(SessionContext);
-
-    var urlcall = D3M_SVC_URL + "/endsession";
-    var solajsonout = "grpcrequest=" + jsonout;
-    console.log("EndSession: ");
-    console.log(solajsonout);
-    console.log("urlcall: ", urlcall);
-
-    function endSuccess(btn, Response) {
-        console.log(Response);
-    }
-
-    function endFail(btn) {
-        console.log("end session failed");
-    }
-
-    makeCorsRequest(urlcall, "nobutton", endSuccess, endFail, solajsonout);
+    makeRequest(D3M_SVC_URL + '/endsession', apiSession(zparams.zsessionid));
 }
 
 /**
@@ -3253,67 +2924,52 @@ export function endsession() {
    pipes is an array of pipeline IDs
 */
 export function listpipelines() {
-    let context = apiSession(zparams.zsessionid);
-    let PipeLineListRequest={context};
-
-    var jsonout = JSON.stringify(PipeLineListRequest);
-
-    var urlcall = D3M_SVC_URL + "/listpipelines";
-    var solajsonout = "grpcrequest=" + jsonout;
-    console.log("PipelineListRequest: ");
-    console.log(solajsonout);
-    console.log(urlcall);
-
-    function listPipesSuccess(btn, PipelineListResult) {
-        console.log(PipelineListResult);
-        //hardcoded pipes for now
-        let pipes = PipelineListResult.pipelineIds;
-
-        /*
-        pipes.unshift("place");
-        console.log(pipes);
-        d3.select("#results").selectAll("p")
-        .data(pipes)
-        .enter()
-        .append("p")
-        .attr("id", "_pipe_".concat)
-        .text(d => d)
-        .attr('class', 'item-default')
-        .on("click", function() {
-            if(this.className=="item-select") {
-                return;
-            } else {
-                d3.select("#results").select("p.item-select")
-                .attr('class', 'item-default');
-                d3.select(this).attr('class',"item-select");
-            }});
-
-        pipes.shift();
-
-
-        d3.select("#setxRight").selectAll("p")
-        .data(pipes)
-        .enter()
-        .append("p")
-        .attr("id", "_setxpipe_".concat)
-        .text(d => d)
-        .attr('class', 'item-default')
-        .on("click", function() {
-            if(this.className=="item-select") {
-            return;
-            } else {
-            d3.select("#setxRight").select("p.item-select")
-            .attr('class', 'item-default');
-            d3.select(this).attr('class',"item-select");
-            }});
-         */
+    let res = makeRequest(D3M_SVC_URL + '/listpipelines', {context: apiSession(zparams.zsessionid)});
+    if (!res) {
+        return;
     }
 
-    function listPipesFail(btn) {
-        console.log("list pipelines failed");
-    }
+    //hardcoded pipes for now
+    let pipes = res.pipelineIds;
 
-    makeCorsRequest(urlcall, "nobutton", listPipesSuccess, listPipesFail, solajsonout);
+    /*
+      pipes.unshift("place");
+      console.log(pipes);
+      d3.select("#results").selectAll("p")
+      .data(pipes)
+      .enter()
+      .append("p")
+      .attr("id", "_pipe_".concat)
+      .text(d => d)
+      .attr('class', 'item-default')
+      .on("click", function() {
+      if(this.className=="item-select") {
+      return;
+      } else {
+      d3.select("#results").select("p.item-select")
+      .attr('class', 'item-default');
+      d3.select(this).attr('class',"item-select");
+      }});
+
+      pipes.shift();
+
+
+      d3.select("#setxRight").selectAll("p")
+      .data(pipes)
+      .enter()
+      .append("p")
+      .attr("id", "_setxpipe_".concat)
+      .text(d => d)
+      .attr('class', 'item-default')
+      .on("click", function() {
+      if(this.className=="item-select") {
+      return;
+      } else {
+      d3.select("#setxRight").select("p.item-select")
+      .attr('class', 'item-default');
+      d3.select(this).attr('class',"item-select");
+      }});
+    */
 }
 
 /**
@@ -3350,26 +3006,7 @@ export function executepipeline() {
         data.push(mydata);
     }
 
-    let PipelineExecuteRequest={context, pipelineId, predictFeatures, data};
-
-    jsonout = JSON.stringify(PipelineExecuteRequest);
-
-    var urlcall = D3M_SVC_URL + "/executepipeline";
-    var solajsonout = "grpcrequest=" + jsonout;
-    console.log("PipelineExecuteRequest: ");
-    console.log(solajsonout);
-    console.log("urlcall: ", urlcall);
-
-    function executePipeSuccess(btn, PipelineExecuteResult) {
-        alert("pipeline executed");
-        console.log(PipelineExecuteResult);
-    }
-
-    function executePipeFail(btn) {
-        console.log("execute pipelines failed");
-    }
-
-    makeCorsRequest(urlcall, "nobutton", executePipeSuccess, executePipeFail, solajsonout);
+    makeRequest(D3M_SVC_URL + '/executepipeline', {context, pipelineId, predictFeatures, data});
 }
 
 /**
@@ -3377,23 +3014,9 @@ export function executepipeline() {
    rpc UpdateProblemSchema(UpdateProblemSchemaRequest) returns (Response) {}
 */
 function updateSchema(type, updates, lookup) {
-    let context = apiSession(zparams.zsessionid);
-    let replaceProblemSchemaField = {[type]: lookup[updates[type]][1]};
-    let updateProblemSchemaRequest = {replaceProblemSchemaField, context};
-    let json = JSON.stringify(updateProblemSchemaRequest);
-
-    let url = D3M_SVC_URL + "/updateproblemschema";
-    let solajsonout = "grpcrequest=" + json;
-    console.log("UpdateProblemSchemaRequest: ");
-    console.log(solajsonout);
-    console.log("urlcall: ", url);
-
-    makeCorsRequest(
-        url,
-        'nobutton',
-        (_, res) => console.log(res),
-        _ => console.log('update schema failed'),
-        solajsonout);
+    makeRequest(
+        D3M_SVC_URL + "/updateproblemschema",
+        {replaceProblemSchemaField: {[type]: lookup[updates[type]][1]}, context: apiSession(zparams.zsessionid)});
 }
 
 /**
@@ -4116,32 +3739,12 @@ export function setxTable(features) {
 /**
   rpc ExportPipeline(PipelineExportRequest) returns (Response) {}
 */
-export function exportpipeline(pipelineId) {
+export async function exportpipeline(pipelineId) {
     console.log(pipelineId);
-    let context = apiSession(zparams.zsessionid);
-    let pipelineExecUri = "<<EXECUTABLE_URI>>"; // uri to persist executable of requested pipeline w/ session preprocessing
-
-    let PipelineExportRequest={context, pipelineId, pipelineExecUri};
-
-    let jsonout = JSON.stringify(PipelineExportRequest);
-
-    let urlcall = D3M_SVC_URL + "/exportpipeline";
-    let solajsonout = "grpcrequest=" + jsonout;
-
-    console.log(urlcall);
-    console.log(solajsonout);
-
-    function exportSuccess(btn, Response) {
-        let message = "Executable for " + pipelineId + " has been written";
-        console.log(message);
-        console.log(Response);
-    }
-
-    function exportFail(btn) {
-        console.log("export pipeline failed");
-    }
-
-    makeCorsRequest(urlcall, "nobutton", exportSuccess, exportFail, solajsonout);
+    let res = await makeRequest(
+        D3M_SVC_URL + 'exportpipeline',
+        {pipelineId, context: apiSession(zparams.zsessionid), pipelineExecUri: '<<EXECUTABLE_URI>>'});
+    res && console.log(`Executable for ${pipelineId} has been written`);
 }
 
 /** needs doc */
