@@ -234,7 +234,7 @@ let dataurl = '';
   10. Add dataschema information to allNodes (when in IS_D3M_DOMAIN)
   11. Call layout() and start up
 */
-async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3mData, d3mTarget, d3mPS, d3mDS, pURL) {
+async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3mData, d3mPS, d3mDS, pURL) {
     if (!IS_D3M_DOMAIN) {
         return;
     }
@@ -244,9 +244,9 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         method: "POST",
         url: "/config/d3m-config/json/latest"
     });
-
+console.log(res);
     // 2. Set 'configurations'
-    configurations = JSON.parse(JSON.stringify(res));
+    configurations = JSON.parse(JSON.stringify(res)); // this is just copying res
     d3mRootPath = configurations.training_data_root.replace(/\/data/,'');
     d3mDataName = configurations.name;
 
@@ -256,30 +256,34 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
                         description: 'D3M config file'};
                         //id: configurations.id};
 
-    // d3mData = configurations.training_data_root+"/trainData.csv";
-    // d3mTarget = configurations.training_data_root+"/trainTargets.csv";
-    d3mPS = configurations.problem_schema_url;
-    d3mDS = configurations.dataset_schema_url;
+    d3mPS = "/config/d3m-config/get-problem-schema/json";
+    d3mDS = "/config/d3m-config/get-dataset-schema/json";
     console.log("Configurations: ", configurations);
     d3mPreprocess = pURL = `rook-custom/rook-files/${d3mDataName}/preprocess/preprocess.json`;
 
     // 3. Read the problem schema and set 'd3mProblemDescription'
     // ...and make a call to start the session with TA2. if we get this far, data are guaranteed to exist for the frontend
     res = await m.request("/config/d3m-config/get-problem-data-file-info");
+    console.log(res);
     // some simple logic to get the paths right
     // note that if neither exist, stay as default which is null
     let set = (field, val) => res.data[field].exists ? res.data[field].path :
         res.data[field + '.gz'].exists ? res.data[field + '.gz'].path :
         val;
-    zparams.zd3mdata = d3mData = set('trainData.csv', d3mData);
-    zparams.zd3mtarget = d3mTarget = set('trainTargets.csv', d3mTarget);
+    
+    zparams.zd3mdata = d3mData = set('learningData.csv', d3mData);
+    zparams.zd3mtarget = set('learningData.csv', d3mData);
+    
+    // hardcoding this, once get-problem-data-file-info is revised this hardcode can go away and use the previous two LOC
+  //  zparams.zd3mdata = d3mData = d3mRootPath+"/dataset_TRAIN/tables/learningData.csv";
+  //  zparams.zd3mtarget = d3mRootPath+"/dataset_TRAIN/tables/learningData.csv";
 
     res = await m.request(d3mPS);
     console.log("prob schema data: ", res);
-    mytarget = res.target.field;
+    mytarget = res.inputs.data[0].targets[0].colName; // easier way to access target name?
 
     if (IS_D3M_DOMAIN) {
-        zparams.zdata = res.datasets[0];
+        zparams.zdata = "none";
     } else {
         // Note: presently xml is no longer being read from Dataverse metadata anywhere
         let temp = xml.documentElement.getElementsByTagName("fileName");
@@ -406,6 +410,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     }
 
     // 8. read preprocess data or (if necessary) run preprocess
+    // NOTE: preprocess.json is now guaranteed to exist...
     let read = res => {
         priv = res.dataset.private || priv;
         Object.keys(res.variables).forEach(k => preprocess[k] = res.variables[k]);
@@ -421,7 +426,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         if (IS_D3M_DOMAIN){
           // For D3M inputs, change the preprocess input data
           //
-          json_input = JSON.stringify({data: d3mData, target: d3mTarget, datastub: d3mDataName});
+          json_input = JSON.stringify({data: d3mData, datastub: d3mDataName});
 
         }else{
          json_input = JSON.stringify({data: dataloc, target: targetloc, datastub: datastub});
@@ -480,9 +485,9 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     }
 
     // 10. Add dataschema information to allNodes (when in IS_D3M_DOMAIN)
-    let datavars = dataschema.trainData.trainData;
+    let datavars = dataschema.dataResources[0].columns;
     datavars.forEach((v, i) => {
-        let myi = findNodeIndex(v.varName);
+        let myi = findNodeIndex(v.colName);
         allNodes[myi] = Object.assign(allNodes[myi], {d3mDescription: v});
     });
     console.log(allNodes);
@@ -540,7 +545,6 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
     let d3mRootPath = '';
     let d3mDataName = '';
     let d3mData = null;
-    let d3mTarget = null;
     let d3mPreprocess = '';
     let d3mPS = '';
     let d3mDS = '';
@@ -557,7 +561,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
         zparams.zdataurl = 'data/fearonLaitin.tsv';
     }
 
-    load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3mData, d3mTarget, d3mPS, d3mDS, pURL);
+    load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3mData, d3mPS, d3mDS, pURL);
 }
 
 let $fill = (obj, op, d1, d2) => d3.select(obj).transition()
