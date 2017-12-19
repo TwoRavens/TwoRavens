@@ -45,6 +45,9 @@ library(devtools)
 library(DescTools)
 library(rpart)
 
+library("future") # submit EventData api requests asynchronously
+plan(multiprocess)
+
 #if (!production) {
 #    if(!("Zelig" %in% rownames(installed.packages()))) {
 #        install_github("IQSS/Zelig")
