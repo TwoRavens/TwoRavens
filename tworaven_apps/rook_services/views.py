@@ -19,12 +19,6 @@ def view_rook_route(request, app_name_in_url):
         orig: TwoRavens -> Rook
         view: TwoRavens -> Django 2ravens -> Rook
     """
-    # record session metadata, if appropriate
-    WorkspaceUtil.record_state(request)
-
-    # retrieve session key
-    session_key = get_session_key(request)
-
     # get the app info
     #
     rook_app_info = RookAppInfo.get_appinfo_from_url(app_name_in_url)
@@ -32,6 +26,9 @@ def view_rook_route(request, app_name_in_url):
         raise Http404(('unknown rook app: "{0}" (please add "{0}" to '
                        ' "tworaven_apps/rook_services/app_names.py")').format(\
                        app_name_in_url))
+
+    # record session metadata, if appropriate
+    WorkspaceUtil.record_state(request)
 
     # look for the "solaJSON" variable in the POST
     #
@@ -53,12 +50,20 @@ def view_rook_route(request, app_name_in_url):
     # Retrieve post data and attempt to insert django session id
     # (if none exists)
     #
-    blank_session_str = '%s":""' % ROOK_ZESSIONID
-    if raven_data_text.find(blank_session_str) > -1:
-        # was converting to JSON, but now just simple text substitution
-        #
-        updated_session_str = '%s":"%s"' % (ROOK_ZESSIONID, session_key)
-        raven_data_text = raven_data_text.replace(blank_session_str, updated_session_str)
+    # retrieve session key
+    session_key = get_session_key(request)
+    if isinstance(raven_data_text, str):
+
+        blank_session_str = '%s":""' % ROOK_ZESSIONID
+        if raven_data_text.find(blank_session_str) > -1:
+            # was converting to JSON, but now just simple text substitution
+            #
+            updated_session_str = '%s":"%s"' % (ROOK_ZESSIONID, session_key)
+            raven_data_text = raven_data_text.replace(blank_session_str, updated_session_str)
+
+    elif ROOK_ZESSIONID in raven_data_text:
+        if raven_data_text[ROOK_ZESSIONID] in [None, '']:
+            raven_data_text[ROOK_ZESSIONID] = session_key
 
     app_data = dict(solaJSON=raven_data_text)
 
