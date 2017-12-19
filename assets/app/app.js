@@ -1801,7 +1801,23 @@ function onPipelineCreate(PipelineCreateResult) {
     //let pipelineid = PipelineCreateResult.pipelineid;
     // getexecutepipelineresults is the third to be called
     makeRequest(D3M_SVC_URL + '/getexecutepipelineresults', {context, pipeline_ids: Object.keys(allPipelineInfo)});
+
 }
+function CreatePipelineData(predictors, depvar) {
+    let context = apiSession(zparams.zsessionid);
+    let uri = {features: zparams.zd3mdata, target:zparams.zd3mtarget};
+    return {
+        trainFeatures: apiFeatureShortPath(predictors, uri.features), // putting in short paths (no filename) for current API usage
+        targetFeatures: apiFeatureShortPath(depvar, uri.target), // putting in short paths (no filename) for current API usage
+        task: d3mTaskType[d3mProblemDescription.taskType][1],
+        taskSubtype: d3mTaskSubtype[d3mProblemDescription.taskSubtype][1],
+        output: d3mOutputType[d3mProblemDescription.outputType][1],
+        metrics: [d3mMetrics[d3mProblemDescription.metric][1]],
+        taskDescription: d3mProblemDescription.taskDescription,
+        maxPipelines: 5, //user to specify this eventually?
+    };
+}
+
 
 /**
     called by clicking 'Solve This Problem' in model mode
@@ -1895,46 +1911,24 @@ export function estimate(btn) {
             del(valueKey, myvki);
         }
 
-        let context = apiSession(zparams.zsessionid);
-        let uri = {features: zparams.zd3mdata, target:zparams.zd3mtarget};
-        let trainFeatures=apiFeatureShortPath(valueKey,uri.features);       // putting in short paths (no filename) for current API usage
-        let targetFeatures=apiFeatureShortPath(mytarget,uri.target);        // putting in short paths (no filename) for current API usage
-        let task = d3mTaskType[d3mProblemDescription.taskType][1];
-        let taskSubtype = d3mTaskSubtype[d3mProblemDescription.taskSubtype][1];
-        let output = d3mOutputType[d3mProblemDescription.outputType][1];
-        let metrics = [d3mMetrics[d3mProblemDescription.metric][1]];
-        let taskDescription = d3mProblemDescription.taskDescription;
-        let maxPipelines = 5; //user to specify this eventually?
-
         estimateLadda.start(); // start spinner
         makeRequest(
             D3M_SVC_URL + '/createpipeline',
-            {context, trainFeatures, task, taskSubtype, taskDescription, output, metrics, targetFeatures, maxPipelines},
+            CreatePipelineData(valueKey, mytarget),
             onPipelineCreate);
     } else { // we are in IS_D3M_DOMAIN no swandive
         // rpc CreatePipelines(PipelineCreateRequest) returns (stream PipelineCreateResult) {}
         zPop();
         zparams.callHistory = callHistory;
 
-        let context = apiSession(zparams.zsessionid);
-        let uri = {features: zparams.zd3mdata, target:zparams.zd3mtarget};
         // pipelineapp is a rook application that returns the dependent variable, the DV values, and the predictors. can think of it was a way to translate the potentially complex grammar from the UI
 
         function success(json) {
-            let trainFeatures=apiFeatureShortPath(json.predictors,uri.features);    // putting in short paths (no filename) for current API usage
-            let targetFeatures=apiFeatureShortPath(json.depvar,uri.target);         // putting in short paths (no filename) for current API usage
-            let task = d3mTaskType[d3mProblemDescription.taskType][1];
-            let taskSubtype = d3mTaskSubtype[d3mProblemDescription.taskSubtype][1];
-            let output = d3mOutputType[d3mProblemDescription.outputType][1];
-            let metrics = [d3mMetrics[d3mProblemDescription.metric][1]];
-            let taskDescription = d3mProblemDescription.taskDescription;
-            let maxPipelines = 5; //user to specify this eventually?
-
             setxTable(json.predictors);
             let dvvalues = json.dvvalues;
             makeRequest(
                 D3M_SVC_URL + '/createpipeline',
-                {context, trainFeatures, task, taskSubtype, taskDescription, output, metrics, targetFeatures, maxPipelines});
+                CreatePipelineData(json.predictors, json.depvar));
             // createpipeline is the second to be called
             makeRequest(ROOK_SVC_URL + 'createpipeline', zparams, onCreatePipeline);
         }
