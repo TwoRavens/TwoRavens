@@ -346,10 +346,10 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     }
     // 7. Start the user session
     // rpc StartSession(SessionRequest) returns (SessionResponse) {}
-    makeRequest(
-        D3M_SVC_URL + '/startsession',
-        {user_agent: 'some agent', version: 'some version'},
-        res => zparams.zsessionid = res.context.sessionId);
+    res = await makeRequest(D3M_SVC_URL + '/startsession', {user_agent: 'some agent', version: 'some version'});
+    if (res) {
+        zparams.zsessionid = res.context.sessionId;
+    }
 
     // hopscotch tutorial
     if (tutorial_mode) {
@@ -1739,7 +1739,7 @@ function tabulate(data, columns, divid) {
 
 }
 
-function onPipelineCreate(PipelineCreateResult) {
+async function onPipelineCreate(PipelineCreateResult) {
     // rpc GetExecutePipelineResults(PipelineExecuteResultsRequest) returns (stream PipelineExecuteResult) {}
     estimateLadda.stop(); // stop spinner
 
@@ -1800,8 +1800,7 @@ function onPipelineCreate(PipelineCreateResult) {
 
     //let pipelineid = PipelineCreateResult.pipelineid;
     // getexecutepipelineresults is the third to be called
-    makeRequest(D3M_SVC_URL + '/getexecutepipelineresults', {context, pipeline_ids: Object.keys(allPipelineInfo)});
-
+    await makeRequest(D3M_SVC_URL + '/getexecutepipelineresults', {context, pipeline_ids: Object.keys(allPipelineInfo)});
 }
 function CreatePipelineData(predictors, depvar) {
     let context = apiSession(zparams.zsessionid);
@@ -1822,7 +1821,7 @@ function CreatePipelineData(predictors, depvar) {
 /**
     called by clicking 'Solve This Problem' in model mode
 */
-export function estimate(btn) {
+export async function estimate(btn) {
     if(!IS_D3M_DOMAIN){
         if (PRODUCTION && zparams.zsessionid == '') {
             alert("Warning: Data download is not complete. Try again soon.");
@@ -1848,8 +1847,11 @@ export function estimate(btn) {
         }
         */
 
-        function success(json) {
-            estimateLadda.stop(); // stop spinner
+        estimateLadda.start(); // start spinner
+        let json = await makeRequest(ROOK_SVC_URL + 'zeligapp', zparams);
+        if (!json) {
+            estimated = true;
+        } else {
             allResults.push(json);
             cdb("json in: ", json);
 
@@ -1899,9 +1901,6 @@ export function estimate(btn) {
 
             viz(model);
         }
-
-        estimateLadda.start(); // start spinner
-        makeRequest(ROOK_SVC_URL + 'zeligapp', zparams, success, _ => estimated = true);
     } else if (swandive) { // IS_D3M_DOMAIN and swandive is true
         zPop();
         zparams.callHistory = callHistory;
@@ -1912,10 +1911,10 @@ export function estimate(btn) {
         }
 
         estimateLadda.start(); // start spinner
-        makeRequest(
+        let res = await makeRequest(
             D3M_SVC_URL + '/createpipeline',
-            CreatePipelineData(valueKey, mytarget),
-            onPipelineCreate);
+            CreatePipelineData(valueKey, mytarget));
+        res && onPipelineCreate(res);
     } else { // we are in IS_D3M_DOMAIN no swandive
         // rpc CreatePipelines(PipelineCreateRequest) returns (stream PipelineCreateResult) {}
         zPop();
@@ -1923,19 +1922,19 @@ export function estimate(btn) {
 
         // pipelineapp is a rook application that returns the dependent variable, the DV values, and the predictors. can think of it was a way to translate the potentially complex grammar from the UI
 
-        function success(json) {
-            setxTable(json.predictors);
-            let dvvalues = json.dvvalues;
-            makeRequest(
+        estimateLadda.start(); // start spinner
+        let res = await makeRequest(ROOK_SVC_URL + 'pipelineapp', zparams);
+        if (!res) {
+            estimated = true;
+        } else {
+            setxTable(res.predictors);
+            let dvvalues = res.dvvalues;
+            res = await makeRequest(
                 D3M_SVC_URL + '/createpipeline',
                 CreatePipelineData(json.predictors, json.depvar));
-            // createpipeline is the second to be called
-            makeRequest(ROOK_SVC_URL + 'createpipeline', zparams, onCreatePipeline);
+            res = await makeRequest(ROOK_SVC_URL + 'createpipeline', zparams);
+            res && onPipelineCreate(res);
         }
-
-        estimateLadda.start(); // start spinner
-        // pipelineapp is first to be called
-        makeRequest(ROOK_SVC_URL + 'pipelineapp', zparams, success, _ => estimated = true);
     }
 }
 
@@ -2519,24 +2518,23 @@ function makeCorsRequest(url, btn, callback, warningcallback, jsonstring) {
     xhr.send(jsonstring);
 }
 
-async function makeRequest(url, data, success, fail) {
+async function makeRequest(url, data) {
     console.log('url:', url);
     console.log('POST:', data);
+    let res;
     try {
-        let res = await m.request(url, {method: 'POST', data: data});
+        res = await m.request(url, {method: 'POST', data: data});
         console.log('response:', res);
         if (Object.keys(res)[0] === 'warning') {
-            fail && fail();
             alert('Warning: ' + res.warning);
-        } else {
-            success && success(res);
         }
     } catch(err) {
         cdb(err);
-        estimateLadda.stop();
-        selectLadda.stop();
         alert(`Error: call to ${url} failed`);
     }
+    estimateLadda.stop();
+    selectLadda.stop();
+    return res;
 }
 
 /** needs doc */
@@ -2877,106 +2875,8 @@ export function subsetSelect(btn) {
         });
     }
 
-    function success(json) {
-        selectLadda.stop(); // stop motion
-        $("#btnVariables").trigger("click"); // programmatic clicks
-        $("#btnModels").trigger("click");
-
-        var grayOuts = [];
-        var rCall = [];
-        rCall[0] = json.call;
-
-        // store contents of the pre-subset space
-        zPop();
-        var myNodes = jQuery.extend(true, [], allNodes);
-        var myParams = jQuery.extend(true, {}, zparams);
-        var myTrans = jQuery.extend(true, [], trans);
-        var myForce = jQuery.extend(true, [], forcetoggle);
-        var myPreprocess = jQuery.extend(true, {}, preprocess);
-        var myLog = jQuery.extend(true, [], logArray);
-        var myHistory = jQuery.extend(true, [], callHistory);
-
-        spaces[myspace] = {
-            "allNodes": myNodes,
-            "zparams": myParams,
-            "trans": myTrans,
-            "force": myForce,
-            "preprocess": myPreprocess,
-            "logArray": myLog,
-            "callHistory": myHistory
-        };
-
-        // remove pre-subset svg
-        var selectMe = "#m".concat(myspace);
-        d3.select(selectMe).attr('class', 'item');
-        selectMe = "#whitespace".concat(myspace);
-        d3.select(selectMe).remove();
-
-        myspace = spaces.length;
-        callHistory.push({
-            func: "subset",
-            zvars: jQuery.extend(true, [], zparams.zvars),
-            zsubset: jQuery.extend(true, [], zparams.zsubset),
-            zplot: jQuery.extend(true, [], zparams.zplot)
-        });
-
-        // this is to be used to gray out and remove listeners for variables that have been subsetted out of the data
-        function varOut(v) {
-            // if in nodes, remove gray out in left panel
-            // make unclickable in left panel
-            for (var i = 0; i < v.length; i++) {
-                var selectMe = v[i].replace(/\W/g, "_");
-                byId(selectMe).style.color = hexToRgba(grayColor);
-                selectMe = "p#".concat(selectMe);
-                d3.select(selectMe)
-                    .on("click", null);
-            }
-        }
-
-        showLog('subset', rCall);
-
-        d3.select("#innercarousel")
-            .append('div')
-            .attr('class', 'item active')
-            .attr('id', () => "m".concat(myspace.toString()))
-            .append('svg')
-            .attr('id', 'whitespace');
-        svg = d3.select("#whitespace");
-
-        d3.json(json.url, function(error, json) {
-            if (error){
-                return console.warn(error);
-            }
-            var jsondata = getVariableData(json);
-
-            for (var key in jsondata) {
-                var myIndex = findNodeIndex(key);
-
-                allNodes[myIndex].plotx = undefined;
-                allNodes[myIndex].ploty = undefined;
-                allNodes[myIndex].plotvalues = undefined;
-                allNodes[myIndex].plottype = "";
-
-                jQuery.extend(true, allNodes[myIndex], jsondata[key]);
-                allNodes[myIndex].subsetplot = false;
-                allNodes[myIndex].subsetrange = ["", ""];
-                allNodes[myIndex].setxplot = false;
-                allNodes[myIndex].setxvals = ["", ""];
-
-                if (allNodes[myIndex].valid == 0) {
-                    grayOuts.push(allNodes[myIndex].name);
-                    allNodes[myIndex].grayout = true;
-                }
-            }
-            rePlot();
-            layout(layoutAdd);
-        });
-
-        varOut(grayOuts);
-    }
-
     selectLadda.start(); // start button motion
-    makeRequest(
+    let json = makeRequest(
         ROOK_SVC_URL + 'subsetSelect',
         {zdataurl: zparams.zdataurl,
          zvars: zparams.zvars,
@@ -2984,9 +2884,106 @@ export function subsetSelect(btn) {
          zsessionid: zparams.zsessionid,
          zplot: zparams.zplot,
          callHistory: callHistory,
-         typeStuff: outtypes},
-        success,
-        selectLadda.stop);
+         typeStuff: outtypes});
+    selectLadda.stop();
+    if (!json) {
+        return;
+    }
+
+    $("#btnVariables").trigger("click"); // programmatic clicks
+    $("#btnModels").trigger("click");
+
+    var grayOuts = [];
+    var rCall = [];
+    rCall[0] = json.call;
+
+    // store contents of the pre-subset space
+    zPop();
+    var myNodes = jQuery.extend(true, [], allNodes);
+    var myParams = jQuery.extend(true, {}, zparams);
+    var myTrans = jQuery.extend(true, [], trans);
+    var myForce = jQuery.extend(true, [], forcetoggle);
+    var myPreprocess = jQuery.extend(true, {}, preprocess);
+    var myLog = jQuery.extend(true, [], logArray);
+    var myHistory = jQuery.extend(true, [], callHistory);
+
+    spaces[myspace] = {
+        "allNodes": myNodes,
+        "zparams": myParams,
+        "trans": myTrans,
+        "force": myForce,
+        "preprocess": myPreprocess,
+        "logArray": myLog,
+        "callHistory": myHistory
+    };
+
+    // remove pre-subset svg
+    var selectMe = "#m".concat(myspace);
+    d3.select(selectMe).attr('class', 'item');
+    selectMe = "#whitespace".concat(myspace);
+    d3.select(selectMe).remove();
+
+    myspace = spaces.length;
+    callHistory.push({
+        func: "subset",
+        zvars: jQuery.extend(true, [], zparams.zvars),
+        zsubset: jQuery.extend(true, [], zparams.zsubset),
+        zplot: jQuery.extend(true, [], zparams.zplot)
+    });
+
+    // this is to be used to gray out and remove listeners for variables that have been subsetted out of the data
+    function varOut(v) {
+        // if in nodes, remove gray out in left panel
+        // make unclickable in left panel
+        for (var i = 0; i < v.length; i++) {
+            var selectMe = v[i].replace(/\W/g, "_");
+            byId(selectMe).style.color = hexToRgba(grayColor);
+            selectMe = "p#".concat(selectMe);
+            d3.select(selectMe)
+                .on("click", null);
+        }
+    }
+
+    showLog('subset', rCall);
+
+    d3.select("#innercarousel")
+        .append('div')
+        .attr('class', 'item active')
+        .attr('id', () => "m".concat(myspace.toString()))
+        .append('svg')
+        .attr('id', 'whitespace');
+    svg = d3.select("#whitespace");
+
+    d3.json(json.url, function(error, json) {
+        if (error){
+            return console.warn(error);
+        }
+        var jsondata = getVariableData(json);
+
+        for (var key in jsondata) {
+            var myIndex = findNodeIndex(key);
+
+            allNodes[myIndex].plotx = undefined;
+            allNodes[myIndex].ploty = undefined;
+            allNodes[myIndex].plotvalues = undefined;
+            allNodes[myIndex].plottype = "";
+
+            jQuery.extend(true, allNodes[myIndex], jsondata[key]);
+            allNodes[myIndex].subsetplot = false;
+            allNodes[myIndex].subsetrange = ["", ""];
+            allNodes[myIndex].setxplot = false;
+            allNodes[myIndex].setxvals = ["", ""];
+
+            if (allNodes[myIndex].valid == 0) {
+                grayOuts.push(allNodes[myIndex].name);
+                allNodes[myIndex].grayout = true;
+            }
+        }
+        rePlot();
+        layout(layoutAdd);
+    });
+
+    varOut(grayOuts);
 }
 
 /**
@@ -3030,67 +3027,52 @@ export function endsession() {
    pipes is an array of pipeline IDs
 */
 export function listpipelines() {
-    let context = apiSession(zparams.zsessionid);
-    let PipeLineListRequest={context};
-
-    var jsonout = JSON.stringify(PipeLineListRequest);
-
-    var urlcall = D3M_SVC_URL + "/listpipelines";
-    var solajsonout = "grpcrequest=" + jsonout;
-    console.log("PipelineListRequest: ");
-    console.log(solajsonout);
-    console.log(urlcall);
-
-    function listPipesSuccess(btn, PipelineListResult) {
-        console.log(PipelineListResult);
-        //hardcoded pipes for now
-        let pipes = PipelineListResult.pipelineIds;
-
-        /*
-        pipes.unshift("place");
-        console.log(pipes);
-        d3.select("#results").selectAll("p")
-        .data(pipes)
-        .enter()
-        .append("p")
-        .attr("id", "_pipe_".concat)
-        .text(d => d)
-        .attr('class', 'item-default')
-        .on("click", function() {
-            if(this.className=="item-select") {
-                return;
-            } else {
-                d3.select("#results").select("p.item-select")
-                .attr('class', 'item-default');
-                d3.select(this).attr('class',"item-select");
-            }});
-
-        pipes.shift();
-
-
-        d3.select("#setxRight").selectAll("p")
-        .data(pipes)
-        .enter()
-        .append("p")
-        .attr("id", "_setxpipe_".concat)
-        .text(d => d)
-        .attr('class', 'item-default')
-        .on("click", function() {
-            if(this.className=="item-select") {
-            return;
-            } else {
-            d3.select("#setxRight").select("p.item-select")
-            .attr('class', 'item-default');
-            d3.select(this).attr('class',"item-select");
-            }});
-         */
+    let res = makeRequest(D3M_SVC_URL + '/listpipelines', {context: apiSession(zparams.zsessionid)});
+    if (!res) {
+        return;
     }
 
-    function listPipesFail(btn) {
-        console.log("list pipelines failed");
-    }
+    //hardcoded pipes for now
+    let pipes = res.pipelineIds;
 
-    makeCorsRequest(urlcall, "nobutton", listPipesSuccess, listPipesFail, solajsonout);
+    /*
+      pipes.unshift("place");
+      console.log(pipes);
+      d3.select("#results").selectAll("p")
+      .data(pipes)
+      .enter()
+      .append("p")
+      .attr("id", "_pipe_".concat)
+      .text(d => d)
+      .attr('class', 'item-default')
+      .on("click", function() {
+      if(this.className=="item-select") {
+      return;
+      } else {
+      d3.select("#results").select("p.item-select")
+      .attr('class', 'item-default');
+      d3.select(this).attr('class',"item-select");
+      }});
+
+      pipes.shift();
+
+
+      d3.select("#setxRight").selectAll("p")
+      .data(pipes)
+      .enter()
+      .append("p")
+      .attr("id", "_setxpipe_".concat)
+      .text(d => d)
+      .attr('class', 'item-default')
+      .on("click", function() {
+      if(this.className=="item-select") {
+      return;
+      } else {
+      d3.select("#setxRight").select("p.item-select")
+      .attr('class', 'item-default');
+      d3.select(this).attr('class',"item-select");
+      }});
+    */
 }
 
 /**
