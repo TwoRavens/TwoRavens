@@ -1817,14 +1817,20 @@ function CreatePipelineData(predictors, depvar) {
     };
 }
 
+function downloadIncomplete() {
+    if (PRODUCTION && zparams.zsessionid === '') {
+        alert('Warning: Data download is not complete. Try again soon.');
+        return true;
+    }
+    return false;
+}
 
 /**
     called by clicking 'Solve This Problem' in model mode
 */
 export async function estimate(btn) {
-    if(!IS_D3M_DOMAIN){
-        if (PRODUCTION && zparams.zsessionid == '') {
-            alert("Warning: Data download is not complete. Try again soon.");
+    if (!IS_D3M_DOMAIN){
+        if (downloadIncomplete()) {
             return;
         }
 
@@ -1853,8 +1859,6 @@ export async function estimate(btn) {
             estimated = true;
         } else {
             allResults.push(json);
-            cdb("json in: ", json);
-
             if (!estimated) byId("results").removeChild(byId("resultsHolder"));
 
             estimated = true;
@@ -1942,9 +1946,8 @@ export async function estimate(btn) {
    called by clicking 'Explore' in explore mode
 */
 export function explore(btn) {
-    console.log("explore called");
-    if (PRODUCTION && zparams.zsessionid === '') {
-        return alert("Warning: Data download is not complete. Try again soon.");
+    if (downloadIncomplete()) {
+        return;
     }
 
     zPop();
@@ -2270,10 +2273,10 @@ function transParse(n) {
    t = selected transformation
 */
 async function transform(n, t, typeTransform) {
-    if (PRODUCTION && zparams.zsessionid == "") {
-        alert("Warning: Data download is not complete. Try again soon.");
+    if (downloadIncomplete()) {
         return;
     }
+
     if (!typeTransform)
         t = t.replace("+", "_plus_"); // can't send the plus operator
 
@@ -2745,12 +2748,13 @@ export function borderState() {
 
 /** needs doc */
 export function subsetSelect(btn) {
-    if (dataurl)
+    if (dataurl) {
         zparams.zdataurl = dataurl;
-    if (PRODUCTION && zparams.zsessionid == "") {
-        alert("Warning: Data download is not complete. Try again soon.");
+    }
+    if (downloadIncomplete()) {
         return;
     }
+
     zparams.zvars = [];
     zparams.zplot = [];
     var subsetEmpty = true;
