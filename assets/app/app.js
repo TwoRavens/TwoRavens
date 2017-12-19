@@ -4180,11 +4180,33 @@ function apiSession(context) {
 
 
 /**
+ *  Send a status message to the TA3 console
+ */
+export function ta3_search_message(user_msg){
+
+  let ta3_search_data = {'message': user_msg}
+
+  const end_search_url = 'ta3_search/send-reviewer-message';
+
+  try {
+      let res = m.request(end_search_url,
+                          {method: 'POST', data: ta3_search_data});
+      console.log('ta3_search_message succeeded:' + res);
+  } catch (err) {
+      console.log('ta3_search_message failed: ' + err);
+  }
+}
+
+
+/**
  *  End the TA3 search.  This sends a message
  *  to the ta3_search console as well as message
  *  for the console to exit with a:
  *  - return code 0 for success
  *  - return code -1 for failure
+ *
+ *  > is_success - boolean
+ *  > user_msg - string sent to the console
  */
 export function end_ta3_search(is_success, user_msg){
 
@@ -4194,7 +4216,8 @@ export function end_ta3_search(is_success, user_msg){
   const end_search_url = 'ta3_search/end-search';
 
   try {
-      let res = m.request(end_search_url, {method: 'POST', data: ta3_search_data});
+      let res = m.request(end_search_url,
+                          {method: 'POST', data: ta3_search_data});
       console.log('end_ta3_search succeeded:' + res);
   } catch (err) {
       console.log('end_ta3_search failed: ' + err);

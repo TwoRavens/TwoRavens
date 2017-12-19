@@ -10,6 +10,10 @@ urlpatterns = (
         views.view_register_listener,
         name='view_register_listener'),
 
+    url(r'^send-reviewer-message$',
+        views.view_send_reviewer_message,
+        name='view_send_reviewer_message'),
+
     url(r'^end-search$',
         views.view_end_ta3_search,
         name='view_end_ta3_search'),

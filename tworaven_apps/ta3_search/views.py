@@ -22,6 +22,16 @@ def view_end_ta3_search(request):
     return JsonResponse(dict(success=True))
 
 
+@login_required
+def view_send_reviewer_message(request):
+    """End the D3M search"""
+
+    # open post commands + message
+    # send appropriate message to the listeners
+    return JsonResponse(dict(success=True))
+
+
+
 @csrf_exempt
 def view_register_listener(request):
     """register a web url for messages related to ta3_search"""
