@@ -41,18 +41,38 @@ class MessageUtil(object):
             data = {KEY_MESSSAGE: message}
 
             try:
-                req = requests.POST(murl,
+                req = requests.post(murl,
                                     data=data,
                                     timeout=MessageUtil.TIMEOUT_SEC)
-            except ConnectionError:
+            except requests.exceptions.ConnectionError:
                 err_msg = 'MessageListener not responding: %s' % mlistener.web_url
                 # log this
                 continue
 
+    @staticmethod
+    def send_message_to_listener(message, mlistener):
+        """Send a message to an individual listener"""
+        if not messsge:
+            return False, "message was None"
+        if not mlistener:
+            return False, "mlistener was None"
 
+        murl = urljoin(mlistener.web_url, URL_MESSAGE)
+        data = {KEY_MESSSAGE: message}
+
+        try:
+            req = requests.post(murl,
+                                data=data,
+                                timeout=MessageUtil.TIMEOUT_SEC)
+        except requests.exceptions.ConnectionError:
+            err_msg = 'MessageListener not responding: %s' % mlistener.web_url
+            # log this
+            return False, err_msg
+
+        return True, 'Message sent'
 
     @staticmethod
-    def send_message(message, is_post=False):
+    def send_message(message):
         """Send message to the listeners"""
         for mlistener in MessageListener.objects.filter(is_active=True):
 
@@ -60,10 +80,17 @@ class MessageUtil(object):
             data = {KEY_MESSSAGE: message}
 
             try:
-                req = requests.POST(murl,
+                req = requests.post(murl,
                                     data=data,
                                     timeout=MessageUtil.TIMEOUT_SEC)
-            except ConnectionError:
+            except requests.exceptions.ConnectionError:
                 err_msg = 'MessageListener not responding: %s' % mlistener.web_url
                 # log this
-                continue
+                return False, err_msg
+
+        return True, 'message sent'
+
+"""
+from tworaven_apps.ta3_search.message_util import *
+MessageUtil.send_message('hello')
+"""

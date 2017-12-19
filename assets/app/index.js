@@ -124,7 +124,10 @@ let ticker = mode => {
         m("a[href='/dev-raven-links'][target=_blank][style=margin-right: 0.5em]", "raven-links"),
         m("a[style=margin-right: 0.5em]",
           {onclick: app.record_user_metadata},
-          "record-metadata"));
+          "record-metadata"),
+        m("a[style=margin-right: 0.5em]",
+          {onclick: app.test_msg_ta3_search},
+          "test_ta3_search"));
 };
 
 class Body {

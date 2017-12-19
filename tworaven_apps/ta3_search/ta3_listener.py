@@ -1,5 +1,8 @@
 """Flask app to log messages to the screen for TA3 search
-ta3-main sends messages to the app"""
+ta3-main sends messages to the app
+>FLASK_APP=ta3_listener.py flask run -p8001
+
+"""
 import logging
 from datetime import datetime as dt
 from flask import Flask, request, jsonify
