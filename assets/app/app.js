@@ -1680,6 +1680,65 @@ function zPop() {
     }
 }
 
+function tabulate(data, columns, divid) {
+    var table = d3.select(divid).append('table');
+    var thead = table.append('thead');
+    var	tbody = table.append('tbody');
+
+    // append the header row
+    thead.append('tr')
+        .selectAll('th')
+        .data(columns).enter()
+        .append('th')
+        .text(function (column) { return column; });
+
+    // create a row for each object in the data
+    var rows = tbody.selectAll('tr')
+        .data(data)
+        .enter()
+        .append('tr')
+        .attr('class',function(d,i) {
+            if(i==0) return 'item-select';
+            else return 'item-default';
+        });
+
+    // create a cell in each row for each column
+    var cells = rows.selectAll('td')
+        .data(function (row) {
+            return columns.map(function (column) {
+                return {column: column, value: row[column]};
+            });
+        })
+        .enter()
+        .append('td')
+        .text(function (d) {
+            return d.value;
+        })
+        .on("click", function(d) {
+            let myrow = this.parentElement;
+            if(myrow.className=="item-select") {
+                return;
+            } else {
+                d3.select(divid).select("tr.item-select")
+                    .attr('class', 'item-default');
+                d3.select(myrow).attr('class',"item-select");
+                if(divid=='#setxRight') {
+                    resultsplotinit(allPipelineInfo[myrow.firstChild.innerText], dvvalues);
+                }
+            }});
+
+    // this is code to add a checkbox to each row of pipeline results table
+    /*
+      d3.select(divid).selectAll("tr")
+      .append("input")
+      .attr("type", "checkbox")
+      .style("float","right");
+    */
+
+    return table;
+}
+
+
 /**
     called by clicking 'Solve This Problem' in model mode
 */
@@ -1806,64 +1865,6 @@ export function estimate(btn) {
             console.log(allPipelineInfo);
             // to get all pipeline ids: Object.keys(allPipelineInfo)
 
-            function tabulate(data, columns, divid) {
-                var table = d3.select(divid).append('table');
-                var thead = table.append('thead');
-                var	tbody = table.append('tbody');
-
-                // append the header row
-                thead.append('tr')
-                    .selectAll('th')
-                    .data(columns).enter()
-                    .append('th')
-                    .text(function (column) { return column; });
-
-                // create a row for each object in the data
-                var rows = tbody.selectAll('tr')
-                    .data(data)
-                    .enter()
-                    .append('tr')
-                    .attr('class',function(d,i) {
-                        if(i==0) return 'item-select';
-                        else return 'item-default';
-                    });
-
-                // create a cell in each row for each column
-                var cells = rows.selectAll('td')
-                    .data(function (row) {
-                        return columns.map(function (column) {
-                            return {column: column, value: row[column]};
-                        });
-                    })
-                    .enter()
-                    .append('td')
-                    .text(function (d) {
-                        return d.value;
-                    })
-                    .on("click", function(d) {
-                        let myrow = this.parentElement;
-                        if(myrow.className=="item-select") {
-                            return;
-                        } else {
-                            d3.select(divid).select("tr.item-select")
-                                .attr('class', 'item-default');
-                            d3.select(myrow).attr('class',"item-select");
-                            if(divid=='#setxRight') {
-                                resultsplotinit(allPipelineInfo[myrow.firstChild.innerText], dvvalues);
-                            }
-                        }});
-
-                // this is code to add a checkbox to each row of pipeline results table
-                /*
-                  d3.select(divid).selectAll("tr")
-                  .append("input")
-                  .attr("type", "checkbox")
-                  .style("float","right");
-                */
-
-                return table;
-            }
-
             let resultstable = [];
             for(var key in allPipelineInfo) {
                 let myid = "";
@@ -1942,64 +1943,6 @@ export function estimate(btn) {
                 }
                 console.log(allPipelineInfo);
                 // to get all pipeline ids: Object.keys(allPipelineInfo)
-
-                function tabulate(data, columns, divid) {
-                    var table = d3.select(divid).append('table');
-                    var thead = table.append('thead');
-                    var	tbody = table.append('tbody');
-
-                    // append the header row
-                    thead.append('tr')
-                         .selectAll('th')
-                        .data(columns).enter()
-                        .append('th')
-                        .text(function (column) { return column; });
-
-                    // create a row for each object in the data
-                    var rows = tbody.selectAll('tr')
-                        .data(data)
-                        .enter()
-                        .append('tr')
-                        .attr('class',function(d,i) {
-                            if(i==0) return 'item-select';
-                            else return 'item-default';
-                        });
-
-                    // create a cell in each row for each column
-                    var cells = rows.selectAll('td')
-                        .data(function (row) {
-                            return columns.map(function (column) {
-                                return {column: column, value: row[column]};
-                            });
-                        })
-                        .enter()
-                        .append('td')
-                        .text(function (d) {
-                            return d.value;
-                        })
-                        .on("click", function(d) {
-                            let myrow = this.parentElement;
-                            if(myrow.className=="item-select") {
-                                return;
-                            } else {
-                                d3.select(divid).select("tr.item-select")
-                                    .attr('class', 'item-default');
-                                d3.select(myrow).attr('class',"item-select");
-                                if(divid=='#setxRight') {
-                                    resultsplotinit(allPipelineInfo[myrow.firstChild.innerText], dvvalues);
-                                }
-                            }});
-
-                    // this is code to add a checkbox to each row of pipeline results table
-                    /*
-                      d3.select(divid).selectAll("tr")
-                      .append("input")
-                      .attr("type", "checkbox")
-                      .style("float","right");
-                    */
-
-                    return table;
-                }
 
                 let resultstable = [];
                 for(var key in allPipelineInfo) {
