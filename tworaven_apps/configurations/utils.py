@@ -29,12 +29,12 @@ def get_latest_d3m_config():
 
 
 def get_train_data_info(d3m_config):
-    """Pull info for train data and train info files
+    """Pull info for train data and train info files.
     {
-        "traindata.csv": {
+        "learningData.csv": {
             "exists": true,
             "size": 2353,
-            "fullpath": "thefullpath/traindata.csv"
+            "fullpath": "thefullpath/learningData.csv"
         }
     }"""
     if not d3m_config:
@@ -42,12 +42,13 @@ def get_train_data_info(d3m_config):
 
     file_info = OrderedDict()
     fnames = ['learningData.csv',
-              'trainData.csv', 'trainData.csv.gz',
-              'trainTargets.csv', 'trainTargets.csv.gz']
+              'learningData.csv.gz']
 
     for fname in fnames:
         # For each file, does it exist? size? path?
         fpath = join(d3m_config.training_data_root,
+                     'dataset_TRAIN',
+                     'tables',
                      fname)
 
         one_file_info = OrderedDict()
