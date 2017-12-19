@@ -131,6 +131,11 @@ query = {
     'datasource': datasource
 };
 
+var laddaSubset = Ladda.create(document.getElementById("btnSubmit"));
+var laddaReset = Ladda.create(document.getElementById("btnReset"));
+var laddaDownload = Ladda.create(document.getElementById("buttonDownload"));
+laddaReset.start();
+
 // The editor menu for the custom subsets
 var editor = ace.edit("subsetCustomEditor");
 editor.$blockScrolling = Infinity;
@@ -278,6 +283,8 @@ function makeCorsRequest(url, post, callback) {
 function download() {
 
     function save(data) {
+        laddaDownload.stop();
+
         let a = document.createElement('A');
         a.href = data.download;
         a.download = data.download.substr(data.download.lastIndexOf('/') + 1);
@@ -299,7 +306,7 @@ function download() {
         'datasource': datasource,
         'type': 'raw'
     };
-
+    laddaDownload.start();
     makeCorsRequest(subsetURL, query, save);
 }
 
@@ -363,6 +370,9 @@ function loadPhoenix(jsondata) {
 function pageSetup(jsondata) {
     console.log("Server returned:");
     console.log(jsondata);
+
+    laddaSubset.stop();
+    laddaReset.stop();
 
     if (jsondata.date_data.length === 0) {
         alert("No records match your subset. Plots will not be updated.");
@@ -599,6 +609,8 @@ function callbackDelete(id) {
                 'dataset': dataset,
                 'datasource': datasource
             };
+
+            laddaSubset.start();
             makeCorsRequest(subsetURL, query, pageSetup);
 
             if (subsetData.length === 0) {
@@ -1136,6 +1148,8 @@ function reset() {
             'dataset': dataset,
             'datasource': datasource
         };
+
+        laddaReset.start();
         makeCorsRequest(subsetURL, query, pageSetup);
     }
 }
@@ -1208,6 +1222,8 @@ function submitQuery() {
         'dataset': dataset,
         'datasource': datasource
     };
+
+    laddaSubset.start();
     makeCorsRequest(subsetURL, query, submitQueryCallback);
 }
 

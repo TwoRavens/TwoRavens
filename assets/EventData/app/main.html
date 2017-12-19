@@ -10,6 +10,7 @@
 
     <script src="../node_modules/ladda/dist/spin.min.js"></script>
     <script src="../node_modules/ladda/dist/ladda.min.js"></script>
+    <link rel="stylesheet" href="../node_modules/ladda/dist/ladda-themeless.min.css"></script>
 
     <!--Used for rendering date calendar-->
     <link rel="stylesheet" href="../node_modules/jquery-ui/themes/base/datepicker.css">
@@ -53,11 +54,12 @@
 		<button class="btn btn-default navbar-right" id="aggSubmit" style="margin-right:1em;" onclick="updateToAggreg()">Aggregate</button>
 		
         <label class="btn btn-default ladda-button navbar-right" style="float:right;margin-left:2em;margin-right:1em;"
-               id="btnSubmit" onclick="submitQuery()" data-spinner-color="#000000"
+               id="btnSubmit" onclick="submitQuery()" data-spinner-color="#818181"
                data-style="zoom-in"><span class="ladda-label">Subset</span></label>
-        <button class="btn btn-default navbar-right" id="btnReset" title="Reset" onclick="reset()"
-                style="margin-left:2.0em;float:right;"><span style="font-size:1em;color:#818181; pointer-events:none;"
-                                                 class="glyphicon glyphicon-repeat"></span></button> 
+        <button class="btn btn-default ladda-button navbar-right" id="btnReset" title="Reset" onclick="reset()"
+                style="margin-left:2.0em;float:right;" data-style="zoom-in" data-spinner-color="#818181">
+                <span style="font-size:1em;color:#818181; pointer-events:none;"
+                                                 class="ladda-label glyphicon glyphicon-repeat"></span></button> 
         <div style="left:calc(50% + 20px);position:fixed;margin-top:6px">
           <div class="popover-markup" style="display:inline;"> 
             <a href="#" style="height:30px;" class="trigger btn btn-sm btn-default">
@@ -214,9 +216,10 @@
                 onclick="addGroup()" type="button"
                 style="float:left;margin-left:6px;">Group
         </button>
-        <button id="buttonDownload" class="btn btn-default ladda-button" data-spinner-color="#000000"
+        <button id="buttonDownload" class="btn btn-default ladda-button" data-spinner-color="#818181"
                 onclick="download()" type="button"
-                style="float:right;margin-right:6px;">Download
+                style="float:right;margin-right:6px;data-style="zoom-in"">
+                <span class="ladda-label">Download</span>
         </button>
     </div>
 </div>

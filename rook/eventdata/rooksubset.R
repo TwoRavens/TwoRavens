@@ -66,10 +66,8 @@ eventdata_subset.app <- function(env) {
     response <- Response$new()
     response$header("Access-Control-Allow-Origin", "*")  # Enable CORS
 
-    print("Request received")
-
     if (request$options()) {
-        # print("Preflight")
+        print("Preflight")
         response$status = 200L
 
         # Ensures CORS header is permitted
@@ -77,6 +75,8 @@ eventdata_subset.app <- function(env) {
         response$header("Access-Control-Allow-Headers", "origin, content-type, accept")
         return(response$finish())
     }
+
+    print("Request received")
 
     # Ensure solaJSON is posted
     solajson = request$POST()$solaJSON
@@ -237,7 +237,7 @@ eventdata_subset.app <- function(env) {
 
         actor_source_role = future({
             sort(unlist(getData(paste(query_url, '&unique=<src_agent>', sep=""))))
-        })
+        }) %plan% multiprocess
 
         actor_source_attributes = future({
             url = relabel(paste(query_url, '&unique=<src_other_agent>', sep=""), format)
@@ -288,10 +288,6 @@ eventdata_subset.app <- function(env) {
             action_data = value(action_frequencies),
             actor_data = actor_values
         )))
-
-        print("Complete!")
-        response$write(result)
-        return(response$finish())
     }
 
     if (dataset == "icews") {
@@ -322,7 +318,7 @@ eventdata_subset.app <- function(env) {
                  '{"$group": { "_id": { "root_code": "$RootCode" }, "total": {"$sum": 1} }}]', sep=""))) # Group by RootCode
             if (nrow(data) != 0) colnames(data) = c('total', '<root_code>')
             data
-        })
+        }) %plan% multiprocess
         
 
         actor_source_country = future({
@@ -353,9 +349,12 @@ eventdata_subset.app <- function(env) {
             action_data = value(action_frequencies),
             actor_data = actor_values
         )))
-
-        print("Complete!")
-        response$write(result)
-        return(response$finish())
     }
+
+    # If your R installation does not support futures multiprocessing, it will fall back to multisession processing
+    # In the multisession fallback case, prints are sent to different R sessions and not the server console
+
+    print("Request completed")
+    response$write(result)
+    return(response$finish())
 }
