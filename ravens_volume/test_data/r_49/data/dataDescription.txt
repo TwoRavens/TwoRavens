@@ -1,7 +1,0 @@
-Data for 49_facebook consists of two graphs in raw_data dir:
-G1.gml: attributed undirected graph; 1000 nodes; 5521 edges; 12 features for each node
-G2.gml: attributed undirected graph; 755 nodes; 5139 edges; 12 features for each node
-trainData.csv contains G1 nodes and trainTargets.csv contains G2 nodes. Together, they constitute 
-the known mapping between matching nodes across G1 and G2.
-testData.csv contains G1 nodes, for which the matching nodes in G2 have to be predicted in 
-testTargets.csv
