@@ -69,7 +69,7 @@ eventdata_subset.app <- function(env) {
     print("Request received")
 
     if (request$options()) {
-        print("Preflight")
+        # print("Preflight")
         response$status = 200L
 
         # Ensures CORS header is permitted
@@ -209,56 +209,71 @@ eventdata_subset.app <- function(env) {
         # This is a new query, so compute new metadata
         query_url = paste(eventdata_url, '&query=', subsets, sep="")
 
-        print("Collecting date frequencies")
-        date_frequencies = do.call(data.frame, getData(paste(query_url, '&group=<year>,<month>', sep="")))
-        if (nrow(date_frequencies) != 0) colnames(date_frequencies) = c('total', '<year>', '<month>')
+        date_frequencies = future({
+            data = do.call(data.frame, getData(paste(query_url, '&group=<year>,<month>', sep="")))
+            if (nrow(data) != 0) colnames(data) = c('total', '<year>', '<month>')
+            data
+        }) %plan% multiprocess
 
-        print("Collecting country frequencies")
-        country_frequencies = do.call(data.frame, getData(paste(query_url, '&group=<country_code>', sep="")))
-        if (nrow(country_frequencies) != 0) colnames(country_frequencies) = c('total', '<country_code>')
+        country_frequencies = future({
+            data = do.call(data.frame, getData(paste(query_url, '&group=<country_code>', sep="")))
+            if (nrow(data) != 0) colnames(data) = c('total', '<country_code>')
+            data
+        }) %plan% multiprocess
 
-        print("Collecting action codes")
-        action_frequencies = do.call(data.frame, getData(paste(query_url, '&group=<root_code>', sep="")))
-        if (nrow(action_frequencies) != 0) colnames(action_frequencies) = c('total', '<root_code>')
+        action_frequencies = future({
+            data = do.call(data.frame, getData(paste(query_url, '&group=<root_code>', sep="")))
+            if (nrow(data) != 0) colnames(data) = c('total', '<root_code>')
+            data
+        }) %plan% multiprocess
 
-        print("Collecting actor sources")
-        actor_source = sort(unlist(getData(paste(query_url, '&unique=<source>', sep=""))))
+        actor_source = future({
+            sort(unlist(getData(paste(query_url, '&unique=<source>', sep=""))))
+        }) %plan% multiprocess
 
-        print("Collecting actor source entities")
-        actor_source_entities = sort(unlist(getData(paste(query_url, '&unique=<src_actor>', sep=""))))
+        actor_source_entities = future({
+            sort(unlist(getData(paste(query_url, '&unique=<src_actor>', sep=""))))
+        }) %plan% multiprocess
 
-        print("Collecting actor source agents/roles")
-        actor_source_role = sort(unlist(getData(paste(query_url, '&unique=<src_agent>', sep=""))))
+        actor_source_role = future({
+            sort(unlist(getData(paste(query_url, '&unique=<src_agent>', sep=""))))
+        })
 
-        print("Collecting actor source other agents")
-        url = relabel(paste(query_url, '&unique=<src_other_agent>', sep=""), format)
-        actor_source_attributes = uniques(jsonlite::fromJSON(readLines(url))$data)
+        actor_source_attributes = future({
+            url = relabel(paste(query_url, '&unique=<src_other_agent>', sep=""), format)
+            uniques(jsonlite::fromJSON(readLines(url))$data)
+        }) %plan% multiprocess
+
+        actor_target = future({
+            sort(unlist(getData(paste(query_url, '&unique=<target>', sep=""))))
+        }) %plan% multiprocess
+
+        actor_target_entities = future({
+            sort(unlist(getData(paste(query_url, '&unique=<tgt_actor>', sep=""))))
+        }) %plan% multiprocess
+
+        actor_target_role = future({
+            sort(unlist(getData(paste(query_url, '&unique=<tgt_agent>', sep=""))))
+        }) %plan% multiprocess
+
+        actor_target_attributes = future({
+            url = relabel(paste(query_url, '&unique=<tgt_other_agent>', sep=""), format)
+            uniques(jsonlite::fromJSON(readLines(url))$data)
+        }) %plan% multiprocess
+
 
         actor_source_values = list(
-            full = actor_source,
-            entities = actor_source_entities,
-            roles = actor_source_role,
-            attributes = actor_source_attributes
+            full = value(actor_source),
+            entities = value(actor_source_entities),
+            roles = value(actor_source_role),
+            attributes = value(actor_source_attributes)
         )
 
-        print("Collecting actor targets")
-        actor_target = sort(unlist(getData(paste(query_url, '&unique=<target>', sep=""))))
-
-        print("Collecting actor target entities")
-        actor_target_entities = sort(unlist(getData(paste(query_url, '&unique=<tgt_actor>', sep=""))))
-
-        print("Collecting actor target agents/roles")
-        actor_target_role = sort(unlist(getData(paste(query_url, '&unique=<tgt_agent>', sep=""))))
-
-        print("Collecting actor target other agents")
-        url = relabel(paste(query_url, '&unique=<tgt_other_agent>', sep=""), format)
-        actor_target_attributes = uniques(jsonlite::fromJSON(readLines(url))$data)
-
         actor_target_values = list(
-            full = actor_target,
-            entities = actor_target_entities,
-            roles = actor_target_role,
-            attributes = actor_target_attributes
+            full = value(actor_target),
+            entities = value(actor_target_entities),
+            roles = value(actor_target_role),
+            attributes = value(actor_target_attributes)
         )
 
         # Package actor data
@@ -268,9 +283,9 @@ eventdata_subset.app <- function(env) {
         )
 
         result = toString(jsonlite::toJSON(list(
-            date_data = date_frequencies,
-            country_data = country_frequencies,
-            action_data = action_frequencies,
+            date_data = value(date_frequencies),
+            country_data = value(country_frequencies),
+            action_data = value(action_frequencies),
             actor_data = actor_values
         )))
 
@@ -284,37 +299,46 @@ eventdata_subset.app <- function(env) {
         # This is a new query, so compute new metadata
         query_url = paste(eventdata_url, '&query=', subsets, sep="")
 
-        print("Collecting date frequencies")
-        date_frequencies = do.call(data.frame, getData(paste(eventdata_url, '&aggregate=', 
-            '[{"$match":', subsets, '},',
-            '{"$project": {"Year":  {"$substr": ["$<date>", 0, 4]},',
-                          '"Month": {"$substr": ["$<date>", 5, 2]}}},',                           # Construct year and month fields
-            '{"$group": { "_id": { "year": "$Year", "month": "$Month" }, "total": {"$sum": 1} }}]', sep=""))) # Group by years and months
-        if (nrow(date_frequencies) != 0) colnames(date_frequencies) = c('total', '<year>', '<month>')
+        date_frequencies = future({
+            data = do.call(data.frame, getData(paste(eventdata_url, '&aggregate=', 
+                '[{"$match":', subsets, '},',
+                 '{"$project": {"Year":  {"$substr": ["$<date>", 0, 4]},',
+                              '"Month": {"$substr": ["$<date>", 5, 2]}}},',                           # Construct year and month fields
+                 '{"$group": { "_id": { "year": "$Year", "month": "$Month" }, "total": {"$sum": 1} }}]', sep=""))) # Group by years and months
+            if (nrow(data) != 0) colnames(data) = c('total', '<year>', '<month>')
+            data
+        }) %plan% multiprocess
 
-        print("Collecting country frequencies")
-        country_frequencies = do.call(data.frame, getData(paste(query_url, '&group=<country>', sep="")))
-        if (nrow(country_frequencies) != 0) colnames(country_frequencies) = c('total', '<country_code>')
+        country_frequencies = future({
+            data = do.call(data.frame, getData(paste(query_url, '&group=<country>', sep="")))
+            if (nrow(data) != 0) colnames(data) = c('total', '<country_code>')
+            data
+        }) %plan% multiprocess
 
-        print("Collecting cameo codes")
-        action_frequencies = do.call(data.frame, getData(paste(eventdata_url, '&aggregate=', 
-            '[{"$match":', subsets, '},',
-            '{"$project": {"RootCode":  {"$substr": ["$<cameo>", 0, 2]}}},',                           # Construct RootCode field
-            '{"$group": { "_id": { "root_code": "$RootCode" }, "total": {"$sum": 1} }}]', sep=""))) # Group by RootCode
-        if (nrow(action_frequencies) != 0) colnames(action_frequencies) = c('total', '<root_code>')
+        action_frequencies = future({
+            data = do.call(data.frame, getData(paste(eventdata_url, '&aggregate=', 
+                '[{"$match":', subsets, '},',
+                 '{"$project": {"RootCode":  {"$substr": ["$<cameo>", 0, 2]}}},',                           # Construct RootCode field
+                 '{"$group": { "_id": { "root_code": "$RootCode" }, "total": {"$sum": 1} }}]', sep=""))) # Group by RootCode
+            if (nrow(data) != 0) colnames(data) = c('total', '<root_code>')
+            data
+        })
+        
 
-        print("Collecting actor source countries")
-        actor_source_country = getData(paste(query_url, '&unique=<src_country>', sep=""))
+        actor_source_country = future({
+            getData(paste(query_url, '&unique=<src_country>', sep=""))
+        }) %plan% multiprocess
+
+        actor_target_countries = future({
+            getData(paste(query_url, '&unique=<tgt_country>', sep=""))
+        }) %plan% multiprocess
 
         actor_source_values = list(
-            full = actor_source_country
+            full = value(actor_source_country)
         )
 
-        print("Collecting actor target countries")
-        actor_target_countries = getData(paste(query_url, '&unique=<tgt_country>', sep=""))
-
         actor_target_values = list(
-            full = actor_target_countries
+            full = value(actor_target_countries)
         )
 
         # Package actor data
@@ -324,9 +348,9 @@ eventdata_subset.app <- function(env) {
         )
 
         result = toString(jsonlite::toJSON(list(
-            date_data = date_frequencies,
-            country_data = country_frequencies,
-            action_data = action_frequencies,
+            date_data = value(date_frequencies),
+            country_data = value(country_frequencies),
+            action_data = value(action_frequencies),
             actor_data = actor_values
         )))
 
