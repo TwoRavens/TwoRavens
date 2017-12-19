@@ -89,8 +89,13 @@ def load_d3m_config(config_file):
 
     try:
         management.call_command('load_config', config_file)
+        return True
     except management.base.CommandError as err_obj:
         print('> Failed to load D3M config.\n%s' % err_obj)
+        return False
+
+
+
 
 def load_docker_ui_config():
     """Load config pk=3, name 'Docker Default configuration'"""

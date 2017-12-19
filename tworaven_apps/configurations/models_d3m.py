@@ -135,11 +135,15 @@ class D3MConfiguration(TimeStampedModel):
     def to_ta2_config_test(self, mnt_volume='/ravens_volume', save_shortened_names=False):
         """Return a dict in TA2 format to use with mounted volume"""
         od = OrderedDict()
-        for name in D3M_FILE_ATTRIBUTES + D3M_DIR_ATTRIBUTES:
+        d3m_attributes = D3M_FILE_ATTRIBUTES + \
+                         D3M_DIR_ATTRIBUTES + \
+                         D3M_VALUE_ATTRIBUTES
+        for name in d3m_attributes:
             val = self.__dict__.get(name, '(not set)')
-            idx = val.find(mnt_volume)
-            if idx > -1:
-                val = val[idx:]
+            if val and isinstance(val, str):
+                idx = val.find(mnt_volume)
+                if idx > -1:
+                    val = val[idx:]
             od[name] = val
             if save_shortened_names:
                 self.__dict__[name] = val
