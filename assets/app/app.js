@@ -1915,9 +1915,7 @@ export async function estimate(btn) {
         }
 
         estimateLadda.start(); // start spinner
-        let res = await makeRequest(
-            D3M_SVC_URL + '/createpipeline',
-            CreatePipelineData(valueKey, mytarget));
+        let res = await makeRequest(D3M_SVC_URL + '/createpipeline', CreatePipelineData(valueKey, mytarget));
         res && onPipelineCreate(res);
     } else { // we are in IS_D3M_DOMAIN no swandive
         // rpc CreatePipelines(PipelineCreateRequest) returns (stream PipelineCreateResult) {}
@@ -1933,9 +1931,7 @@ export async function estimate(btn) {
         } else {
             setxTable(res.predictors);
             let dvvalues = res.dvvalues;
-            res = await makeRequest(
-                D3M_SVC_URL + '/createpipeline',
-                CreatePipelineData(json.predictors, json.depvar));
+            res = await makeRequest(D3M_SVC_URL + '/createpipeline', CreatePipelineData(json.predictors, json.depvar));
             res = await makeRequest(ROOK_SVC_URL + 'createpipeline', zparams);
             res && onPipelineCreate(res);
         }
@@ -2133,9 +2129,7 @@ async function dataDownload() {
 
     // package the output as JSON
     // add call history and package the zparams object as JSON
-    let res = await makeRequest(
-        ROOK_SVC_URL + 'dataapp',
-        zparams);
+    let res = await makeRequest(ROOK_SVC_URL + 'dataapp', zparams);
     if (!res) {
         return;
     }
@@ -2326,7 +2320,7 @@ async function transform(n, t, typeTransform) {
          callHistory: callHistory,
          typeTransform: typeTransform,
          typeStuff: outtypes});
-    if (!res) {
+    if (!json) {
         return;
     }
 
