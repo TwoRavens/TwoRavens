@@ -1736,8 +1736,72 @@ function tabulate(data, columns, divid) {
     */
 
     return table;
+
 }
 
+function onPipelineCreate(PipelineCreateResult) {
+    // rpc GetExecutePipelineResults(PipelineExecuteResultsRequest) returns (stream PipelineExecuteResult) {}
+    estimateLadda.stop(); // stop spinner
+
+    $("#btnEstimate").removeClass("btn-success");
+    $("#btnEstimate").addClass("btn-default");
+    $("#btnEndSession").removeClass("btn-default");
+    $("#btnEndSession").addClass("btn-success");
+
+    let allPipelineInfo = {};
+    for (var i = 0; i<PipelineCreateResult.length; i++) {
+        if(PipelineCreateResult[i].pipelineId in allPipelineInfo) {
+            allPipelineInfo[PipelineCreateResult[i].pipelineId]=Object.assign(allPipelineInfo[PipelineCreateResult[i].pipelineId],PipelineCreateResult[i]);
+        } else {
+            allPipelineInfo[PipelineCreateResult[i].pipelineId]=PipelineCreateResult[i];
+        }
+    }
+    console.log(allPipelineInfo);
+    // to get all pipeline ids: Object.keys(allPipelineInfo)
+
+    let resultstable = [];
+    for(var key in allPipelineInfo) {
+        // don't report the pipeline to user if it has failed
+        if(allPipelineInfo[key].responseInfo.status.details == "Pipeline Failed")  {
+            continue;
+        }
+        let myid = "";
+        let mymetric = "";
+        let myval = "";
+        let myscores = allPipelineInfo[key].pipelineInfo.scores;
+        for(var i = 0; i < myscores.length; i++) {
+            //if(i==0) {myid=key;}
+            //   else myid="";
+            myid=key;
+            mymetric=myscores[i].metric;
+            myval=+myscores[i].value.toFixed(3);
+            resultstable.push({"PipelineID":myid,"Metric":mymetric, "Score":myval});
+        }
+    }
+
+    // render the table
+    tabulate(resultstable, ['PipelineID', 'Metric', 'Score'], '#results');
+    tabulate(resultstable, ['PipelineID', 'Metric', 'Score'], '#setxRight');
+    /////////////////////////
+
+    toggleRightButtons("all");
+    byId("btnResults").click();
+
+    // this initializes the main
+    // this piece here is the first pipeline through: allPipelineInfo[resultstable[1].PipelineID]
+    //resultsplotinit(allPipelineInfo[resultstable[1].PipelineID], dvvalues);
+    exportpipeline(resultstable[1].PipelineID);
+
+    // I don't think we need these until we are handling streaming pipelines
+    // They are set up and called, but don't actually render anything for the user
+
+    // this is our function for the ListPipelines of API
+    listpipelines();
+
+    //let pipelineid = PipelineCreateResult.pipelineid;
+    // getexecutepipelineresults is the third to be called
+    makeRequest(D3M_SVC_URL + '/getexecutepipelineresults', {context, pipeline_ids: Object.keys(allPipelineInfo)});
+}
 
 /**
     called by clicking 'Solve This Problem' in model mode
@@ -1833,10 +1897,8 @@ export function estimate(btn) {
 
         let context = apiSession(zparams.zsessionid);
         let uri = {features: zparams.zd3mdata, target:zparams.zd3mtarget};
-
         let trainFeatures=apiFeatureShortPath(valueKey,uri.features);       // putting in short paths (no filename) for current API usage
         let targetFeatures=apiFeatureShortPath(mytarget,uri.target);        // putting in short paths (no filename) for current API usage
-
         let task = d3mTaskType[d3mProblemDescription.taskType][1];
         let taskSubtype = d3mTaskSubtype[d3mProblemDescription.taskSubtype][1];
         let output = d3mOutputType[d3mProblemDescription.outputType][1];
@@ -1844,61 +1906,11 @@ export function estimate(btn) {
         let taskDescription = d3mProblemDescription.taskDescription;
         let maxPipelines = 5; //user to specify this eventually?
 
-        function success(PipelineCreateResult) {
-            //rpc GetExecutePipelineResults(PipelineExecuteResultsRequest) returns (stream PipelineExecuteResult) {}
-            console.log(PipelineCreateResult);
-            estimateLadda.stop(); // stop spinner
-
-            $("#btnEstimate").removeClass("btn-success");
-            $("#btnEstimate").addClass("btn-default");
-            $("#btnEndSession").removeClass("btn-default");
-            $("#btnEndSession").addClass("btn-success");
-
-            let allPipelineInfo = {};
-            for (var i = 0; i<PipelineCreateResult.length; i++) {
-                if(PipelineCreateResult[i].pipelineId in allPipelineInfo) {
-                    allPipelineInfo[PipelineCreateResult[i].pipelineId]=Object.assign(allPipelineInfo[PipelineCreateResult[i].pipelineId],PipelineCreateResult[i]);
-                } else {
-                    allPipelineInfo[PipelineCreateResult[i].pipelineId]=PipelineCreateResult[i];
-                }
-            }
-            console.log(allPipelineInfo);
-            // to get all pipeline ids: Object.keys(allPipelineInfo)
-
-            let resultstable = [];
-            for(var key in allPipelineInfo) {
-                let myid = "";
-                let mymetric = "";
-                let myval = "";
-                let myscores = allPipelineInfo[key].pipelineInfo.scores;
-                for(var i = 0; i < myscores.length; i++) {
-                    myid=key;
-                    mymetric=myscores[i].metric;
-                    myval=+myscores[i].value.toFixed(3);
-                    resultstable.push({"PipelineID":myid,"Metric":mymetric, "Score":myval});
-                }
-            }
-            // render the table
-            tabulate(resultstable, ['PipelineID', 'Metric', 'Score'], '#results');
-
-            toggleRightButtons("all");
-            byId("btnResults").click();
-
-            // export pipeline request
-            exportpipeline(resultstable[1].PipelineID);
-
-            // I don't think we need these until we are handling streaming pipelines
-            // They are set up and called, but don't actually render anything for the user
-
-            // this is our function for the ListPipelines of API
-            listpipelines();
-            makeRequest(D3M_SVC_URL + '/getexecutepipelineresults', {context, pipeline_ids: Object.keys(allPipelineInfo)});
-        }
         estimateLadda.start(); // start spinner
         makeRequest(
             D3M_SVC_URL + '/createpipeline',
             {context, trainFeatures, task, taskSubtype, taskDescription, output, metrics, targetFeatures, maxPipelines},
-            success);
+            onPipelineCreate);
     } else { // we are in IS_D3M_DOMAIN no swandive
         // rpc CreatePipelines(PipelineCreateRequest) returns (stream PipelineCreateResult) {}
         zPop();
@@ -1920,80 +1932,15 @@ export function estimate(btn) {
 
             setxTable(json.predictors);
             let dvvalues = json.dvvalues;
-            makeRequest(D3M_SVC_URL + '/createpipeline', {context, trainFeatures, task, taskSubtype, taskDescription, output, metrics, targetFeatures, maxPipelines});
-
-            function success(PipelineCreateResult) {
-                //rpc GetExecutePipelineResults(PipelineExecuteResultsRequest) returns (stream PipelineExecuteResult) {}
-
-                // Stop spinner and change green button when createpipeline has finished
-                estimateLadda.stop(); // stop spinner
-
-                $("#btnEstimate").removeClass("btn-success");
-                $("#btnEstimate").addClass("btn-default");
-                $("#btnEndSession").removeClass("btn-default");
-                $("#btnEndSession").addClass("btn-success");
-
-                let allPipelineInfo = {};
-                for (var i = 0; i<PipelineCreateResult.length; i++) {
-                    if(PipelineCreateResult[i].pipelineId in allPipelineInfo) {
-                        allPipelineInfo[PipelineCreateResult[i].pipelineId]=Object.assign(allPipelineInfo[PipelineCreateResult[i].pipelineId],PipelineCreateResult[i]);
-                    } else {
-                        allPipelineInfo[PipelineCreateResult[i].pipelineId]=PipelineCreateResult[i];
-                    }
-                }
-                console.log(allPipelineInfo);
-                // to get all pipeline ids: Object.keys(allPipelineInfo)
-
-                let resultstable = [];
-                for(var key in allPipelineInfo) {
-                    // don't report the pipeline to user if it has failed
-                    if(allPipelineInfo[key].responseInfo.status.details == "Pipeline Failed")  {
-                        continue;
-                    }
-                    let myid = "";
-                    let mymetric = "";
-                    let myval = "";
-                    let myscores = allPipelineInfo[key].pipelineInfo.scores;
-                    for(var i = 0; i < myscores.length; i++) {
-                        //if(i==0) {myid=key;}
-                        //   else myid="";
-                        myid=key;
-                        mymetric=myscores[i].metric;
-                        myval=+myscores[i].value.toFixed(3);
-                        resultstable.push({"PipelineID":myid,"Metric":mymetric, "Score":myval});
-                    }
-                }
-
-                // render the table
-                tabulate(resultstable, ['PipelineID', 'Metric', 'Score'], '#results');
-                tabulate(resultstable, ['PipelineID', 'Metric', 'Score'], '#setxRight');
-                /////////////////////////
-
-                toggleRightButtons("all");
-                byId("btnResults").click();
-
-                // this initializes the main
-                // this piece here is the first pipeline through: allPipelineInfo[resultstable[1].PipelineID]
-                //resultsplotinit(allPipelineInfo[resultstable[1].PipelineID], dvvalues);
-                exportpipeline(resultstable[1].PipelineID);
-
-                // I don't think we need these until we are handling streaming pipelines
-                // They are set up and called, but don't actually render anything for the user
-
-                // this is our function for the ListPipelines of API
-                listpipelines();
-
-                //let pipelineid = PipelineCreateResult.pipelineid;
-                // getexecutepipelineresults is the third to be called
-                makeRequest(D3M_SVC_URL + '/getexecutepipelineresults', {context, pipeline_ids: Object.keys(allPipelineInfo)});
-            }
-
-            //createpipeline is the second to be called
-            makeRequest(ROOK_SVC_URL + 'createpipeline', zparams, success);
+            makeRequest(
+                D3M_SVC_URL + '/createpipeline',
+                {context, trainFeatures, task, taskSubtype, taskDescription, output, metrics, targetFeatures, maxPipelines});
+            // createpipeline is the second to be called
+            makeRequest(ROOK_SVC_URL + 'createpipeline', zparams, onCreatePipeline);
         }
 
         estimateLadda.start(); // start spinner
-        //pipelineapp is first to be called
+        // pipelineapp is first to be called
         makeRequest(ROOK_SVC_URL + 'pipelineapp', zparams, success, _ => estimated = true);
     }
 }
