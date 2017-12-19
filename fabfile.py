@@ -227,7 +227,7 @@ def clear_logs():
 
     pat3 = r'^preprocessSubset_(\w|-){15,50}\.txt$'
     data_file_names = [x for x in os.listdir(rook_data_dir)
-                           if re.match(pat3, x) is not None]
+                       if re.match(pat3, x) is not None]
 
     if data_file_names:
         print('Deleting %s data file(s)' % len(data_file_names))
@@ -238,6 +238,12 @@ def clear_logs():
         print('-' * 40)
         print('Deleted %s log file(s)' % len(data_file_names))
 
+
+def add_ta3_search_listener():
+    """Add local web server address for ta3_search messages"""
+    from tworaven_apps.ta3_search.models import MessageListener
+
+    web_url = 'http://0.0.0.0:8001'
 
 
 def create_django_superuser():
