@@ -283,7 +283,7 @@ console.log(res);
     mytarget = res.inputs.data[0].targets[0].colName; // easier way to access target name?
 
     if (IS_D3M_DOMAIN) {
-        zparams.zdata = "none";
+        zparams.zdata = d3mDataName;
     } else {
         // Note: presently xml is no longer being read from Dataverse metadata anywhere
         let temp = xml.documentElement.getElementsByTagName("fileName");
@@ -1933,6 +1933,7 @@ export async function estimate(btn) {
         if (!res) {
             estimated = true;
         } else {
+        console.log(res);
             setxTable(res.predictors);
             let dvvalues = res.dvvalues;
             res = await makeRequest(D3M_SVC_URL + '/createpipeline', CreatePipelineData(json.predictors, json.depvar));
