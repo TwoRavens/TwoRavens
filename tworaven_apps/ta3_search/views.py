@@ -11,6 +11,15 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from tworaven_apps.ta3_search.forms import MessageListenerForm
 from tworaven_apps.utils.view_helper import get_session_key
+from django.contrib.auth.decorators import login_required
+
+@login_required
+def view_end_ta3_search(request):
+    """End the D3M search"""
+
+    # open post commands + message
+    # send appropriate message to the listeners
+    return JsonResponse(dict(success=True))
 
 
 @csrf_exempt

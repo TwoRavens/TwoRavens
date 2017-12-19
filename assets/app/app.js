@@ -4178,6 +4178,30 @@ function apiSession(context) {
     return {session_id: context};
 }
 
+
+/**
+ *  End the TA3 search.  This sends a message
+ *  to the ta3_search console as well as message
+ *  for the console to exit with a:
+ *  - return code 0 for success
+ *  - return code -1 for failure
+ */
+export function end_ta3_search(is_success, user_msg){
+
+  let ta3_search_data = {'success': is_success,
+                         'message': user_msg}
+
+  const end_search_url = 'ta3_search/end-search';
+
+  try {
+      let res = m.request(end_search_url, {method: 'POST', data: ta3_search_data});
+      console.log('end_ta3_search succeeded:' + res);
+  } catch (err) {
+      console.log('end_ta3_search failed: ' + err);
+  }
+
+}
+
 /**
  *  record user metadata
  */
@@ -4213,15 +4237,15 @@ export function record_user_metadata(){
                         'allnodes': allNodes,
                         'zparams': zparams}
 
-  //console.log('workspace_data: ' + workspace_data);
+        //console.log('workspace_data: ' + workspace_data);
 
-  // (3) Save workspace data
-  //
-  try {
-      let res = m.request(save_workspace_url, {method: 'POST', data: workspace_data});
-      recorder_cnt++;
-      console.log('Session recorded: (cnt: ' + recorder_cnt + ') ' + res);
-  } catch (err) {
-      console.log('record_user_metadata failed: ' + err);
-  }
+      // (3) Save workspace data
+      //
+      try {
+          let res = m.request(save_workspace_url, {method: 'POST', data: workspace_data});
+          recorder_cnt++;
+          console.log('Session recorded: (cnt: ' + recorder_cnt + ') ' + res);
+      } catch (err) {
+          console.log('record_user_metadata failed: ' + err);
+      }
 }

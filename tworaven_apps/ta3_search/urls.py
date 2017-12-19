@@ -4,10 +4,13 @@ from tworaven_apps.ta3_search import views
 
 urlpatterns = (
 
-    # We're listing each call here for now but may change in the future
+    #   - This endpoint is for the flask app to register as a listener
     #
-    url(r'^register-listener/?$',
+    url(r'^register-listener$',
         views.view_register_listener,
         name='view_register_listener'),
 
+    url(r'^end-search$',
+        views.view_end_ta3_search,
+        name='view_end_ta3_search'),
 )
