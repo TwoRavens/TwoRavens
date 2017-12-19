@@ -41,7 +41,8 @@ def get_train_data_info(d3m_config):
         return None, 'd3m_config is None'
 
     file_info = OrderedDict()
-    fnames = ['trainData.csv', 'trainData.csv.gz',
+    fnames = ['learningData.csv',
+              'trainData.csv', 'trainData.csv.gz',
               'trainTargets.csv', 'trainTargets.csv.gz']
 
     for fname in fnames:
