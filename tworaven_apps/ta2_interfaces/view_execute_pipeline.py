@@ -3,8 +3,7 @@ from django.http import JsonResponse    #, HttpResponse, Http404
 from django.views.decorators.csrf import csrf_exempt
 from tworaven_apps.ta2_interfaces.req_execute_pipeline import \
     execute_pipeline
-from tworaven_apps.ta2_interfaces.ta2_util import get_grpc_content
-from tworaven_apps.configurations.utils import get_latest_d3m_config
+from tworaven_apps.utils.view_helper import get_request_body
 from tworaven_apps.call_captures.models import ServiceCallEntry
 from tworaven_apps.utils.view_helper import get_session_key
 
@@ -21,7 +20,7 @@ def view_execute_pipeline(request):
     """
     session_key = get_session_key(request)
 
-    success, raven_data_or_err = get_grpc_content(request)
+    success, raven_data_or_err = get_request_body(request)
     if not success:
         return JsonResponse(dict(status=False,
                                  message=raven_data_or_err))
