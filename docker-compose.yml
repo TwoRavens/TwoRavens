@@ -36,7 +36,7 @@ services:
       # Example of specifying a TA2 service
       - TA2_TEST_SERVER_URL=ta2-main:50051
       #- CONFIG_JSON_PATH=/ravens_volume/config_o_4550seed.json
-      - CONFIG_JSON_PATH=/ravens_volume/config_o_196.json
+      - CONFIG_JSON_PATH=/ravens_volume/config_185_baseball.json
     links:
       - rook-service
     ports:
@@ -45,9 +45,10 @@ services:
     volumes:
       - ./ravens_volume:/ravens_volume
   ta2-main:
-    image: registry.datadrivendiscovery.org/ta2/isi_ta2:latest
+    image: isi_test:stable
+    #image: registry.datadrivendiscovery.org/ta2/isi_ta2:stable
     environment:
-      - CONFIG_JSON_PATH=/ravens_volume/config_o_196.json
+      - CONFIG_JSON_PATH=/ravens_volume/config_185_baseball.json
     volumes:
       - ./ravens_volume:/ravens_volume
     ports:
