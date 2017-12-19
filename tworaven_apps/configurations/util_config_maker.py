@@ -43,7 +43,8 @@ class TestConfigMaker:
 
         problem_dirs = [x for x in os.listdir(data_dir)
                         if isdir(join(data_dir, x)) and
-                        x[:2] in ['o_', 'r_'] and
+                        (x[:2] in ['o_', 'r_'] or
+                         x[:1] in ['1']) and
                         not x.endswith('_output')]
 
         for idx, name in enumerate(problem_dirs):
