@@ -1695,19 +1695,21 @@ export function estimate(btn) {
         // package the output as JSON
         // add call history and package the zparams object as JSON
         zparams.callHistory = callHistory;
-        var jsonout = JSON.stringify(zparams);
-
-        var urlcall = ROOK_SVC_URL + "zeligapp"; //base.concat(jsonout);
-        var solajsonout = "solaJSON=" + jsonout;
-        cdb("urlcall out: ", urlcall);
-        cdb("POST out: ", solajsonout);
-        console.log("estimate: ", solajsonout);
-
         zparams.allVars = valueKey.slice(10, 25); // because the URL is too long...
-        jsonout = JSON.stringify(zparams);
-        var selectorurlcall = ROOK_SVC_URL + "selectorapp";
 
-        function estimateSuccess(btn, json) {
+        /* UNUSED
+        var selectorurlcall = ROOK_SVC_URL + "selectorapp";
+        function selectorSuccess(btn, json) {
+            d3.select("#ticker")
+                .text("Suggested variables and percent improvement on RMSE: " + json.vars);
+            cdb("selectorSuccess: ", json);
+        }
+        function selectorFail(btn) {
+            alert("Selector Fail");
+        }
+        */
+
+        function success(json) {
             estimateLadda.stop(); // stop spinner
             allResults.push(json);
             cdb("json in: ", json);
@@ -1753,35 +1755,17 @@ export function estimate(btn) {
                     viz(this.id);
                 });
 
-            let rCall = [];
-            rCall[0] = json.call;
-            showLog("estimate", rCall);
+            let rCall = [json.call];
+            showLog('estimate', rCall);
 
             viz(model);
         }
 
-        function estimateFail(btn) {
-            estimateLadda.stop(); // stop spinner
-            estimated = true;
-        }
-
-        function selectorSuccess(btn, json) {
-            d3.select("#ticker")
-                .text("Suggested variables and percent improvement on RMSE: " + json.vars);
-            cdb("selectorSuccess: ", json);
-        }
-
-        function selectorFail(btn) {
-            alert("Selector Fail");
-        }
-
         estimateLadda.start(); // start spinner
-        makeCorsRequest(urlcall, btn, estimateSuccess, estimateFail, solajsonout);
+        makeRequest(ROOK_SVC_URL + 'zeligapp', zparams, success, _ => estimated = true);
     } else if (swandive) { // IS_D3M_DOMAIN and swandive is true
         zPop();
         zparams.callHistory = callHistory;
-        var jsonout = JSON.stringify(zparams);
-        console.log(jsonout);
 
         let myvki = valueKey.indexOf(mytarget);
         if(myvki != -1) {
@@ -1907,26 +1891,7 @@ export function estimate(btn) {
 
             // this is our function for the ListPipelines of API
             listpipelines();
-
-            //let pipelineid = PipelineCreateResult.pipelineid;
-            let pipeline_ids = Object.keys(allPipelineInfo);
-            let PipelineExecuteResultsRequest = {context, pipeline_ids};
-            jsonout = JSON.stringify(PipelineExecuteResultsRequest);
-            let urlcall = D3M_SVC_URL + "/getexecutepipelineresults";
-            var solajsonout = "grpcrequest=" + jsonout;
-            console.log("GetExecutePipelineResults: ");
-            console.log(solajsonout);
-            console.log(urlcall);
-
-            function getExecutePipeSuccess(btn, PipelineExecuteResult) {
-                console.log(PipelineExecuteResult);
-                // call to initialize the main plot
-                // dvvalues and predvals should eventually be contained in the pipeline object itself
-            }
-            function getExecutePipeFail (btn) {
-                console.log("GetExecutePipelineResults failed");
-            }
-            makeCorsRequest(urlcall, "nobutton", getExecutePipeSuccess, getExecutePipeFail, solajsonout);
+            makeRequest(D3M_SVC_URL + '/getexecutepipelineresults', {context, pipeline_ids: Object.keys(allPipelineInfo)});
         }
         estimateLadda.start(); // start spinner
         makeRequest(
@@ -1937,22 +1902,12 @@ export function estimate(btn) {
         // rpc CreatePipelines(PipelineCreateRequest) returns (stream PipelineCreateResult) {}
         zPop();
         zparams.callHistory = callHistory;
-        var jsonout = JSON.stringify(zparams);
-        console.log(jsonout);
 
         let context = apiSession(zparams.zsessionid);
         let uri = {features: zparams.zd3mdata, target:zparams.zd3mtarget};
-
         // pipelineapp is a rook application that returns the dependent variable, the DV values, and the predictors. can think of it was a way to translate the potentially complex grammar from the UI
-        let urlcall = ROOK_SVC_URL + "pipelineapp";
 
-        var solajsonout = "solaJSON=" + jsonout;
-        cdb("urlcall out: ", urlcall);
-        cdb("POST out: ", solajsonout);
-
-
-        async function createPipelineSuccess(btn, json) {
-
+        function success(json) {
             let trainFeatures=apiFeatureShortPath(json.predictors,uri.features);    // putting in short paths (no filename) for current API usage
             let targetFeatures=apiFeatureShortPath(json.depvar,uri.target);         // putting in short paths (no filename) for current API usage
             let task = d3mTaskType[d3mProblemDescription.taskType][1];
@@ -1964,54 +1919,10 @@ export function estimate(btn) {
 
             setxTable(json.predictors);
             let dvvalues = json.dvvalues;
+            makeRequest(D3M_SVC_URL + '/createpipeline', {context, trainFeatures, task, taskSubtype, taskDescription, output, metrics, targetFeatures, maxPipelines});
 
-
-            let PipelineCreateRequest={context, trainFeatures, task, taskSubtype, taskDescription, output, metrics, targetFeatures, maxPipelines};
-
-            let jsonout = JSON.stringify(PipelineCreateRequest);
-
-            let urlcall = D3M_SVC_URL + "/createpipeline";
-            var solajsonout = "grpcrequest=" + jsonout;
-
-            console.log(urlcall);
-            console.log(solajsonout);
-
-            console.log(PipelineCreateRequest);
-
-            try {
-                let res = await m.request(urlcall, {method: 'POST', data: PipelineCreateRequest});
-                console.log('pipelinecreaterequest: ', res);
-            } catch (err) {
-                estimateLadda.stop();
-                selectLadda.stop();
-                console.log(err);
-                cdb(err);
-                alert('PipelineCreateRequest has failed.');
-                return;
-            }
-
-            /*
-              let SessionRequest = {user_agent: 'some agent', version: 'some version'};
-              let url = D3M_SVC_URL + '/startsession';
-              console.log('SessionRequest: ', SessionRequest);
-              console.log("url: ", url);
-              try {
-              res = await m.request(url, {method: 'POST', data: SessionRequest});
-              console.log('startsession: ', res);
-              zparams.zsessionid = res.context.sessionId;
-              } catch (err) {
-              estimateLadda.stop();
-              selectLadda.stop();
-              cdb(err);
-              alert('StartSession has failed.');
-              }
-            */
-
-
-
-            function sendPipelineSuccess(btn, PipelineCreateResult) {
+            function success(PipelineCreateResult) {
                 //rpc GetExecutePipelineResults(PipelineExecuteResultsRequest) returns (stream PipelineExecuteResult) {}
-                console.log('pipelinecreaterequest: ', PipelineCreateResult);
 
                 // Stop spinner and change green button when createpipeline has finished
                 estimateLadda.stop(); // stop spinner
@@ -2032,11 +1943,9 @@ export function estimate(btn) {
                 console.log(allPipelineInfo);
                 // to get all pipeline ids: Object.keys(allPipelineInfo)
 
-                //////////////////////////
-
                 function tabulate(data, columns, divid) {
-                    var table = d3.select(divid).append('table')
-                    var thead = table.append('thead')
+                    var table = d3.select(divid).append('table');
+                    var thead = table.append('thead');
                     var	tbody = table.append('tbody');
 
                     // append the header row
@@ -2054,7 +1963,7 @@ export function estimate(btn) {
                         .attr('class',function(d,i) {
                             if(i==0) return 'item-select';
                             else return 'item-default';
-                        })
+                        });
 
                     // create a cell in each row for each column
                     var cells = rows.selectAll('td')
@@ -2125,7 +2034,6 @@ export function estimate(btn) {
                 //resultsplotinit(allPipelineInfo[resultstable[1].PipelineID], dvvalues);
                 exportpipeline(resultstable[1].PipelineID);
 
-
                 // I don't think we need these until we are handling streaming pipelines
                 // They are set up and called, but don't actually render anything for the user
 
@@ -2133,43 +2041,17 @@ export function estimate(btn) {
                 listpipelines();
 
                 //let pipelineid = PipelineCreateResult.pipelineid;
-                let pipeline_ids = Object.keys(allPipelineInfo);
-                let PipelineExecuteResultsRequest = {context, pipeline_ids};
-                jsonout = JSON.stringify(PipelineExecuteResultsRequest);
-                let urlcall = D3M_SVC_URL + "/getexecutepipelineresults";
-                var solajsonout = "grpcrequest=" + jsonout;
-                console.log("GetExecutePipelineResults: ");
-                console.log(solajsonout);
-                console.log(urlcall);
-
-                function getExecutePipeSuccess(btn, PipelineExecuteResult) {
-                    console.log(PipelineExecuteResult);
-                    // call to initialize the main plot
-                    // dvvalues and predvals should eventually be contained in the pipeline object itself
-                }
-                function getExecutePipeFail (btn) {
-                    console.log("GetExecutePipelineResults failed");
-                }
                 // getexecutepipelineresults is the third to be called
-                makeCorsRequest(urlcall, "nobutton", getExecutePipeSuccess, getExecutePipeFail, solajsonout);
-            }
-
-            function sendPipelineFail(btn) {
-                console.log("pipeline to django failed");
+                makeRequest(D3M_SVC_URL + '/getexecutepipelineresults', {context, pipeline_ids: Object.keys(allPipelineInfo)});
             }
 
             //createpipeline is the second to be called
-            makeCorsRequest(urlcall, "nobutton", sendPipelineSuccess, sendPipelineFail, solajsonout);
-        }
-
-        function createPipelineFail(btn) {
-            estimateLadda.stop(); // stop spinner
-            estimated = true;
+            makeRequest(ROOK_SVC_URL + 'createpipeline', zparams, success);
         }
 
         estimateLadda.start(); // start spinner
         //pipelineapp is first to be called
-        makeCorsRequest(urlcall, btn, createPipelineSuccess, createPipelineFail, solajsonout);
+        makeRequest(ROOK_SVC_URL + 'pipelineapp', zparams, success, _ => estimated = true);
     }
 }
 
