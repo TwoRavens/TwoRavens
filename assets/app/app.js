@@ -133,12 +133,12 @@ export let d3mTaskType = {
     taskTypeUndefined: ["description", "TASK_TYPE_UNDEFINED", 0],
     classification: ["description", "CLASSIFICATION" , 1],
     regression: ["description", "REGRESSION" , 2],
-    similarityMatching: ["description", "SIMILARITY_MATCHING" , 3],
-    linkPrediction: ["description", "LINK_PREDICTION" , 4],
-    vertexNomination: ["description", "VERTEX_NOMINATION" , 5],
-    communityDetection: ["description", "COMMUNITY_DETECTION" , 6],
+    linkPrediction: ["description", "LINK_PREDICTION" , 3],
+    vertexNomination: ["description", "VERTEX_NOMINATION" , 4],
+    communityDetection: ["description", "COMMUNITY_DETECTION" , 5],
+    graphClustering: ["description", "GRAPH_CLUSTERING" , 6],
     graphMatching: ["description", "GRAPH_MATCHING" , 7],
-    timeseriesForecasting: ["description", "TIMESERIES_FORECASTING" , 8],
+    timeSeriesForecasting: ["description", "TIMESERIES_FORECASTING" , 8],
     collaborativeFiltering: ["description", "COLLABORATIVE_FILTERING" , 9]
 };
 export let d3mTaskSubtype = {
@@ -147,22 +147,16 @@ export let d3mTaskSubtype = {
     binary:["description", "BINARY" , 2],
     multiClass:["description", "MULTICLASS" , 3],
     multiLabel:["description", "MULTILABEL" , 4],
-    uniVariate:["description", "UNIVARIATE" , 5],
-    multiVariate:["description", "MULTIVARIATE" , 6],
+    univariate:["description", "UNIVARIATE" , 5],
+    multivariate:["description", "MULTIVARIATE" , 6],
     overlapping:["description", "OVERLAPPING" , 7],
     nonOverlapping:["description", "NONOVERLAPPING" , 8]
 };
-export let d3mOutputType = {
+/*export let d3mOutputType = {
     outputUndefined:["description","OUTPUT_TYPE_UNDEFINED ", 0],
-    classLabel:["description","CLASS_LABEL", 1],
-    probability:["description","PROBABILITY", 2],
-    real:["description","REAL", 3],
-    nodeID:["description","NODE_ID", 4],
-    vectorClassLabel:["description","VECTOR_CLASS_LABEL", 5],
-    vectorStochastic:["description","VECTOR_STOCHASTIC", 6],
-    vectorReal:["description","VECTOR_REAL", 7],
-    file:["description","FILE",8]
-};
+    predictionsFile:["description","PREDICTIONS_FILE",1],
+    scoresFile:["description","SCORES_FILE",2]
+}; */
 export let d3mMetrics = {
     metricUndefined:["description", "METRIC_UNDEFINED" , 0],
     accuracy : ["description", "ACCURACY" , 1],
@@ -178,14 +172,13 @@ export let d3mMetrics = {
     meanAbsoluteError:["description", "MEAN_ABSOLUTE_ERROR" , 10],
     rSquared:["description", "R_SQUARED" , 11],
     normalizedMutualInformation:["description", "NORMALIZED_MUTUAL_INFORMATION" , 12],
-    jaccardSimilarityScore:["description", "JACCARD_SIMILARITY_SCORE" , 13],
-    executionTime:["description", "EXECUTION_TIME" , 14]
+    jaccardSimilarityScore:["description", "JACCARD_SIMILARITY_SCORE" , 13]
 };
 export let d3mProblemDescription = {
     taskType: [2,"DEFAULT"],
     taskSubtype: [1,"DEFAFULT"],
-    outputType: [3,"DEFAULT"],
-    metric: [4,"DEFAULT"],
+ //   outputType: [3,"DEFAULT"],
+    metric: [3,"DEFAULT"],
     taskDescription: ""
 };
 
@@ -302,11 +295,15 @@ console.log(res);
     // put dataset name, from meta-data, into page title
     d3.select("title").html("TwoRavens " + dataname);
 
-    set = (field, arr) => d3mProblemDescription[field] = res[field] in arr ? res[field] : field + 'Undefined';
-    set('taskType', d3mTaskType);
-    set('taskSubtype', d3mTaskSubtype);
-    set('metric', d3mMetrics);
-    set('outputType', d3mOutputType);
+  //  set = (field, arr) => d3mProblemDescription[field] = res[field] in arr ? res[field] : field + 'Undefined';
+    d3mProblemDescription.taskType=res.about.taskType;
+    d3mProblemDescription.taskSubtype=res.about.taskSubType;
+    d3mProblemDescription.metric = res.inputs.performanceMetrics[0].metric;
+ //   d3mProblemDescription.outputType = res.expectedOutputs.predictionsFile;
+ //   set('taskType', d3mTaskType);
+ //   set('taskSubtype', d3mTaskSubtype);
+ //   set('metric', d3mMetrics);
+ //   set('outputType', d3mOutputType);
     d3mProblemDescription.taskDescription = res.descriptionFile;
     byId("btnType").click();
 
@@ -1052,7 +1049,7 @@ function layout(v,v2) {
         updateSchema("metric", d3mProblemDescription, d3mMetrics);
         });
 
-    d3.select("#outputs").selectAll("p")
+  /*  d3.select("#outputs").selectAll("p")
     .on("click", function() {
         if(locktoggle) return;
         if(this.className=="item-select") {
@@ -1066,6 +1063,7 @@ function layout(v,v2) {
         restart();
         updateSchema("outputType", d3mProblemDescription, d3mOutputType);
         });
+        */
 
     // update graph (called when needed)
     restart = function($links) {
@@ -1655,10 +1653,10 @@ export function lockDescription() {
         for (i = 0; i < temp.length; i++) {
             temp[i].classList.add("item-lineout");
         }
-        temp = byId('outputs').querySelectorAll("p.item-default");
+    /*    temp = byId('outputs').querySelectorAll("p.item-default");
         for (i = 0; i < temp.length; i++) {
             temp[i].classList.add("item-lineout");
-        }
+        }  */
         fakeClick();
     }
 }
@@ -1772,6 +1770,7 @@ function onPipelineCreate(PipelineCreateResult) {
         let myid = "";
         let mymetric = "";
         let myval = "";
+        console.log(allPipelineInfo);
         let myscores = allPipelineInfo[key].pipelineInfo.scores;
         for(var i = 0; i < myscores.length; i++) {
             //if(i==0) {myid=key;}
@@ -1810,11 +1809,12 @@ function CreatePipelineData(predictors, depvar) {
     let context = apiSession(zparams.zsessionid);
     let uri = {features: zparams.zd3mdata, target:zparams.zd3mtarget};
     return {
+        context,
         trainFeatures: apiFeatureShortPath(predictors, uri.features), // putting in short paths (no filename) for current API usage
         targetFeatures: apiFeatureShortPath(depvar, uri.target), // putting in short paths (no filename) for current API usage
         task: d3mTaskType[d3mProblemDescription.taskType][1],
         taskSubtype: d3mTaskSubtype[d3mProblemDescription.taskSubtype][1],
-        output: d3mOutputType[d3mProblemDescription.outputType][1],
+    //    output: d3mOutputType[d3mProblemDescription.outputType][1],
         metrics: [d3mMetrics[d3mProblemDescription.metric][1]],
         taskDescription: d3mProblemDescription.taskDescription,
         maxPipelines: 5, //user to specify this eventually?
@@ -1936,8 +1936,8 @@ export async function estimate(btn) {
         console.log(res);
             setxTable(res.predictors);
             let dvvalues = res.dvvalues;
-            res = await makeRequest(D3M_SVC_URL + '/createpipeline', CreatePipelineData(json.predictors, json.depvar));
-            res = await makeRequest(ROOK_SVC_URL + 'createpipeline', zparams);
+            res = await makeRequest(D3M_SVC_URL + '/createpipeline', CreatePipelineData(res.predictors, res.depvar));
+         //   res = await makeRequest(ROOK_SVC_URL + 'createpipeline', zparams);
             res && onPipelineCreate(res);
         }
     }
@@ -2424,11 +2424,28 @@ async function makeRequest(url, data) {
         console.log('response:', res);
         if (Object.keys(res)[0] === 'warning') {
             alert('Warning: ' + res.warning);
+            end_ta3_search(false, res.warning);
         }
     } catch(err) {
+        end_ta3_search(false, err);
         cdb(err);
         alert(`Error: call to ${url} failed`);
     }
+   
+   /*
+    //call end_ta3_search if status != OK
+    // status may be in different places for different calls though, and this is not worth doing at the moment
+    let myreg = /d3m-service/g;
+    let isd3mcall = myreg.test(url);
+    if(isd3mcall) {
+        let mystatus = res.responseInfo.status.code.toUpperCase();
+        if(mystatus != "OK") {
+            end_ta3_search(false, "grpc response status not ok");
+        }
+    }
+    
+    */
+    
     estimateLadda.stop();
     selectLadda.stop();
     return res;
@@ -2916,8 +2933,13 @@ export let fakeClick = () => {
 /**
    EndSession(SessionContext) returns (Response) {}
 */
-export function endsession() {
-    makeRequest(D3M_SVC_URL + '/endsession', apiSession(zparams.zsessionid));
+export async function endsession() {
+   // makeRequest(D3M_SVC_URL + '/endsession', apiSession(zparams.zsessionid));
+    let res = await makeRequest(D3M_SVC_URL + '/endsession', apiSession(zparams.zsessionid));
+    let mystatus = res.status.code.toUpperCase();
+    if(mystatus == "OK") {
+        end_ta3_search(true, "Problem marked as complete.");
+    }
 }
 
 /**
@@ -3129,7 +3151,7 @@ function toggleRightButtons(set) {
         byId('btnType').style.display = 'none';
         byId('btnSubtype').style.display = 'none';
         byId('btnMetrics').style.display = 'none';
-        byId('btnOutputs').style.display = 'none';
+ //       byId('btnOutputs').style.display = 'none';
     }
 }
 

@@ -83,8 +83,8 @@ function rightpanel(mode) {
            m(Button, {id: 'btnResults', style: 'width: 100%'}, 'Results'),
            m(Button, {id: 'btnType', style: 'width: 100%'}, 'Task Type'),
            m(Button, {id: 'btnSubtype', style: 'width: 100%'}, 'Subtype'),
-           m(Button, {id: 'btnMetrics', style: 'width: 100%'}, 'Metrics'),
-           m(Button, {id: 'btnOutputs', style: 'width: 100%'}, 'Output')]},
+           m(Button, {id: 'btnMetrics', style: 'width: 100%'}, 'Metrics')]},
+     //      m(Button, {id: 'btnOutputs', style: 'width: 100%'}, 'Output')]},
       m(`#results[style=display: ${when('right', 'btnResults')}; margin-top: .5em]`,
         m("#resultsView.container[style=float: right; overflow: auto; width: 80%; background-color: white; white-space: nowrap]"),
         m('#modelView[style=display: none; float: left; width: 20%; background-color: white]'),
@@ -110,8 +110,8 @@ function rightpanel(mode) {
       righttab('models', 'btnModels'),
       righttab('types', 'btnType', app.d3mTaskType, 'Task', 'taskType'),
       righttab('subtypes', 'btnSubtype', app.d3mTaskSubtype, 'Task Subtype', 'taskSubtype'),
-      righttab('metrics', 'btnMetrics', app.d3mMetrics, 'Metric', 'metric', ),
-      righttab('outputs', 'btnOutputs', app.d3mOutputType, 'Output', 'outputType'));
+      righttab('metrics', 'btnMetrics', app.d3mMetrics, 'Metric', 'metric'));
+//      righttab('outputs', 'btnOutputs', app.d3mOutputType, 'Output', 'outputType'));
 }
 
 let ticker = mode => {
