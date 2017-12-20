@@ -32,7 +32,9 @@ RUN apt-get update && \
 ENV DJANGO_SETTINGS_MODULE=tworavensproject.settings.dev_container2 \
     R_DEV_SERVER_BASE=http://rook-service:8000/custom/ \
     TA2_TEST_SERVER_URL=localhost:50051 \
-    CODE_REPOSITORY=/var/webapps/TwoRavens
+    CODE_REPOSITORY=/var/webapps/TwoRavens \
+    LC_ALL=C.UTF-8 \
+    LANG=C.UTF-8
 
 # -------------------------------------
 # Copy the repo over
@@ -67,7 +69,7 @@ WORKDIR /var/webapps/TwoRavens
 #   - make_d3m_config - WARNING: for testing. Loads D3M info based on the test data
 #   - load_d3m_config_from_env - loads TA2 style config specified in env var
 #                                "CONFIG_JSON_PATH"
-#   - add_ta3_search_listener - add TA3 listener url for terminal window
+#   - ta3_listener_add - add TA3 listener url for terminal window
 # -------------------------------------
 RUN pip3 install --no-cache-dir -r requirements/prod.txt && \
     fab init_db && \
@@ -76,7 +78,7 @@ RUN pip3 install --no-cache-dir -r requirements/prod.txt && \
     fab collect_static && \
     fab make_d3m_config_files && \
     fab load_d3m_config_from_env && \
-    fab add_ta3_search_listener
+    fab ta3_listener_add
 
 #   fab make_d3m_config && \
 
@@ -107,13 +109,14 @@ RUN echo '#!/bin/bash'  >> /usr/bin/ta3_search && \
     echo 'python manage.py runserver 8080'  >> /usr/bin/test_run && \
     chmod u+x /usr/bin/test_run
 
-
 # -------------------------------------
 # Run the python server (django dev or gunicorn)
 # -------------------------------------
 CMD echo 'Starting tworavens python server.' && \
     fab load_d3m_config_from_env && \
     python manage.py runserver 0.0.0.0:8080
+
+# Run with gunicorn
 #CMD gunicorn --workers=2 tworavensproject.wsgi_dev_container -b 0.0.0.0:8080
 
 # -----------------------------------------

@@ -152,7 +152,7 @@ def run(with_rook=False):
     init_db()
     check_config()  # make sure the db has something
     load_d3m_config_from_env() # default the D3M setting to the env variable
-    add_ta3_search_listener() # add MessageListener object
+    ta3_listener_add() # add MessageListener object
 
     commands = [
         # start webpack
@@ -244,19 +244,6 @@ def clear_logs():
         print('-' * 40)
         print('Deleted %s log file(s)' % len(data_file_names))
 
-
-def add_ta3_search_listener():
-    """Add local web server address for ta3_search messages"""
-    from tworaven_apps.ta3_search.message_util import MessageUtil
-
-    web_url = 'http://0.0.0.0:8001'
-    success, mlistener = MessageUtil.add_listener(web_url, 'ta3 listener')
-
-    user_msg = ('listener registered: %s at %s') % \
-                (mlistener, mlistener.web_url)
-
-    print(user_msg)
-
 def create_django_superuser():
     """(Test only) Create superuser with username: dev_admin. Password is printed to the console."""
     from tworaven_apps.raven_auth.models import User
@@ -302,12 +289,25 @@ def run_grpc_tests():
     """Run the gRPC tests, equivalent of 'python manage.py test tworaven_apps.ta2_interfaces'"""
     local('python manage.py test tworaven_apps.ta2_interfaces')
 
-def run_ta3_listener():
+
+def ta3_listener_add():
+    """Add local web server address for ta3_search messages"""
+    from tworaven_apps.ta3_search.message_util import MessageUtil
+
+    web_url = 'http://0.0.0.0:8001'
+    success, mlistener = MessageUtil.add_listener(web_url, 'ta3 listener')
+
+    user_msg = ('listener registered: %s at %s') % \
+                (mlistener, mlistener.web_url)
+
+    print(user_msg)
+
+def ta3_listener_run():
     """Start a flask server that receives messages from the UI
     Part of scaffolding for the D3M eval"""
-    ta3_dir =  os.path.join(FAB_BASE_DIR,
-                            'tworaven_apps',
-                            'ta3_search')
+    ta3_dir = os.path.join(FAB_BASE_DIR,
+                          'tworaven_apps',
+                          'ta3_search')
 
     flask_cmd = ('cd %s;'
                  'FLASK_APP=ta3_listener.py flask run -p8001') % \
