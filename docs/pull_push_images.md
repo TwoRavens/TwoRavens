@@ -32,9 +32,9 @@ docker login registry.datadrivendiscovery.org
 - push
 
 ```
-docker push registry.datadrivendiscovery.org/j18_ta3eval/tworavens/ravens-nginx:stable
+docker push registry.datadrivendiscovery.org/j18_ta3eval/tworavens/ravens-main:stable
 
 docker push registry.datadrivendiscovery.org/j18_ta3eval/tworavens/ravens-r-service:stable
 
-docker push registry.datadrivendiscovery.org/j18_ta3eval/tworavens/ravens-main:stable
+docker push registry.datadrivendiscovery.org/j18_ta3eval/tworavens/ravens-nginx:stable
 ```
