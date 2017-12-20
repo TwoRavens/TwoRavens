@@ -2424,7 +2424,7 @@ async function makeRequest(url, data) {
         console.log('response:', res);
         if (Object.keys(res)[0] === 'warning') {
             alert('Warning: ' + res.warning);
-            end_ta3_search(false, err);
+            end_ta3_search(false, res.warning);
         }
     } catch(err) {
         end_ta3_search(false, err);
