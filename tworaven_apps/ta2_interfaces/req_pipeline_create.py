@@ -90,6 +90,7 @@ def pipeline_create(info_str=None):
     except Exception as ex:
         return get_failed_precondition_response(str(ex))
 
+    
     #print('reply', reply)
     try:
         print(MessageToJson(reply))

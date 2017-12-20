@@ -99,7 +99,7 @@ EXPOSE 8080
 # -------------------------------------
 RUN echo '#!/bin/bash'  >> /usr/bin/ta3_search && \
     echo 'cd $CODE_REPOSITORY;'  >> /usr/bin/ta3_search && \
-    echo 'python manage.py d3m_load_config "$@"'  >> /usr/bin/ta3_search && \
+    echo 'python manage.py ta3_search "$@"'  >> /usr/bin/ta3_search && \
     chmod u+x /usr/bin/ta3_search && \
     echo '------- CREATE test_run command ---- (w/o extra build step)' && \
     echo '#!/bin/bash'  >> /usr/bin/test_run && \
