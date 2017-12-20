@@ -79,6 +79,12 @@ class Command(BaseCommand):
 
             self.stdout.write(self.style.SUCCESS(success_msg))
 
+            self.run_additional_instructions()
+
+    def run_additional_instructions(self, *args, **kwargs):
+        """Add any additional coding instructions here"""
+        pass
+
     def warn_invalid_paths(self, config_file, bad_paths):
         """Show bad path message"""
         err_msg = self.get_bad_path_message(config_file, bad_paths)

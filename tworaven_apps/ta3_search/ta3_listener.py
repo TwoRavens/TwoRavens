@@ -18,14 +18,18 @@ def dashes():
     """Print dashes to console"""
     print('-' * 40)
 
-def show_message(ta3_msg, with_dashes=False):
+def show_message(ta3_msg, with_timestamp=True):
     """Print message to console"""
-    if with_dashes:
+    if with_timestamp:
         dashes()
-    print(ta3_msg)
-    print('\n(timestamp: %s)' % dt.now())
-    dashes()
-    print('')
+        print('message received (%s)' % dt.now())
+        dashes()
+        print(ta3_msg)
+        print('')
+    else:
+        dashes()
+        print(ta3_msg)
+        dashes()
 
 def shutdown_server():
     """reference: http://flask.pocoo.org/snippets/67/"""
@@ -62,8 +66,11 @@ def message():
 def success_with_exit():
     """Print message to terminal"""
     if KEY_MESSSAGE in request.form:
-        show_message(request.form[KEY_MESSSAGE], with_dashes=True)
-        print('Search concluded.\nExiting with return code 0. (success)\n')
+        show_message(request.form[KEY_MESSSAGE])
+        show_message(('Search concluded.\nExiting with return code 0.'
+                      ' (success)'),
+                     with_timestamp=False)
+
         shutdown_server()
 
         dinfo = dict(success=True,
@@ -80,8 +87,10 @@ def success_with_exit():
 def failure_with_exit():
     """Print message to terminal"""
     if KEY_MESSSAGE in request.form:
-        show_message(request.form[KEY_MESSSAGE], with_dashes=True)
-        print('Search concluded.\nExiting with return code -1. (not complete)\n')
+        show_message(request.form[KEY_MESSSAGE])
+        show_message(('Search concluded.\nExiting with return code -1.'
+                      ' (not complete)'),
+                     with_timestamp=False)
         shutdown_server()
 
         dinfo = dict(success=True,
@@ -99,7 +108,7 @@ init_msg = ('TA3 search is now running.'
             '\n\nThe window will eventually exit with either:'
             '\n\t- return code 0 (success) or'
             '\n\t- return code -1 (not complete)')
-show_message(init_msg, with_dashes=True)
+show_message(init_msg)
 
 
 if __name__ == '__main__':

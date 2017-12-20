@@ -89,8 +89,13 @@ def load_d3m_config(config_file):
 
     try:
         management.call_command('load_config', config_file)
+        return True
     except management.base.CommandError as err_obj:
         print('> Failed to load D3M config.\n%s' % err_obj)
+        return False
+
+
+
 
 def load_docker_ui_config():
     """Load config pk=3, name 'Docker Default configuration'"""
@@ -147,6 +152,7 @@ def run(with_rook=False):
     init_db()
     check_config()  # make sure the db has something
     load_d3m_config_from_env() # default the D3M setting to the env variable
+    ta3_listener_add() # add MessageListener object
 
     commands = [
         # start webpack
@@ -227,7 +233,7 @@ def clear_logs():
 
     pat3 = r'^preprocessSubset_(\w|-){15,50}\.txt$'
     data_file_names = [x for x in os.listdir(rook_data_dir)
-                           if re.match(pat3, x) is not None]
+                       if re.match(pat3, x) is not None]
 
     if data_file_names:
         print('Deleting %s data file(s)' % len(data_file_names))
@@ -237,8 +243,6 @@ def clear_logs():
             os.remove(fname)
         print('-' * 40)
         print('Deleted %s log file(s)' % len(data_file_names))
-
-
 
 def create_django_superuser():
     """(Test only) Create superuser with username: dev_admin. Password is printed to the console."""
@@ -284,3 +288,29 @@ def init_db():
 def run_grpc_tests():
     """Run the gRPC tests, equivalent of 'python manage.py test tworaven_apps.ta2_interfaces'"""
     local('python manage.py test tworaven_apps.ta2_interfaces')
+
+
+def ta3_listener_add():
+    """Add local web server address for ta3_search messages"""
+    from tworaven_apps.ta3_search.message_util import MessageUtil
+
+    web_url = 'http://0.0.0.0:8001'
+    success, mlistener = MessageUtil.add_listener(web_url, 'ta3 listener')
+
+    user_msg = ('listener registered: %s at %s') % \
+                (mlistener, mlistener.web_url)
+
+    print(user_msg)
+
+def ta3_listener_run():
+    """Start a flask server that receives messages from the UI
+    Part of scaffolding for the D3M eval"""
+    ta3_dir = os.path.join(FAB_BASE_DIR,
+                          'tworaven_apps',
+                          'ta3_search')
+
+    flask_cmd = ('cd %s;'
+                 'FLASK_APP=ta3_listener.py flask run -p8001') % \
+                 (ta3_dir,)
+
+    local(flask_cmd)

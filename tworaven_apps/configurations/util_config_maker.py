@@ -34,9 +34,6 @@ class TestConfigMaker:
         self.config_files_only = kwargs.get('config_files_only',
                                             False)
 
-        self.new_style_config = kwargs.get('new_style_config',
-                                            False)
-
         self.make_d3m_config()
 
     @staticmethod
@@ -46,15 +43,11 @@ class TestConfigMaker:
 
         problem_dirs = [x for x in os.listdir(data_dir)
                         if isdir(join(data_dir, x)) and
-                        (x[:2] in ['o_', 'r_'] or
-                         x[:1] in ['1']) and
                         not x.endswith('_output')]
+                        #x[:2] in ['o_', 'r_'] and
 
         for idx, name in enumerate(problem_dirs):
             kwargs = dict(config_files_only=config_files_only)
-
-            if not name[:2] in ['o_', 'r_']:
-                kwargs['new_style_config'] = True
 
             if idx == 0:
                 kwargs['is_default'] = True
@@ -117,34 +110,23 @@ class TestConfigMaker:
 
         # create a D3MConfiguration object
         #
-        if self.new_style_config:
-            d3m_config = D3MConfiguration(\
-                name=self.config_name,
-                is_default=self.is_default,
-                dataset_schema=join(data_dir,
-                                    '%s_dataset' % self.config_name,
-                                    'datasetDoc.json'),
-                problem_schema=join(data_dir,
-                                    '%s_problem' % self.config_name,
-                                    'problemDoc.json'),
+        d3m_config = D3MConfiguration(\
+            name=self.config_name,
+            is_default=self.is_default,
+            dataset_schema=join(data_dir,
+                                '%s_dataset' % self.config_name,
+                                'datasetDoc.json'),
+            problem_schema=join(data_dir,
+                                '%s_problem' % self.config_name,
+                                'problemDoc.json'),
 
-                training_data_root=join(data_dir, 'TRAIN'),
+            training_data_root=join(data_dir, 'TRAIN'),
 
-                problem_root=join(data_dir, '%s_problem' % self.config_name),
+            problem_root=join(data_dir, '%s_problem' % self.config_name),
 
-                pipeline_logs_root=join(d3m_output_base, output_dir_names[0]),
-                executables_root=join(d3m_output_base, output_dir_names[1]),
-                temp_storage_root=join(d3m_output_base, output_dir_names[2]))
-        else:
-            d3m_config = D3MConfiguration(\
-                name=self.config_name,
-                is_default=self.is_default,
-                dataset_schema=join(data_dir, 'data', 'dataSchema.json'),
-                problem_schema=join(data_dir, 'problemSchema.json'),
-                training_data_root=join(data_dir, 'data'),
-                pipeline_logs_root=join(d3m_output_base, output_dir_names[0]),
-                executables_root=join(d3m_output_base, output_dir_names[1]),
-                temp_storage_root=join(d3m_output_base, output_dir_names[2]))
+            pipeline_logs_root=join(d3m_output_base, output_dir_names[0]),
+            executables_root=join(d3m_output_base, output_dir_names[1]),
+            temp_storage_root=join(d3m_output_base, output_dir_names[2]))
 
         d3m_config.save()
 
