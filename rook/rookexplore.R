@@ -51,16 +51,13 @@ explore.app <- function(env) {
   }
 
   lookup <- data.frame(vars=vars, nature=nature)
+  edges <- everything$zedges
+  print("edges:")
+  print(edges)
 
-	if (!warning) {
-    edges <- everything$zedges
-    print("edges:")
-    print(edges)
-
-    vars <- unique(edges)
-    print("vars:")
-    print(vars)
-  }
+  vars <- unique(edges)
+  print("vars:")
+  print(vars)
 
   sessionid <- everything$zsessionid
   logfile <- logFile(sessionid, production)
