@@ -13,6 +13,36 @@ import List from './views/PanelList';
 import Search from './views/Search';
 import Subpanel from './views/Subpanel';
 
+
+// EVENTDATA
+import '../EventData/css/main.css'
+// Used for rendering date calendar
+import '../../node_modules/jquery-ui/themes/base/datepicker.css'
+// JQuery-ui must be loaded before bootstrap
+import '../../node_modules/jquery/dist/jquery.min.js'
+import '../../node_modules/jquery-ui-dist/jquery-ui.js'
+// import '../../node_modules/bootstrap/dist/css/bootstrap.min.css'
+// import '../../node_modules/bootstrap/dist/js/bootstrap.min.js'
+// Used for custom query editor
+import '../../node_modules/ace-builds/src-min-noconflict/ace.js'
+// Used for right panel query tree
+import '../../node_modules/jqtree/tree.jquery.js'
+import '../../node_modules/jqtree/jqtree.css'
+import '../EventData/pkgs/jqtree/jqtree.style.css'
+// Used to fix hopscotch css bug
+import '../EventData/pkgs/hopscotch/hopscotch.style.css'
+// Used for interactive plots
+import '../../node_modules/d3/build/d3.min.js'
+import '../../node_modules/d3-drag/build/d3-drag.min.js'
+// Spinners
+import '../../node_modules/ladda/dist/spin.min.js'
+import '../../node_modules/ladda/dist/ladda.min.js'
+import '../../node_modules/ladda/dist/ladda-themeless.min.css'
+
+import '../EventData/app/app'
+import Body_EventData from '../EventData/app/Body_EventData'
+
+
 function setBackgroundColor(color) {
     return function() {
         this.style['background-color'] = color;
@@ -239,6 +269,13 @@ class Body {
               leftpanel(),
               rightpanel(mode)));
     }
+}
+
+if (IS_EVENTDATA_DOMAIN) {
+    m.route(document.body, '/subset', {
+        '/subset': {render: () => m(Body_EventData)},
+        '/aggregate': {render: () => m(Body_EventData, {mode: 'aggregate'})}
+    });
 }
 
 m.route(document.body, '/model', {
