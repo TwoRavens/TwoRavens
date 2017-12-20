@@ -531,11 +531,20 @@ function callbackNegate(id, bool) {
     qtree.tree('setState', state);
 }
 
-function buttonOperator(id, state) {
-    if (state === 'and') {
-        return '<button class="btn btn-default btn-xs active" style="width:33px" type="button" data-toggle="button" aria-pressed="true" onclick="callbackOperator(' + id + ', &quot;or&quot;)">and</button> '
+function buttonOperator(id, state, canChange) {
+
+    if (canChange) {    
+        if (state === 'and') {
+            return '<button class="btn btn-default btn-xs active" style="width:33px" type="button" data-toggle="button" aria-pressed="true" onclick="callbackOperator(' + id + ', &quot;or&quot;)">and</button> '
+        } else {
+            return '<button class="btn btn-default btn-xs active" style="width:33px" type="button" data-toggle="button" aria-pressed="true" onclick="callbackOperator(' + id + ', &quot;and&quot;)">or</button> '
+        }
     } else {
-        return '<button class="btn btn-default btn-xs active" style="width:33px" type="button" data-toggle="button" aria-pressed="true" onclick="callbackOperator(' + id + ', &quot;and&quot;)">or</button> '
+        if (state === 'and') {
+            return '<button class="btn btn-default btn-xs active" style="width:33px;background:none" type="button" data-toggle="button" aria-pressed="true">and</button> '
+        } else {
+            return '<button class="btn btn-default btn-xs active" style="width:33px;background:none" type="button" data-toggle="button" aria-pressed="true">or</button> '
+        }
     }
 
     // To enable nand and nor, comment above and uncomment below. Please mind; the query builder does not support nand/nor
@@ -677,7 +686,8 @@ $(function () {
                 $li.find('.jqtree-element').prepend(buttonNegate(node.id, node.negate));
             }
             if ((!('show_op' in node) || ('show_op' in node && node.show_op)) && 'operation' in node) {
-                $li.find('.jqtree-element').prepend(buttonOperator(node.id, node.operation));
+                let canChange = node.name.indexOf('Query') === -1 && !!node.editable
+                $li.find('.jqtree-element').prepend(buttonOperator(node.id, node.operation, canChange));
             }
             if (!('cancellable' in node) || (node['cancellable'] === true)) {
                 $li.find('.jqtree-element').append(buttonDelete(node.id));
@@ -1246,274 +1256,289 @@ function buildVariables(){
 
 // Construct mongoDB filter (subsets rows)
 function buildSubset(tree){
-
+    // Base case
     if (tree.length === 0) return {};
-    return processGroup({'children': tree});
 
-    // Recursively traverse the tree in the right panel. For each node, call processNode
-
-    // If node is a group, then build up the overall operator tree via processGroup
-    // If node is a subset, then consider it a leaf, use processRule to build query specific to subset
-
-    function processNode(node){
-        if (node.name.indexOf('Group') !== -1 && 'children' in node && node.children.length !== 0) {
-            // Recursively process subgroups
-            return processGroup(node);
-        } else if (node.name.indexOf('Query') !== -1 && 'children' in node && node.children.length !== 0) {
-            // Recursively process query
-            return processGroup(node);
-        }
-        else {
-            // Explicitly process rules
-            return processRule(node);
-        }
-    }
-
-    // Group precedence parser
-    // Constructs a boolean operator tree via operator precedence between siblings (for groups and queries)
-    function processGroup(group) {
-
-        // all rules are 'or'ed together
-        let group_query = {'$or': []};
-
-        // strings of rules conjuncted by 'and' operators are clotted in semigroups that act together as one rule
-        let semigroup = [];
-
-        for (let child_id = 0; child_id < group.children.length - 1; child_id++) {
-            let op_self = group.children[child_id]['operation'];
-            let op_next = group.children[child_id + 1]['operation'];
-
-            // Clot together and operators
-            if (op_self === 'and' || op_next === 'and') {
-                semigroup.push(processNode(group.children[child_id]));
-                if (op_next === 'or') {
-                    group_query['$or'].push({'$and': semigroup.slice()});
-                    semigroup = [];
-                }
-            }
-
-            // If not part of an 'and' clot, simply add to the query
-            if (op_self === 'or' && op_next === 'or') {
-                group_query['$or'].push(processNode(group.children[child_id]));
-            }
-        }
-
-        // Process final sibling
-        if (group.children.length > 0 && group.children[group.children.length - 1]['operation'] === 'and') {
-            semigroup.push(processNode(group.children[group.children.length - 1]));
-            group_query['$or'].push({'$and': semigroup.slice()})
-
+    // Recursion
+    let queryStack = [];
+    let stagedSubsetData = [];
+    for (let child of tree) {
+        if (child.name.indexOf("Query") !== -1) {
+            stagedSubsetData.push(child)
         } else {
-            group_query['$or'].push(processNode(group.children[group.children.length - 1]));
+            queryStack.push(child)
         }
-
-        // Collapse unnecessary conjunctors
-        if (group_query['$or'].length === 1) {
-            group_query = group_query['$or'][0]
-        }
-        if ('$and' in group_query && group_query['$and'].length === 1) {
-            group_query = group_query['$and'][0]
-        }
-
-        return group_query;
     }
 
-    // Return a mongoDB query for a rule data structure
-    function processRule(rule) {
-        let rule_query = {};
+    // Treat staged subset data as just another query on the query stack
+    queryStack.push({'children': stagedSubsetData, 'operation': 'and', 'name': 'New Query'})
+    return processGroup({'children': queryStack})
+}
 
-        if (rule.name === 'Date Subset') {
+// Recursively traverse the tree in the right panel. For each node, call processNode
 
-            // The cline sets have year at the end of the date string, so it takes some additional work
-            if (['cline_phoenix_nyt', 'cline_phoenix_swb', 'cline_phoenix_fbis'].indexOf(dataset) !== -1) {
-                let lower_bound = {};
-                let upper_bound = {};
-                for (let child of rule.children) {
+// If node is a group, then build up the overall operator tree via processGroup
+// If node is a subset, then consider it a leaf, use processRule to build query specific to subset
 
-                    if ('fromDate' in child) {
-                        child.fromDate = new Date(child.fromDate);
-                        // I could break it down to the day, but it would take another 3 lines. Inefficient. This is already bad enough
-                        lower_bound['$or'] = [{'<year>': {'$gt': pad(parseInt(child.fromDate.getFullYear()))}},
-                                              {'<year>': pad(parseInt(child.fromDate.getFullYear())), 
-                                               '<month>': {'$gte': pad(parseInt(child.fromDate.getMonth() + 1))}}]
-                                              // {'<year>': pad(parseInt(child.fromDate.getFullYear())), 
-                                              //  '<month>': pad(parseInt(child.fromDate.getMonth() + 1)),
-                                              //  '<day>': {'$gte': pad(parseInt(child.fromDate.getDate()))}}
-                    }
-                    if ('toDate' in child) {
-                        child.toDate = new Date(child.toDate);
-                        upper_bound['$or'] = [{'<year>': {'$lt': pad(parseInt(child.toDate.getFullYear()))}},
-                                              {'<year>': pad(parseInt(child.toDate.getFullYear())), 
-                                               '<month>': {'$lte': pad(parseInt(child.toDate.getMonth() + 1))}}]
-                                              // {'<year>': pad(parseInt(child.toDate.getFullYear())), 
-                                              //  '<month>': pad(parseInt(child.toDate.getMonth() + 1)),
-                                              //  '<day>': {'$lte': pad(parseInt(child.toDate.getDate()))}}
-                    }
-                }
-                rule_query['$and'] = [lower_bound, upper_bound];
-            }
+function processNode(node){
+    if (node.name.indexOf('Group') !== -1 && 'children' in node && node.children.length !== 0) {
+        // Recursively process subgroups
+        return processGroup(node);
+    } else if (node.name.indexOf('Query') !== -1 && 'children' in node && node.children.length !== 0) {
+        // Recursively process query
+        return processGroup(node);
+    }
+    else {
+        // Explicitly process rules
+        return processRule(node);
+    }
+}
 
-            // Just a simple string sort
-            else {
-                let rule_query_inner = {};
-                for (let child of rule.children) {
+// Group precedence parser
+// Constructs a boolean operator tree via operator precedence between siblings (for groups and queries)
+function processGroup(group) {
 
-                    let phoenixDate = function (date) {
-                        return date.getFullYear().toString() +
-                            pad(date.getMonth() + 1) +
-                            pad(date.getDate());
-                    };
+    // all rules are 'or'ed together
+    let group_query = {'$or': []};
 
-                    let icewsDate = function (date) {
-                        return date.getFullYear().toString() + '-' +
-                            pad(date.getMonth() + 1) + '-' +
-                            pad(date.getDate())
-                    };
+    // strings of rules conjoined by 'and' operators are clotted in semigroups that act together as one rule
+    let semigroup = [];
 
-                    if ('fromDate' in child) {
-                        // There is an implicit cast somewhere in the code, and I cannot find it.
-                        child.fromDate = new Date(child.fromDate);
-                        if (dataset === "icews") rule_query_inner['$gte'] = icewsDate(child.fromDate);
-                        if (dataset === "phoenix_rt") rule_query_inner['$gte'] = phoenixDate(child.fromDate);
-                    }
+    for (let child_id = 0; child_id < group.children.length - 1; child_id++) {
+        let op_self = group.children[child_id]['operation'];
+        let op_next = group.children[child_id + 1]['operation'];
 
-                    if ('toDate' in child) {
-                        // There is an implicit cast somewhere in the code, and I cannot find it. This normalizes
-                        child.toDate = new Date(child.toDate);
-                        if (dataset === "icews") rule_query_inner['$lte'] = icewsDate(child.toDate);
-                        if (dataset === "phoenix_rt") rule_query_inner['$lte'] = phoenixDate(child.toDate);
-                    }
-                }
-                rule_query['<date>'] = rule_query_inner;
+        // Clot together and operators
+        if (op_self === 'and' || op_next === 'and') {
+            semigroup.push(processNode(group.children[child_id]));
+            if (op_next === 'or') {
+                group_query['$or'].push({'$and': semigroup.slice()});
+                semigroup = [];
             }
         }
 
-        if (rule.name === 'Location Subset'){
-            let rule_query_inner = [];
-            for (let child_id in rule.children) {
-                rule_query_inner.push(rule.children[child_id].name);
-            }
-
-            rule_query_inner = {'$in': rule_query_inner};
-            if ('negate' in rule && !rule.negate) {
-                rule_query_inner = {'$not': rule_query_inner};
-            }
-
-            if (dataset === "icews") {
-                rule_query['<country>'] = rule_query_inner;
-            }
-            if (['phoenix_rt', 'cline_phoenix_fbis', 'cline_phoenix_nyt', 'cline_phoenix_swb'].indexOf(dataset) !== -1) {
-                rule_query['<country_code>'] = rule_query_inner;
-            }
+        // If not part of an 'and' clot, simply add to the query
+        if (op_self === 'or' && op_next === 'or') {
+            group_query['$or'].push(processNode(group.children[child_id]));
         }
-
-        if (rule.name === 'Action Subset'){
-            let rule_query_inner = [];
-            if (['phoenix_rt', 'cline_phoenix_fbis', 'cline_phoenix_nyt', 'cline_phoenix_swb'].indexOf(dataset) !== -1) {
-                for (let child_id in rule.children) {
-                    rule_query_inner.push(pad(parseInt(rule.children[child_id].name)));
-                }
-                rule_query_inner = {'$in': rule_query_inner};
-
-                if ('negate' in rule && !rule.negate) {
-                    rule_query_inner = {'$not': rule_query_inner};
-                }
-
-                rule_query['<root_code>'] = rule_query_inner;
-            }
-
-            if (dataset === "icews") {
-                let prefixes = [];
-                for (let child_id in rule.children) {
-                    prefixes.push(pad(parseInt(rule.children[child_id].name)));
-                }
-                rule_query_inner = {'$regex': '^(' + prefixes.join('|') + ')'}
-
-                if ('negate' in rule && !rule.negate) {
-                    rule_query_inner = {'$not': rule_query_inner};
-                }
-
-                rule_query['<cameo>'] = rule_query_inner;
-            }
-        }
-
-        if (rule.name === 'Actor Subset'){
-            let link_list = [];
-            for (let idx in rule.children) {
-                let link_rule = {};
-
-                let sourceList = [];
-                for (let idxsource in rule.children[idx].children[0].children) {
-                    sourceList.push(rule.children[idx].children[0].children[idxsource].name);
-                }
-                link_rule['<source>'] = {'$in': sourceList};
-
-                let targetList = [];
-                for (let idxtarget in rule.children[idx].children[1].children) {
-                    targetList.push(rule.children[idx].children[1].children[idxtarget].name)
-                }
-                link_rule['<target>'] = {'$in': targetList};
-
-                link_list.push(link_rule)
-            }
-            rule_query['$and'] = link_list;
-        }
-
-        if (rule.name === 'Coords Subset') {
-
-            let rule_query_inner = [];
-
-            for (let child_id in rule.children) {
-                let child = rule.children[child_id];
-
-                if (child.name === 'Latitude') {
-                    let latitude = {
-                        '<latitude>': {
-                            '$lte': parseFloat(child.children[0].name),
-                            '$gte': parseFloat(child.children[1].name)
-                        }
-                    };
-
-                    if ('negate' in child && !child.negate) {
-                        latitude = {'$not': latitude};
-                    }
-                    rule_query_inner.push(latitude);
-
-                } else if (child.name === 'Longitude') {
-                    let longitude = {
-                        '<longitude>': {
-                            '$lte': parseFloat(child.children[0].name),
-                            '$gte': parseFloat(child.children[1].name)
-                        }
-                    };
-
-                    if ('negate' in child && !child.negate) {
-                        longitude = {'$not': longitude};
-                    }
-                    rule_query_inner.push(longitude);
-                }
-            }
-
-            if ('negate' in rule && !rule.negate) {
-                rule_query_inner = {'$not': rule_query_inner};
-            }
-
-            rule_query['$and'] = rule_query_inner;
-        }
-
-        if (rule.name === 'Custom Subset') {
-            rule_query = JSON.parse(rule.custom.replace(/\s/g,''));
-        }
-
-        return rule_query;
     }
 
-    function pad(number) {
-        if (number <= 9) {
-            return ("0" + number.toString());
+    // Process final sibling
+    if (group.children.length > 0 && group.children[group.children.length - 1]['operation'] === 'and') {
+        semigroup.push(processNode(group.children[group.children.length - 1]));
+        group_query['$or'].push({'$and': semigroup.slice()})
+
+    } else {
+        group_query['$or'].push(processNode(group.children[group.children.length - 1]));
+    }
+
+    // Remove unnecessary conjunctions
+    if (group_query['$or'].length === 1) {
+        group_query = group_query['$or'][0]
+    }
+    if ('$and' in group_query && group_query['$and'].length === 1) {
+        group_query = group_query['$and'][0]
+    }
+
+    return group_query;
+}
+
+// Return a mongoDB query for a rule data structure
+function processRule(rule) {
+    let rule_query = {};
+
+    if (rule.name === 'Date Subset') {
+
+        // The cline sets have year at the end of the date string, so it takes some additional work
+        if (['cline_phoenix_nyt', 'cline_phoenix_swb', 'cline_phoenix_fbis'].indexOf(dataset) !== -1) {
+            let lower_bound = {};
+            let upper_bound = {};
+            for (let child of rule.children) {
+
+                if ('fromDate' in child) {
+                    child.fromDate = new Date(child.fromDate);
+                    // Not a pretty solution, but it prevents aggregation substring slicing or regexes
+                    lower_bound['$or'] = [{'<year>': {'$gt': pad(parseInt(child.fromDate.getFullYear()))}},
+                                          {'<year>': pad(parseInt(child.fromDate.getFullYear())), 
+                                           '<month>': {'$gte': pad(parseInt(child.fromDate.getMonth() + 1))}},
+                                          {'<year>': pad(parseInt(child.fromDate.getFullYear())), 
+                                           '<month>': pad(parseInt(child.fromDate.getMonth() + 1)),
+                                           '<day>': {'$gte': pad(parseInt(child.fromDate.getDate()))}}]
+                }
+                if ('toDate' in child) {
+                    child.toDate = new Date(child.toDate);
+                    upper_bound['$or'] = [{'<year>': {'$lt': pad(parseInt(child.toDate.getFullYear()))}},
+                                          {'<year>': pad(parseInt(child.toDate.getFullYear())), 
+                                           '<month>': {'$lte': pad(parseInt(child.toDate.getMonth() + 1))}},
+                                          {'<year>': pad(parseInt(child.toDate.getFullYear())), 
+                                           '<month>': pad(parseInt(child.toDate.getMonth() + 1)),
+                                           '<day>': {'$lte': pad(parseInt(child.toDate.getDate()))}}]
+                }
+            }
+            rule_query['$and'] = [lower_bound, upper_bound];
         }
+
+        // Just a simple string sort
         else {
-            return number.toString()
+            let rule_query_inner = {};
+            for (let child of rule.children) {
+
+                let phoenixDate = function (date) {
+                    return date.getFullYear().toString() +
+                        pad(date.getMonth() + 1) +
+                        pad(date.getDate());
+                };
+
+                let icewsDate = function (date) {
+                    return date.getFullYear().toString() + '-' +
+                        pad(date.getMonth() + 1) + '-' +
+                        pad(date.getDate())
+                };
+
+                if ('fromDate' in child) {
+                    // There is an implicit cast somewhere in the code, and I cannot find it.
+                    child.fromDate = new Date(child.fromDate);
+                    if (dataset === "icews") rule_query_inner['$gte'] = icewsDate(child.fromDate);
+                    if (dataset === "phoenix_rt") rule_query_inner['$gte'] = phoenixDate(child.fromDate);
+                }
+
+                if ('toDate' in child) {
+                    // There is an implicit cast somewhere in the code, and I cannot find it. This normalizes
+                    child.toDate = new Date(child.toDate);
+                    if (dataset === "icews") rule_query_inner['$lte'] = icewsDate(child.toDate);
+                    if (dataset === "phoenix_rt") rule_query_inner['$lte'] = phoenixDate(child.toDate);
+                }
+            }
+            rule_query['<date>'] = rule_query_inner;
         }
+    }
+
+    if (rule.name === 'Location Subset'){
+        let rule_query_inner = [];
+        for (let child_id in rule.children) {
+            rule_query_inner.push(rule.children[child_id].name);
+        }
+
+        rule_query_inner = {'$in': rule_query_inner};
+        if ('negate' in rule && !rule.negate) {
+            rule_query_inner = {'$not': rule_query_inner};
+        }
+
+        if (dataset === "icews") {
+            rule_query['<country>'] = rule_query_inner;
+        }
+        if (['phoenix_rt', 'cline_phoenix_fbis', 'cline_phoenix_nyt', 'cline_phoenix_swb'].indexOf(dataset) !== -1) {
+            rule_query['<country_code>'] = rule_query_inner;
+        }
+    }
+
+    if (rule.name === 'Action Subset'){
+        let rule_query_inner = [];
+        if (['phoenix_rt', 'cline_phoenix_fbis', 'cline_phoenix_nyt', 'cline_phoenix_swb'].indexOf(dataset) !== -1) {
+            for (let child_id in rule.children) {
+                rule_query_inner.push(pad(parseInt(rule.children[child_id].name)));
+            }
+            rule_query_inner = {'$in': rule_query_inner};
+
+            if ('negate' in rule && !rule.negate) {
+                rule_query_inner = {'$not': rule_query_inner};
+            }
+
+            rule_query['<root_code>'] = rule_query_inner;
+        }
+
+        if (dataset === "icews") {
+            let prefixes = [];
+            for (let child_id in rule.children) {
+                prefixes.push(pad(parseInt(rule.children[child_id].name)));
+            }
+            rule_query_inner = {'$regex': '^(' + prefixes.join('|') + ')'}
+
+            if ('negate' in rule && !rule.negate) {
+                rule_query_inner = {'$not': rule_query_inner};
+            }
+
+            rule_query['<cameo>'] = rule_query_inner;
+        }
+    }
+
+    if (rule.name === 'Actor Subset'){
+        let link_list = [];
+        for (let idx in rule.children) {
+            let link_rule = {};
+
+            let sourceList = [];
+            for (let idxsource in rule.children[idx].children[0].children) {
+                sourceList.push(rule.children[idx].children[0].children[idxsource].name);
+            }
+            link_rule['<source>'] = {'$in': sourceList};
+
+            let targetList = [];
+            for (let idxtarget in rule.children[idx].children[1].children) {
+                targetList.push(rule.children[idx].children[1].children[idxtarget].name)
+            }
+            link_rule['<target>'] = {'$in': targetList};
+
+            link_list.push(link_rule)
+        }
+        rule_query['$and'] = link_list;
+    }
+
+    if (rule.name === 'Coords Subset') {
+
+        let rule_query_inner = [];
+
+        for (let child_id in rule.children) {
+            let child = rule.children[child_id];
+
+            if (child.name === 'Latitude') {
+                let latitude = {
+                    '<latitude>': {
+                        '$lte': parseFloat(child.children[0].name),
+                        '$gte': parseFloat(child.children[1].name)
+                    }
+                };
+
+                if ('negate' in child && !child.negate) {
+                    latitude = {'$not': latitude};
+                }
+                rule_query_inner.push(latitude);
+
+            } else if (child.name === 'Longitude') {
+                let longitude = {
+                    '<longitude>': {
+                        '$lte': parseFloat(child.children[0].name),
+                        '$gte': parseFloat(child.children[1].name)
+                    }
+                };
+
+                if ('negate' in child && !child.negate) {
+                    longitude = {'$not': longitude};
+                }
+                rule_query_inner.push(longitude);
+            }
+        }
+
+        if ('negate' in rule && !rule.negate) {
+            rule_query_inner = {'$not': rule_query_inner};
+        }
+
+        rule_query['$and'] = rule_query_inner;
+    }
+
+    if (rule.name === 'Custom Subset') {
+        rule_query = JSON.parse(rule.custom.replace(/\s/g,''));
+    }
+
+    return rule_query;
+}
+
+// Convert number to string with at least length 2
+function pad(number) {
+    if (number <= 9) {
+        return ("0" + number.toString());
+    }
+    else {
+        return number.toString()
     }
 }

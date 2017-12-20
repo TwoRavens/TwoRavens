@@ -1,50 +1,3 @@
-/* The actor menu cannot have the full list of actors, but still needs to remembers filters subset over the entire dataset.
-   This is a proposal for how the code can be structured to achieve that. --Michael Shoemate
-
-   There are two queries for source, and two queries for target.
-	Query 1: [VISIBLE]		First n records that match visibility
-	Query 2: [SELECTED]		First n selected records
-	Notice selected actors is always a subset of visible actors,
-		so in the actor menu check the actors that are also in the [SELECTED] query
-
-
- --Specification for [VISIBLE], the list of all actors currently shown in the editing menu.
-   	Important: If EDITED flag is set, then also re-query [SELECTED].
-
-	When a node is selected, set [VISIBLE] to the stored value for [SELECTED] (the node members). Re-query [VISIBLE].
-
-	When show selected is toggled, set/unset the 'show visible' filter. Re-query [VISIBLE].
-
-	When a filter is toggled, add/remove it from <filter_list>. Re-query [VISIBLE].
-
-	When 'Search Source Actors' has an edit with length modulus 3, add text to a temporary <filter_list>. Re-query [VISIBLE].
-
-	When 'Clear All Filters' is selected, clear the <filter_list>. Re-query [VISIBLE].
-
-	When 'show more' is selected, Re-query both [VISIBLE] and [SELECTED] with an increased limit.
-
-
- --Specification for [SELECTED], the data structure that describes the elements in a node, or group of actors.
-	Every modification to the check boxes updates the rule's query data structure.
-	Do not re-query on edits here, but set an EDITED flag that causes re-query of [SELECTED] when [VISIBLE] is changed.
-
-	When a checkbox is clicked in the actor list, a {$Source: 'AFG'} rule is or'ed to root.
-		These entries are collapsed to one $in: [] statement by the query builder in subset.js.
-
-	When select all is clicked, a { $Source: { $in: [<filter_list>] }} rule is or'ed to root.
-
-	When a checkbox is unclicked in the actor list, the entire query tree is added to a new root,
-		and a { $not: {$Source: 'AFG'}} rule is and'ed to root.
-
-	When deselect all is clicked, the entire query tree is added to a new root,
-		and a { $Source: { $not: { $in: [<filter_list>] }}} rule is and'ed to root.
-
-	The object <filter_list> is composed of elements in the form: {$regex: '<filter>'}.
-
-	~~~~~~~~~~~~~~~~~~~
-	On stage, for each link, use a deep copy of [SELECTED] as the value for what is currently the raw string list.
-*/
-
 let actorDisplayed = false;
 
 $(document).ready(function () {
@@ -845,10 +798,8 @@ const loadDictionary = function () {
     return defer;		//return dictionary load completed
 };
 
-console.log("before dict load");
 // Load dictionary on page open
 loadDictionary();
-console.log("after dict load");
 
 // This code is called when data is loaded. It populates the dictionary and source/target lists
 function actorDataLoad() {
@@ -1488,3 +1439,51 @@ function resizeActorSVG() {
     });
     updateAll();
 }
+
+/* Consider if the actor menu cannot keep the full list of actors in browser memory, 
+        but still needs to remember filter subsets over the entire dataset.
+   This is a proposal for how the code can be structured to achieve that. --Michael Shoemate
+
+   There are two queries for source, and two queries for target.
+    Query 1: [VISIBLE]      First n records that match visibility
+    Query 2: [SELECTED]     First n selected records
+    Notice selected actors is always a subset of visible actors,
+        so in the actor menu check the actors that are also in the [SELECTED] query
+
+
+ --Specification for [VISIBLE], the list of all actors currently shown in the editing menu.
+    Important: If EDITED flag is set, then also re-query [SELECTED].
+
+    When a node is selected, set [VISIBLE] to the stored value for [SELECTED] (the node members). Re-query [VISIBLE].
+
+    When show selected is toggled, set/unset the 'show visible' filter. Re-query [VISIBLE].
+
+    When a filter is toggled, add/remove it from <filter_list>. Re-query [VISIBLE].
+
+    When 'Search Source Actors' has an edit with length modulus 3, add text to a temporary <filter_list>. Re-query [VISIBLE].
+
+    When 'Clear All Filters' is selected, clear the <filter_list>. Re-query [VISIBLE].
+
+    When 'show more' is selected, Re-query both [VISIBLE] and [SELECTED] with an increased limit.
+
+
+ --Specification for [SELECTED], the data structure that describes the elements in a node, or group of actors.
+    Every modification to the check boxes updates the rule's query data structure.
+    Do not re-query on edits here, but set an EDITED flag that causes re-query of [SELECTED] when [VISIBLE] is changed.
+
+    When a checkbox is clicked in the actor list, a {$Source: 'AFG'} rule is or'ed to root.
+        These entries are collapsed to one $in: [] statement by the query builder in subset.js.
+
+    When select all is clicked, a { $Source: { $in: [<filter_list>] }} rule is or'ed to root.
+
+    When a checkbox is unclicked in the actor list, the entire query tree is added to a new root,
+        and a { $not: {$Source: 'AFG'}} rule is and'ed to root.
+
+    When deselect all is clicked, the entire query tree is added to a new root,
+        and a { $Source: { $not: { $in: [<filter_list>] }}} rule is and'ed to root.
+
+    The object <filter_list> is composed of elements in the form: {$regex: '<filter>'}.
+
+    ~~~~~~~~~~~~~~~~~~~
+    On stage, for each link, use a deep copy of [SELECTED] as the value for what is currently the raw string list.
+*/
