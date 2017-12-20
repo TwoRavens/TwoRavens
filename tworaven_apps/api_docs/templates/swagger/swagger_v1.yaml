@@ -89,6 +89,40 @@ paths:
           schema:
             type: "object"
             $ref: "#/definitions/UserErrorMessage"
+  {% url 'view_end_ta3_search' %}:
+    post:
+      tags:
+      - "ta3_search"
+      summary: "Send a message and shutdown any open ta3_search consoles"
+      description: "Gives the ability to send messages and shutdown registered ta3_search consoles from the UI"
+      operationId: "ta3_send_message_exit"
+      produces:
+      - "application/json"
+      parameters:
+      - in: body
+        name: message
+        description: Message to send
+        schema:
+          type: object
+          required:
+            - is_success
+            - message
+          properties:
+            is_success:
+              type: boolean
+            message:
+              type: string
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "object"
+            $ref: "#/definitions/UserSuccessMessage"
+        400:
+          description: "Error with the registration.  See details in the response."
+          schema:
+            type: "object"
+            $ref: "#/definitions/UserErrorMessage"
 # ------------------------------
 # Define reusable parameters:
 # ------------------------------

@@ -301,3 +301,16 @@ def init_db():
 def run_grpc_tests():
     """Run the gRPC tests, equivalent of 'python manage.py test tworaven_apps.ta2_interfaces'"""
     local('python manage.py test tworaven_apps.ta2_interfaces')
+
+def run_ta3_listener():
+    """Start a flask server that receives messages from the UI
+    Part of scaffolding for the D3M eval"""
+    ta3_dir =  os.path.join(FAB_BASE_DIR,
+                            'tworaven_apps',
+                            'ta3_search')
+
+    flask_cmd = ('cd %s;'
+                 'FLASK_APP=ta3_listener.py flask run -p8001') % \
+                 (ta3_dir,)
+
+    local(flask_cmd)
