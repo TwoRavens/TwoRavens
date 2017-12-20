@@ -1,13 +1,18 @@
 FROM r-base:3.4.1
 MAINTAINER Raman Prasad (raman_prasad@harvard.edu)
 
+LABEL organization="Two Ravens" \
+      2ra.vn.version="0.0.5-beta" \
+      2ra.vn.release-date="2017-12-19" \
+      description="Image for the base of the Two Ravens R service."
+
 # ----------------------------------------------------
 # This contains R and specific packages
 # needed to run the TwoRavens rook application
-# 
+#
 # - The Image from this Dockerfile is used as a base
 #   to copy in the Rook files and run the app in /rook
-# 
+#
 # ----------------------------------------------------
 
 # -------------------------------------
