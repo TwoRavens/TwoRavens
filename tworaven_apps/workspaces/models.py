@@ -40,12 +40,12 @@ class DataSourceType(TimeStampedModel):
                            'source_url', 'description',
                            'created', 'modified']
 
-    name = models.CharField(max_length=255,
-                            unique=True)
+    name = models.CharField(max_length=255)
 
     is_active = models.BooleanField(default=True)
 
-    source_url = models.URLField(blank=True)
+    source_url = models.URLField(blank=True,
+                                 unique=True)
 
     slug = models.SlugField(blank=True)
 

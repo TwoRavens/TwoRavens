@@ -71,9 +71,11 @@ class WorkspaceRecorder(object):
         # (2)(a) Retrieve the DataSourceType if not already found
         # ---------------------------------------
         if not ds_type:
-            ds_type, _ = DataSourceType.objects.get_or_create(\
-                                name=domain_identifier['name'],
+            ds_type, dst_created = DataSourceType.objects.get_or_create(\
                                 source_url=domain_identifier['source_url'])
+
+            ds_type.name = domain_identifier['name']
+            ds_type.save()
 
         # Update the description
         ds_type.description = domain_identifier.get('description', 'n/a')
@@ -135,6 +137,8 @@ class WorkspaceRecorder(object):
                            ' in request POST. (%s)' % \
                            json_data.keys())
 
+        #print('app_domain', app_domain)
+        #print('domain_identifier', domain_identifier)
 
         # -----------------------------
         # Check for a saved workspace
