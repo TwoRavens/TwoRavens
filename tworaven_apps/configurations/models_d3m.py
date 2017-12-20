@@ -91,8 +91,9 @@ class D3MConfiguration(TimeStampedModel):
                 help_text=('Allotted time for search, in minutes.'
                            ' No timeout if negative.'))
 
-    cpus = models.IntegerField(\
-                default=-1,
+    cpus = models.CharField(\
+                max_length=255,
+                blank=True,
                 help_text=('Number of cpus available for search.'))
 
     ram = models.CharField(\
