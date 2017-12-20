@@ -1,3 +1,60 @@
+
+function about() { $('#about').show(); }
+function closeabout() { $('#about').hide(); }
+// note that .textContent is the new way to write text to a div
+$('#about div.panel-body').text('TwoRavens v0.1 "Dallas" -- The Norse god Odin had two talking ravens as advisors, who would fly out into the world and report back all they observed.  In the Norse, their names were "Thought" and "Memory".  In our coming release, our thought-raven automatically advises on statistical model selection, while our memory-raven accumulates previous statistical models from Dataverse, to provide cumulative guidance and meta-analysis.');
+//This is the first public release of a new, interactive Web application to explore data, view descriptive statistics, and estimate statistical models.";
+
+
+// Open/Close Panels
+$('#leftpanel span').click(toggleLeftPanel);
+$('#rightpanel span').click(toggleRightPanel);
+
+function toggleLeftPanel() {
+  if (!$('#leftpanel').hasClass('forceclosepanel')) {
+    $('#leftpanel').removeClass('expandpanel');
+    $('#leftpanel > div.row-fluid').toggleClass('closepanel');
+    $('#leftpanel').toggleClass('closepanel');
+}
+
+if ($('#leftpanel').hasClass('closepanel')) {
+    $('#main').css('margin-left', '30px');
+    $('#main').css('width', 'calc(100% - 30px)');
+} else {
+    $('#main').css('margin-left', '260px');
+    $('#main').css('width', 'calc(100% - 260px)');
+}
+if (subsetKeySelected === "Action") {
+    drawGraphs();
+    updateData();
+}
+if (subsetKeySelected === "Actor") {
+    resizeActorSVG();
+}
+}
+
+function openRightPanel() {
+  if ($('#rightpanel').hasClass('closepanel')) {
+    /*$('#rightpanel .nav-tabs').hide();*/
+    $('#rightpanel > div.row-fluid').toggleClass('closepanel');
+    $('#rightpanel').toggleClass('closepanel');
+    rightpanelMargin();
+}
+}
+
+function toggleRightPanel() {
+  let rightPanel = $('#rightpanel');
+  if (rightPanel.hasClass('forceclosepanel')) return;
+
+  rightPanel.toggleClass('closepanel');
+  rightpanelMargin();
+}
+
+
+
+
+// BEGIN
+
 let opMode = "subset";
 
 let production = false;
@@ -27,16 +84,16 @@ $(document).on('click', '#option', function (evt) {
 // Popover
 $(function(){
   $('.popover-markup > .trigger').popover({
-        html: true,
-        placement: "bottom",
-        title: function () {
-            return $(this).parent().find('.head').html();
-        },
-        content: function () {
-            return $(this).parent().find('.content').html();
-        },
-        template: '<div class="popover dashboardPopover"><div class="arrow"></div><div class="popover-inner"><h3 class="popover-title"></h3><div class="popover-content"></div></div></div>'
-    });
+    html: true,
+    placement: "bottom",
+    title: function () {
+        return $(this).parent().find('.head').html();
+    },
+    content: function () {
+        return $(this).parent().find('.content').html();
+    },
+    template: '<div class="popover dashboardPopover"><div class="arrow"></div><div class="popover-inner"><h3 class="popover-title"></h3><div class="popover-content"></div></div></div>'
+});
 });
 /* END Dataset Selection Popover */
 
@@ -149,6 +206,11 @@ editor.setOptions({
 editor.renderer.$cursorLayer.element.style.opacity=0;
 editor.textInput.getElement().disabled=true;
 
+// Close rightpanel if no prior queries have been submitted
+if (queryId === 1) {
+  toggleRightPanel();
+}
+
 $("#searchvar").keyup(reloadLeftpanelVariables);
 
 function reloadLeftpanelVariables() {
@@ -164,45 +226,45 @@ function reloadLeftpanelVariables() {
 
     $('#variableList').empty();
     d3.select("#variableList").selectAll("p")
-        .data(matchedVariables)
-        .enter()
-        .append("p")
-        .text(function (d) {return d;})
-        .style('background-color', function () {
-            if (variablesSelected.has(d3.select(this).text())) return selVarColor;
-            return varColor
-        })
-        .on("click", function () {
-            d3.select(this).style('background-color', function () {
-
-                let text = d3.select(this).text();
-                if (variablesSelected.has(text)) {
-                    variablesSelected.delete(text);
-                    return varColor
-
-                } else {
-                    variablesSelected.add(text);
-                    return selVarColor
-                }
-            });
-
-            reloadRightPanelVariables()
-        });
-}
-
-d3.select("#subsetList").selectAll("p")
-    .data(subsetKeys)
+    .data(matchedVariables)
     .enter()
     .append("p")
     .text(function (d) {return d;})
-    .style("text-align", "center")
-    .style('background-color', function() {
-        if (d3.select(this).text() === subsetKeySelected) return selVarColor;
-        else return varColor;
+    .style('background-color', function () {
+        if (variablesSelected.has(d3.select(this).text())) return selVarColor;
+        return varColor
     })
     .on("click", function () {
-        showSubset(d3.select(this).text())
+        d3.select(this).style('background-color', function () {
+
+            let text = d3.select(this).text();
+            if (variablesSelected.has(text)) {
+                variablesSelected.delete(text);
+                return varColor
+
+            } else {
+                variablesSelected.add(text);
+                return selVarColor
+            }
+        });
+
+        reloadRightPanelVariables()
     });
+}
+
+d3.select("#subsetList").selectAll("p")
+.data(subsetKeys)
+.enter()
+.append("p")
+.text(function (d) {return d;})
+.style("text-align", "center")
+.style('background-color', function() {
+    if (d3.select(this).text() === subsetKeySelected) return selVarColor;
+    else return varColor;
+})
+.on("click", function () {
+    showSubset(d3.select(this).text())
+});
 
 function showSubset(subsetKey) {
     subsetKeySelected = subsetKey;
@@ -421,10 +483,10 @@ function tabLeft(tab) {
 
     switch (tab) {
         case "variableTab":
-            document.getElementById('btnVariables').setAttribute("class", "active");
-            break;
+        document.getElementById('btnVariables').setAttribute("class", "active");
+        break;
         case "subsetTab":
-            document.getElementById('btnSubset').setAttribute("class", "active");
+        document.getElementById('btnSubset').setAttribute("class", "active");
     }
 
     d3.select("#leftpanel").attr("class", "sidepanel container clearfix");
@@ -746,7 +808,7 @@ $('#subsetTree').on(
         qtree.tree('loadData', subsetData);
         qtree.tree('setState', state);
     }
-);
+    );
 
 $('#subsetTree').on(
     'tree.click',
@@ -757,7 +819,7 @@ $('#subsetTree').on(
             showSubset("Custom");
         }
     }
-);
+    );
 
 $('#subsetTree').bind(
     'tree.dblclick',
@@ -771,7 +833,7 @@ $('#subsetTree').bind(
             showSubset("Custom");
         }
     }
-);
+    );
 
 function disable_edit_recursive(node) {
     node.editable = false;
@@ -801,7 +863,7 @@ $('#subsetTree').on(
             $('#subsetTree').tree('toggle', event.node);
         }
     }
-);
+    );
 
 function addGroup(query=false) {
     // When the query argument is set, groups will be included under a 'query group'
@@ -824,14 +886,14 @@ function addGroup(query=false) {
             removeIds.push(child_id);
 
         // A query grouping can, however put groups inside of groups.
-        } else if (query && child.name.indexOf('Query') === -1) {
-            movedChildren.push(child);
-            removeIds.push(child_id);
-        }
+    } else if (query && child.name.indexOf('Query') === -1) {
+        movedChildren.push(child);
+        removeIds.push(child_id);
     }
-    if (movedChildren.length > 0) {
-        movedChildren[0]['show_op'] = false;
-    }
+}
+if (movedChildren.length > 0) {
+    movedChildren[0]['show_op'] = false;
+}
 
     // Delete elements from root directory that are moved
     for (let i = removeIds.length - 1; i >= 0; i--) {
@@ -904,7 +966,7 @@ function addRule() {
  * When a new rule is added, retrieve the preferences of the current subset panel
  * @returns {{}} : dictionary of preferences
  */
-function getSubsetPreferences() {
+ function getSubsetPreferences() {
     if (subsetKeySelected === 'Date') {
 
         // If the dates have not been modified, force bring the date from the slider
@@ -919,25 +981,25 @@ function getSubsetPreferences() {
 
         // For mapping numerical months to strings in the child node name
         let monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "June",
-            "July", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        "July", "Aug", "Sep", "Oct", "Nov", "Dec"];
         return {
             id: String(nodeId++),
             name: 'Date Subset',
             children: [
-                {
-                    id: String(nodeId++),
-                    name: 'From: ' + monthNames[dateminUser.getMonth()] + ' ' + dateminUser.getDate() + ' ' + String(dateminUser.getFullYear()),
-                    fromDate: new Date(dateminUser.getTime()),
-                    cancellable: false,
-                    show_op: false
-                },
-                {
-                    id: String(nodeId++),
-                    name: 'To:   ' + monthNames[datemaxUser.getMonth()] + ' ' + datemaxUser.getDate() + ' ' + String(datemaxUser.getFullYear()),
-                    toDate: new Date(datemaxUser.getTime()),
-                    cancellable: false,
-                    show_op: false
-                }
+            {
+                id: String(nodeId++),
+                name: 'From: ' + monthNames[dateminUser.getMonth()] + ' ' + dateminUser.getDate() + ' ' + String(dateminUser.getFullYear()),
+                fromDate: new Date(dateminUser.getTime()),
+                cancellable: false,
+                show_op: false
+            },
+            {
+                id: String(nodeId++),
+                name: 'To:   ' + monthNames[datemaxUser.getMonth()] + ' ' + datemaxUser.getDate() + ' ' + String(datemaxUser.getFullYear()),
+                toDate: new Date(datemaxUser.getTime()),
+                cancellable: false,
+                show_op: false
+            }
             ],
             operation: 'and'
         };
@@ -1123,7 +1185,7 @@ function getSubsetPreferences() {
                 id: String(nodeId++),
                 name: 'Custom Subset',
                 custom: JSON.stringify(editor.getValue())
-        }
+            }
         } else {
             return {}
         }
@@ -1167,7 +1229,7 @@ function reset() {
 /**
  * Makes web request for rightpanel preferences
  */
-function submitQuery() {
+ function submitQuery() {
 
     // Only construct and submit the query if new subsets have been added since last query
     let newSubsets = false;
@@ -1203,7 +1265,7 @@ function submitQuery() {
                     if (node.name.indexOf('Query') === -1) node.editable = false;
                 }
             }
-        );
+            );
 
         // Redraw tree
         subsetData = JSON.parse($('#subsetTree').tree('toJson'));
@@ -1359,20 +1421,20 @@ function processRule(rule) {
                     child.fromDate = new Date(child.fromDate);
                     // Not a pretty solution, but it prevents aggregation substring slicing or regexes
                     lower_bound['$or'] = [{'<year>': {'$gt': pad(parseInt(child.fromDate.getFullYear()))}},
-                                          {'<year>': pad(parseInt(child.fromDate.getFullYear())), 
-                                           '<month>': {'$gte': pad(parseInt(child.fromDate.getMonth() + 1))}},
-                                          {'<year>': pad(parseInt(child.fromDate.getFullYear())), 
-                                           '<month>': pad(parseInt(child.fromDate.getMonth() + 1)),
-                                           '<day>': {'$gte': pad(parseInt(child.fromDate.getDate()))}}]
+                    {'<year>': pad(parseInt(child.fromDate.getFullYear())), 
+                    '<month>': {'$gte': pad(parseInt(child.fromDate.getMonth() + 1))}},
+                    {'<year>': pad(parseInt(child.fromDate.getFullYear())), 
+                    '<month>': pad(parseInt(child.fromDate.getMonth() + 1)),
+                    '<day>': {'$gte': pad(parseInt(child.fromDate.getDate()))}}]
                 }
                 if ('toDate' in child) {
                     child.toDate = new Date(child.toDate);
                     upper_bound['$or'] = [{'<year>': {'$lt': pad(parseInt(child.toDate.getFullYear()))}},
-                                          {'<year>': pad(parseInt(child.toDate.getFullYear())), 
-                                           '<month>': {'$lte': pad(parseInt(child.toDate.getMonth() + 1))}},
-                                          {'<year>': pad(parseInt(child.toDate.getFullYear())), 
-                                           '<month>': pad(parseInt(child.toDate.getMonth() + 1)),
-                                           '<day>': {'$lte': pad(parseInt(child.toDate.getDate()))}}]
+                    {'<year>': pad(parseInt(child.toDate.getFullYear())), 
+                    '<month>': {'$lte': pad(parseInt(child.toDate.getMonth() + 1))}},
+                    {'<year>': pad(parseInt(child.toDate.getFullYear())), 
+                    '<month>': pad(parseInt(child.toDate.getMonth() + 1)),
+                    '<day>': {'$lte': pad(parseInt(child.toDate.getDate()))}}]
                 }
             }
             rule_query['$and'] = [lower_bound, upper_bound];
@@ -1385,14 +1447,14 @@ function processRule(rule) {
 
                 let phoenixDate = function (date) {
                     return date.getFullYear().toString() +
-                        pad(date.getMonth() + 1) +
-                        pad(date.getDate());
+                    pad(date.getMonth() + 1) +
+                    pad(date.getDate());
                 };
 
                 let icewsDate = function (date) {
                     return date.getFullYear().toString() + '-' +
-                        pad(date.getMonth() + 1) + '-' +
-                        pad(date.getDate())
+                    pad(date.getMonth() + 1) + '-' +
+                    pad(date.getDate())
                 };
 
                 if ('fromDate' in child) {
