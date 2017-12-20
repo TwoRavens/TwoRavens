@@ -1770,6 +1770,7 @@ function onPipelineCreate(PipelineCreateResult) {
         let myid = "";
         let mymetric = "";
         let myval = "";
+        console.log(allPipelineInfo);
         let myscores = allPipelineInfo[key].pipelineInfo.scores;
         for(var i = 0; i < myscores.length; i++) {
             //if(i==0) {myid=key;}
@@ -2423,11 +2424,28 @@ async function makeRequest(url, data) {
         console.log('response:', res);
         if (Object.keys(res)[0] === 'warning') {
             alert('Warning: ' + res.warning);
+            end_ta3_search(false, err);
         }
     } catch(err) {
+        end_ta3_search(false, err);
         cdb(err);
         alert(`Error: call to ${url} failed`);
     }
+   
+   /*
+    //call end_ta3_search if status != OK
+    // status may be in different places for different calls though, and this is not worth doing at the moment
+    let myreg = /d3m-service/g;
+    let isd3mcall = myreg.test(url);
+    if(isd3mcall) {
+        let mystatus = res.responseInfo.status.code.toUpperCase();
+        if(mystatus != "OK") {
+            end_ta3_search(false, "grpc response status not ok");
+        }
+    }
+    
+    */
+    
     estimateLadda.stop();
     selectLadda.stop();
     return res;
@@ -2915,8 +2933,13 @@ export let fakeClick = () => {
 /**
    EndSession(SessionContext) returns (Response) {}
 */
-export function endsession() {
-    makeRequest(D3M_SVC_URL + '/endsession', apiSession(zparams.zsessionid));
+export async function endsession() {
+   // makeRequest(D3M_SVC_URL + '/endsession', apiSession(zparams.zsessionid));
+    let res = await makeRequest(D3M_SVC_URL + '/endsession', apiSession(zparams.zsessionid));
+    let mystatus = res.status.code.toUpperCase();
+    if(mystatus == "OK") {
+        end_ta3_search(true, "Problem marked as complete.");
+    }
 }
 
 /**
