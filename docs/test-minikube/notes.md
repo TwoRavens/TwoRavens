@@ -25,6 +25,17 @@ kubectl apply -f tworavens_test_ta2.yml --validate=false
 kubectl port-forward ravens-eval 8080:8080
 ```
 
+# Other commands
+
+```
+# Log into running pod
+kubectl exec -it ravens-eval -c ta3-main -- /bin/bash
+
+# describe containers in pod
+kubectl describe pod/ravens-eval
+```
+
+
 # Delete the pod
 
 ```
