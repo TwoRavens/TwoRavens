@@ -1667,8 +1667,10 @@ function zPop() {
     zparams.zmodelcount = modelCount;
     zparams.zedges = [];
     zparams.zvars = [];
+    zparams.znature = [];
     for (let j = 0; j < nodes.length; j++) { //populate zvars array
         zparams.zvars.push(nodes[j].name);
+        zparams.znature.push(nodes[j].nature);
         let temp = nodes[j].id;
         zparams.zsetx[j] = allNodes[temp].setxvals;
         zparams.zsubset[j] = allNodes[temp].subsetrange;
