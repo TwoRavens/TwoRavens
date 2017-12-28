@@ -1,1 +1,1 @@
-{"warning":["Plot error:  Error in `[.data.frame`(data, , vars): undefined columns selected\n"]}
+{"warning":["error:  Error in if (var2buttontype == \"equidistance\") {: argument is of length zero\n"]}

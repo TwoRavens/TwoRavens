@@ -65,11 +65,11 @@ explore.app <- function(env) {
   ##}
 
   if (production){
-    data <- readData(sessionid=sessionid, logFile=logfile)
-    write(deparse(bquote(data <- read.delim(file=.(paste("data_", sessionid,".tab", sep=""))))), logfile, append=TRUE)
+    mydata <- readData(sessionid=sessionid, logFile=logfile)
+    write(deparse(bquote(mydata <- read.delim(file=.(paste("data_", sessionid,".tab", sep=""))))), logfile, append=TRUE)
   } else {
-    data <- read.delim("../data/fearonLaitin.tsv")
-    write("data <- read.delim(\"../data/fearonLaitin.tsv\")", logfile, append=TRUE)
+    mydata <- read.delim(everything$zd3mdata, header=TRUE, sep=",")
+    write("data <- read.delim(everything$zd3mdata, header=TRUE, sep=\",\")", logfile, append=TRUE)
   }
 
   history <- everything$callHistory
@@ -82,7 +82,7 @@ explore.app <- function(env) {
 
   tryCatch({
     ## 1. prepare data so that it is identical to the representation of the data in TwoRavens
-    data <- executeHistory(data=data, history=history)
+    mydata <- executeHistory(data=mydata, history=history)
     write("mydata <- executeHistory(data=mydata, history=history)", logfile, append=TRUE)
     imageVector <<- list()
     statistical <<- list()
@@ -91,7 +91,7 @@ explore.app <- function(env) {
     plotcount <- 0
 
     ## plot data
-    plotd <- data[,vars]
+    plotd <- mydata[,vars]
     if (nrow(plotd) > 1000) {
       plotd <- plotd[sample(1:nrow(plotd), 1000, replace=FALSE),]
     }
@@ -105,7 +105,7 @@ explore.app <- function(env) {
 
     for (i in 1:nrow(edges)) {
       usepair <- unique(edges[i,])
-      usedata <- data[,c(usepair)]
+      usedata <- mydata[,c(usepair)]
 
       missmap <- !is.na(usedata)
       isobserved <- apply(missmap, 1, all)
@@ -234,7 +234,7 @@ explore.app <- function(env) {
     }
   },
   error = function(err) {
-    result <<- list(warning=paste("Plot error: ", err))
+    result <<- list(warning=paste("error: ", err))
   })
   return(send(result))
 }
