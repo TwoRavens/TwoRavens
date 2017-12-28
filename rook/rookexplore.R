@@ -60,12 +60,12 @@ explore.app <- function(env) {
 
   sessionid <- everything$zsessionid
   logfile <- logFile(sessionid, production)
-  if (sessionid == "") {
-    return(send(list(warning="No session id.")))
-  }
+  ##if (sessionid == "") {
+    ##return(send(list(warning="No session id.")))
+  ##}
 
   if (production){
-    data <- readData(sessionid=sessionid, logfile=logfile)
+    data <- readData(sessionid=sessionid, logFile=logfile)
     write(deparse(bquote(data <- read.delim(file=.(paste("data_", sessionid,".tab", sep=""))))), logfile, append=TRUE)
   } else {
     data <- read.delim("../data/fearonLaitin.tsv")
