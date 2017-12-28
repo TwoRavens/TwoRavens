@@ -1,4 +1,21 @@
 export default class CanvasAction {
+    oncreate() {
+        actionTooltip = d3.select("#subsetAction").select(".SVGtooltip").style("opacity", 0); //tooltip
+
+        // Action labels
+        d3.csv("../data/actionlookup.csv", function(d) {
+            return {
+                rootCode: +d.EventRootCode,
+                rootDesc: d.Description,
+                penta: +d.PentaClass,
+                count: 0,
+                used: false,				//this is from pentaCounts; on click from main graph this is set
+                active: false				//this is from actionSubData; on click from sub graph this is set
+            };
+        }, function(data) {
+            actionSubData = data;
+        });
+    }
     view(vnode) {
         return (m(".subsetDiv[id='subsetAction']", {style: {"display": "none"}},
             m("[id='actionSVGbin']", {

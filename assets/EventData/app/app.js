@@ -110,6 +110,11 @@ if (dataset === "icews") {
 
 let variables;
 
+// These get instantiated in the oncreate() method for the mithril Body_EventData class
+let laddaSubset;
+let laddaReset;
+let laddaDownload;
+
 function variableSetup(jsondata) {
     // Each key has a %-formatted value
     variables = Object.keys(jsondata.variables);
@@ -303,59 +308,6 @@ function download() {
 /**
  *   Draws all subset plots, often invoked as callback after server request for new plotting data
  */
-
-function loadICEWS(jsondata) {
-    dateData = jsondata.date_data;
-
-    countryData = {};
-    for (let idx in jsondata.country_data) {
-        if ('<country_code>' in jsondata.country_data[idx]) {
-            countryData[jsondata.country_data[idx]['<country_code>']] = jsondata.country_data[idx]['total']
-        }
-    }
-
-    actionData = {};
-    for (let i = 0; i < 20; i++) {
-        actionData[i] = 0;
-    }
-    for (let idx in jsondata.action_data) {
-        actionData[parseInt(jsondata.action_data[idx]['<root_code>'])] = jsondata.action_data[idx].total
-    }
-
-    actorData = jsondata.actor_data;
-    actorDataLoad();
-
-    d3date(true);
-    d3loc();
-    resetActionCounts();
-}
-
-function loadPhoenix(jsondata) {
-    dateData = jsondata.date_data
-
-    countryData = {};
-    for (let idx in jsondata.country_data) {
-        let country = jsondata.country_data[idx]['<country_code>'];
-        if (country === "" || country === undefined) continue;
-        countryData[jsondata.country_data[idx]['<country_code>']] = jsondata.country_data[idx].total
-    }
-
-    actionData = {};
-    for (let i = 0; i < 20; i++) {
-        actionData[i] = 0;
-    }
-    for (let idx in jsondata.action_data) {
-        actionData[parseInt(jsondata.action_data[idx]['<root_code>'])] = jsondata.action_data[idx].total
-    }
-
-    actorData = jsondata.actor_data;
-    actorDataLoad();
-
-    d3date(true);
-    d3loc();
-    resetActionCounts();
-}
-
 function pageSetup(jsondata) {
     console.log("Server returned:");
     console.log(jsondata);
@@ -363,16 +315,34 @@ function pageSetup(jsondata) {
     laddaSubset.stop();
     laddaReset.stop();
 
-    if (jsondata.date_data.length === 0) {
+    if (jsondata['date_data'].length === 0) {
         alert("No records match your subset. Plots will not be updated.");
         return false;
     }
 
-    if (["phoenix_rt", "cline_phoenix_swb", "cline_phoenix_nyt", "cline_phoenix_fbis"].indexOf(dataset) !== -1)
-        loadPhoenix(jsondata);
+    dateData = jsondata['date_data']
 
-    if (dataset === "icews")
-        loadICEWS(jsondata);
+    countryData = {};
+    for (let idx in jsondata['country_data']) {
+        let country = jsondata['country_data'][idx]['<country_code>'];
+        if (country === "" || country === undefined) continue;
+        countryData[jsondata['country_data'][idx]['<country_code>']] = jsondata['country_code'][idx].total
+    }
+
+    actionData = {};
+    for (let i = 0; i < 20; i++) {
+        actionData[i] = 0;
+    }
+    for (let idx in jsondata['action_data']) {
+        actionData[parseInt(jsondata['action_data'][idx]['<root_code>'])] = jsondata['action_data'][idx].total
+    }
+
+    actorData = jsondata['actor_data'];
+    actorDataLoad();
+
+    d3date(true);
+    d3loc();
+    resetActionCounts();
 
     // If first load of data, user may have selected a subset and is waiting. Render page now that data is available
     if (!initialLoad) {
