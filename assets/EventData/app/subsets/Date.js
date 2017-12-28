@@ -1,5 +1,5 @@
 // Date tab of subsetting screen
-$("#dateSVG").empty();
+
 // Default calendar ranges
 var datemax = new Date();
 var datemin = d3.timeYear.offset(datemax, -5);
@@ -17,11 +17,11 @@ var plotSelection;
 
 function d3date(init=false) {
     $("#dateSVG").empty();
-    if (opMode == "subset") {
+    if (opMode === "subset") {
 		$("#dateInterval").css("display", "block");
 		$("#dateAggregOption").css("display", "none");
 	}
-	else if (opMode == "aggreg") {
+	else if (opMode === "aggreg") {
 		$("#dateInterval").css("display", "none");
 		$("#dateAggregOption").css("display", "block");
 	}
@@ -268,51 +268,6 @@ function d3date(init=false) {
 min=datemin.getFullYear();
 max=datemax.getFullYear();
 
-$("#fromdate").datepicker({
-    dateFormat: 'mm-dd-yy',
-    changeYear: true,
-    changeMonth: true,
-    defaultDate: datemin,
-    yearRange: min + ':' + max,
-    minDate: datemin,
-    maxDate: datemax,
-    orientation: top,
-    onSelect: function () {
-        dateminUser = new Date($(this).datepicker('getDate').getTime());
-        $("#todate").datepicker('option', 'minDate', dateminUser);
-        $("#todate").datepicker('option', 'defaultDate', datemax);
-        $("#todate").datepicker('option', 'maxDate', datemax);
-        fromdatestring = dateminUser.getFullYear() + "" + ('0' + (dateminUser.getMonth() + 1)).slice(-2) + "" + ('0' + dateminUser.getDate()).slice(-2);
-    },
-    onClose: function (selectedDate) {
-        setTimeout(function () {
-            $('#todate').focus();
-        }, 100);
-
-        d3date();
-        $("#todate").datepicker("show");
-    }
-});
-
-
-$("#todate").datepicker({
-    changeYear: true,
-    changeMonth: true,
-    yearRange: min + ':' + max,
-    dateFormat: 'mm-dd-yy',
-    defaultDate: datemax,
-    minDate: dateminUser,
-    maxDate: datemax,
-    orientation: top,
-    onSelect: function () {
-        datemaxUser = new Date($(this).datepicker('getDate').getTime());
-        todatestring = datemaxUser.getFullYear() + "" + ('0' + (datemaxUser.getMonth() + 1)).slice(-2) + "" + ('0' + datemaxUser.getDate()).slice(-2);
-    },
-    onClose: function () {
-        d3date();
-    }
-});
-
 function interpolate(data, date) {
     let allDates = [];
     for (let item in data){
@@ -359,13 +314,4 @@ function setDatefromSlider() {
 
     // Update plot
     d3date();
-}
-
-function dateSort(a, b) {
-	if (a['Date'] === b['Date']) {
-		return 0;
-	}
-	else {
-		return (a['Date'] < b['Date']) ? -1 : 1;
-	}
 }

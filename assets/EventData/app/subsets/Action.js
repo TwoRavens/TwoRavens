@@ -12,7 +12,7 @@ function pentaClass (classNum, count, maxSelect) {
 	this.description = "";
 }
 
-var actionTooltip = d3.select("#subsetAction").select(".SVGtooltip").style("opacity", 0);		//tooltip
+var actionTooltip;
 
 var pentaCounts = [];		//this will probably have to move into d3action() in order to "reload" data from queries
 var pentaDesc = ["Public Statement", "Verbal Cooperation", "Material Cooperation", "Verbal Conflict", "Material Conflict"];
@@ -24,20 +24,6 @@ var d3action_draw = false;		//only draw graphs once
 
 var actionMainX, actionMainY, actionMainMargin, actionMainWidth, actionMainHeight, actionMainGraphData;
 var actionSubX, actionSubY, actionSubMargin, actionSubWidth, actionSubHeight, actionSubGraphData;
-
-// Action labels
-d3.csv("../data/actionlookup.csv", function(d) {
-    return {
-        rootCode: +d.EventRootCode,
-        rootDesc: d.Description,
-        penta: +d.PentaClass,
-        count: 0,
-        used: false,				//this is from pentaCounts; on click from main graph this is set
-        active: false				//this is from actionSubData; on click from sub graph this is set
-    };
-}, function(data) {
-    actionSubData = data;
-});
 
 function resetActionCounts() {
 	pentaCounts = [];

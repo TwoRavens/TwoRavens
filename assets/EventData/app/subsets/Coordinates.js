@@ -1,8 +1,4 @@
 
-$("#latUpper").keyup(setLatitude);
-$("#latLower").keyup(setLatitude);
-$("#lonLeft").keyup(setLongitude);
-$("#lonRight").keyup(setLongitude);
 
 function setLatitude() {
     let latUpper = $("#latUpper");
@@ -148,17 +144,9 @@ function clip(x, lower, upper) {
     return Math.max(Math.min(x, upper), lower);
 }
 
-let svgMap = d3.select('#worldMap');
-
-let imgs = svgMap.selectAll("image").data([0]);
-imgs.enter()
-    .append("svg:image")
-    .attr("id", "worldMapImage")
-    .attr("xlink:href", "../images/world.svg")
-    .attr("x", "0")
-    .attr("y", "0")
-    .attr("width", "100%")
-    .attr("height", "100%");
+// Holds the large map image. Initialized in the mithril canvas constructor
+let svgMap;
+let imgs;
 
 var widthCoord = 0.2,
     heightCoord = 0.2,
@@ -200,109 +188,17 @@ var dragtopleft= d3.drag()
     .subject(Object)
     .on("drag", tldragresize);
 
-var newg = svgMap.append("g")
-    .data([{x: .5, y: .5}]);
+var newg;
 
-var dragrect = newg.append("rect")
-    .attr("id", "active")
-    .attr("x", function(d) { return d.x; })
-    .attr("y", function(d) { return d.y; })
-    .attr("height", heightCoord)
-    .attr("width", widthCoord)
-    .attr("fill-opacity", .2)
-    .attr("fill", "#9D9D9D !important")
-    .attr("stroke", "#9D9D9D")
-    .attr("stroke-width", .005)
-    .attr("cursor", "move")
-    .call(drag);
-
-var dragbarleft = newg.append("rect")
-    .attr("x", function(d) { return d.x - (dragbarw/2); })
-    .attr("y", function(d) { return d.y + (dragbarw/2); })
-    .attr("height", heightCoord - dragbarw)
-    .attr("id", "dragleft")
-    .attr("width", dragbarw)
-    .attr("fill", "#ADADAD")
-    .attr("fill-opacity", .0)
-    .attr("cursor", "ew-resize")
-    .call(dragleft);
-
-var dragbarright = newg.append("rect")
-    .attr("x", function(d) { return d.x + widthCoord - (dragbarw/2); })
-    .attr("y", function(d) { return d.y + (dragbarw/2); })
-    .attr("id", "dragright")
-    .attr("height", heightCoord - dragbarw)
-    .attr("width", dragbarw)
-    .attr("fill", "#ADADAD")
-    .attr("fill-opacity", .0)
-    .attr("cursor", "ew-resize")
-    .call(dragright);
-
-var dragbartop = newg.append("rect")
-    .attr("x", function(d) { return d.x + (dragbarw/2); })
-    .attr("y", function(d) { return d.y - (dragbarw/2); })
-    .attr("height", dragbarw)
-    .attr("id", "dragtop")
-    .attr("width", widthCoord - dragbarw)
-    .attr("fill", "#ADADAD")
-    .attr("fill-opacity", .0)
-    .attr("cursor", "ns-resize")
-    .call(dragtop);
-
-var dragbarbottom = newg.append("rect")
-    .attr("x", function(d) { return d.x + (dragbarw/2); })
-    .attr("y", function(d) { return d.y + heightCoord - (dragbarw/2); })
-    .attr("id", "dragbottom")
-    .attr("height", dragbarw)
-    .attr("width", widthCoord - dragbarw)
-    .attr("fill", "#ADADAD")
-    .attr("fill-opacity", .0)
-    .attr("cursor", "ns-resize")
-    .call(dragbottom);
-
-var dragbarbottomright = newg.append("rect")
-    .attr("x", function(d) { return d.x + widthCoord - (dragbarw/2); })
-    .attr("y", function(d) { return d.y + heightCoord - (dragbarw/2); })
-    .attr("id", "dragbottomright")
-    .attr("height", dragbarw)
-    .attr("width", dragbarw)
-    .attr("fill", "#ADADAD")
-    .attr("fill-opacity", .0)
-    .attr("cursor", "nwse-resize")
-    .call(dragbottomright);
-
-var dragbarbottomleft = newg.append("rect")
-    .attr("x", function(d) { return d.x - (dragbarw/2); })
-    .attr("y", function(d) { return d.y + heightCoord - (dragbarw/2); })
-    .attr("id", "dragbottomleft")
-    .attr("height", dragbarw)
-    .attr("width", dragbarw)
-    .attr("fill", "#ADADAD")
-    .attr("fill-opacity", .0)
-    .attr("cursor", "nesw-resize")
-    .call(dragbottomleft);
-
-var dragbartopleft = newg.append("rect")
-    .attr("x", function(d) { return d.x - (dragbarw/2); })
-    .attr("y", function(d) { return d.y - (dragbarw/2); })
-    .attr("id", "dragtopleft")
-    .attr("height", dragbarw)
-    .attr("width", dragbarw)
-    .attr("fill", "#ADADAD")
-    .attr("fill-opacity", .0)
-    .attr("cursor", "nwse-resize")
-    .call(dragtopleft);
-
-var dragbartopright = newg.append("rect")
-    .attr("x", function(d) { return d.x + widthCoord - (dragbarw/2); })
-    .attr("y", function(d) { return d.y - (dragbarw/2); })
-    .attr("id", "dragtopleft")
-    .attr("height", dragbarw)
-    .attr("width", dragbarw)
-    .attr("fill", "#ADADAD")
-    .attr("fill-opacity", .0)
-    .attr("cursor", "nesw-resize")
-    .call(dragtopright);
+var dragrect;
+var dragbarleft;
+var dragbarright;
+var dragbartop;
+var dragbarbottom;
+var dragbarbottomright;
+var dragbarbottomleft;
+var dragbartopleft;
+var dragbartopright;
 
 function dragmove(d) {
     dragrect
@@ -499,6 +395,3 @@ function setInputBounds(d) {
     $('#lonLeft').val(Math.round(1000 * (d.x * 90 - 90)) / 1000);
     $('#lonRight').val(Math.round(1000 * ((d.x + widthCoord) * 90 - 90)) / 1000);
 }
-
-setLatitude();
-setLongitude();

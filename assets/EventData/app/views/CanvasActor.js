@@ -6,6 +6,267 @@ export default class CanvasActor {
             document.getElementById('sourceRight').style.visibility = 'hidden';
             document.getElementById('targetRight').style.visibility = 'hidden';
         }
+
+        actorSVG = d3.select("#actorLinkSVG");
+
+        actorWidth = actorSVG.node().getBoundingClientRect().width;		//not yet set since window has not yet been displayed; defaults to 0
+        actorHeight = actorSVG.node().getBoundingClientRect().height;	//this code is here to remind what is under subset.js
+
+        boundaryLeft = Math.floor(actorWidth / 2) - 20;		//max x coordinate source nodes can move
+        boundaryRight = Math.ceil(actorWidth / 2) + 20;		//max x coordinate target nodes can move
+
+        actorForce = d3.forceSimulation()
+            .force("link", d3.forceLink().distance(100).strength(0.5))	//link force to keep nodes together
+            .force("x", d3.forceX().x(function (d) {					//grouping by nodes
+                if (d.actor === "source")
+                    return Math.floor(actorWidth / 4);
+                return Math.floor(3 * actorWidth / 4);
+            }).strength(0.06))
+            .force("y", d3.forceY().y(function (d) {					//cluster nodes
+                return Math.floor(actorHeight / 2);
+            }).strength(0.05))
+            .force('charge', d3.forceManyBody().strength(-100));	//prevent tight clustering
+
+
+        //define arrow markers
+        actorSVG.append('svg:defs').append('svg:marker').attr('id', 'end-arrow').attr('viewBox', '0 -5 10 10').attr('refX', 6).attr('markerWidth', 3).attr('markerHeight', 3).attr('orient', 'auto').append('svg:path').attr('d', 'M0,-5L10,0L0,5').style('fill', '#000');
+        actorSVG.append('svg:defs').append('svg:marker').attr('id', 'start-arrow').attr('viewBox', '0 -5 10 10').attr('refX', 4).attr('markerWidth', 3).attr('markerHeight', 3).attr('orient', 'auto').append('svg:path').attr('d', 'M10,-5L0,0L10,5').style('fill', '#000');
+
+        //define SVG mouse actions
+        actorSVG.on("mouseup", function (d) {		//cancel draw line
+            lineMouseup();
+        }).on("contextmenu", function (d) {		//prevent right click on svg
+            d3.event.preventDefault();
+        });
+
+        linkGroup = actorSVG.append("svg:g").attr("class", "allLinksGroup").selectAll("path");
+        nodeGroup = actorSVG.append("svg:g").attr("class", "allNodesGroup").selectAll("g");
+        drag_line = actorSVG.append('svg:path').attr('class', 'link dragline hidden').attr('d', 'M0,0L0,0')
+        tooltipSVG = d3.select(actorSVG.node().parentNode).append("div").attr("class", "SVGtooltip").style("opacity", 0);
+
+        updateSVG();						//updates SVG elements
+
+        actorForce.on("tick", actorTick);		//custom tick function
+
+        //clears search and filter selections
+        $(".clearActorBtn").click(function (event) {
+            clearChecks();
+            actorSearch(currentTab);
+            $(this).blur();
+        });
+
+
+        //clear search box when reloading page
+        $(".actorSearch").ready(function () {
+            $(".actorSearch").val("");
+        });
+
+        //when typing in search box
+        $(".actorSearch").on("keyup", function (event) {
+            $(".actorChkLbl").popover("hide");
+            const searchText = $("#" + currentTab + "Search").val().toUpperCase();
+            if (searchText.length % 3 === 0) {
+                actorSearch(currentTab);
+            }
+        });
+
+        //on load of page, keep actorShowSelected unchecked
+        $(".actorShowSelected").ready(function () {
+            $(".actorShowSelected").prop("checked", false);
+        });
+
+
+        //on load of page, keep checkbox for selecting all filters unchecked
+        $(".allCheck").ready(function () {
+            $(".allCheck").prop("checked", false);
+        });
+
+        //selects all checks for specified element, handles indeterminate state of checkboxes
+        $(".allCheck").click(function (event) {
+            const currentEntityType = event.target.id.substring(6, 9);
+            const currentElement = (currentEntityType === "Org") ? $("#" + currentTab + currentEntityType + "AllCheck") : $("#" + currentTab + "CountryAllCheck");
+
+            currentElement.prop("indeterminate", false);
+
+            let entityDiv;
+            if (currentEntityType === "Org") {
+                entityDiv = $("#org" + capitalizeFirst(currentTab) + "sList input:checkbox");
+            } else {
+                entityDiv = $("#country" + capitalizeFirst(currentTab) + "sList input:checkbox");
+            }
+
+            if (currentElement.prop("checked")) {
+                entityDiv.each(function () {
+                    filterSet[currentTab]['entities'].add(this.value);
+                    $(this).prop("checked", true);
+                });
+            } else {
+                entityDiv.each(function() {
+                    filterSet[currentTab]['entities'].delete(this.value);
+                    $(this).prop("checked", false);
+                });
+            }
+            actorSearch(currentTab);
+        });
+
+        //adds all of the current matched items into the current selection
+        $(".actorSelectAll").click(function (event) {
+            $("#searchList" + capitalizeFirst(currentTab) + "s").children().each(function () {
+                filterSet[currentTab]["full"].add(this.value);
+                this.checked = true;
+            });
+            // Lose focus so that popover goes away
+            $(this).blur();
+        });
+
+        //clears all of the current matched items from the current selection
+        $(".actorClearAll").click(function (event) {
+            $(".actorBottom, .clearActorBtn, #deleteGroup, .actorShowSelectedLbl, #editGroupName").popover("hide");
+            $("#searchList" + capitalizeFirst(currentTab) + "s").children().each(function () {
+                filterSet[currentTab]["full"].delete(this.value);
+                this.checked = false;
+            });
+            $(this).blur();
+        });
+
+        //adds a new group for source/target
+        $(".actorNewGroup").click(function (event) {
+            $(".actorBottom, .clearActorBtn, #deleteGroup, .actorShowSelectedLbl, #editGroupName").popover("hide");
+            var newName = capitalizeFirst(currentTab) + " " + window[currentTab + "Size"];
+            var nameCount = 1;
+            while (actorNodeNames.indexOf(newName) > -1) {
+                newName = capitalizeFirst(currentTab) + " " + (window[currentTab + "Size"] + nameCount);
+                nameCount ++;
+            }
+            actorNodes.push(new nodeObj(newName, [], [], actorColors(currentSize), currentTab, changeID));
+            actorNodeNames.push(actorNodes[actorNodes.length - 1].name);
+            window[currentTab + "Size"]++;
+            window[currentTab + "ActualSize"]++;
+            currentSize++;
+            changeID++;
+
+            // Save values to the current node
+            window[currentTab + "CurrentNode"].group = [...filterSet[currentTab]["full"]];
+
+            // Set current node to new node
+            window[currentTab + "CurrentNode"] = actorNodes[actorNodes.length - 1];
+            updateGroupName(window[currentTab + "CurrentNode"].name);
+
+            //update gui
+            $("#clearAll" + capitalizeFirst(currentTab) + "s").click();
+            filterSet[currentTab]["full"] = new Set();
+            actorSearch(currentTab);
+
+            //update svg
+            //change dimensions of SVG if needed (exceeds half of the space)
+            if (window[currentTab + "ActualSize"] > calcCircleNum(actorHeight)) {
+                actorHeight += actorNodeR;
+                $("#actorLinkDiv").height(function (n, c) {
+                    return c + actorNodeR;
+                });
+                actorSVG.attr("height", actorHeight);
+                d3.select("#centerLine").attr("d", function () {
+                    return "M" + actorWidth / 2 + "," + 0 + "V" + actorHeight;
+                });
+            }
+            updateAll();
+            if (opMode == "aggreg")
+                updateAggregTable();
+            actorTick();
+            actorForce.alpha(1).restart();
+
+            $(this).blur();
+        });
+
+        //remove a group if possible
+        $("#deleteGroup").click(function () {
+            $(".actorBottom, .clearActorBtn, #deleteGroup, .actorShowSelectedLbl, #editGroupName").popover("hide");
+            const cur = actorNodes.indexOf(window[currentTab + "CurrentNode"]);
+            let prev = cur - 1;
+            let next = cur + 1;
+            while (true) {
+                if (actorNodes[prev] && actorNodes[prev].actor == currentTab) {
+                    performUpdate(prev);
+                    $(this).blur();
+                    return;
+                }
+                else if (actorNodes[next] && actorNodes[next].actor == currentTab) {
+                    performUpdate(next);
+                    $(this).blur();
+                    return;
+                }
+                else {
+                    //update search in both directions
+                    if (prev > -1)
+                        prev--;
+                    if (next < actorNodes.length)
+                        next++;
+                    if (prev == -1 && next == actorNodes.length)
+                        break;
+                }
+            }
+            alert("Need at least one " + currentTab + " node!");
+
+            function performUpdate(index) {
+                //set index node to current
+                window[currentTab + "CurrentNode"] = actorNodes[index];
+                updateGroupName(actorNodes[index].name);
+
+                $("#clearAll" + capitalizeFirst(currentTab) + "s").click();
+                //update actor selection checks
+                $("." + currentTab + "Chk:checked").prop("checked", false);
+                for (var x = 0; x < actorNodes[index].groupIndices.length; x++)
+                    $("#" + actorNodes[index].groupIndices[x]).prop("checked", true);
+                $("#" + currentTab + "ShowSelected").trigger("click");
+
+                //update links
+                for (var x = 0; x < actorLinks.length; x++) {
+                    if (actorLinks[x].source == actorNodes[cur]) {
+                        actorLinks.splice(x, 1);
+                        x--;
+                    }
+                    else if (actorLinks[x].target == actorNodes[cur]) {
+                        actorLinks.splice(x, 1);
+                        x--;
+                    }
+                }
+                actorNodeNames.splice(actorNodes[cur].name, 1);
+                actorNodes.splice(cur, 1);
+                window[currentTab + "ActualSize"]--;
+
+                const curHeight = $("#actorContainer").height();		//this is the height of the container
+                const titleHeight = $("#linkTitle").height();			//this is the height of the title div above the SVG
+
+                if (sourceActualSize <= calcCircleNum(curHeight - titleHeight) && targetActualSize <= calcCircleNum(curHeight - titleHeight)) {		//if link div is empty enough, maintain height alignment
+                    $("#actorLinkDiv").css("height", $("#actorSelectionDiv").height() + 2);
+                    actorHeight = actorSVG.node().getBoundingClientRect().height;
+                    actorSVG.attr("height", actorHeight);
+                    d3.select("#centerLine").attr("d", function () {
+                        return "M" + actorWidth / 2 + "," + 0 + "V" + actorHeight;
+                    });
+                }
+                else {	//if deleting the element and shrinking the SVG will cause the height of the SVG to be less than the height of the container, do nothing; else shrink SVG
+                    if (actorHeight - actorNodeR < curHeight - titleHeight)
+                        return;
+
+                    if (window[currentTab + "ActualSize"] <= calcCircleNum(actorHeight - actorNodeR)) {
+                        actorHeight -= actorNodeR;
+                        $("#actorLinkDiv").height(function (n, c) {
+                            return c - actorNodeR;
+                        });
+                        actorSVG.attr("height", actorHeight);
+                        d3.select("#centerLine").attr("d", function () {
+                            return "M" + actorWidth / 2 + "," + 0 + "V" + actorHeight;
+                        });
+                    }
+                }
+                updateAll();
+
+                if (opMode == "aggreg")
+                    updateAggregTable();
+            }
+        });
+
     }
     view(vnode) {
         return (m(".subsetDiv[id='subsetActor']", {style: {"display": "none"}},

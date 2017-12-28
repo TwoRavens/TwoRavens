@@ -14,9 +14,6 @@ import CanvasLocation from "./views/CanvasLocation"
 import TableAggregation from "./views/TableAggregation"
 
 class Body_EventData {
-    public laddaSubset;
-    public laddaReset;
-    public laddaDownload;
 
     oncreate() {
 
