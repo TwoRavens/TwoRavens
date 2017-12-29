@@ -15,7 +15,7 @@ import Subpanel from './views/Subpanel';
 
 
 // EVENTDATA
-import '../EventData/css/main.css'
+import '../EventData/css/app.css'
 // Used for rendering date calendar
 import '../../node_modules/jquery-ui/themes/base/datepicker.css'
 // JQuery-ui must be loaded before bootstrap
@@ -277,8 +277,9 @@ if (IS_EVENTDATA_DOMAIN) {
         '/aggregate': {render: () => m(Body_EventData, {mode: 'aggregate'})}
     });
 }
-
-m.route(document.body, '/model', {
-    '/model': {render: () => m(Body)},
-    '/explore': {render: () => m(Body, {mode: 'explore'})}
-});
+else {
+    m.route(document.body, '/model', {
+        '/model': {render: () => m(Body)},
+        '/explore': {render: () => m(Body, {mode: 'explore'})}
+    });
+}
