@@ -1,9 +1,10 @@
 import * as app from "../app.js"
+import * as d3 from "../../../../node_modules/d3/build/d3.min.js"
 
-export let actorDisplayed = false;
+let actorDisplayed = false;
 
 // Lists of all checked values
-export let filterSet = {
+let filterSet = {
     'source': {
         'full': new Set(),
         'entities': new Set(),
@@ -22,7 +23,7 @@ const orgs = ["IGO", "IMG", "MNC", "NGO"];		//hard coded organizations to remove
 const actorTypes = ["source", "target"];		//these arrays are to help loop through actor loading
 
 //definition of a node
-export function NodeObj(name, group, groupIndices, color, actorType, actorID) {
+function NodeObj(name, group, groupIndices, color, actorType, actorID) {
     this.name = name;
     this.group = group;
     this.groupIndices = groupIndices;
@@ -32,31 +33,31 @@ export function NodeObj(name, group, groupIndices, color, actorType, actorID) {
 }
 
 //definition of a link
-export function LinkObj(source, target, rev, dup) {
+function LinkObj(source, target, rev, dup) {
     this.source = source;
     this.target = target;
     this.rev = rev;
     this.dup = dup;
 }
 
-export let actorNodes = [];
+let actorNodes = [];
 export let actorLinks = [];
 
-export let currentTab = "source";
+let currentTab = "source";
 
 var sourceCurrentNode;			//current source node that is selected
 var targetCurrentNode;
-export let currentSize = 0;					//total number of nodes created; this is never decremented
+let currentSize = 0;					//total number of nodes created; this is never decremented
 var sourceSize = 0;						//total number of source nodes created; this is never decremented
 var targetSize = 0;						//total number of target nodes created; this is never decremented
-export var sourceActualSize = 0;				//total number of source nodes present
-export var targetActualSize = 0;				//total number of target nodes present
-export let changeID = 0;						//number that is updated whenever a node is added/changed, set to actorID
+var sourceActualSize = 0;				//total number of source nodes present
+var targetActualSize = 0;				//total number of target nodes present
+let changeID = 0;						//number that is updated whenever a node is added/changed, set to actorID
 
-export var actorNodeNames = [];				//array list to maintain unique node names
+var actorNodeNames = [];				//array list to maintain unique node names
 
 //begin force definitions
-export var actorSVG;
+var actorSVG;
 //~ var actorSVG;			//move this to d3actor?
 //~ if (opMode == "subset") {
 	//~ actorSVG = d3.select("#actorLinkSVG");
@@ -68,16 +69,16 @@ export var actorSVG;
 	//~ actorSVG = d3.select("#actorLinkSVG");
 //~ }
 
-export var actorWidth;		//not yet set since window has not yet been displayed; defaults to 0
-export var actorHeight;	//this code is here to remind what is under subset.js
+var actorWidth;		//not yet set since window has not yet been displayed; defaults to 0
+var actorHeight;	//this code is here to remind what is under subset.js
 
 
-export var boundaryLeft;		//max x coordinate source nodes can move
-export var boundaryRight;		//max x coordinate target nodes can move
+var boundaryLeft;		//max x coordinate source nodes can move
+var boundaryRight;		//max x coordinate target nodes can move
 
-export const actorNodeR = 40;									//various definitions for node display
+const actorNodeR = 40;									//various definitions for node display
 const actorPadding = 5;
-export const actorColors = d3.scaleOrdinal(d3.schemeCategory20);
+const actorColors = d3.scaleOrdinal(d3.schemeCategory20);
 const pebbleBorderColor = '#fa8072';
 const fillRatio = 0.6;
 
@@ -95,7 +96,7 @@ changeID++;
 sourceCurrentNode = actorNodes[0];
 targetCurrentNode = actorNodes[1];
 
-export var actorForce;
+var actorForce;
 
 const node_drag = d3.drag().on("start", dragstart).on("drag", dragmove).on("end", dragend);		//defines the drag
 
@@ -117,19 +118,281 @@ d3.selection.prototype.moveToBack = function () {
 };
 
 //all links in SVG
-export let linkGroup;
+let linkGroup;
 
 //all nodes in SVG
-export let nodeGroup;
+let nodeGroup;
 
 //draw the drag line last to show it over the nodes when dragging
-export let drag_line;
-export let tooltipSVG;
+let drag_line;
+let tooltipSVG;
 
 let originNode = null;				//node that is the start of drag link line
 let destNode = null;				//node that is the end of the drag link line
 
 //end force definitions, begin force functions
+
+export function setupActor(){
+    actorSVG = d3.select("#actorLinkSVG");
+
+    actorWidth = actorSVG.node().getBoundingClientRect().width;		//not yet set since window has not yet been displayed; defaults to 0
+    actorHeight = actorSVG.node().getBoundingClientRect().height;	//this code is here to remind what is under subset.js
+
+    boundaryLeft = Math.floor(actorWidth / 2) - 20;		//max x coordinate source nodes can move
+    boundaryRight = Math.ceil(actorWidth / 2) + 20;		//max x coordinate target nodes can move
+
+    actorForce = d3.forceSimulation()
+        .force("link", d3.forceLink().distance(100).strength(0.5))	//link force to keep nodes together
+        .force("x", d3.forceX().x(function (d) {					//grouping by nodes
+            if (d.actor === "source")
+                return Math.floor(actorWidth / 4);
+            return Math.floor(3 * actorWidth / 4);
+        }).strength(0.06))
+        .force("y", d3.forceY().y(function (d) {					//cluster nodes
+            return Math.floor(actorHeight / 2);
+        }).strength(0.05))
+        .force('charge', d3.forceManyBody().strength(-100));	//prevent tight clustering
+
+
+    //define arrow markers
+    actorSVG.append('svg:defs').append('svg:marker').attr('id', 'end-arrow').attr('viewBox', '0 -5 10 10').attr('refX', 6).attr('markerWidth', 3).attr('markerHeight', 3).attr('orient', 'auto').append('svg:path').attr('d', 'M0,-5L10,0L0,5').style('fill', '#000');
+    actorSVG.append('svg:defs').append('svg:marker').attr('id', 'start-arrow').attr('viewBox', '0 -5 10 10').attr('refX', 4).attr('markerWidth', 3).attr('markerHeight', 3).attr('orient', 'auto').append('svg:path').attr('d', 'M10,-5L0,0L10,5').style('fill', '#000');
+
+    //define SVG mouse actions
+    actorSVG.on("mouseup", function (d) {		//cancel draw line
+        lineMouseup();
+    }).on("contextmenu", function (d) {		//prevent right click on svg
+        d3.event.preventDefault();
+    });
+
+    linkGroup = actorSVG.append("svg:g").attr("class", "allLinksGroup").selectAll("path");
+    nodeGroup = actorSVG.append("svg:g").attr("class", "allNodesGroup").selectAll("g");
+    drag_line = actorSVG.append('svg:path').attr('class', 'link dragline hidden').attr('d', 'M0,0L0,0');
+    tooltipSVG = d3.select(actorSVG.node().parentNode).append("div").attr("class", "SVGtooltip").style("opacity", 0);
+
+    updateSVG();						//updates SVG elements
+
+    actorForce.on("tick", actorTick);		//custom tick function
+
+    //clears search and filter selections
+    $(".clearActorBtn").click(function (event) {
+        clearChecks();
+        actorSearch(currentTab);
+        $(this).blur();
+    });
+
+
+    //clear search box when reloading page
+    $(".actorSearch").ready(function () {
+        $(".actorSearch").val("");
+    });
+
+    //when typing in search box
+    $(".actorSearch").on("keyup", function (event) {
+        $(".actorChkLbl").popover("hide");
+        const searchText = $("#" + currentTab + "Search").val().toUpperCase();
+        if (searchText.length % 3 === 0) {
+            actorSearch(currentTab);
+        }
+    });
+
+    //on load of page, keep actorShowSelected unchecked
+    $(".actorShowSelected").ready(function () {
+        $(".actorShowSelected").prop("checked", false);
+    });
+
+
+    //on load of page, keep checkbox for selecting all filters unchecked
+    $(".allCheck").ready(function () {
+        $(".allCheck").prop("checked", false);
+    });
+
+    //selects all checks for specified element, handles indeterminate state of checkboxes
+    $(".allCheck").click(function (event) {
+        const currentEntityType = event.target.id.substring(6, 9);
+        const currentElement = (currentEntityType === "Org") ? $("#" + currentTab + currentEntityType + "AllCheck") : $("#" + currentTab + "CountryAllCheck");
+
+        currentElement.prop("indeterminate", false);
+
+        let entityDiv;
+        if (currentEntityType === "Org") {
+            entityDiv = $("#org" + capitalizeFirst(currentTab) + "sList input:checkbox");
+        } else {
+            entityDiv = $("#country" + capitalizeFirst(currentTab) + "sList input:checkbox");
+        }
+
+        if (currentElement.prop("checked")) {
+            entityDiv.each(function () {
+                filterSet[currentTab]['entities'].add(this.value);
+                $(this).prop("checked", true);
+            });
+        } else {
+            entityDiv.each(function () {
+                filterSet[currentTab]['entities'].delete(this.value);
+                $(this).prop("checked", false);
+            });
+        }
+        actorSearch(currentTab);
+    });
+
+    //adds all of the current matched items into the current selection
+    $(".actorSelectAll").click(function (event) {
+        $("#searchList" + capitalizeFirst(currentTab) + "s").children().each(function () {
+            filterSet[currentTab]["full"].add(this.value);
+            this.checked = true;
+        });
+        // Lose focus so that popover goes away
+        $(this).blur();
+    });
+
+    //clears all of the current matched items from the current selection
+    $(".actorClearAll").click(function (event) {
+        $(".actorBottom, .clearActorBtn, #deleteGroup, .actorShowSelectedLbl, #editGroupName").popover("hide");
+        $("#searchList" + capitalizeFirst(currentTab) + "s").children().each(function () {
+            filterSet[currentTab]["full"].delete(this.value);
+            this.checked = false;
+        });
+        $(this).blur();
+    });
+
+    //adds a new group for source/target
+    $(".actorNewGroup").click(function (event) {
+        $(".actorBottom, .clearActorBtn, #deleteGroup, .actorShowSelectedLbl, #editGroupName").popover("hide");
+        var newName = capitalizeFirst(currentTab) + " " + window[currentTab + "Size"];
+        var nameCount = 1;
+        while (actorNodeNames.indexOf(newName) > -1) {
+            newName = capitalizeFirst(currentTab) + " " + (window[currentTab + "Size"] + nameCount);
+            nameCount++;
+        }
+        actorNodes.push(new NodeObj(newName, [], [], actorColors(currentSize), currentTab, changeID));
+        actorNodeNames.push(actorNodes[actorNodes.length - 1].name);
+        window[currentTab + "Size"]++;
+        window[currentTab + "ActualSize"]++;
+        currentSize++;
+        changeID++;
+
+        // Save values to the current node
+        window[currentTab + "CurrentNode"].group = [...filterSet[currentTab]["full"]];
+
+        // Set current node to new node
+        window[currentTab + "CurrentNode"] = actorNodes[actorNodes.length - 1];
+        updateGroupName(window[currentTab + "CurrentNode"].name);
+
+        //update gui
+        $("#clearAll" + capitalizeFirst(currentTab) + "s").click();
+        filterSet[currentTab]["full"] = new Set();
+        actorSearch(currentTab);
+
+        //update svg
+        //change dimensions of SVG if needed (exceeds half of the space)
+        if (window[currentTab + "ActualSize"] > calcCircleNum(actorHeight)) {
+            actorHeight += actorNodeR;
+            $("#actorLinkDiv").height(function (n, c) {
+                return c + actorNodeR;
+            });
+            actorSVG.attr("height", actorHeight);
+            d3.select("#centerLine").attr("d", function () {
+                return "M" + actorWidth / 2 + "," + 0 + "V" + actorHeight;
+            });
+        }
+        updateAll();
+        if (opMode === "aggreg")
+            updateAggregTable();
+        actorTick();
+        actorForce.alpha(1).restart();
+
+        $(this).blur();
+    });
+
+    //remove a group if possible
+    $("#deleteGroup").click(function () {
+        $(".actorBottom, .clearActorBtn, #deleteGroup, .actorShowSelectedLbl, #editGroupName").popover("hide");
+        const cur = actorNodes.indexOf(window[currentTab + "CurrentNode"]);
+        let prev = cur - 1;
+        let next = cur + 1;
+        while (true) {
+            if (actorNodes[prev] && actorNodes[prev].actor === currentTab) {
+                performUpdate(prev);
+                $(this).blur();
+                return;
+            }
+            else if (actorNodes[next] && actorNodes[next].actor === currentTab) {
+                performUpdate(next);
+                $(this).blur();
+                return;
+            }
+            else {
+                //update search in both directions
+                if (prev > -1)
+                    prev--;
+                if (next < actorNodes.length)
+                    next++;
+                if (prev === -1 && next === actorNodes.length)
+                    break;
+            }
+        }
+        alert("Need at least one " + currentTab + " node!");
+
+        function performUpdate(index) {
+            //set index node to current
+            window[currentTab + "CurrentNode"] = actorNodes[index];
+            updateGroupName(actorNodes[index].name);
+
+            $("#clearAll" + capitalizeFirst(currentTab) + "s").click();
+            //update actor selection checks
+            $("." + currentTab + "Chk:checked").prop("checked", false);
+            for (var x = 0; x < actorNodes[index].groupIndices.length; x++)
+                $("#" + actorNodes[index].groupIndices[x]).prop("checked", true);
+            $("#" + currentTab + "ShowSelected").trigger("click");
+
+            //update links
+            for (var x = 0; x < actorLinks.length; x++) {
+                if (actorLinks[x].source === actorNodes[cur]) {
+                    actorLinks.splice(x, 1);
+                    x--;
+                }
+                else if (actorLinks[x].target === actorNodes[cur]) {
+                    actorLinks.splice(x, 1);
+                    x--;
+                }
+            }
+            actorNodeNames.splice(actorNodes[cur].name, 1);
+            actorNodes.splice(cur, 1);
+            window[currentTab + "ActualSize"]--;
+
+            const curHeight = $("#actorContainer").height();		//this is the height of the container
+            const titleHeight = $("#linkTitle").height();			//this is the height of the title div above the SVG
+
+            if (sourceActualSize <= calcCircleNum(curHeight - titleHeight) && targetActualSize <= calcCircleNum(curHeight - titleHeight)) {		//if link div is empty enough, maintain height alignment
+                $("#actorLinkDiv").css("height", $("#actorSelectionDiv").height() + 2);
+                actorHeight = actorSVG.node().getBoundingClientRect().height;
+                actorSVG.attr("height", actorHeight);
+                d3.select("#centerLine").attr("d", function () {
+                    return "M" + actorWidth / 2 + "," + 0 + "V" + actorHeight;
+                });
+            }
+            else {	//if deleting the element and shrinking the SVG will cause the height of the SVG to be less than the height of the container, do nothing; else shrink SVG
+                if (actorHeight - actorNodeR < curHeight - titleHeight)
+                    return;
+
+                if (window[currentTab + "ActualSize"] <= calcCircleNum(actorHeight - actorNodeR)) {
+                    actorHeight -= actorNodeR;
+                    $("#actorLinkDiv").height(function (n, c) {
+                        return c - actorNodeR;
+                    });
+                    actorSVG.attr("height", actorHeight);
+                    d3.select("#centerLine").attr("d", function () {
+                        return "M" + actorWidth / 2 + "," + 0 + "V" + actorHeight;
+                    });
+                }
+            }
+            updateAll();
+
+            if (opMode === "aggreg")
+                updateAggregTable();
+        }
+    });
+}
 
 //function called at start of drag
 function dragstart(d, i) {
@@ -240,7 +503,7 @@ function dragend(d, i) {
 }
 
 //updates elements in SVG, nodes updated on actorID
-export function updateSVG() {
+function updateSVG() {
     //update links
     linkGroup = linkGroup.data(actorLinks);
 
@@ -462,7 +725,7 @@ export function updateSVG() {
 }
 
 //function that is called on every animated step of the SVG, handles boundary and node collision
-export function actorTick() {
+function actorTick() {
     if (!dragStarted) {
         const q = d3.quadtree().x((d) => d.x).y((d) => d.y).addAll(actorNodes);
         for (let x = 0; x < actorNodes.length; x++) {
@@ -553,7 +816,7 @@ function lineMousemove() {
 }
 
 //if dragging hide line, called on mouseup on SVG
-export function lineMouseup() {
+function lineMouseup() {
     if (originNode) {
         // hide drag line
         drag_line.classed('hidden', true).style('marker-end', '');
@@ -569,7 +832,7 @@ function resetMouseVars() {
 }
 
 //function to handle force and SVG updates
-export function updateAll() {
+function updateAll() {
     updateSVG();
     actorForce.nodes(actorNodes).force("link").links(actorLinks);
     actorForce.alpha(1).restart();
@@ -579,7 +842,7 @@ export function updateAll() {
 //end force functions, begin actor code
 
 //calculates the max number of nodes that can be fit in the fillRatio of the SVG
-export function calcCircleNum(curHeight) {
+function calcCircleNum(curHeight) {
     const numWidth = Math.floor((actorWidth / 2 + actorPadding) / (2 * actorNodeR + actorPadding));
     const numHeight = Math.floor((curHeight + actorPadding) / (2 * actorNodeR + actorPadding));
     const numCircle1 = Math.floor(numWidth * numHeight * fillRatio);		//total number of circles by rectangular packing by fillRatio
@@ -599,7 +862,7 @@ export function calcCircleNum(curHeight) {
 }
 
 //update display of group name
-export function updateGroupName(newGroupName) {
+function updateGroupName(newGroupName) {
     $("#editGroupName").attr("placeholder", newGroupName);
     $("#editGroupName").val(newGroupName);
 }
@@ -908,7 +1171,7 @@ function actorFilterChanged(element) {
 }
 
 // Clear all filters
-export function clearChecks() {
+function clearChecks() {
     document.getElementById(currentTab + "Search").value = "";
     $("#" + currentTab + "Filter :checkbox").prop("checked", false);
     $("#" + currentTab + "OrgAllCheck").prop("checked", false).prop("indeterminate", false);
@@ -926,7 +1189,7 @@ function showSelected(element) {
     actorSearch(currentTab);
 }
 
-export function actorSearch(actorName) {		//bugs: removes pre checked values on search clear, checking partial country after checking org
+function actorSearch(actorName) {		//bugs: removes pre checked values on search clear, checking partial country after checking org
     const searchText = $("#" + actorName + "Search").val().toUpperCase();
 
     const operator = '$and';
@@ -1013,7 +1276,7 @@ export function actorSearch(actorName) {		//bugs: removes pre checked values on 
     app.makeCorsRequest(app.subsetURL, query, updateActorListing);
 }
 
-export function capitalizeFirst(str) {
+function capitalizeFirst(str) {
     return str.charAt(0).toUpperCase() + str.substring(1);
 }
 

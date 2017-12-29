@@ -21,9 +21,12 @@ export default class Body_EventData {
     oncreate() {
 
         /* Dataset Selection Popover */
-        // Initiate
         $('.optionView').hide();
 
+        app.laddaSubset = Ladda.create(document.getElementById("btnSubmit"));
+        app.laddaReset = Ladda.create(document.getElementById("btnReset"));
+        app.laddaDownload = Ladda.create(document.getElementById("buttonDownload"));
+        app.laddaReset.start();
 
         // note that .textContent is the new way to write text to a div
         $('#about div.panel-body').text('TwoRavens v0.1 "Dallas" -- The Norse god Odin had two talking ravens as advisors, who would fly out into the world and report back all they observed.  In the Norse, their names were "Thought" and "Memory".  In our coming release, our thought-raven automatically advises on statistical model selection, while our memory-raven accumulates previous statistical models from Dataverse, to provide cumulative guidance and meta-analysis.');
@@ -56,11 +59,6 @@ export default class Body_EventData {
 
         document.getElementById("datasetLabel").innerHTML = app.dataset + " dataset";
 
-        // Close rightpanel if no prior queries have been submitted
-        if (app.queryId === 1) {
-            app.toggleRightPanel();
-        }
-
         let query = {
             'type': 'formatted',
             'dataset': app.dataset,
@@ -73,11 +71,6 @@ export default class Body_EventData {
         // Bind the leftpanel search box to the field name list
         $("#searchvar").keyup(app.reloadLeftpanelVariables);
 
-        app.laddaSubset = Ladda.create(document.getElementById("btnSubmit"));
-        app.laddaReset = Ladda.create(document.getElementById("btnReset"));
-        app.laddaDownload = Ladda.create(document.getElementById("buttonDownload"));
-        app.laddaReset.start();
-
         query = {
             'subsets': JSON.stringify(app.subsetQuery),
             'variables': JSON.stringify(app.variableQuery),
@@ -87,6 +80,11 @@ export default class Body_EventData {
 
         // Initial load of preprocessed data
         app.makeCorsRequest(app.subsetURL, query, app.pageSetup);
+
+        // Close rightpanel if no prior queries have been submitted
+        // if (app.queryId === 1) {
+        //     app.toggleRightPanel();
+        // }
     }
 
     view(vnode) {

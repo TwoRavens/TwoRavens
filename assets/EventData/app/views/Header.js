@@ -5,7 +5,7 @@ export default class Header {
         return (m("nav.navbar.navbar-default.navbar-fixed-top[id='navbar'][role='navigation']",
             [
                 m("a.navbar-brand", {style: {"margin-left": "0"}},
-                    m("img[alt='TwoRavens'][onmouseout='closeabout();'][onmouseover='about();'][src='../images/TwoRavens.png'][width='100']", {
+                    m("img[alt='TwoRavens'][onmouseout='closeabout();'][onmouseover='about();'][src='../../../images/TwoRavens.png'][width='100']", {
                         style: {
                             "margin-left": "2em",
                             "margin-top": "-0.5em"
