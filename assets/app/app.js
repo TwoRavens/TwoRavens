@@ -105,7 +105,8 @@ export let zparams = {
     zmodelcount: 0,
     zplot: [],
     zsessionid: "",
-    zdatacite: '...'
+    zdatacite: '...',
+    zcrosstab: [],
 };
 
 let modelCount = 0;

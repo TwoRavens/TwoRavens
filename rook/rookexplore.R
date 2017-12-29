@@ -154,39 +154,41 @@ explore.app <- function(env) {
         if (length(unique(useTab[,2])) > 10 & !isTRUE(colvNature == "nominal")) {
           useTab[,2] <- cut(useTab[,2], breaks=10)
         }
-      } else if (var1buttontype == "equidistance") {
-        print("equidistance var 1  called")
-        if (length(unique(useTab[,1]))  >10 & !isTRUE(rowvNature == "nominal")) {
-          useTab[,1] <- cut(useTab[,1], breaks=var1value)
+      } else {
+        if (var1buttontype == "equidistance") {
+          print("equidistance var 1  called")
+          if (length(unique(useTab[,1]))  >10 & !isTRUE(rowvNature == "nominal")) {
+            useTab[,1] <- cut(useTab[,1], breaks=var1value)
+          }
+        } else if (var1buttontype == "equimass") {
+          print("equimass var 1 called")
+          # first arrange
+          usethis <- sort(useTab[,1], decreasing=FALSE, na.last=NA)
+          print("equimass usethis")
+          print(usethis)
+          if (length(unique(useTab[,1])) > 10 & !isTRUE(rowvNature == "nominal")) {
+            useTab[,1] <- cut(usethis, breaks=var1value)
+          }
         }
-      } else if (var1buttontype == "equimass") {
-        print("equimass var 1 called")
-        # first arrange
-        usethis <- sort(useTab[,1], decreasing=FALSE, na.last=NA)
-        print("equimass usethis")
-        print(usethis)
-        if (length(unique(useTab[,1])) > 10 & !isTRUE(rowvNature == "nominal")) {
-          useTab[,1] <- cut(usethis, breaks=var1value)
+
+        if (var2buttontype == "equidistance") {
+          print("equidistance var 2 called")
+          if (length(unique(useTab[,2])) > 10 & !isTRUE(colvNature == "nominal")) {
+            useTab[,2] <- cut(useTab[,2], breaks=var2value)
+          }
+        } else if(var2buttontype == "equimass") {
+          print("equimass var 2 called")
+                                        # first arrange
+          usethis <- sort(useTab[,2], decreasing = FALSE, na.last = NA  )
+          print("equimass usethis")
+          print(usethis)
+          if (length(unique(useTab[,2])) > 10 & !isTRUE(colvNature == "nominal")) {
+            useTab[,2] <- cut(usethis, breaks=var2value)
+          }
         }
       }
 
-      if (var2buttontype == "equidistance") {
-        print("equidistance var 2 called")
-        if (length(unique(useTab[,2])) > 10 & !isTRUE(colvNature == "nominal")) {
-          useTab[,2] <- cut(useTab[,2], breaks=var2value)
-        }
-      } else if(var2buttontype == "equimass") {
-        print("equimass var 2 called")
-        # first arrange
-        usethis <- sort(useTab[,2], decreasing = FALSE, na.last = NA  )
-        print("equimass usethis")
-        print(usethis)
-        if (length(unique(useTab[,2])) > 10 & !isTRUE(colvNature == "nominal")) {
-          useTab[,2] <- cut(usethis, breaks=var2value)
-        }
-      }
-
-      myTab <- table(useTab[,1], seTab[,2])
+      myTab <- table(useTab[,1], useTab[,2])
       rm(useTab)
       coln <- colnames(myTab)
       rown <- row.names(myTab)
