@@ -1,11 +1,26 @@
 // Date tab of subsetting screen
+import * as app from "../app.js"
+
+import * as d3 from "../../../../node_modules/d3/build/d3.min.js"
+import $ from 'jquery'
+import "jquery-ui/ui/widgets/datepicker"
+
+let margin;
+let margin2;
+let datewidth;
+let dateheight;
+let dateheight2;
 
 // Default calendar ranges
 var datemax = new Date();
 var datemin = d3.timeYear.offset(datemax, -5);
 
+let min = datemin.getFullYear();
+let max = datemax.getFullYear();
+
 // Stubs for user preference
 var dateminUser = new Date(datemin.getTime());
+
 var datemaxUser = new Date(datemax.getTime());
 
 // Only true on page setup
@@ -14,14 +29,61 @@ var dateSetup = true;
 // Stores brush dates
 var plotSelection;
 
+export function setupDate() {
 
-function d3date(init=false) {
+    $("#fromdate").datepicker({
+        dateFormat: 'mm-dd-yy',
+        changeYear: true,
+        changeMonth: true,
+        defaultDate: datemin,
+        yearRange: min + ':' + max,
+        minDate: datemin,
+        maxDate: datemax,
+        orientation: top,
+        onSelect: function () {
+            dateminUser = new Date($(this).datepicker('getDate').getTime());
+            $("#todate").datepicker('option', 'minDate', dateminUser);
+            $("#todate").datepicker('option', 'defaultDate', datemax);
+            $("#todate").datepicker('option', 'maxDate', datemax);
+            fromdatestring = dateminUser.getFullYear() + "" + ('0' + (dateminUser.getMonth() + 1)).slice(-2) + "" + ('0' + dateminUser.getDate()).slice(-2);
+        },
+        onClose: function (selectedDate) {
+            setTimeout(function () {
+                $('#todate').focus();
+            }, 100);
+
+            d3date();
+            $("#todate").datepicker("show");
+        }
+    });
+
+
+    $("#todate").datepicker({
+        changeYear: true,
+        changeMonth: true,
+        yearRange: min + ':' + max,
+        dateFormat: 'mm-dd-yy',
+        defaultDate: datemax,
+        minDate: dateminUser,
+        maxDate: datemax,
+        orientation: top,
+        onSelect: function () {
+            datemaxUser = new Date($(this).datepicker('getDate').getTime());
+            todatestring = datemaxUser.getFullYear() + "" + ('0' + (datemaxUser.getMonth() + 1)).slice(-2) + "" + ('0' + datemaxUser.getDate()).slice(-2);
+        },
+        onClose: function () {
+            d3date();
+        }
+    });
+}
+
+export function d3date(init=false) {
     $("#dateSVG").empty();
-    if (opMode === "subset") {
+    if (app.opMode === "subset") {
 		$("#dateInterval").css("display", "block");
 		$("#dateAggregOption").css("display", "none");
 	}
-	else if (opMode === "aggreg") {
+	else if (app.opMode === "aggreg") {
 		$("#dateInterval").css("display", "none");
 		$("#dateAggregOption").css("display", "block");
 	}
@@ -130,12 +192,12 @@ function d3date(init=false) {
         }
     }
 
-    for (let idx in dateData) {
+    for (let idx in app.dateData) {
 
         // Ensure data is valid
-        if (isNaN(parseInt(dateData[idx]['<year>']))) continue;
+        if (isNaN(parseInt(app.dateData[idx]['<year>']))) continue;
 
-        let bin = {'Date': new Date(dateData[idx]['<year>'], dateData[idx]['<month>'] - 1, 0), 'Freq': dateData[idx].total};
+        let bin = {'Date': new Date(app.dateData[idx]['<year>'], app.dateData[idx]['<month>'] - 1, 0), 'Freq': app.dateData[idx].total};
         data.push(bin);
     }
     data = data.sort(dateSort);		//here is where date is collected as monthly?
@@ -264,9 +326,6 @@ function d3date(init=false) {
 
     dateSetup = false;
 }
-
-min=datemin.getFullYear();
-max=datemax.getFullYear();
 
 function interpolate(data, date) {
     let allDates = [];

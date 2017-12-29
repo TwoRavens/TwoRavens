@@ -1,4 +1,5 @@
 import {actorDataLoad, actorLinks, resizeActorSVG} from "./subsets/Actor";
+import {d3date} from "./subsets/Date";
 
 function about() {
     $('#about').show();
@@ -48,7 +49,7 @@ export function toggleRightPanel() {
     rightpanelMargin();
 }
 
-let opMode = "subset";
+export let opMode = "subset";
 let production = false;
 
 let rappURL = '';
@@ -161,6 +162,63 @@ export let variableQuery = buildVariables();
 export let subsetQuery = buildSubset(stagedSubsetData);
 
 console.log("Query: " + JSON.stringify(subsetQuery));
+
+export function setupBody(){
+    laddaSubset = Ladda.create(document.getElementById("btnSubmit"));
+    laddaReset = Ladda.create(document.getElementById("btnReset"));
+    laddaDownload = Ladda.create(document.getElementById("buttonDownload"));
+    laddaReset.start();
+
+    // Build list of subsets in left panel
+    d3.select("#subsetList").selectAll("p")
+        .data(subsetKeys)
+        .enter()
+        .append("p")
+        .text(function (d) {
+            return d;
+        })
+        .style("text-align", "center")
+        .style('background-color', function () {
+            if (d3.select(this).text() === subsetKeySelected) return selVarColor;
+            else return varColor;
+        })
+        .on("click", function () {
+            showSubset(d3.select(this).text())
+        });
+
+    // on load make subset tab in left panel show first
+    $("#btnSubset").trigger("click");
+    $("#btnSubsetLabel").addClass('active');
+
+    document.getElementById("datasetLabel").innerHTML = dataset + " dataset";
+
+    let query = {
+        'type': 'formatted',
+        'dataset': dataset,
+        'datasource': datasource
+    };
+
+    // Load the field names into the left panel
+    makeCorsRequest(subsetURL, query, variableSetup);
+
+    // Bind the leftpanel search box to the field name list
+    $("#searchvar").keyup(reloadLeftpanelVariables);
+
+    query = {
+        'subsets': JSON.stringify(subsetQuery),
+        'variables': JSON.stringify(variableQuery),
+        'dataset': dataset,
+        'datasource': datasource
+    };
+
+    // Initial load of preprocessed data
+    makeCorsRequest(subsetURL, query, pageSetup);
+
+    // Close rightpanel if no prior queries have been submitted
+    // if (queryId === 1) {
+    //     toggleRightPanel();
+    // }
+}
 
 export function reloadLeftpanelVariables() {
     // Subset variable list by search term. Empty string returns all.
@@ -328,7 +386,7 @@ export function pageSetup(jsondata) {
     for (let idx in jsondata['country_data']) {
         let country = jsondata['country_data'][idx]['<country_code>'];
         if (country === "" || country === undefined) continue;
-        countryData[jsondata['country_data'][idx]['<country_code>']] = jsondata['country_code'][idx].total
+        countryData[jsondata['country_data'][idx]['<country_code>']] = jsondata['country_data'][idx].total
     }
 
     actionData = {};
