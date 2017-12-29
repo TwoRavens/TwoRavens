@@ -1,5 +1,6 @@
 import m from 'mithril';
 import * as app from "./app.js"
+import {setupBody, toggleLeftPanel, toggleRightPanel} from "./app";
 
 import Header from "./views/Header"
 import Footer from "./views/Footer"
@@ -23,68 +24,15 @@ export default class Body_EventData {
         /* Dataset Selection Popover */
         $('.optionView').hide();
 
-        app.laddaSubset = Ladda.create(document.getElementById("btnSubmit"));
-        app.laddaReset = Ladda.create(document.getElementById("btnReset"));
-        app.laddaDownload = Ladda.create(document.getElementById("buttonDownload"));
-        app.laddaReset.start();
-
         // note that .textContent is the new way to write text to a div
         $('#about div.panel-body').text('TwoRavens v0.1 "Dallas" -- The Norse god Odin had two talking ravens as advisors, who would fly out into the world and report back all they observed.  In the Norse, their names were "Thought" and "Memory".  In our coming release, our thought-raven automatically advises on statistical model selection, while our memory-raven accumulates previous statistical models from Dataverse, to provide cumulative guidance and meta-analysis.');
         //This is the first public release of a new, interactive Web application to explore data, view descriptive statistics, and estimate statistical models.";
 
         // Open/Close Panels
-        $('#leftpanel span').click(app.toggleLeftPanel);
-        $('#rightpanel span').click(app.toggleRightPanel);
+        $('#leftpanel span').click(toggleLeftPanel);
+        $('#rightpanel span').click(toggleRightPanel);
 
-        // Build list of subsets in left panel
-        d3.select("#subsetList").selectAll("p")
-            .data(app.subsetKeys)
-            .enter()
-            .append("p")
-            .text(function (d) {
-                return d;
-            })
-            .style("text-align", "center")
-            .style('background-color', function () {
-                if (d3.select(this).text() === app.subsetKeySelected) return app.selVarColor;
-                else return app.varColor;
-            })
-            .on("click", function () {
-                app.showSubset(d3.select(this).text())
-            });
-
-        // on load make subset tab in left panel show first
-        $("#btnSubset").trigger("click");
-        $("#btnSubsetLabel").addClass('active');
-
-        document.getElementById("datasetLabel").innerHTML = app.dataset + " dataset";
-
-        let query = {
-            'type': 'formatted',
-            'dataset': app.dataset,
-            'datasource': app.datasource
-        };
-
-        // Load the field names into the left panel
-        app.makeCorsRequest(app.subsetURL, query, app.variableSetup);
-
-        // Bind the leftpanel search box to the field name list
-        $("#searchvar").keyup(app.reloadLeftpanelVariables);
-
-        query = {
-            'subsets': JSON.stringify(app.subsetQuery),
-            'variables': JSON.stringify(app.variableQuery),
-            'dataset': app.dataset,
-            'datasource': app.datasource
-        };
-
-        // Initial load of preprocessed data
-        app.makeCorsRequest(app.subsetURL, query, app.pageSetup);
-
-        // Close rightpanel if no prior queries have been submitted
-        // if (app.queryId === 1) {
-        //     app.toggleRightPanel();
-        // }
+        setupBody();
     }
 
     view(vnode) {

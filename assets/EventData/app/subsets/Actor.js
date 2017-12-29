@@ -927,7 +927,7 @@ export function actorDataLoad() {
             createElement(true, actorType, "entities", orgs[y], y, orgList);
         }
 
-        for (let columnType in actorData[actorType]) {
+        for (let columnType in app.actorData[actorType]) {
             loadDataHelper(actorType, columnType);
         }
     }

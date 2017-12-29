@@ -1,4 +1,5 @@
 import m from 'mithril';
+import {setupDate} from "../subsets/Date.js"
 
 function optionsMenuDate(mode) {
 
@@ -77,52 +78,7 @@ function optionsMenuDate(mode) {
 export default class CanvasDate {
     oncreate() {
         $("#dateSVG").empty();
-
-
-        $("#fromdate").datepicker({
-            dateFormat: 'mm-dd-yy',
-            changeYear: true,
-            changeMonth: true,
-            defaultDate: datemin,
-            yearRange: min + ':' + max,
-            minDate: datemin,
-            maxDate: datemax,
-            orientation: top,
-            onSelect: function () {
-                dateminUser = new Date($(this).datepicker('getDate').getTime());
-                $("#todate").datepicker('option', 'minDate', dateminUser);
-                $("#todate").datepicker('option', 'defaultDate', datemax);
-                $("#todate").datepicker('option', 'maxDate', datemax);
-                fromdatestring = dateminUser.getFullYear() + "" + ('0' + (dateminUser.getMonth() + 1)).slice(-2) + "" + ('0' + dateminUser.getDate()).slice(-2);
-            },
-            onClose: function (selectedDate) {
-                setTimeout(function () {
-                    $('#todate').focus();
-                }, 100);
-
-                d3date();
-                $("#todate").datepicker("show");
-            }
-        });
-
-
-        $("#todate").datepicker({
-            changeYear: true,
-            changeMonth: true,
-            yearRange: min + ':' + max,
-            dateFormat: 'mm-dd-yy',
-            defaultDate: datemax,
-            minDate: dateminUser,
-            maxDate: datemax,
-            orientation: top,
-            onSelect: function () {
-                datemaxUser = new Date($(this).datepicker('getDate').getTime());
-                todatestring = datemaxUser.getFullYear() + "" + ('0' + (datemaxUser.getMonth() + 1)).slice(-2) + "" + ('0' + datemaxUser.getDate()).slice(-2);
-            },
-            onClose: function () {
-                d3date();
-            }
-        });
+        setupDate();
     }
     view(vnode) {
         return (m(".subsetDiv[id='subsetDate']", {style: {"display": "none"}},

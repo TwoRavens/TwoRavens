@@ -1,6 +1,5 @@
 import m from 'mithril';
 import {dataset} from "../app.js"
-
 import {setupActor} from "../subsets/Actor.js"
 
 export default class CanvasActor {
