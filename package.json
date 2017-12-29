@@ -16,6 +16,15 @@
   "author": "",
   "license": "BSD-3-Clause",
   "dependencies": {
+    "ace-builds": "^1.2.9",
+    "bootstrap": "^3.3.7",
+    "d3": "^4.11.0",
+    "jqtree": "^1.4.3",
+    "jquery": "^3.2.1",
+    "jquery-datepicker": "^1.11.5",
+    "jquery-ui": "^1.12.1",
+    "jquery-ui-dist": "^1.12.1",
+    "ladda": "^1.0.5",
     "hopscotch": "^0.3.1",
     "http-server": "^0.10.0",
     "mithril": "^1.1.1"

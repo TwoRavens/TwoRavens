@@ -18,7 +18,6 @@ import List from './views/PanelList';
 import Search from './views/Search';
 import Subpanel from './views/Subpanel';
 
-<<<<<<< d88cc0ad606dbe12a0271fb72263f542a1613609
 import * as common from '../common/app/common';
 import ButtonRadio from '../common/app/views/ButtonRadio';
 import Footer from '../common/app/views/Footer';
@@ -31,17 +30,9 @@ import Peek from '../common/app/views/Peek';
 import Table from '../common/app/views/Table';
 import TextField from '../common/app/views/TextField';
 
-let state = {
-    pipelines: [],
-    async get_pipelines() {
-        this.pipelines = await app.listpipelines();
-        m.redraw();
-    }
-};
-=======
 
 // EVENTDATA
-import '../EventData/css/main.css'
+import '../EventData/css/app.css'
 // Used for rendering date calendar
 import '../../node_modules/jquery-ui/themes/base/datepicker.css'
 // JQuery-ui must be loaded before bootstrap
@@ -68,7 +59,13 @@ import '../../node_modules/ladda/dist/ladda-themeless.min.css'
 import '../EventData/app/app'
 import Body_EventData from '../EventData/app/Body_EventData'
 
->>>>>>> Initial Mithril HTML port
+let state = {
+    pipelines: [],
+    async get_pipelines() {
+        this.pipelines = await app.listpipelines();
+        m.redraw();
+    }
+};
 
 function setBackgroundColor(color) {
     return function() {
@@ -635,6 +632,7 @@ if (IS_EVENTDATA_DOMAIN) {
         '/aggregate': {render: () => m(Body_EventData, {mode: 'aggregate'})}
     });
 }
+<<<<<<< d78f7b519385a37b8638032cac1729d510dd8a80
 
 m.route(document.body, '/model', {
     '/model': {render: () => m(Body)},
@@ -651,3 +649,11 @@ m.route(document.body, '/model', {
     },
     '/data': Peek
 });
+=======
+else {
+    m.route(document.body, '/model', {
+        '/model': {render: () => m(Body)},
+        '/explore': {render: () => m(Body, {mode: 'explore'})}
+    });
+}
+>>>>>>> Fix eventdata webpack issues
