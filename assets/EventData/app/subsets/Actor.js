@@ -1,53 +1,9 @@
-let actorDisplayed = false;
+import * as app from "../app.js"
 
-$(document).ready(function () {
-    //update display variables
-    $("#actorLinkDiv").css("height", $("#actorSelectionDiv").height() + 2);
-
-    actorWidth = actorSVG.node().getBoundingClientRect().width;
-    actorHeight = actorSVG.node().getBoundingClientRect().height;
-
-    boundaryLeft = Math.floor(actorWidth / 2) - 40;
-    boundaryRight = Math.ceil(actorWidth / 2) + 40;
-
-    actorSVG.append("path").attr("id", "centerLine").attr("d", function () {
-        return "M" + actorWidth / 2 + "," + 0 + "V" + actorHeight;
-    }).attr("stroke", "black");
-
-    actorForce.force("x", d3.forceX().x(function (d) {
-        if (d.actor === "source")
-            return Math.floor(actorWidth / 3);
-        return Math.floor(2 * actorWidth / 3);
-    }).strength(0.06))
-        .force("y", d3.forceY().y(function (d) {
-            return Math.floor(actorHeight / 2);
-        }).strength(0.05));
-    updateAll();
-    actorDisplayed = true;
-});
-
-//some preparation and activation for gui display
-$(document).ready(function () {
-    //expands divs with filters
-    $(".filterExpand").click(function () {
-        if (this.value === "expand") {
-            this.value = "collapse";
-            $(this).css("background-image", "url(../images/collapse.png)");
-            $(this).next().next("div.filterContainer").show("fast");
-        }
-        else {
-            this.value = "expand";
-            $(this).css("background-image", "url(../images/expand.png)");
-            $(this).next().next("div.filterContainer").hide("fast");
-        }
-    });
-
-    //enable jquery hover text for various gui elements
-    $(".actorBottom, .clearActorBtn, #deleteGroup, .actorShowSelectedLbl, #editGroupName").tooltip({container: "body"});
-});
+export let actorDisplayed = false;
 
 // Lists of all checked values
-let filterSet = {
+export let filterSet = {
     'source': {
         'full': new Set(),
         'entities': new Set(),
@@ -66,7 +22,7 @@ const orgs = ["IGO", "IMG", "MNC", "NGO"];		//hard coded organizations to remove
 const actorTypes = ["source", "target"];		//these arrays are to help loop through actor loading
 
 //definition of a node
-function nodeObj(name, group, groupIndices, color, actorType, actorID) {
+export function NodeObj(name, group, groupIndices, color, actorType, actorID) {
     this.name = name;
     this.group = group;
     this.groupIndices = groupIndices;
@@ -76,31 +32,31 @@ function nodeObj(name, group, groupIndices, color, actorType, actorID) {
 }
 
 //definition of a link
-function linkObj(source, target, rev, dup) {
+export function LinkObj(source, target, rev, dup) {
     this.source = source;
     this.target = target;
     this.rev = rev;
     this.dup = dup;
 }
 
-let actorNodes = [];
-let actorLinks = [];
+export let actorNodes = [];
+export let actorLinks = [];
 
-let currentTab = "source";
+export let currentTab = "source";
 
-var sourceCurrentNode = null;			//current source node that is selected
-var targetCurrentNode = null;
-let currentSize = 0;					//total number of nodes created; this is never decremented
+var sourceCurrentNode;			//current source node that is selected
+var targetCurrentNode;
+export let currentSize = 0;					//total number of nodes created; this is never decremented
 var sourceSize = 0;						//total number of source nodes created; this is never decremented
 var targetSize = 0;						//total number of target nodes created; this is never decremented
-var sourceActualSize = 0;				//total number of source nodes present
-var targetActualSize = 0;				//total number of target nodes present
-let changeID = 0;						//number that is updated whenever a node is added/changed, set to actorID
+export var sourceActualSize = 0;				//total number of source nodes present
+export var targetActualSize = 0;				//total number of target nodes present
+export let changeID = 0;						//number that is updated whenever a node is added/changed, set to actorID
 
-var actorNodeNames = [];				//array list to maintain unique node names
+export var actorNodeNames = [];				//array list to maintain unique node names
 
 //begin force definitions
-var actorSVG;
+export var actorSVG;
 //~ var actorSVG;			//move this to d3actor?
 //~ if (opMode == "subset") {
 	//~ actorSVG = d3.select("#actorLinkSVG");
@@ -112,26 +68,26 @@ var actorSVG;
 	//~ actorSVG = d3.select("#actorLinkSVG");
 //~ }
 
-var actorWidth;		//not yet set since window has not yet been displayed; defaults to 0
-var actorHeight;	//this code is here to remind what is under subset.js
+export var actorWidth;		//not yet set since window has not yet been displayed; defaults to 0
+export var actorHeight;	//this code is here to remind what is under subset.js
 
 
-var boundaryLeft;		//max x coordinate source nodes can move
-var boundaryRight;		//max x coordinate target nodes can move
+export var boundaryLeft;		//max x coordinate source nodes can move
+export var boundaryRight;		//max x coordinate target nodes can move
 
-const actorNodeR = 40;									//various definitions for node display
+export const actorNodeR = 40;									//various definitions for node display
 const actorPadding = 5;
-const actorColors = d3.scaleOrdinal(d3.schemeCategory20);
+export const actorColors = d3.scaleOrdinal(d3.schemeCategory20);
 const pebbleBorderColor = '#fa8072';
 const fillRatio = 0.6;
 
 //default group display on page load, adds default source/target to nodes and SVG
-actorNodes.push(new nodeObj("Source 0", [], [], actorColors(currentSize), "source", changeID));
+actorNodes.push(new NodeObj("Source 0", [], [], actorColors(currentSize), "source", changeID));
 currentSize++;
 sourceSize++;
 sourceActualSize++;
 changeID++;
-actorNodes.push(new nodeObj("Target 0", [], [], actorColors(currentSize), "target", changeID));
+actorNodes.push(new NodeObj("Target 0", [], [], actorColors(currentSize), "target", changeID));
 currentSize++;
 targetSize++;
 targetActualSize++;
@@ -139,7 +95,7 @@ changeID++;
 sourceCurrentNode = actorNodes[0];
 targetCurrentNode = actorNodes[1];
 
-var actorForce;
+export var actorForce;
 
 const node_drag = d3.drag().on("start", dragstart).on("drag", dragmove).on("end", dragend);		//defines the drag
 
@@ -149,41 +105,6 @@ let dragTarget = null;			//node that is under the dragged node
 let dragTargetHTML = null;		//html for dragTarget
 
 let mousedownNode = null;		//catch for Chrome, check for mouseup + mousedown and manually trigger click
-
-//rename group on click, initialize groups
-$(document).ready(function () {
-    //visual feedback for name changing
-    $("#editGroupName").click(function () {
-        $("#editGroupName").css("background-color", "white").css("border", "1px solid black");
-    });
-
-    //catch enter and escape key
-    $("#editGroupName").keydown(function (e) {
-        if (e.keyCode == 13 || e.keyCode == 27) {       //enter or escape key pressed
-            $("#editGroupName").focusout();
-            $("#" + currentTab + "TabBtn").focus();     //remove focus
-        }
-    });
-
-    //save changes to group name
-    $("#editGroupName").focusout(function () {
-        let newGroupName = $("#editGroupName").val().trim();
-        if (newGroupName == "") {       //revert to previous name if none entered
-            newGroupName = window[currentTab + "CurrentNode"].name;
-        }
-        //remove visual feedback
-        $("#editGroupName").css("background-color", "#F9F9F9").css("border", "none");
-        //update in nodes data structure
-        window[currentTab + "CurrentNode"].name = newGroupName;
-        //update DOM
-        updateGroupName(newGroupName);
-
-        updateAll();        //update force
-
-        if (opMode == "aggreg")
-			updateAggregTable();
-    });
-});
 
 //moves node to back of HTML index in order to allow mouseover detection
 d3.selection.prototype.moveToBack = function () {
@@ -196,14 +117,14 @@ d3.selection.prototype.moveToBack = function () {
 };
 
 //all links in SVG
-let linkGroup;
+export let linkGroup;
 
 //all nodes in SVG
-let nodeGroup;
+export let nodeGroup;
 
 //draw the drag line last to show it over the nodes when dragging
-let drag_line;
-let tooltipSVG;
+export let drag_line;
+export let tooltipSVG;
 
 let originNode = null;				//node that is the start of drag link line
 let destNode = null;				//node that is the end of the drag link line
@@ -255,10 +176,10 @@ function dragend(d, i) {
         //~ actorLinks[x].target = dragTarget;
         //~ }
         for (var x = 0; x < actorLinks.length; x++) {
-            if (actorLinks[x].source == dragSelect) {
+            if (actorLinks[x].source === dragSelect) {
                 actorLinks[x].source = dragTarget;
             }
-            else if (actorLinks[x].target == dragSelect) {
+            else if (actorLinks[x].target === dragSelect) {
                 actorLinks[x].target = dragTarget;
             }
         }
@@ -266,7 +187,7 @@ function dragend(d, i) {
         //~ console.log('begin clean');
         for (var x = 0; x < actorLinks.length; x++) {
             //~ console.log(x);
-            if (actorLinks[x] == undefined) {
+            if (actorLinks[x] === undefined) {
                 //~ console.log("removing");
                 actorLinks.splice(x, 1);
                 x--;
@@ -276,12 +197,12 @@ function dragend(d, i) {
             for (let y = x + 1; y < actorLinks.length; y++) {
                 if (!actorLinks[y])
                     continue;
-                if (actorLinks[x].source == actorLinks[y].source && actorLinks[x].target == actorLinks[y].target) {
+                if (actorLinks[x].source === actorLinks[y].source && actorLinks[x].target === actorLinks[y].target) {
                     //~ console.log("matched " + x + " " + y);
                     actorLinks[y] = undefined;
 
                 }
-                else if (actorLinks[x].source == actorLinks[y].target && actorLinks[x].target == actorLinks[y].source) {
+                else if (actorLinks[x].source === actorLinks[y].target && actorLinks[x].target === actorLinks[y].source) {
                     actorLinks[x].dup = true;
                     actorLinks[y].dup = true;
                     //do not need to set rev flag because this is preserved
@@ -307,7 +228,7 @@ function dragend(d, i) {
 
         updateAll();
 
-        if (opMode == "aggreg")
+        if (opMode === "aggreg")
 			updateAggregTable();
     }
     dragStarted = false;		//now reset all drag variables
@@ -319,7 +240,7 @@ function dragend(d, i) {
 }
 
 //updates elements in SVG, nodes updated on actorID
-function updateSVG() {
+export function updateSVG() {
     //update links
     linkGroup = linkGroup.data(actorLinks);
 
@@ -332,13 +253,13 @@ function updateSVG() {
         //~ .style('marker-end', function(d) { return d.target.actor == "target" ? 'url(#end-arrow)' : ''; })
         .style('marker-start', function (d) {
             if (!d.rev) {
-                return d.source.actor == "target" ? 'url(#start-arrow)' : '';
+                return d.source.actor === "target" ? 'url(#start-arrow)' : '';
             }
             return 'url(#start-arrow)';
         })
         .style('marker-end', function (d) {
             if (!d.rev) {
-                return d.target.actor == "target" ? 'url(#end-arrow)' : '';
+                return d.target.actor === "target" ? 'url(#end-arrow)' : '';
             }
             return 'url(#end-arrow)';
         })
@@ -509,13 +430,13 @@ function updateSVG() {
                     return (linkItem.source == actualTarget && linkItem.target == actualSource);
                 })[0])) {
                 actorLinks[actorLinks.indexOf(linkExist)].dup = true;
-                actorLinks.push(new linkObj(actualTarget, actualSource, true, true));
+                actorLinks.push(new LinkObj(actualTarget, actualSource, true, true));
                 updateAll();
             }
         }
         else {
             //add link
-            actorLinks.push(new linkObj(actualSource, actualTarget, false, false));
+            actorLinks.push(new LinkObj(actualSource, actualTarget, false, false));
             updateAll();
         }
 
@@ -541,7 +462,7 @@ function updateSVG() {
 }
 
 //function that is called on every animated step of the SVG, handles boundary and node collision
-function actorTick() {
+export function actorTick() {
     if (!dragStarted) {
         const q = d3.quadtree().x((d) => d.x).y((d) => d.y).addAll(actorNodes);
         for (let x = 0; x < actorNodes.length; x++) {
@@ -632,7 +553,7 @@ function lineMousemove() {
 }
 
 //if dragging hide line, called on mouseup on SVG
-function lineMouseup() {
+export function lineMouseup() {
     if (originNode) {
         // hide drag line
         drag_line.classed('hidden', true).style('marker-end', '');
@@ -648,7 +569,7 @@ function resetMouseVars() {
 }
 
 //function to handle force and SVG updates
-function updateAll() {
+export function updateAll() {
     updateSVG();
     actorForce.nodes(actorNodes).force("link").links(actorLinks);
     actorForce.alpha(1).restart();
@@ -658,7 +579,7 @@ function updateAll() {
 //end force functions, begin actor code
 
 //calculates the max number of nodes that can be fit in the fillRatio of the SVG
-function calcCircleNum(curHeight) {
+export function calcCircleNum(curHeight) {
     const numWidth = Math.floor((actorWidth / 2 + actorPadding) / (2 * actorNodeR + actorPadding));
     const numHeight = Math.floor((curHeight + actorPadding) / (2 * actorNodeR + actorPadding));
     const numCircle1 = Math.floor(numWidth * numHeight * fillRatio);		//total number of circles by rectangular packing by fillRatio
@@ -677,58 +598,8 @@ function calcCircleNum(curHeight) {
     return numCircle2;
 }
 
-//rename group on click, initialize groups
-$(document).ready(function () {
-
-    //visual feedback for name changing
-    $("#editGroupName").click(function () {
-        $("#editGroupName").css("background-color", "white").css("border", "1px solid black");
-    });
-
-    //catch enter and escape key
-    $("#editGroupName").keydown(function (e) {
-        if (e.keyCode == 13 || e.keyCode == 27) {		//enter or escape key pressed
-            $("#editGroupName").focusout();
-            $("#" + currentTab + "TabBtn").focus();		//remove focus
-        }
-    });
-
-    //save changes to group name
-    $("#editGroupName").focusout(function () {
-		var goodName = true;
-        let newGroupName = $("#editGroupName").val().trim();
-        if (newGroupName == "") {		//revert to previous name if none entered
-            newGroupName = window[currentTab + "CurrentNode"].name;
-            goodName = false;
-        }
-        else if (newGroupName != window[currentTab + "CurrentNode"].name && actorNodeNames.indexOf(newGroupName) > -1) {
-			alert("This name has already been used");
-			newGroupName = window[currentTab + "CurrentNode"].name;
-			goodName = false;
-			$("#editGroupName").focusin();
-		}
-		
-        //remove visual feedback
-        $("#editGroupName").css("background-color", "#F9F9F9").css("border", "none");
-        //update in nodes data structure
-        if (goodName) {
-			actorNodeNames.splice(actorNodeNames.indexOf(window[currentTab + "CurrentNode"].name), 1);
-			actorNodeNames.push(newGroupName);
-		}
-		window[currentTab + "CurrentNode"].name = newGroupName;
-        
-        //update DOM
-        updateGroupName(newGroupName);
-
-        updateAll();		//update force
-
-        if (opMode == "aggreg")
-			updateAggregTable();
-    });
-});
-
 //update display of group name
-function updateGroupName(newGroupName) {
+export function updateGroupName(newGroupName) {
     $("#editGroupName").attr("placeholder", newGroupName);
     $("#editGroupName").val(newGroupName);
 }
@@ -774,7 +645,7 @@ const loadDictionary = function () {
 loadDictionary();
 
 // This code is called when data is loaded. It populates the dictionary and source/target lists
-function actorDataLoad() {
+export function actorDataLoad() {
 
     const defer = $.Deferred();
 
@@ -809,7 +680,7 @@ function actorDataLoad() {
 function loadDataHelper(actorType, columnType) {
 	$(".actorChkLbl").popover("hide");
     $(".popover").popover("hide");
-    let lines = actorData[actorType][columnType];
+    let lines = app.actorData[actorType][columnType];
     if (!Array.isArray(lines) || lines.length === 0) return;
     let displayList;
     let chkSwitch = true;		//enables code for filter
@@ -891,7 +762,7 @@ function createElement(chkSwitch = true, actorType, columnType, value, index, di
     displayList.appendChild(separator);
 
     // Don't use popovers for icews
-    if (dataset === 'icews') return;
+    if (app.dataset === 'icews') return;
 
     $("#" + lbl.id).mouseover(function () {
         if (!$(this).attr("data-content")) {
@@ -1006,7 +877,7 @@ function actorFilterChanged(element) {
 
         let allCountrySet = true;
 
-        for (let country of actorData[currentTab]["entities"]) {
+        for (let country of app.actorData[currentTab]["entities"]) {
             if (!(country in orgs) && !filterListing.has(country)){
                 allCountrySet = false;
                 break;
@@ -1037,7 +908,7 @@ function actorFilterChanged(element) {
 }
 
 // Clear all filters
-function clearChecks() {
+export function clearChecks() {
     document.getElementById(currentTab + "Search").value = "";
     $("#" + currentTab + "Filter :checkbox").prop("checked", false);
     $("#" + currentTab + "OrgAllCheck").prop("checked", false).prop("indeterminate", false);
@@ -1055,7 +926,7 @@ function showSelected(element) {
     actorSearch(currentTab);
 }
 
-function actorSearch(actorName) {		//bugs: removes pre checked values on search clear, checking partial country after checking org
+export function actorSearch(actorName) {		//bugs: removes pre checked values on search clear, checking partial country after checking org
     const searchText = $("#" + actorName + "Search").val().toUpperCase();
 
     const operator = '$and';
@@ -1102,13 +973,13 @@ function actorSearch(actorName) {		//bugs: removes pre checked values on search 
     actorFiltersOp[operator] = actorFilters;
 
     let stagedSubsetData = [];
-    for (let child of subsetData) {
+    for (let child of app.subsetData) {
         if (child.name.indexOf("Query") !== -1) {
             stagedSubsetData.push(child)
         }
     }
 
-    let stagedQuery = buildSubset(stagedSubsetData);
+    let stagedQuery = app.buildSubset(stagedSubsetData);
 
     // If no filters are set, don't add any filtering
     let subsets;
@@ -1121,32 +992,32 @@ function actorSearch(actorName) {		//bugs: removes pre checked values on search 
     console.log("Actor Filter: " + JSON.stringify(subsets));
 
     // Submit query and update listings
-    query = {
+    let query = {
         'subsets': JSON.stringify(subsets),
-        'dataset': dataset,
-        'datasource': datasource,
+        'dataset': app.dataset,
+        'datasource': app.datasource,
         'type': currentTab
     };
 
     function updateActorListing(data) {
         if ('source' in data) {
-            actorData.source.full = data.source;
+            app.actorData.source.full = data.source;
             loadDataHelper("source", "full");
         }
         if ('target' in data) {
             document.getElementById("searchListTargets").innerHTML = "";
-            actorData.target.full = data.target;
+            app.actorData.target.full = data.target;
             loadDataHelper("target", "full");
         }
     }
-    makeCorsRequest(subsetURL, query, updateActorListing);
+    app.makeCorsRequest(app.subsetURL, query, updateActorListing);
 }
 
-function capitalizeFirst(str) {
+export function capitalizeFirst(str) {
     return str.charAt(0).toUpperCase() + str.substring(1);
 }
 
-function resizeActorSVG() {
+export function resizeActorSVG() {
     //actor resize on window resize handled here
     const curHeight = $("#main").height() - 20;     //this is the height of the container
     const titleHeight = $("#linkTitle").height();           //this is the height of the title div above the SVG

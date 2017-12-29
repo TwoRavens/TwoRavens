@@ -1,3 +1,5 @@
+import m from 'mithril';
+
 export default class Header {
     view(vnode) {
         return (m("nav.navbar.navbar-default.navbar-fixed-top[id='navbar'][role='navigation']",

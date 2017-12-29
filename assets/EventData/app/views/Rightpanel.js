@@ -1,3 +1,5 @@
+import m from 'mithril';
+
 export default class Rightpanel {
     view(vnode) {
         return(m(".sidepanel.container.clearfix[id='rightpanel']",

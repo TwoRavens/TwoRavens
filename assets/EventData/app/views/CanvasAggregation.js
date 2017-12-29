@@ -1,3 +1,5 @@
+import m from 'mithril';
+
 export default class CanvasAggregation {
     view(vnode) {
         return (m("[id='aggregDataDisplay']", {

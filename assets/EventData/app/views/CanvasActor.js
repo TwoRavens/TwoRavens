@@ -1,57 +1,61 @@
+import m from 'mithril';
+import {dataset} from "../app.js"
+import * as appActor from "../subsets/Actor.js"
+
 export default class CanvasActor {
 
-    oncreate(){
+    oncreate() {
         // ICEWS does not use the right panel, so hide it!
         if (dataset === "icews") {
             document.getElementById('sourceRight').style.visibility = 'hidden';
             document.getElementById('targetRight').style.visibility = 'hidden';
         }
 
-        actorSVG = d3.select("#actorLinkSVG");
+        appActor.actorSVG = d3.select("#actorLinkSVG");
 
-        actorWidth = actorSVG.node().getBoundingClientRect().width;		//not yet set since window has not yet been displayed; defaults to 0
-        actorHeight = actorSVG.node().getBoundingClientRect().height;	//this code is here to remind what is under subset.js
+        appActor.actorWidth = appActor.actorSVG.node().getBoundingClientRect().width;		//not yet set since window has not yet been displayed; defaults to 0
+        appActor.actorHeight = appActor.actorSVG.node().getBoundingClientRect().height;	//this code is here to remind what is under subset.js
 
-        boundaryLeft = Math.floor(actorWidth / 2) - 20;		//max x coordinate source nodes can move
-        boundaryRight = Math.ceil(actorWidth / 2) + 20;		//max x coordinate target nodes can move
+        appActor.boundaryLeft = Math.floor(appActor.actorWidth / 2) - 20;		//max x coordinate source nodes can move
+        appActor.boundaryRight = Math.ceil(appActor.actorWidth / 2) + 20;		//max x coordinate target nodes can move
 
-        actorForce = d3.forceSimulation()
+        appActor.actorForce = d3.forceSimulation()
             .force("link", d3.forceLink().distance(100).strength(0.5))	//link force to keep nodes together
             .force("x", d3.forceX().x(function (d) {					//grouping by nodes
                 if (d.actor === "source")
-                    return Math.floor(actorWidth / 4);
-                return Math.floor(3 * actorWidth / 4);
+                    return Math.floor(appActor.actorWidth / 4);
+                return Math.floor(3 * appActor.actorWidth / 4);
             }).strength(0.06))
             .force("y", d3.forceY().y(function (d) {					//cluster nodes
-                return Math.floor(actorHeight / 2);
+                return Math.floor(appActor.actorHeight / 2);
             }).strength(0.05))
             .force('charge', d3.forceManyBody().strength(-100));	//prevent tight clustering
 
 
         //define arrow markers
-        actorSVG.append('svg:defs').append('svg:marker').attr('id', 'end-arrow').attr('viewBox', '0 -5 10 10').attr('refX', 6).attr('markerWidth', 3).attr('markerHeight', 3).attr('orient', 'auto').append('svg:path').attr('d', 'M0,-5L10,0L0,5').style('fill', '#000');
-        actorSVG.append('svg:defs').append('svg:marker').attr('id', 'start-arrow').attr('viewBox', '0 -5 10 10').attr('refX', 4).attr('markerWidth', 3).attr('markerHeight', 3).attr('orient', 'auto').append('svg:path').attr('d', 'M10,-5L0,0L10,5').style('fill', '#000');
+        appActor.actorSVG.append('svg:defs').append('svg:marker').attr('id', 'end-arrow').attr('viewBox', '0 -5 10 10').attr('refX', 6).attr('markerWidth', 3).attr('markerHeight', 3).attr('orient', 'auto').append('svg:path').attr('d', 'M0,-5L10,0L0,5').style('fill', '#000');
+        appActor.actorSVG.append('svg:defs').append('svg:marker').attr('id', 'start-arrow').attr('viewBox', '0 -5 10 10').attr('refX', 4).attr('markerWidth', 3).attr('markerHeight', 3).attr('orient', 'auto').append('svg:path').attr('d', 'M10,-5L0,0L10,5').style('fill', '#000');
 
         //define SVG mouse actions
-        actorSVG.on("mouseup", function (d) {		//cancel draw line
-            lineMouseup();
+        appActor.actorSVG.on("mouseup", function (d) {		//cancel draw line
+            appActor.lineMouseup();
         }).on("contextmenu", function (d) {		//prevent right click on svg
             d3.event.preventDefault();
         });
 
-        linkGroup = actorSVG.append("svg:g").attr("class", "allLinksGroup").selectAll("path");
-        nodeGroup = actorSVG.append("svg:g").attr("class", "allNodesGroup").selectAll("g");
-        drag_line = actorSVG.append('svg:path').attr('class', 'link dragline hidden').attr('d', 'M0,0L0,0')
-        tooltipSVG = d3.select(actorSVG.node().parentNode).append("div").attr("class", "SVGtooltip").style("opacity", 0);
+        appActor.linkGroup = appActor.actorSVG.append("svg:g").attr("class", "allLinksGroup").selectAll("path");
+        appActor.nodeGroup = appActor.actorSVG.append("svg:g").attr("class", "allNodesGroup").selectAll("g");
+        appActor.drag_line = appActor.actorSVG.append('svg:path').attr('class', 'link dragline hidden').attr('d', 'M0,0L0,0')
+        appActor.tooltipSVG = d3.select(appActor.actorSVG.node().parentNode).append("div").attr("class", "SVGtooltip").style("opacity", 0);
 
-        updateSVG();						//updates SVG elements
+        appActor.updateSVG();						//updates SVG elements
 
-        actorForce.on("tick", actorTick);		//custom tick function
+        appActor.actorForce.on("tick", appActor.actorTick);		//custom tick function
 
         //clears search and filter selections
         $(".clearActorBtn").click(function (event) {
-            clearChecks();
-            actorSearch(currentTab);
+            appActor.clearChecks();
+            appActor.actorSearch(appActor.currentTab);
             $(this).blur();
         });
 
@@ -64,9 +68,9 @@ export default class CanvasActor {
         //when typing in search box
         $(".actorSearch").on("keyup", function (event) {
             $(".actorChkLbl").popover("hide");
-            const searchText = $("#" + currentTab + "Search").val().toUpperCase();
+            const searchText = $("#" + appActor.currentTab + "Search").val().toUpperCase();
             if (searchText.length % 3 === 0) {
-                actorSearch(currentTab);
+                appActor.actorSearch(appActor.currentTab);
             }
         });
 
@@ -84,35 +88,35 @@ export default class CanvasActor {
         //selects all checks for specified element, handles indeterminate state of checkboxes
         $(".allCheck").click(function (event) {
             const currentEntityType = event.target.id.substring(6, 9);
-            const currentElement = (currentEntityType === "Org") ? $("#" + currentTab + currentEntityType + "AllCheck") : $("#" + currentTab + "CountryAllCheck");
+            const currentElement = (currentEntityType === "Org") ? $("#" + appActor.currentTab + currentEntityType + "AllCheck") : $("#" + appActor.currentTab + "CountryAllCheck");
 
             currentElement.prop("indeterminate", false);
 
             let entityDiv;
             if (currentEntityType === "Org") {
-                entityDiv = $("#org" + capitalizeFirst(currentTab) + "sList input:checkbox");
+                entityDiv = $("#org" + appActor.capitalizeFirst(appActor.currentTab) + "sList input:checkbox");
             } else {
-                entityDiv = $("#country" + capitalizeFirst(currentTab) + "sList input:checkbox");
+                entityDiv = $("#country" + appActor.capitalizeFirst(appActor.currentTab) + "sList input:checkbox");
             }
 
             if (currentElement.prop("checked")) {
                 entityDiv.each(function () {
-                    filterSet[currentTab]['entities'].add(this.value);
+                    appActor.filterSet[appActor.currentTab]['entities'].add(this.value);
                     $(this).prop("checked", true);
                 });
             } else {
-                entityDiv.each(function() {
-                    filterSet[currentTab]['entities'].delete(this.value);
+                entityDiv.each(function () {
+                    appActor.filterSet[appActor.currentTab]['entities'].delete(this.value);
                     $(this).prop("checked", false);
                 });
             }
-            actorSearch(currentTab);
+            appActor.actorSearch(appActor.currentTab);
         });
 
         //adds all of the current matched items into the current selection
         $(".actorSelectAll").click(function (event) {
-            $("#searchList" + capitalizeFirst(currentTab) + "s").children().each(function () {
-                filterSet[currentTab]["full"].add(this.value);
+            $("#searchList" + appActor.capitalizeFirst(appActor.currentTab) + "s").children().each(function () {
+                appActor.filterSet[appActor.currentTab]["full"].add(this.value);
                 this.checked = true;
             });
             // Lose focus so that popover goes away
@@ -122,8 +126,8 @@ export default class CanvasActor {
         //clears all of the current matched items from the current selection
         $(".actorClearAll").click(function (event) {
             $(".actorBottom, .clearActorBtn, #deleteGroup, .actorShowSelectedLbl, #editGroupName").popover("hide");
-            $("#searchList" + capitalizeFirst(currentTab) + "s").children().each(function () {
-                filterSet[currentTab]["full"].delete(this.value);
+            $("#searchList" + appActor.capitalizeFirst(appActor.currentTab) + "s").children().each(function () {
+                appActor.filterSet[appActor.currentTab]["full"].delete(this.value);
                 this.checked = false;
             });
             $(this).blur();
@@ -132,48 +136,48 @@ export default class CanvasActor {
         //adds a new group for source/target
         $(".actorNewGroup").click(function (event) {
             $(".actorBottom, .clearActorBtn, #deleteGroup, .actorShowSelectedLbl, #editGroupName").popover("hide");
-            var newName = capitalizeFirst(currentTab) + " " + window[currentTab + "Size"];
+            var newName = appActor.capitalizeFirst(appActor.currentTab) + " " + window[appActor.currentTab + "Size"];
             var nameCount = 1;
-            while (actorNodeNames.indexOf(newName) > -1) {
-                newName = capitalizeFirst(currentTab) + " " + (window[currentTab + "Size"] + nameCount);
-                nameCount ++;
+            while (appActor.actorNodeNames.indexOf(newName) > -1) {
+                newName = appActor.capitalizeFirst(appActor.currentTab) + " " + (window[appActor.currentTab + "Size"] + nameCount);
+                nameCount++;
             }
-            actorNodes.push(new nodeObj(newName, [], [], actorColors(currentSize), currentTab, changeID));
-            actorNodeNames.push(actorNodes[actorNodes.length - 1].name);
-            window[currentTab + "Size"]++;
-            window[currentTab + "ActualSize"]++;
-            currentSize++;
-            changeID++;
+            appActor.actorNodes.push(new appActor.NodeObj(newName, [], [], appActor.actorColors(appActor.currentSize), appActor.currentTab, appActor.changeID));
+            appActor.actorNodeNames.push(appActor.actorNodes[appActor.actorNodes.length - 1].name);
+            window[appActor.currentTab + "Size"]++;
+            window[appActor.currentTab + "ActualSize"]++;
+            appActor.currentSize++;
+            appActor.changeID++;
 
             // Save values to the current node
-            window[currentTab + "CurrentNode"].group = [...filterSet[currentTab]["full"]];
+            window[appActor.currentTab + "CurrentNode"].group = [...appActor.filterSet[appActor.currentTab]["full"]];
 
             // Set current node to new node
-            window[currentTab + "CurrentNode"] = actorNodes[actorNodes.length - 1];
-            updateGroupName(window[currentTab + "CurrentNode"].name);
+            window[appActor.currentTab + "CurrentNode"] = appActor.actorNodes[appActor.actorNodes.length - 1];
+            appActor.updateGroupName(window[appActor.currentTab + "CurrentNode"].name);
 
             //update gui
-            $("#clearAll" + capitalizeFirst(currentTab) + "s").click();
-            filterSet[currentTab]["full"] = new Set();
-            actorSearch(currentTab);
+            $("#clearAll" + appActor.capitalizeFirst(appActor.currentTab) + "s").click();
+            appActor.filterSet[appActor.currentTab]["full"] = new Set();
+            appActor.actorSearch(appActor.currentTab);
 
             //update svg
             //change dimensions of SVG if needed (exceeds half of the space)
-            if (window[currentTab + "ActualSize"] > calcCircleNum(actorHeight)) {
-                actorHeight += actorNodeR;
+            if (window[appActor.currentTab + "ActualSize"] > appActor.calcCircleNum(appActor.actorHeight)) {
+                appActor.actorHeight += appActor.actorNodeR;
                 $("#actorLinkDiv").height(function (n, c) {
-                    return c + actorNodeR;
+                    return c + appActor.actorNodeR;
                 });
-                actorSVG.attr("height", actorHeight);
+                appActor.actorSVG.attr("height", appActor.actorHeight);
                 d3.select("#centerLine").attr("d", function () {
-                    return "M" + actorWidth / 2 + "," + 0 + "V" + actorHeight;
+                    return "M" + appActor.actorWidth / 2 + "," + 0 + "V" + appActor.actorHeight;
                 });
             }
-            updateAll();
-            if (opMode == "aggreg")
+            appActor.updateAll();
+            if (opMode === "aggreg")
                 updateAggregTable();
-            actorTick();
-            actorForce.alpha(1).restart();
+            appActor.actorTick();
+            appActor.actorForce.alpha(1).restart();
 
             $(this).blur();
         });
@@ -181,16 +185,16 @@ export default class CanvasActor {
         //remove a group if possible
         $("#deleteGroup").click(function () {
             $(".actorBottom, .clearActorBtn, #deleteGroup, .actorShowSelectedLbl, #editGroupName").popover("hide");
-            const cur = actorNodes.indexOf(window[currentTab + "CurrentNode"]);
+            const cur = appActor.actorNodes.indexOf(window[appActor.currentTab + "CurrentNode"]);
             let prev = cur - 1;
             let next = cur + 1;
             while (true) {
-                if (actorNodes[prev] && actorNodes[prev].actor == currentTab) {
+                if (appActor.actorNodes[prev] && appActor.actorNodes[prev].actor === appActor.currentTab) {
                     performUpdate(prev);
                     $(this).blur();
                     return;
                 }
-                else if (actorNodes[next] && actorNodes[next].actor == currentTab) {
+                else if (appActor.actorNodes[next] && appActor.actorNodes[next].actor === appActor.currentTab) {
                     performUpdate(next);
                     $(this).blur();
                     return;
@@ -199,75 +203,207 @@ export default class CanvasActor {
                     //update search in both directions
                     if (prev > -1)
                         prev--;
-                    if (next < actorNodes.length)
+                    if (next < appActor.actorNodes.length)
                         next++;
-                    if (prev == -1 && next == actorNodes.length)
+                    if (prev === -1 && next === appActor.actorNodes.length)
                         break;
                 }
             }
-            alert("Need at least one " + currentTab + " node!");
+            alert("Need at least one " + appActor.currentTab + " node!");
 
             function performUpdate(index) {
                 //set index node to current
-                window[currentTab + "CurrentNode"] = actorNodes[index];
-                updateGroupName(actorNodes[index].name);
+                window[appActor.currentTab + "CurrentNode"] = appActor.actorNodes[index];
+                appActor.updateGroupName(appActor.actorNodes[index].name);
 
-                $("#clearAll" + capitalizeFirst(currentTab) + "s").click();
+                $("#clearAll" + appActor.capitalizeFirst(appActor.currentTab) + "s").click();
                 //update actor selection checks
-                $("." + currentTab + "Chk:checked").prop("checked", false);
-                for (var x = 0; x < actorNodes[index].groupIndices.length; x++)
-                    $("#" + actorNodes[index].groupIndices[x]).prop("checked", true);
-                $("#" + currentTab + "ShowSelected").trigger("click");
+                $("." + appActor.currentTab + "Chk:checked").prop("checked", false);
+                for (var x = 0; x < appActor.actorNodes[index].groupIndices.length; x++)
+                    $("#" + appActor.actorNodes[index].groupIndices[x]).prop("checked", true);
+                $("#" + appActor.currentTab + "ShowSelected").trigger("click");
 
                 //update links
-                for (var x = 0; x < actorLinks.length; x++) {
-                    if (actorLinks[x].source == actorNodes[cur]) {
-                        actorLinks.splice(x, 1);
+                for (var x = 0; x < appActor.actorLinks.length; x++) {
+                    if (appActor.actorLinks[x].source === appActor.actorNodes[cur]) {
+                        appActor.actorLinks.splice(x, 1);
                         x--;
                     }
-                    else if (actorLinks[x].target == actorNodes[cur]) {
-                        actorLinks.splice(x, 1);
+                    else if (appActor.actorLinks[x].target === appActor.actorNodes[cur]) {
+                        appActor.actorLinks.splice(x, 1);
                         x--;
                     }
                 }
-                actorNodeNames.splice(actorNodes[cur].name, 1);
-                actorNodes.splice(cur, 1);
-                window[currentTab + "ActualSize"]--;
+                appActor.actorNodeNames.splice(appActor.actorNodes[cur].name, 1);
+                appActor.actorNodes.splice(cur, 1);
+                window[appActor.currentTab + "ActualSize"]--;
 
                 const curHeight = $("#actorContainer").height();		//this is the height of the container
                 const titleHeight = $("#linkTitle").height();			//this is the height of the title div above the SVG
 
-                if (sourceActualSize <= calcCircleNum(curHeight - titleHeight) && targetActualSize <= calcCircleNum(curHeight - titleHeight)) {		//if link div is empty enough, maintain height alignment
+                if (appActor.sourceActualSize <= appActor.calcCircleNum(curHeight - titleHeight) && appActor.targetActualSize <= appActor.calcCircleNum(curHeight - titleHeight)) {		//if link div is empty enough, maintain height alignment
                     $("#actorLinkDiv").css("height", $("#actorSelectionDiv").height() + 2);
-                    actorHeight = actorSVG.node().getBoundingClientRect().height;
-                    actorSVG.attr("height", actorHeight);
+                    appActor.actorHeight = appActor.actorSVG.node().getBoundingClientRect().height;
+                    appActor.actorSVG.attr("height", appActor.actorHeight);
                     d3.select("#centerLine").attr("d", function () {
-                        return "M" + actorWidth / 2 + "," + 0 + "V" + actorHeight;
+                        return "M" + appActor.actorWidth / 2 + "," + 0 + "V" + appActor.actorHeight;
                     });
                 }
                 else {	//if deleting the element and shrinking the SVG will cause the height of the SVG to be less than the height of the container, do nothing; else shrink SVG
-                    if (actorHeight - actorNodeR < curHeight - titleHeight)
+                    if (appActor.actorHeight - appActor.actorNodeR < curHeight - titleHeight)
                         return;
 
-                    if (window[currentTab + "ActualSize"] <= calcCircleNum(actorHeight - actorNodeR)) {
-                        actorHeight -= actorNodeR;
+                    if (window[appActor.currentTab + "ActualSize"] <= appActor.calcCircleNum(appActor.actorHeight - appActor.actorNodeR)) {
+                        appActor.actorHeight -= appActor.actorNodeR;
                         $("#actorLinkDiv").height(function (n, c) {
-                            return c - actorNodeR;
+                            return c - appActor.actorNodeR;
                         });
-                        actorSVG.attr("height", actorHeight);
+                        appActor.actorSVG.attr("height", appActor.actorHeight);
                         d3.select("#centerLine").attr("d", function () {
-                            return "M" + actorWidth / 2 + "," + 0 + "V" + actorHeight;
+                            return "M" + appActor.actorWidth / 2 + "," + 0 + "V" + appActor.actorHeight;
                         });
                     }
                 }
-                updateAll();
+                appActor.updateAll();
 
-                if (opMode == "aggreg")
+                if (opMode === "aggreg")
                     updateAggregTable();
             }
         });
 
+
+        $(document).ready(function () {
+            //update display variables
+            $("#actorLinkDiv").css("height", $("#actorSelectionDiv").height() + 2);
+
+            appActor.actorWidth = appActor.actorSVG.node().getBoundingClientRect().width;
+            appActor.actorHeight = appActor.actorSVG.node().getBoundingClientRect().height;
+
+            appActor.boundaryLeft = Math.floor(appActor.actorWidth / 2) - 40;
+            appActor.boundaryRight = Math.ceil(appActor.actorWidth / 2) + 40;
+
+            appActor.actorSVG.append("path").attr("id", "centerLine").attr("d", function () {
+                return "M" + appActor.actorWidth / 2 + "," + 0 + "V" + appActor.actorHeight;
+            }).attr("stroke", "black");
+
+            appActor.actorForce.force("x", d3.forceX().x(function (d) {
+                if (d.actor === "source")
+                    return Math.floor(appActor.actorWidth / 3);
+                return Math.floor(2 * appActor.actorWidth / 3);
+            }).strength(0.06))
+                .force("y", d3.forceY().y(function (d) {
+                    return Math.floor(appActor.actorHeight / 2);
+                }).strength(0.05));
+            appActor.updateAll();
+            appActor.actorDisplayed = true;
+        });
+
+        //some preparation and activation for gui display
+        $(document).ready(function () {
+            //expands divs with filters
+            $(".filterExpand").click(function () {
+                if (this.value === "expand") {
+                    this.value = "collapse";
+                    $(this).css("background-image", "url(../images/collapse.png)");
+                    $(this).next().next("div.filterContainer").show("fast");
+                }
+                else {
+                    this.value = "expand";
+                    $(this).css("background-image", "url(../images/expand.png)");
+                    $(this).next().next("div.filterContainer").hide("fast");
+                }
+            });
+
+            //enable jquery hover text for various gui elements
+            $(".actorBottom, .clearActorBtn, #deleteGroup, .actorShowSelectedLbl, #editGroupName").tooltip({container: "body"});
+        });
+
+        //rename group on click, initialize groups
+        $(document).ready(function () {
+            //visual feedback for name changing
+            $("#editGroupName").click(function () {
+                $("#editGroupName").css("background-color", "white").css("border", "1px solid black");
+            });
+
+            //catch enter and escape key
+            $("#editGroupName").keydown(function (e) {
+                if (e.keyCode == 13 || e.keyCode == 27) {       //enter or escape key pressed
+                    $("#editGroupName").focusout();
+                    $("#" + appActor.currentTab + "TabBtn").focus();     //remove focus
+                }
+            });
+
+            //save changes to group name
+            $("#editGroupName").focusout(function () {
+                let newGroupName = $("#editGroupName").val().trim();
+                if (newGroupName === "") {       //revert to previous name if none entered
+                    newGroupName = window[appActor.currentTab + "CurrentNode"].name;
+                }
+                //remove visual feedback
+                $("#editGroupName").css("background-color", "#F9F9F9").css("border", "none");
+                //update in nodes data structure
+                window[appActor.currentTab + "CurrentNode"].name = newGroupName;
+                //update DOM
+                appActor.updateGroupName(newGroupName);
+
+                appActor.updateAll();        //update force
+
+                if (opMode === "aggreg")
+                    updateAggregTable();
+            });
+        });
+
+        //rename group on click, initialize groups
+        $(document).ready(function () {
+
+            //visual feedback for name changing
+            $("#editGroupName").click(function () {
+                $("#editGroupName").css("background-color", "white").css("border", "1px solid black");
+            });
+
+            //catch enter and escape key
+            $("#editGroupName").keydown(function (e) {
+                if (e.keyCode == 13 || e.keyCode == 27) {		//enter or escape key pressed
+                    $("#editGroupName").focusout();
+                    $("#" + appActor.currentTab + "TabBtn").focus();		//remove focus
+                }
+            });
+
+            //save changes to group name
+            $("#editGroupName").focusout(function () {
+                var goodName = true;
+                let newGroupName = $("#editGroupName").val().trim();
+                if (newGroupName === "") {		//revert to previous name if none entered
+                    newGroupName = window[appActor.currentTab + "CurrentNode"].name;
+                    goodName = false;
+                }
+                else if (newGroupName !== window[appActor.currentTab + "CurrentNode"].name && appActor.actorNodeNames.indexOf(newGroupName) > -1) {
+                    alert("This name has already been used");
+                    newGroupName = window[appActor.currentTab + "CurrentNode"].name;
+                    goodName = false;
+                    $("#editGroupName").focusin();
+                }
+
+                //remove visual feedback
+                $("#editGroupName").css("background-color", "#F9F9F9").css("border", "none");
+                //update in nodes data structure
+                if (goodName) {
+                    appActor.actorNodeNames.splice(appActor.actorNodeNames.indexOf(window[appActor.currentTab + "CurrentNode"].name), 1);
+                    appActor.actorNodeNames.push(newGroupName);
+                }
+                window[appActor.currentTab + "CurrentNode"].name = newGroupName;
+
+                //update DOM
+                appActor.updateGroupName(newGroupName);
+
+                appActor.updateAll();		//update force
+
+                if (opMode === "aggreg")
+                    updateAggregTable();
+            });
+        });
     }
+
     view(vnode) {
         return (m(".subsetDiv[id='subsetActor']", {style: {"display": "none"}},
             m("table[id='actorContainer']",

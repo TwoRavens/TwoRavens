@@ -1,3 +1,5 @@
+import m from 'mithril';
+
 export default class Footer {
     view(vnode) {
         return (m(".ticker[id='ticker']",
