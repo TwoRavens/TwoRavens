@@ -1,3 +1,5 @@
+import m from 'mithril';
+
 export default class CanvasCustom {
     oncreate(){
         // The editor menu for the custom subsets

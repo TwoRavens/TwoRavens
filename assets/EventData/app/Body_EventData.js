@@ -1,3 +1,6 @@
+import m from 'mithril';
+import * as app from "./app.js"
+
 import Header from "./views/Header"
 import Footer from "./views/Footer"
 import LeftPanel from "./views/LeftPanel"
@@ -13,7 +16,7 @@ import CanvasLocation from "./views/CanvasLocation"
 
 import TableAggregation from "./views/TableAggregation"
 
-class Body_EventData {
+export default class Body_EventData {
 
     oncreate() {
 
@@ -27,12 +30,12 @@ class Body_EventData {
         //This is the first public release of a new, interactive Web application to explore data, view descriptive statistics, and estimate statistical models.";
 
         // Open/Close Panels
-        $('#leftpanel span').click(toggleLeftPanel);
-        $('#rightpanel span').click(toggleRightPanel);
+        $('#leftpanel span').click(app.toggleLeftPanel);
+        $('#rightpanel span').click(app.toggleRightPanel);
 
         // Build list of subsets in left panel
         d3.select("#subsetList").selectAll("p")
-            .data(subsetKeys)
+            .data(app.subsetKeys)
             .enter()
             .append("p")
             .text(function (d) {
@@ -40,50 +43,50 @@ class Body_EventData {
             })
             .style("text-align", "center")
             .style('background-color', function () {
-                if (d3.select(this).text() === subsetKeySelected) return selVarColor;
-                else return varColor;
+                if (d3.select(this).text() === app.subsetKeySelected) return app.selVarColor;
+                else return app.varColor;
             })
             .on("click", function () {
-                showSubset(d3.select(this).text())
+                app.showSubset(d3.select(this).text())
             });
 
         // on load make subset tab in left panel show first
         $("#btnSubset").trigger("click");
         $("#btnSubsetLabel").addClass('active');
 
-        document.getElementById("datasetLabel").innerHTML = dataset + " dataset";
+        document.getElementById("datasetLabel").innerHTML = app.dataset + " dataset";
 
         // Close rightpanel if no prior queries have been submitted
-        if (queryId === 1) {
-            toggleRightPanel();
+        if (app.queryId === 1) {
+            app.toggleRightPanel();
         }
 
         let query = {
             'type': 'formatted',
-            'dataset': dataset,
-            'datasource': datasource
+            'dataset': app.dataset,
+            'datasource': app.datasource
         };
 
         // Load the field names into the left panel
-        makeCorsRequest(subsetURL, query, variableSetup);
+        app.makeCorsRequest(app.subsetURL, query, app.variableSetup);
 
         // Bind the leftpanel search box to the field name list
-        $("#searchvar").keyup(reloadLeftpanelVariables);
+        $("#searchvar").keyup(app.reloadLeftpanelVariables);
 
-        laddaSubset = Ladda.create(document.getElementById("btnSubmit"));
-        laddaReset = Ladda.create(document.getElementById("btnReset"));
-        laddaDownload = Ladda.create(document.getElementById("buttonDownload"));
-        laddaReset.start();
+        app.laddaSubset = Ladda.create(document.getElementById("btnSubmit"));
+        app.laddaReset = Ladda.create(document.getElementById("btnReset"));
+        app.laddaDownload = Ladda.create(document.getElementById("buttonDownload"));
+        app.laddaReset.start();
 
         query = {
-            'subsets': JSON.stringify(subsetQuery),
-            'variables': JSON.stringify(variableQuery),
-            'dataset': dataset,
-            'datasource': datasource
+            'subsets': JSON.stringify(app.subsetQuery),
+            'variables': JSON.stringify(app.variableQuery),
+            'dataset': app.dataset,
+            'datasource': app.datasource
         };
 
         // Initial load of preprocessed data
-        makeCorsRequest(subsetURL, query, pageSetup);
+        app.makeCorsRequest(app.subsetURL, query, app.pageSetup);
     }
 
     view(vnode) {

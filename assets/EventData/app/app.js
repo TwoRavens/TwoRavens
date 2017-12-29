@@ -1,3 +1,5 @@
+import {actorDataLoad, actorLinks, resizeActorSVG} from "./subsets/Actor";
+
 function about() {
     $('#about').show();
 }
@@ -6,7 +8,7 @@ function closeabout() {
     $('#about').hide();
 }
 
-function toggleLeftPanel() {
+export function toggleLeftPanel() {
     if (!$('#leftpanel').hasClass('forceclosepanel')) {
         $('#leftpanel').removeClass('expandpanel');
         $('#leftpanel > div.row-fluid').toggleClass('closepanel');
@@ -29,7 +31,7 @@ function toggleLeftPanel() {
     }
 }
 
-function openRightPanel() {
+export function openRightPanel() {
     if ($('#rightpanel').hasClass('closepanel')) {
         /*$('#rightpanel .nav-tabs').hide();*/
         $('#rightpanel > div.row-fluid').toggleClass('closepanel');
@@ -38,7 +40,7 @@ function openRightPanel() {
     }
 }
 
-function toggleRightPanel() {
+export function toggleRightPanel() {
     let rightPanel = $('#rightpanel');
     if (rightPanel.hasClass('forceclosepanel')) return;
 
@@ -58,7 +60,7 @@ if (!production) {
 }
 
 let appname = 'eventdatasubsetapp';
-let subsetURL = rappURL + appname;
+export let subsetURL = rappURL + appname;
 
 // Slide animation for dataset selection
 $(document).on('click', '#option', function (evt) {
@@ -88,16 +90,16 @@ function setDataset(dataset) {
 }
 
 // Options: one of ["phoenix_rt", "cline_phoenix_swb", "cline_phoenix_nyt", "cline_phoenix_fbis", "icews"]
-let dataset = 'phoenix_rt';
+export let dataset = 'phoenix_rt';
 if (localStorage.getItem("dataset") !== null) {
     dataset = localStorage.getItem('dataset');
 }
 
 // Options: "api" or "local"
-let datasource = 'api';
+export let datasource = 'api';
 
-let subsetKeys = [];
-let subsetKeySelected = "";
+export let subsetKeys = [];
+export let subsetKeySelected = "";
 
 if (["phoenix_rt", "cline_phoenix_swb", "cline_phoenix_nyt", "cline_phoenix_fbis"].indexOf(dataset) !== -1) {
     subsetKeys = ["Actor", "Date", "Action", "Location", "Coordinates", "Custom"]; // Used to label buttons in the left panel
@@ -111,11 +113,11 @@ if (dataset === "icews") {
 let variables;
 
 // These get instantiated in the oncreate() method for the mithril Body_EventData class
-let laddaSubset;
-let laddaReset;
-let laddaDownload;
+export let laddaSubset;
+export let laddaReset;
+export let laddaDownload;
 
-function variableSetup(jsondata) {
+export function variableSetup(jsondata) {
     // Each key has a %-formatted value
     variables = Object.keys(jsondata.variables);
 
@@ -124,19 +126,19 @@ function variableSetup(jsondata) {
 
 let variablesSelected = new Set();
 
-let varColor = 'rgba(240,248,255, 1.0)';   //d3.rgb("aliceblue");
-let selVarColor = 'rgba(250,128,114, 0.5)';    //d3.rgb("salmon");
+export let varColor = 'rgba(240,248,255, 1.0)';   //d3.rgb("aliceblue");
+export let selVarColor = 'rgba(250,128,114, 0.5)';    //d3.rgb("salmon");
 
 // Stores the live data returned from the server
-let dateData = [];
-let countryData = [];
-let actorData = {};
-let actionData = [];
+export let dateData = [];
+export let countryData = [];
+export let actorData = {};
+export let actionData = [];
 
 // This is set once data is loaded and the graphs can be drawn. Subset menus will not be shown until this is set
 let initialLoad = false;
 
-let subsetData = [];
+export let subsetData = [];
 
 // Attempt to load stored settings
 if (localStorage.getItem("subsetData") !== null) {
@@ -155,12 +157,12 @@ for (let child of subsetData) {
 }
 
 // Construct queries for current subset tree
-let variableQuery = buildVariables();
-let subsetQuery = buildSubset(stagedSubsetData);
+export let variableQuery = buildVariables();
+export let subsetQuery = buildSubset(stagedSubsetData);
 
 console.log("Query: " + JSON.stringify(subsetQuery));
 
-function reloadLeftpanelVariables() {
+export function reloadLeftpanelVariables() {
     // Subset variable list by search term. Empty string returns all.
     let search_term = $("#searchvar").val().toUpperCase();
     let matchedVariables = [];
@@ -201,7 +203,7 @@ function reloadLeftpanelVariables() {
         });
 }
 
-function showSubset(subsetKey) {
+export function showSubset(subsetKey) {
     subsetKeySelected = subsetKey;
     d3.select('#subsetList').selectAll("p").style('background-color', function (d) {
         if (d === subsetKeySelected) return selVarColor;
@@ -225,7 +227,7 @@ function showSubset(subsetKey) {
     }
 }
 
-function makeCorsRequest(url, post, callback) {
+export function makeCorsRequest(url, post, callback) {
     let xhr = new XMLHttpRequest();
     if ("withCredentials" in xhr) {
         // XHR for Chrome/Firefox/Opera/Safari.
@@ -308,7 +310,7 @@ function download() {
 /**
  *   Draws all subset plots, often invoked as callback after server request for new plotting data
  */
-function pageSetup(jsondata) {
+export function pageSetup(jsondata) {
     console.log("Server returned:");
     console.log(jsondata);
 
@@ -453,7 +455,7 @@ var variableData = [];
 
 var nodeId = 1;
 var groupId = 1;
-var queryId = 1;
+export var queryId = 1;
 
 if (localStorage.getItem("nodeId") !== null) {
     // If the user has already submitted a query, restore the previous query from local data
@@ -1212,7 +1214,7 @@ function buildVariables() {
 }
 
 // Construct mongoDB filter (subsets rows)
-function buildSubset(tree) {
+export function buildSubset(tree) {
     // Base case
     if (tree.length === 0) return {};
 

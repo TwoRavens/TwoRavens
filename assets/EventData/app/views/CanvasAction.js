@@ -1,3 +1,5 @@
+import m from 'mithril';
+
 export default class CanvasAction {
     oncreate() {
         actionTooltip = d3.select("#subsetAction").select(".SVGtooltip").style("opacity", 0); //tooltip

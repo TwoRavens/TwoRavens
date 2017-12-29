@@ -1,3 +1,5 @@
+import m from 'mithril';
+
 function optionsMenuDate(mode) {
 
     if (mode === "subset") {

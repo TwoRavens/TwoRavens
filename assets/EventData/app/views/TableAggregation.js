@@ -1,3 +1,5 @@
+import m from 'mithril';
+
 export default class TableAggregation {
     view(vnode) {
         return (m("[id='aggregDataOutput']", {
