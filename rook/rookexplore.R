@@ -60,9 +60,9 @@ explore.app <- function(env) {
 
   sessionid <- everything$zsessionid
   logfile <- logFile(sessionid, production)
-  ##if (sessionid == "") {
-    ##return(send(list(warning="No session id.")))
-  ##}
+  if (sessionid == "") {
+    return(send(list(warning="No session id.")))
+  }
 
   if (production){
     mydata <- readData(sessionid=sessionid, logFile=logfile)

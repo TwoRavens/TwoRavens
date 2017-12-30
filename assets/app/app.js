@@ -238,7 +238,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         method: "POST",
         url: "/config/d3m-config/json/latest"
     });
-console.log(res);
+    console.log(res);
     // 2. Set 'configurations'
     configurations = JSON.parse(JSON.stringify(res)); // this is just copying res
     d3mRootPath = configurations.training_data_root.replace(/\/data/,'');
@@ -264,10 +264,10 @@ console.log(res);
     let set = (field, val) => res.data[field].exists ? res.data[field].path :
         res.data[field + '.gz'].exists ? res.data[field + '.gz'].path :
         val;
-    
+
     zparams.zd3mdata = d3mData = set('learningData.csv', d3mData);
     zparams.zd3mtarget = set('learningData.csv', d3mData);
-    
+
     // hardcoding this, once get-problem-data-file-info is revised this hardcode can go away and use the previous two LOC
   //  zparams.zd3mdata = d3mData = d3mRootPath+"/dataset_TRAIN/tables/learningData.csv";
   //  zparams.zd3mtarget = d3mRootPath+"/dataset_TRAIN/tables/learningData.csv";
@@ -1955,55 +1955,37 @@ export async function explore(btn) {
     }
 
     zPop();
-    console.log("zpop: ", zparams);
-    // write links to file & run R CMD
+    console.log('zpop:', zparams);
 
-    // package the output as JSON
-    // add call history and package the zparams object as JSON
+    // write links to file & run R CMD
     zparams.callHistory = callHistory;
-    estimateLadda.start();  // start spinner
+    estimateLadda.start(); // start spinner
     let json = await makeRequest(ROOK_SVC_URL + 'exploreapp', zparams);
+    estimated = true;
     if (!json) {
-        estimated = true;
         return;
     }
-
     allResults.push(json);
 
-    var myparent = document.getElementById("rightContentArea");
-    if (estimated == false) {
-        myparent.removeChild(document.getElementById("resultsHolder"));
-    }
-    d3.select("#modelView").html("");
-    //   d3.select("#resultsView_tabular").html("");
-    d3.select("#resultsView_statistics").html("");
-
-    estimated = true;
-    //  d3.select("#results")
-    // .style("display", "block");
+    let parent = document.getElementById("rightContentArea");
+    estimated || parent.removeChild(document.getElementById("resultsHolder"));
+    d3.select("#modelView").html('');
+    d3.select("#resultsView_statistics").html('');
 
     d3.select("#result_left")
         .style("display", "block");
-
     d3.select("#result_right")
         .style("display", "block");
-    /*
-      d3.select("#resultsView")
-      .style("display", "block");
-    */
     d3.select("#scatterplot")
         .style("display", "block");
     d3.select("#heatchart")
         .style("display", "block");
     d3.select("#modelView_Container")
         .style("display", "block");
-
     d3.select("#modelView")
         .style("display", "block");
-
     d3.select("#resultsView_tabular")
         .style("display", "block");
-
     d3.select("#resultsView_statistics")
         .style("display", "block");
 

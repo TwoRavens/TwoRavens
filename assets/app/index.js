@@ -72,7 +72,8 @@ function rightpanel(mode) {
                m(Button, {id: 'btnUnivariate'}, 'Univariate'),
                m(Button, {id: 'btnBivariate'}, 'Bivariate')]},
           m(`#univariate[style=display: ${when('right', 'btnUnivariate')}]`),
-          m(`#bivariate[style=display: ${when('right', 'btnBivariate')}]`)) :
+          m(`#bivariate[style=display: ${when('right', 'btnBivariate')}]`),
+          m('#resultsHolder')) :
     // mode == null (model mode)
     m(Panel,
       {side: 'right',
