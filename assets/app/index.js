@@ -6,6 +6,7 @@ import '../../node_modules/hopscotch/dist/css/hopscotch.css';
 import m from 'mithril';
 
 import * as app from './app';
+import * as exp from './explore';
 import * as plots from './plots';
 import Panel from './views/Panel';
 import Button, {when} from './views/PanelButton';
@@ -222,7 +223,7 @@ class Body {
                     {style: `display: ${this.cite ? 'block' : 'none'}; position: absolute; right: 50%; width: 380px; text-align: left; z-index: 50`},
                     m(".panel-body")),
                   m('span',
-                    navBtn('btnEstimate.btn-success', 2, 1, explore ? app.explore : app.estimate, m("span.ladda-label", explore ? 'Explore' : 'Solve This Problem'), '150px'),
+                    navBtn('btnEstimate.btn-success', 2, 1, explore ? exp.explore : app.estimate, m("span.ladda-label", explore ? 'Explore' : 'Solve This Problem'), '150px'),
                     navBtn('btnTA2.btn-default', .5, 1, _ => app.helpmaterials('manual'), ['Help Manual ', glyph('book')]),
                     navBtn('btnTA2.btn-default', 2, .5, _ => app.helpmaterials('video'), ['Help Video ', glyph('expand')]),
                     navBtn1("btnReset", app.reset, glyph('repeat'), 'Reset'),

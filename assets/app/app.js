@@ -109,17 +109,17 @@ export let zparams = {
     zcrosstab: [],
 };
 
-let modelCount = 0;
+export let modelCount = 0;
 export let valueKey = [];
 export let allNodes = [];
-let allResults = [];
+export let allResults = [];
 export let nodes = [];
 export let links = [];
 let mods = {};
 let estimated = false;
 let rightClickLast = false;
 let selInteract = false;
-let callHistory = []; // transform and subset calls
+export let callHistory = []; // transform and subset calls
 let mytarget = '';
 
 let configurations = {};
@@ -183,7 +183,8 @@ export let d3mProblemDescription = {
     taskDescription: ""
 };
 
-let svg, width, height, div, estimateLadda, selectLadda;
+let svg, width, height, div, selectLadda;
+export let estimateLadda;
 
 // arcs for denoting pebble characteristics
 const arc = (start, end) => d3.svg.arc()
@@ -201,7 +202,7 @@ const arcInd = (arclimits) => d3.svg.arc()
 const [arcInd1Limits, arcInd2Limits] = [[0, 0.3], [0.35, 0.65]];
 const [arcInd1, arcInd2] = [arcInd(arcInd1Limits), arcInd(arcInd2Limits)];
 
-let byId = id => document.getElementById(id);
+export let byId = id => document.getElementById(id);
 
 /**
    page reload linked to btnReset
@@ -1663,7 +1664,7 @@ export function lockDescription() {
 }
 
 /** needs doc */
-function zPop() {
+export function zPop() {
     if (dataurl) zparams.zdataurl = dataurl;
     zparams.zmodelcount = modelCount;
     zparams.zedges = [];
@@ -1824,7 +1825,7 @@ function CreatePipelineData(predictors, depvar) {
     };
 }
 
-function downloadIncomplete() {
+export function downloadIncomplete() {
     if (PRODUCTION && zparams.zsessionid === '') {
         alert('Warning: Data download is not complete. Try again soon.');
         return true;
@@ -1944,151 +1945,6 @@ export async function estimate(btn) {
             res && onPipelineCreate(res);
         }
     }
-}
-
-/**
-   called by clicking 'Explore' in explore mode
-*/
-export async function explore(btn) {
-    if (downloadIncomplete()) {
-        return;
-    }
-
-    zPop();
-    console.log('zpop:', zparams);
-
-    // write links to file & run R CMD
-    zparams.callHistory = callHistory;
-    estimateLadda.start(); // start spinner
-    let json = await makeRequest(ROOK_SVC_URL + 'exploreapp', zparams);
-    estimated = true;
-    if (!json) {
-        return;
-    }
-    allResults.push(json);
-
-    let parent = document.getElementById("rightContentArea");
-    estimated || parent.removeChild(document.getElementById("resultsHolder"));
-    d3.select("#modelView").html('');
-    d3.select("#resultsView_statistics").html('');
-
-    d3.select("#result_left")
-        .style("display", "block");
-    d3.select("#result_right")
-        .style("display", "block");
-    d3.select("#scatterplot")
-        .style("display", "block");
-    d3.select("#heatchart")
-        .style("display", "block");
-    d3.select("#modelView_Container")
-        .style("display", "block");
-    d3.select("#modelView")
-        .style("display", "block");
-    d3.select("#resultsView_tabular")
-        .style("display", "block");
-    d3.select("#resultsView_statistics")
-        .style("display", "block");
-
-    d3.select("#modelView")
-        .style('background-color', hexToRgba(varColor))
-        .style("overflow-y", "hidden")
-        .style("overflow-x", "scroll")
-        .append("span")
-        .style("white-space", "pre")
-        .style("margin-top", 0)
-        .style("float", "left")
-        .style("position", "relative")
-        .style("color", "#757575")
-        .text("MODEL SELECTION :  ");
-
-    // programmatic click on Results button
-    $("#btnBivariate").trigger("click");
-    var count = 0;
-    var count1 = -1;
-    for (var i in json.images) {
-        count1++;
-    }
-    for (var i in json.images) {
-        var value = i;
-        model_selection(value, count); // for entering all the variables
-        count++;
-    }
-    modelCount = modelCount + 1;
-    var model = "Model".concat(modelCount);
-    var model_name = value;
-    console.log(" and our value is  : " + count1);
-
-    function modCol() {
-        d3.select("#modelView")
-            .selectAll("button")
-        .style('background-color', "#FFD54F");
-    }
-
-    function model_selection(model_selection_name, count_value) {
-        if (count_value % 2 == 0 && count_value != 0) {
-            d3.select("#modelView")
-                .append("span")
-                .text("\u00A0 \u00A0 \u00A0 \u00A0   \u00A0 ")
-                .style("margin-top", 0)
-                .style("white-space", "pre")
-                .style("display", "inline-block")
-                .style("float", "left")
-                .append("span")
-                .text("|")
-                .style("margin-top", 0)
-                .style("white-space", "pre")
-                .style("display", "inline-block")
-                .style("float", "left")
-                .append("span")
-                .text("\u00A0 \u00A0 \u00A0 \u00A0   \u00A0 ")
-                .style("margin-top", 0)
-                .style("white-space", "pre")
-                .style("display", "inline-block")
-                .style("float", "left");
-
-        }
-        d3.select("#modelView")
-            .append("span")
-            .text(" \u00A0")
-            .style("margin-top", 0)
-            .style("float", "left")
-
-            .style("display", "inline-block")
-            .style("white-space", "pre")
-            .style("overflow-y", "hidden")
-            .style("overflow-x", "scroll")
-            .append("button")// top stack for results
-        //      .append("xhtml:button")
-            .attr("class","btn btn-outline-success")
-            .style("padding","4px")
-            .attr("id", model)
-            .text(model_selection_name)
-            .style('background-color', function() {
-                var color1 = "#FFD54F";
-                return count === count1 ? selVarColor : color1;
-            })
-            .style("display", "inline-block")
-            .style("white-space", "pre")
-            .style("margin-top", 0)
-            .style("float", "left")
-            .on("click", function() {
-                var a = this.style.backgroundColor.replace(/\s*/g, "");
-                var b = hexToRgba(selVarColor).replace(/\s*/g, "");
-                if (a.substr(0, 17) === b.substr(0, 17)) {
-                    return; //escapes the function early if the displayed model is clicked
-                }
-                viz_explore(this.id, json, model_selection_name);
-                modCol();
-                d3.select(this)
-                    .style('background-color', selVarColor);
-            });
-    }
-
-    var rCall = [];
-    rCall[0] = json.call;
-    logArray.push("explore: ".concat(rCall[0]));
-    showLog();
-    viz_explore(model, json, model_name);
 }
 
 /** needs doc */
@@ -2400,7 +2256,7 @@ async function transform(n, t, typeTransform) {
     }
 }
 
-async function makeRequest(url, data) {
+export async function makeRequest(url, data) {
     console.log('url:', url);
     console.log('POST:', data);
     let res;
