@@ -1,5 +1,6 @@
 import m from 'mithril';
 
+
 export default class CanvasLocation {
     view(vnode) {
         return (m(".subsetDiv[id='subsetLocation']", {style: {"display": "none"}},

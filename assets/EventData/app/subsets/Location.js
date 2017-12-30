@@ -1,3 +1,5 @@
+import * as d3 from "d3"
+import {rightpanelMargin, countryData} from "../app";
 
 /**
  * Variables declared for location
@@ -5,7 +7,7 @@
  **/
 var mapGraphSVG = new Object();
 var mapSubGraphIdCname = new Object();
-var mapListCountriesSelected = new Object();
+export var mapListCountriesSelected = new Object();
 
 function resetLocationVariables() {
     mapGraphSVG = new Object();
@@ -19,7 +21,7 @@ function resetLocationVariables() {
  *
  **/
 
-function d3loc() {
+export function d3loc() {
     // Clear existing data and plots
     $("#main_graph_svg").remove();
     $("#sub_graph_td_div").empty();
@@ -53,7 +55,7 @@ function render(blnIsSubgraph, cid) {
 
     // console.log(cid);
 
-    if(!blnIsSubgraph) {		//this is the main graph
+    if (!blnIsSubgraph) {		//this is the main graph
 
         // console.log("Rendering Main Graph...");
 
@@ -80,8 +82,7 @@ function render(blnIsSubgraph, cid) {
             .attr("y2", y.bandwidth() / 20)
             .attr("style", "stroke:brown;stroke-width:5;");
 
-
-        d3.csv("../data/locationlookup.csv", function (data) {
+        d3.csv("/static/EventData/data/locationlookup.csv", function (error, data) {
             // Clear existing region data to redraw with new subsetted data
             arr_location_region_data = [];
             map_location_rid_rname = new Map();
@@ -162,9 +163,10 @@ function render(blnIsSubgraph, cid) {
             }
 
             x.domain([0, maxDomainX]);
-            y.domain(arr_location_region_data.map(function(d) {
-				//~ console.log(d);
-				return d.rname;})).padding(0.2);		//this controls the padding
+            y.domain(arr_location_region_data.map(function (d) {
+                //~ console.log(d);
+                return d.rname;
+            })).padding(0.2);		//this controls the padding
 
             var g = svg.append("g")		//this draws the x axis ticks
                 .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
@@ -609,7 +611,7 @@ function updateCountryList() {
                 fullcountry = ": " + map_fullname_lookup.get(country);
             }
 
-            $("#country_list_tab").append('<tr><td><label class="strike_through" style="cursor:pointer" onclick="removeFromCountryList(\'' + country + '\');">' + country + fullcountry +'</label></td></tr>');
+            $("#country_list_tab").append('<tr><td><label class="strike_through" style="cursor:pointer" onclick="removeFromCountryList(\'' + country + '\');">' + country + fullcountry + '</label></td></tr>');
             $("#tg_rect_" + main_subGraphId).attr("class", "bar_all_selected");
             mapLocalMainGraphIdWithSubGraphCnameList[mainGraphId].push(country);
         }

@@ -1,4 +1,185 @@
+import * as d3 from 'd3'
 
+// Holds the large map image. Initialized in the mithril canvas constructor
+let svgMap;
+let imgs;
+
+var widthCoord = 0.2,
+    heightCoord = 0.2,
+    dragbarw = 0.03;
+
+var drag = d3.drag()
+    .subject(Object)
+    .on("drag", dragmove);
+
+var dragright = d3.drag()
+    .subject(Object)
+    .on("drag", rdragresize);
+
+var dragleft = d3.drag()
+    .subject(Object)
+    .on("drag", ldragresize);
+
+var dragtop = d3.drag()
+    .subject(Object)
+    .on("drag", tdragresize);
+
+var dragbottom = d3.drag()
+    .subject(Object)
+    .on("drag", bdragresize);
+
+var dragbottomright = d3.drag()
+    .subject(Object)
+    .on("drag", brdragresize);
+
+var dragbottomleft = d3.drag()
+    .subject(Object)
+    .on("drag", bldragresize);
+
+var dragtopright = d3.drag()
+    .subject(Object)
+    .on("drag", trdragresize);
+
+var dragtopleft= d3.drag()
+    .subject(Object)
+    .on("drag", tldragresize);
+
+var newg;
+
+var dragrect;
+var dragbarleft;
+var dragbarright;
+var dragbartop;
+var dragbarbottom;
+var dragbarbottomright;
+var dragbarbottomleft;
+var dragbartopleft;
+var dragbartopright;
+
+export function setupCoordinates(){
+    $("#latUpper").keyup(setLatitude);
+    $("#latLower").keyup(setLatitude);
+    $("#lonLeft").keyup(setLongitude);
+    $("#lonRight").keyup(setLongitude);
+
+    svgMap = d3.select('#worldMap');
+    imgs = svgMap.selectAll("image").data([0]);
+    imgs.enter()
+        .append("svg:image")
+        .attr("id", "worldMapImage")
+        .attr("xlink:href", "../images/world.svg")
+        .attr("x", "0")
+        .attr("y", "0")
+        .attr("width", "100%")
+        .attr("height", "100%");
+
+    newg = svgMap.append("g")
+        .data([{x: .5, y: .5}]);
+
+    dragrect = newg.append("rect")
+        .attr("id", "active")
+        .attr("x", function(d) { return d.x; })
+        .attr("y", function(d) { return d.y; })
+        .attr("height", heightCoord)
+        .attr("width", widthCoord)
+        .attr("fill-opacity", .2)
+        .attr("fill", "#9D9D9D !important")
+        .attr("stroke", "#9D9D9D")
+        .attr("stroke-width", .005)
+        .attr("cursor", "move")
+        .call(drag);
+
+    dragbarleft = newg.append("rect")
+        .attr("x", function(d) { return d.x - (dragbarw/2); })
+        .attr("y", function(d) { return d.y + (dragbarw/2); })
+        .attr("height", heightCoord - dragbarw)
+        .attr("id", "dragleft")
+        .attr("width", dragbarw)
+        .attr("fill", "#ADADAD")
+        .attr("fill-opacity", .0)
+        .attr("cursor", "ew-resize")
+        .call(dragleft);
+
+    dragbarright = newg.append("rect")
+        .attr("x", function(d) { return d.x + widthCoord - (dragbarw/2); })
+        .attr("y", function(d) { return d.y + (dragbarw/2); })
+        .attr("id", "dragright")
+        .attr("height", heightCoord - dragbarw)
+        .attr("width", dragbarw)
+        .attr("fill", "#ADADAD")
+        .attr("fill-opacity", .0)
+        .attr("cursor", "ew-resize")
+        .call(dragright);
+
+    dragbartop = newg.append("rect")
+        .attr("x", function(d) { return d.x + (dragbarw/2); })
+        .attr("y", function(d) { return d.y - (dragbarw/2); })
+        .attr("height", dragbarw)
+        .attr("id", "dragtop")
+        .attr("width", widthCoord - dragbarw)
+        .attr("fill", "#ADADAD")
+        .attr("fill-opacity", .0)
+        .attr("cursor", "ns-resize")
+        .call(dragtop);
+
+    dragbarbottom = newg.append("rect")
+        .attr("x", function(d) { return d.x + (dragbarw/2); })
+        .attr("y", function(d) { return d.y + heightCoord - (dragbarw/2); })
+        .attr("id", "dragbottom")
+        .attr("height", dragbarw)
+        .attr("width", widthCoord - dragbarw)
+        .attr("fill", "#ADADAD")
+        .attr("fill-opacity", .0)
+        .attr("cursor", "ns-resize")
+        .call(dragbottom);
+
+    dragbarbottomright = newg.append("rect")
+        .attr("x", function(d) { return d.x + widthCoord - (dragbarw/2); })
+        .attr("y", function(d) { return d.y + heightCoord - (dragbarw/2); })
+        .attr("id", "dragbottomright")
+        .attr("height", dragbarw)
+        .attr("width", dragbarw)
+        .attr("fill", "#ADADAD")
+        .attr("fill-opacity", .0)
+        .attr("cursor", "nwse-resize")
+        .call(dragbottomright);
+
+    dragbarbottomleft = newg.append("rect")
+        .attr("x", function(d) { return d.x - (dragbarw/2); })
+        .attr("y", function(d) { return d.y + heightCoord - (dragbarw/2); })
+        .attr("id", "dragbottomleft")
+        .attr("height", dragbarw)
+        .attr("width", dragbarw)
+        .attr("fill", "#ADADAD")
+        .attr("fill-opacity", .0)
+        .attr("cursor", "nesw-resize")
+        .call(dragbottomleft);
+
+    dragbartopleft = newg.append("rect")
+        .attr("x", function(d) { return d.x - (dragbarw/2); })
+        .attr("y", function(d) { return d.y - (dragbarw/2); })
+        .attr("id", "dragtopleft")
+        .attr("height", dragbarw)
+        .attr("width", dragbarw)
+        .attr("fill", "#ADADAD")
+        .attr("fill-opacity", .0)
+        .attr("cursor", "nwse-resize")
+        .call(dragtopleft);
+
+    dragbartopright = newg.append("rect")
+        .attr("x", function(d) { return d.x + widthCoord - (dragbarw/2); })
+        .attr("y", function(d) { return d.y - (dragbarw/2); })
+        .attr("id", "dragtopleft")
+        .attr("height", dragbarw)
+        .attr("width", dragbarw)
+        .attr("fill", "#ADADAD")
+        .attr("fill-opacity", .0)
+        .attr("cursor", "nesw-resize")
+        .call(dragtopright);
+
+    setLatitude();
+    setLongitude();
+}
 
 function setLatitude() {
     let latUpper = $("#latUpper");
@@ -143,62 +324,6 @@ function setLongitude() {
 function clip(x, lower, upper) {
     return Math.max(Math.min(x, upper), lower);
 }
-
-// Holds the large map image. Initialized in the mithril canvas constructor
-let svgMap;
-let imgs;
-
-var widthCoord = 0.2,
-    heightCoord = 0.2,
-    dragbarw = 0.03;
-
-var drag = d3.drag()
-    .subject(Object)
-    .on("drag", dragmove);
-
-var dragright = d3.drag()
-    .subject(Object)
-    .on("drag", rdragresize);
-
-var dragleft = d3.drag()
-    .subject(Object)
-    .on("drag", ldragresize);
-
-var dragtop = d3.drag()
-    .subject(Object)
-    .on("drag", tdragresize);
-
-var dragbottom = d3.drag()
-    .subject(Object)
-    .on("drag", bdragresize);
-
-var dragbottomright = d3.drag()
-    .subject(Object)
-    .on("drag", brdragresize);
-
-var dragbottomleft = d3.drag()
-    .subject(Object)
-    .on("drag", bldragresize);
-
-var dragtopright = d3.drag()
-    .subject(Object)
-    .on("drag", trdragresize);
-
-var dragtopleft= d3.drag()
-    .subject(Object)
-    .on("drag", tldragresize);
-
-var newg;
-
-var dragrect;
-var dragbarleft;
-var dragbarright;
-var dragbartop;
-var dragbarbottom;
-var dragbarbottomright;
-var dragbarbottomleft;
-var dragbartopleft;
-var dragbartopright;
 
 function dragmove(d) {
     dragrect
