@@ -1,7 +1,7 @@
 // Date tab of subsetting screen
 import * as app from "../app.js"
 
-import * as d3 from "../../../../node_modules/d3/build/d3.min.js"
+import * as d3 from "d3"
 import $ from 'jquery'
 import "jquery-ui/ui/widgets/datepicker"
 
@@ -12,16 +12,15 @@ let dateheight;
 let dateheight2;
 
 // Default calendar ranges
-var datemax = new Date();
-var datemin = d3.timeYear.offset(datemax, -5);
+export var datemax = new Date();
+export var datemin = d3.timeYear.offset(datemax, -5);
 
 let min = datemin.getFullYear();
 let max = datemax.getFullYear();
 
 // Stubs for user preference
-var dateminUser = new Date(datemin.getTime());
-
-var datemaxUser = new Date(datemax.getTime());
+export var dateminUser = new Date(datemin.getTime());
+export var datemaxUser = new Date(datemax.getTime());
 
 // Only true on page setup
 var dateSetup = true;
@@ -361,7 +360,7 @@ function interpolate(data, date) {
 }
 
 
-function setDatefromSlider() {
+export function setDatefromSlider() {
     // Update user preference
     dateminUser = new Date(plotSelection[0].getTime());
     datemaxUser = new Date(plotSelection[1].getTime());

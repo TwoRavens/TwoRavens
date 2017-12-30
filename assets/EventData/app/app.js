@@ -1,5 +1,7 @@
 import {actorDataLoad, actorLinks, resizeActorSVG} from "./subsets/Actor";
-import {d3date} from "./subsets/Date";
+import {d3date, datemax, datemaxUser, datemin, dateminUser, setDatefromSlider} from "./subsets/Date";
+import {d3loc, mapListCountriesSelected} from "./subsets/Location";
+import {resetActionCounts, actionBuffer, drawGraphs, updateData} from "./subsets/Action";
 
 function about() {
     $('#about').show();
@@ -236,9 +238,7 @@ export function reloadLeftpanelVariables() {
         .data(matchedVariables)
         .enter()
         .append("p")
-        .text(function (d) {
-            return d;
-        })
+        .text(function (d) { return d; })
         .style('background-color', function () {
             if (variablesSelected.has(d3.select(this).text())) return selVarColor;
             return varColor
@@ -431,7 +431,7 @@ export function pageSetup(jsondata) {
 
 
 // Select which tab is shown in the left panel
-function tabLeft(tab) {
+export function tabLeft(tab) {
     document.getElementById('variableTab').style.display = 'none';
     document.getElementById('subsetTab').style.display = 'none';
 
@@ -451,7 +451,7 @@ function tabLeft(tab) {
 
 window.onresize = rightpanelMargin;
 
-function rightpanelMargin() {
+export function rightpanelMargin() {
     if (subsetKeySelected === "Actor") {
         resizeActorSVG();
     }
@@ -1375,7 +1375,8 @@ function processRule(rule) {
                 if ('fromDate' in child) {
                     child.fromDate = new Date(child.fromDate);
                     // Not a pretty solution, but it prevents aggregation substring slicing or regexes
-                    lower_bound['$or'] = [{'<year>': {'$gt': pad(parseInt(child.fromDate.getFullYear()))}},
+                    lower_bound['$or'] = [
+                            {'<year>': {'$gt': pad(parseInt(child.fromDate.getFullYear()))}},
                         {
                             '<year>': pad(parseInt(child.fromDate.getFullYear())),
                             '<month>': {'$gte': pad(parseInt(child.fromDate.getMonth() + 1))}
@@ -1388,7 +1389,8 @@ function processRule(rule) {
                 }
                 if ('toDate' in child) {
                     child.toDate = new Date(child.toDate);
-                    upper_bound['$or'] = [{'<year>': {'$lt': pad(parseInt(child.toDate.getFullYear()))}},
+                    upper_bound['$or'] = [
+                            {'<year>': {'$lt': pad(parseInt(child.toDate.getFullYear()))}},
                         {
                             '<year>': pad(parseInt(child.toDate.getFullYear())),
                             '<month>': {'$lte': pad(parseInt(child.toDate.getMonth() + 1))}

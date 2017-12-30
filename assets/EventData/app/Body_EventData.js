@@ -1,5 +1,4 @@
 import m from 'mithril';
-import * as app from "./app.js"
 import {setupBody, toggleLeftPanel, toggleRightPanel} from "./app";
 
 import Header from "./views/Header"

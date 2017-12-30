@@ -1,4 +1,5 @@
 import m from 'mithril';
+import {tabLeft} from '../app'
 
 export default class Leftpanel {
     view(vnode) {
@@ -19,13 +20,27 @@ export default class Leftpanel {
                                         }
                                     },
                                     [
-                                        m("label.btn.btn-default[onclick='tabLeft(\'variableTab\');'][title='Click variable name to add variables to data subset (select columns).']", {style: {"width": "50%"}},
+                                        m("label.btn.btn-default[title='Click variable name to add variables to data subset (select columns).']",
+                                            {
+                                                style: {"width": "50%"},
+                                                onclick: function (e) {
+                                                    tabLeft('variableTab');
+                                                    e.redraw = false;
+                                                }
+                                            },
                                             [
                                                 m("input[autocomplete='off'][id='btnVariables'][name='options'][type='radio']", {style: {"width": "50%"}}),
                                                 "Variables"
                                             ]
                                         ),
-                                        m("label.btn.btn-default.active[id='btnSubsetLabel'][onclick='tabLeft(\'subsetTab\');'][title='Click subset name to configure subset options (select rows).']", {style: {"width": "50%"}},
+                                        m("label.btn.btn-default.active[id='btnSubsetLabel'][title='Click subset name to configure subset options (select rows).']",
+                                            {
+                                                style: {"width": "50%"},
+                                                onclick: function (e) {
+                                                    tabLeft('subsetTab');
+                                                    e.redraw = false;
+                                                }
+                                            },
                                             [
                                                 m("input[autocomplete='off'][checked=''][id='btnSubset'][name='options'][type='radio']", {style: {"width": "50%"}}),
                                                 "Subsets"
