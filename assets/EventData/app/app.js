@@ -52,6 +52,14 @@ export function toggleRightPanel() {
 }
 
 export let opMode = "subset";
+export function setOpMode(mode) {
+    if (['subset', 'aggregate'].indexOf(mode) !== -1) {
+        opMode = mode;
+    } else {
+        console.log("Invalid opmode");
+    }
+}
+
 let production = false;
 
 let rappURL = '';
@@ -165,7 +173,23 @@ export let subsetQuery = buildSubset(stagedSubsetData);
 
 console.log("Query: " + JSON.stringify(subsetQuery));
 
+// The editor will be initialized on body setup
+var editor;
+
 export function setupBody(){
+    // The editor menu for the custom subsets
+    editor = ace.edit("subsetCustomEditor");
+    editor.$blockScrolling = Infinity;
+    editor.session.setMode("ace/mode/json");
+
+    editor.setOptions({
+        readOnly: true,
+        highlightActiveLine: false,
+        highlightGutterLine: false
+    });
+    editor.renderer.$cursorLayer.element.style.opacity=0;
+    editor.textInput.getElement().disabled=true;
+
     laddaSubset = Ladda.create(document.getElementById("btnSubmit"));
     laddaReset = Ladda.create(document.getElementById("btnReset"));
     laddaDownload = Ladda.create(document.getElementById("buttonDownload"));
@@ -521,8 +545,53 @@ if (localStorage.getItem("nodeId") !== null) {
     groupId = localStorage.getItem('groupId');
     queryId = localStorage.getItem('queryId');
 }
+
+
+export function setupQueryTree() {
+    $('#subsetTree').on(
+        'tree.move',
+        function (event) {
+            event.preventDefault();
+            event.move_info.do_move();
+
+            // Save changes when an element is moved
+            subsetData = JSON.parse($('#subsetTree').tree('toJson'));
+
+            hide_first(subsetData);
+            let qtree = $('#subsetTree');
+            let state = qtree.tree('getState');
+            qtree.tree('loadData', subsetData);
+            qtree.tree('setState', state);
+        }
+    );
+
+    $('#subsetTree').on(
+        'tree.click',
+        function (event) {
+            let node = event.node;
+            if (node.name === 'Custom Subset') {
+                editor.set(JSON.parse(node.custom));
+                showSubset("Custom");
+            }
+        }
+    );
+
+    $('#subsetTree').bind(
+        'tree.dblclick',
+        function (event) {
+            let tempQuery = buildSubset([event.node]);
+            if ($.isEmptyObject(tempQuery)) {
+                alert("\"" + event.node.name + "\" is too specific to parse into a query.");
+            } else {
+                editor.setValue(JSON.stringify(tempQuery, null, '\t'));
+                editor.clearSelection();
+                showSubset("Custom");
+            }
+        }
+    );
+}
 // Define negation toggle, logic dropdown and delete button, as well as their callbacks
-function buttonNegate(id, state) {
+window.buttonNegate = function(id, state) {
     // This state is negated simply because the buttons are visually inverted. An active button appears inactive
     // This is due to css tomfoolery
     if (!state) {
@@ -532,7 +601,7 @@ function buttonNegate(id, state) {
     }
 }
 
-function callbackNegate(id, bool) {
+window.callbackNegate = function(id, bool) {
     let node = $('#subsetTree').tree('getNodeById', id);
 
     // don't permit change in negation on non-editable node
@@ -573,7 +642,7 @@ function buttonOperator(id, state, canChange) {
     //     '</ul></div> ';
 }
 
-function callbackOperator(id, operand) {
+window.callbackOperator = function(id, operand) {
     let node = $('#subsetTree').tree('getNodeById', id);
     if ('editable' in node && !node.editable) return;
 
@@ -746,48 +815,6 @@ $(function () {
     });
 });
 
-$('#subsetTree').on(
-    'tree.move',
-    function (event) {
-        event.preventDefault();
-        event.move_info.do_move();
-
-        // Save changes when an element is moved
-        subsetData = JSON.parse($('#subsetTree').tree('toJson'));
-
-        hide_first(subsetData);
-        let qtree = $('#subsetTree');
-        let state = qtree.tree('getState');
-        qtree.tree('loadData', subsetData);
-        qtree.tree('setState', state);
-    }
-);
-
-$('#subsetTree').on(
-    'tree.click',
-    function (event) {
-        let node = event.node;
-        if (node.name === 'Custom Subset') {
-            editor.set(JSON.parse(node.custom));
-            showSubset("Custom");
-        }
-    }
-);
-
-$('#subsetTree').bind(
-    'tree.dblclick',
-    function (event) {
-        let tempQuery = buildSubset([event.node]);
-        if ($.isEmptyObject(tempQuery)) {
-            alert("\"" + event.node.name + "\" is too specific to parse into a query.");
-        } else {
-            editor.setValue(JSON.stringify(tempQuery, null, '\t'));
-            editor.clearSelection();
-            showSubset("Custom");
-        }
-    }
-);
-
 function disable_edit_recursive(node) {
     node.editable = false;
     node.cancellable = false;
@@ -887,7 +914,7 @@ function addGroup(query = false) {
     }
 }
 
-function addRule() {
+export function addRule() {
     // Index zero is root node. Add subset pref to nodes
     if (subsetKeySelected !== "") {
         let preferences = getSubsetPreferences();

@@ -1,5 +1,5 @@
 import m from 'mithril';
-import {setupBody, toggleLeftPanel, toggleRightPanel} from "./app";
+import {setupBody, toggleLeftPanel, toggleRightPanel, addRule, setupQueryTree} from "./app";
 
 import Header from "./views/Header"
 import Footer from "./views/Footer"
@@ -32,6 +32,7 @@ export default class Body_EventData {
         $('#rightpanel span').click(toggleRightPanel);
 
         setupBody();
+        setupQueryTree();
     }
 
     view(vnode) {
@@ -42,7 +43,12 @@ export default class Body_EventData {
                 m(Header, {mode: mode}),
                 m(LeftPanel, {mode: mode}),
                 m(RightPanel, {mode: mode}),
-                m("button.btn.btn-default[id='stageButton'][onclick='addRule()'][type='button']", "Stage"),
+                m("button.btn.btn-default[id='stageButton'][type='button']", {
+                    onclick: function (e) {
+                        addRule();
+                        e.redraw = false;
+                    }
+                }, "Stage"),
                 m(".left[id='main'][onresize='rightpanelMargin()']",
                     [
                         m(CanvasActor, {mode: mode}),

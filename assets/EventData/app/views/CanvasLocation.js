@@ -117,7 +117,7 @@ export default class CanvasLocation {
                                     "width": "243px"
                                 }
                             },
-                            m("table[align='left'][id='country_list_tab']")
+                            m("table[align='left'][id='country_list_tab']", {style: {"text-align": "left"}})
                         )
                     ]
                 )

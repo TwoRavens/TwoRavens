@@ -467,7 +467,7 @@ function maingraphAction(action) {
  * subgraphAction-> to map the subgraph function {All, None, Expand/Collapse}
  *
  **/
-function subgraphAction(textId) {
+window.subgraphAction = function(textId) {
 
 
     if (textId.indexOf("expand_collapse_text_") !== -1) {
@@ -611,7 +611,7 @@ function updateCountryList() {
                 fullcountry = ": " + map_fullname_lookup.get(country);
             }
 
-            $("#country_list_tab").append('<tr><td><label class="strike_through" style="cursor:pointer" onclick="removeFromCountryList(\'' + country + '\');">' + country + fullcountry + '</label></td></tr>');
+            $("#country_list_tab").append('<tr><td><label class="strike_through" style="cursor:pointer;float:left" onclick="removeFromCountryList(\'' + country + '\');">' + country + fullcountry + '</label></td></tr>');
             $("#tg_rect_" + main_subGraphId).attr("class", "bar_all_selected");
             mapLocalMainGraphIdWithSubGraphCnameList[mainGraphId].push(country);
         }

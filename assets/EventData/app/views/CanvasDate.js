@@ -2,7 +2,6 @@ import m from 'mithril';
 import {setupDate} from "../subsets/Date.js"
 
 function optionsMenuDate(mode) {
-
     if (mode === "subset") {
         return (m("[id='dateOptions']", {
                 style: {
