@@ -174,7 +174,7 @@ export let subsetQuery = buildSubset(stagedSubsetData);
 console.log("Query: " + JSON.stringify(subsetQuery));
 
 // The editor will be initialized on body setup
-var editor;
+export var editor;
 
 export function setupBody(){
     // The editor menu for the custom subsets
@@ -414,7 +414,7 @@ export function pageSetup(jsondata) {
     }
 
     actionData = {};
-    for (let i = 0; i < 20; i++) {
+    for (let i = 1; i <= 20; i++) {
         actionData[i] = 0;
     }
     for (let idx in jsondata['action_data']) {

@@ -1,5 +1,5 @@
 import m from 'mithril';
-import {setupDate} from "../subsets/Date.js"
+import {setupDate, setDatefromSlider} from "../subsets/Date.js"
 
 function optionsMenuDate(mode) {
     if (mode === "subset") {
@@ -15,10 +15,14 @@ function optionsMenuDate(mode) {
             m(".form-group[id='dateInterval']",
                 [
                     // Set date from slider
-                    m("button.btn.btn-default[id='setDatefromSlider'][onclick='setDatefromSlider()'][type='button']", {
+                    m("button.btn.btn-default[type='button']", {
                         style: {
                             "margin-top": "10px",
                             "text-align": "center"
+                        },
+                        onclick: function(e) {
+                            setDatefromSlider();
+                            e.redraw = false;
                         }
                     }, "Bring Date from Slider"),
 
