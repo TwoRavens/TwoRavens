@@ -1,13 +1,13 @@
+import {resetActionCounts, actionBuffer, drawGraphs, updateData} from "./subsets/Action";
 import {actorDataLoad, actorLinks, resizeActorSVG} from "./subsets/Actor";
 import {d3date, datemax, datemaxUser, datemin, dateminUser, setDatefromSlider} from "./subsets/Date";
 import {d3loc, mapListCountriesSelected} from "./subsets/Location";
-import {resetActionCounts, actionBuffer, drawGraphs, updateData} from "./subsets/Action";
 
-function about() {
+export function about() {
     $('#about').show();
 }
 
-function closeabout() {
+export function closeabout() {
     $('#about').hide();
 }
 
@@ -53,7 +53,7 @@ export function toggleRightPanel() {
 
 export let opMode = "subset";
 export function setOpMode(mode) {
-    if (['subset', 'aggregate'].indexOf(mode) !== -1) {
+    if (['subset', 'aggreg'].indexOf(mode) !== -1) {
         opMode = mode;
     } else {
         console.log("Invalid opmode");
@@ -76,8 +76,8 @@ export let subsetURL = rappURL + appname;
 // Slide animation for dataset selection
 $(document).on('click', '#option', function (evt) {
     var optionID = $(this).data('option');
-    $('#optionMenu').toggle('slide', {direction: 'left'});
-    $('#optionView' + optionID).toggle('slide', {direction: 'right'});
+    $('#optionMenu').toggle('fade');
+    $('#optionView' + optionID).toggle('fade');
 });
 
 // Popover for dataset selection
@@ -95,7 +95,7 @@ $(function () {
     });
 });
 
-function setDataset(dataset) {
+export function setDataset(dataset) {
     localStorage.setItem('dataset', dataset);
     window.location.reload(false);
 }
@@ -177,6 +177,7 @@ console.log("Query: " + JSON.stringify(subsetQuery));
 export var editor;
 
 export function setupBody(){
+
     // The editor menu for the custom subsets
     editor = ace.edit("subsetCustomEditor");
     editor.$blockScrolling = Infinity;
@@ -358,7 +359,7 @@ export function makeCorsRequest(url, post, callback) {
     xhr.send('solaJSON=' + JSON.stringify(post));
 }
 
-function download() {
+export function download() {
 
     function save(data) {
         laddaDownload.stop();
@@ -377,7 +378,7 @@ function download() {
     console.log("Query: " + JSON.stringify(subsetQuery));
     console.log("Projection: " + JSON.stringify(variableQuery));
 
-    query = {
+    let query = {
         'subsets': JSON.stringify(subsetQuery),
         'variables': JSON.stringify(variableQuery),
         'dataset': dataset,
@@ -548,6 +549,79 @@ if (localStorage.getItem("nodeId") !== null) {
 
 
 export function setupQueryTree() {
+
+    // Variables menu
+    $(function () {
+        $('#variableTree').tree({
+            data: variableData,
+            saveState: true,
+            dragAndDrop: false,
+            autoOpen: true,
+            selectable: false
+        });
+    });
+
+    // Create the query tree
+    $(function () {
+        $('#subsetTree').tree({
+            data: subsetData,
+            saveState: true,
+            dragAndDrop: true,
+            autoOpen: true,
+            selectable: false,
+
+            // Executed for every node and leaf in the tree
+            onCreateLi: function (node, $li) {
+
+                if ('negate' in node) {
+                    $li.find('.jqtree-element').prepend(buttonNegate(node.id, node.negate));
+                }
+                if ((!('show_op' in node) || ('show_op' in node && node.show_op)) && 'operation' in node) {
+                    let canChange = node.name.indexOf('Query') === -1 && !node.editable
+                    $li.find('.jqtree-element').prepend(buttonOperator(node.id, node.operation, canChange));
+                }
+                if (!('cancellable' in node) || (node['cancellable'] === true)) {
+                    $li.find('.jqtree-element').append(buttonDelete(node.id));
+                }
+                // Set a left margin on the first element of a leaf
+                if (node.children.length === 0) {
+                    $li.find('.jqtree-element:first').css('margin-left', '14px');
+                }
+            },
+            onCanMove: function (node) {
+                // Cannot move nodes in uneditable queries
+                if ('editable' in node && !node.editable) {
+                    return false
+                }
+
+                // Subset and Group may be moved
+                let is_country = ('type' in node && node.type === 'country');
+                return (node.name.indexOf('Subset') !== -1 || node.name.indexOf('Group') !== -1 || is_country);
+            },
+            onCanMoveTo: function (moved_node, target_node, position) {
+
+                // Cannot move to uneditable queries
+                if ('editable' in target_node && !target_node.editable) {
+                    return false
+                }
+
+                // Countries can be moved to child of location subset group
+                if ('type' in moved_node && moved_node.type === 'country') {
+                    return position === 'after' && target_node.parent.name === 'Location Subset';
+                }
+                // Rules may be moved next to another rule or grouping
+                if (position === 'after' && (target_node.name.indexOf('Subset') !== -1 || target_node.name.indexOf('Group') !== -1)) {
+                    return true;
+                }
+                // Rules may be moved inside a group or root
+                if ((position === 'inside') && (target_node.name.indexOf('Subsets') !== -1 || target_node.name.indexOf('Group') !== -1)) {
+                    return true;
+                }
+                return false;
+            }
+        });
+    });
+
     $('#subsetTree').on(
         'tree.move',
         function (event) {
@@ -573,6 +647,10 @@ export function setupQueryTree() {
                 editor.set(JSON.parse(node.custom));
                 showSubset("Custom");
             }
+
+            if (event.node.hasChildren()) {
+                $('#subsetTree').tree('toggle', event.node);
+            }
         }
     );
 
@@ -591,7 +669,7 @@ export function setupQueryTree() {
     );
 }
 // Define negation toggle, logic dropdown and delete button, as well as their callbacks
-window.buttonNegate = function(id, state) {
+function buttonNegate(id, state) {
     // This state is negated simply because the buttons are visually inverted. An active button appears inactive
     // This is due to css tomfoolery
     if (!state) {
@@ -617,7 +695,7 @@ window.callbackNegate = function(id, bool) {
 }
 
 function buttonOperator(id, state, canChange) {
-
+    console.log(canChange)
     if (canChange) {
         if (state === 'and') {
             return '<button class="btn btn-default btn-xs active" style="width:33px" type="button" data-toggle="button" aria-pressed="true" onclick="callbackOperator(' + id + ', &quot;or&quot;)">and</button> '
@@ -660,7 +738,7 @@ function buttonDelete(id) {
     return "<button type='button' class='btn btn-default btn-xs' style='background:none;border:none;box-shadow:none;float:right;margin-top:2px;height:18px' onclick='callbackDelete(" + String(id) + ")'><span class='glyphicon glyphicon-remove' style='color:#ADADAD'></span></button></div>";
 }
 
-function callbackDelete(id) {
+window.callbackDelete = function(id) {
     let node = $('#subsetTree').tree('getNodeById', id);
     if (node.name.indexOf('Query') !== -1) {
         if (!confirm("You are deleting a query. This will return your subsetting to an earlier state.")) {
@@ -697,7 +775,7 @@ function callbackDelete(id) {
             console.log(JSON.stringify(subsetQuery));
             console.log(JSON.stringify(variableQuery, null, '  '));
 
-            query = {
+            let query = {
                 'subsets': JSON.stringify(subsetQuery),
                 'variables': JSON.stringify(variableQuery),
                 'dataset': dataset,
@@ -723,17 +801,6 @@ function callbackDelete(id) {
     }
 }
 
-// Variables menu
-$(function () {
-    $('#variableTree').tree({
-        data: variableData,
-        saveState: true,
-        dragAndDrop: false,
-        autoOpen: true,
-        selectable: false
-    });
-});
-
 // Updates the rightpanel variables menu
 function reloadRightPanelVariables() {
     variableData.length = 0;
@@ -753,67 +820,6 @@ function reloadRightPanelVariables() {
 
 // Load stored variables into the rightpanel variable tree on initial page load
 reloadRightPanelVariables();
-
-// Create the query tree
-$(function () {
-    $('#subsetTree').tree({
-        data: subsetData,
-        saveState: true,
-        dragAndDrop: true,
-        autoOpen: true,
-        selectable: false,
-
-        // Executed for every node and leaf in the tree
-        onCreateLi: function (node, $li) {
-
-            if ('negate' in node) {
-                $li.find('.jqtree-element').prepend(buttonNegate(node.id, node.negate));
-            }
-            if ((!('show_op' in node) || ('show_op' in node && node.show_op)) && 'operation' in node) {
-                let canChange = node.name.indexOf('Query') === -1 && !!node.editable
-                $li.find('.jqtree-element').prepend(buttonOperator(node.id, node.operation, canChange));
-            }
-            if (!('cancellable' in node) || (node['cancellable'] === true)) {
-                $li.find('.jqtree-element').append(buttonDelete(node.id));
-            }
-            // Set a left margin on the first element of a leaf
-            if (node.children.length === 0) {
-                $li.find('.jqtree-element:first').css('margin-left', '14px');
-            }
-        },
-        onCanMove: function (node) {
-            // Cannot move nodes in uneditable queries
-            if ('editable' in node && !node.editable) {
-                return false
-            }
-
-            // Subset and Group may be moved
-            let is_country = ('type' in node && node.type === 'country');
-            return (node.name.indexOf('Subset') !== -1 || node.name.indexOf('Group') !== -1 || is_country);
-        },
-        onCanMoveTo: function (moved_node, target_node, position) {
-
-            // Cannot move to uneditable queries
-            if ('editable' in target_node && !target_node.editable) {
-                return false
-            }
-
-            // Countries can be moved to child of location subset group
-            if ('type' in moved_node && moved_node.type === 'country') {
-                return position === 'after' && target_node.parent.name === 'Location Subset';
-            }
-            // Rules may be moved next to another rule or grouping
-            if (position === 'after' && (target_node.name.indexOf('Subset') !== -1 || target_node.name.indexOf('Group') !== -1)) {
-                return true;
-            }
-            // Rules may be moved inside a group or root
-            if ((position === 'inside') && (target_node.name.indexOf('Subsets') !== -1 || target_node.name.indexOf('Group') !== -1)) {
-                return true;
-            }
-            return false;
-        }
-    });
-});
 
 function disable_edit_recursive(node) {
     node.editable = false;
@@ -836,16 +842,7 @@ function hide_first(data) {
     return data;
 }
 
-$('#subsetTree').on(
-    'tree.click',
-    function (event) {
-        if (event.node.hasChildren()) {
-            $('#subsetTree').tree('toggle', event.node);
-        }
-    }
-);
-
-function addGroup(query = false) {
+window.addGroup = function(query = false) {
     // When the query argument is set, groups will be included under a 'query group'
     let movedChildren = [];
     let removeIds = [];
@@ -1174,7 +1171,7 @@ function getSubsetPreferences() {
     }
 }
 
-function reset() {
+export function reset() {
     // suppress server queries from the reset button when the webpage is already reset
     let suppress = variablesSelected.size === 0 && subsetData.length === 0;
 
@@ -1196,7 +1193,7 @@ function reset() {
     reloadRightPanelVariables();
 
     if (!suppress) {
-        query = {
+        let query = {
             'subsets': JSON.stringify({}),
             'variables': JSON.stringify({}),
             'dataset': dataset,
@@ -1211,7 +1208,7 @@ function reset() {
 /**
  * Makes web request for rightpanel preferences
  */
-function submitQuery() {
+export function submitQuery() {
 
     // Only construct and submit the query if new subsets have been added since last query
     let newSubsets = false;
@@ -1270,7 +1267,7 @@ function submitQuery() {
     console.log("Query: " + JSON.stringify(subsetQuery));
     // console.log(JSON.stringify(variableQuery, null, '  '));
 
-    query = {
+    let query = {
         'subsets': JSON.stringify(subsetQuery),
         'variables': JSON.stringify(variableQuery),
         'dataset': dataset,

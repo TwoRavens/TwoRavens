@@ -1,8 +1,9 @@
 import m from 'mithril';
+import {download} from "../app";
 
 export default class Rightpanel {
     view(vnode) {
-        return(m(".sidepanel.container.clearfix[id='rightpanel']",
+        return (m(".sidepanel.container.clearfix[id='rightpanel']",
             [
                 m(".panelbar[id='toggleRpanelicon']",
                     m("span",
@@ -22,12 +23,26 @@ export default class Rightpanel {
                         "Query Summary"
                     )
                 ),
-                m("[id='queryVariables']", {style: {"margin-left": "5px", "width": "232px", "height": "calc(35% - 39px)", "overflow-y": "auto"}},
+                m("[id='queryVariables']", {
+                        style: {
+                            "margin-left": "5px",
+                            "width": "232px",
+                            "height": "calc(35% - 39px)",
+                            "overflow-y": "auto"
+                        }
+                    },
                     [
                         m("h4.panel-title",
                             "Variables"
                         ),
-                        m("[id='variableTree']", {style: {"margin-left": "10px", "width": "calc(100% - 15px)", "height": "calc(100% - 19px)", "overflow-y": "auto"}})
+                        m("[id='variableTree']", {
+                            style: {
+                                "margin-left": "10px",
+                                "width": "calc(100% - 15px)",
+                                "height": "calc(100% - 19px)",
+                                "overflow-y": "auto"
+                            }
+                        })
                     ]
                 ),
                 m("[id='querySubsets']", {style: {"width": "232px", "height": "calc(65% - 39px)"}},
@@ -40,10 +55,29 @@ export default class Rightpanel {
                 ),
                 m("[id='rightpanelButtonBar']", {style: {"width": "232px", "position": "absolute", "bottom": "5px"}},
                     [
-                        m("button.btn.btn-default[id='buttonAddGroup'][onclick='addGroup()'][type='button']", {style: {"float": "left", "margin-left": "6px"}},
+                        m("button.btn.btn-default[id='buttonAddGroup'][type='button']", {
+                                style: {
+                                    "float": "left",
+                                    "margin-left": "6px"
+                                },
+                                onclick: function (e) {
+                                    addGroup();
+                                    e.redraw = false;
+                                }
+                            },
                             "Group"
                         ),
-                        m("button.btn.btn-default.ladda-button[data-spinner-color='#818181'][id='buttonDownload'][onclick='download()'][type='button']", {style: {"float": "right", "margin-right": "6px", "data-style": "zoom-in"}},
+                        m("button.btn.btn-default.ladda-button[data-spinner-color='#818181'][id='buttonDownload'][type='button']", {
+                                style: {
+                                    "float": "right",
+                                    "margin-right": "6px",
+                                    "data-style": "zoom-in"
+                                },
+                                onclick: function (e) {
+                                    download();
+                                    e.redraw = false;
+                                }
+                            },
                             m("span.ladda-label",
                                 "Download"
                             )
