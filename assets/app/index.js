@@ -273,7 +273,7 @@ class Body {
 
 if (IS_EVENTDATA_DOMAIN) {
     m.route(document.body, '/subset', {
-        '/subset': {render: () => m(Body_EventData)},
+        '/subset': {render: () => m(Body_EventData, {mode: 'subset'})},
         '/aggregate': {render: () => m(Body_EventData, {mode: 'aggregate'})}
     });
 }
