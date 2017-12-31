@@ -1,8 +1,6 @@
 import * as app from "../app.js"
 import * as d3 from 'd3'
 
-let actorDisplayed = false;
-
 // Lists of all checked values
 let filterSet = {
     'source': {
@@ -45,13 +43,17 @@ export let actorLinks = [];
 
 let currentTab = "source";
 
-var sourceCurrentNode;			//current source node that is selected
-var targetCurrentNode;
+var currentNode = {};                   //initialized to source and targets below. The highlighted node in the menu
+
 let currentSize = 0;					//total number of nodes created; this is never decremented
-var sourceSize = 0;						//total number of source nodes created; this is never decremented
-var targetSize = 0;						//total number of target nodes created; this is never decremented
-var sourceActualSize = 0;				//total number of source nodes present
-var targetActualSize = 0;				//total number of target nodes present
+let actorSize = {
+    source: 0,                          //total number of source nodes created; this is never decremented
+    target: 0                           //total number of target nodes created; this is never decremented
+};
+let actorActualSize = {
+    source: 0,                          //total number of source nodes present
+    target: 0                           //total number of target nodes present
+};
 let changeID = 0;						//number that is updated whenever a node is added/changed, set to actorID
 
 var actorNodeNames = [];				//array list to maintain unique node names
@@ -59,10 +61,10 @@ var actorNodeNames = [];				//array list to maintain unique node names
 //begin force definitions
 var actorSVG;
 //~ var actorSVG;			//move this to d3actor?
-//~ if (opMode == "subset") {
+//~ if (app.opMode == "subset") {
 	//~ actorSVG = d3.select("#actorLinkSVG");
 //~ }
-//~ else if (opMode == "aggreg") {
+//~ else if (app.opMode == "aggreg") {
 	//~ actorSVG = d3.select("#actorAggregSVG");
 //~ }
 //~ else {
@@ -85,16 +87,16 @@ const fillRatio = 0.6;
 //default group display on page load, adds default source/target to nodes and SVG
 actorNodes.push(new NodeObj("Source 0", [], [], actorColors(currentSize), "source", changeID));
 currentSize++;
-sourceSize++;
-sourceActualSize++;
+actorSize['source']++;
+actorActualSize['source']++;
 changeID++;
 actorNodes.push(new NodeObj("Target 0", [], [], actorColors(currentSize), "target", changeID));
 currentSize++;
-targetSize++;
-targetActualSize++;
+actorSize['target']++;
+actorActualSize['target']++;
 changeID++;
-sourceCurrentNode = actorNodes[0];
-targetCurrentNode = actorNodes[1];
+currentNode['source'] = actorNodes[0];
+currentNode['target'] = actorNodes[1];
 
 var actorForce;
 
@@ -134,12 +136,14 @@ let destNode = null;				//node that is the end of the drag link line
 
 export function setupActor(){
     actorSVG = d3.select("#actorLinkSVG");
+    $("#actorLinkDiv").css("height", $("#actorSelectionDiv").height() + 2);
 
     actorWidth = actorSVG.node().getBoundingClientRect().width;		//not yet set since window has not yet been displayed; defaults to 0
     actorHeight = actorSVG.node().getBoundingClientRect().height;	//this code is here to remind what is under subset.js
 
-    boundaryLeft = Math.floor(actorWidth / 2) - 20;		//max x coordinate source nodes can move
+    //update display variables
     boundaryRight = Math.ceil(actorWidth / 2) + 20;		//max x coordinate target nodes can move
+    boundaryLeft = Math.floor(actorWidth / 2) - 20;		//max x coordinate source nodes can move
 
     actorForce = d3.forceSimulation()
         .force("link", d3.forceLink().distance(100).strength(0.5))	//link force to keep nodes together
@@ -153,6 +157,9 @@ export function setupActor(){
         }).strength(0.05))
         .force('charge', d3.forceManyBody().strength(-100));	//prevent tight clustering
 
+    actorSVG.append("path").attr("id", "centerLine").attr("d", function () {
+        return "M" + actorWidth / 2 + "," + 0 + "V" + actorHeight;
+    }).attr("stroke", "black");
 
     //define arrow markers
     actorSVG.append('svg:defs').append('svg:marker').attr('id', 'end-arrow').attr('viewBox', '0 -5 10 10').attr('refX', 6).attr('markerWidth', 3).attr('markerHeight', 3).attr('orient', 'auto').append('svg:path').attr('d', 'M0,-5L10,0L0,5').style('fill', '#000');
@@ -174,13 +181,30 @@ export function setupActor(){
 
     actorForce.on("tick", actorTick);		//custom tick function
 
+    //expands divs with filters
+    $(".filterExpand").click(function () {
+        if (this.value === "expand") {
+            this.value = "collapse";
+            $(this).css("background-image", "url(/static/EventData/images/collapse.png)");
+            $(this).next().next("div.filterContainer").show("fast");
+        }
+        else {
+            this.value = "expand";
+            $(this).css("background-image", "url(/static/EventData/images/expand.png)");
+            $(this).next().next("div.filterContainer").hide("fast");
+        }
+    });
+
+    //enable jquery hover text for various gui elements
+    $(".actorBottom, .clearActorBtn, #deleteGroup, .actorShowSelectedLbl, #editGroupName").tooltip({container: "body"});
+    $(".actorBottom, .clearActorBtn, #deleteGroup, .actorShowSelectedLbl, #editGroupName").popover("disable");
+
     //clears search and filter selections
     $(".clearActorBtn").click(function (event) {
         clearChecks();
         actorSearch(currentTab);
         $(this).blur();
     });
-
 
     //clear search box when reloading page
     $(".actorSearch").ready(function () {
@@ -258,25 +282,25 @@ export function setupActor(){
     //adds a new group for source/target
     $(".actorNewGroup").click(function (event) {
         $(".actorBottom, .clearActorBtn, #deleteGroup, .actorShowSelectedLbl, #editGroupName").popover("hide");
-        var newName = capitalizeFirst(currentTab) + " " + window[currentTab + "Size"];
+        var newName = capitalizeFirst(currentTab) + " " + actorSize[currentTab];
         var nameCount = 1;
         while (actorNodeNames.indexOf(newName) > -1) {
-            newName = capitalizeFirst(currentTab) + " " + (window[currentTab + "Size"] + nameCount);
+            newName = capitalizeFirst(currentTab) + " " + (actorSize[currentTab] + nameCount);
             nameCount++;
         }
         actorNodes.push(new NodeObj(newName, [], [], actorColors(currentSize), currentTab, changeID));
         actorNodeNames.push(actorNodes[actorNodes.length - 1].name);
-        window[currentTab + "Size"]++;
-        window[currentTab + "ActualSize"]++;
+        actorSize[currentTab]++;
+        actorActualSize[currentTab]++;
         currentSize++;
         changeID++;
 
         // Save values to the current node
-        window[currentTab + "CurrentNode"].group = [...filterSet[currentTab]["full"]];
+        currentNode[currentTab].group = [...filterSet[currentTab]["full"]];
 
         // Set current node to new node
-        window[currentTab + "CurrentNode"] = actorNodes[actorNodes.length - 1];
-        updateGroupName(window[currentTab + "CurrentNode"].name);
+        currentNode[currentTab] = actorNodes[actorNodes.length - 1];
+        updateGroupName(currentNode[currentTab].name);
 
         //update gui
         $("#clearAll" + capitalizeFirst(currentTab) + "s").click();
@@ -285,7 +309,7 @@ export function setupActor(){
 
         //update svg
         //change dimensions of SVG if needed (exceeds half of the space)
-        if (window[currentTab + "ActualSize"] > calcCircleNum(actorHeight)) {
+        if (actorActualSize[currentTab] > calcCircleNum(actorHeight)) {
             actorHeight += actorNodeR;
             $("#actorLinkDiv").height(function (n, c) {
                 return c + actorNodeR;
@@ -296,7 +320,7 @@ export function setupActor(){
             });
         }
         updateAll();
-        if (opMode === "aggreg")
+        if (app.opMode === "aggreg")
             updateAggregTable();
         actorTick();
         actorForce.alpha(1).restart();
@@ -307,7 +331,7 @@ export function setupActor(){
     //remove a group if possible
     $("#deleteGroup").click(function () {
         $(".actorBottom, .clearActorBtn, #deleteGroup, .actorShowSelectedLbl, #editGroupName").popover("hide");
-        const cur = actorNodes.indexOf(window[currentTab + "CurrentNode"]);
+        const cur = actorNodes.indexOf(currentNode[currentTab]);
         let prev = cur - 1;
         let next = cur + 1;
         while (true) {
@@ -335,7 +359,7 @@ export function setupActor(){
 
         function performUpdate(index) {
             //set index node to current
-            window[currentTab + "CurrentNode"] = actorNodes[index];
+            currentNode[currentTab] = actorNodes[index];
             updateGroupName(actorNodes[index].name);
 
             $("#clearAll" + capitalizeFirst(currentTab) + "s").click();
@@ -358,12 +382,12 @@ export function setupActor(){
             }
             actorNodeNames.splice(actorNodes[cur].name, 1);
             actorNodes.splice(cur, 1);
-            window[currentTab + "ActualSize"]--;
+            actorActualSize[currentTab]--;
 
             const curHeight = $("#actorContainer").height();		//this is the height of the container
             const titleHeight = $("#linkTitle").height();			//this is the height of the title div above the SVG
 
-            if (sourceActualSize <= calcCircleNum(curHeight - titleHeight) && targetActualSize <= calcCircleNum(curHeight - titleHeight)) {		//if link div is empty enough, maintain height alignment
+            if (actorActualSize['source'] <= calcCircleNum(curHeight - titleHeight) && actorActualSize['target'] <= calcCircleNum(curHeight - titleHeight)) {		//if link div is empty enough, maintain height alignment
                 $("#actorLinkDiv").css("height", $("#actorSelectionDiv").height() + 2);
                 actorHeight = actorSVG.node().getBoundingClientRect().height;
                 actorSVG.attr("height", actorHeight);
@@ -375,7 +399,7 @@ export function setupActor(){
                 if (actorHeight - actorNodeR < curHeight - titleHeight)
                     return;
 
-                if (window[currentTab + "ActualSize"] <= calcCircleNum(actorHeight - actorNodeR)) {
+                if (actorActualSize[currentTab] <= calcCircleNum(actorHeight - actorNodeR)) {
                     actorHeight -= actorNodeR;
                     $("#actorLinkDiv").height(function (n, c) {
                         return c - actorNodeR;
@@ -388,7 +412,7 @@ export function setupActor(){
             }
             updateAll();
 
-            if (opMode === "aggreg")
+            if (app.opMode === "aggreg")
                 updateAggregTable();
         }
     });
@@ -480,10 +504,10 @@ function dragend(d, i) {
         dragTarget.actorID = changeID;
         changeID++;												//update actorID so SVG can update
         //now set gui to show dragTarget data
-        window[dragTarget.actor + "CurrentNode"] = dragTarget;
+        currentNode[dragTarget.actor] = dragTarget;
         $("#" + dragTarget.actor + "TabBtn").trigger("click");
         currentTab = dragTarget.actor;								//sanity check
-        updateGroupName(window[currentTab + "CurrentNode"].name);
+        updateGroupName(currentNode[currentTab].name);
         $("#clearAll" + capitalizeFirst(currentTab) + "s").click();
 
         $("#" + currentTab + "ShowSelected").prop("checked", true);
@@ -491,7 +515,7 @@ function dragend(d, i) {
 
         updateAll();
 
-        if (opMode === "aggreg")
+        if (app.opMode === "aggreg")
 			updateAggregTable();
     }
     dragStarted = false;		//now reset all drag variables
@@ -550,7 +574,7 @@ function updateSVG() {
                 }
             }
             updateAll();
-            if (opMode == "aggreg")
+            if (app.opMode == "aggreg")
 				updateAggregTable();
         })
         .merge(linkGroup);
@@ -645,12 +669,12 @@ function updateSVG() {
 
     //performs on "click" of node, shows actor selection on node click; call moved to mousedown because click() did not fire for Chrome
     function nodeClick(d) {
-        window[currentTab + "CurrentNode"].group = [...filterSet[currentTab]["full"]];
+        currentNode[currentTab].group = [...filterSet[currentTab]["full"]];
         $("#" + d.actor + "TabBtn").trigger("click");
 
-        if (window[currentTab + "CurrentNode"] !== d) {			//only update gui if selected node is different than the current
+        if (currentNode[currentTab] !== d) {			//only update gui if selected node is different than the current
 
-            window[currentTab + "CurrentNode"] = d;
+            currentNode[currentTab] = d;
             filterSet[currentTab]["full"] = new Set(d.group);
 
             //update gui
@@ -711,7 +735,7 @@ function updateSVG() {
 
         resetMouseVars();
 
-        if (opMode == "aggreg")
+        if (app.opMode == "aggreg")
 			updateAggregTable();
     }	//end of createLink()
 
@@ -749,7 +773,7 @@ function actorTick() {
     //node outline defined here
     actorSVG.selectAll("circle").style("stroke", function (d) {
         //give selected node a black outline, and all other nodes the default color
-        if (d == window[currentTab + "CurrentNode"]) {
+        if (d === currentNode[currentTab]) {
             return "#000000";
         }
         else {
@@ -757,7 +781,7 @@ function actorTick() {
         }
     }).style("stroke-width", function (d) {
         //give selected node a thicker 3px outline, and all other nodes the default 1px
-        if (d == window[currentTab + "CurrentNode"])
+        if (d === currentNode[currentTab])
             return 3;
         else
             return 1;
@@ -868,7 +892,7 @@ function updateGroupName(newGroupName) {
 }
 
 //switches tabs in actor subset, sets current and active nodes
-function actorTabSwitch(origin, tab) {
+export function actorTabSwitch(origin, tab) {
     switch (origin) {
         case "sourceTabBtn":
             document.getElementById("targetDiv").style.display = "none";
@@ -885,7 +909,7 @@ function actorTabSwitch(origin, tab) {
     }
 
 	$(".actorBottom, .clearActorBtn, #deleteGroup, .actorShowSelectedLbl, #editGroupName, .actorChkLbl").popover('hide');
-    updateGroupName(window[currentTab + "CurrentNode"].name);
+    updateGroupName(currentNode[currentTab].name);
     document.getElementById(tab).style.display = "inline-block";
     actorTick();
 }
@@ -896,7 +920,7 @@ let dict;
 //loads the dictionary for translation
 const loadDictionary = function () {
     const defer = $.Deferred();
-    $.get('../data/dict_sorted.txt', function (data) {
+    $.get('/static/EventData/data/dict_sorted.txt', function (data) {
         dict = data.split('\n');
         dict.length--;	//remove last element(empty line)
         defer.resolve();
@@ -1089,17 +1113,17 @@ function createElement(chkSwitch = true, actorType, columnType, value, index, di
 function actorSelectChanged(element) {
     element.checked = !!(element.checked);
     if (element.checked) {					//add into group
-        if (window[currentTab + "CurrentNode"].group.indexOf(element.value < 0)) {		//perhaps change to a set
-            window[currentTab + "CurrentNode"].group.push(element.value);
-            window[currentTab + "CurrentNode"].groupIndices.push(element.id);
+        if (currentNode[currentTab].group.indexOf(element.value < 0)) {		//perhaps change to a set
+            currentNode[currentTab].group.push(element.value);
+            currentNode[currentTab].groupIndices.push(element.id);
             filterSet[currentTab]["full"].add(element.value);
         }
     }
     else {									//remove from group
-        const index = window[currentTab + "CurrentNode"].group.indexOf(element.value);
+        const index = currentNode[currentTab].group.indexOf(element.value);
         if (index > -1) {
-            window[currentTab + "CurrentNode"].group.splice(index, 1);
-            window[currentTab + "CurrentNode"].groupIndices.splice(index, 1);
+            currentNode[currentTab].group.splice(index, 1);
+            currentNode[currentTab].groupIndices.splice(index, 1);
             filterSet[currentTab]["full"].delete(element.value);
         }
     }
@@ -1286,7 +1310,7 @@ export function resizeActorSVG() {
     const titleHeight = $("#linkTitle").height();           //this is the height of the title div above the SVG
     let trySize = actorHeight;
     $("#actorSelectionDiv").css("height", curHeight);   //this constrains the left side
-    if (sourceActualSize <= calcCircleNum(curHeight - titleHeight) && targetActualSize <= calcCircleNum(curHeight - titleHeight)) {     //if link div is empty enough, maintain height alignment
+    if (actorActualSize['source'] <= calcCircleNum(curHeight - titleHeight) && actorActualSize['target'] <= calcCircleNum(curHeight - titleHeight)) {     //if link div is empty enough, maintain height alignment
         $("#actorLinkDiv").css("height", $("#actorSelectionDiv").height() + 2);
         actorHeight = actorSVG.node().getBoundingClientRect().height;
         actorSVG.attr("height", actorHeight);
@@ -1296,7 +1320,7 @@ export function resizeActorSVG() {
         updateAll();
     }
     else if (trySize > curHeight) {     //note this is a slow implementation, especially if dragging to resize
-        while (sourceActualSize <= calcCircleNum(trySize) && targetActualSize <= calcCircleNum(trySize)) {      //reduce the size of the SVG to a comfortable viewing size
+        while (actorActualSize['source'] <= calcCircleNum(trySize) && actorActualSize['target'] <= calcCircleNum(trySize)) {      //reduce the size of the SVG to a comfortable viewing size
             trySize -= 20;      //try half of actorNodeR
         }
 

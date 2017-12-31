@@ -255,6 +255,7 @@ div.sidepanel div.panelbar span {
     margin-top:62px;
     position: fixed;
     overflow:auto;
+    border: none;
 }
 
 #canvas {
@@ -1269,6 +1270,14 @@ div.actorTab button.active {
 	margin-bottom: 3px;
 }
 
+.actorSelectAll {
+    float:left;
+}
+
+.actorClearAll {
+    float:left;
+}
+
 #actorLinkDiv {
 	float:left;
     margin-left:10px;
@@ -1283,7 +1292,7 @@ div.actorTab button.active {
 }
 
 .actorBottom {
-  margin-left:2px;
+  margin-left:4px;
   margin-top:6px;
 }
 
@@ -1292,10 +1301,8 @@ div.actorTab button.active {
 }
 
 .actorNewGroup {
-/*
-	float: right;
-*/
-	margin-left: 60px;
+    float:right;
+    margin-right:3px;
 }
 
 .actorShowSelected {
@@ -1317,7 +1324,7 @@ div.actorTab button.active {
 	vertical-align: middle;
 	outline: none;
 
-	background-image: url(../images/expand.png);
+	background-image: url(/static/EventData/images/expand.png);
 	background-repeat: no-repeat;
 	background-position: 0px 0px;
 	border: none;

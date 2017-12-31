@@ -359,7 +359,7 @@ function render(blnIsSubgraph, cid) {
  * and do the rendering of the sub graph
  *
  **/
-function constructSubgraph(cid, scrollTo) {
+window.constructSubgraph = function(cid, scrollTo) {
 
     // console.log("constructSubgraph for cid : " + cid);
 
@@ -552,7 +552,7 @@ function removeAllSubGraphSVG() {
     rightpanelMargin();
 }
 
-function subgraphYLabelClicked(cname) {
+window.subgraphYLabelClicked = function(cname) {
 
     var bool = mapListCountriesSelected[cname];
 

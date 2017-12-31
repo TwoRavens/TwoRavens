@@ -1,6 +1,6 @@
 import m from 'mithril';
 import {dataset} from "../app.js"
-import {setupActor} from "../subsets/Actor.js"
+import {setupActor, actorTabSwitch} from "../subsets/Actor.js"
 
 export default class CanvasActor {
 
@@ -44,19 +44,30 @@ export default class CanvasActor {
                                         ),
                                         m("[id='tabDiv']", {style: {"overflow": "hidden"}},
                                             m(".btn-group[data-toggle='buttons'][id='actorRadio']", {
-                                                    style: {
-                                                        "margin-left": "6px",
-                                                        "width": "calc(100% - 12px)"
-                                                    }
+                                                    style: { "width": "100%" }
                                                 },
                                                 [
-                                                    m("label.btn.btn-default.active[onclick='actorTabSwitch(\'sourceTabBtn\', \'sourceDiv\')'][title='Select sources']", {style: {"width": "50%"}},
+                                                    m("label.btn.btn-default.active[title='Select sources']",
+                                                        {
+                                                            style: {"width": "50%"},
+                                                            onclick: function (e) {
+                                                                actorTabSwitch('sourceTabBtn', 'sourceDiv');
+                                                                e.redraw = false;
+                                                            }
+                                                        },
                                                         [
                                                             m("input[autocomplete='off'][checked=''][id='sourceTabBtn'][name='actorSet'][type='radio']"),
                                                             "Sources"
                                                         ]
                                                     ),
-                                                    m("label.btn.btn-default[onclick='actorTabSwitch(\'targetTabBtn\', \'targetDiv\')'][title='Select targets']", {style: {"width": "50%"}},
+                                                    m("label.btn.btn-default[title='Select targets']",
+                                                        {
+                                                            style: {"width": "50%"},
+                                                            onclick: function (e) {
+                                                                actorTabSwitch('targetTabBtn', 'targetDiv');
+                                                                e.redraw = false;
+                                                            }
+                                                        },
                                                         [
                                                             m("input[autocomplete='off'][id='targetTabBtn'][name='actorSet'][type='radio']"),
                                                             "Targets"
@@ -78,7 +89,7 @@ export default class CanvasActor {
                                                         m(".actorLeft[id='allSources']",
                                                             [
                                                                 m("input.form-control.actorSearch[id='sourceSearch'][placeholder='Search source actors'][type='text']"),
-                                                                m(".actorFullList[id='searchListSources']",
+                                                                m(".actorFullList[id='searchListSources']", {style: {"text-align": "left"}}
                                                                 )
                                                             ]
                                                         ),
@@ -87,7 +98,7 @@ export default class CanvasActor {
                                                                 m("button.btn.btn-default.clearActorBtn[data-toggle='tooltip'][id='clearAllSources'][title='Clears search text and filters'][type='button']",
                                                                     "Clear All Filters"
                                                                 ),
-                                                                m(".actorFilterList[id='sourceFilter']",
+                                                                m(".actorFilterList[id='sourceFilter']", {style: {"text-align": "left"}},
                                                                     [
                                                                         m("label.actorShowSelectedLbl.actorChkLbl[data-toggle='tooltip'][title='Show selected sources']",
                                                                             [
@@ -143,7 +154,7 @@ export default class CanvasActor {
                                                                 )
                                                             ]
                                                         ),
-                                                        m(".actorBottomTry",
+                                                        m(".actorBottomTry", { style: {"width": "100%"}},
                                                             [
                                                                 m("button.btn.btn-default.actorBottom.actorSelectAll[data-toggle='tooltip'][id='sourceSelectAll'][title='Selects all sources that match the filter criteria'][type='button']",
                                                                     "Select All"
@@ -163,7 +174,7 @@ export default class CanvasActor {
                                                         m(".actorLeft[id='allTargets']",
                                                             [
                                                                 m("input.form-control.actorSearch[id='targetSearch'][placeholder='Search target actors'][type='text']"),
-                                                                m(".actorFullList[id='searchListTargets']",
+                                                                m(".actorFullList[id='searchListTargets']",  {style: {"text-align": "left"}}
                                                                 )
                                                             ]
                                                         ),
@@ -172,7 +183,7 @@ export default class CanvasActor {
                                                                 m("button.btn.btn-default.clearActorBtn[data-toggle='tooltip'][id='clearAllTargets'][title='Clears search text and filters'][type='button']",
                                                                     "Clear All Filters"
                                                                 ),
-                                                                m(".actorFilterList[id='targetFilter']",
+                                                                m(".actorFilterList[id='targetFilter']", {style: {"text-align": "left"}},
                                                                     [
                                                                         m("label.actorShowSelectedLbl.actorChkLbl[data-toggle='tooltip'][title='Show selected targets']",
                                                                             [
