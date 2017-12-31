@@ -1,3 +1,5 @@
+import {opMode, setOpMode} from "../app";
+
 var aggregMode = "penta";
 var aggregDateOn = 0;		//0 = off, 1 = week, 2 = month, 3 = quarter, 4 = year
 var aggregActorOn = true;
@@ -6,9 +8,9 @@ var aggregDataNumber = 6;
 var aggregPentaSelectNum = 5;
 var aggregRootSelectNum = 20;
 
-function updateToAggreg() {
+export function updateToAggreg() {
 	if (opMode === "subset") {
-		opMode = "aggreg";
+		setOpMode("aggreg");
 		//clear main
 		console.log("aggreg on");
 		$("#btnSubmit").removeAttr("onclick").click(function(){alert("Functionality disabled for now");});

@@ -1,38 +1,67 @@
 import m from 'mithril';
+import {about, closeabout, submitQuery, setDataset, reset} from "../app";
+import {updateToAggreg} from "../aggreg/aggreg";
 
 export default class Header {
+    oncreate() {
+        console.log(document.getElementById("selectPhoenixRT"));
+        console.log(document.getElementById("btnSubmit"));
+    }
     view(vnode) {
         return (m("nav.navbar.navbar-default.navbar-fixed-top[id='navbar'][role='navigation']",
             [
                 m("a.navbar-brand", {style: {"margin-left": "0"}},
-                    m("img[alt='TwoRavens'][onmouseout='closeabout();'][onmouseover='about();'][src='/static/images/TwoRavens.png'][width='100']", {
+                    m("img[alt='TwoRavens'][src='/static/images/TwoRavens.png'][width='100']", {
                         style: {
                             "margin-left": "2em",
                             "margin-top": "-0.5em"
+                        },
+                        onmouseover: function (e) {
+                            about();
+                            e.redraw = false;
+                        },
+                        onmouseout: function (e) {
+                            closeabout();
+                            e.redraw = false;
                         }
                     })
                 ),
                 m("[id='navbarNav']", {style: {"margin-top": "11px"}},
                     [
                         // Button Aggregate
-                        m("button.btn.btn-default.navbar-right[id='aggSubmit'][onclick='updateToAggreg()']", {style: {"margin-right": "1em"}}, "Aggregate"),
+                        m("button.btn.btn-default.navbar-right[id='aggSubmit']",
+                            {
+                                style: {"margin-right": "1em"},
+                                onclick: function (e) {
+                                    updateToAggreg();
+                                    e.redraw = false;
+                                }
+                            }, "Aggregate"),
 
                         // Button Subset Submit
-                        m("label.btn.btn-default.ladda-button.navbar-right[data-spinner-color='#818181'][data-style='zoom-in'][id='btnSubmit'][onclick='submitQuery()']", {
+                        m("label.btn.btn-default.ladda-button.navbar-right[data-spinner-color='#818181'][data-style='zoom-in'][id='btnSubmit']", {
                                 style: {
                                     "float": "right",
                                     "margin-left": "2em",
                                     "margin-right": "1em"
+                                },
+                                onclick: function (e) {
+                                    submitQuery();
+                                    e.redraw = false;
                                 }
                             },
                             m("span.ladda-label", "Subset")
                         ),
 
                         // Button Reset
-                        m("button.btn.btn-default.ladda-button.navbar-right[data-spinner-color='#818181'][data-style='zoom-in'][id='btnReset'][onclick='reset()'][title='Reset']", {
+                        m("button.btn.btn-default.ladda-button.navbar-right[data-spinner-color='#818181'][data-style='zoom-in'][id='btnReset'][title='Reset']", {
                                 style: {
                                     "margin-left": "2.0em",
                                     "float": "right"
+                                },
+                                onclick: function(e) {
+                                    reset();
+                                    e.redraw = false;
                                 }
                             },
                             m("span.ladda-label.glyphicon.glyphicon-repeat", {
@@ -48,7 +77,7 @@ export default class Header {
                         m("div", {style: {"left": "calc(50% + 20px)", "position": "fixed", "margin-top": "6px"}},
                             m(".popover-markup", {style: {"display": "inline"}},
                                 [
-                                    m("a.trigger.btn.btn-sm.btn-default[href='#']", {style: {"height": "30px"}},
+                                    m("a.trigger.btn.btn-sm.btn-default", {style: {"height": "30px"}},
                                         m("span.glyphicon.glyphicon-chevron-down", {
                                             style: {
                                                 "margin-top": "3px",
@@ -86,7 +115,14 @@ export default class Header {
                                                             })
                                                         ),
                                                         m("p", "A Phoenix-coded event dataset constructed here at The University of Texas at Dallas!"),
-                                                        m("a.btn.btn-primary.btn-sm[onclick='setDataset(\'phoenix_rt\')']", "Select")
+                                                        m("button.btn.btn-primary[id='selectPhoenixRT']",
+                                                            {
+                                                                onclick: function (e) {
+                                                                    console.log("PHOENIX_RT");
+                                                                    setDataset('phoenix_rt');
+                                                                    e.redraw = false;
+                                                                }
+                                                            }, m("span.ladda-label", "Select"))
                                                     ]
                                                 ),
 
@@ -105,7 +141,14 @@ export default class Header {
                                                             m("a[href='http://www.clinecenter.illinois.edu/data/event/phoenix/']", "Cline New York Times")
                                                         ),
                                                         m("p", "This data is sourced from the New York Times and collected by the Cline Center for Advanced Social Research."),
-                                                        m("a.btn.btn-primary[onclick='setDataset(\'cline_phoenix_nyt\')']", "Select")
+                                                        m("button.btn.btn-primary",
+                                                            {
+                                                                onclick: function (e) {
+                                                                    console.log("TEST");
+                                                                    setDataset('cline_phoenix_nyt');
+                                                                    e.redraw = false;
+                                                                }
+                                                            }, m("span.ladda-label", "Select"))
                                                     ]
                                                 ),
 
@@ -124,7 +167,14 @@ export default class Header {
                                                             m("a[href='http://www.clinecenter.illinois.edu/data/event/phoenix/']", "Cline CIA Broadcast")
                                                         ),
                                                         m("p", "This data is sourced from the CIA Foreign Broadcast Information Service and collected by the Cline Center for Advanced Social Research."),
-                                                        m("a.btn.btn-primary[onclick='setDataset(\'cline_phoenix_fbis\')']", "Select")
+                                                        m("button.btn.btn-primary",
+                                                            {
+                                                                onclick: function (e) {
+                                                                    console.log("TEST");
+                                                                    setDataset('cline_phoenix_fbis');
+                                                                    e.redraw = false;
+                                                                }
+                                                            }, m("span.ladda-label", "Select"))
                                                     ]
                                                 ),
 
@@ -143,7 +193,14 @@ export default class Header {
                                                             m("a[href='http://www.clinecenter.illinois.edu/data/event/phoenix/']", "Cline BBC Summary")
                                                         ),
                                                         m("p", "This data is sourced from the BBC Summary of World Broadcasts and collected by the Cline Center for Advanced Social Research."),
-                                                        m("a.btn.btn-primary[onclick='setDataset(\'cline_phoenix_swb\')']", "Select")
+                                                        m("button.btn.btn-primary",
+                                                            {
+                                                                onclick: function (e) {
+                                                                    console.log("TEST");
+                                                                    setDataset('cline_phoenix_swb');
+                                                                    e.redraw = false;
+                                                                }
+                                                            }, m("span.ladda-label", "Select"))
                                                     ]
                                                 ),
 
@@ -162,7 +219,14 @@ export default class Header {
                                                             m("a[href='https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/28075']", "ICEWS Coded Event Data")
                                                         ),
                                                         m("p", "Event data consists of coded interactions between socio-political actors (i.e., cooperative or hostile actions between individuals, groups, sectors and nation states)."),
-                                                        m("a.btn.btn-primary[onclick='setDataset(\'icews\')']", "Select")
+                                                        m("button.btn.btn-primary",
+                                                            {
+                                                                onclick: function (e) {
+                                                                    console.log("TEST");
+                                                                    setDataset('icews');
+                                                                    e.redraw = false;
+                                                                }
+                                                            }, m("span.ladda-label", "Select"))
                                                     ]
                                                 )
                                             ]
