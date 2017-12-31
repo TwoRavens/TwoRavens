@@ -14,7 +14,8 @@ export default class CanvasCoordinates {
                         style: {
                             "display": "inline-block",
                             "vertical-align": "top",
-                            "margin": "20px"
+                            "margin": "20px",
+                            "margin-bottom": "0"
                         }
                     },
                     [
@@ -53,7 +54,8 @@ export default class CanvasCoordinates {
                         style: {
                             "display": "inline-block",
                             "vertical-align": "top",
-                            "margin-left": "20px"
+                            "margin": "20px",
+                            "margin-bottom": "0"
                         }
                     },
                     [
@@ -92,7 +94,7 @@ export default class CanvasCoordinates {
                     style: {
                         "margin-left": "10px",
                         "width": "calc(100% - 45px)",
-                        "height": "calc(100% - 120px)"
+                        "height": "calc(100% - 100px)"
                     }
                 })
             ]

@@ -1,4 +1,5 @@
 import m from 'mithril';
+import {subsetData, buildSubset, editor} from "../app";
 
 export default class CanvasCustom {
     oncreate(){
@@ -30,10 +31,14 @@ export default class CanvasCustom {
                     m("h3.panel-title", "View Query String")
                 ),
                 // Show rightpanel query
-                m("button.btn.btn-default[id='subsetCustomShowAll'][onclick='editor.setValue(JSON.stringify(buildSubset(subsetData), null, \'\t\'))']", {
+                m("button.btn.btn-default[id='subsetCustomShowAll']", {
                     style: {
                         "display": "inline",
                         "margin-top": "10px"
+                    },
+                    onclick: function(e) {
+                        editor.setValue(JSON.stringify(buildSubset(subsetData), null, '	'));
+                        e.redraw = false;
                     }
                 }, "Show All"),
 

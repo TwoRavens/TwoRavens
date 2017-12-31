@@ -400,7 +400,7 @@ window.constructSubgraph = function(cid, scrollTo) {
  * maingraphAction -> to map the header function {All, None, Expand/Collapse} for the main graph
  *
  **/
-function maingraphAction(action) {
+export function maingraphAction(action) {
 
     if (action == 'Expand_Collapse') {
 
@@ -638,9 +638,8 @@ function updateCountryList() {
     }
 }
 
-function removeFromCountryList(cname) {
-
-    if (cname == 'reset_all') {
+window.removeFromCountryList = function(cname) {
+    if (cname === 'reset_all') {
 
         for (var country in mapListCountriesSelected) {
             mapListCountriesSelected[country] = false;
@@ -651,5 +650,4 @@ function removeFromCountryList(cname) {
         mapListCountriesSelected[cname] = false;
     }
     updateCountryList();
-
 }

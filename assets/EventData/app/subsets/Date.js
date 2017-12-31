@@ -44,7 +44,7 @@ export function setupDate() {
             $("#todate").datepicker('option', 'minDate', dateminUser);
             $("#todate").datepicker('option', 'defaultDate', datemax);
             $("#todate").datepicker('option', 'maxDate', datemax);
-            fromdatestring = dateminUser.getFullYear() + "" + ('0' + (dateminUser.getMonth() + 1)).slice(-2) + "" + ('0' + dateminUser.getDate()).slice(-2);
+            // fromdatestring = dateminUser.getFullYear() + "" + ('0' + (dateminUser.getMonth() + 1)).slice(-2) + "" + ('0' + dateminUser.getDate()).slice(-2);
         },
         onClose: function (selectedDate) {
             setTimeout(function () {
@@ -68,7 +68,7 @@ export function setupDate() {
         orientation: top,
         onSelect: function () {
             datemaxUser = new Date($(this).datepicker('getDate').getTime());
-            todatestring = datemaxUser.getFullYear() + "" + ('0' + (datemaxUser.getMonth() + 1)).slice(-2) + "" + ('0' + datemaxUser.getDate()).slice(-2);
+            // todatestring = datemaxUser.getFullYear() + "" + ('0' + (datemaxUser.getMonth() + 1)).slice(-2) + "" + ('0' + datemaxUser.getDate()).slice(-2);
         },
         onClose: function () {
             d3date();

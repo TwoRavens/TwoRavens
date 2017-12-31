@@ -1,4 +1,5 @@
 import m from 'mithril';
+import {d3loc, maingraphAction} from '../subsets/Location'
 
 
 export default class CanvasLocation {
@@ -37,27 +38,39 @@ export default class CanvasLocation {
 
                                 // Expand/collapse
                                 m("label.hide_label[id='Expand_Collapse_Main_Text']", "Collapse"),
-                                m("button.btn.btn-default[onclick='maingraphAction(\'Expand_Collapse\')']", {
+                                m("button.btn.btn-default", {
                                         style: {
                                             "cursor": "pointer",
                                             "float": "right",
                                             "margin-right": "5px"
+                                        },
+                                        onclick: function(e) {
+                                            maingraphAction("Expand_Collapse");
+                                            e.redraw = false;
                                         }
                                     },
                                     m("span.glyphicon.glyphicon-resize-small[id='Exp_Col_Icon']", {style: {"color": "#818181"}})
                                 ),
 
                                 // Plot all/none
-                                m("button.btn.btn-default[data-toggle='tooltip'][id='Expand_All'][onclick='maingraphAction(\'All\')'][type='button']", {
+                                m("button.btn.btn-default[data-toggle='tooltip'][id='Expand_All'][type='button']", {
                                     style: {
                                         "float": "right",
                                         "margin-right": "5px"
+                                    },
+                                    onclick: function(e) {
+                                        maingraphAction("All");
+                                        e.redraw = false;
                                     }
                                 }, "Plot All"),
-                                m("button.btn.btn-default[data-toggle='tooltip'][id='Collapse_All'][onclick='maingraphAction(\'None\')'][type='button']", {
+                                m("button.btn.btn-default[data-toggle='tooltip'][id='Collapse_All'][type='button']", {
                                     style: {
                                         "float": "right",
                                         "margin-right": "5px"
+                                    },
+                                    onclick: function(e) {
+                                        maingraphAction("None");
+                                        e.redraw = false;
                                     }
                                 }, "Plot None")
                             ]
@@ -95,12 +108,16 @@ export default class CanvasLocation {
                                     }
                                 }, "Selected Countries"),
                                 // Reset Button
-                                m("button.btn.btn-default[onclick='d3loc()']", {
+                                m("button.btn.btn-default", {
                                     style: {
                                         "cursor": "pointer",
                                         "float": "right",
                                         "margin-top": "5px",
                                         "margin-right": "7px"
+                                    },
+                                    onclick: function(e) {
+                                        d3loc();
+                                        e.redraw = false;
                                     }
                                 }, "Reset")
                             ]

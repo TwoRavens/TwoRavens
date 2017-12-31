@@ -18,6 +18,7 @@ import Subpanel from './views/Subpanel';
 import '../EventData/css/app.css'
 // Used for rendering date calendar
 import '../../node_modules/jquery-ui/themes/base/datepicker.css'
+import '../../node_modules/jquery-ui-dist/jquery-ui.theme.min.css'
 // JQuery-ui must be loaded before bootstrap
 import '../../node_modules/jquery/dist/jquery.min.js'
 import '../../node_modules/jquery-ui-dist/jquery-ui.js'
