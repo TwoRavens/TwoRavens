@@ -67,7 +67,7 @@ export function setupCoordinates(){
     imgs.enter()
         .append("svg:image")
         .attr("id", "worldMapImage")
-        .attr("xlink:href", "../images/world.svg")
+        .attr("xlink:href", "/static/EventData/images/world.svg")
         .attr("x", "0")
         .attr("y", "0")
         .attr("width", "100%")
