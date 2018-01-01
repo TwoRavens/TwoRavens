@@ -34,9 +34,9 @@ export function setupAction() {
     // Action labels
     d3.csv("/static/EventData/data/actionlookup.csv", function(d) {
         return {
-            rootCode: +d.EventRootCode,
-            rootDesc: d.Description,
-            penta: +d.PentaClass,
+            rootCode: +d['EventRootCode'],
+            rootDesc: d['Description'],
+            penta: +d['PentaClass'],
             count: 0,
             used: false,				//this is from pentaCounts; on click from main graph this is set
             active: false				//this is from actionSubData; on click from sub graph this is set
@@ -50,12 +50,12 @@ export function resetActionCounts() {
     pentaCounts = [];
     actionBuffer = [];
 
-    for (var x = 0; x < 5; x++) {
+    for (let x = 0; x < 5; x++) {
         pentaCounts.push(new pentaClass(x, 0, 0));
         pentaCounts[x].description = pentaDesc[x];
     }
 
-    for (var x = 0; x < 20; x++) {
+    for (let x = 0; x < 20; x++) {
         if (!isNaN(actionData[x + 1])) {
             pentaCounts[actionSubData[x].penta].count += actionData[x + 1];
             actionSubData[x].count = actionData[x + 1];
@@ -211,7 +211,7 @@ export function updateData() {
                 .on("click", function (d) {
                     // console.log("clicked " + d.classNum);
                     if (d.maxSelect == d.selectCount) {		//deselect all of penta class
-                        for (var x = 0; x < actionSubData.length; x++) {
+                        for (let x = 0; x < actionSubData.length; x++) {
                             if (actionSubData[x].penta == d.classNum && actionSubData[x].active) {
                                 // console.log("deselecting #actionSubBar" + (x + 1));
                                 $("#actionSubBar" + (x + 1)).d3Click();
@@ -219,7 +219,7 @@ export function updateData() {
                         }
                     }
                     else {
-                        for (var x = 0; x < actionSubData.length; x++) {
+                        for (let x = 0; x < actionSubData.length; x++) {
                             if (actionSubData[x].penta == d.classNum && !actionSubData[x].active) {
                                 // console.log("selecting #actionSubBar" + (x + 1));
                                 $("#actionSubBar" + (x + 1)).d3Click();
@@ -263,7 +263,7 @@ export function updateData() {
                 .on("click", function (d) {
                     // console.log("clicked " + d.classNum);
                     if (d.maxSelect == d.selectCount) {		//deselect all of penta class
-                        for (var x = 0; x < actionSubData.length; x++) {
+                        for (let x = 0; x < actionSubData.length; x++) {
                             if (actionSubData[x].penta == d.classNum && actionSubData[x].active) {
                                 // console.log("deselecting #actionSubBar" + (x + 1));
                                 $("#actionSubBar" + (x + 1)).d3Click();
@@ -271,7 +271,7 @@ export function updateData() {
                         }
                     }
                     else {
-                        for (var x = 0; x < actionSubData.length; x++) {
+                        for (let x = 0; x < actionSubData.length; x++) {
                             if (actionSubData[x].penta == d.classNum && !actionSubData[x].active) {
                                 // console.log("selecting #actionSubBar" + (x + 1));
                                 $("#actionSubBar" + (x + 1)).d3Click();

@@ -4,57 +4,57 @@ import * as d3 from 'd3'
 let svgMap;
 let imgs;
 
-var widthCoord = 0.2,
+let widthCoord = 0.2,
     heightCoord = 0.2,
     dragbarw = 0.03;
 
-var drag = d3.drag()
+let drag = d3.drag()
     .subject(Object)
     .on("drag", dragmove);
 
-var dragright = d3.drag()
+let dragright = d3.drag()
     .subject(Object)
     .on("drag", rdragresize);
 
-var dragleft = d3.drag()
+let dragleft = d3.drag()
     .subject(Object)
     .on("drag", ldragresize);
 
-var dragtop = d3.drag()
+let dragtop = d3.drag()
     .subject(Object)
     .on("drag", tdragresize);
 
-var dragbottom = d3.drag()
+let dragbottom = d3.drag()
     .subject(Object)
     .on("drag", bdragresize);
 
-var dragbottomright = d3.drag()
+let dragbottomright = d3.drag()
     .subject(Object)
     .on("drag", brdragresize);
 
-var dragbottomleft = d3.drag()
+let dragbottomleft = d3.drag()
     .subject(Object)
     .on("drag", bldragresize);
 
-var dragtopright = d3.drag()
+let dragtopright = d3.drag()
     .subject(Object)
     .on("drag", trdragresize);
 
-var dragtopleft= d3.drag()
+let dragtopleft= d3.drag()
     .subject(Object)
     .on("drag", tldragresize);
 
-var newg;
+let newg;
 
-var dragrect;
-var dragbarleft;
-var dragbarright;
-var dragbartop;
-var dragbarbottom;
-var dragbarbottomright;
-var dragbarbottomleft;
-var dragbartopleft;
-var dragbartopright;
+let dragrect;
+let dragbarleft;
+let dragbarright;
+let dragbartop;
+let dragbarbottom;
+let dragbarbottomright;
+let dragbarbottomleft;
+let dragbartopleft;
+let dragbartopright;
 
 export function setupCoordinates(){
     $("#latUpper").keyup(setLatitude);
@@ -202,20 +202,23 @@ function setLatitude() {
         latUpper.val(clip(valUpper, -90, 90));
     }
 
+    let lowerBound;
+    let upperBound;
+
     // Correct bounds if necessary
     if (parseFloat(latUpper.val()) > parseFloat(latLower.val())) {
         latUpperLabel.text("North Latitude");
         latLowerLabel.text("South Latitude");
 
-        var lowerBound = parseFloat(latLower.val());
-        var upperBound = parseFloat(latUpper.val());
+        lowerBound = parseFloat(latLower.val());
+        upperBound = parseFloat(latUpper.val());
 
     } else {
         latUpperLabel.text("South Latitude");
         latLowerLabel.text("North Latitude");
 
-        var lowerBound = parseFloat(latLower.val());
-        var upperBound = parseFloat(latUpper.val());
+        lowerBound = parseFloat(latLower.val());
+        upperBound = parseFloat(latUpper.val());
     }
 
     // Transform to map coordinates
@@ -231,24 +234,24 @@ function setLatitude() {
         .attr("height", heightCoord);
 
     dragbarleft
-        .attr("y", function(d) { return upperBound + (dragbarw/2); })
+        .attr("y", function() { return upperBound + (dragbarw/2); })
         .attr("height", heightCoord - dragbarw);
     dragbarright
-        .attr("y", function(d) { return upperBound + (dragbarw/2); })
+        .attr("y", function() { return upperBound + (dragbarw/2); })
         .attr("height", heightCoord - dragbarw);
     dragbartop
-        .attr("y", function(d) { return upperBound - (dragbarw/2); });
+        .attr("y", function() { return upperBound - (dragbarw/2); });
     dragbarbottom
-        .attr("y", function(d) { return upperBound + heightCoord - (dragbarw/2); });
+        .attr("y", function() { return upperBound + heightCoord - (dragbarw/2); });
 
     dragbarbottomleft
-        .attr("y", function(d) { return upperBound + heightCoord - (dragbarw/2); });
+        .attr("y", function() { return upperBound + heightCoord - (dragbarw/2); });
     dragbarbottomright
-        .attr("y", function(d) { return upperBound + heightCoord - (dragbarw/2); });
+        .attr("y", function() { return upperBound + heightCoord - (dragbarw/2); });
     dragbartopleft
-        .attr("y", function(d) { return upperBound - (dragbarw/2); });
+        .attr("y", function() { return upperBound - (dragbarw/2); });
     dragbartopright
-        .attr("y", function(d) { return upperBound - (dragbarw/2); });
+        .attr("y", function() { return upperBound - (dragbarw/2); });
 }
 
 function setLongitude() {
@@ -272,20 +275,23 @@ function setLongitude() {
         lonLeft.val(clip(valRight, -90, 90));
     }
 
+    let leftBound;
+    let rightBound;
+
     // Correct bounds if necessary
     if (parseFloat(lonLeft.val()) < parseFloat(lonRight.val())) {
         lonLeftLabel.text("West Longitude");
         lonRightLabel.text("East Longitude");
 
-        var leftBound = parseFloat(lonLeft.val());
-        var rightBound = parseFloat(lonRight.val());
+        leftBound = parseFloat(lonLeft.val());
+        rightBound = parseFloat(lonRight.val());
 
     } else {
         lonLeftLabel.text("East Longitude");
         lonRightLabel.text("West Longitude");
 
-        var leftBound = parseFloat(lonRight.val());
-        var rightBound = parseFloat(lonLeft.val());
+        leftBound = parseFloat(lonRight.val());
+        rightBound = parseFloat(lonLeft.val());
     }
 
     // Transform to map coordinates
@@ -301,24 +307,24 @@ function setLongitude() {
         .attr("width", widthCoord);
 
     dragbartop
-        .attr("x", function(d) { return leftBound + (dragbarw/2); })
+        .attr("x", function() { return leftBound + (dragbarw/2); })
         .attr("width", widthCoord - dragbarw);
     dragbarbottom
-        .attr("x", function(d) { return leftBound + (dragbarw/2); })
+        .attr("x", function() { return leftBound + (dragbarw/2); })
         .attr("width", widthCoord - dragbarw);
     dragbarleft
-        .attr("x", function(d) { return leftBound - (dragbarw/2); });
+        .attr("x", function() { return leftBound - (dragbarw/2); });
     dragbarright
-        .attr("x", function(d) { return leftBound + widthCoord - (dragbarw/2); });
+        .attr("x", function() { return leftBound + widthCoord - (dragbarw/2); });
 
     dragbarbottomleft
-        .attr("x", function(d) { return leftBound - (dragbarw/2); });
+        .attr("x", function() { return leftBound - (dragbarw/2); });
     dragbarbottomright
-        .attr("x", function(d) { return leftBound + widthCoord - (dragbarw/2); });
+        .attr("x", function() { return leftBound + widthCoord - (dragbarw/2); });
     dragbartopleft
-        .attr("x", function(d) { return leftBound - (dragbarw/2); });
+        .attr("x", function() { return leftBound - (dragbarw/2); });
     dragbartopright
-        .attr("x", function(d) { return leftBound + widthCoord - (dragbarw/2); });
+        .attr("x", function() { return leftBound + widthCoord - (dragbarw/2); });
 }
 
 function clip(x, lower, upper) {
@@ -370,7 +376,7 @@ function dragmove(d) {
 }
 
 function ldragresize(d) {
-    var oldx = d.x;
+    let oldx = d.x;
     //Max x on the right is x + width - dragbarw
     //Max x on the left is 0 - (dragbarw/2)
     d.x = Math.max(0, Math.min(d.x + widthCoord - (dragbarw / 2), d3.event.x));
@@ -400,13 +406,13 @@ function ldragresize(d) {
 function rdragresize(d) {
     //Max x on the left is x - width
     //Max x on the right is width of screen + (dragbarw/2)
-    var dragx = Math.max(d.x + (dragbarw / 2), Math.min(2, d.x + widthCoord + d3.event.dx));
+    let dragx = Math.max(d.x + (dragbarw / 2), Math.min(2, d.x + widthCoord + d3.event.dx));
     //recalculate width
     widthCoord = dragx - d.x;
 
     //move the right drag handle
     dragbarright
-        .attr("x", function(d) { return dragx - (dragbarw/2) });
+        .attr("x", function() { return dragx - (dragbarw/2) });
 
     //resize the drag rectangle
     //as we are only resizing from the right, the x coordinate does not need to change
@@ -459,14 +465,14 @@ function tdragresize(d) {
 function bdragresize(d) {
     //Max x on the left is x - width
     //Max x on the right is width of screen + (dragbarw/2)
-    var dragy = Math.max(d.y + (dragbarw / 2), Math.min(2, d.y + heightCoord + d3.event.dy));
+    let dragy = Math.max(d.y + (dragbarw / 2), Math.min(2, d.y + heightCoord + d3.event.dy));
 
     //recalculate width
     heightCoord = dragy - d.y;
 
     //move the right drag handle
     dragbarbottom
-        .attr("y", function(d) { return dragy - (dragbarw/2) });
+        .attr("y", function() { return dragy - (dragbarw/2) });
 
     //resize the drag rectangle
     //as we are only resizing from the right, the x coordinate does not need to change

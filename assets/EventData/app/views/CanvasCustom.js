@@ -4,7 +4,7 @@ import {subsetData, buildSubset, editor} from "../app";
 export default class CanvasCustom {
     oncreate(){
         // The editor menu for the custom subsets
-        var editor = ace.edit("subsetCustomEditor");
+        editor = ace.edit("subsetCustomEditor");
         editor.$blockScrolling = Infinity;
         editor.session.setMode("ace/mode/json");
 

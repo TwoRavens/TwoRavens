@@ -5,39 +5,36 @@ import {rightpanelMargin, countryData} from "../app";
  * Variables declared for location
  *
  **/
-var mapGraphSVG = new Object();
-var mapSubGraphIdCname = new Object();
-export var mapListCountriesSelected = new Object();
-
-function resetLocationVariables() {
-    mapGraphSVG = new Object();
-    mapSubGraphIdCname = new Object();
-    mapListCountriesSelected = new Object();
-}
-
+let mapGraphSVG = {};
+let mapSubGraphIdCname = {};
+export let mapListCountriesSelected = {};
 
 /**
  * Draw the main graph for Location
  *
  **/
 
-export function d3loc() {
+export function updateLocation() {
     // Clear existing data and plots
     $("#main_graph_svg").remove();
     $("#sub_graph_td_div").empty();
     $("#country_list_tab").empty();
 
-    var svg = d3.select("#main_graph_td_div").append("svg:svg")
+    mapGraphSVG["main_graph"] = d3.select("#main_graph_td_div").append("svg:svg")
         .attr("width", 450)
         .attr("height", 350)
         .attr("background-color", "#ADADAD")
         .attr("id", "main_graph_svg");
 
-    mapGraphSVG["main_graph"] = svg;
-
     render(false, 0);
     // Main graph should always default to open
     maingraphAction('Expand');
+}
+
+function resetLocationVariables() {
+    mapGraphSVG = {};
+    mapSubGraphIdCname = {};
+    mapListCountriesSelected = {};
 }
 
 /**
@@ -59,14 +56,14 @@ function render(blnIsSubgraph, cid) {
 
         // console.log("Rendering Main Graph...");
 
-        var maxDomainX = 1;
-        var svg = d3.select("#main_graph_svg");
-        var margin = {top: 5, right: 20, bottom: 5, left: 120},
+        let maxDomainX = 1;
+        let svg = d3.select("#main_graph_svg");
+        let margin = {top: 5, right: 20, bottom: 5, left: 120},
             width = +svg.attr("width") - margin.left - margin.right,
             height = +svg.attr("height") - margin.top - margin.bottom;
 
-        var x = d3.scaleLinear().range([0, width]);
-        var y = d3.scaleBand().range([height, 0]);
+        let x = d3.scaleLinear().range([0, width]);
+        let y = d3.scaleBand().range([height, 0]);
 
         svg.append("defs").append("pattern")
             .attr("id", "pattern1")
@@ -96,11 +93,11 @@ function render(blnIsSubgraph, cid) {
                 map_fullname_lookup.set(d.cname, d.fullcname);
             });
 
-            var rid = -1;
+            let rid = -1;
             let cid = 1;
             for (let key in countryData) {
 
-                var region = "Other";
+                let region = "Other";
                 if (map_location_lookup.has(key)) {
                     region = map_location_lookup.get(key);
                 }
@@ -120,13 +117,13 @@ function render(blnIsSubgraph, cid) {
                 if (!map_location_rid_rname.has(region)) {
 
                     rid++;
-                    var arr_countries = [];
+                    let arr_countries = [];
                     arr_countries.push(country);
 
-                    var arr_country_names = [];
+                    let arr_country_names = [];
                     arr_country_names.push(country.cname);
 
-                    var rdata = new Object();
+                    let rdata = {};
                     rdata.rid = rid;
                     rdata.rname = region;
                     rdata.freq = parseInt(country.freq);
@@ -142,14 +139,14 @@ function render(blnIsSubgraph, cid) {
                 }
                 else {
 
-                    var currrid = map_location_rid_rname.get(region);
-                    var rdata = arr_location_region_data[currrid];
-                    var freq = rdata.freq + parseInt(country.freq);
+                    let currrid = map_location_rid_rname.get(region);
+                    let rdata = arr_location_region_data[currrid];
+                    let freq = rdata.freq + parseInt(country.freq);
                     rdata.freq = freq;
                     rdata.countries.push(country);
                     rdata.country_names.push(country.cname);
 
-                    var cFreq = parseInt(country.freq);
+                    let cFreq = parseInt(country.freq);
                     if (cFreq > rdata.maxCFreq) {
                         rdata.maxCFreq = cFreq;
                     }
@@ -168,7 +165,7 @@ function render(blnIsSubgraph, cid) {
                 return d.rname;
             })).padding(0.2);		//this controls the padding
 
-            var g = svg.append("g")		//this draws the x axis ticks
+            let g = svg.append("g")		//this draws the x axis ticks
                 .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
             g.append("g")
                 .attr("class", "x axis")
@@ -249,18 +246,18 @@ function render(blnIsSubgraph, cid) {
 
         // console.log("Rendering Sub Graph...");
 
-        var MAX_HEIGHT = 35;
-        var arr_countries = arr_location_region_data[cid].countries;
-        var maxDomainX = arr_location_region_data[cid].maxCFreq;
+        let MAX_HEIGHT = 35;
+        let arr_countries = arr_location_region_data[cid].countries;
+        let maxDomainX = arr_location_region_data[cid].maxCFreq;
 
-        var svg = d3.select("#sub_graph_td_svg_" + cid);
+        let svg = d3.select("#sub_graph_td_svg_" + cid);
 
-        var margin = {top: 20, right: 30, bottom: 30, left: 40},
+        let margin = {top: 20, right: 30, bottom: 30, left: 40},
             width = +svg.attr("width") - margin.left - margin.right,
             height = +svg.attr("height") - margin.top - margin.bottom;
 
-        var x = d3.scaleLinear().range([0, width]);
-        var y = d3.scaleBand().range([height, 0]);
+        let x = d3.scaleLinear().range([0, width]);
+        let y = d3.scaleBand().range([height, 0]);
 
         // console.log(maxDomainX);
 
@@ -269,7 +266,7 @@ function render(blnIsSubgraph, cid) {
             return d.cname;
         })).padding(0.1);
 
-        var g = svg.append("g")
+        let g = svg.append("g")
             .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
         g.append("g")
@@ -375,9 +372,10 @@ window.constructSubgraph = function(cid, scrollTo) {
         mapGraphSVG[cid] = mapGraphSVG[cid + "_removed"];
         mapGraphSVG[cid + "_removed"] = null;
 
-        $("#sub_graph_td_div_" + cid).parent().show();
-        $("#sub_graph_td_div_" + cid).removeClass('graph_close');
-        $("#sub_graph_td_div_" + cid).addClass('graph_config');
+        let subGraphDiv = $("#sub_graph_td_div_" + cid);
+        subGraphDiv.parent().show();
+        subGraphDiv.removeClass('graph_close');
+        subGraphDiv.addClass('graph_config');
 
         if (scrollTo) document.getElementById('sub_graph_td_div_' + cid).scrollIntoView();
         return;
@@ -385,16 +383,15 @@ window.constructSubgraph = function(cid, scrollTo) {
 
     subGraphLabel(cid);
 
-    var svg = d3.select("#sub_graph_td_div_" + cid).append("svg:svg")
+    mapGraphSVG[cid] = d3.select("#sub_graph_td_div_" + cid).append("svg:svg")
         .attr("width", 470)
         .attr("height", 350)
         .attr("id", "sub_graph_td_svg_" + cid);
 
-    mapGraphSVG[cid] = svg;
     render(true, cid);
 
     if (scrollTo) document.getElementById('sub_graph_td_div_' + cid).scrollIntoView();
-}
+};
 
 /**
  * maingraphAction -> to map the header function {All, None, Expand/Collapse} for the main graph
@@ -402,32 +399,33 @@ window.constructSubgraph = function(cid, scrollTo) {
  **/
 export function maingraphAction(action) {
 
-    if (action == 'Expand_Collapse') {
+    if (action === 'Expand_Collapse') {
 
         action = $('#Expand_Collapse_Main_Text').text();
     }
 
-    if (action == 'All') {
+    if (action === 'All') {
 
-        for (var cid in mapGraphSVG) {
+        for (let cid in mapGraphSVG) {
 
             if (cid.indexOf("_removed") > -1) {
                 continue;
             }
+            let subGraphDiv = $("#sub_graph_td_div_" + cid);
 
             if (mapGraphSVG[cid] == null) {
                 // console.log("SVG CREATE = " + cid);
-                $("#sub_graph_td_div_" + cid).parent().show();
-                $("#sub_graph_td_div_" + cid).removeClass('graph_close');
-                $("#sub_graph_td_div_" + cid).addClass('graph_config');
+                subGraphDiv.parent().show();
+                subGraphDiv.removeClass('graph_close');
+                subGraphDiv.addClass('graph_config');
                 constructSubgraph(cid);
             }
             else if (mapGraphSVG[cid + "_removed"] == null) {
 
                 // console.log("SVG SHOW = " + cid);
-                $("#sub_graph_td_div_" + cid).parent().show();
-                $("#sub_graph_td_div_" + cid).removeClass('graph_close');
-                $("#sub_graph_td_div_" + cid).addClass('graph_config');
+                subGraphDiv.parent().show();
+                subGraphDiv.removeClass('graph_close');
+                subGraphDiv.addClass('graph_config');
             }
             else if (mapGraphSVG[cid] != null) {
                 // console.log("SVG NO_ACTION = " + cid);
@@ -435,30 +433,23 @@ export function maingraphAction(action) {
         }
 
     }
-    else if (action == 'None') {
+    else if (action === 'None') {
 
         removeAllSubGraphSVG();
     }
-    else if (action == 'Collapse') {
+    else if (action === 'Collapse') {
 
         $("#Expand_Collapse_Main_Text").text("Expand");
 
-        $("#Exp_Col_Icon").removeClass("glyphicon-resize-small");
-        $("#Exp_Col_Icon").addClass("glyphicon-resize-full");
-
-
-        $("#main_graph_td_div").removeClass('graph_config');
-        $("#main_graph_td_div").addClass('graph_collapse');
+        $("#Exp_Col_Icon").removeClass("glyphicon-resize-small").addClass("glyphicon-resize-full");
+        $("#main_graph_td_div").removeClass('graph_config').addClass('graph_collapse');
     }
-    else if (action == 'Expand') {
+    else if (action === 'Expand') {
 
         $("#Expand_Collapse_Main_Text").text("Collapse");
 
-        $("#Exp_Col_Icon").removeClass("glyphicon-resize-full");
-        $("#Exp_Col_Icon").addClass("glyphicon-resize-small");
-
-        $("#main_graph_td_div").removeClass('graph_collapse');
-        $("#main_graph_td_div").addClass('graph_config');
+        $("#Exp_Col_Icon").removeClass("glyphicon-resize-full").addClass("glyphicon-resize-small");
+        $("#main_graph_td_div").removeClass('graph_collapse').addClass('graph_config');
     }
     rightpanelMargin();
 }
@@ -469,61 +460,50 @@ export function maingraphAction(action) {
  **/
 window.subgraphAction = function(textId) {
 
-
     if (textId.indexOf("expand_collapse_text_") !== -1) {
+        let actionDiv =  $("#" + textId);
 
-        var action = $("#" + textId).text();
+        if (actionDiv.text() === 'Collapse') {
 
-        if (action == 'Collapse') {
-
-            var cid = textId.substring(21);
-
+            let cid = textId.substring(21);
             $("#" + textId).text("Expand");
 
-            $("#Exp_Col_Icon_" + cid).removeClass("glyphicon-resize-small");
-            $("#Exp_Col_Icon_" + cid).addClass("glyphicon-resize-full");
-
-            $("#sub_graph_td_div_" + cid).removeClass('graph_config');
-            $("#sub_graph_td_div_" + cid).addClass('graph_collapse');
+            $("#Exp_Col_Icon_" + cid).removeClass("glyphicon-resize-small").addClass("glyphicon-resize-full");
+            $("#sub_graph_td_div_" + cid).removeClass('graph_config').addClass('graph_collapse');
 
         }
-        else if (action == 'Expand') {
+        else if (actionDiv.text() === 'Expand') {
 
-            var cid = textId.substring(21);
+            let cid = textId.substring(21);
+            actionDiv.text("Collapse");
 
-            $("#" + textId).text("Collapse");
-
-            $("#Exp_Col_Icon_" + cid).removeClass("glyphicon-resize-full");
-            $("#Exp_Col_Icon_" + cid).addClass("glyphicon-resize-small");
-
-            $("#sub_graph_td_div_" + cid).removeClass('graph_collapse');
-            $("#sub_graph_td_div_" + cid).addClass('graph_config');
+            $("#Exp_Col_Icon_" + cid).removeClass("glyphicon-resize-full").addClass("glyphicon-resize-small");
+            $("#sub_graph_td_div_" + cid).removeClass('graph_collapse').addClass('graph_config');
         }
     }
     else {
 
-        var actionData = textId.split("_");
-        var action = actionData[0];
-        var cid = actionData[1];
+        let actionData = textId.split("_");
+        let action = actionData[0];
+        let cid = actionData[1];
 
-        var listCname = arr_location_region_data[cid].country_names;
-        var bool = true;
-        if (action == 'All') {
+        let listCname = arr_location_region_data[cid].country_names;
+        let bool = true;
+        if (action.text() === 'All') {
             bool = true;
         }
-        else if (action == 'None') {
+        else if (action === 'None') {
             bool = false;
         }
 
-        for (var index in listCname) {
-            var cname = listCname[index];
+        for (let cname of listCname) {
             mapListCountriesSelected[cname] = bool;
         }
 
         updateCountryList();
     }
     rightpanelMargin();
-}
+};
 
 
 /**
@@ -532,39 +512,26 @@ window.subgraphAction = function(textId) {
  **/
 function removeAllSubGraphSVG() {
 
-    for (var cid in mapGraphSVG) {
+    for (let cid in mapGraphSVG) {
 
         if (cid.indexOf("_removed") > -1) {
             continue;
         }
 
         if (cid != null && mapGraphSVG[cid] != null) {
-
-            var svgToRemove = mapGraphSVG[cid];
-            mapGraphSVG[cid + "_removed"] = svgToRemove;
+            mapGraphSVG[cid + "_removed"] = mapGraphSVG[cid];
             mapGraphSVG[cid] = null;
 
-            $("#sub_graph_td_div_" + cid).removeClass('graph_config');
-            $("#sub_graph_td_div_" + cid).addClass('graph_close');
-            $("#sub_graph_td_div_" + cid).parent().hide();
+            $("#sub_graph_td_div_" + cid).removeClass('graph_config').addClass('graph_close').parent().hide();
         }
     }
     rightpanelMargin();
 }
 
 window.subgraphYLabelClicked = function(cname) {
-
-    var bool = mapListCountriesSelected[cname];
-
-    if (bool == true) {
-        mapListCountriesSelected[cname] = false;
-    }
-    else {
-        mapListCountriesSelected[cname] = true;
-    }
-
+    mapListCountriesSelected[cname] = !mapListCountriesSelected[cname];
     updateCountryList();
-}
+};
 
 /**
  * subGraphLabel - to put the header Labels in the sub graph
@@ -588,18 +555,18 @@ function subGraphLabel(cid) {
 
 function updateCountryList() {
 
-    var td_id = 'country_list_tab';
+    let td_id = 'country_list_tab';
     $("#" + td_id).empty();
 
-    var mapLocalMainGraphIdWithSubGraphCnameList = new Object();
+    let mapLocalMainGraphIdWithSubGraphCnameList = {};
 
-    for (var country in mapListCountriesSelected) {
+    for (let country in mapListCountriesSelected) {
 
-        var bool = mapListCountriesSelected[country];
-        var main_subGraphId = mapSubGraphIdCname[country];
+        let bool = mapListCountriesSelected[country];
+        let main_subGraphId = mapSubGraphIdCname[country];
 
-        var arrIds = main_subGraphId.split("_");
-        var mainGraphId = arrIds[0];
+        let arrIds = main_subGraphId.split("_");
+        let mainGraphId = arrIds[0];
 
         if (mapLocalMainGraphIdWithSubGraphCnameList[mainGraphId] == null) {
             mapLocalMainGraphIdWithSubGraphCnameList[mainGraphId] = [];
@@ -620,18 +587,18 @@ function updateCountryList() {
         }
     }
 
-    for (var mainGraphCid in arr_location_region_data) {
+    for (let mainGraphCid in arr_location_region_data) {
 
-        var originalLength = arr_location_region_data[mainGraphCid].country_names.length;
-        var localLength = (mapLocalMainGraphIdWithSubGraphCnameList[mainGraphCid] == null ? 0 : mapLocalMainGraphIdWithSubGraphCnameList[mainGraphCid].length);
+        let originalLength = arr_location_region_data[mainGraphCid].country_names.length;
+        let localLength = (mapLocalMainGraphIdWithSubGraphCnameList[mainGraphCid] == null ? 0 : mapLocalMainGraphIdWithSubGraphCnameList[mainGraphCid].length);
 
-        if (localLength == 0) {
+        if (localLength === 0) {
             $("#tg_rect_" + mainGraphCid).attr("class", "bar");
         }
         else if (localLength < originalLength) {
             $("#tg_rect_" + mainGraphCid).attr("class", "bar_some_selected");
         }
-        else if (localLength == originalLength) {
+        else if (localLength === originalLength) {
             $("#tg_rect_" + mainGraphCid).attr("class", "bar_all_selected");
         }
 
@@ -641,7 +608,7 @@ function updateCountryList() {
 window.removeFromCountryList = function(cname) {
     if (cname === 'reset_all') {
 
-        for (var country in mapListCountriesSelected) {
+        for (let country in mapListCountriesSelected) {
             mapListCountriesSelected[country] = false;
         }
     }
@@ -650,4 +617,4 @@ window.removeFromCountryList = function(cname) {
         mapListCountriesSelected[cname] = false;
     }
     updateCountryList();
-}
+};
