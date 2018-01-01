@@ -362,13 +362,13 @@ export function makeCorsRequest(url, post, callback) {
 export function download() {
 
     function save(data) {
-        laddaDownload.stop();
-
         let a = document.createElement('A');
         a.href = data.download;
         a.download = data.download.substr(data.download.lastIndexOf('/') + 1);
         document.body.appendChild(a);
         a.click();
+
+        laddaDownload.stop();
         document.body.removeChild(a);
     }
 
@@ -695,7 +695,6 @@ window.callbackNegate = function(id, bool) {
 }
 
 function buttonOperator(id, state, canChange) {
-    console.log(canChange)
     if (canChange) {
         if (state === 'and') {
             return '<button class="btn btn-default btn-xs active" style="width:33px" type="button" data-toggle="button" aria-pressed="true" onclick="callbackOperator(' + id + ', &quot;or&quot;)">and</button> '
@@ -909,7 +908,7 @@ window.addGroup = function(query = false) {
     if (!query) {
         qtree.tree('openNode', qtree.tree('getNodeById', nodeId - 1), true);
     }
-}
+};
 
 export function addRule() {
     // Index zero is root node. Add subset pref to nodes

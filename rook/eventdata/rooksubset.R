@@ -143,7 +143,7 @@ eventdata_subset.app <- function(env) {
              '{"$project":', variables, '}]', sep=""))
         result['_id'] = NULL
         fileName = format(Sys.time(), '%Y-%m-%d-%H-%M-%OS4')
-
+        dir.create('./eventdata/downloads/', showWarnings = FALSE)
         write.csv(result, file=paste('./eventdata/downloads/', fileName, ".csv", sep=""))
         response$write(paste('{"download":', '"http://127.0.0.1:8000/custom/eventdata-files/', fileName, '.csv"}', sep=""))
         return(response$finish())
