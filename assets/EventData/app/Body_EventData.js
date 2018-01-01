@@ -1,5 +1,6 @@
 import m from 'mithril';
 import {setupBody, toggleLeftPanel, toggleRightPanel, addRule, setupQueryTree} from "./app";
+import {setupAggregation} from "./aggreg/aggreg";
 
 import Header from "./views/Header"
 import Footer from "./views/Footer"
@@ -13,8 +14,6 @@ import CanvasCoordinates from "./views/CanvasCoordinates"
 import CanvasCustom from "./views/CanvasCustom"
 import CanvasDate from "./views/CanvasDate"
 import CanvasLocation from "./views/CanvasLocation"
-
-import TableAggregation from "./views/TableAggregation"
 
 export default class Body_EventData {
 
@@ -33,6 +32,8 @@ export default class Body_EventData {
 
         setupBody();
         setupQueryTree();
+
+        setupAggregation();
     }
 
     view(vnode) {
@@ -60,7 +61,6 @@ export default class Body_EventData {
                         m(CanvasAggregation, {mode: mode})
                     ]
                 ),
-                m(TableAggregation, {mode: mode}),
                 m(Footer, {mode: mode})
             ]
         );

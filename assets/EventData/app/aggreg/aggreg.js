@@ -70,7 +70,6 @@ export function updateToAggreg() {
 		//~ $("#dateSVGdiv").appendTo("#aggregDataDisplay");
 		d3date(true);
 
-		
 		$("#subsetActor").appendTo("#aggregDataDisplay");
 		$("#actorPanelTitleDiv").css({"display":"inline", "float":"left"});
 		$("#actorAggToggleDiv").show();
@@ -298,78 +297,80 @@ export function updateToAggreg() {
 	}
 }
 
-$("#aggregDateToggle").click(function() {
-	d3.select("#aggregActorToggle").style("background-color", varColor);
-	$("#subsetDate").siblings().hide();
-	if ($("#subsetDate").is(":visible")) {
-		d3.select("#aggregDateToggle").style("background-color", varColor);
-		$("#subsetDate").hide();
-	}
-	else {
-		d3.select("#aggregDateToggle").style("background-color", selVarColor);
-		$("#subsetDate").show();
-	}
-});
+export function setupAggregation() {
+    $("#aggregDateToggle").click(function() {
+        d3.select("#aggregActorToggle").style("background-color", varColor);
+        $("#subsetDate").siblings().hide();
+        if ($("#subsetDate").is(":visible")) {
+            d3.select("#aggregDateToggle").style("background-color", varColor);
+            $("#subsetDate").hide();
+        }
+        else {
+            d3.select("#aggregDateToggle").style("background-color", selVarColor);
+            $("#subsetDate").show();
+        }
+    });
 
-$("#aggregActorToggle").click(function() {
-	d3.select("#aggregDateToggle").style("background-color", varColor);
-	$("#subsetActor").siblings().hide();
-	if ($("#subsetActor").is(":visible")) {
-		d3.select("#aggregActorToggle").style("background-color", varColor);
-		$("#subsetActor").hide();
-	}
-	else {
-		d3.select("#aggregActorToggle").style("background-color", selVarColor);
-		$("#subsetActor").show();
-	}
-});
+    $("#aggregActorToggle").click(function() {
+        d3.select("#aggregDateToggle").style("background-color", varColor);
+        $("#subsetActor").siblings().hide();
+        if ($("#subsetActor").is(":visible")) {
+            d3.select("#aggregActorToggle").style("background-color", varColor);
+            $("#subsetActor").hide();
+        }
+        else {
+            d3.select("#aggregActorToggle").style("background-color", selVarColor);
+            $("#subsetActor").show();
+        }
+    });
 
-$("#aggregPentaToggle").click(function() {
-	d3.select("#aggregRootToggle").style("background-color", varColor);
-	$("#aggregEventByPenta").siblings().hide();
-	$(".aggregDataRoot").hide();
-	for (var x = 0; x <= 4; x ++) {
-		if ($("#aggregPenta" + x).prop("checked")) {
-			$(".aggregDataPenta" + x).show();
-		}
-	}
-	
-	if ($("#aggregEventByPenta").is(":visible")) {
-		d3.select("#aggregPentaToggle").style("background-color", varColor);
-		$("#aggregEventByPenta").hide();
-	}
-	else {
-		d3.select("#aggregPentaToggle").style("background-color", selVarColor);
-		$("#aggregEventByPenta").show();
-		aggregMode = "penta";
-		updateAggregTable();
-	}
-});
+    $("#aggregPentaToggle").click(function() {
+        d3.select("#aggregRootToggle").style("background-color", varColor);
+        $("#aggregEventByPenta").siblings().hide();
+        $(".aggregDataRoot").hide();
+        for (var x = 0; x <= 4; x ++) {
+            if ($("#aggregPenta" + x).prop("checked")) {
+                $(".aggregDataPenta" + x).show();
+            }
+        }
 
-$("#aggregRootToggle").click(function() {
-	d3.select("#aggregPentaToggle").style("background-color", varColor);
-	$("#aggregEventByRoot").siblings().hide();
-	$(".aggregDataPenta").hide();
-	for (var x = 1; x <= 20; x ++) {
-		if ($("#aggregRoot" + x).prop("checked")) {
-			$(".aggregDataRoot" + x).show();
-		}
-	}
-	
-	if ($("#aggregEventByRoot").is(":visible")) {
-		d3.select("#aggregRootToggle").style("background-color", varColor);
-		$("#aggregEventByRoot").hide();
-		aggregMode = "penta";
-		d3.select("#aggregPentaToggle").style("background-color", selVarColor);
-		updateAggregTable();
-	}
-	else {
-		d3.select("#aggregRootToggle").style("background-color", selVarColor);
-		$("#aggregEventByRoot").show();
-		aggregMode = "root";
-		updateAggregTable();
-	}
-});
+        if ($("#aggregEventByPenta").is(":visible")) {
+            d3.select("#aggregPentaToggle").style("background-color", varColor);
+            $("#aggregEventByPenta").hide();
+        }
+        else {
+            d3.select("#aggregPentaToggle").style("background-color", selVarColor);
+            $("#aggregEventByPenta").show();
+            aggregMode = "penta";
+            updateAggregTable();
+        }
+    });
+
+    $("#aggregRootToggle").click(function() {
+        d3.select("#aggregPentaToggle").style("background-color", varColor);
+        $("#aggregEventByRoot").siblings().hide();
+        $(".aggregDataPenta").hide();
+        for (var x = 1; x <= 20; x ++) {
+            if ($("#aggregRoot" + x).prop("checked")) {
+                $(".aggregDataRoot" + x).show();
+            }
+        }
+
+        if ($("#aggregEventByRoot").is(":visible")) {
+            d3.select("#aggregRootToggle").style("background-color", varColor);
+            $("#aggregEventByRoot").hide();
+            aggregMode = "penta";
+            d3.select("#aggregPentaToggle").style("background-color", selVarColor);
+            updateAggregTable();
+        }
+        else {
+            d3.select("#aggregRootToggle").style("background-color", selVarColor);
+            $("#aggregEventByRoot").show();
+            aggregMode = "root";
+            updateAggregTable();
+        }
+    });
+}
 
 //~ $(".allCheck").click(function (event)
 

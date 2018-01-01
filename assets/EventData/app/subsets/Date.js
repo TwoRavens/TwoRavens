@@ -23,10 +23,10 @@ export var dateminUser = new Date(datemin.getTime());
 export var datemaxUser = new Date(datemax.getTime());
 
 // Only true on page setup
-var dateSetup = true;
+let dateSetup = true;
 
 // Stores brush dates
-var plotSelection;
+let plotSelection;
 
 export function setupDate() {
 
@@ -41,17 +41,19 @@ export function setupDate() {
         orientation: top,
         onSelect: function () {
             dateminUser = new Date($(this).datepicker('getDate').getTime());
-            $("#todate").datepicker('option', 'minDate', dateminUser);
-            $("#todate").datepicker('option', 'defaultDate', datemax);
-            $("#todate").datepicker('option', 'maxDate', datemax);
+            let toDate = $('#toDate');
+            toDate.datepicker('option', 'minDate', dateminUser);
+            toDate.datepicker('option', 'defaultDate', datemax);
+            toDate.datepicker('option', 'maxDate', datemax);
             // fromdatestring = dateminUser.getFullYear() + "" + ('0' + (dateminUser.getMonth() + 1)).slice(-2) + "" + ('0' + dateminUser.getDate()).slice(-2);
         },
-        onClose: function (selectedDate) {
+        onClose: function () {
             setTimeout(function () {
                 $('#todate').focus();
             }, 100);
 
-            d3date();
+            // Update plot, but don't reset slider
+            updateDate(false);
             $("#todate").datepicker("show");
         }
     });
@@ -71,12 +73,15 @@ export function setupDate() {
             // todatestring = datemaxUser.getFullYear() + "" + ('0' + (datemaxUser.getMonth() + 1)).slice(-2) + "" + ('0' + datemaxUser.getDate()).slice(-2);
         },
         onClose: function () {
-            d3date();
+            // Update plot, but don't reset slider
+            updateDate(false);
         }
     });
 }
 
-export function d3date(init=false) {
+// Redraws the date page. If reset is true, then slider bars get reset
+export function updateDate(reset_sliders=true) {
+
     $("#dateSVG").empty();
     if (app.opMode === "subset") {
 		$("#dateInterval").css("display", "block");
@@ -87,7 +92,7 @@ export function d3date(init=false) {
 		$("#dateAggregOption").css("display", "block");
 	}
 	
-    var dateSVG = d3.select("#dateSVG");
+    let dateSVG = d3.select("#dateSVG");
 
     margin = {top: 20, right: 20, bottom: 110, left: 80};
     margin2 = {top: 430, right: 20, bottom: 30, left: 80};
@@ -97,28 +102,28 @@ export function d3date(init=false) {
 
     // The date range needs to be transformed to image width. Range defined here, domain defined below
     // Range of X:
-    var datex = d3.scaleTime().range([0, datewidth]),
+    let datex = d3.scaleTime().range([0, datewidth]),
         datex2 = d3.scaleTime().range([0, datewidth]),
         datey = d3.scaleLinear().range([dateheight, 0]),
         datey2 = d3.scaleLinear().range([dateheight2, 0]);
 
-    var datexAxis = d3.axisBottom(datex),
+    let datexAxis = d3.axisBottom(datex),
         datexAxis2 = d3.axisBottom(datex2),
         dateyAxis = d3.axisLeft(datey);
 
     // Brush and zoom elements
-    var datebrush = d3.brushX()
+    let datebrush = d3.brushX()
         .extent([[0, 0], [datewidth, dateheight2]])
         .on("brush end", brushed);
 
-    var datezoom = d3.zoom()
+    let datezoom = d3.zoom()
         .scaleExtent([1, Infinity])
         .translateExtent([[0, 0], [datewidth, dateheight]])
         .extent([[0, 0], [datewidth, dateheight]])
         .on("zoom", zoomed);
 
     // Focus data element:
-    var datearea = d3.area()
+    let datearea = d3.area()
         .curve(d3.curveMonotoneX)
         .x(function (d) {
             return datex(d.Date);
@@ -129,7 +134,7 @@ export function d3date(init=false) {
         });
 
     // Context data element:
-    var datearea2 = d3.area()
+    let datearea2 = d3.area()
         .curve(d3.curveMonotoneX)
         .x(function (d) {
             return datex2(d.Date);
@@ -147,18 +152,18 @@ export function d3date(init=false) {
         .attr("height", dateheight);
 
     // Add svg groups for the focus and context portions of the graphic
-    var datefocus = dateSVG.append("g")
+    let datefocus = dateSVG.append("g")
         .attr("class", "focus")
         .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-    var datecontext = dateSVG.append("g")
+    let datecontext = dateSVG.append("g")
         .attr("class", "context")
         .attr("transform", "translate(" + margin2.left + "," + margin2.top + ")");
 
     // Invoked on initialization and interaction
     function brushed() {
         if (d3.event.sourceEvent && d3.event.sourceEvent.type === "zoom") return; // ignore brush-by-zoom
-        var s = d3.event.selection || datex2.range();
+        let s = d3.event.selection || datex2.range();
 
         datex.domain(s.map(datex2.invert, datex2));
         datefocus.select(".area").attr("d", datearea);
@@ -172,7 +177,7 @@ export function d3date(init=false) {
 
     function zoomed() {
         if (d3.event.sourceEvent && d3.event.sourceEvent.type === "brush") return; // ignore zoom-by-brush
-        var t = d3.event.transform;
+        let t = d3.event.transform;
         datex.domain(t.rescaleX(datex2).domain());
         datefocus.select(".area").attr("d", datearea);
         datefocus.select(".areaUser").attr("d", datearea);
@@ -191,12 +196,12 @@ export function d3date(init=false) {
         }
     }
 
-    for (let idx in app.dateData) {
+    for (let entry of app.dateData) {
 
         // Ensure data is valid
-        if (isNaN(parseInt(app.dateData[idx]['<year>']))) continue;
+        if (isNaN(parseInt(entry['<year>']))) continue;
 
-        let bin = {'Date': new Date(app.dateData[idx]['<year>'], app.dateData[idx]['<month>'] - 1, 0), 'Freq': app.dateData[idx].total};
+        let bin = {'Date': new Date(entry['<year>'], entry['<month>'] - 1, 0), 'Freq': entry.total};
         data.push(bin);
     }
     data = data.sort(dateSort);		//here is where date is collected as monthly?
@@ -211,38 +216,40 @@ export function d3date(init=false) {
         return d.Date;
     });
 
-    if (init) {
+    let freqmax = d3.max(data, function (d) {
+        return d.Freq;
+    });
+
+    if (reset_sliders) {
         dateminUser = new Date(datemin.getTime());
         datemaxUser = new Date(datemax.getTime());
     }
 
-    var freqmax = d3.max(data, function (d) {
-        return d.Freq;
-    });
-
     // Filter highlighted data by date picked
-    var data_highlight = data.filter(function (row) {
+    let data_highlight = data.filter(function (row) {
         return row.Date >= dateminUser && row.Date <= datemaxUser;
     });
 
     data_highlight.unshift({"Date": dateminUser, "Freq": interpolate(data, dateminUser)});
     data_highlight.push({"Date": datemaxUser, "Freq": interpolate(data, datemaxUser)});
 
-    var format = d3.timeFormat("%m-%d-%Y");
+    let format = d3.timeFormat("%m-%d-%Y");
 
     if (dateSetup) {
-        $("#fromdate").datepicker('option', 'minDate', datemin);
-        $("#fromdate").datepicker('option', 'maxDate', datemax);
-        $("#fromdate").datepicker('option', 'defaultDate', datemin);
-        $("#fromdate").datepicker('option', 'yearRange', datemin.getFullYear() + ':' + datemax.getFullYear());
+        let fromDate = $('#fromDate');
+        fromDate.datepicker('option', 'minDate', datemin);
+        fromDate.datepicker('option', 'maxDate', datemax);
+        fromDate.datepicker('option', 'defaultDate', datemin);
+        fromDate.datepicker('option', 'yearRange', datemin.getFullYear() + ':' + datemax.getFullYear());
 
-        $("#todate").datepicker('option', 'minDate', datemin);
-        $("#todate").datepicker('option', 'maxDate', datemax);
-        $("#todate").datepicker('option', 'defaultDate', datemax);
-        $("#todate").datepicker('option', 'yearRange', dateminUser.getFullYear() + ':' + datemax.getFullYear());
+        let toDate = $('toDate');
+        toDate.datepicker('option', 'minDate', datemin);
+        toDate.datepicker('option', 'maxDate', datemax);
+        toDate.datepicker('option', 'defaultDate', datemax);
+        toDate.datepicker('option', 'yearRange', dateminUser.getFullYear() + ':' + datemax.getFullYear());
 
-        $('#fromdate').val(format(datemin));
-        $('#todate').val(format(datemax));
+        fromDate.val(format(datemin));
+        toDate.val(format(datemax));
     }
 
     // Domain of dates: (range was set in variable initialization)
@@ -328,8 +335,8 @@ export function d3date(init=false) {
 
 function interpolate(data, date) {
     let allDates = [];
-    for (let item in data){
-        allDates.push(data[item]['Date'])
+    for (let entry of data){
+        allDates.push(entry['Date'])
     }
 
     let lower = allDates[0];
@@ -347,9 +354,9 @@ function interpolate(data, date) {
     let lowerFreq = data[0]['Freq'];
     let upperFreq = data[data.length - 1]['Freq'];
 
-    for (let candidate in data) {
-        if (data[candidate]['Date'] === lower) lowerFreq = data[candidate]['Freq'];
-        if (data[candidate]['Date'] === upper) upperFreq = data[candidate]['Freq'];
+    for (let candidate of data) {
+        if (candidate['Date'] === lower) lowerFreq = candidate['Freq'];
+        if (candidate['Date'] === upper) upperFreq = candidate['Freq'];
     }
 
     let interval_lower = date.getTime() - lower.getTime();
@@ -366,10 +373,10 @@ export function setDatefromSlider() {
     datemaxUser = new Date(plotSelection[1].getTime());
 
     // Update gui
-    var format = d3.timeFormat("%m-%d-%Y");
+    let format = d3.timeFormat("%m-%d-%Y");
     $('#fromdate').val(format(dateminUser));
     $('#todate').val(format(datemaxUser));
 
-    // Update plot
-    d3date();
+    // Update plot, but don't reset slider
+    updateDate(false);
 }

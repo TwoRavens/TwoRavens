@@ -932,7 +932,7 @@ const loadDictionary = function () {
 loadDictionary();
 
 // This code is called when data is loaded. It populates the dictionary and source/target lists
-export function actorDataLoad() {
+export function updateActor() {
 
     const defer = $.Deferred();
 

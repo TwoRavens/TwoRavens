@@ -1,7 +1,7 @@
 import {resetActionCounts, actionBuffer, drawGraphs, updateData} from "./subsets/Action";
-import {actorDataLoad, actorLinks, resizeActorSVG} from "./subsets/Actor";
-import {d3date, datemax, datemaxUser, datemin, dateminUser, setDatefromSlider} from "./subsets/Date";
-import {d3loc, mapListCountriesSelected} from "./subsets/Location";
+import {updateActor, actorLinks, resizeActorSVG} from "./subsets/Actor";
+import {updateDate, datemax, datemaxUser, datemin, dateminUser, setDatefromSlider} from "./subsets/Date";
+import {updateLocation, mapListCountriesSelected} from "./subsets/Location";
 
 export function about() {
     $('#about').show();
@@ -12,18 +12,22 @@ export function closeabout() {
 }
 
 export function toggleLeftPanel() {
-    if (!$('#leftpanel').hasClass('forceclosepanel')) {
-        $('#leftpanel').removeClass('expandpanel');
+    // Make selections
+    let main = $('#main');
+    let leftpanel = $('#leftpanel');
+
+    if (!leftpanel.hasClass('forceclosepanel')) {
+        leftpanel.removeClass('expandpanel');
         $('#leftpanel > div.row-fluid').toggleClass('closepanel');
-        $('#leftpanel').toggleClass('closepanel');
+        leftpanel.toggleClass('closepanel');
     }
 
-    if ($('#leftpanel').hasClass('closepanel')) {
-        $('#main').css('margin-left', '30px');
-        $('#main').css('width', 'calc(100% - 30px)');
+    if (leftpanel.hasClass('closepanel')) {
+        main.css('margin-left', '30px');
+        main.css('width', 'calc(100% - 30px)');
     } else {
-        $('#main').css('margin-left', '260px');
-        $('#main').css('width', 'calc(100% - 260px)');
+        main.css('margin-left', '260px');
+        main.css('width', 'calc(100% - 260px)');
     }
     if (subsetKeySelected === "Action") {
         drawGraphs();
@@ -74,8 +78,8 @@ let appname = 'eventdatasubsetapp';
 export let subsetURL = rappURL + appname;
 
 // Slide animation for dataset selection
-$(document).on('click', '#option', function (evt) {
-    var optionID = $(this).data('option');
+$(document).on('click', '#option', function () {
+    let optionID = $(this).data('option');
     $('#optionMenu').toggle('fade');
     $('#optionView' + optionID).toggle('fade');
 });
@@ -177,20 +181,6 @@ console.log("Query: " + JSON.stringify(subsetQuery));
 export var editor;
 
 export function setupBody(){
-
-    // The editor menu for the custom subsets
-    editor = ace.edit("subsetCustomEditor");
-    editor.$blockScrolling = Infinity;
-    editor.session.setMode("ace/mode/json");
-
-    editor.setOptions({
-        readOnly: true,
-        highlightActiveLine: false,
-        highlightGutterLine: false
-    });
-    editor.renderer.$cursorLayer.element.style.opacity=0;
-    editor.textInput.getElement().disabled=true;
-
     laddaSubset = Ladda.create(document.getElementById("btnSubmit"));
     laddaReset = Ladda.create(document.getElementById("btnReset"));
     laddaDownload = Ladda.create(document.getElementById("buttonDownload"));
@@ -252,9 +242,9 @@ export function reloadLeftpanelVariables() {
     let search_term = $("#searchvar").val().toUpperCase();
     let matchedVariables = [];
 
-    for (let idx in variables) {
-        if (variables[idx].toUpperCase().indexOf(search_term) !== -1) {
-            matchedVariables.push(variables[idx])
+    for (let variable of variables) {
+        if (variable.toUpperCase().indexOf(search_term) !== -1) {
+            matchedVariables.push(variable)
         }
     }
 
@@ -308,6 +298,15 @@ export function showSubset(subsetKey) {
             rightpanelMargin();
         }
     }
+
+    if (subsetKeySelected === "Action") {
+        drawGraphs();
+        updateData();
+    }
+
+    if (subsetKeySelected === "Actor") {
+        resizeActorSVG();
+    }
 }
 
 export function makeCorsRequest(url, post, callback) {
@@ -315,7 +314,7 @@ export function makeCorsRequest(url, post, callback) {
     if ("withCredentials" in xhr) {
         // XHR for Chrome/Firefox/Opera/Safari.
         xhr.open('POST', url, true);
-    } else if (typeof XDomainRequest != "undefined") {
+    } else if (typeof XDomainRequest !== "undefined") {
         // XDomainRequest for IE.
         xhr = new XDomainRequest();
         xhr.open('POST', url);
@@ -405,28 +404,28 @@ export function pageSetup(jsondata) {
         return false;
     }
 
-    dateData = jsondata['date_data']
+    dateData = jsondata['date_data'];
 
     countryData = {};
-    for (let idx in jsondata['country_data']) {
-        let country = jsondata['country_data'][idx]['<country_code>'];
+    for (let entry of jsondata['country_data']) {
+        let country = entry['<country_code>'];
         if (country === "" || country === undefined) continue;
-        countryData[jsondata['country_data'][idx]['<country_code>']] = jsondata['country_data'][idx].total
+        countryData[entry['<country_code>']] = entry.total
     }
 
     actionData = {};
     for (let i = 1; i <= 20; i++) {
         actionData[i] = 0;
     }
-    for (let idx in jsondata['action_data']) {
-        actionData[parseInt(jsondata['action_data'][idx]['<root_code>'])] = jsondata['action_data'][idx].total
+    for (let entry of jsondata['action_data']) {
+        actionData[parseInt(entry['<root_code>'])] = entry.total
     }
 
     actorData = jsondata['actor_data'];
-    actorDataLoad();
+    updateActor();
 
-    d3date(true);
-    d3loc();
+    updateDate();
+    updateLocation();
     resetActionCounts();
 
     // If first load of data, user may have selected a subset and is waiting. Render page now that data is available
@@ -434,15 +433,6 @@ export function pageSetup(jsondata) {
         initialLoad = true;
         // In the case where the user has not yet made a subset selection, this is ignored
         showSubset(subsetKeySelected);
-    }
-
-    if (subsetKeySelected === "Action") {
-        drawGraphs();
-        updateData();
-    }
-
-    if (subsetKeySelected === "Actor") {
-        resizeActorSVG();
     }
 
     let total_records = 0;
@@ -534,112 +524,109 @@ export function rightpanelMargin() {
 
 // variableData is used to create the tree gui on the right panel
 // names of variables comes from 'variablesSelected' variable
-var variableData = [];
+let variableData = [];
 
-var nodeId = 1;
-var groupId = 1;
+let nodeId = 1;
+let groupId = 1;
 export var queryId = 1;
 
 if (localStorage.getItem("nodeId") !== null) {
     // If the user has already submitted a query, restore the previous query from local data
-    nodeId = localStorage.getItem('nodeId');
-    groupId = localStorage.getItem('groupId');
-    queryId = localStorage.getItem('queryId');
+    nodeId = parseInt(localStorage.getItem('nodeId'));
+    groupId = parseInt(localStorage.getItem('groupId'));
+    queryId = parseInt(localStorage.getItem('queryId'));
 }
 
 
 export function setupQueryTree() {
 
     // Variables menu
-    $(function () {
-        $('#variableTree').tree({
-            data: variableData,
-            saveState: true,
-            dragAndDrop: false,
-            autoOpen: true,
-            selectable: false
-        });
+    $('#variableTree').tree({
+        data: variableData,
+        saveState: true,
+        dragAndDrop: false,
+        autoOpen: true,
+        selectable: false
     });
 
     // Create the query tree
-    $(function () {
-        $('#subsetTree').tree({
-            data: subsetData,
-            saveState: true,
-            dragAndDrop: true,
-            autoOpen: true,
-            selectable: false,
+    let subsetTree = $('#subsetTree');
+    subsetTree.tree({
+        data: subsetData,
+        saveState: true,
+        dragAndDrop: true,
+        autoOpen: true,
+        selectable: false,
 
-            // Executed for every node and leaf in the tree
-            onCreateLi: function (node, $li) {
+        // Executed for every node and leaf in the tree
+        onCreateLi: function (node, $li) {
 
-                if ('negate' in node) {
-                    $li.find('.jqtree-element').prepend(buttonNegate(node.id, node.negate));
-                }
-                if ((!('show_op' in node) || ('show_op' in node && node.show_op)) && 'operation' in node) {
-                    let canChange = node.name.indexOf('Query') === -1 && !node.editable
-                    $li.find('.jqtree-element').prepend(buttonOperator(node.id, node.operation, canChange));
-                }
-                if (!('cancellable' in node) || (node['cancellable'] === true)) {
-                    $li.find('.jqtree-element').append(buttonDelete(node.id));
-                }
-                // Set a left margin on the first element of a leaf
-                if (node.children.length === 0) {
-                    $li.find('.jqtree-element:first').css('margin-left', '14px');
-                }
-            },
-            onCanMove: function (node) {
-                // Cannot move nodes in uneditable queries
-                if ('editable' in node && !node.editable) {
-                    return false
-                }
-
-                // Subset and Group may be moved
-                let is_country = ('type' in node && node.type === 'country');
-                return (node.name.indexOf('Subset') !== -1 || node.name.indexOf('Group') !== -1 || is_country);
-            },
-            onCanMoveTo: function (moved_node, target_node, position) {
-
-                // Cannot move to uneditable queries
-                if ('editable' in target_node && !target_node.editable) {
-                    return false
-                }
-
-                // Countries can be moved to child of location subset group
-                if ('type' in moved_node && moved_node.type === 'country') {
-                    return position === 'after' && target_node.parent.name === 'Location Subset';
-                }
-                // Rules may be moved next to another rule or grouping
-                if (position === 'after' && (target_node.name.indexOf('Subset') !== -1 || target_node.name.indexOf('Group') !== -1)) {
-                    return true;
-                }
-                // Rules may be moved inside a group or root
-                if ((position === 'inside') && (target_node.name.indexOf('Subsets') !== -1 || target_node.name.indexOf('Group') !== -1)) {
-                    return true;
-                }
-                return false;
+            if ('negate' in node) {
+                $li.find('.jqtree-element').prepend(buttonNegate(node.id, node.negate));
             }
-        });
+            if ((!('show_op' in node) || ('show_op' in node && node.show_op)) && 'operation' in node) {
+                let canChange = node.name.indexOf('Query') === -1 && !node.editable;
+                $li.find('.jqtree-element').prepend(buttonOperator(node.id, node.operation, canChange));
+            }
+            if (!('cancellable' in node) || (node['cancellable'] === true)) {
+                $li.find('.jqtree-element').append(buttonDelete(node.id));
+            }
+            // Set a left margin on the first element of a leaf
+            if (node.children.length === 0) {
+                $li.find('.jqtree-element:first').css('margin-left', '14px');
+            }
+        },
+        onCanMove: function (node) {
+            // Cannot move nodes in uneditable queries
+            if ('editable' in node && !node.editable) {
+                return false
+            }
+
+            // Subset and Group may be moved
+            let is_country = ('type' in node && node.type === 'country');
+            return (node.name.indexOf('Subset') !== -1 || node.name.indexOf('Group') !== -1 || is_country);
+        },
+        onCanMoveTo: function (moved_node, target_node, position) {
+
+            // Cannot move to uneditable queries
+            if ('editable' in target_node && !target_node.editable) {
+                return false
+            }
+
+            // Countries can be moved to child of location subset group
+            if ('type' in moved_node && moved_node.type === 'country') {
+                return position === 'after' && target_node.parent.name === 'Location Subset';
+            }
+            // Rules may be moved next to another rule or grouping
+            if (position === 'after' && (target_node.name.indexOf('Subset') !== -1 || target_node.name.indexOf('Group') !== -1)) {
+                return true;
+            }
+            // Rules may be moved inside a group or root
+            // noinspection RedundantIfStatementJS
+            if ((position === 'inside') && (target_node.name.indexOf('Subsets') !== -1 || target_node.name.indexOf('Group') !== -1)) {
+                return true;
+            }
+            return false;
+        }
     });
 
-    $('#subsetTree').on(
+    subsetTree.on(
         'tree.move',
         function (event) {
             event.preventDefault();
             event.move_info.do_move();
 
             // Save changes when an element is moved
-            subsetData = JSON.parse($('#subsetTree').tree('toJson'));
+            subsetData = JSON.parse(subsetTree.tree('toJson'));
 
             hide_first(subsetData);
-            let qtree = $('#subsetTree');
-            let state = qtree.tree('getState');
-            qtree.tree('loadData', subsetData);
-            qtree.tree('setState', state);
+            let state = subsetTree.tree('getState');
+            subsetTree.tree('loadData', subsetData);
+            subsetTree.tree('setState', state);
         }
     );
 
-    $('#subsetTree').on(
+    subsetTree.on(
         'tree.click',
         function (event) {
             let node = event.node;
@@ -654,7 +641,7 @@ export function setupQueryTree() {
         }
     );
 
-    $('#subsetTree').bind(
+    subsetTree.bind(
         'tree.dblclick',
         function (event) {
             let tempQuery = buildSubset([event.node]);
@@ -680,26 +667,28 @@ function buttonNegate(id, state) {
 }
 
 window.callbackNegate = function(id, bool) {
-    let node = $('#subsetTree').tree('getNodeById', id);
+    let subsetTree = $('#subsetTree');
+    let node = subsetTree.tree('getNodeById', id);
 
     // don't permit change in negation on non-editable node
     if ('editable' in node && !node.editable) return;
 
     node.negate = bool;
 
-    subsetData = JSON.parse($('#subsetTree').tree('toJson'));
-    let qtree = $('#subsetTree');
-    let state = qtree.tree('getState');
-    qtree.tree('loadData', subsetData);
-    qtree.tree('setState', state);
-}
+    subsetData = JSON.parse(subsetTree.tree('toJson'));
+    let state = subsetTree.tree('getState');
+    subsetTree.tree('loadData', subsetData);
+    subsetTree.tree('setState', state);
+};
 
 function buttonOperator(id, state, canChange) {
     if (canChange) {
         if (state === 'and') {
-            return '<button class="btn btn-default btn-xs active" style="width:33px" type="button" data-toggle="button" aria-pressed="true" onclick="callbackOperator(' + id + ', &quot;or&quot;)">and</button> '
+            // language=HTML
+            return `<button class="btn btn-default btn-xs active" style="width:33px" type="button" data-toggle="button" aria-pressed="true" onclick="callbackOperator(${id}, 'or')">and</button> `
         } else {
-            return '<button class="btn btn-default btn-xs active" style="width:33px" type="button" data-toggle="button" aria-pressed="true" onclick="callbackOperator(' + id + ', &quot;and&quot;)">or</button> '
+            // language=HTML
+            return `<button class="btn btn-default btn-xs active" style="width:33px" type="button" data-toggle="button" aria-pressed="true" onclick="callbackOperator(${id}, 'and')">or</button> `
         }
     } else {
         if (state === 'and') {
@@ -720,25 +709,27 @@ function buttonOperator(id, state, canChange) {
 }
 
 window.callbackOperator = function(id, operand) {
-    let node = $('#subsetTree').tree('getNodeById', id);
+    let subsetTree = $('#subsetTree');
+    let node = subsetTree.tree('getNodeById', id);
     if ('editable' in node && !node.editable) return;
 
     node.operation = operand;
 
     // Redraw tree
-    subsetData = JSON.parse($('#subsetTree').tree('toJson'));
-    let qtree = $('#subsetTree');
-    let state = qtree.tree('getState');
-    qtree.tree('loadData', subsetData);
-    qtree.tree('setState', state);
-}
+    subsetData = JSON.parse(subsetTree.tree('toJson'));
+    let state = subsetTree.tree('getState');
+    subsetTree.tree('loadData', subsetData);
+    subsetTree.tree('setState', state);
+};
 
 function buttonDelete(id) {
     return "<button type='button' class='btn btn-default btn-xs' style='background:none;border:none;box-shadow:none;float:right;margin-top:2px;height:18px' onclick='callbackDelete(" + String(id) + ")'><span class='glyphicon glyphicon-remove' style='color:#ADADAD'></span></button></div>";
 }
 
 window.callbackDelete = function(id) {
-    let node = $('#subsetTree').tree('getNodeById', id);
+    // noinspection JSJQueryEfficiency
+    let subsetTree = $('#subsetTree');
+    let node = subsetTree.tree('getNodeById', id);
     if (node.name.indexOf('Query') !== -1) {
         if (!confirm("You are deleting a query. This will return your subsetting to an earlier state.")) {
             return;
@@ -748,12 +739,12 @@ window.callbackDelete = function(id) {
     if (typeof node.parent.id !== 'undefined' && node.parent.children.length === 1) {
         callbackDelete(node.parent.id);
     } else {
-        $('#subsetTree').tree('removeNode', node);
+        subsetTree.tree('removeNode', node);
 
-        subsetData = JSON.parse($('#subsetTree').tree('toJson'));
+        subsetData = JSON.parse(subsetTree.tree('toJson'));
         hide_first(subsetData);
 
-        let qtree = $('#subsetTree');
+        let qtree = subsetTree;
         let state = qtree.tree('getState');
         qtree.tree('loadData', subsetData);
         qtree.tree('setState', state);
@@ -793,12 +784,12 @@ window.callbackDelete = function(id) {
             localStorage.setItem('variablesSelected', JSON.stringify([...variablesSelected]));
 
             localStorage.setItem('subsetData', $('#subsetTree').tree('toJson'));
-            localStorage.setItem('nodeId', nodeId);
-            localStorage.setItem('groupId', groupId);
-            localStorage.setItem('queryId', queryId);
+            localStorage.setItem('nodeId', String(nodeId));
+            localStorage.setItem('groupId', String(groupId));
+            localStorage.setItem('queryId', String(queryId));
         }
     }
-}
+};
 
 // Updates the rightpanel variables menu
 function reloadRightPanelVariables() {
@@ -824,8 +815,8 @@ function disable_edit_recursive(node) {
     node.editable = false;
     node.cancellable = false;
     if ('children' in node) {
-        for (let child_id in node.children) {
-            node.children[child_id] = disable_edit_recursive(node.children[child_id]);
+        for (let child of node.children) {
+            child = disable_edit_recursive(child);
         }
     }
     return node
@@ -833,10 +824,12 @@ function disable_edit_recursive(node) {
 
 function hide_first(data) {
     for (let child_id in data) {
-        if ('children' in data[child_id]) {
-            data[child_id].children = hide_first(data[child_id].children);
+        // noinspection JSUnfilteredForInLoop
+        let child = data[child_id];
+        if ('children' in child) {
+            child.children = hide_first(child.children);
         }
-        data[child_id]['show_op'] = child_id !== "0";
+        child['show_op'] = child_id !== "0";
     }
     return data;
 }
@@ -949,7 +942,7 @@ function getSubsetPreferences() {
         if (dateminUser - datemin === 0 && datemaxUser - datemax === 0) {
             setDatefromSlider();
 
-            // Ignore the rule if still dates are still not modified
+            // Ignore the rule if dates are still not modified
             if (dateminUser - datemin === 0 && datemaxUser - datemax === 0) {
                 return {};
             }
@@ -1022,11 +1015,11 @@ function getSubsetPreferences() {
             return a - b;
         });
         // Add each action to the parent node as another rule
-        for (let action in actionBuffer) {
-            if (actionBuffer[action]) {
+        for (let action of actionBuffer) {
+            if (action) {
                 subset['children'].push({
                     id: String(nodeId++),
-                    name: actionBuffer[action].toString(),
+                    name: action.toString(),
                     show_op: false
                 });
             }
@@ -1068,21 +1061,21 @@ function getSubsetPreferences() {
                 }]
             };
 
-            for (let sourceId in actorLinks[linkId].source.group) {
-                if (actorLinks[linkId].source.group[sourceId] !== undefined) {
+            for (let source of actorLinks[linkId].source.group) {
+                if (source !== undefined) {
                     link['children'][0]['children'].push({
                         id: String(nodeId++),
-                        name: actorLinks[linkId].source.group[sourceId],
+                        name: source,
                         show_op: false
                     });
                 }
             }
 
-            for (let targetId in actorLinks[linkId].target.group) {
-                if (actorLinks[linkId].target.group[targetId] !== undefined) {
+            for (let target of actorLinks[linkId].target.group) {
+                if (target !== undefined) {
                     link['children'][1]['children'].push({
                         id: String(nodeId++),
-                        name: actorLinks[linkId].target.group[targetId],
+                        name: target,
                         show_op: false
                     });
                 }
@@ -1099,11 +1092,11 @@ function getSubsetPreferences() {
     }
 
     if (subsetKeySelected === 'Coordinates') {
-        let valLeft = parseFloat($("#lonLeft").val());
-        let valRight = parseFloat($("#lonRight").val());
+        let valLeft = parseFloat(document.getElementById('lonLeft').value);
+        let valRight = parseFloat(document.getElementById('lonRight').value);
 
-        let valUpper = parseFloat($("#latUpper").val());
-        let valLower = parseFloat($("#latLower").val());
+        let valUpper = parseFloat(document.getElementById('latUpper').value);
+        let valLower = parseFloat(document.getElementById('latLower').value);
 
         // Make parent node
         let subset = {
@@ -1124,12 +1117,12 @@ function getSubsetPreferences() {
 
         longitude.children.push({
             id: String(nodeId++),
-            name: valLeft > valRight ? $("#lonLeft").val() : $("#lonRight").val()
+            name: valLeft > valRight ? valLeft : valRight
         });
 
         longitude.children.push({
             id: String(nodeId++),
-            name: valLeft < valRight ? $("#lonLeft").val() : $("#lonRight").val()
+            name: valLeft < valRight ? valLeft : valRight
         });
 
         let latitude = {
@@ -1141,12 +1134,12 @@ function getSubsetPreferences() {
 
         latitude.children.push({
             id: String(nodeId++),
-            name: valUpper > valLower ? $("#latUpper").val() : $("#latLower").val()
+            name: valUpper > valLower ? valUpper : valLower
         });
 
         latitude.children.push({
             id: String(nodeId++),
-            name: valUpper < valLower ? $("#latUpper").val() : $("#latLower").val()
+            name: valUpper < valLower ? valUpper : valLower
         });
 
         subset.children.push(latitude);
@@ -1158,6 +1151,7 @@ function getSubsetPreferences() {
 
     // This functionality is disabled, because the stage button is hidden
     if (subsetKeySelected === 'Custom') {
+        // noinspection JSUnresolvedFunction
         if (validateCustom(editor.getValue())) {
             return {
                 id: String(nodeId++),
@@ -1224,6 +1218,8 @@ export function submitQuery() {
     }
 
     function submitQueryCallback(jsondata) {
+        let subsetTree = $('#subsetTree');
+
         // If page setup failed, then don't lock the preferences behind a query
         if (!pageSetup(jsondata)) return;
 
@@ -1231,33 +1227,32 @@ export function submitQuery() {
         addGroup(true);
 
         // Add all nodes to selection
-        let qtree = $('#subsetTree');
         let nodeList = [...Array(nodeId).keys()];
 
         nodeList.forEach(
             function (node_id) {
-                const node = qtree.tree("getNodeById", node_id);
+                const node = subsetTree.tree("getNodeById", node_id);
 
                 if (node) {
-                    qtree.tree("addToSelection", node);
+                    subsetTree.tree("addToSelection", node);
                     if (node.name.indexOf('Query') === -1) node.editable = false;
                 }
             }
         );
 
         // Redraw tree
-        subsetData = JSON.parse($('#subsetTree').tree('toJson'));
-        let state = qtree.tree('getState');
-        qtree.tree('loadData', subsetData);
-        qtree.tree('setState', state);
+        subsetData = JSON.parse(subsetTree.tree('toJson'));
+        let state = subsetTree.tree('getState');
+        subsetTree.tree('loadData', subsetData);
+        subsetTree.tree('setState', state);
 
         // Store user preferences in local data
         localStorage.setItem('variablesSelected', JSON.stringify([...variablesSelected]));
 
-        localStorage.setItem('subsetData', $('#subsetTree').tree('toJson'));
-        localStorage.setItem('nodeId', nodeId);
-        localStorage.setItem('groupId', groupId);
-        localStorage.setItem('queryId', queryId);
+        localStorage.setItem('subsetData', subsetTree.tree('toJson'));
+        localStorage.setItem('nodeId', String(nodeId));
+        localStorage.setItem('groupId', String(groupId));
+        localStorage.setItem('queryId', String(queryId));
     }
 
     let variableQuery = buildVariables();
@@ -1311,7 +1306,7 @@ export function buildSubset(tree) {
     }
 
     // Treat staged subset data as just another query on the query stack
-    queryStack.push({'children': stagedSubsetData, 'operation': 'and', 'name': 'New Query'})
+    queryStack.push({'children': stagedSubsetData, 'operation': 'and', 'name': 'New Query'});
     return processGroup({'children': queryStack})
 }
 
@@ -1399,29 +1394,29 @@ function processRule(rule) {
                     child.fromDate = new Date(child.fromDate);
                     // Not a pretty solution, but it prevents aggregation substring slicing or regexes
                     lower_bound['$or'] = [
-                            {'<year>': {'$gt': pad(parseInt(child.fromDate.getFullYear()))}},
+                            {'<year>': {'$gt': pad(child.fromDate.getFullYear())}},
                         {
-                            '<year>': pad(parseInt(child.fromDate.getFullYear())),
-                            '<month>': {'$gte': pad(parseInt(child.fromDate.getMonth() + 1))}
+                            '<year>': pad(child.fromDate.getFullYear()),
+                            '<month>': {'$gte': pad(child.fromDate.getMonth() + 1)}
                         },
                         {
-                            '<year>': pad(parseInt(child.fromDate.getFullYear())),
-                            '<month>': pad(parseInt(child.fromDate.getMonth() + 1)),
-                            '<day>': {'$gte': pad(parseInt(child.fromDate.getDate()))}
+                            '<year>': pad(child.fromDate.getFullYear()),
+                            '<month>': pad(child.fromDate.getMonth() + 1),
+                            '<day>': {'$gte': pad(child.fromDate.getDate())}
                         }]
                 }
                 if ('toDate' in child) {
                     child.toDate = new Date(child.toDate);
                     upper_bound['$or'] = [
-                            {'<year>': {'$lt': pad(parseInt(child.toDate.getFullYear()))}},
+                            {'<year>': {'$lt': pad(child.toDate.getFullYear())}},
                         {
-                            '<year>': pad(parseInt(child.toDate.getFullYear())),
-                            '<month>': {'$lte': pad(parseInt(child.toDate.getMonth() + 1))}
+                            '<year>': pad(child.toDate.getFullYear()),
+                            '<month>': {'$lte': pad(child.toDate.getMonth() + 1)}
                         },
                         {
-                            '<year>': pad(parseInt(child.toDate.getFullYear())),
-                            '<month>': pad(parseInt(child.toDate.getMonth() + 1)),
-                            '<day>': {'$lte': pad(parseInt(child.toDate.getDate()))}
+                            '<year>': pad(child.toDate.getFullYear()),
+                            '<month>': pad(child.toDate.getMonth() + 1),
+                            '<day>': {'$lte': pad(child.toDate.getDate())}
                         }]
                 }
             }
@@ -1465,8 +1460,8 @@ function processRule(rule) {
 
     if (rule.name === 'Location Subset') {
         let rule_query_inner = [];
-        for (let child_id in rule.children) {
-            rule_query_inner.push(rule.children[child_id].name);
+        for (let child of rule.children) {
+            rule_query_inner.push(child.name);
         }
 
         rule_query_inner = {'$in': rule_query_inner};
@@ -1485,8 +1480,8 @@ function processRule(rule) {
     if (rule.name === 'Action Subset') {
         let rule_query_inner = [];
         if (['phoenix_rt', 'cline_phoenix_fbis', 'cline_phoenix_nyt', 'cline_phoenix_swb'].indexOf(dataset) !== -1) {
-            for (let child_id in rule.children) {
-                rule_query_inner.push(pad(parseInt(rule.children[child_id].name)));
+            for (let child of rule.children) {
+                rule_query_inner.push(pad(parseInt(child.name)));
             }
             rule_query_inner = {'$in': rule_query_inner};
 
@@ -1499,10 +1494,10 @@ function processRule(rule) {
 
         if (dataset === "icews") {
             let prefixes = [];
-            for (let child_id in rule.children) {
-                prefixes.push(pad(parseInt(rule.children[child_id].name)));
+            for (let child of rule.children) {
+                prefixes.push(pad(parseInt(child.name)));
             }
-            rule_query_inner = {'$regex': '^(' + prefixes.join('|') + ')'}
+            rule_query_inner = {'$regex': '^(' + prefixes.join('|') + ')'};
 
             if ('negate' in rule && !rule.negate) {
                 rule_query_inner = {'$not': rule_query_inner};
@@ -1514,18 +1509,18 @@ function processRule(rule) {
 
     if (rule.name === 'Actor Subset') {
         let link_list = [];
-        for (let idx in rule.children) {
+        for (let child of rule.children) {
             let link_rule = {};
 
             let sourceList = [];
-            for (let idxsource in rule.children[idx].children[0].children) {
-                sourceList.push(rule.children[idx].children[0].children[idxsource].name);
+            for (let child_source of child.children[0].children) {
+                sourceList.push(child_source.name);
             }
             link_rule['<source>'] = {'$in': sourceList};
 
             let targetList = [];
-            for (let idxtarget in rule.children[idx].children[1].children) {
-                targetList.push(rule.children[idx].children[1].children[idxtarget].name)
+            for (let child_target of child.children[1].children) {
+                targetList.push(child_target.name)
             }
             link_rule['<target>'] = {'$in': targetList};
 
@@ -1538,9 +1533,7 @@ function processRule(rule) {
 
         let rule_query_inner = [];
 
-        for (let child_id in rule.children) {
-            let child = rule.children[child_id];
-
+        for (let child of rule.children) {
             if (child.name === 'Latitude') {
                 let latitude = {
                     '<latitude>': {
