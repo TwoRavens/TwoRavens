@@ -56,7 +56,7 @@ let actorActualSize = {
 };
 let changeID = 0;						//number that is updated whenever a node is added/changed, set to actorID
 
-var actorNodeNames = [];				//array list to maintain unique node names
+export var actorNodeNames = [];				//array list to maintain unique node names
 
 //begin force definitions
 var actorSVG;

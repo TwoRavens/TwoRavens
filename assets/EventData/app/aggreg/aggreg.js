@@ -1,4 +1,6 @@
-import {opMode, setOpMode} from "../app";
+import {opMode, setOpMode, rappURL, varColor, selVarColor} from "../app";
+import {d3date, datemin} from "../subsets/Date";
+import {actorDataLoad, actorLinks} from "../subsets/Actor";
 
 var aggregMode = "penta";
 var aggregDateOn = 0;		//0 = off, 1 = week, 2 = month, 3 = quarter, 4 = year
@@ -386,8 +388,6 @@ function updateAggregTable() {
 	//~ console.log("min date");
 	//~ console.log(aggregDateMin);
 	//~ console.log(aggregDateData);
-	console.log(actorNodeNames);
-	console.log(actorLinks);
 
 	$(".aggregTableRow").show();
 

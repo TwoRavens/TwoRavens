@@ -62,7 +62,7 @@ export function setOpMode(mode) {
 
 let production = false;
 
-let rappURL = '';
+export let rappURL = '';
 if (!production) {
     // base URL for the R apps:
     rappURL = "http://localhost:8000/custom/";
