@@ -8,13 +8,8 @@
         "progressInfo": "COMPLETED",
         "pipelineId": "pipeline_2",
         "pipelineInfo": {
-            "predictResultUris": [
-              "{{ FILE_URI|safe }}",
-              "{{ FILE_URI2|safe }}",
-              "/Volume/andFile/that/do_not_exist.csv",
-              "{{ FILE_URI4|safe }}"
-            ],
-            "output": "REAL",
+            "predictResultUri": "{{ FILE_URI|safe }}",
+            "output": "OUTPUT_TYPE_UNDEFINED",
             "scores": [
                 {
                     "metric": "ACCURACY",
@@ -23,6 +18,63 @@
                 {
                     "metric": "ROC_AUC",
                     "value": 0.5
+                }
+            ]
+        }
+    },
+    {
+        "responseInfo": {
+            "status": {
+                "code": "OK"
+            }
+        },
+        "progressInfo": "COMPLETED",
+        "pipelineId": "pipeline_3",
+        "pipelineInfo": {
+            "predictResultUri": "{{ FILE_URI2|safe }}",
+            "output": "OUTPUT_TYPE_UNDEFINED",
+            "scores": [
+                {
+                    "metric": "ACCURACY",
+                    "value": 0.800000011920929
+                }
+            ]
+        }
+      },
+      {
+        "responseInfo": {
+            "status": {
+                "code": "OK"
+            }
+        },
+        "progressInfo": "COMPLETED",
+        "pipelineId": "pipeline_4",
+        "pipelineInfo": {
+            "predictResultUri": "/Volume/andFile/that/do_not_exist.csv",
+            "output": "OUTPUT_TYPE_UNDEFINED",
+            "scores": [
+                {
+                    "metric": "ACCURACY",
+                    "value": 0.800000011920929
+                }
+            ]
+          }
+      },
+      {
+        "responseInfo": {
+            "status": {
+                "code": "OK"
+            }
+        },
+        "progressInfo": "COMPLETED",
+        "pipelineId": "pipeline_4",
+        "pipelineInfo": {
+            "predictResultUri": "{{ FILE_URI4|safe }}",
+            "output": "OUTPUT_TYPE_UNDEFINED",
+            "scores": [
+                {
+                    "metric": "ACCURACY",
+                    "value": 0.800000011920929
                 }
             ]
         }

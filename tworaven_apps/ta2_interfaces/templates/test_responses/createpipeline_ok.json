@@ -42,9 +42,7 @@
         "progressInfo": "COMPLETED",
         "pipelineId": "pipeline_5",
         "pipelineInfo": {
-            "predictResultUris": [
-                "{{ FILE_URI }}"
-            ],
+            "predictResultUri": "{{ FILE_URI|safe }}",
             "output": "REAL",
             "scores": [
                 {
@@ -67,9 +65,7 @@
         "progressInfo": "COMPLETED",
         "pipelineId": "pipeline_2",
         "pipelineInfo": {
-            "predictResultUris": [
-              "{{ FILE_URI|safe }}"
-            ],
+            "predictResultUri": "{{ FILE_URI|safe }}",
             "output": "REAL",
             "scores": [
                 {

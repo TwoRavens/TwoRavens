@@ -8,6 +8,7 @@ from django.conf import settings
 from tworaven_apps.ta2_interfaces.ta2_util import format_info_for_request,\
     load_template_as_dict
 from tworaven_apps.utils.msg_helper import msgt
+from tworaven_apps.utils.static_keys import KEY_SUCCESS, KEY_DATA
 from tworaven_apps.ta2_interfaces.models import STATUS_VAL_OK,\
     STATUS_VAL_FAILED_PRECONDITION, STATUS_VAL_COMPLETED
 from tworaven_apps.ta2_interfaces.req_pipeline_create import ERR_NO_SESSION_ID,\
@@ -65,20 +66,22 @@ class CreatePipelinesTest(TestCase):
         self.assertEqual(fifth_resp['progressInfo'],
                          STATUS_VAL_COMPLETED)
 
-        # There is 1 result uri
+        # There is a result uri
         #
-        self.assertEqual(len(fifth_resp['pipelineInfo']['predictResultUris']),
-                         1)
+        self.assertTrue('predictResultUri' in fifth_resp['pipelineInfo'])
 
-        # There is 1 corresponding result for predictResultData
+        # There is a predictResultData
         #
-        self.assertEqual(len(fifth_resp['pipelineInfo']['predictResultData']),
-                         1)
+        self.assertTrue('predictResultData' in fifth_resp['pipelineInfo'])
 
-        # The 1st entry in predictResultData contains the key "file_1"
+        # predictResultData contains
+        #  the keys "success" and "data"
         #
-        self.assertTrue('file_1' in\
-                        fifth_resp['pipelineInfo']['predictResultData'][0])
+        self.assertTrue(KEY_SUCCESS in\
+                        fifth_resp['pipelineInfo']['predictResultData'])
+
+        self.assertTrue(KEY_DATA in\
+                        fifth_resp['pipelineInfo']['predictResultData'])
 
     def test_20_bad_create_no_context(self):
         """(20) Test create pipelines endpoint used by UI.  No context"""
