@@ -1,6 +1,6 @@
-import {opMode, setOpMode, rappURL, varColor, selVarColor} from "../app";
-import {d3date, datemin} from "../subsets/Date";
-import {actorDataLoad, actorLinks} from "../subsets/Actor";
+import {opMode, setOpMode, rappURL, varColor, selVarColor, rightpanelMargin} from "../app";
+import {updateDate, datemin} from "../subsets/Date";
+import {updateActor, actorLinks} from "../subsets/Actor";
 
 var aggregMode = "penta";
 var aggregDateOn = 0;		//0 = off, 1 = week, 2 = month, 3 = quarter, 4 = year
@@ -21,6 +21,13 @@ export function updateToAggreg() {
 		$("#aggregLeftPanelSelection").show();
 		$(".subsetDiv").hide();
 		$(".aggregDiv").show();
+		$("#canvasAggregation").css("display", "block");
+		$("#aggregDataOutput").css("display", "inline");
+		$("#dateOptions").css("display", "none");
+		$("#dateAggregOptions").css("display", "block");
+		$("#leftpanel").css("height", "calc(100% - 222px)");
+		$("#rightpanel").css("height", "calc(100% - 222px)");
+
 
 		d3.select("#aggregOptions").selectAll("p").style("background-color", varColor);
 		d3.select("#aggregPentaToggle").style("background-color", selVarColor);
@@ -65,10 +72,10 @@ export function updateToAggreg() {
 		});
 
 		$("#aggregTable .th").css({"width":"300px", "padding":"5px"});
-		
+
 		$("#subsetDate").appendTo("#aggregDataDisplay");
 		//~ $("#dateSVGdiv").appendTo("#aggregDataDisplay");
-		d3date(true);
+		updateActor(false);
 
 		$("#subsetActor").appendTo("#aggregDataDisplay");
 		$("#actorPanelTitleDiv").css({"display":"inline", "float":"left"});
@@ -87,12 +94,12 @@ export function updateToAggreg() {
 		
 		console.log("new height: " + $("#aggregDataDisplay").height());
 		$("#subsetActor").height($("#aggregDataDisplay").height());
-		actorDataLoad();
+		updateActor();
 
 		/*
 		 * jsondata : contains all data - see console output for format
-		 * d3date() : this will refresh the range and data
-		 * actorDataLoad() : this will refresh the data
+		 * updateDate() : this will refresh the range and data
+		 * updateActor() : this will refresh the data
 		 * add a none option to actor
 		 */
 

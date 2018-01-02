@@ -15,6 +15,8 @@ import CanvasCustom from "./views/CanvasCustom"
 import CanvasDate from "./views/CanvasDate"
 import CanvasLocation from "./views/CanvasLocation"
 
+import TableAggregation from "./views/TableAggregation"
+
 export default class Body_EventData {
 
     oncreate() {
@@ -61,6 +63,7 @@ export default class Body_EventData {
                         m(CanvasAggregation, {mode: mode})
                     ]
                 ),
+                m(TableAggregation, {mode: mode}),
                 m(Footer, {mode: mode})
             ]
         );
