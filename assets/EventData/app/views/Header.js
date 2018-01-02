@@ -3,10 +3,7 @@ import {about, closeabout, submitQuery, setDataset, reset} from "../app";
 import {updateToAggreg} from "../aggreg/aggreg";
 
 export default class Header {
-    oncreate() {
-        console.log(document.getElementById("selectPhoenixRT"));
-        console.log(document.getElementById("btnSubmit"));
-    }
+
     view(vnode) {
         return (m("nav.navbar.navbar-default.navbar-fixed-top[id='navbar'][role='navigation']",
             [
@@ -59,7 +56,7 @@ export default class Header {
                                     "margin-left": "2.0em",
                                     "float": "right"
                                 },
-                                onclick: function(e) {
+                                onclick: function (e) {
                                     reset();
                                     e.redraw = false;
                                 }
@@ -74,7 +71,19 @@ export default class Header {
                         ),
 
                         // Dataset Selection
-                        m("div", {style: {"left": "calc(50% + 20px)", "position": "fixed", "margin-top": "6px"}},
+                        m("div", {
+                                style: {"left": "calc(50% + 20px)", "position": "fixed", "margin-top": "6px"},
+                                onclick: function (e) {
+                                    // I could not get these to bind, so I bind them on dropdown
+                                    $("#selectPhoenixRT").click(function () {setDataset('phoenix_rt');});
+                                    $("#selectClineNYT").click(function () {setDataset('cline_phoenix_nyt');});
+                                    $("#selectClineCIA").click(function () {setDataset('cline_phoenix_fbis');});
+                                    $("#selectClineSWB").click(function () {setDataset('cline_phoenix_swb');});
+                                    $("#selectICEWS").click(function () {setDataset('icews');});
+
+                                    e.redraw = false;
+                                }
+                            },
                             m(".popover-markup", {style: {"display": "inline"}},
                                 [
                                     m("a.trigger.btn.btn-sm.btn-default", {style: {"height": "30px"}},
@@ -115,14 +124,7 @@ export default class Header {
                                                             })
                                                         ),
                                                         m("p", "A Phoenix-coded event dataset constructed here at The University of Texas at Dallas!"),
-                                                        m("button.btn.btn-primary[id='selectPhoenixRT']",
-                                                            {
-                                                                onclick: function (e) {
-                                                                    console.log("PHOENIX_RT");
-                                                                    setDataset('phoenix_rt');
-                                                                    e.redraw = false;
-                                                                }
-                                                            }, m("span.ladda-label", "Select"))
+                                                        m("button.btn.btn-primary[id='selectPhoenixRT']", m("span.ladda-label", "Select"))
                                                     ]
                                                 ),
 
@@ -141,14 +143,7 @@ export default class Header {
                                                             m("a[href='http://www.clinecenter.illinois.edu/data/event/phoenix/']", "Cline New York Times")
                                                         ),
                                                         m("p", "This data is sourced from the New York Times and collected by the Cline Center for Advanced Social Research."),
-                                                        m("button.btn.btn-primary",
-                                                            {
-                                                                onclick: function (e) {
-                                                                    console.log("TEST");
-                                                                    setDataset('cline_phoenix_nyt');
-                                                                    e.redraw = false;
-                                                                }
-                                                            }, m("span.ladda-label", "Select"))
+                                                        m("button.btn.btn-primary[id='selectClineNYT']", m("span.ladda-label", "Select"))
                                                     ]
                                                 ),
 
@@ -167,14 +162,7 @@ export default class Header {
                                                             m("a[href='http://www.clinecenter.illinois.edu/data/event/phoenix/']", "Cline CIA Broadcast")
                                                         ),
                                                         m("p", "This data is sourced from the CIA Foreign Broadcast Information Service and collected by the Cline Center for Advanced Social Research."),
-                                                        m("button.btn.btn-primary",
-                                                            {
-                                                                onclick: function (e) {
-                                                                    console.log("TEST");
-                                                                    setDataset('cline_phoenix_fbis');
-                                                                    e.redraw = false;
-                                                                }
-                                                            }, m("span.ladda-label", "Select"))
+                                                        m("button.btn.btn-primary[id='selectClineCIA']", m("span.ladda-label", "Select"))
                                                     ]
                                                 ),
 
@@ -193,14 +181,7 @@ export default class Header {
                                                             m("a[href='http://www.clinecenter.illinois.edu/data/event/phoenix/']", "Cline BBC Summary")
                                                         ),
                                                         m("p", "This data is sourced from the BBC Summary of World Broadcasts and collected by the Cline Center for Advanced Social Research."),
-                                                        m("button.btn.btn-primary",
-                                                            {
-                                                                onclick: function (e) {
-                                                                    console.log("TEST");
-                                                                    setDataset('cline_phoenix_swb');
-                                                                    e.redraw = false;
-                                                                }
-                                                            }, m("span.ladda-label", "Select"))
+                                                        m("button.btn.btn-primary[id='selectClineSWB']", m("span.ladda-label", "Select"))
                                                     ]
                                                 ),
 
@@ -219,14 +200,7 @@ export default class Header {
                                                             m("a[href='https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/28075']", "ICEWS Coded Event Data")
                                                         ),
                                                         m("p", "Event data consists of coded interactions between socio-political actors (i.e., cooperative or hostile actions between individuals, groups, sectors and nation states)."),
-                                                        m("button.btn.btn-primary",
-                                                            {
-                                                                onclick: function (e) {
-                                                                    console.log("TEST");
-                                                                    setDataset('icews');
-                                                                    e.redraw = false;
-                                                                }
-                                                            }, m("span.ladda-label", "Select"))
+                                                        m("button.btn.btn-primary[id='selectICEWS']", m("span.ladda-label", "Select"))
                                                     ]
                                                 )
                                             ]
