@@ -1063,9 +1063,10 @@ function createElement(chkSwitch = true, actorType, columnType, value, index, di
                     let temp = binarySearch(value.substring(x, x + 3));
                     if (temp === "no translation found")
                         temp = "?";
-                    tail += temp + " ";
+                    // I switched to dash because of a strange rendering issue with spaces - Shoeboxam (Mike)
+                    tail += temp + "-";
                 }
-                tail = tail.trim();
+                tail = tail.slice(0, -1);
 
                 if (head === "no translation found")
                     $(this).attr("data-content", tail);
