@@ -34,6 +34,10 @@ urlpatterns = (
         views.view_delete_pipelines,
         name='DeletePipelines'),
 
+    url(r'^cancelpipelines/?$',
+        views.view_cancel_pipelines,
+        name='CancelPipelines'),
+
     url(r'^executepipeline/?$',
         view_execute_pipeline.view_execute_pipeline,
         name='ExecutePipeline'),

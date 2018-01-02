@@ -257,15 +257,15 @@ service Core {
 
     // Lists all pipelines in session.
     rpc ListPipelines(PipelineListRequest) returns (PipelineListResult) {}
-    
-    // Deletes specified pipelines in session, returns IDs of successfully deleted pipelines. 
+
+    // Deletes specified pipelines in session, returns IDs of successfully deleted pipelines.
     rpc DeletePipelines(PipelineDeleteRequest) returns (PipelineListResult) {}
 
     // Cancels processing (creation or execution) of specified pipelines in session, but does not
     // delete.  Returns IDs of successfully canceled pipelines.  State of a canceled pipeline is
     // unspecified.  It could be useable or not.
     rpc CancelPipelines(PipelineCancelRequest) returns (PipelineListResult) {}
-    
+
     // Obtain results; lists existing pipelines then streams new results as they become available.
     rpc GetCreatePipelineResults(PipelineCreateResultsRequest) returns (stream PipelineCreateResult) {}
     rpc GetExecutePipelineResults(PipelineExecuteResultsRequest) returns (stream PipelineExecuteResult) {}
