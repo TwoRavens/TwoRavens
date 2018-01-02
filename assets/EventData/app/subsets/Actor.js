@@ -1,5 +1,6 @@
 import * as app from "../app.js"
 import * as d3 from 'd3'
+import {updateAggregTable} from "../aggreg/aggreg";
 
 // Lists of all checked values
 let filterSet = {

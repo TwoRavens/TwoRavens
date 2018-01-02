@@ -489,7 +489,7 @@ window.subgraphAction = function(textId) {
 
         let listCname = arr_location_region_data[cid].country_names;
         let bool = true;
-        if (action.text() === 'All') {
+        if (action === 'All') {
             bool = true;
         }
         else if (action === 'None') {

@@ -376,3 +376,23 @@ let customTour = {
         }
     ]
 };
+
+
+export function tourStartAggregation() {
+    hopscotch.endTour(false);
+    hopscotch.startTour(aggregationTour);
+}
+
+let aggregationTour = {
+    id: "subset-general-tour",
+    showPrevButton: true,
+    nextOnTargetClick: true,
+    steps: [
+        {
+            title: "Data Aggregation",
+            content: "Incomplete.",
+            target: "leftpaneltitle",
+            placement: "right"
+        }
+    ]
+};
