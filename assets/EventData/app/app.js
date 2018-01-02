@@ -181,6 +181,9 @@ console.log("Query: " + JSON.stringify(subsetQuery));
 export var editor;
 
 export function setupBody(){
+    // The editor menu for the custom subsets
+    editor = ace.edit("subsetCustomEditor");
+
     laddaSubset = Ladda.create(document.getElementById("btnSubmit"));
     laddaReset = Ladda.create(document.getElementById("btnReset"));
     laddaDownload = Ladda.create(document.getElementById("buttonDownload"));
