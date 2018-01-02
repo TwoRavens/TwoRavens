@@ -1,0 +1,284 @@
+syntax = "proto3";
+option go_package = "pipeline";
+
+/*
+* This interface is based on the unified API proposal available at
+* https://datadrivendiscovery.org/wiki/pages/viewpage.action?pageId=4260430, with changes made to
+* account for functionality provided by GRPC. The Core API constitutes a threshold capability,
+* aimed at satisfying the train/predict/subset tasks.  We use a URI to point to locations on a file system
+* (or other data store), allowing TA3 systems to select a data subset prior to submission to TA2, as well
+* as provide a means for TA2 systems to write out the results of pipeline train and predict steps.
+*/
+
+import "google/protobuf/descriptor.proto";
+
+extend google.protobuf.FileOptions {
+    // 54100 is from the range reserved for internal use within individual organizations.
+    // If we will make this protocol public, we should obtain globally unique field number from Google.
+    string protocol_version = 54100;
+}
+
+// Date-based version string. Use is it to populate version in SessionRequest and SessionResponse messages.
+option (protocol_version) = "2017.12.20";
+
+message SessionContext {
+    string session_id = 1;
+    // ADDITIONAL FUTURE FIELDS
+}
+
+enum StatusCode {
+    UNKNOWN = 0;
+    OK = 1;
+    CANCELLED = 2;
+    SESSION_UNKNOWN = 3;
+    SESSION_ENDED = 4;
+    SESSION_EXPIRED = 5;
+    INVALID_ARGUMENT = 6;
+    RESOURCE_EXHAUSTED = 7;
+    UNAVAILABLE = 8;
+    FAILED_PRECONDITION = 9;
+    OUT_OF_RANGE = 10;
+    UNIMPLEMENTED = 11;
+    INTERNAL = 12;
+    ABORTED = 13;
+}
+
+message Status {
+    StatusCode code = 1;
+    string details = 2; // optional. Ignored if code = OK
+}
+
+message Response {
+    Status status = 1;
+}
+
+// in the future we could also pass arguments allowing one to fork an existing session,
+// or provide resource limits on a session (asking TA2 system to terminate work if it exceeds a given limit)
+message SessionRequest {
+    string user_agent = 1; // some string identifying the name and version of the TA3 system
+    string version = 2; // shall be set to protocol_version above
+}
+
+message SessionResponse {
+    Response response_info = 1;
+    string user_agent = 2; // some string identifying the name and version of the TA2 system
+    string version = 3; // shall be set to protocol_version above
+    SessionContext context = 4;
+}
+
+enum Progress {
+    PROGRESS_UNKNOWN = 0; // just a default value, not really used
+    SUBMITTED = 1;        // the process was created and needs to run before it is completed
+    RUNNING = 2;          // the process is currently running
+    UPDATED = 3;          // the process is still running, but intermediate results are available
+    COMPLETED = 4;        // process completed and the pipeline/result is now ready for use
+    ERRORED = 5;          // the pipeline entered a failed state and shouldn't be used in ExecutePipeline and ExportPipeline (training) or didn't produce results (testing)
+}
+
+// enums below are based on values taken from the problem annotation schema defined at:
+// https://gitlab.datadrivendiscovery.org/MIT-LL/d3m_data_supply/blob/shared/schemas/problemSchema.json
+// as of version 3.0
+
+enum TaskType {                          // Top level classification of the problem
+    TASK_TYPE_UNDEFINED = 0;             // TaskType not yet declared
+    CLASSIFICATION = 1;
+    REGRESSION = 2;
+    CLUSTERING = 3;
+    LINK_PREDICTION = 4;
+    VERTEX_NOMINATION = 5;
+    COMMUNITY_DETECTION = 6;
+    GRAPH_CLUSTERING = 7;
+    GRAPH_MATCHING = 8;
+    TIME_SERIES_FORECASTING = 9;
+    COLLABORATIVE_FILTERING = 10;
+}
+
+enum TaskSubtype {                       // Secondary classification of the problem
+    TASK_SUBTYPE_UNDEFINED = 0;          // TaskSubtype not yet declared
+    NONE = 1;                            // No secondary task is applicable for this problem
+    BINARY = 2;
+    MULTICLASS = 3;
+    MULTILABEL = 4;
+    UNIVARIATE = 5;
+    MULTIVARIATE = 6;
+    OVERLAPPING = 7;
+    NONOVERLAPPING = 8;
+}
+
+enum OutputType {                        // Specifies the type of the output that the model is required to produce - allowable values are under discussion so no present functionality
+    OUTPUT_TYPE_UNDEFINED = 0;           // Output not yet declared
+}
+
+enum PerformanceMetric {                  // The evaluation metric for any potential solution
+    METRIC_UNDEFINED = 0;                 // Metric not yet declared
+    EXECUTION_TIME = 1;                   // wall clock time to run the pipeline by TA2
+    ACCURACY = 2;                         // sklearn.metrics.accuracy_score
+    F1 = 3;                               // sklearn.metrics.f1_score
+    F1_MICRO = 4;                         // sklearn.metrics.f1_score(average='micro')
+    F1_MACRO = 5;                         // sklearn.metrics.f1_score(average='macro')
+    ROC_AUC = 6;                          // sklearn.metrics.roc_auc_score
+    ROC_AUC_MICRO = 7;                    // sklearn.metrics.roc_auc_score(average='micro')
+    ROC_AUC_MACRO = 8;                    // sklearn.metrics.roc_auc_score(average='macro')
+    MEAN_SQUARED_ERROR = 9;               // sklearn.metrics.mean_squared_error
+    ROOT_MEAN_SQUARED_ERROR = 10;         // sqrt(sklearn.metrics.mean_squared_error)
+    ROOT_MEAN_SQUARED_ERROR_AVG = 11;     // sum(mean_squared_error_list)/len(mean_squared_error_list)
+    MEAN_ABSOLUTE_ERROR = 12;             // sklearn.metrics.mean_absolute_error
+    R_SQUARED = 13;                       // sklearn.metrics.r2_score
+    NORMALIZED_MUTUAL_INFORMATION = 14;
+    JACCARD_SIMILARITY_SCORE = 15;
+}
+
+message Feature {
+    string resource_id = 1;   // ID of resource containing feature as specified in D3M datasetDoc.json schema.  Should be
+                              // be set to a string value of '0' when working with a raw CSV file rather than a D3M dataset.
+    string feature_name = 2;  // Name of feature within resource.
+}
+
+message PipelineCreateRequest {
+    SessionContext context = 1;
+    string dataset_uri = 2;                     // URI pointing to a raw CSV file, or datasetDoc.json (indicating a D3M dataset).
+    TaskType task = 3;
+    TaskSubtype task_subtype = 4;               // can be set to NONE = 1
+    string task_description = 5;                // textual description of the task, if available
+    OutputType output = 6;
+    repeated PerformanceMetric metrics = 7;     // specify a list of evaluation metrics
+    repeated Feature target_features = 8; // specify a list of targets to predict
+    repeated Feature predict_features = 9;// specify a list of predictor features to possibly include in model.  If omitted, use all features located in dataset_uri.
+    int32 max_pipelines = 10;                   // optional maximum number of pipelines to return
+                                                // Note that TA2 may still return more pipelines, so TA3 should keep a list
+                                                // of the top results sorted by the relevant metric if required
+}
+
+message Score {
+    PerformanceMetric metric = 1;
+    float value = 2;
+}
+
+message Pipeline {
+    string predict_result_uri = 1;  // output path to predicted results on training data
+    OutputType output = 2;
+    repeated Score scores = 3;
+}
+
+message PipelineCreateResult {
+    Response response_info = 1; // if pipeline_id is empty, this shall be an error, fatal to the whole create process,
+                                // and the stream should be closed immediately
+                                // if pipeline_id is set and this is an error, it concerns only that single pipeline
+                                // (progress_info should be set to ERRORED) and the create process will continue to
+                                // create and train the other pipelines
+    Progress progress_info = 2; // progress of training this particular pipeline. If ERRORED, TA3 should consider this
+                                // pipeline failed and unavailable for ExecutePipeline or ExportPipeline
+    string pipeline_id = 3;     // required if response_info is not an error
+    // Will be set if progress info value is UPDATED or COMPLETED
+    Pipeline pipeline_info = 4;
+}
+
+message PipelineExecuteRequest {
+    SessionContext context = 1;
+    string pipeline_id = 2;
+    string dataset_uri = 3;     // input path to data to run through completed pipeline - can be a datasetDoc.json file
+                                // for a D3M dataset, or a pointer to a CSV file.
+}
+
+message PipelineExecuteResult {
+    Response response_info = 1; // status of the overall execution. If an error, stream will be closed immediately
+    Progress progress_info = 2;
+    string pipeline_id = 3;     // always the requested pipeline
+    // Will be set if progress info value is UPDATED or COMPLETED
+    string result_uri = 4;      // output path to predicted results on eval data
+}
+
+message PipelineListRequest {
+    SessionContext context = 1;
+}
+
+message PipelineDeleteRequest {
+    SessionContext context = 1;
+    repeated string delete_pipeline_ids = 2; // should not be empty
+}
+
+message PipelineCancelRequest {
+    SessionContext context = 1;
+    repeated string cancel_pipeline_ids = 2; // should not be empty
+}
+
+message PipelineListResult {
+    Response response_info = 1;
+    repeated string pipeline_ids = 2;
+}
+
+message PipelineCreateResultsRequest {
+    SessionContext context = 1;
+    repeated string pipeline_ids = 2; // empty list means all pipelines in the session
+}
+
+message PipelineExecuteResultsRequest {
+    SessionContext context = 1;
+    repeated string pipeline_ids = 2; // empty list means all pipelines in the session
+}
+
+message PipelineExportRequest {
+    SessionContext context = 1;
+    string pipeline_id = 2;
+    string pipeline_exec_uri = 3; // uri to the executable file where the requested pipeline is to be persisted
+}
+
+message SetProblemDocRequest {
+    message ReplaceProblemDocField {
+        oneof update {
+            TaskType task_type = 1;
+            TaskSubtype task_subtype = 2;
+            string task_description = 3;
+            OutputType output_type = 4;
+            PerformanceMetric metric = 5;
+        }
+    }
+    repeated ReplaceProblemDocField updates = 1;
+    SessionContext context = 2;
+}
+
+service Core {
+    // Train step - multiple result messages returned via GRPC streaming.
+    // Request the TA2 system generate pipelines to satisfy a given task,
+    // training data, and targets.  The response is a stream of result messages
+    // indicating progress, failure, or completion of an individual pipeline
+    // creation task associated with the request.  The stream is closed by the
+    // server when all pipeline creation tasks have been completed.
+    rpc CreatePipelines(PipelineCreateRequest) returns (stream PipelineCreateResult) {}
+
+    // Predict step - multiple results messages returned via GRPC streaming.
+    // Request the TA2 system execute a previously created pipeline against an
+    // input dataset.  This response is a stream of result messages indicating
+    // progress, failure, or completion of the pipeline execution task.  The
+    // stream is closed by the server when all pipeline execution tasks have
+    // been completed. Labels / predicted values are made available to TA3
+    // systems for user inspection.
+    rpc ExecutePipeline(PipelineExecuteRequest) returns (stream PipelineExecuteResult) {}
+
+    // Lists all pipelines in session.
+    rpc ListPipelines(PipelineListRequest) returns (PipelineListResult) {}
+    
+    // Deletes specified pipelines in session, returns IDs of successfully deleted pipelines. 
+    rpc DeletePipelines(PipelineDeleteRequest) returns (PipelineListResult) {}
+
+    // Cancels processing (creation or execution) of specified pipelines in session, but does not
+    // delete.  Returns IDs of successfully canceled pipelines.  State of a canceled pipeline is
+    // unspecified.  It could be useable or not.
+    rpc CancelPipelines(PipelineCancelRequest) returns (PipelineListResult) {}
+    
+    // Obtain results; lists existing pipelines then streams new results as they become available.
+    rpc GetCreatePipelineResults(PipelineCreateResultsRequest) returns (stream PipelineCreateResult) {}
+    rpc GetExecutePipelineResults(PipelineExecuteResultsRequest) returns (stream PipelineExecuteResult) {}
+
+    // Export executable of a pipeline, including any optional preprocessing used in session.
+    rpc ExportPipeline(PipelineExportRequest) returns (Response) {}
+
+    // Set problem schema for current session.
+    rpc SetProblemDoc(SetProblemDocRequest) returns (Response) {}
+
+    // Session management.
+    // Create a new user session, which provides a session context for creation and execution of pipelines.
+    rpc StartSession(SessionRequest) returns (SessionResponse) {}
+    // Terminate a user session and release associated context resources.
+    rpc EndSession(SessionContext) returns (Response) {}
+}

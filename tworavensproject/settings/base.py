@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/1.11/ref/settings/
 """
 import os
+import sys
 from os.path import abspath, dirname, join
 from distutils.util import strtobool
 
@@ -17,6 +18,12 @@ from django.core.urlresolvers import reverse_lazy
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = dirname(dirname(dirname(abspath(__file__))))
+
+# Link to copy of the TA3TA2 API
+# https://gitlab.com/datadrivendiscovery/ta3ta2-api
+#
+TA3TA2_API_DIR = join(BASE_DIR, 'tworaven_apps', 'ta3ta2-api')
+sys.path.append(TA3TA2_API_DIR)
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/

@@ -18,8 +18,8 @@ import grpc
 import logging
 import time
 
-from tworaven_apps.ta2_interfaces import core_pb2
-from tworaven_apps.ta2_interfaces import core_pb2_grpc as core_pb2_grpc
+import core_pb2
+import core_pb2_grpc as core_pb2_grpc
 from tworaven_apps.ta2_interfaces.models import TEST_KEY_FILE_URI
 from tworaven_apps.ta2_interfaces.ta2_util import get_predict_file_info_dict
 """

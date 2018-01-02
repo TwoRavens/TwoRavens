@@ -21,7 +21,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='core.proto',
   package='',
   syntax='proto3',
-  serialized_pb=_b('\n\ncore.proto\x1a google/protobuf/descriptor.proto\"$\n\x0eSessionContext\x12\x12\n\nsession_id\x18\x01 \x01(\t\"4\n\x06Status\x12\x19\n\x04\x63ode\x18\x01 \x01(\x0e\x32\x0b.StatusCode\x12\x0f\n\x07\x64\x65tails\x18\x02 \x01(\t\"#\n\x08Response\x12\x17\n\x06status\x18\x01 \x01(\x0b\x32\x07.Status\"5\n\x0eSessionRequest\x12\x12\n\nuser_agent\x18\x01 \x01(\t\x12\x0f\n\x07version\x18\x02 \x01(\t\"z\n\x0fSessionResponse\x12 \n\rresponse_info\x18\x01 \x01(\x0b\x32\t.Response\x12\x12\n\nuser_agent\x18\x02 \x01(\t\x12\x0f\n\x07version\x18\x03 \x01(\t\x12 \n\x07\x63ontext\x18\x04 \x01(\x0b\x32\x0f.SessionContext\"/\n\x07\x46\x65\x61ture\x12\x12\n\nfeature_id\x18\x01 \x01(\t\x12\x10\n\x08\x64\x61ta_uri\x18\x02 \x01(\t\"\xa3\x02\n\x15PipelineCreateRequest\x12 \n\x07\x63ontext\x18\x01 \x01(\x0b\x32\x0f.SessionContext\x12 \n\x0etrain_features\x18\x02 \x03(\x0b\x32\x08.Feature\x12\x17\n\x04task\x18\x03 \x01(\x0e\x32\t.TaskType\x12\"\n\x0ctask_subtype\x18\x04 \x01(\x0e\x32\x0c.TaskSubtype\x12\x18\n\x10task_description\x18\x05 \x01(\t\x12\x1b\n\x06output\x18\x06 \x01(\x0e\x32\x0b.OutputType\x12\x18\n\x07metrics\x18\x07 \x03(\x0e\x32\x07.Metric\x12!\n\x0ftarget_features\x18\x08 \x03(\x0b\x32\x08.Feature\x12\x15\n\rmax_pipelines\x18\t \x01(\x05\"/\n\x05Score\x12\x17\n\x06metric\x18\x01 \x01(\x0e\x32\x07.Metric\x12\r\n\x05value\x18\x02 \x01(\x02\"\\\n\x08Pipeline\x12\x1b\n\x13predict_result_uris\x18\x01 \x03(\t\x12\x1b\n\x06output\x18\x02 \x01(\x0e\x32\x0b.OutputType\x12\x16\n\x06scores\x18\x03 \x03(\x0b\x32\x06.Score\"\x91\x01\n\x14PipelineCreateResult\x12 \n\rresponse_info\x18\x01 \x01(\x0b\x32\t.Response\x12 \n\rprogress_info\x18\x02 \x01(\x0e\x32\t.Progress\x12\x13\n\x0bpipeline_id\x18\x03 \x01(\t\x12 \n\rpipeline_info\x18\x04 \x01(\x0b\x32\t.Pipeline\"s\n\x16PipelineExecuteRequest\x12 \n\x07\x63ontext\x18\x01 \x01(\x0b\x32\x0f.SessionContext\x12\x13\n\x0bpipeline_id\x18\x02 \x01(\t\x12\"\n\x10predict_features\x18\x03 \x03(\x0b\x32\x08.Feature\"\x85\x01\n\x15PipelineExecuteResult\x12 \n\rresponse_info\x18\x01 \x01(\x0b\x32\t.Response\x12 \n\rprogress_info\x18\x02 \x01(\x0e\x32\t.Progress\x12\x13\n\x0bpipeline_id\x18\x03 \x01(\t\x12\x13\n\x0bresult_uris\x18\x04 \x03(\t\"7\n\x13PipelineListRequest\x12 \n\x07\x63ontext\x18\x01 \x01(\x0b\x32\x0f.SessionContext\"V\n\x15PipelineDeleteRequest\x12 \n\x07\x63ontext\x18\x01 \x01(\x0b\x32\x0f.SessionContext\x12\x1b\n\x13\x64\x65lete_pipeline_ids\x18\x02 \x03(\t\"L\n\x12PipelineListResult\x12 \n\rresponse_info\x18\x01 \x01(\x0b\x32\t.Response\x12\x14\n\x0cpipeline_ids\x18\x02 \x03(\t\"V\n\x1cPipelineCreateResultsRequest\x12 \n\x07\x63ontext\x18\x01 \x01(\x0b\x32\x0f.SessionContext\x12\x14\n\x0cpipeline_ids\x18\x02 \x03(\t\"W\n\x1dPipelineExecuteResultsRequest\x12 \n\x07\x63ontext\x18\x01 \x01(\x0b\x32\x0f.SessionContext\x12\x14\n\x0cpipeline_ids\x18\x02 \x03(\t\"i\n\x15PipelineExportRequest\x12 \n\x07\x63ontext\x18\x01 \x01(\x0b\x32\x0f.SessionContext\x12\x13\n\x0bpipeline_id\x18\x02 \x01(\t\x12\x19\n\x11pipeline_exec_uri\x18\x03 \x01(\t\"\xcf\x02\n\x1aUpdateProblemSchemaRequest\x12\x46\n\x07updates\x18\x01 \x03(\x0b\x32\x35.UpdateProblemSchemaRequest.ReplaceProblemSchemaField\x12 \n\x07\x63ontext\x18\x02 \x01(\x0b\x32\x0f.SessionContext\x1a\xc6\x01\n\x19ReplaceProblemSchemaField\x12\x1e\n\ttask_type\x18\x01 \x01(\x0e\x32\t.TaskTypeH\x00\x12$\n\x0ctask_subtype\x18\x02 \x01(\x0e\x32\x0c.TaskSubtypeH\x00\x12\x1a\n\x10task_description\x18\x03 \x01(\tH\x00\x12\"\n\x0boutput_type\x18\x04 \x01(\x0e\x32\x0b.OutputTypeH\x00\x12\x19\n\x06metric\x18\x05 \x01(\x0e\x32\x07.MetricH\x00\x42\x08\n\x06update*\x85\x02\n\nStatusCode\x12\x0b\n\x07UNKNOWN\x10\x00\x12\x06\n\x02OK\x10\x01\x12\r\n\tCANCELLED\x10\x02\x12\x13\n\x0fSESSION_UNKNOWN\x10\x03\x12\x11\n\rSESSION_ENDED\x10\x04\x12\x13\n\x0fSESSION_EXPIRED\x10\x05\x12\x14\n\x10INVALID_ARGUMENT\x10\x06\x12\x16\n\x12RESOURCE_EXHAUSTED\x10\x07\x12\x0f\n\x0bUNAVAILABLE\x10\x08\x12\x17\n\x13\x46\x41ILED_PRECONDITION\x10\t\x12\x10\n\x0cOUT_OF_RANGE\x10\n\x12\x11\n\rUNIMPLEMENTED\x10\x0b\x12\x0c\n\x08INTERNAL\x10\x0c\x12\x0b\n\x07\x41\x42ORTED\x10\r*O\n\x08Progress\x12\r\n\tSUBMITTED\x10\x00\x12\x0b\n\x07RUNNING\x10\x01\x12\x0b\n\x07UPDATED\x10\x02\x12\r\n\tCOMPLETED\x10\x03\x12\x0b\n\x07\x45RRORED\x10\x04*\xf2\x01\n\x08TaskType\x12\x17\n\x13TASK_TYPE_UNDEFINED\x10\x00\x12\x12\n\x0e\x43LASSIFICATION\x10\x01\x12\x0e\n\nREGRESSION\x10\x02\x12\x17\n\x13SIMILARITY_MATCHING\x10\x03\x12\x13\n\x0fLINK_PREDICTION\x10\x04\x12\x15\n\x11VERTEX_NOMINATION\x10\x05\x12\x17\n\x13\x43OMMUNITY_DETECTION\x10\x06\x12\x12\n\x0eGRAPH_MATCHING\x10\x07\x12\x1a\n\x16TIMESERIES_FORECASTING\x10\x08\x12\x1b\n\x17\x43OLLABORATIVE_FILTERING\x10\t*\xa6\x01\n\x0bTaskSubtype\x12\x1a\n\x16TASK_SUBTYPE_UNDEFINED\x10\x00\x12\x08\n\x04NONE\x10\x01\x12\n\n\x06\x42INARY\x10\x02\x12\x0e\n\nMULTICLASS\x10\x03\x12\x0e\n\nMULTILABEL\x10\x04\x12\x0e\n\nUNIVARIATE\x10\x05\x12\x10\n\x0cMULTIVARIATE\x10\x06\x12\x0f\n\x0bOVERLAPPING\x10\x07\x12\x12\n\x0eNONOVERLAPPING\x10\x08*\xaa\x01\n\nOutputType\x12\x19\n\x15OUTPUT_TYPE_UNDEFINED\x10\x00\x12\x0f\n\x0b\x43LASS_LABEL\x10\x01\x12\x0f\n\x0bPROBABILITY\x10\x02\x12\x08\n\x04REAL\x10\x03\x12\x0b\n\x07NODE_ID\x10\x04\x12\x16\n\x12VECTOR_CLASS_LABEL\x10\x05\x12\x15\n\x11VECTOR_STOCHASTIC\x10\x06\x12\x0f\n\x0bVECTOR_REAL\x10\x07\x12\x08\n\x04\x46ILE\x10\x08*\xd6\x02\n\x06Metric\x12\x14\n\x10METRIC_UNDEFINED\x10\x00\x12\x0c\n\x08\x41\x43\x43URACY\x10\x01\x12\x06\n\x02\x46\x31\x10\x02\x12\x0c\n\x08\x46\x31_MICRO\x10\x03\x12\x0c\n\x08\x46\x31_MACRO\x10\x04\x12\x0b\n\x07ROC_AUC\x10\x05\x12\x11\n\rROC_AUC_MICRO\x10\x06\x12\x11\n\rROC_AUC_MACRO\x10\x07\x12\x1b\n\x17ROOT_MEAN_SQUARED_ERROR\x10\x08\x12\x1f\n\x1bROOT_MEAN_SQUARED_ERROR_AVG\x10\t\x12\x17\n\x13MEAN_ABSOLUTE_ERROR\x10\n\x12\r\n\tR_SQUARED\x10\x0b\x12!\n\x1dNORMALIZED_MUTUAL_INFORMATION\x10\x0c\x12\x1c\n\x18JACCARD_SIMILARITY_SCORE\x10\r\x12\x12\n\x0e\x45XECUTION_TIME\x10\x0e\x12\x16\n\x12MEAN_SQUARED_ERROR\x10\x0f\x32\x9c\x05\n\x04\x43ore\x12\x44\n\x0f\x43reatePipelines\x12\x16.PipelineCreateRequest\x1a\x15.PipelineCreateResult\"\x00\x30\x01\x12\x46\n\x0f\x45xecutePipeline\x12\x17.PipelineExecuteRequest\x1a\x16.PipelineExecuteResult\"\x00\x30\x01\x12<\n\rListPipelines\x12\x14.PipelineListRequest\x1a\x13.PipelineListResult\"\x00\x12@\n\x0f\x44\x65letePipelines\x12\x16.PipelineDeleteRequest\x1a\x13.PipelineListResult\"\x00\x12T\n\x18GetCreatePipelineResults\x12\x1d.PipelineCreateResultsRequest\x1a\x15.PipelineCreateResult\"\x00\x30\x01\x12W\n\x19GetExecutePipelineResults\x12\x1e.PipelineExecuteResultsRequest\x1a\x16.PipelineExecuteResult\"\x00\x30\x01\x12\x35\n\x0e\x45xportPipeline\x12\x16.PipelineExportRequest\x1a\t.Response\"\x00\x12?\n\x13UpdateProblemSchema\x12\x1b.UpdateProblemSchemaRequest\x1a\t.Response\"\x00\x12\x33\n\x0cStartSession\x12\x0f.SessionRequest\x1a\x10.SessionResponse\"\x00\x12*\n\nEndSession\x12\x0f.SessionContext\x1a\t.Response\"\x00:8\n\x10protocol_version\x12\x1c.google.protobuf.FileOptions\x18\xd4\xa6\x03 \x01(\tB\x18Z\x08pipeline\xa2\xb5\x1a\n2017.10.10b\x06proto3')
+  serialized_pb=_b('\n\ncore.proto\x1a google/protobuf/descriptor.proto\"$\n\x0eSessionContext\x12\x12\n\nsession_id\x18\x01 \x01(\t\"4\n\x06Status\x12\x19\n\x04\x63ode\x18\x01 \x01(\x0e\x32\x0b.StatusCode\x12\x0f\n\x07\x64\x65tails\x18\x02 \x01(\t\"#\n\x08Response\x12\x17\n\x06status\x18\x01 \x01(\x0b\x32\x07.Status\"5\n\x0eSessionRequest\x12\x12\n\nuser_agent\x18\x01 \x01(\t\x12\x0f\n\x07version\x18\x02 \x01(\t\"z\n\x0fSessionResponse\x12 \n\rresponse_info\x18\x01 \x01(\x0b\x32\t.Response\x12\x12\n\nuser_agent\x18\x02 \x01(\t\x12\x0f\n\x07version\x18\x03 \x01(\t\x12 \n\x07\x63ontext\x18\x04 \x01(\x0b\x32\x0f.SessionContext\"4\n\x07\x46\x65\x61ture\x12\x13\n\x0bresource_id\x18\x01 \x01(\t\x12\x14\n\x0c\x66\x65\x61ture_name\x18\x02 \x01(\t\"\xc5\x02\n\x15PipelineCreateRequest\x12 \n\x07\x63ontext\x18\x01 \x01(\x0b\x32\x0f.SessionContext\x12\x13\n\x0b\x64\x61taset_uri\x18\x02 \x01(\t\x12\x17\n\x04task\x18\x03 \x01(\x0e\x32\t.TaskType\x12\"\n\x0ctask_subtype\x18\x04 \x01(\x0e\x32\x0c.TaskSubtype\x12\x18\n\x10task_description\x18\x05 \x01(\t\x12\x1b\n\x06output\x18\x06 \x01(\x0e\x32\x0b.OutputType\x12#\n\x07metrics\x18\x07 \x03(\x0e\x32\x12.PerformanceMetric\x12!\n\x0ftarget_features\x18\x08 \x03(\x0b\x32\x08.Feature\x12\"\n\x10predict_features\x18\t \x03(\x0b\x32\x08.Feature\x12\x15\n\rmax_pipelines\x18\n \x01(\x05\":\n\x05Score\x12\"\n\x06metric\x18\x01 \x01(\x0e\x32\x12.PerformanceMetric\x12\r\n\x05value\x18\x02 \x01(\x02\"[\n\x08Pipeline\x12\x1a\n\x12predict_result_uri\x18\x01 \x01(\t\x12\x1b\n\x06output\x18\x02 \x01(\x0e\x32\x0b.OutputType\x12\x16\n\x06scores\x18\x03 \x03(\x0b\x32\x06.Score\"\x91\x01\n\x14PipelineCreateResult\x12 \n\rresponse_info\x18\x01 \x01(\x0b\x32\t.Response\x12 \n\rprogress_info\x18\x02 \x01(\x0e\x32\t.Progress\x12\x13\n\x0bpipeline_id\x18\x03 \x01(\t\x12 \n\rpipeline_info\x18\x04 \x01(\x0b\x32\t.Pipeline\"d\n\x16PipelineExecuteRequest\x12 \n\x07\x63ontext\x18\x01 \x01(\x0b\x32\x0f.SessionContext\x12\x13\n\x0bpipeline_id\x18\x02 \x01(\t\x12\x13\n\x0b\x64\x61taset_uri\x18\x03 \x01(\t\"\x84\x01\n\x15PipelineExecuteResult\x12 \n\rresponse_info\x18\x01 \x01(\x0b\x32\t.Response\x12 \n\rprogress_info\x18\x02 \x01(\x0e\x32\t.Progress\x12\x13\n\x0bpipeline_id\x18\x03 \x01(\t\x12\x12\n\nresult_uri\x18\x04 \x01(\t\"7\n\x13PipelineListRequest\x12 \n\x07\x63ontext\x18\x01 \x01(\x0b\x32\x0f.SessionContext\"V\n\x15PipelineDeleteRequest\x12 \n\x07\x63ontext\x18\x01 \x01(\x0b\x32\x0f.SessionContext\x12\x1b\n\x13\x64\x65lete_pipeline_ids\x18\x02 \x03(\t\"V\n\x15PipelineCancelRequest\x12 \n\x07\x63ontext\x18\x01 \x01(\x0b\x32\x0f.SessionContext\x12\x1b\n\x13\x63\x61ncel_pipeline_ids\x18\x02 \x03(\t\"L\n\x12PipelineListResult\x12 \n\rresponse_info\x18\x01 \x01(\x0b\x32\t.Response\x12\x14\n\x0cpipeline_ids\x18\x02 \x03(\t\"V\n\x1cPipelineCreateResultsRequest\x12 \n\x07\x63ontext\x18\x01 \x01(\x0b\x32\x0f.SessionContext\x12\x14\n\x0cpipeline_ids\x18\x02 \x03(\t\"W\n\x1dPipelineExecuteResultsRequest\x12 \n\x07\x63ontext\x18\x01 \x01(\x0b\x32\x0f.SessionContext\x12\x14\n\x0cpipeline_ids\x18\x02 \x03(\t\"i\n\x15PipelineExportRequest\x12 \n\x07\x63ontext\x18\x01 \x01(\x0b\x32\x0f.SessionContext\x12\x13\n\x0bpipeline_id\x18\x02 \x01(\t\x12\x19\n\x11pipeline_exec_uri\x18\x03 \x01(\t\"\xc8\x02\n\x14SetProblemDocRequest\x12=\n\x07updates\x18\x01 \x03(\x0b\x32,.SetProblemDocRequest.ReplaceProblemDocField\x12 \n\x07\x63ontext\x18\x02 \x01(\x0b\x32\x0f.SessionContext\x1a\xce\x01\n\x16ReplaceProblemDocField\x12\x1e\n\ttask_type\x18\x01 \x01(\x0e\x32\t.TaskTypeH\x00\x12$\n\x0ctask_subtype\x18\x02 \x01(\x0e\x32\x0c.TaskSubtypeH\x00\x12\x1a\n\x10task_description\x18\x03 \x01(\tH\x00\x12\"\n\x0boutput_type\x18\x04 \x01(\x0e\x32\x0b.OutputTypeH\x00\x12$\n\x06metric\x18\x05 \x01(\x0e\x32\x12.PerformanceMetricH\x00\x42\x08\n\x06update*\x85\x02\n\nStatusCode\x12\x0b\n\x07UNKNOWN\x10\x00\x12\x06\n\x02OK\x10\x01\x12\r\n\tCANCELLED\x10\x02\x12\x13\n\x0fSESSION_UNKNOWN\x10\x03\x12\x11\n\rSESSION_ENDED\x10\x04\x12\x13\n\x0fSESSION_EXPIRED\x10\x05\x12\x14\n\x10INVALID_ARGUMENT\x10\x06\x12\x16\n\x12RESOURCE_EXHAUSTED\x10\x07\x12\x0f\n\x0bUNAVAILABLE\x10\x08\x12\x17\n\x13\x46\x41ILED_PRECONDITION\x10\t\x12\x10\n\x0cOUT_OF_RANGE\x10\n\x12\x11\n\rUNIMPLEMENTED\x10\x0b\x12\x0c\n\x08INTERNAL\x10\x0c\x12\x0b\n\x07\x41\x42ORTED\x10\r*e\n\x08Progress\x12\x14\n\x10PROGRESS_UNKNOWN\x10\x00\x12\r\n\tSUBMITTED\x10\x01\x12\x0b\n\x07RUNNING\x10\x02\x12\x0b\n\x07UPDATED\x10\x03\x12\r\n\tCOMPLETED\x10\x04\x12\x0b\n\x07\x45RRORED\x10\x05*\x80\x02\n\x08TaskType\x12\x17\n\x13TASK_TYPE_UNDEFINED\x10\x00\x12\x12\n\x0e\x43LASSIFICATION\x10\x01\x12\x0e\n\nREGRESSION\x10\x02\x12\x0e\n\nCLUSTERING\x10\x03\x12\x13\n\x0fLINK_PREDICTION\x10\x04\x12\x15\n\x11VERTEX_NOMINATION\x10\x05\x12\x17\n\x13\x43OMMUNITY_DETECTION\x10\x06\x12\x14\n\x10GRAPH_CLUSTERING\x10\x07\x12\x12\n\x0eGRAPH_MATCHING\x10\x08\x12\x1b\n\x17TIME_SERIES_FORECASTING\x10\t\x12\x1b\n\x17\x43OLLABORATIVE_FILTERING\x10\n*\xa6\x01\n\x0bTaskSubtype\x12\x1a\n\x16TASK_SUBTYPE_UNDEFINED\x10\x00\x12\x08\n\x04NONE\x10\x01\x12\n\n\x06\x42INARY\x10\x02\x12\x0e\n\nMULTICLASS\x10\x03\x12\x0e\n\nMULTILABEL\x10\x04\x12\x0e\n\nUNIVARIATE\x10\x05\x12\x10\n\x0cMULTIVARIATE\x10\x06\x12\x0f\n\x0bOVERLAPPING\x10\x07\x12\x12\n\x0eNONOVERLAPPING\x10\x08*\'\n\nOutputType\x12\x19\n\x15OUTPUT_TYPE_UNDEFINED\x10\x00*\xe1\x02\n\x11PerformanceMetric\x12\x14\n\x10METRIC_UNDEFINED\x10\x00\x12\x12\n\x0e\x45XECUTION_TIME\x10\x01\x12\x0c\n\x08\x41\x43\x43URACY\x10\x02\x12\x06\n\x02\x46\x31\x10\x03\x12\x0c\n\x08\x46\x31_MICRO\x10\x04\x12\x0c\n\x08\x46\x31_MACRO\x10\x05\x12\x0b\n\x07ROC_AUC\x10\x06\x12\x11\n\rROC_AUC_MICRO\x10\x07\x12\x11\n\rROC_AUC_MACRO\x10\x08\x12\x16\n\x12MEAN_SQUARED_ERROR\x10\t\x12\x1b\n\x17ROOT_MEAN_SQUARED_ERROR\x10\n\x12\x1f\n\x1bROOT_MEAN_SQUARED_ERROR_AVG\x10\x0b\x12\x17\n\x13MEAN_ABSOLUTE_ERROR\x10\x0c\x12\r\n\tR_SQUARED\x10\r\x12!\n\x1dNORMALIZED_MUTUAL_INFORMATION\x10\x0e\x12\x1c\n\x18JACCARD_SIMILARITY_SCORE\x10\x0f\x32\xd2\x05\n\x04\x43ore\x12\x44\n\x0f\x43reatePipelines\x12\x16.PipelineCreateRequest\x1a\x15.PipelineCreateResult\"\x00\x30\x01\x12\x46\n\x0f\x45xecutePipeline\x12\x17.PipelineExecuteRequest\x1a\x16.PipelineExecuteResult\"\x00\x30\x01\x12<\n\rListPipelines\x12\x14.PipelineListRequest\x1a\x13.PipelineListResult\"\x00\x12@\n\x0f\x44\x65letePipelines\x12\x16.PipelineDeleteRequest\x1a\x13.PipelineListResult\"\x00\x12@\n\x0f\x43\x61ncelPipelines\x12\x16.PipelineCancelRequest\x1a\x13.PipelineListResult\"\x00\x12T\n\x18GetCreatePipelineResults\x12\x1d.PipelineCreateResultsRequest\x1a\x15.PipelineCreateResult\"\x00\x30\x01\x12W\n\x19GetExecutePipelineResults\x12\x1e.PipelineExecuteResultsRequest\x1a\x16.PipelineExecuteResult\"\x00\x30\x01\x12\x35\n\x0e\x45xportPipeline\x12\x16.PipelineExportRequest\x1a\t.Response\"\x00\x12\x33\n\rSetProblemDoc\x12\x15.SetProblemDocRequest\x1a\t.Response\"\x00\x12\x33\n\x0cStartSession\x12\x0f.SessionRequest\x1a\x10.SessionResponse\"\x00\x12*\n\nEndSession\x12\x0f.SessionContext\x1a\t.Response\"\x00:8\n\x10protocol_version\x12\x1c.google.protobuf.FileOptions\x18\xd4\xa6\x03 \x01(\tB\x18Z\x08pipeline\xa2\xb5\x1a\n2017.12.20b\x06proto3')
   ,
   dependencies=[google_dot_protobuf_dot_descriptor__pb2.DESCRIPTOR,])
 
@@ -90,8 +90,8 @@ _STATUSCODE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   options=None,
-  serialized_start=2089,
-  serialized_end=2350,
+  serialized_start=2203,
+  serialized_end=2464,
 )
 _sym_db.RegisterEnumDescriptor(_STATUSCODE)
 
@@ -103,30 +103,34 @@ _PROGRESS = _descriptor.EnumDescriptor(
   file=DESCRIPTOR,
   values=[
     _descriptor.EnumValueDescriptor(
-      name='SUBMITTED', index=0, number=0,
+      name='PROGRESS_UNKNOWN', index=0, number=0,
       options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
-      name='RUNNING', index=1, number=1,
+      name='SUBMITTED', index=1, number=1,
       options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
-      name='UPDATED', index=2, number=2,
+      name='RUNNING', index=2, number=2,
       options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
-      name='COMPLETED', index=3, number=3,
+      name='UPDATED', index=3, number=3,
       options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
-      name='ERRORED', index=4, number=4,
+      name='COMPLETED', index=4, number=4,
+      options=None,
+      type=None),
+    _descriptor.EnumValueDescriptor(
+      name='ERRORED', index=5, number=5,
       options=None,
       type=None),
   ],
   containing_type=None,
   options=None,
-  serialized_start=2352,
-  serialized_end=2431,
+  serialized_start=2466,
+  serialized_end=2567,
 )
 _sym_db.RegisterEnumDescriptor(_PROGRESS)
 
@@ -150,7 +154,7 @@ _TASKTYPE = _descriptor.EnumDescriptor(
       options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
-      name='SIMILARITY_MATCHING', index=3, number=3,
+      name='CLUSTERING', index=3, number=3,
       options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
@@ -166,22 +170,26 @@ _TASKTYPE = _descriptor.EnumDescriptor(
       options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
-      name='GRAPH_MATCHING', index=7, number=7,
+      name='GRAPH_CLUSTERING', index=7, number=7,
       options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
-      name='TIMESERIES_FORECASTING', index=8, number=8,
+      name='GRAPH_MATCHING', index=8, number=8,
       options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
-      name='COLLABORATIVE_FILTERING', index=9, number=9,
+      name='TIME_SERIES_FORECASTING', index=9, number=9,
+      options=None,
+      type=None),
+    _descriptor.EnumValueDescriptor(
+      name='COLLABORATIVE_FILTERING', index=10, number=10,
       options=None,
       type=None),
   ],
   containing_type=None,
   options=None,
-  serialized_start=2434,
-  serialized_end=2676,
+  serialized_start=2570,
+  serialized_end=2826,
 )
 _sym_db.RegisterEnumDescriptor(_TASKTYPE)
 
@@ -231,8 +239,8 @@ _TASKSUBTYPE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   options=None,
-  serialized_start=2679,
-  serialized_end=2845,
+  serialized_start=2829,
+  serialized_end=2995,
 )
 _sym_db.RegisterEnumDescriptor(_TASKSUBTYPE)
 
@@ -247,50 +255,18 @@ _OUTPUTTYPE = _descriptor.EnumDescriptor(
       name='OUTPUT_TYPE_UNDEFINED', index=0, number=0,
       options=None,
       type=None),
-    _descriptor.EnumValueDescriptor(
-      name='CLASS_LABEL', index=1, number=1,
-      options=None,
-      type=None),
-    _descriptor.EnumValueDescriptor(
-      name='PROBABILITY', index=2, number=2,
-      options=None,
-      type=None),
-    _descriptor.EnumValueDescriptor(
-      name='REAL', index=3, number=3,
-      options=None,
-      type=None),
-    _descriptor.EnumValueDescriptor(
-      name='NODE_ID', index=4, number=4,
-      options=None,
-      type=None),
-    _descriptor.EnumValueDescriptor(
-      name='VECTOR_CLASS_LABEL', index=5, number=5,
-      options=None,
-      type=None),
-    _descriptor.EnumValueDescriptor(
-      name='VECTOR_STOCHASTIC', index=6, number=6,
-      options=None,
-      type=None),
-    _descriptor.EnumValueDescriptor(
-      name='VECTOR_REAL', index=7, number=7,
-      options=None,
-      type=None),
-    _descriptor.EnumValueDescriptor(
-      name='FILE', index=8, number=8,
-      options=None,
-      type=None),
   ],
   containing_type=None,
   options=None,
-  serialized_start=2848,
-  serialized_end=3018,
+  serialized_start=2997,
+  serialized_end=3036,
 )
 _sym_db.RegisterEnumDescriptor(_OUTPUTTYPE)
 
 OutputType = enum_type_wrapper.EnumTypeWrapper(_OUTPUTTYPE)
-_METRIC = _descriptor.EnumDescriptor(
-  name='Metric',
-  full_name='Metric',
+_PERFORMANCEMETRIC = _descriptor.EnumDescriptor(
+  name='PerformanceMetric',
+  full_name='PerformanceMetric',
   filename=None,
   file=DESCRIPTOR,
   values=[
@@ -299,74 +275,74 @@ _METRIC = _descriptor.EnumDescriptor(
       options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
-      name='ACCURACY', index=1, number=1,
+      name='EXECUTION_TIME', index=1, number=1,
       options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
-      name='F1', index=2, number=2,
+      name='ACCURACY', index=2, number=2,
       options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
-      name='F1_MICRO', index=3, number=3,
+      name='F1', index=3, number=3,
       options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
-      name='F1_MACRO', index=4, number=4,
+      name='F1_MICRO', index=4, number=4,
       options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
-      name='ROC_AUC', index=5, number=5,
+      name='F1_MACRO', index=5, number=5,
       options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
-      name='ROC_AUC_MICRO', index=6, number=6,
+      name='ROC_AUC', index=6, number=6,
       options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
-      name='ROC_AUC_MACRO', index=7, number=7,
+      name='ROC_AUC_MICRO', index=7, number=7,
       options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
-      name='ROOT_MEAN_SQUARED_ERROR', index=8, number=8,
+      name='ROC_AUC_MACRO', index=8, number=8,
       options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
-      name='ROOT_MEAN_SQUARED_ERROR_AVG', index=9, number=9,
+      name='MEAN_SQUARED_ERROR', index=9, number=9,
       options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
-      name='MEAN_ABSOLUTE_ERROR', index=10, number=10,
+      name='ROOT_MEAN_SQUARED_ERROR', index=10, number=10,
       options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
-      name='R_SQUARED', index=11, number=11,
+      name='ROOT_MEAN_SQUARED_ERROR_AVG', index=11, number=11,
       options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
-      name='NORMALIZED_MUTUAL_INFORMATION', index=12, number=12,
+      name='MEAN_ABSOLUTE_ERROR', index=12, number=12,
       options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
-      name='JACCARD_SIMILARITY_SCORE', index=13, number=13,
+      name='R_SQUARED', index=13, number=13,
       options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
-      name='EXECUTION_TIME', index=14, number=14,
+      name='NORMALIZED_MUTUAL_INFORMATION', index=14, number=14,
       options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
-      name='MEAN_SQUARED_ERROR', index=15, number=15,
+      name='JACCARD_SIMILARITY_SCORE', index=15, number=15,
       options=None,
       type=None),
   ],
   containing_type=None,
   options=None,
-  serialized_start=3021,
-  serialized_end=3363,
+  serialized_start=3039,
+  serialized_end=3392,
 )
-_sym_db.RegisterEnumDescriptor(_METRIC)
+_sym_db.RegisterEnumDescriptor(_PERFORMANCEMETRIC)
 
-Metric = enum_type_wrapper.EnumTypeWrapper(_METRIC)
+PerformanceMetric = enum_type_wrapper.EnumTypeWrapper(_PERFORMANCEMETRIC)
 UNKNOWN = 0
 OK = 1
 CANCELLED = 2
@@ -381,21 +357,23 @@ OUT_OF_RANGE = 10
 UNIMPLEMENTED = 11
 INTERNAL = 12
 ABORTED = 13
-SUBMITTED = 0
-RUNNING = 1
-UPDATED = 2
-COMPLETED = 3
-ERRORED = 4
+PROGRESS_UNKNOWN = 0
+SUBMITTED = 1
+RUNNING = 2
+UPDATED = 3
+COMPLETED = 4
+ERRORED = 5
 TASK_TYPE_UNDEFINED = 0
 CLASSIFICATION = 1
 REGRESSION = 2
-SIMILARITY_MATCHING = 3
+CLUSTERING = 3
 LINK_PREDICTION = 4
 VERTEX_NOMINATION = 5
 COMMUNITY_DETECTION = 6
-GRAPH_MATCHING = 7
-TIMESERIES_FORECASTING = 8
-COLLABORATIVE_FILTERING = 9
+GRAPH_CLUSTERING = 7
+GRAPH_MATCHING = 8
+TIME_SERIES_FORECASTING = 9
+COLLABORATIVE_FILTERING = 10
 TASK_SUBTYPE_UNDEFINED = 0
 NONE = 1
 BINARY = 2
@@ -406,30 +384,22 @@ MULTIVARIATE = 6
 OVERLAPPING = 7
 NONOVERLAPPING = 8
 OUTPUT_TYPE_UNDEFINED = 0
-CLASS_LABEL = 1
-PROBABILITY = 2
-REAL = 3
-NODE_ID = 4
-VECTOR_CLASS_LABEL = 5
-VECTOR_STOCHASTIC = 6
-VECTOR_REAL = 7
-FILE = 8
 METRIC_UNDEFINED = 0
-ACCURACY = 1
-F1 = 2
-F1_MICRO = 3
-F1_MACRO = 4
-ROC_AUC = 5
-ROC_AUC_MICRO = 6
-ROC_AUC_MACRO = 7
-ROOT_MEAN_SQUARED_ERROR = 8
-ROOT_MEAN_SQUARED_ERROR_AVG = 9
-MEAN_ABSOLUTE_ERROR = 10
-R_SQUARED = 11
-NORMALIZED_MUTUAL_INFORMATION = 12
-JACCARD_SIMILARITY_SCORE = 13
-EXECUTION_TIME = 14
-MEAN_SQUARED_ERROR = 15
+EXECUTION_TIME = 1
+ACCURACY = 2
+F1 = 3
+F1_MICRO = 4
+F1_MACRO = 5
+ROC_AUC = 6
+ROC_AUC_MICRO = 7
+ROC_AUC_MACRO = 8
+MEAN_SQUARED_ERROR = 9
+ROOT_MEAN_SQUARED_ERROR = 10
+ROOT_MEAN_SQUARED_ERROR_AVG = 11
+MEAN_ABSOLUTE_ERROR = 12
+R_SQUARED = 13
+NORMALIZED_MUTUAL_INFORMATION = 14
+JACCARD_SIMILARITY_SCORE = 15
 
 PROTOCOL_VERSION_FIELD_NUMBER = 54100
 protocol_version = _descriptor.FieldDescriptor(
@@ -438,7 +408,7 @@ protocol_version = _descriptor.FieldDescriptor(
   has_default_value=False, default_value=_b("").decode('utf-8'),
   message_type=None, enum_type=None, containing_type=None,
   is_extension=True, extension_scope=None,
-  options=None)
+  options=None, file=DESCRIPTOR)
 
 
 _SESSIONCONTEXT = _descriptor.Descriptor(
@@ -454,7 +424,7 @@ _SESSIONCONTEXT = _descriptor.Descriptor(
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -485,14 +455,14 @@ _STATUS = _descriptor.Descriptor(
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='details', full_name='Status.details', index=1,
       number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -523,7 +493,7 @@ _RESPONSE = _descriptor.Descriptor(
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -554,14 +524,14 @@ _SESSIONREQUEST = _descriptor.Descriptor(
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='version', full_name='SessionRequest.version', index=1,
       number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -592,28 +562,28 @@ _SESSIONRESPONSE = _descriptor.Descriptor(
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='user_agent', full_name='SessionResponse.user_agent', index=1,
       number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='version', full_name='SessionResponse.version', index=2,
       number=3, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='context', full_name='SessionResponse.context', index=3,
       number=4, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -639,19 +609,19 @@ _FEATURE = _descriptor.Descriptor(
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='feature_id', full_name='Feature.feature_id', index=0,
+      name='resource_id', full_name='Feature.resource_id', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='data_uri', full_name='Feature.data_uri', index=1,
+      name='feature_name', full_name='Feature.feature_name', index=1,
       number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -665,7 +635,7 @@ _FEATURE = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=356,
-  serialized_end=403,
+  serialized_end=408,
 )
 
 
@@ -682,63 +652,70 @@ _PIPELINECREATEREQUEST = _descriptor.Descriptor(
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='train_features', full_name='PipelineCreateRequest.train_features', index=1,
-      number=2, type=11, cpp_type=10, label=3,
-      has_default_value=False, default_value=[],
+      name='dataset_uri', full_name='PipelineCreateRequest.dataset_uri', index=1,
+      number=2, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='task', full_name='PipelineCreateRequest.task', index=2,
       number=3, type=14, cpp_type=8, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='task_subtype', full_name='PipelineCreateRequest.task_subtype', index=3,
       number=4, type=14, cpp_type=8, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='task_description', full_name='PipelineCreateRequest.task_description', index=4,
       number=5, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='output', full_name='PipelineCreateRequest.output', index=5,
       number=6, type=14, cpp_type=8, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='metrics', full_name='PipelineCreateRequest.metrics', index=6,
       number=7, type=14, cpp_type=8, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='target_features', full_name='PipelineCreateRequest.target_features', index=7,
       number=8, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='max_pipelines', full_name='PipelineCreateRequest.max_pipelines', index=8,
-      number=9, type=5, cpp_type=1, label=1,
+      name='predict_features', full_name='PipelineCreateRequest.predict_features', index=8,
+      number=9, type=11, cpp_type=10, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='max_pipelines', full_name='PipelineCreateRequest.max_pipelines', index=9,
+      number=10, type=5, cpp_type=1, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -751,8 +728,8 @@ _PIPELINECREATEREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=406,
-  serialized_end=697,
+  serialized_start=411,
+  serialized_end=736,
 )
 
 
@@ -769,14 +746,14 @@ _SCORE = _descriptor.Descriptor(
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='value', full_name='Score.value', index=1,
       number=2, type=2, cpp_type=6, label=1,
       has_default_value=False, default_value=float(0),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -789,8 +766,8 @@ _SCORE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=699,
-  serialized_end=746,
+  serialized_start=738,
+  serialized_end=796,
 )
 
 
@@ -802,26 +779,26 @@ _PIPELINE = _descriptor.Descriptor(
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='predict_result_uris', full_name='Pipeline.predict_result_uris', index=0,
-      number=1, type=9, cpp_type=9, label=3,
-      has_default_value=False, default_value=[],
+      name='predict_result_uri', full_name='Pipeline.predict_result_uri', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='output', full_name='Pipeline.output', index=1,
       number=2, type=14, cpp_type=8, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='scores', full_name='Pipeline.scores', index=2,
       number=3, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -834,8 +811,8 @@ _PIPELINE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=748,
-  serialized_end=840,
+  serialized_start=798,
+  serialized_end=889,
 )
 
 
@@ -852,28 +829,28 @@ _PIPELINECREATERESULT = _descriptor.Descriptor(
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='progress_info', full_name='PipelineCreateResult.progress_info', index=1,
       number=2, type=14, cpp_type=8, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='pipeline_id', full_name='PipelineCreateResult.pipeline_id', index=2,
       number=3, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='pipeline_info', full_name='PipelineCreateResult.pipeline_info', index=3,
       number=4, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -886,8 +863,8 @@ _PIPELINECREATERESULT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=843,
-  serialized_end=988,
+  serialized_start=892,
+  serialized_end=1037,
 )
 
 
@@ -904,21 +881,21 @@ _PIPELINEEXECUTEREQUEST = _descriptor.Descriptor(
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='pipeline_id', full_name='PipelineExecuteRequest.pipeline_id', index=1,
       number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='predict_features', full_name='PipelineExecuteRequest.predict_features', index=2,
-      number=3, type=11, cpp_type=10, label=3,
-      has_default_value=False, default_value=[],
+      name='dataset_uri', full_name='PipelineExecuteRequest.dataset_uri', index=2,
+      number=3, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -931,8 +908,8 @@ _PIPELINEEXECUTEREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=990,
-  serialized_end=1105,
+  serialized_start=1039,
+  serialized_end=1139,
 )
 
 
@@ -949,28 +926,28 @@ _PIPELINEEXECUTERESULT = _descriptor.Descriptor(
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='progress_info', full_name='PipelineExecuteResult.progress_info', index=1,
       number=2, type=14, cpp_type=8, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='pipeline_id', full_name='PipelineExecuteResult.pipeline_id', index=2,
       number=3, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='result_uris', full_name='PipelineExecuteResult.result_uris', index=3,
-      number=4, type=9, cpp_type=9, label=3,
-      has_default_value=False, default_value=[],
+      name='result_uri', full_name='PipelineExecuteResult.result_uri', index=3,
+      number=4, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -983,8 +960,8 @@ _PIPELINEEXECUTERESULT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1108,
-  serialized_end=1241,
+  serialized_start=1142,
+  serialized_end=1274,
 )
 
 
@@ -1001,7 +978,7 @@ _PIPELINELISTREQUEST = _descriptor.Descriptor(
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -1014,8 +991,8 @@ _PIPELINELISTREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1243,
-  serialized_end=1298,
+  serialized_start=1276,
+  serialized_end=1331,
 )
 
 
@@ -1032,14 +1009,14 @@ _PIPELINEDELETEREQUEST = _descriptor.Descriptor(
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='delete_pipeline_ids', full_name='PipelineDeleteRequest.delete_pipeline_ids', index=1,
       number=2, type=9, cpp_type=9, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -1052,8 +1029,46 @@ _PIPELINEDELETEREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1300,
-  serialized_end=1386,
+  serialized_start=1333,
+  serialized_end=1419,
+)
+
+
+_PIPELINECANCELREQUEST = _descriptor.Descriptor(
+  name='PipelineCancelRequest',
+  full_name='PipelineCancelRequest',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='context', full_name='PipelineCancelRequest.context', index=0,
+      number=1, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='cancel_pipeline_ids', full_name='PipelineCancelRequest.cancel_pipeline_ids', index=1,
+      number=2, type=9, cpp_type=9, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=1421,
+  serialized_end=1507,
 )
 
 
@@ -1070,14 +1085,14 @@ _PIPELINELISTRESULT = _descriptor.Descriptor(
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='pipeline_ids', full_name='PipelineListResult.pipeline_ids', index=1,
       number=2, type=9, cpp_type=9, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -1090,8 +1105,8 @@ _PIPELINELISTRESULT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1388,
-  serialized_end=1464,
+  serialized_start=1509,
+  serialized_end=1585,
 )
 
 
@@ -1108,14 +1123,14 @@ _PIPELINECREATERESULTSREQUEST = _descriptor.Descriptor(
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='pipeline_ids', full_name='PipelineCreateResultsRequest.pipeline_ids', index=1,
       number=2, type=9, cpp_type=9, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -1128,8 +1143,8 @@ _PIPELINECREATERESULTSREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1466,
-  serialized_end=1552,
+  serialized_start=1587,
+  serialized_end=1673,
 )
 
 
@@ -1146,14 +1161,14 @@ _PIPELINEEXECUTERESULTSREQUEST = _descriptor.Descriptor(
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='pipeline_ids', full_name='PipelineExecuteResultsRequest.pipeline_ids', index=1,
       number=2, type=9, cpp_type=9, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -1166,8 +1181,8 @@ _PIPELINEEXECUTERESULTSREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1554,
-  serialized_end=1641,
+  serialized_start=1675,
+  serialized_end=1762,
 )
 
 
@@ -1184,21 +1199,21 @@ _PIPELINEEXPORTREQUEST = _descriptor.Descriptor(
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='pipeline_id', full_name='PipelineExportRequest.pipeline_id', index=1,
       number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='pipeline_exec_uri', full_name='PipelineExportRequest.pipeline_exec_uri', index=2,
       number=3, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -1211,53 +1226,53 @@ _PIPELINEEXPORTREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1643,
-  serialized_end=1748,
+  serialized_start=1764,
+  serialized_end=1869,
 )
 
 
-_UPDATEPROBLEMSCHEMAREQUEST_REPLACEPROBLEMSCHEMAFIELD = _descriptor.Descriptor(
-  name='ReplaceProblemSchemaField',
-  full_name='UpdateProblemSchemaRequest.ReplaceProblemSchemaField',
+_SETPROBLEMDOCREQUEST_REPLACEPROBLEMDOCFIELD = _descriptor.Descriptor(
+  name='ReplaceProblemDocField',
+  full_name='SetProblemDocRequest.ReplaceProblemDocField',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='task_type', full_name='UpdateProblemSchemaRequest.ReplaceProblemSchemaField.task_type', index=0,
+      name='task_type', full_name='SetProblemDocRequest.ReplaceProblemDocField.task_type', index=0,
       number=1, type=14, cpp_type=8, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='task_subtype', full_name='UpdateProblemSchemaRequest.ReplaceProblemSchemaField.task_subtype', index=1,
+      name='task_subtype', full_name='SetProblemDocRequest.ReplaceProblemDocField.task_subtype', index=1,
       number=2, type=14, cpp_type=8, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='task_description', full_name='UpdateProblemSchemaRequest.ReplaceProblemSchemaField.task_description', index=2,
+      name='task_description', full_name='SetProblemDocRequest.ReplaceProblemDocField.task_description', index=2,
       number=3, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='output_type', full_name='UpdateProblemSchemaRequest.ReplaceProblemSchemaField.output_type', index=3,
+      name='output_type', full_name='SetProblemDocRequest.ReplaceProblemDocField.output_type', index=3,
       number=4, type=14, cpp_type=8, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='metric', full_name='UpdateProblemSchemaRequest.ReplaceProblemSchemaField.metric', index=4,
+      name='metric', full_name='SetProblemDocRequest.ReplaceProblemDocField.metric', index=4,
       number=5, type=14, cpp_type=8, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -1270,38 +1285,38 @@ _UPDATEPROBLEMSCHEMAREQUEST_REPLACEPROBLEMSCHEMAFIELD = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
     _descriptor.OneofDescriptor(
-      name='update', full_name='UpdateProblemSchemaRequest.ReplaceProblemSchemaField.update',
+      name='update', full_name='SetProblemDocRequest.ReplaceProblemDocField.update',
       index=0, containing_type=None, fields=[]),
   ],
-  serialized_start=1888,
-  serialized_end=2086,
+  serialized_start=1994,
+  serialized_end=2200,
 )
 
-_UPDATEPROBLEMSCHEMAREQUEST = _descriptor.Descriptor(
-  name='UpdateProblemSchemaRequest',
-  full_name='UpdateProblemSchemaRequest',
+_SETPROBLEMDOCREQUEST = _descriptor.Descriptor(
+  name='SetProblemDocRequest',
+  full_name='SetProblemDocRequest',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='updates', full_name='UpdateProblemSchemaRequest.updates', index=0,
+      name='updates', full_name='SetProblemDocRequest.updates', index=0,
       number=1, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='context', full_name='UpdateProblemSchemaRequest.context', index=1,
+      name='context', full_name='SetProblemDocRequest.context', index=1,
       number=2, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None),
+      options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
-  nested_types=[_UPDATEPROBLEMSCHEMAREQUEST_REPLACEPROBLEMSCHEMAFIELD, ],
+  nested_types=[_SETPROBLEMDOCREQUEST_REPLACEPROBLEMDOCFIELD, ],
   enum_types=[
   ],
   options=None,
@@ -1310,8 +1325,8 @@ _UPDATEPROBLEMSCHEMAREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1751,
-  serialized_end=2086,
+  serialized_start=1872,
+  serialized_end=2200,
 )
 
 _STATUS.fields_by_name['code'].enum_type = _STATUSCODE
@@ -1319,50 +1334,50 @@ _RESPONSE.fields_by_name['status'].message_type = _STATUS
 _SESSIONRESPONSE.fields_by_name['response_info'].message_type = _RESPONSE
 _SESSIONRESPONSE.fields_by_name['context'].message_type = _SESSIONCONTEXT
 _PIPELINECREATEREQUEST.fields_by_name['context'].message_type = _SESSIONCONTEXT
-_PIPELINECREATEREQUEST.fields_by_name['train_features'].message_type = _FEATURE
 _PIPELINECREATEREQUEST.fields_by_name['task'].enum_type = _TASKTYPE
 _PIPELINECREATEREQUEST.fields_by_name['task_subtype'].enum_type = _TASKSUBTYPE
 _PIPELINECREATEREQUEST.fields_by_name['output'].enum_type = _OUTPUTTYPE
-_PIPELINECREATEREQUEST.fields_by_name['metrics'].enum_type = _METRIC
+_PIPELINECREATEREQUEST.fields_by_name['metrics'].enum_type = _PERFORMANCEMETRIC
 _PIPELINECREATEREQUEST.fields_by_name['target_features'].message_type = _FEATURE
-_SCORE.fields_by_name['metric'].enum_type = _METRIC
+_PIPELINECREATEREQUEST.fields_by_name['predict_features'].message_type = _FEATURE
+_SCORE.fields_by_name['metric'].enum_type = _PERFORMANCEMETRIC
 _PIPELINE.fields_by_name['output'].enum_type = _OUTPUTTYPE
 _PIPELINE.fields_by_name['scores'].message_type = _SCORE
 _PIPELINECREATERESULT.fields_by_name['response_info'].message_type = _RESPONSE
 _PIPELINECREATERESULT.fields_by_name['progress_info'].enum_type = _PROGRESS
 _PIPELINECREATERESULT.fields_by_name['pipeline_info'].message_type = _PIPELINE
 _PIPELINEEXECUTEREQUEST.fields_by_name['context'].message_type = _SESSIONCONTEXT
-_PIPELINEEXECUTEREQUEST.fields_by_name['predict_features'].message_type = _FEATURE
 _PIPELINEEXECUTERESULT.fields_by_name['response_info'].message_type = _RESPONSE
 _PIPELINEEXECUTERESULT.fields_by_name['progress_info'].enum_type = _PROGRESS
 _PIPELINELISTREQUEST.fields_by_name['context'].message_type = _SESSIONCONTEXT
 _PIPELINEDELETEREQUEST.fields_by_name['context'].message_type = _SESSIONCONTEXT
+_PIPELINECANCELREQUEST.fields_by_name['context'].message_type = _SESSIONCONTEXT
 _PIPELINELISTRESULT.fields_by_name['response_info'].message_type = _RESPONSE
 _PIPELINECREATERESULTSREQUEST.fields_by_name['context'].message_type = _SESSIONCONTEXT
 _PIPELINEEXECUTERESULTSREQUEST.fields_by_name['context'].message_type = _SESSIONCONTEXT
 _PIPELINEEXPORTREQUEST.fields_by_name['context'].message_type = _SESSIONCONTEXT
-_UPDATEPROBLEMSCHEMAREQUEST_REPLACEPROBLEMSCHEMAFIELD.fields_by_name['task_type'].enum_type = _TASKTYPE
-_UPDATEPROBLEMSCHEMAREQUEST_REPLACEPROBLEMSCHEMAFIELD.fields_by_name['task_subtype'].enum_type = _TASKSUBTYPE
-_UPDATEPROBLEMSCHEMAREQUEST_REPLACEPROBLEMSCHEMAFIELD.fields_by_name['output_type'].enum_type = _OUTPUTTYPE
-_UPDATEPROBLEMSCHEMAREQUEST_REPLACEPROBLEMSCHEMAFIELD.fields_by_name['metric'].enum_type = _METRIC
-_UPDATEPROBLEMSCHEMAREQUEST_REPLACEPROBLEMSCHEMAFIELD.containing_type = _UPDATEPROBLEMSCHEMAREQUEST
-_UPDATEPROBLEMSCHEMAREQUEST_REPLACEPROBLEMSCHEMAFIELD.oneofs_by_name['update'].fields.append(
-  _UPDATEPROBLEMSCHEMAREQUEST_REPLACEPROBLEMSCHEMAFIELD.fields_by_name['task_type'])
-_UPDATEPROBLEMSCHEMAREQUEST_REPLACEPROBLEMSCHEMAFIELD.fields_by_name['task_type'].containing_oneof = _UPDATEPROBLEMSCHEMAREQUEST_REPLACEPROBLEMSCHEMAFIELD.oneofs_by_name['update']
-_UPDATEPROBLEMSCHEMAREQUEST_REPLACEPROBLEMSCHEMAFIELD.oneofs_by_name['update'].fields.append(
-  _UPDATEPROBLEMSCHEMAREQUEST_REPLACEPROBLEMSCHEMAFIELD.fields_by_name['task_subtype'])
-_UPDATEPROBLEMSCHEMAREQUEST_REPLACEPROBLEMSCHEMAFIELD.fields_by_name['task_subtype'].containing_oneof = _UPDATEPROBLEMSCHEMAREQUEST_REPLACEPROBLEMSCHEMAFIELD.oneofs_by_name['update']
-_UPDATEPROBLEMSCHEMAREQUEST_REPLACEPROBLEMSCHEMAFIELD.oneofs_by_name['update'].fields.append(
-  _UPDATEPROBLEMSCHEMAREQUEST_REPLACEPROBLEMSCHEMAFIELD.fields_by_name['task_description'])
-_UPDATEPROBLEMSCHEMAREQUEST_REPLACEPROBLEMSCHEMAFIELD.fields_by_name['task_description'].containing_oneof = _UPDATEPROBLEMSCHEMAREQUEST_REPLACEPROBLEMSCHEMAFIELD.oneofs_by_name['update']
-_UPDATEPROBLEMSCHEMAREQUEST_REPLACEPROBLEMSCHEMAFIELD.oneofs_by_name['update'].fields.append(
-  _UPDATEPROBLEMSCHEMAREQUEST_REPLACEPROBLEMSCHEMAFIELD.fields_by_name['output_type'])
-_UPDATEPROBLEMSCHEMAREQUEST_REPLACEPROBLEMSCHEMAFIELD.fields_by_name['output_type'].containing_oneof = _UPDATEPROBLEMSCHEMAREQUEST_REPLACEPROBLEMSCHEMAFIELD.oneofs_by_name['update']
-_UPDATEPROBLEMSCHEMAREQUEST_REPLACEPROBLEMSCHEMAFIELD.oneofs_by_name['update'].fields.append(
-  _UPDATEPROBLEMSCHEMAREQUEST_REPLACEPROBLEMSCHEMAFIELD.fields_by_name['metric'])
-_UPDATEPROBLEMSCHEMAREQUEST_REPLACEPROBLEMSCHEMAFIELD.fields_by_name['metric'].containing_oneof = _UPDATEPROBLEMSCHEMAREQUEST_REPLACEPROBLEMSCHEMAFIELD.oneofs_by_name['update']
-_UPDATEPROBLEMSCHEMAREQUEST.fields_by_name['updates'].message_type = _UPDATEPROBLEMSCHEMAREQUEST_REPLACEPROBLEMSCHEMAFIELD
-_UPDATEPROBLEMSCHEMAREQUEST.fields_by_name['context'].message_type = _SESSIONCONTEXT
+_SETPROBLEMDOCREQUEST_REPLACEPROBLEMDOCFIELD.fields_by_name['task_type'].enum_type = _TASKTYPE
+_SETPROBLEMDOCREQUEST_REPLACEPROBLEMDOCFIELD.fields_by_name['task_subtype'].enum_type = _TASKSUBTYPE
+_SETPROBLEMDOCREQUEST_REPLACEPROBLEMDOCFIELD.fields_by_name['output_type'].enum_type = _OUTPUTTYPE
+_SETPROBLEMDOCREQUEST_REPLACEPROBLEMDOCFIELD.fields_by_name['metric'].enum_type = _PERFORMANCEMETRIC
+_SETPROBLEMDOCREQUEST_REPLACEPROBLEMDOCFIELD.containing_type = _SETPROBLEMDOCREQUEST
+_SETPROBLEMDOCREQUEST_REPLACEPROBLEMDOCFIELD.oneofs_by_name['update'].fields.append(
+  _SETPROBLEMDOCREQUEST_REPLACEPROBLEMDOCFIELD.fields_by_name['task_type'])
+_SETPROBLEMDOCREQUEST_REPLACEPROBLEMDOCFIELD.fields_by_name['task_type'].containing_oneof = _SETPROBLEMDOCREQUEST_REPLACEPROBLEMDOCFIELD.oneofs_by_name['update']
+_SETPROBLEMDOCREQUEST_REPLACEPROBLEMDOCFIELD.oneofs_by_name['update'].fields.append(
+  _SETPROBLEMDOCREQUEST_REPLACEPROBLEMDOCFIELD.fields_by_name['task_subtype'])
+_SETPROBLEMDOCREQUEST_REPLACEPROBLEMDOCFIELD.fields_by_name['task_subtype'].containing_oneof = _SETPROBLEMDOCREQUEST_REPLACEPROBLEMDOCFIELD.oneofs_by_name['update']
+_SETPROBLEMDOCREQUEST_REPLACEPROBLEMDOCFIELD.oneofs_by_name['update'].fields.append(
+  _SETPROBLEMDOCREQUEST_REPLACEPROBLEMDOCFIELD.fields_by_name['task_description'])
+_SETPROBLEMDOCREQUEST_REPLACEPROBLEMDOCFIELD.fields_by_name['task_description'].containing_oneof = _SETPROBLEMDOCREQUEST_REPLACEPROBLEMDOCFIELD.oneofs_by_name['update']
+_SETPROBLEMDOCREQUEST_REPLACEPROBLEMDOCFIELD.oneofs_by_name['update'].fields.append(
+  _SETPROBLEMDOCREQUEST_REPLACEPROBLEMDOCFIELD.fields_by_name['output_type'])
+_SETPROBLEMDOCREQUEST_REPLACEPROBLEMDOCFIELD.fields_by_name['output_type'].containing_oneof = _SETPROBLEMDOCREQUEST_REPLACEPROBLEMDOCFIELD.oneofs_by_name['update']
+_SETPROBLEMDOCREQUEST_REPLACEPROBLEMDOCFIELD.oneofs_by_name['update'].fields.append(
+  _SETPROBLEMDOCREQUEST_REPLACEPROBLEMDOCFIELD.fields_by_name['metric'])
+_SETPROBLEMDOCREQUEST_REPLACEPROBLEMDOCFIELD.fields_by_name['metric'].containing_oneof = _SETPROBLEMDOCREQUEST_REPLACEPROBLEMDOCFIELD.oneofs_by_name['update']
+_SETPROBLEMDOCREQUEST.fields_by_name['updates'].message_type = _SETPROBLEMDOCREQUEST_REPLACEPROBLEMDOCFIELD
+_SETPROBLEMDOCREQUEST.fields_by_name['context'].message_type = _SESSIONCONTEXT
 DESCRIPTOR.message_types_by_name['SessionContext'] = _SESSIONCONTEXT
 DESCRIPTOR.message_types_by_name['Status'] = _STATUS
 DESCRIPTOR.message_types_by_name['Response'] = _RESPONSE
@@ -1377,17 +1392,18 @@ DESCRIPTOR.message_types_by_name['PipelineExecuteRequest'] = _PIPELINEEXECUTEREQ
 DESCRIPTOR.message_types_by_name['PipelineExecuteResult'] = _PIPELINEEXECUTERESULT
 DESCRIPTOR.message_types_by_name['PipelineListRequest'] = _PIPELINELISTREQUEST
 DESCRIPTOR.message_types_by_name['PipelineDeleteRequest'] = _PIPELINEDELETEREQUEST
+DESCRIPTOR.message_types_by_name['PipelineCancelRequest'] = _PIPELINECANCELREQUEST
 DESCRIPTOR.message_types_by_name['PipelineListResult'] = _PIPELINELISTRESULT
 DESCRIPTOR.message_types_by_name['PipelineCreateResultsRequest'] = _PIPELINECREATERESULTSREQUEST
 DESCRIPTOR.message_types_by_name['PipelineExecuteResultsRequest'] = _PIPELINEEXECUTERESULTSREQUEST
 DESCRIPTOR.message_types_by_name['PipelineExportRequest'] = _PIPELINEEXPORTREQUEST
-DESCRIPTOR.message_types_by_name['UpdateProblemSchemaRequest'] = _UPDATEPROBLEMSCHEMAREQUEST
+DESCRIPTOR.message_types_by_name['SetProblemDocRequest'] = _SETPROBLEMDOCREQUEST
 DESCRIPTOR.enum_types_by_name['StatusCode'] = _STATUSCODE
 DESCRIPTOR.enum_types_by_name['Progress'] = _PROGRESS
 DESCRIPTOR.enum_types_by_name['TaskType'] = _TASKTYPE
 DESCRIPTOR.enum_types_by_name['TaskSubtype'] = _TASKSUBTYPE
 DESCRIPTOR.enum_types_by_name['OutputType'] = _OUTPUTTYPE
-DESCRIPTOR.enum_types_by_name['Metric'] = _METRIC
+DESCRIPTOR.enum_types_by_name['PerformanceMetric'] = _PERFORMANCEMETRIC
 DESCRIPTOR.extensions_by_name['protocol_version'] = protocol_version
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
@@ -1489,6 +1505,13 @@ PipelineDeleteRequest = _reflection.GeneratedProtocolMessageType('PipelineDelete
   ))
 _sym_db.RegisterMessage(PipelineDeleteRequest)
 
+PipelineCancelRequest = _reflection.GeneratedProtocolMessageType('PipelineCancelRequest', (_message.Message,), dict(
+  DESCRIPTOR = _PIPELINECANCELREQUEST,
+  __module__ = 'core_pb2'
+  # @@protoc_insertion_point(class_scope:PipelineCancelRequest)
+  ))
+_sym_db.RegisterMessage(PipelineCancelRequest)
+
 PipelineListResult = _reflection.GeneratedProtocolMessageType('PipelineListResult', (_message.Message,), dict(
   DESCRIPTOR = _PIPELINELISTRESULT,
   __module__ = 'core_pb2'
@@ -1517,25 +1540,25 @@ PipelineExportRequest = _reflection.GeneratedProtocolMessageType('PipelineExport
   ))
 _sym_db.RegisterMessage(PipelineExportRequest)
 
-UpdateProblemSchemaRequest = _reflection.GeneratedProtocolMessageType('UpdateProblemSchemaRequest', (_message.Message,), dict(
+SetProblemDocRequest = _reflection.GeneratedProtocolMessageType('SetProblemDocRequest', (_message.Message,), dict(
 
-  ReplaceProblemSchemaField = _reflection.GeneratedProtocolMessageType('ReplaceProblemSchemaField', (_message.Message,), dict(
-    DESCRIPTOR = _UPDATEPROBLEMSCHEMAREQUEST_REPLACEPROBLEMSCHEMAFIELD,
+  ReplaceProblemDocField = _reflection.GeneratedProtocolMessageType('ReplaceProblemDocField', (_message.Message,), dict(
+    DESCRIPTOR = _SETPROBLEMDOCREQUEST_REPLACEPROBLEMDOCFIELD,
     __module__ = 'core_pb2'
-    # @@protoc_insertion_point(class_scope:UpdateProblemSchemaRequest.ReplaceProblemSchemaField)
+    # @@protoc_insertion_point(class_scope:SetProblemDocRequest.ReplaceProblemDocField)
     ))
   ,
-  DESCRIPTOR = _UPDATEPROBLEMSCHEMAREQUEST,
+  DESCRIPTOR = _SETPROBLEMDOCREQUEST,
   __module__ = 'core_pb2'
-  # @@protoc_insertion_point(class_scope:UpdateProblemSchemaRequest)
+  # @@protoc_insertion_point(class_scope:SetProblemDocRequest)
   ))
-_sym_db.RegisterMessage(UpdateProblemSchemaRequest)
-_sym_db.RegisterMessage(UpdateProblemSchemaRequest.ReplaceProblemSchemaField)
+_sym_db.RegisterMessage(SetProblemDocRequest)
+_sym_db.RegisterMessage(SetProblemDocRequest.ReplaceProblemDocField)
 
 google_dot_protobuf_dot_descriptor__pb2.FileOptions.RegisterExtension(protocol_version)
 
 DESCRIPTOR.has_options = True
-DESCRIPTOR._options = _descriptor._ParseOptions(descriptor_pb2.FileOptions(), _b('Z\010pipeline\242\265\032\n2017.10.10'))
+DESCRIPTOR._options = _descriptor._ParseOptions(descriptor_pb2.FileOptions(), _b('Z\010pipeline\242\265\032\n2017.12.20'))
 
 _CORE = _descriptor.ServiceDescriptor(
   name='Core',
@@ -1543,8 +1566,8 @@ _CORE = _descriptor.ServiceDescriptor(
   file=DESCRIPTOR,
   index=0,
   options=None,
-  serialized_start=3366,
-  serialized_end=4034,
+  serialized_start=3395,
+  serialized_end=4117,
   methods=[
   _descriptor.MethodDescriptor(
     name='CreatePipelines',
@@ -1583,9 +1606,18 @@ _CORE = _descriptor.ServiceDescriptor(
     options=None,
   ),
   _descriptor.MethodDescriptor(
+    name='CancelPipelines',
+    full_name='Core.CancelPipelines',
+    index=4,
+    containing_service=None,
+    input_type=_PIPELINECANCELREQUEST,
+    output_type=_PIPELINELISTRESULT,
+    options=None,
+  ),
+  _descriptor.MethodDescriptor(
     name='GetCreatePipelineResults',
     full_name='Core.GetCreatePipelineResults',
-    index=4,
+    index=5,
     containing_service=None,
     input_type=_PIPELINECREATERESULTSREQUEST,
     output_type=_PIPELINECREATERESULT,
@@ -1594,7 +1626,7 @@ _CORE = _descriptor.ServiceDescriptor(
   _descriptor.MethodDescriptor(
     name='GetExecutePipelineResults',
     full_name='Core.GetExecutePipelineResults',
-    index=5,
+    index=6,
     containing_service=None,
     input_type=_PIPELINEEXECUTERESULTSREQUEST,
     output_type=_PIPELINEEXECUTERESULT,
@@ -1603,25 +1635,25 @@ _CORE = _descriptor.ServiceDescriptor(
   _descriptor.MethodDescriptor(
     name='ExportPipeline',
     full_name='Core.ExportPipeline',
-    index=6,
+    index=7,
     containing_service=None,
     input_type=_PIPELINEEXPORTREQUEST,
     output_type=_RESPONSE,
     options=None,
   ),
   _descriptor.MethodDescriptor(
-    name='UpdateProblemSchema',
-    full_name='Core.UpdateProblemSchema',
-    index=7,
+    name='SetProblemDoc',
+    full_name='Core.SetProblemDoc',
+    index=8,
     containing_service=None,
-    input_type=_UPDATEPROBLEMSCHEMAREQUEST,
+    input_type=_SETPROBLEMDOCREQUEST,
     output_type=_RESPONSE,
     options=None,
   ),
   _descriptor.MethodDescriptor(
     name='StartSession',
     full_name='Core.StartSession',
-    index=8,
+    index=9,
     containing_service=None,
     input_type=_SESSIONREQUEST,
     output_type=_SESSIONRESPONSE,
@@ -1630,7 +1662,7 @@ _CORE = _descriptor.ServiceDescriptor(
   _descriptor.MethodDescriptor(
     name='EndSession',
     full_name='Core.EndSession',
-    index=9,
+    index=10,
     containing_service=None,
     input_type=_SESSIONCONTEXT,
     output_type=_RESPONSE,
@@ -1641,407 +1673,4 @@ _sym_db.RegisterServiceDescriptor(_CORE)
 
 DESCRIPTOR.services_by_name['Core'] = _CORE
 
-try:
-  # THESE ELEMENTS WILL BE DEPRECATED.
-  # Please use the generated *_pb2_grpc.py files instead.
-  import grpc
-  from grpc.beta import implementations as beta_implementations
-  from grpc.beta import interfaces as beta_interfaces
-  from grpc.framework.common import cardinality
-  from grpc.framework.interfaces.face import utilities as face_utilities
-
-
-  class CoreStub(object):
-    # missing associated documentation comment in .proto file
-    pass
-
-    def __init__(self, channel):
-      """Constructor.
-
-      Args:
-        channel: A grpc.Channel.
-      """
-      self.CreatePipelines = channel.unary_stream(
-          '/Core/CreatePipelines',
-          request_serializer=PipelineCreateRequest.SerializeToString,
-          response_deserializer=PipelineCreateResult.FromString,
-          )
-      self.ExecutePipeline = channel.unary_stream(
-          '/Core/ExecutePipeline',
-          request_serializer=PipelineExecuteRequest.SerializeToString,
-          response_deserializer=PipelineExecuteResult.FromString,
-          )
-      self.ListPipelines = channel.unary_unary(
-          '/Core/ListPipelines',
-          request_serializer=PipelineListRequest.SerializeToString,
-          response_deserializer=PipelineListResult.FromString,
-          )
-      self.DeletePipelines = channel.unary_unary(
-          '/Core/DeletePipelines',
-          request_serializer=PipelineDeleteRequest.SerializeToString,
-          response_deserializer=PipelineListResult.FromString,
-          )
-      self.GetCreatePipelineResults = channel.unary_stream(
-          '/Core/GetCreatePipelineResults',
-          request_serializer=PipelineCreateResultsRequest.SerializeToString,
-          response_deserializer=PipelineCreateResult.FromString,
-          )
-      self.GetExecutePipelineResults = channel.unary_stream(
-          '/Core/GetExecutePipelineResults',
-          request_serializer=PipelineExecuteResultsRequest.SerializeToString,
-          response_deserializer=PipelineExecuteResult.FromString,
-          )
-      self.ExportPipeline = channel.unary_unary(
-          '/Core/ExportPipeline',
-          request_serializer=PipelineExportRequest.SerializeToString,
-          response_deserializer=Response.FromString,
-          )
-      self.UpdateProblemSchema = channel.unary_unary(
-          '/Core/UpdateProblemSchema',
-          request_serializer=UpdateProblemSchemaRequest.SerializeToString,
-          response_deserializer=Response.FromString,
-          )
-      self.StartSession = channel.unary_unary(
-          '/Core/StartSession',
-          request_serializer=SessionRequest.SerializeToString,
-          response_deserializer=SessionResponse.FromString,
-          )
-      self.EndSession = channel.unary_unary(
-          '/Core/EndSession',
-          request_serializer=SessionContext.SerializeToString,
-          response_deserializer=Response.FromString,
-          )
-
-
-  class CoreServicer(object):
-    # missing associated documentation comment in .proto file
-    pass
-
-    def CreatePipelines(self, request, context):
-      """Train step - multiple result messages returned via GRPC streaming.
-      """
-      context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-      context.set_details('Method not implemented!')
-      raise NotImplementedError('Method not implemented!')
-
-    def ExecutePipeline(self, request, context):
-      """Predict step - multiple results messages returned via GRPC streaming.
-      """
-      context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-      context.set_details('Method not implemented!')
-      raise NotImplementedError('Method not implemented!')
-
-    def ListPipelines(self, request, context):
-      """Manage pipelines already present in the session.
-      """
-      context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-      context.set_details('Method not implemented!')
-      raise NotImplementedError('Method not implemented!')
-
-    def DeletePipelines(self, request, context):
-      # missing associated documentation comment in .proto file
-      pass
-      context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-      context.set_details('Method not implemented!')
-      raise NotImplementedError('Method not implemented!')
-
-    def GetCreatePipelineResults(self, request, context):
-      """Obtain results; lists existing pipelines then streams new results as they become available
-      """
-      context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-      context.set_details('Method not implemented!')
-      raise NotImplementedError('Method not implemented!')
-
-    def GetExecutePipelineResults(self, request, context):
-      # missing associated documentation comment in .proto file
-      pass
-      context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-      context.set_details('Method not implemented!')
-      raise NotImplementedError('Method not implemented!')
-
-    def ExportPipeline(self, request, context):
-      """Export executable of a pipeline, including any optional preprocessing used in session
-      """
-      context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-      context.set_details('Method not implemented!')
-      raise NotImplementedError('Method not implemented!')
-
-    def UpdateProblemSchema(self, request, context):
-      """Update problem schema
-      """
-      context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-      context.set_details('Method not implemented!')
-      raise NotImplementedError('Method not implemented!')
-
-    def StartSession(self, request, context):
-      """Session management
-      """
-      context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-      context.set_details('Method not implemented!')
-      raise NotImplementedError('Method not implemented!')
-
-    def EndSession(self, request, context):
-      # missing associated documentation comment in .proto file
-      pass
-      context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-      context.set_details('Method not implemented!')
-      raise NotImplementedError('Method not implemented!')
-
-
-  def add_CoreServicer_to_server(servicer, server):
-    rpc_method_handlers = {
-        'CreatePipelines': grpc.unary_stream_rpc_method_handler(
-            servicer.CreatePipelines,
-            request_deserializer=PipelineCreateRequest.FromString,
-            response_serializer=PipelineCreateResult.SerializeToString,
-        ),
-        'ExecutePipeline': grpc.unary_stream_rpc_method_handler(
-            servicer.ExecutePipeline,
-            request_deserializer=PipelineExecuteRequest.FromString,
-            response_serializer=PipelineExecuteResult.SerializeToString,
-        ),
-        'ListPipelines': grpc.unary_unary_rpc_method_handler(
-            servicer.ListPipelines,
-            request_deserializer=PipelineListRequest.FromString,
-            response_serializer=PipelineListResult.SerializeToString,
-        ),
-        'DeletePipelines': grpc.unary_unary_rpc_method_handler(
-            servicer.DeletePipelines,
-            request_deserializer=PipelineDeleteRequest.FromString,
-            response_serializer=PipelineListResult.SerializeToString,
-        ),
-        'GetCreatePipelineResults': grpc.unary_stream_rpc_method_handler(
-            servicer.GetCreatePipelineResults,
-            request_deserializer=PipelineCreateResultsRequest.FromString,
-            response_serializer=PipelineCreateResult.SerializeToString,
-        ),
-        'GetExecutePipelineResults': grpc.unary_stream_rpc_method_handler(
-            servicer.GetExecutePipelineResults,
-            request_deserializer=PipelineExecuteResultsRequest.FromString,
-            response_serializer=PipelineExecuteResult.SerializeToString,
-        ),
-        'ExportPipeline': grpc.unary_unary_rpc_method_handler(
-            servicer.ExportPipeline,
-            request_deserializer=PipelineExportRequest.FromString,
-            response_serializer=Response.SerializeToString,
-        ),
-        'UpdateProblemSchema': grpc.unary_unary_rpc_method_handler(
-            servicer.UpdateProblemSchema,
-            request_deserializer=UpdateProblemSchemaRequest.FromString,
-            response_serializer=Response.SerializeToString,
-        ),
-        'StartSession': grpc.unary_unary_rpc_method_handler(
-            servicer.StartSession,
-            request_deserializer=SessionRequest.FromString,
-            response_serializer=SessionResponse.SerializeToString,
-        ),
-        'EndSession': grpc.unary_unary_rpc_method_handler(
-            servicer.EndSession,
-            request_deserializer=SessionContext.FromString,
-            response_serializer=Response.SerializeToString,
-        ),
-    }
-    generic_handler = grpc.method_handlers_generic_handler(
-        'Core', rpc_method_handlers)
-    server.add_generic_rpc_handlers((generic_handler,))
-
-
-  class BetaCoreServicer(object):
-    """The Beta API is deprecated for 0.15.0 and later.
-
-    It is recommended to use the GA API (classes and functions in this
-    file not marked beta) for all further purposes. This class was generated
-    only to ease transition from grpcio<0.15.0 to grpcio>=0.15.0."""
-    # missing associated documentation comment in .proto file
-    pass
-    def CreatePipelines(self, request, context):
-      """Train step - multiple result messages returned via GRPC streaming.
-      """
-      context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)
-    def ExecutePipeline(self, request, context):
-      """Predict step - multiple results messages returned via GRPC streaming.
-      """
-      context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)
-    def ListPipelines(self, request, context):
-      """Manage pipelines already present in the session.
-      """
-      context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)
-    def DeletePipelines(self, request, context):
-      # missing associated documentation comment in .proto file
-      pass
-      context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)
-    def GetCreatePipelineResults(self, request, context):
-      """Obtain results; lists existing pipelines then streams new results as they become available
-      """
-      context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)
-    def GetExecutePipelineResults(self, request, context):
-      # missing associated documentation comment in .proto file
-      pass
-      context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)
-    def ExportPipeline(self, request, context):
-      """Export executable of a pipeline, including any optional preprocessing used in session
-      """
-      context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)
-    def UpdateProblemSchema(self, request, context):
-      """Update problem schema
-      """
-      context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)
-    def StartSession(self, request, context):
-      """Session management
-      """
-      context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)
-    def EndSession(self, request, context):
-      # missing associated documentation comment in .proto file
-      pass
-      context.code(beta_interfaces.StatusCode.UNIMPLEMENTED)
-
-
-  class BetaCoreStub(object):
-    """The Beta API is deprecated for 0.15.0 and later.
-
-    It is recommended to use the GA API (classes and functions in this
-    file not marked beta) for all further purposes. This class was generated
-    only to ease transition from grpcio<0.15.0 to grpcio>=0.15.0."""
-    # missing associated documentation comment in .proto file
-    pass
-    def CreatePipelines(self, request, timeout, metadata=None, with_call=False, protocol_options=None):
-      """Train step - multiple result messages returned via GRPC streaming.
-      """
-      raise NotImplementedError()
-    def ExecutePipeline(self, request, timeout, metadata=None, with_call=False, protocol_options=None):
-      """Predict step - multiple results messages returned via GRPC streaming.
-      """
-      raise NotImplementedError()
-    def ListPipelines(self, request, timeout, metadata=None, with_call=False, protocol_options=None):
-      """Manage pipelines already present in the session.
-      """
-      raise NotImplementedError()
-    ListPipelines.future = None
-    def DeletePipelines(self, request, timeout, metadata=None, with_call=False, protocol_options=None):
-      # missing associated documentation comment in .proto file
-      pass
-      raise NotImplementedError()
-    DeletePipelines.future = None
-    def GetCreatePipelineResults(self, request, timeout, metadata=None, with_call=False, protocol_options=None):
-      """Obtain results; lists existing pipelines then streams new results as they become available
-      """
-      raise NotImplementedError()
-    def GetExecutePipelineResults(self, request, timeout, metadata=None, with_call=False, protocol_options=None):
-      # missing associated documentation comment in .proto file
-      pass
-      raise NotImplementedError()
-    def ExportPipeline(self, request, timeout, metadata=None, with_call=False, protocol_options=None):
-      """Export executable of a pipeline, including any optional preprocessing used in session
-      """
-      raise NotImplementedError()
-    ExportPipeline.future = None
-    def UpdateProblemSchema(self, request, timeout, metadata=None, with_call=False, protocol_options=None):
-      """Update problem schema
-      """
-      raise NotImplementedError()
-    UpdateProblemSchema.future = None
-    def StartSession(self, request, timeout, metadata=None, with_call=False, protocol_options=None):
-      """Session management
-      """
-      raise NotImplementedError()
-    StartSession.future = None
-    def EndSession(self, request, timeout, metadata=None, with_call=False, protocol_options=None):
-      # missing associated documentation comment in .proto file
-      pass
-      raise NotImplementedError()
-    EndSession.future = None
-
-
-  def beta_create_Core_server(servicer, pool=None, pool_size=None, default_timeout=None, maximum_timeout=None):
-    """The Beta API is deprecated for 0.15.0 and later.
-
-    It is recommended to use the GA API (classes and functions in this
-    file not marked beta) for all further purposes. This function was
-    generated only to ease transition from grpcio<0.15.0 to grpcio>=0.15.0"""
-    request_deserializers = {
-      ('Core', 'CreatePipelines'): PipelineCreateRequest.FromString,
-      ('Core', 'DeletePipelines'): PipelineDeleteRequest.FromString,
-      ('Core', 'EndSession'): SessionContext.FromString,
-      ('Core', 'ExecutePipeline'): PipelineExecuteRequest.FromString,
-      ('Core', 'ExportPipeline'): PipelineExportRequest.FromString,
-      ('Core', 'GetCreatePipelineResults'): PipelineCreateResultsRequest.FromString,
-      ('Core', 'GetExecutePipelineResults'): PipelineExecuteResultsRequest.FromString,
-      ('Core', 'ListPipelines'): PipelineListRequest.FromString,
-      ('Core', 'StartSession'): SessionRequest.FromString,
-      ('Core', 'UpdateProblemSchema'): UpdateProblemSchemaRequest.FromString,
-    }
-    response_serializers = {
-      ('Core', 'CreatePipelines'): PipelineCreateResult.SerializeToString,
-      ('Core', 'DeletePipelines'): PipelineListResult.SerializeToString,
-      ('Core', 'EndSession'): Response.SerializeToString,
-      ('Core', 'ExecutePipeline'): PipelineExecuteResult.SerializeToString,
-      ('Core', 'ExportPipeline'): Response.SerializeToString,
-      ('Core', 'GetCreatePipelineResults'): PipelineCreateResult.SerializeToString,
-      ('Core', 'GetExecutePipelineResults'): PipelineExecuteResult.SerializeToString,
-      ('Core', 'ListPipelines'): PipelineListResult.SerializeToString,
-      ('Core', 'StartSession'): SessionResponse.SerializeToString,
-      ('Core', 'UpdateProblemSchema'): Response.SerializeToString,
-    }
-    method_implementations = {
-      ('Core', 'CreatePipelines'): face_utilities.unary_stream_inline(servicer.CreatePipelines),
-      ('Core', 'DeletePipelines'): face_utilities.unary_unary_inline(servicer.DeletePipelines),
-      ('Core', 'EndSession'): face_utilities.unary_unary_inline(servicer.EndSession),
-      ('Core', 'ExecutePipeline'): face_utilities.unary_stream_inline(servicer.ExecutePipeline),
-      ('Core', 'ExportPipeline'): face_utilities.unary_unary_inline(servicer.ExportPipeline),
-      ('Core', 'GetCreatePipelineResults'): face_utilities.unary_stream_inline(servicer.GetCreatePipelineResults),
-      ('Core', 'GetExecutePipelineResults'): face_utilities.unary_stream_inline(servicer.GetExecutePipelineResults),
-      ('Core', 'ListPipelines'): face_utilities.unary_unary_inline(servicer.ListPipelines),
-      ('Core', 'StartSession'): face_utilities.unary_unary_inline(servicer.StartSession),
-      ('Core', 'UpdateProblemSchema'): face_utilities.unary_unary_inline(servicer.UpdateProblemSchema),
-    }
-    server_options = beta_implementations.server_options(request_deserializers=request_deserializers, response_serializers=response_serializers, thread_pool=pool, thread_pool_size=pool_size, default_timeout=default_timeout, maximum_timeout=maximum_timeout)
-    return beta_implementations.server(method_implementations, options=server_options)
-
-
-  def beta_create_Core_stub(channel, host=None, metadata_transformer=None, pool=None, pool_size=None):
-    """The Beta API is deprecated for 0.15.0 and later.
-
-    It is recommended to use the GA API (classes and functions in this
-    file not marked beta) for all further purposes. This function was
-    generated only to ease transition from grpcio<0.15.0 to grpcio>=0.15.0"""
-    request_serializers = {
-      ('Core', 'CreatePipelines'): PipelineCreateRequest.SerializeToString,
-      ('Core', 'DeletePipelines'): PipelineDeleteRequest.SerializeToString,
-      ('Core', 'EndSession'): SessionContext.SerializeToString,
-      ('Core', 'ExecutePipeline'): PipelineExecuteRequest.SerializeToString,
-      ('Core', 'ExportPipeline'): PipelineExportRequest.SerializeToString,
-      ('Core', 'GetCreatePipelineResults'): PipelineCreateResultsRequest.SerializeToString,
-      ('Core', 'GetExecutePipelineResults'): PipelineExecuteResultsRequest.SerializeToString,
-      ('Core', 'ListPipelines'): PipelineListRequest.SerializeToString,
-      ('Core', 'StartSession'): SessionRequest.SerializeToString,
-      ('Core', 'UpdateProblemSchema'): UpdateProblemSchemaRequest.SerializeToString,
-    }
-    response_deserializers = {
-      ('Core', 'CreatePipelines'): PipelineCreateResult.FromString,
-      ('Core', 'DeletePipelines'): PipelineListResult.FromString,
-      ('Core', 'EndSession'): Response.FromString,
-      ('Core', 'ExecutePipeline'): PipelineExecuteResult.FromString,
-      ('Core', 'ExportPipeline'): Response.FromString,
-      ('Core', 'GetCreatePipelineResults'): PipelineCreateResult.FromString,
-      ('Core', 'GetExecutePipelineResults'): PipelineExecuteResult.FromString,
-      ('Core', 'ListPipelines'): PipelineListResult.FromString,
-      ('Core', 'StartSession'): SessionResponse.FromString,
-      ('Core', 'UpdateProblemSchema'): Response.FromString,
-    }
-    cardinalities = {
-      'CreatePipelines': cardinality.Cardinality.UNARY_STREAM,
-      'DeletePipelines': cardinality.Cardinality.UNARY_UNARY,
-      'EndSession': cardinality.Cardinality.UNARY_UNARY,
-      'ExecutePipeline': cardinality.Cardinality.UNARY_STREAM,
-      'ExportPipeline': cardinality.Cardinality.UNARY_UNARY,
-      'GetCreatePipelineResults': cardinality.Cardinality.UNARY_STREAM,
-      'GetExecutePipelineResults': cardinality.Cardinality.UNARY_STREAM,
-      'ListPipelines': cardinality.Cardinality.UNARY_UNARY,
-      'StartSession': cardinality.Cardinality.UNARY_UNARY,
-      'UpdateProblemSchema': cardinality.Cardinality.UNARY_UNARY,
-    }
-    stub_options = beta_implementations.stub_options(host=host, metadata_transformer=metadata_transformer, request_serializers=request_serializers, response_deserializers=response_deserializers, thread_pool=pool, thread_pool_size=pool_size)
-    return beta_implementations.dynamic_stub(channel, 'Core', cardinalities, options=stub_options)
-except ImportError:
-  pass
 # @@protoc_insertion_point(module_scope)

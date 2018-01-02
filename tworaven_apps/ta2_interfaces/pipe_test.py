@@ -14,10 +14,10 @@ django.setup()
 import random
 import json
 from django.conf import settings
-from tworaven_apps.ta2_interfaces import core_pb2
+import core_pb2
 # data flow
-from tworaven_apps.ta2_interfaces import dataflow_ext_pb2
-from tworaven_apps.ta2_interfaces import dataflow_ext_pb2_grpc
+import dataflow_ext_pb2
+import dataflow_ext_pb2_grpc
 from tworaven_apps.ta2_interfaces.ta2_connection import TA2Connection
 from tworaven_apps.ta2_interfaces.ta2_util import get_failed_precondition_response
 from google.protobuf.json_format import MessageToJson,\
