@@ -10,8 +10,8 @@ from django.http import JsonResponse    #, HttpResponse, Http404
 from django.views.decorators.csrf import csrf_exempt
 from tworaven_apps.ta2_interfaces.req_start_session import start_session
 from tworaven_apps.ta2_interfaces.req_end_session import end_session
-from tworaven_apps.ta2_interfaces.req_update_problem_schema import \
-    update_problem_schema
+from tworaven_apps.ta2_interfaces.req_set_problem_doc import \
+    set_problem_doc
 from tworaven_apps.ta2_interfaces.req_pipeline_create import \
     pipeline_create
 from tworaven_apps.ta2_interfaces.req_get_pipeline_create_results import \
@@ -114,8 +114,8 @@ def view_endsession(request):
 
 
 @csrf_exempt
-def view_update_problem_schema(request):
-    """gRPC: Call from UI to update the problem schema"""
+def view_set_problem_doc(request):
+    """gRPC: Call from UI to SetProblemDoc"""
     session_key = get_session_key(request)
 
     success, raven_data_or_err = get_request_body(request)
@@ -129,12 +129,12 @@ def view_update_problem_schema(request):
     if ServiceCallEntry.record_d3m_call():
         call_entry = ServiceCallEntry.get_dm3_entry(\
                         request_obj=request,
-                        call_type='update_problem_schema',
+                        call_type='SetProblemDoc',
                         request_msg=raven_data_or_err)
 
     # Let's call the TA2!
     #
-    json_str = update_problem_schema(raven_data_or_err)
+    json_str = set_problem_doc(raven_data_or_err)
 
     # Convert JSON str to python dict - err catch here
     #

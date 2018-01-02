@@ -14,9 +14,9 @@ urlpatterns = (
         views.view_endsession,
         name='EndSession'),
 
-    url(r'^updateproblemschema/?$',
-        views.view_update_problem_schema,
-        name='UpdateProblemSchema'),
+    url(r'^SetProblemDoc/?$',
+        views.view_set_problem_doc,
+        name='SetProblemDoc'),
 
     url(r'^createpipeline/?$',
         views.view_create_pipeline,

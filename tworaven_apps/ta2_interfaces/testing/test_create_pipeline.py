@@ -49,8 +49,8 @@ class CreatePipelinesTest(TestCase):
         # convert to JSON
         #
         json_resp = response.json()
-        #print('json_resp', json_resp[:200])
-        #print(len(json_resp))
+        print('json_resp 1:', json_resp)
+        print('json_resp 2:', len(json_resp))
 
         # expect list of 6 responses
         #

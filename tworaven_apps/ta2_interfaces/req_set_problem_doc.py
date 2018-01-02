@@ -15,7 +15,7 @@ from tworaven_apps.ta2_interfaces.ta2_util import get_grpc_test_json,\
     get_failed_precondition_response
 
 
-REPLACE_PROBLEM_SCHEMA_FIELD = 'ReplaceProblemSchemaField'
+REPLACE_PROBLEM_DOC_FIELD = 'ReplaceProblemDocField'
 
 def get_test_info_str():
     """Test data for update_problem_schema call"""
@@ -24,9 +24,9 @@ def get_test_info_str():
      "outputType" : "REAL",
      "metric" : "ROOT_MEAN_SQUARED_ERROR"}'''
 
-def update_problem_schema(info_str=None):
+def set_problem_doc(info_str=None):
     """
-    UpdateProblemSchemaRequest={"ReplaceProblemSchemaField":{"metric":"ROC_AUC"}}
+    SetProblemDocRequest={"ReplaceProblemDocField":{"metric":"ROC_AUC"}}
 
     Accept UI input as JSON *string* similar to
      {"taskType" : "REGRESSION",
@@ -38,7 +38,7 @@ def update_problem_schema(info_str=None):
         info_str = get_test_info_str()
 
     if info_str is None:
-        err_msg = 'UI Str for UpdateProblemSchema is None'
+        err_msg = 'UI Str for SetProblemDoc is None'
         return get_failed_precondition_response(err_msg)
 
     # --------------------------------
@@ -53,8 +53,8 @@ def update_problem_schema(info_str=None):
     # --------------------------------
     # create UpdateProblemSchemaRequest compatible JSON
     # --------------------------------
-    if REPLACE_PROBLEM_SCHEMA_FIELD in info_dict:
-        info_dict = info_dict[REPLACE_PROBLEM_SCHEMA_FIELD]
+    if REPLACE_PROBLEM_DOC_FIELD in info_dict:
+        info_dict = info_dict[REPLACE_PROBLEM_DOC_FIELD]
 
     updates_list = []
     for key, val in info_dict.items():
@@ -69,13 +69,13 @@ def update_problem_schema(info_str=None):
     # convert the JSON string to a gRPC request
     # --------------------------------
     try:
-        req = Parse(content, core_pb2.UpdateProblemSchemaRequest())
+        req = Parse(content, core_pb2.SetProblemDocRequest())
     except ParseError as err_obj:
         err_msg = 'Failed to convert JSON to gRPC: %s' % (err_obj)
         return get_failed_precondition_response(err_msg)
 
     if settings.TA2_STATIC_TEST_MODE:
-        return get_grpc_test_json('test_responses/updateproblemschema_ok.json',
+        return get_grpc_test_json('test_responses/set_problem_doc_ok.json',
                                   dict())
 
 
@@ -90,7 +90,7 @@ def update_problem_schema(info_str=None):
     # Send the gRPC request
     # --------------------------------
     try:
-        reply = core_stub.UpdateProblemSchema(req)
+        reply = core_stub.SetProblemDocRequest(req)
     except Exception as ex:
         return get_failed_precondition_response(str(ex))
 
