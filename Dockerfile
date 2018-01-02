@@ -31,7 +31,7 @@ RUN apt-get update && \
 # -------------------------------------
 ENV DJANGO_SETTINGS_MODULE=tworavensproject.settings.dev_container2 \
     R_DEV_SERVER_BASE=http://rook-service:8000/custom/ \
-    TA2_TEST_SERVER_URL=localhost:50051 \
+    TA2_TEST_SERVER_URL=localhost:45042 \
     CODE_REPOSITORY=/var/webapps/TwoRavens \
     LC_ALL=C.UTF-8 \
     LANG=C.UTF-8
@@ -130,13 +130,13 @@ CMD echo 'Starting tworavens python server.' && \
 # -----------------
 # run app
 # -----------------
-# >docker run -p 8080:8080 -p 50051:50051 ravens1
+# >docker run -p 8080:8080 -p 45042:45042 ravens1
 # go to: http://0.0.0.0:8080
 #
 # -----------------
 # >run app with custom environment variable
 # -----------------
-# docker run -p 8080:8080 -p 50051:50051 -e TA2_TEST_SERVER_URL=rprasad2r.local:50051 ravens1
+# docker run -p 8080:8080 -p 45042:45042 -e TA2_TEST_SERVER_URL=rprasad2r.local:45042 ravens1
 #
 # -----------------
 # > log into running app
@@ -146,7 +146,7 @@ CMD echo 'Starting tworavens python server.' && \
 # -----------------
 # shell access:
 # -----------------
-# >docker run -ti --rm -p 8080:8080 -p 50051:50051 ravens1 /bin/bash
+# >docker run -ti --rm -p 8080:8080 -p 45042:45042 ravens1 /bin/bash
 #
 # - Potentially switch to a python 3.5 base image
 # -----------------------------------------

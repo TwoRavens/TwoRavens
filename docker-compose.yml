@@ -34,7 +34,7 @@ services:
       # If True, don't use an actual TA2, returned canned responses
       - TA2_STATIC_TEST_MODE=False
       # Example of specifying a TA2 service
-      - TA2_TEST_SERVER_URL=ta2-main:50051
+      - TA2_TEST_SERVER_URL=ta2-main:45042
       #- CONFIG_JSON_PATH=/ravens_volume/config_o_4550seed.json
       - CONFIG_JSON_PATH=/ravens_volume/config_185_baseball.json
     links:
@@ -52,5 +52,5 @@ services:
     volumes:
       - ./ravens_volume:/ravens_volume
     ports:
-      # 50051: grpc connection
-      - 50051:50051
+      # 45042: grpc connection
+      - 45042:45042

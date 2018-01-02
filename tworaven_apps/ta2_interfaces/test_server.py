@@ -405,7 +405,7 @@ def main():
         hostname = None#socket.gethostname()
         if not hostname:
             hostname = '[::]'
-        run_port = '50051'
+        run_port = '45042'
         hostport = '%s:%s' % (hostname, run_port)
         print('running on port: %s' % hostport)
         server.add_insecure_port(hostport)

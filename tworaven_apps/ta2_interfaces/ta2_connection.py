@@ -10,7 +10,7 @@ from tworaven_apps.ta2_interfaces import dataflow_ext_pb2_grpc as dataflow_grpc
 
 ## PARAMETERS
 # ...to get things going
-#settings.TA2_TEST_SERVER_URL = 'localhost:50051'
+#settings.TA2_TEST_SERVER_URL = 'localhost:45042'
 
 _GRPC_CORE_STUB = None
 _GRPC_DATAFLOW_EXT_STUB = None
