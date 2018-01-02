@@ -12,11 +12,11 @@ Once Vagrant is installed, in the terminal enter:
     mkdir 2ravens 
     cd 2ravens 
     vagrant box add ubuntu/xenial64
-    vagrant box update
     vagrant init
     
 Replace the Vagrantfile the last command created with [this one](https://github.com/TwoRavens/TwoRavens/blob/master/Vagrantfile). Then:
 
+    vagrant box update
     vagrant up
     vagrant ssh
     
