@@ -2,26 +2,24 @@
     "context": {
       "session_id": "session_0"
     },
-    "trainFeatures": [
-      {
-        "featureId": "cylinders",
-        "dataUri": "data/d3m/o_196seed/data/trainDatamerged.tsv"
-      },
-      {
-        "featureId": "cylinders",
-        "dataUri": "data/d3m/o_196seed/data/trainDatamerged.tsv"
-      }
-    ],
+    "dataset_uri": "file://ravens_volume/test_data/185_baseball/TRAIN/dataset_TRAIN/tables/learningData.csv",
     "task": "REGRESSION",
     "taskSubtype": "UNIVARIATE",
-    "output": "REAL",
+    "task_description": "Database of baseball players and play statistics, including 'Games_played', 'At_bats', 'Runs', 'Hits', 'Doubles', 'Triples', 'Home_runs', 'RBIs', 'Walks', 'Strikeouts', 'Batting_average', 'On_base_pct', 'Slugging_pct' and 'Fielding_ave'",
+    "output": "OUTPUT_TYPE_UNDEFINED",
     "metrics": [
       "ROOT_MEAN_SQUARED_ERROR"
     ],
     "targetFeatures": [
       {
-        "featureId": "class",
-        "dataUri": "data/d3m/o_196seed/data/trainDatamerged.tsv"
+        "resource_id": "0",
+        "feature_name": "At_bats"
+      }
+    ],
+    "predict_features": [
+      {
+        "resource_id": "0",
+        "feature_name": "RBIs"
       }
     ],
     "maxPipelines": 10
