@@ -5,6 +5,10 @@ import * as d3 from "d3"
 import $ from 'jquery'
 import "jquery-ui/ui/widgets/datepicker"
 
+// Used for rendering date calendar
+import '../../../../node_modules/jquery-ui/themes/base/datepicker.css'
+import '../../../../node_modules/jquery-ui-dist/jquery-ui.theme.min.css'
+
 let margin;
 let margin2;
 let datewidth;
@@ -23,7 +27,7 @@ export var dateminUser = new Date(datemin.getTime());
 export var datemaxUser = new Date(datemax.getTime());
 
 // Only true on page setup
-let dateSetup = true;
+let firstDraw = true;
 
 // Stores brush dates
 let plotSelection;
@@ -81,7 +85,6 @@ export function setupDate() {
 
 // Redraws the date page. If reset is true, then slider bars get reset
 export function updateDate(reset_sliders=true) {
-
     $("#dateSVG").empty();
     if (app.opMode === "subset") {
 		$("#dateInterval").css("display", "block");
@@ -235,14 +238,14 @@ export function updateDate(reset_sliders=true) {
 
     let format = d3.timeFormat("%m-%d-%Y");
 
-    if (dateSetup) {
-        let fromDate = $('#fromDate');
+    if (firstDraw) {
+        let fromDate = $('#fromdate');
         fromDate.datepicker('option', 'minDate', datemin);
         fromDate.datepicker('option', 'maxDate', datemax);
         fromDate.datepicker('option', 'defaultDate', datemin);
         fromDate.datepicker('option', 'yearRange', datemin.getFullYear() + ':' + datemax.getFullYear());
 
-        let toDate = $('toDate');
+        let toDate = $('#todate');
         toDate.datepicker('option', 'minDate', datemin);
         toDate.datepicker('option', 'maxDate', datemax);
         toDate.datepicker('option', 'defaultDate', datemax);
@@ -250,6 +253,8 @@ export function updateDate(reset_sliders=true) {
 
         fromDate.val(format(datemin));
         toDate.val(format(datemax));
+
+        firstDraw = false;
     }
 
     // Domain of dates: (range was set in variable initialization)
@@ -329,8 +334,6 @@ export function updateDate(reset_sliders=true) {
         .attr("dy", "2em")
         .style("text-anchor", "middle")
         .text("Frequency by Month");
-
-    dateSetup = false;
 }
 
 function interpolate(data, date) {

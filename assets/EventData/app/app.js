@@ -3,6 +3,14 @@ import {updateActor, actorLinks, resizeActorSVG} from "./subsets/Actor";
 import {updateDate, datemax, datemaxUser, datemin, dateminUser, setDatefromSlider} from "./subsets/Date";
 import {updateLocation, mapListCountriesSelected} from "./subsets/Location";
 
+// Used for custom query editor
+import '../../../node_modules/ace-builds/src-min-noconflict/ace.js'
+
+// Used for right panel query tree
+import '../../../node_modules/jqtree/tree.jquery.js'
+import '../../../node_modules/jqtree/jqtree.css'
+import '../pkgs/jqtree/jqtree.style.css'
+
 export function about() {
     $('#about').show();
 }
@@ -293,22 +301,20 @@ export function showSubset(subsetKey) {
             $("#main").children().hide();
             $("#subset" + subsetKeySelected).css('display', 'inline');
 
-            if (subsetKeySelected === "Custom") {
-                $("#stageButton").hide()
-            } else {
-                $("#stageButton").show()
-            }
+            if (subsetKeySelected === "Custom") $("#stageButton").hide();
+            else $("#stageButton").show();
+
             rightpanelMargin();
         }
-    }
 
-    if (subsetKeySelected === "Action") {
-        drawGraphs();
-        updateData();
-    }
+        if (subsetKeySelected === "Action") {
+            drawGraphs();
+            updateData();
+        }
 
-    if (subsetKeySelected === "Actor") {
-        resizeActorSVG();
+        if (subsetKeySelected === "Actor") {
+            resizeActorSVG();
+        }
     }
 }
 
@@ -499,15 +505,11 @@ export function rightpanelMargin() {
         }
     }
 
-    if (main.get(0).scrollWidth > main.get(0).clientWidth) {
-        // Horizontal scrollbar
-        document.getElementById("rightpanel").style.height = "calc(100% - 139px)";
-        document.getElementById("stageButton").style.bottom = "73px";
-    } else {
-        // No horizontal scrollbar
-        document.getElementById("rightpanel").style.height = "calc(100% - 122px)";
-        document.getElementById("stageButton").style.bottom = "56px";
-    }
+    let height_adjustment = main.get(0).scrollWidth > main.get(0).clientWidth ? 17 : 0;
+    if (opMode === "aggreg") height_adjustment += 100;
+
+    document.getElementById("rightpanel").style.height = "calc(100% - " + String(122 + height_adjustment) + "px)";
+    document.getElementById("stageButton").style.bottom = String(56 + height_adjustment) + "px";
 }
 
 

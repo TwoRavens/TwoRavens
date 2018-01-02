@@ -1,5 +1,5 @@
 import m from 'mithril';
-import {d3loc, maingraphAction} from '../subsets/Location'
+import {updateLocation, maingraphAction} from '../subsets/Location'
 
 
 export default class CanvasLocation {
@@ -116,7 +116,7 @@ export default class CanvasLocation {
                                         "margin-right": "7px"
                                     },
                                     onclick: function(e) {
-                                        d3loc();
+                                        updateLocation();
                                         e.redraw = false;
                                     }
                                 }, "Reset")

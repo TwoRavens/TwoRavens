@@ -1,6 +1,6 @@
 import {opMode, setOpMode, rappURL, varColor, selVarColor, rightpanelMargin} from "../app";
 import {updateDate, datemin} from "../subsets/Date";
-import {updateActor, actorLinks} from "../subsets/Actor";
+import {updateActor, actorLinks, resizeActorSVG} from "../subsets/Actor";
 
 var aggregMode = "penta";
 var aggregDateOn = 0;		//0 = off, 1 = week, 2 = month, 3 = quarter, 4 = year
@@ -23,11 +23,15 @@ export function updateToAggreg() {
 		$(".aggregDiv").show();
 		$("#canvasAggregation").css("display", "block");
 		$("#aggregDataOutput").css("display", "inline");
+        $("#aggregDataDisplay").css("display", "inline");
+        $("#main").css("height", "calc(100% - 202px)")
 		$("#dateOptions").css("display", "none");
-		$("#dateAggregOptions").css("display", "block");
+		$("#dateAggregOption").css("display", "block");
 		$("#leftpanel").css("height", "calc(100% - 222px)");
 		$("#rightpanel").css("height", "calc(100% - 222px)");
 
+        $("#subsetTourBar").css("display", "none");
+        $("#aggregTourBar").css("display", "inline-block");
 
 		d3.select("#aggregOptions").selectAll("p").style("background-color", varColor);
 		d3.select("#aggregPentaToggle").style("background-color", selVarColor);
@@ -385,7 +389,7 @@ function linkTable() {
 
 }
 
-function updateAggregTable() {
+export function updateAggregTable() {
 	console.log("updating table");
 	//~ console.log(dateData);
 	//~ console.log(dateData[0]);

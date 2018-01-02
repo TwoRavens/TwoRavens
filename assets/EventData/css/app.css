@@ -110,7 +110,8 @@ text.id {
 .left {
     width: 33.3%;
     height: 100%; /*was 600px;*/
-    box-sizing: border-box; margin: 0;
+    box-sizing: border-box;
+    margin: 0;
     overflow:scroll;
 }
 
