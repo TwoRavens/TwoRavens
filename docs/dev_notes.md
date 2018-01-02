@@ -238,8 +238,8 @@ from tworaven_apps.ta2_interfaces import core_pb2
 from tworaven_apps.ta2_interfaces.ta2_connection import TA2Connection
 from google.protobuf.json_format import MessageToJson, Parse, ParseError
 
-#settings.TA2_TEST_SERVER_URL = 'docker.for.mac.localhost:50051'
-settings.TA2_TEST_SERVER_URL = 'localhost:50051'
+#settings.TA2_TEST_SERVER_URL = 'docker.for.mac.localhost:45042'
+settings.TA2_TEST_SERVER_URL = 'localhost:45042'
 
 content = json.dumps(dict(user_agent='tworavens'))
 req = Parse(content, core_pb2.SessionRequest())

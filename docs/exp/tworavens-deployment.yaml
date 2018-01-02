@@ -22,7 +22,7 @@ spec:
         name: tworavens
         ports:
         - containerPort: 8080
-        - containerPort: 50051
+        - containerPort: 45042
         resources: {}
       restartPolicy: Always
 status: {}
