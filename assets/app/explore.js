@@ -2,19 +2,141 @@ import m from 'mithril';
 
 import * as app from './app';
 
-function showLog() {
-    if (app.logArray.length > 0) {
-        app.byId('logdiv').setAttribute("style", "display:block");
-        d3.select("#collapseLog div.panel-body").selectAll("p")
-            .data(app.logArray)
-            .enter()
-            .append("p")
-            .text(d => d);
-        return;
-    }
-    app.byId('logdiv').setAttribute("style", "display:none");
-}
+const $private = false;
 
+function heatmap(x_Axis_name, y_Axis_name) {
+    d3.select("#heatChart").select("svg").remove();
+    $('#heatchart').html("");
+
+    var margin_heat = {top: 30, right: 10, bottom: 60, left: 60},
+        width_heat = 500 - margin_heat.left - margin_heat.right,
+        height_heat = 300 - margin_heat.top - margin_heat.bottom;
+    var padding = 100;
+
+    var min_x = d3.min(data_plot, function (d, i) {
+        return data_plot[i].xaxis;
+    });
+    var max_x = d3.max(data_plot, function (d, i) {
+        return data_plot[i].xaxis;
+    });
+    var avg_x = (max_x - min_x) / 100;
+    var min_y = d3.min(data_plot, function (d, i) {
+        return data_plot[i].yaxis;
+    });
+    var max_y = d3.max(data_plot, function (d, i) {
+        return data_plot[i].yaxis;
+    });
+    var avg_y = (max_y - min_y) / 100;
+
+    var x = d3.scale.linear()
+        .domain([min_x - avg_x, max_x + avg_x])
+        .range([0, width_heat]);
+
+    var y = d3.scale.linear()
+        .domain([min_y - avg_y, max_y + avg_y])
+        .range([height_heat, 0]);
+
+    var z = d3.scale.linear().range(["#EF9A9A", "#EF5350"]);
+
+    // This could be inferred from the data if it weren't sparse.
+    var xStep = avg_x+ 0.1,
+        yStep = avg_y + 0.2;
+    var svg_heat = d3.select("#heatchart").append("svg")
+        .attr("width", width_heat + margin_heat.left + margin_heat.right)
+        .attr("height", height_heat + margin_heat.top + margin_heat.bottom)
+        .append("g")
+        .attr("transform", "translate(" + margin_heat.left + "," + margin_heat.top+ ")")
+        .style("background-color", "#FFEBEE");
+
+
+    // Compute the scale domains.
+    x.domain(d3.extent(data_plot, function (d, i) {
+        return data_plot[i].xaxis;
+    }));
+    y.domain(d3.extent(data_plot, function (d, i) {
+        return data_plot[i].yaxis;
+    }));
+    z.domain([0, d3.max(data_plot, function (d, i) {
+        return data_plot[i].score;
+    })]);
+
+    // Extend the x- and y-domain to fit the last bucket.
+    // For example, the y-bucket 3200 corresponds to values [3200, 3300].
+    x.domain([x.domain()[0], +x.domain()[1] + xStep]);
+    y.domain([y.domain()[0], y.domain()[1] + yStep]);
+
+    // Display the tiles for each non-zero bucket.
+    // See http://bl.ocks.org/3074470 for an alternative implementation.
+    svg_heat.selectAll(".tile")
+        .data(data_plot)
+        .enter().append("rect")
+        .attr("class", "tile")
+        .attr("x", function (d, i) {
+            return x(data_plot[i].xaxis);
+        })
+        .attr("y", function (d, i) {
+            return y(data_plot[i].yaxis + yStep );
+        })
+        .attr("width", 15)
+        .attr("height", 15)
+        .attr("dx", ".35em")
+        .attr("dy", ".35em")
+        .style("fill", function (d, i) {
+            return z(data_plot[i].score);
+        });
+
+
+    svg_heat.append("text")
+        .attr("class", "label")
+        .attr("x", width_heat + 20)
+        .attr("y", 10)
+        .attr("dy", ".35em")
+        .text("Count");
+
+    // Add an x-axis with label.
+    svg_heat.append("g")
+        .attr("class", "x axis")
+        .attr("transform", "translate(0," + height_heat + ")")
+        .call(d3.svg.axis().scale(x).ticks(5).tickSize(-height_heat).orient("bottom"))
+        .append("text")
+        .attr("class", "label")
+        .attr("x", width_heat)
+        .attr("y", -6)
+        .attr("text-anchor", "end")
+        .text("");
+
+    // Add a y-axis with label.
+    svg_heat.append("g")
+        .attr("class", "y axis")
+        .call(d3.svg.axis().scale(y).tickSize(-width_heat).orient("left"))
+        .append("text")
+        .attr("class", "label")
+        .attr("y", 6)
+        .attr("dy", ".71em")
+        .attr("text-anchor", "end")
+        .attr("transform", "rotate(-90)")
+        .text("");
+
+    svg_heat.append("text")
+        .attr("text-anchor", "middle")  // this makes it easy to centre the text as the transform is applied to the anchor
+        .attr("transform", "translate(-40," + (height_heat / 2) + ")rotate(-90)")  // text is drawn off the screen top left, move down and out and rotate
+        .text(y_Axis_name)
+        .style("fill", "#424242")
+        .style("text-indent","20px")
+        .style("font-size","12px")
+        .style("font-weight","bold");
+
+    svg_heat.append("text")
+        .attr("text-anchor", "middle")  // this makes it easy to centre the text as the transform is applied to the anchor
+        .attr("transform", "translate(" + (width_heat / 2) + "," + (height_heat + padding / 4) + ")")  // centre below axis
+        .text(x_Axis_name)
+        .style("fill", "#424242")
+        .style("text-indent","20px")
+        .style("font-size","12px")
+        .style("font-weight","bold");
+
+
+}
 var data_plot = [];
 
 function bivariatePlot(x_Axis, y_Axis, x_Axis_name, y_Axis_name) {
@@ -164,19 +286,13 @@ function bivariatePlot(x_Axis, y_Axis, x_Axis_name, y_Axis_name) {
 
         zoom.translate([panX, panY]);
 
-
         main1.select(".x.axis").call(xAxis);
         main1.select(".y.axis").call(yAxis);
         main1.selectAll("circle")
-            .attr("cx", function (d, i) {
-                return xScale(data_plot[i].xaxis);
-            })
-            .attr("cy", function (d, i) {
-                return yScale(data_plot[i].yaxis);
-            })
+            .attr("cx", (_, i) => xScale(data_plot[i].xaxis))
+            .attr("cy", (_, i) => yScale(data_plot[i].yaxis))
             .attr("r", 2.5)
-            .style("fill", "#B71C1C")
-        ;
+            .style("fill", "#B71C1C");
     }
 
     //heatmap
@@ -185,138 +301,771 @@ function bivariatePlot(x_Axis, y_Axis, x_Axis_name, y_Axis_name) {
     heatmap(x_Axis_name, y_Axis_name);
 }
 
-function heatmap(x_Axis_name, y_Axis_name) {
-    d3.select("#heatChart").select("svg").remove();
-    $('#heatchart').html("");
+function crossTabPlots(PlotNameA, PlotNameB) {
+    var mydiv = "#resultsView_tabular";
 
-    var margin_heat = {top: 30, right: 10, bottom: 60, left: 60},
-        width_heat = 500 - margin_heat.left - margin_heat.right,
-        height_heat = 300 - margin_heat.top - margin_heat.bottom;
-    var padding = 100;
+    var plot_nodes = app.nodes.slice();
+    var margin_cross = {top: 30, right: 35, bottom: 40, left: 40},
+        width_cross = 300 - margin_cross.left - margin_cross.right,
+        height_cross = 160 - margin_cross.top - margin_cross.bottom;
 
-    var min_x = d3.min(data_plot, function (d, i) {
-        return data_plot[i].xaxis;
-    });
-    var max_x = d3.max(data_plot, function (d, i) {
-        return data_plot[i].xaxis;
-    });
-    var avg_x = (max_x - min_x) / 100;
-    var min_y = d3.min(data_plot, function (d, i) {
-        return data_plot[i].yaxis;
-    });
-    var max_y = d3.max(data_plot, function (d, i) {
-        return data_plot[i].yaxis;
-    });
-    var avg_y = (max_y - min_y) / 100;
+    var padding_cross = 100;
 
-    var x = d3.scale.linear()
-        .domain([min_x - avg_x, max_x + avg_x])
-        .range([0, width_heat]);
+    for (var i = 0; i < plot_nodes.length; i++) {
+        if (plot_nodes[i].name === PlotNameA) {
+            if (plot_nodes[i].plottype === "continuous") {
+                density_cross(plot_nodes[i]);
+            }
+            else if (plot_nodes[i].plottype === "bar") {
+                bar_cross(plot_nodes[i]);
+            }
+        } else if (plot_nodes[i].name === PlotNameB) {
+            if (plot_nodes[i].plottype === "continuous") {
+                density_cross(plot_nodes[i]);
+            }
+            else if (plot_nodes[i].plottype === "bar") {
+                bar_cross(plot_nodes[i]);
+            }
+        }
+    }
+    d3.select(mydiv).append("g")
+        .attr("id", "btnDiv")
+        .style('font-size', '75%')
+        .style("width", "280px")
+        .style("position","relative")
+        .style("left", (margin_cross.left+ (padding_cross/2)) + "px")
+        .style("top", "18px");
 
-    var y = d3.scale.linear()
-        .domain([min_y - avg_y, max_y + avg_y])
-        .range([height_heat, 0]);
+    d3.select("#btnDiv")[0][0].innerHTML =[
+        '<h5>Data Selection</h5>',
+        '<p>Enter the numbers for both plots respectively to specify the distribution of the cross-tabs.</p>',
+        '<p id="boldstuff" style="color: #2a6496">Select between Equidistant and Equimass.</p>'
+    ].join('\n');
 
-    var z = d3.scale.linear().range(["#EF9A9A", "#EF5350"]);
+    d3.select("#btnDiv")
+        .append("input")
+        .attr({
+            id: "a",
+            placeholder: PlotNameA,
+            size: 20
+        });
 
-    // This could be inferred from the data if it weren't sparse.
-    var xStep = avg_x+ 0.1,
-        yStep = avg_y + 0.2;
-    var svg_heat = d3.select("#heatchart").append("svg")
-        .attr("width", width_heat + margin_heat.left + margin_heat.right)
-        .attr("height", height_heat + margin_heat.top + margin_heat.bottom)
-        .append("g")
-        .attr("transform", "translate(" + margin_heat.left + "," + margin_heat.top+ ")")
-        .style("background-color", "#FFEBEE");
-
-
-    // Compute the scale domains.
-    x.domain(d3.extent(data_plot, function (d, i) {
-        return data_plot[i].xaxis;
-    }));
-    y.domain(d3.extent(data_plot, function (d, i) {
-        return data_plot[i].yaxis;
-    }));
-    z.domain([0, d3.max(data_plot, function (d, i) {
-        return data_plot[i].score;
-    })]);
-
-    // Extend the x- and y-domain to fit the last bucket.
-    // For example, the y-bucket 3200 corresponds to values [3200, 3300].
-    x.domain([x.domain()[0], +x.domain()[1] + xStep]);
-    y.domain([y.domain()[0], y.domain()[1] + yStep]);
-
-    // Display the tiles for each non-zero bucket.
-    // See http://bl.ocks.org/3074470 for an alternative implementation.
-    svg_heat.selectAll(".tile")
-        .data(data_plot)
-        .enter().append("rect")
-        .attr("class", "tile")
-        .attr("x", function (d, i) {
-            return x(data_plot[i].xaxis);
+    // style both of the inputs at once
+    // more on HTML5 <input> at https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input
+    d3.selectAll("input")
+        .attr({
+            "type": "text",
+            "size": 3,
+            "autofocus": "true",
+            "inputmode": "numeric"
         })
-        .attr("y", function (d, i) {
-            return y(data_plot[i].yaxis + yStep );
-        })
-        .attr("width", 15)
-        .attr("height", 15)
-        .attr("dx", ".35em")
-        .attr("dy", ".35em")
-        .style("fill", function (d, i) {
-            return z(data_plot[i].score);
+        .style({
+            "text-align": "center",
+            "display": "inline-block",
+            "margin-right": "10px"
         });
 
 
-    svg_heat.append("text")
-        .attr("class", "label")
-        .attr("x", width_heat + 20)
-        .attr("y", 10)
-        .attr("dy", ".35em")
-        .text("Count");
+    var btns = d3.select("#btnDiv").selectAll("button").data(["EQUIDISTANCE", "EQUIMASS"])
+    btns = btns.enter().append("button").style("display", "inline-block")
 
-    // Add an x-axis with label.
-    svg_heat.append("g")
-        .attr("class", "x axis")
-        .attr("transform", "translate(0," + height_heat + ")")
-        .call(d3.svg.axis().scale(x).ticks(5).tickSize(-height_heat).orient("bottom"))
-        .append("text")
-        .attr("class", "label")
-        .attr("x", width_heat)
-        .attr("y", -6)
-        .attr("text-anchor", "end")
-        .text("");
+    // fill the buttons with the year from the data assigned to them
+    btns.each(function (d) {
+        this.innerText = d;
+    });
 
-    // Add a y-axis with label.
-    svg_heat.append("g")
-        .attr("class", "y axis")
-        .call(d3.svg.axis().scale(y).tickSize(-width_heat).orient("left"))
-        .append("text")
-        .attr("class", "label")
-        .attr("y", 6)
-        .attr("dy", ".71em")
-        .attr("text-anchor", "end")
-        .attr("transform", "rotate(-90)")
-        .text("");
+    btns.on("click", getData);
 
-    svg_heat.append("text")
-        .attr("text-anchor", "middle")  // this makes it easy to centre the text as the transform is applied to the anchor
-        .attr("transform", "translate(-40," + (height_heat / 2) + ")rotate(-90)")  // text is drawn off the screen top left, move down and out and rotate
-        .text(y_Axis_name)
-        .style("fill", "#424242")
-        .style("text-indent","20px")
-        .style("font-size","12px")
-        .style("font-weight","bold");
+    d3.select(mydiv).append("g")
+        .attr("id", "btnDiv1")
+        .style('font-size', '75%')
+        .style("width", "280px")
+        .style("position","relative")
+        .style("left", (margin_cross.left-(padding_cross*1.75)) + "px")
+        .style("top", "50px")
 
-    svg_heat.append("text")
-        .attr("text-anchor", "middle")  // this makes it easy to centre the text as the transform is applied to the anchor
-        .attr("transform", "translate(" + (width_heat / 2) + "," + (height_heat + padding / 4) + ")")  // centre below axis
-        .text(x_Axis_name)
-        .style("fill", "#424242")
-        .style("text-indent","20px")
-        .style("font-size","12px")
-        .style("font-weight","bold");
+    d3.select("#btnDiv1")
+        .append("input")
+        .attr({
+            "id": "b",
+            "placeholder": PlotNameB,
+            "size": 20
+        })
+
+    // style both of the inputs at once
+    // more on HTML5 <input> at https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input
+    d3.selectAll("input")
+        .attr({
+            "type": "text",
+            "size": 3,
+            "autofocus": "true",
+            "inputmode": "numeric"
+        })
+        .style({
+            "text-align": "center",
+            "display": "inline-block",
+            "margin-right": "10px"
+        });
+
+    var btns1 = d3.select("#btnDiv1").selectAll("button").data(["EQUIDISTANCE", "EQUIMASS"]);
+    btns1 = btns1.enter().append("button").style("display", "inline-block");
+
+    // fill the buttons with the year from the data assigned to them
+    btns1.each(function (d) {
+        this.innerText = d;
+    });
+    btns1.on("click", getData1);
+
+    function getData() {
+
+        if (this.innerText === "EQUIDISTANCE")
+        {
+            var plotA_size= parseInt(d3.select("input#a")[0][0].value);
+            equidistance(PlotNameA,plotA_size);
+        }
+        else if (this.innerText === "EQUIMASS") {
+            var plotA_sizem= parseInt(d3.select("input#a")[0][0].value);
+            equimass(PlotNameA,plotA_sizem);
+        }
+    }
+    function getData1() {
+        if (this.innerText === "EQUIDISTANCE")
+        {
+            var plotB_size= parseInt(d3.select("input#b")[0][0].value);
+            equidistance(PlotNameB,plotB_size);
+        }
+        else if (this.innerText === "EQUIMASS") {
+            var plotB_sizem= parseInt(d3.select("input#b")[0][0].value);
+            equimass(PlotNameB,plotB_sizem);
+        }
+
+    }
+
+    /*
+      trail
+    */
+
+    // this is the function to add  the density plot if any
+    function density_cross(density_env,a,method_name) {
+        // setup the x_cord according to the size given by user
+
+        console.log("welcome to : " + density_env.name);
+        //var mydiv = "#resultsView_tabular";
+        var yVals = density_env.ploty;
+        var xVals = density_env.plotx;
+
+        // an array of objects
+
+        var data2 = [];
+        for (var i = 0; i < density_env.plotx.length; i++) {
+            data2.push({x: density_env.plotx[i], y: density_env.ploty[i]});
+        }
+
+        data2.forEach(function (d) {
+            d.x = +d.x;
+            d.y = +d.y;
+        });
+        //  console.log(data2);
+
+        var min_x = d3.min(data2, function (d, i) {
+            return data2[i].x;
+        });
+        var max_x = d3.max(data2, function (d, i) {
+            return data2[i].x;
+        });
+        var avg_x = (max_x - min_x) / 10;
+        var min_y = d3.min(data2, function (d, i) {
+            return data2[i].y;
+        });
+        var max_y = d3.max(data2, function (d, i) {
+            return data2[i].y;
+        });
+        var avg_y = (max_y - min_y) / 10;
+        var x = d3.scale.linear()
+            .domain([d3.min(xVals), d3.max(xVals)])
+            .range([0, width_cross]);
+
+        var invx = d3.scale.linear()
+            .range([d3.min(data2.map(function (d) {
+                return d.x;
+            })), d3.max(data2.map(function (d) {
+                return d.x;
+            }))])
+            .domain([0, width_cross]);
+
+        var y = d3.scale.linear()
+            .domain([d3.min(data2.map(function (d) {
+                return d.y;
+            })), d3.max(data2.map(function (d) {
+                return d.y;
+            }))])
+            .range([height_cross, 0]);
 
 
+        var xAxis = d3.svg.axis()
+            .scale(x)
+            .ticks(5)
+            .orient("bottom");
+
+        var yAxis = d3.svg.axis()
+            .scale(y)
+            .orient("left");
+
+        var area = d3.svg.area()
+            .interpolate("monotone")
+            .x(function (d) {
+                return x(d.x);
+            })
+            .y0(height_cross - avg_y)
+            .y1(function (d) {
+                return y(d.y);
+            });
+
+        var line = d3.svg.line()
+            .x(function (d) {
+                return x(d.x);
+            })
+            .y(function (d) {
+                return y(d.y);
+            })
+            .interpolate("monotone");
+
+        var plotsvg = d3.select(mydiv)
+            .append("svg")
+            .attr("id", "plotsvg_id")
+            .style("width", width_cross + margin_cross.left + margin_cross.right) //setting height to the height of #main.left
+            .style("height", height_cross + margin_cross.top + margin_cross.bottom)
+            .style("margin-left","20px")
+            .append("g")
+            .attr("transform", "translate(0," + margin_cross.top + ")");
+
+
+        plotsvg.append("path")
+            .attr("id", "path1")
+            .datum(data2)
+            .attr("class", "area")
+            .attr("d", area);
+        plotsvg.append("g")
+            .attr("class", "x axis")
+            .attr("transform", "translate(0," + (height_cross  ) + ")")
+            .call(xAxis);
+
+        plotsvg.append("text")
+            .attr("x", (width_cross / 2))
+            .attr("y", (margin_cross.top + padding_cross -10))
+            .attr("text-anchor", "middle")
+            .text(density_env.name)
+            .style("text-indent","20px")
+            .style("font-size","12px")
+            .style("font-weight","bold");
+
+        if (isNaN(a) || a === 0) {
+            console.log("do nothing #bar")
+            var upper_limit = d3.max(xVals);
+            var lower_limit = d3.min(xVals);
+
+            var z = 10;
+            //console.log(upper_limit +" and " + lower_limit);
+            var diff = upper_limit - lower_limit;
+            var buffer = diff / z;
+            var x_cord = [];
+            console.log("diff : " + diff);
+            console.log("buffer : " + buffer);
+            var push_data = lower_limit;
+            for (var i = 0; i < z - 1; i++) {
+                push_data = push_data + buffer;
+                x_cord.push(push_data);
+                //console.log("x_cord : " + x_cord);
+
+
+                plotsvg.append("line")
+                    .attr("id", "line1")
+                    .attr("x1", x(x_cord[i]))
+                    .attr("x2", x(x_cord[i]))
+                    .attr("y1", y(d3.min(yVals)))
+                    .attr("y2", y(d3.max(yVals)))
+                    .style("stroke", "#212121")
+                    .style("stroke-dasharray", "3");
+            }
+        }
+        else {
+            if (method_name === "equidistance") {
+
+                var upper_limit = d3.max(xVals);
+                var lower_limit = d3.min(xVals);
+
+
+                //console.log(upper_limit +" and " + lower_limit);
+                var diff = upper_limit - lower_limit;
+                var buffer = diff / a;
+                var x_cord = [];
+                console.log("diff : " + diff);
+                console.log("buffer : " + buffer);
+                var push_data = lower_limit;
+                for (var i = 0; i < a - 1; i++) {
+                    push_data = push_data + buffer;
+                    x_cord.push(push_data);
+                    // console.log("x_cord : " + x_cord);
+
+
+                    plotsvg.append("line")
+                        .attr("id", "line1")
+                        .attr("x1", x(x_cord[i]))
+                        .attr("x2", x(x_cord[i]))
+                        .attr("y1", y(d3.min(yVals)))
+                        .attr("y2", y(d3.max(yVals)))
+                        .style("stroke", "#0D47A1")
+                        .style("stroke-dasharray", "4");
+                }
+
+            }
+
+            else if (method_name === "equimass") // here we use the data from equimassCalculation to draw lines
+            {
+                console.log(" density equimass called ");
+                var temp = [];
+
+                temp = equimassCalculation(density_env, a);
+                console.log("temp for density : " + temp);
+                for (var i = 1; i < a; i++) {
+                    plotsvg.append("line")
+                        .attr("id", "line1")
+                        .attr("x1", x(temp[i]))
+                        .attr("x2", x(temp[i]))
+                        .attr("y1", y(d3.min(yVals)))
+                        .attr("y2", y(d3.max(yVals)))
+                        .style("stroke", "#0D47A1")
+                        .style("stroke-dasharray", "4");
+                }
+            }
+        }
+    }
+
+
+    // this is the function to add the bar plot if any
+    function bar_cross(bar_env,a,method_name) {
+        console.log("welcome to : " + bar_env.name);
+
+        var barPadding = .015;  // Space between bars
+        var topScale = 1.2;      // Multiplicative factor to assign space at top within graph - currently removed from implementation
+        var plotXaxis = true;
+
+        // Data
+        var keys = Object.keys(bar_env.plotvalues);
+        var yVals = new Array;
+        var ciUpperVals = new Array;
+        var ciLowerVals = new Array;
+        var ciSize;
+
+        var xVals = new Array;
+        var yValKey = new Array;
+
+        // console.log(keys);
+
+        //    var mydiv = "#resultsView_tabular";
+
+
+        if (bar_env.nature === "nominal") {
+            var xi = 0;
+            for (var i = 0; i < keys.length; i++) {
+                if (bar_env.plotvalues[keys[i]] == 0) {
+                    continue;
+                }
+                yVals[xi] = bar_env.plotvalues[keys[i]];
+                xVals[xi] = xi;
+                if ($private) {
+                    if (bar_env.plotvaluesCI) {
+                        ciLowerVals[xi] = bar_env.plotValuesCI.lowerBound[keys[i]];
+                        ciUpperVals[xi] = bar_env.plotValuesCI.upperBound[keys[i]];
+                    }
+                    ciSize = ciUpperVals[xi] - ciLowerVals[xi];
+                }
+                ;
+
+                yValKey.push({y: yVals[xi], x: keys[i]});
+                xi = xi + 1;
+            }
+            yValKey.sort(function (a, b) {
+                return b.y - a.y
+            }); // array of objects, each object has y, the same as yVals, and x, the category
+            yVals.sort(function (a, b) {
+                return b - a
+            }); // array of y values, the height of the bars
+            ciUpperVals.sort(function (a, b) {
+                return b.y - a.y
+            }); // ?
+            ciLowerVals.sort(function (a, b) {
+                return b.y - a.y
+            }); // ?
+        }
+        else {
+            for (var i = 0; i < keys.length; i++) {
+                // console.log("plotvalues in bars");
+                //console.log(node);
+                yVals[i] = bar_env.plotvalues[keys[i]];
+                xVals[i] = Number(keys[i]);
+                if ($private) {
+                    if (bar_env.plotvaluesCI) {
+                        ciLowerVals[i] = bar_env.plotvaluesCI.lowerBound[keys[i]];
+                        ciUpperVals[i] = bar_env.plotvaluesCI.upperBound[keys[i]];
+                    }
+                    ciSize = ciUpperVals[i] - ciLowerVals[i];
+                }
+            }
+        }
+
+        if ((yVals.length > 15 & bar_env.numchar === "numeric") | (yVals.length > 5 & bar_env.numchar === "character")) {
+            plotXaxis = false;
+        }
+        var minY=d3.min(yVals);
+        var  maxY = d3.max(yVals); // in the future, set maxY to the value of the maximum confidence limit
+        var  minX = d3.min(xVals);
+        var  maxX = d3.max(xVals);
+        var   x_1 = d3.scale.linear()
+            .domain([minX - 0.5, maxX + 0.5])
+            .range([0, width_cross]);
+
+        var invx = d3.scale.linear()
+            .range([minX - 0.5, maxX + 0.5])
+            .domain([0, width_cross]);
+
+        var  y_1 = d3.scale.linear()
+        // .domain([0, maxY])
+            .domain([0, maxY])
+            .range([0, height_cross]);
+
+        var xAxis = d3.svg.axis()
+            .scale(x_1)
+            .ticks(yVals.length)
+            .orient("bottom");
+
+        var yAxis = d3.svg.axis()
+            .scale(y_1)
+            .orient("left");
+
+        var    plotsvg1 = d3.select(mydiv)
+            .append("svg")
+            .attr("id","plotsvg1_id")
+            .style("width", width_cross + margin_cross.left + margin_cross.right) //setting height to the height of #main.left
+            .style("height", height_cross + margin_cross.top + margin_cross.bottom)
+            .style("margin-left","20px")
+            .append("g")
+            .attr("transform", "translate(0," + margin_cross.top + ")");
+
+        var rectWidth = x_1(minX + 0.5 - 2 * barPadding); //the "width" is the coordinate of the end of the first bar
+
+        plotsvg1.selectAll("rect")
+
+            .data(yVals)
+            .enter()
+            .append("rect")
+            .attr("id","path2")
+            .attr("x", function (d, i) {
+                return x_1(xVals[i] - 0.5 + barPadding);
+            })
+            .attr("y", function (d) {
+                return y_1(maxY - d);
+            })
+            .attr("width", rectWidth)
+            .attr("height", function (d) {
+                return y_1(d);
+            })
+            .attr("fill", "#fa8072");
+
+        if (plotXaxis) {
+            plotsvg1.append("g")
+                .attr("class", "x axis")
+                .attr("transform", "translate(0," + height_cross + ")")
+                .call(xAxis);
+        }
+
+        plotsvg1.append("text")
+            .attr("x", (width_cross / 2))
+            .attr("y", margin_cross.top + padding_cross-10)
+            .attr("text-anchor", "middle")
+            .text(bar_env.name)
+            .style("text-indent","20px")
+            .style("font-size","12px")
+            .style("font-weight","bold");
+
+        if(isNaN(a)|| a===0) {
+            console.log("do nothing #bar");
+            x_cord2 = equimass_bar(bar_env, keys.length);
+            //console.log("x_cord2 equidis : " + x_cord2);
+
+            console.log(" bar equimass called ");
+            for (var i = 0; i < keys.length - 1; i++) {
+                // console.log("x_cord1 actual: " + x_1(x_cord2[i]));
+                plotsvg1.append("line")
+                    .attr("id", "line2")
+                    .attr("x1", x_1(x_cord2[i] ))
+                    .attr("x2", x_1(x_cord2[i] ))
+                    .attr("y1", y_1(0))
+                    .attr("y2", y_1(maxY))
+                    .style("stroke", "#212121")
+                    .style("stroke-dasharray", "4");
+            }
+        }
+        else {
+            if (method_name === "equidistance") {
+                var upper_limit1 = maxX;
+                var lower_limit1 = minX;
+                var diff1 = upper_limit1 - lower_limit1;
+                var buffer1 = diff1 / a;
+                var x_cord1 = [];
+                console.log("diff1 : " + diff1);
+                console.log("buffer1 : " + buffer1);
+                var push_data1 = lower_limit1;
+                for (var i = 0; i < a - 1; i++) {
+                    push_data1 = push_data1 + buffer1;
+                    x_cord1.push(push_data1);
+                    //console.log("x_cord1 equidis : "+ x_cord1);
+                    // console.log("x_cord1 actual: " + x_1(x_cord1[i]));
+                    //console.log("maxY : "+ maxY);
+                    plotsvg1.append("line")
+                        .attr("id", "line2")
+                        .attr("x1", x_1(x_cord1[i]))
+                        .attr("x2", x_1(x_cord1[i]))
+                        .attr("y1", y_1(0))
+                        .attr("y2", y_1(maxY))
+                        .style("stroke", "#0D47A1")
+                        .style("stroke-dasharray", "4");
+                }
+            } else if (method_name==="equimass") {
+                var x_cord2 = [];
+                x_cord2 = equimass_bar(bar_env, a);
+                //console.log("x_cord2 equidis : " + x_cord2);
+
+                console.log(" bar equimass called ");
+                for (var i = 0; i < a - 1; i++) {
+                    // console.log("x_cord1 actual: " + x_1(x_cord2[i]));
+                    plotsvg1.append("line")
+                        .attr("id", "line2")
+                        .attr("x1", x_1(x_cord2[i] ))
+                        .attr("x2", x_1(x_cord2[i] ))
+                        .attr("y1", y_1(0))
+                        .attr("y2", y_1(maxY))
+                        .style("stroke", "#0D47A1")
+                        .style("stroke-dasharray", "4");
+                }
+            }
+        }
+    }
+
+    function equidistance(A,a)
+    {
+        var method_name= "equidistance";
+
+        // json object to be sent to r server
+        var obj = new Object();
+        obj.plotNameA = A;
+        obj.equidistance = a;
+
+        //convert object to json string
+        var string = JSON.stringify(obj);
+
+        //convert string to Json Object
+        console.log(JSON.parse(string)); // this is your requirement.
+
+        for (var i = 0; i < plot_nodes.length; i++) {
+            if (plot_nodes[i].name === A) {
+                if (plot_nodes[i].plottype === "continuous") {
+                    $("#plotsvg_id").remove();
+                    density_cross(plot_nodes[i],a,method_name);
+                }
+                else if (plot_nodes[i].plottype === "bar") {
+                    $("#plotsvg1_id").remove();
+                    // d3.select("#line2").remove();
+                    bar_cross(plot_nodes[i],a,method_name);
+                }
+            } else {
+                console.log("not found")
+            }
+        }
+    }
+    function equimass(A,a) //equimass function to call the plot function
+    {
+        var method_name= "equimass";
+
+        // json object to be sent to r server
+        var obj = new Object();
+        obj.plotNameA = A;
+        obj.equidistance = a;
+
+        //convert object to json string
+        var string = JSON.stringify(obj);
+
+        //convert string to Json Object
+        console.log(JSON.parse(string)); // this is your requirement.
+
+        for (var i = 0; i < plot_nodes.length; i++) {
+            if (plot_nodes[i].name === A) {
+                if (plot_nodes[i].plottype === "continuous") {
+                    $("#plotsvg_id").remove();
+                    //d3.select("#line1").remove();
+                    density_cross(plot_nodes[i],a,method_name);
+                }
+                else if (plot_nodes[i].plottype === "bar") {
+                    $("#plotsvg1_id").remove();
+                    // d3.select("#line2").remove();
+                    bar_cross(plot_nodes[i],a,method_name);
+                }
+            } else {
+                console.log("not found")
+            }
+        }
+    }
+
+    function equimassCalculation(plot_ev,n) // here we find the coordinates using CDF values
+    {
+        //var n =v-1;
+        var arr_y=[];
+        var arr_x=[];
+
+        arr_y=plot_ev.cdfploty;// cdfploty data stored
+        arr_x=plot_ev.cdfplotx;// cdfplotx data stored
+
+        var Upper_limitY= d3.max(arr_y);
+        var Lower_limitY=d3.min(arr_y);
+        var diffy=Upper_limitY-Lower_limitY;
+        var e=(diffy)/n; // e is the variable to store the average distance between the points in the cdfy in order to divide the cdfy
+
+        console.log("Upper_limitY ;"+Upper_limitY);
+        console.log("Lower_limitX :"+Lower_limitY);
+        console.log("e "+e );
+
+        var arr_c=[]; //array to store the cdfy divided coordinates data
+        var push_data=arr_y[0];
+        for(var i=0;i<n;i++)
+        {
+            push_data=push_data+e;
+            arr_c.push(push_data);
+        }
+
+        console.log("arr_c : "+ arr_c);
+
+        var temp_cdfx=[];
+        var temp=[];
+        var store=[];
+
+        for (var i=0; i<n; i++)//to get through each arr_c
+        {
+            console.log("test arcc_c" + arr_c[i]);
+            for (var j = 0; j < 50; j++)// to compare with cdfy or arr_y
+            {
+                if (arr_c[i] === arr_y[j]) {
+                    store.push({val: i, coor1: j, coor2: j, diff1: 0.34, diff2: 0});// for testing purpose
+                }
+            }
+        }
+        for(var i=0; i<n;i++) {
+            var diff_val1, diff_val2;// here the diff is not actual difference, it is the fraction of the distance from the two points
+            var x1, x2, x3,x4;
+            for (var j = 0; j < 50; j++) {
+                //  console.log(" j out"+ j );
+                if (arr_y[j] < arr_c[i] && arr_c[i] < arr_y[j + 1]) {
+                    x1 = arr_c[i];
+                    x2 = arr_c[i]-arr_y[j];
+                    x3 = arr_y[j+1]-arr_c[i];
+                    x4=arr_y[j+1]-arr_y[j];
+                    console.log(" val1 : " +x1 + " val2 : " + arr_y[j] + " val3: " + arr_y[j+1]);
+                    console.log(" x1-x2 : " +x2 + " x3-x1 : " + x3 + " x3-x2: " + x4);
+
+                    // console.log(" j in"+ j );
+
+                    diff_val1 = x2/ x4;
+                    diff_val2 = x3 / x4;
+                    console.log("diff_val1: "+ diff_val1 +  " diff_val2: "+ diff_val2);
+                    store.push({val: i, coor1: j, coor2: j + 1, diff1: diff_val1, diff2: diff_val2});
+                }
+            }
+        }
+
+
+        for(var i=0; i<n; i++) {
+            console.log(" store : " + store[i].val + " " + store[i].coor1 + " "+ store[i].coor2 + " diff1 " + store[i].diff1 + " diff2 "+ store[i].diff2);
+        }
+
+        for(var i=0; i<n; i++) {
+            var y1,y2,y3,diffy1,diffy2;
+            y1=store[i].val;
+            y2= store[i].coor1;
+            y3= store[i].coor2;
+            diffy1=store[i].diff1;
+            diffy2=store[i].diff2;
+
+            var x_coor1= arr_x[y2];
+            var x_coor2=arr_x[y3];
+
+            var x_diff=x_coor2-x_coor1;
+
+            var distance1= x_diff*diffy1;
+
+            var val_x=x_coor1+distance1;
+
+            temp.push(val_x);
+            console.log(" val_x"+ val_x);
+        }
+        return temp;
+    }
+
+    function equimass_bar(plot_ev,n) {
+        var keys = Object.keys(plot_ev.plotvalues);
+        var k = keys.length;
+        var temp = [];
+        var count = 0;
+
+        if (k < n) {
+            alert("error enter vaild size");
+            console.log("error enter vaild size")
+        }
+
+        else {
+            while (k > 0) {
+                temp.push({pos: count, val: k});
+                //console.log("k:"+ k+ " and n: "+count );
+                count++;
+                k--;
+                if (count >= n) {
+                    count = 0;
+                }
+            }
+
+            var temp2 = new Array(n);
+
+            for (var i = 0; i < temp2.length; i++) {
+                temp2[i] = 0;
+            }
+            for (var i = 0; i < keys.length; i++) {
+                keys[i] = (keys[i] + 5) / 10;// to get the increase in the actual values by 0.5 according to the xaxis in plot
+            }
+            for (var i = 0; i < n; i++) {
+                for (var j = 0; j < temp.length; j++) {
+                    if (temp[j].pos === i) {
+                        temp2[i] = temp2[i] + 1;
+                    }
+                }
+            }
+
+            for (var i = 0; i < temp.length; i++) {
+                console.log("n : " + temp[i].pos + " and k: " + temp[i].val);
+            }
+            console.log(" the divison of the bar plot : " + temp2);
+
+            var j = 0, k = 0;
+            var temp_final = new Array(n);
+            for (var i = 0; i < keys.length; i++) {
+                temp2[j] = temp2[j] - 1;
+                if (temp2[j] === 0) {
+                    j++;
+                    temp_final[k] = keys[i];
+                    k++;
+                }
+            }
+            console.log("temp_final: " + temp_final);
+            return temp_final;
+        }
+    }
 }
 
 function linechart() {
@@ -938,6 +1687,19 @@ function model_selection(model_selection_name, count_value) {
             d3.select(this)
                 .style('background-color', selVarColor);
         });
+}
+
+function showLog() {
+    if (app.logArray.length > 0) {
+        app.byId('logdiv').setAttribute("style", "display:block");
+        d3.select("#collapseLog div.panel-body").selectAll("p")
+            .data(app.logArray)
+            .enter()
+            .append("p")
+            .text(d => d);
+        return;
+    }
+    app.byId('logdiv').setAttribute("style", "display:none");
 }
 
 /**
