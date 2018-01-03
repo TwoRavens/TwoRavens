@@ -3,7 +3,7 @@ send <- function(res) {
   if(production){
     sink()
   }
-  write(res, "myresult2.json")
+  write(res, "result.json")
 
   response <- Response$new(headers=list("Access-Control-Allow-Origin"="*"))
   response$write(res)

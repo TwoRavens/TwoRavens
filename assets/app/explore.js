@@ -18,12 +18,12 @@ function showLog() {
 var data_plot = [];
 
 function bivariatePlot(x_Axis, y_Axis, x_Axis_name, y_Axis_name) {
-    document.getElementById('scatterplot').style.display = "block";
-    document.getElementById('NAcount').style.display = "block";
+    app.byId('scatterplot').style.display = 'block';
+    app.byId('NAcount').style.display = 'block';
     d3.select("#scatterplot").html("");
     d3.select("#scatterplot").select("svg").remove();
 
-    document.getElementById('linechart').style.display = "none";
+    app.byId('linechart').style.display = 'none';
     d3.select("#heatchart").select("svg").remove();
     d3.select("#linechart").select("svg").remove();
     d3.select("#linechart").html("");
@@ -34,32 +34,24 @@ function bivariatePlot(x_Axis, y_Axis, x_Axis_name, y_Axis_name) {
     // scatter plot
 
     data_plot = [];
-    var nanCount = 0;
-    for (var i = 0; i < 1000; i++) {
+    let nanCount = 0;
+    for (let i = 0; i < 1000; i++) {
         if (isNaN(x_Axis[i]) || isNaN(y_Axis[i])) {
             nanCount++;
         } else {
-            var newNumber1 = x_Axis[i];
-            var newNumber2 = y_Axis[i];
+            let newNumber1 = x_Axis[i];
+            let newNumber2 = y_Axis[i];
             data_plot.push({xaxis: newNumber1, yaxis: newNumber2, score: Math.random() * 100});
-
         }
-
-
     }
 
+    let margin = {top: 20, right: 15, bottom: 40, left: 60},
+        width = 500 - margin.left - margin.right,
+        height = 280 - margin.top - margin.bottom,
+        padding = 100;
 
-    var margin = {top: 20, right: 15, bottom: 40, left: 60}
-    , width = 500 - margin.left - margin.right
-    , height = 280 - margin.top - margin.bottom;
-    var padding = 100;
-
-    var min_x = d3.min(data_plot, function (d, i) {
-        return data_plot[i].xaxis;
-    });
-    var max_x = d3.max(data_plot, function (d, i) {
-        return data_plot[i].xaxis;
-    });
+    let min_x = d3.min(data_plot, (_, i) => data_plot[i].xaxis);
+    let max_x = d3.max(data_plot, (_, i) => data_plot[i].xaxis);
     var avg_x = (max_x - min_x) / 10;
     var min_y = d3.min(data_plot, function (d, i) {
         return data_plot[i].yaxis;
