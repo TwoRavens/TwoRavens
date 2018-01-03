@@ -1723,6 +1723,9 @@ export async function explore() {
     }
     app.allResults.push(json);
 
+
+    d3.select('#rightpanel')
+        .style('width', '900px');
     let parent = app.byId('rightContentArea');
     app.estimated || parent.removeChild(app.byId('resultsHolder'));
     d3.select("#modelView").html('');
