@@ -366,8 +366,8 @@ function crossTabPlots(PlotNameA, PlotNameB) {
         });
 
 
-    var btns = d3.select("#btnDiv").selectAll("button").data(["EQUIDISTANCE", "EQUIMASS"])
-    btns = btns.enter().append("button").style("display", "inline-block")
+    var btns = d3.select("#btnDiv").selectAll("button").data(["EQUIDISTANCE", "EQUIMASS"]);
+    btns = btns.enter().append("button").style("display", "inline-block");
 
     // fill the buttons with the year from the data assigned to them
     btns.each(function (d) {
@@ -382,7 +382,7 @@ function crossTabPlots(PlotNameA, PlotNameB) {
         .style("width", "280px")
         .style("position","relative")
         .style("left", (margin_cross.left-(padding_cross*1.75)) + "px")
-        .style("top", "50px")
+        .style("top", "50px");
 
     d3.select("#btnDiv1")
         .append("input")
@@ -390,7 +390,7 @@ function crossTabPlots(PlotNameA, PlotNameB) {
             "id": "b",
             "placeholder": PlotNameB,
             "size": 20
-        })
+        });
 
     // style both of the inputs at once
     // more on HTML5 <input> at https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input
@@ -1386,7 +1386,7 @@ function viz(m, json_vizexplore, model_name_set) {
         }
     }
 
-    for (var i = 0; i < zparams.zvars.length; i++)
+    for (var i = 0; i < app.zparams.zvars.length; i++)
         // write the results table
         var resultsArray = [];
     for (var key in json.tabular) {
@@ -1445,12 +1445,12 @@ function viz(m, json_vizexplore, model_name_set) {
 
         function removeData()
         {
-            for (var key in zparams) {
-                if (zparams.hasOwnProperty(key)) {
+            for (var key in app.zparams) {
+                if (app.zparams.hasOwnProperty(key)) {
                     // do something with `key'
                     if(key==="zcrosstab" && key.length>0)
                     {
-                        zparams[key]=[];
+                        app.zparams[key]=[];
                     }
 
                 }
@@ -1462,7 +1462,7 @@ function viz(m, json_vizexplore, model_name_set) {
             // alert("The paragraph was clicked.");
             d3.select("#tabular_2").html("");
             removeData();
-            zparams.zcrosstab.push(crossTabPlots.writeCrossTabsJson());
+            app.zparams.zcrosstab.push(crossTabPlots.writeCrossTabsJson());
             explore_crosstab(json);
 
             estimateLadda.stop();  // stop spinner
@@ -1484,7 +1484,7 @@ function viz(m, json_vizexplore, model_name_set) {
                 .text("break "+breakcount) .on("click", function () {
                     d3.select("#tabular_2").html("");
                     removeData();
-                    zparams.zcrosstab.push(zbreaks[this.id]);
+                    app.zparams.zcrosstab.push(zbreaks[this.id]);
                     explore_crosstab(zbreaks_tabular[this.id]);
 
                     var inputvalue1,inputvalue2;
@@ -1536,7 +1536,7 @@ function viz(m, json_vizexplore, model_name_set) {
         }
 
         function explore_crosstab(btn) {
-            if (production && zparams.zsessionid == "") {
+            if (production && app.zparams.zsessionid == "") {
                 alert("Warning: Data download is not complete. Try again soon.");
                 return;
             }
@@ -1546,8 +1546,8 @@ function viz(m, json_vizexplore, model_name_set) {
 
             //package the output as JSON
             // add call history and package the zparams object as JSON
-            zparams.callHistory = callHistory;
-            var jsonout = JSON.stringify(zparams);
+            app.zparams.callHistory = callHistory;
+            var jsonout = JSON.stringify(app.zparams);
 
             //var base = rappURL+"zeligapp?solaJSON="
             urlcall = rappURL + "exploreapp"; //base.concat(jsonout);
