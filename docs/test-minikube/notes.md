@@ -22,13 +22,19 @@ docker build -t ravens-nginx:stable -f Dockerfile .
 
 ```
 # get the pods running
+#
 kubectl apply -f tworavens_test_ta2.yml --validate=false
 
-# start ta3 search (optional)
+# forward to local ports
+#
+kubectl port-forward ravens-eval 8080:8080
+
+# start ta3 search (optional, in separate container)
+#
+eval $(minikube docker-env)
+
 kubectl exec ravens-eval --container ta3-main -- ta3_search /ravens_volume/config_185_baseball.json
 
-# forward to local ports...
-kubectl port-forward ravens-eval 8080:8080
 ```
 
 # Other commands
