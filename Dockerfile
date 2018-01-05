@@ -50,6 +50,7 @@ COPY . $CODE_REPOSITORY/
 # Create a volume for outside info
 # -------------------------------------
 VOLUME /ravens_volume
+COPY ./ravens_volume/. /ravens_volume/
 
 
 
