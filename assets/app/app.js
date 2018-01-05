@@ -170,7 +170,7 @@ export let d3mMetrics = {
     rocAuc:["description", "ROC_AUC" , 6],
     rocAucMicro:["description", "ROC_AUC_MICRO" , 7],
     rocAucMacro:["description", "ROC_AUC_MACRO" , 8],
-    meanSquaredError:["description", "ROOT_MEAN_SQUARED_ERROR", 9],
+    meanSquaredError:["description", "MEAN_SQUARED_ERROR", 9],
     rootMeanSquaredError:["description", "ROOT_MEAN_SQUARED_ERROR" , 10],
     rootMeanSquaredErrorAvg:["description", "ROOT_MEAN_SQUARED_ERROR_AVG" , 11],
     meanAbsoluteError:["description", "MEAN_ABSOLUTE_ERROR" , 12],
