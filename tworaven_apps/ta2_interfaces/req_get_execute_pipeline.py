@@ -81,11 +81,13 @@ def get_execute_pipeline_results(info_str=None):
     except Exception as ex:
         return get_failed_precondition_response(str(ex))
 
+    #print('reply', reply)
+    """
     if reply and str(reply) == VAL_GRPC_STATE_CODE_NONE:
-        err_msg = ('Unkown gRPC state.'
+        err_msg = ('Unknown gRPC state.'
                    ' (Was an ExecutePipeline request sent?)')
         return get_failed_precondition_response(err_msg)
-
+    """
     try:
         print(MessageToJson(reply))
     except:

@@ -213,7 +213,7 @@ class Core(core_pb2_grpc.CoreServicer):
                 msg.pipeline_info.CopyFrom(
                     core_pb2.Pipeline(
                         #predict_result_uris=['file:///out/predict1.csv'],
-                        predict_result_uri = file_uri_dict.get(\
+                        predict_result_uri=file_uri_dict.get(\
                                             TEST_KEY_FILE_URI,
                                             'no file uri'),
                         output=output,
@@ -377,7 +377,7 @@ class Core(core_pb2_grpc.CoreServicer):
                 ),
                 progress_info=progress_info,
                 pipeline_id=pipeline_id,
-                result_uris=[file_uri_dict.get(TEST_KEY_FILE_URI, 'no file uri')]
+                result_uri=file_uri_dict.get(TEST_KEY_FILE_URI, 'no file uri')
             )
 
 
@@ -415,9 +415,7 @@ class Core(core_pb2_grpc.CoreServicer):
             ),
             progress_info=core_pb2.COMPLETED,
             pipeline_id=pipeline_id,
-            result_uris=[file_uri_dict.get(TEST_KEY_FILE_URI, 'no file uri'),
-                         file_uri_dict2.get(TEST_KEY_FILE_URI, 'no file uri'),
-                         'file:///non-existent-file/should-give-err.csv']
+            result_uri=file_uri_dict.get(TEST_KEY_FILE_URI, 'no file uri')
         )
 
 
