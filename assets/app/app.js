@@ -134,14 +134,16 @@ export let d3mTaskType = {
     taskTypeUndefined: ["description", "TASK_TYPE_UNDEFINED", 0],
     classification: ["description", "CLASSIFICATION" , 1],
     regression: ["description", "REGRESSION" , 2],
-    linkPrediction: ["description", "LINK_PREDICTION" , 3],
-    vertexNomination: ["description", "VERTEX_NOMINATION" , 4],
-    communityDetection: ["description", "COMMUNITY_DETECTION" , 5],
-    graphClustering: ["description", "GRAPH_CLUSTERING" , 6],
-    graphMatching: ["description", "GRAPH_MATCHING" , 7],
-    timeSeriesForecasting: ["description", "TIMESERIES_FORECASTING" , 8],
-    collaborativeFiltering: ["description", "COLLABORATIVE_FILTERING" , 9]
+    clustering: ["description", "CLUSTERING", 3],
+    linkPrediction: ["description", "LINK_PREDICTION" , 4],
+    vertexNomination: ["description", "VERTEX_NOMINATION" , 5],
+    communityDetection: ["description", "COMMUNITY_DETECTION" , 6],
+    graphClustering: ["description", "GRAPH_CLUSTERING" , 7],
+    graphMatching: ["description", "GRAPH_MATCHING" , 8],
+    timeSeriesForecasting: ["description", "TIME_SERIES_FORECASTING" , 9],
+    collaborativeFiltering: ["description", "COLLABORATIVE_FILTERING" , 10]
 };
+
 export let d3mTaskSubtype = {
     taskSubtypeUndefined:["description", "TASK_SUBTYPE_UNDEFINED", 0],
     subtypeNone:["description","NONE",1],
@@ -160,21 +162,23 @@ export let d3mTaskSubtype = {
 }; */
 export let d3mMetrics = {
     metricUndefined:["description", "METRIC_UNDEFINED" , 0],
-    accuracy : ["description", "ACCURACY" , 1],
-    f1:["description", "F1" , 2],
-    f1Micro:["description", "F1_MICRO" , 3],
-    f1Macro:["description", "F1_MACRO" , 4],
-    rocAuc:["description", "ROC_AUC" , 5],
-    rocAucMicro:["description", "ROC_AUC_MICRO" , 6],
-    rocAucMacro:["description", "ROC_AUC_MACRO" , 7],
-    meanSquaredError:["description", "ROOT_MEAN_SQUARED_ERROR", 8],
-    rootMeanSquaredError:["description", "ROOT_MEAN_SQUARED_ERROR" , 8],
-    rootMeanSquaredErrorAvg:["description", "ROOT_MEAN_SQUARED_ERROR_AVG" , 9],
-    meanAbsoluteError:["description", "MEAN_ABSOLUTE_ERROR" , 10],
-    rSquared:["description", "R_SQUARED" , 11],
-    normalizedMutualInformation:["description", "NORMALIZED_MUTUAL_INFORMATION" , 12],
-    jaccardSimilarityScore:["description", "JACCARD_SIMILARITY_SCORE" , 13]
+    executionTime:["description", "EXECUTION_TIME", 1],
+    accuracy : ["description", "ACCURACY" , 2],
+    f1:["description", "F1" , 3],
+    f1Micro:["description", "F1_MICRO" , 4],
+    f1Macro:["description", "F1_MACRO" , 5],
+    rocAuc:["description", "ROC_AUC" , 6],
+    rocAucMicro:["description", "ROC_AUC_MICRO" , 7],
+    rocAucMacro:["description", "ROC_AUC_MACRO" , 8],
+    meanSquaredError:["description", "ROOT_MEAN_SQUARED_ERROR", 9],
+    rootMeanSquaredError:["description", "ROOT_MEAN_SQUARED_ERROR" , 10],
+    rootMeanSquaredErrorAvg:["description", "ROOT_MEAN_SQUARED_ERROR_AVG" , 11],
+    meanAbsoluteError:["description", "MEAN_ABSOLUTE_ERROR" , 12],
+    rSquared:["description", "R_SQUARED" , 13],
+    normalizedMutualInformation:["description", "NORMALIZED_MUTUAL_INFORMATION" , 14],
+    jaccardSimilarityScore:["description", "JACCARD_SIMILARITY_SCORE" , 15]
 };
+
 export let d3mProblemDescription = {
     taskType: [2,"DEFAULT"],
     taskSubtype: [1,"DEFAFULT"],
