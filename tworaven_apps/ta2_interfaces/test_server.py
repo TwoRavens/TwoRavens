@@ -257,6 +257,7 @@ class Core(core_pb2_grpc.CoreServicer):
 
 
     def DeletePipelines(self, request, context):
+        """DeletePipelines response"""
         sessioncontext = request.context
         if not sessioncontext.session_id in self.sessions:
             return core_pb2.PipelineListResult(\
@@ -265,19 +266,37 @@ class Core(core_pb2_grpc.CoreServicer):
                                 code=core_pb2.FAILED_PRECONDITION,
                                 details="Unknown session id: %s" % sessioncontext.session_id)))
 
-        logger.info("Got ListPipelines request, session=%s",
+        if hasattr(request, 'delete_pipeline_ids') is False:
+            return core_pb2.PipelineListResult(\
+                        response_info=core_pb2.Response(\
+                            status=core_pb2.Status(\
+                                code=core_pb2.FAILED_PRECONDITION,
+                                details="'delete_pipeline_ids' not found")))
+
+        if not request.delete_pipeline_ids:
+            err_msg = "No pipeline ids specified in 'delete_pipeline_ids'"
+            return core_pb2.PipelineListResult(\
+                        response_info=core_pb2.Response(\
+                            status=core_pb2.Status(\
+                                code=core_pb2.FAILED_PRECONDITION,
+                                details=err_msg)))
+
+
+        logger.info("Rcvd DeletePipelines request, session=%s",
                     sessioncontext.session_id)
 
         res = core_pb2.PipelineListResult()
 
         res.response_info.status.code = core_pb2.OK
-        res.response_info.status.details = \
-                        ("example delete pipelines response."
-                         " (pipeline 1 removed, pipeline 2 "
-                         " still there--perhaps pending delete)")
-
-        #res.pipeline_ids.append('pipeline_1')
-        res.pipeline_ids.append('pipeline_2')
+    
+        if len(request.delete_pipeline_ids) > 1:
+            res.pipeline_ids.append(request.delete_pipeline_ids[-1])
+            res.response_info.status.details = \
+                        ("Test.  All except last pipeline deleted--"
+                         "perhaps it's pending delete")
+        else:
+            res.response_info.status.details = \
+                        ("Test.  Single pipeline has been deleted")
 
         return res
 
