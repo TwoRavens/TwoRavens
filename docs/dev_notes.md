@@ -65,10 +65,19 @@ Environment variable CONFIG_JSON_PATH not set.
 
 The following command runs a TA2 test server with the core code from the NYU team.  Run this is a new, separate Terminal:
 
+#### Step 1 - running the test server
 - open a separate Terminal
 - cd into the TwoRavens directory
 - run `workon 2ravens`
 - run `fab run_ta2_test_server`
+
+#### Step 2 - pointing to the main app at the test server
+- Stop the Terminal where you're running `fab run` (or `fab run_with_rook`)
+- Set the main app to look for the test server:
+
+    ```export TA2_STATIC_TEST_MODE=False```
+- Start the main app: `fab run` (or `fab run_with_rook`)
+
 
 ## Saving webpack js/css files for deployment
 
