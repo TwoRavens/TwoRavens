@@ -288,9 +288,55 @@ class Core(core_pb2_grpc.CoreServicer):
         res = core_pb2.PipelineListResult()
 
         res.response_info.status.code = core_pb2.OK
-    
+
         if len(request.delete_pipeline_ids) > 1:
             res.pipeline_ids.append(request.delete_pipeline_ids[-1])
+            res.response_info.status.details = \
+                        ("Test.  All except last pipeline deleted--"
+                         "perhaps it's pending delete")
+        else:
+            res.response_info.status.details = \
+                        ("Test.  Single pipeline has been deleted")
+
+        return res
+
+
+
+    def CancelPipelines(self, request, context):
+        """CancelPipelines response"""
+        sessioncontext = request.context
+        if not sessioncontext.session_id in self.sessions:
+            return core_pb2.PipelineListResult(\
+                        response_info=core_pb2.Response(\
+                            status=core_pb2.Status(\
+                                code=core_pb2.FAILED_PRECONDITION,
+                                details="Unknown session id: %s" % sessioncontext.session_id)))
+
+        if hasattr(request, 'cancel_pipeline_ids') is False:
+            return core_pb2.PipelineListResult(\
+                        response_info=core_pb2.Response(\
+                            status=core_pb2.Status(\
+                                code=core_pb2.FAILED_PRECONDITION,
+                                details="'cancel_pipeline_ids' not found")))
+
+        if not request.cancel_pipeline_ids:
+            err_msg = "No pipeline ids specified in 'cancel_pipeline_ids'"
+            return core_pb2.PipelineListResult(\
+                        response_info=core_pb2.Response(\
+                            status=core_pb2.Status(\
+                                code=core_pb2.FAILED_PRECONDITION,
+                                details=err_msg)))
+
+
+        logger.info("Rcvd CancelPipelines request, session=%s",
+                    sessioncontext.session_id)
+
+        res = core_pb2.PipelineListResult()
+
+        res.response_info.status.code = core_pb2.OK
+
+        if len(request.cancel_pipeline_ids) > 1:
+            res.pipeline_ids.append(request.cancel_pipeline_ids[-1])
             res.response_info.status.details = \
                         ("Test.  All except last pipeline deleted--"
                          "perhaps it's pending delete")
