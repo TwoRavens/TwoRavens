@@ -255,6 +255,33 @@ class Core(core_pb2_grpc.CoreServicer):
         return res
 
 
+
+    def DeletePipelines(self, request, context):
+        sessioncontext = request.context
+        if not sessioncontext.session_id in self.sessions:
+            return core_pb2.PipelineListResult(\
+                        response_info=core_pb2.Response(\
+                            status=core_pb2.Status(\
+                                code=core_pb2.FAILED_PRECONDITION,
+                                details="Unknown session id: %s" % sessioncontext.session_id)))
+
+        logger.info("Got ListPipelines request, session=%s",
+                    sessioncontext.session_id)
+
+        res = core_pb2.PipelineListResult()
+
+        res.response_info.status.code = core_pb2.OK
+        res.response_info.status.details = \
+                        ("example delete pipelines response."
+                         " (pipeline 1 removed, pipeline 2 "
+                         " still there--perhaps pending delete)")
+
+        #res.pipeline_ids.append('pipeline_1')
+        res.pipeline_ids.append('pipeline_2')
+
+        return res
+
+
     def GetExecutePipelineResults(self, request, context):
         sessioncontext = request.context
         if not sessioncontext.session_id in self.sessions:
