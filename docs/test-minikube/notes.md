@@ -21,7 +21,13 @@ docker build -t ravens-nginx:stable -f Dockerfile .
 # Run it
 
 ```
+# get the pods running
 kubectl apply -f tworavens_test_ta2.yml --validate=false
+
+# start ta3 search (optional)
+kubectl exec ravens-eval --container ta3-main -- ta3_search /ravens_volume/config_185_baseball.json
+
+# forward to local ports...
 kubectl port-forward ravens-eval 8080:8080
 ```
 
@@ -33,6 +39,7 @@ kubectl exec -it ravens-eval -c ta3-main -- /bin/bash
 
 # describe containers in pod
 kubectl describe pod/ravens-eval
+
 ```
 
 

@@ -50,9 +50,6 @@ COPY . $CODE_REPOSITORY/
 # Create a volume for outside info
 # -------------------------------------
 VOLUME /ravens_volume
-COPY ./ravens_volume/. /ravens_volume/
-
-
 
 # -------------------------------------
 # Set the working directory
@@ -79,7 +76,8 @@ RUN pip3 install --no-cache-dir -r requirements/prod.txt && \
     fab collect_static && \
     fab make_d3m_config_files && \
     fab load_d3m_config_from_env && \
-    fab ta3_listener_add
+    fab ta3_listener_add && \
+    cp -r ravens_volume/. /ravens_volume
 
 #   fab make_d3m_config && \
 
