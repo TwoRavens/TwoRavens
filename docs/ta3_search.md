@@ -58,13 +58,13 @@
 
 ---
 
-## kube notes
-
-- this is working...
-  - kubectl exec -it ravens-eval -c ta3-main -- /usr/bin/ta3_search /ravens_volume/config_185_baseball.json
+## kube notes (working inconsistently)
 
 - working properly with *bash*
-  - kubectl exec ravens-eval --container ta3-main -- bash ta3_search /ravens_volume/config_185_baseball.json
+  - `kubectl exec ravens-eval --container ta3-main -- bash ta3_search /ravens_volume/config_185_baseball.json`
 
 - ...but not without (as per specs)
-  - kubectl exec -it ravens-eval -c ta3-main -- ta3_search /ravens_volume/config_185_baseball.json
+  - `kubectl exec -it ravens-eval -c ta3-main -- ta3_search /ravens_volume/config_185_baseball.json`
+
+- also works
+  - `kubectl exec -it ravens-eval -c ta3-main -- /usr/bin/ta3_search /ravens_volume/config_185_baseball.json`
