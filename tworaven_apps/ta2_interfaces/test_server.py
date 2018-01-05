@@ -41,35 +41,21 @@ class Core(core_pb2_grpc.CoreServicer):
         self.sessions = set()
 
     def StartSession(self, request, context):
-        version = core_pb2.DESCRIPTOR.GetOptions().Extensions[
-            core_pb2.protocol_version]
+        version = core_pb2.DESCRIPTOR.GetOptions().Extensions[\
+                    core_pb2.protocol_version]
 
         print('version: %s' % version)
         print('request.version: %s' % request.version)
 
-        """
-        if not request.version == version:
-            err_msg = 'Expecting version %s but received version %s' %\
-                (version, request.version)
-
-            return core_pb2.SessionResponse(
-                response_info=core_pb2.Response(
-                    status=core_pb2.Status(code=core_pb2.FAILED_PRECONDITION,
-                                           details=err_msg),
-                ),)
-                #user_agent='ta2_stub %s' % __version__,
-                #version=version,
-                #context=core_pb2.SessionContext(session_id=err_msg),)
-        """
         session = 'session_%d' % len(self.sessions)
         session_start_time[session] = time.time()
         self.sessions.add(session)
-        logger.info("Session started: 1 (protocol version %s)", version)
+        logger.info("Session started: %s (protocol version %s)",\
+                    session, version)
         return core_pb2.SessionResponse(
             response_info=core_pb2.Response(
                 status=core_pb2.Status(code=core_pb2.OK)
             ),
-            #user_agent='ta2_stub %s' % __version__,
             user_agent=request.user_agent,
             version=version,
             context=core_pb2.SessionContext(session_id=session),
@@ -89,13 +75,24 @@ class Core(core_pb2_grpc.CoreServicer):
         )
 
 
-    def UpdateProblemSchema(self, request, context):
-        #assert context['session_id'] in self.sessions
-        logger.info("UpdateProblemSchema: ")#"%s", request.session_id)
+    def SetProblemDoc(self, request, context):
+        """Mock response for SetProblemDoc"""
+        logger.info("SetProblemDoc 1")
+        sessioncontext = request.context
+        if not sessioncontext.session_id in self.sessions:
+            return core_pb2.Response(\
+                    status=core_pb2.Status(\
+                        code=core_pb2.FAILED_PRECONDITION,
+                        details="Unknown session id: %s" % request.session_id))
+
+        test_msg = 'updates received: %s' % \
+                   ([str(x).strip() for x in request.updates])
+
         return core_pb2.Response(
             status=core_pb2.Status(\
                     code=core_pb2.OK,
-                    details='Problem Schema Updated'),)
+                    details='Problem Doc Updated. %s' % test_msg),)
+
 
     def GetCreatePipelineResults(self, request, context):
         """Mock GetCreatePipelineResults response"""

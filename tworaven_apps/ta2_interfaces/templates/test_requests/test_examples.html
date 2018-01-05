@@ -9,14 +9,31 @@ let EndSession_ex = {
                     };
 
 let SetProblemDoc_ex = {
-                               "context": {
-                                 "session_id": "session_0"
-                               },
-                               "ReplaceProblemDocField":{
-                                  "taskType":"REGRESSION"
-                               }
-                            };
-
+                         "context": {
+                            "session_id": "session_0"
+                          },
+                          "updates": [
+                            {
+                              "taskType": "CLASSIFICATION"
+                            },
+                            {
+                              "metric": "ACCURACY"
+                            },
+                            {
+                              "task_description": "This data consists of..."
+                            }
+                          ]
+                        };
+/* {
+                           "context":{
+                              "session_id":"session_0"
+                           },
+                           "ReplaceProblemDocField":{
+                              "taskType":"CLASSIFICATION",
+                              "metric":"ACCURACY"
+                           }
+                        };
+*/
 let CreatePipelines_ex = {% include "test_requests/req_create_pipeline.json" %}
 
 let GetExecutePipelineResults_ex = {

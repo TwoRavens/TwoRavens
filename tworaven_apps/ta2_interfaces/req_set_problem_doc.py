@@ -19,20 +19,14 @@ REPLACE_PROBLEM_DOC_FIELD = 'ReplaceProblemDocField'
 
 def get_test_info_str():
     """Test data for update_problem_schema call"""
-    return '''{"taskType" : "REGRESSION",
-     "taskSubtype" : "TASK_SUBTYPE_UNDEFINED",
-     "outputType" : "REAL",
-     "metric" : "ROOT_MEAN_SQUARED_ERROR"}'''
+    return """{"context": {"session_id": "session_0"}, "ReplaceProblemDocField": {"metric": "ACCURACY", "taskType": "CLASSIFICATION"}}"""
 
 def set_problem_doc(info_str=None):
     """
     SetProblemDocRequest={"ReplaceProblemDocField":{"metric":"ROC_AUC"}}
 
     Accept UI input as JSON *string* similar to
-     {"taskType" : "REGRESSION",
-      "taskSubtype" : "TASK_SUBTYPE_UNDEFINED",
-      "outputType" : "REAL",
-      "metric" : "ROOT_MEAN_SQUARED_ERROR"}
+     {"context": {"session_id": "session_0"}, "ReplaceProblemDocField": {"metric": "ACCURACY", "taskType": "CLASSIFICATION"}}
     """
     if info_str is None:
         info_str = get_test_info_str()
@@ -50,26 +44,13 @@ def set_problem_doc(info_str=None):
         err_msg = 'Failed to convert UI Str to JSON: %s' % (err_obj)
         return get_failed_precondition_response(err_msg)
 
-    # --------------------------------
-    # create UpdateProblemSchemaRequest compatible JSON
-    # --------------------------------
-    if REPLACE_PROBLEM_DOC_FIELD in info_dict:
-        info_dict = info_dict[REPLACE_PROBLEM_DOC_FIELD]
-
-    updates_list = []
-    for key, val in info_dict.items():
-        updates_list.append({key : val})
-
-    final_dict = dict(updates=updates_list)
-
-    content = json.dumps(final_dict)
-
+    #content = json.dumps(info_dict)
 
     # --------------------------------
     # convert the JSON string to a gRPC request
     # --------------------------------
     try:
-        req = Parse(content, core_pb2.SetProblemDocRequest())
+        req = Parse(info_str, core_pb2.SetProblemDocRequest())
     except ParseError as err_obj:
         err_msg = 'Failed to convert JSON to gRPC: %s' % (err_obj)
         return get_failed_precondition_response(err_msg)
@@ -77,7 +58,6 @@ def set_problem_doc(info_str=None):
     if settings.TA2_STATIC_TEST_MODE:
         return get_grpc_test_json('test_responses/set_problem_doc_ok.json',
                                   dict())
-
 
     # --------------------------------
     # Get the connection, return an error if there are channel issues
@@ -90,7 +70,7 @@ def set_problem_doc(info_str=None):
     # Send the gRPC request
     # --------------------------------
     try:
-        reply = core_stub.SetProblemDocRequest(req)
+        reply = core_stub.SetProblemDoc(req)
     except Exception as ex:
         return get_failed_precondition_response(str(ex))
 

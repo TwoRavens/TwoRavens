@@ -51,7 +51,7 @@ def get_grpc_content(request):
     return True, request.POST[KEY_GRPC_JSON]
 
 
-def get_failed_precondition_response(err_msg):
+def get_failed_precondition_response(err_msg='failed precondition?'):
     """Return a SessionResponse object in JSON format
         with status FAILED_PRECONDITION"""
 
