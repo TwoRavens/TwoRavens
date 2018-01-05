@@ -97,8 +97,8 @@ class Core(core_pb2_grpc.CoreServicer):
                     code=core_pb2.OK,
                     details='Problem Schema Updated'),)
 
-
-    def CreatePipelines(self, request, context):
+    def GetCreatePipelineResults(self, request, context):
+        """Mock GetCreatePipelineResults response"""
         sessioncontext = request.context
         if not sessioncontext.session_id in self.sessions:
             yield core_pb2.PipelineCreateResult(\
@@ -107,14 +107,74 @@ class Core(core_pb2_grpc.CoreServicer):
                             code=core_pb2.FAILED_PRECONDITION,
                             details="Unknown session id: %s" % sessioncontext.session_id)))
             return
-        train_features = request.train_features
+
+        results = [
+            (core_pb2.COMPLETED, 'pipeline_1', True),
+            (core_pb2.COMPLETED, 'pipeline_2', True),
+        ]
+
+        cnt = 0
+        for progress, pipeline_id, send_pipeline in results:
+            print('sleep 1 second...')
+            time.sleep(1)
+
+            if not context.is_active():
+                logger.info("Client closed GetCreatePipelineResults stream")
+
+            msg = core_pb2.PipelineCreateResult(
+                response_info=core_pb2.Response(
+                    status=core_pb2.Status(code=core_pb2.OK),
+                ),
+                progress_info=progress,
+                pipeline_id=pipeline_id,
+            )
+            if send_pipeline:
+                cnt += 1
+
+                # try to create a legit file uri
+                file_uri_dict = get_predict_file_info_dict('CLASSIFICATION')
+
+                msg.pipeline_info.CopyFrom(
+                    core_pb2.Pipeline(
+                        #predict_result_uris=['file:///out/predict1.csv'],
+                        predict_result_uri = file_uri_dict.get(\
+                                            TEST_KEY_FILE_URI,
+                                            'no file uri'),
+                        output=core_pb2.OUTPUT_TYPE_UNDEFINED,
+                        scores=[
+                            core_pb2.Score(
+                                metric=core_pb2.ACCURACY,
+                                value=0.8,
+                            ),
+                            core_pb2.Score(
+                                metric=core_pb2.ROC_AUC,
+                                value=0.5,
+                            ),
+                        ],
+                    )
+                )
+            yield msg
+
+
+    def CreatePipelines(self, request, context):
+        """Mock CreatePipelines response"""
+        sessioncontext = request.context
+        if not sessioncontext.session_id in self.sessions:
+            yield core_pb2.PipelineCreateResult(\
+                    response_info=core_pb2.Response(\
+                        status=core_pb2.Status(\
+                            code=core_pb2.FAILED_PRECONDITION,
+                            details="Unknown session id: %s" % sessioncontext.session_id)))
+            return
+
+        dataset_uri = request.dataset_uri
         task = request.task
-        #assert task == core_pb2.CLASSIFICATION
         task_subtype = request.task_subtype
         task_description = request.task_description
         output = request.output
         metrics = request.metrics
         target_features = request.target_features
+        predict_features = request.predict_features
         max_pipelines = request.max_pipelines
 
         logger.info("Got CreatePipelines request, session=%s",
@@ -131,6 +191,7 @@ class Core(core_pb2_grpc.CoreServicer):
 
         cnt = 0
         for progress, pipeline_id, send_pipeline in results:
+            print('sleep 1 second...')
             time.sleep(1)
 
             if not context.is_active():
@@ -152,7 +213,9 @@ class Core(core_pb2_grpc.CoreServicer):
                 msg.pipeline_info.CopyFrom(
                     core_pb2.Pipeline(
                         #predict_result_uris=['file:///out/predict1.csv'],
-                        predict_result_uris=[file_uri_dict.get(TEST_KEY_FILE_URI, 'no file uri')],
+                        predict_result_uri = file_uri_dict.get(\
+                                            TEST_KEY_FILE_URI,
+                                            'no file uri'),
                         output=output,
                         scores=[
                             core_pb2.Score(
@@ -186,8 +249,8 @@ class Core(core_pb2_grpc.CoreServicer):
         res.response_info.status.code = core_pb2.OK
         res.response_info.status.details = "listing the pipelines!"
 
-        res.pipeline_ids.append('pipeline_01')
-        res.pipeline_ids.append('pipeline_02')
+        res.pipeline_ids.append('pipeline_1')
+        res.pipeline_ids.append('pipeline_2')
 
         return res
 
