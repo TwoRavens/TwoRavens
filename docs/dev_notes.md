@@ -75,7 +75,9 @@ The following command runs a TA2 test server with the core code from the NYU tea
 - Stop the Terminal where you're running `fab run` (or `fab run_with_rook`)
 - Set the main app to look for the test server:
 
-    ```export TA2_STATIC_TEST_MODE=False```
+    ```
+    export TA2_STATIC_TEST_MODE=False
+    ```
     
 - Start the main app: `fab run` (or `fab run_with_rook`)
 
