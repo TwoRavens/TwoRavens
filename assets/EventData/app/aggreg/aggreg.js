@@ -1,5 +1,5 @@
-import {opMode, setOpMode, rappURL, varColor, selVarColor, rightpanelMargin} from "../app";
-import {updateDate, datemin} from "../subsets/Date";
+import {opMode, setOpMode, rappURL, varColor, selVarColor, rightpanelMargin, dataset, datasource} from "../app";
+import {updateDate, dateminUser, datemaxUser} from "../subsets/Date";
 import {updateActor, actorLinks, resizeActorSVG} from "../subsets/Actor";
 
 var aggregMode = "penta";
@@ -253,6 +253,59 @@ export function updateToAggreg() {
 	else {
 		//send to R
 		console.log("aggregation R");
+		console.log(dateminUser);
+		console.log(datemaxUser);
+		console.log("remaining dates");
+		//~ console.log(datemin);
+		//~ console.log(formatAggregDate(datemin));
+		//~ console.log(datemin.toUTCString());
+		//~ console.log(datemax);
+
+		console.log(actorLinks);
+		let aggregActorFormat = {};
+		for (let x = 0; x < actorLinks.length; x ++) {
+			//~ aggregActorFormat[x] = {"sourceName" : actorLinks[x].source.name, "sources" : JSON.stringify(actorLinks[x].source.group),
+									//~ "targetName" : actorLinks[x].target.name, "targets" : JSON.stringify(actorLinks[x].target.group)
+									//~ };
+			aggregActorFormat["group" + x] = {"sourceName" : actorLinks[x].source.name, "sources" : actorLinks[x].source.group,
+									"targetName" : actorLinks[x].target.name, "targets" : actorLinks[x].target.group
+									};
+			//~ aggregActorFormat[x] = {"sourceName" : actorLinks[x].source.name,
+									//~ "targetName" : actorLinks[x].target.name
+									//~ };
+		}
+		console.log("aggreg actor Format");
+		console.log(aggregActorFormat);
+		console.log("JSON actor format");
+		console.log(JSON.stringify(aggregActorFormat));
+
+		function formatAggregDate(date) {
+			let ret = date.getUTCFullYear() + "";
+			//~ console.log("length of month = " + date.getUTCMonth().toString().length);
+			if (date.getUTCMonth().toString().length == 1)
+				ret += "0";
+			ret += (date.getUTCMonth() + 1) + "" + date.getUTCDate();
+			return ret;
+		}
+
+		let aggregQuery = {
+			"date": {
+				"min": formatAggregDate(dateminUser),
+				"max": formatAggregDate(datemaxUser),
+				"dateType": aggregDateOn
+			},
+			"actors": {
+				//~ "links": JSON.stringify(aggregActorFormat),
+				"links": aggregActorFormat,
+				"actorType": aggregActorOn
+			},
+			"dataset": dataset,
+			"datasource": datasource
+		};
+
+		console.log(JSON.stringify(aggregQuery));
+
+		
 		let aggregURL = rappURL + "eventdataaggregapp";
 
 		let xhr = new XMLHttpRequest();
@@ -304,7 +357,7 @@ export function updateToAggreg() {
 			console.log(xhr);
 		};
 		//~ xhr.send('solaJSON='+ JSON.stringify(post));
-		xhr.send("");
+		xhr.send("solaJSON=" + JSON.stringify(aggregQuery));
 	}
 }
 
@@ -405,7 +458,7 @@ export function updateAggregTable() {
 
 	var curActor = 0;
 	var dateNext = false;
-	var dateCur = new Date(datemin.toLocaleDateString());
+	var dateCur = new Date(dateminUser.toLocaleDateString());
 	for (var row = 1; row <= aggregDataNumber; row++) {
 		if (aggregDateOn == 1) {
 			if (dateNext) {

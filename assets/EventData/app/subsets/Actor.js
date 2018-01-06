@@ -265,6 +265,10 @@ export function setupActor(){
         $("#searchList" + capitalizeFirst(currentTab) + "s").children().each(function () {
             filterSet[currentTab]["full"].add(this.value);
             this.checked = true;
+            if (currentNode[currentTab].group.indexOf(this.value < 0)) {		//perhaps change to a set
+				currentNode[currentTab].group.push(this.value);
+				currentNode[currentTab].groupIndices.push(this.id);
+			}
         });
         // Lose focus so that popover goes away
         $(this).blur();
@@ -276,6 +280,11 @@ export function setupActor(){
         $("#searchList" + capitalizeFirst(currentTab) + "s").children().each(function () {
             filterSet[currentTab]["full"].delete(this.value);
             this.checked = false;
+            const index = currentNode[currentTab].group.indexOf(this.value);
+			if (index > -1) {
+				currentNode[currentTab].group.splice(index, 1);
+				currentNode[currentTab].groupIndices.splice(index, 1);
+			}
         });
         $(this).blur();
     });
