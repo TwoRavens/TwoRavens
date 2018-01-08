@@ -308,6 +308,7 @@ def init_db():
     local("python manage.py check")
     local("python manage.py migrate")
     create_django_superuser()
+    create_test_user()
     #local("python manage.py loaddata fixtures/users.json")
     #Series(name_abbreviation="Mass.").save()
 
