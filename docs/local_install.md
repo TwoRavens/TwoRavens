@@ -196,6 +196,11 @@ Note that this may install many packages, depending on what already exists. If i
 - Try the app again:
   - Go to: http://127.0.0.1:8080/
   - Hit shift+refresh on the browser
+  
+As a shortcut to the above, assuming R is installed, from the command line, you can try:
+  ```
+  fab run_rook
+  ```
 
 ## Running the Local Environment after Setup
 
