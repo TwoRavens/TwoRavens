@@ -230,6 +230,9 @@ As a shortcut to the above, assuming R is installed, from the command line, you 
         ```
         source("rooksource.R")
         ```
+        
+   Or, from a new terminal, try `fab run_rook`
+   
 4. Go to Two Ravens: http://127.0.0.1:8080/
   - Go to the Django admin: http://127.0.0.1:8080/admin
     - username: `dev_admin`
