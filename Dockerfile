@@ -72,6 +72,7 @@ WORKDIR /var/webapps/TwoRavens
 RUN pip3 install --no-cache-dir -r requirements/prod.txt && \
     fab init_db && \
     fab create_django_superuser && \
+    fab create_test_user  && \
     fab load_docker_ui_config && \
     fab collect_static && \
     fab make_d3m_config_files && \
