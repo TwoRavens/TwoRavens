@@ -71,22 +71,32 @@
       });
   }
 
+  function requestChoiceUpdate(selOptionVal){
+
+    // get the name of the command
+    let option_text = $("#id_request_type option[value='" + selOptionVal + "']").text();
+
+    // create a variable name by adding '_ex'
+    let json_example = option_text + '_ex';
+
+    // display the JSON example in form textbox
+    $('#id_content').val(formatJSON(eval(json_example)));
+
+    $('#ta2-api-url').html('<code>' + selOptionVal + '<code>');
+
+
+  }
+
   // document is ready
   $(function() {
 
-      // new command selected
+      // bind dropdon box to listen for changes
+      //
       $('#id_request_type').on('change', function() {
-          // get the name of the command
-          let option_text = $("#id_request_type option[value='" + $(this).val() + "']").text();
-
-          // create a variable name by adding '_ex'
-          let json_example = option_text + '_ex';
-
-          // display the JSON example in form textbox
-          $('#id_content').val(formatJSON(eval(json_example)));
-
-
+        requestChoiceUpdate($(this).val());
       })
+      // set initial val
+      requestChoiceUpdate($('#id_request_type').val());
   });
 
 </script>
@@ -104,8 +114,13 @@
   <div class="col-12 col-md-6">
      <h3>json</h3>
 
-
      <hr />
+     <div class="card">
+       <div class="card-body">
+         <b>API url</b>*: <span id="ta2-api-url"></span>
+         <br /><i>(* sent by UI. POST with JSON in request body)</i>
+       </div>
+     </div><br />
       <form method=post action="{% url 'view_test_form' %}">
         <table>
           {% csrf_token %}
@@ -154,6 +169,7 @@ TA2_TEST_SERVER_URL = '{{ TA2_TEST_SERVER_URL }}'</pre>
   <!-- start: result column -->
   <div class="col-12 col-md-6">
       <h3>result</h3>
+
       <hr />
 
       <div id="interimData">

@@ -7,9 +7,7 @@
         },
         "progressInfo": "COMPLETED",
         "pipelineId": "pipeline_1",
-        "resultUris": [
-          "{{ FILE_URI }}"
-        ]
+        "resultUri": "{{ FILE_URI }}"
     },
     {
         "responseInfo": {
@@ -19,8 +17,6 @@
         },
         "progressInfo": "COMPLETED",
         "pipelineId": "pipeline_2",
-        "resultUris": [
-          "{{ FILE_URI }}"
-        ]
+        "resultUri": "{{ FILE_URI }}"
     }
 ]

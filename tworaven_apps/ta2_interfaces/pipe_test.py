@@ -14,10 +14,10 @@ django.setup()
 import random
 import json
 from django.conf import settings
-from tworaven_apps.ta2_interfaces import core_pb2
+import core_pb2
 # data flow
-from tworaven_apps.ta2_interfaces import dataflow_ext_pb2
-from tworaven_apps.ta2_interfaces import dataflow_ext_pb2_grpc
+import dataflow_ext_pb2
+import dataflow_ext_pb2_grpc
 from tworaven_apps.ta2_interfaces.ta2_connection import TA2Connection
 from tworaven_apps.ta2_interfaces.ta2_util import get_failed_precondition_response
 from google.protobuf.json_format import MessageToJson,\
@@ -36,7 +36,8 @@ def json_parse(json_str, CORE_OBJ):
 
     req = Parse(json_str, CORE_OBJ())
     print('req', req)
-
+    return req
+    
 def pipeline_create_parse():
     session_context = core_pb2.SessionContext()
     session_context.session_id = 'abc123'
@@ -370,8 +371,60 @@ def get_dataflow_results():
         print('-' * 40)
     print('\n'.join(module_list))
 
+def set_problem_doc():
+    """...SetProblemDocRequest"""
+
+    req = core_pb2.SetProblemDocRequest()
+
+    req.context.session_id = 'session_01'
+
+    json_str = """{
+   "context":{
+      "session_id":"session_0"
+   },
+   "updates":[ {"taskType":"CLASSIFICATION"},
+               {"metric":"ACCURACY"}]
+    }"""
+    print('-' * 40)
+    print('gRPC:\n')
+    req = json_parse(json_str, core_pb2.SetProblemDocRequest)
+    print('-' * 40)
+
+    #docfield = core_pb2.SetProblemDocRequest.ReplaceProblemDocField(\
+    #                task_type=core_pb2.REGRESSION)
+
+    #req.updates.add(core_pb2.SetProblemDocRequest.ReplaceProblemDocField(task_type=c#ore_pb2.REGRESSION))
+    #req.updates.add(task_type=core_pb2.REGRESSION)
+    #req.updates.add(metric=core_pb2.ROOT_MEAN_SQUARED_ERROR)
+
+
+    #req.pipeline_id = 'pipeline_01'
+
+    #feature_names = ('cylinders displacement horsepower'
+    #                 ' weight acceleration model class').split()
+
+    #for feature_name in feature_names:
+    #    req.predict_features.add(feature_id=feature_name,
+    #                             data_uri='<<DATA_URI>>')
+
+    content = MessageToJson(req)
+    print('JSON:\n')
+    print(content)
+    print('-' * 40)
+    #content = content.replace('pipelineIds', 'pipeline_ids').replace('sessionId', 'session_id')
+    return
+
+    print('-' * 40)
+    print('gRPC:\n')
+    json_parse(content, core_pb2.SetProblemDocRequest)
+    print('-' * 40)
+
+
+
 if __name__ == '__main__':
-    get_dataflow_results()
+    set_problem_doc()
+
+    #get_dataflow_results()
     #describe_data_flow()
 
     #update_parse()

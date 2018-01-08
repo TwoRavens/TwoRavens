@@ -8,15 +8,32 @@ let EndSession_ex = {
                       'session_id' : 'session_0'
                     };
 
-let UpdateProblemSchema_ex = {
-                               "context": {
-                                 "session_id": "session_0"
-                               },
-                               "ReplaceProblemSchemaField":{
-                                  "taskType":"SIMILARITY_MATCHING"
-                               }
-                            };
-
+let SetProblemDoc_ex = {
+                         "context": {
+                            "session_id": "session_0"
+                          },
+                          "updates": [
+                            {
+                              "taskType": "CLASSIFICATION"
+                            },
+                            {
+                              "metric": "ACCURACY"
+                            },
+                            {
+                              "task_description": "This data consists of..."
+                            }
+                          ]
+                        };
+/* {
+                           "context":{
+                              "session_id":"session_0"
+                           },
+                           "ReplaceProblemDocField":{
+                              "taskType":"CLASSIFICATION",
+                              "metric":"ACCURACY"
+                           }
+                        };
+*/
 let CreatePipelines_ex = {% include "test_requests/req_create_pipeline.json" %}
 
 let GetExecutePipelineResults_ex = {
@@ -37,20 +54,29 @@ let ListPipelines_ex = {
                         };
 
 
+let CancelPipelines_ex = {
+                          "context": {
+                            "session_id": "session_0"
+                          },
+                          "cancel_pipeline_ids" : ["pipeline_1",
+                                                   "pipeline_2"]
+                        };
+
+
 let DeletePipelines_ex = {
                           "context": {
                             "session_id": "session_0"
                           },
-                          "delete_pipeline_ids" : ["pipeline_01",
-                                                   "pipeline_02"]
+                          "delete_pipeline_ids" : ["pipeline_1",
+                                                   "pipeline_2"]
                         };
 
 let GetCreatePipelineResults_ex = {
                           "context": {
                             "session_id": "session_0"
                           },
-                          "pipeline_ids" : ["pipeline_01",
-                                                   "pipeline_02"]
+                          "pipeline_ids" : ["pipeline_1",
+                                                   "pipeline_2"]
                         };
 
 
@@ -65,75 +91,46 @@ let ExportPipeline_ex = {
 
 
 let ExecutePipeline_ex = {
-                     "context":{
-                        "sessionId":"session_0"
-                     },
-                     "pipelineId":"pipeline_1",
-                     "predictFeatures":[
-                        {
-                           "featureId":"cylinders",
-                           "dataUri":"<<DATA_URI>>"
-                        },
-                        {
-                           "featureId":"displacement",
-                           "dataUri":"<<DATA_URI>>"
-                        },
-                        {
-                           "featureId":"horsepower",
-                           "dataUri":"<<DATA_URI>>"
-                        },
-                        {
-                           "featureId":"weight",
-                           "dataUri":"<<DATA_URI>>"
-                        },
-                        {
-                           "featureId":"acceleration",
-                           "dataUri":"<<DATA_URI>>"
-                        },
-                        {
-                           "featureId":"model",
-                           "dataUri":"<<DATA_URI>>"
-                        },
-                        {
-                           "featureId":"class",
-                           "dataUri":"<<DATA_URI>>"
-                        }
-                     ],
-                     "data":[
-                        [
-                           5.4496644295302,
-                           5.4496644295302
-                        ],
-                        [
-                           192.81711409396,
-                           192.81711409396
-                        ],
-                        [
-                           103.211604095563,
-                           103.211604095563
-                        ],
-                        [
-                           2978.70469798658,
-                           2978.70469798658
-                        ],
-                        [
-                           15.6577181208054,
-                           15.6577181208054
-                        ],
-                        [
-                           76.0771812080537,
-                           76.0771812080537
-                        ],
-                        [
-                           1.5738255033557,
-                           1.5738255033557
-                        ],
-                        [
-                           23.5268456375839,
-                           23.5268456375839
-                        ]
-                     ]
-                  };
+                             "context":{
+                                "sessionId": "session_0"
+                             },
+                             "pipelineId": "pipeline_1",
+                             "dataset_uri": "<<DATA_URI>>",
+                             "data":[
+                              [
+                                 5.4496644295302,
+                                 5.4496644295302
+                              ],
+                              [
+                                 192.81711409396,
+                                 192.81711409396
+                              ],
+                              [
+                                 103.211604095563,
+                                 103.211604095563
+                              ],
+                              [
+                                 2978.70469798658,
+                                 2978.70469798658
+                              ],
+                              [
+                                 15.6577181208054,
+                                 15.6577181208054
+                              ],
+                              [
+                                 76.0771812080537,
+                                 76.0771812080537
+                              ],
+                              [
+                                 1.5738255033557,
+                                 1.5738255033557
+                              ],
+                              [
+                                 23.5268456375839,
+                                 23.5268456375839
+                              ]
+                           ]
+                          };
 
 let DescribeDataflow_ex = {
                             "context": {

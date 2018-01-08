@@ -86,7 +86,7 @@ spec:
           value: "True"
         # Reference to the gRPC server using the pod name and TA2 port
         #- name: TA2_TEST_SERVER_URL
-        #  value: "ravens-eval:50051"
+        #  value: "ravens-eval:45042"
         # Url to TA3 R/rook web service
         - name: R_DEV_SERVER_BASE
           value: "http://localhost:8000/custom/"
@@ -166,7 +166,7 @@ spec:
     #      value: "/ravens_volume/config_o_196.json"
     #  ports:
     #    # gRPC port
-    #    - containerPort: 50051
+    #    - containerPort: 45042
     #      protocol: TCP
     #  volumeMounts:
     #    - mountPath: /shared_dir

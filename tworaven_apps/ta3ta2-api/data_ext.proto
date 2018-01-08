@@ -1,0 +1,98 @@
+syntax = "proto3";
+option go_package = "pipeline";
+
+import "core.proto";
+
+/*
+ * Data Operations API Messages (Extension)
+ *
+ * This interface provides Protobuf message definitions and GRPC calls to allow a TA3 system to request
+ * in-memory data changes be made by a target TA2 system.
+ */
+
+message FeatureData {
+    Feature from_feature = 1; // source feature
+    Feature to_feature = 2;   // target feature
+}
+
+message AddFeaturesRequest {
+    SessionContext context = 1;
+    string from_dataset_uri = 2;       // dataset having features copied from
+    string to_dataset_uri = 3;         // dataset having features copied to
+    repeated FeatureData features = 4;
+}
+
+message RemoveFeaturesRequest {
+    SessionContext context = 1;
+    string dataset_uri = 2;              // dataset having features removed
+    repeated Feature features = 3; // features being removed
+}
+
+message AddSamplesRequest {
+    SessionContext context = 1;
+    string from_dataset_uri = 2;    // dataset having samples copied from
+    string from_resource_id = 3;    // resource having samples copied from
+    string to_dataset_uri = 4;      // dataset having samples copied to
+    string to_resource_id = 5;      // resource having samples copied to
+    repeated string sample_ids = 6; // samples being copied
+}
+
+message RemoveSamplesRequest {
+    SessionContext context = 1;
+    string dataset_uri = 2;         // dataset having samples removed
+    string resource_id = 3;         // resource having samples removed
+    repeated string sample_ids = 4; // samples being removed
+}
+
+message ReplacementData {
+    Feature feature = 1; // feature value belongs to
+    string sample_id = 2;      // sample value belongs to
+    string value = 3;          // value to add - type is assumed to match value being replaced
+}
+
+message ReplaceDataRequest {
+    SessionContext context = 1;
+    string dataset_uri = 2;     // dataset value belongs to
+    repeated ReplacementData replacements = 3;
+}
+
+message MaterializeRequest {
+    SessionContext context = 1;
+    string source_dataset_uri = 2; // uri of dataset being modified
+    string dest_dataset_uri = 3;   // uri to persist to
+}
+
+message TrainValidationSplitRequest {
+    SessionContext context = 1;
+    float val_size = 2;     // value between 0 and 1 representing validation proportion
+    int32 seed = 3;         // seed for deterministic split
+    bool is_validation = 4; // filters to validation set if true, filters to train set if false
+    string dataset_uri = 5; // uri of dataset being split
+}
+
+message RevertRequest {
+    string dataset_uri = 1; // uri of dataset being reverted
+}
+
+service DataExt {
+    // Add and remove features to/from datasets
+    rpc AddFeatures(AddFeaturesRequest) returns (Response) {}
+    rpc RemoveFeatures(RemoveFeaturesRequest) returns (Response) {}
+
+    // Add and remove records (rows) to/from datasets
+    rpc AddSamples(AddSamplesRequest) returns (Response) {}
+    rpc RemoveSamples(RemoveSamplesRequest) returns (Response) {}
+
+    // Replace individual data points in a set
+    rpc ReplaceData(ReplaceDataRequest) returns (Response) {}
+
+    // Persist the dataset with modifications applied for future use
+    rpc Materialize(MaterializeRequest) returns (Response) {}
+
+    // Deterministic split of a dataset into training a validation
+    // Filters out all but validation records or training records depending on is_validation
+    rpc TrainValidationSplit(TrainValidationSplitRequest) returns (Response) {}
+
+    // Revert the dataset to the original state
+    rpc Revert(RevertRequest) returns (Response) {}
+}

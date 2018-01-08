@@ -55,3 +55,16 @@
 1. Via swagger
   - go to: http://127.0.0.1:8080/static/pkgs/swagger-ui/dist/index.html?url=/api/v1/swagger.yml
   - scroll down to 'ta3_search'
+
+---
+
+## kube notes (working inconsistently)
+
+- working properly with *bash*
+  - `kubectl exec ravens-eval --container ta3-main -- bash ta3_search /ravens_volume/config_185_baseball.json`
+
+- ...but not without (as per specs)
+  - `kubectl exec -it ravens-eval -c ta3-main -- ta3_search /ravens_volume/config_185_baseball.json`
+
+- also works
+  - `kubectl exec -it ravens-eval -c ta3-main -- /usr/bin/ta3_search /ravens_volume/config_185_baseball.json`

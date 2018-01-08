@@ -6,7 +6,7 @@ from google.protobuf.json_format import MessageToJson,\
     Parse, ParseError
 from django.conf import settings
 
-from tworaven_apps.ta2_interfaces import core_pb2
+import core_pb2
 from tworaven_apps.ta2_interfaces.ta2_connection import TA2Connection
 from tworaven_apps.ta2_interfaces.ta2_util import get_grpc_test_json,\
     get_failed_precondition_response,\
@@ -90,12 +90,12 @@ def pipeline_create(info_str=None):
     except Exception as ex:
         return get_failed_precondition_response(str(ex))
 
-    
+
     #print('reply', reply)
     try:
         print(MessageToJson(reply))
     except:
-        print('failed unary convert to JSON')
+        print('failed unary convert to JSON (ok for streaming)')
     # --------------------------------
     # Convert the reply to JSON and send it on
     # --------------------------------

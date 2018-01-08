@@ -46,7 +46,9 @@ from django.conf import settings
 from tworaven_apps.utils.csv_to_json import convert_csv_file_to_json
 from tworaven_apps.utils.url_helper import format_file_uri_to_path
 from tworaven_apps.utils.number_formatting import add_commas_to_number
+from tworaven_apps.utils.static_keys import KEY_SUCCESS, KEY_DATA
 
+KEY_ERR_CODE = 'err_code'
 ERR_CODE_FILE_URI_NOT_SET = 'FILE_URI_NOT_SET'
 ERR_CODE_FILE_URI_BAD_FORMAT = 'FILE_URI_BAD_FORMAT'
 ERR_CODE_FILE_NOT_FOUND = 'FILE_NOT_FOUND'
@@ -146,21 +148,20 @@ class FileEmbedUtil(object):
                 # Handle a list of PipelineCreateResult objects
                 #   - returned by CreatePipelines
                 #
-                if 'predictResultUris' in pip_result['pipelineInfo']:
-                    for file_uri in pip_result['pipelineInfo']['predictResultUris']:
-                        fmt_cnt += 1
-                        embed_result = self.get_embed_result(file_uri, fmt_cnt)
-                        pip_result['pipelineInfo'].setdefault('predictResultData', [])
-                        pip_result['pipelineInfo']['predictResultData'].append(embed_result)
-            elif 'resultUris' in pip_result:
+                if 'predictResultUri' in pip_result['pipelineInfo']:
+                    file_uri = pip_result['pipelineInfo']['predictResultUri']
+                    fmt_cnt += 1
+                    embed_result = self.get_embed_result(file_uri, fmt_cnt)
+                    pip_result['pipelineInfo']['predictResultData'] = embed_result
+
+            elif 'resultUri' in pip_result:
                 # Handle a list of PipelineExecuteResult objects
                 #   - returned by GetExecutePipelineResults
                 #
-                for file_uri in pip_result['resultUris']:
-                    fmt_cnt += 1
-                    embed_result = self.get_embed_result(file_uri, fmt_cnt)
-                    pip_result.setdefault('resultData', [])
-                    pip_result['resultData'].append(embed_result)
+                file_uri = pip_result['resultUri']
+                fmt_cnt += 1
+                embed_result = self.get_embed_result(file_uri, fmt_cnt)
+                pip_result['resultData'] = embed_result
 
             formatted_results.append(pip_result)
 
@@ -171,7 +172,7 @@ class FileEmbedUtil(object):
         return formatted_results, None
 
 
-    def get_embed_result(self, file_uri, file_num):
+    def get_embed_result(self, file_uri, file_num=None):
         """Get the content from the file and format a JSON snippet
         that includes that content.
 
@@ -258,10 +259,13 @@ class FileEmbedUtil(object):
         # Send back the data
         #
         embed_snippet = OrderedDict()
-        fkey = self.format_file_key(file_num)
-        embed_snippet[fkey] = OrderedDict()
-        embed_snippet[fkey]['success'] = True
-        embed_snippet[fkey]['data'] = py_list
+        embed_snippet[KEY_SUCCESS] = True
+        embed_snippet[KEY_DATA] = py_list
+
+        #fkey = self.format_file_key(file_num)
+        #embed_snippet[fkey] = OrderedDict()
+        #embed_snippet[fkey]['success'] = True
+        #embed_snippet[fkey]['data'] = py_list
 
         return embed_snippet
 
@@ -273,15 +277,17 @@ class FileEmbedUtil(object):
     def format_embed_err(self, err_code, err_msg, file_num):
         """Format a dict snippet for JSON embedding"""
         info = OrderedDict()
-        info['success'] = False
-        info['err_code'] = err_code
+        info[KEY_SUCCESS] = False
+        info[KEY_ERR_CODE] = err_code
         info['message'] = err_msg
 
-        od = OrderedDict()
-        fkey = self.format_file_key(file_num)
-        od[fkey] = info
+        return info
 
-        return od
+        #od = OrderedDict()
+        #fkey = self.format_file_key(file_num)
+        #od[fkey] = info
+
+        #return od
 
 
     def get_embed_file_type_err_msg(self):

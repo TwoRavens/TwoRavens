@@ -18,8 +18,8 @@ import grpc
 import logging
 import time
 
-from tworaven_apps.ta2_interfaces import core_pb2
-from tworaven_apps.ta2_interfaces import core_pb2_grpc as core_pb2_grpc
+import core_pb2
+import core_pb2_grpc as core_pb2_grpc
 from tworaven_apps.ta2_interfaces.models import TEST_KEY_FILE_URI
 from tworaven_apps.ta2_interfaces.ta2_util import get_predict_file_info_dict
 """
@@ -41,35 +41,21 @@ class Core(core_pb2_grpc.CoreServicer):
         self.sessions = set()
 
     def StartSession(self, request, context):
-        version = core_pb2.DESCRIPTOR.GetOptions().Extensions[
-            core_pb2.protocol_version]
+        version = core_pb2.DESCRIPTOR.GetOptions().Extensions[\
+                    core_pb2.protocol_version]
 
         print('version: %s' % version)
         print('request.version: %s' % request.version)
 
-        """
-        if not request.version == version:
-            err_msg = 'Expecting version %s but received version %s' %\
-                (version, request.version)
-
-            return core_pb2.SessionResponse(
-                response_info=core_pb2.Response(
-                    status=core_pb2.Status(code=core_pb2.FAILED_PRECONDITION,
-                                           details=err_msg),
-                ),)
-                #user_agent='ta2_stub %s' % __version__,
-                #version=version,
-                #context=core_pb2.SessionContext(session_id=err_msg),)
-        """
         session = 'session_%d' % len(self.sessions)
         session_start_time[session] = time.time()
         self.sessions.add(session)
-        logger.info("Session started: 1 (protocol version %s)", version)
+        logger.info("Session started: %s (protocol version %s)",\
+                    session, version)
         return core_pb2.SessionResponse(
             response_info=core_pb2.Response(
                 status=core_pb2.Status(code=core_pb2.OK)
             ),
-            #user_agent='ta2_stub %s' % __version__,
             user_agent=request.user_agent,
             version=version,
             context=core_pb2.SessionContext(session_id=session),
@@ -89,16 +75,27 @@ class Core(core_pb2_grpc.CoreServicer):
         )
 
 
-    def UpdateProblemSchema(self, request, context):
-        #assert context['session_id'] in self.sessions
-        logger.info("UpdateProblemSchema: ")#"%s", request.session_id)
+    def SetProblemDoc(self, request, context):
+        """Mock response for SetProblemDoc"""
+        logger.info("SetProblemDoc 1")
+        sessioncontext = request.context
+        if not sessioncontext.session_id in self.sessions:
+            return core_pb2.Response(\
+                    status=core_pb2.Status(\
+                        code=core_pb2.FAILED_PRECONDITION,
+                        details="Unknown session id: %s" % request.session_id))
+
+        test_msg = 'updates received: %s' % \
+                   ([str(x).strip() for x in request.updates])
+
         return core_pb2.Response(
             status=core_pb2.Status(\
                     code=core_pb2.OK,
-                    details='Problem Schema Updated'),)
+                    details='Problem Doc Updated. %s' % test_msg),)
 
 
-    def CreatePipelines(self, request, context):
+    def GetCreatePipelineResults(self, request, context):
+        """Mock GetCreatePipelineResults response"""
         sessioncontext = request.context
         if not sessioncontext.session_id in self.sessions:
             yield core_pb2.PipelineCreateResult(\
@@ -107,14 +104,74 @@ class Core(core_pb2_grpc.CoreServicer):
                             code=core_pb2.FAILED_PRECONDITION,
                             details="Unknown session id: %s" % sessioncontext.session_id)))
             return
-        train_features = request.train_features
+
+        results = [
+            (core_pb2.COMPLETED, 'pipeline_1', True),
+            (core_pb2.COMPLETED, 'pipeline_2', True),
+        ]
+
+        cnt = 0
+        for progress, pipeline_id, send_pipeline in results:
+            print('sleep 1 second...')
+            time.sleep(1)
+
+            if not context.is_active():
+                logger.info("Client closed GetCreatePipelineResults stream")
+
+            msg = core_pb2.PipelineCreateResult(
+                response_info=core_pb2.Response(
+                    status=core_pb2.Status(code=core_pb2.OK),
+                ),
+                progress_info=progress,
+                pipeline_id=pipeline_id,
+            )
+            if send_pipeline:
+                cnt += 1
+
+                # try to create a legit file uri
+                file_uri_dict = get_predict_file_info_dict('CLASSIFICATION')
+
+                msg.pipeline_info.CopyFrom(
+                    core_pb2.Pipeline(
+                        #predict_result_uris=['file:///out/predict1.csv'],
+                        predict_result_uri = file_uri_dict.get(\
+                                            TEST_KEY_FILE_URI,
+                                            'no file uri'),
+                        output=core_pb2.OUTPUT_TYPE_UNDEFINED,
+                        scores=[
+                            core_pb2.Score(
+                                metric=core_pb2.ACCURACY,
+                                value=0.8,
+                            ),
+                            core_pb2.Score(
+                                metric=core_pb2.ROC_AUC,
+                                value=0.5,
+                            ),
+                        ],
+                    )
+                )
+            yield msg
+
+
+    def CreatePipelines(self, request, context):
+        """Mock CreatePipelines response"""
+        sessioncontext = request.context
+        if not sessioncontext.session_id in self.sessions:
+            yield core_pb2.PipelineCreateResult(\
+                    response_info=core_pb2.Response(\
+                        status=core_pb2.Status(\
+                            code=core_pb2.FAILED_PRECONDITION,
+                            details="Unknown session id: %s" % sessioncontext.session_id)))
+            return
+
+        dataset_uri = request.dataset_uri
         task = request.task
-        #assert task == core_pb2.CLASSIFICATION
         task_subtype = request.task_subtype
         task_description = request.task_description
         output = request.output
         metrics = request.metrics
         target_features = request.target_features
+        predict_features = request.predict_features
         max_pipelines = request.max_pipelines
 
         logger.info("Got CreatePipelines request, session=%s",
@@ -131,6 +188,7 @@ class Core(core_pb2_grpc.CoreServicer):
 
         cnt = 0
         for progress, pipeline_id, send_pipeline in results:
+            print('sleep 1 second...')
             time.sleep(1)
 
             if not context.is_active():
@@ -152,7 +210,9 @@ class Core(core_pb2_grpc.CoreServicer):
                 msg.pipeline_info.CopyFrom(
                     core_pb2.Pipeline(
                         #predict_result_uris=['file:///out/predict1.csv'],
-                        predict_result_uris=[file_uri_dict.get(TEST_KEY_FILE_URI, 'no file uri')],
+                        predict_result_uri=file_uri_dict.get(\
+                                            TEST_KEY_FILE_URI,
+                                            'no file uri'),
                         output=output,
                         scores=[
                             core_pb2.Score(
@@ -186,8 +246,100 @@ class Core(core_pb2_grpc.CoreServicer):
         res.response_info.status.code = core_pb2.OK
         res.response_info.status.details = "listing the pipelines!"
 
-        res.pipeline_ids.append('pipeline_01')
-        res.pipeline_ids.append('pipeline_02')
+        res.pipeline_ids.append('pipeline_1')
+        res.pipeline_ids.append('pipeline_2')
+
+        return res
+
+
+
+    def DeletePipelines(self, request, context):
+        """DeletePipelines response"""
+        sessioncontext = request.context
+        if not sessioncontext.session_id in self.sessions:
+            return core_pb2.PipelineListResult(\
+                        response_info=core_pb2.Response(\
+                            status=core_pb2.Status(\
+                                code=core_pb2.FAILED_PRECONDITION,
+                                details="Unknown session id: %s" % sessioncontext.session_id)))
+
+        if hasattr(request, 'delete_pipeline_ids') is False:
+            return core_pb2.PipelineListResult(\
+                        response_info=core_pb2.Response(\
+                            status=core_pb2.Status(\
+                                code=core_pb2.FAILED_PRECONDITION,
+                                details="'delete_pipeline_ids' not found")))
+
+        if not request.delete_pipeline_ids:
+            err_msg = "No pipeline ids specified in 'delete_pipeline_ids'"
+            return core_pb2.PipelineListResult(\
+                        response_info=core_pb2.Response(\
+                            status=core_pb2.Status(\
+                                code=core_pb2.FAILED_PRECONDITION,
+                                details=err_msg)))
+
+
+        logger.info("Rcvd DeletePipelines request, session=%s",
+                    sessioncontext.session_id)
+
+        res = core_pb2.PipelineListResult()
+
+        res.response_info.status.code = core_pb2.OK
+
+        if len(request.delete_pipeline_ids) > 1:
+            res.pipeline_ids.append(request.delete_pipeline_ids[-1])
+            res.response_info.status.details = \
+                        ("Test.  All except last pipeline deleted--"
+                         "perhaps it's pending delete")
+        else:
+            res.response_info.status.details = \
+                        ("Test.  Single pipeline has been deleted")
+
+        return res
+
+
+
+    def CancelPipelines(self, request, context):
+        """CancelPipelines response"""
+        sessioncontext = request.context
+        if not sessioncontext.session_id in self.sessions:
+            return core_pb2.PipelineListResult(\
+                        response_info=core_pb2.Response(\
+                            status=core_pb2.Status(\
+                                code=core_pb2.FAILED_PRECONDITION,
+                                details="Unknown session id: %s" % sessioncontext.session_id)))
+
+        if hasattr(request, 'cancel_pipeline_ids') is False:
+            return core_pb2.PipelineListResult(\
+                        response_info=core_pb2.Response(\
+                            status=core_pb2.Status(\
+                                code=core_pb2.FAILED_PRECONDITION,
+                                details="'cancel_pipeline_ids' not found")))
+
+        if not request.cancel_pipeline_ids:
+            err_msg = "No pipeline ids specified in 'cancel_pipeline_ids'"
+            return core_pb2.PipelineListResult(\
+                        response_info=core_pb2.Response(\
+                            status=core_pb2.Status(\
+                                code=core_pb2.FAILED_PRECONDITION,
+                                details=err_msg)))
+
+
+        logger.info("Rcvd CancelPipelines request, session=%s",
+                    sessioncontext.session_id)
+
+        res = core_pb2.PipelineListResult()
+
+        res.response_info.status.code = core_pb2.OK
+
+        if len(request.cancel_pipeline_ids) > 1:
+            res.pipeline_ids.append(request.cancel_pipeline_ids[-1])
+            res.response_info.status.details = \
+                        ("Test.  All except last pipeline deleted--"
+                         "perhaps it's pending delete")
+        else:
+            res.response_info.status.details = \
+                        ("Test.  Single pipeline has been deleted")
 
         return res
 
@@ -222,7 +374,7 @@ class Core(core_pb2_grpc.CoreServicer):
                 ),
                 progress_info=progress_info,
                 pipeline_id=pipeline_id,
-                result_uris=[file_uri_dict.get(TEST_KEY_FILE_URI, 'no file uri')]
+                result_uri=file_uri_dict.get(TEST_KEY_FILE_URI, 'no file uri')
             )
 
 
@@ -260,9 +412,7 @@ class Core(core_pb2_grpc.CoreServicer):
             ),
             progress_info=core_pb2.COMPLETED,
             pipeline_id=pipeline_id,
-            result_uris=[file_uri_dict.get(TEST_KEY_FILE_URI, 'no file uri'),
-                         file_uri_dict2.get(TEST_KEY_FILE_URI, 'no file uri'),
-                         'file:///non-existent-file/should-give-err.csv']
+            result_uri=file_uri_dict.get(TEST_KEY_FILE_URI, 'no file uri')
         )
 
 
@@ -405,7 +555,7 @@ def main():
         hostname = None#socket.gethostname()
         if not hostname:
             hostname = '[::]'
-        run_port = '50051'
+        run_port = '45042'
         hostport = '%s:%s' % (hostname, run_port)
         print('running on port: %s' % hostport)
         server.add_insecure_port(hostport)

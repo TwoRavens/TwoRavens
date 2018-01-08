@@ -12,7 +12,7 @@ from google.protobuf.json_format import MessageToJson
 from django.conf import settings
 from django.template.loader import render_to_string
 
-from tworaven_apps.ta2_interfaces import core_pb2
+import core_pb2
 from tworaven_apps.ta2_interfaces.models import TEST_KEY_FILE_URI
 from tworaven_apps.ta2_interfaces.models import KEY_GRPC_JSON
 from django.template.loader import render_to_string
@@ -51,7 +51,7 @@ def get_grpc_content(request):
     return True, request.POST[KEY_GRPC_JSON]
 
 
-def get_failed_precondition_response(err_msg):
+def get_failed_precondition_response(err_msg='failed precondition?'):
     """Return a SessionResponse object in JSON format
         with status FAILED_PRECONDITION"""
 

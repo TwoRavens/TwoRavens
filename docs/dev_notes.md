@@ -4,7 +4,7 @@
 
 Contents:
  - [Run TwoRavens using D3M config from "CONFIG_JSON_PATH" environment variable](#run-tworavens-using-d3m-config-from-config_json_path-environment-variable)
- - ~~[Run local TA2 test server](#run-local-ta2-test-server)~~
+ - [Run local TA2 test server](#run-local-ta2-test-server)
  - [Saving webpack js/css files for deployment](#saving-webpack-jscss-files-for-deployment)
  - [Loading D3M config information](#loading-d3m-config-information)
  - _incomplete_ [Add gRPC request type](#add-grpc-request-type)
@@ -65,10 +65,22 @@ Environment variable CONFIG_JSON_PATH not set.
 
 The following command runs a TA2 test server with the core code from the NYU team.  Run this is a new, separate Terminal:
 
-- open a separate Terminal
+#### Step 1 - running the test server
+- Open a separate Terminal
 - cd into the TwoRavens directory
-- run `workon 2ravens`
-- run `fab run_ta2_test_server`
+- Run `workon 2ravens`
+- Run `fab run_ta2_test_server`
+
+#### Step 2 - pointing to the main app at the test server
+- Stop the Terminal where you're running `fab run` (or `fab run_with_rook`)
+- Set the main app to look for the test server:
+
+    ```
+    export TA2_STATIC_TEST_MODE=False
+    ```
+    
+- Start the main app: `fab run` (or `fab run_with_rook`)
+
 
 ## Saving webpack js/css files for deployment
 
@@ -238,8 +250,8 @@ from tworaven_apps.ta2_interfaces import core_pb2
 from tworaven_apps.ta2_interfaces.ta2_connection import TA2Connection
 from google.protobuf.json_format import MessageToJson, Parse, ParseError
 
-#settings.TA2_TEST_SERVER_URL = 'docker.for.mac.localhost:50051'
-settings.TA2_TEST_SERVER_URL = 'localhost:50051'
+#settings.TA2_TEST_SERVER_URL = 'docker.for.mac.localhost:45042'
+settings.TA2_TEST_SERVER_URL = 'localhost:45042'
 
 content = json.dumps(dict(user_agent='tworavens'))
 req = Parse(content, core_pb2.SessionRequest())

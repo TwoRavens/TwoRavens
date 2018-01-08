@@ -9,8 +9,8 @@ whitenoise==3.3.0
 Fabric3==1.13.1.post1
 
 # gRPC packages for D3M
-grpcio==1.6.0
-grpcio-tools==1.6.0
+grpcio==1.8.2
+grpcio-tools==1.8.2
 
 # for the ta3_search callback
 Flask==0.12.2

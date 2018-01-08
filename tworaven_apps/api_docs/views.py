@@ -36,7 +36,7 @@ def view_test_form(request):
     info_dict['cform'] = client_form
 
     return render(request,
-                  'api_docs/test_form.html',
+                  'grpc/ta3ta2_api_form.html',
                   info_dict)
 
 
