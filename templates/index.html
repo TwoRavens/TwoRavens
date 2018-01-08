@@ -52,6 +52,16 @@
           const IS_DATAVERSE_DOMAIN = (APP_DOMAIN === DATAVERSE_DOMAIN);
           const IS_EVENTDATA_DOMAIN = (APP_DOMAIN === EVENTDATA_DOMAIN);
 
+          /*
+          // look in base.html for a reference
+          {% if user.is_authenticated %}
+            const username = "{{ user.username }}";
+            const logout_url = "{% url 'logout' %}";
+            const login_url = "{% url 'login' %}";
+          {% else %}
+            // do something
+          {% endif %}
+          */
 
     </script>
   {% endblock %}
