@@ -84,6 +84,12 @@ def clear_user_metadata(request):
 @csrf_exempt
 def record_user_workspace(request):
     """Record a user's workspace"""
+
+    # Temporarily disable this...rework it post Jan
+    return JsonResponse(dict(sucess=False,
+                             message='temporarily disabled'))
+
+
     success, user_msg = WorkspaceRecorder.record_workspace(request)
 
     info = dict(success=success,
