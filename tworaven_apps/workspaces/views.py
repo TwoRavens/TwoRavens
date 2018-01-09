@@ -86,7 +86,7 @@ def record_user_workspace(request):
     """Record a user's workspace"""
 
     # Temporarily disable this...rework it post Jan
-    return JsonResponse(dict(sucess=False,
+    return JsonResponse(dict(success=False,
                              message='temporarily disabled'))
 
 
