@@ -305,6 +305,18 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     if (IS_D3M_DOMAIN) {
         let datasetName = datadocument.about.datasetName;                           // Use "datasetName" field in dataset document
         zparams.zdata = datasetName.charAt(0).toUpperCase() + datasetName.slice(1); // Make sure to capitalize;
+        let cite = datadocument.about.citation;
+        console.log(cite);
+        /*
+        // clean citation 
+        zparams.zdatacite = cite
+            .replace(/\&/g, "and")
+            .replace(/\;/g, ",")
+            .replace(/\%/g, "-");
+        // fill in citation in header
+        $('#cite div.panel-body').text(zparams.zdatacite);
+        */
+ 
     } else {
         // Note: presently xml is no longer being read from Dataverse metadata anywhere
         let temp = xml.documentElement.getElementsByTagName("fileName");
@@ -315,6 +327,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
             .replace(/\&/g, "and")
             .replace(/\;/g, ",")
             .replace(/\%/g, "-");
+        // fill in citation in header
         $('#cite div.panel-body').text(zparams.zdatacite);
     }
     // drop file extension
