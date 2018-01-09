@@ -123,7 +123,7 @@ export let callHistory = []; // transform and subset calls
 let mytarget = '';
 
 let configurations = {};
-let dataschema = {};
+let datadocument = {};
 
 export let domainIdentifier = null; // available throughout apps js; used for saving workspace
 
@@ -224,13 +224,13 @@ let dataurl = '';
   1. Retrieve the configuration information
   2. Set 'configurations'
   3. Read the problem schema and set 'd3mProblemDescription'
-  4. Read the data schema and set 'dataschema'
+  4. Read the data document and set 'datadocument'
   5. Read in zelig models (not for d3m)
   6. Read in zeligchoice models (not for d3m)
   7. Start the user session
   8. Read preprocess data or (if necessary) run preprocess
   9. Build allNodes[] using preprocessed information
-  10. Add dataschema information to allNodes (when in IS_D3M_DOMAIN)
+  10. Add datadocument information to allNodes (when in IS_D3M_DOMAIN)
   11. Call layout() and start up
 */
 async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3mData, d3mPS, d3mDS, pURL) {
@@ -263,7 +263,6 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     // 3. Read the problem schema and set 'd3mProblemDescription'
     // ...and make a call to start the session with TA2. if we get this far, data are guaranteed to exist for the frontend
     res = await m.request("/config/d3m-config/get-problem-data-file-info");
-    console.log(res);
     // some simple logic to get the paths right
     // note that if neither exist, stay as default which is null
     let set = (field, val) => res.data[field].exists ? res.data[field].path :
@@ -279,27 +278,8 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
 
     res = await m.request(d3mPS);
     console.log("prob schema data: ", res);
-    mytarget = res.inputs.data[0].targets[0].colName; // easier way to access target name?
 
-    if (IS_D3M_DOMAIN) {
-        zparams.zdata = d3mDataName;
-    } else {
-        // Note: presently xml is no longer being read from Dataverse metadata anywhere
-        let temp = xml.documentElement.getElementsByTagName("fileName");
-        zparams.zdata = temp[0].childNodes[0].nodeValue;
-        let cite = xml.documentElement.getElementsByTagName("biblCit");
-        // clean citation so POST is valid json
-        zparams.zdatacite = cite[0].childNodes[0].nodeValue
-            .replace(/\&/g, "and")
-            .replace(/\;/g, ",")
-            .replace(/\%/g, "-");
-        $('#cite div.panel-body').text(zparams.zdatacite);
-    }
-    // drop file extension
-    let dataname = IS_D3M_DOMAIN ? zparams.zdata : zparams.zdata.replace(/\.(.*)/, '');
-    d3.select("#dataName").html(dataname);
-    // put dataset name, from meta-data, into page title
-    d3.select("title").html("TwoRavens " + dataname);
+    mytarget = res.inputs.data[0].targets[0].colName; // easier way to access target name?
 
   //  set = (field, arr) => d3mProblemDescription[field] = res[field] in arr ? res[field] : field + 'Undefined';
     d3mProblemDescription.taskType=res.about.taskType;
@@ -318,11 +298,40 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         swandive = true;
     }
 
-    // 4. Read the data schema and set 'dataschema'
-    dataschema = await m.request(d3mDS);
+    // 4. Read the data document and set 'datadocument'
+    datadocument = await m.request(d3mDS);
+
+
+    if (IS_D3M_DOMAIN) {
+        let datasetName = datadocument.about.datasetName;                           // Use "datasetName" field in dataset document
+        zparams.zdata = datasetName.charAt(0).toUpperCase() + datasetName.slice(1); // Make sure to capitalize;
+    } else {
+        // Note: presently xml is no longer being read from Dataverse metadata anywhere
+        let temp = xml.documentElement.getElementsByTagName("fileName");
+        zparams.zdata = temp[0].childNodes[0].nodeValue;
+        let cite = xml.documentElement.getElementsByTagName("biblCit");
+        // clean citation so POST is valid json
+        zparams.zdatacite = cite[0].childNodes[0].nodeValue
+            .replace(/\&/g, "and")
+            .replace(/\;/g, ",")
+            .replace(/\%/g, "-");
+        $('#cite div.panel-body').text(zparams.zdatacite);
+    }
+    // drop file extension
+    let dataname = IS_D3M_DOMAIN ? zparams.zdata : zparams.zdata.replace(/\.(.*)/, '');
+    d3.select("#dataName").html(dataname);
+    // put dataset name, from meta-data, into page title
+    d3.select("title").html("TwoRavens " + dataname);
+
+
+
+
+
+
+
     // if swandive, we have to set valueKey here so that left panel can populate
     if (swandive) {
-        [dataschema.trainData.trainData, dataschema.trainData.trainTargets]
+        [datadocument.trainData.trainData, datadocument.trainData.trainTargets]
             .forEach(vars => vars && vars.forEach(v => valueKey.push(v.varName)));
         // end session if neither trainData nor trainTargets?
         valueKey.length === 0 && alert("no trainData or trainTargest in data description file. valueKey length is 0");
@@ -334,7 +343,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         byId('main').style.backgroundColor = 'grey';
         byId('whitespace').style.backgroundColor = 'grey';
     }
-    console.log("data schema data: ", dataschema);
+    console.log("data schema data: ", datadocument);
 
     // 5. Read in zelig models (not for d3m)
     // 6. Read in zeligchoice models (not for d3m)
@@ -381,7 +390,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
             onEnd: () => first_load = false,
             steps: [
                 step("dataName", "bottom", "Welcome to TwoRavens Solver",
-                     `<p>This tool can guide you to solve an empirical problem in the dataset listed above.</p>
+                     `<p>This tool can guide you to solve an empirical problem in the dataset above.</p>
                       <p>These messages will teach you the steps to take to find and submit a solution.</p>`),
                 step("btnReset", "bottom", "Restart Any Problem Here",
                      '<p>You can always start a problem over by using this reset button.</p>'),
@@ -477,8 +486,8 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         allNodes.push(obj);
     }
 
-    // 10. Add dataschema information to allNodes (when in IS_D3M_DOMAIN)
-    let datavars = dataschema.dataResources[0].columns;
+    // 10. Add datadocument information to allNodes (when in IS_D3M_DOMAIN)
+    let datavars = datadocument.dataResources[0].columns;
     datavars.forEach((v, i) => {
         let myi = findNodeIndex(v.colName);
         allNodes[myi] = Object.assign(allNodes[myi], {d3mDescription: v});
