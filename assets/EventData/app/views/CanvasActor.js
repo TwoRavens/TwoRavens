@@ -1,6 +1,6 @@
 import m from 'mithril';
 import {dataset} from "../app.js"
-import {setupActor, actorTabSwitch} from "../subsets/Actor.js"
+import {setupActor, actorTabSwitch, showSelected} from "../subsets/Actor.js"
 
 export default class CanvasActor {
 
@@ -44,7 +44,7 @@ export default class CanvasActor {
                                         ),
                                         m("[id='tabDiv']", {style: {"overflow": "hidden"}},
                                             m(".btn-group[data-toggle='buttons'][id='actorRadio']", {
-                                                    style: { "width": "100%" }
+                                                    style: {"width": "100%"}
                                                 },
                                                 [
                                                     m("label.btn.btn-default.active[title='Select sources']",
@@ -102,8 +102,13 @@ export default class CanvasActor {
                                                                     [
                                                                         m("label.actorShowSelectedLbl.actorChkLbl[data-toggle='tooltip'][title='Show selected sources']",
                                                                             [
-                                                                                m("input.actorChk.actorShowSelected[id='sourceShowSelected'][name='sourceShowSelected'][onchange='showSelected(this)'][type='checkbox'][value='show']"),
-                                                                                "Show Selected"
+                                                                                m("input.actorChk.actorShowSelected[id='sourceShowSelected'][name='sourceShowSelected'][type='checkbox'][value='show']",
+                                                                                {
+                                                                                    onchange: function (e) {
+                                                                                        showSelected();
+                                                                                        e.redraw = false;
+                                                                                    }
+                                                                                }), "Show Selected"
                                                                             ]
                                                                         ),
                                                                         m(".separator"),
@@ -154,7 +159,7 @@ export default class CanvasActor {
                                                                 )
                                                             ]
                                                         ),
-                                                        m(".actorBottomTry", { style: {"width": "100%"}},
+                                                        m(".actorBottomTry", {style: {"width": "100%"}},
                                                             [
                                                                 m("button.btn.btn-default.actorBottom.actorSelectAll[data-toggle='tooltip'][id='sourceSelectAll'][title='Selects all sources that match the filter criteria'][type='button']",
                                                                     "Select All"
@@ -174,7 +179,7 @@ export default class CanvasActor {
                                                         m(".actorLeft[id='allTargets']",
                                                             [
                                                                 m("input.form-control.actorSearch[id='targetSearch'][placeholder='Search target actors'][type='text']"),
-                                                                m(".actorFullList[id='searchListTargets']",  {style: {"text-align": "left"}}
+                                                                m(".actorFullList[id='searchListTargets']", {style: {"text-align": "left"}}
                                                                 )
                                                             ]
                                                         ),
@@ -187,8 +192,13 @@ export default class CanvasActor {
                                                                     [
                                                                         m("label.actorShowSelectedLbl.actorChkLbl[data-toggle='tooltip'][title='Show selected targets']",
                                                                             [
-                                                                                m("input.actorChk.actorShowSelected[id='targetShowSelected'][name='targetShowSelected'][onchange='showSelected(this)'][type='checkbox'][value='show']"),
-                                                                                "Show Selected"
+                                                                                m("input.actorChk.actorShowSelected[id='targetShowSelected'][name='targetShowSelected'][type='checkbox'][value='show']",
+                                                                                {
+                                                                                    onchange: function (e) {
+                                                                                        showSelected();
+                                                                                        e.redraw = false;
+                                                                                    }
+                                                                                }), "Show Selected"
                                                                             ]
                                                                         ),
                                                                         m(".separator"),

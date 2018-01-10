@@ -14,11 +14,11 @@ export default class Header {
                             "margin-top": "-0.5em"
                         },
                         onmouseover: function (e) {
-                            about();
+                            $('#about').show();
                             e.redraw = false;
                         },
                         onmouseout: function (e) {
-                            closeabout();
+                            $('#about').hide();
                             e.redraw = false;
                         }
                     })

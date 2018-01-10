@@ -110,8 +110,7 @@ text.id {
 .left {
     width: 33.3%;
     height: 100%; /*was 600px;*/
-    box-sizing: border-box;
-    margin: 0;
+    box-sizing: border-box; margin: 0;
     overflow:scroll;
 }
 
@@ -1314,7 +1313,7 @@ div.actorTab button.active {
 	margin-bottom: 0px;
 	display: inline-block;
 	font-size: 18px;
-	
+
 }
 
 .filterExpand {
@@ -1611,10 +1610,4 @@ color: #333;
 #aggregTable th {
 	width: 100px;
 	padding: 0px 10px;
-}
-
-/* Fix the offsets in the ladda spinners library */
-.ladda-spinner {
-    margin-left:-16px !important;
-    margin-top:-16px !important;
 }
