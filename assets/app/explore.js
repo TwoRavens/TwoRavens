@@ -1676,7 +1676,7 @@ function model_selection(model_selection_name, count_value) {
         .style("float", "left")
         .on("click", function() {
             var a = this.style.backgroundColor.replace(/\s*/g, "");
-            var b = hexToRgba(selVarColor).replace(/\s*/g, "");
+            var b = app.hexToRgba(selVarColor).replace(/\s*/g, "");
             if (a.substr(0, 17) === b.substr(0, 17)) {
                 return; //escapes the function early if the displayed model is clicked
             }
@@ -1702,6 +1702,8 @@ function showLog() {
     app.byId('logdiv').setAttribute("style", "display:none");
 }
 
+let count, count1;
+
 /**
    called by clicking 'Explore' in explore mode
 */
@@ -1723,9 +1725,9 @@ export async function explore() {
     }
     app.allResults.push(json);
 
-
     d3.select('#rightpanel')
-        .style('width', '900px');
+        .style('width', '75%');
+
     let parent = app.byId('rightContentArea');
     app.estimated || parent.removeChild(app.byId('resultsHolder'));
     d3.select("#modelView").html('');
@@ -1763,13 +1765,13 @@ export async function explore() {
     // programmatic click on Results button
     $("#btnBivariate").trigger("click");
     let value;
-    let count = 0;
+    count = 0;
     for (var i in json.images) {
         value = i;
         model_selection(value, count); // for entering all the variables
         count++;
     }
-    let count1 = count - 1;
+    count1 = count - 1;
     app.modelCount++;
     var model = "Model".concat(app.modelCount);
     var model_name = value;
