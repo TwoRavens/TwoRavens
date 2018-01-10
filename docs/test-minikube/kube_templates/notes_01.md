@@ -1,4 +1,6 @@
 
+- minikube install
+  - https://gist.github.com/kevin-smets/b91a34cea662d0c523968472a81788f7
 
 ```
 minikube start --vm-driver=xhyve
@@ -15,7 +17,7 @@ docker build -t ravens-r-service:stable -f Dockerfile-r-service .
 
 ```
 cd setup/nginx
-docker build -t ravens-nginx:stable -f Dockerfile-ngins .
+docker build -t ravens-nginx:stable -f Dockerfile-kube .
 ```
 
 # Run it
@@ -23,17 +25,24 @@ docker build -t ravens-nginx:stable -f Dockerfile-ngins .
 ```
 # get the pods running
 #
-kubectl apply -f tworavens_test_ta2.yml --validate=false
+kubectl apply -f tworavens_ta3_pod.yml --validate=false
+
+# check status
+kubectl get pods
+
+# check events like ImagePullBackOff
+kubectl describe pods ravens-ta3
 
 # forward to local ports
 #
-kubectl port-forward ravens-eval 8080:8080
+#kubectl port-forward ravens-ta3-web 80:80
+kubectl port-forward ravens-ta3 8080:8080
 
 # start ta3 search (optional, in separate container)
 #
 eval $(minikube docker-env)
 
-kubectl exec ravens-eval --container ta3-main -- ta3_search /ravens_volume/config_185_baseball.json
+kubectl exec ravens-ta3 --container ta3-main -- ta3_search /ravens_volume/config_185_baseball.json
 
 ```
 
@@ -41,10 +50,10 @@ kubectl exec ravens-eval --container ta3-main -- ta3_search /ravens_volume/confi
 
 ```
 # Log into running pod
-kubectl exec -it ravens-eval -c ta3-main -- /bin/bash
+kubectl exec -it ravens-ta3 -c ta3-main -- /bin/bash
 
 # describe containers in pod
-kubectl describe pod/ravens-eval
+kubectl describe pod/ravens-ta3
 
 ```
 
@@ -53,15 +62,15 @@ kubectl describe pod/ravens-eval
 # Delete the pod
 
 ```
-kubectl delete -f tworavens_test_ta2.yml
+kubectl delete -f tworavens_ta3_pod.yml
 ```
 
 # logs
 
 ```
-kubectl logs ravens-eval ravens-nginx
-kubectl logs ravens-eval ta3-main
-kubectl logs ravens-eval rook-service
+kubectl logs ravens-ta3 ravens-nginx
+kubectl logs ravens-ta3 ta3-main
+kubectl logs ravens-ta3 rook-service
 ```
 
 ---
@@ -89,3 +98,9 @@ kubectl delete service raven-app
 ## other notes
 
 telnet rook-service 8000
+
+# potential fix for minikube failure
+
+```
+rm -rf ~/.minikube/cache
+```

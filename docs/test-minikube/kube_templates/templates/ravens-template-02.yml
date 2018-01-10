@@ -79,7 +79,7 @@ spec:
   # -------------------------
   - name: ta3-main
     image: ravens-main:stable
-    imagePullPolicy: Always
+    #imagePullPolicy: Always
     #command:
     #  - {{ command }}
     #args:

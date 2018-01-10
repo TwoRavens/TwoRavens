@@ -77,8 +77,9 @@ RUN pip3 install --no-cache-dir -r requirements/prod.txt && \
     fab collect_static && \
     fab make_d3m_config_files && \
     fab load_d3m_config_from_env && \
-    fab ta3_listener_add && \
-    cp -r ravens_volume/. /ravens_volume
+    fab ta3_listener_add
+
+RUN cp -r /var/webapps/TwoRavens/ravens_volume/. /ravens_volume
 
 #   fab make_d3m_config && \
 

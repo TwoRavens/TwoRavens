@@ -48,13 +48,13 @@ spec:
       hostPath:
         path: "/ravens_volume"
     ##====|Begin| Required Code that NIST uses to pair TA2 and TA3 components |Begin|
-    - name: nfs-data
-      mountPath: "/inputs"
-      subPath: "subpath_to_dataroot"
-      readOnly: true
-    - name: "nfs-output"
-      mountPath: "/outputs"
-      subPath: "subpath_to_outputs"
+    #- name: nfs-data
+    #  mountPath: "/inputs"
+    #  subPath: "subpath_to_dataroot"
+    #  readOnly: true
+    #- name: "nfs-output"
+    #  mountPath: "/outputs"
+    #  subPath: "subpath_to_outputs"
     ##====|End| Required Code that NIST uses to pair TA2 and TA3
   # affinity:
   #   # Link pod affinity with
@@ -87,7 +87,7 @@ spec:
   # -------------------------
   - name: ta3-main
     image: ravens-main:stable
-    imagePullPolicy: Always
+    #imagePullPolicy: Always
     #command:
     #  - ta3_search
     #args:
@@ -125,13 +125,13 @@ spec:
         mountPath: "/ravens_volume"
         readOnly: false
       ##====|Begin| Required Code that NIST uses to pair TA2 and TA3 components |Begin|
-      - name: nfs-data
-        mountPath: "/inputs"
-        subPath: "subpath_to_dataroot"
-        readOnly: true
-      - name: "nfs-output"
-        mountPath: "/outputs"
-        subPath: "subpath_to_outputs"
+      #- name: nfs-data
+      #  mountPath: "/inputs"
+      #  subPath: "subpath_to_dataroot"
+      #  readOnly: true
+      #- name: "nfs-output"
+      #  mountPath: "/outputs"
+      #  subPath: "subpath_to_outputs"
       ##====|End| Required Code that NIST uses to pair TA2 and TA3
     # liveness is for restart
     livenessProbe:
@@ -161,13 +161,13 @@ spec:
         readOnly: false
 
       ##====|Begin| Required Code that NIST uses to pair TA2 and TA3 components |Begin|
-      - name: nfs-data
-        mountPath: "/inputs"
-        subPath: "subpath_to_dataroot"
-        readOnly: true
-      - name: "nfs-output"
-        mountPath: "/outputs"
-        subPath: "subpath_to_outputs"
+      #- name: nfs-data
+      #  mountPath: "/inputs"
+      #  subPath: "subpath_to_dataroot"
+      #  readOnly: true
+      #- name: "nfs-output"
+      #  mountPath: "/outputs"
+      #  subPath: "subpath_to_outputs"
       ##====|End| Required Code that NIST uses to pair TA2 and TA3
     # web port
     ports:
