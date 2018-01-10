@@ -80,7 +80,7 @@ function rightpanel(mode) {
             m('#scatterplot.container3[style=width: 500px; height: 50%; background-color: white; display: none; overflow: auto]'),
             m('#heatchart.container4[style=width: 500px; height:60%; display: none; overflow: auto; background-color: #FFEBEE'),
             m('h5#NAcount[style=margin-left: 20px; display: none]'),
-            m('button#linechart_welcome.btn.btn-danger[type=button][onclick=linechart()][style=display: block; margin: 0 auto; position: relative]', 'Linechart'),
+            m('button#linechart_welcome.btn.btn-danger[type=button][style=display: block; margin: 0 auto; position: relative]', {onclick: exp.linechart}, 'Linechart'),
             m('#linechart.container4[width: 500px; height: 320px; background-color: white; display: none; overflow:auto')),
           m('#result_right[style=width: 50%; height: 90%; float: right; background-color: white; display:none; border-right: groove; border-bottom: groove; overflow: auto; white-space: nowrap]',
             m('.btn-group.btn-toggle.col-md-4.text-center[style=width:auto; height:10%; display:block; white-space:nowrap; margin-left:170px; position:relative]',

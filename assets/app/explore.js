@@ -1068,7 +1068,7 @@ function crossTabPlots(PlotNameA, PlotNameB) {
     }
 }
 
-function linechart() {
+export function linechart() {
     document.getElementById('linechart').style.display = "block";
     d3.select("#lineChart").select("svg").remove();
     $('#linechart').html("");
@@ -1336,14 +1336,9 @@ function viz(m, json_vizexplore, model_name_set) {
         d3table1(table_obj);
     }
 
-    // for the statistics]
-    // console.log("The data for the statistical"+ json.statistical)
     for (var key in json.statistical) {
-        //   console.log(key);
         if (key == model_name1 || key == model_name2) {
             for (var a in json.statistical[key].cork) {
-                //    console.log("cork: ");
-                //   console.log(json.statistical[key].cork[a]);
                 cork.push(json.statistical[key].cork[a]);
             }
         }
@@ -1351,8 +1346,6 @@ function viz(m, json_vizexplore, model_name_set) {
     for (var key1 in json.statistical) {
         if (key1 == model_name1 || key1 == model_name2) {
             for (var b in json.statistical[key1].corp) {
-                //  console.log("corp: ");
-                //   console.log(json.statistical[key1].corp[b]);
                 corp.push(json.statistical[key1].corp[b]);
             }
         }
@@ -1360,8 +1353,6 @@ function viz(m, json_vizexplore, model_name_set) {
     for (var key in json.statistical) {
         if (key == model_name1 || key == model_name2) {
             for (var c in json.statistical[key].cors) {
-                //  console.log("cors: ");
-                //  console.log(json.statistical[key].cors[c]);
                 cors.push(json.statistical[key].cors[c]);
             }
         }
@@ -1370,8 +1361,6 @@ function viz(m, json_vizexplore, model_name_set) {
     for (var key in json.statistical) {
         if (key == model_name1 || key == model_name2) {
             for (var d in json.statistical[key].var1) {
-                //     console.log("var1: ");
-                //     console.log(json.statistical[key].var1[d]);
                 var1.push(json.statistical[key].var1[d]);
             }
         }
@@ -1379,8 +1368,6 @@ function viz(m, json_vizexplore, model_name_set) {
     for (var key4 in json.statistical) {
         if (key == model_name1 || key == model_name2) {
             for (var e in json.statistical[key].var2) {
-                //   console.log("var2: ");
-                //   console.log(json.statistical[key].var2[e]);
                 var2.push(json.statistical[key].var2[e]);
             }
         }
@@ -1420,9 +1407,7 @@ function viz(m, json_vizexplore, model_name_set) {
         th = table.append("tr").style("border", 1).text("_").style("color", "#fff");
 
         for (var i = 0; i < colnames.length; i++) {
-
             th.append("td").style("border-bottom", 1).style("text-align", "center").style("background-color", selVarColor).append("b").text(colnames[i]);
-
         }
 
 
@@ -1431,20 +1416,16 @@ function viz(m, json_vizexplore, model_name_set) {
             var tr = table.append("tr").style("margin-left", 20).style("background-color", "#BDBDBD").style("border", 1).style("text-align", "center").text(rownames[k]);
             for (var m = 0; m < colnames.length; m++) {
                 for (var z = 0; z < data.length; z++) {
-
-
                     if (rownames[k] === data[z].rowname && colnames[m] === data[z].colname) {
                         tr.append("td").style("border", 1).style("text-align", "center").style("position", "relative").style("background-color", varColor).text(data[z].value);
                         console.log("data for table: "+ data[z].value);
                     }
                 }
-
             }
         }
         crossTab_Table(json);
 
-        function removeData()
-        {
+        function removeData() {
             for (var key in app.zparams) {
                 if (app.zparams.hasOwnProperty(key)) {
                     // do something with `key'
@@ -1452,7 +1433,6 @@ function viz(m, json_vizexplore, model_name_set) {
                     {
                         app.zparams[key]=[];
                     }
-
                 }
             }
         }
@@ -1491,17 +1471,13 @@ function viz(m, json_vizexplore, model_name_set) {
                     inputvalue1=zbreaks[this.id].var1.value;
                     inputvalue2=zbreaks[this.id].var2.value;
 
-                    // console.log("val1:",inputvalue1);
-                    // console.log("val2:",inputvalue2);
-
                     document.getElementById("input1").value = inputvalue1;
                     document.getElementById("input2").value = inputvalue2;
 
                     var json_obj=zbreaks[this.id];
                     var varn1,varn2,varsize1,varsize2;
 
-                    if(json_obj.length===0)
-                    {
+                    if(json_obj.length===0) {
                         console.log("break not called")
                     }else{
                         // console.log("break button called in crosstab")
@@ -1549,11 +1525,8 @@ function viz(m, json_vizexplore, model_name_set) {
             app.zparams.callHistory = callHistory;
             var jsonout = JSON.stringify(app.zparams);
 
-            //var base = rappURL+"zeligapp?solaJSON="
             urlcall = rappURL + "exploreapp"; //base.concat(jsonout);
             var solajsonout = "solaJSON=" + jsonout;
-            //console.log("urlcall out: ", urlcall);
-            // console.log("POST out this: ", solajsonout);
 
             function explore_crosstabSuccess(json) {
                 console.log("crossTabSuccess");
@@ -1561,12 +1534,8 @@ function viz(m, json_vizexplore, model_name_set) {
                 d3.json("rook/result.json", function (error, json) {
                     if (error) return console.warn(error);
                     var jsondata = json;
-                    //console.log("explore DATA json test: ", jsondata);
 
                     crossTab_Table(jsondata);
-                    // var jsonget=json.tabular;
-                    //console.log("json :"+ jsonget);
-                    // d3table1(d);
                     estimateLadda.stop();  // stop spinner
                     estimated = true;
                 });
