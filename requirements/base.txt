@@ -14,3 +14,6 @@ grpcio-tools==1.8.2
 
 # for the ta3_search callback
 Flask==0.12.2
+
+# for nist k8s templates
+Jinja2==2.10
