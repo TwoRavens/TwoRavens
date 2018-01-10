@@ -11,14 +11,6 @@ import '../../../node_modules/jqtree/tree.jquery.js'
 import '../../../node_modules/jqtree/jqtree.css'
 import '../pkgs/jqtree/jqtree.style.css'
 
-export function about() {
-    $('#about').show();
-}
-
-export function closeabout() {
-    $('#about').hide();
-}
-
 export function toggleLeftPanel() {
     // Make selections
     let main = $('#main');
@@ -119,7 +111,7 @@ if (localStorage.getItem("dataset") !== null) {
 }
 
 // Options: "api" or "local"
-export let datasource = 'local';
+export let datasource = 'api';
 
 export let subsetKeys = [];
 export let subsetKeySelected = "";

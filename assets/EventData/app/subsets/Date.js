@@ -383,3 +383,7 @@ export function setDatefromSlider() {
     // Update plot, but don't reset slider
     updateDate(false);
 }
+
+function getUserDates() {
+    return [new Date(plotSelection[0].getTime()), new Date(plotSelection[1].getTime())];
+}
