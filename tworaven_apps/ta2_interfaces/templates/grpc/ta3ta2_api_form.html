@@ -117,8 +117,9 @@
      <hr />
      <div class="card">
        <div class="card-body">
-         <b>API url</b>*: <span id="ta2-api-url"></span>
-         <br /><i>(* sent by UI. POST with JSON in request body)</i>
+         <b>API url</b>*: <span id="ta2-api-url"></span><br />
+         <b>TA3TA2 API version</b>: {{ TA3TA2_API_VERSION }}<br />
+         <i>(* sent by UI. POST with JSON in request body)</i>
        </div>
      </div><br />
       <form method=post action="{% url 'view_test_form' %}">

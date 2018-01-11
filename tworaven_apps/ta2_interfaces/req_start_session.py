@@ -14,6 +14,7 @@ from tworaven_apps.ta2_interfaces.ta2_connection import TA2Connection
 from tworaven_apps.ta2_interfaces.ta2_util import get_grpc_test_json,\
     get_failed_precondition_sess_response
 from tworaven_apps.ta2_interfaces.models import KEY_USER_AGENT_FROM_UI
+from tworaven_apps.ta2_interfaces.grpc_util import TA3TA2Util
 
 ERR_MSG_NO_USER_AGENT = 'A "%s" must be included in the request.' % KEY_USER_AGENT_FROM_UI
 
@@ -65,7 +66,9 @@ def start_session(raven_json_str=None):
     #
     if settings.TA2_STATIC_TEST_MODE:
         rnd_session_id = random_info.get_alphanumeric_string(7)
-        info_dict = dict(session_id=rnd_session_id)
+        info_dict = dict(session_id=rnd_session_id,
+                         api_version=TA3TA2Util.get_api_version())
+
         return get_grpc_test_json('test_responses/startsession_ok.json', info_dict)
 
         #if random.randint(1,10) == 3:
