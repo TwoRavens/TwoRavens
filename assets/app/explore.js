@@ -1,6 +1,7 @@
 import m from 'mithril';
 
 import * as app from './app';
+import * as plots from './plots';
 
 const $private = false;
 
@@ -1177,12 +1178,12 @@ var zbreaks=[];
 var zbreaks_tabular=[];
 
 function viz(m, json_vizexplore, model_name_set) {
-    zbreaks_tabular=[];
+    d3.select("#tabular_1")
+        .style("display", "block");
     // d3.select("#resultsView_tabular").html("");
     d3.select("#plotA").html("");
     d3.select("#plotB").html("");
-    d3.select("#tabular_2").style("display", "block");
-    d3.select("#tabular_1").style("display", "block");
+    d3.select("#SelectionData").html("");
     console.log("Viz explore method called: " + model_name_set);
 
     var get_data = [];
@@ -1193,9 +1194,9 @@ function viz(m, json_vizexplore, model_name_set) {
     var model_name1 = get_data[0] + "-" + get_data[1];
     var model_name2 = get_data[1] + "-" + get_data[0];
 
+
     var mym = +m.substr(5, 5) - 1;
 
-    //console.log("mym is : "+ mym);
     function removeKids(parent) {
         while (parent.firstChild) {
             parent.removeChild(parent.firstChild);
@@ -1213,55 +1214,22 @@ function viz(m, json_vizexplore, model_name_set) {
     var y_axis = [];
     for (var i in json.plotdata) {
         for (var j in json.plotdata[i].varname) {
-            //console.log(" the var name is : " + json.plotdata[i].varname[j]);
             if (json.plotdata[i].varname[j] === get_data[0]) {
                 for (var k in json.plotdata[i].data) {
-                    // console.log(json.plotdata[i].varname[j] + "data is : " + json.plotdata[i].data[k]);
                     x_axis[k] = json.plotdata[i].data[k];
-
                 }
             }
             if (json.plotdata[i].varname[j] === get_data[1]) {
                 for (var k in json.plotdata[i].data) {
-                    // console.log(json.plotdata[i].varname[j] + "data is : " + json.plotdata[i].data[k]);
                     y_axis[k] = json.plotdata[i].data[k];
-
                 }
             }
-
         }
     }
 
+    document.getElementById('scatterplot').style.display = "none";
     bivariatePlot(x_axis, y_axis, get_data[0], get_data[1]);
-    $('#scatterplot_img').on('click', function(){
-        $("#scatterplot_img").fadeOut("fast").fadeIn().fadeTo("fast",1.0);
-    });
-    $('#heatmap_img').on('click', function(){
-        $("#heatmap_img").fadeOut("fast").fadeIn().fadeTo("fast",1.0);
-    });
-    $('#linechart_img').on('click', function(){
-        $("#linechart_img").fadeOut("fast").fadeIn().fadeTo("fast",1.0);
-    });
-    $('#scatterplot_img').click(function() {
-        //document.getElementById('scatterplot_img').style.display = "block";
-        document.getElementById('heatchart').style.display = "none";
-        document.getElementById('linechart').style.display = "none";
-        bivariatePlot(x_axis, y_axis, get_data[0], get_data[1]);
-    });
-
-    $('#heatmap_img').click(function() {
-        document.getElementById('scatterplot').style.display = "none";
-        document.getElementById('linechart').style.display = "none";
-        heatmap(get_data[0],get_data[1]);
-    });
-    $('#linechart_img').click(function() {
-        document.getElementById('heatchart').style.display = "none";
-        document.getElementById('scatterplot').style.display = "none";
-        linechart(get_data[0],get_data[1]);
-    });
-    //  crossTabDensityPlot(x_axis,y_axis,get_data[0],get_data[1]);
-    var empty=[];
-    crossTabPlots(get_data[0], get_data[1],empty);
+    crossTabPlots(get_data[0], get_data[1]);
 
     var cork = [];
     var corp = [];
@@ -1275,16 +1243,9 @@ function viz(m, json_vizexplore, model_name_set) {
     var rowvar = [];
     var rownames = [];
     function crossTab_Table(json_my) {
-        colnames=[];
-        rownames=[];
-        table_data=[];
-        table_obj=[];
-        console.log("test json:",json_my);
         var json1 = json_my;
-
         // data for statistics
         for (var i in json1.tabular) {
-            //console.log("this is data : " + i)
             if (i == model_name1 || i == model_name2) {
                 for (var j in json1.tabular[i].colnames) {
                     colnames.push(json1.tabular[i].colnames[j]);
@@ -1293,7 +1254,6 @@ function viz(m, json_vizexplore, model_name_set) {
         }
 
         for (var i in json1.tabular) {
-            //   console.log("rownames: ");
             if (i == model_name1 || i == model_name2) {
                 for (var k in json1.tabular[i].rownames) {
                     rownames.push(json1.tabular[i].rownames[k]);
@@ -1321,9 +1281,7 @@ function viz(m, json_vizexplore, model_name_set) {
                     for (var a = 0; a < colnames.length; a++) {
                         table_data[n].push(json1.tabular[i].data[n][a]);
                     }
-
                 }
-
             }
         }
 
@@ -1332,10 +1290,10 @@ function viz(m, json_vizexplore, model_name_set) {
                 table_obj.push({rowname: rownames[p], colname: colnames[l], value: table_data[p][l]});
             }
         }
-
         d3table1(table_obj);
     }
 
+    // for the statistics
     for (var key in json.statistical) {
         if (key == model_name1 || key == model_name2) {
             for (var a in json.statistical[key].cork) {
@@ -1357,7 +1315,6 @@ function viz(m, json_vizexplore, model_name_set) {
             }
         }
     }
-
     for (var key in json.statistical) {
         if (key == model_name1 || key == model_name2) {
             for (var d in json.statistical[key].var1) {
@@ -1387,216 +1344,159 @@ function viz(m, json_vizexplore, model_name_set) {
     }
 
     function d3table1(data) {
+        d3.select("#tabular_2").style("display","block");
+        d3.select("#tabular_1").style("display","none");
         var width = 120,   // width of svg
             height = 160,  // height of svg
             padding = 22; // space around the chart, not including labels
-
 
         d3.select("#tabular_2")
             .html("")
             .style("background-color", "#fff")
             .append("h5")
             .text("CROSS-TABS ")
-            .style("color", "#424242")
-            .style("overflow","auto")
-        ;
+            .style("color", "#424242");
 
         var sv = d3.select("#tabular_2").append("svg").attr("width", "100%").attr("height", "100%").style("overflow", "visible");
         var fo = sv.append('foreignObject').attr("width", "100%").attr("height", "100%").style("padding", 10).attr("overflow", "visible");
         var table = fo.append("xhtml:table").attr("class", "table").style("border-collapse", " collapse"),
-        th = table.append("tr").style("border", 1).text("_").style("color", "#fff");
-
+            th = table.append("tr").style("border", 1).text("_").style("color", "#fff");
         for (var i = 0; i < colnames.length; i++) {
-            th.append("td").style("border-bottom", 1).style("text-align", "center").style("background-color", selVarColor).append("b").text(colnames[i]);
+            th.append("td").style("border-bottom", 1).style("text-align", "center").style("background-color", plots.selVarColor).append("b").text(colnames[i]);
         }
-
-
         for (var k = 0; k < rownames.length; k++) {
             var pos = 0;
             var tr = table.append("tr").style("margin-left", 20).style("background-color", "#BDBDBD").style("border", 1).style("text-align", "center").text(rownames[k]);
             for (var m = 0; m < colnames.length; m++) {
                 for (var z = 0; z < data.length; z++) {
                     if (rownames[k] === data[z].rowname && colnames[m] === data[z].colname) {
-                        tr.append("td").style("border", 1).style("text-align", "center").style("position", "relative").style("background-color", varColor).text(data[z].value);
-                        console.log("data for table: "+ data[z].value);
+                        tr.append("td").style("border", 1).style("text-align", "center").style("position", "relative").style("background-color", app.varColor).text(data[z].value);
                     }
                 }
             }
         }
-        crossTab_Table(json);
+    }
+    $('#selection').click(function()
+                          {
+                              console.log("this is selection");
 
-        function removeData() {
-            for (var key in app.zparams) {
-                if (app.zparams.hasOwnProperty(key)) {
-                    // do something with `key'
-                    if(key==="zcrosstab" && key.length>0)
-                    {
-                        app.zparams[key]=[];
-                    }
+                              d3.select("#tabular_2").html("");
+                              d3.select("#tabular_2").style("display","none");
+                              d3.select("#tabular_1").style("display","block");
+                              d3.select("#plotA").html("");
+                              d3.select("#plotB").html("");
+                              d3.select("#SelectionData").html("");
+
+
+                              crossTabPlots(get_data[0], get_data[1]);
+                          });
+    $('#crossTabs').click(function()
+                          {
+
+                              console.log("this is crossTabs");
+
+                              d3.select("#plotA").html("");
+                              d3.select("#plotB").html("");
+                              d3.select("#SelectionData").html("");
+                              //d3.select("#tabular_2").html("");
+                              d3.select("#tabular_2").html("");
+
+
+
+                              explore_crosstab(json);
+                              estimateLadda.stop();  // stop spinner
+                              estimated = true;
+                          });
+
+    function explore_crosstab(btn) {
+        for (var key in app.zparams) {
+            if (app.zparams.hasOwnProperty(key)) {
+                // do something with `key'
+                if(key==="zcrosstabs")
+                {
+                    delete app.zparams[key];
                 }
             }
         }
-        var breakcount=1;
-        // crossTabPlots(get_data[0], get_data[1]);
-        $('#SelectionData1').click(function(){
-            // alert("The paragraph was clicked.");
-            d3.select("#tabular_2").html("");
-            removeData();
-            app.zparams.zcrosstab.push(crossTabPlots.writeCrossTabsJson());
-            explore_crosstab(json);
 
+        app.zparams.zcrosstab.push(crossTabPlots.writeCrossTabsJson());
+        if (production && app.zparams.zsessionid == "") {
+            alert("Warning: Data download is not complete. Try again soon.");
+            return;
+        }
+        zPop();
+        console.log("zpop: ", app.zparams);
+        // write links to file & run R CMD
+
+        app.zparams.callHistory = callHistory;
+        var jsonout = JSON.stringify(app.zparams);
+
+        urlcall = rappURL + "exploreapp"; //base.concat(jsonout);
+        var solajsonout = "solaJSON=" + jsonout;
+        console.log("POST out this: ", solajsonout);
+
+        function explore_crosstabSuccess(json) {
+            console.log("crossTabSuccess");
+            d3.json("rook/myresult2.json", function (error, json) {
+                if (error) return console.warn(error);
+                var jsondata = json;
+
+                console.log("explore DATA json: ", jsondata);
+
+
+                crossTab_Table(jsondata);
+            });
+        }
+        function explore_crosstabFail() {
             estimateLadda.stop();  // stop spinner
             estimated = true;
-            zbreaks.push(crossTabPlots.writeCrossTabsJson());
-            zbreaks_tabular.push(json.tabular);
-
-            d3.select("#breakspace")
-                .append("span")
-                .text("\u00A0 \u00A0 \u00A0 \u00A0   ")
-                .style("margin-top", 0)
-                .style("white-space", "pre")
-                .style("display", "inline-block")
-                .style("float", "left")
-                .append("span")
-                .append("button")// top stack for results
-                .attr("class","btn btn-default btn-xs")
-                .attr("id", breakcount-1)
-                .text("break "+breakcount) .on("click", function () {
-                    d3.select("#tabular_2").html("");
-                    removeData();
-                    app.zparams.zcrosstab.push(zbreaks[this.id]);
-                    explore_crosstab(zbreaks_tabular[this.id]);
-
-                    var inputvalue1,inputvalue2;
-                    inputvalue1=zbreaks[this.id].var1.value;
-                    inputvalue2=zbreaks[this.id].var2.value;
-
-                    document.getElementById("input1").value = inputvalue1;
-                    document.getElementById("input2").value = inputvalue2;
-
-                    var json_obj=zbreaks[this.id];
-                    var varn1,varn2,varsize1,varsize2;
-
-                    if(json_obj.length===0) {
-                        console.log("break not called")
-                    }else{
-                        // console.log("break button called in crosstab")
-                        varn1=json_obj.var1.buttonType;
-                        varn2=json_obj.var2.buttonType;
-                        varsize1=json_obj.var1.value;
-                        varsize2=json_obj.var2.value;
-
-                        if(varn1==="equidistance")
-                        {
-                            crossTabPlots.equidistance(get_data[0], varsize1);
-                        }
-                        else if (varn1==="equimass")
-                        {
-                            crossTabPlots.equimass(get_data[0],varsize1);
-                        }
-
-                        if(varn2==="equidistance")
-                        {
-                            crossTabPlots.equidistance(get_data[1], varsize2);
-                        } else if (varn2==="equimass")
-                        {
-                            crossTabPlots.equimass(get_data[1], varsize2);
-                        }
-                    }
-                });
-            breakcount++;
-        });
-
-        for(var i=0; i<zbreaks.length; i++) {
-            console.log("zbreaks are : "+ zbreaks[i]);
         }
+        estimateLadda.start();  // start spinner
+        makeCorsRequest(urlcall, btn, explore_crosstabSuccess, explore_crosstabFail, solajsonout);
+    }
 
-        function explore_crosstab(btn) {
-            if (production && app.zparams.zsessionid == "") {
-                alert("Warning: Data download is not complete. Try again soon.");
-                return;
-            }
-            zPop();
-            //  console.log("zpop: ", zparams);
-            // write links to file & run R CMD
+    // data for the statistical div
+    var string1 = cork.toString();
+    var string3 = string1.substring(string1.indexOf(":"), string1.length);
+    var string2 = string1.substring(0, string1.indexOf("c"));
+    var string4 = corp.toString();
+    var string6 = string4.substring(string4.indexOf(":"), string4.length);
+    var string5 = string4.substring(0, string4.indexOf("c"));
+    var string7 = cors.toString();
+    var string9 = string7.substring(string7.indexOf(":"), string7.length);
+    var string8 = string7.substring(0, string7.indexOf("c"));
+    var statistical_data = [
+        {correlation: string2, value: string3},
+        {correlation: string5, value: string6},
+        {correlation: string8, value: string9}
+    ];
 
-            //package the output as JSON
-            // add call history and package the zparams object as JSON
-            app.zparams.callHistory = callHistory;
-            var jsonout = JSON.stringify(app.zparams);
-
-            urlcall = rappURL + "exploreapp"; //base.concat(jsonout);
-            var solajsonout = "solaJSON=" + jsonout;
-
-            function explore_crosstabSuccess(json) {
-                console.log("crossTabSuccess");
-                // readPreprocess(url,p,v,callback);
-                d3.json("rook/result.json", function (error, json) {
-                    if (error) return console.warn(error);
-                    var jsondata = json;
-
-                    crossTab_Table(jsondata);
-                    estimateLadda.stop();  // stop spinner
-                    estimated = true;
-                });
-            }
-            function explore_crosstabFail() {
-                estimateLadda.stop();  // stop spinner
-                estimated = true;
-            }
-            estimateLadda.start();  // start spinner
-            makeCorsRequest(urlcall, btn, explore_crosstabSuccess, explore_crosstabFail, solajsonout);
-
-        }
-
-        // data for the statistical div
-        var string1 = cork.toString();
-        var string3 = string1.substring(string1.indexOf(":"), string1.length);
-        //  console.log(string3);
-        var string2 = string1.substring(0, string1.indexOf("c"));
-        //  console.log(string2);
-        var string4 = corp.toString();
-        var string6 = string4.substring(string4.indexOf(":"), string4.length);
-        //  console.log(string3);
-        var string5 = string4.substring(0, string4.indexOf("c"));
-        //  console.log(string2);
-        var string7 = cors.toString();
-        var string9 = string7.substring(string7.indexOf(":"), string7.length);
-        //  console.log(string3);
-        var string8 = string7.substring(0, string7.indexOf("c"));
-        //  console.log(string2);
-        var statistical_data = [
-            {correlation: string2, value: string3},
-            {correlation: string5, value: string6},
-            {correlation: string8, value: string9}
-        ];
-
-        function d3table(data) {
-            d3.select("#resultsView_statistics")
-                .html("")
-                .style("background-color", "#fff")
-                .append("h5")
-                .text("CORRELATION STATISTICS ")
-                .style("color", "#424242");
-            var table = d3.select("#resultsView_statistics").append("table").attr("class", "table").style("border-collapse", " collapse"),
+    function d3table(data) {
+        d3.select("#resultsView_statistics")
+            .html("")
+            .style("background-color", "#fff")
+            .append("h5")
+            .text("CORRELATION STATISTICS ")
+            .style("color", "#424242");
+        var table = d3.select("#resultsView_statistics").append("table").attr("class", "table").style("border-collapse", " collapse"),
             th = table.append("tr").style("border", 1);
 
-            for (var i in Object.keys(data[0])) {
-                th.append("td").style("border-bottom", 1).style("text-align", "left").style("background-color", selVarColor).append("b").text(Object.keys(data[0])[i]);
-            }
-
-            for (var row in data) {
-                var tr = table.append("tr").style("margin-left", 40).style("border", 1).style("text-align", "left");
-                for (var td in data[row])
-                    tr.append("td").style("border", 1).style("text-align", "left").style("position", "relative").style("background-color", varColor).text(data[row][td]);
-            }
+        for (var i in Object.keys(data[0])) {
+            th.append("td").style("border-bottom", 1).style("text-align", "left").style("background-color", plots.selVarColor).append("b").text(Object.keys(data[0])[i]);
         }
 
-        d3table(statistical_data);
+        for (var row in data) {
+            var tr = table.append("tr").style("margin-left", 40).style("border", 1).style("text-align", "left");
+            for (var td in data[row])
+                tr.append("td").style("border", 1).style("text-align", "left").style("position", "relative").style("background-color", app.varColor).text(data[row][td]);
+        }
     }
+
+    d3table(statistical_data);
 }
 
-function model_selection(model_selection_name, count_value) {
+
+function model_selection(model_selection_name, count_value, json) {
     if (count_value % 2 == 0 && count_value != 0) {
         d3.select("#modelView")
             .append("span")
@@ -1637,7 +1537,7 @@ function model_selection(model_selection_name, count_value) {
         .text(model_selection_name)
         .style('background-color', function() {
             var color1 = "#FFD54F";
-            return count === count1 ? selVarColor : color1;
+            return count == count1 ? plots.selVarColor : color1;
         })
         .style("display", "inline-block")
         .style("white-space", "pre")
@@ -1645,7 +1545,7 @@ function model_selection(model_selection_name, count_value) {
         .style("float", "left")
         .on("click", function() {
             var a = this.style.backgroundColor.replace(/\s*/g, "");
-            var b = app.hexToRgba(selVarColor).replace(/\s*/g, "");
+            var b = app.hexToRgba(plots.selVarColor).replace(/\s*/g, "");
             if (a.substr(0, 17) === b.substr(0, 17)) {
                 return; //escapes the function early if the displayed model is clicked
             }
@@ -1654,7 +1554,7 @@ function model_selection(model_selection_name, count_value) {
                 .selectAll("button")
                 .style('background-color', "#FFD54F");
             d3.select(this)
-                .style('background-color', selVarColor);
+                .style('background-color', plots.selVarColor);
         });
 }
 
@@ -1737,7 +1637,7 @@ export async function explore() {
     count = 0;
     for (var i in json.images) {
         value = i;
-        model_selection(value, count); // for entering all the variables
+        model_selection(value, count, json); // for entering all the variables
         count++;
     }
     count1 = count - 1;

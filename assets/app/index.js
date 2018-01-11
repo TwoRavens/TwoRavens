@@ -87,7 +87,7 @@ function rightpanel(mode) {
               m('button#selection.btn.btn-primary.active', 'Selection'),
               m('button#crossTabs.btn.btn-default', 'Cross-Tabs')),
             m('#resultsView_tabular.container1[style=width:100%; height:60%; background-color:white; display:block; float:left; overflow:auto; white-space:nowrap; border-right:groove; border-bottom:groove]'),
-            m('#resultsView_statistics.container2[style=width:100%; height:40%; background-color:white; display:none; clear:left; float:right; overflow:auto; white-space:nowrap; border-right:groove; border-bottom:groove')),
+            m('#resultsView_statistics.container2[style=width:100%; height:40%; background-color:white; display:none; clear:left; float:right; overflow:auto; white-space:nowrap; border-right:groove; border-bottom:groove]')),
           m('#resultsHolder')) :
     // mode == null (model mode)
     m(Panel,
