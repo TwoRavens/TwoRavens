@@ -1178,9 +1178,9 @@ var zbreaks=[];
 var zbreaks_tabular=[];
 
 function viz(m, json_vizexplore, model_name_set) {
+    console.log('testing....', m, model_name_set);
     d3.select("#tabular_1")
         .style("display", "block");
-    // d3.select("#resultsView_tabular").html("");
     d3.select("#plotA").html("");
     d3.select("#plotB").html("");
     d3.select("#SelectionData").html("");
@@ -1189,12 +1189,8 @@ function viz(m, json_vizexplore, model_name_set) {
     var get_data = [];
     get_data = model_name_set.split("-");
 
-    //  console.log(get_data[0]+" and "+get_data[1]);
-
     var model_name1 = get_data[0] + "-" + get_data[1];
     var model_name2 = get_data[1] + "-" + get_data[0];
-
-
     var mym = +m.substr(5, 5) - 1;
 
     function removeKids(parent) {
@@ -1204,12 +1200,10 @@ function viz(m, json_vizexplore, model_name_set) {
     }
 
     var json = json_vizexplore;
-    //   console.log("json explore viz:"+json.toString());
     // pipe in figures to right panel
     var filelist = new Array;
 
     // image added to the div
-
     var x_axis = [];
     var y_axis = [];
     for (var i in json.plotdata) {
@@ -1252,7 +1246,6 @@ function viz(m, json_vizexplore, model_name_set) {
                 }
             }
         }
-
         for (var i in json1.tabular) {
             if (i == model_name1 || i == model_name2) {
                 for (var k in json1.tabular[i].rownames) {
@@ -1284,7 +1277,6 @@ function viz(m, json_vizexplore, model_name_set) {
                 }
             }
         }
-
         for (var p = 0; p < rownames.length; p++) {// console.log(" row data : "+ p);
             for (var l = 0; l < colnames.length; l++) {
                 table_obj.push({rowname: rownames[p], colname: colnames[l], value: table_data[p][l]});
@@ -1329,7 +1321,6 @@ function viz(m, json_vizexplore, model_name_set) {
             }
         }
     }
-
     for (var i = 0; i < app.zparams.zvars.length; i++)
         // write the results table
         var resultsArray = [];
@@ -1338,7 +1329,6 @@ function viz(m, json_vizexplore, model_name_set) {
             console.log("colnames found");
             continue;
         }
-
         var obj = json.tabular[key];
         resultsArray.push(obj);
     }
@@ -1376,37 +1366,26 @@ function viz(m, json_vizexplore, model_name_set) {
             }
         }
     }
-    $('#selection').click(function()
-                          {
-                              console.log("this is selection");
-
-                              d3.select("#tabular_2").html("");
-                              d3.select("#tabular_2").style("display","none");
-                              d3.select("#tabular_1").style("display","block");
-                              d3.select("#plotA").html("");
-                              d3.select("#plotB").html("");
-                              d3.select("#SelectionData").html("");
-
-
-                              crossTabPlots(get_data[0], get_data[1]);
-                          });
-    $('#crossTabs').click(function()
-                          {
-
-                              console.log("this is crossTabs");
-
-                              d3.select("#plotA").html("");
-                              d3.select("#plotB").html("");
-                              d3.select("#SelectionData").html("");
-                              //d3.select("#tabular_2").html("");
-                              d3.select("#tabular_2").html("");
-
-
-
-                              explore_crosstab(json);
-                              estimateLadda.stop();  // stop spinner
-                              estimated = true;
-                          });
+    $('#selection').click(function() {
+        console.log("this is selection");
+        d3.select("#tabular_2").html("");
+        d3.select("#tabular_2").style("display","none");
+        d3.select("#tabular_1").style("display","block");
+        d3.select("#plotA").html("");
+        d3.select("#plotB").html("");
+        d3.select("#SelectionData").html("");
+        crossTabPlots(get_data[0], get_data[1]);
+    });
+    $('#crossTabs').click(function() {
+        console.log("this is crossTabs");
+        d3.select("#plotA").html("");
+        d3.select("#plotB").html("");
+        d3.select("#SelectionData").html("");
+        d3.select("#tabular_2").html("");
+        explore_crosstab(json);
+        estimateLadda.stop();  // stop spinner
+        estimated = true;
+    });
 
     function explore_crosstab(btn) {
         for (var key in app.zparams) {
@@ -1440,10 +1419,7 @@ function viz(m, json_vizexplore, model_name_set) {
             d3.json("rook/myresult2.json", function (error, json) {
                 if (error) return console.warn(error);
                 var jsondata = json;
-
                 console.log("explore DATA json: ", jsondata);
-
-
                 crossTab_Table(jsondata);
             });
         }
@@ -1480,18 +1456,15 @@ function viz(m, json_vizexplore, model_name_set) {
             .style("color", "#424242");
         var table = d3.select("#resultsView_statistics").append("table").attr("class", "table").style("border-collapse", " collapse"),
             th = table.append("tr").style("border", 1);
-
         for (var i in Object.keys(data[0])) {
             th.append("td").style("border-bottom", 1).style("text-align", "left").style("background-color", plots.selVarColor).append("b").text(Object.keys(data[0])[i]);
         }
-
         for (var row in data) {
             var tr = table.append("tr").style("margin-left", 40).style("border", 1).style("text-align", "left");
             for (var td in data[row])
                 tr.append("td").style("border", 1).style("text-align", "left").style("position", "relative").style("background-color", app.varColor).text(data[row][td]);
         }
     }
-
     d3table(statistical_data);
 }
 
@@ -1571,7 +1544,8 @@ function showLog() {
     app.byId('logdiv').setAttribute("style", "display:none");
 }
 
-let count, count1;
+let count = 0;
+let count1 = 0;
 
 /**
    called by clicking 'Explore' in explore mode
@@ -1633,23 +1607,21 @@ export async function explore() {
 
     // programmatic click on Results button
     $("#btnBivariate").trigger("click");
-    let value;
-    count = 0;
-    for (var i in json.images) {
-        value = i;
-        model_selection(value, count, json); // for entering all the variables
+    let model_name;
+    for (let img in json.images) {
+        if (count === 0) {
+            model_name = img;
+        }
+        model_selection(img, count, json); // for entering all the variables
         count++;
     }
     count1 = count - 1;
     app.modelCount++;
-    var model = "Model".concat(app.modelCount);
-    var model_name = value;
-    console.log(" and our value is  : " + count1);
 
     var rCall = [];
     rCall[0] = json.call;
     app.logArray.push("explore: ".concat(rCall[0]));
     showLog();
-    viz(model, json, model_name);
+    viz(model_name, json, model_name);
 }
 
