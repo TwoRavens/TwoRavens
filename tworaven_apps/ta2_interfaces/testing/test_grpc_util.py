@@ -35,6 +35,7 @@ class TA3TA2UtilTest(TestCase):
         self.assertTrue(info_dict is not None)
 
         # Expected keys are there....
+        self.assertTrue('version' in info_dict)
         self.assertTrue('TaskType' in info_dict)
         self.assertTrue('TaskSubtype' in info_dict)
         self.assertTrue('PerformanceMetric' in info_dict)

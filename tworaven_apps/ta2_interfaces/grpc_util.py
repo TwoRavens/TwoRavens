@@ -40,6 +40,7 @@ class TA3TA2Util(object):
             }
         """
         info_dict = OrderedDict()
+        info_dict['version'] = TA3TA2Util.get_api_version()
 
         label_value_pairs = [\
                 ('TaskType', core_pb2._TASKTYPE.values),
