@@ -144,6 +144,7 @@ let ticker = mode => {
 class Body {
     oninit() {
         this.about = false;
+        this.usertasks = false;
         this.cite = false;
         this.citeHidden = false;
     }
@@ -235,7 +236,11 @@ class Body {
                     {style: `display: ${this.cite ? 'block' : 'none'}; position: absolute; right: 50%; width: 380px; text-align: left; z-index: 50`},
                     m(".panel-body")),
                   m('span',
-                    m('h5#userName[style=float: right; padding-right: 0.5em]',[username, glyph('heart-empty')] ),  // const username defined in templates/index.html
+                    m('h5#userName[style=float: right; padding-right: 0.5em]', 
+                      {onmouseover: _ => this.usertasks = true, onmouseout: _ => this.usertasks = false}, 
+                      [username, glyph('heart-empty')],  // const username defined in templates/index.html
+                      m(`#usertasks.panel.panel-default[style=display: ${this.usertasks ? 'block' : 'none'}; position: absolute; z-index: 50]`,
+                        m('.panel-body[style=text-align: left; padding: 1em]','logout')) ), 
                     navBtn('btnEstimate.btn-success', 2, 1, explore ? exp.explore : app.estimate, m("span.ladda-label", explore ? 'Explore' : 'Solve This Problem'), '150px'),
                     navBtn('btnTA2.btn-default', .5, 1, _ => app.helpmaterials('manual'), ['Help Manual ', glyph('book')]),
                     navBtn('btnTA2.btn-default', 2, .5, _ => app.helpmaterials('video'), ['Help Video ', glyph('expand')]),
