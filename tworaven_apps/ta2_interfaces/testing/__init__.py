@@ -7,4 +7,5 @@ python manage.py test tworaven_apps.ta2_interfaces.testing.test_get_create_pipel
 python manage.py test tworaven_apps.ta2_interfaces.testing.test_embed_json
 python manage.py test tworaven_apps.ta2_interfaces.testing.test_describe_data_flow
 python manage.py test tworaven_apps.ta2_interfaces.testing.test_get_dataflow_results
+python manage.py test tworaven_apps.ta2_interfaces.testing.test_grpc_util
 """

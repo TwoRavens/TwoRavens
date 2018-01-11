@@ -1,11 +1,16 @@
 """URLs for the UI to initiate TA2 calls"""
 from django.conf.urls import url
-from tworaven_apps.ta2_interfaces import views, view_execute_pipeline
+from tworaven_apps.ta2_interfaces import (\
+        views,
+        views_additional,
+        view_execute_pipeline)
 
 urlpatterns = (
 
-    # We're listing each call here for now but may change in the future
-    #
+    url(r'^get-problem-schema$',
+        views_additional.view_get_problem_schema,
+        name='get_problem_schema'),
+
     url(r'^startsession/?$',
         views.view_startsession,
         name='StartSession'),

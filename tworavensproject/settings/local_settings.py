@@ -70,6 +70,8 @@ R_DEV_SERVER_BASE = 'http://0.0.0.0:8000/custom/'
 
 RECORD_R_SERVICE_ROUTING = False # log R service requests/response JSON to db
 
+PAGE_CACHE_TIME = 0 # No cache in dev
+
 # export TA2_STATIC_TEST_MODE=False
 TA2_STATIC_TEST_MODE = strtobool(os.environ.get('TA2_STATIC_TEST_MODE', 'True'))   # True: canned responses
 

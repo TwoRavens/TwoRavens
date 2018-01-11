@@ -159,6 +159,7 @@ STATICFILES_DIRS = [join(BASE_DIR, 'assets')]
 RECORD_R_SERVICE_ROUTING = False # log R service requests/response JSON to db
 RECORD_D3M_SERVICE_ROUTING = False # log D3M service requests
 
+PAGE_CACHE_TIME = 60 * 60 * 2 # 2 hours
 
 WEBPACK_LOADER = {
     'DEFAULT': {
