@@ -78,7 +78,7 @@ function rightpanel(mode) {
             m('#modelView', {style: 'width: 100%; height: 100%; background-color: white; display: none; float: left; overflow: auto; margin-top: 2px;'})),
           m('#result_left[style=width: 50%; height: 90%; float:left;background-color: white; display:none; border-right:groove; border-bottom: groove; overflow:auto; white-space:nowrap]',
             m('#scatterplot.container3[style=width: 500px; height: 50%; background-color: white; display: none; overflow: auto]'),
-            m('#heatchart.container4[style=width: 500px; height:60%; display: none; overflow: auto; background-color: #FFEBEE'),
+            m('#heatchart.container4[style=width: 500px; height:60%; display: none; overflow: auto; background-color: #FFEBEE]'),
             m('h5#NAcount[style=margin-left: 20px; display: none]'),
             m('button#linechart_welcome.btn.btn-danger[type=button][style=display: block; margin: 0 auto; position: relative]', {onclick: exp.linechart}, 'Linechart'),
             m('#linechart.container4[width: 500px; height: 320px; background-color: white; display: none; overflow:auto')),
