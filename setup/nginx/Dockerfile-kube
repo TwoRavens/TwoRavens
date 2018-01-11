@@ -1,3 +1,9 @@
 FROM nginx
 
 ADD ./nginx-kube.conf /etc/nginx/nginx.conf
+
+VOLUME /ravens_volume
+COPY . /ravens_volume
+
+RUN mkdir -p /rvol2
+RUN cp /etc/nginx/nginx.conf /rvol2/.

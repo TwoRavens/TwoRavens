@@ -47,8 +47,6 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.sites',
     'django.contrib.humanize',
-    # See: http://whitenoise.evans.io/en/stable/django.html#using-whitenoise-in-development
-    #'whitenoise.runserver_nostatic',
     'django.contrib.staticfiles',
 
     'tworaven_apps.raven_auth', # user model
@@ -68,10 +66,6 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-
-    # whitenoise: http://whitenoise.evans.io/en/stable/django.html#enable-whitenoise
-    #'whitenoise.middleware.WhiteNoiseMiddleware',
-
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -152,9 +146,6 @@ STATIC_URL = '/static/'
 
 STATICFILES_DIRS = [join(BASE_DIR, 'assets')]
 
-# Simplified static file serving.
-# https://warehouse.python.org/project/whitenoise/
-#STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 RECORD_R_SERVICE_ROUTING = False # log R service requests/response JSON to db
 RECORD_D3M_SERVICE_ROUTING = False # log D3M service requests
