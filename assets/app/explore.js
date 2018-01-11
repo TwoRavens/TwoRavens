@@ -302,7 +302,11 @@ function bivariatePlot(x_Axis, y_Axis, x_Axis_name, y_Axis_name) {
     heatmap(x_Axis_name, y_Axis_name);
 }
 
+let plotnamea, plotnameb, varn1, varn2, varsize1, varsize2;
+
 function crossTabPlots(PlotNameA, PlotNameB) {
+    plotnamea = PlotNameA;
+    plotnameb = PlotNameB;
     var mydiv = "#resultsView_tabular";
 
     var plot_nodes = app.nodes.slice();
@@ -418,28 +422,26 @@ function crossTabPlots(PlotNameA, PlotNameB) {
     btns1.on("click", getData1);
 
     function getData() {
-
-        if (this.innerText === "EQUIDISTANCE")
-        {
-            var plotA_size= parseInt(d3.select("input#a")[0][0].value);
-            equidistance(PlotNameA,plotA_size);
-        }
-        else if (this.innerText === "EQUIMASS") {
-            var plotA_sizem= parseInt(d3.select("input#a")[0][0].value);
-            equimass(PlotNameA,plotA_sizem);
+        if (this.innerText === "EQUIDISTANCE") {
+            varn1 = 'equidistance';
+            varsize1 = parseInt(d3.select("input#a")[0][0].value);
+            equidistance(PlotNameA, varsize1);
+        } else if (this.innerText === "EQUIMASS") {
+            varn1 = 'equimass';
+            varsize1 = parseInt(d3.select("input#a")[0][0].value);
+            equimass(PlotNameA, varsize1);
         }
     }
     function getData1() {
-        if (this.innerText === "EQUIDISTANCE")
-        {
-            var plotB_size= parseInt(d3.select("input#b")[0][0].value);
-            equidistance(PlotNameB,plotB_size);
+        if (this.innerText === "EQUIDISTANCE") {
+            varn2 = 'equidistance';
+            varsize2 = parseInt(d3.select("input#b")[0][0].value);
+            equidistance(PlotNameB, varsize2);
+        } else if (this.innerText === "EQUIMASS") {
+            varn2 = 'equimass';
+            varsize2 = parseInt(d3.select("input#b")[0][0].value);
+            equimass(PlotNameB, varsize2);
         }
-        else if (this.innerText === "EQUIMASS") {
-            var plotB_sizem= parseInt(d3.select("input#b")[0][0].value);
-            equimass(PlotNameB,plotB_sizem);
-        }
-
     }
 
     /*
@@ -1398,16 +1400,35 @@ function viz(m, json_vizexplore, model_name_set) {
             }
         }
 
-        app.zparams.zcrosstab.push(crossTabPlots.writeCrossTabsJson());
-        if (production && app.zparams.zsessionid == "") {
+        function writeCrossTabsJson() {
+            var plotAval=varsize1,plotBval=varsize2;
+            if(isNaN(plotAval)) {
+                plotAval=10;
+            }
+            if(isNaN(plotBval)){plotBval=10;}
+            var jsondata = {
+                var1: {
+                    name: plotnamea,
+                    value: plotAval,
+                    buttonType: varn1
+                },
+                var2: {
+                    name: plotnameb,
+                    value: plotBval,
+                    buttonType: varn2
+                }
+            };
+            return JSON.stringify(jsondata);
+        }
+        app.zparams.zcrosstab.push(writeCrossTabsJson());
+        if (PRODUCTION && app.zparams.zsessionid == "") {
             alert("Warning: Data download is not complete. Try again soon.");
             return;
         }
-        zPop();
-        console.log("zpop: ", app.zparams);
-        // write links to file & run R CMD
+        app.zPop();
 
-        app.zparams.callHistory = callHistory;
+        // write links to file & run R CMD
+        app.zparams.callHistory = app.callHistory;
         var jsonout = JSON.stringify(app.zparams);
 
         urlcall = rappURL + "exploreapp"; //base.concat(jsonout);
