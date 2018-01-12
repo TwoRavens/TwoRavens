@@ -40,11 +40,13 @@ COPY . .
 #
 # - DJANGO_SETTINGS_MODULE: Django settings
 # - R_DEV_SERVER_BASE - rook-service docker container
+# - TA2_STATIC_TEST_MODE: True: use canned responses instead of a TA2 server
 # - TA2_TEST_SERVER_URL - TA2 test server
 # - CODE_REPOSITORY - repository where code will be copied
 # -------------------------------------
 ENV DJANGO_SETTINGS_MODULE=tworavensproject.settings.dev_container2 \
     R_DEV_SERVER_BASE=http://rook-service:8000/custom/ \
+    TA2_STATIC_TEST_MODE=False \
     TA2_TEST_SERVER_URL=localhost:45042 \
     CODE_REPOSITORY=/var/webapps/TwoRavens \
     LC_ALL=C.UTF-8
@@ -83,6 +85,7 @@ RUN fab init_db && \
 
 # -------------------------------------
 # Expose port for web communication
+# - web: 8080
 # -------------------------------------
 EXPOSE 8080
 

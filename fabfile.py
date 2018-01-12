@@ -127,7 +127,7 @@ def check_config():
         print('Configs exist in the db: %d' % config_cnt)
 
 def run_ta2_test_server():
-    """Run an external server on 50051 to return gRPC TA2TA3 api calls"""
+    """Run an external server on 45042 to return gRPC TA2TA3 api calls"""
 
     run_cmd = 'cd tworaven_apps/ta2_interfaces; python test_server.py'
     local(run_cmd)
