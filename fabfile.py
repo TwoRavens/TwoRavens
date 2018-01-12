@@ -152,7 +152,7 @@ def run(with_rook=False):
     clear_js()  # clear any dev css/js files
     init_db()
     check_config()  # make sure the db has something
-    load_d3m_config_from_env() # default the D3M setting to the env variable
+    #load_d3m_config_from_env() # default the D3M setting to the env variable
     ta3_listener_add() # add MessageListener object
 
     commands = [
