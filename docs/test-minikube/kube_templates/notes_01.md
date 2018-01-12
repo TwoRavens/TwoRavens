@@ -35,12 +35,14 @@ kubectl describe pods ravens-ta3
 
 # forward to local ports
 #
-sudo kubectl port-forward ravens-ta3-web 80:80
+sudo kubectl port-forward ravens-ta3 80:80
 #kubectl port-forward ravens-ta3 8080:8080
 
 # start ta3 search (optional, in separate container)
 #
 eval $(minikube docker-env)
+
+kubectl exec -ti ravens-ta3 --container ta3-main -- ta3_search /ravens_volume/config_185_baseball.json
 
 kubectl exec ravens-ta3 --container ta3-main -- /bin/bash ta3_search /ravens_volume/config_185_baseball.json
 
