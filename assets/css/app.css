@@ -125,7 +125,7 @@ text.id {
     z-index: 25;
 }
 
-#leftpanel #leftContentArea div {display:none;}
+/*#leftpanel #leftContentArea div {display:none;}*/
 #leftpanel #leftContentArea div.active {display:block;}
 #leftpanel.closepanel {width:1px;}
 #leftpanel.closepanel #leftpaneltitle, #leftpanel.closepanel div.btn-toolbar, #leftpanel.closepanel div.row-fluid.closepanel {display:none;}
