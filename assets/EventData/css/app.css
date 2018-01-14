@@ -172,7 +172,7 @@ table tr td{
 }
 #btnVariables {width:50%;}
 #btnSubset {width:50%;}
-#leftpanel #leftContentArea div {display:none;}
+/*#leftpanel #leftContentArea div {display:none;}*/
 #leftpanel #leftContentArea div.active {display:block;}
 
 /* Elements to enable/disable on open/close left panel */
