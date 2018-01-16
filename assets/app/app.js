@@ -1775,9 +1775,12 @@ function tabulate(data, columns, divid) {
 }
 
 function onPipelineCreate(PipelineCreateResult) {
+    // rpc CreatePipelines(PipelineCreateRequest) returns (stream PipelineCreateResult) {}
+    //  or
     // rpc GetExecutePipelineResults(PipelineExecuteResultsRequest) returns (stream PipelineExecuteResult) {}
     estimateLadda.stop(); // stop spinner
 
+    // change status of buttons for estimating problem and marking problem as finished
     $("#btnEstimate").removeClass("btn-success");
     $("#btnEstimate").addClass("btn-default");
     $("#btnEndSession").removeClass("btn-default");
@@ -1840,10 +1843,13 @@ function onPipelineCreate(PipelineCreateResult) {
 }
 function CreatePipelineData(predictors, depvar) {
     let context = apiSession(zparams.zsessionid);
-    let uri = {features: zparams.zd3mdata, target:zparams.zd3mtarget};
+    //let uri = {features: zparams.zd3mdata, target:zparams.zd3mtarget};
 
     return {
         context,
+
+        dataset_uri: zparams.zd3mdata,
+
         task: d3mTaskType[d3mProblemDescription.taskType][1],
 
         taskSubtype: d3mTaskSubtype[d3mProblemDescription.taskSubtype][1],
@@ -1856,7 +1862,7 @@ function CreatePipelineData(predictors, depvar) {
         metrics: [d3mMetrics[d3mProblemDescription.metric][1]],
 
         // NEW SYNTAX NEEDED, ADJUST 'apiFeatureShortPath'
-        targetFeatures: apiFeatureShortPath(depvar, uri.target), // putting in short paths (no filename) for current API usage
+        targetFeatures: depvar, //apiFeatureShortPath(depvar, uri.target), // putting in short paths (no filename) for current API usage
         /* Example:
           "targetFeatures": [
           {
@@ -1867,7 +1873,7 @@ function CreatePipelineData(predictors, depvar) {
         */
 
         // NEW PARAMETER:  predict_features
-        predict_features: [],
+        predictFeatures: predictors,
         /*"predict_features": [
         {
             "resource_id": "0",
