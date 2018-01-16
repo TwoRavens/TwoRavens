@@ -1775,8 +1775,6 @@ function tabulate(data, columns, divid) {
 }
 
 function onPipelineCreate(PipelineCreateResult) {
-    // rpc CreatePipelines(PipelineCreateRequest) returns (stream PipelineCreateResult) {}
-    //  or
     // rpc GetExecutePipelineResults(PipelineExecuteResultsRequest) returns (stream PipelineExecuteResult) {}
     estimateLadda.stop(); // stop spinner
 
@@ -1998,7 +1996,7 @@ export async function estimate(btn) {
         }
 
         estimateLadda.start(); // start spinner
-        let res = await makeRequest(D3M_SVC_URL + '/createpipeline', CreatePipelineData(valueKey, mytarget));
+        let res = await makeRequest(D3M_SVC_URL + '/CreatePipelines', CreatePipelineData(valueKey, mytarget));
         res && onPipelineCreate(res);
     } else { // we are in IS_D3M_DOMAIN no swandive
         // rpc CreatePipelines(PipelineCreateRequest) returns (stream PipelineCreateResult) {}
@@ -2015,7 +2013,7 @@ export async function estimate(btn) {
         console.log(res);
             setxTable(res.predictors);
             let dvvalues = res.dvvalues;
-            res = await makeRequest(D3M_SVC_URL + '/createpipeline', CreatePipelineData(res.predictors, res.depvar));
+            res = await makeRequest(D3M_SVC_URL + '/CreatePipelines', CreatePipelineData(res.predictors, res.depvar));
          //   res = await makeRequest(ROOK_SVC_URL + 'createpipeline', zparams);
             res && onPipelineCreate(res);
         }
@@ -2863,7 +2861,17 @@ export async function endsession() {
     pipes is an array of pipeline IDs
 */
 export function deletepipelines(pipes) {
-    let res = makeRequest(D3M_SVC_URL + '/deletepipelines', {context: apiSession(zparams.zsessionid), pipeline_ids: pipes});
+    let res = makeRequest(D3M_SVC_URL + '/DeletePipelines', {context: apiSession(zparams.zsessionid), deletePipelineIds: pipes});
+    if (!res) {
+        return;
+    }
+
+/**
+    rpc DeletePipelines(PipelineDeleteRequest) returns (PipelineListResult) {}
+    pipes is an array of pipeline IDs
+*/
+export function cancelpipelines(pipes) {
+    let res = makeRequest(D3M_SVC_URL + '/CancelPipelines', {context: apiSession(zparams.zsessionid), cancelPipelineIds: pipes});
     if (!res) {
         return;
     }
@@ -2964,7 +2972,7 @@ export function executepipeline() {
 */
 function setProblemDefinition(type, updates, lookup) {
     makeRequest(
-        D3M_SVC_URL + "/updateproblemschema",
+        D3M_SVC_URL + "/SetProblemDoc",
         {replaceProblemSchemaField: {[type]: lookup[updates[type]][1]}, context: apiSession(zparams.zsessionid)});
 }
 
