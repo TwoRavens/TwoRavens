@@ -2865,6 +2865,7 @@ export function deletepipelines(pipes) {
     if (!res) {
         return;
     }
+}
 
 /**
     rpc DeletePipelines(PipelineDeleteRequest) returns (PipelineListResult) {}
@@ -2875,6 +2876,7 @@ export function cancelpipelines(pipes) {
     if (!res) {
         return;
     }
+}
 
 /**
    rpc ListPipelines(PipelineListRequest) returns (PipelineListResult) {}
