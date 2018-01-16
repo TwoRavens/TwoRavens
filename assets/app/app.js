@@ -1045,7 +1045,7 @@ function layout(v,v2) {
             d3.select(this).attr('class',"item-select");
         }
         restart();
-        updateSchema("taskType", d3mProblemDescription, d3mTaskType);
+        setProblemDefinition("taskType", d3mProblemDescription, d3mTaskType);
         });
 
     d3.select("#subtypes").selectAll("p")
@@ -1060,7 +1060,7 @@ function layout(v,v2) {
             d3.select(this).attr('class',"item-select");
         }
         restart();
-        updateSchema("taskSubtype", d3mProblemDescription, d3mTaskSubtype);
+        setProblemDefinition("taskSubtype", d3mProblemDescription, d3mTaskSubtype);
         });
 
     d3.select("#metrics").selectAll("p")
@@ -1077,7 +1077,7 @@ function layout(v,v2) {
             d3.select(this).attr('class',"item-select");
         }
         restart();
-        updateSchema("metric", d3mProblemDescription, d3mMetrics);
+        setProblemDefinition("metric", d3mProblemDescription, d3mMetrics);
         });
 
   /*  d3.select("#outputs").selectAll("p")
@@ -1092,7 +1092,7 @@ function layout(v,v2) {
             d3.select(this).attr('class',"item-select");
         }
         restart();
-        updateSchema("outputType", d3mProblemDescription, d3mOutputType);
+        setProblemDefinition("outputType", d3mProblemDescription, d3mOutputType);
         });
         */
 
@@ -2943,10 +2943,10 @@ export function executepipeline() {
 }
 
 /**
-   call to django to update the problem schema
-   rpc UpdateProblemSchema(UpdateProblemSchemaRequest) returns (Response) {}
+    call to django to update the problem definition in the problem document 
+    rpc SetProblemDoc(SetProblemDocRequest) returns (Response) {}
 */
-function updateSchema(type, updates, lookup) {
+function setProblemDefinition(type, updates, lookup) {
     makeRequest(
         D3M_SVC_URL + "/updateproblemschema",
         {replaceProblemSchemaField: {[type]: lookup[updates[type]][1]}, context: apiSession(zparams.zsessionid)});
