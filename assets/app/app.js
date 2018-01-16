@@ -2859,6 +2859,16 @@ export async function endsession() {
 }
 
 /**
+    rpc DeletePipelines(PipelineDeleteRequest) returns (PipelineListResult) {}
+    pipes is an array of pipeline IDs
+*/
+export function deletepipelines(pipes) {
+    let res = makeRequest(D3M_SVC_URL + '/deletepipelines', {context: apiSession(zparams.zsessionid), pipeline_ids: pipes});
+    if (!res) {
+        return;
+    }
+
+/**
    rpc ListPipelines(PipelineListRequest) returns (PipelineListResult) {}
    pipes is an array of pipeline IDs
 */
