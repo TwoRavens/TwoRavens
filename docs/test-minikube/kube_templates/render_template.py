@@ -57,8 +57,9 @@ if __name__ == '__main__':
                      command_args='command_args')
 
     #template_name = 'nist-orig-template.yml'
-    template_name = 'ravens-template-02.yml'
-    output_file = 'tworavens_ta3_pod.yml'
+    #template_name = 'ravens-template-02.yml'
+    template_name = 'ravens-ta2test-01.yml'
+    output_file = 'tworavens_ta3ta2_test_pod.yml'
 
     trh = TemplateRenderHelper(tmpl_info,
                                template_name,
