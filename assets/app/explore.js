@@ -986,13 +986,10 @@ function crossTabPlots(PlotNameA, PlotNameB) {
 
         if (k < n) {
             alert("error enter vaild size");
-            console.log("error enter vaild size")
-        }
-
-        else {
+            console.log("error enter vaild size");
+        } else {
             while (k > 0) {
                 temp.push({pos: count, val: k});
-                //console.log("k:"+ k+ " and n: "+count );
                 count++;
                 k--;
                 if (count >= n) {
@@ -1001,7 +998,6 @@ function crossTabPlots(PlotNameA, PlotNameB) {
             }
 
             var temp2 = new Array(n);
-
             for (var i = 0; i < temp2.length; i++) {
                 temp2[i] = 0;
             }
@@ -1015,7 +1011,6 @@ function crossTabPlots(PlotNameA, PlotNameB) {
                     }
                 }
             }
-
             for (var i = 0; i < temp.length; i++) {
                 console.log("n : " + temp[i].pos + " and k: " + temp[i].val);
             }
@@ -1356,21 +1351,13 @@ function viz(m, json_vizexplore, model_name_set) {
 
     function explore_crosstab(btn) {
         for (var key in app.zparams) {
-            if (app.zparams.hasOwnProperty(key)) {
-                // do something with `key'
-                if(key==="zcrosstabs")
-                {
-                    delete app.zparams[key];
-                }
-            }
+            if (app.zparams.hasOwnProperty(key) && key === "zcrosstabs") delete app.zparams[key];
         }
 
         function writeCrossTabsJson() {
             var plotAval=varsize1,plotBval=varsize2;
-            if(isNaN(plotAval)) {
-                plotAval=10;
-            }
-            if(isNaN(plotBval)){plotBval=10;}
+            if (isNaN(plotAval)) plotAval = 10;
+            if (isNaN(plotBval)) plotBval = 10;
             var jsondata = {
                 var1: {
                     name: plotnamea,
@@ -1396,7 +1383,7 @@ function viz(m, json_vizexplore, model_name_set) {
         app.zparams.callHistory = app.callHistory;
         var jsonout = JSON.stringify(app.zparams);
 
-        urlcall = rappURL + "exploreapp"; //base.concat(jsonout);
+        urlcall = rappURL + "exploreapp";
         var solajsonout = "solaJSON=" + jsonout;
         console.log("POST out this: ", solajsonout);
 
