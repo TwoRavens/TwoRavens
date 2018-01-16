@@ -310,7 +310,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         let newcite = cite.match(/{\s*[\w\.]+\s*}/g).map(function(x) { return x.match(/[\w\.]+/)[0]; });
         console.log(newcite);
         /*
-        // clean citation 
+        // clean citation
         zparams.zdatacite = cite
             .replace(/\&/g, "and")
             .replace(/\;/g, ",")
@@ -318,7 +318,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         // fill in citation in header
         $('#cite div.panel-body').text(zparams.zdatacite);
         */
- 
+
     } else {
         // Note: presently xml is no longer being read from Dataverse metadata anywhere
         let temp = xml.documentElement.getElementsByTagName("fileName");
@@ -1840,6 +1840,46 @@ function onPipelineCreate(PipelineCreateResult) {
 function CreatePipelineData(predictors, depvar) {
     let context = apiSession(zparams.zsessionid);
     let uri = {features: zparams.zd3mdata, target:zparams.zd3mtarget};
+
+    return {
+        context,
+        task: d3mTaskType[d3mProblemDescription.taskType][1],
+
+        taskSubtype: d3mTaskSubtype[d3mProblemDescription.taskSubtype][1],
+
+        taskDescription: d3mProblemDescription.taskDescription,
+
+        // NEW:
+        output: "OUTPUT_TYPE_UNDEFINED",
+
+        metrics: [d3mMetrics[d3mProblemDescription.metric][1]],
+
+        // NEW SYNTAX NEEDED, ADJUST 'apiFeatureShortPath'
+        targetFeatures: apiFeatureShortPath(depvar, uri.target), // putting in short paths (no filename) for current API usage
+        /* Example:
+          "targetFeatures": [
+          {
+              "resource_id": "0",
+              "feature_name": "At_bats"
+          }
+          ],
+        */
+
+        // NEW PARAMETER:  predict_features
+        predict_features: [],
+        /*"predict_features": [
+        {
+            "resource_id": "0",
+            "feature_name": "RBIs"
+        }
+      ],*/
+        maxPipelines: 5 //user to specify this eventually?
+
+    //    output: d3mOutputType[d3mProblemDescription.outputType][1],
+        //trainFeatures: apiFeatureShortPath(predictors, uri.features), // putting in short paths (no filename) for current API usage
+    };
+    /*
+    // September API
     return {
         context,
         trainFeatures: apiFeatureShortPath(predictors, uri.features), // putting in short paths (no filename) for current API usage
@@ -1850,7 +1890,7 @@ function CreatePipelineData(predictors, depvar) {
         metrics: [d3mMetrics[d3mProblemDescription.metric][1]],
         taskDescription: d3mProblemDescription.taskDescription,
         maxPipelines: 5, //user to specify this eventually?
-    };
+    };*/
 }
 
 export function downloadIncomplete() {
@@ -2300,7 +2340,7 @@ export async function makeRequest(url, data) {
         cdb(err);
         alert(`Error: call to ${url} failed`);
     }
-   
+
    /*
     //call end_ta3_search if status != OK
     // status may be in different places for different calls though, and this is not worth doing at the moment
@@ -2312,9 +2352,9 @@ export async function makeRequest(url, data) {
             end_ta3_search(false, "grpc response status not ok");
         }
     }
-    
+
     */
-    
+
     estimateLadda.stop();
     selectLadda.stop();
     return res;
