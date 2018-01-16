@@ -304,42 +304,41 @@ function bivariatePlot(x_Axis, y_Axis, x_Axis_name, y_Axis_name) {
 
 let plotnamea, plotnameb, varn1, varn2, varsize1, varsize2;
 
+let continuous_n = 0;
+let bar_n = 0;
+
+export function get_width(id) {
+    return 50 * (id === 'plotA' ? continuous_n : bar_n);
+}
+
 function crossTabPlots(PlotNameA, PlotNameB) {
     plotnamea = PlotNameA;
     plotnameb = PlotNameB;
-    var mydiv = "#resultsView_tabular";
+    let [plot_a, plot_b] = ['#plotA', '#plotB'];
 
-    var plot_nodes = app.nodes.slice();
     var margin_cross = {top: 30, right: 35, bottom: 40, left: 40},
         width_cross = 300 - margin_cross.left - margin_cross.right,
         height_cross = 160 - margin_cross.top - margin_cross.bottom;
-
     var padding_cross = 100;
 
-    for (var i = 0; i < plot_nodes.length; i++) {
-        if (plot_nodes[i].name === PlotNameA) {
-            if (plot_nodes[i].plottype === "continuous") {
-                density_cross(plot_nodes[i]);
-            }
-            else if (plot_nodes[i].plottype === "bar") {
-                bar_cross(plot_nodes[i]);
-            }
-        } else if (plot_nodes[i].name === PlotNameB) {
-            if (plot_nodes[i].plottype === "continuous") {
-                density_cross(plot_nodes[i]);
-            }
-            else if (plot_nodes[i].plottype === "bar") {
-                bar_cross(plot_nodes[i]);
-            }
+    var plot_nodes = app.nodes.slice();
+    for (let node of plot_nodes) {
+        if (node.name === PlotNameA) {
+            if (node.plottype === "continuous") continuous_n++;
+            else if (node.plottype === "bar") bar_n++;
+        } else if (node.name === PlotNameB) {
+            if (node.plottype === "continuous") continuous_n++;
+            else if (node.plottype === "bar") bar_n++;
         }
     }
-    d3.select(mydiv).append("g")
+
+    d3.select(plot_a).append("g")
         .attr("id", "btnDiv")
         .style('font-size', '75%')
         .style("width", "280px")
         .style("position","relative")
-        .style("left", (margin_cross.left+ (padding_cross/2)) + "px")
-        .style("top", "18px");
+        .style("left", '120px')
+        .style("top", '0px');
 
     d3.select("#btnDiv")[0][0].innerHTML =[
         '<h5>Data Selection</h5>',
@@ -381,13 +380,13 @@ function crossTabPlots(PlotNameA, PlotNameB) {
 
     btns.on("click", getData);
 
-    d3.select(mydiv).append("g")
+    d3.select(plot_a).append("g")
         .attr("id", "btnDiv1")
         .style('font-size', '75%')
         .style("width", "280px")
         .style("position","relative")
-        .style("left", (margin_cross.left-(padding_cross*1.75)) + "px")
-        .style("top", "50px");
+        .style("left", '-102px')
+        .style("top", '40px');
 
     d3.select("#btnDiv1")
         .append("input")
@@ -453,7 +452,6 @@ function crossTabPlots(PlotNameA, PlotNameB) {
         // setup the x_cord according to the size given by user
 
         console.log("welcome to : " + density_env.name);
-        //var mydiv = "#resultsView_tabular";
         var yVals = density_env.ploty;
         var xVals = density_env.plotx;
 
@@ -533,7 +531,7 @@ function crossTabPlots(PlotNameA, PlotNameB) {
             })
             .interpolate("monotone");
 
-        var plotsvg = d3.select(mydiv)
+        var plotsvg = d3.select(plot_a)
             .append("svg")
             .attr("id", "plotsvg_id")
             .style("width", width_cross + margin_cross.left + margin_cross.right) //setting height to the height of #main.left
@@ -563,12 +561,10 @@ function crossTabPlots(PlotNameA, PlotNameB) {
             .style("font-weight","bold");
 
         if (isNaN(a) || a === 0) {
-            console.log("do nothing #bar")
+            console.log("do nothing #bar");
             var upper_limit = d3.max(xVals);
             var lower_limit = d3.min(xVals);
-
             var z = 10;
-            //console.log(upper_limit +" and " + lower_limit);
             var diff = upper_limit - lower_limit;
             var buffer = diff / z;
             var x_cord = [];
@@ -578,27 +574,19 @@ function crossTabPlots(PlotNameA, PlotNameB) {
             for (var i = 0; i < z - 1; i++) {
                 push_data = push_data + buffer;
                 x_cord.push(push_data);
-                //console.log("x_cord : " + x_cord);
-
-
                 plotsvg.append("line")
                     .attr("id", "line1")
                     .attr("x1", x(x_cord[i]))
                     .attr("x2", x(x_cord[i]))
                     .attr("y1", y(d3.min(yVals)))
                     .attr("y2", y(d3.max(yVals)))
-                    .style("stroke", "#212121")
+                    .style("stroke", "#0D47A1")
                     .style("stroke-dasharray", "3");
             }
-        }
-        else {
+        } else {
             if (method_name === "equidistance") {
-
                 var upper_limit = d3.max(xVals);
                 var lower_limit = d3.min(xVals);
-
-
-                //console.log(upper_limit +" and " + lower_limit);
                 var diff = upper_limit - lower_limit;
                 var buffer = diff / a;
                 var x_cord = [];
@@ -608,9 +596,6 @@ function crossTabPlots(PlotNameA, PlotNameB) {
                 for (var i = 0; i < a - 1; i++) {
                     push_data = push_data + buffer;
                     x_cord.push(push_data);
-                    // console.log("x_cord : " + x_cord);
-
-
                     plotsvg.append("line")
                         .attr("id", "line1")
                         .attr("x1", x(x_cord[i]))
@@ -620,10 +605,7 @@ function crossTabPlots(PlotNameA, PlotNameB) {
                         .style("stroke", "#0D47A1")
                         .style("stroke-dasharray", "4");
                 }
-
-            }
-
-            else if (method_name === "equimass") // here we use the data from equimassCalculation to draw lines
+            } else if (method_name === "equimass") // here we use the data from equimassCalculation to draw lines
             {
                 console.log(" density equimass called ");
                 var temp = [];
@@ -662,11 +644,6 @@ function crossTabPlots(PlotNameA, PlotNameB) {
 
         var xVals = new Array;
         var yValKey = new Array;
-
-        // console.log(keys);
-
-        //    var mydiv = "#resultsView_tabular";
-
 
         if (bar_env.nature === "nominal") {
             var xi = 0;
@@ -746,7 +723,7 @@ function crossTabPlots(PlotNameA, PlotNameB) {
             .scale(y_1)
             .orient("left");
 
-        var    plotsvg1 = d3.select(mydiv)
+        var    plotsvg1 = d3.select(plot_b)
             .append("svg")
             .attr("id","plotsvg1_id")
             .style("width", width_cross + margin_cross.left + margin_cross.right) //setting height to the height of #main.left
@@ -794,15 +771,12 @@ function crossTabPlots(PlotNameA, PlotNameB) {
         if(isNaN(a)|| a===0) {
             console.log("do nothing #bar");
             x_cord2 = equimass_bar(bar_env, keys.length);
-            //console.log("x_cord2 equidis : " + x_cord2);
-
-            console.log(" bar equimass called ");
+            console.log("bar equimass called");
             for (var i = 0; i < keys.length - 1; i++) {
-                // console.log("x_cord1 actual: " + x_1(x_cord2[i]));
                 plotsvg1.append("line")
                     .attr("id", "line2")
-                    .attr("x1", x_1(x_cord2[i] ))
-                    .attr("x2", x_1(x_cord2[i] ))
+                    .attr("x1", x_1(x_cord1[i] ))
+                    .attr("x2", x_1(x_cord1[i] ))
                     .attr("y1", y_1(0))
                     .attr("y2", y_1(maxY))
                     .style("stroke", "#212121")
@@ -816,15 +790,10 @@ function crossTabPlots(PlotNameA, PlotNameB) {
                 var diff1 = upper_limit1 - lower_limit1;
                 var buffer1 = diff1 / a;
                 var x_cord1 = [];
-                console.log("diff1 : " + diff1);
-                console.log("buffer1 : " + buffer1);
                 var push_data1 = lower_limit1;
                 for (var i = 0; i < a - 1; i++) {
                     push_data1 = push_data1 + buffer1;
                     x_cord1.push(push_data1);
-                    //console.log("x_cord1 equidis : "+ x_cord1);
-                    // console.log("x_cord1 actual: " + x_1(x_cord1[i]));
-                    //console.log("maxY : "+ maxY);
                     plotsvg1.append("line")
                         .attr("id", "line2")
                         .attr("x1", x_1(x_cord1[i]))
@@ -837,11 +806,8 @@ function crossTabPlots(PlotNameA, PlotNameB) {
             } else if (method_name==="equimass") {
                 var x_cord2 = [];
                 x_cord2 = equimass_bar(bar_env, a);
-                //console.log("x_cord2 equidis : " + x_cord2);
-
                 console.log(" bar equimass called ");
                 for (var i = 0; i < a - 1; i++) {
-                    // console.log("x_cord1 actual: " + x_1(x_cord2[i]));
                     plotsvg1.append("line")
                         .attr("id", "line2")
                         .attr("x1", x_1(x_cord2[i] ))
@@ -1180,7 +1146,6 @@ var zbreaks=[];
 var zbreaks_tabular=[];
 
 function viz(m, json_vizexplore, model_name_set) {
-    console.log('testing....', m, model_name_set);
     d3.select("#tabular_1")
         .style("display", "block");
     d3.select("#plotA").html("");
@@ -1188,8 +1153,8 @@ function viz(m, json_vizexplore, model_name_set) {
     d3.select("#SelectionData").html("");
     console.log("Viz explore method called: " + model_name_set);
 
-    var get_data = [];
-    get_data = model_name_set.split("-");
+    let get_data = model_name_set.split("-");
+    console.log('get_data', get_data);
 
     var model_name1 = get_data[0] + "-" + get_data[1];
     var model_name2 = get_data[1] + "-" + get_data[0];
@@ -1338,8 +1303,8 @@ function viz(m, json_vizexplore, model_name_set) {
     function d3table1(data) {
         d3.select("#tabular_2").style("display","block");
         d3.select("#tabular_1").style("display","none");
-        var width = 120,   // width of svg
-            height = 160,  // height of svg
+        var width = 120, // width of svg
+            height = 160,// height of svg
             padding = 22; // space around the chart, not including labels
 
         d3.select("#tabular_2")
@@ -1611,6 +1576,14 @@ export async function explore() {
         .style("display", "block");
     d3.select("#resultsView_tabular")
         .style("display", "block");
+
+    d3.select("#plotA")
+        .style("display", "block");
+    d3.select("#plotB")
+        .style("display", "block");
+    d3.select("#SelectionData")
+        .style("display", "block");
+
     d3.select("#resultsView_statistics")
         .style("display", "block");
 
