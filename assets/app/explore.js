@@ -135,9 +135,8 @@ function heatmap(x_Axis_name, y_Axis_name) {
         .style("text-indent","20px")
         .style("font-size","12px")
         .style("font-weight","bold");
-
-
 }
+
 var data_plot = [];
 
 function bivariatePlot(x_Axis, y_Axis, x_Axis_name, y_Axis_name) {
