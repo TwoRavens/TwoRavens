@@ -144,17 +144,9 @@ function bivariatePlot(x_Axis, y_Axis, x_Axis_name, y_Axis_name) {
     app.byId('NAcount').style.display = 'block';
     d3.select("#scatterplot").html("");
     d3.select("#scatterplot").select("svg").remove();
-
-    app.byId('linechart').style.display = 'none';
-    d3.select("#heatchart").select("svg").remove();
-    d3.select("#linechart").select("svg").remove();
-    d3.select("#linechart").html("");
     d3.select("#heatchart").html("");
-    // $("#NAcount").html("");
 
-    console.log("bivariate plot called");
     // scatter plot
-
     data_plot = [];
     let nanCount = 0;
     for (let i = 0; i < 1000; i++) {
@@ -313,6 +305,8 @@ export function get_width(id) {
 function crossTabPlots(PlotNameA, PlotNameB) {
     plotnamea = PlotNameA;
     plotnameb = PlotNameB;
+    $("#input1").attr("placeholder", PlotNameA).blur();
+    $("#input2").attr("placeholder", PlotNameB).blur();
     let [plot_a, plot_b] = ['#plotA', '#plotB'];
 
     var margin_cross = {top: 30, right: 35, bottom: 40, left: 40},
@@ -331,141 +325,48 @@ function crossTabPlots(PlotNameA, PlotNameB) {
         }
     }
 
-    d3.select(plot_a).append("g")
-        .attr("id", "btnDiv")
-        .style('font-size', '75%')
-        .style("width", "280px")
-        .style("position","relative")
-        .style("left", '120px')
-        .style("top", '0px');
+    let varn1, varn2, varsize1, varsize2;
+    $("#Equidistance1").click(function(){
+        varn1="equidistance";
+        plotA_size= parseInt(d3.select("#input1")[0][0].value);
+        varsize1=plotA_size;
+        equidistance(PlotNameA,plotA_size);
 
-    d3.select("#btnDiv")[0][0].innerHTML =[
-        '<h5>Data Selection</h5>',
-        '<p>Enter the numbers for both plots respectively to specify the distribution of the cross-tabs.</p>',
-        '<p id="boldstuff" style="color: #2a6496">Select between Equidistant and Equimass.</p>'
-    ].join('\n');
-
-    d3.select("#btnDiv")
-        .append("input")
-        .attr({
-            id: "a",
-            placeholder: PlotNameA,
-            size: 20
-        });
-
-    // style both of the inputs at once
-    // more on HTML5 <input> at https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input
-    d3.selectAll("input")
-        .attr({
-            "type": "text",
-            "size": 3,
-            "autofocus": "true",
-            "inputmode": "numeric"
-        })
-        .style({
-            "text-align": "center",
-            "display": "inline-block",
-            "margin-right": "10px"
-        });
-
-
-    var btns = d3.select("#btnDiv").selectAll("button").data(["EQUIDISTANCE", "EQUIMASS"]);
-    btns = btns.enter().append("button").style("display", "inline-block");
-
-    // fill the buttons with the year from the data assigned to them
-    btns.each(function (d) {
-        this.innerText = d;
     });
-
-    btns.on("click", getData);
-
-    d3.select(plot_a).append("g")
-        .attr("id", "btnDiv1")
-        .style('font-size', '75%')
-        .style("width", "280px")
-        .style("position","relative")
-        .style("left", '-102px')
-        .style("top", '40px');
-
-    d3.select("#btnDiv1")
-        .append("input")
-        .attr({
-            "id": "b",
-            "placeholder": PlotNameB,
-            "size": 20
-        });
-
-    // style both of the inputs at once
-    // more on HTML5 <input> at https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input
-    d3.selectAll("input")
-        .attr({
-            "type": "text",
-            "size": 3,
-            "autofocus": "true",
-            "inputmode": "numeric"
-        })
-        .style({
-            "text-align": "center",
-            "display": "inline-block",
-            "margin-right": "10px"
-        });
-
-    var btns1 = d3.select("#btnDiv1").selectAll("button").data(["EQUIDISTANCE", "EQUIMASS"]);
-    btns1 = btns1.enter().append("button").style("display", "inline-block");
-
-    // fill the buttons with the year from the data assigned to them
-    btns1.each(function (d) {
-        this.innerText = d;
+    $("#Equimass1").click(function(){
+        plotA_sizem= parseInt(d3.select("#input1")[0][0].value);
+        varsize1=plotA_sizem
+        equimass(PlotNameA,plotA_sizem);
+        varn1="equimass";
     });
-    btns1.on("click", getData1);
-
-    function getData() {
-        if (this.innerText === "EQUIDISTANCE") {
-            varn1 = 'equidistance';
-            varsize1 = parseInt(d3.select("input#a")[0][0].value);
-            equidistance(PlotNameA, varsize1);
-        } else if (this.innerText === "EQUIMASS") {
-            varn1 = 'equimass';
-            varsize1 = parseInt(d3.select("input#a")[0][0].value);
-            equimass(PlotNameA, varsize1);
-        }
-    }
-    function getData1() {
-        if (this.innerText === "EQUIDISTANCE") {
-            varn2 = 'equidistance';
-            varsize2 = parseInt(d3.select("input#b")[0][0].value);
-            equidistance(PlotNameB, varsize2);
-        } else if (this.innerText === "EQUIMASS") {
-            varn2 = 'equimass';
-            varsize2 = parseInt(d3.select("input#b")[0][0].value);
-            equimass(PlotNameB, varsize2);
-        }
-    }
-
-    /*
-      trail
-    */
+    $("#Equidistance2").click(function(){
+        varn2="equidistance";
+        plotB_size= parseInt(d3.select("#input2")[0][0].value);
+        equidistance(PlotNameB,plotB_size);
+        varsize2=plotB_size;
+    });
+    $("#Equimass2").click(function(){
+        varn2="equimass";
+        plotB_sizem= parseInt(d3.select("#input2")[0][0].value);
+        equimass(PlotNameB,plotB_sizem);
+        varsize2=plotB_sizem;
+    });
 
     // this is the function to add  the density plot if any
     function density_cross(density_env,a,method_name) {
         // setup the x_cord according to the size given by user
-
-        console.log("welcome to : " + density_env.name);
         var yVals = density_env.ploty;
         var xVals = density_env.plotx;
 
         // an array of objects
-
         var data2 = [];
         for (var i = 0; i < density_env.plotx.length; i++) {
             data2.push({x: density_env.plotx[i], y: density_env.ploty[i]});
         }
-
         data2.forEach(function (d) {
             d.x = +d.x;
             d.y = +d.y;
         });
-        //  console.log(data2);
 
         var min_x = d3.min(data2, function (d, i) {
             return data2[i].x;
@@ -560,15 +461,12 @@ function crossTabPlots(PlotNameA, PlotNameB) {
             .style("font-weight","bold");
 
         if (isNaN(a) || a === 0) {
-            console.log("do nothing #bar");
             var upper_limit = d3.max(xVals);
             var lower_limit = d3.min(xVals);
             var z = 10;
             var diff = upper_limit - lower_limit;
             var buffer = diff / z;
             var x_cord = [];
-            console.log("diff : " + diff);
-            console.log("buffer : " + buffer);
             var push_data = lower_limit;
             for (var i = 0; i < z - 1; i++) {
                 push_data = push_data + buffer;
@@ -589,8 +487,6 @@ function crossTabPlots(PlotNameA, PlotNameB) {
                 var diff = upper_limit - lower_limit;
                 var buffer = diff / a;
                 var x_cord = [];
-                console.log("diff : " + diff);
-                console.log("buffer : " + buffer);
                 var push_data = lower_limit;
                 for (var i = 0; i < a - 1; i++) {
                     push_data = push_data + buffer;
@@ -604,13 +500,10 @@ function crossTabPlots(PlotNameA, PlotNameB) {
                         .style("stroke", "#0D47A1")
                         .style("stroke-dasharray", "4");
                 }
-            } else if (method_name === "equimass") // here we use the data from equimassCalculation to draw lines
-            {
-                console.log(" density equimass called ");
+            } else if (method_name === "equimass") {
+                // here we use the data from equimassCalculation to draw lines
                 var temp = [];
-
                 temp = equimassCalculation(density_env, a);
-                console.log("temp for density : " + temp);
                 for (var i = 1; i < a; i++) {
                     plotsvg.append("line")
                         .attr("id", "line1")
@@ -628,8 +521,6 @@ function crossTabPlots(PlotNameA, PlotNameB) {
 
     // this is the function to add the bar plot if any
     function bar_cross(bar_env,a,method_name) {
-        console.log("welcome to : " + bar_env.name);
-
         var barPadding = .015;  // Space between bars
         var topScale = 1.2;      // Multiplicative factor to assign space at top within graph - currently removed from implementation
         var plotXaxis = true;
@@ -679,8 +570,6 @@ function crossTabPlots(PlotNameA, PlotNameB) {
         }
         else {
             for (var i = 0; i < keys.length; i++) {
-                // console.log("plotvalues in bars");
-                //console.log(node);
                 yVals[i] = bar_env.plotvalues[keys[i]];
                 xVals[i] = Number(keys[i]);
                 if ($private) {
@@ -768,9 +657,7 @@ function crossTabPlots(PlotNameA, PlotNameB) {
             .style("font-weight","bold");
 
         if(isNaN(a)|| a===0) {
-            console.log("do nothing #bar");
             x_cord2 = equimass_bar(bar_env, keys.length);
-            console.log("bar equimass called");
             for (var i = 0; i < keys.length - 1; i++) {
                 plotsvg1.append("line")
                     .attr("id", "line2")
@@ -805,7 +692,6 @@ function crossTabPlots(PlotNameA, PlotNameB) {
             } else if (method_name==="equimass") {
                 var x_cord2 = [];
                 x_cord2 = equimass_bar(bar_env, a);
-                console.log(" bar equimass called ");
                 for (var i = 0; i < a - 1; i++) {
                     plotsvg1.append("line")
                         .attr("id", "line2")
@@ -820,21 +706,15 @@ function crossTabPlots(PlotNameA, PlotNameB) {
         }
     }
 
-    function equidistance(A,a)
-    {
+    function equidistance(A,a) {
         var method_name= "equidistance";
-
         // json object to be sent to r server
         var obj = new Object();
         obj.plotNameA = A;
         obj.equidistance = a;
 
-        //convert object to json string
+        // convert object to json string
         var string = JSON.stringify(obj);
-
-        //convert string to Json Object
-        console.log(JSON.parse(string)); // this is your requirement.
-
         for (var i = 0; i < plot_nodes.length; i++) {
             if (plot_nodes[i].name === A) {
                 if (plot_nodes[i].plottype === "continuous") {
@@ -847,14 +727,13 @@ function crossTabPlots(PlotNameA, PlotNameB) {
                     bar_cross(plot_nodes[i],a,method_name);
                 }
             } else {
-                console.log("not found")
+                console.log("not found");
             }
         }
     }
-    function equimass(A,a) //equimass function to call the plot function
-    {
+    function equimass(A,a) {
+        //equimass function to call the plot function
         var method_name= "equimass";
-
         // json object to be sent to r server
         var obj = new Object();
         obj.plotNameA = A;
@@ -862,30 +741,24 @@ function crossTabPlots(PlotNameA, PlotNameB) {
 
         //convert object to json string
         var string = JSON.stringify(obj);
-
-        //convert string to Json Object
-        console.log(JSON.parse(string)); // this is your requirement.
-
         for (var i = 0; i < plot_nodes.length; i++) {
             if (plot_nodes[i].name === A) {
                 if (plot_nodes[i].plottype === "continuous") {
                     $("#plotsvg_id").remove();
-                    //d3.select("#line1").remove();
                     density_cross(plot_nodes[i],a,method_name);
                 }
                 else if (plot_nodes[i].plottype === "bar") {
                     $("#plotsvg1_id").remove();
-                    // d3.select("#line2").remove();
                     bar_cross(plot_nodes[i],a,method_name);
                 }
             } else {
-                console.log("not found")
+                console.log("not found");
             }
         }
     }
 
-    function equimassCalculation(plot_ev,n) // here we find the coordinates using CDF values
-    {
+    function equimassCalculation(plot_ev,n) {
+        // here we find the coordinates using CDF values
         //var n =v-1;
         var arr_y=[];
         var arr_x=[];
@@ -898,19 +771,12 @@ function crossTabPlots(PlotNameA, PlotNameB) {
         var diffy=Upper_limitY-Lower_limitY;
         var e=(diffy)/n; // e is the variable to store the average distance between the points in the cdfy in order to divide the cdfy
 
-        console.log("Upper_limitY ;"+Upper_limitY);
-        console.log("Lower_limitX :"+Lower_limitY);
-        console.log("e "+e );
-
         var arr_c=[]; //array to store the cdfy divided coordinates data
         var push_data=arr_y[0];
-        for(var i=0;i<n;i++)
-        {
+        for(var i=0;i<n;i++) {
             push_data=push_data+e;
             arr_c.push(push_data);
         }
-
-        console.log("arr_c : "+ arr_c);
 
         var temp_cdfx=[];
         var temp=[];
@@ -918,7 +784,6 @@ function crossTabPlots(PlotNameA, PlotNameB) {
 
         for (var i=0; i<n; i++)//to get through each arr_c
         {
-            console.log("test arcc_c" + arr_c[i]);
             for (var j = 0; j < 50; j++)// to compare with cdfy or arr_y
             {
                 if (arr_c[i] === arr_y[j]) {
@@ -930,28 +795,16 @@ function crossTabPlots(PlotNameA, PlotNameB) {
             var diff_val1, diff_val2;// here the diff is not actual difference, it is the fraction of the distance from the two points
             var x1, x2, x3,x4;
             for (var j = 0; j < 50; j++) {
-                //  console.log(" j out"+ j );
                 if (arr_y[j] < arr_c[i] && arr_c[i] < arr_y[j + 1]) {
                     x1 = arr_c[i];
                     x2 = arr_c[i]-arr_y[j];
                     x3 = arr_y[j+1]-arr_c[i];
                     x4=arr_y[j+1]-arr_y[j];
-                    console.log(" val1 : " +x1 + " val2 : " + arr_y[j] + " val3: " + arr_y[j+1]);
-                    console.log(" x1-x2 : " +x2 + " x3-x1 : " + x3 + " x3-x2: " + x4);
-
-                    // console.log(" j in"+ j );
-
                     diff_val1 = x2/ x4;
                     diff_val2 = x3 / x4;
-                    console.log("diff_val1: "+ diff_val1 +  " diff_val2: "+ diff_val2);
                     store.push({val: i, coor1: j, coor2: j + 1, diff1: diff_val1, diff2: diff_val2});
                 }
             }
-        }
-
-
-        for(var i=0; i<n; i++) {
-            console.log(" store : " + store[i].val + " " + store[i].coor1 + " "+ store[i].coor2 + " diff1 " + store[i].diff1 + " diff2 "+ store[i].diff2);
         }
 
         for(var i=0; i<n; i++) {
@@ -961,18 +814,12 @@ function crossTabPlots(PlotNameA, PlotNameB) {
             y3= store[i].coor2;
             diffy1=store[i].diff1;
             diffy2=store[i].diff2;
-
             var x_coor1= arr_x[y2];
             var x_coor2=arr_x[y3];
-
             var x_diff=x_coor2-x_coor1;
-
             var distance1= x_diff*diffy1;
-
             var val_x=x_coor1+distance1;
-
             temp.push(val_x);
-            console.log(" val_x"+ val_x);
         }
         return temp;
     }
@@ -985,7 +832,6 @@ function crossTabPlots(PlotNameA, PlotNameB) {
 
         if (k < n) {
             alert("error enter vaild size");
-            console.log("error enter vaild size");
         } else {
             while (k > 0) {
                 temp.push({pos: count, val: k});
@@ -1010,10 +856,6 @@ function crossTabPlots(PlotNameA, PlotNameB) {
                     }
                 }
             }
-            for (var i = 0; i < temp.length; i++) {
-                console.log("n : " + temp[i].pos + " and k: " + temp[i].val);
-            }
-            console.log(" the divison of the bar plot : " + temp2);
 
             var j = 0, k = 0;
             var temp_final = new Array(n);
@@ -1025,7 +867,6 @@ function crossTabPlots(PlotNameA, PlotNameB) {
                     k++;
                 }
             }
-            console.log("temp_final: " + temp_final);
             return temp_final;
         }
     }
@@ -1140,15 +981,12 @@ var zbreaks=[];
 var zbreaks_tabular=[];
 
 function viz(m, json_vizexplore, model_name_set) {
-    d3.select("#tabular_1")
-        .style("display", "block");
     d3.select("#plotA").html("");
     d3.select("#plotB").html("");
-    d3.select("#SelectionData").html("");
-    console.log("Viz explore method called: " + model_name_set);
+    d3.select("#tabular_1").style("display", "block");
+    d3.select("#tabular_2").style("display", "block");
 
     let get_data = model_name_set.split("-");
-    console.log('get_data', get_data);
 
     var model_name1 = get_data[0] + "-" + get_data[1];
     var model_name2 = get_data[1] + "-" + get_data[0];
@@ -1199,37 +1037,16 @@ function viz(m, json_vizexplore, model_name_set) {
     var rownames = [];
     function crossTab_Table(json_my) {
         var json1 = json_my;
+        table_data = [];
+        table_obj = [];
+        let push = (i, key) => json1.tabular[i][key].map(v => v);
         // data for statistics
         for (var i in json1.tabular) {
             if (i == model_name1 || i == model_name2) {
-                for (var j in json1.tabular[i].colnames) {
-                    colnames.push(json1.tabular[i].colnames[j]);
-                }
-            }
-        }
-        for (var i in json1.tabular) {
-            if (i == model_name1 || i == model_name2) {
-                for (var k in json1.tabular[i].rownames) {
-                    rownames.push(json1.tabular[i].rownames[k]);
-                }
-            }
-        }
-        for (var i in json1.tabular) {
-            if (i == model_name1 || i == model_name2) {
-                for (var l in json1.tabular[i].rowvar) {
-                    rowvar.push(json1.tabular[i].rowvar[l]);
-                }
-            }
-        }
-        for (var i in json1.tabular) {
-            if (i == model_name1 || i == model_name2) {
-                for (var m in json1.tabular[i].colvar) {
-                    colvar.push(json1.tabular[i].colvar[m]);
-                }
-            }
-        }
-        for (var i in json1.tabular) {
-            if (i == model_name1 || i == model_name2) {
+                colnames = push(i, 'colnames');
+                rownames = push(i, 'rownames');
+                rowvar = push(i, 'rowvar');
+                colvar = push(i,'colvar');
                 for (var n in json1.tabular[i].data) {
                     table_data[n] = [];
                     for (var a = 0; a < colnames.length; a++) {
@@ -1238,7 +1055,7 @@ function viz(m, json_vizexplore, model_name_set) {
                 }
             }
         }
-        for (var p = 0; p < rownames.length; p++) {// console.log(" row data : "+ p);
+        for (var p = 0; p < rownames.length; p++) {
             for (var l = 0; l < colnames.length; l++) {
                 table_obj.push({rowname: rownames[p], colname: colnames[l], value: table_data[p][l]});
             }
@@ -1295,8 +1112,6 @@ function viz(m, json_vizexplore, model_name_set) {
     }
 
     function d3table1(data) {
-        d3.select("#tabular_2").style("display","block");
-        d3.select("#tabular_1").style("display","none");
         var width = 120, // width of svg
             height = 160,// height of svg
             padding = 22; // space around the chart, not including labels
@@ -1327,30 +1142,18 @@ function viz(m, json_vizexplore, model_name_set) {
             }
         }
     }
-    $('#selection').click(function() {
-        console.log("this is selection");
-        d3.select("#tabular_2").html("");
-        d3.select("#tabular_2").style("display","none");
-        d3.select("#tabular_1").style("display","block");
-        d3.select("#plotA").html("");
-        d3.select("#plotB").html("");
-        d3.select("#SelectionData").html("");
-        crossTabPlots(get_data[0], get_data[1]);
-    });
-    $('#crossTabs').click(function() {
-        console.log("this is crossTabs");
-        d3.select("#plotA").html("");
-        d3.select("#plotB").html("");
-        d3.select("#SelectionData").html("");
+
+    crossTab_Table(json);
+    $('#SelectionData1').click(function() {
         d3.select("#tabular_2").html("");
         explore_crosstab(json);
-        estimateLadda.stop();  // stop spinner
+        estimateLadda.stop();
         estimated = true;
     });
 
     function explore_crosstab(btn) {
         for (var key in app.zparams) {
-            if (app.zparams.hasOwnProperty(key) && key === "zcrosstabs") delete app.zparams[key];
+            if (app.zparams.hasOwnProperty(key) && key === "zcrosstabs" && key.length > 0) app.zparams[key] = [];
         }
 
         function writeCrossTabsJson() {
@@ -1384,15 +1187,14 @@ function viz(m, json_vizexplore, model_name_set) {
 
         urlcall = rappURL + "exploreapp";
         var solajsonout = "solaJSON=" + jsonout;
-        console.log("POST out this: ", solajsonout);
 
         function explore_crosstabSuccess(json) {
-            console.log("crossTabSuccess");
             d3.json("rook/myresult2.json", function (error, json) {
                 if (error) return console.warn(error);
                 var jsondata = json;
-                console.log("explore DATA json: ", jsondata);
                 crossTab_Table(jsondata);
+                estimateLadda.stop();
+                estimated = true;
             });
         }
         function explore_crosstabFail() {
@@ -1548,7 +1350,7 @@ export async function explore() {
     d3.select("#modelView").html('');
     d3.select("#resultsView_statistics").html('');
 
-    d3.select("#result_left")
+    d3.select("#result_left1")
         .style("display", "block");
     d3.select("#result_right")
         .style("display", "block");
