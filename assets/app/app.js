@@ -107,6 +107,7 @@ export let zparams = {
     zsessionid: "",
     zdatacite: '...',
     zcrosstab: [],
+    zusername: '',
 };
 
 export let modelCount = 0;
