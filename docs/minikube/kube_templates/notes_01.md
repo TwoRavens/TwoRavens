@@ -11,6 +11,9 @@ eval $(minikube docker-env)
 ```
 docker build -t ravens-main:stable .
 docker build -t ravens-r-service:stable -f Dockerfile-r-service .
+# optional: ta2 test server
+docker build -t ravens-main:stable .
+
 ```
 
 # Build nginx
