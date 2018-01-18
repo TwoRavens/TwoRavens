@@ -1335,7 +1335,6 @@ export async function explore() {
     app.zparams.callHistory = app.callHistory;
     app.estimateLadda.start(); // start spinner
     let json = await app.makeRequest(ROOK_SVC_URL + 'exploreapp', app.zparams);
-    app.estimated = true;
     if (!json) {
         return;
     }
@@ -1346,33 +1345,23 @@ export async function explore() {
 
     let parent = app.byId('rightContentArea');
     app.estimated || parent.removeChild(app.byId('resultsHolder'));
+    app.estimated = true;
+
     d3.select("#modelView").html('');
     d3.select("#resultsView_statistics").html('');
-
-    d3.select("#result_left1")
-        .style("display", "block");
-    d3.select("#result_right")
-        .style("display", "block");
-    d3.select("#scatterplot")
-        .style("display", "block");
-    d3.select("#heatchart")
-        .style("display", "block");
-    d3.select("#modelView_Container")
-        .style("display", "block");
-    d3.select("#modelView")
-        .style("display", "block");
-    d3.select("#resultsView_tabular")
-        .style("display", "block");
-
-    d3.select("#plotA")
-        .style("display", "block");
-    d3.select("#plotB")
-        .style("display", "block");
-    d3.select("#SelectionData")
-        .style("display", "block");
-
-    d3.select("#resultsView_statistics")
-        .style("display", "block");
+    ["#result_left",
+     "#result_left1",
+     "#result_right",
+     "#scatterplot",
+     "#heatchart",
+     "#modelView_Container",
+     "#modelView",
+     "#resultsView_tabular",
+     "#plotA",
+     "#plotB",
+     "#SelectionData",
+     "#resultsView_statistics"
+    ].forEach(id => d3.select(id).style("display", "block"));
 
     d3.select("#modelView")
         .style('background-color', app.hexToRgba(app.varColor))
