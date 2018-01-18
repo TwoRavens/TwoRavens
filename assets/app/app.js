@@ -1843,6 +1843,13 @@ function CreatePipelineData(predictors, depvar) {
     let context = apiSession(zparams.zsessionid);
     //let uri = {features: zparams.zd3mdata, target:zparams.zd3mtarget};
 
+    var targetFeatures = [{ 'resource_id': "0", 'feature_name': depvar[0] }];
+    var predictFeatures = [];
+    for (var i = 0; i < predictors.length; i++) {
+        predictFeatures[i] = { 'resource_id': "0", 'feature_name': predictors[i] };
+    }
+
+
     return {
         context,
 
@@ -1860,7 +1867,7 @@ function CreatePipelineData(predictors, depvar) {
         metrics: [d3mMetrics[d3mProblemDescription.metric][1]],
 
         // NEW SYNTAX NEEDED, ADJUST 'apiFeatureShortPath'
-        targetFeatures: depvar, //apiFeatureShortPath(depvar, uri.target), // putting in short paths (no filename) for current API usage
+        targetFeatures, //: depvar, //apiFeatureShortPath(depvar, uri.target), // putting in short paths (no filename) for current API usage
         /* Example:
           "targetFeatures": [
           {
@@ -1871,7 +1878,7 @@ function CreatePipelineData(predictors, depvar) {
         */
 
         // NEW PARAMETER:  predict_features
-        predictFeatures: predictors,
+        predictFeatures, //: predictors,
         /*"predict_features": [
         {
             "resource_id": "0",
