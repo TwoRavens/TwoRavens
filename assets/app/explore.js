@@ -6,7 +6,8 @@ import * as plots from './plots';
 const $private = false;
 
 function heatmap(x_Axis_name, y_Axis_name) {
-    d3.select("#heatChart").select("svg").remove();
+    document.getElementById('heatchart').style.display = "block";
+    d3.select("#heatchart").select("svg").remove();
     $('#heatchart').html("");
 
     var margin_heat = {top: 30, right: 10, bottom: 60, left: 60},
@@ -137,14 +138,15 @@ function heatmap(x_Axis_name, y_Axis_name) {
         .style("font-weight","bold");
 }
 
-var data_plot = [];
+let heatxaxis, heatyaxis;
+let data_plot = [];
 
 function bivariatePlot(x_Axis, y_Axis, x_Axis_name, y_Axis_name) {
+    heatxaxis = x_Axis_name;
+    heatyaxis = y_Axis_name;
     app.byId('scatterplot').style.display = 'block';
-    app.byId('NAcount').style.display = 'block';
     d3.select("#scatterplot").html("");
     d3.select("#scatterplot").select("svg").remove();
-    d3.select("#heatchart").html("");
 
     // scatter plot
     data_plot = [];
@@ -287,9 +289,8 @@ function bivariatePlot(x_Axis, y_Axis, x_Axis_name, y_Axis_name) {
             .style("fill", "#B71C1C");
     }
 
-    //heatmap
+    d3.select('#NAcount').style('display', 'block');
     d3.select("#NAcount").text("There are " + nanCount + " number of NA values in the relation.");
-    heatmap(x_Axis_name, y_Axis_name);
 }
 
 let plotnamea, plotnameb, varn1, varn2, varsize1, varsize2;
@@ -301,7 +302,7 @@ export function get_width(id) {
     return 50 * (id === 'plotA' ? continuous_n : bar_n);
 }
 
-function crossTabPlots(PlotNameA, PlotNameB) {
+function crossTabPlots(PlotNameA, PlotNameB, json_obj) {
     plotnamea = PlotNameA;
     plotnameb = PlotNameB;
     $("#input1").attr("placeholder", PlotNameA).blur();
@@ -357,32 +358,32 @@ function crossTabPlots(PlotNameA, PlotNameB) {
         }
     }
 
-    var plotA_size,plotB_size,plotA_sizem,plotB_sizem;
+    let plotA_size, plotB_size, plotA_sizem, plotB_sizem;
     let varn1, varn2, varsize1, varsize2;
     $("#Equidistance1").click(function(){
-        varn1="equidistance";
-        plotA_size= parseInt(d3.select("#input1")[0][0].value);
-        varsize1=plotA_size;
-        equidistance(PlotNameA,plotA_size);
+        varn1 = "equidistance";
+        plotA_size = parseInt(d3.select("#input1")[0][0].value);
+        varsize1 = plotA_size;
+        equidistance(PlotNameA, plotA_size);
 
     });
     $("#Equimass1").click(function(){
-        plotA_sizem= parseInt(d3.select("#input1")[0][0].value);
-        varsize1=plotA_sizem;
-        equimass(PlotNameA,plotA_sizem);
-        varn1="equimass";
+        plotA_sizem = parseInt(d3.select("#input1")[0][0].value);
+        varsize1 = plotA_sizem;
+        equimass(PlotNameA, plotA_sizem);
+        varn1 = "equimass";
     });
     $("#Equidistance2").click(function(){
-        varn2="equidistance";
-        plotB_size= parseInt(d3.select("#input2")[0][0].value);
-        equidistance(PlotNameB,plotB_size);
-        varsize2=plotB_size;
+        varn2 = "equidistance";
+        plotB_size = parseInt(d3.select("#input2")[0][0].value);
+        equidistance(PlotNameB, plotB_size);
+        varsize2 = plotB_size;
     });
     $("#Equimass2").click(function(){
-        varn2="equimass";
-        plotB_sizem= parseInt(d3.select("#input2")[0][0].value);
-        equimass(PlotNameB,plotB_sizem);
-        varsize2=plotB_sizem;
+        varn2 = "equimass";
+        plotB_sizem = parseInt(d3.select("#input2")[0][0].value);
+        equimass(PlotNameB, plotB_sizem);
+        varsize2 = plotB_sizem;
     });
 
     // this is the function to add  the density plot if any
@@ -875,12 +876,12 @@ function crossTabPlots(PlotNameA, PlotNameB) {
     }
 }
 
-export function linechart() {
+export function linechart(x_Axis_name, y_Axis_name) {
     document.getElementById('linechart').style.display = "block";
     d3.select("#lineChart").select("svg").remove();
     $('#linechart').html("");
-
-    var w_linechart = 500;
+    let padding = 10;
+    var w_linechart = 480;
     var h_linechart = 300;
     var margin_linechart = {top: 20, right: 80, bottom: 30, left: 50};
     var width_linechart = w_linechart - margin_linechart.left - margin_linechart.right;
@@ -893,10 +894,8 @@ export function linechart() {
     var chart = svg.append("g")
         .classed("display", true)
         .attr("transform", "translate(" + margin_linechart.left + "," + margin_linechart.top + ")");
-    // var dateParser = d3.time.format("%Y/%m/%d").parse;
     var x = d3.scale.linear()
         .domain(d3.extent(data_plot, function (d) {
-
             return d.xaxis;
         }))
         .range([0, width_linechart]);
@@ -910,15 +909,13 @@ export function linechart() {
     var xAxis = d3.svg.axis()
         .scale(x)
         .orient("bottom")
-        .ticks(5)
-    ;
+        .ticks(5);
     var yAxis = d3.svg.axis()
         .scale(y)
         .orient("left")
         .ticks(5);
     var line = d3.svg.line()
         .x(function (d) {
-
             return x(d.xaxis);
         })
         .y(function (d) {
@@ -971,6 +968,26 @@ export function linechart() {
             .remove();
     }
 
+    let temp = d3.select("#main.left").style("width");
+    let width = temp.substring(0, (temp.length - 2));
+    let height = $(window).height() - 120;
+    svg.append("text")
+        .attr("text-anchor", "middle")  // this makes it easy to centre the text as the transform is applied to the anchor
+        .attr("transform", "translate(" + padding  + "," + (height / 3) + ")rotate(-90)")  // text is drawn off the screen top left, move down and out and rotate
+        .text(y_Axis_name)
+        .style("fill", "#424242")
+        .style("text-indent","20px")
+        .style("font-size","12px")
+        .style("font-weight","bold");
+    svg.append("text")
+        .attr("text-anchor", "middle")  // this makes it easy to centre the text as the transform is applied to the anchor
+        .attr("transform", "translate(" + (width / 5) + "," + (height - padding - 128 ) + ")")  // centre below axis
+        .text(x_Axis_name)
+        .style("fill", "#424242")
+        .style("text-indent","20px")
+        .style("font-size","12px")
+        .style("font-weight","bold");
+
     plot.call(chart, {
         data: data_plot,
         axis: {
@@ -1021,9 +1038,35 @@ function viz(m, json_vizexplore, model_name_set) {
         }
     }
 
-    document.getElementById('scatterplot').style.display = "none";
     bivariatePlot(x_axis, y_axis, get_data[0], get_data[1]);
-    crossTabPlots(get_data[0], get_data[1]);
+
+    $('#scatterplot_img').on('click', function(){
+        $("#scatterplot_img").fadeOut("fast").fadeIn().fadeTo("fast",1.0);
+    });
+    $('#heatmap_img').on('click', function(){
+        $("#heatmap_img").fadeOut("fast").fadeIn().fadeTo("fast",1.0);
+    });
+    $('#linechart_img').on('click', function(){
+        $("#linechart_img").fadeOut("fast").fadeIn().fadeTo("fast",1.0);
+    });
+    $('#scatterplot_img').click(function() {
+        document.getElementById('heatchart').style.display = "none";
+        document.getElementById('linechart').style.display = "none";
+        bivariatePlot(x_axis, y_axis, get_data[0], get_data[1]);
+    });
+    $('#heatmap_img').click(function() {
+        document.getElementById('scatterplot').style.display = "none";
+        document.getElementById('linechart').style.display = "none";
+        heatmap(get_data[0], get_data[1]);
+    });
+    $('#linechart_img').click(function() {
+        document.getElementById('heatchart').style.display = "none";
+        document.getElementById('scatterplot').style.display = "none";
+        linechart(get_data[0],get_data[1]);
+    });
+
+    var empty=[];
+    crossTabPlots(get_data[0], get_data[1],empty);
 
     var cork = [];
     var corp = [];
@@ -1122,7 +1165,8 @@ function viz(m, json_vizexplore, model_name_set) {
             .style("background-color", "#fff")
             .append("h5")
             .text("CROSS-TABS ")
-            .style("color", "#424242");
+            .style("color", "#424242")
+            .style('overflow', 'auto');
 
         var sv = d3.select("#tabular_2").append("svg").attr("width", "100%").attr("height", "100%").style("overflow", "visible");
         var fo = sv.append('foreignObject').attr("width", "100%").attr("height", "100%").style("padding", 10).attr("overflow", "visible");
@@ -1202,6 +1246,27 @@ function viz(m, json_vizexplore, model_name_set) {
                 inputvalue2=zbreaks[this.id].var2.value;
                 document.getElementById("input1").value = inputvalue1;
                 document.getElementById("input2").value = inputvalue2;
+
+                var json_obj=zbreaks[this.id];
+                var varn1,varn2,varsize1,varsize2;
+                if (json_obj.length===0) {
+                    console.log("break not called");
+                } else {
+                    varn1=json_obj.var1.buttonType;
+                    varn2=json_obj.var2.buttonType;
+                    varsize1=json_obj.var1.value;
+                    varsize2=json_obj.var2.value;
+                    if (varn1==="equidistance") {
+                        crossTabPlots.equidistance(get_data[0], varsize1);
+                    } else if (varn1==="equimass") {
+                        crossTabPlots.equimass(get_data[0],varsize1);
+                    }
+                    if (varn2==="equidistance") {
+                        crossTabPlots.equidistance(get_data[1], varsize2);
+                    } else if (varn2==="equimass") {
+                        crossTabPlots.equimass(get_data[1], varsize2);
+                    }
+                }
             });
     });
 
@@ -1381,11 +1446,10 @@ export async function explore() {
 
     d3.select("#modelView").html('');
     d3.select("#resultsView_statistics").html('');
-    ["#result_left",
+    ["#left_thumbnail",
+     "#result_left",
      "#result_left1",
      "#result_right",
-     "#scatterplot",
-     "#heatchart",
      "#modelView_Container",
      "#modelView",
      "#resultsView_tabular",

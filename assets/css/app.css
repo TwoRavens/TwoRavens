@@ -466,3 +466,32 @@ tr.item-lineout{
 .yesshow {
     display:inline;
 }
+
+div#scatterplot .axis line {fill: none; stroke: #BBDEFB; shape-rendering: crispEdges;}
+div#scatterplot .axis path {fill: none; stroke: #BDBDBD; shape-rendering: crispEdges;}
+#tooltipPlotA {
+    visibility: hidden;
+    width: 120px;
+    background-color: grey;
+    color: #fff;
+    text-align: center;
+    border-radius: 4px;
+    padding: 4px 0;
+    margin: 1px;
+    /* Position the tooltip */
+    position: relative;
+    z-index: 1;
+}
+#tooltipPlotB {
+    visibility: hidden;
+    width: 120px;
+    background-color: grey;
+    color: #fff;
+    text-align: center;
+    border-radius: 4px;
+    padding: 4px 0;
+    margin: 1px;
+    /* Position the tooltip */
+    position: relative;
+    z-index: 1;
+}
