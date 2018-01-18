@@ -313,6 +313,29 @@ function crossTabPlots(PlotNameA, PlotNameB) {
         height_cross = 160 - margin_cross.top - margin_cross.bottom;
     var padding_cross = 100;
 
+    d3.select("#input1").on("mouseover", function() {
+        d3.select("#tooltipPlotA")
+            .style("visibility", "visible")
+            .style("opacity","1")
+            .text(PlotNameA);
+    })
+        .on("mouseout",function(){
+            d3.select("#tooltipPlotA")
+                .style("visibility", "hidden")
+                .style("opacity","0");
+        });
+    d3.select("#input2").on("mouseover", function() {
+        d3.select("#tooltipPlotB")
+            .style("visibility", "visible")
+            .style("opacity","1")
+            .text(PlotNameB);
+    })
+        .on("mouseout",function(){
+            d3.select("#tooltipPlotB")
+                .style("visibility", "hidden")
+                .style("opacity","0");
+        });
+
     var plot_nodes = app.nodes.slice();
     for (let node of plot_nodes) {
         if (node.name === PlotNameA) {
@@ -333,7 +356,6 @@ function crossTabPlots(PlotNameA, PlotNameB) {
             }
         }
     }
-
 
     var plotA_size,plotB_size,plotA_sizem,plotB_sizem;
     let varn1, varn2, varsize1, varsize2;
@@ -1141,27 +1163,49 @@ function viz(m, json_vizexplore, model_name_set) {
         return JSON.stringify(jsondata);
     }
 
-    let zbreaks = [];
     crossTab_Table(json);
+
+    function removeData(key) {
+        for (var key1 in app.zparams) {
+            if (app.zparams.hasOwnProperty(key1) && key === key1 && app.zparams[key1.length] > 0) app.zparams[key1] = [];
+        }
+    }
+
+    let zbreaks = [];
     $('#SelectionData1').click(function() {
         d3.select("#tabular_2").html("");
+        removeData('zcrosstab');
+        zparams.crosstab.push(writeCrossTabs());
         explore_crosstab(json);
         estimateLadda.stop();
         estimated = true;
         zbreaks.push(writeCrossTabs());
         d3.select('#breakspace')
-            .append('button')
-            .attr('id', 'break')
-            .attr('class', 'btn btn-default btx-xs')
-            .text('break' + zbreaks.length + 1);
+            .append("span")
+            .text("\u00A0 \u00A0 \u00A0 \u00A0   ")
+            .style("margin-top", 0)
+            .style("white-space", "pre")
+            .style("display", "inline-block")
+            .style("float", "left")
+            .append("span")
+            .append("button") // top stack for results
+            .attr("class","btn btn-default btn-xs")
+            .attr("id", zbreaks.length)
+            .text("break " + (zbreaks.length + 1)).on("click", function () {
+                d3.select("#tabular_2").html("");
+                removeData();
+                zparams.zcrosstab.push(zbreaks[this.id]);
+                explore_crosstab(json);
+
+                var inputvalue1,inputvalue2;
+                inputvalue1=zbreaks[this.id].var1.value;
+                inputvalue2=zbreaks[this.id].var2.value;
+                document.getElementById("input1").value = inputvalue1;
+                document.getElementById("input2").value = inputvalue2;
+            });
     });
 
     function explore_crosstab(btn) {
-        for (var key in app.zparams) {
-            if (app.zparams.hasOwnProperty(key) && key === "zcrosstabs" && key.length > 0) app.zparams[key] = [];
-        }
-
-        app.zparams.zcrosstab.push(writeCrossTabs());
         if (PRODUCTION && app.zparams.zsessionid == "") {
             alert("Warning: Data download is not complete. Try again soon.");
             return;
