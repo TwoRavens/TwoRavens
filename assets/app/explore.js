@@ -997,7 +997,6 @@ export function linechart(x_Axis_name, y_Axis_name) {
     });
 }
 
-var zbreaks_tabular=[];
 
 function viz(m, json_vizexplore, model_name_set) {
     d3.select("#plotA").html("");
@@ -1216,6 +1215,7 @@ function viz(m, json_vizexplore, model_name_set) {
     }
 
     let zbreaks = [];
+    let zbreaks_tabular = [];
     $('#SelectionData1').click(function() {
         d3.select("#tabular_2").html("");
         removeData('zcrosstab');
@@ -1224,6 +1224,7 @@ function viz(m, json_vizexplore, model_name_set) {
         estimateLadda.stop();
         estimated = true;
         zbreaks.push(writeCrossTabs());
+        zbreaks_tabular.push(json.tabular);
         d3.select('#breakspace')
             .append("span")
             .text("\u00A0 \u00A0 \u00A0 \u00A0   ")
@@ -1239,7 +1240,7 @@ function viz(m, json_vizexplore, model_name_set) {
                 d3.select("#tabular_2").html("");
                 removeData();
                 zparams.zcrosstab.push(zbreaks[this.id]);
-                explore_crosstab(json);
+                explore_crosstab(zbreaks_tabular[this.id]);
 
                 var inputvalue1,inputvalue2;
                 inputvalue1=zbreaks[this.id].var1.value;
