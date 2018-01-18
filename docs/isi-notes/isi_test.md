@@ -24,19 +24,17 @@ docker run --rm -it  -p 45042:45042 --name=goisi -v /ravens_volume:/ravens_volum
 
 ## Run TwoRavens
 
-- To make sure you're running shareable data from /ravens_volume:
-    1. Delete the D3M config files from:
-      - http://127.0.0.1:8080/admin/configurations/d3mconfiguration/
-    2. Run `fab make_d3m_config_files`
+To make sure you're running shareable data from /ravens_volume:
+
+1. Delete the D3M config files from:
+    - http://127.0.0.1:8080/admin/configurations/d3mconfiguration/
+2. Run `fab make_d3m_config_files`
 
 The next step assumes separate Terminals for rook and the django app, e.g.
 
 1. rook: `fab run_rook`
 2. python/ui: `fab run_expect_ta2_external`
-  - this is instead of `fab run`
-
-
-
+  - This replaces `fab run`
 
 ### Bind the /ravens_volume directory
 
