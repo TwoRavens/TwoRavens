@@ -16,52 +16,10 @@ docker pull registry.datadrivendiscovery.org/j18_ta2eval/isi_ta2:stable
 docker tag registry.datadrivendiscovery.org/j18_ta2eval/isi_ta2:stable isi_ta2:stable
 ```
 
-## xRun it
+## Run it
 
 ```
-docker run --rm -ti -v /path/to/ravens_volume:/ravens_volume -v /tmp/dsbox-ta2:/tmp/dsbox-ta2 -p 45042:45042 --name isi_test isi_ta2:stable
-
-#docker run --rm -ti -v /path/to/ravens_volume:/ravens_volume -v /tmp/dsbox-ta2:/tmp/dsbox-ta2 -p 45042:45042 -d isi_ta2:stable
-
-
-docker run --rm -it  -p 45042:45042 --entrypoint /bin/bash -v /ravens_volume:/ravens_volume isi_ta2:stable -c "ta2_search /ravens_volume/config_185_baseball.json"
-
-docker run --rm -it  -p 45042:45042 --entrypoint /bin/bash -v /ravens_volume:/ravens_volume isi_ta2:stable -c "ta2_search /ravens_volume/config_32_wikiqa.json"
-
-docker run --rm -it  -p 45042:45042 --name=goisi --entrypoint /bin/bash -v /ravens_volume:/ravens_volume isi_ta2:stable -c "ta2_search /ravens_volume/config_32_wikiqa.json"
-
-
-docker run --rm -it -p45042:45042 --name=goisi -v /ravens_volume/config_32_wikiqa.json:/tmp/config.json -v /tmp/results:/tmp/results -v /ravens_volume:/ravens_volume -v /tmp/data:/tmp/data isi_ta2:stable
-
-# --------------------------
-# try with config in place
-# --------------------------
-docker run --rm -it -p45042:45042 --name=goisi \
--v /ravens_volume/config_32_wikiqa.json:/tmp/config.json \
--v /tmp/results:/tmp/results \
--v /tmp/data:/tmp/data \
--v /ravens_volume:/ravens_volume -d isi_ta2:stable
-
-# --------------------------
-# try with config copied to /tmp/config.json
-# --------------------------
-docker run --rm -it -p45042:45042 --name=goisi \
--v /tmp/config.json:/tmp/config.json \
--v /tmp/results:/tmp/results \
--v /tmp/data:/tmp/data \
--v /ravens_volume:/ravens_volume -d isi_ta2:stable
-
-
-
-docker run -p45042:45042 --name=goisi \
--v /ravens_volume/config_32_wikiqa.json:/tmp/config.json \
--v /tmp/results:/tmp/results \
--v /ravens_volume:/ravens_volume -d isi_ta2:stable
-
-# in running ISI container
-docker exec -ti goisi /bin/bash
-apt-get install net-tools
-netstat -anv | egrep -w [.]45042.*LISTEN
+docker run --rm -it  -p 45042:45042 --name=goisi -v /ravens_volume:/ravens_volume  isi_ta2:stable
 ```
 
 
@@ -121,3 +79,42 @@ docker stop isi_test
 
 - clearing out ISI data
   - `rm -rf /tmp/dsbox-ta2`
+
+
+### Old notes
+
+
+#docker run --rm -it  -p 45042:45042 --name=goisi --entrypoint /bin/bash -v /ravens_volume:/ravens_volume isi_ta2:stable -c "ta2_search /ravens_volume/config_32_wikiqa.json"
+
+
+docker run --rm -it -p45042:45042 --name=goisi -v /ravens_volume/config_32_wikiqa.json:/tmp/config.json -v /tmp/results:/tmp/results -v /ravens_volume:/ravens_volume -v /tmp/data:/tmp/data isi_ta2:stable
+
+# --------------------------
+# try with config in place
+# --------------------------
+docker run --rm -it -p45042:45042 --name=goisi \
+-v /ravens_volume/config_32_wikiqa.json:/tmp/config.json \
+-v /tmp/results:/tmp/results \
+-v /tmp/data:/tmp/data \
+-v /ravens_volume:/ravens_volume -d isi_ta2:stable
+
+# --------------------------
+# try with config copied to /tmp/config.json
+# --------------------------
+docker run --rm -it -p45042:45042 --name=goisi \
+-v /tmp/config.json:/tmp/config.json \
+-v /tmp/results:/tmp/results \
+-v /tmp/data:/tmp/data \
+-v /ravens_volume:/ravens_volume -d isi_ta2:stable
+
+
+
+docker run -p45042:45042 --name=goisi \
+-v /ravens_volume/config_32_wikiqa.json:/tmp/config.json \
+-v /tmp/results:/tmp/results \
+-v /ravens_volume:/ravens_volume -d isi_ta2:stable
+
+# in running ISI container
+docker exec -ti goisi /bin/bash
+apt-get install net-tools
+netstat -anv | egrep -w [.]45042.*LISTEN
