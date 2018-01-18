@@ -334,6 +334,8 @@ function crossTabPlots(PlotNameA, PlotNameB) {
         }
     }
 
+
+    var plotA_size,plotB_size,plotA_sizem,plotB_sizem;
     let varn1, varn2, varsize1, varsize2;
     $("#Equidistance1").click(function(){
         varn1="equidistance";
@@ -548,25 +550,14 @@ function crossTabPlots(PlotNameA, PlotNameB) {
                     }
                     ciSize = ciUpperVals[xi] - ciLowerVals[xi];
                 }
-                ;
-
                 yValKey.push({y: yVals[xi], x: keys[i]});
                 xi = xi + 1;
             }
-            yValKey.sort(function (a, b) {
-                return b.y - a.y
-            }); // array of objects, each object has y, the same as yVals, and x, the category
-            yVals.sort(function (a, b) {
-                return b - a
-            }); // array of y values, the height of the bars
-            ciUpperVals.sort(function (a, b) {
-                return b.y - a.y
-            }); // ?
-            ciLowerVals.sort(function (a, b) {
-                return b.y - a.y
-            }); // ?
-        }
-        else {
+            yValKey.sort((a, b) => b.y - a.y); // array of objects, each object has y, the same as yVals, and x, the category
+            yVals.sort((a, b) => b - a); // array of y values, the height of the bars
+            ciUpperVals.sort((a, b) => b.y - a.y); // ?
+            ciLowerVals.sort((a, b) => b.y - a.y); // ?
+        } else {
             for (var i = 0; i < keys.length; i++) {
                 yVals[i] = bar_env.plotvalues[keys[i]];
                 xVals[i] = Number(keys[i]);
@@ -967,7 +958,6 @@ export function linechart() {
     });
 }
 
-var zbreaks=[];
 var zbreaks_tabular=[];
 
 function viz(m, json_vizexplore, model_name_set) {
@@ -1132,12 +1122,38 @@ function viz(m, json_vizexplore, model_name_set) {
         }
     }
 
+    function writeCrossTabs() {
+        var plotAval=varsize1,plotBval=varsize2;
+        if (isNaN(plotAval)) plotAval = 10;
+        if (isNaN(plotBval)) plotBval = 10;
+        var jsondata = {
+            var1: {
+                name: plotnamea,
+                value: plotAval,
+                buttonType: varn1
+            },
+            var2: {
+                name: plotnameb,
+                value: plotBval,
+                buttonType: varn2
+            }
+        };
+        return JSON.stringify(jsondata);
+    }
+
+    let zbreaks = [];
     crossTab_Table(json);
     $('#SelectionData1').click(function() {
         d3.select("#tabular_2").html("");
         explore_crosstab(json);
         estimateLadda.stop();
         estimated = true;
+        zbreaks.push(writeCrossTabs());
+        d3.select('#breakspace')
+            .append('button')
+            .attr('id', 'break')
+            .attr('class', 'btn btn-default btx-xs')
+            .text('break' + zbreaks.length + 1);
     });
 
     function explore_crosstab(btn) {
@@ -1145,25 +1161,7 @@ function viz(m, json_vizexplore, model_name_set) {
             if (app.zparams.hasOwnProperty(key) && key === "zcrosstabs" && key.length > 0) app.zparams[key] = [];
         }
 
-        function writeCrossTabsJson() {
-            var plotAval=varsize1,plotBval=varsize2;
-            if (isNaN(plotAval)) plotAval = 10;
-            if (isNaN(plotBval)) plotBval = 10;
-            var jsondata = {
-                var1: {
-                    name: plotnamea,
-                    value: plotAval,
-                    buttonType: varn1
-                },
-                var2: {
-                    name: plotnameb,
-                    value: plotBval,
-                    buttonType: varn2
-                }
-            };
-            return JSON.stringify(jsondata);
-        }
-        app.zparams.zcrosstab.push(writeCrossTabsJson());
+        app.zparams.zcrosstab.push(writeCrossTabs());
         if (PRODUCTION && app.zparams.zsessionid == "") {
             alert("Warning: Data download is not complete. Try again soon.");
             return;
