@@ -144,11 +144,18 @@ def run_with_rook():
     """In addition to the django dev server and webpack, run rook via the Terminal"""
     run(with_rook=True)
 
-def run(with_rook=False):
+def run_expect_ta2_external():
+    """Assumes there's a TA2 running at localhost:45042"""
+    run(external_ta2=True)
+
+def run(**kwargs):
     """Run the django dev server and webpack--webpack watches the assets directory and rebuilds when appTwoRavens changes
 
     with_rook=True - runs rook in "nonstop" mode
     """
+    with_rook = kwargs.get('with_rook', False)
+    external_ta2 = kwargs.get('external_ta2', False)
+
     clear_js()  # clear any dev css/js files
     init_db()
     check_config()  # make sure the db has something
@@ -165,7 +172,11 @@ def run(with_rook=False):
 
     proc_list = [subprocess.Popen(command, shell=True, stdin=sys.stdin, stdout=sys.stdout, stderr=sys.stderr) for command in commands]
     try:
-        local("python manage.py runserver 0.0.0.0:8080")
+        if external_ta2:
+            local(("export TA2_STATIC_TEST_MODE=False;"
+                   "python manage.py runserver 0.0.0.0:8080"))
+        else:
+            local("python manage.py runserver 0.0.0.0:8080")
     finally:
         for proc in proc_list:
             os.kill(proc.pid, signal.SIGKILL)
