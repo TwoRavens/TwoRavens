@@ -16,13 +16,13 @@ docker pull registry.datadrivendiscovery.org/j18_ta2eval/isi_ta2:stable
 docker tag registry.datadrivendiscovery.org/j18_ta2eval/isi_ta2:stable isi_ta2:stable
 ```
 
-## Run the ISI image in a separate window
+### Run the ISI image in a separate window
 
 ```
-docker run --rm -it  -p 45042:45042 --name=goisi -v /ravens_volume:/ravens_volume  isi_ta2:stable
+docker run --rm -it  -p 45042:45042 --name=goisi -v /ravens_volume:/ravens_volume -v /tmp/dsbox-ta2:/tmp/dsbox-ta2 isi_ta2:stable
 ```
 
-## Run TwoRavens
+### Run TwoRavens
 
 To make sure you're running shareable data from /ravens_volume:
 
@@ -57,6 +57,10 @@ The new `/ravens_volume` "directory" needs to be cleared via Docker
   - Click "+"
   - Add "" `/ravens_volume`
 
+
+---
+
+## _OLD_
 
 ### Terminal 1:  Run the ISI docker image
 
