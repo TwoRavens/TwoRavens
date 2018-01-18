@@ -316,11 +316,21 @@ function crossTabPlots(PlotNameA, PlotNameB) {
     var plot_nodes = app.nodes.slice();
     for (let node of plot_nodes) {
         if (node.name === PlotNameA) {
-            if (node.plottype === "continuous") continuous_n++;
-            else if (node.plottype === "bar") bar_n++;
+            if (node.plottype === "continuous") {
+                continuous_n++;
+                density_cross(node);
+            } else if (node.plottype === "bar") {
+                bar_n++;
+                bar_cross(node);
+            }
         } else if (node.name === PlotNameB) {
-            if (node.plottype === "continuous") continuous_n++;
-            else if (node.plottype === "bar") bar_n++;
+            if (node.plottype === "continuous") {
+                continuous_n++;
+                density_cross(node);
+            } else if (node.plottype === "bar") {
+                bar_n++;
+                bar_cross(node);
+            }
         }
     }
 
@@ -334,7 +344,7 @@ function crossTabPlots(PlotNameA, PlotNameB) {
     });
     $("#Equimass1").click(function(){
         plotA_sizem= parseInt(d3.select("#input1")[0][0].value);
-        varsize1=plotA_sizem
+        varsize1=plotA_sizem;
         equimass(PlotNameA,plotA_sizem);
         varn1="equimass";
     });
@@ -384,7 +394,6 @@ function crossTabPlots(PlotNameA, PlotNameB) {
         var x = d3.scale.linear()
             .domain([d3.min(xVals), d3.max(xVals)])
             .range([0, width_cross]);
-
         var invx = d3.scale.linear()
             .range([d3.min(data2.map(function (d) {
                 return d.x;
@@ -392,7 +401,6 @@ function crossTabPlots(PlotNameA, PlotNameB) {
                 return d.x;
             }))])
             .domain([0, width_cross]);
-
         var y = d3.scale.linear()
             .domain([d3.min(data2.map(function (d) {
                 return d.y;
@@ -400,17 +408,13 @@ function crossTabPlots(PlotNameA, PlotNameB) {
                 return d.y;
             }))])
             .range([height_cross, 0]);
-
-
         var xAxis = d3.svg.axis()
             .scale(x)
             .ticks(5)
             .orient("bottom");
-
         var yAxis = d3.svg.axis()
             .scale(y)
             .orient("left");
-
         var area = d3.svg.area()
             .interpolate("monotone")
             .x(function (d) {
@@ -420,7 +424,6 @@ function crossTabPlots(PlotNameA, PlotNameB) {
             .y1(function (d) {
                 return y(d.y);
             });
-
         var line = d3.svg.line()
             .x(function (d) {
                 return x(d.x);
@@ -438,8 +441,6 @@ function crossTabPlots(PlotNameA, PlotNameB) {
             .style("margin-left","20px")
             .append("g")
             .attr("transform", "translate(0," + margin_cross.top + ")");
-
-
         plotsvg.append("path")
             .attr("id", "path1")
             .datum(data2)
@@ -449,7 +450,6 @@ function crossTabPlots(PlotNameA, PlotNameB) {
             .attr("class", "x axis")
             .attr("transform", "translate(0," + (height_cross  ) + ")")
             .call(xAxis);
-
         plotsvg.append("text")
             .attr("x", (width_cross / 2))
             .attr("y", (margin_cross.top + padding_cross -10))
@@ -516,7 +516,6 @@ function crossTabPlots(PlotNameA, PlotNameB) {
             }
         }
     }
-
 
     // this is the function to add the bar plot if any
     function bar_cross(bar_env,a,method_name) {
@@ -610,7 +609,7 @@ function crossTabPlots(PlotNameA, PlotNameB) {
             .scale(y_1)
             .orient("left");
 
-        var    plotsvg1 = d3.select(plot_b)
+        var plotsvg1 = d3.select(plot_b)
             .append("svg")
             .attr("id","plotsvg1_id")
             .style("width", width_cross + margin_cross.left + margin_cross.right) //setting height to the height of #main.left
@@ -620,9 +619,7 @@ function crossTabPlots(PlotNameA, PlotNameB) {
             .attr("transform", "translate(0," + margin_cross.top + ")");
 
         var rectWidth = x_1(minX + 0.5 - 2 * barPadding); //the "width" is the coordinate of the end of the first bar
-
         plotsvg1.selectAll("rect")
-
             .data(yVals)
             .enter()
             .append("rect")
@@ -660,8 +657,8 @@ function crossTabPlots(PlotNameA, PlotNameB) {
             for (var i = 0; i < keys.length - 1; i++) {
                 plotsvg1.append("line")
                     .attr("id", "line2")
-                    .attr("x1", x_1(x_cord1[i] ))
-                    .attr("x2", x_1(x_cord1[i] ))
+                    .attr("x1", x_1(x_cord2[i] ))
+                    .attr("x2", x_1(x_cord2[i] ))
                     .attr("y1", y_1(0))
                     .attr("y2", y_1(maxY))
                     .style("stroke", "#212121")
@@ -711,8 +708,6 @@ function crossTabPlots(PlotNameA, PlotNameB) {
         var obj = new Object();
         obj.plotNameA = A;
         obj.equidistance = a;
-
-        // convert object to json string
         var string = JSON.stringify(obj);
         for (var i = 0; i < plot_nodes.length; i++) {
             if (plot_nodes[i].name === A) {
@@ -722,7 +717,6 @@ function crossTabPlots(PlotNameA, PlotNameB) {
                 }
                 else if (plot_nodes[i].plottype === "bar") {
                     $("#plotsvg1_id").remove();
-                    // d3.select("#line2").remove();
                     bar_cross(plot_nodes[i],a,method_name);
                 }
             } else {
@@ -733,12 +727,9 @@ function crossTabPlots(PlotNameA, PlotNameB) {
     function equimass(A,a) {
         //equimass function to call the plot function
         var method_name= "equimass";
-        // json object to be sent to r server
         var obj = new Object();
         obj.plotNameA = A;
         obj.equidistance = a;
-
-        //convert object to json string
         var string = JSON.stringify(obj);
         for (var i = 0; i < plot_nodes.length; i++) {
             if (plot_nodes[i].name === A) {
@@ -986,7 +977,6 @@ function viz(m, json_vizexplore, model_name_set) {
     d3.select("#tabular_2").style("display", "block");
 
     let get_data = model_name_set.split("-");
-
     var model_name1 = get_data[0] + "-" + get_data[1];
     var model_name2 = get_data[1] + "-" + get_data[0];
     var mym = +m.substr(5, 5) - 1;
