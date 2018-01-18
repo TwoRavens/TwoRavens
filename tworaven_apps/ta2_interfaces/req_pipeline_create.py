@@ -10,6 +10,7 @@ import core_pb2
 from tworaven_apps.ta2_interfaces.ta2_connection import TA2Connection
 from tworaven_apps.ta2_interfaces.ta2_util import get_grpc_test_json,\
     get_failed_precondition_response,\
+    get_reply_exception_response,\
     get_predict_file_info_dict
 from tworaven_apps.ta2_interfaces.util_embed_results import FileEmbedUtil
 from tworaven_apps.ta2_interfaces.models import KEY_CONTEXT_FROM_UI,\
@@ -90,12 +91,16 @@ def pipeline_create(info_str=None):
     except Exception as ex:
         return get_failed_precondition_response(str(ex))
 
-
     #print('reply', reply)
     try:
         print(MessageToJson(reply))
     except:
         print('failed unary convert to JSON (ok for streaming)')
+
+
+    if reply.exception():
+        return get_reply_exception_response(reply.exception())
+
     # --------------------------------
     # Convert the reply to JSON and send it on
     # --------------------------------
