@@ -289,7 +289,6 @@ function bivariatePlot(x_Axis, y_Axis, x_Axis_name, y_Axis_name) {
 
     //heatmap
     d3.select("#NAcount").text("There are " + nanCount + " number of NA values in the relation.");
-    // document.getElementById('heatchart').style.display = "block";
     heatmap(x_Axis_name, y_Axis_name);
 }
 
