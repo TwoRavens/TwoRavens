@@ -23,7 +23,7 @@ urlpatterns = (
         views.view_set_problem_doc,
         name='SetProblemDoc'),
 
-    url(r'^createpipeline/?$',
+    url(r'^CreatePipelines/?$',
         views.view_create_pipeline,
         name='CreatePipelines'),
 
@@ -35,7 +35,7 @@ urlpatterns = (
         views.view_list_pipelines,
         name='ListPipelines'),
 
-    url(r'^deletepipelines/?$',
+    url(r'^DeletePipelines/?$',
         views.view_delete_pipelines,
         name='DeletePipelines'),
 

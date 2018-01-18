@@ -1045,7 +1045,7 @@ function layout(v,v2) {
             d3.select(this).attr('class',"item-select");
         }
         restart();
-        updateSchema("taskType", d3mProblemDescription, d3mTaskType);
+        setProblemDefinition("taskType", d3mProblemDescription, d3mTaskType);
         });
 
     d3.select("#subtypes").selectAll("p")
@@ -1060,7 +1060,7 @@ function layout(v,v2) {
             d3.select(this).attr('class',"item-select");
         }
         restart();
-        updateSchema("taskSubtype", d3mProblemDescription, d3mTaskSubtype);
+        setProblemDefinition("taskSubtype", d3mProblemDescription, d3mTaskSubtype);
         });
 
     d3.select("#metrics").selectAll("p")
@@ -1077,7 +1077,7 @@ function layout(v,v2) {
             d3.select(this).attr('class',"item-select");
         }
         restart();
-        updateSchema("metric", d3mProblemDescription, d3mMetrics);
+        setProblemDefinition("metric", d3mProblemDescription, d3mMetrics);
         });
 
   /*  d3.select("#outputs").selectAll("p")
@@ -1092,7 +1092,7 @@ function layout(v,v2) {
             d3.select(this).attr('class',"item-select");
         }
         restart();
-        updateSchema("outputType", d3mProblemDescription, d3mOutputType);
+        setProblemDefinition("outputType", d3mProblemDescription, d3mOutputType);
         });
         */
 
@@ -1778,6 +1778,7 @@ function onPipelineCreate(PipelineCreateResult) {
     // rpc GetExecutePipelineResults(PipelineExecuteResultsRequest) returns (stream PipelineExecuteResult) {}
     estimateLadda.stop(); // stop spinner
 
+    // change status of buttons for estimating problem and marking problem as finished
     $("#btnEstimate").removeClass("btn-success");
     $("#btnEstimate").addClass("btn-default");
     $("#btnEndSession").removeClass("btn-default");
@@ -1840,10 +1841,20 @@ function onPipelineCreate(PipelineCreateResult) {
 }
 function CreatePipelineData(predictors, depvar) {
     let context = apiSession(zparams.zsessionid);
-    let uri = {features: zparams.zd3mdata, target:zparams.zd3mtarget};
+    //let uri = {features: zparams.zd3mdata, target:zparams.zd3mtarget};
+
+    var targetFeatures = [{ 'resource_id': "0", 'feature_name': depvar[0] }];
+    var predictFeatures = [];
+    for (var i = 0; i < predictors.length; i++) {
+        predictFeatures[i] = { 'resource_id': "0", 'feature_name': predictors[i] };
+    }
+
 
     return {
         context,
+
+        dataset_uri: zparams.zd3mdata,
+
         task: d3mTaskType[d3mProblemDescription.taskType][1],
 
         taskSubtype: d3mTaskSubtype[d3mProblemDescription.taskSubtype][1],
@@ -1856,7 +1867,7 @@ function CreatePipelineData(predictors, depvar) {
         metrics: [d3mMetrics[d3mProblemDescription.metric][1]],
 
         // NEW SYNTAX NEEDED, ADJUST 'apiFeatureShortPath'
-        targetFeatures: apiFeatureShortPath(depvar, uri.target), // putting in short paths (no filename) for current API usage
+        targetFeatures, //: depvar, //apiFeatureShortPath(depvar, uri.target), // putting in short paths (no filename) for current API usage
         /* Example:
           "targetFeatures": [
           {
@@ -1867,7 +1878,7 @@ function CreatePipelineData(predictors, depvar) {
         */
 
         // NEW PARAMETER:  predict_features
-        predict_features: [],
+        predictFeatures, //: predictors,
         /*"predict_features": [
         {
             "resource_id": "0",
@@ -1992,7 +2003,7 @@ export async function estimate(btn) {
         }
 
         estimateLadda.start(); // start spinner
-        let res = await makeRequest(D3M_SVC_URL + '/createpipeline', CreatePipelineData(valueKey, mytarget));
+        let res = await makeRequest(D3M_SVC_URL + '/CreatePipelines', CreatePipelineData(valueKey, mytarget));
         res && onPipelineCreate(res);
     } else { // we are in IS_D3M_DOMAIN no swandive
         // rpc CreatePipelines(PipelineCreateRequest) returns (stream PipelineCreateResult) {}
@@ -2009,7 +2020,7 @@ export async function estimate(btn) {
         console.log(res);
             setxTable(res.predictors);
             let dvvalues = res.dvvalues;
-            res = await makeRequest(D3M_SVC_URL + '/createpipeline', CreatePipelineData(res.predictors, res.depvar));
+            res = await makeRequest(D3M_SVC_URL + '/CreatePipelines', CreatePipelineData(res.predictors, res.depvar));
          //   res = await makeRequest(ROOK_SVC_URL + 'createpipeline', zparams);
             res && onPipelineCreate(res);
         }
@@ -2853,6 +2864,28 @@ export async function endsession() {
 }
 
 /**
+    rpc DeletePipelines(PipelineDeleteRequest) returns (PipelineListResult) {}
+    pipes is an array of pipeline IDs
+*/
+export function deletepipelines(pipes) {
+    let res = makeRequest(D3M_SVC_URL + '/DeletePipelines', {context: apiSession(zparams.zsessionid), deletePipelineIds: pipes});
+    if (!res) {
+        return;
+    }
+}
+
+/**
+    rpc DeletePipelines(PipelineDeleteRequest) returns (PipelineListResult) {}
+    pipes is an array of pipeline IDs
+*/
+export function cancelpipelines(pipes) {
+    let res = makeRequest(D3M_SVC_URL + '/CancelPipelines', {context: apiSession(zparams.zsessionid), cancelPipelineIds: pipes});
+    if (!res) {
+        return;
+    }
+}
+
+/**
    rpc ListPipelines(PipelineListRequest) returns (PipelineListResult) {}
    pipes is an array of pipeline IDs
 */
@@ -2943,12 +2976,12 @@ export function executepipeline() {
 }
 
 /**
-   call to django to update the problem schema
-   rpc UpdateProblemSchema(UpdateProblemSchemaRequest) returns (Response) {}
+    call to django to update the problem definition in the problem document 
+    rpc SetProblemDoc(SetProblemDocRequest) returns (Response) {}
 */
-function updateSchema(type, updates, lookup) {
+function setProblemDefinition(type, updates, lookup) {
     makeRequest(
-        D3M_SVC_URL + "/updateproblemschema",
+        D3M_SVC_URL + "/SetProblemDoc",
         {replaceProblemSchemaField: {[type]: lookup[updates[type]][1]}, context: apiSession(zparams.zsessionid)});
 }
 
