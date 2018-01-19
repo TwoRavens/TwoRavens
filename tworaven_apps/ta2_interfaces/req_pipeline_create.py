@@ -86,33 +86,29 @@ def pipeline_create(info_str=None):
     # --------------------------------
     # Send the gRPC request
     # --------------------------------
+    messages = []
+
     try:
-        reply = core_stub.CreatePipelines(req)
+        for reply in core_stub.CreatePipelines(req):
+            user_msg = MessageToJson(reply)
+            print(user_msg)
+            messages.append(user_msg)
     except Exception as ex:
-        return get_failed_precondition_response(str(ex))
+        return get_reply_exception_response(str(ex))
 
-    #print('reply', reply)
-    try:
-        print(MessageToJson(reply))
-    except:
-        print('failed unary convert to JSON (ok for streaming)')
+    print('end of queue. make message list')
 
+    result_str = '['+', '.join(messages)+']'
 
-    if reply.exception():
-        return get_reply_exception_response(reply.exception())
-
-    # --------------------------------
-    # Convert the reply to JSON and send it on
-    # --------------------------------
-    results = map(MessageToJson, reply)
-
-    result_str = '['+', '.join(results)+']'
-
+    print('embed file contents')
     embed_util = FileEmbedUtil(result_str)
     if embed_util.has_error:
+        print('file embed error')
         return get_failed_precondition_response(embed_util.error_message)
 
+    print('return results')
     return embed_util.get_final_results()
+
 
 """
 python manage.py shell
