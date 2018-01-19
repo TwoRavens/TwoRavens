@@ -1841,19 +1841,18 @@ function onPipelineCreate(PipelineCreateResult) {
 }
 function CreatePipelineData(predictors, depvar) {
     let context = apiSession(zparams.zsessionid);
-    //let uri = {features: zparams.zd3mdata, target:zparams.zd3mtarget};
-
-    var targetFeatures = [{ 'resource_id': "0", 'feature_name': depvar[0] }];
-    var predictFeatures = [];
+    let uriCsv = zparams.zd3mdata;
+    let uriJson = uriCsv.substring(0, uriCsv.lastIndexOf("/tables")) + "/datasetDoc.json";
+    let targetFeatures = [{ 'resource_id': "0", 'feature_name': depvar[0] }];
+    let predictFeatures = [];
     for (var i = 0; i < predictors.length; i++) {
         predictFeatures[i] = { 'resource_id': "0", 'feature_name': predictors[i] };
     }
 
-
     return {
         context,
 
-        dataset_uri: zparams.zd3mdata,
+        dataset_uri: uriJson,   // uriCsv is also valid, but not currently accepted by ISI TA2
 
         task: d3mTaskType[d3mProblemDescription.taskType][1],
 
@@ -1861,13 +1860,11 @@ function CreatePipelineData(predictors, depvar) {
 
         taskDescription: d3mProblemDescription.taskDescription,
 
-        // NEW:
-        output: "OUTPUT_TYPE_UNDEFINED",
+        output: "OUTPUT_TYPE_UNDEFINED",  // valid values will come in future API
 
         metrics: [d3mMetrics[d3mProblemDescription.metric][1]],
 
-        // NEW SYNTAX NEEDED, ADJUST 'apiFeatureShortPath'
-        targetFeatures, //: depvar, //apiFeatureShortPath(depvar, uri.target), // putting in short paths (no filename) for current API usage
+        targetFeatures, 
         /* Example:
           "targetFeatures": [
           {
@@ -1877,32 +1874,17 @@ function CreatePipelineData(predictors, depvar) {
           ],
         */
 
-        // NEW PARAMETER:  predict_features
-        predictFeatures, //: predictors,
-        /*"predict_features": [
-        {
+        predictFeatures, 
+        /* Example:
+          "predictReatures": [
+          {
             "resource_id": "0",
             "feature_name": "RBIs"
-        }
-      ],*/
+          }
+          ],
+        */
         maxPipelines: 5 //user to specify this eventually?
-
-    //    output: d3mOutputType[d3mProblemDescription.outputType][1],
-        //trainFeatures: apiFeatureShortPath(predictors, uri.features), // putting in short paths (no filename) for current API usage
     };
-    /*
-    // September API
-    return {
-        context,
-        trainFeatures: apiFeatureShortPath(predictors, uri.features), // putting in short paths (no filename) for current API usage
-        targetFeatures: apiFeatureShortPath(depvar, uri.target), // putting in short paths (no filename) for current API usage
-        task: d3mTaskType[d3mProblemDescription.taskType][1],
-        taskSubtype: d3mTaskSubtype[d3mProblemDescription.taskSubtype][1],
-    //    output: d3mOutputType[d3mProblemDescription.outputType][1],
-        metrics: [d3mMetrics[d3mProblemDescription.metric][1]],
-        taskDescription: d3mProblemDescription.taskDescription,
-        maxPipelines: 5, //user to specify this eventually?
-    };*/
 }
 
 export function downloadIncomplete() {
