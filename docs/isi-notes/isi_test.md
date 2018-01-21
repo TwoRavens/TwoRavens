@@ -16,25 +16,27 @@ docker pull registry.datadrivendiscovery.org/j18_ta2eval/isi_ta2:stable
 docker tag registry.datadrivendiscovery.org/j18_ta2eval/isi_ta2:stable isi_ta2:stable
 ```
 
-### Run the ISI image in a separate window
+## Run the ISI image in a separate window
 
 ```
-docker run --rm -it  -p 45042:45042 --name=goisi -v /ravens_volume:/ravens_volume -v /tmp/dsbox-ta2:/tmp/dsbox-ta2 isi_ta2:stable
+docker run --rm -it  -p 45042:45042 --name=goisi -v /ravens_volume:/ravens_volume  isi_ta2:stable
 ```
 
-### Run TwoRavens
+## Run TwoRavens
 
-To make sure you're running shareable data from /ravens_volume:
-
-1. Delete the D3M config files from:
-    - http://127.0.0.1:8080/admin/configurations/d3mconfiguration/
-2. Run `fab make_d3m_config_files`
+- To make sure you're running shareable data from /ravens_volume:
+    1. Delete the D3M config files from:
+      - http://127.0.0.1:8080/admin/configurations/d3mconfiguration/
+    2. Run `fab make_d3m_config_files`
 
 The next step assumes separate Terminals for rook and the django app, e.g.
 
 1. rook: `fab run_rook`
 2. python/ui: `fab run_expect_ta2_external`
-  - This replaces `fab run`
+  - this is instead of `fab run`
+
+
+
 
 ### Bind the /ravens_volume directory
 
@@ -57,10 +59,6 @@ The new `/ravens_volume` "directory" needs to be cleared via Docker
   - Click "+"
   - Add "" `/ravens_volume`
 
-
----
-
-## _OLD_
 
 ### Terminal 1:  Run the ISI docker image
 
@@ -99,8 +97,37 @@ docker stop isi_test
 - clearing out ISI data
   - `rm -rf /tmp/dsbox-ta2`
 
+### debug run
+
+```
+# start the container with a bash shell
+#
+docker run -ti --rm -v /ravens_volume:/ravens_volume -v /tmp/dsbox-ta2:/tmp/dsbox-ta2 -p 45042:45042 --name goisi isi_ta2:stable /bin/bash
+
+# comment out stderr line so output goes to Terminal
+#
+sed -i 's/sys.stderr = self.errorfile/#sys.stderr = self.errorfile/g' /dsbox/dsbox-ta2/python/dsbox/planner/controller.py
+
+# Run the server
+#
+cd /dsbox/dsbox-ta2/python/server
+python3 ta2-server.py
+
+```
+
+#apt-get install vim
+#vim /dsbox/dsbox-ta2/python/dsbox/planner/controller.py
+
+
+
 
 ### Old notes
+
+
+```
+
+docker run --rm -ti -v /ravens_volume:/ravens_volume -v /tmp/dsbox-ta2:/tmp/dsbox-ta2 -p 45042:45042 --name isi_test isi_ta2:stable /bin/bash
+
 
 
 #docker run --rm -it  -p 45042:45042 --name=goisi --entrypoint /bin/bash -v /ravens_volume:/ravens_volume isi_ta2:stable -c "ta2_search /ravens_volume/config_32_wikiqa.json"
@@ -137,3 +164,5 @@ docker run -p45042:45042 --name=goisi \
 docker exec -ti goisi /bin/bash
 apt-get install net-tools
 netstat -anv | egrep -w [.]45042.*LISTEN
+
+```
