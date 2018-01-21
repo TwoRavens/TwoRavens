@@ -365,25 +365,28 @@ function crossTabPlots(PlotNameA, PlotNameB, json_obj) {
         plotA_size = parseInt(d3.select("#input1")[0][0].value);
         varsize1 = plotA_size;
         equidistance(PlotNameA, plotA_size);
-
+        document.getElementById("plotA_status").innerHTML = `${PlotNameA} : ${varn1} distribution with ${varsize1} divisions`;
     });
     $("#Equimass1").click(function(){
         plotA_sizem = parseInt(d3.select("#input1")[0][0].value);
         varsize1 = plotA_sizem;
         equimass(PlotNameA, plotA_sizem);
         varn1 = "equimass";
+        document.getElementById("plotA_status").innerHTML = `${PlotNameA} : ${varn1} distribution with ${varsize1} divisions`;
     });
     $("#Equidistance2").click(function(){
         varn2 = "equidistance";
         plotB_size = parseInt(d3.select("#input2")[0][0].value);
         equidistance(PlotNameB, plotB_size);
         varsize2 = plotB_size;
+        document.getElementById("plotB_status").innerHTML = `${PlotNameB} : ${varn2} distribution with ${varsize2} divisions`;
     });
     $("#Equimass2").click(function(){
         varn2 = "equimass";
         plotB_sizem = parseInt(d3.select("#input2")[0][0].value);
         equimass(PlotNameB, plotB_sizem);
         varsize2 = plotB_sizem;
+        document.getElementById("plotB_status").innerHTML = `${PlotNameB} : ${varn2} distribution with ${varsize2} divisions`;
     });
 
     // this is the function to add  the density plot if any
@@ -997,7 +1000,6 @@ export function linechart(x_Axis_name, y_Axis_name) {
     });
 }
 
-
 function viz(m, json_vizexplore, model_name_set) {
     d3.select("#plotA").html("");
     d3.select("#plotB").html("");
@@ -1078,22 +1080,26 @@ function viz(m, json_vizexplore, model_name_set) {
     var table_data = [];
     var rowvar = [];
     var rownames = [];
-    function crossTab_Table(json_my) {
-        var json1 = json_my;
+    function crossTab_Table(json) {
+        console.log('json', json);
         table_data = [];
         table_obj = [];
-        let push = (i, key) => json1.tabular[i][key].map(v => v);
+        let push = (i, key) => json.tabular[i][key].map(v => v);
         // data for statistics
-        for (var i in json1.tabular) {
+        for (var i in json.tabular) {
             if (i == model_name1 || i == model_name2) {
                 colnames = push(i, 'colnames');
                 rownames = push(i, 'rownames');
                 rowvar = push(i, 'rowvar');
                 colvar = push(i,'colvar');
-                for (var n in json1.tabular[i].data) {
+            }
+        }
+        for (var i in json.tabular) {
+            if (i == model_name1 || i == model_name2) {
+                for (var n in json.tabular[i].data) {
                     table_data[n] = [];
                     for (var a = 0; a < colnames.length; a++) {
-                        table_data[n].push(json1.tabular[i].data[n][a]);
+                        table_data[n].push(json.tabular[i].data[n][a]);
                     }
                 }
             }
@@ -1142,9 +1148,9 @@ function viz(m, json_vizexplore, model_name_set) {
             }
         }
     }
-    for (var i = 0; i < app.zparams.zvars.length; i++)
-        // write the results table
+    for (var i = 0; i < app.zparams.zvars.length; i++) {
         var resultsArray = [];
+    }
     for (var key in json.tabular) {
         if (key == "colnames") {
             console.log("colnames found");
@@ -1164,8 +1170,7 @@ function viz(m, json_vizexplore, model_name_set) {
             .style("background-color", "#fff")
             .append("h5")
             .text("CROSS-TABS ")
-            .style("color", "#424242")
-            .style('overflow', 'auto');
+            .style("color", "#424242");
 
         var sv = d3.select("#tabular_2").append("svg").attr("width", "100%").attr("height", "100%").style("overflow", "visible");
         var fo = sv.append('foreignObject').attr("width", "100%").attr("height", "100%").style("padding", 10).attr("overflow", "visible");
@@ -1187,26 +1192,23 @@ function viz(m, json_vizexplore, model_name_set) {
         }
     }
 
-    function writeCrossTabs() {
-        var plotAval=varsize1,plotBval=varsize2;
-        if (isNaN(plotAval)) plotAval = 10;
-        if (isNaN(plotBval)) plotBval = 10;
-        var jsondata = {
-            var1: {
-                name: plotnamea,
-                value: plotAval,
-                buttonType: varn1
-            },
-            var2: {
-                name: plotnameb,
-                value: plotBval,
-                buttonType: varn2
-            }
-        };
-        return JSON.stringify(jsondata);
-    }
-
     crossTab_Table(json);
+
+    var plotAval=varsize1,plotBval=varsize2;
+    if (isNaN(plotAval)) plotAval = 10;
+    if (isNaN(plotBval)) plotBval = 10;
+    let crosstabs =  {
+        var1: {
+            name: plotnamea,
+            value: plotAval,
+            buttonType: varn1
+        },
+        var2: {
+            name: plotnameb,
+            value: plotBval,
+            buttonType: varn2
+        }
+    };
 
     function removeData(key) {
         for (var key1 in app.zparams) {
@@ -1219,11 +1221,11 @@ function viz(m, json_vizexplore, model_name_set) {
     $('#SelectionData1').click(function() {
         d3.select("#tabular_2").html("");
         removeData('zcrosstab');
-        zparams.crosstab.push(writeCrossTabs());
+        app.zparams.zcrosstab.push(crosstabs);
         explore_crosstab(json);
-        estimateLadda.stop();
-        estimated = true;
-        zbreaks.push(writeCrossTabs());
+        app.estimateLadda.stop();
+        app.estimated = true;
+        zbreaks.push(crosstabs);
         zbreaks_tabular.push(json.tabular);
         d3.select('#breakspace')
             .append("span")
@@ -1236,10 +1238,10 @@ function viz(m, json_vizexplore, model_name_set) {
             .append("button") // top stack for results
             .attr("class","btn btn-default btn-xs")
             .attr("id", zbreaks.length)
-            .text("break " + (zbreaks.length + 1)).on("click", function () {
+            .text("break " + (zbreaks.length + 1)).on("click", function() {
                 d3.select("#tabular_2").html("");
                 removeData();
-                zparams.zcrosstab.push(zbreaks[this.id]);
+                app.zparams.zcrosstab.push(zbreaks[this.id]);
                 explore_crosstab(zbreaks_tabular[this.id]);
 
                 var inputvalue1,inputvalue2;
@@ -1271,35 +1273,26 @@ function viz(m, json_vizexplore, model_name_set) {
             });
     });
 
-    function explore_crosstab(btn) {
-        if (PRODUCTION && app.zparams.zsessionid == "") {
-            alert("Warning: Data download is not complete. Try again soon.");
+    async function explore_crosstab(btn) {
+        if (app.downloadIncomplete()) {
             return;
         }
         app.zPop();
 
+        app.estimateLadda.start();
         // write links to file & run R CMD
         app.zparams.callHistory = app.callHistory;
-        var jsonout = JSON.stringify(app.zparams);
-
-        urlcall = rappURL + "exploreapp";
-        var solajsonout = "solaJSON=" + jsonout;
-
-        function explore_crosstabSuccess(json) {
-            d3.json("rook/myresult2.json", function (error, json) {
-                if (error) return console.warn(error);
-                var jsondata = json;
-                crossTab_Table(jsondata);
-                estimateLadda.stop();
-                estimated = true;
-            });
-        }
-        function explore_crosstabFail() {
-            estimateLadda.stop();  // stop spinner
-            estimated = true;
-        }
-        estimateLadda.start();  // start spinner
-        makeCorsRequest(urlcall, btn, explore_crosstabSuccess, explore_crosstabFail, solajsonout);
+        let json = await app.makeRequest(ROOK_SVC_URL + 'exploreapp', app.zparams);
+        app.estimateLadda.start();
+        app.estimated = false;
+        d3.json("static/result.json", (err, json) => {
+            if (err) {
+                return console.warn(err);
+            }
+            crossTab_Table(json);
+            app.estimateLadda.stop();
+            app.estimated = true;
+        });
     }
 
     // data for the statistical div
@@ -1415,6 +1408,33 @@ function showLog() {
     app.byId('logdiv').setAttribute("style", "display:none");
 }
 
+function univariatePart() {
+    d3.select("#decisionTree")
+        .style("display", "block");
+    d3.select("#left_thumbnail")
+        .style("display", "none");
+    d3.select("#result_left")
+        .style("display", "none");
+    d3.select("#result_left1")
+        .style("display", "none");
+    d3.select("#result_right")
+        .style("display", "none");
+    d3.select("#modelView_Container")
+        .style("display", "none");
+    d3.select("#modelView")
+        .style("display", "none");
+    d3.select("#resultsView_tabular")
+        .style("display", "none");
+    d3.select("#plotA")
+        .style("display", "none");
+    d3.select("#plotB")
+        .style("display", "none");
+    d3.select("#SelectionData")
+        .style("display", "none");
+    d3.select("#resultsView_statistics")
+        .style("display", "none");
+}
+
 let count = 0;
 let count1 = 0;
 
@@ -1445,6 +1465,8 @@ export async function explore() {
     app.estimated || parent.removeChild(app.byId('resultsHolder'));
     app.estimated = true;
 
+    d3.select("#decisionTree")
+        .style("display", "none");
     d3.select("#modelView").html('');
     d3.select("#resultsView_statistics").html('');
     ["#left_thumbnail",

@@ -2343,7 +2343,7 @@ export async function makeRequest(url, data) {
     }
 
    /*
-    //call end_ta3_search if status != OK
+    // call end_ta3_search if status != OK
     // status may be in different places for different calls though, and this is not worth doing at the moment
     let myreg = /d3m-service/g;
     let isd3mcall = myreg.test(url);
@@ -2353,7 +2353,6 @@ export async function makeRequest(url, data) {
             end_ta3_search(false, "grpc response status not ok");
         }
     }
-
     */
 
     estimateLadda.stop();
@@ -2399,22 +2398,16 @@ export function tabRight(tab) {
         return cls ? panel.attr('class', cls) : panel.attr('class');
     };
     let cls = "sidepanel container clearfix";
-    let toggleR = () => {
+    let toggleR = full => {
         select(function() {
-            let expand = cls + ' expandpanel';
-            return this.getAttribute("class") === expand ? cls : expand;
+            return cls + this.getAttribute("class") === cls ? '' : cls + ' expandpanel' + full;
         });
     };
-    let toggleRFull = () => {
-        select(function() {
-               let expand = cls + ' expandpanelfull';
-               return this.getAttribute("class") === expand ? cls : expand;
-               });
-    };
     if (tab === "btnModels") select(cls);
-    else if (tab === "btnSetx") righttab === "btnSetx" || select() === cls && toggleRFull();
+    else if (tab === "btnSetx") righttab === "btnSetx" || select() === cls && toggleR('full');
     else if (tab === "btnResults") !estimated ? select(cls) :
         righttab === "btnResults" || select() === cls && toggleR();
+    else if (tab === "btnUnivariate") select(cls);
     righttab = tab;
 }
 

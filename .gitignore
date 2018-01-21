@@ -20,7 +20,7 @@ test_setup_local/*
 assets/build/tworavens_app-*.js
 assets/build/tworavens_styles-*.css
 assets/build/*.png
-
+assets/result.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
