@@ -104,6 +104,7 @@ docker stop isi_test
 #
 docker run -ti --rm -v /ravens_volume:/ravens_volume -v /tmp/dsbox-ta2:/tmp/dsbox-ta2 -p 45042:45042 --name goisi isi_ta2:stable /bin/bash
 
+
 # comment out stderr line so output goes to Terminal
 #
 sed -i 's/sys.stderr = self.errorfile/#sys.stderr = self.errorfile/g' /dsbox/dsbox-ta2/python/dsbox/planner/controller.py
@@ -114,6 +115,20 @@ cd /dsbox/dsbox-ta2/python/server
 python3 ta2-server.py
 
 ```
+
+### Run ISI with env variable
+
+```
+# set the CONFIG_JSON_PATH variable
+#
+export CONFIG_JSON_PATH=/ravens_volume/config_185_baseball.json
+
+# set the env on docker run
+#
+docker run -ti --rm -v /ravens_volume:/ravens_volume -e "CONFIG_JSON_PATH=/ravens_volume/config_185_baseball.json" -p 45042:45042 --name goisi isi_ta2:stable
+
+```
+
 
 #apt-get install vim
 #vim /dsbox/dsbox-ta2/python/dsbox/planner/controller.py
