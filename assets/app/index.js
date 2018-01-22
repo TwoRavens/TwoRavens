@@ -193,6 +193,7 @@ class Body {
         this.usertasks = false;
         this.cite = false;
         this.citeHidden = false;
+        this.last_mode = null;
     }
 
     oncreate() {
@@ -262,7 +263,12 @@ class Body {
             list.map(x => m('li', x)));
         let spaceBtn = (id, onclick, title, icon) => m(
             `button#${id}.btn.btn-default`, {onclick, title}, glyph(icon, true));
-        app.restart && app.restart(null, explore);
+
+        if (mode != this.last_mode) {
+            app.restart && app.restart(null, explore);
+            this.last_mode = mode;
+        }
+
         return m(
             'main',
             m("nav#navbar.navbar.navbar-default.navbar-fixed-top[role=navigation]",
