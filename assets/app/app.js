@@ -339,12 +339,6 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     // put dataset name, from meta-data, into page title
     d3.select("title").html("TwoRavens " + dataname);
 
-
-
-
-
-
-
     // if swandive, we have to set valueKey here so that left panel can populate
     if (swandive) {
         [datadocument.trainData.trainData, datadocument.trainData.trainTargets]
@@ -511,7 +505,6 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     console.log(allNodes);
 
     // 11. Call layout() and start up
-    IS_D3M_DOMAIN && toggleRightButtons("tasks");
     layout(false, true);
     IS_D3M_DOMAIN ? zPop() : dataDownload();
 }
@@ -1848,23 +1841,15 @@ function CreatePipelineData(predictors, depvar) {
     for (var i = 0; i < predictors.length; i++) {
         predictFeatures[i] = { 'resource_id': "0", 'feature_name': predictors[i] };
     }
-
     return {
         context,
-
         dataset_uri: uriJson,   // uriCsv is also valid, but not currently accepted by ISI TA2
-
         task: d3mTaskType[d3mProblemDescription.taskType][1],
-
         taskSubtype: d3mTaskSubtype[d3mProblemDescription.taskSubtype][1],
-
         taskDescription: d3mProblemDescription.taskDescription,
-
         output: "OUTPUT_TYPE_UNDEFINED",  // valid values will come in future API
-
         metrics: [d3mMetrics[d3mProblemDescription.metric][1]],
-
-        targetFeatures, 
+        targetFeatures,
         /* Example:
           "targetFeatures": [
           {
@@ -1873,8 +1858,7 @@ function CreatePipelineData(predictors, depvar) {
           }
           ],
         */
-
-        predictFeatures, 
+        predictFeatures,
         /* Example:
           "predictReatures": [
           {
@@ -3001,9 +2985,9 @@ function setPebbleRadius(d){
 function setPebbleCharge(d){
     if(d.group1 || d.group2){
         if(d.forefront){// pebbles packed in groups repel others on mouseover
-            return -1000
+            return -1000;
         }
-        var uppersize = 7
+        var uppersize = 7;
         var ng1 = (d.group1) ? zparams.zgroup1.length : 1;      // size of group1, if a member of group 1
         var ng2 = (d.group2) ? zparams.zgroup2.length : 1;      // size of group2, if a member of group 2
         var maxng = Math.max(ng1,ng2);                                                      // size of the largest group variable is member of
@@ -3016,37 +3000,27 @@ function setPebbleCharge(d){
 /** needs doc */
 export function expandrightpanel() {
     byId('rightpanel').classList.add("expandpanelfull");
-    console.log("HERE");
+}
+
+export function btnWidths(btns) {
+    let width = `${100 / btns.length}%`;
+    let expandwidth = '35%';
+    let shrinkwidth = `${65 / (btns.length - 1)}%`;
+    let lis = byId('rightpanel').querySelectorAll(".accordion li");
+    // hardly ever runs on the page
+    lis.forEach(li => {
+        li.style.width = width;
+        li.addEventListener('mouseover', function() {
+            lis.forEach(li => li.style.width = shrinkwidth);
+            this.style.width = expandwidth;
+        });
+        li.addEventListener('mouseout', () => lis.forEach(li => li.style.width = width));
+    });
 }
 
 /** needs doc */
 function toggleRightButtons(set) {
-    function setWidths(btns) {
-        let width = `${100 / btns.length}%`;
-        let expandwidth = '35%';
-        let shrinkwidth = `${65 / (btns.length - 1)}%`;
-        let lis = byId('rightpanel').querySelectorAll(".accordion li");
-        // hardly ever runs on the page
-        lis.forEach(li => {
-            li.style.width = width;
-            li.addEventListener('mouseover', function() {
-                lis.forEach(li => li.style.width = shrinkwidth);
-                this.style.width = expandwidth;
-            });
-            li.addEventListener('mouseout', function() {
-                lis.forEach(li => li.style.width = width);
-            });
-        });
-
-    }
-
-    if(set=="tasks") {
-        byId('btnModels').classList.add("noshow");
-        byId('btnSetx').classList.add("noshow");
-        byId('btnResults').classList.add("noshow");
-        let btns = byId('rightpanelbuttons').querySelectorAll(".btn:not(.noshow)");
-        setWidths(btns);
-    } else if (set=="all") {
+    if (set=="all") {
         // first remove noshow class
         let btns = byId('rightpanelbuttons').querySelectorAll(".noshow");
         btns.forEach(b => b.classList.remove("noshow"));
@@ -3060,16 +3034,15 @@ function toggleRightButtons(set) {
 
         // then select all the buttons
         btns = byId('rightpanelbuttons').querySelectorAll(".btn:not(.noshow)");
-        setWidths(btns);
-    } else if(set=="models") {
+        btnWidths(btns);
+    } else if (set=="models") {
         byId('btnModels').style.display = 'inline';
         byId('btnSetx').style.display = 'inline';
         byId('btnResults').style.display = 'inline';
-
         byId('btnType').style.display = 'none';
         byId('btnSubtype').style.display = 'none';
         byId('btnMetrics').style.display = 'none';
- //       byId('btnOutputs').style.display = 'none';
+        // byId('btnOutputs').style.display = 'none';
     }
 }
 
@@ -3402,10 +3375,10 @@ export function confusionmatrix(matrixdata, classes) {
     var precision = tp/(tp+fp);
     var recall = tp/(tp+fn);
 
-    accuracy = Math.round(accuracy * 100) / 100
-    f1 = Math.round(f1 * 100) / 100
-    precision = Math.round(precision * 100) / 100
-    recall = Math.round(recall * 100) / 100
+    accuracy = Math.round(accuracy * 100) / 100;
+    f1 = Math.round(f1 * 100) / 100;
+    precision = Math.round(precision * 100) / 100;
+    recall = Math.round(recall * 100) / 100;
 
     var computedData = [];
     computedData.push({"F1":f1, "PRECISION":precision,"RECALL":recall,"ACCURACY":accuracy});
