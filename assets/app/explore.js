@@ -238,15 +238,10 @@ function bivariatePlot(x_Axis, y_Axis, x_Axis_name, y_Axis_name) {
         .data(data_plot)
         .enter()
         .append("circle")
-        .attr("cx", function (d, i) {
-            return xScale(data_plot[i].xaxis);
-        })
-        .attr("cy", function (d, i) {
-            return yScale(data_plot[i].yaxis);
-        })
+        .attr("cx", (_, i) => xScale(data_plot[i].xaxis))
+        .attr("cy", (_, i) => yScale(data_plot[i].yaxis))
         .attr("r", 2)
-        .style("fill", "#B71C1C")
-    ;
+        .style("fill", "#B71C1C");
     chart_scatter.append("text")
         .attr("text-anchor", "middle")  // this makes it easy to centre the text as the transform is applied to the anchor
         .attr("transform", "translate(" + padding / 5 + "," + (height / 2) + ")rotate(-90)")  // text is drawn off the screen top left, move down and out and rotate
@@ -1081,7 +1076,6 @@ function viz(m, json_vizexplore, model_name_set) {
     var rowvar = [];
     var rownames = [];
     function crossTab_Table(json) {
-        console.log('json', json);
         table_data = [];
         table_obj = [];
         let push = (i, key) => json.tabular[i][key].map(v => v);
