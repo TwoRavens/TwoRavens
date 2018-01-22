@@ -600,7 +600,7 @@ function zparamsReset(text) {
 }
 
 /** needs doc */
-function layout(v,v2) {
+function layout(v, v2) {
     var myValues = [];
     nodes = [];
     links = [];
@@ -1090,7 +1090,7 @@ function layout(v,v2) {
         */
 
     // update graph (called when needed)
-    restart = function($links) {
+    restart = function($links, is_explore) {
         links = $links || links;
         // nodes.id is pegged to allNodes, i.e. the order in which variables are read in
         // nodes.index is floating and depends on updates to nodes.  a variables index changes when new variables are added.
@@ -1118,15 +1118,15 @@ function layout(v,v2) {
         // update existing links
         // VJD: dashed links between pebbles are "selected". this is disabled for now
         path.classed('selected', x => null)
-            .style('marker-start', x => x.left ? 'url(#start-arrow)' : '')
-            .style('marker-end', x => x.right ? 'url(#end-arrow)' : '');
+            .style('marker-start', x => !is_explore && x.left ? 'url(#start-arrow)' : '')
+            .style('marker-end', x => !is_explore && x.right ? 'url(#end-arrow)' : '');
 
         // add new links
         path.enter().append('svg:path')
             .attr('class', 'link')
             .classed('selected', x => null)
-            .style('marker-start', x => x.left ? 'url(#start-arrow)' : '')
-            .style('marker-end', x => x.right ? 'url(#end-arrow)' : '')
+            .style('marker-start', x => !is_explore && x.left ? 'url(#start-arrow)' : '')
+            .style('marker-end', x => !is_explore && x.right ? 'url(#end-arrow)' : '')
             .on('mousedown', function(d) { // do we ever need to select a link? make it delete..
                 var obj = JSON.stringify(d);
                 for (var j = 0; j < links.length; j++) {

@@ -222,7 +222,6 @@ class Body {
         let {mode} = vnode.attrs;
         let explore = mode === 'explore';
         app.is_results_mode = mode === 'results';
-
         let _navBtn = (id, left, right, onclick, args, min) => m(
             `button#${id}.btn.navbar-right`,
             {onclick: onclick,
@@ -263,7 +262,7 @@ class Body {
             list.map(x => m('li', x)));
         let spaceBtn = (id, onclick, title, icon) => m(
             `button#${id}.btn.btn-default`, {onclick, title}, glyph(icon, true));
-
+        app.restart && app.restart(null, explore);
         return m(
             'main',
             m("nav#navbar.navbar.navbar-default.navbar-fixed-top[role=navigation]",
