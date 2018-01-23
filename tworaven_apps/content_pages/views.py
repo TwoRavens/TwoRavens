@@ -1,6 +1,10 @@
 from django.shortcuts import render
 from django.urls import reverse
+
 from django.http import HttpResponse, JsonResponse, Http404, HttpResponseRedirect
+from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.decorators import login_required
+
 from tworaven_apps.configurations.models import AppConfiguration
 from tworaven_apps.configurations.utils import get_latest_d3m_config
 from tworaven_apps.utils.view_helper import get_session_key
@@ -115,3 +119,17 @@ def view_monitoring_alive(request):
     """For kubernetes liveness check"""
     return JsonResponse(dict(status="ok",
                              message="TwoRavens python server up"))
+
+
+@csrf_exempt
+@login_required
+def view_test_callback(request):
+    """for callback testing"""
+    if not request.POST:
+        return JsonResponse(dict(status="ok",
+                                 message="no post"))
+
+
+    return JsonResponse(dict(status="ok",
+                             message="post found",
+                             data=dict(request.POST)))
