@@ -17,6 +17,7 @@ from concurrent import futures
 import grpc
 import logging
 import time
+import asyncio
 
 import core_pb2
 import core_pb2_grpc as core_pb2_grpc
@@ -112,8 +113,8 @@ class Core(core_pb2_grpc.CoreServicer):
 
         cnt = 0
         for progress, pipeline_id, send_pipeline in results:
-            print('sleep 1 second...')
-            time.sleep(1)
+            #print('sleep 1 second...')
+            #time.sleep(1)
 
             if not context.is_active():
                 logger.info("Client closed GetCreatePipelineResults stream")
