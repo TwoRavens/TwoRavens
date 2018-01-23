@@ -1777,6 +1777,7 @@ function onPipelineCreate(PipelineCreateResult) {
     $("#btnEndSession").removeClass("btn-default");
     $("#btnEndSession").addClass("btn-success");
 
+    let context = apiSession(zparams.zsessionid);
     let allPipelineInfo = {};
     for (var i = 0; i<PipelineCreateResult.length; i++) {
         if(PipelineCreateResult[i].pipelineId in allPipelineInfo) {
@@ -1828,7 +1829,7 @@ function onPipelineCreate(PipelineCreateResult) {
     /////////////////////////
 
     toggleRightButtons("all");
-    byId("btnResults").click();
+    //byId("btnResults").click();      // JH: removing this as experiment because it is causing crash.
 
     // this initializes the main
     // this piece here is the first pipeline through: allPipelineInfo[resultstable[1].PipelineID]
@@ -3045,7 +3046,7 @@ function toggleRightButtons(set) {
 
         console.log(byId('btnModels'))
         // dropping models for IS_D3M_DOMAIN
-        byId('btnModels').classList.add("noshow");
+       // byId('btnModels').classList.add("noshow");     // JH: removing this as experiment because it is causing crash.
 
         // if swandive, dropping setx
         if(swandive)
@@ -3675,7 +3676,7 @@ export function setxTable(features) {
 export async function exportpipeline(pipelineId) {
     console.log(pipelineId);
     let res = await makeRequest(
-        D3M_SVC_URL + 'exportpipeline',
+        D3M_SVC_URL + '/exportpipeline',
         {pipelineId, context: apiSession(zparams.zsessionid), pipelineExecUri: '<<EXECUTABLE_URI>>'});
     res && console.log(`Executable for ${pipelineId} has been written`);
 }
