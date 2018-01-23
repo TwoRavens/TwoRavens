@@ -188,7 +188,10 @@ let ticker = mode => {
 };
 
 class Body {
-    oninit() {
+    oninit(vnode) {
+        if (vnode.attrs.mode) {
+            m.route.set('/model');
+        };
         this.about = false;
         this.usertasks = false;
         this.cite = false;
