@@ -1789,26 +1789,39 @@ function onPipelineCreate(PipelineCreateResult) {
     // to get all pipeline ids: Object.keys(allPipelineInfo)
 
     let resultstable = [];
+
+
     for(var key in allPipelineInfo) {
         // don't report the pipeline to user if it has failed
         if(allPipelineInfo[key].responseInfo.status.details == "Pipeline Failed")  {
             continue;
         }
+        if(allPipelineInfo[key].progressInfo == "RUNNING")  {
+            continue;
+        }
+
         let myid = "";
         let mymetric = "";
         let myval = "";
-        console.log(allPipelineInfo);
-        let myscores = allPipelineInfo[key].pipelineInfo.scores;
-        for(var i = 0; i < myscores.length; i++) {
-            //if(i==0) {myid=key;}
-            //   else myid="";
-            myid=key;
-            mymetric=myscores[i].metric;
-            myval=+myscores[i].value.toFixed(3);
-            resultstable.push({"PipelineID":myid,"Metric":mymetric, "Score":myval});
-        }
+        console.log(key);
+        console.log(allPipelineInfo[key].progressInfo) 
+        let myscores = [];    
+//        if(allPipelineInfo[key].progressInfo == "COMPLETED"){   
+            myscores = allPipelineInfo[key].pipelineInfo.scores;
+            for(var i = 0; i < myscores.length; i++) {
+                //if(i==0) {myid=key;}
+                //   else myid="";
+                myid=key;
+                mymetric=myscores[i].metric;
+                myval=+myscores[i].value.toFixed(3);
+                resultstable.push({"PipelineID":myid,"Metric":mymetric, "Score":myval});
+            }
+  //      } else {
+
+    //    }
     }
 
+    console.log(resultstable);
     // render the table
     tabulate(resultstable, ['PipelineID', 'Metric', 'Score'], '#results');
     tabulate(resultstable, ['PipelineID', 'Metric', 'Score'], '#setxRight');
@@ -3023,9 +3036,14 @@ export function btnWidths(btns) {
 function toggleRightButtons(set) {
     if (set=="all") {
         // first remove noshow class
-        let btns = byId('rightpanelbuttons').querySelectorAll(".noshow");
-        btns.forEach(b => b.classList.remove("noshow"));
+        console.log(byId('rightpanelbuttons'))
 
+        let btns = byId('rightpanelbuttons').querySelectorAll(".noshow");
+        console.log(btns);
+        btns.forEach(b => b.classList.remove("noshow"));
+        console.log(btns);
+
+        console.log(byId('btnModels'))
         // dropping models for IS_D3M_DOMAIN
         byId('btnModels').classList.add("noshow");
 
