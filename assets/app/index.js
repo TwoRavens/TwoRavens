@@ -65,7 +65,7 @@ let righttab = (id, btnId, task, title, probDesc) => m(
        probDesc: probDesc}));
 
 function rightpanel(mode) {
-    let thumbnail = (idx, id, title) =>
+    let thumb = (idx, id, title) =>
         m("th",
           m("figure", {style: {float: "left"}},
             m(`img#${id}_img[alt=${id}][src=/static/images/thumb${idx}.png]`,
@@ -87,10 +87,7 @@ function rightpanel(mode) {
               {style: {"width": "100%", "height": "20%", "background-color": "white", "margin-top": "3%", "margin-right": "3%", "border-bottom": "ridge", "overflow": "auto", "white-space": "nowrap"}},
               m("table",
                 m("tbody",
-                  m("tr",
-                    thumbnail(1, 'scatterplot', "Scatter Plot"),
-                    thumbnail(2, 'heatmap', "Heatpmap"),
-                    thumbnail(3, 'linechart', "Linechart"))))),
+                  m("tr", thumb(1, 'scatterplot', "Scatter Plot"), thumb(2, 'heatmap', "Heatpmap"), thumb(3, 'linechart', "Linechart"))))),
             m('#result_left1', {style: {width: "100%", height: "60%", "text-align": "center", "margin-top": "3%", "background-color": "white", "white-space": "nowrap"}},
               m(".container3[id=scatterplot]", {style: {"width": "500px", "height": "80%", "background-color": "white", "float": "left", "overflow": "hidden", "margin": "5% "}}),
               m(".container4[id=heatchart]", {style: {"width": "500px", "height": "80%", "float": "left", "overflow": "hidden", "background-color": "#FFEBEE", "margin": "5%  "}}),
@@ -132,7 +129,12 @@ function rightpanel(mode) {
                 m('#plotA', {style: {width: exp.get_width('plotA') + '%', height: "100%", float: "left", overflow: "hidden"}}, "plotA"),
                 m('#plotB', {style: {width: exp.get_width('plotB') + '%', height: "100%", float: "right", overflow: "hidden"}}, "plotB")),
               m('#tabular_2', {style: {width: "100%", height: "50%", "border-bottom-style": "inset", overflow: "hidden"}}))),
-          m("p#resultsHolder", {style: {padding: ".5em 1em"}}),
+          m("p#resultsHolder", {style: {padding: ".5em 1em"}},
+            m('#varList[style=display: block]',
+              app.links.map(x => x.target.name).map(
+                  v => m(`p#${v.replace(/\W/g, '_')}`, {
+                      style: {'background-color': app.varColor}},
+                      v)))),
           m('#setx[style=display: none; margin-top: .5em]')) :
     // mode == null (model mode)
     m(Panel,
