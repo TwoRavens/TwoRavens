@@ -1829,7 +1829,9 @@ function onPipelineCreate(PipelineCreateResult) {
     /////////////////////////
 
     toggleRightButtons("all");
-    //byId("btnResults").click();      // JH: removing this as experiment because it is causing crash.
+    if (!IS_D3M_DOMAIN){
+        byId("btnResults").click();      // JH: doesn't appear to exist in D3M mode
+    };
 
     // this initializes the main
     // this piece here is the first pipeline through: allPipelineInfo[resultstable[1].PipelineID]
@@ -3046,7 +3048,9 @@ function toggleRightButtons(set) {
 
         console.log(byId('btnModels'))
         // dropping models for IS_D3M_DOMAIN
-       // byId('btnModels').classList.add("noshow");     // JH: removing this as experiment because it is causing crash.
+        if (!IS_D3M_DOMAIN){
+            byId('btnModels').classList.add("noshow");     // JH: doesn't appear to exist in D3M mode
+        };
 
         // if swandive, dropping setx
         if(swandive)
