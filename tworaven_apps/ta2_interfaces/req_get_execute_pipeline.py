@@ -10,6 +10,7 @@ from tworaven_apps.ta2_interfaces.models import VAL_GRPC_STATE_CODE_NONE
 from tworaven_apps.ta2_interfaces.ta2_connection import TA2Connection
 from tworaven_apps.ta2_interfaces.ta2_util import get_grpc_test_json,\
     get_failed_precondition_response,\
+    get_reply_exception_response,\
     get_predict_file_info_dict
 from tworaven_apps.ta2_interfaces.util_embed_results import FileEmbedUtil
 
@@ -71,39 +72,31 @@ def get_execute_pipeline_results(info_str=None):
 
     #print('req: %s' % req)
 
-    # --------------------------------
-    # Send the gRPC request - returns a stream
-    # --------------------------------
+    messages = []
     try:
-        reply = core_stub.GetExecutePipelineResults(req)
+        for reply in core_stub.GetExecutePipelineResults(req):
+            user_msg = MessageToJson(reply)
+            print(user_msg)
+            messages.append(user_msg)
     except grpc.RpcError as ex:
         return get_failed_precondition_response(str(ex))
     except Exception as ex:
-        return get_failed_precondition_response(str(ex))
+        return get_reply_exception_response(str(ex))
 
-    #print('reply', reply)
-    """
-    if reply and str(reply) == VAL_GRPC_STATE_CODE_NONE:
-        err_msg = ('Unknown gRPC state.'
-                   ' (Was an ExecutePipeline request sent?)')
-        return get_failed_precondition_response(err_msg)
-    """
-    try:
-        print(MessageToJson(reply))
-    except:
-        print('failed unary convert to JSON')
-    #print('reply: %s' % reply)
+    print('end of queue. make message list:', messages)
+    if not messages:
+        return get_reply_exception_response('No messages received.')
 
-    # --------------------------------
-    # Convert the reply to JSON and send it on
-    # --------------------------------
-    results = map(MessageToJson, reply)
-    result_str = '['+', '.join(results)+']'
 
+    result_str = '['+', '.join(messages)+']'
+
+    print('embed file contents')
     embed_util = FileEmbedUtil(result_str)
     if embed_util.has_error:
+        print('file embed error')
         return get_failed_precondition_response(embed_util.error_message)
 
+    print('return results')
     return embed_util.get_final_results()
 
 
