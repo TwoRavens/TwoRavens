@@ -188,11 +188,15 @@ let ticker = mode => {
 };
 
 class Body {
-    oninit() {
+    oninit(vnode) {
+        if (vnode.attrs.mode) {
+            m.route.set('/model');
+        };
         this.about = false;
         this.usertasks = false;
         this.cite = false;
         this.citeHidden = false;
+        this.last_mode = null;
     }
 
     oncreate() {
@@ -222,7 +226,6 @@ class Body {
         let {mode} = vnode.attrs;
         let explore = mode === 'explore';
         app.is_results_mode = mode === 'results';
-
         let _navBtn = (id, left, right, onclick, args, min) => m(
             `button#${id}.btn.navbar-right`,
             {onclick: onclick,
@@ -263,6 +266,11 @@ class Body {
             list.map(x => m('li', x)));
         let spaceBtn = (id, onclick, title, icon) => m(
             `button#${id}.btn.btn-default`, {onclick, title}, glyph(icon, true));
+
+        if (mode != this.last_mode) {
+            app.restart && app.restart(null, explore);
+            this.last_mode = mode;
+        }
 
         return m(
             'main',

@@ -8,16 +8,6 @@ export let getClasses = function(cls, panel) {
         '');
 };
 
-export function btnWidths(btns) {
-    lis.forEach(li => {
-        li.addEventListener('mouseover', function() {
-            lis.forEach(li => li.style.width = shrinkwidth);
-            this.style.width = expandwidth;
-        });
-        li.addEventListener('mouseout', () => lis.forEach(li => li.style.width = width));
-    });
-}
-
 class Panel {
     oninit(vnode) {
         this.closed = false;

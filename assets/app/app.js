@@ -600,7 +600,7 @@ function zparamsReset(text) {
 }
 
 /** needs doc */
-function layout(v,v2) {
+function layout(v, v2) {
     var myValues = [];
     nodes = [];
     links = [];
@@ -1090,7 +1090,7 @@ function layout(v,v2) {
         */
 
     // update graph (called when needed)
-    restart = function($links) {
+    restart = function($links, is_explore) {
         links = $links || links;
         // nodes.id is pegged to allNodes, i.e. the order in which variables are read in
         // nodes.index is floating and depends on updates to nodes.  a variables index changes when new variables are added.
@@ -1118,15 +1118,15 @@ function layout(v,v2) {
         // update existing links
         // VJD: dashed links between pebbles are "selected". this is disabled for now
         path.classed('selected', x => null)
-            .style('marker-start', x => x.left ? 'url(#start-arrow)' : '')
-            .style('marker-end', x => x.right ? 'url(#end-arrow)' : '');
+            .style('marker-start', x => !is_explore && x.left ? 'url(#start-arrow)' : '')
+            .style('marker-end', x => !is_explore && x.right ? 'url(#end-arrow)' : '');
 
         // add new links
         path.enter().append('svg:path')
             .attr('class', 'link')
             .classed('selected', x => null)
-            .style('marker-start', x => x.left ? 'url(#start-arrow)' : '')
-            .style('marker-end', x => x.right ? 'url(#end-arrow)' : '')
+            .style('marker-start', x => !is_explore && x.left ? 'url(#start-arrow)' : '')
+            .style('marker-end', x => !is_explore && x.right ? 'url(#end-arrow)' : '')
             .on('mousedown', function(d) { // do we ever need to select a link? make it delete..
                 var obj = JSON.stringify(d);
                 for (var j = 0; j < links.length; j++) {
@@ -1789,26 +1789,39 @@ function onPipelineCreate(PipelineCreateResult) {
     // to get all pipeline ids: Object.keys(allPipelineInfo)
 
     let resultstable = [];
+
+
     for(var key in allPipelineInfo) {
         // don't report the pipeline to user if it has failed
         if(allPipelineInfo[key].responseInfo.status.details == "Pipeline Failed")  {
             continue;
         }
+        if(allPipelineInfo[key].progressInfo == "RUNNING")  {
+            continue;
+        }
+
         let myid = "";
         let mymetric = "";
         let myval = "";
-        console.log(allPipelineInfo);
-        let myscores = allPipelineInfo[key].pipelineInfo.scores;
-        for(var i = 0; i < myscores.length; i++) {
-            //if(i==0) {myid=key;}
-            //   else myid="";
-            myid=key;
-            mymetric=myscores[i].metric;
-            myval=+myscores[i].value.toFixed(3);
-            resultstable.push({"PipelineID":myid,"Metric":mymetric, "Score":myval});
-        }
+        console.log(key);
+        console.log(allPipelineInfo[key].progressInfo) 
+        let myscores = [];    
+//        if(allPipelineInfo[key].progressInfo == "COMPLETED"){   
+            myscores = allPipelineInfo[key].pipelineInfo.scores;
+            for(var i = 0; i < myscores.length; i++) {
+                //if(i==0) {myid=key;}
+                //   else myid="";
+                myid=key;
+                mymetric=myscores[i].metric;
+                myval=+myscores[i].value.toFixed(3);
+                resultstable.push({"PipelineID":myid,"Metric":mymetric, "Score":myval});
+            }
+  //      } else {
+
+    //    }
     }
 
+    console.log(resultstable);
     // render the table
     tabulate(resultstable, ['PipelineID', 'Metric', 'Score'], '#results');
     tabulate(resultstable, ['PipelineID', 'Metric', 'Score'], '#setxRight');
@@ -2910,7 +2923,8 @@ export function executepipeline() {
     zparams.callHistory = callHistory;
     let jsonout = JSON.stringify(zparams);
 
-    let predictFeatures = apiFeature(zparams.zvars,"<<DATA_URI>>");
+    //let predictFeatures = apiFeature(zparams.zvars,"<<DATA_URI>>");
+    dataset_uri = "<<DATA_URI>>";     // should perhaps adjust call to datasetUri to follow syntax norms on other calls to Django
     let data = [];
 
     //this will just set zparams.zsetx to the mean, which is default for setx plots
@@ -2931,7 +2945,7 @@ export function executepipeline() {
         data.push(mydata);
     }
 
-    makeRequest(D3M_SVC_URL + '/executepipeline', {context, pipelineId, predictFeatures, data});
+    makeRequest(D3M_SVC_URL + '/executepipeline', {context, pipelineId, dataset_uri, data});
 }
 
 /**
@@ -3022,9 +3036,14 @@ export function btnWidths(btns) {
 function toggleRightButtons(set) {
     if (set=="all") {
         // first remove noshow class
-        let btns = byId('rightpanelbuttons').querySelectorAll(".noshow");
-        btns.forEach(b => b.classList.remove("noshow"));
+        console.log(byId('rightpanelbuttons'))
 
+        let btns = byId('rightpanelbuttons').querySelectorAll(".noshow");
+        console.log(btns);
+        btns.forEach(b => b.classList.remove("noshow"));
+        console.log(btns);
+
+        console.log(byId('btnModels'))
         // dropping models for IS_D3M_DOMAIN
         byId('btnModels').classList.add("noshow");
 
