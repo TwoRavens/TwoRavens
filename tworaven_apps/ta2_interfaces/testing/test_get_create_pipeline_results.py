@@ -11,7 +11,7 @@ from tworaven_apps.utils.msg_helper import msgt
 from tworaven_apps.utils.static_keys import KEY_SUCCESS, KEY_DATA
 from tworaven_apps.ta2_interfaces.models import STATUS_VAL_OK,\
     STATUS_VAL_FAILED_PRECONDITION, STATUS_VAL_COMPLETED
-from tworaven_apps.ta2_interfaces.req_get_pipeline_create_results import \
+from tworaven_apps.ta2_interfaces.req_create_pipeline_get_results import \
     get_create_pipeline_results, ERR_NO_CONTEXT
 from tworaven_apps.raven_auth.models import User
 

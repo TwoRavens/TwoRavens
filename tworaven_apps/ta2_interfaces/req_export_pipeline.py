@@ -112,7 +112,7 @@ def export_pipeline(info_str=None, call_entry=None):
     # --------------------------------
     # Convert the reply to JSON and send it back
     # --------------------------------
-    return MessageToJson(reply)
+    return MessageToJson(reply, including_default_value_fields=True)
 
 
 def get_pipeline_id(info_dict):

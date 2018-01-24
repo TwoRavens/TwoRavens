@@ -19,7 +19,7 @@ for num in range(1, 2):
                      value='value %d' % num)
 
 # transform to JSON
-content = MessageToJson(resp)
+content = MessageToJson(resp, including_default_value_fields=True)
 
 print(content)
 
@@ -58,7 +58,7 @@ for num in range(1, 3):
     resp.response_info.status.code = core_pb2.OK
     resp.response_info.status.details = "we did it, we did it, we really, really did it"
 
-    content = MessageToJson(resp)
+    content = MessageToJson(resp, including_default_value_fields=True)
     module_list.append(content)
     print('JSON:\n')
     print(content)

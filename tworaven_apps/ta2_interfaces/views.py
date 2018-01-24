@@ -12,11 +12,11 @@ from tworaven_apps.ta2_interfaces.req_start_session import start_session
 from tworaven_apps.ta2_interfaces.req_end_session import end_session
 from tworaven_apps.ta2_interfaces.req_set_problem_doc import \
     set_problem_doc
-from tworaven_apps.ta2_interfaces.req_pipeline_create import \
+from tworaven_apps.ta2_interfaces.req_create_pipeline import \
     pipeline_create
-from tworaven_apps.ta2_interfaces.req_get_pipeline_create_results import \
+from tworaven_apps.ta2_interfaces.req_create_pipeline_get_results import \
     get_create_pipeline_results
-from tworaven_apps.ta2_interfaces.req_get_execute_pipeline import \
+from tworaven_apps.ta2_interfaces.req_execute_pipeline_get_results import \
     get_execute_pipeline_results
 from tworaven_apps.ta2_interfaces.req_list_pipelines import \
     list_pipelines

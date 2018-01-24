@@ -4,14 +4,17 @@ from django.conf import settings
 from google.protobuf.json_format import MessageToJson,\
     Parse, ParseError
 
+import grpc
 import core_pb2
 from tworaven_apps.ta2_interfaces.ta2_connection import TA2Connection
 from tworaven_apps.ta2_interfaces.ta2_util import get_grpc_test_json,\
     get_failed_precondition_response,\
+    get_reply_exception_response,\
     get_predict_file_info_dict
 from tworaven_apps.configurations.utils import get_latest_d3m_config,\
     write_data_for_execute_pipeline
 from tworaven_apps.ta2_interfaces.util_embed_results import FileEmbedUtil
+from tworaven_apps.ta2_interfaces.util_message_formatter import MessageFormatter
 from tworaven_apps.ta2_interfaces.models import KEY_DATA, VAL_DATA_URI
 
 
@@ -124,30 +127,22 @@ def execute_pipeline(info_str=None):
     # --------------------------------
     # Send the gRPC request - returns a stream
     # --------------------------------
+    messages = []
     try:
-        reply = core_stub.ExecutePipeline(req)
+        for reply in core_stub.ExecutePipeline(req):
+            user_msg = MessageToJson(reply, including_default_value_fields=True)
+            messages.append(user_msg)
+            print('msg received #%d' % len(messages))
+    except grpc.RpcError as ex:
+        return None, get_reply_exception_response(str(ex))
     except Exception as ex:
-        return None, get_failed_precondition_response(str(ex))
+        return None, get_reply_exception_response(str(ex))
 
-    # --------------------------------
-    # Convert the reply to JSON and send it on
-    # --------------------------------
-    results = map(MessageToJson, reply)
-    result_str = '['+', '.join(results)+']'
+    success, return_str = MessageFormatter.format_messages(\
+                                    messages,
+                                    embed_data=True)
 
-    embed_util = FileEmbedUtil(result_str)
-    if embed_util.has_error:
-        return get_failed_precondition_response(embed_util.error_message)
+    if success is False:
+        return None, get_reply_exception_response(return_str)
 
-    return info_str_formatted, embed_util.get_final_results()
-
-    #return info_str_formatted, result_str
-
-
-"""
-python manage.py shell
-#from tworaven_apps.ta2_interfaces.ta2_proxy import *
-from tworaven_apps.ta2_interfaces.update_problem_schema import update_problem_schema
-
-updateproblemschema()
-"""
+    return info_str_formatted, return_str

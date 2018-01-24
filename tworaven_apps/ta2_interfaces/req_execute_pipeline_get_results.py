@@ -5,14 +5,18 @@ from django.conf import settings
 from google.protobuf.json_format import MessageToJson,\
     Parse, ParseError
 
+import grpc
 import core_pb2
 from tworaven_apps.ta2_interfaces.models import VAL_GRPC_STATE_CODE_NONE
 from tworaven_apps.ta2_interfaces.ta2_connection import TA2Connection
-from tworaven_apps.ta2_interfaces.ta2_util import get_grpc_test_json,\
-    get_failed_precondition_response,\
-    get_reply_exception_response,\
-    get_predict_file_info_dict
+from tworaven_apps.ta2_interfaces.ta2_util import \
+    (get_grpc_test_json,
+     get_failed_precondition_response,
+     get_reply_exception_response,
+     get_predict_file_info_dict)
 from tworaven_apps.ta2_interfaces.util_embed_results import FileEmbedUtil
+from tworaven_apps.ta2_interfaces.util_message_formatter import MessageFormatter
+
 
 def get_test_info_str():
     """Test data for update_problem_schema call"""
@@ -75,31 +79,22 @@ def get_execute_pipeline_results(info_str=None):
     messages = []
     try:
         for reply in core_stub.GetExecutePipelineResults(req):
-            user_msg = MessageToJson(reply)
-            print(user_msg)
+            user_msg = MessageToJson(reply, including_default_value_fields=True)
             messages.append(user_msg)
+            print('msg received #%d' % len(messages))
     except grpc.RpcError as ex:
-        return get_failed_precondition_response(str(ex))
+        return get_reply_exception_response(str(ex))
     except Exception as ex:
         return get_reply_exception_response(str(ex))
 
-    print('end of queue. make message list:', messages)
-    if not messages:
-        return get_reply_exception_response('No messages received.')
+    success, return_str = MessageFormatter.format_messages(\
+                                    messages,
+                                    embed_data=True)
 
+    if success is False:
+        return get_reply_exception_response(return_str)
 
-    result_str = '['+', '.join(messages)+']'
-
-    print('embed file contents')
-    embed_util = FileEmbedUtil(result_str)
-    if embed_util.has_error:
-        print('file embed error')
-        return get_failed_precondition_response(embed_util.error_message)
-
-    print('return results')
-    return embed_util.get_final_results()
-
-
+    return return_str
 
 """
 python manage.py shell

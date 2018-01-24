@@ -10,12 +10,15 @@ from google.protobuf.json_format import MessageToJson,\
     Parse, ParseError
 from django.conf import settings
 
+import grpc
 import core_pb2
 from tworaven_apps.ta2_interfaces.ta2_connection import TA2Connection
 from tworaven_apps.ta2_interfaces.ta2_util import get_grpc_test_json,\
     get_failed_precondition_response,\
+    get_reply_exception_response,\
     get_predict_file_info_dict
 from tworaven_apps.ta2_interfaces.util_embed_results import FileEmbedUtil
+from tworaven_apps.ta2_interfaces.util_message_formatter import MessageFormatter
 from tworaven_apps.ta2_interfaces.models import KEY_CONTEXT_FROM_UI,\
     KEY_SESSION_ID_FROM_UI
 
@@ -87,24 +90,23 @@ def get_create_pipeline_results(info_str=None):
     # --------------------------------
     # Send the gRPC request
     # --------------------------------
+    messages = []
     try:
-        reply = core_stub.GetCreatePipelineResults(req)
+        for reply in core_stub.GetCreatePipelineResults(req):
+            user_msg = MessageToJson(reply, including_default_value_fields=True)
+            messages.append(user_msg)
+            print('msg received #%d' % len(messages))
+    except grpc.RpcError as ex:
+        return get_reply_exception_response(str(ex))
     except Exception as ex:
-        return get_failed_precondition_response(str(ex))
+        return get_reply_exception_response(str(ex))
 
-    try:
-        print(MessageToJson(reply))
-    except:
-        print('failed unary convert to JSON')
-    # --------------------------------
-    # Convert the reply to JSON and send it on
-    # --------------------------------
-    results = map(MessageToJson, reply)
 
-    result_str = '['+', '.join(results)+']'
+    success, return_str = MessageFormatter.format_messages(\
+                                    messages,
+                                    embed_data=True)
 
-    embed_util = FileEmbedUtil(result_str)
-    if embed_util.has_error:
-        return get_failed_precondition_response(embed_util.error_message)
+    if success is False:
+        return get_reply_exception_response(return_str)
 
-    return embed_util.get_final_results()
+    return return_str

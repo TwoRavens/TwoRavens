@@ -192,7 +192,7 @@ example with `PipelineExecuteResultsRequest`
 1. figure out the JSON in/out of gRPC via script `tworaven_apps/ta2_interfaces/pipe_test.py`
 1. add url to `tworaven_apps/ta2_interfaces/`
 1. create view for new url in `views.py`
-1. separate file, similar to `req_pipeline_create`
+1. separate file, similar to `req_create_pipeline`
 
 ## Adding a new rook app: django
 
@@ -259,6 +259,6 @@ req = Parse(content, core_pb2.SessionRequest())
 core_stub, err_msg = TA2Connection.get_grpc_stub()
 reply = core_stub.StartSession(req)
 
-MessageToJson(reply)
+MessageToJson(reply, including_default_value_fields=True)
 
 ```

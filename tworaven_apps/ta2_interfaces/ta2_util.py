@@ -57,25 +57,25 @@ def get_failed_precondition_response(err_msg='failed precondition?'):
 
     err_msg = '%s (ta2 server: %s)' % (err_msg, settings.TA2_TEST_SERVER_URL)
 
-    grpc_resp = core_pb2.Response(\
+    resp = core_pb2.Response(\
                     status=core_pb2.Status(\
                         code=core_pb2.FAILED_PRECONDITION,
                         details=err_msg))
 
-    return MessageToJson(grpc_resp)
+    return MessageToJson(resp, including_default_value_fields=True)
 
 
 def get_failed_precondition_sess_response(err_msg):
     """Return a SessionResponse object in JSON format
         with status FAILED_PRECONDITION"""
 
-    grpc_resp = core_pb2.SessionResponse(\
+    resp = core_pb2.SessionResponse(\
                     response_info=core_pb2.Response(\
                         status=core_pb2.Status(\
                             code=core_pb2.FAILED_PRECONDITION,
                             details=err_msg)))
 
-    return MessageToJson(grpc_resp)
+    return MessageToJson(resp, including_default_value_fields=True)
 
 def get_reply_exception_response(err_msg='error in response'):
     """Return a SessionResponse object in JSON format
@@ -83,12 +83,12 @@ def get_reply_exception_response(err_msg='error in response'):
 
     err_msg = '%s (ta2 server: %s)' % (err_msg, settings.TA2_TEST_SERVER_URL)
 
-    grpc_resp = core_pb2.Response(\
+    resp = core_pb2.Response(\
                     status=core_pb2.Status(\
                         code=core_pb2.UNKNOWN,
                         details=err_msg))
 
-    return MessageToJson(grpc_resp)
+    return MessageToJson(resp, including_default_value_fields=True)
 
 
 def get_predict_file_info_dict(task_type=None, cnt=1):

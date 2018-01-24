@@ -63,7 +63,7 @@ def cancel_pipelines(info_str):
     # --------------------------------
     # Convert the reply to JSON and send it back
     # --------------------------------
-    return MessageToJson(reply)
+    return MessageToJson(reply, including_default_value_fields=True)
 
 
 

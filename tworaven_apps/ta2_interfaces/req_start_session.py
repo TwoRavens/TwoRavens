@@ -99,7 +99,7 @@ def start_session(raven_json_str=None):
     # --------------------------------
     # Convert the reply to JSON and send it back
     # --------------------------------
-    return MessageToJson(reply)
+    return MessageToJson(reply, including_default_value_fields=True)
 
 
 
