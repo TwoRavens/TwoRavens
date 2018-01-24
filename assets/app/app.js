@@ -621,7 +621,6 @@ function layout(v, v2) {
         .append("path")
         .attr('d', 'M0,-5L10,0L0,5')
         .style("fill", gr1Color);
-
     svg.append("svg:defs").append("svg:marker")
         .attr("id", "group2-arrow")
         .attr('viewBox', '0 -5 15 15')
@@ -633,6 +632,18 @@ function layout(v, v2) {
         .append("path")
         .attr('d', 'M0,-5L10,0L0,5')
         .style("fill", gr2Color);
+    svg.append('svg:defs').append('svg:marker')
+        .attr('id', 'circle')
+        .classed('circle_start', true)
+        .attr('viewBox', '-6 -6 12 12')
+        .attr('refX', 1)
+        .attr('refY', 1)
+        .attr('markerWidth', 4)
+        .attr('markerHeight', 4)
+        .attr('orient', 'auto')
+        .append('svg:path')
+        .attr('d', 'M 0, 0  m -5, 0  a 5,5 0 1,0 10,0  a 5,5 0 1,0 -10,0')
+        .style('fill', '#000');
 
     var line = svg.append("line")
         .style('fill', 'none')
@@ -1120,18 +1131,25 @@ function layout(v, v2) {
         // path (link) group
         path = path.data(links);
 
+        let marker = side => x => {
+            let kind = side === 'left' ? 'start' : 'end';
+            return is_explore_mode ? 'url(#circle)' :
+                x[side] ? `url(#${kind}-arrow)` :
+                '';
+        };
+
         // update existing links
         // VJD: dashed links between pebbles are "selected". this is disabled for now
         path.classed('selected', x => null)
-            .style('marker-start', x => !is_explore_mode && x.left ? 'url(#start-arrow)' : '')
-            .style('marker-end', x => !is_explore_mode && x.right ? 'url(#end-arrow)' : '');
+            .style('marker-start', marker('left'))
+            .style('marker-end', marker('right'));
 
         // add new links
         path.enter().append('svg:path')
             .attr('class', 'link')
             .classed('selected', x => null)
-            .style('marker-start', x => !is_explore_mode && x.left ? 'url(#start-arrow)' : '')
-            .style('marker-end', x => !is_explore_mode && x.right ? 'url(#end-arrow)' : '')
+            .style('marker-start', marker('left'))
+            .style('marker-end', marker('right'))
             .on('mousedown', function(d) { // do we ever need to select a link? make it delete..
                 var obj = JSON.stringify(d);
                 for (var j = 0; j < links.length; j++) {
@@ -1329,7 +1347,7 @@ function layout(v, v2) {
 
                 // reposition drag line
                 drag_line
-                    .style('marker-end', 'url(#end-arrow)')
+                    .style('marker-end', is_explore_mode? 'url(#end-marker)' : 'url(#end-arrow)')
                     .classed('hidden', false)
                     .attr('d', 'M' + mousedown_node.x + ',' + mousedown_node.y + 'L' + mousedown_node.x + ',' + mousedown_node.y);
 
