@@ -18,6 +18,7 @@ from tworaven_apps.ta2_interfaces.ta2_util import get_grpc_test_json,\
     get_reply_exception_response,\
     get_predict_file_info_dict
 from tworaven_apps.ta2_interfaces.util_embed_results import FileEmbedUtil
+from tworaven_apps.ta2_interfaces.util_message_formatter import MessageFormatter
 from tworaven_apps.ta2_interfaces.models import KEY_CONTEXT_FROM_UI,\
     KEY_SESSION_ID_FROM_UI
 
@@ -100,20 +101,12 @@ def get_create_pipeline_results(info_str=None):
     except Exception as ex:
         return get_reply_exception_response(str(ex))
 
-    # --------------------------------
-    # Make sure messages have been received
-    # --------------------------------
-    print('end of queue. make message list. cnt: %d' % len(messages))
-    if not messages:
-        return get_reply_exception_response('No messages received.')
 
-    # --------------------------------
-    # Convert the reply to JSON and send it on
-    # --------------------------------
-    result_str = '['+', '.join(messages)+']'
+    success, return_str = MessageFormatter.format_messages(\
+                                    messages,
+                                    embed_data=True)
 
-    embed_util = FileEmbedUtil(result_str)
-    if embed_util.has_error:
-        return get_failed_precondition_response(embed_util.error_message)
+    if success is False:
+        return get_reply_exception_response(return_str)
 
-    return embed_util.get_final_results()
+    return return_str

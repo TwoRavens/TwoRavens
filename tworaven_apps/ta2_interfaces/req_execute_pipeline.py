@@ -14,6 +14,7 @@ from tworaven_apps.ta2_interfaces.ta2_util import get_grpc_test_json,\
 from tworaven_apps.configurations.utils import get_latest_d3m_config,\
     write_data_for_execute_pipeline
 from tworaven_apps.ta2_interfaces.util_embed_results import FileEmbedUtil
+from tworaven_apps.ta2_interfaces.util_message_formatter import MessageFormatter
 from tworaven_apps.ta2_interfaces.models import KEY_DATA, VAL_DATA_URI
 
 
@@ -137,32 +138,11 @@ def execute_pipeline(info_str=None):
     except Exception as ex:
         return None, get_reply_exception_response(str(ex))
 
+    success, return_str = MessageFormatter.format_messages(\
+                                    messages,
+                                    embed_data=True)
 
-    # --------------------------------
-    # Make sure messages have been received
-    # --------------------------------
-    print('end of queue. make message list. cnt: %d' % len(messages))
-    if not messages:
-        return None, get_reply_exception_response('No messages received.')
+    if success is False:
+        return None, get_reply_exception_response(return_str)
 
-    # --------------------------------
-    # Convert the reply to JSON and send it on
-    # --------------------------------
-    result_str = '['+', '.join(messages)+']'
-
-    embed_util = FileEmbedUtil(result_str)
-    if embed_util.has_error:
-        return None, get_failed_precondition_response(embed_util.error_message)
-
-    return info_str_formatted, embed_util.get_final_results()
-
-    #return info_str_formatted, result_str
-
-
-"""
-python manage.py shell
-#from tworaven_apps.ta2_interfaces.ta2_proxy import *
-from tworaven_apps.ta2_interfaces.update_problem_schema import update_problem_schema
-
-updateproblemschema()
-"""
+    return info_str_formatted, return_str
