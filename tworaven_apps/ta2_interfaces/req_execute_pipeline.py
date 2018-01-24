@@ -4,10 +4,12 @@ from django.conf import settings
 from google.protobuf.json_format import MessageToJson,\
     Parse, ParseError
 
+import grpc
 import core_pb2
 from tworaven_apps.ta2_interfaces.ta2_connection import TA2Connection
 from tworaven_apps.ta2_interfaces.ta2_util import get_grpc_test_json,\
     get_failed_precondition_response,\
+    get_reply_exception_response,\
     get_predict_file_info_dict
 from tworaven_apps.configurations.utils import get_latest_d3m_config,\
     write_data_for_execute_pipeline
@@ -124,20 +126,33 @@ def execute_pipeline(info_str=None):
     # --------------------------------
     # Send the gRPC request - returns a stream
     # --------------------------------
+    messages = []
     try:
-        reply = core_stub.ExecutePipeline(req)
+        for reply in core_stub.ExecutePipeline(req):
+            user_msg = MessageToJson(reply)
+            print(user_msg)
+            messages.append(user_msg)
+    except grpc.RpcError as ex:
+        return None, get_reply_exception_response(str(ex))
     except Exception as ex:
-        return None, get_failed_precondition_response(str(ex))
+        return None, get_reply_exception_response(str(ex))
+
+
+    # --------------------------------
+    # Make sure messages have been received
+    # --------------------------------
+    print('end of queue. make message list:', messages)
+    if not messages:
+        return None, get_reply_exception_response('No messages received.')
 
     # --------------------------------
     # Convert the reply to JSON and send it on
     # --------------------------------
-    results = map(MessageToJson, reply)
-    result_str = '['+', '.join(results)+']'
+    result_str = '['+', '.join(messages)+']'
 
     embed_util = FileEmbedUtil(result_str)
     if embed_util.has_error:
-        return get_failed_precondition_response(embed_util.error_message)
+        return None, get_failed_precondition_response(embed_util.error_message)
 
     return info_str_formatted, embed_util.get_final_results()
 

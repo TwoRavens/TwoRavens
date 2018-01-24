@@ -5,6 +5,7 @@ from django.conf import settings
 from google.protobuf.json_format import MessageToJson,\
     Parse, ParseError
 
+import grpc
 import core_pb2
 from tworaven_apps.ta2_interfaces.models import VAL_GRPC_STATE_CODE_NONE
 from tworaven_apps.ta2_interfaces.ta2_connection import TA2Connection
@@ -79,7 +80,7 @@ def get_execute_pipeline_results(info_str=None):
             print(user_msg)
             messages.append(user_msg)
     except grpc.RpcError as ex:
-        return get_failed_precondition_response(str(ex))
+        return get_reply_exception_response(str(ex))
     except Exception as ex:
         return get_reply_exception_response(str(ex))
 

@@ -12,7 +12,7 @@ from tworaven_apps.ta2_interfaces.ta2_util import format_info_for_request,\
 from tworaven_apps.utils.msg_helper import msgt
 from tworaven_apps.ta2_interfaces.models import STATUS_VAL_OK,\
     STATUS_VAL_FAILED_PRECONDITION, STATUS_VAL_COMPLETED
-from tworaven_apps.ta2_interfaces.req_pipeline_create import ERR_NO_SESSION_ID,\
+from tworaven_apps.ta2_interfaces.req_create_pipeline import ERR_NO_SESSION_ID,\
     ERR_NO_CONTEXT
 from tworaven_apps.utils.static_keys import KEY_SUCCESS
 from tworaven_apps.ta2_interfaces.util_embed_results import \

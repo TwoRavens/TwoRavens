@@ -137,6 +137,7 @@ def write_data_for_execute_pipeline(d3m_config, data_info):
     # return file uri
     file_uri = 'file://%s' % filepath
     return file_uri, None
+    
 
 def get_d3m_filepath(d3m_config, file_attr):
     """

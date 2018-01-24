@@ -6,6 +6,7 @@ from google.protobuf.json_format import MessageToJson,\
     Parse, ParseError
 from django.conf import settings
 
+import grpc
 import core_pb2
 from tworaven_apps.ta2_interfaces.ta2_connection import TA2Connection
 from tworaven_apps.ta2_interfaces.ta2_util import get_grpc_test_json,\
@@ -87,17 +88,26 @@ def pipeline_create(info_str=None):
     # Send the gRPC request
     # --------------------------------
     messages = []
-
     try:
         for reply in core_stub.CreatePipelines(req):
             user_msg = MessageToJson(reply)
             print(user_msg)
             messages.append(user_msg)
+    except grpc.RpcError as ex:
+        return get_reply_exception_response(str(ex))
     except Exception as ex:
         return get_reply_exception_response(str(ex))
 
-    print('end of queue. make message list')
+    # --------------------------------
+    # Make sure messages have been received
+    # --------------------------------
+    print('end of queue. make message list:', messages)
+    if not messages:
+        return get_reply_exception_response('No messages received.')
 
+    # --------------------------------
+    # Convert the reply to JSON and send it on
+    # --------------------------------
     result_str = '['+', '.join(messages)+']'
 
     print('embed file contents')
