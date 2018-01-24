@@ -5,12 +5,15 @@ from django.conf import settings
 from google.protobuf.json_format import MessageToJson,\
     Parse, ParseError
 
+import grpc
 import dataflow_ext_pb2
 from tworaven_apps.ta2_interfaces.models import VAL_GRPC_STATE_CODE_NONE
 from tworaven_apps.ta2_interfaces.ta2_connection import TA2Connection
-from tworaven_apps.ta2_interfaces.ta2_util import get_grpc_test_json,\
-    get_failed_precondition_response
-#from tworaven_apps.ta2_interfaces.util_embed_results import FileEmbedUtil
+from tworaven_apps.ta2_interfaces.ta2_util import \
+    (get_grpc_test_json,
+     get_reply_exception_response,
+     get_failed_precondition_response)
+from tworaven_apps.ta2_interfaces.util_message_formatter import MessageFormatter
 
 
 def get_data_flow_results(info_str=None):
@@ -55,25 +58,25 @@ def get_data_flow_results(info_str=None):
     # --------------------------------
     # Send the gRPC request
     # --------------------------------
+    messages = []
     try:
-        reply = dataflow_stub.GetDataflowResults(req)
+        for reply in dataflow_stub.GetDataflowResults(req):
+            user_msg = MessageToJson(reply, including_default_value_fields=True)
+            messages.append(user_msg)
+            print('msg received #%d' % len(messages))
+    except grpc.RpcError as ex:
+        return get_reply_exception_response(str(ex))
     except Exception as ex:
-        return get_failed_precondition_response(str(ex))
+        return get_reply_exception_response(str(ex))
 
+    success, return_str = MessageFormatter.format_messages(\
+                                    messages,
+                                    embed_data=False)
 
-    if reply and str(reply) == VAL_GRPC_STATE_CODE_NONE:
-        err_msg = ('Unkown gRPC state.'
-                   ' (Was an GetDataflowResults request sent?)')
-        return get_failed_precondition_response(err_msg)
+    if success is False:
+        return get_reply_exception_response(return_str)
 
-    # --------------------------------
-    # Convert the reply to JSON and send it on
-    # --------------------------------
-    results = map(MessageToJson, reply)
-    result_str = '['+', '.join(results)+']'
-
-    return result_str
-
+    return return_str
 
 
 """

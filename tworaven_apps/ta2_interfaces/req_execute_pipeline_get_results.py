@@ -9,10 +9,11 @@ import grpc
 import core_pb2
 from tworaven_apps.ta2_interfaces.models import VAL_GRPC_STATE_CODE_NONE
 from tworaven_apps.ta2_interfaces.ta2_connection import TA2Connection
-from tworaven_apps.ta2_interfaces.ta2_util import get_grpc_test_json,\
-    get_failed_precondition_response,\
-    get_reply_exception_response,\
-    get_predict_file_info_dict
+from tworaven_apps.ta2_interfaces.ta2_util import \
+    (get_grpc_test_json,
+     get_failed_precondition_response,
+     get_reply_exception_response,
+     get_predict_file_info_dict)
 from tworaven_apps.ta2_interfaces.util_embed_results import FileEmbedUtil
 from tworaven_apps.ta2_interfaces.util_message_formatter import MessageFormatter
 
