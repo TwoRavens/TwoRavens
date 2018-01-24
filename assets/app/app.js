@@ -22,6 +22,11 @@ import {bars, barsNode, barsSubset, density, densityNode, selVarColor} from './p
 
 export let is_results_mode = false;
 
+let is_explore_mode = false;
+export function set_explore_mode(val) {
+    is_explore_mode = val;
+}
+
 // for debugging - if not in PRODUCTION, prints args
 export let cdb = _ => PRODUCTION || console.log(...arguments);
 
@@ -1090,7 +1095,7 @@ function layout(v, v2) {
         */
 
     // update graph (called when needed)
-    restart = function($links, is_explore) {
+    restart = function($links) {
         links = $links || links;
         // nodes.id is pegged to allNodes, i.e. the order in which variables are read in
         // nodes.index is floating and depends on updates to nodes.  a variables index changes when new variables are added.
@@ -1118,15 +1123,15 @@ function layout(v, v2) {
         // update existing links
         // VJD: dashed links between pebbles are "selected". this is disabled for now
         path.classed('selected', x => null)
-            .style('marker-start', x => !is_explore && x.left ? 'url(#start-arrow)' : '')
-            .style('marker-end', x => !is_explore && x.right ? 'url(#end-arrow)' : '');
+            .style('marker-start', x => !is_explore_mode && x.left ? 'url(#start-arrow)' : '')
+            .style('marker-end', x => !is_explore_mode && x.right ? 'url(#end-arrow)' : '');
 
         // add new links
         path.enter().append('svg:path')
             .attr('class', 'link')
             .classed('selected', x => null)
-            .style('marker-start', x => !is_explore && x.left ? 'url(#start-arrow)' : '')
-            .style('marker-end', x => !is_explore && x.right ? 'url(#end-arrow)' : '')
+            .style('marker-start', x => !is_explore_mode && x.left ? 'url(#start-arrow)' : '')
+            .style('marker-end', x => !is_explore_mode && x.right ? 'url(#end-arrow)' : '')
             .on('mousedown', function(d) { // do we ever need to select a link? make it delete..
                 var obj = JSON.stringify(d);
                 for (var j = 0; j < links.length; j++) {

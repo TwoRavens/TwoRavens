@@ -236,6 +236,7 @@ class Body {
     view(vnode) {
         let {mode} = vnode.attrs;
         let explore = mode === 'explore';
+        app.set_explore_mode(explore);
         app.is_results_mode = mode === 'results';
         let _navBtn = (id, left, right, onclick, args, min) => m(
             `button#${id}.btn.navbar-right`,
@@ -279,7 +280,7 @@ class Body {
             `button#${id}.btn.btn-default`, {onclick, title}, glyph(icon, true));
 
         if (mode != this.last_mode) {
-            app.restart && app.restart(null, explore);
+            app.restart && app.restart();
             this.last_mode = mode;
         }
 
