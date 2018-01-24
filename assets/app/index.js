@@ -71,6 +71,18 @@ function rightpanel(mode) {
             m(`img#${id}_img[alt=${id}][src=/static/images/thumb${idx}.png]`,
               {style: {width: "75%", height: "75%", border: "1px solid #ddd", "border-radius": "3px", padding: "5px", margin: "3%", cursor: "pointer"}}),
             m("figcaption", {style: {"text-align": "center"}}, title)));
+    let unique_link_names = () => {
+        let names = [];
+        for (let link of app.links) {
+            if (!names.includes(link.source.name)) {
+                names.push(link.source.name);
+            }
+            if (!names.includes(link.target.name)) {
+                names.push(link.target.name);
+            }
+        }
+        return names;
+    };
     return mode ?
         m(Panel,
           {side: 'right',
@@ -131,10 +143,7 @@ function rightpanel(mode) {
               m('#tabular_2', {style: {width: "100%", height: "50%", "border-bottom-style": "inset", overflow: "hidden"}}))),
           m("p#resultsHolder", {style: {padding: ".5em 1em"}},
             m('#varList[style=display: block]',
-              app.links.map(x => x.target.name).map(
-                  v => m(`p#${v.replace(/\W/g, '_')}`, {
-                      style: {'background-color': app.varColor}},
-                      v)))),
+              unique_link_names().map(x => m(`p#${x.replace(/\W/g, '_')}`, {style: {'background-color': app.varColor}}, x)))),
           m('#setx[style=display: none; margin-top: .5em]')) :
     // mode == null (model mode)
     m(Panel,
@@ -362,13 +371,13 @@ class Body {
                 spaceBtn('btnJoin', _ => {
                     let links = [];
                     if (explore) {
-                        let is_unique = (n, n1) => links.map(l => l.target === n1 && l.source === n).length == 0;
-                        links = app.nodes.map(n => app.nodes.filter(n1 => n !== n1 && is_unique(n, n1)).map(n1 => ({
-                            left: false,
-                            right: false,
-                            target: n,
-                            source: n1,
-                        })));
+                        for (let node of app.nodes) {
+                            for (let node1 of app.nodes) {
+                                if (node !== node1 && links.filter(l => l.target === node1 && l.source === node).length === 0) {
+                                    links.push({left: false, right: false, target: node, source: node1});
+                                }
+                            }
+                        }
                     } else {
                         let dvs = app.nodes.filter(n => app.zparams.zdv.includes(n.name));
                         let ivs = app.nodes.filter(n => !dvs.includes(n));
