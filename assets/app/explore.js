@@ -1218,7 +1218,7 @@ function viz(m, json_vizexplore, model_name_set) {
         app.zparams.zcrosstab.push(crosstabs);
         explore_crosstab(json);
         app.estimateLadda.stop();
-        app.estimated = true;
+        app.explored = true;
         zbreaks.push(crosstabs);
         zbreaks_tabular.push(json.tabular);
         d3.select('#breakspace')
@@ -1278,14 +1278,14 @@ function viz(m, json_vizexplore, model_name_set) {
         app.zparams.callHistory = app.callHistory;
         let json = await app.makeRequest(ROOK_SVC_URL + 'exploreapp', app.zparams);
         app.estimateLadda.start();
-        app.estimated = false;
+        app.explored = false;
         d3.json("static/result.json", (err, json) => {
             if (err) {
                 return console.warn(err);
             }
             crossTab_Table(json);
             app.estimateLadda.stop();
-            app.estimated = true;
+            app.explored = true;
         });
     }
 
@@ -1456,8 +1456,8 @@ export async function explore() {
         .style('width', '75%');
 
     let parent = app.byId('rightContentArea');
-    app.estimated || parent.removeChild(app.byId('resultsHolder'));
-    app.estimated = true;
+    app.explored || parent.removeChild(app.byId('resultsHolder'));
+    app.explored = true;
 
     d3.select("#decisionTree")
         .style("display", "none");

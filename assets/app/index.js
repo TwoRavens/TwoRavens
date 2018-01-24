@@ -87,6 +87,7 @@ function rightpanel(mode) {
         m(Panel,
           {side: 'right',
            title: 'Result Exploration',
+           is_explore_mode: true,
            buttons: [
                m(Button, {id: 'btnUnivariate'}, 'Univariate'),
                m(Button, {id: 'btnBivariate'}, 'Bivariate')]},
@@ -154,9 +155,9 @@ function rightpanel(mode) {
            m(Button, {id: 'btnSetx'}, 'Set Covar.'),
            m(Button, {id: 'btnResults'}, 'Results'),
        ]).concat([
-           m(Button, {id: 'btnType'}, 'Task Type'),
-           m(Button, {id: 'btnSubtype'}, 'Subtype'),
-           m(Button, {id: 'btnMetrics'}, 'Metrics')])},
+           m(Button, {id: 'btnType', is_explore_mode: exp.explore}, 'Task Type'),
+           m(Button, {id: 'btnSubtype', is_explore_mode: exp.explore}, 'Subtype'),
+           m(Button, {id: 'btnMetrics', is_explore_mode: exp.explore}, 'Metrics')])},
       m(`#results[style=display: ${when('right', 'btnResults')}; margin-top: .5em]`,
         m("#resultsView.container[style=float: right; overflow: auto; width: 80%; background-color: white; white-space: nowrap]"),
         m('#modelView[style=display: none; float: left; width: 20%; background-color: white]'),

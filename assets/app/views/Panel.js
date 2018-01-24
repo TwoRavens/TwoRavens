@@ -14,7 +14,7 @@ class Panel {
     }
 
     view(vnode) {
-        let {side, title, buttons} = vnode.attrs;
+        let {side, title, buttons, is_explore_mode} = vnode.attrs;
         let btns = buttons;
         let dot = [m.trust('&#9679;'), m('br')];
         let width = 100 / btns.length;
@@ -29,10 +29,11 @@ class Panel {
             m(`ul${side === 'right' ? '#rightpanelbuttons' : ''}.accordion`,
               btns.map(b => {
                   b.attrs.style = b.attrs.style + '; width: 100%';
+                  b.attrs.is_explore_mode = is_explore_mode;
                   let id = b.attrs.id;
-                  let w = this.active_btn === id ? shrinkwidth :
-                      this.active_btn === null ? width :
-                      expandwidth;
+                  //let w = this.active_btn === id ? shrinkwidth :
+                      //this.active_btn === null ? width :
+                      //expandwidth;
                   return m(
                       'li',
                       {style: {width: width + '%', 'max-width': '150px'},
