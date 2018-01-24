@@ -236,7 +236,6 @@ class Body {
     view(vnode) {
         let {mode} = vnode.attrs;
         let explore = mode === 'explore';
-        app.set_explore_mode(explore);
         app.is_results_mode = mode === 'results';
         let _navBtn = (id, left, right, onclick, args, min) => m(
             `button#${id}.btn.navbar-right`,
@@ -280,6 +279,12 @@ class Body {
             `button#${id}.btn.btn-default`, {onclick, title}, glyph(icon, true));
 
         if (mode != this.last_mode) {
+            if (explore) {
+                app.set_explore_mode(explore);
+                app.set_righttab('btnUnivariate');
+            } else if (!mode) {
+                app.set_righttab(IS_D3M_DOMAIN ? 'btnType' : 'btnModels');
+            }
             app.restart && app.restart();
             this.last_mode = mode;
         }

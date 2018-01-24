@@ -54,7 +54,11 @@ export let timeColor = '#2d6ca2';
 export let lefttab = 'tab1'; // current tab in left panel
 export let subset = false;
 export let summaryHold = false;
+
 export let righttab = 'btnModels'; // current tab in right panel
+export function set_righttab(val) {
+    righttab = val;
+}
 
 // transformation toolbar options
 let t, typeTransform;
@@ -933,11 +937,9 @@ function layout(v, v2) {
                 n.y += Math.min(lnormY , ldeltaY/100 ) * k * sign   * force.alpha();
             });
 
-        }else{
+        } else {
             visbackground.style("opacity", 0);
-
             vis.style("opacity", 0);
-//            vis.style("opacity", 0);
             line.style("opacity", 0);
         };
 
