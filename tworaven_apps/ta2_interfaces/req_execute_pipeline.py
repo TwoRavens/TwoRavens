@@ -129,9 +129,9 @@ def execute_pipeline(info_str=None):
     messages = []
     try:
         for reply in core_stub.ExecutePipeline(req):
-            user_msg = MessageToJson(reply)
-            print(user_msg)
+            user_msg = MessageToJson(reply, including_default_value_fields=True)
             messages.append(user_msg)
+            print('msg received #%d' % len(messages))
     except grpc.RpcError as ex:
         return None, get_reply_exception_response(str(ex))
     except Exception as ex:
@@ -141,7 +141,7 @@ def execute_pipeline(info_str=None):
     # --------------------------------
     # Make sure messages have been received
     # --------------------------------
-    print('end of queue. make message list:', messages)
+    print('end of queue. make message list. cnt: %d' % len(messages))
     if not messages:
         return None, get_reply_exception_response('No messages received.')
 

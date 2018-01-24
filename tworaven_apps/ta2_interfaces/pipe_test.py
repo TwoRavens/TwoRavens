@@ -26,7 +26,7 @@ from google.protobuf.json_format import MessageToJson,\
 
 def msg_and_back(msg_obj, CORE_OBJ):
 
-    content = MessageToJson(msg_obj)
+    content = MessageToJson(msg_obj, including_default_value_fields=True)
     print('content as JSON:\n', content)
 
     req = Parse(content, CORE_OBJ())
@@ -37,7 +37,7 @@ def json_parse(json_str, CORE_OBJ):
     req = Parse(json_str, CORE_OBJ())
     print('req', req)
     return req
-    
+
 def pipeline_create_parse():
     session_context = core_pb2.SessionContext()
     session_context.session_id = 'abc123'
@@ -67,7 +67,7 @@ def pipeline_create_parse():
     msg_and_back(req, core_pb2.PipelineCreateRequest)
 
     print('-' * 40)
-    content = MessageToJson(req)
+    content = MessageToJson(req, including_default_value_fields=True)
     print(content)
     print('-' * 40)
     json_parse(content, core_pb2.PipelineCreateRequest)
@@ -81,7 +81,7 @@ def pipeline_execute_parse():
     req.pipeline_ids.append('pipeline_1')
 
     print('-' * 40)
-    content = MessageToJson(req)
+    content = MessageToJson(req, including_default_value_fields=True)
     print(content)
     print('-' * 40)
 
@@ -114,7 +114,7 @@ def pipeline_exec_result():
     req.result_uris.append('file://results/output/file_002.txt')
 
     print('-' * 40)
-    content = MessageToJson(req)
+    content = MessageToJson(req, including_default_value_fields=True)
     print(content)
     print('-' * 40)
 
@@ -140,13 +140,13 @@ def pipline_list_parse():
 
     req.context.session_id = 'session_01'
 
-    content = MessageToJson(req)
+    content = MessageToJson(req, including_default_value_fields=True)
     print(content)
     """
     message PipelineListRequest {
     SessionContext context = 1;}
     """
-    content = MessageToJson(req)
+    content = MessageToJson(req, including_default_value_fields=True)
     print(content)
     print('-' * 40)
 
@@ -160,9 +160,9 @@ def pipeline_results_parse():
     res.pipeline_ids.append('pipeline_01')
     res.pipeline_ids.append('pipeline_02')
 
-    content = MessageToJson(res)
+    content = MessageToJson(res, including_default_value_fields=True)
 
-    content = MessageToJson(res)
+    content = MessageToJson(res, including_default_value_fields=True)
     print('JSON:\n')
     print(content)
     print('-' * 40)
@@ -189,7 +189,7 @@ def execute_pipeline_parse():
         req.predict_features.add(feature_id=feature_name,
                                  data_uri='<<DATA_URI>>')
 
-    content = MessageToJson(req)
+    content = MessageToJson(req, including_default_value_fields=True)
     print('JSON:\n')
     print(content)
     print('-' * 40)
@@ -209,7 +209,7 @@ def update_parse():
     req.updates.add(task_type=core_pb2.CLASSIFICATION)
     req.updates.add(task_type=core_pb2.REGRESSION)
 
-    content = MessageToJson(req)
+    content = MessageToJson(req, including_default_value_fields=True)
     print('JSON:\n')
     print(content)
     print('-' * 40)
@@ -231,7 +231,7 @@ def pipeline_export_parse():
     req.pipeline_id = 'pipeline_1'
     req.pipeline_exec_uri = 'file:///ravens_volume/pipeline_1'
 
-    content = MessageToJson(req)
+    content = MessageToJson(req, including_default_value_fields=True)
     print('JSON:\n')
     print(content)
     print('-' * 40)
@@ -247,7 +247,7 @@ def pipeline_export_parse():
     resp.status.code = core_pb2.OK
     resp.status.details = 'looking good'
 
-    content = MessageToJson(resp)
+    content = MessageToJson(resp, including_default_value_fields=True)
     print('JSON:\n')
     print(content)
     print('-' * 40)
@@ -266,7 +266,7 @@ def describe_data_flow():
     req.context.session_id = 'session_01'
     req.pipeline_id = 'pipeline_1'
 
-    content = MessageToJson(req)
+    content = MessageToJson(req, including_default_value_fields=True)
     print('JSON:\n')
     print(content)
     print('-' * 40)
@@ -307,7 +307,7 @@ def describe_data_flow():
         resp.connections[idx].to_module_id = 'to_module_id %d' % idx
         resp.connections[idx].to_input_name = 'to_input_name %d' % idx
 
-    content = MessageToJson(resp)
+    content = MessageToJson(resp, including_default_value_fields=True)
     print('JSON:\n')
     print(content)
     print('-' * 40)
@@ -359,7 +359,7 @@ def get_dataflow_results():
         resp.response_info.status.code = core_pb2.OK
         resp.response_info.status.details = "we did it, we did it, we really, really did it"
 
-        content = MessageToJson(resp)
+        content = MessageToJson(resp, including_default_value_fields=True)
         module_list.append(content)
         print('JSON:\n')
         print(content)
@@ -407,7 +407,7 @@ def set_problem_doc():
     #    req.predict_features.add(feature_id=feature_name,
     #                             data_uri='<<DATA_URI>>')
 
-    content = MessageToJson(req)
+    content = MessageToJson(req, including_default_value_fields=True)
     print('JSON:\n')
     print(content)
     print('-' * 40)

@@ -14,6 +14,7 @@ from tworaven_apps.ta2_interfaces.ta2_util import get_grpc_test_json,\
     get_reply_exception_response,\
     get_predict_file_info_dict
 from tworaven_apps.ta2_interfaces.util_embed_results import FileEmbedUtil
+from tworaven_apps.ta2_interfaces.util_message_formatter import MessageFormatter
 from tworaven_apps.ta2_interfaces.models import KEY_CONTEXT_FROM_UI,\
     KEY_SESSION_ID_FROM_UI
 
@@ -90,36 +91,22 @@ def pipeline_create(info_str=None):
     messages = []
     try:
         for reply in core_stub.CreatePipelines(req):
-            user_msg = MessageToJson(reply)
-            print(user_msg)
+            user_msg = MessageToJson(reply, including_default_value_fields=True)
             messages.append(user_msg)
+            print('msg received #%d' % len(messages))
     except grpc.RpcError as ex:
         return get_reply_exception_response(str(ex))
     except Exception as ex:
         return get_reply_exception_response(str(ex))
 
-    # --------------------------------
-    # Make sure messages have been received
-    # --------------------------------
-    print('end of queue. make message list:', messages)
-    if not messages:
-        return get_reply_exception_response('No messages received.')
+    success, return_str = MessageFormatter.format_messages(\
+                                    messages,
+                                    embed_data=True)
 
-    # --------------------------------
-    # Convert the reply to JSON and send it on
-    # --------------------------------
-    result_str = '['+', '.join(messages)+']'
+    if success is False:
+        return get_reply_exception_response(return_str)
 
-    print('embed file contents')
-    embed_util = FileEmbedUtil(result_str)
-    if embed_util.has_error:
-        print('file embed error')
-        return get_failed_precondition_response(embed_util.error_message)
-
-    print('return results')
-    return embed_util.get_final_results()
-
-
+    return return_str
 """
 python manage.py shell
 #from tworaven_apps.ta2_interfaces.ta2_proxy import *
