@@ -7,10 +7,16 @@ from tworaven_apps.utils.view_helper import get_request_body
 from tworaven_apps.call_captures.models import ServiceCallEntry
 from tworaven_apps.utils.view_helper import get_session_key
 
+
 @csrf_exempt
-def view_execute_pipeline(request):
+def view_execute_pipeline_direct(request):
+    """The dataset_uri is already set"""
+    return view_execute_pipeline(request, includes_data=False)
+
+@csrf_exempt
+def view_execute_pipeline(request, includes_data=True):
     """
-    This is a more complex request that does 2 things:
+    If includes_data is True, this is a more complex request that does 2 things:
     (1) Writes the data portion of the JSON from the UI to a file in "temp_storage_root"
         - e.g. create a directory and add the file with a unique name
     (2) Send a gRPC request message replacing "some uri" with reference to the file written in
@@ -36,7 +42,9 @@ def view_execute_pipeline(request):
 
     # Let's call the TA2 and start the session!
     #
-    fmt_request, json_str_or_err = execute_pipeline(raven_data_or_err)
+    fmt_request, json_str_or_err = execute_pipeline(\
+                                            raven_data_or_err,
+                                            includes_data=includes_data)
 
     if fmt_request is None:
         if call_entry:
