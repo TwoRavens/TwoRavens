@@ -1877,7 +1877,7 @@ function onPipelineCreate(PipelineCreateResult) {
 
     //let pipelineid = PipelineCreateResult.pipelineid;
     // getexecutepipelineresults is the third to be called
-    makeRequest(D3M_SVC_URL + '/getexecutepipelineresults', {context, pipeline_ids: Object.keys(allPipelineInfo)});
+  //  makeRequest(D3M_SVC_URL + '/getexecutepipelineresults', {context, pipeline_ids: Object.keys(allPipelineInfo)});
 }
 function CreatePipelineData(predictors, depvar) {
     let context = apiSession(zparams.zsessionid);
