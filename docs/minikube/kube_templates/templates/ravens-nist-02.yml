@@ -100,12 +100,17 @@ spec:
       # environment variables passed to container
       - name: EVAL_ID
         value: {{ eval_id }}
+      # --------------------------------------
+      # Query TA2 Service with service name using format from template:
+      # --------------------------------------
+      - name: TA2_TEST_SERVER_URL
+        value: {{ eval_id }}-ta2:45042
+      # --------------------------------------
+      # Test mode: returns "canned responses" instead
+      # of actual TA2 connection
+      # --------------------------------------
       - name: TA2_STATIC_TEST_MODE
-        value: "True"
-      # Reference to the gRPC server using the pod name and TA2 port
-        #- name: TA2_TEST_SERVER_URL
-        #  value: "{{ eval_id }}l:45042"
-        # Url to TA3 R/rook web service
+        value: "False"
       - name: R_DEV_SERVER_BASE
         value: "http://localhost:8000/custom/"
       - name: TA2_PORT

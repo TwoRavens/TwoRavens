@@ -51,15 +51,21 @@ class TemplateRenderHelper(object):
 if __name__ == '__main__':
 
     tmpl_info = dict(eval_id='ravens',
-                     path_to_dataroot='subpath_to_dataroot',
-                     path_to_outputs='subpath_to_outputs',
+                     #path_to_dataroot='{{ path_to_dataroot }}',
+                     #path_to_outputs='{{ path_to_outputs }}',
+                     path_to_dataroot='path_to_dataroot',
+                     path_to_outputs='path_to_outputs',
                      command='ta3_search',
                      command_args='command_args')
 
     #template_name = 'nist-orig-template.yml'
     #template_name = 'ravens-template-02.yml'
-    template_name = 'ravens-ta2test-01.yml'
-    output_file = 'tworavens_ta3ta2_test_pod.yml'
+
+    #template_name = 'ravens-ta2test-01.yml'
+    #output_file = 'tworavens_ta3ta2_test_pod.yml'
+
+    template_name = 'ravens-nist-02.yml'
+    output_file = 'tworavens_ta3_pod.yml'
 
     trh = TemplateRenderHelper(tmpl_info,
                                template_name,

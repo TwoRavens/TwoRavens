@@ -383,7 +383,13 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     // rpc StartSession(SessionRequest) returns (SessionResponse) {}
     res = await makeRequest(D3M_SVC_URL + '/startsession', {user_agent: 'some agent', version: 'some version'});
     if (res) {
+      if (res.responseInfo.status.code != "OK"){
+        const user_err_msg = "Failed to StartSession with TA2! status code: " + res.responseInfo.status.code;
+        alert(user_err_msg);
+        end_ta3_search(False, user_err_msg);
+      }else{
         zparams.zsessionid = res.context.sessionId;
+      }
     }
 
     // hopscotch tutorial
