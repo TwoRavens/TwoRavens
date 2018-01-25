@@ -101,17 +101,16 @@ EXPOSE 8080
 # - Valid configs load and the app runs
 # - Invalid configs fail with error messages
 # -------------------------------------
-RUN echo '#!/bin/bash'  >> /usr/bin/ta3_search && \
-    echo 'cd $CODE_REPOSITORY;'  >> /usr/bin/ta3_search && \
-    echo 'python manage.py ta3_search "$@"'  >> /usr/bin/ta3_search && \
+RUN chmod u+x $CODE_REPOSITORY/startup_script/run_main_server.sh  && \
+    echo '#!/bin/bash'  >> /usr/bin/ta3_search && \
+    echo 'cd $CODE_REPOSITORY/startup_script;'  >> /usr/bin/ta3_search && \
+    echo './run_main_server.sh'  >> /usr/bin/ta3_search && \
     chmod u+x /usr/bin/ta3_search && \
     echo '------- CREATE test_run command ---- (w/o extra build step)' && \
     echo '#!/bin/bash'  >> /usr/bin/test_run && \
     echo 'cd $CODE_REPOSITORY;'  >> /usr/bin/test_run && \
     echo 'python manage.py runserver 8080'  >> /usr/bin/test_run && \
     chmod u+x /usr/bin/test_run
-
-RUN chmod u+x $CODE_REPOSITORY/startup_script/run_main_server.sh
 
 # -------------------------------------
 # Run the python server (django dev or gunicorn)

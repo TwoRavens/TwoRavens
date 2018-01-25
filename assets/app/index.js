@@ -191,12 +191,17 @@ let ticker = mode => {
     return m('#ticker[style=background: #F9F9F9; bottom: 0; height: 40px; position: fixed; width: 100%; border-top: 1px solid #ADADAD]',
         link('model'),
         link('explore'),
-        m("a#logID[href=somelink][target=_blank][style=margin-right: 0.5em]", "Replication"),
+        m("a#logID[href=somelink][target=_blank]", "Replication"),
+        m("span[style=color:#337ab7]", " | "),
         // dev links...
-        m("a[href='/dev-raven-links'][target=_blank][style=margin-right: 0.5em]", "raven-links"),
-        m("a[style=margin-right: 0.5em]",
-          {onclick: app.record_user_metadata},
-          "record-metadata"));
+        m("a[href='/dev-raven-links'][target=_blank]", "raven-links"),
+        //m("a[style=margin-right: 0.5em]",
+        //  {onclick: app.record_user_metadata},
+        //  "record-metadata"),
+        m("span[style=color:#337ab7]", " | "),
+         m("span[style=color:#337ab7]", "TA2: " + TA2_SERVER),
+         m("span[style=color:#337ab7]", " | "),
+         m("span[style=color:#337ab7]", "TA3TA2 api: " + TA3TA2_API_VERSION));
 };
 
 class Body {
