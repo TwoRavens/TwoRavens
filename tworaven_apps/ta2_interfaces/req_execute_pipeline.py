@@ -56,9 +56,22 @@ def execute_pipeline(info_str=None, includes_data=True):
         err_msg = 'Failed to convert UI Str to JSON: %s' % (err_obj)
         return None, get_failed_precondition_response(err_msg)
 
-    # includes_data, some error checks
-    #
-    if includes_data:
+    # ------------------------------------------------
+    # For "includes_data":
+    #   - Write data and retrieve a file_uri
+    # ------------------------------------------------
+    if includes_data is False:
+
+        if KEY_DATA in info_dict:
+            err_msg = ('Do not include a "%s" key if passing a "%s"') % \
+                      (KEY_DATA, KEY_DATASET_URI)
+            return None, get_failed_precondition_response(err_msg)
+
+        # just use the request directly..
+        #
+        info_str_formatted = info_str
+
+    else:
         # Make sure a "data" key exists
         #
         if not KEY_DATA in info_dict:
@@ -69,19 +82,9 @@ def execute_pipeline(info_str=None, includes_data=True):
         #
         if KEY_DATASET_URI in info_dict:
             err_msg = ('If you are sending data, do not include'
-                       ' a %s" key.') % KEY_DATASET_URI
+                       ' a "%s" key.') % KEY_DATASET_URI
             return None, get_failed_precondition_response(err_msg)
 
-
-    # ------------------------------------------------
-    # For "includes_data":
-    #   - Write data and retrieve a file_uri
-    # ------------------------------------------------
-    if includes_data is False:
-        # just use the request directly..
-        #
-        info_str_formatted = info_str
-    else:
         # write the data and create a new file uri
         #
         file_uri, err_msg = write_data_for_execute_pipeline(\
@@ -139,13 +142,13 @@ def execute_pipeline(info_str=None, includes_data=True):
         # These next lines embed file uri content into the JSON
         embed_util = FileEmbedUtil(template_str)
         if embed_util.has_error:
-            return get_failed_precondition_response(embed_util.error_message)
+            return None, get_failed_precondition_response(embed_util.error_message)
 
         if includes_data:
             test_note = ('Test.  An actual result would be the test JSON with'
-                     ' the "data" section removed and a dataset_uri added'
-                     ' with a file path to where the "data" section was'
-                     ' written.')
+                         ' the "data" section removed and a dataset_uri added'
+                         ' with a file path to where the "data" section was'
+                         ' written.')
         else:
             test_note = ('Message sent directly to TA2')
 

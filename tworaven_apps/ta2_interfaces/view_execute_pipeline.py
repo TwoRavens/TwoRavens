@@ -49,8 +49,8 @@ def view_execute_pipeline(request, includes_data=True):
     if fmt_request is None:
         if call_entry:
             call_entry.save_d3m_response(json_str_or_err)
-        return JsonResponse(dict(status=False,
-                                 message=json_str_or_err))
+        json_dict = dict(grpcResp=json.loads(json_str_or_err))
+        return JsonResponse(json_dict, safe=False)
 
 
     # Convert JSON str to python dict - err catch here
