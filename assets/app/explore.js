@@ -1235,16 +1235,17 @@ function viz(m, json_vizexplore, model_name_set) {
             .text("break " + (zbreaks.length + 1)).on("click", function() {
                 d3.select("#tabular_2").html("");
                 removeData();
-                app.zparams.zcrosstab.push(zbreaks[this.id]);
-                explore_crosstab(zbreaks_tabular[this.id]);
+                let id = this.id - 1;
+                app.zparams.zcrosstab.push(zbreaks[id]);
+                explore_crosstab(zbreaks_tabular[id]);
 
                 var inputvalue1,inputvalue2;
-                inputvalue1=zbreaks[this.id].var1.value;
-                inputvalue2=zbreaks[this.id].var2.value;
+                inputvalue1=zbreaks[id].var1.value;
+                inputvalue2=zbreaks[id].var2.value;
                 document.getElementById("input1").value = inputvalue1;
                 document.getElementById("input2").value = inputvalue2;
 
-                var json_obj=zbreaks[this.id];
+                var json_obj=zbreaks[id];
                 var varn1,varn2,varsize1,varsize2;
                 if (json_obj.length===0) {
                     console.log("break not called");
