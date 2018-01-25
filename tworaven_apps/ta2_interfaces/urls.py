@@ -43,9 +43,13 @@ urlpatterns = (
         views.view_cancel_pipelines,
         name='CancelPipelines'),
 
-    url(r'^executepipeline/?$',
+    url(r'^ExecutePipeline/?$',
         view_execute_pipeline.view_execute_pipeline,
         name='ExecutePipeline'),
+
+    url(r'^ExecutePipelineDirect/?$',
+        view_execute_pipeline.view_execute_pipeline_direct,
+        name='ExecutePipelineDirect'),
 
     url(r'^getexecutepipelineresults/?$',
         views.view_get_execute_pipeline_results,

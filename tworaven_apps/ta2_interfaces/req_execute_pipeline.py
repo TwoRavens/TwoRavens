@@ -15,17 +15,19 @@ from tworaven_apps.configurations.utils import get_latest_d3m_config,\
     write_data_for_execute_pipeline
 from tworaven_apps.ta2_interfaces.util_embed_results import FileEmbedUtil
 from tworaven_apps.ta2_interfaces.util_message_formatter import MessageFormatter
-from tworaven_apps.ta2_interfaces.models import KEY_DATA, VAL_DATA_URI
+from tworaven_apps.ta2_interfaces.models import \
+    (KEY_DATA, KEY_DATASET_URI, VAL_DATA_URI)
 
 
 def get_test_info_str():
     """Test data for update_problem_schema call"""
     return '''{"context": {"sessionId": "session_1"}'''
 
-def execute_pipeline(info_str=None):
+def execute_pipeline(info_str=None, includes_data=True):
     """Ask a TA2 to ListPipelines via gRPC
 
-    This call is a bit different b/c it writes part of the data to a file
+    This call is a bit different. If includes_data is True,
+    it writes part of the data to a file
     and places that file uri into the original request
 
     Success:  (updated request str, grpc json response)
@@ -36,11 +38,6 @@ def execute_pipeline(info_str=None):
 
     if info_str is None:
         err_msg = 'UI Str for PipelineListResult is None'
-        return None, get_failed_precondition_response(err_msg)
-
-    if info_str.find(VAL_DATA_URI) == -1:
-        err_msg = ('Expected to see place holder for file uri.'
-                   ' Placeholder is "%s"') % VAL_DATA_URI
         return None, get_failed_precondition_response(err_msg)
 
     d3m_config = get_latest_d3m_config()
@@ -59,27 +56,65 @@ def execute_pipeline(info_str=None):
         err_msg = 'Failed to convert UI Str to JSON: %s' % (err_obj)
         return None, get_failed_precondition_response(err_msg)
 
-    if not KEY_DATA in info_dict:
-        err_msg = ('The JSON request did not contain a "%s" key.') % KEY_DATA
-        return None, get_failed_precondition_response(err_msg)
-
-    file_uri, err_msg = write_data_for_execute_pipeline(d3m_config,
-                                                        info_dict[KEY_DATA])
-
-    if err_msg is not None:
-        return None, get_failed_precondition_response(err_msg)
-
-    # Reformat the original content
+    # includes_data, some error checks
     #
-    # (1) remove the data key
-    if KEY_DATA in info_dict:
-        del info_dict[KEY_DATA]
+    if includes_data:
+        # Make sure a "data" key exists
+        #
+        if not KEY_DATA in info_dict:
+            err_msg = ('The JSON request did not contain a "%s" key.') % KEY_DATA
+            return None, get_failed_precondition_response(err_msg)
 
-    # (2) convert it back to a JSON string
-    info_str = json.dumps(info_dict)
+        # There shouldn't be a "dataset_uri" key
+        #
+        if KEY_DATASET_URI in info_dict:
+            err_msg = ('If you are sending data, do not include'
+                       ' a %s" key.') % KEY_DATASET_URI
+            return None, get_failed_precondition_response(err_msg)
 
-    # (3) replace the VAL_DATA_URI with the file_uri
-    info_str_formatted = info_str.replace(VAL_DATA_URI, file_uri)
+
+    # ------------------------------------------------
+    # For "includes_data":
+    #   - Write data and retrieve a file_uri
+    # ------------------------------------------------
+    if includes_data is False:
+        # just use the request directly..
+        #
+        info_str_formatted = info_str
+    else:
+        # write the data and create a new file uri
+        #
+        file_uri, err_msg = write_data_for_execute_pipeline(\
+                                        d3m_config,
+                                        info_dict[KEY_DATA])
+
+        # Did it work?
+        #
+        if err_msg is not None:
+            # .. nope
+            return None, get_failed_precondition_response(err_msg)
+
+        # ------------------------------------------------
+        # Reformat the original content
+        # ------------------------------------------------
+        # (1) remove the data key
+        if KEY_DATA in info_dict:
+            del info_dict[KEY_DATA]
+
+        # (2) Add the file_uri and convert it back to a JSON string
+        info_dict[KEY_DATASET_URI] = file_uri
+        info_str_formatted = json.dumps(info_dict)
+
+
+    # ------------------------------------------------
+    # At this point, there should be a 'dataset_uri' key, either:
+    #   - created from newly written data or
+    #   - sent directly from the UI
+    # ------------------------------------------------
+    if info_str_formatted.find(KEY_DATASET_URI) == -1:
+        err_msg = ('The request does not contain a "%s" key.') % KEY_DATASET_URI
+        return None, get_failed_precondition_response(err_msg)
+
 
     # --------------------------------
     # convert the JSON string to a gRPC request
@@ -106,10 +141,13 @@ def execute_pipeline(info_str=None):
         if embed_util.has_error:
             return get_failed_precondition_response(embed_util.error_message)
 
-        test_note = ('Test.  An actual result would be the test JSON with'
-                     ' the "data" section removed and DATA_URI replaced'
+        if includes_data:
+            test_note = ('Test.  An actual result would be the test JSON with'
+                     ' the "data" section removed and a dataset_uri added'
                      ' with a file path to where the "data" section was'
                      ' written.')
+        else:
+            test_note = ('Message sent directly to TA2')
 
         return json.dumps(dict(note=test_note)), embed_util.get_final_results()
         #---

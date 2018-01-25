@@ -89,13 +89,19 @@ let ExportPipeline_ex = {
                            "pipelineExecUri":"<<EXECUTABLE_URI>>"
                         };
 
+let ExecutePipelineDirect_ex = {
+                             "context":{
+                                "sessionId": "session_0"
+                             },
+                             "pipelineId": "pipeline_1",
+                             "dataset_uri": "file://ravens_volume/test_data/185_baseball/TRAIN/dataset_TRAIN/tables/learningData.csv",
+                           }
 
 let ExecutePipeline_ex = {
                              "context":{
                                 "sessionId": "session_0"
                              },
                              "pipelineId": "pipeline_1",
-                             "dataset_uri": "<<DATA_URI>>",
                              "data":[
                               [
                                  5.4496644295302,

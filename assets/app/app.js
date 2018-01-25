@@ -1830,9 +1830,9 @@ function onPipelineCreate(PipelineCreateResult) {
         let mymetric = "";
         let myval = "";
         console.log(key);
-        console.log(allPipelineInfo[key].progressInfo) 
-        let myscores = [];    
-//        if(allPipelineInfo[key].progressInfo == "COMPLETED"){   
+        console.log(allPipelineInfo[key].progressInfo)
+        let myscores = [];
+//        if(allPipelineInfo[key].progressInfo == "COMPLETED"){
             myscores = allPipelineInfo[key].pipelineInfo.scores;
             for(var i = 0; i < myscores.length; i++) {
                 //if(i==0) {myid=key;}
@@ -2973,11 +2973,11 @@ export function executepipeline() {
         data.push(mydata);
     }
 
-    makeRequest(D3M_SVC_URL + '/executepipeline', {context, pipelineId, dataset_uri, data});
+    makeRequest(D3M_SVC_URL + '/ExecutePipeline', {context, pipelineId, dataset_uri, data});
 }
 
 /**
-    call to django to update the problem definition in the problem document 
+    call to django to update the problem definition in the problem document
     rpc SetProblemDoc(SetProblemDocRequest) returns (Response) {}
 */
 function setProblemDefinition(type, updates, lookup) {
