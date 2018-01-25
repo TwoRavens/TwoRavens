@@ -7,7 +7,28 @@
   This is a test to display the error page--not an actual error.
 </div>
 {% endif %}
+
 <div class="alert alert-success" role="alert">
+  Evaluators:  Please see the instructions below for TA3 Search.
+</div>
+
+<div class="card">
+  <div class="card-header"><b>TA3 search needed: D3M configuration not loaded</b></div>
+  <div class="card-body">
+      <p>To load a D3M configuration, please:</p>
+      <ol>
+        <li><b>Run ta3_search against the runnning container</b>:
+          <br />&nbsp;
+          <pre><code>kubectl exec -ti ravens-ta3 --container ta3-main -- ta3_search [path to config file]</code></pre>
+          <i>example:</i> <pre><code>kubectl exec -ti ravens-ta3 --container ta3-main -- ta3_search  /ravens_volume/config_185_baseball.json</code></pre></li>
+        <li><b> <a href="/" xclass="btn btn-success btn-sm">Refresh</a> this page</b></li>
+      </ol>
+  </div>
+</div>
+<hr />
+<hr />
+<h4><i>developer info below</i></h4>
+<div class="alert alert-info" role="alert">
   Developers! Fastest way to fix this:
   <ul>
   <li>Load test data based on local files in the TwoRavens/ravens_volume directory:
@@ -15,9 +36,11 @@
   </li>
   </ul>
 </div>
+
 <div class="card">
-  <div class="card-header">D3M configuration was NOT loaded</div>
+  <div class="card-header">D3M configuration not loaded</div>
   <div class="card-body">
+
     <h4>No D3M configuration information in the database.</h4>
 
     <p>To fix this, load the configuration information and REFRESH this page:</p>

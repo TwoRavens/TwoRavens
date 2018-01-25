@@ -12,7 +12,7 @@ eval $(minikube docker-env)
 docker build -t ravens-main:stable .
 docker build -t ravens-r-service:stable -f Dockerfile-r-service .
 # optional: ta2 test server
-docker build -t ravens-main:stable .
+#docker build -t ravens-main:stable .
 
 ```
 
@@ -29,6 +29,11 @@ docker build -t ravens-nginx:stable -f Dockerfile-kube .
 # get the pods running
 #
 kubectl apply -f tworavens_ta3_pod.yml --validate=false
+
+# delete the pods
+#
+kubectl delete -f tworavens_ta3_pod.yml
+
 
 # check status
 kubectl get pods

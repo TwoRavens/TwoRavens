@@ -80,8 +80,8 @@ RUN fab init_db && \
     fab create_test_user  && \
     fab load_docker_ui_config && \
     fab collect_static && \
-    fab make_d3m_config_files && \
     fab ta3_listener_add
+#    fab make_d3m_config_files && \
 
 # -------------------------------------
 # Expose port for web communication
