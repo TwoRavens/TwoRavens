@@ -1141,6 +1141,7 @@ function createElement(actorType, columnType, value, chkSwitch = true) {
 
 //when an actor selected, add into currentNode.group
 function actorSelectChanged(value) {
+	console.log("actor selected " + value);
     let checkbox = document.getElementById(currentTab + 'full' + value + 'check');
 
     if (checkbox.checked) {
@@ -1149,6 +1150,8 @@ function actorSelectChanged(value) {
     else {
         currentNode[currentTab].group.delete(value);
     }
+	console.log(actorLinks);
+	console.log(currentNode);
 }
 
 function actorFilterChanged(value, category) {

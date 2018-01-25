@@ -111,7 +111,7 @@ if (localStorage.getItem("dataset") !== null) {
 }
 
 // Options: "api" or "local"
-export let datasource = 'api';
+export let datasource = 'local';
 
 export let subsetKeys = [];
 export let subsetKeySelected = "";

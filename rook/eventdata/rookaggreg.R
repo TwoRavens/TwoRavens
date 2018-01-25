@@ -95,6 +95,21 @@ eventdata_aggreg.app <- function(env) {
 	}
 	else {
 		print("using actor")
+		print(everything$actors$links$group0)
+		print(typeof(everything$actors$links$group0))
+#~ 		actorLinks = do.call(rbind, everything$actors$links)
+#~ 		print(actorLinks)
+#~ 		print(typeof(actorLinks))
+		
+		actorLinks = everything$actors$links
+		print(actorLinks)
+		print("end of actorLinks")
+		print(length(actorLinks))
+		#need to compress the source/target lists to a csv like format
+		#DONE in .js
+#~ 		print(actorLinks$group$sources)
+#~ 		actorLinks$group$sources = write.table(matrix(as.character(actorLinks$group$sources), nrow=1), sep=",", row.names=FALSE, col.names=FALSE)
+#~ 		print(actorLinks)
 	}
 
 	#if not using date and not using actor return sum of each root codes
@@ -102,7 +117,8 @@ eventdata_aggreg.app <- function(env) {
 	#if using only actor return a collection of m x 20 of root codes, organized by aggreg on actor groups
 	#else return a collection of (n x m) x 20 of root codes, organized by aggreg on both groups
 
-	query_url = paste(eventdata_url, '&query={\"<date>\":{\"$gte\":\"', everything$date$min, '\",\"$lte\":\"', everything$date$max, '\"}}', sep="")		#change query to match min/max date
+#~ 	query_url = paste(eventdata_url, '&query={\"<date>\":{\"$gte\":\"', everything$date$min, '\",\"$lte\":\"', everything$date$max, '\"}}', sep="")		#change query to match min/max date
+	query_url = paste(eventdata_url, '&query={"<date>":{"$gte":"', everything$date$min, '","$lte":"', everything$date$max, '"}}', sep="")		#change query to match min/max date
 
 	if (everything$date$dateType == 0 && everything$actors$actorType == FALSE) {
 		print("nothing to aggreg on")
@@ -120,14 +136,234 @@ eventdata_aggreg.app <- function(env) {
 			)))
 		}
 	}
-	else if (everything$dateType != 0 && everything$actors$actorType == FALSE) {
+	else if (everything$date$dateType != 0 && everything$actors$actorType == FALSE) {
 		print("only date")
+		if (everything$date$dateType == 1) {	#weekly
+			print("weekly")
+			
+			start_date = as.Date(strptime(everything$date$min, "%Y%m%d"))
+			offset_date = as.Date(cut(as.Date(start_date), "week"))
+			diff = abs(as.numeric(start_date - offset_date, units="days"))
+			
+			if (dataset %in% list("phoenix_rt", "cline_phoenix_fbis", "cline_phoenix_nyt", "cline_phoenix_swb")) {
+			
+				action_frequencies = future({
+					data = do.call(data.frame, getData(paste(eventdata_url, '&aggregate=[',
+						'{"$match": ',
+							'{"<date>": {"$gte":"', everything$date$min,
+									'", "$lte":"', everything$date$max,
+							'"}}},',
+						'{"$project": ',
+							'{"iso_date": {',
+								'"$dateFromParts": {"year": "$<year>", "month": "$<month>", "day":"$<day>"}},',
+							'"<root_code>": 1}},',
+						'{"$project": {',
+							'"iso_date": {"$subtract": ["$iso_date", ', 86400000 * diff, ']}, "<root_code>": 1}},',
+						'{"$group": {',
+							'"_id": {',
+								'"Year": {"$year": "$iso_date"},',
+								'"Week": {"$week": "$iso_date"},',
+								'"root_code": "$<root_code>"}, "total":{"$sum": 1}}}]',
+					sep="")))
+								
+					if (nrow(data) != 0) colnames(data) = c('total', '<root_code>', 'week', 'year')
+					data
+				}) %plan% multiprocess
+
+				print("end of week only")
+				print(value(action_frequencies))
+
+				result = toString(jsonlite::toJSON(list(
+					action_data = value(action_frequencies)
+				)))
+			}
+		}
+		else if (everything$date$dateType == 2) {	#monthly
+			print("monthly")
+			if (dataset %in% list("phoenix_rt", "cline_phoenix_fbis", "cline_phoenix_nyt", "cline_phoenix_swb")) {
+			
+				action_frequencies = future({
+					data = do.call(data.frame, getData(paste(eventdata_url, '&aggregate=[',
+						'{"$match": ',
+							'{"<date>": {"$gte":"', everything$date$min,
+									'", "$lte":"', everything$date$max,
+							'"}}}',
+						'{"$project": ',
+							'{"iso_date": {',
+								'"$dateFromParts": {"year": "$<year>", "month": "$<month>", "day":"$<day>"}},',
+							'"<root_code>": 1}},',
+						'{"$project": {',
+							'"iso_date": {"$subtract": ["$iso_date", ', 86400000 * diff, ']}, "<root_code>": 1}},',
+						'{"$group": {',
+							'"_id": {',
+								'"Year": {"$year": "$iso_date"},',
+								'"Month": {"$month": "$iso_date"},',
+								'"root_code": "$<root_code>"}, "total":{"$sum": 1}}}]',
+					sep="")))
+								
+					if (nrow(data) != 0) colnames(data) = c('total', '<root_code>', 'month', 'year')
+					data
+				}) %plan% multiprocess
+
+				result = toString(jsonlite::toJSON(list(
+					action_data = value(action_frequencies)
+				)))
+			}
+		}
+		else if (everything$date$dateType == 3) {	#quarterly
+			print("quarterly")
+			if (dataset %in% list("phoenix_rt", "cline_phoenix_fbis", "cline_phoenix_nyt", "cline_phoenix_swb")) {
+			#compress to first day of each quarter
+				action_frequencies = future({
+					data = do.call(data.frame, getData(paste(eventdata_url, '&aggregate=[',
+						'{"$match": ',
+							'{"<date>": {"$gte":"', everything$date$min,
+									'", "$lte":"', everything$date$max,
+							'"}}}',
+						'{"$project": ',
+							'{"iso_date": {',
+								'"$dateFromParts": {"year": "$<year>", "month": "$<month>", "day":"$<day>"}},',
+							'"<root_code>": 1}},',
+						'{"$project": {',
+							'"iso_date": {"$subtract": ["$iso_date", ', 86400000 * diff, ']}, "<root_code>": 1}},',
+						'{"$project": {',
+							'"iso_date": 1,',
+							'"quarter":{"$cond":[{"$lte":[{"$month":"$iso_date"},3]}, "first",',
+									  '{"$cond":[{"$lte":[{"$month":"$iso_date"},6]}, "second",',
+									  '{"$cond":[{"$lte":[{"$month":"$iso_date"},9]}, "third",',
+									  '"fourth"]}]}]}}}',
+						'{"$group": {',
+							'"_id": {',
+								'"Year": {"$year": "$iso_date"},',
+								'"Quarter": {"$quarter"},',
+								'"root_code": "$<root_code>"}, "total":{"$sum": 1}}}]',
+					sep="")))
+								
+					if (nrow(data) != 0) colnames(data) = c('total', '<root_code>', 'quarter', 'year')
+					data
+				}) %plan% multiprocess
+
+				result = toString(jsonlite::toJSON(list(
+					action_data = value(action_frequencies)
+				)))
+			}
+		}
+		else if (everything$date$dateType == 4) {	#yearly
+			print("yearly")
+			if (dataset %in% list("phoenix_rt", "cline_phoenix_fbis", "cline_phoenix_nyt", "cline_phoenix_swb")) {
+			
+				action_frequencies = future({
+					data = do.call(data.frame, getData(paste(eventdata_url, '&aggregate=[',
+						'{"$match": ',
+							'{"<date>": {"$gte":"', everything$date$min,
+									'", "$lte":"', everything$date$max,
+							'"}}}',
+						'{"$project": ',
+							'{"iso_date": {',
+								'"$dateFromParts": {"year": "$<year>", "month": "$<month>", "day":"$<day>"}},',
+							'"<root_code>": 1}},',
+						'{"$project": {',
+							'"iso_date": {"$subtract": ["$iso_date", ', 86400000 * diff, ']}, "<root_code>": 1}},',
+						'{"$group": {',
+							'"_id": {',
+								'"Year": {"$year": "$iso_date"},',
+								'"root_code": "$<root_code>"}, "total":{"$sum": 1}}}]',
+					sep="")))
+								
+					if (nrow(data) != 0) colnames(data) = c('total', '<root_code>', 'year')
+					data
+				}) %plan% multiprocess
+
+				result = toString(jsonlite::toJSON(list(
+					action_data = value(action_frequencies)
+				)))
+			}
+		}
+		else {
+			print("bad date data")
+		}
 	}
-	else if (everything$dateType == 0 && everything$actors$actorType == TRUE) {
+	else if (everything$date$dateType == 0 && everything$actors$actorType == TRUE) {
 		print("only actor")
+		if (dataset %in% list("phoenix_rt", "cline_phoenix_fbis", "cline_phoenix_nyt", "cline_phoenix_swb")) {
+			#not working
+				action_frequencies = future({
+					data = do.call(data.frame, getData(paste(eventdata_url, '&aggregate=[',
+						'{"$match": ',
+							'{"$and": [',
+								'{"<date>": {"$gte":"', everything$date$min,
+									'", "$lte":"', everything$date$max,
+								'"}}, {"<source>": {"$in": [',
+									'"USA", "USABUS", "USABUSLEG", "USAELI", "USAGOV"',
+								']}}, {"<target>": {"$in": [',
+									'"AFG", "AFGBUS", "AFGCVL", "AFGGOV", "AFGMIL"',
+								']}}]}},',
+						'{"$project": ',
+							'{"iso_date": {',
+								'"$dateFromParts": {"year": "$<year>", "month": "$<month>", "day":"$<day>"}},',
+							'"<root_code>": 1}},',
+						'{"$project": {',
+							'"iso_date": {"$subtract": ["$iso_date", ', 86400000 * diff, ']}, "<root_code>": 1}},',
+						'{"$group": {',
+							'"_id": {',
+								'"Year": {"$year": "$iso_date"},',
+								'"Week": {"$week": "$iso_date"},',
+								'"root_code": "$<root_code>"}, "total":{"$sum": 1}}}]',
+					sep="")))
+								
+					if (nrow(data) != 0) colnames(data) = c('total', '<root_code>', 'actor', 'year')
+					data
+				}) %plan% multiprocess
+			}
 	}
 	else {
 		print("aggreg all")
+		if (everything$date$dateType == 1) {	#weekly
+			print("aggreg week")
+			
+			if (dataset %in% list("phoenix_rt", "cline_phoenix_fbis", "cline_phoenix_nyt", "cline_phoenix_swb")) {
+			
+				action_frequencies = future({
+					data = do.call(data.frame, getData(paste(eventdata_url, '&aggregate=[',
+						'{"$match": ',
+							'{"$and": [',
+								'{"<date>": {"$gte":"', everything$date$min,
+									'", "$lte":"', everything$date$max,
+								'"}}, {"<source>": {"$in": [',
+									'"USA", "USABUS", "USABUSLEG", "USAELI", "USAGOV"',
+								']}}, {"<target>": {"$in": [',
+									'"AFG", "AFGBUS", "AFGCVL", "AFGGOV", "AFGMIL"',
+								']}}]}},',
+						'{"$project": ',
+							'{"iso_date": {',
+								'"$dateFromParts": {"year": "$<year>", "month": "$<month>", "day":"$<day>"}},',
+							'"<root_code>": 1}},',
+						'{"$project": {',
+							'"iso_date": {"$subtract": ["$iso_date", ', 86400000 * diff, ']}, "<root_code>": 1}},',
+						'{"$group": {',
+							'"_id": {',
+								'"Year": {"$year": "$iso_date"},',
+								'"Week": {"$week": "$iso_date"},',
+								'"root_code": "$<root_code>"}, "total":{"$sum": 1}}}]',
+					sep="")))
+								
+					if (nrow(data) != 0) colnames(data) = c('total', '<root_code>', 'week', 'year')
+					data
+				}) %plan% multiprocess
+			}
+
+				print("end of week and actor")
+				print(value(action_frequencies))
+
+			result = toString(jsonlite::toJSON(list(
+				action_data = value(action_frequencies)
+			)))
+
+		}
+		else {
+			print ("aggreg else")
+		}
+						
 	}
     
 	response$write(result)

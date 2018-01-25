@@ -125,7 +125,7 @@ export function updateToAggreg() {
 			}
 			else {
 				$(".aggregDataDate").show();
-				console.log(datemin);
+				//~ console.log(datemin);
 				//~ var month = datemin.getMonth();
 				//~ var day = datemin.getDate();
 				//~ var year = datemin.getFullYear();
@@ -262,17 +262,18 @@ export function updateToAggreg() {
 		//~ console.log(datemax);
 
 		console.log(actorLinks);
+		console.log(actorLinks[0].source.group.entries());
 		let aggregActorFormat = {};
 		for (let x = 0; x < actorLinks.length; x ++) {
 			//~ aggregActorFormat[x] = {"sourceName" : actorLinks[x].source.name, "sources" : JSON.stringify(actorLinks[x].source.group),
 									//~ "targetName" : actorLinks[x].target.name, "targets" : JSON.stringify(actorLinks[x].target.group)
 									//~ };
-			aggregActorFormat["group" + x] = {"sourceName" : actorLinks[x].source.name, "sources" : actorLinks[x].source.group,
-									"targetName" : actorLinks[x].target.name, "targets" : actorLinks[x].target.group
-									};
-			//~ aggregActorFormat[x] = {"sourceName" : actorLinks[x].source.name,
-									//~ "targetName" : actorLinks[x].target.name
+			//~ aggregActorFormat["group" + x] = {"sourceName" : actorLinks[x].source.name, "sources" : Array.from(actorLinks[x].source.group),
+									//~ "targetName" : actorLinks[x].target.name, "targets" : Array.from(actorLinks[x].target.group)
 									//~ };
+			aggregActorFormat["group" + x] = {"sourceName" : actorLinks[x].source.name, "sources" : '"' + Array.from(actorLinks[x].source.group).join('","') + '"',
+									"targetName" : actorLinks[x].target.name, "targets" : '"' + Array.from(actorLinks[x].target.group).join('","') + '"'
+									};
 		}
 		console.log("aggreg actor Format");
 		console.log(aggregActorFormat);
@@ -284,7 +285,10 @@ export function updateToAggreg() {
 			//~ console.log("length of month = " + date.getUTCMonth().toString().length);
 			if (date.getUTCMonth().toString().length == 1)
 				ret += "0";
-			ret += (date.getUTCMonth() + 1) + "" + date.getUTCDate();
+			ret += (date.getUTCMonth() + 1) + "";
+			if (date.getUTCDate().toString().length == 1)
+				ret += "0";
+			ret += date.getUTCDate();
 			return ret;
 		}
 
