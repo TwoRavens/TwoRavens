@@ -130,12 +130,7 @@ def execute_pipeline(info_str=None, includes_data=True):
 
     if settings.TA2_STATIC_TEST_MODE:
 
-        #return info_str_formatted,\
-        #       get_grpc_test_json('test_responses/execute_results_1pipe_ok.json',
-        #                          dict())
-        #---
         template_info = get_predict_file_info_dict()
-
         template_str = get_grpc_test_json('test_responses/execute_results_1pipe_ok.json',
                                           template_info)
 
@@ -153,11 +148,7 @@ def execute_pipeline(info_str=None, includes_data=True):
             test_note = ('Message sent directly to TA2')
 
         return json.dumps(dict(note=test_note)), embed_util.get_final_results()
-        #---
-        #return info_str_formatted,\
-        #       get_grpc_test_json('test_responses/execute_results_1pipe_ok.json',
-        #                          dict())
-
+        
     # --------------------------------
     # Get the connection, return an error if there are channel issues
     # --------------------------------
