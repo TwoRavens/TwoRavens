@@ -91,7 +91,7 @@ def start_session(raven_json_str=None):
     # Send the gRPC request
     # --------------------------------
     try:
-        reply = core_stub.StartSession(req)
+        reply = core_stub.StartSession(req, timeout=3)
     except Exception as ex:
         return get_failed_precondition_sess_response(str(ex))
 
