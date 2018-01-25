@@ -386,7 +386,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
       if (res.responseInfo.status.code != "OK"){
         const user_err_msg = "Failed to StartSession with TA2! status code: " + res.responseInfo.status.code;
         alert(user_err_msg);
-        end_ta3_search(False, user_err_msg);
+        end_ta3_search(false, user_err_msg);
       }else{
         zparams.zsessionid = res.context.sessionId;
       }
