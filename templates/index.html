@@ -52,7 +52,15 @@
           const IS_DATAVERSE_DOMAIN = (APP_DOMAIN === DATAVERSE_DOMAIN);
           const IS_EVENTDATA_DOMAIN = (APP_DOMAIN === EVENTDATA_DOMAIN);
 
-          
+          // TA2 information
+          {% if TA2_STATIC_TEST_MODE %}
+          const TA2_SERVER = '(none/test mode)';
+          {% else %}
+          const TA2_SERVER = '{{ TA2_TEST_SERVER_URL }}';
+          {% endif %}
+          const TA3TA2_API_VERSION = '{{ TA3TA2_API_VERSION }}';
+
+
           // look in base.html for a reference
           {% if user.is_authenticated %}
             const username = "{{ user.username }}";
@@ -63,7 +71,7 @@
             const logout_url = "{% url 'logout' %}";
             const login_url = "{% url 'login' %}";
           {% endif %}
-          
+
 
     </script>
   {% endblock %}

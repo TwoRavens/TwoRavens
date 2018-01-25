@@ -4,10 +4,12 @@ from django.urls import reverse
 from django.http import HttpResponse, JsonResponse, Http404, HttpResponseRedirect
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
+from django.conf import settings
 
 from tworaven_apps.configurations.models import AppConfiguration
 from tworaven_apps.configurations.utils import get_latest_d3m_config
 from tworaven_apps.utils.view_helper import get_session_key
+from tworaven_apps.ta2_interfaces.grpc_util import TA3TA2Util
 
 def view_pebbles_home(request):
     """Serve up the workspace, the current home page.
@@ -36,7 +38,10 @@ def view_pebbles_home(request):
 
     dinfo = dict(title='TwoRavens',
                  session_key=session_key,
-                 app_config=app_config.convert_to_dict())
+                 app_config=app_config.convert_to_dict(),
+                 TA2_STATIC_TEST_MODE=settings.TA2_STATIC_TEST_MODE,
+                 TA2_TEST_SERVER_URL=settings.TA2_TEST_SERVER_URL,
+                 TA3TA2_API_VERSION=TA3TA2Util.get_api_version())
 
     return render(request,
                   'index.html',
