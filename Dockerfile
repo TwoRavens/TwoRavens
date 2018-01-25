@@ -111,6 +111,8 @@ RUN echo '#!/bin/bash'  >> /usr/bin/ta3_search && \
     echo 'python manage.py runserver 8080'  >> /usr/bin/test_run && \
     chmod u+x /usr/bin/test_run
 
+RUN chmod u+x $CODE_REPOSITORY/startup_script/run_main_server.sh
+
 # -------------------------------------
 # Run the python server (django dev or gunicorn)
 # -------------------------------------

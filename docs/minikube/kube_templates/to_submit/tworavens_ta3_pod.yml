@@ -48,13 +48,13 @@ spec:
       hostPath:
         path: "/ravens_volume"
     ##====|Begin| Required Code that NIST uses to pair TA2 and TA3 components |Begin|
-    #- name: nfs-data
-    #  mountPath: "/inputs"
-    #  subPath: "{{ path_to_dataroot }}"
-    #  readOnly: true
-    #- name: "nfs-output"
-    #  mountPath: "/outputs"
-    #  subPath: "{{ path_to_outputs }}"
+    - name: nfs-data
+      mountPath: "/inputs"
+      subPath: "{{ path_to_dataroot }}"
+      readOnly: true
+    - name: "nfs-output"
+      mountPath: "/outputs"
+      subPath: "{{ path_to_outputs }}"
     ##====|End| Required Code that NIST uses to pair TA2 and TA3
   # affinity:
   #   # Link pod affinity with
@@ -76,7 +76,7 @@ spec:
   # - reverse proxy for ta3-main
   # -------------------------
   - name: ravens-nginx
-    image: ravens-nginx:stable
+    image: registry.datadrivendiscovery.org/j18_ta3eval/tworavens/ravens-nginx:stable
     ports:
       - containerPort: 80
         name: http
@@ -86,7 +86,7 @@ spec:
   # - includes entry point for evaluation
   # -------------------------
   - name: ta3-main
-    image: ravens-main:stable
+    image: registry.datadrivendiscovery.org/j18_ta3eval/tworavens/ravens-main:stable
     #imagePullPolicy: Always
     #command:
     #  - ta3_search
@@ -130,13 +130,13 @@ spec:
         mountPath: "/ravens_volume"
         readOnly: false
       ##====|Begin| Required Code that NIST uses to pair TA2 and TA3 components |Begin|
-      #- name: nfs-data
-      #  mountPath: "/inputs"
-      #  subPath: "{{ path_to_dataroot }}"
-      #  readOnly: true
-      #- name: "nfs-output"
-      #  mountPath: "/outputs"
-      #  subPath: "{{ path_to_outputs }}"
+      - name: nfs-data
+        mountPath: "/inputs"
+        subPath: "{{ path_to_dataroot }}"
+        readOnly: true
+      - name: "nfs-output"
+        mountPath: "/outputs"
+        subPath: "{{ path_to_outputs }}"
       ##====|End| Required Code that NIST uses to pair TA2 and TA3
     # liveness is for restart
     livenessProbe:
@@ -158,21 +158,20 @@ spec:
   # 3 of 3: Rook R services
   # -------------------------
   - name: rook-service
-    image: ravens-r-service:stable
+    image: registry.datadrivendiscovery.org/j18_ta3eval/tworavens/ravens-r-service:stable
     # same mounts as ta3-main and ta2-main
     volumeMounts:
       - name: "ravens-volume"
         mountPath: "/ravens_volume"
         readOnly: false
-
       ##====|Begin| Required Code that NIST uses to pair TA2 and TA3 components |Begin|
-      #- name: nfs-data
-      #  mountPath: "/inputs"
-      #  subPath: "{{ path_to_dataroot }}"
-      #  readOnly: true
-      #- name: "nfs-output"
-      #  mountPath: "/outputs"
-      #  subPath: "{{ path_to_outputs }}"
+      - name: nfs-data
+        mountPath: "/inputs"
+        subPath: "{{ path_to_dataroot }}"
+        readOnly: true
+      - name: "nfs-output"
+        mountPath: "/outputs"
+        subPath: "{{ path_to_outputs }}"
       ##====|End| Required Code that NIST uses to pair TA2 and TA3
     # web port
     ports:

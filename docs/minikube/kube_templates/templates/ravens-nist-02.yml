@@ -47,7 +47,14 @@ spec:
     - name: "ravens-volume"
       hostPath:
         path: "/ravens_volume"
-{{ shared_volumes() }}
+    ##====|Begin| Required Code that NIST uses to pair TA2 and TA3 components |Begin|
+    - name: nfs-data
+      persistentVolumeClaim:
+        claimName: pvc-datasets
+    - name: nfs-output
+      persistentVolumeClaim:
+        claimName: pvc-rw
+    ##====|End| Required Code that NIST uses to pair TA2 and TA3 components |End|
   # affinity:
   #   # Link pod affinity with
   #   podAffinity:
@@ -68,7 +75,7 @@ spec:
   # - reverse proxy for ta3-main
   # -------------------------
   - name: ravens-nginx
-    image: ravens-nginx:stable
+    image: {{ registry_prefix }}ravens-nginx:stable
     ports:
       - containerPort: 80
         name: http
@@ -78,12 +85,12 @@ spec:
   # - includes entry point for evaluation
   # -------------------------
   - name: ta3-main
-    image: ravens-main:stable
-    #imagePullPolicy: Always
-    #command:
-    #  - {{ command }}
-    #args:
-    #  - {{ command_args }}
+    image: {{ registry_prefix }}ravens-main:stable
+    imagePullPolicy: Always
+    command:
+      - {{ command }}
+    args:
+      - {{ command_args }}
     # web (perhaps nginx) ports
     ports:
       # Main web port; nginx makes this available via port 80
@@ -123,14 +130,14 @@ spec:
         readOnly: false
 {{ shared_volumes()|indent(2, first=True) }}
     # liveness is for restart
-    livenessProbe:
-      httpGet:
-        path: /monitoring/alive
-        port: 8080
-      initialDelaySeconds: 5
-      timeoutSeconds: 1
-      periodSeconds: 10
-      failureThreshold: 3
+    #livenessProbe:
+    #  httpGet:
+    #    path: /monitoring/alive
+    #    port: 8080
+    #  initialDelaySeconds: 5
+    #  timeoutSeconds: 1
+    #  periodSeconds: 10
+    #  failureThreshold: 3
     # readiness: ready for traffic
     readinessProbe:
       httpGet:
@@ -142,13 +149,12 @@ spec:
   # 3 of 3: Rook R services
   # -------------------------
   - name: rook-service
-    image: ravens-r-service:stable
+    image: {{ registry_prefix }}ravens-r-service:stable
     # same mounts as ta3-main and ta2-main
     volumeMounts:
       - name: "ravens-volume"
         mountPath: "/ravens_volume"
         readOnly: false
-
 {{ shared_volumes()|indent(2, first=True) }}
     # web port
     ports:

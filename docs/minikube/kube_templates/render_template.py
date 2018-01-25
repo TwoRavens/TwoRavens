@@ -5,6 +5,7 @@ import sys
 from os.path import abspath, dirname, join, normpath, isdir, isfile
 from jinja2 import (Template,
                     Environment,
+                    BaseLoader,
                     PackageLoader,
                     select_autoescape)
 
@@ -17,12 +18,13 @@ OUTPUT_DIR = join(CURRENT_DIR, 'output')
 
 class TemplateRenderHelper(object):
 
-    def __init__(self, template_dict, template_name, rendered_filename):
+    def __init__(self, template_dict, template_name, rendered_filename, **kwargs):
         """execute main method"""
         self.jinja_env = Environment(\
             loader=PackageLoader('kube_templates', 'templates'),
             autoescape=select_autoescape(['html', 'xml']))
 
+        self.for_minikube = kwargs.get('for_minikube', False)
 
         self.render_template(template_dict,
                              template_name,
@@ -39,6 +41,9 @@ class TemplateRenderHelper(object):
         #
         content = template.render(template_dict)
 
+        if self.for_minikube:
+            content = self.format_for_dev(content)
+
         # write file out
         #
         rendered_filepath = join(OUTPUT_DIR, rendered_filename)
@@ -48,15 +53,41 @@ class TemplateRenderHelper(object):
         print('-' * 40)
 
 
+    def format_for_dev(self, content):
+        """format for dev"""
+
+        replace_strings = \
+            {'registry.datadrivendiscovery.org/j18_ta3eval/tworavens/': '',
+             'persistentVolumeClaim': 'hostPath',
+             'claimName: pvc-datasets': 'path: /tmp',
+             'claimName: pvc-rw': 'path: /tmp',
+             'imagePullPolicy: Always': 'imagePullPolicy: Never'}
+
+        for old_str, new_str in replace_strings.items():
+            content = content.replace(old_str, new_str)
+
+        dev_template = Environment(loader=BaseLoader()).from_string(content)
+
+        dev_dict = dict(path_to_outputs='tmp',
+                        path_to_dataroot='tmp',
+                        eval_id='ravens',
+                        command='',
+                        command_args='')
+
+        updated_content = dev_template.render(dev_dict)
+
+        return updated_content
+
 if __name__ == '__main__':
 
-    tmpl_info = dict(eval_id='ravens',
-                     #path_to_dataroot='{{ path_to_dataroot }}',
-                     #path_to_outputs='{{ path_to_outputs }}',
-                     path_to_dataroot='path_to_dataroot',
-                     path_to_outputs='path_to_outputs',
-                     command='ta3_search',
-                     command_args='command_args')
+    tmpl_info_nist = dict(\
+         eval_id='{{ eval_id }}',
+         registry_prefix='registry.datadrivendiscovery.org/j18_ta3eval/tworavens/',
+         path_to_dataroot='{{ path_to_dataroot }}',
+         path_to_outputs='{{ path_to_outputs }}',
+         command='{{ command }}',
+         command_args='{{ command_args }}')
+
 
     #template_name = 'nist-orig-template.yml'
     #template_name = 'ravens-template-02.yml'
@@ -67,6 +98,7 @@ if __name__ == '__main__':
     template_name = 'ravens-nist-02.yml'
     output_file = 'tworavens_ta3_pod.yml'
 
-    trh = TemplateRenderHelper(tmpl_info,
+    trh = TemplateRenderHelper(tmpl_info_nist,
                                template_name,
-                               output_file)
+                               output_file,
+                               for_minikube=True)
