@@ -2959,10 +2959,7 @@ export function executepipeline() {
 
     zPop();
     zparams.callHistory = callHistory;
-    let jsonout = JSON.stringify(zparams);
 
-    //let predictFeatures = apiFeature(zparams.zvars,"<<DATA_URI>>");
-    dataset_uri = "<<DATA_URI>>";     // should perhaps adjust call to datasetUri to follow syntax norms on other calls to Django
     let data = [];
 
     //this will just set zparams.zsetx to the mean, which is default for setx plots
@@ -2983,7 +2980,7 @@ export function executepipeline() {
         data.push(mydata);
     }
 
-    makeRequest(D3M_SVC_URL + '/ExecutePipeline', {context, pipelineId, dataset_uri, data});
+    makeRequest(D3M_SVC_URL + '/ExecutePipeline', {context, pipelineId, data});
 }
 
 /**
