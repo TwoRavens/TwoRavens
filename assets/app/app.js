@@ -2503,6 +2503,7 @@ export let popoverContent = d => {
 
 /** needs doc */
 export function panelPlots() {
+
     if(IS_D3M_DOMAIN) {
         byId('btnSubset').classList.add('noshow');
     }
@@ -3872,22 +3873,21 @@ export function record_user_metadata(){
 }
 
 export function showPredPlot (btn) {
-    if(document.getElementById("setxLeft").style.display=="none")
+    if(document.getElementById("setxLeftGen").style.display=="none")
         return;
     document.getElementById("setxLeftPlot").style.display="block";
-    document.getElementById("setxLeft").style.display="none";
+    document.getElementById("setxLeftGen").style.display="none";
 }
 
 export function showGenPreds (btn) {
     if(document.getElementById("setxLeftPlot").style.display=="none")
         return;
     document.getElementById("setxLeftPlot").style.display="none";
-    document.getElementById("setxLeft").style.display="block";
+    document.getElementById("setxLeftGen").style.display="block";
 }
 
 function singlePlot(pred) {
     d3.select('#setxLeftTopRight').selectAll('svg').remove();
-    
     let i = findNodeIndex(pred);
     let node = allNodes[i];
     node.setxplot = false;
@@ -3899,25 +3899,5 @@ function singlePlot(pred) {
             node.setxplot = true;
             bars(node, div = "setxLeftTopRight", priv);
         }
-/*
-        d3.select("#setxLeft").selectAll("svg")
-        .each(function () {
-              d3.select(this);
-              var regstr = /(.+)_setxLeft_(\d+)/;
-              var myname = regstr.exec(this.id);
-              var nodeid = myname[2];
-              myname = myname[1];
-              if (!vars.includes(myname)) {
-              allNodes[nodeid].setxplot = false;
-              let temp = "#".concat(myname, "_setxLeft_", nodeid);
-              d3.select(temp)
-              .remove();
-              allNodes[nodeid].subsetplot = false;
-              temp = "#".concat(myname, "_tab2_", nodeid);
-              d3.select(temp)
-              .remove();
-              }
-              });
-              */
 }
 
