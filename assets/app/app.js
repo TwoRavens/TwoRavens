@@ -3177,8 +3177,8 @@ export function genconfdata (dvvalues, predvals) {
 
 /** needs doc */
 export function confusionmatrix(matrixdata, classes) {
-    d3.select("#setxMiddle").html("");
-    d3.select("#setxMiddle").select("svg").remove();
+    d3.select("#setxLeftPlot").html("");
+    d3.select("#setxLeftPlot").select("svg").remove();
 
     // adapted from this block: https://bl.ocks.org/arpitnarechania/dbf03d8ef7fffa446379d59db6354bac
     let mainwidth = byId('main').clientWidth;
@@ -3191,7 +3191,7 @@ export function confusionmatrix(matrixdata, classes) {
     condiv.style.marginLeft='20px';
     condiv.style.height=+(mainheight*.4)+'px';
     condiv.style.float="left";
-    byId('setxMiddle').appendChild(condiv);
+    byId('setxLeftPlot').appendChild(condiv);
 
     let legdiv = document.createElement('div');
     legdiv.id="confusionlegend";
@@ -3199,7 +3199,7 @@ export function confusionmatrix(matrixdata, classes) {
     legdiv.style.marginLeft='20px';
     legdiv.style.height=+(mainheight*.4)+'px';
     legdiv.style.display="inline-block";
-    byId('setxMiddle').appendChild(legdiv);
+    byId('setxLeftPlot').appendChild(legdiv);
 
     var margin = {top: 20, right: 10, bottom: 0, left: 50};
     function Matrix(options) {
@@ -3381,7 +3381,7 @@ export function confusionmatrix(matrixdata, classes) {
 
     // The table generation function. Used for the table of performance measures, not the confusion matrix
     function tabulate(data, columns) {
-        var table = d3.select("#setxMiddle").append("table")
+        var table = d3.select("#setxLeftPlot").append("table")
         .attr("style", "margin-left: " + margin.left +"px"),
         thead = table.append("thead"),
         tbody = table.append("tbody");
@@ -3457,8 +3457,8 @@ export function confusionmatrix(matrixdata, classes) {
    scatterplot function to go to plots.js to be reused
 */
 export function bivariatePlot(x_Axis, y_Axis, x_Axis_name, y_Axis_name) {
-    d3.select("#setxMiddle").html("");
-    d3.select("#setxMiddle").select("svg").remove();
+    d3.select("#setxLeftPlot").html("");
+    d3.select("#setxLeftPlot").select("svg").remove();
 
     let mainwidth = byId('main').clientWidth;
     let mainheight = byId('main').clientHeight;
@@ -3523,7 +3523,7 @@ export function bivariatePlot(x_Axis, y_Axis, x_Axis_name, y_Axis_name) {
     .scaleExtent([1, 10])
     .on("zoom", zoomed);
 
-    var chart_scatter = d3.select('#setxMiddle')
+    var chart_scatter = d3.select('#setxLeftPlot')
     .append('svg:svg')
     .attr('width', width + margin.right + margin.left)
     .attr('height', height + margin.top + margin.bottom);
@@ -3644,7 +3644,7 @@ export function bivariatePlot(x_Axis, y_Axis, x_Axis_name, y_Axis_name) {
 /** needs doc */
 export function setxTable(features) {
     function tabulate(data, columns) {
-        var table = d3.select('#setxRightBottomLeft').append('table');
+        var table = d3.select('#setxLeftBottom').append('table');
         var thead = table.append('thead');
         var	tbody = table.append('tbody');
 
@@ -3848,4 +3848,12 @@ export function record_user_metadata(){
       } catch (err) {
           console.log('record_user_metadata failed: ' + err);
       }
+}
+
+export function showPredPlot (btn) {
+    console.log("show pred plot");
+}
+
+export function showGenPreds (btn) {
+    console.log("show gen preds");
 }
