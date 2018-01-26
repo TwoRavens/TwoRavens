@@ -315,7 +315,7 @@ class Body {
                   m('span',
                     m('.dropdown[style=float: right; padding-right: 1em]',
                       m('#drop.button.btn[type=button][data-toggle=dropdown][aria-haspopup=true][aria-expanded=false]',
-                        [username, glyph('heart-empty')]),
+                        [username, " " , glyph('triangle-bottom')]),
                       m('ul.dropdown-menu[role=menu][aria-labelledby=drop]',
                         m('li[style=padding: 0.5em]', 'something here 1'),
                         m('li[style=padding: 0.5em]', 'something here 2'))),
