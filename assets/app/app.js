@@ -1798,7 +1798,7 @@ function tabulate(data, columns, divid) {
 
 }
 
-function onPipelineCreate(PipelineCreateResult, dvvalues, mydv) {
+function onPipelineCreate(PipelineCreateResult, rookpipe) {
     // rpc GetExecutePipelineResults(PipelineExecuteResultsRequest) returns (stream PipelineExecuteResult) {}
     estimateLadda.stop(); // stop spinner
 
@@ -1867,7 +1867,7 @@ function onPipelineCreate(PipelineCreateResult, dvvalues, mydv) {
     //console.log(dvvalues);
     // this initializes the main
     // this piece here is the first pipeline through: allPipelineInfo[resultstable[1].PipelineID]
-    resultsplotinit(allPipelineInfo[resultstable[1].PipelineID], dvvalues, mydv);
+    resultsplotinit(allPipelineInfo[resultstable[1].PipelineID], rookpipe);
     exportpipeline(resultstable[1].PipelineID);
 
     // I don't think we need these until we are handling streaming pipelines
@@ -2028,17 +2028,17 @@ export async function estimate(btn) {
         // pipelineapp is a rook application that returns the dependent variable, the DV values, and the predictors. can think of it was a way to translate the potentially complex grammar from the UI
 
         estimateLadda.start(); // start spinner
-        let res = await makeRequest(ROOK_SVC_URL + 'pipelineapp', zparams);
-        if (!res) {
+        let rookpipe = await makeRequest(ROOK_SVC_URL + 'pipelineapp', zparams);
+        if (!rookpipe) {
             estimated = true;
         } else {
-        console.log(res);
-            setxTable(res.predictors);
-            let dvvals = res.dvvalues;
-            let dvvar = res.depvar[0];
-            res = await makeRequest(D3M_SVC_URL + '/CreatePipelines', CreatePipelineData(res.predictors, res.depvar));
+        console.log(rookpipe);
+            setxTable(rookpipe.predictors);
+       //     let dvvals = res.dvvalues;
+        //    let dvvar = res.depvar[0];
+          let res = await makeRequest(D3M_SVC_URL + '/CreatePipelines', CreatePipelineData(rookpipe.predictors, rookpipe.depvar));
          //   res = await makeRequest(ROOK_SVC_URL + 'createpipeline', zparams);
-            res && onPipelineCreate(res, dvvals, dvvar);
+            res && onPipelineCreate(res, rookpipe);
         }
     }
 }
@@ -3105,9 +3105,11 @@ function toggleRightButtons(set) {
 }
 
 /** needs doc */
-export function resultsplotinit(pid, dvvalues, mydv) {
+export function resultsplotinit(pid, rookpipe) {
     console.log(pid);
-    console.log(mydv);
+    console.log(rookpipe);
+    let mydv = rookpipe.depvar[0];
+    let dvvalues= rookpipe.dvvalues;
    // let predfile = pid.pipelineInfo.predictResultData.file_1;
     let allPreds = pid.pipelineInfo.predictResultData.data;
     console.log(Object.keys(allPreds[1]));
@@ -3133,6 +3135,24 @@ export function resultsplotinit(pid, dvvalues, mydv) {
         let ydata = "Predicted";
         bivariatePlot(dvvalues, predvals, xdata, ydata);
     }
+    
+    // add the list of predictors into setxLeftTopLeft
+    d3.select("#setxLeftTopLeft").selectAll("p")
+        .data(rookpipe.predictors)
+        .enter()
+        .append("p")
+        .text(function (d) { return d; })
+        .attr('id',function(d) { return "sx_"+d; })
+        .attr('class',"item-default")
+        .on("click", function() {
+        if(this.className=="item-select") {
+            return;
+        } else {
+            d3.select("#setxLeftTopLeft").select("p.item-select")
+            .attr('class', 'item-default');
+            d3.select(this).attr('class',"item-select");
+        }
+        });
 }
 
 /** needs doc */
