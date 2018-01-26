@@ -3151,6 +3151,7 @@ export function resultsplotinit(pid, rookpipe) {
             d3.select("#setxLeftTopLeft").select("p.item-select")
             .attr('class', 'item-default');
             d3.select(this).attr('class',"item-select");
+            singlePlot(this.id.slice(3)); // drops that sx_
         }
         });
 }
@@ -3883,3 +3884,40 @@ export function showGenPreds (btn) {
     document.getElementById("setxLeftPlot").style.display="none";
     document.getElementById("setxLeft").style.display="block";
 }
+
+function singlePlot(pred) {
+    d3.select('#setxLeftTopRight').selectAll('svg').remove();
+    
+    let i = findNodeIndex(pred);
+    let node = allNodes[i];
+    node.setxplot = false;
+        node.subsetplot = false;
+        if (node.plottype === "continuous" & node.setxplot == false) {
+            node.setxplot = true;
+            density(node, div = "setxLeftTopRight", priv);
+        } else if (node.plottype === "bar" & node.setxplot == false) {
+            node.setxplot = true;
+            bars(node, div = "setxLeftTopRight", priv);
+        }
+/*
+        d3.select("#setxLeft").selectAll("svg")
+        .each(function () {
+              d3.select(this);
+              var regstr = /(.+)_setxLeft_(\d+)/;
+              var myname = regstr.exec(this.id);
+              var nodeid = myname[2];
+              myname = myname[1];
+              if (!vars.includes(myname)) {
+              allNodes[nodeid].setxplot = false;
+              let temp = "#".concat(myname, "_setxLeft_", nodeid);
+              d3.select(temp)
+              .remove();
+              allNodes[nodeid].subsetplot = false;
+              temp = "#".concat(myname, "_tab2_", nodeid);
+              d3.select(temp)
+              .remove();
+              }
+              });
+              */
+}
+

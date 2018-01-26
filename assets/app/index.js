@@ -165,7 +165,7 @@ function rightpanel(mode) {
         m('#modelView[style=display: none; float: left; width: 20%; background-color: white]'),
         m("p#resultsHolder[style=padding: .5em 1em]")),
       m(`#setx[style=display: ${when('right', 'btnSetx')}]`,
-        m('#setxRightAll[style=display:block; float: right; width: 25%; height:100%; background-color: white]'),
+        m('#setxRight[style=display:block; float: right; width: 25%; height:100%; background-color: white]'),
         m('#setxTop[style=display:block; float: left; width: 75%; height:10%; overflow: auto; background-color: white]',
             m("button.btn.btn-default.btn-xs#btnPredPlot[type='button']", {onclick: _=> app.showPredPlot('btnPredPlot'), style: {float: "left", "margin-left": "2%"}}, "Prediction Summary"),
             m("button.btn.btn-default.btn-xs#btnGenPreds[type='button']", {onclick: _=> app.showGenPreds('btnGenPreds'), style: {float: "left", "margin-left": "2%"}}, "Generate New Predictions")),

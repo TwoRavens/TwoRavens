@@ -3,7 +3,7 @@ export let selVarColor = '#fa8072'; // d3.rgb("salmon");
 
 // function to use d3 to graph density plots with preprocessed data
 export function density(node, div, priv) {
-    div = {subset: '#tab2', setxLeft: '#setxLeft', varSummary: '#tab3'}[div];
+    div = {subset: '#tab2', setxLeft: '#setxLeft', setxLeftTopRight: '#setxLeftTopRight', varSummary: '#tab3'}[div];
     if (!div)
         return alert("Error: incorrect div selected for plots");
 
@@ -35,7 +35,7 @@ export function density(node, div, priv) {
     } else if (div == "#tab2") {
         width = 200;
         height = 120;
-    } else if (div == "#setxLeft") {
+    } else if (div == "#setxLeft" || div == "#setxLeftTopRight") {
         width=tw*.185-margin.left-margin.right; //rightpanel.expand is 40 percent, setxLeft to 50 percent, toggle bar is 16px, padding, it's all about .185
         height=width*.6; //height to width is .6
     } else {
@@ -144,7 +144,7 @@ export function density(node, div, priv) {
     }
 
     // add z lines and sliders setx
-    if (div == "#setxLeft") {
+    if (div == "#setxLeft" || div == "#setxLeftTopRight") {
         plotsvg.append("text")
             .attr("id", "range") // this is bad practice, id is not unique
             .attr('class','xval')
@@ -247,7 +247,7 @@ export function density(node, div, priv) {
             node.subsetrange = brush.extent()[0].toPrecision(4) != brush.extent()[1].toPrecision(4) ?
                 [(brush.extent()[0]).toPrecision(4), (brush.extent()[1]).toPrecision(4)] :
                 ["", ""];
-        } else if (div == "#setxLeft") {
+        } else if (div == "#setxLeft" || div == "#setxLeftTopRight") {
             var value = brush.extent()[0];
             var s = 6;
             if (d3.event.sourceEvent) {
@@ -393,6 +393,7 @@ export function bars(node, div, priv) {
     let mydiv;
     if (div == "setxLeft") mydiv = "#setxLeft";
     else if (div == "varSummary") mydiv = "#tab3";
+    else if (div == "setxLeftTopRight") mydiv = "#setxLeftTopRight";
     else
         return alert("Error: incorrect div selected for plots");
 
@@ -413,7 +414,7 @@ export function bars(node, div, priv) {
     if (mydiv == "#tab3") {
         width = 0.7 * (width - margin.left - margin.right);
         height = 0.3 * (height - margin.top - margin.bottom);
-    } else if (mydiv == "#setxLeft") {
+    } else if (mydiv == "#setxLeft" || mydiv=="#setxLeftTopRight") {
         //width = 200;
         //height = 120;
         width=tw*.185-margin.left-margin.right; //rightpanel.expand is 40 percent, setxLeft to 50 percent, toggle bar is 16px, padding, it's all about .185
@@ -631,7 +632,7 @@ export function bars(node, div, priv) {
         .style("font-size", "12px")
         .text(node.name);
 
-    if (mydiv == "#setxLeft") {
+    if (mydiv == "#setxLeft" || mydiv=="#setxLeftTopRight") {
         plotsvg.append("text")
             .attr("id", "range") // bad practice, not unique
             .attr('class','xval')
