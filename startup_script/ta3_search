@@ -1,0 +1,20 @@
+#!/bin/bash
+servers=$(ps -a | grep python | wc -l)
+printf "\nCheck for running web server before starting ta3_search..."
+#printf "# python processes running: ${servers}"
+if [ $servers -eq 0 ]
+then
+    printf "\nTwo Ravens web server NOT running"
+    cp -r /var/webapps/TwoRavens/ravens_volume/. /ravens_volume/
+    cd /var/webapps/TwoRavens
+    printf "\nStarting web server.."
+    python manage.py runserver 0.0.0.0:8080 > /dev/null 2> /tmp/ta3-main-log.txt &
+    printf "\n(Pausing 3 seconds...)"
+    sleep 3
+    printf "\nWeb server is running. (logging to /tmp/ta3-main-log.txt)"
+else
+    printf "\nTwo Ravens web server is running (${servers})"
+fi
+printf "\n\n--- ta3_search ---\n"
+cd /var/webapps/TwoRavens
+python manage.py ta3_search "$@"
