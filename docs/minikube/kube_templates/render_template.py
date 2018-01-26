@@ -68,11 +68,12 @@ class TemplateRenderHelper(object):
 
         dev_template = Environment(loader=BaseLoader()).from_string(content)
 
-        dev_dict = dict(path_to_outputs='tmp',
-                        path_to_dataroot='tmp',
-                        eval_id='ravens',
-                        command='',
-                        command_args='')
+        dev_dict = dict(\
+                path_to_outputs='tmp',
+                path_to_dataroot='tmp',
+                eval_id='ravens',
+                command='"printenv"',
+                command_args='"HOSTNAME"')
 
         updated_content = dev_template.render(dev_dict)
 

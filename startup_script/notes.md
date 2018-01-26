@@ -7,4 +7,6 @@ ta3_search [path]
 
 - run on minikube
 - execute ta3 search from kubectl
-- test resolved
+- test ta3_search
+- push k8s
+- push images
