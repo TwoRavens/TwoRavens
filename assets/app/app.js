@@ -3871,9 +3871,15 @@ export function record_user_metadata(){
 }
 
 export function showPredPlot (btn) {
-    console.log("show pred plot");
+    if(document.getElementById("setxLeft").style.display=="none")
+        return;
+    document.getElementById("setxLeftPlot").style.display="block";
+    document.getElementById("setxLeft").style.display="none";
 }
 
 export function showGenPreds (btn) {
-    console.log("show gen preds");
+    if(document.getElementById("setxLeftPlot").style.display=="none")
+        return;
+    document.getElementById("setxLeftPlot").style.display="none";
+    document.getElementById("setxLeft").style.display="block";
 }
