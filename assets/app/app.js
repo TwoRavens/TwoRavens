@@ -1798,7 +1798,7 @@ function tabulate(data, columns, divid) {
 
 }
 
-function onPipelineCreate(PipelineCreateResult) {
+function onPipelineCreate(PipelineCreateResult, dvvalues, mydv) {
     // rpc GetExecutePipelineResults(PipelineExecuteResultsRequest) returns (stream PipelineExecuteResult) {}
     estimateLadda.stop(); // stop spinner
 
@@ -1860,19 +1860,21 @@ function onPipelineCreate(PipelineCreateResult) {
     /////////////////////////
 
     toggleRightButtons("all");
-    if (!IS_D3M_DOMAIN){
+    if (IS_D3M_DOMAIN){
         byId("btnResults").click();      // JH: doesn't appear to exist in D3M mode
     };
 
+    //console.log(dvvalues);
     // this initializes the main
     // this piece here is the first pipeline through: allPipelineInfo[resultstable[1].PipelineID]
-    //resultsplotinit(allPipelineInfo[resultstable[1].PipelineID], dvvalues);
+    resultsplotinit(allPipelineInfo[resultstable[1].PipelineID], dvvalues, mydv);
     exportpipeline(resultstable[1].PipelineID);
 
     // I don't think we need these until we are handling streaming pipelines
     // They are set up and called, but don't actually render anything for the user
 
     // this is our function for the ListPipelines of API
+    // VJD: do we need this right now? 1/25
     listpipelines();
 
     //let pipelineid = PipelineCreateResult.pipelineid;
@@ -2032,10 +2034,11 @@ export async function estimate(btn) {
         } else {
         console.log(res);
             setxTable(res.predictors);
-            let dvvalues = res.dvvalues;
+            let dvvals = res.dvvalues;
+            let dvvar = res.depvar[0];
             res = await makeRequest(D3M_SVC_URL + '/CreatePipelines', CreatePipelineData(res.predictors, res.depvar));
          //   res = await makeRequest(ROOK_SVC_URL + 'createpipeline', zparams);
-            res && onPipelineCreate(res);
+            res && onPipelineCreate(res, dvvals, dvvar);
         }
     }
 }
@@ -3102,17 +3105,26 @@ function toggleRightButtons(set) {
 }
 
 /** needs doc */
-export function resultsplotinit(pid, dvvalues) {
-    // presumably we'll be reading in results from a path
-    // for now it's just hardcoded
+export function resultsplotinit(pid, dvvalues, mydv) {
     console.log(pid);
-    let predfile = pid.pipelineInfo.predictResultData.file_1;
+    console.log(mydv);
+   // let predfile = pid.pipelineInfo.predictResultData.file_1;
+    let allPreds = pid.pipelineInfo.predictResultData.data;
+    console.log(Object.keys(allPreds[1]));
     let predvals = [];
-
-    for(let i = 0; i < predfile.length; i++) {
-        predvals.push(Number(predfile[i].preds));
+    
+    let mydvI = Object.keys(allPreds[1]).indexOf(mydv);
+    if ( mydvI > -1) {
+        for(let i = 0; i < allPreds.length; i++) {
+            predvals.push(allPreds[i][mydv]);
+        }
+    } else {
+        alert("DV does not match. No Results window.");
+        return;
     }
 
+    console.log(predvals);
+    
     // only do this for classification tasks
     if(d3mTaskType[d3mProblemDescription.taskType][1] == "CLASSIFICATION") {
         genconfdata(dvvalues, predvals);
@@ -3125,14 +3137,6 @@ export function resultsplotinit(pid, dvvalues) {
 
 /** needs doc */
 export function genconfdata (dvvalues, predvals) {
-    // FOR TESTING
-    dvvalues = predvals.slice(0);
-    for(let i = 0; i < dvvalues.length; i++) {
-        var randomnumber = Math.floor(Math.random() * (2 - -2 + 1)) + -2;
-        dvvalues[i] = dvvalues[i] + randomnumber;
-    }
-
-    // done for testing. drop above when dvvalues are real values returned by R when pipeline is constructed
 
     function onlyUnique(value, index, self) {
         return self.indexOf(value) === index;
@@ -3140,10 +3144,6 @@ export function genconfdata (dvvalues, predvals) {
 
     let mycounts = [];
     let mypairs = [];
-
-    // this should eventually be just read from the URI in pipeline
-   // let dvvalues = [1,1,1,2,3,2,3,3,3,3,3,2,3,2,1,2,3,4,4];
-   // let predvals = [1,2,3,2,3,1,3,3,3,2,2,1,3,3,1,2,3,4,3];
 
     // combine actuals and predicted, and get all unique elements
     let myuniques = dvvalues.concat(predvals);
