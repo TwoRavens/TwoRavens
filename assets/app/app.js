@@ -2379,7 +2379,9 @@ export async function makeRequest(url, data) {
     }
     */
 
-    estimateLadda.stop();
+    if (!IS_D3M_DOMAIN){
+        estimateLadda.stop();    // estimateLadda is being stopped in onPipelineCreate in D3M
+    };
     selectLadda.stop();
     return res;
 }
