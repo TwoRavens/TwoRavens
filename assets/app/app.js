@@ -3849,3 +3849,48 @@ export function record_user_metadata(){
           console.log('record_user_metadata failed: ' + err);
       }
 }
+
+//Kripanshu Bhargava : Univariate function call
+function callTreeApp(node_var,btn)
+{
+    //console.log("new JSONOUT : ", zparams)
+
+
+
+    if (production && zparams.zsessionid == "") {
+        alert("Warning: Data download is not complete. Try again soon.");
+        return;
+    }
+    zPop();
+    //  console.log("zpop: ", zparams);
+    // write links to file & run R CMD
+
+    //package the output as JSON
+    // add call history and package the zparams object as JSON
+    zparams.callHistory = callHistory;
+    var ja= {
+        env:node_var
+    };
+    var jsonout = JSON.stringify(ja);
+console.log("the node_var",node_var)
+    //var base = rappURL+"zeligapp?solaJSON="
+    urlcall = rappURL + "treeapp"; //base.concat(jsonout);
+    var solajsonout = "solaJSON=" +jsonout ;
+    console.log("urlcall out: ", urlcall);
+    console.log("POST out this: ", solajsonout);
+
+    function explore_treeAppSuccess(json) {
+        console.log("treeAppSuccess");
+        // readPreprocess(url,p,v,callback);
+      univariatePart();
+    }
+    function explore_treeAppFail() {
+        console.log("treeAppFail");
+        estimateLadda.stop();  // stop spinner
+        estimated = true;
+    }
+    estimateLadda.start();  // start spinner
+    makeCorsRequest(urlcall, btn, explore_treeAppSuccess, explore_treeAppFail, solajsonout);
+    // univariatePart();
+
+}
