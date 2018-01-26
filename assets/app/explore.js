@@ -1509,3 +1509,17 @@ export async function explore() {
     viz(model_name, json, model_name);
 }
 
+export async function callTreeApp(node_var) {
+    app.zPop();
+    app.zparams.callHistory = app.callHistory;
+    
+    let res = await app.makeRequest(ROOK_SVC_URL + 'treeapp', {zparams:app.zparams, dv:node_var});
+    if (!res) {
+        alert("treeapp failed");
+    } else {
+        console.log(res);
+        univariatePart();
+    }
+}
+
+

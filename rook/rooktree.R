@@ -9,7 +9,6 @@
 # library(readr)
 tree.app <- function(env)
 {
-
     print("Tree app started")
     production<-FALSE     ## Toggle:  TRUE - Production, FALSE - Local Development
     warning<-FALSE
@@ -25,28 +24,69 @@ tree.app <- function(env)
     if(!warning)
     {
         everything <- jsonlite::fromJSON(request$POST()$solaJSON, flatten=TRUE )
-
-        print("this is everything.........")
-        print("***")
         print(everything$env)
-        print("***")
     }
-    print("***")
-    print(valid)
-    print("***")
-  whichlevel<- function(i)
-    {
-        return(trunc(log(i)/log(2)))
+    
+    print(everything)
+    
+    if(!warning){
+        mydataloc <- everything$zparams$zd3mtarget
+        if(length(mydataloc) == 0){ # rewrite to check for data file?
+            warning <- TRUE
+            result<-list(warning="No data location.")
+        }
+    }
+    
+    if(!warning){
+        mydv <- everything$dv
+    }
 
+    whichlevel<- function(i) {
+        return(trunc(log(i)/log(2)))
     }
-    print("hello treeapp")
-    fearonLaitin <- read.csv("../data/fearonLaitin.csv",nrows=1000)
-    #View(fearonLaitin)
-    obj<-everything$env
-    formula<- eval(parse(text=paste(obj,"~ .", sep = "")))
+
+    check_ext <- function(filepath){
+        if(!file.exists(filepath)){                                             # if file does not exist
+            if(file.exists(paste(filepath,".gz",sep=""))){                      # check if .csv should be .csv.gz
+                    filepath <- paste(filepath,".gz",sep="")
+                    print(".csv extension swapped for .csv.gz")
+                    print(filepath)
+            } else if (file.exists( tools::file_path_sans_ext(filepath) ) ){    # then check if .csv.gz should be .csv
+                    filepath <- tools::file_path_sans_ext(filepath)
+                    print(".csv.gz extension swapped for .csv")
+                    print(filepath)
+            }
+        }
+        return(filepath)
+    }
+
+    if(!warning){
+        tryCatch({
+            if(d3m_mode) {                                       # Note presently this entire app is only ever called in d3m mode, but we might generalize its function
+                mydataloc <- check_ext(mydataloc)
+                if( identical(tools::file_ext(mydataloc), "csv" ) ){
+                    mydata <- read.csv(mydataloc, check.names = FALSE)
+                } else if (identical(tools::file_ext(mydataloc), "gz" )){
+                    mydata <- read.csv(gzfile(mydataloc), check.names = FALSE)
+                } else {
+                    warning <- TRUE
+                    return<-list(warning="Data file extension not recognized as .csv or .gz")
+                }
+
+                ppJSON<-preprocess(testdata=mydata)
+        #        result <- list(targets=targetVars)
+            }
+        },
+        error=function(err){
+            warning <<- TRUE ## assign up the scope bc inside function
+            result <<- list(warning=paste("Tree error: ", err))
+        })
+    }
+    
+    formula<- eval(parse(text=paste(mydv,"~ .", sep = "")))
     print(formula)
 
-    myTree <- rpart(formula,data=fearonLaitin,control=rpart.control(minsplit=2,cp=0))
+    myTree <- rpart(formula,data=mydata,control=rpart.control(minsplit=2,cp=0))
    # myTree  <- prune(rpTree, cp = rpTree$cptable[which.min(rpTree$cptable[,"xerror"]),"CP"])
     myTree$frame
     print(myTree)
@@ -231,7 +271,7 @@ tree.app <- function(env)
     }
 
     #newstr <- treeToJson(myTree$frame,myTree$splits,mystr)
-    write(treeToJson(myTree$frame,myTree$splits,mystr), "univariateTree.json")
+  #  write(treeToJson(myTree$frame,myTree$splits,mystr), "univariateTree.json")
 
    response$write(treeToJson(myTree$frame,myTree$splits,mystr))
     response$finish()
