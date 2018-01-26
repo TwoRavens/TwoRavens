@@ -90,32 +90,15 @@ RUN fab init_db && \
 EXPOSE 8080
 
 # -------------------------------------
-# create the "ta3_search" command alias for
-# the integration test.  This command is used against
-# a running container
-#
-# docker exec -ti ta3-main /bin/bash -c 'ta3_search $CONFIG_JSON_PATH'
-#
-#x Xdocker run -i --entrypoint /bin/bash (tworavens image) -c 'ta3_search $CONFIG_JSON_PATH'
-#
-# - Valid configs load and the app runs
-# - Invalid configs fail with error messages
+# Copy the ta3_search command over
 # -------------------------------------
-RUN chmod u+x $CODE_REPOSITORY/startup_script/run_main_server.sh  && \
-    echo '#!/bin/bash'  >> /usr/bin/ta3_search && \
-    echo 'cd $CODE_REPOSITORY/startup_script;'  >> /usr/bin/ta3_search && \
-    echo './run_main_server.sh'  >> /usr/bin/ta3_search && \
-    chmod u+x /usr/bin/ta3_search && \
-    echo '------- CREATE test_run command ---- (w/o extra build step)' && \
-    echo '#!/bin/bash'  >> /usr/bin/test_run && \
-    echo 'cd $CODE_REPOSITORY;'  >> /usr/bin/test_run && \
-    echo 'python manage.py runserver 8080'  >> /usr/bin/test_run && \
-    chmod u+x /usr/bin/test_run
+COPY startup_script/ta3_search /usr/bin
+RUN chmod u+x /usr/bin/ta3_search
 
 # -------------------------------------
 # Run the python server (django dev or gunicorn)
 # -------------------------------------
-CMD echo 'Starting tworavens python server.' && \
+CMD echo 'Starting TwoRavens python server.' && \
     cp -r ravens_volume/. /ravens_volume/ && \
     python manage.py runserver 0.0.0.0:8080
 
