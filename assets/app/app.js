@@ -1824,7 +1824,7 @@ function onPipelineCreate(PipelineCreateResult, rookpipe) {
 
 
     for(var key in allPipelineInfo) {
-        // don't report the pipeline to user if it has failed
+        // this will NOT report the pipeline to user if pipeline has failed, if pipeline is still running, or if it has not completed
         if(allPipelineInfo[key].responseInfo.status.details == "Pipeline Failed")  {
             continue;
         }
@@ -1838,7 +1838,7 @@ function onPipelineCreate(PipelineCreateResult, rookpipe) {
         console.log(key);
         console.log(allPipelineInfo[key].progressInfo)
         let myscores = [];
-//        if(allPipelineInfo[key].progressInfo == "COMPLETED"){
+        if(allPipelineInfo[key].progressInfo == "COMPLETED"){
             myscores = allPipelineInfo[key].pipelineInfo.scores;
             for(var i = 0; i < myscores.length; i++) {
                 //if(i==0) {myid=key;}
@@ -1848,9 +1848,9 @@ function onPipelineCreate(PipelineCreateResult, rookpipe) {
                 myval=+myscores[i].value.toFixed(3);
                 resultstable.push({"PipelineID":myid,"Metric":mymetric, "Score":myval});
             }
-  //      } else {
-
-    //    }
+        } else { // if progressInfo is not "COMPLETED"
+            continue;
+        }
     }
 
     console.log(resultstable);
@@ -2980,6 +2980,9 @@ export function executepipeline() {
         data.push(mydata);
     }
 
+    let temp = {context, pipelineId, data};
+    temp = JSON.stringify(temp);
+    console.log(temp);
     makeRequest(D3M_SVC_URL + '/ExecutePipeline', {context, pipelineId, data});
 }
 
@@ -3117,6 +3120,10 @@ export function resultsplotinit(pid, rookpipe) {
     if ( mydvI > -1) {
         for(let i = 0; i < allPreds.length; i++) {
             predvals.push(allPreds[i][mydv]);
+        }
+    } else if (Object.keys(allPreds[1]).indexOf("preds") > -1) {
+        for(let i = 0; i < allPreds.length; i++) {
+            predvals.push(allPreds[i]["preds"]);
         }
     } else {
         alert("DV does not match. No Results window.");
