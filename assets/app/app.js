@@ -94,6 +94,9 @@ let priv = true;
 let swandive = false;
 let failset = ["TIMESERIESFORECASTING","GRAPHMATCHING","LINKPREDICTION","timeSeriesForecasting","graphMatching","linkPrediction"];
 
+// object that contains all information about the returned pipelines
+let allPipelineInfo = {};
+
 export let logArray = [];
 export let zparams = {
     zdata: [],
@@ -1782,7 +1785,7 @@ function tabulate(data, columns, divid) {
                     .attr('class', 'item-default');
                 d3.select(myrow).attr('class',"item-select");
                 if(divid=='#setxRight') {
-                    resultsplotinit(allPipelineInfo[myrow.firstChild.innerText], dvvalues);
+                    resultsplotinit(myrow.firstChild.innerText);
                 }
             }});
 
@@ -1801,6 +1804,7 @@ function tabulate(data, columns, divid) {
 function onPipelineCreate(PipelineCreateResult, rookpipe) {
     // rpc GetExecutePipelineResults(PipelineExecuteResultsRequest) returns (stream PipelineExecuteResult) {}
     estimateLadda.stop(); // stop spinner
+    console.log(PipelineCreateResult);
 
     // change status of buttons for estimating problem and marking problem as finished
     $("#btnEstimate").removeClass("btn-success");
@@ -1809,7 +1813,6 @@ function onPipelineCreate(PipelineCreateResult, rookpipe) {
     $("#btnEndSession").addClass("btn-success");
 
     let context = apiSession(zparams.zsessionid);
-    let allPipelineInfo = {};
     for (var i = 0; i<PipelineCreateResult.length; i++) {
         if(PipelineCreateResult[i].pipelineId in allPipelineInfo) {
             allPipelineInfo[PipelineCreateResult[i].pipelineId]=Object.assign(allPipelineInfo[PipelineCreateResult[i].pipelineId],PipelineCreateResult[i]);
@@ -1863,11 +1866,12 @@ function onPipelineCreate(PipelineCreateResult, rookpipe) {
     if (IS_D3M_DOMAIN){
         byId("btnResults").click();
     };
+    
+    //adding rookpipe to allPipelineInfo
+    allPipelineInfo.rookpipe=rookpipe;
 
-    //console.log(dvvalues);
-    // this initializes the main
-    // this piece here is the first pipeline through: allPipelineInfo[resultstable[1].PipelineID]
-    resultsplotinit(allPipelineInfo[resultstable[1].PipelineID], rookpipe);
+    // this initializes the results windows using the first pipeline
+    resultsplotinit(resultstable[0].PipelineID);
     
     // VJD: these two functions are built and (I believe) functioning as intended. These exercise two core API calls that are currently unnecessary
     //exportpipeline(resultstable[1].PipelineID);
@@ -3165,11 +3169,11 @@ function toggleRightButtons(set) {
 }
 
 /** needs doc */
-export function resultsplotinit(pid, rookpipe) {
+export function resultsplotinit(pid) {
     console.log(pid);
-    console.log(rookpipe);
-    let mydv = rookpipe.depvar[0];
-    let dvvalues= rookpipe.dvvalues;
+    pid = allPipelineInfo[pid];
+    let mydv = allPipelineInfo.rookpipe.depvar[0];
+    let dvvalues= allPipelineInfo.rookpipe.dvvalues;
    // let predfile = pid.pipelineInfo.predictResultData.file_1;
     let allPreds = pid.pipelineInfo.predictResultData.data;
     console.log(Object.keys(allPreds[1]));
@@ -3202,7 +3206,7 @@ export function resultsplotinit(pid, rookpipe) {
     
     // add the list of predictors into setxLeftTopLeft
     d3.select("#setxLeftTopLeft").selectAll("p")
-        .data(rookpipe.predictors)
+        .data(allPipelineInfo.rookpipe.predictors)
         .enter()
         .append("p")
         .text(function (d) { return d; })
