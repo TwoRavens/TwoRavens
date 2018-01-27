@@ -249,6 +249,19 @@ class Body {
         let {mode} = vnode.attrs;
         let explore = mode === 'explore';
         app.is_results_mode = mode === 'results';
+        let userlinks = [];
+        if(username=="no logged in user"){
+          userlinks = [
+          {title: "Log in", url: login_url},
+          {title: "Sign up", url: signup_url}
+          ];
+        } else {
+          userlinks = [
+          {title: "Workspaces", url: workspaces_url},
+          {title: "Settings", url: settings_url},
+          {title: "Links", url: devlinks_url},
+          {title: "Logout", url: logout_url}
+        ]};
         let _navBtn = (id, left, right, onclick, args, min) => m(
             `button#${id}.btn.navbar-right`,
             {onclick: onclick,
@@ -321,15 +334,12 @@ class Body {
                   m('span',
                     m('.dropdown[style=float: right; padding-right: 1em]',
                       m('#drop.button.btn[type=button][data-toggle=dropdown][aria-haspopup=true][aria-expanded=false]',
-                        [username, glyph('heart-empty')]),
+                        [username, " " , glyph('triangle-bottom')]),
                       m('ul.dropdown-menu[role=menu][aria-labelledby=drop]',
-                        m('li[style=padding: 0.5em]', 'something here 1'),
-                        m('li[style=padding: 0.5em]', 'something here 2'))),
-                    /*m('h5#userName[style=float: right; padding-right: 0.5em]',
-                      {onmouseover: _ => this.usertasks = true, onmouseout: _ => this.usertasks = false},
-                      [username, glyph('heart-empty')],  // const username defined in templates/index.html
-                      m(`#usertasks.panel.panel-default[style=display: ${this.usertasks ? 'block' : 'none'}; position: absolute; z-index: 50]`,
-                        m('.panel-body[style=text-align: left; padding: 1em]','logout'))),*/
+                        userlinks.map(function(link) {
+                          return m('a[style=padding: 0.5em]', {href: link.url}, link.title , 
+                          m('br'))
+                        }))), 
                     navBtn('btnEstimate.btn-success', 2, 1, explore ? exp.explore : app.estimate, m("span.ladda-label", explore ? 'Explore' : 'Solve This Problem'), '150px'),
                     navBtn('btnTA2.btn-default', .5, 1, _ => app.helpmaterials('manual'), ['Help Manual ', glyph('book')]),
                     navBtn('btnTA2.btn-default', 2, .5, _ => app.helpmaterials('video'), ['Help Video ', glyph('expand')]),

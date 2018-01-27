@@ -130,14 +130,14 @@ spec:
         readOnly: false
 {{ shared_volumes()|indent(2, first=True) }}
     # liveness is for restart
-    #livenessProbe:
-    #  httpGet:
-    #    path: /monitoring/alive
-    #    port: 8080
-    #  initialDelaySeconds: 5
-    #  timeoutSeconds: 1
-    #  periodSeconds: 10
-    #  failureThreshold: 3
+    livenessProbe:
+      httpGet:
+        path: /monitoring/alive
+        port: 8080
+      initialDelaySeconds: 5
+      timeoutSeconds: 1
+      periodSeconds: 10
+      failureThreshold: 3
     # readiness: ready for traffic
     readinessProbe:
       httpGet:

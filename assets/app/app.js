@@ -2379,7 +2379,9 @@ export async function makeRequest(url, data) {
     }
     */
 
-    estimateLadda.stop();
+    if (!IS_D3M_DOMAIN){
+        estimateLadda.stop();    // estimateLadda is being stopped in onPipelineCreate in D3M
+    };
     selectLadda.stop();
     return res;
 }
@@ -3762,24 +3764,23 @@ export function setxTable(features) {
         return table;
     }
 
-
     let mydata = [];
     for(let i = 0; i<features.length; i++) {
-        if(allNodes[findNodeIndex(features[i])].valid==0) {
+        let myi = findNodeIndex(features[i]); //i+1;                                // This was set as (i+1), but should be allnodes position, not features position
+
+        if(allNodes[myi].valid==0) {
             xval=0;
             x1val=0;
             mydata.push({"Variables":features[i],"From":xval, "To":x1val});
             continue;
         }
 
-        let myi = i+1;
         let mysvg = features[i]+"_setxLeft_"+myi;
+        //console.log(mysvg);
         let xval = byId(mysvg).querySelector('.xval').innerHTML;
         let x1val = byId(mysvg).querySelector('.x1val').innerHTML;
         xval = xval.split("x: ").pop();
         x1val = x1val.split("x1: ").pop();
-        console.log(xval);
-        console.log(mysvg);
 
         mydata.push({"Variables":features[i],"From":xval, "To":x1val});
     }
