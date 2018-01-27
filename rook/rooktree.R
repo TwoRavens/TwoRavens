@@ -271,11 +271,11 @@ tree.app <- function(env)
     }
 
     #newstr <- treeToJson(myTree$frame,myTree$splits,mystr)
-  #  write(treeToJson(myTree$frame,myTree$splits,mystr), "univariateTree.json")
+
 
    response$write(treeToJson(myTree$frame,myTree$splits,mystr))
     response$finish()
 
 
-response$finish()
+
 }
