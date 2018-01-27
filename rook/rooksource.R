@@ -22,7 +22,7 @@ if(is_rapache_mode) {
 }
 
 if(!production){
-    packageList<-c("Rcpp","VGAM", "AER", "dplyr", "quantreg", "geepack", "maxLik", "Amelia", "Rook","jsonlite","rjson", "devtools", "DescTools", "nloptr","XML", "Zelig")
+    packageList<-c("Rcpp","VGAM", "AER", "dplyr", "quantreg", "geepack", "maxLik", "Amelia", "Rook","jsonlite","rjson", "devtools", "DescTools", "nloptr","XML", "Zelig", "rpart")
 
     # Find an available repository on CRAN
     availableRepos <- getCRANmirrors()
@@ -129,6 +129,7 @@ source("rookpreprocess.R")
 source("rookpipeline.R")
 source("rookhealthcheck.R")
 source("rookexplore.R")
+source("rooktree.R")
 
 if(addPrivacy){
     source("rookprivate.R")
@@ -149,6 +150,7 @@ if(!is_rapache_mode){
     R.server$add(app = pipeline.app, name="pipelineapp")
     R.server$add(app = healthcheck.app, name="healthcheckapp")
     R.server$add(app = explore.app, name="exploreapp")
+    R.server$add(app = tree.app, name="treeapp")
 
     # Serve files directly from rook
     R.server$add(app = File$new(PRE_PATH), name = "rook-files")

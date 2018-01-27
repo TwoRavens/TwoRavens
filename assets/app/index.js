@@ -91,9 +91,9 @@ function rightpanel(mode) {
            buttons: [
                m(Button, {id: 'btnUnivariate'}, 'Univariate'),
                m(Button, {id: 'btnBivariate'}, 'Bivariate')]},
-          m('#modelView_Container', {style: 'width: 100%; height: auto; background-color: white; float: left; overflow-x: auto; overflow-y: hidden; white-space: nowrap;'},
-            m('#modelView', {style: 'width: 100%; height: 100%; background-color: white; float: left; overflow: auto; margin-top: 2px;'})),
-          m('#decisionTree[style=width: 100%; height: 100%; background: #ff5932]'),
+          m('#modelView_Container', {style: 'width: 100%; height: auto; background-color: white; float: left; overflow-x: auto; overflow-y: auto; white-space: nowrap;'},
+            m('#modelView', {style: 'width: 100%; height: auto; background-color: white; float: left; overflow: auto; margin-top: 2px;'})),
+          m('#decisionTree[style=width: 100%; height: auto ; background-color: white ;  overflow : scroll; float: left; white-space: nowrap; margin-top: 2px;]'),
           m('#result_left',
             {style: {"width": "50%", "height": "90%", "float": "left", "background-color": "white", "border-right": "ridge", "border-bottom": "ridge", "overflow": "auto", "white-space": "nowrap"}},
             m('#left_thumbnail',
@@ -144,7 +144,7 @@ function rightpanel(mode) {
               m('#tabular_2', {style: {width: "100%", height: "50%", "border-bottom-style": "inset", overflow: "hidden"}}))),
           m("p#resultsHolder", {style: {padding: ".5em 1em"}},
             m('#varList[style=display: block]',
-              unique_link_names().map(x => m(`p#${x.replace(/\W/g, '_')}`, {style: {'background-color': app.varColor}}, x)))),
+              unique_link_names().map(x => m(`p#${x.replace(/\W/g, '_')}`, {onclick: _=> exp.callTreeApp(x), style: {'background-color': app.varColor}}, x)))),
           m('#setx[style=display: none; margin-top: .5em]')) :
     // mode == null (model mode)
     m(Panel,
