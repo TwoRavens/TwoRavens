@@ -1854,29 +1854,26 @@ function onPipelineCreate(PipelineCreateResult, rookpipe) {
     }
 
     console.log(resultstable);
-    // render the table
+    // render the tables
     tabulate(resultstable, ['PipelineID', 'Metric', 'Score'], '#results');
     tabulate(resultstable, ['PipelineID', 'Metric', 'Score'], '#setxRight');
     /////////////////////////
 
     toggleRightButtons("all");
     if (IS_D3M_DOMAIN){
-        byId("btnResults").click();      // JH: doesn't appear to exist in D3M mode
+        byId("btnResults").click();
     };
 
     //console.log(dvvalues);
     // this initializes the main
     // this piece here is the first pipeline through: allPipelineInfo[resultstable[1].PipelineID]
     resultsplotinit(allPipelineInfo[resultstable[1].PipelineID], rookpipe);
-    exportpipeline(resultstable[1].PipelineID);
-
-    // I don't think we need these until we are handling streaming pipelines
-    // They are set up and called, but don't actually render anything for the user
-
-    // this is our function for the ListPipelines of API
-    // VJD: do we need this right now? 1/25
-    listpipelines();
-
+    
+    // VJD: these two functions are built and (I believe) functioning as intended. These exercise two core API calls that are currently unnecessary
+    //exportpipeline(resultstable[1].PipelineID);
+    //listpipelines();
+    
+    // VJD: this is a third core API call that is currently unnecessary
     //let pipelineid = PipelineCreateResult.pipelineid;
     // getexecutepipelineresults is the third to be called
   //  makeRequest(D3M_SVC_URL + '/getexecutepipelineresults', {context, pipeline_ids: Object.keys(allPipelineInfo)});
