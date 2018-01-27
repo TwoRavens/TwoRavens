@@ -2951,7 +2951,7 @@ export function listpipelines() {
 /**
    rpc ExecutePipeline(PipelineExecuteRequest) returns (stream PipelineExecuteResult) {}
 */
-export function executepipeline() {
+export async function executepipeline() {
     let context = apiSession(zparams.zsessionid);
     let tablerow = byId('setxRight').querySelector('tr.item-select');
     if(tablerow == null) {alert("Please select a pipeline to execute on."); return;}
@@ -2983,7 +2983,67 @@ export function executepipeline() {
     let temp = {context, pipelineId, data};
     temp = JSON.stringify(temp);
     console.log(temp);
-    makeRequest(D3M_SVC_URL + '/ExecutePipeline', {context, pipelineId, data});
+    let res = await makeRequest(D3M_SVC_URL + '/ExecutePipeline', {context, pipelineId, data});
+    // I think we want to do this here, but will wait for ISI image to test against
+   // if(res.progressInfo=="COMPLETED") {
+        res && addPredictions(res);
+   // }
+}
+
+function addPredictions(res) {
+    function tabulate(data, columns) {
+        var table = d3.select('#setxLeftBottomRightBottom').append('table');
+        var thead = table.append('thead');
+        var    tbody = table.append('tbody');
+
+        // append the header row
+        thead.append('tr')
+        .selectAll('th')
+        .data(columns).enter()
+        .append('th')
+        .text(function (column) { return column; });
+
+        // create a row for each object in the data
+        var rows = tbody.selectAll('tr')
+        .data(data)
+        .enter()
+        .append('tr');
+
+        // create a cell in each row for each column
+        var cells = rows.selectAll('td')
+            .data(function (row) {
+                return columns.map(function (column) {
+                    return {column: column, value: row[column]};
+                });
+            })
+            .enter()
+            .append('td')
+            .text(function (d) { return d.value; })
+            .attr('id',function(d,i) {
+                let rowname = this.parentElement.firstChild.innerText;
+                return rowname + d.column;
+            });
+
+        return table;
+    }
+
+    // this is what ISI should look like, and the test server eventually, so just remove the following line when it's up
+    res = res.grpcResp[0];
+    
+    console.log(res);
+    let allPreds = res.resultData.data;
+    let predvals = [];
+    
+    for(let i = 0; i < allPreds.length; i++) {
+        predvals.push(allPreds[i]["preds"]);
+    }
+    
+    let mydata = [];
+    mydata.push({" ":"Pred 1","E(Y|X1)":predvals[0], "E(Y|X2)":predvals[1]});
+
+    // render the table(s)
+    tabulate(mydata, [' ', 'E(Y|X1)', 'E(Y|X2)']); // 2 column table
+
 }
 
 /**
@@ -3670,7 +3730,7 @@ export function bivariatePlot(x_Axis, y_Axis, x_Axis_name, y_Axis_name) {
 /** needs doc */
 export function setxTable(features) {
     function tabulate(data, columns) {
-        var table = d3.select('#setxLeftBottom').append('table');
+        var table = d3.select('#setxLeftBottomLeft').append('table');
         var thead = table.append('thead');
         var	tbody = table.append('tbody');
 
