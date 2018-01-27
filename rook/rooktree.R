@@ -83,6 +83,17 @@ tree.app <- function(env)
         })
     }
     
+    ## VJD: dropping character variables with many categories for the time being. without additional logic, they are confusing the tree display
+    keep<-mydv
+    for(i in 1:ncol(mydata)) {
+        if(colnames(mydata)[i]==mydv)
+            next
+        if(is.numeric(mydata[,i]) | length(unique(mydata[,i])) < 10) {
+            keep<-c(keep,colnames(mydata)[i])
+        }
+    }
+    mydata<-mydata[,keep]
+    
     formula<- eval(parse(text=paste(mydv,"~ .", sep = "")))
     print(formula)
 
