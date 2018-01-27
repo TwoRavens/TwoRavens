@@ -3548,6 +3548,12 @@ export function confusionmatrix(matrixdata, classes) {
 export function bivariatePlot(x_Axis, y_Axis, x_Axis_name, y_Axis_name) {
     d3.select("#setxLeftPlot").html("");
     d3.select("#setxLeftPlot").select("svg").remove();
+    
+    x_Axis=x_Axis.map(Number);
+    y_Axis=y_Axis.map(Number);
+    
+    console.log(x_Axis);
+    console.log(y_Axis);
 
     let mainwidth = byId('main').clientWidth;
     let mainheight = byId('main').clientHeight;
