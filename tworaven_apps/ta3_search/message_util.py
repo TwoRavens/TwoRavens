@@ -52,7 +52,7 @@ class MessageUtil(object):
     @staticmethod
     def send_message_to_listener(message, mlistener):
         """Send a message to an individual listener"""
-        if not messsge:
+        if not message:
             return False, "message was None"
         if not mlistener:
             return False, "mlistener was None"
@@ -70,6 +70,16 @@ class MessageUtil(object):
             return False, err_msg
 
         return True, 'Message sent'
+
+
+    @staticmethod
+    def are_ta3_listeners_active():
+        """proxy to check if ta3_search is running"""
+        if MessageListener.objects.filter(is_active=True).count() > 0:
+            return True
+
+        return False
+
 
     @staticmethod
     def send_message(message):

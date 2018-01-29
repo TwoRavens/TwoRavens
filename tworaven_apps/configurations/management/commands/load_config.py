@@ -4,6 +4,7 @@ from datetime import datetime
 from collections import OrderedDict
 from django.core.management.base import BaseCommand, CommandError
 from tworaven_apps.configurations.models_d3m import D3MConfiguration
+from tworaven_apps.ta3_search.message_util import MessageUtil
 
 class Command(BaseCommand):
     help = ('Load a D3M config file containing JSON to the database'
@@ -73,18 +74,21 @@ class Command(BaseCommand):
 
             # It worked!!
             #
-            #success_msg = ('Successfully loaded new D3M configuration: "%s"'
-            #               '\nD3M config values: \n\n%s\n\n') % \
-            #               (d3m_config,
-            #                d3m_config.get_json_string())
+            success_msg = ('Successfully loaded new D3M configuration: "%s"'
+                           '\nD3M config values: \n\n%s\n\n') % \
+                           (d3m_config,
+                            d3m_config.get_json_string())
 
-            success_msg = ('(%s) Successfully loaded new D3M'
-                           ' configuration: "%s"') % \
-                           (datetime.now(), d3m_config)
+            success_msg = ('(%s) Successfully loaded new'
+                           ' D3M configuration: "%s"') %\
+                          (d3m_config, datetime.now())
 
             self.stdout.write(self.style.SUCCESS(success_msg))
 
+
+            # For TA3 search, this runs a flask listener
             self.run_additional_instructions()
+
 
     def run_additional_instructions(self, *args, **kwargs):
         """Add any additional coding instructions here"""

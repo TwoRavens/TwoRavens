@@ -16,6 +16,16 @@ class Command(d3m_load_config.Command):
 
         flask_cmd = ('cd %s;'
                      'FLASK_APP=ta3_listener.py flask run -p8001') % \
-                     (current_dir,)
+                     (current_dir)
+        """
+        success_msg = kwargs.get('success_msg')
+        if success_msg:
+            show_msg = "echo '%s';" % success_msg
+        else:
+            show_msg = ''
 
+        flask_cmd = ("%scd %s; echo '--- ta3_search running... ---\';"
+                     'FLASK_APP=ta3_listener.py flask run -p8001') % \
+                     (show_msg, current_dir,)
+        """
         local(flask_cmd)
