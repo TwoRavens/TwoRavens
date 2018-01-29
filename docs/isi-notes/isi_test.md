@@ -191,9 +191,7 @@ export CONFIG_JSON_PATH=/ravens_volume/config_185_baseball.json
 
 # set the env on docker run
 #
-docker run --rm -v /ravens_volume:/ravens_volume -p 45042:45042 --name feature_labs --entrypoint=ta2_search featurelabs_ta2:stable $CONFIG_JSON_PATH
-
-#docker run -ti --rm -v /ravens_volume:/ravens_volume -e "CONFIG_JSON_PATH=/ravens_volume/config_185_baseball.json" -p 45042:45042 --name feature_labs featurelabs_ta2:stable
+docker run --rm -v /ravens_volume:/ravens_volume -e "CONFIG_JSON_PATH=/ravens_volume/config_185_baseball.json" -p 45042:45042 --name feature_labs --entrypoint=ta2_grpc_server featurelabs_ta2:stable
 ```
 
 
