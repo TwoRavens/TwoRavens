@@ -72,8 +72,8 @@ class TemplateRenderHelper(object):
                 path_to_outputs='tmp',
                 path_to_dataroot='tmp',
                 eval_id='ravens',
-                command='"printenv"',
-                command_args='"HOSTNAME"')
+                command='["tail"]',
+                command_args='["-f", "/dev/null"]')
 
         updated_content = dev_template.render(dev_dict)
 
@@ -97,9 +97,19 @@ if __name__ == '__main__':
     #output_file = 'tworavens_ta3ta2_test_pod.yml'
 
     template_name = 'ravens-NIST-03.yml'
-    output_file = 'kube.yml'
+    output_file = '../to_submit/kube.yml'
 
+    print('-- For submission --')
     trh = TemplateRenderHelper(tmpl_info_nist,
                                template_name,
                                output_file,
                                for_minikube=False)
+
+    template_name = 'ravens-NIST-03.yml'
+    output_file = 'kube.yml'
+
+    print('-- For dev --')
+    trh = TemplateRenderHelper(tmpl_info_nist,
+                               template_name,
+                               output_file,
+                               for_minikube=True)

@@ -20,7 +20,7 @@ docker build -t ravens-r-service:stable -f Dockerfile-r-service .
 
 ```
 cd setup/nginx
-docker build -t ravens-nginx:stable -f Dockerfile-kube .
+docker build -t ravens-nginx:stable -f Dockerfile .
 ```
 
 # Run it
