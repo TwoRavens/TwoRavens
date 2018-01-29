@@ -99,9 +99,10 @@ RUN chmod u+x /usr/bin/ta3_search
 # -------------------------------------
 # Run the python server (django dev or gunicorn)
 # -------------------------------------
-CMD echo 'Starting TwoRavens python server.' && \
-    cp -r ravens_volume/. /ravens_volume/ && \
-    python manage.py runserver 0.0.0.0:8080
+CMD echo 'Run this container using ta3_search.'
+#CMD echo 'Starting TwoRavens python server.' && \
+#    cp -r ravens_volume/. /ravens_volume/ && \
+#    python manage.py runserver 0.0.0.0:8080
 
 # Run with gunicorn
 #CMD gunicorn --workers=2 tworavensproject.wsgi_dev_container -b 0.0.0.0:8080

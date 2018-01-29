@@ -50,10 +50,15 @@ def make_d3m_config_files():
     """Only for Docker! Make *deploy* config files. Useful for docker-compose or kubernetes--NOT for local tests.
     The resulting config files will have paths specified from "/ravens_volume"
     """
-    from tworaven_apps.configurations.util_config_maker import TestConfigMaker
+    clear_d3m_configs()
 
+    from tworaven_apps.configurations.util_config_maker import TestConfigMaker
     TestConfigMaker.make_deploy_config_files()
 
+def clear_d3m_configs():
+    """Delete D3M configs from the database"""
+    from tworaven_apps.configurations.models_d3m import D3MConfiguration
+    print('Clear all D3MConfiguration database entries')
 
 def make_d3m_config():
     """Make a D3M config based on local files in the /ravens_volume directory"""

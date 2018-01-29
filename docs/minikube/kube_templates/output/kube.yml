@@ -87,10 +87,10 @@ spec:
   - name: ta3-main
     image: ravens-main:stable
     imagePullPolicy: Never
-    #command:
-    #  - "printenv"
-    #args:
-    #  - "HOSTNAME"
+    command:
+      - "printenv"
+    args:
+      - "HOSTNAME"
     # web (perhaps nginx) ports
     ports:
       # Main web port; nginx makes this available via port 80
