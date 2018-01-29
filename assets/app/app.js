@@ -193,10 +193,10 @@ export let d3mMetrics = {
 };
 
 export let d3mProblemDescription = {
-    taskType: [2,"DEFAULT"],
-    taskSubtype: [1,"DEFAULT"],
+    taskType: "taskTypeUndefined",
+    taskSubtype: "taskSubtypeUndefined",
  //   outputType: [3,"DEFAULT"],
-    metric: [3,"DEFAULT"],
+    metric: "metricUndefined",
     taskDescription: ""
 };
 
@@ -293,17 +293,20 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     console.log("prob schema data: ", res);
 
     mytarget = res.inputs.data[0].targets[0].colName; // easier way to access target name?
-
-  //  set = (field, arr) => d3mProblemDescription[field] = res[field] in arr ? res[field] : field + 'Undefined';
-    d3mProblemDescription.taskType=res.about.taskType;
-    d3mProblemDescription.taskSubtype=res.about.taskSubType;
-    d3mProblemDescription.metric = res.inputs.performanceMetrics[0].metric;
+    if (typeof res.about.taskType !== 'undefined') {
+        d3mProblemDescription.taskType=res.about.taskType;
+    }
+    if (typeof res.about.taskSubType !== 'undefined') {
+        d3mProblemDescription.taskSubtype=res.about.taskSubType;
+    }
+    if (typeof res.inputs.performanceMetrics[0].metric !== 'undefined') {
+        d3mProblemDescription.metric = res.inputs.performanceMetrics[0].metric;
+    }
+    if (typeof res.descriptionFile !== 'undefined') {
+        d3mProblemDescription.taskDescription = res.descriptionFile;
+    }
  //   d3mProblemDescription.outputType = res.expectedOutputs.predictionsFile;
- //   set('taskType', d3mTaskType);
- //   set('taskSubtype', d3mTaskSubtype);
- //   set('metric', d3mMetrics);
- //   set('outputType', d3mOutputType);
-    d3mProblemDescription.taskDescription = res.descriptionFile;
+
     byId("btnType").click();
 
     // making it case insensitive because the case seems to disagree all too often
@@ -351,12 +354,14 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     // put dataset name, from meta-data, into page title
     d3.select("title").html("TwoRavens " + dataname);
 
-    // if swandive, we have to set valueKey here so that left panel can populate
+    // if swandive, we have to set valueKey here so that left panel can populate.
     if (swandive) {
-        [datadocument.trainData.trainData, datadocument.trainData.trainTargets]
-            .forEach(vars => vars && vars.forEach(v => valueKey.push(v.varName)));
+    //    let mydataRes = datadocument.dataResources;
+      //  for (let i = 0; i < mydataRes.length; i++) {
+     //       valueKey.push(mydataRes[i].resFormat[0]);
+      //  }
         // end session if neither trainData nor trainTargets?
-        valueKey.length === 0 && alert("no trainData or trainTargest in data description file. valueKey length is 0");
+       // valueKey.length === 0 && alert("no trainData or trainTargest in data description file. valueKey length is 0");
         // perhaps allow users to unlock and select things?
         byId('btnLock').classList.add('noshow');
         byId('btnForce').classList.add('noshow');
@@ -515,13 +520,14 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     }
 
     // 10. Add datadocument information to allNodes (when in IS_D3M_DOMAIN)
-    let datavars = datadocument.dataResources[0].columns;
-    datavars.forEach((v, i) => {
-        let myi = findNodeIndex(v.colName);
-        allNodes[myi] = Object.assign(allNodes[myi], {d3mDescription: v});
-    });
-    console.log(allNodes);
-
+    if(!swandive) {
+        let datavars = datadocument.dataResources[0].columns;
+        datavars.forEach((v, i) => {
+            let myi = findNodeIndex(v.colName);
+            allNodes[myi] = Object.assign(allNodes[myi], {d3mDescription: v});
+        });
+        console.log(allNodes);
+    }
     // 11. Call layout() and start up
     layout(false, true);
     IS_D3M_DOMAIN ? zPop() : dataDownload();
@@ -1882,6 +1888,7 @@ function onPipelineCreate(PipelineCreateResult, rookpipe) {
     // getexecutepipelineresults is the third to be called
   //  makeRequest(D3M_SVC_URL + '/getexecutepipelineresults', {context, pipeline_ids: Object.keys(allPipelineInfo)});
 }
+
 function CreatePipelineData(predictors, depvar) {
     let context = apiSession(zparams.zsessionid);
     let uriCsv = zparams.zd3mdata;
