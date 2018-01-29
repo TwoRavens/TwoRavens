@@ -131,7 +131,7 @@ docker run -ti --rm -v /ravens_volume:/ravens_volume -e "CONFIG_JSON_PATH=/raven
 
 ### Run Brown TA2 with env variable
 
-- pull image
+- Pull image
 
 ```
 docker login registry.datadrivendiscovery.org
@@ -152,6 +152,7 @@ docker run -ti --rm -v /ravens_volume:/ravens_volume -e "CONFIG_JSON_PATH=/raven
 
 ### Run Featurelabs with env variable
 
+- Pull image
 
 ```
 docker login registry.datadrivendiscovery.org
@@ -159,6 +160,9 @@ docker pull registry.datadrivendiscovery.org/mit-featurelabs/btb-dockerimage:sta
 docker tag registry.datadrivendiscovery.org/mit-featurelabs/btb-dockerimage:stable featurelabs_ta2:stable
 ```
 
+- Run image
+
+```
 # set the CONFIG_JSON_PATH variable
 #
 export CONFIG_JSON_PATH=/ravens_volume/config_185_baseball.json
