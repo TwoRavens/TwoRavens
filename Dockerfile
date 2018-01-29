@@ -99,7 +99,9 @@ RUN chmod u+x /usr/bin/ta3_search
 # -------------------------------------
 # Run the python server (django dev or gunicorn)
 # -------------------------------------
-CMD echo 'Run this container using ta3_search.'
+CMD echo 'Run this container using ta3_search.' && \
+    echo 'Example: docker run --rm -ti -p8080:8080 --name=gomain ravens-main:stable ta3_search [path to D3M config]'
+
 #CMD echo 'Starting TwoRavens python server.' && \
 #    cp -r ravens_volume/. /ravens_volume/ && \
 #    python manage.py runserver 0.0.0.0:8080
