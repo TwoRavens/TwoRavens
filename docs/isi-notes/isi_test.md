@@ -195,11 +195,7 @@ docker run --rm -v /ravens_volume:/ravens_volume -e "CONFIG_JSON_PATH=/ravens_vo
 ```
 
 
-
-
-#apt-get install vim
-#vim /dsbox/dsbox-ta2/python/dsbox/planner/controller.py
-
+---
 
 
 
