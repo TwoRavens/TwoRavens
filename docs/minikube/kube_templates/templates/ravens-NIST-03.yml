@@ -130,20 +130,20 @@ spec:
         readOnly: false
 {{ shared_volumes()|indent(2, first=True) }}
     # liveness is for restart
-    #livenessProbe:
-    #  exec:
-    #    command:
-    #    - cat
-    #    - /var/webapps/TwoRavens/docs/health.md
-    #  initialDelaySeconds: 5
-    #  periodSeconds: 5
-    #readinessProbe:
-    #  exec:
-    #    command:
-    #    - cat
-    #    - /var/webapps/TwoRavens/docs/health.md
-    #  initialDelaySeconds: 5
-    #  periodSeconds: 5
+    livenessProbe:
+      exec:
+        command:
+        - cat
+        - /var/webapps/TwoRavens/docs/health.md
+      initialDelaySeconds: 5
+      periodSeconds: 5
+    readinessProbe:
+      exec:
+        command:
+        - cat
+        - /var/webapps/TwoRavens/docs/health.md
+      initialDelaySeconds: 5
+      periodSeconds: 5
     #livenessProbe:
     #  httpGet:
     #    path: /monitoring/alive

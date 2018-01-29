@@ -102,4 +102,4 @@ if __name__ == '__main__':
     trh = TemplateRenderHelper(tmpl_info_nist,
                                template_name,
                                output_file,
-                               for_minikube=True)
+                               for_minikube=False)

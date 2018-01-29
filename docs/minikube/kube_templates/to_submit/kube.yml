@@ -13,15 +13,15 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: ravens-ta3-web
+  name: {{ eval_id }}-ta3-web
   labels:
-    evalId: ravens
+    evalId: {{ eval_id }}
     tier: ta3
 spec:
   # NodePort type allows to expose service outside the cluster
   type: NodePort
   selector:
-    evalId: ravens
+    evalId: {{ eval_id }}
     tier: ta3
   ports:
     - name: http
@@ -35,9 +35,9 @@ spec:
 apiVersion: v1
 kind: Pod
 metadata:
-  name: ravens-ta3
+  name: {{ eval_id }}-ta3
   labels:
-    evalId: ravens
+    evalId: {{ eval_id }}
     main: "yes"
     tier: ta3
     ta3-main: "yes"
@@ -49,11 +49,11 @@ spec:
         path: "/ravens_volume"
     ##====|Begin| Required Code that NIST uses to pair TA2 and TA3 components |Begin|
     - name: nfs-data
-      hostPath:
-        path: /tmp
+      persistentVolumeClaim:
+        claimName: pvc-datasets
     - name: nfs-output
-      hostPath:
-        path: /tmp
+      persistentVolumeClaim:
+        claimName: pvc-rw
     ##====|End| Required Code that NIST uses to pair TA2 and TA3 components |End|
   # affinity:
   #   # Link pod affinity with
@@ -64,7 +64,7 @@ spec:
   #         - key: evalId
   #           operator: In
   #           values:
-  #           - ravens
+  #           - {{ eval_id }}
   #       topologyKey: failure-domain.beta.kubernetes.io/zone
   # -------------------------
   # Start container specs
@@ -75,7 +75,7 @@ spec:
   # - reverse proxy for ta3-main
   # -------------------------
   - name: ravens-nginx
-    image: ravens-nginx:stable
+    image: registry.datadrivendiscovery.org/j18_ta3eval/tworavens/ravens-nginx:stable
     ports:
       - containerPort: 80
         name: http
@@ -85,12 +85,12 @@ spec:
   # - includes entry point for evaluation
   # -------------------------
   - name: ta3-main
-    image: ravens-main:stable
-    imagePullPolicy: Never
+    image: registry.datadrivendiscovery.org/j18_ta3eval/tworavens/ravens-main:stable
+    imagePullPolicy: Always
     command:
-      - "printenv"
+      - {{ command }}
     args:
-      - "HOSTNAME"
+      - {{ command_args }}
     # web (perhaps nginx) ports
     ports:
       # Main web port; nginx makes this available via port 80
@@ -106,12 +106,12 @@ spec:
     env:
       # environment variables passed to container
       - name: EVAL_ID
-        value: ravens
+        value: {{ eval_id }}
       # --------------------------------------
       # Query TA2 Service with service name using format from template:
       # --------------------------------------
       - name: TA2_TEST_SERVER_URL
-        value: ravens-ta2:45042
+        value: {{ eval_id }}-ta2:45042
       # --------------------------------------
       # Test mode: returns "canned responses" instead
       # of actual TA2 connection
@@ -131,11 +131,11 @@ spec:
       ##====|Begin| Required Code that NIST uses to pair TA2 and TA3 components |Begin|
       - name: nfs-data
         mountPath: "/inputs"
-        subPath: "tmp"
+        subPath: "{{ path_to_dataroot }}"
         readOnly: true
       - name: "nfs-output"
         mountPath: "/outputs"
-        subPath: "tmp"
+        subPath: "{{ path_to_outputs }}"
       ##====|End| Required Code that NIST uses to pair TA2 and TA3
     # liveness is for restart
     livenessProbe:
@@ -171,7 +171,7 @@ spec:
   # 3 of 3: Rook R services
   # -------------------------
   - name: rook-service
-    image: ravens-r-service:stable
+    image: registry.datadrivendiscovery.org/j18_ta3eval/tworavens/ravens-r-service:stable
     # same mounts as ta3-main and ta2-main
     volumeMounts:
       - name: "ravens-volume"
@@ -180,11 +180,11 @@ spec:
       ##====|Begin| Required Code that NIST uses to pair TA2 and TA3 components |Begin|
       - name: nfs-data
         mountPath: "/inputs"
-        subPath: "tmp"
+        subPath: "{{ path_to_dataroot }}"
         readOnly: true
       - name: "nfs-output"
         mountPath: "/outputs"
-        subPath: "tmp"
+        subPath: "{{ path_to_outputs }}"
       ##====|End| Required Code that NIST uses to pair TA2 and TA3
     # web port
     ports:
@@ -194,7 +194,7 @@ spec:
     # environment variables passed to container
     env:
       - name: EVAL_ID
-        value: ravens
+        value: {{ eval_id }}
       # Also set to "yes" in the Dockefile
       - name: ROOK_USE_PRODUCTION_MODE
         value: "yes"
