@@ -141,7 +141,7 @@ docker tag registry.gitlab.com/brownbigdata/idea/ta2:nightly brown_ta2:nightly
 
 - Run image
 ```
-# set the CONFIG_JSON_PATH variable
+# set the JSON_CONFIG_PATH variable
 #
 export JSON_CONFIG_PATH=/ravens_volume/config_196_autoMpg.json
 
