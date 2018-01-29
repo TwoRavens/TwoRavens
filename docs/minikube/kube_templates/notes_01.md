@@ -28,11 +28,11 @@ docker build -t ravens-nginx:stable -f Dockerfile-kube .
 ```
 # get the pods running
 #
-kubectl apply -f tworavens_ta3_pod.yml --validate=false
+kubectl apply -f kube.yml --validate=false
 
 # delete the pods
 #
-kubectl delete -f tworavens_ta3_pod.yml
+kubectl delete -f kube.yml
 
 
 # check status
@@ -73,7 +73,7 @@ kubectl describe pod/ravens-ta3
 # Delete the pod
 
 ```
-kubectl delete -f tworavens_ta3_pod.yml
+kubectl delete -f kube.yml
 ```
 
 # logs

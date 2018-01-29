@@ -1,5 +1,5 @@
 #!/bin/bash
-servers=$(ps -a | grep python | wc -l)
+servers=$(ps -e | grep python | wc -l)
 printf "\nCheck for running web server before starting ta3_search..."
 #printf "# python processes running: ${servers}"
 if [ $servers -eq 0 ]

@@ -96,10 +96,10 @@ if __name__ == '__main__':
     #template_name = 'ravens-ta2test-01.yml'
     #output_file = 'tworavens_ta3ta2_test_pod.yml'
 
-    template_name = 'ravens-nist-02.yml'
-    output_file = 'tworavens_ta3_pod.yml'
+    template_name = 'ravens-NIST-03.yml'
+    output_file = 'kube.yml'
 
     trh = TemplateRenderHelper(tmpl_info_nist,
                                template_name,
                                output_file,
-                               for_minikube=False)
+                               for_minikube=True)

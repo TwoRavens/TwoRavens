@@ -81,6 +81,7 @@ RUN fab init_db && \
     fab load_docker_ui_config && \
     fab collect_static && \
     fab ta3_listener_add
+
 #    fab make_d3m_config_files && \
 
 # -------------------------------------
