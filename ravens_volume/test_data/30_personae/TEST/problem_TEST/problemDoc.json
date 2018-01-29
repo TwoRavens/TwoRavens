@@ -1,0 +1,39 @@
+{
+  "about": {
+    "problemID": "30_pe_problem_TEST",
+    "problemName": "NULL",
+    "taskType": "classification",
+    "taskSubType": "binary",
+    "problemSchemaVersion": "3.0",
+    "problemVersion": "1.0"
+  },
+  "inputs": {
+    "data": [
+      {
+        "datasetID": "30_pe_dataset_TEST",
+        "targets": [
+          {
+            "targetIndex": 0,
+            "resID": "1",
+            "colIndex": 6,
+            "colName": "extrovert"
+          }
+        ]
+      }
+    ],
+    "dataSplits": {
+      "method": "holdOut",
+      "testSize": 0.2,
+      "numRepeats": 0,
+      "splitsFile": "dataSplits.csv"
+    },
+    "performanceMetrics": [
+      {
+        "metric": "f1"
+      }
+    ]
+  },
+  "expectedOutputs": {
+    "predictionsFile": "predictions.csv"
+  }
+}

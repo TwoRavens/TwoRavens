@@ -1,2 +1,0 @@
-# Pipelines ranked by metrics ([<Metric.F1: 'f1'>])
-# Pipelines ranked by metrics ([<Metric.F1: 'f1'>])
