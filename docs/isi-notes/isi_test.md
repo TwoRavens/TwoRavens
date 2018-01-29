@@ -143,11 +143,11 @@ docker tag registry.gitlab.com/brownbigdata/idea/ta2:nightly brown_ta2:nightly
 ```
 # set the CONFIG_JSON_PATH variable
 #
-export CONFIG_JSON_PATH=/ravens_volume/config_185_baseball.json
+export JSON_CONFIG_PATH=/ravens_volume/config_196_autoMpg.json
 
 # set the env on docker run
 #
-docker run -ti --rm -v /ravens_volume:/ravens_volume -e "CONFIG_JSON_PATH=/ravens_volume/config_185_baseball.json" -p 45042:45042 --name gobrown  brown_ta2:nightly
+docker run -ti --rm -v /ravens_volume:/ravens_volume -e "JSON_CONFIG_PATH=/ravens_volume/config_196_autoMpg.json" -p 45042:45042 --name gobrown  brown_ta2:nightly
 ```
 
 ### Run TAMU TA2
