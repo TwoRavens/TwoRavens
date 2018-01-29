@@ -89,13 +89,17 @@ def execute_pipeline(info_str=None, includes_data=True):
         #
         file_uri, err_msg = write_data_for_execute_pipeline(\
                                         d3m_config,
-                                        info_dict[KEY_DATA])
+                                        info_dict[KEY_DATA],
+                                        transpose_list=True)
 
         # Did it work?
         #
         if err_msg is not None:
             # .. nope
+            print('failed to write data/create file uri')
             return None, get_failed_precondition_response(err_msg)
+
+        print('file_uri created: %s' % file_uri)
 
         # ------------------------------------------------
         # Reformat the original content
@@ -122,6 +126,7 @@ def execute_pipeline(info_str=None, includes_data=True):
     # --------------------------------
     # convert the JSON string to a gRPC request
     # --------------------------------
+    print('request to TA2: %s' % info_str_formatted)
     try:
         req = Parse(info_str_formatted, core_pb2.PipelineExecuteRequest())
     except ParseError as err_obj:
@@ -148,7 +153,7 @@ def execute_pipeline(info_str=None, includes_data=True):
             test_note = ('Message sent directly to TA2')
 
         return json.dumps(dict(note=test_note)), embed_util.get_final_results()
-        
+
     # --------------------------------
     # Get the connection, return an error if there are channel issues
     # --------------------------------

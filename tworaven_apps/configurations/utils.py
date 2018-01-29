@@ -1,4 +1,5 @@
 import json
+import csv
 from datetime import datetime as dt
 from os.path import isdir, isfile, getsize, join
 from collections import OrderedDict
@@ -100,23 +101,68 @@ def get_dataset_size(d3m_config):
     return None, 'Default data files not found: [%s], [%s]' % \
                  (data_filepath, data_filepath_zipped)
 
-def write_data_for_execute_pipeline(d3m_config, data_info):
+def write_csv_from_data(d3m_config, transposed_data):
+    """
+    Branch off of 'write_data_for_execute_pipeline'
+    Part of the ExecutePipeline, write data to 'temp_storage_root'
+    and return an associated file url
+    "data_info" is a list of lists from the UI
+    """
+    if not d3m_config:
+        return None, 'No D3MConfiguration specified.'
+
+    if not transposed_data:
+        return None, 'No transposed_data specified.'
+
+    rand_str = random_info.get_alphanumeric_string(4)
+
+    # create a file name based on
+    #
+    fname = '%s_data_%s_%s.csv' % (d3m_config.slug[:6],
+                                   rand_str,
+                                   dt.now().strftime('%Y-%m-%d_%H-%M-%S'))
+
+    filepath = join(d3m_config.temp_storage_root, fname)
+
+    try:
+        with open(filepath, "w", newline='') as fhandle:
+            writer = csv.writer(fhandle)
+            writer.writerows(transposed_data)
+    except:
+        return None, 'Failed to write file to: [%s]' % filepath
+
+    # return file uri
+    file_uri = 'file://%s' % filepath
+    return file_uri, None
+
+def write_data_for_execute_pipeline(d3m_config, data_info, **kwargs):
     """Part of the ExecutePipeline, write data to 'temp_storage_root'
-    and return an associated file url"""
+    and return an associated file url
+    "data_info" is a list of lists from the UI
+    """
     if not d3m_config:
         return None, 'No D3MConfiguration specified.'
 
     if not data_info:
         return None, 'No data_info specified.'
 
-    try:
-        data_str = json.dumps(data_info)
-    except TypeError:
-        return None, 'Failed to convert to data_info to string'
+    transpose_list = kwargs.get('transpose_list', False)
+    if transpose_list:
+        try:
+            transposed_data = [list(x) for x in zip(*data_info)]
+        except:
+            return None, 'Failed to transpose data.'
 
-    if not isdir(d3m_config.temp_storage_root):
-        return None, 'temp_storage_root not accessible: [%s]' % \
-                     d3m_config.temp_storage_root
+        return write_csv_from_data(d3m_config, transposed_data)
+    else:
+        try:
+            data_str = json.dumps(data_info)
+        except TypeError:
+            return None, 'Failed to convert to data_info to string'
+
+        if not isdir(d3m_config.temp_storage_root):
+            return None, 'temp_storage_root not accessible: [%s]' % \
+                         d3m_config.temp_storage_root
 
     rand_str = random_info.get_alphanumeric_string(4)
 
@@ -137,7 +183,8 @@ def write_data_for_execute_pipeline(d3m_config, data_info):
     # return file uri
     file_uri = 'file://%s' % filepath
     return file_uri, None
-    
+
+
 
 def get_d3m_filepath(d3m_config, file_attr):
     """
