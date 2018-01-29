@@ -5,3 +5,5 @@ docker run --rm -ti -p8080:8080 -v /ravens_volume:/ravens_volume --name=gomain r
 ```
 
 - switch CMD to ENTRYPOINT
+
+- ref: https://docs.docker.com/engine/admin/multi-service_container/
