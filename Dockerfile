@@ -93,14 +93,27 @@ EXPOSE 8080
 # -------------------------------------
 # Copy the ta3_search command over
 # -------------------------------------
-COPY startup_script/ta3_search /usr/bin
+COPY startup_script/ta3_search /usr/bin/ta3_search
 RUN chmod u+x /usr/bin/ta3_search
+
+# -------------------------------------
+# Idle the container on startup so it
+# can receive subsequent commands
+# -------------------------------------
+ENTRYPOINT tail -f /dev/null
+
+
+#CMD /usr/bin/ta3_search
+
+#RUN cd /var/webapps/TwoRavens && \
+#    printf "\nStarting web server.." && \
+#    python manage.py runserver 0.0.0.0:8080 > /dev/null 2> /tmp/ta3-main-log.txt &
 
 # -------------------------------------
 # Run the python server (django dev or gunicorn)
 # -------------------------------------
-CMD echo 'Run this container using ta3_search.' && \
-    echo 'Example: docker run --rm -ti -p8080:8080 --name=gomain ravens-main:stable ta3_search [path to D3M config]'
+#CMD echo 'Run this container using ta3_search.' && \
+#    echo 'Example: docker run --rm -ti -p8080:8080 --name=gomain ravens-main:stable ta3_search [path to D3M config]'
 
 #CMD echo 'Starting TwoRavens python server.' && \
 #    cp -r ravens_volume/. /ravens_volume/ && \

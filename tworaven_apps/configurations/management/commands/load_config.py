@@ -1,5 +1,6 @@
 from os.path import isfile, isdir
 import json
+from datetime import datetime
 from collections import OrderedDict
 from django.core.management.base import BaseCommand, CommandError
 from tworaven_apps.configurations.models_d3m import D3MConfiguration
@@ -72,10 +73,14 @@ class Command(BaseCommand):
 
             # It worked!!
             #
-            success_msg = ('Successfully loaded new D3M configuration: "%s"'
-                           '\nD3M config values: \n\n%s\n\n') % \
-                           (d3m_config,
-                            d3m_config.get_json_string())
+            #success_msg = ('Successfully loaded new D3M configuration: "%s"'
+            #               '\nD3M config values: \n\n%s\n\n') % \
+            #               (d3m_config,
+            #                d3m_config.get_json_string())
+
+            success_msg = ('(%s) Successfully loaded new D3M'
+                           ' configuration: "%s"') % \
+                           (datetime.now(), d3m_config)
 
             self.stdout.write(self.style.SUCCESS(success_msg))
 
