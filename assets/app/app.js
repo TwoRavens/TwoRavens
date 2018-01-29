@@ -1877,8 +1877,9 @@ function onPipelineCreate(PipelineCreateResult, rookpipe) {
     allPipelineInfo.rookpipe=rookpipe;
 
     // this initializes the results windows using the first pipeline
-    resultsplotinit(resultstable[0].PipelineID);
-    
+    if(!swandive) {
+        resultsplotinit(resultstable[0].PipelineID);
+    }
     // VJD: these two functions are built and (I believe) functioning as intended. These exercise two core API calls that are currently unnecessary
     //exportpipeline(resultstable[1].PipelineID);
     //listpipelines();
