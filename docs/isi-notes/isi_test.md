@@ -129,7 +129,7 @@ docker run -ti --rm -v /ravens_volume:/ravens_volume -e "CONFIG_JSON_PATH=/raven
 
 ```
 
-### Run Brown with env variable
+### Run Brown TA2 with env variable
 
 - pull image
 
@@ -139,6 +139,8 @@ docker pull registry.gitlab.com/brownbigdata/idea/ta2:nightly
 docker tag registry.gitlab.com/brownbigdata/idea/ta2:nightly brown_ta2:nightly
 ```
 
+- Run image
+```
 # set the CONFIG_JSON_PATH variable
 #
 export CONFIG_JSON_PATH=/ravens_volume/config_185_baseball.json
@@ -148,12 +150,13 @@ export CONFIG_JSON_PATH=/ravens_volume/config_185_baseball.json
 docker run -ti --rm -v /ravens_volume:/ravens_volume -e "CONFIG_JSON_PATH=/ravens_volume/config_185_baseball.json" -p 45042:45042 --name gobrown  brown_ta2:nightly
 ```
 
-### Run featurelabs with env variable
+### Run Featurelabs with env variable
 
 
 ```
 docker login registry.datadrivendiscovery.org
 docker pull registry.datadrivendiscovery.org/mit-featurelabs/btb-dockerimage:stable
+docker tag registry.datadrivendiscovery.org/mit-featurelabs/btb-dockerimage:stable featurelabs_ta2:stable
 ```
 
 # set the CONFIG_JSON_PATH variable
@@ -162,7 +165,7 @@ export CONFIG_JSON_PATH=/ravens_volume/config_185_baseball.json
 
 # set the env on docker run
 #
-docker run -ti --rm -v /ravens_volume:/ravens_volume -e "CONFIG_JSON_PATH=/ravens_volume/config_185_baseball.json" -p 45042:45042 --name feature_labs btb-dockerimage:stable
+docker run -ti --rm -v /ravens_volume:/ravens_volume -e "CONFIG_JSON_PATH=/ravens_volume/config_185_baseball.json" -p 45042:45042 --name feature_labs featurelabs_ta2:stable
 ```
 
 
