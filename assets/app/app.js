@@ -2969,16 +2969,17 @@ export async function executepipeline() {
     //note that if setxplot is modified, it will NOT == "" because zparams.zsetx is modified when the setx plot slider is moved for the first time
     for(let i =0; i<zparams.zvars.length; i++) {
         let mydata = [];
+        mydata[0] = zparams.zvars[i];
         let mymean = allNodes[findNodeIndex(zparams.zvars[i])].mean;
         if(zparams.zsetx[i][0]=="") {
-            mydata[0]=mymean;
+            mydata[1]=mymean;
         } else if(zparams.zsetx[i][0]!=mymean){
-            mydata[0]=zparams.zsetx[i][0];
+            mydata[1]=zparams.zsetx[i][0];
         }
         if(zparams.zsetx[i][1]=="") {
-            mydata[1]=allNodes[findNodeIndex(zparams.zvars[i])].mean;
+            mydata[2]=allNodes[findNodeIndex(zparams.zvars[i])].mean;
         } else if(zparams.zsetx[i][1]!=mymean){
-            mydata[1]=zparams.zsetx[i][1];
+            mydata[2]=zparams.zsetx[i][1];
         }
         data.push(mydata);
     }
