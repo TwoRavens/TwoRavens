@@ -317,12 +317,19 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     // 4. Read the data document and set 'datadocument'
     datadocument = await m.request(d3mDS);
 
+    // if no columns in the datadocument, go to swandive
+    if(typeof datadocument.dataResources[0].columns === 'undefined') {
+        swandive = true;
+    }
 
     if (IS_D3M_DOMAIN) {
         let datasetName = datadocument.about.datasetName;                           // Use "datasetName" field in dataset document
         zparams.zdata = datasetName.charAt(0).toUpperCase() + datasetName.slice(1); // Make sure to capitalize;
-        let cite = datadocument.about.citation;
-        console.log(cite);
+        let cite = "No citation provided";
+        if (typeof datadocument.about.citation !== 'undefined') {
+            cite = datadocument.about.citation;
+        }
+        //console.log(cite);
         //let newcite = cite.match(/{\s*[\w\.]+\s*}/g).map(function(x) { return x.match(/[\w\.]+/)[0]; });
         //console.log(newcite);
         /*
