@@ -139,6 +139,16 @@ preprocess<-function(hostname=NULL, fileid=NULL, testdata=NULL, types=NULL, file
     datasetLevelInfo<-list(private=FALSE,stdyDscr=list(citation=list(titlStmt=list(titl="",IDNo=list("-agency"="","#text"="")),rspStmt=list(Authentry=""),biblcit="No Data Citation Provided")),fileDscr=list("-ID"="",fileTxt=list(fileName="",dimensns=list(caseQnty="",varQnty=""),fileType=""),notes=list("-level"="","-type"="","-subject"="","#text"="")))    # This signifies that that the metadata summaries are not privacy protecting
     }
     #datasetitationinfo
+    
+    print("dataset level info")
+    print(datasetLevelInfo)
+    
+    # adding the covariance matrix for all numeric variables to the datasetLevelInfo
+    # using 'complete.obs' is safer than 'pairwise.complete.obs', although it listwise deletes on entire data.frame
+    mydata2 <- mydata[sapply(mydata,is.numeric)]
+    mycov <- tryCatch(cov(mydata2, use='complete.obs'), error=function(e) matrix(0)) # this will default to a 1x1 matrix with a 0
+    datasetLevelInfo[["covarianceMatrix"]] <- mycov
+    
     jsontest<-rjson:::toJSON(datasetLevelInfo)
     write(jsontest,file="test.json")
       ## Construct Metadata file that at highest level has list of dataset-level, and variable-level information
