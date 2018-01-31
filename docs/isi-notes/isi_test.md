@@ -19,7 +19,7 @@ docker tag registry.datadrivendiscovery.org/j18_ta2eval/isi_ta2:stable isi_ta2:s
 ## Run the ISI image in a separate window
 
 ```
-docker run --rm -it  -p 45042:45042 --name=goisi -v /ravens_volume:/ravens_volume  isi_ta2:stable
+docker run --rm -it  -p 45042:45042 --name=goisi -v ~/ravens_volume:/ravens_volume  isi_ta2:stable
 ```
 
 ## Run TwoRavens
@@ -50,7 +50,7 @@ This allows the locally running TwoRavens to access ravens_volume as `/ravens_vo
     - example:
       - `cd /`
       - `sudo ln -s /Users/ramanprasad/Documents/github-rp/TwoRavens/ravens_volume .`
-  - `chmod -R +r /ravens_volume`
+  - `sudo chmod -R +r /ravens_volume`
 
 The new `/ravens_volume` "directory" needs to be cleared via Docker
   - Open the Docker application (Mac)
