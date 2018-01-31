@@ -7,7 +7,10 @@ from os.path import abspath, isdir, join
 
 from django.conf import settings
 
-from tworaven_apps.configurations.models_d3m import D3MConfiguration
+from tworaven_apps.configurations.models_d3m import \
+    (D3MConfiguration,
+     D3M_DIR_USER_PROBLEMS_ROOT,
+     D3M_DIR_TEMP_STORAGE_ROOT)
 
 
 _TEST_BASE_DIR = join(settings.BASE_DIR, 'ravens_volume')
@@ -101,7 +104,11 @@ class TestConfigMaker:
 
         # create output dirs
         #
-        output_dir_names = ['pipeline_logs', 'executables', 'temp']
+        output_dir_names = ['pipeline_logs',
+                            'executables',
+                            D3M_DIR_TEMP_STORAGE_ROOT,
+                            D3M_DIR_USER_PROBLEMS_ROOT]
+
         for folder_name in output_dir_names:
             d3m_output_dir = join(d3m_output_base, folder_name)
             if not isdir(d3m_output_dir):
