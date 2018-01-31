@@ -535,6 +535,13 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         });
         console.log(allNodes);
     }
+
+    // 10b. Call problem discovery
+    if(!swandive) {
+        let test = discovery();
+        console.log(test);
+    }
+
     // 11. Call layout() and start up
     layout(false, true);
     IS_D3M_DOMAIN ? zPop() : dataDownload();
@@ -3989,3 +3996,33 @@ function singlePlot(pred) {
         }
 }
 
+export function discovery() {
+
+    let disco = [];
+    let names = [];
+    let vars = Object.keys(preprocess);
+    for (let i = 1; i < 4; i++) {
+        names[i] = "Problem" + (i + 1);
+        let current_target = vars[i];
+        let current_predictors = [vars[i+1], vars[i+2]];
+        let current_task = "regression";
+        let current_rating = 6-i;
+        let current_description = current_target + " is predicted by " + current_predictors[0] + " and " + current_predictors[1];
+        let current_metric = "meanSquaredError";
+        let current_disco = {target: current_target, predictors: current_predictors, task: current_task, rating: current_rating, description: current_description, metric: current_metric};
+        console.log(current_disco);
+        //jQuery.extend(true, current_disco, names);
+        disco[i] = current_disco;
+    };
+    console.log(names);
+    /* Problem Array of the Form: 
+        [Problem1: {target:"Home_runs",
+            predictors:["Walks","RBIs"],
+            task:"regression",
+            rating:5,
+            description: "Home_runs is predicted by Walks and RBIs",
+            metric: "meanSquaredError"
+    },Problem2:{...}]
+    */
+    return disco;
+}
