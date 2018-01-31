@@ -30,7 +30,7 @@ Install the dependencies that TwoRavens relies upon:
 
     sudo apt install libcurl4-openssl-dev libxml2-dev nodejs-legacy npm pkg-config python3-pip r-base libpoppler-cpp-dev libcairo2-dev librsvg2-dev libwebp-dev libgdal-dev libxt-dev
     pip3 install --upgrade pip
-    sudo pip3 install virtualenvwrapper
+    sudo -H pip3 install virtualenvwrapper
 
 Add this to the end of ~/.bashrc:
 
