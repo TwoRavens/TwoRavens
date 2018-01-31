@@ -87,8 +87,10 @@ spec:
   - name: ta3-main
     image: ravens-main:stable
     imagePullPolicy: Never
-    command: ["tail"]
-    args: ["-f", "/dev/null"]
+    command:
+      - ["tail"]
+    args:
+      - ["-f", "/dev/null"]
     # web (perhaps nginx) ports
     ports:
       # Main web port; nginx makes this available via port 80
