@@ -313,15 +313,14 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     if (failset.includes(d3mProblemDescription.taskType.toUpperCase())) {
         swandive = true;
     }
-    
-    // if no columns in the datadocument, go to swandive
-    if(typeof datadocument.dataResources[0].columns === 'undefined') {
-        swandive = true;
-    }
 
     // 4. Read the data document and set 'datadocument'
     datadocument = await m.request(d3mDS);
 
+    // if no columns in the datadocument, go to swandive
+    if(typeof datadocument.dataResources[0].columns === 'undefined') {
+        swandive = true;
+    }
 
     if (IS_D3M_DOMAIN) {
         let datasetName = datadocument.about.datasetName;                           // Use "datasetName" field in dataset document
