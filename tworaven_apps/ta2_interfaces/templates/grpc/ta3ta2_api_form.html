@@ -10,7 +10,13 @@
   }
 
   function formatOutput(json_obj){
+
     return "<pre><code>" + formatJSON(json_obj) + "</code></pre>";
+  }
+
+  function addPreCodeTags(str_to_format){
+    return "<pre><code>" + str_to_format + "</code></pre>";
+
   }
 
   function cardWrap(title, content){
@@ -19,6 +25,20 @@
            '<div class="card-body">' + content + '</div>';
   }
 
+  function showProblemDoc(data){
+
+    if (data.data.hasOwnProperty('new_problem_doc') ) {
+      $('#problemDoc').show();
+      let problemDocTitle = '<h4>User Discovered Problem</h4>';
+
+      let problemDoc = data.data.new_problem_doc;
+      problemDoc = problemDoc.replace(/(?:\r\n|\r|\n)/g, '<br />');
+      problemDoc = problemDoc.replace(/"/g, '&quot;');
+
+      let outputContent = cardWrap(problemDocTitle, addPreCodeTags(problemDoc));
+      $('#problemDoc').html(outputContent);
+    }
+  }
 
   function sendData(){
       user_content = $('#id_content').val();
@@ -28,6 +48,8 @@
       $('#frmResult').html('Working...');
       $('#interimData').html('');
       $('#interimData').hide();
+      $('#problemDoc').html('');
+      $('#problemDoc').hide();
 
       payload = user_content;
 
@@ -35,6 +57,10 @@
                          payload,
                         //{ {{ KEY_GRPC_JSON }} : user_content},
                         function(data) {
+
+                          if (data.hasOwnProperty('data') ) {
+                            showProblemDoc(data);
+                          }
 
                           if (data.hasOwnProperty('data2') ) {
                               $('#interimData').show();
@@ -177,6 +203,8 @@ TA2_TEST_SERVER_URL = '{{ TA2_TEST_SERVER_URL }}'</pre>
       <div id="interimData">
       </div>
       <div id="frmResult">
+      </div>
+      <div id="problemDoc">
       </div>
   </div><!-- end: result column -->
 </div><!-- end: row -->

@@ -29,8 +29,35 @@ def view_write_user_problem(request):
     return JsonResponse(dict(success=True,
                              message=problem_helper.get_success_message(),
                              data=dict(\
-                                filepath=problem_helper.problem_filepath)))
+                                filepath=problem_helper.problem_filepath,
+                                fileuri=problem_helper.problem_file_uri)))
 
+
+
+@csrf_exempt
+def view_format_retrieve_user_problem(request):
+    """Format the user problem and return the doc (instead of writing to file)
+    """
+    success, dict_info_or_err = get_request_body_as_json(request)
+    if not success:
+        return JsonResponse(dict(success=False,
+                                 message=dict_info_or_err))
+
+    problem_updates = dict_info_or_err
+
+    problem_helper = UserProblemHelper(problem_updates,
+                                       save_schema_to_file=False)
+
+    if problem_helper.has_error:
+        return JsonResponse(\
+                dict(success=False,
+                     message=problem_helper.error_message))
+
+    return JsonResponse(\
+                dict(success=True,
+                     message=problem_helper.get_success_message(),
+                     data=dict(\
+                        new_problem_doc=problem_helper.new_problem_doc)))
 
 
 

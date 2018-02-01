@@ -19,13 +19,16 @@ def get_latest_d3m_config():
     #
     d3m_config = D3MConfiguration.objects.filter(is_default=True).first()
     if not d3m_config:
+        return None
         # nope, get the most recently modified config
         #
+        """
         d3m_config = D3MConfiguration.objects.order_by('-modified').first()
         if not d3m_config:
             # there is no config!
             #
             return None
+        """
     return d3m_config
 
 

@@ -70,9 +70,11 @@ urlpatterns = (
 
     url(r'^write-user-problem/?$',
         views_user_problem.view_write_user_problem,
-        name='view_write_user_problem'),
+        name='WriteUserProblem'),
 
-
+    url(r'^format-retrieve-user-problem/?$',
+        views_user_problem.view_format_retrieve_user_problem,
+        name='TestWriteUserProblem'),
 
     url(r'^',
         views.view_test_call,
