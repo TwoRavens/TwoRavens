@@ -47,9 +47,6 @@ spec:
     - name: "ravens-volume"
       hostPath:
         path: "/ravens_volume"
-    - name: "ravens-volume2"
-      hostPath:
-        path: "/ravens_volume2"
     ##====|Begin| Required Code that NIST uses to pair TA2 and TA3 components |Begin|
     - name: nfs-data
       hostPath:
@@ -90,6 +87,10 @@ spec:
   - name: ta3-main
     image: ravens-main:stable
     imagePullPolicy: Never
+    command:
+      - ["tail"]
+    args:
+      - ["-f", "/dev/null"]
     # web (perhaps nginx) ports
     ports:
       # Main web port; nginx makes this available via port 80
@@ -126,9 +127,6 @@ spec:
     volumeMounts:
       - name: "ravens-volume"
         mountPath: "/ravens_volume"
-        readOnly: false
-      - name: "ravens-volume2"
-        mountPath: "/ravens_volume2"
         readOnly: false
       ##====|Begin| Required Code that NIST uses to pair TA2 and TA3 components |Begin|
       - name: nfs-data
