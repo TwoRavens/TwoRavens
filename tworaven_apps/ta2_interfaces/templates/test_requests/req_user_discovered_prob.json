@@ -1,0 +1,32 @@
+{
+  "file_prefix" : "prefix_01",
+  "context": {
+    "session_id": "session_0"
+  },
+  "dataset_uri": "file://ravens_volume/test_data/185_baseball/TRAIN/dataset_TRAIN/tables/learningData.csv",
+  "task": "CLASSIFICATION",
+  "taskSubtype": "UNIVARIATE",
+  "task_description": "User Problem - updated description",
+  "output": "OUTPUT_TYPE_UNDEFINED",
+  "metrics": [
+    "ROOT_MEAN_SQUARED_ERROR",
+    "R_SQUARED"
+  ],
+  "targetFeatures": [
+    {
+      "resource_id": "0",
+      "feature_name": "At_bats"
+    },
+    {
+      "resource_id": "0",
+      "feature_name": "Batting_average"
+    }
+  ],
+  "predict_features": [
+    {
+      "resource_id": "0",
+      "feature_name": "RBIs"
+    }
+  ],
+  "maxPipelines": 10
+}

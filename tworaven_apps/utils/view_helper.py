@@ -64,6 +64,9 @@ def get_request_body_as_json(request):
     try:
         json_data = json.loads(req_body_or_err,
                                object_pairs_hook=collections.OrderedDict)
+    except json.decoder.JSONDecodeError as err_obj:
+        err_msg = ('Failed to convert request body to JSON: %s') % err_obj
+        return False, err_msg
     except TypeError as err_obj:
         err_msg = ('Failed to convert request body to JSON: %s') % err_obj
         return False, err_msg

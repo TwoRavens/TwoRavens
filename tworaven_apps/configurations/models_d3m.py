@@ -24,8 +24,13 @@ KEY_DATASET_SCHEMA = 'dataset_schema'
 KEY_PROBLEM_SCHEMA = 'problem_schema'
 
 D3M_FILE_ATTRIBUTES = (KEY_DATASET_SCHEMA, KEY_PROBLEM_SCHEMA)
+
+D3M_DIR_USER_PROBLEMS_ROOT = 'user_problems_root'
+D3M_DIR_TEMP_STORAGE_ROOT = 'temp_storage_root'
+
 D3M_DIR_ATTRIBUTES = ('training_data_root', 'problem_root',
-                      'pipeline_logs_root', 'executables_root', 'temp_storage_root')
+                      'pipeline_logs_root', 'executables_root',
+                      D3M_DIR_TEMP_STORAGE_ROOT, D3M_DIR_USER_PROBLEMS_ROOT)
 D3M_VALUE_ATTRIBUTES = ('timeout', 'cpus', 'ram')
 D3M_REQUIRED = D3M_FILE_ATTRIBUTES + ('training_data_root', 'problem_root')
 
@@ -80,6 +85,13 @@ class D3MConfiguration(TimeStampedModel):
                         help_text=('Output: Path at which performers'
                                    ' should write the pipeline list,'
                                    ' output described in Section 4.1.3'))
+
+    user_problems_root = models.TextField(\
+                    blank=True,
+                    help_text=('Directory in which to write user'
+                               ' - (or system-) generated problems'
+                               ' for the part of TA(3+2) that involves'
+                               ' generating additional problems.'))
 
     temp_storage_root = models.TextField(\
                         blank=True,
@@ -158,6 +170,7 @@ class D3MConfiguration(TimeStampedModel):
                  'dataset_schema', 'problem_schema',
                  'training_data_root', 'problem_root',
                  'executables_root', 'pipeline_logs_root',
+                 'user_problems_root',
                  'temp_storage_root',
                  'timeout', 'cpus', 'ram']
         date_attrs = ['created', 'modified']
