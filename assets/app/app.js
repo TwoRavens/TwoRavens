@@ -486,6 +486,9 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         }
     }
 
+    console.log("is this preprocess?")
+    console.log(res);
+
     // 9. Build allNodes[] using preprocessed information
     let vars = Object.keys(preprocess);
     // temporary values for hold that correspond to histogram bins
@@ -4001,6 +4004,8 @@ export function discovery() {
     let disco = [];
     let names = [];
     let vars = Object.keys(preprocess);
+    console.log("preprocess");
+    console.log(preprocess);
     for (let i = 1; i < 4; i++) {
         names[i] = "Problem" + (i + 1);
         let current_target = vars[i];
@@ -4016,13 +4021,13 @@ export function discovery() {
     };
     console.log(names);
     /* Problem Array of the Form: 
-        [Problem1: {target:"Home_runs",
+        [1: {target:"Home_runs",
             predictors:["Walks","RBIs"],
             task:"regression",
             rating:5,
             description: "Home_runs is predicted by Walks and RBIs",
             metric: "meanSquaredError"
-    },Problem2:{...}]
+        },2:{...}]
     */
     return disco;
 }
