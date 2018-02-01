@@ -33,6 +33,12 @@ json<-preprocess(testdata=testdata)
 #write(json4,file="../../data/preprocess171.txt")
 
 library(foreign)
+
+# Example from D3M seed data
+seeddata<-read.csv("../../ravens_volume/test_data/38_sick/38_sick_dataset/tables/learningData.csv")
+json5<-preprocess(testdata=pumsdata)
+
+# Example from Privacy/Census PUMS data
 pumsdata<-read.csv("../../data/PUMS5Extract.csv")
 json5<-preprocess(testdata=pumsdata)
 write(json5,file="../../data/preprocessPUMS5Extract.txt")
