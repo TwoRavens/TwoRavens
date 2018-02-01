@@ -62,7 +62,7 @@ def get_bad_paths(d3m_config, with_html=False):
             if dpath_val and dpath in [D3M_DIR_USER_PROBLEMS_ROOT, D3M_DIR_TEMP_STORAGE_ROOT]:
                 # for these directories, try to create them...
                 try:
-                    os.makedirs(dpath_val)
+                    os.makedirs(dpath_val, exist_ok=True)
                 except OSError as err_obj:
                     if err_obj.errno != errno.EEXIST:
                         fmt_line = format_bad_path_msg(d3m_config, dpath, with_html)

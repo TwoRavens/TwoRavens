@@ -18,7 +18,7 @@ _TEST_DATA_DIR = join(_TEST_BASE_DIR, 'test_data')
 _TEST_DATA_OUTPUT_DIR = join(_TEST_BASE_DIR, 'test_output')
 
 if not isdir(_TEST_DATA_OUTPUT_DIR):
-    os.makedirs(_TEST_DATA_OUTPUT_DIR)
+    os.makedirs(_TEST_DATA_OUTPUT_DIR, exist_ok=True)
 
 class TestConfigMaker:
     """Make a D3M config based on local files in the /data directory
@@ -113,7 +113,7 @@ class TestConfigMaker:
             d3m_output_dir = join(d3m_output_base, folder_name)
             if not isdir(d3m_output_dir):
                 print('   ...Create D3M output dir: %s' % d3m_output_dir)
-                os.makedirs(d3m_output_dir)
+                os.makedirs(d3m_output_dir, exist_ok=True)
                 #self.add_gitkeep(d3m_output_dir)
 
         # create a D3MConfiguration object
