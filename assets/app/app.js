@@ -1879,7 +1879,7 @@ function onPipelineCreate(PipelineCreateResult, rookpipe) {
     if (IS_D3M_DOMAIN){
         byId("btnResults").click();
     };
-    
+
     //adding rookpipe to allPipelineInfo
     allPipelineInfo.rookpipe=rookpipe;
 
@@ -1890,7 +1890,7 @@ function onPipelineCreate(PipelineCreateResult, rookpipe) {
     // VJD: these two functions are built and (I believe) functioning as intended. These exercise two core API calls that are currently unnecessary
     //exportpipeline(resultstable[1].PipelineID);
     //listpipelines();
-    
+
     // VJD: this is a third core API call that is currently unnecessary
     //let pipelineid = PipelineCreateResult.pipelineid;
     // getexecutepipelineresults is the third to be called
@@ -3048,15 +3048,15 @@ function addPredictions(res) {
 
     // this is what ISI should look like, and the test server eventually, so just remove the following line when it's up
     res = res.grpcResp[0];
-    
+
     console.log(res);
     let allPreds = res.resultData.data;
     let predvals = [];
-    
+
     for(let i = 0; i < allPreds.length; i++) {
         predvals.push(allPreds[i]["preds"]);
     }
-    
+
     let mydata = [];
     mydata.push({" ":"Pred 1","E(Y|X1)":predvals[0], "E(Y|X2)":predvals[1]});
 
@@ -3194,7 +3194,7 @@ export function resultsplotinit(pid) {
     let allPreds = pid.pipelineInfo.predictResultData.data;
     console.log(Object.keys(allPreds[1]));
     let predvals = [];
-    
+
     let mydvI = Object.keys(allPreds[1]).indexOf(mydv);
     if ( mydvI > -1) {
         for(let i = 0; i < allPreds.length; i++) {
@@ -3210,7 +3210,7 @@ export function resultsplotinit(pid) {
     }
 
     console.log(predvals);
-    
+
     // only do this for classification tasks
     if(d3mTaskType[d3mProblemDescription.taskType][1] == "CLASSIFICATION") {
         genconfdata(dvvalues, predvals);
@@ -3219,7 +3219,7 @@ export function resultsplotinit(pid) {
         let ydata = "Predicted";
         bivariatePlot(dvvalues, predvals, xdata, ydata);
     }
-    
+
     // add the list of predictors into setxLeftTopLeft
     d3.select("#setxLeftTopLeft").selectAll("p")
         .data(allPipelineInfo.rookpipe.predictors)
@@ -3564,10 +3564,10 @@ export function confusionmatrix(matrixdata, classes) {
 export function bivariatePlot(x_Axis, y_Axis, x_Axis_name, y_Axis_name) {
     d3.select("#setxLeftPlot").html("");
     d3.select("#setxLeftPlot").select("svg").remove();
-    
+
     x_Axis=x_Axis.map(Number);
     y_Axis=y_Axis.map(Number);
-    
+
     console.log(x_Axis);
     console.log(y_Axis);
 
@@ -3920,6 +3920,9 @@ const save_workspace_url = '/workspaces/record-user-workspace';
 
 export function record_user_metadata(){
 
+  // turning off for now
+  return;
+
   // (1) Set domain identifier: differs for D3M, Dataverse, etc
   //
   var domain_identifier = 'unknown!';
@@ -3988,4 +3991,3 @@ function singlePlot(pred) {
             bars(node, div = "setxLeftTopRight", priv);
         }
 }
-
