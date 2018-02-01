@@ -5,6 +5,9 @@ from datetime import datetime as dt
 import os
 from os.path import dirname, isdir, isfile, join
 from collections import OrderedDict
+
+from django.template.loader import render_to_string
+
 from tworaven_apps.utils import random_info
 from tworaven_apps.configurations.models_d3m import KEY_PROBLEM_SCHEMA
 from tworaven_apps.configurations.utils import \
@@ -14,10 +17,10 @@ from tworaven_apps.configurations.utils import \
 
 class UserProblemHelper(object):
     """Create and write a new user problem"""
-    def __init__(self, problem_updates):
+    def __init__(self, problem_updates, **kwargs):
         """problem_updates is a dict sent from the UI"""
         self.problem_updates = problem_updates
-
+        self.save_schema_to_file = kwargs.get('save_schema_to_file', True)
         # -----------
         self.new_problem_doc = None
         self.problem_filepath = None
@@ -26,17 +29,15 @@ class UserProblemHelper(object):
         self.error_message = None
 
         # -----------
-
         # run it!
         if self.update_problem_schema():
-            self.write_problem_schema()
-
+            if self.save_schema_to_file:
+                self.write_problem_schema()
 
     def add_error_message(self, err_msg):
         """Add error message"""
         self.has_error = True
         self.error_message = err_msg
-
 
     def get_success_message(self):
         """user success message"""
@@ -74,6 +75,7 @@ class UserProblemHelper(object):
         if not self.make_updates(prob_schema_or_err):
             return False
 
+        return True
 
     def make_updates(self, orig_prob_schema):
         """Update the original schema"""
@@ -98,13 +100,19 @@ class UserProblemHelper(object):
 
         ## TEST file UNTIL MAPPING READY
         update_cnt += 1
+        new_doc_lookup = dict()
         try:
-            self.new_problem_doc = json.dumps(orig_prob_schema, indent=4) +\
-                               json.dumps(self.problem_updates, indent=4)
+            new_doc_lookup['problem_schema'] = json.dumps(orig_prob_schema,
+                                                          indent=4)
+            new_doc_lookup['create_pipelines'] = json.dumps(self.problem_updates,
+                                                            indent=4)
         except TypeError:
             err_msg = 'Error converting JSON data to string (UserProblemHelper)'
             self.add_error_message(err_msg)
             return False
+
+        self.new_problem_doc = render_to_string('user_problem/problem_doc.txt',
+                                                new_doc_lookup)
 
         if update_cnt == 0:
             self.add_error_message(('No updates made so no file to write'
@@ -238,7 +246,7 @@ class UserProblemHelper(object):
             return False, 'D3M config not found'
 
         filepath, err_msg_or_None = get_d3m_filepath(d3m_config, KEY_PROBLEM_SCHEMA)
-        if err_msg_or_None is None:
+        if err_msg_or_None:
             return False, err_msg_or_None
 
         fcontents = None
