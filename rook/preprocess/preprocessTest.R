@@ -36,7 +36,7 @@ library(foreign)
 
 # Example from D3M seed data
 seeddata<-read.csv("../../ravens_volume/test_data/38_sick/38_sick_dataset/tables/learningData.csv")
-json5<-preprocess(testdata=pumsdata)
+json5<-preprocess(testdata=seeddata)
 
 # Example from Privacy/Census PUMS data
 pumsdata<-read.csv("../../data/PUMS5Extract.csv")
