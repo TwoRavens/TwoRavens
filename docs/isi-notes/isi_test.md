@@ -19,7 +19,7 @@ docker tag registry.datadrivendiscovery.org/j18_ta2eval/isi_ta2:stable isi_ta2:s
 ## Run the ISI image in a separate window
 
 ```
-docker run --rm -it  -p 45042:45042 --name=goisi -v /ravens_volume:/ravens_volume  isi_ta2:stable
+docker run --rm -it  -p 45042:45042 --name=goisi -v ~/ravens_volume:/ravens_volume  isi_ta2:stable
 ```
 
 ## Run TwoRavens
@@ -50,9 +50,9 @@ This allows the locally running TwoRavens to access ravens_volume as `/ravens_vo
     - example:
       - `cd /`
       - `sudo ln -s /Users/ramanprasad/Documents/github-rp/TwoRavens/ravens_volume .`
-  - `chmod -R +r /ravens_volume`
+  - `sudo chmod -R +r /ravens_volume`
 
-The new `/ravens_volume` "directory" needs to be cleared via Docker
+The new `/ravens_volume` "directory" needs to be cleared via Docker (not necessary on Vagrant/Ubuntu setup):
   - Open the Docker application (Mac)
   - Go to "Preferences"
   - Select File Sharing
@@ -65,11 +65,11 @@ The new `/ravens_volume` "directory" needs to be cleared via Docker
 - Run this command:
 
 ```
-docker run --rm -ti -v /ravens_volume:/ravens_volume -v /tmp/dsbox-ta2:/tmp/dsbox-ta2 -p 45042:45042 --name isi_test isi_ta2:stable
+docker run --rm -ti -v ~/ravens_volume:/ravens_volume -v /tmp/dsbox-ta2:/tmp/dsbox-ta2 -p 45042:45042 --name isi_test isi_ta2:stable
 
-docker run --rm -ti -v /ravens_volume:/ravens_volume -p 50051:50051 --name isi_test isi_ta2:stable
+docker run --rm -ti -v ~/ravens_volume:/ravens_volume -p 50051:50051 --name isi_test isi_ta2:stable
 
-#docker run --rm --name isi_test  -v /ravens_volume:/ravens_volume -v #/tmp/dsbox-ta2:/tmp/dsbox-ta2 -p 45042:45042 #registry.datadrivendiscovery.org/ta2/isi_ta2:latest
+#docker run --rm --name isi_test  -v ~/ravens_volume:/ravens_volume -v #/tmp/dsbox-ta2:/tmp/dsbox-ta2 -p 45042:45042 #registry.datadrivendiscovery.org/ta2/isi_ta2:latest
 ```
 
 
@@ -102,7 +102,7 @@ docker stop isi_test
 ```
 # start the container with a bash shell
 #
-docker run -ti --rm -v /ravens_volume:/ravens_volume -v /tmp/dsbox-ta2:/tmp/dsbox-ta2 -p 45042:45042 --name goisi isi_ta2:stable /bin/bash
+docker run -ti --rm -v ~/ravens_volume:/ravens_volume -v /tmp/dsbox-ta2:/tmp/dsbox-ta2 -p 45042:45042 --name goisi isi_ta2:stable /bin/bash
 
 
 # comment out stderr line so output goes to Terminal
@@ -125,7 +125,7 @@ export CONFIG_JSON_PATH=/ravens_volume/config_185_baseball.json
 
 # set the env on docker run
 #
-docker run -ti --rm -v /ravens_volume:/ravens_volume -e "CONFIG_JSON_PATH=/ravens_volume/config_185_baseball.json" -p 45042:45042 --name goisi isi_ta2:stable
+docker run -ti --rm -v ~/ravens_volume:/ravens_volume -e "CONFIG_JSON_PATH=/ravens_volume/config_185_baseball.json" -p 45042:45042 --name goisi isi_ta2:stable
 
 ```
 
@@ -147,7 +147,7 @@ export JSON_CONFIG_PATH=/ravens_volume/config_196_autoMpg.json
 
 # set the env on docker run
 #
-docker run -ti --rm -v /ravens_volume:/ravens_volume -e "JSON_CONFIG_PATH=/ravens_volume/config_196_autoMpg.json" -p 45042:45042 --name gobrown  brown_ta2:nightly
+docker run -ti --rm -v ~/ravens_volume:/ravens_volume -e "JSON_CONFIG_PATH=/ravens_volume/config_196_autoMpg.json" -p 45042:45042 --name gobrown  brown_ta2:nightly
 ```
 
 ### Run TAMU TA2
@@ -169,7 +169,7 @@ export CONFIG_JSON_PATH=/ravens_volume/config_185_baseball.json
 
 # set the env on docker run
 #
-docker run --rm -v /ravens_volume:/ravens_volume -p 45042:45042 --name tamu --entrypoint=ta2_search tamuta2:stable $CONFIG_JSON_PATH
+docker run --rm -v ~/ravens_volume:/ravens_volume -p 45042:45042 --name tamu --entrypoint=ta2_search tamuta2:stable $CONFIG_JSON_PATH
 ```
 
 ### Run Featurelabs TA2
@@ -191,7 +191,7 @@ export CONFIG_JSON_PATH=/ravens_volume/config_185_baseball.json
 
 # set the env on docker run
 #
-docker run --rm -ti -v /ravens_volume:/ravens_volume -e "CONFIG_JSON_PATH=/ravens_volume/config_26_radon_seed.json" -p 45042:45042 --name feature_labs --entrypoint=ta2_grpc_server featurelabs_ta2:stable
+docker run --rm -ti -v ~/ravens_volume:/ravens_volume -e "CONFIG_JSON_PATH=/ravens_volume/config_26_radon_seed.json" -p 45042:45042 --name feature_labs --entrypoint=ta2_grpc_server featurelabs_ta2:stable
 ```
 
 
