@@ -1,0 +1,42 @@
+{
+  "about": {
+    "problemID": "38_sick_problem",
+    "problemName": "sick_problem",
+    "problemDescription": "**Author**:   \n**Source**: [UCI](http://archive.ics.uci.edu/ml/datasets/thyroid+disease)   \n**Please cite**: Thyroid disease records supplied by the Garavan Institute and J. Ross Quinlan, New South Wales Institute, Syndney, Australia. 1987.\n\nAttribute information:\n\n```\nsick, negative.   |  classes\n\nage:    continuous.\nsex:    M, F.\non thyroxine:   f, t.\nquery on thyroxine:  f, t.\non antithyroid medication: f, t.\nsick:    f, t.\npregnant:   f, t.\nthyroid surgery:  f, t.\nI131 treatment:   f, t.\nquery hypothyroid:  f, t.\nquery hyperthyroid:  f, t.\nlithium:   f, t.\ngoitre:    f, t.\ntumor:    f, t.\nhypopituitary:   f, t.\npsych:    f, t.\nTSH measured:   f, t.\nTSH:    continuous.\nT3 measured:   f, t.\nT3:    continuous.\nTT4 measured:   f, t.\nTT4:    continuous.\nT4U measured:   f, t.\nT4U:    continuous.\nFTI measured:   f, t.\nFTI:    continuous.\nTBG measured:   f, t.\nTBG:    continuous.\nreferral source:  WEST, STMW, SVHC, SVI, SVHD, other.\n```\n\n``` \n Num Instances:     3772\n Num Attributes:    30\n Num Continuous:    7 (Int 1 / Real 6)\n Num Discrete:      23\n Missing values:    6064 /  5.4%\n```\n\n```\n     name                      type enum ints real     missing    distinct  (1)\n   1 'age'                     Int    0% 100%   0%     1 /  0%    93 /  2%   0% \n   2 'sex'                     Enum  96%   0%   0%   150 /  4%     2 /  0%   0% \n   3 'on thyroxine'            Enum 100%   0%   0%     0 /  0%     2 /  0%   0% \n   4 'query on thyroxine'      Enum 100%   0%   0%     0 /  0%     2 /  0%   0% \n   5 'on antithyroid medicati  Enum 100%   0%   0%     0 /  0%     2 /  0%   0% \n   6 'sick'                    Enum 100%   0%   0%     0 /  0%     2 /  0%   0% \n   7 'pregnant'                Enum 100%   0%   0%     0 /  0%     2 /  0%   0% \n   8 'thyroid surgery'         Enum 100%   0%   0%     0 /  0%     2 /  0%   0% \n   9 'I131 treatment'          Enum 100%   0%   0%     0 /  0%     2 /  0%   0% \n  10 'query hypothyroid'       Enum 100%   0%   0%     0 /  0%     2 /  0%   0% \n  11 'query hyperthyroid'      Enum 100%   0%   0%     0 /  0%     2 /  0%   0% \n  12 'lithium'                 Enum 100%   0%   0%     0 /  0%     2 /  0%   0% \n  13 'goitre'                  Enum 100%   0%   0%     0 /  0%     2 /  0%   0% \n  14 'tumor'                   Enum 100%   0%   0%     0 /  0%     2 /  0%   0% \n  15 'hypopituitary'           Enum 100%   0%   0%     0 /  0%     2 /  0%   0% \n  16 'psych'                   Enum 100%   0%   0%     0 /  0%     2 /  0%   0% \n  17 'TSH measured'            Enum 100%   0%   0%     0 /  0%     2 /  0%   0% \n  18 'TSH'                     Real   0%  11%  79%   369 / 10%   287 /  8%   2% \n  19 'T3 measured'             Enum 100%   0%   0%     0 /  0%     2 /  0%   0% \n  20 'T3'                      Real   0%   9%  71%   769 / 20%    69 /  2%   0% \n  21 'TT4 measured'            Enum 100%   0%   0%     0 /  0%     2 /  0%   0% \n  22 'TT4'                     Real   0%  94%   0%   231 /  6%   241 /  6%   1% \n  23 'T4U measured'            Enum 100%   0%   0%     0 /  0%     2 /  0%   0% \n  24 'T4U'                     Real   0%   2%  87%   387 / 10%   146 /  4%   1% \n  25 'FTI measured'            Enum 100%   0%   0%     0 /  0%     2 /  0%   0% \n  26 'FTI'                     Real   0%  90%   0%   385 / 10%   234 /  6%   2% \n  27 'TBG measured'            Enum 100%   0%   0%     0 /  0%     1 /  0%   0% \n  28 'TBG'                     Real   0%   0%   0%  3772 /100%     0 /  0%   0% \n  29 'referral source'         Enum 100%   0%   0%     0 /  0%     5 /  0%   0% \n  30 'Class'                   Enum 100%   0%   0%     0 /  0%     2 /  0%   0%\n```",
+    "taskType": "classification",
+    "taskSubType": "binary",
+    "problemVersion": "1.0",
+    "problemSchemaVersion": "3.0"
+  },
+  "inputs": {
+    "data": [
+      {
+        "datasetID": "38_sick_dataset",
+        "targets": [
+          {
+            "targetIndex": 0,
+            "resID": "0",
+            "colIndex": 30,
+            "colName": "Class"
+          }
+        ]
+      }
+    ],
+    "dataSplits": {
+      "method": "holdOut",
+      "testSize": 0.2,
+      "stratified": true,
+      "numRepeats": 0,
+      "randomSeed": 42,
+      "splitsFile": "dataSplits.csv"
+    },
+    "performanceMetrics": [
+      {
+        "metric": "f1Macro"
+      }
+    ]
+  },
+  "expectedOutputs": {
+    "predictionsFile": "predictions.csv"
+  }
+}
