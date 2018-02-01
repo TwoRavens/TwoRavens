@@ -14,6 +14,7 @@ from tworaven_apps.configurations.utils import \
     (get_latest_d3m_config,
      get_d3m_filepath)
 
+KEY_FILE_PREFIX = 'file_prefix'
 
 class UserProblemHelper(object):
     """Create and write a new user problem"""
@@ -198,8 +199,15 @@ class UserProblemHelper(object):
             self.add_error_message(err_msg)
             return False
 
-        success, filepath_or_err = \
-            UserProblemHelper.write_to_user_problems_root(self.new_problem_doc)
+        if KEY_FILE_PREFIX in self.problem_updates:
+            success, filepath_or_err = \
+                UserProblemHelper.write_to_user_problems_root(\
+                            self.new_problem_doc,
+                            file_prefix=self.problem_updates[KEY_FILE_PREFIX])
+        else:
+            success, filepath_or_err = \
+                UserProblemHelper.write_to_user_problems_root(\
+                                            self.new_problem_doc)
 
         if not success:
             self.add_error_message(filepath_or_err)
@@ -216,7 +224,7 @@ class UserProblemHelper(object):
 
 
     @staticmethod
-    def write_to_user_problems_root(problem_info_string):
+    def write_to_user_problems_root(problem_info_string, file_prefix='user_prob'):
         """Write a JSON string as a new file to the
            "user_problems_root" directory"""
         if not problem_info_string:
@@ -239,13 +247,19 @@ class UserProblemHelper(object):
 
         # create a file name based on the d3m config
         #
-        rand_str = random_info.get_alphanumeric_string(4)
-        fname = 'user_prob_%s_%s_%s.txt' % (\
-                            d3m_config.slug[:6],
-                            rand_str,
-                            dt.now().strftime('%Y-%m-%d_%H-%M-%S'))
+        filepath = None
+        for _ in range(3):   # try 3 times, in case name exists
 
-        filepath = join(d3m_config.user_problems_root, fname)
+            # filename includes random element + timestring
+            #
+            fname = '%s_%s_%s.txt' % (\
+                                file_prefix,
+                                random_info.get_alphanumeric_string(4),
+                                dt.now().strftime('%Y-%m-%d_%H-%M-%S'))
+
+            filepath = join(d3m_config.user_problems_root, fname)
+            if not isfile(filepath): # great!  doesn't exist
+                break
 
         # write the file
         try:
