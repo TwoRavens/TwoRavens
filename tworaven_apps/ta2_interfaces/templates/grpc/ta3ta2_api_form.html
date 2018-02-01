@@ -10,6 +10,7 @@
   }
 
   function formatOutput(json_obj){
+
     return "<pre><code>" + formatJSON(json_obj) + "</code></pre>";
   }
 
@@ -28,6 +29,8 @@
       $('#frmResult').html('Working...');
       $('#interimData').html('');
       $('#interimData').hide();
+      $('#problemDoc').html('');
+      $('#problemDoc').hide();
 
       payload = user_content;
 
@@ -35,6 +38,21 @@
                          payload,
                         //{ {{ KEY_GRPC_JSON }} : user_content},
                         function(data) {
+
+                          if (data.hasOwnProperty('data') ) {
+                            if (data.data.hasOwnProperty('new_problem_doc') ) {
+                              $('#problemDoc').show();
+                              let problemDocTitle = '<h3>User Discovered Problem</h3>';
+
+                              let problemDoc = data.data.new_problem_doc;
+                              problemDoc = problemDoc.replace(/(?:\r\n|\r|\n)/g, '<br />');
+                              problemDoc = problemDoc.replace(/"/g, '&quot;');
+
+                              let outputContent = cardWrap(problemDocTitle, formatOutput(problemDoc));
+                              $('#problemDoc').html(outputContent);
+                            }
+
+                          }
 
                           if (data.hasOwnProperty('data2') ) {
                               $('#interimData').show();
@@ -177,6 +195,8 @@ TA2_TEST_SERVER_URL = '{{ TA2_TEST_SERVER_URL }}'</pre>
       <div id="interimData">
       </div>
       <div id="frmResult">
+      </div>
+      <div id="problemDoc">
       </div>
   </div><!-- end: result column -->
 </div><!-- end: row -->

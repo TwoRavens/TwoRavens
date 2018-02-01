@@ -24,6 +24,7 @@ class UserProblemHelper(object):
         # -----------
         self.new_problem_doc = None
         self.problem_filepath = None
+        self.problem_file_uri = None
 
         self.has_error = False
         self.error_message = None
@@ -45,6 +46,9 @@ class UserProblemHelper(object):
             return ('WARNING! WARNING! Error was encountered'
                     '(UserProblemHelper): ') %\
                    self.error_message
+
+        if not self.save_schema_to_file:
+            return 'Test endpoint. Problem doc created. (No file written)'
 
         return 'Problem written: %s' % self.problem_filepath
 
@@ -139,6 +143,8 @@ class UserProblemHelper(object):
             return False
 
         self.problem_filepath = filepath_or_err
+        self.problem_file_uri = 'file://%s' % filepath_or_err
+
         return True
         # *
         #
@@ -213,7 +219,7 @@ class UserProblemHelper(object):
         # create a file name based on the d3m config
         #
         rand_str = random_info.get_alphanumeric_string(4)
-        fname = 'user_prob_%s_%s_%s.json' % (\
+        fname = 'user_prob_%s_%s_%s.txt' % (\
                             d3m_config.slug[:6],
                             rand_str,
                             dt.now().strftime('%Y-%m-%d_%H-%M-%S'))
@@ -243,7 +249,8 @@ class UserProblemHelper(object):
         """Return the D3M problem schema as an OrderedDict"""
         d3m_config = get_latest_d3m_config()
         if d3m_config is None:
-            return False, 'D3M config not found'
+            return False, ('D3M config not found.  Make sure a default'
+                           ' config is set. (UserProblemHelper)')
 
         filepath, err_msg_or_None = get_d3m_filepath(d3m_config, KEY_PROBLEM_SCHEMA)
         if err_msg_or_None:
