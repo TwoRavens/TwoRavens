@@ -3,7 +3,8 @@ from django.conf.urls import url
 from tworaven_apps.ta2_interfaces import (\
         views,
         views_additional,
-        view_execute_pipeline)
+        view_execute_pipeline,
+        views_user_problem)
 
 urlpatterns = (
 
@@ -66,6 +67,12 @@ urlpatterns = (
     url(r'^GetDataflowResults/?$',
         views.view_get_dataflow_results,
         name='GetDataflowResults'),
+
+    url(r'^write-user-problem/?$',
+        views_user_problem.view_write_user_problem,
+        name='view_write_user_problem'),
+
+
 
     url(r'^',
         views.view_test_call,

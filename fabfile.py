@@ -59,6 +59,7 @@ def clear_d3m_configs():
     """Delete D3M configs from the database"""
     from tworaven_apps.configurations.models_d3m import D3MConfiguration
     print('Clear all D3MConfiguration database entries')
+    D3MConfiguration.objects.all().delete()
 
 def make_d3m_config():
     """Make a D3M config based on local files in the /ravens_volume directory"""
