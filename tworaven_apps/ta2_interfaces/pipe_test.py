@@ -201,6 +201,22 @@ def execute_pipeline_parse():
     json_parse(content, core_pb2.PipelineExecuteRequest)
     print('-' * 40)
 
+
+"""
+from google.protobuf.json_format import MessageToJson
+import core_pb2
+
+req = core_pb2.UpdateProblemSchemaRequest()
+req.context.session_id = 'session_01'
+
+req.updates.add(task_type=core_pb2.CLASSIFICATION)
+req.updates.add(task_type=core_pb2.REGRESSION)
+
+content = MessageToJson(req, including_default_value_fields=True)
+print('JSON:\n')
+print(content)
+print('-' * 40)
+"""
 def update_parse():
 
     req = core_pb2.UpdateProblemSchemaRequest()

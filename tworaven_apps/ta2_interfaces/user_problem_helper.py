@@ -89,17 +89,80 @@ class UserProblemHelper(object):
             return False
         update_cnt = 0
 
-        ## BYPASS UNTIL MAPPING READY
-        ## (1) Description
-        """
-        if 'description' in self.problem_updates:
-            if 'about' in orig_prob_schema:
-                if 'problemDescription' in orig_prob_schema:
-                    update_cnt += 1
-                    orig_prob_schema['about']['problemDescription'] = \
-                        self.problem_updates['description']
+        # ----------------------------------------------
+        # CreatePipelines Field -> problemDoc.json Field
+        # ----------------------------------------------
+
+        # ----------------------------------------------
+        # (1) task ->|  about > taskType
+        # ----------------------------------------------
+        if 'task' in self.problem_updates:
+            update_cnt += 1
+            if not 'about' in orig_prob_schema:
+                orig_prob_schema['about'] = OrderedDict()
+            orig_prob_schema['about']['taskType'] = self.problem_updates['task']
+
+        # ----------------------------------------------
+        # (2) task_description ->|  about > problemdescription
+        # ----------------------------------------------
+        if 'task_description' in self.problem_updates:
+            update_cnt += 1
+            if not 'about' in orig_prob_schema:
+                orig_prob_schema['about'] = OrderedDict()
+            orig_prob_schema['about']['problemdescription'] = \
+                self.problem_updates['task_description']
+
+        # ----------------------------------------------
+        # (3) metrics ->| inputs > performanceMetrics > metric
+        # ----------------------------------------------
+        if 'metrics' in self.problem_updates:
+            update_cnt += 1
+            if not 'inputs' in orig_prob_schema:
+                orig_prob_schema['inputs'] = OrderedDict()
+
+            # reset the list of performanceMetrics
+            orig_prob_schema['inputs']['performanceMetrics'] = []
+            #if not 'performanceMetrics' in orig_prob_schema['inputs']:
+
+            for single_metric_val in self.problem_updates['metrics']:
+                single_metric_dict = OrderedDict()
+                single_metric_dict['metric'] = single_metric_val
+                orig_prob_schema['inputs']['performanceMetrics'].append(\
+                            single_metric_dict)
+
+        # ----------------------------------------------
+        # (4) target_features ->|  inputs > data > targets > colName
+        # ----------------------------------------------
+        if 'targetFeatures' in self.problem_updates:
+            update_cnt += 1
+            if 'inputs' in orig_prob_schema and \
+                'data' in orig_prob_schema['inputs']:
+
+                num_data_entries = len(orig_prob_schema['inputs']['data'])
+                if num_data_entries != 1:
+                    err_msg = ('Expect the problem schema to have a single'
+                               " entry for \"orig_prob_schema['inputs']['data']\""
+                               ". Instead found %d entries.") % num_data_entries
+
+                    self.add_error_message(err_msg)
+                    return False
+
+                target_list = []
+                for tf in self.problem_updates['targetFeatures']:
+                    target_list.append(dict(colName=tf['feature_name']))
+
+                orig_prob_schema['inputs']['data'][0]['targets'] = target_list
+
 
         # make other updates, etc....
+        """
+        CreatePipelines Field -> problemDoc.json Field
+        ----------------------------------------------
+        task ->          about > taskType
+        task_description -> about > problemdescription
+        metrics ->           inputs > performanceMetrics > metric
+        target_features ->  inputs > data > targets > colName
+
         """
 
         ## TEST file UNTIL MAPPING READY
@@ -148,49 +211,7 @@ class UserProblemHelper(object):
         return True
         # *
         #
-        """
-        {
-   "about":{
-      "problemID":"185_baseball_problem",
-      "problemName":"baseball_problem",
-      "problemDescription":"**Author**: Jeffrey S. Simonoff \n**Source**: [AnalCatData](http://www.stern.nyu.edu/~jsimonof/AnalCatData) - 2003 \n**Please cite**: Jeffrey S. Simonoff, Analyzing Categorical Data, Springer-Verlag, New York, 2003 \n \nDatabase of baseball players and play statistics, including 'Games_played', 'At_bats', 'Runs', 'Hits', 'Doubles', 'Triples', 'Home_runs', 'RBIs', 'Walks', 'Strikeouts', 'Batting_average', 'On_base_pct', 'Slugging_pct' and 'Fielding_ave' \n\nNotes: \n* Quotes, Single-Quotes and Backslashes were removed, Blanks replaced with Underscores\n* Player is an identifier that should be ignored when modelling the data",
-      "taskType":"classification",
-      "taskSubType":"multiClass",
-      "problemVersion":"1.0",
-      "problemSchemaVersion":"3.0"
-   },
-   "inputs":{
-      "data":[
-         {
-            "datasetID":"185_baseball_dataset",
-            "targets":[
-               {
-                  "targetIndex":0,
-                  "resID":"0",
-                  "colIndex":18,
-                  "colName":"Hall_of_Fame"
-               }
-            ]
-         }
-      ],
-      "dataSplits":{
-         "method":"holdOut",
-         "testSize":0.2,
-         "stratified":true,
-         "numRepeats":0,
-         "randomSeed":42,
-         "splitsFile":"dataSplits.csv"
-      },
-      "performanceMetrics":[
-         {
-            "metric":"f1Macro"
-         }
-      ]
-   },
-   "expectedOutputs":{
-      "predictionsFile":"predictions.csv"
-   }
-}"""
+
 
 
 
