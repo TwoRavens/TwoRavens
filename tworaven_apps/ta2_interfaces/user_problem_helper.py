@@ -17,6 +17,7 @@ from tworaven_apps.configurations.utils import \
 KEY_FILE_PREFIX = 'file_prefix'
 KEY_TASK = 'task'
 KEY_TASK_SUBTYPE = 'taskSubtype'
+KEY_PROBLEM_DESCRIPTION = 'problemDescription'
 
 class UserProblemHelper(object):
     """Create and write a new user problem"""
@@ -136,13 +137,13 @@ class UserProblemHelper(object):
                 orig_prob_schema['about'] = new_about_section
 
         # ----------------------------------------------
-        # (2) task_description ->|  about > problemdescription
+        # (2) task_description ->|  about > problemDescription
         # ----------------------------------------------
         if 'task_description' in self.problem_updates:
             update_cnt += 1
             if not 'about' in orig_prob_schema:
                 orig_prob_schema['about'] = OrderedDict()
-            orig_prob_schema['about']['problemdescription'] = \
+            orig_prob_schema['about'][KEY_PROBLEM_DESCRIPTION] = \
                 self.problem_updates['task_description']
 
         # ----------------------------------------------
