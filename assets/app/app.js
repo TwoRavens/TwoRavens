@@ -1816,6 +1816,7 @@ function tabulate(data, columns, divid) {
                 d3.select(divid).select("tr.item-select")
                     .attr('class', 'item-default');
                 d3.select(myrow).attr('class',"item-select");
+                document.getElementById("tab2input").value=disco[(myrow.rowIndex)-1].description;
                 if(divid=='#setxRight') {
                     resultsplotinit(myrow.firstChild.innerText);
                 }
@@ -1961,7 +1962,7 @@ function CreatePipelineData(predictors, depvar, aux) {
         dataset_uri: uriJson,   // uriCsv is also valid, but not currently accepted by ISI TA2
         task: aux.task,
         taskSubtype: "TASK_SUBTYPE_UNDEFINED",
-        taskDescription: "Description",
+        taskDescription: aux.description,
         output: "OUTPUT_TYPE_UNDEFINED",
         metrics: [aux.metrics],
         targetFeatures,
@@ -4108,10 +4109,12 @@ export function discovery(preprocess_file) {
 
 export function probDiscView(btn) {
     tabLeft(btn);
+    console.log(disco);
     
     if(btn=='tab1') {
         document.getElementById("leftpanel").classList.remove("expandpanelfull");
         document.getElementById("btnSelect").style.display="none";
+        document.getElementById("tab2input").style.display="none";
         return;
     }
     document.getElementById("leftpanel").classList.toggle("expandpanelfull");
@@ -4121,6 +4124,10 @@ export function probDiscView(btn) {
     
     if(document.getElementById("tab2").hasChildNodes()) return; // return if this has already been clicked, if childNodes have already been added
     
+    if(document.getElementById("leftpanel").classList.contains("expandpanelfull")) {
+        document.getElementById("tab2input").style.display="block";
+    }
+    
     let myprobs = disco;  // discovery();  Function requires argument.  Don't presently need to call function again.  
     let probtable = [];
     for(let i = 0; i<myprobs.length; i++) {
@@ -4128,6 +4135,8 @@ export function probDiscView(btn) {
         probtable.push({"Target":myprobs[i].target,"Predictors":mypredictors, "Task":myprobs[i].task, "Metric":myprobs[i].metric});
     }
     tabulate(probtable, ['Target', 'Predictors', 'Task','Metric'], '#tab2');
+    
+    document.getElementById("tab2input").value=myprobs[0].description;
 }
 
 export async function submitDiscProb(btn) {
@@ -4143,7 +4152,7 @@ export async function submitDiscProb(btn) {
         if(!checked[i]) continue;
         //createpipeline call
         console.log(disco);
-        let aux = {"task":d3mTaskType[disco[i].task][1], "metrics":d3mMetrics[disco[i].metric][1]};
+        let aux = {"task":d3mTaskType[disco[i].task][1], "metrics":d3mMetrics[disco[i].metric][1], "description":disco[i].description};
         console.log(aux);
         // VJD: this is the code to ask TA2 for a single pipeline, to check viability. However, TA2s might not actually handle 'maxpipelines', making this take a very long time to run. Bypassing this for now
       //  let res = await makeRequest(D3M_SVC_URL + '/CreatePipelines', CreatePipelineData(disco[i].predictors, [disco[i].target], aux)); // creating a single pipeline for a discovered problem, to check viability
