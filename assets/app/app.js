@@ -2921,6 +2921,25 @@ export let fakeClick = () => {
    EndSession(SessionContext) returns (Response) {}
 */
 export async function endsession() {
+
+    let table = document.getElementById("results").getElementsByTagName('table')[0];
+    if(typeof table === 'undefined') {
+        alert("No pipelines exist. Cannot mark problem as complete.")
+        return;
+    }
+    
+    let selected = "none";
+ 
+ //there's a cleaner way to do this...
+    for (let i = 1, row; row = table.rows[i]; i++) { //skipping the header
+        if(row.className=='item-select'){
+            selected=row.cells[0].innerHTML;
+        }
+    }
+
+    // calling exportpipeline
+    let end = await exportpipeline(selected);
+    
    // makeRequest(D3M_SVC_URL + '/endsession', apiSession(zparams.zsessionid));
     let res = await makeRequest(D3M_SVC_URL + '/endsession', apiSession(zparams.zsessionid));
     let mystatus = res.status.code.toUpperCase();
@@ -3856,12 +3875,21 @@ export function setxTable(features) {
 /**
   rpc ExportPipeline(PipelineExportRequest) returns (Response) {}
 */
+
 export async function exportpipeline(pipelineId) {
     console.log(pipelineId);
     let res = await makeRequest(
         D3M_SVC_URL + '/exportpipeline',
         {pipelineId, context: apiSession(zparams.zsessionid), pipelineExecUri: '<<EXECUTABLE_URI>>'});
-    res && console.log(`Executable for ${pipelineId} has been written`);
+    
+    // we need standardized status messages...
+    if(res.status.code=="FAILED_PRECONDITION") {
+        alert("TA2 has not written the executable.");
+    }
+    else {
+        console.log(`Executable for ${pipelineId} has been written`);
+    }
+    return res;
 }
 
 /** needs doc */
