@@ -52,6 +52,9 @@ eval $(minikube docker-env)
 
 kubectl exec -ti ravens-ta3 --container ta3-main -- ta3_search /ravens_volume/config_185_baseball.json
 
+kubectl exec -ti ravens-ta3 --container ta3-main -- ta3_search /ravens_volume/config_38_sick.json
+
+
 kubectl exec ravens-ta3 --container ta3-main -- /bin/bash ta3_search /ravens_volume/config_185_baseball.json
 
 ```

@@ -87,10 +87,8 @@ spec:
   - name: ta3-main
     image: ravens-main:stable
     imagePullPolicy: Never
-    command:
-      - ["tail"]
-    args:
-      - ["-f", "/dev/null"]
+    command: ["tail"]
+    args: ["-f", "/dev/null"]
     # web (perhaps nginx) ports
     ports:
       # Main web port; nginx makes this available via port 80
@@ -152,21 +150,6 @@ spec:
         - /var/webapps/TwoRavens/docs/health.md
       initialDelaySeconds: 5
       periodSeconds: 5
-    #livenessProbe:
-    #  httpGet:
-    #    path: /monitoring/alive
-    #    port: 8080
-    #  initialDelaySeconds: 5
-    #  timeoutSeconds: 1
-    #  periodSeconds: 10
-    #  failureThreshold: 3
-    # readiness: ready for traffic
-    #readinessProbe:
-    #  httpGet:
-    #    path: /monitoring/alive
-    #    port: 8080
-    #  initialDelaySeconds: 10
-    #  periodSeconds: 10
   # -------------------------
   # 3 of 3: Rook R services
   # -------------------------
