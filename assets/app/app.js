@@ -1825,8 +1825,8 @@ function tabulate(data, columns, divid) {
     if(divid=='#tab2') {
       d3.select(divid).selectAll("tr")
       .append("input")
-      .attr("type", "checkbox")
-      .style("float","right");
+        .attr("type", "checkbox")
+         .style("float","right");
     }
 
     return table;
@@ -1916,7 +1916,7 @@ function onPipelineCreate(PipelineCreateResult, rookpipe) {
   //  makeRequest(D3M_SVC_URL + '/getexecutepipelineresults', {context, pipeline_ids: Object.keys(allPipelineInfo)});
 }
 
-function CreatePipelineData(predictors, depvar) {
+function CreatePipelineData(predictors, depvar, aux) {
     let context = apiSession(zparams.zsessionid);
     let uriCsv = zparams.zd3mdata;
     let uriJson = uriCsv.substring(0, uriCsv.lastIndexOf("/tables")) + "/datasetDoc.json";
@@ -1925,6 +1925,7 @@ function CreatePipelineData(predictors, depvar) {
     for (var i = 0; i < predictors.length; i++) {
         predictFeatures[i] = { 'resource_id': "0", 'feature_name': predictors[i] };
     }
+    if(typeof aux==="undefined") { //default behavior for creating pipeline data
     return {
         context,
         dataset_uri: uriJson,   // uriCsv is also valid, but not currently accepted by ISI TA2
@@ -1952,7 +1953,21 @@ function CreatePipelineData(predictors, depvar) {
           ],
         */
         maxPipelines: 5 //user to specify this eventually?
-    };
+    };}
+    else { //creating pipeline data for problem discovery using aux inputs
+        return {
+        context,
+        dataset_uri: uriJson,   // uriCsv is also valid, but not currently accepted by ISI TA2
+        task: aux.task,
+        taskSubtype: "TASK_SUBTYPE_UNDEFINED",
+        taskDescription: "Description",
+        output: "OUTPUT_TYPE_UNDEFINED",
+        metrics: [aux.metrics],
+        targetFeatures,
+        predictFeatures,
+        maxPipelines: 1
+        };
+    }
 }
 
 export function downloadIncomplete() {
@@ -4048,11 +4063,16 @@ export function discovery(preprocess_file) {
 
 export function probDiscView(btn) {
     tabLeft(btn);
+    
     if(btn=='tab1') {
         document.getElementById("leftpanel").classList.remove("expandpanelfull");
+        document.getElementById("btnSelect").style.display="none";
         return;
     }
     document.getElementById("leftpanel").classList.toggle("expandpanelfull");
+    if(document.getElementById("btnSelect").style.display=="none"){
+        document.getElementById("btnSelect").style.display="block";
+    }
     
     if(document.getElementById("tab2").hasChildNodes()) return; // return if this has already been clicked, if childNodes have already been added
     
@@ -4063,6 +4083,29 @@ export function probDiscView(btn) {
         probtable.push({"Target":myprobs[i].target,"Predictors":mypredictors, "Task":myprobs[i].task, "Metric":myprobs[i].metric});
     }
     tabulate(probtable, ['Target', 'Predictors', 'Task','Metric'], '#tab2');
+}
+
+export async function submitDiscProb(btn) {
+    let table = document.getElementById("tab2").getElementsByTagName('table')[0];
+    console.log(table);
+    let checked = [];
+
+    for (let i = 1, row; row = table.rows[i]; i++) { //skipping the header
+        checked.push(row.getElementsByTagName("input")[0].checked); // boolean array
+    }
+    
+    for(let i = 0; i < disco.length; i++) {
+        if(!checked[i]) continue;
+        //createpipeline call
+        console.log(disco);
+        let aux = {"task":d3mTaskType[disco[i].task][1], "metrics":d3mMetrics[disco[i].metric][1]};
+        console.log(aux);
+        let res = await makeRequest(D3M_SVC_URL + '/CreatePipelines', CreatePipelineData(disco[i].predictors, disco[i].target, aux)); // creating a single pipeline for a discovered problem, to check viability
+        if(res) { // have to check if the response went through ok, this just checks if res exists
+            let res = await makeRequest(D3M_SVC_URL + '/write-user-problem', CreatePipelineData(disco[i].predictors, disco[i].target, aux));
+        }
+    }
+    
 }
 
 
