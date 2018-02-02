@@ -147,7 +147,16 @@ preprocess<-function(hostname=NULL, fileid=NULL, testdata=NULL, types=NULL, file
     # using 'complete.obs' is safer than 'pairwise.complete.obs', although it listwise deletes on entire data.frame
     mydata2 <- mydata[sapply(mydata,is.numeric)]
     mycov <- tryCatch(cov(mydata2, use='complete.obs'), error=function(e) matrix(0)) # this will default to a 1x1 matrix with a 0
+    mycor <- tryCatch(cor(mydata2, use='pairwise.complete.obs'), error=function(e) matrix(0)) # this will default to a 1x1 matrix with a 0
+
+    if(!identical(mycor,0)){
+        mydisco<-disco(names(mydata2), mycor, n=3)
+    }else{
+        mydisco<-NULL
+    }
+
     datasetLevelInfo[["covarianceMatrix"]] <- mycov
+    datasetLevelInfo[["discovery"]] <- mydisco
     
     jsontest<-rjson:::toJSON(datasetLevelInfo)
     write(jsontest,file="test.json")
@@ -340,8 +349,28 @@ typeGuess <- function(data) {
     return(out)
 }
 
+## Function that runs discovery, finding potential models of interest, here by highest correlated variables.
 
+disco <- function(names, cor, n=3){
 
+    diag(cor) <- 0
+    cor <- abs(cor)
+    found <- list()
+    k <- nrow(cor)
+
+    r <- min(k-1,n)  # How many predictor variables to keep
+
+    count<-0
+    for(i in 1:k){
+        if(!identical(names[i],"d3mIndex")){
+            count<-count+1
+            keep<-names[order(cor[i,], decreasing=TRUE)][1:r]
+            found[[count]]<- list(target=names[i], predictors=keep)
+        }
+
+    }
+    return(found)
+}
 
 
 

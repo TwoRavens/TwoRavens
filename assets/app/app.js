@@ -122,6 +122,8 @@ export let zparams = {
     zusername: '',
 };
 
+export let disco = [];
+
 export let modelCount = 0;
 export let valueKey = [];
 export let allNodes = [];
@@ -488,6 +490,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
 
     console.log("is this preprocess?")
     console.log(res);
+    console.log(preprocess);
 
     // 9. Build allNodes[] using preprocessed information
     let vars = Object.keys(preprocess);
@@ -540,9 +543,11 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     }
 
     // 10b. Call problem discovery
+    // Requires that `res` built in 8. above still exists.  Should make this better.
     if(!swandive) {
-        let test = discovery();
-        console.log(test);
+        disco = discovery(res);
+        console.log(disco);
+        
     }
 
     // 11. Call layout() and start up
@@ -4003,27 +4008,29 @@ function singlePlot(pred) {
         }
 }
 
-export function discovery() {
+export function discovery(preprocess_file) {
 
+    console.log("entering disco");
+    console.log(typeof(preprocess_file));
+    let extract = preprocess_file.dataset.discovery;
+    console.log(extract);
     let disco = [];
     let names = [];
     let vars = Object.keys(preprocess);
     console.log("preprocess");
     console.log(preprocess);
-    for (let i = 1; i < 4; i++) {
+    for (let i = 0; i < extract.length; i++) {
         names[i] = "Problem" + (i + 1);
-        let current_target = vars[i];
-        let current_predictors = [vars[i+1], vars[i+2]];
+        let current_target = extract[i]["target"]; //vars[i];
+        let current_predictors = extract[i]["predictors"]; //[vars[i+1], vars[i+2]];
         let current_task = "regression";
-        let current_rating = 6-i;
+        let current_rating = 3;
         let current_description = current_target + " is predicted by " + current_predictors[0] + " and " + current_predictors[1];
         let current_metric = "meanSquaredError";
         let current_disco = {target: current_target, predictors: current_predictors, task: current_task, rating: current_rating, description: current_description, metric: current_metric};
-        console.log(current_disco);
         //jQuery.extend(true, current_disco, names);
-        disco[i-1] = current_disco;
+        disco[i] = current_disco;
     };
-    console.log(names);
     /* Problem Array of the Form: 
         [1: {target:"Home_runs",
             predictors:["Walks","RBIs"],
@@ -4046,7 +4053,7 @@ export function probDiscView(btn) {
     
     if(document.getElementById("tab2").hasChildNodes()) return; // return if this has already been clicked, if childNodes have already been added
     
-    let myprobs = discovery();
+    let myprobs = disco  // discovery();  Function requires argument.  Don't presently need to call function again.  
     console.log(myprobs);
     let probtable = [];
     for(let i = 0; i<myprobs.length; i++) {
