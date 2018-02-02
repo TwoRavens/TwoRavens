@@ -2939,7 +2939,7 @@ export async function endsession() {
 
     // calling exportpipeline
     let end = await exportpipeline(selected);
-    
+
    // makeRequest(D3M_SVC_URL + '/endsession', apiSession(zparams.zsessionid));
     let res = await makeRequest(D3M_SVC_URL + '/endsession', apiSession(zparams.zsessionid));
     let mystatus = res.status.code.toUpperCase();
@@ -3248,6 +3248,12 @@ export function resultsplotinit(pid) {
     let mydv = allPipelineInfo.rookpipe.depvar[0];
     let dvvalues= allPipelineInfo.rookpipe.dvvalues;
    // let predfile = pid.pipelineInfo.predictResultData.file_1;
+   
+   if(pid.pipelineInfo.predictResultData.success==false) {
+        byId('btnSetx').classList.add("noshow")
+       return;
+   }
+   
     let allPreds = pid.pipelineInfo.predictResultData.data;
     console.log(Object.keys(allPreds[1]));
     let predvals = [];
@@ -3877,18 +3883,21 @@ export function setxTable(features) {
 */
 
 export async function exportpipeline(pipelineId) {
-    console.log(pipelineId);
+    let temp = {pipelineId, context: apiSession(zparams.zsessionid), pipelineExecUri: '<<EXECUTABLE_URI>>'};
+
     let res = await makeRequest(
         D3M_SVC_URL + '/exportpipeline',
         {pipelineId, context: apiSession(zparams.zsessionid), pipelineExecUri: '<<EXECUTABLE_URI>>'});
-    
+  
     // we need standardized status messages...
-    if(res.status.code=="FAILED_PRECONDITION") {
+    let mystatus = res.status;
+    if (typeof mystatus !== 'undefined') {
+    if(mystatus.code=="FAILED_PRECONDITION") {
         alert("TA2 has not written the executable.");
     }
     else {
         console.log(`Executable for ${pipelineId} has been written`);
-    }
+    }}
     return res;
 }
 
