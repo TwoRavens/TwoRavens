@@ -436,8 +436,12 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
                       <p>These messages will teach you the steps to take to find and submit a solution.</p>`),
                 step("btnReset", "bottom", "Restart Any Problem Here",
                      '<p>You can always start a problem over by using this reset button.</p>'),
-                step("btnEstimate", "left", "Solve Problem",
-                     `<p>The current green button is generally the next step to follow to move the system forward.</p>
+                step("btnSubset", "right", "Complete Task 1",
+                     `<p>This Problem Discovery button allows you to start Task 1 - Problem Discovery.</p>
+                     <p>Click this button to see a list of problems that have been discovered in the dataset.</p>
+                     <p>You can mark which ones you agree may be interesting, and then submit the table as an answer.</p>`),
+                step("btnEstimate", "left", "Solve Task 2",
+                     `<p>The current green button is generally the first step to follow to work on Task 2 - Build a Model.</p>
                       <p>Click this Solve button to tell the tool to find a solution to the problem.</p>`),
                 step(mytarget + 'biggroup', "left", "Target Variable",
                      `This is the variable, ${mytarget}, we are trying to predict.
