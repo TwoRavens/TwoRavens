@@ -4122,12 +4122,12 @@ export function probDiscView(btn) {
         document.getElementById("btnSelect").style.display="block";
     }
     
-    if(document.getElementById("tab2").hasChildNodes()) return; // return if this has already been clicked, if childNodes have already been added
-    
     if(document.getElementById("leftpanel").classList.contains("expandpanelfull")) {
         document.getElementById("tab2input").style.display="block";
     }
     
+    if(document.getElementById("tab2").hasChildNodes()) return; // return if this has already been clicked, if childNodes have already been added
+
     let myprobs = disco;  // discovery();  Function requires argument.  Don't presently need to call function again.  
     let probtable = [];
     for(let i = 0; i<myprobs.length; i++) {
