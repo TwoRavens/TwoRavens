@@ -1812,13 +1812,13 @@ function tabulate(data, columns, divid) {
                 }
             }});
 
-    // this is code to add a checkbox to each row of pipeline results table
-    /*
+    // this is code to add a checkbox to each row of the table
+    if(divid=='#tab2') {
       d3.select(divid).selectAll("tr")
       .append("input")
       .attr("type", "checkbox")
       .style("float","right");
-    */
+    }
 
     return table;
 
@@ -2446,6 +2446,7 @@ export function tabLeft(tab) {
     lefttab = tab;
 }
 
+
 /** needs doc */
 export function tabRight(tab) {
     let select = cls => {
@@ -2533,7 +2534,7 @@ export let popoverContent = d => {
 export function panelPlots() {
 
     if(IS_D3M_DOMAIN) {
-        byId('btnSubset').classList.add('noshow');
+    //    byId('btnSubset').classList.add('noshow');
     }
     // build arrays from nodes in main
     let vars = [];
@@ -2583,6 +2584,9 @@ export function panelPlots() {
               .remove();
               }
               });
+    
+              // just removing all the subset plots here, because using this button for problem discover
+              d3.select('#tab2').selectAll('svg').remove();
 }
 
 /**
@@ -4017,7 +4021,7 @@ export function discovery() {
         let current_disco = {target: current_target, predictors: current_predictors, task: current_task, rating: current_rating, description: current_description, metric: current_metric};
         console.log(current_disco);
         //jQuery.extend(true, current_disco, names);
-        disco[i] = current_disco;
+        disco[i-1] = current_disco;
     };
     console.log(names);
     /* Problem Array of the Form: 
@@ -4031,3 +4035,26 @@ export function discovery() {
     */
     return disco;
 }
+
+export function probDiscView(btn) {
+    tabLeft(btn);
+    if(btn=='tab1') {
+        document.getElementById("leftpanel").classList.remove("expandpanelfull");
+        return;
+    }
+    document.getElementById("leftpanel").classList.toggle("expandpanelfull");
+    
+    if(document.getElementById("tab2").hasChildNodes()) return; // return if this has already been clicked, if childNodes have already been added
+    
+    let myprobs = discovery();
+    console.log(myprobs);
+    let probtable = [];
+    for(let i = 0; i<myprobs.length; i++) {
+        let mypredictors = myprobs[i].predictors.join();
+        probtable.push({"Target":myprobs[i].target,"Predictors":mypredictors, "Task":myprobs[i].task, "Metric":myprobs[i].metric});
+    }
+    tabulate(probtable, ['Target', 'Predictors', 'Task','Metric'], '#tab2');
+}
+
+
+
