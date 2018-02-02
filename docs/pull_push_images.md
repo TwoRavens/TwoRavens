@@ -2,6 +2,17 @@
 
 ## Notes for downloading/tagging/uploading images
 
+### Before submitting last master
+
+- Run webpack
+
+```
+fab webpack_prod
+fab run
+```
+
+- See if any new files are generated and check them in, if needed
+
 ### Check to make sure latest images built on dockerhub
 
 **Note**: ravens-main is done at end of Travis test but other 2 images may take 10 minutes or so.  
