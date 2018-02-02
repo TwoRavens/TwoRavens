@@ -4056,7 +4056,7 @@ export function probDiscView(btn) {
     
     if(document.getElementById("tab2").hasChildNodes()) return; // return if this has already been clicked, if childNodes have already been added
     
-    let myprobs = disco  // discovery();  Function requires argument.  Don't presently need to call function again.  
+    let myprobs = disco;  // discovery();  Function requires argument.  Don't presently need to call function again.  
     let probtable = [];
     for(let i = 0; i<myprobs.length; i++) {
         let mypredictors = myprobs[i].predictors.join();
