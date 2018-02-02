@@ -61,6 +61,10 @@ def clear_d3m_configs():
     print('Clear all D3MConfiguration database entries')
     D3MConfiguration.objects.all().delete()
 
+def clear_test_data():
+    """Clear all test files, etc"""
+    pass
+
 def make_d3m_config():
     """Make a D3M config based on local files in the /ravens_volume directory"""
     from tworaven_apps.configurations.util_config_maker import TestConfigMaker

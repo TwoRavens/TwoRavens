@@ -34,7 +34,8 @@ def format_jsonfield_for_admin(json_dict, indent=4):
 
 
 def format_json_for_admin(json_string, indent=4):
-    print('format_json_for_admin: ', json_string)
+    """Format the JSON for viewing in the admin"""
+    #print('format_json_for_admin: ', json_string)
     if not json_string:
         return 'n/a'
 
