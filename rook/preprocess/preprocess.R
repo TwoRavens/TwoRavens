@@ -374,15 +374,25 @@ disco <- function(names, cor, n=3){
     r <- min(k-1,n)  # How many predictor variables to keep
 
     count<-0
+    rating <- NULL
     for(i in 1:k){
         if(!identical(names[i],"d3mIndex")){
-            count<-count+1
-            keep<-names[order(cor[i,], decreasing=TRUE)][1:r]
-            found[[count]]<- list(target=names[i], predictors=keep)
+            count <- count+1
+            temporder <- order(cor[i,], decreasing=TRUE)[1:r]
+            keep <- names[temporder]
+            rating <- c(rating,sum(cor[i,temporder]))
+            found[[count]] <- list(target=names[i], predictors=keep)
         }
 
     }
-    return(found)
+
+    newfound <- list()
+    neworder <- order(rating, decreasing=TRUE)
+    for(i in 1:length(rating)){
+        newfound[[i]] <- found[[ neworder[i] ]]
+    }
+
+    return(newfound)
 }
 
 
