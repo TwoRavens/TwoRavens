@@ -109,11 +109,11 @@ if(!is_rapache_mode){
 
     print(R.server)
 
-    if(!production){
+    #if(!production){
       R.server$start(listen=myInterface, port=myPort)
       R.server$listenAddr <- myInterface
       R.server$listenPort <- myPort
-    }
+    #}
 }
 
 
