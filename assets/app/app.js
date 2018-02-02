@@ -4103,10 +4103,11 @@ export async function submitDiscProb(btn) {
         console.log(disco);
         let aux = {"task":d3mTaskType[disco[i].task][1], "metrics":d3mMetrics[disco[i].metric][1]};
         console.log(aux);
-        let res = await makeRequest(D3M_SVC_URL + '/CreatePipelines', CreatePipelineData(disco[i].predictors, disco[i].target, aux)); // creating a single pipeline for a discovered problem, to check viability
-        if(res) { // have to check if the response went through ok, this just checks if res exists
-            let res = await makeRequest(D3M_SVC_URL + '/write-user-problem', CreatePipelineData(disco[i].predictors, disco[i].target, aux));
-        }
+        // VJD: this is the code to ask TA2 for a single pipeline, to check viability. However, TA2s might not actually handle 'maxpipelines', making this take a very long time to run. Bypassing this for now
+      //  let res = await makeRequest(D3M_SVC_URL + '/CreatePipelines', CreatePipelineData(disco[i].predictors, [disco[i].target], aux)); // creating a single pipeline for a discovered problem, to check viability
+      //  if(res) { // have to check if the response went through ok, this just checks if res exists
+            let res = await makeRequest(D3M_SVC_URL + '/write-user-problem', CreatePipelineData(disco[i].predictors, [disco[i].target], aux));
+      //  }
     }
     
 }
