@@ -141,6 +141,7 @@ div.popover.variables div.popover-content.form-horizontal .form-group {
 #leftpanel.closepanel {width:1px;}
 #leftpanel.closepanel #leftpaneltitle, #leftpanel.closepanel div.btn-toolbar, #leftpanel.closepanel div.row-fluid.closepanel {display:none;}
 #leftpanel.expandpanel {width: 30%;}
+#leftpanel.expandpanelfull {width: calc(100% - 300px - 16px);}
 
 #rightpanel {
     border: 1px solid #ADADAD;

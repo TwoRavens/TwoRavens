@@ -15,6 +15,7 @@ preprocess.app <- function(env){
     ## Define paths for output.
     ## Also set `production` toggle:  TRUE - Production, FALSE - Local Development.
     source("rookconfig.R")
+    production <- FALSE
 
     warning<-FALSE
     result <-list()

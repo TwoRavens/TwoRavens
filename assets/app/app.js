@@ -122,6 +122,8 @@ export let zparams = {
     zusername: '',
 };
 
+export let disco = [];
+
 export let modelCount = 0;
 export let valueKey = [];
 export let allNodes = [];
@@ -434,8 +436,12 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
                       <p>These messages will teach you the steps to take to find and submit a solution.</p>`),
                 step("btnReset", "bottom", "Restart Any Problem Here",
                      '<p>You can always start a problem over by using this reset button.</p>'),
-                step("btnEstimate", "left", "Solve Problem",
-                     `<p>The current green button is generally the next step to follow to move the system forward.</p>
+                step("btnSubset", "right", "Complete Task 1",
+                     `<p>This Problem Discovery button allows you to start Task 1 - Problem Discovery.</p>
+                     <p>Click this button to see a list of problems that have been discovered in the dataset.</p>
+                     <p>You can mark which ones you agree may be interesting, and then submit the table as an answer.</p>`),
+                step("btnEstimate", "left", "Solve Task 2",
+                     `<p>The current green button is generally the first step to follow to work on Task 2 - Build a Model.</p>
                       <p>Click this Solve button to tell the tool to find a solution to the problem.</p>`),
                 step(mytarget + 'biggroup', "left", "Target Variable",
                      `This is the variable, ${mytarget}, we are trying to predict.
@@ -486,6 +492,10 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         }
     }
 
+    console.log("is this preprocess?")
+    console.log(res);
+    console.log(preprocess);
+
     // 9. Build allNodes[] using preprocessed information
     let vars = Object.keys(preprocess);
     // temporary values for hold that correspond to histogram bins
@@ -535,6 +545,15 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         });
         console.log(allNodes);
     }
+
+    // 10b. Call problem discovery
+    // Requires that `res` built in 8. above still exists.  Should make this better.
+    if(!swandive) {
+        disco = discovery(res);
+        console.log(disco);
+        
+    }
+
     // 11. Call layout() and start up
     layout(false, true);
     IS_D3M_DOMAIN ? zPop() : dataDownload();
@@ -1802,13 +1821,13 @@ function tabulate(data, columns, divid) {
                 }
             }});
 
-    // this is code to add a checkbox to each row of pipeline results table
-    /*
+    // this is code to add a checkbox to each row of the table
+    if(divid=='#tab2') {
       d3.select(divid).selectAll("tr")
       .append("input")
-      .attr("type", "checkbox")
-      .style("float","right");
-    */
+        .attr("type", "checkbox")
+         .style("float","right");
+    }
 
     return table;
 
@@ -1897,7 +1916,7 @@ function onPipelineCreate(PipelineCreateResult, rookpipe) {
   //  makeRequest(D3M_SVC_URL + '/getexecutepipelineresults', {context, pipeline_ids: Object.keys(allPipelineInfo)});
 }
 
-function CreatePipelineData(predictors, depvar) {
+function CreatePipelineData(predictors, depvar, aux) {
     let context = apiSession(zparams.zsessionid);
     let uriCsv = zparams.zd3mdata;
     let uriJson = uriCsv.substring(0, uriCsv.lastIndexOf("/tables")) + "/datasetDoc.json";
@@ -1906,6 +1925,7 @@ function CreatePipelineData(predictors, depvar) {
     for (var i = 0; i < predictors.length; i++) {
         predictFeatures[i] = { 'resource_id': "0", 'feature_name': predictors[i] };
     }
+    if(typeof aux==="undefined") { //default behavior for creating pipeline data
     return {
         context,
         dataset_uri: uriJson,   // uriCsv is also valid, but not currently accepted by ISI TA2
@@ -1933,7 +1953,21 @@ function CreatePipelineData(predictors, depvar) {
           ],
         */
         maxPipelines: 5 //user to specify this eventually?
-    };
+    };}
+    else { //creating pipeline data for problem discovery using aux inputs
+        return {
+        context,
+        dataset_uri: uriJson,   // uriCsv is also valid, but not currently accepted by ISI TA2
+        task: aux.task,
+        taskSubtype: "TASK_SUBTYPE_UNDEFINED",
+        taskDescription: "Description",
+        output: "OUTPUT_TYPE_UNDEFINED",
+        metrics: [aux.metrics],
+        targetFeatures,
+        predictFeatures,
+        maxPipelines: 1
+        };
+    }
 }
 
 export function downloadIncomplete() {
@@ -2436,6 +2470,7 @@ export function tabLeft(tab) {
     lefttab = tab;
 }
 
+
 /** needs doc */
 export function tabRight(tab) {
     let select = cls => {
@@ -2523,7 +2558,7 @@ export let popoverContent = d => {
 export function panelPlots() {
 
     if(IS_D3M_DOMAIN) {
-        byId('btnSubset').classList.add('noshow');
+    //    byId('btnSubset').classList.add('noshow');
     }
     // build arrays from nodes in main
     let vars = [];
@@ -2573,6 +2608,9 @@ export function panelPlots() {
               .remove();
               }
               });
+    
+              // just removing all the subset plots here, because using this button for problem discover
+              d3.select('#tab2').selectAll('svg').remove();
 }
 
 /**
@@ -3991,3 +4029,85 @@ function singlePlot(pred) {
             bars(node, div = "setxLeftTopRight", priv);
         }
 }
+
+export function discovery(preprocess_file) {
+
+    console.log("entering disco");
+    let extract = preprocess_file.dataset.discovery;
+    console.log(extract);
+    let disco = [];
+    let names = [];
+    let vars = Object.keys(preprocess);
+    for (let i = 0; i < extract.length; i++) {
+        names[i] = "Problem" + (i + 1);
+        let current_target = extract[i]["target"]; 
+        let j = findNodeIndex(current_target);
+        let node = allNodes[j];
+        let current_predictors = extract[i]["predictors"]; 
+        let current_task = node.plottype === "bar" ? 'classification' : 'regression';
+        let current_rating = 3;
+        let current_description = current_target + " is predicted by " + current_predictors.join(" and ");
+        let current_metric = node.plottype === "bar" ? 'f1Macro' : 'meanSquaredError';
+        let current_disco = {target: current_target, predictors: current_predictors, task: current_task, rating: current_rating, description: current_description, metric: current_metric};
+        //jQuery.extend(true, current_disco, names);
+        disco[i] = current_disco;
+    };
+    /* Problem Array of the Form: 
+        [1: {target:"Home_runs",
+            predictors:["Walks","RBIs"],
+            task:"regression",
+            rating:5,
+            description: "Home_runs is predicted by Walks and RBIs",
+            metric: "meanSquaredError"
+        },2:{...}]
+    */
+    return disco;
+}
+
+export function probDiscView(btn) {
+    tabLeft(btn);
+    
+    if(btn=='tab1') {
+        document.getElementById("leftpanel").classList.remove("expandpanelfull");
+        document.getElementById("btnSelect").style.display="none";
+        return;
+    }
+    document.getElementById("leftpanel").classList.toggle("expandpanelfull");
+    if(document.getElementById("btnSelect").style.display=="none"){
+        document.getElementById("btnSelect").style.display="block";
+    }
+    
+    if(document.getElementById("tab2").hasChildNodes()) return; // return if this has already been clicked, if childNodes have already been added
+    
+    let myprobs = disco;  // discovery();  Function requires argument.  Don't presently need to call function again.  
+    let probtable = [];
+    for(let i = 0; i<myprobs.length; i++) {
+        let mypredictors = myprobs[i].predictors.join();
+        probtable.push({"Target":myprobs[i].target,"Predictors":mypredictors, "Task":myprobs[i].task, "Metric":myprobs[i].metric});
+    }
+    tabulate(probtable, ['Target', 'Predictors', 'Task','Metric'], '#tab2');
+}
+
+export async function submitDiscProb(btn) {
+    let table = document.getElementById("tab2").getElementsByTagName('table')[0];
+    console.log(table);
+    let checked = [];
+
+    for (let i = 1, row; row = table.rows[i]; i++) { //skipping the header
+        checked.push(row.getElementsByTagName("input")[0].checked); // boolean array
+    }
+    
+    for(let i = 0; i < disco.length; i++) {
+        if(!checked[i]) continue;
+        //createpipeline call
+        console.log(disco);
+        let aux = {"task":d3mTaskType[disco[i].task][1], "metrics":d3mMetrics[disco[i].metric][1]};
+        console.log(aux);
+        let res = await makeRequest(D3M_SVC_URL + '/CreatePipelines', CreatePipelineData(disco[i].predictors, disco[i].target, aux)); // creating a single pipeline for a discovered problem, to check viability
+        if(res) { // have to check if the response went through ok, this just checks if res exists
+            let res = await makeRequest(D3M_SVC_URL + '/write-user-problem', CreatePipelineData(disco[i].predictors, disco[i].target, aux));
+        }
+    }
+    
+}
+
