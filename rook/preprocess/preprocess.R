@@ -145,7 +145,18 @@ preprocess<-function(hostname=NULL, fileid=NULL, testdata=NULL, types=NULL, file
     
     # adding the covariance matrix for all numeric variables to the datasetLevelInfo
     # using 'complete.obs' is safer than 'pairwise.complete.obs', although it listwise deletes on entire data.frame
-    mydata2 <- mydata[sapply(mydata,is.numeric)]
+    mydata2 <- mydata
+    # If only two unique (non-missing) values, coerce to numeric for correlation matrix
+    for(i in 1:ncol(mydata2)){
+        temp<-mydata2[,i]
+        if(!is.numeric(temp)){
+            if(length(unique(na.omit(temp)))==2){
+                mydata2[,i]<-as.numeric(as.factor(mydata2[,i]))
+            }
+        }
+    }
+    mydata2 <- mydata2[sapply(mydata2,is.numeric)]
+
     mycov <- tryCatch(cov(mydata2, use='complete.obs'), error=function(e) matrix(0)) # this will default to a 1x1 matrix with a 0
     mycor <- tryCatch(cor(mydata2, use='pairwise.complete.obs'), error=function(e) matrix(0)) # this will default to a 1x1 matrix with a 0
 
@@ -353,7 +364,9 @@ typeGuess <- function(data) {
 
 disco <- function(names, cor, n=3){
 
-    diag(cor) <- 0
+    diag(cor) <- 0          # don't include self
+    cor[is.na(cor)] <- 0    # don't get tripped up by incomputable cor
+    cor[cor==1] <- 0        # don't use variables that are perfect
     cor <- abs(cor)
     found <- list()
     k <- nrow(cor)

@@ -4011,22 +4011,21 @@ function singlePlot(pred) {
 export function discovery(preprocess_file) {
 
     console.log("entering disco");
-    console.log(typeof(preprocess_file));
     let extract = preprocess_file.dataset.discovery;
     console.log(extract);
     let disco = [];
     let names = [];
     let vars = Object.keys(preprocess);
-    console.log("preprocess");
-    console.log(preprocess);
     for (let i = 0; i < extract.length; i++) {
         names[i] = "Problem" + (i + 1);
-        let current_target = extract[i]["target"]; //vars[i];
-        let current_predictors = extract[i]["predictors"]; //[vars[i+1], vars[i+2]];
-        let current_task = "regression";
+        let current_target = extract[i]["target"]; 
+        let j = findNodeIndex(current_target);
+        let node = allNodes[j];
+        let current_predictors = extract[i]["predictors"]; 
+        let current_task = node.plottype === "bar" ? 'classification' : 'regression';
         let current_rating = 3;
-        let current_description = current_target + " is predicted by " + current_predictors[0] + " and " + current_predictors[1];
-        let current_metric = "meanSquaredError";
+        let current_description = current_target + " is predicted by " + current_predictors.join(" and ");
+        let current_metric = node.plottype === "bar" ? 'f1Macro' : 'meanSquaredError';
         let current_disco = {target: current_target, predictors: current_predictors, task: current_task, rating: current_rating, description: current_description, metric: current_metric};
         //jQuery.extend(true, current_disco, names);
         disco[i] = current_disco;
@@ -4054,7 +4053,6 @@ export function probDiscView(btn) {
     if(document.getElementById("tab2").hasChildNodes()) return; // return if this has already been clicked, if childNodes have already been added
     
     let myprobs = disco  // discovery();  Function requires argument.  Don't presently need to call function again.  
-    console.log(myprobs);
     let probtable = [];
     for(let i = 0; i<myprobs.length; i++) {
         let mypredictors = myprobs[i].predictors.join();
