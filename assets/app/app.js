@@ -1826,6 +1826,7 @@ function tabulate(data, columns, divid) {
       d3.select(divid).selectAll("tr")
       .append("input")
         .attr("type", "checkbox")
+        .attr("checked",true)
          .style("float","right");
     }
 
@@ -2488,6 +2489,10 @@ export function tabRight(tab) {
     else if (tab === "btnResults") !estimated ? select(cls) :
         righttab === "btnResults" || select() === cls && toggleR();
     else if (tab === "btnUnivariate") select(cls);
+    
+    if(tab=="btnType" || tab=="btnSubtype" || tab=="btnMetrics") {
+        document.getElementById("rightpanel").classList.remove("expandpanelfull");
+    }
     righttab = tab;
 }
 
