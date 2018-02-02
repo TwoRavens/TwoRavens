@@ -4114,7 +4114,7 @@ export function probDiscView(btn) {
     if(btn=='tab1') {
         document.getElementById("leftpanel").classList.remove("expandpanelfull");
         document.getElementById("btnSelect").style.display="none";
-        document.getElementById("tab2input").style.display="none";
+        document.getElementById("tab2a").style.display="none";
         return;
     }
     document.getElementById("leftpanel").classList.toggle("expandpanelfull");
@@ -4123,7 +4123,7 @@ export function probDiscView(btn) {
     }
     
     if(document.getElementById("leftpanel").classList.contains("expandpanelfull")) {
-        document.getElementById("tab2input").style.display="block";
+        document.getElementById("tab2a").style.display="block";
     }
     
     if(document.getElementById("tab2").hasChildNodes()) return; // return if this has already been clicked, if childNodes have already been added
@@ -4162,4 +4162,22 @@ export async function submitDiscProb(btn) {
     }
     
 }
+
+export function saveDisc(btn) {
+    let table = document.getElementById("tab2").getElementsByTagName('table')[0];
+    let newtext = document.getElementById("tab2input").value;
+    for (let i = 1, row; row = table.rows[i]; i++) { //skipping the header
+        if(row.className=='item-select'){
+            disco[i-1].description=newtext;
+        }
+    }
+}
+
+
+
+
+
+
+
+
 
