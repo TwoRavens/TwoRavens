@@ -68,7 +68,7 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 R_DEV_SERVER_BASE = 'http://0.0.0.0:8000/custom/'
 #R_DEV_SERVER_BASE = 'http://0.0.0.0:8060/custom/'
 
-RECORD_R_SERVICE_ROUTING = False # log R service requests/response JSON to db
+RECORD_R_SERVICE_ROUTING = True # log R service requests/response JSON to db
 
 PAGE_CACHE_TIME = 0 # No cache in dev
 
