@@ -15,6 +15,8 @@ from tworaven_apps.configurations.utils import \
      get_d3m_filepath)
 
 KEY_FILE_PREFIX = 'file_prefix'
+KEY_TASK = 'task'
+KEY_TASK_SUBTYPE = 'taskSubtype'
 
 class UserProblemHelper(object):
     """Create and write a new user problem"""
@@ -97,11 +99,41 @@ class UserProblemHelper(object):
         # ----------------------------------------------
         # (1) task ->|  about > taskType
         # ----------------------------------------------
-        if 'task' in self.problem_updates:
+        if KEY_TASK in self.problem_updates:
             update_cnt += 1
             if not 'about' in orig_prob_schema:
                 orig_prob_schema['about'] = OrderedDict()
-            orig_prob_schema['about']['taskType'] = self.problem_updates['task']
+            orig_prob_schema['about']['taskType'] = self.problem_updates[KEY_TASK]
+
+        # ----------------------------------------------
+        # (1a) taskSubtype ->|  about > taskSubtype
+        # ----------------------------------------------
+        if KEY_TASK_SUBTYPE in self.problem_updates:
+            update_cnt += 1
+            if not 'about' in orig_prob_schema:
+                orig_prob_schema['about'] = OrderedDict()
+
+            # A taskSubtype exists in the problem schema -> update it
+            #
+            if KEY_TASK_SUBTYPE in orig_prob_schema['about']:
+                orig_prob_schema['about'][KEY_TASK_SUBTYPE] = \
+                    self.problem_updates[KEY_TASK_SUBTYPE]
+            else:
+                # There's no taskSubtype AND
+                # we want it to appear right after taskType --
+                # little painful
+
+                orig_about_section = orig_prob_schema['about']
+                new_about_section = OrderedDict()
+
+                # create a new 'about' section, putting taskSubType
+                # in the right place
+                for about_key, about_val in orig_about_section.items():
+                    new_about_section[about_key] = about_val
+                    if about_key == 'taskType':
+                        new_about_section[KEY_TASK_SUBTYPE] = \
+                            self.problem_updates[KEY_TASK_SUBTYPE]
+                orig_prob_schema['about'] = new_about_section
 
         # ----------------------------------------------
         # (2) task_description ->|  about > problemdescription
@@ -160,6 +192,7 @@ class UserProblemHelper(object):
         CreatePipelines Field -> problemDoc.json Field
         ----------------------------------------------
         task ->          about > taskType
+        taskSubType ->          about > taskSubType
         task_description -> about > problemdescription
         metrics ->           inputs > performanceMetrics > metric
         target_features ->  inputs > data > targets > colName
