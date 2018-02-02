@@ -64,6 +64,7 @@ kubectl exec ravens-ta3 --container ta3-main -- /bin/bash ta3_search /ravens_vol
 ```
 # Log into running pod
 kubectl exec -it ravens-ta3 -c ta3-main -- /bin/bash
+cp ravens_volume/. /ravens_volume/
 # cp -r /var/webapps/TwoRavens/ravens_volume/. /ravens_volume
 
 # describe containers in pod
