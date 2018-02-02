@@ -14,6 +14,16 @@ docker pull tworavens/ravens-nginx
 
 ### Tag those images
 
+- remove old
+
+```
+docker rmi registry.datadrivendiscovery.org/j18_ta3eval/tworavens/ravens-main:stable
+docker rmi registry.datadrivendiscovery.org/j18_ta3eval/tworavens/ravens-r-service:stable
+docker rmi registry.datadrivendiscovery.org/j18_ta3eval/tworavens/ravens-nginx:stable
+```
+
+- Retag images...
+
 ```
 docker tag tworavens/ravens-main:latest registry.datadrivendiscovery.org/j18_ta3eval/tworavens/ravens-main:stable
 

@@ -87,6 +87,10 @@ spec:
   - name: ta3-main
     image: ravens-main:stable
     imagePullPolicy: Never
+    command:
+      - ["tail"]
+    args:
+      - ["-f", "/dev/null"]
     # web (perhaps nginx) ports
     ports:
       # Main web port; nginx makes this available via port 80
@@ -195,18 +199,18 @@ spec:
       - name: ROOK_USE_PRODUCTION_MODE
         value: "yes"
     # liveness is for restart
-    #livenessProbe:
-    #  httpGet:
-    #    path: /custom/healthcheckapp
-    #    port: 8000
-    #  initialDelaySeconds: 5
-    #  timeoutSeconds: 1
-    #  periodSeconds: 10
-    #  failureThreshold: 3
+    livenessProbe:
+      httpGet:
+        path: /custom/healthcheckapp
+        port: 8000
+      initialDelaySeconds: 5
+      timeoutSeconds: 1
+      periodSeconds: 10
+      failureThreshold: 3
     # readiness: ready for traffic
-    #readinessProbe:
-    #  httpGet:
-    #    path: /custom/healthcheckapp
-    #    port: 8000
-    #  initialDelaySeconds: 20
-    #  periodSeconds: 10
+    readinessProbe:
+      httpGet:
+        path: /custom/healthcheckapp
+        port: 8000
+      initialDelaySeconds: 20
+      periodSeconds: 10
