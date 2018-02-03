@@ -43,7 +43,10 @@ function leftpanel() {
           m(Search, {placeholder: 'Search variables and labels'}),
           m(List, {items: app.valueKey, title: 'Summary Statistics'})),
         m(`#tab2[style=display: ${when('left', 'tab2')}; height:75%; overflow: auto; margin-top: .5em]`),
-        m('textarea#tab2input[style=display:none; float: left; width: 100%; height:25%; overflow: auto; background-color: white]'),
+        m('#tab2a[style=display:none; float: left; width: 100%; height:25%; overflow: auto;]',
+            m('textarea#tab2input[style=display:block; float: left; width: 75%; height:100%; overflow: auto; background-color: white]'),
+            m(Button, {id: 'btnSave',onclick:_=>app.saveDisc('btnSave'),title: 'Saves your revised problem description.'}, 'Save Desc.')),
+    
    //     m("input#input1[name='fname'][type='text']", {style: {"margin-left": "2%"}}),
         m('#tab3[style=height: 350px]',
           m(`p[style=padding: .5em 1em; display: ${when('left', 'tab3')}]`,
