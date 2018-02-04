@@ -31,10 +31,10 @@ function leftpanel() {
                 id2: 'tab1',
                 title: 'Click variable name to add or remove the variable pebble from the modeling space.'},
                'Variables'),
-             m(Button, {id: 'btnSubset', id2: 'tab2'}, 'Prob. Disc.'), //onclick: _ => app.probDiscView('btnSubset')
+             m(Button, {id: 'btnSubset', id2: 'tab2', classes: 'btn-success'}, 'Prob. Disc.'), //onclick: _ => app.probDiscView('btnSubset')
              m(Button,
                {id: 'btnSelect',
-                classes: 'btn-default.ladda-button[data-spinner-color=#000000][data-style=zoom-in]',
+                classes: 'btn-success.ladda-button[data-spinner-color=#000000][data-style=zoom-in]',
                 onclick: _ => app.submitDiscProb('btnSelect'),
                 style: `display: ${app.subset ? 'none' : 'none'}; float: right; margin-right: 10px`,
                 title: 'Submit all checked discovered problems.'},
@@ -45,7 +45,7 @@ function leftpanel() {
         m(`#tab2[style=display: ${when('left', 'tab2')}; height:75%; overflow: auto; margin-top: .5em]`),
         m('#tab2a[style=display:none; float: left; width: 100%; height:25%; overflow: auto;]',
             m('textarea#tab2input[style=display:block; float: left; width: 75%; height:100%; overflow: auto; background-color: white]'),
-            m(Button, {id: 'btnSave',onclick:_=>app.saveDisc('btnSave'),title: 'Saves your revised problem description.'}, 'Save Desc.')),
+            m(Button, {id: 'btnSave', onclick:_=>app.saveDisc('btnSave'),title: 'Saves your revised problem description.'}, 'Save Desc.')),
     
    //     m("input#input1[name='fname'][type='text']", {style: {"margin-left": "2%"}}),
         m('#tab3[style=height: 350px]',
@@ -345,7 +345,7 @@ class Body {
                           return m('a[style=padding: 0.5em]', {href: link.url}, link.title , 
                           m('br'))
                         }))), 
-                    navBtn('btnEstimate.btn-success', 2, 1, explore ? exp.explore : app.estimate, m("span.ladda-label", explore ? 'Explore' : 'Solve This Problem'), '150px'),
+                    navBtn('btnEstimate.btn-default', 2, 1, explore ? exp.explore : app.estimate, m("span.ladda-label", explore ? 'Explore' : 'Solve This Problem'), '150px'),
                     navBtn('btnTA2.btn-default', .5, 1, _ => app.helpmaterials('manual'), ['Help Manual ', glyph('book')]),
                     navBtn('btnTA2.btn-default', 2, .5, _ => app.helpmaterials('video'), ['Help Video ', glyph('expand')]),
                     navBtn1("btnReset", app.reset, glyph('repeat'), 'Reset'),

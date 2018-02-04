@@ -4160,6 +4160,15 @@ export async function submitDiscProb(btn) {
             let res = await makeRequest(D3M_SVC_URL + '/write-user-problem', CreatePipelineData(disco[i].predictors, [disco[i].target], aux));
       //  }
     }
+
+    // change status of buttons for estimating problem and marking problem as finished
+    $("#btnSelect").removeClass("btn-success");
+    $("#btnSelect").addClass("btn-default");  
+    $("#btnSubset").removeClass("btn-success");
+    $("#btnSubset").addClass("btn-default");  
+    $("#btnEstimate").removeClass("btn-default");
+    $("#btnEstimate").addClass("btn-success");
+
     
 }
 
@@ -4171,6 +4180,7 @@ export function saveDisc(btn) {
             disco[i-1].description=newtext;
         }
     }
+
 }
 
 
