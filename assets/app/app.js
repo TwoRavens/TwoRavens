@@ -21,6 +21,8 @@ import {bars, barsNode, barsSubset, density, densityNode, selVarColor} from './p
 //-------------------------------------------------
 
 export let is_results_mode = false;
+export let task1_finished = false;
+export let task2_finished = false;
 
 let is_explore_mode = false;
 export function set_explore_mode(val) {
@@ -233,6 +235,71 @@ export let restart;
 
 let dataurl = '';
 
+export let step = (target, placement, title, content) => ({
+            target,
+            placement,
+            title,
+            content,
+            showCTAButton: true,
+            ctaLabel: 'Disable these messages',
+            onCTA: () => {
+                hopscotch.endTour(true);
+                tutorial_mode = false;
+            },
+        });
+
+export let mytour = {
+            id: "dataset_launch",
+            i18n: {doneBtn:'Ok'},
+            showCloseButton: true,
+            scrollDuration: 300,
+            onEnd: () => first_load = false,
+            steps: [
+                step("dataName", "bottom", "Welcome to TwoRavens Solver",
+                     `<p>This tool can guide you to solve an empirical problem in the dataset above.</p>
+                      <p>These messages will teach you the steps to take to find and submit a solution.</p>`),
+                step("btnReset", "bottom", "Restart Any Problem Here",
+                     '<p>You can always start a problem over by using this reset button.</p>'),
+                step("btnSubset", "right", "Start Task 1",
+                     `<p>This Problem Discovery button allows you to start Task 1 - Problem Discovery.</p>
+                     <p>Generally, as a tip, the Green button is the next button you need to press to move the current task forward.</p>
+                     <p>Click this button to see a list of problems that have been discovered in the dataset.</p>
+                     <p>You can mark which ones you agree may be interesting, and then submit the table as an answer.</p>`),
+                //step("btnSelect", "right", "Complete Task 1",
+                //     `<p>This submission button marks Task 1 - Problem Discovery, as complete.</p>
+                //     <p>Click this button to save the check marked problems in the table below as potentially interesting or relevant.</p>
+                //     <p>Generally, as a tip, the Green button is the next button you need to press to move the current task forward.</p>`),
+                step("btnEstimate", "left", "Solve Task 2",
+                     `<p>This generally is the important step to follow for Task 2 - Build a Model.</p>
+                      <p>Generally, as a tip, the Green button is the next button you need to press to move the current task forward, and this button will be Green when Task 1 is completed and Task 2 started.</p>
+                      <p>Click this Solve button to tell the tool to find a solution to the problem, using the variables presented in the center panel.</p>`),
+                step(mytarget + 'biggroup', "left", "Target Variable",
+                     `This is the variable, ${mytarget}, we are trying to predict.
+                      This center panel graphically represents the problem currently being attempted.`),
+                step("gr1hull", "right", "Explanation Set", "This set of variables can potentially predict the target."),
+                step("displacement", "right", "Variable List",
+                     `<p>Click on any variable name here if you wish to remove it from the problem solution.</p>
+                      <p>You likely do not need to adjust the problem representation in the center panel.</p>`),
+                step("btnEndSession", "bottom", "Finish Problem",
+                     "If the solution reported back seems acceptable, then finish this problem by clicking this End Session button."),
+            ]
+        };
+
+
+export let mytour3 = {
+            id: "dataset_launch",
+            i18n: {doneBtn:'Ok'},
+            showCloseButton: true,
+            scrollDuration: 300,
+            onEnd: () => first_load = false,
+            steps: [
+                step("btnSelect", "right", "Complete Task 1",
+                     `<p>This submission button marks Task 1 - Problem Discovery, as complete.</p>
+                     <p>Click this button to save the check marked problems in the table below as potentially interesting or relevant.</p>
+                     <p>Generally, as a tip, the Green button is the next button you need to press to move the current task forward.</p>`),
+            ]
+        };
+
 /**
   called by main
   Loads all external data in the following order (logic is not included):
@@ -409,51 +476,11 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
       }
     }
 
+
     // hopscotch tutorial
     if (tutorial_mode) {
         console.log('Starting Hopscotch Tour');
-        let step = (target, placement, title, content) => ({
-            target,
-            placement,
-            title,
-            content,
-            showCTAButton: true,
-            ctaLabel: 'Disable these messages',
-            onCTA: () => {
-                hopscotch.endTour(true);
-                tutorial_mode = false;
-            },
-        });
-        hopscotch.startTour({
-            id: "dataset_launch",
-            i18n: {doneBtn:'Ok'},
-            showCloseButton: false,
-            scrollDuration: 300,
-            onEnd: () => first_load = false,
-            steps: [
-                step("dataName", "bottom", "Welcome to TwoRavens Solver",
-                     `<p>This tool can guide you to solve an empirical problem in the dataset above.</p>
-                      <p>These messages will teach you the steps to take to find and submit a solution.</p>`),
-                step("btnReset", "bottom", "Restart Any Problem Here",
-                     '<p>You can always start a problem over by using this reset button.</p>'),
-                step("btnSubset", "right", "Complete Task 1",
-                     `<p>This Problem Discovery button allows you to start Task 1 - Problem Discovery.</p>
-                     <p>Click this button to see a list of problems that have been discovered in the dataset.</p>
-                     <p>You can mark which ones you agree may be interesting, and then submit the table as an answer.</p>`),
-                step("btnEstimate", "left", "Solve Task 2",
-                     `<p>The current green button is generally the first step to follow to work on Task 2 - Build a Model.</p>
-                      <p>Click this Solve button to tell the tool to find a solution to the problem.</p>`),
-                step(mytarget + 'biggroup', "left", "Target Variable",
-                     `This is the variable, ${mytarget}, we are trying to predict.
-                      This center panel graphically represents the problem currently being attempted.`),
-                step("gr1hull", "right", "Explanation Set", "This set of variables can potentially predict the target."),
-                step("displacement", "right", "Variable List",
-                     `<p>Click on any variable name here if you wish to remove it from the problem solution.</p>
-                      <p>You likely do not need to adjust the problem representation in the center panel.</p>`),
-                step("btnEndSession", "bottom", "Finish Problem",
-                     "If the solution reported back seems acceptable, then finish this problem by clicking this End Session button."),
-            ],
-        });
+        hopscotch.startTour(mytour,0);
         console.log('Ending Hopscotch Tour');
     }
 
@@ -2093,6 +2120,7 @@ export async function estimate(btn) {
             res && onPipelineCreate(res, rookpipe);
         }
     }
+    task2_finished = true;
 }
 
 /** needs doc */
@@ -4140,6 +4168,7 @@ export function probDiscView(btn) {
 }
 
 export async function submitDiscProb(btn) {
+
     let table = document.getElementById("tab2").getElementsByTagName('table')[0];
     console.log(table);
     let checked = [];
@@ -4160,6 +4189,17 @@ export async function submitDiscProb(btn) {
             let res = await makeRequest(D3M_SVC_URL + '/write-user-problem', CreatePipelineData(disco[i].predictors, [disco[i].target], aux));
       //  }
     }
+
+    // change status of buttons for estimating problem and marking problem as finished
+    $("#btnSelect").removeClass("btn-success");
+    $("#btnSelect").addClass("btn-default");  
+    $("#btnSubset").removeClass("btn-success");
+    $("#btnSubset").addClass("btn-default");  
+    task1_finished = true;
+    if(!(task2_finished)){
+        $("#btnEstimate").removeClass("btn-default");
+        $("#btnEstimate").addClass("btn-success");
+    };
     
 }
 
@@ -4171,6 +4211,7 @@ export function saveDisc(btn) {
             disco[i-1].description=newtext;
         }
     }
+
 }
 
 

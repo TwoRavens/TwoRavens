@@ -54,9 +54,7 @@ docker rmi registry.datadrivendiscovery.org/j18_ta3eval/tworavens/ravens-nginx:s
 
 ```
 docker tag tworavens/ravens-main:latest registry.datadrivendiscovery.org/j18_ta3eval/tworavens/ravens-main:stable
-
 docker tag tworavens/ravens-r-service:latest registry.datadrivendiscovery.org/j18_ta3eval/tworavens/ravens-r-service:stable
-
 docker tag tworavens/ravens-nginx:latest registry.datadrivendiscovery.org/j18_ta3eval/tworavens/ravens-nginx:stable
 ```
 
