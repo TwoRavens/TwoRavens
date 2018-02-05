@@ -57,11 +57,13 @@ class TemplateRenderHelper(object):
         """format for dev"""
 
         replace_strings = \
-            {'registry.datadrivendiscovery.org/j18_ta3eval/tworavens/': '',
+            {
+            #'registry.datadrivendiscovery.org/j18_ta3eval/tworavens/': '',
              'persistentVolumeClaim': 'hostPath',
              'claimName: pvc-datasets': 'path: /tmp',
              'claimName: pvc-rw': 'path: /tmp',
-             'imagePullPolicy: Always': 'imagePullPolicy: Never'}
+             'imagePullPolicy: Always': 'imagePullPolicy: Never'
+             }
 
         for old_str, new_str in replace_strings.items():
             content = content.replace(old_str, new_str)
@@ -96,7 +98,7 @@ if __name__ == '__main__':
     #template_name = 'ravens-ta2test-01.yml'
     #output_file = 'tworavens_ta3ta2_test_pod.yml'
 
-    template_name = 'ravens-NIST-03.yml'
+    template_name = 'k8s_template.sh'   #'ravens-NIST-03.yml'
     output_file = '../to_submit/kube.yml'
 
     print('-- For submission --')
@@ -105,7 +107,7 @@ if __name__ == '__main__':
                                output_file,
                                for_minikube=False)
 
-    template_name = 'ravens-NIST-03.yml'
+    #template_name = 'k8s_template.sh'   #'ravens-NIST-03.yml'
     output_file = 'kube.yml'
 
     print('-- For dev --')

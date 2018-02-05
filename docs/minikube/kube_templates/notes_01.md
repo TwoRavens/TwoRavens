@@ -14,6 +14,12 @@ docker build -t ravens-r-service:stable -f Dockerfile-r-service .
 # optional: ta2 test server
 #docker build -t ravens-main:stable .
 
+#OR PULL
+
+docker login registry.datadrivendiscovery.org
+docker pull registry.datadrivendiscovery.org/j18_ta3eval/tworavens/ravens-main:stable
+docker pull registry.datadrivendiscovery.org/j18_ta3eval/tworavens/ravens-r-service:stable
+docker pull registry.datadrivendiscovery.org/j18_ta3eval/tworavens/ravens-nginx:stable
 ```
 
 # Build nginx
@@ -64,8 +70,12 @@ kubectl exec ravens-ta3 --container ta3-main -- /bin/bash ta3_search /ravens_vol
 ```
 # Log into running pod
 kubectl exec -it ravens-ta3 -c ta3-main -- /bin/bash
-cp ravens_volume/. /ravens_volume/
-# cp -r /var/webapps/TwoRavens/ravens_volume/. /ravens_volume
+
+# Make some test configs...
+fab make_d3m_config_files
+
+# Copy test data to the shared volume
+cp -r ravens_volume/. /ravens_volume
 
 # describe containers in pod
 kubectl describe pod/ravens-ta3

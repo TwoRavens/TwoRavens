@@ -1,4 +1,3 @@
-
 # ---------------------------------------------------------
 # TA3 Kubernetes Pod Stub File
 # ---------------------------------------------------------
@@ -76,6 +75,7 @@ spec:
   # -------------------------
   - name: ravens-nginx
     image: registry.datadrivendiscovery.org/j18_ta3eval/tworavens/ravens-nginx:stable
+    imagePullPolicy: Always
     ports:
       - containerPort: 80
         name: http
@@ -143,7 +143,7 @@ spec:
         command:
         - cat
         - /var/webapps/TwoRavens/docs/health.md
-      initialDelaySeconds: 5
+      initialDelaySeconds: 60
       periodSeconds: 5
     readinessProbe:
       exec:
@@ -152,26 +152,12 @@ spec:
         - /var/webapps/TwoRavens/docs/health.md
       initialDelaySeconds: 5
       periodSeconds: 5
-    #livenessProbe:
-    #  httpGet:
-    #    path: /monitoring/alive
-    #    port: 8080
-    #  initialDelaySeconds: 5
-    #  timeoutSeconds: 1
-    #  periodSeconds: 10
-    #  failureThreshold: 3
-    # readiness: ready for traffic
-    #readinessProbe:
-    #  httpGet:
-    #    path: /monitoring/alive
-    #    port: 8080
-    #  initialDelaySeconds: 10
-    #  periodSeconds: 10
   # -------------------------
   # 3 of 3: Rook R services
   # -------------------------
   - name: rook-service
     image: registry.datadrivendiscovery.org/j18_ta3eval/tworavens/ravens-r-service:stable
+    imagePullPolicy: Always
     # same mounts as ta3-main and ta2-main
     volumeMounts:
       - name: "ravens-volume"
@@ -198,19 +184,3 @@ spec:
       # Also set to "yes" in the Dockefile
       - name: ROOK_USE_PRODUCTION_MODE
         value: "yes"
-    # liveness is for restart
-    livenessProbe:
-      httpGet:
-        path: /custom/healthcheckapp
-        port: 8000
-      initialDelaySeconds: 5
-      timeoutSeconds: 1
-      periodSeconds: 10
-      failureThreshold: 3
-    # readiness: ready for traffic
-    readinessProbe:
-      httpGet:
-        path: /custom/healthcheckapp
-        port: 8000
-      initialDelaySeconds: 20
-      periodSeconds: 10
