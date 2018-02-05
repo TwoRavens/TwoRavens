@@ -6,7 +6,7 @@
 #
 production <- identical(Sys.getenv(x='ROOK_USE_PRODUCTION_MODE', unset="no"), "yes")
 
-#print(paste("production: ", production, sep=""))
+print(paste("production: ", production, sep=""))
 
 
 d3m_mode <- TRUE
