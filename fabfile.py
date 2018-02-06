@@ -1,4 +1,5 @@
 import os
+import shutil
 import random
 import string
 #from os.path import abspath, dirname, join
@@ -18,9 +19,10 @@ import re
 FAB_BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(FAB_BASE_DIR)
 
+
 if FAB_BASE_DIR == '/srv/webapps/TwoRavens':
     os.environ.setdefault('DJANGO_SETTINGS_MODULE',
-                          'tworavensproject.settings.dev_container')
+                          'tworavensproject.settings.dev_container2')
 else:
     os.environ.setdefault('DJANGO_SETTINGS_MODULE',
                           'tworavensproject.settings.local_settings')
@@ -58,12 +60,47 @@ def make_d3m_config_files():
 def clear_d3m_configs():
     """Delete D3M configs from the database"""
     from tworaven_apps.configurations.models_d3m import D3MConfiguration
+
+    print('-' * 40)
     print('Clear all D3MConfiguration database entries')
-    D3MConfiguration.objects.all().delete()
+    print('-' * 40)
+
+    config_cnt = D3MConfiguration.objects.count()
+    if config_cnt == 0:
+        print('  -> No DM configs to delete')
+    else:
+        D3MConfiguration.objects.all().delete()
+        print('  -> %d DM config(s) deleted' % config_cnt)
 
 def clear_test_data():
-    """Clear all test files, etc"""
-    pass
+    """Clear d3m configs, d3m output, and preprocess files"""
+
+    # (1) D3M config data in Django
+    clear_d3m_configs()
+
+    # (2) Delete Preprocess files
+    rook_files_dir = os.path.join(FAB_BASE_DIR, 'rook', 'rook-files')
+    print('-' * 40)
+    print('Delete preprocess output directory: %s' % rook_files_dir)
+    print('-' * 40)
+    if os.path.isdir(rook_files_dir):
+        shutil.rmtree(rook_files_dir)
+        print('  -> Preprocess output directory deleted: %s\n' % rook_files_dir)
+    else:
+        print('  -> No preprocess files to delete\n')
+
+    # (3) Delete ravens_volume test_output
+    d3m_output_dir = os.path.join(FAB_BASE_DIR, 'ravens_volume', 'test_output')
+    print('-' * 40)
+    print('Delete D3M test output directory: %s' % d3m_output_dir)
+    print('-' * 40)
+    if os.path.isdir(d3m_output_dir):
+        shutil.rmtree(d3m_output_dir)
+        print('  -> D3M test output directory deleted: %s' % d3m_output_dir)
+    else:
+        print('  -> No preprocess D3M test output directory')
+
+
 
 def make_d3m_config():
     """Make a D3M config based on local files in the /ravens_volume directory"""

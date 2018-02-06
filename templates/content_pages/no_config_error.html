@@ -31,9 +31,14 @@
 <div class="alert alert-info" role="alert">
   Developers! Fastest way to fix this:
   <ul>
-  <li>Load test data based on local files in the TwoRavens/ravens_volume directory:
-      <pre><code>fab make_d3m_config</code></pre>
-  </li>
+    <li>Load test data based on local files in the TwoRavens/ravens_volume directory:
+        <pre><code>fab make_d3m_config</code></pre>
+    </li>
+    <li>OR load create/load data based on local files in the "/ravens_volume" directory:
+      <pre><code>fab make_d3m_config_files</code></pre>
+      Use this when using docker images that access "/ravens_volume"
+    </li>
+
   </ul>
 </div>
 
