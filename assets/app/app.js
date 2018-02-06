@@ -344,15 +344,46 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
 
     // 3. Read the problem schema and set 'd3mProblemDescription'
     // ...and make a call to start the session with TA2. if we get this far, data are guaranteed to exist for the frontend
+
     res = await m.request("/config/d3m-config/get-problem-data-file-info");
-    // some simple logic to get the paths right
-    // note that if neither exist, stay as default which is null
-    let set = (field, val) => res.data[field].exists ? res.data[field].path :
+    // The result of this call is similar to below:
+    // example:
+    /*  {
+             "success":true,
+             "data":{
+                "learningData.csv":{
+                   "exists":true,
+                   "size":11654,
+                   "path":"/inputs/dataset_TRAIN/tables/learningData.csv"
+                },
+                "learningData.csv.gz":{
+                   "exists":false,
+                   "size":-1,
+                   "path":"/inputs/dataset_TRAIN/tables/learningData.csv.gz"
+                }
+             }
+          }
+    */
+
+    // Loop through the response above and
+    // pick the first "path" where "exists" is true
+    //
+    // Note: if data files have "exists" as false, stay as default which is null
+    //
+    let set_d3m_data_path = (field, val) => res.data[field].exists ? res.data[field].path :
         res.data[field + '.gz'].exists ? res.data[field + '.gz'].path :
         val;
 
-    zparams.zd3mdata = d3mData = set('learningData.csv', d3mData);
-    zparams.zd3mtarget = set('learningData.csv', d3mData);
+    zparams.zd3mdata = d3mData = set_d3m_data_path('learningData.csv', d3mData);
+    zparams.zd3mtarget = set_d3m_data_path('learningData.csv', d3mData);
+
+    // If this is the D3M domain; d3mData MUST be set to an actual value
+    //
+    if ((IS_D3M_DOMAIN)&&(d3mData == null)){
+        const d3m_path_err = 'NO VALID d3mData path!! ' + JSON.stringify(res)
+        console.log(d3m_path_err);
+        alert('debug (be more graceful): ' + d3m_path_err);
+    }
 
     // hardcoding this, once get-problem-data-file-info is revised this hardcode can go away and use the previous two LOC
   //  zparams.zd3mdata = d3mData = d3mRootPath+"/dataset_TRAIN/tables/learningData.csv";
@@ -502,7 +533,6 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
           // For D3M inputs, change the preprocess input data
           //
           json_input = JSON.stringify({data: d3mData, datastub: d3mDataName});
-
         }else{
          json_input = JSON.stringify({data: dataloc, target: targetloc, datastub: datastub});
         }
@@ -578,7 +608,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     if(!swandive) {
         disco = discovery(res);
         console.log(disco);
-        
+
     }
 
     // 11. Call layout() and start up
@@ -2518,7 +2548,7 @@ export function tabRight(tab) {
     else if (tab === "btnResults") !estimated ? select(cls) :
         righttab === "btnResults" || select() === cls && toggleR();
     else if (tab === "btnUnivariate") select(cls);
-    
+
     if(tab=="btnType" || tab=="btnSubtype" || tab=="btnMetrics") {
         document.getElementById("rightpanel").classList.remove("expandpanelfull");
     }
@@ -2642,7 +2672,7 @@ export function panelPlots() {
               .remove();
               }
               });
-    
+
               // just removing all the subset plots here, because using this button for problem discover
               d3.select('#tab2').selectAll('svg').remove();
 }
@@ -2961,9 +2991,9 @@ export async function endsession() {
         alert("No pipelines exist. Cannot mark problem as complete.")
         return;
     }
-    
+
     let selected = "none";
- 
+
  //there's a cleaner way to do this...
     for (let i = 1, row; row = table.rows[i]; i++) { //skipping the header
         if(row.className=='item-select'){
@@ -3282,12 +3312,12 @@ export function resultsplotinit(pid) {
     let mydv = allPipelineInfo.rookpipe.depvar[0];
     let dvvalues= allPipelineInfo.rookpipe.dvvalues;
    // let predfile = pid.pipelineInfo.predictResultData.file_1;
-   
+
    if(pid.pipelineInfo.predictResultData.success==false) {
         byId('btnSetx').classList.add("noshow")
        return;
    }
-   
+
     let allPreds = pid.pipelineInfo.predictResultData.data;
     console.log(Object.keys(allPreds[1]));
     let predvals = [];
@@ -3922,7 +3952,7 @@ export async function exportpipeline(pipelineId) {
     let res = await makeRequest(
         D3M_SVC_URL + '/exportpipeline',
         {pipelineId, context: apiSession(zparams.zsessionid), pipelineExecUri: '<<EXECUTABLE_URI>>'});
-  
+
     // we need standardized status messages...
     let mystatus = res.status;
     if (typeof mystatus !== 'undefined') {
@@ -4111,10 +4141,10 @@ export function discovery(preprocess_file) {
     let vars = Object.keys(preprocess);
     for (let i = 0; i < extract.length; i++) {
         names[i] = "Problem" + (i + 1);
-        let current_target = extract[i]["target"]; 
+        let current_target = extract[i]["target"];
         let j = findNodeIndex(current_target);
         let node = allNodes[j];
-        let current_predictors = extract[i]["predictors"]; 
+        let current_predictors = extract[i]["predictors"];
         let current_task = node.plottype === "bar" ? 'classification' : 'regression';
         let current_rating = 3;
         let current_description = current_target + " is predicted by " + current_predictors.join(" and ");
@@ -4123,7 +4153,7 @@ export function discovery(preprocess_file) {
         //jQuery.extend(true, current_disco, names);
         disco[i] = current_disco;
     };
-    /* Problem Array of the Form: 
+    /* Problem Array of the Form:
         [1: {target:"Home_runs",
             predictors:["Walks","RBIs"],
             task:"regression",
@@ -4138,7 +4168,7 @@ export function discovery(preprocess_file) {
 export function probDiscView(btn) {
     tabLeft(btn);
     console.log(disco);
-    
+
     if(btn=='tab1') {
         document.getElementById("leftpanel").classList.remove("expandpanelfull");
         document.getElementById("btnSelect").style.display="none";
@@ -4149,21 +4179,21 @@ export function probDiscView(btn) {
     if(document.getElementById("btnSelect").style.display=="none"){
         document.getElementById("btnSelect").style.display="block";
     }
-    
+
     if(document.getElementById("leftpanel").classList.contains("expandpanelfull")) {
         document.getElementById("tab2a").style.display="block";
     }
-    
+
     if(document.getElementById("tab2").hasChildNodes()) return; // return if this has already been clicked, if childNodes have already been added
 
-    let myprobs = disco;  // discovery();  Function requires argument.  Don't presently need to call function again.  
+    let myprobs = disco;  // discovery();  Function requires argument.  Don't presently need to call function again.
     let probtable = [];
     for(let i = 0; i<myprobs.length; i++) {
         let mypredictors = myprobs[i].predictors.join();
         probtable.push({"Target":myprobs[i].target,"Predictors":mypredictors, "Task":myprobs[i].task, "Metric":myprobs[i].metric});
     }
     tabulate(probtable, ['Target', 'Predictors', 'Task','Metric'], '#tab2');
-    
+
     document.getElementById("tab2input").value=myprobs[0].description;
 }
 
@@ -4176,7 +4206,7 @@ export async function submitDiscProb(btn) {
     for (let i = 1, row; row = table.rows[i]; i++) { //skipping the header
         checked.push(row.getElementsByTagName("input")[0].checked); // boolean array
     }
-    
+
     for(let i = 0; i < disco.length; i++) {
         if(!checked[i]) continue;
         //createpipeline call
@@ -4192,15 +4222,15 @@ export async function submitDiscProb(btn) {
 
     // change status of buttons for estimating problem and marking problem as finished
     $("#btnSelect").removeClass("btn-success");
-    $("#btnSelect").addClass("btn-default");  
+    $("#btnSelect").addClass("btn-default");
     $("#btnSubset").removeClass("btn-success");
-    $("#btnSubset").addClass("btn-default");  
+    $("#btnSubset").addClass("btn-default");
     task1_finished = true;
     if(!(task2_finished)){
         $("#btnEstimate").removeClass("btn-default");
         $("#btnEstimate").addClass("btn-success");
     };
-    
+
 }
 
 export function saveDisc(btn) {
@@ -4213,12 +4243,3 @@ export function saveDisc(btn) {
     }
 
 }
-
-
-
-
-
-
-
-
-

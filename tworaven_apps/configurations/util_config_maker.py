@@ -121,16 +121,24 @@ class TestConfigMaker:
         d3m_config = D3MConfiguration(\
             name=self.config_name,
             is_default=self.is_default,
-            dataset_schema=join(data_dir,
-                                '%s_dataset' % self.config_name,
-                                'datasetDoc.json'),
+
+            problem_root=join(data_dir,
+                              'TRAIN',
+                              'problem_TRAIN'),
+
             problem_schema=join(data_dir,
-                                '%s_problem' % self.config_name,
+                                'TRAIN',
+                                'problem_TRAIN',
                                 'problemDoc.json'),
 
-            training_data_root=join(data_dir, 'TRAIN'),
+            training_data_root=join(data_dir,
+                                    'TRAIN',
+                                    'dataset_TRAIN'),
 
-            problem_root=join(data_dir, '%s_problem' % self.config_name),
+            dataset_schema=join(data_dir,
+                                'TRAIN',
+                                'dataset_TRAIN',
+                                'datasetDoc.json'),
 
             pipeline_logs_root=join(d3m_output_base, output_dir_names[0]),
             executables_root=join(d3m_output_base, output_dir_names[1]),

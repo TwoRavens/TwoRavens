@@ -52,7 +52,7 @@ def get_train_data_info(d3m_config):
     for fname in fnames:
         # For each file, does it exist? size? path?
         fpath = join(d3m_config.training_data_root,
-                     'dataset_TRAIN',
+                     #'dataset_TRAIN',
                      'tables',
                      fname)
 
