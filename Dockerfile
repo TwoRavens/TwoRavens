@@ -91,10 +91,12 @@ RUN fab init_db && \
 EXPOSE 8080
 
 # -------------------------------------
-# Copy the ta3_search command over
+# Copy the ta3_search and gce_start command over
 # -------------------------------------
 COPY startup_script/ta3_search /usr/bin/ta3_search
-RUN chmod u+x /usr/bin/ta3_search
+COPY startup_script/gce_start.sh /usr/bin/gce_start.sh
+
+RUN chmod u+x /usr/bin/ta3_search /usr/bin/gce_start.sh
 
 # -------------------------------------
 # Idle the container on startup so it
