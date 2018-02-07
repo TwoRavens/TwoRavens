@@ -423,7 +423,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     }
 
     if (IS_D3M_DOMAIN) {
-        let datasetName = datadocument.about.datasetName;                           // Use "datasetName" field in dataset document
+        let datasetName = datadocument.about.datasetID;   //.datasetName;             // Was use "datasetName" field in dataset document, but is commonly "null"
         zparams.zdata = datasetName.charAt(0).toUpperCase() + datasetName.slice(1); // Make sure to capitalize;
         let cite = "No citation provided";
         if (typeof datadocument.about.citation !== 'undefined') {
