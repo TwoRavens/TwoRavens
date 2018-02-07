@@ -31,13 +31,15 @@ from tworaven_apps.utils.url_helper import \
     (format_file_uri_to_path,
      add_file_uri_to_path)
 from tworaven_apps.utils import random_info
+from tworaven_apps.ta2_interfaces.models import \
+    (KEY_DATASET_URI, KEY_NEW_DATASET_URI)
+
 from tworaven_apps.configurations.utils import \
     (get_latest_d3m_config,
      get_d3m_filepath)
 
-KEY_NEW_DATASET_URI = 'new_dataset_uri'
 
-class ExecutePipelineRequestHelper:
+class ExecutePipelineHelper:
     """Used when a pointer to a dataset folder is needed"""
 
     def __init__(self, info_dict):
@@ -61,6 +63,19 @@ class ExecutePipelineRequestHelper:
         self.has_error = True
         self.error_message = err_msg
 
+    def get_updated_request(self):
+        assert not self.has_error, \
+            "Check .has_error() before calling this method"
+
+        # remove "new_dataset_uri"
+        #
+        del self.info_dict[KEY_NEW_DATASET_URI]
+
+        # add "dataset_uri"
+        self.info_dict[KEY_DATASET_URI] = self.new_problem_doc_uri
+
+        return self.info_dict
+
     def prepare_files(self):
         """Go through the workflow..."""
         if not self.info_dict:
@@ -73,11 +88,10 @@ class ExecutePipelineRequestHelper:
         if not self.passes_basic_error_check():
             return
 
-        if not self.is_file_valid_json():
-            return
+        #if not self.is_file_valid_json():
+        #    return
 
-        if not self.copy_problem_directory():
-            return
+        self.copy_problem_directory()
 
 
     def copy_problem_directory(self):
@@ -93,11 +107,12 @@ class ExecutePipelineRequestHelper:
 
         new_dest_directory = None
         for _ in range(3):
-            new_dest_directory = join(\
-                    self.d3m_config.temp_storage_root,
-                    'exec_pipeline_ds',
-                    random_info.get_alphanumeric_string(3),
-                    dt.now().strftime('%Y-%m-%d_%H-%M-%S'))
+            new_fname = 'dataset_%s-%s' % \
+                        (dt.now().strftime('%Y-%m-%d_%H-%M-%S'),
+                         random_info.get_alphanumeric_string(3),)
+
+            new_dest_directory = join(self.d3m_config.temp_storage_root,
+                                      new_fname)
 
             if not isdir(new_dest_directory):
                 break
@@ -134,12 +149,15 @@ class ExecutePipelineRequestHelper:
             return False
 
         self.new_data_file_dest = join(new_training_dir,
-                                       'tables'
+                                       'tables/'
                                        'learningData.csv')
 
         try:
             shutil.copy(self.data_interim_file_path,
                         self.new_data_file_dest)
+            print('file copied: [%s] to [%s]'  % \
+                  (self.data_interim_file_path,
+                   self.new_data_file_dest))
         except OSError:
             err_msg = ('Failed to copy data from [%s] to [%s]'
                        ' (ExecutePipelineRequestHelper)') % \
@@ -148,9 +166,14 @@ class ExecutePipelineRequestHelper:
             self.add_error_message(err_msg)
             return False
 
-        self.new_problem_doc_uri = add_file_uri_to_path(\
+        success, new_uri_or_err = add_file_uri_to_path(\
                                     join(new_problem_root_dir,
                                          'problemDoc.json'))
+        if not success:
+            self.add_error_message(new_uri_or_err)
+            return False
+
+        self.new_problem_doc_uri = new_uri_or_err
 
         return True
 
