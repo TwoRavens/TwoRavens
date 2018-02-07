@@ -26,5 +26,5 @@ docker exec -ti raven1 /bin/bash gce_start.sh
 #### OR override entry point and run it
 
 ```
-docker run -ti --rm --name raven1 -v /ravens_volume:/ravens_volume -p 8080:8080 --entrypoint /usr/bin/t.sh tworavens/ravens-main:latest```
+docker run -ti --rm --name raven1 -v /ravens_volume:/ravens_volume -p 8080:8080 --entrypoint /usr/bin/gce_start.sh tworavens/ravens-main:latest```
 ```
