@@ -150,7 +150,7 @@ def execute_pipeline(info_str=None, includes_data=True):
                          ' with a file path to where the "data" section was'
                          ' written.')
         else:
-            test_note = ('A message was sent to TA2')
+            test_note = info_dict#info_str_formatted#('request seA message was sent to TA2')
 
         return json.dumps(dict(note=test_note)), embed_util.get_final_results()
 
