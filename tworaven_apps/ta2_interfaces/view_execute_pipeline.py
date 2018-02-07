@@ -7,6 +7,10 @@ from tworaven_apps.utils.view_helper import get_request_body
 from tworaven_apps.call_captures.models import ServiceCallEntry
 from tworaven_apps.utils.view_helper import get_session_key
 
+@csrf_exempt
+def view_execute_pipeline_problem_doc(request):
+    return JsonResponse(dict(success=False,
+                             message='working on it...'))
 
 @csrf_exempt
 def view_execute_pipeline_direct(request):
