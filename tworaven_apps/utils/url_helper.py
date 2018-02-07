@@ -17,6 +17,20 @@ def format_file_uri_to_path(file_uri):
     return (urllib.parse.unquote(file_uri)[len(FILE_URI_PREFIX):], None)
 
 
+def add_file_uri_to_path(filepath):
+    """Add the file uri preix: "file://" to the beginning of a path"""
+    if not filepath:
+        return False, "The filepath must be specified"
+
+    if filepath.lower().startswith(FILE_URI_PREFIX):
+        #
+        #
+        return True, filepath
+
+    updated_fpath = '%s%s' % (FILE_URI_PREFIX, filepath)
+
+    return True, updated_fpath
+
 
 def add_trailing_slash(la_url):
     """Add a trailing slash to a url"""
