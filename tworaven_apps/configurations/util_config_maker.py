@@ -143,7 +143,9 @@ class TestConfigMaker:
             pipeline_logs_root=join(d3m_output_base, output_dir_names[0]),
             executables_root=join(d3m_output_base, output_dir_names[1]),
             temp_storage_root=join(d3m_output_base, D3M_DIR_TEMP_STORAGE_ROOT),
-            user_problems_root=join(d3m_output_base, D3M_DIR_USER_PROBLEMS_ROOT))
+            user_problems_root=join(d3m_output_base, D3M_DIR_USER_PROBLEMS_ROOT),
+
+            cpus=0)
 
         d3m_config.save()
 

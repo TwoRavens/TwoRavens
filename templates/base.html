@@ -3,12 +3,14 @@
 <!doctype html>
 <html>
   <head>
+    <link rel="shortcut icon" type="image/png" href="{% static "images/TwoRavens_favicon.png" %}"/>
     <title>{% block title_block %}
         {% if title %}{{ title }}{% else %}TwoRavens{% endif %}
         {% endblock %}
     </title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+
     {% block extra_css %}
     <!-- bootstrap 4 (not on pebbles page) -->
     <link rel="stylesheet" href="{% static "pkgs/bootstrap4/css/bootstrap.min.css" %}">
