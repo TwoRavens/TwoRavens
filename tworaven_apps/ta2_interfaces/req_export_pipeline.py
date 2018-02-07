@@ -62,11 +62,12 @@ def export_pipeline(info_str=None, call_entry=None):
         return get_failed_precondition_response(err_msg)
 
     # dir = d3m_config.executables_root + pipeline_id
-    executable_write_dir = join('file://%s' % d3m_config.executables_root,
-                                pipeline_id)
+    executable_write_file = join('file://%s' % d3m_config.executables_root,
+                                 pipeline_id)
+    executable_write_file = '%s.mdl' % (executable_write_file)
 
     # update the dict + info_str
-    info_dict[KEY_PIPELINE_EXEC_URI] = executable_write_dir
+    info_dict[KEY_PIPELINE_EXEC_URI] = executable_write_file
     if KEY_PIPELINE_EXEC_URI_FROM_UI in info_dict:
         del info_dict[KEY_PIPELINE_EXEC_URI_FROM_UI]
 
@@ -80,7 +81,7 @@ def export_pipeline(info_str=None, call_entry=None):
     #print('info_str', info_str)
     if call_entry:
         call_entry.request_msg = info_str
-        
+
     # --------------------------------
     # convert the JSON string to a gRPC request
     # --------------------------------

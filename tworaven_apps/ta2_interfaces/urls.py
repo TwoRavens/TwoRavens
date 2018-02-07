@@ -52,6 +52,10 @@ urlpatterns = (
         view_execute_pipeline.view_execute_pipeline_direct,
         name='ExecutePipelineDirect'),
 
+    url(r'^ExecutePipelineProblemDoc/?$',
+        view_execute_pipeline.view_execute_pipeline_problem_doc,
+        name='ExecutePipelineProblemDoc'),
+
     url(r'^getexecutepipelineresults/?$',
         views.view_get_execute_pipeline_results,
         name='GetExecutePipelineResults'),

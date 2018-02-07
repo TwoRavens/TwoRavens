@@ -25,7 +25,7 @@ KEY_SESSION_ID_FROM_UI = 'session_id'
 KEY_CONTEXT_FROM_UI = 'context'
 
 KEY_DATASET_URI = 'dataset_uri'
-
+KEY_NEW_DATASET_URI = 'new_dataset_uri'
 
 # values
 #
