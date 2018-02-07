@@ -63,7 +63,7 @@ class ExecutePipelineHelper:
         self.has_error = True
         self.error_message = err_msg
 
-    def get_updated_request(self):
+    def get_updated_request(self, as_string=False):
         assert not self.has_error, \
             "Check .has_error() before calling this method"
 
@@ -74,6 +74,9 @@ class ExecutePipelineHelper:
         # add "dataset_uri"
         self.info_dict[KEY_DATASET_URI] = self.new_problem_doc_uri
 
+        if as_string:
+            return json.dumps(self.info_dict)
+            
         return self.info_dict
 
     def prepare_files(self):
@@ -130,8 +133,10 @@ class ExecutePipelineHelper:
             shutil.copytree(self.d3m_config.training_data_root,
                             new_training_dir)
         except OSError:
-            err_msg = ('Failed to copy training data root to %s'
-                       ' (ExecutePipelineRequestHelper)') % new_training_dir
+            err_msg = ('Failed to copy training data root [%s] to [%s]'
+                       ' (ExecutePipelineRequestHelper)') % \
+                       (self.d3m_config.training_data_root,
+                        new_training_dir)
             self.add_error_message(err_msg)
             return False
 
@@ -144,7 +149,9 @@ class ExecutePipelineHelper:
                             new_problem_root_dir)
         except OSError:
             err_msg = ('Failed to copy problem root to %s'
-                       ' (ExecutePipelineRequestHelper)') % new_problem_root_dir
+                       ' (ExecutePipelineRequestHelper)') % \
+                       (self.d3m_config.problem_root,
+                        new_problem_root_dir)
             self.add_error_message(err_msg)
             return False
 
