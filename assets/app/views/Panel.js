@@ -11,8 +11,8 @@ export let getClasses = function(cls, panel, attrs) {
         } else if (app.righttab === 'btnBivariate') {
             cls += `[style=width: ${75}%]`;
         }
-    } else if (app.lefttab === 'tab2') {
-        cls += '.expandpanel';
+    } else if (attrs.side === 'left' && app.lefttab === 'tab2') {
+        cls += '.expandpanelfull';
     }
     return cls;
 ;
