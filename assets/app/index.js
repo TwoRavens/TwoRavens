@@ -158,7 +158,6 @@ function rightpanel(mode) {
         }
         return names;
     };
-    console.log(app.righttab);
     let bivariate = app.righttab === 'btnBivariate' ? 'block' : 'none';
     return mode ?
         m(Panel,
@@ -219,7 +218,7 @@ function rightpanel(mode) {
                 m('#plotA', {style: {width: exp.get_width('plotA') + '%', height: "100%", float: "left", overflow: "hidden"}}, "plotA"),
                 m('#plotB', {style: {width: exp.get_width('plotB') + '%', height: "100%", float: "right", overflow: "hidden"}}, "plotB")),
               m('#tabular_2', {style: {width: "100%", height: "50%", "border-bottom-style": "inset", overflow: "hidden"}}))),
-          m("p#resultsHolder", {style: {padding: ".5em 1em"}},
+          m("p#resultsHolder", {style: {display: app.righttab === 'btnUnivariate' ? 'block' : 'none', padding: ".5em 1em"}},
             m('#varList[style=display: block]',
               unique_link_names().map(x => m(`p#${x.replace(/\W/g, '_')}`, {onclick: _=> exp.callTreeApp(x), style: {'background-color': app.varColor}}, x)))),
           m('#setx[style=display: none; margin-top: .5em]')) :
