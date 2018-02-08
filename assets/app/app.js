@@ -422,12 +422,18 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     datadocument = await m.request(d3mDS);
 
     // if no columns in the datadocument, go to swandive
-    if(typeof datadocument.dataResources[0].columns === 'undefined') {
-        if(IS_D3M_DOMAIN){
-          console.log('D3M WARNING: datadocument.dataResources[0].columns is undefined');
-        }
-        swandive = true;
+    // 4a. Set datadocument columns!
+    let datadocument_columns;
+    if(datadocument.dataResources[0].columns) {
+        datadocument_columns = datadocument.dataResources[0].columns
+    } else if(datadocument.dataResources[1].columns){
+      datadocument_columns = datadocument.dataResources[1].columns
+    } else{
+
+      console.log('D3M WARNING: datadocument.dataResources[0].columns is undefined');
+      swandive = true;
     }
+
 
     if (IS_D3M_DOMAIN) {
         let datasetName = datadocument.about.datasetID;   //.datasetName;             // Was use "datasetName" field in dataset document, but is commonly "null"
@@ -603,7 +609,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
 
     // 10. Add datadocument information to allNodes (when in IS_D3M_DOMAIN)
     if(!swandive) {
-        let datavars = datadocument.dataResources[0].columns;
+        let datavars = datadocument_columns;
         datavars.forEach((v, i) => {
             let myi = findNodeIndex(v.colName);
             allNodes[myi] = Object.assign(allNodes[myi], {d3mDescription: v});
