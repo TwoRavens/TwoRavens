@@ -298,6 +298,8 @@ export function get_width(id) {
 }
 
 function crossTabPlots(PlotNameA, PlotNameB, json_obj) {
+    continuous_n = 0;
+    bar_n = 0;
     plotnamea = PlotNameA;
     plotnameb = PlotNameB;
     $("#input1").attr("placeholder", PlotNameA).blur();
@@ -1387,6 +1389,7 @@ function model_selection(model_selection_name, count_value, json) {
                 .style('background-color', "#FFD54F");
             d3.select(this)
                 .style('background-color', plots.selVarColor);
+            m.redraw();
         });
 }
 
