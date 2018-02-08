@@ -169,9 +169,9 @@ def run_ta2_choose_config(choice_num='', ta2_name='ISI'):
     #
     choice_pairs = [(idx, x) for idx, x in enumerate(config_choices, 1)]
     if choice_num.isdigit():
-        choice_num = int(choice_num) - 1
+        choice_num = int(choice_num)
         if choice_num in [x[0] for x in choice_pairs]:
-            config_path = os.path.join(ravens_dir, choice_pairs[choice_num][1])
+            config_path = os.path.join(ravens_dir, choice_pairs[choice_num-1][1])
             if ta2_name == 'ISI':
                 run_isi_ta2(config_path)
                 return
