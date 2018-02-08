@@ -1403,8 +1403,6 @@ function showLog() {
     app.byId('logdiv').setAttribute("style", "display:none");
 }
 
-
-
 let count = 0;
 let count1 = 0;
 
@@ -1423,14 +1421,13 @@ export async function explore() {
     app.zparams.callHistory = app.callHistory;
     app.estimateLadda.start(); // start spinner
     let json = await app.makeRequest(ROOK_SVC_URL + 'exploreapp', app.zparams);
+    app.estimateLadda.stop();
     if (!json) {
         return;
     }
     app.allResults.push(json);
-    app.estimateLadda.stop();
-
-    let parent = app.byId('rightContentArea');
     app.explored = true;
+    app.univariate_finished = false;
 
     d3.select("#decisionTree")
         .style("display", "none");
@@ -1487,6 +1484,7 @@ export async function callTreeApp(node_var, app) {
     let res = await app.makeRequest(ROOK_SVC_URL + 'treeapp', {zparams: app.zparams, dv: node_var});
     app.estimateLadda.stop();
     if (res) {
+        app.explored = false;
         app.univariate_finished = true;
         m.redraw();
         univariatePart(res, node_var);
