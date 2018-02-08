@@ -158,6 +158,8 @@ function rightpanel(mode) {
         }
         return names;
     };
+    console.log(app.righttab);
+    let bivariate = app.righttab === 'btnBivariate' ? 'block' : 'none';
     return mode ?
         m(Panel,
           {side: 'right',
@@ -166,11 +168,11 @@ function rightpanel(mode) {
            buttons: [
                m(Button, {id: 'btnUnivariate'}, 'Univariate'),
                m(Button, {id: 'btnBivariate'}, 'Bivariate')]},
-          m('#modelView_Container', {style: 'width: 100%; height: auto; background-color: white; float: left; overflow-x: auto; overflow-y: auto; white-space: nowrap;'},
+          m('#modelView_Container', {style: `display: ${bivariate}; width: 100%; height: auto; background-color: white; float: left; overflow-x: auto; overflow-y: auto; white-space: nowrap;`},
             m('#modelView', {style: 'width: 100%; height: auto; background-color: white; float: left; overflow: auto; margin-top: 2px;'})),
           m('#decisionTree[style=width: 100%; height: auto ; background-color: white ;  overflow : scroll; float: left; white-space: nowrap; margin-top: 2px;]'),
           m('#result_left',
-            {style: {"width": "50%", "height": "90%", "float": "left", "background-color": "white", "border-right": "ridge", "border-bottom": "ridge", "overflow": "auto", "white-space": "nowrap"}},
+            {style: {display: bivariate, "width": "50%", "height": "90%", "float": "left", "background-color": "white", "border-right": "ridge", "border-bottom": "ridge", "overflow": "auto", "white-space": "nowrap"}},
             m('#left_thumbnail',
               {style: {"width": "100%", "height": "20%", "background-color": "white", "margin-top": "3%", "margin-right": "3%", "border-bottom": "ridge", "overflow": "auto", "white-space": "nowrap"}},
               m("table",
@@ -185,7 +187,7 @@ function rightpanel(mode) {
             m(".container2[id='resultsView_statistics']",
               {style: {"width": "100%", "height": "15%", "background-color": "white", "float": "left", "white-space": "nowrap", "margin-bottom": "3%", "border-bottom": "ridge"}})),
           m('#result_right',
-            {style: {width: "50%", height: "90%", float: "right", "background-color": "white", "border-right": "groove", "white-space": "nowrap"}},
+            {style: {display: bivariate, width: "50%", height: "90%", float: "right", "background-color": "white", "border-right": "groove", "white-space": "nowrap"}},
             m('#resultsView_tabular.container1',
               {style: {width: "100%", height: "100%", "background-color": "white", float: "left", overflow: "auto", "white-space": "nowrap", "border-right": "groove", "border-bottom": "groove"}},
               m('#SelectionData', {style: {width: "100%", height: "50%", overflow: "auto", "margin-top": "10px", "border-bottom-style": "inset"}},

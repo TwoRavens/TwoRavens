@@ -1429,7 +1429,7 @@ export async function explore() {
     app.allResults.push(json);
 
     let parent = app.byId('rightContentArea');
-    app.explored || parent.removeChild(app.byId('resultsHolder'));
+    //app.explored || parent.removeChild(app.byId('resultsHolder'));
     app.explored = true;
 
     d3.select("#decisionTree")
