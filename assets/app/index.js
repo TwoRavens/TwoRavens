@@ -382,6 +382,8 @@ class Body {
 
         if (mode != this.last_mode) {
             if (explore) {
+                app.explored = false;
+                app.univariate_finished = false;
                 app.set_explore_mode(explore);
                 app.set_righttab('btnUnivariate');
             } else if (!mode) {
