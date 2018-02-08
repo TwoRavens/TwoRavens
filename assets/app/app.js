@@ -23,7 +23,7 @@ import {bars, barsNode, barsSubset, density, densityNode, selVarColor} from './p
 export let is_results_mode = false;
 export let task1_finished = false;
 export let task2_finished = false;
-export let univariate_finished = false; 
+export let univariate_finished = false;
 
 let is_explore_mode = false;
 export function set_explore_mode(val) {
@@ -95,7 +95,7 @@ let priv = true;
 // swandive is our graceful fail for d3m
 // swandive set to true if task is in failset
 let swandive = false;
-let failset = ["TIMESERIESFORECASTING","GRAPHMATCHING","LINKPREDICTION","timeSeriesForecasting","graphMatching","linkPrediction"];
+let failset = ["TIME_SERIES_FORECASTING","GRAPH_MATCHING","LINK_PREDICTION","timeSeriesForecasting","graphMatching","linkPrediction"];
 
 // object that contains all information about the returned pipelines
 let allPipelineInfo = {};
@@ -412,6 +412,9 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
 
     // making it case insensitive because the case seems to disagree all too often
     if (failset.includes(d3mProblemDescription.taskType.toUpperCase())) {
+        if(IS_D3M_DOMAIN){
+          console.log('D3M WARNING: failset  task type found');
+        }
         swandive = true;
     }
 
@@ -420,6 +423,9 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
 
     // if no columns in the datadocument, go to swandive
     if(typeof datadocument.dataResources[0].columns === 'undefined') {
+        if(IS_D3M_DOMAIN){
+          console.log('D3M WARNING: datadocument.dataResources[0].columns is undefined');
+        }
         swandive = true;
     }
 
@@ -464,6 +470,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
 
     // if swandive, we have to set valueKey here so that left panel can populate.
     if (swandive) {
+        alert('Exceptional data detected.  Please check the logs for "D3M WARNING"')
     //    let mydataRes = datadocument.dataResources;
       //  for (let i = 0; i < mydataRes.length; i++) {
      //       valueKey.push(mydataRes[i].resFormat[0]);

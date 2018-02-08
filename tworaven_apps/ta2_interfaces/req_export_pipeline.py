@@ -78,7 +78,7 @@ def export_pipeline(info_str=None, call_entry=None):
         err_msg = 'Failed to PipelineExportRequest info to JSON: %s' % ex_obj
         return get_failed_precondition_response(err_msg)
 
-    #print('info_str', info_str)
+    print('info_str', info_str)
     if call_entry:
         call_entry.request_msg = info_str
 
