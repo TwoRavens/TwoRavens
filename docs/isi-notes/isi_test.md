@@ -62,7 +62,7 @@ The next step assumes separate Terminals for rook and the django app, e.g.
 - Got to: http://127.0.0.1:8080/api/grpc-test-form
 - Under the form textbox, click "send data"
   - The TA2 should send a response
-  - Note: Several TA2s take well over 1-2 minutes to startup
+  - Note: Several TA2s take well over 3 minutes to startup
 
 
 ## Preliminary Step: Bind the /ravens_volume directory
