@@ -1483,7 +1483,9 @@ export async function callTreeApp(node_var, app) {
     app.zPop();
     app.zparams.callHistory = app.callHistory;
     
+    app.estimateLadda.start();
     let res = await app.makeRequest(ROOK_SVC_URL + 'treeapp', {zparams: app.zparams, dv: node_var});
+    app.estimateLadda.stop();
     if (res) {
         app.univariate_finished = true;
         m.redraw();
