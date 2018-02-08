@@ -424,16 +424,18 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     // if no columns in the datadocument, go to swandive
     // 4a. Set datadocument columns!
     let datadocument_columns;
-    if(datadocument.dataResources[0].columns) {
-        datadocument_columns = datadocument.dataResources[0].columns
-    } else if(datadocument.dataResources[1].columns){
-      datadocument_columns = datadocument.dataResources[1].columns
-    } else{
-
-      console.log('D3M WARNING: datadocument.dataResources[0].columns is undefined');
+    let col_idx;
+    for (col_idx = 0; col_idx < datadocument.dataResources.length; col_idx++) {
+        if(datadocument.dataResources[col_idx].columns){
+          datadocument_columns = datadocument.dataResources[col_idx].columns
+          console.log('columns found in datadocument.dataResources[' + col_idx + '].columns');
+          break
+        }
+    }
+    if (typeof datadocument_columns === "undefined") {
+      console.log('D3M WARNING: datadocument.dataResources[x].columns is undefined.');
       swandive = true;
     }
-
 
     if (IS_D3M_DOMAIN) {
         let datasetName = datadocument.about.datasetID;   //.datasetName;             // Was use "datasetName" field in dataset document, but is commonly "null"
