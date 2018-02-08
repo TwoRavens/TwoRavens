@@ -7,8 +7,7 @@ import string
 import signal
 
 import sys
-from fabric.api import local
-
+from fabric.api import local, task
 import django
 from django.conf import settings
 import subprocess
@@ -31,6 +30,7 @@ try:
 except Exception as e:
     print("WARNING: Can't configure Django. %s" % e)
 
+
 def stop():
     """Kill any python/npm processes"""
     try:
@@ -48,15 +48,15 @@ def restart():
     stop()
     run()
 
+@task
 def make_d3m_config_files():
-    """Only for Docker! Make *deploy* config files. Useful for docker-compose or kubernetes--NOT for local tests.
-    The resulting config files will have paths specified from "/ravens_volume"
-    """
+    """Make configs in /ravens_volume and load them to db"""
     clear_d3m_configs()
 
     from tworaven_apps.configurations.util_config_maker import TestConfigMaker
     TestConfigMaker.make_deploy_config_files()
 
+@task
 def clear_d3m_configs():
     """Delete D3M configs from the database"""
     from tworaven_apps.configurations.models_d3m import D3MConfiguration
@@ -72,6 +72,7 @@ def clear_d3m_configs():
         D3MConfiguration.objects.all().delete()
         print('  -> %d DM config(s) deleted' % config_cnt)
 
+@task
 def clear_test_data():
     """Clear d3m configs, d3m output, and preprocess files"""
 
@@ -102,8 +103,9 @@ def clear_test_data():
 
 
 
+@task
 def make_d3m_config():
-    """Make a D3M config based on local files in the /ravens_volume directory"""
+    """Adds D3M configs to database--but DOESN'T create config files"""
     from tworaven_apps.configurations.util_config_maker import TestConfigMaker
 
     TestConfigMaker.make_configs()
@@ -131,6 +133,7 @@ def load_d3m_config_from_env():
         print('> Failed to load D3M config.\n%s' % err_obj)
 '''
 
+@task
 def load_d3m_config(config_file):
     """Load D3M config file, saving it as the default D3MConfiguration object.  Pass the config file path: fab load_d3m_config:(path to config file)"""
     from django.core import management
@@ -142,9 +145,98 @@ def load_d3m_config(config_file):
         print('> Failed to load D3M config.\n%s' % err_obj)
         return False
 
+@task
+def run_featurelabs_choose_config(choice_num=''):
+    """Pick a config from /ravens_volume and run FeatureLabs"""
+    run_ta2_choose_config(choice_num, ta2_name='FeatureLabs')
+
+@task
+def run_isi_choose_config(choice_num=''):
+    """Pick a config from /ravens_volume and run ISI"""
+    run_ta2_choose_config(choice_num, ta2_name='ISI')
+
+def run_ta2_choose_config(choice_num='', ta2_name='ISI'):
+    """Pick a config from /ravens_volume and run a TA2"""
+    ravens_dir = '/ravens_volume'
+
+    # pull config files from ravens volume
+    config_choices = [x for x in os.listdir(ravens_dir)
+                      if x.startswith('config_') and \
+                         x.endswith('.json')]
+
+    # pair each config name with a number:
+    # [(1, config_185_baseball.json), (2, config_196_autoMpg.json), etc]
+    #
+    choice_pairs = [(idx, x) for idx, x in enumerate(config_choices, 1)]
+    if choice_num.isdigit():
+        choice_num = int(choice_num) - 1
+        if choice_num in [x[0] for x in choice_pairs]:
+            config_path = os.path.join(ravens_dir, choice_pairs[choice_num][1])
+            if ta2_name == 'ISI':
+                run_isi_ta2(config_path)
+                return
+            elif ta2_name == 'FeatureLabs':
+                run_featurelabs_ta2(config_path)
+                return
+            else:
+                print('\n--> Error: "%s" is not a ta2 choice\n' % ta2_name)
+        else:
+            print('\n--> Error: "%d" is not a valid choice\n' % choice_num)
+
+    print('-' * 40)
+    print('Listing config files in: %s' % ravens_dir)
+    print('-' * 40)
+    print('\nPlease run the fab command again using a config file number:\n')
+    for choice_pair in choice_pairs:
+        print('(%d) %s' % (choice_pair[0], choice_pair[1]))
+
+    print('\nExample: fab run_isi_choose_config:1')
 
 
+def run_featurelabs_ta2(config_json_path):
+    """syntax: `fab run_featurelabs_ta2:config_json_path` Also sets django D3M config"""
+    if not os.path.isfile(config_json_path):
+        print('Config file not found: %s' % config_json_path)
 
+    print('-' * 40)
+    print('Django: Loading D3M config...')
+    print('-' * 40)
+    load_d3m_config(config_json_path)
+
+    print('-' * 40)
+    print('Run Feature Labs')
+    print('-' * 40)
+    docker_cmd = ('docker run -ti --rm -v /ravens_volume:/ravens_volume -e'
+                  ' "CONFIG_JSON_PATH=%s" -p 45042:45042 --name'
+                  ' feature_labs --entrypoint=ta2_grpc_server'
+                  ' featurelabs_ta2:stable') % (config_json_path)
+
+    print('Running command: %s' % docker_cmd)
+
+    local(docker_cmd)
+
+def run_isi_ta2(config_json_path):
+    """syntax: `fab run_isi_ta2:[config_json_path]`.` Also sets django D3M config"""
+    if not os.path.isfile(config_json_path):
+        print('Config file not found: %s' % config_json_path)
+
+    print('-' * 40)
+    print('Django: Loading D3M config...')
+    print('-' * 40)
+    load_d3m_config(config_json_path)
+
+    print('-' * 40)
+    print('Run ISI')
+    print('-' * 40)
+    docker_cmd = ('docker run -ti --rm -v /ravens_volume:/ravens_volume -e'
+                  ' "CONFIG_JSON_PATH=%s" -p 45042:45042 --name'
+                  ' goisi isi_ta2:stable') % (config_json_path)
+
+    print('Running command: %s' % docker_cmd)
+
+    local(docker_cmd)
+
+@task
 def load_docker_ui_config():
     """Load config pk=3, name 'Docker Default configuration'"""
     check_config()
@@ -161,7 +253,7 @@ def load_docker_ui_config():
             print('     > %s: %s' % (k, val))
 
 
-
+@task
 def check_config():
     """If there aren't any db configurations, then load the fixtures"""
     from tworaven_apps.configurations.models import AppConfiguration
@@ -173,28 +265,34 @@ def check_config():
     else:
         print('Configs exist in the db: %d' % config_cnt)
 
+@task
 def run_ta2_test_server():
     """Run an external server on 45042 to return gRPC TA2TA3 api calls"""
 
     run_cmd = 'cd tworaven_apps/ta2_interfaces; python test_server.py'
     local(run_cmd)
 
+@task
 def get_run_rook_cmd():
     """For running the rook server via the command line"""
     return 'cd rook; Rscript rook_nonstop.R'
 
+@task
 def run_rook():
     """Run the rook server via the command line"""
     local(get_run_rook_cmd())
 
+@task
 def run_with_rook():
     """In addition to the django dev server and webpack, run rook via the Terminal"""
     run(with_rook=True)
 
+@task
 def run_expect_ta2_external():
     """Assumes there's a TA2 running at localhost:45042"""
     run(external_ta2=True)
 
+@task
 def run(**kwargs):
     """Run the django dev server and webpack--webpack watches the assets directory and rebuilds when appTwoRavens changes
 
@@ -228,6 +326,7 @@ def run(**kwargs):
         for proc in proc_list:
             os.kill(proc.pid, signal.SIGKILL)
 
+@task
 def webpack_prod():
     """Generate the webpack dist files for prod"""
 
@@ -235,6 +334,7 @@ def webpack_prod():
     cmd_webpack = './node_modules/.bin/webpack --config webpack.prod.config.js'
     local(cmd_webpack)
 
+#@task
 def clear_js():
     """Delete old webpack dev. build files"""
     print(clear_js.__doc__)
@@ -262,7 +362,7 @@ def clear_js():
     print('-' * 40)
     print('Deleted %s file(s)' % len(build_file_names))
 
-
+@task
 def clear_logs():
     """Delete log files, image files, and preprocess files from rook"""
     print(clear_logs.__doc__)
@@ -303,7 +403,7 @@ def clear_logs():
         print('-' * 40)
         print('Deleted %s log file(s)' % len(data_file_names))
 
-
+@task
 def create_test_user():
     """Create regular user with creds: test_user/test_user.  No admin access"""
     from tworaven_apps.raven_auth.models import User
@@ -329,6 +429,7 @@ def create_test_user():
     print('test user created: "%s"' % test_username)
     print('password: "%s"' % test_pw)
 
+@task
 def create_django_superuser():
     """(Test only) Create superuser with username: dev_admin. Password is printed to the console."""
     from tworaven_apps.raven_auth.models import User
@@ -357,11 +458,12 @@ def create_django_superuser():
     print('superuser created: "%s"' % dev_admin_username)
     print('password: "%s"' % admin_pw)
 
-
+@task
 def collect_static():
     """Run the Django collectstatic command"""
     local('python manage.py collectstatic --noinput')
 
+@task
 def init_db():
     """Run django check and migrate"""
     local("python manage.py check")
@@ -371,11 +473,13 @@ def init_db():
     #local("python manage.py loaddata fixtures/users.json")
     #Series(name_abbreviation="Mass.").save()
 
+@task
 def run_grpc_tests():
     """Run the gRPC tests, equivalent of 'python manage.py test tworaven_apps.ta2_interfaces'"""
     local('python manage.py test tworaven_apps.ta2_interfaces')
 
 
+@task
 def ta3_listener_add():
     """Add local web server address for ta3_search messages"""
     from tworaven_apps.ta3_search.message_util import MessageUtil
@@ -388,6 +492,7 @@ def ta3_listener_add():
 
     print(user_msg)
 
+@task
 def ta3_listener_run():
     """Start a flask server that receives messages from the UI
     Part of scaffolding for the D3M eval"""
