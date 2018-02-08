@@ -1474,6 +1474,7 @@ export async function explore() {
     app.logArray.push("explore: ".concat(rCall[0]));
     showLog();
     viz(model_name, json, model_name);
+    m.redraw();
 }
 
 export async function callTreeApp(node_var, app) {
