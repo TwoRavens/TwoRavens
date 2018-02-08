@@ -478,6 +478,7 @@ class Body {
                 spaceBtn('btnLock.active', app.lockDescription, 'Lock selection of problem description', 'pencil'),
                 spaceBtn('btnJoin', _ => {
                     let links = [];
+                    console.log("doing connect all");
                     if (explore) {
                         for (let node of app.nodes) {
                             for (let node1 of app.nodes) {
