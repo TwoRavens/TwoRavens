@@ -1461,6 +1461,8 @@ export async function explore() {
         .style("color", "#757575")
         .text("MODEL SELECTION :  ");
 
+    count = 0;
+    count1 = 0;
     let model_name;
     for (let img in json.images) {
         if (count === 0) {
