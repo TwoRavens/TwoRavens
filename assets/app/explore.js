@@ -1479,24 +1479,21 @@ export async function explore() {
     viz(model_name, json, model_name);
 }
 
-export async function callTreeApp(node_var) {
+export async function callTreeApp(node_var, app) {
     app.zPop();
     app.zparams.callHistory = app.callHistory;
     
-    let res = await app.makeRequest(ROOK_SVC_URL + 'treeapp', {zparams:app.zparams, dv:node_var});
-    if (!res) {
-        alert("treeapp failed");
-    } else {
-        // console.log(res);
-        univariatePart(res,node_var);
+    let res = await app.makeRequest(ROOK_SVC_URL + 'treeapp', {zparams: app.zparams, dv: node_var});
+    if (res) {
+        app.univariate_finished = true;
+        m.redraw();
+        univariatePart(res, node_var);
     }
 }
 
 // Kripanshu : Function to create D3 Tree using the JSON result from call Tree app
 function univariatePart(json, var_name) {
     document.getElementById("decisionTree").innerHTML = "";
-    d3.select('#rightpanel')
-        .style('width', '75%');
     d3.select("#decisionTree")
         .style("display", "block")
         .append("p")
@@ -1539,8 +1536,6 @@ function univariatePart(json, var_name) {
         min_link_width = 1.5,
         char_to_pxl = 6,
         root;
-
-
 
     var tree = d3.layout.tree()
         .size([h, w]);

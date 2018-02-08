@@ -164,6 +164,7 @@ function rightpanel(mode) {
           {side: 'right',
            title: 'Result Exploration',
            is_explore_mode: true,
+           univariate_finished: app.univariate_finished,
            buttons: [
                m(Button, {id: 'btnUnivariate'}, 'Univariate'),
                m(Button, {id: 'btnBivariate'}, 'Bivariate')]},
@@ -220,7 +221,7 @@ function rightpanel(mode) {
               m('#tabular_2', {style: {width: "100%", height: "50%", "border-bottom-style": "inset", overflow: "hidden"}}))),
           m("p#resultsHolder", {style: {display: app.righttab === 'btnUnivariate' ? 'block' : 'none', padding: ".5em 1em"}},
             m('#varList[style=display: block]',
-              unique_link_names().map(x => m(`p#${x.replace(/\W/g, '_')}`, {onclick: _=> exp.callTreeApp(x), style: {'background-color': app.varColor}}, x)))),
+              unique_link_names().map(x => m(`p#${x.replace(/\W/g, '_')}`, {onclick: _=> exp.callTreeApp(x, app), style: {'background-color': app.varColor}}, x)))),
           m('#setx[style=display: none; margin-top: .5em]')) :
     // mode == null (model mode)
     m(Panel,

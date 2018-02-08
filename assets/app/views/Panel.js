@@ -2,11 +2,15 @@ import m from 'mithril';
 
 import * as app from '../app';
 
-export let getClasses = function(cls, panel, is_explore_mode) {
+export let getClasses = function(cls, panel, attrs) {
     if (panel.closed) {
         cls += '.closepanel';
-    } else if (is_explore_mode && app.righttab === 'btnBivariate') {
-        cls += '[style=width: 75%]';
+    } else if (attrs.is_explore_mode) {
+        if (app.righttab === 'btnUnivariate' && attrs.univariate_finished) {
+            cls += `[style=width: ${45}%]`;
+        } else if (app.righttab === 'btnBivariate') {
+            cls += `[style=width: ${75}%]`;
+        }
     } else if (app.lefttab === 'tab2') {
         cls += '.expandpanel';
     }
@@ -27,7 +31,7 @@ class Panel {
         let expandwidth = 35;
         let shrinkwidth = 65 / (btns.length - 1);
         return m(
-            getClasses(`#${side}panel.sidepanel.container.clearfix`, this, is_explore_mode),
+            getClasses(`#${side}panel.sidepanel.container.clearfix`, this, vnode.attrs),
             m(`#toggle${side === 'left' ? 'L' : 'R'}panelicon.panelbar[style=height: 100%]`,
               m('span', {onclick: _ => this.closed = !this.closed}, dot, dot, dot, dot)),
             m(`#${side}paneltitle.panel-heading.text-center`,
@@ -47,7 +51,7 @@ class Panel {
                        onmouseout: _ => this.active_btn = null},
                       b);
               })),
-            m(getClasses('.row-fluid', this),
+            m('.row-fluid',
               m(`#${side}panelcontent`,
                 m(`#${side}ContentArea[style=height: calc(100vh - 213px); overflow: auto]`, vnode.children))));
     }
