@@ -177,7 +177,7 @@ function rightpanel(mode) {
               {style: {"width": "100%", "height": "20%", "background-color": "white", "margin-top": "3%", "margin-right": "3%", "border-bottom": "ridge", "overflow": "auto", "white-space": "nowrap"}},
               m("table",
                 m("tbody",
-                  m("tr", thumb(1, 'scatterplot', "Scatter Plot"), thumb(2, 'heatmap', "Heatpmap"), thumb(3, 'linechart', "Linechart"))))),
+                  m("tr", thumb(1, 'scatterplot', "Scatter Plot"), thumb(2, 'heatmap', "Heatmap"), thumb(3, 'linechart', "Linechart"))))),
             m('#result_left1', {style: {width: "100%", height: "320px", "text-align": "center", "margin-top": "3%", "background-color": "white", "white-space": "nowrap"}},
               m(".container3[id=scatterplot]", {style: {"width": "500px", "height": "80%", "background-color": "white", "float": "left", "overflow": "hidden", "margin": "5% 5% 0 5%"}}),
               m(".container4[id=heatchart]", {style: {"width": "500px", "height": "80%", "float": "left", "overflow": "hidden", "background-color": "#FFEBEE", "margin": "5%  "}}),
