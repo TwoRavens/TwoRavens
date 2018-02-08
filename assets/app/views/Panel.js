@@ -6,7 +6,7 @@ export let getClasses = function(cls, panel, is_explore_mode) {
     if (panel.closed) {
         cls += '.closepanel';
     } else if (is_explore_mode && app.righttab === 'btnBivariate') {
-        cls += '.expandpanelfull'; 
+        cls += '[style=width: 75%]';
     } else if (app.lefttab === 'tab2') {
         cls += '.expandpanel';
     }
