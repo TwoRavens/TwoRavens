@@ -1427,6 +1427,7 @@ export async function explore() {
         return;
     }
     app.allResults.push(json);
+    app.estimateLadda.stop();
 
     let parent = app.byId('rightContentArea');
     app.explored = true;
