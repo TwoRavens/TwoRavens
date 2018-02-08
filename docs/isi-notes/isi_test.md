@@ -16,18 +16,40 @@ docker pull registry.datadrivendiscovery.org/j18_ta2eval/isi_ta2:stable
 docker tag registry.datadrivendiscovery.org/j18_ta2eval/isi_ta2:stable isi_ta2:stable
 ```
 
-## Run the ISI image in a separate window
+## Run ISI with env variable
+
+- In a new Terminal:
+  - **note:** Don't forget the line `export CONFIG_JSON_PATH...`
 
 ```
-docker run --rm -it  -p 45042:45042 --name=goisi -v ~/ravens_volume:/ravens_volume  isi_ta2:stable
+# set the CONFIG_JSON_PATH variable
+#
+export CONFIG_JSON_PATH=/ravens_volume/config_185_baseball.json
+
+# set the env on docker run
+#
+docker run -ti --rm -v /ravens_volume:/ravens_volume -e "CONFIG_JSON_PATH=/ravens_volume/config_185_baseball.json" -p 45042:45042 --name goisi isi_ta2:stable
 ```
+
+#### Troubleshoot ISI (or another TA2)
+
+- For troubleshooting, while the ISI container is running, you can:
+
+1. Open another Terminal
+1. Log into the TA2: `docker exec -ti goisi /bin/bash`
+1. Check the shared volume: `ls /ravens_volume`
+    - e.g. is anything there? Does it match the local systems `ls /ravens_volume`?1
+1. Check the env variable: `echo $CONFIG_JSON_PATH`
+    - Should be the path set during `docker run ...`
+
 
 ## Run TwoRavens
 
-- To make sure you're running shareable data from /ravens_volume:
-    1. Delete the D3M config files from:
-      - http://127.0.0.1:8080/admin/configurations/d3mconfiguration/
-    2. Run `fab make_d3m_config_files`
+To make sure you're running shareable data from /ravens_volume:
+
+1. Clear the current D3M configs from the database:
+    - `fab clear_d3m_configs`
+1. Run `fab make_d3m_config_files`
 
 The next step assumes separate Terminals for rook and the django app, e.g.
 
@@ -35,12 +57,15 @@ The next step assumes separate Terminals for rook and the django app, e.g.
 2. python/ui: `fab run_expect_ta2_external`
   - this is instead of `fab run`
 
+### Check the TA2 connection
+
+- Got to: http://127.0.0.1:8080/api/grpc-test-form
+- Under the form textbox, click "send data"
+  - The TA2 should send a response
+  - Note: Several TA2s take well over 3 minutes to startup
 
 
-
-### Bind the /ravens_volume directory
-
-This may have already been done last year.
+## Preliminary Step: Bind the /ravens_volume directory
 
 #### Make symlink
 
@@ -60,76 +85,19 @@ The new `/ravens_volume` "directory" needs to be cleared via Docker (not necessa
   - Add "" `/ravens_volume`
 
 
-### Terminal 1:  Run the ISI docker image
-
-- Run this command:
-
-```
-docker run --rm -ti -v ~/ravens_volume:/ravens_volume -v /tmp/dsbox-ta2:/tmp/dsbox-ta2 -p 45042:45042 --name isi_test isi_ta2:stable
-
-docker run --rm -ti -v ~/ravens_volume:/ravens_volume -p 50051:50051 --name isi_test isi_ta2:stable
-
-#docker run --rm --name isi_test  -v ~/ravens_volume:/ravens_volume -v #/tmp/dsbox-ta2:/tmp/dsbox-ta2 -p 45042:45042 #registry.datadrivendiscovery.org/ta2/isi_ta2:latest
-```
-
-
-### Terminal 2: Run TwoRavens
-
-- cd into TwoRavens, then:
-1. `workon 2ravens`
-1. `export TA2_STATIC_TEST_MODE=False`
-1. `export TA2_TEST_SERVER_URL=localhost:45052`
-3. `fab run`
-
-- Note: To switch back to canned responses:
-1. stop this Terminal
-2. `export TA2_STATIC_TEST_MODE=True`
-3. `fab run`
 
 ### Stopping the ISI TA2:
 
-- in a new Terminal
-```
-docker stop isi_test
-```
+- In a new Terminal (this may take a few seconds):
+
+    ```
+    docker stop isi_test
+    ```
   - This will take a few seconds
 
-- clearing out ISI data
-  - `rm -rf /tmp/dsbox-ta2`
-
-### debug run
-
-```
-# start the container with a bash shell
-#
-docker run -ti --rm -v ~/ravens_volume:/ravens_volume -v /tmp/dsbox-ta2:/tmp/dsbox-ta2 -p 45042:45042 --name goisi isi_ta2:stable /bin/bash
 
 
-# comment out stderr line so output goes to Terminal
-#
-sed -i 's/sys.stderr = self.errorfile/#sys.stderr = self.errorfile/g' /dsbox/dsbox-ta2/python/dsbox/planner/controller.py
-
-# Run the server
-#
-cd /dsbox/dsbox-ta2/python/server
-python3 ta2-server.py
-
-```
-
-### Run ISI with env variable
-
-```
-# set the CONFIG_JSON_PATH variable
-#
-export CONFIG_JSON_PATH=/ravens_volume/config_185_baseball.json
-
-# set the env on docker run
-#
-docker run -ti --rm -v /ravens_volume:/ravens_volume -e "CONFIG_JSON_PATH=/ravens_volume/config_185_baseball.json" -p 45042:45042 --name goisi isi_ta2:stable
-
-```
-
-### Run Brown TA2 with env variable
+## Run Brown TA2 with env variable
 
 - Pull image
 
@@ -195,11 +163,8 @@ docker run --rm -ti -v /ravens_volume:/ravens_volume -e "CONFIG_JSON_PATH=/raven
 ```
 
 
----
 
-
-
-### Old notes
+### _Old notes_
 
 
 ```
