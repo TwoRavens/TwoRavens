@@ -1428,9 +1428,6 @@ export async function explore() {
     }
     app.allResults.push(json);
 
-    d3.select('#rightpanel')
-        .style('width', '75%');
-
     let parent = app.byId('rightContentArea');
     app.explored || parent.removeChild(app.byId('resultsHolder'));
     app.explored = true;
@@ -1464,8 +1461,6 @@ export async function explore() {
         .style("color", "#757575")
         .text("MODEL SELECTION :  ");
 
-    // programmatic click on Results button
-    $("#btnBivariate").trigger("click");
     let model_name;
     for (let img in json.images) {
         if (count === 0) {

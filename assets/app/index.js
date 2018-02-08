@@ -415,7 +415,7 @@ class Body {
                           return m('a[style=padding: 0.5em]', {href: link.url}, link.title , 
                           m('br'))
                         }))), 
-                    navBtn('btnEstimate.btn-default', 2, 1, explore ? exp.explore : app.estimate, m("span.ladda-label", explore ? 'Explore' : 'Solve This Problem'), '150px'),
+                    navBtn('btnEstimate.btn-default', 2, 1, explore ? _ => {exp.explore(); app.set_righttab('btnBivariate')} : app.estimate, m("span.ladda-label", explore ? 'Explore' : 'Solve This Problem'), '150px'),
                     navBtn('btnTA2.btn-default', .2, 1, _ => app.helpmaterials('manual'), ['Help Manual ', glyph('book')]),
                     navBtn('btnTA2.btn-default', .2, .2, _ => app.helpmaterials('video'), ['Help Video ', glyph('expand')]),
                     navBtn('btnTA2.btn-default', 2, .2, _ => hopscotch.startTour(mytour2, 0), ['Help Tour ', glyph('road')]),

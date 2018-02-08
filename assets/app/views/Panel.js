@@ -2,10 +2,16 @@ import m from 'mithril';
 
 import * as app from '../app';
 
-export let getClasses = function(cls, panel) {
-    return cls + (panel.closed ? '.closepanel' :
-        (panel.side === 'left' && app.lefttab === 'tab2') ? '.expandpanel' :
-        '');
+export let getClasses = function(cls, panel, is_explore_mode) {
+    if (panel.closed) {
+        cls += '.closepanel';
+    } else if (is_explore_mode && app.righttab === 'btnBivariate') {
+        cls += '.expandpanelfull'; 
+    } else if (app.lefttab === 'tab2') {
+        cls += '.expandpanel';
+    }
+    return cls;
+;
 };
 
 class Panel {
@@ -21,7 +27,7 @@ class Panel {
         let expandwidth = 35;
         let shrinkwidth = 65 / (btns.length - 1);
         return m(
-            getClasses(`#${side}panel.sidepanel.container.clearfix`, this),
+            getClasses(`#${side}panel.sidepanel.container.clearfix`, this, is_explore_mode),
             m(`#toggle${side === 'left' ? 'L' : 'R'}panelicon.panelbar[style=height: 100%]`,
               m('span', {onclick: _ => this.closed = !this.closed}, dot, dot, dot, dot)),
             m(`#${side}paneltitle.panel-heading.text-center`,
