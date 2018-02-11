@@ -119,7 +119,7 @@ function leftpanel() {
     
    //     m("input#input1[name='fname'][type='text']", {style: {"margin-left": "2%"}}),
         m('#tab3[style=height: 350px]',
-          m(`p[style=padding: .5em 1em; display: ${when('left', 'tab3')}]`,
+          m(`p[style=padding: 0.5em 1em; display: ${when('left', 'tab3')}]`,          // padding is respectively above/below, and left of table
             {title: "Select a variable from within the visualization in the center panel to view its summary statistics."},
             m('center',
               m('b', app.summary.name),
@@ -127,7 +127,7 @@ function leftpanel() {
               m('i', app.summary.labl)),
             m('table', app.summary.data.map(
                 tr => m('tr', tr.map(
-                    td => m('td', {onmouseover: setBackgroundColor('aliceblue'), onmouseout: setBackgroundColor('f9f9f9')},
+                    td => m('td[style=height:1em; padding: 0.1em]', {onmouseover: setBackgroundColor('aliceblue'), onmouseout: setBackgroundColor('f9f9f9')},
                             td))))))));
 }
 
