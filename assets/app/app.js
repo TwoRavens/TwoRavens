@@ -3973,7 +3973,7 @@ export async function exportpipeline(pipelineId) {
     let mystatus = res.status;
     if (typeof mystatus !== 'undefined') {
     if(mystatus.code=="FAILED_PRECONDITION") {
-        alert("TA2 has not written the executable.");
+        console.log("TA2 has not written the executable.");    // was alert(), but testing on NIST infrastructure suggests these are getting written but triggering alert.
     }
     else {
         console.log(`Executable for ${pipelineId} has been written`);
