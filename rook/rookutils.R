@@ -96,12 +96,17 @@ buildSetx <- function(setx, varnames) {
     return(call)
 }
 
-buildFormula<-function(dv, linkagelist, varnames=NULL, nomvars, groups=NULL){
+buildFormula<-function(dv, linkagelist, varnames=NULL, nomvars, group1=NULL, group2=NULL){
 
     ## this is the code to resolve the linkagelist with a group, which is defined in pipeline. assumption is that the group is a set of predictors. eventually need more args as concept of "group" takes on different meanings. groups default is null, so buildFormula retains previous behavior when groups is not passed.
-    if(!is.null(groups)) {
-        linkagelist <- rbind(linkagelist,cbind(groups, dv))
+    if(length(group1)>0) {    # default value is NULL, but commonly coming across as empty list "list()".  Both cases have length 0
+            linkagelist <- rbind(linkagelist,cbind(group1, dv))
     }
+
+    if(length(group2)>0) {    # default value is NULL, but commonly coming across as empty list "list()".  Both cases have length 0
+            linkagelist <- rbind(linkagelist,cbind(group2, dv))
+    }
+
     
     if(is.null(varnames)){
     	varnames<-unique(c(dv,linkagelist))

@@ -70,15 +70,15 @@ pipeline.app <- function(env){
     if(!warning){
         mygroup1 <- everything$zgroup1
         mygroup2 <- everything$zgroup2
-        if(is.null(mygroup1) | is.null(mygroup2)){
-            warning <- TRUE
-            result <- list(warning="Problem with groups.")
-        }
+        #if(is.null(mygroup1) | is.null(mygroup2)){
+        #    warning <- TRUE
+        #    result <- list(warning="Problem with groups.")
+        #}
     }
 
 	if(!warning){
         mynoms <- everything$znom
-		myformula <- buildFormula(dv=mydv, linkagelist=myedges, varnames=NULL, nomvars=mynoms, groups=mygroup1) #names(mydata))
+		myformula <- buildFormula(dv=mydv, linkagelist=myedges, varnames=NULL, nomvars=mynoms, group1=mygroup1, group2=mygroup2) 
 		if(is.null(myformula)){
 			warning <- TRUE
 			result<-list(warning="Problem constructing formula expression.")
