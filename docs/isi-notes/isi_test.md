@@ -115,7 +115,7 @@ export JSON_CONFIG_PATH=/ravens_volume/config_196_autoMpg.json
 
 # set the env on docker run
 #
-docker run -ti --rm -v ~/ravens_volume:/ravens_volume -e "JSON_CONFIG_PATH=/ravens_volume/config_196_autoMpg.json" -p 45042:45042 --name gobrown  brown_ta2:nightly
+docker run -ti --rm -v /ravens_volume:/ravens_volume -e "JSON_CONFIG_PATH=/ravens_volume/config_196_autoMpg.json" -p 45042:45042 --name gobrown  brown_ta2:nightly
 ```
 
 ### Run TAMU TA2
@@ -137,7 +137,7 @@ export CONFIG_JSON_PATH=/ravens_volume/config_185_baseball.json
 
 # set the env on docker run
 #
-docker run --rm -v ~/ravens_volume:/ravens_volume -p 45042:45042 --name tamu --entrypoint=ta2_search tamuta2:stable $CONFIG_JSON_PATH
+docker run --rm -v /ravens_volume:/ravens_volume -p 45042:45042 --name tamu --entrypoint=ta2_search tamuta2:stable $CONFIG_JSON_PATH
 ```
 
 ### Run Featurelabs TA2
