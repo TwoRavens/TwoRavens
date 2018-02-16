@@ -56,7 +56,8 @@ export let varColor = '#f0f8ff'; // d3.rgb("aliceblue");
 let taggedColor = '#f5f5f5'; // d3.rgb("whitesmoke");
 export let timeColor = '#2d6ca2';
 
-export let lefttab = 'tab1'; // current tab in left panel
+export let lefttab = 'Variables'; // current tab in left panel
+export let lefttabhidden = 'Variables'; // stores the tab user was in before summary hover
 export let subset = false;
 export let summaryHold = false;
 
@@ -410,8 +411,6 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     }
  //   d3mProblemDescription.outputType = res.expectedOutputs.predictionsFile;
 
-    byId("btnType").click();
-
     // making it case insensitive because the case seems to disagree all too often
     if (failset.includes(d3mProblemDescription.taskType.toUpperCase())) {
         if(IS_D3M_DOMAIN){
@@ -662,7 +661,6 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
     height = $(window).height() - 120; // hard code header, footer, and bottom margin
 
     estimateLadda = Ladda.create(byId("btnEstimate"));
-    selectLadda = Ladda.create(byId("btnSelect"));
     svg = d3.select("#whitespace");
 
     // indicators for showing membership above arcs
@@ -1119,7 +1117,7 @@ function layout(v, v2) {
     }
 
     d3.select("#models").selectAll("p") // models tab
-        //  d3.select("#Display_content")
+    //  d3.select("#Display_content")
         .on("click", function() {
             var myColor = d3.select(this).style('background-color');
             d3.select("#models").selectAll("p")
@@ -1139,74 +1137,70 @@ function layout(v, v2) {
 
     d3.select("#types").selectAll("p") // models tab
     //  d3.select("#Display_content")
-    .on("click", function() {
-        if(locktoggle) return;
-        if(this.className=="item-select") {
-            return;
-        } else {
-            d3.select("#types").select("p.item-select")
-            .attr('class', 'item-default');
-            d3mProblemDescription.taskType = this.innerHTML.toString();
-            d3.select(this).attr('class',"item-select");
-        }
-        restart();
-        setProblemDefinition("taskType", d3mProblemDescription, d3mTaskType);
+        .on("click", function() {
+            if(locktoggle) return;
+            if(this.className=="item-select") {
+                return;
+            } else {
+                d3.select("#types").select("p.item-select")
+                    .attr('class', 'item-default');
+                d3mProblemDescription.taskType = this.innerHTML.toString();
+                d3.select(this).attr('class',"item-select");
+            }
+            restart();
+            setProblemDefinition("taskType", d3mProblemDescription, d3mTaskType);
         });
 
     d3.select("#subtypes").selectAll("p")
-    .on("click", function() {
-        if(locktoggle) return;
-        if(this.className=="item-select") {
-            return;
-        } else {
-            d3.select("#subtypes").select("p.item-select")
-            .attr('class', 'item-default');
-            d3mProblemDescription.taskSubtype = this.innerHTML.toString();
-            d3.select(this).attr('class',"item-select");
-        }
-        restart();
-        setProblemDefinition("taskSubtype", d3mProblemDescription, d3mTaskSubtype);
+        .on("click", function() {
+            if(locktoggle) return;
+            if(this.className=="item-select") {
+                return;
+            } else {
+                d3.select("#subtypes").select("p.item-select")
+                    .attr('class', 'item-default');
+                d3mProblemDescription.taskSubtype = this.innerHTML.toString();
+                d3.select(this).attr('class',"item-select");
+            }
+            restart();
+            setProblemDefinition("taskSubtype", d3mProblemDescription, d3mTaskSubtype);
         });
 
     d3.select("#metrics").selectAll("p")
-    .on("click", function() {
-        if(locktoggle) return;
-        if(this.className=="item-select") {
-            return;
-            // d3mProblemDescription.metric = ["",""];
-            // this.className="item-default";
-        } else {
-            d3.select("#metrics").select("p.item-select")
-            .attr('class', 'item-default');
-            d3mProblemDescription.metric = this.innerHTML.toString();
-            d3.select(this).attr('class',"item-select");
-        }
-        restart();
-        setProblemDefinition("metric", d3mProblemDescription, d3mMetrics);
+        .on("click", function() {
+            if(locktoggle) return;
+            if(this.className=="item-select") {
+                return;
+                // d3mProblemDescription.metric = ["",""];
+                // this.className="item-default";
+            } else {
+                d3.select("#metrics").select("p.item-select")
+                    .attr('class', 'item-default');
+                d3mProblemDescription.metric = this.innerHTML.toString();
+                d3.select(this).attr('class',"item-select");
+            }
+            restart();
+            setProblemDefinition("metric", d3mProblemDescription, d3mMetrics);
         });
 
-  /*  d3.select("#outputs").selectAll("p")
-    .on("click", function() {
-        if(locktoggle) return;
-        if(this.className=="item-select") {
-            return;
-        } else {
-            d3.select("#outputs").select("p.item-select")
-            .attr('class', 'item-default');
-            d3mProblemDescription.outputType = this.innerHTML.toString();
-            d3.select(this).attr('class',"item-select");
-        }
-        restart();
-        setProblemDefinition("outputType", d3mProblemDescription, d3mOutputType);
-        });
-        */
+    /*  d3.select("#outputs").selectAll("p")
+      .on("click", function() {
+          if(locktoggle) return;
+          if(this.className=="item-select") {
+              return;
+          } else {
+              d3.select("#outputs").select("p.item-select")
+              .attr('class', 'item-default');
+              d3mProblemDescription.outputType = this.innerHTML.toString();
+              d3.select(this).attr('class',"item-select");
+          }
+          restart();
+          setProblemDefinition("outputType", d3mProblemDescription, d3mOutputType);
+          });
+          */
 
     // update graph (called when needed)
     restart = function($links) {
-        if (is_results_mode) {
-            return;
-        }
-
         links = $links || links;
         // nodes.id is pegged to allNodes, i.e. the order in which variables are read in
         // nodes.index is floating and depends on updates to nodes.  a variables index changes when new variables are added.
@@ -1235,7 +1229,7 @@ function layout(v, v2) {
             let kind = side === 'left' ? 'start' : 'end';
             return is_explore_mode ? 'url(#circle)' :
                 x[side] ? `url(#${kind}-arrow)` :
-                '';
+                    '';
         };
 
         // update existing links
@@ -1392,7 +1386,7 @@ function layout(v, v2) {
                 restart();
             });
 
-         g.append("path")
+        g.append("path")
             .attr("id", append('gr2indicator'))
             .attr("d", arcInd2)
             .style("fill", gr2Color)  // something like: zparams.zgroup1.indexOf(node.name) > -1  ?  #FFFFFF : gr1Color)
@@ -1525,7 +1519,8 @@ function layout(v, v2) {
         // SVG doesn't support text wrapping, use html instead
         g.selectAll("circle.node")
             .on("mouseover", d => {
-                tabLeft('tab3');
+                lefttabhidden = lefttab;
+                setLeftPanelTab('Summary');
                 varSummary(d);
                 d.forefront = true;
 
@@ -1555,7 +1550,7 @@ function layout(v, v2) {
             })
             .on('mouseout', d => {
                 d.forefront = false;
-                summaryHold || tabLeft(subset ? 'tab2' : 'tab1');
+                summaryHold || setLeftPanelTab(lefttabhidden);
                 'csArc csText timeArc timeText dvArc dvText nomArc nomText grArc grText'.split(' ').map(x => fill(d, x, 0, 100, 500));
                 m.redraw();
             });
@@ -1598,7 +1593,7 @@ function layout(v, v2) {
         force.start();
 
         // save workspaces
-        console.log('ok ws');
+        // console.log('ok ws');
         record_user_metadata();
     }
 
@@ -1656,6 +1651,7 @@ function layout(v, v2) {
     }
 }
 
+
 /** needs doc */
 function find($nodes, name) {
     for (let i in $nodes)
@@ -1663,8 +1659,8 @@ function find($nodes, name) {
 }
 
 /**
-   returns id
-*/
+ returns id
+ */
 export function findNodeIndex(name, whole) {
     for (let node of allNodes)
         if (node.name === name) return whole ? node : node.id;
@@ -1717,8 +1713,8 @@ function updateNode(id) {
 }
 
 /**
-   every time a variable in leftpanel is clicked, nodes updates and background color changes
-*/
+ every time a variable in leftpanel is clicked, nodes updates and background color changes
+ */
 export function clickVar(elem) {
     if (updateNode(elem.target.id)) {
         // panelPlots(); is this necessary?
@@ -1727,30 +1723,30 @@ export function clickVar(elem) {
 }
 
 /**
-  Retrieve the variable list from the preprocess data.
-  This helps handle the new format and (temporarily)
-  the older format in PRODUCTION (rp 8.14.2017)
-  "new" response:
-  {
-  "dataset" : {...}
-  "variables" : {
-  "var1" : {...},
-  (etc)
-  }
-  }
-  "old" response:
-  {
-  "var1" : {...},
-  (etc)
-  }
-*/
+ Retrieve the variable list from the preprocess data.
+ This helps handle the new format and (temporarily)
+ the older format in PRODUCTION (rp 8.14.2017)
+ "new" response:
+ {
+ "dataset" : {...}
+ "variables" : {
+ "var1" : {...},
+ (etc)
+ }
+ }
+ "old" response:
+ {
+ "var1" : {...},
+ (etc)
+ }
+ */
 export function getVariableData(json) {
     return json.hasOwnProperty('variables') ? json.variables : json;
 }
 
 /**
-   called by force button
-*/
+ called by force button
+ */
 export function forceSwitch() {
     forcetoggle = [forcetoggle[0] == 'true' ? 'false' : 'true'];
     if (forcetoggle[0] === "false") {
@@ -1799,10 +1795,10 @@ export function lockDescription() {
         for (i = 0; i < temp.length; i++) {
             temp[i].classList.add("item-lineout");
         }
-    /*    temp = byId('outputs').querySelectorAll("p.item-default");
-        for (i = 0; i < temp.length; i++) {
-            temp[i].classList.add("item-lineout");
-        }  */
+        /*    temp = byId('outputs').querySelectorAll("p.item-default");
+            for (i = 0; i < temp.length; i++) {
+                temp[i].classList.add("item-lineout");
+            }  */
         fakeClick();
     }
 }
@@ -1872,14 +1868,14 @@ function tabulate(data, columns, divid) {
                 d3.select(divid).select("tr.item-select")
                     .attr('class', 'item-default');
                 d3.select(myrow).attr('class',"item-select");
-                document.getElementById("tab2input").value=disco[(myrow.rowIndex)-1].description;
+                document.getElementById("discoveryInput").value=disco[(myrow.rowIndex)-1].description;
                 if(divid=='#setxRight') {
                     resultsplotinit(myrow.firstChild.innerText);
                 }
             }});
 
     // this is code to add a checkbox to each row of the table
-    if(divid=='#tab2') {
+    if(divid=='#discoveryTable') {
       d3.select(divid).selectAll("tr")
       .append("input")
         .attr("type", "checkbox")
@@ -2492,7 +2488,6 @@ export async function makeRequest(url, data) {
     if (!IS_D3M_DOMAIN){
         estimateLadda.stop();    // estimateLadda is being stopped in onPipelineCreate in D3M
     };
-    selectLadda.stop();
     return res;
 }
 
@@ -2506,8 +2501,7 @@ export function legend() {
    programmatically deselect every selected variable
 */
 export function erase() {
-    ['#leftpanel', '#rightpanel'].forEach(id => d3.select(id).attr('class', 'sidepanel container clearfix'));
-    tabLeft('tab1');
+    setLeftPanelTab('Variables');
     $("#varList").children().each(function() {
         if (zparams.zdv.concat(zparams.znom, zparams.zvars).includes(this.id))
             clickVar({target: this});
@@ -2515,18 +2509,19 @@ export function erase() {
 }
 
 /** needs doc */
-export function tabLeft(tab) {
-    byId('tab1').style.display = 'none';
-    byId('tab2').style.display = 'none';
-    byId('tab3').style.display = 'none';
-    byId(tab).style.display = 'block';
-    if (tab != 'tab3') {
-        subset = tab == 'tab2';
-        summaryHold = false;
-    }
+export let setLeftPanelTab = (tab) => {
     lefttab = tab;
-}
 
+    if (tab === "Discovery"){
+        probtable.length = 0;
+        for(let i = 0; i < disco.length; i++) {
+            let mypredictors = disco[i].predictors.join();
+            probtable.push([disco[i].target, mypredictors, disco[i].task, disco[i].metric]);
+        }
+
+        document.getElementById("discoveryInput").value=disco[0].description;
+    }
+};
 
 /** needs doc */
 export function tabRight(tab) {
@@ -2573,15 +2568,15 @@ function varSummary(d) {
     summary.name = d.name;
     summary.labl = d.labl;
 
-    d3.select('#tab3')
+    d3.select('#tabSummary')
         .selectAll('svg')
         .remove();
 
     if (!d.plottype)
         return;
-    d.plottype == 'continuous' ? density(d, 'varSummary', priv) :
-        d.plottype == "bar" ? bars(d, 'varSummary', priv) :
-        d3.select("#tab3") // no graph to draw, but still need to remove previous graph
+    d.plottype == 'continuous' ? density(d, 'Summary', priv) :
+        d.plottype == "bar" ? bars(d, 'Summary', priv) :
+        d3.select("#tabSummary") // no graph to draw, but still need to remove previous graph
         .selectAll("svg")
         .remove();
 }
@@ -2631,7 +2626,6 @@ export function panelPlots() {
 
     //remove all plots, could be smarter here
     d3.select('#setxLeft').selectAll('svg').remove();
-    d3.select('#tab2').selectAll('svg').remove();
     for (var i = 0; i < vars.length; i++) {
         if(allNodes[ids[i]].valid==0) // this was a silent error... very frustrating...
             continue;
@@ -2642,7 +2636,7 @@ export function panelPlots() {
             node.setxplot = true;
             density(node, div = "setxLeft", priv);
             node.subsetplot = true;
-            density(node, div = "subset", priv);
+            density(node, div = "Summary", priv);
         } else if (node.plottype === "bar" & node.setxplot == false) {
             node.setxplot = true;
             bars(node, div = "setxLeft", priv);
@@ -2653,25 +2647,25 @@ export function panelPlots() {
 
         d3.select("#setxLeft").selectAll("svg")
         .each(function () {
-              d3.select(this);
-              var regstr = /(.+)_setxLeft_(\d+)/;
-              var myname = regstr.exec(this.id);
-              var nodeid = myname[2];
-              myname = myname[1];
-              if (!vars.includes(myname)) {
-              allNodes[nodeid].setxplot = false;
-              let temp = "#".concat(myname, "_setxLeft_", nodeid);
-              d3.select(temp)
-              .remove();
-              allNodes[nodeid].subsetplot = false;
-              temp = "#".concat(myname, "_tab2_", nodeid);
-              d3.select(temp)
-              .remove();
-              }
-              });
+            d3.select(this);
+            var regstr = /(.+)_setxLeft_(\d+)/;
+            var myname = regstr.exec(this.id);
+            var nodeid = myname[2];
+            myname = myname[1];
+            if (!vars.includes(myname)) {
+                allNodes[nodeid].setxplot = false;
+                let temp = "#".concat(myname, "_setxLeft_", nodeid);
+                d3.select(temp)
+                    .remove();
+                allNodes[nodeid].subsetplot = false;
+                temp = "#".concat(myname, "_tab2_", nodeid);
+                d3.select(temp)
+                    .remove();
+            }
+        });
 
-              // just removing all the subset plots here, because using this button for problem discover
-              d3.select('#tab2').selectAll('svg').remove();
+    // just removing all the subset plots here, because using this button for problem discover
+    d3.select('#tabDiscovery').selectAll('svg').remove();
 }
 
 /**
@@ -2838,7 +2832,6 @@ export function subsetSelect(btn) {
         });
     }
 
-    selectLadda.start(); // start button motion
     let json = makeRequest(
         ROOK_SVC_URL + 'subsetSelect',
         {zdataurl: zparams.zdataurl,
@@ -2848,7 +2841,6 @@ export function subsetSelect(btn) {
          zplot: zparams.zplot,
          callHistory: callHistory,
          typeStuff: outtypes});
-    selectLadda.stop();
     if (!json) {
         return;
     }
@@ -4150,38 +4142,9 @@ export let setCheckedProblem = (problem) => {
     else checkedProblems.add(problem);
 }
 
-export function probDiscView(btn) {
-    tabLeft(btn);
-
-    if(btn=='tab1') {
-        document.getElementById("leftpanel").classList.remove("expandpanelfull");
-        document.getElementById("btnSelect").style.display="none";
-        document.getElementById("tab2a").style.display="none";
-        return;
-    }
-    document.getElementById("leftpanel").classList.toggle("expandpanelfull");
-    if(document.getElementById("btnSelect").style.display=="none"){
-        document.getElementById("btnSelect").style.display="block";
-    }
-
-    if(document.getElementById("leftpanel").classList.contains("expandpanelfull")) {
-        document.getElementById("tab2a").style.display="block";
-    }
-
-    // if(document.getElementById("tab2").hasChildNodes()) return; // return if this has already been clicked, if childNodes have already been added
-
-    probtable.length = 0;
-    for(let i = 0; i < disco.length; i++) {
-        let mypredictors = disco[i].predictors.join();
-        probtable.push([disco[i].target, mypredictors, disco[i].task, disco[i].metric]);
-    }
-
-    document.getElementById("tab2input").value=disco[0].description;
-}
-
 export async function submitDiscProb(btn) {
 
-    let table = document.getElementById("tab2").getElementsByTagName('table')[0];
+    let table = document.getElementById("discoveryTable");
     console.log(table);
     let checked = [];
 
@@ -4203,10 +4166,10 @@ export async function submitDiscProb(btn) {
     }
 
     // change status of buttons for estimating problem and marking problem as finished
-    $("#btnSelect").removeClass("btn-success");
-    $("#btnSelect").addClass("btn-default");
-    $("#btnSubset").removeClass("btn-success");
-    $("#btnSubset").addClass("btn-default");
+    $("#btnDiscovery").removeClass("btn-success");
+    $("#btnDiscovery").addClass("btn-default");
+    $("#btnSubmitDisc").removeClass("btn-success");
+    $("#btnSubmitDisc").addClass("btn-default");
     task1_finished = true;
     if(!(task2_finished)){
         $("#btnEstimate").removeClass("btn-default");
@@ -4216,8 +4179,8 @@ export async function submitDiscProb(btn) {
 }
 
 export function saveDisc(btn) {
-    let table = document.getElementById("tab2").getElementsByTagName('table')[0];
-    let newtext = document.getElementById("tab2input").value;
+    let table = document.getElementById("discoveryTable");
+    let newtext = document.getElementById("discoveryInput").value;
     for (let i = 1, row; row = table.rows[i]; i++) { //skipping the header
         if(row.className=='item-select'){
             disco[i-1].description=newtext;

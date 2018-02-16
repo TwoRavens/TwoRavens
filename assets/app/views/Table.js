@@ -1,6 +1,6 @@
 import m from 'mithril'
 
-import {varColor, selVarColor} from "../../Common/app/common";
+import {varColor, selVarColor} from "../../common/app/common";
 
 // Interface specification
 //

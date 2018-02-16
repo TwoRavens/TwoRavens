@@ -3,9 +3,9 @@ export let selVarColor = '#fa8072'; // d3.rgb("salmon");
 
 // function to use d3 to graph density plots with preprocessed data
 export function density(node, div, priv) {
-    div = {subset: '#tab2', setxLeft: '#setxLeft', setxLeftTopRight: '#setxLeftTopRight', varSummary: '#tab3'}[div];
-    if (!div)
-        return alert("Error: incorrect div selected for plots");
+    div = {setxLeft: '#setxLeft', setxLeftTopRight: '#setxLeftTopRight', Summary: '#tabSummary'}[div];
+
+    if (!div) return alert("Error: incorrect div selected for plots: " + div);
 
     let [xVals, yVals] = [node.plotx, node.ploty];
     if (priv && node.plotCI) {
@@ -28,13 +28,11 @@ export function density(node, div, priv) {
         left: 10
     };
 
-    // Need to fix automatic width and height settings for leftpanel (#tab2, #tab3)
-    if (div == "#tab3") {
-        width = 0.7 * (width - margin.left - margin.right),
-        height = 0.3 * (height - margin.top - margin.bottom);
-    } else if (div == "#tab2") {
-        width = 200;
-        height = 120;
+    // Need to fix automatic width and height settings for leftpanel (#tabSubset, #tabSummary)
+    if (div == "#tabSummary") {
+        [width, height] = [242, 250];
+        // width = 0.7 * (width - margin.left - margin.right),
+        // height = 0.3 * (height - margin.top - margin.bottom);
     } else if (div == "#setxLeft" || div == "#setxLeftTopRight") {
         width=tw*.185-margin.left-margin.right; //rightpanel.expand is 40 percent, setxLeft to 50 percent, toggle bar is 16px, padding, it's all about .185
         height=width*.6; //height to width is .6
@@ -76,9 +74,9 @@ export function density(node, div, priv) {
         .y(d => y(d.y))
         .interpolate("monotone");
 
-    // cumbersome to treat "tab3" differently, but works for now
-    // tab3, has an issue, that unless width height hardcoded, they grow with each additional graph.
-    if (div == "#tab3") {
+    // cumbersome to treat "tabSummary" differently, but works for now
+    // tabSummary, has an issue, that unless width height hardcoded, they grow with each additional graph.
+    if (div == "#tabSummary") {
         var plotsvg = d3.select(div)
             .selectAll("svg")
             .remove();
@@ -130,7 +128,8 @@ export function density(node, div, priv) {
         .text(node.name);
 
     // add brush if subset
-    if (div == "#tab2") {
+    // this tab doesn't exist anymore - Shoeboxam
+    if (div == "#tabSubset") {
         plotsvg.append("text")
             .attr("id", "range")
             .attr("x", 25)
@@ -238,7 +237,7 @@ export function density(node, div, priv) {
 
     // brushing functions
     function brushed() {
-        if (div == "#tab2") {
+        if (div == "#tabSummary") {
             plotsvg.select("text#range")
                 .text(() => brush.empty() ?
                     "Range: ".concat(d3.min(xVals).toPrecision(4), " to ", d3.max(xVals).toPrecision(4)) :
@@ -392,7 +391,7 @@ export function bars(node, div, priv) {
 
     let mydiv;
     if (div == "setxLeft") mydiv = "#setxLeft";
-    else if (div == "varSummary") mydiv = "#tab3";
+    else if (div == "Summary") mydiv = "#tabSummary";
     else if (div == "setxLeftTopRight") mydiv = "#setxLeftTopRight";
     else
         return alert("Error: incorrect div selected for plots");
@@ -410,10 +409,11 @@ export function bars(node, div, priv) {
     };
     let tw = document.getElementById('main').offsetWidth;
 
-    // Need to fix automatic width and height settings for leftpanel (#tab2, #tab3)
-    if (mydiv == "#tab3") {
-        width = 0.7 * (width - margin.left - margin.right);
-        height = 0.3 * (height - margin.top - margin.bottom);
+    // Need to fix automatic width and height settings for leftpanel (#tabSubset, #tabSummary)
+    if (mydiv == "#tabSummary") {
+        [width, height] = [242, 250];
+        // width = 0.7 * (width - margin.left - margin.right);
+        // height = 0.3 * (height - margin.top - margin.bottom);
     } else if (mydiv == "#setxLeft" || mydiv=="#setxLeftTopRight") {
         //width = 200;
         //height = 120;
@@ -465,9 +465,9 @@ export function bars(node, div, priv) {
         .on("brush", brushed2);
 
     // Create SVG element
-    // cumbersome to treat "tab3" differently, but works for now
-    // tab3, has an issue, that unless width height hardcoded, they grow with each additional graph.
-    if (mydiv == "#tab3") {
+    // cumbersome to treat "tabSummary" differently, but works for now
+    // tabSummary, has an issue, that unless width height hardcoded, they grow with each additional graph.
+    if (mydiv == "#tabSummary") {
         var plotsvg = d3.select(mydiv)
             .selectAll("svg")
             .remove();
@@ -939,7 +939,7 @@ export function barsSubset(node) {
     // y0 is the starting point
     // y1 is the length of the bar
 
-    var mydiv = "#tab2";
+    var mydiv = "#tabSubset";
     var width = 200;
     var height = 120;
     var margin = {

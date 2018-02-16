@@ -21,21 +21,22 @@ export default class Dropdown {
     view(vnode) {
         let {id, items, onclickChild, dropWidth} = vnode.attrs;
 
-        return m('div.dropdown', [
-            m('button.btn.btn-default.dropdown-toggle', mergeAttributes(vnode.attrs, {
-                'data-toggle': 'dropdown'
-            }), [this.activeItem, m('b.caret', {style: {'margin-left': '5px'}})]),
+        return m('.dropdown[style=display: block]', [
+            m('button.btn.btn-default.dropdown-toggle',
+                Object.assign(vnode.attrs, {'data-toggle': 'dropdown'}), [
+                    this.activeItem,
+                    m('b.caret', {style: {'margin-left': '5px'}})]),
 
             m('ul.dropdown-menu', {'aria-labelledby': id, style: {width: dropWidth, 'min-width': 0}},
                 items.map((item) => m('li.dropdown-item', {
                     value: item,
                     onclick: () => {
                         this.activeItem = item;
-                        onclickChild(item)
+                        onclickChild(item);
                     },
-                    style: {'padding-left': '10px', 'z-index': 1000}
+                    style: {'padding-left': '10px'}
                 }, item))
             )
-        ])
+        ]);
     }
 }

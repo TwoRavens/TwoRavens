@@ -12,12 +12,15 @@ import * as exp from './explore';
 import * as layout from './layout';
 import * as results from './results';
 import * as plots from './plots';
-import Panel from './views/Panel';
+import Panel2 from './views/Panel';
 import Button, {when} from './views/PanelButton';
 import List from './views/PanelList';
 import Search from './views/Search';
 import Subpanel from './views/Subpanel';
 import Table from './views/Table'
+
+import Panel from '../common/app/views/Panel';
+import MenuTabbed from '../common/app/views/MenuTabbed'
 
 let state = {
     pipelines: [],
@@ -100,53 +103,62 @@ function leftpanel(mode) {
     if (mode === 'results') {
         return results.leftpanel(Object.keys(app.allPipelineInfo));
     }
-    return m(
-        Panel,
-        {side: 'left',
-         title: 'Data Selection',
-         buttons: [
-             m(Button,
-               {id: 'btnVariables',
-                id2: 'tab1',
-                title: 'Click variable name to add or remove the variable pebble from the modeling space.'},
-               'Variables'),
-             m(Button, {id: 'btnSubset', id2: 'tab2', classes: 'btn-success'}, 'Prob. Disc.'), //onclick: _ => app.probDiscView('btnSubset')
-             m(Button,
-               {id: 'btnSelect',
-                classes: 'btn-success.ladda-button[data-spinner-color=#000000][data-style=zoom-in]',
-                onclick: _ => app.submitDiscProb('btnSelect'),
-                style: `display: ${app.subset ? 'none' : 'none'}; float: right; margin-right: 10px`,
-                title: 'Submit all checked discovered problems.'},
-               m('span.ladda-label[style=pointer-events: none]', 'Submit Disc. Probs.'))]},
-        m(`#tab1[style=display: ${when('left', 'tab1')}; padding: 0 8px; text-align: center]`,
-          m(Search, {placeholder: 'Search variables and labels'}),
-          m(List, {items: app.valueKey, title: 'Summary Statistics'})),
-        m(`#tab2[style=display: ${when('left', 'tab2')}; height:75%; overflow: auto; margin-top: .5em]`,
-            m(Table, {
-                id: 'discoveryTable',
-                headers: ['Target', 'Predictors', 'Task', 'Metric'],
-                data: app.probtable,
-                activeRow: app.selectedProblem,
-                onclickRow: app.setSelectedProblem,
-                checkboxes: app.checkedProblems,
-                onclickCheckbox: app.setCheckedProblem
-            })),
-        m('#tab2a[style=display:none; float: left; width: 100%; height:25%; overflow: auto;]',
-            m('textarea#tab2input[style=display:block; float: left; width: 75%; height:100%; overflow: auto; background-color: white]'),
-            m(Button, {id: 'btnSave', onclick:_=>app.saveDisc('btnSave'),title: 'Saves your revised problem description.'}, 'Save Desc.')),
-    
-   //     m("input#input1[name='fname'][type='text']", {style: {"margin-left": "2%"}}),
-        m('#tab3[style=height: 350px]',
-          m(`p[style=padding: 0.5em 1em; display: ${when('left', 'tab3')}]`,          // padding is respectively above/below, and left of table
-            {title: "Select a variable from within the visualization in the center panel to view its summary statistics."},
-            m('center',
-              m('b', app.summary.name),
-              m('br'),
-              m('i', app.summary.labl)),
-            m('table', app.summary.data.map(
-                tr => m('tr', tr.map(
-                    td => m('td[style=height:1em; padding: 0.1em]', {onmouseover: setBackgroundColor('aliceblue'), onmouseout: setBackgroundColor('f9f9f9')},
-                            td))))))));
+
+    return m(Panel, {
+        side: 'left',
+        label: 'Data Selection',
+        hover: true,
+        width: {'Variables': 300, 'Discovery': 600, 'Summary': 300}[app.lefttab],
+        contents: m(MenuTabbed, {
+            id: 'leftpanelMenu',
+            attrsAll: {style: {height: 'calc(100% - 78px)'}},
+            currentTab: app.lefttab,
+            callback: app.setLeftPanelTab,
+            sections: [
+                {
+                    value: 'Variables',
+                    title: 'Click variable name to add or remove the variable pebble from the modeling space.',
+                    contents: [
+                        m(Search, {placeholder: 'Search variables and labels'}),
+                        m(List, {items: app.valueKey, title: 'Summary Statistics'})
+                    ],
+                },
+                {
+                    value: 'Discovery',
+                    contents: [
+                        m('#discoveryTable', {style: {height: '80%', overflow: 'auto'}}),
+                        m(Table, {
+                            id: 'discoveryTable',
+                            headers: ['Target', 'Predictors', 'Task', 'Metric'],
+                            data: app.probtable,
+                            activeRow: app.selectedProblem,
+                            onclickRow: app.setSelectedProblem,
+                            checkboxes: app.checkedProblems,
+                            onclickCheckbox: app.setCheckedProblem
+                        }),
+                        m(Button, {id: 'btnSave', onclick:_=>app.saveDisc('btnSave'),title: 'Saves your revised problem description.'}, 'Save Desc.'),
+                        m(Button, {id: 'btnSubmitDisc', onclick:_=>app.submitDiscProb('btnSubmitDisc'),title: 'Submit all checked discovered problems.'}, 'Submit Disc. Probs.')
+                    ]
+                },
+                {
+                    value: 'Summary',
+                    title: 'Select a variable from within the visualization in the center panel to view its summary statistics.',
+                    contents: [
+                        m('center',
+                            m('b', app.summary.name),
+                            m('br'),
+                            m('i', app.summary.labl)),
+                        m('table', app.summary.data.map(tr => m('tr', tr.map(
+                            td => m('td', {
+                                    onmouseover: setBackgroundColor('aliceblue'),
+                                    onmouseout: setBackgroundColor('f9f9f9')
+                                },
+                                td)))))
+                    ],
+                    display: 'none'
+                }]
+        })
+    });
 }
 
 let righttab = (id, btnId, task, title, probDesc) => m(
@@ -178,7 +190,7 @@ function rightpanel(mode) {
     };
     let bivariate = app.righttab === 'btnBivariate' ? 'block' : 'none';
     return mode ?
-        m(Panel,
+        m(Panel2,
           {side: 'right',
            title: 'Result Exploration',
            is_explore_mode: true,
@@ -242,7 +254,7 @@ function rightpanel(mode) {
               unique_link_names().map(x => m(`p#${x.replace(/\W/g, '_')}`, {onclick: _=> exp.callTreeApp(x, app), style: {'background-color': app.varColor}}, x)))),
           m('#setx[style=display: none; margin-top: .5em]')) :
     // mode == null (model mode)
-    m(Panel,
+    m(Panel2,
       {side: 'right',
        title: 'Model Selection',
        buttons: (!app.IS_D3M_DOMAIN ? [] : [
