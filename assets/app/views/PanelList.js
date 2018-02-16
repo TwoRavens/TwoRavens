@@ -38,7 +38,7 @@ class PanelList {
                           'data-container': 'body',
                           'data-content': content ? content(v) : app.popoverContent(app.findNodeIndex(v, true)),
                           'data-html': 'true',
-                          'data-original-title': title,
+                          'data-original-title': title + ' for <b>' + v,
                           'data-placement': probDesc ? 'top' : 'right',
                           'data-toggle': 'popover',
                           'data-trigger': 'hover'},

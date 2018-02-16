@@ -2598,10 +2598,10 @@ function varSummary(d) {
 export let popoverContent = d => {
     if(swandive)
         return;
-    let text = '';
+    let text = '<table class="table table-sm table-striped"><tbody>';
     let [rint, prec] = [d3.format('r'), (val, int) => (+val).toPrecision(int).toString()];
     let div = (field, name, val) => {
-        if (field != 'NA') text += `<div class='form-group'><label class='col-sm-4 control-label'>${name}</label><div class='col-sm-6'><p class='form-control-static'>${val || field}</p></div></div>`;
+        if (field != 'NA') text += `<tr><th>${name}</th><td><p class="text-left" style="height:10px;">${val || field}</p></td></tr>`
     };
     d.labl != '' && div(d.labl, 'Label');
     div(d.mean, 'Mean', priv && d.meanCI ?
@@ -2621,7 +2621,7 @@ export let popoverContent = d => {
     div(d.valid, 'Valid', rint(d.valid));
     div(d.uniques, 'Uniques', rint(d.uniques));
     div(d.herfindahl, 'Herfindahl', prec(d.herfindahl, 4));
-    return text;
+    return text + '</tbody></table>';
 }
 
 /** needs doc */
