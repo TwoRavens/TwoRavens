@@ -1,6 +1,7 @@
 import hopscotch from 'hopscotch';
 import m from 'mithril';
 import {bars, barsNode, barsSubset, density, densityNode, selVarColor} from './plots.js';
+import {heightHeader} from "../common/app/common";
 
 // hostname default - the app will use it to obtain the variable metadata
 // (ddi) and pre-processed data info if the file id is supplied as an
@@ -1628,6 +1629,7 @@ function layout(v, v2) {
     // app starts here
     svg.attr('id', () => "whitespace".concat(myspace))
         .attr('height', height)
+        .attr('width', width)
         .on('mousedown', function() {mousedown(this);})
         .on('mouseup', function() {mouseup(this);});
 
@@ -1651,6 +1653,18 @@ function layout(v, v2) {
     }
 }
 
+window.onresize = () => {
+    let carousel = document.getElementById('innercarousel');
+    let container = document.getElementById('m0');
+    let whitespace = document.getElementById('whitespace0');
+
+    let marginTop = (carousel.offsetHeight - whitespace.getAttribute("height") - 16) / 2;
+    let marginLeft = (carousel.offsetWidth - whitespace.getAttribute("width")) / 2;
+
+    container.style.marginTop = marginTop + 'px';
+    container.style.marginLeft = marginLeft + 'px';
+    container.style.height = `calc(100% + ${Math.abs(marginTop)}px)`;
+};
 
 /** needs doc */
 function find($nodes, name) {
