@@ -109,12 +109,12 @@ function leftpanel(mode) {
         side: 'left',
         label: 'Data Selection',
         hover: true,
-        width: {'Variables': 300, 'Discovery': 600, 'Summary': 300}[app.lefttab],
+        width: {'Variables': 300, 'Discovery': 600, 'Summary': 300}[app.leftTab],
         contents: m(MenuTabbed, {
             id: 'leftpanelMenu',
             attrsAll: {style: {height: 'calc(100% - 78px)'}},
-            currentTab: app.lefttab,
-            callback: app.setLeftPanelTab,
+            currentTab: app.leftTab,
+            callback: app.setLeftTab,
             sections: [
                 {
                     value: 'Variables',
@@ -189,73 +189,82 @@ function rightpanel(mode) {
         }
         return names;
     };
-    let bivariate = app.righttab === 'btnBivariate' ? 'block' : 'none';
-    return mode ?
-        m(Panel2,
-          {side: 'right',
-           title: 'Result Exploration',
-           is_explore_mode: true,
-           univariate_finished: app.univariate_finished,
-           buttons: [
-               m(Button, {id: 'btnUnivariate'}, 'Univariate'),
-               m(Button, {id: 'btnBivariate'}, 'Bivariate')]},
-          m('#modelView_Container', {style: `display: ${bivariate}; width: 100%; height: auto; background-color: white; float: left; overflow-x: auto; overflow-y: auto; white-space: nowrap;`},
-            m('#modelView', {style: 'width: 100%; height: auto; background-color: white; float: left; overflow: auto; margin-top: 2px;'})),
-          m('#decisionTree[style=width: 100%; height: auto ; background-color: white ;  overflow : scroll; float: left; white-space: nowrap; margin-top: 2px;]'),
-          m('#result_left',
-            {style: {display: bivariate, "width": "50%", "height": "90%", "float": "left", "background-color": "white", "border-right": "ridge", "border-bottom": "ridge", "overflow": "auto", "white-space": "nowrap"}},
-            m('#left_thumbnail',
-              {style: {"width": "100%", "height": "20%", "background-color": "white", "margin-top": "3%", "margin-right": "3%", "border-bottom": "ridge", "overflow": "auto", "white-space": "nowrap"}},
-              m("table",
-                m("tbody",
-                  m("tr", thumb(1, 'scatterplot', "Scatter Plot"), thumb(2, 'heatmap', "Heatmap"), thumb(3, 'linechart', "Linechart"))))),
-            m('#result_left1', {style: {width: "100%", height: "320px", "text-align": "center", "margin-top": "3%", "background-color": "white", "white-space": "nowrap"}},
-              m(".container3[id=scatterplot]", {style: {"width": "500px", "height": "80%", "background-color": "white", "float": "left", "overflow": "hidden", "margin": "5% 5% 0 5%"}}),
-              m(".container4[id=heatchart]", {style: {"width": "500px", "height": "80%", "float": "left", "overflow": "hidden", "background-color": "#FFEBEE", "margin": "5%  "}}),
-              m(".container4[id=linechart]", {style: {"width": "500px", "height": "80%", "background-color": "white", "float": "left", "overflow": "hidden", "margin": "5% "}})),
-            m("div", {style: {"border-bottom": "ridge", "display": "inline-block", "width": "100%", "margin-bottom": "2%", "text-align": "center"}},
-              m("h5#NAcount", {style: {" margin-bottom": "0"}})),
-            m(".container2[id='resultsView_statistics']",
-              {style: {"width": "100%", "height": "15%", "background-color": "white", "float": "left", "white-space": "nowrap", "margin-bottom": "3%", "border-bottom": "ridge"}})),
-          m('#result_right',
-            {style: {display: bivariate, width: "50%", height: "90%", float: "right", "background-color": "white", "border-right": "groove", "white-space": "nowrap"}},
-            m('#resultsView_tabular.container1',
-              {style: {width: "100%", height: "100%", "background-color": "white", float: "left", overflow: "auto", "white-space": "nowrap", "border-right": "groove", "border-bottom": "groove"}},
-              m('#SelectionData', {style: {width: "100%", height: "50%", overflow: "auto", "margin-top": "10px", "border-bottom-style": "inset"}},
-                m("fieldset", {style: {margin: "3%"}},
-                  m("h4", {style: {"text-align": "center"}}, "Data Distribution Selection"),
-                  m("p", {style: {"font-family": "Arial, Helvetica, sans-serif", "font-size": "12px"}},
-                    "Enter number for each variable to specify the break points"),
-                  m('p#boldstuff', {style: {color: "#2a6496", "font-family": "Arial, Helvetica, sans-serif", "font-size": "12px"}},
-                    "Select between Equidistant and Equimass")),
-                m('#forPlotA', {style: {display: 'block', "margin": "2%"}},
-                  m("input#input1[name='fname'][type='text']", {style: {"margin-left": "2%"}}),
-                  m('span#tooltipPlotA.tooltiptext[style=visibility: hidden]'),
-                  m("button.btn.btn-default.btn-xs#Equidistance1[type='button']", {style: {float: "left", "margin-left": "2%"}},
-                    "EQUIDISTANCE"),
-                  m("button.btn.btn-default.btn-xs#Equimass1[type='button']", {style: {float: "left", "margin-left": "2%"}},
-                    "EQUIMASS")),
-                m('#forPlotB', {style: {display: "block", margin: "2%"}},
-                  m("input#input2[name='fname1'][type='text']", {style: {"margin-left": "2%"}}),
-                  m('span#tooltipPlotB.tooltiptext1[style=visibility: hidden]'),
-                  m("button.btn.btn-default.btn-xs#Equidistance2[type='button']", {style: {float: "left", "margin-left": "2%"}}, "EQUIDISTANCE"),
-                  m("button.btn.btn-default.btn-xs#Equimass2[type='button']", {style: {float: "left", "margin-left": "2%"}}, "EQUIMASS")),
-                m("#plotA_status[style=margin-top: 1%; margin-left: 2%]"),
-                m("#plotB_status[style=margin-top: 1%; margin-left: 2%]"),
-                m('h5[style=color: #ac2925; margin-top: 1%; margin-left: 2%]', 'Selection History'),
-                m('#breakspace[style=display: inline-block; overflow: auto; width: 100%]'),
-                m("button.btn.btn-default.btn-sm[id='SelectionData1'][type='button']", {style: {display: "block", margin: "0 auto", position: "relative"}},
-                  "Create")),
-              m('#tabular_1', {style: {width: "100%", height: "200px", "border-bottom-style": "inset"}},
-                m('#plotA', {style: {width: exp.get_width('plotA') + '%', height: "100%", float: "left", overflow: "hidden"}}, "plotA"),
-                m('#plotB', {style: {width: exp.get_width('plotB') + '%', height: "100%", float: "right", overflow: "hidden"}}, "plotB")),
-              m('#tabular_2', {style: {width: "100%", height: "50%", "border-bottom-style": "inset", overflow: "hidden"}}))),
-          m("p#resultsHolder", {style: {display: app.righttab === 'btnUnivariate' ? 'block' : 'none', padding: ".5em 1em"}},
-            m('#varList[style=display: block]',
-              unique_link_names().map(x => m(`p#${x.replace(/\W/g, '_')}`, {onclick: _=> exp.callTreeApp(x, app), style: {'background-color': app.varColor}}, x)))),
-          m('#setx[style=display: none; margin-top: .5em]')) :
-    // mode == null (model mode)
-    m(Panel2,
+
+    if (mode) {
+        let bivariate = app.rightTab === 'Bivariate' ? 'block' : 'none';
+        return m(Panel, {
+            side: 'right',
+            label: 'Result Exploration',
+            hover: true,
+            width: {'Univariate': 600, 'Bivariate': 600}[app.rightTabExplore],
+            contents: [
+                m(ButtonRadio, {
+                    id: 'exploreButtonBar',
+                    onclick: app.setRightTabExplore,
+                    activeSection: app.rightTabExplore,
+                    sections: [{value: 'Univariate'}, {value: 'Bivariate'}]
+                }),
+                m('#modelView_Container', {style: `display: ${bivariate}; width: 100%; height: auto; background-color: white; float: left; overflow-x: auto; overflow-y: auto; white-space: nowrap;`},
+                    m('#modelView', {style: 'width: 100%; height: auto; background-color: white; float: left; overflow: auto; margin-top: 2px;'})),
+                m('#decisionTree[style=width: 100%; height: auto ; background-color: white ;  overflow : scroll; float: left; white-space: nowrap; margin-top: 2px;]'),
+                m('#result_left',
+                    {style: {display: bivariate, "width": "50%", "height": "90%", "float": "left", "background-color": "white", "border-right": "ridge", "border-bottom": "ridge", "overflow": "auto", "white-space": "nowrap"}},
+                    m('#left_thumbnail',
+                        {style: {"width": "100%", "height": "20%", "background-color": "white", "margin-top": "3%", "margin-right": "3%", "border-bottom": "ridge", "overflow": "auto", "white-space": "nowrap"}},
+                        m("table",
+                            m("tbody",
+                                m("tr", thumb(1, 'scatterplot', "Scatter Plot"), thumb(2, 'heatmap', "Heatmap"), thumb(3, 'linechart', "Linechart"))))),
+                    m('#result_left1', {style: {width: "100%", height: "320px", "text-align": "center", "margin-top": "3%", "background-color": "white", "white-space": "nowrap"}},
+                        m(".container3[id=scatterplot]", {style: {"width": "500px", "height": "80%", "background-color": "white", "float": "left", "overflow": "hidden", "margin": "5% 5% 0 5%"}}),
+                        m(".container4[id=heatchart]", {style: {"width": "500px", "height": "80%", "float": "left", "overflow": "hidden", "background-color": "#FFEBEE", "margin": "5%  "}}),
+                        m(".container4[id=linechart]", {style: {"width": "500px", "height": "80%", "background-color": "white", "float": "left", "overflow": "hidden", "margin": "5% "}})),
+                    m("div", {style: {"border-bottom": "ridge", "display": "inline-block", "width": "100%", "margin-bottom": "2%", "text-align": "center"}},
+                        m("h5#NAcount", {style: {" margin-bottom": "0"}})),
+                    m(".container2[id='resultsView_statistics']",
+                        {style: {"width": "100%", "height": "15%", "background-color": "white", "float": "left", "white-space": "nowrap", "margin-bottom": "3%", "border-bottom": "ridge"}})),
+                m('#result_right',
+                    {style: {display: bivariate, width: "50%", height: "90%", float: "right", "background-color": "white", "border-right": "groove", "white-space": "nowrap"}},
+                    m('#resultsView_tabular.container1',
+                        {style: {width: "100%", height: "100%", "background-color": "white", float: "left", overflow: "auto", "white-space": "nowrap", "border-right": "groove", "border-bottom": "groove"}},
+                        m('#SelectionData', {style: {width: "100%", height: "50%", overflow: "auto", "margin-top": "10px", "border-bottom-style": "inset"}},
+                            m("fieldset", {style: {margin: "3%"}},
+                                m("h4", {style: {"text-align": "center"}}, "Data Distribution Selection"),
+                                m("p", {style: {"font-family": "Arial, Helvetica, sans-serif", "font-size": "12px"}},
+                                    "Enter number for each variable to specify the break points"),
+                                m('p#boldstuff', {style: {color: "#2a6496", "font-family": "Arial, Helvetica, sans-serif", "font-size": "12px"}},
+                                    "Select between Equidistant and Equimass")),
+                            m('#forPlotA', {style: {display: 'block', "margin": "2%"}},
+                                m("input#input1[name='fname'][type='text']", {style: {"margin-left": "2%"}}),
+                                m('span#tooltipPlotA.tooltiptext[style=visibility: hidden]'),
+                                m("button.btn.btn-default.btn-xs#Equidistance1[type='button']", {style: {float: "left", "margin-left": "2%"}},
+                                    "EQUIDISTANCE"),
+                                m("button.btn.btn-default.btn-xs#Equimass1[type='button']", {style: {float: "left", "margin-left": "2%"}},
+                                    "EQUIMASS")),
+                            m('#forPlotB', {style: {display: "block", margin: "2%"}},
+                                m("input#input2[name='fname1'][type='text']", {style: {"margin-left": "2%"}}),
+                                m('span#tooltipPlotB.tooltiptext1[style=visibility: hidden]'),
+                                m("button.btn.btn-default.btn-xs#Equidistance2[type='button']", {style: {float: "left", "margin-left": "2%"}}, "EQUIDISTANCE"),
+                                m("button.btn.btn-default.btn-xs#Equimass2[type='button']", {style: {float: "left", "margin-left": "2%"}}, "EQUIMASS")),
+                            m("#plotA_status[style=margin-top: 1%; margin-left: 2%]"),
+                            m("#plotB_status[style=margin-top: 1%; margin-left: 2%]"),
+                            m('h5[style=color: #ac2925; margin-top: 1%; margin-left: 2%]', 'Selection History'),
+                            m('#breakspace[style=display: inline-block; overflow: auto; width: 100%]'),
+                            m("button.btn.btn-default.btn-sm[id='SelectionData1'][type='button']", {style: {display: "block", margin: "0 auto", position: "relative"}},
+                                "Create")),
+                        m('#tabular_1', {style: {width: "100%", height: "200px", "border-bottom-style": "inset"}},
+                            m('#plotA', {style: {width: exp.get_width('plotA') + '%', height: "100%", float: "left", overflow: "hidden"}}, "plotA"),
+                            m('#plotB', {style: {width: exp.get_width('plotB') + '%', height: "100%", float: "right", overflow: "hidden"}}, "plotB")),
+                        m('#tabular_2', {style: {width: "100%", height: "50%", "border-bottom-style": "inset", overflow: "hidden"}}))),
+                m("p#resultsHolder", {style: {display: app.rightTabExplore === 'Univariate' ? 'block' : 'none', padding: ".5em 1em"}},
+                    m('#varList[style=display: block]',
+                        unique_link_names().map(x => m(`p#${x.replace(/\W/g, '_')}`, {onclick: _=> exp.callTreeApp(x, app), style: {'background-color': app.varColor}}, x)))),
+                m('#setx[style=display: none; margin-top: .5em]')
+            ]
+        })
+    }
+
+    // Model mode
+    return m(Panel2,
       {side: 'right',
        title: 'Model Selection',
        buttons: (!app.IS_D3M_DOMAIN ? [] : [
@@ -369,9 +378,11 @@ class Body {
             if (explore_mode) {
                 app.explored = false;
                 app.univariate_finished = false;
-                app.set_righttab('btnUnivariate');
+                app.setRightTabExplore('Univariate');
+            } else if (results_mode) {
+                app.setRightTab(IS_D3M_DOMAIN ? 'Type' : 'Models');
             } else if (!mode) {
-                app.set_righttab(IS_D3M_DOMAIN ? 'btnType' : 'btnModels');
+                app.setRightTab(IS_D3M_DOMAIN ? 'Type' : 'Models');
             }
             app.restart && app.restart();
             this.last_mode = mode;
@@ -510,7 +521,7 @@ class Body {
                 m('.panel-body',
                   'TwoRavens v0.1 "Dallas" -- The Norse god Odin had two talking ravens as advisors, who would fly out into the world and report back all they observed. In the Norse, their names were "Thought" and "Memory". In our coming release, our thought-raven automatically advises on statistical model selection, while our memory-raven accumulates previous statistical models from Dataverse, to provide cummulative guidance and meta-analysis.'))),
             m(`#main.left.carousel.slide.svg-leftpanel.svg-rightpanel[style=overflow: hidden]`,
-              m("#innercarousel.carousel-inner", {style: {height: '100%'}},
+              m("#innercarousel.carousel-inner", {style: {height: `calc(100% + ${app.marginTopCarousel}px)`}},
                 m('#m0.item.active', {style: {height: '100%', 'text-align': "center"}},
                   m('svg#whitespace'))),
               m("#spacetools.spaceTool[style=z-index: 16]",

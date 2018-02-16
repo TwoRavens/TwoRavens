@@ -57,15 +57,16 @@ export let varColor = '#f0f8ff'; // d3.rgb("aliceblue");
 let taggedColor = '#f5f5f5'; // d3.rgb("whitesmoke");
 export let timeColor = '#2d6ca2';
 
-export let lefttab = 'Variables'; // current tab in left panel
-export let lefttabhidden = 'Variables'; // stores the tab user was in before summary hover
+export let leftTab = 'Variables'; // current tab in left panel
+export let leftTabHidden = 'Variables'; // stores the tab user was in before summary hover
 export let subset = false;
 export let summaryHold = false;
 
-export let righttab = 'btnModels'; // current tab in right panel
-export function set_righttab(val) {
-    righttab = val;
-}
+export let rightTab = 'Task Type'; // current tab in right panel
+export let rightTabExplore = 'Univariate';
+
+export let setRightTab = (tab) => rightTab = tab;
+export let setRightTabExplore = (tab) => rightTabExplore = tab;
 
 // transformation toolbar options
 let t, typeTransform;
@@ -1520,8 +1521,8 @@ function layout(v, v2) {
         // SVG doesn't support text wrapping, use html instead
         g.selectAll("circle.node")
             .on("mouseover", d => {
-                lefttabhidden = lefttab;
-                setLeftPanelTab('Summary');
+                leftTabHidden = leftTab;
+                setLeftTab('Summary');
                 varSummary(d);
                 d.forefront = true;
 
@@ -1551,7 +1552,7 @@ function layout(v, v2) {
             })
             .on('mouseout', d => {
                 d.forefront = false;
-                summaryHold || setLeftPanelTab(lefttabhidden);
+                summaryHold || setLeftTab(leftTabHidden);
                 'csArc csText timeArc timeText dvArc dvText nomArc nomText grArc grText'.split(' ').map(x => fill(d, x, 0, 100, 500));
                 m.redraw();
             });
@@ -1653,17 +1654,20 @@ function layout(v, v2) {
     }
 }
 
+export let marginTopCarousel = 0;
+export let marginLeftCarousel = 0;
+
 window.onresize = () => {
     let carousel = document.getElementById('innercarousel');
     let container = document.getElementById('m0');
     let whitespace = document.getElementById('whitespace0');
 
-    let marginTop = (carousel.offsetHeight - whitespace.getAttribute("height") - 16) / 2;
-    let marginLeft = (carousel.offsetWidth - whitespace.getAttribute("width")) / 2;
+    marginTopCarousel = (carousel.offsetHeight - whitespace.getAttribute("height") - 16) / 2;
+    marginLeftCarousel = (carousel.offsetWidth - whitespace.getAttribute("width")) / 2;
 
-    container.style.marginTop = marginTop + 'px';
-    container.style.marginLeft = marginLeft + 'px';
-    container.style.height = `calc(100% + ${Math.abs(marginTop)}px)`;
+    container.style.marginTop = marginTopCarousel + 'px';
+    container.style.marginLeft = marginLeftCarousel + 'px';
+    container.style.height = `calc(100% + ${Math.abs(marginTopCarousel)}px)`;
 };
 
 /** needs doc */
@@ -2515,7 +2519,7 @@ export function legend() {
    programmatically deselect every selected variable
 */
 export function erase() {
-    setLeftPanelTab('Variables');
+    setLeftTab('Variables');
     $("#varList").children().each(function() {
         if (zparams.zdv.concat(zparams.znom, zparams.zvars).includes(this.id))
             clickVar({target: this});
@@ -2523,8 +2527,8 @@ export function erase() {
 }
 
 /** needs doc */
-export let setLeftPanelTab = (tab) => {
-    lefttab = tab;
+export let setLeftTab = (tab) => {
+    leftTab = tab;
 
     if (tab === "Discovery"){
         probtable.length = 0;
@@ -2550,15 +2554,15 @@ export function tabRight(tab) {
         });
     };
     if (tab === "btnModels") select(cls);
-    else if (tab === "btnSetx") righttab === "btnSetx" || select() === cls && toggleR('full');
+    else if (tab === "btnSetx") rightTab === "btnSetx" || select() === cls && toggleR('full');
     else if (tab === "btnResults") !estimated ? select(cls) :
-        righttab === "btnResults" || select() === cls && toggleR();
-    else if (tab === "btnUnivariate") select(cls);
+        rightTab === "btnResults" || select() === cls && toggleR();
+    else if (tab === "Univariate") select(cls);
 
     if(tab=="btnType" || tab=="btnSubtype" || tab=="btnMetrics") {
         document.getElementById("rightpanel").classList.remove("expandpanelfull");
     }
-    righttab = tab;
+    rightTab = tab;
 }
 
 export let summary = {data: []};
