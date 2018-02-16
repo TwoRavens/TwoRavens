@@ -1,6 +1,6 @@
 import m from 'mithril'
 
-import {aboutText, menuColor, heightHeader} from '../common'
+import {aboutText, menuColor, heightHeader, mergeAttributes} from '../common'
 
 // ```
 // m(Header, {
@@ -14,14 +14,14 @@ export default class Header {
     }
 
     view(vnode) {
-        let {contents} = vnode.attrs;
+        let {contents, attrsInterface} = vnode.attrs;
 
-        return m("nav#navbar.navbar.navbar-default.navbar-fixed-top[role=navigation]", {
+        return m("nav#navbar.navbar.navbar-default.navbar-fixed-top[role=navigation]", mergeAttributes({
                 style: {
                     background: menuColor,
                     height: heightHeader
                 }
-            },
+            }, attrsInterface),
             [
                 m("a.navbar-brand",
                     m("img[src=/static/images/TwoRavens.png][alt=TwoRavens][width=100][style=margin-left: 1em; margin-top: -0.5em]",
