@@ -4031,9 +4031,9 @@ function singlePlot(pred) {
 
 export function discovery(preprocess_file) {
 
-    console.log("entering disco");
+    // console.log("entering disco");
     let extract = preprocess_file.dataset.discovery;
-    console.log(extract);
+    // console.log(extract);
     let disco = [];
     let names = [];
     let vars = Object.keys(preprocess);
@@ -4079,10 +4079,10 @@ export let setCheckedProblem = (problem) => {
     else checkedProblems.add(problem);
 }
 
-export async function submitDiscProb(btn) {
+export async function submitDiscProb() {
 
-    let table = document.getElementById("discoveryTable");
-    console.log(table);
+    let table = document.getElementById("discoveryTable").querySelector('table');
+    console.log(table.rows);
     let checked = [];
 
     for (let i = 1, row; row = table.rows[i]; i++) { //skipping the header

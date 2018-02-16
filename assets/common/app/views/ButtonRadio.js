@@ -70,6 +70,8 @@ export default class ButtonRadio {
             }
         };
 
+        this.active = activeSection || this.active;
+
         // Button bar
         return m(`div#${id}.btn-group[data-toggle=buttons]`, mergeAttributes({style: {'width': '100%'}}, attrsAll),
             sections.map((section) =>

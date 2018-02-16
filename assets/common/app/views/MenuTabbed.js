@@ -50,6 +50,7 @@ export default class MenuTabbed {
                 sections: visibleButtons,
                 attrsAll: {style: {'margin-bottom': '5px'}},
                 hoverBonus: hoverBonus,
+                activeSection: currentTab,
                 selectWidth: selectWidth
             }),
             m(ButtonRadio, {

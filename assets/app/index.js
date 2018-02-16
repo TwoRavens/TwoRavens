@@ -11,17 +11,18 @@ import * as app from './app';
 import * as exp from './explore';
 import * as layout from './layout';
 import * as results from './results';
-import * as plots from './plots';
-import Panel2 from './views/Panel';
-import Button, {when} from './views/PanelButton';
+
+import Button from './views/PanelButton';
 import List from './views/PanelList';
 import Search from './views/Search';
 import Subpanel from './views/Subpanel';
 import Table from './views/Table'
 
 import Panel from '../common/app/views/Panel';
-import MenuTabbed from '../common/app/views/MenuTabbed'
-import ButtonRadio from '../common/app/views/ButtonRadio'
+import MenuTabbed from '../common/app/views/MenuTabbed';
+import ButtonRadio from '../common/app/views/ButtonRadio';
+import Footer from '../common/app/views/Footer';
+import Header from '../common/app/views/Header';
 
 let state = {
     pipelines: [],
@@ -138,7 +139,7 @@ function leftpanel(mode) {
                             onclickCheckbox: app.setCheckedProblem
                         }),
                         m(Button, {id: 'btnSave', onclick:_=>app.saveDisc('btnSave'),title: 'Saves your revised problem description.'}, 'Save Desc.'),
-                        m(Button, {id: 'btnSubmitDisc', onclick:_=>app.submitDiscProb('btnSubmitDisc'),title: 'Submit all checked discovered problems.'}, 'Submit Disc. Probs.')
+                        m(Button, {id: 'btnSubmitDisc', classes: 'btn-success', style: 'float: right', onclick:_=>app.submitDiscProb(), title: 'Submit all checked discovered problems.'}, 'Submit Disc. Probs.')
                     ]
                 },
                 {
@@ -201,7 +202,7 @@ function rightpanel(mode) {
                     id: 'exploreButtonBar',
                     onclick: app.setRightTabExplore,
                     activeSection: app.rightTabExplore,
-                    sections: [{value: 'Univariate'}, {value: 'Bivariate'}]
+                    sections: [{value: 'Univariate'}, {value: 'Bivariate', attrsInterface: {disabled: true}}]
                 }),
                 m('#modelView_Container', {style: `display: ${bivariate}; width: 100%; height: auto; background-color: white; float: left; overflow-x: auto; overflow-y: auto; white-space: nowrap;`},
                     m('#modelView', {style: 'width: 100%; height: auto; background-color: white; float: left; overflow: auto; margin-top: 2px;'})),
@@ -356,20 +357,26 @@ function rightpanel(mode) {
     });
 }
 
-let ticker = mode => {
-    return m('#ticker[style=background: #F9F9F9; bottom: 0; height: 40px; position: fixed; width: 100%; border-top: 1px solid #ADADAD]',
-        m("a#logID[href=somelink][target=_blank]", "Replication"),
-        m("span[style=color:#337ab7]", " | "),
-        // dev links...
-        m("a[href='/dev-raven-links'][target=_blank]", "raven-links"),
-        //m("a[style=margin-right: 0.5em]",
-        //  {onclick: app.record_user_metadata},
-        //  "record-metadata"),
-        m("span[style=color:#337ab7]", " | "),
-         m("span[style=color:#337ab7]", "TA2: " + TA2_SERVER),
-         m("span[style=color:#337ab7]", " | "),
-         m("span[style=color:#337ab7]", "TA3TA2 api: " + TA3TA2_API_VERSION));
+let footer = () => {
+    return m(Footer, {
+        contents: [
+            m("a#logID[href=somelink][target=_blank]", "Replication"),
+            m("span[style=color:#337ab7]", " | "),
+            // dev links...
+            m("a[href='/dev-raven-links'][target=_blank]", "raven-links"),
+            //m("a[style=margin-right: 0.5em]",
+            //  {onclick: app.record_user_metadata},
+            //  "record-metadata"),
+            m("span[style=color:#337ab7]", " | "),
+            m("span[style=color:#337ab7]", "TA2: " + TA2_SERVER),
+            m("span[style=color:#337ab7]", " | "),
+            m("span[style=color:#337ab7]", "TA3TA2 api: " + TA3TA2_API_VERSION)
+        ]
+    })
 };
+
+let glyph = (icon, unstyled) => m(
+    `span.glyphicon.glyphicon-${icon}` + (unstyled ? '' : '[style=color: #818181; font-size: 1em; pointer-events: none]'));
 
 class Body {
     oninit(vnode) {
@@ -412,13 +419,9 @@ class Body {
         let {mode} = vnode.attrs;
         let explore_mode = mode === 'explore';
         let results_mode = mode === 'results';
-        let userlinks = username === 'no logged in user' ? [
-            {title: "Log in", url: login_url},
-            {title: "Sign up", url: signup_url}
-        ] : [{title: "Workspaces", url: workspaces_url},
-             {title: "Settings", url: settings_url},
-             {title: "Links", url: devlinks_url},
-             {title: "Logout", url: logout_url}];
+
+        let spaceBtn = (id, onclick, title, icon) => m(
+            `button#${id}.btn.btn-default`, {onclick, title}, glyph(icon, true));
 
         if (mode != this.last_mode) {
             app.set_mode(mode);
@@ -435,138 +438,8 @@ class Body {
             this.last_mode = mode;
         }
 
-        let _navBtn = (id, left, right, onclick, args, min) => m(
-            `button#${id}.btn.navbar-right`,
-            {onclick: onclick,
-             style: {'margin-left': left + 'em',
-                     'margin-right': right + 'em',
-                     'min-width': min}},
-            args);
-        let navBtn = (id, left, right, onclick, args, min) => _navBtn(
-            id + '.ladda-button[data-spinner-color=#000000][data-style=zoom-in]',
-            left, right, onclick, args, min);
-        let navBtnGroup = (id, onclick, args, min) => m(
-            `button#${id}.btn.navbar-left`,
-            {onclick: onclick,
-             style: {'min-width': min}},
-            args);
-        let navBtn1 = (id, left, right, onclick, args, title) => _navBtn(
-            `${id}.btn-default[title=${title}]`, left, right, onclick, args);
-        let glyph = (icon, unstyled) => m(
-            `span.glyphicon.glyphicon-${icon}` + (unstyled ? '' : '[style=color: #818181; font-size: 1em; pointer-events: none]'));
-        let transformation = (id, list) => m(
-            `ul#${id}`, {
-                style: {display: 'none', 'background-color': app.varColor},
-                onclick: function(evt) {
-                    // if interact is selected, show variable list again
-                    if ($(this).text() === 'interact(d,e)') {
-                        $('#tInput').val(tvar.concat('*'));
-                        selInteract = true;
-                        $(this).parent().fadeOut(100);
-                        $('#transSel').fadeIn(100);
-                        evt.stopPropagation();
-                        return;
-                    }
-
-                    let tvar = $('#tInput').val();
-                    let tfunc = $(this).text().replace("d", "_transvar0");
-                    let tcall = $(this).text().replace("d", tvar);
-                    $('#tInput').val(tcall);
-                    $(this).parent().fadeOut(100);
-                    evt.stopPropagation();
-                    transform(tvar, tfunc, typeTransform = false);
-                }
-            },
-            list.map(x => m('li', x)));
-        let spaceBtn = (id, onclick, title, icon) => m(
-            `button#${id}.btn.btn-default`, {onclick, title}, glyph(icon, true));
-
-        return m(
-            'main',
-            m("nav#navbar.navbar.navbar-default.navbar-fixed-top[role=navigation]",
-              {style: explore_mode && 'background-image: -webkit-linear-gradient(top, #fff 0, rgb(227, 242, 254) 100%)'},
-              m("a.navbar-brand",
-                m("img[src=/static/images/TwoRavens.png][alt=TwoRavens][width=100][style=margin-left: 1em; margin-top: -0.5em]",
-                  {onmouseover: _ => this.about = true, onmouseout: _ => this.about = false})),
-              m('#navbarNav[style=padding: 0.5em]',
-                m('#dataField.field[style=margin-top: 0.5em; text-align: center]',
-                  m('h4#dataName[style=display: inline]',
-                    {onclick: _ => this.cite = this.citeHidden = !this.citeHidden,
-                     onmouseout: _ => this.citeHidden || (this.cite = false),
-                     onmouseover: _ => this.cite = true},
-                    "Dataset Name"),
-                  m('#cite.panel.panel-default',
-                    {style: `display: ${this.cite ? 'block' : 'none'}; position: absolute; right: 50%; width: 380px; text-align: left; z-index: 50`},
-                    m(".panel-body")),
-                  m('span',
-                    m('.dropdown[style=float: right; padding-right: 1em]',
-                      m('#drop.button.btn[type=button][data-toggle=dropdown][aria-haspopup=true][aria-expanded=false]',
-                        [username, " " , glyph('triangle-bottom')]),
-                      m('ul.dropdown-menu[role=menu][aria-labelledby=drop]',
-                        userlinks.map(link => m('a[style=padding: 0.5em]', {href: link.url}, link.title, m('br'))))),
-                    navBtn('btnEstimate.btn-default', 2, 1, explore_mode ? _ => {
-                        exp.explore();
-                        app.set_righttab('btnBivariate');
-                    } : app.estimate, m("span.ladda-label", explore_mode ? 'Explore' : 'Solve This Problem'), '150px'),
-                    m('div.btn-group[role=group][aria-label="..."]', {style:{"float":"right"}},
-                      navBtnGroup('btnTA2.btn-default', _ => hopscotch.startTour(mytour2, 0), ['Help Tour ', glyph('road')]),
-                      navBtnGroup('btnTA2.btn-default', _ => app.helpmaterials('video'), ['Video ', glyph('expand')]),
-                      navBtnGroup('btnTA2.btn-default', _ => app.helpmaterials('manual'), ['Manual ', glyph('book')]),
-                    ),
-                    navBtn1("btnReset", 1, 2, app.reset, glyph('repeat'), 'Reset'),
-                    navBtn1('btnEndSession', 2, 1, app.endsession, m("span.ladda-label", 'Mark Problem Finished'), 'Mark Problem Finished'),
-                    m(ButtonRadio, {
-                          id: 'modeButtonBar',
-                          attrsAll: {style: {width: '150px', margin: '0 .2em'}, class: 'navbar-right'},
-                          onclick: (item) => m.route.set('/' + item.toLowerCase()),
-                          activeSection: mode === undefined ? 'model' : mode,
-                          sections: [{value: 'Model'}, {value: 'Explore'}]
-                      })),
-                  m('#tInput', {
-                      style: {display: 'none'},
-                      onclick: _ => {
-                          if (byId('transSel').style.display !== 'none') { // if variable list is displayed when input is clicked...
-                              $('#transSel').fadeOut(100);
-                              return false;
-                          }
-                          if (byId('transList').style.display !== 'none') { // if function list is displayed when input is clicked...
-                              $('#transList').fadeOut(100);
-                              return false;
-                          }
-
-                          // highlight the text
-                          $(this).select();
-                          let pos = $('#tInput').offset();
-                          pos.top += $('#tInput').width();
-                          $('#transSel').fadeIn(100);
-                          return false;
-                      },
-                      keyup: evt => {
-                          let t = byId('transSel').style.display;
-                          let t1 = byId('transList').style.display;
-                          if (t !== 'none') {
-                              $('#transSel').fadeOut(100);
-                          } else if (t1 !== 'none') {
-                              $('#transList').fadeOut(100);
-                          }
-
-                          if (evt.keyCode == 13) { // keyup on Enter
-                              let t = transParse($('#tInput').val());
-                              if (!t) {
-                                  return;
-                              }
-                              transform(t.slice(0, t.length - 1), t[t.length - 1], typeTransform = false);
-                          }
-                      }
-                  }),
-                  m('#transformations.transformTool', {
-                      title: `Construct transformations of existing variables using valid R syntax.
-                              For example, assuming a variable named d, you can enter "log(d)" or "d^2".`},
-                    transformation('transSel', ['a', 'b']),
-                    transformation('transList', app.transformList)))),
-              m(`#about.panel.panel-default[style=display: ${this.about ? 'block' : 'none'}; left: 140px; position: absolute; width: 500px; z-index: 50]`,
-                m('.panel-body',
-                  'TwoRavens v0.1 "Dallas" -- The Norse god Odin had two talking ravens as advisors, who would fly out into the world and report back all they observed. In the Norse, their names were "Thought" and "Memory". In our coming release, our thought-raven automatically advises on statistical model selection, while our memory-raven accumulates previous statistical models from Dataverse, to provide cummulative guidance and meta-analysis.'))),
+        return m('main',
+            this.header(mode),
             m(`#main.left.carousel.slide.svg-leftpanel.svg-rightpanel[style=overflow: hidden]`,
               m("#innercarousel.carousel-inner", {style: {height: `calc(100% + ${app.marginTopCarousel}px)`}},
                 m('#m0.item.active', {style: {height: '100%', 'text-align': "center"}},
@@ -609,9 +482,151 @@ class Body {
                      ['gr1Button', 'zgroup1', 'Group 1'],
                      ['gr2Button', 'zgroup2', 'Group 2']]}),
               m(Subpanel, {title: "History"}),
-              ticker(mode),
+              footer(),
               leftpanel(mode),
               rightpanel(mode)));
+    }
+
+    header(mode) {
+
+        let userlinks = username === 'no logged in user' ? [
+            {title: "Log in", url: login_url},
+            {title: "Sign up", url: signup_url}
+        ] : [{title: "Workspaces", url: workspaces_url},
+            {title: "Settings", url: settings_url},
+            {title: "Links", url: devlinks_url},
+            {title: "Logout", url: logout_url}];
+
+        let _navBtn = (id, left, right, onclick, args, min) => m(
+            `button#${id}.btn.navbar-right`,
+            {onclick: onclick,
+                style: {'margin-left': left + 'em',
+                    'margin-right': right + 'em',
+                    'min-width': min}},
+            args);
+
+        let navBtn = (id, left, right, onclick, args, min) => _navBtn(
+            id + '.ladda-button[data-spinner-color=#000000][data-style=zoom-in]',
+            left, right, onclick, args, min);
+        let navBtnGroup = (id, onclick, args, min) => m(
+            `button#${id}.btn.navbar-left`,
+            {onclick: onclick,
+                style: {'min-width': min}},
+            args);
+        let navBtn1 = (id, onclick, args, title) => _navBtn(
+            `${id}.btn-default[title=${title}]`, 2, 0, onclick, args);
+        let transformation = (id, list) => m(
+            `ul#${id}`, {
+                style: {display: 'none', 'background-color': app.varColor},
+                onclick: function(evt) {
+                    // if interact is selected, show variable list again
+                    if ($(this).text() === 'interact(d,e)') {
+                        $('#tInput').val(tvar.concat('*'));
+                        selInteract = true;
+                        $(this).parent().fadeOut(100);
+                        $('#transSel').fadeIn(100);
+                        evt.stopPropagation();
+                        return;
+                    }
+
+                    let tvar = $('#tInput').val();
+                    let tfunc = $(this).text().replace("d", "_transvar0");
+                    let tcall = $(this).text().replace("d", tvar);
+                    $('#tInput').val(tcall);
+                    $(this).parent().fadeOut(100);
+                    evt.stopPropagation();
+                    transform(tvar, tfunc, typeTransform = false);
+                }
+            },
+            list.map(x => m('li', x)));
+
+        return m("nav#navbar.navbar.navbar-default.navbar-fixed-top[role=navigation]",
+            {style: mode === 'explore' && 'background-image: -webkit-linear-gradient(top, #fff 0, rgb(227, 242, 254) 100%)'},
+            m("a.navbar-brand",
+                m("img[src=/static/images/TwoRavens.png][alt=TwoRavens][width=100][style=margin-left: 1em; margin-top: -0.5em]",
+                    {onmouseover: _ => this.about = true, onmouseout: _ => this.about = false})),
+            m('#navbarNav[style=padding: 0.5em]',
+                m('#dataField.field[style=margin-top: 0.5em; text-align: center]',
+                    m('h4#dataName[style=display: inline]',
+                        {onclick: _ => this.cite = this.citeHidden = !this.citeHidden,
+                            onmouseout: _ => this.citeHidden || (this.cite = false),
+                            onmouseover: _ => this.cite = true},
+                        "Dataset Name"),
+                    m('#cite.panel.panel-default',
+                        {style: `display: ${this.cite ? 'block' : 'none'}; position: absolute; right: 50%; width: 380px; text-align: left; z-index: 50`},
+                        m(".panel-body")),
+                    m('span',
+                        m('.dropdown[style=float: right; padding-right: 1em]',
+                            m('#drop.button.btn[type=button][data-toggle=dropdown][aria-haspopup=true][aria-expanded=false]',
+                                [username, " " , glyph('triangle-bottom')]),
+                            m('ul.dropdown-menu[role=menu][aria-labelledby=drop]',
+                                userlinks.map(function(link) {
+                                    return m('a[style=padding: 0.5em]', {href: link.url}, link.title ,
+                                        m('br'))
+                                }))),
+                        navBtn('btnEstimate.btn-default', 2, 1, mode === 'explore'  ? _ => {
+                            exp.explore();
+                            app.setRightTabExplore('Bivariate');
+                        } : app.estimate, m("span.ladda-label", mode === 'explore' ? 'Explore' : 'Solve This Problem'), '150px'),
+                        m('div.btn-group[role=group][aria-label="..."]', {style:{"float":"right"}},
+                            navBtnGroup('btnTA2.btn-default', _ => hopscotch.startTour(mytour2, 0), ['Help Tour ', glyph('road')]),
+                            navBtnGroup('btnTA2.btn-default', _ => app.helpmaterials('video'), ['Video ', glyph('expand')]),
+                            navBtnGroup('btnTA2.btn-default', _ => app.helpmaterials('manual'), ['Manual ', glyph('book')]),
+                        ),
+                        navBtn1("btnReset", app.reset, glyph('repeat'), 'Reset'),
+                        navBtn1('btnEndSession', app.endsession, m("span.ladda-label", 'Mark Problem Finished'), 'Mark Problem Finished'),
+                        m(ButtonRadio, {
+                            id: 'modeButtonBar',
+                            attrsAll: {style: {width: '200px', margin: '0 .2em'}, class: 'navbar-right'},
+                            onclick: (item) => m.route.set('/' + item.toLowerCase()),
+                            activeSection: mode === undefined ? 'model' : mode,
+                            sections: [{value: 'Model'}, {value: 'Explore'}, {value: 'Results', id: 'btnResultsMode'}]
+                        })),
+                    m('#tInput', {
+                        style: {display: 'none'},
+                        onclick: _ => {
+                            if (byId('transSel').style.display !== 'none') { // if variable list is displayed when input is clicked...
+                                $('#transSel').fadeOut(100);
+                                return false;
+                            }
+                            if (byId('transList').style.display !== 'none') { // if function list is displayed when input is clicked...
+                                $('#transList').fadeOut(100);
+                                return false;
+                            }
+
+                            // highlight the text
+                            $(this).select();
+                            let pos = $('#tInput').offset();
+                            pos.top += $('#tInput').width();
+                            $('#transSel').fadeIn(100);
+                            return false;
+                        },
+                        keyup: evt => {
+                            let t = byId('transSel').style.display;
+                            let t1 = byId('transList').style.display;
+                            if (t !== 'none') {
+                                $('#transSel').fadeOut(100);
+                            } else if (t1 !== 'none') {
+                                $('#transList').fadeOut(100);
+                            }
+
+                            if (evt.keyCode == 13) { // keyup on Enter
+                                let t = transParse($('#tInput').val());
+                                if (!t) {
+                                    return;
+                                }
+                                transform(t.slice(0, t.length - 1), t[t.length - 1], typeTransform = false);
+                            }
+                        }
+                    }),
+                    m('#transformations.transformTool', {
+                            title: `Construct transformations of existing variables using valid R syntax.
+                              For example, assuming a variable named d, you can enter "log(d)" or "d^2".`},
+                        transformation('transSel', ['a', 'b']),
+                        transformation('transList', app.transformList)))),
+            m(`#about.panel.panel-default[style=display: ${this.about ? 'block' : 'none'}; left: 140px; position: absolute; width: 500px; z-index: 50]`,
+                m('.panel-body',
+                    'TwoRavens v0.1 "Dallas" -- The Norse god Odin had two talking ravens as advisors, who would fly out into the world and report back all they observed. In the Norse, their names were "Thought" and "Memory". In our coming release, our thought-raven automatically advises on statistical model selection, while our memory-raven accumulates previous statistical models from Dataverse, to provide cumulative guidance and meta-analysis.')))
     }
 }
 
