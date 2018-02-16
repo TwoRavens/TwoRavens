@@ -21,6 +21,7 @@ import Table from './views/Table'
 
 import Panel from '../common/app/views/Panel';
 import MenuTabbed from '../common/app/views/MenuTabbed'
+import ButtonRadio from '../common/app/views/ButtonRadio'
 
 let state = {
     pipelines: [],
@@ -300,11 +301,7 @@ function rightpanel(mode) {
 }
 
 let ticker = mode => {
-    let link = name => m(`a${name === mode ? '.active' : ''}[href=/${name}][style=margin-right: 0.5em]`, {oncreate: m.route.link}, name[0].toUpperCase() + name.slice(1));
     return m('#ticker[style=background: #F9F9F9; bottom: 0; height: 40px; position: fixed; width: 100%; border-top: 1px solid #ADADAD]',
-        link('model'),
-        link('explore'),
-        link('results'),
         m("a#logID[href=somelink][target=_blank]", "Replication"),
         m("span[style=color:#337ab7]", " | "),
         // dev links...
@@ -459,7 +456,14 @@ class Body {
                       navBtnGroup('btnTA2.btn-default', _ => app.helpmaterials('manual'), ['Manual ', glyph('book')]),
                     ),
                     navBtn1("btnReset", 1, 2, app.reset, glyph('repeat'), 'Reset'),
-                    navBtn1('btnEndSession', 2, 1, app.endsession, m("span.ladda-label", 'Mark Problem Finished'), 'Mark Problem Finished')),
+                    navBtn1('btnEndSession', 2, 1, app.endsession, m("span.ladda-label", 'Mark Problem Finished'), 'Mark Problem Finished'),
+                    m(ButtonRadio, {
+                          id: 'modeButtonBar',
+                          attrsAll: {style: {width: '150px', margin: '0 .2em'}, class: 'navbar-right'},
+                          onclick: (item) => m.route.set('/' + item.toLowerCase()),
+                          activeSection: mode === undefined ? 'model' : mode,
+                          sections: [{value: 'Model'}, {value: 'Explore'}]
+                      })),
                   m('#tInput', {
                       style: {display: 'none'},
                       onclick: _ => {
