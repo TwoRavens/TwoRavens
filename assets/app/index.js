@@ -38,69 +38,6 @@ function setBackgroundColor(color) {
     };
 }
 
-export let step = (target, placement, title, content) => ({
-    target,
-    placement,
-    title,
-    content,
-    showCTAButton: true,
-    ctaLabel: 'Disable these messages',
-    onCTA: () => {
-        hopscotch.endTour(true);
-        tutorial_mode = false;
-    },
-});
-
-export let mytour2 = {
-    id: "dataset_launch",
-    i18n: {doneBtn:'Ok'},
-    showCloseButton: true,
-    scrollDuration: 300,
-    //onEnd: () => first_load = false,
-    steps: [
-        step("dataName", "bottom", "Welcome to TwoRavens Solver",
-             `<p>This tool can guide you to solve an empirical problem in the dataset above.</p>
-              <p>These messages will teach you the steps to take to find and submit a solution.</p>`),
-        step("btnReset", "bottom", "Restart Any Problem Here",
-             '<p>You can always start a problem over by using this reset button.</p>'),
-        step("btnSubset", "right", "Start Task 1",
-             `<p>This Problem Discovery button allows you to start Task 1 - Problem Discovery.</p>
-             <p>Generally, as a tip, the Green button is the next button you need to press to move the current task forward.</p>
-             <p>Click this button to see a list of problems that have been discovered in the dataset.</p>
-             <p>You can mark which ones you agree may be interesting, and then submit the table as an answer.</p>`),
-        step("btnSelect", "right", "Complete Task 1",
-             `<p>This submission button marks Task 1 - Problem Discovery, as complete.</p>
-             <p>Click this button to save the check marked problems in the table below as potentially interesting or relevant.</p>
-             <p>Generally, as a tip, the Green button is the next button you need to press to move the current task forward.</p>`),
-        step("btnEstimate", "left", "Solve Task 2",
-             `<p>This generally is the important step to follow for Task 2 - Build a Model.</p>
-              <p>Generally, as a tip, the Green button is the next button you need to press to move the current task forward, and this button will be Green when Task 1 is completed and Task 2 started.</p>
-              <p>Click this Solve button to tell the tool to find a solution to the problem, using the variables presented in the center panel.</p>`),
-        //step(mytarget + 'biggroup', "left", "Target Variable",
-        //     `This is the variable, ${mytarget}, we are trying to predict.
-        //      This center panel graphically represents the problem currently being attempted.`),
-        step("gr1hull", "right", "Explanation Set", "This set of variables can potentially predict the target."),
-        step("displacement", "right", "Variable List",
-             `<p>Click on any variable name here if you wish to remove it from the problem solution.</p>
-              <p>You likely do not need to adjust the problem representation in the center panel.</p>`),
-        step("btnEndSession", "bottom", "Finish Problem",
-             "If the solution reported back seems acceptable, then finish this problem by clicking this End Session button."),
-    ]
-};
-
-export let mytour3 = {
-    id: "dataset_launch",
-    i18n: {doneBtn:'Ok'},
-    showCloseButton: true,
-    scrollDuration: 300,
-    steps: [
-        step("btnSelect", "right", "Complete Task 1",
-             `<p>This submission button marks Task 1 - Problem Discovery, as complete.</p>
-             <p>Click this button to save the check marked problems in the table below as potentially interesting or relevant.</p>
-             <p>Generally, as a tip, the Green button is the next button you need to press to move the current task forward.</p>`),
-    ]
-};
-
 function leftpanel(mode) {
     if (mode === 'results') {
         return results.leftpanel(Object.keys(app.allPipelineInfo));
@@ -128,7 +65,6 @@ function leftpanel(mode) {
                 {
                     value: 'Discovery',
                     contents: [
-                        m('#discoveryTable', {style: {height: '80%', overflow: 'auto'}}),
                         m(Table, {
                             id: 'discoveryTable',
                             headers: ['Target', 'Predictors', 'Task', 'Metric'],
@@ -138,6 +74,7 @@ function leftpanel(mode) {
                             checkboxes: app.checkedProblems,
                             onclickCheckbox: app.setCheckedProblem
                         }),
+                        m('textarea#discoveryInput[style=display:block; float: left; width: 100%; height:calc(20% - 35px); overflow: auto; background-color: white]'),
                         m(Button, {id: 'btnSave', onclick:_=>app.saveDisc('btnSave'),title: 'Saves your revised problem description.'}, 'Save Desc.'),
                         m(Button, {id: 'btnSubmitDisc', classes: 'btn-success', style: 'float: right', onclick:_=>app.submitDiscProb(), title: 'Submit all checked discovered problems.'}, 'Submit Disc. Probs.')
                     ]
@@ -567,8 +504,8 @@ class Body {
                             app.setRightTabExplore('Bivariate')
                         } : app.estimate,
                         m("span.ladda-label", mode === 'explore' ? 'Explore' : 'Solve This Problem'), '150px'),
-                    m('div.btn-group[role=group][aria-label="..."]', {style:{"float":"right", 'margin-left': '2em'}},
-                        navBtnGroup('btnTA2.btn-default', _ => hopscotch.startTour(mytour2, 0), ['Help Tour ', glyph('road')]),
+                    m('div.btn-group[role=group][aria-label="..."]', {style:{"float":"right", "margin-left": "2em"}},
+                        navBtnGroup('btnTA2.btn-default', _ => hopscotch.startTour(app.mytour, 0), ['Help Tour ', glyph('road')]),
                         navBtnGroup('btnTA2.btn-default', _ => app.helpmaterials('video'), ['Video ', glyph('expand')]),
                         navBtnGroup('btnTA2.btn-default', _ => app.helpmaterials('manual'), ['Manual ', glyph('book')]),
                     ),

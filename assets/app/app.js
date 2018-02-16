@@ -37,8 +37,7 @@ export function set_mode(mode) {
 export let cdb = _ => PRODUCTION || console.log(...arguments);
 
 export let k = 4; // strength parameter for group attraction/repulsion
-let tutorial_mode = true;
-let first_load = true;
+let tutorial_mode = localStorage.getItem('tutorial_mode') !== 'false';
 
 // initial color scale used to establish the initial colors of nodes
 // allNodes.push() below establishes a field for the master node array allNodes called "nodeCol" and assigns a color from this scale to that field
@@ -249,8 +248,8 @@ export let step = (target, placement, title, content) => ({
             showCTAButton: true,
             ctaLabel: 'Disable these messages',
             onCTA: () => {
+                localStorage.setItem('tutorial_mode', 'false');
                 hopscotch.endTour(true);
-                tutorial_mode = false;
             },
         });
 
@@ -259,7 +258,6 @@ export let mytour = {
             i18n: {doneBtn:'Ok'},
             showCloseButton: true,
             scrollDuration: 300,
-            onEnd: () => first_load = false,
             steps: [
                 step("dataName", "bottom", "Welcome to TwoRavens Solver",
                      `<p>This tool can guide you to solve an empirical problem in the dataset above.</p>
@@ -297,7 +295,6 @@ export let mytour3 = {
             i18n: {doneBtn:'Ok'},
             showCloseButton: true,
             scrollDuration: 300,
-            onEnd: () => first_load = false,
             steps: [
                 step("btnSelect", "right", "Complete Task 1",
                      `<p>This submission button marks Task 1 - Problem Discovery, as complete.</p>
@@ -530,8 +527,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     // hopscotch tutorial
     if (tutorial_mode) {
         console.log('Starting Hopscotch Tour');
-        hopscotch.startTour(mytour,0);
-        console.log('Ending Hopscotch Tour');
+        hopscotch.startTour(mytour);
     }
 
     // 8. read preprocess data or (if necessary) run preprocess
@@ -4070,7 +4066,7 @@ export let setSelectedProblem = (problem) => {
     selectedProblem = problem;
 
     let getProblembyKey = (key) => {for (let row of disco) if (row.target === key) return row;}
-    document.getElementById("tab2input").value = getProblembyKey(problem).description;
+    document.getElementById("discoveryInput").value = getProblembyKey(problem).description;
 }
 
 export let checkedProblems = new Set();
