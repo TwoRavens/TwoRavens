@@ -99,7 +99,7 @@ let priv = true;
 
 // swandive is our graceful fail for d3m
 // swandive set to true if task is in failset
-let swandive = false;
+export let swandive = false;
 let failset = ["TIME_SERIES_FORECASTING","GRAPH_MATCHING","LINK_PREDICTION","timeSeriesForecasting","graphMatching","linkPrediction"];
 
 // object that contains all information about the returned pipelines
@@ -1960,11 +1960,10 @@ function onPipelineCreate(PipelineCreateResult, rookpipe) {
 
     console.log(resultstable);
     // render the tables
-    tabulate(resultstable, ['PipelineID', 'Metric', 'Score'], '#results');
+    tabulate(resultstable, ['PipelineID', 'Metric', 'Score'], '#tabResults');
     tabulate(resultstable, ['PipelineID', 'Metric', 'Score'], '#setxRight');
     /////////////////////////
 
-    toggleRightButtons("all");
     if (IS_D3M_DOMAIN){
         byId("btnResults").click();
     };
@@ -2082,10 +2081,10 @@ export async function estimate(btn) {
             estimated = true;
         } else {
             allResults.push(json);
-            if (!estimated) byId("results").removeChild(byId("resultsHolder"));
+            if (!estimated) byId("tabResults").removeChild(byId("resultsHolder"));
 
             estimated = true;
-            d3.select("#results")
+            d3.select("#tabResults")
                 .style("display", "block");
 
             d3.select("#resultsView")
@@ -2541,30 +2540,6 @@ export let setLeftTab = (tab) => {
     }
 };
 
-/** needs doc */
-export function tabRight(tab) {
-    let select = cls => {
-        let panel = d3.select("#rightpanel");
-        return cls ? panel.attr('class', cls) : panel.attr('class');
-    };
-    let cls = "sidepanel container clearfix";
-    let toggleR = full => {
-        select(function() {
-            return cls + this.getAttribute("class") === cls ? '' : cls + ' expandpanel' + full;
-        });
-    };
-    if (tab === "btnModels") select(cls);
-    else if (tab === "btnSetx") rightTab === "btnSetx" || select() === cls && toggleR('full');
-    else if (tab === "btnResults") !estimated ? select(cls) :
-        rightTab === "btnResults" || select() === cls && toggleR();
-    else if (tab === "Univariate") select(cls);
-
-    if(tab=="btnType" || tab=="btnSubtype" || tab=="btnMetrics") {
-        document.getElementById("rightpanel").classList.remove("expandpanelfull");
-    }
-    rightTab = tab;
-}
-
 export let summary = {data: []};
 
 /** needs doc */
@@ -2993,7 +2968,7 @@ export let fakeClick = () => {
 */
 export async function endsession() {
 
-    let table = document.getElementById("results").getElementsByTagName('table')[0];
+    let table = document.getElementById("tabResults").getElementsByTagName('table')[0];
     if(typeof table === 'undefined') {
         alert("No pipelines exist. Cannot mark problem as complete.")
         return;
@@ -3213,62 +3188,6 @@ function setPebbleCharge(d){
         return (maxng>uppersize) ? -400*(uppersize/maxng) : -400;                           // decrease charge as pebbles become smaller, so they can pack together
     }else{
         return -800;
-    }
-};
-
-/** needs doc */
-export function expandrightpanel() {
-    byId('rightpanel').classList.add("expandpanelfull");
-}
-
-export function btnWidths(btns) {
-    let width = `${100 / btns.length}%`;
-    let expandwidth = '35%';
-    let shrinkwidth = `${65 / (btns.length - 1)}%`;
-    let lis = byId('rightpanel').querySelectorAll(".accordion li");
-    // hardly ever runs on the page
-    lis.forEach(li => {
-        li.style.width = width;
-        li.addEventListener('mouseover', function() {
-            lis.forEach(li => li.style.width = shrinkwidth);
-            this.style.width = expandwidth;
-        });
-        li.addEventListener('mouseout', () => lis.forEach(li => li.style.width = width));
-    });
-}
-
-/** needs doc */
-function toggleRightButtons(set) {
-    if (set=="all") {
-        // first remove noshow class
-        console.log(byId('rightpanelbuttons'))
-
-        let btns = byId('rightpanelbuttons').querySelectorAll(".noshow");
-        console.log(btns);
-        btns.forEach(b => b.classList.remove("noshow"));
-        console.log(btns);
-
-        console.log(byId('btnModels'))
-        // dropping models for IS_D3M_DOMAIN
-        if (!IS_D3M_DOMAIN){
-            byId('btnModels').classList.add("noshow");     // JH: doesn't appear to exist in D3M mode
-        };
-
-        // if swandive, dropping setx
-        if(swandive)
-            byId('btnSetx').classList.add("noshow");
-
-        // then select all the buttons
-        btns = byId('rightpanelbuttons').querySelectorAll(".btn:not(.noshow)");
-        btnWidths(btns);
-    } else if (set=="models") {
-        byId('btnModels').style.display = 'inline';
-        byId('btnSetx').style.display = 'inline';
-        byId('btnResults').style.display = 'inline';
-        byId('btnType').style.display = 'none';
-        byId('btnSubtype').style.display = 'none';
-        byId('btnMetrics').style.display = 'none';
-        // byId('btnOutputs').style.display = 'none';
     }
 }
 

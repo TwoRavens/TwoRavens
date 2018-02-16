@@ -23,7 +23,8 @@ class PanelList {
                                   app.nodes.map(n => n.name).includes(v) ? app.hexToRgba(plots.selVarColor) :
                                   app.varColor,
                               'border-color': '#000000',
-                              'border-style': !probDesc && searchIndex && i < searchIndex ? 'solid' : 'none'
+                              'border-style': !probDesc && searchIndex && i < searchIndex ? 'solid' : 'none',
+                              'text-align': 'center'
                           },
                           onclick: onclick || probDesc || app.clickVar,
                           onmouseover: function() {

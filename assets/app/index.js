@@ -162,13 +162,12 @@ function leftpanel(mode) {
     });
 }
 
-let righttab = (id, btnId, task, title, probDesc) => m(
-    `#${id}[style=display: ${when('right', btnId)}; padding: 6px 12px; text-align: center]`,
-    m(List,
-      {items: Object.keys(task || {}),
-       title: title + ' Description',
-       content: v => task[v][1],
-       probDesc: probDesc}));
+let righttab = (id, task, title, probDesc) => m(List, {
+    items: Object.keys(task || {}),
+    title: title + ' Description',
+    content: v => task[v][1],
+    probDesc: probDesc
+});
 
 function rightpanel(mode) {
     let thumb = (idx, id, title) =>
@@ -263,50 +262,98 @@ function rightpanel(mode) {
         })
     }
 
-    // Model mode
-    return m(Panel2,
-      {side: 'right',
-       title: 'Model Selection',
-       buttons: (!app.IS_D3M_DOMAIN ? [] : [
-           m(Button, {id: 'btnModels'}, 'Models'),
-           m(Button, {id: 'btnSetx'}, 'Set Covar.'),
-           m(Button, {id: 'btnResults'}, 'Results'),
-       ]).concat([
-           m(Button, {id: 'btnType', is_explore_mode: exp.explore}, 'Task Type'),
-           m(Button, {id: 'btnSubtype', is_explore_mode: exp.explore}, 'Subtype'),
-           m(Button, {id: 'btnMetrics', is_explore_mode: exp.explore}, 'Metrics'),
-           m(Button, {id: 'btnSetx', is_explore_mode: exp.explore}, 'Set Covar.'),
-           m(Button, {id: 'btnResults', is_explore_mode: exp.explore}, 'Results')])},
-      m(`#results[style=display: ${when('right', 'btnResults')}; margin-top: .5em]`,
-        m("#resultsView.container[style=float: right; overflow: auto; width: 80%; background-color: white; white-space: nowrap]"),
-        m('#modelView[style=display: none; float: left; width: 20%; background-color: white]'),
-        m("p#resultsHolder[style=padding: .5em 1em]")),
-        // this naming is getting ridiculous...
-      m(`#setx[style=display: ${when('right', 'btnSetx')}]`,
-        m('#setxRight[style=display:block; float: right; width: 25%; height:100%; background-color: white]'),
-        m('#setxTop[style=display:block; float: left; width: 75%; height:10%; overflow: auto; background-color: white]',
-            m("button.btn.btn-default.btn-xs#btnPredPlot[type='button']", {onclick: _=> app.showPredPlot('btnPredPlot'), style: {float: "left", "margin-left": "2%"}}, "Prediction Summary"),
-            m("button.btn.btn-default.btn-xs#btnGenPreds[type='button']", {onclick: _=> app.showGenPreds('btnGenPreds'), style: {float: "left", "margin-left": "2%"}}, "Generate New Predictions")),
-        m('#setxLeftPlot[style=display:block; float: left; width: 75%; height:95%; overflow: auto; background-color: white]'),
-        m('#setxLeft[style=display:none; float: left; width: 75%; height:95%; overflow: auto; background-color: white]'),
-        m('#setxLeftGen[style=display:none; float: left; width: 75%; height:95%; overflow: auto; background-color: white]',
-            m('#setxLeftTop[style=display:block; float: left; width: 100%; height:50%; overflow: auto; background-color: white]',
-                m('#setxLeftTopLeft[style=display:block; float: left; width: 30%; height:100%; overflow: auto; background-color: white]'),
-                m('#setxLeftTopRight[style=display:block; float: left; width: 70%; height:100%; overflow: auto; background-color: white]')),
-            m('#setxLeftBottomLeft[style=display:block; float: left; width: 70%; height:50%; overflow: auto; background-color: white]'),
-            m('#setxLeftBottomRightTop[style=display:block; float: left; width: 30%; height:10%; overflow: auto; background-color: white]',
-                m(Button,
-                    {id: 'btnExecutePipe',
-                    classes: 'btn-default.ladda-button[data-spinner-color=#000000][data-style=zoom-in]',
-                    onclick: _ => app.executepipeline('btnExecutePipe'),
-                    style: `display:inline; float: left; margin-right: 10px`,
-                    title: 'Execute pipeline.'},
-                    m('span.ladda-label[style=pointer-events: none]', 'Execute Generation'))),
-            m('#setxLeftBottomRightBottom[style=display:block; float: left; width: 30%; height:40%; overflow: auto; background-color: white]'))),
-      righttab('models', 'btnModels'),
-      righttab('types', 'btnType', app.d3mTaskType, 'Task', 'taskType'),
-      righttab('subtypes', 'btnSubtype', app.d3mTaskSubtype, 'Task Subtype', 'taskSubtype'),
-      righttab('metrics', 'btnMetrics', app.d3mMetrics, 'Metric', 'metric'));
+    let explore = exp.explore && !app.explored;
+
+    // mode == null (model mode)
+    let sections = [
+        {
+            value: 'Models',
+            display: app.IS_D3M_DOMAIN ? 'block' : 'none',
+            contents: righttab('models')
+        },
+        {
+            value: 'Task Type',
+            display: explore ? 'block' : 'none',
+            idSuffix: 'Type',
+            contents: righttab('types', app.d3mTaskType, 'Task', 'taskType')
+        },
+        {
+            value: 'Subtype',
+            display: explore ? 'block' : 'none',
+            contents: righttab('subtypes', app.d3mTaskSubtype, 'Task Subtype', 'taskSubtype')
+        },
+        {
+            value: 'Metrics',
+            display: explore ? 'block' : 'none',
+            contents: righttab('metrics', app.d3mMetrics, 'Metric', 'metric')
+        },
+        {
+            value: 'Set Covar.',
+            display: !app.swandive || app.IS_D3M_DOMAIN ? 'block' : 'none',
+            idSuffix: 'Setx',
+            contents: [
+                m('#setxRight[style=display:block; float: right; width: 25%; height:100%; background-color: white]'),
+                m('#setxTop[style=display:block; float: left; width: 75%; height:10%; overflow: auto; background-color: white]',
+                    m("button.btn.btn-default.btn-xs#btnPredPlot[type='button']", {
+                        onclick: () => app.showPredPlot('btnPredPlot'),
+                        style: {float: "left", "margin-left": "2%"}
+                    }, "Prediction Summary"),
+                    m("button.btn.btn-default.btn-xs#btnGenPreds[type='button']", {
+                        onclick: () => app.showGenPreds('btnGenPreds'),
+                        style: {float: "left", "margin-left": "2%"}
+                    }, "Generate New Predictions")),
+                m('#setxLeftPlot[style=display:block; float: left; width: 75%; height:95%; overflow: auto; background-color: white]'),
+                m('#setxLeft[style=display:none; float: left; width: 75%; height:95%; overflow: auto; background-color: white]'),
+                m('#setxLeftGen[style=display:none; float: left; width: 75%; height:95%; overflow: auto; background-color: white]',
+                    m('#setxLeftTop[style=display:block; float: left; width: 100%; height:50%; overflow: auto; background-color: white]',
+                        m('#setxLeftTopLeft[style=display:block; float: left; width: 30%; height:100%; overflow: auto; background-color: white]'),
+                        m('#setxLeftTopRight[style=display:block; float: left; width: 70%; height:100%; overflow: auto; background-color: white]')),
+                    m('#setxLeftBottomLeft[style=display:block; float: left; width: 70%; height:50%; overflow: auto; background-color: white]'),
+                    m('#setxLeftBottomRightTop[style=display:block; float: left; width: 30%; height:10%; overflow: auto; background-color: white]',
+                        m(Button,
+                            {
+                                id: 'btnExecutePipe',
+                                classes: 'btn-default.ladda-button[data-spinner-color=#000000][data-style=zoom-in]',
+                                onclick: () => app.executepipeline('btnExecutePipe'),
+                                style: `display:inline; float: left; margin-right: 10px`,
+                                title: 'Execute pipeline.'
+                            },
+                            m('span.ladda-label[style=pointer-events: none]', 'Execute Generation'))),
+                    m('#setxLeftBottomRightBottom[style=display:block; float: left; width: 30%; height:40%; overflow: auto; background-color: white]'))
+            ]
+        },
+        {
+            value: 'Results',
+            contents: [
+                m("#resultsView.container[style=float: right; overflow: auto; width: 80%; background-color: white; white-space: nowrap]"),
+                m('#modelView[style=display: none; float: left; width: 20%; background-color: white]'),
+                m("p#resultsHolder[style=padding: .5em 1em]")
+            ]
+        }
+    ];
+
+    return m(Panel, {
+        side: 'right',
+        label: 'Model Selection',
+        hover: true,
+        width: {
+            'Models': 300,
+            'Task Type': 300,
+            'Subtype': 300,
+            'Metrics': 300,
+            'Set Covar.': 900,
+            'Results': 300
+        }[app.rightTab],
+        contents: m(MenuTabbed, {
+            id: 'rightpanelMenu',
+            currentTab: app.rightTab,
+            callback: app.setRightTab,
+            hoverBonus: 10,
+            selectWidth: 30,
+            sections: sections,
+            attrsAll: {style: {height: 'calc(100% - 78px)'}}
+        })
+    });
 }
 
 let ticker = mode => {
