@@ -1,0 +1,38 @@
+{
+  "about": {
+    "problemID": "22_hy_problem_TEST",
+    "problemName": "NULL",
+    "taskType": "regression",
+    "taskSubType": "univariate",
+    "problemSchemaVersion": "3.0"
+  },
+  "inputs": {
+    "data": [
+      {
+        "datasetID": "22_hy_dataset_TEST",
+        "targets": [
+          {
+            "targetIndex": 0,
+            "resID": "1",
+            "colIndex": 2,
+            "colName": "WRISTBREADTH"
+          }
+        ]
+      }
+    ],
+    "dataSplits": {
+      "method": "holdOut",
+      "testSize": 0.3,
+      "numRepeats": 0,
+      "splitsFile": "dataSplits.csv"
+    },
+    "performanceMetrics": [
+      {
+        "metric": "meanSquaredError"
+      }
+    ]
+  },
+  "expectedOutputs": {
+    "predictionsFile": "predictions.csv"
+  }
+}
