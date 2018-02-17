@@ -61,16 +61,6 @@ export let actorNodeNames = [];				//array list to maintain unique node names
 
 //begin force definitions
 let actorSVG;
-//~ var actorSVG;			//move this to d3actor?
-//~ if (app.opMode == "subset") {
-	//~ actorSVG = d3.select("#actorLinkSVG");
-//~ }
-//~ else if (app.opMode == "aggreg") {
-	//~ actorSVG = d3.select("#actorAggregSVG");
-//~ }
-//~ else {
-	//~ actorSVG = d3.select("#actorLinkSVG");
-//~ }
 
 let actorWidth;		//not yet set since window has not yet been displayed; defaults to 0
 let actorHeight;	//this code is here to remind what is under subset.js
