@@ -41,6 +41,7 @@ RUN  R -e 'install.packages("Rcpp", repos="http://cran.rstudio.org")' && \
     R -e 'install.packages("DescTools", repos="http://cran.rstudio.org")' && \
     R -e 'install.packages("nloptr", repos="http://cran.rstudio.org")' && \
     R -e 'install.packages("XML", repos="http://cran.rstudio.org")' && \
+    R -e 'install.packages("rpart", repos="http://cran.rstudio.org")' && \
     R -e 'install.packages("Zelig", repos="http://cran.rstudio.org")'
 
 
