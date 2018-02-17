@@ -303,6 +303,7 @@ export function updateToAggreg() {
 				"links": aggregActorFormat,
 				"actorType": aggregActorOn
 			},
+			"aggregMode": aggregMode,
 			"dataset": dataset,
 			"datasource": datasource
 		};
@@ -480,7 +481,7 @@ export function updateAggregTable() {
 		}
 		else if (aggregDateOn == 3) {
 			if (dateNext) {
-				dateCur.setMonth(dateCur.getMonth() + 4);
+				dateCur.setMonth(dateCur.getMonth() + 3);
 				dateNext = false;
 			}
 			$("#aggregDataDateR" + row).html(dateCur.toLocaleDateString());

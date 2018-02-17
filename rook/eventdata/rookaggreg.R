@@ -1,3 +1,7 @@
+library(tidyverse)
+require(data.table)
+library(lubridate)
+
 print("entered r aggreg app")
 
 eventdata_aggreg.app <- function(env) {
@@ -118,6 +122,15 @@ eventdata_aggreg.app <- function(env) {
 	#else return a collection of (n x m) x 20 of root codes, organized by aggreg on both groups
 
 #~ 	query_url = paste(eventdata_url, '&query={\"<date>\":{\"$gte\":\"', everything$date$min, '\",\"$lte\":\"', everything$date$max, '\"}}', sep="")		#change query to match min/max date
+
+	rootCodeHeader = c("date", 1:20)
+	pentaCodeHeader = c("date", 0:4)
+
+	if (everything$date$dateType != 0) {
+		start_date = as.Date(strptime(everything$date$min, "%Y%m%d"))
+		end_date = as.Date(strptime(everything$date$max, "%Y%m%d"))
+	}
+	
 	query_url = paste(eventdata_url, '&query={"<date>":{"$gte":"', everything$date$min, '","$lte":"', everything$date$max, '"}}', sep="")		#change query to match min/max date
 
 	if (everything$date$dateType == 0 && everything$actors$actorType == FALSE) {
@@ -140,9 +153,249 @@ eventdata_aggreg.app <- function(env) {
 		print("only date")
 		if (everything$date$dateType == 1) {	#weekly
 			print("weekly")
-			
-			start_date = as.Date(strptime(everything$date$min, "%Y%m%d"))
+
+			#calculate offset to first day in week
 			offset_date = as.Date(cut(as.Date(start_date), "week"))
+			diff = abs(as.numeric(start_date - offset_date, units="days"))
+
+			#send query for phoenix dbs
+			if (dataset %in% list("phoenix_rt", "cline_phoenix_fbis", "cline_phoenix_nyt", "cline_phoenix_swb")) {
+			
+				action_frequencies = future({
+					data = do.call(data.frame, getData(paste(eventdata_url, '&aggregate=[',
+						'{"$match": ',
+							'{"<date>": {"$gte":"', everything$date$min,
+									'", "$lte":"', everything$date$max,
+							'"}}},',
+						'{"$project": ',
+							'{"iso_date": {',
+								'"$dateFromParts": {"year": "$<year>", "month": "$<month>", "day":"$<day>"}},',
+							'"<root_code>": 1}},',
+						'{"$project": {',
+							'"iso_date": {"$subtract": ["$iso_date", ', 86400000 * diff, ']}, "<root_code>": 1}},',
+						'{"$group": {',
+							'"_id": {',
+								'"Year": {"$year": "$iso_date"},',
+								'"Week": {"$week": "$iso_date"},',
+								'"root_code": "$<root_code>"}, "total":{"$sum": 1}}},{"$limit":10}]',
+					sep="")))
+								
+					if (nrow(data) != 0) colnames(data) = c('total', 'week', '<root_code>', 'year')
+					data
+				}) %plan% multiprocess
+
+				print("end of week only")
+				print(value(action_frequencies))
+
+				result = toString(jsonlite::toJSON(list(
+					action_data = value(action_frequencies)
+				)))
+			}
+		}
+		else if (everything$date$dateType == 2) {	#monthly
+			print("monthly")
+
+			#calculate offset to first day in month
+			offset_date = as.Date(cut(as.Date(start_date), "month"))
+			diff = abs(as.numeric(start_date - offset_date, units="days"))
+
+			#send query to phoenix dbs
+			if (dataset %in% list("phoenix_rt", "cline_phoenix_fbis", "cline_phoenix_nyt", "cline_phoenix_swb")) {
+			
+				action_frequencies = future({
+					data = do.call(data.frame, getData(paste(eventdata_url, '&aggregate=[',
+						'{"$match": ',
+							'{"<date>": {"$gte":"', everything$date$min,
+									'", "$lte":"', everything$date$max,
+							'"}}},',
+#~ 						'{"$project": ',
+#~ 							'{"iso_date": {',
+#~ 								'"$dateFromParts": {"year": "$<year>", "month": "$<month>", "day":"$<day>"}},',
+#~ 							'"<root_code>": 1}},',
+#~ 						'{"$project": {',
+#~ 							'"iso_date": {"$subtract": ["$iso_date", ', 86400000 * diff, ']}, "<root_code>": 1}},',
+#~ 						'{"$group": {',
+#~ 							'"_id": {',
+#~ 								'"Year": {"$year": "$iso_date"},',
+#~ 								'"Month": {"$month": "$iso_date"},',
+#~ 								'"root_code": "$<root_code>"}, "total":{"$sum": 1}}},{"$limit":10}]',
+						'{"$project": {"<date>": 1, "<root_code>": 1, "_id": 0}}, {"$limit":20}]',
+					sep="")))
+								
+#~ 					if (nrow(data) != 0) colnames(data) = c('total', 'year', '<root_code>', 'month')
+					if (nrow(data) != 0) colnames(data) = c("date", "rootcode")
+					data
+				}) %plan% multiprocess
+
+				
+				print("end of month only")
+				print(value(action_frequencies))
+
+				test_df = value(action_frequencies)
+#~ 				test_df[which(is.na(test_df))] = -1
+
+#~ 				print(test_df)
+
+#~ 				print("test na")
+				test_df = test_df[complete.cases(test_df),]		#remove NAs
+				test_df$date = as.Date(test_df$date, "%Y%m%d")
+#~ 				test_df[order(test_df$date),]
+				print(test_df)
+
+				date_range = seq(start_date, end_date %m+% months(1), by="month")
+				print(date_range)
+				test_df$date = cut(test_df$date, date_range)
+
+				print("collected dates in bins")
+				print(test_df)
+
+				#count number
+				tab = table(test_df)
+				print("counted tab")
+				print(tab)
+
+				#convert to df
+#~ 				tab = data.frame(date=format(as.Date(names(tab)), "%m_%d_%Y"),
+				tab = as.data.frame.matrix(tab)
+				print(tab)
+
+				print("tab names")
+				print(names(tab))
+				print(rootCodeHeader)
+
+				#add missing codes in
+				print("adding missing codes")
+				missing = setdiff(rootCodeHeader, names(tab))
+				tab[missing] = 0
+				tab = tab[rootCodeHeader]
+				print(tab)
+
+				
+#~ 				print(data.frame(date2=format(as.Date(names(tab)), "%m_%d_%Y"), freq = as.vector(tab)))
+
+#~ 				#spread into wide format
+#~ 				test_df = spread(test_df, "rootcode", total, fill = 0)
+
+#~ 				#sort by date
+#~ 				test_df = test_df[with(test_df, order(date)),]
+
+#~ 				print("with gaps")
+#~ 				print(test_df)
+
+				result = toString(jsonlite::toJSON(list(
+					action_data = value(action_frequencies)
+				)))
+			}
+		}
+		else if (everything$date$dateType == 3) {	#quarterly
+			print("quarterly")
+
+			#calculate offset to first day in quarter
+			offset_date = as.Date(cut(as.Date(start_date), "quarter"))
+			diff = abs(as.numeric(start_date - offset_date, units="days"))
+
+			#send query to phoenix dbs
+			if (dataset %in% list("phoenix_rt", "cline_phoenix_fbis", "cline_phoenix_nyt", "cline_phoenix_swb")) {
+			#compress to first day of each quarter
+				action_frequencies = future({
+					data = do.call(data.frame, getData(paste(eventdata_url, '&aggregate=[',
+						'{"$match": ',
+							'{"<date>": {"$gte":"', everything$date$min,
+									'", "$lte":"', everything$date$max,
+							'"}}},',
+						'{"$project": ',
+							'{"iso_date": {',
+								'"$dateFromParts": {"year": "$<year>", "month": "$<month>", "day":"$<day>"}},',
+							'"<root_code>": 1}},',
+						'{"$project": {',
+							'"iso_date": {"$subtract": ["$iso_date", ', 86400000 * diff, ']}, "<root_code>": 1}},',
+						'{"$project": {',
+							'"iso_date": 1,',
+							'"<root_code>": 1,',
+							'"quarter":{"$cond":[{"$lte":[{"$month":"$iso_date"},3]}, "01",',
+									  '{"$cond":[{"$lte":[{"$month":"$iso_date"},6]}, "04",',
+									  '{"$cond":[{"$lte":[{"$month":"$iso_date"},9]}, "07",',
+									  '"10"]}]}]}}},',
+						'{"$group": {',
+							'"_id": {',
+								'"Year": {"$year": "$iso_date"},',
+								'"Quarter_month": "$quarter",',
+								'"root_code": "$<root_code>"}, "total":{"$sum": 1}}}]',
+					sep="")))
+								
+#~ 					if (nrow(data) != 0) colnames(data) = c('total', 'date', 'quarter', '<root_code>', 'year')
+					data
+				}) %plan% multiprocess
+
+				print("end of quarter only")
+				print(value(action_frequencies))
+
+				test_df = spread(value(action_frequencies), "X_id.root_code", total, fill = 0)
+
+				#sort by date
+				test_df = test_df[with(test_df, order(X_id.Year, X_id.Quarter_month)),]
+
+				#replace with actual date
+				fullRows = seq(start_date, end_date + 120, by="quarter")
+				print(fullRows)
+				print(fullRows[2])
+				test_df$date = test_df$X_id.Year
+				print(test_df)
+
+				print(length(test_df))
+				print(length(test_df$X_id.Year))
+				print(test_df$X_id.Year[1])
+#~ 				test_df$date = fullRows[which.min(abs(fullRows - (as.Date(with(test_df, paste(X_id.Year, X_id.Quarter_month, "01", sep="")), "%Y%m%d") + diff)))]
+
+#~ 				for (i in 1:length(test_df$X_id.Year)) {
+#~ 					print("created date")
+#~ 					print(as.Date(paste(test_df$X_id.Year[i], test_df$X_id.Quarter_month[i], "01", sep=""), "%Y%m%d") + diff)
+#~ 					print("new date")
+#~ 					print(fullRows[which.min(abs(fullRows - (as.Date(paste(test_df$X_id.Year[i], test_df$X_id.Quarter_month[i], "01", sep=""), "%Y%m%d") + diff)))])
+#~ 					test_df$date[i] = fullRows[which.min(abs(fullRows - (as.Date(paste(test_df$X_id.Year[i], test_df$X_id.Quarter_month[i], "01", sep=""), "%Y%m%d") + diff)))]
+#~ 				}
+
+				test_df$date = as.Date(with(test_df, paste(X_id.Year, X_id.Quarter_month, "01", sep="")), "%Y%m%d") + diff
+				fullRows = data.frame(date2=fullRows)
+				ldt = data.table(fullRows, key="date2")
+				dt = data.table(test_df, key="date")
+				ldt[dt, list(date, X_id.Year), roll="nearest"]
+				print(ldt)
+				print("end of ldt")
+				print(test_df)
+
+				#drop temp date columns
+				test_df$X_id.Quarter_month = NULL
+				test_df$X_id.Year = NULL
+
+				#add in empty columns and rows
+				missing = setdiff(rootCodeHeader, names(test_df))
+				test_df[missing] = 0
+				test_df = test_df[rootCodeHeader]
+#~ 				colnames(test_df)[2:21] = paste("Root", colnames(test_df)[2:21], sep=" ")
+
+				print("test_df")
+				print(test_df)
+				
+				fullRows = data.frame(date=fullRows)
+				
+				test_df = merge(fullRows, test_df, by="date", all.x=TRUE)
+
+				print(test_df)
+				
+#~ 				test_df[which(is.na(test_df))] = 0
+#~ 				print(test_df)
+
+
+				result = toString(jsonlite::toJSON(list(
+					action_data = value(action_frequencies)
+				)))
+			}
+		}
+		else if (everything$date$dateType == 4) {	#yearly
+			print("yearly")
+
+			offset_date = as.Date(cut(as.Date(start_date), "year"))
 			diff = abs(as.numeric(start_date - offset_date, units="days"))
 			
 			if (dataset %in% list("phoenix_rt", "cline_phoenix_fbis", "cline_phoenix_nyt", "cline_phoenix_swb")) {
@@ -162,117 +415,16 @@ eventdata_aggreg.app <- function(env) {
 						'{"$group": {',
 							'"_id": {',
 								'"Year": {"$year": "$iso_date"},',
-								'"Week": {"$week": "$iso_date"},',
-								'"root_code": "$<root_code>"}, "total":{"$sum": 1}}}]',
-					sep="")))
-								
-					if (nrow(data) != 0) colnames(data) = c('total', '<root_code>', 'week', 'year')
-					data
-				}) %plan% multiprocess
-
-				print("end of week only")
-				print(value(action_frequencies))
-
-				result = toString(jsonlite::toJSON(list(
-					action_data = value(action_frequencies)
-				)))
-			}
-		}
-		else if (everything$date$dateType == 2) {	#monthly
-			print("monthly")
-			if (dataset %in% list("phoenix_rt", "cline_phoenix_fbis", "cline_phoenix_nyt", "cline_phoenix_swb")) {
-			
-				action_frequencies = future({
-					data = do.call(data.frame, getData(paste(eventdata_url, '&aggregate=[',
-						'{"$match": ',
-							'{"<date>": {"$gte":"', everything$date$min,
-									'", "$lte":"', everything$date$max,
-							'"}}}',
-						'{"$project": ',
-							'{"iso_date": {',
-								'"$dateFromParts": {"year": "$<year>", "month": "$<month>", "day":"$<day>"}},',
-							'"<root_code>": 1}},',
-						'{"$project": {',
-							'"iso_date": {"$subtract": ["$iso_date", ', 86400000 * diff, ']}, "<root_code>": 1}},',
-						'{"$group": {',
-							'"_id": {',
-								'"Year": {"$year": "$iso_date"},',
-								'"Month": {"$month": "$iso_date"},',
-								'"root_code": "$<root_code>"}, "total":{"$sum": 1}}}]',
-					sep="")))
-								
-					if (nrow(data) != 0) colnames(data) = c('total', '<root_code>', 'month', 'year')
-					data
-				}) %plan% multiprocess
-
-				result = toString(jsonlite::toJSON(list(
-					action_data = value(action_frequencies)
-				)))
-			}
-		}
-		else if (everything$date$dateType == 3) {	#quarterly
-			print("quarterly")
-			if (dataset %in% list("phoenix_rt", "cline_phoenix_fbis", "cline_phoenix_nyt", "cline_phoenix_swb")) {
-			#compress to first day of each quarter
-				action_frequencies = future({
-					data = do.call(data.frame, getData(paste(eventdata_url, '&aggregate=[',
-						'{"$match": ',
-							'{"<date>": {"$gte":"', everything$date$min,
-									'", "$lte":"', everything$date$max,
-							'"}}}',
-						'{"$project": ',
-							'{"iso_date": {',
-								'"$dateFromParts": {"year": "$<year>", "month": "$<month>", "day":"$<day>"}},',
-							'"<root_code>": 1}},',
-						'{"$project": {',
-							'"iso_date": {"$subtract": ["$iso_date", ', 86400000 * diff, ']}, "<root_code>": 1}},',
-						'{"$project": {',
-							'"iso_date": 1,',
-							'"quarter":{"$cond":[{"$lte":[{"$month":"$iso_date"},3]}, "first",',
-									  '{"$cond":[{"$lte":[{"$month":"$iso_date"},6]}, "second",',
-									  '{"$cond":[{"$lte":[{"$month":"$iso_date"},9]}, "third",',
-									  '"fourth"]}]}]}}}',
-						'{"$group": {',
-							'"_id": {',
-								'"Year": {"$year": "$iso_date"},',
-								'"Quarter": {"$quarter"},',
-								'"root_code": "$<root_code>"}, "total":{"$sum": 1}}}]',
-					sep="")))
-								
-					if (nrow(data) != 0) colnames(data) = c('total', '<root_code>', 'quarter', 'year')
-					data
-				}) %plan% multiprocess
-
-				result = toString(jsonlite::toJSON(list(
-					action_data = value(action_frequencies)
-				)))
-			}
-		}
-		else if (everything$date$dateType == 4) {	#yearly
-			print("yearly")
-			if (dataset %in% list("phoenix_rt", "cline_phoenix_fbis", "cline_phoenix_nyt", "cline_phoenix_swb")) {
-			
-				action_frequencies = future({
-					data = do.call(data.frame, getData(paste(eventdata_url, '&aggregate=[',
-						'{"$match": ',
-							'{"<date>": {"$gte":"', everything$date$min,
-									'", "$lte":"', everything$date$max,
-							'"}}}',
-						'{"$project": ',
-							'{"iso_date": {',
-								'"$dateFromParts": {"year": "$<year>", "month": "$<month>", "day":"$<day>"}},',
-							'"<root_code>": 1}},',
-						'{"$project": {',
-							'"iso_date": {"$subtract": ["$iso_date", ', 86400000 * diff, ']}, "<root_code>": 1}},',
-						'{"$group": {',
-							'"_id": {',
-								'"Year": {"$year": "$iso_date"},',
-								'"root_code": "$<root_code>"}, "total":{"$sum": 1}}}]',
+								'"root_code": "$<root_code>"}, "total":{"$sum": 1}}},{"$limit":10}]',
 					sep="")))
 								
 					if (nrow(data) != 0) colnames(data) = c('total', '<root_code>', 'year')
 					data
 				}) %plan% multiprocess
+
+				print("end of year only")
+				print(value(action_frequencies))
+
 
 				result = toString(jsonlite::toJSON(list(
 					action_data = value(action_frequencies)
@@ -320,6 +472,10 @@ eventdata_aggreg.app <- function(env) {
 		print("aggreg all")
 		if (everything$date$dateType == 1) {	#weekly
 			print("aggreg week")
+
+			start_date = as.Date(strptime(everything$date$min, "%Y%m%d"))
+			offset_date = as.Date(cut(as.Date(start_date), "week"))
+			diff = abs(as.numeric(start_date - offset_date, units="days"))
 			
 			if (dataset %in% list("phoenix_rt", "cline_phoenix_fbis", "cline_phoenix_nyt", "cline_phoenix_swb")) {
 			
@@ -344,7 +500,7 @@ eventdata_aggreg.app <- function(env) {
 							'"_id": {',
 								'"Year": {"$year": "$iso_date"},',
 								'"Week": {"$week": "$iso_date"},',
-								'"root_code": "$<root_code>"}, "total":{"$sum": 1}}}]',
+								'"root_code": "$<root_code>"}, "total":{"$sum": 1}}},{"$limit":10}]',
 					sep="")))
 								
 					if (nrow(data) != 0) colnames(data) = c('total', '<root_code>', 'week', 'year')
