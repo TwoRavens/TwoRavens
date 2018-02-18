@@ -12,6 +12,10 @@ fab run
 ```
 
 - See if any new files are generated and check them in, if needed
+These are generally:
+* /tworavens/webpack-stats-prod.json
+* /tworavens/assets/dist tworavens_app-XXX.js
+* /tworavens/assets/dist tworavens_styles-XXX.css
 
 ### Check to make sure latest images built on dockerhub
 
