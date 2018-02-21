@@ -169,7 +169,7 @@ Then, in the R shell:
   install.packages(c("VGAM", "AER", "dplyr", "quantreg", "geepack", "maxLik", "Amelia", "Rook","jsonlite","rjson", "devtools", "DescTools", "XML", "Zelig", "rappdirs", "sourcetools", "processx", "rex", "evaluate", "highr", "brglm", "ROCR", "praise", "commonmark", "hunspell", "knitr", "rprojroot", "rpart"))
   ```
 
-Then set your working directory to ~TwoRavens/rook. On the Vagrant install, this is:
+Then set your working directory to ~/TwoRavens/rook. On the Vagrant install, this is:
 
   ```
   setwd("/home/ubuntu/TwoRavens/rook")
