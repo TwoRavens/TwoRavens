@@ -1,0 +1,20 @@
+{
+  "train": {
+    "split": {
+      "type": "StratifiedKFold",
+      "n_splits": 10,
+      "random_state": 42,
+      "shuffle": true
+    },
+    "score": {
+      "metric": "f1Macro",
+      "value": 0.31754660362282333
+    }
+  },
+  "test": {
+    "score": {
+      "metric": "f1Macro",
+      "value": 0.33957899339438263
+    }
+  }
+}
