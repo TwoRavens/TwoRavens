@@ -1,0 +1,40 @@
+{
+  "dataset_dir": "/home/gridsan/SW26425/d3m_shared/gov/openml/openml_534_cps_85_wages",
+  "feature_extractors": {
+    "EDUCATION,SOUTH,SEX,EXPERIENCE,UNION,AGE,RACE,OCCUPATION,SECTOR,MARR": {
+      "uuid": "a46530da936e11e797ae0002c958a258",
+      "feature_extractor": "AnnotatedTabularExtractor",
+      "params": {
+        "add_missing_indicator": true,
+        "categorize": true,
+        "normalize_text": true,
+        "numeric_strategy": "median"
+      }
+    }
+  },
+  "feature_selector": {
+    "feature_selector": "SelectPercentileRegression",
+    "params": {
+      "percentile": 60,
+      "score_func": "f_regression"
+    }
+  },
+  "estimator": {
+    "estimator": "SGDRegressorEstimator",
+    "params": {
+      "epsilon": 1.0,
+      "penalty": "elasticnet",
+      "learning_rate": "invscaling",
+      "l1_ratio": 0.8,
+      "fit_intercept": true,
+      "alpha": 1e-06,
+      "loss": "squared_loss",
+      "power_t": 0.25,
+      "eta0": 0.001
+    }
+  },
+  "performance": {
+    "metric": "meanSquaredError",
+    "cv_performance": 19.06887411324427
+  }
+}
