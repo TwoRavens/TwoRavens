@@ -480,7 +480,7 @@ class Body {
                 spaceBtn('btnJoin', _ => {
                     let links = [];
                     console.log("doing connect all");
-                    if (explore) {
+                    if (explore_mode) {
                         for (let node of app.nodes) {
                             for (let node1 of app.nodes) {
                                 if (node !== node1 && links.filter(l => l.target === node1 && l.source === node).length === 0) {
