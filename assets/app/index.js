@@ -274,6 +274,7 @@ let ticker = mode => {
     return m('#ticker[style=background: #F9F9F9; bottom: 0; height: 40px; position: fixed; width: 100%; border-top: 1px solid #ADADAD]',
         link('model'),
         link('explore'),
+        link('results'),
         m("a#logID[href=somelink][target=_blank]", "Replication"),
         m("span[style=color:#337ab7]", " | "),
         // dev links...
@@ -324,8 +325,8 @@ class Body {
 
     view(vnode) {
         let {mode} = vnode.attrs;
-        let explore = mode === 'explore';
-        app.is_results_mode = mode === 'results';
+        let explore_mode = mode === 'explore';
+        let results_mode = mode === 'results';
         let userlinks = [];
         if(username=="no logged in user"){
           userlinks = [
@@ -381,11 +382,14 @@ class Body {
             `button#${id}.btn.btn-default`, {onclick, title}, glyph(icon, true));
 
         if (mode != this.last_mode) {
-            if (explore) {
+            if (explore_mode) {
                 app.explored = false;
                 app.univariate_finished = false;
-                app.set_explore_mode(explore);
+                app.set_explore_mode();
                 app.set_righttab('btnUnivariate');
+            } else if (results_mode) {
+                app.set_results_mode();
+                app.set_righttab(IS_D3M_DOMAIN ? 'btnType' : 'btnModels');
             } else if (!mode) {
                 app.set_righttab(IS_D3M_DOMAIN ? 'btnType' : 'btnModels');
             }
@@ -396,7 +400,7 @@ class Body {
         return m(
             'main',
             m("nav#navbar.navbar.navbar-default.navbar-fixed-top[role=navigation]",
-              {style: mode === 'explore' && 'background-image: -webkit-linear-gradient(top, #fff 0, rgb(227, 242, 254) 100%)'},
+              {style: explore_mode && 'background-image: -webkit-linear-gradient(top, #fff 0, rgb(227, 242, 254) 100%)'},
               m("a.navbar-brand",
                 m("img[src=/static/images/TwoRavens.png][alt=TwoRavens][width=100][style=margin-left: 1em; margin-top: -0.5em]",
                   {onmouseover: _ => this.about = true, onmouseout: _ => this.about = false})),
@@ -419,7 +423,10 @@ class Body {
                           return m('a[style=padding: 0.5em]', {href: link.url}, link.title , 
                           m('br'))
                         }))), 
-                    navBtn('btnEstimate.btn-default', 2, 1, explore ? _ => {exp.explore(); app.set_righttab('btnBivariate')} : app.estimate, m("span.ladda-label", explore ? 'Explore' : 'Solve This Problem'), '150px'),
+                    navBtn('btnEstimate.btn-default', 2, 1, explore_mode ? _ => {
+                        exp.explore(); 
+                        app.set_righttab('btnBivariate')
+                    } : app.estimate, m("span.ladda-label", explore_mode ? 'Explore' : 'Solve This Problem'), '150px'),
                     navBtn('btnTA2.btn-default', .2, 1, _ => app.helpmaterials('manual'), ['Help Manual ', glyph('book')]),
                     navBtn('btnTA2.btn-default', .2, .2, _ => app.helpmaterials('video'), ['Help Video ', glyph('expand')]),
                     navBtn('btnTA2.btn-default', 2, .2, _ => hopscotch.startTour(mytour2, 0), ['Help Tour ', glyph('road')]),

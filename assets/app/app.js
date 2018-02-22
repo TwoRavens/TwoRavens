@@ -20,14 +20,18 @@ import {bars, barsNode, barsSubset, density, densityNode, selVarColor} from './p
 //    Developers, see /template/index.html
 //-------------------------------------------------
 
-export let is_results_mode = false;
 export let task1_finished = false;
 export let task2_finished = false;
 export let univariate_finished = false;
 
 let is_explore_mode = false;
-export function set_explore_mode(val) {
-    is_explore_mode = val;
+export function set_explore_mode() {
+    is_explore_mode = true;
+}
+
+let is_results_mode = false;
+export function set_results_mode() {
+    is_results_mode = true;
 }
 
 // for debugging - if not in PRODUCTION, prints args
