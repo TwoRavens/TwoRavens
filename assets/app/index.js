@@ -35,7 +35,6 @@ export let step = (target, placement, title, content) => ({
             },
         });
 
-
 export let mytour2 = {
             id: "dataset_launch",
             i18n: {doneBtn:'Ok'},
@@ -85,10 +84,6 @@ export let mytour3 = {
                      <p>Generally, as a tip, the Green button is the next button you need to press to move the current task forward.</p>`),
             ]
         };
-
-
-
-
 
 function leftpanel() {
     return m(
@@ -382,13 +377,12 @@ class Body {
             `button#${id}.btn.btn-default`, {onclick, title}, glyph(icon, true));
 
         if (mode != this.last_mode) {
+            app.set_mode(mode);
             if (explore_mode) {
                 app.explored = false;
                 app.univariate_finished = false;
-                app.set_explore_mode();
                 app.set_righttab('btnUnivariate');
             } else if (results_mode) {
-                app.set_results_mode();
                 app.set_righttab(IS_D3M_DOMAIN ? 'btnType' : 'btnModels');
             } else if (!mode) {
                 app.set_righttab(IS_D3M_DOMAIN ? 'btnType' : 'btnModels');
