@@ -10,6 +10,12 @@ docker login registry.datadrivendiscovery.org
 docker pull registry.datadrivendiscovery.org/j18_ta2eval/isi_ta2:stable
 ```
 
+or use the cached pullregistry:
+```
+docker login pullregistry.datadrivendiscovery.org
+docker pull pullregistry.datadrivendiscovery.org/j18_ta2eval/isi_ta2:stable
+```
+
 ### Tag it for a local repo
 
 ```
