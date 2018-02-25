@@ -1,5 +1,6 @@
 import m from 'mithril';
 import {subsetData, buildSubset, editor} from "../app";
+import {panelMargin} from "../../../common/app/common";
 
 export default class CanvasCustom {
     oncreate(){
@@ -16,12 +17,12 @@ export default class CanvasCustom {
     }
 
     view(vnode) {
-        return (m(".subsetDiv[id='subsetCustom']", {style: {"display": "none"}},
+        let {display} = vnode.attrs;
+        return (m("#canvasCustom.subsetDiv", {style: {"display": display, height: '100%', 'padding-top': panelMargin + 'px'}},
             [
                 // Header
                 m(".panel-heading.text-left[id='subsetCustomLabel']", {
                         style: {
-                            "margin-top": "10px",
                             "width": "14em",
                             "float": "left"
                         }
@@ -31,8 +32,7 @@ export default class CanvasCustom {
                 // Show rightpanel query
                 m("button.btn.btn-default[id='subsetCustomShowAll']", {
                     style: {
-                        "display": "inline",
-                        "margin-top": "10px"
+                        "display": "inline"
                     },
                     onclick: function(e) {
                         editor.setValue(JSON.stringify(buildSubset(subsetData), null, '	'));
@@ -46,8 +46,8 @@ export default class CanvasCustom {
                         "resize": "none",
                         "margin-left": "10px",
                         "margin-top": "5px",
-                        "width": "calc(100% - 45px)",
-                        "height": "calc(100% - 59px)"
+                        "width": "calc(100% - 35px)",
+                        "height": "calc(100% - 49px)"
                     }
                 })
             ]

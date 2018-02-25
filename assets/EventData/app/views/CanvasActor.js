@@ -1,6 +1,7 @@
 import m from 'mithril';
 import {dataset} from "../app.js"
 import {setupActor, actorTabSwitch, showSelected} from "../subsets/Actor.js"
+import {panelMargin} from "../../../common/app/common";
 
 export default class CanvasActor {
 
@@ -14,13 +15,14 @@ export default class CanvasActor {
     }
 
     view(vnode) {
-        return (m(".subsetDiv[id='subsetActor']", {style: {"display": "none"}},
-            m("table[id='actorContainer']",
-                m("tbody",
-                    m("tr",
+        let {display} = vnode.attrs;
+        return (m("#canvasActor.subsetDiv", {style: {"display": display, 'padding-top': panelMargin + 'px', height: `calc(100% - ${panelMargin + 2}px)`}},
+            m("table[id='actorContainer']", {style: {height: '100%', width: '100%'}},
+                m("tbody", {style: {height: '100%'}},
+                    m("tr", {style: {height: '100%'}},
                         [
-                            m("td[width='350']",
-                                m("[id='actorSelectionDiv']",
+                            m("td[width='350']", {style: {height: '100%'}},
+                                m("[id='actorSelectionDiv']", {style: {height: '100%'}},
                                     [
                                         m(".panel-heading.text-center[id='actorSelectionTitle']", {style: {"padding-bottom": "5px"}},
                                             [
@@ -269,7 +271,7 @@ export default class CanvasActor {
                                     ]
                                 )
                             ),
-                            m("td[id='actorLinkDiv']",
+                            m("td[id='actorLinkDiv']", {style: {height: '100%', width: `calc(100% - ${panelMargin}px)`}},
                                 [
                                     m("[id='linkTitle']",
                                         [

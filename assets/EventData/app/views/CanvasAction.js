@@ -1,19 +1,20 @@
 import m from 'mithril';
 import {setupAction} from '../subsets/Action.js';
+import {panelMargin} from "../../../common/app/common";
 
 export default class CanvasAction {
     oncreate() {
         setupAction();
     }
     view(vnode) {
-        return (m(".subsetDiv[id='subsetAction']", {style: {"display": "none"}},
+        let {display} = vnode.attrs;
+
+        return (m("#canvasAction.subsetDiv", {style: {"display": display, height: '100%', 'padding-top': panelMargin + 'px'}},
             m("[id='actionSVGbin']", {
                     style: {
                         "display": "inline-block",
-                        "margin-top": "10px",
-                        "margin-left": "10px",
-                        "height": "calc(100% - 20px)",
-                        "width": "calc(100% - 46px)"
+                        "height": "calc(100% - 10px)",
+                        "width": "calc(100%)"
                     }
                 },
                 [

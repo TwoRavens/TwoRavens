@@ -1324,13 +1324,13 @@ function capitalizeFirst(str) {
 
 export function resizeActorSVG() {
     //actor resize on window resize handled here
-    const curHeight = $("#main").height() - 20;     //this is the height of the container
+    console.log("RESIZE");
+    const curHeight = $("#canvas").height() - 20;     //this is the height of the container
     const titleHeight = $("#linkTitle").height();           //this is the height of the title div above the SVG
     let trySize = actorHeight;
 
     let actorSelectionDiv = $("#actorSelectionDiv");
     let actorLinkDiv = $("#actorLinkDiv");
-    actorSelectionDiv.css("height", curHeight);   //this constrains the left side
     if (actorActualSize['source'] <= calcCircleNum(curHeight - titleHeight) && actorActualSize['target'] <= calcCircleNum(curHeight - titleHeight)) {     //if link div is empty enough, maintain height alignment
         actorLinkDiv.css("height", actorSelectionDiv.height() + 2);
         actorHeight = actorSVG.node().getBoundingClientRect().height;
@@ -1355,10 +1355,6 @@ export function resizeActorSVG() {
         });
         updateAll();
     }
-
-    if ($('#rightpanel').hasClass('closepanel')) {
-        actorLinkDiv.css("width", "calc(100% - 45px)");
-    } else actorLinkDiv.css("width", "calc(100% - 275px)");
 
     let diagramWidth = actorLinkDiv.width();
     

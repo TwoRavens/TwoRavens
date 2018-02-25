@@ -1,3 +1,5 @@
+import m from 'mithril'
+
 import {resetActionCounts, actionBuffer, drawGraphs, updateData} from "./subsets/Action";
 import {updateActor, actorLinks, resizeActorSVG} from "./subsets/Actor";
 import {updateDate, datemax, datemaxUser, datemin, dateminUser, setDatefromSlider} from "./subsets/Date";
@@ -11,49 +13,9 @@ import '../../../node_modules/jqtree/tree.jquery.js'
 import '../../../node_modules/jqtree/jqtree.css'
 import '../pkgs/jqtree/jqtree.style.css'
 
-export function toggleLeftPanel() {
-    // Make selections
-    let main = $('#main');
-    let leftpanel = $('#leftpanel');
-
-    if (!leftpanel.hasClass('forceclosepanel')) {
-        leftpanel.removeClass('expandpanel');
-        $('#leftpanel > div.row-fluid').toggleClass('closepanel');
-        leftpanel.toggleClass('closepanel');
-    }
-
-    if (leftpanel.hasClass('closepanel')) {
-        main.css('margin-left', '30px');
-        main.css('width', 'calc(100% - 30px)');
-    } else {
-        main.css('margin-left', '260px');
-        main.css('width', 'calc(100% - 260px)');
-    }
-    if (subsetKeySelected === "Action") {
-        drawGraphs();
-        updateData();
-    }
-    if (subsetKeySelected === "Actor") {
-        resizeActorSVG();
-    }
-}
-
-export function openRightPanel() {
-    if ($('#rightpanel').hasClass('closepanel')) {
-        /*$('#rightpanel .nav-tabs').hide();*/
-        $('#rightpanel > div.row-fluid').toggleClass('closepanel');
-        $('#rightpanel').toggleClass('closepanel');
-        rightpanelMargin();
-    }
-}
-
-export function toggleRightPanel() {
-    let rightPanel = $('#rightpanel');
-    if (rightPanel.hasClass('forceclosepanel')) return;
-
-    rightPanel.toggleClass('closepanel');
-    rightpanelMargin();
-}
+// Select which tab is shown in the left panel
+export let setLeftTab = (tab) => leftTab = tab;
+export let leftTab = 'Variables'
 
 export let opMode = "subset";
 export function setOpMode(mode) {
@@ -111,7 +73,7 @@ if (localStorage.getItem("dataset") !== null) {
 }
 
 // Options: "api" or "local"
-export let datasource = 'local';
+export let datasource = 'api';
 
 export let subsetKeys = [];
 export let subsetKeySelected = "";
@@ -125,21 +87,14 @@ if (dataset === "icews") {
     subsetKeySelected = "Actor";
 }
 
-let variables;
+export let variables;
 
 // These get instantiated in the oncreate() method for the mithril Body_EventData class
 export let laddaSubset;
 export let laddaReset;
 export let laddaDownload;
 
-export function variableSetup(jsondata) {
-    // Each key has a %-formatted value
-    variables = Object.keys(jsondata.variables);
-
-    reloadLeftpanelVariables();
-}
-
-let variablesSelected = new Set();
+export let variablesSelected = new Set();
 
 export let varColor = 'rgba(240,248,255, 1.0)';   //d3.rgb("aliceblue");
 export let selVarColor = 'rgba(250,128,114, 0.5)';    //d3.rgb("salmon");
@@ -184,7 +139,7 @@ export function setupBody(){
     // The editor menu for the custom subsets
     editor = ace.edit("subsetCustomEditor");
 
-    laddaSubset = Ladda.create(document.getElementById("btnSubmit"));
+    laddaSubset = Ladda.create(document.getElementById("btnSubsetSubmit"));
     laddaReset = Ladda.create(document.getElementById("btnReset"));
     laddaDownload = Ladda.create(document.getElementById("buttonDownload"));
     laddaReset.start();
@@ -219,10 +174,11 @@ export function setupBody(){
     };
 
     // Load the field names into the left panel
-    makeCorsRequest(subsetURL, query, variableSetup);
-
-    // Bind the leftpanel search box to the field name list
-    $("#searchvar").keyup(reloadLeftpanelVariables);
+    makeCorsRequest(subsetURL, query, function(jsondata) {
+        // Each key has a %-formatted value
+        variables = Object.keys(jsondata.variables);
+        reloadLeftpanelVariables();
+    });
 
     query = {
         'subsets': JSON.stringify(subsetQuery),
@@ -240,43 +196,27 @@ export function setupBody(){
     // }
 }
 
+export let matchedVariables = [];
 export function reloadLeftpanelVariables() {
+    let search_term = document.getElementById('searchVariables').value.toUpperCase();
     // Subset variable list by search term. Empty string returns all.
-    let search_term = $("#searchvar").val().toUpperCase();
-    let matchedVariables = [];
-
+    matchedVariables.length = 0;
+    
     for (let variable of variables) {
         if (variable.toUpperCase().indexOf(search_term) !== -1) {
             matchedVariables.push(variable)
         }
     }
+    m.redraw();
+}
 
-    $('#variableList').empty();
-    d3.select("#variableList").selectAll("p")
-        .data(matchedVariables)
-        .enter()
-        .append("p")
-        .text(function (d) { return d; })
-        .style('background-color', function () {
-            if (variablesSelected.has(d3.select(this).text())) return selVarColor;
-            return varColor
-        })
-        .on("click", function () {
-            d3.select(this).style('background-color', function () {
-
-                let text = d3.select(this).text();
-                if (variablesSelected.has(text)) {
-                    variablesSelected.delete(text);
-                    return varColor
-
-                } else {
-                    variablesSelected.add(text);
-                    return selVarColor
-                }
-            });
-
-            reloadRightPanelVariables()
-        });
+export function toggleVariableSelected(variable) {
+    if (variablesSelected.has(variable)) {
+        variablesSelected.delete(variable);
+    } else {
+        variablesSelected.add(variable);
+    }
+    reloadRightPanelVariables();
 }
 
 export function showSubset(subsetKey) {
@@ -445,63 +385,13 @@ export function pageSetup(jsondata) {
     return true;
 }
 
-
-// Select which tab is shown in the left panel
-export function tabLeft(tab) {
-    document.getElementById('variableTab').style.display = 'none';
-    document.getElementById('subsetTab').style.display = 'none';
-
-    $("#leftpanelButtons").children().addClass("btn btn-default").removeClass("active");
-
-    switch (tab) {
-        case "variableTab":
-            document.getElementById('btnVariables').setAttribute("class", "active");
-            break;
-        case "subsetTab":
-            document.getElementById('btnSubset').setAttribute("class", "active");
-    }
-
-    d3.select("#leftpanel").attr("class", "sidepanel container clearfix");
-    document.getElementById(tab).style.display = 'block';
-}
-
 window.onresize = rightpanelMargin;
 
 export function rightpanelMargin() {
-    if (subsetKeySelected === "Actor") {
-        resizeActorSVG();
-    }
-
-    // Resize SVGs in action
     if (subsetKeySelected === "Action") {
         drawGraphs();
         updateData();
     }
-
-    let main = $("#main");
-    if (main.get(0).scrollHeight > main.get(0).clientHeight) {
-        // Vertical scrollbar
-        document.getElementById("rightpanel").style.right = "27px";
-        if ($('#rightpanel').hasClass('closepanel')) {
-            document.getElementById("stageButton").style.right = "56px";
-        } else {
-            document.getElementById("stageButton").style.right = "286px";
-        }
-    } else {
-        // No vertical scrollbar
-        document.getElementById("rightpanel").style.right = "10px";
-        if ($('#rightpanel').hasClass('closepanel')) {
-            document.getElementById("stageButton").style.right = "40px";
-        } else {
-            document.getElementById("stageButton").style.right = "270px";
-        }
-    }
-
-    let height_adjustment = main.get(0).scrollWidth > main.get(0).clientWidth ? 17 : 0;
-    if (opMode === "aggreg") height_adjustment += 100;
-
-    document.getElementById("rightpanel").style.height = "calc(100% - " + String(122 + height_adjustment) + "px)";
-    document.getElementById("stageButton").style.bottom = String(56 + height_adjustment) + "px";
 }
 
 

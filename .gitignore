@@ -1,6 +1,8 @@
 node_modules/
 npm-debug.log
 
+assets/common/*
+
 # currently in rook directory
 <<<<<<< 0aa6a9974e808c6b182540e39bd28172f15e5881
 =======
