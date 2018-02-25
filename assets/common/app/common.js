@@ -35,8 +35,24 @@ export let panelOpen = {
     'left': true,
     'right': true
 };
-export function setPanelOpen(side, state=true) {panelOpen[side] = state}
-export function togglePanelOpen(side) {panelOpen[side] = !panelOpen[side]}
+
+// If you invoke from outside a mithril context, run m.redraw() to trigger the visual update
+export function setPanelOpen(side, state=true) {
+    panelOpen[side] = state;
+    panelCallback[side](state);
+}
+
+export function togglePanelOpen(side) {
+    panelOpen[side] = !panelOpen[side];
+    panelCallback[side](panelOpen[side])
+}
+
+// Optionally trigger callback after setting panel state (but before redraw)
+export let panelCallback = {
+    'left': Function,
+    'right': Function
+};
+export function setPanelCallback(side, callback) {panelCallback[side] = callback}
 
 // Number of pixels occluded by the panels. Left at zero if panels are hovering
 export let panelOcclusion = {

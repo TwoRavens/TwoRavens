@@ -34,9 +34,9 @@ import {mergeAttributes} from '../common'
 
 export default class ButtonRadio {
     oninit(vnode) {
-        let {selectedSection, defaultSection, sections} = vnode.attrs;
+        let {activeSection, defaultSection, sections} = vnode.attrs;
         // Attempt to set active on initial load based on options
-        this.active = selectedSection || defaultSection || sections.length !== 0 ? sections[0].value : undefined;
+        this.active = activeSection || defaultSection || sections.length !== 0 ? sections[0].value : undefined;
     }
 
     view(vnode) {

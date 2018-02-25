@@ -30,9 +30,9 @@ export default class Canvas {
                 height: `calc(100% - ${heightHeader + heightFooter}px)`,
                 'padding-left': panelOcclusion['left'] + 'px',
                 'padding-right': panelOcclusion['right'] + 'px',
-                top: heightHeader + 'px',
                 position: 'fixed',
-                overflow: 'auto'
+                overflow: 'auto',
+                top: 0
             }
         }, contents)
     }
