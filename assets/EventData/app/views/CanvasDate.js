@@ -1,5 +1,6 @@
 import m from 'mithril';
 import {setupDate, setDatefromSlider} from "../subsets/Date.js"
+import {panelMargin} from "../../../common/app/common";
 
 export default class CanvasDate {
     oncreate() {
@@ -7,7 +8,8 @@ export default class CanvasDate {
     }
 
     view(vnode) {
-        return (m(".subsetDiv[id='subsetDate']", {style: {"display": "none"}},
+        let {display} = vnode.attrs;
+        return (m("#canvasDate.subsetDiv", {style: {"display": display, 'padding-top': panelMargin + 'px'}},
             [
                 m("[id='dateSVGdiv']", {style: {"display": "inline-block"}}, m("svg[height='500'][id='dateSVG'][width='500']")),
                 m("div",

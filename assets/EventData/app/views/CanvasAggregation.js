@@ -1,15 +1,18 @@
 import m from 'mithril';
+import {panelMargin} from "../../../common/app/common";
 
 export default class CanvasAggregation {
     view(vnode) {
+        let {display} = vnode.attrs;
         return m("[id='aggregDataDisplay']", {
                 style: {
-                    "display": "inline-block",
+                    "display": display,
                     "width": "100%",
                     "height": "75%",
                     "overflow-x": "auto",
                     "overflow-y": "scroll",
-                    "white-space": "nowrap"
+                    "white-space": "nowrap",
+                    "padding-top": panelMargin + 'px'
                 }
             },
             [

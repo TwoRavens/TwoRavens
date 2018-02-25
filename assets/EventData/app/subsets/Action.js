@@ -29,7 +29,7 @@ var actionSubX, actionSubY, actionSubMargin, actionSubWidth, actionSubHeight, ac
 
 
 export function setupAction() {
-    actionTooltip = d3.select("#subsetAction").select(".SVGtooltip").style("opacity", 0); //tooltip
+    actionTooltip = d3.select("#canvasAction").select(".SVGtooltip").style("opacity", 0); //tooltip
 
     // Action labels
     d3.csv("/static/EventData/data/actionlookup.csv", function(d) {
@@ -106,7 +106,9 @@ export function drawGraphs() {
     })).padding(0.15);
 
     var gMain = svgMain.append("g").attr("id", "actionMainG")
-        .attr("transform", "translate(" + actionMainMargin.left + "," + actionMainMargin.top + ")");
+        .attr("transform", "translate(" + actionMainMargin.left + "," + actionMainMargin.top + ")")
+        .attr("width", "100%")
+        .attr("height", "100%");
 
     gMain.append("g")
         .attr("class", "x axis mainX")

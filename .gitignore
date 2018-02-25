@@ -1,6 +1,8 @@
 node_modules/
 npm-debug.log
 
+assets/common/*
+
 # currently in rook directory
 rook/rook-files/
 rook/test.json
