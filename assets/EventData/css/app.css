@@ -687,7 +687,7 @@ div.actorTab button.active {
 
 /* style the tab content */
 .actorTabContent {
-    display: none;
+    height: 100%;
     -webkit-animation: fadeEffect 0.5s;
     animation: fadeEffect 0.5s;
 }

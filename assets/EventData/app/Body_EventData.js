@@ -20,11 +20,12 @@ import TextField from '../../common/app/views/TextField'
 
 import CanvasAction from "./views/CanvasAction"
 import CanvasActor from "./views/CanvasActor"
-import CanvasAggregation from "./views/CanvasAggregation"
 import CanvasCoordinates from "./views/CanvasCoordinates"
 import CanvasCustom from "./views/CanvasCustom"
 import CanvasDate from "./views/CanvasDate"
 import CanvasLocation from "./views/CanvasLocation"
+import CanvasPentaClass from "./views/CanvasPentaClass"
+import CanvasRootCode from "./views/CanvasRootCode"
 
 import TableAggregation from "./views/TableAggregation"
 
@@ -37,199 +38,197 @@ export default class Body_EventData {
     }
 
     header(mode) {
-        if (mode === 'subset') {
-            return m(Header, {
-                contents: [
+        return m(Header, {
+            contents: [
 
-                    // Button Reset
-                    m("button.btn.btn-default.ladda-button[data-spinner-color='#818181'][data-style='zoom-in'][id='btnReset'][title='Reset']", {
-                            style: {
-                                "margin-left": "2.0em",
-                                "float": "right"
-                            },
-                            onclick: app.reset
+                // Button Reset
+                m("button.btn.btn-default.ladda-button[data-spinner-color='#818181'][data-style='zoom-in'][id='btnReset'][title='Reset']", {
+                        style: {
+                            "margin-left": "2.0em",
+                            "float": "right"
                         },
-                        m("span.ladda-label.glyphicon.glyphicon-repeat", {
-                            style: {
-                                "font-size": "1em",
-                                "color": "#818181",
-                                "pointer-events": "none"
-                            }
-                        })
-                    ),
+                        onclick: app.reset
+                    },
+                    m("span.ladda-label.glyphicon.glyphicon-repeat", {
+                        style: {
+                            "font-size": "1em",
+                            "color": "#818181",
+                            "pointer-events": "none"
+                        }
+                    })
+                ),
 
-                    // Button Subset Submit
-                    m("label#btnSubsetSubmit.btn.btn-default.ladda-button[data-spinner-color='#818181'][data-style='zoom-in']", {
-                            style: {
-                                "float": "right",
-                                "margin-left": "2em",
-                                "margin-right": "1em"
-                            },
-                            onclick: app.submitQuery
+                // Button Subset Submit
+                m("label#btnSubsetSubmit.btn.btn-default.ladda-button[data-spinner-color='#818181'][data-style='zoom-in']", {
+                        style: {
+                            "float": "right",
+                            "margin-left": "2em",
+                            "margin-right": "1em"
                         },
-                        m("span.ladda-label", "Subset")
-                    ),
+                        onclick: () => (mode==='subset') ? app.submitQuery() : m.route.set('/subset')
+                    },
+                    m("span.ladda-label", "Subset")
+                ),
 
-                    // Button Aggregate
-                    m("button.btn.btn-default[id='aggSubmit']",
-                        {
-                            style: {"margin-right": "1em", 'float': 'right'},
-                            onclick: aggreg.updateToAggreg
-                        }, "Aggregate"),
+                // Button Aggregate
+                m("button.btn.btn-default[id='aggSubmit']",
+                    {
+                        style: {"margin-right": "1em", 'float': 'right'},
+                        onclick: () => (mode==='subset') ? m.route.set('/aggregate') : undefined
+                    }, "Aggregate"),
 
-                    // Dataset Selection
-                    m("div", {
-                            style: {"left": "calc(50% + 20px)", "position": "fixed"},
-                            onclick: function (e) {
-                                // I could not get these to bind, so I bind them on dropdown
-                                $("#selectPhoenixRT").click(function () {
-                                    app.setDataset('phoenix_rt');
-                                });
-                                $("#selectClineNYT").click(function () {
-                                    app.setDataset('cline_phoenix_nyt');
-                                });
-                                $("#selectClineCIA").click(function () {
-                                    app.setDataset('cline_phoenix_fbis');
-                                });
-                                $("#selectClineSWB").click(function () {
-                                    app.setDataset('cline_phoenix_swb');
-                                });
-                                $("#selectICEWS").click(function () {
-                                    app.setDataset('icews');
-                                });
-                            }
-                        },
-                        m(".popover-markup", {style: {"display": "inline"}},
-                            [
-                                m("a.trigger.btn.btn-sm.btn-default", {style: {"height": "30px"}},
-                                    m("span.glyphicon.glyphicon-chevron-down", {
-                                        style: {
-                                            "margin-top": "3px",
-                                            "font-size": "1em",
-                                            "color": "#818181",
-                                            "pointer-events": "none"
-                                        }
-                                    })
-                                ),
-                                m(".head.hide",
-                                    "Dataset"
-                                ),
-                                m(".content.hide",
-                                    m(".popoverContentContainer",
-                                        [
-                                            m("[id='optionMenu']",
-                                                [
-                                                    m("button.btn.btn-default[data-option='1'][id='option']", "Phoenix - UTDallas"),
-                                                    m("button.btn.btn-default[data-option='2'][id='option']", "Cline - New York Times"),
-                                                    m("button.btn.btn-default[data-option='3'][id='option']", "Cline - CIA Broadcast"),
-                                                    m("button.btn.btn-default[data-option='4'][id='option']", "Cline - BBC Summary"),
-                                                    m("button.btn.btn-default[data-option='5'][id='option']", "ICEWS")
-                                                ]
-                                            ),
+                // Dataset Selection
+                m("div", {
+                        style: {"left": "calc(50% + 20px)", "position": "fixed"},
+                        onclick: function (e) {
+                            // I could not get these to bind, so I bind them on dropdown
+                            $("#selectPhoenixRT").click(function () {
+                                app.setDataset('phoenix_rt');
+                            });
+                            $("#selectClineNYT").click(function () {
+                                app.setDataset('cline_phoenix_nyt');
+                            });
+                            $("#selectClineCIA").click(function () {
+                                app.setDataset('cline_phoenix_fbis');
+                            });
+                            $("#selectClineSWB").click(function () {
+                                app.setDataset('cline_phoenix_swb');
+                            });
+                            $("#selectICEWS").click(function () {
+                                app.setDataset('icews');
+                            });
+                        }
+                    },
+                    m(".popover-markup", {style: {"display": "inline"}},
+                        [
+                            m("a.trigger.btn.btn-sm.btn-default", {style: {"height": "30px"}},
+                                m("span.glyphicon.glyphicon-chevron-down", {
+                                    style: {
+                                        "margin-top": "3px",
+                                        "font-size": "1em",
+                                        "color": "#818181",
+                                        "pointer-events": "none"
+                                    }
+                                })
+                            ),
+                            m(".head.hide",
+                                "Dataset"
+                            ),
+                            m(".content.hide",
+                                m(".popoverContentContainer",
+                                    [
+                                        m("[id='optionMenu']",
+                                            [
+                                                m("button.btn.btn-default[data-option='1'][id='option']", "Phoenix - UTDallas"),
+                                                m("button.btn.btn-default[data-option='2'][id='option']", "Cline - New York Times"),
+                                                m("button.btn.btn-default[data-option='3'][id='option']", "Cline - CIA Broadcast"),
+                                                m("button.btn.btn-default[data-option='4'][id='option']", "Cline - BBC Summary"),
+                                                m("button.btn.btn-default[data-option='5'][id='option']", "ICEWS")
+                                            ]
+                                        ),
 
-                                            m(".optionView[id='optionView1']",
-                                                [
-                                                    m("button.btn.btn-sm.btn-default[data-option='1'][id='option']",
-                                                        m("span.glyphicon.glyphicon-chevron-left", {
-                                                            style: {
-                                                                "font-size": "1em",
-                                                                "color": "#818181",
-                                                                "pointer-events": "none"
-                                                            }
-                                                        })
-                                                    ),
-                                                    m("p", "A Phoenix-coded event dataset constructed here at The University of Texas at Dallas!"),
-                                                    m("button.btn.btn-primary[id='selectPhoenixRT']", m("span.ladda-label", "Select"))
-                                                ]
-                                            ),
+                                        m(".optionView[id='optionView1']",
+                                            [
+                                                m("button.btn.btn-sm.btn-default[data-option='1'][id='option']",
+                                                    m("span.glyphicon.glyphicon-chevron-left", {
+                                                        style: {
+                                                            "font-size": "1em",
+                                                            "color": "#818181",
+                                                            "pointer-events": "none"
+                                                        }
+                                                    })
+                                                ),
+                                                m("p", "A Phoenix-coded event dataset constructed here at The University of Texas at Dallas!"),
+                                                m("button.btn.btn-primary[id='selectPhoenixRT']", m("span.ladda-label", "Select"))
+                                            ]
+                                        ),
 
-                                            m(".optionView[id='optionView2']",
-                                                [
-                                                    m("button.btn.btn-sm.btn-default[data-option='2'][id='option']",
-                                                        m("span.glyphicon.glyphicon-chevron-left", {
-                                                            style: {
-                                                                "font-size": "1em",
-                                                                "color": "#818181",
-                                                                "pointer-events": "none"
-                                                            }
-                                                        })
-                                                    ),
-                                                    m(".head", {style: {"margin-left": "40px"}},
-                                                        m("a[href='http://www.clinecenter.illinois.edu/data/event/phoenix/']", "Cline New York Times")
-                                                    ),
-                                                    m("p", "This data is sourced from the New York Times and collected by the Cline Center for Advanced Social Research."),
-                                                    m("button.btn.btn-primary[id='selectClineNYT']", m("span.ladda-label", "Select"))
-                                                ]
-                                            ),
+                                        m(".optionView[id='optionView2']",
+                                            [
+                                                m("button.btn.btn-sm.btn-default[data-option='2'][id='option']",
+                                                    m("span.glyphicon.glyphicon-chevron-left", {
+                                                        style: {
+                                                            "font-size": "1em",
+                                                            "color": "#818181",
+                                                            "pointer-events": "none"
+                                                        }
+                                                    })
+                                                ),
+                                                m(".head", {style: {"margin-left": "40px"}},
+                                                    m("a[href='http://www.clinecenter.illinois.edu/data/event/phoenix/']", "Cline New York Times")
+                                                ),
+                                                m("p", "This data is sourced from the New York Times and collected by the Cline Center for Advanced Social Research."),
+                                                m("button.btn.btn-primary[id='selectClineNYT']", m("span.ladda-label", "Select"))
+                                            ]
+                                        ),
 
-                                            m(".optionView[id='optionView3']",
-                                                [
-                                                    m("button.btn.btn-sm.btn-default[data-option='3'][id='option']",
-                                                        m("span.glyphicon.glyphicon-chevron-left", {
-                                                            style: {
-                                                                "font-size": "1em",
-                                                                "color": "#818181",
-                                                                "pointer-events": "none"
-                                                            }
-                                                        })
-                                                    ),
-                                                    m(".head", {style: {"margin-left": "40px"}},
-                                                        m("a[href='http://www.clinecenter.illinois.edu/data/event/phoenix/']", "Cline CIA Broadcast")
-                                                    ),
-                                                    m("p", "This data is sourced from the CIA Foreign Broadcast Information Service and collected by the Cline Center for Advanced Social Research."),
-                                                    m("button.btn.btn-primary[id='selectClineCIA']", m("span.ladda-label", "Select"))
-                                                ]
-                                            ),
+                                        m(".optionView[id='optionView3']",
+                                            [
+                                                m("button.btn.btn-sm.btn-default[data-option='3'][id='option']",
+                                                    m("span.glyphicon.glyphicon-chevron-left", {
+                                                        style: {
+                                                            "font-size": "1em",
+                                                            "color": "#818181",
+                                                            "pointer-events": "none"
+                                                        }
+                                                    })
+                                                ),
+                                                m(".head", {style: {"margin-left": "40px"}},
+                                                    m("a[href='http://www.clinecenter.illinois.edu/data/event/phoenix/']", "Cline CIA Broadcast")
+                                                ),
+                                                m("p", "This data is sourced from the CIA Foreign Broadcast Information Service and collected by the Cline Center for Advanced Social Research."),
+                                                m("button.btn.btn-primary[id='selectClineCIA']", m("span.ladda-label", "Select"))
+                                            ]
+                                        ),
 
-                                            m(".optionView[id='optionView4']",
-                                                [
-                                                    m("button.btn.btn-sm.btn-default[data-option='4'][id='option']",
-                                                        m("span.glyphicon.glyphicon-chevron-left", {
-                                                            style: {
-                                                                "font-size": "1em",
-                                                                "color": "#818181",
-                                                                "pointer-events": "none"
-                                                            }
-                                                        })
-                                                    ),
-                                                    m(".head", {style: {"margin-left": "40px"}},
-                                                        m("a[href='http://www.clinecenter.illinois.edu/data/event/phoenix/']", "Cline BBC Summary")
-                                                    ),
-                                                    m("p", "This data is sourced from the BBC Summary of World Broadcasts and collected by the Cline Center for Advanced Social Research."),
-                                                    m("button.btn.btn-primary[id='selectClineSWB']", m("span.ladda-label", "Select"))
-                                                ]
-                                            ),
+                                        m(".optionView[id='optionView4']",
+                                            [
+                                                m("button.btn.btn-sm.btn-default[data-option='4'][id='option']",
+                                                    m("span.glyphicon.glyphicon-chevron-left", {
+                                                        style: {
+                                                            "font-size": "1em",
+                                                            "color": "#818181",
+                                                            "pointer-events": "none"
+                                                        }
+                                                    })
+                                                ),
+                                                m(".head", {style: {"margin-left": "40px"}},
+                                                    m("a[href='http://www.clinecenter.illinois.edu/data/event/phoenix/']", "Cline BBC Summary")
+                                                ),
+                                                m("p", "This data is sourced from the BBC Summary of World Broadcasts and collected by the Cline Center for Advanced Social Research."),
+                                                m("button.btn.btn-primary[id='selectClineSWB']", m("span.ladda-label", "Select"))
+                                            ]
+                                        ),
 
-                                            m(".optionView[id='optionView5']",
-                                                [
-                                                    m("button.btn.btn-sm.btn-default[data-option='5'][id='option']",
-                                                        m("span.glyphicon.glyphicon-chevron-left", {
-                                                            style: {
-                                                                "font-size": "1em",
-                                                                "color": "#818181",
-                                                                "pointer-events": "none"
-                                                            }
-                                                        })
-                                                    ),
-                                                    m(".head", {style: {"margin-left": "40px"}},
-                                                        m("a[href='https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/28075']", "ICEWS Coded Event Data")
-                                                    ),
-                                                    m("p", "Event data consists of coded interactions between socio-political actors (i.e., cooperative or hostile actions between individuals, groups, sectors and nation states)."),
-                                                    m("button.btn.btn-primary[id='selectICEWS']", m("span.ladda-label", "Select"))
-                                                ]
-                                            )
-                                        ]
-                                    )
+                                        m(".optionView[id='optionView5']",
+                                            [
+                                                m("button.btn.btn-sm.btn-default[data-option='5'][id='option']",
+                                                    m("span.glyphicon.glyphicon-chevron-left", {
+                                                        style: {
+                                                            "font-size": "1em",
+                                                            "color": "#818181",
+                                                            "pointer-events": "none"
+                                                        }
+                                                    })
+                                                ),
+                                                m(".head", {style: {"margin-left": "40px"}},
+                                                    m("a[href='https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/28075']", "ICEWS Coded Event Data")
+                                                ),
+                                                m("p", "Event data consists of coded interactions between socio-political actors (i.e., cooperative or hostile actions between individuals, groups, sectors and nation states)."),
+                                                m("button.btn.btn-primary[id='selectICEWS']", m("span.ladda-label", "Select"))
+                                            ]
+                                        )
+                                    ]
                                 )
-                            ]
-                        )
-                    ),
-                    m("h4", {style: {"right": "calc(50% - 10px)", "position": "fixed"}},
-                        m("span.label.label-default[id='datasetLabel']")
+                            )
+                        ]
                     )
-                ]
-            })
-        }
+                ),
+                m("h4", {style: {"right": "calc(50% - 10px)", "position": "fixed"}},
+                    m("span.label.label-default[id='datasetLabel']")
+                )
+            ]
+        })
     }
 
     footer(mode) {
@@ -289,7 +288,7 @@ export default class Body_EventData {
                                 onclick: tour.tourStartCustom
                             }, "Custom")
                         ]) :
-                    m("div[id='aggregTourBar']", {style: {"display": "none"}},
+                    m("div[id='aggregTourBar']", {style: {"display": "inline-block"}},
                         [
                             m("button.btn.btn-default.btn-sm[id='tourButtonAggreg'][type='button']", {
                                 style: {
@@ -347,8 +346,8 @@ export default class Body_EventData {
                             contents: m(PanelList, {
                                 id: 'subsetsList',
                                 items: app.subsetKeys,
-                                itemsSelected: [app.subsetKeySelected],
-                                callback: app.showSubset
+                                itemsSelected: [app.canvasKeySelected],
+                                callback: app.showCanvas
                             })
                         }
                     ]
@@ -363,8 +362,23 @@ export default class Body_EventData {
                 width: 250,
                 label: 'Data Selection',
                 contents: m(MenuHeaders, {
-                    contents: [
-                        {}
+                    sections: [
+                        {
+                            value: 'Unit of Measure',
+                            contents: m(PanelList, {
+                                items: ['Date', 'Actor'],
+                                itemsSelected: [app.canvasKeySelected],
+                                callback: app.showCanvas
+                            })
+                        },
+                        {
+                            value: 'Event Measure',
+                            contents: m(PanelList, {
+                                items: ['Penta Class', 'Root Code'],
+                                itemsSelected: [app.canvasKeySelected],
+                                callback: app.showCanvas
+                            })
+                        }
                     ]
                 })
             })
@@ -415,6 +429,7 @@ export default class Body_EventData {
     view(vnode) {
         let {mode} = vnode.attrs;
 
+        app.setOpMode(mode);
         return m('main',
             [
                 this.header(mode),
@@ -424,38 +439,41 @@ export default class Body_EventData {
                     onclick: app.addRule
                 }, "Stage"),
                 m(Canvas, {
-                        contents: [
-                            m(CanvasActor, {
-                                mode: mode,
-                                display: app.subsetKeySelected === 'Actor' ? 'block' : 'none'
-                            }),
-                            m(CanvasDate, {
-                                mode: mode,
-                                display: app.subsetKeySelected === 'Date' ? 'block' : 'none'
-                            }),
-                            m(CanvasAction, {
-                                mode: mode,
-                                display: app.subsetKeySelected === 'Action' ? 'block' : 'none'
-                            }),
-                            m(CanvasLocation, {
-                                mode: mode,
-                                display: app.subsetKeySelected === 'Location' ? 'block' : 'none'
-                            }),
-                            m(CanvasCoordinates, {
-                                mode: mode,
-                                display: app.subsetKeySelected === 'Coordinates' ? 'block' : 'none'
-                            }),
-                            m(CanvasCustom, {
-                                mode: mode,
-                                display: app.subsetKeySelected === 'Custom' ? 'block' : 'none'
-                            }),
-                            m(CanvasAggregation, {
-                                mode: mode,
-                                display: app.subsetKeySelected === 'Aggregation' ? 'block' : 'none'
-                            })
-                        ]
-                    }
-                ),
+                    contents: [
+                        m(CanvasActor, {
+                            mode: mode,
+                            display: app.canvasKeySelected === 'Actor' ? 'block' : 'none'
+                        }),
+                        m(CanvasDate, {
+                            mode: mode,
+                            display: app.canvasKeySelected === 'Date' ? 'block' : 'none'
+                        }),
+                        m(CanvasAction, {
+                            mode: mode,
+                            display: app.canvasKeySelected === 'Action' ? 'block' : 'none'
+                        }),
+                        m(CanvasLocation, {
+                            mode: mode,
+                            display: app.canvasKeySelected === 'Location' ? 'block' : 'none'
+                        }),
+                        m(CanvasCoordinates, {
+                            mode: mode,
+                            display: app.canvasKeySelected === 'Coordinates' ? 'block' : 'none'
+                        }),
+                        m(CanvasCustom, {
+                            mode: mode,
+                            display: app.canvasKeySelected === 'Custom' ? 'block' : 'none'
+                        }),
+                        m(CanvasPentaClass, {
+                            mode: mode,
+                            display: app.canvasKeySelected === 'Penta Class' ? 'block' : 'none'
+                        }),
+                        m(CanvasRootCode, {
+                            mode: mode,
+                            display: app.canvasKeySelected === 'Root Code' ? 'block' : 'none'
+                        })
+                    ]
+                }),
                 m(TableAggregation, {mode: mode}),
                 this.footer(mode)
             ]

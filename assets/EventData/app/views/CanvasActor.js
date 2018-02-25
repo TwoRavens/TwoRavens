@@ -1,7 +1,170 @@
 import m from 'mithril';
 import {dataset} from "../app.js"
-import {setupActor, actorTabSwitch, showSelected} from "../subsets/Actor.js"
+import {
+    setupActor,
+    actorTabSwitch,
+    showSelected,
+    filterSet,
+    currentNode,
+    currentTab,
+    dict,
+    actorSelectChanged,
+    actorFilterChanged,
+    resizeActorSVG
+} from "../subsets/Actor.js"
 import {panelMargin} from "../../../common/app/common";
+
+// Width of the actor selection panel
+let selectionWidth = 350;
+
+
+function actorSelection(mode) {
+
+    // Header text with optional aggregation checkbox
+    let headerElements = [
+        m("[id='actorPanelTitleDiv']", m("h3.panel-title", "Actor Selection"))
+    ];
+
+    if (mode === "aggregate") {
+        headerElements.push(m("[id='actorAggToggleDiv']", {
+                style: {
+                    "position": "relative",
+                    "top": "-2px"
+                }
+            },
+            m("label.aggChkLbl",
+                [
+                    m("input.aggChk.aggActor[checked=''][id='aggregActorSelect'][name='aggregActorSelect'][type='checkbox'][value='aggregActorUse']"),
+                    "Use in aggregation"
+                ]
+            )
+        ))
+    }
+
+    // Radio buttons for actor/target selection
+    let tabSelection = m("[id='tabDiv']", {style: {"overflow": "hidden"}},
+        m(".btn-group[data-toggle='buttons'][id='actorRadio']", {style: {width: "100%"}},
+            [
+                m(`label.btn.btn-default${currentTab === "source" ? ".active" : ""}[title='Select sources']`,
+                    {
+                        style: {"width": "50%"},
+                        onclick: () => actorTabSwitch('source')
+                    },
+                    [
+                        m("input[autocomplete='off'][checked=''][id='sourceTabBtn'][name='actorSet'][type='radio']"),
+                        "Sources"
+                    ]
+                ),
+                m(`label.btn.btn-default${currentTab === "target" ? ".active" : ""}[title='Select targets']`,
+                    {
+                        style: {"width": "50%"},
+                        onclick: () => actorTabSwitch('target')
+                    },
+                    [
+                        m("input[autocomplete='off'][id='targetTabBtn'][name='actorSet'][type='radio']"),
+                        "Targets"
+                    ]
+                )
+            ]
+        )
+    );
+
+    let aggregationOffset = (mode === 'subset') ? 0 : 25;
+
+    let actorLists = m(`.actorTabContent#actorDiv`,
+        [
+            m(`.actorLeft#allActors`, {style: {height: `calc(100% - ${aggregationOffset}px)`}},
+                [
+                    m(`input.form-control#actorSearch[placeholder='Search ${currentTab} actors'][type='text']`),
+                    m(`.actorFullList#searchListActors`, {style: {"text-align": "left"}})
+                ]
+            ),
+            m(`.actorRight[id='actorRight']`, {style: {height: `calc(100% - ${aggregationOffset}px)`}},
+                [
+                    m(`button.btn.btn-default.clearActorBtn[data-toggle='tooltip'][id='clearAllActors'][title='Clears search text and filters'][type='button']`,
+                        "Clear All Filters"
+                    ),
+                    m(`.actorFilterList#actorFilter`, {style: {"text-align": "left"}},
+                        [
+                            m(`label.actorShowSelectedLbl.actorChkLbl[data-toggle='tooltip'][title='Show selected ${currentTab}s']`,
+                                [
+                                    m("input.actorChk.actorShowSelected#actorShowSelected[name='actorShowSelected'][type='checkbox'][value='show']",
+                                        {
+                                            onchange: showSelected
+                                        }), "Show Selected"
+                                ]
+                            ),
+                            m(".separator"),
+                            m("button.filterExpand#entityActorExpand[value='expand']"),
+                            m("label.actorHead4#entityActor[for='entityActorExpand']",
+                                m("b", "Entity")
+                            ),
+                            m(".filterContainer#wrapEntityActor", {style: {"padding-left": "10px"}},
+                                [
+                                    m("button.filterExpand[id='orgActorExpand'][value='expand']"),
+                                    m("label.actorChkLbl",
+                                        [
+                                            m("input.actorChk.allCheck#actorOrgAllCheck[name='actorOrgAllCheck'][type='checkbox'][value='organizations']"),
+                                            "Organization"
+                                        ]
+                                    ),
+                                    m(".filterContainer[id='orgActorList']", {style: {"padding-left": "30px"}}),
+                                    m(".separator"),
+                                    m("button.filterExpand#countryActorExpand[value='expand']"),
+                                    m("label.actorChkLbl",
+                                        [
+                                            m("input.actorChk.allCheck#actorCountryAllCheck[name='actorCountryAllCheck'][type='checkbox'][value='countries']"),
+                                            "Country"
+                                        ]
+                                    ),
+                                    m(".filterContainer[id='countryActorList']", {style: {"padding-left": "30px"}})
+                                ]
+                            ),
+                            m(".separator"),
+                            m("button.filterExpand[id='roleActorExpand'][value='expand']"),
+                            m("label.actorHead4#roleActors[for='roleActorExpand']",
+                                m("b", "Role")
+                            ),
+                            m(".filterContainer[id='roleActorList']"),
+                            m(".separator"),
+                            m("button.filterExpand#attributeActorExpand[value='expand']"),
+                            m("label.actorHead4#attributeActors[for='attributeActorExpand']",
+                                m("b", "Attribute")
+                            ),
+                            m(".filterContainer#attributeActorList")
+                        ]
+                    )
+                ]
+            ),
+            m(".actorBottomTry", {style: {"width": "100%"}},
+                [
+                    m(`button.btn.btn-default.actorBottom#actorSelectAll[data-toggle='tooltip'][title='Selects all ${currentTab}s that match the filter criteria'][type='button']`,
+                        "Select All"
+                    ),
+                    m(`button.btn.btn-default.actorBottom#actorClearAll[data-toggle='tooltip'][title='Clears all ${currentTab}s that match the filter criteria'][type='button']`,
+                        "Clear All"
+                    ),
+                    m(`button.btn.btn-default.actorBottom#actorNewGroup[data-toggle='tooltip'][title='Create new ${currentTab} group'][type='button']`,
+                        "New Group"
+                    )
+                ]
+            )
+        ]
+    );
+
+    return [
+        m(".panel-heading.text-center[id='actorSelectionTitle']", {style: {"padding-bottom": "5px"}}, headerElements),
+        tabSelection,
+        m(".panel-heading.text-center[id='groupNameDisplayContainer']", {style: {"padding-bottom": "0px"}},
+            [
+                m(`input[data-toggle='tooltip'][id='editGroupName'][placeholder='${currentNode[currentTab].name}'][title='Click to change group name'][type='text']`),
+                m("button[data-toggle='tooltip'][id='deleteGroup'][title='Delete current group'][type='button']")
+            ]
+        ),
+        m("[id='fullContainer']", actorLists)
+    ]
+}
+
 
 export default class CanvasActor {
 
@@ -14,282 +177,52 @@ export default class CanvasActor {
         setupActor();
     }
 
+    onupdate() {
+        resizeActorSVG();
+    }
+
     view(vnode) {
-        let {display} = vnode.attrs;
-        return (m("#canvasActor.subsetDiv", {style: {"display": display, 'padding-top': panelMargin + 'px', height: `calc(100% - ${panelMargin + 2}px)`}},
-            m("table[id='actorContainer']", {style: {height: '100%', width: '100%'}},
-                m("tbody", {style: {height: '100%'}},
-                    m("tr", {style: {height: '100%'}},
+        let {mode, display} = vnode.attrs;
+
+        return m("#canvasActor.canvas", {style: {height: `calc(100% - ${panelMargin}px)`, display: display}},
+            [
+                m("div#actorSelectionDiv", {
+                    style: {
+                        float: "left",
+                        height: `calc(100% - ${panelMargin}px)`,
+                        width: selectionWidth + "px",
+                        'margin-top': "10px"
+                    }
+                }, actorSelection(mode)),
+                m("div#actorLinkDiv", {
+                    style: {
+                        'margin-left': panelMargin + 'px',
+                        'margin-top': panelMargin + 'px',
+                        height: `calc(100% - ${panelMargin}px)`,
+                        width: `calc(100% - ${selectionWidth + panelMargin}px)`
+                    }
+                }, [
+                    m("[id='linkTitle']",
                         [
-                            m("td[width='350']", {style: {height: '100%'}},
-                                m("[id='actorSelectionDiv']", {style: {height: '100%'}},
-                                    [
-                                        m(".panel-heading.text-center[id='actorSelectionTitle']", {style: {"padding-bottom": "5px"}},
-                                            [
-                                                // Header
-                                                m("[id='actorPanelTitleDiv']", m("h3.panel-title", "Actor Selection")),
-                                                m("[id='actorAggToggleDiv']", {
-                                                        style: {
-                                                            "display": "none",
-                                                            "position": "relative",
-                                                            "top": "-2px"
-                                                        }
-                                                    },
-                                                    m("label.aggChkLbl",
-                                                        [
-                                                            m("input.aggChk.aggActor[checked=''][id='aggregActorSelect'][name='aggregActorSelect'][type='checkbox'][value='aggregActorUse']"),
-                                                            "Use in aggregation"
-                                                        ]
-                                                    )
-                                                )
-                                            ]
-                                        ),
-                                        m("[id='tabDiv']", {style: {"overflow": "hidden"}},
-                                            m(".btn-group[data-toggle='buttons'][id='actorRadio']", {
-                                                    style: {"width": "100%"}
-                                                },
-                                                [
-                                                    m("label.btn.btn-default.active[title='Select sources']",
-                                                        {
-                                                            style: {"width": "50%"},
-                                                            onclick: function (e) {
-                                                                actorTabSwitch('sourceTabBtn', 'sourceDiv');
-                                                                e.redraw = false;
-                                                            }
-                                                        },
-                                                        [
-                                                            m("input[autocomplete='off'][checked=''][id='sourceTabBtn'][name='actorSet'][type='radio']"),
-                                                            "Sources"
-                                                        ]
-                                                    ),
-                                                    m("label.btn.btn-default[title='Select targets']",
-                                                        {
-                                                            style: {"width": "50%"},
-                                                            onclick: function (e) {
-                                                                actorTabSwitch('targetTabBtn', 'targetDiv');
-                                                                e.redraw = false;
-                                                            }
-                                                        },
-                                                        [
-                                                            m("input[autocomplete='off'][id='targetTabBtn'][name='actorSet'][type='radio']"),
-                                                            "Targets"
-                                                        ]
-                                                    )
-                                                ]
-                                            )
-                                        ),
-                                        m(".panel-heading.text-center[id='groupNameDisplayContainer']", {style: {"padding-bottom": "0px"}},
-                                            [
-                                                m("input[data-toggle='tooltip'][id='editGroupName'][placeholder='Source 0'][title='Click to change group name'][type='text']"),
-                                                m("button[data-toggle='tooltip'][id='deleteGroup'][title='Delete current group'][type='button']")
-                                            ]
-                                        ),
-                                        m("[id='fullContainer']",
-                                            [
-                                                m(".actorTabContent[id='sourceDiv']",
-                                                    [
-                                                        m(".actorLeft[id='allSources']",
-                                                            [
-                                                                m("input.form-control.actorSearch[id='sourceSearch'][placeholder='Search source actors'][type='text']"),
-                                                                m(".actorFullList[id='searchListSources']", {style: {"text-align": "left"}}
-                                                                )
-                                                            ]
-                                                        ),
-                                                        m(".actorRight[id='sourceRight']",
-                                                            [
-                                                                m("button.btn.btn-default.clearActorBtn[data-toggle='tooltip'][id='clearAllSources'][title='Clears search text and filters'][type='button']",
-                                                                    "Clear All Filters"
-                                                                ),
-                                                                m(".actorFilterList[id='sourceFilter']", {style: {"text-align": "left"}},
-                                                                    [
-                                                                        m("label.actorShowSelectedLbl.actorChkLbl[data-toggle='tooltip'][title='Show selected sources']",
-                                                                            [
-                                                                                m("input.actorChk.actorShowSelected[id='sourceShowSelected'][name='sourceShowSelected'][type='checkbox'][value='show']",
-                                                                                {
-                                                                                    onchange: function (e) {
-                                                                                        showSelected();
-                                                                                        e.redraw = false;
-                                                                                    }
-                                                                                }), "Show Selected"
-                                                                            ]
-                                                                        ),
-                                                                        m(".separator"),
-                                                                        m("button.filterExpand[id='entitySourceExpand'][value='expand']"),
-                                                                        m("label.actorHead4[for='entitySourceExpand'][id='entitySources']",
-                                                                            m("b",
-                                                                                "Entity"
-                                                                            )
-                                                                        ),
-                                                                        m(".filterContainer[id='wrapEntitySource']", {style: {"padding-left": "10px"}},
-                                                                            [
-                                                                                m("button.filterExpand[id='orgSourceExpand'][value='expand']"),
-                                                                                m("label.actorChkLbl",
-                                                                                    [
-                                                                                        m("input.actorChk.allCheck[id='sourceOrgAllCheck'][name='sourceOrgAllCheck'][type='checkbox'][value='organizations']"),
-                                                                                        "Organization"
-                                                                                    ]
-                                                                                ),
-                                                                                m(".filterContainer[id='orgSourcesList']", {style: {"padding-left": "30px"}}),
-                                                                                m(".separator"),
-                                                                                m("button.filterExpand[id='countrySourceExpand'][value='expand']"),
-                                                                                m("label.actorChkLbl",
-                                                                                    [
-                                                                                        m("input.actorChk.allCheck[id='sourceCountryAllCheck'][name='sourceCountryAllCheck'][type='checkbox'][value='countries']"),
-                                                                                        "Country"
-                                                                                    ]
-                                                                                ),
-                                                                                m(".filterContainer[id='countrySourcesList']", {style: {"padding-left": "30px"}})
-                                                                            ]
-                                                                        ),
-                                                                        m(".separator"),
-                                                                        m("button.filterExpand[id='roleSourceExpand'][value='expand']"),
-                                                                        m("label.actorHead4[for='roleSourceExpand'][id='roleSources']",
-                                                                            m("b",
-                                                                                "Role"
-                                                                            )
-                                                                        ),
-                                                                        m(".filterContainer[id='roleSourcesList']"),
-                                                                        m(".separator"),
-                                                                        m("button.filterExpand[id='attributeSourceExpand'][value='expand']"),
-                                                                        m("label.actorHead4[for='attributeSourceExpand'][id='attributeSources']",
-                                                                            m("b",
-                                                                                "Attribute"
-                                                                            )
-                                                                        ),
-                                                                        m(".filterContainer[id='attributeSourcesList']")
-                                                                    ]
-                                                                )
-                                                            ]
-                                                        ),
-                                                        m(".actorBottomTry", {style: {"width": "100%"}},
-                                                            [
-                                                                m("button.btn.btn-default.actorBottom.actorSelectAll[data-toggle='tooltip'][id='sourceSelectAll'][title='Selects all sources that match the filter criteria'][type='button']",
-                                                                    "Select All"
-                                                                ),
-                                                                m("button.btn.btn-default.actorBottom.actorClearAll[data-toggle='tooltip'][id='sourceClearSel'][title='Clears all sources that match the filter criteria'][type='button']",
-                                                                    "Clear All"
-                                                                ),
-                                                                m("button.btn.btn-default.actorBottom.actorNewGroup[data-toggle='tooltip'][id='sourceNew'][title='Create new source group'][type='button']",
-                                                                    "New Group"
-                                                                )
-                                                            ]
-                                                        )
-                                                    ]
-                                                ),
-                                                m(".actorTabContent[id='targetDiv']",
-                                                    [
-                                                        m(".actorLeft[id='allTargets']",
-                                                            [
-                                                                m("input.form-control.actorSearch[id='targetSearch'][placeholder='Search target actors'][type='text']"),
-                                                                m(".actorFullList[id='searchListTargets']", {style: {"text-align": "left"}}
-                                                                )
-                                                            ]
-                                                        ),
-                                                        m(".actorRight[id='targetRight']",
-                                                            [
-                                                                m("button.btn.btn-default.clearActorBtn[data-toggle='tooltip'][id='clearAllTargets'][title='Clears search text and filters'][type='button']",
-                                                                    "Clear All Filters"
-                                                                ),
-                                                                m(".actorFilterList[id='targetFilter']", {style: {"text-align": "left"}},
-                                                                    [
-                                                                        m("label.actorShowSelectedLbl.actorChkLbl[data-toggle='tooltip'][title='Show selected targets']",
-                                                                            [
-                                                                                m("input.actorChk.actorShowSelected[id='targetShowSelected'][name='targetShowSelected'][type='checkbox'][value='show']",
-                                                                                {
-                                                                                    onchange: function (e) {
-                                                                                        showSelected();
-                                                                                        e.redraw = false;
-                                                                                    }
-                                                                                }), "Show Selected"
-                                                                            ]
-                                                                        ),
-                                                                        m(".separator"),
-                                                                        m("button.filterExpand[id='entityTargetExpand'][value='expand']"),
-                                                                        m("label.actorHead4[for='entityTargetExpand'][id='entityTargets']",
-                                                                            m("b",
-                                                                                "Entity"
-                                                                            )
-                                                                        ),
-                                                                        m(".filterContainer[id='wrapEntityTarget']", {style: {"padding-left": "10px"}},
-                                                                            [
-                                                                                m("button.filterExpand[id='orgTargetExpand'][value='expand']"),
-                                                                                m("label.actorChkLbl",
-                                                                                    [
-                                                                                        m("input.actorChk.allCheck[id='targetOrgAllCheck'][name='targetOrgAllCheck'][type='checkbox'][value='organizations']"),
-                                                                                        "Organization"
-                                                                                    ]
-                                                                                ),
-                                                                                m(".filterContainer[id='orgTargetsList']", {style: {"padding-left": "30px"}}),
-                                                                                m(".separator"),
-                                                                                m("button.filterExpand[id='countryTargetExpand'][value='expand']"),
-                                                                                m("label.actorChkLbl",
-                                                                                    [
-                                                                                        m("input.actorChk.allCheck[id='targetCountryAllCheck'][name='targetCountryAllCheck'][type='checkbox'][value='countries']"),
-                                                                                        "Country"
-                                                                                    ]
-                                                                                ),
-                                                                                m(".filterContainer[id='countryTargetsList']", {style: {"padding-left": "30px"}})
-                                                                            ]
-                                                                        ),
-                                                                        m(".separator"),
-                                                                        m("button.filterExpand[id='roleTargetExpand'][value='expand']"),
-                                                                        m("label.actorHead4[for='roleTargetExpand'][id='roleTargets']",
-                                                                            m("b",
-                                                                                "Role"
-                                                                            )
-                                                                        ),
-                                                                        m(".filterContainer[id='roleTargetsList']"),
-                                                                        m(".separator"),
-                                                                        m("button.filterExpand[id='attributeTargetExpand'][value='expand']"),
-                                                                        m("label.actorHead4[for='attributeTargetExpand'][id='attributeTargets']",
-                                                                            m("b",
-                                                                                "Attribute"
-                                                                            )
-                                                                        ),
-                                                                        m(".filterContainer[id='attributeTargetsList']")
-                                                                    ]
-                                                                )
-                                                            ]
-                                                        ),
-                                                        m(".actorBottomTry",
-                                                            [
-                                                                m("button.btn.btn-default.actorBottom.actorSelectAll[data-toggle='tooltip'][id='targetSelectAll'][title='Selects all targets that match the filter criteria'][type='button']",
-                                                                    "Select All"
-                                                                ),
-                                                                m("button.btn.btn-default.actorBottom.actorClearAll[data-toggle='tooltip'][id='targetClearSel'][title='Clears all targets that match the filter criteria'][type='button']",
-                                                                    "Clear All"
-                                                                ),
-                                                                m("button.btn.btn-default.actorBottom.actorNewGroup[data-toggle='tooltip'][id='targetNew'][title='Create new target group'][type='button']",
-                                                                    "New Group"
-                                                                )
-                                                            ]
-                                                        )
-                                                    ]
-                                                )
-                                            ]
-                                        )
-                                    ]
-                                )
+                            m("h3.panel-title.text-center[id='linkTitleLeft']",
+                                "Sources"
                             ),
-                            m("td[id='actorLinkDiv']", {style: {height: '100%', width: `calc(100% - ${panelMargin}px)`}},
-                                [
-                                    m("[id='linkTitle']",
-                                        [
-                                            m("h3.panel-title.text-center[id='linkTitleLeft']",
-                                                "Sources"
-                                            ),
-                                            m("h3.panel-title.text-center[id='linkTitleRight']",
-                                                "Targets"
-                                            )
-                                        ]
-                                    ),
-                                    m("svg[id='actorLinkSVG']")
-                                ]
+                            m("h3.panel-title.text-center[id='linkTitleRight']",
+                                "Targets"
                             )
                         ]
-                    )
-                )
-            )
-        ));
+                    ),
+                    m("svg[id='actorLinkSVG']")
+                ]),
+                m("div#actorFormatDiv", {
+                    style: {
+                        clear: 'both',
+                        height: '1px',
+                        overflow: 'hidden',
+                        'font-size': '0pt',
+                        'margin-top': '-1px'
+                    }
+                })
+            ]);
     }
 }

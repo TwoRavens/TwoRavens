@@ -1,4 +1,4 @@
-import {showSubset, openRightPanel} from "./app";
+import {showCanvas, openRightPanel} from "./app";
 import hopscotch from 'hopscotch';
 
 export function tourStartGeneral() {
@@ -73,7 +73,7 @@ let generalTour = {
 };
 
 export function tourStartActor() {
-    showSubset('Actor');
+    showCanvas('Actor');
     hopscotch.endTour(false);
     hopscotch.startTour(actorTour);
 }
@@ -152,7 +152,7 @@ let actorTour = {
 };
 
 export function tourStartDate() {
-    showSubset('Date');
+    showCanvas('Date');
     hopscotch.endTour(false);
     hopscotch.startTour(dateTour);
 }
@@ -192,7 +192,7 @@ let dateTour = {
 };
 
 export function tourStartAction() {
-    showSubset('Action');
+    showCanvas('Action');
     hopscotch.endTour(false);
     hopscotch.startTour(actionTour);
 }
@@ -234,7 +234,7 @@ let actionTour = {
 };
 
 export function tourStartLocation() {
-    showSubset('Location');
+    showCanvas('Location');
     hopscotch.endTour(false);
     hopscotch.startTour(locationTour);
 }
@@ -284,7 +284,7 @@ let locationTour = {
 
 
 export function tourStartCoordinates() {
-    showSubset('Coordinates');
+    showCanvas('Coordinates');
     hopscotch.endTour(false);
     hopscotch.startTour(coordinatesTour);
 }
@@ -328,7 +328,7 @@ let coordinatesTour = {
 
 
 export function tourStartCustom() {
-    showSubset('Custom');
+    showCanvas('Custom');
     hopscotch.endTour(false);
     hopscotch.startTour(customTour);
 }

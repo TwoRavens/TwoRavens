@@ -1,5 +1,5 @@
 import * as d3 from "d3"
-import {rightpanelMargin, countryData} from "../app";
+import {handleResize, countryData} from "../app";
 
 /**
  * Variables declared for location
@@ -348,7 +348,7 @@ function render(blnIsSubgraph, cid) {
             .text("Frequency");
 
     }
-    rightpanelMargin();
+    handleResize();
 }
 
 /**
@@ -451,7 +451,7 @@ export function maingraphAction(action) {
         $("#Exp_Col_Icon").removeClass("glyphicon-resize-full").addClass("glyphicon-resize-small");
         $("#main_graph_td_div").removeClass('graph_collapse').addClass('graph_config');
     }
-    rightpanelMargin();
+    handleResize();
 }
 
 /**
@@ -502,7 +502,7 @@ window.subgraphAction = function(textId) {
 
         updateCountryList();
     }
-    rightpanelMargin();
+    handleResize();
 };
 
 
@@ -525,7 +525,7 @@ function removeAllSubGraphSVG() {
             $("#sub_graph_td_div_" + cid).removeClass('graph_config').addClass('graph_close').parent().hide();
         }
     }
-    rightpanelMargin();
+    handleResize();
 }
 
 window.subgraphYLabelClicked = function(cname) {
