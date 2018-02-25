@@ -4,6 +4,7 @@ import {resetActionCounts, actionBuffer, drawGraphs, updateData} from "./subsets
 import {updateActor, actorLinks, resizeActorSVG} from "./subsets/Actor";
 import {updateDate, datemax, datemaxUser, datemin, dateminUser, setDatefromSlider} from "./subsets/Date";
 import {updateLocation, mapListCountriesSelected} from "./subsets/Location";
+import {setPanelCallback} from "../../common/app/common";
 
 // Used for custom query editor
 import '../../../node_modules/ace-builds/src-min-noconflict/ace.js'
@@ -15,16 +16,29 @@ import '../pkgs/jqtree/jqtree.style.css'
 
 // Select which tab is shown in the left panel
 export let setLeftTab = (tab) => leftTab = tab;
-export let leftTab = 'Variables'
+export let leftTab = 'Variables';
+
+export function handleResize() {
+    if (canvasKeySelected === 'Actor') {
+        resizeActorSVG();
+    }
+
+    if (canvasKeySelected === "Action") {
+        drawGraphs();
+        updateData();
+    }
+}
 
 export let opMode = "subset";
 export function setOpMode(mode) {
-    if (['subset', 'aggreg'].indexOf(mode) !== -1) {
+    if (['subset', 'aggregate'].indexOf(mode) !== -1) {
         opMode = mode;
     } else {
         console.log("Invalid opmode");
     }
 }
+
+
 
 let production = false;
 
@@ -75,17 +89,8 @@ if (localStorage.getItem("dataset") !== null) {
 // Options: "api" or "local"
 export let datasource = 'api';
 
-export let subsetKeys = [];
-export let subsetKeySelected = "";
-
-if (["phoenix_rt", "cline_phoenix_swb", "cline_phoenix_nyt", "cline_phoenix_fbis"].indexOf(dataset) !== -1) {
-    subsetKeys = ["Actor", "Date", "Action", "Location", "Coordinates", "Custom"]; // Used to label buttons in the left panel
-    subsetKeySelected = "Actor";
-}
-if (dataset === "icews") {
-    subsetKeys = ["Actor", "Date", "Action", "Location", "Coordinates", "Custom"]; // Used to label buttons in the left panel
-    subsetKeySelected = "Actor";
-}
+export let subsetKeys = ["Actor", "Date", "Action", "Location", "Coordinates", "Custom"]; // Used to label buttons in the left panel
+export let canvasKeySelected = "Actor";
 
 export let variables;
 
@@ -102,8 +107,21 @@ export let selVarColor = 'rgba(250,128,114, 0.5)';    //d3.rgb("salmon");
 // Stores the live data returned from the server
 export let dateData = [];
 export let countryData = [];
-export let actorData = {};
 export let actionData = [];
+export let actorData = {
+    'source': {
+        full: [],
+        entities: [],
+        roles: [],
+        attributes: []
+    },
+    'target': {
+        full: [],
+        entities: [],
+        roles: [],
+        attributes: []
+    }
+};
 
 // This is set once data is loaded and the graphs can be drawn. Subset menus will not be shown until this is set
 let initialLoad = false;
@@ -139,34 +157,6 @@ export function setupBody(){
     // The editor menu for the custom subsets
     editor = ace.edit("subsetCustomEditor");
 
-    laddaSubset = Ladda.create(document.getElementById("btnSubsetSubmit"));
-    laddaReset = Ladda.create(document.getElementById("btnReset"));
-    laddaDownload = Ladda.create(document.getElementById("buttonDownload"));
-    laddaReset.start();
-
-    // Build list of subsets in left panel
-    d3.select("#subsetList").selectAll("p")
-        .data(subsetKeys)
-        .enter()
-        .append("p")
-        .text(function (d) {
-            return d;
-        })
-        .style("text-align", "center")
-        .style('background-color', function () {
-            if (d3.select(this).text() === subsetKeySelected) return selVarColor;
-            else return varColor;
-        })
-        .on("click", function () {
-            showSubset(d3.select(this).text())
-        });
-
-    // on load make subset tab in left panel show first
-    $("#btnSubset").trigger("click");
-    $("#btnSubsetLabel").addClass('active');
-
-    document.getElementById("datasetLabel").innerHTML = dataset + " dataset";
-
     let query = {
         'type': 'formatted',
         'dataset': dataset,
@@ -180,6 +170,13 @@ export function setupBody(){
         reloadLeftpanelVariables();
     });
 
+    laddaSubset = Ladda.create(document.getElementById("btnSubsetSubmit"));
+    laddaReset = Ladda.create(document.getElementById("btnReset"));
+    laddaDownload = Ladda.create(document.getElementById("buttonDownload"));
+    laddaReset.start();
+
+    document.getElementById("datasetLabel").innerHTML = dataset + " dataset";
+
     query = {
         'subsets': JSON.stringify(subsetQuery),
         'variables': JSON.stringify(variableQuery),
@@ -189,15 +186,12 @@ export function setupBody(){
 
     // Initial load of preprocessed data
     makeCorsRequest(subsetURL, query, pageSetup);
-
-    // Close rightpanel if no prior queries have been submitted
-    // if (queryId === 1) {
-    //     toggleRightPanel();
-    // }
 }
 
 export let matchedVariables = [];
 export function reloadLeftpanelVariables() {
+    if (opMode !== 'subset') return;
+
     let search_term = document.getElementById('searchVariables').value.toUpperCase();
     // Subset variable list by search term. Empty string returns all.
     matchedVariables.length = 0;
@@ -219,32 +213,22 @@ export function toggleVariableSelected(variable) {
     reloadRightPanelVariables();
 }
 
-export function showSubset(subsetKey) {
-    subsetKeySelected = subsetKey;
-    d3.select('#subsetList').selectAll("p").style('background-color', function (d) {
-        if (d === subsetKeySelected) return selVarColor;
-        else return varColor;
-    });
+export function showCanvas(canvasKey) {
+    canvasKeySelected = canvasKey;
 
     if (!initialLoad) {
-        alert("Resources are still being loaded from the server. Subsets will be available once resources have been loaded.");
+        alert("Resources are still being loaded from the server. Canvases will be available once resources have been loaded.");
     } else {
-        if (subsetKeySelected !== "") {
-            $("#main").children().hide();
-            $("#subset" + subsetKeySelected).css('display', 'inline');
+        if (canvasKeySelected === "Custom" || opMode === 'aggregation')
+            $("#stageButton").hide();
+        else $("#stageButton").show();
 
-            if (subsetKeySelected === "Custom") $("#stageButton").hide();
-            else $("#stageButton").show();
-
-            rightpanelMargin();
-        }
-
-        if (subsetKeySelected === "Action") {
+        if (canvasKeySelected === "Action") {
             drawGraphs();
             updateData();
         }
 
-        if (subsetKeySelected === "Actor") {
+        if (canvasKeySelected === "Actor") {
             resizeActorSVG();
         }
     }
@@ -355,9 +339,7 @@ export function pageSetup(jsondata) {
     }
 
     actionData = {};
-    for (let i = 1; i <= 20; i++) {
-        actionData[i] = 0;
-    }
+    for (let i = 1; i <= 20; i++) actionData[i] = 0;
     for (let entry of jsondata['action_data']) {
         actionData[parseInt(entry['<root_code>'])] = entry.total
     }
@@ -373,7 +355,7 @@ export function pageSetup(jsondata) {
     if (!initialLoad) {
         initialLoad = true;
         // In the case where the user has not yet made a subset selection, this is ignored
-        showSubset(subsetKeySelected);
+        showCanvas(canvasKeySelected);
     }
 
     let total_records = 0;
@@ -382,16 +364,8 @@ export function pageSetup(jsondata) {
     }
 
     document.getElementById('recordCount').innerHTML = total_records + " records";
+    m.redraw();
     return true;
-}
-
-window.onresize = rightpanelMargin;
-
-export function rightpanelMargin() {
-    if (subsetKeySelected === "Action") {
-        drawGraphs();
-        updateData();
-    }
 }
 
 
@@ -519,7 +493,7 @@ export function setupQueryTree() {
             let node = event.node;
             if (node.name === 'Custom Subset') {
                 editor.set(JSON.parse(node.custom));
-                showSubset("Custom");
+                showCanvas("Custom");
             }
 
             if (event.node.hasChildren()) {
@@ -537,7 +511,7 @@ export function setupQueryTree() {
             } else {
                 editor.setValue(JSON.stringify(tempQuery, null, '\t'));
                 editor.clearSelection();
-                showSubset("Custom");
+                showCanvas("Custom");
             }
         }
     );
@@ -792,7 +766,7 @@ window.addGroup = function(query = false) {
 
 export function addRule() {
     // Index zero is root node. Add subset pref to nodes
-    if (subsetKeySelected !== "") {
+    if (canvasKeySelected !== "") {
         let preferences = getSubsetPreferences();
 
         // Don't add an empty preference
@@ -823,7 +797,7 @@ export function addRule() {
  * @returns {{}} : dictionary of preferences
  */
 function getSubsetPreferences() {
-    if (subsetKeySelected === 'Date') {
+    if (canvasKeySelected === 'Date') {
 
         // If the dates have not been modified, force bring the date from the slider
         if (dateminUser - datemin === 0 && datemaxUser - datemax === 0) {
@@ -861,7 +835,7 @@ function getSubsetPreferences() {
         };
     }
 
-    if (subsetKeySelected === 'Location') {
+    if (canvasKeySelected === 'Location') {
         // Make parent node
         let subset = {
             id: String(nodeId++),
@@ -888,7 +862,7 @@ function getSubsetPreferences() {
         return subset
     }
 
-    if (subsetKeySelected === 'Action') {
+    if (canvasKeySelected === 'Action') {
         // Make parent node
         let subset = {
             id: String(nodeId++),
@@ -918,7 +892,7 @@ function getSubsetPreferences() {
         return subset
     }
 
-    if (subsetKeySelected === 'Actor') {
+    if (canvasKeySelected === 'Actor') {
         // Make parent node
         let subset = {
             id: String(nodeId++),
@@ -978,7 +952,7 @@ function getSubsetPreferences() {
         return subset
     }
 
-    if (subsetKeySelected === 'Coordinates') {
+    if (canvasKeySelected === 'Coordinates') {
         let valLeft = parseFloat(document.getElementById('lonLeft').value);
         let valRight = parseFloat(document.getElementById('lonRight').value);
 
@@ -1037,7 +1011,7 @@ function getSubsetPreferences() {
     }
 
     // This functionality is disabled, because the stage button is hidden
-    if (subsetKeySelected === 'Custom') {
+    if (canvasKeySelected === 'Custom') {
         // noinspection JSUnresolvedFunction
         if (validateCustom(editor.getValue())) {
             return {
