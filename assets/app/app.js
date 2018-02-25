@@ -4224,9 +4224,9 @@ export function confusionmatrix(matrixdata, classes) {
     let condiv = document.createElement('div');
     condiv.id="confusioncontainer";
     condiv.style.display="inline-block";
-    condiv.style.width=+(mainwidth*.25)+'px';
+    condiv.style.width=+(mainwidth*.75)+'px';   // Need to not be hard coded
     condiv.style.marginLeft='20px';
-    condiv.style.height=+(mainheight*.4)+'px';
+    condiv.style.height=+(mainheight)+'px';     // Need to not be hard coded
     condiv.style.float="left";
     byId('setxLeftPlot').appendChild(condiv);
 
@@ -4238,7 +4238,7 @@ export function confusionmatrix(matrixdata, classes) {
     legdiv.style.display="inline-block";
     byId('setxLeftPlot').appendChild(legdiv);
 
-    var margin = {top: 20, right: 10, bottom: 0, left: 50};
+    var margin = {top: 20, right: 10, bottom: 0, left: 50};    // Left margin needs not to be hardcoded, but responsive to maximum label length
     function Matrix(options) {
         let width = options.width,
         height = options.height,
@@ -4305,13 +4305,15 @@ export function confusionmatrix(matrixdata, classes) {
         .attr("height", y.rangeBand())
         .style("stroke-width", 0);
 
-        cell.append("text")
-        .attr("dy", ".32em")
-        .attr("x", x.rangeBand() / 2)
-        .attr("y", y.rangeBand() / 2)
-        .attr("text-anchor", "middle")
-        .style("fill", function(d, i) { return d >= maxValue/2 ? 'white' : 'black'; })
-        .text(function(d, i) { return d; });
+        if(numcols < 20){
+          cell.append("text")
+          .attr("dy", ".32em")
+          .attr("x", x.rangeBand() / 2)
+          .attr("y", y.rangeBand() / 2)
+          .attr("text-anchor", "middle")
+          .style("fill", function(d, i) { return d >= maxValue/2 ? 'white' : 'black'; })
+          .text(function(d, i) { return d; });
+        };
 
         row.selectAll(".cell")
         .data(function(d, i) { return data[i]; })
@@ -4481,8 +4483,8 @@ export function confusionmatrix(matrixdata, classes) {
            labels    : classes,
            start_color : '#ffffff',
            end_color : '#e67e22',
-           width : mainwidth * .15,
-           height : mainheight * .25,
+           width : mainwidth * .45,      // Need to not be hard coded
+           height : mainheight * .625,    // Need to not be hard coded
            widthLegend : mainwidth*.05
            });
 
