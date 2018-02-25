@@ -4141,8 +4141,6 @@ export function resultsplotinit(pid) {
         return;
     }
 
-    console.log(predvals);
-
     // only do this for classification tasks
     if(d3mTaskType[d3mProblemDescription.taskType][1] == "CLASSIFICATION") {
         genconfdata(dvvalues, predvals);
@@ -4175,16 +4173,27 @@ export function resultsplotinit(pid) {
 /** needs doc */
 export function genconfdata (dvvalues, predvals) {
 
+    // dvvalues are generally numeric
+    dvvalues = dvvalues.map(String);
+    // predvals are generally strings
+    predvals = predvals.map(String);
+
     function onlyUnique(value, index, self) {
         return self.indexOf(value) === index;
     }
+
 
     let mycounts = [];
     let mypairs = [];
 
     // combine actuals and predicted, and get all unique elements
     let myuniques = dvvalues.concat(predvals);
-    myuniques = myuniques.filter(onlyUnique);
+
+    myuniques= [...new Set(myuniques)];
+    //equivalent to: myuniques = Array.from(new Set(myuniques));
+    //was: myuniques = myuniques.filter(onlyUnique);    
+
+    myuniques = myuniques.sort();
 
     // create two arrays: mycounts initialized to 0, mypairs have elements set to all possible pairs of uniques
     // looked into solutions other than nested fors, but Internet suggest performance is just fine this way
@@ -4214,6 +4223,7 @@ export function genconfdata (dvvalues, predvals) {
 
 /** needs doc */
 export function confusionmatrix(matrixdata, classes) {
+
     d3.select("#setxLeftPlot").html("");
     d3.select("#setxLeftPlot").select("svg").remove();
 
