@@ -2745,7 +2745,7 @@ function onPipelineCreate(PipelineCreateResult, rookpipe) {
                 myid=key;
                 mymetric=myscores[i].metric;
                 myval=+myscores[i].value.toFixed(3);
-                resultstable.push({"PipelineID":myid,"Metric":mymetric, "Score":myval});
+                resultstable.push({"PipelineID":myid,"Metric":mymetric, "Score":myval});         
             }
         } else { // if progressInfo is not "COMPLETED"
             continue;
@@ -4493,7 +4493,7 @@ export function confusionmatrix(matrixdata, classes) {
            labels    : classes,
            start_color : '#ffffff',
            end_color : '#e67e22',
-           width : mainwidth * .4,      // Need to not be hard coded
+           width : mainwidth * .41,      // Need to not be hard coded
            height : mainheight * .6,    // Need to not be hard coded
            widthLegend : mainwidth*.05
            });

@@ -345,8 +345,13 @@ class Body {
         let navBtn = (id, left, right, onclick, args, min) => _navBtn(
             id + '.ladda-button[data-spinner-color=#000000][data-style=zoom-in]',
             left, right, onclick, args, min);
-        let navBtn1 = (id, onclick, args, title) => _navBtn(
-            `${id}.btn-default[title=${title}]`, 2, 0, onclick, args);
+        let navBtnGroup = (id, onclick, args, min) => m(
+            `button#${id}.btn.navbar-left`,
+            {onclick: onclick,
+             style: {'min-width': min}},
+            args);
+        let navBtn1 = (id, left, right, onclick, args, title) => _navBtn(
+            `${id}.btn-default[title=${title}]`, left, right, onclick, args);
         let glyph = (icon, unstyled) => m(
             `span.glyphicon.glyphicon-${icon}` + (unstyled ? '' : '[style=color: #818181; font-size: 1em; pointer-events: none]'));
         let transformation = (id, list) => m(
@@ -421,11 +426,13 @@ class Body {
                         exp.explore(); 
                         app.set_righttab('btnBivariate')
                     } : app.estimate, m("span.ladda-label", explore_mode ? 'Explore' : 'Solve This Problem'), '150px'),
-                    navBtn('btnTA2.btn-default', .2, 1, _ => app.helpmaterials('manual'), ['Help Manual ', glyph('book')]),
-                    navBtn('btnTA2.btn-default', .2, .2, _ => app.helpmaterials('video'), ['Help Video ', glyph('expand')]),
-                    navBtn('btnTA2.btn-default', 2, .2, _ => hopscotch.startTour(mytour2, 0), ['Help Tour ', glyph('road')]),
-                    navBtn1("btnReset", app.reset, glyph('repeat'), 'Reset'),
-                    navBtn1('btnEndSession', app.endsession, m("span.ladda-label", 'Mark Problem Finished'), 'Mark Problem Finished')),
+                    m('div.btn-group[role=group][aria-label="..."]', {style:{"float":"right"}},
+                      navBtnGroup('btnTA2.btn-default', _ => hopscotch.startTour(mytour2, 0), ['Help Tour ', glyph('road')]),
+                      navBtnGroup('btnTA2.btn-default', _ => app.helpmaterials('video'), ['Video ', glyph('expand')]),
+                      navBtnGroup('btnTA2.btn-default', _ => app.helpmaterials('manual'), ['Manual ', glyph('book')]),
+                    ),
+                    navBtn1("btnReset", 1, 2, app.reset, glyph('repeat'), 'Reset'),
+                    navBtn1('btnEndSession', 2, 1, app.endsession, m("span.ladda-label", 'Mark Problem Finished'), 'Mark Problem Finished')),
                   m('#tInput', {
                       style: {display: 'none'},
                       onclick: _ => {
