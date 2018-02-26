@@ -4234,7 +4234,7 @@ export function confusionmatrix(matrixdata, classes) {
     let condiv = document.createElement('div');
     condiv.id="confusioncontainer";
     condiv.style.display="inline-block";
-    condiv.style.width=+(mainwidth*.4)+'px';   // Need to not be hard coded
+    condiv.style.width=+(mainwidth*.46)+'px';   // Need to not be hard coded
     condiv.style.marginLeft='20px';
     condiv.style.height=+(mainheight)+'px';     // Need to not be hard coded
     condiv.style.float="left";
@@ -4493,7 +4493,7 @@ export function confusionmatrix(matrixdata, classes) {
            labels    : classes,
            start_color : '#ffffff',
            end_color : '#e67e22',
-           width : mainwidth * .35,      // Need to not be hard coded
+           width : mainwidth * .4,      // Need to not be hard coded
            height : mainheight * .6,    // Need to not be hard coded
            widthLegend : mainwidth*.05
            });
