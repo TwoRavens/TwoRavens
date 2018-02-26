@@ -110,9 +110,9 @@ def make_d3m_config():
 
     TestConfigMaker.make_configs()
 
-'''
+@task
 def load_d3m_config_from_env():
-    """DEPRECATED! Load docker config file from path specified in the environment variable D3M_CONFIG_FILEPATH. The information in this file becomes the default D3MConfiguration object. If D3M_CONFIG_FILEPATH doesn't exist, display error message and keep running."""
+    """Load docker config file from path specified in the environment variable D3M_CONFIG_FILEPATH. The information in this file becomes the default D3MConfiguration object. If D3M_CONFIG_FILEPATH doesn't exist, display error message and keep running."""
     from django.core import management
     from tworaven_apps.configurations.models_d3m import CONFIG_JSON_PATH
 
@@ -131,7 +131,7 @@ def load_d3m_config_from_env():
         management.call_command('load_config', config_file)
     except management.base.CommandError as err_obj:
         print('> Failed to load D3M config.\n%s' % err_obj)
-'''
+
 
 @task
 def load_d3m_config(config_file):
