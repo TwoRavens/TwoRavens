@@ -1331,6 +1331,7 @@ function viz(m, json_vizexplore, model_name_set) {
 
 
 function model_selection(model_selection_name, count_value, json) {
+
     if (count_value % 2 == 0 && count_value != 0) {
         d3.select("#modelView")
             .append("span")
@@ -1499,35 +1500,13 @@ export async function callTreeApp(node_var, app) {
 
 // Kripanshu : Function to create D3 Tree using the JSON result from call Tree app
 function univariatePart(json, var_name) {
+    app.setRightTabExplore('Univariate');
     document.getElementById("decisionTree").innerHTML = "";
     d3.select("#decisionTree")
         .style("display", "block")
         .append("p")
         .style("margin-top", "1px")
         .text(var_name);
-    d3.select("p#resultsHolder").style("display", "none");
-    d3.select("#left_thumbnail")
-        .style("display", "none");
-    d3.select("#result_left")
-        .style("display", "none");
-    d3.select("#result_left1")
-        .style("display", "none");
-    d3.select("#result_right")
-        .style("display", "none");
-    d3.select("#modelView_Container")
-        .style("display", "none");
-    d3.select("#modelView")
-        .style("display", "none");
-    d3.select("#resultsView_tabular")
-        .style("display", "none");
-    d3.select("#plotA")
-        .style("display", "none");
-    d3.select("#plotB")
-        .style("display", "none");
-    d3.select("#SelectionData")
-        .style("display", "none");
-    d3.select("#resultsView_statistics")
-        .style("display", "none");
 
     // request for r code using nodevar
     //code for the  decision tree map
@@ -1554,6 +1533,7 @@ function univariatePart(json, var_name) {
     var vis = d3.select("#decisionTree").append("svg:svg")
         .attr("width", w + m[1] + m[3])
         .attr("height", h + m[0] + m[2] + 1000)
+        .style('height', 'auto')
         .append("svg:g")
         .attr("transform", "translate(" + m[3] + "," + m[0] + ")");
 

@@ -14,6 +14,6 @@ import m from 'mithril'
 export default class Button {
     view(vnode) {
         let {id, text} = vnode.attrs;
-        return m(`#${id}.btn.btn-default`, vnode.attrs, text)
+        return m(`#${id || 'btn' + text}.btn.btn-default`, vnode.attrs, text)
     }
 }
