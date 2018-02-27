@@ -18,7 +18,8 @@ import {mergeAttributes} from '../common'
 //     onclick: (value) => console.log(value + " was clicked.")
 //     attrsAll: {optional object of attributes to apply to the bar}
 //     attrsButtons: {optional object of attributes to apply to all buttons}
-//     selectWidth: 100 (optional)
+//     selectWidth: 20 (optional int),
+//     hoverBonus: 10 (optional int)
 //     })
 // ```
 
@@ -27,7 +28,7 @@ import {mergeAttributes} from '../common'
 // If not included, then every button has even spacing.
 
 // The hoverBonus option makes the hovered button n percent larger when hovered.
-// Both hoverBonus and selectWidth may be used together.
+// Both hoverBonus and selectWidth may be used together. On both, don't pass a string%, pass the numeric.
 
 // defaultSection sets which element is selected on page load
 // activeSelection forces the selected element. This is for convenience when external events change the selected button

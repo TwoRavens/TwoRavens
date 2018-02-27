@@ -47,7 +47,7 @@ function leftpanel(mode) {
         side: 'left',
         label: 'Data Selection',
         hover: true,
-        width: {'Variables': 300, 'Discovery': 600, 'Summary': 300}[app.leftTab],
+        width: {'Variables': '300px', 'Discovery': '600px', 'Summary': '300px'}[app.leftTab],
         contents: m(MenuTabbed, {
             id: 'leftpanelMenu',
             attrsAll: {style: {height: 'calc(100% - 78px)'}},
@@ -198,7 +198,7 @@ function rightpanel(mode) {
             side: 'right',
             label: 'Result Exploration',
             hover: true,
-            width: {'Univariate': 600, 'Bivariate': 600}[app.rightTabExplore],
+            width: {'Univariate': '600px', 'Bivariate': '75%'}[app.rightTabExplore],
             contents: m(MenuTabbed, {
                 id: 'rightPanelMenuExplore',
                 currentTab: app.rightTabExplore,
@@ -287,12 +287,12 @@ function rightpanel(mode) {
         label: 'Model Selection',
         hover: true,
         width: {
-            'Models': 300,
-            'Task Type': 300,
-            'Subtype': 300,
-            'Metrics': 300,
-            'Set Covar.': 900,
-            'Results': 300
+            'Models': '300px',
+            'Task Type': '300px',
+            'Subtype': '300px',
+            'Metrics': '300px',
+            'Set Covar.': '900px',
+            'Results': '300px'
         }[app.rightTab],
         contents: m(MenuTabbed, {
             id: 'rightpanelMenu',

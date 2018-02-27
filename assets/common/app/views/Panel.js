@@ -48,7 +48,7 @@ export default class Panel {
             style: {
                 background: menuColor,
                 border: borderColor,
-                width: panelOpen[side] ? width + 'px' : 0,
+                width: panelOpen[side] ? width : 0,
                 height: `calc(100% - ${heightHeader + heightFooter}px - ${2 * panelMargin}px - ${canvasScroll['horizontal'] ? scrollbarWidth : 0}px)`,
                 position: 'fixed',
                 top: heightHeader + panelMargin + 'px',

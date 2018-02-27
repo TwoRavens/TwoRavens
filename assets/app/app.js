@@ -229,6 +229,7 @@ const [arcInd1Limits, arcInd2Limits] = [[0, 0.3], [0.35, 0.65]];
 const [arcInd1, arcInd2] = [arcInd(arcInd1Limits), arcInd(arcInd2Limits)];
 
 export let byId = id => document.getElementById(id);
+// export let byId = id => {console.log(id); return document.getElementById(id);}
 
 /**
    page reload linked to btnReset
