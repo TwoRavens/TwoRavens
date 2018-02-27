@@ -318,7 +318,7 @@ export default class Body_EventData {
                 side: 'left',
                 label: 'Data Selection',
                 hover: false,
-                width: 250,
+                width: '250px',
                 contents: m(MenuTabbed, {
                     id: 'leftPanelMenu',
                     callback: app.setLeftTab,
@@ -359,7 +359,7 @@ export default class Body_EventData {
             return m(Panel, {
                 id: 'leftPanelMenu',
                 side: 'left',
-                width: 250,
+                width: '250px',
                 label: 'Data Selection',
                 contents: m(MenuHeaders, {
                     sections: [
@@ -390,7 +390,7 @@ export default class Body_EventData {
             id: 'rightPanelMenu',
             side: 'right',
             label: 'Query Summary',
-            width: 250,
+            width: '250px',
             contents: [
                 m(MenuHeaders, {
                     sections: [
