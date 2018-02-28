@@ -326,19 +326,29 @@ class Body {
         let {mode} = vnode.attrs;
         let explore_mode = mode === 'explore';
         let results_mode = mode === 'results';
-        let userlinks = [];
-        if(username=="no logged in user"){
-          userlinks = [
-          {title: "Log in", url: login_url},
-          {title: "Sign up", url: signup_url}
-          ];
-        } else {
-          userlinks = [
-          {title: "Workspaces", url: workspaces_url},
-          {title: "Settings", url: settings_url},
-          {title: "Links", url: devlinks_url},
-          {title: "Logout", url: logout_url}
-        ]};
+        let userlinks = username === 'no logged in user' ?
+            [{title: "Log in", url: login_url},
+             {title: "Sign up", url: signup_url}] :
+            [{title: "Workspaces", url: workspaces_url},
+             {title: "Settings", url: settings_url},
+             {title: "Links", url: devlinks_url},
+             {title: "Logout", url: logout_url}];
+
+        if (mode != this.last_mode) {
+            app.set_mode(mode);
+            if (explore_mode) {
+                app.explored = false;
+                app.univariate_finished = false;
+                app.set_righttab('btnUnivariate');
+            } else if (results_mode) {
+                app.set_righttab(IS_D3M_DOMAIN ? 'btnType' : 'btnModels');
+            } else if (!mode) {
+                app.set_righttab(IS_D3M_DOMAIN ? 'btnType' : 'btnModels');
+            }
+            app.restart && app.restart();
+            this.last_mode = mode;
+        }
+
         let _navBtn = (id, left, right, onclick, args, min) => m(
             `button#${id}.btn.navbar-right`,
             {onclick: onclick,
@@ -385,21 +395,6 @@ class Body {
         let spaceBtn = (id, onclick, title, icon) => m(
             `button#${id}.btn.btn-default`, {onclick, title}, glyph(icon, true));
 
-        if (mode != this.last_mode) {
-            app.set_mode(mode);
-            if (explore_mode) {
-                app.explored = false;
-                app.univariate_finished = false;
-                app.set_righttab('btnUnivariate');
-            } else if (results_mode) {
-                app.set_righttab(IS_D3M_DOMAIN ? 'btnType' : 'btnModels');
-            } else if (!mode) {
-                app.set_righttab(IS_D3M_DOMAIN ? 'btnType' : 'btnModels');
-            }
-            app.restart && app.restart();
-            this.last_mode = mode;
-        }
-
         return m(
             'main',
             m("nav#navbar.navbar.navbar-default.navbar-fixed-top[role=navigation]",
@@ -422,13 +417,10 @@ class Body {
                       m('#drop.button.btn[type=button][data-toggle=dropdown][aria-haspopup=true][aria-expanded=false]',
                         [username, " " , glyph('triangle-bottom')]),
                       m('ul.dropdown-menu[role=menu][aria-labelledby=drop]',
-                        userlinks.map(function(link) {
-                          return m('a[style=padding: 0.5em]', {href: link.url}, link.title , 
-                          m('br'))
-                        }))), 
+                        userlinks.map(link => m('a[style=padding: 0.5em]', {href: link.url}, link.title, m('br'))))),
                     navBtn('btnEstimate.btn-default', 2, 1, explore_mode ? _ => {
-                        exp.explore(); 
-                        app.set_righttab('btnBivariate')
+                        exp.explore();
+                        app.set_righttab('btnBivariate');
                     } : app.estimate, m("span.ladda-label", explore_mode ? 'Explore' : 'Solve This Problem'), '150px'),
                     m('div.btn-group[role=group][aria-label="..."]', {style:{"float":"right"}},
                       navBtnGroup('btnTA2.btn-default', _ => hopscotch.startTour(mytour2, 0), ['Help Tour ', glyph('road')]),
@@ -533,5 +525,12 @@ class Body {
 m.route(document.body, '/model', {
     '/model': {render: () => m(Body)},
     '/explore': {render: () => m(Body, {mode: 'explore'})},
-    '/results': {render: () => m(Body, {mode: 'results'})},
+    '/results': {
+        onmatch() {
+            console.log('download pipelines');
+        },
+        render() {
+            return m(Body, {mode: 'results'});
+        }
+    }
 });
