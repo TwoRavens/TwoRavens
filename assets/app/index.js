@@ -17,6 +17,13 @@ import List from './views/PanelList';
 import Search from './views/Search';
 import Subpanel from './views/Subpanel';
 
+let state = {
+    pipelines: [],
+    async get_pipelines() {
+        this.pipelines = await app.listpipelines();
+    }
+};
+
 function setBackgroundColor(color) {
     return function() {
         this.style['background-color'] = color;
@@ -88,7 +95,7 @@ export let mytour3 = {
 
 function leftpanel(mode) {
     if (mode === 'results') {
-        return results.leftpanel();
+        return results.leftpanel(state.pipelines);
     }
     return m(
         Panel,
@@ -308,11 +315,12 @@ class Body {
             val = idx > 0 ? val.substring(0, idx) : val;
             val = val.replace('#!/model', '');
             console.log(name, ': ', val);
-            if (replace) val = val
-                .replace(/%25/g, '%')
-                .replace(/%3A/g, ':')
-                .replace(/%2F/g, '/');
-            return val;
+            return replace ?
+                val
+                    .replace(/%25/g, '%')
+                    .replace(/%3A/g, ':')
+                    .replace(/%2F/g, '/')
+                : val;
         };
         app.main(
             extract('fileid', 'dfId', 5),
@@ -326,10 +334,10 @@ class Body {
         let {mode} = vnode.attrs;
         let explore_mode = mode === 'explore';
         let results_mode = mode === 'results';
-        let userlinks = username === 'no logged in user' ?
-            [{title: "Log in", url: login_url},
-             {title: "Sign up", url: signup_url}] :
-            [{title: "Workspaces", url: workspaces_url},
+        let userlinks = username === 'no logged in user' ? [
+            {title: "Log in", url: login_url},
+            {title: "Sign up", url: signup_url}
+        ] : [{title: "Workspaces", url: workspaces_url},
              {title: "Settings", url: settings_url},
              {title: "Links", url: devlinks_url},
              {title: "Logout", url: logout_url}];
@@ -527,7 +535,7 @@ m.route(document.body, '/model', {
     '/explore': {render: () => m(Body, {mode: 'explore'})},
     '/results': {
         onmatch() {
-            console.log('download pipelines');
+            state.get_pipelines();
         },
         render() {
             return m(Body, {mode: 'results'});

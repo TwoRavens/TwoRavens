@@ -3843,53 +3843,13 @@ export function cancelpipelines(pipes) {
    rpc ListPipelines(PipelineListRequest) returns (PipelineListResult) {}
    pipes is an array of pipeline IDs
 */
-export function listpipelines() {
-    let res = makeRequest(D3M_SVC_URL + '/listpipelines', {context: apiSession(zparams.zsessionid)});
+export async function listpipelines() {
+    let res = await makeRequest(D3M_SVC_URL + '/listpipelines', {context: apiSession(zparams.zsessionid)});
     if (!res) {
-        return;
+        return [];
     }
-
-    //hardcoded pipes for now
     let pipes = res.pipelineIds;
-
-    /*
-      pipes.unshift("place");
-      console.log(pipes);
-      d3.select("#results").selectAll("p")
-      .data(pipes)
-      .enter()
-      .append("p")
-      .attr("id", "_pipe_".concat)
-      .text(d => d)
-      .attr('class', 'item-default')
-      .on("click", function() {
-      if(this.className=="item-select") {
-      return;
-      } else {
-      d3.select("#results").select("p.item-select")
-      .attr('class', 'item-default');
-      d3.select(this).attr('class',"item-select");
-      }});
-
-      pipes.shift();
-
-
-      d3.select("#setxRight").selectAll("p")
-      .data(pipes)
-      .enter()
-      .append("p")
-      .attr("id", "_setxpipe_".concat)
-      .text(d => d)
-      .attr('class', 'item-default')
-      .on("click", function() {
-      if(this.className=="item-select") {
-      return;
-      } else {
-      d3.select("#setxRight").select("p.item-select")
-      .attr('class', 'item-default');
-      d3.select(this).attr('class',"item-select");
-      }});
-    */
+    return pipes;
 }
 
 /**

@@ -5,7 +5,7 @@ import Button, {when} from './views/PanelButton';
 import List from './views/PanelList';
 import Search from './views/Search';
 
-export function leftpanel() {
+export function leftpanel(pipelines=[]) {
     return m(
         Panel,
         {side: 'left',
@@ -18,5 +18,5 @@ export function leftpanel() {
                'Variables')]},
         m(`#tab1[style=display: ${when('left', 'tab1')}; padding: 0 8px; text-align: center]`,
           m(Search, {placeholder: 'Search variables and labels'}),
-          m(List, {items: [], title: 'Summary Statistics'})));
+          m(List, {items: pipelines, title: 'Summary Statistics'})));
 }
