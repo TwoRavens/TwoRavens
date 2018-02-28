@@ -379,9 +379,9 @@ class Body {
                 app.univariate_finished = false;
                 app.setRightTabExplore('Univariate');
             } else if (results_mode) {
-                app.setRightTab(IS_D3M_DOMAIN ? 'Type' : 'Models');
+                app.setRightTab(IS_D3M_DOMAIN ? 'Task Type' : 'Models');
             } else if (!mode) {
-                app.setRightTab(IS_D3M_DOMAIN ? 'Type' : 'Models');
+                app.setRightTab(IS_D3M_DOMAIN ? 'Task Type' : 'Models');
             }
             app.restart && app.restart();
             this.last_mode = mode;
@@ -491,7 +491,7 @@ class Body {
 
         return m(Header, {
             attrsInterface: {style: mode === 'explore' ? {'background-image': '-webkit-linear-gradient(top, #fff 0, rgb(227, 242, 254) 100%)'} : {}},
-            contents: m('#dataField.field[style=margin-top: 1em; text-align: center]',
+            contents: m('#dataField.field[style=text-align: center]',
                 m('h4#dataName[style=display: inline]',
                     {
                         onclick: _ => this.cite = this.citeHidden = !this.citeHidden,
