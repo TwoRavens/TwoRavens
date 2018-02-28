@@ -2745,7 +2745,7 @@ function onPipelineCreate(PipelineCreateResult, rookpipe) {
                 myid=key;
                 mymetric=myscores[i].metric;
                 myval=+myscores[i].value.toFixed(3);
-                resultstable.push({"PipelineID":myid,"Metric":mymetric, "Score":myval});
+                resultstable.push({"PipelineID":myid,"Metric":mymetric, "Score":myval});         
             }
         } else { // if progressInfo is not "COMPLETED"
             continue;
@@ -4234,7 +4234,7 @@ export function confusionmatrix(matrixdata, classes) {
     let condiv = document.createElement('div');
     condiv.id="confusioncontainer";
     condiv.style.display="inline-block";
-    condiv.style.width=+(mainwidth*.75)+'px';   // Need to not be hard coded
+    condiv.style.width=+(mainwidth*.46)+'px';   // Need to not be hard coded
     condiv.style.marginLeft='20px';
     condiv.style.height=+(mainheight)+'px';     // Need to not be hard coded
     condiv.style.float="left";
@@ -4242,9 +4242,9 @@ export function confusionmatrix(matrixdata, classes) {
 
     let legdiv = document.createElement('div');
     legdiv.id="confusionlegend";
-    legdiv.style.width=+(mainwidth*.07)+'px';
+    legdiv.style.width=+(mainwidth*.07)+'px'; // Need to not be hard coded
     legdiv.style.marginLeft='20px';
-    legdiv.style.height=+(mainheight*.4)+'px';
+    legdiv.style.height=+(mainheight)+'px';   // Need to not be hard coded
     legdiv.style.display="inline-block";
     byId('setxLeftPlot').appendChild(legdiv);
 
@@ -4493,8 +4493,8 @@ export function confusionmatrix(matrixdata, classes) {
            labels    : classes,
            start_color : '#ffffff',
            end_color : '#e67e22',
-           width : mainwidth * .45,      // Need to not be hard coded
-           height : mainheight * .625,    // Need to not be hard coded
+           width : mainwidth * .41,      // Need to not be hard coded
+           height : mainheight * .6,    // Need to not be hard coded
            widthLegend : mainwidth*.05
            });
 

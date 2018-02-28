@@ -9,6 +9,7 @@ import m from 'mithril';
 
 import * as app from './app';
 import * as exp from './explore';
+import * as results from './results';
 import * as plots from './plots';
 import Panel from './views/Panel';
 import Button, {when} from './views/PanelButton';
@@ -23,69 +24,72 @@ function setBackgroundColor(color) {
 }
 
 export let step = (target, placement, title, content) => ({
-            target,
-            placement,
-            title,
-            content,
-            showCTAButton: true,
-            ctaLabel: 'Disable these messages',
-            onCTA: () => {
-                hopscotch.endTour(true);
-                tutorial_mode = false;
-            },
-        });
+    target,
+    placement,
+    title,
+    content,
+    showCTAButton: true,
+    ctaLabel: 'Disable these messages',
+    onCTA: () => {
+        hopscotch.endTour(true);
+        tutorial_mode = false;
+    },
+});
 
 export let mytour2 = {
-            id: "dataset_launch",
-            i18n: {doneBtn:'Ok'},
-            showCloseButton: true,
-            scrollDuration: 300,
-            //onEnd: () => first_load = false,
-            steps: [
-                step("dataName", "bottom", "Welcome to TwoRavens Solver",
-                     `<p>This tool can guide you to solve an empirical problem in the dataset above.</p>
-                      <p>These messages will teach you the steps to take to find and submit a solution.</p>`),
-                step("btnReset", "bottom", "Restart Any Problem Here",
-                     '<p>You can always start a problem over by using this reset button.</p>'),
-                step("btnSubset", "right", "Start Task 1",
-                     `<p>This Problem Discovery button allows you to start Task 1 - Problem Discovery.</p>
-                     <p>Generally, as a tip, the Green button is the next button you need to press to move the current task forward.</p>
-                     <p>Click this button to see a list of problems that have been discovered in the dataset.</p>
-                     <p>You can mark which ones you agree may be interesting, and then submit the table as an answer.</p>`),
-                step("btnSelect", "right", "Complete Task 1",
-                     `<p>This submission button marks Task 1 - Problem Discovery, as complete.</p>
-                     <p>Click this button to save the check marked problems in the table below as potentially interesting or relevant.</p>
-                     <p>Generally, as a tip, the Green button is the next button you need to press to move the current task forward.</p>`),
-                step("btnEstimate", "left", "Solve Task 2",
-                     `<p>This generally is the important step to follow for Task 2 - Build a Model.</p>
-                      <p>Generally, as a tip, the Green button is the next button you need to press to move the current task forward, and this button will be Green when Task 1 is completed and Task 2 started.</p>
-                      <p>Click this Solve button to tell the tool to find a solution to the problem, using the variables presented in the center panel.</p>`),
-                //step(mytarget + 'biggroup', "left", "Target Variable",
-                //     `This is the variable, ${mytarget}, we are trying to predict.
-                //      This center panel graphically represents the problem currently being attempted.`),
-                step("gr1hull", "right", "Explanation Set", "This set of variables can potentially predict the target."),
-                step("displacement", "right", "Variable List",
-                     `<p>Click on any variable name here if you wish to remove it from the problem solution.</p>
-                      <p>You likely do not need to adjust the problem representation in the center panel.</p>`),
-                step("btnEndSession", "bottom", "Finish Problem",
-                     "If the solution reported back seems acceptable, then finish this problem by clicking this End Session button."),
-            ]
-        };
+    id: "dataset_launch",
+    i18n: {doneBtn:'Ok'},
+    showCloseButton: true,
+    scrollDuration: 300,
+    //onEnd: () => first_load = false,
+    steps: [
+        step("dataName", "bottom", "Welcome to TwoRavens Solver",
+             `<p>This tool can guide you to solve an empirical problem in the dataset above.</p>
+              <p>These messages will teach you the steps to take to find and submit a solution.</p>`),
+        step("btnReset", "bottom", "Restart Any Problem Here",
+             '<p>You can always start a problem over by using this reset button.</p>'),
+        step("btnSubset", "right", "Start Task 1",
+             `<p>This Problem Discovery button allows you to start Task 1 - Problem Discovery.</p>
+             <p>Generally, as a tip, the Green button is the next button you need to press to move the current task forward.</p>
+             <p>Click this button to see a list of problems that have been discovered in the dataset.</p>
+             <p>You can mark which ones you agree may be interesting, and then submit the table as an answer.</p>`),
+        step("btnSelect", "right", "Complete Task 1",
+             `<p>This submission button marks Task 1 - Problem Discovery, as complete.</p>
+             <p>Click this button to save the check marked problems in the table below as potentially interesting or relevant.</p>
+             <p>Generally, as a tip, the Green button is the next button you need to press to move the current task forward.</p>`),
+        step("btnEstimate", "left", "Solve Task 2",
+             `<p>This generally is the important step to follow for Task 2 - Build a Model.</p>
+              <p>Generally, as a tip, the Green button is the next button you need to press to move the current task forward, and this button will be Green when Task 1 is completed and Task 2 started.</p>
+              <p>Click this Solve button to tell the tool to find a solution to the problem, using the variables presented in the center panel.</p>`),
+        //step(mytarget + 'biggroup', "left", "Target Variable",
+        //     `This is the variable, ${mytarget}, we are trying to predict.
+        //      This center panel graphically represents the problem currently being attempted.`),
+        step("gr1hull", "right", "Explanation Set", "This set of variables can potentially predict the target."),
+        step("displacement", "right", "Variable List",
+             `<p>Click on any variable name here if you wish to remove it from the problem solution.</p>
+              <p>You likely do not need to adjust the problem representation in the center panel.</p>`),
+        step("btnEndSession", "bottom", "Finish Problem",
+             "If the solution reported back seems acceptable, then finish this problem by clicking this End Session button."),
+    ]
+};
 
 export let mytour3 = {
-            id: "dataset_launch",
-            i18n: {doneBtn:'Ok'},
-            showCloseButton: true,
-            scrollDuration: 300,
-            steps: [
-                step("btnSelect", "right", "Complete Task 1",
-                     `<p>This submission button marks Task 1 - Problem Discovery, as complete.</p>
-                     <p>Click this button to save the check marked problems in the table below as potentially interesting or relevant.</p>
-                     <p>Generally, as a tip, the Green button is the next button you need to press to move the current task forward.</p>`),
-            ]
-        };
+    id: "dataset_launch",
+    i18n: {doneBtn:'Ok'},
+    showCloseButton: true,
+    scrollDuration: 300,
+    steps: [
+        step("btnSelect", "right", "Complete Task 1",
+             `<p>This submission button marks Task 1 - Problem Discovery, as complete.</p>
+             <p>Click this button to save the check marked problems in the table below as potentially interesting or relevant.</p>
+             <p>Generally, as a tip, the Green button is the next button you need to press to move the current task forward.</p>`),
+    ]
+};
 
-function leftpanel() {
+function leftpanel(mode) {
+    if (mode === 'results') {
+        return results.leftpanel();
+    }
     return m(
         Panel,
         {side: 'left',
@@ -322,19 +326,29 @@ class Body {
         let {mode} = vnode.attrs;
         let explore_mode = mode === 'explore';
         let results_mode = mode === 'results';
-        let userlinks = [];
-        if(username=="no logged in user"){
-          userlinks = [
-          {title: "Log in", url: login_url},
-          {title: "Sign up", url: signup_url}
-          ];
-        } else {
-          userlinks = [
-          {title: "Workspaces", url: workspaces_url},
-          {title: "Settings", url: settings_url},
-          {title: "Links", url: devlinks_url},
-          {title: "Logout", url: logout_url}
-        ]};
+        let userlinks = username === 'no logged in user' ?
+            [{title: "Log in", url: login_url},
+             {title: "Sign up", url: signup_url}] :
+            [{title: "Workspaces", url: workspaces_url},
+             {title: "Settings", url: settings_url},
+             {title: "Links", url: devlinks_url},
+             {title: "Logout", url: logout_url}];
+
+        if (mode != this.last_mode) {
+            app.set_mode(mode);
+            if (explore_mode) {
+                app.explored = false;
+                app.univariate_finished = false;
+                app.set_righttab('btnUnivariate');
+            } else if (results_mode) {
+                app.set_righttab(IS_D3M_DOMAIN ? 'btnType' : 'btnModels');
+            } else if (!mode) {
+                app.set_righttab(IS_D3M_DOMAIN ? 'btnType' : 'btnModels');
+            }
+            app.restart && app.restart();
+            this.last_mode = mode;
+        }
+
         let _navBtn = (id, left, right, onclick, args, min) => m(
             `button#${id}.btn.navbar-right`,
             {onclick: onclick,
@@ -345,8 +359,13 @@ class Body {
         let navBtn = (id, left, right, onclick, args, min) => _navBtn(
             id + '.ladda-button[data-spinner-color=#000000][data-style=zoom-in]',
             left, right, onclick, args, min);
-        let navBtn1 = (id, onclick, args, title) => _navBtn(
-            `${id}.btn-default[title=${title}]`, 2, 0, onclick, args);
+        let navBtnGroup = (id, onclick, args, min) => m(
+            `button#${id}.btn.navbar-left`,
+            {onclick: onclick,
+             style: {'min-width': min}},
+            args);
+        let navBtn1 = (id, left, right, onclick, args, title) => _navBtn(
+            `${id}.btn-default[title=${title}]`, left, right, onclick, args);
         let glyph = (icon, unstyled) => m(
             `span.glyphicon.glyphicon-${icon}` + (unstyled ? '' : '[style=color: #818181; font-size: 1em; pointer-events: none]'));
         let transformation = (id, list) => m(
@@ -376,21 +395,6 @@ class Body {
         let spaceBtn = (id, onclick, title, icon) => m(
             `button#${id}.btn.btn-default`, {onclick, title}, glyph(icon, true));
 
-        if (mode != this.last_mode) {
-            app.set_mode(mode);
-            if (explore_mode) {
-                app.explored = false;
-                app.univariate_finished = false;
-                app.set_righttab('btnUnivariate');
-            } else if (results_mode) {
-                app.set_righttab(IS_D3M_DOMAIN ? 'btnType' : 'btnModels');
-            } else if (!mode) {
-                app.set_righttab(IS_D3M_DOMAIN ? 'btnType' : 'btnModels');
-            }
-            app.restart && app.restart();
-            this.last_mode = mode;
-        }
-
         return m(
             'main',
             m("nav#navbar.navbar.navbar-default.navbar-fixed-top[role=navigation]",
@@ -413,19 +417,18 @@ class Body {
                       m('#drop.button.btn[type=button][data-toggle=dropdown][aria-haspopup=true][aria-expanded=false]',
                         [username, " " , glyph('triangle-bottom')]),
                       m('ul.dropdown-menu[role=menu][aria-labelledby=drop]',
-                        userlinks.map(function(link) {
-                          return m('a[style=padding: 0.5em]', {href: link.url}, link.title , 
-                          m('br'))
-                        }))), 
+                        userlinks.map(link => m('a[style=padding: 0.5em]', {href: link.url}, link.title, m('br'))))),
                     navBtn('btnEstimate.btn-default', 2, 1, explore_mode ? _ => {
-                        exp.explore(); 
-                        app.set_righttab('btnBivariate')
+                        exp.explore();
+                        app.set_righttab('btnBivariate');
                     } : app.estimate, m("span.ladda-label", explore_mode ? 'Explore' : 'Solve This Problem'), '150px'),
-                    navBtn('btnTA2.btn-default', .2, 1, _ => app.helpmaterials('manual'), ['Help Manual ', glyph('book')]),
-                    navBtn('btnTA2.btn-default', .2, .2, _ => app.helpmaterials('video'), ['Help Video ', glyph('expand')]),
-                    navBtn('btnTA2.btn-default', 2, .2, _ => hopscotch.startTour(mytour2, 0), ['Help Tour ', glyph('road')]),
-                    navBtn1("btnReset", app.reset, glyph('repeat'), 'Reset'),
-                    navBtn1('btnEndSession', app.endsession, m("span.ladda-label", 'Mark Problem Finished'), 'Mark Problem Finished')),
+                    m('div.btn-group[role=group][aria-label="..."]', {style:{"float":"right"}},
+                      navBtnGroup('btnTA2.btn-default', _ => hopscotch.startTour(mytour2, 0), ['Help Tour ', glyph('road')]),
+                      navBtnGroup('btnTA2.btn-default', _ => app.helpmaterials('video'), ['Video ', glyph('expand')]),
+                      navBtnGroup('btnTA2.btn-default', _ => app.helpmaterials('manual'), ['Manual ', glyph('book')]),
+                    ),
+                    navBtn1("btnReset", 1, 2, app.reset, glyph('repeat'), 'Reset'),
+                    navBtn1('btnEndSession', 2, 1, app.endsession, m("span.ladda-label", 'Mark Problem Finished'), 'Mark Problem Finished')),
                   m('#tInput', {
                       style: {display: 'none'},
                       onclick: _ => {
@@ -514,7 +517,7 @@ class Body {
                      ['gr2Button', 'zgroup2', 'Group 2']]}),
               m(Subpanel, {title: "History"}),
               ticker(mode),
-              leftpanel(),
+              leftpanel(mode),
               rightpanel(mode)));
     }
 }
@@ -522,5 +525,12 @@ class Body {
 m.route(document.body, '/model', {
     '/model': {render: () => m(Body)},
     '/explore': {render: () => m(Body, {mode: 'explore'})},
-    '/results': {render: () => m(Body, {mode: 'results'})},
+    '/results': {
+        onmatch() {
+            console.log('download pipelines');
+        },
+        render() {
+            return m(Body, {mode: 'results'});
+        }
+    }
 });
