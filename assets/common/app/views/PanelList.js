@@ -33,12 +33,12 @@ export default class PanelList {
         let viewClass = {};
         for (let css in classes || [])
             for (let item of classes[css])
-                viewClass[item] = (viewClass[item] || []).push(css);
+                viewClass[item] ? viewClass[item].push(css) : viewClass[item] = [css];
 
         return m(`div#${id}`, attrsAll, items.map((item) =>
             m(`div#${id + item.replace(/\W/g, '_')}`, mergeAttributes({
                     style: {
-                        'margin-top': '4px',
+                        'margin-top': '5px',
                         'text-align': "center",
                         'background-color': viewColor[item] || varColor
                     },
@@ -48,8 +48,8 @@ export default class PanelList {
 
                 // add popup if defined
                 popup ? {
-                    onmouseover: "$(this).popover('toggle');",
-                    onmouseout: "$(this).popover('toggle');",
+                    onmouseover: function() {$(this).popover('toggle')},
+                    onmouseout: function() {$(this).popover('toggle')},
                     'data-container': 'body',
                     'data-content': popup(item),
                     'data-html': 'true',

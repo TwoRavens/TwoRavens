@@ -113,15 +113,8 @@ text.id {
 #main.svg-leftpanel.svg-rightpanel svg {width: 100%;}   /*  Was: calc(100% - 300px);} /*
 /* Above changes fix issue when screen gets very small, and right margin is fixed at 300px, obscuring central display, even while left tab is shrinking below 300px */
 
-div.popover.variables {
-    max-width:none;
-    width:300px;
-}
-div.popover.variables div.popover-content.form-horizontal {
-    padding:0;
-}
-div.popover.variables div.popover-content.form-horizontal .form-group {
-    margin-bottom:0;
+.bordered-variable {
+    border: solid #000000;
 }
 
 #leftpanel {

@@ -2,6 +2,7 @@ import hopscotch from 'hopscotch';
 import m from 'mithril';
 import {bars, barsNode, barsSubset, density, densityNode, selVarColor} from './plots.js';
 import {heightHeader} from "../common/app/common";
+import {searchIndex} from "./views/Search";
 
 // hostname default - the app will use it to obtain the variable metadata
 // (ddi) and pre-processed data info if the file id is supplied as an
@@ -1731,11 +1732,23 @@ function updateNode(id) {
  every time a variable in leftpanel is clicked, nodes updates and background color changes
  */
 export function clickVar(elem) {
-    if (updateNode(elem.target.id)) {
+    if (updateNode(elem)) {
         // panelPlots(); is this necessary?
         restart();
     }
 }
+
+// Used for left panel variable search
+export let matchedVariables = [];
+export let searchVariables = val => {
+    matchedVariables.length = 0;
+    let [others, match] = [[], (n, key) => n[key].toLowerCase().includes(val.toLowerCase())];
+    allNodes.forEach(n => match(n, 'name') || match(n, 'labl') ? matchedVariables.push(n.name) : others.push(n.name));
+    valueKey = matchedVariables.concat(others);
+
+    // Just because having every variable bordered all the time is not pleasant
+    if (val === '') matchedVariables.length = 0;
+};
 
 /**
  Retrieve the variable list from the preprocess data.
@@ -2574,7 +2587,7 @@ function varSummary(d) {
 export let popoverContent = d => {
     if(swandive)
         return;
-    let text = '<table class="table table-sm table-striped"><tbody>';
+    let text = '<table class="table table-sm table-striped" style="margin:-10px;"><tbody>';
     let [rint, prec] = [d3.format('r'), (val, int) => (+val).toPrecision(int).toString()];
     let div = (field, name, val) => {
         if (field != 'NA') text += `<tr><th>${name}</th><td><p class="text-left" style="height:10px;">${val || field}</p></td></tr>`

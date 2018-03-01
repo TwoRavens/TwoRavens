@@ -18,11 +18,14 @@ import Search from './views/Search';
 import Subpanel from './views/Subpanel';
 import Table from './views/Table'
 
+import * as common from '../common/app/common'
 import Panel from '../common/app/views/Panel';
 import MenuTabbed from '../common/app/views/MenuTabbed';
 import ButtonRadio from '../common/app/views/ButtonRadio';
 import Footer from '../common/app/views/Footer';
 import Header from '../common/app/views/Header';
+import PanelList from '../common/app/views/PanelList'
+import TextField from '../common/app/views/TextField'
 
 let state = {
     pipelines: [],
@@ -58,8 +61,24 @@ function leftpanel(mode) {
                     value: 'Variables',
                     title: 'Click variable name to add or remove the variable pebble from the modeling space.',
                     contents: [
-                        m(Search, {placeholder: 'Search variables and labels'}),
-                        m(List, {items: app.valueKey, title: 'Summary Statistics'})
+                        m(TextField, {
+                            id: 'searchVar',
+                            placeholder: 'Search variables and labels',
+                            oninput: app.searchVariables
+                        }),
+                        m(PanelList, {
+                            id: 'varList',
+                            items: app.valueKey,
+                            colors: {
+                                [app.hexToRgba(common.selVarColor)]: app.nodes.map(n => n.name),
+                                [app.hexToRgba(common.nomColor)]: app.zparams.znom,
+                                [app.hexToRgba(common.dvColor)]: app.zparams.zdv
+                            },
+                            classes: {'bordered-variable': app.matchedVariables},
+                            callback: app.clickVar,
+                            popup: (variable) => app.popoverContent(app.findNodeIndex(variable, true)),
+                            attrsItems: {'data-placement': 'right', 'data-original-title': 'Summary Statistics'}
+                        }),
                     ],
                 },
                 {
