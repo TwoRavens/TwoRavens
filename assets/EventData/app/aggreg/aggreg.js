@@ -336,6 +336,23 @@ export function updateToAggreg() {
 			let text = xhr.responseText;
 			console.log("aggreg response");
 			console.log(text);
+
+			let json = '';
+			let names = [];
+
+			try {
+				json = JSON.parse(text);
+				names = Object.keys(json);
+			}
+			catch (err) {
+				console.log(err);
+				alert('Error: Could not parse incoming JSON.');
+			}
+			console.log("json");
+			console.log(json);
+			console.log("names");
+			console.log(names);
+			
 			//~ let json = '';
 			//~ let names = [];
 
@@ -352,7 +369,33 @@ export function updateToAggreg() {
 				//~ alert('Warning: Additional information in console.')
 			//~ }
 			//~ callback(json);
-			console.log("test aggreg");
+
+
+			//display first 6 in table: consider moving this out to another function
+			for (let row = 1; row <= aggregDataNumber; row++) {
+				console.log(row + " is updating")
+				if (aggregDateOn) {
+					$("#aggregDataDateR" + row).html(json["action_data"][row - 1]["_row"]);
+				}
+				console.log("date up");
+				if (aggregActorOn) {
+					$("#aggregDataSrcR" + row).html(json["action_data"][row - 1]["Source"]);
+					$("#aggregDataTgt" + row).html(json["action_data"][row - 1]["Target"]);
+				}
+				console.log("actor up");
+				if (aggregMode == "penta") {
+					for (let code = 0; code < 5; code++) {
+						$("#aggregDataPenta" + code + "R" + row).html(json["action_data"][row - 1][code]);
+					}
+					console.log("penta up");
+				}
+				else {
+					for (let code = 1; code <= 20; code ++) {
+						$("#aggregDataRoot" + code + "R" + row).html(json["action_data"][row - 1][code]);
+					}
+					console.log("root up");
+				}
+			}
 		};
 
 		xhr.onerror = function () {
