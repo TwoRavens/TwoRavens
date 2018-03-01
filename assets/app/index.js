@@ -21,6 +21,7 @@ let state = {
     pipelines: [],
     async get_pipelines() {
         this.pipelines = await app.listpipelines();
+        m.redraw();
     }
 };
 
