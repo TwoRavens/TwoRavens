@@ -7,7 +7,7 @@ import {searchIndex} from './Search';
 
 class PanelList {
     view(vnode) {
-        let {items, content, title, probDesc} = vnode.attrs;
+        let {items, content, title, probDesc, onclick} = vnode.attrs;
         return m(
             '#varList[style=display: block]',
             items.map((v, i) =>
@@ -25,7 +25,7 @@ class PanelList {
                               'border-color': '#000000',
                               'border-style': !probDesc && searchIndex && i < searchIndex ? 'solid' : 'none'
                           },
-                          onclick: probDesc || app.clickVar,
+                          onclick: onclick || probDesc || app.clickVar,
                           onmouseover: function() {
                               $(this).popover('toggle');
                               if (probDesc) return;

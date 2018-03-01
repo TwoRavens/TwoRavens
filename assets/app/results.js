@@ -19,5 +19,5 @@ export function leftpanel(pipelines) {
                'Pipelines')]},
         m(`#tab1[style=display: ${when('left', 'tab1')}; padding: 0 8px; text-align: center]`,
           m(Dropdown, {style: 'margin-bottom: 0.5em; width: 100%', items: ['Problem 1']}),
-          m(List, {items: pipelines, content: x => x, title: 'Info'})));
+          m(List, {items: pipelines, title: 'Info', content: x => x, onclick: el => console.log(el.target.id)})));
 }
