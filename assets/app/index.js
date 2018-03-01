@@ -299,6 +299,7 @@ class Body {
     oninit(vnode) {
         if (vnode.attrs.mode) {
             m.route.set('/model');
+            vnode.attrs.mode = null;
         };
         this.about = false;
         this.usertasks = false;
