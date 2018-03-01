@@ -1,8 +1,9 @@
 import * as app from "../app.js"
 import * as d3 from 'd3'
 import {updateAggregTable} from "../aggreg/aggreg";
+import {panelMargin} from "../../../common/app/common";
 
-let filterSet = {
+export let filterSet = {
     'source': {
         'entities': new Set(),
         'roles': new Set(),
@@ -15,8 +16,8 @@ let filterSet = {
     }
 };
 
-const orgs = ["IGO", "IMG", "MNC", "NGO"];		//hard coded organizations to remove from entities list
-const actorTypes = ["source", "target"];		//these arrays are to help loop through actor loading
+export const orgs = ["IGO", "IMG", "MNC", "NGO"];		//hard coded organizations to remove from entities list
+export const actorTypes = ["source", "target"];		//these arrays are to help loop through actor loading
 
 //definition of a node
 function NodeObj(name, actorType, actors = new Set()) {
@@ -42,9 +43,9 @@ function LinkObj(source, target, rev, dup) {
 let actorNodes = [];
 export let actorLinks = [];
 
-let currentTab = "source";
+export let currentTab = "source";
 
-let currentNode = {};                   //initialized to source and targets below. The highlighted node in the menu
+export let currentNode = {};                   //initialized to source and targets below. The highlighted node in the menu
 
 let currentSize = 0;					//total number of nodes created; this is never decremented
 let actorSize = {
@@ -61,6 +62,16 @@ export let actorNodeNames = [];				//array list to maintain unique node names
 
 //begin force definitions
 let actorSVG;
+//~ var actorSVG;			//move this to d3actor?
+//~ if (app.opMode == "subset") {
+//~ actorSVG = d3.select("#actorLinkSVG");
+//~ }
+//~ else if (app.opMode == "aggreg") {
+//~ actorSVG = d3.select("#actorAggregSVG");
+//~ }
+//~ else {
+//~ actorSVG = d3.select("#actorLinkSVG");
+//~ }
 
 let actorWidth;		//not yet set since window has not yet been displayed; defaults to 0
 let actorHeight;	//this code is here to remind what is under subset.js
@@ -216,49 +227,49 @@ export function setupActor(){
     //clears search and filter selections
     $(".clearActorBtn").click(function () {
         clearChecks();
-        actorSearch(currentTab);
+        actorSearch();
         $(this).blur();
     });
 
     //clear search box when reloading page
-    let actorSearchDivs = $(".actorSearch");
+    let actorSearchDivs = $("#actorSearch");
     actorSearchDivs.ready(function () {
-        $(".actorSearch").val("");
+        $("#actorSearch").val("");
     });
 
     //when typing in search box
     actorSearchDivs.on("keyup", function () {
         $(".actorChkLbl").popover("hide");
-        const searchText = $("#" + currentTab + "Search").val().toUpperCase();
+        const searchText = $("#actorSearch").val().toUpperCase();
         if (searchText.length % 3 === 0) {
-            actorSearch(currentTab);
+            actorSearch();
         }
     });
 
     //on load of page, keep actorShowSelected unchecked
-    $(".actorShowSelected").ready(function () {
-        $(".actorShowSelected").prop("checked", false);
+    $("#actorShowSelected").ready(function () {
+        $("#actorShowSelected").prop("checked", false);
     });
 
 
     //on load of page, keep checkbox for selecting all filters unchecked
-    let allCheck = $(".allCheck");
+    let allCheck = $("#allCheck");
     allCheck.ready(function () {
-        $(".allCheck").prop("checked", false);
+        allCheck.prop("checked", false);
     });
 
     //selects all checks for specified element, handles indeterminate state of checkboxes
     allCheck.click(function (event) {
         const currentEntityType = event.target.id.substring(6, 9);
-        const currentElement = (currentEntityType === "Org") ? $("#" + currentTab + currentEntityType + "AllCheck") : $("#" + currentTab + "CountryAllCheck");
+        const currentElement = (currentEntityType === "Org") ? $("#actor" + currentEntityType + "AllCheck") : $("#actorCountryAllCheck");
 
         currentElement.prop("indeterminate", false);
 
         let entityDiv;
         if (currentEntityType === "Org") {
-            entityDiv = $("#org" + capitalizeFirst(currentTab) + "sList input:checkbox");
+            entityDiv = $("#orgActorList input:checkbox");
         } else {
-            entityDiv = $("#country" + capitalizeFirst(currentTab) + "sList input:checkbox");
+            entityDiv = $("#countryActorList input:checkbox");
         }
 
         if (currentElement.prop("checked")) {
@@ -272,12 +283,12 @@ export function setupActor(){
                 $(this).prop("checked", false);
             });
         }
-        actorSearch(currentTab);
+        actorSearch();
     });
 
     //adds all of the current matched items into the current selection
-    $(".actorSelectAll").click(function () {
-        $("#searchList" + capitalizeFirst(currentTab) + "s").children().each(function () {
+    $("#actorSelectAll").click(function () {
+        $("#searchListActors").children().each(function () {
             this.childNodes[0].checked = true;
             currentNode[currentTab].group.add(this.childNodes[1].textContent);
         });
@@ -286,19 +297,17 @@ export function setupActor(){
     });
 
     //clears all of the current matched items from the current selection
-    $(".actorClearAll").click(function () {
+    $("#actorClearAll").click(function () {
         $(".actorBottom, .clearActorBtn, #deleteGroup, .actorShowSelectedLbl, #editGroupName").popover("hide");
-        $("#searchList" + capitalizeFirst(currentTab) + "s").children().each(function () {
+        $("#searchListActors").children().each(function () {
             this.childNodes[0].checked = false;
+            currentNode[currentTab].group.delete(this.childNodes[1].innerHTML);
         });
-
-        // Use clear to empty both the current node list and filter list
-        currentNode[currentTab].group.clear();
         $(this).blur();
     });
 
     //adds a new group for source/target
-    $(".actorNewGroup").click(function () {
+    $("#actorNewGroup").click(function () {
         $(".actorBottom, .clearActorBtn, #deleteGroup, .actorShowSelectedLbl, #editGroupName").popover("hide");
         let newName = capitalizeFirst(currentTab) + " " + actorSize[currentTab];
         let nameCount = 1;
@@ -314,9 +323,9 @@ export function setupActor(){
         updateGroupName(currentNode[currentTab].name);
 
         //update gui
-        $("#clearAll" + capitalizeFirst(currentTab) + "s").click();
+        $("#clearAllActors").click();
         filterSet[currentTab]["full"] = new Set();
-        actorSearch(currentTab);
+        actorSearch();
 
         //update svg
         //change dimensions of SVG if needed (exceeds half of the space)
@@ -373,14 +382,14 @@ export function setupActor(){
             currentNode[currentTab] = actorNodes[index];
             updateGroupName(actorNodes[index].name);
 
-            $("#clearAll" + capitalizeFirst(currentTab) + "s").click();
+            $("#clearAllActors").click();
             //update actor selection checks
             $("." + currentTab + "Chk:checked").prop("checked", false);
 
             for (let actor of actorNodes[index].group) {
                 document.getElementById(currentTab + 'full' + actor + 'check').checked = true;
             }
-            $("#" + currentTab + "ShowSelected").trigger("click");
+            $("#actorShowSelected").trigger("click");
 
             //update links
             for (let x = 0; x < actorLinks.length; x++) {
@@ -503,7 +512,7 @@ function dragend() {
         }
         //~ console.log(actorLinks);
 
-		actorNodeNames.splice(actorNodeNames.indexOf(dragSelect.name), 1);		//remove from name list
+        actorNodeNames.splice(actorNodeNames.indexOf(dragSelect.name), 1);		//remove from name list
         actorNodes.splice(actorNodes.indexOf(dragSelect), 1);		//remove the old node
 
         dragTarget.actorID = changeID;
@@ -513,16 +522,16 @@ function dragend() {
         $("#" + dragTarget.actor + "TabBtn").trigger("click");
         currentTab = dragTarget.actor;								//sanity check
         updateGroupName(currentNode[currentTab].name);
-        $("#clearAll" + capitalizeFirst(currentTab) + "s").click();
+        $("#clearAllActors").click();
 
-        let showSelectedDiv = $("#" + currentTab + "ShowSelected");
+        let showSelectedDiv = $("#actorShowSelected");
         showSelectedDiv.prop("checked", true);
         showSelected(showSelectedDiv[0]);
 
         updateAll();
 
         if (app.opMode === "aggreg")
-			updateAggregTable();
+            updateAggregTable();
     }
     dragStarted = false;		//now reset all drag variables
     dragSelect = null;
@@ -581,7 +590,7 @@ function updateSVG() {
             }
             updateAll();
             if (app.opMode === "aggreg")
-				updateAggregTable();
+                updateAggregTable();
         })
         .merge(linkGroup);
 
@@ -634,7 +643,7 @@ function updateSVG() {
                     mousedownNode = null;
                 })
                 .on("mousedown", function (d) {		//creates link if mouseup did not catch
-					$(".actorChkLbl").popover("hide");
+                    $(".actorChkLbl").popover("hide");
                     createLink(d);
                     nodeClick(d);
                 })
@@ -681,8 +690,8 @@ function updateSVG() {
             //update gui
             updateGroupName(d.name);
             clearChecks();
-            document.getElementById(currentTab + "ShowSelected").checked = true;
-            showSelected(document.getElementById(currentTab + "ShowSelected"));
+            document.getElementById("actorShowSelected").checked = true;
+            showSelected(document.getElementById("actorShowSelected"));
         }
     }
 
@@ -737,7 +746,7 @@ function updateSVG() {
         resetMouseVars();
 
         if (app.opMode === "aggreg")
-			updateAggregTable();
+            updateAggregTable();
     }	//end of createLink()
 
     //update all names of nodes - changeID and actorID are not updated on name change to save room for other changes; probably unneccesary for a normal user (unlikely they will perform so many changes)
@@ -893,33 +902,18 @@ function updateGroupName(newGroupName) {
 }
 
 //switches tabs in actor subset, sets current and active nodes
-export function actorTabSwitch(origin, tab) {
+export function actorTabSwitch(tab) {
+    currentTab = tab;
 
-    let sourceTabBtn = $("#sourceTabBtn");
-    let targetTabBtn = $("#targetTabBtn");
-    switch (origin) {
-        case "sourceTabBtn":
-            document.getElementById("targetDiv").style.display = "none";
-            targetTabBtn.removeClass("active").addClass("btn-default");
-            sourceTabBtn.removeClass("btn-default").addClass("active");
-            currentTab = "source";
-            break;
-        default:	//other button (targetTabBtn)
-            document.getElementById("sourceDiv").style.display = "none";
-            sourceTabBtn.removeClass("active").addClass("btn-default");
-            targetTabBtn.removeClass("btn-default").addClass("active");
-            currentTab = "target";
-            break;
-    }
-
-	$(".actorBottom, .clearActorBtn, #deleteGroup, .actorShowSelectedLbl, #editGroupName, .actorChkLbl").popover('hide');
+    $(".actorBottom, .clearActorBtn, #deleteGroup, .actorShowSelectedLbl, #editGroupName, .actorChkLbl").popover('hide');
     updateGroupName(currentNode[currentTab].name);
-    document.getElementById(tab).style.display = "inline-block";
+
+    updateActor();
     actorTick();
 }
 
 //read dictionary and store for fast retrieval
-let dict;
+export let dict;
 
 //loads the dictionary for translation
 const loadDictionary = function () {
@@ -940,35 +934,24 @@ export function updateActor() {
 
     const defer = $.Deferred();
 
-    for (let actorType of actorTypes) {
-        let orgList;
-        if (actorType === "source") {
-            orgList = document.getElementById("orgSourcesList");
-            orgList.innerHTML = "";
-        }
-        else {
-            orgList = document.getElementById("orgTargetsList");
-            orgList.innerHTML = "";
-        }
+    let orgList = document.getElementById("orgActorList");
+    orgList.innerHTML = "";
 
-        for (let y = 0; y < orgs.length; y++) {
-            orgList.appendChild(createElement(actorType, "entities", orgs[y], true));
-        }
+    for (let y = 0; y < orgs.length; y++) {
+        orgList.appendChild(createElement(currentTab, "entities", orgs[y], true));
+    }
 
-        for (let columnType in app.actorData[actorType]) {
-            loadDataHelper(actorType, columnType);
-        }
+    for (let columnType in app.actorData[currentTab]) {
+        loadDataHelper(currentTab, columnType);
     }
     defer.resolve();
 
-    document.getElementById("sourceSearch").value = "";
-    document.getElementById("targetSearch").value = "";
-    $("#sourceTabBtn").trigger("click");
+    document.getElementById("actorSearch").value = "";
 }
 
 //handles data selection and read asynchronously to help speed up load
 function loadDataHelper(actorType, columnType) {
-	$(".actorChkLbl").popover("hide");
+    $(".actorChkLbl").popover("hide");
     $(".popover").remove();
     let lines = app.actorData[actorType][columnType];
     if (!Array.isArray(lines) || lines.length === 0) return;
@@ -976,13 +959,13 @@ function loadDataHelper(actorType, columnType) {
     let chkSwitch = true;		//enables code for filter
 
     if (columnType === "full") {
-        displayList = document.getElementById("searchList" + capitalizeFirst(actorType) + "s");
+        displayList = document.getElementById("searchListActors");
         displayList.innerHTML = "";
         chkSwitch = false;
     }
 
     if (columnType === "entities") {
-        displayList = document.getElementById("country" + capitalizeFirst(actorType) + "sList");
+        displayList = document.getElementById("countryActorList");
         displayList.innerHTML = "";
 
         lines = lines.filter(function (val) {
@@ -991,12 +974,12 @@ function loadDataHelper(actorType, columnType) {
     }
 
     if (columnType === "roles") {
-        displayList = document.getElementById("role" + capitalizeFirst(actorType) + "sList");
+        displayList = document.getElementById("roleActorList");
         displayList.innerHTML = "";
     }
 
     if (columnType === "attributes") {
-        displayList = document.getElementById("attribute" + capitalizeFirst(actorType) + "sList");
+        displayList = document.getElementById("attributeActorList");
         displayList.innerHTML = "";
     }
 
@@ -1007,7 +990,7 @@ function loadDataHelper(actorType, columnType) {
         // Don't create an element if it is not selected and 'show selected' is on
         if (line != null && line !== '') {
             if (columnType === 'full') {
-                if (!document.getElementById(currentTab + "ShowSelected").checked || currentNode[currentTab].group.has(line)) {
+                if (!document.getElementById("actorShowSelected").checked || currentNode[currentTab].group.has(line)) {
                     fragment.appendChild(createElement(actorType, columnType, line, chkSwitch));
                 }
             }
@@ -1017,8 +1000,6 @@ function loadDataHelper(actorType, columnType) {
         }
     }
     displayList.appendChild(fragment);
-
-
 }
 
 // Returns a new element
@@ -1107,31 +1088,31 @@ function createElement(actorType, columnType, value, chkSwitch = true) {
     //     $("#" + lbl.id).modal('hide')
     // }, 4000);
 
-    function binarySearch(element) {
-        let l = 0, r = dict.length - 1;
-        while (l <= r) {
-            const m = Math.floor((l + r) / 2);
-            const head = dict[m].split("\t")[0];
-            if (head === element) {
-                return dict[m].split("\t")[1];
-            }
-            else {
-                if (head < element) {
-                    l = m + 1;
-                }
-                else {
-                    r = m - 1;
-                }
-            }
-        }
-        return "no translation found";
-    }
     return entry;
 }
 
+function binarySearch(element) {
+    let l = 0, r = dict.length - 1;
+    while (l <= r) {
+        const m = Math.floor((l + r) / 2);
+        const head = dict[m].split("\t")[0];
+        if (head === element) {
+            return dict[m].split("\t")[1];
+        }
+        else {
+            if (head < element) {
+                l = m + 1;
+            }
+            else {
+                r = m - 1;
+            }
+        }
+    }
+    return "no translation found";
+}
+
 //when an actor selected, add into currentNode.group
-function actorSelectChanged(value) {
-	console.log("actor selected " + value);
+export function actorSelectChanged(value) {
     let checkbox = document.getElementById(currentTab + 'full' + value + 'check');
 
     if (checkbox.checked) {
@@ -1140,11 +1121,9 @@ function actorSelectChanged(value) {
     else {
         currentNode[currentTab].group.delete(value);
     }
-	console.log(actorLinks);
-	console.log(currentNode);
 }
 
-function actorFilterChanged(value, category) {
+export function actorFilterChanged(value, category) {
     let checkbox = document.getElementById(currentTab + category + value + 'check');
     //when filter checkbox checked, add or remove filter
     let filterListing;
@@ -1169,7 +1148,7 @@ function actorFilterChanged(value, category) {
             }
         }
 
-        $("#" + currentTab + "OrgAllCheck")
+        $("#actorOrgAllCheck")
             .prop("checked", allOrgSet)
             .prop("indeterminate", !allOrgSet);
     }
@@ -1188,7 +1167,7 @@ function actorFilterChanged(value, category) {
             }
         }
 
-        $("#" + currentTab + "CountryAllCheck")
+        $("#actorCountryAllCheck")
             .prop("checked", allCountrySet)
             .prop("indeterminate", !allCountrySet);
     }
@@ -1208,30 +1187,30 @@ function actorFilterChanged(value, category) {
     //     toggleFilter();
     // }
 
-    actorSearch(currentTab);
+    actorSearch();
 }
 
 // Clear all filters
 function clearChecks() {
-    document.getElementById(currentTab + "Search").value = "";
-    $("#" + currentTab + "Filter :checkbox").prop("checked", false);
-    $("#" + currentTab + "OrgAllCheck").prop("checked", false).prop("indeterminate", false);
-    $("#" + currentTab + "CountryAllCheck").prop("checked", false).prop("indeterminate", false);
+    document.getElementById("actorSearch").value = "";
+    $("#actorFilter :checkbox").prop("checked", false);
+    $("#actorOrgAllCheck").prop("checked", false).prop("indeterminate", false);
+    $("#actorCountryAllCheck").prop("checked", false).prop("indeterminate", false);
 
     filterSet[currentTab]['entities'].clear();
     filterSet[currentTab]['roles'].clear();
     filterSet[currentTab]['attributes'].clear();
 
-    actorSearch(currentTab);
+    actorSearch();
 }
 
 //called when showing only selected elements, element is the checkbox calling the function
 export function showSelected() {
-    actorSearch(currentTab);
+    actorSearch();
 }
 
-function actorSearch(actorName) {		//bugs: removes pre checked values on search clear, checking partial country after checking org
-    const searchText = $("#" + actorName + "Search").val().toUpperCase();
+function actorSearch() {		//bugs: checking partial country after checking org
+    const searchText = $("#actorSearch").val().toUpperCase();
 
     const operator = '$and';
     let actorFilters = [];
@@ -1304,33 +1283,29 @@ function actorSearch(actorName) {		//bugs: removes pre checked values on search 
     };
 
     function updateActorListing(data) {
-        if ('source' in data) {
-            document.getElementById("searchListSources").innerHTML = "";
-            app.actorData.source.full = data.source;
-            loadDataHelper("source", "full");
-        }
-        if ('target' in data) {
-            document.getElementById("searchListTargets").innerHTML = "";
-            app.actorData.target.full = data.target;
-            loadDataHelper("target", "full");
-        }
+
+        document.getElementById("searchListActors").innerHTML = "";
+        if ('source' in data) app.actorData.source.full = data.source;
+        if ('target' in data) app.actorData.target.full = data.target;
+        loadDataHelper(currentTab, "full");
     }
     app.makeCorsRequest(app.subsetURL, query, updateActorListing);
 }
 
-function capitalizeFirst(str) {
+export function capitalizeFirst(str) {
     return str.charAt(0).toUpperCase() + str.substring(1);
 }
 
 export function resizeActorSVG() {
+    if (document.getElementById('canvasActor').style.display === 'none') return;
     //actor resize on window resize handled here
-    const curHeight = $("#main").height() - 20;     //this is the height of the container
+    const curHeight = $("#canvas").height() - panelMargin * 2;     //this is the height of the container
     const titleHeight = $("#linkTitle").height();           //this is the height of the title div above the SVG
     let trySize = actorHeight;
 
     let actorSelectionDiv = $("#actorSelectionDiv");
     let actorLinkDiv = $("#actorLinkDiv");
-    actorSelectionDiv.css("height", curHeight);   //this constrains the left side
+    // actorSelectionDiv.css("height", curHeight);   //this constrains the left side
     if (actorActualSize['source'] <= calcCircleNum(curHeight - titleHeight) && actorActualSize['target'] <= calcCircleNum(curHeight - titleHeight)) {     //if link div is empty enough, maintain height alignment
         actorLinkDiv.css("height", actorSelectionDiv.height() + 2);
         actorHeight = actorSVG.node().getBoundingClientRect().height;
@@ -1356,68 +1331,15 @@ export function resizeActorSVG() {
         updateAll();
     }
 
-    if ($('#rightpanel').hasClass('closepanel')) {
-        actorLinkDiv.css("width", "calc(100% - 45px)");
-    } else actorLinkDiv.css("width", "calc(100% - 275px)");
-
     let diagramWidth = actorLinkDiv.width();
-    
-    actorWidth = actorSVG.node().getBoundingClientRect().width;
+    actorSVG.attr("width", diagramWidth);
 
+    actorWidth = actorSVG.node().getBoundingClientRect().width;
     boundaryLeft = Math.floor(actorWidth / 2) - 20;     //max x coordinate source nodes can move
     boundaryRight = Math.ceil(actorWidth / 2) + 20;     //max x coordinate target nodes can move
 
-    actorSVG.attr("width", diagramWidth);
     d3.select("#centerLine").attr("d", function () {
         return "M" + diagramWidth / 2 + "," + 0 + "V" + actorHeight;
     });
     updateAll();
 }
-
-/* Consider if the actor menu cannot keep the full list of actors in browser memory, 
-        but still needs to remember filter subsets over the entire dataset.
-   This is a proposal for how the code can be structured to achieve that. --Michael Shoemate
-
-   There are two queries for source, and two queries for target.
-    Query 1: [VISIBLE]      First n records that match visibility
-    Query 2: [SELECTED]     First n selected records
-    Notice selected actors is always a subset of visible actors,
-        so in the actor menu check the actors that are also in the [SELECTED] query
-
-
- --Specification for [VISIBLE], the list of all actors currently shown in the editing menu.
-    Important: If EDITED flag is set, then also re-query [SELECTED].
-
-    When a node is selected, set [VISIBLE] to the stored value for [SELECTED] (the node members). Re-query [VISIBLE].
-
-    When show selected is toggled, set/unset the 'show visible' filter. Re-query [VISIBLE].
-
-    When a filter is toggled, add/remove it from <filter_list>. Re-query [VISIBLE].
-
-    When 'Search Source Actors' has an edit with length modulus 3, add text to a temporary <filter_list>. Re-query [VISIBLE].
-
-    When 'Clear All Filters' is selected, clear the <filter_list>. Re-query [VISIBLE].
-
-    When 'show more' is selected, Re-query both [VISIBLE] and [SELECTED] with an increased limit.
-
-
- --Specification for [SELECTED], the data structure that describes the elements in a node, or group of actors.
-    Every modification to the check boxes updates the rule's query data structure.
-    Do not re-query on edits here, but set an EDITED flag that causes re-query of [SELECTED] when [VISIBLE] is changed.
-
-    When a checkbox is clicked in the actor list, a {$Source: 'AFG'} rule is or'ed to root.
-        These entries are collapsed to one $in: [] statement by the query builder in subset.js.
-
-    When select all is clicked, a { $Source: { $in: [<filter_list>] }} rule is or'ed to root.
-
-    When a checkbox is unclicked in the actor list, the entire query tree is added to a new root,
-        and a { $not: {$Source: 'AFG'}} rule is and'ed to root.
-
-    When deselect all is clicked, the entire query tree is added to a new root,
-        and a { $Source: { $not: { $in: [<filter_list>] }}} rule is and'ed to root.
-
-    The object <filter_list> is composed of elements in the form: {$regex: '<filter>'}.
-
-    ~~~~~~~~~~~~~~~~~~~
-    On stage, for each link, use a deep copy of [SELECTED] as the value for what is currently the raw string list.
-*/

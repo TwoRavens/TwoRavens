@@ -12,30 +12,15 @@ var aggregRootSelectNum = 20;
 
 export function updateToAggreg() {
 	if (opMode === "subset") {
-		setOpMode("aggreg");
 		//clear main
 		console.log("aggreg on");
-		$("#btnSubmit").removeAttr("onclick").click(function(){alert("Functionality disabled for now");});
-		$("#stageButton").hide();
-		$("#subsetLeftPanelSelection").hide();
-		$("#aggregLeftPanelSelection").show();
-		$(".subsetDiv").hide();
-		$(".aggregDiv").show();
-		$("#canvasAggregation").css("display", "block");
 		$("#aggregDataOutput").css("display", "inline");
         $("#aggregDataDisplay").css("display", "inline");
-        $("#main").css("height", "calc(100% - 202px)")
-		$("#dateOptions").css("display", "none");
-		$("#dateAggregOption").css("display", "block");
+        $("#canvas").css("height", "calc(100% - 202px)")
 		$("#leftpanel").css("height", "calc(100% - 222px)");
 		$("#rightpanel").css("height", "calc(100% - 222px)");
 
-        $("#subsetTourBar").css("display", "none");
-        $("#aggregTourBar").css("display", "inline-block");
-
 		d3.select("#aggregOptions").selectAll("p").style("background-color", varColor);
-		d3.select("#aggregPentaToggle").style("background-color", selVarColor);
-		d3.select("#aggregRootToggle").style("background-color", varColor);
 
 		$("#aggregTable").append(function() {
 			var tablestring = "";
@@ -77,11 +62,6 @@ export function updateToAggreg() {
 
 		$("#aggregTable .th").css({"width":"300px", "padding":"5px"});
 
-		$("#subsetDate").appendTo("#aggregDataDisplay");
-		//~ $("#dateSVGdiv").appendTo("#aggregDataDisplay");
-		updateActor(false);
-
-		$("#subsetActor").appendTo("#aggregDataDisplay");
 		$("#actorPanelTitleDiv").css({"display":"inline", "float":"left"});
 		$("#actorAggToggleDiv").show();
 		$("#aggregActorSelect").change(function(e) {
