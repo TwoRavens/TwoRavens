@@ -113,10 +113,6 @@ text.id {
 #main.svg-leftpanel.svg-rightpanel svg {width: 100%;}   /*  Was: calc(100% - 300px);} /*
 /* Above changes fix issue when screen gets very small, and right margin is fixed at 300px, obscuring central display, even while left tab is shrinking below 300px */
 
-.bordered-variable {
-    border: solid #000000;
-}
-
 #leftpanel {
     border: 1px solid #ADADAD;
     position: fixed;
@@ -419,6 +415,13 @@ tr.item-select{
 }
 
 tr.item-lineout{
+    text-decoration:line-through;
+}
+
+.item-bordered {
+    border: solid #000000;
+}
+.item-lineout{
     text-decoration:line-through;
 }
 

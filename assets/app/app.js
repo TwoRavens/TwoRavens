@@ -30,6 +30,9 @@ let is_explore_mode = false;
 let is_results_mode = false;
 
 export function set_mode(mode) {
+    if (!mode) mode = 'model';
+    m.route.set('/' + mode.toLowerCase());
+
     is_explore_mode = mode === 'explore';
     is_results_mode = mode === 'results';
 }

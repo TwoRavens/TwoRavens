@@ -43,7 +43,7 @@ export default class PanelList {
                         'background-color': viewColor[item] || varColor
                     },
                     'class': viewClass[item],
-                    onclick: () => callback(item)
+                    onclick: () => (callback || Function)(item)
                 },
 
                 // add popup if defined

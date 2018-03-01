@@ -119,11 +119,18 @@ function leftpanel(mode) {
     });
 }
 
-let righttab = (id, task, title, probDesc) => m(List, {
+let righttab = (id, task, title, probDesc) => m(PanelList, {
+    id: id,
     items: Object.keys(task || {}),
-    title: title + ' Description',
-    content: v => task[v][1],
-    probDesc: probDesc
+    colors: {
+        [app.hexToRgba(common.selVarColor)]: [app.d3mProblemDescription[probDesc]],
+    },
+    classes: {
+        'item-lineout': Object.keys(task || {})
+            .filter(item => app.locktoggle && item !== app.d3mProblemDescription[probDesc])
+    },
+    popup: v => task[v][1],
+    attrsItems: {'data-placement': 'top', 'data-original-title': title + ' Description'}
 });
 
 function rightpanel(mode) {
@@ -244,6 +251,19 @@ function rightpanel(mode) {
             value: 'Task Type',
             display: explore ? 'block' : 'none',
             idSuffix: 'Type',
+            contents: m(PanelList, {
+                id: 'varList',
+                items: app.valueKey,
+                colors: {
+                    [app.hexToRgba(common.selVarColor)]: app.nodes.map(n => n.name),
+                    [app.hexToRgba(common.nomColor)]: app.zparams.znom,
+                    [app.hexToRgba(common.dvColor)]: app.zparams.zdv
+                },
+                classes: {'item-bordered': app.matchedVariables},
+                callback: app.clickVar,
+                popup: (variable) => app.popoverContent(app.findNodeIndex(variable, true)),
+                attrsItems: {'data-placement': 'right', 'data-original-title': 'Summary Statistics'}
+            }),
             contents: righttab('types', app.d3mTaskType, 'Task', 'taskType')
         },
         {
@@ -545,7 +565,7 @@ class Body {
                     m(ButtonRadio, {
                         id: 'modeButtonBar',
                         attrsAll: {style: {width: '200px', margin: '0 .2em'}, class: 'navbar-right'},
-                        onclick: (item) => m.route.set('/' + item.toLowerCase()),
+                        onclick: app.set_mode,
                         activeSection: mode === undefined ? 'model' : mode,
                         sections: [{value: 'Model'}, {value: 'Explore'}, {value: 'Results', id: 'btnResultsMode'}]
                     })),
