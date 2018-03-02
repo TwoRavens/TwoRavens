@@ -97,7 +97,7 @@ tree.app <- function(env)
     formula<- eval(parse(text=paste(mydv,"~ .", sep = "")))
     print(formula)
 
-    myTree <- rpart(formula,data=mydata,control=rpart.control(minsplit=2,cp=0))
+    myTree <- rpart::rpart(formula,data=mydata,control=rpart::rpart.control(minsplit=2,cp=0))
    # myTree  <- prune(rpTree, cp = rpTree$cptable[which.min(rpTree$cptable[,"xerror"]),"CP"])
     myTree$frame
     print(myTree)
