@@ -23,15 +23,25 @@ fab run
 
 - **ravens-main**
   - last update: https://hub.docker.com/r/tworavens/ravens-main/tags/
+  - container with core frontend as well as python web service
 - **ravens-r-service**
-  - gets kicked off after ravens-main completes
+  - gets kicked off after `ravens-main` or `ravens-r-base` (below) completes
   - last update: https://hub.docker.com/r/tworavens/ravens-r-service/tags/
   - queue (if in process): https://hub.docker.com/r/tworavens/ravens-r-service/builds/
+- **ravens-r-base**
+  - This contains R + packages such as Zelig
+  - This serves as the base for `ravens-r-service`.  
+    - It is not rebuilt often.
+    - It is not uploaded to gitlab or part of final deployment
+  - Rebuild this manually if any packages are added to the Dockerfile for the image
+      - Dockerfile: `setup/r-base-Dockerfile`
+      - Page to trigger build (requires login):
+        - https://hub.docker.com/r/tworavens/r-service-base/~/settings/automated-builds/
+  - last update: https://hub.docker.com/r/tworavens/ravens-r-base/tags/
 - **ravens-nginx**
-  - gets kicked off after ravens-main completes
+  - gets kicked off after `ravens-main` completes
   - last update: https://hub.docker.com/r/tworavens/ravens-nginx/tags/
   - queue (if in process): https://hub.docker.com/r/tworavens/ravens-nginx/builds/
-
 
 ### Pull images from dockerhub
 
