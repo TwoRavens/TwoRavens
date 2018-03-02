@@ -74,7 +74,7 @@ function leftpanel(mode) {
                                 [app.hexToRgba(common.nomColor)]: app.zparams.znom,
                                 [app.hexToRgba(common.dvColor)]: app.zparams.zdv
                             },
-                            classes: {'bordered-variable': app.matchedVariables},
+                            classes: {'item-bordered': app.matchedVariables},
                             callback: app.clickVar,
                             popup: (variable) => app.popoverContent(app.findNodeIndex(variable, true)),
                             attrsItems: {'data-placement': 'right', 'data-original-title': 'Summary Statistics'}
