@@ -4,6 +4,7 @@ import * as app from './app'
 import * as aggreg from './aggreg/aggreg'
 import * as tour from "./tour";
 
+import * as common from '../../common/app/common'
 import Panel from '../../common/app/views/Panel'
 import Header from '../../common/app/views/Header'
 import Footer from '../../common/app/views/Footer'
@@ -335,7 +336,7 @@ export default class Body_EventData {
                                 m(PanelList, {
                                     id: 'variablesList',
                                     items: app.matchedVariables,
-                                    itemsSelected: app.variablesSelected,
+                                    colors: {[common.selVarColor]: app.variablesSelected},
                                     callback: app.toggleVariableSelected
                                 })
                             ]
@@ -346,7 +347,7 @@ export default class Body_EventData {
                             contents: m(PanelList, {
                                 id: 'subsetsList',
                                 items: app.subsetKeys,
-                                itemsSelected: [app.canvasKeySelected],
+                                colors: {[common.selVarColor]: [app.canvasKeySelected]},
                                 callback: app.showCanvas
                             })
                         }
@@ -367,7 +368,7 @@ export default class Body_EventData {
                             value: 'Unit of Measure',
                             contents: m(PanelList, {
                                 items: ['Date', 'Actor'],
-                                itemsSelected: [app.canvasKeySelected],
+                                colors: {[common.selVarColor]: [app.canvasKeySelected]},
                                 callback: app.showCanvas
                             })
                         },
@@ -375,7 +376,7 @@ export default class Body_EventData {
                             value: 'Event Measure',
                             contents: m(PanelList, {
                                 items: ['Penta Class', 'Root Code'],
-                                itemsSelected: [app.canvasKeySelected],
+                                colors: {[common.selVarColor]: [app.canvasKeySelected]},
                                 callback: app.showCanvas
                             })
                         }
