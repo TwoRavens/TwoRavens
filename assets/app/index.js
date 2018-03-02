@@ -225,10 +225,10 @@ function rightpanel(mode) {
                                 ),
                                 m("button.btn.btn-default.btn-sm[id='SelectionData1'][type='button']", {style: {display: "block", margin: "0 auto", position: "relative"}},
                                     "Create")),
-                            m('#tabular_1', {style: {width: "100%", height: "200px", "border-bottom-style": "inset"}},
+                            m('#tabular_1', {style: {width: "100%", height: "200px"}},
                                 m('#plotA', {style: {width: exp.get_width('plotA') + '%', height: "100%", float: "left", overflow: "hidden"}}, "plotA"),
                                 m('#plotB', {style: {width: exp.get_width('plotB') + '%', height: "100%", float: "right", overflow: "hidden"}}, "plotB")),
-                            m('#tabular_2', {style: {width: "100%", height: "50%", "border-bottom-style": "inset", overflow: "hidden"}})))
+                            m('#tabular_2', {style: {width: "100%"}})))
                 ]
             }
         ];

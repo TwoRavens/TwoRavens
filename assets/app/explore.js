@@ -161,6 +161,11 @@ function bivariatePlot(x_Axis, y_Axis, x_Axis_name, y_Axis_name) {
         }
     }
 
+    // D3 line charts need sorted data
+    data_plot.sort(function(a, b) {
+        return a.xaxis - b.xaxis;
+    });
+
     let margin = {top: 20, right: 15, bottom: 40, left: 60},
         width = 500 - margin.left - margin.right,
         height = 280 - margin.top - margin.bottom,
@@ -998,8 +1003,6 @@ export function linechart(x_Axis_name, y_Axis_name) {
 }
 
 function viz(m, json_vizexplore, model_name_set) {
-    console.log(model_name_set);
-    console.log("TAG");
     d3.select("#plotA").html("");
     d3.select("#plotB").html("");
     d3.select("#tabular_1").style("display", "block");
@@ -1165,7 +1168,6 @@ function viz(m, json_vizexplore, model_name_set) {
 
         d3.select("#tabular_2")
             .html("")
-            .style("background-color", "#fff")
             .append("h5")
             .text("CROSS-TABS ")
             .style("color", "#424242");
