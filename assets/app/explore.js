@@ -998,6 +998,8 @@ export function linechart(x_Axis_name, y_Axis_name) {
 }
 
 function viz(m, json_vizexplore, model_name_set) {
+    console.log(model_name_set);
+    console.log("TAG");
     d3.select("#plotA").html("");
     d3.select("#plotB").html("");
     d3.select("#tabular_1").style("display", "block");
@@ -1363,7 +1365,7 @@ function model_selection(model_selection_name, count_value, json) {
         .style("display", "inline-block")
         .style("white-space", "pre")
         .style("overflow-y", "hidden")
-        .style("overflow-x", "scroll")
+        .style("overflow-x", "auto")
         .append("button")// top stack for results
     //      .append("xhtml:button")
         .attr("class","btn btn-outline-success")
@@ -1433,27 +1435,13 @@ export async function explore() {
     app.explored = true;
     app.univariate_finished = false;
 
-    d3.select("#decisionTree")
-        .style("display", "none");
     d3.select("#modelView").html('');
     d3.select("#resultsView_statistics").html('');
-    ["#left_thumbnail",
-     "#result_left",
-     "#result_left1",
-     "#result_right",
-     "#modelView_Container",
-     "#modelView",
-     "#resultsView_tabular",
-     "#plotA",
-     "#plotB",
-     "#SelectionData",
-     "#resultsView_statistics"
-    ].forEach(id => d3.select(id).style("display", "block"));
 
     d3.select("#modelView")
         .style('background-color', app.hexToRgba(app.varColor))
         .style("overflow-y", "hidden")
-        .style("overflow-x", "scroll")
+        .style("overflow-x", "auto")
         .append("span")
         .style("white-space", "pre")
         .style("margin-top", 0)
