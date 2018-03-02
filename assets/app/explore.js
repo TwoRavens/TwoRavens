@@ -1483,7 +1483,9 @@ export async function explore() {
     m.redraw();
 }
 
+export let exploreVar = '';
 export async function callTreeApp(node_var, app) {
+    exploreVar = node_var;
     app.zPop();
     app.zparams.callHistory = app.callHistory;
     
@@ -1530,9 +1532,12 @@ function univariatePart(json, var_name) {
             return [d.x, d.y];
         });
 
+    // set height of SVG via height of tree, 200px per layer
+    let getHeight = (json_data) => json_data.children ? Math.max(...json_data.children.map(v => getHeight(v))) + 1 : 0;
+
     var vis = d3.select("#decisionTree").append("svg:svg")
         .attr("width", w + m[1] + m[3])
-        .attr("height", h + m[0] + m[2] + 1000)
+        .attr("height", getHeight(json) * 200 + 20)
         .style('height', 'auto')
         .append("svg:g")
         .attr("transform", "translate(" + m[3] + "," + m[0] + ")");

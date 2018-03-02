@@ -159,10 +159,16 @@ function rightpanel(mode) {
             {
                 value: 'Univariate',
                 contents: [
-                    m('#decisionTree[style=width: 100%; height:80%; overflow:scroll; float: left; white-space: nowrap; margin-top: 2px;]'),
-                    m("p#resultsHolder", {style: {display: app.rightTabExplore === 'Univariate' ? 'block' : 'none', padding: ".5em 1em", height: '20%'}},
-                        m('#varList[style=display: block]',
-                            unique_link_names().map(x => m(`p#${x.replace(/\W/g, '_')}`, {onclick: _=> exp.callTreeApp(x, app), style: {'background-color': app.varColor}}, x))))
+                    m('#decisionTree[style=width: 100%; height:80%; overflow-y:scroll; float: left; white-space: nowrap; margin-top: 2px;]'),
+                    m(PanelList, {
+                        id: 'varListExplore',
+                        items: unique_link_names(),
+                        colors: {[app.hexToRgba(common.selVarColor)]: [exp.exploreVar]},
+                        callback: (variable) => exp.callTreeApp(variable, app),
+                        attrsAll: {style: {float: 'left', width: '100%', height: '20%'}}
+                    })
+                        // m('#varList[style=display: block]',
+                        //     unique_link_names().map(x => m(`p#${x.replace(/\W/g, '_')}`, {onclick: _=> exp.callTreeApp(x, app), style: {'background-color': app.varColor}}, x))))
                 ]
             },
             {
@@ -224,7 +230,7 @@ function rightpanel(mode) {
             side: 'right',
             label: 'Result Exploration',
             hover: true,
-            width: {'Univariate': '600px', 'Bivariate': '75%'}[app.rightTabExplore],
+            width: {'Univariate': '700px', 'Bivariate': '75%'}[app.rightTabExplore],
             contents: m(MenuTabbed, {
                 id: 'rightPanelMenuExplore',
                 currentTab: app.rightTabExplore,
@@ -531,7 +537,7 @@ class Body {
         return m(Header, {
             attrsInterface: {style: mode === 'explore' ? {'background-image': '-webkit-linear-gradient(top, #fff 0, rgb(227, 242, 254) 100%)'} : {}},
             contents: m('#dataField.field[style=text-align: center]',
-                m('h4#dataName[style=display: inline]',
+                m('h4#dataName[style=display: inline-block; margin-right:2em; margin-top: 7px]',
                     {
                         onclick: _ => this.cite = this.citeHidden = !this.citeHidden,
                         onmouseout: _ => this.citeHidden || (this.cite = false),
