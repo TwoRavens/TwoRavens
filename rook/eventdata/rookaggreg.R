@@ -123,8 +123,8 @@ eventdata_aggreg.app <- function(env) {
 
 #~ 	query_url = paste(eventdata_url, '&query={\"<date>\":{\"$gte\":\"', everything$date$min, '\",\"$lte\":\"', everything$date$max, '\"}}', sep="")		#change query to match min/max date
 
-	rootCodeHeader = c("date", 1:20)
-	pentaCodeHeader = c("date", 0:4)
+	rootCodeHeader = sprintf("%d", seq(1:20))
+	pentaCodeHeader = 0:4
 
 	if (everything$date$dateType != 0) {
 		start_date = as.Date(strptime(everything$date$min, "%Y%m%d"))
@@ -221,8 +221,7 @@ eventdata_aggreg.app <- function(env) {
 #~ 								'"root_code": "$<root_code>"}, "total":{"$sum": 1}}},{"$limit":10}]',
 						'{"$project": {"<date>": 1, "<root_code>": 1, "_id": 0}}, {"$limit":20}]',
 					sep="")))
-								
-#~ 					if (nrow(data) != 0) colnames(data) = c('total', 'year', '<root_code>', 'month')
+
 					if (nrow(data) != 0) colnames(data) = c("date", "rootcode")
 					data
 				}) %plan% multiprocess
@@ -283,7 +282,7 @@ eventdata_aggreg.app <- function(env) {
 #~ 				print(test_df)
 
 				result = toString(jsonlite::toJSON(list(
-					action_data = value(action_frequencies)
+					action_data = tab
 				)))
 			}
 		}
@@ -437,84 +436,196 @@ eventdata_aggreg.app <- function(env) {
 	}
 	else if (everything$date$dateType == 0 && everything$actors$actorType == TRUE) {
 		print("only actor")
+		result = data.frame(matrix(ncol = 22, nrow = 0))
+		resHeader = c("Source", "Target", (1:20))
+		colnames(result) = resHeader
+		
 		if (dataset %in% list("phoenix_rt", "cline_phoenix_fbis", "cline_phoenix_nyt", "cline_phoenix_swb")) {
-			#not working
+			for (group in everything$actors$links) {
 				action_frequencies = future({
-					data = do.call(data.frame, getData(paste(eventdata_url, '&aggregate=[',
-						'{"$match": ',
-							'{"$and": [',
-								'{"<date>": {"$gte":"', everything$date$min,
-									'", "$lte":"', everything$date$max,
-								'"}}, {"<source>": {"$in": [',
-									'"USA", "USABUS", "USABUSLEG", "USAELI", "USAGOV"',
-								']}}, {"<target>": {"$in": [',
-									'"AFG", "AFGBUS", "AFGCVL", "AFGGOV", "AFGMIL"',
-								']}}]}},',
-						'{"$project": ',
-							'{"iso_date": {',
-								'"$dateFromParts": {"year": "$<year>", "month": "$<month>", "day":"$<day>"}},',
-							'"<root_code>": 1}},',
-						'{"$project": {',
-							'"iso_date": {"$subtract": ["$iso_date", ', 86400000 * diff, ']}, "<root_code>": 1}},',
-						'{"$group": {',
-							'"_id": {',
-								'"Year": {"$year": "$iso_date"},',
-								'"Week": {"$week": "$iso_date"},',
-								'"root_code": "$<root_code>"}, "total":{"$sum": 1}}}]',
-					sep="")))
-								
-					if (nrow(data) != 0) colnames(data) = c('total', '<root_code>', 'actor', 'year')
-					data
+					
+						data = do.call(data.frame, getData(paste(eventdata_url, '&aggregate=[',
+							'{"$match": ',
+								'{"$and": [',
+									'{"<date>": {"$gte":"', everything$date$min,
+										'", "$lte":"', everything$date$max,
+									'"}}, {"<source>": {"$in": [',
+	#~ 									'"USA", "USABUS", "USABUSLEG", "USAELI", "USAGOV"',
+										group$sources,
+									']}}, {"<target>": {"$in": [',
+	#~ 									'"AFG", "AFGBUS", "AFGCVL", "AFGGOV", "AFGMIL"',
+										group$targets,
+									']}}]}},',
+							'{"$project": {"sourceName": "', group$sourceName, '", "targetName": "', group$targetName, '", "<root_code>": 1}},',
+							'{"$group": {',
+								'"_id": {',
+									'"Source": "$sourceName", "Target": "$targetName", "RootCode": "$<root_code>"',
+								'}, "total": {"$sum": 1}}}]',
+	#~ 								']}}]}},',
+	#~ 						'{"$project": ',
+	#~ 							'{"iso_date": {',
+	#~ 								'"$dateFromParts": {"year": "$<year>", "month": "$<month>", "day":"$<day>"}},',
+	#~ 							'"<root_code>": 1}},',
+	#~ 						'{"$project": {',
+	#~ 							'"iso_date": {"$subtract": ["$iso_date", ', 86400000 * diff, ']}, "<root_code>": 1}},',
+	#~ 						'{"$group": {',
+	#~ 							'"_id": {',
+	#~ 								'"Year": {"$year": "$iso_date"},',
+	#~ 								'"Week": {"$week": "$iso_date"},',
+	#~ 								'"root_code": "$<root_code>"}, "total":{"$sum": 1}}}]',
+						sep="")))
+									
+						if (nrow(data) != 0) colnames(data) = c('total', 'Source', 'Target', 'RootCode')
+						data
 				}) %plan% multiprocess
+
+				print(value(action_frequencies))
+
+				if (ncol(value(action_frequencies)) == 0) {
+					result[nrow(result) + 1,] = c(group$sourceName, group$targetName, rep(0, 20))
+				}
+				else {
+					temp_df = spread(value(action_frequencies), "RootCode", "total", fill = 0)
+					print(temp_df)
+
+					missing = setdiff(resHeader, names(temp_df))
+					temp_df[missing] = 0
+					temp_df = temp_df[resHeader]
+					print(temp_df)
+
+					result[nrow(result)+1,] = temp_df
+				}
 			}
+#~ 			colnames(result)[3:ncol(result)] = paste("R", (1:20), sep="")
+			print("result")
+			print(result)
+
+#~ 			result = toString(jsonlite::toJSON(action_data = list(result)))
+			result = toString(jsonlite::toJSON(list(
+						action_data = result
+					)))
+		}
 	}
 	else {
 		print("aggreg all")
+
+		result = data.frame(matrix(ncol = 23, nrow = 0))
+		resHeader = c("Source", "Target", (1:20))
+		colnames(result) = resHeader
+		
 		if (everything$date$dateType == 1) {	#weekly
 			print("aggreg week")
 
-			start_date = as.Date(strptime(everything$date$min, "%Y%m%d"))
 			offset_date = as.Date(cut(as.Date(start_date), "week"))
 			diff = abs(as.numeric(start_date - offset_date, units="days"))
 			
 			if (dataset %in% list("phoenix_rt", "cline_phoenix_fbis", "cline_phoenix_nyt", "cline_phoenix_swb")) {
-			
-				action_frequencies = future({
-					data = do.call(data.frame, getData(paste(eventdata_url, '&aggregate=[',
-						'{"$match": ',
-							'{"$and": [',
-								'{"<date>": {"$gte":"', everything$date$min,
-									'", "$lte":"', everything$date$max,
-								'"}}, {"<source>": {"$in": [',
-									'"USA", "USABUS", "USABUSLEG", "USAELI", "USAGOV"',
-								']}}, {"<target>": {"$in": [',
-									'"AFG", "AFGBUS", "AFGCVL", "AFGGOV", "AFGMIL"',
-								']}}]}},',
-						'{"$project": ',
-							'{"iso_date": {',
-								'"$dateFromParts": {"year": "$<year>", "month": "$<month>", "day":"$<day>"}},',
-							'"<root_code>": 1}},',
-						'{"$project": {',
-							'"iso_date": {"$subtract": ["$iso_date", ', 86400000 * diff, ']}, "<root_code>": 1}},',
-						'{"$group": {',
-							'"_id": {',
-								'"Year": {"$year": "$iso_date"},',
-								'"Week": {"$week": "$iso_date"},',
-								'"root_code": "$<root_code>"}, "total":{"$sum": 1}}},{"$limit":10}]',
-					sep="")))
-								
-					if (nrow(data) != 0) colnames(data) = c('total', '<root_code>', 'week', 'year')
-					data
-				}) %plan% multiprocess
+				for (group in everything$actors$links) {
+					action_frequencies = future({
+						data = do.call(data.frame, getData(paste(eventdata_url, '&aggregate=[',
+							'{"$match": ',
+								'{"$and": [',
+									'{"<date>": {"$gte":"', everything$date$min,
+										'", "$lte":"', everything$date$max,
+									'"}}, {"<source>": {"$in": [',
+										group$sources,
+									']}}, {"<target>": {"$in": [',
+										group$targets,
+									']}}]}},',
+#~ 							'{"$project": {"<date>": 1, "sourceName": "', group$sourceName,
+#~ 								'", "targetName": "', group$targetName, '", "<root_code>": 1, "_id": 0}},{"$limit":20}]',
+
+							'{"$project": {"<date>": 1, "<root_code>": 1, "_id": 0}},{"$limit": 20}]',
+
+#~ 							'{"$project": ',
+#~ 								'{"iso_date": {',
+#~ 									'"$dateFromParts": {"year": "$<year>", "month": "$<month>", "day":"$<day>"}},',
+#~ 								'"<root_code>": 1}},',
+#~ 							'{"$project": {',
+#~ 								'"iso_date": {"$subtract": ["$iso_date", ', 86400000 * diff, ']}, "<root_code>": 1}},',
+#~ 							'{"$group": {',
+#~ 								'"_id": {',
+#~ 									'"Year": {"$year": "$iso_date"},',
+#~ 									'"Week": {"$week": "$iso_date"},',
+#~ 									'"root_code": "$<root_code>"}, "total":{"$sum": 1}}},{"$limit":10}]',
+						sep="")))
+									
+#~ 						if (nrow(data) != 0) colnames(data) = c('total', '<root_code>', 'week', 'year')
+						data
+					}) %plan% multiprocess
+
+					print("end of week and actor")
+					print(value(action_frequencies))
+
+					test_df = value(action_frequencies)
+					test_df = test_df[complete.cases(test_df),]		#remove NAs
+					test_df$Date = as.Date(test_df$Date, "%Y%m%d")
+					print(test_df)
+
+					date_range = seq(start_date, end_date %m+% weeks(1), by="week")
+#~ 					print(date_range)
+					test_df$Date = cut(test_df$Date, date_range)
+
+					print("collected dates in bins")
+					print(test_df)
+
+#~ 					#count number
+					tab = table(test_df)
+					print("counted tab")
+					print(tab)
+
+#~ 					tab2 = tabulate(test_df)
+#~ 					print("tabulate")
+#~ 					print(tab2)
+
+#~ 					tab3 = table(test_df$RootCode)
+#~ 					print("tab3")
+#~ 					print(tab3)
+
+					#convert to df
+					print("matrix tab")
+					tab = as.data.frame.matrix(tab)
+#~ 					tab = as.data.frame(as.data.frame.matrix(tab))
+					print(tab)
+					print(names(tab))
+#~ 					print("frame tab")
+#~ 					tab = as.data.frame(tab)
+#~ 					print(tab)
+#~ 					print(names(tab))
+#~ 					print(
+
+					print("adding names")
+
+#~ 					colnames(tab)[1] = "Date"
+					#add source and target names to tab
+					tab["Source"] = group$sourceName
+					tab["Target"] = group$targetName
+					print(tab)
+
+					print("tab names")
+					print(names(tab))
+					print(resHeader)
+
+					#add missing codes in
+					print("adding missing codes")
+					missing = setdiff(resHeader, names(tab))
+					print(missing)
+					tab[missing] = 0
+					tab = tab[resHeader]
+					print(tab)
+
+					result = toString(jsonlite::toJSON(list(
+						action_data = tab
+					)))
+
+					print("result?")
+					print(result)
+
+#~ 					result = toString(jsonlite::toJSON(list(
+#~ 						action_data = value(action_frequencies)
+#~ 					)))
+				}
 			}
-
-				print("end of week and actor")
-				print(value(action_frequencies))
-
-			result = toString(jsonlite::toJSON(list(
-				action_data = value(action_frequencies)
-			)))
-
 		}
 		else {
 			print ("aggreg else")

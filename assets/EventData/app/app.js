@@ -296,21 +296,26 @@ export function download() {
         document.body.removeChild(a);
     }
 
-    let variableQuery = buildVariables();
-    let subsetQuery = buildSubset(subsetData);
+	if (opMode == "subset") {
+		let variableQuery = buildVariables();
+		let subsetQuery = buildSubset(subsetData);
 
-    console.log("Query: " + JSON.stringify(subsetQuery));
-    console.log("Projection: " + JSON.stringify(variableQuery));
+		console.log("Query: " + JSON.stringify(subsetQuery));
+		console.log("Projection: " + JSON.stringify(variableQuery));
 
-    let query = {
-        'subsets': JSON.stringify(subsetQuery),
-        'variables': JSON.stringify(variableQuery),
-        'dataset': dataset,
-        'datasource': datasource,
-        'type': 'raw'
-    };
-    laddaDownload.start();
-    makeCorsRequest(subsetURL, query, save);
+		let query = {
+			'subsets': JSON.stringify(subsetQuery),
+			'variables': JSON.stringify(variableQuery),
+			'dataset': dataset,
+			'datasource': datasource,
+			'type': 'raw'
+		};
+		laddaDownload.start();
+		makeCorsRequest(subsetURL, query, save);
+	}
+	else if (opMode == "aggreg") {
+		//merge my request code with makeCorsRequest and wrap table update in function
+	}
 }
 
 
