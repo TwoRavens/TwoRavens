@@ -43,6 +43,7 @@ library(rjson)
 library(jsonlite)
 library(devtools)
 library(DescTools)
+library(rpart)
 
 #if (!production) {
 #    if(!("Zelig" %in% rownames(installed.packages()))) {
