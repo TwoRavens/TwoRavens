@@ -1,5 +1,7 @@
 import * as d3 from "d3"
 import {handleResize, countryData} from "../app";
+import m from "mithril";
+import {scrollBarChanged} from "../../../common/app/common";
 
 /**
  * Variables declared for location
@@ -349,6 +351,7 @@ function render(blnIsSubgraph, cid) {
 
     }
     handleResize();
+    if (scrollBarChanged()) m.redraw();
 }
 
 /**

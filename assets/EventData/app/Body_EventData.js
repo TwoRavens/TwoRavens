@@ -14,11 +14,6 @@ import MenuHeaders from '../../common/app/views/MenuHeaders'
 import PanelList from '../../common/app/views/PanelList'
 import TextField from '../../common/app/views/TextField'
 
-// import Header from "./views/Header"
-// import Footer from "./views/Footer"
-// import LeftPanel from "./views/LeftPanel"
-// import RightPanel from "./views/RightPanel"
-
 import CanvasAction from "./views/CanvasAction"
 import CanvasActor from "./views/CanvasActor"
 import CanvasCoordinates from "./views/CanvasCoordinates"
@@ -331,6 +326,7 @@ export default class Body_EventData {
                             contents: [
                                 m(TextField, {
                                     id: 'searchVariables',
+                                    placeholder: 'Search variables',
                                     oninput: app.reloadLeftpanelVariables
                                 }),
                                 m(PanelList, {

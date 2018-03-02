@@ -4,7 +4,7 @@ import {resetActionCounts, actionBuffer, drawGraphs, updateData} from "./subsets
 import {updateActor, actorLinks, resizeActorSVG} from "./subsets/Actor";
 import {updateDate, datemax, datemaxUser, datemin, dateminUser, setDatefromSlider} from "./subsets/Date";
 import {updateLocation, mapListCountriesSelected} from "./subsets/Location";
-import {setPanelCallback} from "../../common/app/common";
+import {scrollBarChanged, setPanelCallback} from "../../common/app/common";
 
 // Used for custom query editor
 import '../../../node_modules/ace-builds/src-min-noconflict/ace.js'
@@ -223,12 +223,18 @@ export function showCanvas(canvasKey) {
             $("#stageButton").hide();
         else $("#stageButton").show();
 
+        // Typically 1. update state 2. mithril redraw. Therefore graphs get drawn on a display:none styled div
+        // Graphs depend on the the div width, so this causes them to render improperly.
+        // Setting the div visible before the state change fixes collapsing graphs.
+
         if (canvasKeySelected === "Action") {
+            document.getElementById('canvasAction').style.display = 'inline';
             drawGraphs();
             updateData();
         }
 
         if (canvasKeySelected === "Actor") {
+            document.getElementById('canvasActor').style.display = 'inline';
             resizeActorSVG();
         }
     }
