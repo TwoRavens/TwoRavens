@@ -28,8 +28,8 @@ export default class Canvas {
             style: {
                 width: '100%',
                 height: `calc(100% - ${heightHeader + heightFooter}px)`,
-                'padding-left': panelOcclusion['left'] + 'px',
-                'padding-right': panelOcclusion['right'] + 'px',
+                'padding-left': panelOcclusion['left'],
+                'padding-right': panelOcclusion['right'],
                 position: 'fixed',
                 overflow: 'auto',
                 top: 0

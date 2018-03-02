@@ -33,7 +33,6 @@ import {
 //
 // Sometimes the contents of a panel should not be accessible via the tab bar.
 // Setting the toggle 'visible' prevents it from appearing in the tab bar.
-
 export default class Panel {
 
     view(vnode) {
@@ -41,7 +40,7 @@ export default class Panel {
         const dot = [m.trust('&#9679;'), m('br')];
 
         if (!hover) {
-            setPanelOcclusion(side, (panelOpen[side] ? width : 16) + 2 * panelMargin);
+            setPanelOcclusion(side, `calc(${panelOpen[side] ? width : '16px'} + ${2 * panelMargin}px)`);
         }
 
         return m(`#${side}panel.container.sidepanel.clearfix`, {
