@@ -22,8 +22,6 @@ var pentaDesc = ["Public Statement", "Verbal Cooperation", "Material Cooperation
 export var actionBuffer = [];			//this is for query submission - remember to clear it after query!
 var actionSubData = [];			//this is for the data in each root event code
 
-var d3action_draw = false;		//only draw graphs once
-
 var actionMainX, actionMainY, actionMainMargin, actionMainWidth, actionMainHeight, actionMainGraphData;
 var actionSubX, actionSubY, actionSubMargin, actionSubWidth, actionSubHeight, actionSubGraphData;
 
@@ -71,12 +69,6 @@ export function drawGraphs() {
     //begin drawing for main graph
     var svgMain = d3.select("#actionMainGraph");
     actionMainMargin = {top: 0, right: 50, bottom: 50, left: 50};
-
-    if ($('#rightpanel').hasClass('closepanel')) {
-        document.getElementById("actionSVGbin").style.width = "calc(100% - 46px)";
-    } else {
-        document.getElementById("actionSVGbin").style.width = "calc(100% - 276px)";
-    }
 
     actionMainWidth = +$('#pentaclass_container').width() - actionMainMargin.left - actionMainMargin.right;
     actionMainHeight = +$('#pentaclass_container').height() - actionMainMargin.top - actionMainMargin.bottom - 38;
