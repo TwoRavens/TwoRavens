@@ -12,6 +12,7 @@ LABEL organization="Two Ravens" \
 #     and assets, be more selective
 # -------------------------------------
 RUN mkdir -p /var/webapps/TwoRavens && \
+    mkdir -p /var/webapps/TwoRavens/assets && \
     mkdir -p /ravens_volume
 
 # Copy over the repository
