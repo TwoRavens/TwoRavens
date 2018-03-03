@@ -4,7 +4,11 @@ import * as app from './app'
 import * as aggreg from './aggreg/aggreg'
 import * as tour from "./tour";
 
+import {tableHeight} from "./aggreg/aggreg";
+
 import * as common from '../../common/app/common'
+import {panelMargin, heightHeader, heightFooter, canvasScroll, scrollbarWidth} from "../../common/app/common";
+
 import Panel from '../../common/app/views/Panel'
 import Header from '../../common/app/views/Header'
 import Footer from '../../common/app/views/Footer'
@@ -26,6 +30,13 @@ import CanvasRootCode from "./views/CanvasRootCode"
 import TableAggregation from "./views/TableAggregation"
 
 export default class Body_EventData {
+
+    oninit(vnode) {
+        if (vnode.attrs.mode !== 'subset') {
+            m.route.set('/subset');
+            vnode.attrs.mode = 'subset';
+        }
+    }
 
     oncreate() {
         app.setupBody();
@@ -361,6 +372,9 @@ export default class Body_EventData {
                 side: 'left',
                 width: '250px',
                 label: 'Data Selection',
+                attrsAll: {style: {
+                    height: `calc(100% - ${heightHeader + heightFooter}px - ${2 * panelMargin}px - ${canvasScroll['horizontal'] ? scrollbarWidth : 0}px - ${tableHeight})`
+                }},
                 contents: m(MenuHeaders, {
                     id: 'aggregateMenu',
                     sections: [
@@ -392,6 +406,9 @@ export default class Body_EventData {
             side: 'right',
             label: 'Query Summary',
             width: '250px',
+            attrsAll: {style: mode === 'aggregate' ? {
+                    height: `calc(100% - ${heightHeader + heightFooter}px - ${2 * panelMargin}px - ${canvasScroll['horizontal'] ? scrollbarWidth : 0}px - ${tableHeight})`
+                } : {}},
             contents: [
                 m(MenuHeaders, {
                     id: 'querySummaryMenu',
@@ -482,7 +499,8 @@ export default class Body_EventData {
                             mode: mode,
                             display: app.canvasKeySelected === 'Root Code' ? 'block' : 'none'
                         })
-                    ]
+                    ],
+                    attrsAll: {style: mode === 'aggregate' ? {height: `calc(100% - ${heightHeader + heightFooter}px - ${tableHeight})`} : {}}
                 }),
                 m(TableAggregation, {mode: mode}),
                 this.footer(mode)

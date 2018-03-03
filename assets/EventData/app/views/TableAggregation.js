@@ -1,13 +1,17 @@
 import m from 'mithril';
+import {tableHeight} from '../aggreg/aggreg'
+import {heightFooter} from "../../../common/app/common";
 
 export default class TableAggregation {
     view(vnode) {
+        let {mode} = vnode.attrs;
+
         return (m("[id='aggregDataOutput']", {
                 style: {
-                    "display": "none",
+                    "display": mode === 'aggregate' ? 'inline' : 'none',
                     "position": "fixed",
-                    "bottom": "40px",
-                    "height": "100px",
+                    "bottom": heightFooter + 'px',
+                    "height": tableHeight,
                     "width": "100%",
                     "border-top": "1px solid #ADADAD",
                     "overflow-y": "scroll",
