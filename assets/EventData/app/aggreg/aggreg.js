@@ -10,6 +10,8 @@ var aggregDataNumber = 6;
 var aggregPentaSelectNum = 5;
 var aggregRootSelectNum = 20;
 
+export let tableHeight = '20%';
+
 export function updateToAggreg() {
 	if (opMode === "subset") {
 		//clear main
