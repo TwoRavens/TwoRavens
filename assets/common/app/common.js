@@ -70,6 +70,8 @@ export let canvasScroll = {
 // If scroll bar has been added or removed from canvas, update state and return true.
 export function scrollBarChanged() {
     let canvas = document.getElementById('canvas');
+    if (canvas === null) return false;
+
     let newState = {
         vertical: canvas.scrollHeight > canvas.clientHeight,
         horizontal: canvas.scrollWidth > canvas.clientWidth

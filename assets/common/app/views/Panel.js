@@ -11,7 +11,7 @@ import {
     panelMargin,
     canvasScroll,
     scrollbarWidth,
-    setPanelOcclusion
+    setPanelOcclusion, scrollBarChanged
 } from "../common";
 
 // ```
@@ -33,11 +33,12 @@ import {
 //
 // Sometimes the contents of a panel should not be accessible via the tab bar.
 // Setting the toggle 'visible' prevents it from appearing in the tab bar.
+const dot = [m.trust('&#9679;'), m('br')];
 export default class Panel {
 
     view(vnode) {
         let {side, hover, label, contents, width} = vnode.attrs;
-        const dot = [m.trust('&#9679;'), m('br')];
+        scrollBarChanged();
 
         if (!hover) {
             setPanelOcclusion(side, `calc(${panelOpen[side] ? width : '16px'} + ${2 * panelMargin}px)`);
@@ -52,7 +53,7 @@ export default class Panel {
                 position: 'fixed',
                 top: heightHeader + panelMargin + 'px',
                 [side]: (side === 'right' && canvasScroll['vertical'] ? scrollbarWidth : 0) + panelMargin + 'px',
-                ['padding-' + side]: '1px',
+                // ['padding-' + side]: '1px',
                 'z-index': 100
             }
         }, [

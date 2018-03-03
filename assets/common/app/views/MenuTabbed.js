@@ -64,7 +64,7 @@ export default class MenuTabbed {
             sections.map((section) => m(`div#tab${section['idSuffix'] || section['value']}`, {
                 style: {
                     display: section['value'] === currentTab ? 'block' : 'none',
-                    height: '100%',
+                    height: 'calc(100% - 39px)',
                     overflow: 'auto'
                 }
             }, section.contents))

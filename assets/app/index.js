@@ -53,7 +53,7 @@ function leftpanel(mode) {
         width: {'Variables': '300px', 'Discovery': '600px', 'Summary': '300px'}[app.leftTab],
         contents: m(MenuTabbed, {
             id: 'leftpanelMenu',
-            attrsAll: {style: {height: 'calc(100% - 78px)'}},
+            attrsAll: {style: {height: 'calc(100% - 39px)'}},
             currentTab: app.leftTab,
             callback: app.setLeftTab,
             sections: [
@@ -243,7 +243,7 @@ function rightpanel(mode) {
                 currentTab: app.rightTabExplore,
                 callback: app.setRightTabExplore,
                 sections: sectionsExplore,
-                attrsAll: {style: {height: 'calc(100% - 78px)'}}
+                attrsAll: {style: {height: 'calc(100% - 39px)'}}
             })
                 // m('#setx[style=display: none; margin-top: .5em]')
 
@@ -334,7 +334,7 @@ function rightpanel(mode) {
             hoverBonus: 10,
             selectWidth: 30,
             sections: sections,
-            attrsAll: {style: {height: 'calc(100% - 78px)'}}
+            attrsAll: {style: {height: 'calc(100% - 39px)'}}
         })
     });
 }
