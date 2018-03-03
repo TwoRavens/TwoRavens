@@ -454,6 +454,10 @@ export default class Body_EventData {
         let {mode} = vnode.attrs;
         app.setOpMode(mode);
 
+        // Some canvases only exist in certain modes. Fall back to default if necessary.
+        if (mode === 'subset' && app.subsetKeys.indexOf(app.canvasKeySelected) === -1) app.showCanvas('Actor');
+        if (mode === 'aggregate' && app.aggregateKeys.indexOf(app.canvasKeySelected) === -1) app.showCanvas('Date');
+
         return m('main',
             [
                 this.header(mode),
