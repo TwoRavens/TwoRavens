@@ -103,6 +103,7 @@ if (localStorage.getItem("dataset") !== null) {
 export let datasource = 'api';
 
 export let subsetKeys = ["Actor", "Date", "Action", "Location", "Coordinates", "Custom"]; // Used to label buttons in the left panel
+export let aggregateKeys = ["Actor", "Date", "Penta Class", "Root Code"];
 export let canvasKeySelected = "Actor";
 
 export let variables;
