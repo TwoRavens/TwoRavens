@@ -3,12 +3,30 @@ import {updateDate, dateminUser, datemaxUser} from "../subsets/Date";
 import {updateActor, actorLinks, resizeActorSVG} from "../subsets/Actor";
 
 var aggregMode = "penta";
-var aggregDateOn = 0;		//0 = off, 1 = week, 2 = month, 3 = quarter, 4 = year
+export let aggregDateOn = 0;		//0 = off, 1 = week, 2 = month, 3 = quarter, 4 = year
 var aggregActorOn = true;
 var aggregDataNumber = 6;
 
 var aggregPentaSelectNum = 5;
 var aggregRootSelectNum = 20;
+
+// export let dateMeasure = 'None';
+// export let setDateMeasure = (measure) => dateMeasure = measure;
+
+// Map measure string to numeric value used in existing aggregation code
+export let setDateMeasure = (measure) => {
+    aggregDateOn = {
+        'None': 0,
+        'Weekly': 1,
+        'Monthly': 2,
+        'Quarterly': 3,
+        'Yearly': 4
+    }[measure];
+
+    if (measure === 'None') $(".aggregDataDate").hide();
+    else $(".aggregDataDate").show();
+    updateAggregTable();
+};
 
 export let tableHeight = '20%';
 
@@ -74,66 +92,59 @@ export function updateToAggreg() {
 		 * add a none option to actor
 		 */
 
-		$(".dateAggregIntBtn").click(function() {
-			//~ console.log("#aggregDate" + this.id.substring(4, this.id.length));
-			$("#aggregDate" + this.id.substring(4, this.id.length)).prop("checked", true).trigger("change").siblings(".aggregDateChk").prop("checked", false);
-		});
-
-		$(".aggregDateChk").prop("checked", false);
-
-		$(".aggregDateChk").change(function(e) {
-			//~ console.log(this.id);
-			if (!this.checked)
-				return;
-			console.log("checked proceed");
-			if (this.id.substring(10, this.id.length) == "None") {
-				$(".aggregDataDate").hide();
-				aggregDateOn = 0;
-			}
-			else {
-				$(".aggregDataDate").show();
-				//~ console.log(datemin);
-				//~ var month = datemin.getMonth();
-				//~ var day = datemin.getDate();
-				//~ var year = datemin.getFullYear();
-				//~ $("#aggregDataDateR1").html(datemin.toLocaleDateString());
-				//~ var datenew = new Date(datemin.getDate());
-				//~ var datenew = new Date(datemin.toLocaleDateString());
-				//~ console.log(datenew.toLocaleDateString());
-				if (this.id.substring(10, this.id.length) == "Week") {
-					aggregDateOn = 1;
-					//~ console.log("updating by week");
-					//~ for (var x = 2; x < 4; x ++) {
-						//~ datenew = new Date(datenew.setDate(datenew.getDate() + 7));
-						//~ console.log(datenew.toLocaleDateString());
-						//~ $("#aggregDataDateR" + x).html(datenew.toLocaleDateString());
-					//~ }
-				}
-				else if (this.id.substring(10, this.id.length) == "Month") {
-					aggregDateOn = 2;
-					//~ for (var x = 2; x < 4; x ++) {
-						//~ datenew.setMonth(datenew.getMonth() + 1);
-						//~ $("#aggregDataDateR" + x).html(datenew.toLocaleDateString());
-					//~ }
-				}
-				else if (this.id.substring(10, this.id.length) == "Quarter") {
-					aggregDateOn = 3;
-					//~ for (var x = 2; x < 4; x ++) {
-						//~ datenew.setMonth(datenew.getMonth() + 4);
-						//~ $("#aggregDataDateR" + x).html(datenew.toLocaleDateString());
-					//~ }
-				}
-				else if (this.id.substring(10, this.id.length) == "Year") {
-					aggregDateOn = 4;
-					//~ for (var x = 2; x < 4; x ++) {
-						//~ datenew.setMonth(datenew.getMonth() + 12);
-						//~ $("#aggregDataDateR" + x).html(datenew.toLocaleDateString());
-					//~ }
-				}
-			}
-			updateAggregTable();
-				
-		});
+		// $(".aggregDateChk").change(function(e) {
+		// 	//~ console.log(this.id);
+		// 	if (!this.checked)
+		// 		return;
+		// 	console.log("checked proceed");
+		// 	if (this.id.substring(10, this.id.length) == "None") {
+		// 		$(".aggregDataDate").hide();
+		// 		aggregDateOn = 0;
+		// 	}
+		// 	else {
+		// 		$(".aggregDataDate").show();
+		// 		//~ console.log(datemin);
+		// 		//~ var month = datemin.getMonth();
+		// 		//~ var day = datemin.getDate();
+		// 		//~ var year = datemin.getFullYear();
+		// 		//~ $("#aggregDataDateR1").html(datemin.toLocaleDateString());
+		// 		//~ var datenew = new Date(datemin.getDate());
+		// 		//~ var datenew = new Date(datemin.toLocaleDateString());
+		// 		//~ console.log(datenew.toLocaleDateString());
+		// 		if (this.id.substring(10, this.id.length) == "Week") {
+		// 			aggregDateOn = 1;
+		// 			//~ console.log("updating by week");
+		// 			//~ for (var x = 2; x < 4; x ++) {
+		// 				//~ datenew = new Date(datenew.setDate(datenew.getDate() + 7));
+		// 				//~ console.log(datenew.toLocaleDateString());
+		// 				//~ $("#aggregDataDateR" + x).html(datenew.toLocaleDateString());
+		// 			//~ }
+		// 		}
+		// 		else if (this.id.substring(10, this.id.length) == "Month") {
+		// 			aggregDateOn = 2;
+		// 			//~ for (var x = 2; x < 4; x ++) {
+		// 				//~ datenew.setMonth(datenew.getMonth() + 1);
+		// 				//~ $("#aggregDataDateR" + x).html(datenew.toLocaleDateString());
+		// 			//~ }
+		// 		}
+		// 		else if (this.id.substring(10, this.id.length) == "Quarter") {
+		// 			aggregDateOn = 3;
+		// 			//~ for (var x = 2; x < 4; x ++) {
+		// 				//~ datenew.setMonth(datenew.getMonth() + 4);
+		// 				//~ $("#aggregDataDateR" + x).html(datenew.toLocaleDateString());
+		// 			//~ }
+		// 		}
+		// 		else if (this.id.substring(10, this.id.length) == "Year") {
+		// 			aggregDateOn = 4;
+		// 			//~ for (var x = 2; x < 4; x ++) {
+		// 				//~ datenew.setMonth(datenew.getMonth() + 12);
+		// 				//~ $("#aggregDataDateR" + x).html(datenew.toLocaleDateString());
+		// 			//~ }
+		// 		}
+		// 	}
+		// 	updateAggregTable();
+		//
+		// });
 
 		$("#aggregPentaAll").change(function(e) {
 			aggregMode = "penta";

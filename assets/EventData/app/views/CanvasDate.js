@@ -1,6 +1,8 @@
 import m from 'mithril';
 import {setupDate, setDatefromSlider} from "../subsets/Date.js"
 import {panelMargin} from "../../../common/app/common";
+import * as aggreg from '../aggreg/aggreg'
+import ButtonRadio from '../../../common/app/views/ButtonRadio'
 
 export default class CanvasDate {
     oncreate() {
@@ -48,29 +50,19 @@ export default class CanvasDate {
                     ]
                 )
             ) :
-            m("[id='dateAggregOption']",
-                [
-                    m("button.dateAggregIntBtn[id='dateNone']", "None"),
-                    m("input.aggregDateChk[id='aggregDateNone'][type='checkbox'][value='none']"),
-
-                    m(".separator"),
-                    m("button.dateAggregIntBtn[id='dateWeek']", "Weekly"),
-                    m("input.aggregDateChk[id='aggregDateWeek'][type='checkbox'][value='week']"),
-
-                    m(".separator"),
-                    m("button.dateAggregIntBtn[id='dateMonth']", "Monthly"),
-                    m("input.aggregDateChk[id='aggregDateMonth'][type='checkbox'][value='month']"),
-
-                    m(".separator"),
-                    m("button.dateAggregIntBtn[id='dateQuarter']", "Quarterly"),
-                    m("input.aggregDateChk[id='aggregDateQuarter'][type='checkbox'][value='quarter']"),
-
-                    m(".separator"),
-                    m("button.dateAggregIntBtn[id='dateYear']", "Yearly"),
-                    m("input.aggregDateChk[id='aggregDateYear'][type='checkbox'][value='year']"),
-                    m(".separator")
+            m(ButtonRadio, {
+                id: 'dateAggregOption',
+                attrsAll: {style: {width: '400px'}},
+                onclick: aggreg.setDateMeasure,
+                activeSection: ['None', 'Weekly', 'Monthly', 'Quarterly', 'Yearly'][aggreg.aggregDateOn],
+                sections: [
+                    {value: 'None'},
+                    {value: 'Weekly'},
+                    {value: 'Monthly'},
+                    {value: 'Quarterly'},
+                    {value: 'Yearly'},
                 ]
-            );
+            });
 
         return (m("#canvasDate.subsetDiv", {style: {"display": display, 'padding-top': panelMargin + 'px'}},
             [
