@@ -81,7 +81,10 @@ export default class Body_EventData {
                 m("button.btn.btn-default[id='aggSubmit']",
                     {
                         style: {"margin-right": "1em", 'float': 'right'},
-                        onclick: () => (mode==='subset') ? m.route.set('/aggregate') : undefined
+                        onclick: () => {
+                            if (mode==='subset') m.route.set('/aggregate');
+                            aggreg.updateToAggreg();
+                        }
                     }, "Aggregate"),
 
                 // Dataset Selection
@@ -406,7 +409,8 @@ export default class Body_EventData {
             side: 'right',
             label: 'Query Summary',
             width: '250px',
-            attrsAll: {style: mode === 'aggregate' ? {
+            attrsAll: {
+                style: mode === 'aggregate' ? {
                     height: `calc(100% - ${heightHeader + heightFooter}px - ${2 * panelMargin}px - ${canvasScroll['horizontal'] ? scrollbarWidth : 0}px - ${tableHeight})`
                 } : {}},
             contents: [

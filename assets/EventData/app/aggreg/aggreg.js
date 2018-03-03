@@ -14,15 +14,6 @@ export let tableHeight = '20%';
 
 export function updateToAggreg() {
 	if (opMode === "subset") {
-		//clear main
-		console.log("aggreg on");
-		$("#aggregDataOutput").css("display", "inline");
-        $("#aggregDataDisplay").css("display", "inline");
-        $("#canvas").css("height", "calc(100% - 202px)")
-		$("#leftpanel").css("height", "calc(100% - 222px)");
-		$("#rightpanel").css("height", "calc(100% - 222px)");
-
-		d3.select("#aggregOptions").selectAll("p").style("background-color", varColor);
 
 		$("#aggregTable").append(function() {
 			var tablestring = "";
@@ -64,8 +55,6 @@ export function updateToAggreg() {
 
 		$("#aggregTable .th").css({"width":"300px", "padding":"5px"});
 
-		$("#actorPanelTitleDiv").css({"display":"inline", "float":"left"});
-		$("#actorAggToggleDiv").show();
 		$("#aggregActorSelect").change(function(e) {
 			if (!this.checked) {
 				$(".aggregDataActor").hide();
@@ -77,10 +66,6 @@ export function updateToAggreg() {
 			}
 			updateAggregTable();
 		}).prop("checked", true);
-		
-		console.log("new height: " + $("#aggregDataDisplay").height());
-		$("#subsetActor").height($("#aggregDataDisplay").height());
-		updateActor();
 
 		/*
 		 * jsondata : contains all data - see console output for format
