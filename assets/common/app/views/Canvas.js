@@ -1,10 +1,12 @@
 import m from 'mithril'
+import {mergeAttributes} from "../common";
 
 // Interface specification
 
 // ```
 // m(Canvas, {
-//     contents: m(...)
+//     contents: m(...),
+//     attrsAll: { additional attributes to apply to the outer div }
 //     })
 // ```
 
@@ -23,8 +25,8 @@ export default class Canvas {
     }
 
     view(vnode) {
-        let {contents} = vnode.attrs;
-        return m('div#canvas', {
+        let {contents, attrsAll} = vnode.attrs;
+        return m('div#canvas', mergeAttributes({
             style: {
                 width: '100%',
                 height: `calc(100% - ${heightHeader + heightFooter}px)`,
@@ -34,6 +36,6 @@ export default class Canvas {
                 overflow: 'auto',
                 top: 0
             }
-        }, contents)
+        }, attrsAll), contents)
     }
 }

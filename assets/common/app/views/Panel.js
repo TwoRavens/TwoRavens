@@ -11,7 +11,9 @@ import {
     panelMargin,
     canvasScroll,
     scrollbarWidth,
-    setPanelOcclusion, scrollBarChanged
+    setPanelOcclusion,
+    scrollBarChanged,
+    mergeAttributes
 } from "../common";
 
 // ```
@@ -20,7 +22,8 @@ import {
 //     label: 'text at top of header',
 //     hover: Bool
 //     contents: m(...),
-//     width: int pixels
+//     width: int pixels,
+//     attrsAll: { apply attributes to the outer div }
 //     })
 // ```
 
@@ -37,14 +40,14 @@ const dot = [m.trust('&#9679;'), m('br')];
 export default class Panel {
 
     view(vnode) {
-        let {side, hover, label, contents, width} = vnode.attrs;
+        let {side, hover, label, contents, width, attrsAll} = vnode.attrs;
         scrollBarChanged();
 
         if (!hover) {
             setPanelOcclusion(side, `calc(${panelOpen[side] ? width : '16px'} + ${2 * panelMargin}px)`);
         }
 
-        return m(`#${side}panel.container.sidepanel.clearfix`, {
+        return m(`#${side}panel.container.sidepanel.clearfix`, mergeAttributes({
             style: {
                 background: menuColor,
                 border: borderColor,
@@ -56,7 +59,7 @@ export default class Panel {
                 // ['padding-' + side]: '1px',
                 'z-index': 100
             }
-        }, [
+        }, attrsAll), [
             // Panel handle
             m(`#toggle${side === 'left' ? 'L' : 'R'}panelicon.panelbar`, {
                     style: {height: '100%', [side]: 'calc(100% - 16px)'}
