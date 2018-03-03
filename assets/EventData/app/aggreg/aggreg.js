@@ -4,7 +4,7 @@ import {updateActor, actorLinks, resizeActorSVG} from "../subsets/Actor";
 
 var aggregMode = "penta";
 export let aggregDateOn = 0;		//0 = off, 1 = week, 2 = month, 3 = quarter, 4 = year
-var aggregActorOn = true;
+export let aggregActorOn = true;
 var aggregDataNumber = 6;
 
 var aggregPentaSelectNum = 5;
@@ -23,8 +23,14 @@ export let setDateMeasure = (measure) => {
         'Yearly': 4
     }[measure];
 
-    if (measure === 'None') $(".aggregDataDate").hide();
-    else $(".aggregDataDate").show();
+    measure === 'None' ? $(".aggregDataDate").hide() : $(".aggregDataDate").show();
+    updateAggregTable();
+};
+
+export let setAggregActor = (state) => {
+	aggregActorOn = state;
+
+	aggregActorOn ? $(".aggregDataActor").show() : $(".aggregDataActor").hide();
     updateAggregTable();
 };
 
@@ -72,18 +78,6 @@ export function updateToAggreg() {
 		});
 
 		$("#aggregTable .th").css({"width":"300px", "padding":"5px"});
-
-		$("#aggregActorSelect").change(function(e) {
-			if (!this.checked) {
-				$(".aggregDataActor").hide();
-				aggregActorOn = false;
-			}
-			else {
-				$(".aggregDataActor").show();
-				aggregActorOn = true;
-			}
-			updateAggregTable();
-		}).prop("checked", true);
 
 		/*
 		 * jsondata : contains all data - see console output for format
