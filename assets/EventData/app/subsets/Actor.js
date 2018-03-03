@@ -66,7 +66,7 @@ let actorSVG;
 //~ if (app.opMode == "subset") {
 //~ actorSVG = d3.select("#actorLinkSVG");
 //~ }
-//~ else if (app.opMode == "aggreg") {
+//~ else if (app.opMode == "aggregate") {
 //~ actorSVG = d3.select("#actorAggregSVG");
 //~ }
 //~ else {
@@ -253,33 +253,33 @@ export function setupActor(){
 
 
     //on load of page, keep checkbox for selecting all filters unchecked
-    let allCheck = $("#allCheck");
+    let allCheck = $(".allCheck");
     allCheck.ready(function () {
         allCheck.prop("checked", false);
     });
 
     //selects all checks for specified element, handles indeterminate state of checkboxes
     allCheck.click(function (event) {
-        const currentEntityType = event.target.id.substring(6, 9);
-        const currentElement = (currentEntityType === "Org") ? $("#actor" + currentEntityType + "AllCheck") : $("#actorCountryAllCheck");
+        const currentEntityType = event.target.id.substring(5, 8);
+        const currentElement = (currentEntityType === "Org") ? $("#actorOrgAllCheck") : $("#actorCountryAllCheck");
 
         currentElement.prop("indeterminate", false);
 
         let entityDiv;
         if (currentEntityType === "Org") {
-            entityDiv = $("#orgActorList input:checkbox");
+            entityDiv = $("#orgActorList label");
         } else {
-            entityDiv = $("#countryActorList input:checkbox");
+            entityDiv = $("#countryActorList label");
         }
 
         if (currentElement.prop("checked")) {
             entityDiv.each(function () {
-                filterSet[currentTab]['entities'].add(this.value);
+                filterSet[currentTab]['entities'].add(this.innerHTML);
                 $(this).prop("checked", true);
             });
         } else {
             entityDiv.each(function () {
-                filterSet[currentTab]['entities'].delete(this.value);
+                filterSet[currentTab]['entities'].delete(this.innerHTML);
                 $(this).prop("checked", false);
             });
         }
@@ -340,7 +340,7 @@ export function setupActor(){
             });
         }
         updateAll();
-        if (app.opMode === "aggreg")
+        if (app.opMode === "aggregate")
             updateAggregTable();
         actorTick();
         actorForce.alpha(1).restart();
@@ -434,7 +434,7 @@ export function setupActor(){
             }
             updateAll();
 
-            if (app.opMode === "aggreg")
+            if (app.opMode === "aggregate")
                 updateAggregTable();
         }
     });
@@ -530,7 +530,7 @@ function dragend() {
 
         updateAll();
 
-        if (app.opMode === "aggreg")
+        if (app.opMode === "aggregate")
             updateAggregTable();
     }
     dragStarted = false;		//now reset all drag variables
@@ -589,7 +589,7 @@ function updateSVG() {
                 }
             }
             updateAll();
-            if (app.opMode === "aggreg")
+            if (app.opMode === "aggregate")
                 updateAggregTable();
         })
         .merge(linkGroup);
@@ -745,7 +745,7 @@ function updateSVG() {
 
         resetMouseVars();
 
-        if (app.opMode === "aggreg")
+        if (app.opMode === "aggregate")
             updateAggregTable();
     }	//end of createLink()
 
@@ -903,7 +903,13 @@ function updateGroupName(newGroupName) {
 
 //switches tabs in actor subset, sets current and active nodes
 export function actorTabSwitch(tab) {
+    if (tab === currentTab) return;
     currentTab = tab;
+
+    $('#actorSelectAll').attr('data-original-title', `Selects all ${currentTab}s that match the filter criteria`);
+    $('#actorClearAll').attr('data-original-title', `Clears all ${currentTab}s that match the filter criteria`);
+    $('#actorNewGroup').attr('data-original-title', `Create new ${currentTab} group`);
+    $('#actorShowSelected').attr('data-original-title', `Show selected ${currentTab}s`);
 
     $(".actorBottom, .clearActorBtn, #deleteGroup, .actorShowSelectedLbl, #editGroupName, .actorChkLbl").popover('hide');
     updateGroupName(currentNode[currentTab].name);
@@ -988,15 +994,15 @@ function loadDataHelper(actorType, columnType) {
     for (let line of lines) {
 
         // Don't create an element if it is not selected and 'show selected' is on
-        if (line != null && line !== '') {
-            if (columnType === 'full') {
-                if (!document.getElementById("actorShowSelected").checked || currentNode[currentTab].group.has(line)) {
-                    fragment.appendChild(createElement(actorType, columnType, line, chkSwitch));
-                }
-            }
-            else if (columnType !== 'full') {
+        if (line === null || line === '') continue;
+
+        if (columnType === 'full') {
+            if (!document.getElementById("actorShowSelected").checked || currentNode[currentTab].group.has(line)) {
                 fragment.appendChild(createElement(actorType, columnType, line, chkSwitch));
             }
+        }
+        else if (columnType !== 'full') {
+            fragment.appendChild(createElement(actorType, columnType, line, chkSwitch));
         }
     }
     displayList.appendChild(fragment);
@@ -1034,14 +1040,13 @@ function createElement(actorType, columnType, value, chkSwitch = true) {
 
     const label = document.createElement('label');
     label.innerHTML = value;
+    label.onclick = () => {
+        checkbox.checked = !checkbox.checked;
+        actorSelectChanged(value);
+    };
+
     entry.appendChild(label);
     entry.id = actorType + columnType + value;
-
-    // const lbl = document.createElement("label");
-    // lbl.htmlFor = actorType + columnType + "Check" + index;
-    // lbl.className = "actorChkLbl";
-    // lbl.id = actorType + columnType + "Lbl" + index;
-    // lbl.innerHTML = value;
 
     entry.setAttribute("data-container", "body");
     entry.setAttribute("data-toggle", "popover");
@@ -1209,7 +1214,7 @@ export function showSelected() {
     actorSearch();
 }
 
-function actorSearch() {		//bugs: checking partial country after checking org
+function actorSearch() {
     const searchText = $("#actorSearch").val().toUpperCase();
 
     const operator = '$and';
@@ -1283,8 +1288,6 @@ function actorSearch() {		//bugs: checking partial country after checking org
     };
 
     function updateActorListing(data) {
-
-        document.getElementById("searchListActors").innerHTML = "";
         if ('source' in data) app.actorData.source.full = data.source;
         if ('target' in data) app.actorData.target.full = data.target;
         loadDataHelper(currentTab, "full");

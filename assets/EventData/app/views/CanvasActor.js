@@ -4,15 +4,11 @@ import {
     setupActor,
     actorTabSwitch,
     showSelected,
-    filterSet,
     currentNode,
     currentTab,
-    dict,
-    actorSelectChanged,
-    actorFilterChanged,
-    resizeActorSVG
 } from "../subsets/Actor.js"
 import {panelMargin} from "../../../common/app/common";
+import {aggregActorOn, setAggregActor} from "../aggreg/aggreg";
 
 // Width of the actor selection panel
 let selectionWidth = 350;
@@ -33,10 +29,11 @@ function actorSelection(mode) {
                 }
             },
             m("label.aggChkLbl",
-                [
-                    m("input.aggChk.aggActor[checked=''][id='aggregActorSelect'][name='aggregActorSelect'][type='checkbox'][value='aggregActorUse']"),
-                    "Use in aggregation"
-                ]
+                m('input#aggregActorSelect.aggChk.aggActor[type=checkbox]', {
+                    onclick: m.withAttr("checked", setAggregActor),
+                    checked: aggregActorOn
+                }),
+                "Use in aggregation"
             )
         ))
     }
@@ -75,7 +72,9 @@ function actorSelection(mode) {
         [
             m(`.actorLeft#allActors`, {style: {height: `calc(100% - ${aggregationOffset}px)`}},
                 [
-                    m(`input.form-control#actorSearch[placeholder='Search ${currentTab} actors'][type='text']`),
+                    m(`input.form-control#actorSearch[type='text']`, {
+                        placeholder: `Search ${currentTab} actors`
+                    }),
                     m(`.actorFullList#searchListActors`, {style: {"text-align": "left"}})
                 ]
             ),
@@ -86,7 +85,9 @@ function actorSelection(mode) {
                     ),
                     m(`.actorFilterList#actorFilter`, {style: {"text-align": "left"}},
                         [
-                            m(`label.actorShowSelectedLbl.actorChkLbl[data-toggle='tooltip'][title='Show selected ${currentTab}s']`,
+                            m(`label.actorShowSelectedLbl.actorChkLbl[data-toggle='tooltip']`, {
+                                    title: `Show selected ${currentTab}s`
+                                },
                                 [
                                     m("input.actorChk.actorShowSelected#actorShowSelected[name='actorShowSelected'][type='checkbox'][value='show']",
                                         {
@@ -138,13 +139,21 @@ function actorSelection(mode) {
             ),
             m(".actorBottomTry", {style: {"width": "100%"}},
                 [
-                    m(`button.btn.btn-default.actorBottom#actorSelectAll[data-toggle='tooltip'][title='Selects all ${currentTab}s that match the filter criteria'][type='button']`,
-                        "Select All"
+                    m(`button.btn.btn-default.actorBottom#actorSelectAll[data-toggle='tooltip'][type='button']`, {
+                            title: `Selects all ${currentTab}s that match the filter criteria`
+                        }, "Select All"
                     ),
-                    m(`button.btn.btn-default.actorBottom#actorClearAll[data-toggle='tooltip'][title='Clears all ${currentTab}s that match the filter criteria'][type='button']`,
-                        "Clear All"
+                    m(`button.btn.btn-default.actorBottom#actorClearAll[data-toggle='tooltip'][type='button']`, {
+                            title: `Clears all ${currentTab}s that match the filter criteria`
+                        }, "Clear All"
                     ),
-                    m(`button.btn.btn-default.actorBottom#actorNewGroup[data-toggle='tooltip'][title='Create new ${currentTab} group'][type='button']`,
+                    m(`button.btn.btn-default.actorBottom#actorNewGroup[data-toggle='tooltip'][type='button']`, {
+                            title: `Create new ${currentTab} group`,
+                            style: {
+                                'margin-right': '2px',
+                                float: 'right'
+                            }
+                        },
                         "New Group"
                     )
                 ]
@@ -157,7 +166,9 @@ function actorSelection(mode) {
         tabSelection,
         m(".panel-heading.text-center[id='groupNameDisplayContainer']", {style: {"padding-bottom": "0px"}},
             [
-                m(`input[data-toggle='tooltip'][id='editGroupName'][placeholder='${currentNode[currentTab].name}'][title='Click to change group name'][type='text']`),
+                m(`input[data-toggle='tooltip'][id='editGroupName'][title='Click to change group name'][type='text']`, {
+                    placeholder: currentNode[currentTab].name
+                }),
                 m("button[data-toggle='tooltip'][id='deleteGroup'][title='Delete current group'][type='button']")
             ]
         ),
@@ -175,10 +186,6 @@ export default class CanvasActor {
             document.getElementById('targetRight').style.visibility = 'hidden';
         }
         setupActor();
-    }
-
-    onupdate() {
-        resizeActorSVG();
     }
 
     view(vnode) {
