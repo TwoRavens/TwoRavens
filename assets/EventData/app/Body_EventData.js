@@ -319,6 +319,7 @@ export default class Body_EventData {
                     id: 'leftPanelMenu',
                     callback: app.setLeftTab,
                     currentTab: app.leftTab,
+                    attrsAll: {style: {height: 'calc(100% - 39px)'}},
                     sections: [
                         {
                             value: 'Variables',
@@ -333,7 +334,8 @@ export default class Body_EventData {
                                     id: 'variablesList',
                                     items: app.matchedVariables,
                                     colors: {[common.selVarColor]: app.variablesSelected},
-                                    callback: app.toggleVariableSelected
+                                    callback: app.toggleVariableSelected,
+                                    attrsAll: {style: {height: 'calc(100% - 44px)', overflow: 'auto'}}
                                 })
                             ]
                         },
@@ -344,7 +346,8 @@ export default class Body_EventData {
                                 id: 'subsetsList',
                                 items: app.subsetKeys,
                                 colors: {[common.selVarColor]: [app.canvasKeySelected]},
-                                callback: app.showCanvas
+                                callback: app.showCanvas,
+                                attrsAll: {style: {height: 'calc(100% - 39px)', overflow: 'auto'}}
                             })
                         }
                     ]
@@ -359,6 +362,7 @@ export default class Body_EventData {
                 width: '250px',
                 label: 'Data Selection',
                 contents: m(MenuHeaders, {
+                    id: 'aggregateMenu',
                     sections: [
                         {
                             value: 'Unit of Measure',
@@ -390,6 +394,8 @@ export default class Body_EventData {
             width: '250px',
             contents: [
                 m(MenuHeaders, {
+                    id: 'querySummaryMenu',
+                    attrsAll: {style: {height: 'calc(100% - 85px)', overflow: 'auto'}},
                     sections: [
                         {value: 'Variables', contents: m('div#variableTree')},
                         {value: 'Subsets', contents: m('div#subsetTree')}
@@ -425,14 +431,21 @@ export default class Body_EventData {
 
     view(vnode) {
         let {mode} = vnode.attrs;
-
         app.setOpMode(mode);
+
         return m('main',
             [
                 this.header(mode),
                 this.leftpanel(mode),
                 this.rightpanel(mode),
-                m("button.btn.btn-default[id='stageButton'][type='button']", {
+                m("button#btnStage.btn.btn-default[type='button']", {
+                    style: {
+                        display: app.canvasKeySelected !== 'Custom' && app.opMode === 'subset' ? 'block' : 'none',
+                        right: `calc(${common.panelOcclusion['right']} + 5px)`,
+                        bottom: common.heightFooter + common.panelMargin + 6 + 'px',
+                        position: 'fixed',
+                        'z-index': 100
+                    },
                     onclick: app.addRule
                 }, "Stage"),
                 m(Canvas, {

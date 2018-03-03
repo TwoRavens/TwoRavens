@@ -4,7 +4,10 @@ import {resetActionCounts, actionBuffer, drawGraphs, updateData} from "./subsets
 import {updateActor, actorLinks, resizeActorSVG} from "./subsets/Actor";
 import {updateDate, datemax, datemaxUser, datemin, dateminUser, setDatefromSlider} from "./subsets/Date";
 import {updateLocation, mapListCountriesSelected} from "./subsets/Location";
-import {scrollBarChanged, setPanelCallback} from "../../common/app/common";
+import {
+    panelMargin, panelOcclusion, panelOpen, scrollBarChanged, setPanelCallback,
+    setPanelOcclusion
+} from "../../common/app/common";
 
 // Used for custom query editor
 import '../../../node_modules/ace-builds/src-min-noconflict/ace.js'
@@ -18,7 +21,19 @@ import '../pkgs/jqtree/jqtree.style.css'
 export let setLeftTab = (tab) => leftTab = tab;
 export let leftTab = 'Variables';
 
+setPanelCallback('right', () => {
+    setPanelOcclusion('right', `calc(${panelOpen['right'] ? '250px' : '16px'} + ${2 * panelMargin}px)`);
+    handleResize();
+});
+
+setPanelCallback('left', () => {
+    setPanelOcclusion('left', `calc(${panelOpen['left'] ? '250px' : '16px'} + ${2 * panelMargin}px)`);
+    handleResize();
+});
+
 export function handleResize() {
+    document.getElementById('canvas').style['padding-right'] = panelOcclusion['right'];
+    document.getElementById('canvas').style['padding-left'] = panelOcclusion['left'];
     if (canvasKeySelected === 'Actor') {
         resizeActorSVG();
     }
@@ -37,8 +52,6 @@ export function setOpMode(mode) {
         console.log("Invalid opmode");
     }
 }
-
-
 
 let production = false;
 
@@ -100,9 +113,6 @@ export let laddaReset;
 export let laddaDownload;
 
 export let variablesSelected = new Set();
-
-export let varColor = 'rgba(240,248,255, 1.0)';   //d3.rgb("aliceblue");
-export let selVarColor = 'rgba(250,128,114, 0.5)';    //d3.rgb("salmon");
 
 // Stores the live data returned from the server
 export let dateData = [];
@@ -216,16 +226,14 @@ export function toggleVariableSelected(variable) {
 export function showCanvas(canvasKey) {
     canvasKeySelected = canvasKey;
 
+    // Typically 1. update state 2. mithril redraw. Therefore graphs get drawn on a display:none styled div
+    // Graphs depend on the the div width, so this causes them to render improperly.
+    // Setting the div visible before the state change fixes collapsing graphs.
+    for (let child of document.getElementById('canvas').children) child.style.display = 'none';
+
     if (!initialLoad) {
         alert("Resources are still being loaded from the server. Canvases will be available once resources have been loaded.");
     } else {
-        if (canvasKeySelected === "Custom" || opMode === 'aggregation')
-            $("#stageButton").hide();
-        else $("#stageButton").show();
-
-        // Typically 1. update state 2. mithril redraw. Therefore graphs get drawn on a display:none styled div
-        // Graphs depend on the the div width, so this causes them to render improperly.
-        // Setting the div visible before the state change fixes collapsing graphs.
 
         if (canvasKeySelected === "Action") {
             document.getElementById('canvasAction').style.display = 'inline';
