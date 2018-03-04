@@ -135,7 +135,7 @@ export let actorData = {
 };
 
 // This is set once data is loaded and the graphs can be drawn. Subset menus will not be shown until this is set
-let initialLoad = false;
+export let initialLoad = false;
 
 export let subsetData = [];
 
@@ -371,11 +371,17 @@ export function pageSetup(jsondata) {
     updateLocation();
     resetActionCounts();
 
+    if (canvasKeySelected === 'Action') {
+        drawGraphs();
+        updateData();
+    }
+
     // If first load of data, user may have selected a subset and is waiting. Render page now that data is available
     if (!initialLoad) {
         initialLoad = true;
         // In the case where the user has not yet made a subset selection, this is ignored
         showCanvas(canvasKeySelected);
+        if (canvasKeySelected === 'Actor') resizeActorSVG();
     }
 
     let total_records = 0;
@@ -532,6 +538,7 @@ export function setupQueryTree() {
                 editor.setValue(JSON.stringify(tempQuery, null, '\t'));
                 editor.clearSelection();
                 showCanvas("Custom");
+                m.redraw();
             }
         }
     );

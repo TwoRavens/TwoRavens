@@ -458,6 +458,11 @@ export default class Body_EventData {
         if (mode === 'subset' && app.subsetKeys.indexOf(app.canvasKeySelected) === -1) app.showCanvas('Actor');
         if (mode === 'aggregate' && app.aggregateKeys.indexOf(app.canvasKeySelected) === -1) app.showCanvas('Date');
 
+        let display = (canvas) => {
+            if (!app.initialLoad) return 'none';
+            return (canvas === app.canvasKeySelected) ? 'block' : 'none';
+        };
+
         return m('main',
             [
                 this.header(mode),
@@ -475,38 +480,14 @@ export default class Body_EventData {
                 }, "Stage"),
                 m(Canvas, {
                     contents: [
-                        m(CanvasActor, {
-                            mode: mode,
-                            display: app.canvasKeySelected === 'Actor' ? 'block' : 'none'
-                        }),
-                        m(CanvasDate, {
-                            mode: mode,
-                            display: app.canvasKeySelected === 'Date' ? 'block' : 'none'
-                        }),
-                        m(CanvasAction, {
-                            mode: mode,
-                            display: app.canvasKeySelected === 'Action' ? 'block' : 'none'
-                        }),
-                        m(CanvasLocation, {
-                            mode: mode,
-                            display: app.canvasKeySelected === 'Location' ? 'block' : 'none'
-                        }),
-                        m(CanvasCoordinates, {
-                            mode: mode,
-                            display: app.canvasKeySelected === 'Coordinates' ? 'block' : 'none'
-                        }),
-                        m(CanvasCustom, {
-                            mode: mode,
-                            display: app.canvasKeySelected === 'Custom' ? 'block' : 'none'
-                        }),
-                        m(CanvasPentaClass, {
-                            mode: mode,
-                            display: app.canvasKeySelected === 'Penta Class' ? 'block' : 'none'
-                        }),
-                        m(CanvasRootCode, {
-                            mode: mode,
-                            display: app.canvasKeySelected === 'Root Code' ? 'block' : 'none'
-                        })
+                        m(CanvasActor, {mode: mode, display: display('Actor')}),
+                        m(CanvasDate, {mode: mode, display: display('Date')}),
+                        m(CanvasAction, {mode: mode, display: display('Action')}),
+                        m(CanvasLocation, {mode: mode, display: display('Location')}),
+                        m(CanvasCoordinates, {mode: mode, display: display('Coordinates')}),
+                        m(CanvasCustom, {mode: mode, display: display('Custom')}),
+                        m(CanvasPentaClass, {mode: mode, display: display('Penta Class')}),
+                        m(CanvasRootCode, {mode: mode, display: display('Root Code')})
                     ],
                     attrsAll: {style: mode === 'aggregate' ? {height: `calc(100% - ${heightHeader + heightFooter}px - ${tableHeight})`} : {}}
                 }),
