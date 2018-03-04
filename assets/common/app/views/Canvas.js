@@ -1,5 +1,5 @@
 import m from 'mithril'
-import {mergeAttributes} from "../common";
+import {callOnResize, mergeAttributes, panelOcclusion, heightFooter, heightHeader, scrollBarChanged} from "../common";
 
 // Interface specification
 
@@ -16,12 +16,10 @@ import {mergeAttributes} from "../common";
 // 2. if the contents of the canvas overflow and cause a scroll bar,
 //      the left and right panel are shifted to maintain a margin
 
-import {panelOcclusion, heightFooter, heightHeader, scrollBarChanged, panelMargin} from "../common";
-
 export default class Canvas {
     oncreate() {
         // Redraw if scroll bar status has changed
-        window.onresize = () => {if (scrollBarChanged()) m.redraw()};
+        callOnResize(() => {if (scrollBarChanged()) m.redraw()});
     }
 
     view(vnode) {
