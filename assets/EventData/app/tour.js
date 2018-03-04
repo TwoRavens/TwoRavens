@@ -145,7 +145,7 @@ let actorTour = {
         {
             title: "Stage",
             content: "Use 'Stage' to take a snapshot of the relationships actor lists in the diagram and place it in the right panel.",
-            target: "#stageButton",
+            target: "#btnStage",
             placement: "left",
         }
     ]

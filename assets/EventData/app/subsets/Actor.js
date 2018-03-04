@@ -1,7 +1,10 @@
 import * as app from "../app.js"
 import * as d3 from 'd3'
 import {updateAggregTable} from "../aggreg/aggreg";
-import {panelMargin} from "../../../common/app/common";
+import {callOnResize, panelMargin} from "../../../common/app/common";
+
+// Resize actor when window changes size
+callOnResize(() => resizeActorSVG());
 
 export let filterSet = {
     'source': {
@@ -17,7 +20,6 @@ export let filterSet = {
 };
 
 export const orgs = ["IGO", "IMG", "MNC", "NGO"];		//hard coded organizations to remove from entities list
-export const actorTypes = ["source", "target"];		//these arrays are to help loop through actor loading
 
 //definition of a node
 function NodeObj(name, actorType, actors = new Set()) {
