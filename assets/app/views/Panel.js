@@ -25,7 +25,7 @@ class Panel {
 
     view(vnode) {
         let {side, title, buttons, is_explore_mode} = vnode.attrs;
-        let btns = buttons;
+        let btns = buttons || [];
         let dot = [m.trust('&#9679;'), m('br')];
         let width = 100 / btns.length;
         let expandwidth = 35;
@@ -36,7 +36,7 @@ class Panel {
               m('span', {onclick: _ => this.closed = !this.closed}, dot, dot, dot, dot)),
             m(`#${side}paneltitle.panel-heading.text-center`,
               m("h3.panel-title", title)),
-            m(`ul${side === 'right' ? '#rightpanelbuttons' : ''}.accordion`,
+            btns.length === 0 ? null : m(`ul${side === 'right' ? '#rightpanelbuttons' : ''}.accordion`,
               btns.map(b => {
                   b.attrs.style = b.attrs.style + '; width: 100%';
                   b.attrs.is_explore_mode = is_explore_mode;

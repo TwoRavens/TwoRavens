@@ -100,7 +100,7 @@ let swandive = false;
 let failset = ["TIME_SERIES_FORECASTING","GRAPH_MATCHING","LINK_PREDICTION","timeSeriesForecasting","graphMatching","linkPrediction"];
 
 // object that contains all information about the returned pipelines
-let allPipelineInfo = {};
+export let allPipelineInfo = {};
 
 export let logArray = [];
 export let zparams = {

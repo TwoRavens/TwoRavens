@@ -96,7 +96,7 @@ export let mytour3 = {
 
 function leftpanel(mode) {
     if (mode === 'results') {
-        return results.leftpanel(state.pipelines);
+        return results.leftpanel(Object.keys(app.allPipelineInfo));
     }
     return m(
         Panel,
