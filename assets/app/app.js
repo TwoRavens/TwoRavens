@@ -35,7 +35,7 @@ export function set_mode(mode) {
 // for debugging - if not in PRODUCTION, prints args
 export let cdb = _ => PRODUCTION || console.log(...arguments);
 
-let k = 4; // strength parameter for group attraction/repulsion
+export let k = 4; // strength parameter for group attraction/repulsion
 let tutorial_mode = true;
 let first_load = true;
 
@@ -81,7 +81,7 @@ const layoutAdd = "add";
 const layoutMove = "move";
 
 // radius of circle
-const RADIUS = 40;
+export const RADIUS = 40;
 
 // cx, cy, r values for indicator lights
 let ind1 = [(RADIUS+30) * Math.cos(1.3), -1*(RADIUS+30) * Math.sin(1.3), 5];
@@ -90,7 +90,7 @@ let ind2 = [(RADIUS+30) * Math.cos(1.1), -1*(RADIUS+30) * Math.sin(1.1), 5];
 // space index
 let myspace = 0;
 
-let forcetoggle = ["true"];
+export let forcetoggle = ["true"];
 export let locktoggle = true;
 let priv = true;
 
@@ -216,7 +216,7 @@ const arc = (start, end) => d3.svg.arc()
     .outerRadius(RADIUS + 20)
     .startAngle(start)
     .endAngle(end);
-const [arc0, arc1, arc2, arc3, arc4] = [arc(0, 3.2), arc(0, 1), arc(1.1, 2.2), arc(2.3, 3.3), arc(4.3, 5.3)];
+export const [arc0, arc1, arc2, arc3, arc4] = [arc(0, 3.2), arc(0, 1), arc(1.1, 2.2), arc(2.3, 3.3), arc(4.3, 5.3)];
 const arcInd = (arclimits) => d3.svg.arc()
     .innerRadius(RADIUS + 22)
     .outerRadius(RADIUS + 37)
@@ -723,16 +723,7 @@ function zparamsReset(text) {
     'zdv zcross ztime znom'.split(' ').forEach(x => del(zparams[x], -1, text));
 }
 
-/** needs doc */
-function layout(v, v2) {
-    if (is_results_mode) {
-        return results_layout(v, v2);
-    }
-
-    var myValues = [];
-    nodes = [];
-    links = [];
-
+export function setup_svg(svg) {
     svg.append("svg:defs").append("svg:marker")
         .attr("id", "group1-arrow")
         .attr('viewBox', '0 -5 15 15')
@@ -755,17 +746,26 @@ function layout(v, v2) {
         .append("path")
         .attr('d', 'M0,-5L10,0L0,5')
         .style("fill", gr2Color);
+    // define arrow markers for graph links
     svg.append('svg:defs').append('svg:marker')
-        .attr('id', 'circle')
-        .classed('circle_start', true)
-        .attr('viewBox', '-6 -6 12 12')
-        .attr('refX', 1)
-        .attr('refY', 1)
-        .attr('markerWidth', 4)
-        .attr('markerHeight', 4)
+        .attr('id', 'end-arrow')
+        .attr('viewBox', '0 -5 10 10')
+        .attr('refX', 6)
+        .attr('markerWidth', 3)
+        .attr('markerHeight', 3)
         .attr('orient', 'auto')
         .append('svg:path')
-        .attr('d', 'M 0, 0  m -5, 0  a 5,5 0 1,0 10,0  a 5,5 0 1,0 -10,0')
+        .attr('d', 'M0,-5L10,0L0,5')
+        .style('fill', '#000');
+    svg.append('svg:defs').append('svg:marker')
+        .attr('id', 'start-arrow')
+        .attr('viewBox', '0 -5 10 10')
+        .attr('refX', 4)
+        .attr('markerWidth', 3)
+        .attr('markerHeight', 3)
+        .attr('orient', 'auto')
+        .append('svg:path')
+        .attr('d', 'M10,-5L0,0L10,5')
         .style('fill', '#000');
 
     var line = svg.append("line")
@@ -773,17 +773,14 @@ function layout(v, v2) {
         .style('stroke', gr1Color)
         .style('stroke-width', 5)
         .attr("marker-end", "url(#group1-arrow)");
-
     var line2 = svg.append("line")
         .style('fill', 'none')
         .style('stroke', gr2Color)
         .style('stroke-width', 5)
-        .attr("marker-end", "url(#group2-arrow)");;
-
+        .attr("marker-end", "url(#group2-arrow)");
     var visbackground = d3.select("#whitespace").append("svg")
         .attr("width", width)
         .attr("height", height);
-
     visbackground.append("path") // note lines, are behind group hulls of which there is a white and colored semi transparent layer
         .attr("id", 'gr1background')
         .style("fill", '#ffffff')
@@ -791,11 +788,9 @@ function layout(v, v2) {
         .style("stroke-width", 2.5*RADIUS)
         .style('stroke-linejoin','round')
         .style("opacity", 1);
-
     var vis2background = d3.select("#whitespace").append("svg")
         .attr("width", width)
         .attr("height", height);
-
     vis2background.append("path")
         .attr("id", 'gr1background')
         .style("fill", '#ffffff')
@@ -803,27 +798,40 @@ function layout(v, v2) {
         .style("stroke-width", 2.5*RADIUS)
         .style('stroke-linejoin','round')
         .style("opacity", 1);
-
     var vis = d3.select("#whitespace").append("svg")
         .attr("width", width)
         .attr("height", height);
-
     vis.append("path")
         .attr("id", 'gr1hull')
         .style("fill", gr1Color)
         .style("stroke", gr1Color)
         .style("stroke-width", 2.5*RADIUS)
         .style('stroke-linejoin','round');
-
     var vis2 = d3.select("#whitespace").append("svg")
         .attr("width", width)
         .attr("height", height);
-
     vis2.append("path")
         .style("fill", gr2Color)
         .style("stroke", gr2Color)
         .style("stroke-width", 2.5*RADIUS)
         .style('stroke-linejoin','round');
+    // line displayed when dragging new nodes
+    var drag_line = svg.append('svg:path')
+        .attr('class', 'link dragline hidden')
+        .attr('d', 'M0,0L0,0');
+    // handles to link and node element groups
+    var path = svg.append('svg:g').selectAll('path'),
+        circle = svg.append('svg:g').selectAll('g');
+    return [line, line2, visbackground, vis2background, vis, vis2, drag_line, path, circle];
+}
+
+/** needs doc */
+function layout(v, v2) {
+    var myValues = [];
+    nodes = [];
+    links = [];
+
+    var [line, line2, visbackground, vis2background, vis, vis2, drag_line, path, circle] = setup_svg(svg);
 
     if (v == layoutAdd || v == layoutMove) {
         for (var j = 0; j < zparams.zvars.length; j++) {
@@ -894,39 +902,6 @@ function layout(v, v2) {
         .linkDistance(150)
         .charge(-800)
         .on('tick', tick);
-
-    // define arrow markers for graph links
-    svg.append('svg:defs').append('svg:marker')
-        .attr('id', 'end-arrow')
-        .attr('viewBox', '0 -5 10 10')
-        .attr('refX', 6)
-        .attr('markerWidth', 3)
-        .attr('markerHeight', 3)
-        .attr('orient', 'auto')
-        .append('svg:path')
-        .attr('d', 'M0,-5L10,0L0,5')
-        .style('fill', '#000');
-
-    svg.append('svg:defs').append('svg:marker')
-        .attr('id', 'start-arrow')
-        .attr('viewBox', '0 -5 10 10')
-        .attr('refX', 4)
-        .attr('markerWidth', 3)
-        .attr('markerHeight', 3)
-        .attr('orient', 'auto')
-        .append('svg:path')
-        .attr('d', 'M10,-5L0,0L10,5')
-        .style('fill', '#000');
-
-    // line displayed when dragging new nodes
-    var drag_line = svg.append('svg:path')
-        .attr('class', 'link dragline hidden')
-        .attr('d', 'M0,0L0,0');
-
-    // handles to link and node element groups
-    var path = svg.append('svg:g').selectAll('path'),
-        circle = svg.append('svg:g').selectAll('g');
-        //line = svg.append('svg:g').selectAll('line');
 
     // mouse event vars
     var selected_node = null,
@@ -1228,6 +1203,10 @@ function layout(v, v2) {
 
     // update graph (called when needed)
     restart = function($links) {
+        if (is_results_mode) {
+            return;
+        }
+
         links = $links || links;
         // nodes.id is pegged to allNodes, i.e. the order in which variables are read in
         // nodes.index is floating and depends on updates to nodes.  a variables index changes when new variables are added.
@@ -1469,793 +1448,6 @@ function layout(v, v2) {
                 // reposition drag line
                 drag_line
                     .style('marker-end', is_explore_mode? 'url(#end-marker)' : 'url(#end-arrow)')
-                    .classed('hidden', false)
-                    .attr('d', 'M' + mousedown_node.x + ',' + mousedown_node.y + 'L' + mousedown_node.x + ',' + mousedown_node.y);
-
-                svg.on('mousemove', mousemove);
-                restart();
-            })
-            .on('mouseup', function(d) {
-                d3.event.stopPropagation();
-
-                if (rightClickLast) {
-                    rightClickLast = false;
-                    return;
-                }
-                if (!mousedown_node) return;
-
-                // needed by FF
-                drag_line
-                    .classed('hidden', true)
-                    .style('marker-end', '');
-
-                // check for drag-to-self
-                mouseup_node = d;
-                if (mouseup_node === mousedown_node) {
-                    resetMouseVars();
-                    return;
-                }
-
-                // unenlarge target node
-                d3.select(this).attr('transform', '');
-
-                // add link to graph (update if exists)
-                // NB: links are strictly source < target; arrows separately specified by booleans
-                var source, target, direction;
-                if (mousedown_node.id < mouseup_node.id) {
-                    source = mousedown_node;
-                    target = mouseup_node;
-                    direction = 'right';
-                } else {
-                    source = mouseup_node;
-                    target = mousedown_node;
-                    direction = 'left';
-                }
-
-                let link = links.filter(x => x.source == source && x.target == target)[0];
-                if (link) {
-                    link[direction] = true;
-                } else {
-                    link = {
-                        source: source,
-                        target: target,
-                        left: false,
-                        right: false
-                    };
-                    link[direction] = true;
-                    links.push(link);
-                }
-
-                // select new link
-                selected_link = link;
-                selected_node = null;
-                svg.on('mousemove', null);
-
-                resetMouseVars();
-                restart();
-            });
-
-        // show node names
-        g.append('svg:text')
-            .attr('x', 0)
-            .attr('y', 15)
-            .attr('class', 'id')
-            .text(d => d.name);
-
-        // show summary stats on mouseover
-        // SVG doesn't support text wrapping, use html instead
-        g.selectAll("circle.node")
-            .on("mouseover", d => {
-                tabLeft('tab3');
-                varSummary(d);
-                d.forefront = true;
-
-                byId('transformations').setAttribute('style', 'display:block');
-                byId("transSel").selectedIndex = d.id;
-                transformVar = valueKey[d.id];
-
-                fill(d, "dvArc", .1, 0, 100);
-                fill(d, "dvText", .5, 0, 100);
-                fill(d, "grArc", .1, 0, 100);
-                fill(d, "grText", .5, 0, 100);
-                //fill(d, "gr1indicator", .1, 0, 100);
-                //fill(d, "gr1indicatorText", .1, 0, 100);
-                //fill(d, "gr2indicator", .1, 0, 100);
-                //fill(d, "gr2indicatorText", .1, 0, 100);
-
-                if (d.defaultNumchar == "numeric") {
-                    fill(d, "nomArc", .1, 0, 100);
-                    fill(d, "nomText", .5, 0, 100);
-                }
-                fill(d, "csArc", .1, 0, 100);
-                fill(d, "csText", .5, 0, 100);
-                fill(d, "timeArc", .1, 0, 100);
-                fill(d, "timeText", .5, 0, 100);
-
-                m.redraw();
-            })
-            .on('mouseout', d => {
-                d.forefront = false;
-                summaryHold || tabLeft(subset ? 'tab2' : 'tab1');
-                'csArc csText timeArc timeText dvArc dvText nomArc nomText grArc grText'.split(' ').map(x => fill(d, x, 0, 100, 500));
-                m.redraw();
-            });
-
-        // the transformation variable list is silently updated as pebbles are added/removed
-        d3.select("#transSel")
-            .selectAll('li')
-            .remove();
-
-        d3.select("#transSel")
-            .selectAll('li')
-            .data(nodes.map(x => x.name)) // set to variables in model space as they're added
-            .enter()
-            .append("li")
-            .text(d => d);
-
-        if(!IS_D3M_DOMAIN){
-            $('#transSel li').click(function(evt) {
-                // if 'interaction' is the selected function, don't show the function list again
-                if (selInteract) {
-                    var n = $('#tInput').val().concat($(this).text());
-                    $('#tInput').val(n);
-                    evt.stopPropagation();
-                    var t = transParse(n = n);
-                    if (!t) return;
-                    $(this).parent().fadeOut(100);
-                    transform(n = t.slice(0, t.length - 1), t = t[t.length - 1], typeTransform = false);
-                    return;
-                }
-
-                $('#tInput').val($(this).text());
-                $(this).parent().fadeOut(100);
-                $('#transList').fadeIn(100);
-                evt.stopPropagation();
-            });
-        };
-
-        // remove old nodes
-        circle.exit().remove();
-        force.start();
-
-        // save workspaces
-        console.log('ok ws');
-        record_user_metadata();
-    }
-
-    function mousedown(d) {
-        // prevent I-bar on drag
-        d3.event.preventDefault();
-        // because :active only works in WebKit?
-        svg.classed('active', true);
-        if (d3.event.ctrlKey || mousedown_node || mousedown_link) return;
-        restart();
-    }
-
-    function mousemove(d) {
-        if (!mousedown_node)
-            return;
-        // update drag line
-        drag_line.attr('d', 'M' + mousedown_node.x + ',' + mousedown_node.y + 'L' + d3.mouse(this)[0] + ',' + d3.mouse(this)[1]);
-    }
-
-    function mouseup(d) {
-        if (mousedown_node) {
-            drag_line
-                .classed('hidden', true)
-                .style('marker-end', '');
-        }
-        // because :active only works in WebKit?
-        svg.classed('active', false);
-        // clear mouse event vars
-        resetMouseVars();
-    }
-
-    // app starts here
-    svg.attr('id', () => "whitespace".concat(myspace))
-        .attr('height', height)
-        .on('mousedown', function() {mousedown(this);})
-        .on('mouseup', function() {mouseup(this);});
-
-    d3.select(window)
-        .on('click', () => {
-            // all clicks will bubble here unless event.stopPropagation()
-            $('#transList').fadeOut(100);
-            $('#transSel').fadeOut(100);
-        });
-
-    restart(); // initializes force.layout()
-    fakeClick();
-
-    if(v2 & IS_D3M_DOMAIN) {
-        var click_ev = document.createEvent("MouseEvents");
-        // initialize the event
-        click_ev.initEvent("click", true /* bubble */, true /* cancelable */);
-        // trigger the event
-        let clickID = "dvArc"+findNodeIndex(mytarget);
-        byId(clickID).dispatchEvent(click_ev);
-    }
-}
-
-function results_layout(v, v2) {
-    console.log("in layout function")
-    var myValues = [];
-    nodes = [];
-    links = [];
-
-    svg.append("svg:defs").append("svg:marker")
-        .attr("id", "group1-arrow")
-        .attr('viewBox', '0 -5 15 15')
-        .attr("refX", 2.5)
-        .attr("refY", 0)
-        .attr("markerWidth", 3)
-        .attr("markerHeight", 3)
-        .attr("orient", "auto")
-        .append("path")
-        .attr('d', 'M0,-5L10,0L0,5')
-        .style("fill", gr1Color);
-
-    svg.append("svg:defs").append("svg:marker")
-        .attr("id", "group2-arrow")
-        .attr('viewBox', '0 -5 15 15')
-        .attr("refX", 2.5)
-        .attr("refY", 0)
-        .attr("markerWidth", 3)
-        .attr("markerHeight", 3)
-        .attr("orient", "auto")
-        .append("path")
-        .attr('d', 'M0,-5L10,0L0,5')
-        .style("fill", gr2Color);
-
-    var line = svg.append("line")
-        .style('fill', 'none')
-        .style('stroke', gr1Color)
-        .style('stroke-width', 5)
-        .attr("marker-end", "url(#group1-arrow)");
-
-    var line2 = svg.append("line")
-        .style('fill', 'none')
-        .style('stroke', gr2Color)
-        .style('stroke-width', 5)
-        .attr("marker-end", "url(#group2-arrow)");;
-
-    var visbackground = d3.select("#whitespace").append("svg")
-        .attr("width", width)
-        .attr("height", height);
-
-    visbackground.append("path") // note lines, are behind group hulls of which there is a white and colored semi transparent layer
-        .attr("id", 'gr1background')
-        .style("fill", '#ffffff')
-        .style("stroke", '#ffffff')
-        .style("stroke-width", 2.5*RADIUS)
-        .style('stroke-linejoin','round')
-        .style("opacity", 1);
-
-    var vis2background = d3.select("#whitespace").append("svg")
-        .attr("width", width)
-        .attr("height", height);
-
-    vis2background.append("path")
-        .attr("id", 'gr1background')
-        .style("fill", '#ffffff')
-        .style("stroke", '#ffffff')
-        .style("stroke-width", 2.5*RADIUS)
-        .style('stroke-linejoin','round')
-        .style("opacity", 1);
-
-    var vis = d3.select("#whitespace").append("svg")
-        .attr("width", width)
-        .attr("height", height);
-
-    vis.append("path")
-        .attr("id", 'gr1hull')
-        .style("fill", gr1Color)
-        .style("stroke", gr1Color)
-        .style("stroke-width", 2.5*RADIUS)
-        .style('stroke-linejoin','round');
-
-    var vis2 = d3.select("#whitespace").append("svg")
-        .attr("width", width)
-        .attr("height", height);
-
-    vis2.append("path")
-        .style("fill", gr2Color)
-        .style("stroke", gr2Color)
-        .style("stroke-width", 2.5*RADIUS)
-        .style('stroke-linejoin','round');
-
-    if (v == layoutAdd || v == layoutMove) {
-        for (var j = 0; j < zparams.zvars.length; j++) {
-            var ii = findNodeIndex(zparams.zvars[j]);
-            if (allNodes[ii].grayout)
-                continue;
-            nodes.push(allNodes[ii]);
-            var selectMe = zparams.zvars[j].replace(/\W/g, "_");
-            selectMe = "#".concat(selectMe);
-            d3.select(selectMe).style('background-color', () => hexToRgba(nodes[j].strokeColor));
-        }
-
-        for (var j = 0; j < zparams.zedges.length; j++) {
-            var mysrc = nodeIndex(zparams.zedges[j][0]);
-            var mytgt = nodeIndex(zparams.zedges[j][1]);
-            links.push({
-                source: nodes[mysrc],
-                target: nodes[mytgt],
-                left: false,
-                right: true
-            });
-        }
-    } else {
-        if(IS_D3M_DOMAIN) {
-            //nodes = [findNode(mytarget)];               // Only add dependent variable on startup
-            nodes = allNodes.slice(1,allNodes.length);    // Add all but first variable on startup (assumes 0 position is d3m index variable)
-            for (let j = 0; j < nodes.length; j++) { //populate zvars array
-                if (nodes[j].name != mytarget) {
-                    nodes[j].group1 = true;
-                    zparams.zgroup1.push(nodes[j].name);  // write all names (except d3m index and the dependent variable) to zgroup1 array
-                };
-            };
-        } else if (allNodes.length > 2) {
-            nodes = [allNodes[0], allNodes[1], allNodes[2]];
-            links = [{
-                source: nodes[1],
-                target: nodes[0],
-                left: false,
-                right: true
-            }, {
-                source: nodes[0],
-                target: nodes[2],
-                left: false,
-                right: true
-            }];
-        } else if (allNodes.length === 2) {
-            nodes = [allNodes[0], allNodes[1]];
-            links = [{
-                source: nodes[1],
-                target: nodes[0],
-                left: false,
-                right: true
-            }];
-        } else if (allNodes.length === 1) {
-            nodes = [allNodes[0]];
-        } else {
-            alert("There are zero variables in the metadata.");
-            return;
-        }
-    }
-
-    panelPlots(); // after nodes is populated, add subset and (if !IS_D3M_DOMAIN) setx panels
-
-    var force = d3.layout.force()
-        .nodes(nodes)
-        .links(links)
-        .size([width, height])
-        .linkDistance(150)
-        .charge(-800)
-        .on('tick', tick);
-
-    // define arrow markers for graph links
-    svg.append('svg:defs').append('svg:marker')
-        .attr('id', 'end-arrow')
-        .attr('viewBox', '0 -5 10 10')
-        .attr('refX', 6)
-        .attr('markerWidth', 3)
-        .attr('markerHeight', 3)
-        .attr('orient', 'auto')
-        .append('svg:path')
-        .attr('d', 'M0,-5L10,0L0,5')
-        .style('fill', '#000');
-
-    svg.append('svg:defs').append('svg:marker')
-        .attr('id', 'start-arrow')
-        .attr('viewBox', '0 -5 10 10')
-        .attr('refX', 4)
-        .attr('markerWidth', 3)
-        .attr('markerHeight', 3)
-        .attr('orient', 'auto')
-        .append('svg:path')
-        .attr('d', 'M10,-5L0,0L10,5')
-        .style('fill', '#000');
-
-    // line displayed when dragging new nodes
-    var drag_line = svg.append('svg:path')
-        .attr('class', 'link dragline hidden')
-        .attr('d', 'M0,0L0,0');
-
-    // handles to link and node element groups
-    var path = svg.append('svg:g').selectAll('path'),
-        circle = svg.append('svg:g').selectAll('g');
-        //line = svg.append('svg:g').selectAll('line');
-
-    // mouse event vars
-    var selected_node = null,
-        selected_link = null,
-        mousedown_link = null,
-        mousedown_node = null,
-        mouseup_node = null;
-
-    function resetMouseVars() {
-        mousedown_node = null;
-        mouseup_node = null;
-        mousedown_link = null;
-    }
-
-    // update force layout (called automatically each iteration)
-    function tick() {
-        // draw directed edges with proper padding from node centers
-        path.attr('d', d => {
-            var deltaX = d.target.x - d.source.x,
-                deltaY = d.target.y - d.source.y,
-                dist = Math.sqrt(deltaX * deltaX + deltaY * deltaY),
-                normX = deltaX / dist,
-                normY = deltaY / dist,
-                sourcePadding = d.left ? RADIUS + 5 : RADIUS,
-                targetPadding = d.right ? RADIUS + 5 : RADIUS,
-                sourceX = d.source.x + (sourcePadding * normX),
-                sourceY = d.source.y + (sourcePadding * normY),
-                targetX = d.target.x - (targetPadding * normX),
-                targetY = d.target.y - (targetPadding * normY);
-            return `M${sourceX},${sourceY}L${targetX},${targetY}`;
-        });
-
-        circle.attr('transform', d => 'translate(' + d.x + ',' + d.y + ')');
-
-        circle.selectAll('circle')           // Shrink/expand pebbles that join/leave groups
-            .transition()
-            .duration(100)
-            .attr('r', d => setPebbleRadius(d));
-
-    }
-
-    d3.select("#models").selectAll("p") // models tab
-        //  d3.select("#Display_content")
-        .on("click", function() {
-            var myColor = d3.select(this).style('background-color');
-            d3.select("#models").selectAll("p")
-                .style('background-color', varColor);
-            d3.select(this)
-                .style('background-color', d => {
-                    if (d3.rgb(myColor).toString() === varColor.toString()) {
-                        zparams.zmodel = d.toString();
-                        return hexToRgba(selVarColor);
-                    } else {
-                        zparams.zmodel = '';
-                        return varColor;
-                    }
-                });
-            restart();
-        });
-
-    d3.select("#types").selectAll("p") // models tab
-    //  d3.select("#Display_content")
-    .on("click", function() {
-        if(locktoggle) return;
-        if(this.className=="item-select") {
-            return;
-        } else {
-            d3.select("#types").select("p.item-select")
-            .attr('class', 'item-default');
-            d3mProblemDescription.taskType = this.innerHTML.toString();
-            d3.select(this).attr('class',"item-select");
-        }
-        restart();
-        setProblemDefinition("taskType", d3mProblemDescription, d3mTaskType);
-        });
-
-    d3.select("#subtypes").selectAll("p")
-    .on("click", function() {
-        if(locktoggle) return;
-        if(this.className=="item-select") {
-            return;
-        } else {
-            d3.select("#subtypes").select("p.item-select")
-            .attr('class', 'item-default');
-            d3mProblemDescription.taskSubtype = this.innerHTML.toString();
-            d3.select(this).attr('class',"item-select");
-        }
-        restart();
-        setProblemDefinition("taskSubtype", d3mProblemDescription, d3mTaskSubtype);
-        });
-
-    d3.select("#metrics").selectAll("p")
-    .on("click", function() {
-        if(locktoggle) return;
-        if(this.className=="item-select") {
-            return;
-            // d3mProblemDescription.metric = ["",""];
-            // this.className="item-default";
-        } else {
-            d3.select("#metrics").select("p.item-select")
-            .attr('class', 'item-default');
-            d3mProblemDescription.metric = this.innerHTML.toString();
-            d3.select(this).attr('class',"item-select");
-        }
-        restart();
-        setProblemDefinition("metric", d3mProblemDescription, d3mMetrics);
-        });
-
-    // update graph (called when needed)
-    restart = function($links, is_explore) {
-        links = $links || links;
-        // nodes.id is pegged to allNodes, i.e. the order in which variables are read in
-        // nodes.index is floating and depends on updates to nodes.  a variables index changes when new variables are added.
-        circle.call(force.drag);
-        if (forcetoggle[0] == "true") {
-            force.gravity(0.1);
-            force.charge(d => setPebbleCharge(d));
-            force.start();
-            force.linkStrength(1);
-            k = 4; // strength parameter for group attraction/repulsion
-            if ((zparams.zgroup1.length > 0) & (zparams.zgroup2.length > 0 )) { // scale down by number of active groups
-                k = 2.5;
-            }
-        } else {
-            force.gravity(0);
-            force.charge(0);
-            force.linkStrength(0);
-            k = 0;
-        }
-        force.resume();
-
-        // path (link) group
-        path = path.data(links);
-
-        // update existing links
-        // VJD: dashed links between pebbles are "selected". this is disabled for now
-        path.classed('selected', x => null)
-            .style('marker-start', x => !is_explore && x.left ? 'url(#start-arrow)' : '')
-            .style('marker-end', x => !is_explore && x.right ? 'url(#end-arrow)' : '');
-
-        // add new links
-        path.enter().append('svg:path')
-            .attr('class', 'link')
-            .classed('selected', x => null)
-            .style('marker-start', x => !is_explore && x.left ? 'url(#start-arrow)' : '')
-            .style('marker-end', x => !is_explore && x.right ? 'url(#end-arrow)' : '')
-            .on('mousedown', function(d) { // do we ever need to select a link? make it delete..
-                var obj = JSON.stringify(d);
-                for (var j = 0; j < links.length; j++) {
-                    if (obj === JSON.stringify(links[j]))
-                        del(links, j);
-                }
-            });
-
-        // remove old links
-        path.exit().remove();
-
-        // circle (node) group
-        circle = circle.data(nodes, x => x.id);
-
-        // update existing nodes (reflexive & selected visual states)
-        // d3.rgb is the function adjusting the color here
-        circle.selectAll('circle')
-            .classed('reflexive', x => x.reflexive)
-            .style('fill', x => d3.rgb(x.nodeCol))
-            .style('stroke', x => d3.rgb(x.strokeColor))
-            .style('stroke-width', x => x.strokeWidth);
-
-        // add new nodes
-        let g = circle.enter()
-            .append('svg:g')
-            .attr('id', x => x.name + 'biggroup');
-
-        // add plot
-        g.each(function(d) {
-            d3.select(this);
-            if (d.plottype == 'continuous') densityNode(d, this);
-            else if (d.plottype == 'bar') barsNode(d, this);
-        });
-
-        let append = (str, attr) => x => str + x[attr || 'id'];
-
-        g.append("path")
-            .attr("id", append('dvArc'))
-            .attr("d", arc3)
-            .style("fill", dvColor)
-            .attr("fill-opacity", 0)
-            .on('mouseover', function(d) {
-                fillThis(this, .3, 0, 100);
-                fill(d, 'dvText', .9, 0, 100);
-            })
-            .on('mouseout', function(d) {
-                fillThis(this, 0, 100, 500);
-                fill(d, 'dvText', 0, 100, 500);
-            })
-            .on('click', d => {
-                setColors(d, dvColor);
-                legend(dvColor);
-                restart();
-                d.group1 = d.group2 = false;
-            });
-
-        g.append("text")
-            .attr("id", append('dvText'))
-            .attr("x", 6)
-            .attr("dy", 11.5)
-            .attr("fill-opacity", 0)
-            .append("textPath")
-            .attr("xlink:href", append('#dvArc'))
-            .text("Dep Var");
-
-        g.append("path")
-            .attr("id", append('nomArc'))
-            .attr("d", arc4)
-            .style("fill", nomColor)
-            .attr("fill-opacity", 0)
-            .on('mouseover', function(d) {
-                if (d.defaultNumchar == "character") return;
-                fillThis(this, .3, 0, 100);
-                fill(d, "nomText", .9, 0, 100);
-            })
-            .on('mouseout', function(d) {
-                if (d.defaultNumchar == "character") return;
-                fillThis(this, 0, 100, 500);
-                fill(d, "nomText", 0, 100, 500);
-            })
-            .on('click', function(d) {
-                if (d.defaultNumchar == "character") return;
-                setColors(d, nomColor);
-                legend(nomColor);
-                restart();
-            });
-
-        g.append("text")
-            .attr("id", append("nomText"))
-            .attr("x", 6)
-            .attr("dy", 11.5)
-            .attr("fill-opacity", 0)
-            .append("textPath")
-            .attr("xlink:href", append("#nomArc"))
-            .text("Nominal");
-
-        g.append("path")
-            .attr("id", append('grArc'))
-            .attr("d", arc1)
-            .style("fill",  gr1Color)
-            .attr("fill-opacity", 0)
-            .on('mouseover', function(d) {
-                fill(d, "gr1indicator", .3, 0, 100);
-                fill(d, "gr2indicator", .3, 0, 100);
-                fillThis(this, .3, 0, 100);
-                fill(d, 'grText', .9, 0, 100);
-            })
-            .on('mouseout', function(d) {
-                fill(d, "gr1indicator", 0, 100, 500);
-                fill(d, "gr2indicator", 0, 100, 500);
-                fillThis(this, 0, 100, 500);
-                fill(d, 'grText', 0, 100, 500);
-            })
-            .on('click', d => {
-                //d.group1 = !d.group1;      // This might be easier, but currently set in setColors()
-                setColors(d, gr1Color);
-                legend(gr1Color);
-                restart();
-            });
-
-        g.append("path")
-            .attr("id", append('gr1indicator'))
-            .attr("d", arcInd1)
-            .style("fill", gr1Color)  // something like: zparams.zgroup1.indexOf(node.name) > -1  ?  #FFFFFF : gr1Color)
-            .attr("fill-opacity", 0)
-            .on('mouseover', function(d) {
-                fillThis(this, .3, 0, 100);
-                fill(d, "grArc", .1, 0, 100);
-                fill(d, 'grText', .9, 0, 100);
-            })
-            .on('mouseout', function(d) {
-                fillThis(this, 0, 100, 500);
-                fill(d, "grArc", 0, 100, 500);
-                fill(d, 'grText', 0, 100, 500);
-            })
-            .on('click', d => {
-                //d.group1 = !d.group1;      // This might be easier, but currently set in setColors()
-                setColors(d, gr1Color);
-                legend(gr1Color);
-                restart();
-            });
-
-         g.append("path")
-            .attr("id", append('gr2indicator'))
-            .attr("d", arcInd2)
-            .style("fill", gr2Color)  // something like: zparams.zgroup1.indexOf(node.name) > -1  ?  #FFFFFF : gr1Color)
-            .attr("fill-opacity", 0)
-            .on('mouseover', function(d) {
-                fillThis(this, .3, 0, 100);
-                fill(d, "grArc", .1, 0, 100);
-                fill(d, 'grText', .9, 0, 100);
-            })
-            .on('mouseout', function(d) {
-                fillThis(this, 0, 100, 500);
-                fill(d, "grArc", 0, 100, 500);
-                fill(d, 'grText', 0, 100, 500);
-            })
-            .on('click', d => {
-                //d.group2 = !d.group2;      // This might be easier, but currently set in setColors()
-                setColors(d, gr2Color);
-                legend(gr2Color);
-                restart();
-            });
-
-        g.append("text")
-            .attr("id", append('grText'))
-            .attr("x", 6)
-            .attr("dy", 11.5)
-            .attr("fill-opacity", 0)
-            .append("textPath")
-            .attr("xlink:href", append('#grArc'))
-            .text("Groups");
-
-        g.append('svg:circle')
-            .attr('class', 'node')
-            .attr('r', d => setPebbleRadius(d))
-            .style('pointer-events', 'inherit')
-            .style('fill', d => d.nodeCol)
-            .style('opacity', "0.5")
-            .style('stroke', d => d3.rgb(d.strokeColor).toString())
-            .classed('reflexive', d => d.reflexive)
-            .on('dblclick', function(d) {
-                d3.event.stopPropagation(); // stop click from bubbling
-                summaryHold = true;
-                console.log("pebble");
-                console.log(d.group2);
-                if(d.group1){
-                    var len = allNodes.length;
-                    console.log(d.properties.length)
-                     var hold = [.6, .2, .9, .8, .1, .3, .4];
-                    for(var p = 0; p < d.properties.length;p++){
-                        let obj = {
-                            id: len + p,
-                            reflexive: false,
-                            name: d.properties[p],
-                            labl: "no labels",
-                            data: [5, 15, 20, 0, 5, 15, 20],
-                            count: hold,
-                            nodeCol: colors(p),
-                            baseCol: colors(p),
-                            strokeColor: selVarColor,
-                            strokeWidth: "1",
-                            subsetplot: false,
-                            subsetrange: ["", ""],
-                            setxplot: false,
-                            setxvals: ["", ""],
-                            grayout: false,
-                            group1: false,
-                            group2: true,
-                            forefront: false
-                        }
-                        
-                        // jQuery.extend(true, obj, d.properties[p]);
-                        console.log("obj after merge")
-                        console.log(allNodes)
-                        allNodes.push(obj);
-                        nodes.push(obj);
-                        console.log(nodes);
-                        links.push({
-                            source: nodes[d.id-1],
-                            target: nodes[nodes.length-1], // not able to access with object id!!
-                            left: false,
-                            right: true
-                        });
-
-
-                    }
-                    restart();
-                    
-                }
-            })
-            .on('contextmenu', function(d) {
-                // right click on node
-                d3.event.preventDefault();
-                d3.event.stopPropagation();
-
-                rightClickLast = true;
-                mousedown_node = d;
-                selected_node = mousedown_node === selected_node ? null : mousedown_node;
-                selected_link = null;
-
-                // reposition drag line
-                drag_line
-                    .style('marker-end', 'url(#end-arrow)')
                     .classed('hidden', false)
                     .attr('d', 'M' + mousedown_node.x + ',' + mousedown_node.y + 'L' + mousedown_node.x + ',' + mousedown_node.y);
 

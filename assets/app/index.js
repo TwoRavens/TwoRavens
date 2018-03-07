@@ -9,6 +9,7 @@ import m from 'mithril';
 
 import * as app from './app';
 import * as exp from './explore';
+import * as layout from './layout';
 import * as results from './results';
 import * as plots from './plots';
 import Panel from './views/Panel';
@@ -538,6 +539,7 @@ m.route(document.body, '/model', {
     '/results': {
         onmatch() {
             state.get_pipelines();
+            layout.results_layout(false, true);
         },
         render() {
             return m(Body, {mode: 'results'});
