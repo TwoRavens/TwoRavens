@@ -351,12 +351,10 @@ class Body {
                 app.explored = false;
                 app.univariate_finished = false;
                 app.set_righttab('btnUnivariate');
-            } else if (results_mode) {
-                app.set_righttab(IS_D3M_DOMAIN ? 'btnType' : 'btnModels');
             } else if (!mode) {
                 app.set_righttab(IS_D3M_DOMAIN ? 'btnType' : 'btnModels');
             }
-            app.restart && app.restart();
+            results_mode || app.restart && app.restart();
             this.last_mode = mode;
         }
 

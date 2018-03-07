@@ -479,13 +479,13 @@ function restart(force, line, line2, visbackground, vis2background, vis, vis2, d
 }
 
 export function results_layout(v, v2) {
-    let {gr1Color, gr2Color, RADIUS, height, width, allNodes, fakeClick} = app;
+    let {gr1Color, gr2Color, RADIUS, height, width, allNodes, fakeClick, myspace} = app;
 
     nodes = [];//allNodes;
     //nodes = Object.values(allPipelineInfo);
     // app starts here
 
-    let svg = d3.select('#whitespace');
+    let svg = d3.select('#whitespace0');
     svg.selectAll('*').remove();
     svg.attr('id', () => "whitespace".concat(myspace))
         .attr('height', height)
