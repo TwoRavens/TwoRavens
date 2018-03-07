@@ -207,8 +207,8 @@ export let d3mProblemDescription = {
     taskDescription: ""
 };
 
-let svg, width, height, div, selectLadda;
-export let estimateLadda;
+let svg, div, selectLadda;
+export let width, height, estimateLadda;
 
 // arcs for denoting pebble characteristics
 const arc = (start, end) => d3.svg.arc()
@@ -3176,9 +3176,9 @@ function jamescentroid(coord) {
    Presently, most pebbles are scaled to radius set by global RADIUS.
    Members of groups are scaled down if group gets large.
 */
-function setPebbleRadius(d){
+export function setPebbleRadius(d){
     if (d.group1 || d.group2){ // if a member of a group, need to calculate radius size
-        var uppersize = 7
+        var uppersize = 7;
         var ng1 = (d.group1) ? zparams.zgroup1.length : 1; // size of group1, if a member of group 1
         var ng2 = (d.group2) ? zparams.zgroup2.length : 1; // size of group2, if a member of group 2
         var maxng = Math.max(ng1, ng2); // size of the largest group variable is member of

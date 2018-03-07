@@ -354,7 +354,7 @@ class Body {
             } else if (!mode) {
                 app.set_righttab(IS_D3M_DOMAIN ? 'btnType' : 'btnModels');
             }
-            results_mode || app.restart && app.restart();
+            app.restart && app.restart();
             this.last_mode = mode;
         }
 
@@ -536,6 +536,7 @@ m.route(document.body, '/model', {
     '/explore': {render: () => m(Body, {mode: 'explore'})},
     '/results': {
         onmatch() {
+            app.set_mode('results');
             state.get_pipelines();
             layout.results_layout(false, true);
         },

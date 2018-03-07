@@ -1,4 +1,6 @@
 import * as app from './app';
+import {setPebbleRadius} from './app';
+import {barsNode, densityNode} from './plots.js';
 
 let nodes = [];
 let links = [];
@@ -481,17 +483,17 @@ function restart(force, line, line2, visbackground, vis2background, vis, vis2, d
 export function results_layout(v, v2) {
     let {gr1Color, gr2Color, RADIUS, height, width, allNodes, fakeClick, myspace} = app;
 
-    nodes = [];//allNodes;
+    nodes = allNodes;
     //nodes = Object.values(allPipelineInfo);
     // app starts here
 
-    let svg = d3.select('#whitespace0');
+    let svg = d3.select('#whitespace');
     svg.selectAll('*').remove();
+    let [line, line2, visbackground, vis2background, vis, vis2, drag_line, path, circle] = app.setup_svg(svg);
     svg.attr('id', () => "whitespace".concat(myspace))
         .attr('height', height)
         .on('mousedown', mousedown)
         .on('mouseup', mouseup);
-    let [line, line2, visbackground, vis2background, vis, vis2, drag_line, path, circle] = app.setup_svg(svg);
     let force = d3.layout.force()
         .nodes(nodes)
         .links(links)
