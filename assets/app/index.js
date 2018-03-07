@@ -17,6 +17,7 @@ import Button, {when} from './views/PanelButton';
 import List from './views/PanelList';
 import Search from './views/Search';
 import Subpanel from './views/Subpanel';
+import Table from './views/Table'
 
 let state = {
     pipelines: [],
@@ -120,7 +121,16 @@ function leftpanel(mode) {
         m(`#tab1[style=display: ${when('left', 'tab1')}; padding: 0 8px; text-align: center]`,
           m(Search, {placeholder: 'Search variables and labels'}),
           m(List, {items: app.valueKey, title: 'Summary Statistics'})),
-        m(`#tab2[style=display: ${when('left', 'tab2')}; height:75%; overflow: auto; margin-top: .5em]`),
+        m(`#tab2[style=display: ${when('left', 'tab2')}; height:75%; overflow: auto; margin-top: .5em]`,
+            m(Table, {
+                id: 'discoveryTable',
+                headers: ['Target', 'Predictors', 'Task', 'Metric'],
+                data: app.probtable,
+                activeRow: app.selectedProblem,
+                onclickRow: app.setSelectedProblem,
+                checkboxes: app.checkedProblems,
+                onclickCheckbox: app.setCheckedProblem
+            })),
         m('#tab2a[style=display:none; float: left; width: 100%; height:25%; overflow: auto;]',
             m('textarea#tab2input[style=display:block; float: left; width: 75%; height:100%; overflow: auto; background-color: white]'),
             m(Button, {id: 'btnSave', onclick:_=>app.saveDisc('btnSave'),title: 'Saves your revised problem description.'}, 'Save Desc.')),
