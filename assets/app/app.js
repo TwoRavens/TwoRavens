@@ -4134,9 +4134,24 @@ export function discovery(preprocess_file) {
     return disco;
 }
 
+export let probtable = [];
+
+export let selectedProblem = '';
+export let setSelectedProblem = (problem) => {
+    selectedProblem = problem;
+
+    let getProblembyKey = (key) => {for (let row of disco) if (row.target === key) return row;}
+    document.getElementById("tab2input").value = getProblembyKey(problem).description;
+}
+
+export let checkedProblems = new Set();
+export let setCheckedProblem = (problem) => {
+    if (checkedProblems.has(problem)) checkedProblems.delete(problem)
+    else checkedProblems.add(problem);
+}
+
 export function probDiscView(btn) {
     tabLeft(btn);
-    console.log(disco);
 
     if(btn=='tab1') {
         document.getElementById("leftpanel").classList.remove("expandpanelfull");
@@ -4153,17 +4168,15 @@ export function probDiscView(btn) {
         document.getElementById("tab2a").style.display="block";
     }
 
-    if(document.getElementById("tab2").hasChildNodes()) return; // return if this has already been clicked, if childNodes have already been added
+    // if(document.getElementById("tab2").hasChildNodes()) return; // return if this has already been clicked, if childNodes have already been added
 
-    let myprobs = disco;  // discovery();  Function requires argument.  Don't presently need to call function again.
-    let probtable = [];
-    for(let i = 0; i<myprobs.length; i++) {
-        let mypredictors = myprobs[i].predictors.join();
-        probtable.push({"Target":myprobs[i].target,"Predictors":mypredictors, "Task":myprobs[i].task, "Metric":myprobs[i].metric});
+    probtable.length = 0;
+    for(let i = 0; i < disco.length; i++) {
+        let mypredictors = disco[i].predictors.join();
+        probtable.push([disco[i].target, mypredictors, disco[i].task, disco[i].metric]);
     }
-    tabulate(probtable, ['Target', 'Predictors', 'Task','Metric'], '#tab2');
 
-    document.getElementById("tab2input").value=myprobs[0].description;
+    document.getElementById("tab2input").value=disco[0].description;
 }
 
 export async function submitDiscProb(btn) {
