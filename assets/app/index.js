@@ -16,7 +16,7 @@ import Button from './views/PanelButton';
 import List from './views/PanelList';
 import Search from './views/Search';
 import Subpanel from './views/Subpanel';
-import Table from './views/Table'
+import Table from '../common/app/views/Table'
 
 import * as common from '../common/app/common'
 import Panel from '../common/app/views/Panel';
@@ -91,7 +91,8 @@ function leftpanel(mode) {
                             activeRow: app.selectedProblem,
                             onclickRow: app.setSelectedProblem,
                             checkboxes: app.checkedProblems,
-                            onclickCheckbox: app.setCheckedProblem
+                            onclickCheckbox: app.setCheckedProblem,
+                            attrsAll: {style: {height: '80%', overflow: 'auto', display: 'block'}}
                         }),
                         m('textarea#discoveryInput[style=display:block; float: left; width: 100%; height:calc(20% - 35px); overflow: auto; background-color: white]'),
                         m(Button, {id: 'btnSave', onclick:_=>app.saveDisc('btnSave'),title: 'Saves your revised problem description.'}, 'Save Desc.'),

@@ -1,6 +1,6 @@
 import m from 'mithril'
 
-import {varColor, selVarColor} from "../../common/app/common";
+import {varColor, selVarColor, mergeAttributes} from "../common";
 
 // Interface specification
 //
@@ -19,7 +19,11 @@ import {varColor, selVarColor} from "../../common/app/common";
 export default class Table {
 
     view(vnode) {
-        let {id, headers, data, activeRow, onclickRow, checkboxes, onclickCheckbox} = vnode.attrs;
+        let {id, headers, data, attrsAll, attrsRows} = vnode.attrs;
+
+        // Interactive rows and checkboxes
+        let {activeRow, onclickRow} = vnode.attrs;
+        let {checkboxes, onclickCheckbox} = vnode.attrs;
 
         let allChecked = data.length === checkboxes.size;
         let setAllChecked = (checked) => {
@@ -37,13 +41,13 @@ export default class Table {
             })) : undefined
         ]) : undefined;
 
-        return m(`table#${id}`, {style: {width: '100%'}},
+        return m(`table#${id}`, mergeAttributes({style: {width: '100%'}}, attrsAll),
             // rows
             [headerDiv, ...data.map((row) => {
-                return m('tr', {
+                return m('tr', mergeAttributes({
                         style: {'background-color': row[0] === activeRow ? selVarColor : varColor},
                         onclick: () => onclickRow(row[0])
-                    },
+                    }, attrsRows),
 
                     // columns
                     [
