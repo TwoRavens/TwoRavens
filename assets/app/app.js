@@ -88,7 +88,7 @@ let ind1 = [(RADIUS+30) * Math.cos(1.3), -1*(RADIUS+30) * Math.sin(1.3), 5];
 let ind2 = [(RADIUS+30) * Math.cos(1.1), -1*(RADIUS+30) * Math.sin(1.1), 5];
 
 // space index
-let myspace = 0;
+export let myspace = 0;
 
 export let forcetoggle = ["true"];
 export let locktoggle = true;
@@ -778,7 +778,7 @@ export function setup_svg(svg) {
         .style('stroke', gr2Color)
         .style('stroke-width', 5)
         .attr("marker-end", "url(#group2-arrow)");
-    var visbackground = d3.select("#whitespace").append("svg")
+    var visbackground = svg.append("svg")
         .attr("width", width)
         .attr("height", height);
     visbackground.append("path") // note lines, are behind group hulls of which there is a white and colored semi transparent layer
@@ -788,7 +788,7 @@ export function setup_svg(svg) {
         .style("stroke-width", 2.5*RADIUS)
         .style('stroke-linejoin','round')
         .style("opacity", 1);
-    var vis2background = d3.select("#whitespace").append("svg")
+    var vis2background = svg.append("svg")
         .attr("width", width)
         .attr("height", height);
     vis2background.append("path")
@@ -798,7 +798,7 @@ export function setup_svg(svg) {
         .style("stroke-width", 2.5*RADIUS)
         .style('stroke-linejoin','round')
         .style("opacity", 1);
-    var vis = d3.select("#whitespace").append("svg")
+    var vis = svg.append("svg")
         .attr("width", width)
         .attr("height", height);
     vis.append("path")
@@ -807,7 +807,7 @@ export function setup_svg(svg) {
         .style("stroke", gr1Color)
         .style("stroke-width", 2.5*RADIUS)
         .style('stroke-linejoin','round');
-    var vis2 = d3.select("#whitespace").append("svg")
+    var vis2 = svg.append("svg")
         .attr("width", width)
         .attr("height", height);
     vis2.append("path")
@@ -826,7 +826,7 @@ export function setup_svg(svg) {
 }
 
 /** needs doc */
-function layout(v, v2) {
+export function layout(v, v2) {
     var myValues = [];
     nodes = [];
     links = [];

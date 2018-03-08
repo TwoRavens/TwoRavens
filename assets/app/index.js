@@ -538,7 +538,7 @@ m.route(document.body, '/model', {
         onmatch() {
             app.set_mode('results');
             state.get_pipelines();
-            layout.results_layout(false, true);
+            layout.init();
         },
         render() {
             return m(Body, {mode: 'results'});
