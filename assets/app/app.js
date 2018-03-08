@@ -26,12 +26,18 @@ export let task1_finished = false;
 export let task2_finished = false;
 export let univariate_finished = false;
 
+let currentMode = 'model';
 let is_explore_mode = false;
 let is_results_mode = false;
 
 export function set_mode(mode) {
     if (!mode) mode = 'model';
-    m.route.set('/' + mode.toLowerCase());
+    mode = mode.toLowerCase()
+
+    if (currentMode !== mode) {
+        currentMode = mode;
+        m.route.set('/' + mode.toLowerCase());
+    }
 
     is_explore_mode = mode === 'explore';
     is_results_mode = mode === 'results';
@@ -1204,6 +1210,10 @@ function layout(v, v2) {
 
     // update graph (called when needed)
     restart = function($links) {
+        if (is_results_mode) {
+            return;
+        }
+
         links = $links || links;
         // nodes.id is pegged to allNodes, i.e. the order in which variables are read in
         // nodes.index is floating and depends on updates to nodes.  a variables index changes when new variables are added.
@@ -1905,17 +1915,7 @@ function tabulate(data, columns, divid) {
                 }
             }});
 
-    // this is code to add a checkbox to each row of the table
-    if(divid=='#discoveryTable') {
-      d3.select(divid).selectAll("tr")
-      .append("input")
-        .attr("type", "checkbox")
-        .attr("checked",true)
-         .style("float","right");
-    }
-
     return table;
-
 }
 
 function onPipelineCreate(PipelineCreateResult, rookpipe) {
