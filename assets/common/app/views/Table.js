@@ -25,7 +25,9 @@ export default class Table {
         let {activeRow, onclickRow} = vnode.attrs;
         let {checkboxes, onclickCheckbox} = vnode.attrs;
 
-        let allChecked = data.length === checkboxes.size;
+        let allChecked = false;
+        if (checkboxes) allChecked = data.length === checkboxes.size;
+        
         let setAllChecked = (checked) => {
             // turn on or off all checks
             data.map((row) => {
