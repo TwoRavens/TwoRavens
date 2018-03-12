@@ -161,6 +161,17 @@ docker tag registry.datadrivendiscovery.org/mit-featurelabs/btb-dockerimage:stab
 ```
 # set the CONFIG_JSON_PATH variable
 #
+workon 2ravens
+fab run_featurelabs_choose_config:XX
+```
+with number XX being the number of a seed dataset.  If you don't know a number, omit `:XX` and a list will be shown.
+
+
+
+### _Old notes_
+```
+# set the CONFIG_JSON_PATH variable
+#
 export CONFIG_JSON_PATH=/ravens_volume/config_185_baseball.json
 
 # set the env on docker run
@@ -170,7 +181,7 @@ docker run --rm -ti -v /ravens_volume:/ravens_volume -e "CONFIG_JSON_PATH=/raven
 
 
 
-### _Old notes_
+### _Older notes_
 
 
 ```
