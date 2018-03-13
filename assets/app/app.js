@@ -1952,7 +1952,7 @@ function onPipelineCreate(PipelineCreateResult, rookpipe) {
 
     toggleRightButtons("all");
     if (IS_D3M_DOMAIN){
-        byId("btnResults").click();
+        byId("btnSetx").click();   // Was "btnResults" - changing to simplify user experience for testing. 
     };
 
     //adding rookpipe to allPipelineInfo
@@ -2082,7 +2082,7 @@ export async function estimate(btn) {
 
 
             // programmatic click on Results button
-            $("#btnResults").trigger("click");
+            $("#btnSetx").trigger("click");      // Was "btnResults" - changing to simplify user experience for testing. 
 
             let model = "Model".concat(modelCount = modelCount + 1);
 
@@ -2542,8 +2542,8 @@ export function tabRight(tab) {
     };
     if (tab === "btnModels") select(cls);
     else if (tab === "btnSetx") righttab === "btnSetx" || select() === cls && toggleR('full');
-    else if (tab === "btnResults") !estimated ? select(cls) :
-        righttab === "btnResults" || select() === cls && toggleR();
+    //else if (tab === "btnResults") !estimated ? select(cls) :         // removing for present to simplify user experience for testing. 
+    //    righttab === "btnResults" || select() === cls && toggleR();   // removing for present to simplify user experience for testing. 
     else if (tab === "btnUnivariate") select(cls);
 
     if(tab=="btnType" || tab=="btnSubtype" || tab=="btnMetrics") {
@@ -3254,7 +3254,7 @@ function toggleRightButtons(set) {
     } else if (set=="models") {
         byId('btnModels').style.display = 'inline';
         byId('btnSetx').style.display = 'inline';
-        byId('btnResults').style.display = 'inline';
+        //byId('btnResults').style.display = 'inline';  // removing for present to simplify user experience for testing. 
         byId('btnType').style.display = 'none';
         byId('btnSubtype').style.display = 'none';
         byId('btnMetrics').style.display = 'none';

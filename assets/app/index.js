@@ -247,18 +247,19 @@ function rightpanel(mode) {
        title: 'Model Selection',
        buttons: (!app.IS_D3M_DOMAIN ? [] : [
            m(Button, {id: 'btnModels'}, 'Models'),
-           m(Button, {id: 'btnSetx'}, 'Set Covar.'),
-           m(Button, {id: 'btnResults'}, 'Results'),
+           m(Button, {id: 'btnSetx'}, 'Results'),       // Was "Set Covar" - Renaming to simplify user experience for testing.
+           //m(Button, {id: 'btnResults'}, 'Results'),  // Removing results button presently to simplify user experience for testing.
        ]).concat([
            m(Button, {id: 'btnType', is_explore_mode: exp.explore}, 'Task Type'),
            m(Button, {id: 'btnSubtype', is_explore_mode: exp.explore}, 'Subtype'),
            m(Button, {id: 'btnMetrics', is_explore_mode: exp.explore}, 'Metrics'),
-           m(Button, {id: 'btnSetx', is_explore_mode: exp.explore}, 'Set Covar.'),
-           m(Button, {id: 'btnResults', is_explore_mode: exp.explore}, 'Results')])},
-      m(`#results[style=display: ${when('right', 'btnResults')}; margin-top: .5em]`,
-        m("#resultsView.container[style=float: right; overflow: auto; width: 80%; background-color: white; white-space: nowrap]"),
-        m('#modelView[style=display: none; float: left; width: 20%; background-color: white]'),
-        m("p#resultsHolder[style=padding: .5em 1em]")),
+           m(Button, {id: 'btnSetx', is_explore_mode: exp.explore}, 'Results')//,    // Renaming to simplify user experience for testing.
+           //m(Button, {id: 'btnResults', is_explore_mode: exp.explore}, 'Results')  // Removing results button presently to simplify user experience for testing.
+           ])},
+     // m(`#results[style=display: ${when('right', 'btnResults')}; margin-top: .5em]`,
+     //   m("#resultsView.container[style=float: right; overflow: auto; width: 80%; background-color: white; white-space: nowrap]"),
+     //   m('#modelView[style=display: none; float: left; width: 20%; background-color: white]'),
+     //   m("p#resultsHolder[style=padding: .5em 1em]")),
         // this naming is getting ridiculous...
       m(`#setx[style=display: ${when('right', 'btnSetx')}]`,
         m('#setxRight[style=display:block; float: right; width: 25%; height:100%; background-color: white]'),
