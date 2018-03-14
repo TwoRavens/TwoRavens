@@ -3334,7 +3334,6 @@ export function genconfdata (dvvalues, predvals) {
         return self.indexOf(value) === index;
     }
 
-
     let mycounts = [];
     let mypairs = [];
 
@@ -3354,13 +3353,13 @@ export function genconfdata (dvvalues, predvals) {
         let temppair = [];
         for(let j = 0; j < myuniques.length; j++) {
             mycounts.push(0);
-            mypairs.push(+myuniques[i]+','+myuniques[j]);
+            mypairs.push(myuniques[i]+','+myuniques[j]);
         }
     }
 
     // line up actuals and predicted, and increment mycounts at index where mypair has a match for the 'actual,predicted'
     for (let i = 0; i < dvvalues.length; i++) {
-        let temppair = +dvvalues[i]+','+predvals[i];
+        let temppair = dvvalues[i]+','+predvals[i];
         let myindex = mypairs.indexOf(temppair);
         mycounts[myindex] += 1;
     }
