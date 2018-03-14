@@ -256,10 +256,10 @@ function rightpanel(mode) {
            m(Button, {id: 'btnSetx', is_explore_mode: exp.explore}, 'Results')//,    // Renaming to simplify user experience for testing.
            //m(Button, {id: 'btnResults', is_explore_mode: exp.explore}, 'Results')  // Removing results button presently to simplify user experience for testing.
            ])},
-     // m(`#results[style=display: ${when('right', 'btnResults')}; margin-top: .5em]`,
-     //   m("#resultsView.container[style=float: right; overflow: auto; width: 80%; background-color: white; white-space: nowrap]"),
-     //   m('#modelView[style=display: none; float: left; width: 20%; background-color: white]'),
-     //   m("p#resultsHolder[style=padding: .5em 1em]")),
+      m(`#results[style=display: ${when('right', 'btnResults')}; margin-top: .5em]`,
+        m("#resultsView.container[style=float: right; overflow: auto; width: 80%; background-color: white; white-space: nowrap]"),
+        m('#modelView[style=display: none; float: left; width: 20%; background-color: white]'),
+        m("p#resultsHolder[style=padding: .5em 1em]")),
         // this naming is getting ridiculous...
       m(`#setx[style=display: ${when('right', 'btnSetx')}]`,
         m('#setxRight[style=display:block; float: right; width: 25%; height:100%; background-color: white]'),
