@@ -3327,23 +3327,21 @@ export function genconfdata (dvvalues, predvals) {
 
     // dvvalues are generally numeric
     dvvalues = dvvalues.map(String);
+
     // predvals are generally strings
     predvals = predvals.map(String);
-
-    function onlyUnique(value, index, self) {
-        return self.indexOf(value) === index;
-    }
 
     let mycounts = [];
     let mypairs = [];
 
     // combine actuals and predicted, and get all unique elements
     let myuniques = dvvalues.concat(predvals);
-
-    myuniques= [...new Set(myuniques)];
-    //equivalent to: myuniques = Array.from(new Set(myuniques));
-    //was: myuniques = myuniques.filter(onlyUnique);    
-
+    myuniques= [...new Set(myuniques)];                 //equivalent to: myuniques = Array.from(new Set(myuniques));
+    //was: 
+    //  function onlyUnique(value, index, self) {
+    //    return self.indexOf(value) === index;
+    //  }
+    //  myuniques = myuniques.filter(onlyUnique);    
     myuniques = myuniques.sort();
 
     // create two arrays: mycounts initialized to 0, mypairs have elements set to all possible pairs of uniques
@@ -3399,7 +3397,7 @@ export function confusionmatrix(matrixdata, classes) {
     legdiv.style.display="inline-block";
     byId('setxLeftPlot').appendChild(legdiv);
 
-    var margin = {top: 20, right: 10, bottom: 0, left: 50};    // Left margin needs not to be hardcoded, but responsive to maximum label length
+    var margin = {top: 30, right: 30, bottom: 0, left: 50};    // Left margin needs not to be hardcoded, but responsive to maximum label length
     function Matrix(options) {
         let width = options.width,
         height = options.height,
@@ -3562,6 +3560,30 @@ export function confusionmatrix(matrixdata, classes) {
         .attr("height", height)
         .style("fill", "url(#gradient)")
         .attr("transform", "translate(0," + margin.top + ")");
+
+        svg.append("text")
+        .attr("transform", "translate(" + (width / 2) + " ," + (0 - 10) + ")")
+        .style("text-anchor", "middle")
+        .text("Predicted Class");
+
+        svg.append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("y", (width + 15) )
+        .attr("x",0 - (height / 2))
+        //.attr("dy", "1em")
+        .style("text-anchor", "middle")
+        .text("Actual Class");
+
+
+
+//    chart_scatter.append("text")
+//    .attr("text-anchor", "middle")  // this makes it easy to centre the text as the transform is applied to the anchor
+//    .attr("transform", "translate(" + padding / 5 + "," + (height / 2) + ")rotate(-90)")  // text is drawn off the screen top left, move down and out and rotate
+//    .text(y_Axis_name)
+//    .style("fill", "#424242")
+//    .style("text-indent","20px")
+//    .style("font-size","12px")
+//    .style("font-weight","bold");
 
         // this y is for the legend
         y = d3.scale.linear()
