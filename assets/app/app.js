@@ -3380,6 +3380,12 @@ export function confusionmatrix(matrixdata, classes) {
     let mainwidth = byId('main').clientWidth;
     let mainheight = byId('main').clientHeight;
 
+
+    let longest = classes.reduce(function (a, b) { return a.length > b.length ? a : b; });
+    //console.log(longest);
+    let leftmarginguess = Math.max(longest.length * 8, 25);  // More correct answer is to make a span, put string inside span, then use jquery to get pixel width of span.
+
+
     let condiv = document.createElement('div');
     condiv.id="confusioncontainer";
     condiv.style.display="inline-block";
@@ -3397,7 +3403,9 @@ export function confusionmatrix(matrixdata, classes) {
     legdiv.style.display="inline-block";
     byId('setxLeftPlot').appendChild(legdiv);
 
-    var margin = {top: 30, right: 30, bottom: 0, left: 50};    // Left margin needs not to be hardcoded, but responsive to maximum label length
+    var margin = {top: 30, right: 30, bottom: 0, left: leftmarginguess};    // Left margin needs not to be hardcoded, but responsive to maximum label length
+
+
     function Matrix(options) {
         let width = options.width,
         height = options.height,
@@ -3574,17 +3582,6 @@ export function confusionmatrix(matrixdata, classes) {
         .style("text-anchor", "middle")
         .text("Actual Class");
 
-
-
-//    chart_scatter.append("text")
-//    .attr("text-anchor", "middle")  // this makes it easy to centre the text as the transform is applied to the anchor
-//    .attr("transform", "translate(" + padding / 5 + "," + (height / 2) + ")rotate(-90)")  // text is drawn off the screen top left, move down and out and rotate
-//    .text(y_Axis_name)
-//    .style("fill", "#424242")
-//    .style("text-indent","20px")
-//    .style("font-size","12px")
-//    .style("font-weight","bold");
-
         // this y is for the legend
         y = d3.scale.linear()
         .range([height, 0])
@@ -3666,7 +3663,7 @@ export function confusionmatrix(matrixdata, classes) {
            labels    : classes,
            start_color : '#ffffff',
            end_color : '#e67e22',
-           width : mainwidth * .41,      // Need to not be hard coded
+           width : mainwidth * .41 + 25 - leftmarginguess,      // Need to not be hard coded
            height : mainheight * .6,    // Need to not be hard coded
            widthLegend : mainwidth*.05
            });
