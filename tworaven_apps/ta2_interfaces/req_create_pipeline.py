@@ -1,4 +1,5 @@
 import json
+import time
 from os.path import join
 from collections import OrderedDict
 
@@ -89,15 +90,21 @@ def pipeline_create(info_str=None):
     # Send the gRPC request
     # --------------------------------
     messages = []
+
     try:
-        for reply in core_stub.CreatePipelines(req):
+        for reply in core_stub.CreatePipelines(req, timeout=60):
             user_msg = MessageToJson(reply, including_default_value_fields=True)
             messages.append(user_msg)
             print('msg received #%d' % len(messages))
-    except grpc.RpcError as ex:
-        return get_reply_exception_response(str(ex))
-    except Exception as ex:
-        return get_reply_exception_response(str(ex))
+
+    except grpc.RpcError as err_obj:
+        # we're purposely breaking here as new grpc svc being built
+        if str(err_obj).find('StatusCode.DEADLINE_EXCEEDED') > -1:
+            pass
+        else:
+            return get_reply_exception_response(str(err_obj))
+    except Exception as err_obj:
+        return get_reply_exception_response(str(err_obj))
 
     success, return_str = MessageFormatter.format_messages(\
                                     messages,
