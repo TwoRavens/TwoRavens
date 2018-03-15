@@ -333,23 +333,6 @@ function rightpanel(mode) {
     });
 }
 
-let footer = () => {
-    return m(Footer, {
-        contents: [
-            m("a#logID[href=somelink][target=_blank]", "Replication"),
-            m("span[style=color:#337ab7]", " | "),
-            // dev links...
-            m("a[href='/dev-raven-links'][target=_blank]", "raven-links"),
-            //m("a[style=margin-right: 0.5em]",
-            //  {onclick: app.record_user_metadata},
-            //  "record-metadata"),
-            m("span[style=color:#337ab7]", " | "),
-            m("span[style=color:#337ab7]", "TA2: " + TA2_SERVER),
-            m("span[style=color:#337ab7]", " | "),
-            m("span[style=color:#337ab7]", "TA3TA2 api: " + TA3TA2_API_VERSION)
-        ]
-    })
-};
 
 let glyph = (icon, unstyled) => m(
     `span.glyphicon.glyphicon-${icon}` + (unstyled ? '' : '[style=color: #818181; font-size: 1em; pointer-events: none]'));
@@ -416,6 +399,7 @@ class Body {
 
         return m('main',
             this.header(mode),
+            this.footer(mode),
             m(`#main.left.carousel.slide.svg-leftpanel.svg-rightpanel[style=overflow: hidden]`,
               m("#innercarousel.carousel-inner", {style: {height: `calc(100% + ${app.marginTopCarousel}px)`}},
                 m('#m0.item.active', {style: {height: '100%', 'text-align': "center"}},
@@ -458,7 +442,7 @@ class Body {
                      ['gr1Button', 'zgroup1', 'Group 1'],
                      ['gr2Button', 'zgroup2', 'Group 2']]}),
               m(Subpanel, {title: "History"}),
-              footer(),
+              //footer(),
               leftpanel(mode),
               rightpanel(mode)));
     }
@@ -549,14 +533,7 @@ class Body {
                         navBtnGroup('btnTA2.btn-default', _ => app.helpmaterials('manual'), ['Manual ', glyph('book')]),
                     ),
                     navBtn1("btnReset", app.reset, glyph('repeat'), 'Reset'),
-                    navBtn1('btnEndSession', app.endsession, m("span.ladda-label", 'Mark Problem Finished'), 'Mark Problem Finished'),
-                    m(ButtonRadio, {
-                        id: 'modeButtonBar',
-                        attrsAll: {style: {width: '200px', margin: '0 .2em'}, class: 'navbar-right'},
-                        onclick: app.set_mode,
-                        activeSection: mode === undefined ? 'model' : mode,
-                        sections: [{value: 'Model'}, {value: 'Explore'}, {value: 'Results', id: 'btnResultsMode'}]
-                    })),
+                    navBtn1('btnEndSession', app.endsession, m("span.ladda-label", 'Mark Problem Finished'), 'Mark Problem Finished')),
                 m('#tInput', {
                     style: {display: 'none'},
                     onclick: _ => {
@@ -600,6 +577,31 @@ class Body {
                     },
                     transformation('transSel', ['a', 'b']),
                     transformation('transList', app.transformList)))
+        })
+    }
+    
+    footer(mode) {
+        return m(Footer, {
+            contents: [
+                m(ButtonRadio, {
+                        id: 'modeButtonBar',
+                        attrsAll: {style: {width: '200px', margin: '0 .2em'}, class: 'navbar-left'},
+                        onclick: app.set_mode,
+                        activeSection: mode === undefined ? 'model' : mode,
+                        sections: [{value: 'Model'}, {value: 'Explore'}]//, {value: 'Results', id: 'btnResultsMode'}] VJD: commenting out the results mode button since we don't have this yet
+                    }),
+                m("a#logID[href=somelink][target=_blank]", "Replication"),
+                m("span[style=color:#337ab7]", " | "),
+                // dev links...
+                m("a[href='/dev-raven-links'][target=_blank]", "raven-links"),
+                //m("a[style=margin-right: 0.5em]",
+                //  {onclick: app.record_user_metadata},
+                //  "record-metadata"),
+                m("span[style=color:#337ab7]", " | "),
+                m("span[style=color:#337ab7]", "TA2: " + TA2_SERVER),
+                m("span[style=color:#337ab7]", " | "),
+                m("span[style=color:#337ab7]", "TA3TA2 api: " + TA3TA2_API_VERSION)
+            ]
         })
     }
 }
