@@ -2,11 +2,13 @@ import * as app from './app';
 import {setPebbleRadius} from './app';
 import {barsNode, densityNode} from './plots.js';
 
+let force;
 let nodes = [];
 let links = [];
+let circle, path;
 
 // mouse event vars
-var selected_node = null,
+let selected_node = null,
     selected_link = null,
     mousedown_link = null,
     mousedown_node = null,
@@ -19,7 +21,7 @@ function resetMouseVars() {
 }
 
 // update force layout (called automatically each iteration)
-function tick(path, circle) {
+function tick() {
     // draw directed edges with proper padding from node centers
     path.attr('d', d => {
         var deltaX = d.target.x - d.source.x,
@@ -43,14 +45,6 @@ function tick(path, circle) {
         .attr('r', d => setPebbleRadius(d));
 }
 
-function mousedown(d) {
-    // prevent I-bar on drag
-    d3.event.preventDefault();
-    // because :active only works in WebKit?
-    svg.classed('active', true);
-    if (d3.event.ctrlKey || mousedown_node || mousedown_link) return;
-    //restart();
-}
 
 function mousemove(d) {
     if (!mousedown_node)
@@ -72,10 +66,9 @@ function mouseup(d) {
 }
 
 // update graph (called when needed)
-function restart(force, line, line2, visbackground, vis2background, vis, vis2, drag_line, path, circle) {
+function restart(line, line2, visbackground, vis2background, vis, vis2, drag_line) {
     let {forcetoggle, setPebbleCharge, k, zparams, arc3, dvColor, arc4, nomColor, arc1, gr1Color, arcInd1, arcInd2, gr2Color, record_user_metadata} = app;
 
-    // nodes.id is pegged to allNodes, i.e. the order in which variables are read in
     // nodes.index is floating and depends on updates to nodes. a variables index changes when new variables are added.
     circle.call(force.drag);
     if (forcetoggle[0] == "true") {
@@ -298,7 +291,7 @@ function restart(force, line, line2, visbackground, vis2background, vis, vis2, d
             console.log("pebble");
             console.log(d.group2);
             if(d.group1){
-                var len = allNodes.length;
+                var len = nodes.length;
                 var hold = [.6, .2, .9, .8, .1, .3, .4];
                 for(var p = 0; p < d.properties.length;p++){
                     let obj = {
@@ -322,8 +315,7 @@ function restart(force, line, line2, visbackground, vis2background, vis, vis2, d
                         forefront: false
                     };
                     console.log("obj after merge");
-                    console.log(allNodes);
-                    allNodes.push(obj);
+                    nodes.push(obj);
                     nodes.push(obj);
                     console.log(nodes);
                     links.push({
@@ -480,27 +472,40 @@ function restart(force, line, line2, visbackground, vis2background, vis, vis2, d
     record_user_metadata();
 }
 
-export function results_layout(v, v2) {
-    let {gr1Color, gr2Color, RADIUS, height, width, allNodes, fakeClick, myspace} = app;
+export function init() {
+    let {gr1Color, gr2Color, RADIUS, height, width, fakeClick, myspace} = app;
 
-    nodes = allNodes;
-    //nodes = Object.values(allPipelineInfo);
+    nodes = Object.values(app.allPipelineInfo);
+
     // app starts here
-
-    let svg = d3.select('#whitespace');
+    let svg = d3.select('#whitespace0');
     svg.selectAll('*').remove();
-    let [line, line2, visbackground, vis2background, vis, vis2, drag_line, path, circle] = app.setup_svg(svg);
+
+    let [line, line2, visbackground, vis2background, vis, vis2, drag_line, path1, circle1] = app.setup_svg(svg);
+    path = path1;
+    circle = circle1;
+
     svg.attr('id', () => "whitespace".concat(myspace))
         .attr('height', height)
-        .on('mousedown', mousedown)
+        .on('mousedown', d => {
+            // prevent I-bar on drag
+            d3.event.preventDefault();
+            // because :active only works in WebKit?
+            svg.classed('active', true);
+            if (d3.event.ctrlKey || mousedown_node || mousedown_link) {
+                return;
+            }
+            //restart();
+        })
         .on('mouseup', mouseup);
-    let force = d3.layout.force()
+
+    force = d3.layout.force()
         .nodes(nodes)
         .links(links)
         .size([width, height])
         .linkDistance(150)
         .charge(-800)
-        .on('tick', _ => tick(path, circle));
+        .on('tick', tick);
 
     d3.select(window)
         .on('click', () => {
@@ -509,6 +514,6 @@ export function results_layout(v, v2) {
             $('#transSel').fadeOut(100);
         });
 
-    restart(force, line, line2, visbackground, vis2background, vis, vis2, drag_line, path, circle); // initializes force.layout()
+    restart(line, line2, visbackground, vis2background, vis, vis2, drag_line); // initializes force.layout()
     fakeClick();
 }

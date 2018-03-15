@@ -252,6 +252,7 @@ function rightpanel(mode) {
     }
 
     // mode == null (model mode)
+
     let sections = [
         // {
         //     value: 'Models',
@@ -272,7 +273,7 @@ function rightpanel(mode) {
             contents: righttab('metrics', app.d3mMetrics, 'Metric', 'metric')
         },
         {
-            value: 'Set Covar.',
+            value: 'Results',
             display: !app.swandive || app.IS_D3M_DOMAIN ? 'block' : 'none',
             idSuffix: 'Setx',
             contents: [
@@ -305,14 +306,6 @@ function rightpanel(mode) {
                             m('span.ladda-label[style=pointer-events: none]', 'Execute Generation'))),
                     m('#setxLeftBottomRightBottom[style=display:block; float: left; width: 30%; height:40%; overflow: auto; background-color: white]'))
             ]
-        },
-        {
-            value: 'Results',
-            contents: [
-                m("#resultsView.container[style=float: right; overflow: auto; width: 80%; background-color: white; white-space: nowrap]"),
-                m('#modelView[style=display: none; float: left; width: 20%; background-color: white]'),
-                m("p#resultsHolder[style=padding: .5em 1em]")
-            ]
         }
     ];
 
@@ -325,8 +318,8 @@ function rightpanel(mode) {
             'Task Type': '300px',
             'Subtype': '300px',
             'Metrics': '300px',
-            'Set Covar.': '900px',
-            'Results': '300px'
+       //     'Set Covar.': '900px',
+            'Results': '900px'
         }[app.rightTab],
         contents: m(MenuTabbed, {
             id: 'rightpanelMenu',
@@ -618,7 +611,7 @@ m.route(document.body, '/model', {
         onmatch() {
             app.set_mode('results');
             state.get_pipelines();
-            layout.results_layout(false, true);
+            layout.init();
         },
         render() {
             return m(Body, {mode: 'results'});

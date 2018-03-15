@@ -100,7 +100,7 @@ let ind1 = [(RADIUS+30) * Math.cos(1.3), -1*(RADIUS+30) * Math.sin(1.3), 5];
 let ind2 = [(RADIUS+30) * Math.cos(1.1), -1*(RADIUS+30) * Math.sin(1.1), 5];
 
 // space index
-let myspace = 0;
+export let myspace = 0;
 
 export let forcetoggle = ["true"];
 export let locktoggle = true;
@@ -785,7 +785,7 @@ export function setup_svg(svg) {
         .style('stroke', gr2Color)
         .style('stroke-width', 5)
         .attr("marker-end", "url(#group2-arrow)");
-    var visbackground = d3.select("#whitespace").append("svg")
+    var visbackground = svg.append("svg")
         .attr("width", width)
         .attr("height", height);
     visbackground.append("path") // note lines, are behind group hulls of which there is a white and colored semi transparent layer
@@ -795,7 +795,7 @@ export function setup_svg(svg) {
         .style("stroke-width", 2.5*RADIUS)
         .style('stroke-linejoin','round')
         .style("opacity", 1);
-    var vis2background = d3.select("#whitespace").append("svg")
+    var vis2background = svg.append("svg")
         .attr("width", width)
         .attr("height", height);
     vis2background.append("path")
@@ -805,7 +805,7 @@ export function setup_svg(svg) {
         .style("stroke-width", 2.5*RADIUS)
         .style('stroke-linejoin','round')
         .style("opacity", 1);
-    var vis = d3.select("#whitespace").append("svg")
+    var vis = svg.append("svg")
         .attr("width", width)
         .attr("height", height);
     vis.append("path")
@@ -814,7 +814,7 @@ export function setup_svg(svg) {
         .style("stroke", gr1Color)
         .style("stroke-width", 2.5*RADIUS)
         .style('stroke-linejoin','round');
-    var vis2 = d3.select("#whitespace").append("svg")
+    var vis2 = svg.append("svg")
         .attr("width", width)
         .attr("height", height);
     vis2.append("path")
@@ -833,7 +833,7 @@ export function setup_svg(svg) {
 }
 
 /** needs doc */
-function layout(v, v2) {
+export function layout(v, v2) {
     var myValues = [];
     nodes = [];
     links = [];
@@ -1978,7 +1978,7 @@ function onPipelineCreate(PipelineCreateResult, rookpipe) {
     /////////////////////////
 
     if (IS_D3M_DOMAIN){
-        byId("btnResults").click();
+        byId("btnSetx").click();   // Was "btnResults" - changing to simplify user experience for testing. 
     };
 
     //adding rookpipe to allPipelineInfo
@@ -2108,7 +2108,7 @@ export async function estimate(btn) {
 
 
             // programmatic click on Results button
-            $("#btnResults").trigger("click");
+            $("#btnSetx").trigger("click");      // Was "btnResults" - changing to simplify user experience for testing. 
 
             let model = "Model".concat(modelCount = modelCount + 1);
 
@@ -3269,24 +3269,21 @@ export function genconfdata (dvvalues, predvals) {
 
     // dvvalues are generally numeric
     dvvalues = dvvalues.map(String);
+
     // predvals are generally strings
     predvals = predvals.map(String);
-
-    function onlyUnique(value, index, self) {
-        return self.indexOf(value) === index;
-    }
-
 
     let mycounts = [];
     let mypairs = [];
 
     // combine actuals and predicted, and get all unique elements
     let myuniques = dvvalues.concat(predvals);
-
-    myuniques= [...new Set(myuniques)];
-    //equivalent to: myuniques = Array.from(new Set(myuniques));
-    //was: myuniques = myuniques.filter(onlyUnique);    
-
+    myuniques= [...new Set(myuniques)];                 //equivalent to: myuniques = Array.from(new Set(myuniques));
+    //was: 
+    //  function onlyUnique(value, index, self) {
+    //    return self.indexOf(value) === index;
+    //  }
+    //  myuniques = myuniques.filter(onlyUnique);    
     myuniques = myuniques.sort();
 
     // create two arrays: mycounts initialized to 0, mypairs have elements set to all possible pairs of uniques
@@ -3296,13 +3293,13 @@ export function genconfdata (dvvalues, predvals) {
         let temppair = [];
         for(let j = 0; j < myuniques.length; j++) {
             mycounts.push(0);
-            mypairs.push(+myuniques[i]+','+myuniques[j]);
+            mypairs.push(myuniques[i]+','+myuniques[j]);
         }
     }
 
     // line up actuals and predicted, and increment mycounts at index where mypair has a match for the 'actual,predicted'
     for (let i = 0; i < dvvalues.length; i++) {
-        let temppair = +dvvalues[i]+','+predvals[i];
+        let temppair = dvvalues[i]+','+predvals[i];
         let myindex = mypairs.indexOf(temppair);
         mycounts[myindex] += 1;
     }
@@ -3325,6 +3322,12 @@ export function confusionmatrix(matrixdata, classes) {
     let mainwidth = byId('main').clientWidth;
     let mainheight = byId('main').clientHeight;
 
+
+    let longest = classes.reduce(function (a, b) { return a.length > b.length ? a : b; });
+    //console.log(longest);
+    let leftmarginguess = Math.max(longest.length * 8, 25);  // More correct answer is to make a span, put string inside span, then use jquery to get pixel width of span.
+
+
     let condiv = document.createElement('div');
     condiv.id="confusioncontainer";
     condiv.style.display="inline-block";
@@ -3342,7 +3345,9 @@ export function confusionmatrix(matrixdata, classes) {
     legdiv.style.display="inline-block";
     byId('setxLeftPlot').appendChild(legdiv);
 
-    var margin = {top: 20, right: 10, bottom: 0, left: 50};    // Left margin needs not to be hardcoded, but responsive to maximum label length
+    var margin = {top: 30, right: 30, bottom: 0, left: leftmarginguess};    // Left margin needs not to be hardcoded, but responsive to maximum label length
+
+
     function Matrix(options) {
         let width = options.width,
         height = options.height,
@@ -3506,6 +3511,19 @@ export function confusionmatrix(matrixdata, classes) {
         .style("fill", "url(#gradient)")
         .attr("transform", "translate(0," + margin.top + ")");
 
+        svg.append("text")
+        .attr("transform", "translate(" + (width / 2) + " ," + (0 - 10) + ")")
+        .style("text-anchor", "middle")
+        .text("Predicted Class");
+
+        svg.append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("y", (width + 15) )
+        .attr("x",0 - (height / 2))
+        //.attr("dy", "1em")
+        .style("text-anchor", "middle")
+        .text("Actual Class");
+
         // this y is for the legend
         y = d3.scale.linear()
         .range([height, 0])
@@ -3587,7 +3605,7 @@ export function confusionmatrix(matrixdata, classes) {
            labels    : classes,
            start_color : '#ffffff',
            end_color : '#e67e22',
-           width : mainwidth * .41,      // Need to not be hard coded
+           width : mainwidth * .41 + 25 - leftmarginguess,      // Need to not be hard coded
            height : mainheight * .6,    // Need to not be hard coded
            widthLegend : mainwidth*.05
            });

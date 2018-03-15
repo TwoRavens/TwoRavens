@@ -47,6 +47,12 @@ class MessageUtil(object):
             except requests.exceptions.ConnectionError:
                 err_msg = 'MessageListener not responding: %s' % mlistener.web_url
                 # log this
+                print(err_msg)
+                continue
+            except Exception as err_obj:
+                err_msg = 'MessageListener not responding: %s; %s' % \
+                          (mlistener.web_url, err_obj)
+                print(err_msg)
                 continue
 
     @staticmethod
