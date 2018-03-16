@@ -2536,10 +2536,19 @@ export function legend() {
    programmatically deselect every selected variable
 */
 export function erase() {
+    console.log("erasing!")
     setLeftTab('Variables');
+    
+    console.log($("#varList").children()[1].id);
+    console.log($("#varList").children()[2].id);
+    console.log(zparams.zdv.concat(zparams.znom, zparams.zvars));
+
     $("#varList").children().each(function() {
-        if (zparams.zdv.concat(zparams.znom, zparams.zvars).includes(this.id))
+        if (zparams.zdv.concat(zparams.znom, zparams.zvars).includes(this.id)){
+          console.log("something happened");
+          console.log(this.id);
             clickVar({target: this});
+          }
     });
 }
 
