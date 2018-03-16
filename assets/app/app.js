@@ -275,7 +275,7 @@ export let mytour = {
                       <p>These messages will teach you the steps to take to find and submit a solution.</p>`),
                 step("btnReset", "bottom", "Restart Any Problem Here",
                      '<p>You can always start a problem over by using this reset button.</p>'),
-                step("btnSubset", "right", "Start Task 1",
+                step("btnDiscovery", "right", "Start Task 1",
                      `<p>This Problem Discovery button allows you to start Task 1 - Problem Discovery.</p>
                      <p>Generally, as a tip, the Green button is the next button you need to press to move the current task forward.</p>
                      <p>Click this button to see a list of problems that have been discovered in the dataset.</p>
@@ -633,6 +633,11 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     // Requires that `res` built in 8. above still exists.  Should make this better.
     if(!swandive) {
         disco = discovery(res);
+
+        // Kick off discovery button as green for user guidance
+        $("#btnDiscovery").removeClass("btn-default");   
+        $("#btnDiscovery").addClass("btn-success");      // Would be better to attach this as a class at creation, but don't see where it is created
+
         console.log(disco);
     }
 
