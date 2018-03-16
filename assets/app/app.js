@@ -633,6 +633,11 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     // Requires that `res` built in 8. above still exists.  Should make this better.
     if(!swandive) {
         disco = discovery(res);
+
+        // Kick off discovery button as green for user guidance
+        $("#btnDiscovery").removeClass("btn-default");   
+        $("#btnDiscovery").addClass("btn-success");      // Would be better to attach this as a class at creation, but don't see where it is created
+
         console.log(disco);
     }
 
