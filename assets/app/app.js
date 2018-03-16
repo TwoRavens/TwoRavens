@@ -4112,7 +4112,7 @@ export let setCheckedProblem = (problem) => {
 
 export async function submitDiscProb() {
 
-    let table = document.getElementById("discoveryTable").querySelector('table');
+    let table = document.getElementById("discoveryTable"); //.querySelector('table');    // Seems to already be a table, and can't find table
     console.log(table.rows);
     let checked = [];
 
