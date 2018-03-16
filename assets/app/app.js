@@ -2537,9 +2537,10 @@ export function legend() {
 */
 export function erase() {
     setLeftTab('Variables');
-    $("#varList").children().each(function() {
-        if (zparams.zdv.concat(zparams.znom, zparams.zvars).includes(this.id))
-            clickVar({target: this});
+    
+    valueKey.forEach(function(element){
+      if (zparams.zdv.concat(zparams.znom, zparams.zvars).includes(element))   // names start with varList now
+        clickVar(element);
     });
 }
 
