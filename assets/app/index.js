@@ -50,7 +50,7 @@ function leftpanel(mode) {
         side: 'left',
         label: 'Data Selection',
         hover: true,
-        width: {'Variables': '300px', 'Discovery': '600px', 'Summary': '300px'}[app.leftTab],
+        width: app.modelLeftPanelWidths[app.leftTab],
         contents: m(MenuTabbed, {
             id: 'leftpanelMenu',
             attrsAll: {style: {height: 'calc(100% - 39px)'}},
@@ -238,7 +238,7 @@ function rightpanel(mode) {
             side: 'right',
             label: 'Result Exploration',
             hover: true,
-            width: {'Univariate': '700px', 'Bivariate': '75%'}[app.rightTabExplore],
+            width: app.exploreRightPanelWidths[app.rightTabExplore],
             contents: m(MenuTabbed, {
                 id: 'rightPanelMenuExplore',
                 currentTab: app.rightTabExplore,
@@ -313,14 +313,7 @@ function rightpanel(mode) {
         side: 'right',
         label: 'Model Selection',
         hover: true,
-        width: {
-            'Models': '300px',
-            'Task Type': '300px',
-            'Subtype': '300px',
-            'Metrics': '300px',
-       //     'Set Covar.': '900px',
-            'Results': '900px'
-        }[app.rightTab],
+        width: app.modelRightPanelWidths[app.rightTab],
         contents: m(MenuTabbed, {
             id: 'rightpanelMenu',
             currentTab: app.rightTab,
@@ -404,7 +397,7 @@ class Body {
               m("#innercarousel.carousel-inner", {style: {height: `calc(100% + ${app.marginTopCarousel}px)`}},
                 m('#m0.item.active', {style: {height: '100%', 'text-align': "center"}},
                   m('svg#whitespace'))),
-              m("#spacetools.spaceTool[style=z-index: 16]",
+              m("#spacetools.spaceTool", {style: {right: app.panelWidth['right'], 'z-index': 16}},
                 spaceBtn('btnLock.active', app.lockDescription, 'Lock selection of problem description', 'pencil'),
                 spaceBtn('btnJoin', _ => {
                     let links = [];

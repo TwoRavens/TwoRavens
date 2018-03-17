@@ -3,6 +3,7 @@ import m from 'mithril';
 import {bars, barsNode, barsSubset, density, densityNode, selVarColor} from './plots.js';
 import {heightHeader} from "../common/app/common";
 import {searchIndex} from "./views/Search";
+import * as common from "../common/app/common";
 
 // hostname default - the app will use it to obtain the variable metadata
 // (ddi) and pre-processed data info if the file id is supplied as an
@@ -35,6 +36,9 @@ export function set_mode(mode) {
     mode = mode.toLowerCase()
 
     if (currentMode !== mode) {
+        updateRightPanelWidth()
+        updateLeftPanelWidth()
+
         currentMode = mode;
         m.route.set('/' + mode.toLowerCase());
     }
@@ -74,8 +78,57 @@ export let summaryHold = false;
 export let rightTab = 'Task Type'; // current tab in right panel
 export let rightTabExplore = 'Univariate';
 
-export let setRightTab = (tab) => rightTab = tab;
-export let setRightTabExplore = (tab) => rightTabExplore = tab;
+export let modelLeftPanelWidths = {
+    'Variables': '300px',
+    'Discovery': '600px',
+    'Summary': '300px'
+};
+
+export let modelRightPanelWidths = {
+    'Models': '300px',
+    'Task Type': '300px',
+    'Subtype': '300px',
+    'Metrics': '300px',
+    //     'Set Covar.': '900px',
+    'Results': '900px'
+};
+
+export let exploreRightPanelWidths = {
+    'Univariate': '700px',
+    'Bivariate': '75%'
+};
+
+export let setRightTab = (tab) => { rightTab = tab; updateRightPanelWidth() }
+export let setRightTabExplore = (tab) => { rightTabExplore = tab; updateRightPanelWidth() }
+
+// panelWidth is meant to be read only
+export let panelWidth = {
+    'left': '0',
+    'right': '0'
+}
+
+let updateRightPanelWidth = () => {
+    if (common.panelOpen['right']) {
+        let tempWidth = {
+            'model': modelRightPanelWidths[rightTab],
+            'explore': exploreRightPanelWidths[rightTabExplore]
+        }[currentMode]
+
+        panelWidth['right'] = `calc(${common.panelMargin * 2}px + ${tempWidth})`
+    }
+    else panelWidth['right'] = `calc(${common.panelMargin * 2}px + 16px)`
+}
+let updateLeftPanelWidth = () => {
+    if (common.panelOpen['left'])
+        panelWidth['left'] = `calc(${common.panelMargin * 2}px + ${modelLeftPanelWidths[leftTab]})`
+    else panelWidth['left'] = `calc(${common.panelMargin * 2}px + 16px)`
+}
+
+updateRightPanelWidth()
+updateLeftPanelWidth()
+
+common.setPanelCallback('right', updateRightPanelWidth);
+common.setPanelCallback('left', updateLeftPanelWidth);
 
 // transformation toolbar options
 let t, typeTransform;
@@ -2547,6 +2600,7 @@ export function erase() {
 /** needs doc */
 export let setLeftTab = (tab) => {
     leftTab = tab;
+    updateLeftPanelWidth()
 
     if (tab === "Discovery"){
         probtable.length = 0;
