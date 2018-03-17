@@ -80,7 +80,7 @@ export let rightTabExplore = 'Univariate';
 
 export let modelLeftPanelWidths = {
     'Variables': '300px',
-    'Discovery': '600px',
+    'Discovery': 'auto',
     'Summary': '300px'
 };
 

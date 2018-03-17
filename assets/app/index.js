@@ -92,7 +92,7 @@ function leftpanel(mode) {
                             onclickRow: app.setSelectedProblem,
                             checkboxes: app.checkedProblems,
                             onclickCheckbox: app.setCheckedProblem,
-                            attrsAll: {style: {height: '80%', overflow: 'auto', display: 'block'}}
+                            attrsAll: {style: {height: '80%', overflow: 'auto', display: 'block', 'margin-right': '16px'}}
                         }),
                         m('textarea#discoveryInput[style=display:block; float: left; width: 100%; height:calc(20% - 35px); overflow: auto; background-color: white]'),
                         m(Button, {id: 'btnSave', onclick:_=>app.saveDisc('btnSave'),title: 'Saves your revised problem description.'}, 'Save Desc.'),
