@@ -104,8 +104,7 @@ function leftpanel(mode) {
                             attrsAll: {style: {height: '80%', overflow: 'auto', display: 'block', 'margin-right': '16px', 'margin-bottom': 0}}
                         }),
                         m('textarea#discoveryInput[style=display:block; float: left; width: 100%; height:calc(20% - 35px); overflow: auto; background-color: white]', {
-                            value: app.disco[app.selectedPipeline[app.currentMode]] === undefined ? ''
-                                : app.disco[app.selectedProblem].description
+                            value: app.disco[app.selectedProblem] === undefined ? '' : app.disco[app.selectedProblem].description
                         }),
                         m(Button, {id: 'btnSave', onclick:_=>app.saveDisc('btnSave'),title: 'Saves your revised problem description.'}, 'Save Desc.'),
                         m(Button, {id: 'btnSubmitDisc', classes: 'btn-success', style: 'float: right', onclick:_=>app.submitDiscProb(), title: 'Submit all checked discovered problems.'}, 'Submit Disc. Probs.')
