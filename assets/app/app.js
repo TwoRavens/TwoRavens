@@ -27,7 +27,7 @@ export let task1_finished = false;
 export let task2_finished = false;
 export let univariate_finished = false;
 
-let currentMode = 'model';
+export let currentMode = 'model';
 let is_explore_mode = false;
 let is_results_mode = false;
 
@@ -1976,11 +1976,19 @@ function tabulate(data, columns, divid) {
     return table;
 }
 
-export let selectedResult;
-export let setSelectedResult = (result) => selectedResult = result;
+// when selected, the key/value [mode]: [pipelineID] is set.
+export let selectedPipeline = {};
+export let setSelectedPipeline = (result) => {
+    selectedPipeline[currentMode] = result;
+    if (currentMode === 'model') {
+        // the 'find' function would have been nice here-- es6 only. Find pipeline with UID, then pass pipeline_id
+        let pipeline = pipelineTable.filter((row) => row[0] == result)[0]
+        resultsplotinit(pipeline[1]);
+    }
+}
 
-export let resultsHeader = ['PipelineID', 'Metric', 'Score'];
-export let resultsTable;
+export let pipelineHeader = ['Hidden_UID', 'PipelineID', 'Metric', 'Score'];
+export let pipelineTable;
 
 function onPipelineCreate(PipelineCreateResult, rookpipe) {
     // rpc GetExecutePipelineResults(PipelineExecuteResultsRequest) returns (stream PipelineExecuteResult) {}
@@ -2004,7 +2012,7 @@ function onPipelineCreate(PipelineCreateResult, rookpipe) {
     console.log(allPipelineInfo);
     // to get all pipeline ids: Object.keys(allPipelineInfo)
 
-    resultsTable = [];
+    pipelineTable = [];
     for(var key in allPipelineInfo) {
         // this will NOT report the pipeline to user if pipeline has failed, if pipeline is still running, or if it has not completed
         if(allPipelineInfo[key].responseInfo.status.details == "Pipeline Failed")  {
@@ -2028,19 +2036,14 @@ function onPipelineCreate(PipelineCreateResult, rookpipe) {
                 myid=key;
                 mymetric=myscores[i].metric;
                 myval=+myscores[i].value.toFixed(3);
-                resultsTable.push([resultsTable.length, myid, mymetric, myval])
+                pipelineTable.push([pipelineTable.length, myid, mymetric, myval])
             }
         } else { // if progressInfo is not "COMPLETED"
             continue;
         }
     }
 
-    console.table(resultsTable, [1, 2, 3]);
-    // render the tables
-
-    // tabulate(resultstable, ['PipelineID', 'Metric', 'Score'], '#tabResults');
-    // tabulate(resultstable, ['PipelineID', 'Metric', 'Score'], '#setxRight');
-    /////////////////////////
+    console.table(pipelineTable, [1, 2, 3]);
 
     if (IS_D3M_DOMAIN){
         byId("btnSetx").click();   // Was "btnResults" - changing to simplify user experience for testing. 
@@ -2051,10 +2054,10 @@ function onPipelineCreate(PipelineCreateResult, rookpipe) {
 
     // this initializes the results windows using the first pipeline ID
     if(!swandive) {
-        resultsplotinit(resultsTable[0][1]);
+        resultsplotinit(pipelineTable[0][1]);
     }
     // VJD: these two functions are built and (I believe) functioning as intended. These exercise two core API calls that are currently unnecessary
-    //exportpipeline(resultstable[1].PipelineID);
+    //exportpipeline(pipelineTable[1][1]);
     //listpipelines();
 
     // VJD: this is a third core API call that is currently unnecessary

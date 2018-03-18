@@ -35,6 +35,9 @@ export default class Table {
         showUID = showUID !== false; // Default is 'true'
         if (typeof data === 'function') data = data();
 
+        // if UIDs are hidden, remove the first header value
+        if (!showUID) headers.shift();
+
         return m(`table.table#${id}`, mergeAttributes({style: {width: '100%'}}, attrsAll), [
             tableTags,
             headers ? m('tr', {style: {width: '100%', background: menuColor}}, [

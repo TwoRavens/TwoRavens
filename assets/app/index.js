@@ -96,7 +96,7 @@ function leftpanel(mode) {
                     contents: [
                         m(Table, {
                             id: 'discoveryTable',
-                            headers: ['Target', 'Predictors', 'Task', 'Metric', discoveryAllCheck],
+                            headers: ['Hidden_UID', 'Target', 'Predictors', 'Task', 'Metric', discoveryAllCheck],
                             data: discoveryTableData,
                             activeRow: app.selectedProblem,
                             onclick: app.setSelectedProblem,
@@ -104,7 +104,8 @@ function leftpanel(mode) {
                             attrsAll: {style: {height: '80%', overflow: 'auto', display: 'block', 'margin-right': '16px', 'margin-bottom': 0}}
                         }),
                         m('textarea#discoveryInput[style=display:block; float: left; width: 100%; height:calc(20% - 35px); overflow: auto; background-color: white]', {
-                            value: app.disco[app.selectedProblem] === undefined ? '' : app.disco[app.selectedProblem].description
+                            value: app.disco[app.selectedPipeline[app.currentMode]] === undefined ? ''
+                                : app.disco[app.selectedProblem].description
                         }),
                         m(Button, {id: 'btnSave', onclick:_=>app.saveDisc('btnSave'),title: 'Saves your revised problem description.'}, 'Save Desc.'),
                         m(Button, {id: 'btnSubmitDisc', classes: 'btn-success', style: 'float: right', onclick:_=>app.submitDiscProb(), title: 'Submit all checked discovered problems.'}, 'Submit Disc. Probs.')
@@ -193,12 +194,12 @@ function rightpanel(mode) {
                     m('#result_prompt', {style: {display: app.explored ? 'none' : 'block'}}, `Click 'Explore' for interactive plots.`),
                     m('#modelView_Container', {style: `width: 100%; float: left; white-space: nowrap;`},
                         m('#modelView', {style: 'width: 100%; float: left'})),
-                    app.resultsTable ? m(Table, {
-                        id: 'resultsTableExplore',
-                        headers: app.resultsHeader,
-                        data: app.resultsTable,
-                        activeRow: app.selectedResult,
-                        onclick: app.setSelectedResult,
+                    app.pipelineTable ? m(Table, {
+                        id: 'pipelineTableExplore',
+                        headers: app.pipelineHeader,
+                        data: app.pipelineTable,
+                        activeRow: app.selectedPipeline[app.currentMode],
+                        onclick: app.setSelectedPipeline,
                         showUID: false
                     }) : undefined,
                     m('#result_left',
@@ -297,12 +298,12 @@ function rightpanel(mode) {
             idSuffix: 'Setx',
             contents: [
                 m('#setxRight[style=display:block; float: right; width: 25%; height:100%; background-color: white]',
-                    app.resultsTable ? m(Table, {
-                        id: 'resultsTable',
-                        headers: app.resultsHeader,
-                        data: app.resultsTable,
-                        activeRow: app.selectedResult,
-                        onclick: app.setSelectedResult,
+                    app.pipelineTable ? m(Table, {
+                        id: 'pipelineTable',
+                        headers: app.pipelineHeader,
+                        data: app.pipelineTable,
+                        activeRow: app.selectedPipeline[app.currentMode],
+                        onclick: app.setSelectedPipeline,
                         showUID: false
                     }) : undefined),
                 m('#setxTop[style=display:block; float: left; width: 75%; height:10%; overflow: auto; background-color: white]',
