@@ -46,6 +46,16 @@ function leftpanel(mode) {
         return results.leftpanel(Object.keys(app.allPipelineInfo));
     }
 
+    let discoveryAllCheck = m('input#discoveryAllCheck[type=checkbox]', {
+        onclick: m.withAttr("checked", (checked) => app.setCheckedDiscoveryProblem(checked)),
+        checked: app.probtable.length === app.checkedDiscoveryProblems.size
+    })
+
+    let discoveryTableData = app.probtable.map((problem) => [...problem, m('input[type=checkbox]', {
+        onclick: m.withAttr("checked", (checked) => app.setCheckedDiscoveryProblem(checked, problem[0])),
+        checked: app.checkedDiscoveryProblems.has(problem[0])
+    })])
+
     return m(Panel, {
         side: 'left',
         label: 'Data Selection',
@@ -86,15 +96,16 @@ function leftpanel(mode) {
                     contents: [
                         m(Table, {
                             id: 'discoveryTable',
-                            headers: ['Target', 'Predictors', 'Task', 'Metric'],
-                            data: app.probtable,
+                            headers: ['Target', 'Predictors', 'Task', 'Metric', discoveryAllCheck],
+                            data: discoveryTableData,
                             activeRow: app.selectedProblem,
-                            onclickRow: app.setSelectedProblem,
-                            checkboxes: app.checkedProblems,
-                            onclickCheckbox: app.setCheckedProblem,
-                            attrsAll: {style: {height: '80%', overflow: 'auto', display: 'block', 'margin-right': '16px'}}
+                            onclick: app.setSelectedProblem,
+                            showUID: false,
+                            attrsAll: {style: {height: '80%', overflow: 'auto', display: 'block', 'margin-right': '16px', 'margin-bottom': 0}}
                         }),
-                        m('textarea#discoveryInput[style=display:block; float: left; width: 100%; height:calc(20% - 35px); overflow: auto; background-color: white]'),
+                        m('textarea#discoveryInput[style=display:block; float: left; width: 100%; height:calc(20% - 35px); overflow: auto; background-color: white]', {
+                            value: app.disco[app.selectedProblem] === undefined ? '' : app.disco[app.selectedProblem].description
+                        }),
                         m(Button, {id: 'btnSave', onclick:_=>app.saveDisc('btnSave'),title: 'Saves your revised problem description.'}, 'Save Desc.'),
                         m(Button, {id: 'btnSubmitDisc', classes: 'btn-success', style: 'float: right', onclick:_=>app.submitDiscProb(), title: 'Submit all checked discovered problems.'}, 'Submit Disc. Probs.')
                     ]
@@ -182,6 +193,14 @@ function rightpanel(mode) {
                     m('#result_prompt', {style: {display: app.explored ? 'none' : 'block'}}, `Click 'Explore' for interactive plots.`),
                     m('#modelView_Container', {style: `width: 100%; float: left; white-space: nowrap;`},
                         m('#modelView', {style: 'width: 100%; float: left'})),
+                    app.resultsTable ? m(Table, {
+                        id: 'resultsTableExplore',
+                        headers: app.resultsHeader,
+                        data: app.resultsTable,
+                        activeRow: app.selectedResult,
+                        onclick: app.setSelectedResult,
+                        showUID: false
+                    }) : undefined,
                     m('#result_left',
                         {style: {display: app.explored ? 'block' : 'none',
                                 "width": "50%", "height": "100%",
@@ -277,7 +296,15 @@ function rightpanel(mode) {
             display: !app.swandive || app.IS_D3M_DOMAIN ? 'block' : 'none',
             idSuffix: 'Setx',
             contents: [
-                m('#setxRight[style=display:block; float: right; width: 25%; height:100%; background-color: white]'),
+                m('#setxRight[style=display:block; float: right; width: 25%; height:100%; background-color: white]',
+                    app.resultsTable ? m(Table, {
+                        id: 'resultsTable',
+                        headers: app.resultsHeader,
+                        data: app.resultsTable,
+                        activeRow: app.selectedResult,
+                        onclick: app.setSelectedResult,
+                        showUID: false
+                    }) : undefined),
                 m('#setxTop[style=display:block; float: left; width: 75%; height:10%; overflow: auto; background-color: white]',
                     m("button.btn.btn-default.btn-xs#btnPredPlot[type='button']", {
                         onclick: () => app.showPredPlot('btnPredPlot'),
@@ -572,7 +599,7 @@ class Body {
                     transformation('transList', app.transformList)))
         })
     }
-    
+
     footer(mode) {
         return m(Footer, {
             contents: [
