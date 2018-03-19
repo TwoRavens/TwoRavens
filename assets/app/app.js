@@ -3041,7 +3041,8 @@ export let fakeClick = () => {
 */
 export async function endsession() {
 
-    let table = document.getElementById("tabResults").getElementsByTagName('table')[0];
+    let table = document.getElementById("setxRight").getElementsByTagName('table')[0];
+
     if(typeof table === 'undefined') {
         alert("No pipelines exist. Cannot mark problem as complete.")
         return;
