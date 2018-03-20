@@ -1,6 +1,6 @@
-import m from 'mithril'
+import m from 'mithril';
 
-import {varColor, selVarColor, mergeAttributes} from "../common";
+import {selVarColor, mergeAttributes, menuColor} from "../common";
 
 // Interface specification
 //
@@ -8,59 +8,47 @@ import {varColor, selVarColor, mergeAttributes} from "../common";
 // m(Table, {
 //     id: id (String),
 //     headers: ['col1Header', 'col2Header'],
-//     data: [['row1col1', 'row1col2'], ['row2col1', 'row2col2']],
-//     activeRow: 'row1col1',
-//     onclickRow: (row) => console.log(row + " was clicked."),
-//     checkboxes: Set(['row1col1']),
-//     onclickCheckbox: (checkbox) => console.log(row + "was checked/unchecked"),
+//     data: [['row1col1', 'row1col2'], ['row2col1', 'row2col2']] or function
+//     activeRow: 'row1col1', (optional)
+//     onclick: (uid, colID) => console.log(uid + " row was clicked, column number " + colID + " was clicked"), (optional)
+//     showUID: true | false, (optional)
+//
+//     attrsAll: { apply attributes to all divs },(optional)
+//     attrsRows: { apply attributes to each row }, (optional)
+//     attrsCells: { apply attributes to each cell } (optional)
+//     tableTags: [ m('colgroup', ...), m('caption', ...), m('tfoot', ...)]
 //     })
 // ```
 
+// The UID for the table is the key for identifying a certain row.
+// The UID is the first column, and its value is passed in the onclick callback.
+// The first column may be hidden via showUID: false. This does not remove the first header
+
+// Table tags allows passing colgroups, captions, etc. into the table manually. Can be a single element or list
+
 export default class Table {
-
     view(vnode) {
-        let {id, headers, data, attrsAll, attrsRows} = vnode.attrs;
+        let {id, data, headers, activeRow, onclick, showUID} = vnode.attrs;
+        // Interface custom attributes
+        let {attrsAll, attrsRows, attrsCells, tableTags} = vnode.attrs;
 
-        // Interactive rows and checkboxes
-        let {activeRow, onclickRow} = vnode.attrs;
-        let {checkboxes, onclickCheckbox} = vnode.attrs;
+        showUID = showUID !== false; // Default is 'true'
+        if (typeof data === 'function') data = data();
 
-        let allChecked = false;
-        if (checkboxes) allChecked = data.length === checkboxes.size;
-        
-        let setAllChecked = (checked) => {
-            // turn on or off all checks
-            data.map((row) => {
-                if (checked !== checkboxes.has(row[0])) onclickCheckbox(row[0], checked)
-            });
-        };
+        return m(`table.table#${id}`, mergeAttributes({style: {width: '100%'}}, attrsAll), [
+            tableTags,
+            headers ? m('tr', {style: {width: '100%', background: menuColor}}, [
+                ...(showUID ? headers : headers.slice(1)).map((header) => m('th', header))
+            ]) : undefined,
 
-        let headerDiv = headers ? m('tr', {style: {width: '100%'}}, [
-            ...headers.map((header) => m('th', header)),
-            checkboxes ? m('td', m('input[type="checkbox"]', {
-                onclick: m.withAttr("checked", setAllChecked),
-                checked: allChecked
-            })) : undefined
-        ]) : undefined;
-
-        return m(`table#${id}`, mergeAttributes({style: {width: '100%'}}, attrsAll),
-            // rows
-            [headerDiv, ...data.map((row) => {
-                return m('tr', mergeAttributes({
-                        style: {'background-color': row[0] === activeRow ? selVarColor : varColor},
-                        onclick: () => onclickRow(row[0])
-                    }, attrsRows),
-
-                    // columns
-                    [
-                        ...row.map((item) => m('td', item)),
-                        checkboxes ? m('td', m('input[type="checkbox"]', {
-                            onclick: m.withAttr("checked", (checked) => onclickCheckbox(row[0], checked)),
-                            checked: checkboxes.has(row[0])
-                        })) : undefined
-                    ]
+            ...data.map((row, i) => m('tr', mergeAttributes(
+                i % 2 === 1 ? {style: {'background': '#fcfcfc'}} : {},
+                row[0] === activeRow ? {style: {'background': selVarColor}} : {},
+                attrsRows),
+                row.filter((item, j) => j !== 0 || showUID).map((item, j) => m('td',
+                    mergeAttributes(onclick ? {onclick: () => onclick(row[0], j)} : {}, attrsCells), item))
                 )
-            })]
-        )
-    }
+            )]
+        );
+    };
 }

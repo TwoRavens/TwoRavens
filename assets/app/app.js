@@ -27,7 +27,7 @@ export let task1_finished = false;
 export let task2_finished = false;
 export let univariate_finished = false;
 
-let currentMode = 'model';
+export let currentMode = 'model';
 let is_explore_mode = false;
 let is_results_mode = false;
 
@@ -1925,56 +1925,19 @@ export function zPop() {
     }
 }
 
-function tabulate(data, columns, divid) {
-    var table = d3.select(divid).append('table');
-    var thead = table.append('thead');
-    var	tbody = table.append('tbody');
-
-    // append the header row
-    thead.append('tr')
-        .selectAll('th')
-        .data(columns).enter()
-        .append('th')
-        .text(function (column) { return column; });
-
-    // create a row for each object in the data
-    var rows = tbody.selectAll('tr')
-        .data(data)
-        .enter()
-        .append('tr')
-        .attr('class',function(d,i) {
-            if(i==0) return 'item-select';
-            else return 'item-default';
-        });
-
-    // create a cell in each row for each column
-    var cells = rows.selectAll('td')
-        .data(function (row) {
-            return columns.map(function (column) {
-                return {column: column, value: row[column]};
-            });
-        })
-        .enter()
-        .append('td')
-        .text(function (d) {
-            return d.value;
-        })
-        .on("click", function(d) {
-            let myrow = this.parentElement;
-            if(myrow.className=="item-select") {
-                return;
-            } else {
-                d3.select(divid).select("tr.item-select")
-                    .attr('class', 'item-default');
-                d3.select(myrow).attr('class',"item-select");
-                document.getElementById("discoveryInput").value=disco[(myrow.rowIndex)-1].description;
-                if(divid=='#setxRight') {
-                    resultsplotinit(myrow.firstChild.innerText);
-                }
-            }});
-
-    return table;
+// when selected, the key/value [mode]: [pipelineID] is set.
+export let selectedPipeline = {};
+export let setSelectedPipeline = (result) => {
+    selectedPipeline[currentMode] = result;
+    if (currentMode === 'model') {
+        // the 'find' function would have been nice here-- es6 only. Find pipeline with UID, then pass pipeline_id
+        let pipeline = pipelineTable.filter((row) => row[0] == result)[0]
+        resultsplotinit(pipeline[1]);
+    }
 }
+
+export let pipelineHeader = ['Hidden_UID', 'PipelineID', 'Metric', 'Score'];
+export let pipelineTable;
 
 function onPipelineCreate(PipelineCreateResult, rookpipe) {
     // rpc GetExecutePipelineResults(PipelineExecuteResultsRequest) returns (stream PipelineExecuteResult) {}
@@ -1998,7 +1961,7 @@ function onPipelineCreate(PipelineCreateResult, rookpipe) {
     console.log(allPipelineInfo);
     // to get all pipeline ids: Object.keys(allPipelineInfo)
 
-    let resultstable = [];
+    pipelineTable = [];
     for(var key in allPipelineInfo) {
         // this will NOT report the pipeline to user if pipeline has failed, if pipeline is still running, or if it has not completed
         if(allPipelineInfo[key].responseInfo.status.details == "Pipeline Failed")  {
@@ -2022,18 +1985,14 @@ function onPipelineCreate(PipelineCreateResult, rookpipe) {
                 myid=key;
                 mymetric=myscores[i].metric;
                 myval=+myscores[i].value.toFixed(3);
-                resultstable.push({"PipelineID":myid,"Metric":mymetric, "Score":myval});         
+                pipelineTable.push([pipelineTable.length, myid, mymetric, myval])
             }
         } else { // if progressInfo is not "COMPLETED"
             continue;
         }
     }
 
-    console.log(resultstable);
-    // render the tables
-    tabulate(resultstable, ['PipelineID', 'Metric', 'Score'], '#tabResults');
-    tabulate(resultstable, ['PipelineID', 'Metric', 'Score'], '#setxRight');
-    /////////////////////////
+    console.table(pipelineTable, [1, 2, 3]);
 
     if (IS_D3M_DOMAIN){
         byId("btnSetx").click();   // Was "btnResults" - changing to simplify user experience for testing. 
@@ -2042,12 +2001,12 @@ function onPipelineCreate(PipelineCreateResult, rookpipe) {
     //adding rookpipe to allPipelineInfo
     allPipelineInfo.rookpipe=rookpipe;
 
-    // this initializes the results windows using the first pipeline
+    // this initializes the results windows using the first pipeline ID
     if(!swandive) {
-        resultsplotinit(resultstable[0].PipelineID);
+        resultsplotinit(pipelineTable[0][1]);
     }
     // VJD: these two functions are built and (I believe) functioning as intended. These exercise two core API calls that are currently unnecessary
-    //exportpipeline(resultstable[1].PipelineID);
+    //exportpipeline(pipelineTable[1][1]);
     //listpipelines();
 
     // VJD: this is a third core API call that is currently unnecessary
@@ -2606,7 +2565,7 @@ export let setLeftTab = (tab) => {
         probtable.length = 0;
         for(let i = 0; i < disco.length; i++) {
             let mypredictors = disco[i].predictors.join();
-            probtable.push([disco[i].target, mypredictors, disco[i].task, disco[i].metric]);
+            probtable.push([i, disco[i].target, mypredictors, disco[i].task, disco[i].metric]);
         }
 
         document.getElementById("discoveryInput").value=disco[0].description;
@@ -4155,34 +4114,21 @@ export function discovery(preprocess_file) {
     return disco;
 }
 
+// This stores discovery problems
 export let probtable = [];
 
-export let selectedProblem = '';
-export let setSelectedProblem = (problem) => {
-    selectedProblem = problem;
+export let selectedProblem;
+export let setSelectedProblem = (problem) => selectedProblem = problem;
 
-    let getProblembyKey = (key) => {for (let row of disco) if (row.target === key) return row;}
-    document.getElementById("discoveryInput").value = getProblembyKey(problem).description;
-}
-
-export let checkedProblems = new Set();
-export let setCheckedProblem = (problem) => {
-    if (checkedProblems.has(problem)) checkedProblems.delete(problem)
-    else checkedProblems.add(problem);
+export let checkedDiscoveryProblems = new Set();
+export let setCheckedDiscoveryProblem = (status, problem) => {
+    if (problem !== undefined) status ? checkedDiscoveryProblems.add(problem) : checkedDiscoveryProblems.delete(problem);
+    else checkedDiscoveryProblems = status ? new Set(probtable.map((problem) => problem[0])) : new Set();
 }
 
 export async function submitDiscProb() {
-
-    let table = document.getElementById("discoveryTable"); //.querySelector('table');    // Seems to already be a table, and can't find table
-    console.log(table.rows);
-    let checked = [];
-
-    for (let i = 1, row; row = table.rows[i]; i++) { //skipping the header
-        checked.push(row.getElementsByTagName("input")[0].checked); // boolean array
-    }
-
     for(let i = 0; i < disco.length; i++) {
-        if(!checked[i]) continue;
+        if(!checkedDiscoveryProblems.has(i)) continue;
         //createpipeline call
         console.log(disco);
         let aux = {"task":d3mTaskType[disco[i].task][1], "metrics":d3mMetrics[disco[i].metric][1], "description":disco[i].description};
