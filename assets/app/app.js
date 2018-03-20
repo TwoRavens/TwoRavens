@@ -3485,7 +3485,7 @@ export function confusionmatrix(matrixdata, classes) {
         .attr("y", -10)
         //.attr("dy", "0.5em")
         .attr("text-anchor", "start")
-        .attr("transform", "rotate(45," + x.rangeBand()/2 + ",-10)")
+        .attr("transform", "rotate(60," + x.rangeBand()/2 + ",-10)")
         .text(function(d, i) { return d; });
 
         let rowLabels = labels.selectAll(".row-label")
