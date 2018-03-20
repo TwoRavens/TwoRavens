@@ -3383,7 +3383,8 @@ export function confusionmatrix(matrixdata, classes) {
         container = options.container,
         labelsData = options.labels,
         startColor = options.start_color,
-        endColor = options.end_color;
+        endColor = options.end_color,
+        xOffset = options.x_offset;
 
         let widthLegend = options.widthLegend;
 
@@ -3467,22 +3468,24 @@ export function confusionmatrix(matrixdata, classes) {
         .attr("transform", function(d, i) {
              // let temp = "translate(" + x(i) + "," + (height+20) + ")"; // this in particular looks to be the cause
             //  console.log(temp);
-              return "translate(" + x(i) + "," + (height+30) + ")"; });
+              return "translate(" + x(i) + "," + (height + xOffset) + ")"; });
 
         columnLabels.append("line")
         .style("stroke", "black")
         .style("stroke-width", "1px")
         .attr("x1", x.rangeBand() / 2)
         .attr("x2", x.rangeBand() / 2)
-        .attr("y1", 0)
-        .attr("y2", 5);
+        .attr("y1", 5 -xOffset)
+        .attr("y2", -xOffset);
+
+        console.log(x.rangeBand);
 
         columnLabels.append("text")
-        .attr("x", 30)
-        .attr("y", y.rangeBand() / 2)
-        .attr("dy", ".22em")
-        .attr("text-anchor", "end")
-        .attr("transform", "rotate(-60)")
+        .attr("x", x.rangeBand()/2)
+        .attr("y", -10)
+        //.attr("dy", "0.5em")
+        .attr("text-anchor", "start")
+        .attr("transform", "rotate(60," + x.rangeBand()/2 + ",-10)")
         .text(function(d, i) { return d; });
 
         let rowLabels = labels.selectAll(".row-label")
@@ -3635,7 +3638,8 @@ export function confusionmatrix(matrixdata, classes) {
            end_color : '#e67e22',
            width : mainwidth * .41 + 25 - leftmarginguess,      // Need to not be hard coded
            height : mainheight * .6,    // Need to not be hard coded
-           widthLegend : mainwidth*.05
+           widthLegend : mainwidth*.05,
+           x_offset : 30
            });
 
     // not rendering this table for right now, left all the code in place though. maybe we use it eventually
