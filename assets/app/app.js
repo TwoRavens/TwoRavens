@@ -3359,7 +3359,7 @@ export function confusionmatrix(matrixdata, classes) {
     let condiv = document.createElement('div');
     condiv.id="confusioncontainer";
     condiv.style.display="inline-block";
-    condiv.style.width=+(mainwidth*.46)+'px';   // Need to not be hard coded
+    condiv.style.width=+(mainwidth*.385)+'px';   // Need to not be hard coded
     condiv.style.marginLeft='20px';
     condiv.style.height=+(mainheight)+'px';     // Need to not be hard coded
     condiv.style.float="left";
@@ -3367,13 +3367,13 @@ export function confusionmatrix(matrixdata, classes) {
 
     let legdiv = document.createElement('div');
     legdiv.id="confusionlegend";
-    legdiv.style.width=+(mainwidth*.07)+'px'; // Need to not be hard coded
-    legdiv.style.marginLeft='20px';
+    legdiv.style.width=+(mainwidth*.05)+'px'; // Need to not be hard coded
+    legdiv.style.marginLeft='5px';           // Margin between cofusion matrix container and legend container
     legdiv.style.height=+(mainheight)+'px';   // Need to not be hard coded
     legdiv.style.display="inline-block";
     byId('setxLeftPlot').appendChild(legdiv);
 
-    var margin = {top: 30, right: 30, bottom: 0, left: leftmarginguess};    // Left margin needs not to be hardcoded, but responsive to maximum label length
+    var margin = {top: 30, right: 35, bottom: 0, left: leftmarginguess};    // Left margin needs not to be hardcoded, but responsive to maximum label length
 
 
     function Matrix(options) {
@@ -3567,7 +3567,7 @@ export function confusionmatrix(matrixdata, classes) {
         key
             .append("g")
             .attr("class", "y axis")
-            .attr("transform", "translate(41," + margin.top + ")")
+            .attr("transform", "translate(25," + margin.top + ")")    // first number is separation between legend scale and legend key
             .call(yAxis);
     }
 
@@ -3636,9 +3636,9 @@ export function confusionmatrix(matrixdata, classes) {
            labels    : classes,
            start_color : '#ffffff',
            end_color : '#e67e22',
-           width : mainwidth * .41 + 25 - leftmarginguess,      // Need to not be hard coded
+           width : mainwidth * .33 + 25 - leftmarginguess,      // Width of confusion matrix table: Need to not be hard coded
            height : mainheight * .6,    // Need to not be hard coded
-           widthLegend : mainwidth*.05,
+           widthLegend : mainwidth*.04,  
            x_offset : 30
            });
 
