@@ -297,7 +297,8 @@ export let byId = id => document.getElementById(id);
 /**
    page reload linked to btnReset
 */
-export const reset = function reloadPage() {
+export const reset = async function reloadPage() {
+    let res = await makeRequest(D3M_SVC_URL + '/endsession', apiSession(zparams.zsessionid));
     location.reload();
 };
 export let restart;
