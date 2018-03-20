@@ -273,7 +273,7 @@ export let d3mProblemDescription = {
 };
 
 let svg, div, selectLadda;
-export let width, height, estimateLadda;
+export let width, height, estimateLadda, discoveryLadda;
 
 // arcs for denoting pebble characteristics
 const arc = (start, end) => d3.svg.arc()
@@ -729,6 +729,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
     height = $(window).height() - 120; // hard code header, footer, and bottom margin
 
     estimateLadda = Ladda.create(byId("btnEstimate"));
+    discoveryLadda = Ladda.create(byId("btnSubmitDisc"));
     svg = d3.select("#whitespace");
 
     // indicators for showing membership above arcs
@@ -4128,6 +4129,7 @@ export let setCheckedDiscoveryProblem = (status, problem) => {
 }
 
 export async function submitDiscProb() {
+    discoveryLadda.start();
     for(let i = 0; i < disco.length; i++) {
         if(!checkedDiscoveryProblems.has(i)) continue;
         //createpipeline call
@@ -4141,6 +4143,7 @@ export async function submitDiscProb() {
       //  }
     }
 
+    discoveryLadda.stop();
     // change status of buttons for estimating problem and marking problem as finished
     $("#btnDiscovery").removeClass("btn-success");
     $("#btnDiscovery").addClass("btn-default");
@@ -4151,7 +4154,7 @@ export async function submitDiscProb() {
         $("#btnEstimate").removeClass("btn-default");
         $("#btnEstimate").addClass("btn-success");
     };
-
+    byId("btnVariables").click();
 }
 
 export function saveDisc(btn) {
