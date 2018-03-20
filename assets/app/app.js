@@ -2007,7 +2007,7 @@ function onPipelineCreate(PipelineCreateResult, rookpipe) {
     };
 
     //adding rookpipe to allPipelineInfo
-    allPipelineInfo.rookpipe=rookpipe;                // Don't understand what this is doing, but it's likely going to wrong place when there are multiple CreatePipelines calls.
+    allPipelineInfo.rookpipe=rookpipe;                // This is setting rookpipe for the entire table, but when there are multiple CreatePipelines calls, this is only recording latest values
 
     // this initializes the results windows using the first pipeline ID
     if(!swandive) {
@@ -3236,8 +3236,8 @@ function setPebbleCharge(d){
 export function resultsplotinit(pid) {
     console.log(pid);
     pid = allPipelineInfo[pid];
-    let mydv = allPipelineInfo.rookpipe.depvar[0];
-    let dvvalues= allPipelineInfo.rookpipe.dvvalues;
+    let mydv = allPipelineInfo.rookpipe.depvar[0];         // When there are multiple CreatePipelines calls, then this only has values from latest value
+    let dvvalues= allPipelineInfo.rookpipe.dvvalues;       // When there are multiple CreatePipelines calls, then this only has values from latest value
    // let predfile = pid.pipelineInfo.predictResultData.file_1;
 
    if(pid.pipelineInfo.predictResultData.success==false) {
@@ -3274,7 +3274,7 @@ export function resultsplotinit(pid) {
 
     // add the list of predictors into setxLeftTopLeft
     d3.select("#setxLeftTopLeft").selectAll("p")
-        .data(allPipelineInfo.rookpipe.predictors)
+        .data(allPipelineInfo.rookpipe.predictors)                    // When there are multiple CreatePipelines calls, then this only has values from latest value
         .enter()
         .append("p")
         .text(function (d) { return d; })
