@@ -1965,6 +1965,12 @@ function onPipelineCreate(PipelineCreateResult, rookpipe) {
 
     pipelineTable = [];
     for(var key in allPipelineInfo) {
+        console.log(key);
+        console.log(allPipelineInfo[key]);
+
+        if(key == "rookpipe"){   // happens when multiple CreatePipelines calls have been made
+            continue;
+        }
         // this will NOT report the pipeline to user if pipeline has failed, if pipeline is still running, or if it has not completed
         if(allPipelineInfo[key].responseInfo.status.details == "Pipeline Failed")  {
             continue;
@@ -2001,7 +2007,7 @@ function onPipelineCreate(PipelineCreateResult, rookpipe) {
     };
 
     //adding rookpipe to allPipelineInfo
-    allPipelineInfo.rookpipe=rookpipe;
+    allPipelineInfo.rookpipe=rookpipe;                // Don't understand what this is doing, but it's likely going to wrong place when there are multiple CreatePipelines calls.
 
     // this initializes the results windows using the first pipeline ID
     if(!swandive) {
