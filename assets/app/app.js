@@ -3478,12 +3478,14 @@ export function confusionmatrix(matrixdata, classes) {
         .attr("y1", 5 -xOffset)
         .attr("y2", -xOffset);
 
+        console.log(x.rangeBand);
+
         columnLabels.append("text")
-        .attr("x", xOffset )
-        .attr("y", y.rangeBand() *2)
-        .attr("dy", "-1.5em")
-        .attr("text-anchor", "end")
-        .attr("transform", "rotate(-60)")
+        .attr("x", x.rangeBand()/2)
+        .attr("y", -10)
+        //.attr("dy", "0.5em")
+        .attr("text-anchor", "start")
+        .attr("transform", "rotate(45," + x.rangeBand()/2 + ",-10)")
         .text(function(d, i) { return d; });
 
         let rowLabels = labels.selectAll(".row-label")
