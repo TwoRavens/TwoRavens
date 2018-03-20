@@ -3361,15 +3361,15 @@ export function confusionmatrix(matrixdata, classes) {
     condiv.style.display="inline-block";
     condiv.style.width=+(mainwidth*.385)+'px';   // Need to not be hard coded
     condiv.style.marginLeft='20px';
-    condiv.style.height=+(mainheight)+'px';     // Need to not be hard coded
+    condiv.style.height=+(mainheight)+'px';      // Need to not be hard coded
     condiv.style.float="left";
     byId('setxLeftPlot').appendChild(condiv);
 
     let legdiv = document.createElement('div');
     legdiv.id="confusionlegend";
-    legdiv.style.width=+(mainwidth*.05)+'px'; // Need to not be hard coded
-    legdiv.style.marginLeft='5px';           // Margin between cofusion matrix container and legend container
-    legdiv.style.height=+(mainheight)+'px';   // Need to not be hard coded
+    legdiv.style.width=+(mainwidth*.05)+'px';    // Need to not be hard coded
+    legdiv.style.marginLeft='5px';               // Margin between confusion matrix container and legend container
+    legdiv.style.height=+(mainheight)+'px';      // Need to not be hard coded
     legdiv.style.display="inline-block";
     byId('setxLeftPlot').appendChild(legdiv);
 
