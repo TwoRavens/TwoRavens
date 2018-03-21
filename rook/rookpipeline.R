@@ -78,7 +78,10 @@ pipeline.app <- function(env){
 
 	if(!warning){
         mynoms <- everything$znom
+        print("got here 1")
 		myformula <- buildFormula(dv=mydv, linkagelist=myedges, varnames=NULL, nomvars=mynoms, group1=mygroup1, group2=mygroup2) 
+        print(names(myformula))
+        print("got here 2")
 		if(is.null(myformula)){
 			warning <- TRUE
 			result<-list(warning="Problem constructing formula expression.")
@@ -109,8 +112,8 @@ pipeline.app <- function(env){
 
 	if(!warning){
         tryCatch({
-            predictors <- all.vars(myformula[[3]])
-            depvar <- all.vars(myformula[[2]])
+            predictors <- myformula$predictors #all.vars(myformula[[3]])
+            depvar <- myformula$depvar         #all.vars(myformula[[2]])
             dvvalues <- mydata[,depvar]
             result <- list(predictors=predictors, depvar=depvar, dvvalues=dvvalues)
         },
