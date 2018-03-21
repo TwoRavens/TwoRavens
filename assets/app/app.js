@@ -3015,14 +3015,17 @@ export async function endsession() {
         return;
     }
 
-    let selected = "none";
+    let selected = table.rows[1].cells[0].innerHTML;  // was "none"; as default
 
  //there's a cleaner way to do this...
     for (let i = 1, row; row = table.rows[i]; i++) { //skipping the header
+        console.log(row);
         if(row.className=='item-select'){
             selected=row.cells[0].innerHTML;
         }
     }
+
+
 
     // calling exportpipeline
     let end = await exportpipeline(selected);
