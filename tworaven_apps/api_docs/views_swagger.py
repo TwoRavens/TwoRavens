@@ -6,7 +6,7 @@ from django.views.decorators.cache import cache_page
 def view_swagger_doc_v1(request):
   """Return a yaml doc for use in swagger UI"""
 
-  info_dict = dict()
+  info_dict = dict(SWAGGER_HOST=settings.SWAGGER_HOST)
 
   return render(request,
                 'swagger/swagger_v1.yaml',

@@ -177,3 +177,5 @@ TA2_GPRC_USER_AGENT = os.environ.get('TA2_GPRC_USER_AGENT', 'tworavens')
 
 # D3M - gRPC file uris
 MAX_EMBEDDABLE_FILE_SIZE = .5 * 500000
+
+SWAGGER_HOST = '127.0.0.1:8080'
