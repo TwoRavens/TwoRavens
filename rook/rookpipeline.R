@@ -112,8 +112,8 @@ pipeline.app <- function(env){
 
 	if(!warning){
         tryCatch({
-            predictors <- myformula$predictors #all.vars(myformula[[3]])
-            depvar <- myformula$depvar         #all.vars(myformula[[2]])
+            predictors <- unlist(myformula$predictors) #all.vars(myformula[[3]])
+            depvar <- unlist(myformula$depvar)         #all.vars(myformula[[2]])
             dvvalues <- mydata[,depvar]
             result <- list(predictors=predictors, depvar=depvar, dvvalues=dvvalues)
         },
