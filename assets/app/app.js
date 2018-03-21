@@ -3009,23 +3009,16 @@ export let fakeClick = () => {
 export async function endsession() {
 
     let table = document.getElementById("setxRight").getElementsByTagName('table')[0];
-
     if(typeof table === 'undefined') {
         alert("No pipelines exist. Cannot mark problem as complete.")
         return;
     }
 
-    let selected = table.rows[1].cells[0].innerHTML;  // was "none"; as default
-
- //there's a cleaner way to do this...
-    for (let i = 1, row; row = table.rows[i]; i++) { //skipping the header
-        console.log(row);
-        if(row.className=='item-select'){
-            selected=row.cells[0].innerHTML;
-        }
+    let tableposition = selectedPipeline['model'] + 1;  // no pipeline selected become NaN
+    if(isNaN(tableposition)){
+        tableposition = 1;
     }
-
-
+    let selected = table.rows[tableposition].cells[0].innerHTML;  // was "none"; as default
 
     // calling exportpipeline
     let end = await exportpipeline(selected);
