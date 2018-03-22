@@ -207,6 +207,11 @@ let selInteract = false;
 export let callHistory = []; // transform and subset calls
 let mytarget = '';
 
+export let modalText = "Default modal text";
+export let modalHeader = "Default modal header";
+export let modalButton = "Close";
+export let modalVis = false;
+
 let configurations = {};
 let datadocument = {};
 
@@ -299,6 +304,7 @@ export let byId = id => document.getElementById(id);
 */
 export const reset = async function reloadPage() {
     let res = await makeRequest(D3M_SVC_URL + '/endsession', apiSession(zparams.zsessionid));
+    byId("btnModel").click();
     location.reload();
 };
 export let restart;
@@ -581,12 +587,15 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     if (res) {
       if (res.responseInfo.status.code != "OK"){
         const user_err_msg = "Failed to StartSession with TA2! status code: " + res.responseInfo.status.code;
-        alert(user_err_msg);
-        end_ta3_search(false, user_err_msg);
-      }else{
-        zparams.zsessionid = res.context.sessionId;
-      }
+        modalVis = true;
+        setModal(user_err_msg,"Error Connecting to TA2", modalVis, "Reset");
+      //  end_ta3_search(false, user_err_msg);
+        return;
+      } else {
+            zparams.zsessionid = res.context.sessionId;
+        }
     }
+
 
 
     // hopscotch tutorial
@@ -762,7 +771,6 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
     } else if (!PRODUCTION) {
         zparams.zdataurl = 'data/fearonLaitin.tsv';
     }
-
     load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3mData, d3mPS, d3mDS, pURL);
 }
 
@@ -4172,4 +4180,19 @@ export function saveDisc(btn) {
         }
     }
 
+}
+
+// function to call a modal window
+function setModal(text, header, show, btnText) {
+    if(text)
+        modalText = text;
+    if(header)
+        modalHeader = header;
+    if(btnText)
+        modalButton = btnText;
+    m.redraw();
+    if(show)
+        $('#myModal').modal({show:true, backdrop: 'static', keyboard: false});
+    else
+        $('#myModal').modal("hide");
 }

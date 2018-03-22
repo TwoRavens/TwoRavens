@@ -153,11 +153,13 @@ buildFormula<-function(dv, linkagelist, varnames=NULL, nomvars, group1=NULL, gro
     flag<-rhsIndicator==1
     rhs.names<-varnames[flag]
     rhs.names[which(rhs.names %in% nomvars)] <- paste("factor(", rhs.names[which(rhs.names %in% nomvars)], ")", sep="") # nominal variables are entered into the formula as factors
-    formula<-as.formula(paste(dv," ~ ", paste(rhs.names,collapse=" + ")))
-
+ 
+    #########  CHANGE HERE: 
+    #formula<-as.formula(paste(dv," ~ ", paste(rhs.names,collapse=" + ")))      // D3M is supplying variables names including spaces and `-` that prevents a formula creation
+    formula<-paste(dv," ~ ", paste(rhs.names,collapse=" + "))
     print(formula)
 
-    return(formula)
+    return(list(formula=formula, predictors=rhs.names, depvar=dv ))
 }
 
 
