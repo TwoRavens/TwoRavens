@@ -439,7 +439,9 @@ class Body {
                         }
                     } else {
                         let dvs = app.nodes.filter(n => app.zparams.zdv.includes(n.name));
-                        let ivs = app.nodes.filter(n => !dvs.includes(n));
+                        let nolink = app.zparams.zdv.concat(app.zparams.zgroup1).concat(app.zparams.zgroup2);
+                        let ivs = app.nodes.filter(n => !nolink.includes(n.name)); 
+
                         links = dvs.map(dv => ivs.map(iv => ({
                             left: true,
                             right: false,
