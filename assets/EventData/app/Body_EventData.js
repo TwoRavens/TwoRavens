@@ -393,6 +393,7 @@ export default class Body_EventData {
                             value: 'Event Measure',
                             contents: m(PanelList, {
                                 items: ['Penta Class', 'Root Code'],
+                                id: 'EMList',
                                 colors: {[common.selVarColor]: [app.canvasKeySelected]},
                                 callback: app.showCanvas
                             })
