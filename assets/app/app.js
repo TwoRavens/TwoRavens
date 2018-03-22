@@ -304,6 +304,7 @@ export let byId = id => document.getElementById(id);
 */
 export const reset = async function reloadPage() {
     let res = await makeRequest(D3M_SVC_URL + '/endsession', apiSession(zparams.zsessionid));
+    byId("btnModel").click();
     location.reload();
 };
 export let restart;
