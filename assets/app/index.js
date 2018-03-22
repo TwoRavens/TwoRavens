@@ -265,9 +265,8 @@ function rightpanel(mode) {
                 sections: sectionsExplore,
                 attrsAll: {style: {height: 'calc(100% - 39px)'}}
             })
-                // m('#setx[style=display: none; margin-top: .5em]')
-
-        })
+            // m('#setx[style=display: none; margin-top: .5em]')
+        });
     }
 
     // mode == null (model mode)
@@ -520,43 +519,40 @@ class Body {
                     evt.stopPropagation();
                     transform(tvar, tfunc, typeTransform = false);
                 }
-            },
-            list.map(x => m('li', x)));
+            }, list.map(x => m('li', x)));
 
         return m(Header, {
             attrsInterface: {style: mode === 'explore' ? {'background-image': '-webkit-linear-gradient(top, #fff 0, rgb(227, 242, 254) 100%)'} : {}},
-            contents: m('#dataField.field[style=text-align: center]',
-                m('h4#dataName[style=display: inline-block; margin-right:2em; margin-top: 7px]',
-                    {
-                        onclick: _ => this.cite = this.citeHidden = !this.citeHidden,
-                        onmouseout: _ => this.citeHidden || (this.cite = false),
-                        onmouseover: _ => this.cite = true
-                    },
-                    "Dataset Name"),
-                m('#cite.panel.panel-default',
-                    {style: `display: ${this.cite ? 'block' : 'none'}; position: absolute; right: 50%; width: 380px; text-align: left; z-index: 50`},
-                    m(".panel-body")),
+            contents: m('#dataField.field[style=text-align: center]', [
+                m('h4#dataName[style=display: inline-block; margin-right:2em; margin-top: 7px]', {
+                    onclick: _ => this.cite = this.citeHidden = !this.citeHidden,
+                    onmouseout: _ => this.citeHidden || (this.cite = false),
+                    onmouseover: _ => this.cite = true
+                }, "Dataset Name"),
+                m('#cite.panel.panel-default', {
+                    style: `display: ${this.cite ? 'block' : 'none'}; position: absolute; right: 50%; width: 380px; text-align: left; z-index: 50`
+                }, m(".panel-body")),
                 m('span',
-                    m('.dropdown[style=float: right; padding-right: 1em]',
-                        m('#drop.button.btn[type=button][data-toggle=dropdown][aria-haspopup=true][aria-expanded=false]',
-                            [username, " ", glyph('triangle-bottom')]),
-                        m('ul.dropdown-menu[role=menu][aria-labelledby=drop]',
-                            userlinks.map(function (link) {
-                                return m('a[style=padding: 0.5em]', {href: link.url}, link.title,
-                                    m('br'))
-                            }))),
-                    navBtn('btnEstimate.btn-default', 2, 1, mode === 'explore' ? _ => {
-                            exp.explore();
-                            app.setRightTabExplore('Bivariate')
-                        } : app.estimate,
-                        m("span.ladda-label", mode === 'explore' ? 'Explore' : 'Solve This Problem'), '150px'),
-                    m('div.btn-group[role=group][aria-label="..."]', {style:{"float":"right", "margin-left": "2em"}},
-                        navBtnGroup('btnTA2.btn-default', _ => hopscotch.startTour(app.mytour, 0), ['Help Tour ', glyph('road')]),
-                        navBtnGroup('btnTA2.btn-default', _ => app.helpmaterials('video'), ['Video ', glyph('expand')]),
-                        navBtnGroup('btnTA2.btn-default', _ => app.helpmaterials('manual'), ['Manual ', glyph('book')]),
-                    ),
-                    navBtn1("btnReset", app.reset, glyph('repeat'), 'Reset'),
-                    navBtn1('btnEndSession', app.endsession, m("span.ladda-label", 'Mark Problem Finished'), 'Mark Problem Finished')),
+                  m('.dropdown[style=float: right; padding-right: 1em]',
+                    m('#drop.button.btn[type=button][data-toggle=dropdown][aria-haspopup=true][aria-expanded=false]',
+                      [username, " ", glyph('triangle-bottom')]),
+                    m('ul.dropdown-menu[role=menu][aria-labelledby=drop]',
+                      userlinks.map(link => m('a[style=padding: 0.5em]', {href: link.url}, link.title, m('br'))))),
+                  navBtn('btnEstimate.btn-default', 2, 1, mode === 'explore' ? _ => {
+                      if (app.links.length === 0) {
+                          alert('Please link pebbles first.');
+                          return;
+                      }
+
+                      exp.explore();
+                      app.setRightTabExplore('Bivariate');
+                  } : app.estimate, m("span.ladda-label", mode === 'explore' ? 'Explore' : 'Solve This Problem'), '150px'),
+                  m('div.btn-group[role=group][aria-label="..."]', {style:{"float":"right", "margin-left": "2em"}},
+                    navBtnGroup('btnTA2.btn-default', _ => hopscotch.startTour(app.mytour, 0), ['Help Tour ', glyph('road')]),
+                    navBtnGroup('btnTA2.btn-default', _ => app.helpmaterials('video'), ['Video ', glyph('expand')]),
+                    navBtnGroup('btnTA2.btn-default', _ => app.helpmaterials('manual'), ['Manual ', glyph('book')])),
+                  navBtn1("btnReset", app.reset, glyph('repeat'), 'Reset'),
+                  navBtn1('btnEndSession', app.endsession, m("span.ladda-label", 'Mark Problem Finished'), 'Mark Problem Finished')),
                 m('#tInput', {
                     style: {display: 'none'},
                     onclick: _ => {
@@ -590,17 +586,20 @@ class Body {
                             if (!t) {
                                 return;
                             }
+
                             transform(t.slice(0, t.length - 1), t[t.length - 1], typeTransform = false);
                         }
                     }
                 }),
                 m('#transformations.transformTool', {
-                        title: `Construct transformations of existing variables using valid R syntax.
+                    title: `Construct transformations of existing variables using valid R syntax.
                               For example, assuming a variable named d, you can enter "log(d)" or "d^2".`
-                    },
+                }, [
                     transformation('transSel', ['a', 'b']),
-                    transformation('transList', app.transformList)))
-        })
+                    transformation('transList', app.transformList)
+                ])
+            ])
+        });
     }
 
     footer(mode) {
@@ -625,9 +624,9 @@ class Body {
                 m("span[style=color:#337ab7]", " | "),
                 m("span[style=color:#337ab7]", "TA3TA2 api: " + TA3TA2_API_VERSION)
             ]
-        })
+        });
     }
-  
+
     modal() {
         return m(".modal.fade[id='myModal'][role='dialog']",
             m(".modal-dialog",

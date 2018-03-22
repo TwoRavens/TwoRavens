@@ -33,11 +33,11 @@ let is_results_mode = false;
 
 export function set_mode(mode) {
     if (!mode) mode = 'model';
-    mode = mode.toLowerCase()
+    mode = mode.toLowerCase();
 
     if (currentMode !== mode) {
-        updateRightPanelWidth()
-        updateLeftPanelWidth()
+        updateRightPanelWidth();
+        updateLeftPanelWidth();
 
         currentMode = mode;
         m.route.set('/' + mode.toLowerCase());
@@ -178,7 +178,7 @@ export let zparams = {
     zvars: [],
     zdv: [],
     zgroup1: [],
-    zgroup2: [],       // hard coding to two groups for present experiments, but will eventually make zgroup array of arrays, with zgroup.lenght the number of groups
+    zgroup2: [], // hard coding to two groups for present experiments, but will eventually make zgroup array of arrays, with zgroup.length the number of groups
     zdataurl: "",
     zd3mdata: "", //these take the place of zdataurl for d3m, because data is in two placees. eventually will generalize
     zd3mtarget: "",
@@ -189,7 +189,7 @@ export let zparams = {
     zsessionid: "",
     zdatacite: '...',
     zcrosstab: [],
-    zusername: '',
+    zusername: ''
 };
 
 export let disco = [];
