@@ -418,6 +418,7 @@ class Body {
         }
 
         return m('main',
+            this.modal(),
             this.header(mode),
             this.footer(mode),
             m(`#main.left.carousel.slide.svg-leftpanel.svg-rightpanel[style=overflow: hidden]`,
@@ -623,6 +624,26 @@ class Body {
                 m("span[style=color:#337ab7]", "TA3TA2 api: " + TA3TA2_API_VERSION)
             ]
         })
+    }
+  
+    modal() {
+        return m(".modal.fade[id='myModal'][role='dialog']",
+            m(".modal-dialog",
+                m(".modal-content", [
+                    m(".modal-header", [
+                      //  m("button.close[data-dismiss='modal'][type='button']",
+                      //      m.trust("&times;")),
+                        m("h4.modal-title",
+                            app.modalHeader)]),
+                    m(".modal-body",
+                        m("p",
+                            app.modalText)),
+                    m(".modal-footer",
+                        //m("button.btn.btn-default[data-dismiss='modal'][type='button']",{
+                            //onclick: () => app.reset}, app.modalButton))
+                    m("button.btn.btn-default[type='button']",{
+                            onclick: () => location.reload()}, app.modalButton))
+                ])))
     }
 }
 
