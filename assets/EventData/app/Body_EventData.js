@@ -385,6 +385,7 @@ export default class Body_EventData {
                             value: 'Unit of Measure',
                             contents: m(PanelList, {
                                 items: ['Date', 'Actor'],
+                                id: 'UMList',
                                 colors: {[common.selVarColor]: [app.canvasKeySelected]},
                                 callback: app.showCanvas
                             })

@@ -1153,7 +1153,8 @@ export function submitQuery() {
         'subsets': JSON.stringify(subsetQuery),
         'variables': JSON.stringify(variableQuery),
         'dataset': dataset,
-        'datasource': datasource
+        'datasource': datasource,
+        'type': 'sample'
     };
 
     laddaSubset.start();

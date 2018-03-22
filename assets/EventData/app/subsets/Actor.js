@@ -1,5 +1,6 @@
 import * as app from "../app.js"
 import * as d3 from 'd3'
+import {panelOcclusion} from "../../../common/app/common";
 import {updateAggregTable} from "../aggreg/aggreg";
 import {callOnResize, panelMargin} from "../../../common/app/common";
 
@@ -385,12 +386,6 @@ export function setupActor(){
             updateGroupName(actorNodes[index].name);
 
             $("#clearAllActors").click();
-            //update actor selection checks
-            $("." + currentTab + "Chk:checked").prop("checked", false);
-
-            for (let actor of actorNodes[index].group) {
-                document.getElementById(currentTab + 'full' + actor + 'check').checked = true;
-            }
             $("#actorShowSelected").trigger("click");
 
             //update links
@@ -408,8 +403,8 @@ export function setupActor(){
             actorNodes.splice(cur, 1);
             actorActualSize[currentTab]--;
 
-            const curHeight = $("#actorContainer").height();		//this is the height of the container
-            const titleHeight = $("#linkTitle").height();			//this is the height of the title div above the SVG
+            const curHeight = $("#canvasActor").height();		//this is the height of the container
+            const titleHeight = $("#linkTitleLeft").height();			//this is the height of the title div above the SVG
 
             if (actorActualSize['source'] <= calcCircleNum(curHeight - titleHeight) && actorActualSize['target'] <= calcCircleNum(curHeight - titleHeight)) {		//if link div is empty enough, maintain height alignment
                 $("#actorLinkDiv").css("height", $("#actorSelectionDiv").height() + 2);
@@ -434,6 +429,7 @@ export function setupActor(){
                     });
                 }
             }
+
             updateAll();
 
             if (app.opMode === "aggregate")
@@ -669,11 +665,14 @@ function updateSVG() {
                     tooltipSVG.transition().duration(200).style("opacity", 0).style("display", "none");		//reset tooltip
                 })
                 .on("mousemove", function (d) {		//display tooltip
-                    if (!dragStarted)
-                        tooltipSVG.style("display", "block").style("left", (d.x + 350) + "px").style("top", (d.y) + "px");
+                    if (!dragStarted) {
+                        tooltipSVG.style("display", "block")
+                            .style("left", 'calc(' + (d.x + 320) + 'px + ' + panelOcclusion['left'] + ')')
+                            .style("top", (d.y - 30) + "px");
+                    }
                 });
 
-            d3.select(this).append('svg:text').attr('x', 0).attr('y', 15).attr('class', 'id').text(function (d) {	//add text to nodes
+            d3.select(this).append('svg:text').attr('x', 0).attr('y', 10).attr('class', 'id').text(function (d) {	//add text to nodes
                 if (d.name.length > 12)
                     return d.name.substring(0, 9) + "...";
                 else
@@ -1060,7 +1059,7 @@ function createElement(actorType, columnType, value, chkSwitch = true) {
     // Don't use popovers for icews
     if (app.dataset === 'icews') return entry;
 
-    entry.onmouseover = function () {
+    label.onmouseover = function () {
         if (!$(this).attr("data-content")) {
             if (columnType !== "full")
                 $(this).attr("data-content", binarySearch(value));
@@ -1072,7 +1071,7 @@ function createElement(actorType, columnType, value, chkSwitch = true) {
                     if (temp === "no translation found")
                         temp = "?";
                     // I switched to dash because of a strange rendering issue with spaces - Shoeboxam (Mike)
-                    tail += temp + "-";
+                    tail += temp + " ";
                 }
                 tail = tail.slice(0, -1);
 
@@ -1089,7 +1088,7 @@ function createElement(actorType, columnType, value, chkSwitch = true) {
         $(this).popover("show");
     };
 
-    entry.onmouseout = function () { $(this).popover('hide'); };
+    label.onmouseout = function () { $(this).popover('hide'); };
 
     // setTimeout(function(){
     //     $("#" + lbl.id).modal('hide')
