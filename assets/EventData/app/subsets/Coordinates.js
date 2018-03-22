@@ -266,13 +266,13 @@ function setLongitude() {
     if (isNaN(lonLeft.val()) || lonLeft.val() === '') return;
 
     let valLeft = parseFloat(lonRight.val());
-    if (valLeft < -90 || valLeft > 90) {
-        lonRight.val(clip(valLeft, -90, 90));
+    if (valLeft < -180 || valLeft > 180) {
+        lonRight.val(clip(valLeft, -180, 180));
     }
 
     let valRight = parseFloat(lonLeft.val());
-    if (valRight < -90 ||valRight > 90) {
-        lonLeft.val(clip(valRight, -90, 90));
+    if (valRight < -180 || valRight > 180) {
+        lonLeft.val(clip(valRight, -180, 180));
     }
 
     let leftBound;
@@ -295,8 +295,8 @@ function setLongitude() {
     }
 
     // Transform to map coordinates
-    leftBound = (leftBound + 90) / 90;
-    rightBound = (rightBound + 90) / 90;
+    leftBound = (leftBound + 180) / 180;
+    rightBound = (rightBound + 180) / 180;
 
     widthCoord = Math.abs(rightBound - leftBound);
 
@@ -523,6 +523,6 @@ function setInputBounds(d) {
     $('#lonLeftLabel').text("West Longitude");
     $('#lonRightLabel').text("East Longitude");
 
-    $('#lonLeft').val(Math.round(1000 * (d.x * 90 - 90)) / 1000);
-    $('#lonRight').val(Math.round(1000 * ((d.x + widthCoord) * 90 - 90)) / 1000);
+    $('#lonLeft').val(Math.round(1000 * (d.x * 180 - 180)) / 1000);
+    $('#lonRight').val(Math.round(1000 * ((d.x + widthCoord) * 180 - 180)) / 1000);
 }
