@@ -644,7 +644,8 @@ class Body {
                         //m("button.btn.btn-default[data-dismiss='modal'][type='button']",{
                             //onclick: () => app.reset}, app.modalButton))
                     m("button.btn.btn-default[type='button']",{
-                            onclick: () => location.reload()}, app.modalButton))
+                            style: {display: app.modalBtnDisplay, float:'right'},
+                            onclick: () => eval(app.modalFunc)}, app.modalButton))
                 ])))
     }
 }
