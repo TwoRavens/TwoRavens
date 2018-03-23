@@ -28,6 +28,10 @@ import CanvasPentaClass from "./views/CanvasPentaClass"
 import CanvasRootCode from "./views/CanvasRootCode"
 
 import TableAggregation from "./views/TableAggregation"
+import {updateDate} from "./subsets/Date";
+import {updateActor} from "./subsets/Actor";
+import {updateLocation} from "./subsets/Location";
+import {resetActionCounts} from "./subsets/Action";
 
 export default class Body_EventData {
 
@@ -127,7 +131,9 @@ export default class Body_EventData {
                             m(".content.hide",
                                 m(".popoverContentContainer",
                                     [
-                                        m("[id='optionMenu']",
+                                        m("[id='optionMenu']", {
+                                            style: {display: app.popoverDataset === undefined ? 'block' : 'none'}
+                                            },
                                             [
                                                 m("button.btn.btn-default[data-option='1'][id='option']", "Phoenix - UTDallas"),
                                                 m("button.btn.btn-default[data-option='2'][id='option']", "Cline - New York Times"),
@@ -137,7 +143,9 @@ export default class Body_EventData {
                                             ]
                                         ),
 
-                                        m(".optionView[id='optionView1']",
+                                        m(".optionView[id='optionView1']", {
+                                                style: {display: app.popoverDataset === 'phoenix_rt' ? 'block' : 'none'}
+                                            },
                                             [
                                                 m("button.btn.btn-sm.btn-default[data-option='1'][id='option']",
                                                     m("span.glyphicon.glyphicon-chevron-left", {
@@ -153,7 +161,9 @@ export default class Body_EventData {
                                             ]
                                         ),
 
-                                        m(".optionView[id='optionView2']",
+                                        m(".optionView[id='optionView2']", {
+                                                style: {display: app.popoverDataset === 'cline_phoenix_nyt' ? 'block' : 'none'}
+                                            },
                                             [
                                                 m("button.btn.btn-sm.btn-default[data-option='2'][id='option']",
                                                     m("span.glyphicon.glyphicon-chevron-left", {
@@ -172,7 +182,9 @@ export default class Body_EventData {
                                             ]
                                         ),
 
-                                        m(".optionView[id='optionView3']",
+                                        m(".optionView[id='optionView3']", {
+                                                style: {display: app.popoverDataset === 'cline_phoenix_fbis' ? 'block' : 'none'}
+                                            },
                                             [
                                                 m("button.btn.btn-sm.btn-default[data-option='3'][id='option']",
                                                     m("span.glyphicon.glyphicon-chevron-left", {
@@ -191,7 +203,9 @@ export default class Body_EventData {
                                             ]
                                         ),
 
-                                        m(".optionView[id='optionView4']",
+                                        m(".optionView[id='optionView4']", {
+                                                style: {display: app.popoverDataset === 'cline_phoenix_swb' ? 'block' : 'none'}
+                                            },
                                             [
                                                 m("button.btn.btn-sm.btn-default[data-option='4'][id='option']",
                                                     m("span.glyphicon.glyphicon-chevron-left", {
@@ -210,7 +224,9 @@ export default class Body_EventData {
                                             ]
                                         ),
 
-                                        m(".optionView[id='optionView5']",
+                                        m(".optionView[id='optionView5']",{
+                                                style: {display: app.popoverDataset === 'cline_phoenix_icews' ? 'block' : 'none'}
+                                            },
                                             [
                                                 m("button.btn.btn-sm.btn-default[data-option='5'][id='option']",
                                                     m("span.glyphicon.glyphicon-chevron-left", {

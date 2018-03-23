@@ -71,7 +71,10 @@ $(document).on('click', '#option', function () {
     let optionID = $(this).data('option');
     $('#optionMenu').toggle('fade');
     $('#optionView' + optionID).toggle('fade');
+    popoverDataset = optionID;
 });
+
+export let popoverDataset;
 
 // Popover for dataset selection
 $(function () {
@@ -365,8 +368,8 @@ export function pageSetup(jsondata) {
     }
 
     actorData = jsondata['actor_data'];
-    updateActor();
 
+    updateActor();
     updateDate();
     updateLocation();
     resetActionCounts();
@@ -379,7 +382,7 @@ export function pageSetup(jsondata) {
     // If first load of data, user may have selected a subset and is waiting. Render page now that data is available
     if (!initialLoad) {
         initialLoad = true;
-        // In the case where the user has not yet made a subset selection, this is ignored
+
         showCanvas(canvasKeySelected);
         if (canvasKeySelected === 'Actor') resizeActorSVG();
     }
