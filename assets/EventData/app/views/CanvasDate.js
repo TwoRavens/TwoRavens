@@ -12,8 +12,10 @@ export default class CanvasDate {
     view(vnode) {
         let {mode, display} = vnode.attrs;
 
-        let rightMenu = (mode === 'subset') ?
-            m("[id='dateOptions']",
+        let rightMenu = [
+            m("[id='dateOptions']", {
+                    style: {display: mode === 'subset' ? 'block' : 'none'}
+                },
                 m(".form-group[id='dateInterval']",
                     [
                         // Set date from slider
@@ -49,8 +51,10 @@ export default class CanvasDate {
                         m("input.form-control[id='todate'][type='text']")
                     ]
                 )
-            ) :
-            m(ButtonRadio, {
+            ),
+            m('#dateAggreg', {
+                style: {display: mode === 'aggregate' ? 'block' : 'none'}
+            }, m(ButtonRadio, {
                 id: 'dateAggregOption',
                 attrsAll: {style: {width: '400px'}},
                 onclick: aggreg.setDateMeasure,
@@ -62,7 +66,8 @@ export default class CanvasDate {
                     {value: 'Quarterly'},
                     {value: 'Yearly'},
                 ]
-            });
+            }))
+        ];
 
         return (m("#canvasDate.subsetDiv", {style: {"display": display, 'padding-top': panelMargin + 'px'}},
             [

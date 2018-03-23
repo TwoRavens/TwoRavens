@@ -3,6 +3,7 @@ import * as d3 from 'd3'
 import {panelOcclusion} from "../../../common/app/common";
 import {updateAggregTable} from "../aggreg/aggreg";
 import {callOnResize, panelMargin} from "../../../common/app/common";
+import m from 'mithril'
 
 // Resize actor when window changes size
 callOnResize(() => resizeActorSVG());
@@ -1346,4 +1347,6 @@ export function resizeActorSVG() {
         return "M" + diagramWidth / 2 + "," + 0 + "V" + actorHeight;
     });
     updateAll();
+
+    m.redraw()
 }

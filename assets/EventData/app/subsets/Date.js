@@ -86,14 +86,6 @@ export function setupDate() {
 // Redraws the date page. If reset is true, then slider bars get reset
 export function updateDate(reset_sliders=true) {
     $("#dateSVG").empty();
-    if (app.opMode === "subset") {
-		$("#dateInterval").css("display", "block");
-		$("#dateAggregOption").css("display", "none");
-	}
-	else if (app.opMode === "aggreg") {
-		$("#dateInterval").css("display", "none");
-		$("#dateAggregOption").css("display", "block");
-	}
 	
     let dateSVG = d3.select("#dateSVG");
 
