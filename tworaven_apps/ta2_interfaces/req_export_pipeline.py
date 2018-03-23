@@ -8,7 +8,7 @@ from django.template.defaultfilters import slugify
 from google.protobuf.json_format import MessageToJson,\
     Parse, ParseError
 
-from tworaven_apps.ta2_interfaces import core_pb2
+import core_pb2
 from tworaven_apps.ta2_interfaces.ta2_connection import TA2Connection
 from tworaven_apps.ta2_interfaces.ta2_util import get_grpc_test_json,\
     get_failed_precondition_response
@@ -62,11 +62,12 @@ def export_pipeline(info_str=None, call_entry=None):
         return get_failed_precondition_response(err_msg)
 
     # dir = d3m_config.executables_root + pipeline_id
-    executable_write_dir = join('file://%s' % d3m_config.executables_root,
-                                pipeline_id)
+    executable_write_file = join('file://%s' % d3m_config.executables_root,
+                                 pipeline_id)
+    executable_write_file = '%s.mdl' % (executable_write_file)
 
     # update the dict + info_str
-    info_dict[KEY_PIPELINE_EXEC_URI] = executable_write_dir
+    info_dict[KEY_PIPELINE_EXEC_URI] = executable_write_file
     if KEY_PIPELINE_EXEC_URI_FROM_UI in info_dict:
         del info_dict[KEY_PIPELINE_EXEC_URI_FROM_UI]
 
@@ -77,10 +78,10 @@ def export_pipeline(info_str=None, call_entry=None):
         err_msg = 'Failed to PipelineExportRequest info to JSON: %s' % ex_obj
         return get_failed_precondition_response(err_msg)
 
-    #print('info_str', info_str)
+    print('info_str', info_str)
     if call_entry:
         call_entry.request_msg = info_str
-        
+
     # --------------------------------
     # convert the JSON string to a gRPC request
     # --------------------------------
@@ -112,7 +113,7 @@ def export_pipeline(info_str=None, call_entry=None):
     # --------------------------------
     # Convert the reply to JSON and send it back
     # --------------------------------
-    return MessageToJson(reply)
+    return MessageToJson(reply, including_default_value_fields=True)
 
 
 def get_pipeline_id(info_dict):

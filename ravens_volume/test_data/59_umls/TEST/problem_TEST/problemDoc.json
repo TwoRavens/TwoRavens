@@ -1,0 +1,38 @@
+{
+  "about": {
+    "problemID": "59_us_problem_TEST",
+    "problemName": "NULL",
+    "taskType": "linkPrediction",
+    "problemSchemaVersion": "3.0",
+    "problemVersion": "1.0"
+  },
+  "inputs": {
+    "data": [
+      {
+        "datasetID": "59_us_dataset_TEST",
+        "targets": [
+          {
+            "targetIndex": 0,
+            "resID": "1",
+            "colIndex": 4,
+            "colName": "linkExists"
+          }
+        ]
+      }
+    ],
+    "dataSplits": {
+      "method": "holdOut",
+      "testSize": 0.95,
+      "numRepeats": 0,
+      "splitsFile": "dataSplits.csv"
+    },
+    "performanceMetrics": [
+      {
+        "metric": "accuracy"
+      }
+    ]
+  },
+  "expectedOutputs": {
+    "predictionsFile": "predictions.csv"
+  }
+}

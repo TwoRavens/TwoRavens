@@ -1,0 +1,131 @@
+  User:
+    # corresponds to raven_auth.models.User
+    type: "object"
+    required:
+    - "id"
+    - "username"
+    properties:
+      id:
+        type: "integer"
+      username:
+        type: "string"
+      email:
+        type: "string"
+        format: "email"
+      first_name:
+        type: "string"
+      last_name:
+        type: "string"
+      is_active:
+        type: "boolean"
+      is_staff:
+        type: "boolean"
+      is_superuser:
+        type: "boolean"
+      last_login:
+        # e.g. 2017-12-07T17:04:55.639Z. 2017-07-21T17:32:28Z
+        type: "string"
+        format: "date-time"
+      date_joined:
+        type: "string"
+        format: "date-time"
+  AppDomain:
+    type: "string"
+    enum:
+    - "D3M_DOMAIN"
+    - "DATAVERSE_DOMAIN"
+    - "EVENTDATA_DOMAIN"
+  DataSourceType:
+    # corresponds to workspaces.models.DataSourceType
+    type: "object"
+    required:
+    - "id"
+    - "name"
+    - "is_active"
+    properties:
+      id:
+        type: "integer"
+      name:
+        type: "string"
+      is_active:
+        type: "boolean"
+      slug:
+        type: "string"
+      source_url:
+        type: "string"
+      description:
+        type: "string"
+      created:
+        type: "string"
+        format: "date-time"
+      modified:
+        type: "string"
+        format: "date-time"
+  SavedWorkspace:
+    # corresponds to workspaces.models.SavedWorkspace
+    type: "object"
+    required:
+    - "id"
+    - "name"
+    properties:
+      id:
+        type: "integer"
+      name:
+        type: "string"
+      user:
+        type: "object"
+        $ref: "#/definitions/User"
+      is_anonymous:
+        type: "boolean"
+      app_domain:
+        type: "string"
+        $ref: "#/definitions/AppDomain"
+        #enum:
+        #- "D3M_DOMAIN"
+        #- "DATAVERSE_DOMAIN"
+        #- "EVENTDATA_DOMAIN"
+      data_source_type:
+        type: "object"
+        $ref: "#/definitions/DataSourceType"
+      zparams:
+        type: "object"
+      allnodes:
+        type: "object"
+      notes:
+        type: "string"
+      created:
+        type: "string"
+        format: "date-time"
+      modified:
+        type: "string"
+        format: "date-time"
+  SavedWorkspacePartial:
+    # corresponds to workspaces.models.SavedWorkspace
+    type: "object"
+    required:
+    - "id"
+    - "name"
+    properties:
+      id:
+        type: "integer"
+      name:
+        type: "string"
+      user:
+        type: "object"
+        $ref: "#/definitions/User"
+      is_anonymous:
+        type: "boolean"
+      app_domain:
+        type: "string"
+        $ref: "#/definitions/AppDomain"
+      data_source_type:
+        type: "object"
+        $ref: "#/definitions/DataSourceType"
+      notes:
+        type: "string"
+      created:
+        type: "string"
+        format: "date-time"
+      modified:
+        type: "string"
+        format: "date-time"

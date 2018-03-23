@@ -13,9 +13,9 @@ spec:
   - name: "8080"
     port: 8080
     targetPort: 8080
-  - name: "50051"
-    port: 50051
-    targetPort: 50051
+  - name: "45042"
+    port: 45042
+    targetPort: 45042
   selector:
     io.kompose.service: tworavens
 status:

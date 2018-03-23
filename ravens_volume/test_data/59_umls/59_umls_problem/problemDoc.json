@@ -1,0 +1,39 @@
+{
+  "about": {
+    "problemID": "59_umls_problem",
+    "problemName": "UMLS Link prediction problem",
+    "problemDescription": "The UMLS includes a semantic network with 135 concepts and 49 binary predicates. The concepts are nodes of the graph and the predicates are relationship(edge) types. There can be multiple relationships between two concepts. Given a partial set of relationships, the task is to predict if a relationship of a certain type exists between two nodes (concepts)",
+    "taskType": "linkPrediction",
+    "problemSchemaVersion": "3.0",
+    "problemVersion": "1.0"
+  },
+  "inputs": {
+    "data": [
+      {
+        "datasetID": "59_umls_dataset",
+        "targets": [
+          {
+            "targetIndex": 0,
+            "resID": "1",
+            "colIndex": 4,
+            "colName": "linkExists"
+          }
+        ]
+      }
+    ],
+    "dataSplits": {
+      "method": "holdOut",
+      "testSize": 0.95,
+      "numRepeats": 0,
+      "splitsFile": "dataSplits.csv"
+    },
+    "performanceMetrics": [
+      {
+        "metric": "accuracy"
+      }
+    ]
+  },
+  "expectedOutputs": {
+    "predictionsFile": "predictions.csv"
+  }
+}

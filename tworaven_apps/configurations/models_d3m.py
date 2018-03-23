@@ -24,9 +24,15 @@ KEY_DATASET_SCHEMA = 'dataset_schema'
 KEY_PROBLEM_SCHEMA = 'problem_schema'
 
 D3M_FILE_ATTRIBUTES = (KEY_DATASET_SCHEMA, KEY_PROBLEM_SCHEMA)
-D3M_DIR_ATTRIBUTES = ('training_data_root', 'executables_root',
-                      'pipeline_logs_root', 'temp_storage_root')
-D3M_REQUIRED = D3M_FILE_ATTRIBUTES + ('training_data_root',)
+
+D3M_DIR_USER_PROBLEMS_ROOT = 'user_problems_root'
+D3M_DIR_TEMP_STORAGE_ROOT = 'temp_storage_root'
+
+D3M_DIR_ATTRIBUTES = ('training_data_root', 'problem_root',
+                      'pipeline_logs_root', 'executables_root',
+                      D3M_DIR_TEMP_STORAGE_ROOT, D3M_DIR_USER_PROBLEMS_ROOT)
+D3M_VALUE_ATTRIBUTES = ('timeout', 'cpus', 'ram')
+D3M_REQUIRED = D3M_FILE_ATTRIBUTES + ('training_data_root', 'problem_root')
 
 # environment variable name to store a d3m config filepath for startup
 CONFIG_JSON_PATH = 'CONFIG_JSON_PATH'
@@ -64,6 +70,11 @@ class D3MConfiguration(TimeStampedModel):
                         help_text=('Input: Path to the root directory of the'
                                    ' dataset described by dataset_schema'))
 
+    problem_root = models.TextField(\
+                    blank=True,
+                    help_text=('Path to the root directory of the'
+                               ' problem.'))
+
     executables_root = models.TextField(\
                         blank=True,
                         help_text=('Output: Directory in which to write'
@@ -75,10 +86,32 @@ class D3MConfiguration(TimeStampedModel):
                                    ' should write the pipeline list,'
                                    ' output described in Section 4.1.3'))
 
+    user_problems_root = models.TextField(\
+                    blank=True,
+                    help_text=('Directory in which to write user'
+                               ' - (or system-) generated problems'
+                               ' for the part of TA(3+2) that involves'
+                               ' generating additional problems.'))
+
     temp_storage_root = models.TextField(\
                         blank=True,
                         help_text=('Temporary storage root for performers'
                                    ' to use.'))
+
+    timeout = models.IntegerField(\
+                default=-1,
+                help_text=('Allotted time for search, in minutes.'
+                           ' No timeout if negative.'))
+
+    cpus = models.CharField(\
+                max_length=255,
+                blank=True,
+                help_text=('Number of cpus available for search.'))
+
+    ram = models.CharField(\
+                max_length=255,
+                blank=True,
+                help_text=('Amount of RAM available for search.'))
 
     slug = models.SlugField(blank=True,
                             help_text='auto-filled on save')
@@ -115,11 +148,15 @@ class D3MConfiguration(TimeStampedModel):
     def to_ta2_config_test(self, mnt_volume='/ravens_volume', save_shortened_names=False):
         """Return a dict in TA2 format to use with mounted volume"""
         od = OrderedDict()
-        for name in D3M_FILE_ATTRIBUTES + D3M_DIR_ATTRIBUTES:
+        d3m_attributes = D3M_FILE_ATTRIBUTES + \
+                         D3M_DIR_ATTRIBUTES + \
+                         D3M_VALUE_ATTRIBUTES
+        for name in d3m_attributes:
             val = self.__dict__.get(name, '(not set)')
-            idx = val.find(mnt_volume)
-            if idx > -1:
-                val = val[idx:]
+            if val and isinstance(val, str):
+                idx = val.find(mnt_volume)
+                if idx > -1:
+                    val = val[idx:]
             od[name] = val
             if save_shortened_names:
                 self.__dict__[name] = val
@@ -130,9 +167,12 @@ class D3MConfiguration(TimeStampedModel):
     def to_dict(self):
         """Return in an OrderedDict"""
         attrs = ['id', 'name', 'is_default',
-                 'dataset_schema', 'problem_schema', 'training_data_root',
+                 'dataset_schema', 'problem_schema',
+                 'training_data_root', 'problem_root',
                  'executables_root', 'pipeline_logs_root',
-                 'temp_storage_root']
+                 'user_problems_root',
+                 'temp_storage_root',
+                 'timeout', 'cpus', 'ram']
         date_attrs = ['created', 'modified']
 
         od = OrderedDict()
@@ -202,7 +242,10 @@ class D3MConfiguration(TimeStampedModel):
 
         # Load the fields, defaulting to "" (blank)
         #
-        for key in D3M_FILE_ATTRIBUTES + D3M_DIR_ATTRIBUTES:
+        d3m_config_attrs = D3M_FILE_ATTRIBUTES + \
+                           D3M_DIR_ATTRIBUTES + \
+                           D3M_VALUE_ATTRIBUTES
+        for key in d3m_config_attrs:
             val = d3m_dict.get(key, '')
             d3m_config.__dict__[key] = val
 

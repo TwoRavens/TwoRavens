@@ -1,0 +1,37 @@
+{
+  "about": {
+    "problemID": "49_fk_problem_TEST",
+    "problemName": "NULL",
+    "taskType": "graphMatching",
+    "problemSchemaVersion": "3.0"
+  },
+  "inputs": {
+    "data": [
+      {
+        "datasetID": "49_fk_dataset_TEST",
+        "targets": [
+          {
+            "targetIndex": 0,
+            "resID": "2",
+            "colIndex": 3,
+            "colName": "match"
+          }
+        ]
+      }
+    ],
+    "dataSplits": {
+      "method": "holdOut",
+      "testSize": 0.8,
+      "numRepeats": 0,
+      "splitsFile": "dataSplits.csv"
+    },
+    "performanceMetrics": [
+      {
+        "metric": "accuracy"
+      }
+    ]
+  },
+  "expectedOutputs": {
+    "predictionsFile": "predictions.csv"
+  }
+}

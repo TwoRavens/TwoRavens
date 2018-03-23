@@ -4,14 +4,16 @@ Initial code courtesy of Matthias Grabmair's example.
 """
 from django.conf import settings
 import grpc
-from tworaven_apps.ta2_interfaces import core_pb2
-from tworaven_apps.ta2_interfaces import core_pb2_grpc as cpb_grpc
+import core_pb2
+import core_pb2_grpc as cpb_grpc
+import dataflow_ext_pb2_grpc as dataflow_grpc
 
 ## PARAMETERS
 # ...to get things going
-#settings.TA2_TEST_SERVER_URL = 'localhost:50051'
+#settings.TA2_TEST_SERVER_URL = 'localhost:45042'
 
 _GRPC_CORE_STUB = None
+_GRPC_DATAFLOW_EXT_STUB = None
 
 class TA2Connection(object):
     """For now, just return the CoreStub for a single TA2 connection"""
@@ -47,3 +49,28 @@ class TA2Connection(object):
             return None, 'Could not initialize gRPC channel.(2) %s' % ex
 
         return _GRPC_CORE_STUB, None
+
+    @staticmethod
+    def get_grpc_dataflow_stub():
+        """Make sure the gRPC channel is initialized and return the Dataflow CoreStub."""
+        global _GRPC_DATAFLOW_EXT_STUB
+        if _GRPC_DATAFLOW_EXT_STUB is not None:    # channel already initialized
+            return _GRPC_DATAFLOW_EXT_STUB, None
+
+        if not settings.TA2_TEST_SERVER_URL:
+            """No server set!!!"""
+            return None, ('No TA2 server url was found in'
+                          ' the TwoRavens settings (see'
+                          ' "TA2_TEST_SERVER_URL")')
+
+        try:
+            channel = grpc.insecure_channel(settings.TA2_TEST_SERVER_URL)
+        except Exception as ex:
+            return None, 'dataflow. Could not initialize gRPC channel.(1) %s' % ex
+
+        try:
+            _GRPC_DATAFLOW_EXT_STUB = dataflow_grpc.DataflowExtStub(channel)
+        except Exception as ex:
+            return None, 'dataflow. Could not initialize gRPC channel.(2) %s' % ex
+
+        return _GRPC_DATAFLOW_EXT_STUB, None

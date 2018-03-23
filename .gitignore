@@ -1,19 +1,18 @@
 node_modules/
 npm-debug.log
 
-assets/common/*
-
 # currently in rook directory
-rook/rook-files/
-rook/test.json
-rook/eventdata/downloads/
 #rook/
-#rook/output*.png
-#rook/.Rapp.history
-#rook/.RData
-#rook/.Rhistory
-#rook/config.json
-#rook/test.json
+rook/output*.png
+rook/.Rapp.history
+rook/.RData
+rook/.Rhistory
+rook/config.json
+rook/result.json
+rook/test.json
+rook/rook-files/*
+rook/log_*
+rook/eventdata/downloads/
 
 # EventData
 assets/EventData/node_modules/
@@ -26,7 +25,7 @@ test_setup_local/*
 assets/build/tworavens_app-*.js
 assets/build/tworavens_styles-*.css
 assets/build/*.png
-
+assets/result.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -54,9 +53,7 @@ setup/r-setup/RINSTALL.*.LOG
 
 ravens_volume/test_output/*
 ravens_volume/config_*.json
+ravens_volume/32_wikiqa
 rook/rook-files/o_185/data/trainDatamerged.tsv
 rook/rook-files/o_185/preprocess/preprocess.json
-tworaven_apps/content_pages/views.py
-
-# IDE files
-.idea/
+assets/pkgs/swagger-ui/dist/*.map

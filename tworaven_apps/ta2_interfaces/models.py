@@ -12,7 +12,7 @@ KEY_GRPC_JSON = 'grpcrequest'
 #
 KEY_PIPELINE_ID = 'pipelineId'
 KEY_PIPELINE_INFO = 'pipelineInfo'
-KEY_PREDICT_RESULT_URIS = 'predictResultUris'
+KEY_PREDICT_RESULT_URI = 'predictResultUri'
 KEY_PREDICT_RESULT_DATA = 'predictResultData'
 KEY_DATA = 'data'
 
@@ -23,6 +23,9 @@ KEY_PIPELINE_EXEC_URI = 'pipeline_exec_uri'
 KEY_USER_AGENT_FROM_UI = 'user_agent'
 KEY_SESSION_ID_FROM_UI = 'session_id'
 KEY_CONTEXT_FROM_UI = 'context'
+
+KEY_DATASET_URI = 'dataset_uri'
+KEY_NEW_DATASET_URI = 'new_dataset_uri'
 
 # values
 #

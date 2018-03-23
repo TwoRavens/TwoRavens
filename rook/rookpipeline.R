@@ -70,15 +70,18 @@ pipeline.app <- function(env){
     if(!warning){
         mygroup1 <- everything$zgroup1
         mygroup2 <- everything$zgroup2
-        if(is.null(mygroup1) | is.null(mygroup2)){
-            warning <- TRUE
-            result <- list(warning="Problem with groups.")
-        }
+        #if(is.null(mygroup1) | is.null(mygroup2)){
+        #    warning <- TRUE
+        #    result <- list(warning="Problem with groups.")
+        #}
     }
 
 	if(!warning){
         mynoms <- everything$znom
-		myformula <- buildFormula(dv=mydv, linkagelist=myedges, varnames=NULL, nomvars=mynoms, groups=mygroup1) #names(mydata))
+        print("got here 1")
+		myformula <- buildFormula(dv=mydv, linkagelist=myedges, varnames=NULL, nomvars=mynoms, group1=mygroup1, group2=mygroup2) 
+        print(names(myformula))
+        print("got here 2")
 		if(is.null(myformula)){
 			warning <- TRUE
 			result<-list(warning="Problem constructing formula expression.")
@@ -109,8 +112,8 @@ pipeline.app <- function(env){
 
 	if(!warning){
         tryCatch({
-            predictors <- all.vars(myformula[[3]])
-            depvar <- all.vars(myformula[[2]])
+            predictors <- unlist(myformula$predictors) #all.vars(myformula[[3]])
+            depvar <- unlist(myformula$depvar)         #all.vars(myformula[[2]])
             dvvalues <- mydata[,depvar]
             result <- list(predictors=predictors, depvar=depvar, dvvalues=dvvalues)
         },

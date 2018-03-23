@@ -1,0 +1,180 @@
+# ---------------------------------------------------------
+# Kubernetes file for TA3-TA2 - TwoRavens and ISI
+# ---------------------------------------------------------
+---
+# Service for Nginx
+apiVersion: v1
+kind: Service
+metadata:
+  name: ravens-eval
+  labels:
+    evalId: ravens-eval
+spec:
+  # NodePort type allows to expose service outside the cluster
+  type: NodePort
+  selector:
+    evalId: ravens-eval
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: ravens-eval
+  labels:
+    evalId: ravens-eval
+    main: "yes"
+spec:
+  restartPolicy: Never
+  volumes:
+    # TA3 specification volume mount for both containers
+    - name: shared-vol
+      emptyDir: {}
+    # Additional Volumes mounted for ISI/TwoRavens sharing
+    - name: "isi-volume"
+      emptyDir: {}
+    - name: "ravens-volume"
+      hostPath:
+        path: "/ravens_volume"
+  containers:
+    # -------------------------
+    # TA3 - Ravens nginx - reverse proxy for ta3-main
+    # -------------------------
+    - name: ravens-nginx
+      image: ravens-nginx:stable
+      ports:
+        - containerPort: 80
+          name: http
+          protocol: TCP
+      env:
+        # NIST eval id
+        - name: EVAL_ID
+          value: ravens-eval
+    # -------------------------
+    # TA3 Main - TwoRavens
+    # -------------------------
+    - name: ta3-main
+      image: ravens-main:stable
+      # current tworavens has a mount at /ravens_volume
+      volumeMounts:
+        - mountPath: /shared_dir
+          name: shared-vol
+          readOnly: false
+        - mountPath: "/ravens_volume"
+          name: "ravens-volume"
+          readOnly: false
+        - mountPath: /tmp/dsbox-ta2/
+          name: "isi-volume"
+          readOnly: false
+      # web port
+      ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+      # environment variables passed to container
+      env:
+        # NIST eval id
+        - name: EVAL_ID
+          value: ravens-eval
+        # NIST config path
+        - name: CONFIG_JSON_PATH
+          value: "/ravens_volume/config_185_baseball.json"
+        # Turn off test mode
+        - name: TA2_STATIC_TEST_MODE
+          value: "False"
+        # Reference to the gRPC server using the pod name and TA2 port
+        - name: TA2_TEST_SERVER_URL
+          value: "ravens-eval:45042"
+        # Url to TA3 R/rook web service
+        - name: R_DEV_SERVER_BASE
+          value: "http://localhost:8000/custom/"
+      # liveness is for restart
+      livenessProbe:
+        httpGet:
+          path: /monitoring/alive
+          port: 8080
+        initialDelaySeconds: 5
+        timeoutSeconds: 1
+        periodSeconds: 10
+        failureThreshold: 3
+      # readiness: ready for traffic
+      readinessProbe:
+        httpGet:
+          path: /monitoring/alive
+          port: 8080
+        initialDelaySeconds: 10
+        periodSeconds: 10
+    # -------------------------
+    # ROOK CONTAINER SPECS
+    # -------------------------
+    - name: rook-service
+      image: ravens-r-service:stable
+      # same mounts as ta3-main and ta2-main
+      volumeMounts:
+        - mountPath: /shared_dir
+          name: shared-vol
+          readOnly: false
+        - mountPath: "/ravens_volume"
+          name: "ravens-volume"
+          readOnly: false
+        - mountPath: /tmp/dsbox-ta2/
+          name: "isi-volume"
+          readOnly: false
+      # web port
+      ports:
+        - containerPort: 8000
+          name: http
+          protocol: TCP
+      # environment variables passed to container
+      env:
+        # NIST eval id
+        - name: EVAL_ID
+          value: ravens-eval
+        # Also set to "yes" in the Dockefile
+        - name: ROOK_USE_PRODUCTION_MODE
+          value: "yes"
+      # liveness is for restart
+      livenessProbe:
+        httpGet:
+          path: /custom/healthcheckapp
+          port: 8000
+        initialDelaySeconds: 5
+        timeoutSeconds: 1
+        periodSeconds: 10
+        failureThreshold: 3
+      # readiness: ready for traffic
+      readinessProbe:
+        httpGet:
+          path: /custom/healthcheckapp
+          port: 8000
+        initialDelaySeconds: 20
+        periodSeconds: 10
+    # -------------------------
+    # TA2 CONTAINER
+    # -------------------------
+    #- name: ta2-main
+    #  image: isi_ta2:stable
+    #  # environment variables passed to container
+    #  env:
+    #    # NIST eval id
+    #    - name: EVAL_ID
+    #      value: ravens-eval
+    #    # NIST config path
+    #    - name: CONFIG_JSON_PATH
+    #      value: "/ravens_volume/config_o_196.json"
+    #  ports:
+    #    # gRPC port
+    #    - containerPort: 45042
+    #      protocol: TCP
+    #  volumeMounts:
+    #    - mountPath: /shared_dir
+    #      name: shared-vol
+    #      readOnly: false
+    #    - mountPath: "/ravens_volume"
+    #      name: "ravens-volume"
+    #      readOnly: false
+    #    - mountPath: /tmp/dsbox-ta2/
+    #      name: "isi-volume"
+    #      readOnly: false

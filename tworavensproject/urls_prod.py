@@ -18,7 +18,9 @@ urlpatterns = [
 
     url(r'^d3m-service/', include('tworaven_apps.ta2_interfaces.urls')),
 
-    url(r'^api-docs/', include('tworaven_apps.api_docs.urls')),
+    url(r'^api/', include('tworaven_apps.api_docs.urls')),
+
+    url(r'^ta3-search/', include('tworaven_apps.ta3_search.urls')),
 
     # for testing
     #url(r'^data/', include('tworaven_apps.test_data.urls')),

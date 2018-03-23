@@ -1,0 +1,579 @@
+500*.75
+500 + .75*450
+500 + .75*450 - 250
+138796 + 11766
+100/120
+.833*3
+250-150
+100*.833
+120*4.333
+120*4.5
+120*4.333
+250-158
+92/120
+(92/120) * 3
+.75*250
+187-150
+37/120
+250-158
+92/120
+92/125
+.736*90
+125*4
+125*4.3
+.044 * 130000
+61.5*12*20
+750/14/7
+750/14.7
+14.7/750
+1.69*3
+3^100
+3^1000
+161.053*3
+500 - 483
+17/3
+206 * 12/ 9
+21*.38
+20/115
+20* 100/115
+110/5
+install.packages("/Users/tercer/scratch/products/PSI-Library",repos=NULL,type="source")#
+# Test code for json writing function#
+#
+rm(list=ls())#
+#
+library(jsonlite)#
+library(PSIlence)#
+data(PUMS5extract10000, package = "PSIlence")#
+#
+my_delta <- .0000001#
+my_epsilon <- 0.1#
+my_n <- nrow(PUMS5extract10000)#
+my_n.bins <- 16#
+#
+dp.mean.numeric <- dpMean$new(mechanism='mechanismLaplace', var.type='numeric', n=my_n, epsilon=my_epsilon, delta=my_delta, rng=c(0,100))#
+dp.mean.numeric$release(PUMS5extract10000$age)#
+#
+dp.mean.logical <- dpMean$new(mechanism='mechanismLaplace', var.type='logical', n=10000, epsilon=0.01, rng=c(0, 1))#
+dp.mean.logical$release(PUMS5extract10000$married)#
+#
+dp.histogram <- dpHistogram$new(mechanism='mechanismLaplace', var.type='numeric', n=my_n, epsilon=my_epsilon, n.bins=my_n.bins, delta=my_delta, rng=c(0.5,16.5))#
+dp.histogram$release(PUMS5extract10000$educ)#
+names<- c("age", "married", "educ")                              # names : names of variable of each statistic#
+release <- list(dp.mean.numeric, dp.mean.logical, dp.histogram)  # release : list of release objects#
+#
+my_json <- PSIlence:::release2json(names,release)
+my_json
+15*40 4*4
+15*40* 4*4
+15*40
+600*5*4
+600*5
+install.packages("/Users/tercer/scratch/products/PSI-Library",repos=NULL,type="source")#
+# Test code for json writing function#
+#
+rm(list=ls())#
+#
+library(jsonlite)#
+library(PSIlence)#
+data(PUMS5extract10000, package = "PSIlence")#
+#
+my_delta <- .0000001#
+my_epsilon <- 0.1#
+my_n <- nrow(PUMS5extract10000)#
+my_n.bins <- 16#
+#
+dp.mean.numeric <- dpMean$new(mechanism='mechanismLaplace', var.type='numeric', n=my_n, epsilon=my_epsilon, delta=my_delta, rng=c(0,100))#
+dp.mean.numeric$release(PUMS5extract10000$age)#
+#
+dp.mean.logical <- dpMean$new(mechanism='mechanismLaplace', var.type='logical', n=10000, epsilon=0.01, rng=c(0, 1))#
+dp.mean.logical$release(PUMS5extract10000$married)#
+#
+dp.histogram <- dpHistogram$new(mechanism='mechanismLaplace', var.type='numeric', n=my_n, epsilon=my_epsilon, n.bins=my_n.bins, delta=my_delta, rng=c(0.5,16.5))#
+dp.histogram$release(PUMS5extract10000$educ)#
+names<- c("age", "married", "educ")                              # names : names of variable of each statistic#
+release <- list(dp.mean.numeric, dp.mean.logical, dp.histogram)  # release : list of release objects
+dp.mean.numeric
+# Test code for json writing function#
+#
+rm(list=ls())#
+#
+library(jsonlite)#
+library(PSIlence)#
+data(PUMS5extract10000, package = "PSIlence")#
+#
+my_delta <- .0000001#
+my_epsilon <- 0.1#
+my_n <- nrow(PUMS5extract10000)#
+my_n.bins <- 16#
+#
+dp.mean.numeric <- dpMean$new(mechanism='mechanismLaplace', var.type='numeric', n=my_n, epsilon=my_epsilon, delta=my_delta, rng=c(0,100))#
+dp.mean.numeric$release(PUMS5extract10000$age)#
+#
+dp.mean.logical <- dpMean$new(mechanism='mechanismLaplace', var.type='logical', n=10000, epsilon=0.01, rng=c(0, 1))#
+dp.mean.logical$release(PUMS5extract10000$married)#
+#
+dp.histogram <- dpHistogram$new(mechanism='mechanismLaplace', var.type='numeric', n=my_n, epsilon=my_epsilon, n.bins=my_n.bins, delta=my_delta, rng=c(0.5,16.5))#
+dp.histogram$release(PUMS5extract10000$educ)#
+names<- c("age", "married", "educ")                              # names : names of variable of each statistic#
+release <- list(dp.mean.numeric, dp.mean.logical, dp.histogram)  # release : list of release objects#
+#
+my_json <- PSIlence:::release2json(names,release)
+dp.mean.numeric
+# Test code for json writing function#
+#
+rm(list=ls())#
+#
+library(jsonlite)#
+library(PSIlence)#
+data(PUMS5extract10000, package = "PSIlence")#
+#
+my_delta <- .0000001#
+my_epsilon <- 0.1#
+my_n <- nrow(PUMS5extract10000)#
+my_n.bins <- 16#
+#
+dp.mean.numeric <- dpMean$new(mechanism='mechanismLaplace', var.type='numeric', n=my_n, epsilon=my_epsilon, delta=my_delta, rng=c(0,100))#
+dp.mean.numeric$release(PUMS5extract10000$age)#
+#
+dp.mean.logical <- dpMean$new(mechanism='mechanismLaplace', var.type='logical', n=10000, epsilon=0.01, rng=c(0, 1))#
+dp.mean.logical$release(PUMS5extract10000$married)#
+#
+dp.histogram <- dpHistogram$new(mechanism='mechanismLaplace', var.type='numeric', n=my_n, epsilon=my_epsilon, n.bins=my_n.bins, delta=my_delta, rng=c(0.5,16.5))#
+dp.histogram$release(PUMS5extract10000$educ)#
+names<- c("age", "married", "educ")                              # names : names of variable of each statistic#
+release <- list(dp.mean.numeric, dp.mean.logical, dp.histogram)  # release : list of release objects#
+#
+my_json <- PSIlence:::release2json(names,release)
+install.packages("/Users/tercer/scratch/products/PSI-Library",repos=NULL,type="source")#
+# Test code for json writing function#
+#
+rm(list=ls())#
+#
+library(jsonlite)#
+library(PSIlence)#
+data(PUMS5extract10000, package = "PSIlence")#
+#
+my_delta <- .0000001#
+my_epsilon <- 0.1#
+my_n <- nrow(PUMS5extract10000)#
+my_n.bins <- 16#
+#
+dp.mean.numeric <- dpMean$new(mechanism='mechanismLaplace', var.type='numeric', n=my_n, epsilon=my_epsilon, delta=my_delta, rng=c(0,100))#
+dp.mean.numeric$release(PUMS5extract10000$age)#
+#
+dp.mean.logical <- dpMean$new(mechanism='mechanismLaplace', var.type='logical', n=10000, epsilon=0.01, rng=c(0, 1))#
+dp.mean.logical$release(PUMS5extract10000$married)#
+#
+dp.histogram <- dpHistogram$new(mechanism='mechanismLaplace', var.type='numeric', n=my_n, epsilon=my_epsilon, n.bins=my_n.bins, delta=my_delta, rng=c(0.5,16.5))#
+dp.histogram$release(PUMS5extract10000$educ)#
+names<- c("age", "married", "educ")                              # names : names of variable of each statistic#
+release <- list(dp.mean.numeric, dp.mean.logical, dp.histogram)  # release : list of release objects#
+#
+my_json <- PSIlence:::release2json(names,release)
+PSIlence:::release2json(release)
+install.packages("/Users/tercer/scratch/products/PSI-Library",repos=NULL,type="source")#
+# Test code for json writing function#
+#
+rm(list=ls())#
+#
+library(jsonlite)#
+library(PSIlence)#
+data(PUMS5extract10000, package = "PSIlence")#
+#
+my_delta <- .0000001#
+my_epsilon <- 0.1#
+my_n <- nrow(PUMS5extract10000)#
+my_n.bins <- 16#
+#
+dp.mean.numeric <- dpMean$new(mechanism='mechanismLaplace', var.type='numeric', n=my_n, epsilon=my_epsilon, delta=my_delta, rng=c(0,100))#
+dp.mean.numeric$release(PUMS5extract10000$age)#
+#
+dp.mean.logical <- dpMean$new(mechanism='mechanismLaplace', var.type='logical', n=10000, epsilon=0.01, rng=c(0, 1))#
+dp.mean.logical$release(PUMS5extract10000$married)#
+#
+dp.histogram <- dpHistogram$new(mechanism='mechanismLaplace', var.type='numeric', n=my_n, epsilon=my_epsilon, n.bins=my_n.bins, delta=my_delta, rng=c(0.5,16.5))#
+dp.histogram$release(PUMS5extract10000$educ)#
+names<- c("age", "married", "educ")                              # names : names of variable of each statistic#
+release <- list(dp.mean.numeric, dp.mean.logical, dp.histogram)  # release : list of release objects#
+#
+my_json <- PSIlence:::release2json(release)
+dp.mean.logical
+install.packages("/Users/tercer/scratch/products/PSI-Library",repos=NULL,type="source")#
+# Test code for json writing function#
+#
+rm(list=ls())#
+#
+library(jsonlite)#
+library(PSIlence)#
+data(PUMS5extract10000, package = "PSIlence")#
+#
+my_delta <- .0000001#
+my_epsilon <- 0.1#
+my_n <- nrow(PUMS5extract10000)#
+my_n.bins <- 16#
+#
+dp.mean.numeric <- dpMean$new(mechanism='mechanismLaplace', var.type='numeric', n=my_n, epsilon=my_epsilon, delta=my_delta, rng=c(0,100))#
+dp.mean.numeric$release(PUMS5extract10000$age)#
+#
+dp.mean.logical <- dpMean$new(mechanism='mechanismLaplace', var.type='logical', n=10000, epsilon=0.01, rng=c(0, 1))#
+dp.mean.logical$release(PUMS5extract10000$married)#
+#
+dp.histogram <- dpHistogram$new(mechanism='mechanismLaplace', var.type='numeric', n=my_n, epsilon=my_epsilon, n.bins=my_n.bins, delta=my_delta, rng=c(0.5,16.5))#
+dp.histogram$release(PUMS5extract10000$educ)#
+names<- c("age", "married", "educ")                              # names : names of variable of each statistic#
+release <- list(dp.mean.numeric, dp.mean.logical, dp.histogram)  # release : list of release objects#
+#
+my_json <- PSIlence:::release2json(release)
+names<- c("age", "married", "educ", "age")                              # names : names of variable of each statistic#
+release <- list(dp.mean.numeric, dp.mean.logical, dp.histogram, dp.mean.numeric)  # release : list of release objects#
+#
+my_json <- PSIlence:::release2json(release)
+20/.6
+33*12
+43/2
+849+168
+6.6*12
+79/130
+6000*.28
+20000/200
+12*.8
+18*.8
+12 + 16.94+14.22
+500000/.1
+18.5*1.28*40*4*4
+2000/35
+416/450
+1000/.08
+(1000/.08) * 10000
+144*5
+432/144
+144*3
+3*60
+3*60 -15
+1200/60
+750/60
+6*5 + 10
+setwd("/Users/tercer/scratch/products/sola/current2/TwoRavens/rook/preprocess")
+dir()
+mydata<-read.csv("/Users/tercer/scratch/products/sola/current2/TwoRavens/ravens_volume/test_data/38_sick/38_sick_dataset/tables/learningData.csv")
+mydata[1:10,]
+seeddata<-read.csv("../../ravens_volume/test_data/38_sick/38_sick_dataset/tables/learningData.csv")
+seeddata[1:10,]
+library(rjson)
+source(paste(getwd(),"/preprocess.R",sep=""))
+json5<-preprocess(testdata=seeddata)
+json5
+source(paste(getwd(),"/preprocess.R",sep=""))
+json5<-preprocess(testdata=seeddata)
+mydata2 <- mydata[sapply(mydata,is.numeric)]#
+#
+mycov <- tryCatch(cov(mydata2, use='complete.obs'), error=function(e) matrix(0)) # this will default to a 1x1 matrix with a 0
+mycov
+names(mycov)
+dim(mydata2)
+names(mydata2)
+help(cov)
+mydata2 <- mydata[sapply(mydata,is.numeric)]#
+#
+mycov <- tryCatch(cov(mydata2, use='complete.obs'), error=function(e) matrix(0)) # this will default to a 1x1 matrix with a 0
+mycov <- tryCatch(cov(mydata2, use='complete.obs'), error=function(e) matrix(0)) # this will default to a 1x1 matrix with a 0#
+mycor <- tryCatch(cor(mydata2, use='complete.obs'), error=function(e) matrix(0)) # this will default to a 1x1 matrix with a 0
+mycor
+dim(mycor)
+names(mycor)
+max(mycor)
+apply(mycor, 2, max)
+help(sort)
+a<-runif(10)
+a
+sort(a)
+sort(a,partial=3)
+help(partial)
+help(sort)
+rank(a)
+help(rank)
+names<- ("a1","b2","c3","d4","e5","f6","g7","h8","i9","j10")
+names<- c("a1","b2","c3","d4","e5","f6","g7","h8","i9","j10")
+names(rank(a))
+names[rank(a)]
+names[order(a)]
+names[order(a)]
+names
+a
+rank(a)
+order(a)
+help(rank)
+order(a, decreasing=TRUE)
+names(order(a, decreasing=TRUE))
+names[order(a, decreasing=TRUE)]
+k<-4
+names[order(a, decreasing=TRUE)][1:k]
+mycor
+h<-mycor
+diag(h)<-0
+h
+disco <- function(names, cor){#
+#
+	diag(cor) <- 0#
+	found <- NULL#
+	k <- nrows(cor)#
+#
+	r <- min(k-1,3)#
+#
+	for(i in 1:k){#
+		if(!identical(names[i],"d3mIndex")){#
+			keep<-names[order(a, decreasing=TRUE)][1:k]#
+			found<-rbind(found, c(names[i], keep)#
+#
+		}#
+	}#
+}
+disco <- function(names, cor){#
+#
+	diag(cor) <- 0#
+	found <- NULL#
+	k <- nrows(cor)#
+#
+	r <- min(k-1,3)#
+#
+	for(i in 1:k){#
+		if(!identical(names[i],"d3mIndex")){#
+			keep<-names[order(a, decreasing=TRUE)][1:k]#
+			found<-rbind(found, c(names[i], keep)#
+#
+		}#
+	}#
+#
+	return(found)#
+}
+disco <- function(names, cor){#
+#
+	diag(cor) <- 0#
+	found <- NULL#
+	k <- nrows(cor)#
+#
+	r <- min(k-1,3)#
+#
+	for(i in 1:k){#
+		if(!identical(names[i],"d3mIndex")){#
+			keep<-names[order(a, decreasing=TRUE)][1:k]#
+			found<-rbind(found, c(names[i], keep))#
+#
+		}#
+	}#
+#
+	return(found)#
+}
+disco
+ls()
+names
+mycor
+d<-disco(names(mydata), mycor)
+disco <- function(names, cor){#
+#
+	diag(cor) <- 0#
+	found <- NULL#
+	k <- nrow(cor)#
+#
+	r <- min(k-1,3)#
+#
+	for(i in 1:k){#
+		if(!identical(names[i],"d3mIndex")){#
+			keep<-names[order(a, decreasing=TRUE)][1:k]#
+			found<-rbind(found, c(names[i], keep))#
+#
+		}#
+	}#
+#
+	return(found)#
+}
+d<-disco(names(mydata), mycor)
+d
+mycor
+disco <- function(names, cor){#
+#
+	diag(cor) <- 0#
+	found <- NULL#
+	k <- nrow(cor)#
+#
+	r <- min(k-1,3)#
+#
+	for(i in 1:k){#
+		if(!identical(names[i],"d3mIndex")){#
+			keep<-names[order(a, decreasing=TRUE)][1:k]#
+			cat(names[i], ":", keep, "\n", sep="")#
+			found<-rbind(found, c(names[i], keep))#
+		}#
+#
+	}#
+	return(found)#
+}
+d<-disco(names(mydata), mycor)
+names(mydata)
+d<-disco(names(mydata2), mycor)
+a<-c(TRUE,FALSE,TRUE)
+a
+is.boolean(a)
+is.logical(a)
+mydata[1:10,]
+as.numeric(mydata[1:10,])
+summary(mydata)
+mydata[1:10,]
+disco <- function(names, cor){#
+#
+	diag(cor) <- 0#
+	found <- NULL#
+	k <- nrow(cor)#
+#
+	r <- min(k-1,3)#
+#
+	for(i in 1:k){#
+		if(!identical(names[i],"d3mIndex")){#
+			keep<-names[order(a, decreasing=TRUE)][1:k]#
+			cat(names[i], ":", keep, "\n", sep="")#
+			found<-rbind(found, c(names[i], keep))#
+		}#
+#
+	}#
+	return(found)#
+}
+d<-disco(names(mydata2), mycor)
+d
+corr
+cor
+mycor
+d<-disco(names(mydata2), mycor)
+mycor
+order(mycor[1,])
+order(mycor[1,], decreasing=FALSE)
+order(mycor[1,], decreasing=TRUE)
+disco <- function(names, cor){#
+#
+	diag(cor) <- 0#
+	cor <- abs(cor)#
+	found <- NULL#
+	k <- nrow(cor)#
+#
+	r <- min(k-1,3)#
+#
+	for(i in 1:k){#
+		if(!identical(names[i],"d3mIndex")){#
+			keep<-names[order(cor[i,], decreasing=TRUE)][1:k]#
+			cat(names[i], ":", keep, "\n", sep=" ")#
+			found<-rbind(found, c(names[i], keep))#
+		}#
+#
+	}#
+	return(found)#
+}
+mycor
+d<-disco(names(mydata2), mycor)
+d
+disco <- function(names, cor){#
+#
+	diag(cor) <- 0#
+	cor <- abs(cor)#
+	found <- NULL#
+	k <- nrow(cor)#
+#
+	r <- min(k-1,3)#
+#
+	for(i in 1:k){#
+		if(!identical(names[i],"d3mIndex")){#
+			keep<-names[order(cor[i,], decreasing=TRUE)][1:r]#
+			cat(names[i], ":", keep, "\n", sep=" ")#
+			found<-rbind(found, c(names[i], keep))#
+		}#
+#
+	}#
+	return(found)#
+}
+mycor
+d<-disco(names(mydata2), mycor)
+d
+help(cor)
+source(paste(getwd(),"/preprocess.R",sep=""))
+seeddata<-read.csv("../../ravens_volume/test_data/38_sick/38_sick_dataset/tables/learningData.csv")#
+json5<-preprocess(testdata=seeddata)
+source(paste(getwd(),"/preprocess.R",sep=""))
+seeddata<-read.csv("../../ravens_volume/test_data/38_sick/38_sick_dataset/tables/learningData.csv")#
+json5<-preprocess(testdata=seeddata)
+json5
+a<-c("aa","bb","aa",NA,"aa")
+a
+unique(a)
+help(unique)
+unique(a, incomparables=NA)
+unique(a, incomparables="NA")
+unique(na.omit(a))
+a
+as.numeric(a)
+as.numeric(as.character(a))
+a
+as.numeric(as.factor(a))
+source(paste(getwd(),"/preprocess.R",sep=""))
+source(paste(getwd(),"/preprocess.R",sep=""))
+d<-disco(names(mydata2), mycor)
+d
+seeddata<-read.csv("../../ravens_volume/test_data/38_sick/38_sick_dataset/tables/learningData.csv")#
+json5<-preprocess(testdata=seeddata)
+source(paste(getwd(),"/preprocess.R",sep=""))
+seeddata<-read.csv("../../ravens_volume/test_data/38_sick/38_sick_dataset/tables/learningData.csv")#
+json5<-preprocess(testdata=seeddata)
+json5
+source(paste(getwd(),"/preprocess.R",sep=""))
+seeddata<-read.csv("../../ravens_volume/test_data/38_sick/38_sick_dataset/tables/learningData.csv")#
+json5<-preprocess(testdata=seeddata)
+json5
+source(paste(getwd(),"/preprocess.R",sep=""))
+seeddata<-read.csv("../../ravens_volume/test_data/38_sick/38_sick_dataset/tables/learningData.csv")#
+json5<-preprocess(testdata=seeddata)
+source(paste(getwd(),"/preprocess.R",sep=""))
+seeddata<-read.csv("../../ravens_volume/test_data/38_sick/38_sick_dataset/tables/learningData.csv")#
+json5<-preprocess(testdata=seeddata)
+source(paste(getwd(),"/preprocess.R",sep=""))
+seeddata<-read.csv("../../ravens_volume/test_data/38_sick/38_sick_dataset/tables/learningData.csv")#
+json5<-preprocess(testdata=seeddata)
+source(paste(getwd(),"/preprocess.R",sep=""))
+seeddata<-read.csv("../../ravens_volume/test_data/38_sick/38_sick_dataset/tables/learningData.csv")#
+json5<-preprocess(testdata=seeddata)
+seeddata[,3]
+unique(seeddata[,3])
+as.numeric(as.factor(seeddata[,3]))
+as.numeric(as.factor(seeddata[,4]))
+source(paste(getwd(),"/preprocess.R",sep=""))
+seeddata<-read.csv("../../ravens_volume/test_data/38_sick/38_sick_dataset/tables/learningData.csv")#
+json5<-preprocess(testdata=seeddata)
+source(paste(getwd(),"/preprocess.R",sep=""))
+seeddata<-read.csv("../../ravens_volume/test_data/38_sick/38_sick_dataset/tables/learningData.csv")#
+json5<-preprocess(testdata=seeddata)
+source(paste(getwd(),"/preprocess.R",sep=""))
+seeddata<-read.csv("../../ravens_volume/test_data/38_sick/38_sick_dataset/tables/learningData.csv")#
+json5<-preprocess(testdata=seeddata)
+source(paste(getwd(),"/preprocess.R",sep=""))
+seeddata<-read.csv("../../ravens_volume/test_data/38_sick/38_sick_dataset/tables/learningData.csv")#
+json5<-preprocess(testdata=seeddata)
+source(paste(getwd(),"/preprocess.R",sep=""))
+seeddata<-read.csv("../../ravens_volume/test_data/38_sick/38_sick_dataset/tables/learningData.csv")#
+json5<-preprocess(testdata=seeddata)
+json5
+a
+b<-runif(10)
+b
+order(b)
+order(b, decreasing[false])
+order(b, decreasing=false)
+order(b, decreasing=TRUE)
+a<-list()
+a[[1]]<-"a"
+a[[2]]<-"b"
+a[[3]]<-"c"
+a
+a[[c(2,1,3)]]
+a
+help(tools:::startDynamicHelp)
+help(startDynamicHelp)
+6.6*12
+(6.6 - 3) * 12
+(6.6 - 3.5) * 12

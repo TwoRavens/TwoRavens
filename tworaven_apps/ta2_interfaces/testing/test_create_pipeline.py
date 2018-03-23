@@ -8,10 +8,12 @@ from django.conf import settings
 from tworaven_apps.ta2_interfaces.ta2_util import format_info_for_request,\
     load_template_as_dict
 from tworaven_apps.utils.msg_helper import msgt
+from tworaven_apps.utils.static_keys import KEY_SUCCESS, KEY_DATA
 from tworaven_apps.ta2_interfaces.models import STATUS_VAL_OK,\
     STATUS_VAL_FAILED_PRECONDITION, STATUS_VAL_COMPLETED
-from tworaven_apps.ta2_interfaces.req_pipeline_create import ERR_NO_SESSION_ID,\
+from tworaven_apps.ta2_interfaces.req_create_pipeline import ERR_NO_SESSION_ID,\
     ERR_NO_CONTEXT
+from tworaven_apps.raven_auth.models import User
 
 
 class CreatePipelinesTest(TestCase):
@@ -19,12 +21,15 @@ class CreatePipelinesTest(TestCase):
         # Set it to internal testing mode
         settings.TA2_STATIC_TEST_MODE = True
 
+        # test client
+        self.client = Client()
+
+        user_obj = User.objects.get_or_create(username='dev_admin')[0]
+        self.client.force_login(user_obj)
 
     def test_10_good_create(self):
         """(10) Test create pipelines endpoint used by UI"""
         msgt(self.test_10_good_create.__doc__)
-        # test client
-        client = Client()
 
         # url and info for call
         #
@@ -33,7 +38,10 @@ class CreatePipelinesTest(TestCase):
         info_dict = load_template_as_dict('test_requests/req_create_pipeline.json')
 
 
-        response = client.post(url, format_info_for_request(info_dict))
+        #response = self.client.post(url, format_info_for_request(info_dict))
+        response = self.client.post(url,
+                                    json.dumps(info_dict),
+                                    content_type="application/json")
 
         # 200 response
         #
@@ -42,8 +50,6 @@ class CreatePipelinesTest(TestCase):
         # convert to JSON
         #
         json_resp = response.json()
-        #print('json_resp', json_resp[:200])
-        #print(len(json_resp))
 
         # expect list of 6 responses
         #
@@ -60,26 +66,26 @@ class CreatePipelinesTest(TestCase):
         self.assertEqual(fifth_resp['progressInfo'],
                          STATUS_VAL_COMPLETED)
 
-        # There is 1 result uri
+        # There is a result uri
         #
-        self.assertEqual(len(fifth_resp['pipelineInfo']['predictResultUris']),
-                         1)
+        self.assertTrue('predictResultUri' in fifth_resp['pipelineInfo'])
 
-        # There is 1 corresponding result for predictResultData
+        # There is a predictResultData
         #
-        self.assertEqual(len(fifth_resp['pipelineInfo']['predictResultData']),
-                         1)
+        self.assertTrue('predictResultData' in fifth_resp['pipelineInfo'])
 
-        # The 1st entry in predictResultData contains the key "file_1"
+        # predictResultData contains
+        #  the keys "success" and "data"
         #
-        self.assertTrue('file_1' in\
-                        fifth_resp['pipelineInfo']['predictResultData'][0])
+        self.assertTrue(KEY_SUCCESS in\
+                        fifth_resp['pipelineInfo']['predictResultData'])
+
+        self.assertTrue(KEY_DATA in\
+                        fifth_resp['pipelineInfo']['predictResultData'])
 
     def test_20_bad_create_no_context(self):
         """(20) Test create pipelines endpoint used by UI.  No context"""
         msgt(self.test_20_bad_create_no_context.__doc__)
-        # test client
-        client = Client()
 
         # url and info for call
         #
@@ -89,7 +95,10 @@ class CreatePipelinesTest(TestCase):
 
         del info_dict['context']
 
-        response = client.post(url, format_info_for_request(info_dict))
+        #response = self.client.post(url, format_info_for_request(info_dict))
+        response = self.client.post(url,
+                                    json.dumps(info_dict),
+                                    content_type="application/json")
 
         # 200 response
         #
@@ -114,8 +123,6 @@ class CreatePipelinesTest(TestCase):
     def test_30_bad_create_no_session_id(self):
         """(30) Test create pipelines endpoint used by UI.  No session_id"""
         msgt(self.test_30_bad_create_no_session_id.__doc__)
-        # test client
-        client = Client()
 
         # url and info for call
         #
@@ -125,7 +132,10 @@ class CreatePipelinesTest(TestCase):
 
         del info_dict['context']['session_id']
 
-        response = client.post(url, format_info_for_request(info_dict))
+        #response = self.client.post(url, format_info_for_request(info_dict))
+        response = self.client.post(url,
+                                    json.dumps(info_dict),
+                                    content_type="application/json")
 
         # 200 response
         #

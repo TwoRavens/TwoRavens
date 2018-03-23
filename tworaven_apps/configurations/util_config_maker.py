@@ -7,7 +7,10 @@ from os.path import abspath, isdir, join
 
 from django.conf import settings
 
-from tworaven_apps.configurations.models_d3m import D3MConfiguration
+from tworaven_apps.configurations.models_d3m import \
+    (D3MConfiguration,
+     D3M_DIR_USER_PROBLEMS_ROOT,
+     D3M_DIR_TEMP_STORAGE_ROOT)
 
 
 _TEST_BASE_DIR = join(settings.BASE_DIR, 'ravens_volume')
@@ -15,7 +18,7 @@ _TEST_DATA_DIR = join(_TEST_BASE_DIR, 'test_data')
 _TEST_DATA_OUTPUT_DIR = join(_TEST_BASE_DIR, 'test_output')
 
 if not isdir(_TEST_DATA_OUTPUT_DIR):
-    os.makedirs(_TEST_DATA_OUTPUT_DIR)
+    os.makedirs(_TEST_DATA_OUTPUT_DIR, exist_ok=True)
 
 class TestConfigMaker:
     """Make a D3M config based on local files in the /data directory
@@ -43,8 +46,9 @@ class TestConfigMaker:
 
         problem_dirs = [x for x in os.listdir(data_dir)
                         if isdir(join(data_dir, x)) and
-                        x[:2] in ['o_', 'r_'] and
-                        not x.endswith('_output')]
+                        not x.endswith('_output') and
+                        not x.startswith('x')]
+                        #x[:2] in ['o_', 'r_'] and
 
         for idx, name in enumerate(problem_dirs):
             kwargs = dict(config_files_only=config_files_only)
@@ -100,12 +104,16 @@ class TestConfigMaker:
 
         # create output dirs
         #
-        output_dir_names = ['pipeline_logs', 'executables', 'temp']
+        output_dir_names = ['pipeline_logs',
+                            'executables',
+                            D3M_DIR_TEMP_STORAGE_ROOT,
+                            D3M_DIR_USER_PROBLEMS_ROOT]
+
         for folder_name in output_dir_names:
             d3m_output_dir = join(d3m_output_base, folder_name)
             if not isdir(d3m_output_dir):
                 print('   ...Create D3M output dir: %s' % d3m_output_dir)
-                os.makedirs(d3m_output_dir)
+                os.makedirs(d3m_output_dir, exist_ok=True)
                 #self.add_gitkeep(d3m_output_dir)
 
         # create a D3MConfiguration object
@@ -113,12 +121,31 @@ class TestConfigMaker:
         d3m_config = D3MConfiguration(\
             name=self.config_name,
             is_default=self.is_default,
-            dataset_schema=join(data_dir, 'data', 'dataSchema.json'),
-            problem_schema=join(data_dir, 'problemSchema.json'),
-            training_data_root=join(data_dir, 'data'),
+
+            problem_root=join(data_dir,
+                              'TRAIN',
+                              'problem_TRAIN'),
+
+            problem_schema=join(data_dir,
+                                'TRAIN',
+                                'problem_TRAIN',
+                                'problemDoc.json'),
+
+            training_data_root=join(data_dir,
+                                    'TRAIN',
+                                    'dataset_TRAIN'),
+
+            dataset_schema=join(data_dir,
+                                'TRAIN',
+                                'dataset_TRAIN',
+                                'datasetDoc.json'),
+
             pipeline_logs_root=join(d3m_output_base, output_dir_names[0]),
             executables_root=join(d3m_output_base, output_dir_names[1]),
-            temp_storage_root=join(d3m_output_base, output_dir_names[2]))
+            temp_storage_root=join(d3m_output_base, D3M_DIR_TEMP_STORAGE_ROOT),
+            user_problems_root=join(d3m_output_base, D3M_DIR_USER_PROBLEMS_ROOT),
+
+            cpus=0)
 
         d3m_config.save()
 

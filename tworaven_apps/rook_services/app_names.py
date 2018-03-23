@@ -19,6 +19,8 @@ ROOK_APP_NAMES = [('ZELIG_APP', 'zeligapp', 'zeligapp'),    # run models
                   ('TRANSFORM_APP', 'transformapp', 'transformapp'), # transfor file
                   ('PREPROCESS_APP', 'preprocessapp', 'preprocessapp'), # preprocess
                   ('PIPELINE_APP', 'pipelineapp', 'pipelineapp'), # format pipeline
+                  ('EXPLORE_APP', 'exploreapp', 'exploreapp'),
+                  ('TREE_APP', 'treeapp', 'treeapp'),
                   (HEALTH_CHECK_APP, 'healthcheckapp', 'healthcheckapp'), # healthcheckapp
                  ]
 

@@ -22,7 +22,7 @@ if(is_rapache_mode) {
 }
 
 if(!production){
-    packageList<-c("Rcpp","VGAM", "AER", "dplyr", "quantreg", "geepack", "maxLik", "Amelia", "Rook","jsonlite","rjson", "devtools", "DescTools", "nloptr","XML", "Zelig", "future", "tidyverse", "lubridate")
+    packageList<-c("Rcpp","VGAM", "AER", "dplyr", "quantreg", "geepack", "maxLik", "Amelia", "Rook","jsonlite","rjson", "devtools", "DescTools", "nloptr","XML", "Zelig", "future", "tidyverse", "lubridate", "rpart", "cellranger")
 
     # Find an available repository on CRAN
     availableRepos <- getCRANmirrors()
@@ -43,6 +43,7 @@ library(rjson)
 library(jsonlite)
 library(devtools)
 library(DescTools)
+library(rpart)
 
 library("future") # submit EventData api requests asynchronously
 plan(multiprocess)
@@ -113,11 +114,11 @@ if(!is_rapache_mode){
 
     print(R.server)
 
-    if(!production){
+    #if(!production){
       R.server$start(listen=myInterface, port=myPort)
       R.server$listenAddr <- myInterface
       R.server$listenPort <- myPort
-    }
+    #}
 }
 
 
@@ -132,6 +133,8 @@ source("rookdata.R")
 source("rookpreprocess.R")
 source("rookpipeline.R")
 source("rookhealthcheck.R")
+source("rookexplore.R")
+source("rooktree.R")
 
 # Event Data
 source("eventdata/rooksubset.R")
@@ -157,6 +160,8 @@ if(!is_rapache_mode){
     R.server$add(app = preprocess.app, name="preprocessapp")
     R.server$add(app = pipeline.app, name="pipelineapp")
     R.server$add(app = healthcheck.app, name="healthcheckapp")
+    R.server$add(app = explore.app, name="exploreapp")
+    R.server$add(app = tree.app, name="treeapp")
 
     R.server$add(app = eventdata_subset.app, name="eventdatasubsetapp")
     

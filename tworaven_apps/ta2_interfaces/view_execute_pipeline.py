@@ -3,15 +3,44 @@ from django.http import JsonResponse    #, HttpResponse, Http404
 from django.views.decorators.csrf import csrf_exempt
 from tworaven_apps.ta2_interfaces.req_execute_pipeline import \
     execute_pipeline
-from tworaven_apps.ta2_interfaces.ta2_util import get_grpc_content
-from tworaven_apps.configurations.utils import get_latest_d3m_config
+from tworaven_apps.ta2_interfaces.execute_pipeline_helper import ExecutePipelineHelper
+from tworaven_apps.utils.view_helper import \
+    (get_request_body, get_request_body_as_json)
 from tworaven_apps.call_captures.models import ServiceCallEntry
 from tworaven_apps.utils.view_helper import get_session_key
 
 @csrf_exempt
-def view_execute_pipeline(request):
+def view_execute_pipeline_problem_doc(request):
+    """copies config directories, adds new learning data, and passes
+    problem doc in copied directory"""
+    success, raven_data_or_err = get_request_body_as_json(request)
+    if not success:
+        return JsonResponse(dict(status=False,
+                                 message=raven_data_or_err))
+
+    eph = ExecutePipelineHelper(raven_data_or_err)
+    if eph.has_error:
+        return JsonResponse(dict(status=False,
+                                 message=eph.error_message))
+
+    json_request_as_string = eph.get_updated_request(as_string=True)
+
+    print('UPDATED request: %s' % json_request_as_string)
+
+    return view_execute_pipeline(request,
+                                 includes_data=False,
+                                 json_request_as_string=json_request_as_string)
+
+
+@csrf_exempt
+def view_execute_pipeline_direct(request):
+    """The dataset_uri is already set"""
+    return view_execute_pipeline(request, includes_data=False)
+
+@csrf_exempt
+def view_execute_pipeline(request, includes_data=True, **kwargs):
     """
-    This is a more complex request that does 2 things:
+    If includes_data is True, this is a more complex request that does 2 things:
     (1) Writes the data portion of the JSON from the UI to a file in "temp_storage_root"
         - e.g. create a directory and add the file with a unique name
     (2) Send a gRPC request message replacing "some uri" with reference to the file written in
@@ -21,10 +50,22 @@ def view_execute_pipeline(request):
     """
     session_key = get_session_key(request)
 
-    success, raven_data_or_err = get_grpc_content(request)
-    if not success:
-        return JsonResponse(dict(status=False,
-                                 message=raven_data_or_err))
+    # Option to send the JSON request directly instead of within
+    # the HTTP Request object
+    #
+    json_request_as_string = kwargs.get('json_request_as_string')
+
+    if json_request_as_string is not None:
+        # they sent the request as a separate string
+        #
+        raven_data_or_err = json_request_as_string
+    else:
+        # pull the request from the body of the POST
+        #
+        success, raven_data_or_err = get_request_body(request)
+        if not success:
+            return JsonResponse(dict(status=False,
+                                     message=raven_data_or_err))
 
     # Begin to log D3M call
     #
@@ -37,13 +78,15 @@ def view_execute_pipeline(request):
 
     # Let's call the TA2 and start the session!
     #
-    fmt_request, json_str_or_err = execute_pipeline(raven_data_or_err)
+    fmt_request, json_str_or_err = execute_pipeline(\
+                                            raven_data_or_err,
+                                            includes_data=includes_data)
 
     if fmt_request is None:
         if call_entry:
             call_entry.save_d3m_response(json_str_or_err)
-        return JsonResponse(dict(status=False,
-                                 message=json_str_or_err))
+        json_dict = dict(grpcResp=json.loads(json_str_or_err))
+        return JsonResponse(json_dict, safe=False)
 
 
     # Convert JSON str to python dict - err catch here

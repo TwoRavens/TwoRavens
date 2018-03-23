@@ -1,0 +1,97 @@
+{
+  "about": {
+    "datasetID": "30_personae_dataset",
+    "datasetName": "Personae -personality detection Dataset",
+    "description": "The Personae corpus was collected for experiments in Authorship Attribution and Personality Prediction. It consists of 145 Dutch-language essays, written by 145 different students.",
+    "citation": "\n@inproceedings{\nluyckx2008personae,\ntitle={Personae: a Corpus for Author and Personality Prediction from Text.},\nauthor={Luyckx, Kim and Daelemans, Walter},\nbooktitle={LREC},\nyear={2008}\n}\n",
+    "license": "Creative Commons",
+    "source": "CLiPS Research Center, University of Antwerp",
+    "sourceURI": "http://www.clips.ua.ac.be/datasets/personae-corpus",
+    "approximateSize": "1.36 MB",
+    "datasetSchemaVersion": "3.0",
+    "redacted": false,
+    "datasetVersion": "1.0"
+  },
+  "dataResources": [
+    {
+      "resID": "0",
+      "resPath": "text/",
+      "resType": "text",
+      "resFormat": [
+        "text/plain"
+      ],
+      "isCollection": true
+    },
+    {
+      "resID": "1",
+      "resPath": "tables/learningData.csv",
+      "resType": "table",
+      "resFormat": [
+        "text/csv"
+      ],
+      "isCollection": false,
+      "columns": [
+        {
+          "colIndex": 0,
+          "colName": "d3mIndex",
+          "colType": "integer",
+          "role": [
+            "index"
+          ]
+        },
+        {
+          "colIndex": 1,
+          "colName": "raw_text_file",
+          "colType": "string",
+          "role": [
+            "attribute"
+          ],
+          "refersTo": {
+            "resID": "0",
+            "resObject": "item"
+          }
+        },
+        {
+          "colIndex": 2,
+          "colName": "text_language",
+          "colType": "categorical",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 3,
+          "colName": "author_gender",
+          "colType": "categorical",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 4,
+          "colName": "author_language",
+          "colType": "categorical",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 5,
+          "colName": "author_region",
+          "colType": "categorical",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 6,
+          "colName": "extrovert",
+          "colType": "categorical",
+          "role": [
+            "suggestedTarget"
+          ]
+        }
+      ]
+    }
+  ]
+}

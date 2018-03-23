@@ -139,6 +139,36 @@ preprocess<-function(hostname=NULL, fileid=NULL, testdata=NULL, types=NULL, file
     datasetLevelInfo<-list(private=FALSE,stdyDscr=list(citation=list(titlStmt=list(titl="",IDNo=list("-agency"="","#text"="")),rspStmt=list(Authentry=""),biblcit="No Data Citation Provided")),fileDscr=list("-ID"="",fileTxt=list(fileName="",dimensns=list(caseQnty="",varQnty=""),fileType=""),notes=list("-level"="","-type"="","-subject"="","#text"="")))    # This signifies that that the metadata summaries are not privacy protecting
     }
     #datasetitationinfo
+    
+    print("dataset level info")
+    print(datasetLevelInfo)
+    
+    # adding the covariance matrix for all numeric variables to the datasetLevelInfo
+    # using 'complete.obs' is safer than 'pairwise.complete.obs', although it listwise deletes on entire data.frame
+    mydata2 <- mydata
+    # If only two unique (non-missing) values, coerce to numeric for correlation matrix
+    for(i in 1:ncol(mydata2)){
+        temp<-mydata2[,i]
+        if(!is.numeric(temp)){
+            if(length(unique(na.omit(temp)))==2){
+                mydata2[,i]<-as.numeric(as.factor(mydata2[,i]))
+            }
+        }
+    }
+    mydata2 <- mydata2[sapply(mydata2,is.numeric)]
+
+    mycov <- tryCatch(cov(mydata2, use='complete.obs'), error=function(e) matrix(0)) # this will default to a 1x1 matrix with a 0
+    mycor <- tryCatch(cor(mydata2, use='pairwise.complete.obs'), error=function(e) matrix(0)) # this will default to a 1x1 matrix with a 0
+
+    if(!identical(mycor,0)){
+        mydisco<-disco(names(mydata2), mycor, n=3)
+    }else{
+        mydisco<-NULL
+    }
+
+    datasetLevelInfo[["covarianceMatrix"]] <- mycov
+    datasetLevelInfo[["discovery"]] <- mydisco
+    
     jsontest<-rjson:::toJSON(datasetLevelInfo)
     write(jsontest,file="test.json")
       ## Construct Metadata file that at highest level has list of dataset-level, and variable-level information
@@ -330,8 +360,40 @@ typeGuess <- function(data) {
     return(out)
 }
 
+## Function that runs discovery, finding potential models of interest, here by highest correlated variables.
 
+disco <- function(names, cor, n=3){
 
+    diag(cor) <- 0          # don't include self
+    cor[is.na(cor)] <- 0    # don't get tripped up by incomputable cor
+    cor[cor==1] <- 0        # don't use variables that are perfect
+    cor <- abs(cor)
+    found <- list()
+    k <- nrow(cor)
+
+    r <- min(k-1,n)  # How many predictor variables to keep
+
+    count<-0
+    rating <- NULL
+    for(i in 1:k){
+        if(!identical(names[i],"d3mIndex")){
+            count <- count+1
+            temporder <- order(cor[i,], decreasing=TRUE)[1:r]
+            keep <- names[temporder]
+            rating <- c(rating,sum(cor[i,temporder]))
+            found[[count]] <- list(target=names[i], predictors=keep)
+        }
+
+    }
+
+    newfound <- list()
+    neworder <- order(rating, decreasing=TRUE)
+    for(i in 1:length(rating)){
+        newfound[[i]] <- found[[ neworder[i] ]]
+    }
+
+    return(newfound)
+}
 
 
 

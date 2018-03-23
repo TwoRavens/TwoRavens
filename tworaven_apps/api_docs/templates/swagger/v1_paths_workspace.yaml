@@ -1,0 +1,73 @@
+  #--------------------
+  # start: workspace paths
+  #--------------------
+  {% url 'list_user_workspaces' %}:
+    get:
+      tags:
+      - "workspaces"
+      summary: "Retrieve a list of workspaces for the logged in users"
+      description: "Retrieve a JSON representation of a user's SavedWorkspace objects"
+      operationId: "listWorkspaces"
+      produces:
+      - "application/json"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/SavedWorkspacePartial"
+        400:
+          description: "Error in retrieval."
+        401:
+          description: "Not logged in."
+        404:
+          description: "No workspaces found for this user."
+  {% url 'view_workspace_by_id_base' %}{workspaceId}:
+    get:
+      tags:
+      - "workspaces"
+      summary: "Retrieve a workspace by workspace id"
+      description: "Retrieve a JSON representation of a SavedWorkspace object"
+      operationId: "findWorkspaceById"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "workspaceId"
+        in: "query"
+        description: "ID of SavedWorkspace to return"
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "object"
+            $ref: "#/definitions/SavedWorkspace"
+        400:
+          description: "Workspace not found for this id/user."
+        401:
+          description: "Not logged in."
+  {% url 'view_current_workspace' %}:
+    get:
+      tags:
+      - "workspaces"
+      summary: "Retrieve the current workspace by session id and the logged in user"
+      description: "Retrieve a JSON representation of a SavedWorkspace object"
+      operationId: "findWorkspaceCurrent"
+      produces:
+      - "application/json"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "object"
+            $ref: "#/definitions/SavedWorkspace"
+        400:
+          description: "Workspace not found for this session id and user."
+        401:
+          description: "Not logged in."
+    #--------------------
+    # end workspace paths
+    #--------------------

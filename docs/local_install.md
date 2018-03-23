@@ -166,10 +166,10 @@ The following must be run within R. On the Vagrant install, this is done via:
 Then, in the R shell:
 
   ```
-  install.packages(c("VGAM", "AER", "dplyr", "quantreg", "geepack", "maxLik", "Amelia", "Rook","jsonlite","rjson", "devtools", "DescTools", "XML", "Zelig"))
+  install.packages(c("VGAM", "AER", "dplyr", "quantreg", "geepack", "maxLik", "Amelia", "Rook","jsonlite","rjson", "devtools", "DescTools", "XML", "Zelig", "rappdirs", "sourcetools", "processx", "rex", "evaluate", "highr", "brglm", "ROCR", "praise", "commonmark", "hunspell", "knitr", "rprojroot", "rpart", "future", "tidyverse", "lubridate", "cellranger"))
   ```
 
-Then set your working directory to ~TwoRavens/rook. On the Vagrant install, this is:
+Then set your working directory to ~/TwoRavens/rook. On the Vagrant install, this is:
 
   ```
   setwd("/home/ubuntu/TwoRavens/rook")
@@ -196,6 +196,11 @@ Note that this may install many packages, depending on what already exists. If i
 - Try the app again:
   - Go to: http://127.0.0.1:8080/
   - Hit shift+refresh on the browser
+  
+As a shortcut to the above, assuming R is installed, from the command line, you can try:
+  ```
+  fab run_rook
+  ```
 
 ## Running the Local Environment after Setup
 
@@ -225,6 +230,9 @@ Note that this may install many packages, depending on what already exists. If i
         ```
         source("rooksource.R")
         ```
+        
+   Or, from a new terminal, try `fab run_rook`
+   
 4. Go to Two Ravens: http://127.0.0.1:8080/
   - Go to the Django admin: http://127.0.0.1:8080/admin
     - username: `dev_admin`

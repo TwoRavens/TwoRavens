@@ -1,13 +1,18 @@
 FROM r-base:3.4.1
 MAINTAINER Raman Prasad (raman_prasad@harvard.edu)
 
+LABEL organization="Two Ravens" \
+      2ra.vn.version="0.0.6-beta" \
+      2ra.vn.release-date="2018-01-11" \
+      description="Image for the base of the Two Ravens R service."
+
 # ----------------------------------------------------
 # This contains R and specific packages
 # needed to run the TwoRavens rook application
-# 
+#
 # - The Image from this Dockerfile is used as a base
 #   to copy in the Rook files and run the app in /rook
-# 
+#
 # ----------------------------------------------------
 
 # -------------------------------------
@@ -36,7 +41,10 @@ RUN  R -e 'install.packages("Rcpp", repos="http://cran.rstudio.org")' && \
     R -e 'install.packages("DescTools", repos="http://cran.rstudio.org")' && \
     R -e 'install.packages("nloptr", repos="http://cran.rstudio.org")' && \
     R -e 'install.packages("XML", repos="http://cran.rstudio.org")' && \
+    R -e 'install.packages("rpart", repos="http://cran.rstudio.org")' && \
+    R -e 'install.packages("tidyverse", repos="http://cran.rstudio.org")' && \
+    R -e 'install.packages("lubridate", repos="http://cran.rstudio.org")' && \
+    R -e 'install.packages("data.table", repos="http://cran.rstudio.org")' && \
     R -e 'install.packages("Zelig", repos="http://cran.rstudio.org")'
-
-
+    
 EXPOSE 8000

@@ -1,0 +1,89 @@
+[
+  {
+  "moduleId": "module_id 0",
+  "status": "PENDING",
+  "outputs": [
+    {
+      "outputName": "output_name 1",
+      "value": "value 1"
+    },
+    {
+      "outputName": "output_name 2",
+      "value": "value 2"
+    }
+  ],
+  "executionTime": 34.0,
+  "responseInfo": {
+    "status": {
+      "code": "OK",
+      "details": "we did it, we did it, we really, really did it"
+    }
+  }
+},
+{
+  "moduleId": "module_id 1",
+  "status": "RUNNING",
+  "progress": 0.9,
+  "outputs": [
+    {
+      "outputName": "output_name 1",
+      "value": "value 1"
+    },
+    {
+      "outputName": "output_name 2",
+      "value": "value 2"
+    }
+  ],
+  "executionTime": 71.9,
+  "responseInfo": {
+    "status": {
+      "code": "OK",
+      "details": "we did it, we did it, we really, really did it"
+    }
+  }
+},
+{
+  "moduleId": "module_id 2",
+  "status": "DONE",
+  "progress": 0.8,
+  "outputs": [
+    {
+      "outputName": "output_name 1",
+      "value": "value 1"
+    },
+    {
+      "outputName": "output_name 2",
+      "value": "value 2"
+    }
+  ],
+  "executionTime": 17.7,
+  "responseInfo": {
+    "status": {
+      "code": "OK",
+      "details": "we did it, we did it, we really, really did it"
+    }
+  }
+},
+{
+  "moduleId": "module_id 3",
+  "status": "ERROR",
+  "progress": 0.6,
+  "outputs": [
+    {
+      "outputName": "output_name 1",
+      "value": "value 1"
+    },
+    {
+      "outputName": "output_name 2",
+      "value": "value 2"
+    }
+  ],
+  "executionTime": 28.5,
+  "responseInfo": {
+    "status": {
+      "code": "OK",
+      "details": "we did it, we did it, we really, really did it"
+    }
+  }
+}
+]

@@ -1,5 +1,0 @@
-This problem addresses a not yet very well researched aspect of text style, the 
-author’s personality. The aim is to test whether personality traits are reflected in  writing style. Descriptive 
-statistics studies in language psychology show a direct correlation: personality is projected linguistically and 
-can be perceived through language. In this problem, the task is to classify text into two categories: 
-extrovert = 1 or 0, which reflects the personality of the author of the text. It's a binary text classification task.
