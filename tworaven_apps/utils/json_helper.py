@@ -3,15 +3,24 @@ import json
 from django.utils.safestring import mark_safe
 
 
+def format_pretty_from_dict(info_dict, indent=4):
+    """Load a string into JSON"""
+
+    try:
+        return True, json.dumps(info_dict, indent=indent)
+    except TypeError as ex_obj:
+        return False, '(Invalid JSON) ' + ex_obj
+
+
 def format_pretty(json_string, indent=4):
     """Load a string into JSON"""
 
     try:
         d = json.loads(json_string)
     except TypeError:
-        return '(Invalid JSON) ' + json_string
+        return False, '(Invalid JSON) ' + json_string
 
-    return json.dumps(d, indent=indent)
+    return True, json.dumps(d, indent=indent)
 
 
 def format_jsonfield_for_admin(json_dict, indent=4):
@@ -25,7 +34,8 @@ def format_jsonfield_for_admin(json_dict, indent=4):
 
 
 def format_json_for_admin(json_string, indent=4):
-    print('format_json_for_admin: ', json_string)
+    """Format the JSON for viewing in the admin"""
+    #print('format_json_for_admin: ', json_string)
     if not json_string:
         return 'n/a'
 

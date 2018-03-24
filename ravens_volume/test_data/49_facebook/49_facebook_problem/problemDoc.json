@@ -1,0 +1,38 @@
+{
+  "about": {
+    "problemID": "49_facebook_problem",
+    "problemName": "Facebook graph matching problem",
+    "problemDescription": "Data for 49_facebook consists of two graphs G1 and G2 with a known partial mapping (both matches and mismatches) between the nodes. The problem is given a pair of nodes, to determine if they match or not",
+    "taskType": "graphMatching",
+    "problemSchemaVersion": "3.0"
+  },
+  "inputs": {
+    "data": [
+      {
+        "datasetID": "49_facebook_dataset",
+        "targets": [
+          {
+            "targetIndex": 0,
+            "resID": "2",
+            "colIndex": 3,
+            "colName": "match"
+          }
+        ]
+      }
+    ],
+    "dataSplits": {
+      "method": "holdOut",
+      "testSize": 0.8,
+      "numRepeats": 0,
+      "splitsFile": "dataSplits.csv"
+    },
+    "performanceMetrics": [
+      {
+        "metric": "accuracy"
+      }
+    ]
+  },
+  "expectedOutputs": {
+    "predictionsFile": "predictions.csv"
+  }
+}

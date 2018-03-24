@@ -12,11 +12,11 @@ Once Vagrant is installed, in the terminal enter:
     mkdir 2ravens 
     cd 2ravens 
     vagrant box add ubuntu/xenial64
-    vagrant box update
     vagrant init
     
 Replace the Vagrantfile the last command created with [this one](https://github.com/TwoRavens/TwoRavens/blob/master/Vagrantfile). Then:
 
+    vagrant box update
     vagrant up
     vagrant ssh
     
@@ -28,16 +28,16 @@ The last command boots you into a virtual machine running Ubuntu Linux. Next, up
     
 Install the dependencies that TwoRavens relies upon:
 
-    sudo apt install libcurl4-openssl-dev libxml2-dev nodejs-legacy npm pkg-config python3-pip r-base
+    sudo apt install libcurl4-openssl-dev libxml2-dev nodejs-legacy npm pkg-config python3-pip r-base libpoppler-cpp-dev libcairo2-dev librsvg2-dev libwebp-dev libgdal-dev libxt-dev libssl-dev
     pip3 install --upgrade pip
-    pip3 install --user virtualenvwrapper
+    sudo -H pip3 install virtualenvwrapper
 
 Add this to the end of ~/.bashrc:
 
     export WORKON_HOME=$HOME/.virtualenvs
     export PROJECT_HOME=$HOME/Devel
     VIRTUALENVWRAPPER_PYTHON=/usr/bin/python3
-    source ~/.local/bin/virtualenvwrapper.sh
+    source /usr/local/bin/virtualenvwrapper.sh
    
 Once that is saved, run:
 

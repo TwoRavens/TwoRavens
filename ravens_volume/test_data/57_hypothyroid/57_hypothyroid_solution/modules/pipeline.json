@@ -1,0 +1,36 @@
+{
+  "dataset_dir": "../eval/openml_57_hypothyroid/",
+  "feature_extractors": {
+    "age,sex,on_thyroxine,query_on_thyroxine,on_antithyroid_medication,sick,pregnant,thyroid_surgery,I131_treatment,query_hypothyroid,query_hyperthyroid,lithium,goitre,tumor,hypopituitary,psych,TSH_measured,TSH,T3_measured,T3,TT4_measured,TT4,T4U_measured,T4U,FTI_measured,FTI,TBG_measured,TBG,referral_source": {
+      "uuid": "09c41b12932311e7a4ba080027f9f5b6",
+      "feature_extractor": "AnnotatedTabularExtractor",
+      "params": {
+        "categorize": false,
+        "normalize_text": true,
+        "add_missing_indicator": false,
+        "numeric_strategy": "median"
+      }
+    }
+  },
+  "feature_selector": {
+    "feature_selector": "SelectFromLinearSVC",
+    "params": {
+      "C": 174.7528400007683,
+      "threshold": 1e-05
+    }
+  },
+  "estimator": {
+    "estimator": "SGDClassifierEstimator",
+    "params": {
+      "loss": "perceptron",
+      "fit_intercept": true,
+      "penalty": "elasticnet",
+      "alpha": 0.001,
+      "l1_ratio": 1.0
+    }
+  },
+  "performance": {
+    "metric": "f1Macro",
+    "cv_performance": 0.6249802255127787
+  }
+}

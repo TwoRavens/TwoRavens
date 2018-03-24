@@ -1,0 +1,139 @@
+{
+  "about": {
+    "datasetID": "27_wordLevels_dataset",
+    "datasetName": "Word Level Classification Dataset",
+    "description": "This is a tabular dataset comprising of about 7000 instances, split into 5600 training and 1400 test instances. Each instance has about 12 mixed categorical and float features.",
+    "citation": "\n@misc{guzey_2014_12501,\n  author = {Guzey, Onur andSohsah, Gihad  andUnal, Muhammed},\n  title = {{Classification of word levels with usage frequency, expert opinions and machine learning}},\n  month = oct,\n  year = 2014,\n  doi = {10.5281/zenodo.12501},\n  url = {https://doi.org/10.5281/zenodo.12501}\n}\n",
+    "license": "Creative Commons Attribution 4.0",
+    "source": "Zenodo",
+    "sourceURI": "https://zenodo.org/record/12501#.WbPUhY6F2dw",
+    "datasetSchemaVersion": "3.0",
+    "redacted": false,
+    "datasetVersion": "1.0"
+  },
+  "dataResources": [
+    {
+      "resID": "0",
+      "resPath": "tables/learningData.csv",
+      "resType": "table",
+      "resFormat": [
+        "text/csv"
+      ],
+      "isCollection": false,
+      "columns": [
+        {
+          "colIndex": 0,
+          "colName": "d3mIndex",
+          "colType": "integer",
+          "role": [
+            "index"
+          ]
+        },
+        {
+          "colIndex": 1,
+          "colName": "Word",
+          "colType": "string",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 2,
+          "colName": "PoS",
+          "colType": "categorical",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 3,
+          "colName": "X2000",
+          "colType": "real",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 4,
+          "colName": "X2001",
+          "colType": "real",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 5,
+          "colName": "X2002",
+          "colType": "real",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 6,
+          "colName": "X2003",
+          "colType": "real",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 7,
+          "colName": "X2004",
+          "colType": "real",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 8,
+          "colName": "X2005",
+          "colType": "real",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 9,
+          "colName": "X2006",
+          "colType": "real",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 10,
+          "colName": "X2007",
+          "colType": "real",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 11,
+          "colName": "X2008",
+          "colType": "real",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 12,
+          "colName": "AvrgOfYears",
+          "colType": "real",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 13,
+          "colName": "Level.Teachers.Average",
+          "colType": "categorical",
+          "role": [
+            "suggestedTarget"
+          ]
+        }
+      ]
+    }
+  ]
+}

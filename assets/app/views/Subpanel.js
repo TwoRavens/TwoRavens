@@ -12,8 +12,13 @@ class Subpanel {
         let legend = title === 'Legend';
         let target = 'collapse' + title;
         let z = app.zparams;
+        let side = legend ? 'right' : 'left';
+
         return m(`#${legend ? "legend.legendary" : "logdiv.logbox"}.panel.panel-default`, {
-            style: {display: legend && z.ztime.length + z.zcross.length + z.zdv.length + z.znom.length || !legend && app.logArray.length > 0 ? 'block' : 'none'}},
+            style: {
+                display: legend && z.ztime.length + z.zcross.length + z.zdv.length + z.znom.length || !legend && app.logArray.length > 0 ? 'block' : 'none',
+                [side]: app.panelWidth[side]
+            }},
                  m(".panel-heading",
                    m("h3.panel-title",
                      title,

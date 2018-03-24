@@ -1,0 +1,52 @@
+  #--------------------
+  # start: TA2 paths
+  #--------------------
+  {% url 'get_problem_schema' %}:
+    get:
+      tags:
+      - "ta2"
+      summary: "Return problem TA3TA2 api version and schema information"
+      operationId: "ta2_get_problem_schema"
+      produces:
+      - "application/json"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "object"
+            $ref: "#/definitions/UserDataSuccessMessage"
+        400:
+          description: "Error in retrieval."
+          schema:
+            type: "object"
+            $ref: "#/definitions/UserErrorMessage"
+  {% url 'StartSession' %}:
+    post:
+      tags:
+      - "ta2"
+      summary: "Start a session"
+      consumes:
+        - application/json
+      parameters:
+        - in: body
+          name: sessionRequest
+          description: Start a session
+          schema:
+            type: object
+            required:
+              - user_agent
+            properties:
+              user_agent:
+                type: string
+              version:
+                type: string
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "object"
+            $ref: "#/definitions/SessionResponse"
+        400:
+          description: "Error in retrieval."
+        401:
+          description: "Not logged in."

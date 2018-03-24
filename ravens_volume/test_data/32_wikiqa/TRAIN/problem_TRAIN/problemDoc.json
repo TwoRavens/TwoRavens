@@ -1,0 +1,39 @@
+{
+  "about": {
+    "problemID": "32_wa_problem_TRAIN",
+    "problemName": "NULL",
+    "taskType": "classification",
+    "taskSubType": "binary",
+    "problemSchemaVersion": "3.0",
+    "problemVersion": "1.0"
+  },
+  "inputs": {
+    "data": [
+      {
+        "datasetID": "32_wa_dataset_TRAIN",
+        "targets": [
+          {
+            "targetIndex": 0,
+            "resID": "3",
+            "colIndex": 3,
+            "colName": "isAnswer"
+          }
+        ]
+      }
+    ],
+    "dataSplits": {
+      "method": "holdOut",
+      "testSize": 0.3,
+      "numRepeats": 0,
+      "splitsFile": "dataSplits.csv"
+    },
+    "performanceMetrics": [
+      {
+        "metric": "f1"
+      }
+    ]
+  },
+  "expectedOutputs": {
+    "predictionsFile": "predictions.csv"
+  }
+}

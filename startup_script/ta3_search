@@ -1,0 +1,55 @@
+#!/bin/bash
+
+# -------------------------------
+# (1) Check if web server is running
+# -------------------------------
+
+# count python processes (current web server is 2 processes)
+# -------------------------------
+servers=$(ps -e | grep python | wc -l)
+# trim leading spaces
+servers="$(echo -e "${servers}" | sed -e 's/^[[:space:]]*//')"
+
+printf "\nCheck for running web server before starting ta3_search ... (%s)\n" "$servers"
+
+if [ $servers -lt 2 ]
+then
+    # -------------------------------
+    # Not running: Start it up!!
+    # -------------------------------
+    printf "\nTwo Ravens web server NOT running"
+
+    # -------------------------------
+    # prelim: Copy test data to /ravens_volume
+    # -------------------------------
+    cp -r /var/webapps/TwoRavens/ravens_volume/. /ravens_volume/
+    cd /var/webapps/TwoRavens
+
+    # -------------------------------
+    # start with setsid so it keeps running...
+    # -------------------------------
+    printf "\nStarting web server.."
+    setsid python manage.py runserver 0.0.0.0:8080 > /dev/null 2> /tmp/ta3-main-log.txt &
+
+    # -------------------------------
+    # give it 3 seconds to startup
+    # -------------------------------
+    printf "\n(Pausing 3 seconds...)"
+    sleep 3
+    printf "\nWeb server is running. (logging to /tmp/ta3-main-log.txt)"
+    # -------------------------------
+else
+   # -------------------------------
+   # Web server appears to be running
+   # -------------------------------
+   printf "\nTwo Ravens web server is running."
+fi
+
+# -------------------------------
+# Run TA3 search
+# -------------------------------
+printf "\n----------------------"
+printf "\nTA3_search: TwoRavens"
+printf "\n----------------------\n"
+cd /var/webapps/TwoRavens
+python manage.py ta3_search "$@"

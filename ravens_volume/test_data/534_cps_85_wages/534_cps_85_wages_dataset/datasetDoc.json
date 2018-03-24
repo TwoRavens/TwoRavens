@@ -1,0 +1,124 @@
+{
+  "about": {
+    "datasetID": "534_cps_85_wages_dataset",
+    "datasetName": "cps_85_wages",
+    "description": "**Author**:   \n**Source**: Unknown - Date unknown  \n**Please cite**:   \n\nDeterminants of Wages from the 1985 Current Population Survey\n\nSummary:\nThe Current Population Survey (CPS) is used to supplement census information between census years. These data consist of a random sample of 534 persons from the CPS, with information on wages and other characteristics of the workers, including sex, number of years of education, years of work experience, occupational status, region of residence and union membership. We wish to determine (i) whether wages are related to these characteristics and (ii) whether there is a gender gap in wages.\nBased on residual plots, wages were log-transformed to stabilize the variance. Age and work experience were almost perfectly correlated (r=.98). Multiple regression of log wages against sex, age, years of education, work experience, union membership, southern residence, and occupational status showed that these covariates were related to wages (pooled F test, p < .0001). The effect of age was not significant after controlling for experience. Standardized residual plots showed no patterns, except for one large outlier with lower wages than expected. This was a male, with 22 years of experience and 12 years of education, in a management position, who lived in the north and was not a union member. Removing this person from the analysis did not substantially change the results, so that the final model included the entire sample.\nAdjusting for all other variables in the model, females earned 81% (75%, 88%) the wages of males (p < .0001). Wages increased 41% (28%, 56%) for every 5 additional years of education (p < .0001). They increased by 11% (7%, 14%) for every additional 10 years of experience (p < .0001). Union members were paid 23% (12%, 36%) more than non-union members (p < .0001). Northerns were paid 11% (2%, 20%) more than southerns (p =.016). Management and professional positions were paid most, and service and clerical positions were paid least (pooled F-test, p < .0001). Overall variance explained was R2 = .35.\nIn summary, many factors describe the variations in wages: occupational status, years of experience, years of education, sex, union membership and region of residence. However, despite adjustment for all factors that were available, there still appeared to be a gender gap in wages. There is no readily available explanation for this gender gap.\n\nAuthorization: Public Domain\n\nReference: Berndt, ER. The Practice of Econometrics. 1991. NY: Addison-Wesley.\n\nDescription:  The datafile contains 534 observations on 11 variables sampled from the Current Population Survey of 1985.  This data set demonstrates multiple regression, confounding, transformations, multicollinearity, categorical variables, ANOVA, pooled tests of significance, interactions and model building strategies.\n\nVariable names in order from left to right:\nEDUCATION: Number of years of education.\nSOUTH: Indicator variable for Southern Region (1=Person lives in \t\tSouth, 0=Person lives elsewhere).\nSEX: Indicator variable for sex (1=Female, 0=Male).\nEXPERIENCE: Number of years of work experience.\nUNION: Indicator variable for union membership (1=Union member, \t\t0=Not union member).\nWAGE: Wage (dollars per hour).\nAGE: Age (years).\nRACE: Race (1=Other, 2=Hispanic, 3=White).\nOCCUPATION: Occupational category (1=Management, \t\t2=Sales, 3=Clerical, 4=Service, 5=Professional, 6=Other).\nSECTOR: Sector (0=Other, 1=Manufacturing, 2=Construction).\nMARR: Marital Status (0=Unmarried,  1=Married)\n\n\nTherese Stukel\nDartmouth Hitchcock Medical Center\nOne Medical Center Dr.\nLebanon, NH 03756\ne-mail: stukel@dartmouth.edu\n\n\nInformation about the dataset\nCLASSTYPE: numeric\nCLASSINDEX: none specific",
+    "citation": "\n\t\t\t\t@article{OpenML2013,\n\t\t\t\tauthor = {Vanschoren, Joaquin and van Rijn, Jan N. and Bischl, Bernd and Torgo, Luis},\n\t\t\t\ttitle = {OpenML: Networked Science in Machine Learning},\n\t\t\t\tjournal = {SIGKDD Explorations},\n\t\t\t\tvolume = {15},\n\t\t\t\tnumber = {2},\n\t\t\t\tyear = {2013},\n\t\t\t\tpages = {49--60},\n\t\t\t\turl = {http://doi.acm.org/10.1145/2641190.2641198},\n\t\t\t\tdoi = {10.1145/2641190.2641198},\n\t\t\t\tpublisher = {ACM},\n\t\t\t\taddress = {New York, NY, USA},\n\t\t\t\t}",
+    "license": "CC-BY license",
+    "source": "OpenML",
+    "sourceURI": "http://www.openml.org/d/534",
+    "approximateSize": "",
+    "datasetVersion": "1.0",
+    "datasetSchemaVersion": "3.0",
+    "redacted": false
+  },
+  "dataResources": [
+    {
+      "resID": "0",
+      "resPath": "tables/learningData.csv",
+      "resType": "table",
+      "resFormat": [
+        "text/csv"
+      ],
+      "isCollection": false,
+      "columns": [
+        {
+          "colIndex": 0,
+          "colName": "d3mIndex",
+          "colType": "integer",
+          "role": [
+            "index"
+          ]
+        },
+        {
+          "colIndex": 1,
+          "colName": "EDUCATION",
+          "colType": "integer",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 2,
+          "colName": "SOUTH",
+          "colType": "categorical",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 3,
+          "colName": "SEX",
+          "colType": "categorical",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 4,
+          "colName": "EXPERIENCE",
+          "colType": "integer",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 5,
+          "colName": "UNION",
+          "colType": "categorical",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 6,
+          "colName": "WAGE",
+          "colType": "real",
+          "role": [
+            "suggestedTarget"
+          ]
+        },
+        {
+          "colIndex": 7,
+          "colName": "AGE",
+          "colType": "integer",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 8,
+          "colName": "RACE",
+          "colType": "categorical",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 9,
+          "colName": "OCCUPATION",
+          "colType": "categorical",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 10,
+          "colName": "SECTOR",
+          "colType": "categorical",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 11,
+          "colName": "MARR",
+          "colType": "categorical",
+          "role": [
+            "attribute"
+          ]
+        }
+      ]
+    }
+  ]
+}

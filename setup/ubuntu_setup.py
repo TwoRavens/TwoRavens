@@ -139,7 +139,7 @@ class TwoRavensSetup:
             msg('directory exists: %s' % new_dirname)
             return
 
-        os.makedirs(new_dirname)
+        os.makedirs(new_dirname, exist_ok=True))
         msg('directory created: %s' % new_dirname)
 
 if __name__ == '__main__':

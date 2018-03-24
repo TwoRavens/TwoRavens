@@ -7,7 +7,7 @@ import {searchIndex} from './Search';
 
 class PanelList {
     view(vnode) {
-        let {items, content, title, probDesc} = vnode.attrs;
+        let {items, content, title, probDesc, onclick} = vnode.attrs;
         return m(
             '#varList[style=display: block]',
             items.map((v, i) =>
@@ -23,9 +23,10 @@ class PanelList {
                                   app.nodes.map(n => n.name).includes(v) ? app.hexToRgba(plots.selVarColor) :
                                   app.varColor,
                               'border-color': '#000000',
-                              'border-style': !probDesc && searchIndex && i < searchIndex ? 'solid' : 'none'
+                              'border-style': !probDesc && searchIndex && i < searchIndex ? 'solid' : 'none',
+                              'text-align': 'center'
                           },
-                          onclick: probDesc || app.clickVar,
+                          onclick: onclick || probDesc || app.clickVar,
                           onmouseover: function() {
                               $(this).popover('toggle');
                               if (probDesc) return;
@@ -38,7 +39,7 @@ class PanelList {
                           'data-container': 'body',
                           'data-content': content ? content(v) : app.popoverContent(app.findNodeIndex(v, true)),
                           'data-html': 'true',
-                          'data-original-title': title,
+                          'data-original-title': title + ' for <b>' + v,
                           'data-placement': probDesc ? 'top' : 'right',
                           'data-toggle': 'popover',
                           'data-trigger': 'hover'},

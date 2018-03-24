@@ -1,0 +1,227 @@
+
+# ---------------------------------------------------------
+# TA3 Kubernetes Pod Stub File
+# ---------------------------------------------------------
+## Specifications
+# * Assumes a web service over ports 80 (http) and 443 https
+# * Assumes a listening port 5001 to listen to TA2 signals
+# * In this speicification, the ta3-main container has the web ports
+# but one can have a separate container handle the web ports
+# that is not the TA3-main container
+---
+# Web Port Service (perhaps Nginx)
+apiVersion: v1
+kind: Service
+metadata:
+  name: ravens-ta3-web
+  labels:
+    evalId: ravens
+    tier: ta3
+spec:
+  # NodePort type allows to expose service outside the cluster
+  type: NodePort
+  selector:
+    evalId: ravens
+    tier: ta3
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+    - name: https
+      port: 443
+      targetPort: 443
+---
+# TA3 Pod
+apiVersion: v1
+kind: Pod
+metadata:
+  name: ravens-ta3
+  labels:
+    evalId: ravens
+    main: "yes"
+    tier: ta3
+    ta3-main: "yes"
+spec:
+  restartPolicy: Never
+  volumes:
+    - name: "ravens-volume"
+      hostPath:
+        path: "/ravens_volume"
+    ##====|Begin| Required Code that NIST uses to pair TA2 and TA3 components |Begin|
+    #- name: nfs-data
+    #  mountPath: "/inputs"
+    #  subPath: "subpath_to_dataroot"
+    #  readOnly: true
+    #- name: "nfs-output"
+    #  mountPath: "/outputs"
+    #  subPath: "subpath_to_outputs"
+    ##====|End| Required Code that NIST uses to pair TA2 and TA3
+  # affinity:
+  #   # Link pod affinity with
+  #   podAffinity:
+  #     requiredDuringSchedulingIgnoredDuringExecution:
+  #     - labelSelector:
+  #         matchExpressions:
+  #         - key: evalId
+  #           operator: In
+  #           values:
+  #           - ravens
+  #       topologyKey: failure-domain.beta.kubernetes.io/zone
+  # -------------------------
+  # Start container specs
+  # -------------------------
+  containers:
+  # -------------------------
+  # 1 of 3: Ravens nginx
+  # - reverse proxy for ta3-main
+  # -------------------------
+  - name: ravens-nginx
+    image: ravens-nginx:stable
+    ports:
+      - containerPort: 80
+        name: http
+        protocol: TCP
+  # -------------------------
+  # 2 of 3: TA3 main container
+  # - includes entry point for evaluation
+  # -------------------------
+  - name: ta3-main
+    image: ravens-main:stable
+    #imagePullPolicy: Always
+    #command:
+    #  - ta3_search
+    #args:
+    #  - command_args
+    # web (perhaps nginx) ports
+    ports:
+      # Main web port; nginx makes this available via port 80
+      - containerPort: 8080
+        name: http
+        protocol: TCP
+      #- containerPort: 443
+      #  name: https
+      #  protocol: TCP
+      # Additional Port for TA3 to listen to TA2 signals
+      #- containerPort: 5001
+      #  protocol: TCP
+    env:
+      # environment variables passed to container
+      - name: EVAL_ID
+        value: ravens
+      - name: TA2_STATIC_TEST_MODE
+        value: "True"
+      # Reference to the gRPC server using the pod name and TA2 port
+      - name: TA2_TEST_SERVER_URL
+        value: "localhost:45042"
+        #  value: "ravensl:45042"
+        # Url to TA3 R/rook web service
+      - name: R_DEV_SERVER_BASE
+        value: "http://localhost:8000/custom/"
+      - name: TA2_PORT
+        value: "45042"
+      - name: TA3_PORT
+        value: "5001"
+    volumeMounts:
+      - name: "ravens-volume"
+        mountPath: "/ravens_volume"
+        readOnly: false
+      ##====|Begin| Required Code that NIST uses to pair TA2 and TA3 components |Begin|
+      #- name: nfs-data
+      #  mountPath: "/inputs"
+      #  subPath: "subpath_to_dataroot"
+      #  readOnly: true
+      #- name: "nfs-output"
+      #  mountPath: "/outputs"
+      #  subPath: "subpath_to_outputs"
+      ##====|End| Required Code that NIST uses to pair TA2 and TA3
+    # liveness is for restart
+    livenessProbe:
+      httpGet:
+        path: /monitoring/alive
+        port: 8080
+      initialDelaySeconds: 5
+      timeoutSeconds: 1
+      periodSeconds: 10
+      failureThreshold: 3
+    # readiness: ready for traffic
+    readinessProbe:
+      httpGet:
+        path: /monitoring/alive
+        port: 8080
+      initialDelaySeconds: 10
+      periodSeconds: 10
+  # -------------------------
+  # 3 of 3: Rook R services
+  # -------------------------
+  - name: rook-service
+    image: ravens-r-service:stable
+    # same mounts as ta3-main and ta2-main
+    volumeMounts:
+      - name: "ravens-volume"
+        mountPath: "/ravens_volume"
+        readOnly: false
+      ##====|Begin| Required Code that NIST uses to pair TA2 and TA3 components |Begin|
+      #- name: nfs-data
+      #  mountPath: "/inputs"
+      #  subPath: "subpath_to_dataroot"
+      #  readOnly: true
+      #- name: "nfs-output"
+      #  mountPath: "/outputs"
+      #  subPath: "subpath_to_outputs"
+      ##====|End| Required Code that NIST uses to pair TA2 and TA3
+    # web port
+    ports:
+      - containerPort: 8000
+        name: http
+        protocol: TCP
+    # environment variables passed to container
+    env:
+      - name: EVAL_ID
+        value: ravens
+      # Also set to "yes" in the Dockefile
+      - name: ROOK_USE_PRODUCTION_MODE
+        value: "yes"
+    # liveness is for restart
+    livenessProbe:
+      httpGet:
+        path: /custom/healthcheckapp
+        port: 8000
+      initialDelaySeconds: 5
+      timeoutSeconds: 1
+      periodSeconds: 10
+      failureThreshold: 3
+    # readiness: ready for traffic
+    readinessProbe:
+      httpGet:
+        path: /custom/healthcheckapp
+        port: 8000
+      initialDelaySeconds: 20
+      periodSeconds: 10
+  # -------------------------
+  # TA2 CONTAINER
+  # -------------------------
+  - name: ta2-main
+    image: ta2-test:stable
+    # environment variables passed to container
+    env:
+      # NIST eval id
+      - name: EVAL_ID
+        value: ravens-eval
+    ports:
+      # gRPC port
+      - containerPort: 45042
+        protocol: TCP
+    volumes:
+      - name: "ravens-volume"
+        #emptyDir: {}
+        mountPath: "/ravens_volume"
+        readOnly: false
+    ##====|Begin| Required Code that NIST uses to pair TA2 and TA3 components |Begin|
+    #- name: nfs-data
+    #  mountPath: "/inputs"
+    #  subPath: "subpath_to_dataroot"
+    #  readOnly: true
+    #- name: "nfs-output"
+    #  mountPath: "/outputs"
+    #  subPath: "subpath_to_outputs"
+    ##====|End| Required Code that NIST uses to pair TA2 and TA3

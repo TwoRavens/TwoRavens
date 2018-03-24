@@ -1,0 +1,40 @@
+{
+  "dataset_dir": "/home/gridsan/SW26425/d3m_shared/gov/openml/openml_299_libras_move",
+  "feature_extractors": {
+    "xcoord1,ycoord1,xcoord2,ycoord2,xcoord3,ycoord3,xcoord4,ycoord4,xcoord5,ycoord5,xcoord6,ycoord6,xcoord7,ycoord7,xcoord8,ycoord8,xcoord9,ycoord9,xcoord10,ycoord10,xcoord11,ycoord11,xcoord12,ycoord12,xcoord13,ycoord13,xcoord14,ycoord14,xcoord15,ycoord15,xcoord16,ycoord16,xcoord17,ycoord17,xcoord18,ycoord18,xcoord19,ycoord19,xcoord20,ycoord20,xcoord21,ycoord21,xcoord22,ycoord22,xcoord23,ycoord23,xcoord24,ycoord24,xcoord25,ycoord25,xcoord26,ycoord26,xcoord27,ycoord27,xcoord28,ycoord28,xcoord29,ycoord29,xcoord30,ycoord30,xcoord31,ycoord31,xcoord32,ycoord32,xcoord33,ycoord33,xcoord34,ycoord34,xcoord35,ycoord35,xcoord36,ycoord36,xcoord37,ycoord37,xcoord38,ycoord38,xcoord39,ycoord39,xcoord40,ycoord40,xcoord41,ycoord41,xcoord42,ycoord42,xcoord43,ycoord43,xcoord44,ycoord44,xcoord45,ycoord45": {
+      "uuid": "a86880ec936e11e7bf6f0002c958a2e6",
+      "feature_extractor": "AnnotatedTabularExtractor",
+      "params": {
+        "normalize_text": false,
+        "add_missing_indicator": true,
+        "numeric_strategy": "median",
+        "categorize": false
+      }
+    }
+  },
+  "feature_selector": {
+    "feature_selector": "SelectPercentileRegression",
+    "params": {
+      "score_func": "f_regression",
+      "percentile": 60
+    }
+  },
+  "estimator": {
+    "estimator": "SGDRegressorEstimator",
+    "params": {
+      "penalty": "elasticnet",
+      "learning_rate": "invscaling",
+      "alpha": 0.001,
+      "epsilon": 1.0,
+      "fit_intercept": true,
+      "l1_ratio": 0.1,
+      "power_t": 0.0,
+      "loss": "squared_loss",
+      "eta0": 0.001
+    }
+  },
+  "performance": {
+    "metric": "meanSquaredError",
+    "cv_performance": 13.646296719946859
+  }
+}

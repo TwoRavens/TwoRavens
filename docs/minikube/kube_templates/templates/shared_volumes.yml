@@ -1,0 +1,9 @@
+    ##====|Begin| Required Code that NIST uses to pair TA2 and TA3 components |Begin|
+    - name: nfs-data
+      mountPath: "/inputs"
+      subPath: "{{ path_to_dataroot }}"
+      readOnly: true
+    - name: "nfs-output"
+      mountPath: "/outputs"
+      subPath: "{{ path_to_outputs }}"
+    ##====|End| Required Code that NIST uses to pair TA2 and TA3

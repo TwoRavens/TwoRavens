@@ -9,14 +9,21 @@ https://docs.djangoproject.com/en/1.11/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/1.11/ref/settings/
 """
-
 import os
+import sys
 from os.path import abspath, dirname, join
 from distutils.util import strtobool
 
+from django.core.urlresolvers import reverse_lazy
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = dirname(dirname(dirname(abspath(__file__))))
+
+# Link to copy of the TA3TA2 API
+# https://gitlab.com/datadrivendiscovery/ta3ta2-api
+#
+TA3TA2_API_DIR = join(BASE_DIR, 'tworaven_apps', 'ta3ta2-api')
+sys.path.append(TA3TA2_API_DIR)
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
@@ -40,8 +47,6 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.sites',
     'django.contrib.humanize',
-    # See: http://whitenoise.evans.io/en/stable/django.html#using-whitenoise-in-development
-    #'whitenoise.runserver_nostatic',
     'django.contrib.staticfiles',
 
     'tworaven_apps.raven_auth', # user model
@@ -53,6 +58,7 @@ INSTALLED_APPS = [
     'tworaven_apps.rook_services', # sending UI calls to rook and back again
     'tworaven_apps.api_docs',
     'tworaven_apps.call_captures', # capture data sent from UI out to rook/TA2
+    'tworaven_apps.ta3_search', # ta3_search for NIST
 
     # webpack!
     'webpack_loader',
@@ -60,16 +66,13 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-
-    # whitenoise: http://whitenoise.evans.io/en/stable/django.html#enable-whitenoise
-    #'whitenoise.middleware.WhiteNoiseMiddleware',
-
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django.middleware.locale.LocaleMiddleware',
 ]
 
 ROOT_URLCONF = 'tworavensproject.urls'
@@ -137,17 +140,17 @@ CSRF_COOKIE_NAME = 'CSRF_2R'
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
 
+LOGIN_URL = reverse_lazy('home')    #'/auth/login/'
+
 STATIC_URL = '/static/'
 
 STATICFILES_DIRS = [join(BASE_DIR, 'assets')]
 
-# Simplified static file serving.
-# https://warehouse.python.org/project/whitenoise/
-#STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 RECORD_R_SERVICE_ROUTING = False # log R service requests/response JSON to db
 RECORD_D3M_SERVICE_ROUTING = False # log D3M service requests
 
+PAGE_CACHE_TIME = 60 * 60 * 2 # 2 hours
 
 WEBPACK_LOADER = {
     'DEFAULT': {
@@ -168,9 +171,11 @@ SERVER_SCHEME = 'http'  # or https
 #
 # Test work...
 TA2_STATIC_TEST_MODE = strtobool(os.environ.get('TA2_STATIC_TEST_MODE', 'True'))   # True: canned responses
-TA2_TEST_SERVER_URL = os.environ.get('TA2_TEST_SERVER_URL', 'localhost:50051')
+TA2_TEST_SERVER_URL = os.environ.get('TA2_TEST_SERVER_URL', 'localhost:45042')
 TA2_GPRC_USER_AGENT = os.environ.get('TA2_GPRC_USER_AGENT', 'tworavens')
 
 
 # D3M - gRPC file uris
 MAX_EMBEDDABLE_FILE_SIZE = .5 * 500000
+
+SWAGGER_HOST = '127.0.0.1:8080'

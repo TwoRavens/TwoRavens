@@ -6,7 +6,7 @@ Quick Description of containers as specified in docker-compose.yml
   - UI and middleware
   - port 8080 web service
     - exposed to the outside via nginx
-  - port 50051 for gRPC communication
+  - port 45042 for gRPC communication
   - Serves the UI via a Django app
   - Makes internal requests to *rook* service below
 1. **rook-service**
@@ -33,8 +33,8 @@ These three environment variables are presently in docker-compose.yml
 
 - Specify a TA2 server for gRPC communcation
   - **variable**: TA2_TEST_SERVER_URL
-  - **example**: TA2_TEST_SERVER_URL=rprasad2r.local:50051
-  - Note: The container exposes port `50051` -- other ports aren't reachable without changing the Dockefile itself
+  - **example**: TA2_TEST_SERVER_URL=rprasad2r.local:45042
+  - Note: The container exposes port `45042` -- other ports aren't reachable without changing the Dockefile itself
 
 - Set a path to load a D3M config file:
   - **variable**: CONFIG_JSON_PATH

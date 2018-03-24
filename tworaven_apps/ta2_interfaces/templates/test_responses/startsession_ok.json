@@ -5,7 +5,7 @@
     }
   },
   "userAgent": "ta2_stub 0.1",
-  "version": "2017.9.x_pre",
+  "version": "{{ api_version }}",
   "context": {
     "sessionId": "{{ session_id }}"
   }

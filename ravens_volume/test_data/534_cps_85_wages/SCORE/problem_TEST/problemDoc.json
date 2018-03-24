@@ -1,0 +1,41 @@
+{
+  "about": {
+    "problemID": "534_cps_85_problem_TEST",
+    "problemName": "NULL",
+    "taskType": "regression",
+    "taskSubType": "univariate",
+    "problemVersion": "1.0",
+    "problemSchemaVersion": "3.0"
+  },
+  "inputs": {
+    "data": [
+      {
+        "datasetID": "534_cps_85_dataset_TEST",
+        "targets": [
+          {
+            "targetIndex": 0,
+            "resID": "0",
+            "colIndex": 6,
+            "colName": "WAGE"
+          }
+        ]
+      }
+    ],
+    "dataSplits": {
+      "method": "holdOut",
+      "testSize": 0.2,
+      "stratified": true,
+      "numRepeats": 0,
+      "randomSeed": 42,
+      "splitsFile": "dataSplits.csv"
+    },
+    "performanceMetrics": [
+      {
+        "metric": "meanSquaredError"
+      }
+    ]
+  },
+  "expectedOutputs": {
+    "predictionsFile": "predictions.csv"
+  }
+}

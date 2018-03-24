@@ -51,7 +51,13 @@
         <div class="card-header"><b>Error pages</b></div>
         <div class="card-body">
           <ul>
-            <li><a href="{% url 'view_d3m_config_error_test' %}">D3M config error</a> (trigged when in D3M mode but no D3M configs are loaded)</li>
+            <li><a href="{% url 'view_no_domain_config_error_test' %}">App/UI config error (test page)</a>
+              <p>(normally triggered when in no AppConfiguration entries exist--e.g. app doesn't know which domain to use)</p></li>
+            <li><a href="{% url 'view_d3m_config_error_test' %}">D3M config error (test page)</a>
+              <p>(normally triggered when in D3M mode but no D3M configs are loaded)</p></li>
+
+            <hr />
+
             <li><a href="/aint-nothing-here-404">404 trigger</a> (shows formatted page in production)</li>
             <li><a href="{% url 'view_err_500_test' %}">500 trigger</a> (shows formatted page in production)</li>
           </ul>
@@ -64,9 +70,14 @@
       <div class="card">
         <div class="card-header"><b>Test/in process</b></div>
         <div class="card-body">
-            <ul>
-              <li><a href="{% url 'view_session_info' %}">view_session_info</a></li>
-            </ul>
+          <ul>
+            <li><a href="{% url 'view_workspace_info' %}">view workspace info</a></li>
+          </ul>
+          <ul>
+            <li><a href="/static/pkgs/swagger-ui/dist/index.html?url={% url 'view_swagger_doc_v1' %}">swagger ui</a> </li>
+            <li><a href="{% url 'view_swagger_doc_v1' %}">swagger spec v1</a></li>
+
+          </ul>
 
         </div>
       </div>
@@ -93,7 +104,7 @@
           <ul>
             <li><a href="{% url 'signup' %}">Sign Up</a></li>
             <li><a href="{% url 'login' %}">Log in</a></li>
-            <li><a href="{% url 'logout' %}">Log out</a> (forwards to login)</li>
+            <li><a href="{% url 'logout' %}?next=/">Log out</a> (forwards to login)</li>
             <li><a href="{% url 'password_reset' %}">Forgot password</a> (enter email)</li>
             <li><a href="{% url 'password_reset_done' %}">Password reset instructions</a> (after submitting email)</li>
           </ul>

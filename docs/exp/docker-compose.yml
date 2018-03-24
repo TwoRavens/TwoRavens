@@ -27,5 +27,5 @@ services:
       - rook-service
     ports:
       - 8080
-      - 50051:50051
-      # 50051 is for gRPC communication
+      - 45042:45042
+      # 45042 is for gRPC communication

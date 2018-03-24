@@ -1,0 +1,42 @@
+{
+  "about": {
+    "problemID": "1491_one_hundred_plants_margin_problem",
+    "problemName": "one_hundred_plants_margin_problem",
+    "problemDescription": "**Author**: James Cope, Thibaut Beghin, Paolo Remagnino, Sarah Barman.  \n**Source**: [UCI](https://archive.ics.uci.edu/ml/datasets/One-hundred+plant+species+leaves+data+set) - 2010   \n**Please cite**: Charles Mallah, James Cope, James Orwell. Plant Leaf Classification Using Probabilistic Integration of Shape, Texture and Margin Features. Signal Processing, Pattern Recognition and Applications, in press. 2013.     \n\n### Description\n\nOne-hundred plant species leaves dataset (Class = Margin).\n \n### Sources\n```\n   (a) Original owners of colour Leaves Samples:\n\n James Cope, Thibaut Beghin, Paolo Remagnino, Sarah Barman.  \n The colour images are not included.  \n The Leaves were collected in the Royal Botanic Gardens, Kew, UK.  \n email: james.cope@kingston.ac.uk  \n   \n   (b) This dataset consists of work carried out by James Cope, Charles Mallah, and James Orwell.  \n Donor of database Charles Mallah: charles.mallah@kingston.ac.uk; James Cope:  james.cope@kingston.ac.uk  \n```\n\n### Dataset Information\n\nThe original data directory contains the binary images (masks) of the leaf samples (colour images not included).\nThere are three features for each image: Shape, Margin and Texture.\nFor each feature, a 64 element vector is given per leaf sample.\nThese vectors are taken as a contiguous descriptor (for shape) or histograms (for texture and margin).\nSo, there are three different files, one for each feature problem:  \n * 'data_Sha_64.txt' -> prediction based on shape\n * 'data_Tex_64.txt' -> prediction based on texture\n * 'data_Mar_64.txt' -> prediction based on margin [**dataset provided here**] \n\nEach row has a 64-element feature vector followed by the Class label.\nThere is a total of 1600 samples with 16 samples per leaf class (100 classes), and no missing values.\n\n### Attributes Information\n\nThree 64 element feature vectors per sample.\n\n### Relevant Papers\n\nCharles Mallah, James Cope, James Orwell. \nPlant Leaf Classification Using Probabilistic Integration of Shape, Texture and Margin Features. \nSignal Processing, Pattern Recognition and Applications, in press.\n\nJ. Cope, P. Remagnino, S. Barman, and P. Wilkin.\nPlant texture classification using gabor co-occurrences.\nAdvances in Visual Computing,\npages 699-677, 2010.\n\nT. Beghin, J. Cope, P. Remagnino, and S. Barman.\nShape and texture based plant leaf classification. \nIn: Advanced Concepts for Intelligent Vision Systems,\npages 345-353. Springer, 2010.",
+    "taskType": "classification",
+    "taskSubType": "multiClass",
+    "problemVersion": "1.0",
+    "problemSchemaVersion": "3.0"
+  },
+  "inputs": {
+    "data": [
+      {
+        "datasetID": "1491_one_hundred_plants_margin_dataset",
+        "targets": [
+          {
+            "targetIndex": 0,
+            "resID": "0",
+            "colIndex": 65,
+            "colName": "Class"
+          }
+        ]
+      }
+    ],
+    "dataSplits": {
+      "method": "holdOut",
+      "testSize": 0.2,
+      "stratified": true,
+      "numRepeats": 0,
+      "randomSeed": 42,
+      "splitsFile": "dataSplits.csv"
+    },
+    "performanceMetrics": [
+      {
+        "metric": "f1Macro"
+      }
+    ]
+  },
+  "expectedOutputs": {
+    "predictionsFile": "predictions.csv"
+  }
+}

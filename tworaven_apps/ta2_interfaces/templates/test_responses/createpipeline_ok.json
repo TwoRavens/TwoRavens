@@ -22,7 +22,7 @@
             }
         },
         "progressInfo": "RUNNING",
-        "pipelineId": "pipeline_2"
+        "pipelineId": "pipeline_3"
     },
     {
         "responseInfo": {
@@ -31,7 +31,7 @@
             }
         },
         "progressInfo": "RUNNING",
-        "pipelineId": "pipeline_1"
+        "pipelineId": "pipeline_4"
     },
     {
         "responseInfo": {
@@ -40,11 +40,9 @@
             }
         },
         "progressInfo": "COMPLETED",
-        "pipelineId": "pipeline_1",
+        "pipelineId": "pipeline_5",
         "pipelineInfo": {
-            "predictResultUris": [
-                "{{ FILE_URI }}"
-            ],
+            "predictResultUri": "{{ FILE_URI|safe }}",
             "output": "REAL",
             "scores": [
                 {
@@ -67,9 +65,7 @@
         "progressInfo": "COMPLETED",
         "pipelineId": "pipeline_2",
         "pipelineInfo": {
-            "predictResultUris": [
-              "{{ FILE_URI|safe }}"
-            ],
+            "predictResultUri": "{{ FILE_URI|safe }}",
             "output": "REAL",
             "scores": [
                 {

@@ -12,7 +12,7 @@ from google.protobuf.json_format import MessageToJson
 from django.conf import settings
 from django.template.loader import render_to_string
 
-from tworaven_apps.ta2_interfaces import core_pb2
+import core_pb2
 from tworaven_apps.ta2_interfaces.models import TEST_KEY_FILE_URI
 from tworaven_apps.ta2_interfaces.models import KEY_GRPC_JSON
 from django.template.loader import render_to_string
@@ -37,12 +37,13 @@ def load_template_as_dict(template_name, info_dict={}):
 
     return json.loads(json_string, object_pairs_hook=OrderedDict)
 
+
 def get_grpc_content(request):
     """"Retrieve the GRPC content from the POST
 
     Returns either:
         (True, content text)
-        (Fales, error message)
+        (False, error message)
     """
     if not (request.POST and KEY_GRPC_JSON in request.POST):
         return False, 'Key "%s" not found' % KEY_GRPC_JSON
@@ -50,31 +51,44 @@ def get_grpc_content(request):
     return True, request.POST[KEY_GRPC_JSON]
 
 
-def get_failed_precondition_response(err_msg):
+def get_failed_precondition_response(err_msg='failed precondition?'):
     """Return a SessionResponse object in JSON format
         with status FAILED_PRECONDITION"""
 
     err_msg = '%s (ta2 server: %s)' % (err_msg, settings.TA2_TEST_SERVER_URL)
 
-    grpc_resp = core_pb2.Response(\
+    resp = core_pb2.Response(\
                     status=core_pb2.Status(\
                         code=core_pb2.FAILED_PRECONDITION,
                         details=err_msg))
 
-    return MessageToJson(grpc_resp)
+    return MessageToJson(resp, including_default_value_fields=True)
 
 
 def get_failed_precondition_sess_response(err_msg):
     """Return a SessionResponse object in JSON format
         with status FAILED_PRECONDITION"""
 
-    grpc_resp = core_pb2.SessionResponse(\
+    resp = core_pb2.SessionResponse(\
                     response_info=core_pb2.Response(\
                         status=core_pb2.Status(\
                             code=core_pb2.FAILED_PRECONDITION,
                             details=err_msg)))
 
-    return MessageToJson(grpc_resp)
+    return MessageToJson(resp, including_default_value_fields=True)
+
+def get_reply_exception_response(err_msg='error in response'):
+    """Return a SessionResponse object in JSON format
+        with status FAILED_PRECONDITION"""
+
+    err_msg = '%s (ta2 server: %s)' % (err_msg, settings.TA2_TEST_SERVER_URL)
+
+    resp = core_pb2.Response(\
+                    status=core_pb2.Status(\
+                        code=core_pb2.UNKNOWN,
+                        details=err_msg))
+
+    return MessageToJson(resp, including_default_value_fields=True)
 
 
 def get_predict_file_info_dict(task_type=None, cnt=1):

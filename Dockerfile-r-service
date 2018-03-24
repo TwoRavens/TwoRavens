@@ -2,8 +2,8 @@ FROM tworavens/r-service-base:latest
 MAINTAINER Raman Prasad (raman_prasad@harvard.edu)
 
 LABEL organization="Two Ravens" \
-      2ra.vn.version="0.0.4-beta" \
-      2ra.vn.release-date="2017-11-20" \
+      2ra.vn.version="0.0.6-beta" \
+      2ra.vn.release-date="2018-01-11" \
       description="Image for the Two Ravens R service which runs on rook."
 
 # -------------------------------------
@@ -12,10 +12,13 @@ LABEL organization="Two Ravens" \
 #     and assets, be more selective
 # -------------------------------------
 RUN mkdir -p /var/webapps/TwoRavens && \
+    mkdir -p /var/webapps/TwoRavens/assets && \
     mkdir -p /ravens_volume
 
 # Copy over the repository
-COPY . /var/webapps/TwoRavens
+COPY ./rook /var/webapps/TwoRavens/rook
+COPY ./LICENSE /var/webapps/TwoRavens
+COPY ./README.md /var/webapps/TwoRavens
 
 
 # -------------------------------------

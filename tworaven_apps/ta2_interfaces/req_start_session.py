@@ -3,16 +3,18 @@ Code based on sample by Matthias Grabmair
     - https://gitlab.datadrivendiscovery.org/mgrabmair/ta3ta2-proxy
 """
 import json
-import random, string
 from google.protobuf.json_format import MessageToJson,\
     Parse, ParseError
 
 from django.conf import settings
-from tworaven_apps.ta2_interfaces import core_pb2
+
+from tworaven_apps.utils import random_info
+import core_pb2
 from tworaven_apps.ta2_interfaces.ta2_connection import TA2Connection
 from tworaven_apps.ta2_interfaces.ta2_util import get_grpc_test_json,\
     get_failed_precondition_sess_response
 from tworaven_apps.ta2_interfaces.models import KEY_USER_AGENT_FROM_UI
+from tworaven_apps.ta2_interfaces.grpc_util import TA3TA2Util
 
 ERR_MSG_NO_USER_AGENT = 'A "%s" must be included in the request.' % KEY_USER_AGENT_FROM_UI
 
@@ -63,10 +65,11 @@ def start_session(raven_json_str=None):
     # -- then return canned response
     #
     if settings.TA2_STATIC_TEST_MODE:
-        rnd_session_id = ''.join(random.choice(string.ascii_lowercase + string.digits)
-                         for _ in range(7))
-        d = dict(session_id=rnd_session_id)
-        return get_grpc_test_json('test_responses/startsession_ok.json', d)
+        rnd_session_id = random_info.get_alphanumeric_string(7)
+        info_dict = dict(session_id=rnd_session_id,
+                         api_version=TA3TA2Util.get_api_version())
+
+        return get_grpc_test_json('test_responses/startsession_ok.json', info_dict)
 
         #if random.randint(1,10) == 3:
         #    return get_grpc_test_json('test_responses/startsession_badassertion.json')
@@ -88,7 +91,7 @@ def start_session(raven_json_str=None):
     # Send the gRPC request
     # --------------------------------
     try:
-        reply = core_stub.StartSession(req)
+        reply = core_stub.StartSession(req, timeout=3)
     except Exception as ex:
         return get_failed_precondition_sess_response(str(ex))
 
@@ -96,7 +99,7 @@ def start_session(raven_json_str=None):
     # --------------------------------
     # Convert the reply to JSON and send it back
     # --------------------------------
-    return MessageToJson(reply)
+    return MessageToJson(reply, including_default_value_fields=True)
 
 
 

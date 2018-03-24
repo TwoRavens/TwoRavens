@@ -14,7 +14,6 @@ def convert_csv_file_to_json(csv_fname, to_string=True):
     return json_string, None
     return None, err_msg
     """
-    #import ipdb; ipdb.set_trace()
     if not csv_fname:
         return (None, 'No file specified')
 

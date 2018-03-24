@@ -1,5 +1,5 @@
 svg {
-  background-color: #FFF;
+  background-color: transparent;
   cursor: default;
   -webkit-user-select: none;
   -moz-user-select: none;
@@ -113,17 +113,6 @@ text.id {
 #main.svg-leftpanel.svg-rightpanel svg {width: 100%;}   /*  Was: calc(100% - 300px);} /*
 /* Above changes fix issue when screen gets very small, and right margin is fixed at 300px, obscuring central display, even while left tab is shrinking below 300px */
 
-div.popover.variables {
-    max-width:none;
-    width:300px;
-}
-div.popover.variables div.popover-content.form-horizontal {
-    padding:0;
-}
-div.popover.variables div.popover-content.form-horizontal .form-group {
-    margin-bottom:0;
-}
-
 #leftpanel {
     border: 1px solid #ADADAD;
     position: fixed;
@@ -141,6 +130,7 @@ div.popover.variables div.popover-content.form-horizontal .form-group {
 #leftpanel.closepanel {width:1px;}
 #leftpanel.closepanel #leftpaneltitle, #leftpanel.closepanel div.btn-toolbar, #leftpanel.closepanel div.row-fluid.closepanel {display:none;}
 #leftpanel.expandpanel {width: 30%;}
+#leftpanel.expandpanelfull {width: calc(100% - 300px - 16px);}
 
 #rightpanel {
     border: 1px solid #ADADAD;
@@ -219,7 +209,6 @@ div.sidepanel div.panelbar span {
 
 .spaceTool {
     top: 0;
-    right: 310px;
     margin-right: 10px;
     margin-top: 10px;
     position: absolute;
@@ -428,6 +417,13 @@ tr.item-lineout{
     text-decoration:line-through;
 }
 
+.item-bordered {
+    border: solid #000000;
+}
+.item-lineout{
+    text-decoration:line-through;
+}
+
 
 #searchvar{
 /*  background: #fff url(icoX.gif) no-repeat right -10px center;*/
@@ -453,9 +449,9 @@ tr.item-lineout{
     display: block;
     float: left;
     position: relative;
-    transition: all 0.5s;
+    /*transition: all 0.5s;
     -moz-transition: all 0.5s;
-    -webkit-transition: all 0.5s;
+    -webkit-transition: all 0.5s;*/
     width: 10%;
 }
 
@@ -465,4 +461,33 @@ tr.item-lineout{
 
 .yesshow {
     display:inline;
+}
+
+div#scatterplot .axis line {fill: none; stroke: #BBDEFB; shape-rendering: crispEdges;}
+div#scatterplot .axis path {fill: none; stroke: #BDBDBD; shape-rendering: crispEdges;}
+#tooltipPlotA {
+    visibility: hidden;
+    width: 120px;
+    background-color: grey;
+    color: #fff;
+    text-align: center;
+    border-radius: 4px;
+    padding: 4px 0;
+    margin: 1px;
+    /* Position the tooltip */
+    position: relative;
+    z-index: 1;
+}
+#tooltipPlotB {
+    visibility: hidden;
+    width: 120px;
+    background-color: grey;
+    color: #fff;
+    text-align: center;
+    border-radius: 4px;
+    padding: 4px 0;
+    margin: 1px;
+    /* Position the tooltip */
+    position: relative;
+    z-index: 1;
 }
