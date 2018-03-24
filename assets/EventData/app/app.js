@@ -45,6 +45,7 @@ export function handleResize() {
 }
 
 export let opMode = "subset";
+
 export function setOpMode(mode) {
     if (['subset', 'aggregate'].indexOf(mode) !== -1) {
         opMode = mode;
@@ -66,33 +67,15 @@ if (!production) {
 let appname = 'eventdatasubsetapp';
 export let subsetURL = rappURL + appname;
 
-// Slide animation for dataset selection
-$(document).on('click', '#option', function () {
-    let optionID = $(this).data('option');
-    $('#optionMenu').toggle('fade');
-    $('#optionView' + optionID).toggle('fade');
-    popoverDataset = optionID;
-});
-
-export let popoverDataset;
-
-// Popover for dataset selection
-$(function () {
-    $('.popover-markup > .trigger').popover({
-        html: true,
-        placement: "bottom",
-        title: function () {
-            return $(this).parent().find('.head').html();
-        },
-        content: function () {
-            return $(this).parent().find('.content').html();
-        },
-        template: '<div class="popover dashboardPopover"><div class="arrow"></div><div class="popover-inner"><h3 class="popover-title"></h3><div class="popover-content"></div></div></div>'
-    });
-});
-
 export function setDataset(dataset) {
-    localStorage.setItem('dataset', dataset);
+    localStorage.setItem('dataset', {
+            'Phoenix - UTDallas': 'phoenix_rt',
+            'Cline - New York Times': 'cline_phoenix_nyt',
+            'Cline - CIA Broadcast': 'cline_phoenix_fbis',
+            'Cline - BBC Summary': 'cline_phoenix_swb',
+            'ICEWS': 'icews'
+        }[dataset]
+    );
     window.location.reload(false);
 }
 
@@ -167,7 +150,7 @@ console.log("Query: " + JSON.stringify(subsetQuery));
 // The editor will be initialized on body setup
 export var editor;
 
-export function setupBody(){
+export function setupBody() {
     // The editor menu for the custom subsets
     editor = ace.edit("subsetCustomEditor");
 
@@ -178,7 +161,7 @@ export function setupBody(){
     };
 
     // Load the field names into the left panel
-    makeCorsRequest(subsetURL, query, function(jsondata) {
+    makeCorsRequest(subsetURL, query, function (jsondata) {
         // Each key has a %-formatted value
         variables = Object.keys(jsondata.variables);
         reloadLeftpanelVariables();
@@ -203,13 +186,14 @@ export function setupBody(){
 }
 
 export let matchedVariables = [];
+
 export function reloadLeftpanelVariables() {
     if (opMode !== 'subset') return;
 
     let search_term = document.getElementById('searchVariables').value.toUpperCase();
     // Subset variable list by search term. Empty string returns all.
     matchedVariables.length = 0;
-    
+
     for (let variable of variables) {
         if (variable.toUpperCase().indexOf(search_term) !== -1) {
             matchedVariables.push(variable)
@@ -314,26 +298,26 @@ export function download() {
         document.body.removeChild(a);
     }
 
-	if (opMode == "subset") {
-		let variableQuery = buildVariables();
-		let subsetQuery = buildSubset(subsetData);
+    if (opMode === "subset") {
+        let variableQuery = buildVariables();
+        let subsetQuery = buildSubset(subsetData);
 
-		console.log("Query: " + JSON.stringify(subsetQuery));
-		console.log("Projection: " + JSON.stringify(variableQuery));
+        console.log("Query: " + JSON.stringify(subsetQuery));
+        console.log("Projection: " + JSON.stringify(variableQuery));
 
-		let query = {
-			'subsets': JSON.stringify(subsetQuery),
-			'variables': JSON.stringify(variableQuery),
-			'dataset': dataset,
-			'datasource': datasource,
-			'type': 'raw'
-		};
-		laddaDownload.start();
-		makeCorsRequest(subsetURL, query, save);
-	}
-	else if (opMode == "aggreg") {
-		//merge my request code with makeCorsRequest and wrap table update in function
-	}
+        let query = {
+            'subsets': JSON.stringify(subsetQuery),
+            'variables': JSON.stringify(variableQuery),
+            'dataset': dataset,
+            'datasource': datasource,
+            'type': 'raw'
+        };
+        laddaDownload.start();
+        makeCorsRequest(subsetURL, query, save);
+    }
+    else if (opMode == "aggreg") {
+        //merge my request code with makeCorsRequest and wrap table update in function
+    }
 }
 
 
@@ -546,6 +530,7 @@ export function setupQueryTree() {
         }
     );
 }
+
 // Define negation toggle, logic dropdown and delete button, as well as their callbacks
 function buttonNegate(id, state) {
     // This state is negated simply because the buttons are visually inverted. An active button appears inactive
@@ -557,7 +542,7 @@ function buttonNegate(id, state) {
     }
 }
 
-window.callbackNegate = function(id, bool) {
+window.callbackNegate = function (id, bool) {
     let subsetTree = $('#subsetTree');
     let node = subsetTree.tree('getNodeById', id);
 
@@ -599,7 +584,7 @@ function buttonOperator(id, state, canChange) {
     //     '</ul></div> ';
 }
 
-window.callbackOperator = function(id, operand) {
+window.callbackOperator = function (id, operand) {
     let subsetTree = $('#subsetTree');
     let node = subsetTree.tree('getNodeById', id);
     if ('editable' in node && !node.editable) return;
@@ -617,7 +602,7 @@ function buttonDelete(id) {
     return "<button type='button' class='btn btn-default btn-xs' style='background:none;border:none;box-shadow:none;float:right;margin-top:2px;height:18px' onclick='callbackDelete(" + String(id) + ")'><span class='glyphicon glyphicon-remove' style='color:#ADADAD'></span></button></div>";
 }
 
-window.callbackDelete = function(id) {
+window.callbackDelete = function (id) {
     // noinspection JSJQueryEfficiency
     let subsetTree = $('#subsetTree');
     let node = subsetTree.tree('getNodeById', id);
@@ -725,7 +710,7 @@ function hide_first(data) {
     return data;
 }
 
-window.addGroup = function(query = false) {
+window.addGroup = function (query = false) {
     // When the query argument is set, groups will be included under a 'query group'
     let movedChildren = [];
     let removeIds = [];
@@ -1286,7 +1271,7 @@ function processRule(rule) {
                     child.fromDate = new Date(child.fromDate);
                     // Not a pretty solution, but it prevents aggregation substring slicing or regexes
                     lower_bound['$or'] = [
-                            {'<year>': {'$gt': pad(child.fromDate.getFullYear())}},
+                        {'<year>': {'$gt': pad(child.fromDate.getFullYear())}},
                         {
                             '<year>': pad(child.fromDate.getFullYear()),
                             '<month>': {'$gte': pad(child.fromDate.getMonth() + 1)}
@@ -1300,7 +1285,7 @@ function processRule(rule) {
                 if ('toDate' in child) {
                     child.toDate = new Date(child.toDate);
                     upper_bound['$or'] = [
-                            {'<year>': {'$lt': pad(child.toDate.getFullYear())}},
+                        {'<year>': {'$lt': pad(child.toDate.getFullYear())}},
                         {
                             '<year>': pad(child.toDate.getFullYear()),
                             '<month>': {'$lte': pad(child.toDate.getMonth() + 1)}
