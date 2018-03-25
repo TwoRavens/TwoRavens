@@ -659,8 +659,7 @@ class Body {
     }
 }
 
-// VJD: note the 'not' here, to get to eventdata
-if (!IS_EVENTDATA_DOMAIN) {
+if (IS_EVENTDATA_DOMAIN) {
     m.route(document.body, '/subset', {
         '/subset': {render: () => m(Body_EventData, {mode: 'subset'})},
         '/aggregate': {render: () => m(Body_EventData, {mode: 'aggregate'})}
