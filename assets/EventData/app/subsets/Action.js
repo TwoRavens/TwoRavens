@@ -235,7 +235,7 @@ export function updateData() {
                 })
                 .on("mousemove", function (d) {
                     actionTooltip.style("display", "block")
-                        .style("left", d3.event.pageX - 250 + "px")
+                        .style("left", d3.event.pageX + "px")
                         .style("top", d3.event.pageY - 70 + "px");
                 })
                 .on("mouseout", function (d) {
@@ -282,7 +282,7 @@ export function updateData() {
                 })
                 .on("mousemove", function (d) {
                     actionTooltip.style("display", "block")
-                        .style("left", d3.event.pageX - 250 + "px")
+                        .style("left", d3.event.pageX + "px")
                         .style("top", d3.event.pageY - 70 + "px");
                 })
                 .on("mouseout", function (d) {
@@ -361,7 +361,7 @@ export function updateData() {
                 })
                 .on("mousemove", function (d) {
                     actionTooltip.style("display", "block")
-                        .style("left", d3.event.pageX - 250 + "px")
+                        .style("left", d3.event.pageX + "px")
                         .style("top", d3.event.pageY - 70 + "px");
                 })
                 .on("mouseout", function (d) {
@@ -405,7 +405,7 @@ export function updateData() {
                 })
                 .on("mousemove", function (d) {
                     actionTooltip.style("display", "block")
-                        .style("left", d3.event.pageX - 250 + "px")
+                        .style("left", d3.event.pageX + "px")
                         .style("top", d3.event.pageY - 70 + "px");
                 })
                 .on("mouseout", function (d) {
