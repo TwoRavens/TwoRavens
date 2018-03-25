@@ -87,7 +87,7 @@ if (localStorage.getItem("dataset") !== null) {
 }
 
 // Options: "api" or "local"
-export let datasource = 'local';
+export let datasource = 'api';
 
 export let subsetKeys = ["Actor", "Date", "Action", "Location", "Coordinates", "Custom"]; // Used to label buttons in the left panel
 export let aggregateKeys = ["Actor", "Date", "Penta Class", "Root Code"];
