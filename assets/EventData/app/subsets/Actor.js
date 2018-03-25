@@ -222,6 +222,9 @@ export function setupActor(){
         //update DOM
         updateGroupName(newGroupName);
 
+        if (app.opMode === "aggregate")
+            updateAggregTable();
+
         updateAll();		//update force
     });
 

@@ -4,6 +4,7 @@ import {resetActionCounts, actionBuffer, drawGraphs, updateData} from "./subsets
 import {updateActor, actorLinks, resizeActorSVG} from "./subsets/Actor";
 import {updateDate, datemax, datemaxUser, datemin, dateminUser, setDatefromSlider} from "./subsets/Date";
 import {updateLocation, mapListCountriesSelected} from "./subsets/Location";
+import {setAggregMode, updateAggregTable, makeAggregQuery, aggregPentaChkOrd, aggregRootChkOrd} from "./aggreg/aggreg";
 import {
     panelMargin, panelOcclusion, panelOpen, scrollBarChanged, setPanelCallback,
     setPanelOcclusion
@@ -86,7 +87,7 @@ if (localStorage.getItem("dataset") !== null) {
 }
 
 // Options: "api" or "local"
-export let datasource = 'api';
+export let datasource = 'local';
 
 export let subsetKeys = ["Actor", "Date", "Action", "Location", "Coordinates", "Custom"]; // Used to label buttons in the left panel
 export let aggregateKeys = ["Actor", "Date", "Penta Class", "Root Code"];
@@ -212,6 +213,8 @@ export function toggleVariableSelected(variable) {
 }
 
 export function showCanvas(canvasKey) {
+	console.log("in showCanvas");
+	console.log(canvasKey);
     canvasKeySelected = canvasKey;
 
     // Typically 1. update state 2. mithril redraw. Therefore graphs get drawn on a display:none styled div
@@ -233,6 +236,66 @@ export function showCanvas(canvasKey) {
             document.getElementById('canvasActor').style.display = 'inline';
             resizeActorSVG();
         }
+
+        if (canvasKeySelected === "Penta Class") {
+			console.log("in penta canvas");
+			setAggregMode("penta");
+			$(".aggregDataRoot").hide();
+			//~ for (let x = 0; x <= 4; x ++) {
+				//~ console.log("showing penta table");
+				//~ if ($("#aggregPenta" + x).prop("checked")) {
+					//~ $(".aggregDataPenta" + x).show();
+				//~ }
+			//~ }
+			console.log(aggregPentaChkOrd);
+			$("#aggregPentaAll").prop("indeterminate", false);
+			if (aggregPentaChkOrd[0] == 0)
+				$("#aggregPentaAll").prop("checked", false);
+			else if (aggregPentaChkOrd[0] == 2)
+				$("#aggregPentaAll").prop("indeterminate", true);
+			for (let x = 0; x < aggregPentaChkOrd.length - 1; x ++) {
+				if (aggregPentaChkOrd[x + 1] == 0) {
+					console.log("hiding penta " + x);
+					$("#aggregPenta" + x).prop("checked", false);
+					$(".aggregDataPenta" + x).hide();
+				}
+				else {
+					console.log("showing penta " + x);
+					$("#aggregPenta" + x).prop("checked", true);
+					$(".aggregDataPenta" + x).show();
+				}
+			}
+			updateAggregTable();
+		}
+		else if (canvasKeySelected === "Root Code") {
+			console.log("in root canvas");
+			setAggregMode("root");
+			$(".aggregDataPenta").hide();
+			//~ for (let x = 1; x <= 20; x ++) {
+				//~ if ($("#aggregRoot" + x).prop("checked")) {
+					//~ $(".aggregDataRoot" + x).show();
+				//~ }
+			//~ }
+			console.log(aggregRootChkOrd);
+			$("#aggregRootAll").prop("indeterminate", false);
+			if (aggregRootChkOrd[0] == 0)
+				$("#aggregRootAll").prop("checked", false);
+			else if (aggregRootChkOrd[0] == 2)
+				$("#aggregRootAll").prop("indeterminate", true);
+			for (let x = 1; x < aggregRootChkOrd.length; x ++) {
+				if (aggregRootChkOrd[x] == 0) {
+					console.log("hiding root " + x);
+					$("#aggregRoot" + x).prop("checked", false);
+					$(".aggregDataRoot" + x).hide();
+				}
+				else {
+					console.log("showing root " + x);
+					$("#aggregRoot" + x).prop("checked", true);
+					$(".aggregDataRoot" + x).show();
+				}
+			}
+			updateAggregTable();
+		}
     }
 }
 
@@ -286,6 +349,8 @@ export function makeCorsRequest(url, post, callback) {
 }
 
 export function download() {
+	console.log("in download func");
+	console.log(opMode);
 
     function save(data) {
         let a = document.createElement('A');
@@ -298,26 +363,30 @@ export function download() {
         document.body.removeChild(a);
     }
 
-    if (opMode === "subset") {
-        let variableQuery = buildVariables();
-        let subsetQuery = buildSubset(subsetData);
+	if (opMode === "subset") {
+		console.log("making subset download");
+		let variableQuery = buildVariables();
+		let subsetQuery = buildSubset(subsetData);
 
-        console.log("Query: " + JSON.stringify(subsetQuery));
-        console.log("Projection: " + JSON.stringify(variableQuery));
+		console.log("Query: " + JSON.stringify(subsetQuery));
+		console.log("Projection: " + JSON.stringify(variableQuery));
 
-        let query = {
-            'subsets': JSON.stringify(subsetQuery),
-            'variables': JSON.stringify(variableQuery),
-            'dataset': dataset,
-            'datasource': datasource,
-            'type': 'raw'
-        };
-        laddaDownload.start();
-        makeCorsRequest(subsetURL, query, save);
-    }
-    else if (opMode == "aggreg") {
-        //merge my request code with makeCorsRequest and wrap table update in function
-    }
+		let query = {
+			'subsets': JSON.stringify(subsetQuery),
+			'variables': JSON.stringify(variableQuery),
+			'dataset': dataset,
+			'datasource': datasource,
+			'type': 'raw'
+		};
+		laddaDownload.start();
+		makeCorsRequest(subsetURL, query, save);
+	}
+	else if (opMode === "aggregate") {
+		console.log("making aggreg download");
+		//merge my request code with makeCorsRequest and wrap table update in function
+		laddaDownload.start();
+		makeAggregQuery("download", save);
+	}
 }
 
 
