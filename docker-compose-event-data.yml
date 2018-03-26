@@ -1,23 +1,24 @@
-# Pull images from docker hub to run the containers
-#
-#
 version: '3'
 
 services:
   nginx:
-    image: tworavens/ravens-nginx:latest
+    build:
+      context: ./setup/nginx
+      dockerfile: Dockerfile
     links:
       - rook-service:rook-service
-      - tworavens:tworavens
+      - ta3-main:ta3-main
     ports:
       - 80:80
     depends_on:
-      - tworavens
+      - ta3-main
       - rook-service
     volumes:
       - ./ravens_volume:/ravens_volume
   rook-service:
-    image: tworavens/ravens-r-service:latest
+    build:
+      context: ./
+      dockerfile: Dockerfile-eventdata-r-service
     environment:
       # Note: this variable is also set in Dockerfile-r-service
       - ROOK_USE_PRODUCTION_MODE=yes
@@ -25,15 +26,17 @@ services:
       - 8000
     volumes:
       - ./ravens_volume:/ravens_volume
-  tworavens:
-    image: tworavens/ravens-main:latest
+  ta3-main:
+    build:
+      context: ./
+      dockerfile: Dockerfile-eventdata
     environment:
       # If True, don't use an actual TA2, returned canned responses
-      - TA2_STATIC_TEST_MODE=False
+      - TA2_STATIC_TEST_MODE=True
       # Example of specifying a TA2 service
-      - TA2_TEST_SERVER_URL=ta2-main:50051
+      #- TA2_TEST_SERVER_URL=ta2-main:45042
       #- CONFIG_JSON_PATH=/ravens_volume/config_o_4550seed.json
-      - CONFIG_JSON_PATH=/ravens_volume/config_o_196.json
+      #- CONFIG_JSON_PATH=/ravens_volume/config_185_baseball.json
     links:
       - rook-service
     ports:
@@ -41,12 +44,4 @@ services:
       - 8080:8080
     volumes:
       - ./ravens_volume:/ravens_volume
-  ta2-main:
-    image: registry.datadrivendiscovery.org/ta2/isi_ta2:latest
-    environment:
-      - CONFIG_JSON_PATH=/ravens_volume/config_o_196.json
-    volumes:
-      - ./ravens_volume:/ravens_volume
-    ports:
-      # 50051: grpc connection
-      - 50051:50051
+  
