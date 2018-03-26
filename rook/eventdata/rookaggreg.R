@@ -1,3 +1,5 @@
+source("rookconfig.R")
+
 library(tidyverse)
 require(data.table)
 library(lubridate)
@@ -5,24 +7,23 @@ library(lubridate)
 print("entered r aggreg app")
 
 eventdata_aggreg.app <- function(env) {
-	production = FALSE     ## Toggle:  TRUE - Production, FALSE - Local Development
+	
+		production = EVENTDATA_PRODUCTION_MODE     ## Toggle:  TRUE - Production, FALSE - Local Development
 
-    api_key = 'api_key=CD75737EF4CAC292EE17B85AAE4B6'
     datasource = 'api'
 
-    server_address = 'http://149.165.156.33:5002/api/data?'
-    local_server_address = 'http://0.0.0.0:5002/api/data?'
+    server_address = EVENTDATA_PRODUCTION_SERVER_ADDRESS
 
     if (production) {
         sink(file = stderr(), type = "output")
     }
-	
+
 
 	request <- Request$new(env)
 	response <- Response$new()
     response$header("Access-Control-Allow-Origin", "*")  # Enable CORS
 
-    
+
     if (request$options()) {
 		print("Preflight from aggreg")
 		response$status = 200L
@@ -63,11 +64,11 @@ eventdata_aggreg.app <- function(env) {
 
     print(datasource)
     if (!production && datasource == "local") {
-        server_address = local_server_address
+        server_address = EVENTDATA_LOCAL_SERVER_ADDRESS
     }
 
     format = paste(dataset, '_', datasource, sep="")
-    eventdata_url = paste(server_address, api_key, "&datasource=", dataset, sep="")
+    eventdata_url = paste(server_address, EVENTDATA_SERVER_API_KEY, "&datasource=", dataset, sep="")
 
     # ~~~~ Data Retrieval ~~~~
 
@@ -83,13 +84,13 @@ eventdata_aggreg.app <- function(env) {
 	}
 
     actionType = everything$action
-    
+
     if (!is.null(actionType) && actionType == "preview") {	#get first $numberPreview dates
 		print(everything$date$dateType)
 		print(everything$numberPreview)
 		print(start_date)
 		print(end_date)
-		
+
 		num = everything$numberPreview - 1
 #~ 		if (everything$date$dateType == 1)
 #~ 			date_range = seq(start_date, min(start_date + weeks(num), end_date + weeks(1)), by="week")
@@ -143,7 +144,7 @@ eventdata_aggreg.app <- function(env) {
 	#~ 		actorLinks = do.call(rbind, everything$actors$links)
 	#~ 		print(actorLinks)
 	#~ 		print(typeof(actorLinks))
-			
+
 			actorLinks = everything$actors$links
 			print(actorLinks)
 			print("end of actorLinks")
@@ -169,14 +170,14 @@ eventdata_aggreg.app <- function(env) {
 #~ 			start_date = as.Date(strptime(everything$date$min, "%Y%m%d"))
 #~ 			end_date = as.Date(strptime(everything$date$max, "%Y%m%d"))
 #~ 		}
-		
+
 		query_url = paste(eventdata_url, '&query={"<date>":{"$gte":"', everything$date$min, '","$lte":"', everything$date$max, '"}}', sep="")		#change query to match min/max date
 
 		if (everything$date$dateType == 0 && everything$actors$actorType == FALSE) {
 			print("nothing to aggreg on")
 			#return the action counts
 			if (dataset %in% list("phoenix_rt", "cline_phoenix_fbis", "cline_phoenix_nyt", "cline_phoenix_swb")) {
-				
+
 				action_frequencies = future({
 					data = do.call(data.frame, getData(paste(query_url, '&group=<root_code>', sep="")))
 					if (nrow(data) != 0) colnames(data) = c('total', 'rootcode')
@@ -224,13 +225,13 @@ eventdata_aggreg.app <- function(env) {
 	#~ 									'"Year": {"$year": "$iso_date"},',
 	#~ 									'"root_code": "$<root_code>"}, "total":{"$sum": 1}}},{"$limit":10}]',
 					sep="")))
-								
+
 	#~ 						if (nrow(data) != 0) colnames(data) = c('total', '<root_code>', 'year')
 					if (nrow(data) != 0) colnames(data) = c("Date", "rootcode")
 					data
 				}) %plan% multiprocess
 			}
-					
+
 			print("only date")
 			if (everything$date$dateType == 1) {	#weekly
 				print("weekly")
@@ -290,7 +291,7 @@ eventdata_aggreg.app <- function(env) {
 					print("frame ver")
 					print(ftab)
 
-					
+
 	#~ 				print(data.frame(date2=format(as.Date(names(tab)), "%m_%d_%Y"), freq = as.vector(tab)))
 
 	#~ 				#spread into wide format
@@ -311,7 +312,7 @@ eventdata_aggreg.app <- function(env) {
 			}
 			else if (everything$date$dateType == 2) {	#monthly
 				#send query to phoenix dbs
-				if (dataset %in% list("phoenix_rt", "cline_phoenix_fbis", "cline_phoenix_nyt", "cline_phoenix_swb")) {	
+				if (dataset %in% list("phoenix_rt", "cline_phoenix_fbis", "cline_phoenix_nyt", "cline_phoenix_swb")) {
 					print("end of month only")
 					print(value(action_frequencies))
 
@@ -361,7 +362,7 @@ eventdata_aggreg.app <- function(env) {
 					print("frame ver")
 					print(ftab)
 
-					
+
 	#~ 				print(data.frame(date2=format(as.Date(names(tab)), "%m_%d_%Y"), freq = as.vector(tab)))
 
 	#~ 				#spread into wide format
@@ -433,7 +434,7 @@ eventdata_aggreg.app <- function(env) {
 					print("frame ver")
 					print(ftab)
 
-					
+
 	#~ 				print(data.frame(date2=format(as.Date(names(tab)), "%m_%d_%Y"), freq = as.vector(tab)))
 
 	#~ 				#spread into wide format
@@ -452,7 +453,7 @@ eventdata_aggreg.app <- function(env) {
 #~ 					)))
 				}
 			}
-			else if (everything$date$dateType == 4) {	#yearly				
+			else if (everything$date$dateType == 4) {	#yearly
 				if (dataset %in% list("phoenix_rt", "cline_phoenix_fbis", "cline_phoenix_nyt", "cline_phoenix_swb")) {
 					print("end of year only")
 					print(value(action_frequencies))
@@ -503,7 +504,7 @@ eventdata_aggreg.app <- function(env) {
 					print("frame ver")
 					print(ftab)
 
-					
+
 	#~ 				print(data.frame(date2=format(as.Date(names(tab)), "%m_%d_%Y"), freq = as.vector(tab)))
 
 	#~ 				#spread into wide format
@@ -531,11 +532,11 @@ eventdata_aggreg.app <- function(env) {
 			result = data.frame(matrix(ncol = 22, nrow = 0))
 			resHeader = c("Source", "Target", (1:20))
 			colnames(result) = resHeader
-			
+
 			if (dataset %in% list("phoenix_rt", "cline_phoenix_fbis", "cline_phoenix_nyt", "cline_phoenix_swb")) {
 				for (group in everything$actors$links) {
 					action_frequencies = future({
-						
+
 							data = do.call(data.frame, getData(paste(eventdata_url, '&aggregate=[',
 								'{"$match": ',
 									'{"$and": [',
@@ -566,7 +567,7 @@ eventdata_aggreg.app <- function(env) {
 		#~ 								'"Week": {"$week": "$iso_date"},',
 		#~ 								'"root_code": "$<root_code>"}, "total":{"$sum": 1}}}]',
 							sep="")))
-										
+
 							if (nrow(data) != 0) colnames(data) = c('total', 'Source', 'Target', 'RootCode')
 							data
 					}) %plan% multiprocess
@@ -607,13 +608,13 @@ eventdata_aggreg.app <- function(env) {
 			result = data.frame(matrix(ncol = 23, nrow = 0))
 			resHeader = c("Source", "Target", (1:20))
 			colnames(result) = c("Date", resHeader)
-			
+
 			if (everything$date$dateType == 1) {	#weekly
 				print("aggreg week")
 
 	#~ 			offset_date = as.Date(cut(as.Date(start_date), "week"))
 	#~ 			diff = abs(as.numeric(start_date - offset_date, units="days"))
-				
+
 				if (dataset %in% list("phoenix_rt", "cline_phoenix_fbis", "cline_phoenix_nyt", "cline_phoenix_swb")) {
 					for (group in everything$actors$links) {
 						action_frequencies = future({
@@ -644,7 +645,7 @@ eventdata_aggreg.app <- function(env) {
 	#~ 									'"Week": {"$week": "$iso_date"},',
 	#~ 									'"root_code": "$<root_code>"}, "total":{"$sum": 1}}},{"$limit":10}]',
 							sep="")))
-										
+
 	#~ 						if (nrow(data) != 0) colnames(data) = c('total', '<root_code>', 'week', 'year')
 							if (nrow(data) != 0) colnames(data) = c("Date", "rootcode")
 							data
@@ -750,7 +751,7 @@ eventdata_aggreg.app <- function(env) {
 										']}}]}},',
 								'{"$project": {"<date>": 1, "<root_code>": 1, "_id": 0}}]',
 							sep="")))
-										
+
 	#~ 						if (nrow(data) != 0) colnames(data) = c('total', '<root_code>', 'week', 'year')
 							if (nrow(data) != 0) colnames(data) = c("Date", "rootcode")
 							data
@@ -843,7 +844,7 @@ eventdata_aggreg.app <- function(env) {
 										']}}]}},',
 								'{"$project": {"<date>": 1, "<root_code>": 1, "_id": 0}}]',
 							sep="")))
-										
+
 	#~ 						if (nrow(data) != 0) colnames(data) = c('total', '<root_code>', 'week', 'year')
 							if (nrow(data) != 0) colnames(data) = c("Date", "rootcode")
 							data
@@ -936,7 +937,7 @@ eventdata_aggreg.app <- function(env) {
 										']}}]}},',
 								'{"$project": {"<date>": 1, "<root_code>": 1, "_id": 0}}]',
 							sep="")))
-										
+
 	#~ 						if (nrow(data) != 0) colnames(data) = c('total', '<root_code>', 'week', 'year')
 							if (nrow(data) != 0) colnames(data) = c("Date", "rootcode")
 							data
@@ -1015,9 +1016,9 @@ eventdata_aggreg.app <- function(env) {
 			else {
 				print ("aggreg else")
 			}
-							
+
 		}
-		
+
 		#convert to penta if needed
 		#result[[penta#]] = result$1 + result$2 + ...
 		#result$1 = NULL ...
@@ -1075,13 +1076,13 @@ eventdata_aggreg.app <- function(env) {
 #~ 				}
 #~ 			}
 #~ 			else if (everything$date$dateType == 0 && everything$actors$actorType == FALSE) {
-				
+
 #~ 			}
 #~ 			else if (everything$date$dateType == 0 && everything$actors$actorType == FALSE) {
-				
+
 #~ 			}
 #~ 			else {
-				
+
 #~ 			}
 
 			offset = 0;
@@ -1184,9 +1185,9 @@ eventdata_aggreg.app <- function(env) {
 #~ 					colnames(result)[4:length(colnames(result))] = paste("Root", colnames(result)[4:length(colnames(result))])
 #~ 				}
 #~ 			}
-			
+
 			print(result)
-			
+
 			fileName = paste("aggregation_", format(Sys.time(), '%Y-%m-%d-%H-%M-%OS4'), sep="")
 
 			write.csv(result, file=paste('./eventdata/downloads/', fileName, ".csv", sep=""))
@@ -1198,7 +1199,7 @@ eventdata_aggreg.app <- function(env) {
 			action_data = result
 		)))
 	}
-    
+
 	response$write(result)
     return(response$finish())
 

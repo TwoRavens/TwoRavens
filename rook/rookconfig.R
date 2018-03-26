@@ -1,9 +1,41 @@
 ## This is a configuration file for Rook apps
 
-## Define modes
+# ----------------------------------------------
+# START: Event data specific config variables
+# ----------------------------------------------
 
-# Use production mode if env variable ROOK_USE_PRODUCTION_MODE = "yes"
+#EVENT_DATA_ROOK_URL_BASE = Sys.getenv(x='EVENTDATA_PRODUCTION_SERVER_ADDRESS', unset=EVENTDATA_PHOENIX_SERVER_ADDRESS)
+
+# Default is FALSE, setting an env variable to "yes", will set the mode to TRUE
 #
+EVENTDATA_PRODUCTION_MODE <- identical(Sys.getenv(x='EVENTDATA_PRODUCTION_MODE', unset="no"), "yes")
+
+# Event data server addresses
+#	- local server
+# - default prod server
+#
+EVENTDATA_LOCAL_SERVER_ADDRESS <- 'http://0.0.0.0:5002/api/data?'
+
+# Load prod server from ENV variable.  If it doesn't exist, use the PHOENIX address
+#
+EVENTDATA_PHOENIX_SERVER_ADDRESS <- 'http://149.165.156.33:5002/api/data?'
+EVENTDATA_PRODUCTION_SERVER_ADDRESS <- Sys.getenv(x='EVENTDATA_PRODUCTION_SERVER_ADDRESS', unset=EVENTDATA_PHOENIX_SERVER_ADDRESS)
+
+# API KEY, Load from ENV variable.  If it doesn't exist, use the default
+#
+EVENTDATA_DEFAULT_API_KEY <- 'api_key=CD75737EF4CAC292EE17B85AAE4B6'
+EVENTDATA_SERVER_API_KEY <- Sys.getenv(x='EVENTDATA_SERVER_API_KEY', unset=EVENTDATA_DEFAULT_API_KEY)
+# ----------------------------------------------
+# END: Event data specific config variables
+# ----------------------------------------------
+# ----------------------------------------------
+# ----------------------------------------------
+
+
+
+# ----------------------------------------------
+# Variables used for TwoRavens (non-eventdata)
+# ----------------------------------------------
 production <- identical(Sys.getenv(x='ROOK_USE_PRODUCTION_MODE', unset="no"), "yes")
 
 print(paste("production: ", production, sep=""))

@@ -1,3 +1,5 @@
+source("rookconfig.R")
+
 ##
 ##  rookvalidator.r
 ##
