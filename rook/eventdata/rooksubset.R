@@ -1,3 +1,5 @@
+source("rookconfig.R")
+
 ##
 ##  rookeventdata.r
 ##
@@ -34,7 +36,7 @@
 #       b. Run source('rooksource.R') to start R server
 #          Note: Rook, the R package that runs the R server, does not seem to recognize file updates,
 #                so the server must be restarted after each edit. There should be a better way.
-# 
+#
 # 5. Start a local spec-api server from the multi-set branch here:
 #      https://github.com/Sayeedsalam/spec-event-data-server/tree/local
 #      python ./app_v2.py
@@ -50,13 +52,14 @@
 # NOTE: Use quit() to close the R server. Otherwise the ports will not correctly be released.
 #       If you use Rstudio, modify the IDE config so that it won't share the same port as the R server
 eventdata_subset.app <- function(env) {
-    production = FALSE     ## Toggle:  TRUE - Production, FALSE - Local Development
 
-    api_key = 'api_key=CD75737EF4CAC292EE17B85AAE4B6'
+    production = EVENTDATA_PRODUCTION_MODE     ## Toggle:  TRUE - Production, FALSE - Local Development
+    cat("\nEVENTDATA_PRODUCTION_MODE: ", EVENTDATA_PRODUCTION_MODE)
+
     datasource = 'api'
 
-    server_address = 'http://149.165.156.33:5002/api/data?'
-    local_server_address = 'http://0.0.0.0:5002/api/data?'
+    server_address = EVENTDATA_PRODUCTION_SERVER_ADDRESS
+    cat("\nEVENTDATA_PRODUCTION_SERVER_ADDRESS: ", EVENTDATA_PRODUCTION_SERVER_ADDRESS, "\n")
 
     if (production) {
         sink(file = stderr(), type = "output")
@@ -117,11 +120,12 @@ eventdata_subset.app <- function(env) {
 
     print(datasource)
     if (!production && datasource == "local") {
-        server_address = local_server_address
+        server_address = EVENTDATA_LOCAL_SERVER_ADDRESS
     }
+    cat('\nserver_address', server_address)
 
     format = paste(dataset, '_', datasource, sep="")
-    eventdata_url = paste(server_address, api_key, "&datasource=", dataset, sep="")
+    eventdata_url = paste(server_address, EVENTDATA_SERVER_API_KEY, "&datasource=", dataset, sep="")
 
     # ~~~~ Data Retrieval ~~~~
 
@@ -138,7 +142,7 @@ eventdata_subset.app <- function(env) {
     }
 
     if (!is.null(type) && type == 'raw') {
-        result = getData(paste(eventdata_url, '&aggregate=', 
+        result = getData(paste(eventdata_url, '&aggregate=',
             '[{"$match":', subsets, '},',
              '{"$project":', variables, '}]', sep=""))
         result['_id'] = NULL
@@ -296,7 +300,7 @@ eventdata_subset.app <- function(env) {
         query_url = paste(eventdata_url, '&query=', subsets, sep="")
 
         date_frequencies = future({
-            data = do.call(data.frame, getData(paste(eventdata_url, '&aggregate=', 
+            data = do.call(data.frame, getData(paste(eventdata_url, '&aggregate=',
                 '[{"$match":', subsets, '},',
                  '{"$project": {"Year":  {"$substr": ["$<date>", 0, 4]},',
                               '"Month": {"$substr": ["$<date>", 5, 2]}}},',                           # Construct year and month fields
@@ -312,14 +316,14 @@ eventdata_subset.app <- function(env) {
         }) %plan% multiprocess
 
         action_frequencies = future({
-            data = do.call(data.frame, getData(paste(eventdata_url, '&aggregate=', 
+            data = do.call(data.frame, getData(paste(eventdata_url, '&aggregate=',
                 '[{"$match":', subsets, '},',
                  '{"$project": {"RootCode":  {"$substr": ["$<cameo>", 0, 2]}}},',                           # Construct RootCode field
                  '{"$group": { "_id": { "root_code": "$RootCode" }, "total": {"$sum": 1} }}]', sep=""))) # Group by RootCode
             if (nrow(data) != 0) colnames(data) = c('total', '<root_code>')
             data
         }) %plan% multiprocess
-        
+
 
         actor_source_country = future({
             getData(paste(query_url, '&unique=<src_country>', sep=""))
