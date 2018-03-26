@@ -87,7 +87,7 @@ let actorTour = {
             title: "Overview",
             content: "The actor menu provides a flexible way to find relationships between two sets of actors.",
             target: "subsetsListActor",
-            placement: "left",
+            placement: "bottom",
             width: 200
         },
         {
@@ -166,7 +166,7 @@ let dateTour = {
             title: "Broad Selection",
             content: "Use the brushes at the bottom of the plot to zoom into the date region of interest.",
             target: "#dateSVG",
-            placement: "left",
+            placement: "bottom",
             width: 200
         },
         {
