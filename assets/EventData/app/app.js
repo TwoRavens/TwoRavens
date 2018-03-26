@@ -127,13 +127,14 @@ export let initialLoad = false;
 
 export let subsetData = [];
 
-// Attempt to load stored settings
-if (localStorage.getItem("subsetData") !== null) {
-    // Since the user has already submitted a query, restore the previous preferences from local data
-    // All stored data is cleared on reset
-    variablesSelected = new Set(JSON.parse(localStorage.getItem('variablesSelected')));
-    subsetData = JSON.parse(localStorage.getItem('subsetData'));
-}
+// TAGGED: LOCALSTORE
+// // Attempt to load stored settings
+// if (localStorage.getItem("subsetData") !== null) {
+//     // Since the user has already submitted a query, restore the previous preferences from local data
+//     // All stored data is cleared on reset
+//     variablesSelected = new Set(JSON.parse(localStorage.getItem('variablesSelected')));
+//     subsetData = JSON.parse(localStorage.getItem('subsetData'));
+// }
 
 // Don't use constraints outside of submitted queries
 let stagedSubsetData = [];
@@ -473,12 +474,13 @@ let nodeId = 1;
 let groupId = 1;
 export var queryId = 1;
 
-if (localStorage.getItem("nodeId") !== null) {
-    // If the user has already submitted a query, restore the previous query from local data
-    nodeId = parseInt(localStorage.getItem('nodeId'));
-    groupId = parseInt(localStorage.getItem('groupId'));
-    queryId = parseInt(localStorage.getItem('queryId'));
-}
+// TAGGED: LOCALSTORE
+// if (localStorage.getItem("nodeId") !== null) {
+//     // If the user has already submitted a query, restore the previous query from local data
+//     nodeId = parseInt(localStorage.getItem('nodeId'));
+//     groupId = parseInt(localStorage.getItem('groupId'));
+//     queryId = parseInt(localStorage.getItem('queryId'));
+// }
 
 
 export function setupQueryTree() {
@@ -725,13 +727,14 @@ window.callbackDelete = function (id) {
                 queryId = 1;
             }
 
-            // Store user preferences in local data
-            localStorage.setItem('variablesSelected', JSON.stringify([...variablesSelected]));
-
-            localStorage.setItem('subsetData', $('#subsetTree').tree('toJson'));
-            localStorage.setItem('nodeId', String(nodeId));
-            localStorage.setItem('groupId', String(groupId));
-            localStorage.setItem('queryId', String(queryId));
+            // TAGGED: LOCALSTORE
+            // // Store user preferences in local data
+            // localStorage.setItem('variablesSelected', JSON.stringify([...variablesSelected]));
+            //
+            // localStorage.setItem('subsetData', $('#subsetTree').tree('toJson'));
+            // localStorage.setItem('nodeId', String(nodeId));
+            // localStorage.setItem('groupId', String(groupId));
+            // localStorage.setItem('queryId', String(queryId));
         }
     }
 };
@@ -1113,11 +1116,12 @@ export function reset() {
     // suppress server queries from the reset button when the webpage is already reset
     let suppress = variablesSelected.size === 0 && subsetData.length === 0;
 
-    localStorage.removeItem('variablesSelected');
-    localStorage.removeItem('subsetData');
-    localStorage.removeItem('nodeId');
-    localStorage.removeItem('groupId');
-    localStorage.removeItem('queryId');
+    // TAGGED: LOCALSTORE
+    // localStorage.removeItem('variablesSelected');
+    // localStorage.removeItem('subsetData');
+    // localStorage.removeItem('nodeId');
+    // localStorage.removeItem('groupId');
+    // localStorage.removeItem('queryId');
 
     subsetData.length = 0;
     $('#subsetTree').tree('loadData', subsetData);
@@ -1191,13 +1195,14 @@ export function submitQuery() {
         subsetTree.tree('loadData', subsetData);
         subsetTree.tree('setState', state);
 
-        // Store user preferences in local data
-        localStorage.setItem('variablesSelected', JSON.stringify([...variablesSelected]));
-
-        localStorage.setItem('subsetData', subsetTree.tree('toJson'));
-        localStorage.setItem('nodeId', String(nodeId));
-        localStorage.setItem('groupId', String(groupId));
-        localStorage.setItem('queryId', String(queryId));
+        // TAGGED: LOCALSTORE
+        // // Store user preferences in local data
+        // localStorage.setItem('variablesSelected', JSON.stringify([...variablesSelected]));
+        //
+        // localStorage.setItem('subsetData', subsetTree.tree('toJson'));
+        // localStorage.setItem('nodeId', String(nodeId));
+        // localStorage.setItem('groupId', String(groupId));
+        // localStorage.setItem('queryId', String(queryId));
     }
 
     let variableQuery = buildVariables();
