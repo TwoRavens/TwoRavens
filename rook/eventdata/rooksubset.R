@@ -131,8 +131,16 @@ eventdata_subset.app <- function(env) {
 
     getData = function(url) {
         print(gsub(' ', '%20', relabel(url, format), fixed=TRUE))
-        data = jsonlite::fromJSON(readLines(gsub(' ', '%20', relabel(url, format), fixed=TRUE)))$data
-        return(data)
+        data = readLines(gsub(' ', '%20', relabel(url, format), fixed=TRUE), warn=FALSE);
+
+        # attempt parsing
+        tryCatch({
+            return(jsonlite::fromJSON(data)$data)
+        }, error = function(err) {
+            # catch the json parsing error, but return the string anyways
+            print(err);
+            return(data);
+        })
     }
 
     if (!is.null(type) && type == 'formatted') {
@@ -327,21 +335,41 @@ eventdata_subset.app <- function(env) {
             data
         }) %plan% multiprocess
 
-
-        actor_source_country = future({
-            getData(paste(query_url, '&unique=<src_country>', sep=""))
+        actor_source = future({
+            sort(unlist(getData(paste(query_url, '&unique=<src_name>', sep=""))))
         }) %plan% multiprocess
 
-        actor_target_countries = future({
-            getData(paste(query_url, '&unique=<tgt_country>', sep=""))
+        actor_source_role = future({
+            sort(unlist(getData(paste(query_url, '&unique=<src_country>', sep=""))))
         }) %plan% multiprocess
+
+        actor_source_attributes = future({
+            sort(unlist(getData(paste(query_url, '&unique=<src_sectors>', sep=""))))
+        }) %plan% multiprocess
+
+        actor_target = future({
+            sort(unlist(getData(paste(query_url, '&unique=<tgt_name>', sep=""))))
+        }) %plan% multiprocess
+
+        actor_target_role = future({
+            sort(unlist(getData(paste(query_url, '&unique=<tgt_country>', sep=""))))
+        }) %plan% multiprocess
+
+        actor_target_attributes = future({
+            sort(unlist(getData(paste(query_url, '&unique=<tgt_sectors>', sep=""))))
+        }) %plan% multiprocess
+
 
         actor_source_values = list(
-            full = value(actor_source_country)
+            full = value(actor_source),
+            roles = value(actor_source_role),
+            attributes = value(actor_source_attributes)
         )
 
         actor_target_values = list(
-            full = value(actor_target_countries)
+            full = value(actor_target),
+            roles = value(actor_target_role),
+            attributes = value(actor_target_attributes)
         )
 
         # Package actor data

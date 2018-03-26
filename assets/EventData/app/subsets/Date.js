@@ -187,9 +187,8 @@ export function updateDate(reset_sliders=true) {
     }
 
     for (let entry of app.dateData) {
-
         // Ensure data is valid
-        if (isNaN(parseInt(entry['<year>']))) continue;
+        if (isNaN(parseInt(entry['<year>'])) || isNaN(parseInt(entry['<month>']))) continue;
 
         let bin = {'Date': new Date(entry['<year>'], entry['<month>'] - 1, 0), 'Freq': entry.total};
         data_raw.push(bin);
@@ -210,13 +209,23 @@ export function updateDate(reset_sliders=true) {
         return d.Freq;
     });
 
+    // we must be very particular about how months get incremented, to handle leap years etc.
+    function incrementMonth(date) {
+        let d = date.getDate();
+        date.setMonth(date.getMonth() + 1);
+        if (date.getDate() !== d) {
+            date.setDate(0);
+        }
+        return date;
+    }
+
     let isSameMonth = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth();
     let tempDate = new Date(datemin);
     let allDates = [];
 
     // make an array of zero datapoints spaced between min/max date
     while(!isSameMonth(tempDate, datemax)) {
-        tempDate.setMonth(tempDate.getMonth() + 1);
+        tempDate = incrementMonth(tempDate);
         allDates.push({Freq: 0, Date: new Date(tempDate)})
     }
 
@@ -226,7 +235,7 @@ export function updateDate(reset_sliders=true) {
     for (let point of data_raw) {
         allDates[idx]['Freq'] = point['Freq'];
         while(!isSameMonth(tempDate, point['Date'])) {
-            tempDate.setMonth(tempDate.getMonth() + 1);
+            tempDate = incrementMonth(tempDate);
             idx++;
         }
     }
