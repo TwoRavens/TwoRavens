@@ -528,6 +528,7 @@ export function makeAggregQuery(action, save = null) {
 
 	console.log(JSON.stringify(aggregQuery));
 
+
 	if (action != "preview") {
 		makeCorsRequest(aggregURL, aggregQuery, updateTable);
 		if (taction == "download") {
@@ -644,22 +645,9 @@ export function setupAggregation() {
             updateAggregTable();
         }
     });
-
-	console.log("in setup");
-    $("#EMListPenta_Class").click(function() {
-		console.log("penta selected");
-	});
-
-	$("#EMListRoot_Code").click(function() {
-		console.log("root selected");
-	});
 }
 
 //~ $(".allCheck").click(function (event)
-
-function linkTable() {
-
-}
 
 export function updateAggregTable() {
 	console.log("updating table");

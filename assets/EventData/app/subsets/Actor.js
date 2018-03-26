@@ -1304,7 +1304,7 @@ export function capitalizeFirst(str) {
     return str.charAt(0).toUpperCase() + str.substring(1);
 }
 
-export function resizeActorSVG() {
+export function resizeActorSVG(redraw=true) {
     if (document.getElementById('canvasActor').style.display === 'none') return;
     //actor resize on window resize handled here
     const curHeight = $("#canvas").height() - panelMargin * 2;     //this is the height of the container
@@ -1351,5 +1351,5 @@ export function resizeActorSVG() {
     });
     updateAll();
 
-    m.redraw()
+    redraw && m.redraw();
 }

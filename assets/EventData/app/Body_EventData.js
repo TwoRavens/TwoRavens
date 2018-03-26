@@ -5,6 +5,7 @@ import * as aggreg from './aggreg/aggreg'
 import * as tour from "./tour";
 
 import {tableHeight} from "./aggreg/aggreg";
+import {resizeActorSVG} from "./subsets/Actor";
 
 import * as common from '../../common/app/common'
 import {panelMargin, heightHeader, heightFooter, canvasScroll, scrollbarWidth} from "../../common/app/common";
@@ -120,6 +121,7 @@ export default class Body_EventData {
                             "margin-left": "2em",
                             "margin-right": "1em"
                         },
+                        onupdate: () => resizeActorSVG(false),
                         onclick: () => (mode === 'subset') ? app.submitQuery() : m.route.set('/subset')
                     },
                     m("span.ladda-label", "Subset")
