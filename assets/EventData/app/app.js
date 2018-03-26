@@ -20,7 +20,7 @@ import '../pkgs/jqtree/jqtree.style.css'
 
 // Select which tab is shown in the left panel
 export let setLeftTab = (tab) => leftTab = tab;
-export let leftTab = 'Variables';
+export let leftTab = 'Subsets';
 
 setPanelCallback('right', () => {
     setPanelOcclusion('right', `calc(${panelOpen['right'] ? '250px' : '16px'} + ${2 * panelMargin}px)`);
