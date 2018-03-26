@@ -213,8 +213,6 @@ export function toggleVariableSelected(variable) {
 }
 
 export function showCanvas(canvasKey) {
-	console.log("in showCanvas");
-	console.log(canvasKey);
     canvasKeySelected = canvasKey;
 
     // Typically 1. update state 2. mithril redraw. Therefore graphs get drawn on a display:none styled div
