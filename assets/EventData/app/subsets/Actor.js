@@ -136,6 +136,8 @@ let tooltipSVG;
 let originNode = null;				//node that is the start of drag link line
 let destNode = null;				//node that is the end of the drag link line
 
+let searchTimeout = null;
+
 //end force definitions, begin force functions
 
 export function setupActor(){
@@ -251,7 +253,14 @@ export function setupActor(){
     actorSearchDivs.on("keyup", function () {
         $(".actorChkLbl").popover("hide");
         const searchText = $("#actorSearch").val().toUpperCase();
-        if (app.dataset !== 'icews' && searchText.length % 3 === 0) {
+
+        if (app.dataset === 'icews') {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                actorSearch();
+            }, 500);
+        }
+        else if (searchText.length % 3 === 0) {
             actorSearch();
         }
     });
@@ -1271,39 +1280,41 @@ function actorSearch() {
 
     let abbreviated = currentTab === "source" ? "src" : "tgt";
 
-    if (filterSet[currentTab]["entities"].size !== 0) {
+    if (app.dataset !== 'icews' && filterSet[currentTab]["entities"].size !== 0) {
         let filter = {};
         filter['<' + abbreviated + '_actor>'] = { '$in': [...filterSet[currentTab]["entities"]] };
         actorFilters.push(filter);
     }
 
     if (filterSet[currentTab]["roles"].size !== 0) {
-        let filter = {};
-        filter['<' + abbreviated + '_agent>'] = {'$in': [...filterSet[currentTab]["roles"]]};
-        actorFilters.push(filter);
+        if (app.dataset === 'icews') actorFilters.push({['<' + abbreviated + '_country>']: {'$in': [...filterSet[currentTab]["roles"]]}});
+        else actorFilters.push({['<' + abbreviated + '_agent>']: {'$in': [...filterSet[currentTab]["roles"]]}});
     }
 
     if (filterSet[currentTab]["attributes"].size !== 0) {
-        let filter = {};
-
-        filter['<' + abbreviated + '_other_agent>'] = {
+        if (app.dataset === 'icews') actorFilters.push({['<' + abbreviated + '_sector>']: {'$in': [...filterSet[currentTab]["attributes"]]}});
+        else actorFilters.push({['<' + abbreviated + '_other_agent>']: {
             '$regex':  "^(....)*(" + [...filterSet[currentTab]["attributes"]].join('|') + ")"
-        };
-        actorFilters.push(filter);
+        }});
     }
 
-    // Apply the lookahead search regex last, as it is the most expensive
-    if (searchText.length % 3 === 0 && searchText.length !== 0) {
-        const tags = searchText.match(/.{3}/g);
+    if (searchText.length !== 0) {
+        // If the dataset is icews, all we do is a simple text search
+        if (app.dataset === 'icews') actorFilters.push({['<' + currentTab + '>']: {'$regex': '.*' + searchText + '.*', '$options' : 'i'}});
 
-        let regex = "";
-        for (let tag of tags) {
-            regex = regex + "(?=^(...)*" + tag + ")";
+        // Apply the lookahead search regex last, as it is the most expensive
+        else if (searchText.length % 3 === 0) {
+            const tags = searchText.match(/.{3}/g);
+
+            let regex = "";
+            for (let tag of tags) {
+                regex = regex + "(?=^(...)*" + tag + ")";
+            }
+
+            let filter = {};
+            filter['<' + currentTab + '>'] = { '$regex': regex + ".*" };
+            actorFilters.push(filter)
         }
-
-        let filter = {};
-        filter['<' + currentTab + '>'] = { '$regex': regex + ".*" };
-        actorFilters.push(filter)
     }
 
     let actorFiltersOp = {};

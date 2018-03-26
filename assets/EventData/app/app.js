@@ -419,6 +419,7 @@ export function pageSetup(jsondata) {
         actionData[parseInt(entry['<root_code>'])] = entry.total
     }
 
+    // assign to actorData
     actorData = jsondata['actor_data'];
 
     updateActor();

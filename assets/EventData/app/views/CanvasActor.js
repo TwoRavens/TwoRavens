@@ -96,11 +96,11 @@ function actorSelection(mode) {
                                 ]
                             ),
                             m(".separator"),
-                            m("button.filterExpand#entityActorExpand[value='expand']"),
-                            m("label.actorHead4#entityActor[for='entityActorExpand']",
+                            m("button.filterExpand#entityActorExpand[value='expand']", {style: {display: dataset === 'icews' ? 'none' : 'inline-block'}}),
+                            m("label.actorHead4#entityActor[for='entityActorExpand']", {style: {display: dataset === 'icews' ? 'none' : 'inline-block'}},
                                 m("b", "Entity")
                             ),
-                            m(".filterContainer#wrapEntityActor", {style: {"padding-left": "10px"}},
+                            m(".filterContainer#wrapEntityActor", {style: {"padding-left": "10px", display: dataset === 'icews' ? 'none' : 'inline-block'}},
                                 [
                                     m("button.filterExpand[id='orgActorExpand'][value='expand']"),
                                     m("label.actorChkLbl",
@@ -180,11 +180,6 @@ function actorSelection(mode) {
 export default class CanvasActor {
 
     oncreate() {
-        // ICEWS does not use the right panel, so hide it!
-        if (dataset === "icews") {
-            document.getElementById('sourceRight').style.visibility = 'hidden';
-            document.getElementById('targetRight').style.visibility = 'hidden';
-        }
         setupActor();
     }
 
