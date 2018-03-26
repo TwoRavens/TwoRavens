@@ -1,35 +1,35 @@
 import m from 'mithril';
 
-import * as app from './app'
-import * as aggreg from './aggreg/aggreg'
+import * as app from './app';
+import * as aggreg from './aggreg/aggreg';
 import * as tour from "./tour";
 
 import {tableHeight} from "./aggreg/aggreg";
 import {resizeActorSVG} from "./subsets/Actor";
 
-import * as common from '../../common/app/common'
+import * as common from '../../common/app/common';
 import {panelMargin, heightHeader, heightFooter, canvasScroll, scrollbarWidth} from "../../common/app/common";
 
-import Panel from '../../common/app/views/Panel'
-import Header from '../../common/app/views/Header'
-import Footer from '../../common/app/views/Footer'
-import Canvas from '../../common/app/views/Canvas'
-import MenuTabbed from '../../common/app/views/MenuTabbed'
-import MenuHeaders from '../../common/app/views/MenuHeaders'
-import PanelList from '../../common/app/views/PanelList'
-import TextField from '../../common/app/views/TextField'
-import DropdownPopup from '../../common/app/views/DropdownPopup'
+import Panel from '../../common/app/views/Panel';
+import Header from '../../common/app/views/Header';
+import Footer from '../../common/app/views/Footer';
+import Canvas from '../../common/app/views/Canvas';
+import MenuTabbed from '../../common/app/views/MenuTabbed';
+import MenuHeaders from '../../common/app/views/MenuHeaders';
+import PanelList from '../../common/app/views/PanelList';
+import TextField from '../../common/app/views/TextField';
+import DropdownPopup from '../../common/app/views/DropdownPopup';
 
-import CanvasAction from "./views/CanvasAction"
-import CanvasActor from "./views/CanvasActor"
-import CanvasCoordinates from "./views/CanvasCoordinates"
-import CanvasCustom from "./views/CanvasCustom"
-import CanvasDate from "./views/CanvasDate"
-import CanvasLocation from "./views/CanvasLocation"
-import CanvasPentaClass from "./views/CanvasPentaClass"
-import CanvasRootCode from "./views/CanvasRootCode"
+import CanvasAction from "./views/CanvasAction";
+import CanvasActor from "./views/CanvasActor";
+import CanvasCoordinates from "./views/CanvasCoordinates";
+import CanvasCustom from "./views/CanvasCustom";
+import CanvasDate from "./views/CanvasDate";
+import CanvasLocation from "./views/CanvasLocation";
+import CanvasPentaClass from "./views/CanvasPentaClass";
+import CanvasRootCode from "./views/CanvasRootCode";
 
-import TableAggregation from "./views/TableAggregation"
+import TableAggregation from "./views/TableAggregation";
 import {canvasKeySelected} from "./app";
 
 export default class Body_EventData {
@@ -48,8 +48,6 @@ export default class Body_EventData {
     }
 
     header(mode) {
-
-
         let datasets = [
             {
                 name: 'Phoenix - UTDallas',
@@ -97,7 +95,6 @@ export default class Body_EventData {
 
         return m(Header, {
             contents: [
-
                 // Button Reset
                 m("button.btn.btn-default.ladda-button[data-spinner-color='#818181'][data-style='zoom-in'][id='btnReset'][title='Reset']", {
                         style: {
@@ -169,88 +166,89 @@ export default class Body_EventData {
                     m("span.label.label-default[id='datasetLabel']")
                 )
             ]
-        })
+        });
     }
 
     footer(mode) {
-        return m(Footer, {
-            contents: [
-                m("span.label.label-default", {style: {"margin-left": "10px", "display": "inline-block"}}, "Tours"),
-                (mode === 'subset') ?
-                    m("div[id='subsetTourBar']", {style: {"display": "inline-block"}},
-                        [
-                            m("button.btn.btn-default.btn-sm[id='tourButtonGeneral'][type='button']", {
-                                style: {
-                                    "margin-left": "5px",
-                                    "margin-top": "4px"
-                                },
-                                onclick: tour.tourStartGeneral
-                            }, "General"),
-                            m("button.btn.btn-default.btn-sm[id='tourButtonActor'][type='button']", {
-                                style: {
-                                    "margin-left": "5px",
-                                    "margin-top": "4px"
-                                },
-                                onclick: tour.tourStartActor
-                            }, "Actor"),
-                            m("button.btn.btn-default.btn-sm[id='tourButtonDate'][type='button']", {
-                                style: {
-                                    "margin-left": "5px",
-                                    "margin-top": "4px"
-                                },
-                                onclick: tour.tourStartDate
-                            }, "Date"),
-                            m("button.btn.btn-default.btn-sm[id='tourButtonAction'][type='button']", {
-                                style: {
-                                    "margin-left": "5px",
-                                    "margin-top": "4px"
-                                },
-                                onclick: tour.tourStartAction
-                            }, "Action"),
-                            m("button.btn.btn-default.btn-sm[id='tourButtonLocation'][type='button']", {
-                                style: {
-                                    "margin-left": "5px",
-                                    "margin-top": "4px"
-                                },
-                                onclick: tour.tourStartLocation
-                            }, "Location"),
-                            m("button.btn.btn-default.btn-sm[id='tourButtonCoordinates'][type='button']", {
-                                style: {
-                                    "margin-left": "5px",
-                                    "margin-top": "4px"
-                                },
-                                onclick: tour.tourStartCoordinates
-                            }, "Coordinates"),
-                            m("button.btn.btn-default.btn-sm[id='tourButtonCustom'][type='button']", {
-                                style: {
-                                    "margin-left": "5px",
-                                    "margin-top": "4px"
-                                },
-                                onclick: tour.tourStartCustom
-                            }, "Custom")
-                        ]) :
-                    m("div[id='aggregTourBar']", {style: {"display": "inline-block"}},
-                        [
-                            m("button.btn.btn-default.btn-sm[id='tourButtonAggreg'][type='button']", {
-                                style: {
-                                    "margin-left": "5px",
-                                    "margin-top": "4px"
-                                },
-                                onclick: tour.tourStartAggregation
-                            }, "Aggregation")
-                        ]),
-
+        return m(Footer, [
+            m("span.label.label-default", {style: {"margin-left": "10px", "display": "inline-block"}}, "Tours"),
+            (mode === 'subset') ?
+                m("div[id='subsetTourBar']", {style: {"display": "inline-block"}}, [
+                    m("button.btn.btn-default.btn-sm[id='tourButtonGeneral'][type='button']", {
+                        style: {
+                            "margin-left": "5px",
+                            "margin-top": "4px"
+                        },
+                        onclick: tour.tourStartGeneral
+                    }, "General"),
+                    m("button.btn.btn-default.btn-sm[id='tourButtonActor'][type='button']", {
+                        style: {
+                            "margin-left": "5px",
+                            "margin-top": "4px"
+                        },
+                        onclick: tour.tourStartActor
+                    }, "Actor"),
+                    m("button.btn.btn-default.btn-sm[id='tourButtonDate'][type='button']", {
+                        style: {
+                            "margin-left": "5px",
+                            "margin-top": "4px"
+                        },
+                        onclick: tour.tourStartDate
+                    }, "Date"),
+                    m("button.btn.btn-default.btn-sm[id='tourButtonAction'][type='button']", {
+                        style: {
+                            "margin-left": "5px",
+                            "margin-top": "4px"
+                        },
+                        onclick: tour.tourStartAction
+                    }, "Action"),
+                    m("button.btn.btn-default.btn-sm[id='tourButtonLocation'][type='button']", {
+                        style: {
+                            "margin-left": "5px",
+                            "margin-top": "4px"
+                        },
+                        onclick: tour.tourStartLocation
+                    }, "Location"),
+                    m("button.btn.btn-default.btn-sm[id='tourButtonCoordinates'][type='button']", {
+                        style: {
+                            "margin-left": "5px",
+                            "margin-top": "4px"
+                        },
+                        onclick: tour.tourStartCoordinates
+                    }, "Coordinates"),
+                    m("button.btn.btn-default.btn-sm[id='tourButtonCustom'][type='button']", {
+                        style: {
+                            "margin-left": "5px",
+                            "margin-top": "4px"
+                        },
+                        onclick: tour.tourStartCustom
+                    }, "Custom")
+                ]) :
+            m("div[id='aggregTourBar']", {style: {"display": "inline-block"}}, [
+                m("button.btn.btn-default.btn-sm[id='tourButtonAggreg'][type='button']", {
+                    style: {
+                        "margin-left": "5px",
+                        "margin-top": "4px"
+                    },
+                    onclick: tour.tourStartAggregation
+                }, "Aggregation")
+            ]),
+            m("#recordBar", {style: {display: "inline-block", float: 'right'}}, [
+                m("button.btn.btn-default.btn-sm#peek[type='button']", {
+                    style: {"margin-top": "4px"},
+                    onclick: _ => alert('peek')
+                }, "Peek"),
                 // Record Count
-                m("span.label.label-default[id='recordCount']", {
+                m("span.label.label-default#recordCount", {
                     style: {
                         "display": "inline-block",
+                        "margin-left": "5px",
                         "margin-top": "10px",
-                        "margin-right": "10px",
-                        "float": "right"
+                        "margin-right": "10px"
                     }
                 })
-            ]
-        })
+            ]),
+        ]);
     }
 
     leftpanel(mode) {

@@ -609,53 +609,48 @@ class Body {
                     },
                     transformation('transSel', ['a', 'b']),
                     transformation('transList', app.transformList)))
-        })
+        });
     }
 
     footer(mode) {
-        return m(Footer, {
-            contents: [
-                m(ButtonRadio, {
-                        id: 'modeButtonBar',
-                        attrsAll: {style: {width: '200px', margin: '0 .2em'}, class: 'navbar-left'},
-                        onclick: app.set_mode,
-                        activeSection: mode === undefined ? 'model' : mode,
-                        sections: [{value: 'Model'}, {value: 'Explore'}]//, {value: 'Results', id: 'btnResultsMode'}] VJD: commenting out the results mode button since we don't have this yet
-                    }),
-                m("a#logID[href=somelink][target=_blank]", "Replication"),
-                m("span[style=color:#337ab7]", " | "),
-                // dev links...
-                m("a[href='/dev-raven-links'][target=_blank]", "raven-links"),
-                //m("a[style=margin-right: 0.5em]",
-                //  {onclick: app.record_user_metadata},
-                //  "record-metadata"),
-                m("span[style=color:#337ab7]", " | "),
-                m("span[style=color:#337ab7]", "TA2: " + TA2_SERVER),
-                m("span[style=color:#337ab7]", " | "),
-                m("span[style=color:#337ab7]", "TA3TA2 api: " + TA3TA2_API_VERSION)
-            ]
-        })
+        return m(Footer, [
+            m(ButtonRadio, {
+                id: 'modeButtonBar',
+                attrsAll: {style: {width: '200px', margin: '0 .2em'}, class: 'navbar-left'},
+                onclick: app.set_mode,
+                activeSection: mode === undefined ? 'model' : mode,
+                sections: [{value: 'Model'}, {value: 'Explore'}] //, {value: 'Results', id: 'btnResultsMode'}] VJD: commenting out the results mode button since we don't have this yet
+            }),
+            m("a#logID[href=somelink][target=_blank]", "Replication"),
+            m("span[style=color:#337ab7]", " | "),
+            // dev links...
+            m("a[href='/dev-raven-links'][target=_blank]", "raven-links"),
+            // m("a[style=margin-right: 0.5em]", {onclick: app.record_user_metadata}, "record-metadata"),
+            m("span[style=color:#337ab7]", " | "),
+            m("span[style=color:#337ab7]", "TA2: " + TA2_SERVER),
+            m("span[style=color:#337ab7]", " | "),
+            m("span[style=color:#337ab7]", "TA3TA2 api: " + TA3TA2_API_VERSION)
+        ]);
     }
-  
+
     modal() {
         return m(".modal.fade[id='myModal'][role='dialog']",
             m(".modal-dialog",
                 m(".modal-content", [
                     m(".modal-header", [
-                      //  m("button.close[data-dismiss='modal'][type='button']",
-                      //      m.trust("&times;")),
-                        m("h4.modal-title",
-                            app.modalHeader)]),
+                        // m("button.close[data-dismiss='modal'][type='button']",
+                        // m.trust("&times;")),
+                        m("h4.modal-title", app.modalHeader)]),
                     m(".modal-body",
-                        m("p",
-                            app.modalText)),
+                        m("p", app.modalText)),
                     m(".modal-footer",
-                        //m("button.btn.btn-default[data-dismiss='modal'][type='button']",{
-                            //onclick: () => app.reset}, app.modalButton))
-                    m("button.btn.btn-default[type='button']",{
-                            style: {display: app.modalBtnDisplay, float:'right'},
-                            onclick: () => eval(app.modalFunc)}, app.modalButton))
-                ])))
+                      // m("button.btn.btn-default[data-dismiss='modal'][type='button']",{
+                      // onclick: () => app.reset}, app.modalButton))
+                    m("button.btn.btn-default[type='button']", {
+                        style: {display: app.modalBtnDisplay, float:'right'},
+                        onclick: () => eval(app.modalFunc)
+                    }, app.modalButton))
+                ])));
     }
 }
 
