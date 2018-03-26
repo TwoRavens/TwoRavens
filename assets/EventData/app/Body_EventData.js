@@ -30,6 +30,7 @@ import CanvasPentaClass from "./views/CanvasPentaClass"
 import CanvasRootCode from "./views/CanvasRootCode"
 
 import TableAggregation from "./views/TableAggregation"
+import {canvasKeySelected} from "./app";
 
 export default class Body_EventData {
 
@@ -121,8 +122,16 @@ export default class Body_EventData {
                             "margin-left": "2em",
                             "margin-right": "1em"
                         },
-                        onupdate: () => resizeActorSVG(false),
-                        onclick: () => (mode === 'subset') ? app.submitQuery() : m.route.set('/subset')
+                        onclick: () => {
+                            if (mode === 'subset') app.submitQuery();
+                            else {
+                                if (canvasKeySelected === 'Actor') {
+                                    document.getElementById('canvas').style.height = 'calc(100% - 102px)';
+                                    resizeActorSVG(false);
+                                }
+                                m.route.set('/subset')
+                            }
+                        }
                     },
                     m("span.ladda-label", "Subset")
                 ),
@@ -132,7 +141,13 @@ export default class Body_EventData {
                     {
                         style: {"margin-right": "1em", 'float': 'right'},
                         onclick: () => {
-                            if (mode === 'subset') m.route.set('/aggregate');
+                            if (mode === 'subset') {
+                                if (canvasKeySelected === 'Actor') {
+                                    document.getElementById('canvas').style.height = 'calc(80% - 102px)';
+                                    resizeActorSVG(false);
+                                }
+                                m.route.set('/aggregate');
+                            }
                             aggreg.updateToAggreg();
                         }
                     }, "Aggregate"),
