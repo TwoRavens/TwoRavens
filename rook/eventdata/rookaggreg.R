@@ -7,7 +7,7 @@ library(lubridate)
 print("entered r aggreg app")
 
 eventdata_aggreg.app <- function(env) {
-	
+
 		production = EVENTDATA_PRODUCTION_MODE     ## Toggle:  TRUE - Production, FALSE - Local Development
 
     datasource = 'api'
@@ -1191,7 +1191,11 @@ eventdata_aggreg.app <- function(env) {
 			fileName = paste("aggregation_", format(Sys.time(), '%Y-%m-%d-%H-%M-%OS4'), sep="")
 
 			write.csv(result, file=paste('./eventdata/downloads/', fileName, ".csv", sep=""))
-			response$write(paste('{"download":', '"http://127.0.0.1:8000/custom/eventdata-files/', fileName, '.csv"}', sep=""))
+
+			event_data_files_url = paste('"', EVENTDATA_ROOK_URL_BASE, '/custom/eventdata-files/')
+			response$write(paste('{"download":', event_data_files_url, fileName, '.csv"}', sep=""))
+
+			#response$write(paste('{"download":', '"http://127.0.0.1:8000/custom/eventdata-files/', fileName, '.csv"}', sep=""))
 			return(response$finish())
 		}
 

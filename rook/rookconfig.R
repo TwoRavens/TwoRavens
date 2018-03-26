@@ -4,7 +4,7 @@
 # START: Event data specific config variables
 # ----------------------------------------------
 
-#EVENT_DATA_ROOK_URL_BASE = Sys.getenv(x='EVENTDATA_PRODUCTION_SERVER_ADDRESS', unset=EVENTDATA_PHOENIX_SERVER_ADDRESS)
+EVENTDATA_ROOK_URL_BASE = Sys.getenv(x='EVENTDATA_ROOK_URL_BASE', unset="http://127.0.0.1:8000")
 
 # Default is FALSE, setting an env variable to "yes", will set the mode to TRUE
 #
