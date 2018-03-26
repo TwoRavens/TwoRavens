@@ -22,7 +22,7 @@ if(is_rapache_mode) {
 }
 
 if(!production){
-    packageList<-c("Rcpp","VGAM", "AER", "dplyr", "quantreg", "geepack", "maxLik", "Amelia", "Rook","jsonlite","rjson", "devtools", "DescTools", "nloptr","XML", "Zelig", "future", "tidyverse", "lubridate", "rpart", "cellranger")
+    packageList<-c("Rcpp","VGAM", "AER", "dplyr", "quantreg", "geepack", "maxLik", "Amelia", "Rook","jsonlite","rjson", "devtools", "DescTools", "nloptr","XML", "future", "lubridate", "rpart", "cellranger", "data.table", "tidyverse", "Zelig" )
 
     # Find an available repository on CRAN
     availableRepos <- getCRANmirrors()
@@ -31,8 +31,11 @@ if(!production){
 
     ## install missing packages, and update if newer version available
     for(i in 1:length(packageList)){
-       if (!require(packageList[i],character.only = TRUE)){
-           install.packages(packageList[i], repos=useRepos)
+       print("loading"); print(packageList[i]);
+       if (packageList[i] == "tidyverse"){
+          install.packages(packageList[i], repos=useRepos, dependencies = TRUE)
+       } else if (!require(packageList[i],character.only = TRUE)){
+          install.packages(packageList[i], repos=useRepos)
        }
     }
     update.packages(ask = FALSE, dependencies = c('Suggests'), oldPkgs=packageList, repos=useRepos)
@@ -164,7 +167,7 @@ if(!is_rapache_mode){
     R.server$add(app = tree.app, name="treeapp")
 
     R.server$add(app = eventdata_subset.app, name="eventdatasubsetapp")
-    
+
     R.server$add(app = eventdata_aggreg.app, name="eventdataaggregapp")
 
     # Serve files directly from rook

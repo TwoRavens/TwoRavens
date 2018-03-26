@@ -57,3 +57,4 @@ ravens_volume/32_wikiqa
 rook/rook-files/o_185/data/trainDatamerged.tsv
 rook/rook-files/o_185/preprocess/preprocess.json
 assets/pkgs/swagger-ui/dist/*.map
+.Rhistory
