@@ -20,13 +20,13 @@ let generalTour = {
         {
             title: "Filtering",
             content: "Each record has identifiable sources, targets, dates, actions and locations. These identifiers are crucial for selecting useful data.",
-            target: "#leftpanelButtons",
+            target: "leftPanelMenuButtonBar",
             placement: "right"
         },
         {
             title: "Stage",
             content: "After selecting your subset preferences in the canvas, use 'Stage' to store a snapshot of those preferences in the summary panel.",
-            target: "#stageButton",
+            target: "btnStage",
             onNext: openRightPanel,
             placement: "top",
             arrowOffset: 250
@@ -34,31 +34,31 @@ let generalTour = {
         {
             title: "Combining Subsets",
             content: "Multiple filters can be chained together with logical operators and grouping. For instance, records from Guyana in 1985 require both a Date subset and Location subset.",
-            target: "#querySubsets",
+            target: "headerSubsets",
             placement: "left"
         },
         {
             title: "Grouping and Dragging",
             content: "Each snapshot of subset preferences can be considered a 'rule.' Rules can be grouped together under one logical operator with the 'Group' button. Rules can also be re-ordered by dragging, or moved into groups.",
-            target: "#querySubsets",
+            target: "subsetTree",
             placement: "left"
         },
         {
             title: "Subset",
             content: "Once the constraints have been staged, use 'Subset' to apply the constraints in the summary panel to the full dataset. This will encapsulate the constraints as a query, and redraw all the plots and figures.",
-            target: "#btnSubmit",
+            target: "btnStage",
             placement: "left"
         },
         {
             title: "Query Handling",
-            content: "Previous subsets are grouped, so the data set is successively refined. These elements are highlighted blue. They can be deleted, but can no longer be edited.",
-            target: "#querySubsets",
+            content: "Previous subsets are grouped, so the data set is successively refined. These elements from previous subsets are highlighted blue. They may be deleted, but may no longer be edited.",
+            target: "subsetTree",
             placement: "left"
         },
         {
             title: "Download",
             content: "Download the data at any time. The downloaded file reflects the current constraints in the query summary panel, not submitted subsets. The variables menu is used to select columns in this table. If no variables are selected, all are returned.",
-            target: "#buttonDownload",
+            target: "buttonDownload",
             placement: "left",
             arrowOffset: 140,
             height: 150
@@ -86,14 +86,14 @@ let actorTour = {
         {
             title: "Overview",
             content: "The actor menu provides a flexible way to find relationships between two sets of actors.",
-            target: "#actorSelectionTitle",
+            target: "subsetsListActor",
             placement: "left",
             width: 200
         },
         {
             title: "Source vs. Target",
             content: "Both the source node and target node must be populated with actor tags, and a relationship must be drawn between the nodes. There is more information about this later.",
-            target: "#actorRadio",
+            target: "actorRadio",
             placement: "left",
             width: 200
         },
@@ -184,7 +184,7 @@ let dateTour = {
         {
             title: "Stage",
             content: "'Stage' places the selected date range in the query summary.",
-            target: "#stageButton",
+            target: "#btnStage",
             placement: "left",
             arrowOffset: 50
         }
@@ -226,7 +226,7 @@ let actionTour = {
         {
             title: "Stage",
             content: "'Stage' places the selected codes in the query summary. The faded 'not' in the query summary permits a negation: all records NOT in the selected codes will be matched.",
-            target: "#stageButton",
+            target: "#btnStage",
             placement: "left",
             arrowOffset: 100
         }
@@ -275,7 +275,7 @@ let locationTour = {
         {
             title: "Stage",
             content: "'Stage' places the selected countries list in the query summary. The faded 'not' in the query summmary permits a negation: all records NOT in the selected countries list will be matched.",
-            target: "#stageButton",
+            target: "#btnStage",
             placement: "left",
             arrowOffset: 100
         }
@@ -318,7 +318,7 @@ let coordinatesTour = {
         {
             title: "Stage",
             content: "'Stage' places the selected bounds in the query summary. The faded 'not' in the query summary allows for negation of the overall box. One may also negate latitude and longitude to select regions outside the demarcated row/column.",
-            target: "#stageButton",
+            target: "#btnStage",
             placement: "left",
             arrowOffset: 140,
             width: 200
@@ -340,40 +340,61 @@ let customTour = {
     steps: [
         {
             title: "Overview",
-            content: "Manually create or edit a query. Important! Notice that right clicking rules, groups, and queries in the right panel will fill the editor with the query for that element in the tree.",
+            content: "View the Mongo query used to retrieve the data. Important! Notice that double clicking rules, groups, and queries from the right panel will fill the editor with the query for that element in the tree.",
             target: "#subsetCustomLabel",
             placement: "left",
             width: 200
         },
         {
             title: "Format",
-            content: "The query must be formatted as JSON. Additionally, queries must be constructed with <a href='https://docs.mongodb.com/manual/reference/operator/query/' target='_blank'>MongoDB query operators</a>.",
+            content: "The query is formatted as JSON. These queries may be extended using the <a href='https://docs.mongodb.com/manual/reference/operator/query/' target='_blank'>MongoDB query operators</a>.",
             target: "#subsetCustomEditor",
             placement: "left",
             width: 200
         },
         {
             title: "Column Names",
-            content: "Feel free to use the generalized column names, denoted <>, or the column names specific to the dataset. For example, queries can be written directly with the Phoenix dataset labels.",
+            content: "Column names are generalized to be compatible across datasets using the <> notation. These generalized columns, or the column names specific to the dataset, are compatible with a separate Event Data R-package developed at the University of Texas at Dallas.",
             target: "#subsetCustomEditor",
             placement: "left",
             width: 200
         },
         {
-            title: "Validate",
-            content: "Check if the query is valid JSON, and check that the query can be interpreted by MongoDB.",
-            target: "#subsetCustomValidate",
+            title: "R Package",
+            content: "Any query here may be reused in the <a href='https://github.com/KateHyoung/UTDEventData/' target='_blank'>Event Data R-Package</a>.",
+            target: "#subsetCustomEditor",
             placement: "left",
             width: 200
         },
         {
-            title: "Stage",
-            content: "'Stage' places the selected bounds in the query summary. If the custom query is not valid, a warning will be provided. Keep in mind that matching on a non-existent column is completely valid.",
-            target: "#stageButton",
+            title: "API Endpoint",
+            content: "Alternatively, Mongo queries may be submitted directly to the <a href='https://github.com/Sayeedsalam/spec-event-data-server/' target='_blank'>API linked here</a>. Note that generalized column names are not supported, but there are endpoints for retrieving dataset-specific column names.",
+            target: "#subsetCustomEditor",
             placement: "left",
-            arrowOffset: 140,
+            width: 200
+        },
+        {
+            title: "Data Source",
+            content: "Data is hosted at <a href='http://eventdata.utdallas.edu/data.html' target='_blank'>the Real Time Event Data service</a>.",
+            target: "#subsetCustomEditor",
+            placement: "left",
             width: 200
         }
+        // {
+        //     title: "Validate",
+        //     content: "Check if the query is valid JSON, and check that the query can be interpreted by MongoDB.",
+        //     target: "#subsetCustomValidate",
+        //     placement: "left",
+        //     width: 200
+        // },
+        // {
+        //     title: "Stage",
+        //     content: "'Stage' places the selected bounds in the query summary. If the custom query is not valid, a warning will be provided. Keep in mind that matching on a non-existent column is completely valid.",
+        //     target: "#btnStage",
+        //     placement: "left",
+        //     arrowOffset: 140,
+        //     width: 200
+        // }
     ]
 };
 
@@ -390,9 +411,45 @@ let aggregationTour = {
     steps: [
         {
             title: "Data Aggregation",
-            content: "Incomplete.",
+            content: "Aggregation groups the raw data points provided by subset into frequency bins based on an event measure.",
             target: "leftpaneltitle",
             placement: "right"
+        },
+        {
+            title: "Unit of Measure",
+            content: "The grouping is defined in unit of measure. A group may be a combination of actor requirements and date intervals.",
+            target: "headerUnit_of_Measure",
+            placement: "right"
+        },
+        {
+            title: "Event Measure",
+            content: "Once the data is grouped, the number of events with the specified event measure are counted. For example, there may be 200 events with CAMEO code '12' during the month of October, 1992.",
+            target: "headerEvent_Measure",
+            placement: "right"
+        },
+        {
+            title: "Data Results",
+            content: "The Date, Source, and Target columns indicate how data will be grouped. Depending on the chosen Event Measure, frequencies will be displayed in columns by CAMEO root codes or penta classes.",
+            target: "aggregTable",
+            placement: "top"
+        },
+        {
+            title: "Aggregate",
+            content: "The TBD values in the Data Results are updated with the actual frequencies when the Aggregate button is clicked.",
+            target: "aggSubmit",
+            placement: "left"
+        },
+        {
+            title: "Download",
+            content: "Download the aggregated data here!",
+            target: "buttonDownload",
+            placement: "left"
+        },
+        {
+            title: "Subset",
+            content: "To make modifications to the subsetted data, or download the subsetted data before aggregation, return to the subset menu.",
+            target: "btnSubsetSubmit",
+            placement: "left"
         }
     ]
 };
