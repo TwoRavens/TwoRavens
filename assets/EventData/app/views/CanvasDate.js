@@ -1,5 +1,5 @@
 import m from 'mithril';
-import {setupDate, setDatefromSlider} from "../subsets/Date.js"
+import {setupDate, setDatefromSlider, updateDate} from "../subsets/Date.js"
 import {panelMargin} from "../../../common/app/common";
 import * as aggreg from '../aggreg/aggreg'
 import ButtonRadio from '../../../common/app/views/ButtonRadio'
@@ -38,7 +38,12 @@ export default class CanvasDate {
                                 "margin-top": "10px"
                             }
                         }, "From:"),
-                        m("input.form-control[id='fromdate'][type='text']"),
+                        m("input.form-control[id='fromdate'][type='text']", {
+                            onblur: function () {
+                                // Update plot, but don't reset slider
+                                updateDate(false);
+                            }
+                        }),
 
                         // To date
                         m("label[for='todate'][id='dateToLab']", {
@@ -48,7 +53,12 @@ export default class CanvasDate {
                                 "margin-top": "10px"
                             }
                         }, "To:"),
-                        m("input.form-control[id='todate'][type='text']")
+                        m("input.form-control[id='todate'][type='text']", {
+                            onblur: function () {
+                                // Update plot, but don't reset slider
+                                updateDate(false);
+                            }
+                        })
                     ]
                 )
             ),

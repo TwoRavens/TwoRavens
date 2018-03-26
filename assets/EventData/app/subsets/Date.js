@@ -57,7 +57,6 @@ export function setupDate() {
             }, 100);
 
             // Update plot, but don't reset slider
-            updateDate(false);
             $("#todate").datepicker("show");
         }
     });
@@ -75,10 +74,6 @@ export function setupDate() {
         onSelect: function () {
             datemaxUser = new Date($(this).datepicker('getDate').getTime());
             // todatestring = datemaxUser.getFullYear() + "" + ('0' + (datemaxUser.getMonth() + 1)).slice(-2) + "" + ('0' + datemaxUser.getDate()).slice(-2);
-        },
-        onClose: function () {
-            // Update plot, but don't reset slider
-            updateDate(false);
         }
     });
 }
