@@ -175,7 +175,7 @@ export function updateDate(reset_sliders=true) {
         datecontext.select(".brush").call(datebrush.move, datex.range().map(t.invertX, t));
     }
 
-    let data = [];
+    let data_raw = [];
 
     function dateSort(a, b) {
         if (a['Date'] === b['Date']) {
@@ -192,23 +192,44 @@ export function updateDate(reset_sliders=true) {
         if (isNaN(parseInt(entry['<year>']))) continue;
 
         let bin = {'Date': new Date(entry['<year>'], entry['<month>'] - 1, 0), 'Freq': entry.total};
-        data.push(bin);
+        data_raw.push(bin);
     }
-    data = data.sort(dateSort);		//here is where date is collected as monthly?
+    data_raw = data_raw.sort(dateSort);		//here is where date is collected as monthly?
     //look at: https://bl.ocks.org/cjhin/8872a492d44694ecf5a883642926f19c
 
     // Set calendar ranges
-    datemin = d3.min(data, function (d) {
+    datemin = d3.min(data_raw, function (d) {
         return d.Date;
     });
 
-    datemax = d3.max(data, function (d) {
+    datemax = d3.max(data_raw, function (d) {
         return d.Date;
     });
 
-    let freqmax = d3.max(data, function (d) {
+    let freqmax = d3.max(data_raw, function (d) {
         return d.Freq;
     });
+
+    let isSameMonth = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth();
+    let tempDate = new Date(datemin);
+    let allDates = [];
+
+    // make an array of zero datapoints spaced between min/max date
+    while(!isSameMonth(tempDate, datemax)) {
+        tempDate.setMonth(tempDate.getMonth() + 1);
+        allDates.push({Freq: 0, Date: new Date(tempDate)})
+    }
+
+    // replace datapoints with actual data
+    let idx = 0;
+    tempDate = new Date(datemin);
+    for (let point of data_raw) {
+        allDates[idx]['Freq'] = point['Freq'];
+        while(!isSameMonth(tempDate, point['Date'])) {
+            tempDate.setMonth(tempDate.getMonth() + 1);
+            idx++;
+        }
+    }
 
     if (reset_sliders) {
         dateminUser = new Date(datemin.getTime());
@@ -216,12 +237,18 @@ export function updateDate(reset_sliders=true) {
     }
 
     // Filter highlighted data by date picked
-    let data_highlight = data.filter(function (row) {
+    let data_highlight = allDates.filter(function (row) {
         return row.Date >= dateminUser && row.Date <= datemaxUser;
     });
 
-    data_highlight.unshift({"Date": dateminUser, "Freq": interpolate(data, dateminUser)});
-    data_highlight.push({"Date": datemaxUser, "Freq": interpolate(data, datemaxUser)});
+    let interpolatedMin = {"Date": dateminUser, "Freq": interpolate(data_raw, dateminUser)};
+    let interpolatedMax = {"Date": datemaxUser, "Freq": interpolate(data_raw, datemaxUser)};
+    data_highlight.unshift(interpolatedMin);
+    data_highlight.push(interpolatedMax);
+
+    allDates.push(interpolatedMin);
+    allDates.push(interpolatedMax);
+    allDates = allDates.sort(dateSort);
 
     let format = d3.timeFormat("%m-%d-%Y");
 
@@ -245,7 +272,7 @@ export function updateDate(reset_sliders=true) {
     }
 
     // Domain of dates: (range was set in variable initialization)
-    datex.domain(d3.extent(data, function (d) {
+    datex.domain(d3.extent(allDates, function (d) {
         return d.Date;
     }));
 
@@ -255,7 +282,7 @@ export function updateDate(reset_sliders=true) {
 
     // Draw data on focus portion of svg (datefocus) with the area variable attribute
     datefocus.append("path")
-        .datum(data)
+        .datum(allDates)
         .style("fill", "#ADADAD")
         .attr("class", "area")
         .attr("d", datearea);
@@ -280,7 +307,7 @@ export function updateDate(reset_sliders=true) {
 
     // Draw data on context portion of svg (datecontext)
     datecontext.append("path")
-        .datum(data)
+        .datum(allDates)
         .style("fill", "#ADADAD")
         .attr("class", "area")
         .attr("d", datearea2);
