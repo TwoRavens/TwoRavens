@@ -163,8 +163,11 @@ eventdata_aggreg.app <- function(env) {
 
 	#~ 	query_url = paste(eventdata_url, '&query={\"<date>\":{\"$gte\":\"', everything$date$min, '\",\"$lte\":\"', everything$date$max, '\"}}', sep="")		#change query to match min/max date
 
-		rootCodeHeader = sprintf("%d", seq(1:20))
-		pentaCodeHeader = sprintf("%d", seq(0:4))
+		if (datasource == "api")
+			rootCodeHeader = sprintf("%.2d", seq(1:20))
+		else
+			rootCodeHeader = sprintf("%d", seq(1:20))
+#~ 		pentaCodeHeader = sprintf("%d", seq(0:4))
 
 #~ 		if (everything$date$dateType != 0) {
 #~ 			start_date = as.Date(strptime(everything$date$min, "%Y%m%d"))
@@ -184,13 +187,16 @@ eventdata_aggreg.app <- function(env) {
 					data
 				}) %plan% multiprocess
 
-				print(value(action_frequencies))
+#~ 				print(value(action_frequencies))
 				#format and sort data
 				df = value(action_frequencies)
 				df = df[complete.cases(df),]		#remove NAs
 				df = spread(df, rootcode, total, fill=0)
 
-				print("adding missing codes")
+				print("pre missing")
+				print(df)
+
+#~ 				print("adding missing codes")
 				missing = setdiff(rootCodeHeader, names(df))
 				df[missing] = 0
 				df = df[rootCodeHeader]
@@ -1018,36 +1024,89 @@ eventdata_aggreg.app <- function(env) {
 			}
 
 		}
+		print("done with queries")
+		print(datasource)
 
+		#standardize root code data frame result
+		if (datasource == "api") {
+			print("standardizing")
+#~ 			order = sprintf("%d", seq(1:9))
+#~ 			for (i in sprintf("%.2d", seq(1:9))) {
+#~ 				result[["1"]] = result$"01"
+#~ 				result$"01" = NULL
+#~ 			}
+			cleanOrder = sprintf("%d", seq(1:9))
+			curOrder = sprintf("%.2d", seq(1:9))
+#~ 			for (i in 1:length(cleanOrder)) {
+#~ 				print(i)
+#~ 				result[[cleanOrder[i]]] = result$curOrder[i]
+#~ 				result$curOrder[i] = NULL
+#~ 			}
+#~ 			print(result)
+			for (i in 1:9) {
+				names(result)[names(result) == curOrder[i]] = cleanOrder[i]
+			}
+			print(result)
+		}
+		
 		#convert to penta if needed
 		#result[[penta#]] = result$1 + result$2 + ...
 		#result$1 = NULL ...
 		if (!is.null(everything$aggregMode) && everything$aggregMode == "penta") {
-			result[["0"]] = result$"1" + result$"2"
-			result$"1" = NULL
-			result$"2" = NULL
-			result[["1"]] = result$"3" + result$"4" + result$"5"
-			result$"3" = NULL
-			result$"4" = NULL
-			result$"5" = NULL
-			result[["2"]] = result$"6" + result$"7" + result$"8"
-			result$"6" = NULL
-			result$"7" = NULL
-			result$"8" = NULL
-			result[["3"]] = result$"9" + result$"10" + result$"11" + result$"12" + result$"13" + result$"16"
-			result$"9" = NULL
-			result$"10" = NULL
-			result$"11" = NULL
-			result$"12" = NULL
-			result$"13" = NULL
-			result$"16" = NULL
-			result[["4"]] = result$"14" + result$"15" + result$"17" + result$"18" + result$"19" + result$"20"
-			result$"14" = NULL
-			result$"15" = NULL
-			result$"17" = NULL
-			result$"18" = NULL
-			result$"19" = NULL
-			result$"20" = NULL
+#~ 			if (datasource == "api") {
+#~ 				result[["0"]] = result$"01" + result$"02"
+#~ 				result$"01" = NULL
+#~ 				result$"02" = NULL
+#~ 				result[["1"]] = result$"03" + result$"04" + result$"05"
+#~ 				result$"03" = NULL
+#~ 				result$"04" = NULL
+#~ 				result$"05" = NULL
+#~ 				result[["2"]] = result$"06" + result$"07" + result$"08"
+#~ 				result$"06" = NULL
+#~ 				result$"07" = NULL
+#~ 				result$"08" = NULL
+#~ 				result[["3"]] = result$"09" + result$"10" + result$"11" + result$"12" + result$"13" + result$"16"
+#~ 				result$"09" = NULL
+#~ 				result$"10" = NULL
+#~ 				result$"11" = NULL
+#~ 				result$"12" = NULL
+#~ 				result$"13" = NULL
+#~ 				result$"16" = NULL
+#~ 				result[["4"]] = result$"14" + result$"15" + result$"17" + result$"18" + result$"19" + result$"20"
+#~ 				result$"14" = NULL
+#~ 				result$"15" = NULL
+#~ 				result$"17" = NULL
+#~ 				result$"18" = NULL
+#~ 				result$"19" = NULL
+#~ 				result$"20" = NULL
+#~ 			}
+#~ 			else {
+				result[["0"]] = result$"1" + result$"2"
+				result$"1" = NULL
+				result$"2" = NULL
+				result[["1"]] = result$"3" + result$"4" + result$"5"
+				result$"3" = NULL
+				result$"4" = NULL
+				result$"5" = NULL
+				result[["2"]] = result$"6" + result$"7" + result$"8"
+				result$"6" = NULL
+				result$"7" = NULL
+				result$"8" = NULL
+				result[["3"]] = result$"9" + result$"10" + result$"11" + result$"12" + result$"13" + result$"16"
+				result$"9" = NULL
+				result$"10" = NULL
+				result$"11" = NULL
+				result$"12" = NULL
+				result$"13" = NULL
+				result$"16" = NULL
+				result[["4"]] = result$"14" + result$"15" + result$"17" + result$"18" + result$"19" + result$"20"
+				result$"14" = NULL
+				result$"15" = NULL
+				result$"17" = NULL
+				result$"18" = NULL
+				result$"19" = NULL
+				result$"20" = NULL
+#~ 			}
 		}
 
 		print("final result output")

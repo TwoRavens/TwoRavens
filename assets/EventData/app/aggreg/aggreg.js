@@ -384,6 +384,7 @@ function updateDates(json) {
 		}
 		else {
 			$("#aggregDataDateR" + (row)).html("");
+			$("#aggregTableR" + (row)).hide();
 		}
 
 		if (aggregActorOn) {
