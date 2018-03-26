@@ -51,10 +51,10 @@ CMD Rscript rook_nonstop.R
 # -- Dev notes --
 #
 # build local:
-# >docker build -t rook1 -f ./Dockerfile-r-service .
+# >docker build -t rook2 -f ./Dockerfile-eventdata-r-service .
 #
 # shell access:
-# >docker run -ti  -p 8000:8000 rook1 /usr/bin/bash
+# >docker run -ti  -p 8000:8000 rook2 /usr/bin/bash
 #
 # run app
 # >docker run -p 8000:8000 rook1

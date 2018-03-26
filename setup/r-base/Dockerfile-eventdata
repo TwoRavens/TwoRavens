@@ -48,4 +48,9 @@ RUN  R -e 'install.packages("Rcpp", repos="http://cran.rstudio.org")' && \
     R -e 'install.packages("data.table", repos="http://cran.rstudio.org")' && \
     R -e 'install.packages("Zelig", repos="http://cran.rstudio.org")'
 
+# -------------------------------------
+# another package...
+# -------------------------------------
+RUN R -e 'install.packages("future", repos="http://cran.rstudio.org")'
+
 EXPOSE 8000
