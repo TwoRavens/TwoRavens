@@ -5,6 +5,10 @@ import {updateAggregTable} from "../aggreg/aggreg";
 import {callOnResize, panelMargin} from "../../../common/app/common";
 import m from 'mithril'
 
+// number of elements to show in search actor list
+let defaultPageSize = 200;
+let scrolledPageSize = defaultPageSize;
+
 // Resize actor when window changes size
 callOnResize(() => resizeActorSVG());
 
@@ -234,7 +238,6 @@ export function setupActor(){
     //clears search and filter selections
     $(".clearActorBtn").click(function () {
         clearChecks();
-        actorSearch();
         $(this).blur();
     });
 
@@ -248,7 +251,7 @@ export function setupActor(){
     actorSearchDivs.on("keyup", function () {
         $(".actorChkLbl").popover("hide");
         const searchText = $("#actorSearch").val().toUpperCase();
-        if (searchText.length % 3 === 0) {
+        if (app.dataset !== 'icews' && searchText.length % 3 === 0) {
             actorSearch();
         }
     });
@@ -295,10 +298,15 @@ export function setupActor(){
 
     //adds all of the current matched items into the current selection
     $("#actorSelectAll").click(function () {
+        // don't do anything if show selected is true
+        if (document.getElementById("actorShowSelected").checked) return;
+
         $("#searchListActors").children().each(function () {
             this.childNodes[0].checked = true;
-            currentNode[currentTab].group.add(this.childNodes[1].textContent);
         });
+
+        currentNode[currentTab].group = new Set([...currentNode[currentTab].group, ...app.actorData[currentTab].full]);
+
         // Lose focus so that popover goes away
         $(this).blur();
     });
@@ -308,8 +316,10 @@ export function setupActor(){
         $(".actorBottom, .clearActorBtn, #deleteGroup, .actorShowSelectedLbl, #editGroupName").popover("hide");
         $("#searchListActors").children().each(function () {
             this.childNodes[0].checked = false;
-            currentNode[currentTab].group.delete(this.childNodes[1].innerHTML);
         });
+        currentNode[currentTab].group = new Set([...currentNode[currentTab].group]
+            .filter((item) => app.actorData[currentTab].full.indexOf(item) === -1));
+
         $(this).blur();
     });
 
@@ -354,6 +364,33 @@ export function setupActor(){
 
         $(this).blur();
     });
+
+    // infinite scroll on the actor list
+    let searchList = $('#searchListActors');
+    searchList.on('scroll', function(){
+        let container = document.querySelector('#searchListActors');
+        let lastChild = document.querySelector('#searchListActors > div:last-child');
+
+        // don't apply infinite scrolling when actor list is empty
+        if (lastChild === null) return;
+
+        let scrollHeight = container.scrollHeight - container.scrollTop;
+
+        if (scrollHeight < container.offsetHeight) {
+
+            let newLines = app.actorData[currentTab].full.slice(scrolledPageSize, scrolledPageSize + defaultPageSize);
+            for (let line of newLines) {
+
+                // Don't create an element if it is an empty string
+                if (line === null || line === '') continue;
+
+                if (!document.getElementById("actorShowSelected").checked || currentNode[currentTab].group.has(line)) {
+                    searchList.append(createElement(currentTab, 'full', line, true));
+                }
+            }
+            scrolledPageSize += defaultPageSize;
+        }
+    }).scroll();
 
     //remove a group if possible
     $("#deleteGroup").click(function () {
@@ -467,7 +504,6 @@ function dragend() {
         dragTarget.group = new Set([...dragSelect.group, ...dragTarget.group]);
 
         //update checks in actor selection
-        // TODO: Fix id selection
         for (let actor of dragTarget.group) document.getElementById(currentTab + 'full' + actor + 'check').checked = true;
 
         //merge dragSel links to dragTarg
@@ -953,7 +989,10 @@ export function updateActor() {
     }
 
     for (let columnType in app.actorData[currentTab]) {
-        loadDataHelper(currentTab, columnType);
+        scrolledPageSize = defaultPageSize;
+
+        if (columnType === 'full') loadDataHelper(currentTab, columnType, defaultPageSize);
+        else loadDataHelper(currentTab, columnType);
     }
     defer.resolve();
 
@@ -961,7 +1000,7 @@ export function updateActor() {
 }
 
 //handles data selection and read asynchronously to help speed up load
-function loadDataHelper(actorType, columnType) {
+function loadDataHelper(actorType, columnType, limit=undefined) {
     $(".actorChkLbl").popover("hide");
     $(".popover").remove();
     let lines = app.actorData[actorType][columnType];
@@ -996,12 +1035,17 @@ function loadDataHelper(actorType, columnType) {
 
     // Populate listing
     let fragment = document.createDocumentFragment();
+
+    let idx = 0;
     for (let line of lines) {
 
-        // Don't create an element if it is not selected and 'show selected' is on
+        // Don't create an element if it is an empty string
         if (line === null || line === '') continue;
 
         if (columnType === 'full') {
+            // only show first n
+            idx++;
+            if (limit !== undefined && idx > limit) break;
             if (!document.getElementById("actorShowSelected").checked || currentNode[currentTab].group.has(line)) {
                 fragment.appendChild(createElement(actorType, columnType, line, chkSwitch));
             }
@@ -1295,7 +1339,8 @@ function actorSearch() {
     function updateActorListing(data) {
         if ('source' in data) app.actorData.source.full = data.source;
         if ('target' in data) app.actorData.target.full = data.target;
-        loadDataHelper(currentTab, "full");
+        scrolledPageSize = defaultPageSize;
+        loadDataHelper(currentTab, "full", defaultPageSize);
     }
     app.makeCorsRequest(app.subsetURL, query, updateActorListing);
 }
