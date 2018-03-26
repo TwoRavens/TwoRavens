@@ -337,30 +337,44 @@ def run_with_ta2():
     run(external_ta2=True)
 
 @task
-def run_eventdata_dev():
-    """Set the UI mode to EventData with .js using a local rook url"""
+def load_eventdata_dev():
+    """Load the AppConfiguration for EventData dev"""
     from tworaven_apps.configurations.models import AppConfiguration
 
-    le_config = AppConfiguration.objects.get(pk=4)
+    check_config()  # make sure config file is loaded
+
+    le_config = AppConfiguration.objects.get(pk=4)  # let it blow up if not found...
     le_config.is_active = True
     le_config.save()
 
     print('new config activated: ')
     le_config.print_vals()
+
+@task
+def run_eventdata_dev():
+    """Set the UI mode to EventData with .js using a local rook url"""
+    load_eventdata_dev()
 
     run()
 
 @task
-def run_eventdata_prod():
-    """Set the UI mode to EventData with .js using a local rook url"""
+def load_eventdata_prod():
+    """Load the AppConfiguration for EventData prod"""
     from tworaven_apps.configurations.models import AppConfiguration
 
-    le_config = AppConfiguration.objects.get(pk=5)
+    check_config()  # make sure config file is loaded
+
+    le_config = AppConfiguration.objects.get(pk=5)   # let it blow up if not found...
     le_config.is_active = True
     le_config.save()
 
     print('new config activated: ')
     le_config.print_vals()
+
+@task
+def run_eventdata_prod():
+    """Set the UI mode to EventData with .js using a local rook url"""
+    load_eventdata_prod()
 
     run()
 

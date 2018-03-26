@@ -48,6 +48,7 @@ ENV DJANGO_SETTINGS_MODULE=tworavensproject.settings.dev_container2 \
     R_DEV_SERVER_BASE=http://rook-service:8000/custom/ \
     TA2_STATIC_TEST_MODE=True \
     CODE_REPOSITORY=/var/webapps/TwoRavens \
+    RAVENS_SESSION_COOKIE_NAME=tworavens_eventdata \
     LC_ALL=C.UTF-8
 
 # -------------------------------------
@@ -63,25 +64,16 @@ VOLUME /ravens_volume
 #
 #   - create_test_user - Non-admin user created for testing
 #
-#   - load_docker_ui_config - sets JS variables for UI d3m_mode to true
+#   - load_eventdata_prod - sets JS variables for UI Event Data
 #
 #   - collect_static - django collect static files
-#
-#   - make_d3m_config_files - makes test config files accessible via env variables
-#                             (not used for eval)
-#   - make_d3m_config - WARNING: for testing. Loads D3M info based on the test data
-#
-#   - ta3_listener_add - add TA3 listener url for terminal window
 #
 # -------------------------------------
 RUN fab init_db && \
     fab create_django_superuser && \
     fab create_test_user  && \
-    fab load_docker_ui_config && \
-    fab collect_static && \
-    fab ta3_listener_add
-
-#    fab make_d3m_config_files && \
+    fab load_eventdata_prod && \
+    fab collect_static
 
 # -------------------------------------
 # Expose port for web communication
@@ -89,10 +81,6 @@ RUN fab init_db && \
 # -------------------------------------
 EXPOSE 8080
 
-CMD echo 'Starting TwoRavens python server for event data!' && \
-    cd /var/webapps/TwoRavens && \
-    fab run_eventdata_prod
-
-#CMD echo 'Starting TwoRavens python server.' && \
-#    cp -r ravens_volume/. /ravens_volume/ && \
-#    python manage.py runserver 0.0.0.0:8080
+CMD echo 'Starting TwoRavens python server.' && \
+    cp -r ravens_volume/. /ravens_volume/ && \
+    python manage.py runserver 0.0.0.0:8080
