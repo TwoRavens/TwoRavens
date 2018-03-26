@@ -60,7 +60,8 @@ let production = false;
 export let rappURL = '';
 if (!production) {
     // base URL for the R apps:
-    rappURL = "http://localhost:8000/custom/";
+    //rappURL = "http://localhost:8000/custom/";
+    rappURL = ROOK_SVC_URL; // Note: The ROOK_SVC_URL is set by django in /templates/index.html
 } else {
     rappURL = "https://beta.dataverse.org/custom/"; //this will change when/if the production host changes
 }

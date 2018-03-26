@@ -237,7 +237,7 @@ def run_isi_ta2(config_json_path):
     local(docker_cmd)
 
 @task
-def load_docker_ui_config():
+def load_docker_ui_config(**kwargs):
     """Load config pk=3, name 'Docker Default configuration'"""
     check_config()
 
@@ -248,9 +248,8 @@ def load_docker_ui_config():
     le_config.save()
 
     print('new config activated: ')
-    for k, val in le_config.__dict__.items():
-        if not k.startswith('_'):
-            print('     > %s: %s' % (k, val))
+    le_config.print_vals()
+
 
 
 @task
@@ -291,6 +290,34 @@ def run_with_rook():
 def run_expect_ta2_external():
     """Assumes there's a TA2 running at localhost:45042"""
     run(external_ta2=True)
+
+@task
+def run_eventdata_dev():
+    """Set the UI mode to EventData with .js using a local rook url"""
+    from tworaven_apps.configurations.models import AppConfiguration
+
+    le_config = AppConfiguration.objects.get(pk=4)
+    le_config.is_active = True
+    le_config.save()
+
+    print('new config activated: ')
+    le_config.print_vals()
+
+    run()
+
+@task
+def run_eventdata_prod():
+    """Set the UI mode to EventData with .js using a local rook url"""
+    from tworaven_apps.configurations.models import AppConfiguration
+
+    le_config = AppConfiguration.objects.get(pk=5)
+    le_config.is_active = True
+    le_config.save()
+
+    print('new config activated: ')
+    le_config.print_vals()
+
+    run()
 
 @task
 def run(**kwargs):
