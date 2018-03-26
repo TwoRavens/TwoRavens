@@ -248,7 +248,7 @@ let locationTour = {
             title: "Overview",
             content: "Select a world region to draw a second graph with the countries in said region at the bottom of the page. Region plots have selectable bars for adding countries to the 'Selected Countries' box.",
             target: "#regionLabel",
-            placement: "left",
+            placement: "bottom",
             width: 200
         },
         {
@@ -298,14 +298,14 @@ let coordinatesTour = {
             title: "Overview",
             content: "Limit records via latitude and longitude demarcations. Edit the text to move the box on the world map, or move the box on the world map to edit the text in the boxes.",
             target: "#latUpperLabel",
-            placement: "left",
+            placement: "bottom",
             width: 200
         },
         {
             title: "Switched Bounds",
             content: "If a boundary is given that is beyond the other boundary, the labels will switch. The labels will switch back if the box on the world map is clicked, or if the text boxes are corrected manually.",
             target: "#latUpperLabel",
-            placement: "left",
+            placement: "bottom",
             width: 200
         },
         {
@@ -342,12 +342,12 @@ let customTour = {
             title: "Overview",
             content: "View the Mongo query used to retrieve the data. Important! Notice that double clicking rules, groups, and queries from the right panel will fill the editor with the query for that element in the tree.",
             target: "#subsetCustomLabel",
-            placement: "left",
+            placement: "bottom",
             width: 200
         },
         {
             title: "Format",
-            content: "The query is formatted as JSON. These queries may be extended using the <a href='https://docs.mongodb.com/manual/reference/operator/query/' target='_blank'>MongoDB query operators</a>.",
+            content: "The query is formatted as JSON. These queries may be extended using the <a style='color: #0645AD;' href='https://docs.mongodb.com/manual/reference/operator/query/' target='_blank'>MongoDB query operators</a>.",
             target: "#subsetCustomEditor",
             placement: "left",
             width: 200
@@ -361,21 +361,21 @@ let customTour = {
         },
         {
             title: "R Package",
-            content: "Any query here may be reused in the <a href='https://github.com/KateHyoung/UTDEventData/' target='_blank'>Event Data R-Package</a>.",
+            content: "Any query here may be reused in the <a style='color: #0645AD;' href='https://github.com/KateHyoung/UTDEventData/' target='_blank'>Event Data R-Package</a>.",
             target: "#subsetCustomEditor",
             placement: "left",
             width: 200
         },
         {
             title: "API Endpoint",
-            content: "Alternatively, Mongo queries may be submitted directly to the <a href='https://github.com/Sayeedsalam/spec-event-data-server/' target='_blank'>API linked here</a>. Note that generalized column names are not supported, but there are endpoints for retrieving dataset-specific column names.",
+            content: "Alternatively, Mongo queries may be submitted directly to the <a style='color: #0645AD;' href='https://github.com/Sayeedsalam/spec-event-data-server/' target='_blank'>API linked here</a>. Note that generalized column names are not supported, but there are endpoints for retrieving dataset-specific column names.",
             target: "#subsetCustomEditor",
             placement: "left",
             width: 200
         },
         {
             title: "Data Source",
-            content: "Data is hosted at <a href='http://eventdata.utdallas.edu/data.html' target='_blank'>the Real Time Event Data service</a>.",
+            content: "Data is hosted at <a style='color: #0645AD;' href='http://eventdata.utdallas.edu/data.html' target='_blank'>the Real Time Event Data service</a>.",
             target: "#subsetCustomEditor",
             placement: "left",
             width: 200
