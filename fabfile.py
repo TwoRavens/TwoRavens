@@ -308,6 +308,8 @@ def load_eventdata_dev():
 @task
 def run_eventdata_dev():
     """Set the UI mode to EventData with .js using a local rook url"""
+    init_db()
+
     load_eventdata_dev()
 
     run()
@@ -329,6 +331,8 @@ def load_eventdata_prod():
 @task
 def run_eventdata_prod():
     """Set the UI mode to EventData with .js using a local rook url"""
+    init_db()
+
     load_eventdata_prod()
 
     run()
