@@ -4196,12 +4196,13 @@ export function setModal(text, header, show, btnText, close, func) {
         modalText = text;
     if (header)
         modalHeader = header;
-    if (btnText)
+    if (btnText) {
         modalButton = btnText;
         modalClose = close;
         modalBtnDisplay = 'block';
-    } else
+    } else {
         modalBtnDisplay = 'none';
+    };
     if(func)
         modalFunc = func;
     m.redraw();
