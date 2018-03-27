@@ -303,7 +303,7 @@ def check_config():
     from tworaven_apps.configurations.models import AppConfiguration
 
     config_cnt = AppConfiguration.objects.count()
-    if config_cnt == 0:
+    if config_cnt < 5:
         local(('python manage.py loaddata'
                ' tworaven_apps/configurations/fixtures/initial_configs.json'))
     else:
