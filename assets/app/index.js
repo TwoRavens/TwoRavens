@@ -640,11 +640,14 @@ class Body {
                     // m("button.btn.btn-default[data-dismiss='modal'][type='button']",{
                     // onclick: () => app.reset}, app.modalButton))
                     m("button.btn.btn-default[type='button']", {
+                        style: {display: app.modalBtnDisplay, float:'right'},
                         onclick: _ => {
                             if (app.modalClose) {
                                 app.modalClose = false;
                                 $('#myModal').modal('hide');
                                 return;
+                            } else {
+                                eval(app.modalFunc);
                             }
                             location.reload();
                         }

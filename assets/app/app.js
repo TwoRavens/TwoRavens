@@ -207,11 +207,14 @@ let selInteract = false;
 export let callHistory = []; // transform and subset calls
 let mytarget = '';
 
+// things to customize modal window from app.js
 export let modalText = "Default modal text";
 export let modalHeader = "Default modal header";
 export let modalButton = "Close";
 export let modalVis = false;
-export let modalClose = false;
+export let modalClose = false
+export let modalBtnDisplay = 'block';
+export let modalFunc = function() {return};
 
 let configurations = {};
 let datadocument = {};
@@ -588,8 +591,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     if (res) {
       if (res.responseInfo.status.code != "OK"){
         const user_err_msg = "Failed to StartSession with TA2! status code: " + res.responseInfo.status.code;
-        modalVis = true;
-        setModal(user_err_msg,"Error Connecting to TA2", modalVis, "Reset");
+        setModal(user_err_msg,"Error Connecting to TA2", true, "Reset", false, "location.reload()");
       //  end_ta3_search(false, user_err_msg);
         return;
       } else {
@@ -3037,6 +3039,7 @@ export async function endsession() {
     let mystatus = res.status.code.toUpperCase();
     if(mystatus == "OK") {
         end_ta3_search(true, "Problem marked as complete.");
+        setModal("Your selected pipeline has been submitted.","Task Complete", true, false, false, "location.reload()");
     }
 }
 
@@ -4183,14 +4186,24 @@ export function saveDisc(btn) {
 }
 
 // function to call a modal window
-export function setModal(text, header, show, btnText, close) {
-    if (text)
+
+// text and header are text
+// show is boolean
+// btnText is the text to go inside the button (eg "Reset"), but if false then no button appears
+// func is the function to execute when button is clicked, as a string (eg "location.reload()")
+export function setModal(text, header, show, btnText, close, func) {
+    if(text)
         modalText = text;
     if (header)
         modalHeader = header;
     if (btnText)
         modalButton = btnText;
-    modalClose = close;
+        modalClose = close;
+        modalBtnDisplay = 'block';
+    } else
+        modalBtnDisplay = 'none';
+    if(func)
+        modalFunc = func;
     m.redraw();
     show ? $('#myModal').modal({show, backdrop: 'static', keyboard: false}) : $('#myModal').modal("hide");
 }

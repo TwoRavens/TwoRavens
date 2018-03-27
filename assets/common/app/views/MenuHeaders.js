@@ -17,10 +17,10 @@ export default class MenuHeaders {
     view(vnode) {
         let {id, attrsAll, sections} = vnode.attrs;
 
-        return m(`#${id}`, attrsAll, [
-            sections.map((section) => m(`div#bin${section['idSuffix'] || section.value}`,
-                m(`#header${section['idSuffix'] || section.value}Header.panel-heading`, m("h3.panel-title", section.value)),
+        return m(`#${id.replace(/\W/g, '_')}`, attrsAll,
+            sections.map((section) => m(`div#bin${section['idSuffix'] || section.value.replace(/\W/g, '_')}`,
+                m(`#header${section['idSuffix'] || section.value.replace(/\W/g, '_')}.panel-heading`, m("h3.panel-title", section.value)),
                 section.contents))
-        ])
+        )
     }
 }
