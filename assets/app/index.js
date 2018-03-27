@@ -540,7 +540,7 @@ class Body {
                       userlinks.map(link => m('a[style=padding: 0.5em]', {href: link.url}, link.title, m('br'))))),
                   navBtn('btnEstimate.btn-default', 2, 1, mode === 'explore' ? _ => {
                       if (app.links.length === 0) {
-                          alert('Please link pebbles first.');
+                          app.setModal('Please link pebbles first.', 'Warning', true, 'Ok', true);
                           return;
                       }
 
@@ -628,23 +628,30 @@ class Body {
     }
 
     modal() {
-        return m(".modal.fade[id='myModal'][role='dialog']",
+        return m(".modal.fade[id='myModal'][role='dialog']", [
             m(".modal-dialog",
-                m(".modal-content", [
-                    m(".modal-header", [
-                      //  m("button.close[data-dismiss='modal'][type='button']",
-                      //      m.trust("&times;")),
-                        m("h4.modal-title",
-                            app.modalHeader)]),
-                    m(".modal-body",
-                        m("p",
-                            app.modalText)),
-                    m(".modal-footer",
-                        //m("button.btn.btn-default[data-dismiss='modal'][type='button']",{
-                            //onclick: () => app.reset}, app.modalButton))
-                    m("button.btn.btn-default[type='button']",{
-                            onclick: () => location.reload()}, app.modalButton))
-                ])))
+              m(".modal-content", [
+                  m(".modal-header",
+                    //  m("button.close[data-dismiss='modal'][type='button']",
+                    //  m.trust("&times;")),
+                    m("h4.modal-title", app.modalHeader)),
+                  m(".modal-body",
+                    m("p", app.modalText)),
+                  m(".modal-footer",
+                    // m("button.btn.btn-default[data-dismiss='modal'][type='button']",{
+                    // onclick: () => app.reset}, app.modalButton))
+                    m("button.btn.btn-default[type='button']", {
+                        onclick: _ => {
+                            if (app.modalClose) {
+                                app.modalClose = false;
+                                $('#myModal').modal('hide');
+                                return;
+                            }
+                            location.reload();
+                        }
+                    }, app.modalButton))
+              ]))
+        ]);
     }
 }
 

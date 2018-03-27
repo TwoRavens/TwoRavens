@@ -211,6 +211,7 @@ export let modalText = "Default modal text";
 export let modalHeader = "Default modal header";
 export let modalButton = "Close";
 export let modalVis = false;
+export let modalClose = false;
 
 let configurations = {};
 let datadocument = {};
@@ -4179,20 +4180,17 @@ export function saveDisc(btn) {
             disco[i-1].description=newtext;
         }
     }
-
 }
 
 // function to call a modal window
-function setModal(text, header, show, btnText) {
-    if(text)
+export function setModal(text, header, show, btnText, close) {
+    if (text)
         modalText = text;
-    if(header)
+    if (header)
         modalHeader = header;
-    if(btnText)
+    if (btnText)
         modalButton = btnText;
+    modalClose = close;
     m.redraw();
-    if(show)
-        $('#myModal').modal({show:true, backdrop: 'static', keyboard: false});
-    else
-        $('#myModal').modal("hide");
+    show ? $('#myModal').modal({show, backdrop: 'static', keyboard: false}) : $('#myModal').modal("hide");
 }
