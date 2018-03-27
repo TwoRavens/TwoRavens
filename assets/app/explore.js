@@ -1433,6 +1433,7 @@ export async function explore() {
     if (!json) {
         return;
     }
+
     app.allResults.push(json);
     app.explored = true;
     app.univariate_finished = false;
@@ -1478,7 +1479,7 @@ export async function callTreeApp(node_var, app) {
     exploreVar = node_var;
     app.zPop();
     app.zparams.callHistory = app.callHistory;
-    
+
     app.estimateLadda.start();
     let res = await app.makeRequest(ROOK_SVC_URL + 'treeapp', {zparams: app.zparams, dv: node_var});
     app.estimateLadda.stop();

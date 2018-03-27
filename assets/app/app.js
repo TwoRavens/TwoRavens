@@ -33,11 +33,11 @@ let is_results_mode = false;
 
 export function set_mode(mode) {
     if (!mode) mode = 'model';
-    mode = mode.toLowerCase()
+    mode = mode.toLowerCase();
 
     if (currentMode !== mode) {
-        updateRightPanelWidth()
-        updateLeftPanelWidth()
+        updateRightPanelWidth();
+        updateLeftPanelWidth();
 
         currentMode = mode;
         m.route.set('/' + mode.toLowerCase());
@@ -178,7 +178,7 @@ export let zparams = {
     zvars: [],
     zdv: [],
     zgroup1: [],
-    zgroup2: [],       // hard coding to two groups for present experiments, but will eventually make zgroup array of arrays, with zgroup.lenght the number of groups
+    zgroup2: [], // hard coding to two groups for present experiments, but will eventually make zgroup array of arrays, with zgroup.length the number of groups
     zdataurl: "",
     zd3mdata: "", //these take the place of zdataurl for d3m, because data is in two placees. eventually will generalize
     zd3mtarget: "",
@@ -189,7 +189,7 @@ export let zparams = {
     zsessionid: "",
     zdatacite: '...',
     zcrosstab: [],
-    zusername: '',
+    zusername: ''
 };
 
 export let disco = [];
@@ -211,6 +211,8 @@ let mytarget = '';
 export let modalText = "Default modal text";
 export let modalHeader = "Default modal header";
 export let modalButton = "Close";
+export let modalVis = false;
+export let modalClose = false
 export let modalBtnDisplay = 'block';
 export let modalFunc = function() {return};
 
@@ -589,7 +591,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     if (res) {
       if (res.responseInfo.status.code != "OK"){
         const user_err_msg = "Failed to StartSession with TA2! status code: " + res.responseInfo.status.code;
-        setModal(user_err_msg,"Error Connecting to TA2", true, "Reset", "location.reload()");
+        setModal(user_err_msg,"Error Connecting to TA2", true, "Reset", false, "location.reload()");
       //  end_ta3_search(false, user_err_msg);
         return;
       } else {
@@ -3037,7 +3039,7 @@ export async function endsession() {
     let mystatus = res.status.code.toUpperCase();
     if(mystatus == "OK") {
         end_ta3_search(true, "Problem marked as complete.");
-        setModal("Your selected pipeline has been submitted.","Task Complete", true, false, "location.reload()");
+        setModal("Your selected pipeline has been submitted.","Task Complete", true, false, false, "location.reload()");
     }
 }
 
@@ -4181,29 +4183,27 @@ export function saveDisc(btn) {
             disco[i-1].description=newtext;
         }
     }
-
 }
 
 // function to call a modal window
+
 // text and header are text
 // show is boolean
 // btnText is the text to go inside the button (eg "Reset"), but if false then no button appears
 // func is the function to execute when button is clicked, as a string (eg "location.reload()")
-function setModal(text, header, show, btnText, func) {
+export function setModal(text, header, show, btnText, close, func) {
     if(text)
         modalText = text;
-    if(header)
+    if (header)
         modalHeader = header;
-    if(btnText) {
+    if (btnText)
         modalButton = btnText;
+        modalClose = close;
         modalBtnDisplay = 'block';
     } else
         modalBtnDisplay = 'none';
     if(func)
         modalFunc = func;
     m.redraw();
-    if(show)
-        $('#myModal').modal({show:true, backdrop: 'static', keyboard: false});
-    else
-        $('#myModal').modal("hide");
+    show ? $('#myModal').modal({show, backdrop: 'static', keyboard: false}) : $('#myModal').modal("hide");
 }
