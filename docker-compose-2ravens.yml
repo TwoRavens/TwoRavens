@@ -18,7 +18,7 @@ services:
   rook-service:
     build:
       context: ./
-      dockerfile: Dockerfile-eventdata-r-service
+      dockerfile: Dockerfile-r-service
     environment:
       # Note: this variable is also set in Dockerfile-r-service
       - ROOK_USE_PRODUCTION_MODE=yes
@@ -29,14 +29,14 @@ services:
   ta3-main:
     build:
       context: ./
-      dockerfile: Dockerfile-eventdata
+      dockerfile: Dockerfile
     environment:
       # If True, don't use an actual TA2, returned canned responses
-      - TA2_STATIC_TEST_MODE=True
+      - TA2_STATIC_TEST_MODE=False
       # Example of specifying a TA2 service
-      #- TA2_TEST_SERVER_URL=ta2-main:45042
+      - TA2_TEST_SERVER_URL=ta2-main:45042
       #- CONFIG_JSON_PATH=/ravens_volume/config_o_4550seed.json
-      #- CONFIG_JSON_PATH=/ravens_volume/config_185_baseball.json
+      - CONFIG_JSON_PATH=/ravens_volume/config_185_baseball.json
     links:
       - rook-service
     ports:
@@ -44,4 +44,16 @@ services:
       - 8080:8080
     volumes:
       - ./ravens_volume:/ravens_volume
-  
+  ta2-main:
+    build:
+      context: ./
+      dockerfile: Dockerfile-TA2-test
+    #image: isi_test:stable
+    #image: registry.datadrivendiscovery.org/ta2/isi_ta2:stable
+    environment:
+      - CONFIG_JSON_PATH=/ravens_volume/config_185_baseball.json
+    volumes:
+      - ./ravens_volume:/ravens_volume
+    ports:
+      # 45042: grpc connection
+      - 45042:45042
