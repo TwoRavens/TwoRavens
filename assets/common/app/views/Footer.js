@@ -2,15 +2,11 @@ import m from 'mithril'
 import {heightFooter, menuColor, borderColor} from "../common";
 
 // ```
-// m(Footer, {
-//     contents: m(...)
-//     })
+// m(Footer, vnode.children)
 // ```
 
 export default class Footer {
     view(vnode) {
-        let {contents} = vnode.attrs;
-
         return m('#footer', {
             style: {
                 background: menuColor,
@@ -18,8 +14,8 @@ export default class Footer {
                 bottom: 0,
                 height: heightFooter + 'px',
                 position: 'fixed',
-                width: '100%',
+                width: '100%'
             }
-        }, contents);
+        }, vnode.children);
     }
 }
