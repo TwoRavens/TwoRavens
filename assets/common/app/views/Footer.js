@@ -1,6 +1,9 @@
 import m from 'mithril';
 
 import {heightFooter, menuColor, borderColor} from "../common";
+// ```
+// m(Footer, vnode.children)
+// ```
 
 export default class Footer {
     view(vnode) {
