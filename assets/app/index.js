@@ -568,13 +568,15 @@ class Body {
 
                         transform(t.slice(0, t.length - 1), t[t.length - 1], typeTransform = false);
                     }
-                }
-            }),
-            m('#transformations.transformTool',
-              {title: 'Construct transformations of existing variables using valid R syntax. For example, assuming a variable named d, you can enter "log(d)" or "d^2".'},
-              [transformation('transSel', ['a', 'b']),
-               transformation('transList', app.transformList)])
-        ])]);
+
+                }),
+                m('#transformations.transformTool', {
+                        title: `Construct transformations of existing variables using valid R syntax.
+                              For example, assuming a variable named d, you can enter "log(d)" or "d^2".`
+                    },
+                    transformation('transSel', ['a', 'b']),
+                    transformation('transList', app.transformList)))
+        });
     }
 
     footer(mode) {
@@ -591,15 +593,36 @@ class Body {
             m("span[style=color:#337ab7]", " | "),
             // dev links...
             m("a[href='/dev-raven-links'][target=_blank]", "raven-links"),
+            // m("a[style=margin-right: 0.5em]", {onclick: app.record_user_metadata}, "record-metadata"),
             m("span[style=color:#337ab7]", " | "),
-            m("span[style=color:#337ab7]", `TA2: ${TA2_SERVER}`),
+            m("span[style=color:#337ab7]", "TA2: " + TA2_SERVER),
             m("span[style=color:#337ab7]", " | "),
-            m("span[style=color:#337ab7]", `TA3TA2 api: ${TA3TA2_API_VERSION}`),
-            m('button.btn.btn-default', {
+            m("span[style=color:#337ab7]", "TA3TA2 api: " + TA3TA2_API_VERSION),
+                        m('button.btn.btn-default', {
                 onclick: _ => window.open('#!/data', 'data'),
                 style: 'float: right; margin: 0.5em; margin-top: 2px'
             }, 'Peek')
         ]);
+    }
+
+    modal() {
+        return m(".modal.fade[id='myModal'][role='dialog']",
+            m(".modal-dialog",
+                m(".modal-content", [
+                    m(".modal-header", [
+                        // m("button.close[data-dismiss='modal'][type='button']",
+                        // m.trust("&times;")),
+                        m("h4.modal-title", app.modalHeader)]),
+                    m(".modal-body",
+                        m("p", app.modalText)),
+                    m(".modal-footer",
+                      // m("button.btn.btn-default[data-dismiss='modal'][type='button']",{
+                      // onclick: () => app.reset}, app.modalButton))
+                    m("button.btn.btn-default[type='button']", {
+                        style: {display: app.modalBtnDisplay, float:'right'},
+                        onclick: () => eval(app.modalFunc)
+                    }, app.modalButton))
+                ])));
     }
 }
 
@@ -609,7 +632,6 @@ if (IS_EVENTDATA_DOMAIN) {
         '/aggregate': {render: () => m(Body_EventData, {mode: 'aggregate'})}
     });
 }
-<<<<<<< d78f7b519385a37b8638032cac1729d510dd8a80
 
 m.route(document.body, '/model', {
     '/model': {render: () => m(Body)},
@@ -626,11 +648,3 @@ m.route(document.body, '/model', {
     },
     '/data': Peek
 });
-=======
-else {
-    m.route(document.body, '/model', {
-        '/model': {render: () => m(Body)},
-        '/explore': {render: () => m(Body, {mode: 'explore'})}
-    });
-}
->>>>>>> Fix eventdata webpack issues
