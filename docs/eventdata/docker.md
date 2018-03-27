@@ -25,4 +25,11 @@ docker build -t tworavens/eventdata-ravens-r-service:latest -f Dockerfile-eventd
 # ------------------------------
 docker build -t tworavens/eventdata-ravens-main:latest -f Dockerfile-eventdata .
 
-docker run --rm -ti --name=go-ed-main -p 8080:8080 tworavens/eventdata-ravens-main:latest
+#docker run --rm -ti --name=go-ed-main -p 8080:8080 tworavens/eventdata-ravens-main:latest
+
+
+# ------------------------------
+# build nginx
+# ------------------------------
+cd setup/nginx
+docker build -t tworavens/eventdata-ravens-nginx:latest -f Dockerfile-eventdata .
