@@ -152,7 +152,7 @@ function rightpanel(mode) {
             m(`img#${id}_img[alt=${id}][src=/static/images/thumb${idx}.png]`,
               {style: {width: "75%", height: "75%", border: "1px solid #ddd", "border-radius": "3px", padding: "5px", margin: "3%", cursor: "pointer"}}),
             m("figcaption", {style: {"text-align": "center"}}, title)));
-    let unique_link_names = () => {
+    /*let unique_link_names = () => {
         let names = [];
         for (let link of app.links) {
             if (!names.includes(link.source.name)) {
@@ -163,24 +163,23 @@ function rightpanel(mode) {
             }
         }
         return names;
-    };
+    };*/
 
     if (mode === 'results') return [];
     if (mode === 'explore') {
-        let link_names = unique_link_names();
-
+        // let link_names = unique_link_names();
         let sectionsExplore = [
             {
                 value: 'Univariate',
                 contents: [
-                    m('#decision_prompt', {style: {display: link_names.length === 0 ? 'block' : 'none'}},
-                        `First, right click pebble variables to draw links between them. \nThen, select the variable in the list of linked pebbles below to draw a decision tree for that variable.`),
+                    m('#decision_prompt',
+                        `Right click pebble variables to draw links between them. Select a variable in the list of linked pebbles below to draw a decision tree for that variable.`),
                     m('#decisionTree[style=width: 100%; height:80%; overflow-y:scroll; float: left; white-space: nowrap; margin-top: 2px;]'),
                     m(PanelList, {
                         id: 'varListExplore',
-                        items: link_names,
+                        items: app.nodes.map(n => n.name),
                         colors: {[app.hexToRgba(common.selVarColor)]: [exp.exploreVar]},
-                        callback: (variable) => exp.callTreeApp(variable, app),
+                        callback: variable => exp.callTreeApp(variable, app),
                         attrsAll: {style: {float: 'left', width: '100%', height: '20%'}}
                     })
                         // m('#varList[style=display: block]',
