@@ -2,12 +2,13 @@ import m from 'mithril';
 import {dataset} from "../app.js"
 import {
     setupActor,
+    waitForQuery,
     actorTabSwitch,
     showSelected,
     currentNode,
     currentTab,
 } from "../subsets/Actor.js"
-import {panelMargin} from "../../../common/app/common";
+import {panelMargin, csColor} from "../../../common/app/common";
 import {aggregActorOn, setAggregActor} from "../aggreg/aggreg";
 
 // Width of the actor selection panel
@@ -75,7 +76,8 @@ function actorSelection(mode) {
                     m(`input.form-control#actorSearch[type='text']`, {
                         placeholder: `Search ${currentTab} actors`
                     }),
-                    m(`.actorFullList#searchListActors`, {style: {"text-align": "left"}})
+                    m(`.actorFullList#searchListActors`, {style: Object.assign({"text-align": "left"},
+                            waitForQuery && {'pointer-events': 'none', 'background': csColor})})
                 ]
             ),
             m(`.actorRight[id='actorRight']`, {style: {height: `calc(100% - ${aggregationOffset}px)`}},

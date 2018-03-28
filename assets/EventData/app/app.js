@@ -1471,7 +1471,7 @@ function processRule(rule) {
         }
     }
 
-    // Actor subset is itself a group of links. The links are leaf nodes
+    // Actor subset is itself a group of links. A link is a hardcoded group, and source/target lists are leaf nodes
     if (rule.name === 'Actor Subset') {
         return processGroup(rule);
     }

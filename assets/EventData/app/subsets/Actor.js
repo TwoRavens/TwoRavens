@@ -9,6 +9,9 @@ import m from 'mithril'
 let defaultPageSize = 200;
 let scrolledPageSize = defaultPageSize;
 
+export let waitForQuery = 0;
+let cachedSearch = '';
+
 // Resize actor when window changes size
 callOnResize(() => resizeActorSVG());
 
@@ -254,6 +257,10 @@ export function setupActor(){
         $(".actorChkLbl").popover("hide");
         const searchText = $("#actorSearch").val().toUpperCase();
 
+        // prevent sending the same text twice
+        if (searchText === cachedSearch) return;
+        cachedSearch = searchText;
+
         if (app.dataset === 'icews') {
             clearTimeout(searchTimeout);
             searchTimeout = setTimeout(() => {
@@ -316,6 +323,9 @@ export function setupActor(){
         // don't do anything if show selected is true
         if (document.getElementById("actorShowSelected").checked) return;
 
+        // don't do anything if waiting for a query to return
+        if (waitForQuery) return;
+
         $("#searchListActors").children().each(function () {
             this.childNodes[0].checked = true;
         });
@@ -329,6 +339,10 @@ export function setupActor(){
     //clears all of the current matched items from the current selection
     $("#actorClearAll").click(function () {
         $(".actorBottom, .clearActorBtn, #deleteGroup, .actorShowSelectedLbl, #editGroupName").popover("hide");
+
+        // don't do anything if waiting for a query to return
+        if (waitForQuery) return;
+
         $("#searchListActors").children().each(function () {
             this.childNodes[0].checked = false;
         });
@@ -1358,7 +1372,11 @@ function actorSearch() {
         if ('target' in data) app.actorData.target.full = data.target;
         scrolledPageSize = defaultPageSize;
         loadDataHelper(currentTab, "full", defaultPageSize);
+        waitForQuery--;
+        m.redraw();
     }
+    waitForQuery++;
+    m.redraw();
     app.makeCorsRequest(app.subsetURL, query, updateActorListing);
 }
 
