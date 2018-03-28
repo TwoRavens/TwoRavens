@@ -34,7 +34,10 @@ def view_pebbles_home(request):
             return HttpResponseRedirect(\
                     reverse('login'))
 
-    session_key = get_session_key(request)
+        session_key = get_session_key(request)
+
+    else:
+        session_key = '(not set for non d3m)'
 
     dinfo = dict(title='TwoRavens',
                  session_key=session_key,
