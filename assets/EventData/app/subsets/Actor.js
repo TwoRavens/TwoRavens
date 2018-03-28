@@ -1300,7 +1300,7 @@ function actorSearch() {
 
     if (searchText.length !== 0) {
         // If the dataset is icews, all we do is a simple text search
-        if (app.dataset === 'icews') actorFilters.push({['<' + currentTab + '>']: {'$regex': '.*' + searchText + '.*', '$options' : 'i'}});
+        if (app.dataset === 'icews') actorFilters.push({['<' + abbreviated + '_name>']: {'$regex': '.*' + searchText + '.*', '$options' : 'i'}});
 
         // Apply the lookahead search regex last, as it is the most expensive
         else if (searchText.length % 3 === 0) {

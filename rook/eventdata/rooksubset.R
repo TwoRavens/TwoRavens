@@ -184,13 +184,15 @@ eventdata_subset.app <- function(env) {
 
     # Arguments specific to sources/targets queries
     if (!is.null(type) && type == 'source') {
-        unique_vals = sort(unlist(getData(paste(eventdata_url, '&unique=<source>&query=', subsets, sep=""))))
+        field <- if (dataset == 'icews') 'src_name' else 'source'
+        unique_vals = sort(unlist(getData(paste(eventdata_url, '&unique=<', field, '>&query=', subsets, sep=""))))
         response$write(toString(jsonlite::toJSON(list(source = unique_vals))))
         return(response$finish())
     }
 
     if (!is.null(type) && type == 'target') {
-        unique_vals = sort(unlist(getData(paste(eventdata_url, '&unique=<target>&query=', subsets, sep=""))))
+        field <- if (dataset == 'icews') 'tgt_name' else 'target'
+        unique_vals = sort(unlist(getData(paste(eventdata_url, '&unique=<', field, '>&query=', subsets, sep=""))))
         response$write(toString(jsonlite::toJSON(list(target = unique_vals))))
         return(response$finish())
     }

@@ -96,11 +96,11 @@ function actorSelection(mode) {
                                 ]
                             ),
                             m(".separator"),
-                            m("button.filterExpand#entityActorExpand[value='expand']", {style: {display: dataset === 'icews' ? 'none' : 'inline-block'}}),
-                            m("label.actorHead4#entityActor[for='entityActorExpand']", {style: {display: dataset === 'icews' ? 'none' : 'inline-block'}},
+                            m("button.filterExpand#entityActorExpand[value='expand']", dataset === 'icews' && {style: {display: 'none'}}),
+                            m("label.actorHead4#entityActor[for='entityActorExpand']", dataset === 'icews' && {style: {display: 'none'}},
                                 m("b", "Entity")
                             ),
-                            m(".filterContainer#wrapEntityActor", {style: {"padding-left": "10px", display: dataset === 'icews' ? 'none' : 'inline-block'}},
+                            m(".filterContainer#wrapEntityActor",
                                 [
                                     m("button.filterExpand[id='orgActorExpand'][value='expand']"),
                                     m("label.actorChkLbl",
