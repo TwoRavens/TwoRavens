@@ -11,6 +11,7 @@ let scrolledPageSize = defaultPageSize;
 
 export let waitForQuery = 0;
 let cachedSearch = '';
+let cachedQuery = '';
 
 // Resize actor when window changes size
 callOnResize(() => resizeActorSVG());
@@ -371,7 +372,7 @@ export function setupActor(){
         //update gui
         $("#clearAllActors").click();
         filterSet[currentTab]["full"] = new Set();
-        actorSearch();
+        actorSearch(true);
 
         //update svg
         //change dimensions of SVG if needed (exceeds half of the space)
@@ -589,6 +590,7 @@ function dragend() {
         $("#" + dragTarget.actor + "TabBtn").trigger("click");
         currentTab = dragTarget.actor;								//sanity check
         updateGroupName(currentNode[currentTab].name);
+        // TODO
         $("#clearAllActors").click();
 
         let showSelectedDiv = $("#actorShowSelected");
@@ -1033,7 +1035,10 @@ function loadDataHelper(actorType, columnType, limit=undefined) {
     $(".actorChkLbl").popover("hide");
     $(".popover").remove();
     let lines = app.actorData[actorType][columnType];
-    if (!Array.isArray(lines) || lines.length === 0) return;
+
+    // decoding can spit out an object, this permits an empty redraw
+    if (!Array.isArray(lines)) lines = [];
+
     let displayList;
     let chkSwitch = true;		//enables code for filter
 
@@ -1289,10 +1294,10 @@ function clearChecks() {
 
 //called when showing only selected elements, element is the checkbox calling the function
 export function showSelected() {
-    actorSearch();
+    actorSearch(true);
 }
 
-function actorSearch() {
+function actorSearch(force=false) {
     const searchText = $("#actorSearch").val().toUpperCase();
 
     const operator = '$and';
@@ -1357,19 +1362,23 @@ function actorSearch() {
         subsets = stagedQuery;
     }
 
-    console.log("Actor Filter: " + JSON.stringify(subsets));
+    if (!force && JSON.stringify(subsets) === cachedQuery) return;
+    cachedQuery = JSON.stringify(subsets);
+
+    console.log("Actor Filter: " + cachedQuery);
 
     // Submit query and update listings
     let query = {
-        'subsets': JSON.stringify(subsets),
+        'subsets': cachedQuery,
         'dataset': app.dataset,
         'datasource': app.datasource,
         'type': currentTab
     };
 
     function updateActorListing(data) {
-        if ('source' in data) app.actorData.source.full = data.source;
-        if ('target' in data) app.actorData.target.full = data.target;
+        console.log(data);
+        if ('source' in data) app.actorData.source.full = data.source || [];
+        if ('target' in data) app.actorData.target.full = data.target || [];
         scrolledPageSize = defaultPageSize;
         loadDataHelper(currentTab, "full", defaultPageSize);
         waitForQuery--;
