@@ -150,9 +150,14 @@ eventdata_subset.app <- function(env) {
     }
 
     if (!is.null(type) && type == 'raw') {
-        result = getData(paste(eventdata_url, '&aggregate=',
-            '[{"$match":', subsets, '},',
-             '{"$project":', variables, '}]', sep=""))
+        if (!is.null(variables)) {
+            result = getData(paste(eventdata_url, '&aggregate=',
+                '[{"$match":', subsets, '},',
+                 '{"$project":', variables, '}]', sep=""))
+        } else {
+            result = getData(paste(eventdata_url, '&query=', subsets, sep=""))
+        }
+
         result['_id'] = NULL
         fileName = format(Sys.time(), '%Y-%m-%d-%H-%M-%OS4')
         dir.create('./eventdata/downloads/', showWarnings = FALSE)
@@ -165,9 +170,12 @@ eventdata_subset.app <- function(env) {
     }
 
     if (!is.null(type) && type == 'peek') {
+        projection = '';
+        if (!is.null(variables)) projection = paste('{"$project":', variables, '},', sep="")
+
         result = getData(paste(eventdata_url, '&aggregate=',
             '[{"$match":', subsets, '},',
-            '{"$project":', variables, '},',
+            projection,
             '{"$skip":', everything$skip, '},',
             '{"$limit":', everything$limit, '}]', sep=""))
         result['_id'] = NULL

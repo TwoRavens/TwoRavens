@@ -98,7 +98,7 @@ export let subsetKeys = ["Actor", "Date", "Action", "Location", "Coordinates", "
 export let aggregateKeys = ["Actor", "Date", "Penta Class", "Root Code"];
 export let canvasKeySelected = "Actor";
 
-export let variables;
+export let variables = [];
 
 // These get instantiated in the oncreate() method for the mithril Body_EventData class
 export let laddaSubset;
@@ -384,11 +384,14 @@ export function download() {
 
 		let query = {
 			'subsets': JSON.stringify(subsetQuery),
-			'variables': JSON.stringify(variableQuery),
 			'dataset': dataset,
 			'datasource': datasource,
 			'type': 'raw'
 		};
+
+		// only pass projection if variables are loaded and selected
+		if (Object.keys(variableQuery).length !== 0) Object.assign(query, {'variables': JSON.stringify(variableQuery)});
+
 		laddaDownload.start();
 		makeCorsRequest(subsetURL, query, save);
 	}
