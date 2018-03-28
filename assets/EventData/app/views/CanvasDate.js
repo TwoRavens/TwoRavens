@@ -1,8 +1,9 @@
 import m from 'mithril';
-import {setupDate, setDatefromSlider, updateDate} from "../subsets/Date.js"
+import {dateminUser, datemaxUser, setupDate, setDatefromSlider, updateDate} from "../subsets/Date.js"
 import {panelMargin} from "../../../common/app/common";
 import * as aggreg from '../aggreg/aggreg'
 import ButtonRadio from '../../../common/app/views/ButtonRadio'
+import * as d3 from "d3";
 
 export default class CanvasDate {
     oncreate() {
@@ -42,7 +43,8 @@ export default class CanvasDate {
                             onblur: function () {
                                 // Update plot, but don't reset slider
                                 updateDate(false);
-                            }
+                            },
+                            value: d3.timeFormat("%Y-%m-%d")(dateminUser)
                         }),
 
                         // To date
@@ -57,7 +59,8 @@ export default class CanvasDate {
                             onblur: function () {
                                 // Update plot, but don't reset slider
                                 updateDate(false);
-                            }
+                            },
+                            value: d3.timeFormat("%Y-%m-%d")(datemaxUser)
                         })
                     ]
                 )

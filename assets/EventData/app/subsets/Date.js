@@ -5,6 +5,8 @@ import * as d3 from "d3"
 import $ from 'jquery'
 import "jquery-ui/ui/widgets/datepicker"
 
+import m from 'mithril'
+
 // Used for rendering date calendar
 import '../../../../node_modules/jquery-ui/themes/base/datepicker.css'
 import '../../../../node_modules/jquery-ui-dist/jquery-ui.theme.min.css'
@@ -35,7 +37,7 @@ let plotSelection;
 export function setupDate() {
 
     $("#fromdate").datepicker({
-        dateFormat: 'mm-dd-yy',
+        dateFormat: 'yy-mm-dd',
         changeYear: true,
         changeMonth: true,
         defaultDate: datemin,
@@ -66,7 +68,7 @@ export function setupDate() {
         changeYear: true,
         changeMonth: true,
         yearRange: min + ':' + max,
-        dateFormat: 'mm-dd-yy',
+        dateFormat: 'yy-mm-dd',
         defaultDate: datemax,
         minDate: dateminUser,
         maxDate: datemax,
@@ -196,6 +198,32 @@ export function updateDate(reset_sliders=true) {
     data_raw = data_raw.sort(dateSort);		//here is where date is collected as monthly?
     //look at: https://bl.ocks.org/cjhin/8872a492d44694ecf5a883642926f19c
 
+    // // remove outliers via interquartile range
+    // let total = 0;
+    // for (let point of data_raw) total += point['Freq'];
+    //
+    // // find upper/lower quartiles from frequency list
+    // let quartiles = [];
+    // let counter = 0;
+    // let segment = 1;
+    // for (let point of data_raw) {
+    //     counter += point['Freq'];
+    //     if (counter > total / 4 * segment) {
+    //         quartiles.push(point['Date']);
+    //         if (++segment > 3) break;
+    //     }
+    // }
+    // console.log(quartiles);
+    // console.log(quartiles[1]);
+    // // filter by outlier formula
+    // let iqr = new Date(quartiles[2] - quartiles[0]);
+    // let iqrMin = new Date(quartiles[1] - iqr * 1.5);
+    // let iqrMax = new Date(quartiles[1].getTime() + iqr * 1.5);
+    //
+    // console.log(iqrMin);
+    // console.log(iqrMax);
+    // data_raw = data_raw.filter((point) => point['Date'] > iqrMin && point['Date'] < iqrMax);
+
     // Set calendar ranges
     datemin = d3.min(data_raw, function (d) {
         return d.Date;
@@ -229,6 +257,14 @@ export function updateDate(reset_sliders=true) {
         allDates.push({Freq: 0, Date: new Date(tempDate)})
     }
 
+    // don't even bother graphing, there's no interval...
+    if (allDates.length <= 1) {
+        datemaxUser = datemin;
+        dateminUser = datemax;
+        m.redraw();
+        return;
+    }
+
     // replace datapoints with actual data
     let idx = 0;
     tempDate = new Date(datemin);
@@ -259,7 +295,7 @@ export function updateDate(reset_sliders=true) {
     allDates.push(interpolatedMax);
     allDates = allDates.sort(dateSort);
 
-    let format = d3.timeFormat("%m-%d-%Y");
+    let format = d3.timeFormat("%Y-%m-%d");
 
     if (firstDraw) {
         let fromDate = $('#fromdate');
@@ -399,7 +435,7 @@ export function setDatefromSlider() {
     datemaxUser = new Date(plotSelection[1].getTime());
 
     // Update gui
-    let format = d3.timeFormat("%m-%d-%Y");
+    let format = d3.timeFormat("%Y-%m-%d");
     $('#fromdate').val(format(dateminUser));
     $('#todate').val(format(datemaxUser));
 
