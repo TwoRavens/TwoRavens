@@ -405,7 +405,7 @@ export default class Body_EventData {
                 m("button#btnStage.btn.btn-default[type='button']", {
                     style: {
                         display: app.canvasKeySelected !== 'Custom' && app.opMode === 'subset' ? 'block' : 'none',
-                        right: `calc(${common.panelOcclusion['right']} + 5px)`,
+                        right: `calc(${common.panelOcclusion['right'] || '275px'} + 5px)`,
                         bottom: common.heightFooter + common.panelMargin + 6 + 'px',
                         position: 'fixed',
                         'z-index': 100
