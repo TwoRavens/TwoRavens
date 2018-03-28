@@ -213,15 +213,11 @@ export function updateDate(reset_sliders=true) {
     //         if (++segment > 3) break;
     //     }
     // }
-    // console.log(quartiles);
-    // console.log(quartiles[1]);
     // // filter by outlier formula
     // let iqr = new Date(quartiles[2] - quartiles[0]);
     // let iqrMin = new Date(quartiles[1] - iqr * 1.5);
     // let iqrMax = new Date(quartiles[1].getTime() + iqr * 1.5);
     //
-    // console.log(iqrMin);
-    // console.log(iqrMax);
     // data_raw = data_raw.filter((point) => point['Date'] > iqrMin && point['Date'] < iqrMax);
 
     // Set calendar ranges
