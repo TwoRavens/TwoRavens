@@ -4,9 +4,13 @@ import {resetActionCounts, actionBuffer, drawGraphs, updateData} from "./subsets
 import {updateActor, actorLinks, resizeActorSVG} from "./subsets/Actor";
 import {updateDate, datemax, datemaxUser, datemin, dateminUser, setDatefromSlider} from "./subsets/Date";
 import {updateLocation, mapListCountriesSelected} from "./subsets/Location";
-import {setAggregMode, updateAggregTable, makeAggregQuery, aggregPentaChkOrd, aggregRootChkOrd} from "./aggreg/aggreg";
 import {
-    panelMargin, panelOcclusion, panelOpen, scrollBarChanged, setPanelCallback,
+    setAggregMode, updateAggregTable, makeAggregQuery,
+    aggregPentaChkOrd, aggregRootChkOrd,
+    setEventMeasure
+} from "./aggreg/aggreg";
+import {
+    panelMargin, panelOcclusion, panelOpen, setPanelCallback,
     setPanelOcclusion
 } from "../../common/app/common";
 
@@ -240,6 +244,8 @@ export function showCanvas(canvasKey) {
         }
 
         if (canvasKeySelected === "Penta Class") {
+
+            setEventMeasure("Penta Class");
 			console.log("in penta canvas");
 			setAggregMode("penta");
 			$(".aggregDataRoot").hide();
@@ -270,6 +276,8 @@ export function showCanvas(canvasKey) {
 			updateAggregTable();
 		}
 		else if (canvasKeySelected === "Root Code") {
+            setEventMeasure("Root Code");
+
 			console.log("in root canvas");
 			setAggregMode("root");
 			$(".aggregDataPenta").hide();

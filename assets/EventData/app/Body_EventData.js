@@ -327,6 +327,7 @@ export default class Body_EventData {
                                 items: ['Penta Class', 'Root Code'],
                                 id: 'EMList',
                                 colors: {[common.selVarColor]: [app.canvasKeySelected]},
+                                classes: {['item-bordered']: [aggreg.eventMeasure]},
                                 callback: app.showCanvas
                             })
                         }
