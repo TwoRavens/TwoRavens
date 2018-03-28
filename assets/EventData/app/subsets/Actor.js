@@ -1384,9 +1384,11 @@ function actorSearch(force=false) {
         waitForQuery--;
         m.redraw();
     }
+
+    let failedUpdateActorListing = () => waitForQuery--;
     waitForQuery++;
     m.redraw();
-    app.makeCorsRequest(app.subsetURL, query, updateActorListing);
+    app.makeCorsRequest(app.subsetURL, query, updateActorListing, failedUpdateActorListing);
 }
 
 export function capitalizeFirst(str) {

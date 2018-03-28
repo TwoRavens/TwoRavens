@@ -309,7 +309,7 @@ export function showCanvas(canvasKey) {
     }
 }
 
-export function makeCorsRequest(url, post, callback) {
+export function makeCorsRequest(url, post, callback, callbackError=Function) {
     let xhr = new XMLHttpRequest();
     if ("withCredentials" in xhr) {
         // XHR for Chrome/Firefox/Opera/Safari.
@@ -354,6 +354,7 @@ export function makeCorsRequest(url, post, callback) {
         // xhr.status should not be zero
         alert("There was an error making the data request. \nDebugging information has been logged.");
         console.log(xhr);
+        callbackError();
     };
     xhr.send('solaJSON=' + JSON.stringify(post));
 }
