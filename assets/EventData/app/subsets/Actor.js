@@ -285,22 +285,28 @@ export function setupActor(){
         currentElement.prop("indeterminate", false);
 
         let entityDiv;
+        let nameDiv;
+
         if (currentEntityType === "Org") {
-            entityDiv = $("#orgActorList label");
+            entityDiv = $("#orgActorList input");
+            nameDiv = $("#orgActorList label");
         } else {
-            entityDiv = $("#countryActorList label");
+            entityDiv = $("#countryActorList input");
+            nameDiv = $("#countryActorList label");
         }
 
         if (currentElement.prop("checked")) {
-            entityDiv.each(function () {
+            entityDiv.each(function () {$(this).prop("checked", true)});
+            nameDiv.each(function () {
                 filterSet[currentTab]['entities'].add(this.innerHTML);
-                $(this).prop("checked", true);
-            });
+            })
         } else {
             entityDiv.each(function () {
-                filterSet[currentTab]['entities'].delete(this.innerHTML);
                 $(this).prop("checked", false);
             });
+            nameDiv.each(function () {
+                filterSet[currentTab]['entities'].delete(this.innerHTML);
+            })
         }
         actorSearch();
     });
