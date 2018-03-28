@@ -22,6 +22,8 @@ for (let x = 0; x <= aggregRootSelectNum; x ++) {
 	aggregRootChkOrd[x] = 1;
 }
 
+export let eventMeasure = 'Penta Class';
+export let setEventMeasure = (measure) => eventMeasure = measure;
 // export let dateMeasure = 'None';
 // export let setDateMeasure = (measure) => dateMeasure = measure;
 

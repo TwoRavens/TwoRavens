@@ -1082,3 +1082,8 @@ text.id {
     width: 100px;
     padding: 0px 10px;
 }
+
+/* used to style panelList selections in aggregate */
+.item-bordered {
+    border: solid #000000;
+}
