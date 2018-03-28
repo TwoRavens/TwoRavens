@@ -100,6 +100,7 @@ export let variables;
 export let laddaSubset;
 export let laddaReset;
 export let laddaDownload;
+export let laddaAggregate;
 
 export let variablesSelected = new Set();
 
@@ -173,6 +174,7 @@ export function setupBody() {
     laddaSubset = Ladda.create(document.getElementById("btnSubsetSubmit"));
     laddaReset = Ladda.create(document.getElementById("btnReset"));
     laddaDownload = Ladda.create(document.getElementById("buttonDownload"));
+    laddaAggregate = Ladda.create(document.getElementById("aggSubmit"));
     laddaReset.start();
 
     document.getElementById("datasetLabel").innerHTML = dataset + " dataset";

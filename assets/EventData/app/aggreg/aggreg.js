@@ -1,6 +1,7 @@
-import {opMode, setOpMode, rappURL, varColor, selVarColor, rightpanelMargin, dataset, datasource, makeCorsRequest} from "../app";
-import {updateDate, dateminUser, datemaxUser} from "../subsets/Date";
-import {updateActor, actorLinks, resizeActorSVG} from "../subsets/Actor";
+import {opMode, rappURL, dataset, datasource, makeCorsRequest, laddaAggregate} from "../app";
+import {dateminUser, datemaxUser} from "../subsets/Date";
+import {actorLinks} from "../subsets/Actor";
+import {varColor, selVarColor} from '../../../common/app/common';
 
 let aggregMode = "penta";
 export let aggregDateOn = 0;		//0 = off, 1 = week, 2 = month, 3 = quarter, 4 = year
@@ -281,6 +282,7 @@ export function updateToAggreg() {
 function updateTable(json) {
 	console.log("aggregated json");
 	console.log(json);
+	laddaAggregate.stop();
 	
 	for (let row = 1; row <= aggregDataNumber; row++) {
 		if (row > json["action_data"].length) {
@@ -373,6 +375,8 @@ function updateTable(json) {
 function updateDates(json) {
 	console.log(json);
 	console.log(json["aggreg_dates"]);
+
+	laddaAggregate.stop();
 	//~ aggregDates = json["aggreg_dates"];
 
 	var curActor = 0;
@@ -528,7 +532,7 @@ export function makeAggregQuery(action, save = null) {
 	};
 
 	console.log(JSON.stringify(aggregQuery));
-
+	laddaAggregate.start();
 
 	if (action != "preview") {
 		makeCorsRequest(aggregURL, aggregQuery, updateTable);
