@@ -236,7 +236,7 @@ export default class Body_EventData {
             m("#recordBar", {style: {display: "inline-block", float: 'right'}}, [
                 m("button.btn.btn-default.btn-sm#peek[type='button']", {
                     style: {"margin-top": "4px"},
-                    onclick: _ => alert('peek')
+                    onclick: app.peekData
                 }, "Peek"),
                 // Record Count
                 m("span.label.label-default#recordCount", {

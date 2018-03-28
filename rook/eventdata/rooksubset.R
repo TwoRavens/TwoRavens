@@ -164,6 +164,19 @@ eventdata_subset.app <- function(env) {
         return(response$finish())
     }
 
+    if (!is.null(type) && type == 'peek') {
+        result = getData(paste(eventdata_url, '&aggregate=',
+            '[{"$match":', subsets, '},',
+            '{"$project":', variables, '},',
+            '{"$skip":', everything$skip, '},',
+            '{"$limit":', everything$limit, '}]', sep=""))
+        result['_id'] = NULL
+
+        print("peek data collected")
+        response$write(toString(jsonlite::toJSON(result)))
+        return(response$finish())
+    }
+
     if (!is.null(type) && type == 'validate') {
 
         handler = function(exc) {

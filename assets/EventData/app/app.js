@@ -399,6 +399,31 @@ export function download() {
 	}
 }
 
+export function peekData() {
+
+    function printData(data) {
+        console.log(data);
+    }
+
+    let variableQuery = buildVariables();
+    let subsetQuery = buildSubset(subsetData);
+
+    console.log("Query: " + JSON.stringify(subsetQuery));
+    console.log("Projection: " + JSON.stringify(variableQuery));
+
+    let query = {
+        'subsets': JSON.stringify(subsetQuery),
+        'variables': JSON.stringify(variableQuery),
+        'skip': 0,
+        'limit': 100,
+        'dataset': dataset,
+        'datasource': datasource,
+        'type': 'peek'
+    };
+    laddaDownload.start();
+    makeCorsRequest(subsetURL, query, printData);
+}
+
 
 /**
  *   Draws all subset plots, often invoked as callback after server request for new plotting data
