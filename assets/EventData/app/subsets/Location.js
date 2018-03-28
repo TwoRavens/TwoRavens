@@ -60,7 +60,7 @@ function render(blnIsSubgraph, cid) {
 
         let maxDomainX = 1;
         let svg = d3.select("#main_graph_svg");
-        let margin = {top: 5, right: 20, bottom: 5, left: 120},
+        let margin = {top: 5, right: 60, bottom: 5, left: 120},
             width = +svg.attr("width") - margin.left - margin.right,
             height = +svg.attr("height") - margin.top - margin.bottom;
 
@@ -254,7 +254,7 @@ function render(blnIsSubgraph, cid) {
 
         let svg = d3.select("#sub_graph_td_svg_" + cid);
 
-        let margin = {top: 20, right: 30, bottom: 30, left: 40},
+        let margin = {top: 20, right: 50, bottom: 30, left: 40},
             width = +svg.attr("width") - margin.left - margin.right,
             height = +svg.attr("height") - margin.top - margin.bottom;
 

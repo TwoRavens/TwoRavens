@@ -997,47 +997,50 @@ function getSubsetPreferences() {
             operation: 'and',
             children: []
         };
-        // Add each link to the parent node as another rule
+
         for (let linkId in actorLinks) {
+            // Add each link to the parent node as another rule
             let link = {
                 id: String(nodeId++),
-                name: 'Link ' + String(linkId + 1),
-                show_op: linkId !== 0,
+                name: 'Link ' + String(linkId),
+                show_op: linkId !== '0',
                 operation: 'or',
                 children: [{
                     id: String(nodeId++),
                     name: 'Source: ' + actorLinks[linkId].source.name,
                     show_op: false,
                     cancellable: false,
-                    children: []
+                    actors: [...actorLinks[linkId].source.group]
                 }, {
                     id: String(nodeId++),
                     name: 'Target: ' + actorLinks[linkId].target.name,
                     show_op: false,
                     cancellable: false,
-                    children: []
+                    actors: [...actorLinks[linkId].target.group]
                 }]
             };
 
-            for (let source of actorLinks[linkId].source.group) {
-                if (source !== undefined) {
-                    link['children'][0]['children'].push({
-                        id: String(nodeId++),
-                        name: source,
-                        show_op: false
-                    });
-                }
-            }
+            // // add an entry for every checked value. Disabled for performance
+            // for (let source of actorLinks[linkId].source.group) {
+            //     if (source !== undefined) {
+            //         link['children'][0]['children'].push({
+            //             id: String(nodeId++),
+            //             name: source,
+            //             show_op: false
+            //         });
+            //     }
+            // }
+            //
+            // for (let target of actorLinks[linkId].target.group) {
+            //     if (target !== undefined) {
+            //         link['children'][1]['children'].push({
+            //             id: String(nodeId++),
+            //             name: target,
+            //             show_op: false
+            //         });
+            //     }
+            // }
 
-            for (let target of actorLinks[linkId].target.group) {
-                if (target !== undefined) {
-                    link['children'][1]['children'].push({
-                        id: String(nodeId++),
-                        name: target,
-                        show_op: false
-                    });
-                }
-            }
             subset['children'].push(link);
         }
 
@@ -1468,26 +1471,25 @@ function processRule(rule) {
         }
     }
 
+    // Actor subset is itself a group of links. The links are leaf nodes
     if (rule.name === 'Actor Subset') {
-        let link_list = [];
-        for (let child of rule.children) {
-            let link_rule = {};
+        return processGroup(rule);
+    }
 
-            let sourceList = [];
-            for (let child_source of child.children[0].children) {
-                sourceList.push(child_source.name);
-            }
-            link_rule['<source>'] = {'$in': sourceList};
+    if (rule.name.indexOf('Link ') !== -1) {
+        return {'$and': [
+                processNode(rule.children[0]),
+                processNode(rule.children[1])
+            ]
+        };
+    }
 
-            let targetList = [];
-            for (let child_target of child.children[1].children) {
-                targetList.push(child_target.name)
-            }
-            link_rule['<target>'] = {'$in': targetList};
+    if (rule.name.indexOf('Source: ') !== -1) {
+        return {'<source>':  {'$in': rule.actors}}
+    }
 
-            link_list.push(link_rule)
-        }
-        rule_query['$and'] = link_list;
+    if (rule.name.indexOf('Target: ') !== -1) {
+        return {'<target>':  {'$in': rule.actors}}
     }
 
     if (rule.name === 'Coords Subset') {
