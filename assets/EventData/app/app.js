@@ -1,7 +1,7 @@
 import m from 'mithril'
 
 import {resetActionCounts, actionBuffer, drawGraphs, updateData} from "./subsets/Action";
-import {updateActor, actorLinks, resizeActorSVG} from "./subsets/Actor";
+import {updateActor, actorLinks, resizeActorSVG, actorSearch} from "./subsets/Actor";
 import {updateDate, datemax, datemaxUser, datemin, dateminUser, setDatefromSlider} from "./subsets/Date";
 import {updateLocation, mapListCountriesSelected} from "./subsets/Location";
 import {
@@ -458,6 +458,9 @@ export function pageSetup(jsondata) {
 
     // assign to actorData
     actorData = jsondata['actor_data'];
+
+    // now load the list of all actors. its state is dependent on actor_data
+    actorSearch(true);
 
     updateActor();
     updateDate();

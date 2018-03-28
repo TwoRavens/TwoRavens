@@ -1298,7 +1298,7 @@ export function showSelected() {
     $(".popover").remove();
 }
 
-function actorSearch(force=false) {
+export function actorSearch(force=false) {
     const searchText = $("#actorSearch").val().toUpperCase();
 
     const operator = '$and';

@@ -257,10 +257,6 @@ eventdata_subset.app <- function(env) {
             data
         }) %plan% multiprocess
 
-        actor_source = future({
-            sort(unlist(getData(paste(query_url, '&unique=<source>', sep=""))))
-        }) %plan% multiprocess
-
         actor_source_entities = future({
             sort(unlist(getData(paste(query_url, '&unique=<src_actor>', sep=""))))
         }) %plan% multiprocess
@@ -272,10 +268,6 @@ eventdata_subset.app <- function(env) {
         actor_source_attributes = future({
             url = relabel(paste(query_url, '&unique=<src_other_agent>', sep=""), format)
             uniques(jsonlite::fromJSON(readLines(url))$data)
-        }) %plan% multiprocess
-
-        actor_target = future({
-            sort(unlist(getData(paste(query_url, '&unique=<target>', sep=""))))
         }) %plan% multiprocess
 
         actor_target_entities = future({
@@ -291,16 +283,13 @@ eventdata_subset.app <- function(env) {
             uniques(jsonlite::fromJSON(readLines(url))$data)
         }) %plan% multiprocess
 
-
         actor_source_values = list(
-            full = value(actor_source),
             entities = value(actor_source_entities),
             roles = value(actor_source_role),
             attributes = value(actor_source_attributes)
         )
 
         actor_target_values = list(
-            full = value(actor_target),
             entities = value(actor_target_entities),
             roles = value(actor_target_role),
             attributes = value(actor_target_attributes)
@@ -350,20 +339,12 @@ eventdata_subset.app <- function(env) {
             data
         }) %plan% multiprocess
 
-        actor_source = future({
-            sort(unlist(getData(paste(query_url, '&unique=<src_name>', sep=""))))
-        }) %plan% multiprocess
-
         actor_source_role = future({
             sort(unlist(getData(paste(query_url, '&unique=<src_country>', sep=""))))
         }) %plan% multiprocess
 
         actor_source_attributes = future({
             sort(unlist(getData(paste(query_url, '&unique=<src_sectors>', sep=""))))
-        }) %plan% multiprocess
-
-        actor_target = future({
-            sort(unlist(getData(paste(query_url, '&unique=<tgt_name>', sep=""))))
         }) %plan% multiprocess
 
         actor_target_role = future({
@@ -376,13 +357,11 @@ eventdata_subset.app <- function(env) {
 
 
         actor_source_values = list(
-            full = value(actor_source),
             roles = value(actor_source_role),
             attributes = value(actor_source_attributes)
         )
 
         actor_target_values = list(
-            full = value(actor_target),
             roles = value(actor_target_role),
             attributes = value(actor_target_attributes)
         )
