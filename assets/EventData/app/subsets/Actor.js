@@ -1295,6 +1295,7 @@ function clearChecks() {
 //called when showing only selected elements, element is the checkbox calling the function
 export function showSelected() {
     actorSearch(true);
+    $(".popover").remove();
 }
 
 function actorSearch(force=false) {
@@ -1376,7 +1377,6 @@ function actorSearch(force=false) {
     };
 
     function updateActorListing(data) {
-        console.log(data);
         if ('source' in data) app.actorData.source.full = data.source || [];
         if ('target' in data) app.actorData.target.full = data.target || [];
         scrolledPageSize = defaultPageSize;
