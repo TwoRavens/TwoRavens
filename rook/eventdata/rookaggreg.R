@@ -1251,7 +1251,7 @@ eventdata_aggreg.app <- function(env) {
 
 			write.csv(result, file=paste('./eventdata/downloads/', fileName, ".csv", sep=""))
 
-			event_data_files_url = paste('"', EVENTDATA_ROOK_URL_BASE, '/custom/eventdata-files/')
+			event_data_files_url = paste('"', EVENTDATA_ROOK_URL_BASE, '/custom/eventdata-files/', sep="")
 			response$write(paste('{"download":', event_data_files_url, fileName, '.csv"}', sep=""))
 
 			#response$write(paste('{"download":', '"http://127.0.0.1:8000/custom/eventdata-files/', fileName, '.csv"}', sep=""))
