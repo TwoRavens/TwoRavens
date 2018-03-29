@@ -7,7 +7,7 @@ import {updateLocation, mapListCountriesSelected} from "./subsets/Location";
 import {
     setAggregMode, updateAggregTable, makeAggregQuery,
     aggregPentaChkOrd, aggregRootChkOrd,
-    setEventMeasure
+    setEventMeasure, updateToAggreg
 } from "./aggreg/aggreg";
 import {
     panelMargin, panelOcclusion, panelOpen, setPanelCallback,
@@ -52,11 +52,28 @@ export function handleResize() {
 export let opMode = "subset";
 
 export function setOpMode(mode) {
-    if (['subset', 'aggregate'].indexOf(mode) !== -1) {
-        opMode = mode;
-    } else {
-        console.log("Invalid opmode");
+    mode = mode.toLowerCase();
+    if (mode === opMode) return;
+
+    if (['subset', 'aggregate'].indexOf(mode) === -1) console.log("Invalid opMode");
+
+    opMode = mode;
+    if (mode === 'subset') {
+        if (canvasKeySelected === 'Actor' && initialLoad) {
+            document.getElementById('canvas').style.height = 'calc(100% - 102px)';
+            resizeActorSVG(false);
+        }
     }
+
+    if (mode === 'aggregate') {
+        if (canvasKeySelected === 'Actor' && initialLoad) {
+            document.getElementById('canvas').style.height = 'calc(80% - 102px)';
+            resizeActorSVG(false);
+        }
+        updateToAggreg(false);
+    }
+    // This triggers some very strange mithril issues... but if you call it from outside, then everything works.
+    // m.route.set('/' + mode);
 }
 
 let production = false;
@@ -101,10 +118,9 @@ export let canvasKeySelected = "Actor";
 export let variables = [];
 
 // These get instantiated in the oncreate() method for the mithril Body_EventData class
-export let laddaSubset;
+export let laddaUpdate;
 export let laddaReset;
 export let laddaDownload;
-export let laddaAggregate;
 
 export let variablesSelected = new Set();
 
@@ -175,10 +191,9 @@ export function setupBody() {
         reloadLeftpanelVariables();
     });
 
-    laddaSubset = Ladda.create(document.getElementById("btnSubsetSubmit"));
+    laddaUpdate = Ladda.create(document.getElementById("btnUpdate"));
     laddaReset = Ladda.create(document.getElementById("btnReset"));
     laddaDownload = Ladda.create(document.getElementById("buttonDownload"));
-    laddaAggregate = Ladda.create(document.getElementById("aggSubmit"));
     laddaReset.start();
 
     document.getElementById("datasetLabel").innerHTML = dataset + " dataset";
@@ -435,7 +450,7 @@ export function pageSetup(jsondata) {
     console.log("Server returned:");
     console.log(jsondata);
 
-    laddaSubset.stop();
+    laddaUpdate.stop();
     laddaReset.stop();
 
     if (jsondata['date_data'].length === 0) {
@@ -760,7 +775,7 @@ window.callbackDelete = function (id) {
                 'datasource': datasource
             };
 
-            laddaSubset.start();
+            laddaUpdate.start();
             makeCorsRequest(subsetURL, query, pageSetup);
 
             if (subsetData.length === 0) {
@@ -1263,7 +1278,7 @@ export function submitQuery() {
         'type': 'sample'
     };
 
-    laddaSubset.start();
+    laddaUpdate.start();
     makeCorsRequest(subsetURL, query, submitQueryCallback);
 }
 

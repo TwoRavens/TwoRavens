@@ -8,7 +8,7 @@ import {
     currentNode,
     currentTab,
 } from "../subsets/Actor.js"
-import {panelMargin, csColor} from "../../../common/app/common";
+import {panelMargin, grayColor} from "../../../common/app/common";
 import {aggregActorOn, setAggregActor} from "../aggreg/aggreg";
 
 // Width of the actor selection panel
@@ -77,7 +77,7 @@ function actorSelection(mode) {
                         placeholder: `Search ${currentTab} actors`
                     }),
                     m(`.actorFullList#searchListActors`, {style: Object.assign({"text-align": "left"},
-                            waitForQuery && {'pointer-events': 'none', 'background': csColor})})
+                            waitForQuery && {'pointer-events': 'none', 'background': grayColor})})
                 ]
             ),
             m(`.actorRight[id='actorRight']`, {style: {height: `calc(100% - ${aggregationOffset}px)`}},
