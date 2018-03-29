@@ -141,6 +141,7 @@ let originNode = null;				//node that is the start of drag link line
 let destNode = null;				//node that is the end of the drag link line
 
 let searchTimeout = null;
+export let showSelectedCheck = false;
 
 //end force definitions, begin force functions
 
@@ -273,12 +274,6 @@ export function setupActor(){
         }
     });
 
-    //on load of page, keep actorShowSelected unchecked
-    $("#actorShowSelected").ready(function () {
-        $("#actorShowSelected").prop("checked", false);
-    });
-
-
     //on load of page, keep checkbox for selecting all filters unchecked
     let allCheck = $(".allCheck");
     allCheck.ready(function () {
@@ -322,7 +317,7 @@ export function setupActor(){
     //adds all of the current matched items into the current selection
     $("#actorSelectAll").click(function () {
         // don't do anything if show selected is true
-        if (document.getElementById("actorShowSelected").checked) return;
+        if (showSelectedCheck) return;
 
         // don't do anything if waiting for a query to return
         if (waitForQuery) return;
@@ -372,7 +367,7 @@ export function setupActor(){
         //update gui
         $("#clearAllActors").click();
         filterSet[currentTab]["full"] = new Set();
-        actorSearch(true);
+        showSelected(false);
 
         //update svg
         //change dimensions of SVG if needed (exceeds half of the space)
@@ -414,7 +409,7 @@ export function setupActor(){
                 // Don't create an element if it is an empty string
                 if (line === null || line === '') continue;
 
-                if (!document.getElementById("actorShowSelected").checked || currentNode[currentTab].group.has(line)) {
+                if (!showSelectedCheck || currentNode[currentTab].group.has(line)) {
                     searchList.append(createElement(currentTab, 'full', line, true));
                 }
             }
@@ -457,7 +452,7 @@ export function setupActor(){
             updateGroupName(actorNodes[index].name);
 
             $("#clearAllActors").click();
-            $("#actorShowSelected").trigger("click");
+            showSelectedCheck = true;
 
             //update links
             for (let x = 0; x < actorLinks.length; x++) {
@@ -590,12 +585,9 @@ function dragend() {
         $("#" + dragTarget.actor + "TabBtn").trigger("click");
         currentTab = dragTarget.actor;								//sanity check
         updateGroupName(currentNode[currentTab].name);
-        // TODO
         $("#clearAllActors").click();
 
-        let showSelectedDiv = $("#actorShowSelected");
-        showSelectedDiv.prop("checked", true);
-        showSelected(showSelectedDiv[0]);
+        showSelected(true);
 
         updateAll();
 
@@ -756,15 +748,14 @@ function updateSVG() {
     //performs on "click" of node, shows actor selection on node click; call moved to mousedown because click() did not fire for Chrome
     function nodeClick(d) {
         $("#" + d.actor + "TabBtn").trigger("click");
-        if (currentNode[currentTab] !== d) {			//only update gui if selected node is different than the current
-            currentNode[currentTab] = d;
+        currentNode[currentTab] = d;
 
-            //update gui
-            updateGroupName(d.name);
-            clearChecks();
-            document.getElementById("actorShowSelected").checked = true;
-            showSelected(document.getElementById("actorShowSelected"));
-        }
+        //update gui
+        updateGroupName(d.name);
+        clearChecks();
+        $("#clearAllActors").click();
+        console.log(currentNode[currentTab].group);
+        showSelected(true);
     }
 
     //creates link between nodes
@@ -975,7 +966,6 @@ function updateGroupName(newGroupName) {
 
 //switches tabs in actor subset, sets current and active nodes
 export function actorTabSwitch(tab) {
-    if (tab === currentTab) return;
     currentTab = tab;
 
     $('#actorSelectAll').attr('data-original-title', `Selects all ${currentTab}s that match the filter criteria`);
@@ -1077,10 +1067,10 @@ function loadDataHelper(actorType, columnType, limit=undefined) {
         if (line === null || line === '') continue;
 
         if (columnType === 'full') {
-            // only show first n
-            idx++;
             if (limit !== undefined && idx > limit) break;
             if (!document.getElementById("actorShowSelected").checked || currentNode[currentTab].group.has(line)) {
+                // only show first n
+                idx++;
                 fragment.appendChild(createElement(actorType, columnType, line, chkSwitch));
             }
         }
@@ -1280,6 +1270,7 @@ export function actorFilterChanged(value, category) {
 
 // Clear all filters
 function clearChecks() {
+
     document.getElementById("actorSearch").value = "";
     $("#actorFilter :checkbox").prop("checked", false);
     $("#actorOrgAllCheck").prop("checked", false).prop("indeterminate", false);
@@ -1293,7 +1284,12 @@ function clearChecks() {
 }
 
 //called when showing only selected elements, element is the checkbox calling the function
-export function showSelected() {
+export function showSelected(status) {
+    if (status !== null) {
+        showSelectedCheck = status;
+        document.getElementById('actorShowSelected').checked = status;
+    }
+
     actorSearch(true);
     $(".popover").remove();
 }

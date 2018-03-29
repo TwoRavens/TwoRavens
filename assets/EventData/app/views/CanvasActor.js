@@ -5,6 +5,7 @@ import {
     waitForQuery,
     actorTabSwitch,
     showSelected,
+    showSelectedCheck,
     currentNode,
     currentTab,
 } from "../subsets/Actor.js"
@@ -88,12 +89,13 @@ function actorSelection(mode) {
                     m(`.actorFilterList#actorFilter`, {style: {"text-align": "left"}},
                         [
                             m(`label.actorShowSelectedLbl.actorChkLbl[data-toggle='tooltip']`, {
-                                    title: `Show selected ${currentTab}s`
+                                    'data-original-title': `Show selected ${currentTab}s`
                                 },
                                 [
                                     m("input.actorChk.actorShowSelected#actorShowSelected[name='actorShowSelected'][type='checkbox'][value='show']",
                                         {
-                                            onchange: showSelected
+                                            checked: showSelectedCheck,
+                                            onchange: m.withAttr('checked', showSelected)
                                         }), "Show Selected"
                                 ]
                             ),
@@ -142,15 +144,15 @@ function actorSelection(mode) {
             m(".actorBottomTry", {style: {"width": "100%"}},
                 [
                     m(`button.btn.btn-default.actorBottom#actorSelectAll[data-toggle='tooltip'][type='button']`, {
-                            title: `Selects all ${currentTab}s that match the filter criteria`
+                            'data-original-title': `Selects all ${currentTab}s that match the filter criteria`
                         }, "Select All"
                     ),
                     m(`button.btn.btn-default.actorBottom#actorClearAll[data-toggle='tooltip'][type='button']`, {
-                            title: `Clears all ${currentTab}s that match the filter criteria`
+                            'data-original-title': `Clears all ${currentTab}s that match the filter criteria`
                         }, "Clear All"
                     ),
                     m(`button.btn.btn-default.actorBottom#actorNewGroup[data-toggle='tooltip'][type='button']`, {
-                            title: `Create new ${currentTab} group`,
+                            'data-original-title': `Create new ${currentTab} group`,
                             style: {
                                 'margin-right': '2px',
                                 float: 'right'
