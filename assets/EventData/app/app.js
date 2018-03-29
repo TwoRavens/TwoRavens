@@ -65,6 +65,10 @@ export function setOpMode(mode) {
         }
     }
 
+    if (mode === 'peek') {
+
+    }
+
     if (mode === 'aggregate') {
         if (canvasKeySelected === 'Actor' && initialLoad) {
             document.getElementById('canvas').style.height = 'calc(80% - 102px)';

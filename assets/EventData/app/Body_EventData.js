@@ -114,14 +114,18 @@ export default class Body_EventData {
 
                 m(ButtonRadio, {
                     id: 'modeButtonBar',
-                    attrsAll: {style: {width: '200px', margin: '0 2em'}, class: 'navbar-right'},
+                    attrsAll: {style: {width: '18em', margin: '0 2em'}, class: 'navbar-right'},
                     onclick: (mode) => {
                         app.setOpMode(mode);
                         // the route set doesn't work inside setOpMode... no clue why
                         m.route.set('/' + mode.toLowerCase());
                     },
                     activeSection: app.opMode,
-                    sections: [{value: 'Subset', id: 'btnSubsetSubmit'}, {value: 'Aggregate', id: 'aggSubmit'}]
+                    sections: [
+                        {value: 'Subset', id: 'btnSubsetSubmit'},
+                        {value: 'Peek'},
+                        {value: 'Aggregate', id: 'aggSubmit'}
+                    ]
                 }),
 
                 // Dataset Selection
@@ -209,10 +213,6 @@ export default class Body_EventData {
                 }, "Aggregation")
             ]),
             m("#recordBar", {style: {display: "inline-block", float: 'right'}}, [
-                m("button.btn.btn-default.btn-sm#peek[type='button']", {
-                    style: {"margin-top": "4px"},
-                    onclick: _ => m.route.set('/peek')
-                }, "Peek"),
 
                 m("button.btn.btn-default.btn-sm.ladda-button[data-spinner-color='#818181'][id='buttonDownload'][type='button']", {
                         style: {
@@ -372,7 +372,6 @@ export default class Body_EventData {
 
     view(vnode) {
         let {mode} = vnode.attrs;
-        console.log("mode " + mode);
         app.setOpMode(mode);
 
         // Some canvases only exist in certain modes. Fall back to default if necessary.
