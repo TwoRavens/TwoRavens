@@ -16,16 +16,16 @@ import Button from './views/PanelButton';
 import List from './views/PanelList';
 import Search from './views/Search';
 import Subpanel from './views/Subpanel';
-import Table from '../common/app/views/Table'
+import Table from '../common/app/views/Table';
 
-import * as common from '../common/app/common'
+import * as common from '../common/app/common';
 import Panel from '../common/app/views/Panel';
 import MenuTabbed from '../common/app/views/MenuTabbed';
 import ButtonRadio from '../common/app/views/ButtonRadio';
 import Footer from '../common/app/views/Footer';
 import Header from '../common/app/views/Header';
-import PanelList from '../common/app/views/PanelList'
-import TextField from '../common/app/views/TextField'
+import PanelList from '../common/app/views/PanelList';
+import TextField from '../common/app/views/TextField';
 
 let state = {
     pipelines: [],
@@ -35,14 +35,13 @@ let state = {
     }
 };
 
-
 // EVENTDATA
-import Body_EventData from '../EventData/app/Body_EventData'
-import '../EventData/css/app.css'
-import '../EventData/app/app'
+import Body_EventData from '../EventData/app/Body_EventData';
+import '../EventData/css/app.css';
+import * as eventdata from '../EventData/app/app';
 
 // Used to fix hopscotch css bug
-import '../EventData/pkgs/hopscotch/hopscotch.style.css'
+import '../EventData/pkgs/hopscotch/hopscotch.style.css';
 
 function setBackgroundColor(color) {
     return function() {
@@ -657,7 +656,19 @@ class Body {
 if (IS_EVENTDATA_DOMAIN) {
     m.route(document.body, '/subset', {
         '/subset': {render: () => m(Body_EventData, {mode: 'subset'})},
-        '/aggregate': {render: () => m(Body_EventData, {mode: 'aggregate'})}
+        '/aggregate': {render: () => m(Body_EventData, {mode: 'aggregate'})},
+        '/peek': {
+            oninit: eventdata.getPeekData,
+            view() {
+                let headers = Object.keys(eventdata.peekData[0] || {});
+                return m(Table, {
+                    id: 'peekTable',
+                    headers,
+                    data: eventdata.peekData.map(Object.values),
+                    attrsAll: {style: {height: '80%', overflow: 'auto', display: 'block', 'margin-right': '16px', 'margin-bottom': 0}}
+                });
+            }
+        }
     });
 }
 else {

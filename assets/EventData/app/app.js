@@ -1,4 +1,4 @@
-import m from 'mithril'
+import m from 'mithril';
 
 import {resetActionCounts, actionBuffer, drawGraphs, updateData} from "./subsets/Action";
 import {updateActor, actorLinks, resizeActorSVG, actorSearch} from "./subsets/Actor";
@@ -15,12 +15,12 @@ import {
 } from "../../common/app/common";
 
 // Used for custom query editor
-import '../../../node_modules/ace-builds/src-min-noconflict/ace.js'
+import '../../../node_modules/ace-builds/src-min-noconflict/ace.js';
 
 // Used for right panel query tree
-import '../../../node_modules/jqtree/tree.jquery.js'
-import '../../../node_modules/jqtree/jqtree.css'
-import '../pkgs/jqtree/jqtree.style.css'
+import '../../../node_modules/jqtree/tree.jquery.js';
+import '../../../node_modules/jqtree/jqtree.css';
+import '../pkgs/jqtree/jqtree.style.css';
 
 // Select which tab is shown in the left panel
 export let setLeftTab = (tab) => leftTab = tab;
@@ -403,12 +403,9 @@ export function download() {
 	}
 }
 
-export function peekData() {
+export let peekData = [];
 
-    function printData(data) {
-        console.log(data);
-    }
-
+export function getPeekData() {
     let variableQuery = buildVariables();
     let subsetQuery = buildSubset(subsetData);
 
@@ -416,18 +413,20 @@ export function peekData() {
     console.log("Projection: " + JSON.stringify(variableQuery));
 
     let query = {
-        'subsets': JSON.stringify(subsetQuery),
-        'variables': JSON.stringify(variableQuery),
-        'skip': 0,
-        'limit': 100,
-        'dataset': dataset,
-        'datasource': datasource,
-        'type': 'peek'
+        subsets: JSON.stringify(subsetQuery),
+        variables: JSON.stringify(variableQuery),
+        skip: 0,
+        limit: 100,
+        dataset: dataset,
+        datasource: datasource,
+        type: 'peek'
     };
     laddaDownload.start();
-    makeCorsRequest(subsetURL, query, printData);
+    makeCorsRequest(subsetURL, query, data => {
+        peekData = data;
+        m.redraw();
+    });
 }
-
 
 /**
  *   Draws all subset plots, often invoked as callback after server request for new plotting data
