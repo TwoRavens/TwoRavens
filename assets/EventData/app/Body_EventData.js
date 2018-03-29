@@ -19,6 +19,7 @@ import MenuHeaders from '../../common/app/views/MenuHeaders';
 import PanelList from '../../common/app/views/PanelList';
 import TextField from '../../common/app/views/TextField';
 import DropdownPopup from '../../common/app/views/DropdownPopup';
+import ButtonRadio from '../../common/app/views/ButtonRadio';
 
 import CanvasAction from "./views/CanvasAction";
 import CanvasActor from "./views/CanvasActor";
@@ -30,7 +31,6 @@ import CanvasPentaClass from "./views/CanvasPentaClass";
 import CanvasRootCode from "./views/CanvasRootCode";
 
 import TableAggregation from "./views/TableAggregation";
-import {canvasKeySelected} from "./app";
 
 export default class Body_EventData {
 
@@ -112,42 +112,17 @@ export default class Body_EventData {
                     })
                 ),
 
-                // Button Subset Submit
-                m("label#btnSubsetSubmit.btn.btn-default.ladda-button[data-spinner-color='#818181'][data-style='zoom-in']", {
-                        style: {
-                            "float": "right",
-                            "margin-left": "2em",
-                            "margin-right": "1em"
-                        },
-                        onclick: () => {
-                            if (mode === 'subset') app.submitQuery();
-                            else {
-                                if (canvasKeySelected === 'Actor') {
-                                    document.getElementById('canvas').style.height = 'calc(100% - 102px)';
-                                    resizeActorSVG(false);
-                                }
-                                m.route.set('/subset');
-                            }
-                        }
+                m(ButtonRadio, {
+                    id: 'modeButtonBar',
+                    attrsAll: {style: {width: '200px', margin: '0 2em'}, class: 'navbar-right'},
+                    onclick: (mode) => {
+                        app.setOpMode(mode);
+                        // the route set doesn't work inside setOpMode... no clue why
+                        m.route.set('/' + mode.toLowerCase());
                     },
-                    m("span.ladda-label", "Subset")
-                ),
-
-                // Button Aggregate
-                m("button.btn.btn-default[id='aggSubmit']",
-                    {
-                        style: {"margin-right": "1em", 'float': 'right'},
-                        onclick: () => {
-                            if (mode === 'subset') {
-                                if (canvasKeySelected === 'Actor') {
-                                    document.getElementById('canvas').style.height = 'calc(80% - 102px)';
-                                    resizeActorSVG(false);
-                                }
-                                m.route.set('/aggregate');
-                            }
-                            aggreg.updateToAggreg();
-                        }
-                    }, "Aggregate"),
+                    activeSection: app.opMode,
+                    sections: [{value: 'Subset', id: 'btnSubsetSubmit'}, {value: 'Aggregate', id: 'aggSubmit'}]
+                }),
 
                 // Dataset Selection
                 m(DropdownPopup, {
@@ -238,6 +213,20 @@ export default class Body_EventData {
                     style: {"margin-top": "4px"},
                     onclick: _ => m.route.set('/peek')
                 }, "Peek"),
+
+                m("button.btn.btn-default.btn-sm.ladda-button[data-spinner-color='#818181'][id='buttonDownload'][type='button']", {
+                        style: {
+                            "margin-right": "6px",
+                            'margin-top': '4px',
+                            'margin-left': '6px',
+                            "data-style": "zoom-in"
+                        },
+                        onclick: app.download
+                    },
+                    m("span.ladda-label",
+                        "Download"
+                    )
+                ),
                 // Record Count
                 m("span.label.label-default#recordCount", {
                     style: {
@@ -357,29 +346,25 @@ export default class Body_EventData {
                         {value: 'Subsets', contents: m('div#subsetTree')}
                     ]
                 }),
-                m("#rightpanelButtonBar", {style: {"width": "232px", "position": "absolute", "bottom": "5px"}},
+                m("#rightpanelButtonBar", {style: {width: "calc(100% - 25px)", "position": "absolute", "bottom": '5px'}},
                     [
                         m("button.btn.btn-default[id='buttonAddGroup'][type='button']", {
                                 style: {
-                                    "float": "left",
-                                    "margin-left": "6px"
+                                    "float": "left"
                                 },
-                                onclick: app.addGroup
+                                onclick: addGroup
                             },
                             "Group"
                         ),
-                        m("button.btn.btn-default.ladda-button[data-spinner-color='#818181'][id='buttonDownload'][type='button']", {
-                                style: {
-                                    "float": "right",
-                                    "margin-right": "6px",
-                                    "data-style": "zoom-in"
-                                },
-                                onclick: app.download
-                            },
-                            m("span.ladda-label",
-                                "Download"
-                            )
-                        )
+
+                        m("button.btn.btn-default.ladda-button[data-spinner-color='#818181'][type='button']", {
+                            id: 'btnUpdate',
+                            style: {float: 'right'},
+                            onclick: () => {
+                                if (mode === 'subset') app.submitQuery();
+                                if (mode === 'aggregate') aggreg.updateToAggreg();
+                            }
+                        }, 'Update')
                     ])
             ]
         })
@@ -387,6 +372,7 @@ export default class Body_EventData {
 
     view(vnode) {
         let {mode} = vnode.attrs;
+        console.log("mode " + mode);
         app.setOpMode(mode);
 
         // Some canvases only exist in certain modes. Fall back to default if necessary.
