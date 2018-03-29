@@ -1,5 +1,7 @@
-import {showCanvas, openRightPanel} from "./app";
+import {showCanvas} from "./app";
 import hopscotch from 'hopscotch';
+import * as common from '../../common/app/common';
+import m from 'mithril';
 
 export function tourStartGeneral() {
     hopscotch.endTour(false);
@@ -27,7 +29,10 @@ let generalTour = {
             title: "Stage",
             content: "After selecting your subset preferences in the canvas, use 'Stage' to store a snapshot of those preferences in the summary panel.",
             target: "btnStage",
-            onNext: openRightPanel,
+            onNext: () => {
+                common.setPanelOpen('right');
+                m.redraw();
+            },
             placement: "top",
             arrowOffset: 250
         },
@@ -45,8 +50,8 @@ let generalTour = {
         },
         {
             title: "Subset",
-            content: "Once the constraints have been staged, use 'Subset' to apply the constraints in the summary panel to the full dataset. This will encapsulate the constraints as a query, and redraw all the plots and figures.",
-            target: "btnStage",
+            content: "Once the constraints have been staged, use 'Update' to apply the constraints in the summary panel to the full dataset. This will encapsulate the constraints as a query, and redraw all the plots and figures.",
+            target: "btnUpdate",
             placement: "left"
         },
         {
@@ -435,8 +440,8 @@ let aggregationTour = {
         },
         {
             title: "Aggregate",
-            content: "The TBD values in the Data Results are updated with the actual frequencies when the Aggregate button is clicked.",
-            target: "aggSubmit",
+            content: "The TBD values in the Data Results are updated with the actual frequencies when the Update button is clicked.",
+            target: "btnUpdate",
             placement: "left"
         },
         {
