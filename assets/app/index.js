@@ -629,7 +629,19 @@ class Body {
 if (IS_EVENTDATA_DOMAIN) {
     m.route(document.body, '/subset', {
         '/subset': {render: () => m(Body_EventData, {mode: 'subset'})},
-        '/aggregate': {render: () => m(Body_EventData, {mode: 'aggregate'})}
+        '/aggregate': {render: () => m(Body_EventData, {mode: 'aggregate'})},
+        '/peek': {
+            oninit: eventdata.getPeekData,
+            view() {
+                let headers = Object.keys(eventdata.peekData[0] || {});
+                return m(Table, {
+                    id: 'peekTable',
+                    headers,
+                    data: eventdata.peekData.map(Object.values),
+                    attrsAll: {style: {height: '80%', overflow: 'auto', display: 'block', 'margin-right': '16px', 'margin-bottom': 0}}
+                });
+            }
+        }
     });
 }
 

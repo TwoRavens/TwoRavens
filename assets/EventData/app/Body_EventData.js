@@ -126,7 +126,7 @@ export default class Body_EventData {
                                     document.getElementById('canvas').style.height = 'calc(100% - 102px)';
                                     resizeActorSVG(false);
                                 }
-                                m.route.set('/subset')
+                                m.route.set('/subset');
                             }
                         }
                     },
@@ -236,7 +236,7 @@ export default class Body_EventData {
             m("#recordBar", {style: {display: "inline-block", float: 'right'}}, [
                 m("button.btn.btn-default.btn-sm#peek[type='button']", {
                     style: {"margin-top": "4px"},
-                    onclick: app.peekData
+                    onclick: _ => m.route.set('/peek')
                 }, "Peek"),
                 // Record Count
                 m("span.label.label-default#recordCount", {
