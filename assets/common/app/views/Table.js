@@ -47,15 +47,14 @@ export default class Table {
         return m(`table.table#${id}`, mergeAttributes({style: {width: '100%'}}, attrsAll), [
             tableTags,
             headers && m('tr', {style: {width: '100%', background: menuColor}}, [
-                ...(showUID ? headers : headers.slice(1)).map((header) => m('th', abbreviate(header)))
+                ...(showUID ? headers : headers.slice(1)).map((header) => m('th[style=padding-right: 1em]', abbreviate(header)))
             ]),
-
             ...data.map((row, i) => m('tr', mergeAttributes(
                 i % 2 === 1 ? {style: {'background': '#fcfcfc'}} : {},
                 row[0] === activeRow ? {style: {'background': selVarColor}} : {},
                 attrsRows),
-                row.filter((item, j) => j !== 0 || showUID).map((item, j) =>
-                    m('td', mergeAttributes(onclick ? {onclick: () => onclick(row[0], j)} : {}, attrsCells), abbreviate(item)))
+                row.filter((item, j) => j !== 0 || showUID).map((item, j) => m('td[style=padding-right: 1em]',
+                    mergeAttributes(onclick ? {onclick: () => onclick(row[0], j)} : {}, attrsCells), abbreviate(item)))
                 )
             )]
         );

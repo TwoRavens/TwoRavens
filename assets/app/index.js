@@ -626,6 +626,13 @@ class Body {
     }
 }
 
+window.addEventListener('scroll', function(_) {
+    if (this.scrollY === this.scrollMaxY && m.route.get('/peek')) {
+        eventdata.getPeekData();
+        m.redraw();
+    }
+});
+
 if (IS_EVENTDATA_DOMAIN) {
     m.route(document.body, '/subset', {
         '/subset': {render: () => m(Body_EventData, {mode: 'subset'})},
@@ -636,13 +643,14 @@ if (IS_EVENTDATA_DOMAIN) {
                 let headers = Object.keys(eventdata.peekData[0] || {});
                 return m(Table, {
                     id: 'peekTable',
-                    headers,
-                    data: eventdata.peekData.map(Object.values),
-                    attrsAll: {style: {height: '80%', overflow: 'auto', display: 'block', 'margin-right': '16px', 'margin-bottom': 0}}
+                    headers: [''].concat(headers),
+                    data: eventdata.peekData.map((x, i) => [++i].concat(headers.map(y => x[y] || ' '))),
+                    attrsAll: {style: {height: '100%', overflow: 'auto', display: 'block', 'margin-right': '16px', 'margin-bottom': 0}}
                 });
             }
         }
     });
+<<<<<<< aeb0b92a82dc66b532065b907eb9e7f00198348c
 }
 
 m.route(document.body, '/model', {
@@ -656,6 +664,21 @@ m.route(document.body, '/model', {
         },
         render() {
             return m(Body, {mode: 'results'});
+=======
+} else {
+    m.route(document.body, '/model', {
+        '/model': {render: () => m(Body)},
+        '/explore': {render: () => m(Body, {mode: 'explore'})},
+        '/results': {
+            onmatch() {
+                app.set_mode('results');
+                state.get_pipelines();
+                layout.init();
+            },
+            render() {
+                return m(Body, {mode: 'results'});
+            }
+>>>>>>> load rows on scroll
         }
     },
     '/data': Peek

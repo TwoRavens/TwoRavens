@@ -422,6 +422,7 @@ export function download() {
 	}
 }
 
+let peekSkip = 0;
 export let peekData = [];
 
 export function getPeekData() {
@@ -434,7 +435,7 @@ export function getPeekData() {
     let query = {
         subsets: JSON.stringify(subsetQuery),
         variables: JSON.stringify(variableQuery),
-        skip: 0,
+        skip: peekSkip,
         limit: 100,
         dataset: dataset,
         datasource: datasource,
@@ -442,7 +443,8 @@ export function getPeekData() {
     };
     laddaDownload.start();
     makeCorsRequest(subsetURL, query, data => {
-        peekData = data;
+        peekData = peekData.concat(data);
+        peekSkip += 100;
         m.redraw();
     });
 }
