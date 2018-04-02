@@ -52,6 +52,7 @@ def view_rook_route(request, app_name_in_url):
     #
     # retrieve session key
     session_key = get_session_key(request)
+
     if isinstance(raven_data_text, str):
 
         blank_session_str = '%s":""' % ROOK_ZESSIONID
@@ -60,10 +61,17 @@ def view_rook_route(request, app_name_in_url):
             #
             updated_session_str = '%s":"%s"' % (ROOK_ZESSIONID, session_key)
             raven_data_text = raven_data_text.replace(blank_session_str, updated_session_str)
+        elif raven_data_text.find(ROOK_ZESSIONID) == -1:
+            print('MAJOR ISSUE: NOT SESSION AT ALL (rook_services.views.py)')
 
-    elif ROOK_ZESSIONID in raven_data_text:
-        if raven_data_text[ROOK_ZESSIONID] in [None, '']:
+    elif isinstance(raven_data_text, dict):
+        #  We have a dict, make sure it gets a session
+        if ROOK_ZESSIONID in raven_data_text:
+            if raven_data_text[ROOK_ZESSIONID] in [None, '']:
+                raven_data_text[ROOK_ZESSIONID] = session_key
+        elif ROOK_ZESSIONID not in raven_data_text:
             raven_data_text[ROOK_ZESSIONID] = session_key
+
 
     if not isinstance(raven_data_text, str):
         try:
@@ -76,6 +84,7 @@ def view_rook_route(request, app_name_in_url):
 
     rook_svc_url = rook_app_info.get_rook_server_url()
 
+    print('raven_data_text', raven_data_text)
     # Begin object to capture request
     #
     call_entry = None
