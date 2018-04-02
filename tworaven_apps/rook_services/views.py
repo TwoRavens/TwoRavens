@@ -84,7 +84,7 @@ def view_rook_route(request, app_name_in_url):
 
     rook_svc_url = rook_app_info.get_rook_server_url()
 
-    print('raven_data_text', raven_data_text)
+    #print('raven_data_text', raven_data_text)
     # Begin object to capture request
     #
     call_entry = None
