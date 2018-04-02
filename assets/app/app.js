@@ -624,9 +624,9 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         if (IS_D3M_DOMAIN){
           // For D3M inputs, change the preprocess input data
           //
-          json_input = JSON.stringify({data: d3mData, datastub: d3mDataName});
+          json_input = {data: d3mData, datastub: d3mDataName};
         }else{
-         json_input = JSON.stringify({data: dataloc, target: targetloc, datastub: datastub});
+         json_input = {data: dataloc, target: targetloc, datastub: datastub};
         }
 
         console.log('json_input: ', json_input);
@@ -701,7 +701,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         disco = discovery(res);
 
         // Kick off discovery button as green for user guidance
-        $("#btnDiscovery").removeClass("btn-default");   
+        $("#btnDiscovery").removeClass("btn-default");
         $("#btnDiscovery").addClass("btn-success");      // Would be better to attach this as a class at creation, but don't see where it is created
 
         console.log(disco);
@@ -2014,7 +2014,7 @@ function onPipelineCreate(PipelineCreateResult, rookpipe) {
     console.table(pipelineTable, [1, 2, 3]);
 
     if (IS_D3M_DOMAIN){
-        byId("btnSetx").click();   // Was "btnResults" - changing to simplify user experience for testing. 
+        byId("btnSetx").click();   // Was "btnResults" - changing to simplify user experience for testing.
     };
 
     //adding rookpipe to allPipelineInfo
@@ -2144,7 +2144,7 @@ export async function estimate(btn) {
 
 
             // programmatic click on Results button
-            $("#btnSetx").trigger("click");      // Was "btnResults" - changing to simplify user experience for testing. 
+            $("#btnSetx").trigger("click");      // Was "btnResults" - changing to simplify user experience for testing.
 
             let model = "Model".concat(modelCount = modelCount + 1);
 
@@ -2196,6 +2196,9 @@ export async function estimate(btn) {
         // pipelineapp is a rook application that returns the dependent variable, the DV values, and the predictors. can think of it was a way to translate the potentially complex grammar from the UI
 
         estimateLadda.start(); // start spinner
+
+        //zparams.zvars.unshift("Alice-was_beg!n^ing t* get/ ve#y tired of s(tt)ng by her si$+e \n on the bank and of having nothing to do:");
+
         let rookpipe = await makeRequest(ROOK_SVC_URL + 'pipelineapp', zparams);
         if (!rookpipe) {
             estimated = true;
@@ -2568,7 +2571,7 @@ export function legend() {
 */
 export function erase() {
     setLeftTab('Variables');
-    
+
     valueKey.forEach(function(element){
       if (zparams.zdv.concat(zparams.znom, zparams.zvars).includes(element))   // names start with varList now
         clickVar(element);
@@ -3315,11 +3318,11 @@ export function genconfdata (dvvalues, predvals) {
     // combine actuals and predicted, and get all unique elements
     let myuniques = dvvalues.concat(predvals);
     myuniques= [...new Set(myuniques)];                 //equivalent to: myuniques = Array.from(new Set(myuniques));
-    //was: 
+    //was:
     //  function onlyUnique(value, index, self) {
     //    return self.indexOf(value) === index;
     //  }
-    //  myuniques = myuniques.filter(onlyUnique);    
+    //  myuniques = myuniques.filter(onlyUnique);
     myuniques = myuniques.sort();
 
     // create two arrays: mycounts initialized to 0, mypairs have elements set to all possible pairs of uniques
@@ -3646,7 +3649,7 @@ export function confusionmatrix(matrixdata, classes) {
            end_color : '#e67e22',
            width : mainwidth * .33 + 25 - leftmarginguess,      // Width of confusion matrix table: Need to not be hard coded
            height : mainheight * .6,    // Need to not be hard coded
-           widthLegend : mainwidth*.04,  
+           widthLegend : mainwidth*.04,
            x_offset : 30
            });
 
