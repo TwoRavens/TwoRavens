@@ -21,11 +21,6 @@ pipeline.app <- function(env){
     request <- Request$new(env)
     response <- Response$new(headers = list( "Access-Control-Allow-Origin"="*"))
 
-    print('===================================================')
-    print(request$POST()$solaJSON)
-    print('===================================================')
-
-
     valid <- jsonlite::validate(request$POST()$solaJSON)
     print(valid)
     if(!valid) {
