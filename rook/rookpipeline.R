@@ -47,7 +47,7 @@ pipeline.app <- function(env){
 
 	if(!warning){
         myedges<-everything$zedges
-        print(myedges)
+        #print(myedges)
 	}
 
     if(!warning){
@@ -78,10 +78,8 @@ pipeline.app <- function(env){
 
 	if(!warning){
         mynoms <- everything$znom
-        print("got here 1")
 		myformula <- buildFormula(dv=mydv, linkagelist=myedges, varnames=NULL, nomvars=mynoms, group1=mygroup1, group2=mygroup2) 
-        print(names(myformula))
-        print("got here 2")
+        #print(names(myformula))
 		if(is.null(myformula)){
 			warning <- TRUE
 			result<-list(warning="Problem constructing formula expression.")
@@ -125,7 +123,7 @@ pipeline.app <- function(env){
 
     result<-jsonlite:::toJSON(result)
 
-    print(result)
+    #print(result)
     if(production){
         sink()
     }

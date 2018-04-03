@@ -2197,10 +2197,15 @@ export async function estimate(btn) {
 
         estimateLadda.start(); // start spinner
 
-        //zparams.zvars.unshift("Alice-was_beg!n^ing t* get/ ve#y tired of s(tt)ng by her si$+e \n on the bank and of having nothing to do:");
-        //zparams.zgroup1 = ["age","sex","on thyroxine","query-on-thyroxine","Alice-was_beg!n^ing t* get/ ve#y tired of s(tt)ng by her si$+er on the bank and of having nothing to do:","sick","pregnant","thyroid_surgery","I131_treatment","query_hypothyroid","query_hyperthyroid","lithium","goitre","tumor","hypopituitary","psych","TSH_measured","TSH","T3_measured","T3","TT4_measured","TT4","T4U_measured","T4U","FTI_measured","FTI","TBG_measured","TBG","referral_source"];
+        zparams.zgroup1.unshift("Alice-was_beg!n^ing t* get/ ve#y tired of s(tt)ng by her si$+er on the bank and of having nothing to do:");
+        console.log("zparams zgroup1");
+        console.log(zparams.zgroup1);      // Notice zgroup1 is being sent with correct characters
 
         let rookpipe = await makeRequest(ROOK_SVC_URL + 'pipelineapp', zparams);
+
+        console.log("pipeline app return (rookpipe)");   
+        console.log(rookpipe);            // Notice predictors are coming back with character `+` substituted for space
+
         if (!rookpipe) {
             estimated = true;
         } else {
