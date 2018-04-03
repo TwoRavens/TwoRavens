@@ -2197,13 +2197,14 @@ export async function estimate(btn) {
 
         estimateLadda.start(); // start spinner
 
-        zparams.zgroup1.unshift("Alice-was_beg!n^ing t* get/ ve#y tired of s(tt)ng by her si$+er on the bank and of having nothing to do:");
+        zparams.zgroup1.unshift("blah+");
+        zparams.zgroup1.unshift("Alice-was_beg!n^ing t* get/ ve#y tired of s(tt)ng by her si$\+er on the bank and of having nothing to do:");
         console.log("zparams zgroup1");
         console.log(zparams.zgroup1);      // Notice zgroup1 is being sent with correct characters
 
         let rookpipe = await makeRequest(ROOK_SVC_URL + 'pipelineapp', zparams);
 
-        console.log("pipeline app return (rookpipe)");   
+        console.log("pipeline app return (rookpipe)");
         console.log(rookpipe);            // Notice predictors are coming back with character `+` substituted for space
 
         if (!rookpipe) {
