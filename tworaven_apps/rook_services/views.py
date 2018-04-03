@@ -72,13 +72,19 @@ def view_rook_route(request, app_name_in_url):
         elif ROOK_ZESSIONID not in raven_data_text:
             raven_data_text[ROOK_ZESSIONID] = session_key
 
-
-    if not isinstance(raven_data_text, str):
         try:
             raven_data_text = json.dumps(raven_data_text)
         except TypeError:
-            JsonResponse(dict(success=False,
-                              message='Failed to convert data to JSON'))
+            return JsonResponse(\
+                        dict(success=False,
+                             message='Failed to convert data to JSON'))
+
+    # for issue: https://github.com/TwoRavens/TwoRavens/issues/237
+    # (need more general encoding?)
+    raven_data_text = raven_data_text.replace('+', '%2B'\
+                                    ).replace('&', '%26'\
+                                    ).replace('=', '%3D')
+
 
     app_data = dict(solaJSON=raven_data_text)
 
@@ -95,7 +101,7 @@ def view_rook_route(request, app_name_in_url):
                         outgoing_url=rook_svc_url,
                         request_msg=raven_data_text)
 
-    #print('rook_svc_url: %s' % rook_svc_url)
+    print('app_data: %s' % app_data)
 
     # Call R services
     #

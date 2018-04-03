@@ -9,7 +9,7 @@ pipeline.app <- function(env){
 
     ## Define paths for output.
     ## Also set `production` toggle:  TRUE - Production, FALSE - Local Development.
-    source("rookconfig.R") 
+    source("rookconfig.R")
 
     warning<-FALSE
     result <-list()
@@ -47,7 +47,7 @@ pipeline.app <- function(env){
 
 	if(!warning){
         myedges<-everything$zedges
-        print(myedges)
+        #print(myedges)
 	}
 
     if(!warning){
@@ -66,7 +66,7 @@ pipeline.app <- function(env){
             result <- list(warning="Problem with subset.")
         }
     }
-    
+
     if(!warning){
         mygroup1 <- everything$zgroup1
         mygroup2 <- everything$zgroup2
@@ -78,10 +78,8 @@ pipeline.app <- function(env){
 
 	if(!warning){
         mynoms <- everything$znom
-        print("got here 1")
-		myformula <- buildFormula(dv=mydv, linkagelist=myedges, varnames=NULL, nomvars=mynoms, group1=mygroup1, group2=mygroup2) 
-        print(names(myformula))
-        print("got here 2")
+		myformula <- buildFormula(dv=mydv, linkagelist=myedges, varnames=NULL, nomvars=mynoms, group1=mygroup1, group2=mygroup2)
+        #print(names(myformula))
 		if(is.null(myformula)){
 			warning <- TRUE
 			result<-list(warning="Problem constructing formula expression.")
@@ -92,7 +90,7 @@ pipeline.app <- function(env){
         print(warning)
         print(result)
     }
-    
+
     if(!warning){
         ## switching this over to separate data and targets for d3m--not assuming a merged dataset
         #mydataurl <- everything$zdataurl
@@ -101,7 +99,7 @@ pipeline.app <- function(env){
         #writeme <- paste("mydata <- read.delim(\"",mydataurl,"\")", sep="")
         #print(writeme)
         #write(writeme,mylogfile,append=TRUE)
-        
+
         mytargeturi <- everything$zd3mtarget
         #        mytargeturi <- paste("../",mytargeturi,sep="")
         mydata <- read.csv(mytargeturi)
@@ -125,7 +123,7 @@ pipeline.app <- function(env){
 
     result<-jsonlite:::toJSON(result)
 
-    print(result)
+    #print(result)
     if(production){
         sink()
     }

@@ -2197,14 +2197,24 @@ export async function estimate(btn) {
 
         estimateLadda.start(); // start spinner
 
-        //zparams.zvars.unshift("Alice-was_beg!n^ing t* get/ ve#y tired of s(tt)ng by her si$+e \n on the bank and of having nothing to do:");
-        //zparams.zgroup1 = ["age","sex","on thyroxine","query-on-thyroxine","Alice-was_beg!n^ing t* get/ ve#y tired of s(tt)ng by her si$+er on the bank and of having nothing to do:","sick","pregnant","thyroid_surgery","I131_treatment","query_hypothyroid","query_hyperthyroid","lithium","goitre","tumor","hypopituitary","psych","TSH_measured","TSH","T3_measured","T3","TT4_measured","TT4","T4U_measured","T4U","FTI_measured","FTI","TBG_measured","TBG","referral_source"];
+        // 1. Some diagnostic tests to add special characters to the pipelineapp call:
+        //zparams.zgroup1.unshift("blah+");
+        //zparams.zgroup1.unshift("Alice-was_beg!n^ing t* get/ ve#y tired of s(tt)ng by her si$\+er on th= bank & of having nothing to do:");
+
+        // 2. Note how they go out in call:
+        console.log("zparams zgroup1");
+        console.log(zparams.zgroup1);      // Notice zgroup1 is being sent with correct characters
 
         let rookpipe = await makeRequest(ROOK_SVC_URL + 'pipelineapp', zparams);
+
+        // 3. And check they come back correctly formed:
+        console.log("pipeline app return (rookpipe)");
+        console.log(rookpipe);            // Notice predictors are coming back with character `+` substituted for space
+
         if (!rookpipe) {
             estimated = true;
         } else {
-        console.log(rookpipe);
+
             setxTable(rookpipe.predictors);
        //     let dvvals = res.dvvalues;
         //    let dvvar = res.depvar[0];
@@ -3895,20 +3905,30 @@ export function setxTable(features) {
         let myi = findNodeIndex(features[i]); //i+1;                                // This was set as (i+1), but should be allnodes position, not features position
 
         if(allNodes[myi].valid==0) {
-            xval=0;
-            x1val=0;
+            let xval=0;
+            let x1val=0;
             mydata.push({"Variables":features[i],"From":xval, "To":x1val});
             continue;
         }
 
         let mysvg = features[i]+"_setxLeft_"+myi;
-        //console.log(mysvg);
-        let xval = byId(mysvg).querySelector('.xval').innerHTML;
-        let x1val = byId(mysvg).querySelector('.x1val').innerHTML;
-        xval = xval.split("x: ").pop();
-        x1val = x1val.split("x1: ").pop();
 
-        mydata.push({"Variables":features[i],"From":xval, "To":x1val});
+        try
+        {
+            //console.log(mysvg);
+            //console.log(byId(mysvg).querySelector('.xval'));
+            let xval = byId(mysvg).querySelector('.xval').innerHTML;
+            let x1val = byId(mysvg).querySelector('.x1val').innerHTML;
+            //console.log(xval);
+            //console.log(x1val);
+            xval = xval.split("x: ").pop();
+            x1val = x1val.split("x1: ").pop();
+            mydata.push({"Variables":features[i],"From":xval, "To":x1val});
+        } 
+        catch(error)
+        {
+            continue;
+        }
     }
 
     // render the table(s)
