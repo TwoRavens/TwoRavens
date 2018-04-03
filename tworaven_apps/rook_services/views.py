@@ -79,7 +79,13 @@ def view_rook_route(request, app_name_in_url):
                         dict(success=False,
                              message='Failed to convert data to JSON'))
 
-    raven_data_text = raven_data_text.replace('+', '%2B')
+    # for issue: https://github.com/TwoRavens/TwoRavens/issues/237
+    # (need more general encoding?)
+    raven_data_text = raven_data_text.replace('+', '%2B'\
+                                    ).replace('&', '%26'\
+                                    ).replace('=', '%3D')
+
+
     app_data = dict(solaJSON=raven_data_text)
 
     rook_svc_url = rook_app_info.get_rook_server_url()
