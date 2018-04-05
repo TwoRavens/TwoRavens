@@ -2202,14 +2202,14 @@ export async function estimate(btn) {
         //zparams.zgroup1.unshift("Alice-was_beg!n^ing t* get/ ve#y tired of s(tt)ng by her si$\+er on th= bank & of having nothing to do:");
 
         // 2. Note how they go out in call:
-        console.log("zparams zgroup1");
-        console.log(zparams.zgroup1);      // Notice zgroup1 is being sent with correct characters
+        //console.log("zparams zgroup1");
+        //console.log(zparams.zgroup1);      // Notice zgroup1 is being sent with correct characters
 
         let rookpipe = await makeRequest(ROOK_SVC_URL + 'pipelineapp', zparams);
 
         // 3. And check they come back correctly formed:
-        console.log("pipeline app return (rookpipe)");
-        console.log(rookpipe);            // Notice predictors are coming back with character `+` substituted for space
+        //console.log("pipeline app return (rookpipe)");
+        //console.log(rookpipe);            
 
         if (!rookpipe) {
             estimated = true;
