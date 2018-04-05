@@ -23,6 +23,7 @@ pipeline.app <- function(env){
 
     valid <- jsonlite::validate(request$POST()$solaJSON)
     print(valid)
+    
     if(!valid) {
         warning <- TRUE
         result <- list(warning="The request is not valid json. Check for special characters.")
@@ -102,7 +103,7 @@ pipeline.app <- function(env){
 
         mytargeturi <- everything$zd3mtarget
         #        mytargeturi <- paste("../",mytargeturi,sep="")
-        mydata <- read.csv(mytargeturi)
+        mydata <- read.csv(mytargeturi, check.names = FALSE)
         #writeme <- paste("mydata <- read.delim(\"",mydataurl,"\")", sep="")
         #print(writeme)
         #write(writeme,mylogfile,append=TRUE)
