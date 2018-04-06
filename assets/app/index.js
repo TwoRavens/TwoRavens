@@ -101,7 +101,7 @@ function leftpanel(mode) {
                             activeRow: app.selectedProblem,
                             onclick: app.setSelectedProblem,
                             showUID: false,
-                            attrsAll: {style: {height: '80%', overflow: 'auto', display: 'block', 'margin-right': '16px', 'margin-bottom': 0}}
+                            attrsAll: {style: {height: '80%', overflow: 'auto', display: 'block', 'margin-right': '16px', 'margin-bottom': 0, 'max-width': (window.innerWidth - 90) + 'px'}}
                         }),
                         m('textarea#discoveryInput[style=display:block; float: left; width: 100%; height:calc(20% - 35px); overflow: auto; background-color: white]', {
                             value: app.disco[app.selectedProblem] === undefined ? '' : app.disco[app.selectedProblem].description
@@ -611,10 +611,10 @@ class Body {
             contents: [
                 m(ButtonRadio, {
                         id: 'modeButtonBar',
-                        attrsAll: {style: {width: '200px', margin: '0 .2em'}, class: 'navbar-left'},
+                        attrsAll: {style: {width: '200px', margin: '0 .2em'}, class: 'navbar-left btn-sm'},
                         onclick: app.set_mode,
                         activeSection: mode === undefined ? 'model' : mode,
-                        sections: [{value: 'Model'}, {value: 'Explore'}]//, {value: 'Results', id: 'btnResultsMode'}] VJD: commenting out the results mode button since we don't have this yet
+                        sections: [{value: 'Model'}, {value: 'Explore'}] // {value: 'Results', id: 'btnResultsMode'}] VJD: commenting out the results mode button since we don't have this yet
                     }),
                 m("a#logID[href=somelink][target=_blank]", "Replication"),
                 m("span[style=color:#337ab7]", " | "),

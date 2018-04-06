@@ -3169,25 +3169,22 @@ export function resultsplotinit(pid) {
     console.log(pid);
     pid = allPipelineInfo[pid];
     let mydv = allPipelineInfo.rookpipe.depvar[0];         // When there are multiple CreatePipelines calls, then this only has values from latest value
-    let dvvalues= allPipelineInfo.rookpipe.dvvalues;       // When there are multiple CreatePipelines calls, then this only has values from latest value
-   // let predfile = pid.pipelineInfo.predictResultData.file_1;
+    let dvvalues = allPipelineInfo.rookpipe.dvvalues;       // When there are multiple CreatePipelines calls, then this only has values from latest value
+    // let predfile = pid.pipelineInfo.predictResultData.file_1;
 
-   if(pid.pipelineInfo.predictResultData.success==false) {
-        byId('btnSetx').classList.add("noshow")
-       return;
-   }
+    if (pid.pipelineInfo.predictResultData.success == false) return;
 
     let allPreds = pid.pipelineInfo.predictResultData.data;
     console.log(Object.keys(allPreds[1]));
     let predvals = [];
 
     let mydvI = Object.keys(allPreds[1]).indexOf(mydv);
-    if ( mydvI > -1) {
-        for(let i = 0; i < allPreds.length; i++) {
+    if (mydvI > -1) {
+        for (let i = 0; i < allPreds.length; i++) {
             predvals.push(allPreds[i][mydv]);
         }
     } else if (Object.keys(allPreds[1]).indexOf("preds") > -1) {
-        for(let i = 0; i < allPreds.length; i++) {
+        for (let i = 0; i < allPreds.length; i++) {
             predvals.push(allPreds[i]["preds"]);
         }
     } else {
