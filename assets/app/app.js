@@ -281,6 +281,29 @@ export let d3mProblemDescription = {
     taskDescription: ""
 };
 
+/*
+ * call to django to update the problem definition in the problem document
+ * rpc SetProblemDoc(SetProblemDocRequest) returns (Response) {}
+ */
+export let setD3mProblemDescription = (key, value) => {
+    if (!locktoggle) {
+        d3mProblemDescription[key] = value;
+
+        let lookup = {
+            'taskType': d3mTaskType,
+            'taskSubtype': d3mTaskSubtype,
+            // 'outputType': d3mOutputType,
+            'metric': d3mMetrics
+        }[key];
+
+        if (lookup === undefined) return;
+        makeRequest(
+            D3M_SVC_URL + "/SetProblemDoc",
+            {replaceProblemSchemaField: {[key]: lookup[d3mProblemDescription[key]][1]}, context: apiSession(zparams.zsessionid)});
+    }
+    else hopscotch.startTour(lockTour)
+}
+
 let svg, div, selectLadda;
 export let width, height, estimateLadda, discoveryLadda;
 
@@ -377,6 +400,17 @@ export let mytour3 = {
                      <p>Generally, as a tip, the Green button is the next button you need to press to move the current task forward.</p>`),
             ]
         };
+
+// appears when a user attempts to edit when the toggle is set
+export let lockTour = {
+    id: "lock_toggle",
+    i18n: {doneBtn:'Ok'},
+    showCloseButton: true,
+    scrollDuration: 300,
+    steps: [
+        step("btnLock", "left", "Locked Mode", `<p>Click the lock button to enable editing.</p>`)
+    ]
+};
 
 /**
   called by main
@@ -1196,89 +1230,6 @@ export function layout(v, v2) {
 
     }
 
-    d3.select("#models").selectAll("p") // models tab
-    //  d3.select("#Display_content")
-        .on("click", function() {
-            var myColor = d3.select(this).style('background-color');
-            d3.select("#models").selectAll("p")
-                .style('background-color', varColor);
-            d3.select(this)
-                .style('background-color', d => {
-                    if (d3.rgb(myColor).toString() === varColor.toString()) {
-                        zparams.zmodel = d.toString();
-                        return hexToRgba(selVarColor);
-                    } else {
-                        zparams.zmodel = '';
-                        return varColor;
-                    }
-                });
-            restart();
-        });
-
-    d3.select("#types").selectAll("p") // models tab
-    //  d3.select("#Display_content")
-        .on("click", function() {
-            if(locktoggle) return;
-            if(this.className=="item-select") {
-                return;
-            } else {
-                d3.select("#types").select("p.item-select")
-                    .attr('class', 'item-default');
-                d3mProblemDescription.taskType = this.innerHTML.toString();
-                d3.select(this).attr('class',"item-select");
-            }
-            restart();
-            setProblemDefinition("taskType", d3mProblemDescription, d3mTaskType);
-        });
-
-    d3.select("#subtypes").selectAll("p")
-        .on("click", function() {
-            if(locktoggle) return;
-            if(this.className=="item-select") {
-                return;
-            } else {
-                d3.select("#subtypes").select("p.item-select")
-                    .attr('class', 'item-default');
-                d3mProblemDescription.taskSubtype = this.innerHTML.toString();
-                d3.select(this).attr('class',"item-select");
-            }
-            restart();
-            setProblemDefinition("taskSubtype", d3mProblemDescription, d3mTaskSubtype);
-        });
-
-    d3.select("#metrics").selectAll("p")
-        .on("click", function() {
-            if(locktoggle) return;
-            if(this.className=="item-select") {
-                return;
-                // d3mProblemDescription.metric = ["",""];
-                // this.className="item-default";
-            } else {
-                d3.select("#metrics").select("p.item-select")
-                    .attr('class', 'item-default');
-                d3mProblemDescription.metric = this.innerHTML.toString();
-                d3.select(this).attr('class',"item-select");
-            }
-            restart();
-            setProblemDefinition("metric", d3mProblemDescription, d3mMetrics);
-        });
-
-    /*  d3.select("#outputs").selectAll("p")
-      .on("click", function() {
-          if(locktoggle) return;
-          if(this.className=="item-select") {
-              return;
-          } else {
-              d3.select("#outputs").select("p.item-select")
-              .attr('class', 'item-default');
-              d3mProblemDescription.outputType = this.innerHTML.toString();
-              d3.select(this).attr('class',"item-select");
-          }
-          restart();
-          setProblemDefinition("outputType", d3mProblemDescription, d3mOutputType);
-          });
-          */
-
     // update graph (called when needed)
     restart = function($links) {
         if (is_results_mode) {
@@ -1882,38 +1833,7 @@ export function helpmaterials(type) {
 }
 
 /** needs doc */
-export function lockDescription() {
-    locktoggle = locktoggle ? false : true;
-    let temp;
-    let i;
-    if (!locktoggle) {
-        byId('btnLock').setAttribute("class", "btn btn-default");
-        temp = byId('rightContentArea').querySelectorAll("p.item-lineout");
-        for (i = 0; i < temp.length; i++) {
-            temp[i].classList.remove("item-lineout");
-        }
-    } else {
-        byId('btnLock').setAttribute("class", "btn active");
-        temp = byId('metrics').querySelectorAll("p.item-default");
-        console.log(temp);
-        for (i = 0; i < temp.length; i++) {
-            temp[i].classList.add("item-lineout");
-        }
-        temp = byId('types').querySelectorAll("p.item-default");
-        for (i = 0; i < temp.length; i++) {
-            temp[i].classList.add("item-lineout");
-        }
-        temp = byId('subtypes').querySelectorAll("p.item-default");
-        for (i = 0; i < temp.length; i++) {
-            temp[i].classList.add("item-lineout");
-        }
-        /*    temp = byId('outputs').querySelectorAll("p.item-default");
-            for (i = 0; i < temp.length; i++) {
-                temp[i].classList.add("item-lineout");
-            }  */
-        fakeClick();
-    }
-}
+export let lockDescription = (state) => locktoggle = state;
 
 /** needs doc */
 export function zPop() {
@@ -3189,16 +3109,6 @@ function addPredictions(res) {
     // render the table(s)
     tabulate(mydata, [' ', 'E(Y|X1)', 'E(Y|X2)']); // 2 column table
 
-}
-
-/**
-    call to django to update the problem definition in the problem document
-    rpc SetProblemDoc(SetProblemDocRequest) returns (Response) {}
-*/
-function setProblemDefinition(type, updates, lookup) {
-    makeRequest(
-        D3M_SVC_URL + "/SetProblemDoc",
-        {replaceProblemSchemaField: {[type]: lookup[updates[type]][1]}, context: apiSession(zparams.zsessionid)});
 }
 
 /**

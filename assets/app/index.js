@@ -141,6 +141,7 @@ let righttab = (id, task, title, probDesc) => m(PanelList, {
         'item-lineout': Object.keys(task || {})
             .filter(item => app.locktoggle && item !== app.d3mProblemDescription[probDesc])
     },
+    callback: (value) => app.setD3mProblemDescription(probDesc, value),
     popup: v => task[v][1],
     attrsItems: {'data-placement': 'top', 'data-original-title': title + ' Description'}
 });
@@ -394,7 +395,7 @@ class Body {
 
     view(vnode) {
         let {mode} = vnode.attrs;
-        let explore_mode = mode === 'explore';mode === 'explore'
+        let explore_mode = mode === 'explore';
         let results_mode = mode === 'results';
 
         let spaceBtn = (id, onclick, title, icon) => m(
@@ -424,7 +425,11 @@ class Body {
                 m('#m0.item.active', {style: {height: '100%', 'text-align': "center"}},
                   m('svg#whitespace'))),
               m("#spacetools.spaceTool", {style: {right: app.panelWidth['right'], 'z-index': 16}},
-                spaceBtn('btnLock.active', app.lockDescription, 'Lock selection of problem description', 'pencil'),
+                  m(`button#btnLock.btn.btn-default`, {
+                      class: app.locktoggle ? 'active' : '',
+                      onclick: () => app.lockDescription(!app.locktoggle),
+                      title: 'Lock selection of problem description'
+                  }, glyph(app.locktoggle ? 'lock' : 'pencil', true)),
                 spaceBtn('btnJoin', _ => {
                     let links = [];
                     console.log("doing connect all");
