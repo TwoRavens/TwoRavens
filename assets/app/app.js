@@ -1315,6 +1315,9 @@ export function layout(v, v2) {
 
         let redrawPebbles = () => {
             g[0].forEach((pebble) => {
+                // nullity check for when reintroducing variable from variable list
+                if (pebble === null) return;
+
                 let data = pebble.__data__;
                 let radius = setPebbleRadius(data);
 
