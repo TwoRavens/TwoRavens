@@ -1092,28 +1092,30 @@ export function barsSubset(node) {
 }
 
 
-export function densityNode(node, obj) {
+export function densityNode(node, obj, radius) {
     var myname = node.name.toString().concat("nodeplot");
 
-    if (typeof obj === "undefined") {
-        var obj = document.getElementById(node.name.toString() + "biggroup");
-        // if obj contains an svg element, remove it. this removes any plot inside the node
-        if (d3.select(obj).selectAll("svg")[0].length > 0)
-            d3.select(obj).selectAll("svg").remove();
-    }
+    d3.select(obj).selectAll("svg").remove();
 
     var yVals = node.ploty;
     var xVals = node.plotx;
     // array of objects
     let data2 = node.plotx.map((x, i) => ({x: +x, y: +node.ploty[i]}));
 
-    var width = 60; // hardcoded, should be set automatically
-    var height = 30;
+    // default radius 40
+
+    // width 60
+    // height 30
+    // top 20
+    // l/r 10
+
+    var width = radius * 1.5;
+    var height = radius * 0.75;
     var margin = {
-        top: 20,
-        right: 10,
+        top: 50 - radius * .75,
+        right: (80 - width) / 2,
         bottom: 53,
-        left: 10
+        left: (80 - width) / 2
     };
 
     var x = d3.scale.linear()
@@ -1146,16 +1148,10 @@ export function densityNode(node, obj) {
         .attr("d", area);
 }
 
-export function barsNode(node, obj) {
+export function barsNode(node, obj, radius) {
     var myname = node.name.toString().concat("nodeplot");
 
-    if (typeof obj === "undefined") {
-        var obj = document.getElementById(node.name.toString() + "biggroup");
-        // if obj contains an svg element, remove it. this removes any plot inside the node
-        if (d3.select(obj).selectAll("svg")[0].length > 0) {
-            d3.select(obj).selectAll("svg").remove();
-        }
-    }
+    d3.select(obj).selectAll("svg").remove();
 
     // Histogram spacing
     var barPadding = .015; // Space between bars
@@ -1190,13 +1186,13 @@ export function barsNode(node, obj) {
     var minX = d3.min(xVals);
     var maxX = d3.max(xVals);
 
-    var width = 60;
-    var height = 30;
+    var width = radius * 1.5;
+    var height = radius * 0.75;
     var margin = {
-        top: 20,
-        right: 10,
+        top: 50 - radius * .75,
+        right: (80 - width) / 2,
         bottom: 53,
-        left: 10
+        left: (80 - width) / 2
     };
 
     var x = d3.scale.linear()

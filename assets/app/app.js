@@ -308,15 +308,15 @@ let svg, div, selectLadda;
 export let width, height, estimateLadda, discoveryLadda;
 
 // arcs for denoting pebble characteristics
-const arc = (start, end) => d3.svg.arc()
-    .innerRadius(RADIUS + 5)
-    .outerRadius(RADIUS + 20)
+const arc = (start, end) => (radius) => d3.svg.arc()
+    .innerRadius(radius + 5)
+    .outerRadius(radius + 20)
     .startAngle(start)
     .endAngle(end);
 export const [arc0, arc1, arc2, arc3, arc4] = [arc(0, 3.2), arc(0, 1), arc(1.1, 2.2), arc(2.3, 3.3), arc(4.3, 5.3)];
-const arcInd = (arclimits) => d3.svg.arc()
-    .innerRadius(RADIUS + 22)
-    .outerRadius(RADIUS + 37)
+const arcInd = (arclimits) => (radius) => d3.svg.arc()
+    .innerRadius(radius + 22)
+    .outerRadius(radius + 37)
     .startAngle(arclimits[0])
     .endAngle(arclimits[1]);
 
@@ -1227,7 +1227,6 @@ export function layout(v, v2) {
             .transition()
             .duration(100)
             .attr('r', d => setPebbleRadius(d));
-
     }
 
     // update graph (called when needed)
@@ -1300,7 +1299,6 @@ export function layout(v, v2) {
             .style('fill', x => d3.rgb(x.nodeCol))
             .style('stroke', x => d3.rgb(x.strokeColor))
             .style('stroke-width', x => x.strokeWidth);
-
         // add new nodes
         let g = circle.enter()
             .append('svg:g')
@@ -1309,31 +1307,52 @@ export function layout(v, v2) {
         // add plot
         g.each(function(d) {
             d3.select(this);
-            if (d.plottype == 'continuous') densityNode(d, this);
-            else if (d.plottype == 'bar') barsNode(d, this);
+            if (d.plottype == 'continuous') densityNode(d, this, setPebbleRadius(d));
+            else if (d.plottype == 'bar') barsNode(d, this, setPebbleRadius(d));
         });
 
         let append = (str, attr) => x => str + x[attr || 'id'];
 
-        g.append("path")
-            .attr("id", append('dvArc'))
-            .attr("d", arc3)
-            .style("fill", dvColor)
-            .attr("fill-opacity", 0)
-            .on('mouseover', function(d) {
-                fillThis(this, .3, 0, 100);
-                fill(d, 'dvText', .9, 0, 100);
+        let redrawPebbles = () => {
+            g[0].forEach((pebble) => {
+                let data = pebble.__data__;
+                let radius = setPebbleRadius(data);
+
+                if (data.plottype == 'continuous') densityNode(data, pebble, setPebbleRadius(data));
+                else if (data.plottype == 'bar') barsNode(data, pebble, setPebbleRadius(data));
+
+                d3.select(pebble.querySelector("[id^='pebbleLabel']")).style('font-size', radius * .175 + 7 + 'px')  // proportional scaling would be 14 / 40, but I added y-intercept at 7
+                d3.select(pebble.querySelector("[id^='dvArc']")).attr("d", arc3(radius))
+                d3.select(pebble.querySelector("[id^='nomArc']")).attr("d", arc4(radius))
+                d3.select(pebble.querySelector("[id^='grArc']")).attr("d", arc1(radius))
+                d3.select(pebble.querySelector("[id^='gr1indicator']")).attr("d", arcInd1(radius))
+                d3.select(pebble.querySelector("[id^='gr2indicator']")).attr("d", arcInd2(radius))
             })
-            .on('mouseout', function(d) {
-                fillThis(this, 0, 100, 500);
-                fill(d, 'dvText', 0, 100, 500);
-            })
-            .on('click', d => {
-                setColors(d, dvColor);
-                legend(dvColor);
-                restart();
-                d.group1 = d.group2 = false;
-            });
+        }
+
+        g.append("path").each(function(d) {
+            let radius = setPebbleRadius(d);
+            d3.select(this)
+                .attr("id", append('dvArc'))
+                .attr("d", arc3(radius))
+                .style("fill", dvColor)
+                .attr("fill-opacity", 0)
+                .on('mouseover', function(d) {
+                    fillThis(this, .3, 0, 100);
+                    fill(d, 'dvText', .9, 0, 100);
+                })
+                .on('mouseout', function(d) {
+                    fillThis(this, 0, 100, 500);
+                    fill(d, 'dvText', 0, 100, 500);
+                })
+                .on('click', function(d) {
+                    setColors(d, dvColor);
+                    legend(dvColor);
+                    d.group1 = d.group2 = false;
+                    redrawPebbles();
+                    restart();
+                });
+        })
 
         g.append("text")
             .attr("id", append('dvText'))
@@ -1344,27 +1363,31 @@ export function layout(v, v2) {
             .attr("xlink:href", append('#dvArc'))
             .text("Dep Var");
 
-        g.append("path")
-            .attr("id", append('nomArc'))
-            .attr("d", arc4)
-            .style("fill", nomColor)
-            .attr("fill-opacity", 0)
-            .on('mouseover', function(d) {
-                if (d.defaultNumchar == "character") return;
-                fillThis(this, .3, 0, 100);
-                fill(d, "nomText", .9, 0, 100);
-            })
-            .on('mouseout', function(d) {
-                if (d.defaultNumchar == "character") return;
-                fillThis(this, 0, 100, 500);
-                fill(d, "nomText", 0, 100, 500);
-            })
-            .on('click', function(d) {
-                if (d.defaultNumchar == "character") return;
-                setColors(d, nomColor);
-                legend(nomColor);
-                restart();
-            });
+        g.append("path").each(function(d) {
+            let radius = setPebbleRadius(d);
+            d3.select(this)
+                .attr("id", append('nomArc'))
+                .attr("d", arc4(radius))
+                .style("fill", nomColor)
+                .attr("fill-opacity", 0)
+                .on('mouseover', function (d) {
+                    if (d.defaultNumchar == "character") return;
+                    fillThis(this, .3, 0, 100);
+                    fill(d, "nomText", .9, 0, 100);
+                })
+                .on('mouseout', function (d) {
+                    if (d.defaultNumchar == "character") return;
+                    fillThis(this, 0, 100, 500);
+                    fill(d, "nomText", 0, 100, 500);
+                })
+                .on('click', function (d) {
+                    if (d.defaultNumchar == "character") return;
+                    setColors(d, nomColor);
+                    legend(nomColor);
+                    redrawPebbles();
+                    restart();
+                });
+        });
 
         g.append("text")
             .attr("id", append("nomText"))
@@ -1375,73 +1398,85 @@ export function layout(v, v2) {
             .attr("xlink:href", append("#nomArc"))
             .text("Nominal");
 
-        g.append("path")
-            .attr("id", append('grArc'))
-            .attr("d", arc1)
-            .style("fill",  gr1Color)
-            .attr("fill-opacity", 0)
-            .on('mouseover', function(d) {
-                fill(d, "gr1indicator", .3, 0, 100);
-                fill(d, "gr2indicator", .3, 0, 100);
-                fillThis(this, .3, 0, 100);
-                fill(d, 'grText', .9, 0, 100);
-            })
-            .on('mouseout', function(d) {
-                fill(d, "gr1indicator", 0, 100, 500);
-                fill(d, "gr2indicator", 0, 100, 500);
-                fillThis(this, 0, 100, 500);
-                fill(d, 'grText', 0, 100, 500);
-            })
-            .on('click', d => {
-                //d.group1 = !d.group1;      // This might be easier, but currently set in setColors()
-                setColors(d, gr1Color);
-                legend(gr1Color);
-                restart();
-            });
+        g.append("path").each(function(d) {
+            let radius = setPebbleRadius(d);
+            d3.select(this)
+                .attr("id", append('grArc'))
+                .attr("d", arc1(radius))
+                .style("fill", gr1Color)
+                .attr("fill-opacity", 0)
+                .on('mouseover', function (d) {
+                    fill(d, "gr1indicator", .3, 0, 100);
+                    fill(d, "gr2indicator", .3, 0, 100);
+                    fillThis(this, .3, 0, 100);
+                    fill(d, 'grText', .9, 0, 100);
+                })
+                .on('mouseout', function (d) {
+                    fill(d, "gr1indicator", 0, 100, 500);
+                    fill(d, "gr2indicator", 0, 100, 500);
+                    fillThis(this, 0, 100, 500);
+                    fill(d, 'grText', 0, 100, 500);
+                })
+                .on('click', d => {
+                    //d.group1 = !d.group1;      // This might be easier, but currently set in setColors()
+                    setColors(d, gr1Color);
+                    legend(gr1Color);
+                    redrawPebbles();
+                    restart();
+                });
+        });
 
-        g.append("path")
-            .attr("id", append('gr1indicator'))
-            .attr("d", arcInd1)
-            .style("fill", gr1Color)  // something like: zparams.zgroup1.indexOf(node.name) > -1  ?  #FFFFFF : gr1Color)
-            .attr("fill-opacity", 0)
-            .on('mouseover', function(d) {
-                fillThis(this, .3, 0, 100);
-                fill(d, "grArc", .1, 0, 100);
-                fill(d, 'grText', .9, 0, 100);
-            })
-            .on('mouseout', function(d) {
-                fillThis(this, 0, 100, 500);
-                fill(d, "grArc", 0, 100, 500);
-                fill(d, 'grText', 0, 100, 500);
-            })
-            .on('click', d => {
-                //d.group1 = !d.group1;      // This might be easier, but currently set in setColors()
-                setColors(d, gr1Color);
-                legend(gr1Color);
-                restart();
-            });
+        g.append("path").each(function(d) {
+            let radius = setPebbleRadius(d);
+            d3.select(this)
+                .attr("id", append('gr1indicator'))
+                .attr("d", arcInd1(radius))
+                .style("fill", gr1Color)  // something like: zparams.zgroup1.indexOf(node.name) > -1  ?  #FFFFFF : gr1Color)
+                .attr("fill-opacity", 0)
+                .on('mouseover', function (d) {
+                    fillThis(this, .3, 0, 100);
+                    fill(d, "grArc", .1, 0, 100);
+                    fill(d, 'grText', .9, 0, 100);
+                })
+                .on('mouseout', function (d) {
+                    fillThis(this, 0, 100, 500);
+                    fill(d, "grArc", 0, 100, 500);
+                    fill(d, 'grText', 0, 100, 500);
+                })
+                .on('click', d => {
+                    //d.group1 = !d.group1;      // This might be easier, but currently set in setColors()
+                    setColors(d, gr1Color);
+                    legend(gr1Color);
+                    redrawPebbles();
+                    restart();
+                });
+        });
 
-        g.append("path")
-            .attr("id", append('gr2indicator'))
-            .attr("d", arcInd2)
-            .style("fill", gr2Color)  // something like: zparams.zgroup1.indexOf(node.name) > -1  ?  #FFFFFF : gr1Color)
-            .attr("fill-opacity", 0)
-            .on('mouseover', function(d) {
-                fillThis(this, .3, 0, 100);
-                fill(d, "grArc", .1, 0, 100);
-                fill(d, 'grText', .9, 0, 100);
-            })
-            .on('mouseout', function(d) {
-                fillThis(this, 0, 100, 500);
-                fill(d, "grArc", 0, 100, 500);
-                fill(d, 'grText', 0, 100, 500);
-            })
-            .on('click', d => {
-                //d.group2 = !d.group2;      // This might be easier, but currently set in setColors()
-                setColors(d, gr2Color);
-                legend(gr2Color);
-                restart();
-            });
+        g.append("path").each(function(d) {
+            let radius = setPebbleRadius(d);
+            d3.select(this)
+                .attr("id", append('gr2indicator'))
+                .attr("d", arcInd2(radius))
+                .style("fill", gr2Color)  // something like: zparams.zgroup1.indexOf(node.name) > -1  ?  #FFFFFF : gr1Color)
+                .attr("fill-opacity", 0)
+                .on('mouseover', function (d) {
+                    fillThis(this, .3, 0, 100);
+                    fill(d, "grArc", .1, 0, 100);
+                    fill(d, 'grText', .9, 0, 100);
+                })
+                .on('mouseout', function (d) {
+                    fillThis(this, 0, 100, 500);
+                    fill(d, "grArc", 0, 100, 500);
+                    fill(d, 'grText', 0, 100, 500);
+                })
+                .on('click', d => {
+                    //d.group2 = !d.group2;      // This might be easier, but currently set in setColors()
+                    setColors(d, gr2Color);
+                    legend(gr2Color);
+                    redrawPebbles();
+                    restart();
+                });
+        });
 
         g.append("text")
             .attr("id", append('grText'))
@@ -1545,6 +1580,7 @@ export function layout(v, v2) {
 
         // show node names
         g.append('svg:text')
+            .attr('id', append('pebbleLabel'))
             .attr('x', 0)
             .attr('y', 15)
             .attr('class', 'id')
