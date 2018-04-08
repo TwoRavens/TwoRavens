@@ -323,6 +323,10 @@ const arcInd = (arclimits) => (radius) => d3.svg.arc()
 const [arcInd1Limits, arcInd2Limits] = [[0, 0.3], [0.35, 0.65]];
 const [arcInd1, arcInd2] = [arcInd(arcInd1Limits), arcInd(arcInd2Limits)];
 
+// milliseconds to wait before showing/hiding the pebble handles
+let hoverTimeout = 150;
+let hoverPebble;
+
 export let byId = id => document.getElementById(id);
 // export let byId = id => {console.log(id); return document.getElementById(id);}
 
@@ -812,7 +816,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
 }
 
 let $fill = (obj, op, d1, d2) => d3.select(obj).transition()
-    .attr('fill-opacity', op)
+    .attr('fill-opacity', op).attr('display', op ? '' : 'none')
     .delay(d1)
     .duration(d2);
 let fill = (d, id, op, d1, d2) => $fill('#' + id + d.id, op, d1, d2);
@@ -1341,12 +1345,22 @@ export function layout(v, v2) {
                 .style("fill", dvColor)
                 .attr("fill-opacity", 0)
                 .on('mouseover', function(d) {
-                    fillThis(this, .3, 0, 100);
-                    fill(d, 'dvText', .9, 0, 100);
+                    d.forefront = true;
+                    if (hoverPebble === d.id) {
+                        setTimeout(() => {
+                            if (!d.forefront) return;
+                            hoverPebble = d.id;
+                            fillThis(this, .3, 0, 100);
+                            fill(d, 'dvText', .9, 0, 100);
+                        }, hoverTimeout)
+                    }
                 })
                 .on('mouseout', function(d) {
-                    fillThis(this, 0, 100, 500);
-                    fill(d, 'dvText', 0, 100, 500);
+                    d.forefront = false;
+                    setTimeout(() => {
+                        fillThis(this, 0, 100, 500);
+                        fill(d, 'dvText', 0, 100, 500);
+                    }, hoverTimeout)
                 })
                 .on('click', function(d) {
                     setColors(d, dvColor);
@@ -1375,13 +1389,23 @@ export function layout(v, v2) {
                 .attr("fill-opacity", 0)
                 .on('mouseover', function (d) {
                     if (d.defaultNumchar == "character") return;
-                    fillThis(this, .3, 0, 100);
-                    fill(d, "nomText", .9, 0, 100);
+                    d.forefront = true;
+                    if (hoverPebble === d.id) {
+                        setTimeout(() => {
+                            if (!d.forefront) return;
+                            hoverPebble = d.id;
+                            fillThis(this, .3, 0, 100);
+                            fill(d, "nomText", .9, 0, 100);
+                        }, hoverTimeout)
+                    }
                 })
                 .on('mouseout', function (d) {
                     if (d.defaultNumchar == "character") return;
-                    fillThis(this, 0, 100, 500);
-                    fill(d, "nomText", 0, 100, 500);
+                    d.forefront = false;
+                    setTimeout(() => {
+                        fillThis(this, 0, 100, 500);
+                        fill(d, "nomText", 0, 100, 500);
+                    }, hoverTimeout)
                 })
                 .on('click', function (d) {
                     if (d.defaultNumchar == "character") return;
@@ -1411,14 +1435,24 @@ export function layout(v, v2) {
                 .on('mouseover', function (d) {
                     fill(d, "gr1indicator", .3, 0, 100);
                     fill(d, "gr2indicator", .3, 0, 100);
-                    fillThis(this, .3, 0, 100);
-                    fill(d, 'grText', .9, 0, 100);
+                    d.forefront = true;
+                    if (hoverPebble === d.id) {
+                        setTimeout(() => {
+                            if (!d.forefront) return;
+                            hoverPebble = d.id;
+                            fillThis(this, .3, 0, 100);
+                            fill(d, 'grText', .9, 0, 100);
+                        }, hoverTimeout)
+                    }
                 })
                 .on('mouseout', function (d) {
-                    fill(d, "gr1indicator", 0, 100, 500);
-                    fill(d, "gr2indicator", 0, 100, 500);
-                    fillThis(this, 0, 100, 500);
-                    fill(d, 'grText', 0, 100, 500);
+                    d.forefront = false;
+                    setTimeout(() => {
+                        fill(d, "gr1indicator", 0, 100, 500);
+                        fill(d, "gr2indicator", 0, 100, 500);
+                        fillThis(this, 0, 100, 500);
+                        fill(d, 'grText', 0, 100, 500);
+                    }, hoverTimeout)
                 })
                 .on('click', d => {
                     //d.group1 = !d.group1;      // This might be easier, but currently set in setColors()
@@ -1437,14 +1471,24 @@ export function layout(v, v2) {
                 .style("fill", gr1Color)  // something like: zparams.zgroup1.indexOf(node.name) > -1  ?  #FFFFFF : gr1Color)
                 .attr("fill-opacity", 0)
                 .on('mouseover', function (d) {
-                    fillThis(this, .3, 0, 100);
-                    fill(d, "grArc", .1, 0, 100);
-                    fill(d, 'grText', .9, 0, 100);
+                    d.forefront = true;
+                    if (hoverPebble === d.id) {
+                        setTimeout(() => {
+                            if (!d.forefront) return;
+                            hoverPebble = d.id;
+                            fillThis(this, .3, 0, 100);
+                            fill(d, "grArc", .1, 0, 100);
+                            fill(d, 'grText', .9, 0, 100);
+                        }, hoverTimeout)
+                    }
                 })
                 .on('mouseout', function (d) {
-                    fillThis(this, 0, 100, 500);
-                    fill(d, "grArc", 0, 100, 500);
-                    fill(d, 'grText', 0, 100, 500);
+                    d.forefront = false;
+                    setTimeout(() => {
+                        fillThis(this, 0, 100, 500);
+                        fill(d, "grArc", 0, 100, 500);
+                        fill(d, 'grText', 0, 100, 500);
+                    }, hoverTimeout)
                 })
                 .on('click', d => {
                     //d.group1 = !d.group1;      // This might be easier, but currently set in setColors()
@@ -1463,14 +1507,24 @@ export function layout(v, v2) {
                 .style("fill", gr2Color)  // something like: zparams.zgroup1.indexOf(node.name) > -1  ?  #FFFFFF : gr1Color)
                 .attr("fill-opacity", 0)
                 .on('mouseover', function (d) {
-                    fillThis(this, .3, 0, 100);
-                    fill(d, "grArc", .1, 0, 100);
-                    fill(d, 'grText', .9, 0, 100);
+                    d.forefront = true;
+                    if (hoverPebble === d.id) {
+                        setTimeout(() => {
+                            if (!d.forefront) return;
+                            hoverPebble = d.id;
+                            fillThis(this, .3, 0, 100);
+                            fill(d, "grArc", .1, 0, 100);
+                            fill(d, 'grText', .9, 0, 100);
+                        }, hoverTimeout)
+                    }
                 })
                 .on('mouseout', function (d) {
-                    fillThis(this, 0, 100, 500);
-                    fill(d, "grArc", 0, 100, 500);
-                    fill(d, 'grText', 0, 100, 500);
+                    d.forefront = false;
+                    setTimeout(() => {
+                        fillThis(this, 0, 100, 500);
+                        fill(d, "grArc", 0, 100, 500);
+                        fill(d, 'grText', 0, 100, 500);
+                    }, hoverTimeout)
                 })
                 .on('click', d => {
                     //d.group2 = !d.group2;      // This might be easier, but currently set in setColors()
@@ -1602,31 +1656,39 @@ export function layout(v, v2) {
                 byId("transSel").selectedIndex = d.id;
                 transformVar = valueKey[d.id];
 
-                fill(d, "dvArc", .1, 0, 100);
-                fill(d, "dvText", .5, 0, 100);
-                fill(d, "grArc", .1, 0, 100);
-                fill(d, "grText", .5, 0, 100);
-                //fill(d, "gr1indicator", .1, 0, 100);
-                //fill(d, "gr1indicatorText", .1, 0, 100);
-                //fill(d, "gr2indicator", .1, 0, 100);
-                //fill(d, "gr2indicatorText", .1, 0, 100);
+                setTimeout(() => {
+                    if (!d.forefront) return;
+                    hoverPebble = d.id;
 
-                if (d.defaultNumchar == "numeric") {
-                    fill(d, "nomArc", .1, 0, 100);
-                    fill(d, "nomText", .5, 0, 100);
-                }
-                fill(d, "csArc", .1, 0, 100);
-                fill(d, "csText", .5, 0, 100);
-                fill(d, "timeArc", .1, 0, 100);
-                fill(d, "timeText", .5, 0, 100);
+                    fill(d, "dvArc", .1, 0, 100);
+                    fill(d, "dvText", .5, 0, 100);
+                    fill(d, "grArc", .1, 0, 100);
+                    fill(d, "grText", .5, 0, 100);
 
+                    //fill(d, "gr1indicator", .1, 0, 100);
+                    //fill(d, "gr1indicatorText", .1, 0, 100);
+                    //fill(d, "gr2indicator", .1, 0, 100);
+                    //fill(d, "gr2indicatorText", .1, 0, 100);
+
+                    if (d.defaultNumchar == "numeric") {
+                        fill(d, "nomArc", .1, 0, 100);
+                        fill(d, "nomText", .5, 0, 100);
+                    }
+                    fill(d, "csArc", .1, 0, 100);
+                    fill(d, "csText", .5, 0, 100);
+                    fill(d, "timeArc", .1, 0, 100);
+                    fill(d, "timeText", .5, 0, 100);
+                }, hoverTimeout)
                 m.redraw();
             })
             .on('mouseout', d => {
                 d.forefront = false;
-                summaryHold || setLeftTab(leftTabHidden);
-                'csArc csText timeArc timeText dvArc dvText nomArc nomText grArc grText'.split(' ').map(x => fill(d, x, 0, 100, 500));
-                m.redraw();
+                setTimeout(() => {
+                    hoverPebble = undefined;
+                    summaryHold || setLeftTab(leftTabHidden);
+                    'csArc csText timeArc timeText dvArc dvText nomArc nomText grArc grText'.split(' ').map(x => fill(d, x, 0, 100, 500));
+                    m.redraw();
+                }, hoverTimeout)
             });
 
         // the transformation variable list is silently updated as pebbles are added/removed
