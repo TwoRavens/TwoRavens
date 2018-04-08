@@ -1234,6 +1234,9 @@ export function layout(v, v2) {
             .attr('r', d => setPebbleRadius(d));
     }
 
+    // this is to detect a click in the whitespace, but not on a pebble
+    let outsideClick = false;
+
     // update graph (called when needed)
     restart = function($links) {
         if (is_results_mode) {
@@ -1558,13 +1561,14 @@ export function layout(v, v2) {
             .style('opacity', "0.5")
             .style('stroke', d => d3.rgb(d.strokeColor).toString())
             .classed('reflexive', d => d.reflexive)
+            // TODO should this be used?
             .on('dblclick', function(_) {
                 d3.event.stopPropagation(); // stop click from bubbling
                 summaryHold = true;
-                console.log(_);
             })
             .on('click', function(d) {
                 selectedPebble = d.name;
+                outsideClick = false;
                 redrawPebbles();
             })
             .on('contextmenu', function(d) {
@@ -1658,16 +1662,20 @@ export function layout(v, v2) {
         // SVG doesn't support text wrapping, use html instead
         g.selectAll("circle.node")
             .on("mouseover", d => {
-                leftTabHidden = leftTab;
-                setLeftTab('Summary');
-                varSummary(d);
+
                 d.forefront = true;
 
-                byId('transformations').setAttribute('style', 'display:block');
-                byId("transSel").selectedIndex = d.id;
-                transformVar = valueKey[d.id];
-
                 setTimeout(() => {
+                    if (leftTab !== 'Summary') leftTabHidden = leftTab;
+                    setLeftTab('Summary');
+                    varSummary(d);
+
+                    byId('transformations').setAttribute('style', 'display:block');
+                    byId("transSel").selectedIndex = d.id;
+                    transformVar = valueKey[d.id];
+
+                    m.redraw();
+
                     if (!d.forefront) return;
                     hoverPebble = d.name;
 
@@ -1690,13 +1698,14 @@ export function layout(v, v2) {
                     fill(d, "timeArc", .1, 0, 100);
                     fill(d, "timeText", .5, 0, 100);
                 }, hoverTimeout)
-                m.redraw();
             })
             .on('mouseout', d => {
                 d.forefront = false;
                 setTimeout(() => {
                     hoverPebble = undefined;
-                    summaryHold || setLeftTab(leftTabHidden);
+
+                    if (selectedPebble) varSummary(allNodes.filter((node) => node.name === selectedPebble)[0]);
+                    else setLeftTab(leftTabHidden);
                     'csArc csText timeArc timeText dvArc dvText nomArc nomText grArc grText'.split(' ').map(x => fill(d, x, 0, 100, 500));
                     m.redraw();
                 }, hoverTimeout)
@@ -1751,6 +1760,7 @@ export function layout(v, v2) {
         // because :active only works in WebKit?
         svg.classed('active', true);
         if (d3.event.ctrlKey || mousedown_node || mousedown_link) return;
+        outsideClick = true;
         restart();
     }
 
@@ -1766,6 +1776,14 @@ export function layout(v, v2) {
             drag_line
                 .classed('hidden', true)
                 .style('marker-end', '');
+        }
+        if (outsideClick) {
+            outsideClick = false;
+            if (leftTabHidden) {
+                setLeftTab(leftTabHidden);
+                leftTabHidden = undefined;
+                m.redraw();
+            }
         }
         // because :active only works in WebKit?
         svg.classed('active', false);
@@ -1797,6 +1815,10 @@ export function layout(v, v2) {
         // trigger the event
         let clickID = "dvArc"+findNodeIndex(mytarget);
         byId(clickID).dispatchEvent(click_ev);
+
+        // The dispatched click sets the leftpanel. This switches the panel back on page load
+        selectedPebble = undefined;
+        mouseup();
     }
 }
 
