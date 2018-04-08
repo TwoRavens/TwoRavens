@@ -326,6 +326,7 @@ const [arcInd1, arcInd2] = [arcInd(arcInd1Limits), arcInd(arcInd2Limits)];
 // milliseconds to wait before showing/hiding the pebble handles
 let hoverTimeout = 150;
 let hoverPebble;
+let selectedPebble;
 
 export let byId = id => document.getElementById(id);
 // export let byId = id => {console.log(id); return document.getElementById(id);}
@@ -1346,10 +1347,10 @@ export function layout(v, v2) {
                 .attr("fill-opacity", 0)
                 .on('mouseover', function(d) {
                     d.forefront = true;
-                    if (hoverPebble === d.id) {
+                    if (hoverPebble === d.name) {
                         setTimeout(() => {
                             if (!d.forefront) return;
-                            hoverPebble = d.id;
+                            hoverPebble = d.name;
                             fillThis(this, .3, 0, 100);
                             fill(d, 'dvText', .9, 0, 100);
                         }, hoverTimeout)
@@ -1366,6 +1367,7 @@ export function layout(v, v2) {
                     setColors(d, dvColor);
                     legend(dvColor);
                     d.group1 = d.group2 = false;
+                    selectedPebble = d.name;
                     redrawPebbles();
                     restart();
                 });
@@ -1390,10 +1392,10 @@ export function layout(v, v2) {
                 .on('mouseover', function (d) {
                     if (d.defaultNumchar == "character") return;
                     d.forefront = true;
-                    if (hoverPebble === d.id) {
+                    if (hoverPebble === d.name) {
                         setTimeout(() => {
                             if (!d.forefront) return;
-                            hoverPebble = d.id;
+                            hoverPebble = d.name;
                             fillThis(this, .3, 0, 100);
                             fill(d, "nomText", .9, 0, 100);
                         }, hoverTimeout)
@@ -1411,6 +1413,7 @@ export function layout(v, v2) {
                     if (d.defaultNumchar == "character") return;
                     setColors(d, nomColor);
                     legend(nomColor);
+                    selectedPebble = d.name;
                     redrawPebbles();
                     restart();
                 });
@@ -1436,10 +1439,10 @@ export function layout(v, v2) {
                     fill(d, "gr1indicator", .3, 0, 100);
                     fill(d, "gr2indicator", .3, 0, 100);
                     d.forefront = true;
-                    if (hoverPebble === d.id) {
+                    if (hoverPebble === d.name) {
                         setTimeout(() => {
                             if (!d.forefront) return;
-                            hoverPebble = d.id;
+                            hoverPebble = d.name;
                             fillThis(this, .3, 0, 100);
                             fill(d, 'grText', .9, 0, 100);
                         }, hoverTimeout)
@@ -1458,6 +1461,7 @@ export function layout(v, v2) {
                     //d.group1 = !d.group1;      // This might be easier, but currently set in setColors()
                     setColors(d, gr1Color);
                     legend(gr1Color);
+                    selectedPebble = d.name;
                     redrawPebbles();
                     restart();
                 });
@@ -1472,10 +1476,10 @@ export function layout(v, v2) {
                 .attr("fill-opacity", 0)
                 .on('mouseover', function (d) {
                     d.forefront = true;
-                    if (hoverPebble === d.id) {
+                    if (hoverPebble === d.name) {
                         setTimeout(() => {
                             if (!d.forefront) return;
-                            hoverPebble = d.id;
+                            hoverPebble = d.name;
                             fillThis(this, .3, 0, 100);
                             fill(d, "grArc", .1, 0, 100);
                             fill(d, 'grText', .9, 0, 100);
@@ -1494,6 +1498,7 @@ export function layout(v, v2) {
                     //d.group1 = !d.group1;      // This might be easier, but currently set in setColors()
                     setColors(d, gr1Color);
                     legend(gr1Color);
+                    selectedPebble = d.name;
                     redrawPebbles();
                     restart();
                 });
@@ -1508,10 +1513,10 @@ export function layout(v, v2) {
                 .attr("fill-opacity", 0)
                 .on('mouseover', function (d) {
                     d.forefront = true;
-                    if (hoverPebble === d.id) {
+                    if (hoverPebble === d.name) {
                         setTimeout(() => {
                             if (!d.forefront) return;
-                            hoverPebble = d.id;
+                            hoverPebble = d.name;
                             fillThis(this, .3, 0, 100);
                             fill(d, "grArc", .1, 0, 100);
                             fill(d, 'grText', .9, 0, 100);
@@ -1530,6 +1535,7 @@ export function layout(v, v2) {
                     //d.group2 = !d.group2;      // This might be easier, but currently set in setColors()
                     setColors(d, gr2Color);
                     legend(gr2Color);
+                    selectedPebble = d.name;
                     redrawPebbles();
                     restart();
                 });
@@ -1555,6 +1561,11 @@ export function layout(v, v2) {
             .on('dblclick', function(_) {
                 d3.event.stopPropagation(); // stop click from bubbling
                 summaryHold = true;
+                console.log(_);
+            })
+            .on('click', function(d) {
+                selectedPebble = d.name;
+                redrawPebbles();
             })
             .on('contextmenu', function(d) {
                 // right click on node
@@ -1658,7 +1669,7 @@ export function layout(v, v2) {
 
                 setTimeout(() => {
                     if (!d.forefront) return;
-                    hoverPebble = d.id;
+                    hoverPebble = d.name;
 
                     fill(d, "dvArc", .1, 0, 100);
                     fill(d, "dvText", .5, 0, 100);
@@ -1734,6 +1745,7 @@ export function layout(v, v2) {
     }
 
     function mousedown(d) {
+        selectedPebble = undefined;
         // prevent I-bar on drag
         d3.event.preventDefault();
         // because :active only works in WebKit?
@@ -3236,12 +3248,16 @@ function jamescentroid(coord) {
    Members of groups are scaled down if group gets large.
 */
 export function setPebbleRadius(d){
-    if (d.group1 || d.group2){ // if a member of a group, need to calculate radius size
+    if (d.group1 || d.group2) { // if a member of a group, need to calculate radius size
         var uppersize = 7;
         var ng1 = (d.group1) ? zparams.zgroup1.length : 1; // size of group1, if a member of group 1
         var ng2 = (d.group2) ? zparams.zgroup2.length : 1; // size of group2, if a member of group 2
         var maxng = Math.max(ng1, ng2); // size of the largest group variable is member of
-        return (maxng>uppersize) ? RADIUS*Math.sqrt(uppersize/maxng) : RADIUS; // keep total area of pebbles bounded to pi * RADIUS^2 * uppersize, thus shrinking radius for pebbles in larger groups
+        let node_radius = (maxng>uppersize) ? RADIUS*Math.sqrt(uppersize/maxng) : RADIUS; // keep total area of pebbles bounded to pi * RADIUS^2 * uppersize, thus shrinking radius for pebbles in larger groups
+
+        // make the selected node a bit bigger
+        if (d.name === selectedPebble) return Math.min(node_radius * 1.5, RADIUS);
+        return node_radius
     } else {
         return RADIUS; // nongroup members get the common global radius
     }
