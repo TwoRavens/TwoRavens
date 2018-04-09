@@ -1,4 +1,5 @@
 import m from 'mithril'
+// This honestly doesn't do much. More of a proof of concept
 
 // Specification
 
@@ -6,14 +7,13 @@ import m from 'mithril'
 // ```
 // m(Button, {
 //     id: 'buttonID',
-//     text: 'Click Me!',
 //     onclick: () => console.log("buttonID was clicked"),
 //     })
 // ```
 
 export default class Button {
     view(vnode) {
-        let {id, text} = vnode.attrs;
-        return m(`#${id || 'btn' + text}.btn.btn-default`, vnode.attrs, text)
+        let {id} = vnode.attrs;
+        return m(`#${id || 'btn' + text}.btn.btn-default`, vnode.attrs, vnode.children)
     }
 }

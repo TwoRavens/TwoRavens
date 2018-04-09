@@ -63,6 +63,7 @@ function onScrollEvent() {
 }
 
 function onStorageEvent (peek, e) {
+
     if (e.key !== 'peekTableData') return;
 
     peek.header = localStorage.getItem('peekHeader');
