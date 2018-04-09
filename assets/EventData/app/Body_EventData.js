@@ -5,7 +5,6 @@ import * as aggreg from './aggreg/aggreg';
 import * as tour from "./tour";
 
 import {tableHeight} from "./aggreg/aggreg";
-import {resizeActorSVG} from "./subsets/Actor";
 
 import * as common from '../../common/app/common';
 import {panelMargin, heightHeader, heightFooter, canvasScroll, scrollbarWidth} from "../../common/app/common";
@@ -18,9 +17,9 @@ import MenuTabbed from '../../common/app/views/MenuTabbed';
 import MenuHeaders from '../../common/app/views/MenuHeaders';
 import PanelList from '../../common/app/views/PanelList';
 import TextField from '../../common/app/views/TextField';
-import DropdownPopup from '../../common/app/views/DropdownPopup';
 import ButtonRadio from '../../common/app/views/ButtonRadio';
 
+import CanvasDatasets from "./views/CanvasDatasets";
 import CanvasAction from "./views/CanvasAction";
 import CanvasActor from "./views/CanvasActor";
 import CanvasCoordinates from "./views/CanvasCoordinates";
@@ -31,14 +30,17 @@ import CanvasPentaClass from "./views/CanvasPentaClass";
 import CanvasRootCode from "./views/CanvasRootCode";
 
 import TableAggregation from "./views/TableAggregation";
+import {setPanelOcclusion} from "../../common/app/common";
 
 export default class Body_EventData {
 
     oninit(vnode) {
-        if (vnode.attrs.mode !== 'subset') {
-            m.route.set('/subset');
-            vnode.attrs.mode = 'subset';
+        if (vnode.attrs.mode !== 'datasets') {
+            m.route.set('/datasets');
+            vnode.attrs.mode = 'datasets';
         }
+        // reset peeked data on page load
+        localStorage.removeItem('peekTableData');
     }
 
     oncreate() {
@@ -48,61 +50,10 @@ export default class Body_EventData {
     }
 
     header(mode) {
-        let datasets = [
-            {
-                name: 'Phoenix - UTDallas',
-                content: [
-                    m("p", "A real-time Phoenix-coded event dataset constructed at The University of Texas at Dallas."),
-                ]
-            },
-            {
-                name: 'Cline - New York Times',
-                content: [
-                    m(".head", {style: {"margin-left": "40px"}},
-                        m("a[href='http://www.clinecenter.illinois.edu/data/event/phoenix/']", {style: {color: '#337ab7'}}, "Cline New York Times")
-                    ),
-                    m("p", "This data is sourced from the New York Times and collected by the Cline Center for Advanced Social Research."),
-                ]
-            },
-            {
-                name: 'Cline - CIA Broadcast',
-                content: [
-                    m(".head", {style: {"margin-left": "40px"}},
-                        m("a[href='http://www.clinecenter.illinois.edu/data/event/phoenix/']", {style: {color: '#337ab7'}}, "Cline CIA Broadcast")
-                    ),
-                    m("p", "This data is sourced from the CIA Foreign Broadcast Information Service and collected by the Cline Center for Advanced Social Research."),
-                ]
-            },
-            {
-                name: 'Cline - BBC Summary',
-                content: [
-                    m(".head", {style: {"margin-left": "40px"}},
-                        m("a[href='http://www.clinecenter.illinois.edu/data/event/phoenix/']", {style: {color: '#337ab7'}}, "Cline BBC Summary")
-                    ),
-                    m("p", "This data is sourced from the BBC Summary of World Broadcasts and collected by the Cline Center for Advanced Social Research."),
-                ]
-            },
-            {
-                name: 'ICEWS',
-                content: [
-                    m(".head", {style: {"margin-left": "40px"}},
-                        m("a[href='https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/28075']", {style: {color: '#337ab7'}}, "ICEWS Coded Event Data")
-                    ),
-                    m("p", "Event data consists of coded interactions between socio-political actors (i.e., cooperative or hostile actions between individuals, groups, sectors and nation states).")
-                ]
-            }
-        ];
-
         return m(Header,
 
             m('div', {style: {'flex-grow': 1}}),
-            // Dataset Selection
-            m(DropdownPopup, {
-                header: 'Dataset Selection',
-                sections: datasets,
-                callback: app.setDataset
-            }),
-            m("h4", m("span.label.label-default[id='datasetLabel']")),
+            m("h4", m("span#datasetLabel.label.label-default", app.dataset)),
 
             m('div', {style: {'flex-grow': 1}}),
             m("button#btnPeek.btn.btn-default", {
@@ -140,6 +91,7 @@ export default class Body_EventData {
                 },
                 activeSection: app.opMode,
                 sections: [
+                    {value: 'Datasets'},
                     {value: 'Subset', id: 'btnSubsetSubmit'},
                     {value: 'Aggregate', id: 'aggSubmit'}
                 ]
@@ -240,6 +192,10 @@ export default class Body_EventData {
     }
 
     leftpanel(mode) {
+        if (mode === 'datasets') {
+            setPanelOcclusion('left', `calc(250px + ${2 * panelMargin}px)`);
+        }
+
         if (mode === 'subset') {
             return m(Panel, {
                 side: 'left',
@@ -326,16 +282,19 @@ export default class Body_EventData {
     }
 
     rightpanel(mode) {
+
+        let styling = {};
+        if (mode === 'datasets') styling = {display: 'none'};
+        if (mode === 'aggregate') styling = {
+            height: `calc(100% - ${heightHeader + heightFooter}px - ${2 * panelMargin}px - ${canvasScroll['horizontal'] ? scrollbarWidth : 0}px - ${tableHeight})`
+        };
+
         return m(Panel, {
             id: 'rightPanelMenu',
             side: 'right',
             label: 'Query Summary',
             width: '250px',
-            attrsAll: {
-                style: mode === 'aggregate' ? {
-                    height: `calc(100% - ${heightHeader + heightFooter}px - ${2 * panelMargin}px - ${canvasScroll['horizontal'] ? scrollbarWidth : 0}px - ${tableHeight})`
-                } : {}
-            },
+            attrsAll: {style: styling},
             contents: [
                 m(MenuHeaders, {
                     id: 'querySummaryMenu',
@@ -394,6 +353,7 @@ export default class Body_EventData {
                 }, "Stage"),
                 m(Canvas, {
                     contents: [
+                        m(CanvasDatasets, {mode: mode, display: ('Datasets' === app.canvasKeySelected) ? 'block' : 'none'}),
                         m(CanvasActor, {mode: mode, display: display('Actor')}),
                         m(CanvasDate, {mode: mode, display: display('Date')}),
                         m(CanvasAction, {mode: mode, display: display('Action')}),

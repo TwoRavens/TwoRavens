@@ -22,6 +22,20 @@ import '../../../node_modules/jqtree/tree.jquery.js';
 import '../../../node_modules/jqtree/jqtree.css';
 import '../pkgs/jqtree/jqtree.style.css';
 
+let production = false;
+
+export let rappURL = '';
+if (!production) {
+    // base URL for the R apps:
+    //rappURL = "http://localhost:8000/custom/";
+    rappURL = ROOK_SVC_URL; // Note: The ROOK_SVC_URL is set by django in /templates/index.html
+} else {
+    rappURL = "https://beta.dataverse.org/custom/"; //this will change when/if the production host changes
+}
+
+let appname = 'eventdatasubsetapp';
+export let subsetURL = rappURL + appname;
+
 // Select which tab is shown in the left panel
 export let setLeftTab = (tab) => leftTab = tab;
 export let leftTab = 'Subsets';
@@ -49,7 +63,7 @@ export function handleResize() {
     }
 }
 
-export let opMode = "subset";
+export let opMode = "datasets";
 
 export function setOpMode(mode) {
     mode = mode.toLowerCase();
@@ -59,6 +73,7 @@ export function setOpMode(mode) {
     // Some canvases only exist in certain modes. Fall back to default if necessary.
     if (mode === 'subset' && subsetKeys.indexOf(canvasKeySelected) === -1) showCanvas('Actor');
     if (mode === 'aggregate' && aggregateKeys.indexOf(canvasKeySelected) === -1) showCanvas('Date');
+    if (mode === 'datasets' && 'Datasets' !== canvasKeySelected) showCanvas('Datasets');
 
     opMode = mode;
     if (mode === 'subset') {
@@ -79,34 +94,13 @@ export function setOpMode(mode) {
     // m.route.set('/' + mode);
 }
 
-let production = false;
-
-export let rappURL = '';
-if (!production) {
-    // base URL for the R apps:
-    //rappURL = "http://localhost:8000/custom/";
-    rappURL = ROOK_SVC_URL; // Note: The ROOK_SVC_URL is set by django in /templates/index.html
-} else {
-    rappURL = "https://beta.dataverse.org/custom/"; //this will change when/if the production host changes
-}
-
-let appname = 'eventdatasubsetapp';
-export let subsetURL = rappURL + appname;
-
-export function setDataset(dataset) {
-    localStorage.setItem('dataset', {
-            'Phoenix - UTDallas': 'phoenix_rt',
-            'Cline - New York Times': 'cline_phoenix_nyt',
-            'Cline - CIA Broadcast': 'cline_phoenix_fbis',
-            'Cline - BBC Summary': 'cline_phoenix_swb',
-            'ICEWS': 'icews'
-        }[dataset]
-    );
-    window.location.reload(false);
-}
-
 // Options: one of ["phoenix_rt", "cline_phoenix_swb", "cline_phoenix_nyt", "cline_phoenix_fbis", "icews"]
 export let dataset = 'phoenix_rt';
+export let setDataset = (set) => {
+    dataset = set;
+    submitQuery(true);
+};
+
 if (localStorage.getItem("dataset") !== null) {
     dataset = localStorage.getItem('dataset');
 }
@@ -116,7 +110,7 @@ export let datasource = 'api';
 
 export let subsetKeys = ["Actor", "Date", "Action", "Location", "Coordinates", "Custom"]; // Used to label buttons in the left panel
 export let aggregateKeys = ["Actor", "Date", "Penta Class", "Root Code"];
-export let canvasKeySelected = "Actor";
+export let canvasKeySelected = "Datasets";
 
 export let variables = [];
 
@@ -421,7 +415,6 @@ export function download() {
 	}
 }
 
-// TODO reset when a new query is submitted
 let resetPeek = () => {
     peekSkip = 0;
     peekData = [];
@@ -1270,7 +1263,7 @@ export function reset() {
 /**
  * Makes web request for rightpanel preferences
  */
-export function submitQuery() {
+export function submitQuery(datasetChanged=false) {
 
     // Only construct and submit the query if new subsets have been added since last query
     let newSubsets = false;
@@ -1281,16 +1274,18 @@ export function submitQuery() {
         }
     }
 
-    if (!newSubsets) {
+    if (!newSubsets && !datasetChanged) {
         alert("Nothing has been staged yet! Stage your preferences before subset.");
         return;
     }
 
     function submitQueryCallback(jsondata) {
-        let subsetTree = $('#subsetTree');
 
         // If page setup failed, then don't lock the preferences behind a query
         if (!pageSetup(jsondata)) return;
+
+        // when requerying for switching datasets, don't make right panel edits
+        if (datasetChanged) return;
 
         // True for adding a query group, all existing preferences are grouped under a 'query group'
         addGroup(true);
@@ -1298,6 +1293,7 @@ export function submitQuery() {
         // Add all nodes to selection
         let nodeList = [...Array(nodeId).keys()];
 
+        let subsetTree = $('#subsetTree');
         nodeList.forEach(
             function (node_id) {
                 const node = subsetTree.tree("getNodeById", node_id);
@@ -1339,7 +1335,8 @@ export function submitQuery() {
         'type': 'sample'
     };
 
-    laddaUpdate.start();
+    if (datasetChanged) laddaReset.start();
+    else laddaUpdate.start();
     makeCorsRequest(subsetURL, query, submitQueryCallback);
 }
 

@@ -4,8 +4,12 @@ import * as common from '../common';
 import Header from './Header';
 import Table from './Table';
 import Canvas from './Canvas';
+import {heightHeader} from "../common";
+import {heightFooter} from "../common";
 
 // widget for displaying a full-page data preview
+
+// localstorage entries:
 
 // READ FIELDS
 // peekHeader: text in header label
@@ -46,19 +50,17 @@ export default class Peek {
                         headers: this.tableHeaders,
                         data: this.tableData,
                         attrsAll: {style: {overflow: 'auto'}}
-                    })
+                    }),
+                    attrsAll: {style: {height: `calc(100% - ${heightHeader}px)`}}
                 }
             )
         ]
     }
 }
 
-// there is no footer in the peek menu
-common.heightFooter = 0;
-
-let onScrollEvent = (e) => {
+let onScrollEvent = () => {
     let canvas = document.getElementById('canvas');
-    if (canvas.scrollTopMax === canvas.scrollTop && m.route.get('/peek')) {
+    if (canvas.scrollTopMax === canvas.scrollTop) {
         localStorage.setItem('peekMore', 'true');
     }
 };

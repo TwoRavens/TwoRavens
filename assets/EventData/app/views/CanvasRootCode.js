@@ -1,5 +1,4 @@
 import m from 'mithril';
-import {panelMargin} from "../../../common/app/common";
 
 // Aggregation menu!
 export default class CanvasRootCode {
