@@ -61,6 +61,7 @@ function leftpanel(mode) {
         label: 'Data Selection',
         hover: true,
         width: app.modelLeftPanelWidths[app.leftTab],
+        attrsAll: {style: {'z-index': 101}},
         contents: m(MenuTabbed, {
             id: 'leftpanelMenu',
             attrsAll: {style: {height: 'calc(100% - 39px)'}},
