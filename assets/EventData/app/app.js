@@ -51,11 +51,15 @@ export function handleResize() {
 
 export let opMode = "subset";
 
+// TODO mithril div duping likely occurs here
 export function setOpMode(mode) {
     mode = mode.toLowerCase();
+
     if (mode === opMode) return;
 
-    if (['subset', 'aggregate'].indexOf(mode) === -1) console.log("Invalid opMode");
+    // Some canvases only exist in certain modes. Fall back to default if necessary.
+    if (mode === 'subset' && subsetKeys.indexOf(canvasKeySelected) === -1) showCanvas('Actor');
+    if (mode === 'aggregate' && aggregateKeys.indexOf(canvasKeySelected) === -1) showCanvas('Date');
 
     opMode = mode;
     if (mode === 'subset') {
@@ -63,10 +67,6 @@ export function setOpMode(mode) {
             document.getElementById('canvas').style.height = 'calc(100% - 102px)';
             resizeActorSVG(false);
         }
-    }
-
-    if (mode === 'peek') {
-
     }
 
     if (mode === 'aggregate') {

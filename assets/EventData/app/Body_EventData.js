@@ -123,7 +123,6 @@ export default class Body_EventData {
                     activeSection: app.opMode,
                     sections: [
                         {value: 'Subset', id: 'btnSubsetSubmit'},
-                        {value: 'Peek'},
                         {value: 'Aggregate', id: 'aggSubmit'}
                     ]
                 }),
@@ -304,7 +303,7 @@ export default class Body_EventData {
                         {
                             value: 'Unit of Measure',
                             contents: m(PanelList, {
-                                items: ['Date', 'Actor'],
+                                items: ['Actor', 'Date'],
                                 id: 'UMList',
                                 colors: {[common.selVarColor]: [app.canvasKeySelected]},
                                 callback: app.showCanvas
@@ -372,11 +371,6 @@ export default class Body_EventData {
 
     view(vnode) {
         let {mode} = vnode.attrs;
-        app.setOpMode(mode);
-
-        // Some canvases only exist in certain modes. Fall back to default if necessary.
-        if (mode === 'subset' && app.subsetKeys.indexOf(app.canvasKeySelected) === -1) app.showCanvas('Actor');
-        if (mode === 'aggregate' && app.aggregateKeys.indexOf(app.canvasKeySelected) === -1) app.showCanvas('Date');
 
         let display = (canvas) => {
             if (!app.initialLoad) return 'none';
