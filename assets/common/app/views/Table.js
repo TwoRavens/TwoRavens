@@ -28,25 +28,34 @@ import {selVarColor, mergeAttributes, menuColor} from "../common";
 
 export default class Table {
     view(vnode) {
-        let {id, data, headers, activeRow, onclick, showUID} = vnode.attrs;
+        let {id, data, headers, activeRow, onclick, showUID, abbreviation} = vnode.attrs;
         // Interface custom attributes
         let {attrsAll, attrsRows, attrsCells, tableTags} = vnode.attrs;
 
         showUID = showUID !== false; // Default is 'true'
         if (typeof data === 'function') data = data();
 
+        // if abbreviation is not undefined, and string is too long, then shorten the string and add a tooltop
+        let abbreviate = (item) => {
+            if (typeof(item) === 'string' && item.length > abbreviation) {
+                return m('div', {'data-toggle': 'tooltip', title: item},
+                    item.substring(0, abbreviation - 3).trim() + '...')
+            }
+            else return item;
+        };
+
         return m(`table.table#${id}`, mergeAttributes({style: {width: '100%'}}, attrsAll), [
             tableTags,
             headers ? m('tr', {style: {width: '100%', background: menuColor}}, [
-                ...(showUID ? headers : headers.slice(1)).map((header) => m('th', header))
+                ...(showUID ? headers : headers.slice(1)).map((header) => m('th', abbreviate(header)))
             ]) : undefined,
 
             ...data.map((row, i) => m('tr', mergeAttributes(
                 i % 2 === 1 ? {style: {'background': '#fcfcfc'}} : {},
                 row[0] === activeRow ? {style: {'background': selVarColor}} : {},
                 attrsRows),
-                row.filter((item, j) => j !== 0 || showUID).map((item, j) => m('td',
-                    mergeAttributes(onclick ? {onclick: () => onclick(row[0], j)} : {}, attrsCells), item))
+                row.filter((item, j) => j !== 0 || showUID).map((item, j) =>
+                    m('td', mergeAttributes(onclick ? {onclick: () => onclick(row[0], j)} : {}, attrsCells), abbreviate(item)))
                 )
             )]
         );

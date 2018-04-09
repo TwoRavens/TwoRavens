@@ -102,6 +102,7 @@ function leftpanel(mode) {
                             activeRow: app.selectedProblem,
                             onclick: app.setSelectedProblem,
                             showUID: false,
+                            abbreviation: 40,
                             attrsAll: {style: {height: '80%', overflow: 'auto', display: 'block', 'margin-right': '16px', 'margin-bottom': 0, 'max-width': (window.innerWidth - 90) + 'px'}}
                         }),
                         m('textarea#discoveryInput[style=display:block; float: left; width: 100%; height:calc(20% - 35px); overflow: auto; background-color: white]', {
@@ -200,7 +201,8 @@ function rightpanel(mode) {
                         data: app.pipelineTable,
                         activeRow: app.selectedPipeline[app.currentMode],
                         onclick: app.setSelectedPipeline,
-                        showUID: false
+                        showUID: false,
+                        abbreviation: 20
                     }) : undefined,
                     m('#result_left',
                         {style: {display: app.explored ? 'block' : 'none',
@@ -303,7 +305,8 @@ function rightpanel(mode) {
                         data: app.pipelineTable,
                         activeRow: app.selectedPipeline[app.currentMode],
                         onclick: app.setSelectedPipeline,
-                        showUID: false
+                        showUID: false,
+                        abbreviation: 20
                     }) : undefined),
                 m('#setxTop[style=display:block; float: left; width: 75%; height:10%; overflow: auto; background-color: white]',
                     m("button.btn.btn-default.btn-xs#btnPredPlot[type='button']", {
