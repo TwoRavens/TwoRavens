@@ -54,10 +54,16 @@ export default class Peek {
     }
 }
 
+<<<<<<< b6e93a8307e2492de2c600e19110ed3972ffd85f
 function onScrollEvent() {
     let canvas = document.getElementById('canvas');
     if (canvas.scrollTop + canvas.clientHeight === canvas.scrollHeight) {
         localStorage.removeItem('peekMore');
+=======
+let onScrollEvent = () => {
+    let canvas = document.getElementById('canvas');
+    if (canvas.scrollTopMax === canvas.scrollTop) {
+>>>>>>> datasets mode
         localStorage.setItem('peekMore', 'true');
     }
 }
