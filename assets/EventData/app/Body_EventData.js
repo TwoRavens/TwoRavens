@@ -93,58 +93,58 @@ export default class Body_EventData {
             }
         ];
 
-        return m(Header, {
-            contents: [
-                // Button Reset
-                m("button.btn.btn-default.ladda-button[data-spinner-color='#818181'][data-style='zoom-in'][id='btnReset'][title='Reset']", {
-                        style: {
-                            "margin-left": "2.0em",
-                            "float": "right"
-                        },
-                        onclick: app.reset
-                    },
-                    m("span.ladda-label.glyphicon.glyphicon-repeat", {
-                        style: {
-                            "font-size": "1em",
-                            "color": "#818181",
-                            "pointer-events": "none"
-                        }
-                    })
-                ),
+        return m(Header,
 
-                m(ButtonRadio, {
-                    id: 'modeButtonBar',
-                    attrsAll: {style: {width: '18em', margin: '0 2em'}, class: 'navbar-right'},
-                    onclick: (mode) => {
-                        app.setOpMode(mode);
-                        // the route set doesn't work inside setOpMode... no clue why
-                        m.route.set('/' + mode.toLowerCase());
-                    },
-                    activeSection: app.opMode,
-                    sections: [
-                        {value: 'Subset', id: 'btnSubsetSubmit'},
-                        {value: 'Aggregate', id: 'aggSubmit'}
-                    ]
-                }),
+            m('div', {style: {'flex-grow': 1}}),
+            // Dataset Selection
+            m(DropdownPopup, {
+                header: 'Dataset Selection',
+                sections: datasets,
+                callback: app.setDataset
+            }),
+            m("h4", m("span.label.label-default[id='datasetLabel']")),
 
-                // Dataset Selection
-                m(DropdownPopup, {
-                    header: 'Dataset Selection',
-                    sections: datasets,
-                    callback: app.setDataset,
-                    attrsAll: {
-                        style: {
-                            position: "fixed",
-                            top: '15px',
-                            left: "calc(50% + 20px)"
-                        }
+            m('div', {style: {'flex-grow': 1}}),
+            m("button#btnPeek.btn.btn-default", {
+                    title: 'Display a data preview',
+                    style: {"margin-left": "2.0em", "float": "right"},
+                    onclick: () => window.open('#!/peek', 'peek')
+                },
+                'Peek'
+            ),
+
+            // Button Reset
+            m("button#btnReset.btn.btn-default.ladda-button[data-spinner-color='#818181'][data-style='zoom-in'][title='Reset']", {
+                    style: {
+                        "margin-left": "2.0em",
+                        "float": "right"
                     },
-                }),
-                m("h4", {style: {"right": "calc(50% - 10px)", "position": "fixed"}},
-                    m("span.label.label-default[id='datasetLabel']")
-                )
-            ]
-        });
+                    onclick: app.reset
+                },
+                m("span.ladda-label.glyphicon.glyphicon-repeat", {
+                    style: {
+                        "font-size": "1em",
+                        "color": "#818181",
+                        "pointer-events": "none"
+                    }
+                })
+            ),
+
+            m(ButtonRadio, {
+                id: 'modeButtonBar',
+                attrsAll: {style: {width: '18em', margin: '0 2em'}, class: 'navbar-right'},
+                onclick: (mode) => {
+                    app.setOpMode(mode);
+                    // the route set doesn't work inside setOpMode... no clue why
+                    m.route.set('/' + mode.toLowerCase());
+                },
+                activeSection: app.opMode,
+                sections: [
+                    {value: 'Subset', id: 'btnSubsetSubmit'},
+                    {value: 'Aggregate', id: 'aggSubmit'}
+                ]
+            })
+        );
     }
 
     footer(mode) {

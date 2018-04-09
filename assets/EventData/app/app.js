@@ -51,7 +51,6 @@ export function handleResize() {
 
 export let opMode = "subset";
 
-// TODO mithril div duping likely occurs here
 export function setOpMode(mode) {
     mode = mode.toLowerCase();
 
@@ -422,32 +421,85 @@ export function download() {
 	}
 }
 
+// TODO reset when a new query is submitted
+let resetPeek = () => {
+    peekSkip = 0;
+    peekData = [];
+
+    peekAllDataReceived = false;
+    peekIsGetting = false;
+
+    // this will cause a redraw in the peek menu
+    localStorage.removeItem('peekTableData');
+};
+
+let peekBatchSize = 100;
 let peekSkip = 0;
-export let peekData = [];
+let peekData = [];
 
-export function getPeekData() {
-    let variableQuery = buildVariables();
-    let subsetQuery = buildSubset(subsetData);
+let peekAllDataReceived = false;
+let peekIsGetting = false;
 
-    console.log("Query: " + JSON.stringify(subsetQuery));
-    console.log("Projection: " + JSON.stringify(variableQuery));
+localStorage.setItem('peekHeader', dataset);
+// localStorage.setItem('peekTableData', JSON.stringify(peekData));
 
-    let query = {
-        subsets: JSON.stringify(subsetQuery),
-        variables: JSON.stringify(variableQuery),
-        skip: peekSkip,
-        limit: 100,
-        dataset: dataset,
-        datasource: datasource,
-        type: 'peek'
-    };
-    laddaDownload.start();
-    makeCorsRequest(subsetURL, query, data => {
-        peekData = peekData.concat(data);
-        peekSkip += 100;
-        m.redraw();
-    });
-}
+let onStorageEvent = (e) => {
+    if (e.key !== 'peekMore' || peekIsGetting) return;
+
+    if (localStorage.getItem('peekMore') === 'true' && !peekAllDataReceived) {
+        localStorage.setItem('peekMore', 'false');
+        peekIsGetting = true;
+
+        let variableQuery = buildVariables();
+        let subsetQuery = buildSubset(subsetData);
+
+        console.log("Peek Update");
+        console.log("Query: " + JSON.stringify(subsetQuery));
+        console.log("Projection: " + JSON.stringify(variableQuery));
+
+        let query = {
+            subsets: JSON.stringify(subsetQuery),
+            variables: JSON.stringify(variableQuery),
+            skip: peekSkip,
+            limit: peekBatchSize,
+            dataset: dataset,
+            datasource: datasource,
+            type: 'peek'
+        };
+
+        makeCorsRequest(subsetURL, query, data => {
+            // cancel the request
+            if (!peekIsGetting) return;
+
+            peekIsGetting = false;
+
+            if (data.length === 0) {
+                peekAllDataReceived = true;
+                return;
+            }
+
+            for (let record of data) {
+                if (record.length === variableQuery.length) peekData.push(Object.values(record));
+
+                // handle the case where a record is incomplete
+                else {
+                    let sparseRecord = [];
+                    for (let variable of Object.keys(variableQuery)) {
+                        sparseRecord.push(record[variable] || '')
+                    }
+                    peekData.push(sparseRecord);
+                }
+            }
+
+            peekSkip += data.length;
+
+            // this gets noticed by the peek window
+            localStorage.setItem('peekTableHeaders', JSON.stringify(Object.keys(variableQuery)));
+            localStorage.setItem('peekTableData', JSON.stringify(peekData));
+        });
+    }
+};
+window.addEventListener('storage', onStorageEvent);
 
 /**
  *   Draws all subset plots, often invoked as callback after server request for new plotting data
@@ -458,6 +510,9 @@ export function pageSetup(jsondata) {
 
     laddaUpdate.stop();
     laddaReset.stop();
+
+    // cause the peek menu to redraw (if it is enabled)
+    resetPeek();
 
     if (jsondata['date_data'].length === 0) {
         alert("No records match your subset. Plots will not be updated.");

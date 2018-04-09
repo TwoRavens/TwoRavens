@@ -28,7 +28,8 @@ export default class Header {
                         {onmouseover: _ => this.about = true, onmouseout: _ => this.about = false})),
                 m(`#about.panel.panel-default[style=display: ${this.about ? 'block' : 'none'}; left: 140px; position: absolute; width: 500px; z-index: 50]`,
                     m('.panel-body', aboutText)),
-                m('div', {style: {'display': 'flex', 'justify-content': 'flex-end', 'align-items': 'center', 'height': '100%'}}, contents)            ]
+                m('div', {style: {'display': 'flex', 'justify-content': 'space-between', 'align-items': 'center', 'height': '100%'}}, contents || vnode.children)
+            ]
         )
     }
 }

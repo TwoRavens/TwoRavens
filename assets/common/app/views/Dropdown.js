@@ -1,7 +1,5 @@
 import m from 'mithril'
 
-import {mergeAttributes} from "../common";
-
 // Interface specification
 
 // ```
