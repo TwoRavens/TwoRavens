@@ -98,6 +98,7 @@ export function setOpMode(mode) {
 export let dataset = 'phoenix_rt';
 export let setDataset = (set) => {
     dataset = set;
+    downloadVariables();
     submitQuery(true);
 };
 
@@ -175,18 +176,8 @@ export function setupBody() {
     // The editor menu for the custom subsets
     editor = ace.edit("subsetCustomEditor");
 
-    let query = {
-        'type': 'formatted',
-        'dataset': dataset,
-        'datasource': datasource
-    };
-
-    // Load the field names into the left panel
-    makeCorsRequest(subsetURL, query, function (jsondata) {
-        // Each key has a %-formatted value
-        variables = Object.keys(jsondata.variables);
-        reloadLeftpanelVariables();
-    });
+    // sends a server request to get the variables for the current dataset
+    downloadVariables();
 
     laddaUpdate = Ladda.create(document.getElementById("btnUpdate"));
     laddaReset = Ladda.create(document.getElementById("btnReset"));
@@ -195,7 +186,7 @@ export function setupBody() {
 
     document.getElementById("datasetLabel").innerHTML = dataset + " dataset";
 
-    query = {
+    let query = {
         'subsets': JSON.stringify(subsetQuery),
         'variables': JSON.stringify(variableQuery),
         'dataset': dataset,
@@ -320,6 +311,21 @@ export function showCanvas(canvasKey) {
 		}
     }
 }
+
+let downloadVariables = () => {
+    let query = {
+        'type': 'formatted',
+        'dataset': dataset,
+        'datasource': datasource
+    };
+
+    // Load the field names into the left panel
+    makeCorsRequest(subsetURL, query, function (jsondata) {
+        // Each key has a %-formatted value
+        variables = Object.keys(jsondata.variables);
+        reloadLeftpanelVariables();
+    });
+};
 
 export function makeCorsRequest(url, post, callback, callbackError=Function) {
     let xhr = new XMLHttpRequest();
@@ -1210,7 +1216,6 @@ function getSubsetPreferences() {
 
     }
 
-    // This functionality is disabled, because the stage button is hidden
     if (canvasKeySelected === 'Custom') {
         // noinspection JSUnresolvedFunction
         if (validateCustom(editor.getValue())) {
