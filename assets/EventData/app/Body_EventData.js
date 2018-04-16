@@ -100,9 +100,12 @@ export default class Body_EventData {
     }
 
     footer(mode) {
-        return m(Footer, [
-            m("span.label.label-default", {style: {"margin-left": "10px", "display": "inline-block"}}, "Tours"),
-            (mode === 'subset') ?
+
+        let tours;
+
+        if (mode === 'subset') {
+            tours = [
+                m("span.label.label-default", {style: {"margin-left": "10px", "display": "inline-block"}}, "Tours"),
                 m("div[id='subsetTourBar']", {style: {"display": "inline-block"}}, [
                     m("button.btn.btn-default.btn-sm[id='tourButtonGeneral'][type='button']", {
                         style: {
@@ -153,16 +156,25 @@ export default class Body_EventData {
                         },
                         onclick: tour.tourStartCustom
                     }, "Custom")
-                ]) :
-            m("div[id='aggregTourBar']", {style: {"display": "inline-block"}}, [
-                m("button.btn.btn-default.btn-sm[id='tourButtonAggreg'][type='button']", {
-                    style: {
-                        "margin-left": "5px",
-                        "margin-top": "4px"
-                    },
-                    onclick: tour.tourStartAggregation
-                }, "Aggregation")
-            ]),
+                ])];
+        }
+
+        if (mode === 'aggregate') {
+            tours = [
+                m("span.label.label-default", {style: {"margin-left": "10px", "display": "inline-block"}}, "Tours"),
+                m("div[id='aggregTourBar']", {style: {"display": "inline-block"}}, [
+                    m("button.btn.btn-default.btn-sm[id='tourButtonAggreg'][type='button']", {
+                        style: {
+                            "margin-left": "5px",
+                            "margin-top": "4px"
+                        },
+                        onclick: tour.tourStartAggregation
+                    }, "Aggregation")
+                ])];
+        }
+
+        return m(Footer, [
+            tours,
             m("#recordBar", {style: {display: "inline-block", float: 'right'}}, [
 
                 m("button.btn.btn-default.btn-sm.ladda-button[data-spinner-color='#818181'][id='buttonDownload'][type='button']", {
@@ -343,7 +355,7 @@ export default class Body_EventData {
                 this.rightpanel(mode),
                 m("button#btnStage.btn.btn-default[type='button']", {
                     style: {
-                        display: app.canvasKeySelected !== 'Custom' && app.opMode === 'subset' ? 'block' : 'none',
+                        display: app.opMode === 'subset' ? 'block' : 'none',
                         right: `calc(${common.panelOcclusion['right'] || '275px'} + 5px)`,
                         bottom: common.heightFooter + common.panelMargin + 6 + 'px',
                         position: 'fixed',

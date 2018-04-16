@@ -2,6 +2,7 @@ import {showCanvas} from "./app";
 import hopscotch from 'hopscotch';
 import * as common from '../../common/app/common';
 import m from 'mithril';
+import {editor} from './app';
 
 export function tourStartGeneral() {
     hopscotch.endTour(false);
@@ -403,6 +404,97 @@ let customTour = {
     ]
 };
 
+
+
+export function tourStartCustomExamples() {
+    console.log("Callback success");
+    console.log(editor);
+    hopscotch.endTour(false);
+    hopscotch.startTour(customExampleTour);
+}
+
+let example_date = `{
+  "<date>": {
+    "$gte": "08-14-1994"
+  }
+}`;
+
+let example_group = `{
+  "$or": [
+    {
+      "<date>": {
+        "$gte": "08-14-1994"
+      }
+    },
+    {
+      "<CAMEO>": 1
+    }
+  ]
+}`;
+
+let example_actor = `{
+  "$or": [
+    {
+      "<source>": {
+        "$regex": ".*MUS.*"
+      }
+    },
+    {
+      "<target>": {
+        "$regex": ".*MUS.*"
+      }
+    }
+  ],
+  "<CAMEO>": 1
+}`;
+
+let customExampleTour = {
+    id: "subset-custom-tour-example",
+    showPrevButton: true,
+    nextOnTargetClick: true,
+    steps: [
+        {
+            title: "Overview",
+            content: "This is a walkthrough with examples on how to get started building your own queries.",
+            onNext: () => {
+                editor.setValue(example_date);
+                editor.clearSelection();
+            },
+            target: "#subsetCustomEditor",
+            placement: "left",
+            width: 200
+        },
+        {
+            title: "Date Example",
+            content: "Restrict to any date greater than August 14, 1994.",
+            onNext: () => {
+                editor.setValue(example_group);
+                editor.clearSelection();
+            },
+            target: "#subsetCustomEditor",
+            placement: "left",
+            width: 200
+        },
+        {
+            title: "Group Example",
+            content: "Restrict to any event ",
+            onNext: () => {
+                editor.setValue(example_actor);
+                editor.clearSelection();
+            },
+            target: "#subsetCustomEditor",
+            placement: "left",
+            width: 200
+        },
+        {
+            title: "Actor Example",
+            content: "Restrict to any event with an actor that contains the substring \"MUS\" as well as CAMEO code 1.",
+            target: "#subsetCustomEditor",
+            placement: "left",
+            width: 200
+        }
+    ]
+};
 
 export function tourStartAggregation() {
     hopscotch.endTour(false);
