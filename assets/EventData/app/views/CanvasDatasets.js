@@ -54,7 +54,7 @@ export default class CanvasDatasets {
                 m('h4', dataset.name, m('button.btn.btn-default[type="button"]', {
                     style: {float: 'right'},
                     onclick: () => window.open(dataset.url, dataset.name)
-                }, 'website')),
+                }, 'Website')),
                 dataset.content
             )
         }))

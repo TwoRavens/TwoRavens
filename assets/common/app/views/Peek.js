@@ -77,6 +77,10 @@ function onStorageEvent (peek, e) {
     peek.tableData = JSON.parse(localStorage.getItem('peekTableData')) || [];
 
     if (peek.tableData.length === 0) localStorage.setItem('peekMore', 'true');
+<<<<<<< 50c5c0a1e048dd8c445127ba52e840b07efb6274
+=======
+
+>>>>>>> peek updates more consistently
     m.redraw();
 }
 
