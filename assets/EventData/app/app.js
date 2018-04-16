@@ -211,6 +211,7 @@ export function reloadLeftpanelVariables() {
             matchedVariables.push(variable)
         }
     }
+
     m.redraw();
 }
 
@@ -324,6 +325,7 @@ let downloadVariables = () => {
         // Each key has a %-formatted value
         variables = Object.keys(jsondata.variables);
         reloadLeftpanelVariables();
+        resetPeek();
     });
 };
 
@@ -439,7 +441,10 @@ let peekData = [];
 let peekAllDataReceived = false;
 let peekIsGetting = false;
 
-localStorage.setItem('peekHeader', dataset);
+if (opMode !== 'peek') {
+    localStorage.setItem('peekHeader', dataset);
+    localStorage.removeItem('peekTableData');
+}
 // localStorage.setItem('peekTableData', JSON.stringify(peekData));
 
 let onStorageEvent = (e) => {
@@ -448,55 +453,49 @@ let onStorageEvent = (e) => {
     if (localStorage.getItem('peekMore') === 'true' && !peekAllDataReceived) {
         localStorage.setItem('peekMore', 'false');
         peekIsGetting = true;
-
-        let variableQuery = buildVariables();
-        let subsetQuery = buildSubset(subsetData);
-
-        console.log("Peek Update");
-        console.log("Query: " + JSON.stringify(subsetQuery));
-        console.log("Projection: " + JSON.stringify(variableQuery));
-
-        let query = {
-            subsets: JSON.stringify(subsetQuery),
-            variables: JSON.stringify(variableQuery),
-            skip: peekSkip,
-            limit: peekBatchSize,
-            dataset: dataset,
-            datasource: datasource,
-            type: 'peek'
-        };
-
-        makeCorsRequest(subsetURL, query, data => {
-            // cancel the request
-            if (!peekIsGetting) return;
-
-            peekIsGetting = false;
-
-            if (data.length === 0) {
-                peekAllDataReceived = true;
-                return;
-            }
-
-            for (let record of data) {
-                if (record.length === variableQuery.length) peekData.push(Object.values(record));
-
-                // handle the case where a record is incomplete
-                else {
-                    let sparseRecord = [];
-                    for (let variable of Object.keys(variableQuery)) {
-                        sparseRecord.push(record[variable] || '')
-                    }
-                    peekData.push(sparseRecord);
-                }
-            }
-
-            peekSkip += data.length;
-
-            // this gets noticed by the peek window
-            localStorage.setItem('peekTableHeaders', JSON.stringify(Object.keys(variableQuery)));
-            localStorage.setItem('peekTableData', JSON.stringify(peekData));
-        });
+        updatePeek();
     }
+};
+
+let updatePeek = () => {
+    let variableQuery = buildVariables();
+    let subsetQuery = buildSubset(subsetData);
+
+    console.log("Peek Update");
+    console.log("Query: " + JSON.stringify(subsetQuery));
+    console.log("Projection: " + JSON.stringify(variableQuery));
+
+    let query = {
+        subsets: JSON.stringify(subsetQuery),
+        skip: peekSkip,
+        limit: peekBatchSize,
+        dataset: dataset,
+        datasource: datasource,
+        type: 'peek'
+    };
+
+    console.log(variableQuery);
+    // conditionally pass variable projection
+    if (Object.keys(variableQuery).length !== 0) query['variables'] = JSON.stringify(variableQuery);
+
+    makeCorsRequest(subsetURL, query, data => {
+        // cancel the request
+        if (!peekIsGetting) return;
+        peekIsGetting = false;
+
+        if (data.length === 0) {
+            peekAllDataReceived = true;
+            return;
+        }
+
+        for (let record of data) peekData.push(Object.keys(variableQuery).map((key) => record[key] || ""));
+        peekSkip += data.length;
+
+        // this gets noticed by the peek window
+        localStorage.setItem('peekHeader', dataset);
+        localStorage.setItem('peekTableHeaders', JSON.stringify(Object.keys(variableQuery)));
+        localStorage.setItem('peekTableData', JSON.stringify(peekData));
+    });
 };
 window.addEventListener('storage', onStorageEvent);
 
@@ -509,9 +508,6 @@ export function pageSetup(jsondata) {
 
     laddaUpdate.stop();
     laddaReset.stop();
-
-    // cause the peek menu to redraw (if it is enabled)
-    resetPeek();
 
     if (jsondata['date_data'].length === 0) {
         alert("No records match your subset. Plots will not be updated.");
@@ -870,6 +866,8 @@ function reloadRightPanelVariables() {
     let state = qtree.tree('getState');
     qtree.tree('loadData', variableData);
     qtree.tree('setState', state);
+
+    resetPeek();
 }
 
 // Load stored variables into the rightpanel variable tree on initial page load
