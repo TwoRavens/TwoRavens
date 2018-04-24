@@ -1,12 +1,15 @@
-import {rappURL, dataset, datasource, makeCorsRequest, laddaUpdate} from "../app";
+import {rappURL, dataset, datasource, makeCorsRequest, laddaUpdate, showCanvas} from "../app";
 import {dateminUser, datemaxUser} from "../subsets/Date";
 import {actorLinks} from "../subsets/Actor";
 import {varColor, selVarColor} from '../../../common/app/common';
+import * as d3 from "d3";
 
 let aggregMode = "penta";
 export let aggregDateOn = 0;		//0 = off, 1 = week, 2 = month, 3 = quarter, 4 = year
 export let aggregActorOn = true;
 var aggregDataNumber = 6;
+
+var initTblColor;
 
 var initAggregLoad = true;
 
@@ -208,6 +211,8 @@ export function updateToAggreg(alreadyInAggreg=true) {
 
 			aggregURL = rappURL + "eventdataaggregapp";
 
+			initTblColor = d3.select("#aggregDataPenta0Head").style("background-color");
+
 			initAggregLoad = false;
 		}
 
@@ -278,6 +283,136 @@ export function updateToAggreg(alreadyInAggreg=true) {
 	}
 	else {
 		makeAggregQuery("aggreg");
+	}
+}
+
+function setupAggregTS(data) {
+	console.log("setting up TS");
+
+	let parseFormat = d3.timeParse("%Y-%m-%d");
+	//reformat data
+	let formattedData = [];
+	//in format of: 
+	if (aggregMode == "penta") {
+		for (let x = 1; x < aggregPentaChkOrd.length; x ++) {
+			let tempVals = [];
+			for (let y = 0; y < data["action_data"].length; y ++) {
+				tempVals[y] =
+					{
+						"date": parseFormat(data["action_data"][y]["Date"]),
+						"count": data["action_data"][y][x-1]
+					};
+			}
+			formattedData[x-1] = 
+				{
+					id: "Penta " + (x-1),
+					values: tempVals
+				};
+		}
+	}
+	else {	//is root code
+		for (let x = 1; x < aggregRootChkOrd.length; x ++) {
+			let tempVals = [];
+			for (let y = 0; y < data["action_data"].length; y ++) {
+				tempVals[y] =
+					{
+						"date": parseFormat(data["action_data"][y]["Date"]),
+						"count": data["action_data"][y][x]
+					};
+			}
+			formattedData[x-1] =
+				{
+					id: "Root " + x,
+					values: tempVals
+				};
+		}
+	}
+	console.log(formattedData);
+	$("#canvasAggregTS").empty().append('<svg id="aggregTS_SVG" style="border: 1px solid black"></svg>');
+	let svgTS = d3.select("#aggregTS_SVG");
+
+	let margin = {top: 20, right: 80, bottom: 30, left: 50};
+	svgTS.attr("width", 960).attr("height", 480);		//resize later
+	let widthTS = svgTS.attr("width") - margin.left - margin.right;
+    let heightTS = svgTS.attr("height") - margin.top - margin.bottom;
+	let g = svgTS.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+	console.log("post svg setup");
+
+	let x = d3.scaleTime().range([0, widthTS]);
+    let y = d3.scaleLinear().range([heightTS, 0]);
+    let z = d3.scaleOrdinal(d3.schemeCategory10);
+
+	var line = d3.line()	//update this in accordance to data format
+		.curve(d3.curveBasis)
+		.x(function(d) {
+			//~ console.log("x"); console.log(d); console.log(x(d.date));
+			return x(d.date); })
+		.y(function(d) {
+			//~ console.log("y"); console.log(d); console.log(y(d.date));
+			return y(d.count); });
+
+	x.domain([
+		d3.min(formattedData, function(c) { return d3.min(c.values, function(d) { return d.date; }); }),
+		d3.max(formattedData, function(c) { return d3.max(c.values, function(d) { return d.date; }); })
+	]);
+
+	y.domain([
+	d3.min(formattedData, function(c) { return d3.min(c.values, function(d) { return d.count; }); }),
+	d3.max(formattedData, function(c) { return d3.max(c.values, function(d) { return d.count; }); })
+	]);
+
+	z.domain(formattedData.map(function(c) { return c.id; }));
+
+	g.append("g")
+	  .attr("class", "axis axis--x")
+	  .attr("transform", "translate(0," + heightTS + ")")
+	  .call(d3.axisBottom(x));
+
+	g.append("g")
+	  .attr("class", "axis axis--y")
+	  .call(d3.axisLeft(y))
+	.append("text")
+	  .attr("transform", "rotate(-90)")
+	  .attr("y", 6)
+	  .attr("dy", "0.71em")
+	  .attr("fill", "#000")
+	  .text("Count");
+
+	var aggregTSLine = g.selectAll(".aggregTSLine")
+	.data(formattedData)
+	.enter().append("g")
+	  .attr("class", "aggregTSLine").attr("id", function(d) { return d.id.split(" ")[0] + d.id.split(" ")[1] + "Line"; });
+
+	aggregTSLine.append("path")
+	  .attr("class", "line")
+	  .attr("d", function(d) {
+		  return line(d.values); })
+	  .style("stroke", function(d) { console.log("stroke in def"); console.log(z(d.id)); return z(d.id); }).style("fill", "none");
+
+	if (aggregMode == "penta") {
+		for (let a = 1; a < aggregPentaChkOrd.length; a ++) {
+			let curLine = d3.select("#Penta" + (a - 1) + "Line");
+			console.log(curLine);
+			if (!aggregPentaChkOrd[a]) {
+				curLine.style("opacity", 0);
+			}
+			else {
+				curLine.style("opacity", 1);
+				d3.select("#aggregDataPenta" + (a - 1) + "Head").style("background-color", curLine.select(".line").style("stroke"));
+			}
+		}
+	}
+	else {
+		for (let a = 1; a < aggregRootChkOrd.length; a ++) {
+			let curLine = d3.select("#Root" + a + "Line");
+			if (!aggregRootChkOrd[a]) {
+				curLine.style("opacity", 0);
+			}
+			else {
+				curLine.style("opacity", 1);
+				d3.select("#aggregDataRoot" + a + "Head").style("background-color", curLine.select(".line").style("stroke"));
+			}
+		}
 	}
 }
 
@@ -370,6 +505,11 @@ function updateTable(json) {
 			console.log(aggregRootChkOrd);
 			console.log(aggregRootSelectNum);
 		//~ }
+	}
+
+	if (aggregDateOn) {
+		showCanvas("CanvasAggregTS");
+		setupAggregTS(json);
 	}
 }
 
@@ -658,81 +798,10 @@ export function setupAggregation() {
 
 export function updateAggregTable() {
 	console.log("updating table");
-	//~ console.log(dateData);
-	//~ console.log(dateData[0]);
-	//~ console.log(dateData[0]._id);
-	//~ console.log(datemin);
-	//~ aggregDateData = dateData.sort(dateSort);
-	//~ aggregDateMin = d3.min(aggregDateData, function(d) {return d.Freq;});
-	//~ console.log("min date");
-	//~ console.log(aggregDateMin);
-	//~ console.log(aggregDateData);
 
 	$(".aggregTableRow").show();
 
-	//~ var curActor = 0;
-	//~ var dateNext = false;
-	//~ var dateCur = new Date(dateminUser.toLocaleDateString());
-	//~ for (var row = 1; row <= aggregDataNumber; row++) {
-		//~ if (aggregDateOn == 1) {
-			//~ if (dateNext) {
-				//~ dateCur = new Date(dateCur.setDate(dateCur.getDate() + 7));
-				//~ dateNext = false;
-			//~ }
-			//~ $("#aggregDataDateR" + row).html(dateCur.toLocaleDateString());
-		//~ }
-		//~ else if (aggregDateOn == 2) {
-			//~ if (dateNext) {
-				//~ dateCur.setMonth(dateCur.getMonth() + 1);
-				//~ dateNext = false;
-			//~ }
-			//~ $("#aggregDataDateR" + row).html(dateCur.toLocaleDateString());
-		//~ }
-		//~ else if (aggregDateOn == 3) {
-			//~ if (dateNext) {
-				//~ dateCur.setMonth(dateCur.getMonth() + 3);
-				//~ dateNext = false;
-			//~ }
-			//~ $("#aggregDataDateR" + row).html(dateCur.toLocaleDateString());
-		//~ }
-		//~ else if (aggregDateOn == 4) {
-			//~ if (dateNext) {
-				//~ dateCur.setMonth(dateCur.getMonth() + 12);
-				//~ dateNext = false;
-			//~ }
-			//~ $("#aggregDataDateR" + row).html(dateCur.toLocaleDateString());
-		//~ }
-		
-		//~ if (aggregActorOn) {
-			//~ if (actorLinks.length == 0) {
-				//~ dateNext = true;
-				//~ continue;
-			//~ }
-
-			//~ if (curActor == actorLinks.length) {
-				//~ console.log("actor limit reached");
-				//~ if (aggregDateOn == 0) {
-					//~ $("#aggregTableR" + row).hide();
-					//~ console.log("hide");
-					//~ continue;
-				//~ }
-				//~ else {
-					//~ curActor = 0;
-				//~ }
-			//~ }
-			
-			//~ $("#aggregDataSrcR" + row).html(actorLinks[curActor].source.name);
-			//~ $("#aggregDataTgtR" + row).html(actorLinks[curActor].target.name);
-			//~ curActor++;
-			//~ if(curActor == actorLinks.length) {
-				//~ dateNext = true;
-				//curActor = 0;
-			//~ }
-		//~ }
-		//~ else {
-			//~ dateNext = true;
-		//~ }
-	//~ }
+	d3.selectAll(".aggregTblHdr").style("background-color", initTblColor);
 
 	if (aggregDateOn != 0) {
 		makeAggregQuery("preview");
