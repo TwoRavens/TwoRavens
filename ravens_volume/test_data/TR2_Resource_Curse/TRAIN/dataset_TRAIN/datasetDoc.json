@@ -1,0 +1,343 @@
+{
+  "about": {
+    "datasetID": "TR2_Resource_Curse",
+    "datasetName": "Resource_Curse",
+    "description": "Replication data for Collier and Hoeffler resource curse analysis",
+    "citation": ""
+  },
+  "dataResources": [
+    {
+      "resID": "0",
+      "resPath": "tables/learningData.csv",
+      "resType": "table",
+      "resFormat": ["text/csv"],
+      "isCollection": false,
+      "columns": [
+        {
+          "colIndex": 0,
+          "colName": "d3mIndex",
+          "colType": "categorical",
+          "role": ["index"]
+        },
+        {
+          "colIndex": 1,
+          "colName": "year",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 2,
+          "colName": "ccode",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 3,
+          "colName": "country",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 4,
+          "colName": "cname",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 5,
+          "colName": "id",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 6,
+          "colName": "geogia",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 7,
+          "colName": "sxp",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 8,
+          "colName": "gy1",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 9,
+          "colName": "lngdp_",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 10,
+          "colName": "lnpop",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 11,
+          "colName": "sxp2",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 12,
+          "colName": "frac",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 13,
+          "colName": "ssa",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 14,
+          "colName": "warsa",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 15,
+          "colName": "peace",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 16,
+          "colName": "etdo4590",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 17,
+          "colName": "chsamp",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 18,
+          "colName": "chwars",
+          "colType": "categorical",
+          "role": ["suggestedTarget"]
+        },
+        {
+          "colIndex": 19,
+          "colName": "chonset",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 20,
+          "colName": "ipeace",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 21,
+          "colName": "fuelexp",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 22,
+          "colName": "pop",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 23,
+          "colName": "fuelwdi",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 24,
+          "colName": "gdpen",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 25,
+          "colName": "region",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 26,
+          "colName": "lgdpenl1",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 27,
+          "colName": "gdpenl",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 28,
+          "colName": "lpopl1",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 29,
+          "colName": "Oil",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 30,
+          "colName": "isxp",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 31,
+          "colName": "isxp2",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 32,
+          "colName": "ifrac",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 33,
+          "colName": "ietdom",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 34,
+          "colName": "igeogia",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 35,
+          "colName": "gdp",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 36,
+          "colName": "lgdp",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 37,
+          "colName": "lgdpl",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 38,
+          "colName": "lpopl",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 39,
+          "colName": "igy5",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 40,
+          "colName": "igy3",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 41,
+          "colName": "igyl4",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 42,
+          "colName": "lisxp",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 43,
+          "colName": "lsxp",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 44,
+          "colName": "exports",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 45,
+          "colName": "fuelgdp",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 46,
+          "colName": "contract",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 47,
+          "colName": "exprop",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 48,
+          "colName": "acon",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 49,
+          "colName": "alsxp",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 50,
+          "colName": "algdpl",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 51,
+          "colName": "aifuel",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 52,
+          "colName": "aexprop",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 53,
+          "colName": "ifuel",
+          "colType": "categorical",
+          "role": ["attribute"]
+        }
+      ]
+    }
+  ]
+}
