@@ -28,6 +28,7 @@ import CanvasDate from "./views/CanvasDate";
 import CanvasLocation from "./views/CanvasLocation";
 import CanvasPentaClass from "./views/CanvasPentaClass";
 import CanvasRootCode from "./views/CanvasRootCode";
+import CanvasAggregTS from "./views/CanvasAggregTS";
 
 import TableAggregation from "./views/TableAggregation";
 import {setPanelOcclusion} from "../../common/app/common";
@@ -373,7 +374,8 @@ export default class Body_EventData {
                         m(CanvasCoordinates, {mode: mode, display: display('Coordinates')}),
                         m(CanvasCustom, {mode: mode, display: display('Custom')}),
                         m(CanvasPentaClass, {mode: mode, display: display('Penta Class')}),
-                        m(CanvasRootCode, {mode: mode, display: display('Root Code')})
+                        m(CanvasRootCode, {mode: mode, display: display('Root Code')}),
+                        m(CanvasAggregTS, {mode: mode, display: display('Time Series')})
                     ],
                     attrsAll: {style: mode === 'aggregate' ? {height: `calc(100% - ${heightHeader + heightFooter}px - ${tableHeight})`} : {}}
                 }),
