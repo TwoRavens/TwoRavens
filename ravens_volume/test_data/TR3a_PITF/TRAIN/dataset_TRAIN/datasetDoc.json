@@ -3,7 +3,8 @@
     "datasetID": "TR3a_PITF",
     "datasetName": "Forecasting_Political_Instability",
     "description": "Replication data for Goldstone et al. A Global Model for Forecasting Political Instability, primary model.",
-    "citation": ""
+    "citation": "",
+    "datasetSchemaVersion": "3.0"
   },
   "dataResources": [
     {

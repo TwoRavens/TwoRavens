@@ -3,7 +3,8 @@
     "datasetID": "TR2_Resource_Curse",
     "datasetName": "Resource_Curse",
     "description": "Replication data for Collier and Hoeffler resource curse analysis",
-    "citation": ""
+    "citation": "",
+    "datasetSchemaVersion": "3.0"
   },
   "dataResources": [
     {

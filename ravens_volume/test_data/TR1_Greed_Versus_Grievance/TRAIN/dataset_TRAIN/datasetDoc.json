@@ -3,7 +3,8 @@
     "datasetID": "TR1_Greed_Versus_Grievance",
     "datasetName": "Greed_Versus_Grievance",
     "description": "Replication data for Fearon and Laitin greed versus grievance analysis",
-    "citation": ""
+    "citation": "",
+    "datasetSchemaVersion": "3.0"
   },
   "dataResources": [
     {
