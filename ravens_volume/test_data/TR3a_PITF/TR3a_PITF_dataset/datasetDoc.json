@@ -1,0 +1,85 @@
+{
+  "about": {
+    "datasetID": "TR3a_PITF",
+    "datasetName": "Forecasting_Political_Instability",
+    "description": "Replication data for Goldstone et al. A Global Model for Forecasting Political Instability, primary model.",
+    "citation": ""
+  },
+  "dataResources": [
+    {
+      "resID": "0",
+      "resPath": "tables/learningData.csv",
+      "resType": "table",
+      "resFormat": ["text/csv"],
+      "isCollection": false,
+      "columns": [
+        {
+          "colIndex": 0,
+          "colName": "d3mIndex",
+          "colType": "categorical",
+          "role": ["index"]
+        },
+        {
+          "colIndex": 1,
+          "colName": "sftpcons",
+          "colType": "categorical",
+          "role": ["suggestedTarget"]
+        },
+        {
+          "colIndex": 2,
+          "colName": "sftptv2a3",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 3,
+          "colName": "sftptv2a4",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 4,
+          "colName": "sftptv2a5",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 5,
+          "colName": "sftptv2a2",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 6,
+          "colName": "sftptv2a6",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 7,
+          "colName": "logim",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 8,
+          "colName": "maccat",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 9,
+          "colName": "disp4cat",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 10,
+          "colName": "stratidc",
+          "colType": "categorical",
+          "role": ["attribute"]
+        }
+      ]
+    }
+  ]
+}
