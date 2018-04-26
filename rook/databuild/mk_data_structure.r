@@ -47,9 +47,9 @@ seed_skeleton <- function(data, name, fraction=0.2, ID=NULL, citation="", descri
   testdata <- data[testindex,]
   traindata <- data[-testindex,]
 
-  write.csv(data, paste(name, "/", name, "_dataset/tables/learningdata.csv", sep=""))
-  write.csv(testdata, paste(name, "/", "TEST/dataset_TEST/tables/learningdata.csv", sep=""))
-  write.csv(traindata, paste(name, "/", "TRAIN/dataset_TRAIN/tables/learningdata.csv", sep=""))
+  write.csv(data, paste(name, "/", name, "_dataset/tables/learningData.csv", sep=""))
+  write.csv(testdata, paste(name, "/", "TEST/dataset_TEST/tables/learningData.csv", sep=""))
+  write.csv(traindata, paste(name, "/", "TRAIN/dataset_TRAIN/tables/learningData.csv", sep=""))
 
   ## Write various versions of datasetDoc.json
 
