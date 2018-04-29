@@ -2531,6 +2531,18 @@ export let summary = {data: []};
 function varSummary(d) {
     let t1 = 'Mean:, Median:, Most Freq:, Occurrences:, Median Freq:, Occurrences:, Least Freq:, Occurrences:, Std Dev:, Minimum:, Maximum:, Invalid:, Valid:, Uniques:, Herfindahl'.split(', ');
 
+    d3.select('#tabSummary')
+        .selectAll('svg')
+        .remove();
+
+    if (!d.plottype)
+        return;
+    d.plottype == 'continuous' ? density(d, 'Summary', priv) :
+        d.plottype == "bar" ? bars(d, 'Summary', priv) :
+        d3.select("#tabSummary") // no graph to draw, but still need to remove previous graph
+        .selectAll("svg")
+        .remove();
+
     let rint = d3.format('r');
     let str = (x, p) => (+x).toPrecision(p || 4).toString();
     let t2 = priv && d.meanCI ?
@@ -2546,17 +2558,6 @@ function varSummary(d) {
     summary.name = d.name;
     summary.labl = d.labl;
 
-    d3.select('#tabSummary')
-        .selectAll('svg')
-        .remove();
-
-    if (!d.plottype)
-        return;
-    d.plottype == 'continuous' ? density(d, 'Summary', priv) :
-        d.plottype == "bar" ? bars(d, 'Summary', priv) :
-        d3.select("#tabSummary") // no graph to draw, but still need to remove previous graph
-        .selectAll("svg")
-        .remove();
 }
 
 export let popoverContent = d => {
