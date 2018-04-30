@@ -625,7 +625,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     if (res) {
       if (res.responseInfo.status.code != "OK"){
         const user_err_msg = "Failed to StartSession with TA2! status code: " + res.responseInfo.status.code;
-        setModal(user_err_msg,"Error Connecting to TA2", true, "Reset", false, "location.reload()");
+        setModal(user_err_msg,"Error Connecting to TA2", true, "Reset", false, location.reload);
       //  end_ta3_search(false, user_err_msg);
         return;
       } else {
@@ -2974,7 +2974,7 @@ export async function endsession() {
     let mystatus = res.status.code.toUpperCase();
     if(mystatus == "OK") {
         end_ta3_search(true, "Problem marked as complete.");
-        setModal("Your selected pipeline has been submitted.","Task Complete", true, false, false, "location.reload()");
+        setModal("Your selected pipeline has been submitted.","Task Complete", true, false, false, location.reload);
     }
 }
 

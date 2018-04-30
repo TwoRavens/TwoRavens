@@ -464,7 +464,7 @@ class Body {
             `ul#${id}`,
             {style: {display: 'none', 'background-color': app.varColor},
              onclick: function(evt) {
-                 let tInput = byId('tInput');
+                 let tInput = app.byId('tInput');
 
                  // if interact is selected, show variable list again
                  if (this.textContent === 'interact(d,e)') {
@@ -521,14 +521,14 @@ class Body {
             m('#tInput', {
                 style: {display: 'none'},
                 onclick: _ => {
-                    let transSel = byId('transSel');
+                    let transSel = app.byId('transSel');
                     // if variable list is displayed when input is clicked...
                     if (transSel.style.display !== 'none') {
                         //transSel.fadeOut(100);
                         return false;
                     }
 
-                    let transList = byId('transList');
+                    let transList = app.byId('transList');
                     // if function list is displayed when input is clicked...
                     if (transList.style.display !== 'none') {
                         //transList.fadeOut(100);
@@ -542,8 +542,8 @@ class Body {
                     return false;
                 },
                 keyup: evt => {
-                    let transSel = byId('transSel');
-                    let transList = byId('transList');
+                    let transSel = app.byId('transSel');
+                    let transList = app.byId('transList');
                     if (transSel.style.display !== 'none') {
                         //transSel.fadeOut(100);
                     } else if (transList.style.display !== 'none') {
@@ -551,7 +551,7 @@ class Body {
                     }
 
                     if (evt.keyCode == 13) { // keyup on Enter
-                        let t = transParse(byId('tInput').value);
+                        let t = transParse(app.byId('tInput').value);
                         if (!t) {
                             return;
                         }
@@ -605,10 +605,10 @@ class Body {
                         onclick: _ => {
                             if (app.modalClose) {
                                 app.modalClose = false;
-                                byId('myModal').modal('hide');
+                                $('#myModal').modal('hide');
                                 return;
                             } else {
-                                eval(app.modalFunc);
+                                app.modalFunc();
                             }
                             location.reload();
                         }
