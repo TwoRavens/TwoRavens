@@ -233,16 +233,14 @@ function rightpanel(mode) {
             side: 'right',
             label: 'Result Exploration',
             hover: true,
-            width: app.exploreRightPanelWidths[app.rightTabExplore],
-            contents: m(MenuTabbed, {
-                id: 'rightPanelMenuExplore',
-                currentTab: app.rightTabExplore,
-                callback: app.setRightTabExplore,
-                sections: sectionsExplore,
-                attrsAll: {style: {height: 'calc(100% - 39px)'}}
-            })
-            // m('#setx[style=display: none; margin-top: .5em]')
-        });
+            width: app.exploreRightPanelWidths[app.rightTabExplore]
+        }, m(MenuTabbed, {
+            id: 'rightPanelMenuExplore',
+            currentTab: app.rightTabExplore,
+            callback: app.setRightTabExplore,
+            sections: sectionsExplore,
+            attrsAll: {style: {height: 'calc(100% - 39px)'}}
+        }));
     }
 
     // mode == null (model mode)
