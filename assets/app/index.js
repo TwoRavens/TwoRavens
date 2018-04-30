@@ -428,7 +428,7 @@ class Body {
                             left: true,
                             right: false,
                             target: iv,
-                            source: dv,
+                            source: dv
                         })));
                     }
                     app.restart([].concat(...links));
@@ -446,7 +446,6 @@ class Body {
                      ['gr1Button', 'zgroup1', 'Group 1'],
                      ['gr2Button', 'zgroup2', 'Group 2']]}),
               m(Subpanel, {title: "History"}),
-              //footer(),
               leftpanel(mode),
               rightpanel(mode)));
     }
@@ -504,107 +503,104 @@ class Body {
             list.map(x => m('li', x)));
 
         return m(Header, {
-            attrsInterface: {style: mode === 'explore' ? {'background-image': '-webkit-linear-gradient(top, #fff 0, rgb(227, 242, 254) 100%)'} : {}},
-            contents: m('#dataField.field[style=text-align: center]', [
-                m('h4#dataName[style=display: inline-block; margin-right:2em; margin-top: 7px]',
-                  {onclick: _ => this.cite = this.citeHidden = !this.citeHidden,
-                   onmouseout: _ => this.citeHidden || (this.cite = false),
-                   onmouseover: _ => this.cite = true},
-                  'Dataset Name'),
-                m('#cite.panel.panel-default',
-                  {style: `display: ${this.cite ? 'block' : 'none'}; position: absolute; right: 50%; width: 380px; text-align: left; z-index: 50`},
-                  m('.panel-body')),
-                m('span',
-                  m('.dropdown[style=float: right; padding-right: 1em]',
-                    m('#drop.button.btn[type=button][data-toggle=dropdown][aria-haspopup=true][aria-expanded=false]',
-                      [username, " ", glyph('triangle-bottom')]),
-                    m('ul.dropdown-menu[role=menu][aria-labelledby=drop]',
-                      userlinks.map(link => m('a[style=padding: 0.5em]', {href: link.url}, link.title, m('br'))))),
-                  navBtn('btnEstimate.btn-default', 2, 1, mode === 'explore' ? _ => {
-                      if (app.links.length === 0) {
-                          app.setModal('Please link pebbles first.', 'Warning', true, 'Ok', true);
-                          return;
-                      }
+            style: mode === 'explore' ? {'background-image': '-webkit-linear-gradient(top, #fff 0, rgb(227, 242, 254) 100%)'} : {}
+        }, [m('#dataField.field[style=text-align: center]', [
+            m('h4#dataName[style=display: inline-block; margin-right:2em; margin-top: 7px]',
+              {onclick: _ => this.cite = this.citeHidden = !this.citeHidden,
+               onmouseout: _ => this.citeHidden || (this.cite = false),
+               onmouseover: _ => this.cite = true},
+              'Dataset Name'),
+            m('#cite.panel.panel-default',
+              {style: `display: ${this.cite ? 'block' : 'none'}; position: absolute; right: 50%; width: 380px; text-align: left; z-index: 50`},
+              m('.panel-body')),
+            m('span',
+              m('.dropdown[style=float: right; padding-right: 1em]',
+                m('#drop.button.btn[type=button][data-toggle=dropdown][aria-haspopup=true][aria-expanded=false]',
+                  [username, " ", glyph('triangle-bottom')]),
+                m('ul.dropdown-menu[role=menu][aria-labelledby=drop]',
+                  userlinks.map(link => m('a[style=padding: 0.5em]', {href: link.url}, link.title, m('br'))))),
+              navBtn('btnEstimate.btn-default', 2, 1, mode === 'explore' ? _ => {
+                  if (app.links.length === 0) {
+                      app.setModal('Please link pebbles first.', 'Warning', true, 'Ok', true);
+                      return;
+                  }
 
-                      exp.explore();
-                      app.setRightTabExplore('Bivariate');
-                  } : app.estimate, m("span.ladda-label", mode === 'explore' ? 'Explore' : 'Solve This Problem'), '150px'),
-                  m('div.btn-group[role=group][aria-label="..."]', {style:{"float":"right", "margin-left": "2em"}},
-                    navBtnGroup('btnTA2.btn-default', _ => hopscotch.startTour(app.mytour, 0), ['Help Tour ', glyph('road')]),
-                    navBtnGroup('btnTA2.btn-default', _ => app.helpmaterials('video'), ['Video ', glyph('expand')]),
-                    navBtnGroup('btnTA2.btn-default', _ => app.helpmaterials('manual'), ['Manual ', glyph('book')])),
-                  navBtn1("btnReset", app.reset, glyph('repeat'), 'Reset'),
-                  navBtn1('btnEndSession', app.endsession, m("span.ladda-label", 'Mark Problem Finished'), 'Mark Problem Finished')),
-                m('#tInput', {
-                    style: {display: 'none'},
-                    onclick: _ => {
-                        let transSel = byId('transSel');
-                        // if variable list is displayed when input is clicked...
-                        if (transSel.style.display !== 'none') {
-                            //transSel.fadeOut(100);
-                            return false;
-                        }
-
-                        let transList = byId('transList');
-                        // if function list is displayed when input is clicked...
-                        if (transList.style.display !== 'none') {
-                            //transList.fadeOut(100);
-                            return false;
-                        }
-
-                        // highlight the text
-                        //let pos = this.offset();
-                        //pos.top += this.width();
-                        //transSel.fadeIn(100);
+                  exp.explore();
+                  app.setRightTabExplore('Bivariate');
+              } : app.estimate, m("span.ladda-label", mode === 'explore' ? 'Explore' : 'Solve This Problem'), '150px'),
+              m('div.btn-group[role=group][aria-label="..."]', {style:{"float":"right", "margin-left": "2em"}},
+                navBtnGroup('btnTA2.btn-default', _ => hopscotch.startTour(app.mytour, 0), ['Help Tour ', glyph('road')]),
+                navBtnGroup('btnTA2.btn-default', _ => app.helpmaterials('video'), ['Video ', glyph('expand')]),
+                navBtnGroup('btnTA2.btn-default', _ => app.helpmaterials('manual'), ['Manual ', glyph('book')])),
+              navBtn1("btnReset", app.reset, glyph('repeat'), 'Reset'),
+              navBtn1('btnEndSession', app.endsession, m("span.ladda-label", 'Mark Problem Finished'), 'Mark Problem Finished')),
+            m('#tInput', {
+                style: {display: 'none'},
+                onclick: _ => {
+                    let transSel = byId('transSel');
+                    // if variable list is displayed when input is clicked...
+                    if (transSel.style.display !== 'none') {
+                        //transSel.fadeOut(100);
                         return false;
-                    },
-                    keyup: evt => {
-                        let transSel = byId('transSel');
-                        let transList = byId('transList');
-                        if (transSel.style.display !== 'none') {
-                            //transSel.fadeOut(100);
-                        } else if (transList.style.display !== 'none') {
-                            //transList.fadeOut(100);
-                        }
-
-                        if (evt.keyCode == 13) { // keyup on Enter
-                            let t = transParse(byId('tInput').value);
-                            if (!t) {
-                                return;
-                            }
-
-                            transform(t.slice(0, t.length - 1), t[t.length - 1], typeTransform = false);
-                        }
                     }
-                }),
-                m('#transformations.transformTool',
-                  {title: 'Construct transformations of existing variables using valid R syntax. For example, assuming a variable named d, you can enter "log(d)" or "d^2".'},
-                  [transformation('transSel', ['a', 'b']),
-                   transformation('transList', app.transformList)])
-            ])
-        });
+
+                    let transList = byId('transList');
+                    // if function list is displayed when input is clicked...
+                    if (transList.style.display !== 'none') {
+                        //transList.fadeOut(100);
+                        return false;
+                    }
+
+                    // highlight the text
+                    //let pos = this.offset();
+                    //pos.top += this.width();
+                    //transSel.fadeIn(100);
+                    return false;
+                },
+                keyup: evt => {
+                    let transSel = byId('transSel');
+                    let transList = byId('transList');
+                    if (transSel.style.display !== 'none') {
+                        //transSel.fadeOut(100);
+                    } else if (transList.style.display !== 'none') {
+                        //transList.fadeOut(100);
+                    }
+
+                    if (evt.keyCode == 13) { // keyup on Enter
+                        let t = transParse(byId('tInput').value);
+                        if (!t) {
+                            return;
+                        }
+
+                        transform(t.slice(0, t.length - 1), t[t.length - 1], typeTransform = false);
+                    }
+                }
+            }),
+            m('#transformations.transformTool',
+              {title: 'Construct transformations of existing variables using valid R syntax. For example, assuming a variable named d, you can enter "log(d)" or "d^2".'},
+              [transformation('transSel', ['a', 'b']),
+               transformation('transList', app.transformList)])
+        ])]);
     }
 
     footer(mode) {
-        return m(Footer, {
-            contents: [
-                m(ButtonRadio,
-                  {id: 'modeButtonBar',
-                   attrsAll: {style: {width: '200px', margin: '0 .2em'}, class: 'navbar-left btn-sm'},
-                   onclick: app.set_mode,
-                   activeSection: mode || 'model',
-                   // {value: 'Results', id: 'btnResultsMode'}] VJD: commenting out the results mode button since we don't have this yet
-                   sections: [{value: 'Model'}, {value: 'Explore'}]}),
-                m("a#logID[href=somelink][target=_blank]", "Replication"),
-                m("span[style=color:#337ab7]", " | "),
-                // dev links...
-                m("a[href='/dev-raven-links'][target=_blank]", "raven-links"),
-                m("span[style=color:#337ab7]", " | "),
-                m("span[style=color:#337ab7]", `TA2: ${TA2_SERVER}`),
-                m("span[style=color:#337ab7]", " | "),
-                m("span[style=color:#337ab7]", `TA3TA2 api: ${TA3TA2_API_VERSION}`)
-            ]
-        });
+        return m(Footer, [
+            m(ButtonRadio,
+              {id: 'modeButtonBar',
+               attrsAll: {style: {width: '200px', margin: '0 .2em'}, class: 'navbar-left btn-sm'},
+               onclick: app.set_mode,
+               activeSection: mode || 'model',
+               // {value: 'Results', id: 'btnResultsMode'}] VJD: commenting out the results mode button since we don't have this yet
+               sections: [{value: 'Model'}, {value: 'Explore'}]}),
+            m("a#logID[href=somelink][target=_blank]", "Replication"),
+            m("span[style=color:#337ab7]", " | "),
+            // dev links...
+            m("a[href='/dev-raven-links'][target=_blank]", "raven-links"),
+            m("span[style=color:#337ab7]", " | "),
+            m("span[style=color:#337ab7]", `TA2: ${TA2_SERVER}`),
+            m("span[style=color:#337ab7]", " | "),
+            m("span[style=color:#337ab7]", `TA3TA2 api: ${TA3TA2_API_VERSION}`)
+        ]);
     }
 
     modal() {
