@@ -1,5 +1,6 @@
 import m from 'mithril';
-import '../../css/common.css'
+
+import '../../css/common.css';
 
 import {
     panelOpen,
@@ -36,11 +37,12 @@ import {
 //
 // Sometimes the contents of a panel should not be accessible via the tab bar.
 // Setting the toggle 'visible' prevents it from appearing in the tab bar.
-const dot = [m.trust('&#9679;'), m('br')];
-export default class Panel {
 
+const dot = [m.trust('&#9679;'), m('br')];
+
+export default class Panel {
     view(vnode) {
-        let {side, hover, label, contents, width, attrsAll} = vnode.attrs;
+        let {side, hover, label, width, attrsAll} = vnode.attrs;
         scrollBarChanged();
 
         if (!hover) {
@@ -60,24 +62,18 @@ export default class Panel {
                 'z-index': 100
             }
         }, attrsAll), [
-            // Panel handle
+            // handle
             m(`#toggle${side === 'left' ? 'L' : 'R'}panelicon.panelbar`, {
-                    style: {height: '100%', [side]: 'calc(100% - 16px)'}
-                },
-                m('span', {onclick: () => togglePanelOpen(side)}, dot, dot, dot, dot)),
-
-            // Panel contents
+                style: {height: '100%', [side]: 'calc(100% - 16px)'}
+            }, m('span', {onclick: () => togglePanelOpen(side)}, dot, dot, dot, dot)),
+            // contents
             m(`div${panelOpen[side] ? '' : '.closepanel'}`, {
-                    style: {
-                        width: 'calc(100% - 8px)', height: '100%',
-                        margin: '0 4px',
-                        display: panelOpen[side] ? 'block' : 'none'
-                    }
-                },
-                [
-                    m(`#${side}paneltitle.panel-heading.text-center`, m("h3.panel-title", label)),
-                    contents
-                ])
-        ])
+                style: {
+                    width: 'calc(100% - 8px)', height: '100%',
+                    margin: '0 4px',
+                    display: panelOpen[side] ? 'block' : 'none'
+                }
+            }, [m(`#${side}paneltitle.panel-heading.text-center`, m("h3.panel-title", label)), vnode.children])
+        ]);
     }
 }

@@ -60,66 +60,65 @@ function leftpanel(mode) {
         label: 'Data Selection',
         hover: true,
         width: app.modelLeftPanelWidths[app.leftTab],
-        attrsAll: {style: {'z-index': 101}},
-        contents: m(MenuTabbed, {
-            id: 'leftpanelMenu',
-            attrsAll: {style: {height: 'calc(100% - 39px)'}},
-            currentTab: app.leftTab,
-            callback: app.setLeftTab,
-            sections: [
-                {value: 'Variables',
-                 title: 'Click variable name to add or remove the variable pebble from the modeling space.',
-                 contents: [
-                     m(TextField, {
-                         id: 'searchVar',
-                         placeholder: 'Search variables and labels',
-                         oninput: app.searchVariables
-                     }),
-                     m(PanelList, {
-                         id: 'varList',
-                         items: app.valueKey,
-                         colors: {
-                             [app.hexToRgba(common.selVarColor)]: app.nodes.map(n => n.name),
-                             [app.hexToRgba(common.nomColor)]: app.zparams.znom,
-                             [app.hexToRgba(common.dvColor)]: app.zparams.zdv
-                         },
-                         classes: {'item-bordered': app.matchedVariables},
-                         callback: app.clickVar,
-                         popup: (variable) => app.popoverContent(app.findNodeIndex(variable, true)),
-                         attrsItems: {'data-placement': 'right', 'data-original-title': 'Summary Statistics'}})]},
-                {value: 'Discovery',
-                 contents: [
-                     m(Table, {
-                         id: 'discoveryTable',
-                         headers: ['Hidden_UID', 'Target', 'Predictors', 'Task', 'Metric', discoveryAllCheck],
-                         data: discoveryTableData,
-                         activeRow: app.selectedProblem,
-                         onclick: app.setSelectedProblem,
-                         showUID: false,
-                         abbreviation: 40,
-                         attrsAll: {style: {height: '80%', overflow: 'auto', display: 'block', 'margin-right': '16px', 'margin-bottom': 0, 'max-width': (window.innerWidth - 90) + 'px'}}
-                     }),
-                     m('textarea#discoveryInput[style=display:block; float: left; width: 100%; height:calc(20% - 35px); overflow: auto; background-color: white]', {
-                         value: app.disco[app.selectedProblem] === undefined ? '' : app.disco[app.selectedProblem].description
-                     }),
-                     m(Button, {id: 'btnSave', onclick:_=>app.saveDisc('btnSave'),title: 'Saves your revised problem description.'}, 'Save Desc.'),
-                     m(Button, {id: 'btnSubmitDisc', classes: 'btn-success', style: 'float: right', onclick:_=>app.submitDiscProb(), title: 'Submit all checked discovered problems.'}, 'Submit Disc. Probs.')]},
-                {value: 'Summary',
-                 title: 'Select a variable from within the visualization in the center panel to view its summary statistics.',
-                 contents: [
-                     m('center',
-                       m('b', app.summary.name),
-                       m('br'),
-                       m('i', app.summary.labl)),
-                     m('table', app.summary.data.map(tr => m('tr', tr.map(
-                         td => m('td',
-                                 {onmouseover: setBackgroundColor('aliceblue'),
-                                  onmouseout: setBackgroundColor('f9f9f9')},
-                                 td)))))],
-                 display: 'none'}
-            ]
-        })
-    });
+        attrsAll: {style: {'z-index': 101}}
+    }, m(MenuTabbed, {
+        id: 'leftpanelMenu',
+        attrsAll: {style: {height: 'calc(100% - 39px)'}},
+        currentTab: app.leftTab,
+        callback: app.setLeftTab,
+        sections: [
+            {value: 'Variables',
+             title: 'Click variable name to add or remove the variable pebble from the modeling space.',
+             contents: [
+                 m(TextField, {
+                     id: 'searchVar',
+                     placeholder: 'Search variables and labels',
+                     oninput: app.searchVariables
+                 }),
+                 m(PanelList, {
+                     id: 'varList',
+                     items: app.valueKey,
+                     colors: {
+                         [app.hexToRgba(common.selVarColor)]: app.nodes.map(n => n.name),
+                         [app.hexToRgba(common.nomColor)]: app.zparams.znom,
+                         [app.hexToRgba(common.dvColor)]: app.zparams.zdv
+                     },
+                     classes: {'item-bordered': app.matchedVariables},
+                     callback: app.clickVar,
+                     popup: (variable) => app.popoverContent(app.findNodeIndex(variable, true)),
+                     attrsItems: {'data-placement': 'right', 'data-original-title': 'Summary Statistics'}})]},
+            {value: 'Discovery',
+             contents: [
+                 m(Table, {
+                     id: 'discoveryTable',
+                     headers: ['Hidden_UID', 'Target', 'Predictors', 'Task', 'Metric', discoveryAllCheck],
+                     data: discoveryTableData,
+                     activeRow: app.selectedProblem,
+                     onclick: app.setSelectedProblem,
+                     showUID: false,
+                     abbreviation: 40,
+                     attrsAll: {style: {height: '80%', overflow: 'auto', display: 'block', 'margin-right': '16px', 'margin-bottom': 0, 'max-width': (window.innerWidth - 90) + 'px'}}
+                 }),
+                 m('textarea#discoveryInput[style=display:block; float: left; width: 100%; height:calc(20% - 35px); overflow: auto; background-color: white]', {
+                     value: app.disco[app.selectedProblem] === undefined ? '' : app.disco[app.selectedProblem].description
+                 }),
+                 m(Button, {id: 'btnSave', onclick:_=>app.saveDisc('btnSave'),title: 'Saves your revised problem description.'}, 'Save Desc.'),
+                 m(Button, {id: 'btnSubmitDisc', classes: 'btn-success', style: 'float: right', onclick:_=>app.submitDiscProb(), title: 'Submit all checked discovered problems.'}, 'Submit Disc. Probs.')]},
+            {value: 'Summary',
+             title: 'Select a variable from within the visualization in the center panel to view its summary statistics.',
+             contents: [
+                 m('center',
+                   m('b', app.summary.name),
+                   m('br'),
+                   m('i', app.summary.labl)),
+                 m('table', app.summary.data.map(tr => m('tr', tr.map(
+                     td => m('td',
+                             {onmouseover: setBackgroundColor('aliceblue'),
+                              onmouseout: setBackgroundColor('f9f9f9')},
+                             td)))))],
+             display: 'none'}
+        ]
+    }));
 }
 
 let righttab = (id, task, title, probDesc) => m(PanelList, {
@@ -305,17 +304,16 @@ function rightpanel(mode) {
         side: 'right',
         label: 'Model Selection',
         hover: true,
-        width: app.modelRightPanelWidths[app.rightTab],
-        contents: m(MenuTabbed, {
-            id: 'rightpanelMenu',
-            currentTab: app.rightTab,
-            callback: app.setRightTab,
-            hoverBonus: 10,
-            selectWidth: 30,
-            sections: sections,
-            attrsAll: {style: {height: 'calc(100% - 39px)'}}
-        })
-    });
+        width: app.modelRightPanelWidths[app.rightTab]
+    }, m(MenuTabbed, {
+        id: 'rightpanelMenu',
+        currentTab: app.rightTab,
+        callback: app.setRightTab,
+        hoverBonus: 10,
+        selectWidth: 30,
+        sections: sections,
+        attrsAll: {style: {height: 'calc(100% - 39px)'}}
+    }));
 }
 
 
