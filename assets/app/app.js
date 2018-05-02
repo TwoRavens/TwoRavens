@@ -102,34 +102,34 @@ export let exploreRightPanelWidths = {
     'Bivariate': '75%'
 };
 
-export let setRightTab = (tab) => { rightTab = tab; updateRightPanelWidth() }
-export let setRightTabExplore = (tab) => { rightTabExplore = tab; updateRightPanelWidth() }
+export let setRightTab = (tab) => { rightTab = tab; updateRightPanelWidth() };
+export let setRightTabExplore = (tab) => { rightTabExplore = tab; updateRightPanelWidth() };
 
 // panelWidth is meant to be read only
 export let panelWidth = {
     'left': '0',
     'right': '0'
-}
+};
 
 let updateRightPanelWidth = () => {
     if (common.panelOpen['right']) {
         let tempWidth = {
             'model': modelRightPanelWidths[rightTab],
             'explore': exploreRightPanelWidths[rightTabExplore]
-        }[currentMode]
+        }[currentMode];
 
-        panelWidth['right'] = `calc(${common.panelMargin * 2}px + ${tempWidth})`
+        panelWidth['right'] = `calc(${common.panelMargin * 2}px + ${tempWidth})`;
     }
-    else panelWidth['right'] = `calc(${common.panelMargin * 2}px + 16px)`
-}
+    else panelWidth['right'] = `calc(${common.panelMargin * 2}px + 16px)`;
+};
 let updateLeftPanelWidth = () => {
     if (common.panelOpen['left'])
-        panelWidth['left'] = `calc(${common.panelMargin * 2}px + ${modelLeftPanelWidths[leftTab]})`
-    else panelWidth['left'] = `calc(${common.panelMargin * 2}px + 16px)`
-}
+        panelWidth['left'] = `calc(${common.panelMargin * 2}px + ${modelLeftPanelWidths[leftTab]})`;
+    else panelWidth['left'] = `calc(${common.panelMargin * 2}px + 16px)`;
+};
 
-updateRightPanelWidth()
-updateLeftPanelWidth()
+updateRightPanelWidth();
+updateLeftPanelWidth();
 
 common.setPanelCallback('right', updateRightPanelWidth);
 common.setPanelCallback('left', updateLeftPanelWidth);
@@ -210,15 +210,6 @@ let rightClickLast = false;
 let selInteract = false;
 export let callHistory = []; // transform and subset calls
 let mytarget = '';
-
-// things to customize modal window from app.js
-export let modalText = "Default modal text";
-export let modalHeader = "Default modal header";
-export let modalButton = "Close";
-export let modalVis = false;
-export let modalClose = false
-export let modalBtnDisplay = 'block';
-export let modalFunc = function() {return};
 
 let configurations = {};
 let datadocument = {};
@@ -305,7 +296,7 @@ export let setD3mProblemDescription = (key, value) => {
             D3M_SVC_URL + "/SetProblemDoc",
             {replaceProblemSchemaField: {[key]: lookup[d3mProblemDescription[key]][1]}, context: apiSession(zparams.zsessionid)});
     }
-    else hopscotch.startTour(lockTour)
+    else hopscotch.startTour(lockTour);
 }
 
 let svg, div, selectLadda;
@@ -329,6 +320,12 @@ const [arcInd1, arcInd2] = [arcInd(arcInd1Limits), arcInd(arcInd2Limits)];
 
 export let byId = id => document.getElementById(id);
 // export let byId = id => {console.log(id); return document.getElementById(id);}
+
+function trigger(id, event) {
+    let evt = document.createEvent('HTMLEvents');
+    evt.initEvent(event, true, false);
+    byId(id).dispatchEvent(evt);
+}
 
 /**
    page reload linked to btnReset
@@ -393,17 +390,17 @@ export let mytour = {
 
 
 export let mytour3 = {
-            id: "dataset_launch",
-            i18n: {doneBtn:'Ok'},
-            showCloseButton: true,
-            scrollDuration: 300,
-            steps: [
-                step("btnSelect", "right", "Complete Task 1",
-                     `<p>This submission button marks Task 1 - Problem Discovery, as complete.</p>
+    id: "dataset_launch",
+    i18n: {doneBtn:'Ok'},
+    showCloseButton: true,
+    scrollDuration: 300,
+    steps: [
+        step("btnSelect", "right", "Complete Task 1",
+             `<p>This submission button marks Task 1 - Problem Discovery, as complete.</p>
                      <p>Click this button to save the check marked problems in the table below as potentially interesting or relevant.</p>
                      <p>Generally, as a tip, the Green button is the next button you need to press to move the current task forward.</p>`),
-            ]
-        };
+    ]
+};
 
 // appears when a user attempts to edit when the toggle is set
 export let lockTour = {
@@ -539,15 +536,15 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     let datadocument_columns;
     let col_idx;
     for (col_idx = 0; col_idx < datadocument.dataResources.length; col_idx++) {
-        if(datadocument.dataResources[col_idx].columns){
-          datadocument_columns = datadocument.dataResources[col_idx].columns
-          console.log('columns found in datadocument.dataResources[' + col_idx + '].columns');
-          break
+        if(datadocument.dataResources[col_idx].columns) {
+            datadocument_columns = datadocument.dataResources[col_idx].columns;
+            console.log('columns found in datadocument.dataResources[' + col_idx + '].columns');
+            break
         }
     }
     if (typeof datadocument_columns === "undefined") {
-      console.log('D3M WARNING: datadocument.dataResources[x].columns is undefined.');
-      swandive = true;
+        console.log('D3M WARNING: datadocument.dataResources[x].columns is undefined.');
+        swandive = true;
     }
 
     if (IS_D3M_DOMAIN) {
@@ -563,9 +560,9 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         /*
         // clean citation
         zparams.zdatacite = cite
-            .replace(/\&/g, "and")
-            .replace(/\;/g, ",")
-            .replace(/\%/g, "-");
+        .replace(/\&/g, "and")
+        .replace(/\;/g, ",")
+        .replace(/\%/g, "-");
         // fill in citation in header
         $('#cite div.panel-body').text(zparams.zdatacite);
         */
@@ -581,7 +578,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
             .replace(/\;/g, ",")
             .replace(/\%/g, "-");
         // fill in citation in header
-        $('#cite div.panel-body').text(zparams.zdatacite);
+        byId('cite').children[0].textContent = zparams.zdatacite;
     }
     // drop file extension
     let dataname = IS_D3M_DOMAIN ? zparams.zdata : zparams.zdata.replace(/\.(.*)/, '');
@@ -591,13 +588,13 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
 
     // if swandive, we have to set valueKey here so that left panel can populate.
     if (swandive) {
-        alert('Exceptional data detected.  Please check the logs for "D3M WARNING"')
-    //    let mydataRes = datadocument.dataResources;
-      //  for (let i = 0; i < mydataRes.length; i++) {
-     //       valueKey.push(mydataRes[i].resFormat[0]);
-      //  }
+        alert('Exceptional data detected.  Please check the logs for "D3M WARNING"');
+        //    let mydataRes = datadocument.dataResources;
+        //  for (let i = 0; i < mydataRes.length; i++) {
+        //       valueKey.push(mydataRes[i].resFormat[0]);
+        //  }
         // end session if neither trainData nor trainTargets?
-       // valueKey.length === 0 && alert("no trainData or trainTargest in data description file. valueKey length is 0");
+        // valueKey.length === 0 && alert("no trainData or trainTargest in data description file. valueKey length is 0");
         // perhaps allow users to unlock and select things?
         byId('btnLock').classList.add('noshow');
         byId('btnForce').classList.add('noshow');
@@ -739,8 +736,8 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         disco = discovery(res);
 
         // Kick off discovery button as green for user guidance
-        $("#btnDiscovery").removeClass("btn-default");
-        $("#btnDiscovery").addClass("btn-success");      // Would be better to attach this as a class at creation, but don't see where it is created
+        byId("btnDiscovery").classList.remove("btn-default");
+        byId("btnDiscovery").classList.add("btn-success"); // Would be better to attach this as a class at creation, but don't see where it is created
 
         console.log(disco);
     }
@@ -776,7 +773,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
 
     let tempWidth = d3.select('#main.left').style('width');
     width = tempWidth.substring(0, tempWidth.length - 2);
-    height = $(window).height() - 120; // hard code header, footer, and bottom margin
+    height = window.innerHeight - 120; // hard code header, footer, and bottom margin
 
     estimateLadda = Ladda.create(byId("btnEstimate"));
     discoveryLadda = Ladda.create(byId("btnSubmitDisc"));
@@ -1606,25 +1603,26 @@ export function layout(v, v2) {
             .append("li")
             .text(d => d);
 
-        if(!IS_D3M_DOMAIN){
-            $('#transSel li').click(function(evt) {
+        if(!IS_D3M_DOMAIN) {
+            document.querySelectorAll('#transSel li').forEach(x => x.onclick(function(evt) {
                 // if 'interaction' is the selected function, don't show the function list again
+                let tInput = byId('tInput');
                 if (selInteract) {
-                    var n = $('#tInput').val().concat($(this).text());
-                    $('#tInput').val(n);
+                    let n = tInput.value.concat(this.textContent);
+                    tInput.value = n;
                     evt.stopPropagation();
-                    var t = transParse(n = n);
+                    let t = transParse(n = n);
                     if (!t) return;
-                    $(this).parent().fadeOut(100);
+                    //$(this).parent().fadeOut(100);
                     transform(n = t.slice(0, t.length - 1), t = t[t.length - 1], typeTransform = false);
                     return;
                 }
 
-                $('#tInput').val($(this).text());
-                $(this).parent().fadeOut(100);
-                $('#transList').fadeIn(100);
+                tInput.value = this.textContent;
+                //$(this).parent().fadeOut(100);
+                //$('#transList').fadeIn(100);
                 evt.stopPropagation();
-            });
+            }));
         };
 
         // remove old nodes
@@ -1674,8 +1672,8 @@ export function layout(v, v2) {
     d3.select(window)
         .on('click', () => {
             // all clicks will bubble here unless event.stopPropagation()
-            $('#transList').fadeOut(100);
-            $('#transSel').fadeOut(100);
+            //$('#transList').fadeOut(100);
+            //$('#transSel').fadeOut(100);
         });
 
     restart(); // initializes force.layout()
@@ -1868,7 +1866,7 @@ export let setSelectedPipeline = (result) => {
     selectedPipeline[currentMode] = result;
     if (currentMode === 'model') {
         // the 'find' function would have been nice here-- es6 only. Find pipeline with UID, then pass pipeline_id
-        let pipeline = pipelineTable.filter((row) => row[0] == result)[0]
+        let pipeline = pipelineTable.filter((row) => row[0] == result)[0];
         resultsplotinit(pipeline[1]);
     }
 }
@@ -1882,10 +1880,10 @@ function onPipelineCreate(PipelineCreateResult, rookpipe) {
     console.log(PipelineCreateResult);
 
     // change status of buttons for estimating problem and marking problem as finished
-    $("#btnEstimate").removeClass("btn-success");
-    $("#btnEstimate").addClass("btn-default");
-    $("#btnEndSession").removeClass("btn-default");
-    $("#btnEndSession").addClass("btn-success");
+    byId("btnEstimate").classList.remove("btn-success");
+    byId("btnEstimate").classList.add("btn-default");
+    byId("btnEndSession").classList.remove("btn-default");
+    byId("btnEndSession").classList.add("btn-success");
 
     let context = apiSession(zparams.zsessionid);
     for (var i = 0; i<PipelineCreateResult.length; i++) {
@@ -1918,7 +1916,7 @@ function onPipelineCreate(PipelineCreateResult, rookpipe) {
         let mymetric = "";
         let myval = "";
         console.log(key);
-        console.log(allPipelineInfo[key].progressInfo)
+        console.log(allPipelineInfo[key].progressInfo);
         let myscores = [];
         if(allPipelineInfo[key].progressInfo == "COMPLETED"){
             myscores = allPipelineInfo[key].pipelineInfo.scores;
@@ -2059,16 +2057,13 @@ export async function estimate(btn) {
             estimated = true;
             d3.select("#tabResults")
                 .style("display", "block");
-
             d3.select("#resultsView")
                 .style("display", "block");
-
             d3.select("#modelView")
                 .style("display", "block");
 
-
             // programmatic click on Results button
-            $("#btnSetx").trigger("click");      // Was "btnResults" - changing to simplify user experience for testing.
+            trigger("btnSetx", "click"); // Was "btnResults" - changing to simplify user experience for testing.
 
             let model = "Model".concat(modelCount = modelCount + 1);
 
@@ -2516,7 +2511,7 @@ export function erase() {
 /** needs doc */
 export let setLeftTab = (tab) => {
     leftTab = tab;
-    updateLeftPanelWidth()
+    updateLeftPanelWidth();
 
     if (tab === "Discovery"){
         probtable.length = 0;
@@ -2570,7 +2565,7 @@ export let popoverContent = d => {
     let text = '<table class="table table-sm table-striped" style="margin:-10px;"><tbody>';
     let [rint, prec] = [d3.format('r'), (val, int) => (+val).toPrecision(int).toString()];
     let div = (field, name, val) => {
-        if (field != 'NA') text += `<tr><th>${name}</th><td><p class="text-left" style="height:10px;">${val || field}</p></td></tr>`
+        if (field != 'NA') text += `<tr><th>${name}</th><td><p class="text-left" style="height:10px;">${val || field}</p></td></tr>`;
     };
     d.labl != '' && div(d.labl, 'Label');
     div(d.mean, 'Mean', priv && d.meanCI ?
@@ -2597,7 +2592,7 @@ export let popoverContent = d => {
 export function panelPlots() {
 
     if(IS_D3M_DOMAIN) {
-    //    byId('btnSubset').classList.add('noshow');
+        //byId('btnSubset').classList.add('noshow');
     }
     // build arrays from nodes in main
     let vars = [];
@@ -2751,24 +2746,18 @@ function setColors(n, c) {
 
 /** needs doc */
 export function borderState() {
-    zparams.zdv.length > 0 ?
-        $('#dvButton .rectColor svg circle').attr('stroke', dvColor) :
-        $('#dvButton').css('border-color', '#ccc');
-    zparams.zcross.length > 0 ?
-        $('#csButton .rectColor svg circle').attr('stroke', csColor) :
-        $('#csButton').css('border-color', '#ccc');
-    zparams.ztime.length > 0 ?
-        $('#timeButton .rectColor svg circle').attr('stroke', timeColor) :
-        $('#timeButton').css('border-color', '#ccc');
-    zparams.znom.length > 0 ?
-        $('#nomButton .rectColor svg circle').attr('stroke', nomColor) :
-        $('#nomButton').css('border-color', '#ccc');
-    zparams.zgroup1.length > 0 ?
-        $('#gr1Button .rectColor svg circle').attr('stroke', gr1Color).attr('fill', gr1Color).attr('fill-opacity', 0.6).attr('stroke-opacity', 0) :
-        $('#gr1Button').css('border-color', '#ccc');
-    zparams.zgroup2.length > 0 ?
-        $('#gr2Button .rectColor svg circle').attr('stroke', gr2Color).attr('fill', gr2Color).attr('fill-opacity', 0.6).attr('stroke-opacity', 0) :
-        $('#gr2Button').css('border-color', '#ccc');
+    let set = (id, param, attrs) => {
+        let el = byId(id);
+        zparams[param].length > 0 ?
+            Object.entries(attrs).forEach(([x, y]) => el.querySelector('.rectColor svg circle').setAttribute(x, y)) :
+            el.style['border-color'] = '#ccc';
+    };
+    set('dvButton', 'zdv', {stroke: dvColor});
+    set('csButton','zcross', {stroke: csColor});
+    set('timeButton','ztime', {stroke: timeColor});
+    set('nomButton','znom', {stroke: nomColor});
+    set('gr1Button','zgroup1', {stroke: gr1Color, fill: gr1Color, 'fill-opacity': 0.6, 'stroke-opacity': 0});
+    set('gr2Button','zgroup2', {stroke: gr2Color, fill: gr2Color, 'fill-opacity': 0.6, 'stroke-opacity': 0});
 }
 
 /** needs doc */
@@ -2828,8 +2817,8 @@ export function subsetSelect(btn) {
         return;
     }
 
-    $("#btnVariables").trigger("click"); // programmatic clicks
-    $("#btnModels").trigger("click");
+    trigger("btnVariables", "click"); // programmatic clicks
+    trigger("btnModels", "click");
 
     var grayOuts = [];
     var rCall = [];
@@ -2938,26 +2927,19 @@ function rePlot() {
 }
 
 // acts as if the user clicked in whitespace. useful when restart() is outside of scope
-export let fakeClick = () => {
-    let ws = "#whitespace".concat(myspace);
-    // d3 and programmatic events don't mesh well, here's a SO workaround that looks good but uses jquery...
-    jQuery.fn.d3Click = function() {
-        this.each((i, e) => {
-            let evt = document.createEvent("MouseEvents");
-            evt.initMouseEvent("mousedown", true, true, window, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
-            e.dispatchEvent(evt);
-        });
-    };
-    $(ws).d3Click();
-    d3.select(ws)
+export function fakeClick() {
+    let el = byId(`whitespace${myspace}`);
+    let evt = document.createEvent("MouseEvents");
+    evt.initMouseEvent("mousedown", true, true, window, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
+    el.dispatchEvent(evt);
+    d3.select(el)
         .classed('active', false);
-};
+}
 
 /**
    EndSession(SessionContext) returns (Response) {}
 */
 export async function endsession() {
-
     let table = document.getElementById("setxRight").getElementsByTagName('table')[0];
     if(typeof table === 'undefined') {
         alert("No pipelines exist. Cannot mark problem as complete.");
@@ -3022,7 +3004,7 @@ export async function listpipelines() {
 */
 export async function executepipeline() {
     let context = apiSession(zparams.zsessionid);
-    let tablerow = byId('setxRight').querySelector('tr.item-select');
+    let tablerow = document.querySelector('#setxRight tr.item-select');
     if(tablerow == null) {alert("Please select a pipeline to execute on."); return;}
     let pipelineId=tablerow.firstChild.innerText;
 
@@ -4099,24 +4081,24 @@ export async function submitDiscProb() {
 
     discoveryLadda.stop();
     // change status of buttons for estimating problem and marking problem as finished
-    $("#btnDiscovery").removeClass("btn-success");
-    $("#btnDiscovery").addClass("btn-default");
-    $("#btnSubmitDisc").removeClass("btn-success");
-    $("#btnSubmitDisc").addClass("btn-default");
+    byId("btnDiscovery").classList.remove("btn-success");
+    byId("btnDiscovery").classList.add("btn-default");
+    byId("btnSubmitDisc").classList.remove("btn-success");
+    byId("btnSubmitDisc").classList.add("btn-default");
     task1_finished = true;
     if(!(task2_finished)){
-        $("#btnEstimate").removeClass("btn-default");
-        $("#btnEstimate").addClass("btn-success");
+        byId("btnEstimate").classList.remove("btn-default");
+        byId("btnEstimate").classList.add("btn-success");
     };
-    byId("btnVariables").click();
+    trigger("btnVariables", 'click');
 }
 
 export function saveDisc(btn) {
     let table = document.getElementById("discoveryTable");
     let newtext = document.getElementById("discoveryInput").value;
     for (let i = 1, row; row = table.rows[i]; i++) { //skipping the header
-        if(row.className=='item-select'){
-            disco[i-1].description=newtext;
+        if (row.className === 'item-select') {
+            disco[i-1].description = newtext;
         }
     }
 }
