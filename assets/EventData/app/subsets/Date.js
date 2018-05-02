@@ -160,7 +160,10 @@ export function updateDate(reset_sliders=true) {
         datex.domain(s.map(datex2.invert, datex2));
         datefocus.select(".area").attr("d", datearea);
         datefocus.select(".areaUser").attr("d", datearea);
-        datefocus.select(".axis--x").call(datexAxis);
+        datefocus.select(".axis--x").call(datexAxis)
+			.selectAll("text")
+				.attr("transform", "rotate(45)")
+				.style("text-anchor", "start");
         dateSVG.select(".zoom").call(datezoom.transform, d3.zoomIdentity
             .scale(datewidth / (s[1] - s[0]))
             .translate(-s[0], 0));
@@ -173,7 +176,10 @@ export function updateDate(reset_sliders=true) {
         datex.domain(t.rescaleX(datex2).domain());
         datefocus.select(".area").attr("d", datearea);
         datefocus.select(".areaUser").attr("d", datearea);
-        datefocus.select(".axis--x").call(datexAxis);
+        datefocus.select(".axis--x").call(datexAxis)
+			.selectAll("text")
+				.attr("transform", "rotate(45)")
+				.style("text-anchor", "start");
         datecontext.select(".brush").call(datebrush.move, datex.range().map(t.invertX, t));
     }
 
@@ -338,9 +344,12 @@ export function updateDate(reset_sliders=true) {
 
     // Add x and y axes to focus group
     datefocus.append("g")
-        .attr("class", "axis axis--x")
+        .attr("class", "dateFocusX axis axis--x")
         .attr("transform", "translate(0," + dateheight + ")")
-        .call(datexAxis);
+        .call(datexAxis)
+        .selectAll("text")
+			.attr("transform", "rotate(45)")
+			.style("text-anchor", "start");;
 
     datefocus.append("g")
         .attr("class", "axis axis--y")
@@ -362,9 +371,12 @@ export function updateDate(reset_sliders=true) {
 
     // Add x axis to context group
     datecontext.append("g")
-        .attr("class", "axis axis--x")
+        .attr("class", "dateContextX axis axis--x")
         .attr("transform", "translate(0," + dateheight2 + ")")
         .call(datexAxis2);
+        //~ .selectAll("text")
+			//~ .attr("transform", "rotate(45)")
+			//~ .style("text-anchor", "start");
 
     // Add brushes to context group
     datecontext.append("g")

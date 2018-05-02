@@ -86,20 +86,11 @@ eventdata_aggreg.app <- function(env) {
     actionType = everything$action
 
     if (!is.null(actionType) && actionType == "preview") {	#get first $numberPreview dates
-		print(everything$date$dateType)
-		print(everything$numberPreview)
 		print(start_date)
 		print(end_date)
 
 		num = everything$numberPreview - 1
-#~ 		if (everything$date$dateType == 1)
-#~ 			date_range = seq(start_date, min(start_date + weeks(num), end_date + weeks(1)), by="week")
-#~ 		else if (everything$date$dateType == 2)
-#~ 			date_range = seq(start_date, min(start_date %m+% months(num), end_date %m+% months(1)), by="month")
-#~ 		else if (everything$date$dateType == 3)
-#~ 			date_range = seq(start_date, min(start_date %m+% months(num * 4), end_date %m+% months(4)), by="quarter")
-#~ 		else if (everything$date$dateType == 4)
-#~ 			date_range = seq(start_date, min(start_date %m+% years(num), start_date %m+% years(1)), by="year")
+		
 		if (everything$date$dateType == 1)
 			date_range = seq(start_date, min(start_date + weeks(num), end_date), by="week")
 		else if (everything$date$dateType == 2)
@@ -139,21 +130,8 @@ eventdata_aggreg.app <- function(env) {
 		}
 		else {
 			print("using actor")
-			print(everything$actors$links$group0)
-			print(typeof(everything$actors$links$group0))
-	#~ 		actorLinks = do.call(rbind, everything$actors$links)
-	#~ 		print(actorLinks)
-	#~ 		print(typeof(actorLinks))
 
 			actorLinks = everything$actors$links
-			print(actorLinks)
-			print("end of actorLinks")
-			print(length(actorLinks))
-			#need to compress the source/target lists to a csv like format
-			#DONE in .js
-	#~ 		print(actorLinks$group$sources)
-	#~ 		actorLinks$group$sources = write.table(matrix(as.character(actorLinks$group$sources), nrow=1), sep=",", row.names=FALSE, col.names=FALSE)
-	#~ 		print(actorLinks)
 		}
 
 		#if not using date and not using actor return sum of each root codes
@@ -161,18 +139,12 @@ eventdata_aggreg.app <- function(env) {
 		#if using only actor return a collection of m x 20 of root codes, organized by aggreg on actor groups
 		#else return a collection of (n x m) x 20 of root codes, organized by aggreg on both groups
 
-	#~ 	query_url = paste(eventdata_url, '&query={\"<date>\":{\"$gte\":\"', everything$date$min, '\",\"$lte\":\"', everything$date$max, '\"}}', sep="")		#change query to match min/max date
 
 		if (datasource == "api")
 			rootCodeHeader = sprintf("%.2d", seq(1:20))
 		else
 			rootCodeHeader = sprintf("%d", seq(1:20))
-#~ 		pentaCodeHeader = sprintf("%d", seq(0:4))
-
-#~ 		if (everything$date$dateType != 0) {
-#~ 			start_date = as.Date(strptime(everything$date$min, "%Y%m%d"))
-#~ 			end_date = as.Date(strptime(everything$date$max, "%Y%m%d"))
-#~ 		}
+		#penta header handled after queries
 
 		query_url = paste(eventdata_url, '&query={"<date>":{"$gte":"', everything$date$min, '","$lte":"', everything$date$max, '"}}', sep="")		#change query to match min/max date
 
@@ -187,28 +159,17 @@ eventdata_aggreg.app <- function(env) {
 					data
 				}) %plan% multiprocess
 
-#~ 				print(value(action_frequencies))
 				#format and sort data
 				df = value(action_frequencies)
 				df = df[complete.cases(df),]		#remove NAs
 				df = spread(df, rootcode, total, fill=0)
 
-				print("pre missing")
-				print(df)
-
-#~ 				print("adding missing codes")
+				#add missing root codes
 				missing = setdiff(rootCodeHeader, names(df))
 				df[missing] = 0
 				df = df[rootCodeHeader]
-				print("df")
-				print(df)
 
 				result = df
-
-#~ 				result = toString(jsonlite::toJSON(list(
-#~ 					action_data = df
-#~ 					#SORT THIS AND FORMAT
-#~ 				)))
 			}
 		}
 		else if (everything$date$dateType != 0 && everything$actors$actorType == FALSE) {
@@ -232,305 +193,52 @@ eventdata_aggreg.app <- function(env) {
 	#~ 									'"root_code": "$<root_code>"}, "total":{"$sum": 1}}},{"$limit":10}]',
 					sep="")))
 
-	#~ 						if (nrow(data) != 0) colnames(data) = c('total', '<root_code>', 'year')
+					#rename columns
 					if (nrow(data) != 0) colnames(data) = c("Date", "rootcode")
 					data
 				}) %plan% multiprocess
-			}
 
-			print("only date")
-			if (everything$date$dateType == 1) {	#weekly
-				print("weekly")
+				test_df = value(action_frequencies)
+					
+				test_df = test_df[complete.cases(test_df),]		#remove NAs
+				test_df$Date = as.Date(test_df$Date, "%Y%m%d")
 
-				#calculate offset to first day in week
-				offset_date = as.Date(cut(as.Date(start_date), "week"))
-				diff = abs(as.numeric(start_date - offset_date, units="days"))
-
-				#send query for phoenix dbs
-				if (dataset %in% list("phoenix_rt", "cline_phoenix_fbis", "cline_phoenix_nyt", "cline_phoenix_swb")) {
-					print("end of week only")
-					print(value(action_frequencies))
-
-					test_df = value(action_frequencies)
-	#~ 				test_df[which(is.na(test_df))] = -1
-
-	#~ 				print(test_df)
-
-	#~ 				print("test na")
-					test_df = test_df[complete.cases(test_df),]		#remove NAs
-					test_df$Date = as.Date(test_df$Date, "%Y%m%d")
-	#~ 				test_df[order(test_df$date),]
-					print(test_df)
-
+				if (everything$date$dateType == 1) {	#weekly
 					date_range = seq(start_date, end_date + weeks(1), by="week")
-					print(date_range)
-					test_df$Date = cut(test_df$Date, date_range)
-
-					print("collected dates in bins")
-					print(test_df)
-
-					#count number
-					tab = table(test_df)
-					print("counted tab")
-					print(tab)
-
-					#convert to df
-	#~ 				tab = data.frame(date=format(as.Date(names(tab)), "%m_%d_%Y"),
-					tab = as.data.frame.matrix(tab)
-					print(tab)
-
-					print("tab names")
-					print(names(tab))
-					print(rootCodeHeader)
-
-					#add missing codes in
-					print("adding missing codes")
-					missing = setdiff(rootCodeHeader, names(tab))
-					tab[missing] = 0
-					tab = tab[rootCodeHeader]
-					print(tab)
-
-					#convert to data frame
-					ftab = setDT(tab, keep.rownames=TRUE)[]
-					colnames(ftab)[1] = "Date"
-
-					print("frame ver")
-					print(ftab)
-
-
-	#~ 				print(data.frame(date2=format(as.Date(names(tab)), "%m_%d_%Y"), freq = as.vector(tab)))
-
-	#~ 				#spread into wide format
-	#~ 				test_df = spread(test_df, "rootcode", total, fill = 0)
-
-	#~ 				#sort by date
-	#~ 				test_df = test_df[with(test_df, order(date)),]
-
-	#~ 				print("with gaps")
-	#~ 				print(test_df)
-
-					result = ftab
-
-#~ 					result = toString(jsonlite::toJSON(list(
-#~ 						action_data = ftab
-#~ 					)))
+					test_df$Date = cut(test_df$Date, date_range)	#data in bins
 				}
-			}
-			else if (everything$date$dateType == 2) {	#monthly
-				#send query to phoenix dbs
-				if (dataset %in% list("phoenix_rt", "cline_phoenix_fbis", "cline_phoenix_nyt", "cline_phoenix_swb")) {
-					print("end of month only")
-					print(value(action_frequencies))
-
-					test_df = value(action_frequencies)
-	#~ 				test_df[which(is.na(test_df))] = -1
-
-	#~ 				print(test_df)
-
-	#~ 				print("test na")
-					test_df = test_df[complete.cases(test_df),]		#remove NAs
-					test_df$Date = as.Date(test_df$Date, "%Y%m%d")
-	#~ 				test_df[order(test_df$date),]
-					print(test_df)
-
+				else if (everything$date$dateType == 2) {	#monthly
 					date_range = seq(start_date, end_date %m+% months(1), by="month")
-					print(date_range)
-					test_df$Date = cut(test_df$Date, date_range)
-
-					print("collected dates in bins")
-					print(test_df)
-
-					#count number
-					tab = table(test_df)
-					print("counted tab")
-					print(tab)
-
-					#convert to df
-	#~ 				tab = data.frame(date=format(as.Date(names(tab)), "%m_%d_%Y"),
-					tab = as.data.frame.matrix(tab)
-					print(tab)
-
-					print("tab names")
-					print(names(tab))
-					print(rootCodeHeader)
-
-					#add missing codes in
-					print("adding missing codes")
-					missing = setdiff(rootCodeHeader, names(tab))
-					tab[missing] = 0
-					tab = tab[rootCodeHeader]
-					print(tab)
-
-					#convert to data frame
-					ftab = setDT(tab, keep.rownames=TRUE)[]
-					colnames(ftab)[1] = "Date"
-
-					print("frame ver")
-					print(ftab)
-
-
-	#~ 				print(data.frame(date2=format(as.Date(names(tab)), "%m_%d_%Y"), freq = as.vector(tab)))
-
-	#~ 				#spread into wide format
-	#~ 				test_df = spread(test_df, "rootcode", total, fill = 0)
-
-	#~ 				#sort by date
-	#~ 				test_df = test_df[with(test_df, order(date)),]
-
-	#~ 				print("with gaps")
-	#~ 				print(test_df)
-
-					result = ftab
-
-#~ 					result = toString(jsonlite::toJSON(list(
-#~ 						action_data = ftab
-#~ 					)))
+					test_df$Date = cut(test_df$Date, date_range)	#data in bins
 				}
-			}
-			else if (everything$date$dateType == 3) {	#quarterly
-				#send query to phoenix dbs
-				if (dataset %in% list("phoenix_rt", "cline_phoenix_fbis", "cline_phoenix_nyt", "cline_phoenix_swb")) {
-				#compress to first day of each quarter
-					print("end of quarter only")
-					print(value(action_frequencies))
-
-					test_df = value(action_frequencies)
-	#~ 				test_df[which(is.na(test_df))] = -1
-
-	#~ 				print(test_df)
-
-	#~ 				print("test na")
-					test_df = test_df[complete.cases(test_df),]		#remove NAs
-					test_df$Date = as.Date(test_df$Date, "%Y%m%d")
-	#~ 				test_df[order(test_df$date),]
-					print(test_df)
-
+				else if (everything$date$dateType == 3) {	#quarterly
 					date_range = seq(start_date, end_date %m+% months(4), by="quarter")
-					print(date_range)
 					test_df$Date = cut(test_df$Date, date_range)
-
-					print("collected dates in bins")
-					print(test_df)
-
-					#count number
-					tab = table(test_df)
-					print("counted tab")
-					print(tab)
-
-					#convert to df
-	#~ 				tab = data.frame(date=format(as.Date(names(tab)), "%m_%d_%Y"),
-					tab = as.data.frame.matrix(tab)
-					print(tab)
-
-					print("tab names")
-					print(names(tab))
-					print(rootCodeHeader)
-
-					#add missing codes in
-					print("adding missing codes")
-					missing = setdiff(rootCodeHeader, names(tab))
-					tab[missing] = 0
-					tab = tab[rootCodeHeader]
-					print(tab)
-
-					#convert to data frame
-					ftab = setDT(tab, keep.rownames=TRUE)[]
-					colnames(ftab)[1] = "Date"
-
-					print("frame ver")
-					print(ftab)
-
-
-	#~ 				print(data.frame(date2=format(as.Date(names(tab)), "%m_%d_%Y"), freq = as.vector(tab)))
-
-	#~ 				#spread into wide format
-	#~ 				test_df = spread(test_df, "rootcode", total, fill = 0)
-
-	#~ 				#sort by date
-	#~ 				test_df = test_df[with(test_df, order(date)),]
-
-	#~ 				print("with gaps")
-	#~ 				print(test_df)
-
-					result = ftab
-
-#~ 					result = toString(jsonlite::toJSON(list(
-#~ 						action_data = ftab
-#~ 					)))
 				}
-			}
-			else if (everything$date$dateType == 4) {	#yearly
-				if (dataset %in% list("phoenix_rt", "cline_phoenix_fbis", "cline_phoenix_nyt", "cline_phoenix_swb")) {
-					print("end of year only")
-					print(value(action_frequencies))
-
-					test_df = value(action_frequencies)
-	#~ 				test_df[which(is.na(test_df))] = -1
-
-	#~ 				print(test_df)
-
-	#~ 				print("test na")
-					test_df = test_df[complete.cases(test_df),]		#remove NAs
-					test_df$Date = as.Date(test_df$Date, "%Y%m%d")
-	#~ 				test_df[order(test_df$date),]
-					print(test_df)
-
+				else if (everything$date$dateType == 4) {	#yearly
 					date_range = seq(start_date, end_date %m+% years(1), by="year")
-					print(date_range)
 					test_df$Date = cut(test_df$Date, date_range)
-
-					print("collected dates in bins")
-					print(test_df)
-
-					#count number
-					tab = table(test_df)
-					print("counted tab")
-					print(tab)
-
-					#convert to df
-	#~ 				tab = data.frame(date=format(as.Date(names(tab)), "%m_%d_%Y"),
-					tab = as.data.frame.matrix(tab)
-					print(tab)
-
-					print("tab names")
-					print(names(tab))
-					print(rootCodeHeader)
-
-					#add missing codes in
-					print("adding missing codes")
-					missing = setdiff(rootCodeHeader, names(tab))
-					tab[missing] = 0
-					tab = tab[rootCodeHeader]
-					print(tab)
-
-					#convert to data frame
-					ftab = setDT(tab, keep.rownames=TRUE)[]
-					colnames(ftab)[1] = "Date"
-
-					print("frame ver")
-					print(ftab)
-
-
-	#~ 				print(data.frame(date2=format(as.Date(names(tab)), "%m_%d_%Y"), freq = as.vector(tab)))
-
-	#~ 				#spread into wide format
-	#~ 				test_df = spread(test_df, "rootcode", total, fill = 0)
-
-	#~ 				#sort by date
-	#~ 				test_df = test_df[with(test_df, order(date)),]
-
-	#~ 				print("with gaps")
-	#~ 				print(test_df)
-
-					result = ftab
-
-#~ 					result = toString(jsonlite::toJSON(list(
-#~ 						action_data = ftab
-#~ 					)))
 				}
-			}
-			else {
-				print("bad date data")
+				else {
+					print("bad date data")
+				}
+
+				#count number
+				tab = table(test_df)
+
+				#convert to df
+				tab = as.data.frame.matrix(tab)
+
+				#add missing codes in
+				missing = setdiff(rootCodeHeader, names(tab))
+				tab[missing] = 0
+				tab = tab[rootCodeHeader]
+
+				#convert to data frame
+				ftab = setDT(tab, keep.rownames=TRUE)[]
+				colnames(ftab)[1] = "Date"
+
+				result = ftab
 			}
 		}
 		else if (everything$date$dateType == 0 && everything$actors$actorType == TRUE) {
@@ -578,34 +286,19 @@ eventdata_aggreg.app <- function(env) {
 							data
 					}) %plan% multiprocess
 
-					print(value(action_frequencies))
-
 					if (ncol(value(action_frequencies)) == 0) {
 						result[nrow(result) + 1,] = c(group$sourceName, group$targetName, rep(0, 20))
 					}
 					else {
 						temp_df = spread(value(action_frequencies), "RootCode", "total", fill = 0)
-						print(temp_df)
 
 						missing = setdiff(resHeader, names(temp_df))
 						temp_df[missing] = 0
 						temp_df = temp_df[resHeader]
-						print(temp_df)
 
 						result[nrow(result)+1,] = temp_df
 					}
 				}
-	#~ 			colnames(result)[3:ncol(result)] = paste("R", (1:20), sep="")
-				print("result")
-				print(result)
-
-	#~ 			result = toString(jsonlite::toJSON(action_data = list(result)))
-
-
-				#result saved into result
-#~ 				result = toString(jsonlite::toJSON(list(
-#~ 							action_data = result
-#~ 						)))
 			}
 		}
 		else {
@@ -615,414 +308,89 @@ eventdata_aggreg.app <- function(env) {
 			resHeader = c("Source", "Target", (1:20))
 			colnames(result) = c("Date", resHeader)
 
-			if (everything$date$dateType == 1) {	#weekly
-				print("aggreg week")
+			if (dataset %in% list("phoenix_rt", "cline_phoenix_fbis", "cline_phoenix_nyt", "cline_phoenix_swb")) {
+				for (group in everything$actors$links) {
+					action_frequencies = future({
+						data = do.call(data.frame, getData(paste(eventdata_url, '&aggregate=[',
+							'{"$match": ',
+								'{"$and": [',
+									'{"<date>": {"$gte":"', everything$date$min,
+										'", "$lte":"', everything$date$max,
+									'"}}, {"<source>": {"$in": [',
+										group$sources,
+									']}}, {"<target>": {"$in": [',
+										group$targets,
+									']}}]}},',
+#~ 							'{"$project": {"<date>": 1, "sourceName": "', group$sourceName,
+#~ 								'", "targetName": "', group$targetName, '", "<root_code>": 1, "_id": 0}},{"$limit":20}]',
 
-	#~ 			offset_date = as.Date(cut(as.Date(start_date), "week"))
-	#~ 			diff = abs(as.numeric(start_date - offset_date, units="days"))
+							'{"$project": {"<date>": 1, "<root_code>": 1, "_id": 0}}]',
 
-				if (dataset %in% list("phoenix_rt", "cline_phoenix_fbis", "cline_phoenix_nyt", "cline_phoenix_swb")) {
-					for (group in everything$actors$links) {
-						action_frequencies = future({
-							data = do.call(data.frame, getData(paste(eventdata_url, '&aggregate=[',
-								'{"$match": ',
-									'{"$and": [',
-										'{"<date>": {"$gte":"', everything$date$min,
-											'", "$lte":"', everything$date$max,
-										'"}}, {"<source>": {"$in": [',
-											group$sources,
-										']}}, {"<target>": {"$in": [',
-											group$targets,
-										']}}]}},',
-	#~ 							'{"$project": {"<date>": 1, "sourceName": "', group$sourceName,
-	#~ 								'", "targetName": "', group$targetName, '", "<root_code>": 1, "_id": 0}},{"$limit":20}]',
+#~ 							'{"$project": ',
+#~ 								'{"iso_date": {',
+#~ 									'"$dateFromParts": {"year": "$<year>", "month": "$<month>", "day":"$<day>"}},',
+#~ 								'"<root_code>": 1}},',
+#~ 							'{"$project": {',
+#~ 								'"iso_date": {"$subtract": ["$iso_date", ', 86400000 * diff, ']}, "<root_code>": 1}},',
+#~ 							'{"$group": {',
+#~ 								'"_id": {',
+#~ 									'"Year": {"$year": "$iso_date"},',
+#~ 									'"Week": {"$week": "$iso_date"},',
+#~ 									'"root_code": "$<root_code>"}, "total":{"$sum": 1}}},{"$limit":10}]',
+						sep="")))
 
-								'{"$project": {"<date>": 1, "<root_code>": 1, "_id": 0}}]',
+						if (nrow(data) != 0) colnames(data) = c("Date", "rootcode")
+						data
+					}) %plan% multiprocess
 
-	#~ 							'{"$project": ',
-	#~ 								'{"iso_date": {',
-	#~ 									'"$dateFromParts": {"year": "$<year>", "month": "$<month>", "day":"$<day>"}},',
-	#~ 								'"<root_code>": 1}},',
-	#~ 							'{"$project": {',
-	#~ 								'"iso_date": {"$subtract": ["$iso_date", ', 86400000 * diff, ']}, "<root_code>": 1}},',
-	#~ 							'{"$group": {',
-	#~ 								'"_id": {',
-	#~ 									'"Year": {"$year": "$iso_date"},',
-	#~ 									'"Week": {"$week": "$iso_date"},',
-	#~ 									'"root_code": "$<root_code>"}, "total":{"$sum": 1}}},{"$limit":10}]',
-							sep="")))
+					test_df = value(action_frequencies)
+					test_df = test_df[complete.cases(test_df),]		#remove NAs
+					test_df$Date = as.Date(test_df$Date, "%Y%m%d")
 
-	#~ 						if (nrow(data) != 0) colnames(data) = c('total', '<root_code>', 'week', 'year')
-							if (nrow(data) != 0) colnames(data) = c("Date", "rootcode")
-							data
-						}) %plan% multiprocess
-
-						print("end of week and actor")
-						print(value(action_frequencies))
-
-						test_df = value(action_frequencies)
-						test_df = test_df[complete.cases(test_df),]		#remove NAs
-						test_df$Date = as.Date(test_df$Date, "%Y%m%d")
-						print(test_df)
-
+					if (everything$date$dateType == 1) {	#weekly
 						date_range = seq(start_date, end_date + weeks(1), by="week")
-	#~ 					print(date_range)
-						test_df$Date = cut(test_df$Date, date_range)
-
-						print("collected dates in bins")
-						print(test_df)
-
-	#~ 					#count number
-						tab = table(test_df)
-						print("counted tab")
-						print(tab)
-
-	#~ 					tab2 = tabulate(test_df)
-	#~ 					print("tabulate")
-	#~ 					print(tab2)
-
-	#~ 					tab3 = table(test_df$RootCode)
-	#~ 					print("tab3")
-	#~ 					print(tab3)
-
-						#convert to df
-						print("matrix tab")
-						tab = as.data.frame.matrix(tab)
-	#~ 					tab = as.data.frame(as.data.frame.matrix(tab))
-						print(tab)
-						print(names(tab))
-	#~ 					print("frame tab")
-	#~ 					tab = as.data.frame(tab)
-	#~ 					print(tab)
-	#~ 					print(names(tab))
-	#~ 					print(
-
-						print("adding names")
-
-	#~ 					colnames(tab)[1] = "Date"
-						#add source and target names to tab
-						tab["Source"] = group$sourceName
-						tab["Target"] = group$targetName
-						print(tab)
-
-						print("tab names")
-						print(names(tab))
-						print(resHeader)
-
-						#add missing codes in
-						print("adding missing codes")
-						missing = setdiff(resHeader, names(tab))
-						print(missing)
-						tab[missing] = 0
-						tab = tab[resHeader]
-
-						print("matrix ver")
-						print(tab)
-
-						print("frame ver?")
-						ftab = setDT(tab, keep.rownames=TRUE)[]
-						colnames(ftab)[1] = "Date"
-						print(ftab)
-						print(class(ftab))
-
-	#~ 					result = merge(x = result, y = ftab, by = "Date", all = TRUE)
-						result = rbind(result, ftab)
-
-	#~ 					result = toString(jsonlite::toJSON(list(
-	#~ 						action_data = value(action_frequencies)
-	#~ 					)))
+						test_df$Date = cut(test_df$Date, date_range)	#data in bins
 					}
-					print("new result")
-					result = result[with(result, order(Date, Source, Target))]
-					print(result)
-#~ 					result = toString(jsonlite::toJSON(list(
-#~ 							action_data = result
-#~ 						)))
-				}
-			}
-			else if (everything$date$dateType == 2) {	#monthly
-				print("aggreg month")
-				if (dataset %in% list("phoenix_rt", "cline_phoenix_fbis", "cline_phoenix_nyt", "cline_phoenix_swb")) {
-					for (group in everything$actors$links) {
-						action_frequencies = future({
-							data = do.call(data.frame, getData(paste(eventdata_url, '&aggregate=[',
-								'{"$match": ',
-									'{"$and": [',
-										'{"<date>": {"$gte":"', everything$date$min,
-											'", "$lte":"', everything$date$max,
-										'"}}, {"<source>": {"$in": [',
-											group$sources,
-										']}}, {"<target>": {"$in": [',
-											group$targets,
-										']}}]}},',
-								'{"$project": {"<date>": 1, "<root_code>": 1, "_id": 0}}]',
-							sep="")))
-
-	#~ 						if (nrow(data) != 0) colnames(data) = c('total', '<root_code>', 'week', 'year')
-							if (nrow(data) != 0) colnames(data) = c("Date", "rootcode")
-							data
-						}) %plan% multiprocess
-
-						print("end of week and actor")
-						print(value(action_frequencies))
-
-						test_df = value(action_frequencies)
-						test_df = test_df[complete.cases(test_df),]		#remove NAs
-						test_df$Date = as.Date(test_df$Date, "%Y%m%d")
-						print(test_df)
-
+					else if (everything$date$dateType == 2) {	#monthly
 						date_range = seq(start_date, end_date %m+% months(1), by="month")
-	#~ 					print(date_range)
 						test_df$Date = cut(test_df$Date, date_range)
-
-						print("collected dates in bins")
-						print(test_df)
-
-	#~ 					#count number
-						tab = table(test_df)
-						print("counted tab")
-						print(tab)
-
-						#convert to df
-						print("matrix tab")
-						tab = as.data.frame.matrix(tab)
-	#~ 					tab = as.data.frame(as.data.frame.matrix(tab))
-						print(tab)
-						print(names(tab))
-
-						print("adding names")
-
-	#~ 					colnames(tab)[1] = "Date"
-						#add source and target names to tab
-						tab["Source"] = group$sourceName
-						tab["Target"] = group$targetName
-						print(tab)
-
-						print("tab names")
-						print(names(tab))
-						print(resHeader)
-
-						#add missing codes in
-						print("adding missing codes")
-						missing = setdiff(resHeader, names(tab))
-						print(missing)
-						tab[missing] = 0
-						tab = tab[resHeader]
-
-						print("matrix ver")
-						print(tab)
-
-						print("frame ver?")
-						ftab = setDT(tab, keep.rownames=TRUE)[]
-						colnames(ftab)[1] = "Date"
-						print(ftab)
-						print(class(ftab))
-
-	#~ 					result = merge(x = result, y = ftab, by = "Date", all = TRUE)
-						result = rbind(result, ftab)
-
-	#~ 					result = toString(jsonlite::toJSON(list(
-	#~ 						action_data = value(action_frequencies)
-	#~ 					)))
 					}
-					print("new result")
-					result = result[with(result, order(Date, Source, Target))]
-					print(result)
-#~ 					result = toString(jsonlite::toJSON(list(
-#~ 							action_data = result
-#~ 						)))
-				}
-			}
-			else if (everything$date$dateType == 3) {	#quarterly
-				print("aggreg quarter")
-				if (dataset %in% list("phoenix_rt", "cline_phoenix_fbis", "cline_phoenix_nyt", "cline_phoenix_swb")) {
-					for (group in everything$actors$links) {
-						action_frequencies = future({
-							data = do.call(data.frame, getData(paste(eventdata_url, '&aggregate=[',
-								'{"$match": ',
-									'{"$and": [',
-										'{"<date>": {"$gte":"', everything$date$min,
-											'", "$lte":"', everything$date$max,
-										'"}}, {"<source>": {"$in": [',
-											group$sources,
-										']}}, {"<target>": {"$in": [',
-											group$targets,
-										']}}]}},',
-								'{"$project": {"<date>": 1, "<root_code>": 1, "_id": 0}}]',
-							sep="")))
-
-	#~ 						if (nrow(data) != 0) colnames(data) = c('total', '<root_code>', 'week', 'year')
-							if (nrow(data) != 0) colnames(data) = c("Date", "rootcode")
-							data
-						}) %plan% multiprocess
-
-						print("end of week and actor")
-						print(value(action_frequencies))
-
-						test_df = value(action_frequencies)
-						test_df = test_df[complete.cases(test_df),]		#remove NAs
-						test_df$Date = as.Date(test_df$Date, "%Y%m%d")
-						print(test_df)
-
+					else if (everything$date$dateType == 3) {	#quarterly
 						date_range = seq(start_date, end_date %m+% months(4), by="quarter")
-	#~ 					print(date_range)
 						test_df$Date = cut(test_df$Date, date_range)
-
-						print("collected dates in bins")
-						print(test_df)
-
-	#~ 					#count number
-						tab = table(test_df)
-						print("counted tab")
-						print(tab)
-
-						#convert to df
-						print("matrix tab")
-						tab = as.data.frame.matrix(tab)
-	#~ 					tab = as.data.frame(as.data.frame.matrix(tab))
-						print(tab)
-						print(names(tab))
-
-						print("adding names")
-
-	#~ 					colnames(tab)[1] = "Date"
-						#add source and target names to tab
-						tab["Source"] = group$sourceName
-						tab["Target"] = group$targetName
-						print(tab)
-
-						print("tab names")
-						print(names(tab))
-						print(resHeader)
-
-						#add missing codes in
-						print("adding missing codes")
-						missing = setdiff(resHeader, names(tab))
-						print(missing)
-						tab[missing] = 0
-						tab = tab[resHeader]
-
-						print("matrix ver")
-						print(tab)
-
-						print("frame ver?")
-						ftab = setDT(tab, keep.rownames=TRUE)[]
-						colnames(ftab)[1] = "Date"
-						print(ftab)
-						print(class(ftab))
-
-	#~ 					result = merge(x = result, y = ftab, by = "Date", all = TRUE)
-						result = rbind(result, ftab)
-
-	#~ 					result = toString(jsonlite::toJSON(list(
-	#~ 						action_data = value(action_frequencies)
-	#~ 					)))
 					}
-					print("new result")
-					result = result[with(result, order(Date, Source, Target))]
-					print(result)
-#~ 					result = toString(jsonlite::toJSON(list(
-#~ 							action_data = result
-#~ 						)))
-				}
-			}
-			else if (everything$date$dateType == 4) {	#yearly
-				print("aggreg year")
-				if (dataset %in% list("phoenix_rt", "cline_phoenix_fbis", "cline_phoenix_nyt", "cline_phoenix_swb")) {
-					for (group in everything$actors$links) {
-						action_frequencies = future({
-							data = do.call(data.frame, getData(paste(eventdata_url, '&aggregate=[',
-								'{"$match": ',
-									'{"$and": [',
-										'{"<date>": {"$gte":"', everything$date$min,
-											'", "$lte":"', everything$date$max,
-										'"}}, {"<source>": {"$in": [',
-											group$sources,
-										']}}, {"<target>": {"$in": [',
-											group$targets,
-										']}}]}},',
-								'{"$project": {"<date>": 1, "<root_code>": 1, "_id": 0}}]',
-							sep="")))
-
-	#~ 						if (nrow(data) != 0) colnames(data) = c('total', '<root_code>', 'week', 'year')
-							if (nrow(data) != 0) colnames(data) = c("Date", "rootcode")
-							data
-						}) %plan% multiprocess
-
-						print("end of week and actor")
-						print(value(action_frequencies))
-
-						test_df = value(action_frequencies)
-						test_df = test_df[complete.cases(test_df),]		#remove NAs
-						test_df$Date = as.Date(test_df$Date, "%Y%m%d")
-						print(test_df)
-
+					else if (everything$date$dateType == 4) {	#yearly
 						date_range = seq(start_date, end_date %m+% years(1), by="year")
-	#~ 					print(date_range)
 						test_df$Date = cut(test_df$Date, date_range)
-
-						print("collected dates in bins")
-						print(test_df)
-
-	#~ 					#count number
-						tab = table(test_df)
-						print("counted tab")
-						print(tab)
-
-						#convert to df
-						print("matrix tab")
-						tab = as.data.frame.matrix(tab)
-	#~ 					tab = as.data.frame(as.data.frame.matrix(tab))
-						print(tab)
-						print(names(tab))
-
-						print("adding names")
-
-	#~ 					colnames(tab)[1] = "Date"
-						#add source and target names to tab
-						tab["Source"] = group$sourceName
-						tab["Target"] = group$targetName
-						print(tab)
-
-						print("tab names")
-						print(names(tab))
-						print(resHeader)
-
-						#add missing codes in
-						print("adding missing codes")
-						missing = setdiff(resHeader, names(tab))
-						print(missing)
-						tab[missing] = 0
-						tab = tab[resHeader]
-
-						print("matrix ver")
-						print(tab)
-
-						print("frame ver?")
-						ftab = setDT(tab, keep.rownames=TRUE)[]
-						colnames(ftab)[1] = "Date"
-						print(ftab)
-						print(class(ftab))
-
-	#~ 					result = merge(x = result, y = ftab, by = "Date", all = TRUE)
-						result = rbind(result, ftab)
-
-	#~ 					result = toString(jsonlite::toJSON(list(
-	#~ 						action_data = value(action_frequencies)
-	#~ 					)))
 					}
-					print("new result")
-					result = result[with(result, order(Date, Source, Target))]
-					print(result)
-#~ 					result = toString(jsonlite::toJSON(list(
-#~ 							action_data = result
-#~ 						)))
-				}
-			}
-			else {
-				print ("aggreg else")
-			}
+					else {
+						print ("bad aggreg data")
+					}
 
+					#count number
+					tab = table(test_df)
+
+					#convert to matrix
+					tab = as.data.frame.matrix(tab)
+					
+					#add source and target names to tab
+					tab["Source"] = group$sourceName
+					tab["Target"] = group$targetName
+					
+					#add missing codes in
+					missing = setdiff(resHeader, names(tab))
+					tab[missing] = 0
+					tab = tab[resHeader]
+
+					#convert to df
+					ftab = setDT(tab, keep.rownames=TRUE)[]
+					colnames(ftab)[1] = "Date"
+					
+					result = rbind(result, ftab)
+				}
+				#collect results
+				result = result[with(result, order(Date, Source, Target))]
+			}
 		}
 
 		print("done with queries")
@@ -1031,119 +399,48 @@ eventdata_aggreg.app <- function(env) {
 		#standardize root code data frame result
 		if (datasource == "api") {
 			print("standardizing")
-#~ 			order = sprintf("%d", seq(1:9))
-#~ 			for (i in sprintf("%.2d", seq(1:9))) {
-#~ 				result[["1"]] = result$"01"
-#~ 				result$"01" = NULL
-#~ 			}
 			cleanOrder = sprintf("%d", seq(1:9))
 			curOrder = sprintf("%.2d", seq(1:9))
-#~ 			for (i in 1:length(cleanOrder)) {
-#~ 				print(i)
-#~ 				result[[cleanOrder[i]]] = result$curOrder[i]
-#~ 				result$curOrder[i] = NULL
-#~ 			}
-#~ 			print(result)
 			for (i in 1:9) {
 				names(result)[names(result) == curOrder[i]] = cleanOrder[i]
 			}
-			print(result)
 		}
+		
 		#convert to penta if needed
 		#result[[penta#]] = result$1 + result$2 + ...
 		#result$1 = NULL ...
 		if (!is.null(everything$aggregMode) && everything$aggregMode == "penta") {
-#~ 			if (datasource == "api") {
-#~ 				result[["0"]] = result$"01" + result$"02"
-#~ 				result$"01" = NULL
-#~ 				result$"02" = NULL
-#~ 				result[["1"]] = result$"03" + result$"04" + result$"05"
-#~ 				result$"03" = NULL
-#~ 				result$"04" = NULL
-#~ 				result$"05" = NULL
-#~ 				result[["2"]] = result$"06" + result$"07" + result$"08"
-#~ 				result$"06" = NULL
-#~ 				result$"07" = NULL
-#~ 				result$"08" = NULL
-#~ 				result[["3"]] = result$"09" + result$"10" + result$"11" + result$"12" + result$"13" + result$"16"
-#~ 				result$"09" = NULL
-#~ 				result$"10" = NULL
-#~ 				result$"11" = NULL
-#~ 				result$"12" = NULL
-#~ 				result$"13" = NULL
-#~ 				result$"16" = NULL
-#~ 				result[["4"]] = result$"14" + result$"15" + result$"17" + result$"18" + result$"19" + result$"20"
-#~ 				result$"14" = NULL
-#~ 				result$"15" = NULL
-#~ 				result$"17" = NULL
-#~ 				result$"18" = NULL
-#~ 				result$"19" = NULL
-#~ 				result$"20" = NULL
-#~ 			}
-#~ 			else {
-				result[["0"]] = result$"1" + result$"2"
-				result$"1" = NULL
-				result$"2" = NULL
-				result[["1"]] = result$"3" + result$"4" + result$"5"
-				result$"3" = NULL
-				result$"4" = NULL
-				result$"5" = NULL
-				result[["2"]] = result$"6" + result$"7" + result$"8"
-				result$"6" = NULL
-				result$"7" = NULL
-				result$"8" = NULL
-				result[["3"]] = result$"9" + result$"10" + result$"11" + result$"12" + result$"13" + result$"16"
-				result$"9" = NULL
-				result$"10" = NULL
-				result$"11" = NULL
-				result$"12" = NULL
-				result$"13" = NULL
-				result$"16" = NULL
-				result[["4"]] = result$"14" + result$"15" + result$"17" + result$"18" + result$"19" + result$"20"
-				result$"14" = NULL
-				result$"15" = NULL
-				result$"17" = NULL
-				result$"18" = NULL
-				result$"19" = NULL
-				result$"20" = NULL
-#~ 			}
+			result[["0"]] = result$"1" + result$"2"
+			result$"1" = NULL
+			result$"2" = NULL
+			result[["1"]] = result$"3" + result$"4" + result$"5"
+			result$"3" = NULL
+			result$"4" = NULL
+			result$"5" = NULL
+			result[["2"]] = result$"6" + result$"7" + result$"8"
+			result$"6" = NULL
+			result$"7" = NULL
+			result$"8" = NULL
+			result[["3"]] = result$"9" + result$"10" + result$"11" + result$"12" + result$"13" + result$"16"
+			result$"9" = NULL
+			result$"10" = NULL
+			result$"11" = NULL
+			result$"12" = NULL
+			result$"13" = NULL
+			result$"16" = NULL
+			result[["4"]] = result$"14" + result$"15" + result$"17" + result$"18" + result$"19" + result$"20"
+			result$"14" = NULL
+			result$"15" = NULL
+			result$"17" = NULL
+			result$"18" = NULL
+			result$"19" = NULL
+			result$"20" = NULL
 		}
-
-		print("final result output")
-		print(result)
 
 		#download actions here
 		if (everything$action == "download" && !is.null(everything$toggles)) {
 			print("downloading")
 			#prefix action codes with root or penta
-#~ 			if (everything$date$dateType == 0 && everything$actors$actorType == FALSE) {
-#~ 				if (everything$aggregMode == "penta") {
-#~ 					for (i in 2:length(everything$toggles)) {
-#~ 						if (!everything$toggles[i]) {
-#~ 							result[i] = NULL
-#~ 						}
-#~ 					}
-#~ 					colnames(result) = paste("penta", colnames(result))
-#~ 				}
-#~ 				else {
-#~ 					for (i in 2:length(everything$toggles)) {
-#~ 						if (!everything$toggles[i]) {
-#~ 							result[i] = NULL
-#~ 						}
-#~ 					}
-#~ 					colnames(result) = paste("root", colnames(result))
-#~ 				}
-#~ 			}
-#~ 			else if (everything$date$dateType == 0 && everything$actors$actorType == FALSE) {
-
-#~ 			}
-#~ 			else if (everything$date$dateType == 0 && everything$actors$actorType == FALSE) {
-
-#~ 			}
-#~ 			else {
-
-#~ 			}
-
 			offset = 0;
 			if (everything$date$dateType == 0 && everything$actors$actorType == FALSE) {
 				print("none")
@@ -1162,13 +459,9 @@ eventdata_aggreg.app <- function(env) {
 				offset = 4;
 			}
 
-			print(everything$toggles)
-			print(class(result))
+			#drop columns that are not selected
 			for (i in 1:(length(everything$toggles) - 1)) {
-				print(i)
 				if (!everything$toggles[i + 1]) {
-					print(c("dropping", i))
-#~ 					if (offset == 0) {
 					if (everything$aggregMode == "penta") {
 						if (is.data.table(result))
 							result[, (toString(i-1)):=NULL]
@@ -1181,71 +474,14 @@ eventdata_aggreg.app <- function(env) {
 						else
 							result[(toString(i))] = NULL
 					}
-#~ 					}
-#~ 					else {
-#~ 						if (is.data.table(result))
-#~ 							result[,(toString(i)):=NULL]
-#~ 						else
-#~ 							result[i] = NULL
-#~ 					}
-					print(result)
 				}
 			}
 
-#~ 			if (everything$aggregMode == "penta") {
-#~ 				colnames(result)[offset:length(colnames(result))] = paste("Penta", colnames(result)[offset:length(colnames(result))])
-#~ 			}
-#~ 			else {
-#~ 				colnames(result)[offset:length(colnames(result))] = paste("Root", colnames(result)[offset:length(colnames(result))])
-#~ 			}
 			colnames(result)[offset:length(colnames(result))] =
 				if (everything$aggregMode == "penta")
 					paste("Penta", colnames(result)[offset:length(colnames(result))])
 				else
 					paste("Root", colnames(result)[offset:length(colnames(result))])
-
-#~ 			print(colnames(result))
-#~ 			print(everything$date$dateType)
-#~ 			if (everything$date$dateType != 0) print("date is true") else print("date is false")
-#~ 			print(everything$actors$actorType)
-#~ 			if (everything$date$dateType == 0 && everything$actors$actorType == FALSE) {
-#~ 				print("none")
-#~ 				if (everything$aggregMode == "penta") {
-#~ 					colnames(result) = paste("Penta", colnames(result))
-#~ 				}
-#~ 				else {
-#~ 					colnames(result) = paste("Root", colnames(result))
-#~ 				}
-#~ 			}
-#~ 			else if (everything$date$dateType != 0 && everything$actors$actorType == FALSE) {
-#~ 				print("date only")
-#~ 				if (everything$aggregMode == "penta") {
-#~ 					colnames(result)[2:length(colnames(result))] = paste("Penta", colnames(result)[2:length(colnames(result))])
-#~ 				}
-#~ 				else {
-#~ 					colnames(result)[2:length(colnames(result))] = paste("Root", colnames(result)[2:length(colnames(result))])
-#~ 				}
-#~ 			}
-#~ 			else if (everything$date$dateType == 0 && everything$actors$actorType == TRUE) {
-#~ 				print("actor only")
-#~ 				if (everything$aggregMode == "penta") {
-#~ 					colnames(result)[3:length(colnames(result))] = paste("Penta", colnames(result)[3:length(colnames(result))])
-#~ 				}
-#~ 				else {
-#~ 					colnames(result)[3:length(colnames(result))] = paste("Root", colnames(result)[3:length(colnames(result))])
-#~ 				}
-#~ 			}
-#~ 			else {
-#~ 				print("everything")
-#~ 				if (everything$aggregMode == "penta") {
-#~ 					colnames(result)[4:length(colnames(result))] = paste("Penta", colnames(result)[4:length(colnames(result))])
-#~ 				}
-#~ 				else {
-#~ 					colnames(result)[4:length(colnames(result))] = paste("Root", colnames(result)[4:length(colnames(result))])
-#~ 				}
-#~ 			}
-
-			print(result)
 
 			fileName = paste("aggregation_", format(Sys.time(), '%Y-%m-%d-%H-%M-%OS4'), sep="")
 
@@ -1254,7 +490,6 @@ eventdata_aggreg.app <- function(env) {
 			event_data_files_url = paste('"', EVENTDATA_ROOK_URL_BASE, '/custom/eventdata-files/', sep="")
 			response$write(paste('{"download":', event_data_files_url, fileName, '.csv"}', sep=""))
 
-			#response$write(paste('{"download":', '"http://127.0.0.1:8000/custom/eventdata-files/', fileName, '.csv"}', sep=""))
 			return(response$finish())
 		}
 
