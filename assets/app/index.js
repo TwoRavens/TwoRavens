@@ -23,6 +23,7 @@ import ButtonRadio from '../common/app/views/ButtonRadio';
 import Footer from '../common/app/views/Footer';
 import Header from '../common/app/views/Header';
 import MenuTabbed from '../common/app/views/MenuTabbed';
+import Modal, {setModal} from '../common/app/views/Modal';
 import Panel from '../common/app/views/Panel';
 import PanelList from '../common/app/views/PanelList';
 import TextField from '../common/app/views/TextField';
@@ -378,8 +379,8 @@ class Body {
             this.last_mode = mode;
         }
 
-        return m('main',
-            this.modal(),
+        return m('main', [
+            m(Modal),
             this.header(mode),
             this.footer(mode),
             m(`#main.left.carousel.slide.svg-leftpanel.svg-rightpanel[style=overflow: hidden]`,
@@ -406,7 +407,7 @@ class Body {
                     } else {
                         let dvs = app.nodes.filter(n => app.zparams.zdv.includes(n.name));
                         let nolink = app.zparams.zdv.concat(app.zparams.zgroup1).concat(app.zparams.zgroup2);
-                        let ivs = app.nodes.filter(n => !nolink.includes(n.name)); 
+                        let ivs = app.nodes.filter(n => !nolink.includes(n.name));
 
                         links = dvs.map(dv => ivs.map(iv => ({
                             left: true,
@@ -431,7 +432,8 @@ class Body {
                      ['gr2Button', 'zgroup2', 'Group 2']]}),
               m(Subpanel, {title: "History"}),
               leftpanel(mode),
-              rightpanel(mode)));
+              rightpanel(mode))
+        ]);
     }
 
     header(mode) {
@@ -505,7 +507,7 @@ class Body {
                   userlinks.map(link => m('a[style=padding: 0.5em]', {href: link.url}, link.title, m('br'))))),
               navBtn('btnEstimate.btn-default', 2, 1, mode === 'explore' ? _ => {
                   if (app.links.length === 0) {
-                      app.setModal('Please link pebbles first.', 'Warning', true, 'Ok', true);
+                      setModal('Please link pebbles first.', 'Warning', true, 'Ok', true);
                       return;
                   }
 
@@ -584,36 +586,6 @@ class Body {
             m("span[style=color:#337ab7]", `TA2: ${TA2_SERVER}`),
             m("span[style=color:#337ab7]", " | "),
             m("span[style=color:#337ab7]", `TA3TA2 api: ${TA3TA2_API_VERSION}`)
-        ]);
-    }
-
-    modal() {
-        return m(".modal.fade[id='myModal'][role='dialog']", [
-            m(".modal-dialog",
-              m(".modal-content", [
-                  m(".modal-header",
-                    //  m("button.close[data-dismiss='modal'][type='button']",
-                    //  m.trust("&times;")),
-                    m("h4.modal-title", app.modalHeader)),
-                  m(".modal-body",
-                    m("p", app.modalText)),
-                  m(".modal-footer",
-                    // m("button.btn.btn-default[data-dismiss='modal'][type='button']",{
-                    // onclick: () => app.reset}, app.modalButton))
-                    m("button.btn.btn-default[type='button']", {
-                        style: {display: app.modalBtnDisplay, float:'right'},
-                        onclick: _ => {
-                            if (app.modalClose) {
-                                app.modalClose = false;
-                                $('#myModal').modal('hide');
-                                return;
-                            } else {
-                                app.modalFunc();
-                            }
-                            location.reload();
-                        }
-                    }, app.modalButton))
-              ]))
         ]);
     }
 }

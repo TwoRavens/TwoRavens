@@ -1,9 +1,13 @@
 import hopscotch from 'hopscotch';
 import m from 'mithril';
-import {bars, barsNode, barsSubset, density, densityNode, selVarColor} from './plots.js';
+
 import {heightHeader} from "../common/app/common";
-import {searchIndex} from "./views/Search";
 import * as common from "../common/app/common";
+import {setModal} from '../common/app/views/Modal';
+
+import {bars, barsNode, barsSubset, density, densityNode, selVarColor} from './plots.js';
+import {searchIndex} from "./views/Search";
+
 
 // hostname default - the app will use it to obtain the variable metadata
 // (ddi) and pre-processed data info if the file id is supplied as an
@@ -625,8 +629,8 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     if (res) {
       if (res.responseInfo.status.code != "OK"){
         const user_err_msg = "Failed to StartSession with TA2! status code: " + res.responseInfo.status.code;
-        setModal(user_err_msg,"Error Connecting to TA2", true, "Reset", false, location.reload);
-      //  end_ta3_search(false, user_err_msg);
+        setModal(user_err_msg, "Error Connecting to TA2", true, "Reset", false, location.reload);
+          //  end_ta3_search(false, user_err_msg);
         return;
       } else {
             zparams.zsessionid = res.context.sessionId;
@@ -2956,7 +2960,7 @@ export async function endsession() {
 
     let table = document.getElementById("setxRight").getElementsByTagName('table')[0];
     if(typeof table === 'undefined') {
-        alert("No pipelines exist. Cannot mark problem as complete.")
+        alert("No pipelines exist. Cannot mark problem as complete.");
         return;
     }
 
@@ -2974,7 +2978,7 @@ export async function endsession() {
     let mystatus = res.status.code.toUpperCase();
     if(mystatus == "OK") {
         end_ta3_search(true, "Problem marked as complete.");
-        setModal("Your selected pipeline has been submitted.","Task Complete", true, false, false, location.reload);
+        setModal("Your selected pipeline has been submitted.", "Task Complete", true, false, false, location.reload);
     }
 }
 
@@ -4115,28 +4119,4 @@ export function saveDisc(btn) {
             disco[i-1].description=newtext;
         }
     }
-}
-
-// function to call a modal window
-
-// text and header are text
-// show is boolean
-// btnText is the text to go inside the button (eg "Reset"), but if false then no button appears
-// func is the function to execute when button is clicked, as a string (eg "location.reload()")
-export function setModal(text, header, show, btnText, close, func) {
-    if(text)
-        modalText = text;
-    if (header)
-        modalHeader = header;
-    if (btnText) {
-        modalButton = btnText;
-        modalClose = close;
-        modalBtnDisplay = 'block';
-    } else {
-        modalBtnDisplay = 'none';
-    };
-    if(func)
-        modalFunc = func;
-    m.redraw();
-    show ? $('#myModal').modal({show, backdrop: 'static', keyboard: false}) : $('#myModal').modal("hide");
 }

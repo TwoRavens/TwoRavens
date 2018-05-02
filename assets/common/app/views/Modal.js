@@ -5,26 +5,26 @@ let header = "Default modal header";
 let btnDisplay = 'block';
 let close = false;
 let func = _ => {};
-let btn = "Close";
+let btnText = "Close";
 let vis = false;
 
 // text and header are text
 // show is boolean
 // btnText is the text to go inside the button (eg "Reset"), but if false then no button appears
 // func is the function to execute when button is clicked
-export function set(text_, header_, show, btnText, close_, func_) {
+export function setModal(text_, header_, show, btnText_, close_, func_) {
     if (text_) text = text_;
     if (header_) header = header_;
-    if (btnText) {
-        btn = btnText;
-        close = close;
+    if (btnText_) {
+        btnText = btnText_;
+        close = close_;
         btnDisplay = 'block';
     } else {
         btnDisplay = 'none';
     };
-    if (func) func = func_;
+    if (func_) func = func_;
     m.redraw();
-    show ? byId('modal').modal({show, backdrop: 'static', keyboard: false}) : byId('modal').modal("hide");
+    show ? $('#modal').modal({show, backdrop: 'static', keyboard: false}) : $('#modal').modal("hide");
 }
 
 export default class Modal {
@@ -42,14 +42,12 @@ export default class Modal {
                        onclick: _ => {
                            if (close) {
                                close = false;
-                               byId('modal').modal('hide');
+                               $('#modal').modal('hide');
                                return;
-                           } else {
-                               func();
                            }
-                           location.reload();
+                           func();
                        }},
-                      btn))
+                      btnText))
               ]))
         ]);
     }
