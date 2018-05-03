@@ -10,7 +10,7 @@ function heatmap(x_Axis_name, y_Axis_name) {
     let heatchart = elem('#heatchart');
     heatchart.style.display = "block";
     d3.select("#heatchart").select("svg").remove();
-    heatchart.innerHTMLL = '';
+    heatchart.innerHTML = '';
 
     var margin_heat = {top: 30, right: 10, bottom: 60, left: 60},
         width_heat = 500 - margin_heat.left - margin_heat.right,
