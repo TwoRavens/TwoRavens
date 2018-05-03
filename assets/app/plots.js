@@ -1,4 +1,4 @@
-import {fadeOut} from './utils';
+import {elem} from './utils';
 
 let d3Color = '#1f77b4'; // d3's default blue
 export let selVarColor = '#fa8072'; // d3.rgb("salmon");
@@ -18,10 +18,7 @@ export function density(node, div, priv) {
 
     var tempWidth = d3.select(div).style("width");
     var width = tempWidth.substring(0, (tempWidth.length - 2));
-    
-
     let tw = document.getElementById('main').offsetWidth;
-    
     var tempHeight = d3.select(div).style("height");
     var height = tempHeight.substring(0, (tempHeight.length - 2));
     var margin = {
