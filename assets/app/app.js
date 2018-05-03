@@ -2724,7 +2724,7 @@ function setColors(n, c) {
             if (dvColor == c){
                 var dvname = n.name;
                 zparams.zdv.push(dvname);
-                if(n.group1){                     // remove group memberships from dv's
+                if(n.group1){ // remove group memberships from dv's
                     ngroup1 = false;
                     del(zparams.zgroup1, -1, dvname);
                 };
