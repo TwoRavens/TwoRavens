@@ -1,3 +1,5 @@
+import {fadeOut} from './utils';
+
 let d3Color = '#1f77b4'; // d3's default blue
 export let selVarColor = '#fa8072'; // d3.rgb("salmon");
 
@@ -1019,7 +1021,7 @@ export function barsSubset(node) {
             var selectMe = this;
             var selectName = this.getAttribute("name");
             if (this.parentNode.getAttribute("name") == myname.concat("subsetno")) {
-                selectMe = $('[name="' + myname.concat("subsetyes") + '"]').children('[name="' + selectName + '"]')[0];
+                selectMe = elem(`[name="${myname}subsetyes"] > [name="${selectName}"]`);
             }
             d3.select(selectMe)
                 .style("fill", function(d, i) {
