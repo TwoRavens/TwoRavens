@@ -6,8 +6,8 @@ import * as common from "../common/app/common";
 import {setModal} from '../common/app/views/Modal';
 
 import {bars, barsNode, barsSubset, density, densityNode, selVarColor} from './plots.js';
+import {elem, fadeOut} from './utils';
 import {searchIndex} from "./views/Search";
-
 
 // hostname default - the app will use it to obtain the variable metadata
 // (ddi) and pre-processed data info if the file id is supplied as an
@@ -564,7 +564,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         .replace(/\;/g, ",")
         .replace(/\%/g, "-");
         // fill in citation in header
-        $('#cite div.panel-body').text(zparams.zdatacite);
+        elem('#cite div.panel-body').textNode = zparams.zdatacite;
         */
 
     } else {
@@ -1613,14 +1613,14 @@ export function layout(v, v2) {
                     evt.stopPropagation();
                     let t = transParse(n = n);
                     if (!t) return;
-                    //$(this).parent().fadeOut(100);
+                    fadeOut(this.parentNode, 100);
                     transform(n = t.slice(0, t.length - 1), t = t[t.length - 1], typeTransform = false);
                     return;
                 }
 
                 tInput.value = this.textContent;
-                //$(this).parent().fadeOut(100);
-                //$('#transList').fadeIn(100);
+                fadeOut(this.parentNode, 100);
+                fadeOut('#transList', 100);
                 evt.stopPropagation();
             }));
         };
@@ -1672,8 +1672,8 @@ export function layout(v, v2) {
     d3.select(window)
         .on('click', () => {
             // all clicks will bubble here unless event.stopPropagation()
-            //$('#transList').fadeOut(100);
-            //$('#transSel').fadeOut(100);
+            fadeOut('#transList', 100);
+            fadeOut('#transSel', 100);
         });
 
     restart(); // initializes force.layout()

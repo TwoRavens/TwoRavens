@@ -11,6 +11,7 @@ import * as app from './app';
 import * as exp from './explore';
 import * as layout from './layout';
 import * as results from './results';
+import {elem, fadeIn, fadeOut} from './utils';
 
 import Button from './views/PanelButton';
 import List from './views/PanelList';
@@ -472,8 +473,8 @@ class Body {
                  if (this.textContent === 'interact(d,e)') {
                      tInput.value = tvar.concat('*');
                      selInteract = true;
-                     //this.parentNode.fadeOut(100);
-                     //byId('transSel').fadeIn(100);
+                     fadeOut(this.parentNode, 100);
+                     fadeIn('#transSel', 100);
                      evt.stopPropagation();
                      return;
                  }
@@ -482,7 +483,7 @@ class Body {
                  let tfunc = this.textContent.replace("d", "_transvar0");
                  let tcall = this.textContent.replace("d", tvar);
                  tInput.value = tcall;
-                 //this.parentNode.fadeOut(100);
+                 fadeOut(this.parentNode, 100);
                  evt.stopPropagation();
                  transform(tvar, tfunc, typeTransform = false);
              }},
@@ -526,30 +527,30 @@ class Body {
                     let transSel = app.byId('transSel');
                     // if variable list is displayed when input is clicked...
                     if (transSel.style.display !== 'none') {
-                        //transSel.fadeOut(100);
+                        fadeOut(transSel, 100);
                         return false;
                     }
 
                     let transList = app.byId('transList');
                     // if function list is displayed when input is clicked...
                     if (transList.style.display !== 'none') {
-                        //transList.fadeOut(100);
+                        fadeOut(transList, 100);
                         return false;
                     }
 
                     // highlight the text
                     //let pos = this.offset();
-                    //pos.top += this.width();
-                    //transSel.fadeIn(100);
+                    //pos.top += this.offsetWidth();
+                    fadeIn(transSel, 100);
                     return false;
                 },
                 keyup: evt => {
                     let transSel = app.byId('transSel');
                     let transList = app.byId('transList');
                     if (transSel.style.display !== 'none') {
-                        //transSel.fadeOut(100);
+                        fadeOut(transSel, 100);
                     } else if (transList.style.display !== 'none') {
-                        //transList.fadeOut(100);
+                        fadeOut(transList, 100);
                     }
 
                     if (evt.keyCode == 13) { // keyup on Enter
