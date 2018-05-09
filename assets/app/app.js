@@ -27,6 +27,26 @@ import {searchIndex} from "./views/Search";
 //    Developers, see /template/index.html
 //-------------------------------------------------
 
+export let marginTopCarousel = 0;
+export let marginLeftCarousel = 0;
+
+window.onresize = () => {
+    if (m.route.get() === '/data') {
+        return;
+    }
+
+    let carousel = elem('#innercarousel');
+    let container = elem('#m0');
+    let whitespace = elem('#whitespace0');
+
+    marginTopCarousel = (carousel.offsetHeight - whitespace.getAttribute("height") - 16) / 2;
+    marginLeftCarousel = (carousel.offsetWidth - whitespace.getAttribute("width")) / 2;
+
+    container.style.marginTop = marginTopCarousel + 'px';
+    container.style.marginLeft = marginLeftCarousel + 'px';
+    container.style.height = `calc(100% + ${Math.abs(marginTopCarousel)}px)`;
+};
+
 export let task1_finished = false;
 export let task2_finished = false;
 export let univariate_finished = false;
@@ -1688,26 +1708,6 @@ export function layout(v, v2) {
         byId(clickID).dispatchEvent(click_ev);
     }
 }
-
-export let marginTopCarousel = 0;
-export let marginLeftCarousel = 0;
-
-window.onresize = () => {
-    if (m.route.get() === '/data') {
-        return;
-    }
-
-    let carousel = document.getElementById('innercarousel');
-    let container = document.getElementById('m0');
-    let whitespace = document.getElementById('whitespace0');
-
-    marginTopCarousel = (carousel.offsetHeight - whitespace.getAttribute("height") - 16) / 2;
-    marginLeftCarousel = (carousel.offsetWidth - whitespace.getAttribute("width")) / 2;
-
-    container.style.marginTop = marginTopCarousel + 'px';
-    container.style.marginLeft = marginLeftCarousel + 'px';
-    container.style.height = `calc(100% + ${Math.abs(marginTopCarousel)}px)`;
-};
 
 /** needs doc */
 function find($nodes, name) {
