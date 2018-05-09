@@ -17,7 +17,6 @@ import Button from './views/PanelButton';
 import List from './views/PanelList';
 import Search from './views/Search';
 import Subpanel from './views/Subpanel';
-import Table from '../common/app/views/Table';
 
 import * as common from '../common/app/common';
 import ButtonRadio from '../common/app/views/ButtonRadio';
@@ -27,6 +26,8 @@ import MenuTabbed from '../common/app/views/MenuTabbed';
 import Modal, {setModal} from '../common/app/views/Modal';
 import Panel from '../common/app/views/Panel';
 import PanelList from '../common/app/views/PanelList';
+import Peek from '../common/app/views/Peek';
+import Table from '../common/app/views/Table';
 import TextField from '../common/app/views/TextField';
 
 let state = {
@@ -603,5 +604,6 @@ m.route(document.body, '/model', {
         render() {
             return m(Body, {mode: 'results'});
         }
-    }
+    },
+    '/data': Peek
 });

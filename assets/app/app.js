@@ -1693,6 +1693,10 @@ export let marginTopCarousel = 0;
 export let marginLeftCarousel = 0;
 
 window.onresize = () => {
+    if (m.route.get() === '/data') {
+        return;
+    }
+
     let carousel = document.getElementById('innercarousel');
     let container = document.getElementById('m0');
     let whitespace = document.getElementById('whitespace0');
