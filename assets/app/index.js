@@ -575,7 +575,7 @@ class Body {
         return m(Footer, [
             m(ButtonRadio,
               {id: 'modeButtonBar',
-               attrsAll: {style: {width: '200px', margin: '0 .2em'}, class: 'navbar-left btn-sm'},
+               attrsAll: {style: {width: '200px'}, class: 'navbar-left btn-sm'},
                onclick: app.set_mode,
                activeSection: mode || 'model',
                // {value: 'Results', id: 'btnResultsMode'}] VJD: commenting out the results mode button since we don't have this yet
@@ -587,7 +587,11 @@ class Body {
             m("span[style=color:#337ab7]", " | "),
             m("span[style=color:#337ab7]", `TA2: ${TA2_SERVER}`),
             m("span[style=color:#337ab7]", " | "),
-            m("span[style=color:#337ab7]", `TA3TA2 api: ${TA3TA2_API_VERSION}`)
+            m("span[style=color:#337ab7]", `TA3TA2 api: ${TA3TA2_API_VERSION}`),
+            m('button.btn.btn-default', {
+                onclick: _ => window.open('#!/data', 'data'),
+                style: 'float: right; margin: 0.5em'
+            }, 'Peek')
         ]);
     }
 }
