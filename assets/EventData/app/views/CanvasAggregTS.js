@@ -12,7 +12,7 @@ export default class CanvasAggregTS {
 		let {display} = vnode.attrs;
 		return m("[id='canvasAggregTS']", {style: {"display": display}}, [
 			m("#canvasAggregTSBin", {style: {'padding-top': panelMargin + 'px'}}, [
-				m("svg[height='100%'][id='aggregTS_SVG'][width='100%']", {style: {"background": "none"}})
+				m("svg[height='100%'][id='aggregTS_SVG'][width='100%']", {style: {"background": "none"}}), m(".SVGtooltip")
 			]),
 			m("#aggregTSGroupSelect")
 			//~ ,

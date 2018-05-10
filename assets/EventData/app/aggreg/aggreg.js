@@ -57,10 +57,13 @@ export let tableHeight = '20%';
 
 var aggregURL;
 
+let tooltipSVG;
+
 export function updateToAggreg(alreadyInAggreg=true) {
 	if (!alreadyInAggreg) {
 
 		if (initAggregLoad) {
+			tooltipSVG = d3.select("#canvasAggregTSBin").select(".SVGtooltip").style("opacity", 0);
 			$("#aggregTable").append(function() {
 				var tablestring = "";
 				for (var row = 1; row <= aggregDataNumber; row ++) {
@@ -377,12 +380,32 @@ function updateTSData(data) {
 		else {	//is root code
 			for (let x = 1; x < aggregRootChkOrd.length; x ++) {
 				let tempVals = [];
-				for (let y = 0; y < data["action_data"].length; y ++) {
-					tempVals[y] =
-						{
-							"date": parseFormat(data["action_data"][y]["Date"]),
-							"count": data["action_data"][y][x]
-						};
+				if (!aggregActorOn || actorLinks.length == 1 || aggTSChkCount == actorLinks.length) {
+					console.log("using all data");
+					for (let y = 0; y < data["action_data"].length; y ++) {
+						tempVals[y] =
+							{
+								"date": parseFormat(data["action_data"][y]["Date"]),
+								"count": data["action_data"][y][x]
+							};
+					}
+				}
+				else {
+					let tempCount = 0;
+					console.log("using only checked data");
+					console.log(aggTSChkOrder);
+					for (let y = 0; y < data["action_data"].length; y ++) {
+						for (let z = 0; z < aggTSChkOrder.length; z ++) {
+							if (actorLinks[aggTSChkOrder[z]].source.name == data["action_data"][y]["Source"] && actorLinks[aggTSChkOrder[z]].target.name == data["action_data"][y]["Target"]) {
+								tempVals[tempCount] =
+									{
+										"date": parseFormat(data["action_data"][y]["Date"]),
+										"count": data["action_data"][y][x]
+									};
+								tempCount ++;
+							}
+						}
+					}
 				}
 				formattedData[x-1] =
 					{
@@ -412,7 +435,7 @@ function drawTS(formattedData) {
 	let svgTS = d3.select("#aggregTS_SVG");
 
 	let margin = {top: 20, right: 80, bottom: 30, left: 50};
-	svgTS.attr("width", 960).attr("height", 450);		//resize later
+	svgTS.attr("width", 1000).attr("height", 450);		//resize later
 	let widthTS = svgTS.attr("width") - margin.left - margin.right;
     let heightTS = svgTS.attr("height") - margin.top - margin.bottom;
 	let g = svgTS.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
@@ -420,7 +443,7 @@ function drawTS(formattedData) {
 
 	let x = d3.scaleTime().range([0, widthTS]);
     let y = d3.scaleLinear().range([heightTS, 0]);
-    let z = d3.scaleOrdinal(d3.schemeCategory10);
+    let z = d3.scaleOrdinal(d3.schemeCategory20);
 
 	var line = d3.line()	//update this in accordance to data format
 		.curve(d3.curveBasis)
@@ -465,9 +488,24 @@ function drawTS(formattedData) {
 
 	aggregTSLine.append("path")
 	  .attr("class", "line")
+	  //~ .attr("id", function(d) { return d.id;})
 	  .attr("d", function(d) {
 		  return line(d.values); })
-	  .style("stroke", function(d) { return z(d.id); }).style("fill", "none");
+	  .style("stroke", function(d) { return z(d.id); }).style("fill", "none")
+	  .on("mouseover", function(d) {
+		  d3.select(this).attr("stroke-width", 3);
+		  tooltipSVG.html(d.id).style("display", "block");
+          tooltipSVG.transition().duration(50).style("opacity", 1);
+	  })
+	  .on("mousemove", function (d) {
+			tooltipSVG.style("display", "block")
+				.style("left", d3.event.pageX + "px")
+				.style("top", d3.event.pageY - 70 + "px");
+		})
+	  .on("mouseout", function(d) {
+		  d3.select(this).attr("stroke-width", 1);
+		  tooltipSVG.transition().duration(50).style("opacity", 0).style("display", "none");
+	  });
 
 	if (aggregMode == "penta") {
 		for (let a = 1; a < aggregPentaChkOrd.length; a ++) {
