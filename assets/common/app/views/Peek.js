@@ -1,11 +1,9 @@
-import m from 'mithril';
-
-import * as app from "../../../app/app";
+import m from 'mithril'
 
 import Header from './Header';
 import Table from './Table';
 import Canvas from './Canvas';
-import {heightHeader} from "../common";
+import * as common from "../common";
 
 // widget for displaying a full-page data preview
 
@@ -19,20 +17,13 @@ import {heightHeader} from "../common";
 // WRITE FIELDS
 // peekMore: boolean set by peek when the bottom of the page is scrolled to
 
-let data = [];
-
 export default class Peek {
     oncreate() {
-        m.request('rook-custom/rook-files/299_libras_move/data/trainData.tsv', {deserialize: x => x.split('\n').map(y => y.split('\t'))})
-            .then(x => {
-                data = x;
-                data[0] = data[0].map(x => x.replace(/"/g, ''));
-            });
-        //window.addEventListener('storage', e => onStorageEvent(this, e));
-        //document.getElementById('canvas').addEventListener('scroll', onScrollEvent);
+        window.addEventListener('storage', (e) => onStorageEvent(this, e));
+        document.getElementById('canvas').addEventListener('scroll', onScrollEvent);
     }
 
-    /*oninit() {
+    oninit() {
         this.header = localStorage.getItem('peekHeader') || '';
         this.tableHeaders = JSON.parse(localStorage.getItem('peekTableHeaders')) || [];
         this.tableData = JSON.parse(localStorage.getItem('peekTableData')) || [];
@@ -41,23 +32,25 @@ export default class Peek {
             localStorage.removeItem('peekMore');
             localStorage.setItem('peekMore', 'true');
         }
-    }*/
+    }
 
     view() {
         return [
-            m(Header,
-              m('div', {style: {'flex-grow': 1}}),
-              m("h4", m("span#headerLabel.label.label-default", 'header')),
-              m('div', {style: {'flex-grow': 1}})),
+            m(Header, [
+                m('div', {style: {'flex-grow': 1}}),
+                m("h4", m("span#headerLabel.label.label-default", this.header)),
+                m('div', {style: {'flex-grow': 1}}),
+            ]),
             m(Canvas, {
-                attrsAll: {style: {'margin-top': heightHeader + 'px', height: `calc(100% - ${heightHeader}px)`}}
-            }, m(Table, {
-                id: 'peekTable',
-                headers: data[0],
-                data: data.slice(1),
-                attrsAll: {style: {overflow: 'auto'}}
-            }))
-        ];
+                    attrsAll: {style: {'margin-top': common.heightHeader + 'px', height: `calc(100% - ${common.heightHeader}px)`}}
+                }, m(Table, {
+                    id: 'peekTable',
+                    headers: this.tableHeaders,
+                    data: this.tableData,
+                    attrsAll: {style: {overflow: 'auto'}}
+                })
+            )
+        ]
     }
 }
 
@@ -69,7 +62,7 @@ function onScrollEvent() {
     }
 }
 
-function onStorageEvent(peek, e) {
+function onStorageEvent (peek, e) {
     if (e.key !== 'peekTableData') return;
 
     peek.header = localStorage.getItem('peekHeader');
@@ -90,8 +83,7 @@ let peekData = [];
 let peekAllDataReceived = false;
 let peekIsGetting = false;
 
-let onStorageEvent = (e) => {
-    console.log(e);
+function onStorageEvent(e) {
     if (e.key !== 'peekMore' || peekIsGetting) return;
 
     if (localStorage.getItem('peekMore') === 'true' && !peekAllDataReceived) {
@@ -99,41 +91,42 @@ let onStorageEvent = (e) => {
         peekIsGetting = true;
         updatePeek();
     }
-};
+}
+window.addEventListener('storage', onStorageEvent);
 
-  let updatePeek = () => {
-  m.request({
-  method: 'POST',
-  url: data_url,
-  data: {
-  skip: peekSkip,
-  limit: peekBatchSize,
-  }
-  }).then((response) => {
-  // stop blocking new requests
-  peekIsGetting = false;
+function updatePeek() {
+    m.request({
+        method: 'POST',
+        url: data_url,
+        data: {
+            skip: peekSkip,
+            limit: peekBatchSize,
+        }
+    }).then((response) => {
+        // stop blocking new requests
+        peekIsGetting = false;
 
-  let newData = response['data'];
+        let newData = response['data'];
 
-  // start blocking new requests until peekReset() is called
-  if (newData.length === 0) peekAllDataReceived = true;
+        // start blocking new requests until peekReset() is called
+        if (newData.length === 0) peekAllDataReceived = true;
 
-  peekData.concat(newData);
-  peekSkip += newData.length;
+        peekData = peekData.concat(newData);
+        peekSkip += newData.length;
 
-  localStorage.setItem('peekTableHeaders', JSON.stringify(headers));
-  localStorage.setItem('peekTableData', JSON.stringify(peekData));
-  });
-  };
+        localStorage.setItem('peekTableHeaders', JSON.stringify(headers));
+        localStorage.setItem('peekTableData', JSON.stringify(peekData));
+    });
+}
 
-  let resetPeek = () => {
-  peekSkip = 0;
-  peekData = [];
+function resetPeek() {
+    peekSkip = 0;
+    peekData = [];
 
-  peekAllDataReceived = false;
-  peekIsGetting = false;
+    peekAllDataReceived = false;
+    peekIsGetting = false;
 
-  // provoke a redraw from the peek menu
-  localStorage.removeItem('peekTableData');
-  };
+    // provoke a redraw from the peek menu
+    localStorage.removeItem('peekTableData');
+}
 */

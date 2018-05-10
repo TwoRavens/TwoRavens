@@ -5,9 +5,8 @@ import {callOnResize, mergeAttributes, panelOcclusion, heightFooter, heightHeade
 
 // ```
 // m(Canvas, {
-//     contents: m(...),
 //     attrsAll: { additional attributes to apply to the outer div }
-//     })
+//     }, contents)
 // ```
 
 // Purpose:
@@ -23,17 +22,17 @@ export default class Canvas {
     }
 
     view(vnode) {
-        let {contents, attrsAll} = vnode.attrs;
+        let {attrsAll} = vnode.attrs;
         return m('div#canvas', mergeAttributes({
             style: {
                 width: '100%',
-                height: `calc(100% - ${heightHeader + heightFooter}px)`,
+                height: `calc(100% - ${heightHeader} - ${heightFooter})`,
                 'padding-left': panelOcclusion['left'],
                 'padding-right': panelOcclusion['right'],
                 position: 'fixed',
                 overflow: 'auto',
-                top: 0
+                top: heightHeader
             }
-        }, attrsAll), contents)
+        }, attrsAll), vnode.children)
     }
 }

@@ -47,6 +47,59 @@ window.onresize = () => {
     container.style.height = `calc(100% + ${Math.abs(marginTopCarousel)}px)`;
 };
 
+let peekBatchSize = 100;
+let peekSkip = 0;
+let peekData = [];
+
+let peekAllDataReceived = false;
+let peekIsGetting = false;
+
+function onStorageEvent(e) {
+    if (e.key !== 'peekMore' || peekIsGetting) return;
+
+    if (localStorage.getItem('peekMore') === 'true' && !peekAllDataReceived) {
+        localStorage.setItem('peekMore', 'false');
+        peekIsGetting = true;
+        updatePeek();
+    }
+}
+window.addEventListener('storage', onStorageEvent);
+
+function updatePeek() {
+    m.request('rook-custom/rook-files/26_radon_seed/data/trainData.tsv', {
+        deserialize: x => x.split('\n').map(y => y.split('\t'))
+    }).then(data => {
+        // simulate only loading some of the data... by just deleting all the other data
+        let headers = data[0].map(x => x.replace(/"/g, ''));
+        let newData = data.slice(peekSkip + 1, peekSkip + 1 + peekBatchSize);
+
+        // stop blocking new requests
+        peekIsGetting = false;
+
+        // start blocking new requests until peekReset() is called
+        if (newData.length === 0) peekAllDataReceived = true;
+
+        peekData = peekData.concat(newData);
+        peekSkip += newData.length;
+
+        localStorage.setItem('peekTableHeaders', JSON.stringify(headers));
+        localStorage.setItem('peekTableData', JSON.stringify(peekData));
+    });
+}
+
+let resetPeek = () => {
+    peekSkip = 0;
+    peekData = [];
+
+    peekAllDataReceived = false;
+    peekIsGetting = false;
+
+    // provoke a redraw from the peek menu
+    localStorage.removeItem('peekTableData');
+};
+
+
+
 export let task1_finished = false;
 export let task2_finished = false;
 export let univariate_finished = false;
@@ -606,6 +659,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     d3.select("#dataName").html(dataname);
     // put dataset name, from meta-data, into page title
     d3.select("title").html("TwoRavens " + dataname);
+    localStorage.setItem('peekHeader', "TwoRavens " + dataname);
 
     // if swandive, we have to set valueKey here so that left panel can populate.
     if (swandive) {
