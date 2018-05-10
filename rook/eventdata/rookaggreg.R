@@ -173,6 +173,7 @@ eventdata_aggreg.app <- function(env) {
 			}
 		}
 		else if (everything$date$dateType != 0 && everything$actors$actorType == FALSE) {
+			print("aggreg date only")
 			if (dataset %in% list("phoenix_rt", "cline_phoenix_fbis", "cline_phoenix_nyt", "cline_phoenix_swb")) {
 				action_frequencies = future({
 					data = do.call(data.frame, getData(paste(eventdata_url, '&aggregate=[',
@@ -242,7 +243,7 @@ eventdata_aggreg.app <- function(env) {
 			}
 		}
 		else if (everything$date$dateType == 0 && everything$actors$actorType == TRUE) {
-			print("only actor")
+			print("aggreg actor only")
 			result = data.frame(matrix(ncol = 22, nrow = 0))
 			resHeader = c("Source", "Target", (1:20))
 			colnames(result) = resHeader

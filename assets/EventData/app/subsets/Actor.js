@@ -226,6 +226,10 @@ export function setupActor(){
         if (newGroupName === "") {		//revert to previous name if none entered
             newGroupName = currentNode[currentTab].name;
         }
+        else if (actorNodeNames.includes(newGroupName)) {
+			alert("Please enter a unique group name");
+			newGroupName = currentNode[currentTab].name;
+		}
         //remove visual feedback
         editGroupNameDiv.css("background-color", "#F9F9F9").css("border", "none");
         //update in nodes data structure
