@@ -7,7 +7,7 @@ import {updateLocation, mapListCountriesSelected} from "./subsets/Location";
 import {
     setAggregMode, updateAggregTable, makeAggregQuery,
     aggregPentaChkOrd, aggregRootChkOrd,
-    setEventMeasure, updateToAggreg
+    setEventMeasure, updateToAggreg, setupAggregTS
 } from "./aggreg/aggreg";
 import {
     panelMargin, panelOcclusion, panelOpen, setPanelCallback,
@@ -313,6 +313,7 @@ export function showCanvas(canvasKey) {
 
 		if (canvasKeySelected === "CanvasAggregTS") {
 			$("#canvasAggregTS").css("display", "block");
+			//~ setupAggregTS();
 		}
     }
 }

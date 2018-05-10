@@ -218,67 +218,6 @@ export function updateToAggreg(alreadyInAggreg=true) {
 
 		$("#aggregTable .th").css({"width":"300px", "padding":"5px"});
 
-		/*
-		 * jsondata : contains all data - see console output for format
-		 * updateDate() : this will refresh the range and data
-		 * updateActor() : this will refresh the data
-		 * add a none option to actor
-		 *
-
-		// $(".aggregDateChk").change(function(e) {
-		// 	//~ console.log(this.id);
-		// 	if (!this.checked)
-		// 		return;
-		// 	console.log("checked proceed");
-		// 	if (this.id.substring(10, this.id.length) == "None") {
-		// 		$(".aggregDataDate").hide();
-		// 		aggregDateOn = 0;
-		// 	}
-		// 	else {
-		// 		$(".aggregDataDate").show();
-		// 		//~ console.log(datemin);
-		// 		//~ var month = datemin.getMonth();
-		// 		//~ var day = datemin.getDate();
-		// 		//~ var year = datemin.getFullYear();
-		// 		//~ $("#aggregDataDateR1").html(datemin.toLocaleDateString());
-		// 		//~ var datenew = new Date(datemin.getDate());
-		// 		//~ var datenew = new Date(datemin.toLocaleDateString());
-		// 		//~ console.log(datenew.toLocaleDateString());
-		// 		if (this.id.substring(10, this.id.length) == "Week") {
-		// 			aggregDateOn = 1;
-		// 			//~ console.log("updating by week");
-		// 			//~ for (var x = 2; x < 4; x ++) {
-		// 				//~ datenew = new Date(datenew.setDate(datenew.getDate() + 7));
-		// 				//~ console.log(datenew.toLocaleDateString());
-		// 				//~ $("#aggregDataDateR" + x).html(datenew.toLocaleDateString());
-		// 			//~ }
-		// 		}
-		// 		else if (this.id.substring(10, this.id.length) == "Month") {
-		// 			aggregDateOn = 2;
-		// 			//~ for (var x = 2; x < 4; x ++) {
-		// 				//~ datenew.setMonth(datenew.getMonth() + 1);
-		// 				//~ $("#aggregDataDateR" + x).html(datenew.toLocaleDateString());
-		// 			//~ }
-		// 		}
-		// 		else if (this.id.substring(10, this.id.length) == "Quarter") {
-		// 			aggregDateOn = 3;
-		// 			//~ for (var x = 2; x < 4; x ++) {
-		// 				//~ datenew.setMonth(datenew.getMonth() + 4);
-		// 				//~ $("#aggregDataDateR" + x).html(datenew.toLocaleDateString());
-		// 			//~ }
-		// 		}
-		// 		else if (this.id.substring(10, this.id.length) == "Year") {
-		// 			aggregDateOn = 4;
-		// 			//~ for (var x = 2; x < 4; x ++) {
-		// 				//~ datenew.setMonth(datenew.getMonth() + 12);
-		// 				//~ $("#aggregDataDateR" + x).html(datenew.toLocaleDateString());
-		// 			//~ }
-		// 		}
-		// 	}
-		// 	updateAggregTable();
-		//
-		// });*/
-
 		updateAggregTable();
 	}
 	else {
@@ -286,53 +225,194 @@ export function updateToAggreg(alreadyInAggreg=true) {
 	}
 }
 
-function setupAggregTS(data) {
+//~ let prevTSData = null;
+let aggTSChkCount = 0;
+let aggTSChkOrder = [];
+
+export function setupAggregTS(data) {
 	console.log("setting up TS");
 
+	console.log("original data");
+	console.log(data);
+
+	//set up group toggles
+	/* if actor used in aggreg and multiple groups:
+		* create all chk and indiv group chk
+		* each toggles the appropriate line; through changing data -> redraw
+			* will this be affected by m.redraw???
+	*/
+	if (aggregActorOn && actorLinks.length > 1) {
+		 console.log("multiple TS groups");
+		 console.log(actorLinks);
+		 $("#aggregTSGroupSelect").empty().append(function() {
+			 let retStr = "";
+			 retStr += '<h3 class="panel-title">Group Selection</h3>';
+			 retStr += '<label class="aggChkLbl">\
+							<input id="aggregTSAll" class="aggChk aggTSChkAll" name="aggTSAll" value="aggTSAll" type="checkbox">\
+							All Groups\
+						</label>';						
+			for (let x = 0; x < actorLinks.length; x ++) {
+				retStr += '<div class="seperator"></div>\
+							<label class="aggChkLbl">\
+								<input id="aggregTS' + x + '" class="aggChk aggTSChk" name="aggTS' + x + '" value="aggTS' + x + '" type="checkbox">';
+				retStr += actorLinks[x].source.name + "-" + actorLinks[x].target.name;
+				retStr += '</label><div class="seperator"></div>';
+			}
+			return retStr;
+		});
+		aggTSChkCount = 0;
+		aggTSChkOrder = [];
+		//add events to checks
+		$("#aggregTSAll").change(function(e) {
+			console.log("changing all chk");
+			if (this.checked) {
+				$(".aggTSChk").prop("checked", true).each(function(){$(this).trigger("change");});
+				$(this).prop("indeterminate", false).prop("checked", true);
+			}
+			else {
+				$(".aggTSChk").prop("checked", false).each(function(){$(this).trigger("change");});
+				$(this).prop("indeterminate", false).prop("checked", false);
+			}
+			console.log("TS check info");
+			console.log(aggTSChkCount);
+			console.log(aggTSChkOrder);
+
+			//~ drawTS(updateTSData(data));
+		});
+
+		$(".aggTSChk").change(function(e) {
+			console.log("changing indiv chk");
+			if (this.checked) {
+				aggTSChkCount ++;
+				//update data
+				aggTSChkOrder.push(parseInt(this.id.substring(8, this.id.length)));
+			}
+			else {
+				aggTSChkCount --;
+				//update data
+				aggTSChkOrder.splice(aggTSChkOrder.indexOf(parseInt(this.id.substring(8, this.id.length))), 1);
+			}
+			console.log("TS check info");
+			console.log(aggTSChkCount);
+			console.log(aggTSChkOrder);
+
+			if (aggTSChkCount == 0) {
+				$("#aggregTSAll").prop("indeterminate", false).prop("checked", false);
+				//~ drawTS(updateTSData(data));
+			}
+			else if (aggTSChkCount == actorLinks.length) {
+				$("#aggregTSAll").prop("indeterminate", false).prop("checked", true);
+			}
+			else {
+				$("#aggregTSAll").prop("indeterminate", true).prop("checked", true);
+				//~ drawTS(updateTSData(data));
+			}
+
+			drawTS(updateTSData(data));
+		});
+
+		$("#aggregTSAll").prop("checked", true).trigger("change");
+	}
+	else {
+		$("#aggregTSGroupSelect").empty();
+	}
+
+	drawTS(updateTSData(data));
+				
+
+	
+	
+}
+
+function updateTSData(data) {
+	//called to get formatted data
 	let parseFormat = d3.timeParse("%Y-%m-%d");
 	//reformat data
 	let formattedData = [];
-	//in format of: 
-	if (aggregMode == "penta") {
-		for (let x = 1; x < aggregPentaChkOrd.length; x ++) {
-			let tempVals = [];
-			for (let y = 0; y < data["action_data"].length; y ++) {
-				tempVals[y] =
+	//~ if (data) {
+		//~ console.log("reformatting data");
+		//in format of: 
+		if (aggregMode == "penta") {
+			for (let x = 1; x < aggregPentaChkOrd.length; x ++) {
+				let tempVals = [];
+				if (!aggregActorOn || actorLinks.length == 1 || aggTSChkCount == actorLinks.length) {
+					console.log("using all data");
+					for (let y = 0; y < data["action_data"].length; y ++) {
+						tempVals[y] =
+							{
+								"date": parseFormat(data["action_data"][y]["Date"]),
+								"count": data["action_data"][y][x-1]
+							};
+					}
+				}
+				else {
+					let tempCount = 0;
+					console.log("using only checked data");
+					console.log(aggTSChkOrder);
+					for (let y = 0; y < data["action_data"].length; y ++) {
+						for (let z = 0; z < aggTSChkOrder.length; z ++) {
+							//~ console.log("in checking loop");
+							//~ console.log(z);
+							//~ console.log(aggTSChkOrder[z]);
+							//~ console.log(actorLinks[aggTSChkOrder[z]]);
+							//~ console.log(data["action_data"][y]);
+							if (actorLinks[aggTSChkOrder[z]].source.name == data["action_data"][y]["Source"] && actorLinks[aggTSChkOrder[z]].target.name == data["action_data"][y]["Target"]) {
+								tempVals[tempCount] =
+									{
+										"date": parseFormat(data["action_data"][y]["Date"]),
+										"count": data["action_data"][y][x-1]
+									};
+								tempCount ++;
+							}
+						}
+					}
+				}
+				formattedData[x-1] = 
 					{
-						"date": parseFormat(data["action_data"][y]["Date"]),
-						"count": data["action_data"][y][x-1]
+						id: "Penta " + (x-1),
+						values: tempVals
 					};
 			}
-			formattedData[x-1] = 
-				{
-					id: "Penta " + (x-1),
-					values: tempVals
-				};
 		}
-	}
-	else {	//is root code
-		for (let x = 1; x < aggregRootChkOrd.length; x ++) {
-			let tempVals = [];
-			for (let y = 0; y < data["action_data"].length; y ++) {
-				tempVals[y] =
+		else {	//is root code
+			for (let x = 1; x < aggregRootChkOrd.length; x ++) {
+				let tempVals = [];
+				for (let y = 0; y < data["action_data"].length; y ++) {
+					tempVals[y] =
+						{
+							"date": parseFormat(data["action_data"][y]["Date"]),
+							"count": data["action_data"][y][x]
+						};
+				}
+				formattedData[x-1] =
 					{
-						"date": parseFormat(data["action_data"][y]["Date"]),
-						"count": data["action_data"][y][x]
+						id: "Root " + x,
+						values: tempVals
 					};
 			}
-			formattedData[x-1] =
-				{
-					id: "Root " + x,
-					values: tempVals
-				};
 		}
-	}
+		//~ prevTSData = formattedData;
+	//~ }
+	//~ else if (prevTSData) {
+		//~ console.log("using old data");
+		//~ formattedData = prevTSData;
+	//~ }
+	//~ else {
+		//~ return;
+	//~ }
+	console.log("ret form data");
 	console.log(formattedData);
-	$("#canvasAggregTS").empty().append('<svg id="aggregTS_SVG" style="border: 1px solid black"></svg>');
+	return formattedData;
+}
+
+function drawTS(formattedData) {
+	//called with updated data per group select, or by default when only one actor group present
+	//~ $("#canvasAggregTS").empty().append('<svg id="aggregTS_SVG" style="border: 1px solid black"></svg>');
+	$("#aggregTS_SVG").empty();
 	let svgTS = d3.select("#aggregTS_SVG");
 
 	let margin = {top: 20, right: 80, bottom: 30, left: 50};
-	svgTS.attr("width", 960).attr("height", 480);		//resize later
+	svgTS.attr("width", 960).attr("height", 450);		//resize later
 	let widthTS = svgTS.attr("width") - margin.left - margin.right;
     let heightTS = svgTS.attr("height") - margin.top - margin.bottom;
 	let g = svgTS.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
@@ -387,12 +467,11 @@ function setupAggregTS(data) {
 	  .attr("class", "line")
 	  .attr("d", function(d) {
 		  return line(d.values); })
-	  .style("stroke", function(d) { console.log("stroke in def"); console.log(z(d.id)); return z(d.id); }).style("fill", "none");
+	  .style("stroke", function(d) { return z(d.id); }).style("fill", "none");
 
 	if (aggregMode == "penta") {
 		for (let a = 1; a < aggregPentaChkOrd.length; a ++) {
 			let curLine = d3.select("#Penta" + (a - 1) + "Line");
-			console.log(curLine);
 			if (!aggregPentaChkOrd[a]) {
 				curLine.style("opacity", 0);
 			}
