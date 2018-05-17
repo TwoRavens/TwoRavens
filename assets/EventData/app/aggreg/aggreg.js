@@ -435,7 +435,7 @@ function drawTS(formattedData) {
 	let svgTS = d3.select("#aggregTS_SVG");
 
 	let margin = {top: 20, right: 80, bottom: 30, left: 50};
-	svgTS.attr("width", 1000).attr("height", 450);		//resize later
+	svgTS.attr("width", document.getElementById("canvas").offsetWidth - document.getElementById("rightpanel").offsetWidth - margin.left - margin.right - 10).attr("height", document.getElementById("canvas").offsetHeight - margin.top - margin.bottom - 10);		//resize later	1000, 450
 	let widthTS = svgTS.attr("width") - margin.left - margin.right;
     let heightTS = svgTS.attr("height") - margin.top - margin.bottom;
 	let g = svgTS.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
@@ -537,6 +537,8 @@ function updateTable(json) {
 	console.log("aggregated json");
 	console.log(json);
 	laddaUpdate.stop();
+
+	document.getElementById('recordCount').innerHTML = json["action_data"].length + " records";
 	
 	for (let row = 1; row <= aggregDataNumber; row++) {
 		if (row > json["action_data"].length) {
