@@ -88,7 +88,7 @@ function updatePeek() {
     });
 }
 
-let resetPeek = () => {
+function resetPeek() {
     peekSkip = 0;
     peekData = [];
 
@@ -97,7 +97,9 @@ let resetPeek = () => {
 
     // provoke a redraw from the peek menu
     localStorage.removeItem('peekTableData');
-};
+}
+
+resetPeek();
 
 export let task1_finished = false;
 export let task2_finished = false;
