@@ -90,6 +90,8 @@ export function drawGraphs() {
         .attr("y2", actionMainY.bandwidth() / 20)
         .attr("style", "stroke:brown;stroke-width:5;");
 
+    let maxMainData = d3.max(pentaCounts, function(d) { return d.count; });
+
     actionMainX.domain([0, d3.max(pentaCounts, function (d) {
         return d.count;
     })]);
@@ -106,7 +108,7 @@ export function drawGraphs() {
         .attr("class", "x axis mainX")
         .attr("transform", "translate(0," + actionMainHeight + ")")
         .call(d3.axisBottom(actionMainX).ticks(5).tickFormat(function (d) {
-            return parseInt(d);
+            return (parseInt(d) == 0 ? 0 : d3.format("0.1f")(parseInt(d) / maxMainData));
         }).tickSizeInner([-actionMainHeight])).select("path").style("display", "inline");
 
     gMain.append("g").attr("class", "y axis mainY").call(d3.axisLeft(actionMainY));
@@ -119,7 +121,7 @@ export function drawGraphs() {
         .attr("text-anchor", "middle")
         .attr("transform", "translate(" + (actionMainWidth / 2) + "," + (actionMainHeight + 35) + ")")
         .attr("class", "graph_axis_label")
-        .text("Frequency");
+        .text("Density");
 
     //end of main graph, begin sub graph
 
@@ -131,6 +133,8 @@ export function drawGraphs() {
     actionSubX = d3.scaleLinear().range([0, actionSubWidth]);
     actionSubY = d3.scaleBand().range([0, actionSubHeight]);
 
+	let maxSubData = d3.max(actionSubData, function(d) { return d.count; });
+	
     actionSubX.domain([0, d3.max(actionSubData, function (d) {
         return d.count;
     })]);
@@ -145,7 +149,7 @@ export function drawGraphs() {
         .attr("class", "x axis subX")
         .attr("transform", "translate(0," + actionSubHeight + ")")
         .call(d3.axisBottom(actionSubX).ticks(5).tickFormat(function (d) {
-            return parseInt(d);
+            return (parseInt(d) == 0 ? 0 : d3.format("0.1f")(parseInt(d) / maxSubData));
         }).tickSizeInner([-actionSubHeight])).select("path").style("display", "inline");
 
     gSub.append("g").attr("class", "y axis subY").call(d3.axisLeft(actionSubY));
@@ -159,7 +163,7 @@ export function drawGraphs() {
         .attr("text-anchor", "middle")
         .attr("transform", "translate(" + (actionSubWidth / 2) + "," + (actionSubHeight + 35) + ")")
         .attr("class", "graph_axis_label")
-        .text("Frequency");
+        .text("Density");
 }
 
 export function updateData() {
@@ -167,6 +171,8 @@ export function updateData() {
         pentaCounts[i].selectCount = 0;
     }
     //begin updating main graph data
+    let maxMainData = d3.max(pentaCounts, function(d) { return d.count; });
+    
     actionMainX.domain([0, d3.max(pentaCounts, function (d) {
         return d.count;
     })]);
@@ -175,7 +181,7 @@ export function updateData() {
     }));
 
     d3.select("#actionMainGraph").select(".mainX").call(d3.axisBottom(actionMainX).ticks(5).tickFormat(function (d) {
-        return parseInt(d);
+        return (parseInt(d) == 0 ? 0 : d3.format("0.1f")(parseInt(d) / maxMainData));
     }).tickSizeInner([-actionMainHeight]));
     d3.select("#actionMainGraph").select(".mainY").call(d3.axisLeft(actionMainY));
 
@@ -304,6 +310,8 @@ export function updateData() {
 
     //end of update main graph data, begin update sub graph data
 
+	let maxSubData = d3.max(actionSubData, function(d) { return d.count; });
+
     actionSubX.domain([0, d3.max(actionSubData, function (d) {
         return d.count;
     })]);
@@ -312,7 +320,7 @@ export function updateData() {
     }));
 
     d3.select("#actionSubGraph").select(".subX").call(d3.axisBottom(actionSubX).ticks(5).tickFormat(function (d) {
-        return parseInt(d);
+        return (parseInt(d) == 0 ? 0 : d3.format("0.1f")(parseInt(d) / maxSubData));
     }).tickSizeInner([-actionMainHeight]));
     d3.select("#actionSubGraph").select(".subY").call(d3.axisLeft(actionSubY));
 
