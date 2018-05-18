@@ -63,10 +63,11 @@ function onStorageEvent(e) {
         updatePeek();
     }
 }
+
 window.addEventListener('storage', onStorageEvent);
 
 function updatePeek() {
-    m.request('rook-custom/rook-files/26_radon_seed/data/trainData.tsv', {
+    m.request(`rook-custom/rook-files/${configurations.name}/data/trainData.tsv`, {
         deserialize: x => x.split('\n').map(y => y.split('\t'))
     }).then(data => {
         // simulate only loading some of the data... by just deleting all the other data
@@ -97,8 +98,6 @@ let resetPeek = () => {
     // provoke a redraw from the peek menu
     localStorage.removeItem('peekTableData');
 };
-
-
 
 export let task1_finished = false;
 export let task2_finished = false;
@@ -284,7 +283,7 @@ let selInteract = false;
 export let callHistory = []; // transform and subset calls
 let mytarget = '';
 
-let configurations = {};
+export let configurations = {};
 let datadocument = {};
 
 export let domainIdentifier = null; // available throughout apps js; used for saving workspace
