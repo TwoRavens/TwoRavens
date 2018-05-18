@@ -11,21 +11,24 @@ import * as app from './app';
 import * as exp from './explore';
 import * as layout from './layout';
 import * as results from './results';
+import {elem, fadeIn, fadeOut} from './utils';
 
 import Button from './views/PanelButton';
 import List from './views/PanelList';
 import Search from './views/Search';
 import Subpanel from './views/Subpanel';
-import Table from '../common/app/views/Table'
 
-import * as common from '../common/app/common'
-import Panel from '../common/app/views/Panel';
-import MenuTabbed from '../common/app/views/MenuTabbed';
+import * as common from '../common/app/common';
 import ButtonRadio from '../common/app/views/ButtonRadio';
 import Footer from '../common/app/views/Footer';
 import Header from '../common/app/views/Header';
-import PanelList from '../common/app/views/PanelList'
-import TextField from '../common/app/views/TextField'
+import MenuTabbed from '../common/app/views/MenuTabbed';
+import Modal, {setModal} from '../common/app/views/Modal';
+import Panel from '../common/app/views/Panel';
+import PanelList from '../common/app/views/PanelList';
+import Peek from '../common/app/views/Peek';
+import Table from '../common/app/views/Table';
+import TextField from '../common/app/views/TextField';
 
 let state = {
     pipelines: [],
@@ -49,94 +52,82 @@ function leftpanel(mode) {
     let discoveryAllCheck = m('input#discoveryAllCheck[type=checkbox]', {
         onclick: m.withAttr("checked", (checked) => app.setCheckedDiscoveryProblem(checked)),
         checked: app.probtable.length === app.checkedDiscoveryProblems.size
-    })
-
+    });
     let discoveryTableData = app.probtable.map((problem) => [...problem, m('input[type=checkbox]', {
         onclick: m.withAttr("checked", (checked) => app.setCheckedDiscoveryProblem(checked, problem[0])),
         checked: app.checkedDiscoveryProblems.has(problem[0])
-    })])
+    })]);
 
     return m(Panel, {
         side: 'left',
         label: 'Data Selection',
         hover: true,
         width: app.modelLeftPanelWidths[app.leftTab],
-        contents: m(MenuTabbed, {
-            id: 'leftpanelMenu',
-            attrsAll: {style: {height: 'calc(100% - 39px)'}},
-            currentTab: app.leftTab,
-            callback: app.setLeftTab,
-            sections: [
-                {
-                    value: 'Variables',
-                    title: 'Click variable name to add or remove the variable pebble from the modeling space.',
-                    contents: [
-                        m(TextField, {
-                            id: 'searchVar',
-                            placeholder: 'Search variables and labels',
-                            oninput: app.searchVariables
-                        }),
-                        m(PanelList, {
-                            id: 'varList',
-                            items: app.valueKey,
-                            colors: {
-                                [app.hexToRgba(common.selVarColor)]: app.nodes.map(n => n.name),
-                                [app.hexToRgba(common.nomColor)]: app.zparams.znom,
-                                [app.hexToRgba(common.dvColor)]: app.zparams.zdv
-                            },
-                            classes: {'item-bordered': app.matchedVariables},
-                            callback: app.clickVar,
-                            popup: (variable) => app.popoverContent(app.findNodeIndex(variable, true)),
-                            attrsItems: {'data-placement': 'right', 'data-original-title': 'Summary Statistics'}
-                        }),
-                    ],
-                },
-                {
-                    value: 'Discovery',
-                    contents: [
-                        m(Table, {
-                            id: 'discoveryTable',
-                            headers: ['Hidden_UID', 'Target', 'Predictors', 'Task', 'Metric', discoveryAllCheck],
-                            data: discoveryTableData,
-                            activeRow: app.selectedProblem,
-                            onclick: app.setSelectedProblem,
-                            showUID: false,
-                            attrsAll: {style: {height: '80%', overflow: 'auto', display: 'block', 'margin-right': '16px', 'margin-bottom': 0, 'max-width': (window.innerWidth - 90) + 'px'}}
-                        }),
-                        m('textarea#discoveryInput[style=display:block; float: left; width: 100%; height:calc(20% - 35px); overflow: auto; background-color: white]', {
-                            value: app.disco[app.selectedProblem] === undefined ? '' : app.disco[app.selectedProblem].description
-                        }),
-                        m(Button, {id: 'btnSave', onclick:_=>app.saveDisc('btnSave'),title: 'Saves your revised problem description.'}, 'Save Desc.'),
-                        m(Button, {id: 'btnSubmitDisc', classes: 'btn-success', style: 'float: right', onclick:_=>app.submitDiscProb(), title: 'Submit all checked discovered problems.'}, 'Submit Disc. Probs.')
-                    ]
-                },
-                {
-                    value: 'Summary',
-                    title: 'Select a variable from within the visualization in the center panel to view its summary statistics.',
-                    contents: [
-                        m('center',
-                            m('b', app.summary.name),
-                            m('br'),
-                            m('i', app.summary.labl)),
-                        m('table', app.summary.data.map(tr => m('tr', tr.map(
-                            td => m('td', {
-                                    onmouseover: setBackgroundColor('aliceblue'),
-                                    onmouseout: setBackgroundColor('f9f9f9')
-                                },
-                                td)))))
-                    ],
-                    display: 'none'
-                }]
-        })
-    });
+        attrsAll: {style: {'z-index': 101}}
+    }, m(MenuTabbed, {
+        id: 'leftpanelMenu',
+        attrsAll: {style: {height: 'calc(100% - 39px)'}},
+        currentTab: app.leftTab,
+        callback: app.setLeftTab,
+        sections: [
+            {value: 'Variables',
+             title: 'Click variable name to add or remove the variable pebble from the modeling space.',
+             contents: [
+                 m(TextField, {
+                     id: 'searchVar',
+                     placeholder: 'Search variables and labels',
+                     oninput: app.searchVariables
+                 }),
+                 m(PanelList, {
+                     id: 'varList',
+                     items: app.valueKey,
+                     colors: {
+                         [app.hexToRgba(common.selVarColor)]: app.nodes.map(n => n.name),
+                         [app.hexToRgba(common.nomColor)]: app.zparams.znom,
+                         [app.hexToRgba(common.dvColor)]: app.zparams.zdv
+                     },
+                     classes: {'item-bordered': app.matchedVariables},
+                     callback: app.clickVar,
+                     popup: (variable) => app.popoverContent(app.findNodeIndex(variable, true)),
+                     attrsItems: {'data-placement': 'right', 'data-original-title': 'Summary Statistics'}})]},
+            {value: 'Discovery',
+             contents: [
+                 m(Table, {
+                     id: 'discoveryTable',
+                     headers: ['Hidden_UID', 'Target', 'Predictors', 'Task', 'Metric', discoveryAllCheck],
+                     data: discoveryTableData,
+                     activeRow: app.selectedProblem,
+                     onclick: app.setSelectedProblem,
+                     showUID: false,
+                     abbreviation: 40,
+                     attrsAll: {style: {height: '80%', overflow: 'auto', display: 'block', 'margin-right': '16px', 'margin-bottom': 0, 'max-width': (window.innerWidth - 90) + 'px'}}
+                 }),
+                 m('textarea#discoveryInput[style=display:block; float: left; width: 100%; height:calc(20% - 35px); overflow: auto; background-color: white]', {
+                     value: app.disco[app.selectedProblem] === undefined ? '' : app.disco[app.selectedProblem].description
+                 }),
+                 m(Button, {id: 'btnSave', onclick:_=>app.saveDisc('btnSave'),title: 'Saves your revised problem description.'}, 'Save Desc.'),
+                 m(Button, {id: 'btnSubmitDisc', classes: 'btn-success', style: 'float: right', onclick:_=>app.submitDiscProb(), title: 'Submit all checked discovered problems.'}, 'Submit Disc. Probs.')]},
+            {value: 'Summary',
+             title: 'Select a variable from within the visualization in the center panel to view its summary statistics.',
+             contents: [
+                 m('center',
+                   m('b', app.summary.name),
+                   m('br'),
+                   m('i', app.summary.labl)),
+                 m('table', app.summary.data.map(tr => m('tr', tr.map(
+                     td => m('td',
+                             {onmouseover: setBackgroundColor('aliceblue'),
+                              onmouseout: setBackgroundColor('f9f9f9')},
+                             td)))))],
+             display: 'none'}
+        ]
+    }));
 }
 
 let righttab = (id, task, title, probDesc) => m(PanelList, {
     id: id,
     items: Object.keys(task || {}),
-    colors: {
-        [app.hexToRgba(common.selVarColor)]: [app.d3mProblemDescription[probDesc]],
-    },
+    colors: {[app.hexToRgba(common.selVarColor)]: [app.d3mProblemDescription[probDesc]]},
     classes: {
         'item-lineout': Object.keys(task || {})
             .filter(item => app.locktoggle && item !== app.d3mProblemDescription[probDesc])
@@ -153,22 +144,9 @@ function rightpanel(mode) {
             m(`img#${id}_img[alt=${id}][src=/static/images/thumb${idx}.png]`,
               {style: {width: "75%", height: "75%", border: "1px solid #ddd", "border-radius": "3px", padding: "5px", margin: "3%", cursor: "pointer"}}),
             m("figcaption", {style: {"text-align": "center"}}, title)));
-    /*let unique_link_names = () => {
-        let names = [];
-        for (let link of app.links) {
-            if (!names.includes(link.source.name)) {
-                names.push(link.source.name);
-            }
-            if (!names.includes(link.target.name)) {
-                names.push(link.target.name);
-            }
-        }
-        return names;
-    };*/
 
     if (mode === 'results') return [];
     if (mode === 'explore') {
-        // let link_names = unique_link_names();
         let sectionsExplore = [
             {
                 value: 'Univariate',
@@ -183,8 +161,8 @@ function rightpanel(mode) {
                         callback: variable => exp.callTreeApp(variable, app),
                         attrsAll: {style: {float: 'left', width: '100%', height: '20%'}}
                     })
-                        // m('#varList[style=display: block]',
-                        //     unique_link_names().map(x => m(`p#${x.replace(/\W/g, '_')}`, {onclick: _=> exp.callTreeApp(x, app), style: {'background-color': app.varColor}}, x))))
+                    // m('#varList[style=display: block]',
+                    //     unique_link_names().map(x => m(`p#${x.replace(/\W/g, '_')}`, {onclick: _=> exp.callTreeApp(x, app), style: {'background-color': app.varColor}}, x))))
                 ]
             },
             {
@@ -199,7 +177,8 @@ function rightpanel(mode) {
                         data: app.pipelineTable,
                         activeRow: app.selectedPipeline[app.currentMode],
                         onclick: app.setSelectedPipeline,
-                        showUID: false
+                        showUID: false,
+                        abbreviation: 20
                     }) : undefined,
                     m('#result_left',
                         {style: {display: app.explored ? 'block' : 'none',
@@ -257,99 +236,85 @@ function rightpanel(mode) {
             side: 'right',
             label: 'Result Exploration',
             hover: true,
-            width: app.exploreRightPanelWidths[app.rightTabExplore],
-            contents: m(MenuTabbed, {
-                id: 'rightPanelMenuExplore',
-                currentTab: app.rightTabExplore,
-                callback: app.setRightTabExplore,
-                sections: sectionsExplore,
-                attrsAll: {style: {height: 'calc(100% - 39px)'}}
-            })
-            // m('#setx[style=display: none; margin-top: .5em]')
-        });
+            width: app.exploreRightPanelWidths[app.rightTabExplore]
+        }, m(MenuTabbed, {
+            id: 'rightPanelMenuExplore',
+            currentTab: app.rightTabExplore,
+            callback: app.setRightTabExplore,
+            sections: sectionsExplore,
+            attrsAll: {style: {height: 'calc(100% - 39px)'}}
+        }));
     }
 
     // mode == null (model mode)
 
     let sections = [
-        // {
-        //     value: 'Models',
-        //     display: app.IS_D3M_DOMAIN ? 'block' : 'none',
-        //     contents: righttab('models')
-        // },
-        {
-            value: 'Task Type',
-            idSuffix: 'Type',
-            contents: righttab('types', app.d3mTaskType, 'Task', 'taskType')
-        },
-        {
-            value: 'Subtype',
-            contents: righttab('subtypes', app.d3mTaskSubtype, 'Task Subtype', 'taskSubtype')
-        },
-        {
-            value: 'Metrics',
-            contents: righttab('metrics', app.d3mMetrics, 'Metric', 'metric')
-        },
-        {
-            value: 'Results',
-            display: !app.swandive || app.IS_D3M_DOMAIN ? 'block' : 'none',
-            idSuffix: 'Setx',
-            contents: [
-                m('#setxRight[style=display:block; float: right; width: 25%; height:100%; background-color: white]',
-                    app.pipelineTable ? m(Table, {
-                        id: 'pipelineTable',
-                        headers: app.pipelineHeader,
-                        data: app.pipelineTable,
-                        activeRow: app.selectedPipeline[app.currentMode],
-                        onclick: app.setSelectedPipeline,
-                        showUID: false
-                    }) : undefined),
-                m('#setxTop[style=display:block; float: left; width: 75%; height:10%; overflow: auto; background-color: white]',
-                    m("button.btn.btn-default.btn-xs#btnPredPlot[type='button']", {
-                        onclick: () => app.showPredPlot('btnPredPlot'),
-                        style: {float: "left", "margin-left": "2%"}
-                    }, "Prediction Summary"),
-                    m("button.btn.btn-default.btn-xs#btnGenPreds[type='button']", {
-                        onclick: () => app.showGenPreds('btnGenPreds'),
-                        style: {float: "left", "margin-left": "2%"}
-                    }, "Generate New Predictions")),
-                m('#setxLeftPlot[style=display:block; float: left; width: 75%; height:95%; overflow: auto; background-color: white]'),
-                m('#setxLeft[style=display:none; float: left; width: 75%; height:95%; overflow: auto; background-color: white]'),
-                m('#setxLeftGen[style=display:none; float: left; width: 75%; height:95%; overflow: auto; background-color: white]',
-                    m('#setxLeftTop[style=display:block; float: left; width: 100%; height:50%; overflow: auto; background-color: white]',
-                        m('#setxLeftTopLeft[style=display:block; float: left; width: 30%; height:100%; overflow: auto; background-color: white]'),
-                        m('#setxLeftTopRight[style=display:block; float: left; width: 70%; height:100%; overflow: auto; background-color: white]')),
-                    m('#setxLeftBottomLeft[style=display:block; float: left; width: 70%; height:50%; overflow: auto; background-color: white]'),
-                    m('#setxLeftBottomRightTop[style=display:block; float: left; width: 30%; height:10%; overflow: auto; background-color: white]',
-                        m(Button,
-                            {
-                                id: 'btnExecutePipe',
-                                classes: 'btn-default.ladda-button[data-spinner-color=#000000][data-style=zoom-in]',
-                                onclick: () => app.executepipeline('btnExecutePipe'),
-                                style: `display:inline; float: left; margin-right: 10px`,
-                                title: 'Execute pipeline.'
-                            },
-                            m('span.ladda-label[style=pointer-events: none]', 'Execute Generation'))),
-                    m('#setxLeftBottomRightBottom[style=display:block; float: left; width: 30%; height:40%; overflow: auto; background-color: white]'))
-            ]
-        }
+        // {value: 'Models',
+        //  display: app.IS_D3M_DOMAIN ? 'block' : 'none',
+        //  contents: righttab('models')},
+        {value: 'Task Type',
+         idSuffix: 'Type',
+         contents: righttab('types', app.d3mTaskType, 'Task', 'taskType')},
+        {value: 'Subtype',
+         contents: righttab('subtypes', app.d3mTaskSubtype, 'Task Subtype', 'taskSubtype')},
+        {value: 'Metrics',
+         contents: righttab('metrics', app.d3mMetrics, 'Metric', 'metric')},
+        {value: 'Results',
+         display: !app.swandive || app.IS_D3M_DOMAIN ? 'block' : 'none',
+         idSuffix: 'Setx',
+         contents: [
+             m('#setxRight[style=display:block; float: right; width: 25%; height:100%; background-color: white]',
+               app.pipelineTable ? m(Table, {
+                   id: 'pipelineTable',
+                   headers: app.pipelineHeader,
+                   data: app.pipelineTable,
+                   activeRow: app.selectedPipeline[app.currentMode],
+                   onclick: app.setSelectedPipeline,
+                   showUID: false,
+                   abbreviation: 20
+               }) : undefined),
+             m('#setxTop[style=display:block; float: left; width: 75%; height:10%; overflow: auto; background-color: white]',
+               m("button.btn.btn-default.btn-xs#btnPredPlot[type='button']", {
+                   onclick: () => app.showPredPlot('btnPredPlot'),
+                   style: {float: "left", "margin-left": "2%"}
+               }, "Prediction Summary"),
+               m("button.btn.btn-default.btn-xs#btnGenPreds[type='button']", {
+                   onclick: () => app.showGenPreds('btnGenPreds'),
+                   style: {float: "left", "margin-left": "2%"}
+               }, "Generate New Predictions")),
+             m('#setxLeftPlot[style=display:block; float: left; width: 75%; height:95%; overflow: auto; background-color: white]'),
+             m('#setxLeft[style=display:none; float: left; width: 75%; height:95%; overflow: auto; background-color: white]'),
+             m('#setxLeftGen[style=display:none; float: left; width: 75%; height:95%; overflow: auto; background-color: white]',
+               m('#setxLeftTop[style=display:block; float: left; width: 100%; height:50%; overflow: auto; background-color: white]',
+                 m('#setxLeftTopLeft[style=display:block; float: left; width: 30%; height:100%; overflow: auto; background-color: white]'),
+                 m('#setxLeftTopRight[style=display:block; float: left; width: 70%; height:100%; overflow: auto; background-color: white]')),
+               m('#setxLeftBottomLeft[style=display:block; float: left; width: 70%; height:50%; overflow: auto; background-color: white]'),
+               m('#setxLeftBottomRightTop[style=display:block; float: left; width: 30%; height:10%; overflow: auto; background-color: white]',
+                 m(Button,
+                   {id: 'btnExecutePipe',
+                    classes: 'btn-default.ladda-button[data-spinner-color=#000000][data-style=zoom-in]',
+                    onclick: () => app.executepipeline('btnExecutePipe'),
+                    style: `display:inline; float: left; margin-right: 10px`,
+                    title: 'Execute pipeline.'},
+                   m('span.ladda-label[style=pointer-events: none]', 'Execute Generation'))),
+               m('#setxLeftBottomRightBottom[style=display:block; float: left; width: 30%; height:40%; overflow: auto; background-color: white]'))
+         ]}
     ];
 
     return m(Panel, {
         side: 'right',
         label: 'Model Selection',
         hover: true,
-        width: app.modelRightPanelWidths[app.rightTab],
-        contents: m(MenuTabbed, {
-            id: 'rightpanelMenu',
-            currentTab: app.rightTab,
-            callback: app.setRightTab,
-            hoverBonus: 10,
-            selectWidth: 30,
-            sections: sections,
-            attrsAll: {style: {height: 'calc(100% - 39px)'}}
-        })
-    });
+        width: app.modelRightPanelWidths[app.rightTab]
+    }, m(MenuTabbed, {
+        id: 'rightpanelMenu',
+        currentTab: app.rightTab,
+        callback: app.setRightTab,
+        hoverBonus: 10,
+        selectWidth: 30,
+        sections: sections,
+        attrsAll: {style: {height: 'calc(100% - 39px)'}}
+    }));
 }
 
 
@@ -416,8 +381,8 @@ class Body {
             this.last_mode = mode;
         }
 
-        return m('main',
-            this.modal(),
+        return m('main', [
+            m(Modal),
             this.header(mode),
             this.footer(mode),
             m(`#main.left.carousel.slide.svg-leftpanel.svg-rightpanel[style=overflow: hidden]`,
@@ -444,13 +409,13 @@ class Body {
                     } else {
                         let dvs = app.nodes.filter(n => app.zparams.zdv.includes(n.name));
                         let nolink = app.zparams.zdv.concat(app.zparams.zgroup1).concat(app.zparams.zgroup2);
-                        let ivs = app.nodes.filter(n => !nolink.includes(n.name)); 
+                        let ivs = app.nodes.filter(n => !nolink.includes(n.name));
 
                         links = dvs.map(dv => ivs.map(iv => ({
                             left: true,
                             right: false,
                             target: iv,
-                            source: dv,
+                            source: dv
                         })));
                     }
                     app.restart([].concat(...links));
@@ -468,13 +433,12 @@ class Body {
                      ['gr1Button', 'zgroup1', 'Group 1'],
                      ['gr2Button', 'zgroup2', 'Group 2']]}),
               m(Subpanel, {title: "History"}),
-              //footer(),
               leftpanel(mode),
-              rightpanel(mode)));
+              rightpanel(mode))
+        ]);
     }
 
     header(mode) {
-
         let userlinks = username === 'no logged in user' ? [
             {title: "Log in", url: login_url},
             {title: "Sign up", url: signup_url}
@@ -486,178 +450,149 @@ class Body {
         let _navBtn = (id, left, right, onclick, args, min) => m(
             `button#${id}.btn.navbar-right`,
             {onclick: onclick,
-                style: {'margin-left': left + 'em',
-                    'margin-right': right + 'em',
-                    'min-width': min}},
+             style: {'margin-left': left + 'em',
+                     'margin-right': right + 'em',
+                     'min-width': min}},
             args);
-
         let navBtn = (id, left, right, onclick, args, min) => _navBtn(
             id + '.ladda-button[data-spinner-color=#000000][data-style=zoom-in]',
             left, right, onclick, args, min);
         let navBtnGroup = (id, onclick, args, min) => m(
             `button#${id}.btn.navbar-left`,
             {onclick: onclick,
-                style: {'min-width': min}},
+             style: {'min-width': min}},
             args);
         let navBtn1 = (id, onclick, args, title) => _navBtn(
             `${id}.btn-default[title=${title}]`, 2, 0, onclick, args);
         let transformation = (id, list) => m(
-            `ul#${id}`, {
-                style: {display: 'none', 'background-color': app.varColor},
-                onclick: function(evt) {
-                    // if interact is selected, show variable list again
-                    if ($(this).text() === 'interact(d,e)') {
-                        $('#tInput').val(tvar.concat('*'));
-                        selInteract = true;
-                        $(this).parent().fadeOut(100);
-                        $('#transSel').fadeIn(100);
-                        evt.stopPropagation();
-                        return;
-                    }
+            `ul#${id}`,
+            {style: {display: 'none', 'background-color': app.varColor},
+             onclick: function(evt) {
+                 let tInput = app.byId('tInput');
 
-                    let tvar = $('#tInput').val();
-                    let tfunc = $(this).text().replace("d", "_transvar0");
-                    let tcall = $(this).text().replace("d", tvar);
-                    $('#tInput').val(tcall);
-                    $(this).parent().fadeOut(100);
-                    evt.stopPropagation();
-                    transform(tvar, tfunc, typeTransform = false);
-                }
-            }, list.map(x => m('li', x)));
+                 // if interact is selected, show variable list again
+                 if (this.textContent === 'interact(d,e)') {
+                     tInput.value = tvar.concat('*');
+                     selInteract = true;
+                     fadeOut(this.parentNode, 100);
+                     fadeIn('#transSel', 100);
+                     evt.stopPropagation();
+                     return;
+                 }
+
+                 let tvar = tInput.value;
+                 let tfunc = this.textContent.replace("d", "_transvar0");
+                 let tcall = this.textContent.replace("d", tvar);
+                 tInput.value = tcall;
+                 fadeOut(this.parentNode, 100);
+                 evt.stopPropagation();
+                 transform(tvar, tfunc, typeTransform = false);
+             }},
+            list.map(x => m('li', x)));
 
         return m(Header, {
-            attrsInterface: {style: mode === 'explore' ? {'background-image': '-webkit-linear-gradient(top, #fff 0, rgb(227, 242, 254) 100%)'} : {}},
-            contents: m('#dataField.field[style=text-align: center]', [
-                m('h4#dataName[style=display: inline-block; margin-right:2em; margin-top: 7px]', {
-                    onclick: _ => this.cite = this.citeHidden = !this.citeHidden,
-                    onmouseout: _ => this.citeHidden || (this.cite = false),
-                    onmouseover: _ => this.cite = true
-                }, "Dataset Name"),
-                m('#cite.panel.panel-default', {
-                    style: `display: ${this.cite ? 'block' : 'none'}; position: absolute; right: 50%; width: 380px; text-align: left; z-index: 50`
-                }, m(".panel-body")),
-                m('span',
-                  m('.dropdown[style=float: right; padding-right: 1em]',
-                    m('#drop.button.btn[type=button][data-toggle=dropdown][aria-haspopup=true][aria-expanded=false]',
-                      [username, " ", glyph('triangle-bottom')]),
-                    m('ul.dropdown-menu[role=menu][aria-labelledby=drop]',
-                      userlinks.map(link => m('a[style=padding: 0.5em]', {href: link.url}, link.title, m('br'))))),
-                  navBtn('btnEstimate.btn-default', 2, 1, mode === 'explore' ? _ => {
-                      if (app.links.length === 0) {
-                          app.setModal('Please link pebbles first.', 'Warning', true, 'Ok', true);
-                          return;
-                      }
+            style: mode === 'explore' ? {'background-image': '-webkit-linear-gradient(top, #fff 0, rgb(227, 242, 254) 100%)'} : {}
+        }, [m('#dataField.field[style=text-align: center]', [
+            m('h4#dataName[style=display: inline-block; margin-right:2em; margin-top: 7px]',
+              {onclick: _ => this.cite = this.citeHidden = !this.citeHidden,
+               onmouseout: _ => this.citeHidden || (this.cite = false),
+               onmouseover: _ => this.cite = true},
+              'Dataset Name'),
+            m('#cite.panel.panel-default',
+              {style: `display: ${this.cite ? 'block' : 'none'}; position: absolute; right: 50%; width: 380px; text-align: left; z-index: 50`},
+              m('.panel-body')),
+            m('span',
+              m('.dropdown[style=float: right; padding-right: 1em]',
+                m('#drop.button.btn[type=button][data-toggle=dropdown][aria-haspopup=true][aria-expanded=false]',
+                  [username, " ", glyph('triangle-bottom')]),
+                m('ul.dropdown-menu[role=menu][aria-labelledby=drop]',
+                  userlinks.map(link => m('a[style=padding: 0.5em]', {href: link.url}, link.title, m('br'))))),
+              navBtn('btnEstimate.btn-default', 2, 1, mode === 'explore' ? _ => {
+                  if (app.links.length === 0) {
+                      setModal('Please link pebbles first.', 'Warning', true, 'Ok', true);
+                      return;
+                  }
 
-                      exp.explore();
-                      app.setRightTabExplore('Bivariate');
-                  } : app.estimate, m("span.ladda-label", mode === 'explore' ? 'Explore' : 'Solve This Problem'), '150px'),
-                  m('div.btn-group[role=group][aria-label="..."]', {style:{"float":"right", "margin-left": "2em"}},
-                    navBtnGroup('btnTA2.btn-default', _ => hopscotch.startTour(app.mytour, 0), ['Help Tour ', glyph('road')]),
-                    navBtnGroup('btnTA2.btn-default', _ => app.helpmaterials('video'), ['Video ', glyph('expand')]),
-                    navBtnGroup('btnTA2.btn-default', _ => app.helpmaterials('manual'), ['Manual ', glyph('book')])),
-                  navBtn1("btnReset", app.reset, glyph('repeat'), 'Reset'),
-                  navBtn1('btnEndSession', app.endsession, m("span.ladda-label", 'Mark Problem Finished'), 'Mark Problem Finished')),
-                m('#tInput', {
-                    style: {display: 'none'},
-                    onclick: _ => {
-                        if (byId('transSel').style.display !== 'none') { // if variable list is displayed when input is clicked...
-                            $('#transSel').fadeOut(100);
-                            return false;
-                        }
-                        if (byId('transList').style.display !== 'none') { // if function list is displayed when input is clicked...
-                            $('#transList').fadeOut(100);
-                            return false;
-                        }
-
-                        // highlight the text
-                        $(this).select();
-                        let pos = $('#tInput').offset();
-                        pos.top += $('#tInput').width();
-                        $('#transSel').fadeIn(100);
+                  exp.explore();
+                  app.setRightTabExplore('Bivariate');
+              } : app.estimate, m("span.ladda-label", mode === 'explore' ? 'Explore' : 'Solve This Problem'), '150px'),
+              m('div.btn-group[role=group][aria-label="..."]', {style:{"float":"right", "margin-left": "2em"}},
+                navBtnGroup('btnTA2.btn-default', _ => hopscotch.startTour(app.mytour, 0), ['Help Tour ', glyph('road')]),
+                navBtnGroup('btnTA2.btn-default', _ => app.helpmaterials('video'), ['Video ', glyph('expand')]),
+                navBtnGroup('btnTA2.btn-default', _ => app.helpmaterials('manual'), ['Manual ', glyph('book')])),
+              navBtn1("btnReset", app.reset, glyph('repeat'), 'Reset'),
+              navBtn1('btnEndSession', app.endsession, m("span.ladda-label", 'Mark Problem Finished'), 'Mark Problem Finished')),
+            m('#tInput', {
+                style: {display: 'none'},
+                onclick: _ => {
+                    let transSel = app.byId('transSel');
+                    // if variable list is displayed when input is clicked...
+                    if (transSel.style.display !== 'none') {
+                        fadeOut(transSel, 100);
                         return false;
-                    },
-                    keyup: evt => {
-                        let t = byId('transSel').style.display;
-                        let t1 = byId('transList').style.display;
-                        if (t !== 'none') {
-                            $('#transSel').fadeOut(100);
-                        } else if (t1 !== 'none') {
-                            $('#transList').fadeOut(100);
-                        }
-
-                        if (evt.keyCode == 13) { // keyup on Enter
-                            let t = transParse($('#tInput').val());
-                            if (!t) {
-                                return;
-                            }
-
-                            transform(t.slice(0, t.length - 1), t[t.length - 1], typeTransform = false);
-                        }
                     }
-                }),
-                m('#transformations.transformTool', {
-                    title: `Construct transformations of existing variables using valid R syntax.
-                              For example, assuming a variable named d, you can enter "log(d)" or "d^2".`
-                }, [
-                    transformation('transSel', ['a', 'b']),
-                    transformation('transList', app.transformList)
-                ])
-            ])
-        });
+
+                    let transList = app.byId('transList');
+                    // if function list is displayed when input is clicked...
+                    if (transList.style.display !== 'none') {
+                        fadeOut(transList, 100);
+                        return false;
+                    }
+
+                    // highlight the text
+                    //let pos = this.offset();
+                    //pos.top += this.offsetWidth();
+                    fadeIn(transSel, 100);
+                    return false;
+                },
+                keyup: evt => {
+                    let transSel = app.byId('transSel');
+                    let transList = app.byId('transList');
+                    if (transSel.style.display !== 'none') {
+                        fadeOut(transSel, 100);
+                    } else if (transList.style.display !== 'none') {
+                        fadeOut(transList, 100);
+                    }
+
+                    if (evt.keyCode == 13) { // keyup on Enter
+                        let t = transParse(app.byId('tInput').value);
+                        if (!t) {
+                            return;
+                        }
+
+                        transform(t.slice(0, t.length - 1), t[t.length - 1], typeTransform = false);
+                    }
+                }
+            }),
+            m('#transformations.transformTool',
+              {title: 'Construct transformations of existing variables using valid R syntax. For example, assuming a variable named d, you can enter "log(d)" or "d^2".'},
+              [transformation('transSel', ['a', 'b']),
+               transformation('transList', app.transformList)])
+        ])]);
     }
 
     footer(mode) {
-        return m(Footer, {
-            contents: [
-                m(ButtonRadio, {
-                        id: 'modeButtonBar',
-                        attrsAll: {style: {width: '200px', margin: '0 .2em'}, class: 'navbar-left btn-sm'},
-                        onclick: app.set_mode,
-                        activeSection: mode === undefined ? 'model' : mode,
-                        sections: [{value: 'Model'}, {value: 'Explore'}] // {value: 'Results', id: 'btnResultsMode'}] VJD: commenting out the results mode button since we don't have this yet
-                    }),
-                m("a#logID[href=somelink][target=_blank]", "Replication"),
-                m("span[style=color:#337ab7]", " | "),
-                // dev links...
-                m("a[href='/dev-raven-links'][target=_blank]", "raven-links"),
-                //m("a[style=margin-right: 0.5em]",
-                //  {onclick: app.record_user_metadata},
-                //  "record-metadata"),
-                m("span[style=color:#337ab7]", " | "),
-                m("span[style=color:#337ab7]", "TA2: " + TA2_SERVER),
-                m("span[style=color:#337ab7]", " | "),
-                m("span[style=color:#337ab7]", "TA3TA2 api: " + TA3TA2_API_VERSION)
-            ]
-        });
-    }
-
-    modal() {
-        return m(".modal.fade[id='myModal'][role='dialog']", [
-            m(".modal-dialog",
-              m(".modal-content", [
-                  m(".modal-header",
-                    //  m("button.close[data-dismiss='modal'][type='button']",
-                    //  m.trust("&times;")),
-                    m("h4.modal-title", app.modalHeader)),
-                  m(".modal-body",
-                    m("p", app.modalText)),
-                  m(".modal-footer",
-                    // m("button.btn.btn-default[data-dismiss='modal'][type='button']",{
-                    // onclick: () => app.reset}, app.modalButton))
-                    m("button.btn.btn-default[type='button']", {
-                        style: {display: app.modalBtnDisplay, float:'right'},
-                        onclick: _ => {
-                            if (app.modalClose) {
-                                app.modalClose = false;
-                                $('#myModal').modal('hide');
-                                return;
-                            } else {
-                                eval(app.modalFunc);
-                            }
-                            location.reload();
-                        }
-                    }, app.modalButton))
-              ]))
+        return m(Footer, [
+            m(ButtonRadio,
+              {id: 'modeButtonBar',
+               attrsAll: {
+                  style: {'padding-top':'2px', width: '200px'}, class: 'navbar-left btn-sm'},
+               onclick: app.set_mode,
+               activeSection: mode || 'model',
+               // {value: 'Results', id: 'btnResultsMode'}] VJD: commenting out the results mode button since we don't have this yet
+               sections: [{value: 'Model'}, {value: 'Explore'}]}),
+            m("a#logID[href=somelink][target=_blank]", "Replication"),
+            m("span[style=color:#337ab7]", " | "),
+            // dev links...
+            m("a[href='/dev-raven-links'][target=_blank]", "raven-links"),
+            m("span[style=color:#337ab7]", " | "),
+            m("span[style=color:#337ab7]", `TA2: ${TA2_SERVER}`),
+            m("span[style=color:#337ab7]", " | "),
+            m("span[style=color:#337ab7]", `TA3TA2 api: ${TA3TA2_API_VERSION}`),
+            m('button.btn.btn-default', {
+                onclick: _ => window.open('#!/data', 'data'),
+                style: 'float: right; margin: 0.5em; margin-top: 2px'
+            }, 'Peek')
         ]);
     }
 }
@@ -674,5 +609,6 @@ m.route(document.body, '/model', {
         render() {
             return m(Body, {mode: 'results'});
         }
-    }
+    },
+    '/data': Peek
 });

@@ -1,3 +1,5 @@
+import {elem} from './utils';
+
 let d3Color = '#1f77b4'; // d3's default blue
 export let selVarColor = '#fa8072'; // d3.rgb("salmon");
 
@@ -16,21 +18,19 @@ export function density(node, div, priv) {
 
     var tempWidth = d3.select(div).style("width");
     var width = tempWidth.substring(0, (tempWidth.length - 2));
-    
     let tw = document.getElementById('main').offsetWidth;
-    
     var tempHeight = d3.select(div).style("height");
     var height = tempHeight.substring(0, (tempHeight.length - 2));
     var margin = {
-        top: 20,
+        top: 20,//20,
         right: 20,
-        bottom: 53,
+        bottom: 53,//53,
         left: 10
     };
 
     // Need to fix automatic width and height settings for leftpanel (#tabSubset, #tabSummary)
     if (div == "#tabSummary") {
-        [width, height] = [242, 250];
+        [width, height] = [242,150]; //[242, 250];             // These should not be hard coded
         // width = 0.7 * (width - margin.left - margin.right),
         // height = 0.3 * (height - margin.top - margin.bottom);
     } else if (div == "#setxLeft" || div == "#setxLeftTopRight") {
@@ -40,6 +40,7 @@ export function density(node, div, priv) {
         width = 0.35 * (width - margin.left - margin.right),
         height = 0.25 * (height - margin.top - margin.bottom);
     };
+
 
     var x = d3.scale.linear()
         .domain([d3.min(xVals), d3.max(xVals)])
@@ -411,7 +412,7 @@ export function bars(node, div, priv) {
 
     // Need to fix automatic width and height settings for leftpanel (#tabSubset, #tabSummary)
     if (mydiv == "#tabSummary") {
-        [width, height] = [242, 250];
+        [width, height] = [242,150]; //[242, 250];       // These should not be hard coded
         // width = 0.7 * (width - margin.left - margin.right);
         // height = 0.3 * (height - margin.top - margin.bottom);
     } else if (mydiv == "#setxLeft" || mydiv=="#setxLeftTopRight") {
@@ -1017,7 +1018,7 @@ export function barsSubset(node) {
             var selectMe = this;
             var selectName = this.getAttribute("name");
             if (this.parentNode.getAttribute("name") == myname.concat("subsetno")) {
-                selectMe = $('[name="' + myname.concat("subsetyes") + '"]').children('[name="' + selectName + '"]')[0];
+                selectMe = elem(`[name="${myname}subsetyes"] > [name="${selectName}"]`);
             }
             d3.select(selectMe)
                 .style("fill", function(d, i) {

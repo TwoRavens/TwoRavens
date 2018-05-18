@@ -2,13 +2,15 @@ import m from 'mithril';
 
 import * as app from './app';
 import * as plots from './plots';
+import {elem, fadeIn, fadeOut, fadeTo, remove, setAttrs, trigger} from './utils';
 
 const $private = false;
 
 function heatmap(x_Axis_name, y_Axis_name) {
-    document.getElementById('heatchart').style.display = "block";
+    let heatchart = elem('#heatchart');
+    heatchart.style.display = "block";
     d3.select("#heatchart").select("svg").remove();
-    $('#heatchart').html("");
+    heatchart.innerHTML = '';
 
     var margin_heat = {top: 30, right: 10, bottom: 60, left: 60},
         width_heat = 500 - margin_heat.left - margin_heat.right,
@@ -307,8 +309,10 @@ function crossTabPlots(PlotNameA, PlotNameB, json_obj) {
     bar_n = 0;
     plotnamea = PlotNameA;
     plotnameb = PlotNameB;
-    $("#input1").attr("placeholder", PlotNameA).blur();
-    $("#input2").attr("placeholder", PlotNameB).blur();
+    trigger('#input1', 'blur');
+    trigger('#input2', 'blur');
+    setAttrs('#input1', {placeholder: PlotNameA});
+    setAttrs('#input2', {placeholder: PlotNameB});
     let [plot_a, plot_b] = ['#plotA', '#plotB'];
 
     var margin_cross = {top: 30, right: 35, bottom: 40, left: 40},
@@ -362,34 +366,35 @@ function crossTabPlots(PlotNameA, PlotNameB, json_obj) {
 
     let plotA_size, plotB_size, plotA_sizem, plotB_sizem;
     let varn1, varn2, varsize1, varsize2;
-    $("#Equidistance1").click(function(){
+    let setStatus = (id, plot, n, size) => elem(id).innerHTML = `${plot} : ${n} distribution with ${size} divisions`;
+    elem("#Equidistance1").onclick = function() {
         varn1 = "equidistance";
         plotA_size = parseInt(d3.select("#input1")[0][0].value);
         varsize1 = plotA_size;
         equidistance(PlotNameA, plotA_size);
-        document.getElementById("plotA_status").innerHTML = `${PlotNameA} : ${varn1} distribution with ${varsize1} divisions`;
-    });
-    $("#Equimass1").click(function(){
+        setStatus("#plotA_status", PlotNameA, varn1, varsize1);
+    };
+    elem("#Equimass1").onclick = function() {
+        varn1 = "equimass";
         plotA_sizem = parseInt(d3.select("#input1")[0][0].value);
         varsize1 = plotA_sizem;
         equimass(PlotNameA, plotA_sizem);
-        varn1 = "equimass";
-        document.getElementById("plotA_status").innerHTML = `${PlotNameA} : ${varn1} distribution with ${varsize1} divisions`;
-    });
-    $("#Equidistance2").click(function(){
+        setStatus("#plotA_status", PlotNameA, varn1, varsize1);
+    };
+    elem("#Equidistance2").onclick = function() {
         varn2 = "equidistance";
         plotB_size = parseInt(d3.select("#input2")[0][0].value);
         equidistance(PlotNameB, plotB_size);
         varsize2 = plotB_size;
-        document.getElementById("plotB_status").innerHTML = `${PlotNameB} : ${varn2} distribution with ${varsize2} divisions`;
-    });
-    $("#Equimass2").click(function(){
+        setStatus("#plotB_status", PlotNameB, varn2, varsize2);
+    };
+    elem("#Equimass2").onclick = function() {
         varn2 = "equimass";
         plotB_sizem = parseInt(d3.select("#input2")[0][0].value);
         equimass(PlotNameB, plotB_sizem);
         varsize2 = plotB_sizem;
-        document.getElementById("plotB_status").innerHTML = `${PlotNameB} : ${varn2} distribution with ${varsize2} divisions`;
-    });
+        setStatus("#plotB_status", PlotNameB, varn2, varsize2);
+    };
 
     // this is the function to add  the density plot if any
     function density_cross(density_env,a,method_name) {
@@ -731,11 +736,11 @@ function crossTabPlots(PlotNameA, PlotNameB, json_obj) {
         for (var i = 0; i < plot_nodes.length; i++) {
             if (plot_nodes[i].name === A) {
                 if (plot_nodes[i].plottype === "continuous") {
-                    $("#plotsvg_id").remove();
+                    remove("#plotsvg_id");
                     density_cross(plot_nodes[i],a,method_name);
                 }
                 else if (plot_nodes[i].plottype === "bar") {
-                    $("#plotsvg1_id").remove();
+                    remove("#plotsvg1_id");
                     bar_cross(plot_nodes[i],a,method_name);
                 }
             } else {
@@ -753,11 +758,11 @@ function crossTabPlots(PlotNameA, PlotNameB, json_obj) {
         for (var i = 0; i < plot_nodes.length; i++) {
             if (plot_nodes[i].name === A) {
                 if (plot_nodes[i].plottype === "continuous") {
-                    $("#plotsvg_id").remove();
+                    remove("#plotsvg_id");
                     density_cross(plot_nodes[i],a,method_name);
                 }
                 else if (plot_nodes[i].plottype === "bar") {
-                    $("#plotsvg1_id").remove();
+                    remove("#plotsvg1_id");
                     bar_cross(plot_nodes[i],a,method_name);
                 }
             } else {
@@ -884,7 +889,7 @@ function crossTabPlots(PlotNameA, PlotNameB, json_obj) {
 export function linechart(x_Axis_name, y_Axis_name) {
     document.getElementById('linechart').style.display = "block";
     d3.select("#lineChart").select("svg").remove();
-    $('#linechart').html("");
+    elem('#linechart').innerHTML = '';
     let padding = 10;
     var w_linechart = 480;
     var h_linechart = 300;
@@ -975,7 +980,7 @@ export function linechart(x_Axis_name, y_Axis_name) {
 
     let temp = d3.select("#main.left").style("width");
     let width = temp.substring(0, (temp.length - 2));
-    let height = $(window).height() - 120;
+    let height = window.innerHeight - 120;
     svg.append("text")
         .attr("text-anchor", "middle")  // this makes it easy to centre the text as the transform is applied to the anchor
         .attr("transform", "translate(" + padding  + "," + (height / 3) + ")rotate(-90)")  // text is drawn off the screen top left, move down and out and rotate
@@ -1043,30 +1048,33 @@ function viz(m, json_vizexplore, model_name_set) {
 
     bivariatePlot(x_axis, y_axis, get_data[0], get_data[1]);
 
-    $('#scatterplot_img').on('click', function(){
-        $("#scatterplot_img").fadeOut("fast").fadeIn().fadeTo("fast",1.0);
-    });
-    $('#heatmap_img').on('click', function(){
-        $("#heatmap_img").fadeOut("fast").fadeIn().fadeTo("fast",1.0);
-    });
-    $('#linechart_img').on('click', function(){
-        $("#linechart_img").fadeOut("fast").fadeIn().fadeTo("fast",1.0);
-    });
-    $('#scatterplot_img').click(function() {
-        document.getElementById('heatchart').style.display = "none";
-        document.getElementById('linechart').style.display = "none";
+    let heatchart = elem('#heatchart');
+    let $linechart = elem('#linechart');
+    let scatterplot = elem('#scatterplot');
+    elem('#scatterplot_img').onclick = function() {
+        fadeOut(this, "fast");
+        fadeIn(this);
+        fadeTo(this, "fast", 1.0);
+        heatchart.style.display = "none";
+        $linechart.style.display = "none";
         bivariatePlot(x_axis, y_axis, get_data[0], get_data[1]);
-    });
-    $('#heatmap_img').click(function() {
-        document.getElementById('scatterplot').style.display = "none";
-        document.getElementById('linechart').style.display = "none";
+    };
+    elem('#heatmap_img').onclick = function() {
+        fadeOut(this, "fast");
+        fadeIn(this);
+        fadeTo(this, "fast", 1.0);
+        $linechart.style.display = "none";
+        scatterplot.style.display = "none";
         heatmap(get_data[0], get_data[1]);
-    });
-    $('#linechart_img').click(function() {
-        document.getElementById('heatchart').style.display = "none";
-        document.getElementById('scatterplot').style.display = "none";
+    };
+    elem('#linechart_img').onclick = function() {
+        fadeOut(this, "fast");
+        fadeIn(this);
+        fadeTo(this, "fast", 1.0);
+        heatchart.style.display = "none";
+        scatterplot.style.display = "none";
         linechart(get_data[0],get_data[1]);
-    });
+    };
 
     var empty=[];
     crossTabPlots(get_data[0], get_data[1],empty);
@@ -1218,7 +1226,7 @@ function viz(m, json_vizexplore, model_name_set) {
 
     let zbreaks = [];
     let zbreaks_tabular = [];
-    $('#SelectionData1').click(function() {
+    elem('#SelectionData1').click(function() {
         d3.select("#tabular_2").html("");
         removeData('zcrosstab');
         app.zparams.zcrosstab.push(crosstabs);

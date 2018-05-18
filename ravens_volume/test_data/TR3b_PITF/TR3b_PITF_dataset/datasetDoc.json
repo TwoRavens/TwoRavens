@@ -1,0 +1,98 @@
+{
+  "about": {
+    "datasetID": "TR3b_PITF",
+    "datasetName": "Forecasting_Political_Instability",
+    "description": "Replication data for Goldstone et al. A Global Model for Forecasting Political Instability, with Fearon and Laitin comparison.",
+    "citation": "",
+    "datasetSchemaVersion": "3.0"
+  },
+  "dataResources": [
+    {
+      "resID": "0",
+      "resPath": "tables/learningData.csv",
+      "resType": "table",
+      "resFormat": ["text/csv"],
+      "isCollection": false,
+      "columns": [
+        {
+          "colIndex": 0,
+          "colName": "d3mIndex",
+          "colType": "categorical",
+          "role": ["index"]
+        },
+        {
+          "colIndex": 1,
+          "colName": "sftpcons",
+          "colType": "categorical",
+          "role": ["suggestedTarget"]
+        },
+        {
+          "colIndex": 2,
+          "colName": "log_gdpc",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 3,
+          "colName": "logtpop",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 4,
+          "colName": "logmtn",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 5,
+          "colName": "feanctig",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 6,
+          "colName": "floil",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 7,
+          "colName": "sftpdur2",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 8,
+          "colName": "ethherf",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 9,
+          "colName": "relhrel",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 10,
+          "colName": "anocracy",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 11,
+          "colName": "democracy",
+          "colType": "categorical",
+          "role": ["attribute"]
+        },
+        {
+          "colIndex": 12,
+          "colName": "stratidc",
+          "colType": "categorical",
+          "role": ["attribute"]
+        }
+      ]
+    }
+  ]
+}

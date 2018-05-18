@@ -1,9 +1,13 @@
 import hopscotch from 'hopscotch';
 import m from 'mithril';
-import {bars, barsNode, barsSubset, density, densityNode, selVarColor} from './plots.js';
+
 import {heightHeader} from "../common/app/common";
-import {searchIndex} from "./views/Search";
 import * as common from "../common/app/common";
+import {setModal} from '../common/app/views/Modal';
+
+import {bars, barsNode, barsSubset, density, densityNode, selVarColor} from './plots.js';
+import {elem, fadeOut} from './utils';
+import {searchIndex} from "./views/Search";
 
 // hostname default - the app will use it to obtain the variable metadata
 // (ddi) and pre-processed data info if the file id is supplied as an
@@ -22,6 +26,79 @@ import * as common from "../common/app/common";
 // NOTE: global variables are now set in the index.html file.
 //    Developers, see /template/index.html
 //-------------------------------------------------
+
+export let marginTopCarousel = 0;
+export let marginLeftCarousel = 0;
+
+window.onresize = () => {
+    if (m.route.get() === '/data') {
+        return;
+    }
+
+    let carousel = elem('#innercarousel');
+    let container = elem('#m0');
+    let whitespace = elem('#whitespace0');
+
+    marginTopCarousel = (carousel.offsetHeight - whitespace.getAttribute("height") - 16) / 2;
+    marginLeftCarousel = (carousel.offsetWidth - whitespace.getAttribute("width")) / 2;
+
+    container.style.marginTop = marginTopCarousel + 'px';
+    container.style.marginLeft = marginLeftCarousel + 'px';
+    container.style.height = `calc(100% + ${Math.abs(marginTopCarousel)}px)`;
+};
+
+let peekBatchSize = 100;
+let peekSkip = 0;
+let peekData = [];
+
+let peekAllDataReceived = false;
+let peekIsGetting = false;
+
+function onStorageEvent(e) {
+    if (e.key !== 'peekMore' || peekIsGetting) return;
+
+    if (localStorage.getItem('peekMore') === 'true' && !peekAllDataReceived) {
+        localStorage.setItem('peekMore', 'false');
+        peekIsGetting = true;
+        updatePeek();
+    }
+}
+window.addEventListener('storage', onStorageEvent);
+
+function updatePeek() {
+    m.request('rook-custom/rook-files/26_radon_seed/data/trainData.tsv', {
+        deserialize: x => x.split('\n').map(y => y.split('\t'))
+    }).then(data => {
+        // simulate only loading some of the data... by just deleting all the other data
+        let headers = data[0].map(x => x.replace(/"/g, ''));
+        let newData = data.slice(peekSkip + 1, peekSkip + 1 + peekBatchSize);
+
+        // stop blocking new requests
+        peekIsGetting = false;
+
+        // start blocking new requests until peekReset() is called
+        if (newData.length === 0) peekAllDataReceived = true;
+
+        peekData = peekData.concat(newData);
+        peekSkip += newData.length;
+
+        localStorage.setItem('peekTableHeaders', JSON.stringify(headers));
+        localStorage.setItem('peekTableData', JSON.stringify(peekData));
+    });
+}
+
+let resetPeek = () => {
+    peekSkip = 0;
+    peekData = [];
+
+    peekAllDataReceived = false;
+    peekIsGetting = false;
+
+    // provoke a redraw from the peek menu
+    localStorage.removeItem('peekTableData');
+};
+
+
 
 export let task1_finished = false;
 export let task2_finished = false;
@@ -98,34 +175,34 @@ export let exploreRightPanelWidths = {
     'Bivariate': '75%'
 };
 
-export let setRightTab = (tab) => { rightTab = tab; updateRightPanelWidth() }
-export let setRightTabExplore = (tab) => { rightTabExplore = tab; updateRightPanelWidth() }
+export let setRightTab = (tab) => { rightTab = tab; updateRightPanelWidth() };
+export let setRightTabExplore = (tab) => { rightTabExplore = tab; updateRightPanelWidth() };
 
 // panelWidth is meant to be read only
 export let panelWidth = {
     'left': '0',
     'right': '0'
-}
+};
 
 let updateRightPanelWidth = () => {
     if (common.panelOpen['right']) {
         let tempWidth = {
             'model': modelRightPanelWidths[rightTab],
             'explore': exploreRightPanelWidths[rightTabExplore]
-        }[currentMode]
+        }[currentMode];
 
-        panelWidth['right'] = `calc(${common.panelMargin * 2}px + ${tempWidth})`
+        panelWidth['right'] = `calc(${common.panelMargin * 2}px + ${tempWidth})`;
     }
-    else panelWidth['right'] = `calc(${common.panelMargin * 2}px + 16px)`
-}
+    else panelWidth['right'] = `calc(${common.panelMargin * 2}px + 16px)`;
+};
 let updateLeftPanelWidth = () => {
     if (common.panelOpen['left'])
-        panelWidth['left'] = `calc(${common.panelMargin * 2}px + ${modelLeftPanelWidths[leftTab]})`
-    else panelWidth['left'] = `calc(${common.panelMargin * 2}px + 16px)`
-}
+        panelWidth['left'] = `calc(${common.panelMargin * 2}px + ${modelLeftPanelWidths[leftTab]})`;
+    else panelWidth['left'] = `calc(${common.panelMargin * 2}px + 16px)`;
+};
 
-updateRightPanelWidth()
-updateLeftPanelWidth()
+updateRightPanelWidth();
+updateLeftPanelWidth();
 
 common.setPanelCallback('right', updateRightPanelWidth);
 common.setPanelCallback('left', updateLeftPanelWidth);
@@ -206,15 +283,6 @@ let rightClickLast = false;
 let selInteract = false;
 export let callHistory = []; // transform and subset calls
 let mytarget = '';
-
-// things to customize modal window from app.js
-export let modalText = "Default modal text";
-export let modalHeader = "Default modal header";
-export let modalButton = "Close";
-export let modalVis = false;
-export let modalClose = false
-export let modalBtnDisplay = 'block';
-export let modalFunc = function() {return};
 
 let configurations = {};
 let datadocument = {};
@@ -301,7 +369,7 @@ export let setD3mProblemDescription = (key, value) => {
             D3M_SVC_URL + "/SetProblemDoc",
             {replaceProblemSchemaField: {[key]: lookup[d3mProblemDescription[key]][1]}, context: apiSession(zparams.zsessionid)});
     }
-    else hopscotch.startTour(lockTour)
+    else hopscotch.startTour(lockTour);
 }
 
 let svg, div, selectLadda;
@@ -331,6 +399,12 @@ let selectedPebble;
 export let byId = id => document.getElementById(id);
 // export let byId = id => {console.log(id); return document.getElementById(id);}
 
+function trigger(id, event) {
+    let evt = document.createEvent('HTMLEvents');
+    evt.initEvent(event, true, false);
+    byId(id).dispatchEvent(evt);
+}
+
 /**
    page reload linked to btnReset
 */
@@ -344,67 +418,67 @@ export let restart;
 let dataurl = '';
 
 export let step = (target, placement, title, content) => ({
-            target,
-            placement,
-            title,
-            content,
-            showCTAButton: true,
-            ctaLabel: 'Disable these messages',
-            onCTA: () => {
-                localStorage.setItem('tutorial_mode', 'false');
-                hopscotch.endTour(true);
-            },
-        });
+    target,
+    placement,
+    title,
+    content,
+    showCTAButton: true,
+    ctaLabel: 'Disable these messages',
+    onCTA: () => {
+        localStorage.setItem('tutorial_mode', 'false');
+        hopscotch.endTour(true);
+    }
+});
 
 export let mytour = {
-            id: "dataset_launch",
-            i18n: {doneBtn:'Ok'},
-            showCloseButton: true,
-            scrollDuration: 300,
-            steps: [
-                step("dataName", "bottom", "Welcome to TwoRavens Solver",
-                     `<p>This tool can guide you to solve an empirical problem in the dataset above.</p>
+    id: "dataset_launch",
+    i18n: {doneBtn:'Ok'},
+    showCloseButton: true,
+    scrollDuration: 300,
+    steps: [
+        step("dataName", "bottom", "Welcome to TwoRavens Solver",
+             `<p>This tool can guide you to solve an empirical problem in the dataset above.</p>
                       <p>These messages will teach you the steps to take to find and submit a solution.</p>`),
-                step("btnReset", "bottom", "Restart Any Problem Here",
-                     '<p>You can always start a problem over by using this reset button.</p>'),
-                step("btnDiscovery", "right", "Start Task 1",
-                     `<p>This Problem Discovery button allows you to start Task 1 - Problem Discovery.</p>
+        step("btnReset", "bottom", "Restart Any Problem Here",
+             '<p>You can always start a problem over by using this reset button.</p>'),
+        step("btnDiscovery", "right", "Start Task 1",
+             `<p>This Problem Discovery button allows you to start Task 1 - Problem Discovery.</p>
                      <p>Generally, as a tip, the Green button is the next button you need to press to move the current task forward.</p>
                      <p>Click this button to see a list of problems that have been discovered in the dataset.</p>
                      <p>You can mark which ones you agree may be interesting, and then submit the table as an answer.</p>`),
-                //step("btnSelect", "right", "Complete Task 1",
-                //     `<p>This submission button marks Task 1 - Problem Discovery, as complete.</p>
-                //     <p>Click this button to save the check marked problems in the table below as potentially interesting or relevant.</p>
-                //     <p>Generally, as a tip, the Green button is the next button you need to press to move the current task forward.</p>`),
-                step("btnEstimate", "left", "Solve Task 2",
-                     `<p>This generally is the important step to follow for Task 2 - Build a Model.</p>
+        //step("btnSelect", "right", "Complete Task 1",
+        //     `<p>This submission button marks Task 1 - Problem Discovery, as complete.</p>
+        //     <p>Click this button to save the check marked problems in the table below as potentially interesting or relevant.</p>
+        //     <p>Generally, as a tip, the Green button is the next button you need to press to move the current task forward.</p>`),
+        step("btnEstimate", "left", "Solve Task 2",
+             `<p>This generally is the important step to follow for Task 2 - Build a Model.</p>
                       <p>Generally, as a tip, the Green button is the next button you need to press to move the current task forward, and this button will be Green when Task 1 is completed and Task 2 started.</p>
                       <p>Click this Solve button to tell the tool to find a solution to the problem, using the variables presented in the center panel.</p>`),
-                step(mytarget + 'biggroup', "left", "Target Variable",
-                     `This is the variable, ${mytarget}, we are trying to predict.
+        step(mytarget + 'biggroup', "left", "Target Variable",
+             `This is the variable, ${mytarget}, we are trying to predict.
                       This center panel graphically represents the problem currently being attempted.`),
-                step("gr1hull", "right", "Explanation Set", "This set of variables can potentially predict the target."),
-                step("displacement", "right", "Variable List",
-                     `<p>Click on any variable name here if you wish to remove it from the problem solution.</p>
+        step("gr1hull", "right", "Explanation Set", "This set of variables can potentially predict the target."),
+        step("displacement", "right", "Variable List",
+             `<p>Click on any variable name here if you wish to remove it from the problem solution.</p>
                       <p>You likely do not need to adjust the problem representation in the center panel.</p>`),
-                step("btnEndSession", "bottom", "Finish Problem",
-                     "If the solution reported back seems acceptable, then finish this problem by clicking this End Session button."),
-            ]
-        };
+        step("btnEndSession", "bottom", "Finish Problem",
+             "If the solution reported back seems acceptable, then finish this problem by clicking this End Session button."),
+    ]
+};
 
 
 export let mytour3 = {
-            id: "dataset_launch",
-            i18n: {doneBtn:'Ok'},
-            showCloseButton: true,
-            scrollDuration: 300,
-            steps: [
-                step("btnSelect", "right", "Complete Task 1",
-                     `<p>This submission button marks Task 1 - Problem Discovery, as complete.</p>
+    id: "dataset_launch",
+    i18n: {doneBtn:'Ok'},
+    showCloseButton: true,
+    scrollDuration: 300,
+    steps: [
+        step("btnSelect", "right", "Complete Task 1",
+             `<p>This submission button marks Task 1 - Problem Discovery, as complete.</p>
                      <p>Click this button to save the check marked problems in the table below as potentially interesting or relevant.</p>
                      <p>Generally, as a tip, the Green button is the next button you need to press to move the current task forward.</p>`),
-            ]
-        };
+    ]
+};
 
 // appears when a user attempts to edit when the toggle is set
 export let lockTour = {
@@ -458,6 +532,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     d3mDS = "/config/d3m-config/get-dataset-schema/json";
     console.log("Configurations: ", configurations);
     d3mPreprocess = pURL = `rook-custom/rook-files/${d3mDataName}/preprocess/preprocess.json`;
+    console.log(d3mPreprocess);
 
     // 3. Read the problem schema and set 'd3mProblemDescription'
     // ...and make a call to start the session with TA2. if we get this far, data are guaranteed to exist for the frontend
@@ -540,15 +615,15 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     let datadocument_columns;
     let col_idx;
     for (col_idx = 0; col_idx < datadocument.dataResources.length; col_idx++) {
-        if(datadocument.dataResources[col_idx].columns){
-          datadocument_columns = datadocument.dataResources[col_idx].columns
-          console.log('columns found in datadocument.dataResources[' + col_idx + '].columns');
-          break
+        if(datadocument.dataResources[col_idx].columns) {
+            datadocument_columns = datadocument.dataResources[col_idx].columns;
+            console.log('columns found in datadocument.dataResources[' + col_idx + '].columns');
+            break
         }
     }
     if (typeof datadocument_columns === "undefined") {
-      console.log('D3M WARNING: datadocument.dataResources[x].columns is undefined.');
-      swandive = true;
+        console.log('D3M WARNING: datadocument.dataResources[x].columns is undefined.');
+        swandive = true;
     }
 
     if (IS_D3M_DOMAIN) {
@@ -564,11 +639,11 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         /*
         // clean citation
         zparams.zdatacite = cite
-            .replace(/\&/g, "and")
-            .replace(/\;/g, ",")
-            .replace(/\%/g, "-");
+        .replace(/\&/g, "and")
+        .replace(/\;/g, ",")
+        .replace(/\%/g, "-");
         // fill in citation in header
-        $('#cite div.panel-body').text(zparams.zdatacite);
+        elem('#cite div.panel-body').textNode = zparams.zdatacite;
         */
 
     } else {
@@ -582,23 +657,24 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
             .replace(/\;/g, ",")
             .replace(/\%/g, "-");
         // fill in citation in header
-        $('#cite div.panel-body').text(zparams.zdatacite);
+        byId('cite').children[0].textContent = zparams.zdatacite;
     }
     // drop file extension
     let dataname = IS_D3M_DOMAIN ? zparams.zdata : zparams.zdata.replace(/\.(.*)/, '');
     d3.select("#dataName").html(dataname);
     // put dataset name, from meta-data, into page title
     d3.select("title").html("TwoRavens " + dataname);
+    localStorage.setItem('peekHeader', "TwoRavens " + dataname);
 
     // if swandive, we have to set valueKey here so that left panel can populate.
     if (swandive) {
-        alert('Exceptional data detected.  Please check the logs for "D3M WARNING"')
-    //    let mydataRes = datadocument.dataResources;
-      //  for (let i = 0; i < mydataRes.length; i++) {
-     //       valueKey.push(mydataRes[i].resFormat[0]);
-      //  }
+        alert('Exceptional data detected.  Please check the logs for "D3M WARNING"');
+        //    let mydataRes = datadocument.dataResources;
+        //  for (let i = 0; i < mydataRes.length; i++) {
+        //       valueKey.push(mydataRes[i].resFormat[0]);
+        //  }
         // end session if neither trainData nor trainTargets?
-       // valueKey.length === 0 && alert("no trainData or trainTargest in data description file. valueKey length is 0");
+        // valueKey.length === 0 && alert("no trainData or trainTargest in data description file. valueKey length is 0");
         // perhaps allow users to unlock and select things?
         byId('btnLock').classList.add('noshow');
         byId('btnForce').classList.add('noshow');
@@ -630,8 +706,8 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     if (res) {
       if (res.responseInfo.status.code != "OK"){
         const user_err_msg = "Failed to StartSession with TA2! status code: " + res.responseInfo.status.code;
-        setModal(user_err_msg,"Error Connecting to TA2", true, "Reset", false, "location.reload()");
-      //  end_ta3_search(false, user_err_msg);
+        setModal(user_err_msg, "Error Connecting to TA2", true, "Reset", false, location.reload);
+          //  end_ta3_search(false, user_err_msg);
         return;
       } else {
             zparams.zsessionid = res.context.sessionId;
@@ -740,8 +816,8 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         disco = discovery(res);
 
         // Kick off discovery button as green for user guidance
-        $("#btnDiscovery").removeClass("btn-default");
-        $("#btnDiscovery").addClass("btn-success");      // Would be better to attach this as a class at creation, but don't see where it is created
+        byId("btnDiscovery").classList.remove("btn-default");
+        byId("btnDiscovery").classList.add("btn-success"); // Would be better to attach this as a class at creation, but don't see where it is created
 
         console.log(disco);
     }
@@ -777,7 +853,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
 
     let tempWidth = d3.select('#main.left').style('width');
     width = tempWidth.substring(0, tempWidth.length - 2);
-    height = $(window).height() - 120; // hard code header, footer, and bottom margin
+    height = window.innerHeight - 120; // hard code header, footer, and bottom margin
 
     estimateLadda = Ladda.create(byId("btnEstimate"));
     discoveryLadda = Ladda.create(byId("btnSubmitDisc"));
@@ -1723,25 +1799,26 @@ export function layout(v, v2) {
             .append("li")
             .text(d => d);
 
-        if(!IS_D3M_DOMAIN){
-            $('#transSel li').click(function(evt) {
+        if(!IS_D3M_DOMAIN) {
+            document.querySelectorAll('#transSel li').forEach(x => x.onclick(function(evt) {
                 // if 'interaction' is the selected function, don't show the function list again
+                let tInput = byId('tInput');
                 if (selInteract) {
-                    var n = $('#tInput').val().concat($(this).text());
-                    $('#tInput').val(n);
+                    let n = tInput.value.concat(this.textContent);
+                    tInput.value = n;
                     evt.stopPropagation();
-                    var t = transParse(n = n);
+                    let t = transParse(n = n);
                     if (!t) return;
-                    $(this).parent().fadeOut(100);
+                    fadeOut(this.parentNode, 100);
                     transform(n = t.slice(0, t.length - 1), t = t[t.length - 1], typeTransform = false);
                     return;
                 }
 
-                $('#tInput').val($(this).text());
-                $(this).parent().fadeOut(100);
-                $('#transList').fadeIn(100);
+                tInput.value = this.textContent;
+                fadeOut(this.parentNode, 100);
+                fadeOut('#transList', 100);
                 evt.stopPropagation();
-            });
+            }));
         };
 
         // remove old nodes
@@ -1801,8 +1878,8 @@ export function layout(v, v2) {
     d3.select(window)
         .on('click', () => {
             // all clicks will bubble here unless event.stopPropagation()
-            $('#transList').fadeOut(100);
-            $('#transSel').fadeOut(100);
+            fadeOut('#transList', 100);
+            fadeOut('#transSel', 100);
         });
 
     restart(); // initializes force.layout()
@@ -1821,22 +1898,6 @@ export function layout(v, v2) {
         mouseup();
     }
 }
-
-export let marginTopCarousel = 0;
-export let marginLeftCarousel = 0;
-
-window.onresize = () => {
-    let carousel = document.getElementById('innercarousel');
-    let container = document.getElementById('m0');
-    let whitespace = document.getElementById('whitespace0');
-
-    marginTopCarousel = (carousel.offsetHeight - whitespace.getAttribute("height") - 16) / 2;
-    marginLeftCarousel = (carousel.offsetWidth - whitespace.getAttribute("width")) / 2;
-
-    container.style.marginTop = marginTopCarousel + 'px';
-    container.style.marginLeft = marginLeftCarousel + 'px';
-    container.style.height = `calc(100% + ${Math.abs(marginTopCarousel)}px)`;
-};
 
 /** needs doc */
 function find($nodes, name) {
@@ -1999,7 +2060,7 @@ export let setSelectedPipeline = (result) => {
     selectedPipeline[currentMode] = result;
     if (currentMode === 'model') {
         // the 'find' function would have been nice here-- es6 only. Find pipeline with UID, then pass pipeline_id
-        let pipeline = pipelineTable.filter((row) => row[0] == result)[0]
+        let pipeline = pipelineTable.filter((row) => row[0] == result)[0];
         resultsplotinit(pipeline[1]);
     }
 }
@@ -2013,10 +2074,10 @@ function onPipelineCreate(PipelineCreateResult, rookpipe) {
     console.log(PipelineCreateResult);
 
     // change status of buttons for estimating problem and marking problem as finished
-    $("#btnEstimate").removeClass("btn-success");
-    $("#btnEstimate").addClass("btn-default");
-    $("#btnEndSession").removeClass("btn-default");
-    $("#btnEndSession").addClass("btn-success");
+    byId("btnEstimate").classList.remove("btn-success");
+    byId("btnEstimate").classList.add("btn-default");
+    byId("btnEndSession").classList.remove("btn-default");
+    byId("btnEndSession").classList.add("btn-success");
 
     let context = apiSession(zparams.zsessionid);
     for (var i = 0; i<PipelineCreateResult.length; i++) {
@@ -2049,7 +2110,7 @@ function onPipelineCreate(PipelineCreateResult, rookpipe) {
         let mymetric = "";
         let myval = "";
         console.log(key);
-        console.log(allPipelineInfo[key].progressInfo)
+        console.log(allPipelineInfo[key].progressInfo);
         let myscores = [];
         if(allPipelineInfo[key].progressInfo == "COMPLETED"){
             myscores = allPipelineInfo[key].pipelineInfo.scores;
@@ -2190,16 +2251,13 @@ export async function estimate(btn) {
             estimated = true;
             d3.select("#tabResults")
                 .style("display", "block");
-
             d3.select("#resultsView")
                 .style("display", "block");
-
             d3.select("#modelView")
                 .style("display", "block");
 
-
             // programmatic click on Results button
-            $("#btnSetx").trigger("click");      // Was "btnResults" - changing to simplify user experience for testing.
+            trigger("btnSetx", "click"); // Was "btnResults" - changing to simplify user experience for testing.
 
             let model = "Model".concat(modelCount = modelCount + 1);
 
@@ -2647,7 +2705,7 @@ export function erase() {
 /** needs doc */
 export let setLeftTab = (tab) => {
     leftTab = tab;
-    updateLeftPanelWidth()
+    updateLeftPanelWidth();
 
     if (tab === "Discovery"){
         probtable.length = 0;
@@ -2666,6 +2724,18 @@ export let summary = {data: []};
 function varSummary(d) {
     let t1 = 'Mean:, Median:, Most Freq:, Occurrences:, Median Freq:, Occurrences:, Least Freq:, Occurrences:, Std Dev:, Minimum:, Maximum:, Invalid:, Valid:, Uniques:, Herfindahl'.split(', ');
 
+    d3.select('#tabSummary')
+        .selectAll('svg')
+        .remove();
+
+    if (!d.plottype)
+        return;
+    d.plottype == 'continuous' ? density(d, 'Summary', priv) :
+        d.plottype == "bar" ? bars(d, 'Summary', priv) :
+        d3.select("#tabSummary") // no graph to draw, but still need to remove previous graph
+        .selectAll("svg")
+        .remove();
+
     let rint = d3.format('r');
     let str = (x, p) => (+x).toPrecision(p || 4).toString();
     let t2 = priv && d.meanCI ?
@@ -2681,17 +2751,6 @@ function varSummary(d) {
     summary.name = d.name;
     summary.labl = d.labl;
 
-    d3.select('#tabSummary')
-        .selectAll('svg')
-        .remove();
-
-    if (!d.plottype)
-        return;
-    d.plottype == 'continuous' ? density(d, 'Summary', priv) :
-        d.plottype == "bar" ? bars(d, 'Summary', priv) :
-        d3.select("#tabSummary") // no graph to draw, but still need to remove previous graph
-        .selectAll("svg")
-        .remove();
 }
 
 export let popoverContent = d => {
@@ -2700,7 +2759,7 @@ export let popoverContent = d => {
     let text = '<table class="table table-sm table-striped" style="margin:-10px;"><tbody>';
     let [rint, prec] = [d3.format('r'), (val, int) => (+val).toPrecision(int).toString()];
     let div = (field, name, val) => {
-        if (field != 'NA') text += `<tr><th>${name}</th><td><p class="text-left" style="height:10px;">${val || field}</p></td></tr>`
+        if (field != 'NA') text += `<tr><th>${name}</th><td><p class="text-left" style="height:10px;">${val || field}</p></td></tr>`;
     };
     d.labl != '' && div(d.labl, 'Label');
     div(d.mean, 'Mean', priv && d.meanCI ?
@@ -2727,7 +2786,7 @@ export let popoverContent = d => {
 export function panelPlots() {
 
     if(IS_D3M_DOMAIN) {
-    //    byId('btnSubset').classList.add('noshow');
+        //byId('btnSubset').classList.add('noshow');
     }
     // build arrays from nodes in main
     let vars = [];
@@ -2859,7 +2918,7 @@ function setColors(n, c) {
             if (dvColor == c){
                 var dvname = n.name;
                 zparams.zdv.push(dvname);
-                if(n.group1){                     // remove group memberships from dv's
+                if(n.group1){ // remove group memberships from dv's
                     ngroup1 = false;
                     del(zparams.zgroup1, -1, dvname);
                 };
@@ -2881,24 +2940,18 @@ function setColors(n, c) {
 
 /** needs doc */
 export function borderState() {
-    zparams.zdv.length > 0 ?
-        $('#dvButton .rectColor svg circle').attr('stroke', dvColor) :
-        $('#dvButton').css('border-color', '#ccc');
-    zparams.zcross.length > 0 ?
-        $('#csButton .rectColor svg circle').attr('stroke', csColor) :
-        $('#csButton').css('border-color', '#ccc');
-    zparams.ztime.length > 0 ?
-        $('#timeButton .rectColor svg circle').attr('stroke', timeColor) :
-        $('#timeButton').css('border-color', '#ccc');
-    zparams.znom.length > 0 ?
-        $('#nomButton .rectColor svg circle').attr('stroke', nomColor) :
-        $('#nomButton').css('border-color', '#ccc');
-    zparams.zgroup1.length > 0 ?
-        $('#gr1Button .rectColor svg circle').attr('stroke', gr1Color).attr('fill', gr1Color).attr('fill-opacity', 0.6).attr('stroke-opacity', 0) :
-        $('#gr1Button').css('border-color', '#ccc');
-    zparams.zgroup2.length > 0 ?
-        $('#gr2Button .rectColor svg circle').attr('stroke', gr2Color).attr('fill', gr2Color).attr('fill-opacity', 0.6).attr('stroke-opacity', 0) :
-        $('#gr2Button').css('border-color', '#ccc');
+    let set = (id, param, attrs) => {
+        let el = byId(id);
+        zparams[param].length > 0 ?
+            Object.entries(attrs).forEach(([x, y]) => el.querySelector('.rectColor svg circle').setAttribute(x, y)) :
+            el.style['border-color'] = '#ccc';
+    };
+    set('dvButton', 'zdv', {stroke: dvColor});
+    set('csButton','zcross', {stroke: csColor});
+    set('timeButton','ztime', {stroke: timeColor});
+    set('nomButton','znom', {stroke: nomColor});
+    set('gr1Button','zgroup1', {stroke: gr1Color, fill: gr1Color, 'fill-opacity': 0.6, 'stroke-opacity': 0});
+    set('gr2Button','zgroup2', {stroke: gr2Color, fill: gr2Color, 'fill-opacity': 0.6, 'stroke-opacity': 0});
 }
 
 /** needs doc */
@@ -2958,8 +3011,8 @@ export function subsetSelect(btn) {
         return;
     }
 
-    $("#btnVariables").trigger("click"); // programmatic clicks
-    $("#btnModels").trigger("click");
+    trigger("btnVariables", "click"); // programmatic clicks
+    trigger("btnModels", "click");
 
     var grayOuts = [];
     var rCall = [];
@@ -3068,29 +3121,22 @@ function rePlot() {
 }
 
 // acts as if the user clicked in whitespace. useful when restart() is outside of scope
-export let fakeClick = () => {
-    let ws = "#whitespace".concat(myspace);
-    // d3 and programmatic events don't mesh well, here's a SO workaround that looks good but uses jquery...
-    jQuery.fn.d3Click = function() {
-        this.each((i, e) => {
-            let evt = document.createEvent("MouseEvents");
-            evt.initMouseEvent("mousedown", true, true, window, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
-            e.dispatchEvent(evt);
-        });
-    };
-    $(ws).d3Click();
-    d3.select(ws)
+export function fakeClick() {
+    let el = byId(`whitespace${myspace}`);
+    let evt = document.createEvent("MouseEvents");
+    evt.initMouseEvent("mousedown", true, true, window, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
+    el.dispatchEvent(evt);
+    d3.select(el)
         .classed('active', false);
-};
+}
 
 /**
    EndSession(SessionContext) returns (Response) {}
 */
 export async function endsession() {
-
     let table = document.getElementById("setxRight").getElementsByTagName('table')[0];
     if(typeof table === 'undefined') {
-        alert("No pipelines exist. Cannot mark problem as complete.")
+        alert("No pipelines exist. Cannot mark problem as complete.");
         return;
     }
 
@@ -3108,7 +3154,7 @@ export async function endsession() {
     let mystatus = res.status.code.toUpperCase();
     if(mystatus == "OK") {
         end_ta3_search(true, "Problem marked as complete.");
-        setModal("Your selected pipeline has been submitted.","Task Complete", true, false, false, "location.reload()");
+        setModal("Your selected pipeline has been submitted.", "Task Complete", true, false, false, location.reload);
     }
 }
 
@@ -3152,7 +3198,7 @@ export async function listpipelines() {
 */
 export async function executepipeline() {
     let context = apiSession(zparams.zsessionid);
-    let tablerow = byId('setxRight').querySelector('tr.item-select');
+    let tablerow = document.querySelector('#setxRight tr.item-select');
     if(tablerow == null) {alert("Please select a pipeline to execute on."); return;}
     let pipelineId=tablerow.firstChild.innerText;
 
@@ -4233,48 +4279,24 @@ export async function submitDiscProb() {
 
     discoveryLadda.stop();
     // change status of buttons for estimating problem and marking problem as finished
-    $("#btnDiscovery").removeClass("btn-success");
-    $("#btnDiscovery").addClass("btn-default");
-    $("#btnSubmitDisc").removeClass("btn-success");
-    $("#btnSubmitDisc").addClass("btn-default");
+    byId("btnDiscovery").classList.remove("btn-success");
+    byId("btnDiscovery").classList.add("btn-default");
+    byId("btnSubmitDisc").classList.remove("btn-success");
+    byId("btnSubmitDisc").classList.add("btn-default");
     task1_finished = true;
     if(!(task2_finished)){
-        $("#btnEstimate").removeClass("btn-default");
-        $("#btnEstimate").addClass("btn-success");
+        byId("btnEstimate").classList.remove("btn-default");
+        byId("btnEstimate").classList.add("btn-success");
     };
-    byId("btnVariables").click();
+    trigger("btnVariables", 'click');
 }
 
 export function saveDisc(btn) {
     let table = document.getElementById("discoveryTable");
     let newtext = document.getElementById("discoveryInput").value;
     for (let i = 1, row; row = table.rows[i]; i++) { //skipping the header
-        if(row.className=='item-select'){
-            disco[i-1].description=newtext;
+        if (row.className === 'item-select') {
+            disco[i-1].description = newtext;
         }
     }
-}
-
-// function to call a modal window
-
-// text and header are text
-// show is boolean
-// btnText is the text to go inside the button (eg "Reset"), but if false then no button appears
-// func is the function to execute when button is clicked, as a string (eg "location.reload()")
-export function setModal(text, header, show, btnText, close, func) {
-    if(text)
-        modalText = text;
-    if (header)
-        modalHeader = header;
-    if (btnText) {
-        modalButton = btnText;
-        modalClose = close;
-        modalBtnDisplay = 'block';
-    } else {
-        modalBtnDisplay = 'none';
-    };
-    if(func)
-        modalFunc = func;
-    m.redraw();
-    show ? $('#myModal').modal({show, backdrop: 'static', keyboard: false}) : $('#myModal').modal("hide");
 }

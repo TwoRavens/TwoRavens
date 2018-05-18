@@ -1,0 +1,36 @@
+{
+  "about": {
+    "problemID": "TR2_Resource_Curse_problem",
+    "problemName": "Resource_Curse",
+    "problemDescription": "Replication data for Collier and Hoeffler resource curse analysis",
+    "taskType": "classification",
+    "taskSubType": "multiClass",
+    "problemVersion": "1.0",
+    "problemSchemaVersion": "3.0"
+  },
+  "inputs": {
+    "data": [
+      {
+        "datasetID": "Resource_Curse_dataset",
+        "targets": [
+          {
+            "colIndex": 19,
+            "colName": "chwars"
+          }
+        ]
+      }
+    ],
+    "dataSplits": {
+      "method": "holdOut",
+      "testSize": 0.2
+    },
+    "performanceMetrics": [
+      {
+        "metric": "f1Macro"
+      }
+    ]
+  },
+  "expectedOutputs": {
+    "predictionsFile": "predictions.csv"
+  }
+}

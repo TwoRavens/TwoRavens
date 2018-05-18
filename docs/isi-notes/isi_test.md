@@ -226,3 +226,8 @@ apt-get install net-tools
 netstat -anv | egrep -w [.]45042.*LISTEN
 
 ```
+
+
+### _Additional things to check_
+
+Check to make sure `APP DOMAIN` is set to `D3M_DOMAIN` here: http://127.0.0.1:8080/admin/configurations/appconfiguration/

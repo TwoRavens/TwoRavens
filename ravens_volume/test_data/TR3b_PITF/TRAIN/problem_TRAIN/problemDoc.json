@@ -1,0 +1,36 @@
+{
+  "about": {
+    "problemID": "TR3b_PITF_problem",
+    "problemName": "Forecasting_Political_Instability",
+    "problemDescription": "Replication data for Goldstone et al. A Global Model for Forecasting Political Instability, with Fearon and Laitin comparison.",
+    "taskType": "classification",
+    "taskSubType": "binary",
+    "problemVersion": "1.0",
+    "problemSchemaVersion": "3.0"
+  },
+  "inputs": {
+    "data": [
+      {
+        "datasetID": "Forecasting_Political_Instability_dataset",
+        "targets": [
+          {
+            "colIndex": 2,
+            "colName": "sftpcons"
+          }
+        ]
+      }
+    ],
+    "dataSplits": {
+      "method": "holdOut",
+      "testSize": 0.2
+    },
+    "performanceMetrics": [
+      {
+        "metric": "f1Macro"
+      }
+    ]
+  },
+  "expectedOutputs": {
+    "predictionsFile": "predictions.csv"
+  }
+}

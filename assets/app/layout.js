@@ -1,6 +1,7 @@
 import * as app from './app';
 import {setPebbleRadius} from './app';
-import {barsNode, densityNode} from './plots.js';
+import {barsNode, densityNode} from './plots';
+import {fadeOut} from './utils';
 
 let force;
 let nodes = [];
@@ -510,8 +511,8 @@ export function init() {
     d3.select(window)
         .on('click', () => {
             // all clicks will bubble here unless event.stopPropagation()
-            $('#transList').fadeOut(100);
-            $('#transSel').fadeOut(100);
+            fadeOut('#transList', 100);
+            fadeOut('#transSel', 100);
         });
 
     restart(line, line2, visbackground, vis2background, vis, vis2, drag_line); // initializes force.layout()
