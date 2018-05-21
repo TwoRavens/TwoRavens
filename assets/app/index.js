@@ -89,7 +89,8 @@ function leftpanel(mode) {
                      classes: {'item-bordered': app.matchedVariables},
                      callback: app.clickVar,
                      popup: (variable) => app.popoverContent(app.findNodeIndex(variable, true)),
-                     attrsItems: {'data-placement': 'right', 'data-original-title': 'Summary Statistics'}})]},
+                     attrsItems: {'data-placement': 'right', 'data-original-title': 'Summary Statistics'}}),
+                    m(Button,{id: 'custom', onclick:_=>app.customize() ,title: 'Customize variables.',style: ' display: block; margin: 0 auto; margin-top: 5%; text-align: center;'},'Customize')]},
             {value: 'Discovery',
              contents: [
                  m(Table, {

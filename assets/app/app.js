@@ -4300,3 +4300,9 @@ export function saveDisc(btn) {
         }
     }
 }
+
+
+export function customize(){   
+    var myWindow = window.open("", "Cutomize","toolbar=no,scrollbars=yes,resizable=yes,top=200,left=500,width=1000,height=600");
+    myWindow.document.write();      
+}
