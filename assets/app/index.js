@@ -27,6 +27,7 @@ import Modal, {setModal} from '../common/app/views/Modal';
 import Panel from '../common/app/views/Panel';
 import PanelList from '../common/app/views/PanelList';
 import Peek from '../common/app/views/Peek';
+import Recode from '../common/app/views/Recode';
 import Table from '../common/app/views/Table';
 import TextField from '../common/app/views/TextField';
 
@@ -90,7 +91,7 @@ function leftpanel(mode) {
                      callback: app.clickVar,
                      popup: (variable) => app.popoverContent(app.findNodeIndex(variable, true)),
                      attrsItems: {'data-placement': 'right', 'data-original-title': 'Summary Statistics'}}),
-                    m(Button,{id: 'custom', onclick:_=>app.customize() ,title: 'Customize variables.',style: ' display: block; margin: 0 auto; margin-top: 5%; text-align: center;'},'Customize')]},
+                    m(Button,{id: 'recode', onclick:_=>window.open("#!/recode", "recode","toolbar=no,scrollbars=yes,resizable=yes,top=200,left=500,width=1000,height=600") ,title: 'Customize variables.',style: ' display: block; margin: 0 auto; margin-top: 5%; text-align: center;'},'Customize')]},
             {value: 'Discovery',
              contents: [
                  m(Table, {
@@ -611,5 +612,6 @@ m.route(document.body, '/model', {
             return m(Body, {mode: 'results'});
         }
     },
-    '/data': Peek
+    '/data': Peek,
+    '/recode':Recode
 });
