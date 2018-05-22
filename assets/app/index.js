@@ -613,5 +613,6 @@ m.route(document.body, '/model', {
         }
     },
     '/data': Peek,
-    '/recode':Recode
+    '/recode':Recode,
+    '/try':Recode
 });
