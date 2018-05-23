@@ -5,6 +5,8 @@ import List from '../../../app/views/PanelList';
 import Search from '../../../app/views/Search';
 import Subpanel from '../../../app/views/Subpanel';
 
+import {varColor, mergeAttributes, menuColor} from "../common";
+
 import Header from './Header';
 import Canvas from './Canvas';
 import MenuTabbed from './MenuTabbed';
@@ -14,17 +16,15 @@ import PanelList from './PanelList';
 import Table from './Table';
 import TextField from './TextField';
 import * as common from "../common";
-
+import * as index from "../../../app/index";
 import * as app from "../../../app/app";
 
 export default class Recode {
     oncreate() {
-       
+        
     }
 
     oninit() {
-        console.log("here..")
-        console.log(app.nodes)
     }
     view() {
         return [
@@ -38,11 +38,11 @@ export default class Recode {
                     m('div.container-fluid',[
                         m('ul.nav.navbar-nav',[
                             m('li',
-                            m('a[href=/try].active',{onclick: m.route.link},  "Create New Variable")),
+                            m('a[href=/createVar]',{onclick: m.route.link},  "Create New Variable")),
                             m('li',
                             m('a[href=/formulaBuilder]',{oncreate: m.route.link}, "Formula Builder")),
                             m('li',
-                            m('a[href=/change]', {oncreate: m.route.link}, "Recode")),
+                            m('a[href=/recode].active', {oncreate: m.route.link}, "Recode")),
                             m('li',
                             m('a[href=/reorder]', {oncreate: m.route.link}, "Reorder")),
                         ]),
@@ -58,20 +58,26 @@ export default class Recode {
                 hover: true,
                 width: app.modelLeftPanelWidths[app.leftTab],
                 attrsAll: {style: {'z-index': 101}}
-            },m(PanelList, {
-                id: 'varList',
-                items: app.valueKey,
-                colors: {
-                    [app.hexToRgba(common.selVarColor)]: app.nodes.map(n => n.name),
-                    [app.hexToRgba(common.nomColor)]: app.zparams.znom,
-                    [app.hexToRgba(common.dvColor)]: app.zparams.zdv
+            },m(`div#${"varList"}`, getUrlVars()["val"].split(",").map((item) =>
+            m(`div#${"varList" + item.replace(/\W/g, '_')}`, mergeAttributes({
+                    style: {
+                        'margin-top': '5px',
+                        'text-align': "center",
+                        'background-color':  varColor
+                    },
+                    // 'class': viewClass[item],
                 },
-                classes: {'item-bordered': app.matchedVariables},
-                callback: app.clickVar,
-                popup: (variable) => app.popoverContent(app.findNodeIndex(variable, true)),
-                attrsItems: {'data-placement': 'right', 'data-original-title': 'Summary Statistics'}}),
+                // add any additional attributes if passed
+                ), item)))
             ),
         ]
     }
 
 }
+function getUrlVars() {
+    var vars = {};
+    var parts = window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, function(m,key,value) {
+    vars[key] = value;
+    });
+    return vars;
+    }
