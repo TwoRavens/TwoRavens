@@ -27,7 +27,7 @@ def view_workspace_info(request):
 
     # pull some session info, if there are any
     #
-    if request.user.is_authenticated():
+    if request.user.is_authenticated:
         other_workspaces = SavedWorkspace.objects.filter(user=request.user)
         if current_workspace:
             other_workspaces = other_workspaces.exclude(id=current_workspace.id)
@@ -43,7 +43,7 @@ def view_workspace_info(request):
 
 def list_user_workspaces(request):
     """Retrieve a workspace by the currently logged-in user"""
-    if not request.user.is_authenticated():
+    if not request.user.is_authenticated:
         err_msg = ('Not logged in')
         return JsonResponse(dict(success=False,
                                  message=err_msg),
@@ -74,7 +74,7 @@ def list_user_workspaces(request):
 
 def view_current_workspace(request):
     """Retrieve a workspace by session_key and user"""
-    if not request.user.is_authenticated():
+    if not request.user.is_authenticated:
         err_msg = ('Not logged in')
         return JsonResponse(dict(success=False,
                                  message=err_msg),
@@ -104,7 +104,7 @@ def view_workspace_by_id_base(request):
 
 def view_workspace_by_id_json(request, workspace_id):
     """Retrieve a workspace, if it exists"""
-    if not request.user.is_authenticated():
+    if not request.user.is_authenticated:
         err_msg = ('Not logged in')
         return JsonResponse(dict(success=False,
                                  message=err_msg),
