@@ -179,3 +179,12 @@ TA2_GPRC_USER_AGENT = os.environ.get('TA2_GPRC_USER_AGENT', 'tworavens')
 MAX_EMBEDDABLE_FILE_SIZE = .5 * 500000
 
 SWAGGER_HOST = '127.0.0.1:8080'
+
+# ---------------------------
+# REDIS/CELERY SETTINGS
+# ---------------------------
+REDIS_HOST = os.environ.get('REDIS_HOST', 'localhost')
+REDIS_PORT = os.environ.get('REDIS_PORT', 6379)
+
+CELERY_BROKER_URL = 'redis://%s:%d' % (REDIS_HOST, REDIS_PORT)
+CELERY_RESULT_BACKEND = 'redis://%s:%d' % (REDIS_HOST, REDIS_PORT)

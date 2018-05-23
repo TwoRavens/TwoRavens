@@ -1,4 +1,6 @@
 from django.db import models
+from collections import OrderedDict
+
 
 # ---------------------------------
 # keys to results in JSON
@@ -45,3 +47,27 @@ TEST_KEY_FILE_URI = 'FILE_URI'
 # src: https://github.com/grpc/grpc/blob/master/src/python/grpcio/grpc/_channel.py
 # > 10/18/2017
 VAL_GRPC_STATE_CODE_NONE = '<_Rendezvous object of in-flight RPC>'
+
+from model_utils.models import TimeStampedModel
+import jsonfield
+
+class StoredResponseTest(TimeStampedModel):
+    """temp model for storage"""
+    name = models.CharField(max_length=255, blank=True)
+
+    resp = jsonfield.JSONField(\
+                load_kwargs=dict(object_pairs_hook=OrderedDict))
+
+    def __str__(self):
+        return self.name
+
+    def save(self, *args, **kwargs):
+        """Set a name if one isn't specified"""
+        if not self.name:
+            if not self.id:
+                super(StoredResponseTest, self).save(*args, **kwargs)
+
+            self.name = 'id: %s' % self.id
+
+
+        super(StoredResponseTest, self).save(*args, **kwargs)

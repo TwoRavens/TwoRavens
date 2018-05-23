@@ -1,3 +1,5 @@
+
+# --------------------------------
 import json
 import time
 from os.path import join
@@ -16,11 +18,9 @@ from tworaven_apps.ta2_interfaces.ta2_util import get_grpc_test_json,\
     get_predict_file_info_dict
 from tworaven_apps.ta2_interfaces.util_embed_results import FileEmbedUtil
 from tworaven_apps.ta2_interfaces.util_message_formatter import MessageFormatter
-from tworaven_apps.ta2_interfaces.models import KEY_CONTEXT_FROM_UI,\
-    KEY_SESSION_ID_FROM_UI
-
-from tworaven_apps.ta2_interfaces.tasks import \
-    (stream_pipeline_create)
+from tworaven_apps.ta2_interfaces.models import \
+    (KEY_CONTEXT_FROM_UI, KEY_SESSION_ID_FROM_UI,
+     StoredResponseTest)
 
 PIPELINE_CREATE_REQUEST = 'PipelineCreateRequest'
 
@@ -28,63 +28,31 @@ ERR_NO_CONTEXT = 'A "%s" must be included in the request.' % KEY_CONTEXT_FROM_UI
 ERR_NO_SESSION_ID = ('A "%s" must be included in the request,'
                      ' within the "%s".') %\
                      (KEY_CONTEXT_FROM_UI, KEY_SESSION_ID_FROM_UI)
+# --------------------------------
+#@celery_app.task(bind=True)
 
-def get_test_info_str():
-    """Test data for update_problem_schema call"""
-    return """{"context": {"sessionId": "session_0"}, "trainFeatures": [{"featureId": "cylinders", "dataUri": "data/d3m/o_196seed/data/trainDatamerged.tsv"}, {"featureId": "cylinders", "dataUri": "data/d3m/o_196seed/data/trainDatamerged.tsv"}], "task": "REGRESSION", "taskSubtype": "UNIVARIATE", "output": "REAL", "metrics": ["ROOT_MEAN_SQUARED_ERROR"], "targetFeatures": [{"featureId": "class", "dataUri": "data/d3m/o_196seed/data/trainDatamerged.tsv"}], "maxPipelines": 10"""
+"""
+from tworavensproject.celery import debug_task
+debug_task()
+debug_task.delay()
+
+from tworaven_apps.ta2_interfaces.tasks import hi_there
+hi_there('hi')
+hi_there.delay('working via celery...')
+"""
 
 
-from celery import task, shared_task
-from celery.result import AsyncResult
 
-from tworavensproject.celery import celery_app
-
-def pipeline_create(info_str=None):
-
-    really_pipeline_create.delay(info_str)
-
-    err_msg = """Trying to stream, check for updates"""
-    return get_failed_precondition_response(err_msg)
-
-@celery_app.task
-def hi_there(info_str):
-    print('hi_there 1', info_str)
-    print('hi_there 2', info_str)
-    store_it(info_str)
-
-def store_it(info_str):
-    stored_resp = StoredResponseTest(resp=info_str)
-    stored_resp.save()
-
-    
-@celery_app.task
-def really_pipeline_create(info_str=None):
+def stream_pipeline_create(info_str=None):
     """Send the pipeline create request via gRPC"""
-    print('pipeline_create 1', info_str)
-    if info_str is None:
-        info_str = get_test_info_str()
-
-    #task = hi_there.delay(info_str)
-    #print('task', task)
-
-    print('pipeline_create 2')
-    stream_pipeline_create(info_str)
-    print('task', task)
-    print('pipeline_create 3')
-
-    err_msg = """Trying to stream, check for updates"""
-    return get_failed_precondition_response(err_msg)
-
-    # --------------------------------------------------
-    # --------------------------------------------------
+    print('stream_pipeline_create 1')
 
     if info_str is None:
-        info_str = get_test_info_str()
-
-    if info_str is None:
+        print('stream_pipeline_create 1a')
         err_msg = 'UI Str for %s is None' % PIPELINE_CREATE_REQUEST
         return get_failed_precondition_response(err_msg)
 
+    print('stream_pipeline_create 1b')
     # --------------------------------
     # Convert info string to dict
     # --------------------------------
@@ -100,6 +68,8 @@ def really_pipeline_create(info_str=None):
     if KEY_SESSION_ID_FROM_UI not in info_dict[KEY_CONTEXT_FROM_UI]:
         return get_failed_precondition_response(ERR_NO_SESSION_ID)
 
+    print('stream_pipeline_create 1c')
+
     # --------------------------------
     # convert the JSON string to a gRPC request
     # --------------------------------
@@ -110,7 +80,7 @@ def really_pipeline_create(info_str=None):
         return get_failed_precondition_response(err_msg)
 
     if settings.TA2_STATIC_TEST_MODE:
-
+        print('stream_pipeline_create 2: NO!! test mode')
         template_info = get_predict_file_info_dict(info_dict.get('task'))
 
         template_str = get_grpc_test_json('test_responses/createpipeline_ok.json',
@@ -128,6 +98,7 @@ def really_pipeline_create(info_str=None):
     # --------------------------------
     # Get the connection, return an error if there are channel issues
     # --------------------------------
+    print('stream_pipeline_create 3')
     core_stub, err_msg = TA2Connection.get_grpc_stub()
     if err_msg:
         return get_failed_precondition_response(err_msg)
@@ -136,10 +107,26 @@ def really_pipeline_create(info_str=None):
     # Send the gRPC request
     # --------------------------------
     messages = []
+    print('stream_pipeline_create 4')
 
     try:
+        from tworaven_apps.ta2_interfaces.models import StoredResponseTest
         for reply in core_stub.CreatePipelines(req, timeout=60):
             user_msg = MessageToJson(reply, including_default_value_fields=True)
+            print('stream_pipeline_create 4a: got a message')
+
+            # Attempt to save....
+            # ----------------------------
+            success, return_str = MessageFormatter.format_messages(\
+                                            [user_msg],
+                                            embed_data=True)
+            if success:
+                stored_resp = StoredResponseTest(resp=return_str)
+            else:
+                stored_resp = StoredResponseTest(resp=user_msg)
+
+            stored_resp.save()
+            # ----------------------------
             messages.append(user_msg)
             print('msg received #%d' % len(messages))
 
@@ -152,6 +139,9 @@ def really_pipeline_create(info_str=None):
     except Exception as err_obj:
         return get_reply_exception_response(str(err_obj))
 
+
+    print('ALL DONE! WITH STREAMING!!!')
+
     success, return_str = MessageFormatter.format_messages(\
                                     messages,
                                     embed_data=True)
@@ -160,10 +150,3 @@ def really_pipeline_create(info_str=None):
         return get_reply_exception_response(return_str)
 
     return return_str
-"""
-python manage.py shell
-#from tworaven_apps.ta2_interfaces.ta2_proxy import *
-from tworaven_apps.ta2_interfaces.update_problem_schema import update_problem_schema
-
-updateproblemschema()
-"""
