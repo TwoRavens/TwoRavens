@@ -30,7 +30,7 @@ def view_pebbles_home(request):
                     reverse('view_d3m_config_error'))
 
         # (2) Is the user authenticated?
-        if not request.user.is_authenticated():
+        if not request.user.is_authenticated:
             return HttpResponseRedirect(\
                     reverse('login'))
 

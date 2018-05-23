@@ -14,7 +14,7 @@ import sys
 from os.path import abspath, dirname, join
 from distutils.util import strtobool
 
-from django.core.urlresolvers import reverse_lazy
+from django.urls import reverse_lazy
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = dirname(dirname(dirname(abspath(__file__))))

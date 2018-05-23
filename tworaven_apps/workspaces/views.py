@@ -26,7 +26,7 @@ def view_workspace_info(request):
 
     # pull some session info, if there are any
     #
-    if request.user.is_authenticated():
+    if request.user.is_authenticated:
         other_workspaces = SavedWorkspace.objects.filter(user=request.user)
         if current_workspace:
             other_workspaces = other_workspaces.exclude(id=current_workspace.id)

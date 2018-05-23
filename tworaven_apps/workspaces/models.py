@@ -111,6 +111,7 @@ class SavedWorkspace(TimeStampedModel):
     session_key = models.CharField(max_length=255)
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL,
+                             on_delete=models.CASCADE,
                              blank=True,
                              null=True)
 
@@ -118,6 +119,7 @@ class SavedWorkspace(TimeStampedModel):
                                   choices=APP_DOMAINS)
 
     data_source_type = models.ForeignKey(DataSourceType,
+                                         on_delete=models.PROTECT,
                                          null=True,
                                          blank=True)
 
