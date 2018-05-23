@@ -23,7 +23,7 @@ class WorkspaceRecorder(object):
         self.session_key = get_session_key(request_obj)
 
         # Set user
-        if request_obj.user.is_authenticated():
+        if request_obj.user.is_authenticated:
             self.is_authenticated = True
             self.loggedin_user = request_obj.user
         else:

@@ -27,7 +27,7 @@ def get_authenticated_user(request):
     if not request:
         return False, 'request is None'
 
-    if not request.user.is_authenticated():
+    if not request.user.is_authenticated:
         return False, 'user is not authenticated'
 
     return True, request.user

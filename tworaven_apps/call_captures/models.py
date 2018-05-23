@@ -37,6 +37,7 @@ class ServiceCallEntry(TimeStampedModel):
                                   help_text='Used for grouping calls together')
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL,
+                             on_delete=models.CASCADE,
                              blank=True,
                              null=True)
 
@@ -85,7 +86,7 @@ class ServiceCallEntry(TimeStampedModel):
         session_id = get_session_key(request_obj)
 
         user = None
-        if request_obj.user.is_authenticated():
+        if request_obj.user.is_authenticated:
             user = request_obj.user
 
         return ServiceCallEntry(call_type=call_type,
@@ -104,7 +105,7 @@ class ServiceCallEntry(TimeStampedModel):
         session_id = get_session_key(request_obj)
 
         user = None
-        if request_obj.user.is_authenticated():
+        if request_obj.user.is_authenticated:
             user = request_obj.user
 
         if settings.TA2_STATIC_TEST_MODE:
