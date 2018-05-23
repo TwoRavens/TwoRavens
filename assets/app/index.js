@@ -147,6 +147,8 @@ function rightpanel(mode) {
 
     if (mode === 'results') return [];
     if (mode === 'explore') {
+        return [];
+
         let sectionsExplore = [
             {
                 value: 'Univariate',

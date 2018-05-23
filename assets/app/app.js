@@ -168,7 +168,7 @@ export let modelRightPanelWidths = {
     'Subtype': '300px',
     'Metrics': '300px',
     //     'Set Covar.': '900px',
-    'Results': '900px'
+    'Results': '300px'
 };
 
 export let exploreRightPanelWidths = {
@@ -186,6 +186,7 @@ export let panelWidth = {
 };
 
 let updateRightPanelWidth = () => {
+    return panelWidth['right'] = `calc(${common.panelMargin * 2}px + 16px)`;
     if (common.panelOpen['right']) {
         let tempWidth = {
             'model': modelRightPanelWidths[rightTab],
