@@ -387,7 +387,7 @@ class Body {
             m(Modal),
             this.header(mode),
             this.footer(mode),
-            m(`#main.left.carousel.slide.svg-leftpanel.svg-rightpanel[style=overflow: hidden]`,
+            m(`#main.left[style=overflow: hidden]`,
               m("#innercarousel.carousel-inner", {style: {height: `calc(100% + ${app.marginTopCarousel}px)`}},
                 m('#m0.item.active', {style: {height: '100%', 'text-align': "center"}},
                   m('svg#whitespace'))),
@@ -436,6 +436,7 @@ class Body {
                      ['gr2Button', 'zgroup2', 'Group 2']]}),
               m(Subpanel, {title: "History"}),
               leftpanel(mode),
+              explore_mode && m('div', {style: `position: absolute; left: ${app.panelWidth.left}; top: 0; margin-top: 10px`}, 'test'),
               rightpanel(mode))
         ]);
     }

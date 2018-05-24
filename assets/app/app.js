@@ -123,6 +123,8 @@ export function set_mode(mode) {
 
     is_explore_mode = mode === 'explore';
     is_results_mode = mode === 'results';
+
+    elem('#whitespace0').style.display = is_explore_mode ? 'none' : 'block';
 }
 
 // for debugging - if not in PRODUCTION, prints args
