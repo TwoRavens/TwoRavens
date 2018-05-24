@@ -174,7 +174,7 @@ function rightpanel(mode) {
                     m('#result_prompt', {style: {display: app.explored ? 'none' : 'block'}}, `Click 'Explore' for interactive plots.`),
                     m('#modelView_Container', {style: `width: 100%; float: left; white-space: nowrap;`},
                         m('#modelView', {style: 'width: 100%; float: left'})),
-                    app.pipelineTable ? m(Table, {
+                    app.pipelineTable && m(Table, {
                         id: 'pipelineTableExplore',
                         headers: app.pipelineHeader,
                         data: app.pipelineTable,
@@ -182,7 +182,7 @@ function rightpanel(mode) {
                         onclick: app.setSelectedPipeline,
                         showUID: false,
                         abbreviation: 20
-                    }) : undefined,
+                    }),
                     m('#result_left',
                         {style: {display: app.explored ? 'block' : 'none',
                                 "width": "50%", "height": "100%",
@@ -389,7 +389,7 @@ class Body {
             m(Modal),
             this.header(mode),
             this.footer(mode),
-            m(`#main.left[style=overflow: hidden]`,
+            m(`#main.left[style=overflow: ${explore_mode ? 'auto' : 'hidden'}]`,
               m("#innercarousel.carousel-inner", {style: {height: `calc(100% + ${app.marginTopCarousel}px)`}},
                 m('#m0.item.active', {style: {height: '100%', 'text-align': "center"}},
                   m('svg#whitespace'))),
@@ -438,7 +438,14 @@ class Body {
                      ['gr2Button', 'zgroup2', 'Group 2']]}),
               m(Subpanel, {title: "History"}),
               leftpanel(mode),
-              explore_mode && m('div', {style: `position: absolute; left: ${app.panelWidth.left}; top: 0; margin-top: 10px`}, 'test'),
+              explore_mode && m('table', {
+                  style: `position: absolute; left: ${app.panelWidth.left}; top: 0; margin-top: 10px`
+              }, [
+                  m('thead', [''].concat(app.nodes).map(x => m('th', x.name))),
+                  m('tbody', app.nodes.map(x => {
+                      return m('tr', m('td', {style: 'transform: rotate(-90deg)'}, x.name));
+                  }))
+              ]),
               rightpanel(mode))
         ]);
     }
@@ -448,9 +455,9 @@ class Body {
             {title: "Log in", url: login_url},
             {title: "Sign up", url: signup_url}
         ] : [{title: "Workspaces", url: workspaces_url},
-            {title: "Settings", url: settings_url},
-            {title: "Links", url: devlinks_url},
-            {title: "Logout", url: logout_url}];
+             {title: "Settings", url: settings_url},
+             {title: "Links", url: devlinks_url},
+             {title: "Logout", url: logout_url}];
 
         let _navBtn = (id, left, right, onclick, args, min) => m(
             `button#${id}.btn.navbar-right`,
