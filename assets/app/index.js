@@ -385,7 +385,7 @@ class Body {
             this.last_mode = mode;
         }
 
-        let sortedNodes = app.nodes.sort((x, y) => x.id > y.id);
+        let sortedNodes = app.nodes.concat().sort((x, y) => x.id - y.id);
         return m('main', [
             m(Modal),
             this.header(mode),
