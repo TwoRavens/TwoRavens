@@ -443,9 +443,10 @@ class Body {
                   style: `position: absolute; left: ${app.panelWidth.left}; top: 0; margin-top: 10px`
               }, [m('thead', [''].concat(sortedNodes).map(x => m('th', x.name))),
                   m('tbody', sortedNodes.map(x => {
-                      return m('tr', m('td', {style: 'transform: rotate(-90deg)'}, x.name), sortedNodes.map(y => m('td', [
-                          x.interval === y.interval ? x.interval : 'combo'
-                      ])));
+                      return m('tr', [
+                          m('td', {style: 'height: 75px; width: 75px; transform: rotate(-90deg)'}, x.name),
+                          sortedNodes.map(y => m('td', {style: 'height: 75px; width: 75px'}, x.interval === y.interval ? x.interval : 'combo'))
+                      ]);
                   }))
               ]),
               rightpanel(mode))
