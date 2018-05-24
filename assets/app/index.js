@@ -106,7 +106,8 @@ function leftpanel(mode) {
                      value: app.disco[app.selectedProblem] === undefined ? '' : app.disco[app.selectedProblem].description
                  }),
                  m(Button, {id: 'btnSave', onclick:_=>app.saveDisc('btnSave'),title: 'Saves your revised problem description.'}, 'Save Desc.'),
-                 m(Button, {id: 'btnSubmitDisc', classes: 'btn-success', style: 'float: right', onclick:_=>app.submitDiscProb(), title: 'Submit all checked discovered problems.'}, 'Submit Disc. Probs.')]},
+                 m(Button, {id: 'btnSubmitDisc', classes: 'btn-success', style: 'float: right', onclick:_=>app.submitDiscProb(), title: 'Submit all checked discovered problems.'}, 'Submit Disc. Probs.')],
+             display: mode === 'explore' ? 'none' : 'block'},
             {value: 'Summary',
              title: 'Select a variable from within the visualization in the center panel to view its summary statistics.',
              contents: [
@@ -362,6 +363,7 @@ class Body {
 
     view(vnode) {
         let {mode} = vnode.attrs;
+        let model_mode = !mode;
         let explore_mode = mode === 'explore';
         let results_mode = mode === 'results';
 
@@ -391,7 +393,7 @@ class Body {
               m("#innercarousel.carousel-inner", {style: {height: `calc(100% + ${app.marginTopCarousel}px)`}},
                 m('#m0.item.active', {style: {height: '100%', 'text-align': "center"}},
                   m('svg#whitespace'))),
-              m("#spacetools.spaceTool", {style: {right: app.panelWidth['right'], 'z-index': 16}},
+              model_mode &&  m("#spacetools.spaceTool", {style: {right: app.panelWidth['right'], 'z-index': 16}},
                   m(`button#btnLock.btn.btn-default`, {
                       class: app.locktoggle ? 'active' : '',
                       onclick: () => app.lockDescription(!app.locktoggle),
@@ -425,7 +427,7 @@ class Body {
                 spaceBtn('btnDisconnect', _ => app.restart([]), 'Delete all connections between nodes', 'remove-circle'),
                 spaceBtn('btnForce', app.forceSwitch, 'Pin the variable pebbles to the page', 'pushpin'),
                 spaceBtn('btnEraser', app.erase, 'Wipe all variables from the modeling space', 'magnet')),
-              m(Subpanel,
+              model_mode && m(Subpanel,
                 {title: "Legend",
                  buttons: [
                      ['timeButton', 'ztime', 'Time'],
