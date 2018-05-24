@@ -1,0 +1,10 @@
+# This file contains a list of primitives that TA3 systems expect to be available
+# for execution by any TA2 system.  Changes to this list should be vetted by the
+# TA3/TA2 API working group to ensure that all parties agree on content - failure to support
+# a primitive in this list may make a TA2 system incompatible with a TA3 for purposes of
+# evaluation.
+#
+# Primitives are described using metadata values:
+# id, version, name, python_path, digest
+"4b42ce1e-9b98-4a25-b68e-fad13311eb65", "0.1.0", "Dataset to numpy array converter", "d3m.primitives.datasets.DatasetToNumpyPrimitive", "TBD"
+"eb5fe752-f22a-4090-948b-aafcef203bf5", "0.1.0", "Casts numpy array", "d3m.primitives.data.CastToTypePrimitive", "TBD"
