@@ -385,6 +385,7 @@ class Body {
             this.last_mode = mode;
         }
 
+        let sortedNodes = app.nodes.sort((x, y) => x.id > y.id);
         return m('main', [
             m(Modal),
             this.header(mode),
@@ -441,8 +442,8 @@ class Body {
               explore_mode && m('table', {
                   style: `position: absolute; left: ${app.panelWidth.left}; top: 0; margin-top: 10px`
               }, [
-                  m('thead', [''].concat(app.nodes).map(x => m('th', x.name))),
-                  m('tbody', app.nodes.map(x => {
+                  m('thead', [''].concat(sortedNodes).map(x => m('th', x.name))),
+                  m('tbody', sortedNodes.map(x => {
                       return m('tr', m('td', {style: 'transform: rotate(-90deg)'}, x.name));
                   }))
               ]),
