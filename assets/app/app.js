@@ -2946,6 +2946,10 @@ function setColors(n, c) {
 export function borderState() {
     let set = (id, param, attrs) => {
         let el = byId(id);
+        if (!el) {
+            return;
+        }
+
         zparams[param].length > 0 ?
             Object.entries(attrs).forEach(([x, y]) => el.querySelector('.rectColor svg circle').setAttribute(x, y)) :
             el.style['border-color'] = '#ccc';
