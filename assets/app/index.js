@@ -441,10 +441,11 @@ class Body {
               leftpanel(mode),
               explore_mode && m('table', {
                   style: `position: absolute; left: ${app.panelWidth.left}; top: 0; margin-top: 10px`
-              }, [
-                  m('thead', [''].concat(sortedNodes).map(x => m('th', x.name))),
+              }, [m('thead', [''].concat(sortedNodes).map(x => m('th', x.name))),
                   m('tbody', sortedNodes.map(x => {
-                      return m('tr', m('td', {style: 'transform: rotate(-90deg)'}, x.name));
+                      return m('tr', m('td', {style: 'transform: rotate(-90deg)'}, x.name), sortedNodes.map(y => m('td', [
+                          x.interval === y.interval ? x.interval : 'combo'
+                      ])));
                   }))
               ]),
               rightpanel(mode))
