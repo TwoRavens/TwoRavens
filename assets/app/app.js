@@ -666,6 +666,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     // put dataset name, from meta-data, into page title
     d3.select("title").html("TwoRavens " + dataname);
     localStorage.setItem('peekHeader', "TwoRavens " + dataname);
+    localStorage.setItem('configuration',dataname);//For Recode
 
     // if swandive, we have to set valueKey here so that left panel can populate.
     if (swandive) {

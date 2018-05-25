@@ -19,12 +19,24 @@ import * as common from "../common";
 import * as index from "../../../app/index";
 import * as app from "../../../app/app";
 
+let varList = [];
+
 export default class Recode {
     oncreate() {
-        
+        window.addEventListener('storage', (e) => onRecodeStorageEvent(this, e));
     }
 
     oninit() {
+
+        this.configuration = localStorage.getItem('configuration');
+
+        m.request(`rook-custom/rook-files/${this.configuration}/preprocess/preprocess.json`).then(data => {
+            for(var variable in data['variables']){
+                varList.push(variable);  
+            }
+            console.log(varList)
+        });
+
     }
     view() {
         return [
@@ -58,7 +70,7 @@ export default class Recode {
                 hover: true,
                 width: app.modelLeftPanelWidths[app.leftTab],
                 attrsAll: {style: {'z-index': 101}}
-            },m(`div#${"varList"}`, getUrlVars()["val"].split(",").map((item) =>
+            },m(`div#${"varList"}`, varList.map((item) =>
             m(`div#${"varList" + item.replace(/\W/g, '_')}`, mergeAttributes({
                     style: {
                         'margin-top': '5px',
@@ -74,10 +86,8 @@ export default class Recode {
     }
 
 }
-function getUrlVars() {
-    var vars = {};
-    var parts = window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, function(m,key,value) {
-    vars[key] = value;
-    });
-    return vars;
-    }
+
+function onRecodeStorageEvent(recode, e){
+    recode.configuration = localStorage.getItem('configuration');
+    m.redraw();
+}

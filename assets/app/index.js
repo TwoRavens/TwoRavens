@@ -91,7 +91,7 @@ function leftpanel(mode) {
                      callback: app.clickVar,
                      popup: (variable) => app.popoverContent(app.findNodeIndex(variable, true)),
                      attrsItems: {'data-placement': 'right', 'data-original-title': 'Summary Statistics'}}),
-                    m(Button,{id: 'recode', onclick:_=>window.open("#!/recode?val="+app.valueKey, "recode","toolbar=no,scrollbars=yes,resizable=yes,top=200,left=500,width=1000,height=600") ,title: 'Customize variables.',style: ' display: block; margin: 0 auto; margin-top: 5%; text-align: center;'},'Customize')]},
+                    m(Button,{id: 'recode', onclick:_=>window.open("#!/recode", "recode","toolbar=no,scrollbars=yes,resizable=yes,top=200,left=500,width=1000,height=600") ,title: 'Customize variables.',style: ' display: block; margin: 0 auto; margin-top: 5%; text-align: center;'},'Customize')]},
             {value: 'Discovery',
              contents: [
                  m(Table, {
@@ -613,6 +613,5 @@ m.route(document.body, '/model', {
         }
     },
     '/data': Peek,
-    '/recode':Recode,
-    '/try':Recode
+    '/recode':Recode
 });
