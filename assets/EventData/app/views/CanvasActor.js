@@ -1,5 +1,5 @@
 import m from 'mithril';
-import {dataset} from "../app.js"
+import {dataset} from '../app';
 import {
     setupActor,
     waitForQuery,
@@ -8,12 +8,12 @@ import {
     showSelectedCheck,
     currentNode,
     currentTab,
-} from "../subsets/Actor.js"
-import {panelMargin, grayColor} from "../../../common/app/common";
-import {aggregActorOn, setAggregActor} from "../aggreg/aggreg";
+} from '../subsets/Actor';
+import {panelMargin, grayColor} from '../../../common/common';
+import {aggregActorOn, setAggregActor} from '../aggreg/aggreg';
 
 // Width of the actor selection panel
-let selectionWidth = 350;
+let selectionWidth = '350px';
 
 
 function actorSelection(mode) {
@@ -190,22 +190,22 @@ export default class CanvasActor {
     view(vnode) {
         let {mode, display} = vnode.attrs;
 
-        return m("#canvasActor.canvas", {style: {height: `calc(100% - ${panelMargin}px)`, display: display}},
+        return m("#canvasActor.canvas", {style: {height: `calc(100% - ${panelMargin})`, display: display}},
             [
                 m("div#actorSelectionDiv", {
                     style: {
                         float: "left",
-                        height: `calc(100% - ${panelMargin}px)`,
-                        width: selectionWidth + "px",
+                        height: `calc(100% - ${panelMargin})`,
+                        width: selectionWidth,
                         'margin-top': "10px"
                     }
                 }, actorSelection(mode)),
                 m("div#actorLinkDiv", {
                     style: {
-                        'margin-left': panelMargin + 'px',
-                        'margin-top': panelMargin + 'px',
-                        height: `calc(100% - ${panelMargin}px)`,
-                        width: `calc(100% - ${selectionWidth + panelMargin}px)`
+                        'margin-left': panelMargin,
+                        'margin-top': panelMargin,
+                        height: `calc(100% - ${panelMargin})`,
+                        width: `calc(100% - ${selectionWidth} - ${panelMargin})`
                     }
                 }, [
                     m("[id='linkTitle']",

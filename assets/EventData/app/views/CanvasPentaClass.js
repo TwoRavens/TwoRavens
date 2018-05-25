@@ -1,10 +1,9 @@
 import m from 'mithril';
-import {panelMargin} from "../../../common/app/common";
 
 // Aggregation menu!
 export default class CanvasPentaClass {
     view(vnode) {
-        let {mode, display} = vnode.attrs;
+        let {display} = vnode.attrs;
         return m('div', {style: {display: display}}, [
             m("label.aggChkLbl",
                 [

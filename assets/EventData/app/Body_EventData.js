@@ -4,20 +4,16 @@ import * as app from './app';
 import * as aggreg from './aggreg/aggreg';
 import * as tour from "./tour";
 
-import {tableHeight} from "./aggreg/aggreg";
-
-import * as common from '../../common/app/common';
-import {panelMargin, heightHeader, heightFooter, canvasScroll, scrollbarWidth} from "../../common/app/common";
-
-import Panel from '../../common/app/views/Panel';
-import Header from '../../common/app/views/Header';
-import Footer from '../../common/app/views/Footer';
-import Canvas from '../../common/app/views/Canvas';
-import MenuTabbed from '../../common/app/views/MenuTabbed';
-import MenuHeaders from '../../common/app/views/MenuHeaders';
-import PanelList from '../../common/app/views/PanelList';
-import TextField from '../../common/app/views/TextField';
-import ButtonRadio from '../../common/app/views/ButtonRadio';
+import * as common from '../../common/common';
+import Panel from '../../common/views/Panel';
+import Header from '../../common/views/Header';
+import Footer from '../../common/views/Footer';
+import Canvas from '../../common/views/Canvas';
+import MenuTabbed from '../../common/views/MenuTabbed';
+import MenuHeaders from '../../common/views/MenuHeaders';
+import PanelList from '../../common/views/PanelList';
+import TextField from '../../common/views/TextField';
+import ButtonRadio from '../../common/views/ButtonRadio';
 
 import CanvasDatasets from "./views/CanvasDatasets";
 import CanvasAction from "./views/CanvasAction";
@@ -31,7 +27,6 @@ import CanvasRootCode from "./views/CanvasRootCode";
 import CanvasAggregTS from "./views/CanvasAggregTS";
 
 import TableAggregation from "./views/TableAggregation";
-import {setPanelOcclusion} from "../../common/app/common";
 
 export default class Body_EventData {
 
@@ -51,15 +46,15 @@ export default class Body_EventData {
     }
 
     header(mode) {
-        return m(Header,
+        return m(Header, {image: '/static/images/TwoRavens.png'},
 
             m('div', {style: {'flex-grow': 1}}),
-            m("h4", m("span#datasetLabel.label.label-default", app.dataset)),
+            m("h4", m("span#datasetLabel.label.label-default", {style: {margin: '.25em 1em'}}, app.dataset)),
 
             m('div', {style: {'flex-grow': 1}}),
             m("button#btnPeek.btn.btn-default", {
                     title: 'Display a data preview',
-                    style: {"margin-left": "2.0em", "float": "right"},
+                    style: {margin: '.25em 1em'},
                     onclick: () => window.open('#!/peek', 'peek')
                 },
                 'Peek'
@@ -67,15 +62,12 @@ export default class Body_EventData {
 
             // Button Reset
             m("button#btnReset.btn.btn-default.ladda-button[data-spinner-color='#818181'][data-style='zoom-in'][title='Reset']", {
-                    style: {
-                        "margin-left": "2.0em",
-                        "float": "right"
-                    },
+                    style: {margin: '1em'},
                     onclick: app.reset
                 },
                 m("span.ladda-label.glyphicon.glyphicon-repeat", {
                     style: {
-                        "font-size": "1em",
+                        "font-size": ".25em 1em",
                         "color": "#818181",
                         "pointer-events": "none"
                     }
@@ -84,7 +76,7 @@ export default class Body_EventData {
 
             m(ButtonRadio, {
                 id: 'modeButtonBar',
-                attrsAll: {style: {width: '18em', margin: '0 2em'}, class: 'navbar-right'},
+                attrsAll: {style: {width: '18em', margin: '.25em 1em'}},
                 onclick: (mode) => {
                     app.setOpMode(mode);
                     // the route set doesn't work inside setOpMode... no clue why
@@ -206,7 +198,7 @@ export default class Body_EventData {
 
     leftpanel(mode) {
         if (mode === 'datasets') {
-            setPanelOcclusion('left', `calc(250px + ${2 * panelMargin}px)`);
+            common.setPanelOcclusion('left', `calc(${common.panelMargin} + 250px + ${common.panelMargin})`);
         }
 
         if (mode === 'subset') {
@@ -263,7 +255,8 @@ export default class Body_EventData {
                 label: 'Data Selection',
                 attrsAll: {
                     style: {
-                        height: `calc(100% - ${heightHeader + heightFooter}px - ${2 * panelMargin}px - ${canvasScroll['horizontal'] ? scrollbarWidth : 0}px - ${tableHeight})`
+                        // subtract header, spacer, spacer, scrollbar, table, and footer
+                        height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${common.canvasScroll['horizontal'] ? common.scrollbarWidth : '0px'} - ${aggreg.tableHeight} - ${common.heightFooter})`
                     }
                 },
                 contents: m(MenuHeaders, {
@@ -299,7 +292,8 @@ export default class Body_EventData {
         let styling = {};
         if (mode === 'datasets') styling = {display: 'none'};
         if (mode === 'aggregate') styling = {
-            height: `calc(100% - ${heightHeader + heightFooter}px - ${2 * panelMargin}px - ${canvasScroll['horizontal'] ? scrollbarWidth : 0}px - ${tableHeight})`
+            // subtract header, the two margins, scrollbar, table, and footer
+            height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${common.canvasScroll['horizontal'] ? common.scrollbarWidth : '0px'} - ${aggreg.tableHeight} - ${common.heightFooter})`
         };
 
         return m(Panel, {
@@ -358,14 +352,14 @@ export default class Body_EventData {
                     style: {
                         display: app.opMode === 'subset' ? 'block' : 'none',
                         right: `calc(${common.panelOcclusion['right'] || '275px'} + 5px)`,
-                        bottom: common.heightFooter + common.panelMargin + 6 + 'px',
+                        bottom: `calc(${common.heightFooter} + ${common.panelMargin} + 6px)`,
                         position: 'fixed',
                         'z-index': 100
                     },
                     onclick: app.addRule
                 }, "Stage"),
-                m(Canvas, {
-                    contents: [
+                m(Canvas, {attrsAll: {style: mode === 'aggregate' ? {height: `calc(100% - ${common.heightHeader} - ${aggreg.tableHeight} - ${common.heightFooter})`} : {}}},
+                    [
                         m(CanvasDatasets, {mode: mode, display: ('Datasets' === app.canvasKeySelected) ? 'block' : 'none'}),
                         m(CanvasActor, {mode: mode, display: display('Actor')}),
                         m(CanvasDate, {mode: mode, display: display('Date')}),
@@ -376,9 +370,8 @@ export default class Body_EventData {
                         m(CanvasPentaClass, {mode: mode, display: display('Penta Class')}),
                         m(CanvasRootCode, {mode: mode, display: display('Root Code')}),
                         m(CanvasAggregTS, {mode: mode, display: display('Time Series')})
-                    ],
-                    attrsAll: {style: mode === 'aggregate' ? {height: `calc(100% - ${heightHeader + heightFooter}px - ${tableHeight})`} : {}}
-                }),
+                    ]
+                ),
                 m(TableAggregation, {mode: mode}),
                 this.footer(mode)
             ]

@@ -1,6 +1,6 @@
 import m from 'mithril';
-import {subsetData, buildSubset, editor} from "../app";
-import {panelMargin} from "../../../common/app/common";
+import {subsetData, buildSubset, editor} from '../app';
+import {panelMargin} from '../../../common/common';
 
 import {tourStartCustomExamples} from "../tour";
 
@@ -18,8 +18,9 @@ export default class CanvasCustom {
     }
 
     view(vnode) {
+        console.log("TEST 2");
         let {display} = vnode.attrs;
-        return (m("#canvasCustom.subsetDiv", {style: {"display": display, height: '100%', 'padding-top': panelMargin + 'px'}},
+        return (m("#canvasCustom.subsetDiv", {style: {"display": display, height: '100%', 'padding-top': panelMargin}},
             [
                 // Header
                 m(".panel-heading.text-left[id='subsetCustomLabel']", {

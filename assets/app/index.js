@@ -13,20 +13,18 @@ import * as layout from './layout';
 import * as results from './results';
 
 import Button from './views/PanelButton';
-import List from './views/PanelList';
-import Search from './views/Search';
 import Subpanel from './views/Subpanel';
-import Table from '../common/app/views/Table';
+import Table from '../common/views/Table';
 
-import * as common from '../common/app/common';
-import Panel from '../common/app/views/Panel';
-import MenuTabbed from '../common/app/views/MenuTabbed';
-import ButtonRadio from '../common/app/views/ButtonRadio';
-import Footer from '../common/app/views/Footer';
-import Header from '../common/app/views/Header';
-import PanelList from '../common/app/views/PanelList';
-import TextField from '../common/app/views/TextField';
-import Peek from '../common/app/views/Peek';
+import * as common from '../common/common';
+import Panel from '../common/views/Panel';
+import MenuTabbed from '../common/views/MenuTabbed';
+import ButtonRadio from '../common/views/ButtonRadio';
+import Footer from '../common/views/Footer';
+import Header from '../common/views/Header';
+import PanelList from '../common/views/PanelList';
+import TextField from '../common/views/TextField';
+import Peek from '../common/views/Peek';
 
 let state = {
     pipelines: [],
@@ -659,7 +657,7 @@ if (IS_EVENTDATA_DOMAIN) {
         '/datasets': {render: () => m(Body_EventData, {mode: 'datasets'})},
         '/subset': {render: () => m(Body_EventData, {mode: 'subset'})},
         '/aggregate': {render: () => m(Body_EventData, {mode: 'aggregate'})},
-        '/peek': {render: () => m(Peek)}
+        '/peek': {render: () => m(Peek, {image: '/static/images/TwoRavens.png'})}
     });
 } else {
     m.route(document.body, '/model', {

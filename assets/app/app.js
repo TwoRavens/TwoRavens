@@ -1,9 +1,7 @@
 import hopscotch from 'hopscotch';
 import m from 'mithril';
 import {bars, barsNode, barsSubset, density, densityNode, selVarColor} from './plots.js';
-import {heightHeader} from "../common/app/common";
-import {searchIndex} from "./views/Search";
-import * as common from "../common/app/common";
+import * as common from "../common/common";
 
 // hostname default - the app will use it to obtain the variable metadata
 // (ddi) and pre-processed data info if the file id is supplied as an
@@ -1738,7 +1736,7 @@ export let marginTopCarousel = 0;
 export let marginLeftCarousel = 0;
 
 if (IS_D3M_DOMAIN || IS_DATAVERSE_DOMAIN) {
-    common.callOnResize(() => {
+    window.addEventListener('resize', () => {
         let carousel = document.getElementById('innercarousel');
         let container = document.getElementById('m0');
         let whitespace = document.getElementById('whitespace0');

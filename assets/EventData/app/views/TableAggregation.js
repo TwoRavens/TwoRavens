@@ -1,6 +1,6 @@
 import m from 'mithril';
 import {tableHeight} from '../aggreg/aggreg'
-import {heightFooter} from "../../../common/app/common";
+import {heightFooter} from "../../../common/common";
 
 export default class TableAggregation {
     view(vnode) {
@@ -10,7 +10,7 @@ export default class TableAggregation {
                 style: {
                     "display": mode === 'aggregate' ? 'inline' : 'none',
                     "position": "fixed",
-                    "bottom": heightFooter + 'px',
+                    "bottom": heightFooter,
                     "height": tableHeight,
                     "width": "100%",
                     "border-top": "1px solid #ADADAD",
