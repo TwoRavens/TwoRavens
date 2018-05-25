@@ -6,7 +6,7 @@ from django.conf import settings
 import grpc
 import core_pb2
 import core_pb2_grpc as cpb_grpc
-import dataflow_ext_pb2_grpc as dataflow_grpc
+#import dataflow_ext_pb2_grpc as dataflow_grpc
 
 ## PARAMETERS
 # ...to get things going
