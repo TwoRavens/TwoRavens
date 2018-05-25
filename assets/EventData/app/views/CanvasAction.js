@@ -1,6 +1,6 @@
 import m from 'mithril';
 import {setupAction} from '../subsets/Action.js';
-import {panelMargin} from "../../../common/app/common";
+import {panelMargin} from "../../../common/common";
 
 export default class CanvasAction {
     oncreate() {

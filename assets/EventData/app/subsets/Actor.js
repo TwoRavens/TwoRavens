@@ -1,8 +1,8 @@
 import * as app from "../app.js"
 import * as d3 from 'd3'
-import {panelOcclusion} from "../../../common/app/common";
+import {panelOcclusion} from "../../../common/common";
 import {updateAggregTable} from "../aggreg/aggreg";
-import {callOnResize, panelMargin} from "../../../common/app/common";
+import {panelMargin} from "../../../common/common";
 import m from 'mithril'
 
 // number of elements to show in search actor list
@@ -14,7 +14,7 @@ let cachedSearch = '';
 let cachedQuery = '';
 
 // Resize actor when window changes size
-callOnResize(() => resizeActorSVG());
+window.addEventListener('resize', () => resizeActorSVG());
 
 export let filterSet = {
     'source': {
@@ -1299,6 +1299,7 @@ export function showSelected(status) {
 }
 
 export function actorSearch(force=false) {
+    console.log($("#actorSearch"));
     const searchText = $("#actorSearch").val().toUpperCase();
 
     const operator = '$and';

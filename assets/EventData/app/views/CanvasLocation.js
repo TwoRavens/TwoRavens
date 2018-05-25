@@ -1,11 +1,11 @@
 import m from 'mithril';
 import {updateLocation, maingraphAction} from '../subsets/Location'
-import {panelMargin} from "../../../common/app/common";
+import {panelMargin} from "../../../common/common";
 
 export default class CanvasLocation {
     view(vnode) {
         let {display} = vnode.attrs;
-        return (m("#canvasLocation.subsetDiv", {style: {"display": display, 'padding-top': panelMargin + 'px'}},
+        return (m("#canvasLocation.subsetDiv", {style: {"display": display, 'padding-top': panelMargin}},
             [
                 m("[tabindex='0']", {
                         style: {

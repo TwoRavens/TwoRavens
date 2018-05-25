@@ -1,5 +1,5 @@
 import m from 'mithril';
-import {panelMargin} from "../../../common/app/common";
+import {panelMargin} from "../../../common/common";
 //~ import * as d3 from "d3";
 
 export default class CanvasAggregTS {
@@ -11,7 +11,7 @@ export default class CanvasAggregTS {
 		console.log(vnode.attrs);
 		let {display} = vnode.attrs;
 		return m("[id='canvasAggregTS']", {style: {"display": display}}, [
-			m("#canvasAggregTSBin", {style: {'padding-top': panelMargin + 'px'}}, [
+			m("#canvasAggregTSBin", {style: {'padding-top': panelMargin}}, [
 				m("svg[height='100%'][id='aggregTS_SVG'][width='100%']", {style: {"background": "none"}}), m(".SVGtooltip")
 			]),
 			m("#aggregTSGroupSelect")

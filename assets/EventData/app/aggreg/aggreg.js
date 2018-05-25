@@ -1,7 +1,7 @@
 import {rappURL, dataset, datasource, makeCorsRequest, laddaUpdate, showCanvas} from "../app";
 import {dateminUser, datemaxUser} from "../subsets/Date";
 import {actorLinks} from "../subsets/Actor";
-import {varColor, selVarColor} from '../../../common/app/common';
+import {varColor, selVarColor} from '../../../common/common';
 import * as d3 from "d3";
 
 let aggregMode = "penta";

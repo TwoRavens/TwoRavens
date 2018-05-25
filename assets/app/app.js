@@ -1914,6 +1914,23 @@ export function layout(v, v2) {
     }
 }
 
+export let marginTopCarousel = 0;
+export let marginLeftCarousel = 0;
+
+if (IS_D3M_DOMAIN || IS_DATAVERSE_DOMAIN) {
+    window.addEventListener('resize', () => {
+        let carousel = document.getElementById('innercarousel');
+        let container = document.getElementById('m0');
+        let whitespace = document.getElementById('whitespace0');
+
+        marginTopCarousel = (carousel.offsetHeight - whitespace.getAttribute("height") - 16) / 2;
+        marginLeftCarousel = (carousel.offsetWidth - whitespace.getAttribute("width")) / 2;
+
+        container.style.marginTop = marginTopCarousel + 'px';
+        container.style.marginLeft = marginLeftCarousel + 'px';
+        container.style.height = `calc(100% + ${Math.abs(marginTopCarousel)}px)`;
+    })
+}
 
 /** needs doc */
 function find($nodes, name) {

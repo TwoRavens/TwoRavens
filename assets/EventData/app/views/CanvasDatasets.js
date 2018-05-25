@@ -1,6 +1,6 @@
 import m from 'mithril';
 import * as app from '../app';
-import * as common from '../../../common/app/common'
+import * as common from '../../../common/common'
 
 export default class CanvasDatasets {
     view(vnode) {
@@ -45,7 +45,7 @@ export default class CanvasDatasets {
                         width: '100%',
                         background: dataset.key === app.dataset ? common.grayColor : common.menuColor,
                         'box-shadow': '#0003 0px 2px 3px',
-                        'margin-top': common.panelMargin + 'px',
+                        'margin-top': common.panelMargin,
                         'padding': '10px',
                         'border': common.borderColor
                     },

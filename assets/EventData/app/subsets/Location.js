@@ -1,7 +1,7 @@
 import * as d3 from "d3"
 import {handleResize, countryData} from "../app";
 import m from "mithril";
-import {scrollBarChanged} from "../../../common/app/common";
+import {scrollBarChanged} from "../../../common/common";
 
 /**
  * Variables declared for location

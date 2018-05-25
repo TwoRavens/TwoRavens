@@ -3,7 +3,7 @@ import m from 'mithril';
 // Aggregation menu!
 export default class CanvasRootCode {
     view(vnode) {
-        let {mode, display} = vnode.attrs;
+        let {display} = vnode.attrs;
         return m('div', {style: {display: display}}, [
             m("label.aggChkLbl",
                 [

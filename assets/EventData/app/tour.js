@@ -1,6 +1,6 @@
 import {showCanvas} from "./app";
 import hopscotch from 'hopscotch';
-import * as common from '../../common/app/common';
+import * as common from '../../common/common';
 import m from 'mithril';
 import {editor} from './app';
 

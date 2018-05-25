@@ -1,6 +1,6 @@
 import m from 'mithril';
 import {setupCoordinates} from "../subsets/Coordinates"
-import {panelMargin} from "../../../common/app/common";
+import {panelMargin} from "../../../common/common";
 
 export default class CanvasCoordinates {
 
@@ -10,7 +10,7 @@ export default class CanvasCoordinates {
 
     view(vnode) {
         let {display} = vnode.attrs;
-        return (m("#canvasCoordinates.subsetDiv", {style: {"display": display, 'padding-top': panelMargin + 'px'}},
+        return (m("#canvasCoordinates.subsetDiv", {style: {"display": display, 'padding-top': panelMargin}},
             [
                 m(".form-inline[id='latitudeInterval']", {
                         style: {

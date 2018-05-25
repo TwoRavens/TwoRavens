@@ -14,22 +14,19 @@ import * as results from './results';
 import {elem, fadeIn, fadeOut} from './utils';
 
 import Button from './views/PanelButton';
-import List from './views/PanelList';
-import Search from './views/Search';
 import Subpanel from './views/Subpanel';
 
-import * as common from '../common/app/common';
-import ButtonRadio from '../common/app/views/ButtonRadio';
-import Footer from '../common/app/views/Footer';
-import Header from '../common/app/views/Header';
-import MenuTabbed from '../common/app/views/MenuTabbed';
-import Modal, {setModal} from '../common/app/views/Modal';
-import Panel from '../common/app/views/Panel';
-import PanelList from '../common/app/views/PanelList';
-import Peek from '../common/app/views/Peek';
-import Table from '../common/app/views/Table';
-import TextField from '../common/app/views/TextField';
-import Peek from '../common/app/views/Peek';
+import Table from '../common/views/Table';
+
+import * as common from '../common/common';
+import Panel from '../common/views/Panel';
+import MenuTabbed from '../common/views/MenuTabbed';
+import ButtonRadio from '../common/views/ButtonRadio';
+import Footer from '../common/views/Footer';
+import Header from '../common/views/Header';
+import PanelList from '../common/views/PanelList';
+import TextField from '../common/views/TextField';
+import Peek from '../common/views/Peek';
 
 
 // EVENTDATA
@@ -632,9 +629,8 @@ if (IS_EVENTDATA_DOMAIN) {
         '/datasets': {render: () => m(Body_EventData, {mode: 'datasets'})},
         '/subset': {render: () => m(Body_EventData, {mode: 'subset'})},
         '/aggregate': {render: () => m(Body_EventData, {mode: 'aggregate'})},
-        '/peek': {render: () => m(Peek)}
+        '/peek': {render: () => m(Peek, {image: '/static/images/TwoRavens.png'})}
     });
-<<<<<<< aeb0b92a82dc66b532065b907eb9e7f00198348c
 }
 
 m.route(document.body, '/model', {
@@ -648,21 +644,6 @@ m.route(document.body, '/model', {
         },
         render() {
             return m(Body, {mode: 'results'});
-=======
-} else {
-    m.route(document.body, '/model', {
-        '/model': {render: () => m(Body)},
-        '/explore': {render: () => m(Body, {mode: 'explore'})},
-        '/results': {
-            onmatch() {
-                app.set_mode('results');
-                state.get_pipelines();
-                layout.init();
-            },
-            render() {
-                return m(Body, {mode: 'results'});
-            }
->>>>>>> load rows on scroll
         }
     },
     '/data': Peek
