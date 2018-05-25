@@ -58,3 +58,6 @@ rook/rook-files/o_185/data/trainDatamerged.tsv
 rook/rook-files/o_185/preprocess/preprocess.json
 assets/pkgs/swagger-ui/dist/*.map
 .Rhistory
+
+# Code editors
+.idea/
