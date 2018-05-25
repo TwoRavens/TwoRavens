@@ -1,3 +1,4 @@
+<<<<<<< a8180a85b0c76a70a0ecd4f62c790556a07bf424
 node_modules/
 npm-debug.log
 
@@ -64,3 +65,68 @@ ravens_volume/test_data/*/search_config.json
 
 # IDE files
 .idea/
+=======
+node_modules/
+npm-debug.log
+
+# currently in rook directory
+#rook/
+rook/output*.png
+rook/.Rapp.history
+rook/.RData
+rook/.Rhistory
+rook/config.json
+rook/result.json
+rook/test.json
+rook/rook-files/*
+rook/log_*
+rook/eventdata/downloads/
+
+# EventData
+assets/EventData/node_modules/
+assets/EventData/build/
+
+#build/
+data/preprocessSubset*.txt
+.DS_Store
+test_setup_local/*
+assets/build/tworavens_app-*.js
+assets/build/tworavens_styles-*.css
+assets/build/*.png
+assets/result.json
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+
+*.egg-info/
+.installed.cfg
+*.egg
+
+# PyInstaller
+#  Usually these files are written by a python script from a template
+#  before PyInstaller builds the exe, so as to inject date/other infos into it.
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# C extensions
+*.so
+webpack-stats.json
+data/d3m/o_196seed/data/.Rapp.history
+setup/r-setup/RINSTALL.*.LOG
+
+ravens_volume/test_output/*
+ravens_volume/config_*.json
+ravens_volume/32_wikiqa
+rook/rook-files/o_185/data/trainDatamerged.tsv
+rook/rook-files/o_185/preprocess/preprocess.json
+assets/pkgs/swagger-ui/dist/*.map
+.Rhistory
+
+# Code editors
+.idea/
+>>>>>>> initial common submodule

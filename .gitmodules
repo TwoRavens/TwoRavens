@@ -1,0 +1,4 @@
+[submodule "assets/common"]
+	path = assets/common
+	url = https://github.com/TwoRavens/common.git
+	branch = master
