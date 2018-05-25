@@ -29,10 +29,13 @@ def ta2_hello():
     # --------------------------------
     try:
         req = Parse("{}", core_pb2.HelloRequest())
+        #req = core_pb2.HelloRequest()
     except ParseError as err_obj:
         err_msg = 'Failed to convert JSON to gRPC: %s' % (err_obj)
         return err_resp(err_msg)
 
+    content = MessageToJson(req, including_default_value_fields=True)
+    print('content as JSON:\n', content)
 
     # In test mode, check if the incoming JSON is legit (in line above)
     # -- then return canned response

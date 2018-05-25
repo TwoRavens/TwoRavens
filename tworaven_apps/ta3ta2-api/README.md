@@ -39,6 +39,8 @@ TA3-TA2 API calls are defined in the *core* GRPC service which can be found in [
 and all TA3 and TA2 sytems are expected to implement it and support it. Optional services can be
 defined as well in other `.proto` files.
 
+![Diagram of the overall flow of the API](flow.png)
+
 ## GRPC compilation
 
 GRPC provides tooling to compile protocol specification into various target languages. Examples follow.
@@ -148,6 +150,11 @@ one) and predictions as output. This is the only pipeline TA2 is expected to sea
 But TA3 can fully specify any pipeline for TA2 to execute without any search
 (including a pipeline of just one primitive).
 
+Examples of "relaxations" of the common requirements are included. We expect
+that some TA2 systems will be able to work with those relaxed requirements,
+and TA3s can use those if available, but it is not expected that every TA2
+will. TA3s should be able to function within the restrictions as stated below.
+
 ### Pipeline templates
 
 Pipeline templates are based on pipeline description with few differences:
@@ -163,12 +170,12 @@ final pipeline.
 ### Pipeline template restrictions
 
 While the pipeline template language does not restrict the use of a placeholder step, for
-the purpose of TA3-TA2 API there are the following restrictions:
+the purpose of TA3-TA2 API we are currently placing the following restrictions:
 
-* There can be only one placeholder step in a pipeline template, at a top-level of a pipeline (not inside a sub-pipeline).
-* Placeholder step has to have only one input, a Dataset container value, and one output,
-  predictions as Pandas dataframe. In this way it resembles a standard pipeline.
-* Placeholder can be only the latest step in the pipeline.
+* There can be only one placeholder step in a pipeline template, at the top-level of a pipeline (not inside a sub-pipeline).
+* The placeholder step has to have only one input, a Dataset container value, and one output,
+  predictions as a Pandas dataframe. In this way it resembles a standard pipeline.
+* The placeholder can be only the last step in the pipeline.
 * All primitive steps should have all their hyper-parameters fixed.
 
 These restrictions effectively mean that a pipeline template can only specify preprocessing
@@ -183,26 +190,26 @@ should tune.
 
 ### Fully specified pipelines
 
-TA3 can also fully specified pipeline in the `SearchSolutions`. This is a pipeline description
+TA3 can also provide a fully specified pipeline in the `SearchSolutions`. This is a pipeline description
 which does not have any placeholder step and have all hyper-parameters fixed.
 
 For fully specified pipelines with fixed hyper-parameters, TA2 will just check that the given
 pipeline is valid and return it for it to be directly executed (scored, fitted, called to
-produce data). This allows fixed computations to be done on data, for example, pipeline
+produce data). This allows fixed computations to be done on data, for example, the pipeline
 can consist of only one primitive with fixed hyper-parameters to execute that one primitive.
 Moreover, such fully specified pipeline with fixed hyper-parameters can have any
 inputs and any outputs. Otherwise pipelines have to be from a Dataset container value
 to predictions Pandas dataframe.
 
-Relaxation: Individual systems can support also pipeliens with all primitives specified,
+Relaxation: Individual systems can support also pipelines with all primitives specified,
 but with free (available for tuning) hyper-parameters. In this case, TA2 will only tune
 hyper-parameters and resulting pipelines will have the same structure as given pipeline,
 but hyper-parameter configuration will differ.
 
 ## Values
 
-Some message contain data values which can be passed between TA2 and TA3. There are
-multiple ways this value can be passed and they are listed in the [`value.proto`](./value.proto)
+Some messages contain data values which can be passed between TA2 and TA3. There are
+multiple ways those values can be passed and they are listed in the [`value.proto`](./value.proto)
 file:
 
 * Put simple raw values directly in the message.
@@ -225,30 +232,56 @@ preprocessing or postprocessing, and the TA2 system returns two pipelines throug
 responses. Responses for multiple pipelines are transmitted each using one GRPC stream and can be
 interleaved. Client then requests scores for one.
 
+```mermaid
+sequenceDiagram
+  participant Client
+  participant ScoreSolution
+  participant SearchSolutions
+  Client->>SearchSolutions: SearchSolutionsRequest
+  SearchSolutions-->>Client: SearchSolutionsResponse { search_id = 057cf5... }
+  Client->>+SearchSolutions: GetSearchSolutionsResults(GetSearchSolutionsResultsRequest)
+  SearchSolutions-->>Client: GetSearchSolutionsResultsResponse { solution_id = a5d78d... }
+  SearchSolutions-->>Client: GetSearchSolutionsResultsResponse { solution_id = b6d5e2... }
+  Client->>ScoreSolution: ScoreSolutionRequest { a5d78d... }
+  ScoreSolution-->>Client: ScoreSolutionResponse { request_id = 1d9193... }
+  Client->>+ScoreSolution: GetScoreSolutionResults(GetScoreSolutionResultsRequest)
+  ScoreSolution-->>Client: ScoreSolutionResultsResponse { progress = PENDING }
+  ScoreSolution-->>Client: ScoreSolutionResultsResponse { progress = RUNNING }
+  ScoreSolution-->>Client: ScoreSolutionResultsResponse { progress = COMPLETED, scores }
+  ScoreSolution-->>-Client: (ScoreSolution stream ends)
+  Client->>SearchSolutions: EndSearchSolutions(EndSearchSolutionsRequest)
+  SearchSolutions-->>Client: EndSearchSolutionsResponse
+  SearchSolutions-->>-Client: (GetFoundSolutions stream ends)
 ```
-1. Client: SearchSolutions(SearchSolutionsRequest) // problem = {...}, template = null, inputs = [dataset_uri]
+
+```
+1. Client: SearchSolutions(SearchSolutionsRequest) // problem = {...}, template = {...}, inputs = [dataset_uri]
 2. Server: SearchSolutionsResponse // search_id = 057cf581-5d5e-48b2-8867-db72e7d1381d
-3. Client: GetFoundSolutions(GetFoundSolutionsRequest) // search_id = 057cf581-5d5e-48b2-8867-db72e7d1381d
-[FOUND PIPELINES STREAM BEGINS]
-4. Server: GetFoundSolutionsResponse // solution_id = 5b08f87a-8393-4fa4-95be-91a3e587fe54, internal_score = 0.6
-5. Server: GetFoundSolutionsResponse // solution_id = 95de692f-ea81-4e7a-bef3-c01f18281bc0, internal_score = 0.8
-[FOUND PIPELINES STREAM ENDS]
-6. Client: ScoreSolution(ScoreSolutionRequest) // solution_id = 95de692f-ea81-4e7a-bef3-c01f18281bc0, inputs = [dataset_uri], performance_metrics = [ACCURACY]
-[SCORE PIPELINE STREAM BEGINS]
-7. Server: ScoreSolutionResponse // progress = PENDING
-8. Server: ScoreSolutionResponse // progress = RUNNING
-9. Server: ScoreSolutionResponse // progress = COMPLETED, scores = [0.9]
-[SCORE PIPELINE STREAM END]
-10. Client: EndSearchSolutions(EndSearchSolutionsRequest) // search_id = 057cf581-5d5e-48b2-8867-db72e7d1381d
-11. Server: EndSearchSolutionsResponse
+3. Client: GetSearchSolutionsResults(GetSearchSolutionsResultsRequest) // search_id = 057cf581-5d5e-48b2-8867-db72e7d1381d
+[SEARCH SOLUTIONS STREAM BEGINS]
+4. Server: GetSearchSolutionsResultsResponse // progress = PENDING
+5. Server: GetSearchSolutionsResultsResponse // progress = RUNNING, solution_id = 5b08f87a-8393-4fa4-95be-91a3e587fe54, internal_score = 0.6, done_ticks = 0.5, all_ticks = 1.0
+6. Server: GetSearchSolutionsResultsResponse // progress = RUNNING, solution_id = 95de692f-ea81-4e7a-bef3-c01f18281bc0, internal_score = 0.8, done_ticks = 1.0, all_ticks = 1.0
+7. Server: GetSearchSolutionsResultsResponse // progress = COMPLETED
+[SEARCH SOLUTIONS STREAM ENDS]
+8. Client: ScoreSolution(ScoreSolutionRequest) // solution_id = 95de692f-ea81-4e7a-bef3-c01f18281bc0, inputs = [dataset_uri], performance_metrics = [ACCURACY]
+9. Server: ScoreSolutionResponse // request_id = 5d919354-4bd3-4155-9295-406d8c02b915
+10. Client: GetScoreSolutionResults(GetScoreSolutionResultsRequest) // request_id = 5d919354-4bd3-4155-9295-406d8c02b915
+[SCORE SOLUTION STREAM BEGINS]
+11. Server: GetScoreSolutionResultsResponse // progress = PENDING
+12. Server: GetScoreSolutionResultsResponse // progress = RUNNING
+13. Server: GetScoreSolutionResultsResponse // progress = COMPLETED, scores = [0.9]
+[SCORE SOLUTION STREAM END]
+14. Client: EndSearchSolutions(EndSearchSolutionsRequest) // search_id = 057cf581-5d5e-48b2-8867-db72e7d1381d
+15. Server: EndSearchSolutionsResponse
 ```
 
 ### Pass-through execution of a primitive
 
 Example call flow for a TA3 system calling one primitive on a dataset and storing transformed dataset into a
 Plasma store where it can efficiently access it using memory sharing and display it to the user.
-It calls only `ProduceSolution` without `FitSolution` first because it knows that the primitive is just
-a transformation and fitting is not necessary.
+Even if the primitive is just a transformation and fitting is not necessary, TA3 has to fit a solution
+before it is able to call produce.
 
 This example has as an input dataset and as the output dataset as well. This is different from regular
 pipelines which take dataset as input and produce predictions as output. The reason is that the
@@ -257,20 +290,32 @@ pipeline is full specified by a TA3 system so inputs and outputs can be anything
 ```
 1. Client: SearchSolutions(SearchSolutionsRequest) // problem = {...}, template = {...}, inputs = [dataset_uri]
 2. Server: SearchSolutionsResponse // search_id = ae4de7f4-4435-4d86-834b-c183ef85f2d0
-3. Client: GetFoundSolutions(GetFoundSolutionsRequest) // search_id = ae4de7f4-4435-4d86-834b-c183ef85f2d0
-[FOUND PIPELINES STREAM BEGINS]
-4. Server: GetFoundSolutionsResponse // solution_id = 619e09ee-ccf5-4bd2-935d-41094169b0c5
-[FOUND PIPELINES STREAM ENDS]
-5. Client: ProduceSolution(ProduceSolutionRequest) // solution_id = 619e09ee-ccf5-4bd2-935d-41094169b0c5, inputs = [dataset_uri], expose_outputs = ["outputs.0"], expose_value_types = [PLASMA_ID]
-[PRODUCE PIPELINE STREAM BEGINS]
-6. Server: ProduceSolutionResponse // progress = PENDING
-7. Server: ProduceSolutionResponse // progress = RUNNING, steps = [progress = PENDING]
-8. Server: ProduceSolutionResponse // progress = RUNNING, steps = [progress = RUNNING]
-9. Server: ProduceSolutionResponse // progress = RUNNING, steps = [progress = COMPLETED]
-10. Server: ProduceSolutionResponse // progress = COMPLETED, steps = [progress = COMPLETED], exposed_outputs = {"outputs.0": ObjectID(6811fc1154520d677d58b01a51b47036d5a408a8)}
-[PRODUCE PIPELINE STREAM END]
-11. Client: EndSearchSolutions(EndSearchSolutionsRequest) // search_id = ae4de7f4-4435-4d86-834b-c183ef85f2d0
-12. Server: EndSearchSolutionsResponse
+3. Client: GetSearchSolutionsResults(GetSearchSolutionsResultsRequest) // search_id = ae4de7f4-4435-4d86-834b-c183ef85f2d0
+[SEARCH SOLUTIONS STREAM BEGINS]
+4. Server: GetSearchSolutionsResultsResponse // progress = PENDING
+5. Server: GetSearchSolutionsResultsResponse // progress = RUNNING, solution_id = 619e09ee-ccf5-4bd2-935d-41094169b0c5, internal_score = NaN, done_ticks = 1.0, all_ticks = 1.0
+6. Server: GetSearchSolutionsResultsResponse // progress = COMPLETED
+[SEARCH SOLUTIONS STREAM ENDS]
+7. Client: FitSolution(FitSolutionRequest) // solution_id = 619e09ee-ccf5-4bd2-935d-41094169b0c5, inputs = [dataset_uri]
+8. Server: FitSolutionResponse // request_id = e7fe4ef7-8b3a-4365-9fc4-c1a8228c509c
+9. Client: GetFitSolutionResults(GetFitSolutionResultsRequest) // request_id = e7fe4ef7-8b3a-4365-9fc4-c1a8228c509c
+[FIT SOLUTION STREAM BEGINS]
+10. Server: GetFitSolutionResultsResponse // progress = PENDING
+11. Server: GetFitSolutionResultsResponse // progress = RUNNING
+12. Server: GetFitSolutionResultsResponse // progress = COMPLETED, fitted_solution_id = 88d627a4-e4ca-4b1a-9f2e-af9c54dfa860
+[FIT SOLUTION STREAM END]
+13. Client: ProduceSolution(ProduceSolutionRequest) // fitted_solution_id = 88d627a4-e4ca-4b1a-9f2e-af9c54dfa860, inputs = [dataset_uri], expose_outputs = ["outputs.0"], expose_value_types = [PLASMA_ID]
+14. Server: ProduceSolutionResponse // request_id = 954b19cc-13d4-4c2a-a98f-8c15498014ac
+15. Client: GetProduceSolutionResults(GetProduceSolutionResultsRequest) // request_id = 954b19cc-13d4-4c2a-a98f-8c15498014ac
+[PRODUCE SOLUTION STREAM BEGINS]
+16. Server: GetProduceSolutionResultsResponse // progress = PENDING
+17. Server: GetProduceSolutionResultsResponse // progress = RUNNING, steps = [progress = PENDING]
+18. Server: GetProduceSolutionResultsResponse // progress = RUNNING, steps = [progress = RUNNING]
+19. Server: GetProduceSolutionResultsResponse // progress = RUNNING, steps = [progress = COMPLETED]
+20. Server: GetProduceSolutionResultsResponse // progress = COMPLETED, steps = [progress = COMPLETED], exposed_outputs = {"outputs.0": ObjectID(6811fc1154520d677d58b01a51b47036d5a408a8)}
+[PRODUCE SOLUTION STREAM END]
+21. Client: EndSearchSolutions(EndSearchSolutionsRequest) // search_id = ae4de7f4-4435-4d86-834b-c183ef85f2d0
+22. Server: EndSearchSolutionsResponse
 ```
 
 `template` used above could look like (with message shown in JSON):

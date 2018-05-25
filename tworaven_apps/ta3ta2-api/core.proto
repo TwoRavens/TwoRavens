@@ -17,7 +17,7 @@ extend google.protobuf.FileOptions {
 
 // Date-based version string. Use this to populate version field in "SearchSolutionsRequest"
 // and "SearchSolutionsResponse" messages.
-option (protocol_version) = "2018.5.1";
+option (protocol_version) = "2018.5.2_pre";
 
 enum EvaluationMethod {
     // Default value. Not to be used.
@@ -355,12 +355,14 @@ message GetFitSolutionResultsResponse {
     repeated StepProgress steps = 2;
     // A mapping between data references of step outputs and values.
     map<string, Value> exposed_outputs = 3;
+    // The fitted solution ID, once progress = COMPLETED.
+    string fitted_solution_id = 4;
 }
 
 // Produce (execute) the solution on given inputs. A solution has to have been fitted for this
 // to be possible (even if in cases where this is just created by transformations).
 message ProduceSolutionRequest {
-    string solution_id = 1;
+    string fitted_solution_id = 1;
     repeated Value inputs = 2;
     // List of data references of step outputs which should be exposed to the TA3 system.
     // If you want to expose outputs of the whole pipeline (e.g., predictions themselves),
@@ -403,7 +405,7 @@ message GetProduceSolutionResultsResponse {
 // Exports a solution for evaluation purposes based on NIST specifications.
 message SolutionExportRequest {
     // Found solution to export.
-    string solution_id = 1;
+    string fitted_solution_id = 1;
     // Solution rank to be used for the exported solution. Each exported solution
     // has rank metadata associated with it. There has to be at least one solution
     // exported and only one can and should have rank 1, but assuring this is
