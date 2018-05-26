@@ -1,51 +1,41 @@
 import m from 'mithril';
+import {selectedPentaClasses, setSelectedPentaClasses} from "../aggreg/aggreg";
 
-// Aggregation menu!
 export default class CanvasPentaClass {
     view(vnode) {
         let {display} = vnode.attrs;
+
+        let labels = [
+            "Public Statement",
+            "Verbal Cooperation",
+            "Material Cooperation",
+            "Verbal Conflict",
+            "Material Conflict"
+        ];
+
         return m('div', {style: {display: display}}, [
+            // all
             m("label.aggChkLbl",
-                [
-                    m("input.aggChk.aggChkPentaAll.aggAllCheck[checked='true'][id='aggregPentaAll'][name='aggregPentaAll'][type='checkbox'][value='all']"),
-                    "All"
-                ]
+                m("input#aggregPentaAll.aggChk.aggChkPentaAll.aggAllCheck[type='checkbox']", {
+                    name: 'aggregPentaAll',
+                    value: 'all',
+                    onclick: m.withAttr('checked', setSelectedPentaClasses),
+                    checked: selectedPentaClasses.every(_ => _),
+                    indeterminate: !selectedPentaClasses.every(_=>_) && selectedPentaClasses.some(_=>_)
+                }),
+                "All"
             ),
-            m(".separator"),
-            m("label.aggChkLbl",
-                [
-                    m("input.aggChk.aggChkPenta[checked='true'][id='aggregPenta0'][name='aggregPenta0'][type='checkbox'][value='penta0']"),
-                    "Penta 0: Public Statement"
-                ]
-            ),
-            m(".separator"),
-            m("label.aggChkLbl",
-                [
-                    m("input.aggChk.aggChkPenta[checked='true'][id='aggregPenta1'][name='aggregPenta1'][type='checkbox'][value='penta1']"),
-                    "Penta 1: Verbal Cooperation"
-                ]
-            ),
-            m(".separator"),
-            m("label.aggChkLbl",
-                [
-                    m("input.aggChk.aggChkPenta[checked='true'][id='aggregPenta2'][name='aggregPenta2'][type='checkbox'][value='penta2']"),
-                    "Penta 2: Material Cooperation"
-                ]
-            ),
-            m(".separator"),
-            m("label.aggChkLbl",
-                [
-                    m("input.aggChk.aggChkPenta[checked='true'][id='aggregPenta3'][name='aggregPenta3'][type='checkbox'][value='penta3']"),
-                    "Penta 3: Verbal Conflict"
-                ]
-            ),
-            m(".separator"),
-            m("label.aggChkLbl",
-                [
-                    m("input.aggChk.aggChkPenta[checked='true'][id='aggregPenta4'][name='aggregPenta4'][type='checkbox'][value='penta4']"),
-                    "Penta 4: Material Conflict"
-                ]
-            )
-        ])
+            // individual
+            ...labels.map((label, i) =>
+                m("label.aggChkLbl",
+                    m(`input#aggregPenta${i}.aggChk.aggChkPenta[type='checkbox']`, {
+                        name: 'aggregPenta' + i,
+                        value: 'penta' + i,
+                        onclick: m.withAttr('checked', (checked) => setSelectedPentaClasses(checked, i)),
+                        checked: selectedPentaClasses[i]
+                    }),
+                    `Penta ${i}: ${label}`
+                ))
+        ].map(val => [val, m(".separator")]));
     }
 }
