@@ -27,9 +27,6 @@ for (let x = 0; x <= aggregRootSelectNum; x ++) {
 
 export let eventMeasure = 'Penta Class';
 export let setEventMeasure = (measure) => eventMeasure = measure;
-// export let dateMeasure = 'None';
-// export let setDateMeasure = (measure) => dateMeasure = measure;
-
 export let setAggregMode = (mode) => aggregMode = mode;
 
 // Map measure string to numeric value used in existing aggregation code
@@ -51,6 +48,19 @@ export let setAggregActor = (state) => {
 
 	aggregActorOn ? $(".aggregDataActor").show() : $(".aggregDataActor").hide();
     updateAggregTable();
+};
+
+// start with all selected
+export let selectedPentaClasses = Array(5).fill(true);
+export let setSelectedPentaClasses = (status, penta) => {
+	if (penta === undefined) selectedPentaClasses.fill(status);
+	else selectedPentaClasses[penta] = status;
+};
+
+export let selectedRootCodes = Array(5).fill(true);
+export let setSelectedRootCodes = (status, root) => {
+    if (root === undefined) selectedRootCodes.fill(status);
+    else selectedRootCodes[root] = status;
 };
 
 export let tableHeight = '20%';
