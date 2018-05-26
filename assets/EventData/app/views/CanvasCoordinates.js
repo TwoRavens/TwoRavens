@@ -10,7 +10,7 @@ export default class CanvasCoordinates {
 
     view(vnode) {
         let {display} = vnode.attrs;
-        return (m("#canvasCoordinates.subsetDiv", {style: {"display": display, 'padding-top': panelMargin}},
+        return (m("#canvasCoordinates", {style: {"display": display, 'padding-top': panelMargin}},
             [
                 m(".form-inline[id='latitudeInterval']", {
                         style: {

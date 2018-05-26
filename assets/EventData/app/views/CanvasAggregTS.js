@@ -1,28 +1,22 @@
 import m from 'mithril';
 import {panelMargin} from "../../../common/common";
-//~ import * as d3 from "d3";
 
 export default class CanvasAggregTS {
-	//on create?
-
-	view(vnode) {
-		console.log("in canvas aggreg ts mithril");
-		console.log(vnode);
-		console.log(vnode.attrs);
-		let {display} = vnode.attrs;
-		return m("[id='canvasAggregTS']", {style: {"display": display}}, [
-			m("#canvasAggregTSBin", {style: {'padding-top': panelMargin}}, [
-				m("svg[height='100%'][id='aggregTS_SVG'][width='100%']", {style: {"background": "none"}}), m(".SVGtooltip")
-			]),
-			m("#aggregTSGroupSelect")
-			//~ ,
-			//~ m("#aggregTSGroupSelect" , [
-				//~ m("h3.panel-title", "Group Selection")
-			//~ ])
-		]);
-		//~ ,
-            //~ [
-                //~ m("[id='aggregTS_SVGdiv']", {style: {"display": "inline-block"}}, m("svg[height='500'][id='aggregTS_SVG'][width='500']", {style: {"border": "1px black"}}))
-			//~ ]
-	}
+    view(vnode) {
+        let {display} = vnode.attrs;
+        return m("#canvasAggregTS", {style: {"display": display, width: '100%'}}, [
+            m("#canvasAggregTSBin", {style: {'padding-top': panelMargin, width: '100%'}}, [
+                m("svg#aggregTS_SVG[height='100%'][width='100%']", {style: {"background": "none", width: '100%'}}), m(".SVGtooltip")
+            ]),
+            m("#aggregTSGroupSelect")
+            //~ ,
+            //~ m("#aggregTSGroupSelect" , [
+            //~ m("h3.panel-title", "Group Selection")
+            //~ ])
+        ]);
+        //~ ,
+        //~ [
+        //~ m("[id='aggregTS_SVGdiv']", {style: {"display": "inline-block"}}, m("svg[height='500'][id='aggregTS_SVG'][width='500']", {style: {"border": "1px black"}}))
+        //~ ]
+    }
 }

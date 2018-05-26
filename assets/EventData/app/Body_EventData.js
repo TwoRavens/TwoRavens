@@ -198,7 +198,7 @@ export default class Body_EventData {
 
     leftpanel(mode) {
         if (mode === 'datasets') {
-            common.setPanelOcclusion('left', `calc(${common.panelMargin} + 250px + ${common.panelMargin})`);
+            common.setPanelOcclusion('left', `calc(2*${common.panelMargin} + 250px)`);
         }
 
         if (mode === 'subset') {
@@ -338,6 +338,9 @@ export default class Body_EventData {
     view(vnode) {
         let {mode} = vnode.attrs;
 
+        // Typically with mithril you would just render the pages that are visible. This works when there is no local state.
+        // Eventdata was written before we used mithril, so the canvases were written with local state.
+        // To preserve state, all pages are always rendered, but use css to hide inactive canvases.
         let display = (canvas) => {
             if (!app.initialLoad) return 'none';
             return (canvas === app.canvasKeySelected) ? 'block' : 'none';

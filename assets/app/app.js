@@ -96,34 +96,34 @@ export let exploreRightPanelWidths = {
     'Bivariate': '75%'
 };
 
-export let setRightTab = (tab) => { rightTab = tab; updateRightPanelWidth() }
-export let setRightTabExplore = (tab) => { rightTabExplore = tab; updateRightPanelWidth() }
+export let setRightTab = (tab) => { rightTab = tab; updateRightPanelWidth() };
+export let setRightTabExplore = (tab) => { rightTabExplore = tab; updateRightPanelWidth() };
 
 // panelWidth is meant to be read only
 export let panelWidth = {
     'left': '0',
     'right': '0'
-}
+};
 
 let updateRightPanelWidth = () => {
     if (common.panelOpen['right']) {
         let tempWidth = {
             'model': modelRightPanelWidths[rightTab],
             'explore': exploreRightPanelWidths[rightTabExplore]
-        }[currentMode]
+        }[currentMode];
 
-        panelWidth['right'] = `calc(${common.panelMargin * 2}px + ${tempWidth})`
+        panelWidth['right'] = `calc(2*${common.panelMargin}px + ${tempWidth})`;
     }
-    else panelWidth['right'] = `calc(${common.panelMargin * 2}px + 16px)`
-}
+    else panelWidth['right'] = `calc(2*${common.panelMargin}px + 16px)`;
+};
 let updateLeftPanelWidth = () => {
     if (common.panelOpen['left'])
-        panelWidth['left'] = `calc(${common.panelMargin * 2}px + ${modelLeftPanelWidths[leftTab]})`
-    else panelWidth['left'] = `calc(${common.panelMargin * 2}px + 16px)`
-}
+        panelWidth['left'] = `calc(2*${common.panelMargin}px + ${modelLeftPanelWidths[leftTab]})`;
+    else panelWidth['left'] = `calc(2*${common.panelMargin}px + 16px)`;
+};
 
-updateRightPanelWidth()
-updateLeftPanelWidth()
+updateRightPanelWidth();
+updateLeftPanelWidth();
 
 common.setPanelCallback('right', updateRightPanelWidth);
 common.setPanelCallback('left', updateLeftPanelWidth);

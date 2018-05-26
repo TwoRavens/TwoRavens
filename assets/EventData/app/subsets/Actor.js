@@ -1399,7 +1399,7 @@ export function capitalizeFirst(str) {
 export function resizeActorSVG(redraw=true) {
     if (document.getElementById('canvasActor').style.display === 'none') return;
     //actor resize on window resize handled here
-    const curHeight = $("#canvas").height() - panelMargin * 2;     //this is the height of the container
+    const curHeight = $("#canvas").height() - 20;     //this is the height of the container. Note that 20 refers to panelMargin * 2
     const titleHeight = $("#linkTitle").height();           //this is the height of the title div above the SVG
     let trySize = actorHeight;
 

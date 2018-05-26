@@ -41,12 +41,12 @@ export let setLeftTab = (tab) => leftTab = tab;
 export let leftTab = 'Subsets';
 
 setPanelCallback('right', () => {
-    setPanelOcclusion('right', `calc(${panelOpen['right'] ? '250px' : '16px'} + ${2 * panelMargin}px)`);
+    setPanelOcclusion('right', `calc(${panelOpen['right'] ? '250px' : '16px'} + 2*${panelMargin})`);
     handleResize();
 });
 
 setPanelCallback('left', () => {
-    setPanelOcclusion('left', `calc(${panelOpen['left'] ? '250px' : '16px'} + ${2 * panelMargin}px)`);
+    setPanelOcclusion('left', `calc(${panelOpen['left'] ? '250px' : '16px'} + 2*${panelMargin})`);
     handleResize();
 });
 
@@ -311,8 +311,8 @@ export function showCanvas(canvasKey) {
 			updateAggregTable();
 		}
 
-		if (canvasKeySelected === "CanvasAggregTS") {
-			$("#canvasAggregTS").css("display", "block");
+		if (canvasKeySelected === "Time Series") {
+            document.getElementById('canvasAggregTS').style.display = 'block';
 			//~ setupAggregTS();
 		}
     }
