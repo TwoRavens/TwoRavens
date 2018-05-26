@@ -1,4 +1,4 @@
-svg {
+main#EventData svg {
     background-color: #FFF;
     cursor: default;
     -webkit-user-select: none;
@@ -7,419 +7,268 @@ svg {
     -o-user-select: none;
     user-select: none;
 }
-
-.ui-datepicker-prev {
+main#EventData .ui-datepicker-prev {
     display: inline-block;
     margin-left: 0;
 }
-
-.ui-datepicker-next {
+main#EventData .ui-datepicker-next {
     display: inline-block;
     float: right;
 }
-
-.hidden {
+main#EventData .hidden {
     display: none;
 }
-
-.arc path {
+main#EventData .arc path {
     stroke: #fff;
 }
-
-svg:not(.active):not(.ctrl) {
+main#EventData svg:not(.active):not(.ctrl) {
     cursor: crosshair;
 }
-
-path.link {
+main#EventData path.link {
     fill: none;
     stroke: #000;
     stroke-width: 2px;
     cursor: default;
 }
-
-svg:not(.active):not(.ctrl) path.link {
+main#EventData svg:not(.active):not(.ctrl) path.link {
     cursor: pointer;
 }
-
-path.link.selected {
-    stroke-dasharray: 10,3;
+main#EventData path.link.selected {
+    stroke-dasharray: 10, 3;
 }
-
-path.link.dragline {
+main#EventData path.link.dragline {
     pointer-events: none;
 }
-
-path.link.hidden {
+main#EventData path.link.hidden {
     stroke-width: 0;
 }
-
-circle.node {
+main#EventData circle.node {
     stroke-width: 1.5px;
     cursor: pointer;
 }
-
-text {
+main#EventData text {
     font: 12px sans-serif;
     pointer-events: none;
 }
-
-text.id {
+main#EventData text.id {
     text-anchor: middle;
     font-weight: bold;
 }
-
-.left {
+main#EventData .left {
     width: 33.3%;
-    height: 100%; /*was 600px;*/
-    box-sizing: border-box; margin: 0;
-    overflow:scroll;
-}
+    height: 100%;
+    /*was 600px;*/
 
-.navbar-default {
-    height: 62px;
+    box-sizing: border-box;
+    margin: 0;
+    overflow: scroll;
 }
-
-#canvasLocation svg {
-    background-color:transparent;
+main#EventData #canvasLocation svg {
+    background-color: transparent;
     /*width:500px;*/
-    height:386px;   /*was 600px;*/
-}
 
-/*#main.svg-leftpanel svg, #main.svg-rightpanel svg {width: 100%;}  This is size when left/right panel minimized. Was: calc(100% - 300px);}*/
-/*#main.svg-leftpanel.svg-rightpanel svg {width: 100%;}   /*  Was: calc(100% - 300px);} /**/
-/* Above changes fix issue when screen gets very small, and right margin is fixed at 300px, obscuring central display, even while left tab is shrinking below 300px */
+    height: 386px;
+    /*was 600px;*/
 
-
-/* #main.svg-marg-left svg {margin-left:0px;}
-#main.svg-marg-right svg {margin-right:0px;} */
-
-div.popover.variables {
-    max-width:275px;
-    width:275px;
 }
-div.popover {
-    z-index:1050;
+main#EventData div.popover.variables {
+    max-width: 275px;
+    width: 275px;
 }
-div.popover.variables div.popover-content.form-horizontal {
-    padding:0;
+main#EventData div.popover {
+    z-index: 1050;
 }
-div.popover.variables div.popover-content.form-horizontal .form-group {
-    margin-bottom:0;
+main#EventData div.popover.variables div.popover-content.form-horizontal {
+    padding: 0;
 }
-
-/* Format popover table in variable selector */
-table tr td{
-    padding:0px !important;
+main#EventData div.popover.variables div.popover-content.form-horizontal .form-group {
+    margin-bottom: 0;
 }
-.table > tbody > tr:first-child > td {
+main#EventData table tr td {
+    padding: 0px !important;
+}
+main#EventData .table > tbody > tr:first-child > td {
     border: none;
 }
-
-/* For rightpanel query tree */
-#boolToggle.btn.active, #boolToggle.btn:active {
+main#EventData #boolToggle.btn.active,
+main#EventData #boolToggle.btn:active {
     background-color: transparent;
     border-color: slategray;
-    color:lightgray;
+    color: lightgray;
 }
-#logToggle.btn.active, #logToggle.btn:active {
+main#EventData #logToggle.btn.active,
+main#EventData #logToggle.btn:active {
     background-color: #428bca;
     border-color: #357ebd;
 }
-
-#spacetools {
-    z-index: 17;
-}
-.spaceTool {
-    top:0;
-    right:21%;
-    margin-right:10px;
-    margin-top:10px;
-    position:absolute;
-}
-.spaceTool button:first-child {
-    margin-right:1em;
-}
-.spaceTool button span {
-    font-size:1em;
-    color:#818181;
-    pointer-events:none;
-}
-
-path {
+main#EventData path {
     fill: steelblue;
 }
-
-.axis path,
-.axis line {
+main#EventData .axis path,
+main#EventData .axis line {
     fill: none;
     stroke: #000;
     shape-rendering: crispEdges;
 }
-
-.brush .extent {
+main#EventData .brush .extent {
     stroke: #fff;
     fill-opacity: .125;
     shape-rendering: crispEdges;
 }
-
-.handle {
+main#EventData .handle {
     fill: #fff;
     stroke: #000;
     stroke-opacity: .5;
     stroke-width: 1.25px;
     pointer-events: fill;
 }
-
-table, th, td {
+main#EventData table,
+main#EventData th,
+main#EventData td {
     border-collapse: collapse;
 }
-td {
-    padding:4px;
+main#EventData td {
+    padding: 4px;
 }
-
-#btnEventSubset{
-    margin-top: 5%;
-}
-
-.dropdown {
-    position: relative;
-
-    /*margin-left: 43%;*/
-
-}
-
-.dropdown dd,
-.dropdown dt {
-    margin: 0px;
-    padding: 0px;
-    width:100%;
-    text-align: center;
-}
-
-.dropdown ul,
-.dropdownevent ul {
-    margin: 0 0 0 0;
-    width: 272px;
-}
-
-.dropdown dd {
-    position: relative;
-}
-
-.dropdown a,
-.dropdown a:visited {
-    color: #fff;
-    text-decoration: none;
-    outline: none;
-    font-size: 12px;
-}
-
-.dropdown dt a {
-    background-color: #4F6877;
-    display: block;
-    padding: 8px 20px 5px 10px;
-    min-height: 25px;
-    line-height: 24px;
-    overflow: hidden;
-    border: 0;
-    width: 272px;
-    margin-left: 25%;
-}
-
-.dropdown dt a span,
-.dropdownevent dt a span
-.multiSel span {
-    cursor: pointer;
-    display: inline-block;
-    padding: 0 3px 2px 0;
-}
-
-.dropdown dd ul {
-    background-color: #4F6877;
-    border: 0;
-    color: #fff;
-    display: none;
-    left: 25%;
-    padding: 2px 15px 2px 5px;
-    position: absolute;
-    top: 2px;
-    width: 272px;
-    list-style: none;
-    height: 200px;
-    overflow: auto;
-    text-align:left;
-}
-
-.dropdown span.value {
-    display: none;
-}
-
-.dropdown dd ul li a {
-    padding: 5px;
-    display: block;
-}
-
-.dropdown dd ul li a:hover {
-    background-color: #fff;
-}
-
-/*source actor*/
-.dropdownactorl1,.dropdownactorl2,.dropdownactorl3,.dropdownactorl4 {
+main#EventData .dropdownactorl1,
+main#EventData .dropdownactorl2,
+main#EventData .dropdownactorl3,
+main#EventData .dropdownactorl4 {
     position: relative;
     float: left;
     /*margin-left: 43%;*/
-    height:50px;
-    z-index:100;
 
+    height: 50px;
+    z-index: 100;
 }
-
-/*target actor*/
-.tdropdownactorl1,.tdropdownactorl2,.tdropdownactorl3,.tdropdownactorl4 {
+main#EventData .tdropdownactorl1,
+main#EventData .tdropdownactorl2,
+main#EventData .tdropdownactorl3,
+main#EventData .tdropdownactorl4 {
     position: relative;
-
     /*margin-left: 43%;*/
-    height:50px;
-    z-index:100;
 
+    height: 50px;
+    z-index: 100;
 }
-
-.dropdownevent{
+main#EventData .dropdownevent {
     position: relative;
-
     /*margin-left: 43%;*/
-    height:50px;
-    z-index:100;
 
+    height: 50px;
+    z-index: 100;
 }
-a {
+main#EventData a {
     color: #fff;
-    height:40px;
+    height: 40px;
 }
-
-/*source actor*/
-.dropdownactorl1 dd,
-.dropdownactorl1 dt,
-.dropdownactorl2 dd,
-.dropdownactorl2 dt,
-.dropdownactorl3 dd,
-.dropdownactorl3 dt,
-.dropdownactorl4 dd,
-.dropdownactorl4 dt
-{
+main#EventData .dropdownactorl1 dd,
+main#EventData .dropdownactorl1 dt,
+main#EventData .dropdownactorl2 dd,
+main#EventData .dropdownactorl2 dt,
+main#EventData .dropdownactorl3 dd,
+main#EventData .dropdownactorl3 dt,
+main#EventData .dropdownactorl4 dd,
+main#EventData .dropdownactorl4 dt {
     /*margin-left: 43%;*/
+
     text-align: center;
     padding: 0px;
-    width:100%;
-    z-index:100;
-
+    width: 100%;
+    z-index: 100;
 }
-
-/*target actor*/
-.tdropdownactorl1 dd,
-.tdropdownactorl1 dt,
-.tdropdownactorl2 dd,
-.tdropdownactorl2 dt,
-.tdropdownactorl3 dd,
-.tdropdownactorl3 dt,
-.tdropdownactorl4 dd,
-.tdropdownactorl4 dt  {
+main#EventData .tdropdownactorl1 dd,
+main#EventData .tdropdownactorl1 dt,
+main#EventData .tdropdownactorl2 dd,
+main#EventData .tdropdownactorl2 dt,
+main#EventData .tdropdownactorl3 dd,
+main#EventData .tdropdownactorl3 dt,
+main#EventData .tdropdownactorl4 dd,
+main#EventData .tdropdownactorl4 dt {
     /*margin-left: 43%;*/
+
     padding: 0px;
-    width:100%;
-    z-index:100;
+    width: 100%;
+    z-index: 100;
     text-align: center;
 }
-
-.dropdownevent dd,
-.dropdownevent dt{
+main#EventData .dropdownevent dd,
+main#EventData .dropdownevent dt {
     padding: 0px;
-    width:100%;
-    z-index:100;
+    width: 100%;
+    z-index: 100;
     text-align: center;
 }
-
-#event
-{
-    text-align: center;
-    margin-left: 30%;
-}
-
-.area {
+main#EventData .area {
     clip-path: url(#clip);
 }
-
-.areauser {
+main#EventData .areauser {
     clip-path: url(#clip);
 }
-
-.zoom {
+main#EventData .zoom {
     cursor: move;
     fill: none;
     pointer-events: all;
 }
-
-/*source actor*/
-.dropdownactorl1 ul,
-.dropdownactorl2 ul,
-.dropdownactorl3 ul,
-.dropdownactorl4 ul,
-.tdropdownactorl1 ul,
-.tdropdownactorl2 ul,
-.tdropdownactorl3 ul,
-.tdropdownactorl4 ul,
-.dropdownevent  {
+main#EventData .dropdownactorl1 ul,
+main#EventData .dropdownactorl2 ul,
+main#EventData .dropdownactorl3 ul,
+main#EventData .dropdownactorl4 ul,
+main#EventData .tdropdownactorl1 ul,
+main#EventData .tdropdownactorl2 ul,
+main#EventData .tdropdownactorl3 ul,
+main#EventData .tdropdownactorl4 ul,
+main#EventData .dropdownevent {
     margin: 0 0 0 0;
     width: 272px;
     /*margin-left: 43%;*/
-    z-index:100;
-}
 
-.dropdownactorl1 dd,
-.dropdownactorl2 dd,
-.dropdownactorl3 dd,
-.dropdownactorl4 dd,
-.tdropdownactorl1 dd,
-.tdropdownactorl2 dd,
-.tdropdownactorl3 dd,
-.tdropdownactorl4 dd,
-.dropdownevent {
+    z-index: 100;
+}
+main#EventData .dropdownactorl1 dd,
+main#EventData .dropdownactorl2 dd,
+main#EventData .dropdownactorl3 dd,
+main#EventData .dropdownactorl4 dd,
+main#EventData .tdropdownactorl1 dd,
+main#EventData .tdropdownactorl2 dd,
+main#EventData .tdropdownactorl3 dd,
+main#EventData .tdropdownactorl4 dd,
+main#EventData .dropdownevent {
     position: relative;
-    z-index:100;
+    z-index: 100;
 }
-
-.dropdownactorl1 a,
-.dropdownactorl1 a:visited,
-.dropdownactorl2 a,
-.dropdownactorl2 a:visited,
-.dropdownactorl3 a,
-.dropdownactorl3 a:visited,
-.dropdownactorl4 a,
-.dropdownactorl4 a:visited,
-.tdropdownactorl1 a,
-.tdropdownactorl1 a:visited,
-.tdropdownactorl2 a,
-.tdropdownactorl2 a:visited,
-.tdropdownactorl3 a,
-.tdropdownactorl3 a:visited,
-.tdropdownactorl4 a,
-.tdropdownactorl4 a:visited,
-.dropdownevent a,
-.dropdownevent a:visited {
+main#EventData .dropdownactorl1 a,
+main#EventData .dropdownactorl1 a:visited,
+main#EventData .dropdownactorl2 a,
+main#EventData .dropdownactorl2 a:visited,
+main#EventData .dropdownactorl3 a,
+main#EventData .dropdownactorl3 a:visited,
+main#EventData .dropdownactorl4 a,
+main#EventData .dropdownactorl4 a:visited,
+main#EventData .tdropdownactorl1 a,
+main#EventData .tdropdownactorl1 a:visited,
+main#EventData .tdropdownactorl2 a,
+main#EventData .tdropdownactorl2 a:visited,
+main#EventData .tdropdownactorl3 a,
+main#EventData .tdropdownactorl3 a:visited,
+main#EventData .tdropdownactorl4 a,
+main#EventData .tdropdownactorl4 a:visited,
+main#EventData .dropdownevent a,
+main#EventData .dropdownevent a:visited {
     color: #fff;
     text-decoration: none;
     outline: none;
     font-size: 12px;
 }
-
-.dropdownactorl1 dt a,
-.dropdownactorl2 dt a,
-.dropdownactorl3 dt a,
-.dropdownactorl4 dt a,
-.tdropdownactorl1 dt a,
-.tdropdownactorl2 dt a,
-.tdropdownactorl3 dt a,
-.tdropdownactorl4 dt a,
-.dropdownevent dt a  {
+main#EventData .dropdownactorl1 dt a,
+main#EventData .dropdownactorl2 dt a,
+main#EventData .dropdownactorl3 dt a,
+main#EventData .dropdownactorl4 dt a,
+main#EventData .tdropdownactorl1 dt a,
+main#EventData .tdropdownactorl2 dt a,
+main#EventData .tdropdownactorl3 dt a,
+main#EventData .tdropdownactorl4 dt a,
+main#EventData .dropdownevent dt a {
     background-color: #4F6877;
     display: block;
     padding: 8px 20px 5px 10px;
@@ -428,38 +277,37 @@ a {
     overflow: hidden;
     border: 0;
     width: 272px;
-    z-index:100;
+    z-index: 100;
 }
-
-.dropdownactorl1 dt a span,
-.dropdownactorl2 dt a span,
-.dropdownactorl3 dt a span,
-.dropdownactorl4 dt a span,
-.tdropdownactorl1 dt a span,
-.tdropdownactorl2 dt a span,
-.tdropdownactorl3 dt a span,
-.tdropdownactorl4 dt a span,
-.multiSel span,
-.multiSelevent span {
+main#EventData .dropdownactorl1 dt a span,
+main#EventData .dropdownactorl2 dt a span,
+main#EventData .dropdownactorl3 dt a span,
+main#EventData .dropdownactorl4 dt a span,
+main#EventData .tdropdownactorl1 dt a span,
+main#EventData .tdropdownactorl2 dt a span,
+main#EventData .tdropdownactorl3 dt a span,
+main#EventData .tdropdownactorl4 dt a span,
+main#EventData .multiSel span,
+main#EventData .multiSelevent span {
     cursor: pointer;
     display: inline-block;
     padding: 0 3px 2px 0;
 }
-
-.dropdownactorl1 dd ul,
-.dropdownactorl2 dd ul,
-.dropdownactorl3 dd ul,
-.dropdownactorl4 dd ul,
-.tdropdownactorl1 dd ul,
-.tdropdownactorl2 dd ul,
-.tdropdownactorl3 dd ul,
-.tdropdownactorl4 dd ul,
-.dropdownevent dd ul {
+main#EventData .dropdownactorl1 dd ul,
+main#EventData .dropdownactorl2 dd ul,
+main#EventData .dropdownactorl3 dd ul,
+main#EventData .dropdownactorl4 dd ul,
+main#EventData .tdropdownactorl1 dd ul,
+main#EventData .tdropdownactorl2 dd ul,
+main#EventData .tdropdownactorl3 dd ul,
+main#EventData .tdropdownactorl4 dd ul,
+main#EventData .dropdownevent dd ul {
     background-color: #4F6877;
     border: 0;
     color: #fff;
     display: none;
     /*left: 0px;*/
+
     margin-left: 25%;
     padding: 2px 15px 2px 5px;
     position: absolute;
@@ -468,392 +316,349 @@ a {
     list-style: none;
     height: 200px;
     overflow: auto;
-    text-align:left;
+    text-align: left;
 }
-
-.dropdownactorl1 span.value,
-.dropdownactorl2 span.value,
-.dropdownactorl3 span.value,
-.dropdownactorl4 span.value,
-.tdropdownactorl1 span.value,
-.tdropdownactorl2 span.value,
-.tdropdownactorl3 span.value,
-.tdropdownactorl4 span.value.
-.dropdownevent span.value {
+main#EventData .dropdownactorl1 span.value,
+main#EventData .dropdownactorl2 span.value,
+main#EventData .dropdownactorl3 span.value,
+main#EventData .dropdownactorl4 span.value,
+main#EventData .tdropdownactorl1 span.value,
+main#EventData .tdropdownactorl2 span.value,
+main#EventData .tdropdownactorl3 span.value,
+main#EventData .tdropdownactorl4 span.value,
+main#EventData .dropdownevent span.value {
     display: none;
 }
-
-.dropdownactorl1 dd ul li a,
-.dropdownactorl2 dd ul li a,
-.dropdownactorl3 dd ul li a,
-.dropdownactorl4 dd ul li a,
-.tdropdownactorl1 dd ul li a,
-.tdropdownactorl2 dd ul li a,
-.tdropdownactorl3 dd ul li a,
-.tdropdownactorl4 dd ul li a,
-.dropdownevent dd ul li a
-{
+main#EventData .dropdownactorl1 dd ul li a,
+main#EventData .dropdownactorl2 dd ul li a,
+main#EventData .dropdownactorl3 dd ul li a,
+main#EventData .dropdownactorl4 dd ul li a,
+main#EventData .tdropdownactorl1 dd ul li a,
+main#EventData .tdropdownactorl2 dd ul li a,
+main#EventData .tdropdownactorl3 dd ul li a,
+main#EventData .tdropdownactorl4 dd ul li a,
+main#EventData .dropdownevent dd ul li a {
     padding: 5px;
     display: block;
 }
-
-.dropdownactorl1 dd ul li a:hover,
-.dropdownactorl2 dd ul li a:hover,
-.dropdownactorl3 dd ul li a:hover,
-.dropdownactorl4 dd ul li a:hover,
-.tdropdownactorl1 dd ul li a:hover,
-.tdropdownactorl2 dd ul li a:hover,
-.tdropdownactorl3 dd ul li a:hover,
-.tdropdownactorl4 dd ul li a:hover,
-.dropdownevent dd ul li a:hover {
+main#EventData .dropdownactorl1 dd ul li a:hover,
+main#EventData .dropdownactorl2 dd ul li a:hover,
+main#EventData .dropdownactorl3 dd ul li a:hover,
+main#EventData .dropdownactorl4 dd ul li a:hover,
+main#EventData .tdropdownactorl1 dd ul li a:hover,
+main#EventData .tdropdownactorl2 dd ul li a:hover,
+main#EventData .tdropdownactorl3 dd ul li a:hover,
+main#EventData .tdropdownactorl4 dd ul li a:hover,
+main#EventData .dropdownevent dd ul li a:hover {
     background-color: #fff;
 }
-
-/*
-* Added for Location
-*/
-.graph_axis_label {
-    font-size:20px;
+main#EventData .graph_axis_label {
+    font-size: 20px;
 }
-
-.graph_collapse {
+main#EventData .graph_collapse {
     overflow: hidden;
-    display:inline-block; /* or float:left; */
+    display: inline-block;
+    /* or float:left; */
+
     height: 44px;
-    width:auto;
+    width: auto;
     -webkit-transition: all 0.5s ease;
 }
-
-.graph_close {
+main#EventData .graph_close {
     border: 1px solid #ADADAD;
-    padding-top:3px;
-    background: rgb(249, 249, 249);
-    margin-bottom:5px;
-
+    padding-top: 3px;
+    background: #f9f9f9;
+    margin-bottom: 5px;
     overflow: hidden;
-    display:inline-block; /* or float:left; */
+    display: inline-block;
+    /* or float:left; */
+
     height: 36px;
-    width:480px;
+    width: 480px;
     -webkit-transition: all 0.5s ease;
 }
-
-.graph_config {
-    width:480px;
+main#EventData .graph_config {
+    width: 480px;
     border: 1px solid #ADADAD;
-    padding-top:3px;
-    background: rgb(249, 249, 249);
+    padding-top: 3px;
+    background: #f9f9f9;
     overflow: hidden;
-    display:inline-block; /* or float:left; */
+    display: inline-block;
+    /* or float:left; */
+
     height: 432px;
     -webkit-transition: all 0.5s ease;
-    margin-bottom:5px;
+    margin-bottom: 5px;
 }
-
-.countrytable_collapse {
+main#EventData .countrytable_collapse {
     overflow: hidden;
-    display:inline-block; /* or float:left; */
+    display: inline-block;
+    /* or float:left; */
+
     height: 0;
-    width:auto;
+    width: auto;
     -webkit-transition: all 0.5s ease;
 }
-
-.country_table_config {
+main#EventData .country_table_config {
     overflow: hidden;
-    float:left; /* or float:left; */
-    width:auto;
+    float: left;
+    /* or float:left; */
+
+    width: auto;
     -webkit-transition: all 1s ease;
 }
-
-.hide_label {
-    display:none;
+main#EventData .hide_label {
+    display: none;
 }
-
-.graph_container {
-    width:auto;
-    height:500px;
+main#EventData .graph_container {
+    width: auto;
+    height: 500px;
     overflow-x: scroll;
     overflow-y: scroll;
 }
-
-.bar {
+main#EventData .bar {
     fill: steelblue;
     cursor: pointer;
 }
-
-.bar_click {
-    fill:white;
+main#EventData .bar_click {
+    fill: white;
     cursor: pointer;
     opacity: 0;
 }
-
-
-.bar_all_selected {
+main#EventData .bar_all_selected {
     fill: brown;
     cursor: pointer;
 }
-
-.bar_some_selected {
+main#EventData .bar_some_selected {
     stroke: #000000;
     fill: url(#pattern1);
     cursor: pointer;
 }
-
-.bar:hover {
+main#EventData .bar:hover {
     fill: brown;
     cursor: pointer;
 }
-
-.bar_all_selected:hover {
+main#EventData .bar_all_selected:hover {
     fill: steelblue;
     cursor: pointer;
 }
-
-.bar_some_selected:hover {
+main#EventData .bar_some_selected:hover {
     fill: steelblue;
     cursor: pointer;
 }
-
-.axis path, .axis line {
+main#EventData .axis path,
+main#EventData .axis line {
     fill: none;
     stroke: #D4D8DA;
     stroke-width: 1px;
     shape-rendering: crispEdges;
 }
-.x path {
+main#EventData .x path {
     display: none;
 }
-
-#svg_graph_table tr:nth-child(odd) {
+main#EventData #svg_graph_table tr:nth-child(odd) {
     background: #ADADAD;
 }
-
-#svg_graph_table tr:nth-child(even) {
+main#EventData #svg_graph_table tr:nth-child(even) {
     background: #ADADAD;
 }
-
-.strike_through:hover {
+main#EventData .strike_through:hover {
     text-decoration: line-through;
 }
-
-#svg_graph_table tr:nth-child(odd) {
+main#EventData #svg_graph_table tr:nth-child(odd) {
     background: #ADADAD;
 }
-
-#svg_graph_table tr:nth-child(even) {
+main#EventData #svg_graph_table tr:nth-child(even) {
     background: #ADADAD;
 }
-
-.strike_through:hover {
+main#EventData .strike_through:hover {
     text-decoration: line-through;
 }
-
-/*begin styling for actor*/
-
-#tabDiv {
+main#EventData #tabDiv {
     margin-left: 5px;
     margin-right: 5px;
 }
-
-#sourceTabBtn {
+main#EventData #sourceTabBtn {
     width: 50%;
     border-top-right-radius: 0;
     border-bottom-right-radius: 0;
     margin-left: 0;
-
 }
-
-#targetTabBtn {
+main#EventData #targetTabBtn {
     width: 50%;
     border-top-left-radius: 0;
     border-bottom-left-radius: 0;
     margin-left: -1px;
 }
-
-/* style the buttons inside the tab */
-div.actorTab button {
+main#EventData div.actorTab button {
     position: relative;
     float: left;
     border: none !important;
     outline: none !important;
 }
-
-/* create an active/current tablink class */
-div.actorTab button.active {
+main#EventData div.actorTab button.active {
     background-image: none;
     outline: 0;
-    -webkit-box-shadow: inset 0 3px 5px rgba(0, 0, 0, .125);
-    box-shadow: inset 0 3px 5px rgba(0, 0, 0, .125);
+    -webkit-box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.125);
+    box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.125);
 }
-
-/* style the tab content */
-.actorTabContent {
+main#EventData .actorTabContent {
     height: 100%;
     -webkit-animation: fadeEffect 0.5s;
     animation: fadeEffect 0.5s;
 }
-
-/* fade in tabs */
 @-webkit-keyframes fadeEffect {
-    from {opacity: 0;}
-    to {opacity: 1;}
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
 }
-
 @keyframes fadeEffect {
-    from {opacity: 0;}
-    to {opacity: 1;}
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
 }
-
-#fullContainer {
+main#EventData #fullContainer {
     width: 100%;
     height: calc(100% - 130px);
     box-sizing: border-box;
 }
-
-.actorTabContent {
+main#EventData .actorTabContent {
     width: 100%;
     height: 100%;
 }
-
-.actorLeft {
+main#EventData .actorLeft {
     width: 180px;
     height: 100%;
     display: inline-block;
     vertical-align: top;
 }
-
-.actorRight {
-    width:164px;
-    height:100%;
+main#EventData .actorRight {
+    width: 164px;
+    height: 100%;
     display: inline-block;
     vertical-align: top;
 }
-
-.actorSearch {
+main#EventData .actorSearch {
     margin: 5px 0 5px 5px;
     height: 30px;
     width: 170px !important;
 }
-
-.actorFullList {
+main#EventData .actorFullList {
     display: inline-block;
     /*
-        position: absolute;
-    */
-    width :180px;
+          position: absolute;
+      */
+
+    width: 180px;
     /*
-        height: calc(100% - 212px);
-    */
+          height: calc(100% - 212px);
+      */
+
     height: calc(100% - 54px);
     overflow-x: auto;
     overflow-y: scroll;
     white-space: nowrap;
 }
-
-.actorFilterList {
+main#EventData .actorFilterList {
     /*
-        position: absolute;
-    */
+          position: absolute;
+      */
+
     width: 164px;
     /*
-        height: calc(100% - 206px);
-    */
+          height: calc(100% - 206px);
+      */
+
     height: calc(100% - 54px);
-    margin-top:3px;
+    margin-top: 3px;
     overflow-x: auto;
     overflow-y: scroll;
     white-space: nowrap;
 }
-
-.clearActorBtn {
+main#EventData .clearActorBtn {
     display: block;
     margin: 5px 38px 5px 5px;
     width: calc(100% - 43px);
     height: 30px;
 }
-
-#actorSelectionDiv {
+main#EventData #actorSelectionDiv {
     width: 350px !important;
     border: 1px solid #ADADAD;
     background: #F9F9F9;
-    height:100%;
+    height: 100%;
     margin-bottom: 3px;
 }
-
-.actorSelectAll {
-    float:left;
+main#EventData .actorSelectAll {
+    float: left;
 }
-
-.actorClearAll {
-    float:left;
+main#EventData .actorClearAll {
+    float: left;
 }
-
-#actorLinkDiv {
-    float:left;
-    margin-left:10px;
-
+main#EventData #actorLinkDiv {
+    float: left;
+    margin-left: 10px;
     /*width:calc(100% - 45px);*/
+
     min-width: 200px;
-    overflow-x:auto;
-    overflow-y:hidden;
+    overflow-x: auto;
+    overflow-y: hidden;
     border: 1px solid #ADADAD;
-    display:block;
+    display: block;
 }
-
-.actorBottom {
-    margin-left:2px;
-    margin-top:6px;
+main#EventData .actorBottom {
+    margin-left: 2px;
+    margin-top: 6px;
 }
-
-.actorBottomTry {
+main#EventData .actorBottomTry {
     margin-top: -12px;
 }
-
-.actorNewGroup {
-    float:right;
-    margin-right:3px;
+main#EventData .actorNewGroup {
+    float: right;
+    margin-right: 3px;
 }
-
-.actorShowSelected {
+main#EventData .actorShowSelected {
     display: inline-block;
 }
-
-.actorHead4 {
+main#EventData .actorHead4 {
     margin-bottom: 0px;
     display: inline-block;
     font-size: 18px;
-
 }
-
-.filterExpand {
+main#EventData .filterExpand {
     display: inline-block;
     padding: 0px;
     height: 20px;
     width: 20px;
     vertical-align: middle;
     outline: none;
-
     background-image: url(/static/EventData/images/expand.png);
     background-repeat: no-repeat;
     background-position: 0px 0px;
     border: none;
 }
-
-.filterContainer {
+main#EventData .filterContainer {
     display: none;
 }
-
-.sourceChk, .targetChk, .actorChk, .aggChk {
+main#EventData .sourceChk,
+main#EventData .targetChk,
+main#EventData .actorChk,
+main#EventData .aggChk {
     display: inline-block;
     vertical-align: text-bottom;
     margin: 1px 5px 0px 5px !important;
 }
-
-.actorChkLbl, .aggChkLbl {
+main#EventData .actorChkLbl,
+main#EventData .aggChkLbl {
     display: inline-block;
     margin-right: 10px;
 }
-
-#editGroupName {
+main#EventData #editGroupName {
     display: inline-block;
     text-align: center;
     width: 250px;
@@ -866,37 +671,30 @@ div.actorTab button.active {
     outline: none;
     box-shadow: none;
     background-color: #F9F9F9;
-
-    top:0px;
+    top: 0px;
 }
-
-#deleteGroup {
+main#EventData #deleteGroup {
     display: inline-block;
-    top:0px;
+    top: 0px;
     margin-right: 20px;
-
     padding: 0px;
     height: 15px;
     width: 15px;
     vertical-align: middle;
     outline: none;
     background-color: #F9F9F9;
-
     background-image: url(../images/delete.png);
     background-repeat: no-repeat;
     background-position: 0px 0px;
     border: none;
 }
-
-#linkTitleLeft, #linkTitleRight {
+main#EventData #linkTitleLeft,
+main#EventData #linkTitleRight {
     width: 50%;
     float: left;
     border-bottom: 1px solid #ADADAD;
 }
-
-
-/*styling for link SVG*/
-#actorLinkSVG {
+main#EventData #actorLinkSVG {
     background-color: #FFF;
     cursor: default;
     -webkit-user-select: none;
@@ -906,40 +704,33 @@ div.actorTab button.active {
     user-select: none;
     height: calc(100% - 19px) !important;
     display: block;
-    width:100%;
+    width: 100%;
 }
-
-path.link {
+main#EventData path.link {
     fill: none;
     stroke: #000;
     stroke-width: 3px;
     cursor: pointer;
 }
-
-path.link.dragline {
+main#EventData path.link.dragline {
     pointer-events: none;
 }
-
-path.link.hidden {
+main#EventData path.link.hidden {
     stroke-width: 0;
 }
-
-circle.node {
+main#EventData circle.node {
     stroke-width: 1.5px;
     cursor: pointer;
 }
-
-text {
+main#EventData text {
     font: 12px sans-serif;
     pointer-events: none;
 }
-
-text.id {
+main#EventData text.id {
     text-anchor: middle;
     font-weight: bold;
 }
-
-.SVGtooltip {
+main#EventData .SVGtooltip {
     display: none;
     position: absolute;
     text-align: center;
@@ -949,141 +740,125 @@ text.id {
     border: 1px solid #F9F9F9;
     pointer-events: none;
 }
-/*end styling for actor*/
-
-.action_graph_config {
+main#EventData .action_graph_config {
     border: 1px solid #ADADAD;
-    padding-top:3px;
-    background: rgb(249, 249, 249);
+    padding-top: 3px;
+    background: #f9f9f9;
     overflow: hidden;
 }
-
-#actionMainGraph text,#actionSubGraph text {
+main#EventData #actionMainGraph text,
+main#EventData #actionSubGraph text {
     font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-
     font-size: 14px;
-
     line-height: 1.42857143;
-
     color: #333;
     /*
-      text-anchor: end;
-    */
-}
+        text-anchor: end;
+      */
 
-#actionMainGraph .axis {
+}
+main#EventData #actionMainGraph .axis {
     /*
-        stroke: red;
-    */
-}
+          stroke: red;
+      */
 
-.actionBar_click {
+}
+main#EventData .actionBar_click {
     fill: white;
     cursor: pointer;
     opacity: 0;
 }
-
-.actionBar, .actionBar_none {
+main#EventData .actionBar,
+main#EventData .actionBar_none {
     fill: steelblue;
     cursor: pointer;
 }
-
-.actionBar_none:hover, .actionBar_none_hover {
+main#EventData .actionBar_none:hover,
+main#EventData .actionBar_none_hover {
     fill: brown;
     cursor: pointer;
 }
-
-.actionBar_some {
+main#EventData .actionBar_some {
     fill: url("#actionPattern");
     cursor: pointer;
 }
-
-.actionBar_some:hover, .actionBar_some_hover {
+main#EventData .actionBar_some:hover,
+main#EventData .actionBar_some_hover {
     fill: steelblue;
     cursor: pointer;
 }
-
-.actionBar_all {
+main#EventData .actionBar_all {
     fill: brown;
     cursor: pointer;
 }
-
-.actionBar_all:hover, .actionBar_all_hover {
+main#EventData .actionBar_all:hover,
+main#EventData .actionBar_all_hover {
     fill: steelblue;
     cursor: pointer;
 }
-
-.glyphicon {
-    color: #818181
+main#EventData .glyphicon {
+    color: #818181;
 }
-
-/* Dataset Selection Popover */
-.container {
-    width:400px;
-    height:200px;
+main#EventData .container {
+    width: 400px;
+    height: 200px;
 }
-.trigger {
-    color:#777;
+main#EventData .trigger {
+    color: #777;
 }
-.popoverContentContainer {
-    position:relative;
+main#EventData .popoverContentContainer {
+    position: relative;
     top: 0px;
     left: 0px;
     width: 100%;
     height: 220px;
 }
-#optionMenu,
-.optionView {
+main#EventData #optionMenu,
+main#EventData .optionView {
     width: 100%;
     position: absolute;
     top: 0px;
     left: 0px;
 }
-#optionMenu button,
-#optionMenu a {
-    width:100%;
-    margin:5px 0;
+main#EventData #optionMenu button,
+main#EventData #optionMenu a {
+    width: 100%;
+    margin: 5px 0;
 }
-.optionView button {
-    float:left;
+main#EventData .optionView button {
+    float: left;
 }
-.optionView p {
-    color:#777;
-    float:left;
-    width:100%;
-    padding:10px 0 0 0;
+main#EventData .optionView p {
+    color: #777;
+    float: left;
+    width: 100%;
+    padding: 10px 0 0 0;
 }
-.optionView a {
-    float:left;
+main#EventData .optionView a {
+    float: left;
 }
-.popover {
-    width:400px;
+main#EventData .popover {
+    width: 400px;
 }
-.popover-inner {
-    position:relative;
+main#EventData .popover-inner {
+    position: relative;
 }
-.popover-title {
-    text-align:center;
-    color:#555;
+main#EventData .popover-title {
+    text-align: center;
+    color: #555;
 }
-
-/* Begin aggregation styling */
-.aggregPentaSelect {
+main#EventData .aggregPentaSelect {
     padding: 10px;
     width: 300px;
 }
-
-#aggregTable {
-    width:100%;
+main#EventData #aggregTable {
+    width: 100%;
     table-layout: fixed;
 }
-
-#aggregTable th {
+main#EventData #aggregTable th {
     width: 100px;
     padding: 0px 10px;
 }
-
-/* used to style panelList selections in aggregate */
-.item-bordered {
+main#EventData .item-bordered {
     border: solid #000000;
 }

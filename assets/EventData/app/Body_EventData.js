@@ -346,7 +346,7 @@ export default class Body_EventData {
             return (canvas === app.canvasKeySelected) ? 'block' : 'none';
         };
 
-        return m('main',
+        return m('main#EventData',
             [
                 this.header(mode),
                 this.leftpanel(mode),
