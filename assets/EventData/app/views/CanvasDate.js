@@ -70,7 +70,8 @@ export default class CanvasDate {
                 style: {display: mode === 'aggregate' ? 'block' : 'none'}
             }, m(ButtonRadio, {
                 id: 'dateAggregOption',
-                attrsAll: {style: {width: '400px'}},
+                attrsAll: {style: {width: '80px'}},
+                vertical: true,
                 onclick: aggreg.setDateMeasure,
                 activeSection: ['None', 'Weekly', 'Monthly', 'Quarterly', 'Yearly'][aggreg.aggregDateOn],
                 sections: [
