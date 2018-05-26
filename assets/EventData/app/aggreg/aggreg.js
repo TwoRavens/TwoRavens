@@ -310,7 +310,6 @@ export function setupAggregTS(data) {
 				$("#aggregTSAll").prop("indeterminate", true).prop("checked", true);
 				//~ drawTS(updateTSData(data));
 			}
-
 			drawTS(updateTSData(data));
 		});
 
@@ -319,7 +318,6 @@ export function setupAggregTS(data) {
 	else {
 		$("#aggregTSGroupSelect").empty();
 	}
-
 	drawTS(updateTSData(data));
 				
 
@@ -436,7 +434,10 @@ function drawTS(formattedData) {
 
 	let margin = {top: 20, right: 80, bottom: 30, left: 50};
 	//~ svgTS.attr("width", document.getElementById("canvas").offsetWidth - document.getElementById("rightpanel").offsetWidth - margin.left - margin.right - 50).attr("height", document.getElementById("canvas").offsetHeight - margin.top - margin.bottom - 10);		//resize later	1000, 450
-	svgTS.attr("width", document.getElementById("canvasAggregTS").clientWidth).attr("height", document.getElementById("canvas").clientHeight - margin.top - margin.bottom);
+	console.log("TEST AGGREG");
+    console.log(document.getElementById("canvasAggregTS").clientWidth);
+    svgTS.attr("width", document.getElementById("canvasAggregTS").clientWidth)
+        .attr("height", document.getElementById("canvas").clientHeight - margin.top - margin.bottom);
 	//~ svgTS.attr("width", 600).attr("height", 450);
 	let widthTS = svgTS.attr("width") - margin.left - margin.right;
     let heightTS = svgTS.attr("height") - margin.top - margin.bottom;
@@ -629,7 +630,7 @@ function updateTable(json) {
 	}
 
 	if (aggregDateOn) {
-		showCanvas("CanvasAggregTS");
+		showCanvas("Time Series");
 		setupAggregTS(json);
 	}
 }

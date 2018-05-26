@@ -18,9 +18,8 @@ export default class CanvasCustom {
     }
 
     view(vnode) {
-        console.log("TEST 2");
         let {display} = vnode.attrs;
-        return (m("#canvasCustom.subsetDiv", {style: {"display": display, height: '100%', 'padding-top': panelMargin}},
+        return (m("#canvasCustom", {style: {"display": display, height: '100%', 'padding-top': panelMargin}},
             [
                 // Header
                 m(".panel-heading.text-left[id='subsetCustomLabel']", {

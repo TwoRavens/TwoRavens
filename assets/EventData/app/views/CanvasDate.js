@@ -83,7 +83,7 @@ export default class CanvasDate {
             }))
         ];
 
-        return (m("#canvasDate.subsetDiv", {style: {"display": display, 'padding-top': panelMargin}},
+        return (m("#canvasDate", {style: {"display": display, 'padding-top': panelMargin}},
             [
                 m("[id='dateSVGdiv']", {style: {"display": "inline-block"}}, m("svg[height='500'][id='dateSVG'][width='500']")),
                 m("div",

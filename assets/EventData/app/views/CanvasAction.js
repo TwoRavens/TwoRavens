@@ -9,7 +9,7 @@ export default class CanvasAction {
     view(vnode) {
         let {display} = vnode.attrs;
 
-        return (m("#canvasAction.subsetDiv", {style: {"display": display, height: '100%', 'padding-top': panelMargin + 'px'}},
+        return (m("#canvasAction", {style: {"display": display, height: '100%', 'padding-top': panelMargin}},
             m("[id='actionSVGbin']", {
                     style: {
                         "display": "inline-block",
