@@ -72,7 +72,7 @@ export function setOpMode(mode) {
 
     // Some canvases only exist in certain modes. Fall back to default if necessary.
     if (mode === 'subset' && subsetKeys.indexOf(canvasKeySelected) === -1) showCanvas('Actor');
-    if (mode === 'aggregate' && aggregateKeys.indexOf(canvasKeySelected) === -1) showCanvas('Date');
+    if (mode === 'aggregate' && aggregateKeys.indexOf(canvasKeySelected) === -1) showCanvas('Actor');
     if (mode === 'datasets' && 'Datasets' !== canvasKeySelected) showCanvas('Datasets');
 
     opMode = mode;
@@ -200,14 +200,15 @@ export function setupBody() {
 export let matchedVariables = [];
 
 export function reloadLeftpanelVariables() {
-    if (opMode !== 'subset') return;
 
-    let search_term = document.getElementById('searchVariables').value.toUpperCase();
+    // if searchVariables is undefined, use an empty string
+    let textBox = document.getElementById('searchVariables');
+    let searchTerm = textBox !== undefined ? textBox.value.toUpperCase() : '';
     // Subset variable list by search term. Empty string returns all.
     matchedVariables.length = 0;
 
     for (let variable of variables) {
-        if (variable.toUpperCase().indexOf(search_term) !== -1) {
+        if (variable.toUpperCase().indexOf(searchTerm) !== -1) {
             matchedVariables.push(variable)
         }
     }
@@ -250,7 +251,7 @@ export function showCanvas(canvasKey) {
         if (canvasKeySelected === "Penta Class") {
 
             setEventMeasure("Penta Class");
-			console.log("in penta canvas");
+			// console.log("in penta canvas");
 			setAggregMode("penta");
 			$(".aggregDataRoot").hide();
 			//~ for (let x = 0; x <= 4; x ++) {
@@ -259,7 +260,7 @@ export function showCanvas(canvasKey) {
 					//~ $(".aggregDataPenta" + x).show();
 				//~ }
 			//~ }
-			console.log(aggregPentaChkOrd);
+			// console.log(aggregPentaChkOrd);
 			$("#aggregPentaAll").prop("indeterminate", false);
 			if (aggregPentaChkOrd[0] == 0)
 				$("#aggregPentaAll").prop("checked", false);
@@ -267,12 +268,12 @@ export function showCanvas(canvasKey) {
 				$("#aggregPentaAll").prop("indeterminate", true);
 			for (let x = 0; x < aggregPentaChkOrd.length - 1; x ++) {
 				if (aggregPentaChkOrd[x + 1] == 0) {
-					console.log("hiding penta " + x);
+					// console.log("hiding penta " + x);
 					$("#aggregPenta" + x).prop("checked", false);
 					$(".aggregDataPenta" + x).hide();
 				}
 				else {
-					console.log("showing penta " + x);
+					// console.log("showing penta " + x);
 					$("#aggregPenta" + x).prop("checked", true);
 					$(".aggregDataPenta" + x).show();
 				}
@@ -282,7 +283,7 @@ export function showCanvas(canvasKey) {
 		else if (canvasKeySelected === "Root Code") {
             setEventMeasure("Root Code");
 
-			console.log("in root canvas");
+			// console.log("in root canvas");
 			setAggregMode("root");
 			$(".aggregDataPenta").hide();
 			//~ for (let x = 1; x <= 20; x ++) {
@@ -290,7 +291,7 @@ export function showCanvas(canvasKey) {
 					//~ $(".aggregDataRoot" + x).show();
 				//~ }
 			//~ }
-			console.log(aggregRootChkOrd);
+			// console.log(aggregRootChkOrd);
 			$("#aggregRootAll").prop("indeterminate", false);
 			if (aggregRootChkOrd[0] == 0)
 				$("#aggregRootAll").prop("checked", false);
@@ -298,12 +299,12 @@ export function showCanvas(canvasKey) {
 				$("#aggregRootAll").prop("indeterminate", true);
 			for (let x = 1; x < aggregRootChkOrd.length; x ++) {
 				if (aggregRootChkOrd[x] == 0) {
-					console.log("hiding root " + x);
+					// console.log("hiding root " + x);
 					$("#aggregRoot" + x).prop("checked", false);
 					$(".aggregDataRoot" + x).hide();
 				}
 				else {
-					console.log("showing root " + x);
+					// console.log("showing root " + x);
 					$("#aggregRoot" + x).prop("checked", true);
 					$(".aggregDataRoot" + x).show();
 				}
@@ -385,8 +386,6 @@ export function makeCorsRequest(url, post, callback, callbackError=Function) {
 }
 
 export function download() {
-	console.log("in download func");
-	console.log(opMode);
 
     function save(data) {
         let a = document.createElement('A');
@@ -400,7 +399,6 @@ export function download() {
     }
 
 	if (opMode === "subset") {
-		console.log("making subset download");
 		let variableQuery = buildVariables();
 		let subsetQuery = buildSubset(subsetData);
 
@@ -421,7 +419,6 @@ export function download() {
 		makeCorsRequest(subsetURL, query, save);
 	}
 	else if (opMode === "aggregate") {
-		console.log("making aggreg download");
 		//merge my request code with makeCorsRequest and wrap table update in function
 		laddaDownload.start();
 		makeAggregQuery("download", save);
@@ -479,7 +476,6 @@ let updatePeek = () => {
         type: 'peek'
     };
 
-    console.log(variableQuery);
     // conditionally pass variable projection
     if (Object.keys(variableQuery).length !== 0) query['variables'] = JSON.stringify(variableQuery);
 
@@ -826,8 +822,8 @@ window.callbackDelete = function (id) {
             let variableQuery = buildVariables();
             let subsetQuery = buildSubset(stagedSubsetData);
 
-            console.log(JSON.stringify(subsetQuery));
-            console.log(JSON.stringify(variableQuery, null, '  '));
+            // console.log(JSON.stringify(subsetQuery));
+            // console.log(JSON.stringify(variableQuery, null, '  '));
 
             let query = {
                 'subsets': JSON.stringify(subsetQuery),
