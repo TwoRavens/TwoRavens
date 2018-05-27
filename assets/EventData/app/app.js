@@ -10,7 +10,7 @@ import {
     setEventMeasure, updateToAggreg, setupAggregTS
 } from "./aggreg/aggreg";
 import {
-    panelMargin, panelOcclusion, panelOpen, setPanelCallback,
+    panelMargin, panelOcclusion, panelOpen, scrollBarChanged, setPanelCallback,
     setPanelOcclusion
 } from "../../common/common";
 
@@ -62,6 +62,8 @@ export function handleResize() {
         updateData();
     }
 }
+
+window.addEventListener('resize', handleResize);
 
 export let opMode = "datasets";
 
@@ -203,7 +205,7 @@ export function reloadLeftpanelVariables() {
 
     // if searchVariables is undefined, use an empty string
     let textBox = document.getElementById('searchVariables');
-    let searchTerm = textBox !== undefined ? textBox.value.toUpperCase() : '';
+    let searchTerm = textBox !== null ? textBox.value.toUpperCase() : '';
     // Subset variable list by search term. Empty string returns all.
     matchedVariables.length = 0;
 
