@@ -93,7 +93,7 @@ export function setOpMode(mode) {
         updateToAggreg(false);
     }
     // This triggers some very strange mithril issues... but if you call it from outside, then everything works.
-    // m.route.set('/' + mode);
+    m.route.set('/' + mode.toLowerCase());
 }
 
 // Options: one of ["phoenix_rt", "cline_phoenix_swb", "cline_phoenix_nyt", "cline_phoenix_fbis", "icews"]
