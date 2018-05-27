@@ -2,7 +2,6 @@ import * as app from "../app.js"
 import * as d3 from 'd3'
 import {panelOcclusion} from "../../../common/common";
 import {updateAggregTable} from "../aggreg/aggreg";
-import {panelMargin} from "../../../common/common";
 import m from 'mithril'
 
 // number of elements to show in search actor list
@@ -173,8 +172,25 @@ export function setupActor(){
     }).attr("stroke", "black");
 
     //define arrow markers
-    actorSVG.append('svg:defs').append('svg:marker').attr('id', 'end-arrow').attr('viewBox', '0 -5 10 10').attr('refX', 6).attr('markerWidth', 3).attr('markerHeight', 3).attr('orient', 'auto').append('svg:path').attr('d', 'M0,-5L10,0L0,5').style('fill', '#000');
-    actorSVG.append('svg:defs').append('svg:marker').attr('id', 'start-arrow').attr('viewBox', '0 -5 10 10').attr('refX', 4).attr('markerWidth', 3).attr('markerHeight', 3).attr('orient', 'auto').append('svg:path').attr('d', 'M10,-5L0,0L10,5').style('fill', '#000');
+    actorSVG.append('svg:defs').append('svg:marker')
+        .attr('id', 'end-arrow').attr('viewBox', '0 -5 10 10')
+        .attr('refX', 6).attr('markerWidth', 3)
+        .attr('markerHeight', 3)
+        .attr('orient', 'auto')
+        .append('svg:path')
+        .attr('d', 'M0,-5L10,0L0,5')
+        .style('fill', '#000');
+    actorSVG.append('svg:defs')
+        .append('svg:marker')
+        .attr('id', 'start-arrow')
+        .attr('viewBox', '0 -5 10 10')
+        .attr('refX', 4)
+        .attr('markerWidth', 3)
+        .attr('markerHeight', 3)
+        .attr('orient', 'auto')
+        .append('svg:path')
+        .attr('d', 'M10,-5L0,0L10,5')
+        .style('fill', '#000');
 
     //define SVG mouse actions
     actorSVG.on("mouseup", function () {		//cancel draw line
@@ -1299,7 +1315,6 @@ export function showSelected(status) {
 }
 
 export function actorSearch(force=false) {
-    console.log($("#actorSearch"));
     const searchText = $("#actorSearch").val().toUpperCase();
 
     const operator = '$and';

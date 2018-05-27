@@ -1,5 +1,6 @@
 import m from 'mithril';
 import {selectedPentaClasses, setSelectedPentaClasses} from "../aggreg/aggreg";
+import {panelMargin} from "../../../common/common";
 
 export default class CanvasPentaClass {
     view(vnode) {
@@ -13,7 +14,7 @@ export default class CanvasPentaClass {
             "Material Conflict"
         ];
 
-        return m('div', {style: {display: display}}, [
+        return m('div', {style: {display: display, 'margin-top': panelMargin}}, [
             // all
             m("label.aggChkLbl",
                 m("input#aggregPentaAll.aggChk.aggChkPentaAll.aggAllCheck[type='checkbox']", {

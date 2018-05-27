@@ -42,7 +42,6 @@ export default class Body_EventData {
     oncreate() {
         app.setupBody();
         app.setupQueryTree();
-        aggreg.setupAggregation();
     }
 
     header(mode) {
@@ -248,6 +247,11 @@ export default class Body_EventData {
         }
 
         if (mode === 'aggregate') {
+
+            let disabledResults = [];
+            if (!aggreg.aggregResultsDate) disabledResults.push('Time Series');
+            if (!aggreg.aggregResults) disabledResults = ['Time Series', 'Analysis'];
+
             return m(Panel, {
                 id: 'leftPanelMenu',
                 side: 'left',
@@ -261,6 +265,7 @@ export default class Body_EventData {
                 },
                 contents: m(MenuHeaders, {
                     id: 'aggregateMenu',
+                    attrsAll: {style: {height: 'calc(100% - 39px)', overflow: 'auto'}},
                     sections: [
                         {
                             value: 'Unit of Measure',
@@ -279,6 +284,20 @@ export default class Body_EventData {
                                 colors: {[common.selVarColor]: [app.canvasKeySelected]},
                                 classes: {['item-bordered']: [aggreg.eventMeasure]},
                                 callback: app.showCanvas
+                            })
+                        },
+                        {
+                            value: 'Results',
+                            contents: m(PanelList, {
+                                items: ['Time Series', 'Analysis'],
+                                id: 'ResultsList',
+                                colors: {
+                                    [common.grayColor]: disabledResults,
+                                    [common.selVarColor]: [app.canvasKeySelected]
+                                },
+                                classes: {['item-bordered']: [aggreg.eventMeasure]},
+                                // only change the canvas if the canvas is not disabled
+                                callback: (canvas) => disabledResults.indexOf(canvas) === -1 && app.showCanvas(canvas)
                             })
                         }
                     ]
@@ -327,7 +346,7 @@ export default class Body_EventData {
                             style: {float: 'right'},
                             onclick: () => {
                                 if (mode === 'subset') app.submitQuery();
-                                if (mode === 'aggregate') aggreg.updateToAggreg();
+                                if (mode === 'aggregate') aggreg.makeAggregQuery("aggreg");
                             }
                         }, 'Update')
                     ])

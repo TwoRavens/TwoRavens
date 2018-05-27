@@ -7,10 +7,10 @@ import {updateLocation, mapListCountriesSelected} from "./subsets/Location";
 import {
     setAggregMode, updateAggregTable, makeAggregQuery,
     aggregPentaChkOrd, aggregRootChkOrd,
-    setEventMeasure, updateToAggreg, setupAggregTS
+    setEventMeasure, updateToAggreg
 } from "./aggreg/aggreg";
 import {
-    panelMargin, panelOcclusion, panelOpen, scrollBarChanged, setPanelCallback,
+    panelMargin, panelOcclusion, panelOpen, setPanelCallback,
     setPanelOcclusion
 } from "../../common/common";
 

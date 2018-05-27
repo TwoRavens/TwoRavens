@@ -1,10 +1,14 @@
-import {rappURL, dataset, datasource, makeCorsRequest, laddaUpdate, showCanvas} from "../app";
-import {dateminUser, datemaxUser} from "../subsets/Date";
+import {dataset, datasource, laddaUpdate, makeCorsRequest, rappURL, showCanvas} from "../app";
+import {datemaxUser, dateminUser} from "../subsets/Date";
 import {actorLinks} from "../subsets/Actor";
-import {varColor, selVarColor} from '../../../common/common';
 import * as d3 from "d3";
+import m from 'mithril';
 
 let aggregMode = "penta";
+// set once results are loaded on update. unsets when subsets/aggregations are changed before updates. unlocks the results menus in aggregation.
+export let aggregResults = false;
+export let aggregResultsDate = false;
+
 export let aggregDateOn = 0;		//0 = off, 1 = week, 2 = month, 3 = quarter, 4 = year
 export let aggregActorOn = true;
 var aggregDataNumber = 6;
@@ -31,6 +35,7 @@ export let setAggregMode = (mode) => aggregMode = mode;
 
 // Map measure string to numeric value used in existing aggregation code
 export let setDateMeasure = (measure) => {
+	aggregResults = false;
     aggregDateOn = {
         'None': 0,
         'Weekly': 1,
@@ -112,31 +117,35 @@ export function updateToAggreg(alreadyInAggreg=true) {
 				return tablestring;
 			});
 
-			$("#aggregPentaAll").change(function(e) {
-			aggregMode = "penta";
-			if (this.checked) {
-				$(".aggChkPenta").prop("checked", true).each(function() {
-					$(this).trigger("change");
-				});
-				aggregPentaSelectNum = 5;
-				$(this).prop("checked", true);
-				//~ aggregPentaChkOrd[0] = 1;
-			}
-			else {
-				$(".aggChkPenta").prop("checked", false).each(function() {
-					$(this).trigger("change");
-				});
-				aggregPentaSelectNum = 0;
-				$(this).prop("checked", false);
-				//~ aggregPentaChkOrd[0] = 0;
-				}
-				$(this).prop("indeterminate", false);
-			}).prop("checked", true);
+			$("#aggregPentaAll").change(function (e) {
+                aggregResults = false;
+                m.redraw();
+                aggregMode = "penta";
+                if (this.checked) {
+                    $(".aggChkPenta").prop("checked", true).each(function () {
+                        $(this).trigger("change");
+                    });
+                    aggregPentaSelectNum = 5;
+                    $(this).prop("checked", true);
+                    //~ aggregPentaChkOrd[0] = 1;
+                }
+                else {
+                    $(".aggChkPenta").prop("checked", false).each(function () {
+                        $(this).trigger("change");
+                    });
+                    aggregPentaSelectNum = 0;
+                    $(this).prop("checked", false);
+                    //~ aggregPentaChkOrd[0] = 0;
+                }
+                $(this).prop("indeterminate", false);
+            }).prop("checked", true);
 
 			$(".aggChkPenta").change(function(e) {
+                aggregResults = false;
+                m.redraw();
 				aggregMode = "penta";
 				$(".aggregDataRoot").hide();
-				
+
 				if (this.checked) {
 					$(".aggregData" + this.id.substring(6, this.id.length)).show();
 					aggregPentaChkOrd[parseInt(this.id.substring(11, this.id.length)) + 1] = 1;
@@ -162,12 +171,14 @@ export function updateToAggreg(alreadyInAggreg=true) {
 					$("#aggregPentaAll").prop("checked", false).prop("indeterminate", true);
 					aggregPentaChkOrd[0] = 2;
 				}
-				console.log(aggregPentaChkOrd);
-				console.log("aggreg penta select number");
-				console.log(aggregPentaSelectNum);
+				// console.log(aggregPentaChkOrd);
+				// console.log("aggreg penta select number");
+				// console.log(aggregPentaSelectNum);
 			}).prop("checked", true);
 
 			$("#aggregRootAll").change(function(e) {
+				aggregResults = false;
+				m.redraw();
 				aggregMode = "root";
 				if (this.checked) {
 					$(".aggChkRoot").prop("checked", true).each(function() {
@@ -187,11 +198,13 @@ export function updateToAggreg(alreadyInAggreg=true) {
 				}
 				$(this).prop("indeterminate", false);
 			}).prop("checked", true);
-			
+
 			$(".aggChkRoot").change(function(e) {
+                aggregResults = false;
+                m.redraw();
 				aggregMode = "root";
 				$(".aggregDataPenta").hide();
-				
+
 				if (this.checked) {
 					$(".aggregData" + this.id.substring(6, this.id.length)).show();
 					aggregRootChkOrd[parseInt(this.id.substring(10, this.id.length))] = 1;
@@ -215,7 +228,7 @@ export function updateToAggreg(alreadyInAggreg=true) {
 					$("#aggregRootAll").prop("checked", false).prop("indeterminate", true);
 					aggregRootChkOrd[0] = 2;
 				}
-				console.log(aggregRootChkOrd);
+				// console.log(aggregRootChkOrd);
 			}).prop("checked", true);
 
 			$(".aggregDataRoot").hide();
@@ -245,7 +258,7 @@ let aggTSChkOrder = [];
 export function setupAggregTS(data) {
 	console.log("setting up TS");
 
-	console.log("original data");
+	// console.log("original data");
 	console.log(data);
 
 	//set up group toggles
@@ -255,15 +268,15 @@ export function setupAggregTS(data) {
 			* will this be affected by m.redraw???
 	*/
 	if (aggregActorOn && actorLinks.length > 1) {
-		 console.log("multiple TS groups");
-		 console.log(actorLinks);
+		 // console.log("multiple TS groups");
+		 // console.log(actorLinks);
 		 $("#aggregTSGroupSelect").empty().append(function() {
 			 let retStr = "";
 			 retStr += '<h3 class="panel-title">Group Selection</h3>';
 			 retStr += '<label class="aggChkLbl">\
 							<input id="aggregTSAll" class="aggChk aggTSChkAll" name="aggTSAll" value="aggTSAll" type="checkbox">\
 							All Groups\
-						</label>';						
+						</label>';
 			for (let x = 0; x < actorLinks.length; x ++) {
 				retStr += '<div class="seperator"></div>\
 							<label class="aggChkLbl">\
@@ -277,7 +290,7 @@ export function setupAggregTS(data) {
 		aggTSChkOrder = [];
 		//add events to checks
 		$("#aggregTSAll").change(function(e) {
-			console.log("changing all chk");
+			// console.log("changing all chk");
 			if (this.checked) {
 				$(".aggTSChk").prop("checked", true).each(function(){$(this).trigger("change");});
 				$(this).prop("indeterminate", false).prop("checked", true);
@@ -286,15 +299,15 @@ export function setupAggregTS(data) {
 				$(".aggTSChk").prop("checked", false).each(function(){$(this).trigger("change");});
 				$(this).prop("indeterminate", false).prop("checked", false);
 			}
-			console.log("TS check info");
-			console.log(aggTSChkCount);
-			console.log(aggTSChkOrder);
+			// console.log("TS check info");
+			// console.log(aggTSChkCount);
+			// console.log(aggTSChkOrder);
 
 			//~ drawTS(updateTSData(data));
 		});
 
 		$(".aggTSChk").change(function(e) {
-			console.log("changing indiv chk");
+			// console.log("changing indiv chk");
 			if (this.checked) {
 				aggTSChkCount ++;
 				//update data
@@ -305,9 +318,9 @@ export function setupAggregTS(data) {
 				//update data
 				aggTSChkOrder.splice(aggTSChkOrder.indexOf(parseInt(this.id.substring(8, this.id.length))), 1);
 			}
-			console.log("TS check info");
-			console.log(aggTSChkCount);
-			console.log(aggTSChkOrder);
+			// console.log("TS check info");
+			// console.log(aggTSChkCount);
+			// console.log(aggTSChkOrder);
 
 			if (aggTSChkCount == 0) {
 				$("#aggregTSAll").prop("indeterminate", false).prop("checked", false);
@@ -329,10 +342,10 @@ export function setupAggregTS(data) {
 		$("#aggregTSGroupSelect").empty();
 	}
 	drawTS(updateTSData(data));
-				
 
-	
-	
+
+
+
 }
 
 function updateTSData(data) {
@@ -342,12 +355,12 @@ function updateTSData(data) {
 	let formattedData = [];
 	//~ if (data) {
 		//~ console.log("reformatting data");
-		//in format of: 
+		//in format of:
 		if (aggregMode == "penta") {
 			for (let x = 1; x < aggregPentaChkOrd.length; x ++) {
 				let tempVals = [];
 				if (!aggregActorOn || actorLinks.length == 1 || aggTSChkCount == actorLinks.length) {
-					console.log("using all data");
+					// console.log("using all data");
 					for (let y = 0; y < data["action_data"].length; y ++) {
 						tempVals[y] =
 							{
@@ -358,8 +371,8 @@ function updateTSData(data) {
 				}
 				else {
 					let tempCount = 0;
-					console.log("using only checked data");
-					console.log(aggTSChkOrder);
+					// console.log("using only checked data");
+					// console.log(aggTSChkOrder);
 					for (let y = 0; y < data["action_data"].length; y ++) {
 						for (let z = 0; z < aggTSChkOrder.length; z ++) {
 							//~ console.log("in checking loop");
@@ -378,7 +391,7 @@ function updateTSData(data) {
 						}
 					}
 				}
-				formattedData[x-1] = 
+				formattedData[x-1] =
 					{
 						id: "Penta " + (x-1),
 						values: tempVals
@@ -389,7 +402,7 @@ function updateTSData(data) {
 			for (let x = 1; x < aggregRootChkOrd.length; x ++) {
 				let tempVals = [];
 				if (!aggregActorOn || actorLinks.length == 1 || aggTSChkCount == actorLinks.length) {
-					console.log("using all data");
+					// console.log("using all data");
 					for (let y = 0; y < data["action_data"].length; y ++) {
 						tempVals[y] =
 							{
@@ -400,8 +413,8 @@ function updateTSData(data) {
 				}
 				else {
 					let tempCount = 0;
-					console.log("using only checked data");
-					console.log(aggTSChkOrder);
+					// console.log("using only checked data");
+					// console.log(aggTSChkOrder);
 					for (let y = 0; y < data["action_data"].length; y ++) {
 						for (let z = 0; z < aggTSChkOrder.length; z ++) {
 							if (actorLinks[aggTSChkOrder[z]].source.name == data["action_data"][y]["Source"] && actorLinks[aggTSChkOrder[z]].target.name == data["action_data"][y]["Target"]) {
@@ -431,8 +444,8 @@ function updateTSData(data) {
 	//~ else {
 		//~ return;
 	//~ }
-	console.log("ret form data");
-	console.log(formattedData);
+	// console.log("ret form data");
+	// console.log(formattedData);
 	return formattedData;
 }
 
@@ -444,15 +457,13 @@ function drawTS(formattedData) {
 
 	let margin = {top: 20, right: 80, bottom: 30, left: 50};
 	//~ svgTS.attr("width", document.getElementById("canvas").offsetWidth - document.getElementById("rightpanel").offsetWidth - margin.left - margin.right - 50).attr("height", document.getElementById("canvas").offsetHeight - margin.top - margin.bottom - 10);		//resize later	1000, 450
-	console.log("TEST AGGREG");
-    console.log(document.getElementById("canvasAggregTS").clientWidth);
     svgTS.attr("width", document.getElementById("canvasAggregTS").clientWidth)
         .attr("height", document.getElementById("canvas").clientHeight - margin.top - margin.bottom);
 	//~ svgTS.attr("width", 600).attr("height", 450);
 	let widthTS = svgTS.attr("width") - margin.left - margin.right;
     let heightTS = svgTS.attr("height") - margin.top - margin.bottom;
 	let g = svgTS.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-	console.log("post svg setup");
+	// console.log("post svg setup");
 
 	let x = d3.scaleTime().range([0, widthTS]);
     let y = d3.scaleLinear().range([heightTS, 0]);
@@ -546,39 +557,44 @@ function drawTS(formattedData) {
 	}
 }
 
+// eventually redraws the timeseries too
 function updateTable(json) {
-	console.log("aggregated json");
-	console.log(json);
+	// console.log("aggregated json");
+	// console.log(json);
 	laddaUpdate.stop();
 
+	aggregResults = true;
+	aggregResultsDate = aggregDateOn !== 0;
+	m.redraw();
+
 	document.getElementById('recordCount').innerHTML = json["action_data"].length + " records";
-	
+
 	for (let row = 1; row <= aggregDataNumber; row++) {
 		if (row > json["action_data"].length) {
 			$("#aggregTableR" + row + " th").each(function() { $(this).html(""); });
 			continue;
 		}
-		console.log(row + " is updating")
+		// console.log(row + " is updating")
 		if (aggregDateOn) {
 			$("#aggregDataDateR" + row).html(json["action_data"][row - 1]["Date"]);
 		}
-		console.log("date up");
+		// console.log("date up");
 		if (aggregActorOn) {
 			$("#aggregDataSrcR" + row).html(json["action_data"][row - 1]["Source"]);
 			$("#aggregDataTgt" + row).html(json["action_data"][row - 1]["Target"]);
 		}
-		console.log("actor up");
+		// console.log("actor up");
 		if (aggregMode == "penta") {
 			for (let code = 0; code < 5; code++) {
 				$("#aggregDataPenta" + code + "R" + row).html(json["action_data"][row - 1][code]);
 			}
-			console.log("penta up");
+			// console.log("penta up");
 		}
 		else {
 			for (let code = 1; code <= 20; code ++) {
 				$("#aggregDataRoot" + code + "R" + row).html(json["action_data"][row - 1][code]);
 			}
-			console.log("root up");
+			// console.log("root up");
 		}
 	}
 
@@ -587,9 +603,9 @@ function updateTable(json) {
 			//~ $("#aggregPentaAll").prop("checked", true).trigger("change");
 		//~ }
 		//~ else {
-		console.log("in update table callback penta");
-		console.log(aggregPentaChkOrd);
-		console.log(aggregPentaSelectNum);
+		// console.log("in update table callback penta");
+		// console.log(aggregPentaChkOrd);
+		// console.log(aggregPentaSelectNum);
 			$("#aggregPentaAll").prop("indeterminate", false);
 			for (let x = 0; x < aggregPentaChkOrd.length - 1; x ++) {
 				if (aggregPentaChkOrd[x + 1] == 1) {
@@ -605,9 +621,9 @@ function updateTable(json) {
 				$("#aggregPentaAll").prop("checked", false);
 			else if (aggregPentaChkOrd[0] == 2)
 				$("#aggregPentaAll").prop("indeterminate", true);
-			console.log("post force check");
-			console.log(aggregPentaChkOrd);
-			console.log(aggregPentaSelectNum);
+			// console.log("post force check");
+			// console.log(aggregPentaChkOrd);
+			// console.log(aggregPentaSelectNum);
 		//~ }
 	}
 	else {
@@ -615,9 +631,9 @@ function updateTable(json) {
 			//~ $("#aggregPentaAll").prop("checked", true).trigger("change");
 		//~ }
 		//~ else {
-		console.log("in update table callback root");
-		console.log(aggregRootChkOrd);
-		console.log(aggregRootSelectNum);
+		// console.log("in update table callback root");
+		// console.log(aggregRootChkOrd);
+		// console.log(aggregRootSelectNum);
 			$("#aggregRootAll").prop("indeterminate", false);
 			for (let x = 1; x < aggregRootChkOrd.length; x ++) {
 				if (aggregRootChkOrd[x] == 1) {
@@ -633,29 +649,30 @@ function updateTable(json) {
 				$("#aggregRootAll").prop("checked", false);
 			else if (aggregRootChkOrd[0] == 2)
 				$("#aggregRootAll").prop("indeterminate", true);
-			console.log("post force check");
-			console.log(aggregRootChkOrd);
-			console.log(aggregRootSelectNum);
+			// console.log("post force check");
+			// console.log(aggregRootChkOrd);
+			// console.log(aggregRootSelectNum);
 		//~ }
 	}
 
 	if (aggregDateOn) {
 		showCanvas("Time Series");
+		m.redraw();
 		setupAggregTS(json);
 	}
 }
 
 //~ let aggregDates;
 function updateDates(json) {
-	console.log(json);
-	console.log(json["aggreg_dates"]);
+	// console.log(json);
+	// console.log(json["aggreg_dates"]);
 
 	laddaUpdate.stop();
 	//~ aggregDates = json["aggreg_dates"];
 
 	var curActor = 0;
 	var curDate = 0;
-	
+
 	for (let row = 1; row <= aggregDataNumber; row ++) {
 		if (curDate < json["aggreg_dates"].length) {
 			$("#aggregDataDateR" + (row)).html(json["aggreg_dates"][curDate]);
@@ -696,9 +713,9 @@ function updateDates(json) {
 			//~ $("#aggregPentaAll").prop("checked", true).trigger("change");
 		//~ }
 		//~ else {
-		console.log("in update table callback penta");
-		console.log(aggregPentaChkOrd);
-		console.log(aggregPentaSelectNum);
+		// console.log("in update table callback penta");
+		// console.log(aggregPentaChkOrd);
+		// console.log(aggregPentaSelectNum);
 			$("#aggregPentaAll").prop("indeterminate", false);
 			for (let x = 0; x < aggregPentaChkOrd.length - 1; x ++) {
 				if (aggregPentaChkOrd[x + 1] == 1) {
@@ -714,9 +731,9 @@ function updateDates(json) {
 				$("#aggregPentaAll").prop("checked", false);
 			else if (aggregPentaChkOrd[0] == 2)
 				$("#aggregPentaAll").prop("indeterminate", true);
-			console.log("post force check");
-			console.log(aggregPentaChkOrd);
-			console.log(aggregPentaSelectNum);
+			// console.log("post force check");
+			// console.log(aggregPentaChkOrd);
+			// console.log(aggregPentaSelectNum);
 		//~ }
 	}
 	else {
@@ -724,9 +741,9 @@ function updateDates(json) {
 			//~ $("#aggregPentaAll").prop("checked", true).trigger("change");
 		//~ }
 		//~ else {
-		console.log("in update table callback root");
-		console.log(aggregRootChkOrd);
-		console.log(aggregRootSelectNum);
+		// console.log("in update table callback root");
+		// console.log(aggregRootChkOrd);
+		// console.log(aggregRootSelectNum);
 			$("#aggregRootAll").prop("indeterminate", false);
 			for (let x = 1; x < aggregRootChkOrd.length; x ++) {
 				if (aggregRootChkOrd[x] == 1) {
@@ -742,14 +759,18 @@ function updateDates(json) {
 				$("#aggregRootAll").prop("checked", false);
 			else if (aggregRootChkOrd[0] == 2)
 				$("#aggregRootAll").prop("indeterminate", true);
-			console.log("post force check");
-			console.log(aggregRootChkOrd);
-			console.log(aggregRootSelectNum);
+			// console.log("post force check");
+			// console.log(aggregRootChkOrd);
+			// console.log(aggregRootSelectNum);
 		//~ }
 	}
 }
 
 export function makeAggregQuery(action, save = null) {
+    aggregResults = false;
+    aggregResultsDate = aggregDateOn !== 0;
+    m.redraw();
+
 	if (actorLinks.length == 0 && aggregActorOn) {
 		alert("There are no actor groups linked");
 		return;
@@ -765,14 +786,17 @@ export function makeAggregQuery(action, save = null) {
 		//~ aggregActorFormat["group" + x] = {"sourceName" : actorLinks[x].source.name, "sources" : Array.from(actorLinks[x].source.group),
 								//~ "targetName" : actorLinks[x].target.name, "targets" : Array.from(actorLinks[x].target.group)
 								//~ };
-		aggregActorFormat["group" + x] = {"sourceName" : actorLinks[x].source.name, "sources" : '"' + Array.from(actorLinks[x].source.group).join('","') + '"',
-								"targetName" : actorLinks[x].target.name, "targets" : '"' + Array.from(actorLinks[x].target.group).join('","') + '"'
-								};
+		aggregActorFormat["group" + x] = {
+            "sourceName": actorLinks[x].source.name,
+            "sources": '"' + Array.from(actorLinks[x].source.group).join('","') + '"',
+            "targetName": actorLinks[x].target.name,
+            "targets": '"' + Array.from(actorLinks[x].target.group).join('","') + '"'
+        };
 	}
-	console.log("aggreg actor Format");
-	console.log(aggregActorFormat);
-	console.log("JSON actor format");
-	console.log(JSON.stringify(aggregActorFormat));
+	// console.log("aggreg actor Format");
+	// console.log(aggregActorFormat);
+	// console.log("JSON actor format");
+	// console.log(JSON.stringify(aggregActorFormat));
 
 	function formatAggregDate(date) {
 		let ret = date.getUTCFullYear() + "";
@@ -808,128 +832,24 @@ export function makeAggregQuery(action, save = null) {
 	console.log(JSON.stringify(aggregQuery));
 	laddaUpdate.start();
 
-	if (action != "preview") {
-		makeCorsRequest(aggregURL, aggregQuery, updateTable);
-		if (taction == "download") {
-			console.log("making aggreg download req");
-			aggregQuery["action"] = "download";
-			console.log(aggregQuery);
-			makeCorsRequest(aggregURL, aggregQuery, save);
-		}
+	if (action === 'preview') {
+        // console.log("previewing dates");
+        makeCorsRequest(aggregURL, aggregQuery, updateDates);
 	}
 	else {
-		console.log("previewing dates");
-		makeCorsRequest(aggregURL, aggregQuery, updateDates);
+        makeCorsRequest(aggregURL, aggregQuery, updateTable);
+        if (taction == "download") {
+            aggregQuery["action"] = "download";
+
+            console.log("Aggregation Query: ");
+            console.log(aggregQuery);
+            makeCorsRequest(aggregURL, aggregQuery, save);
+        }
 	}
 }
 
-export function setupAggregation() {
-    $("#aggregDateToggle").click(function() {
-        d3.select("#aggregActorToggle").style("background-color", varColor);
-        $("#subsetDate").siblings().hide();
-        if ($("#subsetDate").is(":visible")) {
-            d3.select("#aggregDateToggle").style("background-color", varColor);
-            $("#subsetDate").hide();
-        }
-        else {
-            d3.select("#aggregDateToggle").style("background-color", selVarColor);
-            $("#subsetDate").show();
-        }
-    });
-
-    $("#aggregActorToggle").click(function() {
-        d3.select("#aggregDateToggle").style("background-color", varColor);
-        $("#subsetActor").siblings().hide();
-        if ($("#subsetActor").is(":visible")) {
-            d3.select("#aggregActorToggle").style("background-color", varColor);
-            $("#subsetActor").hide();
-        }
-        else {
-            d3.select("#aggregActorToggle").style("background-color", selVarColor);
-            $("#subsetActor").show();
-        }
-    });
-
-    //~ $("#aggregPentaToggle").click(function() {
-        //~ d3.select("#aggregRootToggle").style("background-color", varColor);
-        //~ $("#aggregEventByPenta").siblings().hide();
-        //~ $(".aggregDataRoot").hide();
-        //~ for (var x = 0; x <= 4; x ++) {
-            //~ if ($("#aggregPenta" + x).prop("checked")) {
-                //~ $(".aggregDataPenta" + x).show();
-            //~ }
-        //~ }
-
-        //~ if ($("#aggregEventByPenta").is(":visible")) {
-            //~ d3.select("#aggregPentaToggle").style("background-color", varColor);
-            //~ $("#aggregEventByPenta").hide();
-        //~ }
-        //~ else {
-            //~ d3.select("#aggregPentaToggle").style("background-color", selVarColor);
-            //~ $("#aggregEventByPenta").show();
-            //~ aggregMode = "penta";
-            //~ updateAggregTable();
-        //~ }
-    //~ });
-    $("#aggregPentaToggle").click(function() {
-		console.log("penta toggled");
-		console.log(aggregPentaChkOrd);
-        d3.select("#aggregRootToggle").style("background-color", varColor);
-        //~ $("#aggregEventByPenta").siblings().hide();
-        $(".aggregDataRoot").hide();
-        //~ for (var x = 0; x <= 4; x ++) {
-            //~ if ($("#aggregPenta" + x).prop("checked")) {
-                //~ $(".aggregDataPenta" + x).show();
-            //~ }
-        //~ }
-        for (let x = 1; x < aggregPentaChkOrd.length; x ++) {
-			if (aggregPentaChkOrd[x] == 1) {
-				$("#aggregPenta" + x).prop("checked", true).trigger("change");
-			}
-		}
-
-        //~ if ($("#aggregEventByPenta").is(":visible")) {
-            //~ d3.select("#aggregPentaToggle").style("background-color", varColor);
-            //~ $("#aggregEventByPenta").hide();
-        //~ }
-        //~ else {
-            //~ d3.select("#aggregPentaToggle").style("background-color", selVarColor);
-            //~ $("#aggregEventByPenta").show();
-            //~ aggregMode = "penta";
-            //~ updateAggregTable();
-        //~ }
-    });
-
-    $("#aggregRootToggle").click(function() {
-        d3.select("#aggregPentaToggle").style("background-color", varColor);
-        $("#aggregEventByRoot").siblings().hide();
-        $(".aggregDataPenta").hide();
-        for (var x = 1; x <= 20; x ++) {
-            if ($("#aggregRoot" + x).prop("checked")) {
-                $(".aggregDataRoot" + x).show();
-            }
-        }
-
-        if ($("#aggregEventByRoot").is(":visible")) {
-            d3.select("#aggregRootToggle").style("background-color", varColor);
-            $("#aggregEventByRoot").hide();
-            aggregMode = "penta";
-            d3.select("#aggregPentaToggle").style("background-color", selVarColor);
-            updateAggregTable();
-        }
-        else {
-            d3.select("#aggregRootToggle").style("background-color", selVarColor);
-            $("#aggregEventByRoot").show();
-            aggregMode = "root";
-            updateAggregTable();
-        }
-    });
-}
-
-//~ $(".allCheck").click(function (event)
-
 export function updateAggregTable() {
-	console.log("updating table");
+	// console.log("updating table");
 
 	$(".aggregTableRow").show();
 
@@ -943,22 +863,22 @@ export function updateAggregTable() {
 		for (let row = 1; row <= aggregDataNumber; row ++) {
 			if (aggregActorOn) {
 				if (actorLinks.length == 0) {
-					console.log("table continue?");
+					// console.log("table continue?");
 					continue;
 				}
 
 				if (curActor == actorLinks.length) {
-					console.log("actor limit reached");
+					// console.log("actor limit reached");
 					if (aggregDateOn == 0) {
 						$("#aggregTableR" + row).hide();
-						console.log("hide");
+						// console.log("hide");
 						continue;
 					}
 					else {
 						curActor = 0;
 					}
 				}
-				
+
 				$("#aggregDataSrcR" + row).html(actorLinks[curActor].source.name);
 				$("#aggregDataTgtR" + row).html(actorLinks[curActor].target.name);
 				$(".aggregDataPenta:not(.aggregTblHdr)").html("TBD");
@@ -978,5 +898,4 @@ export function updateAggregTable() {
 			}
 		}
 	}
-				
 }
