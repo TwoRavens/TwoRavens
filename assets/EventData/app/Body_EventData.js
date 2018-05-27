@@ -79,7 +79,6 @@ export default class Body_EventData {
                 onclick: (mode) => {
                     app.setOpMode(mode);
                     // the route set doesn't work inside setOpMode... no clue why
-                    m.route.set('/' + mode.toLowerCase());
                 },
                 activeSection: app.opMode,
                 sections: [
