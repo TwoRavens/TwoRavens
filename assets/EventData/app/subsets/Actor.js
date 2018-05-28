@@ -266,6 +266,7 @@ export function setupActor(){
     $(".clearActorBtn").click(function () {
         clearChecks();
         $(this).blur();
+        actorSearch();
     });
 
     //clear search box when reloading page
@@ -773,9 +774,9 @@ function updateSVG() {
         //update gui
         updateGroupName(d.name);
         clearChecks();
-        $("#clearAllActors").click();
         console.log(currentNode[currentTab].group);
-        showSelected(true);
+        if (currentNode[currentTab].group.size === 0) actorSearch();
+        else showSelected(true);
     }
 
     //creates link between nodes
@@ -1299,8 +1300,6 @@ function clearChecks() {
     filterSet[currentTab]['entities'].clear();
     filterSet[currentTab]['roles'].clear();
     filterSet[currentTab]['attributes'].clear();
-
-    actorSearch();
 }
 
 //called when showing only selected elements, element is the checkbox calling the function
@@ -1314,6 +1313,7 @@ export function showSelected(status) {
     $(".popover").remove();
 }
 
+// if force is set, cached results will be ignored and a new request will be made
 export function actorSearch(force=false) {
     const searchText = $("#actorSearch").val().toUpperCase();
 
