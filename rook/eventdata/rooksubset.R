@@ -130,15 +130,16 @@ eventdata_subset.app <- function(env) {
     # ~~~~ Data Retrieval ~~~~
 
     getData = function(url) {
-        print(gsub(' ', '%20', relabel(url, format), fixed=TRUE))
-        data = readLines(gsub(' ', '%20', relabel(url, format), fixed=TRUE), warn=FALSE);
+        print(gsub(' ', '%20', relabel(url, format), fixed=TRUE), quote=FALSE)
+        data = readLines(gsub(' ', '%20', relabel(url, format), fixed=TRUE), warn=FALSE)
 
         # attempt parsing
         tryCatch({
             return(jsonlite::fromJSON(data)$data)
         }, error = function(err) {
             # catch the json parsing error, but return the string anyways
-            print(err);
+            print(err, quote=FALSE)
+            print(data, quote=FALSE)
             return(data);
         })
     }
@@ -274,8 +275,7 @@ eventdata_subset.app <- function(env) {
         }) %plan% multiprocess
 
         actor_source_attributes = future({
-            url = relabel(paste(query_url, '&unique=<src_other_agent>', sep=""), format)
-            uniques(jsonlite::fromJSON(readLines(url))$data)
+            uniques(getData(paste(query_url, '&unique=<src_other_agent>', sep="")))
         }) %plan% multiprocess
 
         actor_target_entities = future({
@@ -287,8 +287,7 @@ eventdata_subset.app <- function(env) {
         }) %plan% multiprocess
 
         actor_target_attributes = future({
-            url = relabel(paste(query_url, '&unique=<tgt_other_agent>', sep=""), format)
-            uniques(jsonlite::fromJSON(readLines(url))$data)
+            uniques(getData(paste(query_url, '&unique=<tgt_other_agent>', sep="")))
         }) %plan% multiprocess
 
         actor_source_values = list(
