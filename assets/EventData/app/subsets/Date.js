@@ -86,8 +86,8 @@ export function updateDate(reset_sliders=true) {
 	
     let dateSVG = d3.select("#dateSVG");
 
-    margin = {top: 20, right: 20, bottom: 110, left: 80};
-    margin2 = {top: 430, right: 20, bottom: 30, left: 80};
+    margin = {top: 20, right: 20, bottom: 180, left: 80};
+    margin2 = {top: 430, right: 20, bottom: 80, left: 80};
     datewidth = +dateSVG.attr("width") - margin.left - margin.right;
     dateheight = +dateSVG.attr("height") - margin.top - margin.bottom;
     dateheight2 = +dateSVG.attr("height") - margin2.top - margin2.bottom;
@@ -349,7 +349,7 @@ export function updateDate(reset_sliders=true) {
         .call(datexAxis)
         .selectAll("text")
 			.attr("transform", "rotate(45)")
-			.style("text-anchor", "start");;
+			.style("text-anchor", "start");
 
     datefocus.append("g")
         .attr("class", "axis axis--y")
@@ -373,10 +373,10 @@ export function updateDate(reset_sliders=true) {
     datecontext.append("g")
         .attr("class", "dateContextX axis axis--x")
         .attr("transform", "translate(0," + dateheight2 + ")")
-        .call(datexAxis2);
-        //~ .selectAll("text")
-			//~ .attr("transform", "rotate(45)")
-			//~ .style("text-anchor", "start");
+        .call(datexAxis2)
+        .selectAll("text")
+            .attr("transform", "rotate(45)")
+			.style("text-anchor", "start");
 
     // Add brushes to context group
     datecontext.append("g")

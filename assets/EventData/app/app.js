@@ -1,22 +1,21 @@
 import m from 'mithril';
 
-import {resetActionCounts, actionBuffer, drawGraphs, updateData} from "./subsets/Action";
-import {updateActor, actorLinks, resizeActorSVG, actorSearch} from "./subsets/Actor";
-import {updateDate, datemax, datemaxUser, datemin, dateminUser, setDatefromSlider} from "./subsets/Date";
-import {updateLocation, mapListCountriesSelected} from "./subsets/Location";
+import {actionBuffer, drawGraphs, resetActionCounts, updateData} from "./subsets/Action";
+import {actorLinks, actorSearch, resizeActorSVG, updateActor} from "./subsets/Actor";
+import {datemax, datemaxUser, datemin, dateminUser, setDatefromSlider, updateDate} from "./subsets/Date";
+import {mapListCountriesSelected, updateLocation} from "./subsets/Location";
 import {
-    setAggregMode, updateAggregTable, makeAggregQuery,
-    aggregPentaChkOrd, aggregRootChkOrd,
-    setEventMeasure, updateToAggreg
+    aggregPentaChkOrd,
+    aggregRootChkOrd,
+    makeAggregQuery,
+    setAggregMode,
+    setEventMeasure,
+    updateAggregTable,
+    updateToAggreg
 } from "./aggreg/aggreg";
-import {
-    panelMargin, panelOcclusion, panelOpen, setPanelCallback,
-    setPanelOcclusion
-} from "../../common/common";
-
+import {panelMargin, panelOcclusion, panelOpen, setPanelCallback, setPanelOcclusion} from "../../common/common";
 // Used for custom query editor
 import '../../../node_modules/ace-builds/src-min-noconflict/ace.js';
-
 // Used for right panel query tree
 import '../../../node_modules/jqtree/tree.jquery.js';
 import '../../../node_modules/jqtree/jqtree.css';
@@ -344,7 +343,14 @@ let downloadVariables = () => {
     });
 };
 
-export function makeCorsRequest(url, post, callback, callbackError=Function) {
+// useful for handling request errors
+function laddaStop() {
+    laddaDownload.stop();
+    laddaReset.stop();
+    laddaUpdate.stop();
+}
+
+export function makeCorsRequest(url, post, callback, callbackError=laddaStop) {
     let xhr = new XMLHttpRequest();
     if ("withCredentials" in xhr) {
         // XHR for Chrome/Firefox/Opera/Safari.
@@ -700,8 +706,10 @@ export function setupQueryTree() {
         function (event) {
             let node = event.node;
             if (node.name === 'Custom Subset') {
-                editor.set(JSON.parse(node.custom));
+                editor.setValue(JSON.stringify(node.custom, null, '\t'));
+                editor.clearSelection();
                 showCanvas("Custom");
+                m.redraw();
             }
 
             if (event.node.hasChildren()) {
@@ -1227,15 +1235,10 @@ function getSubsetPreferences() {
     }
 
     if (canvasKeySelected === 'Custom') {
-        // noinspection JSUnresolvedFunction
-        if (validateCustom(editor.getValue())) {
-            return {
-                id: String(nodeId++),
-                name: 'Custom Subset',
-                custom: JSON.stringify(editor.getValue())
-            }
-        } else {
-            return {}
+        return {
+            id: String(nodeId++),
+            name: 'Custom Subset',
+            custom: JSON.parse(editor.getValue())
         }
     }
 }
@@ -1652,7 +1655,9 @@ function processRule(rule) {
     }
 
     if (rule.name === 'Custom Subset') {
-        rule_query = JSON.parse(rule.custom.replace(/\s/g, ''));
+        // makes a copy and validates json
+        rule_query = JSON.parse(JSON.stringify(rule.custom));
+        console.log(rule_query);
     }
 
     return rule_query;
