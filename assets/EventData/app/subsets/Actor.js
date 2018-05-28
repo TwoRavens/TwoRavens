@@ -284,7 +284,7 @@ export function setupActor(){
         if (searchText === cachedSearch) return;
         cachedSearch = searchText;
 
-        if (app.dataset === 'icews') {
+        if (app.datasetKey === 'icews') {
             clearTimeout(searchTimeout);
             searchTimeout = setTimeout(() => {
                 actorSearch();
@@ -1150,7 +1150,7 @@ function createElement(actorType, columnType, value, chkSwitch = true) {
     // listElement.appendChild(separator);
 
     // Don't use popovers for icews
-    if (app.dataset === 'icews') return entry;
+    if (app.datasetKey === 'icews') return entry;
 
     label.onmouseover = function () {
         if (!$(this).attr("data-content")) {
@@ -1322,27 +1322,27 @@ export function actorSearch(force=false) {
 
     let abbreviated = currentTab === "source" ? "src" : "tgt";
 
-    if (app.dataset !== 'icews' && filterSet[currentTab]["entities"].size !== 0) {
+    if (app.datasetKey !== 'icews' && filterSet[currentTab]["entities"].size !== 0) {
         let filter = {};
         filter['<' + abbreviated + '_actor>'] = { '$in': [...filterSet[currentTab]["entities"]] };
         actorFilters.push(filter);
     }
 
     if (filterSet[currentTab]["roles"].size !== 0) {
-        if (app.dataset === 'icews') actorFilters.push({['<' + abbreviated + '_country>']: {'$in': [...filterSet[currentTab]["roles"]]}});
+        if (app.datasetKey === 'icews') actorFilters.push({['<' + abbreviated + '_country>']: {'$in': [...filterSet[currentTab]["roles"]]}});
         else actorFilters.push({['<' + abbreviated + '_agent>']: {'$in': [...filterSet[currentTab]["roles"]]}});
     }
 
     if (filterSet[currentTab]["attributes"].size !== 0) {
-        if (app.dataset === 'icews') actorFilters.push({['<' + abbreviated + '_sector>']: {'$in': [...filterSet[currentTab]["attributes"]]}});
+        if (app.datasetKey === 'icews') actorFilters.push({['<' + abbreviated + '_sector>']: {'$in': [...filterSet[currentTab]["attributes"]]}});
         else actorFilters.push({['<' + abbreviated + '_other_agent>']: {
             '$regex':  "^(....)*(" + [...filterSet[currentTab]["attributes"]].join('|') + ")"
         }});
     }
 
     if (searchText.length !== 0) {
-        // If the dataset is icews, all we do is a simple text search
-        if (app.dataset === 'icews') actorFilters.push({['<' + abbreviated + '_name>']: {'$regex': '.*' + searchText + '.*', '$options' : 'i'}});
+        // If the datasetKey is icews, all we do is a simple text search
+        if (app.datasetKey === 'icews') actorFilters.push({['<' + abbreviated + '_name>']: {'$regex': '.*' + searchText + '.*', '$options' : 'i'}});
 
         // Apply the lookahead search regex last, as it is the most expensive
         else if (searchText.length % 3 === 0) {
@@ -1387,7 +1387,7 @@ export function actorSearch(force=false) {
     // Submit query and update listings
     let query = {
         'subsets': cachedQuery,
-        'dataset': app.dataset,
+        'dataset': app.datasetKey,
         'datasource': app.datasource,
         'type': currentTab
     };

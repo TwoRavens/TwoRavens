@@ -52,7 +52,7 @@ export default class Body_EventData {
             m("h4", m("h4#datasetLabel", {style: {margin: '.25em 1em'}}, app.datasetName)),
 
             m('div', {style: {'flex-grow': 1}}),
-            app.dataset && m("button#btnPeek.btn.btn-default", {
+            app.datasetKey && m("button#btnPeek.btn.btn-default", {
                     title: 'Display a data preview',
                     style: {margin: '.25em 1em'},
                     onclick: () => window.open('#!/data', 'data')
@@ -62,7 +62,7 @@ export default class Body_EventData {
 
             // Button Reset
             m("button#btnReset.btn.btn-default.ladda-button[data-spinner-color='#818181'][data-style='zoom-in'][title='Reset']", {
-                    style: {margin: '1em', display: app.dataset ? 'block' : 'none'},
+                    style: {margin: '1em', display: app.datasetKey ? 'block' : 'none'},
                     onclick: app.reset
                 },
                 m("span.ladda-label.glyphicon.glyphicon-repeat", {
@@ -84,7 +84,7 @@ export default class Body_EventData {
                 activeSection: app.opMode,
                 sections: [
                     {value: 'Datasets'}
-                ].concat(app.dataset ? [
+                ].concat(app.datasetKey ? [
                     {value: 'Subset', id: 'btnSubsetSubmit'},
                     {value: 'Aggregate', id: 'aggSubmit'}
                 ] : [])
@@ -134,7 +134,7 @@ export default class Body_EventData {
 
                 m("button.btn.btn-default.btn-sm.ladda-button[data-spinner-color='#818181'][id='buttonDownload'][type='button']", {
                         style: {
-                            display: app.dataset ? 'inline-block' : 'none',
+                            display: app.datasetKey ? 'inline-block' : 'none',
                             "margin-right": "6px",
                             'margin-top': '4px',
                             'margin-left': '6px',
@@ -149,7 +149,7 @@ export default class Body_EventData {
                 // Record Count
                 m("span.label.label-default#recordCount", {
                     style: {
-                        display: app.dataset ? 'inline-block' : 'none',
+                        display: app.datasetKey ? 'inline-block' : 'none',
                         "margin-left": "5px",
                         "margin-top": "10px",
                         "margin-right": "10px"
