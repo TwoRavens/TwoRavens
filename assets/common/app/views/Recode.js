@@ -19,6 +19,18 @@ import * as common from "../common";
 import * as index from "../../../app/index";
 import * as app from "../../../app/app";
 
+import '../../css/common.css';
+
+import {
+    borderColor,
+    heightHeader,
+    heightFooter,
+    panelMargin,
+    canvasScroll,
+    scrollbarWidth,
+} from "../common";
+
+
 let varList = [];
 
 export default class Recode {
@@ -34,7 +46,7 @@ export default class Recode {
             for(var variable in data['variables']){
                 varList.push(variable);  
             }
-            console.log(varList)
+            // console.log(varList)
         });
 
     }
@@ -50,7 +62,7 @@ export default class Recode {
                     m('div.container-fluid',[
                         m('ul.nav.navbar-nav',[
                             m('li',
-                            m('a[href=/createVar]',{onclick: m.route.link},  "Create New Variable")),
+                            m('a',{onclick: hidePanel},  "Create New Variable")),
                             m('li',
                             m('a[href=/formulaBuilder]',{oncreate: m.route.link}, "Formula Builder")),
                             m('li',
@@ -60,29 +72,40 @@ export default class Recode {
                         ]),
                     ])
                 ]),
-            m(Canvas, {
-                    attrsAll: {style: {'margin-top': common.heightHeader + 'px', height: `calc(100% - ${common.heightHeader}px)`}}
-                },
-                
-            ),m(Panel, {
+            m(Panel, {
                 side: 'left',
-                label: 'Variables',
+                label: 'Data Selection',
                 hover: true,
                 width: app.modelLeftPanelWidths[app.leftTab],
                 attrsAll: {style: {'z-index': 101}}
-            },m(`div#${"varList"}`, varList.map((item) =>
-            m(`div#${"varList" + item.replace(/\W/g, '_')}`, mergeAttributes({
-                    style: {
-                        'margin-top': '5px',
-                        'text-align': "center",
-                        'background-color':  varColor
-                    },
-                    // 'class': viewClass[item],
-                },
-                // add any additional attributes if passed
-                ), item)))
-            ),
-        ]
+            },  m(PanelList,{
+                id: 'varList',
+                items: varList,
+                callback: clickVar,
+                
+            }),
+        ),
+        m(`#${'right'}panel.container.sidepanel.clearfix`, mergeAttributes({
+            style: {
+                background: menuColor,
+                border: borderColor,
+                width: (window.innerWidth - 300)+'px' ,
+                height: `calc(100% - ${heightHeader + heightFooter}px - ${2 * panelMargin}px - ${canvasScroll['horizontal'] ? scrollbarWidth : 0}px)`,
+                position: 'fixed',
+                top: heightHeader + panelMargin  + 'px',
+                
+                // ['right']: ('right' === 'right' && canvasScroll['vertical'] ? scrollbarWidth : 0) + panelMargin + 'px',
+                // ['padding-' + side]: '1px',
+                // 'z-index': 100
+            }}),
+            m('div.container-fluid', [
+                m('input[type=text]', {id: 'variable', placeholder: 'Variable'}),
+                m('br'),
+                m('br'),
+                m(Button,{id: 'recode'},'Customize'),
+            ])
+        ), 
+    ]
     }
 
 }
@@ -91,3 +114,25 @@ function onRecodeStorageEvent(recode, e){
     recode.configuration = localStorage.getItem('configuration');
     m.redraw();
 }
+function clickVar(elem) {
+    
+    var element = document.getElementById("varListsftptv2a5");
+    element.style.backgroundColor = "black";
+
+    console.log((window.innerWidth - 300)+'px')
+    
+    var text = document.getElementById('variable');
+     text.value = elem; 
+    //  m.redraw();
+}
+
+function hidePanel(){
+    var elem = document.getElementById('leftpanel');
+    elem.style.visibility = 'hidden';
+}
+
+$(window).resize(function(){
+    $('#rightpanel').css({
+    'width':  (window.innerWidth - 300)+'px',
+});
+});
