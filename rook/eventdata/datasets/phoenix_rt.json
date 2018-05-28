@@ -1,0 +1,48 @@
+{
+  "name": "UTDallas - Real Time Phoenix Data",
+  "api_key": "phoenix_rt",
+  "description": "A real-time Phoenix-coded event dataset constructed at The University of Texas at Dallas.",
+  "interval": "Oct. 2017 - present",
+  "coding_schema": {
+    "actor": "phoenix",
+    "action": "CAMEO",
+    "date": "string",
+    "location": "ISO-3",
+    "coordinates": "signed degrees (DDD.dddd)"
+  },
+  "columns": {
+    "<date>": "date8",
+    "<year>": "year",
+    "<month>": "month",
+    "<day>": "day",
+    "<source>": "source",
+    "<src_actor>": "src_actor",
+    "<src_agent>": "src_agent",
+    "<src_other_agent>": "src_other_agent",
+    "<target>": "target",
+    "<tgt_actor>": "tgt_actor",
+    "<tgt_agent>": "tgt_agent",
+    "<tgt_other_agent>": "tgt_other_agent",
+    "<root_code>": "root_code",
+    "<quad_class>": "quad_class",
+    "<goldstein>": "goldstein",
+    "<latitude>": "latitude",
+    "<longitude>": "longitude",
+    "<geoname>": "geoname",
+    "<cameo>": "code",
+    "<country_code>": "country_code",
+    "<admin_info>": "geoname",
+    "<id>": "id",
+    "<url>": "url",
+    "<publisher>": "source_text"
+  },
+  "citations": [
+    {
+      "title": "Phoenix real time event data",
+      "author": "Brandt, Patrick T.; “D’Orazio, Vito; Holmes, Jennifer; Khan, Latifur; Ng, Vincent",
+      "year": "2018",
+      "note": "University of Texas Dallas",
+      "url": "http://eventdata.utdallas.edu"
+    }
+  ]
+}

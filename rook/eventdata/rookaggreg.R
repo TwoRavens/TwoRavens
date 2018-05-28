@@ -67,14 +67,13 @@ eventdata_aggreg.app <- function(env) {
         server_address = EVENTDATA_LOCAL_SERVER_ADDRESS
     }
 
-    format = paste(dataset, '_', datasource, sep="")
     eventdata_url = paste(server_address, EVENTDATA_SERVER_API_KEY, "&datasource=", dataset, sep="")
 
     # ~~~~ Data Retrieval ~~~~
 
     getData = function(url) {
-        print(gsub(' ', '%20', relabel(url, format), fixed=TRUE))
-        data = jsonlite::fromJSON(readLines(gsub(' ', '%20', relabel(url, format), fixed=TRUE)))$data
+        print(gsub(' ', '%20', relabel(url, dataset), fixed=TRUE))
+        data = jsonlite::fromJSON(readLines(gsub(' ', '%20', relabel(url, dataset), fixed=TRUE)))$data
         return(data)
     }
 

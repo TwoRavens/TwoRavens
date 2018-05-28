@@ -97,10 +97,10 @@ eventdata_subset.app <- function(env) {
 
     everything <- jsonlite::fromJSON(request$POST()$solaJSON, simplifyDataFrame = FALSE)
 
+    # metadata: return data about each dataset
     # raw: return query as is
     # summary: return metadata
     # actor: return actor filtering
-    # formatted: check if database is properly formatted
     # validate: check if query is valid
 
     type = everything$type
@@ -108,6 +108,13 @@ eventdata_subset.app <- function(env) {
     dataset = everything$dataset
     subsets = everything$subsets
     variables = everything$variables
+
+    if (!is.null(type) && type == 'metadata') {
+        response$write(toString(jsonlite::toJSON(lapply(list.files('./eventdata/datasets'), function(path) {
+            return(jsonlite::fromJSON(readLines(paste('./eventdata/datasets/', path, sep=""), warn=FALSE)))
+        }), auto_unbox=TRUE)))
+        return(response$finish())
+    }
 
     if (is.null(everything$dataset)) {
         response$write(paste('{"error": "no dataset is specified"}'))
@@ -124,14 +131,13 @@ eventdata_subset.app <- function(env) {
     }
     cat('\nserver_address', server_address)
 
-    format = paste(dataset, '_', datasource, sep="")
     eventdata_url = paste(server_address, EVENTDATA_SERVER_API_KEY, "&datasource=", dataset, sep="")
 
     # ~~~~ Data Retrieval ~~~~
 
     getData = function(url) {
-        print(gsub(' ', '%20', relabel(url, format), fixed=TRUE), quote=FALSE)
-        data = readLines(gsub(' ', '%20', relabel(url, format), fixed=TRUE), warn=FALSE)
+        print(gsub(' ', '%20', relabel(url, dataset), fixed=TRUE), quote=FALSE)
+        data = readLines(gsub(' ', '%20', relabel(url, dataset), fixed=TRUE), warn=FALSE)
 
         # attempt parsing
         tryCatch({
@@ -142,12 +148,6 @@ eventdata_subset.app <- function(env) {
             print(data, quote=FALSE)
             return(data);
         })
-    }
-
-    if (!is.null(type) && type == 'formatted') {
-        validations = validate(getData(paste(eventdata_url, '&aggregate=[{"$limit":100}]', sep="")), format)
-        response$write(paste('{"variables": ', toString(jsonlite::toJSON(validations)), '}'))
-        return(response$finish())
     }
 
     if (!is.null(type) && type == 'raw') {

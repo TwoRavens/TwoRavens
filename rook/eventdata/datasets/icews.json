@@ -1,0 +1,44 @@
+{
+  "name": "ICEWS",
+  "api_key": "icews",
+  "description": "Event data consists of coded interactions between socio-political actors (i.e., cooperative or hostile actions between individuals, groups, sectors and nation states).",
+  "interval": "1995 - Sep. 2016",
+  "schema": {
+    "actor": "icews",
+    "action": "CAMEO condensed",
+    "date": "string",
+    "location": "english short name",
+    "coordinates": "signed degrees (DDD.dddd)"
+  },
+  "columns": {
+    "<event_id>": "Event ID",
+    "<date>": "Event Date",
+    "<src_name>": "Source Name",
+    "<src_sectors>": "Source Sectors",
+    "<src_country>": "Source Country",
+    "<tgt_name>": "Target Name",
+    "<tgt_sectors>": "Target Sectors",
+    "<tgt_country>": "Target Country",
+    "<goldstein>": "Intensity",
+    "<latitude>": "Latitude",
+    "<longitude>": "Longitude",
+    "<city>": "City",
+    "<district>": "District",
+    "<province>": "Province",
+    "<country>": "Country",
+    "<cameo>": "CAMEO Code",
+    "<event_text>": "Event Text",
+    "<id>": "Story ID",
+    "<sentence_number>": "Sentence Number",
+    "<publisher>": "Publisher"
+  },
+  "citations": [
+    {
+      "author": "Boschee, Elizabeth; Lautenschlager, Jennifer; O'Brien, Sean; Shellman, Steve; Starz, James; Ward, Michael",
+      "year": "2015",
+      "title": "ICEWS Coded Event Data",
+      "url": "https://doi.org/10.7910/DVN/28075",
+      "version": "Harvard Dataverse, V22"
+    }
+  ]
+}

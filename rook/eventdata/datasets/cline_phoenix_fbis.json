@@ -1,0 +1,60 @@
+{
+  "name": "Cline - CIA Broadcast",
+  "api_key": "cline_phoenix_fbis",
+  "description": "Data sourced from the CIA Foreign Broadcast Information Service and collected by the Cline Center for Advanced Social Research.",
+  "interval": "1995 - 2004",
+  "coding_schema": {
+    "actor": "phoenix",
+    "action": "CAMEO",
+    "date": "string",
+    "location": "ISO-3",
+    "coordinates": "signed degrees (DDD.dddd)"
+  },
+  "columns": {
+    "<event_id>": "eid",
+    "<date>": "story_date",
+    "<year>": "year",
+    "<month>": "month",
+    "<day>": "day",
+    "<source>": "source",
+    "<src_actor>": "source_root",
+    "<src_agent>": "source_agent",
+    "<src_other_agent>": "source_others",
+    "<target>": "target",
+    "<tgt_actor>": "target_root",
+    "<tgt_agent>": "target_agent",
+    "<tgt_other_agent>": "target_others",
+    "<cameo>": "code",
+    "<root_code>": "root_code",
+    "<quad_class>": "quad_class",
+    "<goldstein>": "goldstein",
+    "<latitude>": "lat",
+    "<longitude>": "lon",
+    "<geoname>": "placename",
+    "<country_code>": "countryname",
+    "<admin_info>": "statename",
+    "<id>": "aid",
+    "<process>": "process"
+  },
+  "citations": [
+    {
+      "author": "Althaus, Scott, Joseph Bajjalieh, John F. Carter, Buddy Peyton, and Dan A. Shalmon",
+      "year": "2017",
+      "title": "Cline Center Historical Phoenix Event Data",
+      "version": "v.1.0.0",
+      "note": "Distributed by Cline Center for Advanced Social Research",
+      "date": "June 30",
+      "url": "http://www.clinecenter.illinois.edu/data/event/phoenix/"
+    },
+    {
+      "author": "Althaus, Scott, Joseph Bajjalieh, John F. Carter, Buddy Peyton, and Dan A. Shalmon",
+      "year": "2017",
+      "description": "Cline Center Historical Phoenix Event Data Variable Descriptions",
+      "title": "Cline Center Historical Phoenix Event Data",
+      "version": "v.1.0.0",
+      "note": "Cline Center for Advanced Social Research",
+      "date": "June 30",
+      "url": "http://www.clinecenter.illinois.edu/data/event/phoenix/"
+    }
+  ]
+}
