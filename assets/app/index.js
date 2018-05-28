@@ -657,7 +657,7 @@ if (IS_EVENTDATA_DOMAIN) {
         '/datasets': {render: () => m(Body_EventData, {mode: 'datasets'})},
         '/subset': {render: () => m(Body_EventData, {mode: 'subset'})},
         '/aggregate': {render: () => m(Body_EventData, {mode: 'aggregate'})},
-        '/peek': {render: () => m(Peek, {image: '/static/images/TwoRavens.png'})}
+        '/data': {render: () => m(Peek, {image: '/static/images/TwoRavens.png'})}
     });
 } else {
     m.route(document.body, '/model', {

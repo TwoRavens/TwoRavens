@@ -20,6 +20,7 @@ import CanvasAction from "./views/CanvasAction";
 import CanvasActor from "./views/CanvasActor";
 import CanvasCoordinates from "./views/CanvasCoordinates";
 import CanvasCustom from "./views/CanvasCustom";
+import CanvasLoading from "./views/CanvasLoading";
 import CanvasDate from "./views/CanvasDate";
 import CanvasLocation from "./views/CanvasLocation";
 import CanvasPentaClass from "./views/CanvasPentaClass";
@@ -48,20 +49,20 @@ export default class Body_EventData {
         return m(Header, {image: '/static/images/TwoRavens.png'},
 
             m('div', {style: {'flex-grow': 1}}),
-            m("h4", m("span#datasetLabel.label.label-default", {style: {margin: '.25em 1em'}}, app.dataset)),
+            m("h4", m("h4#datasetLabel", {style: {margin: '.25em 1em'}}, app.datasetName)),
 
             m('div', {style: {'flex-grow': 1}}),
-            m("button#btnPeek.btn.btn-default", {
+            app.dataset && m("button#btnPeek.btn.btn-default", {
                     title: 'Display a data preview',
                     style: {margin: '.25em 1em'},
-                    onclick: () => window.open('#!/peek', 'peek')
+                    onclick: () => window.open('#!/data', 'data')
                 },
-                'Peek'
+                'Data'
             ),
 
             // Button Reset
             m("button#btnReset.btn.btn-default.ladda-button[data-spinner-color='#818181'][data-style='zoom-in'][title='Reset']", {
-                    style: {margin: '1em'},
+                    style: {margin: '1em', display: app.dataset ? 'block' : 'none'},
                     onclick: app.reset
                 },
                 m("span.ladda-label.glyphicon.glyphicon-repeat", {
@@ -75,101 +76,65 @@ export default class Body_EventData {
 
             m(ButtonRadio, {
                 id: 'modeButtonBar',
-                attrsAll: {style: {width: '18em', margin: '.25em 1em'}},
+                attrsAll: {style: {width: 'auto', margin: '.25em 1em'}},
                 onclick: (mode) => {
                     app.setOpMode(mode);
                     // the route set doesn't work inside setOpMode... no clue why
                 },
                 activeSection: app.opMode,
                 sections: [
-                    {value: 'Datasets'},
+                    {value: 'Datasets'}
+                ].concat(app.dataset ? [
                     {value: 'Subset', id: 'btnSubsetSubmit'},
                     {value: 'Aggregate', id: 'aggSubmit'}
-                ]
+                ] : [])
             })
         );
     }
 
     footer(mode) {
 
-        let tours;
+        let tourBar;
+
+        let tourButton = (name, tour) => m("button.btn.btn-default.btn-sm[id='tourButton${name}'][type='button']", {
+                style: {
+                    "margin-left": "5px",
+                    "margin-top": "4px"
+                },
+                onclick: tour
+            }, name);
 
         if (mode === 'subset') {
-            tours = [
+            let tours = {
+                'General': tour.tourStartGeneral,
+                'Actor': tour.tourStartActor,
+                'Date': tour.tourStartDate,
+                'Action': tour.tourStartAction,
+                'Location': tour.tourStartLocation,
+                'Coordinates': tour.tourStartCoordinates,
+                'Custom': tour.tourStartCustom
+            };
+
+            tourBar = [
                 m("span.label.label-default", {style: {"margin-left": "10px", "display": "inline-block"}}, "Tours"),
-                m("div[id='subsetTourBar']", {style: {"display": "inline-block"}}, [
-                    m("button.btn.btn-default.btn-sm[id='tourButtonGeneral'][type='button']", {
-                        style: {
-                            "margin-left": "5px",
-                            "margin-top": "4px"
-                        },
-                        onclick: tour.tourStartGeneral
-                    }, "General"),
-                    m("button.btn.btn-default.btn-sm[id='tourButtonActor'][type='button']", {
-                        style: {
-                            "margin-left": "5px",
-                            "margin-top": "4px"
-                        },
-                        onclick: tour.tourStartActor
-                    }, "Actor"),
-                    m("button.btn.btn-default.btn-sm[id='tourButtonDate'][type='button']", {
-                        style: {
-                            "margin-left": "5px",
-                            "margin-top": "4px"
-                        },
-                        onclick: tour.tourStartDate
-                    }, "Date"),
-                    m("button.btn.btn-default.btn-sm[id='tourButtonAction'][type='button']", {
-                        style: {
-                            "margin-left": "5px",
-                            "margin-top": "4px"
-                        },
-                        onclick: tour.tourStartAction
-                    }, "Action"),
-                    m("button.btn.btn-default.btn-sm[id='tourButtonLocation'][type='button']", {
-                        style: {
-                            "margin-left": "5px",
-                            "margin-top": "4px"
-                        },
-                        onclick: tour.tourStartLocation
-                    }, "Location"),
-                    m("button.btn.btn-default.btn-sm[id='tourButtonCoordinates'][type='button']", {
-                        style: {
-                            "margin-left": "5px",
-                            "margin-top": "4px"
-                        },
-                        onclick: tour.tourStartCoordinates
-                    }, "Coordinates"),
-                    m("button.btn.btn-default.btn-sm[id='tourButtonCustom'][type='button']", {
-                        style: {
-                            "margin-left": "5px",
-                            "margin-top": "4px"
-                        },
-                        onclick: tour.tourStartCustom
-                    }, "Custom")
-                ])];
+                m("div[id='subsetTourBar']", {style: {"display": "inline-block"}}, Object.keys(tours).map(name => tourButton(name, tours[name])))];
         }
 
         if (mode === 'aggregate') {
-            tours = [
+            tourBar = [
                 m("span.label.label-default", {style: {"margin-left": "10px", "display": "inline-block"}}, "Tours"),
                 m("div[id='aggregTourBar']", {style: {"display": "inline-block"}}, [
-                    m("button.btn.btn-default.btn-sm[id='tourButtonAggreg'][type='button']", {
-                        style: {
-                            "margin-left": "5px",
-                            "margin-top": "4px"
-                        },
-                        onclick: tour.tourStartAggregation
-                    }, "Aggregation")
+                    tourButton('Aggregation', tour.tourStartAggregation)
                 ])];
         }
 
         return m(Footer, [
-            tours,
+            tourBar,
             m("#recordBar", {style: {display: "inline-block", float: 'right'}}, [
 
                 m("button.btn.btn-default.btn-sm.ladda-button[data-spinner-color='#818181'][id='buttonDownload'][type='button']", {
                         style: {
+                            display: app.dataset ? 'inline-block' : 'none',
                             "margin-right": "6px",
                             'margin-top': '4px',
                             'margin-left': '6px',
@@ -184,7 +149,7 @@ export default class Body_EventData {
                 // Record Count
                 m("span.label.label-default#recordCount", {
                     style: {
-                        "display": "inline-block",
+                        display: app.dataset ? 'inline-block' : 'none',
                         "margin-left": "5px",
                         "margin-top": "10px",
                         "margin-right": "10px"
@@ -360,7 +325,10 @@ export default class Body_EventData {
         // Eventdata was written before we used mithril, so the canvases were written with local state.
         // To preserve state, all pages are always rendered, but use css to hide inactive canvases.
         let display = (canvas) => {
-            if (!app.initialLoad) return 'none';
+            if (!app.initialLoad) {
+                if (canvas === 'Loading' && app.canvasKeySelected !== 'Datasets') return 'block';
+                return 'none';
+            }
             return (canvas === app.canvasKeySelected) ? 'block' : 'none';
         };
 
@@ -385,6 +353,7 @@ export default class Body_EventData {
                         m(CanvasActor, {mode: mode, display: display('Actor')}),
                         m(CanvasDate, {mode: mode, display: display('Date')}),
                         m(CanvasAction, {mode: mode, display: display('Action')}),
+                        m(CanvasLoading, {display: display('Loading')}),
                         m(CanvasLocation, {mode: mode, display: display('Location')}),
                         m(CanvasCoordinates, {mode: mode, display: display('Coordinates')}),
                         m(CanvasCustom, {mode: mode, display: display('Custom')}),

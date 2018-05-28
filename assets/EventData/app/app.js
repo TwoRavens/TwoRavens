@@ -36,6 +36,9 @@ if (!production) {
 let appname = 'eventdatasubsetapp';
 export let subsetURL = rappURL + appname;
 
+// text here is shown in the footer
+export let footerAlert;
+
 // Select which tab is shown in the left panel
 export let setLeftTab = (tab) => leftTab = tab;
 export let leftTab = 'Subsets';
@@ -97,9 +100,12 @@ export function setOpMode(mode) {
 }
 
 // Options: one of ["phoenix_rt", "cline_phoenix_swb", "cline_phoenix_nyt", "cline_phoenix_fbis", "icews"]
-export let dataset = 'phoenix_rt';
-export let setDataset = (set) => {
+export let dataset;
+export let datasetName;
+export let setDataset = (set, name) => {
+    initialLoad = false;
     dataset = set;
+    datasetName = name;
     downloadVariables();
     submitQuery(true);
 };
@@ -178,15 +184,15 @@ export function setupBody() {
     // The editor menu for the custom subsets
     editor = ace.edit("subsetCustomEditor");
 
-    // sends a server request to get the variables for the current dataset
-    downloadVariables();
-
     laddaUpdate = Ladda.create(document.getElementById("btnUpdate"));
     laddaReset = Ladda.create(document.getElementById("btnReset"));
     laddaDownload = Ladda.create(document.getElementById("buttonDownload"));
-    laddaReset.start();
 
-    document.getElementById("datasetLabel").innerHTML = dataset + " dataset";
+    // this will only get used if dataset selection is loaded from localstorage, since the default is undefined
+    if (dataset === undefined) return;
+
+    // sends a server request to get the variables for the current dataset.
+    downloadVariables();
 
     let query = {
         'subsets': JSON.stringify(subsetQuery),
@@ -194,6 +200,8 @@ export function setupBody() {
         'dataset': dataset,
         'datasource': datasource
     };
+
+    laddaReset.start();
 
     // Initial load of preprocessed data
     makeCorsRequest(subsetURL, query, pageSetup);
@@ -235,10 +243,7 @@ export function showCanvas(canvasKey) {
     // Setting the div visible before the state change fixes collapsing graphs.
     for (let child of document.getElementById('canvas').children) child.style.display = 'none';
 
-    if (!initialLoad) {
-        alert("Resources are still being loaded from the server. Canvases will be available once resources have been loaded.");
-    } else {
-
+    if (initialLoad) {
         if (canvasKeySelected === "Action") {
             document.getElementById('canvasAction').style.display = 'inline';
             drawGraphs();
@@ -322,6 +327,8 @@ export function showCanvas(canvasKey) {
 }
 
 let downloadVariables = () => {
+    if (dataset === undefined) return;
+
     let query = {
         'type': 'formatted',
         'dataset': dataset,
