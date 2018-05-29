@@ -59,7 +59,8 @@ def ta2_hello():
     # Send the gRPC request
     # --------------------------------
     try:
-        reply = core_stub.Hello(req, timeout=3)
+        reply = core_stub.Hello(req,
+                                timeout=settings.TA2_GPRC_SHORT_TIMEOUT)
     except Exception as ex:
         return err_resp(str(ex))
 

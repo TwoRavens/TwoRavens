@@ -6,12 +6,16 @@ from tworaven_apps.ta2_interfaces import (\
 
 urlpatterns = (
 
-    path(r'^get-problem-schema$',
+    path(r'get-problem-schema',
          views_additional.view_get_problem_schema,
          name='get_problem_schema'),
 
-    path(r'^hello$',
+    path(r'Hello',
          views_ta2_req1.view_hello,
          name='Hello'),
+
+    path(r'SearchSolutions',
+         views_ta2_req1.view_search_solutions,
+         name='SearchSolutions'),
 
     )

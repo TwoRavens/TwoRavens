@@ -2,8 +2,10 @@
 
 {% block extra_js %}
 {{ block.super }}
-{% include "test_requests/test_examples.html" %}
+
+{% include "test_requests/test_examples2.html" %}
 <script>
+
 
   function formatJSON(json_obj){
     return JSON.stringify(json_obj, null, 4);

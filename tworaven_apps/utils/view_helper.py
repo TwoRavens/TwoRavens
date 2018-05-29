@@ -3,14 +3,14 @@ Utilities for views
 """
 from collections import OrderedDict
 import json
+from tworaven_apps.utils.basic_response import (ok_resp, err_resp)
 
 def get_common_view_info(request):
     """For all pages, e.g. is user logged in, etc"""
 
-    info = dict()
-
-    #info = dict(is_authenticated=request.user.is_authenticated,
-    #            user=request.user)
+    #info = dict()
+    info = dict(is_authenticated=request.user.is_authenticated,
+                user=request.user)
 
     return info
 
@@ -25,12 +25,12 @@ def get_session_key(request):
 def get_authenticated_user(request):
     """Return the user from the request"""
     if not request:
-        return False, 'request is None'
+        return err_resp('request is None')
 
     if not request.user.is_authenticated:
-        return False, 'user is not authenticated'
+        return err_resp('user is not authenticated')
 
-    return True, request.user
+    return ok_resp(request.user)
 
 
 def get_request_body(request):
@@ -40,12 +40,12 @@ def get_request_body(request):
         (Fales, error message)
     """
     if not request:
-        return False, 'request is None'
+        return err_resp('request is None')
 
     if not request.body:
-        return False, 'request.body not found'
+        return err_resp('request.body not found')
 
-    return True, request.body.decode('utf-8')
+    return ok_resp(request.body.decode('utf-8'))
 
 
 def get_request_body_as_json(request):
@@ -55,23 +55,23 @@ def get_request_body_as_json(request):
         (Fales, error message)
     """
     if not request:
-        return False, 'request is None'
+        return err_resp('request is None')
 
-    success, req_body_or_err = get_request_body(request)
-    if not success:
-        return False, req_body_or_err
+    resp_info = get_request_body(request)
+    if not resp_info.success:
+        return resp_info
 
     try:
-        json_data = json.loads(req_body_or_err,
+        json_data = json.loads(resp_info.result_obj,
                                object_pairs_hook=OrderedDict)
     except json.decoder.JSONDecodeError as err_obj:
         err_msg = ('Failed to convert request body to JSON: %s') % err_obj
-        return False, err_msg
+        return err_resp(err_msg)
     except TypeError as err_obj:
         err_msg = ('Failed to convert request body to JSON: %s') % err_obj
-        return False, err_msg
+        return err_resp(err_msg)
 
-    return True, json_data
+    return ok_resp(json_data)
 
 
 
