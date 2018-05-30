@@ -1,36 +1,69 @@
 {
   "name": "ICEWS",
-  "api_key": "icews",
+  "key": "icews",
   "description": "Event data consists of coded interactions between socio-political actors (i.e., cooperative or hostile actions between individuals, groups, sectors and nation states).",
   "interval": "1995 - Sep. 2016",
-  "schema": {
-    "actor": "icews",
-    "action": "CAMEO condensed",
-    "date": "string",
-    "location": "english short name",
-    "coordinates": "signed degrees (DDD.dddd)"
+  "subsets": {
+    "Actor": {
+      "type": "actor",
+      "format": "icews",
+      "columns": [
+        "Source Name",
+        "Source Sectors",
+        "Source Country",
+        "Target Name",
+        "Target Sectors",
+        "Target Country"
+      ]
+    },
+    "Action": {
+      "type": "action",
+      "format": "CAMEO",
+      "columns": [
+        "CAMEO Code"
+      ]
+    },
+    "Date": {
+      "type": "date",
+      "format": "YYYY-MM-DD",
+      "columns": [
+        "Event Date"
+      ]
+    },
+    "Location": {
+      "type": "location",
+      "format": "english full name",
+      "columns": [
+        "Country"
+      ]
+    },
+    "Coordinates": {
+      "type": "coordinates",
+      "format": "signed degrees",
+      "columns": []
+    }
   },
   "columns": {
-    "<event_id>": "Event ID",
-    "<date>": "Event Date",
-    "<src_name>": "Source Name",
-    "<src_sectors>": "Source Sectors",
-    "<src_country>": "Source Country",
-    "<tgt_name>": "Target Name",
-    "<tgt_sectors>": "Target Sectors",
-    "<tgt_country>": "Target Country",
-    "<goldstein>": "Intensity",
-    "<latitude>": "Latitude",
-    "<longitude>": "Longitude",
-    "<city>": "City",
-    "<district>": "District",
-    "<province>": "Province",
-    "<country>": "Country",
-    "<cameo>": "CAMEO Code",
-    "<event_text>": "Event Text",
-    "<id>": "Story ID",
-    "<sentence_number>": "Sentence Number",
-    "<publisher>": "Publisher"
+    "CAMEO Code": "<cameo>",
+    "City": "<city>",
+    "Country": "<country>",
+    "District": "<district>",
+    "Event Date": "<date>",
+    "Event ID": "<event_id>",
+    "Event Text": "<event_text>",
+    "Intensity": "<goldstein>",
+    "Latitude": "<latitude>",
+    "Longitude": "<longitude>",
+    "Province": "<province>",
+    "Publisher": "<publisher>",
+    "Sentence Number": "<sentence_number>",
+    "Source Country": "<src_country>",
+    "Source Name": "<source>",
+    "Source Sectors": "<src_sectors>",
+    "Story ID": "<id>",
+    "Target Country": "<tgt_country>",
+    "Target Name": "<target>",
+    "Target Sectors": "<tgt_sectors>"
   },
   "citations": [
     {

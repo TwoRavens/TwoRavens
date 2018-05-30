@@ -1,40 +1,76 @@
 {
   "name": "Cline - CIA Broadcast",
-  "api_key": "cline_phoenix_fbis",
+  "key": "cline_phoenix_fbis",
   "description": "Data sourced from the CIA Foreign Broadcast Information Service and collected by the Cline Center for Advanced Social Research.",
   "interval": "1995 - 2004",
-  "coding_schema": {
-    "actor": "phoenix",
-    "action": "CAMEO",
-    "date": "string",
-    "location": "ISO-3",
-    "coordinates": "signed degrees (DDD.dddd)"
+  "subsets": {
+    "Actor": {
+      "type": "actor",
+      "format": "phoenix",
+      "columns": [
+        "source",
+        "source_agent",
+        "source_others",
+        "source_root",
+        "target",
+        "target_agent",
+        "target_others",
+        "target_root"
+      ]
+    },
+    "Action": {
+      "type": "action",
+      "format": "CAMEO root code",
+      "columns": [
+        "root_code"
+      ]
+    },
+    "Date": {
+      "type": "date",
+      "format": "fields",
+      "columns": [
+        "year",
+        "month"
+      ]
+    },
+    "Location": {
+      "type": "location",
+      "format": "ISO-3",
+      "columns": [
+        "countryname"
+      ]
+    },
+    "Coordinates": {
+      "type": "coordinates",
+      "format": "signed degrees",
+      "columns": []
+    }
   },
   "columns": {
-    "<event_id>": "eid",
-    "<date>": "story_date",
-    "<year>": "year",
-    "<month>": "month",
-    "<day>": "day",
-    "<source>": "source",
-    "<src_actor>": "source_root",
-    "<src_agent>": "source_agent",
-    "<src_other_agent>": "source_others",
-    "<target>": "target",
-    "<tgt_actor>": "target_root",
-    "<tgt_agent>": "target_agent",
-    "<tgt_other_agent>": "target_others",
-    "<cameo>": "code",
-    "<root_code>": "root_code",
-    "<quad_class>": "quad_class",
-    "<goldstein>": "goldstein",
-    "<latitude>": "lat",
-    "<longitude>": "lon",
-    "<geoname>": "placename",
-    "<country_code>": "countryname",
-    "<admin_info>": "statename",
-    "<id>": "aid",
-    "<process>": "process"
+    "aid": "<id>",
+    "code": "<cameo>",
+    "countryname": "<country>",
+    "day": "<day>",
+    "eid": "<event_id>",
+    "goldstein": "<goldstein>",
+    "lat": "<latitude>",
+    "lon": "<longitude>",
+    "month": "<month>",
+    "placename": "<geoname>",
+    "process": "<process>",
+    "quad_class": "<quad_class>",
+    "root_code": "<action_code>",
+    "source": "<source>",
+    "source_agent": "<src_agent>",
+    "source_others": "<src_other_agent>",
+    "source_root": "<src_actor>",
+    "statename": "<admin_info>",
+    "story_date": "<date>",
+    "target": "<target>",
+    "target_agent": "<tgt_agent>",
+    "target_others": "<tgt_other_agent>",
+    "target_root": "<tgt_actor>",
+    "year": "<year>"
   },
   "citations": [
     {

@@ -167,7 +167,6 @@ if(!is_rapache_mode){
     R.server$add(app = tree.app, name="treeapp")
 
     R.server$add(app = eventdata_subset.app, name="eventdatasubsetapp")
-
     R.server$add(app = eventdata_aggreg.app, name="eventdataaggregapp")
 
     # Serve files directly from rook

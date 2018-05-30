@@ -2,7 +2,7 @@ import m from 'mithril';
 
 import {actionBuffer, drawGraphs, resetActionCounts, updateData} from "./subsets/Action";
 import {actorLinks, actorSearch, resizeActorSVG, updateActor} from "./subsets/Actor";
-import {datemax, datemaxUser, datemin, dateminUser, setDatefromSlider, updateDate} from "./subsets/Date";
+import {datemax, datemaxUser, datemin, dateminUser, setDatefromSlider, updateDate, dateSort} from "./subsets/Date";
 import {mapListCountriesSelected, updateLocation} from "./subsets/Location";
 import {
     aggregPentaChkOrd,
@@ -35,10 +35,10 @@ if (!production) {
 let appname = 'eventdatasubsetapp';
 export let subsetURL = rappURL + appname;
 
-// metadata for each available datasetKey
-export let metadata = [];
-export let getDataset = (key) => metadata.filter(meta => meta['api_key'] === key)[0];
-export let getVariables = (key) => Object.values((getDataset(key) || {})['columns'] || {});
+// metadata for each available dataset
+export let datasetMetadata = [];
+export let getDataset = (key) => datasetMetadata.filter(meta => meta['key'] === key)[0];
+export let getVariables = (dataset) => Object.values((dataset || {})['columns'] || {});
 
 // Select which tab is shown in the left panel
 export let setLeftTab = (tab) => leftTab = tab;
@@ -77,7 +77,7 @@ export function setOpMode(mode) {
     if (mode === opMode) return;
 
     // Some canvases only exist in certain modes. Fall back to default if necessary.
-    if (mode === 'subset' && subsetKeys.indexOf(canvasKeySelected) === -1) showCanvas('Actor');
+    if (mode === 'subset' && subsetKeys(dataset).indexOf(canvasKeySelected) === -1) showCanvas('Actor');
     if (mode === 'aggregate' && aggregateKeys.indexOf(canvasKeySelected) === -1) showCanvas('Actor');
     if (mode === 'datasets' && 'Datasets' !== canvasKeySelected) showCanvas('Datasets');
 
@@ -100,35 +100,38 @@ export function setOpMode(mode) {
     m.route.set('/' + mode.toLowerCase());
 }
 
-// Load the metadata for each available datasetKey
-makeCorsRequest(subsetURL, {'type': 'metadata'}, function (jsondata) {
-    metadata = jsondata;
-    reloadLeftpanelVariables();
+// Load the metadata for each available dataset
+m.request({
+    url: subsetURL,
+    data: {'type': 'metadata'},
+    method: 'POST'
+}).then((jsondata) => {
+    datasetMetadata = jsondata;
     resetPeek();
-});
+}).catch(laddaStop);
 
-// Options: one of ["phoenix_rt", "cline_phoenix_swb", "cline_phoenix_nyt", "cline_phoenix_fbis", "icews"]
-export let datasetKey;
-export let datasetName;
-export let setDataset = (set, name) => {
+export let totalSubsetRecords = 0;
+
+export let dataset = {};
+export let setDataset = (key) => {
+    dataset = getDataset(key);
+
+    // trigger reloading of necessary menu elements
     initialLoad = false;
-    datasetKey = set;
-    datasetName = name;
-
-    reloadLeftpanelVariables();
     resetPeek();
     submitQuery(true);
 };
 
 if (localStorage.getItem("dataset") !== null) {
-    datasetKey = localStorage.getItem('dataset');
+    dataset = localStorage.getItem('dataset');
 }
 
 // Options: "api" or "local"
 export let datasource = 'api';
 
-export let subsetKeys = ["Actor", "Date", "Action", "Location", "Coordinates", "Custom"]; // Used to label buttons in the left panel
-export let aggregateKeys = ["Actor", "Date", "Penta Class", "Root Code"];
+export let subsetKeys = (dataset) => Object.keys(dataset['subsets']);
+// TODO conditionally draw based on available aggregates
+export let aggregateKeys = ["Actor", "Date", "Penta Class", "Root Code", "Time Series", "Analysis"];
 export let canvasKeySelected = "Datasets";
 
 // These get instantiated in the oncreate() method for the mithril Body_EventData class
@@ -138,24 +141,7 @@ export let laddaDownload;
 
 export let variablesSelected = new Set();
 
-// Stores the live data returned from the server
-export let dateData = [];
-export let countryData = [];
-export let actionData = [];
-export let actorData = {
-    'source': {
-        full: [],
-        entities: [],
-        roles: [],
-        attributes: []
-    },
-    'target': {
-        full: [],
-        entities: [],
-        roles: [],
-        attributes: []
-    }
-};
+export let subsetMetadata = {};
 
 // This is set once data is loaded and the graphs can be drawn. Subset menus will not be shown until this is set
 export let initialLoad = false;
@@ -183,8 +169,6 @@ for (let child of subsetData) {
 export let variableQuery = buildVariables();
 export let subsetQuery = buildSubset(stagedSubsetData);
 
-console.log("Query: " + JSON.stringify(subsetQuery));
-
 // The editor will be initialized on body setup
 export var editor;
 
@@ -196,43 +180,30 @@ export function setupBody() {
     laddaReset = Ladda.create(document.getElementById("btnReset"));
     laddaDownload = Ladda.create(document.getElementById("buttonDownload"));
 
-    // this will only get used if datasetKey selection is loaded from localstorage, since the default is undefined
-    if (datasetKey === undefined) return;
+    // this will only get used if dataset selection is loaded from localstorage, since the default is undefined
+    if (dataset['key'] === undefined) return;
 
-    reloadLeftpanelVariables();
     resetPeek();
 
     let query = {
         'subsets': JSON.stringify(subsetQuery),
         'variables': JSON.stringify(variableQuery),
-        'dataset': datasetKey,
+        'dataset': dataset['key'],
         'datasource': datasource
     };
 
     laddaReset.start();
 
     // Initial load of preprocessed data
-    makeCorsRequest(subsetURL, query, pageSetup);
+    m.request({
+        url: subsetURL,
+        data: query,
+        method: 'POST'
+    }).then(pageSetup).catch(laddaStop);
 }
 
-export let matchedVariables = [];
-
-export function reloadLeftpanelVariables() {
-
-    // if searchVariables is undefined, use an empty string
-    let textBox = document.getElementById('searchVariables');
-    let searchTerm = textBox !== null ? textBox.value.toUpperCase() : '';
-    // Subset variable list by search term. Empty string returns all.
-    matchedVariables.length = 0;
-
-    for (let variable of getVariables(datasetKey)) {
-        if (variable.toUpperCase().indexOf(searchTerm) !== -1) {
-            matchedVariables.push(variable)
-        }
-    }
-
-    m.redraw();
-}
+export let variableSearch = '';
+export let setVariableSearch = (text) => variableSearch = text;
 
 export function toggleVariableSelected(variable) {
     if (variablesSelected.has(variable)) {
@@ -341,56 +312,6 @@ function laddaStop() {
     laddaUpdate.stop();
 }
 
-export function makeCorsRequest(url, post, callback, callbackError=laddaStop) {
-    let xhr = new XMLHttpRequest();
-    if ("withCredentials" in xhr) {
-        // XHR for Chrome/Firefox/Opera/Safari.
-        xhr.open('POST', url, true);
-    } else if (typeof XDomainRequest !== "undefined") {
-        // XDomainRequest for IE.
-        xhr = new XDomainRequest();
-        xhr.open('POST', url);
-    } else {
-        // CORS not supported.
-        xhr = null;
-    }
-    xhr.setRequestHeader('Content-Type', 'text/json');
-
-    if (!xhr) {
-        alert('CORS not supported');
-        return;
-    }
-
-    xhr.onload = function () {
-        let text = xhr.responseText;
-        let json = '';
-        let names = [];
-
-        try {
-            json = JSON.parse(text);
-            names = Object.keys(json);
-        }
-        catch (err) {
-            console.log(err);
-            alert('Error: Could not parse incoming JSON.');
-        }
-        if (names[0] === "warning") {
-            console.log(json.warning);
-            alert('Warning: Additional information in console.')
-        }
-        callback(json);
-    };
-
-    xhr.onerror = function () {
-        // note: xhr.readystate should be 4, and status should be 200.
-        // xhr.status should not be zero
-        alert("There was an error making the data request. \nDebugging information has been logged.");
-        console.log(xhr);
-        callbackError();
-    };
-    xhr.send('solaJSON=' + JSON.stringify(post));
-}
-
 export function download() {
 
     function save(data) {
@@ -414,7 +335,7 @@ export function download() {
 
 		let query = {
 			'subsets': JSON.stringify(subsetQuery),
-			'dataset': datasetKey,
+			'dataset': dataset['key'],
 			'datasource': datasource,
 			'type': 'raw'
 		};
@@ -423,7 +344,11 @@ export function download() {
 		if (Object.keys(variableQuery).length !== 0) Object.assign(query, {'variables': JSON.stringify(variableQuery)});
 
 		laddaDownload.start();
-		makeCorsRequest(subsetURL, query, save);
+        m.request({
+            url: subsetURL,
+            data: query,
+            method: 'POST'
+        }).then(save).catch(laddaStop);
 	}
 	else if (opMode == "aggregate") {
 		console.log("making aggreg download");
@@ -452,7 +377,7 @@ let peekAllDataReceived = false;
 let peekIsGetting = false;
 
 if (opMode !== 'peek') {
-    localStorage.setItem('peekHeader', datasetKey);
+    localStorage.setItem('peekHeader', dataset['name']);
     localStorage.removeItem('peekTableData');
 }
 // localStorage.setItem('peekTableData', JSON.stringify(peekData));
@@ -467,7 +392,7 @@ let onStorageEvent = (e) => {
     }
 };
 
-let updatePeek = () => {
+let updatePeek = async () => {
     let variableQuery = buildVariables();
     let subsetQuery = buildSubset(subsetData);
 
@@ -479,7 +404,7 @@ let updatePeek = () => {
         subsets: JSON.stringify(subsetQuery),
         skip: peekSkip,
         limit: peekBatchSize,
-        dataset: datasetKey,
+        dataset: dataset['key'],
         datasource: datasource,
         type: 'peek'
     };
@@ -487,24 +412,30 @@ let updatePeek = () => {
     // conditionally pass variable projection
     if (Object.keys(variableQuery).length !== 0) query['variables'] = JSON.stringify(variableQuery);
 
-    makeCorsRequest(subsetURL, query, data => {
-        // cancel the request
-        if (!peekIsGetting) return;
-        peekIsGetting = false;
+    // cancel the request
+    if (!peekIsGetting) return;
 
-        if (data.length === 0) {
-            peekAllDataReceived = true;
-            return;
-        }
-
-        for (let record of data) peekData.push(Object.keys(variableQuery).map((key) => record[key] || ""));
-        peekSkip += data.length;
-
-        // this gets noticed by the peek window
-        localStorage.setItem('peekHeader', datasetKey);
-        localStorage.setItem('peekTableHeaders', JSON.stringify(Object.keys(variableQuery)));
-        localStorage.setItem('peekTableData', JSON.stringify(peekData));
+    let data = await m.request({
+        url: subsetURL,
+        data: query,
+        method: 'POST'
     });
+
+    console.log(data);
+    peekIsGetting = false;
+
+    if (data.length === 0) {
+        peekAllDataReceived = true;
+        return;
+    }
+
+    for (let record of data) peekData.push(Object.keys(variableQuery).map((key) => record[key] || ""));
+    peekSkip += data.length;
+
+    // this gets noticed by the peek window
+    localStorage.setItem('peekHeader', dataset['name']);
+    localStorage.setItem('peekTableHeaders', JSON.stringify(Object.keys(variableQuery)));
+    localStorage.setItem('peekTableData', JSON.stringify(peekData));
 };
 window.addEventListener('storage', onStorageEvent);
 
@@ -518,29 +449,59 @@ export function pageSetup(jsondata) {
     laddaUpdate.stop();
     laddaReset.stop();
 
-    if (jsondata['date_data'].length === 0) {
+    if ((jsondata['Date'] || {}).length === 0) {
         alert("No records match your subset. Plots will not be updated.");
         return false;
     }
+    console.log(dataset);
 
-    dateData = jsondata['date_data'];
+    let reformatters = {
+        'action': data => data
+            .filter(entry => entry['<action_code>'] !== undefined)
+            .reduce((out, entry) => {
+                out[parseInt(entry['<action_code>']) - 1] = entry['total'];
+                return(out)
+            }, Array(20).fill(0)),
 
-    countryData = {};
-    for (let entry of jsondata['country_data']) {
-        let country = entry['<country_code>'];
-        if (country === "" || country === undefined) continue;
-        countryData[entry['<country_code>']] = entry.total
-    }
+        'actor': data => Object.keys(data)
+            // restructure under source/target, as full, entities, roles and attributes
+            .reduce((out, field) => {
+                let genericField = dataset['columns'][field];
+                let genericID = ['tgt_', 'src_', '<', '>'].reduce((out, txt) => out.replace(txt, ''), genericField);
+                let actorTab = (genericField.includes('source') || genericField.includes('src')) ? 'source' : 'target';
 
-    actionData = {};
-    for (let i = 1; i <= 20; i++) actionData[i] = 0;
-    for (let entry of jsondata['action_data']) {
-        actionData[parseInt(entry['<root_code>'])] = entry.total
-    }
+                out[actorTab][{
+                    'actor': 'entities',
+                    'agent': 'roles',
+                    'country': 'roles',
+                    'other_agent': 'attributes',
+                    'sectors': 'attributes'
+                }[genericID] || 'full'] = data[field];
+                return(out);
+            }, {source: {}, target: {}}),
 
-    // assign to actorData
-    actorData = jsondata['actor_data'];
+        'coordinates': _=>_,
 
+        'date': data => data
+            .filter(entry => !isNaN(entry['<year>'] && !isNaN(entry['<month>'])))
+            .map(entry => ({'Date': new Date(entry['<year>'], entry['<month>'] - 1, 0), 'Freq': entry.total}))
+            .sort(dateSort),
+
+        'location': data => data
+            .filter(entry => ['', undefined].indexOf(entry['<country>'] === -1))
+            .reduce((out, entry) => {
+                out[entry['<country>']] = entry['total'];
+                return(out);
+            }, {})
+    };
+
+    // reformat date, action, and location data
+    subsetMetadata = Object.keys(dataset['subsets']).reduce((out, key) => {
+            out[key] = reformatters[dataset['subsets'][key]['type']](jsondata[key]);
+            return(out);
+        }, {});
+
+    console.log(subsetMetadata);
     // now load the list of all actors. its state is dependent on actor_data
     actorSearch(true);
 
@@ -554,21 +515,22 @@ export function pageSetup(jsondata) {
         updateData();
     }
 
+
     // If first load of data, user may have selected a subset and is waiting. Render page now that data is available
     if (!initialLoad) {
-        initialLoad = true;
-
         showCanvas(canvasKeySelected);
         if (canvasKeySelected === 'Actor') resizeActorSVG();
     }
+    initialLoad = true;
+    console.log(canvasKeySelected);
 
-    let total_records = 0;
-    for (let record of dateData) {
-        total_records += record['total'];
-    }
+    // find a subset of type
+    let findType = (type) => Object.keys(datasetMetadata['subsets'])
+        .filter(label => datasetMetadata['subsets'][label]['type'] === type)[0];
 
-    document.getElementById('recordCount').innerHTML = total_records + " records";
-    m.redraw();
+    totalSubsetRecords = subsetMetadata[findType('date') || findType('action') || findType('location')]
+        .reduce((accum, val) => accum + val['total']);
+
     return true;
 }
 
@@ -838,12 +800,17 @@ window.callbackDelete = function (id) {
             let query = {
                 'subsets': JSON.stringify(subsetQuery),
                 'variables': JSON.stringify(variableQuery),
-                'dataset': datasetKey,
+                'dataset': dataset['key'],
                 'datasource': datasource
             };
 
             laddaUpdate.start();
-            makeCorsRequest(subsetURL, query, pageSetup);
+
+            m.request({
+                url: subsetURL,
+                data: query,
+                method: 'POST'
+            }).then(pageSetup).catch(laddaStop);
 
             if (subsetData.length === 0) {
                 groupId = 1;
@@ -1253,19 +1220,23 @@ export function reset() {
     groupId = 1;
     queryId = 1;
 
-    reloadLeftpanelVariables();
     reloadRightPanelVariables();
 
     if (!suppress) {
         let query = {
             'subsets': JSON.stringify({}),
             'variables': JSON.stringify({}),
-            'dataset': datasetKey,
+            'dataset': dataset['key'],
             'datasource': datasource
         };
 
         laddaReset.start();
-        makeCorsRequest(subsetURL, query, pageSetup);
+
+        m.request({
+            url: subsetURL,
+            data: query,
+            method: 'POST'
+        }).then(pageSetup).catch(laddaStop);
     }
 }
 
@@ -1339,14 +1310,19 @@ export function submitQuery(datasetChanged=false) {
     let query = {
         'subsets': JSON.stringify(subsetQuery),
         'variables': JSON.stringify(variableQuery),
-        'dataset': datasetKey,
+        'dataset': dataset['key'],
         'datasource': datasource,
         'type': 'sample'
     };
 
     if (datasetChanged) laddaReset.start();
     else laddaUpdate.start();
-    makeCorsRequest(subsetURL, query, submitQueryCallback);
+
+    m.request({
+        url: subsetURL,
+        data: query,
+        method: 'POST'
+    }).then(submitQueryCallback).catch(laddaStop);
 }
 
 // Construct mongoDB selection (subsets columns)
@@ -1356,7 +1332,7 @@ function buildVariables() {
 
     // Select all fields if none selected
     if (variablelist.length === 0) {
-        variablelist = getVariables(datasetKey);
+        variablelist = getVariables(dataset);
     }
 
     for (let idx in variablelist) {
@@ -1460,9 +1436,10 @@ function processRule(rule) {
     let rule_query = {};
 
     if (rule.name === 'Date Subset') {
+        let date_schema = dataset['subsets'][canvasKeySelected]['format'];
 
-        // The cline sets have year at the end of the date string, so it takes some additional work
-        if (['cline_phoenix_nyt', 'cline_phoenix_swb', 'cline_phoenix_fbis'].indexOf(datasetKey) !== -1) {
+        // construct a query that works for separate year, month and day fields
+        if (date_schema === 'fields') {
             let lower_bound = {};
             let upper_bound = {};
             for (let child of rule.children) {
@@ -1500,35 +1477,31 @@ function processRule(rule) {
             rule_query['$and'] = [lower_bound, upper_bound];
         }
 
-        // Just a simple string sort
-        else {
+        // construct a query that works for string date fields
+        else if (date_schema === 'YYYYMMDD' || /YYYY.MM.DD/.test(date_schema)) {
             let rule_query_inner = {};
             for (let child of rule.children) {
 
-                let phoenixDate = function (date) {
-                    return date.getFullYear().toString() +
-                        pad(date.getMonth() + 1) +
-                        pad(date.getDate());
-                };
-
-                let icewsDate = function (date) {
-                    return date.getFullYear().toString() + '-' +
-                        pad(date.getMonth() + 1) + '-' +
+                let formatDate = (date) => {
+                    if (date_schema === 'YYYYMMDD')
+                        return date.getFullYear().toString() +
+                            pad(date.getMonth() + 1) +
+                            pad(date.getDate());
+                    return date.getFullYear().toString() + date_schema[4] +
+                        pad(date.getMonth() + 1) + date_schema[6] +
                         pad(date.getDate())
                 };
 
                 if ('fromDate' in child) {
                     // There is an implicit cast somewhere in the code, and I cannot find it.
                     child.fromDate = new Date(child.fromDate);
-                    if (datasetKey === "icews") rule_query_inner['$gte'] = icewsDate(child.fromDate);
-                    if (datasetKey === "phoenix_rt") rule_query_inner['$gte'] = phoenixDate(child.fromDate);
+                    rule_query_inner['$gte'] = formatDate(child.fromDate);
                 }
 
                 if ('toDate' in child) {
                     // There is an implicit cast somewhere in the code, and I cannot find it. This normalizes
                     child.toDate = new Date(child.toDate);
-                    if (datasetKey === "icews") rule_query_inner['$lte'] = icewsDate(child.toDate);
-                    if (datasetKey === "phoenix_rt") rule_query_inner['$lte'] = phoenixDate(child.toDate);
+                    rule_query_inner['$lte'] = formatDate(child.toDate);
                 }
             }
             rule_query['<date>'] = rule_query_inner;
@@ -1546,17 +1519,13 @@ function processRule(rule) {
             rule_query_inner = {'$not': rule_query_inner};
         }
 
-        if (datasetKey === "icews") {
-            rule_query['<country>'] = rule_query_inner;
-        }
-        if (['phoenix_rt', 'cline_phoenix_fbis', 'cline_phoenix_nyt', 'cline_phoenix_swb'].indexOf(datasetKey) !== -1) {
-            rule_query['<country_code>'] = rule_query_inner;
-        }
+        rule_query['<country>'] = rule_query_inner;
     }
 
     if (rule.name === 'Action Subset') {
         let rule_query_inner = [];
-        if (['phoenix_rt', 'cline_phoenix_fbis', 'cline_phoenix_nyt', 'cline_phoenix_swb'].indexOf(datasetKey) !== -1) {
+
+        if (dataset['subsets'][canvasKeySelected]['format'] === 'CAMEO root code') {
             for (let child of rule.children) {
                 rule_query_inner.push(pad(parseInt(child.name)));
             }
@@ -1569,7 +1538,7 @@ function processRule(rule) {
             rule_query['<root_code>'] = rule_query_inner;
         }
 
-        if (datasetKey === "icews") {
+        if (dataset['subsets'][canvasKeySelected]['action'] === "CAMEO") {
             let prefixes = [];
             for (let child of rule.children) {
                 prefixes.push(pad(parseInt(child.name)));
@@ -1580,7 +1549,7 @@ function processRule(rule) {
                 rule_query_inner = {'$not': rule_query_inner};
             }
 
-            rule_query['<cameo>'] = rule_query_inner;
+            rule_query['<root_code>'] = rule_query_inner;
         }
     }
 
@@ -1606,6 +1575,9 @@ function processRule(rule) {
     }
 
     if (rule.name === 'Coords Subset') {
+        // The only implemented coordinates unit type is signed degrees
+        if (dataset['subsets'][canvasKeySelected]['format'] !== 'signed degrees')
+            console.log("invalid format: " + dataset['subsets'][canvasKeySelected]['format']);
 
         let rule_query_inner = [];
 

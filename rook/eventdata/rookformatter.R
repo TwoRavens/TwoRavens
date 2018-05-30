@@ -2,11 +2,12 @@ source("rookconfig.R")
 
 relabel = function(queryString, dataset) {
 
-    jsonFormat = jsonlite::fromJSON(readLines(paste("./eventdata/datasets/", dataset, '.json', sep="")))$columns;
-    key = names(jsonFormat)
+    columnTypes = jsonlite::fromJSON(readLines(paste("./eventdata/datasets/", dataset, '.json', sep="")))$columns;
+    columnTypes = setNames(names(columnTypes), columnTypes)
+    key = names(columnTypes)
 
-    for (i in 1:length(jsonFormat)) {
-        queryString = gsub(key[[i]], jsonFormat[[i]], queryString)
+    for (i in 1:length(columnTypes)) {
+        queryString = gsub(key[[i]], columnTypes[[i]], queryString)
     }
     return(queryString)
 }

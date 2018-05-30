@@ -1,4 +1,4 @@
-import {actionData} from '../app'
+import {subsetMetadata} from '../app'
 import * as d3 from 'd3'
 
 /**
@@ -54,9 +54,9 @@ export function resetActionCounts() {
     }
 
     for (let x = 0; x < 20; x++) {
-        if (!isNaN(actionData[x + 1])) {
-            pentaCounts[actionSubData[x].penta].count += actionData[x + 1];
-            actionSubData[x].count = actionData[x + 1];
+        if (!isNaN(subsetMetadata['Action'][x + 1])) {
+            pentaCounts[actionSubData[x].penta].count += subsetMetadata['Action'][x + 1];
+            actionSubData[x].count = subsetMetadata['Action'][x + 1];
         }
         pentaCounts[actionSubData[x].penta].maxSelect++;
     }

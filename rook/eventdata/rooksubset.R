@@ -29,8 +29,8 @@ source("rookconfig.R")
 #       c. Return all data from the phoenix_events table
 #            db.phoenix_events.find()
 #
-# 4. Start a local R server to make this file available here: (should prompt for solajson)
-#      http://localhost:8000/custom/eventdataapp
+# 4. Start a local R server to make this file available here:
+#      http://localhost:8000/custom/eventdatasubsetapp
 #
 #      4a. Install/run R, to enter R prompt
 #       b. Run source('rooksource.R') to start R server
@@ -80,22 +80,16 @@ eventdata_subset.app <- function(env) {
     }
 
     print("Request received")
+    post = names(request$POST())
 
-    # Ensure solaJSON is posted
-    solajson = request$POST()$solaJSON
-    if (is.null(solajson)) {
-        response$write('{"warning": "EventData R App is loaded, but no json sent. Please send solaJSON in the POST body."}')
-        return(response$finish())
-    }
-
-    # Ensure that solaJSON is valid
-    valid <- jsonlite::validate(solajson)
-    if (!valid) {
+    # Ensure that request is valid
+    if (!jsonlite::validate(post)) {
         response$write('{"warning": "The request is not valid json. Check for special characters."}')
         return(response$finish())
     }
 
-    everything <- jsonlite::fromJSON(request$POST()$solaJSON, simplifyDataFrame = FALSE)
+    everything <- jsonlite::fromJSON(post, simplifyDataFrame = FALSE)
+    print(everything)
 
     # metadata: return data about each dataset
     # raw: return query as is
@@ -135,6 +129,11 @@ eventdata_subset.app <- function(env) {
 
     # ~~~~ Data Retrieval ~~~~
 
+    genericErrorHandler = function(err) {
+        print(err, quote=FALSE)
+        return(data);
+    }
+
     getData = function(url) {
         print(gsub(' ', '%20', relabel(url, dataset), fixed=TRUE), quote=FALSE)
         data = readLines(gsub(' ', '%20', relabel(url, dataset), fixed=TRUE), warn=FALSE)
@@ -142,12 +141,7 @@ eventdata_subset.app <- function(env) {
         # attempt parsing
         tryCatch({
             return(jsonlite::fromJSON(data)$data)
-        }, error = function(err) {
-            # catch the json parsing error, but return the string anyways
-            print(err, quote=FALSE)
-            print(data, quote=FALSE)
-            return(data);
-        })
+        }, error = genericErrorHandler)
     }
 
     if (!is.null(type) && type == 'raw') {
@@ -199,22 +193,24 @@ eventdata_subset.app <- function(env) {
             getData(paste(eventdata_url, '&query=', subsets, sep=""))
             response$write('{"response": "Query is valid."}')},
         warning = handler,
-        error = handler
-        )
+        error = handler)
         return(response$finish())
     }
 
+    metadata = jsonlite::fromJSON(readLines(paste("./eventdata/datasets/", dataset, '.json', sep="")));
+    # some extra schema info is needed to describe how information should be presented
+    subset_config = jsonlite::fromJSON(readLines(paste("./eventdata/config/subsets.json", sep="")));
+    delimited_columns = jsonlite::fromJSON(readLines(paste("./eventdata/config/delimited_columns.json", sep="")));
+
     # Arguments specific to sources/targets queries
     if (!is.null(type) && type == 'source') {
-        field <- if (dataset == 'icews') 'src_name' else 'source'
-        unique_vals = sort(unlist(getData(paste(eventdata_url, '&unique=<', field, '>&query=', subsets, sep=""))))
+        unique_vals = sort(unlist(getData(paste(eventdata_url, '&unique=<source>&query=', subsets, sep=""))))
         response$write(toString(jsonlite::toJSON(list(source = unique_vals))))
         return(response$finish())
     }
 
     if (!is.null(type) && type == 'target') {
-        field <- if (dataset == 'icews') 'tgt_name' else 'target'
-        unique_vals = sort(unlist(getData(paste(eventdata_url, '&unique=<', field, '>&query=', subsets, sep=""))))
+        unique_vals = sort(unlist(getData(paste(eventdata_url, '&unique=<target>&query=', subsets, sep=""))))
         response$write(toString(jsonlite::toJSON(list(target = unique_vals))))
         return(response$finish())
     }
@@ -229,168 +225,77 @@ eventdata_subset.app <- function(env) {
     # }
 
     # Useful for the target and source other fields, to unwrap the semicolon-delimited values
-    uniques = function(values) {
+    uniques = function(values, delimiter) {
         accumulator = list()
         for (key in values) {
             if (!is.na(key) && key != "") {
-                accumulator = c(accumulator, strsplit(key, ';'))
+                accumulator = c(accumulator, strsplit(key, delimiter))
             }
         }
-        return(sort(unlist(unique(do.call(c, accumulator)))))
+        return(unique(do.call(c, accumulator)))
     }
 
     if (production) {
         sink()
     }
 
-    if (dataset %in% list("phoenix_rt", "cline_phoenix_fbis", "cline_phoenix_nyt", "cline_phoenix_swb")) {
+    query_url = paste(eventdata_url, '&query=', subsets, sep="")
 
-        # This is a new query, so compute new metadata
-        query_url = paste(eventdata_url, '&query=', subsets, sep="")
+    # construct all futures
+    futures = sapply(metadata$subsets, function(subset) {
 
-        date_frequencies = future({
-            data = do.call(data.frame, getData(paste(query_url, '&group=<year>,<month>', sep="")))
-            if (nrow(data) != 0) colnames(data) = c('total', '<year>', '<month>')
-            data
-        }) %plan% multiprocess
+        # handle the groupable subsets separately
+        if (subset_config[[subset$type]]$grouped) {
 
-        country_frequencies = future({
-            data = do.call(data.frame, getData(paste(query_url, '&group=<country_code>', sep="")))
-            if (nrow(data) != 0) colnames(data) = c('total', '<country_code>')
-            data
-        }) %plan% multiprocess
+            # if the dataset does not have <year> and <month> columns, then construct them from <date>
+            if (subset$type == 'date' && !all(list('<year>', '<month>') %in% unlist(metadata$columns, use.names=FALSE))) {
+                return(future(tryCatch({
+                    data = do.call(data.frame, getData(paste(eventdata_url, '&aggregate=',
+                        '[{"$match":', subsets, '},',
+                         '{"$project": {"Year":  {"$substr": ["$<date>", 0, 4]},',
+                         ' "Month": {"$substr": ["$<date>",', if (subset$format == 'YYYYMMDD') '4' else '5', ',2]}}},',     # Construct year and month fields
+                         '{"$group": { "_id": { "year": "$Year", "month": "$Month" }, "total": {"$sum": 1} }}]', sep=""))) # Group by years and months
+                    if (nrow(data) != 0) colnames(data) = c('total', '<year>', '<month>')
+                    data
+                }, error=genericErrorHandler)) %plan% multiprocess)
+            }
 
-        action_frequencies = future({
-            data = do.call(data.frame, getData(paste(query_url, '&group=<root_code>', sep="")))
-            if (nrow(data) != 0) colnames(data) = c('total', '<root_code>')
-            data
-        }) %plan% multiprocess
+            # if the dataset does not have an <action_code> column, then attempt to construct it from <cameo>
+            if (subset$type == 'action' && !('<action_code>' %in% unlist(metadata$columns, use.names=FALSE))) {
+                return(future(tryCatch({
+                    data = do.call(data.frame, getData(paste(eventdata_url, '&aggregate=',
+                        '[{"$match":', subsets, '},',
+                         '{"$project": {"RootCode":  {"$substr": ["$<cameo>", 0, 2]}}},',                          # Construct RootCode field
+                         '{"$group": { "_id": { "action_code": "$RootCode" }, "total": {"$sum": 1} }}]', sep=""))) # Group by RootCode
+                    if (nrow(data) != 0) colnames(data) = c('total', '<action_code>')
+                    data
+                }, error=genericErrorHandler)) %plan% multiprocess)
+            }
 
-        actor_source_entities = future({
-            sort(unlist(getData(paste(query_url, '&unique=<src_actor>', sep=""))))
-        }) %plan% multiprocess
+            return(future(tryCatch({
+                data = do.call(data.frame, getData(paste(query_url, '&group=', paste(subset$columns, collapse=","), sep="")))
+                if (nrow(data) != 0) colnames(data) = c('total', lapply(subset$columns, function(col) {metadata$columns[[col]]}))
+                data
+            }, error=genericErrorHandler)) %plan% multiprocess)
+        }
 
-        actor_source_role = future({
-            sort(unlist(getData(paste(query_url, '&unique=<src_agent>', sep=""))))
-        }) %plan% multiprocess
+        return(sapply(subset$columns, function(column) {
+            return(future(tryCatch({
+                data = getData(paste(query_url, '&unique=', column, '', sep=""))
+                if (metadata$columns[[column]] %in% names(delimited_columns)) data = uniques(data, delimited_columns[[metadata$columns[[column]]]])
+                return(sort(unlist(data)))
+            }, error=genericErrorHandler)) %plan% multiprocess)
+        }))
+    })
 
-        actor_source_attributes = future({
-            uniques(getData(paste(query_url, '&unique=<src_other_agent>', sep="")))
-        }) %plan% multiprocess
-
-        actor_target_entities = future({
-            sort(unlist(getData(paste(query_url, '&unique=<tgt_actor>', sep=""))))
-        }) %plan% multiprocess
-
-        actor_target_role = future({
-            sort(unlist(getData(paste(query_url, '&unique=<tgt_agent>', sep=""))))
-        }) %plan% multiprocess
-
-        actor_target_attributes = future({
-            uniques(getData(paste(query_url, '&unique=<tgt_other_agent>', sep="")))
-        }) %plan% multiprocess
-
-        actor_source_values = list(
-            entities = value(actor_source_entities),
-            roles = value(actor_source_role),
-            attributes = value(actor_source_attributes)
-        )
-
-        actor_target_values = list(
-            entities = value(actor_target_entities),
-            roles = value(actor_target_role),
-            attributes = value(actor_target_attributes)
-        )
-
-        # Package actor data
-        actor_values = list(
-            source = actor_source_values,
-            target = actor_target_values
-        )
-
-        result = toString(jsonlite::toJSON(list(
-            date_data = value(date_frequencies),
-            country_data = value(country_frequencies),
-            action_data = value(action_frequencies),
-            actor_data = actor_values
-        )))
-    }
-
-    if (dataset == "icews") {
-
-        # This is a new query, so compute new metadata
-        query_url = paste(eventdata_url, '&query=', subsets, sep="")
-
-        date_frequencies = future({
-            data = do.call(data.frame, getData(paste(eventdata_url, '&aggregate=',
-                '[{"$match":', subsets, '},',
-                 '{"$project": {"Year":  {"$substr": ["$<date>", 0, 4]},',
-                              '"Month": {"$substr": ["$<date>", 5, 2]}}},',                           # Construct year and month fields
-                 '{"$group": { "_id": { "year": "$Year", "month": "$Month" }, "total": {"$sum": 1} }}]', sep=""))) # Group by years and months
-            if (nrow(data) != 0) colnames(data) = c('total', '<year>', '<month>')
-            data
-        }) %plan% multiprocess
-
-        country_frequencies = future({
-            data = do.call(data.frame, getData(paste(query_url, '&group=<country>', sep="")))
-            if (nrow(data) != 0) colnames(data) = c('total', '<country_code>')
-            data
-        }) %plan% multiprocess
-
-        action_frequencies = future({
-            data = do.call(data.frame, getData(paste(eventdata_url, '&aggregate=',
-                '[{"$match":', subsets, '},',
-                 '{"$project": {"RootCode":  {"$substr": ["$<cameo>", 0, 2]}}},',                           # Construct RootCode field
-                 '{"$group": { "_id": { "root_code": "$RootCode" }, "total": {"$sum": 1} }}]', sep=""))) # Group by RootCode
-            if (nrow(data) != 0) colnames(data) = c('total', '<root_code>')
-            data
-        }) %plan% multiprocess
-
-        actor_source_role = future({
-            sort(unlist(getData(paste(query_url, '&unique=<src_country>', sep=""))))
-        }) %plan% multiprocess
-
-        actor_source_attributes = future({
-            sort(unlist(getData(paste(query_url, '&unique=<src_sectors>', sep=""))))
-        }) %plan% multiprocess
-
-        actor_target_role = future({
-            sort(unlist(getData(paste(query_url, '&unique=<tgt_country>', sep=""))))
-        }) %plan% multiprocess
-
-        actor_target_attributes = future({
-            sort(unlist(getData(paste(query_url, '&unique=<tgt_sectors>', sep=""))))
-        }) %plan% multiprocess
-
-
-        actor_source_values = list(
-            roles = value(actor_source_role),
-            attributes = value(actor_source_attributes)
-        )
-
-        actor_target_values = list(
-            roles = value(actor_target_role),
-            attributes = value(actor_target_attributes)
-        )
-
-        # Package actor data
-        actor_values = list(
-            source = actor_source_values,
-            target = actor_target_values
-        )
-
-        result = toString(jsonlite::toJSON(list(
-            date_data = value(date_frequencies),
-            country_data = value(country_frequencies),
-            action_data = value(action_frequencies),
-            actor_data = actor_values
-        )))
-    }
+    # await all futures
+    response$write(toString(jsonlite::toJSON(sapply(names(futures), function(subset) {
+        if (subset_config[[metadata$subsets[[subset]]$type]]$grouped) return(value(futures[[subset]]));
+        return(sapply(futures[[subset]], value))
+    }))))
 
     # If your R installation does not support futures multiprocessing, it will fall back to multisession processing
     # In the multisession fallback case, prints are sent to different R sessions and not the server console
-
     print("Request completed")
-    response$write(result)
     return(response$finish())
 }

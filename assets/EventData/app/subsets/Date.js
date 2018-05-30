@@ -80,6 +80,15 @@ export function setupDate() {
     });
 }
 
+export function dateSort(a, b) {
+    if (a['Date'] === b['Date']) {
+        return 0;
+    }
+    else {
+        return (a['Date'] < b['Date']) ? -1 : 1;
+    }
+}
+
 // Redraws the date page. If reset is true, then slider bars get reset
 export function updateDate(reset_sliders=true) {
     $("#dateSVG").empty();
@@ -183,25 +192,6 @@ export function updateDate(reset_sliders=true) {
         datecontext.select(".brush").call(datebrush.move, datex.range().map(t.invertX, t));
     }
 
-    let data_raw = [];
-
-    function dateSort(a, b) {
-        if (a['Date'] === b['Date']) {
-            return 0;
-        }
-        else {
-            return (a['Date'] < b['Date']) ? -1 : 1;
-        }
-    }
-
-    for (let entry of app.dateData) {
-        // Ensure data is valid
-        if (isNaN(parseInt(entry['<year>'])) || isNaN(parseInt(entry['<month>']))) continue;
-
-        let bin = {'Date': new Date(entry['<year>'], entry['<month>'] - 1, 0), 'Freq': entry.total};
-        data_raw.push(bin);
-    }
-    data_raw = data_raw.sort(dateSort);		//here is where date is collected as monthly?
     //look at: https://bl.ocks.org/cjhin/8872a492d44694ecf5a883642926f19c
 
     // // remove outliers via interquartile range
@@ -227,15 +217,15 @@ export function updateDate(reset_sliders=true) {
     // data_raw = data_raw.filter((point) => point['Date'] > iqrMin && point['Date'] < iqrMax);
 
     // Set calendar ranges
-    datemin = d3.min(data_raw, function (d) {
+    datemin = d3.min(app.subsetMetadata['Date'], function (d) {
         return d.Date;
     });
 
-    datemax = d3.max(data_raw, function (d) {
+    datemax = d3.max(app.subsetMetadata['Date'], function (d) {
         return d.Date;
     });
 
-    let freqmax = d3.max(data_raw, function (d) {
+    let freqmax = d3.max(app.subsetMetadata['Date'], function (d) {
         return d.Freq;
     });
 
@@ -269,8 +259,8 @@ export function updateDate(reset_sliders=true) {
 
     // replace datapoints with actual data
     let idx = 0;
-    tempDate = new Date(datemin);
-    for (let point of data_raw) {
+    tempDate = new Date(incrementMonth(datemin));
+    for (let point of app.subsetMetadata['Date']) {
         allDates[idx]['Freq'] = point['Freq'];
         while(!isSameMonth(tempDate, point['Date'])) {
             tempDate = incrementMonth(tempDate);
@@ -288,8 +278,8 @@ export function updateDate(reset_sliders=true) {
         return row.Date >= dateminUser && row.Date <= datemaxUser;
     });
 
-    let interpolatedMin = {"Date": dateminUser, "Freq": interpolate(data_raw, dateminUser)};
-    let interpolatedMax = {"Date": datemaxUser, "Freq": interpolate(data_raw, datemaxUser)};
+    let interpolatedMin = {"Date": dateminUser, "Freq": interpolate(allDates, dateminUser)};
+    let interpolatedMax = {"Date": datemaxUser, "Freq": interpolate(allDates, datemaxUser)};
     data_highlight.unshift(interpolatedMin);
     data_highlight.push(interpolatedMax);
 
@@ -404,20 +394,20 @@ export function updateDate(reset_sliders=true) {
 }
 
 function interpolate(data, date) {
-    let allDates = [];
+    let allDatesInt = [];
     for (let entry of data){
-        allDates.push(entry['Date'])
+        allDatesInt.push(entry['Date'])
     }
 
-    let lower = allDates[0];
-    let upper = allDates[allDates.length - 1];
+    let lower = allDatesInt[0];
+    let upper = allDatesInt[allDatesInt.length - 1];
 
-    for (let candidate in allDates) {
-        if (allDates[candidate] > lower && allDates[candidate] < date) {
-            lower = allDates[candidate];
+    for (let candidate in allDatesInt) {
+        if (allDatesInt[candidate] > lower && allDatesInt[candidate] < date) {
+            lower = allDatesInt[candidate];
         }
-        if (allDates[candidate] < upper && allDates[candidate] > date) {
-            upper = allDates[candidate];
+        if (allDatesInt[candidate] < upper && allDatesInt[candidate] > date) {
+            upper = allDatesInt[candidate];
         }
     }
 

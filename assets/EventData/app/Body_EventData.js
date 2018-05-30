@@ -49,10 +49,10 @@ export default class Body_EventData {
         return m(Header, {image: '/static/images/TwoRavens.png'},
 
             m('div', {style: {'flex-grow': 1}}),
-            m("h4", m("h4#datasetLabel", {style: {margin: '.25em 1em'}}, app.datasetName)),
+            m("h4", m("h4#datasetLabel", {style: {margin: '.25em 1em'}}, app.dataset['name'])),
 
             m('div', {style: {'flex-grow': 1}}),
-            app.datasetKey && m("button#btnPeek.btn.btn-default", {
+            app.dataset['key'] && m("button#btnPeek.btn.btn-default", {
                     title: 'Display a data preview',
                     style: {margin: '.25em 1em'},
                     onclick: () => window.open('#!/data', 'data')
@@ -62,7 +62,7 @@ export default class Body_EventData {
 
             // Button Reset
             m("button#btnReset.btn.btn-default.ladda-button[data-spinner-color='#818181'][data-style='zoom-in'][title='Reset']", {
-                    style: {margin: '1em', display: app.datasetKey ? 'block' : 'none'},
+                    style: {margin: '1em', display: app.dataset['key'] ? 'block' : 'none'},
                     onclick: app.reset
                 },
                 m("span.ladda-label.glyphicon.glyphicon-repeat", {
@@ -84,7 +84,7 @@ export default class Body_EventData {
                 activeSection: app.opMode,
                 sections: [
                     {value: 'Datasets'}
-                ].concat(app.datasetKey ? [
+                ].concat(app.dataset['key'] ? [
                     {value: 'Subset', id: 'btnSubsetSubmit'},
                     {value: 'Aggregate', id: 'aggSubmit'}
                 ] : [])
@@ -134,7 +134,7 @@ export default class Body_EventData {
 
                 m("button.btn.btn-default.btn-sm.ladda-button[data-spinner-color='#818181'][id='buttonDownload'][type='button']", {
                         style: {
-                            display: app.datasetKey ? 'inline-block' : 'none',
+                            display: app.dataset['key'] ? 'inline-block' : 'none',
                             "margin-right": "6px",
                             'margin-top': '4px',
                             'margin-left': '6px',
@@ -149,12 +149,15 @@ export default class Body_EventData {
                 // Record Count
                 m("span.label.label-default#recordCount", {
                     style: {
-                        display: app.datasetKey ? 'inline-block' : 'none',
+                        display: app.dataset['key'] ? 'inline-block' : 'none',
                         "margin-left": "5px",
                         "margin-top": "10px",
                         "margin-right": "10px"
                     }
-                })
+                }, {
+                    'subset': app.totalSubsetRecords,
+                    'aggregate': aggreg.totalAggregRecords
+                }[app.opMode] + ' Records')
             ]),
         ]);
     }
@@ -183,11 +186,11 @@ export default class Body_EventData {
                                 m(TextField, {
                                     id: 'searchVariables',
                                     placeholder: 'Search variables',
-                                    oninput: app.reloadLeftpanelVariables
+                                    oninput: app.setVariableSearch
                                 }),
                                 m(PanelList, {
                                     id: 'variablesList',
-                                    items: app.matchedVariables,
+                                    items: Object.keys(app.dataset['columns']).filter(col => col.includes(app.variableSearch)),
                                     colors: {[common.selVarColor]: app.variablesSelected},
                                     callback: app.toggleVariableSelected,
                                     attrsAll: {style: {height: 'calc(100% - 44px)', overflow: 'auto'}}
@@ -199,7 +202,7 @@ export default class Body_EventData {
                             title: 'Restrict by contents of rows.',
                             contents: m(PanelList, {
                                 id: 'subsetsList',
-                                items: app.subsetKeys,
+                                items: Object.keys(app.dataset['subsets']),
                                 colors: {[common.selVarColor]: [app.canvasKeySelected]},
                                 callback: app.showCanvas,
                                 attrsAll: {style: {height: 'calc(100% - 39px)', overflow: 'auto'}}
@@ -320,6 +323,7 @@ export default class Body_EventData {
 
     view(vnode) {
         let {mode} = vnode.attrs;
+        console.log(app.canvasKeySelected);
 
         // Typically with mithril you would just render the pages that are visible. This works when there is no local state.
         // Eventdata was written before we used mithril, so the canvases were written with local state.
@@ -331,6 +335,10 @@ export default class Body_EventData {
             }
             return (canvas === app.canvasKeySelected) ? 'block' : 'none';
         };
+        console.log(app.initialLoad);
+        console.log(display('Actor'));
+        console.log(display('Loading'));
+
 
         return m('main#EventData',
             [

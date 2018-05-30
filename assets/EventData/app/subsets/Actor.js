@@ -284,7 +284,7 @@ export function setupActor(){
         if (searchText === cachedSearch) return;
         cachedSearch = searchText;
 
-        if (app.datasetKey === 'icews') {
+        if (app.dataset['subsets'][app.canvasKeySelected]['formats'] === 'icews') {
             clearTimeout(searchTimeout);
             searchTimeout = setTimeout(() => {
                 actorSearch();
@@ -347,7 +347,7 @@ export function setupActor(){
             this.childNodes[0].checked = true;
         });
 
-        currentNode[currentTab].group = new Set([...currentNode[currentTab].group, ...app.actorData[currentTab].full]);
+        currentNode[currentTab].group = new Set([...currentNode[currentTab].group, ...app.subsetMetadata['Actor'][currentTab]['full']]);
 
         // Lose focus so that popover goes away
         $(this).blur();
@@ -364,7 +364,7 @@ export function setupActor(){
             this.childNodes[0].checked = false;
         });
         currentNode[currentTab].group = new Set([...currentNode[currentTab].group]
-            .filter((item) => app.actorData[currentTab].full.indexOf(item) === -1));
+            .filter((item) => app.subsetMetadata['Actor'][currentTab]['full'].indexOf(item) === -1));
 
         $(this).blur();
     });
@@ -424,7 +424,7 @@ export function setupActor(){
 
         if (scrollHeight < container.offsetHeight) {
 
-            let newLines = app.actorData[currentTab].full.slice(scrolledPageSize, scrolledPageSize + defaultPageSize);
+            let newLines = app.subsetMetadata['Actor'][currentTab]['full'].slice(scrolledPageSize, scrolledPageSize + defaultPageSize);
             for (let line of newLines) {
 
                 // Don't create an element if it is an empty string
@@ -1030,11 +1030,13 @@ export function updateActor() {
         orgList.appendChild(createElement(currentTab, "entities", orgs[y], true));
     }
 
-    for (let columnType in app.actorData[currentTab]) {
-        scrolledPageSize = defaultPageSize;
+    if (app.subsetMetadata['Actor'] !== undefined) {
+        for (let columnType in app.subsetMetadata['Actor'][currentTab]) {
+            scrolledPageSize = defaultPageSize;
 
-        if (columnType === 'full') loadDataHelper(currentTab, columnType, defaultPageSize);
-        else loadDataHelper(currentTab, columnType);
+            if (columnType === 'full') loadDataHelper(currentTab, columnType, defaultPageSize);
+            else loadDataHelper(currentTab, columnType);
+        }
     }
     defer.resolve();
 
@@ -1045,7 +1047,7 @@ export function updateActor() {
 function loadDataHelper(actorType, columnType, limit=undefined) {
     $(".actorChkLbl").popover("hide");
     $(".popover").remove();
-    let lines = app.actorData[actorType][columnType];
+    let lines = app.subsetMetadata['Actor'][actorType][columnType];
 
     // decoding can spit out an object, this permits an empty redraw
     if (!Array.isArray(lines)) lines = [];
@@ -1150,7 +1152,7 @@ function createElement(actorType, columnType, value, chkSwitch = true) {
     // listElement.appendChild(separator);
 
     // Don't use popovers for icews
-    if (app.datasetKey === 'icews') return entry;
+    if (app.dataset['subsets']['Actor']['formats'] === 'icews') return entry;
 
     label.onmouseover = function () {
         if (!$(this).attr("data-content")) {
@@ -1259,7 +1261,7 @@ export function actorFilterChanged(value, category) {
 
         let allCountrySet = true;
 
-        for (let country of app.actorData[currentTab]["entities"]) {
+        for (let country of app.subsetMetadata['Actor'][currentTab]['entities']) {
             if (!(country in orgs) && !filterListing.has(country)){
                 allCountrySet = false;
                 break;
@@ -1322,27 +1324,30 @@ export function actorSearch(force=false) {
 
     let abbreviated = currentTab === "source" ? "src" : "tgt";
 
-    if (app.datasetKey !== 'icews' && filterSet[currentTab]["entities"].size !== 0) {
+    if (app.dataset['subsets']['Actor']['format'] !== 'icews' && filterSet[currentTab]["entities"].size !== 0) {
         let filter = {};
         filter['<' + abbreviated + '_actor>'] = { '$in': [...filterSet[currentTab]["entities"]] };
         actorFilters.push(filter);
     }
 
     if (filterSet[currentTab]["roles"].size !== 0) {
-        if (app.datasetKey === 'icews') actorFilters.push({['<' + abbreviated + '_country>']: {'$in': [...filterSet[currentTab]["roles"]]}});
+        if (app.dataset['subsets']['Actor']['formats'] === 'icews')
+            actorFilters.push({['<' + abbreviated + '_country>']: {'$in': [...filterSet[currentTab]["roles"]]}});
         else actorFilters.push({['<' + abbreviated + '_agent>']: {'$in': [...filterSet[currentTab]["roles"]]}});
     }
 
     if (filterSet[currentTab]["attributes"].size !== 0) {
-        if (app.datasetKey === 'icews') actorFilters.push({['<' + abbreviated + '_sector>']: {'$in': [...filterSet[currentTab]["attributes"]]}});
+        if (app.dataset['subsets']['Actor']['formats'] === 'icews')
+            actorFilters.push({['<' + abbreviated + '_sector>']: {'$in': [...filterSet[currentTab]["attributes"]]}});
         else actorFilters.push({['<' + abbreviated + '_other_agent>']: {
             '$regex':  "^(....)*(" + [...filterSet[currentTab]["attributes"]].join('|') + ")"
         }});
     }
 
     if (searchText.length !== 0) {
-        // If the datasetKey is icews, all we do is a simple text search
-        if (app.datasetKey === 'icews') actorFilters.push({['<' + abbreviated + '_name>']: {'$regex': '.*' + searchText + '.*', '$options' : 'i'}});
+        // If the dataset actor schema is icews, all we do is a simple text search
+        if (app.dataset['subsets']['Actor']['formats'] === 'icews')
+            actorFilters.push({['<' + abbreviated + '_name>']: {'$regex': '.*' + searchText + '.*', '$options' : 'i'}});
 
         // Apply the lookahead search regex last, as it is the most expensive
         else if (searchText.length % 3 === 0) {
@@ -1387,14 +1392,14 @@ export function actorSearch(force=false) {
     // Submit query and update listings
     let query = {
         'subsets': cachedQuery,
-        'dataset': app.datasetKey,
+        'dataset': app.dataset['key'],
         'datasource': app.datasource,
         'type': currentTab
     };
 
     function updateActorListing(data) {
-        if ('source' in data) app.actorData.source.full = data.source || [];
-        if ('target' in data) app.actorData.target.full = data.target || [];
+        if ('source' in data) app.subsetMetadata['Actor']['<source>'] = data.source || [];
+        if ('target' in data) app.subsetMetadata['Actor']['<target>'] = data.target || [];
         scrolledPageSize = defaultPageSize;
         loadDataHelper(currentTab, "full", defaultPageSize);
         waitForQuery--;
@@ -1404,7 +1409,11 @@ export function actorSearch(force=false) {
     let failedUpdateActorListing = () => waitForQuery--;
     waitForQuery++;
     m.redraw();
-    app.makeCorsRequest(app.subsetURL, query, updateActorListing, failedUpdateActorListing);
+    m.request({
+        url: app.subsetURL,
+        data: query,
+        method: 'POST'
+    }).then(updateActorListing).catch(failedUpdateActorListing);
 }
 
 export function capitalizeFirst(str) {

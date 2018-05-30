@@ -1,0 +1,17 @@
+{
+  "actor": {
+    "grouped": false
+  },
+  "date": {
+    "grouped": true
+  },
+  "action": {
+    "grouped": true
+  },
+  "location": {
+    "grouped": true
+  },
+  "coordinates": {
+    "grouped": false
+  }
+}

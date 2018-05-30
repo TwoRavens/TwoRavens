@@ -2,10 +2,11 @@ import m from 'mithril';
 import * as app from '../app';
 import * as common from '../../../common/common';
 import Table from '../../../common/views/Table';
+import ListTags from "../../../common/views/ListTags";
 
 export default class CanvasDatasets {
     oninit() {
-        this.dataset = app.datasetKey;
+        this.dataset = app.dataset['key'];
     }
 
     view(vnode) {
@@ -21,36 +22,51 @@ export default class CanvasDatasets {
         let markup = (key) => ({"title": italicize, "note": quote, "url": link}[key] || (_ => _));
         let format = (citation) => Object.keys(citation).map(key => [markup(key)(citation[key]), '. ']);
 
-        return m('div#canvasDatasets', {style: {display: display, width: '100%'}}, app.metadata.map((dataset) => {
+        let coerceArray = (value) => Array.isArray(value) ? value : [value];
+
+        return m('div#canvasDatasets', {style: {display: display, width: '100%'}}, app.datasetMetadata.map((dataset) => {
             return m('div', {
                     style: {
                         width: '100%',
-                        background: this.dataset === dataset['api_key'] ? common.menuColor : '#f0f0f0',
+                        background: this.dataset === dataset['key'] ? common.menuColor : '#f0f0f0',
                         'box-shadow': '#0003 0px 2px 3px',
                         'margin-top': common.panelMargin,
                         'padding': '10px',
                         'border': common.borderColor
                     },
-                    onclick: () => this.dataset = dataset['api_key']
+                    onclick: () => this.dataset = dataset['key']
                 },
                 m('h4', [
                     dataset['name'],
                     m('button.btn.btn-default[type="button"]', {
                         style: {margin: '0 0.25em', float: 'right'},
                         onclick: () => {
-                            app.setDataset(dataset['api_key'], dataset['name']);
+                            app.setDataset(dataset['key']);
                             app.setOpMode('subset')
                         },
-                        disabled: app.datasetKey === dataset['api_key']
-                    }, 'Load' + (app.datasetKey === dataset['api_key'] ? 'ed' : ''))
+                        disabled: app.dataset['key'] === dataset['key']
+                    }, 'Load' + (app.dataset['key'] === dataset['key'] ? 'ed' : ''))
                 ]),
                 dataset['description'],
-                this.dataset === dataset['api_key'] && [
+                this.dataset === dataset['key'] && [
                     m(Table, {
                         data: {
-                            'API Reference Key': dataset['api_key'],
+                            'API Reference Key': dataset['key'],
                             'Time Interval': dataset['interval']
                         }
+                    }),
+                    m(Table, {
+                        headers: ['label', 'subset', 'format', 'columns'],
+                        data: Object.keys(app.dataset['subsets'] || {}).map(label => [
+                            label,
+                            app.dataset['subsets'][label]['type'],
+                            app.dataset['subsets'][label]['format'],
+                            m(ListTags, {
+                                tags: coerceArray(app.dataset['subsets'][label]['columns']),
+                                readonly: true,
+                                attrsTags: {style: {padding: '2px 4px'}}
+                            })
+                        ])
                     }),
                     dataset['citations'].map(citation => [m('br'), bold("Citation:"), m('br'), format(citation)])
                 ]

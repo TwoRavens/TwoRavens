@@ -1,10 +1,14 @@
-import {datasetKey, datasource, laddaUpdate, makeCorsRequest, rappURL, showCanvas} from "../app";
+import * as app from '../app';
 import {datemaxUser, dateminUser} from "../subsets/Date";
 import {actorLinks} from "../subsets/Actor";
+
 import * as d3 from "d3";
 import m from 'mithril';
 
 let aggregMode = "penta";
+
+let totalAggregRecords = 0;
+
 // set once results are loaded on update. unsets when subsets/aggregations are changed before updates. unlocks the results menus in aggregation.
 export let aggregResults = false;
 export let aggregResultsDate = false;
@@ -235,7 +239,7 @@ export function updateToAggreg(alreadyInAggreg=true) {
 
 			//~ setupAggregation();
 
-			aggregURL = rappURL + "eventdataaggregapp";
+			aggregURL = app.rappURL + "eventdataaggregapp";
 
 			initTblColor = d3.select("#aggregDataPenta0Head").style("background-color");
 
@@ -561,13 +565,13 @@ function drawTS(formattedData) {
 function updateTable(json) {
 	// console.log("aggregated json");
 	// console.log(json);
-	laddaUpdate.stop();
+	app.laddaUpdate.stop();
 
 	aggregResults = true;
 	aggregResultsDate = aggregDateOn !== 0;
 	m.redraw();
 
-	document.getElementById('recordCount').innerHTML = json["action_data"].length + " records";
+	totalAggregRecords = json['action_data'];
 
 	for (let row = 1; row <= aggregDataNumber; row++) {
 		if (row > json["action_data"].length) {
@@ -656,7 +660,7 @@ function updateTable(json) {
 	}
 
 	if (aggregDateOn) {
-		showCanvas("Time Series");
+		app.showCanvas("Time Series");
 		m.redraw();
 		setupAggregTS(json);
 	}
@@ -667,7 +671,7 @@ function updateDates(json) {
 	// console.log(json);
 	// console.log(json["aggreg_dates"]);
 
-	laddaUpdate.stop();
+	app.laddaUpdate.stop();
 	//~ aggregDates = json["aggreg_dates"];
 
 	var curActor = 0;
@@ -825,25 +829,38 @@ export function makeAggregQuery(action, save = null) {
 		"toggles": (aggregMode == "penta" ? aggregPentaChkOrd : aggregRootChkOrd),
 		"action": action,		//preview = get dates, aggreg = perform aggregation, download = download aggreg
 		"numberPreview": aggregDataNumber,
-		"dataset": datasetKey,
-		"datasource": datasource
+		"dataset": app.dataset['key'],
+		"datasource": app.datasource
 	};
 
 	console.log(JSON.stringify(aggregQuery));
-	laddaUpdate.start();
+	app.laddaUpdate.start();
 
 	if (action === 'preview') {
         // console.log("previewing dates");
-        makeCorsRequest(aggregURL, aggregQuery, updateDates);
+        m.request({
+            url: aggregURL,
+            data: aggregQuery,
+            method: 'POST'
+        }).then(updateDates).catch(app.laddaStop);
 	}
 	else {
-        makeCorsRequest(aggregURL, aggregQuery, updateTable);
+        m.request({
+            url: aggregURL,
+            data: aggregQuery,
+            method: 'POST'
+        }).then(updateTable).catch(app.laddaStop);
+
         if (taction == "download") {
             aggregQuery["action"] = "download";
 
             console.log("Aggregation Query: ");
             console.log(aggregQuery);
-            makeCorsRequest(aggregURL, aggregQuery, save);
+            m.request({
+                url: aggregURL,
+                data: aggregQuery,
+                method: 'POST'
+            }).then(save).catch(app.laddaStop);
         }
 	}
 }

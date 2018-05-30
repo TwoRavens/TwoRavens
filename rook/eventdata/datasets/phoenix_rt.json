@@ -1,40 +1,74 @@
 {
   "name": "UTDallas - Real Time Phoenix Data",
-  "api_key": "phoenix_rt",
+  "key": "phoenix_rt",
   "description": "A real-time Phoenix-coded event dataset constructed at The University of Texas at Dallas.",
   "interval": "Oct. 2017 - present",
-  "coding_schema": {
-    "actor": "phoenix",
-    "action": "CAMEO",
-    "date": "string",
-    "location": "ISO-3",
-    "coordinates": "signed degrees (DDD.dddd)"
+  "subsets": {
+    "Actor": {
+      "type": "actor",
+      "format": "phoenix",
+      "columns": [
+        "source",
+        "src_agent",
+        "src_other_agent",
+        "src_actor",
+        "target",
+        "tgt_agent",
+        "tgt_other_agent",
+        "tgt_actor"
+      ]
+    },
+    "Action": {
+      "type": "action",
+      "format": "CAMEO root code",
+      "columns": [
+        "root code"
+      ]
+    },
+    "Date": {
+      "type": "date",
+      "format": "YYYYMMDD",
+      "columns": [
+        "date8"
+      ]
+    },
+    "Location": {
+      "type": "location",
+      "format": "ISO-3",
+      "columns": [
+        "country_code"
+      ]
+    },
+    "Coordinates": {
+      "type": "coordinates",
+      "format": "signed degrees",
+      "columns": []
+    }
   },
   "columns": {
-    "<date>": "date8",
-    "<year>": "year",
-    "<month>": "month",
-    "<day>": "day",
-    "<source>": "source",
-    "<src_actor>": "src_actor",
-    "<src_agent>": "src_agent",
-    "<src_other_agent>": "src_other_agent",
-    "<target>": "target",
-    "<tgt_actor>": "tgt_actor",
-    "<tgt_agent>": "tgt_agent",
-    "<tgt_other_agent>": "tgt_other_agent",
-    "<root_code>": "root_code",
-    "<quad_class>": "quad_class",
-    "<goldstein>": "goldstein",
-    "<latitude>": "latitude",
-    "<longitude>": "longitude",
-    "<geoname>": "geoname",
-    "<cameo>": "code",
-    "<country_code>": "country_code",
-    "<admin_info>": "geoname",
-    "<id>": "id",
-    "<url>": "url",
-    "<publisher>": "source_text"
+    "code": "<cameo>",
+    "country_code": "<country>",
+    "date8": "<date>",
+    "day": "<day>",
+    "geoname": "<admin_info>",
+    "goldstein": "<goldstein>",
+    "id": "<id>",
+    "latitude": "<latitude>",
+    "longitude": "<longitude>",
+    "month": "<month>",
+    "quad_class": "<quad_class>",
+    "root_code": "<action_code>",
+    "source_text": "<publisher>",
+    "source": "<source>",
+    "src_actor": "<src_actor>",
+    "src_agent": "<src_agent>",
+    "src_other_agent": "<src_other_agent>",
+    "target": "<target>",
+    "tgt_actor": "<tgt_actor>",
+    "tgt_agent": "<tgt_agent>",
+    "tgt_other_agent": "<tgt_other_agent>",
+    "url": "<url>",
+    "year": "<year>"
   },
   "citations": [
     {

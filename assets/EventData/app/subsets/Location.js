@@ -1,5 +1,5 @@
 import * as d3 from "d3"
-import {handleResize, countryData} from "../app";
+import {handleResize, subsetMetadata} from "../app";
 import m from "mithril";
 import {scrollBarChanged} from "../../../common/common";
 
@@ -97,7 +97,7 @@ function render(blnIsSubgraph, cid) {
 
             let rid = -1;
             let cid = 1;
-            for (let key in countryData) {
+            for (let key in subsetMetadata['Location']) {
 
                 let region = "Other";
                 if (map_location_lookup.has(key)) {
@@ -112,7 +112,7 @@ function render(blnIsSubgraph, cid) {
                 let country = {
                     'id': "" + cid++,
                     'cname': key,
-                    'freq': "" + countryData[key],
+                    'freq': "" + subsetMetadata['Location'][key],
                     'fullcname': map_fullname_lookup.get(key)
                 };
 
