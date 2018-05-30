@@ -38,6 +38,8 @@ let state = {
     }
 };
 
+let nodesExplore = [];
+
 function setBackgroundColor(color) {
     return function() {
         this.style['background-color'] = color;
@@ -45,6 +47,8 @@ function setBackgroundColor(color) {
 }
 
 function leftpanel(mode) {
+    let exploreMode = mode === 'explore';
+
     if (mode === 'results') {
         return results.leftpanel(Object.keys(app.allPipelineInfo));
     }
@@ -57,6 +61,8 @@ function leftpanel(mode) {
         onclick: m.withAttr("checked", (checked) => app.setCheckedDiscoveryProblem(checked, problem[0])),
         checked: app.checkedDiscoveryProblems.has(problem[0])
     })]);
+
+    let nodes = exploreMode ? nodesExplore : app.nodes;
 
     return m(Panel, {
         side: 'left',
@@ -82,15 +88,16 @@ function leftpanel(mode) {
                      id: 'varList',
                      items: app.valueKey,
                      colors: {
-                         [app.hexToRgba(common.selVarColor)]: app.nodes.map(n => n.name),
+                         [app.hexToRgba(common.selVarColor)]: nodes.map(n => n.name),
                          [app.hexToRgba(common.nomColor)]: app.zparams.znom,
                          [app.hexToRgba(common.dvColor)]: app.zparams.zdv
                      },
                      classes: {'item-bordered': app.matchedVariables},
-                     callback: app.clickVar,
-                     popup: (variable) => app.popoverContent(app.findNodeIndex(variable, true)),
+                     callback: x => app.clickVar(x, nodes),
+                     popup: variable => app.popoverContent(app.findNodeIndex(variable, true)),
                      attrsItems: {'data-placement': 'right', 'data-original-title': 'Summary Statistics'}})]},
             {value: 'Discovery',
+             display: exploreMode ? 'none' : 'block',
              contents: [
                  m(Table, {
                      id: 'discoveryTable',
@@ -106,10 +113,10 @@ function leftpanel(mode) {
                      value: app.disco[app.selectedProblem] === undefined ? '' : app.disco[app.selectedProblem].description
                  }),
                  m(Button, {id: 'btnSave', onclick:_=>app.saveDisc('btnSave'),title: 'Saves your revised problem description.'}, 'Save Desc.'),
-                 m(Button, {id: 'btnSubmitDisc', classes: 'btn-success', style: 'float: right', onclick:_=>app.submitDiscProb(), title: 'Submit all checked discovered problems.'}, 'Submit Disc. Probs.')],
-             display: mode === 'explore' ? 'none' : 'block'},
+                 m(Button, {id: 'btnSubmitDisc', classes: 'btn-success', style: 'float: right', onclick:_=>app.submitDiscProb(), title: 'Submit all checked discovered problems.'}, 'Submit Disc. Probs.')]},
             {value: 'Summary',
              title: 'Select a variable from within the visualization in the center panel to view its summary statistics.',
+             display: 'none',
              contents: [
                  m('center',
                    m('b', app.summary.name),
@@ -119,8 +126,7 @@ function leftpanel(mode) {
                      td => m('td',
                              {onmouseover: setBackgroundColor('aliceblue'),
                               onmouseout: setBackgroundColor('f9f9f9')},
-                             td)))))],
-             display: 'none'}
+                             td)))))]}
         ]
     }));
 }
@@ -385,7 +391,7 @@ class Body {
             this.last_mode = mode;
         }
 
-        let sortedNodes = app.nodes.concat().sort((x, y) => x.id - y.id);
+        let sortedNodes = nodesExplore.concat().sort((x, y) => x.id - y.id);
         return m('main', [
             m(Modal),
             this.header(mode),
@@ -614,7 +620,12 @@ class Body {
 
 m.route(document.body, '/model', {
     '/model': {render: () => m(Body)},
-    '/explore': {render: () => m(Body, {mode: 'explore'})},
+    '/explore': {
+        onmatch() {
+            nodesExplore = app.nodes.concat();
+        },
+        render: () => m(Body, {mode: 'explore'})
+    },
     '/results': {
         onmatch() {
             app.set_mode('results');

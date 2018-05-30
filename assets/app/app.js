@@ -1118,6 +1118,10 @@ export function layout(v, v2) {
 
     // update force layout (called automatically each iteration)
     function tick() {
+        if (is_explore_mode) {
+            return;
+        }
+
         function findcoords(findnames,allnames,coords,lengthen){
             var fcoords = new Array(findnames.length);   // found coordinates
             var addlocation = 0;
@@ -1934,31 +1938,34 @@ export function findNode(name) {
 }
 
 /** needs doc */
-function updateNode(id) {
+function updateNode(id, nodes) {
     let node = findNode(id);
-    if (node.grayout)
+    if (node.grayout) {
         return false;
+    }
 
     let name = node.name;
     let names = () => nodes.map(n => n.name);
     if (names().includes(name)) {
-        del(nodes, node.index);
-        links
-            .filter(l => l.source === node || l.target === node)
-            .forEach(l => del(links, -1, l));
-        zparamsReset(name);
+        del(nodes, node.index, is_explore_mode && node);
+        if (!is_explore_mode) {
+            links
+                .filter(l => l.source === node || l.target === node)
+                .forEach(l => del(links, -1, l));
+            zparamsReset(name);
 
-        // remove node name from group lists
-        node.group1 && del(zparams.zgroup1, -1, name);
-        node.group2 && del(zparams.zgroup2, -1, name);
-        node.group1 = node.group2 = false;
+            // remove node name from group lists
+            node.group1 && del(zparams.zgroup1, -1, name);
+            node.group2 && del(zparams.zgroup2, -1, name);
+            node.group1 = node.group2 = false;
 
-        // node reset - perhaps this will become a hard reset back to all original allNode values?
-        node.nodeCol = node.baseCol;
-        node.strokeColor = selVarColor;
-        node.strokeWidth = '1';
+            // node reset - perhaps this will become a hard reset back to all original allNode values?
+            node.nodeCol = node.baseCol;
+            node.strokeColor = selVarColor;
+            node.strokeWidth = '1';
 
-        borderState();
+            borderState();
+        }
     } else {
         nodes.push(node);
     }
@@ -1969,8 +1976,8 @@ function updateNode(id) {
 /**
  every time a variable in leftpanel is clicked, nodes updates and background color changes
  */
-export function clickVar(elem) {
-    if (updateNode(elem)) {
+export function clickVar(elem, $nodes) {
+    if (updateNode(elem, $nodes || nodes)) {
         // panelPlots(); is this necessary?
         restart();
     }
