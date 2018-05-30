@@ -46,29 +46,22 @@ export default class Recode {
             for(var variable in data['variables']){
                 varList.push(variable);  
             }
-            // console.log(varList)
         });
-
     }
     view() {
         return [
-            // m(Header, [
-            //     m('div', {style: {'flex-grow': 1}}),
-            //     m("h4", m("span#headerLabel.label.label-default", this.header)),
-            //     m('div', {style: {'flex-grow': 1}}),
-            // ]),
             m('nav.navbar.navbar-default',
                 [
                     m('div.container-fluid',[
                         m('ul.nav.navbar-nav',[
                             m('li',
-                            m('a',{onclick: hidePanel},  "Create New Variable")),
+                            m('a',{oncreate: createCreate, onclick: hidePanel},  "Create New Variable")),
                             m('li',
-                            m('a[href=/formulaBuilder]',{oncreate: m.route.link}, "Formula Builder")),
+                            m('a',{oncreate:""}, "Formula Builder")),
                             m('li',
-                            m('a[href=/recode].active', {oncreate: m.route.link}, "Recode")),
+                            m('a', {oncreate: ""}, "Recode")),
                             m('li',
-                            m('a[href=/reorder]', {oncreate: m.route.link}, "Reorder")),
+                            m('a', {oncreate: ""}, "Reorder")),
                         ]),
                     ])
                 ]),
@@ -98,16 +91,40 @@ export default class Recode {
                 // ['padding-' + side]: '1px',
                 // 'z-index': 100
             }}),
-            m('div.container-fluid', [
-                m('input[type=text]', {id: 'variable', placeholder: 'Variable'}),
-                m('br'),
-                m('br'),
-                m(Button,{id: 'recode'},'Customize'),
+            m('div.container-fluid ',{id: 'recodeDiv'},[
+
+                m('div.container-fluid', {id : 'div1'}, [
+                    m('form',{ onsubmit: calculate},[
+                        m('input[type=text]', {id: 'variable', placeholder: 'Variable'}),
+                        m("br"),
+                        m('button[type="submit"]', 'Customize'),
+                    ]),
+                    
+                    // m('br'),
+                    // m('br'),
+                    
+                ])
+            
+            ]),
+            m('div.container-fluid', {id: 'createDiv'},[
+
+                m('div.container-fluid.align-items-center', {id : 'div1'}, [
+                    m('form',{ onsubmit: calculate},[
+                        m('input[type=text]', {id: 'variable', placeholder: 'Variable'}),
+                        m("br"),
+                        m('button[type="submit"]', 'Customize'),
+                    ]),                    
+                ]),
+                m('div.container-fluid', {id : 'div2'}, [
+                    m('form',{ onsubmit: calculate},[
+                        m('input[type=text]', {id: 'variable', placeholder: 'Variable'}),
+                        m("br"),
+                        m('button[type="submit"]', 'Customize'),
+                    ]),                   
+                ])
             ])
         ), 
-    ]
-    }
-
+    ]}
 }
 
 function onRecodeStorageEvent(recode, e){
@@ -115,20 +132,36 @@ function onRecodeStorageEvent(recode, e){
     m.redraw();
 }
 function clickVar(elem) {
-    
-    var element = document.getElementById("varListsftptv2a5");
-    element.style.backgroundColor = "black";
-
-    console.log((window.innerWidth - 300)+'px')
-    
+        
     var text = document.getElementById('variable');
-     text.value = elem; 
-    //  m.redraw();
+     text.value = elem;
+}
+
+function calculate(elem){
+    console.log(elem.target[0].value)
+    app.callTransform(elem.target[0].value);
 }
 
 function hidePanel(){
-    var elem = document.getElementById('leftpanel');
+    var elem = document.getElementById('createDiv');
+    // elem.style.visibility = 'visible';
+    $(elem).show();
+    // jQuery('#recodeDiv').replaceWith(jQuery('#createDiv'));
+
+    // $('div#createDiv').html('<div class ="container-fluid" id ="newDiv"></div>');
+    // var elem = document.getElementById('recodeDiv');
+    // return elem.parentNode.removeChild(elem);
+    // var elem = document.getElementById('leftpanel');
+    // elem.style.visibility = 'hidden';
+    var elem = document.getElementById('recodeDiv');
     elem.style.visibility = 'hidden';
+}
+function createCreate(){
+    console.log('create created');
+    var elem = document.getElementById('createDiv');
+    // elem.style.visibility = 'hidden';
+    $(elem).hide();
+
 }
 
 $(window).resize(function(){
@@ -136,3 +169,4 @@ $(window).resize(function(){
     'width':  (window.innerWidth - 300)+'px',
 });
 });
+

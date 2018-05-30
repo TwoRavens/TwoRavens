@@ -4303,4 +4303,18 @@ export function saveDisc(btn) {
     }
 }
 
+export function callTransform(elem){
+    console.log("function called")
+    let json =  makeRequest(
+        ROOK_SVC_URL + 'transformapp',
+        {zdataurl: dataurl,
+         zvars: elem,
+         zsessionid: zparams.zsessionid,
+         transform: t,
+         callHistory: callHistory,
+         typeTransform: typeTransform,
+         typeStuff: outtypes});
+
+         console.log(json)
+}
 
