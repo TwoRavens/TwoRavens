@@ -41,7 +41,7 @@ export default class Recode {
     oninit() {
 
         this.configuration = localStorage.getItem('configuration');
-
+//data/ traindata.csv
         m.request(`rook-custom/rook-files/${this.configuration}/preprocess/preprocess.json`).then(data => {
             for(var variable in data['variables']){
                 varList.push(variable);  
@@ -54,14 +54,14 @@ export default class Recode {
                 [
                     m('div.container-fluid',[
                         m('ul.nav.navbar-nav',[
-                            m('li',
-                            m('a',{oncreate: createCreate, onclick: hidePanel},  "Create New Variable")),
-                            m('li',
-                            m('a',{oncreate:""}, "Formula Builder")),
-                            m('li',
-                            m('a', {oncreate: ""}, "Recode")),
-                            m('li',
-                            m('a', {oncreate: ""}, "Reorder")),
+                            m('li',{id:'createLink'},
+                            m('a',{oncreate: createCreate, onclick: createClick},  "Create New Variable")),
+                            m('li',{id:'formulaLink'},
+                            m('a',{oncreate: formulaCreate, onclick: formulaClick}, "Formula Builder")),
+                            m('li',{id:'recodeLink'},
+                            m('a', {oncreate: recodeCreate, onclick: recodeClick}, "Recode")),
+                            m('li',{id:'reorderLink'},
+                            m('a', {oncreate: reorderCreate, onclick: reorderClick}, "Reorder")),
                         ]),
                     ])
                 ]),
@@ -70,7 +70,7 @@ export default class Recode {
                 label: 'Data Selection',
                 hover: true,
                 width: app.modelLeftPanelWidths[app.leftTab],
-                attrsAll: {style: {'z-index': 101}}
+                attrsAll: {style: {'z-index': 101, 'overflow':'scroll'}}
             },  m(PanelList,{
                 id: 'varList',
                 items: varList,
@@ -93,35 +93,48 @@ export default class Recode {
             }}),
             m('div.container-fluid ',{id: 'recodeDiv'},[
 
-                m('div.container-fluid', {id : 'div1'}, [
+                m('div.container-fluid', {id : 'div1' , style : {'display':'block','height': '220px','padding':'20px'}}, [
                     m('form',{ onsubmit: calculate},[
-                        m('input[type=text]', {id: 'variable', placeholder: 'Variable'}),
+                        m('div',{style :{'display': 'block','overflow': 'hidden'}},[
+                            m('input[type=text]', {id: 'variable', placeholder: 'Variable', style : {'width': '100%','box-sizing':'border-box'}}),
+                            m('span',{style: {'position': 'absolute',
+                                'display': 'inline',
+                                'top': '25px',
+                                // 'right': -'300px',
+                                // 'background-color': 'grey',
+                                'color': 'grey',
+                                // 'padding-right':'100px',
+                                'padding-left': '5px',
+                                'z-index':'10'
+                                }},"?")
+                        ]),
                         m("br"),
-                        m('button[type="submit"]', 'Customize'),
-                    ]),
-                    
-                    // m('br'),
-                    // m('br'),
-                    
+                        m('button[type="submit"]',{style: {'float':'right'}}, 'Customize'),
+                    ]),]),
+                    m('div.container-fluid', {id : 'div2' , style : {'display':'block','height': '250px','padding':'20px'}}, [
+                    m('form',{ onsubmit: calculate},[
+                        m('span',{style :{'display': 'block','overflow': 'hidden'}},[
+                            m('input[type=text]', {id: 'value1', placeholder: 'value 1', style : {'display':'inline-block' , 'margin-right':'10px', 'width':'20%'}}),
+                            m('h3',{ style : {'display':'inline-block', 'margin-right':'10px'}},'-'),
+                            m('input[type=text]', {id: 'value2', placeholder: 'value 1', style : {'display':'inline-block' , 'margin-right':'10px', 'width':'20%'}}),
+                            m('h3',{ style : {'display':'inline-block', 'margin-right':'10px'}},'='),
+                            m('input[type=text]', {id: 'newValue', placeholder: 'New Value', style : {'display':'inline-block' , 'width':'20%'}}),
+                        ]),
+                        
+                        m("br"),
+                        m('button[type="submit"]',{style: {'float': 'right'}} ,'Customize'),
+                    ])
                 ])
             
             ]),
-            m('div.container-fluid', {id: 'createDiv'},[
+            m('div.container-fluid', {id: 'formulaDiv'},[
 
-                m('div.container-fluid.align-items-center', {id : 'div1'}, [
-                    m('form',{ onsubmit: calculate},[
-                        m('input[type=text]', {id: 'variable', placeholder: 'Variable'}),
+                m('div.container-fluid', {id : 'div1' , style : {'display':'block','height': '220px','padding':'20px'}}, [
+                    m('form',{ onsubmit: createNewCalculate},[
+                        m('span',{style :{'display': 'block','overflow': 'hidden'}},[m('input[type=text]', {id: 'variables', placeholder: 'Variable', style : {'width': '100%','box-sizing':'border-box'}}),]),
                         m("br"),
-                        m('button[type="submit"]', 'Customize'),
-                    ]),                    
-                ]),
-                m('div.container-fluid', {id : 'div2'}, [
-                    m('form',{ onsubmit: calculate},[
-                        m('input[type=text]', {id: 'variable', placeholder: 'Variable'}),
-                        m("br"),
-                        m('button[type="submit"]', 'Customize'),
-                    ]),                   
-                ])
+                        m('button[type="submit"]',{style: {'float':'right'}}, 'Customize'),
+                    ]),])
             ])
         ), 
     ]}
@@ -132,9 +145,21 @@ function onRecodeStorageEvent(recode, e){
     m.redraw();
 }
 function clickVar(elem) {
-        
-    var text = document.getElementById('variable');
-     text.value = elem;
+    
+    if(document.getElementById('recodeLink').className === 'active'){
+        var text = document.getElementById('variable');
+        text.value = elem;
+    }
+
+    if(document.getElementById('createLink').className === 'active'){
+        var text = document.getElementById('variables');
+        text.value = text.value + " " + elem;
+     }
+     
+}
+
+function createNewCalculate(){
+
 }
 
 function calculate(elem){
@@ -142,27 +167,80 @@ function calculate(elem){
     app.callTransform(elem.target[0].value);
 }
 
-function hidePanel(){
-    var elem = document.getElementById('createDiv');
-    // elem.style.visibility = 'visible';
-    $(elem).show();
-    // jQuery('#recodeDiv').replaceWith(jQuery('#createDiv'));
+function createClick(){
+    var elem = document.getElementById('formulaDiv');
+    elem.style.display="none";
 
-    // $('div#createDiv').html('<div class ="container-fluid" id ="newDiv"></div>');
-    // var elem = document.getElementById('recodeDiv');
-    // return elem.parentNode.removeChild(elem);
-    // var elem = document.getElementById('leftpanel');
-    // elem.style.visibility = 'hidden';
     var elem = document.getElementById('recodeDiv');
-    elem.style.visibility = 'hidden';
+    elem.style.display = 'none';
+
+    var elem = document.getElementById('createLink');
+    elem.className = 'active';
+    var elem = document.getElementById('formulaLink');
+    elem.className = '';
+    var elem = document.getElementById('recodeLink');
+    elem.className = '';
+    var elem = document.getElementById('reorderLink');
+    elem.className = '';
 }
 function createCreate(){
-    console.log('create created');
-    var elem = document.getElementById('createDiv');
-    // elem.style.visibility = 'hidden';
-    $(elem).hide();
-
+    var elem = document.getElementById('formulaDiv');
+    elem.style.display = 'none';
 }
+
+function recodeCreate(){
+    var elem = document.getElementById('recodeLink');
+    elem.className = 'active';
+}
+function recodeClick(){
+    var elem = document.getElementById('recodeLink');
+    elem.className = 'active';
+
+    var elem = document.getElementById('recodeDiv');
+    elem.style.display="block";
+
+    var elem = document.getElementById('formulaDiv');
+    elem.style.display="none";
+
+    var elem = document.getElementById('reorderLink');
+    elem.className = '';
+    var elem = document.getElementById('formulaLink');
+    elem.className = '';
+    var elem = document.getElementById('createLink');
+    elem.className = '';
+}
+
+function formulaCreate(){}
+function formulaClick(){
+
+    var elem = document.getElementById('formulaDiv');
+    elem.style.display="block";
+
+    var elem = document.getElementById('recodeDiv');
+    elem.style.display = 'none';
+    
+    var elem = document.getElementById('formulaLink');
+    elem.className = 'active';
+    var elem = document.getElementById('reorderLink');
+    elem.className = '';
+    var elem = document.getElementById('recodeLink');
+    elem.className = '';
+    var elem = document.getElementById('createLink');
+    elem.className = '';
+}
+
+function reorderClick(){
+    var elem = document.getElementById('reorderLink');
+    elem.className = 'active';
+    var elem = document.getElementById('formulaLink');
+    elem.className = '';
+    var elem = document.getElementById('recodeLink');
+    elem.className = '';
+    var elem = document.getElementById('createLink');
+    elem.className = '';
+    
+}
+function reorderCreate(){}
 
 $(window).resize(function(){
     $('#rightpanel').css({
