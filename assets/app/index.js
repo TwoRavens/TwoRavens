@@ -10,6 +10,7 @@ import m from 'mithril';
 import * as app from './app';
 import * as exp from './explore';
 import * as layout from './layout';
+import * as plots from './plots';
 import * as results from './results';
 import {elem, fadeIn, fadeOut} from './utils';
 
@@ -368,7 +369,7 @@ class Body {
     }
 
     view(vnode) {
-        let {mode} = vnode.attrs;
+        let {mode, variable} = vnode.attrs;
         let model_mode = !mode;
         let explore_mode = mode === 'explore';
         let results_mode = mode === 'results';
@@ -400,7 +401,7 @@ class Body {
               m("#innercarousel.carousel-inner", {style: {height: `calc(100% + ${app.marginTopCarousel}px)`}},
                 m('#m0.item.active', {style: {height: '100%', 'text-align': "center"}},
                   m('svg#whitespace'))),
-              model_mode &&  m("#spacetools.spaceTool", {style: {right: app.panelWidth['right'], 'z-index': 16}},
+              model_mode && m("#spacetools.spaceTool", {style: {right: app.panelWidth['right'], 'z-index': 16}},
                   m(`button#btnLock.btn.btn-default`, {
                       class: app.locktoggle ? 'active' : '',
                       onclick: () => app.lockDescription(!app.locktoggle),
@@ -445,16 +446,21 @@ class Body {
                      ['gr2Button', 'zgroup2', 'Group 2']]}),
               m(Subpanel, {title: "History"}),
               leftpanel(mode),
-              explore_mode && m('table', {
+              explore_mode && (variable ? m('#tabSummary', {oncreate: _ => plots.density(app.findNode(variable), 'Summary', true)}) : m('table', {
                   style: `position: absolute; left: ${app.panelWidth.left}; top: 0; margin-top: 10px`
               }, [m('thead', [''].concat(sortedNodes).map(x => m('th', x.name))),
                   m('tbody', sortedNodes.map(x => {
                       return m('tr', [
                           m('td', {style: 'height: 75px; width: 75px; transform: rotate(-90deg)'}, x.name),
-                          sortedNodes.map(y => m('td', {style: 'height: 75px; width: 75px'}, x.interval === y.interval ? x.interval : 'combo'))
+                          sortedNodes.map(y => {
+                              let td = x === y ? m('a', {href: `/explore/${x.name}`, oncreate: m.route.link}, 'diagonal') :
+                                  x.interval === y.interval ? x.interval :
+                                  'combo';
+                              return m('td', {style: 'height: 75px; width: 75px'}, td);
+                          })
                       ]);
                   }))
-              ]),
+                 ])),
               rightpanel(mode))
         ]);
     }
@@ -625,6 +631,9 @@ m.route(document.body, '/model', {
             nodesExplore = app.nodes.concat();
         },
         render: () => m(Body, {mode: 'explore'})
+    },
+    '/explore/:variable': {
+        render: vnode => m(Body, {mode: 'explore', variable: vnode.attrs.variable})
     },
     '/results': {
         onmatch() {
