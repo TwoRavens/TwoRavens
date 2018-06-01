@@ -1,0 +1,110 @@
+{
+  "pipeline": {
+    "id": "UUID of the pipeline",
+    "source": {
+      "name": "name_of_author_team",
+      "contact": "URI to contact source",
+      "pipelines": [
+        "pipeline_id_1",
+        "pipeline_id_2"
+      ]
+    },
+    "created": "2018-06-01T02:19:38.510811805Z",
+    "context": "EVALUATION",
+    "name": "optional-pipeline-name",
+    "description": "human friendly pipeline description",
+    "users": [
+      {
+        "id": "unique_user_id",
+        "reason": "natural language description of what the user did to be on the list",
+        "rationale": "natural language description by the user of what the user did"
+      }
+    ],
+    "inputs": [
+      {
+        "name": "human-friendly name of input #1"
+      },
+      {
+        "name": "human-friendly name of input #2"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "human-friendly name of output #1",
+        "data": "data reference, probably of an output step"
+      },
+      {
+        "name": "human-friendly name of output #1",
+        "data": "data reference, probably of an output step"
+      }
+    ],
+    "steps": [
+      {
+        "primitive": {
+          "primitive": {
+            "id": "id",
+            "version": "version",
+            "pythonPath": "python_path",
+            "name": "name",
+            "digest": "optional--some locally registered primitives might not have it"
+          },
+          "arguments": {
+            "arg1": {
+              "container": {
+                "data": "data reference"
+              }
+            },
+            "arg2": {
+              "data": {
+                "data": "singleton output from another step as an argument"
+              }
+            }
+          },
+          "outputs": [
+            {
+              "id": "id for data ref"
+            },
+            {
+              "id": "id for data ref"
+            }
+          ],
+          "hyperparams": {
+            "param 1": {
+              "container": {
+                "data": "data reference"
+              }
+            },
+            "param 2": {
+              "value": {
+                "data": {
+                  "csvUri": "uri to a csv"
+                }
+              }
+            }
+          }
+        }
+      }
+    ]
+  },
+  "steps": [
+    {
+      "primitive": {
+        "hyperparams": {
+          "val1": {
+            "csvUri": "uri to a csv"
+          },
+          "val2": {
+            "datasetUri": "uri to a dataset"
+          }
+        }
+      }
+    },
+    {
+      "pipeline": {
+        "steps": [
+          {}
+        ]
+      }
+    }
+  ]
+}

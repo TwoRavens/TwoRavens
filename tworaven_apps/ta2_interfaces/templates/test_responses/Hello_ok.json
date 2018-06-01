@@ -1,0 +1,12 @@
+{
+  "userAgent": "TA2-aromatic roaster",
+  "version": "2018.5.2_pre",
+  "allowedValueTypes": [
+    "RAW",
+    "DATASET_URI",
+    "CSV_URI",
+    "PICKLE_URI",
+    "PICKLE_BLOB",
+    "PLASMA_ID"
+  ]
+}
