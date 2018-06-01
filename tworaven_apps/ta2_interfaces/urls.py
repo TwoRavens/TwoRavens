@@ -22,4 +22,8 @@ urlpatterns = (
          views_ta2_req1.view_end_search_solutions,
          name='EndSearchSolutions'),
 
+    path(r'StopSearchSolutions',
+         views_ta2_req1.view_stop_search_solutions,
+         name='StopSearchSolutions'),
+
     )
