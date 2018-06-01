@@ -70,3 +70,60 @@ def search_solutions(raven_json_str=None):
     # Convert the reply to JSON and send it back
     # --------------------------------
     return ok_resp(MessageToJson(reply, including_default_value_fields=True))
+
+
+
+def end_search_solutions(raven_json_str=None):
+    """
+    Send a EndSearchSolutionsRequest to the EndSearchSolutions command
+    """
+    if raven_json_str is None:
+        err_msg = 'No data found for the EndSearchSolutionsRequest'
+        return err_resp(err_msg)
+
+    # --------------------------------
+    # The UI has sent JSON in string format that contains the PipelineReference
+    # Make sure it's valid JSON
+    # --------------------------------
+    try:
+        json.loads(raven_json_str)
+    except json.decoder.JSONDecodeError as err_obj:
+        err_msg = 'Failed to convert UI Str to JSON: %s' % (err_obj)
+        return err_resp(err_msg)
+
+    # --------------------------------
+    # convert the JSON string to a gRPC request
+    # --------------------------------
+    try:
+        req = Parse(raven_json_str, core_pb2.EndSearchSolutionsRequest())
+    except ParseError as err_obj:
+        err_msg = 'Failed to convert JSON to gRPC: %s' % (err_obj)
+        return err_resp(err_msg)
+
+    # In test mode, return canned response
+    #
+    if settings.TA2_STATIC_TEST_MODE:
+        resp = core_pb2.EndSearchSolutionsResponse()
+
+        print('MessageToJson(req)', MessageToJson(resp))
+
+        return ok_resp(MessageToJson(resp))
+
+    core_stub, err_msg = TA2Connection.get_grpc_stub()
+    if err_msg:
+        return err_resp(err_msg)
+
+    # --------------------------------
+    # Send the gRPC request
+    # --------------------------------
+    try:
+        reply = core_stub.EndSearchSolutions(\
+                            req,
+                            timeout=settings.TA2_GPRC_SHORT_TIMEOUT)
+    except Exception as err_obj:
+        return err_resp(str(err_obj))
+
+    # --------------------------------
+    # Convert the reply to JSON and send it back
+    # --------------------------------
+    return ok_resp(MessageToJson(reply, including_default_value_fields=True))

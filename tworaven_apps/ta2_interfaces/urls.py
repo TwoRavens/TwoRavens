@@ -18,4 +18,8 @@ urlpatterns = (
          views_ta2_req1.view_search_solutions,
          name='SearchSolutions'),
 
+    path(r'EndSearchSolutions',
+         views_ta2_req1.view_end_search_solutions,
+         name='EndSearchSolutions'),
+
     )
