@@ -429,7 +429,8 @@ let updatePeek = async () => {
         return;
     }
 
-    for (let record of data) peekData.push(Object.keys(variableQuery).map((key) => record[key] || ""));
+    // for (let record of data) peekData.push(Object.keys(variableQuery).map((key) => record[key] || ""));
+    peekData = peekData.concat(data);
     peekSkip += data.length;
 
     // this gets noticed by the peek window

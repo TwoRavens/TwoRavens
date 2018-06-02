@@ -24,6 +24,16 @@ export default class CanvasDatasets {
 
         let coerceArray = (value) => Array.isArray(value) ? value : [value];
 
+        let tempDataset = app.getDataset(this.dataset);
+
+        let colgroupDataset = () => {
+            return m('colgroup',
+                m('col', {span: 1}),
+                m('col', {span: 1}),
+                m('col', {span: 1}),
+                m('col', {span: 1, width: '50%'}));
+        };
+
         return m('div#canvasDatasets', {style: {display: display, width: '100%'}}, app.datasetMetadata.map((dataset) => {
             return m('div', {
                     style: {
@@ -57,16 +67,18 @@ export default class CanvasDatasets {
                     }),
                     m(Table, {
                         headers: ['label', 'subset', 'format', 'columns'],
-                        data: Object.keys(app.dataset['subsets'] || {}).map(label => [
+                        data: Object.keys(tempDataset['subsets'] || {}).map(label => [
                             label,
-                            app.dataset['subsets'][label]['type'],
-                            app.dataset['subsets'][label]['format'],
+                            tempDataset['subsets'][label]['type'],
+                            tempDataset['subsets'][label]['format'],
                             m(ListTags, {
-                                tags: coerceArray(app.dataset['subsets'][label]['columns']),
+                                tags: coerceArray(tempDataset['subsets'][label]['columns']),
                                 readonly: true,
                                 attrsTags: {style: {padding: '2px 4px'}}
                             })
-                        ])
+                        ]),
+                        attrsCells: {style: {padding: '0.1em 1em'}},
+                        tableTags: colgroupDataset()
                     }),
                     dataset['citations'].map(citation => [m('br'), bold("Citation:"), m('br'), format(citation)])
                 ]
