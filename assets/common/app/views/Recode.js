@@ -35,6 +35,7 @@ import {
 let varList = [];
 let currentVal = "variable" ;
 let config = '';
+let dataDetails = {};
 
 export default class Recode {
     oncreate() {
@@ -47,7 +48,10 @@ export default class Recode {
         config = this.configuration;
 //data/ traindata.csv
         m.request(`rook-custom/rook-files/${this.configuration}/preprocess/preprocess.json`).then(data => {
-            for(var variable in data['variables']){
+            
+            Object.assign(dataDetails,  data['variables']);
+
+            for(var variable in dataDetails){
                 varList.push(variable);  
             }
         });
@@ -94,7 +98,7 @@ export default class Recode {
             }}),
             m('div.container-fluid ',{id: 'recodeDiv'},[
 
-                m('div.container-fluid', {id : 'div1' , style : {'display':'block','height': '220px','padding':'20px'}}, [
+                m('div.container-fluid', {id : 'div1_recode' , style : {'height': '220px','padding':'20px'}}, [
                     m('form',{ onsubmit: calculate},[
                         m('div',{style :{'display': 'block','overflow': 'hidden'}},[
                             m('input[type=text]', {id: 'variable', placeholder: 'Variable', style : {'width': '100%','box-sizing':'border-box'}}),
@@ -174,19 +178,36 @@ export default class Recode {
 
 function onRecodeStorageEvent(recode, e){
     recode.configuration = localStorage.getItem('configuration');
+    recode.zparams = localStorage.getItem('zparams');
     m.redraw();
+}
+function initialconfig(){
+    console.log(dataDetails)
 }
 function clickVar(elem) {
     
     if(document.getElementById('recodeLink').className === 'active'){
-        var text = document.getElementById('variable');
-        text.value = elem;
-        currentVal = elem;
+      
+        //If the variable is a of the type 'character', cannot apply mathematical transformations on it.
+        if(dataDetails[elem]['numchar'] != 'numeric'){
+            var transform =  document.getElementById('div1_recode');
+            transform.style.display = 'none';
+        }
+        else {
+            var transform =  document.getElementById('div1_recode');
+            transform.style.display = 'block';
+            var text = document.getElementById('variable');
+            text.value = elem;
+            currentVal = elem;
+        }
     }
 
-    if(document.getElementById('createLink').className === 'active'){
-        var text = document.getElementById('variables');
-        text.value = text.value + " " + elem;
+    if(document.getElementById('formulaLink').className === 'active'){
+        //Only those variables of type "numeric" could be used to build formula
+        if(dataDetails[elem]['numchar'] === 'numeric'){
+            var text = document.getElementById('variables');
+            text.value = text.value + " " + elem;
+        }
      }
      
 }
@@ -219,7 +240,8 @@ function calculate2(elem){
         'end': elem.target[1].value,
         'replacement': elem.target[2].value
     }
-    console.log(json)
+    app.callTransform();
+    // console.log(json)
 }
 function calculate(elem){
     var recodeString = elem.target[0].value;
