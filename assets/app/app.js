@@ -1945,7 +1945,7 @@ function updateNode(id, nodes) {
     }
 
     let name = node.name;
-    let names = () => nodes.map(n => n.name);
+    let names = _ => nodes.map(n => n.name);
     if (names().includes(name)) {
         del(nodes, node.index, is_explore_mode && node);
         if (!is_explore_mode) {
@@ -1969,6 +1969,11 @@ function updateNode(id, nodes) {
     } else {
         nodes.push(node);
     }
+
+    if (is_explore_mode) {
+        return false;
+    }
+
     zparams.zvars = names();
     return true;
 }

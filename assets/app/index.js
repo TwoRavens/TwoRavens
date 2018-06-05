@@ -446,7 +446,7 @@ class Body {
                      ['gr2Button', 'zgroup2', 'Group 2']]}),
               m(Subpanel, {title: "History"}),
               leftpanel(mode),
-              explore_mode && (variable ? m('#tabSummary', {oncreate: _ => plots.density(app.findNode(variable), 'Summary', true)}) : m('table', {
+              explore_mode && (variable ? m('#tabSummary', m('svg', {oncreate: _ => plots.density(app.findNode(variable), 'Summary', true)})) : m('table', {
                   style: `position: absolute; left: ${app.panelWidth.left}; top: 0; margin-top: 10px`
               }, [m('thead', [''].concat(sortedNodes).map(x => m('th', x.name))),
                   m('tbody', sortedNodes.map(x => {
