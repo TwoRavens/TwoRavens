@@ -393,74 +393,73 @@ class Body {
         }
 
         let sortedNodes = nodesExplore.concat().sort((x, y) => x.id - y.id);
+        let style = `position: absolute; left: ${app.panelWidth.left}; top: 0; margin-top: 10px`;
         return m('main', [
             m(Modal),
             this.header(mode),
             this.footer(mode),
             m(`#main.left[style=overflow: ${explore_mode ? 'auto' : 'hidden'}]`,
               m("#innercarousel.carousel-inner", {style: {height: `calc(100% + ${app.marginTopCarousel}px)`}},
-                m('#m0.item.active', {style: {height: '100%', 'text-align': "center"}},
-                  m('svg#whitespace'))),
+                explore_mode && (variable ? m('#plot', {style, oncreate: _ => plots.density(app.findNode(variable), 'explore', true)}) : m('table', {style}, [
+                    m('thead', [''].concat(sortedNodes).map(x => m('th', x.name))),
+                    m('tbody', sortedNodes.map(x => {
+                        return m('tr', [
+                            m('td', {style: 'height: 75px; width: 75px; transform: rotate(-90deg)'}, x.name),
+                            sortedNodes.map(y => {
+                                let td = x === y ? m('a', {href: `/explore/${x.name}`, oncreate: m.route.link}, 'diagonal') :
+                                    x.interval === y.interval ? x.interval :
+                                    'combo';
+                                return m('td', {style: 'height: 75px; width: 75px'}, td);
+                            })
+                        ]);
+                    }))
+                ])),
+                m('svg#whitespace')),
               model_mode && m("#spacetools.spaceTool", {style: {right: app.panelWidth['right'], 'z-index': 16}},
-                  m(`button#btnLock.btn.btn-default`, {
-                      class: app.locktoggle ? 'active' : '',
-                      onclick: () => app.lockDescription(!app.locktoggle),
-                      title: 'Lock selection of problem description'
-                  }, glyph(app.locktoggle ? 'lock' : 'pencil', true)),
-                spaceBtn('btnJoin', _ => {
-                    let links = [];
-                    console.log("doing connect all");
-                    if (explore_mode) {
-                        for (let node of app.nodes) {
-                            for (let node1 of app.nodes) {
-                                if (node !== node1 && links.filter(l => l.target === node1 && l.source === node).length === 0) {
-                                    links.push({left: false, right: false, target: node, source: node1});
-                                }
-                            }
-                        }
-                    } else {
-                        let dvs = app.nodes.filter(n => app.zparams.zdv.includes(n.name));
-                        let nolink = app.zparams.zdv.concat(app.zparams.zgroup1).concat(app.zparams.zgroup2);
-                        let ivs = app.nodes.filter(n => !nolink.includes(n.name));
+                              m(`button#btnLock.btn.btn-default`, {
+                                  class: app.locktoggle ? 'active' : '',
+                                  onclick: () => app.lockDescription(!app.locktoggle),
+                                  title: 'Lock selection of problem description'
+                              }, glyph(app.locktoggle ? 'lock' : 'pencil', true)),
+                              spaceBtn('btnJoin', _ => {
+                                  let links = [];
+                                  console.log("doing connect all");
+                                  if (explore_mode) {
+                                      for (let node of app.nodes) {
+                                          for (let node1 of app.nodes) {
+                                              if (node !== node1 && links.filter(l => l.target === node1 && l.source === node).length === 0) {
+                                                  links.push({left: false, right: false, target: node, source: node1});
+                                              }
+                                          }
+                                      }
+                                  } else {
+                                      let dvs = app.nodes.filter(n => app.zparams.zdv.includes(n.name));
+                                      let nolink = app.zparams.zdv.concat(app.zparams.zgroup1).concat(app.zparams.zgroup2);
+                                      let ivs = app.nodes.filter(n => !nolink.includes(n.name));
 
-                        links = dvs.map(dv => ivs.map(iv => ({
-                            left: true,
-                            right: false,
-                            target: iv,
-                            source: dv
-                        })));
-                    }
-                    app.restart([].concat(...links));
-                }, 'Make all possible connections between nodes', 'link'),
-                spaceBtn('btnDisconnect', _ => app.restart([]), 'Delete all connections between nodes', 'remove-circle'),
-                spaceBtn('btnForce', app.forceSwitch, 'Pin the variable pebbles to the page', 'pushpin'),
-                spaceBtn('btnEraser', app.erase, 'Wipe all variables from the modeling space', 'magnet')),
+                                      links = dvs.map(dv => ivs.map(iv => ({
+                                          left: true,
+                                          right: false,
+                                          target: iv,
+                                          source: dv
+                                      })));
+                                  }
+                                  app.restart([].concat(...links));
+                              }, 'Make all possible connections between nodes', 'link'),
+                              spaceBtn('btnDisconnect', _ => app.restart([]), 'Delete all connections between nodes', 'remove-circle'),
+                              spaceBtn('btnForce', app.forceSwitch, 'Pin the variable pebbles to the page', 'pushpin'),
+                              spaceBtn('btnEraser', app.erase, 'Wipe all variables from the modeling space', 'magnet')),
               model_mode && m(Subpanel,
-                {title: "Legend",
-                 buttons: [
-                     ['timeButton', 'ztime', 'Time'],
-                     ['csButton', 'zcross', 'Cross Sec'],
-                     ['dvButton', 'zdv', 'Dep Var'],
-                     ['nomButton', 'znom', 'Nom Var'],
-                     ['gr1Button', 'zgroup1', 'Group 1'],
-                     ['gr2Button', 'zgroup2', 'Group 2']]}),
+                              {title: "Legend",
+                               buttons: [
+                                   ['timeButton', 'ztime', 'Time'],
+                                   ['csButton', 'zcross', 'Cross Sec'],
+                                   ['dvButton', 'zdv', 'Dep Var'],
+                                   ['nomButton', 'znom', 'Nom Var'],
+                                   ['gr1Button', 'zgroup1', 'Group 1'],
+                                   ['gr2Button', 'zgroup2', 'Group 2']]}),
               m(Subpanel, {title: "History"}),
               leftpanel(mode),
-              explore_mode && (variable ? m('#tabSummary', m('svg', {oncreate: _ => plots.density(app.findNode(variable), 'Summary', true)})) : m('table', {
-                  style: `position: absolute; left: ${app.panelWidth.left}; top: 0; margin-top: 10px`
-              }, [m('thead', [''].concat(sortedNodes).map(x => m('th', x.name))),
-                  m('tbody', sortedNodes.map(x => {
-                      return m('tr', [
-                          m('td', {style: 'height: 75px; width: 75px; transform: rotate(-90deg)'}, x.name),
-                          sortedNodes.map(y => {
-                              let td = x === y ? m('a', {href: `/explore/${x.name}`, oncreate: m.route.link}, 'diagonal') :
-                                  x.interval === y.interval ? x.interval :
-                                  'combo';
-                              return m('td', {style: 'height: 75px; width: 75px'}, td);
-                          })
-                      ]);
-                  }))
-                 ])),
               rightpanel(mode))
         ]);
     }

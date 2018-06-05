@@ -5,7 +5,7 @@ export let selVarColor = '#fa8072'; // d3.rgb("salmon");
 
 // function to use d3 to graph density plots with preprocessed data
 export function density(node, div, priv) {
-    div = {setxLeft: '#setxLeft', setxLeftTopRight: '#setxLeftTopRight', Summary: '#tabSummary'}[div];
+    div = {setxLeft: '#setxLeft', setxLeftTopRight: '#setxLeftTopRight', Summary: '#tabSummary', explore: '#plot'}[div];
 
     if (!div) return alert("Error: incorrect div selected for plots: " + div);
 
@@ -29,7 +29,7 @@ export function density(node, div, priv) {
     };
 
     // Need to fix automatic width and height settings for leftpanel (#tabSubset, #tabSummary)
-    if (div == "#tabSummary") {
+    if (div == "#tabSummary" || div === '#plot') {
         [width, height] = [242,150]; //[242, 250];             // These should not be hard coded
         // width = 0.7 * (width - margin.left - margin.right),
         // height = 0.3 * (height - margin.top - margin.bottom);
@@ -314,16 +314,15 @@ export function density(node, div, priv) {
         handle2.attr("points", _ => (xpos - s) + "," + s + " " + (xpos + s) + "," + s + " " + xpos + "," + (-s * 1.3));
         plotsvg.select("text#range2")
         .text(_ => {
-              let returnval = "x1: ".concat((invx(xpos)).toPrecision(4));
-              let x1val = invx(xpos).toPrecision(4);
-              let mycell = node.name+"To"; // hardcoded here
-              if(document.getElementById(mycell)) {
+            let returnval = "x1: ".concat((invx(xpos)).toPrecision(4));
+            let x1val = invx(xpos).toPrecision(4);
+            let mycell = node.name+"To"; // hardcoded here
+            if(document.getElementById(mycell)) {
                 document.getElementById(mycell).innerText=x1val;
-              }
-              return returnval});
+            }
+            return returnval;
+        });
         node.setxvals[1] = (invx(xpos)).toPrecision(4);
-        
-        
     }
 }
 
