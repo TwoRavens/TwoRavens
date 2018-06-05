@@ -1,3 +1,7 @@
+
+import '../../css/common.css';
+import '../../css/tooltip.css';
+
 import m from 'mithril'
 
 import Button from '../../../app/views/PanelButton';
@@ -19,8 +23,6 @@ import * as common from "../common";
 import * as index from "../../../app/index";
 import * as app from "../../../app/app";
 
-import '../../css/common.css';
-
 import {
     borderColor,
     heightHeader,
@@ -32,6 +34,7 @@ import {
 
 
 let varList = [];
+let currentVal = "variable" ;
 
 export default class Recode {
     oncreate() {
@@ -49,6 +52,17 @@ export default class Recode {
         });
     }
     view() {
+        const Tooltip = {
+            view({ attrs, children }) {
+              return (
+                m('.Tooltip-wrap',
+                  children,
+                  m('.Tooltip', attrs.value)
+                )
+              );
+            }
+          };
+
         return [
             m('nav.navbar.navbar-default',
                 [
@@ -86,10 +100,6 @@ export default class Recode {
                 height: `calc(100% - ${heightHeader + heightFooter}px - ${2 * panelMargin}px - ${canvasScroll['horizontal'] ? scrollbarWidth : 0}px)`,
                 position: 'fixed',
                 top: heightHeader + panelMargin  + 'px',
-                
-                // ['right']: ('right' === 'right' && canvasScroll['vertical'] ? scrollbarWidth : 0) + panelMargin + 'px',
-                // ['padding-' + side]: '1px',
-                // 'z-index': 100
             }}),
             m('div.container-fluid ',{id: 'recodeDiv'},[
 
@@ -97,16 +107,47 @@ export default class Recode {
                     m('form',{ onsubmit: calculate},[
                         m('div',{style :{'display': 'block','overflow': 'hidden'}},[
                             m('input[type=text]', {id: 'variable', placeholder: 'Variable', style : {'width': '100%','box-sizing':'border-box'}}),
-                            m('span',{style: {'position': 'absolute',
-                                'display': 'inline',
-                                'top': '25px',
-                                // 'right': -'300px',
-                                // 'background-color': 'grey',
-                                'color': 'grey',
-                                // 'padding-right':'100px',
-                                'padding-left': '5px',
-                                'z-index':'10'
-                                }},"?")
+                            m('span',{ onmouseover:_=> showTooltip() , onmouseout:_=> hideTooltip(),style: {'position': 'absolute','display': 'inline','top': '25px','color': 'grey','padding-left': '5px', 'font-size':'17px'}},"?"),
+                            m('div',{id:'tooltip', style: 'display: none; margin-left: 185px;'},[
+                                m('table',{style : {'width':'100%'}},[
+                                    m('tr',[
+                                        m('th','Use..'),
+                                        m('th','to do...'),
+                                    ]),
+                                    m('tr',[
+                                        m('td',{style:{'font-family': 'Courier New'}},'sqrt('+currentVal+')'),
+                                        m('td','square root of a variable'),
+                                    ]),
+                                    m('tr',[
+                                        m('td',{style:{'font-family': 'Courier New'}},'abs('+currentVal+')'),
+                                        m('td','absolute value of the variable'),
+                                    ]),
+                                    m('tr',[
+                                        m('td',{style:{'font-family': 'Courier New'}},'exp('+currentVal+')'),
+                                        m('td','exponential of the variable'),
+                                    ]),
+                                    m('tr',[
+                                        m('td',{style:{'font-family': 'Courier New'}},'log('+currentVal+')'),
+                                        m('td','logarithmic value of a variable'),
+                                    ]),
+                                    m('tr',[
+                                        m('td',{style:{'font-family': 'Courier New'}},'log10('+currentVal+')'),
+                                        m('td','logarithmic base 10 value of a variable'),
+                                    ]),
+                                    m('tr',[
+                                        m('td',{style:{'font-family': 'Courier New'}},'factorial('+currentVal+')'),
+                                        m('td','factorial of a variable'),
+                                    ]),
+                                    m('tr',[
+                                        m('td',{style:{'font-family': 'Courier New'}},'ceiling('+currentVal+')'),
+                                        m('td','ceiling value of a variable'),
+                                    ]),
+                                    m('tr',[
+                                        m('td',{style:{'font-family': 'Courier New'}},'floor('+currentVal+')'),
+                                        m('td','floor value of a variable'),
+                                    ]),
+                                ])
+                            ]),                            
                         ]),
                         m("br"),
                         m('button[type="submit"]',{style: {'float':'right'}}, 'Customize'),
@@ -149,6 +190,7 @@ function clickVar(elem) {
     if(document.getElementById('recodeLink').className === 'active'){
         var text = document.getElementById('variable');
         text.value = elem;
+        currentVal = elem;
     }
 
     if(document.getElementById('createLink').className === 'active'){
@@ -156,6 +198,26 @@ function clickVar(elem) {
         text.value = text.value + " " + elem;
      }
      
+}
+
+function showTooltip(){
+    console.log("mouse")
+    var tooltip = document.getElementById('tooltip');
+    tooltip.style.display = 'block';
+    tooltip.style.position ='absolute';
+    tooltip.style.whiteSpace = 'nowrap';
+    tooltip.style.border = '1px solid black';
+    tooltip.style.borderRadius = '5px';
+    tooltip.style.padding= "5px";
+    tooltip.style.zIndex= "1";
+    tooltip.style.backgroundColor= 'white';
+    // tooltip.style.overflow = 'scroll';
+
+}
+function hideTooltip(){
+    console.log('gone')
+    var tooltip = document.getElementById('tooltip');
+    tooltip.style.display = 'none';
 }
 
 function createNewCalculate(){
