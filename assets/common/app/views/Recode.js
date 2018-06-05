@@ -1,6 +1,5 @@
 
 import '../../css/common.css';
-import '../../css/tooltip.css';
 
 import m from 'mithril'
 
@@ -35,6 +34,7 @@ import {
 
 let varList = [];
 let currentVal = "variable" ;
+let config = '';
 
 export default class Recode {
     oncreate() {
@@ -44,6 +44,7 @@ export default class Recode {
     oninit() {
 
         this.configuration = localStorage.getItem('configuration');
+        config = this.configuration;
 //data/ traindata.csv
         m.request(`rook-custom/rook-files/${this.configuration}/preprocess/preprocess.json`).then(data => {
             for(var variable in data['variables']){
@@ -52,17 +53,6 @@ export default class Recode {
         });
     }
     view() {
-        const Tooltip = {
-            view({ attrs, children }) {
-              return (
-                m('.Tooltip-wrap',
-                  children,
-                  m('.Tooltip', attrs.value)
-                )
-              );
-            }
-          };
-
         return [
             m('nav.navbar.navbar-default',
                 [
@@ -94,6 +84,7 @@ export default class Recode {
         ),
         m(`#${'right'}panel.container.sidepanel.clearfix`, mergeAttributes({
             style: {
+                overflow: 'scroll',
                 background: menuColor,
                 border: borderColor,
                 width: (window.innerWidth - 300)+'px' ,
@@ -108,8 +99,8 @@ export default class Recode {
                         m('div',{style :{'display': 'block','overflow': 'hidden'}},[
                             m('input[type=text]', {id: 'variable', placeholder: 'Variable', style : {'width': '100%','box-sizing':'border-box'}}),
                             m('span',{ onmouseover:_=> showTooltip() , onmouseout:_=> hideTooltip(),style: {'position': 'absolute','display': 'inline','top': '25px','color': 'grey','padding-left': '5px', 'font-size':'17px'}},"?"),
-                            m('div',{id:'tooltip', style: 'display: none; margin-left: 185px;'},[
-                                m('table',{style : {'width':'100%'}},[
+                            m('div',{id:'tooltip', style: 'right:0; display: none; margin-right: 35px'},[
+                                m('table',[
                                     m('tr',[
                                         m('th','Use..'),
                                         m('th','to do...'),
@@ -153,7 +144,7 @@ export default class Recode {
                         m('button[type="submit"]',{style: {'float':'right'}}, 'Customize'),
                     ]),]),
                     m('div.container-fluid', {id : 'div2' , style : {'display':'block','height': '250px','padding':'20px'}}, [
-                    m('form',{ onsubmit: calculate},[
+                    m('form',{ onsubmit: calculate2},[
                         m('span',{style :{'display': 'block','overflow': 'hidden'}},[
                             m('input[type=text]', {id: 'value1', placeholder: 'value 1', style : {'display':'inline-block' , 'margin-right':'10px', 'width':'20%'}}),
                             m('h3',{ style : {'display':'inline-block', 'margin-right':'10px'}},'-'),
@@ -201,7 +192,6 @@ function clickVar(elem) {
 }
 
 function showTooltip(){
-    console.log("mouse")
     var tooltip = document.getElementById('tooltip');
     tooltip.style.display = 'block';
     tooltip.style.position ='absolute';
@@ -215,18 +205,32 @@ function showTooltip(){
 
 }
 function hideTooltip(){
-    console.log('gone')
     var tooltip = document.getElementById('tooltip');
     tooltip.style.display = 'none';
 }
 
 function createNewCalculate(){
-
 }
-
+function calculate2(elem){
+    var json = {
+        'configuration': config,
+        'variable': currentVal,
+        'start': elem.target[0].value,
+        'end': elem.target[1].value,
+        'replacement': elem.target[2].value
+    }
+    console.log(json)
+}
 function calculate(elem){
-    console.log(elem.target[0].value)
-    app.callTransform(elem.target[0].value);
+    var recodeString = elem.target[0].value;
+    var json = {
+        'configuration': config,
+        'variable': currentVal,
+        'formula': recodeString
+    }
+
+    console.log(json);
+
 }
 
 function createClick(){
