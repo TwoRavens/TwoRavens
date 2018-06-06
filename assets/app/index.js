@@ -392,14 +392,15 @@ class Body {
             this.last_mode = mode;
         }
 
+        let overflow = explore_mode ? 'auto' : 'hidden';
         let style = `position: absolute; left: ${app.panelWidth.left}; top: 0; margin-top: 10px`;
         let sortedNodes = nodesExplore.concat().sort((x, y) => x.id - y.id);
         return m('main', [
             m(Modal),
             this.header(mode),
             this.footer(mode),
-            m(`#main.left`,
-              m("#innercarousel.carousel-inner", {style: {height: `calc(100% + ${app.marginTopCarousel}px)`, overflow: explore_mode ? 'auto' : 'hidden'}},
+            m(`#main.left`, {style: {overflow}},
+              m("#innercarousel.carousel-inner", {style: {height: `calc(100% + ${app.marginTopCarousel}px)`, overflow}},
                 explore_mode && (variable ? m('#plot', {style, oncreate: _ => plots.density(app.findNode(variable), 'explore', true)}) : m('table', {style}, [
                     m('thead', [''].concat(sortedNodes).map(x => m('th', x.name))),
                     m('tbody', sortedNodes.map(x => {
