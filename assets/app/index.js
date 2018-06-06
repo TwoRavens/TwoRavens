@@ -404,7 +404,7 @@ class Body {
                     m('thead', [''].concat(sortedNodes).map(x => m('th', x.name))),
                     m('tbody', sortedNodes.map(x => {
                         return m('tr', [
-                            m('td', {style: 'height: 100px; transform: rotate(-90deg)'}, x.name),
+                            m('td', {style: 'height: 100px; transform: rotate(-90deg); font-weight: bold'}, x.name),
                             sortedNodes.map(y => {
                                 let td = x === y ? m('a', {href: `/explore/${x.name}`, oncreate: m.route.link}, m('img', {src: '/static/images/density.png'})) :
                                     x.plottype === y.plottype ? m('img', {src: '/static/images/scatterplot.png'}) :
