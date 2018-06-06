@@ -46,8 +46,10 @@ export default class Recode {
 
         this.configuration = localStorage.getItem('configuration');
         config = this.configuration;
+        console.log('config')
+        console.log(config)
 //data/ traindata.csv
-        m.request(`rook-custom/rook-files/${this.configuration}/preprocess/preprocess.json`).then(data => {
+        m.request(config).then(data => {
             
             Object.assign(dataDetails,  data['variables']);
 
