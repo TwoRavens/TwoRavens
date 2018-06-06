@@ -13,6 +13,7 @@ import {
     updateAggregTable,
     updateToAggreg
 } from "./aggreg/aggreg";
+
 import {panelMargin, panelOcclusion, panelOpen, setPanelCallback, setPanelOcclusion} from "../../common/common";
 // Used for custom query editor
 import '../../../node_modules/ace-builds/src-min-noconflict/ace.js';
@@ -39,6 +40,10 @@ export let subsetURL = rappURL + appname;
 export let datasetMetadata = [];
 export let getDataset = (key) => datasetMetadata.filter(meta => meta['key'] === key)[0];
 export let getVariables = (dataset) => Object.values((dataset || {})['columns'] || {});
+
+export let subsetPreferences = {};
+export let subsetRedraw = {};
+
 
 // Select which tab is shown in the left panel
 export let setLeftTab = (tab) => leftTab = tab;
@@ -133,6 +138,7 @@ export let subsetKeys = (dataset) => Object.keys(dataset['subsets']);
 // TODO conditionally draw based on available aggregates
 export let aggregateKeys = ["Actor", "Date", "Penta Class", "Root Code", "Time Series", "Analysis"];
 export let canvasKeySelected = "Datasets";
+export let subsetKeySelected;
 
 // These get instantiated in the oncreate() method for the mithril Body_EventData class
 export let laddaUpdate;
@@ -440,6 +446,20 @@ let updatePeek = async () => {
 };
 window.addEventListener('storage', onStorageEvent);
 
+
+// we must be very particular about how months get incremented, to handle leap years etc.
+export function incrementMonth(date) {
+    let d = date.getDate();
+    date.setMonth(date.getMonth() + 1);
+    if (date.getDate() !== d) {
+        date.setDate(0);
+    }
+    return date;
+}
+
+export let isSameMonth = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth();
+
+
 /**
  *   Draws all subset plots, often invoked as callback after server request for new plotting data
  */
@@ -455,6 +475,13 @@ export function pageSetup(jsondata) {
         return false;
     }
     console.log(dataset);
+
+    Object.keys(jsondata['subsets']).forEach(subset => {
+        // ensure each subset has a place to store settings
+        subsetPreferences[subset] = subsetPreferences[subset] || {};
+        // trigger d3 replots in all subsets
+        subsetRedraw[subset] = true;
+    });
 
     let reformatters = {
         'action': data => data
@@ -486,7 +513,18 @@ export function pageSetup(jsondata) {
         'date': data => data
             .filter(entry => !isNaN(entry['<year>'] && !isNaN(entry['<month>'])))
             .map(entry => ({'Date': new Date(entry['<year>'], entry['<month>'] - 1, 0), 'Freq': entry.total}))
-            .sort(dateSort),
+            .sort(dateSort)
+            .reduce((out, entry) => {
+                if (out.length === 0) return [entry];
+                let tempDate = incrementMonth(out[out.length - 1]['Date']);
+
+                while (!isSameMonth(tempDate, entry['Date'])) {
+                    out.push({Freq: 0, Date: new Date(tempDate)});
+                    tempDate = incrementMonth(tempDate);
+                }
+                out.push(entry);
+                return(out);
+            }, []),
 
         'location': data => data
             .filter(entry => ['', undefined].indexOf(entry['<country>'] === -1))
