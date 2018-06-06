@@ -392,24 +392,24 @@ class Body {
             this.last_mode = mode;
         }
 
-        let sortedNodes = nodesExplore.concat().sort((x, y) => x.id - y.id);
         let style = `position: absolute; left: ${app.panelWidth.left}; top: 0; margin-top: 10px`;
+        let sortedNodes = nodesExplore.concat().sort((x, y) => x.id - y.id);
         return m('main', [
             m(Modal),
             this.header(mode),
             this.footer(mode),
-            m(`#main.left[style=overflow: ${explore_mode ? 'auto' : 'hidden'}]`,
-              m("#innercarousel.carousel-inner", {style: {height: `calc(100% + ${app.marginTopCarousel}px)`}},
+            m(`#main.left`,
+              m("#innercarousel.carousel-inner", {style: {height: `calc(100% + ${app.marginTopCarousel}px)`, overflow: explore_mode ? 'auto' : 'hidden'}},
                 explore_mode && (variable ? m('#plot', {style, oncreate: _ => plots.density(app.findNode(variable), 'explore', true)}) : m('table', {style}, [
                     m('thead', [''].concat(sortedNodes).map(x => m('th', x.name))),
                     m('tbody', sortedNodes.map(x => {
                         return m('tr', [
-                            m('td', {style: 'height: 75px; width: 75px; transform: rotate(-90deg)'}, x.name),
+                            m('td', {style: 'height: 100px; transform: rotate(-90deg)'}, x.name),
                             sortedNodes.map(y => {
-                                let td = x === y ? m('a', {href: `/explore/${x.name}`, oncreate: m.route.link}, 'diagonal') :
-                                    x.interval === y.interval ? x.interval :
+                                let td = x === y ? m('a', {href: `/explore/${x.name}`, oncreate: m.route.link}, m('img', {src: '/static/images/density.png'})) :
+                                    x.plottype === y.plottype ? m('img', {src: '/static/images/scatterplot.png'}) :
                                     'combo';
-                                return m('td', {style: 'height: 75px; width: 75px'}, td);
+                                return m('td', {style: 'height: 100px'}, td);
                             })
                         ]);
                     }))
