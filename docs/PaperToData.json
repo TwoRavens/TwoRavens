@@ -1,62 +1,175 @@
-
 {
-"Paper":{"type":"dict","required":"true","schema": {
-            "NoOfCitations": {"type":"integer", "required":true},
-            "author":{"type":"list","required":"true","schema":{ 
-                       "FirstName":{"type":"string", "required":true},
-                       "LastName":{"type":"string", "required":true},
-                       "GoogleScholarUrl":{"type":"string", "required":false}
-                     }},
-            "Publisher" : {"type":"string", "required":true},
-            "Title" : {"type":"string", "required":true},
-            "PublicationYear" : {"type":"integer","format":"date-time","required":true},
-            "doi" : {"type":"string", "required":false},
-            "SourceURL": {"type":"string","format":"uri","required":true},
-            "Keywords":{"type":"string", "required":false},
-            "HumanSubjectsResearch": {"type":"boolean", "required":false}
+  "Paper": {
+    "type": "dict",
+    "required": "true",
+    "schema": {
+      "NoOfCitations": {
+        "type": "integer",
+        "required": true
+      },
+      "author": {
+        "type": "list",
+        "required": "true",
+        "schema": {
+          "FirstName": {
+            "type": "string",
+            "required": true
+          },
+          "LastName": {
+            "type": "string",
+            "required": true
+          },
+          "GoogleScholarUrl": {
+            "type": "string",
+            "required": false
+          }
+        }
+      },
+      "Publisher": {
+        "type": "string",
+        "required": true
+      },
+      "Title": {
+        "type": "string",
+        "required": true
+      },
+      "PublicationYear": {
+        "type": "integer",
+        "format": "date-time",
+        "required": true
+      },
+      "doi": {
+        "type": "string",
+        "required": false
+      },
+      "SourceURL": {
+        "type": "string",
+        "format": "uri",
+        "required": true
+      },
+      "Keywords": {
+        "type": "string",
+        "required": false
+      },
+      "HumanSubjectsResearch": {
+        "type": "boolean",
+        "required": false
+      }
+    },
+    "Data": {
+      "type": "list",
+      "required": "true",
+      "schema": {
+        "Filename": {
+          "type": "string",
+          "required": "true"
         },
-        "Data":{"type":"list","required":"true","schema":{
-                "Filename":{"type":"string","required":"true"},
-                "FileType":{"type":"string","allowed":[
-                            "csv",
-                            "tab",
-                            "xlsx",
-                            "R",
-                            "do",
-                            "dat",
-                            "ipynb",
-                            "json"                            
-                ], "allow_unknown":true},
-                "dimensions":{"type":"dict","required":false,"schema":{
-                    "RowCount":{"type":"integer","required":false},
-                    "ColumnCount":{"type":"integer","required":false}
-                }},
-                "isSubset":{"type":"boolean","required":true},
-                "Subset": {"type":"string","required":false, "dependencies": {"isSubset":true}},
-                "UnitOfObservation": {"type":"string","required":false}
-                },
-            "Models": [
-                {
-                    "goal": "prediction (or inference)",
-                    "dependent_variable": "Date",
-                    "statistical_model": "linear regression",
-                    "predictors": [
-                        {
-                            "transformation": "ln(startDate)",
-                            "primary": true
-                        },
-                        {}
-                    ]
-                },
-                {}
-            ],
-            "columns": [
-                {
-                    "name": "startDate",
-                    "transformation": "if defined, it is a formula"
-                },
-                {}
+        "FileType": {
+          "type": "string",
+          "allowed": [
+            "csv",
+            "tab",
+            "xlsx",
+            "R",
+            "do",
+            "dat",
+            "ipynb",
+            "json"
+          ],
+          "allow_unknown": true
+        },
+        "dimensions": {
+          "type": "dict",
+          "required": false,
+          "schema": {
+            "RowCount": {
+              "type": "integer",
+              "required": false
+            },
+            "ColumnCount": {
+              "type": "integer",
+              "required": false
+            }
+          }
+        },
+        "isSubset": {
+          "type": "boolean",
+          "required": true
+        },
+        "Subset": {
+          "type": "string",
+          "required": false,
+          "dependencies": {
+            "isSubset": true
+          }
+        },
+        "UnitOfObservation": {
+          "type": "string",
+          "required": false
+        }
+      },
+      "Model": {
+        "type": "dict",
+        "required": true,
+        "schema": {
+          "Goal": {
+            "required": true,
+            "oneof": [
+              {
+                "type": "string",
+                "allowed": [
+                  "prediction",
+                  "inference"
+                ],
+                "allow_unknown": false
+              }
             ]
-        },
-        {}
-    ]}
+          },
+          "DependentVariable": {
+            "type": "string",
+            "required": true
+          },
+          "StatisticalModel": {
+            "type": "string",
+            "required": true
+          },
+          "Predictors": {
+            "type": "list",
+            "required": true,
+            "schema": {
+              "VarTransformation": {
+                "type": "string",
+                "required": false
+              },
+              "Primary": {
+                "type": "boolean",
+                "required": false
+              }
+            }
+          },
+          "EvaluationMetric": {
+            "type": "string",
+            "required": false,
+            "dependencies": {
+              "goal": "prediction"
+            }
+          }
+        }
+      },
+      "Columns": {
+        "type": "list",
+        "required": true,
+        "schema": {
+          "ColName": {
+            "type": "string",
+            "required": true
+          },
+          "Transformation": {
+            "type": "string",
+            "required": false
+          }
+        }
+      }
+    }
+  }
+}
