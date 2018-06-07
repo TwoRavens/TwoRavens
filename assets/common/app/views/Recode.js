@@ -35,7 +35,17 @@ import {
 let varList = [];
 let currentVal = "variable" ;
 let config = '';
+let configName = '';
 let dataDetails = {};
+let peekBatchSize = 100;
+let peekSkip = 0;
+let peekData = [];
+
+let tableData = [];
+let tableHeader = [];
+
+let peekAllDataReceived = false;
+let peekIsGetting = false;
 
 export default class Recode {
     oncreate() {
@@ -45,7 +55,9 @@ export default class Recode {
     oninit() {
 
         this.configuration = localStorage.getItem('configuration');
+        this.configName = localStorage.getItem('configName');
         config = this.configuration;
+        configName = this.configName
         //data/ traindata.csv
         m.request(config).then(data => {
             
@@ -55,6 +67,35 @@ export default class Recode {
                 varList.push(variable);  
             }
         });
+        
+
+        m.request(`rook-custom/rook-files/${configName}/data/trainData.tsv`, {
+            deserialize: x => x.split('\n').map(y => y.split('\t'))
+        }).then(data => {
+            // console.log(data)
+            // simulate only loading some of the data... by just deleting all the other data
+            let headers = data[0].map(x => x.replace(/"/g, ''));
+            let newData = data.slice(peekSkip + 1, peekSkip + 1 + peekBatchSize);
+    
+            // stop blocking new requests
+            peekIsGetting = false;
+    
+            // start blocking new requests until peekReset() is called
+            if (newData.length === 0) peekAllDataReceived = true;
+    
+            peekData = peekData.concat(newData);
+            peekSkip += newData.length;
+            // console.log('data')
+            
+            for(var val in peekData){
+                tableData.push(peekData[val]);  
+            }
+            for(var val in headers){
+                tableHeader.push(headers[val]);  
+            }
+        });
+        console.log(tableData)
+        console.log(tableHeader)
     }
     view() {
         return [
@@ -176,7 +217,7 @@ export default class Recode {
                 ),
                 m('#centralPanel.container.sidepanel.clearfix', mergeAttributes({
                     style: {
-                        overflow: 'hidden',
+                        overflow: 'scroll',
                         background: menuColor,
                         border: borderColor,
                         width: (window.innerWidth-25)+'px' ,
@@ -186,19 +227,31 @@ export default class Recode {
                         top: heightHeader + panelMargin  + 'px',
                         
                     }}),[
-                        m('div.container-fluid', {id : 'createDiv' , style : {'display':'block','height': '250px','padding':'20px'}}, [
+                        m('div.container', {id : 'createDiv' , style : {'display':'block','height': '250px','overflow':'hidden','width': '100%','height':'100%'}}, [
                             m('form',{ onsubmit: createNewCalculate},[
-                                m('span',{style :{'display': 'block','overflow': 'hidden'}},[
+                                m('div',{style :{'display': 'block','float':'left'  ,'overflow':'hidden','width':'40%'}},[
+                                    m('br'),
                                     m('h4',{ style : {'display':'inline-block', 'margin-right':'10px'}},'Variable Name : '),
-                                    m('input[type=text]', {id: 'newVar', placeholder: 'New Variable', style : {'display':'inline-block' , 'margin-right':'10px', 'width':'20%'}}),
+                                    m('input[type=text]', {id: 'newVar', placeholder: 'New Variable', style : {'display':'inline-block' , 'margin-right':'10px', 'width':'40%'}}),
                                     m('br'),
                                     m('h4',{ style : {'display':'inline-block', 'margin-right':'10px'}},'Variable Type : '),
-                                    // m('input[type=text]', {id: 'newValue', placeholder: 'New Value', style : {'display':'inline-block' , 'width':'20%'}}),
                                     m('div.dropdown',{ style : {'display':'inline-block'}},[
                                         m('select.form-control',{style:{'display':'inline-block'}, id:'varType'},[
-                                            m('option','numchar')
+                                            m('option','numchar'),
+                                            m('option','boolean'),
+                                            m('option','Character')
                                         ])
                                     ])
+                                ]),m('div',{style :{'display': 'block','width':'60%','float':'right','height':'1000px' ,'overflow-y': 'auto'}},[
+                                    m('table.table#createTable',{style:{ 'overflow': 'scroll'}},[
+                                        m('tr',[
+                                            (tableHeader.slice(1)).map((header) => m('th.col-xs-2',header))
+                                        ]),
+                                        tableData.map((row,i)=> m('tr',[
+                                            row.filter((item,j) => j !== 0 ).map((item,j) => m('td',item))],
+                                            m('td',[])
+                                        ))
+                                    ])                                                                        
                                 ]),
                                 
                                 m("br"),
@@ -212,7 +265,7 @@ export default class Recode {
 
 function onRecodeStorageEvent(recode, e){
     recode.configuration = localStorage.getItem('configuration');
-    recode.zparams = localStorage.getItem('zparams');
+    recode.configName = localStorage.getItem('configName');
     m.redraw();
 }
 function initialconfig(){
@@ -264,7 +317,9 @@ function hideTooltip(){
     tooltip.style.display = 'none';
 }
 
-function createNewCalculate(){
+function createNewCalculate(elem){
+    console.log(elem.target[0].value);
+    console.log(elem.target[1].value);
 }
 function calculate2(elem){
     var json = {

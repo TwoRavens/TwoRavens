@@ -535,6 +535,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     d3mPreprocess = pURL = `rook-custom/rook-files/${d3mDataName}/preprocess/preprocess.json`;
     console.log(d3mPreprocess);
     localStorage.setItem('configuration',d3mPreprocess);//For Recode
+    localStorage.setItem('configName',d3mDataName);//For Recode
 
     // 3. Read the problem schema and set 'd3mProblemDescription'
     // ...and make a call to start the session with TA2. if we get this far, data are guaranteed to exist for the frontend
