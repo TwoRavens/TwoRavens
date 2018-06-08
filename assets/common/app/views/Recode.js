@@ -1,5 +1,6 @@
 
 import '../../css/common.css';
+import '../../../pkgs/bootstrap/css/bootstrap-theme.min.css';
 
 import m from 'mithril'
 
@@ -37,15 +38,13 @@ let currentVal = "variable" ;
 let config = '';
 let configName = '';
 let dataDetails = {};
-let peekBatchSize = 100;
+
 let peekSkip = 0;
 let peekData = [];
 
 let tableData = [];
 let tableHeader = [];
 
-let peekAllDataReceived = false;
-let peekIsGetting = false;
 
 export default class Recode {
     oncreate() {
@@ -72,20 +71,12 @@ export default class Recode {
         m.request(`rook-custom/rook-files/${configName}/data/trainData.tsv`, {
             deserialize: x => x.split('\n').map(y => y.split('\t'))
         }).then(data => {
-            // console.log(data)
+            console.log(data.length)
             // simulate only loading some of the data... by just deleting all the other data
             let headers = data[0].map(x => x.replace(/"/g, ''));
-            let newData = data.slice(peekSkip + 1, peekSkip + 1 + peekBatchSize);
-    
-            // stop blocking new requests
-            peekIsGetting = false;
-    
-            // start blocking new requests until peekReset() is called
-            if (newData.length === 0) peekAllDataReceived = true;
-    
+            let newData = data.slice(1, data.length-1);
+       
             peekData = peekData.concat(newData);
-            peekSkip += newData.length;
-            // console.log('data')
             
             for(var val in peekData){
                 tableData.push(peekData[val]);  
@@ -94,8 +85,6 @@ export default class Recode {
                 tableHeader.push(headers[val]);  
             }
         });
-        console.log(tableData)
-        console.log(tableHeader)
     }
     view() {
         return [
@@ -237,19 +226,20 @@ export default class Recode {
                                     m('h4',{ style : {'display':'inline-block', 'margin-right':'10px'}},'Variable Type : '),
                                     m('div.dropdown',{ style : {'display':'inline-block'}},[
                                         m('select.form-control',{style:{'display':'inline-block'}, id:'varType'},[
-                                            m('option','numchar'),
-                                            m('option','boolean'),
-                                            m('option','Character')
+                                            m('option','Boolean'),
+                                            m('option','Character'),
+                                            m('option','Numchar')
                                         ])
                                     ])
-                                ]),m('div',{style :{'display': 'block','width':'60%','float':'right','height':'1000px' ,'overflow-y': 'auto'}},[
-                                    m('table.table#createTable',{style:{ 'overflow': 'scroll'}},[
+                                ]),m('div#tableDiv',{style :{'display': 'block','width':'60%','float':'right','height':(window.innerHeight-150)+'px' ,'overflow-y': 'auto','border-style': 'solid','border-width': 'thin'}},[
+                                    m('table.table.table-bordered',{id:'createTable',style:{ 'overflow': 'scroll'}},[
                                         m('tr',[
-                                            (tableHeader.slice(1)).map((header) => m('th.col-xs-2',header))
+                                            (tableHeader.slice(1)).map((header) => m('th.col-xs-4',{style : {'border': '1px solid #ddd'}},header)),
+                                            m('th.col-xs-4',"New Variable")
                                         ]),
                                         tableData.map((row,i)=> m('tr',[
-                                            row.filter((item,j) => j !== 0 ).map((item,j) => m('td',item))],
-                                            m('td',[])
+                                            row.filter((item,j) => j !== 0 ).map((item,j) => m('td',{style : {'border': '1px solid #ddd','text-align': 'center'}},item))],
+                                            m('td',{style : {'border': '1px solid #ddd','text-align': 'center'}}, [m('input[type=checkbox]', {id: 'newVarVal',name:'newVarVal',value : i})])
                                         ))
                                     ])                                                                        
                                 ]),
@@ -463,6 +453,9 @@ $(window).resize(function(){
 });
 $('#centralPanel').css({
     'width':  (window.innerWidth-25)+'px',
+});
+$('#tableDiv').css({
+    'height': (window.innerHeight-150)+'px',
 });
 });
 
