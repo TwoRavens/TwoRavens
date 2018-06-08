@@ -197,7 +197,7 @@ export default class Recode {
                     m('div.container-fluid', {id: 'formulaDiv'},[
         
                         m('div.container-fluid', {id : 'div1' , style : {'display':'block','height': '220px','padding':'20px'}}, [
-                            m('form',{ onsubmit: createNewCalculate},[
+                            m('form',{ onsubmit: formulaCalculate},[
                                 m('span',{style :{'display': 'block','overflow': 'hidden'}},[m('input[type=text]', {id: 'variables', placeholder: 'Variable', style : {'width': '100%','box-sizing':'border-box','white-space': 'nowrap;'}}),]),
                                 m("br"),
                                 m('button[type="submit"]',{style: {'float':'right'}}, 'Customize'),
@@ -217,7 +217,7 @@ export default class Recode {
                         
                     }}),[
                         m('div.container', {id : 'createDiv' , style : {'display':'block','height': '250px','overflow':'hidden','width': '100%','height':'100%'}}, [
-                            m('form',{ onsubmit: createNewCalculate},[
+                            m('form#createNewForm',{ onsubmit: addValue},[
                                 m('div',{style :{'display': 'block','float':'left'  ,'overflow':'hidden','width':'40%'}},[
                                     m('br'),
                                     m('h4',{ style : {'display':'inline-block', 'margin-right':'10px'}},'Variable Name : '),
@@ -233,19 +233,22 @@ export default class Recode {
                                     ])
                                 ]),m('div#tableDiv',{style :{'display': 'block','width':'60%','float':'right','height':(window.innerHeight-150)+'px' ,'overflow-y': 'auto','border-style': 'solid','border-width': 'thin'}},[
                                     m('table.table.table-bordered',{id:'createTable',style:{ 'overflow': 'scroll'}},[
-                                        m('tr',[
+                                        m('tr#colheader',[
                                             (tableHeader.slice(1)).map((header) => m('th.col-xs-4',{style : {'border': '1px solid #ddd'}},header)),
-                                            m('th.col-xs-4',"New Variable")
+                                            
                                         ]),
-                                        tableData.map((row,i)=> m('tr',[
-                                            row.filter((item,j) => j !== 0 ).map((item,j) => m('td',{style : {'border': '1px solid #ddd','text-align': 'center'}},item))],
-                                            m('td',{style : {'border': '1px solid #ddd','text-align': 'center'}}, [m('input[type=checkbox]', {id: 'newVarVal',name:'newVarVal',value : i})])
+                                        tableData.map((row,i)=> m('tr#colValues',[
+                                            row.filter((item,j) => j !== 0 ).map((item,j) => m('td',{style : {'border': '1px solid #ddd','text-align': 'center'}},item)),
+                                            
+                                        ],
+                                            
                                         ))
                                     ])                                                                        
                                 ]),
                                 
                                 m("br"),
-                                m('button[type="submit"]' ,'Create New Variable'),
+                                m('button[type="button"]' ,{onclick: createNewCalculate},'Create New Variable'),
+                                m('button[type="submit"]',{id:'submitButton'},'Add Values'),
                             ])
                         ])
                     ])
@@ -258,9 +261,7 @@ function onRecodeStorageEvent(recode, e){
     recode.configName = localStorage.getItem('configName');
     m.redraw();
 }
-function initialconfig(){
-    console.log(dataDetails)
-}
+
 function clickVar(elem) {
     
     if(document.getElementById('recodeLink').className === 'active'){
@@ -288,6 +289,19 @@ function clickVar(elem) {
      }
      
 }
+function addValue(elem){
+    console.log('Values Added')
+
+    var newVarValue = [];
+    for(var i =0;i<tableData.length;i++){
+        if(elem.target[2+i].checked){
+            newVarValue.push(elem.target[2+i].value)
+        }
+    }
+    console.log(newVarValue);
+}
+
+function formulaCalculate(){}
 
 function showTooltip(){
     var tooltip = document.getElementById('tooltip');
@@ -307,9 +321,30 @@ function hideTooltip(){
     tooltip.style.display = 'none';
 }
 
-function createNewCalculate(elem){
-    console.log(elem.target[0].value);
-    console.log(elem.target[1].value);
+function createNewCalculate(){
+    if(document.getElementById('newVar').value===""){
+        alert("Enter Variable Name!");
+    }
+    else{
+        var iter = 0;
+    //createNewForm
+    $('#createNewForm').find('tr').each(function(){
+        var trow = $(this);
+        // console.log(trow);
+        if(iter == 0){
+            trow.append('<th class = "col-xs-4" style ="border: 1px solid #ddd;">'+document.getElementById('newVar').value+'</th>');
+            iter++;
+        }else{
+            trow.append('<td style ="border: 1px solid #ddd;text-align: center;"><input type="checkbox" name="newVarVal" id ="newVarVal'+(iter-1)+' value = '+(iter-1)+'"/></td>');
+            iter++
+        }
+        
+    });
+    var elem = document.getElementById('submitButton');
+    elem.style.visibility="visible";
+
+    }
+    
 }
 function calculate2(elem){
     var json = {
@@ -337,6 +372,9 @@ function calculate(elem){
 function createClick(){
     var elem = document.getElementById('formulaDiv');
     elem.style.display="none";
+
+    var elem = document.getElementById('submitButton');
+    elem.style.visibility="hidden";
 
     var elem = document.getElementById('recodeDiv');
     elem.style.display = 'none';
@@ -449,13 +487,12 @@ function reorderCreate(){
 
 $(window).resize(function(){
     $('#rightpanel').css({
-    'width':  (window.innerWidth - 300)+'px',
+        'width':  (window.innerWidth - 300)+'px',
+    });
+    $('#centralPanel').css({
+        'width':  (window.innerWidth-25)+'px',
+    });
+    $('#tableDiv').css({
+        'height': (window.innerHeight-150)+'px',
+    });
 });
-$('#centralPanel').css({
-    'width':  (window.innerWidth-25)+'px',
-});
-$('#tableDiv').css({
-    'height': (window.innerHeight-150)+'px',
-});
-});
-
