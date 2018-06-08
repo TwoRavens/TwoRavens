@@ -6,7 +6,7 @@ import ListTags from "../../../common/views/ListTags";
 
 export default class CanvasDatasets {
     oninit() {
-        this.dataset = app.dataset['key'];
+        this.dataset = app.selectedDataset;
     }
 
     view(vnode) {
@@ -52,7 +52,7 @@ export default class CanvasDatasets {
                         style: {margin: '0 0.25em', float: 'right'},
                         onclick: () => {
                             app.setDataset(dataset['key']);
-                            app.setOpMode('subset')
+                            app.setSelectedMode('subset')
                         },
                         disabled: app.dataset['key'] === dataset['key']
                     }, 'Load' + (app.dataset['key'] === dataset['key'] ? 'ed' : ''))

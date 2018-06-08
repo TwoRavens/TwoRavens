@@ -74,10 +74,10 @@ export let actorNodeNames = [];				//array list to maintain unique node names
 //begin force definitions
 let actorSVG;
 //~ var actorSVG;			//move this to d3actor?
-//~ if (app.opMode == "subset") {
+//~ if (app.selectedMode == "subset") {
 //~ actorSVG = d3.select("#actorLinkSVG");
 //~ }
-//~ else if (app.opMode == "aggregate") {
+//~ else if (app.selectedMode == "aggregate") {
 //~ actorSVG = d3.select("#actorAggregSVG");
 //~ }
 //~ else {
@@ -253,7 +253,7 @@ export function setupActor(){
         //update DOM
         updateGroupName(newGroupName);
 
-        if (app.opMode === "aggregate")
+        if (app.selectedMode === "aggregate")
             updateAggregTable();
 
         updateAll();		//update force
@@ -284,7 +284,7 @@ export function setupActor(){
         if (searchText === cachedSearch) return;
         cachedSearch = searchText;
 
-        if (app.dataset['subsets'][app.canvasKeySelected]['formats'] === 'icews') {
+        if (app.dataset['subsets'][app.selectedCanvas]['formats'] === 'icews') {
             clearTimeout(searchTimeout);
             searchTimeout = setTimeout(() => {
                 actorSearch();
@@ -403,7 +403,7 @@ export function setupActor(){
             });
         }
         updateAll();
-        if (app.opMode === "aggregate")
+        if (app.selectedMode === "aggregate")
             updateAggregTable();
         actorTick();
         actorForce.alpha(1).restart();
@@ -519,7 +519,7 @@ export function setupActor(){
 
             updateAll();
 
-            if (app.opMode === "aggregate")
+            if (app.selectedMode === "aggregate")
                 updateAggregTable();
         }
     });
@@ -612,7 +612,7 @@ function dragend() {
 
         updateAll();
 
-        if (app.opMode === "aggregate")
+        if (app.selectedMode === "aggregate")
             updateAggregTable();
     }
     dragStarted = false;		//now reset all drag variables
@@ -671,7 +671,7 @@ function updateSVG() {
                 }
             }
             updateAll();
-            if (app.opMode === "aggregate")
+            if (app.selectedMode === "aggregate")
                 updateAggregTable();
         })
         .merge(linkGroup);
@@ -829,7 +829,7 @@ function updateSVG() {
 
         resetMouseVars();
 
-        if (app.opMode === "aggregate")
+        if (app.selectedMode === "aggregate")
             updateAggregTable();
     }	//end of createLink()
 

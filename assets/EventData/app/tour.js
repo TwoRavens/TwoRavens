@@ -1,4 +1,4 @@
-import {showCanvas} from "./app";
+import {setSelectedCanvas} from "./app";
 import hopscotch from 'hopscotch';
 import * as common from '../../common/common';
 import m from 'mithril';
@@ -79,7 +79,7 @@ let generalTour = {
 };
 
 export function tourStartActor() {
-    showCanvas('Actor');
+    setSelectedCanvas('Actor');
     hopscotch.endTour(false);
     hopscotch.startTour(actorTour);
 }
@@ -158,7 +158,7 @@ let actorTour = {
 };
 
 export function tourStartDate() {
-    showCanvas('Date');
+    setSelectedCanvas('Date');
     hopscotch.endTour(false);
     hopscotch.startTour(dateTour);
 }
@@ -198,7 +198,7 @@ let dateTour = {
 };
 
 export function tourStartAction() {
-    showCanvas('Action');
+    setSelectedCanvas('Action');
     hopscotch.endTour(false);
     hopscotch.startTour(actionTour);
 }
@@ -240,7 +240,7 @@ let actionTour = {
 };
 
 export function tourStartLocation() {
-    showCanvas('Location');
+    setSelectedCanvas('Location');
     hopscotch.endTour(false);
     hopscotch.startTour(locationTour);
 }
@@ -290,7 +290,7 @@ let locationTour = {
 
 
 export function tourStartCoordinates() {
-    showCanvas('Coordinates');
+    setSelectedCanvas('Coordinates');
     hopscotch.endTour(false);
     hopscotch.startTour(coordinatesTour);
 }
@@ -334,7 +334,7 @@ let coordinatesTour = {
 
 
 export function tourStartCustom() {
-    showCanvas('Custom');
+    setSelectedCanvas('Custom');
     hopscotch.endTour(false);
     hopscotch.startTour(customTour);
 }

@@ -18,12 +18,9 @@ import ButtonRadio from '../../common/views/ButtonRadio';
 import CanvasDatasets from "./views/CanvasDatasets";
 import CanvasAction from "./views/CanvasAction";
 import CanvasActor from "./views/CanvasActor";
-import CanvasCoordinates from "./views/CanvasCoordinates";
-import CanvasCustom from "./views/CanvasCustom";
 import CanvasLoading from "./views/CanvasLoading";
 import CanvasDate from "./views/CanvasDate";
 import CanvasLocation from "./views/CanvasLocation";
-import CanvasPentaClass from "./views/CanvasPentaClass";
 import CanvasRootCode from "./views/CanvasRootCode";
 import CanvasAggregTS from "./views/CanvasAggregTS";
 
@@ -53,11 +50,11 @@ export default class Body_EventData {
 
             m('div', {style: {'flex-grow': 1}}),
             app.dataset['key'] && m("button#btnPeek.btn.btn-default", {
-                    title: 'Display a data preview',
-                    style: {margin: '.25em 1em'},
-                    onclick: () => window.open('#!/data', 'data')
-                },
-                'Data'
+                title: 'Display a data preview',
+                style: {margin: '.25em 1em'},
+                onclick: () => window.open('#!/data', 'data')
+            },
+            'Data'
             ),
 
             // Button Reset
@@ -78,10 +75,10 @@ export default class Body_EventData {
                 id: 'modeButtonBar',
                 attrsAll: {style: {width: 'auto', margin: '.25em 1em'}},
                 onclick: (mode) => {
-                    app.setOpMode(mode);
-                    // the route set doesn't work inside setOpMode... no clue why
+                    app.setSelectedMode(mode);
+                    // the route set doesn't work inside setSelectedMode... no clue why
                 },
-                activeSection: app.opMode,
+                activeSection: app.selectedMode,
                 sections: [
                     {value: 'Datasets'}
                 ].concat(app.dataset['key'] ? [
@@ -97,12 +94,12 @@ export default class Body_EventData {
         let tourBar;
 
         let tourButton = (name, tour) => m("button.btn.btn-default.btn-sm[id='tourButton${name}'][type='button']", {
-                style: {
-                    "margin-left": "5px",
-                    "margin-top": "4px"
-                },
-                onclick: tour
-            }, name);
+            style: {
+                "margin-left": "5px",
+                "margin-top": "4px"
+            },
+            onclick: tour
+        }, name);
 
         if (mode === 'subset') {
             let tours = {
@@ -157,7 +154,7 @@ export default class Body_EventData {
                 }, {
                     'subset': app.totalSubsetRecords,
                     'aggregate': aggreg.totalAggregRecords
-                }[app.opMode] + ' Records')
+                }[app.selectedMode] + ' Records')
             ]),
         ]);
     }
@@ -203,8 +200,8 @@ export default class Body_EventData {
                             contents: m(PanelList, {
                                 id: 'subsetsList',
                                 items: Object.keys(app.dataset['subsets']),
-                                colors: {[common.selVarColor]: [app.canvasKeySelected]},
-                                callback: app.showCanvas,
+                                colors: {[common.selVarColor]: [app.selectedCanvas]},
+                                callback: app.setSelectedCanvas,
                                 attrsAll: {style: {height: 'calc(100% - 39px)', overflow: 'auto'}}
                             })
                         }
@@ -239,8 +236,8 @@ export default class Body_EventData {
                             contents: m(PanelList, {
                                 items: ['Actor', 'Date'],
                                 id: 'UMList',
-                                colors: {[common.selVarColor]: [app.canvasKeySelected]},
-                                callback: app.showCanvas
+                                colors: {[common.selVarColor]: [app.selectedCanvas]},
+                                callback: app.setSelectedCanvas
                             })
                         },
                         {
@@ -248,9 +245,9 @@ export default class Body_EventData {
                             contents: m(PanelList, {
                                 items: ['Penta Class', 'Root Code'],
                                 id: 'EMList',
-                                colors: {[common.selVarColor]: [app.canvasKeySelected]},
+                                colors: {[common.selVarColor]: [app.selectedCanvas]},
                                 classes: {['item-bordered']: [aggreg.eventMeasure]},
-                                callback: app.showCanvas
+                                callback: app.setSelectedCanvas
                             })
                         },
                         {
@@ -260,11 +257,11 @@ export default class Body_EventData {
                                 id: 'ResultsList',
                                 colors: {
                                     [common.grayColor]: disabledResults,
-                                    [common.selVarColor]: [app.canvasKeySelected]
+                                    [common.selVarColor]: [app.selectedCanvas]
                                 },
                                 classes: {['item-bordered']: [aggreg.eventMeasure]},
                                 // only change the canvas if the canvas is not disabled
-                                callback: (canvas) => disabledResults.indexOf(canvas) === -1 && app.showCanvas(canvas)
+                                callback: (canvas) => disabledResults.indexOf(canvas) === -1 && app.setSelectedCanvas(canvas)
                             })
                         }
                     ]
@@ -297,7 +294,13 @@ export default class Body_EventData {
                         {value: 'Subsets', contents: m('div#subsetTree')}
                     ]
                 }),
-                m("#rightpanelButtonBar", {style: {width: "calc(100% - 25px)", "position": "absolute", "bottom": '5px'}},
+                m("#rightpanelButtonBar", {
+                        style: {
+                            width: "calc(100% - 25px)",
+                            "position": "absolute",
+                            "bottom": '5px'
+                        }
+                    },
                     [
                         m("button.btn.btn-default[id='buttonAddGroup'][type='button']", {
                                 style: {
@@ -323,56 +326,59 @@ export default class Body_EventData {
 
     view(vnode) {
         let {mode} = vnode.attrs;
-        console.log(app.canvasKeySelected);
 
-        // Typically with mithril you would just render the pages that are visible. This works when there is no local state.
-        // Eventdata was written before we used mithril, so the canvases were written with local state.
-        // To preserve state, all pages are always rendered, but use css to hide inactive canvases.
-        let display = (canvas) => {
-            if (!app.initialLoad) {
-                if (canvas === 'Loading' && app.canvasKeySelected !== 'Datasets') return 'block';
-                return 'none';
-            }
-            return (canvas === app.canvasKeySelected) ? 'block' : 'none';
-        };
-        console.log(app.initialLoad);
-        console.log(display('Actor'));
-        console.log(display('Loading'));
-
+        // construct what should appear in the center of the page
+        let canvasContent;
+        if (app.selectedCanvas === 'Subset') {
+            let subsetType = app.getSubset(app.selectedDataset, app.selectedSubsetName)['type'];
+            canvasContent = m({
+                'action': CanvasAction,
+                'actor': CanvasActor,
+                'date': CanvasDate,
+                'Location': CanvasLocation
+            }[subsetType], {
+                mode: app.selectedMode,
+                subsetName: app.selectedSubsetName,
+                data: app.subsetMetadata[app.selectedSubsetName],
+                preferences: app.subsetPreferences[app.selectedSubsetName],
+                redraw: app.subsetRedraw[app.selectedSubsetName],
+                setRedraw: app.setSubsetRedraw
+            })
+        }
+        else {
+            // TODO add CanvasAnalysis
+            canvasContent = m({
+                'Dataset': CanvasDatasets,
+                'Loading': CanvasLoading,
+                'PentaClass': CanvasDatasets,
+                'RootCode': CanvasRootCode,
+                'Time Series': CanvasAggregTS
+            }[app.selectedCanvas], {
+                mode: app.selectedMode,
+                preferences: app.canvasPreferences[app.selectedCanvas],
+                redraw: app.canvasRedraw[app.selectedCanvas]
+            });
+        }
 
         return m('main#EventData',
-            [
-                this.header(mode),
-                this.leftpanel(mode),
-                this.rightpanel(mode),
-                m("button#btnStage.btn.btn-default[type='button']", {
-                    style: {
-                        display: app.opMode === 'subset' ? 'block' : 'none',
-                        right: `calc(${common.panelOcclusion['right'] || '275px'} + 5px)`,
-                        bottom: `calc(${common.heightFooter} + ${common.panelMargin} + 6px)`,
-                        position: 'fixed',
-                        'z-index': 100
-                    },
-                    onclick: app.addRule
-                }, "Stage"),
-                m(Canvas, {attrsAll: {style: mode === 'aggregate' ? {height: `calc(100% - ${common.heightHeader} - ${aggreg.tableHeight} - ${common.heightFooter})`} : {}}},
-                    [
-                        m(CanvasDatasets, {mode: mode, display: ('Datasets' === app.canvasKeySelected) ? 'block' : 'none'}),
-                        m(CanvasActor, {mode: mode, display: display('Actor')}),
-                        m(CanvasDate, {mode: mode, display: display('Date')}),
-                        m(CanvasAction, {mode: mode, display: display('Action')}),
-                        m(CanvasLoading, {display: display('Loading')}),
-                        m(CanvasLocation, {mode: mode, display: display('Location')}),
-                        m(CanvasCoordinates, {mode: mode, display: display('Coordinates')}),
-                        m(CanvasCustom, {mode: mode, display: display('Custom')}),
-                        m(CanvasPentaClass, {mode: mode, display: display('Penta Class')}),
-                        m(CanvasRootCode, {mode: mode, display: display('Root Code')}),
-                        m(CanvasAggregTS, {mode: mode, display: display('Time Series')})
-                    ]
-                ),
-                m(TableAggregation, {mode: mode}),
-                this.footer(mode)
-            ]
+            this.header(mode),
+            this.leftpanel(mode),
+            this.rightpanel(mode),
+            m("button#btnStage.btn.btn-default[type='button']", {
+                style: {
+                    display: app.selectedMode === 'subset' ? 'block' : 'none',
+                    right: `calc(${common.panelOcclusion['right'] || '275px'} + 5px)`,
+                    bottom: `calc(${common.heightFooter} + ${common.panelMargin} + 6px)`,
+                    position: 'fixed',
+                    'z-index': 100
+                },
+                onclick: app.addRule
+            }, "Stage"),
+            m(Canvas, {
+                attrsAll: {style: mode === 'aggregate' ? {height: `calc(100% - ${common.heightHeader} - ${aggreg.tableHeight} - ${common.heightFooter})`} : {}}
+            }, canvasContent),
+            m(TableAggregation, {mode: mode}),
+            this.footer(mode)
         );
     }
 }

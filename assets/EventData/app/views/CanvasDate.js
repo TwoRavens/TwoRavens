@@ -2,14 +2,12 @@ import m from 'mithril';
 import * as d3 from "d3";
 import $ from 'jquery'
 import "jquery-ui/ui/widgets/datepicker"
-
 // Used for rendering date calendar
 import '../../../../node_modules/jquery-ui/themes/base/datepicker.css'
 import '../../../../node_modules/jquery-ui-dist/jquery-ui.theme.min.css'
 
 
 import * as aggreg from '../aggreg/aggreg';
-import * as app from '../app';
 
 import {panelMargin} from "../../../common/common";
 import ButtonRadio from '../../../common/views/ButtonRadio';
@@ -26,7 +24,7 @@ export function dateSort(a, b) {
 
 export function interpolate(data, date) {
     let allDatesInt = [];
-    for (let entry of data){
+    for (let entry of data) {
         allDatesInt.push(entry['Date'])
     }
 
@@ -59,12 +57,12 @@ export function interpolate(data, date) {
 
 export default class CanvasDate {
     oncreate(vnode) {
-        let {subset} = vnode.attrs;
+        let {subsetName, data, preferences} = vnode.attrs;
 
-        let minDate = app.subsetData[subset][0]['Date'];
-        let maxDate = app.subsetData[subset][app.subsetData[subset].length - 1]['Date'];
+        let minDate = data[0]['Date'];
+        let maxDate = data[data.length - 1]['Date'];
 
-        $(`#fromDate${subset}`).datepicker({
+        $(`#fromDate${subsetName}`).datepicker({
             dateFormat: 'yy-mm-dd',
             changeYear: true,
             changeMonth: true,
@@ -74,63 +72,69 @@ export default class CanvasDate {
             maxDate: maxDate,
             orientation: top,
             onSelect: function () {
-                app.subsetPreferences[subset]['userLower'] = new Date($(this).datepicker('getDate').getTime());
-                let toDate = $(`#toDate${subset}`);
-                toDate.datepicker('option', 'minDate', app.subsetPreferences[subset]['userLower']);
+                preferences['userLower'] = new Date($(this).datepicker('getDate').getTime());
+                let toDate = $(`#toDate${subsetName}`);
+                toDate.datepicker('option', 'minDate', preferences['userLower']);
                 toDate.datepicker('option', 'defaultDate', maxDate);
                 toDate.datepicker('option', 'maxDate', maxDate);
                 // fromdatestring = dateminUser.getFullYear() + "" + ('0' + (dateminUser.getMonth() + 1)).slice(-2) + "" + ('0' + dateminUser.getDate()).slice(-2);
             },
             onClose: function () {
                 setTimeout(function () {
-                    $(`#toDate${subset}`).focus();
+                    $(`#toDate${subsetName}`).focus();
                 }, 100);
 
                 // Update plot, but don't reset slider
-                $(`#toDate${subset}`).datepicker("show");
+                $(`#toDate${subsetName}`).datepicker("show");
             }
         });
 
 
-        $(`#toDate${subset}`).datepicker({
+        $(`#toDate${subsetName}`).datepicker({
             changeYear: true,
             changeMonth: true,
             yearRange: min + ':' + max,
             dateFormat: 'yy-mm-dd',
             defaultDate: maxDate,
-            minDate: app.subsetPreferences[subset]['userLower'],
+            minDate: preferences['userLower'],
             maxDate: maxDate,
             orientation: top,
             onSelect: function () {
-                app.subsetPreferences[subset]['userUpper'] = new Date($(this).datepicker('getDate').getTime());
+                preferences['userUpper'] = new Date($(this).datepicker('getDate').getTime());
                 // todatestring = datemaxUser.getFullYear() + "" + ('0' + (datemaxUser.getMonth() + 1)).slice(-2) + "" + ('0' + datemaxUser.getDate()).slice(-2);
             }
         });
     }
 
     view(vnode) {
-        let {mode, display, subset} = vnode.attrs;
+        let {mode, subsetName, data, preferences, redraw, setRedraw} = vnode.attrs;
 
         let setHandleDates = (lower, upper) => {
-            app.subsetPreferences[subset]['handleLower'] = lower;
-            app.subsetPreferences[subset]['handleUpper'] = upper;
+            preferences['handleLower'] = lower;
+            preferences['handleUpper'] = upper;
         };
 
         // only draw the graph if there are multiple datapoints
-        let drawGraph = app.subsetData[subset].length > 1;
-        let data;
-        if (app.subsetRedraw[subset] && drawGraph) {
-            app.subsetRedraw[subset] = true;
-
-            let allDates = [...app.subsetMetadata[subset]].sort(dateSort);
+        let drawGraph = data.length > 1;
+        let dataProcessed;
+        if (redraw && drawGraph) {
+            setRedraw(subsetName, false);
+            let allDates = data.sort(dateSort);
 
             // Filter highlighted data by date picked
-            let selectedDates = app.subsetMetadata[subset].filter(function (row) {
-                return row.Date >= dateminUser && row.Date <= datemaxUser;
+            let selectedDates = data.filter(function (row) {
+                return row.Date >= preferences['userLower'] && row.Date <= preferences['userUpper'];
             });
 
-            let interpolatedMin = {"Date": dateminUser, "Freq": interpolate(allDates, dateminUser)};
-            let interpolatedMax = {"Date": datemaxUser, "Freq": interpolate(allDates, datemaxUser)};
+            let interpolatedMin = {
+                "Date": preferences['userLower'],
+                "Freq": interpolate(allDates, preferences['userLower'])
+            };
+            let interpolatedMax = {
+                "Date": preferences['userUpper'],
+                "Freq": interpolate(allDates, preferences['userUpper'])
+            };
+
             selectedDates.unshift(interpolatedMin);
             selectedDates.push(interpolatedMax);
 
@@ -138,7 +142,7 @@ export default class CanvasDate {
             allDates.push(interpolatedMax);
             allDates = allDates.sort(dateSort);
 
-            data = {
+            dataProcessed = {
                 "#ADADAD": allDates,
                 "steelblue": selectedDates
             }
@@ -156,17 +160,12 @@ export default class CanvasDate {
                                 "margin-top": "10px",
                                 "text-align": "center"
                             },
-                            onclick: function (e) {
-                                app.subsetPreferences[subset]['userLower'] = app.subsetPreferences['handleLower'];
-                                app.subsetPreferences[subset]['userUpper'] = app.subsetPreferences['handleUpper'];
+                            onclick: function () {
+                                preferences['userLower'] = preferences['handleLower'];
+                                preferences['userUpper'] = preferences['handleUpper'];
 
-                                // Update gui
-                                let format = d3.timeFormat("%Y-%m-%d");
-                                $('#fromdate').val(format(dateminUser));
-                                $('#todate').val(format(datemaxUser));
-
-
-                                app.subsetRedraw[subset] = true;
+                                // hard redraw plots
+                                setRedraw(subsetName, true);
                             }
                         }, "Bring Date from Slider"),
 
@@ -180,10 +179,9 @@ export default class CanvasDate {
                         }, "From:"),
                         m("input.form-control[id='fromdate'][type='text']", {
                             onblur: function () {
-                                // Update plot, but don't reset slider
-                                updateDate(false);
+                                setRedraw(subsetName, true);
                             },
-                            value: d3.timeFormat("%Y-%m-%d")(dateminUser)
+                            value: d3.timeFormat("%Y-%m-%d")(preferences['userUpper'])
                         }),
 
                         // To date
@@ -195,11 +193,8 @@ export default class CanvasDate {
                             }
                         }, "To:"),
                         m("input.form-control[id='todate'][type='text']", {
-                            onblur: function () {
-                                // Update plot, but don't reset slider
-                                updateDate(false);
-                            },
-                            value: d3.timeFormat("%Y-%m-%d")(datemaxUser)
+                            onblur: () => setRedraw(subsetName, true),
+                            value: d3.timeFormat("%Y-%m-%d")(preferences['userUpper'])
                         })
                     ]
                 )
@@ -228,7 +223,7 @@ export default class CanvasDate {
                     m("svg#dateSVG[height='550'][width='500']"),
                     drawGraph && m(PlotDate, {
                         callbackHandles: setHandleDates,
-                        data,
+                        dataProcessed,
                         attrsAll: {
                             id: 'dateSVG',
                             height: 550,

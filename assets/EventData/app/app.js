@@ -38,12 +38,23 @@ export let subsetURL = rappURL + appname;
 
 // metadata for each available dataset
 export let datasetMetadata = [];
+
 export let getDataset = (key) => datasetMetadata.filter(meta => meta['key'] === key)[0];
+export let getSubset = (dataset, subset) => getDataset(dataset)['subsets'][subset];
 export let getVariables = (dataset) => Object.values((dataset || {})['columns'] || {});
 
+// metadata computed on the dataset for each subset
+export let subsetMetadata = {};
+
+// contains state for redrawing subsets (for example, it contains selected countries and regions under the name of a location subset)
 export let subsetPreferences = {};
 export let subsetRedraw = {};
+export let setSubsetRedraw = (subset, value) => subsetRedraw[subset] = value || false;
 
+// contains state for redrawing canvases
+export let canvasPreferences = {};
+export let canvasRedraw = {};
+export let setCanvasRedraw = (canvas, value) => canvasRedraw[canvas] = value || false;
 
 // Select which tab is shown in the left panel
 export let setLeftTab = (tab) => leftTab = tab;
@@ -62,11 +73,11 @@ setPanelCallback('left', () => {
 export function handleResize() {
     document.getElementById('canvas').style['padding-right'] = panelOcclusion['right'];
     document.getElementById('canvas').style['padding-left'] = panelOcclusion['left'];
-    if (canvasKeySelected === 'Actor') {
+    if (selectedCanvas === 'Actor') {
         resizeActorSVG();
     }
 
-    if (canvasKeySelected === "Action") {
+    if (selectedCanvas === "Action") {
         drawGraphs();
         updateData();
     }
@@ -74,28 +85,38 @@ export function handleResize() {
 
 window.addEventListener('resize', handleResize);
 
-export let opMode = "datasets";
+export let selectedDataset;
+export let setDataset = (key) => {
+    selectedDataset = key;
 
-export function setOpMode(mode) {
+    // trigger reloading of necessary menu elements
+    initialLoad = false;
+    resetPeek();
+    submitQuery(true);
+};
+
+let modeTypes = ['subset', 'aggregate'];
+export let selectedMode = "datasets";
+export function setSelectedMode(mode) {
     mode = mode.toLowerCase();
 
-    if (mode === opMode) return;
+    if (mode === selectedMode) return;
 
     // Some canvases only exist in certain modes. Fall back to default if necessary.
-    if (mode === 'subset' && subsetKeys(dataset).indexOf(canvasKeySelected) === -1) showCanvas('Actor');
-    if (mode === 'aggregate' && aggregateKeys.indexOf(canvasKeySelected) === -1) showCanvas('Actor');
-    if (mode === 'datasets' && 'Datasets' !== canvasKeySelected) showCanvas('Datasets');
+    if (mode === 'subset' && subsetKeys(dataset).indexOf(selectedCanvas) === -1) setSelectedCanvas('Actor');
+    if (mode === 'aggregate' && aggregateKeys.indexOf(selectedCanvas) === -1) setSelectedCanvas('Actor');
+    if (mode === 'datasets' && 'Datasets' !== selectedCanvas) setSelectedCanvas('Datasets');
 
-    opMode = mode;
+    selectedMode = mode;
     if (mode === 'subset') {
-        if (canvasKeySelected === 'Actor' && initialLoad) {
+        if (selectedCanvas === 'Actor' && initialLoad) {
             document.getElementById('canvas').style.height = 'calc(100% - 102px)';
             resizeActorSVG(false);
         }
     }
 
     if (mode === 'aggregate') {
-        if (canvasKeySelected === 'Actor' && initialLoad) {
+        if (selectedCanvas === 'Actor' && initialLoad) {
             document.getElementById('canvas').style.height = 'calc(80% - 102px)';
             resizeActorSVG(false);
         }
@@ -104,6 +125,116 @@ export function setOpMode(mode) {
     // This triggers some very strange mithril issues... but if you call it from outside, then everything works.
     m.route.set('/' + mode.toLowerCase());
 }
+
+// dictates what menu is shown, but the value of selectedSubsetName is user-defined
+let subsetTypes = ['actor', 'action', 'coordinates', 'date', 'location', 'custom'];
+export let selectedSubsetName;
+export let setSelectedSubsetName = (subset) => {
+    let candidateSubset = getSubset(selectedDataset, subset);
+
+    if (candidateSubset && subsetTypes.indexOf(candidateSubset['type']) === -1) {
+        alert('Invalid subset: ' + subset);
+        return;
+    }
+    selectedSubsetName = subset;
+};
+
+// TODO decouple setSelectedCanvas and setSelectedSubset
+let canvasTypes = ['Datasets', 'Subset', 'Time Series', 'Analysis'];
+export let selectedCanvas = 'Datasets';
+export let setSelectedCanvas = (canvasKey) => {
+    selectedCanvas = canvasKey;
+
+    // TODO strip this out when state is abstracted
+    // Typically 1. update state 2. mithril redraw. Therefore graphs get drawn on a display:none styled div
+    // Graphs depend on the the div width, so this causes them to render improperly.
+    // Setting the div visible before the state change fixes collapsing graphs.
+    for (let child of document.getElementById('canvas').children) child.style.display = 'none';
+
+    if (initialLoad) {
+        if (selectedCanvas === "Action") {
+            document.getElementById('canvasAction').style.display = 'inline';
+            drawGraphs();
+            updateData();
+        }
+
+        if (selectedCanvas === "Actor") {
+            document.getElementById('canvasActor').style.display = 'inline';
+            resizeActorSVG();
+        }
+
+        if (selectedCanvas === "Penta Class") {
+
+            setEventMeasure("Penta Class");
+            // console.log("in penta canvas");
+            setAggregMode("penta");
+            $(".aggregDataRoot").hide();
+            //~ for (let x = 0; x <= 4; x ++) {
+            //~ console.log("showing penta table");
+            //~ if ($("#aggregPenta" + x).prop("checked")) {
+            //~ $(".aggregDataPenta" + x).show();
+            //~ }
+            //~ }
+            // console.log(aggregPentaChkOrd);
+            $("#aggregPentaAll").prop("indeterminate", false);
+            if (aggregPentaChkOrd[0] == 0)
+                $("#aggregPentaAll").prop("checked", false);
+            else if (aggregPentaChkOrd[0] == 2)
+                $("#aggregPentaAll").prop("indeterminate", true);
+            for (let x = 0; x < aggregPentaChkOrd.length - 1; x ++) {
+                if (aggregPentaChkOrd[x + 1] == 0) {
+                    // console.log("hiding penta " + x);
+                    $("#aggregPenta" + x).prop("checked", false);
+                    $(".aggregDataPenta" + x).hide();
+                }
+                else {
+                    // console.log("showing penta " + x);
+                    $("#aggregPenta" + x).prop("checked", true);
+                    $(".aggregDataPenta" + x).show();
+                }
+            }
+            updateAggregTable();
+        }
+        else if (selectedCanvas === "Root Code") {
+            setEventMeasure("Root Code");
+
+            // console.log("in root canvas");
+            setAggregMode("root");
+            $(".aggregDataPenta").hide();
+            //~ for (let x = 1; x <= 20; x ++) {
+            //~ if ($("#aggregRoot" + x).prop("checked")) {
+            //~ $(".aggregDataRoot" + x).show();
+            //~ }
+            //~ }
+            // console.log(aggregRootChkOrd);
+            $("#aggregRootAll").prop("indeterminate", false);
+            if (aggregRootChkOrd[0] == 0)
+                $("#aggregRootAll").prop("checked", false);
+            else if (aggregRootChkOrd[0] == 2)
+                $("#aggregRootAll").prop("indeterminate", true);
+            for (let x = 1; x < aggregRootChkOrd.length; x ++) {
+                if (aggregRootChkOrd[x] == 0) {
+                    // console.log("hiding root " + x);
+                    $("#aggregRoot" + x).prop("checked", false);
+                    $(".aggregDataRoot" + x).hide();
+                }
+                else {
+                    // console.log("showing root " + x);
+                    $("#aggregRoot" + x).prop("checked", true);
+                    $(".aggregDataRoot" + x).show();
+                }
+            }
+            updateAggregTable();
+        }
+
+        if (selectedCanvas === "Time Series") {
+            document.getElementById('canvasAggregTS').style.display = 'block';
+            //~ setupAggregTS();
+        }
+    }
+};
+
+export let totalSubsetRecords = 0;
 
 // Load the metadata for each available dataset
 m.request({
@@ -115,18 +246,6 @@ m.request({
     resetPeek();
 }).catch(laddaStop);
 
-export let totalSubsetRecords = 0;
-
-export let dataset = {};
-export let setDataset = (key) => {
-    dataset = getDataset(key);
-
-    // trigger reloading of necessary menu elements
-    initialLoad = false;
-    resetPeek();
-    submitQuery(true);
-};
-
 if (localStorage.getItem("dataset") !== null) {
     dataset = localStorage.getItem('dataset');
 }
@@ -137,8 +256,6 @@ export let datasource = 'api';
 export let subsetKeys = (dataset) => Object.keys(dataset['subsets']);
 // TODO conditionally draw based on available aggregates
 export let aggregateKeys = ["Actor", "Date", "Penta Class", "Root Code", "Time Series", "Analysis"];
-export let canvasKeySelected = "Datasets";
-export let subsetKeySelected;
 
 // These get instantiated in the oncreate() method for the mithril Body_EventData class
 export let laddaUpdate;
@@ -146,8 +263,6 @@ export let laddaReset;
 export let laddaDownload;
 
 export let variablesSelected = new Set();
-
-export let subsetMetadata = {};
 
 // This is set once data is loaded and the graphs can be drawn. Subset menus will not be shown until this is set
 export let initialLoad = false;
@@ -220,97 +335,6 @@ export function toggleVariableSelected(variable) {
     reloadRightPanelVariables();
 }
 
-export function showCanvas(canvasKey) {
-    canvasKeySelected = canvasKey;
-
-    // Typically 1. update state 2. mithril redraw. Therefore graphs get drawn on a display:none styled div
-    // Graphs depend on the the div width, so this causes them to render improperly.
-    // Setting the div visible before the state change fixes collapsing graphs.
-    for (let child of document.getElementById('canvas').children) child.style.display = 'none';
-
-    if (initialLoad) {
-        if (canvasKeySelected === "Action") {
-            document.getElementById('canvasAction').style.display = 'inline';
-            drawGraphs();
-            updateData();
-        }
-
-        if (canvasKeySelected === "Actor") {
-            document.getElementById('canvasActor').style.display = 'inline';
-            resizeActorSVG();
-        }
-
-        if (canvasKeySelected === "Penta Class") {
-
-            setEventMeasure("Penta Class");
-			// console.log("in penta canvas");
-			setAggregMode("penta");
-			$(".aggregDataRoot").hide();
-			//~ for (let x = 0; x <= 4; x ++) {
-				//~ console.log("showing penta table");
-				//~ if ($("#aggregPenta" + x).prop("checked")) {
-					//~ $(".aggregDataPenta" + x).show();
-				//~ }
-			//~ }
-			// console.log(aggregPentaChkOrd);
-			$("#aggregPentaAll").prop("indeterminate", false);
-			if (aggregPentaChkOrd[0] == 0)
-				$("#aggregPentaAll").prop("checked", false);
-			else if (aggregPentaChkOrd[0] == 2)
-				$("#aggregPentaAll").prop("indeterminate", true);
-			for (let x = 0; x < aggregPentaChkOrd.length - 1; x ++) {
-				if (aggregPentaChkOrd[x + 1] == 0) {
-					// console.log("hiding penta " + x);
-					$("#aggregPenta" + x).prop("checked", false);
-					$(".aggregDataPenta" + x).hide();
-				}
-				else {
-					// console.log("showing penta " + x);
-					$("#aggregPenta" + x).prop("checked", true);
-					$(".aggregDataPenta" + x).show();
-				}
-			}
-			updateAggregTable();
-		}
-		else if (canvasKeySelected === "Root Code") {
-            setEventMeasure("Root Code");
-
-			// console.log("in root canvas");
-			setAggregMode("root");
-			$(".aggregDataPenta").hide();
-			//~ for (let x = 1; x <= 20; x ++) {
-				//~ if ($("#aggregRoot" + x).prop("checked")) {
-					//~ $(".aggregDataRoot" + x).show();
-				//~ }
-			//~ }
-			// console.log(aggregRootChkOrd);
-			$("#aggregRootAll").prop("indeterminate", false);
-			if (aggregRootChkOrd[0] == 0)
-				$("#aggregRootAll").prop("checked", false);
-			else if (aggregRootChkOrd[0] == 2)
-				$("#aggregRootAll").prop("indeterminate", true);
-			for (let x = 1; x < aggregRootChkOrd.length; x ++) {
-				if (aggregRootChkOrd[x] == 0) {
-					// console.log("hiding root " + x);
-					$("#aggregRoot" + x).prop("checked", false);
-					$(".aggregDataRoot" + x).hide();
-				}
-				else {
-					// console.log("showing root " + x);
-					$("#aggregRoot" + x).prop("checked", true);
-					$(".aggregDataRoot" + x).show();
-				}
-			}
-			updateAggregTable();
-		}
-
-		if (canvasKeySelected === "Time Series") {
-            document.getElementById('canvasAggregTS').style.display = 'block';
-			//~ setupAggregTS();
-		}
-    }
-}
-
 // useful for handling request errors
 function laddaStop() {
     laddaDownload.stop();
@@ -331,8 +355,7 @@ export function download() {
         document.body.removeChild(a);
     }
 
-	if (opMode == "subset") {
-		console.log("making subset download");
+	if (selectedMode === "subset") {
 		let variableQuery = buildVariables();
 		let subsetQuery = buildSubset(subsetData);
 
@@ -356,8 +379,7 @@ export function download() {
             method: 'POST'
         }).then(save).catch(laddaStop);
 	}
-	else if (opMode == "aggregate") {
-		console.log("making aggreg download");
+	else if (selectedMode === "aggregate") {
 		//merge my request code with makeCorsRequest and wrap table update in function
 		laddaDownload.start();
 		makeAggregQuery("download", save);
@@ -382,7 +404,7 @@ let peekData = [];
 let peekAllDataReceived = false;
 let peekIsGetting = false;
 
-if (opMode !== 'peek') {
+if (selectedMode !== 'peek') {
     localStorage.setItem('peekHeader', dataset['name']);
     localStorage.removeItem('peekTableData');
 }
@@ -534,7 +556,7 @@ export function pageSetup(jsondata) {
             }, {})
     };
 
-    // reformat date, action, and location data
+    // reformat date, action, and location metadata
     subsetMetadata = Object.keys(dataset['subsets']).reduce((out, key) => {
             out[key] = reformatters[dataset['subsets'][key]['type']](jsondata[key]);
             return(out);
@@ -549,7 +571,7 @@ export function pageSetup(jsondata) {
     updateLocation();
     resetActionCounts();
 
-    if (canvasKeySelected === 'Action') {
+    if (selectedCanvas === 'Action') {
         drawGraphs();
         updateData();
     }
@@ -557,11 +579,11 @@ export function pageSetup(jsondata) {
 
     // If first load of data, user may have selected a subset and is waiting. Render page now that data is available
     if (!initialLoad) {
-        showCanvas(canvasKeySelected);
-        if (canvasKeySelected === 'Actor') resizeActorSVG();
+        setSelectedCanvas(selectedCanvas);
+        if (selectedCanvas === 'Actor') resizeActorSVG();
     }
     initialLoad = true;
-    console.log(canvasKeySelected);
+    console.log(selectedCanvas);
 
     // find a subset of type
     let findType = (type) => Object.keys(datasetMetadata['subsets'])
@@ -700,7 +722,7 @@ export function setupQueryTree() {
             if (node.name === 'Custom Subset') {
                 editor.setValue(JSON.stringify(node.custom, null, '\t'));
                 editor.clearSelection();
-                showCanvas("Custom");
+                setSelectedCanvas("Custom");
                 m.redraw();
             }
 
@@ -719,7 +741,7 @@ export function setupQueryTree() {
             } else {
                 editor.setValue(JSON.stringify(tempQuery, null, '\t'));
                 editor.clearSelection();
-                showCanvas("Custom");
+                setSelectedCanvas("Custom");
                 m.redraw();
             }
         }
@@ -984,7 +1006,7 @@ window.addGroup = function (query = false) {
 
 export function addRule() {
     // Index zero is root node. Add subset pref to nodes
-    if (canvasKeySelected !== "") {
+    if (selectedCanvas !== "") {
         let preferences = getSubsetPreferences();
 
         // Don't add an empty preference
@@ -1015,7 +1037,7 @@ export function addRule() {
  * @returns {{}} : dictionary of preferences
  */
 function getSubsetPreferences() {
-    if (canvasKeySelected === 'Date') {
+    if (selectedCanvas === 'Date') {
 
         // If the dates have not been modified, force bring the date from the slider
         if (dateminUser - datemin === 0 && datemaxUser - datemax === 0) {
@@ -1053,7 +1075,7 @@ function getSubsetPreferences() {
         };
     }
 
-    if (canvasKeySelected === 'Location') {
+    if (selectedCanvas === 'Location') {
         // Make parent node
         let subset = {
             id: String(nodeId++),
@@ -1080,7 +1102,7 @@ function getSubsetPreferences() {
         return subset
     }
 
-    if (canvasKeySelected === 'Action') {
+    if (selectedCanvas === 'Action') {
         // Make parent node
         let subset = {
             id: String(nodeId++),
@@ -1110,7 +1132,7 @@ function getSubsetPreferences() {
         return subset
     }
 
-    if (canvasKeySelected === 'Actor') {
+    if (selectedCanvas === 'Actor') {
         // Make parent node
         let subset = {
             id: String(nodeId++),
@@ -1173,7 +1195,7 @@ function getSubsetPreferences() {
         return subset
     }
 
-    if (canvasKeySelected === 'Coordinates') {
+    if (selectedCanvas === 'Coordinates') {
         let valLeft = parseFloat(document.getElementById('lonLeft').value);
         let valRight = parseFloat(document.getElementById('lonRight').value);
 
@@ -1231,7 +1253,7 @@ function getSubsetPreferences() {
 
     }
 
-    if (canvasKeySelected === 'Custom') {
+    if (selectedCanvas === 'Custom') {
         return {
             id: String(nodeId++),
             name: 'Custom Subset',
@@ -1475,7 +1497,7 @@ function processRule(rule) {
     let rule_query = {};
 
     if (rule.name === 'Date Subset') {
-        let date_schema = dataset['subsets'][canvasKeySelected]['format'];
+        let date_schema = dataset['subsets'][selectedCanvas]['format'];
 
         // construct a query that works for separate year, month and day fields
         if (date_schema === 'fields') {
@@ -1564,7 +1586,7 @@ function processRule(rule) {
     if (rule.name === 'Action Subset') {
         let rule_query_inner = [];
 
-        if (dataset['subsets'][canvasKeySelected]['format'] === 'CAMEO root code') {
+        if (dataset['subsets'][selectedCanvas]['format'] === 'CAMEO root code') {
             for (let child of rule.children) {
                 rule_query_inner.push(pad(parseInt(child.name)));
             }
@@ -1577,7 +1599,7 @@ function processRule(rule) {
             rule_query['<root_code>'] = rule_query_inner;
         }
 
-        if (dataset['subsets'][canvasKeySelected]['action'] === "CAMEO") {
+        if (dataset['subsets'][selectedCanvas]['action'] === "CAMEO") {
             let prefixes = [];
             for (let child of rule.children) {
                 prefixes.push(pad(parseInt(child.name)));
@@ -1615,8 +1637,8 @@ function processRule(rule) {
 
     if (rule.name === 'Coords Subset') {
         // The only implemented coordinates unit type is signed degrees
-        if (dataset['subsets'][canvasKeySelected]['format'] !== 'signed degrees')
-            console.log("invalid format: " + dataset['subsets'][canvasKeySelected]['format']);
+        if (dataset['subsets'][selectedCanvas]['format'] !== 'signed degrees')
+            console.log("invalid format: " + dataset['subsets'][selectedCanvas]['format']);
 
         let rule_query_inner = [];
 

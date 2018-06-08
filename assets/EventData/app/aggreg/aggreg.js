@@ -660,7 +660,7 @@ function updateTable(json) {
 	}
 
 	if (aggregDateOn) {
-		app.showCanvas("Time Series");
+		app.setSelectedCanvas("Time Series");
 		m.redraw();
 		setupAggregTS(json);
 	}

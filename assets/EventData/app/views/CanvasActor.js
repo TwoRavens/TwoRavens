@@ -1,5 +1,5 @@
 import m from 'mithril';
-import {dataset, canvasKeySelected} from '../app';
+import {selectedDataset, selectedCanvas} from '../app';
 import {
     setupActor,
     waitForQuery,
@@ -101,9 +101,9 @@ function actorSelection(mode) {
                             ),
                             m(".separator"),
                             m("button.filterExpand#entityActorExpand[value='expand']",
-                                ((dataset['subsets'] || {})[canvasKeySelected] || {})['format'] === 'icews' && {style: {display: 'none'}}),
+                                ((dataset['subsets'] || {})[selectedCanvas] || {})['format'] === 'icews' && {style: {display: 'none'}}),
                             m("label.actorHead4#entityActor[for='entityActorExpand']",
-                                ((dataset['subsets'] || {})[canvasKeySelected] || {})['format'] === 'icews' && {style: {display: 'none'}},
+                                ((dataset['subsets'] || {})[selectedCanvas] || {})['format'] === 'icews' && {style: {display: 'none'}},
                                 m("b", "Entity")
                             ),
                             m(".filterContainer#wrapEntityActor",
