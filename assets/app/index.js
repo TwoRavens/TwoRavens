@@ -404,13 +404,14 @@ class Body {
                 explore_mode && (variable ? m('#plot', {style, oncreate: _ => plots.density(app.findNode(variable), 'explore', true)}) : m('table', {style}, [
                     m('thead', [''].concat(sortedNodes).map(x => m('th', x.name))),
                     m('tbody', sortedNodes.map(x => {
+                        let style = 'height: 160px; width: 160px';
                         return m('tr', [
-                            m('td', {style: 'height: 100px; transform: rotate(-90deg); font-weight: bold'}, x.name),
+                            m('td', {style: `${style}; transform: rotate(-90deg); font-weight: bold`}, x.name),
                             sortedNodes.map(y => {
-                                let td = x === y ? m('a', {href: `/explore/${x.name}`, oncreate: m.route.link}, m('img', {src: '/static/images/density.png'})) :
-                                    x.plottype === y.plottype ? m('img', {src: '/static/images/scatterplot.png'}) :
-                                    'combo';
-                                return m('td', {style: 'height: 100px'}, td);
+                                let td = x === y ? 'density' :
+                                    x.plottype === y.plottype ? 'scatterplot' :
+                                    'box-whisker';
+                                return m('td', {style}, m('a', {href: `/explore/${x.name}`, oncreate: m.route.link}, m('img', {src: `/static/images/${td}.png`})));
                             })
                         ]);
                     }))
