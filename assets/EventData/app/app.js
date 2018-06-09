@@ -1,9 +1,9 @@
 import m from 'mithril';
 
-import {actionBuffer, drawGraphs, resetActionCounts, updateData} from "./subsets/Action";
-import {actorLinks, actorSearch, resizeActorSVG, updateActor} from "./subsets/Actor";
-import {datemax, datemaxUser, datemin, dateminUser, setDatefromSlider, updateDate, dateSort} from "./subsets/Date";
-import {mapListCountriesSelected, updateLocation} from "./subsets/Location";
+import {actionBuffer, drawGraphs, updateData} from "./subsets/Action";
+import {actorLinks, resizeActorSVG} from "./subsets/Actor";
+import {dateSort} from "./views/CanvasDate";
+import {mapListCountriesSelected} from "./subsets/Location";
 import {
     aggregPentaChkOrd,
     aggregRootChkOrd,
@@ -15,8 +15,7 @@ import {
 } from "./aggreg/aggreg";
 
 import {panelMargin, panelOcclusion, panelOpen, setPanelCallback, setPanelOcclusion} from "../../common/common";
-// Used for custom query editor
-import '../../../node_modules/ace-builds/src-min-noconflict/ace.js';
+
 // Used for right panel query tree
 import '../../../node_modules/jqtree/tree.jquery.js';
 import '../../../node_modules/jqtree/jqtree.css';
@@ -103,8 +102,8 @@ export function setSelectedMode(mode) {
     if (mode === selectedMode) return;
 
     // Some canvases only exist in certain modes. Fall back to default if necessary.
-    if (mode === 'subset' && subsetKeys(dataset).indexOf(selectedCanvas) === -1) setSelectedCanvas('Actor');
-    if (mode === 'aggregate' && aggregateKeys.indexOf(selectedCanvas) === -1) setSelectedCanvas('Actor');
+    if (mode === 'subset' && subsetKeys().indexOf(selectedCanvas) === -1) setSelectedSubsetName('Actor');
+    if (mode === 'aggregate' && aggregateKeys.indexOf(selectedCanvas) === -1) setSelectedSubsetName('Actor');
     if (mode === 'datasets' && 'Datasets' !== selectedCanvas) setSelectedCanvas('Datasets');
 
     selectedMode = mode;
@@ -130,6 +129,7 @@ export function setSelectedMode(mode) {
 let subsetTypes = ['actor', 'action', 'coordinates', 'date', 'location', 'custom'];
 export let selectedSubsetName;
 export let setSelectedSubsetName = (subset) => {
+    setSelectedCanvas('Subset');
     let candidateSubset = getSubset(selectedDataset, subset);
 
     if (candidateSubset && subsetTypes.indexOf(candidateSubset['type']) === -1) {
@@ -253,7 +253,7 @@ if (localStorage.getItem("dataset") !== null) {
 // Options: "api" or "local"
 export let datasource = 'api';
 
-export let subsetKeys = (dataset) => Object.keys(dataset['subsets']);
+export let subsetKeys = () => Object.keys(getDataset(selectedDataset)['subsets']);
 // TODO conditionally draw based on available aggregates
 export let aggregateKeys = ["Actor", "Date", "Penta Class", "Root Code", "Time Series", "Analysis"];
 
@@ -290,26 +290,20 @@ for (let child of subsetData) {
 export let variableQuery = buildVariables();
 export let subsetQuery = buildSubset(stagedSubsetData);
 
-// The editor will be initialized on body setup
-export var editor;
-
 export function setupBody() {
-    // The editor menu for the custom subsets
-    editor = ace.edit("subsetCustomEditor");
-
     laddaUpdate = Ladda.create(document.getElementById("btnUpdate"));
     laddaReset = Ladda.create(document.getElementById("btnReset"));
     laddaDownload = Ladda.create(document.getElementById("buttonDownload"));
 
     // this will only get used if dataset selection is loaded from localstorage, since the default is undefined
-    if (dataset['key'] === undefined) return;
+    if (selectedDataset === undefined) return;
 
     resetPeek();
 
     let query = {
         'subsets': JSON.stringify(subsetQuery),
         'variables': JSON.stringify(variableQuery),
-        'dataset': dataset['key'],
+        'dataset': getDataset(selectedDataset)['key'],
         'datasource': datasource
     };
 
@@ -405,7 +399,7 @@ let peekAllDataReceived = false;
 let peekIsGetting = false;
 
 if (selectedMode !== 'peek') {
-    localStorage.setItem('peekHeader', dataset['name']);
+    localStorage.setItem('peekHeader', (getDataset(selectedDataset) || {})['name']);
     localStorage.removeItem('peekTableData');
 }
 // localStorage.setItem('peekTableData', JSON.stringify(peekData));
@@ -496,7 +490,6 @@ export function pageSetup(jsondata) {
         alert("No records match your subset. Plots will not be updated.");
         return false;
     }
-    console.log(dataset);
 
     Object.keys(jsondata['subsets']).forEach(subset => {
         // ensure each subset has a place to store settings
@@ -563,19 +556,11 @@ export function pageSetup(jsondata) {
         }, {});
 
     console.log(subsetMetadata);
-    // now load the list of all actors. its state is dependent on actor_data
-    actorSearch(true);
-
-    updateActor();
-    updateDate();
-    updateLocation();
-    resetActionCounts();
 
     if (selectedCanvas === 'Action') {
         drawGraphs();
         updateData();
     }
-
 
     // If first load of data, user may have selected a subset and is waiting. Render page now that data is available
     if (!initialLoad) {
@@ -720,10 +705,9 @@ export function setupQueryTree() {
         function (event) {
             let node = event.node;
             if (node.name === 'Custom Subset') {
-                editor.setValue(JSON.stringify(node.custom, null, '\t'));
-                editor.clearSelection();
+                subsetPreferences['custom']['text'] = JSON.stringify(node.custom, null, '\t');
+                subsetRedraw['custom'] = true;
                 setSelectedCanvas("Custom");
-                m.redraw();
             }
 
             if (event.node.hasChildren()) {
@@ -739,10 +723,9 @@ export function setupQueryTree() {
             if ($.isEmptyObject(tempQuery)) {
                 alert("\"" + event.node.name + "\" is too specific to parse into a query.");
             } else {
-                editor.setValue(JSON.stringify(tempQuery, null, '\t'));
-                editor.clearSelection();
+                subsetPreferences['custom']['text'] = JSON.stringify(node.custom, null, '\t');
+                subsetRedraw['custom'] = true;
                 setSelectedCanvas("Custom");
-                m.redraw();
             }
         }
     );
@@ -1037,16 +1020,22 @@ export function addRule() {
  * @returns {{}} : dictionary of preferences
  */
 function getSubsetPreferences() {
+    let preferences = subsetPreferences[selectedSubsetName];
+    let data = subsetMetadata[selectedSubsetName];
+
     if (selectedCanvas === 'Date') {
+        let datemin = data[0]['Date'];
+        let datemax = data[data.length - 1]['Date'];
 
         // If the dates have not been modified, force bring the date from the slider
-        if (dateminUser - datemin === 0 && datemaxUser - datemax === 0) {
-            setDatefromSlider();
-
-            // Ignore the rule if dates are still not modified
-            if (dateminUser - datemin === 0 && datemaxUser - datemax === 0) {
+        if (preferences['userLower'] - datemin === 0 && preferences['userUpper'] - datemax === 0) {
+            if (preferences['userLower'] - preferences['handleLower'] === 0 &&
+                preferences['userUpper'] - preferences['handleUpper'] === 0) {
                 return {};
             }
+
+            preferences['userLower'] = preferences['handleLower'];
+            preferences['userUpper'] = preferences['handleUpper'];
         }
 
         // For mapping numerical months to strings in the child node name
@@ -1058,15 +1047,15 @@ function getSubsetPreferences() {
             children: [
                 {
                     id: String(nodeId++),
-                    name: 'From: ' + monthNames[dateminUser.getMonth()] + ' ' + dateminUser.getDate() + ' ' + String(dateminUser.getFullYear()),
-                    fromDate: new Date(dateminUser.getTime()),
+                    name: 'From: ' + monthNames[preferences['userLower'].getMonth()] + ' ' + preferences['userLower'].getDate() + ' ' + String(preferences['userLower'].getFullYear()),
+                    fromDate: new Date(preferences['userLower'].getTime()),
                     cancellable: false,
                     show_op: false
                 },
                 {
                     id: String(nodeId++),
-                    name: 'To:   ' + monthNames[datemaxUser.getMonth()] + ' ' + datemaxUser.getDate() + ' ' + String(datemaxUser.getFullYear()),
-                    toDate: new Date(datemaxUser.getTime()),
+                    name: 'To:   ' + monthNames[preferences['userUpper'].getMonth()] + ' ' + preferences['userUpper'].getDate() + ' ' + String(preferences['userUpper'].getFullYear()),
+                    toDate: new Date(preferences['userUpper'].getTime()),
                     cancellable: false,
                     show_op: false
                 }
@@ -1257,7 +1246,7 @@ function getSubsetPreferences() {
         return {
             id: String(nodeId++),
             name: 'Custom Subset',
-            custom: JSON.parse(editor.getValue())
+            custom: JSON.parse(subsetPreferences['custom']['text'])
         }
     }
 }
@@ -1371,7 +1360,7 @@ export function submitQuery(datasetChanged=false) {
     let query = {
         'subsets': JSON.stringify(subsetQuery),
         'variables': JSON.stringify(variableQuery),
-        'dataset': dataset['key'],
+        'dataset': selectedDataset,
         'datasource': datasource,
         'type': 'sample'
     };
@@ -1393,7 +1382,7 @@ function buildVariables() {
 
     // Select all fields if none selected
     if (variablelist.length === 0) {
-        variablelist = getVariables(dataset);
+        variablelist = getVariables(getDataset(selectedDataset));
     }
 
     for (let idx in variablelist) {
@@ -1497,7 +1486,7 @@ function processRule(rule) {
     let rule_query = {};
 
     if (rule.name === 'Date Subset') {
-        let date_schema = dataset['subsets'][selectedCanvas]['format'];
+        let date_schema = getDataset(selectedDataset)['subsets'][selectedCanvas]['format'];
 
         // construct a query that works for separate year, month and day fields
         if (date_schema === 'fields') {
@@ -1586,7 +1575,7 @@ function processRule(rule) {
     if (rule.name === 'Action Subset') {
         let rule_query_inner = [];
 
-        if (dataset['subsets'][selectedCanvas]['format'] === 'CAMEO root code') {
+        if (getDataset(selectedDataset)['subsets'][selectedCanvas]['format'] === 'CAMEO root code') {
             for (let child of rule.children) {
                 rule_query_inner.push(pad(parseInt(child.name)));
             }
@@ -1599,7 +1588,7 @@ function processRule(rule) {
             rule_query['<root_code>'] = rule_query_inner;
         }
 
-        if (dataset['subsets'][selectedCanvas]['action'] === "CAMEO") {
+        if (getDataset(selectedDataset)['subsets'][selectedCanvas]['action'] === "CAMEO") {
             let prefixes = [];
             for (let child of rule.children) {
                 prefixes.push(pad(parseInt(child.name)));
@@ -1637,8 +1626,8 @@ function processRule(rule) {
 
     if (rule.name === 'Coords Subset') {
         // The only implemented coordinates unit type is signed degrees
-        if (dataset['subsets'][selectedCanvas]['format'] !== 'signed degrees')
-            console.log("invalid format: " + dataset['subsets'][selectedCanvas]['format']);
+        if (getDataset(selectedDataset)['subsets'][selectedCanvas]['format'] !== 'signed degrees')
+            console.log("invalid format: " + getDataset(selectedDataset)['subsets'][selectedCanvas]['format']);
 
         let rule_query_inner = [];
 

@@ -1,25 +1,38 @@
 import m from 'mithril';
-import {subsetData, buildSubset, editor} from '../app';
+import {subsetData, buildSubset} from '../app';
 import {panelMargin} from '../../../common/common';
+
+import '../../../node_modules/ace-builds/src-min-noconflict/ace.js';
 
 import {tourStartCustomExamples} from "../tour";
 
 export default class CanvasCustom {
-    oncreate(){
-        editor.$blockScrolling = Infinity;
-        editor.session.setMode("ace/mode/json");
+    oncreate(vnode){
+        let {preferences} = vnode.attrs;
+        // The editor menu for the custom subsets
+        this.editor = ace.edit("subsetCustomEditor");
 
-        editor.setOptions({
+        this.editor.$blockScrolling = Infinity;
+        this.editor.session.setMode("ace/mode/json");
+
+        this.editor.setOptions({
             highlightActiveLine: false,
             highlightGutterLine: false
         });
+        this.editor.setValue(preferences['text'] || '')
+
         // editor.renderer.$cursorLayer.element.style.opacity = 0;
         // editor.textInput.getElement().disabled = true;
     }
 
     view(vnode) {
-        let {display} = vnode.attrs;
-        return (m("#canvasCustom", {style: {"display": display, height: '100%', 'padding-top': panelMargin}},
+        let {preferences, redraw, setRedraw} = vnode.attrs;
+        if (redraw) {
+            this.editor.setValue(preferences['text']);
+            setRedraw('custom', false);
+        }
+
+        return (m("#canvasCustom", {style: {height: '100%', 'padding-top': panelMargin}},
             [
                 // Header
                 m(".panel-heading.text-left[id='subsetCustomLabel']", {
@@ -35,7 +48,7 @@ export default class CanvasCustom {
                     style: {
                         "display": "inline"
                     },
-                    onclick: () => editor.setValue(JSON.stringify(buildSubset(subsetData), null, '	'))
+                    onclick: () => preferences['text'] = JSON.stringify(buildSubset(subsetData), null, '	')
                 }, "Show All"),
 
                 // Examples Button

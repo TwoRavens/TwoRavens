@@ -1,5 +1,4 @@
 import * as app from '../app';
-import {datemaxUser, dateminUser} from "../subsets/Date";
 import {actorLinks} from "../subsets/Actor";
 
 import * as d3 from "d3";
@@ -816,8 +815,8 @@ export function makeAggregQuery(action, save = null) {
 
 	let aggregQuery = {
 		"date": {
-			"min": formatAggregDate(dateminUser),
-			"max": formatAggregDate(datemaxUser),
+			"min": formatAggregDate(app.subsetPreferences['Date']['userLower']),
+			"max": formatAggregDate(app.subsetPreferences['Date']['userUpper']),
 			"dateType": aggregDateOn
 		},
 		"actors": {
@@ -829,7 +828,7 @@ export function makeAggregQuery(action, save = null) {
 		"toggles": (aggregMode == "penta" ? aggregPentaChkOrd : aggregRootChkOrd),
 		"action": action,		//preview = get dates, aggreg = perform aggregation, download = download aggreg
 		"numberPreview": aggregDataNumber,
-		"dataset": app.dataset['key'],
+		"dataset": app.getDataset(app.selectedDataset)['key'],
 		"datasource": app.datasource
 	};
 

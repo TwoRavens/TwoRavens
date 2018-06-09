@@ -54,8 +54,8 @@ export default class CanvasDatasets {
                             app.setDataset(dataset['key']);
                             app.setSelectedMode('subset')
                         },
-                        disabled: app.dataset['key'] === dataset['key']
-                    }, 'Load' + (app.dataset['key'] === dataset['key'] ? 'ed' : ''))
+                        disabled: app.selectedDataset === dataset['key']
+                    }, 'Load' + (app.selectedDataset === dataset['key'] ? 'ed' : ''))
                 ]),
                 dataset['description'],
                 this.dataset === dataset['key'] && [

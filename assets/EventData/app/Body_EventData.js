@@ -46,10 +46,10 @@ export default class Body_EventData {
         return m(Header, {image: '/static/images/TwoRavens.png'},
 
             m('div', {style: {'flex-grow': 1}}),
-            m("h4", m("h4#datasetLabel", {style: {margin: '.25em 1em'}}, app.dataset['name'])),
+            m("h4", m("h4#datasetLabel", {style: {margin: '.25em 1em'}}, (app.getDataset(app.selectedDataset) || {})['name'])),
 
             m('div', {style: {'flex-grow': 1}}),
-            app.dataset['key'] && m("button#btnPeek.btn.btn-default", {
+            app.getDataset(app.selectedDataset) && m("button#btnPeek.btn.btn-default", {
                 title: 'Display a data preview',
                 style: {margin: '.25em 1em'},
                 onclick: () => window.open('#!/data', 'data')
@@ -59,7 +59,7 @@ export default class Body_EventData {
 
             // Button Reset
             m("button#btnReset.btn.btn-default.ladda-button[data-spinner-color='#818181'][data-style='zoom-in'][title='Reset']", {
-                    style: {margin: '1em', display: app.dataset['key'] ? 'block' : 'none'},
+                    style: {margin: '1em', display: app.getDataset(app.selectedDataset) ? 'block' : 'none'},
                     onclick: app.reset
                 },
                 m("span.ladda-label.glyphicon.glyphicon-repeat", {
@@ -81,7 +81,7 @@ export default class Body_EventData {
                 activeSection: app.selectedMode,
                 sections: [
                     {value: 'Datasets'}
-                ].concat(app.dataset['key'] ? [
+                ].concat(app.getDataset(app.selectedDataset) ? [
                     {value: 'Subset', id: 'btnSubsetSubmit'},
                     {value: 'Aggregate', id: 'aggSubmit'}
                 ] : [])
@@ -131,7 +131,7 @@ export default class Body_EventData {
 
                 m("button.btn.btn-default.btn-sm.ladda-button[data-spinner-color='#818181'][id='buttonDownload'][type='button']", {
                         style: {
-                            display: app.dataset['key'] ? 'inline-block' : 'none',
+                            display: app.getDataset(app.selectedDataset) ? 'inline-block' : 'none',
                             "margin-right": "6px",
                             'margin-top': '4px',
                             'margin-left': '6px',
@@ -146,7 +146,7 @@ export default class Body_EventData {
                 // Record Count
                 m("span.label.label-default#recordCount", {
                     style: {
-                        display: app.dataset['key'] ? 'inline-block' : 'none',
+                        display: app.getDataset(app.selectedDataset) ? 'inline-block' : 'none',
                         "margin-left": "5px",
                         "margin-top": "10px",
                         "margin-right": "10px"
@@ -187,7 +187,7 @@ export default class Body_EventData {
                                 }),
                                 m(PanelList, {
                                     id: 'variablesList',
-                                    items: Object.keys(app.dataset['columns']).filter(col => col.includes(app.variableSearch)),
+                                    items: Object.keys(app.getDataset(app.selectedDataset)['columns']).filter(col => col.includes(app.variableSearch)),
                                     colors: {[common.selVarColor]: app.variablesSelected},
                                     callback: app.toggleVariableSelected,
                                     attrsAll: {style: {height: 'calc(100% - 44px)', overflow: 'auto'}}
@@ -199,7 +199,7 @@ export default class Body_EventData {
                             title: 'Restrict by contents of rows.',
                             contents: m(PanelList, {
                                 id: 'subsetsList',
-                                items: Object.keys(app.dataset['subsets']),
+                                items: Object.keys(app.getDataset(app.selectedDataset)['subsets']),
                                 colors: {[common.selVarColor]: [app.selectedCanvas]},
                                 callback: app.setSelectedCanvas,
                                 attrsAll: {style: {height: 'calc(100% - 39px)', overflow: 'auto'}}
@@ -348,7 +348,7 @@ export default class Body_EventData {
         else {
             // TODO add CanvasAnalysis
             canvasContent = m({
-                'Dataset': CanvasDatasets,
+                'Datasets': CanvasDatasets,
                 'Loading': CanvasLoading,
                 'PentaClass': CanvasDatasets,
                 'RootCode': CanvasRootCode,
@@ -356,7 +356,8 @@ export default class Body_EventData {
             }[app.selectedCanvas], {
                 mode: app.selectedMode,
                 preferences: app.canvasPreferences[app.selectedCanvas],
-                redraw: app.canvasRedraw[app.selectedCanvas]
+                redraw: app.canvasRedraw[app.selectedCanvas],
+                setRedraw: app.setCanvasRedraw
             });
         }
 
