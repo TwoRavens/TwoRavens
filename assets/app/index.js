@@ -394,6 +394,8 @@ class Body {
 
         let overflow = explore_mode ? 'auto' : 'hidden';
         let style = `position: absolute; left: ${app.panelWidth.left}; top: 0; margin-top: 10px`;
+        let node = app.findNode(variable);
+        let plot = node && node.plottype === 'continuous' ? plots.density : plots.bars;
         let sortedNodes = nodesExplore.concat().sort((x, y) => x.id - y.id);
         return m('main', [
             m(Modal),
@@ -401,14 +403,15 @@ class Body {
             this.footer(mode),
             m(`#main.left`, {style: {overflow}},
               m("#innercarousel.carousel-inner", {style: {height: `calc(100% + ${app.marginTopCarousel}px)`, overflow}},
-                explore_mode && (variable ? m('#plot', {style, oncreate: _ => plots.density(app.findNode(variable), 'explore', true)}) : m('table', {style}, [
+                explore_mode && (variable ? m('#plot', {style, oncreate: _ => plot(node, 'explore', true)}) : m('table', {style}, [
                     m('thead', [''].concat(sortedNodes).map(x => m('th', x.name))),
                     m('tbody', sortedNodes.map(x => {
                         let style = 'height: 160px; width: 160px';
                         return m('tr', [
                             m('td', {style: `${style}; transform: rotate(-90deg); font-weight: bold`}, x.name),
                             sortedNodes.map(y => {
-                                let td = x === y ? 'density' :
+                                let td = x === y && x.plottype === 'continuous' ? 'density' :
+                                    x === y ? 'bars' :
                                     x.plottype === y.plottype ? 'scatterplot' :
                                     'box-whisker';
                                 return m('td', {style}, m('a', {href: `/explore/${x.name}`, oncreate: m.route.link}, m('img', {src: `/static/images/${td}.png`})));

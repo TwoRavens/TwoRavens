@@ -391,14 +391,16 @@ export function bars(node, div, priv) {
 
     let mydiv;
     if (div == "setxLeft") mydiv = "#setxLeft";
+    else if (div == 'explore') mydiv = '#plot';
     else if (div == "Summary") mydiv = "#tabSummary";
     else if (div == "setxLeftTopRight") mydiv = "#setxLeftTopRight";
-    else
+    else {
         return alert("Error: incorrect div selected for plots");
+    }
 
-    var tempWidth = d3.select(mydiv).style("width")
+    var tempWidth = d3.select(mydiv).style("width");
     var width = tempWidth.substring(0, (tempWidth.length - 2));
-    var tempHeight = d3.select(mydiv).style("height")
+    var tempHeight = d3.select(mydiv).style("height");
     var height = tempHeight.substring(0, (tempHeight.length - 2));
 
     var margin = {
@@ -410,7 +412,7 @@ export function bars(node, div, priv) {
     let tw = document.getElementById('main').offsetWidth;
 
     // Need to fix automatic width and height settings for leftpanel (#tabSubset, #tabSummary)
-    if (mydiv == "#tabSummary") {
+    if (mydiv == "#tabSummary" || mydiv === '#plot') {
         [width, height] = [242,150]; //[242, 250];       // These should not be hard coded
         // width = 0.7 * (width - margin.left - margin.right);
         // height = 0.3 * (height - margin.top - margin.bottom);
