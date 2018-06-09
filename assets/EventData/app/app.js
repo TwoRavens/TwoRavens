@@ -102,8 +102,8 @@ export function setSelectedMode(mode) {
     if (mode === selectedMode) return;
 
     // Some canvases only exist in certain modes. Fall back to default if necessary.
-    if (mode === 'subset' && subsetKeys().indexOf(selectedCanvas) === -1) setSelectedSubsetName('Actor');
-    if (mode === 'aggregate' && aggregateKeys.indexOf(selectedCanvas) === -1) setSelectedSubsetName('Actor');
+    if (mode === 'subset' && subsetKeys().indexOf(selectedCanvas) === -1) setSelectedSubsetName(subsetKeys()[0]);
+    if (mode === 'aggregate' && aggregateKeys.indexOf(selectedCanvas) === -1) setSelectedSubsetName(subsetKeys()[0]);
     if (mode === 'datasets' && 'Datasets' !== selectedCanvas) setSelectedCanvas('Datasets');
 
     selectedMode = mode;
