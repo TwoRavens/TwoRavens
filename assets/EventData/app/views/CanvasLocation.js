@@ -4,7 +4,9 @@ import {panelMargin} from "../../../common/common";
 
 export default class CanvasLocation {
     view(vnode) {
-        let {display} = vnode.attrs;
+        let {data, preferences} = vnode.attrs;
+        preferences['country_codes'] = preferences['country_codes'] || new Set();
+
         return (m("#canvasLocation", {style: {"display": display, 'padding-top': panelMargin}},
             [
                 m("[tabindex='0']", {

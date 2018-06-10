@@ -1,0 +1,22 @@
+[
+  {"code": 1, "name": "Make Public Statement", "penta": 0},
+  {"code": 2, "name": "Appeal", "penta": 0},
+  {"code": 3, "name": "Express Intent to Coop", "penta": 1},
+  {"code": 4, "name": "Consult", "penta": 1},
+  {"code": 5, "name": "Engage in Dip Coop", "penta": 1},
+  {"code": 6, "name": "Engage in Material Coop", "penta": 2},
+  {"code": 7, "name": "Provide Aid", "penta": 2},
+  {"code": 8, "name": "Yield", "penta": 2},
+  {"code": 9, "name": "Investigate", "penta": 3},
+  {"code": 10, "name": "Demand", "penta": 3},
+  {"code": 11, "name": "Disapprove", "penta": 3},
+  {"code": 12, "name": "Reject", "penta": 3},
+  {"code": 13, "name": "Threaten", "penta": 3},
+  {"code": 14, "name": "Protest", "penta": 4},
+  {"code": 15, "name": "Exhibit Force Posture", "penta": 4},
+  {"code": 16, "name": "Reduce Relations", "penta": 3},
+  {"code": 17, "name": "Coerce", "penta": 4},
+  {"code": 18, "name": "Assault", "penta": 4},
+  {"code": 19, "name": "Fight", "penta": 4},
+  {"code": 20, "name": "Use Unconventional Mass Violence", "penta": 4}
+]
