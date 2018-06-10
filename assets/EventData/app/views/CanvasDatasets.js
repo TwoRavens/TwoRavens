@@ -3,6 +3,14 @@ import * as app from '../app';
 import * as common from '../../../common/common';
 import Table from '../../../common/views/Table';
 import ListTags from "../../../common/views/ListTags";
+import PlotBars from "./PlotBars";
+
+
+let data = [
+    {'key': 'A', 'value': 23, 'class': 'bar_some', 'title': "TEST A"},
+    {'key': 'B', 'value': 12, 'class': 'bar', 'title': "TEST B"},
+    {'key': 'C', 'value': 52, 'class': 'bar', 'title': "TEST C"}
+];
 
 export default class CanvasDatasets {
     oninit() {
@@ -34,6 +42,18 @@ export default class CanvasDatasets {
                 m('col', {span: 1, width: '50%'}));
         };
 
+        // return m(PlotBars, {
+        //     id: 'testPlot',
+        //     margin: {top: 10, right: 30, bottom: 50, left: 30},
+        //     data: data,
+        //     callbackBar: (bar) => {
+        //         bar.class = bar.class === 'bar' ? 'bar_selected' : 'bar';
+        //     },
+        //     orient: 'vertical',
+        //     xLabel: 'Country',
+        //     yLabel: 'Frequency by Month'
+        // });
+
         return m('div#canvasDatasets', {style: {display: display, width: '100%'}}, app.datasetMetadata.map((dataset) => {
             return m('div', {
                     style: {
@@ -51,7 +71,7 @@ export default class CanvasDatasets {
                     m('button.btn.btn-default[type="button"]', {
                         style: {margin: '0 0.25em', float: 'right'},
                         onclick: () => {
-                            app.setDataset(dataset['key']);
+                            app.setSelectedDataset(dataset['key']);
                             app.setSelectedMode('subset')
                         },
                         disabled: app.selectedDataset === dataset['key']

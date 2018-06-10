@@ -12,15 +12,6 @@ main#EventData .loader {
     100% { transform: rotate(360deg); }
 }
 
-main#EventData svg {
-    background-color: #FFF;
-    cursor: default;
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    -o-user-select: none;
-    user-select: none;
-}
 main#EventData .ui-datepicker-prev {
     display: inline-block;
     margin-left: 0;
@@ -29,6 +20,8 @@ main#EventData .ui-datepicker-next {
     display: inline-block;
     float: right;
 }
+
+/* TODO delete everything below */
 main#EventData .hidden {
     display: none;
 }
@@ -430,35 +423,10 @@ main#EventData .graph_container {
     overflow-x: scroll;
     overflow-y: scroll;
 }
-main#EventData .bar {
-    fill: steelblue;
-    cursor: pointer;
-}
 main#EventData .bar_click {
     fill: white;
     cursor: pointer;
     opacity: 0;
-}
-main#EventData .bar_all_selected {
-    fill: brown;
-    cursor: pointer;
-}
-main#EventData .bar_some_selected {
-    stroke: #000000;
-    fill: url(#pattern1);
-    cursor: pointer;
-}
-main#EventData .bar:hover {
-    fill: brown;
-    cursor: pointer;
-}
-main#EventData .bar_all_selected:hover {
-    fill: steelblue;
-    cursor: pointer;
-}
-main#EventData .bar_some_selected:hover {
-    fill: steelblue;
-    cursor: pointer;
 }
 main#EventData .axis path,
 main#EventData .axis line {

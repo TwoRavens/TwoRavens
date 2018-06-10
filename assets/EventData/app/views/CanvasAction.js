@@ -1,15 +1,37 @@
 import m from 'mithril';
-import {setupAction} from '../subsets/Action.js';
 import {panelMargin} from "../../../common/common";
+import PlotBars from "./PlotBars";
+
+let actionMap = [0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3, 3, 4, 4, 3, 4, 4, 4, 4];
 
 export default class CanvasAction {
-    oncreate() {
-        setupAction();
-    }
     view(vnode) {
-        let {display} = vnode.attrs;
+        let {data, preferences} = vnode.attrs;
+        preferences['action_codes'] = preferences['action_codes'] || Array(20).fill(false);
 
-        return (m("#canvasAction", {style: {"display": display, height: '100%', 'padding-top': panelMargin}},
+        let ploverData = data.map((quantity, i) => ({
+            key: i,
+            value: quantity,
+            'class': preferences['action_codes'][i] ? 'bar_selected' : 'bar'
+            // TODO: 'title': ''
+        }));
+
+        // determine style
+        let clusteredPreferences = Array(5).fill(0).map(() => []);
+        actionMap.forEach((penta, i) => clusteredPreferences[penta].push(preferences['action_codes'][i]));
+
+        // determine quantities
+        let clusteredQuantities = Array(5).fill(0);
+        data.forEach((quantity, i) => clusteredQuantities[actionMap[i]] += quantity);
+
+        let pentaData = Array(5).fill(0).map((_, i) => ({
+            key: i,
+            value: clusteredQuantities[i],
+            'class': clusteredPreferences[i].every(_=>_) ? 'bar_selected' : clusteredPreferences[i].some(_=>_) ? 'bar_some' : 'bar',
+            // TODO: 'title': ''
+        }));
+
+        return (m("#canvasAction", {style: {height: '100%', 'padding-top': panelMargin}},
             m("[id='actionSVGbin']", {
                     style: {
                         "display": "inline-block",
@@ -37,7 +59,20 @@ export default class CanvasAction {
                                 m("h3.panel-title", "Penta Classes")
                             ),
                             m("br"),
-                            m("svg[height='100%'][id='actionMainGraph'][width='100%']", {style: {"background": "none"}})
+                            m(PlotBars, {
+                                id: 'barPlotPenta',
+                                margin: {top: 10, right: 30, bottom: 50, left: 30},
+                                data: pentaData,
+                                callbackBar: (bar) => {
+                                    let target_state = bar.class === 'bar_some' || bar.class === 'bar';
+                                    actionMap.forEach((penta, i) => {
+                                        if (penta === bar.key) preferences['action_codes'][i] = target_state
+                                    });
+                                },
+                                orient: 'vertical',
+                                xLabel: 'Penta Class',
+                                yLabel: 'Frequency'
+                            })
                         ]
                     ),
                     m(".action_graph_config[id='rootcode_container']", {
@@ -59,7 +94,15 @@ export default class CanvasAction {
                                 m("h3.panel-title", "Root Classes")
                             ),
                             m("br"),
-                            m("svg[height='100%'][id='actionSubGraph'][width='100%']", {style: {"background": "none"}})
+                            m(PlotBars, {
+                                id: 'barPlotPlover',
+                                margin: {top: 10, right: 30, bottom: 50, left: 30},
+                                data: ploverData,
+                                callbackBar: (bar) => preferences['action_codes'][bar.key] = bar.class === 'bar',
+                                orient: 'vertical',
+                                xLabel: 'Plover Root ID',
+                                yLabel: 'Frequency'
+                            })
                         ]
                     ),
                     m(".SVGtooltip")

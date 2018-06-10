@@ -197,6 +197,6 @@ export default class PlotDate {
 
     view(vnode) {
         let {id, attrsAll} = vnode.attrs;
-        return m(`div#${id}`, attrsAll)
+        return m(`svg#${id}[width=100%][height=100%]`, attrsAll)
     }
 }

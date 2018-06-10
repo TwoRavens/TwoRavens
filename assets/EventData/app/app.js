@@ -1,6 +1,4 @@
 import m from 'mithril';
-
-import {actionBuffer, drawGraphs, updateData} from "./subsets/Action";
 import {actorLinks, resizeActorSVG} from "./subsets/Actor";
 import {dateSort} from "./views/CanvasDate";
 import {mapListCountriesSelected} from "./subsets/Location";
@@ -85,8 +83,12 @@ export function handleResize() {
 window.addEventListener('resize', handleResize);
 
 export let selectedDataset;
-export let setDataset = (key) => {
+export let setSelectedDataset = (key) => {
     selectedDataset = key;
+    Object.keys(getDataset(selectedDataset)['subsets']).forEach(subset => {
+        // ensure each subset has a place to store settings
+        subsetPreferences[subset] = subsetPreferences[subset] || {};
+    });
 
     // trigger reloading of necessary menu elements
     initialLoad = false;
@@ -486,17 +488,16 @@ export function pageSetup(jsondata) {
     laddaUpdate.stop();
     laddaReset.stop();
 
-    if ((jsondata['Date'] || {}).length === 0) {
-        alert("No records match your subset. Plots will not be updated.");
-        return false;
-    }
+    // if ((jsondata['Date'] || []).length === 0) {
+    //     alert("No records match your subset. Plots will not be updated.");
+    //     return false;
+    // }
 
-    Object.keys(jsondata['subsets']).forEach(subset => {
-        // ensure each subset has a place to store settings
-        subsetPreferences[subset] = subsetPreferences[subset] || {};
+    Object.keys(jsondata).forEach(subset => {
         // trigger d3 replots in all subsets
         subsetRedraw[subset] = true;
     });
+
 
     let reformatters = {
         'action': data => data
@@ -548,12 +549,14 @@ export function pageSetup(jsondata) {
                 return(out);
             }, {})
     };
+    console.log("TEST 2")
 
     // reformat date, action, and location metadata
-    subsetMetadata = Object.keys(dataset['subsets']).reduce((out, key) => {
-            out[key] = reformatters[dataset['subsets'][key]['type']](jsondata[key]);
+    subsetMetadata = Object.keys(getDataset(selectedDataset)['subsets']).reduce((out, key) => {
+            out[key] = reformatters[getDataset(selectedDataset)['subsets'][key]['type']](jsondata[key]);
             return(out);
         }, {});
+    console.log("TEST 3")
 
     console.log(subsetMetadata);
 
@@ -562,13 +565,15 @@ export function pageSetup(jsondata) {
         updateData();
     }
 
+    console.log("TEST 3")
+
     // If first load of data, user may have selected a subset and is waiting. Render page now that data is available
     if (!initialLoad) {
         setSelectedCanvas(selectedCanvas);
         if (selectedCanvas === 'Actor') resizeActorSVG();
     }
     initialLoad = true;
-    console.log(selectedCanvas);
+    console.log("TEST 4")
 
     // find a subset of type
     let findType = (type) => Object.keys(datasetMetadata['subsets'])
@@ -1372,7 +1377,7 @@ export function submitQuery(datasetChanged=false) {
         url: subsetURL,
         data: query,
         method: 'POST'
-    }).then(submitQueryCallback).catch(laddaStop);
+    }).then(submitQueryCallback) // TODO re-enable catch after debugging. Possibly make this one custom/explicit because tracking this down is annoying .catch(laddaStop);
 }
 
 // Construct mongoDB selection (subsets columns)

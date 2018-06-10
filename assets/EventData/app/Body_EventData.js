@@ -201,7 +201,7 @@ export default class Body_EventData {
                                 id: 'subsetsList',
                                 items: Object.keys(app.getDataset(app.selectedDataset)['subsets']),
                                 colors: {[common.selVarColor]: [app.selectedCanvas]},
-                                callback: app.setSelectedCanvas,
+                                callback: app.setSelectedSubsetName,
                                 attrsAll: {style: {height: 'calc(100% - 39px)', overflow: 'auto'}}
                             })
                         }
@@ -329,13 +329,15 @@ export default class Body_EventData {
 
         // construct what should appear in the center of the page
         let canvasContent;
-        if (app.selectedCanvas === 'Subset') {
+        if (!app.initialLoad && app.selectedCanvas !== 'Datasets') canvasContent = m(CanvasLoading);
+
+        else if (app.selectedCanvas === 'Subset') {
             let subsetType = app.getSubset(app.selectedDataset, app.selectedSubsetName)['type'];
             canvasContent = m({
                 'action': CanvasAction,
                 'actor': CanvasActor,
                 'date': CanvasDate,
-                'Location': CanvasLocation
+                'location': CanvasLocation
             }[subsetType], {
                 mode: app.selectedMode,
                 subsetName: app.selectedSubsetName,
@@ -345,6 +347,7 @@ export default class Body_EventData {
                 setRedraw: app.setSubsetRedraw
             })
         }
+
         else {
             // TODO add CanvasAnalysis
             canvasContent = m({
