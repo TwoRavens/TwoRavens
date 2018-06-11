@@ -22,7 +22,7 @@ BASE_DIR = dirname(dirname(dirname(abspath(__file__))))
 # Link to copy of the TA3TA2 API
 # https://gitlab.com/datadrivendiscovery/ta3ta2-api
 #
-TA3TA2_API_DIR = join(BASE_DIR, 'tworaven_apps', 'ta3ta2-api')
+TA3TA2_API_DIR = join(BASE_DIR, 'submodules', 'ta3ta2-api')
 sys.path.append(TA3TA2_API_DIR)
 
 # Quick-start development settings - unsuitable for production

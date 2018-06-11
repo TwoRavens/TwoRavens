@@ -570,3 +570,20 @@ def celery_restart():
     """Stop celery (if it's running) and start it again"""
     celery_stop()
     celery_run()
+
+
+
+@task
+def compile_ta3ta2_api():
+    """Compile the TA3TA2 grpc .proto files"""
+    proto_names = """core pipeline primitive problem value""".split()
+    proto_cmds = []
+    for pname in proto_names:
+        one_cmd = ('python -m grpc_tools.protoc -I . --python_out=.'
+                   ' --grpc_python_out=. %s.proto') % pname
+        proto_cmds.append(one_cmd)
+
+    proto_dir = os.path.join(FAB_BASE_DIR, 'submodules', 'ta3ta2-api')
+    cmd = ('cd %s;'
+           '%s') % (proto_dir, ';'.join(proto_cmds))
+    local(cmd)
