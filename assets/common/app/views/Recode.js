@@ -206,7 +206,7 @@ export default class Recode {
                 ),
                 m('#centralPanel.container.sidepanel.clearfix', mergeAttributes({
                     style: {
-                        overflow: 'scroll',
+                        overflow: 'hidden',
                         background: menuColor,
                         border: borderColor,
                         width: (window.innerWidth-25)+'px' ,
@@ -216,21 +216,25 @@ export default class Recode {
                         top: heightHeader + panelMargin  + 'px',
                         
                     }}),[
-                        m('div.container', {id : 'createDiv' , style : {'display':'block','height': '250px','overflow':'hidden','width': '100%','height':'100%'}}, [
+                        m('div.container', {id : 'createDiv' , style : {'display':'block','height': '250px','overflow':'scroll','width': '100%','height':'100%'}}, [
                             m('form#createNewForm',{ onsubmit: addValue},[
                                 m('div',{style :{'display': 'block','float':'left'  ,'overflow':'hidden','width':'40%'}},[
                                     m('br'),
-                                    m('h4',{ style : {'display':'inline-block', 'margin-right':'10px'}},'Variable Name : '),
-                                    m('input[type=text]', {id: 'newVar', placeholder: 'New Variable', style : {'display':'inline-block' , 'margin-right':'10px', 'width':'40%'}}),
+                                    m('label',{ style : {'display':'inline-block', 'margin-right':'10px'}},'Variable Name : '),
+                                    m('input[type=text]', {id: 'newVar', placeholder: 'New Variable', style : {'display':'inline-block' , 'margin':'10px', 'width':'40%'}}),
                                     m('br'),
-                                    m('h4',{ style : {'display':'inline-block', 'margin-right':'10px'}},'Variable Type : '),
-                                    m('div.dropdown',{ style : {'display':'inline-block'}},[
-                                        m('select.form-control',{style:{'display':'inline-block'}, id:'varType'},[
+                                    m('label',{ style : {'display':'inline-block', 'margin-right':'10px'}},'Variable Type : '),
+                                    m('div.dropdown',{ style : {'display':'inline-block','margin':'10px'}},[
+                                        m('select.form-control#typeSelect',{onchange: someFunction ,style:{'display':'inline-block'}, id:'varType'},[
                                             m('option','Boolean'),
-                                            m('option','Character'),
+                                            m('option','Nominal'),
                                             m('option','Numchar')
                                         ])
-                                    ])
+                                    ]),
+                                    m('div#nominalDiv',{style:{'margin':'10px'}},[
+                                        m('label',{ style : { 'margin-right':'10px'}},'Class List : '),
+                                        m('input[type=text]',{id:'nominalList', placeholder:'Nominal', style:{'margin':'10px'}},),
+                                    ]),
                                 ]),m('div#tableDiv',{style :{'display': 'block','width':'60%','float':'right','height':(window.innerHeight-150)+'px' ,'overflow-y': 'auto','border-style': 'solid','border-width': 'thin'}},[
                                     m('table.table.table-bordered',{id:'createTable',style:{ 'overflow': 'scroll'}},[
                                         m('tr#colheader',[
@@ -247,7 +251,7 @@ export default class Recode {
                                 ]),
                                 
                                 m("br"),
-                                m('button[type="button"]' ,{onclick: createNewCalculate},'Create New Variable'),
+                                m('button[type="button"]' ,{onclick: createNewCalculate,style:"float:left;"},'Create New Variable'),
                                 m('button[type="submit"]',{id:'submitButton'},'Add Values'),
                             ])
                         ])
@@ -262,6 +266,15 @@ function onRecodeStorageEvent(recode, e){
     m.redraw();
 }
 
+function someFunction(elem){
+    if(elem.target[1].selected){
+        var elem = document.getElementById('nominalDiv');
+        elem.style.visibility="visible";
+    }else{
+        var elem = document.getElementById('nominalDiv');
+        elem.style.visibility="hidden";
+    }
+}
 function clickVar(elem) {
     
     if(document.getElementById('recodeLink').className === 'active'){
@@ -291,13 +304,26 @@ function clickVar(elem) {
 }
 function addValue(elem){
     console.log('Values Added')
-
+    console.log(elem.target[3].value)
+    //selectedOptions
     var newVarValue = [];
-    for(var i =0;i<tableData.length;i++){
-        if(elem.target[2+i].checked){
+
+    if(document.getElementById('typeSelect').selectedIndex === 0){
+        for(var i =0;i<tableData.length;i++){
+            if(elem.target[2+i].checked){
+                newVarValue.push(elem.target[2+i].value)
+            }
+        }
+    }else if(document.getElementById('typeSelect').selectedIndex === 1){
+        for(var i =0;i<tableData.length;i++){
+            newVarValue.push(elem.target[2+i].value)
+        }
+    }else if(document.getElementById('typeSelect').selectedIndex === 2){
+        for(var i =0;i<tableData.length;i++){
             newVarValue.push(elem.target[2+i].value)
         }
     }
+    
     console.log(newVarValue);
 }
 
@@ -322,6 +348,7 @@ function hideTooltip(){
 }
 
 function createNewCalculate(){
+    console.log(document.getElementById('typeSelect').selectedIndex)
     if(document.getElementById('newVar').value===""){
         alert("Enter Variable Name!");
     }
@@ -330,18 +357,34 @@ function createNewCalculate(){
     //createNewForm
     $('#createNewForm').find('tr').each(function(){
         var trow = $(this);
-        // console.log(trow);
+
         if(iter == 0){
-            trow.append('<th class = "col-xs-4" style ="border: 1px solid #ddd;">'+document.getElementById('newVar').value+'</th>');
+            trow.append('<th class = "col-xs-4" style ="border: 1px solid #ddd; text-align: center;">'+document.getElementById('newVar').value+'</th>');
             iter++;
         }else{
-            trow.append('<td style ="border: 1px solid #ddd;text-align: center;"><input type="checkbox" name="newVarVal" id ="newVarVal'+(iter-1)+' value = '+(iter-1)+'"/></td>');
+            if(document.getElementById('typeSelect').selectedIndex === 0){
+                trow.append('<td style ="border: 1px solid #ddd;text-align: center;"><input type="checkbox" name="newVarVal" id ="newVarVal'+(iter-1)+' value = '+(iter-1)+'"/></td>');
+            }else if(document.getElementById('typeSelect').selectedIndex === 1){
+
+                var classList = document.getElementById('nominalList').value.split(",");
+                trow.append('<td style ="border: 1px solid #ddd;"><select id ="newVarVal'+(iter-1)+'"></select></td>');
+                
+                var selectBox = document.getElementById("newVarVal"+(iter-1))
+                for(var i =0 ;i<classList.length;i++){
+                    selectBox.options.add(new Option(classList[i],classList[i]))
+                }
+
+            }else if(document.getElementById('typeSelect').selectedIndex === 2){
+                trow.append('<td style ="border: 1px solid #ddd;text-align: center;"><input type="text" name="newVarVal" style = "width:100%" id ="newVarVal'+(iter-1)+'"/></td>');
+            }
+            
             iter++
         }
         
     });
     var elem = document.getElementById('submitButton');
     elem.style.visibility="visible";
+
 
     }
     
@@ -373,6 +416,9 @@ function createClick(){
     var elem = document.getElementById('formulaDiv');
     elem.style.display="none";
 
+    var elem = document.getElementById('nominalDiv');
+    elem.style.visibility="hidden";
+    
     var elem = document.getElementById('submitButton');
     elem.style.visibility="hidden";
 
