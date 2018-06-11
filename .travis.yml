@@ -16,23 +16,23 @@ install:
   # Build/test dependencies
   - pip install --no-cache-dir -r requirements/prod.txt
   - pip install coveralls
-
 script:
   # Run django tests.  (Note django settings are an env variable)
+  - cd submodules/raven-metadata-service/preprocess/code/;python -m unittest
+  - cd ../../../..
   - python manage.py test tworaven_apps.ta2_interfaces tworaven_apps.workspaces
   - coverage run --source=tworaven_apps.ta2_interfaces manage.py test tworaven_apps.ta2_interfaces tworaven_apps.workspaces
   #- coverage run --source=tworaven_apps.raven_auth manage.py test tworaven_apps.raven_auth
-  # If tests passed, build docker image--and see if that works
-  - docker build -t tworavens/ravens-main:latest .
 
 # Don't push the image but instead trigger a build on dockerhub
-after_script:
+after_success:
   #
-  #curl -H "Content-Type: application/json"
-  #--data '{"docker_tag": "master"}'
-  #-X POST #https://registry.hub.docker.com/u/tworavens/ravens-main/trigger/9269f094-1951-4d52-ba6d-15b216cec4a4/
-
+  # If tests passed, build docker image--and see if that works
+  #
+  - docker build -t tworavens/ravens-main:latest .
+  #
   # Push image to dockerhub
+  #
   - if [ "$TRAVIS_BRANCH" == "master" ]; then
     docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
     docker push tworavens/ravens-main:latest;

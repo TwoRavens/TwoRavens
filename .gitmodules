@@ -1,0 +1,3 @@
+[submodule "submodules/raven-metadata-service"]
+	path = submodules/raven-metadata-service
+	url = https://github.com/TwoRavens/raven-metadata-service.git

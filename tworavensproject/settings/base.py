@@ -19,11 +19,23 @@ from django.urls import reverse_lazy
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = dirname(dirname(dirname(abspath(__file__))))
 
+# -----------------------------------------------------
 # Link to copy of the TA3TA2 API
 # https://gitlab.com/datadrivendiscovery/ta3ta2-api
-#
+# -----------------------------------------------------
 TA3TA2_API_DIR = join(BASE_DIR, 'submodules', 'ta3ta2-api')
 sys.path.append(TA3TA2_API_DIR)
+
+# -----------------------------------------------------
+# Link to copy of the raven-metadata-service
+# for the preprocess script
+#
+# https://github.com/TwoRavens/raven-metadata-service
+# -----------------------------------------------------
+RAVEN_METADATA_SVC = join(BASE_DIR, 'submodules', 'raven-metadata-service')
+RAVEN_PREPROCESS = join(RAVEN_METADATA_SVC, 'preprocess', 'code')
+sys.path.append(RAVEN_PREPROCESS)
+
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
