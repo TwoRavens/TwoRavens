@@ -5,7 +5,7 @@ import {heightHeader} from "../common/app/common";
 import * as common from "../common/app/common";
 import {setModal} from '../common/app/views/Modal';
 
-import {bars, barsNode, barsSubset, density, densityNode, selVarColor} from './plots.js';
+import {bars, barsNode, barsSubset, density, densityNode, scatter, selVarColor} from './plots.js';
 import {elem, fadeOut} from './utils';
 import {searchIndex} from "./views/Search";
 
@@ -3406,7 +3406,7 @@ export function resultsplotinit(pid) {
     } else {
         let xdata = "Actual";
         let ydata = "Predicted";
-        bivariatePlot(dvvalues, predvals, xdata, ydata);
+        scatter(dvvalues, predvals, xdata, ydata);
     }
 
     // add the list of predictors into setxLeftTopLeft
@@ -3781,200 +3781,6 @@ export function confusionmatrix(matrixdata, classes) {
 
     // not rendering this table for right now, left all the code in place though. maybe we use it eventually
     // var table = tabulate(computedData, ["F1", "PRECISION","RECALL","ACCURACY"]);
-}
-
-/**
-   scatterplot function to go to plots.js to be reused
-*/
-export function bivariatePlot(x_Axis, y_Axis, x_Axis_name, y_Axis_name) {
-    d3.select("#setxLeftPlot").html("");
-    d3.select("#setxLeftPlot").select("svg").remove();
-
-    x_Axis=x_Axis.map(Number);
-    y_Axis=y_Axis.map(Number);
-
-    console.log(x_Axis);
-    console.log(y_Axis);
-
-    let mainwidth = byId('main').clientWidth;
-    let mainheight = byId('main').clientHeight;
-
-    // scatter plot
-    let data_plot = [];
-    var nanCount = 0;
-    for (var i = 0; i < x_Axis.length; i++) {
-        if (isNaN(x_Axis[i]) || isNaN(y_Axis[i])) {
-            nanCount++;
-        } else {
-            var newNumber1 = x_Axis[i];
-            var newNumber2 = y_Axis[i];
-            data_plot.push({xaxis: newNumber1, yaxis: newNumber2, score: Math.random() * 100});
-
-        }
-    }
-
-
-    var margin = {top: 35, right: 35, bottom: 35, left: 35}
-    , width = mainwidth*.25- margin.left - margin.right
-    , height = mainwidth*.25 - margin.top - margin.bottom;
-    var padding = 100;
-
-    var min_x = d3.min(data_plot, function (d, i) {
-                       return data_plot[i].xaxis;
-                       });
-    var max_x = d3.max(data_plot, function (d, i) {
-                       return data_plot[i].xaxis;
-                       });
-    var avg_x = (max_x - min_x) / 10;
-    var min_y = d3.min(data_plot, function (d, i) {
-                       return data_plot[i].yaxis;
-                       });
-    var max_y = d3.max(data_plot, function (d, i) {
-                       return data_plot[i].yaxis;
-                       });
-    var avg_y = (max_y - min_y) / 10;
-
-    var xScale = d3.scale.linear()
-    .domain([min_x - avg_x, max_x + avg_x])
-    .range([0, width]);
-
-    var yScale = d3.scale.linear()
-    .domain([min_y - avg_y, max_y + avg_y])
-    .range([height, 0]);
-
-    var xAxis = d3.svg.axis()
-    .scale(xScale)
-    .orient('bottom')
-    .tickSize(-height);
-
-    var yAxis = d3.svg.axis()
-    .scale(yScale)
-    .orient('left')
-    .ticks(5)
-    .tickSize(-width);
-
-    var zoom = d3.behavior.zoom()
-    .x(xScale)
-    .y(yScale)
-    .scaleExtent([1, 10])
-    .on("zoom", zoomed);
-
-    var chart_scatter = d3.select('#setxLeftPlot')
-    .append('svg:svg')
-    .attr('width', width + margin.right + margin.left)
-    .attr('height', height + margin.top + margin.bottom);
-    // .call(zoom); dropping this for now, until the line zooms properly
-
-    var main1 = chart_scatter.append('g')
-    .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')')
-    .attr('width', width+ margin.right + margin.left)
-    .attr('height', height + margin.top + margin.bottom)
-    .attr('class', 'main');
-
-    let gX = main1.append('g')
-    .attr('transform', 'translate(0,' + height + ')')
-    .attr('class', 'x axis')
-    .call(xAxis);
-
-    let gY = main1.append('g')
-    .attr('transform', 'translate(0,0)')
-    .attr('class', 'y axis')
-    .call(yAxis);
-
-    var clip = main1.append("defs").append("svg:clipPath")
-    .attr("id", "clip")
-    .append("svg:rect")
-    .attr("id", "clip-rect")
-    .attr("x", "0")
-    .attr("y", "0")
-    .attr('width', width)
-    .attr('height', height);
-
-    main1.append("g").attr("clip-path", "url(#clip)")
-    .selectAll("circle")
-    .data(data_plot)
-    .enter()
-    .append("circle")
-    .attr("cx", (d, i) => xScale(data_plot[i].xaxis))
-    .attr("cy", (d, i) => yScale(data_plot[i].yaxis))
-    .attr("r", 2)
-    .style("fill", "#B71C1C");
-
-
-    chart_scatter.append("text")
-    .attr("text-anchor", "middle")  // this makes it easy to centre the text as the transform is applied to the anchor
-    .attr("transform", "translate(" + padding / 5 + "," + (height / 2) + ")rotate(-90)")  // text is drawn off the screen top left, move down and out and rotate
-    .text(y_Axis_name)
-    .style("fill", "#424242")
-    .style("text-indent","20px")
-    .style("font-size","12px")
-    .style("font-weight","bold");
-
-    chart_scatter.append("text")
-    .attr("text-anchor", "middle")  // this makes it easy to centre the text as the transform is applied to the anchor
-    .attr("transform", "translate(" + (width / 2) + "," + (height + (padding / 2)) + ")")  // centre below axis
-    .text(x_Axis_name)
-    .style("fill", "#424242")
-    .style("text-indent","20px")
-    .style("font-size","12px")
-    .style("font-weight","bold");
-
-
-    main1.append("line")
-    .attr("x1", xScale(min_x))
-    .attr("y1", yScale(min_x))
-    .attr("x2", xScale(max_x))
-    .attr("y2", yScale(max_x))
-    .attr("stroke-width", 2)
-    .attr("stroke", "black");
-
-    function zoomed() {
-        var panX = d3.event.translate[0];
-        var panY = d3.event.translate[1];
-        var scale = d3.event.scale;
-
-        panX = panX > 10 ? 10 : panX;
-        var maxX = -(scale - 1) * width - 10;
-        panX = panX < maxX ? maxX : panX;
-
-        panY = panY > 10 ? 10 : panY;
-        var maxY = -(scale - 1) * height - 10;
-        panY = panY < maxY ? maxY : panY;
-
-        zoom.translate([panX, panY]);
-
-
-        main1.select(".x.axis").call(xAxis);
-        main1.select(".y.axis").call(yAxis);
-        main1.selectAll("circle")
-        .attr("cx", function (d, i) {
-              console.log("circle x ",xScale(5));
-              return xScale(data_plot[i].xaxis);
-              })
-        .attr("cy", function (d, i) {
-              return yScale(data_plot[i].yaxis);
-              })
-        .attr("r", 2.5)
-        .style("fill", "#B71C1C");
-
-       // below doesn't work, so I'm just dropping the zoom
-        main1.select("line")
-        .attr("x1", function(d, i) {
-              return xScale(min_x);
-              })
-        .attr("y1", function(d, i) {
-              return xScale(min_x);
-              })
-        .attr("x2", function(d, i) {
-              return xScale(max_x);
-              })
-        .attr("y2", function(d, i) {
-              return yScale(max_x);
-              })
-        .attr("stroke-width", 2)
-        .attr("stroke", "black");
-    }
-    //  d3.select("#NAcount").text("There are " + nanCount + " number of NA values in the relation.");
 }
 
 /** needs doc */
