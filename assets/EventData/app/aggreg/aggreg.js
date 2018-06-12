@@ -3,6 +3,8 @@ import {actorLinks} from "../subsets/Actor";
 
 import * as d3 from "d3";
 import m from 'mithril';
+import {genericMetadata} from "../app";
+import {selectedDataset} from "../app";
 
 let aggregMode = "penta";
 
@@ -828,7 +830,7 @@ export function makeAggregQuery(action, save = null) {
 		"toggles": (aggregMode == "penta" ? aggregPentaChkOrd : aggregRootChkOrd),
 		"action": action,		//preview = get dates, aggreg = perform aggregation, download = download aggreg
 		"numberPreview": aggregDataNumber,
-		"dataset": app.getDataset(app.selectedDataset)['key'],
+		"dataset": app.genericMetadata['datasets'][app.selectedDataset]['key'],
 		"datasource": app.datasource
 	};
 

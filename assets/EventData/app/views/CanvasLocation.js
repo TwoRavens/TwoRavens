@@ -6,8 +6,9 @@ export default class CanvasLocation {
     view(vnode) {
         let {data, preferences} = vnode.attrs;
         preferences['country_codes'] = preferences['country_codes'] || new Set();
+        preferences['regions'] = preferences['regions'] || new Set();
 
-        return (m("#canvasLocation", {style: {"display": display, 'padding-top': panelMargin}},
+        return (m("#canvasLocation", {style: {'padding-top': panelMargin}},
             [
                 m("[tabindex='0']", {
                         style: {

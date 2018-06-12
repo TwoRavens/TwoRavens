@@ -4,6 +4,8 @@ import * as common from '../../../common/common';
 import Table from '../../../common/views/Table';
 import ListTags from "../../../common/views/ListTags";
 import PlotBars from "./PlotBars";
+import {genericMetadata} from "../app";
+import {selectedDataset} from "../app";
 
 
 let data = [
@@ -32,7 +34,7 @@ export default class CanvasDatasets {
 
         let coerceArray = (value) => Array.isArray(value) ? value : [value];
 
-        let tempDataset = app.getDataset(this.dataset);
+        let tempDataset = app.genericMetadata['datasets'][this.dataset];
 
         let colgroupDataset = () => {
             return m('colgroup',
@@ -54,7 +56,7 @@ export default class CanvasDatasets {
         //     yLabel: 'Frequency by Month'
         // });
 
-        return m('div#canvasDatasets', {style: {display: display, width: '100%'}}, app.datasetMetadata.map((dataset) => {
+        return m('div#canvasDatasets', {style: {display: display, width: '100%'}}, Object.values(app.genericMetadata['datasets']).map((dataset) => {
             return m('div', {
                     style: {
                         width: '100%',

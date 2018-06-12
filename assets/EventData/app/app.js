@@ -33,11 +33,12 @@ if (!production) {
 let appname = 'eventdatasubsetapp';
 export let subsetURL = rappURL + appname;
 
-// metadata for each available dataset
-export let datasetMetadata = [];
+// metadata for all available datasets and type formats
+export let genericMetadata = {
+    'datasets': {},
+    'formats': {}
+};
 
-export let getDataset = (key) => datasetMetadata.filter(meta => meta['key'] === key)[0];
-export let getSubset = (dataset, subset) => getDataset(dataset)['subsets'][subset];
 export let getVariables = (dataset) => Object.values((dataset || {})['columns'] || {});
 
 // metadata computed on the dataset for each subset
@@ -85,7 +86,7 @@ window.addEventListener('resize', handleResize);
 export let selectedDataset;
 export let setSelectedDataset = (key) => {
     selectedDataset = key;
-    Object.keys(getDataset(selectedDataset)['subsets']).forEach(subset => {
+    Object.keys(genericMetadata['datasets'][selectedDataset]['subsets']).forEach(subset => {
         // ensure each subset has a place to store settings
         subsetPreferences[subset] = subsetPreferences[subset] || {};
     });
@@ -132,7 +133,7 @@ let subsetTypes = ['actor', 'action', 'coordinates', 'date', 'location', 'custom
 export let selectedSubsetName;
 export let setSelectedSubsetName = (subset) => {
     setSelectedCanvas('Subset');
-    let candidateSubset = getSubset(selectedDataset, subset);
+    let candidateSubset = genericMetadata['datasets'][selectedDataset]['subsets'][subset];
 
     if (candidateSubset && subsetTypes.indexOf(candidateSubset['type']) === -1) {
         alert('Invalid subset: ' + subset);
@@ -244,7 +245,8 @@ m.request({
     data: {'type': 'metadata'},
     method: 'POST'
 }).then((jsondata) => {
-    datasetMetadata = jsondata;
+    console.log(jsondata);
+    genericMetadata = jsondata;
     resetPeek();
 }).catch(laddaStop);
 
@@ -255,7 +257,7 @@ if (localStorage.getItem("dataset") !== null) {
 // Options: "api" or "local"
 export let datasource = 'api';
 
-export let subsetKeys = () => Object.keys(getDataset(selectedDataset)['subsets']);
+export let subsetKeys = () => Object.keys(genericMetadata['datasets'][selectedDataset]['subsets']);
 // TODO conditionally draw based on available aggregates
 export let aggregateKeys = ["Actor", "Date", "Penta Class", "Root Code", "Time Series", "Analysis"];
 
@@ -264,7 +266,7 @@ export let laddaUpdate;
 export let laddaReset;
 export let laddaDownload;
 
-export let variablesSelected = new Set();
+export let selectedVariables = new Set();
 
 // This is set once data is loaded and the graphs can be drawn. Subset menus will not be shown until this is set
 export let initialLoad = false;
@@ -276,7 +278,7 @@ export let subsetData = [];
 // if (localStorage.getItem("subsetData") !== null) {
 //     // Since the user has already submitted a query, restore the previous preferences from local data
 //     // All stored data is cleared on reset
-//     variablesSelected = new Set(JSON.parse(localStorage.getItem('variablesSelected')));
+//     selectedVariables = new Set(JSON.parse(localStorage.getItem('selectedVariables')));
 //     subsetData = JSON.parse(localStorage.getItem('subsetData'));
 // }
 
@@ -289,7 +291,6 @@ for (let child of subsetData) {
 }
 
 // Construct queries for current subset tree
-export let variableQuery = buildVariables();
 export let subsetQuery = buildSubset(stagedSubsetData);
 
 export function setupBody() {
@@ -303,10 +304,11 @@ export function setupBody() {
     resetPeek();
 
     let query = {
-        'subsets': JSON.stringify(subsetQuery),
-        'variables': JSON.stringify(variableQuery),
-        'dataset': getDataset(selectedDataset)['key'],
-        'datasource': datasource
+        'query': JSON.stringify(subsetQuery),
+        'variables': [...selectedVariables],
+        'dataset': genericMetadata['datasets'][selectedDataset]['key'],
+        'datasource': datasource,
+        'subsets': Object.keys(genericMetadata['datasets'][selectedDataset]['subsets'])
     };
 
     laddaReset.start();
@@ -323,10 +325,10 @@ export let variableSearch = '';
 export let setVariableSearch = (text) => variableSearch = text;
 
 export function toggleVariableSelected(variable) {
-    if (variablesSelected.has(variable)) {
-        variablesSelected.delete(variable);
+    if (selectedVariables.has(variable)) {
+        selectedVariables.delete(variable);
     } else {
-        variablesSelected.add(variable);
+        selectedVariables.add(variable);
     }
     reloadRightPanelVariables();
 }
@@ -352,21 +354,19 @@ export function download() {
     }
 
 	if (selectedMode === "subset") {
-		let variableQuery = buildVariables();
 		let subsetQuery = buildSubset(subsetData);
 
 		console.log("Query: " + JSON.stringify(subsetQuery));
-		console.log("Projection: " + JSON.stringify(variableQuery));
 
 		let query = {
-			'subsets': JSON.stringify(subsetQuery),
-			'dataset': dataset['key'],
+			'query': JSON.stringify(subsetQuery),
+			'dataset': selectedDataset,
 			'datasource': datasource,
 			'type': 'raw'
 		};
 
 		// only pass projection if variables are loaded and selected
-		if (Object.keys(variableQuery).length !== 0) Object.assign(query, {'variables': JSON.stringify(variableQuery)});
+		if (selectedVariables.size !== 0) Object.assign(query, {'variables': [...selectedVariables]});
 
 		laddaDownload.start();
         m.request({
@@ -401,7 +401,7 @@ let peekAllDataReceived = false;
 let peekIsGetting = false;
 
 if (selectedMode !== 'peek') {
-    localStorage.setItem('peekHeader', (getDataset(selectedDataset) || {})['name']);
+    localStorage.setItem('peekHeader', (genericMetadata['datasets'][selectedDataset] || {})['name']);
     localStorage.removeItem('peekTableData');
 }
 // localStorage.setItem('peekTableData', JSON.stringify(peekData));
@@ -417,24 +417,22 @@ let onStorageEvent = (e) => {
 };
 
 let updatePeek = async () => {
-    let variableQuery = buildVariables();
     let subsetQuery = buildSubset(subsetData);
 
     console.log("Peek Update");
     console.log("Query: " + JSON.stringify(subsetQuery));
-    console.log("Projection: " + JSON.stringify(variableQuery));
 
     let query = {
         subsets: JSON.stringify(subsetQuery),
         skip: peekSkip,
         limit: peekBatchSize,
-        dataset: dataset['key'],
+        dataset: selectedDataset,
         datasource: datasource,
         type: 'peek'
     };
 
     // conditionally pass variable projection
-    if (Object.keys(variableQuery).length !== 0) query['variables'] = JSON.stringify(variableQuery);
+    if (selectedVariables.size !== 0) query['variables'] = [...selectedVariables];
 
     // cancel the request
     if (!peekIsGetting) return;
@@ -510,7 +508,7 @@ export function pageSetup(jsondata) {
         'actor': data => Object.keys(data)
             // restructure under source/target, as full, entities, roles and attributes
             .reduce((out, field) => {
-                let genericField = dataset['columns'][field];
+                let genericField = genericMetadata['datasets'][selectedDataset]['columns'][field];
                 let genericID = ['tgt_', 'src_', '<', '>'].reduce((out, txt) => out.replace(txt, ''), genericField);
                 let actorTab = (genericField.includes('source') || genericField.includes('src')) ? 'source' : 'target';
 
@@ -549,23 +547,12 @@ export function pageSetup(jsondata) {
                 return(out);
             }, {})
     };
-    console.log("TEST 2")
 
     // reformat date, action, and location metadata
-    subsetMetadata = Object.keys(getDataset(selectedDataset)['subsets']).reduce((out, key) => {
-            out[key] = reformatters[getDataset(selectedDataset)['subsets'][key]['type']](jsondata[key]);
+    subsetMetadata = Object.keys(genericMetadata['datasets'][selectedDataset]['subsets']).reduce((out, key) => {
+            out[key] = reformatters[genericMetadata['datasets'][selectedDataset]['subsets'][key]['type']](jsondata[key]);
             return(out);
         }, {});
-    console.log("TEST 3")
-
-    console.log(subsetMetadata);
-
-    if (selectedCanvas === 'Action') {
-        drawGraphs();
-        updateData();
-    }
-
-    console.log("TEST 3")
 
     // If first load of data, user may have selected a subset and is waiting. Render page now that data is available
     if (!initialLoad) {
@@ -573,11 +560,10 @@ export function pageSetup(jsondata) {
         if (selectedCanvas === 'Actor') resizeActorSVG();
     }
     initialLoad = true;
-    console.log("TEST 4")
 
     // find a subset of type
-    let findType = (type) => Object.keys(datasetMetadata['subsets'])
-        .filter(label => datasetMetadata['subsets'][label]['type'] === type)[0];
+    let findType = (type) => Object.keys(genericMetadata['subsets'])
+        .filter(label => genericMetadata['subsets'][label]['type'] === type)[0];
 
     totalSubsetRecords = subsetMetadata[findType('date') || findType('action') || findType('location')]
         .reduce((accum, val) => accum + val['total']);
@@ -601,7 +587,7 @@ export function pageSetup(jsondata) {
 // }
 
 // variableData is used to create the tree gui on the right panel
-// names of variables comes from 'variablesSelected' variable
+// names of variables comes from 'selectedVariables' variable
 let variableData = [];
 
 let nodeId = 1;
@@ -840,17 +826,17 @@ window.callbackDelete = function (id) {
                 }
             }
 
-            let variableQuery = buildVariables();
             let subsetQuery = buildSubset(stagedSubsetData);
 
             // console.log(JSON.stringify(subsetQuery));
             // console.log(JSON.stringify(variableQuery, null, '  '));
 
             let query = {
-                'subsets': JSON.stringify(subsetQuery),
-                'variables': JSON.stringify(variableQuery),
-                'dataset': dataset['key'],
-                'datasource': datasource
+                'query': JSON.stringify(subsetQuery),
+                'variables': [...selectedVariables],
+                'dataset': selectedDataset,
+                'datasource': datasource,
+                'subsets': Object.keys(genericMetadata['datasets'][selectedDataset]['subsets'])
             };
 
             laddaUpdate.start();
@@ -868,7 +854,7 @@ window.callbackDelete = function (id) {
 
             // TAGGED: LOCALSTORE
             // // Store user preferences in local data
-            // localStorage.setItem('variablesSelected', JSON.stringify([...variablesSelected]));
+            // localStorage.setItem('selectedVariables', JSON.stringify([...selectedVariables]));
             //
             // localStorage.setItem('subsetData', $('#subsetTree').tree('toJson'));
             // localStorage.setItem('nodeId', String(nodeId));
@@ -881,7 +867,7 @@ window.callbackDelete = function (id) {
 // Updates the rightpanel variables menu
 function reloadRightPanelVariables() {
     variableData.length = 0;
-    [...variablesSelected].forEach(function (element) {
+    [...selectedVariables].forEach(function (element) {
         variableData.push({
             name: element,
             cancellable: false,
@@ -1258,10 +1244,10 @@ function getSubsetPreferences() {
 
 export function reset() {
     // suppress server queries from the reset button when the webpage is already reset
-    let suppress = variablesSelected.size === 0 && subsetData.length === 0;
+    let suppress = selectedVariables.size === 0 && subsetData.length === 0;
 
     // TAGGED: LOCALSTORE
-    // localStorage.removeItem('variablesSelected');
+    // localStorage.removeItem('selectedVariables');
     // localStorage.removeItem('subsetData');
     // localStorage.removeItem('nodeId');
     // localStorage.removeItem('groupId');
@@ -1270,7 +1256,7 @@ export function reset() {
     subsetData.length = 0;
     $('#subsetTree').tree('loadData', subsetData);
 
-    variablesSelected.clear();
+    selectedVariables.clear();
     nodeId = 1;
     groupId = 1;
     queryId = 1;
@@ -1279,10 +1265,11 @@ export function reset() {
 
     if (!suppress) {
         let query = {
-            'subsets': JSON.stringify({}),
+            'query': JSON.stringify({}),
             'variables': JSON.stringify({}),
-            'dataset': dataset['key'],
-            'datasource': datasource
+            'dataset': selectedDataset,
+            'datasource': datasource,
+            'subsets': Object.keys(genericMetadata['datasets'][selectedDataset]['subsets'])
         };
 
         laddaReset.start();
@@ -1348,7 +1335,7 @@ export function submitQuery(datasetChanged=false) {
 
         // TAGGED: LOCALSTORE
         // // Store user preferences in local data
-        // localStorage.setItem('variablesSelected', JSON.stringify([...variablesSelected]));
+        // localStorage.setItem('selectedVariables', JSON.stringify([...selectedVariables]));
         //
         // localStorage.setItem('subsetData', subsetTree.tree('toJson'));
         // localStorage.setItem('nodeId', String(nodeId));
@@ -1356,18 +1343,17 @@ export function submitQuery(datasetChanged=false) {
         // localStorage.setItem('queryId', String(queryId));
     }
 
-    let variableQuery = buildVariables();
     let subsetQuery = buildSubset(subsetData);
 
     console.log("Query: " + JSON.stringify(subsetQuery));
-    // console.log(JSON.stringify(variableQuery, null, '  '));
 
     let query = {
-        'subsets': JSON.stringify(subsetQuery),
-        'variables': JSON.stringify(variableQuery),
+        'query': JSON.stringify(subsetQuery),
+        'variables': [...selectedVariables],
         'dataset': selectedDataset,
         'datasource': datasource,
-        'type': 'sample'
+        'type': 'summary',
+        'subsets': Object.keys(genericMetadata['datasets'][selectedDataset]['subsets'])
     };
 
     if (datasetChanged) laddaReset.start();
@@ -1378,23 +1364,6 @@ export function submitQuery(datasetChanged=false) {
         data: query,
         method: 'POST'
     }).then(submitQueryCallback) // TODO re-enable catch after debugging. Possibly make this one custom/explicit because tracking this down is annoying .catch(laddaStop);
-}
-
-// Construct mongoDB selection (subsets columns)
-function buildVariables() {
-    let fieldQuery = {};
-    let variablelist = [...variablesSelected];
-
-    // Select all fields if none selected
-    if (variablelist.length === 0) {
-        variablelist = getVariables(getDataset(selectedDataset));
-    }
-
-    for (let idx in variablelist) {
-        fieldQuery[variablelist[idx]] = 1;
-    }
-
-    return fieldQuery;
 }
 
 // Construct mongoDB filter (subsets rows)
@@ -1491,7 +1460,7 @@ function processRule(rule) {
     let rule_query = {};
 
     if (rule.name === 'Date Subset') {
-        let date_schema = getDataset(selectedDataset)['subsets'][selectedCanvas]['format'];
+        let date_schema = genericMetadata['datasets'][selectedDataset]['subsets'][selectedSubsetName]['format'];
 
         // construct a query that works for separate year, month and day fields
         if (date_schema === 'fields') {
@@ -1580,7 +1549,7 @@ function processRule(rule) {
     if (rule.name === 'Action Subset') {
         let rule_query_inner = [];
 
-        if (getDataset(selectedDataset)['subsets'][selectedCanvas]['format'] === 'CAMEO root code') {
+        if (genericMetadata['datasets'][selectedDataset]['subsets'][selectedSubsetName]['format'] === 'CAMEO root code') {
             for (let child of rule.children) {
                 rule_query_inner.push(pad(parseInt(child.name)));
             }
@@ -1593,7 +1562,7 @@ function processRule(rule) {
             rule_query['<root_code>'] = rule_query_inner;
         }
 
-        if (getDataset(selectedDataset)['subsets'][selectedCanvas]['action'] === "CAMEO") {
+        if (genericMetadata['datasets'][selectedDataset]['subsets'][selectedSubsetName]['action'] === "CAMEO") {
             let prefixes = [];
             for (let child of rule.children) {
                 prefixes.push(pad(parseInt(child.name)));
@@ -1631,8 +1600,8 @@ function processRule(rule) {
 
     if (rule.name === 'Coords Subset') {
         // The only implemented coordinates unit type is signed degrees
-        if (getDataset(selectedDataset)['subsets'][selectedCanvas]['format'] !== 'signed degrees')
-            console.log("invalid format: " + getDataset(selectedDataset)['subsets'][selectedCanvas]['format']);
+        if (genericMetadata['datasets'][selectedDataset]['subsets'][selectedSubsetName]['format'] !== 'signed degrees')
+            console.log("invalid format: " + genericMetadata['datasets'][selectedDataset]['subsets'][selectedSubsetName]['format']);
 
         let rule_query_inner = [];
 

@@ -88,25 +88,39 @@ eventdata_subset.app <- function(env) {
         return(response$finish())
     }
 
-    everything <- jsonlite::fromJSON(post, simplifyDataFrame = FALSE)
+    everything <- jsonlite::fromJSON(post, simplifyDataFrame=FALSE)
     print(everything)
 
-    # metadata: return data about each dataset
-    # raw: return query as is
-    # summary: return metadata
-    # actor: return actor filtering
+    # VALUES FOR TYPE
+    # metadata: return data about each dataset (list of variables, available subsets, citations)
+    # formats: return formatting metadata (mappings definitions for each subset)
     # validate: check if query is valid
-
+    # raw: return query data as-is. Heavy.
+    # summary: return display metadata computed from dataset
     type = everything$type
 
+    # corresponds to dataset keys from ./eventdata/datasets/*.json
     dataset = everything$dataset
-    subsets = everything$subsets
+
+    # JSON-string MongoDB find or aggregation match query
+    query = everything$query
+
+    # list of variables or classifications to project to
     variables = everything$variables
 
+    # corresponds to subset names from ./eventdata/datasets/*.json > 'subsets'
+    subsets = everything$subsets
+
     if (!is.null(type) && type == 'metadata') {
-        response$write(toString(jsonlite::toJSON(lapply(list.files('./eventdata/datasets'), function(path) {
-            return(jsonlite::fromJSON(readLines(paste('./eventdata/datasets/', path, sep=""), warn=FALSE)))
-        }), auto_unbox=TRUE)))
+        readMeta = function(path) {
+            setNames(lapply(list.files(path), function(filename) {
+                return(jsonlite::fromJSON(readLines(paste(path, filename, sep=""), warn=FALSE)))
+            }), lapply(list.files(path), function(val) {gsub('.json', '', val)}))
+        }
+
+        response$write(toString(jsonlite::toJSON(list(
+            datasets=readMeta('./eventdata/datasets/'),
+            formats=readMeta('./eventdata/formats/')), auto_unbox=TRUE)))
         return(response$finish())
     }
 
@@ -119,7 +133,6 @@ eventdata_subset.app <- function(env) {
         datasource = everything$datasource
     }
 
-    print(datasource)
     if (!production && datasource == "local") {
         server_address = EVENTDATA_LOCAL_SERVER_ADDRESS
     }
@@ -144,13 +157,15 @@ eventdata_subset.app <- function(env) {
         }, error = genericErrorHandler)
     }
 
+    formatVar = function(var) {temp=list(); temp[[var]]=jsonlite::unbox(1); temp}
+
     if (!is.null(type) && type == 'raw') {
         if (!is.null(variables)) {
             result = getData(paste(eventdata_url, '&aggregate=',
-                '[{"$match":', subsets, '},',
-                 '{"$project":', variables, '}]', sep=""))
+                '[{"$match":', query, '},',
+                 '{"$project":', jsonlite::toJSON(lapply(variables, formatVar)), '}]', sep=""))
         } else {
-            result = getData(paste(eventdata_url, '&query=', subsets, sep=""))
+            result = getData(paste(eventdata_url, '&query=', query, sep=""))
         }
 
         result['_id'] = NULL
@@ -166,10 +181,10 @@ eventdata_subset.app <- function(env) {
 
     if (!is.null(type) && type == 'peek') {
         projection = '';
-        if (!is.null(variables)) projection = paste('{"$project":', variables, '},', sep="")
+        if (!is.null(variables)) projection = paste('{"$project":', jsonlite::toJSON(lapply(variables, formatVar)), '},', sep="")
 
         result = getData(paste(eventdata_url, '&aggregate=',
-            '[{"$match":', subsets, '},',
+            '[{"$match":', query, '},',
             projection,
             '{"$skip":', everything$skip, '},',
             '{"$limit":', everything$limit, '}]', sep=""))
@@ -190,7 +205,7 @@ eventdata_subset.app <- function(env) {
         }
 
         tryCatch({
-            getData(paste(eventdata_url, '&query=', subsets, sep=""))
+            getData(paste(eventdata_url, '&query=', query, sep=""))
             response$write('{"response": "Query is valid."}')},
         warning = handler,
         error = handler)
@@ -202,25 +217,12 @@ eventdata_subset.app <- function(env) {
     subset_config = jsonlite::fromJSON(readLines(paste("./eventdata/config/subsets.json", sep="")));
     delimited_columns = jsonlite::fromJSON(readLines(paste("./eventdata/config/delimited_columns.json", sep="")));
 
-    # Arguments specific to sources/targets queries
-    if (!is.null(type) && type == 'source') {
-        unique_vals = sort(unlist(getData(paste(eventdata_url, '&unique=<source>&query=', subsets, sep=""))))
-        response$write(toString(jsonlite::toJSON(list(source = unique_vals))))
-        return(response$finish())
-    }
-
-    if (!is.null(type) && type == 'target') {
-        unique_vals = sort(unlist(getData(paste(eventdata_url, '&unique=<target>&query=', subsets, sep=""))))
-        response$write(toString(jsonlite::toJSON(list(target = unique_vals))))
-        return(response$finish())
-    }
-
     # Check if metadata has already been computed, and return cached value if it has
     # if (!file.exists("./data/cachedQueries.RData")) save(list(0), file="./data/cachedQueries.RData")
     #
     # cachedQueries = load("./data/cachedQueries.RData")
-    # if (subsets %in% cachedQueries) {
-    #     response$write(getData(paste("./data/", match(subsets, cachedQueries)), ".txt"))$data
+    # if (query %in% cachedQueries) {
+    #     response$write(getData(paste("./data/", match(query, cachedQueries)), ".txt"))$data
     #     return(response$finish())
     # }
 
@@ -239,21 +241,23 @@ eventdata_subset.app <- function(env) {
         sink()
     }
 
-    query_url = paste(eventdata_url, '&query=', subsets, sep="")
+    query_url = paste(eventdata_url, '&query=', query, sep="")
 
     # construct all futures
-    futures = sapply(metadata$subsets, function(subset) {
+    futures = sapply(subsets, function(subset) {
+
+        subsetMetadata = metadata$subsets[[subset]]
 
         # handle the groupable subsets separately
-        if (subset_config[[subset$type]]$grouped) {
+        if (subset_config[[subsetMetadata$type]]$grouped) {
 
             # if the dataset does not have <year> and <month> columns, then construct them from <date>
-            if (subset$type == 'date' && !all(list('<year>', '<month>') %in% unlist(metadata$columns, use.names=FALSE))) {
+            if (subsetMetadata$type == 'date' && !all(list('<year>', '<month>') %in% unlist(metadata$columns, use.names=FALSE))) {
                 return(future(tryCatch({
                     data = do.call(data.frame, getData(paste(eventdata_url, '&aggregate=',
-                        '[{"$match":', subsets, '},',
+                        '[{"$match":', query, '},',
                          '{"$project": {"Year":  {"$substr": ["$<date>", 0, 4]},',
-                         ' "Month": {"$substr": ["$<date>",', if (subset$format == 'YYYYMMDD') '4' else '5', ',2]}}},',     # Construct year and month fields
+                         ' "Month": {"$substr": ["$<date>",', if (subsetMetadata$format == 'YYYYMMDD') '4' else '5', ',2]}}},',     # Construct year and month fields
                          '{"$group": { "_id": { "year": "$Year", "month": "$Month" }, "total": {"$sum": 1} }}]', sep=""))) # Group by years and months
                     if (nrow(data) != 0) colnames(data) = c('total', '<year>', '<month>')
                     data
@@ -261,10 +265,10 @@ eventdata_subset.app <- function(env) {
             }
 
             # if the dataset does not have an <action_code> column, then attempt to construct it from <cameo>
-            if (subset$type == 'action' && !('<action_code>' %in% unlist(metadata$columns, use.names=FALSE))) {
+            if (subsetMetadata$type == 'action' && !('<action_code>' %in% unlist(metadata$columns, use.names=FALSE))) {
                 return(future(tryCatch({
                     data = do.call(data.frame, getData(paste(eventdata_url, '&aggregate=',
-                        '[{"$match":', subsets, '},',
+                        '[{"$match":', query, '},',
                          '{"$project": {"RootCode":  {"$substr": ["$<cameo>", 0, 2]}}},',                          # Construct RootCode field
                          '{"$group": { "_id": { "action_code": "$RootCode" }, "total": {"$sum": 1} }}]', sep=""))) # Group by RootCode
                     if (nrow(data) != 0) colnames(data) = c('total', '<action_code>')
@@ -273,16 +277,16 @@ eventdata_subset.app <- function(env) {
             }
 
             return(future(tryCatch({
-                data = do.call(data.frame, getData(paste(query_url, '&group=', paste(subset$columns, collapse=","), sep="")))
-                if (nrow(data) != 0) colnames(data) = c('total', lapply(subset$columns, function(col) {metadata$columns[[col]]}))
+                data = do.call(data.frame, getData(paste(query_url, '&group=', paste(subsetMetadata$columns, collapse=","), sep="")))
+                if (nrow(data) != 0) colnames(data) = c('total', lapply(subsetMetadata$columns, function(col) {metadata$columns[[col]]}))
                 data
             }, error=genericErrorHandler)) %plan% multiprocess)
         }
 
-        return(sapply(subset$columns, function(column) {
+        return(sapply(subsetMetadata$columns, function(column) {
             return(future(tryCatch({
                 data = getData(paste(query_url, '&unique=', column, '', sep=""))
-                if (metadata$columns[[column]] %in% names(delimited_columns)) data = uniques(data, delimited_columns[[metadata$columns[[column]]]])
+                if (subsetMetadata$columns[[column]] %in% names(delimited_columns)) data = uniques(data, delimited_columns[[subsetMetadata$columns[[column]]]])
                 return(sort(unlist(data)))
             }, error=genericErrorHandler)) %plan% multiprocess)
         }))

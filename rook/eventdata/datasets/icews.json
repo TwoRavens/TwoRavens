@@ -32,7 +32,7 @@
     },
     "Location": {
       "type": "location",
-      "format": "english full name",
+      "format": "fullname",
       "columns": [
         "Country"
       ]

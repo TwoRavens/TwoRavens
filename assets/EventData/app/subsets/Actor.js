@@ -3,6 +3,7 @@ import * as d3 from 'd3'
 import {panelOcclusion} from "../../../common/common";
 import {updateAggregTable} from "../aggreg/aggreg";
 import m from 'mithril'
+import {genericMetadata, selectedDataset} from "../app";
 
 // number of elements to show in search actor list
 let defaultPageSize = 200;
@@ -284,7 +285,7 @@ export function setupActor(){
         if (searchText === cachedSearch) return;
         cachedSearch = searchText;
 
-        if (app.getDataset(app.selectedDataset)['subsets'][app.selectedCanvas]['formats'] === 'icews') {
+        if (app.genericMetadata['datasets'][app.selectedDataset]['subsets'][app.selectedCanvas]['formats'] === 'icews') {
             clearTimeout(searchTimeout);
             searchTimeout = setTimeout(() => {
                 actorSearch();
@@ -1152,7 +1153,7 @@ function createElement(actorType, columnType, value, chkSwitch = true) {
     // listElement.appendChild(separator);
 
     // Don't use popovers for icews
-    if (app.getDataset(app.selectedDataset)['subsets']['Actor']['formats'] === 'icews') return entry;
+    if (app.genericMetadata['datasets'][selectedDataset]['subsets'][app.selectedSubsetName]['formats'] === 'icews') return entry;
 
     label.onmouseover = function () {
         if (!$(this).attr("data-content")) {
@@ -1323,7 +1324,7 @@ export function actorSearch(force=false) {
     let actorFilters = [];
 
     let abbreviated = currentTab === "source" ? "src" : "tgt";
-    let dataset = app.getDataset(app.selectedDataset);
+    let dataset = genericMetadata['datasets'][selectedDataset];
 
     if (dataset['subsets']['Actor']['format'] !== 'icews' && filterSet[currentTab]["entities"].size !== 0) {
         let filter = {};
