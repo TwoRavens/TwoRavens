@@ -262,7 +262,7 @@ class Body {
     }
 
     view(vnode) {
-        let {mode, variable} = vnode.attrs;
+        let {mode, var1, var2} = vnode.attrs;
         let model_mode = !mode;
         let explore_mode = mode === 'explore';
         let results_mode = mode === 'results';
@@ -287,8 +287,9 @@ class Body {
 
         let overflow = explore_mode ? 'auto' : 'hidden';
         let style = `position: absolute; left: ${app.panelWidth.left}; top: 0; margin-top: 10px`;
-        let node = app.findNode(variable);
-        let plot = node && node.plottype === 'continuous' ? plots.density : plots.bars;
+        let node1 = app.findNode(var1);
+        let node2 = app.findNode(var2);
+        let plot = node1 && node1.plottype === 'continuous' ? plots.density : plots.bars;
         let sortedNodes = nodesExplore.concat().sort((x, y) => x.id - y.id);
         return m('main', [
             m(Modal),
@@ -296,24 +297,27 @@ class Body {
             this.footer(mode),
             m(`#main.left`, {style: {overflow}},
               m("#innercarousel.carousel-inner", {style: {height: `calc(100% + ${app.marginTopCarousel}px)`, overflow}},
-                explore_mode && (variable ? m('#plot', {style, oncreate: _ => plot(node, 'explore', true)}) : m('table', {style}, [
-                    m('thead', [''].concat(sortedNodes).map(x => m('th', x.name))),
-                    m('tbody', sortedNodes.map(y => {
-                        return m('tr', [
-                            m('td', {style: 'height: 160px; transform: rotate(-90deg); font-weight: bold'}, y.name),
-                            sortedNodes.map(x => {
-                                let td = x === y && x.plottype === 'continuous' ? 'density' :
-                                    x === y ? 'bars' :
-                                    x.plottype === y.plottype ? 'scatterplot' :
-                                    'box-whisker';
-                                let title = x === y ? x.name : `${x.name}-${y.name}`;
-                                return m('td', {style: 'height: 160px; width: 160px'},
-                                         m('a', {href: `/explore/${x.name}`, oncreate: m.route.link},
-                                           m('img', {src: `/static/images/${td}.png`, title, alt: title})));
-                            })
-                        ]);
-                    }))
-                ])),
+                explore_mode && (
+                    var1 && var2 ? m('#plot', {style, oncreate: _ => plots.scatter(node1.plotx, node2.ploty, node1.name, node2.name, '#plot')}) :
+                    var1 ? m('#plot', {style, oncreate: _ => plot(node1, 'explore', true)}) :
+                    m('table', {style}, [
+                        m('thead', [''].concat(sortedNodes).map(x => m('th', x.name))),
+                        m('tbody', sortedNodes.map(y => {
+                            return m('tr', [
+                                m('td', {style: 'height: 160px; transform: rotate(-90deg); font-weight: bold'}, y.name),
+                                sortedNodes.map(x => {
+                                    let td = x === y && x.plottype === 'continuous' ? 'density' :
+                                        x === y ? 'bars' :
+                                        x.plottype === y.plottype ? 'scatterplot' :
+                                        'box-whisker';
+                                    let title = x === y ? x.name : `${x.name}/${y.name}`;
+                                    return m('td', {style: 'height: 160px; width: 160px'},
+                                             m('a', {href: `/explore/${title}`, oncreate: m.route.link},
+                                               m('img', {src: `/static/images/${td}.png`, title, alt: title})));
+                                })
+                            ]);
+                        }))
+                    ])),
                 m('svg#whitespace')),
               model_mode && m("#spacetools.spaceTool", {style: {right: app.panelWidth['right'], 'z-index': 16}},
                               m(`button#btnLock.btn.btn-default`, {
@@ -533,8 +537,14 @@ m.route(document.body, '/model', {
         },
         render: () => m(Body, {mode: 'explore'})
     },
-    '/explore/:variable': {
-        render: vnode => m(Body, {mode: 'explore', variable: vnode.attrs.variable})
+    '/explore/:var1': {
+        render: vnode => m(Body, {mode: 'explore', var1: vnode.attrs.var1})
+    },
+    '/explore/:var1/:var2': {
+        render: vnode => {
+            let {var1, var2} = vnode.attrs;
+            return m(Body, {mode: 'explore', var1, var2});
+        }
     },
     '/results': {
         onmatch() {

@@ -473,7 +473,6 @@ export function bars(node, div, priv) {
         var plotsvg = d3.select(mydiv)
             .selectAll("svg")
             .remove();
-
         var plotsvg = d3.select(mydiv)
             .append("svg")
             .attr("id", () => node.name.toString().concat(mydiv.substr(1)))
@@ -516,11 +515,11 @@ export function bars(node, div, priv) {
                 .append("line")
                 .style("stroke", "black")
                 .attr("x1", function(d, i) {
-                    return x(xVals[i] - 0.5 + barPadding) + rectWidth / 2
+                    return x(xVals[i] - 0.5 + barPadding) + rectWidth / 2;
                 })
         	.attr("y1", d => y(maxY - d))
                 .attr("x2", function(d, i) {
-                    return x(xVals[i] - 0.5 + barPadding) + rectWidth / 2
+                    return x(xVals[i] - 0.5 + barPadding) + rectWidth / 2;
                 })
                 .attr("y2", d => {
                     let y2 = y(maxY - d + ciSize);
@@ -537,9 +536,9 @@ export function bars(node, div, priv) {
                 .style("stroke", "black")
                 .attr("x1", function(d, i) {
                     if (yVals.length > 20) {
-                        return x(xVals[i] - 0.5 + barPadding) //make tick bigger to increase visibility
+                        return x(xVals[i] - 0.5 + barPadding); //make tick bigger to increase visibility
                     } else {
-                        return x(xVals[i] - 0.5 + barPadding) + 0.4 * rectWidth
+                        return x(xVals[i] - 0.5 + barPadding) + 0.4 * rectWidth;
                     }
                 })
                 .attr("y1", function(d) {
@@ -547,9 +546,9 @@ export function bars(node, div, priv) {
                 })
                 .attr("x2", function(d, i) {
                     if (yVals.length > 20) {
-                        return x(xVals[i] - 0.5 + barPadding) + rectWidth //make tick bigger to increase visibility
+                        return x(xVals[i] - 0.5 + barPadding) + rectWidth; //make tick bigger to increase visibility
                     } else {
-                        return x(xVals[i] - 0.5 + barPadding) + 0.6 * rectWidth
+                        return x(xVals[i] - 0.5 + barPadding) + 0.6 * rectWidth;
                     }
                 })
                 .attr("y2", d => y(maxY - d));
@@ -563,17 +562,17 @@ export function bars(node, div, priv) {
                 .style("stroke", "black")
                 .attr("x1", function(d, i) {
                     if (yVals.length > 20) {
-                        return x(xVals[i] - 0.5 + barPadding)
+                        return x(xVals[i] - 0.5 + barPadding);
                     } else {
-                        return x(xVals[i] - 0.5 + barPadding) + 0.4 * rectWidth
+                        return x(xVals[i] - 0.5 + barPadding) + 0.4 * rectWidth;
                     }
                 })
                 .attr("y1", d => y(maxY - d))
                 .attr("x2", function(d, i) {
                     if (yVals.length > 20) {
-                        return x(xVals[i] - 0.5 + barPadding) + rectWidth
+                        return x(xVals[i] - 0.5 + barPadding) + rectWidth;
                     } else {
-                        return x(xVals[i] - 0.5 + barPadding) + 0.6 * rectWidth
+                        return x(xVals[i] - 0.5 + barPadding) + 0.6 * rectWidth;
                     }
                 })
                 .attr("y2", d => y(maxY - d));
@@ -616,7 +615,7 @@ export function bars(node, div, priv) {
                         return x(maxX + 0.5 - barPadding);
                     }
                 })
-                .attr("y2", y(maxY) - node.threshold)
+                .attr("y2", y(maxY) - node.threshold);
         }
     }
 
@@ -907,12 +906,8 @@ export function barsSubset(node) {
         xi = xi + 1;
     }
     if (node.nature === "nominal") { // if nominal, orders bars left to right, highest frequency to lowest
-        yValKey.sort(function(a, b) {
-            return b.y - a.y
-        }); // array of objects, each object has y, the same as yVals, and x, the category
-        yVals.sort(function(a, b) {
-            return b - a
-        }); // array of y values, the height of the bars
+        yValKey.sort((a, b) => b.y - a.y); // array of objects, each object has y, the same as yVals, and x, the category
+        yVals.sort((a, b) => b - a); // array of y values, the height of the bars
     }
 
     plotXaxis = false;
@@ -1043,7 +1038,7 @@ export function barsSubset(node) {
                         var selecteds = new Array;
                         a.forEach(function(val) {
                             selecteds.push(yValKey[val].x);
-                        })
+                        });
                         return ("Selected: " + selecteds);
                     }
                 });
@@ -1092,7 +1087,6 @@ export function barsSubset(node) {
             return "Selected: " + selecteds;
         });
 }
-
 
 export function densityNode(node, obj, radius) {
     var myname = node.name.toString().concat("nodeplot");
@@ -1231,9 +1225,9 @@ export function barsNode(node, obj, radius) {
         .attr("fill", "#1f77b4");
 }
 
-export function scatter(x_Axis, y_Axis, x_Axis_name, y_Axis_name) {
-    d3.select("#setxLeftPlot").html("");
-    d3.select("#setxLeftPlot").select("svg").remove();
+export function scatter(x_Axis, y_Axis, x_Axis_name, y_Axis_name, id='#setxLeftPlot') {
+    d3.select(id).html("");
+    d3.select(id).select("svg").remove();
 
     x_Axis = x_Axis.map(Number);
     y_Axis = y_Axis.map(Number);
@@ -1290,7 +1284,7 @@ export function scatter(x_Axis, y_Axis, x_Axis_name, y_Axis_name) {
         .scaleExtent([1, 10])
         .on("zoom", zoomed);
 
-    var chart_scatter = d3.select('#setxLeftPlot')
+    var chart_scatter = d3.select(id)
         .append('svg:svg')
         .attr('width', width + margin.right + margin.left)
         .attr('height', height + margin.top + margin.bottom);
