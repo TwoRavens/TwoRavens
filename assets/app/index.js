@@ -399,15 +399,18 @@ class Body {
               m("#innercarousel.carousel-inner", {style: {height: `calc(100% + ${app.marginTopCarousel}px)`, overflow}},
                 explore_mode && (variable ? m('#plot', {style, oncreate: _ => plot(node, 'explore', true)}) : m('table', {style}, [
                     m('thead', [''].concat(sortedNodes).map(x => m('th', x.name))),
-                    m('tbody', sortedNodes.map(x => {
+                    m('tbody', sortedNodes.map(y => {
                         return m('tr', [
-                            m('td', {style: 'height: 160px; transform: rotate(-90deg); font-weight: bold'}, x.name),
-                            sortedNodes.map(y => {
+                            m('td', {style: 'height: 160px; transform: rotate(-90deg); font-weight: bold'}, y.name),
+                            sortedNodes.map(x => {
                                 let td = x === y && x.plottype === 'continuous' ? 'density' :
                                     x === y ? 'bars' :
                                     x.plottype === y.plottype ? 'scatterplot' :
                                     'box-whisker';
-                                return m('td', {style: 'height: 160px; width: 160px'}, m('a', {href: `/explore/${x.name}`, oncreate: m.route.link}, m('img', {src: `/static/images/${td}.png`})));
+                                let title = x === y ? x.name : `${x.name}-${y.name}`;
+                                return m('td', {style: 'height: 160px; width: 160px'},
+                                         m('a', {href: `/explore/${x.name}`, oncreate: m.route.link},
+                                           m('img', {src: `/static/images/${td}.png`, title, alt: title})));
                             })
                         ]);
                     }))
