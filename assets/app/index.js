@@ -632,7 +632,9 @@ m.route(document.body, '/model', {
     '/model': {render: () => m(Body)},
     '/explore': {
         onmatch() {
-            nodesExplore = app.nodes.concat();
+            if (m.route.get() === '/model') {
+                nodesExplore = app.nodes.concat();
+            }
         },
         render: () => m(Body, {mode: 'explore'})
     },
