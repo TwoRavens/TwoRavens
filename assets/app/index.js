@@ -158,88 +158,82 @@ function rightpanel(mode) {
         return [];
 
         let sectionsExplore = [
-            {
-                value: 'Univariate',
-                contents: [
-                    m('#decision_prompt',
-                        `Right click pebble variables to draw links between them. Select a variable in the list of linked pebbles below to draw a decision tree for that variable.`),
-                    m('#decisionTree[style=width: 100%; height:80%; overflow-y:scroll; float: left; white-space: nowrap; margin-top: 2px;]'),
-                    m(PanelList, {
-                        id: 'varListExplore',
-                        items: app.nodes.map(n => n.name),
-                        colors: {[app.hexToRgba(common.selVarColor)]: [exp.exploreVar]},
-                        callback: variable => exp.callTreeApp(variable, app),
-                        attrsAll: {style: {float: 'left', width: '100%', height: '20%'}}
-                    })
-                    // m('#varList[style=display: block]',
-                    //     unique_link_names().map(x => m(`p#${x.replace(/\W/g, '_')}`, {onclick: _=> exp.callTreeApp(x, app), style: {'background-color': app.varColor}}, x))))
-                ]
-            },
-            {
-                value: 'Bivariate',
-                contents: [
-                    m('#result_prompt', {style: {display: app.explored ? 'none' : 'block'}}, `Click 'Explore' for interactive plots.`),
-                    m('#modelView_Container', {style: `width: 100%; float: left; white-space: nowrap;`},
-                        m('#modelView', {style: 'width: 100%; float: left'})),
-                    app.pipelineTable && m(Table, {
-                        id: 'pipelineTableExplore',
-                        headers: app.pipelineHeader,
-                        data: app.pipelineTable,
-                        activeRow: app.selectedPipeline[app.currentMode],
-                        onclick: app.setSelectedPipeline,
-                        showUID: false,
-                        abbreviation: 20
-                    }),
-                    m('#result_left',
-                        {style: {display: app.explored ? 'block' : 'none',
-                                "width": "50%", "height": "100%",
-                                "float": "left", "overflow-y": "auto",
-                                "white-space": "nowrap", "padding-right": "10px"}},
-                        m('#left_thumbnail', {style: {"width": "100%", "white-space": "nowrap"}},
-                            thumb(1, 'scatterplot', "Scatter Plot"), thumb(2, 'heatmap', "Heatmap"), thumb(3, 'linechart', "Linechart")),
-                        m('#result_left1', {style: {width: "100%", "text-align": "center", "white-space": "nowrap"}},
-                            m(".container3[id=scatterplot]", {style: {"width": "500px", "height": "80%", "float": "left", "overflow": "hidden"}}),
-                            m(".container4[id=heatchart]", {style: {"display": "none", "width": "500px", "height": "80%", "float": "left", "overflow": "hidden"}}),
-                            m(".container4[id=linechart]", {style: {"display": "none", "width": "500px", "height": "80%", "float": "left", "overflow": "hidden"}})),
-                        m("div", {style: {"display": "inline-block", "width": "100%", "float": "left", "text-align": "center"}},
-                            m("h5#NAcount", {style: {" margin-bottom": "0"}})),
-                        m(".container2[id='resultsView_statistics']",
-                            {style: {"width": "100%", "float": "left", "white-space": "nowrap"}})),
-                    m('#result_right',
-                        {style: {display: app.explored ? 'block' : 'none',
-                                width: "50%", height: "100%",
-                                float: "right", "white-space": "nowrap", "padding-left": "10px"}},
-                        m('#resultsView_tabular.container1',
-                            {style: {width: "100%", height: "100%", float: "left", overflow: "auto", "white-space": "nowrap"}},
-                            m('#SelectionData', {style: {width: "100%"}},
-                                m("fieldset",
-                                    m("h4", {style: {"text-align": "center"}}, "Data Distribution Selection"),
-                                    m("p", "Enter number for each variable to specify the break points, and select between Equidistant/Equimass")),
-                                m('#plotBreakInputs', {style: {height: '60px'}},
-                                    m('#forPlotA', {style: {display: 'inline', float: "left", width: '50%'}},
-                                        m("input#input1[name='fname'][type='text']", {style: {"margin-left": "2%"}}),
-                                        m('span#tooltipPlotA.tooltiptext[style=visibility: hidden]'),
-                                        m("button.btn.btn-default.btn-xs#Equidistance1[type='button']", {style: {float: "left", "margin-left": "2%"}}, "EQUIDISTANCE"),
-                                        m("button.btn.btn-default.btn-xs#Equimass1[type='button']", {style: {float: "left", "margin-left": "2%"}}, "EQUIMASS")),
-                                    m('#forPlotB', {style: {display: 'inline', float: "right", width: '50%'}},
-                                        m("input#input2[name='fname1'][type='text']", {style: {"margin-left": "2%"}}),
-                                        m('span#tooltipPlotB.tooltiptext1[style=visibility: hidden]'),
-                                        m("button.btn.btn-default.btn-xs#Equidistance2[type='button']", {style: {float: "left", "margin-left": "2%"}}, "EQUIDISTANCE"),
-                                        m("button.btn.btn-default.btn-xs#Equimass2[type='button']", {style: {float: "left", "margin-left": "2%"}}, "EQUIMASS"))
-                                ),
-                                m('div#statusesBivariate',
-                                    m("div#plotA_status", {style: {width: '100%'}}),
-                                    m("div#plotB_status", {style: {width: '100%'}}),
-                                    m('h5[style=color: #ac2925; margin-top: 1%; margin-left: 2%]', 'Selection History'),
-                                ),
-                                m("button.btn.btn-default.btn-sm[id='SelectionData1'][type='button']", {style: {display: "block", margin: "0 auto", position: "relative"}},
-                                    "Create")),
-                            m('#tabular_1', {style: {width: "100%", height: "200px"}},
-                                m('#plotA', {style: {width: exp.get_width('plotA') + '%', height: "100%", float: "left", overflow: "hidden"}}, "plotA"),
-                                m('#plotB', {style: {width: exp.get_width('plotB') + '%', height: "100%", float: "right", overflow: "hidden"}}, "plotB")),
-                            m('#tabular_2', {style: {width: "100%"}})))
-                ]
-            }
+            {value: 'Univariate',
+             contents: [
+                 m('#decision_prompt',
+                   `Right click pebble variables to draw links between them. Select a variable in the list of linked pebbles below to draw a decision tree for that variable.`),
+                 m('#decisionTree[style=width: 100%; height:80%; overflow-y:scroll; float: left; white-space: nowrap; margin-top: 2px;]'),
+                 m(PanelList, {
+                     id: 'varListExplore',
+                     items: app.nodes.map(n => n.name),
+                     colors: {[app.hexToRgba(common.selVarColor)]: [exp.exploreVar]},
+                     callback: variable => exp.callTreeApp(variable, app),
+                     attrsAll: {style: {float: 'left', width: '100%', height: '20%'}}
+                 })
+                 // m('#varList[style=display: block]',
+                 //     unique_link_names().map(x => m(`p#${x.replace(/\W/g, '_')}`, {onclick: _=> exp.callTreeApp(x, app), style: {'background-color': app.varColor}}, x))))
+             ]},
+            {value: 'Bivariate',
+             contents: [
+                 m('#result_prompt', {style: {display: app.explored ? 'none' : 'block'}}, `Click 'Explore' for interactive plots.`),
+                 m('#modelView_Container', {style: `width: 100%; float: left; white-space: nowrap;`},
+                   m('#modelView', {style: 'width: 100%; float: left'})),
+                 app.pipelineTable && m(Table, {
+                     id: 'pipelineTableExplore',
+                     headers: app.pipelineHeader,
+                     data: app.pipelineTable,
+                     activeRow: app.selectedPipeline[app.currentMode],
+                     onclick: app.setSelectedPipeline,
+                     showUID: false,
+                     abbreviation: 20
+                 }),
+                 m('#result_left',
+                   {style: {display: app.explored ? 'block' : 'none',
+                            "width": "50%", "height": "100%",
+                            "float": "left", "overflow-y": "auto",
+                            "white-space": "nowrap", "padding-right": "10px"}},
+                   m('#left_thumbnail', {style: {"width": "100%", "white-space": "nowrap"}},
+                     thumb(1, 'scatterplot', "Scatter Plot"), thumb(2, 'heatmap', "Heatmap"), thumb(3, 'linechart', "Linechart")),
+                   m('#result_left1', {style: {width: "100%", "text-align": "center", "white-space": "nowrap"}},
+                     m(".container3[id=scatterplot]", {style: {"width": "500px", "height": "80%", "float": "left", "overflow": "hidden"}}),
+                     m(".container4[id=heatchart]", {style: {"display": "none", "width": "500px", "height": "80%", "float": "left", "overflow": "hidden"}}),
+                     m(".container4[id=linechart]", {style: {"display": "none", "width": "500px", "height": "80%", "float": "left", "overflow": "hidden"}})),
+                   m("div", {style: {"display": "inline-block", "width": "100%", "float": "left", "text-align": "center"}},
+                     m("h5#NAcount", {style: {" margin-bottom": "0"}})),
+                   m(".container2[id='resultsView_statistics']",
+                     {style: {"width": "100%", "float": "left", "white-space": "nowrap"}})),
+                 m('#result_right',
+                   {style: {display: app.explored ? 'block' : 'none',
+                            width: "50%", height: "100%",
+                            float: "right", "white-space": "nowrap", "padding-left": "10px"}},
+                   m('#resultsView_tabular.container1',
+                     {style: {width: "100%", height: "100%", float: "left", overflow: "auto", "white-space": "nowrap"}},
+                     m('#SelectionData', {style: {width: "100%"}},
+                       m("fieldset",
+                         m("h4", {style: {"text-align": "center"}}, "Data Distribution Selection"),
+                         m("p", "Enter number for each variable to specify the break points, and select between Equidistant/Equimass")),
+                       m('#plotBreakInputs', {style: {height: '60px'}},
+                         m('#forPlotA', {style: {display: 'inline', float: "left", width: '50%'}},
+                           m("input#input1[name='fname'][type='text']", {style: {"margin-left": "2%"}}),
+                           m('span#tooltipPlotA.tooltiptext[style=visibility: hidden]'),
+                           m("button.btn.btn-default.btn-xs#Equidistance1[type='button']", {style: {float: "left", "margin-left": "2%"}}, "EQUIDISTANCE"),
+                           m("button.btn.btn-default.btn-xs#Equimass1[type='button']", {style: {float: "left", "margin-left": "2%"}}, "EQUIMASS")),
+                         m('#forPlotB', {style: {display: 'inline', float: "right", width: '50%'}},
+                           m("input#input2[name='fname1'][type='text']", {style: {"margin-left": "2%"}}),
+                           m('span#tooltipPlotB.tooltiptext1[style=visibility: hidden]'),
+                           m("button.btn.btn-default.btn-xs#Equidistance2[type='button']", {style: {float: "left", "margin-left": "2%"}}, "EQUIDISTANCE"),
+                           m("button.btn.btn-default.btn-xs#Equimass2[type='button']", {style: {float: "left", "margin-left": "2%"}}, "EQUIMASS"))),
+                       m('div#statusesBivariate',
+                         m("div#plotA_status", {style: {width: '100%'}}),
+                         m("div#plotB_status", {style: {width: '100%'}}),
+                         m('h5[style=color: #ac2925; margin-top: 1%; margin-left: 2%]', 'Selection History')),
+                       m("button.btn.btn-default.btn-sm[id='SelectionData1'][type='button']", {style: {display: "block", margin: "0 auto", position: "relative"}},
+                         "Create")),
+                     m('#tabular_1', {style: {width: "100%", height: "200px"}},
+                       m('#plotA', {style: {width: exp.get_width('plotA') + '%', height: "100%", float: "left", overflow: "hidden"}}, "plotA"),
+                       m('#plotB', {style: {width: exp.get_width('plotB') + '%', height: "100%", float: "right", overflow: "hidden"}}, "plotB")),
+                     m('#tabular_2', {style: {width: "100%"}})))
+             ]}
         ];
 
         return m(Panel, {
@@ -406,15 +400,14 @@ class Body {
                 explore_mode && (variable ? m('#plot', {style, oncreate: _ => plot(node, 'explore', true)}) : m('table', {style}, [
                     m('thead', [''].concat(sortedNodes).map(x => m('th', x.name))),
                     m('tbody', sortedNodes.map(x => {
-                        let style = 'height: 160px; width: 160px';
                         return m('tr', [
-                            m('td', {style: `${style}; transform: rotate(-90deg); font-weight: bold`}, x.name),
+                            m('td', {style: 'height: 160px; transform: rotate(-90deg); font-weight: bold'}, x.name),
                             sortedNodes.map(y => {
                                 let td = x === y && x.plottype === 'continuous' ? 'density' :
                                     x === y ? 'bars' :
                                     x.plottype === y.plottype ? 'scatterplot' :
                                     'box-whisker';
-                                return m('td', {style}, m('a', {href: `/explore/${x.name}`, oncreate: m.route.link}, m('img', {src: `/static/images/${td}.png`})));
+                                return m('td', {style: 'height: 160px; width: 160px'}, m('a', {href: `/explore/${x.name}`, oncreate: m.route.link}, m('img', {src: `/static/images/${td}.png`})));
                             })
                         ]);
                     }))
