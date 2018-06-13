@@ -1,189 +1,85 @@
 import m from 'mithril';
-import {selectedCanvas} from '../app';
-import {
-    actorTabSwitch,
-    currentNode,
-    currentTab,
-    setupActor,
-    showSelected,
-    showSelectedCheck,
-    waitForQuery,
-} from '../subsets/Actor';
-import {grayColor, panelMargin} from '../../../common/common';
+import {setupActor} from '../subsets/Actor';
+import {panelMargin} from '../../../common/common';
 import {aggregActorOn, setAggregActor} from '../aggreg/aggreg';
+import ButtonRadio from "../../../common/views/ButtonRadio";
+import Button from "../../../common/views/Button";
+
+import MonadSelection from './MonadSelection';
 
 // Width of the actor selection panel
 let selectionWidth = '350px';
 
 
-function actorSelection(mode) {
-
-    // Header text with optional aggregation checkbox
-    let headerElements = [
-        m("[id='actorPanelTitleDiv']", m("h3.panel-title", "Actor Selection"))
-    ];
-
-    if (mode === "aggregate") {
-        headerElements.push(m("[id='actorAggToggleDiv']", {
-                style: {
-                    "position": "relative",
-                    "top": "-2px"
-                }
-            },
-            m("label.aggChkLbl",
-                m('input#aggregActorSelect.aggChk.aggActor[type=checkbox]', {
-                    onclick: m.withAttr("checked", setAggregActor),
-                    checked: aggregActorOn
-                }),
-                "Use in aggregation"
-            )
-        ))
-    }
-
-    // Radio buttons for actor/target selection
-    let tabSelection = m("[id='tabDiv']", {style: {"overflow": "hidden"}},
-        m(".btn-group[data-toggle='buttons'][id='actorRadio']", {style: {width: "100%"}},
-            [
-                m(`label.btn.btn-default${currentTab === "source" ? ".active" : ""}[title='Select sources']`,
-                    {
-                        style: {"width": "50%"},
-                        onclick: () => actorTabSwitch('source')
-                    },
-                    [
-                        m("input[autocomplete='off'][checked=''][id='sourceTabBtn'][name='actorSet'][type='radio']"),
-                        "Sources"
-                    ]
-                ),
-                m(`label.btn.btn-default${currentTab === "target" ? ".active" : ""}[title='Select targets']`,
-                    {
-                        style: {"width": "50%"},
-                        onclick: () => actorTabSwitch('target')
-                    },
-                    [
-                        m("input[autocomplete='off'][id='targetTabBtn'][name='actorSet'][type='radio']"),
-                        "Targets"
-                    ]
-                )
-            ]
-        )
-    );
-
-    let aggregationOffset = (mode === 'subset') ? 0 : 25;
-
-    let actorLists = m(`.actorTabContent#actorDiv`,
-        [
-            m(`.actorLeft#allActors`, {style: {height: `calc(100% - ${aggregationOffset}px)`}},
-                [
-                    m(`input.form-control#actorSearch[type='text']`, {
-                        placeholder: `Search ${currentTab} actors`
-                    }),
-                    m(`.actorFullList#searchListActors`, {
-                        style: Object.assign({"text-align": "left"},
-                            waitForQuery && {'pointer-events': 'none', 'background': grayColor})
-                    })
-                ]
-            ),
-            m(`.actorRight[id='actorRight']`, {style: {height: `calc(100% - ${aggregationOffset}px)`}},
-                [
-                    m(`button.btn.btn-default.clearActorBtn[data-toggle='tooltip'][id='clearAllActors'][title='Clears search text and filters'][type='button']`,
-                        "Clear All Filters"
-                    ),
-                    m(`.actorFilterList#actorFilter`, {style: {"text-align": "left"}},
-                        [
-                            m(`label.actorShowSelectedLbl.actorChkLbl[data-toggle='tooltip']`, {
-                                    'data-original-title': `Show selected ${currentTab}s`
-                                },
-                                [
-                                    m("input.actorChk.actorShowSelected#actorShowSelected[name='actorShowSelected'][type='checkbox'][value='show']",
-                                        {
-                                            checked: showSelectedCheck,
-                                            onchange: m.withAttr('checked', showSelected)
-                                        }), "Show Selected"
-                                ]
-                            ),
-                            m(".separator"),
-                            m("button.filterExpand#entityActorExpand[value='expand']",
-                                ((dataset['subsets'] || {})[selectedCanvas] || {})['format'] === 'icews' && {style: {display: 'none'}}),
-                            m("label.actorHead4#entityActor[for='entityActorExpand']",
-                                ((dataset['subsets'] || {})[selectedCanvas] || {})['format'] === 'icews' && {style: {display: 'none'}},
-                                m("b", "Entity")
-                            ),
-                            m(".filterContainer#wrapEntityActor",
-                                [
-                                    m("button.filterExpand[id='orgActorExpand'][value='expand']"),
-                                    m("label.actorChkLbl",
-                                        [
-                                            m("input.actorChk.allCheck#actorOrgAllCheck[name='actorOrgAllCheck'][type='checkbox'][value='organizations']"),
-                                            "Organization"
-                                        ]
-                                    ),
-                                    m(".filterContainer[id='orgActorList']", {style: {"padding-left": "30px"}}),
-                                    m(".separator"),
-                                    m("button.filterExpand#countryActorExpand[value='expand']"),
-                                    m("label.actorChkLbl",
-                                        [
-                                            m("input.actorChk.allCheck#actorCountryAllCheck[name='actorCountryAllCheck'][type='checkbox'][value='countries']"),
-                                            "Country"
-                                        ]
-                                    ),
-                                    m(".filterContainer[id='countryActorList']", {style: {"padding-left": "30px"}})
-                                ]
-                            ),
-                            m(".separator"),
-                            m("button.filterExpand[id='roleActorExpand'][value='expand']"),
-                            m("label.actorHead4#roleActors[for='roleActorExpand']",
-                                m("b", "Role")
-                            ),
-                            m(".filterContainer[id='roleActorList']"),
-                            m(".separator"),
-                            m("button.filterExpand#attributeActorExpand[value='expand']"),
-                            m("label.actorHead4#attributeActors[for='attributeActorExpand']",
-                                m("b", "Attribute")
-                            ),
-                            m(".filterContainer#attributeActorList")
-                        ]
-                    )
-                ]
-            ),
-            m(".actorBottomTry", {style: {"width": "100%"}},
-                [
-                    m(`button.btn.btn-default.actorBottom#actorSelectAll[data-toggle='tooltip'][type='button']`, {
-                            'data-original-title': `Selects all ${currentTab}s that match the filter criteria`
-                        }, "Select All"
-                    ),
-                    m(`button.btn.btn-default.actorBottom#actorClearAll[data-toggle='tooltip'][type='button']`, {
-                            'data-original-title': `Clears all ${currentTab}s that match the filter criteria`
-                        }, "Clear All"
-                    ),
-                    m(`button.btn.btn-default.actorBottom#actorNewGroup[data-toggle='tooltip'][type='button']`, {
-                            'data-original-title': `Create new ${currentTab} group`,
-                            style: {
-                                'margin-right': '2px',
-                                float: 'right'
-                            }
-                        },
-                        "New Group"
-                    )
-                ]
-            )
-        ]
-    );
+function actorSelection(vnode) {
+    let {mode, data, formatting, preferences} = vnode.attrs;
 
     return [
-        m(".panel-heading.text-center[id='actorSelectionTitle']", {style: {"padding-bottom": "5px"}}, headerElements),
-        tabSelection,
-        m(".panel-heading.text-center[id='groupNameDisplayContainer']", {style: {"padding-bottom": "0px"}},
-            [
-                m(`input[data-toggle='tooltip'][id='editGroupName'][title='Click to change group name'][type='text']`, {
-                    placeholder: currentNode[currentTab].name
-                }),
-                m("button[data-toggle='tooltip'][id='deleteGroup'][title='Delete current group'][type='button']")
+        m(".panel-heading.text-center[id='actorSelectionTitle']", {style: {"padding-bottom": "5px"}},
+            m("[id='actorPanelTitleDiv']", m("h3.panel-title", "Actor Selection")),
+            mode === 'aggregate' && [
+                m("[id='actorAggToggleDiv']", {
+                        style: {
+                            "position": "relative",
+                            "top": "-2px"
+                        }
+                    },
+                    m("label.aggChkLbl",
+                        m('input#aggregActorSelect.aggChk.aggActor[type=checkbox]', {
+                            onclick: m.withAttr("checked", setAggregActor),
+                            checked: aggregActorOn
+                        }),
+                        "Use in aggregation"
+                    ))
             ]
         ),
-        m("[id='fullContainer']", actorLists)
+        m(ButtonRadio, {
+            id: 'actorTab',
+            onclick: (tab) => preferences['current_tab'] = tab,
+            activeSection: preferences['current_tab'],
+            sections: [{value: 'source'}, {value: 'target'}]
+        }),
+        m("#groupNameDisplayContainer.panel-heading.text-center", {style: {"padding-bottom": "0px"}},
+            [
+                m(`input[data-toggle='tooltip'][id='editGroupName'][title='Click to change group name'][type='text']`, {
+                    placeholder: preferences['current_node'][preferences['current_tab']]['name']
+                }),
+                m("#deleteGroup.button[data-toggle='tooltip'][title='Delete current group'][type='button']")
+            ]
+        ),
+
+        m("#fullContainer", m(`.actorTabContent#actorDiv`,
+            m(MonadSelection, {preferences: preferences['tabs'][preferences['current_tab']], formatting}),
+            m(".actorBottomTry", {style: {"width": "100%"}},
+                m(Button, {
+                    id: 'actorSelectAll',
+                    onclick: () => preferences['current_node'][preferences['current_tab']]['group'] = new Set(data[preferences['current_tab']]),
+                    title: `Selects all ${preferences['current_tab']}s that match the filter criteria`,
+                    value: 'Select All'
+                }),
+                m(Button, {
+                    id: 'actorClearAll',
+                    onclick: () => preferences['current_node'][preferences['current_tab']]['group'] = new Set(),
+                    title: `Clears all ${preferences['current_tab']}s that match the filter criteria`,
+                    value: 'Clear All'
+                }),
+                m(Button, {
+                    id: 'actorNewGroup',
+                    onclick: () => preferences[''], // TODO
+                    title: `Create new ${preferences['current_tab']} group`,
+                    style: {'margin-right': '2px', float: 'right'},
+                    value: 'New Group'
+                }),
+                m(Button, {
+                    id: 'actorDeleteGroup',
+                    onclick: () => preferences[''], // TODO
+                    title: `Delete current group`,
+                    style: {float: 'right'},
+                    value: 'Delete Group'
+                })
+            )))
     ]
 }
-
 
 export default class CanvasActor {
 
@@ -192,9 +88,7 @@ export default class CanvasActor {
     }
 
     view(vnode) {
-        let {mode, subsetName, data, preferences, metadata, formatting, redraw, setRedraw} = vnode.attrs;
-
-        return m("#canvasActor.canvas", {style: {height: `calc(100% - ${panelMargin})`}},
+        return m("#canvasActor", {style: {height: `calc(100% - ${panelMargin})`}},
             [
                 m("div#actorSelectionDiv", {
                     style: {
@@ -203,7 +97,7 @@ export default class CanvasActor {
                         width: selectionWidth,
                         'margin-top': "10px"
                     }
-                }, actorSelection(mode)),
+                }, actorSelection(vnode)),
                 m("div#actorLinkDiv", {
                     style: {
                         'margin-left': panelMargin,

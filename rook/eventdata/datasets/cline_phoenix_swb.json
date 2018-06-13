@@ -6,20 +6,26 @@
   "host": "TwoRavens",
   "subsets": {
     "Actor": {
-      "type": "actor",
+      "type": "dyad",
+      "tabs": {
+        "source": {
+          "full": "source",
+          "filters": [
+            "source_agent",
+            "source_others",
+            "source_root"
+          ]
+        },
+        "target": {
+          "full": "target",
+          "filters": [
+            "target_agent",
+            "target_others",
+            "target_root"
+          ]
+        }
+      },
       "format": "phoenix",
-      "source": "source",
-      "source_filters": [
-        "source_agent",
-        "source_others",
-        "source_root"
-      ],
-      "target": "target",
-      "target_filters": [
-        "target_agent",
-        "target_others",
-        "target_root"
-      ],
       "search_length": 3,
       "deconstruct": {
         "source_others": ";",

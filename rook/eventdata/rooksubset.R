@@ -291,13 +291,15 @@ eventdata_subset.app <- function(env) {
             }, error=genericErrorHandler)) %plan% multiprocess
         }
 
-        if (subsetMetadata$type == 'actor') {
-            return(list(
-                source=collectColumn(subsetMetadata$source),
-                source_filters=sapply(subsetMetadata$source_filters, collectColumn),
-                target=collectColumn(subsetMetadata$target),
-                target_filters=sapply(subsetMetadata$target_filters, collectColumn)
-            ))
+        collectMonoid = function(monoid) {
+            list(full=collectColumn(monoid$full), filters=sapply(monoid$filters, collectColumn))
+        }
+
+        if (subsetMetadata$type == 'dyad') {
+            return(sapply(subsetMetadata$tabs, collectMonoid))
+        }
+        if (subsetMetadata$tyype == 'monoid') {
+            return(collectMonoid(subsetMetadata))
         }
 
         return(sapply(subsetMetadata$columns, collectColumn))

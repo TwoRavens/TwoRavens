@@ -1,0 +1,130 @@
+{
+  "action": {
+    "action_codes": []
+  },
+  "coordinates": {
+    "latLower": 22,
+    "latUpper": 23,
+    "lonLeft": 5,
+    "lonRight": 20
+  },
+  "date": {
+    "handleLower": "date",
+    "handleUpper": "date",
+    "userLower": "date",
+    "userUpper": "date"
+  },
+  "dyad": {
+    "current_tab": "source",
+    "edges": [
+      {
+        "dup": false,
+        "rev": false,
+        "source": 1,
+        "target": 2
+      }
+    ],
+    "graph": {
+      "note": "contains node locations, speeds, etc."
+    },
+    "groups": [
+      {
+        "actor": "source",
+        "actorID": 1,
+        "group": [],
+        "name": "Source 1",
+        "nodeCol": "red"
+      },
+      {
+        "actor": "target",
+        "actorID": 2,
+        "group": [],
+        "name": "Target 1",
+        "nodeCol": "blue"
+      }
+    ],
+    "tabs": {
+      "source": {
+        "show_selected": true,
+        "filters": {
+          "src_countries": {
+            "expanded": true,
+            "selected": []
+          },
+          "src_sectors": {
+            "expanded": true,
+            "selected": []
+          },
+          "src_other_sectors": {
+            "expanded": true,
+            "selected": []
+          }
+        },
+        "search": "MUS",
+        "visible_elements": 100,
+        "node": {
+          "actor": "source",
+          "actorID": 2,
+          "group": [],
+          "name": "Target 1",
+          "nodeCol": "blue"
+        }
+      }
+    },
+    "target": {
+      "show_selected": true,
+      "filters": {
+        "src_countries": {
+          "expanded": true,
+          "selected": []
+        },
+        "src_sectors": {
+          "expanded": true,
+          "selected": []
+        },
+        "src_other_sectors": {
+          "expanded": true,
+          "selected": []
+        }
+      },
+      "search": "MUS",
+      "visible_elements": 100,
+      "node": {
+        "actor": "target",
+        "selected": [],
+        "name": "Target 1",
+        "nodeCol": "blue"
+      }
+    }
+  },
+  "location": {
+    "plotted_regions": {
+      "Oceania": true,
+      "Other": false
+    },
+    "plotted_world": true,
+    "selected_codes": []
+  },
+  "monad": {
+    "show_selected": true,
+    "filters": {
+      "src_countries": {
+        "expanded": true,
+        "selected": []
+      },
+      "src_sectors": {
+        "expanded": true,
+        "selected": []
+      },
+      "src_other_sectors": {
+        "expanded": true,
+        "selected": []
+      }
+    },
+    "search": "MUS",
+    "visible_elements": 100,
+    "node": {
+      "selected": []
+    }
+  }
+}

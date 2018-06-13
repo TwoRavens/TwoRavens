@@ -6,20 +6,26 @@
   "host": "UTDallas",
   "subsets": {
     "Actor": {
-      "type": "actor",
+      "type": "dyad",
       "format": "phoenix",
-      "source": "source",
-      "source_filters": [
-        "src_agent",
-        "src_other_agent",
-        "src_actor"
-      ],
-      "target": "target",
-      "target_filters": [
-        "tgt_agent",
-        "tgt_other_agent",
-        "tgt_actor"
-      ],
+      "tabs": {
+        "source": {
+          "full": "source",
+          "filters": [
+            "src_agent",
+            "src_other_agent",
+            "src_actor"
+          ]
+        },
+        "target": {
+          "full": "target",
+          "filters": [
+            "tgt_agent",
+            "tgt_other_agent",
+            "tgt_actor"
+          ]
+        }
+      },
       "search_length": 3,
       "deconstruct": {
         "src_other_agent": ";",

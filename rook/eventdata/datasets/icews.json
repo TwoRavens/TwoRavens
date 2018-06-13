@@ -6,18 +6,24 @@
   "host": "TwoRavens",
   "subsets": {
     "Actor": {
-      "type": "actor",
+      "type": "dyad",
       "format": "icews",
-      "source": "Source Name",
-      "source_filters": [
-        "Source Sectors",
-        "Source Country"
-      ],
-      "target": "Target Name",
-      "target_filters": [
-        "Target Sectors",
-        "Target Country"
-      ]
+      "tabs": {
+        "source": {
+          "full": "Source Name",
+          "filters": [
+            "Source Sectors",
+            "Source Country"
+          ]
+        },
+        "target": {
+          "full": "Target Name",
+          "filters": [
+            "Target Sectors",
+            "Target Country"
+          ]
+        }
+      }
     },
     "Action": {
       "type": "action",
