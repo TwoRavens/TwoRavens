@@ -25,8 +25,7 @@ import CanvasRootCode from "./views/CanvasRootCode";
 import CanvasAggregTS from "./views/CanvasAggregTS";
 
 import TableAggregation from "./views/TableAggregation";
-import {genericMetadata} from "./app";
-import {selectedDataset} from "./app";
+import CanvasCoordinates from "./views/CanvasCoordinates";
 
 export default class Body_EventData {
 
@@ -339,13 +338,15 @@ export default class Body_EventData {
                 'action': CanvasAction,
                 'actor': CanvasActor,
                 'date': CanvasDate,
-                'location': CanvasLocation
+                'location': CanvasLocation,
+                'coordinates' : CanvasCoordinates
             }[subsetType], {
                 mode: app.selectedMode,
                 subsetName: app.selectedSubsetName,
                 data: app.subsetMetadata[app.selectedSubsetName],
                 preferences: app.subsetPreferences[app.selectedSubsetName],
                 metadata: app.genericMetadata['datasets'][app.selectedDataset]['subsets'][app.selectedSubsetName],
+                formatting: app.genericMetadata['formats'][subsetType],
                 redraw: app.subsetRedraw[app.selectedSubsetName],
                 setRedraw: app.setSubsetRedraw
             })

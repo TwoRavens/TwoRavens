@@ -21,6 +21,10 @@ main#EventData .ui-datepicker-next {
     float: right;
 }
 
+main#EventData .location-entry:hover {
+    text-decoration: line-through;
+}
+
 /* TODO delete everything below */
 main#EventData .hidden {
     display: none;

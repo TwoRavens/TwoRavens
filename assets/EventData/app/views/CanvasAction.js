@@ -12,7 +12,7 @@ export default class CanvasAction {
         let ploverData = data.map((quantity, i) => ({
             key: i,
             value: quantity,
-            'class': preferences['action_codes'][i] ? 'bar_selected' : 'bar'
+            'class': preferences['action_codes'][i] ? 'bar-selected' : 'bar'
             // TODO: 'title': ''
         }));
 
@@ -27,7 +27,7 @@ export default class CanvasAction {
         let pentaData = Array(5).fill(0).map((_, i) => ({
             key: i,
             value: clusteredQuantities[i],
-            'class': clusteredPreferences[i].every(_=>_) ? 'bar_selected' : clusteredPreferences[i].some(_=>_) ? 'bar_some' : 'bar',
+            'class': clusteredPreferences[i].every(_=>_) ? 'bar-selected' : clusteredPreferences[i].some(_=>_) ? 'bar-some' : 'bar',
             // TODO: 'title': ''
         }));
 
@@ -64,7 +64,7 @@ export default class CanvasAction {
                                 margin: {top: 10, right: 30, bottom: 50, left: 30},
                                 data: pentaData,
                                 callbackBar: (bar) => {
-                                    let target_state = bar.class === 'bar_some' || bar.class === 'bar';
+                                    let target_state = bar.class === 'bar-some' || bar.class === 'bar';
                                     actionMap.forEach((penta, i) => {
                                         if (penta === bar.key) preferences['action_codes'][i] = target_state
                                     });

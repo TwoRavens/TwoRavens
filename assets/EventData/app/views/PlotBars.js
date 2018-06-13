@@ -19,7 +19,8 @@ export default class PlotBars {
         if (data === undefined) return;
         let horizontal = orient === 'horizontal';
 
-        let svg = d3.select('#' + id);
+        let svg = d3.select('#' + id.replace(/ /g,"_"));
+
         svg.html('');
 
         // set the dimensions and margins of the graph
@@ -41,6 +42,7 @@ export default class PlotBars {
             .attr('id', 'plotTooltip')
             .style("position", "absolute")
             .style("z-index", "10")
+            .style("pointer-events", "none")
             .style("background", common.menuColor)
             .style("border", common.borderColor)
             .style("padding", "4px")
@@ -65,7 +67,44 @@ export default class PlotBars {
             .attr("y", 6)
             .attr("dy", "0.71em");
 
-        // bars
+        let barClick = d =>  {
+            if (!callbackBar) return;
+            callbackBar(d);
+            m.redraw();
+        };
+
+        let tooltipMove = (d) => {
+            // only show the tooltip if a title has been set
+            if (!d.title) return;
+            tooltip.transition()
+                .duration(200)
+                .style("opacity", .9);
+            tooltip.html(d.title)
+                .style("left", (d3.event.pageX) + "px")
+                .style("top", (d3.event.pageY - 28) + "px");
+        };
+
+        let tooltipOut = () => {
+            tooltip.transition()
+                .duration(500)
+                .style("opacity", 0)
+        };
+
+        // transparent bar that covers entire area
+        g.selectAll(".bar")
+            .data(data)
+            .enter().append("rect")
+            .attr("x", d => horizontal ? x(d.key) : 0)
+            .attr("y", d => horizontal ? 0 : x(d.key))
+            .attr("width", horizontal ? x.bandwidth() : width)
+            .attr("height", horizontal ? width : x.bandwidth())
+            .style("fill-opacity", 0)
+            .style("z-index", 20)
+            .on("click", barClick)
+            .on("mousemove", tooltipMove)
+            .on("mouseout", tooltipOut);
+
+        // visible bar rendered in background
         g.selectAll(".bar")
             .data(data)
             .enter().append("rect")
@@ -74,28 +113,9 @@ export default class PlotBars {
             .attr("y", d => horizontal ? y(d.value) : x(d.key))
             .attr("width", horizontal ? x.bandwidth() : d => y(d.value))
             .attr("height", horizontal ? d => height - y(d.value) : x.bandwidth())
-            .on("click", d =>  {
-                if (!callbackBar) return;
-                callbackBar(d);
-                m.redraw();
-            })
-
-            // tooltip behavior
-            .on("mousemove", (d) => {
-                // only show the tooltip if a title has been set
-                if (!d.title) return;
-                tooltip.transition()
-                    .duration(200)
-                    .style("opacity", .9);
-                tooltip.html(d.title)
-                    .style("left", (d3.event.pageX) + "px")
-                    .style("top", (d3.event.pageY - 28) + "px");
-            })
-            .on("mouseout", () => {
-                tooltip.transition()
-                    .duration(500)
-                    .style("opacity", 0)
-            });
+            .on("click", barClick)
+            .on("mousemove", tooltipMove)
+            .on("mouseout", tooltipOut);
 
         // axis labels
         let label = horizontal ? yLabel : xLabel;
@@ -126,6 +146,6 @@ export default class PlotBars {
 
     view(vnode) {
         let {id, attrsAll} = vnode.attrs;
-        return m(`svg#${id}[width=100%][height=100%]`, attrsAll)
+        return m(`svg#${id.replace(/ /g,"_")}[width=100%][height=100%]`, attrsAll)
     }
 }

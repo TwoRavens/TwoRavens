@@ -1,7 +1,6 @@
 import m from 'mithril';
 import {actorLinks, resizeActorSVG} from "./subsets/Actor";
 import {dateSort} from "./views/CanvasDate";
-import {mapListCountriesSelected} from "./subsets/Location";
 import {
     aggregPentaChkOrd,
     aggregRootChkOrd,
@@ -1066,15 +1065,16 @@ function getSubsetPreferences() {
         };
 
         // Add each country to the parent node as another rule
-        for (let country in mapListCountriesSelected) {
-            if (mapListCountriesSelected[country]) {
-                subset['children'].push({
-                    id: String(nodeId++),
-                    name: country,
-                    show_op: false
-                });
-            }
-        }
+        // TODO pull from subsetPreferences
+        // for (let country in mapListCountriesSelected) {
+        //     if (mapListCountriesSelected[country]) {
+        //         subset['children'].push({
+        //             id: String(nodeId++),
+        //             name: country,
+        //             show_op: false
+        //         });
+        //     }
+        // }
         // Don't add a rule and ignore the stage if no countries are selected
         if (subset['children'].length === 0) {
             return {}
