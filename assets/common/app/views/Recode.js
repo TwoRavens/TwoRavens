@@ -110,12 +110,16 @@ export default class Recode {
                         hover: true,
                         width: app.modelLeftPanelWidths[app.leftTab],
                         attrsAll: {style: {'z-index': 101, 'overflow':'scroll'}}
-                    },  m(PanelList,{
-                        id: 'varList',
-                        items: varList,
-                        callback: clickVar,
-                        
-                    }),
+                    },m(`div#varList`, varList.map((item) =>
+                    m(`div#${'varList' + item.replace(/\W/g, '_')}`, mergeAttributes({
+                            style: {
+                                'margin-top': '5px',
+                                'text-align': "center",
+                                'background-color': app.hexToRgba("#FA8072")
+                            },
+                            class: 'var',
+                            onclick: clickVar
+                        }), item)))
                 ),
                 m(`#rightpanel.container.sidepanel.clearfix`, mergeAttributes({
                     style: {
@@ -276,11 +280,22 @@ function someFunction(elem){
     }
 }
 function clickVar(elem) {
+    console.log(this.style.backgroundColor)
+    console.log(document.getElementById('varList'+this.textContent))
+
+    // $(this).css('background-color', app.hexToRgba("#28a4c9"));
+
+    // console.log(document.getElementById('varList'+elem))
+    
+    // $('#varList'+elem).click(function () {
+    //     $(this).css('background-color', '#ffa07a');
+    //     console.log('clicked');
+    // });
     
     if(document.getElementById('recodeLink').className === 'active'){
       
         //If the variable is a of the type 'character', cannot apply mathematical transformations on it.
-        if(dataDetails[elem]['numchar'] != 'numeric'){
+        if(dataDetails[this.textContent]['numchar'] != 'numeric'){
             var transform =  document.getElementById('div1_recode');
             transform.style.display = 'none';
         }
@@ -288,16 +303,16 @@ function clickVar(elem) {
             var transform =  document.getElementById('div1_recode');
             transform.style.display = 'block';
             var text = document.getElementById('variable');
-            text.value = elem;
-            currentVal = elem;
+            text.value = this.textContent;
+            currentVal = this.textContent;
         }
     }
 
     if(document.getElementById('formulaLink').className === 'active'){
         //Only those variables of type "numeric" could be used to build formula
-        if(dataDetails[elem]['numchar'] === 'numeric'){
+        if(dataDetails[this.textContent]['numchar'] === 'numeric'){
             var text = document.getElementById('variables');
-            text.value = text.value + " " + elem;
+            text.value = text.value + " " + this.textContent;
         }
      }
      
@@ -311,20 +326,23 @@ function addValue(elem){
     if(document.getElementById('typeSelect').selectedIndex === 0){
         for(var i =0;i<tableData.length;i++){
             if(elem.target[2+i].checked){
-                newVarValue.push(elem.target[2+i].value)
+                newVarValue.push({row:i,value:'yes'})
+            }else{
+                newVarValue.push({row:i,value:'no'})
             }
         }
     }else if(document.getElementById('typeSelect').selectedIndex === 1){
         for(var i =0;i<tableData.length;i++){
-            newVarValue.push(elem.target[2+i].value)
+            newVarValue.push({row:i,value:elem.target[3+i].value})
         }
     }else if(document.getElementById('typeSelect').selectedIndex === 2){
         for(var i =0;i<tableData.length;i++){
-            newVarValue.push(elem.target[2+i].value)
+            newVarValue.push({row:i,value:elem.target[2+i].value})
         }
     }
     
     console.log(newVarValue);
+    console.log(n)
 }
 
 function formulaCalculate(){}
@@ -339,8 +357,7 @@ function showTooltip(){
     tooltip.style.padding= "5px";
     tooltip.style.zIndex= "1";
     tooltip.style.backgroundColor= 'white';
-    // tooltip.style.overflow = 'scroll';
-
+    
 }
 function hideTooltip(){
     var tooltip = document.getElementById('tooltip');
@@ -363,7 +380,7 @@ function createNewCalculate(){
             iter++;
         }else{
             if(document.getElementById('typeSelect').selectedIndex === 0){
-                trow.append('<td style ="border: 1px solid #ddd;text-align: center;"><input type="checkbox" name="newVarVal" id ="newVarVal'+(iter-1)+' value = '+(iter-1)+'"/></td>');
+                trow.append('<td style ="border: 1px solid #ddd;text-align: center;"><input type="checkbox" name="newVarVal" id ="newVarVal'+(iter-1)+'" value = 1 /></td>');
             }else if(document.getElementById('typeSelect').selectedIndex === 1){
 
                 var classList = document.getElementById('nominalList').value.split(",");
@@ -492,6 +509,9 @@ function formulaCreate(){
 }
 function formulaClick(){
 
+    var elem = document.getElementById('centralPanel');
+    elem.style.display ='none';
+    
     var elem = document.getElementById('rightpanel');
     elem.style.display="block"
 
@@ -502,7 +522,7 @@ function formulaClick(){
     elem.style.display="block";
 
     var elem = document.getElementById('recodeDiv');
-    elem.style.display = 'none';
+    elem.style.display = 'none';  
     
     var elem = document.getElementById('formulaLink');
     elem.className = 'active';
@@ -523,6 +543,21 @@ function reorderClick(){
     elem.className = '';
     var elem = document.getElementById('createLink');
     elem.className = '';
+
+    var elem = document.getElementById('formulaDiv');
+    elem.style.display="none";
+
+    var elem = document.getElementById('recodeDiv');
+    elem.style.display = 'none';
+
+    var elem = document.getElementById('centralPanel');
+    elem.style.display ='none'; 
+
+    var elem = document.getElementById('leftpanel');
+    elem.style.display ='block';
+    
+    var elem = document.getElementById('rightpanel');
+    elem.style.display ='block';
     
 }
 function reorderCreate(){
