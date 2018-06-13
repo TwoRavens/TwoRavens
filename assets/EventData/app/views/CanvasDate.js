@@ -32,10 +32,10 @@ export function interpolate(data, date) {
     let upper = allDatesInt[allDatesInt.length - 1];
 
     for (let candidate in allDatesInt) {
-        if (allDatesInt[candidate] > lower && allDatesInt[candidate] < date) {
+        if (allDatesInt[candidate] > lower && allDatesInt[candidate] < upper) {
             lower = allDatesInt[candidate];
         }
-        if (allDatesInt[candidate] < upper && allDatesInt[candidate] > date) {
+        if (allDatesInt[candidate] < upper && allDatesInt[candidate] > lower) {
             upper = allDatesInt[candidate];
         }
     }
@@ -48,7 +48,7 @@ export function interpolate(data, date) {
         if (candidate['Date'] === upper) upperFreq = candidate['Freq'];
     }
 
-    let interval_lower = date.getTime() - lower.getTime();
+    let interval_lower = upper.getTime() - lower.getTime();
     let timespan = upper.getTime() - lower.getTime();
 
     let weight = interval_lower / timespan;

@@ -3,20 +3,28 @@
   "key": "phoenix_rt",
   "description": "A real-time Phoenix-coded event dataset constructed at The University of Texas at Dallas.",
   "interval": "Oct. 2017 - present",
+  "host": "UTDallas",
   "subsets": {
     "Actor": {
       "type": "actor",
       "format": "phoenix",
-      "columns": [
-        "source",
+      "source": "source",
+      "source_filters": [
         "src_agent",
         "src_other_agent",
-        "src_actor",
-        "target",
+        "src_actor"
+      ],
+      "target": "target",
+      "target_filters": [
         "tgt_agent",
         "tgt_other_agent",
         "tgt_actor"
-      ]
+      ],
+      "search_length": 3,
+      "deconstruct": {
+        "src_other_agent": ";",
+        "tgt_other_agent": ";"
+      }
     },
     "Action": {
       "type": "action",
@@ -60,13 +68,13 @@
     "root_code": "<action_code>",
     "source_text": "<publisher>",
     "source": "<source>",
-    "src_actor": "<src_actor>",
-    "src_agent": "<src_agent>",
-    "src_other_agent": "<src_other_agent>",
+    "src_actor": "<src_country>",
+    "src_agent": "<src_sector>",
+    "src_other_agent": "<src_other_sector>",
     "target": "<target>",
     "tgt_actor": "<tgt_actor>",
-    "tgt_agent": "<tgt_agent>",
-    "tgt_other_agent": "<tgt_other_agent>",
+    "tgt_agent": "<tgt_sector>",
+    "tgt_other_agent": "<tgt_other_sector>",
     "url": "<url>",
     "year": "<year>"
   },

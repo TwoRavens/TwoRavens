@@ -5,7 +5,7 @@ import PlotBars from "./PlotBars";
 
 export default class CanvasLocation {
     view(vnode) {
-        let {subsetName, data, preferences, metadata, formatting} = vnode.attrs;
+        let {subsetName, data, preferences, formatting} = vnode.attrs;
 
         // defaults
         preferences['selected_codes'] = preferences['selected_codes'] || new Set();

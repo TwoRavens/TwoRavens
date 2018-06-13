@@ -3,21 +3,29 @@
   "key": "cline_phoenix_fbis",
   "description": "Data sourced from the CIA Foreign Broadcast Information Service and collected by the Cline Center for Advanced Social Research.",
   "interval": "1995 - 2004",
-  "(temporarily-disabled) Actor": {
-    "type": "actor",
-    "format": "phoenix",
-    "columns": [
-      "source",
-      "source_agent",
-      "source_others",
-      "source_root",
-      "target",
-      "target_agent",
-      "target_others",
-      "target_root"
-    ]
-  },
+  "host": "TwoRavens",
   "subsets": {
+    "Actor": {
+      "type": "actor",
+      "format": "phoenix",
+      "source": "source",
+      "source_filters": [
+        "source_agent",
+        "source_others",
+        "source_root"
+      ],
+      "target": "target",
+      "target_filters": [
+        "target_agent",
+        "target_others",
+        "target_root"
+      ],
+      "search_length": 3,
+      "deconstruct": {
+        "source_others": ";",
+        "target_others": ";"
+      }
+    },
     "Action": {
       "type": "action",
       "format": "CAMEO root code",
@@ -61,15 +69,15 @@
     "quad_class": "<quad_class>",
     "root_code": "<action_code>",
     "source": "<source>",
-    "source_agent": "<src_agent>",
-    "source_others": "<src_other_agent>",
-    "source_root": "<src_actor>",
+    "source_agent": "<src_sector>",
+    "source_others": "<src_other_sector>",
+    "source_root": "<src_country>",
     "statename": "<admin_info>",
     "story_date": "<date>",
     "target": "<target>",
-    "target_agent": "<tgt_agent>",
-    "target_others": "<tgt_other_agent>",
-    "target_root": "<tgt_actor>",
+    "target_agent": "<tgt_sector>",
+    "target_others": "<tgt_other_sector>",
+    "target_root": "<tgt_country>",
     "year": "<year>"
   },
   "citations": [

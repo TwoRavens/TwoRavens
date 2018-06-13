@@ -1,15 +1,15 @@
 import m from 'mithril';
-import {selectedDataset, selectedCanvas} from '../app';
+import {selectedCanvas} from '../app';
 import {
-    setupActor,
-    waitForQuery,
     actorTabSwitch,
-    showSelected,
-    showSelectedCheck,
     currentNode,
     currentTab,
+    setupActor,
+    showSelected,
+    showSelectedCheck,
+    waitForQuery,
 } from '../subsets/Actor';
-import {panelMargin, grayColor} from '../../../common/common';
+import {grayColor, panelMargin} from '../../../common/common';
 import {aggregActorOn, setAggregActor} from '../aggreg/aggreg';
 
 // Width of the actor selection panel
@@ -77,8 +77,10 @@ function actorSelection(mode) {
                     m(`input.form-control#actorSearch[type='text']`, {
                         placeholder: `Search ${currentTab} actors`
                     }),
-                    m(`.actorFullList#searchListActors`, {style: Object.assign({"text-align": "left"},
-                            waitForQuery && {'pointer-events': 'none', 'background': grayColor})})
+                    m(`.actorFullList#searchListActors`, {
+                        style: Object.assign({"text-align": "left"},
+                            waitForQuery && {'pointer-events': 'none', 'background': grayColor})
+                    })
                 ]
             ),
             m(`.actorRight[id='actorRight']`, {style: {height: `calc(100% - ${aggregationOffset}px)`}},
@@ -190,9 +192,9 @@ export default class CanvasActor {
     }
 
     view(vnode) {
-        let {mode, display} = vnode.attrs;
+        let {mode, subsetName, data, preferences, metadata, formatting, redraw, setRedraw} = vnode.attrs;
 
-        return m("#canvasActor.canvas", {style: {height: `calc(100% - ${panelMargin})`, display: display}},
+        return m("#canvasActor.canvas", {style: {height: `calc(100% - ${panelMargin})`}},
             [
                 m("div#actorSelectionDiv", {
                     style: {

@@ -339,7 +339,7 @@ export default class Body_EventData {
                 'actor': CanvasActor,
                 'date': CanvasDate,
                 'location': CanvasLocation,
-                'coordinates' : CanvasCoordinates
+                'coordinates': CanvasCoordinates
             }[subsetType], {
                 mode: app.selectedMode,
                 subsetName: app.selectedSubsetName,

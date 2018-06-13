@@ -283,19 +283,32 @@ eventdata_subset.app <- function(env) {
             }, error=genericErrorHandler)) %plan% multiprocess)
         }
 
-        return(sapply(subsetMetadata$columns, function(column) {
-            return(future(tryCatch({
+        collectColumn = function(column) {
+            future(tryCatch({
                 data = getData(paste(query_url, '&unique=', column, '', sep=""))
-                if (subsetMetadata$columns[[column]] %in% names(delimited_columns)) data = uniques(data, delimited_columns[[subsetMetadata$columns[[column]]]])
+                if (column %in% names(subsetMetadata$deconstruct)) data = uniques(data, subsetMetadata$deconstruct[[column]])
                 return(sort(unlist(data)))
-            }, error=genericErrorHandler)) %plan% multiprocess)
-        }))
+            }, error=genericErrorHandler)) %plan% multiprocess
+        }
+
+        if (subsetMetadata$type == 'actor') {
+            return(list(
+                source=collectColumn(subsetMetadata$source),
+                source_filters=sapply(subsetMetadata$source_filters, collectColumn),
+                target=collectColumn(subsetMetadata$target),
+                target_filters=sapply(subsetMetadata$target_filters, collectColumn)
+            ))
+        }
+
+        return(sapply(subsetMetadata$columns, collectColumn))
     })
 
     # await all futures
     response$write(toString(jsonlite::toJSON(sapply(names(futures), function(subset) {
         if (subset_config[[metadata$subsets[[subset]]$type]]$grouped) return(value(futures[[subset]]));
-        return(sapply(futures[[subset]], value))
+        return(sapply(futures[[subset]], function(entry) {
+            if (is.list(entry)) return(sapply(entry, value)) else return(value(entry))
+        }))
     }))))
 
     # If your R installation does not support futures multiprocessing, it will fall back to multisession processing

@@ -3,15 +3,18 @@
   "key": "icews",
   "description": "Event data consists of coded interactions between socio-political actors (i.e., cooperative or hostile actions between individuals, groups, sectors and nation states).",
   "interval": "1995 - Sep. 2016",
+  "host": "TwoRavens",
   "subsets": {
     "Actor": {
       "type": "actor",
       "format": "icews",
-      "columns": [
-        "Source Name",
+      "source": "Source Name",
+      "source_filters": [
         "Source Sectors",
-        "Source Country",
-        "Target Name",
+        "Source Country"
+      ],
+      "target": "Target Name",
+      "target_filters": [
         "Target Sectors",
         "Target Country"
       ]
@@ -59,11 +62,11 @@
     "Sentence Number": "<sentence_number>",
     "Source Country": "<src_country>",
     "Source Name": "<source>",
-    "Source Sectors": "<src_sectors>",
+    "Source Sectors": "<src_sector>",
     "Story ID": "<id>",
     "Target Country": "<tgt_country>",
     "Target Name": "<target>",
-    "Target Sectors": "<tgt_sectors>"
+    "Target Sectors": "<tgt_sector>"
   },
   "citations": [
     {
