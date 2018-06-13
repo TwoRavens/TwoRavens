@@ -27,13 +27,10 @@ script:
 # Don't push the image but instead trigger a build on dockerhub
 after_success:
   #
-  # If tests passed, build docker image--and see if that works
-  #
-  - docker build -t tworavens/ravens-main:latest .
-  #
-  # Push image to dockerhub
+  # Build image and push to dockerhub
   #
   - if [ "$TRAVIS_BRANCH" == "master" ]; then
+    docker build -t tworavens/ravens-main:latest .;
     docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
     docker push tworavens/ravens-main:latest;
     fi
