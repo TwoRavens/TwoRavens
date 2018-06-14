@@ -1,13 +1,15 @@
 import m from 'mithril';
 import {grayColor} from "../../../common/common";
-import {currentTab, waitForQuery} from "../subsets/Actor";
 import TextField from '../../../common/views/TextField';
 import * as app from "../app";
 
+let searchLag = 500;
 
 export default class MonadSelection {
     oninit() {
-        this.defaultPageSize = 100;
+        this.defaultPageSize = 200;
+        this.waitForQuery = 0;
+        this.searchTimeout = null;
     }
 
     search(subsetName, metadata, preferences, force = false) {
@@ -73,14 +75,14 @@ export default class MonadSelection {
         };
 
         function updateActorListing(data) {
-            waitForQuery--;
+            this.waitForQuery--;
             preferences['full_limit'] = this.defaultPageSize;
             app.pageSetup(data);
         }
 
-        let failedUpdateActorListing = () => waitForQuery--;
+        let failedUpdateActorListing = () => this.waitForQuery--;
 
-        waitForQuery++;
+        this.waitForQuery++;
         m.request({
             url: app.subsetURL,
             data: query,
@@ -98,26 +100,28 @@ export default class MonadSelection {
         let toggleFilter = (filter, actor) => {
             filter = app.ontologyAlign(filter);
             preferences['filters'][filter]
-                ? preferences['filters'][filter].add(actor)
-                : preferences['filters'][filter].delete(actor);
+                ? preferences['filters'][filter]['selected'].add(actor)
+                : preferences['filters'][filter]['selected'].delete(actor);
 
-            this.search(subsetName, metadata, preferences)
+            clearTimeout(this.searchTimeout);
+            this.searchTimeout = setTimeout(() => this.search(subsetName, metadata, preferences), searchLag);
         };
 
         return [
             m(`.actorLeft#allActors`,
                 m(TextField, {
-                    placeholder: `Search ${currentTab} actors`,
+                    placeholder: `Search ${preferences['current_tab']} actors`,
                     oninput: (value) => {
                         preferences['search'] = value;
-                        this.search(subsetName, metadata, preferences);
+                        clearTimeout(this.searchTimeout);
+                        this.searchTimeout = setTimeout(() => this.search(subsetName, metadata, preferences), searchLag);
                     }
                 }),
                 m(`.actorFullList#searchListActors`, {
                         style: Object.assign({"text-align": "left"},
-                            waitForQuery && {'pointer-events': 'none', 'background': grayColor})
+                            this.waitForQuery && {'pointer-events': 'none', 'background': grayColor})
                     },
-                    waitForQuery && data['full']
+                    this.waitForQuery && data['full']
                         .filter(actor => !preferences['show_selected'] || preferences['node']['selected'].has(actor))
                         .slice(preferences['full_limit'])
                         .map(actor =>
@@ -143,15 +147,16 @@ export default class MonadSelection {
                         title: 'Clear search text and filters',
                         onclick: () => {
                             preferences['search'] = '';
-                            Object.keys(preferences['filters']).map(filter => preferences['filters'][filter] = new Set());
-                            this.search(subsetName, metadata, preferences);
+                            Object.keys(preferences['filters']).map(filter => preferences['filters'][filter]['selected'] = new Set());
+                            clearTimeout(this.searchTimeout);
+                            this.searchTimeout = setTimeout(() => this.search(subsetName, metadata, preferences), searchLag);
                         }
                     },
                     "Clear All Filters"
                 ),
                 m(`.actorFilterList#actorFilter`, {style: {"text-align": "left"}},
                     m(`label.actorShowSelectedLbl.actorChkLbl[data-toggle='tooltip']`, {
-                            title: `Show selected ${currentTab}s`
+                            title: `Show selected ${preferences['current_tab']}s`
                         },
                         m("input.actorChk.actorShowSelected#actorShowSelected[name='actorShowSelected'][type='checkbox']", {
                             checked: preferences['show_selected'],
@@ -161,9 +166,13 @@ export default class MonadSelection {
                     ),
                     Object.keys(data).map(filter => [
                         m(".separator"),
-                        m("button.filterExpand"),
-                        m("label.actorHead4", m("b", filter)),
-                        m(".filterContainer", data['filters'][filter].map(actor => m('div',
+                        m("button.filterBase" + (preferences['filters'][filter]['expanded'] ? '.filterExpand': '.filterCollapse'), {
+                            onclick: () => preferences['filters'][filter]['expanded'] = !preferences['filters'][filter]['expanded']
+                        }),
+                        m("label.actorHead4", {
+                            onclick: () => preferences['filters'][filter]['expanded'] = !preferences['filters'][filter]['expanded']
+                        }, m("b", filter)),
+                        preferences['filters'][filter]['expanded'] && m(".filterContainer", data['filters'][filter]['selected'].map(actor => m('div',
                             preferences['format'] === 'phoenix' && {
                                 'data-container': 'body',
                                 'data-toggle': 'popover',
@@ -172,7 +181,7 @@ export default class MonadSelection {
                                 'data-content': formatting['phoenix'][actor] || '?'
                             },
                             m(`input.actorChk[type=checkbox]`, {
-                                checked: preferences['filters'][filter].has(actor),
+                                checked: preferences['filters'][filter]['selected'].has(actor),
                                 onclick: () => toggleFilter(filter, actor)
                             }),
                             m('label', {onclick: () => toggleFilter(filter, actor)}, actor)

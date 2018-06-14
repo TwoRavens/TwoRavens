@@ -40,12 +40,10 @@ function actorSelection(vnode) {
             sections: Object.keys(preferences['tabs']).map(entry => ({value: entry}))
         }),
         m("#groupNameDisplayContainer.panel-heading.text-center", {style: {"padding-bottom": "0px"}},
-            [
-                m(`input[data-toggle='tooltip'][id='editGroupName'][title='Click to change group name'][type='text']`, {
-                    placeholder: preferences['tabs'][preferences['current_tab']]['node']['name']
-                }),
-                m("#deleteGroup.button[data-toggle='tooltip'][title='Delete current group'][type='button']")
-            ]
+            // TODO focusout on esc, and TextField wrapper
+            m(`input[data-toggle='tooltip'][id='editGroupName'][title='Click to change group name'][type='text']`, {
+                placeholder: preferences['tabs'][preferences['current_tab']]['node']['name']
+            })
         ),
 
         m("#fullContainer", m(`.actorTabContent#actorDiv`,
@@ -70,7 +68,7 @@ function actorSelection(vnode) {
                 m(Button, {
                     id: 'actorNewGroup',
                     onclick: () => {
-                        preferences['nodes'].push({})
+                        preferences['nodes'].push({}) // TODO
                     },
                     title: `Create new ${preferences['current_tab']} group`,
                     style: {'margin-right': '2px', float: 'right'},
@@ -78,7 +76,7 @@ function actorSelection(vnode) {
                 }),
                 m(Button, {
                     id: 'actorDeleteGroup',
-                    onclick: () => preferences[''], // TODO
+                    onclick: () => preferences[''], // TODO (also make sure there isn't zero groups)
                     title: `Delete current group`,
                     style: {float: 'right'},
                     value: 'Delete Group'

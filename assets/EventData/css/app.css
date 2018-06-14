@@ -25,6 +25,24 @@ main#EventData .location-entry:hover {
     text-decoration: line-through;
 }
 
+main#EventData .filterBase {
+    display: inline-block;
+    padding: 0px;
+    height: 20px;
+    width: 20px;
+    vertical-align: middle;
+    outline: none;
+    background-repeat: no-repeat;
+    background-position: 0px 0px;
+    border: none;
+}
+main#EventData .filterExpand {
+    background-image: url(/static/EventData/images/expand.png);
+}
+main#EventData .filterCollapse {
+    background-image: url(/static/EventData/images/collapse.png)
+}
+
 /* TODO delete everything below */
 main#EventData .hidden {
     display: none;
@@ -616,18 +634,6 @@ main#EventData .actorHead4 {
     display: inline-block;
     font-size: 18px;
 }
-main#EventData .filterExpand {
-    display: inline-block;
-    padding: 0px;
-    height: 20px;
-    width: 20px;
-    vertical-align: middle;
-    outline: none;
-    background-image: url(/static/EventData/images/expand.png);
-    background-repeat: no-repeat;
-    background-position: 0px 0px;
-    border: none;
-}
 main#EventData .filterContainer {
     display: none;
 }
@@ -658,6 +664,10 @@ main#EventData #editGroupName {
     box-shadow: none;
     background-color: #F9F9F9;
     top: 0px;
+}
+main#EventData #editGroupName:hover {
+    background-color: white;
+    border: 1px solid black;
 }
 main#EventData #deleteGroup {
     display: inline-block;
