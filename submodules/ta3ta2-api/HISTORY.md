@@ -1,3 +1,28 @@
+## v2018.6.2
+
+* Fitted solutions now have separate id, and field `solution_id` changed to
+  `fitted_solution_id` where appropriate.
+* The field `rank` in `SolutionExportRequest` has changed from type `int32` to 
+  type `double` and the comments defining this field have also changed, in 
+  combination with revisions to NIST's solution export spec.
+* New task `OBJECT_DETECTION` and new metric `OBJECT_DETECTION_AVERAGE_PRECISION`
+  are added to mirror changes in ProblemDoc v3.1.1
+* Metrics `PRECISION` and `RECALL` added to mirror changes in ProblemDoc v3.1
+* Field `clusters_number` added to message `ProblemTarget`.
+* Lists of raw values are now supported in the `Value` message.
+* The README has been updated, particularly with a flow diagram of calls.
+
+## v2018.5.1
+
+* API has been completely rewritten to utilize the pipeline template format.
+  See the README.md for overview of rpc calls. In particular, TA3 systems can
+  specify early ("preprocessing") steps of pipelines, and TA2 systems can 
+  communicate a description of the pipeline of any found solution.
+* As part of this change, API now uses native gRPC error codes.
+* The CONTRIBUTING.md has been updated to reflect current API development process
+  and define baseline functionality in the core API.
+
+
 ## v2017.12.20
 
 * Data extension has been updated according to changes to a D3M dataset structure.
@@ -17,7 +42,7 @@
        separated, but hyphens for prefixes are not separated.  So "Time-series"
        and "Root-mean-squared error" become `TIME_SERIES` and `ROOT_MEAN_SQUARED_ERROR`
        but "Non-overlapping" and "Multi-class" are `NONOVERLAPPING` and `MULTICLASS`.
-    5. Enum type `Metric` was renamed to `ProblemMetric`.
+    5. Enum type `Metric` was renamed to `PerformanceMetric`.
   [#53](https://gitlab.com/datadrivendiscovery/ta3ta2-api/issues/53)
 * Instead of pointing to a set of features to train from and to target which can each have
   its own dataset URI, we now point to just one dataset URI and then a set of features and

@@ -19,6 +19,9 @@ from tworaven_apps.ta2_interfaces.util_message_formatter import MessageFormatter
 from tworaven_apps.ta2_interfaces.models import KEY_CONTEXT_FROM_UI,\
     KEY_SESSION_ID_FROM_UI
 
+from tworaven_apps.ta2_interfaces.tasks import \
+    (stream_pipeline_create)
+
 PIPELINE_CREATE_REQUEST = 'PipelineCreateRequest'
 
 ERR_NO_CONTEXT = 'A "%s" must be included in the request.' % KEY_CONTEXT_FROM_UI
@@ -30,8 +33,51 @@ def get_test_info_str():
     """Test data for update_problem_schema call"""
     return """{"context": {"sessionId": "session_0"}, "trainFeatures": [{"featureId": "cylinders", "dataUri": "data/d3m/o_196seed/data/trainDatamerged.tsv"}, {"featureId": "cylinders", "dataUri": "data/d3m/o_196seed/data/trainDatamerged.tsv"}], "task": "REGRESSION", "taskSubtype": "UNIVARIATE", "output": "REAL", "metrics": ["ROOT_MEAN_SQUARED_ERROR"], "targetFeatures": [{"featureId": "class", "dataUri": "data/d3m/o_196seed/data/trainDatamerged.tsv"}], "maxPipelines": 10"""
 
+
+from celery import task, shared_task
+from celery.result import AsyncResult
+
+from tworavensproject.celery import celery_app
+
 def pipeline_create(info_str=None):
+
+    really_pipeline_create.delay(info_str)
+
+    err_msg = """Trying to stream, check for updates"""
+    return get_failed_precondition_response(err_msg)
+
+@celery_app.task
+def hi_there(info_str):
+    print('hi_there 1', info_str)
+    print('hi_there 2', info_str)
+    store_it(info_str)
+
+def store_it(info_str):
+    stored_resp = StoredResponseTest(resp=info_str)
+    stored_resp.save()
+
+    
+@celery_app.task
+def really_pipeline_create(info_str=None):
     """Send the pipeline create request via gRPC"""
+    print('pipeline_create 1', info_str)
+    if info_str is None:
+        info_str = get_test_info_str()
+
+    #task = hi_there.delay(info_str)
+    #print('task', task)
+
+    print('pipeline_create 2')
+    stream_pipeline_create(info_str)
+    print('task', task)
+    print('pipeline_create 3')
+
+    err_msg = """Trying to stream, check for updates"""
+    return get_failed_precondition_response(err_msg)
+
+    # --------------------------------------------------
+    # --------------------------------------------------
+
     if info_str is None:
         info_str = get_test_info_str()
 

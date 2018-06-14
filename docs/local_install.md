@@ -5,9 +5,9 @@
 
 For the recommended and easiest route, try the [Vagrant install](https://github.com/TwoRavens/TwoRavens/blob/master/docs/vagrant_install.md), which will allow you to run TwoRavens within a virtual machine on Mac, Windows, or Linux.
 
-Note: the Vagrant install will also work natively on an Ubuntu 16.04 (Xenial) system. 
+Note: the Vagrant install will also work natively on an Ubuntu 16.04 (Xenial) system.
 
-The following is tested on a Mac (OS 10.12.6). 
+The following is tested on a Mac (OS 10.12.6).
 
 ## Get the repository
 
@@ -154,8 +154,39 @@ The following command will start the Django webserver as well as webpack.
 
 - You will probably see an error!  Follow the step below and then go back to the url above and try again.
 
+# Run Redis/Celery
 
-## Install R / Run Rook
+## Redis
+
+**With docker:**
+
+```
+docker run --rm -p 6379:6379 redis:2.8
+```
+
+**_Without_ docker**
+
+1. Install Redis
+      - example: https://medium.com/@petehouston/install-and-config-redis-on-mac-os-x-via-homebrew-eb8df9a4f298
+2. From a new Terminal and within the TwoRavens repository, run the following commands
+
+      ```
+      workon 2ravens
+      fab redis_run
+      ```
+
+## Celery
+
+1. Open a new Terminal
+1. `cd` within the TwoRavens repository directory
+1. Run the following commands:
+    ```
+    workon 2ravens
+    fab celery_run
+    ```
+
+
+# Install R / Run Rook
 
 Download and install R at https://www.r-project.org. If you followed the Vagrant install guide, you've already done this.
 
@@ -174,7 +205,7 @@ Then set your working directory to ~/TwoRavens/rook. On the Vagrant install, thi
   ```
   setwd("/home/ubuntu/TwoRavens/rook")
   ```
-  
+
 On Mac it will look more like:
 
   ```
@@ -196,7 +227,7 @@ Note that this may install many packages, depending on what already exists. If i
 - Try the app again:
   - Go to: http://127.0.0.1:8080/
   - Hit shift+refresh on the browser
-  
+
 As a shortcut to the above, assuming R is installed, from the command line, you can try:
   ```
   fab run_rook
@@ -225,14 +256,14 @@ As a shortcut to the above, assuming R is installed, from the command line, you 
         ```
         setwd("/Users/vjdorazio/Desktop/github/TwoRavens/rook")
         ```
-        
+
     1. Source rooksource.R to get the app up:
         ```
         source("rooksource.R")
         ```
-        
+
    Or, from a new terminal, try `fab run_rook`
-   
+
 4. Go to Two Ravens: http://127.0.0.1:8080/
   - Go to the Django admin: http://127.0.0.1:8080/admin
     - username: `dev_admin`

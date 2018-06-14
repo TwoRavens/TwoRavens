@@ -9,7 +9,6 @@ import signal
 import sys
 from fabric.api import local, task
 import django
-from django.conf import settings
 import subprocess
 
 import re
@@ -497,11 +496,94 @@ def ta3_listener_run():
     """Start a flask server that receives messages from the UI
     Part of scaffolding for the D3M eval"""
     ta3_dir = os.path.join(FAB_BASE_DIR,
-                          'tworaven_apps',
-                          'ta3_search')
+                           'tworaven_apps',
+                           'ta3_search')
 
     flask_cmd = ('cd %s;'
                  'FLASK_APP=ta3_listener.py flask run -p8001') % \
                  (ta3_dir,)
 
     local(flask_cmd)
+
+# -----------------------------------
+#   Redis and celery tasks
+# -----------------------------------
+@task
+def redis_run():
+    """Run the local redis server"""
+    redis_cmd = 'redis-server /usr/local/etc/redis.conf'
+
+    #with settings(warn_only=True):
+    result = local(redis_cmd, capture=True)
+
+    if result.failed:
+        print('Redis may already be running...')
+
+
+@task
+def redis_clear():
+    """Clear data from the *running* local redis server"""
+
+    redis_cmd = 'redis-cli flushall'    #  /usr/local/etc/redis.conf'
+    #with settings(warn_only=True):
+    result = local(redis_cmd, capture=True)
+
+    if result.failed:
+        print('Redis not running, nothing to clear')
+
+@task
+def redis_stop():
+    """Clear data from the *running* local redis server"""
+
+    redis_cmd = 'pkill -f redis'
+    #with settings(warn_only=True):
+    result = local(redis_cmd, capture=True)
+
+    if result.failed:
+        print('Nothing to stop')
+
+@task
+def redis_restart():
+    """Stop redis (if it's running) and start it again"""
+    redis_stop()
+    redis_run()
+
+@task
+def celery_run():
+    """Clear redis and Start celery"""
+    redis_clear()
+
+    #celery_cmd = ('export TA2_STATIC_TEST_MODE=False;'
+    #              'celery -A tworavensproject worker -l info')
+
+    celery_cmd = ('celery -A tworavensproject worker -l info')
+    local(celery_cmd)
+
+@task
+def celery_stop():
+    """Stop the celery processes"""
+    celery_cmd = ('pkill -f celery')
+    local(celery_cmd)
+
+@task
+def celery_restart():
+    """Stop celery (if it's running) and start it again"""
+    celery_stop()
+    celery_run()
+
+
+
+@task
+def compile_ta3ta2_api():
+    """Compile the TA3TA2 grpc .proto files"""
+    proto_names = """core pipeline primitive problem value""".split()
+    proto_cmds = []
+    for pname in proto_names:
+        one_cmd = ('python -m grpc_tools.protoc -I . --python_out=.'
+                   ' --grpc_python_out=. %s.proto') % pname
+        proto_cmds.append(one_cmd)
+
+    proto_dir = os.path.join(FAB_BASE_DIR, 'submodules', 'ta3ta2-api')
+    cmd = ('cd %s;'
+           '%s') % (proto_dir, ';'.join(proto_cmds))
+    local(cmd)
