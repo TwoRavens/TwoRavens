@@ -27,7 +27,7 @@
     "graph": {
       "note": "contains node locations, speeds, etc."
     },
-    "groups": [
+    "nodes": [
       {
         "actor": "source",
         "actorID": 1,
@@ -61,6 +61,7 @@
           }
         },
         "search": "MUS",
+        "search_trigger": false,
         "visible_elements": 100,
         "node": {
           "actor": "source",
@@ -88,6 +89,7 @@
         }
       },
       "search": "MUS",
+      "search_trigger": false,
       "visible_elements": 100,
       "node": {
         "actor": "target",
@@ -122,6 +124,7 @@
       }
     },
     "search": "MUS",
+    "search_trigger": false,
     "visible_elements": 100,
     "node": {
       "selected": []

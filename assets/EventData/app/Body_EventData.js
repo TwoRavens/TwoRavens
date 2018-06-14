@@ -17,7 +17,7 @@ import ButtonRadio from '../../common/views/ButtonRadio';
 
 import CanvasDatasets from "./views/CanvasDatasets";
 import CanvasAction from "./views/CanvasAction";
-import CanvasActor from "./views/CanvasActor";
+import CanvasDyad from "./views/CanvasDyad";
 import CanvasLoading from "./views/CanvasLoading";
 import CanvasDate from "./views/CanvasDate";
 import CanvasLocation from "./views/CanvasLocation";
@@ -336,7 +336,7 @@ export default class Body_EventData {
             let subsetType = app.genericMetadata['datasets'][app.selectedDataset]['subsets'][app.selectedSubsetName]['type'];
             canvasContent = m({
                 'action': CanvasAction,
-                'actor': CanvasActor,
+                'actor': CanvasDyad,
                 'date': CanvasDate,
                 'location': CanvasLocation,
                 'coordinates': CanvasCoordinates

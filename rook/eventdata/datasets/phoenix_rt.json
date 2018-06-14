@@ -7,29 +7,33 @@
   "subsets": {
     "Actor": {
       "type": "dyad",
-      "format": "phoenix",
       "tabs": {
         "source": {
+          "format": "phoenix",
           "full": "source",
           "filters": [
             "src_agent",
             "src_other_agent",
             "src_actor"
+          ],
+          "token_length": 3,
+          "deconstruct": [
+            "src_other_agent"
           ]
         },
         "target": {
+          "format": "phoenix",
           "full": "target",
           "filters": [
             "tgt_agent",
             "tgt_other_agent",
             "tgt_actor"
+          ],
+          "token_length": 3,
+          "deconstruct": [
+            "tgt_other_agent"
           ]
         }
-      },
-      "search_length": 3,
-      "deconstruct": {
-        "src_other_agent": ";",
-        "tgt_other_agent": ";"
       }
     },
     "Action": {

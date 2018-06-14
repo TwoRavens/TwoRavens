@@ -37,35 +37,41 @@ function actorSelection(vnode) {
             id: 'actorTab',
             onclick: (tab) => preferences['current_tab'] = tab,
             activeSection: preferences['current_tab'],
-            sections: [{value: 'source'}, {value: 'target'}]
+            sections: Object.keys(preferences['tabs']).map(entry => ({value: entry}))
         }),
         m("#groupNameDisplayContainer.panel-heading.text-center", {style: {"padding-bottom": "0px"}},
             [
                 m(`input[data-toggle='tooltip'][id='editGroupName'][title='Click to change group name'][type='text']`, {
-                    placeholder: preferences['current_node'][preferences['current_tab']]['name']
+                    placeholder: preferences['tabs'][preferences['current_tab']]['node']['name']
                 }),
                 m("#deleteGroup.button[data-toggle='tooltip'][title='Delete current group'][type='button']")
             ]
         ),
 
         m("#fullContainer", m(`.actorTabContent#actorDiv`,
-            m(MonadSelection, {preferences: preferences['tabs'][preferences['current_tab']], formatting}),
+            m(MonadSelection, {
+                data: data[preferences['current_tab']],
+                preferences: preferences['tabs'][preferences['current_tab']],
+                formatting: formatting
+            }),
             m(".actorBottomTry", {style: {"width": "100%"}},
                 m(Button, {
                     id: 'actorSelectAll',
-                    onclick: () => preferences['current_node'][preferences['current_tab']]['group'] = new Set(data[preferences['current_tab']]),
+                    onclick: () => preferences['tabs'][preferences['current_tab']]['node']['group'] = new Set(data[preferences['current_tab']]['full']),
                     title: `Selects all ${preferences['current_tab']}s that match the filter criteria`,
                     value: 'Select All'
                 }),
                 m(Button, {
                     id: 'actorClearAll',
-                    onclick: () => preferences['current_node'][preferences['current_tab']]['group'] = new Set(),
+                    onclick: () => preferences['tabs'][preferences['current_tab']]['node']['group'] = new Set(),
                     title: `Clears all ${preferences['current_tab']}s that match the filter criteria`,
                     value: 'Clear All'
                 }),
                 m(Button, {
                     id: 'actorNewGroup',
-                    onclick: () => preferences[''], // TODO
+                    onclick: () => {
+                        preferences['nodes'].push({})
+                    },
                     title: `Create new ${preferences['current_tab']} group`,
                     style: {'margin-right': '2px', float: 'right'},
                     value: 'New Group'
@@ -81,7 +87,7 @@ function actorSelection(vnode) {
     ]
 }
 
-export default class CanvasActor {
+export default class CanvasDyad {
 
     oncreate() {
         setupActor();

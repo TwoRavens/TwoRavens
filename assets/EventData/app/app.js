@@ -39,6 +39,7 @@ export let genericMetadata = {
 };
 
 export let getVariables = (dataset) => Object.values((dataset || {})['columns'] || {});
+export let ontologyAlign = (column) => genericMetadata['datasets'][selectedDataset]['columns'][column];
 
 // metadata computed on the dataset for each subset
 export let subsetMetadata = {};
@@ -504,23 +505,7 @@ export function pageSetup(jsondata) {
                 return(out)
             }, Array(20).fill(0)),
 
-        'actor': data => Object.keys(data)
-            // restructure under source/target, as full, entities, roles and attributes
-            .reduce((out, field) => {
-                let genericField = genericMetadata['datasets'][selectedDataset]['columns'][field];
-                let genericID = ['tgt_', 'src_', '<', '>'].reduce((out, txt) => out.replace(txt, ''), genericField);
-                let actorTab = (genericField.includes('source') || genericField.includes('src')) ? 'source' : 'target';
-
-                out[actorTab][{
-                    'actor': 'entities',
-                    'agent': 'roles',
-                    'country': 'roles',
-                    'other_agent': 'attributes',
-                    'sectors': 'attributes'
-                }[genericID] || 'full'] = data[field];
-                return(out);
-            }, {source: {}, target: {}}),
-
+        'dyad': _=>_,
         'coordinates': _=>_,
 
         'date': data => data

@@ -215,7 +215,6 @@ eventdata_subset.app <- function(env) {
     metadata = jsonlite::fromJSON(readLines(paste("./eventdata/datasets/", dataset, '.json', sep="")));
     # some extra schema info is needed to describe how information should be presented
     subset_config = jsonlite::fromJSON(readLines(paste("./eventdata/config/subsets.json", sep="")));
-    delimited_columns = jsonlite::fromJSON(readLines(paste("./eventdata/config/delimited_columns.json", sep="")));
 
     # Check if metadata has already been computed, and return cached value if it has
     # if (!file.exists("./data/cachedQueries.RData")) save(list(0), file="./data/cachedQueries.RData")
@@ -291,15 +290,15 @@ eventdata_subset.app <- function(env) {
             }, error=genericErrorHandler)) %plan% multiprocess
         }
 
-        collectMonoid = function(monoid) {
-            list(full=collectColumn(monoid$full), filters=sapply(monoid$filters, collectColumn))
+        collectMonad = function(monad) {
+            list(full=collectColumn(monad$full), filters=sapply(monad$filters, collectColumn))
         }
 
         if (subsetMetadata$type == 'dyad') {
-            return(sapply(subsetMetadata$tabs, collectMonoid))
+            return(sapply(subsetMetadata$tabs, collectMonad))
         }
-        if (subsetMetadata$tyype == 'monoid') {
-            return(collectMonoid(subsetMetadata))
+        if (subsetMetadata$tyype == 'monad') {
+            return(collectMonad(subsetMetadata))
         }
 
         return(sapply(subsetMetadata$columns, collectColumn))

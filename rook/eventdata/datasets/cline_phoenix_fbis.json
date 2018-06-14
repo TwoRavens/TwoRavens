@@ -9,27 +9,31 @@
       "type": "dyad",
       "tabs": {
         "source": {
+          "format": "phoenix",
           "full": "source",
           "filters": [
             "source_agent",
             "source_others",
             "source_root"
-          ]
+          ],
+          "token_length": 3,
+          "deconstruct": {
+            "source_others": ";"
+          }
         },
         "target": {
+          "format": "phoenix",
           "full": "target",
           "filters": [
             "target_agent",
             "target_others",
             "target_root"
-          ]
+          ],
+          "token_length": 3,
+          "deconstruct": {
+            "target_others": ";"
+          }
         }
-      },
-      "format": "phoenix",
-      "search_length": 3,
-      "deconstruct": {
-        "source_others": ";",
-        "target_others": ";"
       }
     },
     "Action": {

@@ -7,9 +7,9 @@
   "subsets": {
     "Actor": {
       "type": "dyad",
-      "format": "icews",
       "tabs": {
         "source": {
+          "format": "icews",
           "full": "Source Name",
           "filters": [
             "Source Sectors",
@@ -17,6 +17,7 @@
           ]
         },
         "target": {
+          "format": "icews",
           "full": "Target Name",
           "filters": [
             "Target Sectors",
