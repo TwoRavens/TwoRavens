@@ -438,12 +438,13 @@ class Body {
                 m('ul.dropdown-menu[role=menu][aria-labelledby=drop]',
                   userlinks.map(link => m('a[style=padding: 0.5em]', {href: link.url}, link.title, m('br'))))),
               navBtn('btnEstimate.btn-default', 2, 1, mode === 'explore' ? _ => {
-                  if (app.links.length === 0) {
+               /*   if (app.links.length === 0) {
                       setModal('Please link pebbles first.', 'Warning', true, 'Ok', true);
                       return;
-                  }
+                  } */
 
-                  exp.explore();
+                //  exp.explore();
+                exp.plot();
                   app.setRightTabExplore('Bivariate');
               } : app.estimate, m("span.ladda-label", mode === 'explore' ? 'Explore' : 'Solve This Problem'), '150px'),
               m('div.btn-group[role=group][aria-label="..."]', {style:{"float":"right", "margin-left": "2em"}},

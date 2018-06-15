@@ -1482,6 +1482,39 @@ export async function explore() {
     m.redraw();
 }
 
+/**
+   called by clicking 'Plot' in explore mode
+*/
+export async function plot() {
+    if (app.downloadIncomplete()) {
+        return;
+    }
+
+    app.zPop();
+    console.log('zpop:', app.zparams);
+
+//    let plottype = "scatter";
+    let plottype = "box";
+    let plotvars=["stratidc","logim"];
+    let zd3mdata = app.zparams.zd3mdata;
+    
+    let jsonout = {plottype, plotvars, zd3mdata};
+    jsonout = JSON.stringify(jsonout);
+    console.log(jsonout);
+
+    // write links to file & run R CMD
+    app.estimateLadda.start(); // start spinner
+    let json = await app.makeRequest(ROOK_SVC_URL + 'plotdataapp', jsonout);
+    
+    app.estimateLadda.stop();
+    if (!json) {
+        return;
+    }
+    
+    return;
+    // VJD: at this point UI has plotdata for the selected plot
+}
+
 export let exploreVar = '';
 export async function callTreeApp(node_var, app) {
     exploreVar = node_var;
