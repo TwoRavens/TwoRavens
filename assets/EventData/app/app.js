@@ -1,17 +1,11 @@
 import m from 'mithril';
-import {actorLinks, resizeActorSVG} from "./subsets/Actor";
 import {dateSort} from "./views/CanvasDate";
 import {
-    aggregPentaChkOrd,
-    aggregRootChkOrd,
     makeAggregQuery,
-    setAggregMode,
-    setEventMeasure,
-    updateAggregTable,
     updateToAggreg
 } from "./aggreg/aggreg";
 
-import {panelMargin, panelOcclusion, panelOpen, setPanelCallback, setPanelOcclusion} from "../../common/common";
+import * as common from '../../common/common';
 
 // Used for right panel query tree
 import '../../../node_modules/jqtree/tree.jquery.js';
@@ -58,27 +52,19 @@ export let setCanvasRedraw = (canvas, value) => canvasRedraw[canvas] = value || 
 export let setLeftTab = (tab) => leftTab = tab;
 export let leftTab = 'Subsets';
 
-setPanelCallback('right', () => {
-    setPanelOcclusion('right', `calc(${panelOpen['right'] ? '250px' : '16px'} + 2*${panelMargin})`);
+common.setPanelCallback('right', () => {
+    common.setPanelOcclusion('right', `calc(${common.panelOpen['right'] ? '250px' : '16px'} + 2*${common.panelMargin})`);
     handleResize();
 });
 
-setPanelCallback('left', () => {
-    setPanelOcclusion('left', `calc(${panelOpen['left'] ? '250px' : '16px'} + 2*${panelMargin})`);
+common.setPanelCallback('left', () => {
+    common.setPanelOcclusion('left', `calc(${common.panelOpen['left'] ? '250px' : '16px'} + 2*${common.panelMargin})`);
     handleResize();
 });
 
 export function handleResize() {
-    document.getElementById('canvas').style['padding-right'] = panelOcclusion['right'];
-    document.getElementById('canvas').style['padding-left'] = panelOcclusion['left'];
-    if (selectedCanvas === 'Actor') {
-        resizeActorSVG();
-    }
-
-    if (selectedCanvas === "Action") {
-        drawGraphs();
-        updateData();
-    }
+    document.getElementById('canvas').style['padding-right'] = common.panelOcclusion['right'];
+    document.getElementById('canvas').style['padding-left'] = common.panelOcclusion['left'];
 }
 
 window.addEventListener('resize', handleResize);
@@ -110,21 +96,11 @@ export function setSelectedMode(mode) {
     if (mode === 'datasets' && 'Datasets' !== selectedCanvas) setSelectedCanvas('Datasets');
 
     selectedMode = mode;
-    if (mode === 'subset') {
-        if (selectedCanvas === 'Actor' && initialLoad) {
-            document.getElementById('canvas').style.height = 'calc(100% - 102px)';
-            resizeActorSVG(false);
-        }
-    }
 
     if (mode === 'aggregate') {
-        if (selectedCanvas === 'Actor' && initialLoad) {
-            document.getElementById('canvas').style.height = 'calc(80% - 102px)';
-            resizeActorSVG(false);
-        }
         updateToAggreg(false);
     }
-    // This triggers some very strange mithril issues... but if you call it from outside, then everything works.
+
     m.route.set('/' + mode.toLowerCase());
 }
 
@@ -133,109 +109,13 @@ let subsetTypes = ['actor', 'action', 'coordinates', 'date', 'location', 'custom
 export let selectedSubsetName;
 export let setSelectedSubsetName = (subset) => {
     setSelectedCanvas('Subset');
-    let candidateSubset = genericMetadata['datasets'][selectedDataset]['subsets'][subset];
-
-    if (candidateSubset && subsetTypes.indexOf(candidateSubset['type']) === -1) {
-        alert('Invalid subset: ' + subset);
-        return;
-    }
     selectedSubsetName = subset;
 };
 
 // TODO decouple setSelectedCanvas and setSelectedSubset
 let canvasTypes = ['Datasets', 'Subset', 'Time Series', 'Analysis'];
 export let selectedCanvas = 'Datasets';
-export let setSelectedCanvas = (canvasKey) => {
-    selectedCanvas = canvasKey;
-
-    // TODO strip this out when state is abstracted
-    // Typically 1. update state 2. mithril redraw. Therefore graphs get drawn on a display:none styled div
-    // Graphs depend on the the div width, so this causes them to render improperly.
-    // Setting the div visible before the state change fixes collapsing graphs.
-    for (let child of document.getElementById('canvas').children) child.style.display = 'none';
-
-    if (initialLoad) {
-        if (selectedCanvas === "Action") {
-            document.getElementById('canvasAction').style.display = 'inline';
-            drawGraphs();
-            updateData();
-        }
-
-        if (selectedCanvas === "Actor") {
-            document.getElementById('canvasActor').style.display = 'inline';
-            resizeActorSVG();
-        }
-
-        if (selectedCanvas === "Penta Class") {
-
-            setEventMeasure("Penta Class");
-            // console.log("in penta canvas");
-            setAggregMode("penta");
-            $(".aggregDataRoot").hide();
-            //~ for (let x = 0; x <= 4; x ++) {
-            //~ console.log("showing penta table");
-            //~ if ($("#aggregPenta" + x).prop("checked")) {
-            //~ $(".aggregDataPenta" + x).show();
-            //~ }
-            //~ }
-            // console.log(aggregPentaChkOrd);
-            $("#aggregPentaAll").prop("indeterminate", false);
-            if (aggregPentaChkOrd[0] == 0)
-                $("#aggregPentaAll").prop("checked", false);
-            else if (aggregPentaChkOrd[0] == 2)
-                $("#aggregPentaAll").prop("indeterminate", true);
-            for (let x = 0; x < aggregPentaChkOrd.length - 1; x ++) {
-                if (aggregPentaChkOrd[x + 1] == 0) {
-                    // console.log("hiding penta " + x);
-                    $("#aggregPenta" + x).prop("checked", false);
-                    $(".aggregDataPenta" + x).hide();
-                }
-                else {
-                    // console.log("showing penta " + x);
-                    $("#aggregPenta" + x).prop("checked", true);
-                    $(".aggregDataPenta" + x).show();
-                }
-            }
-            updateAggregTable();
-        }
-        else if (selectedCanvas === "Root Code") {
-            setEventMeasure("Root Code");
-
-            // console.log("in root canvas");
-            setAggregMode("root");
-            $(".aggregDataPenta").hide();
-            //~ for (let x = 1; x <= 20; x ++) {
-            //~ if ($("#aggregRoot" + x).prop("checked")) {
-            //~ $(".aggregDataRoot" + x).show();
-            //~ }
-            //~ }
-            // console.log(aggregRootChkOrd);
-            $("#aggregRootAll").prop("indeterminate", false);
-            if (aggregRootChkOrd[0] == 0)
-                $("#aggregRootAll").prop("checked", false);
-            else if (aggregRootChkOrd[0] == 2)
-                $("#aggregRootAll").prop("indeterminate", true);
-            for (let x = 1; x < aggregRootChkOrd.length; x ++) {
-                if (aggregRootChkOrd[x] == 0) {
-                    // console.log("hiding root " + x);
-                    $("#aggregRoot" + x).prop("checked", false);
-                    $(".aggregDataRoot" + x).hide();
-                }
-                else {
-                    // console.log("showing root " + x);
-                    $("#aggregRoot" + x).prop("checked", true);
-                    $(".aggregDataRoot" + x).show();
-                }
-            }
-            updateAggregTable();
-        }
-
-        if (selectedCanvas === "Time Series") {
-            document.getElementById('canvasAggregTS').style.display = 'block';
-            //~ setupAggregTS();
-        }
-    }
-};
+export let setSelectedCanvas = (canvasKey) => selectedCanvas = canvasKey;
 
 export let totalSubsetRecords = 0;
 
@@ -456,8 +336,8 @@ let updatePeek = async () => {
     peekSkip += data.length;
 
     // this gets noticed by the peek window
-    localStorage.setItem('peekHeader', dataset['name']);
-    localStorage.setItem('peekTableHeaders', JSON.stringify(Object.keys(variableQuery)));
+    localStorage.setItem('peekHeader', selectedDataset['name']);
+    localStorage.setItem('peekTableHeaders', JSON.stringify([...selectedVariables]));
     localStorage.setItem('peekTableData', JSON.stringify(peekData));
 };
 window.addEventListener('storage', onStorageEvent);
@@ -539,10 +419,7 @@ export function pageSetup(jsondata) {
         }, {});
 
     // If first load of data, user may have selected a subset and is waiting. Render page now that data is available
-    if (!initialLoad) {
-        setSelectedCanvas(selectedCanvas);
-        if (selectedCanvas === 'Actor') resizeActorSVG();
-    }
+    if (!initialLoad) setSelectedCanvas(selectedCanvas);
     initialLoad = true;
 
     // find a subset of type
@@ -973,7 +850,7 @@ export function addRule() {
             return;
         }
 
-        if ($('#rightpanel').hasClass('closepanel')) toggleRightPanel();
+        common.setPanelOpen('right');
 
         // Don't show the boolean operator on the first element
         if (subsetData.length === 0) {
@@ -1106,7 +983,7 @@ function getSubsetPreferences() {
             children: []
         };
 
-        for (let linkId in actorLinks) {
+        for (let linkId in preferences[selectedSubsetName]['edges']) {
             // Add each link to the parent node as another rule
             let link = {
                 id: String(nodeId++),
@@ -1115,16 +992,16 @@ function getSubsetPreferences() {
                 operation: 'or',
                 children: [{
                     id: String(nodeId++),
-                    name: 'Source: ' + actorLinks[linkId].source.name,
+                    name: 'Source: ' + preferences[selectedSubsetName]['edges'][linkId].source.name,
                     show_op: false,
                     cancellable: false,
-                    actors: [...actorLinks[linkId].source.group]
+                    actors: [...preferences[selectedSubsetName]['edges'][linkId].source.group]
                 }, {
                     id: String(nodeId++),
-                    name: 'Target: ' + actorLinks[linkId].target.name,
+                    name: 'Target: ' + preferences[selectedSubsetName]['edges'][linkId].target.name,
                     show_op: false,
                     cancellable: false,
-                    actors: [...actorLinks[linkId].target.group]
+                    actors: [...preferences[selectedSubsetName]['edges'][linkId].target.group]
                 }]
             };
 

@@ -1,10 +1,7 @@
 import * as app from '../app';
-import {actorLinks} from "../subsets/Actor";
 
 import * as d3 from "d3";
 import m from 'mithril';
-import {genericMetadata} from "../app";
-import {selectedDataset} from "../app";
 
 let aggregMode = "penta";
 
