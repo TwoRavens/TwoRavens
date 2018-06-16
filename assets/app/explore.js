@@ -1497,6 +1497,7 @@ export async function plot() {
     let plottype = "box";
     let plotvars=["stratidc","logim"];
     let zd3mdata = app.zparams.zd3mdata;
+    let myvegaschema = {};
     
     let jsonout = {plottype, plotvars, zd3mdata};
     jsonout = JSON.stringify(jsonout);
@@ -1511,8 +1512,29 @@ export async function plot() {
         return;
     }
     
+    if(plottype=="box") {
+        myvegaschema = await m.request({method: "GET", url: "/rook-custom/rook-files/vega-schemas/box2d.json"});
+        console.log(myvegaschema);
+    }
+    
+    // function to fill in the contents of the vega schema
+    function fillVega(vegaschema, vegadata) {
+        let stringified = JSON.stringify(vegaschema);
+        stringified = stringified.replace(/tworavensY/g, vegadata.vars[1]);
+        stringified = stringified.replace(/tworavensX/g, vegadata.vars[0]);
+        stringified = stringified.replace("url","values");
+        stringified = stringified.replace('"tworavensData"',vegadata.plotdata[0]);
+        // VJD: if you enter this console.log into the vega editor https://vega.github.io/editor/#/edited the plot will render
+        console.log(stringified);
+        vegaschema = JSON.parse(stringified);
+    
+        console.log(vegaschema);
+        console.log(vegadata);
+    }
+    
+    fillVega(myvegaschema, json);
     return;
-    // VJD: at this point UI has plotdata for the selected plot
+    
 }
 
 export let exploreVar = '';
