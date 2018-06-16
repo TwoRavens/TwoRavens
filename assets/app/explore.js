@@ -1528,11 +1528,11 @@ export async function plot() {
         console.log(stringified);
         vegaschema = JSON.parse(stringified);
     
-        console.log(vegaschema);
-        console.log(vegadata);
+        return(vegaschema);
     }
     
-    fillVega(myvegaschema, json);
+    myvegaschema = fillVega(myvegaschema, json);
+    console.log(myvegaschema);
     return;
     
 }
