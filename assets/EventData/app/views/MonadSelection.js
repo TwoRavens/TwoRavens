@@ -119,7 +119,15 @@ export default class MonadSelection {
                 }),
                 m(`.actorFullList#searchListActors`, {
                         style: Object.assign({"text-align": "left"},
-                            this.waitForQuery && {'pointer-events': 'none', 'background': grayColor})
+                            this.waitForQuery && {'pointer-events': 'none', 'background': grayColor}),
+                        onscroll: () => {
+                            // don't apply infinite scrolling when actor list is empty
+                            if (data.length === 0) return;
+
+                            let container = document.querySelector('#searchListActors');
+                            let scrollHeight = container.scrollHeight - container.scrollTop;
+                            if (scrollHeight < container.offsetHeight) preferences['full_limit'] += this.defaultPageSize;
+                        }
                     },
                     this.waitForQuery && data['full']
                         .filter(actor => !preferences['show_selected'] || preferences['node']['selected'].has(actor))
@@ -166,7 +174,7 @@ export default class MonadSelection {
                     ),
                     Object.keys(data).map(filter => [
                         m(".separator"),
-                        m("button.filterBase" + (preferences['filters'][filter]['expanded'] ? '.filterExpand': '.filterCollapse'), {
+                        m("button.filterBase" + (preferences['filters'][filter]['expanded'] ? '.filterExpand' : '.filterCollapse'), {
                             onclick: () => preferences['filters'][filter]['expanded'] = !preferences['filters'][filter]['expanded']
                         }),
                         m("label.actorHead4", {

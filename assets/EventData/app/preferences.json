@@ -16,6 +16,7 @@
   },
   "dyad": {
     "current_tab": "source",
+    "node_count": 0,
     "edges": [
       {
         "dup": false,
@@ -61,12 +62,11 @@
           }
         },
         "search": "MUS",
-        "search_trigger": false,
         "visible_elements": 100,
         "node": {
           "actor": "source",
           "actorID": 2,
-          "group": [],
+          "selected": [],
           "name": "Target 1",
           "nodeCol": "blue"
         }

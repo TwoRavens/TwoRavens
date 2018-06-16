@@ -1,11 +1,11 @@
 import m from 'mithril';
-import {setupActor} from '../subsets/Actor';
 import {panelMargin} from '../../../common/common';
 import {aggregActorOn, setAggregActor} from '../aggreg/aggreg';
 import ButtonRadio from "../../../common/views/ButtonRadio";
 import Button from "../../../common/views/Button";
 
 import MonadSelection from './MonadSelection';
+import PlotDyad, {dyadColors} from './PlotDyad';
 
 // Width of the actor selection panel
 let selectionWidth = '350px';
@@ -87,11 +87,38 @@ function actorSelection(vnode) {
 
 export default class CanvasDyad {
 
-    oncreate() {
-        setupActor();
+    oncreate(vnode) {
+        let {metadata, preferences} = vnode.attrs;
+        preferences['node_count'] = preferences['node_count'] || 0;
+
+        // initialize preferences with new nodes, if none have been set
+        preferences['nodes'] = preferences['nodes'] || Object.keys(metadata['tabs']).map(tab => ({
+            name: tab + ' ' + (preferences['nodes'] || []).length,
+            actor: tab,
+            selected: new Set(),
+            id: preferences['node_count']++
+        }));
+
+        preferences['tabs'] = preferences['tabs'] || Object.keys(metadata['tabs']).map(tab => {
+            preferences['tabs'][tab] = {
+                show_selected: false,
+                filters: Object.keys(metadata['tabs'][tab]['filters']).reduce((out, filter) => {
+                    out[filter] = {expanded: false, selected: new Set()};
+                    return out;
+                }, {}),
+                search: '',
+                visible_elements: 0,
+                node: preferences['nodes'].filter(node => node['actor'] === tab)[0]
+            }
+        });
+
+        preferences['edges'] = preferences['edges'] || [];
+        preferences['current_tab'] = preferences['current_tab'] || Object.keys(metadata['tabs'])[0];
     }
 
+
     view(vnode) {
+        let {preferences} = vnode.attrs;
         return m("#canvasActor", {style: {height: `calc(100% - ${panelMargin})`}},
             [
                 m("div#actorSelectionDiv", {
@@ -120,7 +147,10 @@ export default class CanvasDyad {
                             )
                         ]
                     ),
-                    m("svg[id='actorLinkSVG']")
+                    m(PlotDyad, {
+                        id: 'actorSVG',
+                        preferences: preferences
+                    })
                 ]),
                 m("div#actorFormatDiv", {
                     style: {
