@@ -63,30 +63,43 @@
       "columns": []
     }
   },
-  "columns": {
+  "columns": [
+    "code",
+    "country_code",
+    "date8",
+    "day",
+    "geoname",
+    "goldstein",
+    "id",
+    "latitude",
+    "longitude",
+    "month",
+    "quad_class",
+    "root_code",
+    "source_text",
+    "source",
+    "src_actor",
+    "src_agent",
+    "src_other_agent",
+    "target",
+    "tgt_actor",
+    "tgt_agent",
+    "tgt_other_agent",
+    "url",
+    "year"
+  ],
+  "ontology_alignments": {
     "code": "<cameo>",
     "country_code": "<country>",
-    "date8": "<date>",
-    "day": "<day>",
-    "geoname": "<admin_info>",
     "goldstein": "<goldstein>",
-    "id": "<id>",
     "latitude": "<latitude>",
     "longitude": "<longitude>",
-    "month": "<month>",
     "quad_class": "<quad_class>",
-    "root_code": "<action_code>",
-    "source_text": "<publisher>",
-    "source": "<source>",
+    "root_code": "<root_code>",
     "src_actor": "<src_country>",
     "src_agent": "<src_sector>",
-    "src_other_agent": "<src_other_sector>",
-    "target": "<target>",
     "tgt_actor": "<tgt_actor>",
-    "tgt_agent": "<tgt_sector>",
-    "tgt_other_agent": "<tgt_other_sector>",
-    "url": "<url>",
-    "year": "<year>"
+    "tgt_agent": "<tgt_sector>"
   },
   "citations": [
     {

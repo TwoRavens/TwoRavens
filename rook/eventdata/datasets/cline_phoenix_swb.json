@@ -64,31 +64,49 @@
       "columns": []
     }
   },
-  "columns": {
-    "aid": "<id>",
+  "columns": [
+    "aid",
+    "code",
+    "countryname",
+    "day",
+    "eid",
+    "goldstein",
+    "lat",
+    "lon",
+    "month",
+    "placename",
+    "process",
+    "quad_class",
+    "root_code",
+    "source",
+    "source_agent",
+    "source_others",
+    "source_root",
+    "statename",
+    "story_date",
+    "target",
+    "target_agent",
+    "target_others",
+    "target_root",
+    "year"
+  ],
+  "columns_constructed": [
+    "date_event_constructed"
+  ],
+  "ontology_alignments": {
     "code": "<cameo>",
     "countryname": "<country>",
-    "day": "<day>",
-    "eid": "<event_id>",
     "goldstein": "<goldstein>",
     "lat": "<latitude>",
     "lon": "<longitude>",
-    "month": "<month>",
     "placename": "<geoname>",
-    "process": "<process>",
     "quad_class": "<quad_class>",
-    "root_code": "<action_code>",
-    "source": "<source>",
+    "root_code": "<root_code>",
     "source_agent": "<src_sector>",
-    "source_others": "<src_other_sector>",
     "source_root": "<src_country>",
-    "statename": "<admin_info>",
     "story_date": "<date>",
-    "target": "<target>",
     "target_agent": "<tgt_sector>",
-    "target_others": "<tgt_other_sector>",
-    "target_root": "<tgt_country>",
-    "year": "<year>"
+    "target_root": "<tgt_country>"
   },
   "citations": [
     {

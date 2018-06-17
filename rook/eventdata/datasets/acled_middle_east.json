@@ -1,0 +1,106 @@
+{
+  "name": "ACLED Middle East",
+  "key": "acled_middle_east",
+  "description": "Middle East event data from the Armed Conflict Location & Event Data Project (ACLED).",
+  "interval": "1997 - 9 June 2018",
+  "host": "TwoRavens",
+  "subsets": {
+    "Actor": {
+      "type": "dyad",
+      "tabs": {
+        "actor 1": {
+          "format": "ACLED",
+          "full": "ACTOR1",
+          "filters": [
+            "ASSOC_ACTOR_1",
+            "INTER1"
+          ]
+        },
+        "format": "ACLED",
+        "target": {
+          "full": "ACTOR2",
+          "filters": [
+            "ASSOC_ACTOR_2",
+            "INTER2"
+          ]
+        }
+      }
+    },
+    "Action": {
+      "type": "action",
+      "format": "ACLED interaction",
+      "columns": [
+        "INTERACTION"
+      ]
+    },
+    "Date": {
+      "type": "date",
+      "format": "point",
+      "columns": [
+        "date_event_constructed"
+      ]
+    },
+    "Location": {
+      "type": "location",
+      "format": "ISO-3",
+      "columns": [
+        "country_constructed"
+      ]
+    },
+    "Coordinates": {
+      "type": "coordinates",
+      "format": "signed degrees",
+      "columns": []
+    }
+  },
+  "columns": [
+    "ISO",
+    "EVENT_ID_CNTY",
+    "EVENT_ID_NO_CNTY",
+    "EVENT_DATE",
+    "YEAR",
+    "TIME_PRECISION",
+    "EVENT_TYPE",
+    "ACTOR1",
+    "ASSOC_ACTOR_1",
+    "INTER1",
+    "ACTOR2",
+    "ASSOC_ACTOR_2",
+    "INTER2",
+    "INTERACTION",
+    "REGION",
+    "COUNTRY",
+    "ADMIN1",
+    "ADMIN2",
+    "ADMIN3",
+    "LOCATION",
+    "LATITUDE",
+    "LONGITUDE",
+    "GEO_PRECISION",
+    "SOURCE",
+    "SOURCE_SCALE",
+    "NOTES",
+    "FATALITIES",
+    "TIMESTAMP"
+  ],
+  "columns_constructed": [
+    "date_event_constructed",
+    "country_constructed"
+  ],
+  "ontology_alignments": {
+    "INTERACTION": "<interaction>",
+    "LATITUDE": "<latitude>",
+    "LONGITUDE": "<latitude>",
+    "country_constructed": "<country>",
+    "date_event_constructed": "<date>"
+  },
+  "citations": [
+    {
+      "author": "The Armed Conflict Location & Event Data Project",
+      "year": "2018",
+      "title": "MIDDLE EAST 1997-PRESENT",
+      "date": "June 9",
+      "url": "https://www.acleddata.com/data/"
+    }
+  ]
+}

@@ -53,27 +53,40 @@
       "columns": []
     }
   },
-  "columns": {
-    "CAMEO Code": "<cameo>",
-    "City": "<city>",
-    "Country": "<country>",
-    "District": "<district>",
-    "Event Date": "<date>",
-    "Event ID": "<event_id>",
-    "Event Text": "<event_text>",
-    "Intensity": "<goldstein>",
+  "columns": [
+    "CAMEO Code",
+    "City",
+    "Country",
+    "District",
+    "Event Date",
+    "Event ID",
+    "Event Text",
+    "Intensity",
+    "Latitude",
+    "Longitude",
+    "Province",
+    "Publisher",
+    "Sentence Number",
+    "Source Country",
+    "Source Name",
+    "Source Sectors",
+    "Story ID",
+    "Target Country",
+    "Target Name",
+    "Target Sectors"
+  ],
+  "columns_constructed": [
+    "date_event_constructed",
+    "country_constructed"
+  ],
+  "ontology_alignments": {
+    "date_event_constructed": "<date>",
+    "country_constructed": "<country>",
     "Latitude": "<latitude>",
     "Longitude": "<longitude>",
-    "Province": "<province>",
-    "Publisher": "<publisher>",
-    "Sentence Number": "<sentence_number>",
-    "Source Country": "<src_country>",
-    "Source Name": "<source>",
-    "Source Sectors": "<src_sector>",
-    "Story ID": "<id>",
-    "Target Country": "<tgt_country>",
-    "Target Name": "<target>",
-    "Target Sectors": "<tgt_sector>"
+    "Source Sectors": "<source_sectors>",
+    "Target Sectors": "<target_sectors>",
+    "CAMEO Code": "<cameo>"
   },
   "citations": [
     {

@@ -1,0 +1,191 @@
+{
+  "name": "Cline - Speed",
+  "key": "cline_speed",
+  "description": "Data sourced from The Social, Political and Economic Event Database Project and made available by the Cline Center for Advanced Social Research.",
+  "interval": "1979 - 2015",
+  "host": "TwoRavens",
+  "subsets": {
+    "Actor": {
+      "type": "dyad",
+      "tabs": {
+        "source": {
+          "format": "phoenix",
+          "full": "source",
+          "filters": [
+            "source_agent",
+            "source_others",
+            "source_root"
+          ],
+          "token_length": 3,
+          "deconstruct": {
+            "source_others": ";"
+          }
+        },
+        "target": {
+          "format": "phoenix",
+          "full": "target",
+          "filters": [
+            "target_agent",
+            "target_others",
+            "target_root"
+          ],
+          "token_length": 3,
+          "deconstruct": {
+            "target_others": ";"
+          }
+        }
+      }
+    },
+    "Action": {
+      "type": "action",
+      "format": "CAMEO root code",
+      "columns": [
+        "root_code"
+      ]
+    },
+    "Date": {
+      "type": "date",
+      "format": "fields",
+      "columns": [
+        "year",
+        "month"
+      ]
+    },
+    "Location": {
+      "type": "location",
+      "format": "ISO-3",
+      "columns": [
+        "countryname"
+      ]
+    },
+    "Coordinates": {
+      "type": "coordinates",
+      "format": "signed degrees",
+      "columns": []
+    }
+  },
+  "columns": [
+    "cowcode",
+    "month",
+    "year",
+    "eventid",
+    "country",
+    "INI_IGRP1",
+    "TAR_IGRP1",
+    "VIC_IGRP1",
+    "INI_SGRP1",
+    "TAR_SGRP1",
+    "VIC_SGRP1",
+    "INI_PGRP1",
+    "TAR_PGRP1",
+    "VIC_PGRP1",
+    "KNOW_INI",
+    "AMBIG_INI",
+    "INI_TYPE",
+    "NGOV_I1",
+    "GOV_I1",
+    "TAR_TYPE",
+    "HUMAN_T1",
+    "GOV_T1",
+    "G_LVL_I",
+    "G_LVL_T",
+    "G_LVL_V",
+    "HUMAN_V1",
+    "GOV_V1",
+    "VIC_TYPE",
+    "DATE_TYP",
+    "day",
+    "JUL_PSD",
+    "JUL_PED",
+    "JUL_EED",
+    "JUL_LED",
+    "JUL_START_DATE",
+    "JUL_END_DATE",
+    "DAY_SPAN",
+    "N_INJURD",
+    "TAR_GPOL",
+    "GP_TYPE",
+    "aid",
+    "PUB_MON",
+    "PUB_DATE",
+    "PUB_YEAR",
+    "recap",
+    "NEWS_SOURCE",
+    "CODE_YEAR",
+    "CODE_MONTH",
+    "CODE_DAY",
+    "event",
+    "posthoc",
+    "EV_TYPE",
+    "linked",
+    "LINK_TYPE",
+    "FROM_EID",
+    "TO_EID",
+    "pinpoint",
+    "GP3",
+    "GP4",
+    "GP7",
+    "GP8",
+    "LOC_TYPE",
+    "PE_TYPE",
+    "SYM_TYPE",
+    "AD_VIOL",
+    "AD_TACT",
+    "EXP_TYPE",
+    "ATK_TYPE",
+    "DSA_TYPE",
+    "STAT_ACT",
+    "N_OF_INI_P",
+    "N_OF_INI_A",
+    "WEAP_GRD",
+    "N_KILLED_P",
+    "N_KILLED_A",
+    "E_LENGTH",
+    "N_INJURD_D",
+    "DAM_PROP",
+    "arrests",
+    "PER_ATK_I",
+    "PER_ATK_E",
+    "PUB_ORDER",
+    "retribution",
+    "POL_EXPRESS",
+    "INTANG_REP",
+    "MASS_EXPRESS",
+    "POL_VIOL",
+    "STAT_VIOL",
+    "ST_REPRESS",
+    "AMBIG_WGT",
+    "SC_ANIMOSITY",
+    "ANTI_GOV_SENTMNTS",
+    "CLASS_CONFLICT",
+    "POL_DESIRES",
+    "RETAIN_POWER",
+    "ECO_SCARCITY",
+    "PERS_SECURITY",
+    "QUASI_EVENT",
+    "coup",
+    "COUP_FAILED",
+    "region",
+    "ctry_bias",
+    "victim_effect",
+    "weapon",
+    "property_damaged",
+    "property_owner"
+  ],
+  "columns_constructed": [
+    "date_event_constructed",
+    "country_constructed"
+  ],
+  "ontology_alignments": {
+    "date_event_constructed": "<date>"
+  },
+  "citations": [
+    {
+      "year": "2018",
+      "title": "The Social, Political and Economic Event Database Project (SPEED)",
+      "note": "Distributed by Cline Center for Advanced Social Research",
+      "date": "June 16",
+      "url": "https://clinecenter.illinois.edu/project/human-loop-event-data-projects/SPEED"
+    }
+  ]
+}
