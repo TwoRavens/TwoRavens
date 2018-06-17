@@ -1,24 +1,10 @@
-
-import '../../css/common.css';
-import '../../../pkgs/bootstrap/css/bootstrap-theme.min.css';
-
 import m from 'mithril'
 
-import Button from '../../../app/views/PanelButton';
-import List from '../../../app/views/PanelList';
 import Search from '../../../app/views/Search';
-import Subpanel from '../../../app/views/Subpanel';
 
 import {varColor, mergeAttributes, menuColor} from "../common";
 
-import Header from './Header';
-import Canvas from './Canvas';
-import MenuTabbed from './MenuTabbed';
-import Modal, {setModal} from './Modal';
 import Panel from './Panel';
-import PanelList from './PanelList';
-import Table from './Table';
-import TextField from './TextField';
 import * as common from "../common";
 import * as index from "../../../app/index";
 import * as app from "../../../app/app";
@@ -44,6 +30,9 @@ let peekData = [];
 
 let tableData = [];
 let tableHeader = [];
+
+var filterIndex =[];
+var filterVars =[];
 
 
 export default class Recode {
@@ -210,7 +199,7 @@ export default class Recode {
                 ),
                 m('#centralPanel.container.sidepanel.clearfix', mergeAttributes({
                     style: {
-                        overflow: 'hidden',
+                        overflow: 'scroll',
                         background: menuColor,
                         border: borderColor,
                         width: (window.innerWidth-25)+'px' ,
@@ -220,45 +209,66 @@ export default class Recode {
                         top: heightHeader + panelMargin  + 'px',
                         
                     }}),[
-                        m('div.container', {id : 'createDiv' , style : {'display':'block','height': '250px','overflow':'scroll','width': '100%','height':'100%'}}, [
-                            m('form#createNewForm',{ onsubmit: addValue},[
-                                m('div',{style :{'display': 'block','float':'left'  ,'overflow':'hidden','width':'40%'}},[
-                                    m('br'),
-                                    m('label',{ style : {'display':'inline-block', 'margin-right':'10px'}},'Variable Name : '),
-                                    m('input[type=text]', {id: 'newVar', placeholder: 'New Variable', style : {'display':'inline-block' , 'margin':'10px', 'width':'40%'}}),
-                                    m('br'),
-                                    m('label',{ style : {'display':'inline-block', 'margin-right':'10px'}},'Variable Type : '),
-                                    m('div.dropdown',{ style : {'display':'inline-block','margin':'10px'}},[
-                                        m('select.form-control#typeSelect',{onchange: someFunction ,style:{'display':'inline-block'}, id:'varType'},[
-                                            m('option','Boolean'),
-                                            m('option','Nominal'),
-                                            m('option','Numchar')
-                                        ])
-                                    ]),
-                                    m('div#nominalDiv',{style:{'margin':'10px'}},[
-                                        m('label',{ style : { 'margin-right':'10px'}},'Class List : '),
-                                        m('input[type=text]',{id:'nominalList', placeholder:'Nominal', style:{'margin':'10px'}},),
-                                    ]),
-                                ]),m('div#tableDiv',{style :{'display': 'block','width':'60%','float':'right','height':(window.innerHeight-150)+'px' ,'overflow-y': 'auto','border-style': 'solid','border-width': 'thin'}},[
-                                    m('table.table.table-bordered',{id:'createTable',style:{ 'overflow': 'scroll'}},[
+                        // m('div.container', {id : 'createDiv' , style : {'overflow':'scroll','width': '100%','height':'100%'}}, [
+                            m('div',{id:'filterTableDiv'},[
+                                m('form#selectVars',{onsubmit: filterTable},[
+                                    m('table.table.table-bordered',{id:'tableVars'},[
                                         m('tr#colheader',[
-                                            (tableHeader.slice(1)).map((header) => m('th.col-xs-4',{style : {'border': '1px solid #ddd'}},header)),
-                                            
+                                            m('td.col-xs-4',{style : {'border': '1px solid #ddd','text-align': 'center','font-weight': 'bold'}},'Variables'),
+                                            m('td.col-xs-4',{style : {'border': '1px solid #ddd','text-align': 'center','font-weight': 'bold'}},'Checked')
                                         ]),
-                                        tableData.map((row,i)=> m('tr#colValues',[
-                                            row.filter((item,j) => j !== 0 ).map((item,j) => m('td',{style : {'border': '1px solid #ddd','text-align': 'center'}},item)),
+                                        varList.filter((varItem,j) => j !== 0 ).map((varItem,j)=>m('tr',[
+                                            m('td',{style : {'border': '1px solid #ddd','text-align': 'center'}},m('span',varItem)),
+                                            m('td',{style : {'border': '1px solid #ddd','text-align': 'center'}},m('input[type=checkbox]',{id:'filterVal'+j,value:varItem+","+j})),
                                             
-                                        ],
-                                            
-                                        ))
-                                    ])                                                                        
+                                        ])),
+                                    ]),
+                                    m('button[type="button"]',{onclick: selectAllVars},'Select All Variables'),
+                                    m('button[type="submit"]','Filter Table'),
+                                    m('button[type="button"]',{onclick: unselectAllVars},'Unselect All Variables'),
                                 ]),
-                                
-                                m("br"),
-                                m('button[type="button"]' ,{onclick: createNewCalculate,style:"float:left;"},'Create New Variable'),
-                                m('button[type="submit"]',{id:'submitButton'},'Add Values'),
-                            ])
-                        ])
+                            ]),
+                            m('div',{id:'createTableDiv'},[
+                                m('form#createNewForm',{ onsubmit: addValue},[
+                                    m('div',{style :{'float':'left'  ,'overflow':'hidden','width':'40%'}},[
+                                        m('br'),
+                                        m('label',{ style : {'display':'inline-block', 'margin-right':'10px'}},'Variable Name : '),
+                                        m('input[type=text]', {id: 'newVar', placeholder: 'New Variable', style : {'display':'inline-block' , 'margin':'10px', 'width':'40%'}}),
+                                        m('br'),
+                                        m('label',{ style : {'display':'inline-block', 'margin-right':'10px'}},'Variable Type : '),
+                                        m('div.dropdown',{ style : {'display':'inline-block','margin':'10px'}},[
+                                            m('select.form-control#typeSelect',{onchange: someFunction ,style:{'display':'inline-block'}, id:'varType'},[
+                                                m('option','Boolean'),
+                                                m('option','Nominal'),
+                                                m('option','Numchar')
+                                            ])
+                                        ]),
+                                        m('div#nominalDiv',{style:{'margin':'10px'}},[
+                                            m('label',{ style : { 'margin-right':'10px'}},'Class List : '),
+                                            m('input[type=text]',{id:'nominalList', placeholder:'Nominal', style:{'margin':'10px'}},),
+                                        ]),
+                                    ]),m('div#tableDiv',{style :{'display': 'block','width':'60%','float':'right','height':(window.innerHeight-150)+'px' ,'overflow-y': 'auto','border-style': 'solid','border-width': 'thin'}},[
+                                        m('table.table.table-bordered',{id:'createTable',style:{ 'overflow': 'scroll'}},[
+                                            m('tr#colheader',[
+                                                (tableHeader.slice(1)).filter((header)=> filterVars.includes(header)).map((header) => m('th.col-xs-4',{style : {'border': '1px solid #ddd','text-align': 'center'}},header)),
+                                                
+                                            ]),
+                                            tableData.map((row,i)=> m('tr#colValues',[
+                                                row.filter((item,j) => filterIndex.indexOf(j)>=0 ).map((item,j) => m('td',{style : {'border': '1px solid #ddd','text-align': 'center'}},item)),
+                                                
+                                            ],
+                                                
+                                            ))
+                                        ])                                                                        
+                                    ]),
+                                    
+                                    m("br"),
+                                    m('button[type="button"]' ,{onclick: createNewCalculate,style:"float:left;"},'Create New Variable'),
+                                    m('button[type="submit"]',{id:'submitButton'},'Add Values'),
+                                ])
+                            ]),
+                            
+                        // ])
                     ])
                 ]),
             ]}
@@ -279,19 +289,17 @@ function someFunction(elem){
         elem.style.visibility="hidden";
     }
 }
+
+function selectAllVars(){
+    $(':checkbox').prop("checked", true);
+}
+
+function unselectAllVars(){
+    $(':checkbox').prop("checked", false);
+}
+
 function clickVar(elem) {
-    console.log(this.style.backgroundColor)
-    console.log(document.getElementById('varList'+this.textContent))
 
-    // $(this).css('background-color', app.hexToRgba("#28a4c9"));
-
-    // console.log(document.getElementById('varList'+elem))
-    
-    // $('#varList'+elem).click(function () {
-    //     $(this).css('background-color', '#ffa07a');
-    //     console.log('clicked');
-    // });
-    
     if(document.getElementById('recodeLink').className === 'active'){
       
         //If the variable is a of the type 'character', cannot apply mathematical transformations on it.
@@ -341,8 +349,21 @@ function addValue(elem){
         }
     }
     
-    console.log(newVarValue);
+    console.log(newVarValue);   
     console.log(n)
+}
+
+function filterTable(elem){
+
+    for(var i =0; i< varList.length-1;i++){
+        if(elem.target[i].checked){
+            filterIndex.push(++(elem.target[i].value.split(',')[1]));
+            filterVars.push(elem.target[i].value.split(',')[0]);
+        }
+    }
+
+    document.getElementById("createTableDiv").setAttribute("style", "display:block");
+    document.getElementById("filterTableDiv").setAttribute("style", "display:none");
 }
 
 function formulaCalculate(){}
@@ -433,6 +454,9 @@ function createClick(){
     var elem = document.getElementById('formulaDiv');
     elem.style.display="none";
 
+    var elem = document.getElementById('createTableDiv');
+    elem.style.display="none";
+
     var elem = document.getElementById('nominalDiv');
     elem.style.visibility="hidden";
     
@@ -462,6 +486,9 @@ function createClick(){
     
 }
 function createCreate(){
+
+    var elem = document.getElementById('createTableDiv');
+    elem.style.display="none";
     var elem = document.getElementById('formulaDiv');
     elem.style.display = 'none';
     var elem = document.getElementById('centralPanel');
@@ -494,6 +521,9 @@ function recodeClick(){
     var elem = document.getElementById('formulaDiv');
     elem.style.display="none";
 
+    var elem = document.getElementById('createTableDiv');
+    elem.style.display="none";
+
     var elem = document.getElementById('reorderLink');
     elem.className = '';
     var elem = document.getElementById('formulaLink');
@@ -511,6 +541,9 @@ function formulaClick(){
 
     var elem = document.getElementById('centralPanel');
     elem.style.display ='none';
+
+    var elem = document.getElementById('createTableDiv');
+    elem.style.display="none";
     
     var elem = document.getElementById('rightpanel');
     elem.style.display="block"
@@ -558,12 +591,18 @@ function reorderClick(){
     
     var elem = document.getElementById('rightpanel');
     elem.style.display ='block';
+
+    var elem = document.getElementById('createTableDiv');
+    elem.style.display="none";
     
 }
 function reorderCreate(){
 
     var elem = document.getElementById('centralPanel');
     elem.style.display ='none';
+
+    var elem = document.getElementById('createTableDiv');
+    elem.style.display="none";
 }
 
 $(window).resize(function(){
