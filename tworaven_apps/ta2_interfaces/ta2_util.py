@@ -13,8 +13,8 @@ from django.conf import settings
 from django.template.loader import render_to_string
 
 import core_pb2
-from tworaven_apps.ta2_interfaces.models import TEST_KEY_FILE_URI
-from tworaven_apps.ta2_interfaces.models import KEY_GRPC_JSON
+from tworaven_apps.ta2_interfaces.static_vals import \
+(KEY_GRPC_JSON, TEST_KEY_FILE_URI)
 from django.template.loader import render_to_string
 
 

@@ -7,7 +7,7 @@ from django.http import JsonResponse, HttpResponse, Http404
 from django.contrib.auth.decorators import login_required
 
 from tworaven_apps.api_docs.forms import ClientTestForm
-from tworaven_apps.ta2_interfaces.models import KEY_GRPC_JSON
+from tworaven_apps.ta2_interfaces.static_vals import KEY_GRPC_JSON
 from tworaven_apps.ta2_interfaces.grpc_util import TA3TA2Util
 
 @login_required
