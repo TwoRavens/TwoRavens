@@ -208,8 +208,6 @@ eventdata_subset.app <- function(env) {
     }
 
     metadata = jsonlite::fromJSON(readLines(paste("./eventdata/datasets/", dataset, '.json', sep="")));
-    # some extra schema info is needed to describe how information should be presented
-    subset_config = jsonlite::fromJSON(readLines(paste("./eventdata/config/subsets.json", sep="")));
 
     # Check if metadata has already been computed, and return cached value if it has
     # if (!file.exists("./data/cachedQueries.RData")) save(list(0), file="./data/cachedQueries.RData")
@@ -243,7 +241,7 @@ eventdata_subset.app <- function(env) {
         subsetMetadata = metadata$subsets[[subset]]
 
         # handle the groupable subsets separately
-        if (subset_config[[subsetMetadata$type]]$grouped) {
+        if (subsetMetadata$type %in% list('date', 'location', 'action', 'frequency', 'density')) {
 
             # if the dataset does not have <year> and <month> columns, then construct them from <date>
             if (subsetMetadata$type == 'date' && !all(list('<year>', '<month>') %in% unlist(metadata$columns, use.names=FALSE))) {
@@ -301,7 +299,7 @@ eventdata_subset.app <- function(env) {
 
     # await all futures
     response$write(toString(jsonlite::toJSON(sapply(names(futures), function(subset) {
-        if (subset_config[[metadata$subsets[[subset]]$type]]$grouped) return(value(futures[[subset]]));
+        if (metadata$subsets[[subset]]$type %in% list('date', 'location', 'action', 'frequency', 'density')) return(value(futures[[subset]]));
         return(sapply(futures[[subset]], function(entry) {
             if (is.list(entry)) return(sapply(entry, value)) else return(value(entry))
         }))
