@@ -74,11 +74,11 @@ def date_icews():
             print(document['_id'])
 
 
-remove_header()
+# remove_header()
 
 # add constructed date fields
-date_cline_phoenix()
-date_cline_speed()
-date_acled()
+# date_cline_phoenix()
+# date_cline_speed()
+# date_acled()
 date_icews()
 

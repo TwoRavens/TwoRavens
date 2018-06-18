@@ -3,6 +3,7 @@
   "key": "cline_phoenix_fbis",
   "description": "Data sourced from the CIA Foreign Broadcast Information Service and collected by the Cline Center for Advanced Social Research.",
   "interval": "1995 - 2004",
+  "codebook": "https://uofi.app.box.com/s/bmh9i39m6bf0vhnuebtf3ak3j6uxy2le",
   "host": "TwoRavens",
   "subsets": {
     "Actor": {

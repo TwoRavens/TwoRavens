@@ -4,48 +4,6 @@ source("rookconfig.R")
 ##  rookeventdata.r
 ##
 
-## LOCAL SETUP STEPS:
-# 0. If on windows, use Ubuntu on a virtualbox to prevent this error:
-#       Cross-Origin Request Blocked: The Same Origin Policy disallows reading the remote resource at http://localhost:8000/custom/eventdataapp. (Reason: CORS header ‘Access-Control-Allow-Origin’ missing).
-#
-# 1. Install mongodb
-#
-# 2. Start a mongo server. Server port is 27017 by default
-#      sudo service mongod start
-#
-# 3. Create a new database using the mongoimport utility in the mongo bin (via cmd from ~/TwoRavens/)
-#      Import statements are in ./mongoimports.txt
-#          Remove any straggling header documents via db.phoenix_events.remove({"Date": "Date"}), and db.icews_events.remove({"Source Country": "Source Country"})
-#      3a. To check that the csv data is available, run in new CMD:
-#          (connects to mongo server on default port, opens mongo prompt)
-#            mongo
-#       b. Switch to event_scrape database
-#            use event_scrape
-#       c. Return all data from the phoenix_events table
-#            db.phoenix_events.find()
-#
-# 4. Start a local R server to make this file available here:
-#      http://localhost:8000/custom/eventdatasubsetapp
-#
-#      4a. Install/run R, to enter R prompt
-#       b. Run source('rooksource.R') to start R server
-#          Note: Rook, the R package that runs the R server, does not seem to recognize file updates,
-#                so the server must be restarted after each edit. There should be a better way.
-#
-# 5. Start a local spec-api server from the multi-set branch here:
-#      https://github.com/Sayeedsalam/spec-event-data-server/tree/local
-#      python ./app_v2.py
-#      The api will now be available on 0.0.0.0:5002
-#
-# 6. Submit query from local python server via eventdata web gui. This script will return the subsetted data
-#
-# 7. Permit CORS on your browser. This doesn't seem to work on Windows
-#      7a. Google Chrome: start with terminal argument
-#             google-chrome --disable-web-security
-#       b. Mozilla Firefox: in about:config settings
-#             security.fileuri.strict_origin_policy - set to False
-# NOTE: Use quit() to close the R server. Otherwise the ports will not correctly be released.
-#       If you use Rstudio, modify the IDE config so that it won't share the same port as the R server
 eventdata_subset.app <- function(env) {
 
     production = EVENTDATA_PRODUCTION_MODE     ## Toggle:  TRUE - Production, FALSE - Local Development

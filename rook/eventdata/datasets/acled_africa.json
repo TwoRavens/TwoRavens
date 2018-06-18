@@ -3,6 +3,7 @@
   "key": "acled_africa",
   "description": "African event data from the Armed Conflict Location & Event Data Project (ACLED).",
   "interval": "1997 - 9 June 2018",
+  "codebook": "https://www.acleddata.com/wp-content/uploads/2017/12/ACLED_Codebook_2017FINAL.pdf",
   "host": "TwoRavens",
   "subsets": {
     "Actor": {
