@@ -234,23 +234,17 @@
     "Date Coded": {
       "type": "date",
       "structure": "point",
-      "columns": [
-        "CODE_DATE_constructed"
-      ]
+      "date": "CODE_DATE_constructed"
     },
     "Date Published": {
       "type": "date",
       "structure": "point",
-      "columns": [
-        "PUB_DATE_constructed"
-      ]
+      "date": "PUB_DATE_constructed"
     },
     "Date Average": {
       "type": "date",
       "structure": "point",
-      "columns": [
-        "AVERAGE_DATE_constructed"
-      ]
+      "date": "AVERAGE_DATE_constructed"
     },
     "Date Earliest/Latest": {
       "type": "date",

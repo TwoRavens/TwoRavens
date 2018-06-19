@@ -26,11 +26,12 @@ LOCAL SETUP STEPS:
      4a. Install/run R, to enter R prompt
       b. Run source('rooksource.R') to start R server
          Note: Rook, the R package that runs the R server, does not seem to recognize file updates,
-               so the server must be restarted after each edit. There should be a better way.
+               so the server must be restarted after each edit.
+      c. The RMongo package requires java - `sudo apt-get install default-jdk`
 
 6. Submit query from local python server via eventdata web gui. This script will return the subsetted data
 
-7. Permit CORS on your browser. This doesn't seem to work on Windows
+7. If you still have problems, try to permit CORS on your browser. This doesn't seem to work on Windows
      7a. Google Chrome: start with terminal argument
             google-chrome --disable-web-security
       b. Mozilla Firefox: in about:config settings

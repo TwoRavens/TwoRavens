@@ -39,9 +39,8 @@
     },
     "Date": {
       "type": "date",
-      "columns": [
-        "date_event_constructed"
-      ]
+      "structure": "point",
+      "date": "TIMESTAMP_constructed"
     },
     "Location": {
       "type": "categorical_grouped",

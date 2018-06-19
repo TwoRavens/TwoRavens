@@ -22,7 +22,7 @@ if(is_rapache_mode) {
 }
 
 if(!production){
-    packageList<-c("Rcpp","VGAM", "AER", "dplyr", "quantreg", "geepack", "maxLik", "Amelia", "Rook","jsonlite","rjson", "devtools", "DescTools", "nloptr","XML", "Zelig", "rpart", "tidyverse", "lubridate", "cellranger", "data.table")
+    packageList<-c("Rcpp","VGAM", "AER", "dplyr", "quantreg", "geepack", "maxLik", "Amelia", "Rook","jsonlite","rjson", "devtools", "DescTools", "nloptr","XML", "Zelig", "rpart", "tidyverse", "lubridate", "cellranger", "data.table", "RMongo)
 
     # Find an available repository on CRAN
     availableRepos <- getCRANmirrors()
@@ -47,6 +47,7 @@ library(jsonlite)
 library(devtools)
 library(DescTools)
 library(rpart)
+library(RMongo)
 
 library("future") # submit EventData api requests asynchronously
 plan(multiprocess)

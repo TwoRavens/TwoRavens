@@ -47,9 +47,8 @@
     },
     "Date": {
       "type": "date",
-      "columns": [
-        "date_event_constructed"
-      ]
+      "structure": "point",
+      "date": "story_date_constructed"
     },
     "Location": {
       "type": "categorical_grouped",
@@ -63,10 +62,8 @@
     "Coordinates": {
       "type": "coordinates",
       "format": "signed degrees",
-      "columns": [
-        "lat",
-        "lon"
-      ]
+      "latitude": "lat",
+      "longitude": "lon"
     }
   },
   "columns": [
