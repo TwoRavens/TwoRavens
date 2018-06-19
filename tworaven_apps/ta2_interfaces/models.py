@@ -1,73 +1,127 @@
-from django.db import models
 from collections import OrderedDict
+import hashlib
 
+from django.db import models
+from django.conf import settings
 
-# ---------------------------------
-# keys to results in JSON
-# (mostly JSON sent from the UI)
-# ---------------------------------
-
-# form name
-KEY_GRPC_JSON = 'grpcrequest'
-
-# json keys
-#
-KEY_PIPELINE_ID = 'pipelineId'
-KEY_PIPELINE_INFO = 'pipelineInfo'
-KEY_PREDICT_RESULT_URI = 'predictResultUri'
-KEY_PREDICT_RESULT_DATA = 'predictResultData'
-KEY_DATA = 'data'
-
-
-KEY_PIPELINE_EXEC_URI_FROM_UI = 'pipelineExecUri'
-KEY_PIPELINE_EXEC_URI = 'pipeline_exec_uri'
-
-KEY_USER_AGENT_FROM_UI = 'user_agent'
-KEY_SESSION_ID_FROM_UI = 'session_id'
-KEY_CONTEXT_FROM_UI = 'context'
-
-KEY_DATASET_URI = 'dataset_uri'
-KEY_NEW_DATASET_URI = 'new_dataset_uri'
-
-# values
-#
-VAL_DATA_URI = '<<DATA_URI>>'
-VAL_EXECUTABLE_URI = '<<EXECUTABLE_URI>>'
-
-STATUS_VAL_OK = 'OK'
-STATUS_VAL_COMPLETED = 'COMPLETED'
-STATUS_VAL_FAILED_PRECONDITION = 'FAILED_PRECONDITION'
-
-# Test keys
-# - used in tests but not actual code
-TEST_KEY_FILE_URI = 'FILE_URI'
-
-#
-#
-# src: https://github.com/grpc/grpc/blob/master/src/python/grpcio/grpc/_channel.py
-# > 10/18/2017
-VAL_GRPC_STATE_CODE_NONE = '<_Rendezvous object of in-flight RPC>'
-
-from model_utils.models import TimeStampedModel
 import jsonfield
 
-class StoredResponseTest(TimeStampedModel):
-    """temp model for storage"""
-    name = models.CharField(max_length=255, blank=True)
+from model_utils.models import TimeStampedModel
 
-    resp = jsonfield.JSONField(\
-                load_kwargs=dict(object_pairs_hook=OrderedDict))
+
+STATUS_SENT = 'SENT'
+STATUS_IN_PROGRESS = 'IN_PROGRESS'
+STATUS_ERROR = 'ERROR'
+STATUS_COMPLETE = 'COMPLETE'
+STATUS_LIST = (STATUS_SENT, STATUS_IN_PROGRESS,
+               STATUS_ERROR, STATUS_COMPLETE)
+REQUEST_STATUS_CHOICES = [(x, x) for x in STATUS_LIST]
+RESPONSE_STATUS_CHOICES = [(x, x) for x in (STATUS_ERROR, STATUS_COMPLETE)]
+
+
+class StoredRequest(TimeStampedModel):
+    """For storing TA2 responses, especially streaming responses"""
+    name = models.CharField(\
+                    blank=True,
+                    max_length=255,
+                    help_text='auto-generated')
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL,
+                             on_delete=models.CASCADE)
+
+    workspace = models.CharField(\
+                    help_text='Used to identify this problem',
+                    max_length=255)
+
+    request_type = models.CharField(\
+                        help_text='API request name',
+                        max_length=255)
+
+    status = models.CharField(\
+                        max_length=255,
+                        choices=REQUEST_STATUS_CHOICES)
+
+    is_finished = models.BooleanField(default=False)
+
+    pipeline_id = models.CharField(\
+                        'Pipeline ID',
+                        help_text='if applicable',
+                        max_length=255,
+                        blank=True)
+
+    request = jsonfield.JSONField(\
+                    help_text='JSON sent by user',
+                    load_kwargs=dict(object_pairs_hook=OrderedDict))
+
+    hash = models.CharField(help_text='Used for urls (auto-generated)',
+                            max_length=255,
+                            blank=True)
 
     def __str__(self):
+        """reference name"""
         return self.name
+
+    class Meta:
+        """ordering, etc"""
+        ordering = ('-created',)
+
 
     def save(self, *args, **kwargs):
         """Set a name if one isn't specified"""
+        if not self.id:
+            super(StoredRequest, self).save(*args, **kwargs)
+
         if not self.name:
-            if not self.id:
-                super(StoredResponseTest, self).save(*args, **kwargs)
+            self.name = '(%s) %s' % \
+                (self.id, self.request_type)
 
-            self.name = 'id: %s' % self.id
+        if not self.hash:
+            hash_str = '%s %s' % (self.id, self.created)
+            self.hash = hashlib.sha224(hash_str).hexdigest()
+
+        if self.status in (STATUS_COMPLETE, STATUS_ERROR):
+            self.is_finished = False
+        else:
+            self.is_finished = True
+
+        super(StoredRequest, self).save(*args, **kwargs)
 
 
-        super(StoredResponseTest, self).save(*args, **kwargs)
+class StoredResponse(TimeStampedModel):
+    """For storing TA2 responses, especially streaming responses"""
+    stored_request = models.ForeignKey(StoredRequest,
+                                on_delete=models.CASCADE)
+
+    is_success = models.BooleanField(default=True)
+
+    sent_to_user = models.BooleanField(\
+                        help_text='Sent to the UI for user viewing',
+                        default=False)
+
+    status = models.CharField(\
+                        max_length=255,
+                        choices=RESPONSE_STATUS_CHOICES)
+
+    response = jsonfield.JSONField(\
+                    help_text='JSON received by the TA2',
+                    load_kwargs=dict(object_pairs_hook=OrderedDict))
+
+    hash = models.CharField(help_text='Used for urls (auto-generated)',
+                            max_length=255,
+                            blank=True)
+
+    def save(self, *args, **kwargs):
+        """Set a name if one isn't specified"""
+        if not self.id:
+            super(StoredResponse, self).save(*args, **kwargs)
+
+        if not self.hash:
+            hash_str = 'rsp-%s%s' % (self.id, self.created)
+            self.hash = hashlib.sha224(hash_str).hexdigest()
+
+        super(StoredResponse, self).save(*args, **kwargs)
+
+    @staticmethod
+    def mark_as_read(stored_response):
+        """Mark the response as read"""
+        pass

@@ -2,6 +2,7 @@
 from django.urls import path
 from tworaven_apps.ta2_interfaces import (\
         views_additional,
+        views_search_solutions,
         views_ta2_req1)
 
 urlpatterns = (
@@ -17,6 +18,10 @@ urlpatterns = (
     path(r'SearchSolutions',
          views_ta2_req1.view_search_solutions,
          name='SearchSolutions'),
+
+    path(r'GetSearchSolutionsResults',
+         views_search_solutions.view_get_search_solutions,
+         name='GetSearchSolutionsResults'),
 
     path(r'EndSearchSolutions',
          views_ta2_req1.view_end_search_solutions,

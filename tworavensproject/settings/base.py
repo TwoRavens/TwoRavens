@@ -187,7 +187,7 @@ TA2_TEST_SERVER_URL = os.environ.get('TA2_TEST_SERVER_URL', 'localhost:45042')
 TA2_GPRC_USER_AGENT = os.environ.get('TA2_GPRC_USER_AGENT', 'tworavens')
 
 TA2_GPRC_SHORT_TIMEOUT = 3 # seconds
-TA2_GPRC_LONG_TIMEOUT = 60 # seconds
+TA2_GPRC_LONG_TIMEOUT = 5 * 60 # 5 minutes
 
 # D3M - gRPC file uris
 MAX_EMBEDDABLE_FILE_SIZE = .5 * 500000

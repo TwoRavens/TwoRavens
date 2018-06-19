@@ -18,9 +18,10 @@ from tworaven_apps.ta2_interfaces.ta2_util import get_grpc_test_json,\
     get_predict_file_info_dict
 from tworaven_apps.ta2_interfaces.util_embed_results import FileEmbedUtil
 from tworaven_apps.ta2_interfaces.util_message_formatter import MessageFormatter
+from tworaven_apps.ta2_interfaces.static_vals import \
+    (KEY_CONTEXT_FROM_UI, KEY_SESSION_ID_FROM_UI)
 from tworaven_apps.ta2_interfaces.models import \
-    (KEY_CONTEXT_FROM_UI, KEY_SESSION_ID_FROM_UI,
-     StoredResponseTest)
+    (StoredResponseTest)
 
 PIPELINE_CREATE_REQUEST = 'PipelineCreateRequest'
 

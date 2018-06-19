@@ -14,9 +14,9 @@ import core_pb2
 from tworaven_apps.ta2_interfaces.ta2_connection import TA2Connection
 #from tworaven_apps.ta2_interfaces.ta2_util import get_grpc_test_json,\
 #    get_failed_precondition_sess_response
-from tworaven_apps.ta2_interfaces.models import KEY_USER_AGENT_FROM_UI
 from tworaven_apps.ta2_interfaces.grpc_util import TA3TA2Util
 from tworaven_apps.ta2_interfaces.ta2_util import get_grpc_test_json
+from tworaven_apps.ta2_interfaces.static_vals import KEY_USER_AGENT_FROM_UI
 
 ERR_MSG_NO_USER_AGENT = 'A "%s" must be included in the request.' % KEY_USER_AGENT_FROM_UI
 
