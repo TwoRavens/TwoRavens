@@ -10,7 +10,6 @@
       "type": "dyad",
       "tabs": {
         "source": {
-          "format": "icews",
           "full": "Source Name",
           "filters": [
             "Source Sectors",
@@ -18,7 +17,6 @@
           ]
         },
         "target": {
-          "format": "icews",
           "full": "Target Name",
           "filters": [
             "Target Sectors",
@@ -28,30 +26,33 @@
       }
     },
     "Action": {
-      "type": "action",
-      "format": "CAMEO",
+      "type": "categorical",
+      "alignment": "action",
+      "format": ["CAMEO", "root_code", "penta_class"],
       "columns": [
         "CAMEO Code"
       ]
     },
     "Date": {
       "type": "date",
-      "format": "YYYY-MM-DD",
+      "structure": "point",
       "columns": [
-        "Event Date"
+        "Event Date_constructed"
       ]
     },
     "Location": {
-      "type": "location",
-      "format": "fullname",
+      "type": "categorical_grouped",
+      "group_by": "region",
+      "formats": ["ISO-3"],
       "columns": [
-        "Country"
+        "Country_constructed"
       ]
     },
     "Coordinates": {
       "type": "coordinates",
       "format": "signed degrees",
-      "columns": []
+      "latitude": "Latitude",
+      "longitude": "Longitude"
     }
   },
   "columns": [
@@ -77,11 +78,11 @@
     "Target Sectors"
   ],
   "columns_constructed": [
-    "date_event_constructed",
-    "country_constructed"
+    "Event Date_constructed",
+    "Country_constructed"
   ],
   "ontology_alignments": {
-    "date_event_constructed": "<date>",
+    "Event Date_constructed": "<date>",
     "country_constructed": "<country>",
     "Latitude": "<latitude>",
     "Longitude": "<longitude>",

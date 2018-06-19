@@ -8,9 +8,10 @@
   "subsets": {
     "Actor": {
       "type": "dyad",
+      "alignment": "actor",
+      "formats": ["phoenix"],
       "tabs": {
         "source": {
-          "format": "phoenix",
           "full": "source",
           "filters": [
             "source_agent",
@@ -23,7 +24,6 @@
           }
         },
         "target": {
-          "format": "phoenix",
           "full": "target",
           "filters": [
             "target_agent",
@@ -38,31 +38,35 @@
       }
     },
     "Action": {
-      "type": "action",
-      "format": "CAMEO root code",
+      "type": "categorical",
+      "alignment": "action",
+      "formats": ["CAMEO", "root_code", "penta_class"],
       "columns": [
-        "root_code"
+        "code"
       ]
     },
     "Date": {
       "type": "date",
-      "format": "fields",
       "columns": [
-        "year",
-        "month"
+        "date_event_constructed"
       ]
     },
     "Location": {
-      "type": "location",
-      "format": "ISO-3",
+      "type": "categorical_grouped",
+      "alignment": "location",
+      "group_by": "region",
+      "formats": ["ISO-3"],
       "columns": [
-        "countryname"
+        "countryname_constructed"
       ]
     },
     "Coordinates": {
       "type": "coordinates",
       "format": "signed degrees",
-      "columns": []
+      "columns": [
+        "lat",
+        "lon"
+      ]
     }
   },
   "columns": [
@@ -92,7 +96,8 @@
     "year"
   ],
   "columns_constructed": [
-    "date_event_constructed"
+    "story_date_constructed",
+    "countryname_constructed"
   ],
   "ontology_alignments": {
     "code": "<cameo>",
@@ -105,7 +110,7 @@
     "root_code": "<root_code>",
     "source_agent": "<src_sector>",
     "source_root": "<src_country>",
-    "story_date": "<date>",
+    "story_date_constructed": "<date>",
     "target_agent": "<tgt_sector>",
     "target_root": "<tgt_country>"
   },

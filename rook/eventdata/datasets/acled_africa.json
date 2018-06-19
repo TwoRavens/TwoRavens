@@ -10,14 +10,12 @@
       "type": "dyad",
       "tabs": {
         "actor 1": {
-          "format": "ACLED",
           "full": "ACTOR1",
           "filters": [
             "ASSOC_ACTOR_1",
             "INTER1"
           ]
         },
-        "format": "ACLED",
         "target": {
           "full": "ACTOR2",
           "filters": [
@@ -28,22 +26,30 @@
       }
     },
     "Action": {
-      "type": "action",
-      "format": "ACLED interaction",
+      "type": "categorical",
+      "alignment": "action",
+      "formats": [
+        "ACLED_interaction",
+        "plover_code",
+        "penta_class"
+      ],
       "columns": [
         "INTERACTION"
       ]
     },
     "Date": {
       "type": "date",
-      "format": "point",
       "columns": [
         "date_event_constructed"
       ]
     },
     "Location": {
-      "type": "location",
-      "format": "ISO-3",
+      "type": "categorical_grouped",
+      "alignment": "location",
+      "group_by": "region",
+      "formats": [
+        "ISO-3"
+      ],
       "columns": [
         "country_constructed"
       ]
@@ -51,7 +57,8 @@
     "Coordinates": {
       "type": "coordinates",
       "format": "signed degrees",
-      "columns": []
+      "latitude": "LATITUDE",
+      "longitude": "LONGITUDE"
     }
   },
   "columns": [
@@ -85,7 +92,7 @@
     "TIMESTAMP"
   ],
   "columns_constructed": [
-    "date_event_constructed",
+    "TIMESTAMP_constructed",
     "country_constructed"
   ],
   "ontology_alignments": {
@@ -93,7 +100,7 @@
     "LATITUDE": "<latitude>",
     "LONGITUDE": "<latitude>",
     "country_constructed": "<country>",
-    "date_event_constructed": "<date>"
+    "TIMESTAMP_constructed": "<date>"
   },
   "citations": [
     {

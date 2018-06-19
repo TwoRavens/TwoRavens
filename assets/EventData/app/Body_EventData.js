@@ -18,7 +18,6 @@ import ButtonRadio from '../../common/views/ButtonRadio';
 import CanvasDatasets from "./views/CanvasDatasets";
 import CanvasAction from "./views/CanvasAction";
 import CanvasDyad from "./views/CanvasDyad";
-import CanvasLoading from "./views/CanvasLoading";
 import CanvasDate from "./views/CanvasDate";
 import CanvasLocation from "./views/CanvasLocation";
 import CanvasRootCode from "./views/CanvasRootCode";
@@ -26,6 +25,9 @@ import CanvasAggregTS from "./views/CanvasAggregTS";
 
 import TableAggregation from "./views/TableAggregation";
 import CanvasCoordinates from "./views/CanvasCoordinates";
+import {selectedDataset} from "./app";
+import {datasource} from "./app";
+import {genericMetadata} from "./app";
 
 export default class Body_EventData {
 
@@ -330,9 +332,28 @@ export default class Body_EventData {
 
         // construct what should appear in the center of the page
         let canvasContent;
-        if (!app.initialLoad && app.selectedCanvas !== 'Datasets') canvasContent = m(CanvasLoading);
 
-        else if (app.selectedCanvas === 'Subset') {
+        if (app.selectedCanvas === 'Subset') {
+            if (app.subsetMetadata[app.selectedSubsetName] === undefined) {
+                m.request({
+                    data: {
+                        'query': app.buildSubset(app.subsetData),
+                        'dataset': selectedDataset,
+                        'type': 'summary',
+                        'subset': app.selectedSubsetName,
+                        'metadata': app.subsetMetadata[app.selectedSubsetName] === undefined
+                    }
+                }).then(app.pageSetup);
+
+                return m('#loading.loader', {
+                    style: {
+                        margin: 'auto',
+                        position: 'relative',
+                        top: '40%',
+                        transform: 'translateY(-50%)'
+                    }
+                })
+            }
             let subsetType = app.genericMetadata['datasets'][app.selectedDataset]['subsets'][app.selectedSubsetName]['type'];
             canvasContent = m({
                 'action': CanvasAction,
@@ -356,7 +377,6 @@ export default class Body_EventData {
             // TODO add CanvasAnalysis
             canvasContent = m({
                 'Datasets': CanvasDatasets,
-                'Loading': CanvasLoading,
                 'PentaClass': CanvasDatasets,
                 'RootCode': CanvasRootCode,
                 'Time Series': CanvasAggregTS

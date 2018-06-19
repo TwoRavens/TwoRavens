@@ -45,12 +45,13 @@ eventdata_subset.app <- function(env) {
     print(everything)
 
     # VALUES FOR TYPE
-    # metadata: return data about each dataset (list of variables, available subsets, citations)
+    # datasets: return data about each dataset (list of variables, available subsets, citations)
     # formats: return formatting metadata (mappings definitions for each subset)
     # validate: check if query is valid
     # raw: return query data as-is. Heavy.
     # summary: return display metadata computed from dataset
     type = everything$type
+    if (is.null(type)) type = 'summary'
 
     # corresponds to dataset keys from ./eventdata/datasets/*.json
     dataset = everything$dataset
@@ -64,18 +65,8 @@ eventdata_subset.app <- function(env) {
     # corresponds to subset names from ./eventdata/datasets/*.json > 'subsets'
     subsets = everything$subsets
 
-    if (!is.null(type) && type == 'metadata') {
-        readMeta = function(path) {
-            setNames(lapply(list.files(path), function(filename) {
-                return(jsonlite::fromJSON(readLines(paste(path, filename, sep=""), warn=FALSE)))
-            }), lapply(list.files(path), function(val) {gsub('.json', '', val)}))
-        }
-
-        response$write(toString(jsonlite::toJSON(list(
-            datasets=readMeta('./eventdata/datasets/'),
-            formats=readMeta('./eventdata/formats/')), auto_unbox=TRUE)))
-        return(response$finish())
-    }
+    # boolean, if type is summary, then return formatting metadata in the response
+    metadata = everything$metadata
 
     if (is.null(everything$dataset)) {
         response$write(paste('{"error": "no dataset is specified"}'))
@@ -111,8 +102,15 @@ eventdata_subset.app <- function(env) {
     }
 
     formatVar = function(var) {temp=list(); temp[[var]]=jsonlite::unbox(1); temp}
+    if (type == 'datasets') {
+        response$write(toString(jsonlite::toJSON(setNames(lapply(list.files('./eventdata/datasets/'), function(filename) {
+            jsonlite::fromJSON(readLines(paste('./eventdata/datasets/', filename, sep=""), warn=FALSE))
+        }), lapply(list.files(path), function(val) {gsub('.json', '', val)})))))
+        return(response$finish())
+    }
 
-    if (!is.null(type) && type == 'raw') {
+
+    if (type == 'raw') {
         if (!is.null(variables)) {
             result = getData(paste(eventdata_url, '&aggregate=',
                 '[{"$match":', query, '},',
@@ -132,7 +130,7 @@ eventdata_subset.app <- function(env) {
         return(response$finish())
     }
 
-    if (!is.null(type) && type == 'peek') {
+    if (type == 'peek') {
         projection = '';
         if (!is.null(variables)) projection = paste('{"$project":', jsonlite::toJSON(lapply(variables, formatVar)), '},', sep="")
 
@@ -148,7 +146,7 @@ eventdata_subset.app <- function(env) {
         return(response$finish())
     }
 
-    if (!is.null(type) && type == 'validate') {
+    if (type == 'validate') {
 
         handler = function(exc) {
             cleanedExc = gsub('\\\n', '', gsub('"', "'", toString(exc)))
@@ -165,7 +163,10 @@ eventdata_subset.app <- function(env) {
         return(response$finish())
     }
 
-    metadata = jsonlite::fromJSON(readLines(paste("./eventdata/datasets/", dataset, '.json', sep="")));
+    # todo
+    if (type != 'summary') return
+
+    datasetMetadata = jsonlite::fromJSON(readLines(paste("./eventdata/datasets/", dataset, '.json', sep="")));
 
     # Check if metadata has already been computed, and return cached value if it has
     # if (!file.exists("./data/cachedQueries.RData")) save(list(0), file="./data/cachedQueries.RData")
@@ -187,81 +188,86 @@ eventdata_subset.app <- function(env) {
         return(unique(do.call(c, accumulator)))
     }
 
-    if (production) {
-        sink()
-    }
-
     query_url = paste(eventdata_url, '&query=', query, sep="")
 
-    # construct all futures
-    futures = sapply(subsets, function(subset) {
+    subsetMetadata = datasetMetadata$subsets[[subset]]
 
-        subsetMetadata = metadata$subsets[[subset]]
+    collectColumn = function(column) {
+        future(tryCatch({
+            data = getData(paste(query_url, '&unique=', column, '', sep=""))
+            if (column %in% names(subsetMetadata$deconstruct)) data = uniques(data, subsetMetadata$deconstruct[[column]])
+            return(sort(unlist(data)))
+        }, error=genericErrorHandler)) %plan% multiprocess
+    }
 
-        # handle the groupable subsets separately
-        if (subsetMetadata$type %in% list('date', 'location', 'action', 'frequency', 'density')) {
+    collectMonad = function(monad) {
+        list(full=collectColumn(monad$full), filters=sapply(monad$filters, collectColumn))
+    }
 
-            # if the dataset does not have <year> and <month> columns, then construct them from <date>
-            if (subsetMetadata$type == 'date' && !all(list('<year>', '<month>') %in% unlist(metadata$columns, use.names=FALSE))) {
-                return(future(tryCatch({
-                    data = do.call(data.frame, getData(paste(eventdata_url, '&aggregate=',
-                        '[{"$match":', query, '},',
-                         '{"$project": {"Year":  {"$substr": ["$<date>", 0, 4]},',
-                         ' "Month": {"$substr": ["$<date>",', if (subsetMetadata$format == 'YYYYMMDD') '4' else '5', ',2]}}},',     # Construct year and month fields
-                         '{"$group": { "_id": { "year": "$Year", "month": "$Month" }, "total": {"$sum": 1} }}]', sep=""))) # Group by years and months
-                    if (nrow(data) != 0) colnames(data) = c('total', '<year>', '<month>')
-                    data
-                }, error=genericErrorHandler)) %plan% multiprocess)
-            }
+    # handle the groupable subsets separately
+    if (subsetMetadata$type %in% list('date', 'location', 'action', 'frequency', 'density')) {
 
-            # if the dataset does not have an <action_code> column, then attempt to construct it from <cameo>
-            if (subsetMetadata$type == 'action' && !('<action_code>' %in% unlist(metadata$columns, use.names=FALSE))) {
-                return(future(tryCatch({
-                    data = do.call(data.frame, getData(paste(eventdata_url, '&aggregate=',
-                        '[{"$match":', query, '},',
-                         '{"$project": {"RootCode":  {"$substr": ["$<cameo>", 0, 2]}}},',                          # Construct RootCode field
-                         '{"$group": { "_id": { "action_code": "$RootCode" }, "total": {"$sum": 1} }}]', sep=""))) # Group by RootCode
-                    if (nrow(data) != 0) colnames(data) = c('total', '<action_code>')
-                    data
-                }, error=genericErrorHandler)) %plan% multiprocess)
-            }
-
-            return(future(tryCatch({
-                data = do.call(data.frame, getData(paste(query_url, '&group=', paste(subsetMetadata$columns, collapse=","), sep="")))
-                if (nrow(data) != 0) colnames(data) = c('total', lapply(subsetMetadata$columns, function(col) {metadata$columns[[col]]}))
+        # if the dataset does not have <year> and <month> columns, then construct them from <date>
+        if (subsetMetadata$type == 'date' && !all(list('<year>', '<month>') %in% unlist(metadata$columns, use.names=FALSE))) {
+            subsetFuture = future(tryCatch({
+                data = do.call(data.frame, getData(paste(eventdata_url, '&aggregate=',
+                '[{"$match":', query, '},',
+                '{"$project": {"Year":  {"$substr": ["$<date>", 0, 4]},',
+                ' "Month": {"$substr": ["$<date>",', if (subsetMetadata$format == 'YYYYMMDD') '4' else '5', ',2]}}},',     # Construct year and month fields
+                '{"$group": { "_id": { "year": "$Year", "month": "$Month" }, "total": {"$sum": 1} }}]', sep=""))) # Group by years and months
+                if (nrow(data) != 0) colnames(data) = c('total', '<year>', '<month>')
                 data
-            }, error=genericErrorHandler)) %plan% multiprocess)
-        }
-
-        collectColumn = function(column) {
-            future(tryCatch({
-                data = getData(paste(query_url, '&unique=', column, '', sep=""))
-                if (column %in% names(subsetMetadata$deconstruct)) data = uniques(data, subsetMetadata$deconstruct[[column]])
-                return(sort(unlist(data)))
             }, error=genericErrorHandler)) %plan% multiprocess
         }
 
-        collectMonad = function(monad) {
-            list(full=collectColumn(monad$full), filters=sapply(monad$filters, collectColumn))
+        # if the dataset does not have an <action_code> column, then attempt to construct it from <cameo>
+        else if (subsetMetadata$type == 'action' && !('<action_code>' %in% unlist(datasetMetadata$columns, use.names=FALSE))) {
+            subsetFuture = future(tryCatch({
+                data = do.call(data.frame, getData(paste(eventdata_url, '&aggregate=',
+                '[{"$match":', query, '},',
+                '{"$project": {"RootCode":  {"$substr": ["$<cameo>", 0, 2]}}},',                          # Construct RootCode field
+                '{"$group": { "_id": { "action_code": "$RootCode" }, "total": {"$sum": 1} }}]', sep=""))) # Group by RootCode
+                if (nrow(data) != 0) colnames(data) = c('total', '<action_code>')
+                data
+            }, error=genericErrorHandler)) %plan% multiprocess
         }
 
-        if (subsetMetadata$type == 'dyad') {
-            return(sapply(subsetMetadata$tabs, collectMonad))
+        else {
+            subsetFuture = future(tryCatch({
+                data = do.call(data.frame, getData(paste(query_url, '&group=', paste(subsetMetadata$columns, collapse=","), sep="")))
+                if (nrow(data) != 0) colnames(data) = c('total', lapply(subsetMetadata$columns, function(col) {datasetMetadata$columns[[col]]}))
+                data
+            }, error=genericErrorHandler)) %plan% multiprocess
         }
-        if (subsetMetadata$tyype == 'monad') {
-            return(collectMonad(subsetMetadata))
-        }
+    }
+    else if (subsetMetadata$type == 'dyad') subsetFuture = sapply(subsetMetadata$tabs, collectMonad)
+    else if (subsetMetadata$tyype == 'monad') subsetFuture = collectMonad(subsetMetadata)
+    else subsetFuture = sapply(subsetMetadata$columns, collectColumn)
 
-        return(sapply(subsetMetadata$columns, collectColumn))
-    })
+    summary = list()
 
     # await all futures
-    response$write(toString(jsonlite::toJSON(sapply(names(futures), function(subset) {
-        if (metadata$subsets[[subset]]$type %in% list('date', 'location', 'action', 'frequency', 'density')) return(value(futures[[subset]]));
-        return(sapply(futures[[subset]], function(entry) {
+    if (datasetMetadata$subsets[[subset]]$type %in% list('date', 'location', 'action', 'frequency', 'density')) {
+        summary$data = value(subsetFuture);
+    }
+    else {
+        summary$data = sapply(subsetFuture, function(entry) {
             if (is.list(entry)) return(sapply(entry, value)) else return(value(entry))
-        }))
-    }))))
+        })
+    }
+
+    if (metadata) {
+        summary$metadata = list()
+        if (!is.na(subsetMetadata$alignment)) {
+            summary$metadata$alignment = jsonlite::fromJSON(readLines(paste('./eventdata/alignments/', subsetMetadata$alignment, sep=""), warn=FALSE))
+        }
+        if (!is.na(subsetMetadata$formatting)) {
+            summary$metadata$formats = sapply(subsetMetadata$formats, function(format) {
+                jsonlite::fromJSON(readLines(paste('./eventdata/formats/', format, '.json', sep=""), warn=FALSE))
+            })
+        }
+    }
+    response$write(toString(jsonlite::toJSON(summary)))
 
     # If your R installation does not support futures multiprocessing, it will fall back to multisession processing
     # In the multisession fallback case, prints are sent to different R sessions and not the server console

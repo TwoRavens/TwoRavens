@@ -8,61 +8,288 @@
   "subsets": {
     "Actor": {
       "type": "dyad",
+      "formats": [
+        "SPEED_ini_igrp1",
+        "SPEED_tar_igrp1",
+        "SPEED_vic_igrp1",
+        "SPEED_ini_sgrp1",
+        "SPEED_tar_sgrp1",
+        "SPEED_vic_sgrp1",
+        "SPEED_ini_pgrp1",
+        "SPEED_tar_pgrp1",
+        "SPEED_vic_pgrp1"
+      ],
       "tabs": {
         "source": {
-          "format": "phoenix",
-          "full": "source",
           "filters": [
-            "source_agent",
-            "source_others",
-            "source_root"
-          ],
-          "token_length": 3,
-          "deconstruct": {
-            "source_others": ";"
-          }
+            "ini_igrp1",
+            "tar_igrp1",
+            "vic_igrp1",
+            "ini_sgrp1",
+            "tar_sgrp1",
+            "vic_sgrp1",
+            "ini_pgrp1",
+            "tar_pgrp1",
+            "vic_pgrp1"
+          ]
         },
         "target": {
-          "format": "phoenix",
-          "full": "target",
+          "full": "eventid",
           "filters": [
-            "target_agent",
-            "target_others",
-            "target_root"
-          ],
-          "token_length": 3,
-          "deconstruct": {
-            "target_others": ";"
-          }
+            "ini_igrp1",
+            "tar_igrp1",
+            "vic_igrp1",
+            "ini_sgrp1",
+            "tar_sgrp1",
+            "vic_sgrp1",
+            "ini_pgrp1",
+            "tar_pgrp1",
+            "vic_pgrp1"
+          ]
         }
       }
     },
-    "Action": {
-      "type": "action",
-      "format": "CAMEO root code",
+    "Event Type": {
+      "type": "categorical",
+      "formats": ["SPEED_ev_type"],
       "columns": [
-        "root_code"
+        "ev_type"
       ]
     },
-    "Date": {
-      "type": "date",
-      "format": "fields",
+    "Posthoc": {
+      "type": "categorical",
+      "formats": ["SPEED_posthoc"],
       "columns": [
-        "year",
-        "month"
+        "posthoc"
+      ]
+    },
+    "Link Type": {
+      "type": "categorical",
+      "formats": ["SPEED_link_type"],
+      "columns": [
+        "link_type"
+      ]
+    },
+    "Location Type": {
+      "type": "categorical",
+      "formats": ["SPEED_loc_type"],
+      "columns": [
+        "loc_type"
+      ]
+    },
+    "Political Expression Type": {
+      "type": "categorical",
+      "formats": ["SPEED_pe_type"],
+      "columns": [
+        "pe_type"
+      ]
+    },
+    "Reduced Political Expression Type": {
+      "type": "categorical",
+      "formats": ["SPEED_exp_type"],
+      "columns": [
+        "exp_type"
+      ]
+    },
+    "Symbolic Event Type": {
+      "type": "categorical",
+      "formats": ["SPEED_sym_type"],
+      "columns": [
+        "exp_type"
+      ]
+    },
+    "Advocated Violence": {
+      "type": "categorical",
+      "formats": ["SPEED_ad_viol"],
+      "columns": [
+        "ad_viol"
+      ]
+    },
+    "Advocated Tactics": {
+      "type": "categorical",
+      "formats": ["SPEED_ad_tact"],
+      "columns": [
+        "ad_tact"
+      ]
+    },
+    "Attack Type": {
+      "type": "categorical",
+      "formats": ["SPEED_atk_type"],
+      "columns": [
+        "atk_type"
+      ]
+    },
+    "Disruptive State Act Type Broad": {
+      "type": "categorical",
+      "formats": ["SPEED_dsa_type"],
+      "columns": [
+        "dsa_type"
+      ]
+    },
+    "Disruptive State Act Type": {
+      "type": "categorical",
+      "formats": ["SPEED_stat_type"],
+      "columns": [
+        "stat_type"
+      ]
+    },
+    "Victim Effect": {
+      "type": "categorical",
+      "formats": ["SPEED_victim_effect"],
+      "columns": [
+        "victim_effect"
+      ]
+    },
+    "Weapon": {
+      "type": "categorical",
+      "formats": ["SPEED_weapon"],
+      "columns": [
+        "weapon"
+      ]
+    },
+    "Property Damaged": {
+      "type": "categorical",
+      "formats": ["SPEED_property_damaged"],
+      "columns": [
+        "property_damaged"
+      ]
+    },
+    "Property Ownder": {
+      "type": "categorical",
+      "formats": ["SPEED_property_owner"],
+      "columns": [
+        "property_owner"
+      ]
+    },
+    "Geopolitical Entity Type": {
+      "type": "categorical",
+      "formats": ["SPEED_gp_type"],
+      "columns": [
+        "gp_type"
+      ]
+    },
+    "Initiator Type Known": {
+      "type": "categorical",
+      "formats": ["SPEED_know_ini"],
+      "columns": [
+        "know_ini"
+      ]
+    },
+    "Initiator Type": {
+      "type": "categorical",
+      "formats": ["SPEED_ini_type"],
+      "columns": [
+        "ini_type"
+      ]
+    },
+    "Target Type": {
+      "type": "categorical",
+      "formats": ["SPEED_tar_type"],
+      "columns": [
+        "tar_type"
+      ]
+    },
+    "Victim Type": {
+      "type": "categorical",
+      "formats": ["SPEED_vic_type"],
+      "columns": [
+        "vic_type"
+      ]
+    },
+    "Non-government Initiator Type": {
+      "type": "categorical",
+      "formats": ["SPEED_ngov_i1"],
+      "columns": [
+        "ngov_i1"
+      ]
+    },
+    "Government Initiator Type": {
+      "type": "categorical",
+      "formats": ["SPEED_gov_i1"],
+      "columns": [
+        "gov_i1"
+      ]
+    },
+    "Level of Government Initiator": {
+      "type": "categorical",
+      "formats": ["SPEED_g_lvl"],
+      "columns": [
+        "g_lvl_i"
+      ]
+    },
+    "Level of Government Target": {
+      "type": "categorical",
+      "formats": ["SPEED_g_lvl"],
+      "columns": [
+        "g_lvl_t"
+      ]
+    },
+    "Level of Government Victim": {
+      "type": "categorical",
+      "formats": ["SPEED_g_lvl"],
+      "columns": [
+        "g_lvl_v"
+      ]
+    },
+    "Date Coded": {
+      "type": "date",
+      "structure": "point",
+      "columns": [
+        "CODE_DATE_constructed"
+      ]
+    },
+    "Date Published": {
+      "type": "date",
+      "structure": "point",
+      "columns": [
+        "PUB_DATE_constructed"
+      ]
+    },
+    "Date Average": {
+      "type": "date",
+      "structure": "point",
+      "columns": [
+        "AVERAGE_DATE_constructed"
+      ]
+    },
+    "Date Earliest/Latest": {
+      "type": "date",
+      "structure": "interval",
+      "columns": [
+        "JUL_END_DATE_constructed",
+        "JUL_START_DATE_constructed"
+      ]
+    },
+    "Date Precise": {
+      "type": "date",
+      "structure": "interval",
+      "columns": [
+        "JUL_PED_constructed",
+        "JUL_PSD_constructed"
+      ]
+    },
+    "Date Estimated": {
+      "type": "date",
+      "structure": "interval",
+      "columns": [
+        "JUL_EED_constructed",
+        "JUL_LED_constructed"
       ]
     },
     "Location": {
-      "type": "location",
-      "format": "ISO-3",
+      "type": "categorical_grouped",
+      "alignment": "location",
+      "group_by": "region",
+      "formats": ["cowcode"],
       "columns": [
-        "countryname"
+        "cowcode"
       ]
     },
     "Coordinates": {
       "type": "coordinates",
       "format": "signed degrees",
-      "columns": []
+      "latitude": "gp7",
+      "longitude": "gp8"
     }
   },
   "columns": [
@@ -174,11 +401,18 @@
     "property_owner"
   ],
   "columns_constructed": [
-    "date_event_constructed",
-    "country_constructed"
+    "CODE_DATE_constructed",
+    "PUB_DATE_constructed",
+    "AVERAGE_DATE_constructed",
+    "JUL_END_DATE_constructed",
+    "JUL_START_DATE_constructed",
+    "JUL_PED_constructed",
+    "JUL_PSD_constructed",
+    "JUL_EED_constructed",
+    "JUL_LED_constructed"
   ],
   "ontology_alignments": {
-    "date_event_constructed": "<date>"
+    "AVERAGE_DATE_constructed": "<date>"
   },
   "citations": [
     {

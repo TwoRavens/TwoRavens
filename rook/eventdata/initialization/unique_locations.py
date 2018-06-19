@@ -10,7 +10,7 @@ location_columns = {
     "cline_phoenix_nyt": ['countryname', 'statename', 'placename'],
     "cline_phoenix_fbis": ['countryname', 'statename', 'placename'],
     "cline_phoenix_swb": ['countryname', 'statename', 'placename'],
-    "speed": ['country'],
+    # "speed": ['country'],
     "icews": ['Country', 'Province', 'District', 'City']
 }
 
@@ -18,7 +18,11 @@ all_locations = set()
 
 for collection in location_columns:
     for location in db[collection].aggregate([{"$group": {"_id": {name: '$' + name for name in location_columns[collection]}}}]):
-        all_locations.add(', '.join(set(location['_id'].values())))
+        idx = [location['_id'][val] for val in location_columns[collection] if val in location['_id']]
+        all_locations.add(', '.join(sorted(set(location['_id'].values()), key=lambda x: idx.index(x))))
 
-print(all_locations)
+
+with open('./locations.txt', 'w') as outfile:
+    for location in all_locations:
+        outfile.write(location + '\n')
 print(len(all_locations))

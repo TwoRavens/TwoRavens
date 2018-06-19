@@ -78,7 +78,6 @@ export let setSelectedDataset = (key) => {
     });
 
     // trigger reloading of necessary menu elements
-    initialLoad = false;
     resetPeek();
     submitQuery(true);
 };
@@ -147,9 +146,6 @@ export let laddaReset;
 export let laddaDownload;
 
 export let selectedVariables = new Set();
-
-// This is set once data is loaded and the graphs can be drawn. Subset menus will not be shown until this is set
-export let initialLoad = false;
 
 export let subsetData = [];
 
@@ -417,10 +413,6 @@ export function pageSetup(jsondata) {
             out[key] = reformatters[genericMetadata['datasets'][selectedDataset]['subsets'][key]['type']](jsondata[key]);
             return(out);
         }, {});
-
-    // If first load of data, user may have selected a subset and is waiting. Render page now that data is available
-    if (!initialLoad) setSelectedCanvas(selectedCanvas);
-    initialLoad = true;
 
     // find a subset of type
     let findType = (type) => Object.keys(genericMetadata['subsets'])
@@ -1142,6 +1134,10 @@ export function reset() {
             method: 'POST'
         }).then(pageSetup).catch(laddaStop);
     }
+}
+
+export function getQuery(staged=false) {
+
 }
 
 /**
