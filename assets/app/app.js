@@ -702,16 +702,16 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
       }
     }
     // 7. Start the user session
-    // rpc StartSession(SessionRequest) returns (SessionResponse) {}
-    res = await makeRequest(D3M_SVC_URL + '/startsession', {user_agent: 'some agent', version: 'some version'});
+    // rpc rpc Hello (HelloRequest) returns (HelloResponse) {}
+    res = await makeRequest(D3M_SVC_URL + '/Hello', {});
     if (res) {
-      if (res.responseInfo.status.code != "OK"){
-        const user_err_msg = "Failed to StartSession with TA2! status code: " + res.responseInfo.status.code;
+      console.log(res)
+      if (res.success != true){
+        const user_err_msg = "Failed to make Hello connection with TA2! status code: " + res.message;
         setModal(user_err_msg, "Error Connecting to TA2", true, "Reset", false, location.reload);
-          //  end_ta3_search(false, user_err_msg);
         return;
       } else {
-            zparams.zsessionid = res.context.sessionId;
+            zparams.zsessionid = "no session id in this API version";   // remove this eventually
         }
     }
 
