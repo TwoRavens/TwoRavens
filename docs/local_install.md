@@ -311,6 +311,11 @@ These commands will:
 
 ### Commands
 
+- Submodule updates
+    ```
+    git submodule update
+    ```
+
 - Update requirements
     ```
     pip install -r requirements/dev.txt
