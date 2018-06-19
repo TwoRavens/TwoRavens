@@ -15,6 +15,8 @@ The following is tested on a Mac (OS 10.12.6).
 - Alternately, use the command line:
     ```
     git clone https://github.com/TwoRavens/TwoRavens.git
+    git submodule init
+    git submodule update
     ```
 
 ## Install Node.js
