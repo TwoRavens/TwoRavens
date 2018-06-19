@@ -5,6 +5,7 @@ import Search from '../../../app/views/Search';
 import {varColor, mergeAttributes, menuColor} from "../common";
 
 import Panel from './Panel';
+import MenuTabbed from './MenuTabbed';
 import * as common from "../common";
 import * as index from "../../../app/index";
 import * as app from "../../../app/app";
@@ -34,6 +35,7 @@ let tableHeader = [];
 var filterIndex =[];
 var filterVars =[];
 
+var operations = ['sqrt()','abs()','exp()','log()','log10()','factorial()','ceiling()','floor()'];
 
 export default class Recode {
     oncreate() {
@@ -99,16 +101,47 @@ export default class Recode {
                         hover: true,
                         width: app.modelLeftPanelWidths[app.leftTab],
                         attrsAll: {style: {'z-index': 101, 'overflow':'scroll'}}
-                    },m(`div#varList`, varList.map((item) =>
-                    m(`div#${'varList' + item.replace(/\W/g, '_')}`, mergeAttributes({
-                            style: {
-                                'margin-top': '5px',
-                                'text-align': "center",
-                                'background-color': app.hexToRgba("#FA8072")
+                    },
+                    m(MenuTabbed,{
+                        id: 'leftpanelMenu',
+                        attrsAll: {style: {height: 'calc(100% - 39px)'}},
+                        currentTab: app.leftTab,
+                        callback: app.setLeftTab,
+                        sections: [
+                            {
+                                value: 'Variables',
+                                title: '',
+                                contents: [
+                                    m(`div#varList`, varList.map((item) =>
+                                    m(`div#${'varList' + item.replace(/\W/g, '_')}`, mergeAttributes({
+                                            style: {
+                                                'margin-top': '5px',
+                                                'text-align': "center",
+                                                'background-color': app.hexToRgba("#FA8072")
+                                            },
+                                            class: 'var',
+                                            onclick: clickVar
+                                        }), item)))
+
+                                ]
                             },
-                            class: 'var',
-                            onclick: clickVar
-                        }), item)))
+                            {
+                                value: 'Operations',
+                                contents:[
+                                    m(`div#operation`, operations.map((item) =>
+                                    m(`div#${'operation' + item.replace(/\W/g, '')}`, mergeAttributes({
+                                            style: {
+                                                'margin-top': '5px',
+                                                'text-align': "center",
+                                                'background-color': app.hexToRgba("#FA8072")
+                                            },
+                                            class: 'var',
+                                            onclick: addOperations
+                                        }), item)))
+                                ]
+                            }
+                        ]
+                    }),
                 ),
                 m(`#rightpanel.container.sidepanel.clearfix`, mergeAttributes({
                     style: {
@@ -243,6 +276,8 @@ export default class Recode {
                                                 m('option','Numchar')
                                             ])
                                         ]),
+                                        m('label',{ style : {'display':'block', 'margin-right':'10px'}},'Variable Description : '),
+                                        m('textarea',{id:'varDescription',cols:"40",rows:'5'}),
                                         m('div#nominalDiv',{style:{'margin':'10px'}},[
                                             m('label',{ style : { 'margin-right':'10px'}},'Class List : '),
                                             m('input[type=text]',{id:'nominalList', placeholder:'Nominal', style:{'margin':'10px'}},),
@@ -298,6 +333,11 @@ function unselectAllVars(){
     $(':checkbox').prop("checked", false);
 }
 
+function addOperations(elem){
+    var text = document.getElementById('variable');
+    text.value = this.textContent.split("(")[0]+"("+currentVal+")";
+}
+
 function clickVar(elem) {
 
     if(document.getElementById('recodeLink').className === 'active'){
@@ -310,9 +350,9 @@ function clickVar(elem) {
         else {
             var transform =  document.getElementById('div1_recode');
             transform.style.display = 'block';
-            var text = document.getElementById('variable');
-            text.value = this.textContent;
-            currentVal = this.textContent;
+            // var text = document.getElementById('variable');
+            // text.value = this.textContent;
+            currentVal = this.textContent;  
         }
     }
 
@@ -354,16 +394,22 @@ function addValue(elem){
 }
 
 function filterTable(elem){
+    console.log($("input[type=checkbox]:checked").size());
 
-    for(var i =0; i< varList.length-1;i++){
-        if(elem.target[i].checked){
-            filterIndex.push(++(elem.target[i].value.split(',')[1]));
-            filterVars.push(elem.target[i].value.split(',')[0]);
-        }
+    if($("input[type=checkbox]:checked").size()<1){
+        alert('Select atleast one variable')
     }
-
-    document.getElementById("createTableDiv").setAttribute("style", "display:block");
-    document.getElementById("filterTableDiv").setAttribute("style", "display:none");
+    else{
+        for(var i =0; i< varList.length-1;i++){
+            if(elem.target[i].checked){
+                filterIndex.push(++(elem.target[i].value.split(',')[1]));
+                filterVars.push(elem.target[i].value.split(',')[0]);
+            }
+        }
+    
+        document.getElementById("createTableDiv").setAttribute("style", "display:block");
+        document.getElementById("filterTableDiv").setAttribute("style", "display:none");
+    }
 }
 
 function formulaCalculate(){}
@@ -425,6 +471,7 @@ function createNewCalculate(){
 
 
     }
+    $('#tableDiv').animate({scrollLeft:'+=1500'},500);
     
 }
 function calculate2(elem){
