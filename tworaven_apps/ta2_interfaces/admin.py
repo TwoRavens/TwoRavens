@@ -15,7 +15,7 @@ class StoredRequestAdmin(admin.ModelAdmin):
                     'modified')
     list_filter = ('is_finished', 'status')
     readonly_fields = ('request',
-                       'hash',
+                       'hash_id',
                        'modified',
                        'created')
 admin.site.register(StoredRequest, StoredRequestAdmin)
@@ -31,7 +31,13 @@ class StoredResponseAdmin(admin.ModelAdmin):
                     'modified')
     list_filter = ('is_success', 'sent_to_user', 'status')
     readonly_fields = ('response',
-                       'hash',
+                       'hash_id',
                        'modified',
                        'created')
 admin.site.register(StoredResponse, StoredResponseAdmin)
+
+"""
+from tworaven_apps.ta2_interfaces.models import (StoredRequest, StoredResponse)
+sr = StoredRequest.objects.get(pk=18)
+sr.as_dict()
+"""
