@@ -116,7 +116,7 @@ eventdata_subset.app <- function(env) {
                 data = readLines(paste(url, '&aggregate=', query, sep=""), warn=FALSE)
             }
             if (type == 'distinct') {
-                readLines(paste(url, '&query=', query, '&unique=', key, sep=""), warn=FALSE)
+                data = readLines(paste(url, '&query=', query, '&unique=', key, sep=""), warn=FALSE)
             }
             tryCatch({
                 return(jsonlite::fromJSON(data)$data)

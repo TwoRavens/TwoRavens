@@ -1,0 +1,5 @@
+
+
+mongoexport --db locations --collection arcgis --query '{"dataset": "icews"}' --fields country,region,subregion,city --out icews.csv
+mongoexport --db locations --collection arcgis --query '{"dataset": {"$regex": "cline_phoenix_*"}}' --fields oneLine --out cline.csv
+mongoexport --db locations --collection arcgis --query '{"dataset": {"$regex": "acled_*"}}' --fields country,region,subregion,city --out acled.csv

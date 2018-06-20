@@ -78,6 +78,6 @@ remove_header()
 
 # add constructed date fields
 date_cline_phoenix()
-date_cline_speed()
-date_acled()
-date_icews()
+# date_cline_speed()
+# date_acled()
+# date_icews()
