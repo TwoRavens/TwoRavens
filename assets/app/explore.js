@@ -1484,6 +1484,7 @@ export async function explore() {
 }
 
 export async function plot(xNode, yNode) {
+    let colors = ["#e6194b" , "#3cb44b" ,  "#ffe119" ,  "#0082c8"  , "#f58231" ,  "#911eb4" ,  "#46f0f0" ,  "#f032e6"  , "#d2f53c" , "#fabebe"  , "#008080" ,  "#e6beff", "#aa6e28"  ,  "#fffac8"  ,  "#800000"  ,  "#aaffc3","#808000"  ,  "#ffd8b1"   , "#000080" ,  "#808080"];
     if (app.downloadIncomplete()) {
         return;
     }
@@ -1527,13 +1528,22 @@ export async function plot(xNode, yNode) {
     } else if (plottype[0] === "scatter") {
         myvegaschema = await m.request({method: "GET", url: "/rook-custom/rook-files/vega-schemas/scatter.json"});
         console.log(myvegaschema);
+    } else if (plottype[0] === "stackedbar") {
+        myvegaschema = await m.request({method: "GET", url: "/rook-custom/rook-files/vega-schemas/stackedbar.json"});
+        console.log(myvegaschema);
     }
 
     // function to fill in the contents of the vega schema
     function fillVega(vegaschema, vegadata) {
+       // let mycolors = app.colors[vegadata["uniqueY"].length];
+       let mycolors = colors.splice(0,(vegadata["uniqueY"].length));
+       mycolors=mycolors.map(col => `"${col}"`).join(',');
+
         let stringified = JSON.stringify(vegaschema);
         stringified = stringified.replace(/tworavensY/g, vegadata.vars[1]);
         stringified = stringified.replace(/tworavensX/g, vegadata.vars[0]);
+        stringified = stringified.replace(/"tworavensUniqueY"/g, "["+vegadata.uniqueY+"]");
+        stringified = stringified.replace(/"tworavensColors"/g, "["+mycolors+"]");
         stringified = stringified.replace("url", "values");
         stringified = stringified.replace('"tworavensData"',vegadata.plotdata[0]);
         // VJD: if you enter this console.log into the vega editor https://vega.github.io/editor/#/edited the plot will render

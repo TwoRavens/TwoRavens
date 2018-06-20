@@ -1,0 +1,13 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v2.json",
+  "data": {"url": "tworavensData"},
+ "mark":"bar","encoding":{"x":{"timeUnit":null,"field":"tworavensX","type":"nominal","axis":{"title":"tworavensX"}},"y":{"field":"tworavensY", "aggregate":"count","type":"nominal","title":"tworavensY"},
+"color": {
+      "field": "tworavensY",
+      "type": "nominal",
+      "scale": {
+        "domain": "tworavensUniqueY",
+        "range": "tworavensColors"
+      },
+      "legend": {"title": "Hall_of_Fame"}
+    }}}

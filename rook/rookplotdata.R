@@ -135,11 +135,12 @@ plotdata.app <- function(env) {
             plotd <- plotd[sample(1:nrow(plotd), 1000, replace=FALSE),]
         }
         
+        uniqueY <- unique(plotd[,2])
         plotdata <- jsonlite:::toJSON(plotd)
         rm(plotd)
         
         if (length(plotdata) !=0) {
-            return(send(list(plottype=plottype, vars=vars, plotdata=plotdata)))
+            return(send(list(plottype=plottype, vars=vars, plotdata=plotdata, uniqueY=uniqueY)))
         } else {
             return(send(list(warning="No plot data.")))
         }
