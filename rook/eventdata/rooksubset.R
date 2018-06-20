@@ -16,8 +16,8 @@ eventdata_subset.app <- function(env) {
         sink(file = stderr(), type = "output")
     }
 
-    request <- Request$new(env)
-    response <- Response$new()
+    request <- Rook::Request$new(env)
+    response <- Rook::Response$new()
     response$header("Access-Control-Allow-Origin", "*")  # Enable CORS
 
     if (request$options()) {
@@ -76,8 +76,6 @@ eventdata_subset.app <- function(env) {
         return(response$finish())
     }
 
-    cat('\nserver_address', server_address)
-    print(dataset)
     datasetMetadata = jsonlite::fromJSON(readLines(paste("./eventdata/datasets/", dataset, '.json', sep = "")));
 
     # ~~~~ Data Retrieval ~~~~
@@ -88,17 +86,20 @@ eventdata_subset.app <- function(env) {
     }
 
     getData = function(type, query, key=NULL) {
+        print(paste("GETTING", toString(type), toString(key), toString(query)))
         if (datasetMetadata$host == 'TwoRavens') {
-            connect = RMongo::mongoDbConnect("event_data")
+            connect = RMongo::mongoDbConnect('event_data', '127.0.0.1', 27017)
             if (type == 'find') {
-                return(RMongo::dbGetQuery(connect, dataset, query))
+                data = RMongo::dbGetQuery(connect, dataset, query)
             }
             if (type == 'aggregate') {
-                return(RMongo::dbAggregate(connect, dataset, query))
+                data = RMongo::dbAggregate(connect, dataset, query)
             }
             if (type == 'distinct') {
-                return(RMongo::dbGetDistinct(connect, dataset, key, query))
+                data = RMongo::dbGetDistinct(connect, dataset, key, query)
             }
+            RMongo::dbDisconnect(connect)
+            return(data)
         }
 
         if (datasetMetadata$host == 'UTDallas') {
@@ -121,7 +122,7 @@ eventdata_subset.app <- function(env) {
     if (type == 'raw') {
         variableQuery = jsonlite::toJSON(lapply(if (! is.null(variables))variables else datasetMetadata$columns, formatVar))
 
-        result = getData(paste('aggregate',
+        result = getData('aggregate', paste(
         '[{"$match":', query, '},',
         '{"$project":', variableQuery, '}]', sep = ""))
 
@@ -168,8 +169,6 @@ eventdata_subset.app <- function(env) {
     }
 
     # START (type == 'summary')
-    print(subset)
-    print(dataset$subsets)
     subsetMetadata = datasetMetadata$subsets[[subset]]
 
     # Useful for the target and source other fields, to unwrap the semicolon-delimited values
@@ -184,20 +183,22 @@ eventdata_subset.app <- function(env) {
     }
 
     collectColumn = function(column) {
-        future(tryCatch({
+        tryCatch({
             data = getData('distinct', query, column)
             if (column %in% names(subsetMetadata$deconstruct))data = uniques(data, subsetMetadata$deconstruct[[column]])
             return(sort(unlist(data)))
-        }, error = genericErrorHandler)) %plan% multiprocess
+        }, error = genericErrorHandler)
     }
 
     collectMonad = function(monad) {
-        list(full = collectColumn(monad$full), filters = sapply(monad$filters, collectColumn))
+        list(full = collectColumn(monad$full), filters = sapply(monad$filters, collectColumn, simplify=FALSE, USE.NAMES=TRUE))
     }
+
+    summary = list()
 
     if (subsetMetadata$type == 'date') {
         columnName = if (subsetMetadata$structure == 'point')subsetMetadata$date else subsetMetadata$columns[[0]]
-        subsetFuture = future(tryCatch({
+        summary$data = tryCatch({
             data = do.call(data.frame, getData('aggregate', paste(
             '[{"$match":', query, '},',
             ' {"$project: {"Year": {"$year": "$', columnName, '"}, ',
@@ -205,47 +206,33 @@ eventdata_subset.app <- function(env) {
             ' {"$group": { "_id": { "year": "$Year", "month": "$Month" }, "total": {"$sum": 1} }}]', sep = "")))
             if (nrow(data) != 0)colnames(data) = c('total', '<year>', '<month>')
             data
-        }, error = genericErrorHandler)) %plan% multiprocess
+        }, error = genericErrorHandler)
     }
 
     if (subsetMetadata$type %in% list('categorical', 'categorical_grouped')) {
-        subsetFuture = future(tryCatch({
+        summary$data = tryCatch({
             data = do.call(data.frame, getData('find', paste(subsetMetadata$columns, collapse = ",")))
             if (nrow(data) != 0)colnames(data) = c('total', lapply(subsetMetadata$columns, function(col) {datasetMetadata$columns[[col]]}))
             data
-        }, error = genericErrorHandler)) %plan% multiprocess
+        }, error = genericErrorHandler)
     }
-    else if (subsetMetadata$type == 'dyad')subsetFuture = sapply(subsetMetadata$tabs, collectMonad)
-    else if (subsetMetadata$tyype == 'monad')subsetFuture = collectMonad(subsetMetadata)
-    else subsetFuture = sapply(subsetMetadata$columns, collectColumn)
+    else if (subsetMetadata$type == 'dyad')summary$data = sapply(subsetMetadata$tabs, collectMonad, simplify=FALSE, USE.NAMES=TRUE)
+    else if (subsetMetadata$type == 'monad')summary$data = collectMonad(subsetMetadata)
+    else summary$data = sapply(subsetMetadata$columns, collectColumn, simplify=FALSE, USE.NAMES=TRUE)
 
-    summary = list()
-
-    # await all futures
-    if (subsetMetadata$type %in% list('date', 'categorical', 'categorical_grouped')) {
-        summary$data = value(subsetFuture);
+    if (! is.null(everything$alignments)) {
+        summary$alignments = sapply(everything$alignments, function(format) {
+            jsonlite::fromJSON(readLines(paste('./eventdata/alignments/', format, '.json', sep = ""), warn=FALSE))
+        }, simplify=FALSE, USE.NAMES=TRUE)
     }
-    else {
-        # todo check resolution
-        # valueRecursive = ''
-        valueRecursive = function(entry) {
-            if (is.list(entry)) sapply(entry, valueRecursive) else value(entry)
-        }
-        summary$data = sapply(subsetFuture, valueRecursive)
-    }
-
-    if (!is.na(everything$alignments)) {
-        summary$formats = sapply(everything$alignments, function(format) {
-            jsonlite::fromJSON(readLines(paste('./eventdata/alignments/', format, '.json', sep = ""), warn = FALSE))
-        })
-    }
-    if (!is.na(everything$formats)) {
+    if (! is.null(everything$formats)) {
         summary$formats = sapply(everything$formats, function(format) {
             jsonlite::fromJSON(readLines(paste('./eventdata/formats/', format, '.json', sep = ""), warn = FALSE))
-        })
+        }, simplify=FALSE, USE.NAMES=TRUE)
     }
-    summary$subsetName = subset
+    summary$subsetName = jsonlite::unbox(subset)
 
+    # NOTE: R jsonlite interprets literals as singleton literal arrays, since R has no scalar datatype.
     response$write(toString(jsonlite::toJSON(summary)))
 
     # If your R installation does not support futures multiprocessing, it will fall back to multisession processing

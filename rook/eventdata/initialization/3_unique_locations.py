@@ -40,7 +40,7 @@ def get_arcgis_id(dataset, document):
         return {"singleLine": 'X:' + document['gp7'] + ' Y:' + document['gp8']}
 
 
-for collection in ['icews', 'acled_africa', 'acled_middle_east', 'acled_asia']:  # db.collection_names():
+for collection in ['acled_africa', 'acled_middle_east', 'acled_asia']:  # db.collection_names():
     print(collection)
     for document in db[collection].find({}):
         identifier = get_arcgis_id(collection, document)

@@ -124,14 +124,13 @@ export let setSelectedSubsetName = (subset) => {
     }
 
     let subsetMetadata = genericMetadata[selectedDataset]['subsets'][selectedSubsetName];
-
+    console.log(buildSubset(stagedSubsetData));
     m.request({
         url: subsetURL,
         data: {
-            query: buildSubset(stagedSubsetData),
+            query: JSON.stringify(buildSubset(stagedSubsetData)),
             dataset: selectedDataset,
             subset: selectedSubsetName,
-            metadata: formattingData,
 
             alignments: (subsetMetadata['alignments'] || []).filter(alignment => !(alignment in alignmentData)),
             formats: (subsetMetadata['formats'] || []).filter(format => !(format in formattingData))
@@ -399,8 +398,10 @@ export function pageSetup(jsondata) {
         subsetRedraw[subset] = true;
     });
 
-    Object.keys(jsondata['formats'] || {}).forEach(format => formattingData[format] = jsondata['formats'][format])
-    Object.keys(jsondata['alignments'] || {}).forEach(align => formattingData[align] = jsondata['alignments'][align])
+    Object.keys(jsondata['formats'] || {}).forEach(format => formattingData[format] = jsondata['formats'][format]);
+    Object.keys(jsondata['alignments'] || {}).forEach(align => formattingData[align] = jsondata['alignments'][align]);
+
+    let subsetType = genericMetadata[selectedDataset]['subsets'][jsondata['subsetName']]['type'];
 
     let reformatters = {
         'action': data => data
@@ -437,7 +438,7 @@ export function pageSetup(jsondata) {
             }, {})
     };
 
-    subsetMetadata[jsondata['subsetName']] = reformatters[jsondata['subsetName']](jsondata['data'])
+    subsetMetadata[jsondata['subsetName']] = reformatters[subsetType](jsondata['data']);
 
     // find a subset of type
     let findType = (type) => Object.keys(genericMetadata['subsets'])

@@ -359,7 +359,7 @@ export default class Body_EventData {
                 data: app.subsetMetadata[app.selectedSubsetName],
                 preferences: app.subsetPreferences[app.selectedSubsetName],
                 metadata: app.genericMetadata[app.selectedDataset]['subsets'][app.selectedSubsetName],
-                formatting: app.genericMetadata['formats'][subsetType],
+                formatting: app.formattingData[subsetType],
                 redraw: app.subsetRedraw[app.selectedSubsetName],
                 setRedraw: app.setSubsetRedraw
             })

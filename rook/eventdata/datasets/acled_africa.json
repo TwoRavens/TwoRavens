@@ -16,7 +16,7 @@
             "INTER1"
           ]
         },
-        "target": {
+        "actor 2": {
           "full": "ACTOR2",
           "filters": [
             "ASSOC_ACTOR_2",

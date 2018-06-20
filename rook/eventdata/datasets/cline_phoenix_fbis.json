@@ -9,7 +9,9 @@
     "Actor": {
       "type": "dyad",
       "alignment": "actor",
-      "formats": ["phoenix"],
+      "formats": [
+        "phoenix"
+      ],
       "tabs": {
         "source": {
           "full": "source",
@@ -18,10 +20,7 @@
             "source_others",
             "source_root"
           ],
-          "token_length": 3,
-          "deconstruct": {
-            "source_others": ";"
-          }
+          "token_length": 3
         },
         "target": {
           "full": "target",
@@ -30,17 +29,24 @@
             "target_others",
             "target_root"
           ],
-          "token_length": 3,
-          "deconstruct": {
-            "target_others": ";"
-          }
+          "token_length": 3
         }
+      },
+      "deconstruct": {
+        "source_others": ";",
+        "target_others": ";"
       }
     },
     "Action": {
       "type": "categorical",
-      "alignments": ["action"],
-      "formats": ["CAMEO", "root_code", "penta_class"],
+      "alignments": [
+        "action"
+      ],
+      "formats": [
+        "CAMEO",
+        "root_code",
+        "penta_class"
+      ],
       "columns": [
         "code"
       ]
@@ -52,9 +58,13 @@
     },
     "Location": {
       "type": "categorical_grouped",
-      "alignments": ["location"],
+      "alignments": [
+        "location"
+      ],
       "group_by": "region",
-      "formats": ["ISO-3"],
+      "formats": [
+        "ISO-3"
+      ],
       "columns": [
         "countryname_constructed"
       ]
