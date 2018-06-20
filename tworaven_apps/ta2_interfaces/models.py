@@ -87,6 +87,10 @@ class StoredRequest(TimeStampedModel):
 
         super(StoredRequest, self).save(*args, **kwargs)
 
+    def get_absolute_url(self):
+        """for the admin"""
+        return self.get_callback_url()
+
     def get_callback_url(self):
         """Callback url for returning "as_dict" info"""
         if not self.id:
@@ -172,8 +176,11 @@ class StoredResponse(TimeStampedModel):
 
     def __str__(self):
         """reference name"""
-        return self.stored_request
+        return '%s' % self.stored_request
 
+    def get_absolute_url(self):
+        """for the admin"""
+        return self.get_callback_url()
 
     def get_callback_url(self):
         """Callback url for returning "as_dict" info"""
