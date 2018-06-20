@@ -250,8 +250,11 @@ As a shortcut to the above, assuming R is installed, from the command line, you 
 1. Next are commands to run--one for each Terminal
     1. Main app: ```fab run```
     1. Rook: ```fab run_rook```
-    1. Redis: ```docker run --rm -p 6379:6379 redis:2.8``` or ```fab run_redis``` 
-    1. Celery: ```fab run_celery```
+    1. Redis: ```docker run --rm -p 6379:6379 redis:2.8``` 
+         - If you don't have docker:
+             - install redis (see above)
+             - redis: ```fab run_redis``` 
+    1. Celery: ```fab celery_run```
 1. Go to Two Ravens: http://127.0.0.1:8080/
     - Go to the Django admin: http://127.0.0.1:8080/admin
       - username: `dev_admin`
