@@ -241,7 +241,7 @@ As a shortcut to the above, assuming R is installed, from the command line, you 
 
 6/20 - This setup involves running several processes.  The manual method is as follows:
 
-- **Without** a TA2 (test mode)
+#### _Without_ a TA2 (test mode)
 
 1. Open 4 separate Terminals
 1. For each Terminal:
@@ -258,7 +258,7 @@ As a shortcut to the above, assuming R is installed, from the command line, you 
       - password: [from create superuser step above](#create-a-django-superuser-optional)
 
 
-- **With** a TA2
+#### _With_ a TA2
 
 Read fully before going through the step.
 
