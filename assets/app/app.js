@@ -9,19 +9,6 @@ import {bars, barsNode, barsSubset, density, densityNode, scatter, selVarColor} 
 import {elem, fadeOut} from './utils';
 import {searchIndex} from "./views/Search";
 
-// hostname default - the app will use it to obtain the variable metadata
-// (ddi) and pre-processed data info if the file id is supplied as an
-// argument (for ex., gui.html?dfId=17), but hostname isn't.
-// Edit it to suit your installation.
-// (NOTE that if the file id isn't supplied, the app will default to the
-// local files specified below!)
-// NEW: it is also possible now to supply complete urls for the ddi and
-// the tab-delimited data file; the parameters are ddiurl and dataurl.
-// These new parameters are optional. If they are not supplied, the app
-// will go the old route - will try to cook standard dataverse urls
-// for both the data and metadata, if the file id is supplied; or the
-// local files if nothing is supplied.
-
 //-------------------------------------------------
 // NOTE: global variables are now set in the index.html file.
 //    Developers, see /template/index.html
@@ -29,23 +16,6 @@ import {searchIndex} from "./views/Search";
 
 export let marginTopCarousel = 0;
 export let marginLeftCarousel = 0;
-
-window.onresize = () => {
-    if (m.route.get() === '/data') {
-        return;
-    }
-
-    let carousel = elem('#innercarousel');
-    let container = elem('#m0');
-    let whitespace = elem('#whitespace0');
-
-    marginTopCarousel = (carousel.offsetHeight - whitespace.getAttribute("height") - 16) / 2;
-    marginLeftCarousel = (carousel.offsetWidth - whitespace.getAttribute("width")) / 2;
-
-    container.style.marginTop = marginTopCarousel + 'px';
-    container.style.marginLeft = marginLeftCarousel + 'px';
-    container.style.height = `calc(100% + ${Math.abs(marginTopCarousel)}px)`;
-};
 
 let peekBatchSize = 100;
 let peekSkip = 0;
