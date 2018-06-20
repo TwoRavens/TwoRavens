@@ -4,7 +4,7 @@ import PlotBars from "./PlotBars";
 
 let actionMap = [0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3, 3, 4, 4, 3, 4, 4, 4, 4];
 
-export default class CanvasAction {
+export default class CanvasCategorical {
     view(vnode) {
         let {data, preferences} = vnode.attrs;
         preferences['action_codes'] = preferences['action_codes'] || Array(20).fill(false);

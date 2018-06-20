@@ -5,14 +5,14 @@ import ButtonRadio from "../../../common/views/ButtonRadio";
 import Button from "../../../common/views/Button";
 
 import MonadSelection from './MonadSelection';
-import PlotDyad, {dyadColors} from './PlotDyad';
+import PlotDyad from './PlotDyad';
 
 // Width of the actor selection panel
 let selectionWidth = '350px';
 
 
 function actorSelection(vnode) {
-    let {mode, data, formatting, preferences} = vnode.attrs;
+    let {mode, data, preferences} = vnode.attrs;
 
     return [
         m(".panel-heading.text-center[id='actorSelectionTitle']", {style: {"padding-bottom": "5px"}},
@@ -49,8 +49,7 @@ function actorSelection(vnode) {
         m("#fullContainer", m(`.actorTabContent#actorDiv`,
             m(MonadSelection, {
                 data: data[preferences['current_tab']],
-                preferences: preferences['tabs'][preferences['current_tab']],
-                formatting: formatting
+                preferences: preferences['tabs'][preferences['current_tab']]
             }),
             m(".actorBottomTry", {style: {"width": "100%"}},
                 m(Button, {

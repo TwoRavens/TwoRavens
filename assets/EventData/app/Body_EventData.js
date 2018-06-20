@@ -16,10 +16,10 @@ import TextField from '../../common/views/TextField';
 import ButtonRadio from '../../common/views/ButtonRadio';
 
 import CanvasDatasets from "./views/CanvasDatasets";
-import CanvasAction from "./views/CanvasAction";
+import CanvasCategorical from "./views/CanvasCategorical";
 import CanvasDyad from "./views/CanvasDyad";
 import CanvasDate from "./views/CanvasDate";
-import CanvasLocation from "./views/CanvasLocation";
+import CanvasCategoricalGrouped from "./views/CanvasCategoricalGrouped";
 import CanvasRootCode from "./views/CanvasRootCode";
 import CanvasAggregTS from "./views/CanvasAggregTS";
 
@@ -329,14 +329,13 @@ export default class Body_EventData {
         })
     }
 
-    view(vnode) {
-        let {mode} = vnode.attrs;
-
-        // construct what should appear in the center of the page
-        let canvasContent;
-
+    canvasContent() {
         if (app.selectedCanvas === 'Subset') {
-            if (app.subsetMetadata[app.selectedSubsetName] === undefined) {
+            if (app.subsetData[app.selectedSubsetName] === undefined) {
+
+                if (!app.isLoading[app.selectedSubsetName])
+                    app.reloadSubset(app.selectedSubsetName);
+
                 return m('#loading.loader', {
                     style: {
                         margin: 'auto',
@@ -346,39 +345,41 @@ export default class Body_EventData {
                     }
                 })
             }
+
             let subsetType = app.genericMetadata[app.selectedDataset]['subsets'][app.selectedSubsetName]['type'];
-            canvasContent = m({
-                'action': CanvasAction,
-                'actor': CanvasDyad,
+            return m({
                 'date': CanvasDate,
-                'location': CanvasLocation,
+                'dyad': CanvasDyad,
+                'categorical': CanvasCategorical,
+                'categorical_grouped': CanvasCategoricalGrouped,
                 'coordinates': CanvasCoordinates
             }[subsetType], {
                 mode: app.selectedMode,
                 subsetName: app.selectedSubsetName,
-                data: app.subsetMetadata[app.selectedSubsetName],
+                data: app.subsetData[app.selectedSubsetName],
                 preferences: app.subsetPreferences[app.selectedSubsetName],
                 metadata: app.genericMetadata[app.selectedDataset]['subsets'][app.selectedSubsetName],
-                formatting: app.formattingData[subsetType],
                 redraw: app.subsetRedraw[app.selectedSubsetName],
                 setRedraw: app.setSubsetRedraw
             })
         }
 
-        else {
-            // TODO add CanvasAnalysis
-            canvasContent = m({
-                'Datasets': CanvasDatasets,
-                'PentaClass': CanvasDatasets,
-                'RootCode': CanvasRootCode,
-                'Time Series': CanvasAggregTS
-            }[app.selectedCanvas], {
-                mode: app.selectedMode,
-                preferences: app.canvasPreferences[app.selectedCanvas],
-                redraw: app.canvasRedraw[app.selectedCanvas],
-                setRedraw: app.setCanvasRedraw
-            });
-        }
+        // TODO add CanvasAnalysis
+        return m({
+            'Datasets': CanvasDatasets,
+            'PentaClass': CanvasDatasets,
+            'RootCode': CanvasRootCode,
+            'Time Series': CanvasAggregTS
+        }[app.selectedCanvas], {
+            mode: app.selectedMode,
+            preferences: app.canvasPreferences[app.selectedCanvas],
+            redraw: app.canvasRedraw[app.selectedCanvas],
+            setRedraw: app.setCanvasRedraw
+        });
+    }
+
+    view(vnode) {
+        let {mode} = vnode.attrs;
 
         return m('main#EventData',
             this.header(mode),
@@ -395,8 +396,12 @@ export default class Body_EventData {
                 onclick: app.addRule
             }, "Stage"),
             m(Canvas, {
-                attrsAll: {style: mode === 'aggregate' ? {height: `calc(100% - ${common.heightHeader} - ${aggreg.tableHeight} - ${common.heightFooter})`} : {}}
-            }, canvasContent),
+                attrsAll: {
+                    style: mode === 'aggregate'
+                        ? {height: `calc(100% - ${common.heightHeader} - ${aggreg.tableHeight} - ${common.heightFooter})`}
+                        : {}
+                }
+            }, this.canvasContent()),
             m(TableAggregation, {mode: mode}),
             this.footer(mode)
         );

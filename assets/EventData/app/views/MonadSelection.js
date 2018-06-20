@@ -44,7 +44,7 @@ export default class MonadSelection {
         let actorFiltersOp = {[operator]: actorFilters};
 
         let stagedSubsetData = [];
-        for (let child of app.subsetData) {
+        for (let child of app.abstractQuery) {
             if (child.name.indexOf("Query") !== -1) {
                 stagedSubsetData.push(child)
             }
@@ -91,7 +91,7 @@ export default class MonadSelection {
     }
 
     view(vnode) {
-        let {subsetName, data, metadata, preferences, formatting} = vnode.attrs;
+        let {subsetName, data, metadata, preferences} = vnode.attrs;
 
         let toggleFull = (actor) => preferences['node']['selected'].has(actor)
             ? preferences['node']['selected'].add(actor)
@@ -134,13 +134,13 @@ export default class MonadSelection {
                         .slice(preferences['full_limit'])
                         .map(actor =>
                             m('div',
-                                preferences['format'] === 'phoenix' && {
+                                preferences['format'].indexOf('phoenix') !== -1 && {
                                     'data-container': 'body',
                                     'data-toggle': 'popover',
                                     'data-placement': 'right',
                                     'data-trigger': 'hover',
                                     'data-content': actor.match(new RegExp(`.{${metadata['token_length']}}`, 'g'))
-                                        .map(token => formatting['phoenix'][token] || '?').join(' ')
+                                        .map(token => app.formattingData['phoenix'][token] || '?').join(' ')
                                 },
                                 m(`input.actorChk[type=checkbox]`, {
                                     checked: preferences['node']['selected'].has(actor),
@@ -181,12 +181,12 @@ export default class MonadSelection {
                             onclick: () => preferences['filters'][filter]['expanded'] = !preferences['filters'][filter]['expanded']
                         }, m("b", filter)),
                         preferences['filters'][filter]['expanded'] && m(".filterContainer", data['filters'][filter]['selected'].map(actor => m('div',
-                            preferences['format'] === 'phoenix' && {
+                            preferences['format'].indexOf('phoenix') !== -1 && {
                                 'data-container': 'body',
                                 'data-toggle': 'popover',
                                 'data-placement': 'right',
                                 'data-trigger': 'hover',
-                                'data-content': formatting['phoenix'][actor] || '?'
+                                'data-content': app.formattingData['phoenix'][actor] || '?'
                             },
                             m(`input.actorChk[type=checkbox]`, {
                                 checked: preferences['filters'][filter]['selected'].has(actor),

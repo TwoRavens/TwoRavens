@@ -3,7 +3,7 @@ import * as common from '../../../common/common';
 
 import PlotBars from "./PlotBars";
 
-export default class CanvasLocation {
+export default class CanvasCategoricalGrouped {
     view(vnode) {
         let {subsetName, data, preferences, formatting} = vnode.attrs;
 

@@ -1,5 +1,5 @@
 import m from 'mithril';
-import {subsetData, buildSubset} from '../app';
+import {abstractQuery, buildSubset} from '../app';
 import {panelMargin} from '../../../common/common';
 
 import '../../../node_modules/ace-builds/src-min-noconflict/ace.js';
@@ -48,7 +48,7 @@ export default class CanvasCustom {
                     style: {
                         "display": "inline"
                     },
-                    onclick: () => preferences['text'] = JSON.stringify(buildSubset(subsetData), null, '	')
+                    onclick: () => preferences['text'] = JSON.stringify(buildSubset(abstractQuery), null, '	')
                 }, "Show All"),
 
                 // Examples Button

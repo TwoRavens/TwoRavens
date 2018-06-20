@@ -86,7 +86,7 @@ eventdata_subset.app <- function(env) {
     }
 
     getData = function(type, query, key=NULL) {
-        print(paste("GETTING", toString(type), toString(key), toString(query)))
+        # print(paste("GETTING", toString(type), toString(key), toString(query)))
         if (datasetMetadata$host == 'TwoRavens') {
             connect = RMongo::mongoDbConnect('event_data', '127.0.0.1', 27017)
             if (type == 'find') {
@@ -220,16 +220,27 @@ eventdata_subset.app <- function(env) {
     else if (subsetMetadata$type == 'monad')summary$data = collectMonad(subsetMetadata)
     else summary$data = sapply(subsetMetadata$columns, collectColumn, simplify=FALSE, USE.NAMES=TRUE)
 
+    # Additional metadata
     if (! is.null(everything$alignments)) {
         summary$alignments = sapply(everything$alignments, function(format) {
             jsonlite::fromJSON(readLines(paste('./eventdata/alignments/', format, '.json', sep = ""), warn=FALSE))
         }, simplify=FALSE, USE.NAMES=TRUE)
     }
+
     if (! is.null(everything$formats)) {
         summary$formats = sapply(everything$formats, function(format) {
             jsonlite::fromJSON(readLines(paste('./eventdata/formats/', format, '.json', sep = ""), warn = FALSE))
         }, simplify=FALSE, USE.NAMES=TRUE)
     }
+
+    if (! is.null(everything$countRecords) && everything$countRecords) {
+        # RMongo is outdated... so it throws an error on valid aggregate queries
+        print(paste('[{"$match":', query, '}, {"$count": "total"}]', sep = ""), quote=FALSE)
+        summary$total = tryCatch({
+            getData('aggregate', paste('[{"$match":', query, '}, {"$count": "total"}]', sep = ""))
+        }, error = genericErrorHandler)
+    }
+
     summary$subsetName = jsonlite::unbox(subset)
 
     # NOTE: R jsonlite interprets literals as singleton literal arrays, since R has no scalar datatype.
