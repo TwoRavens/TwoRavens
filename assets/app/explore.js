@@ -1,4 +1,5 @@
 import m from 'mithril';
+import vegaEmbed from 'vega-embed';
 
 import * as app from './app';
 import * as plots from './plots';
@@ -1482,10 +1483,7 @@ export async function explore() {
     m.redraw();
 }
 
-/**
-   called by clicking 'Plot' in explore mode
-*/
-export async function plot() {
+export async function plot(xNode, yNode) {
     if (app.downloadIncomplete()) {
         return;
     }
@@ -1493,48 +1491,38 @@ export async function plot() {
     app.zPop();
     console.log('zpop:', app.zparams);
 
-//    let plottype = "scatter";
-    let plottype = "box";
-    let plotvars=["stratidc","logim"];
+    let plottype = xNode === yNode ? 'scatter' : 'box';
+    let plotvars = [xNode.name, yNode.name];
     let zd3mdata = app.zparams.zd3mdata;
-    let myvegaschema = {};
-    
     let jsonout = {plottype, plotvars, zd3mdata};
-    jsonout = JSON.stringify(jsonout);
     console.log(jsonout);
 
     // write links to file & run R CMD
-    app.estimateLadda.start(); // start spinner
     let json = await app.makeRequest(ROOK_SVC_URL + 'plotdataapp', jsonout);
-    
-    app.estimateLadda.stop();
     if (!json) {
         return;
     }
-    
-    if(plottype=="box") {
+
+    let myvegaschema = {};
+    if (plottype === "box") {
         myvegaschema = await m.request({method: "GET", url: "/rook-custom/rook-files/vega-schemas/box2d.json"});
         console.log(myvegaschema);
     }
-    
+
     // function to fill in the contents of the vega schema
     function fillVega(vegaschema, vegadata) {
         let stringified = JSON.stringify(vegaschema);
         stringified = stringified.replace(/tworavensY/g, vegadata.vars[1]);
         stringified = stringified.replace(/tworavensX/g, vegadata.vars[0]);
-        stringified = stringified.replace("url","values");
+        stringified = stringified.replace("url", "values");
         stringified = stringified.replace('"tworavensData"',vegadata.plotdata[0]);
         // VJD: if you enter this console.log into the vega editor https://vega.github.io/editor/#/edited the plot will render
         console.log(stringified);
         vegaschema = JSON.parse(stringified);
-    
-        return(vegaschema);
+        return vegaschema;
     }
-    
-    myvegaschema = fillVega(myvegaschema, json);
-    console.log(myvegaschema);
-    return;
-    
+
+    vegaEmbed('#plot', fillVega(myvegaschema, json));
 }
 
 export let exploreVar = '';
@@ -1603,7 +1591,7 @@ function univariatePart(json, var_name) {
 
     // stroke style of link - either color or function
     var stroke_callback = "#ccc";
-    load_dataset(json)
+    load_dataset(json);
 
     function load_dataset(json_data) {
 

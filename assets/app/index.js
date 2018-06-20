@@ -298,7 +298,7 @@ class Body {
             m(`#main.left`, {style: {overflow}},
               m("#innercarousel.carousel-inner", {style: {height: `calc(100% + ${app.marginTopCarousel}px)`, overflow}},
                 explore_mode && (
-                    var1 && var2 ? m('#plot', {style, oncreate: _ => plots.scatter(node1.plotx, node2.ploty, node1.name, node2.name, '#plot')}) :
+                    var1 && var2 ? m('#plot', {style, oncreate: _ => exp.plot(node1, node2)}) :
                     var1 ? m('#plot', {style, oncreate: _ => plot(node1, 'explore', true)}) :
                     m('table', {style}, [
                         m('thead', [''].concat(sortedNodes).map(x => m('th', x.name))),
