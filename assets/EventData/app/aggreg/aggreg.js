@@ -827,7 +827,7 @@ export function makeAggregQuery(action, save = null) {
 		"toggles": (aggregMode == "penta" ? aggregPentaChkOrd : aggregRootChkOrd),
 		"action": action,		//preview = get dates, aggreg = perform aggregation, download = download aggreg
 		"numberPreview": aggregDataNumber,
-		"dataset": app.genericMetadata['datasets'][app.selectedDataset]['key'],
+		"dataset": app.genericMetadata[app.selectedDataset]['key'],
 		"datasource": app.datasource
 	};
 

@@ -27,7 +27,7 @@
     },
     "Action": {
       "type": "categorical",
-      "alignment": "action",
+      "alignments": ["action"],
       "format": ["CAMEO", "root_code", "penta_class"],
       "columns": [
         "CAMEO Code"

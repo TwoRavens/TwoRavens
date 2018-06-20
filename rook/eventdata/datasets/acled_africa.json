@@ -27,7 +27,7 @@
     },
     "Action": {
       "type": "categorical",
-      "alignment": "action",
+      "alignments": ["action"],
       "formats": [
         "ACLED_interaction",
         "plover_code",
@@ -44,7 +44,7 @@
     },
     "Location": {
       "type": "categorical_grouped",
-      "alignment": "location",
+      "alignments": ["location"],
       "group_by": "region",
       "formats": [
         "ISO-3"

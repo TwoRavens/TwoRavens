@@ -27,13 +27,12 @@ let appname = 'eventdatasubsetapp';
 export let subsetURL = rappURL + appname;
 
 // metadata for all available datasets and type formats
-export let genericMetadata = {
-    'datasets': {},
-    'formats': {}
-};
+export let genericMetadata = {};
+export let formattingData = {};
+export let alignmentData = {};
 
 export let getVariables = (dataset) => Object.values((dataset || {})['columns'] || {});
-export let ontologyAlign = (column) => genericMetadata['datasets'][selectedDataset]['columns'][column];
+export let ontologyAlign = (column) => genericMetadata[selectedDataset]['columns'][column];
 
 // metadata computed on the dataset for each subset
 export let subsetMetadata = {};
@@ -42,6 +41,9 @@ export let subsetMetadata = {};
 export let subsetPreferences = {};
 export let subsetRedraw = {};
 export let setSubsetRedraw = (subset, value) => subsetRedraw[subset] = value || false;
+
+export let isLoading = {};
+export let setIsLoading = (key, state) => isLoading[key] = state;
 
 // contains state for redrawing canvases
 export let canvasPreferences = {};
@@ -72,7 +74,7 @@ window.addEventListener('resize', handleResize);
 export let selectedDataset;
 export let setSelectedDataset = (key) => {
     selectedDataset = key;
-    Object.keys(genericMetadata['datasets'][selectedDataset]['subsets']).forEach(subset => {
+    Object.keys(genericMetadata[selectedDataset]['subsets']).forEach(subset => {
         // ensure each subset has a place to store settings
         subsetPreferences[subset] = subsetPreferences[subset] || {};
     });
@@ -109,6 +111,33 @@ export let selectedSubsetName;
 export let setSelectedSubsetName = (subset) => {
     setSelectedCanvas('Subset');
     selectedSubsetName = subset;
+
+    if (isLoading[selectedSubsetName]) return;
+    isLoading[selectedSubsetName] = true;
+
+
+    let stagedSubsetData = [];
+    for (let child of subsetData) {
+        if (child.name.indexOf("Query") !== -1) {
+            stagedSubsetData.push(child)
+        }
+    }
+
+    let subsetMetadata = genericMetadata[selectedDataset]['subsets'][selectedSubsetName];
+
+    m.request({
+        url: subsetURL,
+        data: {
+            query: buildSubset(stagedSubsetData),
+            dataset: selectedDataset,
+            subset: selectedSubsetName,
+            metadata: formattingData,
+
+            alignments: (subsetMetadata['alignments'] || []).filter(alignment => !(alignment in alignmentData)),
+            formats: (subsetMetadata['formats'] || []).filter(format => !(format in formattingData))
+        },
+        method: 'POST'
+    }).then(pageSetup)
 };
 
 // TODO decouple setSelectedCanvas and setSelectedSubset
@@ -121,7 +150,7 @@ export let totalSubsetRecords = 0;
 // Load the metadata for each available dataset
 m.request({
     url: subsetURL,
-    data: {'type': 'metadata'},
+    data: {'type': 'datasets'},
     method: 'POST'
 }).then((jsondata) => {
     console.log(jsondata);
@@ -136,7 +165,7 @@ if (localStorage.getItem("dataset") !== null) {
 // Options: "api" or "local"
 export let datasource = 'api';
 
-export let subsetKeys = () => Object.keys(genericMetadata['datasets'][selectedDataset]['subsets']);
+export let subsetKeys = () => Object.keys(genericMetadata[selectedDataset]['subsets']);
 // TODO conditionally draw based on available aggregates
 export let aggregateKeys = ["Actor", "Date", "Penta Class", "Root Code", "Time Series", "Analysis"];
 
@@ -182,9 +211,8 @@ export function setupBody() {
     let query = {
         'query': JSON.stringify(subsetQuery),
         'variables': [...selectedVariables],
-        'dataset': genericMetadata['datasets'][selectedDataset]['key'],
-        'datasource': datasource,
-        'subsets': Object.keys(genericMetadata['datasets'][selectedDataset]['subsets'])
+        'dataset': genericMetadata[selectedDataset]['key'],
+        'subsets': Object.keys(genericMetadata[selectedDataset]['subsets'])
     };
 
     laddaReset.start();
@@ -237,7 +265,6 @@ export function download() {
 		let query = {
 			'query': JSON.stringify(subsetQuery),
 			'dataset': selectedDataset,
-			'datasource': datasource,
 			'type': 'raw'
 		};
 
@@ -277,7 +304,7 @@ let peekAllDataReceived = false;
 let peekIsGetting = false;
 
 if (selectedMode !== 'peek') {
-    localStorage.setItem('peekHeader', (genericMetadata['datasets'][selectedDataset] || {})['name']);
+    localStorage.setItem('peekHeader', (genericMetadata[selectedDataset] || {})['name']);
     localStorage.removeItem('peekTableData');
 }
 // localStorage.setItem('peekTableData', JSON.stringify(peekData));
@@ -372,6 +399,8 @@ export function pageSetup(jsondata) {
         subsetRedraw[subset] = true;
     });
 
+    Object.keys(jsondata['formats'] || {}).forEach(format => formattingData[format] = jsondata['formats'][format])
+    Object.keys(jsondata['alignments'] || {}).forEach(align => formattingData[align] = jsondata['alignments'][align])
 
     let reformatters = {
         'action': data => data
@@ -408,11 +437,7 @@ export function pageSetup(jsondata) {
             }, {})
     };
 
-    // reformat date, action, and location metadata
-    subsetMetadata = Object.keys(genericMetadata['datasets'][selectedDataset]['subsets']).reduce((out, key) => {
-            out[key] = reformatters[genericMetadata['datasets'][selectedDataset]['subsets'][key]['type']](jsondata[key]);
-            return(out);
-        }, {});
+    subsetMetadata[jsondata['subsetName']] = reformatters[jsondata['subsetName']](jsondata['data'])
 
     // find a subset of type
     let findType = (type) => Object.keys(genericMetadata['subsets'])
@@ -689,7 +714,7 @@ window.callbackDelete = function (id) {
                 'variables': [...selectedVariables],
                 'dataset': selectedDataset,
                 'datasource': datasource,
-                'subsets': Object.keys(genericMetadata['datasets'][selectedDataset]['subsets'])
+                'subsets': Object.keys(genericMetadata[selectedDataset]['subsets'])
             };
 
             laddaUpdate.start();
@@ -1123,7 +1148,7 @@ export function reset() {
             'variables': JSON.stringify({}),
             'dataset': selectedDataset,
             'datasource': datasource,
-            'subsets': Object.keys(genericMetadata['datasets'][selectedDataset]['subsets'])
+            'subsets': Object.keys(genericMetadata[selectedDataset]['subsets'])
         };
 
         laddaReset.start();
@@ -1207,11 +1232,9 @@ export function submitQuery(datasetChanged=false) {
 
     let query = {
         'query': JSON.stringify(subsetQuery),
-        'variables': [...selectedVariables],
         'dataset': selectedDataset,
-        'datasource': datasource,
         'type': 'summary',
-        'subsets': Object.keys(genericMetadata['datasets'][selectedDataset]['subsets'])
+        'subset': selectedSubsetName
     };
 
     if (datasetChanged) laddaReset.start();
@@ -1318,7 +1341,7 @@ function processRule(rule) {
     let rule_query = {};
 
     if (rule.name === 'Date Subset') {
-        let date_schema = genericMetadata['datasets'][selectedDataset]['subsets'][selectedSubsetName]['format'];
+        let date_schema = genericMetadata[selectedDataset]['subsets'][selectedSubsetName]['format'];
 
         // construct a query that works for separate year, month and day fields
         if (date_schema === 'fields') {
@@ -1407,7 +1430,7 @@ function processRule(rule) {
     if (rule.name === 'Action Subset') {
         let rule_query_inner = [];
 
-        if (genericMetadata['datasets'][selectedDataset]['subsets'][selectedSubsetName]['format'] === 'CAMEO root code') {
+        if (genericMetadata[selectedDataset]['subsets'][selectedSubsetName]['format'] === 'CAMEO root code') {
             for (let child of rule.children) {
                 rule_query_inner.push(pad(parseInt(child.name)));
             }
@@ -1420,7 +1443,7 @@ function processRule(rule) {
             rule_query['<root_code>'] = rule_query_inner;
         }
 
-        if (genericMetadata['datasets'][selectedDataset]['subsets'][selectedSubsetName]['action'] === "CAMEO") {
+        if (genericMetadata[selectedDataset]['subsets'][selectedSubsetName]['action'] === "CAMEO") {
             let prefixes = [];
             for (let child of rule.children) {
                 prefixes.push(pad(parseInt(child.name)));
@@ -1458,8 +1481,8 @@ function processRule(rule) {
 
     if (rule.name === 'Coords Subset') {
         // The only implemented coordinates unit type is signed degrees
-        if (genericMetadata['datasets'][selectedDataset]['subsets'][selectedSubsetName]['format'] !== 'signed degrees')
-            console.log("invalid format: " + genericMetadata['datasets'][selectedDataset]['subsets'][selectedSubsetName]['format']);
+        if (genericMetadata[selectedDataset]['subsets'][selectedSubsetName]['format'] !== 'signed degrees')
+            console.log("invalid format: " + genericMetadata[selectedDataset]['subsets'][selectedSubsetName]['format']);
 
         let rule_query_inner = [];
 

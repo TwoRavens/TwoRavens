@@ -24,7 +24,7 @@ export default class CanvasDatasets {
 
         let coerceArray = (value) => Array.isArray(value) ? value : [value];
 
-        let tempDataset = app.genericMetadata['datasets'][this.dataset];
+        let tempDataset = this.dataset ? app.genericMetadata[this.dataset] : {};
 
         let colgroupDataset = () => {
             return m('colgroup',
@@ -34,7 +34,7 @@ export default class CanvasDatasets {
                 m('col', {span: 1, width: '50%'}));
         };
 
-        return m('div#canvasDatasets', {style: {display: display, width: '100%'}}, Object.values(app.genericMetadata['datasets']).map((dataset) => {
+        return m('div#canvasDatasets', {style: {display: display, width: '100%'}}, Object.values(app.genericMetadata).map((dataset) => {
             return m('div', {
                     style: {
                         width: '100%',

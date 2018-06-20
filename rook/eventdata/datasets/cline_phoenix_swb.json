@@ -8,7 +8,7 @@
   "subsets": {
     "Actor": {
       "type": "dyad",
-      "alignment": "actor",
+      "alignments": ["actor"],
       "formats": ["phoenix"],
       "tabs": {
         "source": {
@@ -39,7 +39,7 @@
     },
     "Action": {
       "type": "categorical",
-      "alignment": "action",
+      "alignments": ["action"],
       "formats": ["CAMEO", "root_code", "penta_class"],
       "columns": [
         "code"
@@ -52,7 +52,7 @@
     },
     "Location": {
       "type": "categorical_grouped",
-      "alignment": "location",
+      "alignments": ["location"],
       "group_by": "region",
       "formats": ["ISO-3"],
       "columns": [

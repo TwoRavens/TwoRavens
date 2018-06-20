@@ -272,7 +272,7 @@
     },
     "Location": {
       "type": "categorical_grouped",
-      "alignment": "location",
+      "alignments": ["location"],
       "group_by": "region",
       "formats": ["cowcode"],
       "columns": [

@@ -49,10 +49,11 @@ export default class Body_EventData {
         return m(Header, {image: '/static/images/TwoRavens.png'},
 
             m('div', {style: {'flex-grow': 1}}),
-            m("h4", m("h4#datasetLabel", {style: {margin: '.25em 1em'}}, (app.genericMetadata['datasets'][app.selectedDataset] || {})['name'])),
+            m("h4", m("h4#datasetLabel", {style: {margin: '.25em 1em'}},
+                app.selectedDataset ? app.genericMetadata[app.selectedDataset]['name'] : '')),
 
             m('div', {style: {'flex-grow': 1}}),
-            app.genericMetadata['datasets'][app.selectedDataset] && m("button#btnPeek.btn.btn-default", {
+            app.selectedDataset && m("button#btnPeek.btn.btn-default", {
                 title: 'Display a data preview',
                 style: {margin: '.25em 1em'},
                 onclick: () => window.open('#!/data', 'data')
@@ -61,8 +62,10 @@ export default class Body_EventData {
             ),
 
             // Button Reset
-            m("button#btnReset.btn.btn-default.ladda-button[data-spinner-color='#818181'][data-style='zoom-in'][title='Reset']", {
-                    style: {margin: '1em', display: app.genericMetadata['datasets'][app.selectedDataset] ? 'block' : 'none'},
+            m("button#btnReset.btn.btn-default.ladda-button[title='Reset']", {
+                    'data-style': 'zoom-in',
+                    'data-spinner-color': '#818181',
+                    style: {margin: '1em', display: app.selectedDataset ? 'block' : 'none'},
                     onclick: app.reset
                 },
                 m("span.ladda-label.glyphicon.glyphicon-repeat", {
@@ -84,7 +87,7 @@ export default class Body_EventData {
                 activeSection: app.selectedMode,
                 sections: [
                     {value: 'Datasets'}
-                ].concat(app.genericMetadata['datasets'][app.selectedDataset] ? [
+                ].concat(app.selectedDataset ? [
                     {value: 'Subset', id: 'btnSubsetSubmit'},
                     {value: 'Aggregate', id: 'aggSubmit'}
                 ] : [])
@@ -134,7 +137,7 @@ export default class Body_EventData {
 
                 m("button.btn.btn-default.btn-sm.ladda-button[data-spinner-color='#818181'][id='buttonDownload'][type='button']", {
                         style: {
-                            display: app.genericMetadata['datasets'][app.selectedDataset] ? 'inline-block' : 'none',
+                            display: app.selectedDataset ? 'inline-block' : 'none',
                             "margin-right": "6px",
                             'margin-top': '4px',
                             'margin-left': '6px',
@@ -147,9 +150,8 @@ export default class Body_EventData {
                     )
                 ),
                 // Record Count
-                m("span.label.label-default#recordCount", {
+                app.selectedDataset && m("span.label.label-default#recordCount", {
                     style: {
-                        display: app.genericMetadata['datasets'][app.selectedDataset] ? 'inline-block' : 'none',
                         "margin-left": "5px",
                         "margin-top": "10px",
                         "margin-right": "10px"
@@ -190,7 +192,7 @@ export default class Body_EventData {
                                 }),
                                 m(PanelList, {
                                     id: 'variablesList',
-                                    items: Object.keys(app.genericMetadata['datasets'][app.selectedDataset]['columns']).filter(col => col.includes(app.variableSearch)),
+                                    items: Object.keys(app.genericMetadata[app.selectedDataset]['columns']).filter(col => col.includes(app.variableSearch)),
                                     colors: {[common.selVarColor]: app.selectedVariables},
                                     callback: app.toggleVariableSelected,
                                     attrsAll: {style: {height: 'calc(100% - 44px)', overflow: 'auto'}}
@@ -202,7 +204,7 @@ export default class Body_EventData {
                             title: 'Restrict by contents of rows.',
                             contents: m(PanelList, {
                                 id: 'subsetsList',
-                                items: Object.keys(app.genericMetadata['datasets'][app.selectedDataset]['subsets']),
+                                items: Object.keys(app.genericMetadata[app.selectedDataset]['subsets']),
                                 colors: {[common.selVarColor]: [app.selectedSubsetName]},
                                 callback: app.setSelectedSubsetName,
                                 attrsAll: {style: {height: 'calc(100% - 39px)', overflow: 'auto'}}
@@ -335,16 +337,6 @@ export default class Body_EventData {
 
         if (app.selectedCanvas === 'Subset') {
             if (app.subsetMetadata[app.selectedSubsetName] === undefined) {
-                m.request({
-                    data: {
-                        'query': app.buildSubset(app.subsetData),
-                        'dataset': selectedDataset,
-                        'type': 'summary',
-                        'subset': app.selectedSubsetName,
-                        'metadata': app.subsetMetadata[app.selectedSubsetName] === undefined
-                    }
-                }).then(app.pageSetup);
-
                 return m('#loading.loader', {
                     style: {
                         margin: 'auto',
@@ -354,7 +346,7 @@ export default class Body_EventData {
                     }
                 })
             }
-            let subsetType = app.genericMetadata['datasets'][app.selectedDataset]['subsets'][app.selectedSubsetName]['type'];
+            let subsetType = app.genericMetadata[app.selectedDataset]['subsets'][app.selectedSubsetName]['type'];
             canvasContent = m({
                 'action': CanvasAction,
                 'actor': CanvasDyad,
@@ -366,7 +358,7 @@ export default class Body_EventData {
                 subsetName: app.selectedSubsetName,
                 data: app.subsetMetadata[app.selectedSubsetName],
                 preferences: app.subsetPreferences[app.selectedSubsetName],
-                metadata: app.genericMetadata['datasets'][app.selectedDataset]['subsets'][app.selectedSubsetName],
+                metadata: app.genericMetadata[app.selectedDataset]['subsets'][app.selectedSubsetName],
                 formatting: app.genericMetadata['formats'][subsetType],
                 redraw: app.subsetRedraw[app.selectedSubsetName],
                 setRedraw: app.setSubsetRedraw
