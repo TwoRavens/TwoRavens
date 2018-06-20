@@ -1,7 +1,7 @@
 # Install requirements from the raven-metadata-service
 # - used for accessing preprocess code
 #
--r ../submodules/raven-metadata-service/requirements/10_preprocess.txt
+#-r ../submodules/raven-metadata-service/requirements/10_preprocess.txt
 
 Django==2.0.5
 django-model-utils==3.0.0
