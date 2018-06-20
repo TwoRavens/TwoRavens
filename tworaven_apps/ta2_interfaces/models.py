@@ -141,18 +141,19 @@ class StoredRequest(TimeStampedModel):
     def as_dict(self, short_version=False):
         """Return info as a dict"""
         attr_names = ('id', 'name', 'hash_id',
-                      'status',
+                      'is_finished', 'status',
                       'workspace', 'request_type',
                       DETAILS_URL,
                       'request')
 
         od = OrderedDict()
         for val in attr_names:
-            if val == DETAILS_URL:
+            if val == 'is_finished':
+                od[val] = self.is_finished
+            elif val == DETAILS_URL:
                 od[DETAILS_URL] = self.get_callback_url()
             else:
                 od[val] = self.__dict__.get(val)
-        od['is_finished'] = self.is_finished
         od['created'] = self.created.isoformat()
         od['modified'] = self.modified.isoformat()
 
@@ -232,17 +233,18 @@ class StoredResponse(TimeStampedModel):
 
     def as_dict(self, short_version=False):
         """Return info as a dict"""
-        attr_names = ('id', 'hash_id',
+        attr_names = ('id', 'hash_id', 'is_success',
                       'status', 'sent_to_user',
                       DETAILS_URL)
 
         od = OrderedDict()
         for val in attr_names:
-            if val == DETAILS_URL:
+            if val == 'is_success':
+                od[val] = self.is_success
+            elif val == DETAILS_URL:
                 od[DETAILS_URL] = self.get_callback_url()
             else:
                 od[val] = self.__dict__.get(val)
-        od['is_success'] = self.is_success
         od['created'] = self.created.isoformat()
         od['modified'] = self.modified.isoformat()
 
