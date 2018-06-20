@@ -117,10 +117,10 @@ export default class Recode {
                                             style: {
                                                 'margin-top': '5px',
                                                 'text-align': "center",
-                                                'background-color': app.hexToRgba("#FA8072")
                                             },
                                             class: 'var',
-                                            onclick: clickVar
+                                            onclick: clickVar,
+                                            oncreate: createList
                                         }), item)))
 
                                 ]
@@ -133,10 +133,11 @@ export default class Recode {
                                             style: {
                                                 'margin-top': '5px',
                                                 'text-align': "center",
-                                                'background-color': app.hexToRgba("#FA8072")
+                                                // 'background-color': app.hexToRgba("#FA8072")
                                             },
                                             class: 'var',
-                                            onclick: addOperations
+                                            onclick: addOperations,
+                                            oncreate: createList
                                         }), item)))
                                 ]
                             }
@@ -276,12 +277,12 @@ export default class Recode {
                                                 m('option','Numchar')
                                             ])
                                         ]),
-                                        m('label',{ style : {'display':'block', 'margin-right':'10px'}},'Variable Description : '),
-                                        m('textarea',{id:'varDescription',cols:"40",rows:'5'}),
                                         m('div#nominalDiv',{style:{'margin':'10px'}},[
                                             m('label',{ style : { 'margin-right':'10px'}},'Class List : '),
                                             m('input[type=text]',{id:'nominalList', placeholder:'Nominal', style:{'margin':'10px'}},),
                                         ]),
+                                        m('label',{ style : {'display':'block', 'margin-right':'10px'}},'Variable Description : '),
+                                        m('textarea',{id:'varDescription',cols:"40",rows:'5'}),
                                     ]),m('div#tableDiv',{style :{'display': 'block','width':'60%','float':'right','height':(window.innerHeight-150)+'px' ,'overflow-y': 'auto','border-style': 'solid','border-width': 'thin'}},[
                                         m('table.table.table-bordered',{id:'createTable',style:{ 'overflow': 'scroll'}},[
                                             m('tr#colheader',[
@@ -315,13 +316,18 @@ function onRecodeStorageEvent(recode, e){
     m.redraw();
 }
 
+function createList(elem){
+    console.log(elem.dom.id)
+    if(elem.dom.id !== "varList"){
+        document.getElementById(elem.dom.id).setAttribute("style", "background-color:"+app.hexToRgba("#FA8072"));
+    }
+}
 function someFunction(elem){
     if(elem.target[1].selected){
-        var elem = document.getElementById('nominalDiv');
-        elem.style.visibility="visible";
+        document.getElementById("nominalDiv").setAttribute("style", "display:block");
+        
     }else{
-        var elem = document.getElementById('nominalDiv');
-        elem.style.visibility="hidden";
+        document.getElementById("nominalDiv").setAttribute("style", "display:none");
     }
 }
 
@@ -339,6 +345,9 @@ function addOperations(elem){
 }
 
 function clickVar(elem) {
+    console.log(this.id)
+
+    document.getElementById(this.id).setAttribute("style", "background:"+app.hexToRgba("#28a4c9"));
 
     if(document.getElementById('recodeLink').className === 'active'){
       
@@ -498,6 +507,10 @@ function calculate(elem){
 }
 
 function createClick(){
+    
+    document.getElementById("filterTableDiv").setAttribute("style", "display:block");
+    document.getElementById("nominalDiv").setAttribute("style", "display:none");
+    
     var elem = document.getElementById('formulaDiv');
     elem.style.display="none";
 
@@ -548,6 +561,12 @@ function recodeCreate(){
 
     var elem = document.getElementById('centralPanel');
     elem.style.display ='none';
+
+    console.log(varList.length)
+    // for(var i =1;i< varList.length;i++){
+    //     console.log('here')
+    //     // console.log(document.getElementById('varList'+varList[i].replace(/\W/g, '_')))
+    // }
 }
 function recodeClick(){
     var elem = document.getElementById('recodeLink');
