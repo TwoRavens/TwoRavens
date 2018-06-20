@@ -8,6 +8,7 @@ from django.urls import reverse
 import jsonfield
 
 from model_utils.models import TimeStampedModel
+from tworaven_apps.utils.basic_response import (ok_resp, err_resp)
 from tworaven_apps.ta2_interfaces.static_vals import CALLBACK_URL, DETAILS_URL
 
 STATUS_IN_PROGRESS = 'IN_PROGRESS'
@@ -58,6 +59,10 @@ class StoredRequest(TimeStampedModel):
                                max_length=255,
                                blank=True)
 
+    user_message = models.CharField(help_text='Mainly for error messages',
+                                    max_length=255,
+                                    blank=True)
+
     def __str__(self):
         """reference name"""
         return self.name
@@ -81,9 +86,9 @@ class StoredRequest(TimeStampedModel):
             self.hash_id = hashlib.sha224(hash_str.encode('utf-8')).hexdigest()
 
         if self.status in (STATUS_COMPLETE, STATUS_ERROR):
-            self.is_finished = False
-        else:
             self.is_finished = True
+        else:
+            self.is_finished = False
 
         super(StoredRequest, self).save(*args, **kwargs)
 
@@ -99,10 +104,44 @@ class StoredRequest(TimeStampedModel):
         return reverse('view_stored_request',
                        kwargs=dict(hash_id=self.hash_id))
 
+    @staticmethod
+    def set_error_status(stored_request_id, user_message=None, is_finished=True):
+        """Retrieve the StoredRequest, set the status and message"""
+        try:
+            stored_request = StoredRequest.objects.get(pk=stored_request_id)
+        except StoredRequest.DoesNotExist:
+            return err_resp('Failed to find Stored Request')
+
+        stored_request.status = STATUS_ERROR
+        stored_request.is_finished = is_finished
+        if user_message:
+            stored_request.user_message = user_message
+
+        stored_request.save()
+
+        return ok_resp(None)
+
+    @staticmethod
+    def set_finished_ok_status(stored_request_id, user_message=None):
+        """Retrieve the StoredRequest, set the status and message"""
+        try:
+            stored_request = StoredRequest.objects.get(pk=stored_request_id)
+        except StoredRequest.DoesNotExist:
+            return err_resp('Failed to find Stored Request')
+
+        stored_request.status = STATUS_COMPLETE
+        stored_request.is_finished = True
+        if user_message:
+            stored_request.user_message = user_message
+
+        stored_request.save()
+
+        return ok_resp(None)
+
     def as_dict(self, short_version=False):
         """Return info as a dict"""
         attr_names = ('id', 'name', 'hash_id',
-                      'status', 'is_success', 'is_finished',
+                      'status',
                       'workspace', 'request_type',
                       DETAILS_URL,
                       'request')
@@ -113,6 +152,7 @@ class StoredRequest(TimeStampedModel):
                 od[DETAILS_URL] = self.get_callback_url()
             else:
                 od[val] = self.__dict__.get(val)
+        od['is_finished'] = self.is_finished
         od['created'] = self.created.isoformat()
         od['modified'] = self.modified.isoformat()
 
@@ -202,6 +242,7 @@ class StoredResponse(TimeStampedModel):
                 od[DETAILS_URL] = self.get_callback_url()
             else:
                 od[val] = self.__dict__.get(val)
+        od['is_success'] = self.is_success
         od['created'] = self.created.isoformat()
         od['modified'] = self.modified.isoformat()
 
@@ -225,3 +266,19 @@ class StoredResponse(TimeStampedModel):
         stored_response.save()
 
         return True
+
+    @staticmethod
+    def add_response(stored_request_id, response):
+        """Retrieve the StoredRequest, set the status and message"""
+        try:
+            stored_request = StoredRequest.objects.get(pk=stored_request_id)
+        except StoredRequest.DoesNotExist:
+            return err_resp('Failed to find Stored Request')
+
+        stored_response = StoredResponse(\
+                            stored_request=stored_request,
+                            response=response)
+
+        stored_response.save()
+
+        return ok_resp(None)
