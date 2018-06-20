@@ -1487,11 +1487,28 @@ export async function plot(xNode, yNode) {
     if (app.downloadIncomplete()) {
         return;
     }
-
+    
+    console.log(xNode);
+ 
+    function getPlotType(xNode,yNode) {
+        if(xNode.plottype=="continuous") {
+            if(yNode.plottype=="continuous")
+                return ["scatter"];
+            if(yNode.plottype=="bar")
+                return ["box","y"];
+        } else if (xNode.plottype=="bar") {
+            if(yNode.plottype=="continuous")
+                return ["box","x"];
+            if(yNode.plottype=="bar")
+                return ["stackedbar"];
+        }
+    }
+    
+    
     app.zPop();
     console.log('zpop:', app.zparams);
-
-    let plottype = xNode === yNode ? 'scatter' : 'box';
+    
+    let plottype = getPlotType(xNode,yNode);
     let plotvars = [xNode.name, yNode.name];
     let zd3mdata = app.zparams.zd3mdata;
     let jsonout = {plottype, plotvars, zd3mdata};
@@ -1504,8 +1521,11 @@ export async function plot(xNode, yNode) {
     }
 
     let myvegaschema = {};
-    if (plottype === "box") {
+    if (plottype[0] === "box") {
         myvegaschema = await m.request({method: "GET", url: "/rook-custom/rook-files/vega-schemas/box2d.json"});
+        console.log(myvegaschema);
+    } else if (plottype[0] === "scatter") {
+        myvegaschema = await m.request({method: "GET", url: "/rook-custom/rook-files/vega-schemas/scatter.json"});
         console.log(myvegaschema);
     }
 

@@ -124,5 +124,30 @@ plotdata.app <- function(env) {
         })
   }
   
+  if(plottype=="stackedbar") {
+        tryCatch({
+        plotdata <<- list()
+
+        ## plot data
+        plotd <- mydata[,vars]
+        plotd <- na.omit(plotd)
+        if (nrow(plotd) > 1000) {
+            plotd <- plotd[sample(1:nrow(plotd), 1000, replace=FALSE),]
+        }
+        
+        plotdata <- jsonlite:::toJSON(plotd)
+        rm(plotd)
+        
+        if (length(plotdata) !=0) {
+            return(send(list(plottype=plottype, vars=vars, plotdata=plotdata)))
+        } else {
+            return(send(list(warning="No plot data.")))
+        }
+        },
+        error = function(err) {
+        result <<- list(warning=paste("error: ", err))
+        })
+  }
+  
   return(send(result))
 }
