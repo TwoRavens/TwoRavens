@@ -35,4 +35,8 @@ urlpatterns = (
          views_ta2_req1.view_describe_solution,
          name='DescribeSolution'),
 
+    path(r'ScoreSolution',
+         views_ta2_req1.view_score_solution,
+         name='ScoreSolution'),
+
     )
