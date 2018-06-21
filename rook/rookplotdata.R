@@ -124,7 +124,7 @@ plotdata.app <- function(env) {
         })
   }
   
-  if(plottype=="stackedbar" | plottype=="groupedbar") {
+  if(plottype=="stackedbar" | plottype=="groupedbar" | plottype=="averagediff") {
         tryCatch({
         plotdata <<- list()
 

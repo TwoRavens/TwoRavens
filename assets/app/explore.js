@@ -10,7 +10,13 @@ import * as stackedbar from './vega-schemas/stackedbar';
 import * as line from './vega-schemas/line';
 import * as tableheat from './vega-schemas/tableheat';
 import * as groupedbar from './vega-schemas/groupedbar';
-
+import * as strip from './vega-schemas/strip';
+import * as aggbar from './vega-schemas/aggbar';
+import * as binnedscatter from './vega-schemas/binnedscatter';
+import * as step from './vega-schemas/step';
+import * as area from './vega-schemas/area';
+import * as binnedtableheat from './vega-schemas/binnedtableheat';
+import * as averagediff from './vega-schemas/averagediff';
 const $private = false;
 
 function heatmap(x_Axis_name, y_Axis_name) {
@@ -1528,7 +1534,7 @@ export async function plot(xNode, yNode, plottype="") {
     */
     
     //testing
-    //plottype=["groupedbar"];
+    //plottype=["strip"];
     
     if(plottype=="") plottype = getPlotType();
     let plotvars = [xNode.name, yNode.name];
@@ -1548,6 +1554,13 @@ export async function plot(xNode, yNode, plottype="") {
         plottype[0] === "line" ? line:
         plottype[0] === "tableheat" ? tableheat:
         plottype[0] === "groupedbar" ? groupedbar:
+        plottype[0] === "strip" ? strip:
+        plottype[0] === "aggbar" ? aggbar:
+        plottype[0] === "binnedscatter" ? binnedscatter:
+        plottype[0] === "step" ? step:
+        plottype[0] === "area" ? area:
+        plottype[0] === "binnedtableheat" ? binnedtableheat:
+        plottype[0] === "averagediff" ? averagediff:
         alert("invalid plot type");
     console.log(schema);
 
