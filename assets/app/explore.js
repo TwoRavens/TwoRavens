@@ -7,6 +7,7 @@ import {elem, fadeIn, fadeOut, fadeTo, remove, setAttrs, trigger} from './utils'
 import * as box2d from './vega-schemas/box2d';
 import * as scatter from './vega-schemas/scatter';
 import * as stackedbar from './vega-schemas/stackedbar';
+import * as line from './vega-schemas/line';
 
 const $private = false;
 
@@ -1486,7 +1487,7 @@ export async function explore() {
     m.redraw();
 }
 
-export async function plot(xNode, yNode) {
+export async function plot(xNode, yNode, plottype="") {
     const colors = [
         "#e6194b", "#3cb44b", "#ffe119", "#0082c8", "#f58231", "#911eb4", "#46f0f0",
         "#f032e6", "#d2f53c", "#fabebe", "#008080", "#e6beff", "#aa6e28", "#fffac8",
@@ -1507,7 +1508,27 @@ export async function plot(xNode, yNode) {
             !xCon && yCon ? ['box', 'x'] :
             ['stackedbar'];
     };
-    let plottype = getPlotType();
+ 
+    /* VJD: leaving this code for comparison and is more readable for me
+    let getPlotType = () => {
+        if(xNode.plottype=="continuous") {
+            if(yNode.plottype=="continuous")
+                return ["scatter"];
+            if(yNode.plottype=="bar")
+                return ["box","y"];
+        } else if (xNode.plottype=="bar") {
+            if(yNode.plottype=="continuous")
+                return ["box","x"];
+            if(yNode.plottype=="bar")
+               return ["stackedbar"];
+        }
+    };
+    */
+    
+    //testing
+    //plottype=["line"];
+    
+    if(plottype=="") plottype = getPlotType();
     let plotvars = [xNode.name, yNode.name];
     let zd3mdata = app.zparams.zd3mdata;
     let jsonout = {plottype, plotvars, zd3mdata};
@@ -1521,7 +1542,9 @@ export async function plot(xNode, yNode) {
 
     let schema = plottype[0] === "box" ? box2d :
         plottype[0] === "scatter" ? scatter :
-        stackedbar;
+        plottype[0] === "stackedbar" ? stackedbar:
+        plottype[0] === "line" ? line:
+        alert("invalid plot type");
     console.log(schema);
 
     // function to fill in the contents of the vega schema
@@ -1529,14 +1552,17 @@ export async function plot(xNode, yNode) {
         let stringified = JSON.stringify(schema);
         stringified = stringified.replace(/tworavensY/g, data.vars[1]);
         stringified = stringified.replace(/tworavensX/g, data.vars[0]);
+        stringified = stringified.replace(/"tworavensFilter"/g, null);
         stringified = stringified.replace("url", "values");
         stringified = stringified.replace('"tworavensData"',data.plotdata[0]);
         if (data.uniqueY) {
+        console.log("here");
             let $colors = colors.splice(0, data["uniqueY"].length).map(col => `"${col}"`).join(',');
             stringified = stringified.replace(/"tworavensUniqueY"/g, "["+data.uniqueY+"]");
             stringified = stringified.replace(/"tworavensColors"/g, "["+$colors+"]");
         }
 
+    //filter is: [{"filter": "datum.symbol==='GOOG'"}]
         // VJD: if you enter this console.log into the vega editor https://vega.github.io/editor/#/edited the plot will render
         console.log(stringified);
         return JSON.parse(stringified);
