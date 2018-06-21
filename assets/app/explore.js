@@ -17,6 +17,7 @@ import * as step from './vega-schemas/step';
 import * as area from './vega-schemas/area';
 import * as binnedtableheat from './vega-schemas/binnedtableheat';
 import * as averagediff from './vega-schemas/averagediff';
+import * as scattermeansd from './vega-schemas/scattermeansd';
 const $private = false;
 
 function heatmap(x_Axis_name, y_Axis_name) {
@@ -1561,6 +1562,7 @@ export async function plot(xNode, yNode, plottype="") {
         plottype[0] === "area" ? area:
         plottype[0] === "binnedtableheat" ? binnedtableheat:
         plottype[0] === "averagediff" ? averagediff:
+        plottype[0] === "scattermeansd" ? scattermeansd:
         alert("invalid plot type");
     console.log(schema);
 
