@@ -71,6 +71,7 @@ INSTALLED_APPS = [
     'tworaven_apps.api_docs',
     'tworaven_apps.call_captures', # capture data sent from UI out to rook/TA2
     'tworaven_apps.ta3_search', # ta3_search for NIST
+    'tworaven_apps.eventdata_queries', # eventdata API services
 
     # webpack!
     'webpack_loader',
