@@ -3,6 +3,8 @@
 # keys to results in JSON
 # (mostly JSON sent from the UI)
 # ---------------------------------
+DETAILS_URL = 'details_url'
+CALLBACK_URL = 'callback_url'
 
 # form name
 KEY_GRPC_JSON = 'grpcrequest'

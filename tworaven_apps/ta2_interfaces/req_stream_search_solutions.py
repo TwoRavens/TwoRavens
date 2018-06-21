@@ -9,9 +9,14 @@ from django.conf import settings
 
 from tworaven_apps.utils.basic_response import (ok_resp, err_resp)
 from tworaven_apps.utils.random_info import get_alphanumeric_string
+from tworaven_apps.utils.json_helper import json_loads
 from tworaven_apps.ta2_interfaces.ta2_connection import TA2Connection
 from tworaven_apps.ta2_interfaces.ta2_util import get_grpc_test_json
 from tworaven_apps.ta2_interfaces.util_message_formatter import MessageFormatter
+from tworaven_apps.ta2_interfaces.models import \
+    (StoredRequest, StoredResponse)
+from tworavensproject.celery import celery_app
+
 import grpc
 
 import core_pb2
@@ -20,26 +25,26 @@ import core_pb2
 from google.protobuf.json_format import \
     (MessageToJson, Parse, ParseError)
 
-def get_search_solutions_results(raven_json_str=None):
+def get_search_solutions_results(raven_json_str, user_obj):
     """
     Send a GetSearchSolutionsResultsRequest to the GetSearchSolutionsResults command
     """
-    if raven_json_str is None:
+    if user_obj is None:
+        return err_resp("The user_obj cannot be None")
+    if not raven_json_str:
         err_msg = 'No data found for the GetSearchSolutionsResultsRequest'
         return err_resp(err_msg)
 
     # --------------------------------
-    # The UI has sent JSON in string format that contains the PipelineReference
     # Make sure it's valid JSON
     # --------------------------------
-    try:
-        json.loads(raven_json_str)
-    except json.decoder.JSONDecodeError as err_obj:
-        err_msg = 'Failed to convert UI Str to JSON: %s' % (err_obj)
-        return err_resp(err_msg)
+    raven_json_info = json_loads(raven_json_str)
+    if not raven_json_info.success:
+        return err_resp(raven_json_info.err_msg)
 
     # --------------------------------
     # convert the JSON string to a gRPC request
+    #   Done for error checking; call repeated in celery task
     # --------------------------------
     try:
         req = Parse(raven_json_str, core_pb2.GetSearchSolutionsResultsRequest())
@@ -47,41 +52,107 @@ def get_search_solutions_results(raven_json_str=None):
         err_msg = 'Failed to convert JSON to gRPC: %s' % (err_obj)
         return err_resp(err_msg)
 
+    # --------------------------------
+    # Save the request to the db
+    # --------------------------------
+    stored_request = StoredRequest(\
+                    user=user_obj,
+                    workspace='(not specified)',
+                    request_type='GetSearchSolutionsResults',
+                    is_finished=False,
+                    request=raven_json_info.result_obj)
+    stored_request.save()
+
     # In test mode, return canned response
     #
     if settings.TA2_STATIC_TEST_MODE:
         resp_str = get_grpc_test_json(\
                         'test_responses/GetSearchSolutionsResultsResponse_ok.json',
                         dict())
-        return ok_resp(resp_str)
 
+        resp_info = json_loads(resp_str)
+        if not resp_info.success:
+            return err_resp(resp_info.err_msg)
+
+        # Save the stored response
+        #
+        StoredResponse.add_response(\
+                        stored_request.id,
+                        response=resp_info.result_obj)
+
+        StoredRequest.set_finished_ok_status(stored_request.id)
+        # Return the stored **request** (not response)
+        #
+        return ok_resp(stored_request.as_dict())
+
+    stream_search_solutions_results.delay(raven_json_str, stored_request.id)
+
+    return ok_resp(stored_request.as_dict())
+
+
+@celery_app.task
+def stream_search_solutions_results(raven_json_str, stored_request_id):
+    """Make the grpc call which has a streaming response"""
 
     core_stub, err_msg = TA2Connection.get_grpc_stub()
     if err_msg:
-        return err_resp(err_msg)
+        StoredRequest.set_error_status(stored_request_id, err_msg)
+        return
+
+
+    # --------------------------------
+    # convert the JSON string to a gRPC request
+    #  Yes: done for the 2nd time
+    # --------------------------------
+    try:
+        req = Parse(raven_json_str,
+                    core_pb2.GetSearchSolutionsResultsRequest())
+    except ParseError as err_obj:
+        err_msg = 'Failed to convert JSON to gRPC: %s' % (err_obj)
+        StoredRequest.set_error_status(stored_request_id, err_msg)
+        return
 
     # --------------------------------
     # Send the gRPC request
     # --------------------------------
-    messages = []
+    msg_cnt = 0
     try:
         for reply in core_stub.GetSearchSolutionsResults(\
                 req, timeout=settings.TA2_GPRC_LONG_TIMEOUT):
-            user_msg = MessageToJson(reply, including_default_value_fields=True)
-            messages.append(user_msg)
-            print('msg received #%d' % len(messages))
+
+
+            # Save the stored response
+            #
+            msg_json_str = MessageToJson(\
+                                reply,
+                                including_default_value_fields=True)
+
+            msg_json_info = json_loads(msg_json_str)
+            if not msg_json_info.success:
+                print('PROBLEM HERE TO LOG!')
+                #StoredRequest.set_error_status(\
+                #            stored_request_id,
+                #            msg_json_info.err_msg,
+                #            is_finished=False)
+            else:
+                StoredResponse.add_response(\
+                                stored_request_id,
+                                response=msg_json_info.result_obj)
+            msg_cnt += 1
+
+            print('msg received #%d' % msg_cnt)
+
     except grpc.RpcError as err_obj:
-        # we're purposely breaking here as new grpc svc being built
-        if str(err_obj).find('StatusCode.DEADLINE_EXCEEDED') > -1:
-            pass
-        else:
-            return err_resp(str(err_obj))
+        StoredRequest.set_error_status(\
+                        stored_request_id,
+                        str(err_obj))
+        return
+
     except Exception as err_obj:
-        return err_resp(str(err_obj))
+        StoredRequest.set_error_status(\
+                        stored_request_id,
+                        str(err_obj))
+        return
 
-    success, return_str = MessageFormatter.format_messages(messages)
 
-    if success is False:
-        return err_resp(return_str)
-
-    return ok_resp(return_str)
+    StoredRequest.set_finished_ok_status(stored_request_id)
