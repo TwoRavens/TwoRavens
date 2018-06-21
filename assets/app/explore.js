@@ -9,6 +9,7 @@ import * as scatter from './vega-schemas/scatter';
 import * as stackedbar from './vega-schemas/stackedbar';
 import * as line from './vega-schemas/line';
 import * as tableheat from './vega-schemas/tableheat';
+import * as groupedbar from './vega-schemas/groupedbar';
 
 const $private = false;
 
@@ -1527,7 +1528,7 @@ export async function plot(xNode, yNode, plottype="") {
     */
     
     //testing
-    //plottype=["tableheat"];
+    //plottype=["groupedbar"];
     
     if(plottype=="") plottype = getPlotType();
     let plotvars = [xNode.name, yNode.name];
@@ -1546,6 +1547,7 @@ export async function plot(xNode, yNode, plottype="") {
         plottype[0] === "stackedbar" ? stackedbar:
         plottype[0] === "line" ? line:
         plottype[0] === "tableheat" ? tableheat:
+        plottype[0] === "groupedbar" ? groupedbar:
         alert("invalid plot type");
     console.log(schema);
 
@@ -1558,7 +1560,6 @@ export async function plot(xNode, yNode, plottype="") {
         stringified = stringified.replace("url", "values");
         stringified = stringified.replace('"tworavensData"',data.plotdata[0]);
         if (data.uniqueY) {
-        console.log("here");
             let $colors = colors.splice(0, data["uniqueY"].length).map(col => `"${col}"`).join(',');
             stringified = stringified.replace(/"tworavensUniqueY"/g, "["+data.uniqueY+"]");
             stringified = stringified.replace(/"tworavensColors"/g, "["+$colors+"]");

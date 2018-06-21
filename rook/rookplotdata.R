@@ -124,7 +124,7 @@ plotdata.app <- function(env) {
         })
   }
   
-  if(plottype=="stackedbar") {
+  if(plottype=="stackedbar" | plottype=="groupedbar") {
         tryCatch({
         plotdata <<- list()
 
