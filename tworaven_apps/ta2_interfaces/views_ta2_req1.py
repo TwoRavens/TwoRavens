@@ -12,7 +12,8 @@ from tworaven_apps.ta2_interfaces.req_hello import ta2_hello
 from tworaven_apps.ta2_interfaces.req_search_solutions import \
         (search_solutions, end_search_solutions,
          stop_search_solutions, describe_solution,
-         score_solution, fit_solution)
+         score_solution, fit_solution,
+         produce_solution)
 from tworaven_apps.utils.json_helper import json_loads
 from tworaven_apps.utils.view_helper import \
     (get_request_body,
@@ -238,18 +239,19 @@ def view_score_solution(request):
         return JsonResponse(get_json_error(search_info.err_msg))
 
     # Convert JSON str to python dict - err catch here
-    #  - let it blow up for now--should always return JSON
-    json_dict = json.loads(search_info.result_obj, object_pairs_hook=OrderedDict)
+    #
+    json_format_info = json_loads(search_info.result_obj)
+    if not json_format_info.success:
+        return JsonResponse(get_json_error(json_format_info.err_msg))
 
     # Save D3M log
     #
     if call_entry:
-        call_entry.save_d3m_response(json_dict)
+        call_entry.save_d3m_response(json_format_info.result_obj)
 
-    json_info = get_json_success('success!', data=json_dict)
+    json_info = get_json_success('success!',
+                                 data=json_format_info.result_obj)
     return JsonResponse(json_info, safe=False)
-
-
 
 
 @csrf_exempt
@@ -276,13 +278,57 @@ def view_fit_solution(request):
         return JsonResponse(get_json_error(search_info.err_msg))
 
     # Convert JSON str to python dict - err catch here
-    #  - let it blow up for now--should always return JSON
-    json_dict = json.loads(search_info.result_obj, object_pairs_hook=OrderedDict)
+    #
+    json_format_info = json_loads(search_info.result_obj)
+    if not json_format_info.success:
+        return JsonResponse(get_json_error(json_format_info.err_msg))
 
     # Save D3M log
     #
     if call_entry:
-        call_entry.save_d3m_response(json_dict)
+        call_entry.save_d3m_response(json_format_info.result_obj)
 
-    json_info = get_json_success('success!', data=json_dict)
+    json_info = get_json_success('success!', data=json_format_info.result_obj)
+
+    return JsonResponse(json_info, safe=False)
+
+
+
+
+@csrf_exempt
+def view_produce_solution(request):
+    """gRPC: Call from UI with a ProduceSolutionRequest"""
+    req_body_info = get_request_body(request)
+    if not req_body_info.success:
+        return JsonResponse(get_json_error(req_body_info.err_msg))
+
+    # Begin to log D3M call
+    #
+    call_entry = None
+    if ServiceCallEntry.record_d3m_call():
+        call_entry = ServiceCallEntry.get_dm3_entry(\
+                        request_obj=request,
+                        call_type='ProduceSolution',
+                        request_msg=req_body_info.result_obj)
+
+    # Let's call the TA2!
+    #
+    search_info = produce_solution(req_body_info.result_obj)
+    #print('search_info', search_info)
+    if not search_info.success:
+        return JsonResponse(get_json_error(search_info.err_msg))
+
+    # Convert JSON str to python dict - err catch here
+    #
+    json_format_info = json_loads(search_info.result_obj)
+    if not json_format_info.success:
+        return JsonResponse(get_json_error(json_format_info.err_msg))
+
+    # Save D3M log
+    #
+    if call_entry:
+        call_entry.save_d3m_response(json_format_info.result_obj)
+
+    json_info = get_json_success('success!', data=json_format_info.result_obj)
+
     return JsonResponse(json_info, safe=False)

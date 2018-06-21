@@ -51,4 +51,8 @@ urlpatterns = (
     path(r'FitSolution',
          views_ta2_req1.view_fit_solution,
          name='FitSolution'),
+
+    path(r'ProduceSolution',
+         views_ta2_req1.view_produce_solution,
+         name='ProduceSolution'),
     )
