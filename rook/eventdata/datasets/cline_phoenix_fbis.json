@@ -45,7 +45,8 @@
       "formats": [
         "CAMEO",
         "root_code",
-        "penta_class"
+        "penta_class",
+        "PLOVER"
       ],
       "columns": [
         "code"

@@ -22,7 +22,7 @@ if(is_rapache_mode) {
 }
 
 if(!production){
-    packageList<-c("Rcpp","VGAM", "AER", "dplyr", "quantreg", "geepack", "maxLik", "Amelia", "Rook","jsonlite","rjson", "devtools", "DescTools", "nloptr","XML", "Zelig", "rpart", "tidyverse", "lubridate", "cellranger", "data.table", "RMongo)
+    packageList<-c("Rcpp","VGAM", "AER", "dplyr", "quantreg", "geepack", "maxLik", "Amelia", "Rook","jsonlite","rjson", "devtools", "DescTools", "nloptr","XML", "Zelig", "rpart", "tidyverse", "lubridate", "cellranger", "data.table", "mongolite)
 
     # Find an available repository on CRAN
     availableRepos <- getCRANmirrors()
@@ -47,7 +47,7 @@ library(jsonlite)
 library(devtools)
 library(DescTools)
 library(rpart)
-library(RMongo)
+library(mongolite)
 
 library("future") # submit EventData api requests asynchronously
 plan(multiprocess)
@@ -142,8 +142,6 @@ source("rooktree.R")
 
 # Event Data
 source("eventdata/rooksubset.R")
-source("eventdata/rookformatter.R")
-
 source("eventdata/rookaggreg.R")
 
 if(addPrivacy){

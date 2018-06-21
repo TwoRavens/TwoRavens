@@ -30,7 +30,7 @@
       "alignments": ["action"],
       "formats": [
         "ACLED_interaction",
-        "plover_code",
+        "PLOVER",
         "penta_class"
       ],
       "columns": [

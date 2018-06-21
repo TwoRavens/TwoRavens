@@ -27,8 +27,15 @@
     },
     "Action": {
       "type": "categorical",
-      "alignments": ["action"],
-      "format": ["CAMEO", "root_code", "penta_class"],
+      "alignments": [
+        "action"
+      ],
+      "format": [
+        "CAMEO",
+        "root_code",
+        "penta_class",
+        "PLOVER"
+      ],
       "columns": [
         "CAMEO Code"
       ]
@@ -41,7 +48,9 @@
     "Location": {
       "type": "categorical_grouped",
       "group_by": "region",
-      "formats": ["ISO-3"],
+      "formats": [
+        "ISO-3"
+      ],
       "columns": [
         "Country_constructed"
       ]

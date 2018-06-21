@@ -148,6 +148,8 @@ export let reloadSubset = (subsetName) => {
     }
 
     let subsetMetadata = genericMetadata[selectedDataset]['subsets'][selectedSubsetName];
+    // since R can't handle scalars
+    let coerceArray = (value) => Array.isArray(value) ? value : [value];
 
     m.request({
         url: subsetURL,
@@ -156,8 +158,10 @@ export let reloadSubset = (subsetName) => {
             dataset: selectedDataset,
             subset: selectedSubsetName,
 
-            alignments: (subsetMetadata['alignments'] || []).filter(alignment => !(alignment in alignmentData)),
-            formats: (subsetMetadata['formats'] || []).filter(format => !(format in formattingData)),
+            alignments: coerceArray(subsetMetadata['alignments'] || [])
+                .filter(alignment => !(alignment in alignmentData)),
+            formats: coerceArray(subsetMetadata['formats'] || [])
+                .filter(format => !(format in formattingData)),
 
             countRecords: totalSubsetRecords === undefined
         },

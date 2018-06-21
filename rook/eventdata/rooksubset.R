@@ -1,15 +1,9 @@
 source("rookconfig.R")
 
-##
-##  rookeventdata.r
-##
-
 eventdata_subset.app <- function(env) {
 
     production = EVENTDATA_PRODUCTION_MODE     ## Toggle:  TRUE - Production, FALSE - Local Development
     cat("\nEVENTDATA_PRODUCTION_MODE: ", EVENTDATA_PRODUCTION_MODE)
-
-    server_address = EVENTDATA_PRODUCTION_SERVER_ADDRESS
     cat("\nEVENTDATA_PRODUCTION_SERVER_ADDRESS: ", EVENTDATA_PRODUCTION_SERVER_ADDRESS, "\n")
 
     if (production) {
@@ -88,17 +82,18 @@ eventdata_subset.app <- function(env) {
     getData = function(type, query, key=NULL) {
         # print(paste("GETTING", toString(type), toString(key), toString(query)))
         if (datasetMetadata$host == 'TwoRavens') {
-            connect = RMongo::mongoDbConnect('event_data', '127.0.0.1', 27017)
+            connect = mongolite::mongo(dataset, db = "event_data", url = "mongodb://localhost:27017")
+
             if (type == 'find') {
-                data = RMongo::dbGetQuery(connect, dataset, query)
+                data = connect$find(query)
             }
             if (type == 'aggregate') {
-                data = RMongo::dbAggregate(connect, dataset, query)
+                data = connect$aggregate(query)
             }
             if (type == 'distinct') {
-                data = RMongo::dbGetDistinct(connect, dataset, key, query)
+                data = connect$distinct(key, query)
             }
-            RMongo::dbDisconnect(connect)
+            rm(connect)
             return(data)
         }
 
@@ -191,7 +186,7 @@ eventdata_subset.app <- function(env) {
     }
 
     collectMonad = function(monad) {
-        list(full = collectColumn(monad$full), filters = sapply(monad$filters, collectColumn, simplify=FALSE, USE.NAMES=TRUE))
+        list(full = collectColumn(monad$full), filters = sapply(monad$filters, collectColumn, simplify = FALSE, USE.NAMES = TRUE))
     }
 
     summary = list()
@@ -216,28 +211,26 @@ eventdata_subset.app <- function(env) {
             data
         }, error = genericErrorHandler)
     }
-    else if (subsetMetadata$type == 'dyad')summary$data = sapply(subsetMetadata$tabs, collectMonad, simplify=FALSE, USE.NAMES=TRUE)
+    else if (subsetMetadata$type == 'dyad')summary$data = sapply(subsetMetadata$tabs, collectMonad, simplify = FALSE, USE.NAMES = TRUE)
     else if (subsetMetadata$type == 'monad')summary$data = collectMonad(subsetMetadata)
-    else summary$data = sapply(subsetMetadata$columns, collectColumn, simplify=FALSE, USE.NAMES=TRUE)
+    else summary$data = sapply(subsetMetadata$columns, collectColumn, simplify = FALSE, USE.NAMES = TRUE)
 
     # Additional metadata
     if (! is.null(everything$alignments)) {
         summary$alignments = sapply(everything$alignments, function(format) {
-            jsonlite::fromJSON(readLines(paste('./eventdata/alignments/', format, '.json', sep = ""), warn=FALSE))
-        }, simplify=FALSE, USE.NAMES=TRUE)
+            jsonlite::fromJSON(readLines(paste('./eventdata/alignments/', format, '.json', sep = ""), warn = FALSE))
+        }, simplify = FALSE, USE.NAMES = TRUE)
     }
 
     if (! is.null(everything$formats)) {
         summary$formats = sapply(everything$formats, function(format) {
             jsonlite::fromJSON(readLines(paste('./eventdata/formats/', format, '.json', sep = ""), warn = FALSE))
-        }, simplify=FALSE, USE.NAMES=TRUE)
+        }, simplify = FALSE, USE.NAMES = TRUE)
     }
 
     if (! is.null(everything$countRecords) && everything$countRecords) {
-        # RMongo is outdated... so it throws an error on valid aggregate queries
-        print(paste('[{"$match":', query, '}, {"$count": "total"}]', sep = ""), quote=FALSE)
         summary$total = tryCatch({
-            getData('aggregate', paste('[{"$match":', query, '}, {"$count": "total"}]', sep = ""))
+            jsonlite::unbox(getData('aggregate', paste('[{"$match":', query, '}, {"$count": "total"}]', sep = ""))$total)
         }, error = genericErrorHandler)
     }
 

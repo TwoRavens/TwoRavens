@@ -27,7 +27,7 @@ LOCAL SETUP STEPS:
       b. Run source('rooksource.R') to start R server
          Note: Rook, the R package that runs the R server, does not seem to recognize file updates,
                so the server must be restarted after each edit.
-      c. The RMongo package requires java - `sudo apt-get install default-jdk`
+      c. The mongolite package has some prerequisites - `https://jeroen.github.io/mongolite/`
 
 6. Submit query from local python server via eventdata web gui. This script will return the subsetted data
 
