@@ -235,8 +235,6 @@ def describe_solution(raven_json_str=None):
     return ok_resp(message_to_json(reply))
 
 
-#rpc ScoreSolution (ScoreSolutionRequest) returns (ScoreSolutionResponse) {}
-
 def score_solution(raven_json_str=None):
     """
     Send a ScoreSolutionRequest to the ScoreSolution command
@@ -279,6 +277,59 @@ def score_solution(raven_json_str=None):
     # --------------------------------
     try:
         reply = core_stub.ScoreSolution(\
+                            req,
+                            timeout=settings.TA2_GPRC_SHORT_TIMEOUT)
+    except Exception as err_obj:
+        return err_resp(str(err_obj))
+
+    # --------------------------------
+    # Convert the reply to JSON and send it back
+    # --------------------------------
+    return ok_resp(message_to_json(reply))
+
+
+def fit_solution(raven_json_str=None):
+    """
+    Send a FitSolutionRequest to the FitSolution command
+    """
+    if raven_json_str is None:
+        err_msg = 'No data found for the FitSolutionRequest'
+        return err_resp(err_msg)
+
+    # --------------------------------
+    # Make sure it's valid JSON
+    # --------------------------------
+    raven_json_info = json_loads(raven_json_str)
+    if not raven_json_info.success:
+        return err_resp(raven_json_info.err_msg)
+
+    # --------------------------------
+    # convert the JSON string to a gRPC request
+    # --------------------------------
+    try:
+        req = Parse(raven_json_str,
+                    core_pb2.FitSolutionRequest())
+    except ParseError as err_obj:
+        err_msg = 'Failed to convert JSON to gRPC: %s' % (err_obj)
+        return err_resp(err_msg)
+
+    # In test mode, return canned response
+    #
+    if settings.TA2_STATIC_TEST_MODE:
+        resp = core_pb2.FitSolutionResponse(\
+                    request_id='requestId_%s' % get_alphanumeric_string(6))
+
+        return ok_resp(message_to_json(resp))
+
+    core_stub, err_msg = TA2Connection.get_grpc_stub()
+    if err_msg:
+        return err_resp(err_msg)
+
+    # --------------------------------
+    # Send the gRPC request
+    # --------------------------------
+    try:
+        reply = core_stub.FitSolution(\
                             req,
                             timeout=settings.TA2_GPRC_SHORT_TIMEOUT)
     except Exception as err_obj:

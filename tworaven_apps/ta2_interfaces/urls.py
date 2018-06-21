@@ -48,4 +48,7 @@ urlpatterns = (
          views_ta2_req1.view_score_solution,
          name='ScoreSolution'),
 
+    path(r'FitSolution',
+         views_ta2_req1.view_fit_solution,
+         name='FitSolution'),
     )

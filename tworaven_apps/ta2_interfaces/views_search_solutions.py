@@ -40,7 +40,7 @@ def view_get_search_solutions(request):
                                     req_body_info.result_obj,
                                     user_info.result_obj)
 
-    print('search_info', search_info)
+    #print('search_info', search_info)
     if not search_info.success:
         return JsonResponse(get_json_error(search_info.err_msg))
 

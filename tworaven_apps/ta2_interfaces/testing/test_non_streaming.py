@@ -192,3 +192,31 @@ class NonStreamingTests(TestCase):
         self.assertTrue(json_resp['success'])
         self.assertTrue('data' in json_resp)
         self.assertTrue('requestId' in json_resp['data'])
+
+
+    def test_70_FitSolution(self):
+        """(60) Test FitSolution"""
+        msgt(self.test_70_FitSolution.__doc__)
+        # url and info for call
+        #
+        url = reverse('FitSolution')
+
+        req_str = render_to_string('test_requests/req_FitSolution.json',
+                                   {})
+
+        response = self.client.post(url,
+                                    req_str,
+                                    content_type="application/json")
+
+        # 200 response
+        #
+        self.assertEqual(response.status_code, 200)
+
+        # convert to JSON
+        #
+        json_resp = response.json()
+        print('json_resp', json_resp)
+
+        self.assertTrue(json_resp['success'])
+        self.assertTrue('data' in json_resp)
+        self.assertTrue('requestId' in json_resp['data'])
