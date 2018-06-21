@@ -59,4 +59,10 @@ urlpatterns = (
     path(r'SolutionExport',
          views_non_streaming_requests.view_solution_export,
          name='SolutionExport'),
+
+    path(r'UpdateProblem',
+         views_non_streaming_requests.view_update_problem,
+         name='UpdateProblem'),
+
+
 )

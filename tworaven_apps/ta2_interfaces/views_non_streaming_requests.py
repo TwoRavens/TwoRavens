@@ -13,7 +13,8 @@ from tworaven_apps.ta2_interfaces.req_search_solutions import \
         (search_solutions, end_search_solutions,
          stop_search_solutions, describe_solution,
          score_solution, fit_solution,
-         produce_solution, solution_export)
+         produce_solution, solution_export,
+         update_problem)
 from tworaven_apps.utils.json_helper import json_loads
 from tworaven_apps.utils.view_helper import \
     (get_request_body,
@@ -293,8 +294,6 @@ def view_fit_solution(request):
     return JsonResponse(json_info, safe=False)
 
 
-
-
 @csrf_exempt
 def view_produce_solution(request):
     """gRPC: Call from UI with a ProduceSolutionRequest"""
@@ -334,7 +333,6 @@ def view_produce_solution(request):
     return JsonResponse(json_info, safe=False)
 
 
-
 @csrf_exempt
 def view_solution_export(request):
     """gRPC: Call from UI with a SolutionExportRequest"""
@@ -354,6 +352,45 @@ def view_solution_export(request):
     # Let's call the TA2!
     #
     search_info = solution_export(req_body_info.result_obj)
+    #print('search_info', search_info)
+    if not search_info.success:
+        return JsonResponse(get_json_error(search_info.err_msg))
+
+    # Convert JSON str to python dict - err catch here
+    #
+    json_format_info = json_loads(search_info.result_obj)
+    if not json_format_info.success:
+        return JsonResponse(get_json_error(json_format_info.err_msg))
+
+    # Save D3M log
+    #
+    if call_entry:
+        call_entry.save_d3m_response(json_format_info.result_obj)
+
+    json_info = get_json_success('success!', data=json_format_info.result_obj)
+
+    return JsonResponse(json_info, safe=False)
+
+
+@csrf_exempt
+def view_update_problem(request):
+    """gRPC: Call from UI with a UpdateProblemRequest"""
+    req_body_info = get_request_body(request)
+    if not req_body_info.success:
+        return JsonResponse(get_json_error(req_body_info.err_msg))
+
+    # Begin to log D3M call
+    #
+    call_entry = None
+    if ServiceCallEntry.record_d3m_call():
+        call_entry = ServiceCallEntry.get_dm3_entry(\
+                        request_obj=request,
+                        call_type='UpdateProblem',
+                        request_msg=req_body_info.result_obj)
+
+    # Let's call the TA2!
+    #
+    search_info = update_problem(req_body_info.result_obj)
     #print('search_info', search_info)
     if not search_info.success:
         return JsonResponse(get_json_error(search_info.err_msg))
