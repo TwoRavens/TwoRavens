@@ -289,17 +289,33 @@ class Body {
         let style = `position: absolute; left: ${app.panelWidth.left}; top: 0; margin-top: 10px`;
         let node1 = app.findNode(var1);
         let node2 = app.findNode(var2);
-        let plot = node1 && node1.plottype === 'continuous' ? plots.density : plots.bars;
         let sortedNodes = nodesExplore.concat().sort((x, y) => x.id - y.id);
+
+        let exploreVars = () => {
+            if (!node1 && !node2) {
+                return;
+            }
+
+            let thumb = (idx, id, title) =>
+                m("figure", {style: {float: "left"}},
+                  m(`img#${id}_img[alt=${id}][height=140px][width=260px][src=/static/images/thumb${idx}.png]`,
+                    {style: {border: "1px solid #ddd", "border-radius": "3px", padding: "5px", margin: "3%", cursor: "pointer"}}),
+                  m("figcaption", {style: {"text-align": "center"}}, title));
+            let plot = node1 && node1.plottype === 'continuous' ? plots.density : plots.bars;
+            return m('div', {style}, [
+                thumb(1, 'scatterplot', "Scatter Plot"), thumb(2, 'heatmap', "Heatmap"), thumb(3, 'linechart', "Linechart"),
+                m('#plot', {oncreate: _ => node1 && node2 ? exp.plot(node1, node2) : plot(node1, 'explore', true)})
+            ]);
+        };
+
         return m('main', [
             m(Modal),
             this.header(mode),
             this.footer(mode),
             m(`#main.left`, {style: {overflow}},
               m("#innercarousel.carousel-inner", {style: {height: '100%', overflow}},
-                explore_mode && (
-                    var1 && var2 ? m('#plot', {style, oncreate: _ => exp.plot(node1, node2)}) :
-                    var1 ? m('#plot', {style, oncreate: _ => plot(node1, 'explore', true)}) :
+                explore_mode && [
+                    exploreVars() ||
                     m('table', {style}, [
                         m('thead', [''].concat(sortedNodes).map(x => m('th', x.name))),
                         m('tbody', sortedNodes.map(y => {
@@ -317,7 +333,8 @@ class Body {
                                 })
                             ]);
                         }))
-                    ])),
+                    ])
+                ],
                 m('svg#whitespace')),
               model_mode && m("#spacetools.spaceTool", {style: {right: app.panelWidth['right'], 'z-index': 16}},
                               m(`button#btnLock.btn.btn-default`, {
