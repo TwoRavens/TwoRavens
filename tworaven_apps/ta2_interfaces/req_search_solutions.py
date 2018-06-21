@@ -392,3 +392,56 @@ def produce_solution(raven_json_str=None):
     # Convert the reply to JSON and send it back
     # --------------------------------
     return ok_resp(message_to_json(reply))
+
+
+
+def solution_export(raven_json_str=None):
+    """
+    Send a SolutionExportRequest to the SolutionExport command
+    """
+    if raven_json_str is None:
+        err_msg = 'No data found for the SolutionExportRequest'
+        return err_resp(err_msg)
+
+    # --------------------------------
+    # Make sure it's valid JSON
+    # --------------------------------
+    raven_json_info = json_loads(raven_json_str)
+    if not raven_json_info.success:
+        return err_resp(raven_json_info.err_msg)
+
+    # --------------------------------
+    # convert the JSON string to a gRPC request
+    # --------------------------------
+    try:
+        req = Parse(raven_json_str,
+                    core_pb2.SolutionExportRequest())
+    except ParseError as err_obj:
+        err_msg = 'Failed to convert JSON to gRPC: %s' % (err_obj)
+        return err_resp(err_msg)
+
+    # In test mode, return canned response
+    #
+    if settings.TA2_STATIC_TEST_MODE:
+        resp = core_pb2.SolutionExportResponse()
+
+        return ok_resp(message_to_json(resp))
+
+    core_stub, err_msg = TA2Connection.get_grpc_stub()
+    if err_msg:
+        return err_resp(err_msg)
+
+    # --------------------------------
+    # Send the gRPC request
+    # --------------------------------
+    try:
+        reply = core_stub.SolutionExport(\
+                            req,
+                            timeout=settings.TA2_GPRC_SHORT_TIMEOUT)
+    except Exception as err_obj:
+        return err_resp(str(err_obj))
+
+    # --------------------------------
+    # Convert the reply to JSON and send it back
+    # --------------------------------
+    return ok_resp(message_to_json(reply))
