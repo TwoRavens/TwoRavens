@@ -99,7 +99,7 @@ plotdata.app <- function(env) {
         })
   }
   
-  if(plottype=="scatter") {
+  if(plottype=="scatter" | plottype=="aggbar") {
         tryCatch({
         plotdata <<- list()
 
