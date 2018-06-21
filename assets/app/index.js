@@ -304,7 +304,7 @@ class Body {
                   m("figcaption", {style: {"text-align": "center"}}, title));
             let plot = node1 && node1.plottype === 'continuous' ? plots.density : plots.bars;
             return m('div', {style}, [
-                thumb(1, 'scatter', "Scatter Plot"), thumb(2, 'tableheat', "Heatmap"), thumb(3, 'line', "Line Chart"), thumb(4, 'stackedbar', "Stacked Bar"),thumb(5, 'box', "Box Plot"), thumb(6, 'groupedbar', "Grouped Bar"),thumb(7, 'strip', "Strip Plot"),thumb(8, 'aggbar', "Aggregate Bar"),thumb(9, 'binnedscatter', "Binned Scatter"), thumb(10, 'step', "Step Chart"), thumb(11, 'area', "Area Chart"), thumb(12, 'binnedtableheat', "Binned Heatmap"),thumb(13, 'averagediff', "Diff. from Avg."),thumb(14, 'scattermeansd', "Scatter with Overlays"),
+                thumb(1, 'scatter', "Scatter Plot"), thumb(2, 'tableheat', "Heatmap"), thumb(3, 'line', "Line Chart"), thumb(4, 'stackedbar', "Stacked Bar"),thumb(5, 'box', "Box Plot"), thumb(6, 'groupedbar', "Grouped Bar"),thumb(7, 'strip', "Strip Plot"),thumb(8, 'aggbar', "Aggregate Bar"),thumb(9, 'binnedscatter', "Binned Scatter"), thumb(10, 'step', "Step Chart"), thumb(11, 'area', "Area Chart"), thumb(12, 'binnedtableheat', "Binned Heatmap"),thumb(13, 'averagediff', "Diff. from Avg."),thumb(14, 'scattermeansd', "Scatter with Overlays"),thumb(15, 'scattermatrix', "Scatter Matrix"),
                 m('#plot', {oncreate: _ => node1 && node2 ? exp.plot(node1, node2) : plot(node1, 'explore', true)})
             ]);
         };

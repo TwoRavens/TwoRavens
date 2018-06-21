@@ -18,6 +18,7 @@ import * as area from './vega-schemas/area';
 import * as binnedtableheat from './vega-schemas/binnedtableheat';
 import * as averagediff from './vega-schemas/averagediff';
 import * as scattermeansd from './vega-schemas/scattermeansd';
+import * as scattermatrix from './vega-schemas/scattermatrix';
 const $private = false;
 
 function heatmap(x_Axis_name, y_Axis_name) {
@@ -1535,7 +1536,7 @@ export async function plot(xNode, yNode, plottype="") {
     */
     
     //testing
-    //plottype=["strip"];
+    //plottype=["scattermatrix"];
     
     if(plottype=="") plottype = getPlotType();
     let plotvars = [xNode.name, yNode.name];
@@ -1563,6 +1564,7 @@ export async function plot(xNode, yNode, plottype="") {
         plottype[0] === "binnedtableheat" ? binnedtableheat:
         plottype[0] === "averagediff" ? averagediff:
         plottype[0] === "scattermeansd" ? scattermeansd:
+        plottype[0] === "scattermatrix" ? scattermatrix:
         alert("invalid plot type");
     console.log(schema);
 
@@ -1579,8 +1581,12 @@ export async function plot(xNode, yNode, plottype="") {
             stringified = stringified.replace(/"tworavensUniqueY"/g, "["+data.uniqueY+"]");
             stringified = stringified.replace(/"tworavensColors"/g, "["+$colors+"]");
         }
+        if(data.plottype=="scattermatrix") {
+            let $matvars = data["vars"].map(myvar => `"${myvar}"`).join(',');
+            stringified = stringified.replace(/"tworavensRow"/g, $matvars);
+            stringified = stringified.replace(/"tworavensCol"/g, $matvars);
+        }
 
-    //filter is: [{"filter": "datum.symbol==='GOOG'"}]
         // VJD: if you enter this console.log into the vega editor https://vega.github.io/editor/#/edited the plot will render
         console.log(stringified);
         return JSON.parse(stringified);
