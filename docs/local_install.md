@@ -239,37 +239,34 @@ As a shortcut to the above, assuming R is installed, from the command line, you 
 
 ### Run the server
 
+6/20 - This setup involves running several processes.  The manual method is as follows:
 
-1. Open a Terminal and ```cd``` into the TwoRavens directory
-2. Activate the virtual environment and run the server
-    ```
-    workon 2ravens
-    # the next line runs the django server AND starts webpack to monitor .js changes
-    fab run
-    ```
-3. Start an R interactive shell
-    1. Set your working directory to ~TwoRavens/rook, for example:
-        ```
-        setwd("/home/ubuntu/TwoRavens/rook")
-        ```
+#### _Without_ a TA2 (test mode)
 
-        Or:
+1. Open 4 separate Terminals
+1. For each Terminal:
+    - ```cd``` into the TwoRavens directory
+    - ```workon 2ravens```
+1. Next are commands to run--one for each Terminal
+    1. Main app: ```fab run```
+    1. Rook: ```fab run_rook```
+    1. Redis: ```docker run --rm -p 6379:6379 redis:2.8``` 
+         - If you don't have docker:
+             - install redis (see above)
+             - redis: ```fab run_redis``` 
+    1. Celery: ```fab celery_run```
+1. Go to Two Ravens: http://127.0.0.1:8080/
+    - Go to the Django admin: http://127.0.0.1:8080/admin
+      - username: `dev_admin`
+      - password: [from create superuser step above](#create-a-django-superuser-optional)
 
-        ```
-        setwd("/Users/vjdorazio/Desktop/github/TwoRavens/rook")
-        ```
 
-    1. Source rooksource.R to get the app up:
-        ```
-        source("rooksource.R")
-        ```
+#### _With_ a TA2
 
-   Or, from a new terminal, try `fab run_rook`
+Read fully before going through the step.
 
-4. Go to Two Ravens: http://127.0.0.1:8080/
-  - Go to the Django admin: http://127.0.0.1:8080/admin
-    - username: `dev_admin`
-    - password: [from create superuser step above](#create-a-django-superuser-optional)
+1. Follow the steps in previous section **EXCEPT**:
+     - For step (3)(i), the "Main app", use ```fab run_expect_ta2_external```
 
 
 ### Run the python shell (if needed)
