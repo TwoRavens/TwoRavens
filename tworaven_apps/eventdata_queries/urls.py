@@ -2,7 +2,7 @@ from django.urls import path, re_path
 
 from tworaven_apps.eventdata_queries import views
 
-urlpatterns = (
+urlpatterns = [
 
     # for adding query
     #
@@ -10,4 +10,4 @@ urlpatterns = (
          views.api_add_query,
          name='api_add_query'
          )
-)
+]
