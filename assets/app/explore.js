@@ -4,6 +4,9 @@ import vegaEmbed from 'vega-embed';
 import * as app from './app';
 import * as plots from './plots';
 import {elem, fadeIn, fadeOut, fadeTo, remove, setAttrs, trigger} from './utils';
+import * as box2d from './vega-schemas/box2d';
+import * as scatter from './vega-schemas/scatter';
+import * as stackedbar from './vega-schemas/stackedbar';
 
 const $private = false;
 
@@ -1484,32 +1487,27 @@ export async function explore() {
 }
 
 export async function plot(xNode, yNode) {
-    let colors = ["#e6194b" , "#3cb44b" ,  "#ffe119" ,  "#0082c8"  , "#f58231" ,  "#911eb4" ,  "#46f0f0" ,  "#f032e6"  , "#d2f53c" , "#fabebe"  , "#008080" ,  "#e6beff", "#aa6e28"  ,  "#fffac8"  ,  "#800000"  ,  "#aaffc3","#808000"  ,  "#ffd8b1"   , "#000080" ,  "#808080"];
+    const colors = [
+        "#e6194b", "#3cb44b", "#ffe119", "#0082c8", "#f58231", "#911eb4", "#46f0f0",
+        "#f032e6", "#d2f53c", "#fabebe", "#008080", "#e6beff", "#aa6e28", "#fffac8",
+        "#800000", "#aaffc3", "#808000", "#ffd8b1", "#000080", "#808080"
+    ];
     if (app.downloadIncomplete()) {
         return;
     }
-    
-    console.log(xNode);
- 
-    function getPlotType(xNode,yNode) {
-        if(xNode.plottype=="continuous") {
-            if(yNode.plottype=="continuous")
-                return ["scatter"];
-            if(yNode.plottype=="bar")
-                return ["box","y"];
-        } else if (xNode.plottype=="bar") {
-            if(yNode.plottype=="continuous")
-                return ["box","x"];
-            if(yNode.plottype=="bar")
-                return ["stackedbar"];
-        }
-    }
-    
-    
+
     app.zPop();
     console.log('zpop:', app.zparams);
-    
-    let plottype = getPlotType(xNode,yNode);
+
+    let getPlotType = () => {
+        let xCon = xNode.plottype === 'continuous';
+        let yCon = yNode.plottype === 'continuous';
+        return xCon && yCon ? ['scatter'] :
+            xCon && !yCon ? ['box', 'y'] :
+            !xCon && yCon ? ['box', 'x'] :
+            ['stackedbar'];
+    };
+    let plottype = getPlotType();
     let plotvars = [xNode.name, yNode.name];
     let zd3mdata = app.zparams.zd3mdata;
     let jsonout = {plottype, plotvars, zd3mdata};
@@ -1521,38 +1519,29 @@ export async function plot(xNode, yNode) {
         return;
     }
 
-    let myvegaschema = {};
-    if (plottype[0] === "box") {
-        myvegaschema = await m.request({method: "GET", url: "/rook-custom/rook-files/vega-schemas/box2d.json"});
-        console.log(myvegaschema);
-    } else if (plottype[0] === "scatter") {
-        myvegaschema = await m.request({method: "GET", url: "/rook-custom/rook-files/vega-schemas/scatter.json"});
-        console.log(myvegaschema);
-    } else if (plottype[0] === "stackedbar") {
-        myvegaschema = await m.request({method: "GET", url: "/rook-custom/rook-files/vega-schemas/stackedbar.json"});
-        console.log(myvegaschema);
-    }
+    let schema = plottype[0] === "box" ? box2d :
+        plottype[0] === "scatter" ? scatter :
+        stackedbar;
+    console.log(schema);
 
     // function to fill in the contents of the vega schema
-    function fillVega(vegaschema, vegadata) {
-       // let mycolors = app.colors[vegadata["uniqueY"].length];
-       let mycolors = colors.splice(0,(vegadata["uniqueY"].length));
-       mycolors=mycolors.map(col => `"${col}"`).join(',');
-
-        let stringified = JSON.stringify(vegaschema);
-        stringified = stringified.replace(/tworavensY/g, vegadata.vars[1]);
-        stringified = stringified.replace(/tworavensX/g, vegadata.vars[0]);
-        stringified = stringified.replace(/"tworavensUniqueY"/g, "["+vegadata.uniqueY+"]");
-        stringified = stringified.replace(/"tworavensColors"/g, "["+mycolors+"]");
+    let fillVega = data => {
+        let stringified = JSON.stringify(schema);
+        stringified = stringified.replace(/tworavensY/g, data.vars[1]);
+        stringified = stringified.replace(/tworavensX/g, data.vars[0]);
         stringified = stringified.replace("url", "values");
-        stringified = stringified.replace('"tworavensData"',vegadata.plotdata[0]);
+        stringified = stringified.replace('"tworavensData"',data.plotdata[0]);
+        if (data.uniqueY) {
+            let $colors = colors.splice(0, data["uniqueY"].length).map(col => `"${col}"`).join(',');
+            stringified = stringified.replace(/"tworavensUniqueY"/g, "["+data.uniqueY+"]");
+            stringified = stringified.replace(/"tworavensColors"/g, "["+$colors+"]");
+        }
+
         // VJD: if you enter this console.log into the vega editor https://vega.github.io/editor/#/edited the plot will render
         console.log(stringified);
-        vegaschema = JSON.parse(stringified);
-        return vegaschema;
-    }
-
-    vegaEmbed('#plot', fillVega(myvegaschema, json));
+        return JSON.parse(stringified);
+    };
+    vegaEmbed('#plot', fillVega(json));
 }
 
 export let exploreVar = '';

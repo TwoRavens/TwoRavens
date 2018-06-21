@@ -296,7 +296,7 @@ class Body {
             this.header(mode),
             this.footer(mode),
             m(`#main.left`, {style: {overflow}},
-              m("#innercarousel.carousel-inner", {style: {height: `calc(100% + ${app.marginTopCarousel}px)`, overflow}},
+              m("#innercarousel.carousel-inner", {style: {height: '100%', overflow}},
                 explore_mode && (
                     var1 && var2 ? m('#plot', {style, oncreate: _ => exp.plot(node1, node2)}) :
                     var1 ? m('#plot', {style, oncreate: _ => plot(node1, 'explore', true)}) :

@@ -14,9 +14,6 @@ import {searchIndex} from "./views/Search";
 //    Developers, see /template/index.html
 //-------------------------------------------------
 
-export let marginTopCarousel = 0;
-export let marginLeftCarousel = 0;
-
 let peekBatchSize = 100;
 let peekSkip = 0;
 let peekData = [];
