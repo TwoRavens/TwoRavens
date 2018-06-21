@@ -13,6 +13,7 @@ from tworaven_apps.ta2_interfaces.req_search_solutions import \
         (search_solutions, end_search_solutions,
          stop_search_solutions, describe_solution,
          score_solution)
+from tworaven_apps.utils.json_helper import json_loads
 from tworaven_apps.utils.view_helper import \
     (get_request_body,
      get_json_error,
@@ -49,14 +50,19 @@ def view_hello(request):
 
     # Convert JSON str to python dict - err catch here
     #  - let it blow up for now--should always return JSON
-    json_dict = json.loads(json_str, object_pairs_hook=OrderedDict)
+    json_format_info = json_loads(json_str)
+    if not json_format_info.success:
+        return JsonResponse(get_json_error(json_format_info.err_msg))
+
 
     # Save D3M log
     #
     if call_entry:
-        call_entry.save_d3m_response(json_dict)
+        call_entry.save_d3m_response(json_format_info.result_obj)
 
-    json_info = get_json_success('success!', data=json_dict)
+    json_info = get_json_success('success!',
+                                 data=json_format_info.result_obj)
+
     return JsonResponse(json_info, safe=False)
 
 @csrf_exempt
@@ -78,7 +84,7 @@ def view_search_solutions(request):
     # Let's call the TA2!
     #
     search_info = search_solutions(req_body_info.result_obj)
-    print('search_info', search_info)
+    #print('search_info', search_info)
     if not search_info.success:
         return JsonResponse(get_json_error(search_info.err_msg))
 
@@ -113,7 +119,7 @@ def view_end_search_solutions(request):
     # Let's call the TA2 and start the session!
     #
     search_info = end_search_solutions(req_body_info.result_obj)
-    print('search_info', search_info)
+    #print('search_info', search_info)
     if not search_info.success:
         return JsonResponse(get_json_error(search_info.err_msg))
 
@@ -149,7 +155,7 @@ def view_stop_search_solutions(request):
     # Let's call the TA2!
     #
     search_info = stop_search_solutions(req_body_info.result_obj)
-    print('search_info', search_info)
+    #print('search_info', search_info)
     if not search_info.success:
         return JsonResponse(get_json_error(search_info.err_msg))
 
@@ -185,7 +191,7 @@ def view_describe_solution(request):
     # Let's call the TA2!
     #
     search_info = describe_solution(req_body_info.result_obj)
-    print('search_info', search_info)
+    #print('search_info', search_info)
     if not search_info.success:
         return JsonResponse(get_json_error(search_info.err_msg))
 

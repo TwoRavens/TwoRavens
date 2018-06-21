@@ -7,14 +7,18 @@ from django.conf import settings
 
 from tworaven_apps.utils.basic_response import (ok_resp, err_resp)
 from tworaven_apps.utils.random_info import get_alphanumeric_string
+from tworaven_apps.utils.json_helper import json_loads
+from tworaven_apps.utils.proto_util import message_to_json
+
 from tworaven_apps.ta2_interfaces.ta2_connection import TA2Connection
 from tworaven_apps.ta2_interfaces.ta2_util import get_grpc_test_json
 
 import core_pb2
-import core_pb2_grpc
+#import core_pb2_grpc
+
 
 from google.protobuf.json_format import \
-    (MessageToJson, Parse, ParseError)
+    (Parse, ParseError)
 
 def search_solutions(raven_json_str=None):
     """
@@ -25,14 +29,11 @@ def search_solutions(raven_json_str=None):
         return err_resp(err_msg)
 
     # --------------------------------
-    # The UI has sent JSON in string format that contains the PipelineReference
     # Make sure it's valid JSON
     # --------------------------------
-    try:
-        json.loads(raven_json_str)
-    except json.decoder.JSONDecodeError as err_obj:
-        err_msg = 'Failed to convert UI Str to JSON: %s' % (err_obj)
-        return err_resp(err_msg)
+    raven_json_info = json_loads(raven_json_str)
+    if not raven_json_info.success:
+        return err_resp(raven_json_info.err_msg)
 
     # --------------------------------
     # convert the JSON string to a gRPC request
@@ -49,9 +50,9 @@ def search_solutions(raven_json_str=None):
         search_id = 'search_id_%s' % get_alphanumeric_string(6)
         resp = core_pb2.SearchSolutionsResponse(search_id=search_id)
 
-        print('MessageToJson(req)', MessageToJson(resp))
+        # print('message_to_json(req)', message_to_json(resp))
 
-        return ok_resp(MessageToJson(resp))
+        return ok_resp(message_to_json(resp))
 
     core_stub, err_msg = TA2Connection.get_grpc_stub()
     if err_msg:
@@ -70,7 +71,7 @@ def search_solutions(raven_json_str=None):
     # --------------------------------
     # Convert the reply to JSON and send it back
     # --------------------------------
-    return ok_resp(MessageToJson(reply, including_default_value_fields=True))
+    return ok_resp(message_to_json(reply))
 
 
 
@@ -83,14 +84,11 @@ def end_search_solutions(raven_json_str=None):
         return err_resp(err_msg)
 
     # --------------------------------
-    # The UI has sent JSON in string format that contains the PipelineReference
     # Make sure it's valid JSON
     # --------------------------------
-    try:
-        json.loads(raven_json_str)
-    except json.decoder.JSONDecodeError as err_obj:
-        err_msg = 'Failed to convert UI Str to JSON: %s' % (err_obj)
-        return err_resp(err_msg)
+    raven_json_info = json_loads(raven_json_str)
+    if not raven_json_info.success:
+        return err_resp(raven_json_info.err_msg)
 
     # --------------------------------
     # convert the JSON string to a gRPC request
@@ -106,9 +104,9 @@ def end_search_solutions(raven_json_str=None):
     if settings.TA2_STATIC_TEST_MODE:
         resp = core_pb2.EndSearchSolutionsResponse()
 
-        print('MessageToJson(req)', MessageToJson(resp))
+        # print('message_to_json(req)', message_to_json(resp))
 
-        return ok_resp(MessageToJson(resp))
+        return ok_resp(message_to_json(resp))
 
     core_stub, err_msg = TA2Connection.get_grpc_stub()
     if err_msg:
@@ -127,7 +125,7 @@ def end_search_solutions(raven_json_str=None):
     # --------------------------------
     # Convert the reply to JSON and send it back
     # --------------------------------
-    return ok_resp(MessageToJson(reply, including_default_value_fields=True))
+    return ok_resp(message_to_json(reply))
 
 
 
@@ -141,20 +139,18 @@ def stop_search_solutions(raven_json_str=None):
         return err_resp(err_msg)
 
     # --------------------------------
-    # The UI has sent JSON in string format that contains the PipelineReference
     # Make sure it's valid JSON
     # --------------------------------
-    try:
-        json.loads(raven_json_str)
-    except json.decoder.JSONDecodeError as err_obj:
-        err_msg = 'Failed to convert UI Str to JSON: %s' % (err_obj)
-        return err_resp(err_msg)
+    raven_json_info = json_loads(raven_json_str)
+    if not raven_json_info.success:
+        return err_resp(raven_json_info.err_msg)
 
     # --------------------------------
     # convert the JSON string to a gRPC request
     # --------------------------------
     try:
-        req = Parse(raven_json_str, core_pb2.StopSearchSolutionsRequest())
+        req = Parse(raven_json_str,
+                    core_pb2.StopSearchSolutionsRequest())
     except ParseError as err_obj:
         err_msg = 'Failed to convert JSON to gRPC: %s' % (err_obj)
         return err_resp(err_msg)
@@ -163,10 +159,7 @@ def stop_search_solutions(raven_json_str=None):
     #
     if settings.TA2_STATIC_TEST_MODE:
         resp = core_pb2.StopSearchSolutionsResponse()
-
-        print('MessageToJson(req)', MessageToJson(resp))
-
-        return ok_resp(MessageToJson(resp))
+        return ok_resp(message_to_json(resp))
 
     core_stub, err_msg = TA2Connection.get_grpc_stub()
     if err_msg:
@@ -185,7 +178,7 @@ def stop_search_solutions(raven_json_str=None):
     # --------------------------------
     # Convert the reply to JSON and send it back
     # --------------------------------
-    return ok_resp(MessageToJson(reply, including_default_value_fields=True))
+    return ok_resp(message_to_json(reply))
 
 
 
@@ -198,20 +191,18 @@ def describe_solution(raven_json_str=None):
         return err_resp(err_msg)
 
     # --------------------------------
-    # The UI has sent JSON in string format that contains the PipelineReference
     # Make sure it's valid JSON
     # --------------------------------
-    try:
-        json.loads(raven_json_str)
-    except json.decoder.JSONDecodeError as err_obj:
-        err_msg = 'Failed to convert UI Str to JSON: %s' % (err_obj)
-        return err_resp(err_msg)
+    raven_json_info = json_loads(raven_json_str)
+    if not raven_json_info.success:
+        return err_resp(raven_json_info.err_msg)
 
     # --------------------------------
     # convert the JSON string to a gRPC request
     # --------------------------------
     try:
-        req = Parse(raven_json_str, core_pb2.DescribeSolutionRequest())
+        req = Parse(raven_json_str,
+                    core_pb2.DescribeSolutionRequest())
     except ParseError as err_obj:
         err_msg = 'Failed to convert JSON to gRPC: %s' % (err_obj)
         return err_resp(err_msg)
@@ -241,7 +232,7 @@ def describe_solution(raven_json_str=None):
     # --------------------------------
     # Convert the reply to JSON and send it back
     # --------------------------------
-    return ok_resp(MessageToJson(reply, including_default_value_fields=True))
+    return ok_resp(message_to_json(reply))
 
 
 #rpc ScoreSolution (ScoreSolutionRequest) returns (ScoreSolutionResponse) {}
@@ -257,17 +248,16 @@ def score_solution(raven_json_str=None):
     # --------------------------------
     # Make sure it's valid JSON
     # --------------------------------
-    try:
-        json.loads(raven_json_str)
-    except json.decoder.JSONDecodeError as err_obj:
-        err_msg = 'Failed to convert UI Str to JSON: %s' % (err_obj)
-        return err_resp(err_msg)
+    raven_json_info = json_loads(raven_json_str)
+    if not raven_json_info.success:
+        return err_resp(raven_json_info.err_msg)
 
     # --------------------------------
     # convert the JSON string to a gRPC request
     # --------------------------------
     try:
-        req = Parse(raven_json_str, core_pb2.DescribeSolutionRequest())
+        req = Parse(raven_json_str,
+                    core_pb2.ScoreSolutionRequest())
     except ParseError as err_obj:
         err_msg = 'Failed to convert JSON to gRPC: %s' % (err_obj)
         return err_resp(err_msg)
@@ -275,10 +265,10 @@ def score_solution(raven_json_str=None):
     # In test mode, return canned response
     #
     if settings.TA2_STATIC_TEST_MODE:
-        resp_str = get_grpc_test_json(\
-                        'test_responses/DescribeSolutionResponse_ok.json',
-                        dict())
-        return ok_resp(resp_str)
+        resp = core_pb2.ScoreSolutionResponse(\
+                    request_id='requestId_%s' % get_alphanumeric_string(6))
+
+        return ok_resp(message_to_json(resp))
 
     core_stub, err_msg = TA2Connection.get_grpc_stub()
     if err_msg:
@@ -288,7 +278,7 @@ def score_solution(raven_json_str=None):
     # Send the gRPC request
     # --------------------------------
     try:
-        reply = core_stub.DescribeSolution(\
+        reply = core_stub.ScoreSolution(\
                             req,
                             timeout=settings.TA2_GPRC_SHORT_TIMEOUT)
     except Exception as err_obj:
@@ -297,4 +287,4 @@ def score_solution(raven_json_str=None):
     # --------------------------------
     # Convert the reply to JSON and send it back
     # --------------------------------
-    return ok_resp(MessageToJson(reply, including_default_value_fields=True))
+    return ok_resp(message_to_json(reply))
