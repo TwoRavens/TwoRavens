@@ -404,19 +404,13 @@ export function pageSetup(jsondata) {
     subsetRedraw[jsondata['subsetName']] = true;
 
     Object.keys(jsondata['formats'] || {}).forEach(format => formattingData[format] = jsondata['formats'][format]);
-    Object.keys(jsondata['alignments'] || {}).forEach(align => formattingData[align] = jsondata['alignments'][align]);
+    Object.keys(jsondata['alignments'] || {}).forEach(align => alignmentData[align] = jsondata['alignments'][align]);
 
     let subsetType = genericMetadata[selectedDataset]['subsets'][jsondata['subsetName']]['type'];
 
     // todo: configuration for the categorical reformatters - they're tied to 20 atm, for example
     let reformatters = {
-        'categorical': data => data
-            .filter(entry => entry['<action_code>'] !== undefined)
-            .reduce((out, entry) => {
-                out[parseInt(entry['<action_code>']) - 1] = entry['total'];
-                return(out)
-            }, Array(20).fill(0)),
-
+        'categorical': _=>_,
         'dyad': _=>_,
         'coordinates': _=>_,
 

@@ -51,182 +51,234 @@
     },
     "Event Type": {
       "type": "categorical",
-      "formats": ["SPEED_ev_type"],
+      "formats": [
+        "SPEED_ev_type"
+      ],
       "columns": [
         "ev_type"
       ]
     },
     "Posthoc": {
       "type": "categorical",
-      "formats": ["SPEED_posthoc"],
+      "formats": [
+        "SPEED_posthoc"
+      ],
       "columns": [
         "posthoc"
       ]
     },
     "Link Type": {
       "type": "categorical",
-      "formats": ["SPEED_link_type"],
+      "formats": [
+        "SPEED_link_type"
+      ],
       "columns": [
         "link_type"
       ]
     },
     "Location Type": {
       "type": "categorical",
-      "formats": ["SPEED_loc_type"],
+      "formats": [
+        "SPEED_loc_type"
+      ],
       "columns": [
         "loc_type"
       ]
     },
     "Political Expression Type": {
       "type": "categorical",
-      "formats": ["SPEED_pe_type"],
+      "formats": [
+        "SPEED_pe_type"
+      ],
       "columns": [
         "pe_type"
       ]
     },
     "Reduced Political Expression Type": {
       "type": "categorical",
-      "formats": ["SPEED_exp_type"],
+      "formats": [
+        "SPEED_exp_type"
+      ],
       "columns": [
         "exp_type"
       ]
     },
     "Symbolic Event Type": {
       "type": "categorical",
-      "formats": ["SPEED_sym_type"],
+      "formats": [
+        "SPEED_sym_type"
+      ],
       "columns": [
         "exp_type"
       ]
     },
     "Advocated Violence": {
       "type": "categorical",
-      "formats": ["SPEED_ad_viol"],
+      "formats": [
+        "SPEED_ad_viol"
+      ],
       "columns": [
         "ad_viol"
       ]
     },
     "Advocated Tactics": {
       "type": "categorical",
-      "formats": ["SPEED_ad_tact"],
+      "formats": [
+        "SPEED_ad_tact"
+      ],
       "columns": [
         "ad_tact"
       ]
     },
     "Attack Type": {
       "type": "categorical",
-      "formats": ["SPEED_atk_type"],
+      "formats": [
+        "SPEED_atk_type"
+      ],
       "columns": [
         "atk_type"
       ]
     },
     "Disruptive State Act Type Broad": {
       "type": "categorical",
-      "formats": ["SPEED_dsa_type"],
+      "formats": [
+        "SPEED_dsa_type"
+      ],
       "columns": [
         "dsa_type"
       ]
     },
     "Disruptive State Act Type": {
       "type": "categorical",
-      "formats": ["SPEED_stat_type"],
+      "formats": [
+        "SPEED_stat_type"
+      ],
       "columns": [
         "stat_type"
       ]
     },
     "Victim Effect": {
       "type": "categorical",
-      "formats": ["SPEED_victim_effect"],
+      "formats": [
+        "SPEED_victim_effect"
+      ],
       "columns": [
         "victim_effect"
       ]
     },
     "Weapon": {
       "type": "categorical",
-      "formats": ["SPEED_weapon"],
+      "formats": [
+        "SPEED_weapon"
+      ],
       "columns": [
         "weapon"
       ]
     },
     "Property Damaged": {
       "type": "categorical",
-      "formats": ["SPEED_property_damaged"],
+      "formats": [
+        "SPEED_property_damaged"
+      ],
       "columns": [
         "property_damaged"
       ]
     },
     "Property Ownder": {
       "type": "categorical",
-      "formats": ["SPEED_property_owner"],
+      "formats": [
+        "SPEED_property_owner"
+      ],
       "columns": [
         "property_owner"
       ]
     },
     "Geopolitical Entity Type": {
       "type": "categorical",
-      "formats": ["SPEED_gp_type"],
+      "formats": [
+        "SPEED_gp_type"
+      ],
       "columns": [
         "gp_type"
       ]
     },
     "Initiator Type Known": {
       "type": "categorical",
-      "formats": ["SPEED_know_ini"],
+      "formats": [
+        "SPEED_know_ini"
+      ],
       "columns": [
         "know_ini"
       ]
     },
     "Initiator Type": {
       "type": "categorical",
-      "formats": ["SPEED_ini_type"],
+      "formats": [
+        "SPEED_ini_type"
+      ],
       "columns": [
         "ini_type"
       ]
     },
     "Target Type": {
       "type": "categorical",
-      "formats": ["SPEED_tar_type"],
+      "formats": [
+        "SPEED_tar_type"
+      ],
       "columns": [
         "tar_type"
       ]
     },
     "Victim Type": {
       "type": "categorical",
-      "formats": ["SPEED_vic_type"],
+      "formats": [
+        "SPEED_vic_type"
+      ],
       "columns": [
         "vic_type"
       ]
     },
     "Non-government Initiator Type": {
       "type": "categorical",
-      "formats": ["SPEED_ngov_i1"],
+      "formats": [
+        "SPEED_ngov_i1"
+      ],
       "columns": [
         "ngov_i1"
       ]
     },
     "Government Initiator Type": {
       "type": "categorical",
-      "formats": ["SPEED_gov_i1"],
+      "formats": [
+        "SPEED_gov_i1"
+      ],
       "columns": [
         "gov_i1"
       ]
     },
     "Level of Government Initiator": {
       "type": "categorical",
-      "formats": ["SPEED_g_lvl"],
+      "formats": [
+        "SPEED_g_lvl"
+      ],
       "columns": [
         "g_lvl_i"
       ]
     },
     "Level of Government Target": {
       "type": "categorical",
-      "formats": ["SPEED_g_lvl"],
+      "formats": [
+        "SPEED_g_lvl"
+      ],
       "columns": [
         "g_lvl_t"
       ]
     },
     "Level of Government Victim": {
       "type": "categorical",
-      "formats": ["SPEED_g_lvl"],
+      "formats": [
+        "SPEED_g_lvl"
+      ],
       "columns": [
         "g_lvl_v"
       ]
@@ -234,17 +286,23 @@
     "Date Coded": {
       "type": "date",
       "structure": "point",
-      "date": "CODE_DATE_constructed"
+      "columns": [
+        "CODE_DATE_constructed"
+      ]
     },
     "Date Published": {
       "type": "date",
       "structure": "point",
-      "date": "PUB_DATE_constructed"
+      "columns": [
+        "PUB_DATE_constructed"
+      ]
     },
     "Date Average": {
       "type": "date",
       "structure": "point",
-      "date": "AVERAGE_DATE_constructed"
+      "columns": [
+        "AVERAGE_DATE_constructed"
+      ]
     },
     "Date Earliest/Latest": {
       "type": "date",
@@ -272,9 +330,13 @@
     },
     "Location": {
       "type": "categorical_grouped",
-      "alignments": ["location"],
+      "alignments": [
+        "location"
+      ],
       "group_by": "region",
-      "formats": ["cowcode"],
+      "formats": [
+        "cowcode"
+      ],
       "columns": [
         "cowcode"
       ]

@@ -43,7 +43,9 @@
     "Date": {
       "type": "date",
       "structure": "point",
-      "date": "Event Date_constructed"
+      "columns": [
+        "Event Date_constructed"
+      ]
     },
     "Location": {
       "type": "categorical_grouped",

@@ -51,7 +51,9 @@
     "Date": {
       "type": "date",
       "structure": "point",
-      "date": "story_date_constructed"
+      "columns": [
+        "story_date_constructed"
+      ]
     },
     "Location": {
       "type": "categorical_grouped",

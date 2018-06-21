@@ -192,23 +192,22 @@ eventdata_subset.app <- function(env) {
     summary = list()
 
     if (subsetMetadata$type == 'date') {
-        columnName = if (subsetMetadata$structure == 'point')subsetMetadata$date else subsetMetadata$columns[[0]]
         summary$data = tryCatch({
-            data = do.call(data.frame, getData('aggregate', paste(
-            '[{"$match":', query, '},',
-            ' {"$project: {"Year": {"$year": "$', columnName, '"}, ',
-            '"Month": {"$month": "$', columnName, '"}}},',
-            ' {"$group": { "_id": { "year": "$Year", "month": "$Month" }, "total": {"$sum": 1} }}]', sep = "")))
-            if (nrow(data) != 0)colnames(data) = c('total', '<year>', '<month>')
-            data
+            do.call(data.frame, getData('aggregate', paste(
+                '[{"$match":', query, '},',
+                ' {"$project": {"Year": {"$year": "$', subsetMetadata$columns[[1]], '"},',
+                               '"Month": {"$month": "$', subsetMetadata$columns[[1]], '"}}},',
+                ' {"$group": { "_id": { "year": "$Year", "month": "$Month" }, "total": {"$sum": 1} }},',
+                ' {"$project": {"year": "$_id.year", "month": "$_id.month", "_id": 0, "total": 1}}]', sep = "")))
         }, error = genericErrorHandler)
     }
 
-    if (subsetMetadata$type %in% list('categorical', 'categorical_grouped')) {
+    else if (subsetMetadata$type %in% list('categorical', 'categorical_grouped')) {
+        formatName = datasetMetadata$formats[[subsetMetadata$columns[[1]]]]
         summary$data = tryCatch({
-            data = do.call(data.frame, getData('find', paste(subsetMetadata$columns, collapse = ",")))
-            if (nrow(data) != 0)colnames(data) = c('total', lapply(subsetMetadata$columns, function(col) {datasetMetadata$columns[[col]]}))
-            data
+            do.call(data.frame, getData('aggregate', paste(
+                '[{"$match":', query, '},',
+                '{"$group": { "_id": { "', formatName,'": "$', subsetMetadata$columns[[1]], '"}, "total": {"$sum": 1} }}]', sep=""))) # Group by years and months
         }, error = genericErrorHandler)
     }
     else if (subsetMetadata$type == 'dyad') {

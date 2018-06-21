@@ -30,13 +30,8 @@
     },
     "Action": {
       "type": "categorical",
-      "alignments": [
-        "action"
-      ],
       "formats": [
-        "ACLED_interaction",
-        "PLOVER",
-        "penta_class"
+        "ACLED_interaction"
       ],
       "columns": [
         "INTERACTION"
@@ -45,7 +40,9 @@
     "Date": {
       "type": "date",
       "structure": "point",
-      "date": "TIMESTAMP_constructed"
+      "columns": [
+        "TIMESTAMP_constructed"
+      ]
     },
     "Location": {
       "type": "categorical_grouped",

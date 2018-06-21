@@ -149,9 +149,7 @@ export default class CanvasDate {
         }
 
         let rightMenu = [
-            m("[id='dateOptions']", {
-                    style: {display: mode === 'subset' ? 'block' : 'none'}
-                },
+            m("[id='dateOptions']",
                 m(".form-group[id='dateInterval']",
                     [
                         // Set date from slider
@@ -217,7 +215,7 @@ export default class CanvasDate {
             }))
         ];
 
-        return (m("#canvasDate", {style: {"display": display, 'padding-top': panelMargin}},
+        return (m("#canvasDate", {style: {'padding-top': panelMargin}},
             [
                 m("[id='dateSVGdiv']", {style: {"display": "inline-block"}},
                     m("svg#dateSVG[height='550'][width='500']"),
