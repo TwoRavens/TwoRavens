@@ -202,7 +202,7 @@ plotdata.app <- function(env) {
         })
   }
   
-  if(plottype=="tableheat") {
+  if(plottype=="tableheat" | plottype=="binnedtableheat") {
         tryCatch({
         plotdata <<- list()
 
