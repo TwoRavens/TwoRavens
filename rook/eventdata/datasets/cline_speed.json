@@ -405,8 +405,35 @@
     "JUL_EED_constructed",
     "JUL_LED_constructed"
   ],
-  "ontology_alignments": {
+  "alignments": {
     "AVERAGE_DATE_constructed": "<date>"
+  },
+  "formats": {
+    "ad_tact": "SPEED_ad_tact",
+    "ad_viol": "SPEED_ad_viol",
+    "atk_type": "SPEED_atk_type",
+    "dsa_type": "SPEED_dsa_type",
+    "ev_type": "SPEED_ev_type",
+    "exp_type": "SPEED_sym_type",
+    "g_lvl_i": "SPEED_g_lvl",
+    "g_lvl_t": "SPEED_g_lvl",
+    "g_lvl_v": "SPEED_g_lvl",
+    "gov_i1": "SPEED_gov_i1",
+    "gp_type": "SPEED_gp_type",
+    "ini_type": "SPEED_ini_type",
+    "know_ini": "SPEED_know_ini",
+    "link_type": "SPEED_link_type",
+    "loc_type": "SPEED_loc_type",
+    "ngov_i1": "SPEED_ngov_i1",
+    "pe_type": "SPEED_pe_type",
+    "posthoc": "SPEED_posthoc",
+    "property_damaged": "SPEED_property_damaged",
+    "property_owner": "SPEED_property_owner",
+    "stat_type": "SPEED_stat_type",
+    "tar_type": "SPEED_tar_type",
+    "vic_type": "SPEED_vic_type",
+    "victim_effect": "SPEED_victim_effect",
+    "weapon": "SPEED_weapon"
   },
   "citations": [
     {

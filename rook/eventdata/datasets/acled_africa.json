@@ -94,12 +94,14 @@
     "TIMESTAMP_constructed",
     "country_constructed"
   ],
-  "ontology_alignments": {
-    "INTERACTION": "<interaction>",
+  "alignments": {
     "LATITUDE": "<latitude>",
     "LONGITUDE": "<latitude>",
     "country_constructed": "<country>",
     "TIMESTAMP_constructed": "<date>"
+  },
+  "formats": {
+    "INTERACTION": "ACLED_interaction"
   },
   "citations": [
     {

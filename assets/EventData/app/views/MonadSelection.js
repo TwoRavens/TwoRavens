@@ -69,9 +69,9 @@ export default class MonadSelection {
         let query = {
             'query': this.cachedQuery,
             'dataset': app.selectedDataset,
-            'datasource': app.datasource,
             'type': 'summary',
-            'subsets': [subsetName]
+            'subset': subsetName,
+            'search': true
         };
 
         function updateActorListing(data) {
@@ -107,6 +107,20 @@ export default class MonadSelection {
             this.searchTimeout = setTimeout(() => this.search(subsetName, metadata, preferences), searchLag);
         };
 
+        let popupAttributes = (column, value) => app.genericMetadata[app.selectedDataset]['formats'][column] && {
+            'data-container': 'body',
+            'data-toggle': 'popover',
+            'data-placement': 'right',
+            'data-trigger': 'hover',
+            'data-content': metadata['token_length']
+                ? value.match(new RegExp(`.{${metadata['token_length']}}`, 'g'))
+                    .map(token => app.formattingData[app.genericMetadata[app.selectedDataset]['formats'][column]][token] || '?').join(' ')
+                : app.formattingData[app.genericMetadata[app.selectedDataset]['formats'][column]][token] || '?'
+        };
+
+        console.log("FULL");
+        console.log(data['full']);
+        console.log(metadata);
         return [
             m(`.actorLeft#allActors`,
                 m(TextField, {
@@ -129,19 +143,11 @@ export default class MonadSelection {
                             if (scrollHeight < container.offsetHeight) preferences['full_limit'] += this.defaultPageSize;
                         }
                     },
-                    this.waitForQuery && data['full']
+                    this.waitForQuery === 0 && data['full']
                         .filter(actor => !preferences['show_selected'] || preferences['node']['selected'].has(actor))
                         .slice(preferences['full_limit'])
                         .map(actor =>
-                            m('div',
-                                preferences['format'].indexOf('phoenix') !== -1 && {
-                                    'data-container': 'body',
-                                    'data-toggle': 'popover',
-                                    'data-placement': 'right',
-                                    'data-trigger': 'hover',
-                                    'data-content': actor.match(new RegExp(`.{${metadata['token_length']}}`, 'g'))
-                                        .map(token => app.formattingData['phoenix'][token] || '?').join(' ')
-                                },
+                            m('div', popupAttributes(metadata['full'], actor),
                                 m(`input.actorChk[type=checkbox]`, {
                                     checked: preferences['node']['selected'].has(actor),
                                     onclick: () => toggleFull(actor)
@@ -172,7 +178,7 @@ export default class MonadSelection {
                         }),
                         "Show Selected"
                     ),
-                    Object.keys(data).map(filter => [
+                    Object.keys(data['filters']).map(filter => [
                         m(".separator"),
                         m("button.filterBase" + (preferences['filters'][filter]['expanded'] ? '.filterExpand' : '.filterCollapse'), {
                             onclick: () => preferences['filters'][filter]['expanded'] = !preferences['filters'][filter]['expanded']
@@ -180,14 +186,8 @@ export default class MonadSelection {
                         m("label.actorHead4", {
                             onclick: () => preferences['filters'][filter]['expanded'] = !preferences['filters'][filter]['expanded']
                         }, m("b", filter)),
-                        preferences['filters'][filter]['expanded'] && m(".filterContainer", data['filters'][filter]['selected'].map(actor => m('div',
-                            preferences['format'].indexOf('phoenix') !== -1 && {
-                                'data-container': 'body',
-                                'data-toggle': 'popover',
-                                'data-placement': 'right',
-                                'data-trigger': 'hover',
-                                'data-content': app.formattingData['phoenix'][actor] || '?'
-                            },
+                        preferences['filters'][filter]['expanded'] && m(".filterContainer", data['filters'][filter].map(actor => m('div',
+                            popupAttributes(filter, actor),
                             m(`input.actorChk[type=checkbox]`, {
                                 checked: preferences['filters'][filter]['selected'].has(actor),
                                 onclick: () => toggleFilter(filter, actor)

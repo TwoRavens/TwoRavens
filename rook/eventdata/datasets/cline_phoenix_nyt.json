@@ -108,20 +108,21 @@
   "columns_constructed": [
     "story_date_constructed"
   ],
-  "ontology_alignments": {
-    "code": "<cameo>",
+  "alignments": {
     "countryname": "<country>",
     "goldstein": "<goldstein>",
     "lat": "<latitude>",
     "lon": "<longitude>",
-    "placename": "<geoname>",
-    "quad_class": "<quad_class>",
-    "root_code": "<root_code>",
-    "source_agent": "<src_sector>",
-    "source_root": "<src_country>",
-    "story_date_constructed": "<date>",
-    "target_agent": "<tgt_sector>",
-    "target_root": "<tgt_country>"
+    "story_date_constructed": "<date>"
+  },
+  "formats": {
+    "code": "CAMEO",
+    "quad_class": "penta_class",
+    "root_code": "root_code",
+    "source_agent": "phoenix",
+    "source_root": "phoenix",
+    "target_agent": "phoenix",
+    "target_root": "phoenix"
   },
   "citations": [
     {

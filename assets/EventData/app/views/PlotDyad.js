@@ -47,9 +47,9 @@ export default class PlotDyad {
         }).attr("stroke", "black");
 
         this.node_drag = d3.drag()
-            .on("start", this.dragstart)
-            .on("drag", this.dragmove)
-            .on("end", () => this.dragend(preferences));
+            .on("start", (d) => this.dragstart(vnode, d))
+            .on("drag", (d) => this.dragmove(vnode, d))
+            .on("end", () => this.dragend(vnode));
 
         this.dragStarted = false; //determines if dragging
         this.dragSelect = null; //node that has started the drag
@@ -98,8 +98,8 @@ export default class PlotDyad {
         // draw the drag line last to show it over the nodes when dragging
         this.drag_line = this.svg.append('svg:path').attr('class', 'link dragline hidden').attr('d', 'M0,0L0,0');
 
-        this.updateSVG(); //updates SVG elements
-        this.actorForce.on("tick", this.actorTick); //custom tick function
+        this.updateSVG(vnode); //updates SVG elements
+        this.actorForce.on("tick", () => this.actorTick(vnode)); //custom tick function
     }
 
     onupdate(vnode) {
@@ -135,7 +135,7 @@ export default class PlotDyad {
         d3.select("#centerLine").attr("d", function () {
             return "M" + diagramWidth / 2 + "," + 0 + "V" + bound.height;
         });
-        this.updateAll();
+        this.updateAll(vnode);
     }
 
     // todo save graph state
@@ -149,7 +149,7 @@ export default class PlotDyad {
     }
 
     //function called at start of drag. 'i' is also passed but ignored
-    dragstart(d) {
+    dragstart(vnode, d) {
         this.actorForce.stop(); // stops the force auto positioning before you start dragging
         this.dragStarted = true;
         this.dragSelect = d;
@@ -158,15 +158,16 @@ export default class PlotDyad {
     }
 
     //function called while dragging, binds (x, y) within SVG and boundaries
-    dragmove(d) {
+    dragmove(vnode, d) {
         let bound = this.svg.node().getBoundingClientRect();
         d.x = Math.max(actorNodeR, Math.min(bound.width - actorNodeR, d3.event.x));
         d.y = Math.max(actorNodeR, Math.min(bound.height - actorNodeR, d3.event.y));
-        this.actorTick();
+        this.actorTick(vnode);
     }
 
     //function called at end of drag, merges dragSelect and dragTarget if dragTarget exists
-    dragend(preferences) {
+    dragend(vnode) {
+        let {preferences} = vnode.attrs;
         //merge dragSel and dragTarg
         if (this.dragTarget) {
             d3.select(this.dragTargetHTML).transition().attr("r", actorNodeR); //transition back to normal size
@@ -210,7 +211,7 @@ export default class PlotDyad {
             preferences['tabs'][preferences['current_tab']]['node'] = this.dragTarget;
             preferences['tabs'][preferences['current_tab']]['show_selected'] = true;
 
-            this.updateAll();
+            this.updateAll(vnode);
 
             if (app.selectedMode === "aggregate")
                 updateAggregTable();
@@ -219,7 +220,7 @@ export default class PlotDyad {
         this.dragSelect = null;
         this.dragTarget = null;
         this.dragTargetHTML = null;
-        this.actorTick();
+        this.actorTick(vnode);
         this.actorForce.alpha(1).restart();
     }
 
@@ -256,7 +257,7 @@ export default class PlotDyad {
                     else preferences['edges'].splice(i, 1);
                 });
 
-                this.updateAll();
+                this.updateAll(vnode);
                 if (app.selectedMode === "aggregate")
                     updateAggregTable();
             })
@@ -386,7 +387,7 @@ export default class PlotDyad {
                 dup: !!foundLink
             });
 
-            this.updateAll();
+            this.updateAll(vnode);
             this.resetMouseVars();
 
             if (app.selectedMode === "aggregate")
@@ -425,10 +426,10 @@ export default class PlotDyad {
         //node outline defined here
         this.svg.selectAll("circle").style("stroke", function (d) {
             //give selected node a black outline, and all other nodes the default color
-            return d === preferences[preferences['current_tab']]['node'] ? "black" : pebbleBorderColor;
+            return d === preferences['tabs'][preferences['current_tab']]['node'] ? "black" : pebbleBorderColor;
         }).style("stroke-width", function (d) {
             //give selected node a thicker 3px outline, and all other nodes the default 1px
-            return d === preferences[preferences['current_tab']]['node'] ? 3 : 1;
+            return d === preferences['tabs'][preferences['current_tab']]['node'] ? 3 : 1;
         });
 
         //link movement and display determined here
@@ -504,7 +505,7 @@ export default class PlotDyad {
     //function to handle force and SVG updates
     updateAll(vnode) {
         let {preferences} = vnode.attrs;
-        this.updateSVG();
+        this.updateSVG(vnode);
         this.actorForce.nodes(preferences['nodes']).force("link").links(preferences['edges']);
         this.actorForce.alpha(1).restart();
         this.resetMouseVars();

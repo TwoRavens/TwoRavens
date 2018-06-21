@@ -88,14 +88,16 @@
     "Event Date_constructed",
     "Country_constructed"
   ],
-  "ontology_alignments": {
+  "alignments": {
     "Event Date_constructed": "<date>",
     "country_constructed": "<country>",
     "Latitude": "<latitude>",
-    "Longitude": "<longitude>",
-    "Source Sectors": "<source_sectors>",
-    "Target Sectors": "<target_sectors>",
-    "CAMEO Code": "<cameo>"
+    "Longitude": "<longitude>"
+  },
+  "formats": {
+    "Source Sectors": "icews",
+    "Target Sectors": "icews",
+    "CAMEO Code": "CAMEO"
   },
   "citations": [
     {

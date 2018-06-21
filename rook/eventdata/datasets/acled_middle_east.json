@@ -101,6 +101,9 @@
     "country_constructed": "<country>",
     "TIMESTAMP_constructed": "<date>"
   },
+  "formats": {
+    "INTERACTION": "ACLED_interaction"
+  },
   "citations": [
     {
       "author": "The Armed Conflict Location & Event Data Project",

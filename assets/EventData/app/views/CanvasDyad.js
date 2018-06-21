@@ -12,8 +12,7 @@ let selectionWidth = '350px';
 
 
 function actorSelection(vnode) {
-    let {mode, data, preferences} = vnode.attrs;
-
+    let {mode, data, metadata, preferences} = vnode.attrs;
     return [
         m(".panel-heading.text-center[id='actorSelectionTitle']", {style: {"padding-bottom": "5px"}},
             m("[id='actorPanelTitleDiv']", m("h3.panel-title", "Actor Selection")),
@@ -37,7 +36,8 @@ function actorSelection(vnode) {
             id: 'actorTab',
             onclick: (tab) => preferences['current_tab'] = tab,
             activeSection: preferences['current_tab'],
-            sections: Object.keys(preferences['tabs']).map(entry => ({value: entry}))
+            sections: Object.keys(preferences['tabs']).map(entry => ({value: entry})),
+            attrsAll: {"style": {"width": "calc(100% - 10px)", 'margin-left': '5px'}}
         }),
         m("#groupNameDisplayContainer.panel-heading.text-center", {style: {"padding-bottom": "0px"}},
             // TODO focusout on esc, and TextField wrapper
@@ -49,44 +49,41 @@ function actorSelection(vnode) {
         m("#fullContainer", m(`.actorTabContent#actorDiv`,
             m(MonadSelection, {
                 data: data[preferences['current_tab']],
-                preferences: preferences['tabs'][preferences['current_tab']]
+                preferences: preferences['tabs'][preferences['current_tab']],
+                metadata: metadata['tabs'][preferences['current_tab']]
             }),
             m(".actorBottomTry", {style: {"width": "100%"}},
                 m(Button, {
                     id: 'actorSelectAll',
                     onclick: () => preferences['tabs'][preferences['current_tab']]['node']['group'] = new Set(data[preferences['current_tab']]['full']),
-                    title: `Selects all ${preferences['current_tab']}s that match the filter criteria`,
-                    value: 'Select All'
-                }),
+                    title: `Selects all ${preferences['current_tab']}s that match the filter criteria`
+                }, 'Select All'),
                 m(Button, {
                     id: 'actorClearAll',
                     onclick: () => preferences['tabs'][preferences['current_tab']]['node']['group'] = new Set(),
-                    title: `Clears all ${preferences['current_tab']}s that match the filter criteria`,
-                    value: 'Clear All'
-                }),
+                    title: `Clears all ${preferences['current_tab']}s that match the filter criteria`
+                }, 'Clear All'),
                 m(Button, {
                     id: 'actorNewGroup',
                     onclick: () => {
                         preferences['nodes'].push({}) // TODO
                     },
                     title: `Create new ${preferences['current_tab']} group`,
-                    style: {'margin-right': '2px', float: 'right'},
-                    value: 'New Group'
-                }),
+                    style: {'margin-right': '2px', float: 'right'}
+                }, 'New Group'),
                 m(Button, {
                     id: 'actorDeleteGroup',
                     onclick: () => preferences[''], // TODO (also make sure there isn't zero groups)
                     title: `Delete current group`,
-                    style: {float: 'right'},
-                    value: 'Delete Group'
-                })
+                    style: {float: 'right'}
+                }, 'Delete Group')
             )))
     ]
 }
 
 export default class CanvasDyad {
 
-    oncreate(vnode) {
+    oninit(vnode) {
         let {metadata, preferences} = vnode.attrs;
         preferences['node_count'] = preferences['node_count'] || 0;
 
@@ -98,18 +95,21 @@ export default class CanvasDyad {
             id: preferences['node_count']++
         }));
 
-        preferences['tabs'] = preferences['tabs'] || Object.keys(metadata['tabs']).map(tab => {
-            preferences['tabs'][tab] = {
-                show_selected: false,
-                filters: Object.keys(metadata['tabs'][tab]['filters']).reduce((out, filter) => {
-                    out[filter] = {expanded: false, selected: new Set()};
-                    return out;
-                }, {}),
-                search: '',
-                visible_elements: 0,
-                node: preferences['nodes'].filter(node => node['actor'] === tab)[0]
-            }
-        });
+        if (preferences['tabs'] === undefined) {
+            preferences['tabs'] = {};
+            Object.keys(metadata['tabs']).map(tab => {
+                preferences['tabs'][tab] = {
+                    show_selected: false,
+                    filters: metadata['tabs'][tab]['filters'].reduce((out, filter) => {
+                        out[filter] = {expanded: false, selected: new Set()};
+                        return out;
+                    }, {}),
+                    search: '',
+                    visible_elements: 0,
+                    node: preferences['nodes'].filter(node => node['actor'] === tab)[0]
+                }
+            });
+        }
 
         preferences['edges'] = preferences['edges'] || [];
         preferences['current_tab'] = preferences['current_tab'] || Object.keys(metadata['tabs'])[0];
