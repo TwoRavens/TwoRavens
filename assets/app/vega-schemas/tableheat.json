@@ -1,5 +1,6 @@
 {
   "$schema": "https://vega.github.io/schema/vega-lite/v2.json",
+  "description": "A heatmap.",
   "data": {"url": "tworavensData"},
   "encoding": {
     "y": {"field": "tworavensX", "type": "nominal"},

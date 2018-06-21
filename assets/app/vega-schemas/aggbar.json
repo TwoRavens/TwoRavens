@@ -1,0 +1,17 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v2.json",
+  "description": "An aggregate bar chart.",
+  "data": { "url": "tworavensData"},
+  "transform": null,
+  "mark": "bar",
+  "encoding": {
+    "y": {
+      "field": "tworavensY", "type": "nominal",
+      "scale": {"rangeStep": null}
+    },
+    "x": {
+      "aggregate": "sum", "field": "tworavensX", "type": "quantitative",
+      "axis": {"title": "tworavensX"}
+    }
+  }
+}

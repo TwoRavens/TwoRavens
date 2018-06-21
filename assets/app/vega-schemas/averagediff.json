@@ -1,0 +1,40 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v2.json",
+  "description": "Difference from the average.",
+  "data": {"url": "tworavensData"},
+  "transform": [
+    {
+      "window": [{
+        "op": "mean",
+        "field": "tworavensX",
+        "as": "AverageRating"
+      }],
+      "frame": [
+        null,
+        null
+      ]
+    }
+  ],
+  "layer": [
+    {
+      "mark": "bar",
+      "encoding": {
+        "x": {
+          "field": "tworavensX", "type": "quantitative",
+          "axis": {"title": "tworavensX"}
+        },
+        "y": {"field": "tworavensY", "type": "nominal"}
+      }
+    },
+    {
+      "mark": {"type": "rule", "color": "red"},
+      "encoding": {
+        "x": {
+          "aggregate": "average",
+          "field": "AverageRating",
+          "type": "quantitative"
+        }
+      }
+    }
+  ]
+}
