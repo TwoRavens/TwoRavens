@@ -150,7 +150,7 @@ plotdata.app <- function(env) {
         })
   }
   
-  if(plottype=="line") {
+  if(plottype=="line" | plottype=="step") {
         tryCatch({
         plotdata <<- list()
 
