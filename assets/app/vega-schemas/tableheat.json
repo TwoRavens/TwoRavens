@@ -1,0 +1,11 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v2.json",
+  "description": "A heatmap table.",
+  "data": {"url": "tworavensData"},
+  "mark": "rect",
+  "encoding": {
+    "y": {"field": "tworavensY", "type": "nominal"},
+    "x": {"field": "tworavensX", "type": "nominal"},
+    "color": {"aggregate": "count", "type": "quantitative"}
+  }
+}

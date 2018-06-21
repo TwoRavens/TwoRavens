@@ -8,6 +8,7 @@ import * as box2d from './vega-schemas/box2d';
 import * as scatter from './vega-schemas/scatter';
 import * as stackedbar from './vega-schemas/stackedbar';
 import * as line from './vega-schemas/line';
+import * as tableheat from './vega-schemas/tableheat';
 
 const $private = false;
 
@@ -1526,7 +1527,7 @@ export async function plot(xNode, yNode, plottype="") {
     */
     
     //testing
-    //plottype=["line"];
+    //plottype=["tableheat"];
     
     if(plottype=="") plottype = getPlotType();
     let plotvars = [xNode.name, yNode.name];
@@ -1544,6 +1545,7 @@ export async function plot(xNode, yNode, plottype="") {
         plottype[0] === "scatter" ? scatter :
         plottype[0] === "stackedbar" ? stackedbar:
         plottype[0] === "line" ? line:
+        plottype[0] === "tableheat" ? tableheat:
         alert("invalid plot type");
     console.log(schema);
 
