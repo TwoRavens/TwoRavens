@@ -304,7 +304,7 @@ class Body {
                   m("figcaption", {style: {"text-align": "center"}}, title));
             let plot = node1 && node1.plottype === 'continuous' ? plots.density : plots.bars;
             return m('div', {style}, [
-                thumb(1, 'scatter', "Scatter Plot"), thumb(2, 'tableheat', "Heatmap"), thumb(3, 'line', "Linechart"), thumb(4, 'stackedbar', "Stacked Bar"),thumb(5, 'box', "Box Plot"), thumb(6, 'groupedbar', "Grouped Bar"),
+                thumb(1, 'scatter', "Scatter Plot"), thumb(2, 'tableheat', "Heatmap"), thumb(3, 'line', "Linechart"), thumb(4, 'stackedbar', "Stacked Bar"),thumb(5, 'box', "Box Plot"), thumb(6, 'groupedbar', "Grouped Bar"),thumb(7, 'strip', "Strip Plot"),
                 m('#plot', {oncreate: _ => node1 && node2 ? exp.plot(node1, node2) : plot(node1, 'explore', true)})
             ]);
         };

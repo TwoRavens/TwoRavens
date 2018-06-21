@@ -74,7 +74,7 @@ plotdata.app <- function(env) {
         })
   }
   
-  if(plottype=="box") {
+  if(plottype=="box" | plottype=="strip") {
         tryCatch({
         plotdata <<- list()
 
