@@ -299,11 +299,12 @@ class Body {
             let thumb = (idx, id, title) =>
                 m("figure", {style: {float: "left"}},
                   m(`img#${id}_img[alt=${id}][height=140px][width=260px][src=/static/images/thumb${idx}.png]`,
-                    {style: {border: "1px solid #ddd", "border-radius": "3px", padding: "5px", margin: "3%", cursor: "pointer"}}),
+                    {onclick: _ => exp.plot(node1,node2,[id]),
+                    style: {border: "1px solid #ddd", "border-radius": "3px", padding: "5px", margin: "3%", cursor: "pointer"}}),
                   m("figcaption", {style: {"text-align": "center"}}, title));
             let plot = node1 && node1.plottype === 'continuous' ? plots.density : plots.bars;
             return m('div', {style}, [
-                thumb(1, 'scatterplot', "Scatter Plot"), thumb(2, 'heatmap', "Heatmap"), thumb(3, 'linechart', "Linechart"),
+                thumb(1, 'scatter', "Scatter Plot"), thumb(2, 'tableheat', "Heatmap"), thumb(3, 'line', "Linechart"), thumb(4, 'stackedbar', "Stacked Bar"),
                 m('#plot', {oncreate: _ => node1 && node2 ? exp.plot(node1, node2) : plot(node1, 'explore', true)})
             ]);
         };
