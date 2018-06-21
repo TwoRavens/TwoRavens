@@ -32,10 +32,10 @@ export function interpolate(data, date) {
     let upper = allDatesInt[allDatesInt.length - 1];
 
     for (let candidate in allDatesInt) {
-        if (allDatesInt[candidate] > lower && allDatesInt[candidate] < upper) {
+        if (allDatesInt[candidate] > lower && allDatesInt[candidate] < date) {
             lower = allDatesInt[candidate];
         }
-        if (allDatesInt[candidate] < upper && allDatesInt[candidate] > lower) {
+        if (allDatesInt[candidate] < upper && allDatesInt[candidate] > date) {
             upper = allDatesInt[candidate];
         }
     }
@@ -67,7 +67,7 @@ export default class CanvasDate {
             changeYear: true,
             changeMonth: true,
             defaultDate: minDate,
-            yearRange: min + ':' + max,
+            yearRange: minDate.getFullYear() + ':' + maxDate.getFullYear(),
             minDate: minDate,
             maxDate: maxDate,
             orientation: top,
@@ -93,7 +93,7 @@ export default class CanvasDate {
         $(`#toDate${subsetName}`).datepicker({
             changeYear: true,
             changeMonth: true,
-            yearRange: min + ':' + max,
+            yearRange: minDate.getFullYear() + ':' + maxDate.getFullYear(),
             dateFormat: 'yy-mm-dd',
             defaultDate: maxDate,
             minDate: preferences['userLower'],
@@ -109,9 +109,9 @@ export default class CanvasDate {
     view(vnode) {
         let {mode, subsetName, data, preferences, redraw, setRedraw} = vnode.attrs;
 
-        let setHandleDates = (lower, upper) => {
-            preferences['handleLower'] = lower;
-            preferences['handleUpper'] = upper;
+        let setHandleDates = (handles) => {
+            preferences['handleLower'] = handles[0];
+            preferences['handleUpper'] = handles[1];
         };
 
         // only draw the graph if there are multiple datapoints
@@ -119,7 +119,13 @@ export default class CanvasDate {
         let dataProcessed;
         if (redraw && drawGraph) {
             setRedraw(subsetName, false);
-            let allDates = data.sort(dateSort);
+            let allDates = [...data.sort(dateSort)];
+
+            preferences['userLower'] = preferences['userLower'] || data[0]['Date'];
+            preferences['userUpper'] = preferences['userUpper'] || data[data.length - 1]['Date'];
+
+            preferences['handleLower'] = preferences['handleLower'] || data[0]['Date'];
+            preferences['handleUpper'] = preferences['handleUpper'] || data[data.length - 1]['Date'];
 
             // Filter highlighted data by date picked
             let selectedDates = data.filter(function (row) {
@@ -215,18 +221,21 @@ export default class CanvasDate {
             }))
         ];
 
-        return (m("#canvasDate", {style: {'padding-top': panelMargin}},
+        return (m("#canvasDate", {style: {'height': '100%', 'width': '100%', 'padding-top': panelMargin}},
             [
-                m("[id='dateSVGdiv']", {style: {"display": "inline-block"}},
-                    m("svg#dateSVG[height='550'][width='500']"),
+                m("[id='dateSVGdiv']", {
+                        style: {
+                            "height": "550px",
+                            "width": "500px",
+                            "display": "inline-block"
+                        }
+                    },
                     drawGraph && m(PlotDate, {
+                        id: 'dateSVG' + subsetName,
+                        data: dataProcessed,
+                        handles: [preferences['handleLower'], preferences['handleUpper']],
                         callbackHandles: setHandleDates,
                         dataProcessed,
-                        attrsAll: {
-                            id: 'dateSVG',
-                            height: 550,
-                            width: 500
-                        }
                     })),
                 m("div",
                     {

@@ -11,6 +11,7 @@ export default class CanvasCategorical {
     createPlot(format, data, preferences, shape) {
         let maxCharacters = 0;
 
+        // resize left margin to keep labels within svg. If greater than 25 keys, then ignore zero-value keys
         let keepZeros = Object.keys(data).length <= 25;
         let keepKeys = Object.keys(data)
             .filter(key => key !== 'undefined' && (keepZeros || data[key] !== 0));
@@ -83,7 +84,8 @@ export default class CanvasCategorical {
             })
         } else if ('formats' in metadata) {
             allData[masterFormat] = {};
-            Object.keys(app.formattingData[masterFormat]).forEach(key => allData[masterFormat][key] = flattenedData[key] || 0)
+            Object.keys(app.formattingData[masterFormat]).forEach(key =>
+                allData[masterFormat][key] = flattenedData[key] || 0)
         }
 
         // preferences['action_codes'] = preferences['action_codes'] || Array(20).fill(false);

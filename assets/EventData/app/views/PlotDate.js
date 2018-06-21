@@ -17,27 +17,41 @@ let getFreq = entry => entry.Freq;
 let getDate = entry => entry.Date;
 
 export default class PlotDate {
+    oncreate(vnode) {
+        this.plot(vnode)
+    }
 
     onupdate(vnode) {
-        // TODO: handle locations are not used! this defaults to min and max dates
-        let {id, data, handles, callbackHandles} = vnode.attrs;
+        this.plot(vnode)
+    }
+
+    plot(vnode) {
+        let {id, data, callbackHandles} = vnode.attrs;
         if (data === undefined) return;
 
-        let dateSVG = d3.select('#' + id);
+        // Set calendar ranges
+        let datemin = d3.min(Object.keys(data).map(color => d3.min(data[color], getDate)));
+        let datemax = d3.max(Object.keys(data).map(color => d3.max(data[color], getDate)));
+        let freqmax = d3.max(Object.keys(data).map(color => d3.max(data[color], getFreq)));
+
+        let dateSVG = d3.select('#' + id.replace(/ /g,"_"));
         dateSVG.html('');
 
-        let margin = {top: 20, right: 20, bottom: 180, left: 80};
+        let bound = dateSVG.node().getBoundingClientRect();
+
+        let margin = {top: 25, right: 20, bottom: 180, left: 80};
         let margin2 = {top: 430, right: 20, bottom: 80, left: 80};
-        let datewidth = +dateSVG.attr("width") - margin.left - margin.right;
-        let dateheight = +dateSVG.attr("height") - margin.top - margin.bottom;
-        let dateheight2 = +dateSVG.attr("height") - margin2.top - margin2.bottom;
+        let datewidth = +bound.width - margin.left - margin.right;
+        let dateheight = +bound.height - margin.top - margin.bottom;
+        let dateheight2 = +bound.height - margin2.top - margin2.bottom;
+
 
         // The date range needs to be transformed to image width. Range defined here, domain defined below
         // Range of X:
-        let datex = d3.scaleTime().range([0, datewidth]),
-            datex2 = d3.scaleTime().range([0, datewidth]),
-            datey = d3.scaleLinear().range([dateheight, 0]),
-            datey2 = d3.scaleLinear().range([dateheight2, 0]);
+        let datex = d3.scaleTime().range([0, datewidth]).domain([datemin, datemax]);
+        let datex2 = d3.scaleTime().range([0, datewidth]).domain(datex.domain());
+        let datey = d3.scaleLinear().range([dateheight, 0]).domain([0, freqmax]);
+        let datey2 = d3.scaleLinear().range([dateheight2, 0]).domain(datey.domain());
 
         let datexAxis = d3.axisBottom(datex),
             datexAxis2 = d3.axisBottom(datex2),
@@ -50,7 +64,7 @@ export default class PlotDate {
 
         let datezoom = d3.zoom()
             .scaleExtent([1, Infinity])
-            .translateExtent([[0, 0], [datewidth, dateheight]])
+            .translateExtent([[200, 0], [datewidth, dateheight]])
             .extent([[0, 0], [datewidth, dateheight]])
             .on("zoom", zoomed);
 
@@ -98,8 +112,7 @@ export default class PlotDate {
             let s = d3.event.selection || datex2.range();
 
             datex.domain(s.map(datex2.invert, datex2));
-            datefocus.select(".area").attr("d", datearea);
-            datefocus.select(".areaUser").attr("d", datearea);
+            Object.keys(data).forEach((color, i) => datefocus.select(".area" + i).attr("d", datearea));
             datefocus.select(".axis--x").call(datexAxis)
                 .selectAll("text")
                 .attr("transform", "rotate(45)")
@@ -116,7 +129,6 @@ export default class PlotDate {
             let t = d3.event.transform;
             datex.domain(t.rescaleX(datex2).domain());
             datefocus.select(".area").attr("d", datearea);
-            datefocus.select(".areaUser").attr("d", datearea);
             datefocus.select(".axis--x").call(datexAxis)
                 .selectAll("text")
                 .attr("transform", "rotate(45)")
@@ -124,28 +136,20 @@ export default class PlotDate {
             datecontext.select(".brush").call(datebrush.move, datex.range().map(t.invertX, t));
         }
 
-        // Set calendar ranges
-        let datemin = d3.min(Object.keys(data).map(color => d3.min(data[color], getDate)), getDate);
-        let datemax = d3.max(Object.keys(data).map(color => d3.max(data[color], getDate)), getDate);
-        let freqmax = d3.max(Object.keys(data).map(color => d3.max(data[color], getFreq)), getFreq);
-
-        datex.domain([datemin, datemax]);
-        datey.domain([0, freqmax]);
-        datex2.domain(datex.domain());
-        datey2.domain(datey.domain());
-
         // Draw data on focus portion of svg (datefocus) with the area variable attribute
-        Object.keys(data).forEach(color => {
+        Object.keys(data).forEach((color, i) => {
             datefocus.append("path")
                 .datum(data[color])
                 .style('fill', color)
+                .attr("class", "area" + i)
                 .style("clip-path", "url(#clip)")
                 .attr('d', datearea);
 
             datecontext.append("path")
                 .datum(data[color])
-                .style("fill", "#ADADAD")
+                .style("fill", color)
                 .attr("class", "area")
+                .style("clip-path", "url(#clip)")
                 .attr("d", datearea2);
         });
 
@@ -197,6 +201,6 @@ export default class PlotDate {
 
     view(vnode) {
         let {id, attrsAll} = vnode.attrs;
-        return m(`svg#${id}[width=100%][height=100%]`, attrsAll)
+        return m(`svg#${id.replace(/ /g,"_")}[width=100%][height=100%]`, attrsAll)
     }
 }

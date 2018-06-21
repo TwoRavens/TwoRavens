@@ -8,43 +8,33 @@
   "subsets": {
     "Actor": {
       "type": "dyad",
-      "formats": [
-        "SPEED_ini_igrp1",
-        "SPEED_tar_igrp1",
-        "SPEED_vic_igrp1",
-        "SPEED_ini_sgrp1",
-        "SPEED_tar_sgrp1",
-        "SPEED_vic_sgrp1",
-        "SPEED_ini_pgrp1",
-        "SPEED_tar_pgrp1",
-        "SPEED_vic_pgrp1"
-      ],
       "tabs": {
         "source": {
+          "full": "eventid",
           "filters": [
-            "ini_igrp1",
-            "tar_igrp1",
-            "vic_igrp1",
-            "ini_sgrp1",
-            "tar_sgrp1",
-            "vic_sgrp1",
-            "ini_pgrp1",
-            "tar_pgrp1",
-            "vic_pgrp1"
+            "INI_IGRP1",
+            "TAR_IGRP1",
+            "VIC_IGRP1",
+            "INI_SGRP1",
+            "TAR_SGRP1",
+            "VIC_SGRP1",
+            "INI_PGRP1",
+            "TAR_PGRP1",
+            "VIC_PGRP1"
           ]
         },
         "target": {
           "full": "eventid",
           "filters": [
-            "ini_igrp1",
-            "tar_igrp1",
-            "vic_igrp1",
-            "ini_sgrp1",
-            "tar_sgrp1",
-            "vic_sgrp1",
-            "ini_pgrp1",
-            "tar_pgrp1",
-            "vic_pgrp1"
+            "INI_IGRP1",
+            "TAR_IGRP1",
+            "VIC_IGRP1",
+            "INI_SGRP1",
+            "TAR_SGRP1",
+            "VIC_SGRP1",
+            "INI_PGRP1",
+            "TAR_PGRP1",
+            "VIC_PGRP1"
           ]
         }
       }
@@ -55,7 +45,7 @@
         "SPEED_ev_type"
       ],
       "columns": [
-        "ev_type"
+        "EV_TYPE"
       ]
     },
     "Posthoc": {
@@ -73,7 +63,7 @@
         "SPEED_link_type"
       ],
       "columns": [
-        "link_type"
+        "LINK_TYPE"
       ]
     },
     "Location Type": {
@@ -82,7 +72,7 @@
         "SPEED_loc_type"
       ],
       "columns": [
-        "loc_type"
+        "LOC_TYPE"
       ]
     },
     "Political Expression Type": {
@@ -91,7 +81,7 @@
         "SPEED_pe_type"
       ],
       "columns": [
-        "pe_type"
+        "PE_TYPE"
       ]
     },
     "Reduced Political Expression Type": {
@@ -100,7 +90,7 @@
         "SPEED_exp_type"
       ],
       "columns": [
-        "exp_type"
+        "EXP_TYPE"
       ]
     },
     "Symbolic Event Type": {
@@ -109,7 +99,7 @@
         "SPEED_sym_type"
       ],
       "columns": [
-        "exp_type"
+        "SYM_TYPE"
       ]
     },
     "Advocated Violence": {
@@ -118,7 +108,7 @@
         "SPEED_ad_viol"
       ],
       "columns": [
-        "ad_viol"
+        "AD_VIOL"
       ]
     },
     "Advocated Tactics": {
@@ -127,7 +117,7 @@
         "SPEED_ad_tact"
       ],
       "columns": [
-        "ad_tact"
+        "AD_TACT"
       ]
     },
     "Attack Type": {
@@ -136,7 +126,7 @@
         "SPEED_atk_type"
       ],
       "columns": [
-        "atk_type"
+        "ATK_TYPE"
       ]
     },
     "Disruptive State Act Type Broad": {
@@ -145,7 +135,7 @@
         "SPEED_dsa_type"
       ],
       "columns": [
-        "dsa_type"
+        "DSA_TYPE"
       ]
     },
     "Disruptive State Act Type": {
@@ -154,7 +144,7 @@
         "SPEED_stat_type"
       ],
       "columns": [
-        "stat_type"
+        "STAT_TYPE"
       ]
     },
     "Victim Effect": {
@@ -199,7 +189,7 @@
         "SPEED_gp_type"
       ],
       "columns": [
-        "gp_type"
+        "GP_TYPE"
       ]
     },
     "Initiator Type Known": {
@@ -208,7 +198,7 @@
         "SPEED_know_ini"
       ],
       "columns": [
-        "know_ini"
+        "KNOW_INI"
       ]
     },
     "Initiator Type": {
@@ -217,7 +207,7 @@
         "SPEED_ini_type"
       ],
       "columns": [
-        "ini_type"
+        "INI_TYPE"
       ]
     },
     "Target Type": {
@@ -226,7 +216,7 @@
         "SPEED_tar_type"
       ],
       "columns": [
-        "tar_type"
+        "TAR_TYPE"
       ]
     },
     "Victim Type": {
@@ -235,7 +225,7 @@
         "SPEED_vic_type"
       ],
       "columns": [
-        "vic_type"
+        "VIC_TYPE"
       ]
     },
     "Non-government Initiator Type": {
@@ -244,7 +234,7 @@
         "SPEED_ngov_i1"
       ],
       "columns": [
-        "ngov_i1"
+        "NGOV_I1"
       ]
     },
     "Government Initiator Type": {
@@ -253,7 +243,7 @@
         "SPEED_gov_i1"
       ],
       "columns": [
-        "gov_i1"
+        "GOV_I1"
       ]
     },
     "Level of Government Initiator": {
@@ -262,7 +252,7 @@
         "SPEED_g_lvl"
       ],
       "columns": [
-        "g_lvl_i"
+        "G_LVL_I"
       ]
     },
     "Level of Government Target": {
@@ -271,7 +261,7 @@
         "SPEED_g_lvl"
       ],
       "columns": [
-        "g_lvl_t"
+        "G_LVL_T"
       ]
     },
     "Level of Government Victim": {
@@ -280,7 +270,7 @@
         "SPEED_g_lvl"
       ],
       "columns": [
-        "g_lvl_v"
+        "G_LVL_V"
       ]
     },
     "Date Coded": {
@@ -344,8 +334,8 @@
     "Coordinates": {
       "type": "coordinates",
       "format": "signed degrees",
-      "latitude": "gp7",
-      "longitude": "gp8"
+      "latitude": "GP7",
+      "longitude": "GP8"
     }
   },
   "columns": [
@@ -471,29 +461,29 @@
     "AVERAGE_DATE_constructed": "<date>"
   },
   "formats": {
-    "ad_tact": "SPEED_ad_tact",
-    "ad_viol": "SPEED_ad_viol",
-    "atk_type": "SPEED_atk_type",
-    "dsa_type": "SPEED_dsa_type",
-    "ev_type": "SPEED_ev_type",
-    "exp_type": "SPEED_sym_type",
-    "g_lvl_i": "SPEED_g_lvl",
-    "g_lvl_t": "SPEED_g_lvl",
-    "g_lvl_v": "SPEED_g_lvl",
-    "gov_i1": "SPEED_gov_i1",
-    "gp_type": "SPEED_gp_type",
-    "ini_type": "SPEED_ini_type",
-    "know_ini": "SPEED_know_ini",
-    "link_type": "SPEED_link_type",
-    "loc_type": "SPEED_loc_type",
-    "ngov_i1": "SPEED_ngov_i1",
-    "pe_type": "SPEED_pe_type",
+    "AD_TACT": "SPEED_ad_tact",
+    "AD_VIOL": "SPEED_ad_viol",
+    "ATK_TYPE": "SPEED_atk_type",
+    "DSA_TYPE": "SPEED_dsa_type",
+    "EV_TYPE": "SPEED_ev_type",
+    "EXP_TYPE": "SPEED_exp_type",
+    "G_LVL_I": "SPEED_g_lvl",
+    "G_LVL_T": "SPEED_g_lvl",
+    "G_LVL_V": "SPEED_g_lvl",
+    "GOV_I1": "SPEED_gov_i1",
+    "GP_TYPE": "SPEED_gp_type",
+    "INI_TYPE": "SPEED_ini_type",
+    "KNOW_INI": "SPEED_know_ini",
+    "LINK_TYPE": "SPEED_link_type",
+    "LOC_TYPE": "SPEED_loc_type",
+    "NGOV_I1": "SPEED_ngov_i1",
+    "PE_TYPE": "SPEED_pe_type",
     "posthoc": "SPEED_posthoc",
     "property_damaged": "SPEED_property_damaged",
     "property_owner": "SPEED_property_owner",
-    "stat_type": "SPEED_stat_type",
-    "tar_type": "SPEED_tar_type",
-    "vic_type": "SPEED_vic_type",
+    "STAT_TYPE": "SPEED_stat_type",
+    "TAR_TYPE": "SPEED_tar_type",
+    "VIC_TYPE": "SPEED_vic_type",
     "victim_effect": "SPEED_victim_effect",
     "weapon": "SPEED_weapon"
   },

@@ -377,12 +377,8 @@ window.addEventListener('storage', onStorageEvent);
 
 // we must be very particular about how months get incremented, to handle leap years etc.
 export function incrementMonth(date) {
-    let d = date.getDate();
-    date.setMonth(date.getMonth() + 1);
-    if (date.getDate() !== d) {
-        date.setDate(0);
-    }
-    return date;
+    let months = date.getFullYear() * 12 + date.getMonth() + 1;
+    return new Date(Math.floor(months/12), months % 12);
 }
 
 export let isSameMonth = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth();
@@ -408,17 +404,17 @@ export function pageSetup(jsondata) {
 
     let subsetType = genericMetadata[selectedDataset]['subsets'][jsondata['subsetName']]['type'];
 
-    // todo: configuration for the categorical reformatters - they're tied to 20 atm, for example
     let reformatters = {
         'categorical': _=>_,
         'dyad': _=>_,
         'coordinates': _=>_,
 
         'date': data => data
-            .filter(entry => !isNaN(entry['<year>'] && !isNaN(entry['<month>'])))
-            .map(entry => ({'Date': new Date(entry['<year>'], entry['<month>'] - 1, 0), 'Freq': entry.total}))
+            .filter(entry => !isNaN(entry['year'] && !isNaN(entry['month'])))
+            .map(entry => ({'Date': new Date(entry['year'], entry['month'] - 1, 0), 'Freq': entry.total}))
             .sort(dateSort)
             .reduce((out, entry) => {
+
                 if (out.length === 0) return [entry];
                 let tempDate = incrementMonth(out[out.length - 1]['Date']);
 
