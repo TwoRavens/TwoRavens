@@ -537,13 +537,13 @@ main#EventData .actorTabContent {
     height: 100%;
 }
 main#EventData .actorLeft {
-    width: 180px;
+    width: 50%;
     height: 100%;
     display: inline-block;
     vertical-align: top;
 }
 main#EventData .actorRight {
-    width: 164px;
+    width: 50%;
     height: 100%;
     display: inline-block;
     vertical-align: top;
@@ -555,30 +555,14 @@ main#EventData .actorSearch {
 }
 main#EventData .actorFullList {
     display: inline-block;
-    /*
-          position: absolute;
-      */
-
-    width: 180px;
-    /*
-          height: calc(100% - 212px);
-      */
-
+    width: 100%;
     height: calc(100% - 54px);
     overflow-x: auto;
     overflow-y: scroll;
     white-space: nowrap;
 }
 main#EventData .actorFilterList {
-    /*
-          position: absolute;
-      */
-
-    width: 164px;
-    /*
-          height: calc(100% - 206px);
-      */
-
+    width: 100%;
     height: calc(100% - 54px);
     margin-top: 3px;
     overflow-x: auto;
@@ -592,7 +576,6 @@ main#EventData .clearActorBtn {
     height: 30px;
 }
 main#EventData #actorSelectionDiv {
-    width: 350px !important;
     border: 1px solid #ADADAD;
     background: #F9F9F9;
     height: 100%;
@@ -633,9 +616,6 @@ main#EventData .actorHead4 {
     margin-bottom: 0px;
     display: inline-block;
     font-size: 18px;
-}
-main#EventData .filterContainer {
-    display: none;
 }
 main#EventData .sourceChk,
 main#EventData .targetChk,

@@ -8,6 +8,9 @@
   "subsets": {
     "Actor": {
       "type": "dyad",
+      "formats": [
+        "ACLED_inter"
+      ],
       "tabs": {
         "actor 1": {
           "full": "ACTOR1",
@@ -102,7 +105,9 @@
     "TIMESTAMP_constructed": "<date>"
   },
   "formats": {
-    "INTERACTION": "ACLED_interaction"
+    "INTERACTION": "ACLED_interaction",
+    "INTER1": "ACLED_inter",
+    "INTER2": "ACLED_inter"
   },
   "citations": [
     {

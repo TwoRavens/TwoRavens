@@ -31,10 +31,6 @@
           ],
           "token_length": 3
         }
-      },
-      "deconstruct": {
-        "source_others": ";",
-        "target_others": ";"
       }
     },
     "Action": {
@@ -122,6 +118,10 @@
     "source_root": "phoenix",
     "target_agent": "phoenix",
     "target_root": "phoenix"
+  },
+  "deconstruct": {
+    "source_others": ";",
+    "target_others": ";"
   },
   "citations": [
     {

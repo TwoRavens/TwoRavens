@@ -8,11 +8,11 @@ import MonadSelection from './MonadSelection';
 import PlotDyad from './PlotDyad';
 
 // Width of the actor selection panel
-let selectionWidth = '350px';
+let selectionWidth = '400px';
 
 
 function actorSelection(vnode) {
-    let {mode, data, metadata, preferences} = vnode.attrs;
+    let {mode, subsetName, data, metadata, preferences} = vnode.attrs;
     return [
         m(".panel-heading.text-center[id='actorSelectionTitle']", {style: {"padding-bottom": "5px"}},
             m("[id='actorPanelTitleDiv']", m("h3.panel-title", "Actor Selection")),
@@ -48,19 +48,21 @@ function actorSelection(vnode) {
 
         m("#fullContainer", m(`.actorTabContent#actorDiv`,
             m(MonadSelection, {
+                subsetName: subsetName,
                 data: data[preferences['current_tab']],
                 preferences: preferences['tabs'][preferences['current_tab']],
-                metadata: metadata['tabs'][preferences['current_tab']]
+                metadata: metadata['tabs'][preferences['current_tab']],
+                currentTab: preferences['current_tab']
             }),
             m(".actorBottomTry", {style: {"width": "100%"}},
                 m(Button, {
                     id: 'actorSelectAll',
-                    onclick: () => preferences['tabs'][preferences['current_tab']]['node']['group'] = new Set(data[preferences['current_tab']]['full']),
+                    onclick: () => preferences['tabs'][preferences['current_tab']]['node']['selected'] = new Set(data[preferences['current_tab']]['full']),
                     title: `Selects all ${preferences['current_tab']}s that match the filter criteria`
                 }, 'Select All'),
                 m(Button, {
                     id: 'actorClearAll',
-                    onclick: () => preferences['tabs'][preferences['current_tab']]['node']['group'] = new Set(),
+                    onclick: () => preferences['tabs'][preferences['current_tab']]['node']['selected'] = new Set(),
                     title: `Clears all ${preferences['current_tab']}s that match the filter criteria`
                 }, 'Clear All'),
                 m(Button, {

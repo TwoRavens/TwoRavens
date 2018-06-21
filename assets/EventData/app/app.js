@@ -443,8 +443,11 @@ export function pageSetup(jsondata) {
                 return(out);
             }, {})
     };
-    subsetData[jsondata['subsetName']] = reformatters[subsetType](jsondata['data']);
-    console.log(subsetData);
+
+    if (subsetType === 'dyad' && jsondata['search'])
+        subsetData[jsondata['subsetName']][jsondata['tab']]['full'] = jsondata['data'];
+    else
+        subsetData[jsondata['subsetName']] = reformatters[subsetType](jsondata['data']);
 }
 
 
@@ -711,7 +714,6 @@ window.callbackDelete = function (id) {
                 'query': JSON.stringify(subsetQuery),
                 'variables': [...selectedVariables],
                 'dataset': selectedDataset,
-                'datasource': datasource,
                 'subsets': Object.keys(genericMetadata[selectedDataset]['subsets'])
             };
 

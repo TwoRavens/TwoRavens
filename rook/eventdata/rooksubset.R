@@ -180,7 +180,7 @@ eventdata_subset.app <- function(env) {
     collectColumn = function(column) {
         tryCatch({
             data = getData('distinct', query, column)
-            if (column %in% names(subsetMetadata$deconstruct))data = uniques(data, subsetMetadata$deconstruct[[column]])
+            if (column %in% names(datasetMetadata$deconstruct))data = uniques(data, datasetMetadata$deconstruct[[column]])
             return(sort(unlist(data)))
         }, error = genericErrorHandler)
     }
@@ -211,8 +211,18 @@ eventdata_subset.app <- function(env) {
             data
         }, error = genericErrorHandler)
     }
-    else if (subsetMetadata$type == 'dyad')summary$data = sapply(subsetMetadata$tabs, collectMonad, simplify = FALSE, USE.NAMES = TRUE)
-    else if (subsetMetadata$type == 'monad')summary$data = collectMonad(subsetMetadata)
+    else if (subsetMetadata$type == 'dyad') {
+        if (! is.null(everything$search) && everything$search) {
+            summary$search = jsonlite::unbox(TRUE)
+            summary$tab = jsonlite::unbox(everything$tab)
+            summary$data = collectColumn(subsetMetadata$tabs[[everything$tab]]$full)
+        }
+        else summary$data = sapply(subsetMetadata$tabs, collectMonad, simplify = FALSE, USE.NAMES = TRUE)
+    }
+    else if (subsetMetadata$type == 'monad') {
+        if (! is.null(everything$search) && everything$search)summary$data = collectColumn(subsetMetadata$full)
+        else summary$data = collectMonad(subsetMetadata)
+    }
     else summary$data = sapply(subsetMetadata$columns, collectColumn, simplify = FALSE, USE.NAMES = TRUE)
 
     # Additional metadata

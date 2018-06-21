@@ -12,17 +12,19 @@ export default class MonadSelection {
         this.searchTimeout = null;
     }
 
-    search(subsetName, metadata, preferences, force = false) {
+    search(subsetName, metadata, preferences, currentTab, force = false) {
 
         const operator = '$and';
 
         let actorFilters = Object.keys(preferences['filters']).reduce((out, column) => {
-            if (preferences['filters'][column].size === 0) return out;
+            if (preferences['filters'][column]['selected'].size === 0) return out;
             let filter = {};
-            if (column in metadata['deconstruct']) filter[app.ontologyAlign(column)] = {
-                '$regex': `^(.*${metadata['deconstruct'][column]})*(${[...preferences['filters'][column]].join('|')})`
+            let deconstruct = app.genericMetadata[app.selectedDataset]['deconstruct'] || {};
+
+            if (column in deconstruct) filter[app.ontologyAlign(column)] = {
+                '$regex': `^(.*${deconstruct[column]})*(${[...preferences['filters'][column]['selected']].join('|')})`
             };
-            else filter[app.ontologyAlign(column)] = {'$in': [...preferences['filters'][column]]};
+            else filter[column] = {'$in': [...preferences['filters'][column]['selected']]};
             return out.concat([filter]);
         }, []);
 
@@ -30,11 +32,14 @@ export default class MonadSelection {
             if ('token_length' in metadata && preferences['search'].length % metadata['token_length'] === 0) {
                 const tags = preferences['search'].match(new RegExp(`.{${metadata['token_length']}}`, 'g'));
                 actorFilters.push({
-                    [app.ontologyAlign(metadata['full'])]: {'$regex': tags.map(tag => `(?=^(...)*${tag})`).join() + ".*"}
+                    [metadata['full']]: {
+                        '$regex': tags.map(tag => `(?=^(...)*${tag})`).join() + ".*",
+                        '$options': 'i'
+                    }
                 })
             }
             if (!('token_length' in metadata)) actorFilters.push({
-                [app.ontologyAlign(metadata['full'])]: {
+                [metadata['full']]: {
                     '$regex': '.*' + preferences['search'] + '.*',
                     '$options': 'i'
                 }
@@ -71,16 +76,20 @@ export default class MonadSelection {
             'dataset': app.selectedDataset,
             'type': 'summary',
             'subset': subsetName,
+            'tab': currentTab,
             'search': true
         };
 
-        function updateActorListing(data) {
+        let updateActorListing = (data) => {
             this.waitForQuery--;
             preferences['full_limit'] = this.defaultPageSize;
             app.pageSetup(data);
-        }
+        };
 
-        let failedUpdateActorListing = () => this.waitForQuery--;
+        let failedUpdateActorListing = () => {
+            console.log("UPDATE TO ACTOR LISTING FAILED");
+            this.waitForQuery--;
+        };
 
         this.waitForQuery++;
         m.request({
@@ -91,20 +100,22 @@ export default class MonadSelection {
     }
 
     view(vnode) {
-        let {subsetName, data, metadata, preferences} = vnode.attrs;
+        let {subsetName, data, metadata, currentTab, preferences} = vnode.attrs;
+
+        preferences['full_limit'] = preferences['full_limit'] || this.defaultPageSize;
 
         let toggleFull = (actor) => preferences['node']['selected'].has(actor)
-            ? preferences['node']['selected'].add(actor)
-            : preferences['node']['selected'].delete(actor);
+            ? preferences['node']['selected'].delete(actor)
+            : preferences['node']['selected'].add(actor);
 
         let toggleFilter = (filter, actor) => {
-            filter = app.ontologyAlign(filter);
-            preferences['filters'][filter]
-                ? preferences['filters'][filter]['selected'].add(actor)
-                : preferences['filters'][filter]['selected'].delete(actor);
+            preferences['filters'][filter]['selected'].has(actor)
+                ? preferences['filters'][filter]['selected'].delete(actor)
+                : preferences['filters'][filter]['selected'].add(actor);
 
             clearTimeout(this.searchTimeout);
-            this.searchTimeout = setTimeout(() => this.search(subsetName, metadata, preferences), searchLag);
+            this.searchTimeout = setTimeout(
+                () => this.search(subsetName, metadata, preferences, currentTab), searchLag);
         };
 
         let popupAttributes = (column, value) => app.genericMetadata[app.selectedDataset]['formats'][column] && {
@@ -112,23 +123,32 @@ export default class MonadSelection {
             'data-toggle': 'popover',
             'data-placement': 'right',
             'data-trigger': 'hover',
-            'data-content': metadata['token_length']
-                ? value.match(new RegExp(`.{${metadata['token_length']}}`, 'g'))
-                    .map(token => app.formattingData[app.genericMetadata[app.selectedDataset]['formats'][column]][token] || '?').join(' ')
-                : app.formattingData[app.genericMetadata[app.selectedDataset]['formats'][column]][token] || '?'
+            'onmouseover': function(e) {
+                e.redraw = false;
+                let translation = metadata['token_length']
+                    ? value.match(new RegExp(`.{${metadata['token_length']}}`, 'g'))
+                        .map(token => app.formattingData[app.genericMetadata[app.selectedDataset]['formats'][column]][token] || '?').join(' ')
+                    : app.formattingData[app.genericMetadata[app.selectedDataset]['formats'][column]][value];
+                if (translation) {
+                    $(this).attr('data-content', translation);
+                    setTimeout(() => $(this).popover("show"), 200);
+                }
+            },
+            'onmouseout': function(e) {
+                e.redraw = false;
+                setTimeout(() => $(".popover").remove(), 200);
+            }
         };
 
-        console.log("FULL");
-        console.log(data['full']);
-        console.log(metadata);
         return [
             m(`.actorLeft#allActors`,
                 m(TextField, {
-                    placeholder: `Search ${preferences['current_tab']} actors`,
+                    placeholder: `Search ${metadata['full']}`,
                     oninput: (value) => {
                         preferences['search'] = value;
                         clearTimeout(this.searchTimeout);
-                        this.searchTimeout = setTimeout(() => this.search(subsetName, metadata, preferences), searchLag);
+                        this.searchTimeout = setTimeout(
+                            () => this.search(subsetName, metadata, preferences, currentTab), searchLag);
                     }
                 }),
                 m(`.actorFullList#searchListActors`, {
@@ -145,7 +165,7 @@ export default class MonadSelection {
                     },
                     this.waitForQuery === 0 && data['full']
                         .filter(actor => !preferences['show_selected'] || preferences['node']['selected'].has(actor))
-                        .slice(preferences['full_limit'])
+                        .slice(0, preferences['full_limit'])
                         .map(actor =>
                             m('div', popupAttributes(metadata['full'], actor),
                                 m(`input.actorChk[type=checkbox]`, {
@@ -163,14 +183,15 @@ export default class MonadSelection {
                             preferences['search'] = '';
                             Object.keys(preferences['filters']).map(filter => preferences['filters'][filter]['selected'] = new Set());
                             clearTimeout(this.searchTimeout);
-                            this.searchTimeout = setTimeout(() => this.search(subsetName, metadata, preferences), searchLag);
+                            this.searchTimeout = setTimeout(
+                                () => this.search(subsetName, metadata, preferences, currentTab), searchLag);
                         }
                     },
                     "Clear All Filters"
                 ),
                 m(`.actorFilterList#actorFilter`, {style: {"text-align": "left"}},
                     m(`label.actorShowSelectedLbl.actorChkLbl[data-toggle='tooltip']`, {
-                            title: `Show selected ${preferences['current_tab']}s`
+                            title: `Show selected ${metadata['full']}`
                         },
                         m("input.actorChk.actorShowSelected#actorShowSelected[name='actorShowSelected'][type='checkbox']", {
                             checked: preferences['show_selected'],
@@ -186,14 +207,14 @@ export default class MonadSelection {
                         m("label.actorHead4", {
                             onclick: () => preferences['filters'][filter]['expanded'] = !preferences['filters'][filter]['expanded']
                         }, m("b", filter)),
-                        preferences['filters'][filter]['expanded'] && m(".filterContainer", data['filters'][filter].map(actor => m('div',
+                        preferences['filters'][filter]['expanded'] && data['filters'][filter].map(actor => m('div',
                             popupAttributes(filter, actor),
                             m(`input.actorChk[type=checkbox]`, {
                                 checked: preferences['filters'][filter]['selected'].has(actor),
                                 onclick: () => toggleFilter(filter, actor)
                             }),
                             m('label', {onclick: () => toggleFilter(filter, actor)}, actor)
-                        )))
+                        ))
                     ])
                 )
             )
