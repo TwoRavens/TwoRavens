@@ -201,7 +201,7 @@ export default class MonadSelection {
                     ),
                     Object.keys(data['filters']).map(filter => [
                         m(".separator"),
-                        m("button.filterBase" + (preferences['filters'][filter]['expanded'] ? '.filterExpand' : '.filterCollapse'), {
+                        m("button.filterBase" + (preferences['filters'][filter]['expanded'] ? '.filterCollapse' : '.filterExpand'), {
                             onclick: () => preferences['filters'][filter]['expanded'] = !preferences['filters'][filter]['expanded']
                         }),
                         m("label.actorHead4", {

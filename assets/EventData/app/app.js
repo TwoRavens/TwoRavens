@@ -67,6 +67,8 @@ common.setPanelCallback('left', () => {
 export function handleResize() {
     document.getElementById('canvas').style['padding-right'] = common.panelOcclusion['right'];
     document.getElementById('canvas').style['padding-left'] = common.panelOcclusion['left'];
+    Object.keys(genericMetadata[selectedDataset]['subsets']).forEach(subset => subsetRedraw[subset] = true);
+    m.redraw();
 }
 
 window.addEventListener('resize', handleResize);
@@ -398,10 +400,8 @@ export function pageSetup(jsondata) {
 
     if ('total' in jsondata) totalSubsetRecords = jsondata['total'];
 
-    Object.keys(jsondata).forEach(subset => {
-        // trigger d3 replots in all subsets
-        subsetRedraw[subset] = true;
-    });
+    // trigger d3 redraw within current subset
+    subsetRedraw[jsondata['subsetName']] = true;
 
     Object.keys(jsondata['formats'] || {}).forEach(format => formattingData[format] = jsondata['formats'][format]);
     Object.keys(jsondata['alignments'] || {}).forEach(align => formattingData[align] = jsondata['alignments'][align]);

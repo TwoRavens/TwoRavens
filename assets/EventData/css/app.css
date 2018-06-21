@@ -603,7 +603,9 @@ main#EventData .actorBottom {
     margin-top: 6px;
 }
 main#EventData .actorBottomTry {
-    margin-top: -12px;
+    width: 398px;
+    bottom: 12px;
+    position: absolute;
 }
 main#EventData .actorNewGroup {
     float: right;

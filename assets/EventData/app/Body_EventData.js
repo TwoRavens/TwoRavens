@@ -360,7 +360,7 @@ export default class Body_EventData {
                 preferences: app.subsetPreferences[app.selectedSubsetName],
                 metadata: app.genericMetadata[app.selectedDataset]['subsets'][app.selectedSubsetName],
                 redraw: app.subsetRedraw[app.selectedSubsetName],
-                setRedraw: app.setSubsetRedraw
+                setRedraw: (state) => app.setSubsetRedraw(app.selectedSubsetName, state)
             })
         }
 
