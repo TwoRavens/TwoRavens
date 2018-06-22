@@ -18,7 +18,7 @@ urlpatterns = [
 
     url(r'^config/', include('tworaven_apps.configurations.urls')),
 
-    url(r'^eventdata-service/', include('tworaven_apps.eventdata_queries.urls')),
+    url(r'^eventdata/', include('tworaven_apps.eventdata_queries.urls')),
 
     url(r'^d3m-service/', include('tworaven_apps.ta2_interfaces.urls')),
 

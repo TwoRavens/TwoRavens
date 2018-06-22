@@ -37,6 +37,12 @@ class EventDataSavedQuery(TimeStampedModel):
     saved_to_dataverse = models.BooleanField(default=False)
     dataverse_url = models.URLField(default=None)
 
+    def __str__(self):
+        return self.query
+
+    class Meta:
+        ordering = ('-created',)
+
 
 class ArchiveQueryJob(TimeStampedModel):
     """archive query job"""
@@ -52,3 +58,6 @@ class ArchiveQueryJob(TimeStampedModel):
     message = models.TextField(default=None)
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ('-created',)
