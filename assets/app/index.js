@@ -286,7 +286,7 @@ class Body {
         }
 
         let overflow = explore_mode ? 'auto' : 'hidden';
-        let style = `position: absolute; left: ${app.panelWidth.left}; top: 0; margin-top: 10px`;
+        let style = `position: absolute; left: ${app.panelWidth.left}; top: 0; margin-top: 10px; display: block`;
         let node1 = app.findNode(var1);
         let node2 = app.findNode(var2);
         let sortedNodes = nodesExplore.concat().sort((x, y) => x.id - y.id);
@@ -300,12 +300,28 @@ class Body {
                 m("figure", {style: {float: "left"}},
                   m(`img#${id}_img[alt=${id}][height=140px][width=260px][src=/static/images/thumb${idx}.png]`,
                     {onclick: _ => exp.plot(node1,node2,[id]),
-                    style: {border: "1px solid #ddd", "border-radius": "3px", padding: "5px", margin: "3%", cursor: "pointer"}}),
+                     style: {border: "1px solid #ddd", "border-radius": "3px", padding: "5px", margin: "3%", cursor: "pointer"}}),
                   m("figcaption", {style: {"text-align": "center"}}, title));
             let plot = node1 && node1.plottype === 'continuous' ? plots.density : plots.bars;
             return m('div', {style}, [
-                thumb(1, 'scatter', "Scatter Plot"), thumb(2, 'tableheat', "Heatmap"), thumb(3, 'line', "Line Chart"), thumb(4, 'stackedbar', "Stacked Bar"),thumb(5, 'box', "Box Plot"), thumb(6, 'groupedbar', "Grouped Bar"),thumb(7, 'strip', "Strip Plot"),thumb(8, 'aggbar', "Aggregate Bar"),thumb(9, 'binnedscatter', "Binned Scatter"), thumb(10, 'step', "Step Chart"), thumb(11, 'area', "Area Chart"), thumb(12, 'binnedtableheat', "Binned Heatmap"),thumb(13, 'averagediff', "Diff. from Avg."),thumb(14, 'scattermeansd', "Scatter with Overlays"),thumb(15, 'scattermatrix', "Scatter Matrix"),
-                m('#plot', {oncreate: _ => node1 && node2 ? exp.plot(node1, node2) : plot(node1, 'explore', true)})
+                m('div', [
+                    thumb(1, 'scatter', "Scatter Plot"),
+                    thumb(2, 'tableheat', "Heatmap"),
+                    thumb(3, 'line', "Line Chart"),
+                    thumb(4, 'stackedbar', "Stacked Bar"),
+                    thumb(5, 'box', "Box Plot"),
+                    thumb(6, 'groupedbar', "Grouped Bar"),
+                    thumb(7, 'strip', "Strip Plot"),
+                    thumb(8, 'aggbar', "Aggregate Bar"),
+                    thumb(9, 'binnedscatter', "Binned Scatter"),
+                    thumb(10, 'step', "Step Chart"),
+                    thumb(11, 'area', "Area Chart"),
+                    thumb(12, 'binnedtableheat', "Binned Heatmap"),
+                    thumb(13, 'averagediff', "Diff. from Avg."),
+                    thumb(14, 'scattermeansd', "Scatter with Overlays"),
+                    thumb(15, 'scattermatrix', "Scatter Matrix"),
+                ]),
+                m('#plot', {style: 'clear: both', oncreate: _ => node1 && node2 ? exp.plot(node1, node2) : plot(node1, 'explore', true)})
             ]);
         };
 
@@ -317,24 +333,24 @@ class Body {
               m("#innercarousel.carousel-inner", {style: {height: '100%', overflow}},
                 explore_mode && [
                     exploreVars() ||
-                    m('table', {style}, [
-                        m('thead', [''].concat(sortedNodes).map(x => m('th', x.name))),
-                        m('tbody', sortedNodes.map(y => {
-                            return m('tr', [
-                                m('td', {style: 'height: 160px; transform: rotate(-90deg); font-weight: bold'}, y.name),
-                                sortedNodes.map(x => {
-                                    let td = x === y && x.plottype === 'continuous' ? 'density' :
-                                        x === y ? 'bars' :
-                                        x.plottype === y.plottype ? 'scatterplot' :
-                                        'box-whisker';
-                                    let title = x === y ? x.name : `${x.name}/${y.name}`;
-                                    return m('td', {style: 'height: 160px; width: 160px'},
-                                             m('a', {href: `/explore/${title}`, oncreate: m.route.link},
-                                               m('img', {src: `/static/images/${td}.png`, title, alt: title})));
-                                })
-                            ]);
-                        }))
-                    ])
+                        m('table', {style}, [
+                            m('thead', [''].concat(sortedNodes).map(x => m('th', x.name))),
+                            m('tbody', sortedNodes.map(y => {
+                                return m('tr', [
+                                    m('td', {style: 'height: 160px; transform: rotate(-90deg); font-weight: bold'}, y.name),
+                                    sortedNodes.map(x => {
+                                        let td = x === y && x.plottype === 'continuous' ? 'density' :
+                                            x === y ? 'bars' :
+                                            x.plottype === y.plottype ? 'scatterplot' :
+                                            'box-whisker';
+                                        let title = x === y ? x.name : `${x.name}/${y.name}`;
+                                        return m('td', {style: 'height: 160px; width: 160px'},
+                                                 m('a', {href: `/explore/${title}`, oncreate: m.route.link},
+                                                   m('img', {src: `/static/images/${td}.png`, title, alt: title})));
+                                    })
+                                ]);
+                            }))
+                        ])
                 ],
                 m('svg#whitespace')),
               model_mode && m("#spacetools.spaceTool", {style: {right: app.panelWidth['right'], 'z-index': 16}},

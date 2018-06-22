@@ -486,3 +486,7 @@ div#scatterplot .axis path {fill: none; stroke: #BDBDBD; shape-rendering: crispE
     position: relative;
     z-index: 1;
 }
+
+.vega-actions a {
+    padding-right: 1em;
+}
