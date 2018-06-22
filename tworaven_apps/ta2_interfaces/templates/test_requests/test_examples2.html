@@ -10,44 +10,7 @@ let Hello_ex = {};
 // ------------------------------------------
 // example of a SearchSolutionsRequest
 // -------------------------------------------
-let SearchSolutions_ex = {
-            "userAgent": "TA3 system",
-            "version": "2018.5.2_pre",
-            "timeBound": 10.0,
-            "priority": 101.0,
-            "allowedValueTypes": [
-              "DATASET_URI",
-              "CSV_URI"
-            ],
-            "problem": {
-              "problem": {
-                "id": "id-of-this-problem",
-                "version": "version of problem",
-                "name": "name of the problem",
-                "description": "predicting hall of fame inductees",
-                "taskType": "REGRESSION",
-                "taskSubtype": "MULTIVARIATE",
-                "performanceMetrics": [
-                  {
-                    "metric": "ROOT_MEAN_SQUARED_ERROR"
-                  }
-                ]
-              },
-              "inputs": [
-                {
-                  "datasetId": "dataset_123",
-                  "targets": [
-                    {
-                      "resourceId": "r52",
-                      "columnIndex": 3,
-                      "columnName": "at_bats"
-                    }
-                  ]
-                }
-              ]
-            }
-          };
-
+let SearchSolutions_ex = {% include "test_requests/req_SearchSolutions.json" %}
 
 let GetSearchSolutionsResults_ex = {
                               "searchId": "searchId_hwdjip"
@@ -65,47 +28,19 @@ let DescribeSolution_ex = {
                             "solutionId": "solutionId"
                           };
 
-let ScoreSolution_ex = {
-                          "solutionId": "solutionId_62usgm",
-                          "inputs": [
-                            {
-                              "csvUri": "file://uri/to-a/csv"
-                            },
-                            {
-                              "datasetUri": "file://uri/to-a/dataset"
-                            }
-                          ],
-                          "performanceMetrics": [
-                            {
-                              "metric": "ACCURACY",
-                              "k": 0,
-                              "posLabel": ""
-                            },
-                            {
-                              "metric": "F1_MICRO",
-                              "k": 0,
-                              "posLabel": ""
-                            }
-                          ],
-                          "users": [
-                            {
-                              "id": "uuid of user",
-                              "choosen": true,
-                              "reason": "best solution"
-                            },
-                            {
-                              "id": "uuid of user",
-                              "choosen": false,
-                              "reason": ""
-                            }
-                          ],
-                          "configuration": {
-                            "method": "EVALUATION_METHOD_UNDEFINED",
-                            "folds": 0,
-                            "trainTestRatio": 0.0,
-                            "shuffle": false,
-                            "randomSeed": 0,
-                            "stratified": false
-                          }
+let ScoreSolution_ex = {% include "test_requests/req_ScoreSolution.json" %}
+
+let FitSolution_ex = {% include "test_requests/req_FitSolution.json" %}
+
+let ProduceSolution_ex = {% include "test_requests/req_ProduceSolution.json" %}
+
+let SolutionExport_ex = {
+                          "fittedSolutionId": "solutionId_gtk2c2",
+                          "rank": 0.122
                         };
+
+let UpdateProblem_ex = {% include "test_requests/req_UpdateProblem.json" %}
+
+let ListPrimitives_ex = {};
+
 </script>

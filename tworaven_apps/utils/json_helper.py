@@ -1,25 +1,11 @@
 """Convenience methods for JSON strings"""
 import json
 from collections import OrderedDict
-from datetime import date, datetime
 
 from django.utils.safestring import mark_safe
+from tworaven_apps.utils.raven_json_encoder import RavenJSONEncoder
 from tworaven_apps.utils.basic_response import \
     (ok_resp, err_resp)
-
-class RavenJSONEncoder(json.JSONEncoder):
-    """class to encode the data"""
-    def default(self, obj):
-        #if isinstance(obj, np.integer):
-        #    return int(obj)
-        #elif isinstance(obj, np.floating):
-        #    return float(obj)
-        #elif isinstance(obj, np.ndarray):
-        #    return obj.tolist()
-        if isinstance(obj, (datetime, date)):
-            return obj.isoformat()
-        else:
-            return super(RavenJSONEncoder, self).default(obj)
 
 def json_loads(json_str):
     """wrapper for json.loads with OrderedDict"""
@@ -27,7 +13,10 @@ def json_loads(json_str):
         json_dict = json.loads(json_str,
                                object_pairs_hook=OrderedDict)
     except json.decoder.JSONDecodeError as err_obj:
-        err_msg = 'Failed to string to JSON: %s' % (err_obj)
+        err_msg = 'Failed to convert string to JSON: %s' % (err_obj)
+        return err_resp(err_msg)
+    except TypeError as err_obj:
+        err_msg = 'Failed to convert string to JSON: %s' % (err_obj)
         return err_resp(err_msg)
 
     return ok_resp(json_dict)

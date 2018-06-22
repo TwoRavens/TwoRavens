@@ -4,7 +4,7 @@ from tworaven_apps.ta2_interfaces import (\
         views_additional,
         views_search_solutions,
         views_saved_requests,
-        views_ta2_req1)
+        views_non_streaming_requests)
 
 urlpatterns = (
 
@@ -21,11 +21,11 @@ urlpatterns = (
             name='view_stored_response'),
 
     path(r'Hello',
-         views_ta2_req1.view_hello,
+         views_non_streaming_requests.view_hello,
          name='Hello'),
 
     path(r'SearchSolutions',
-         views_ta2_req1.view_search_solutions,
+         views_non_streaming_requests.view_search_solutions,
          name='SearchSolutions'),
 
     path(r'GetSearchSolutionsResults',
@@ -33,15 +33,39 @@ urlpatterns = (
          name='GetSearchSolutionsResults'),
 
     path(r'EndSearchSolutions',
-         views_ta2_req1.view_end_search_solutions,
+         views_non_streaming_requests.view_end_search_solutions,
          name='EndSearchSolutions'),
 
     path(r'StopSearchSolutions',
-         views_ta2_req1.view_stop_search_solutions,
+         views_non_streaming_requests.view_stop_search_solutions,
          name='StopSearchSolutions'),
 
     path(r'DescribeSolution',
-         views_ta2_req1.view_describe_solution,
+         views_non_streaming_requests.view_describe_solution,
          name='DescribeSolution'),
 
-    )
+    path(r'ScoreSolution',
+         views_non_streaming_requests.view_score_solution,
+         name='ScoreSolution'),
+
+    path(r'FitSolution',
+         views_non_streaming_requests.view_fit_solution,
+         name='FitSolution'),
+
+    path(r'ProduceSolution',
+         views_non_streaming_requests.view_produce_solution,
+         name='ProduceSolution'),
+
+    path(r'SolutionExport',
+         views_non_streaming_requests.view_solution_export,
+         name='SolutionExport'),
+
+    path(r'UpdateProblem',
+         views_non_streaming_requests.view_update_problem,
+         name='UpdateProblem'),
+
+    path(r'ListPrimitives',
+         views_non_streaming_requests.view_list_primitives,
+         name='ListPrimitives'),
+
+)
