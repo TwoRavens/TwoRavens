@@ -265,7 +265,7 @@ class StoredResponse(TimeStampedModel):
             'stored_response must be a StoredResponse instance'
 
         # Is 'sent_to_user' already set?
-        if stored_response.sent_to_user is False:
+        if stored_response.sent_to_user is True:
             return False
 
         stored_response.sent_to_user = True

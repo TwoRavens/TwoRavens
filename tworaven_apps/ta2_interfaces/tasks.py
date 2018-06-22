@@ -1,153 +1,91 @@
-
-# --------------------------------
-import json
-import time
-from os.path import join
-from collections import OrderedDict
-
-from google.protobuf.json_format import MessageToJson,\
-    Parse, ParseError
+"""
+send a gRPC command that has streaming results
+capture the results in the db as StoredResponse objects
+"""
 from django.conf import settings
+
+from tworaven_apps.utils.json_helper import json_loads
+from tworaven_apps.utils.proto_util import message_to_json
+from tworaven_apps.ta2_interfaces.ta2_connection import TA2Connection
+from tworaven_apps.ta2_interfaces.models import \
+    (StoredRequest, StoredResponse)
+from tworavensproject.celery import celery_app
 
 import grpc
 import core_pb2
-from tworaven_apps.ta2_interfaces.ta2_connection import TA2Connection
-from tworaven_apps.ta2_interfaces.ta2_util import get_grpc_test_json,\
-    get_failed_precondition_response,\
-    get_reply_exception_response,\
-    get_predict_file_info_dict
-from tworaven_apps.ta2_interfaces.util_embed_results import FileEmbedUtil
-from tworaven_apps.ta2_interfaces.util_message_formatter import MessageFormatter
-from tworaven_apps.ta2_interfaces.static_vals import \
-    (KEY_CONTEXT_FROM_UI, KEY_SESSION_ID_FROM_UI)
-from tworaven_apps.ta2_interfaces.models import \
-    (StoredResponseTest)
 
-PIPELINE_CREATE_REQUEST = 'PipelineCreateRequest'
-
-ERR_NO_CONTEXT = 'A "%s" must be included in the request.' % KEY_CONTEXT_FROM_UI
-ERR_NO_SESSION_ID = ('A "%s" must be included in the request,'
-                     ' within the "%s".') %\
-                     (KEY_CONTEXT_FROM_UI, KEY_SESSION_ID_FROM_UI)
-# --------------------------------
-#@celery_app.task(bind=True)
-
-"""
-from tworavensproject.celery import debug_task
-debug_task()
-debug_task.delay()
-
-from tworaven_apps.ta2_interfaces.tasks import hi_there
-hi_there('hi')
-hi_there.delay('working via celery...')
-"""
+from google.protobuf.json_format import \
+    (Parse, ParseError)
 
 
+@celery_app.task
+def stream_and_store_results(raven_json_str, stored_request_id,
+                             grpc_req_obj_name, grpc_call_name):
+    """Make the grpc call which has a streaming response
 
-def stream_pipeline_create(info_str=None):
-    """Send the pipeline create request via gRPC"""
-    print('stream_pipeline_create 1')
+    grpc_req_obj_name: "core_pb2.GetSearchSolutionsResultsRequest", etc
+    grpc_call_name: "GetSearchSolutionsResults", etc
+    """
+    core_stub, err_msg = TA2Connection.get_grpc_stub()
+    if err_msg:
+        StoredRequest.set_error_status(stored_request_id, err_msg)
+        return
 
-    if info_str is None:
-        print('stream_pipeline_create 1a')
-        err_msg = 'UI Str for %s is None' % PIPELINE_CREATE_REQUEST
-        return get_failed_precondition_response(err_msg)
+    #
+    grpc_req_obj = eval(grpc_req_obj_name)
 
-    print('stream_pipeline_create 1b')
-    # --------------------------------
-    # Convert info string to dict
-    # --------------------------------
-    try:
-        info_dict = json.loads(info_str, object_pairs_hook=OrderedDict)
-    except json.decoder.JSONDecodeError as err_obj:
-        err_msg = 'Failed to convert UI Str to JSON: %s' % (err_obj)
-        return get_failed_precondition_response(err_msg)
-
-    if KEY_CONTEXT_FROM_UI not in info_dict:
-        return get_failed_precondition_response(ERR_NO_CONTEXT)
-
-    if KEY_SESSION_ID_FROM_UI not in info_dict[KEY_CONTEXT_FROM_UI]:
-        return get_failed_precondition_response(ERR_NO_SESSION_ID)
-
-    print('stream_pipeline_create 1c')
+    grpc_rpc_call_function = eval('core_stub.%s' % grpc_call_name)
 
     # --------------------------------
     # convert the JSON string to a gRPC request
+    #  Yes: done for the 2nd time
     # --------------------------------
     try:
-        req = Parse(info_str, core_pb2.PipelineCreateRequest())
+        req = Parse(raven_json_str,
+                    grpc_req_obj())
     except ParseError as err_obj:
         err_msg = 'Failed to convert JSON to gRPC: %s' % (err_obj)
-        return get_failed_precondition_response(err_msg)
-
-    if settings.TA2_STATIC_TEST_MODE:
-        print('stream_pipeline_create 2: NO!! test mode')
-        template_info = get_predict_file_info_dict(info_dict.get('task'))
-
-        template_str = get_grpc_test_json('test_responses/createpipeline_ok.json',
-                                          template_info)
-
-        # These next lines embed file uri content into the JSON
-        embed_util = FileEmbedUtil(template_str)
-        if embed_util.has_error:
-            return get_failed_precondition_response(embed_util.error_message)
-
-        return embed_util.get_final_results()
-        #return get_grpc_test_json('test_responses/createpipeline_ok.json',
-        #                          template_info)
-
-    # --------------------------------
-    # Get the connection, return an error if there are channel issues
-    # --------------------------------
-    print('stream_pipeline_create 3')
-    core_stub, err_msg = TA2Connection.get_grpc_stub()
-    if err_msg:
-        return get_failed_precondition_response(err_msg)
+        StoredRequest.set_error_status(stored_request_id, err_msg)
+        return
 
     # --------------------------------
     # Send the gRPC request
     # --------------------------------
-    messages = []
-    print('stream_pipeline_create 4')
-
+    msg_cnt = 0
     try:
-        from tworaven_apps.ta2_interfaces.models import StoredResponseTest
-        for reply in core_stub.CreatePipelines(req, timeout=60):
-            user_msg = MessageToJson(reply, including_default_value_fields=True)
-            print('stream_pipeline_create 4a: got a message')
+        for reply in grpc_rpc_call_function(\
+                req, timeout=settings.TA2_GPRC_LONG_TIMEOUT):
 
-            # Attempt to save....
-            # ----------------------------
-            success, return_str = MessageFormatter.format_messages(\
-                                            [user_msg],
-                                            embed_data=True)
-            if success:
-                stored_resp = StoredResponseTest(resp=return_str)
+            # Save the stored response
+            #
+            msg_json_str = message_to_json(reply)
+
+            msg_json_info = json_loads(msg_json_str)
+            if not msg_json_info.success:
+                print('PROBLEM HERE TO LOG!')
+                #StoredRequest.set_error_status(\
+                #            stored_request_id,
+                #            msg_json_info.err_msg,
+                #            is_finished=False)
             else:
-                stored_resp = StoredResponseTest(resp=user_msg)
+                StoredResponse.add_response(\
+                                stored_request_id,
+                                response=msg_json_info.result_obj)
+            msg_cnt += 1
 
-            stored_resp.save()
-            # ----------------------------
-            messages.append(user_msg)
-            print('msg received #%d' % len(messages))
+            print('msg received #%d' % msg_cnt)
 
     except grpc.RpcError as err_obj:
-        # we're purposely breaking here as new grpc svc being built
-        if str(err_obj).find('StatusCode.DEADLINE_EXCEEDED') > -1:
-            pass
-        else:
-            return get_reply_exception_response(str(err_obj))
+        StoredRequest.set_error_status(\
+                        stored_request_id,
+                        str(err_obj))
+        return
+
     except Exception as err_obj:
-        return get_reply_exception_response(str(err_obj))
+        StoredRequest.set_error_status(\
+                        stored_request_id,
+                        str(err_obj))
+        return
 
 
-    print('ALL DONE! WITH STREAMING!!!')
-
-    success, return_str = MessageFormatter.format_messages(\
-                                    messages,
-                                    embed_data=True)
-
-    if success is False:
-        return get_reply_exception_response(return_str)
-
-    return return_str
+    StoredRequest.set_finished_ok_status(stored_request_id)

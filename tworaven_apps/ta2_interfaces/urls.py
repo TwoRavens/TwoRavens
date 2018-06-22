@@ -56,6 +56,10 @@ urlpatterns = (
          views_non_streaming_requests.view_fit_solution,
          name='FitSolution'),
 
+    path(r'GetFitSolutionResults',
+         views_streaming_requests.view_fit_solution_results,
+         name='GetFitSolutionResults'),
+
     path(r'ProduceSolution',
          views_non_streaming_requests.view_produce_solution,
          name='ProduceSolution'),

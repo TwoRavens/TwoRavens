@@ -369,3 +369,69 @@ class NonStreamingTests(TestCase):
         self.assertTrue(json_resp['data']['responses']['count'] == 1)
         self.assertTrue(json_resp['data']['responses']['unread_count'] == 1)
         self.assertTrue('list' in json_resp['data']['responses'])
+
+
+
+    def test_130_GetFitSolutionResults(self):
+        """(130) Test GetFitSolutionResults"""
+        msgt(self.test_130_GetFitSolutionResults.__doc__)
+        # url and info for call
+        #
+        url = reverse('GetFitSolutionResults')
+
+        info = dict(request_id='request_id')
+
+        response = self.client.post(url,
+                                    json.dumps(info),
+                                    content_type="application/json")
+
+        # 200 response
+        #
+        self.assertEqual(response.status_code, 200)
+
+        # convert to JSON
+        #
+        json_resp = response.json()
+        print('json_resp', json_resp)
+
+        self.assertTrue(json_resp['success'])
+        self.assertTrue('data' in json_resp)
+        self.assertTrue('responses' in json_resp['data'])
+        self.assertTrue(json_resp['data']['request_type'] == \
+                        'GetFitSolutionResults')
+        self.assertTrue(json_resp['data']['responses']['count'] == 1)
+        self.assertTrue(json_resp['data']['responses']['unread_count'] == 1)
+        self.assertTrue('list' in json_resp['data']['responses'])
+
+
+    @skip('not implemented')
+    def test_140_GetProduceSolutionResults(self):
+        """(140) Test GetProduceSolutionResults"""
+        msgt(self.test_140_GetProduceSolutionResults.__doc__)
+        # url and info for call
+        #
+        url = reverse('GetProduceSolutionResults')
+
+        info = dict(request_id='request_id')
+
+        response = self.client.post(url,
+                                    json.dumps(info),
+                                    content_type="application/json")
+
+        # 200 response
+        #
+        self.assertEqual(response.status_code, 200)
+
+        # convert to JSON
+        #
+        json_resp = response.json()
+        print('json_resp', json_resp)
+
+        self.assertTrue(json_resp['success'])
+        self.assertTrue('data' in json_resp)
+        self.assertTrue('responses' in json_resp['data'])
+        self.assertTrue(json_resp['data']['request_type'] == \
+                        'GetProduceSolutionResults')
+        self.assertTrue(json_resp['data']['responses']['count'] == 1)
+        self.assertTrue(json_resp['data']['responses']['unread_count'] == 1)
+        self.assertTrue('list' in json_resp['data']['responses'])

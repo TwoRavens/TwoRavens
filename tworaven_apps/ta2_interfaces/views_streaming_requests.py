@@ -14,8 +14,9 @@ from tworaven_apps.ta2_interfaces.req_stream_search_solutions import \
  (get_search_solutions_results)
 from tworaven_apps.ta2_interfaces.req_stream_score_solutions import \
  (get_score_solutions_results)
+from tworaven_apps.ta2_interfaces.req_stream_fit_solutions import \
+ (get_fit_solution_results)
 
- 
 
 
 @csrf_exempt
@@ -86,6 +87,50 @@ def view_score_solutions(request):
     # Let's call the TA2!
     #
     search_info = get_score_solutions_results(\
+                                    req_body_info.result_obj,
+                                    user_info.result_obj)
+
+    #print('search_info', search_info)
+    if not search_info.success:
+        return JsonResponse(get_json_error(search_info.err_msg))
+
+    # Convert JSON str to python dict - err catch here
+    #  - let it blow up for now--should always return JSON
+    json_dict = search_info.result_obj
+    #json.loads(search_info.result_obj, object_pairs_hook=OrderedDict)
+
+    # Save D3M log
+    #
+    if call_entry:
+        call_entry.save_d3m_response(json_dict)
+
+    json_info = get_json_success('success!', data=json_dict)
+    return JsonResponse(json_info, safe=False)
+
+
+@csrf_exempt
+def view_fit_solution_results(request):
+    """gRPC: Call from UI with a GetFitSolutionResultsRequest"""
+    user_info = get_authenticated_user(request)
+    if not user_info.success:
+        return JsonResponse(get_json_error(user_info.err_msg))
+
+    req_body_info = get_request_body(request)
+    if not req_body_info.success:
+        return JsonResponse(get_json_error(req_body_info.err_msg))
+
+    # Begin to log D3M call
+    #
+    call_entry = None
+    if ServiceCallEntry.record_d3m_call():
+        call_entry = ServiceCallEntry.get_dm3_entry(\
+                        request_obj=request,
+                        call_type='GetFitSolutionResults',
+                        request_msg=req_body_info.result_obj)
+
+    # Let's call the TA2!
+    #
+    search_info = get_fit_solution_results(\
                                     req_body_info.result_obj,
                                     user_info.result_obj)
 
