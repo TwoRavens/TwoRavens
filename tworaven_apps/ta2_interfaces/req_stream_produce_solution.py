@@ -18,14 +18,14 @@ import core_pb2
 from google.protobuf.json_format import \
     (Parse, ParseError)
 
-def get_search_solutions_results(raven_json_str, user_obj):
+def get_produce_solution_results(raven_json_str, user_obj):
     """
-    Send a GetSearchSolutionsResultsRequest to the GetSearchSolutionsResults command
+    Send a GetProduceSolutionResultsRequest to the GetProduceSolutionResults command
     """
     if user_obj is None:
         return err_resp("The user_obj cannot be None")
     if not raven_json_str:
-        err_msg = 'No data found for the GetSearchSolutionsResultsRequest'
+        err_msg = 'No data found for the GetProduceSolutionResultsRequest'
         return err_resp(err_msg)
 
     # --------------------------------
@@ -40,7 +40,7 @@ def get_search_solutions_results(raven_json_str, user_obj):
     #   Done for error checking; call repeated in celery task
     # --------------------------------
     try:
-        req = Parse(raven_json_str, core_pb2.GetSearchSolutionsResultsRequest())
+        req = Parse(raven_json_str, core_pb2.GetProduceSolutionResultsRequest())
     except ParseError as err_obj:
         err_msg = 'Failed to convert JSON to gRPC: %s' % (err_obj)
         return err_resp(err_msg)
@@ -51,7 +51,7 @@ def get_search_solutions_results(raven_json_str, user_obj):
     stored_request = StoredRequest(\
                     user=user_obj,
                     workspace='(not specified)',
-                    request_type='GetSearchSolutionsResults',
+                    request_type='GetProduceSolutionResults',
                     is_finished=False,
                     request=raven_json_info.result_obj)
     stored_request.save()
@@ -60,7 +60,7 @@ def get_search_solutions_results(raven_json_str, user_obj):
     #
     if settings.TA2_STATIC_TEST_MODE:
         resp_str = get_grpc_test_json(\
-                        'test_responses/GetSearchSolutionsResultsResponse_ok.json',
+                        'test_responses/GetProduceSolutionResultsResponse_ok.json',
                         dict())
 
         resp_info = json_loads(resp_str)
@@ -80,7 +80,7 @@ def get_search_solutions_results(raven_json_str, user_obj):
 
     stream_and_store_results.delay(raven_json_str,
                                    stored_request.id,
-                                   'core_pb2.GetSearchSolutionsResultsRequest',
-                                   'GetSearchSolutionsResults')
+                                   'core_pb2.GetProduceSolutionResultsRequest',
+                                   'GetProduceSolutionResults')
 
     return ok_resp(stored_request.as_dict())
