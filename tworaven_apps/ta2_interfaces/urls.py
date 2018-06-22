@@ -64,5 +64,8 @@ urlpatterns = (
          views_non_streaming_requests.view_update_problem,
          name='UpdateProblem'),
 
+    path(r'ListPrimitives',
+         views_non_streaming_requests.view_list_primitives,
+         name='ListPrimitives'),
 
 )

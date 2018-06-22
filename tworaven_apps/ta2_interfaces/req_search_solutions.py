@@ -447,8 +447,6 @@ def solution_export(raven_json_str=None):
     return ok_resp(message_to_json(reply))
 
 
-
-
 def update_problem(raven_json_str=None):
     """
     Send a UpdateProblemRequest to the UpdateProblem command
@@ -490,6 +488,48 @@ def update_problem(raven_json_str=None):
     # --------------------------------
     try:
         reply = core_stub.UpdateProblem(\
+                            req,
+                            timeout=settings.TA2_GPRC_SHORT_TIMEOUT)
+    except Exception as err_obj:
+        return err_resp(str(err_obj))
+
+    # --------------------------------
+    # Convert the reply to JSON and send it back
+    # --------------------------------
+    return ok_resp(message_to_json(reply))
+
+
+
+def list_primitives():
+    """
+    Send a ListPrimitivesRequest to the ListPrimitives command
+    """
+    # --------------------------------
+    # convert the JSON string to a gRPC request
+    # --------------------------------
+    try:
+        req = Parse("{}", core_pb2.ListPrimitivesRequest())
+    except ParseError as err_obj:
+        err_msg = 'Failed to convert JSON to gRPC: %s' % (err_obj)
+        return err_resp(err_msg)
+
+    # In test mode, return canned response
+    #
+    if settings.TA2_STATIC_TEST_MODE:
+        resp_str = get_grpc_test_json(\
+                        'test_responses/ListPrimitivesResponse_ok.json',
+                        dict())
+        return ok_resp(resp_str)
+
+    core_stub, err_msg = TA2Connection.get_grpc_stub()
+    if err_msg:
+        return err_resp(err_msg)
+
+    # --------------------------------
+    # Send the gRPC request
+    # --------------------------------
+    try:
+        reply = core_stub.ListPrimitives(\
                             req,
                             timeout=settings.TA2_GPRC_SHORT_TIMEOUT)
     except Exception as err_obj:
