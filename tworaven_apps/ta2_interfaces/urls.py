@@ -64,6 +64,10 @@ urlpatterns = (
          views_non_streaming_requests.view_produce_solution,
          name='ProduceSolution'),
 
+    path(r'GetProduceSolutionResults',
+         views_streaming_requests.view_get_produce_solution_results,
+         name='GetProduceSolutionResults'),
+
     path(r'SolutionExport',
          views_non_streaming_requests.view_solution_export,
          name='SolutionExport'),

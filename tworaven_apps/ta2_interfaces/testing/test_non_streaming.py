@@ -404,7 +404,6 @@ class NonStreamingTests(TestCase):
         self.assertTrue('list' in json_resp['data']['responses'])
 
 
-    @skip('not implemented')
     def test_140_GetProduceSolutionResults(self):
         """(140) Test GetProduceSolutionResults"""
         msgt(self.test_140_GetProduceSolutionResults.__doc__)
