@@ -2323,7 +2323,7 @@ export async function estimate(btn) {
 
         // 3. And check they come back correctly formed:
         //console.log("pipeline app return (rookpipe)");
-        //console.log(rookpipe);            
+        //console.log(rookpipe);
 
         if (!rookpipe) {
             estimated = true;
@@ -4017,7 +4017,7 @@ export function setxTable(features) {
             xval = xval.split("x: ").pop();
             x1val = x1val.split("x1: ").pop();
             mydata.push({"Variables":features[i],"From":xval, "To":x1val});
-        } 
+        }
         catch(error)
         {
             continue;
@@ -4090,7 +4090,7 @@ function apiSession(context) {
  *  Send a status message to the TA3 console
  */
 export function ta3_search_message(user_msg){
-
+  /*
   let ta3_search_message = {'message': user_msg}
 
   const end_search_url = 'ta3-search/send-reviewer-message';
@@ -4102,6 +4102,7 @@ export function ta3_search_message(user_msg){
   } catch (err) {
       console.log('ta3_search_message failed: ' + err);
   }
+  */
 }
 
 export function test_msg_ta3_search(){
@@ -4122,6 +4123,8 @@ export function test_msg_ta3_search(){
  */
 export function end_ta3_search(is_success, user_msg){
 
+  // 6/21/2018 - removed from eval
+  /*
   let end_search_msg = {'is_success': is_success,
                         'message': user_msg}
 
@@ -4134,7 +4137,7 @@ export function end_ta3_search(is_success, user_msg){
   } catch (err) {
       console.log('end_ta3_search failed: ' + err);
   }
-
+  */
 }
 
 /**

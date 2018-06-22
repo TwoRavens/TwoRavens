@@ -4,7 +4,6 @@ from datetime import datetime
 from collections import OrderedDict
 from django.core.management.base import BaseCommand, CommandError
 from tworaven_apps.configurations.models_d3m import D3MConfiguration
-from tworaven_apps.ta3_search.message_util import MessageUtil
 
 class Command(BaseCommand):
     help = ('Load a D3M config file containing JSON to the database'
