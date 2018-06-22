@@ -304,7 +304,7 @@ def run(**kwargs):
     init_db()
     check_config()  # make sure the db has something
     #load_d3m_config_from_env() # default the D3M setting to the env variable
-    ta3_listener_add() # add MessageListener object
+    #ta3_listener_add() # add MessageListener object
 
     commands = [
         # start webpack
@@ -477,33 +477,6 @@ def run_grpc_tests():
     """Run the gRPC tests, equivalent of 'python manage.py test tworaven_apps.ta2_interfaces'"""
     local('python manage.py test tworaven_apps.ta2_interfaces')
 
-
-@task
-def ta3_listener_add():
-    """Add local web server address for ta3_search messages"""
-    from tworaven_apps.ta3_search.message_util import MessageUtil
-
-    web_url = 'http://0.0.0.0:8001'
-    success, mlistener = MessageUtil.add_listener(web_url, 'ta3 listener')
-
-    user_msg = ('listener registered: %s at %s') % \
-                (mlistener, mlistener.web_url)
-
-    print(user_msg)
-
-@task
-def ta3_listener_run():
-    """Start a flask server that receives messages from the UI
-    Part of scaffolding for the D3M eval"""
-    ta3_dir = os.path.join(FAB_BASE_DIR,
-                           'tworaven_apps',
-                           'ta3_search')
-
-    flask_cmd = ('cd %s;'
-                 'FLASK_APP=ta3_listener.py flask run -p8001') % \
-                 (ta3_dir,)
-
-    local(flask_cmd)
 
 # -----------------------------------
 #   Redis and celery tasks

@@ -44,12 +44,3 @@ else
    # -------------------------------
    printf "\nTwo Ravens web server is running."
 fi
-
-# -------------------------------
-# Run TA3 search
-# -------------------------------
-printf "\n----------------------"
-printf "\nTA3_search: TwoRavens"
-printf "\n----------------------\n"
-cd /var/webapps/TwoRavens
-python manage.py ta3_search "$@"

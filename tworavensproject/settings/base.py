@@ -70,7 +70,7 @@ INSTALLED_APPS = [
     'tworaven_apps.rook_services', # sending UI calls to rook and back again
     'tworaven_apps.api_docs',
     'tworaven_apps.call_captures', # capture data sent from UI out to rook/TA2
-    'tworaven_apps.ta3_search', # ta3_search for NIST
+    #'tworaven_apps.ta3_search', # ta3_search for NIST
 
     # webpack!
     'webpack_loader',
