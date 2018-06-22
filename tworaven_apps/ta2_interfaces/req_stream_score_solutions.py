@@ -1,5 +1,5 @@
 """
-send a gRPC GetSearchSolutionsResults command
+send a gRPC GetScoreSolutionResultsRequest command
 capture the streaming results in the db as StoredResponse objects
 """
 import json
@@ -12,6 +12,8 @@ from tworaven_apps.utils.json_helper import json_loads
 from tworaven_apps.ta2_interfaces.ta2_connection import TA2Connection
 from tworaven_apps.ta2_interfaces.ta2_util import get_grpc_test_json
 from tworaven_apps.ta2_interfaces.util_message_formatter import MessageFormatter
+from tworaven_apps.utils.proto_util import message_to_json
+
 from tworaven_apps.ta2_interfaces.models import \
     (StoredRequest, StoredResponse)
 from tworavensproject.celery import celery_app
@@ -22,16 +24,16 @@ import core_pb2
 #import core_pb2_grpc
 
 from google.protobuf.json_format import \
-    (MessageToJson, Parse, ParseError)
+    (Parse, ParseError)
 
-def get_search_solutions_results(raven_json_str, user_obj):
+def get_score_solutions_results(raven_json_str, user_obj):
     """
-    Send a GetSearchSolutionsResultsRequest to the GetSearchSolutionsResults command
+    Send a GetScoreSolutionResultsRequest to the GetScoreSolutionResults command
     """
     if user_obj is None:
         return err_resp("The user_obj cannot be None")
     if not raven_json_str:
-        err_msg = 'No data found for the GetSearchSolutionsResultsRequest'
+        err_msg = 'No data found for the GetScoreSolutionResultsRequest'
         return err_resp(err_msg)
 
     # --------------------------------
@@ -46,7 +48,7 @@ def get_search_solutions_results(raven_json_str, user_obj):
     #   Done for error checking; call repeated in celery task
     # --------------------------------
     try:
-        req = Parse(raven_json_str, core_pb2.GetSearchSolutionsResultsRequest())
+        req = Parse(raven_json_str, core_pb2.GetScoreSolutionResultsRequest())
     except ParseError as err_obj:
         err_msg = 'Failed to convert JSON to gRPC: %s' % (err_obj)
         return err_resp(err_msg)
@@ -57,7 +59,7 @@ def get_search_solutions_results(raven_json_str, user_obj):
     stored_request = StoredRequest(\
                     user=user_obj,
                     workspace='(not specified)',
-                    request_type='GetSearchSolutionsResults',
+                    request_type='GetScoreSolutionResults',
                     is_finished=False,
                     request=raven_json_info.result_obj)
     stored_request.save()
@@ -66,7 +68,7 @@ def get_search_solutions_results(raven_json_str, user_obj):
     #
     if settings.TA2_STATIC_TEST_MODE:
         resp_str = get_grpc_test_json(\
-                        'test_responses/GetSearchSolutionsResultsResponse_ok.json',
+                        'test_responses/GetScoreSolutionResultsResponse_ok.json',
                         dict())
 
         resp_info = json_loads(resp_str)
@@ -84,13 +86,13 @@ def get_search_solutions_results(raven_json_str, user_obj):
         #
         return ok_resp(stored_request.as_dict())
 
-    stream_search_solutions_results.delay(raven_json_str, stored_request.id)
+    stream_score_solutions_results.delay(raven_json_str, stored_request.id)
 
     return ok_resp(stored_request.as_dict())
 
 
 @celery_app.task
-def stream_search_solutions_results(raven_json_str, stored_request_id):
+def stream_score_solutions_results(raven_json_str, stored_request_id):
     """Make the grpc call which has a streaming response"""
 
     core_stub, err_msg = TA2Connection.get_grpc_stub()
@@ -105,7 +107,7 @@ def stream_search_solutions_results(raven_json_str, stored_request_id):
     # --------------------------------
     try:
         req = Parse(raven_json_str,
-                    core_pb2.GetSearchSolutionsResultsRequest())
+                    core_pb2.GetScoreSolutionResultsRequest())
     except ParseError as err_obj:
         err_msg = 'Failed to convert JSON to gRPC: %s' % (err_obj)
         StoredRequest.set_error_status(stored_request_id, err_msg)
@@ -116,23 +118,18 @@ def stream_search_solutions_results(raven_json_str, stored_request_id):
     # --------------------------------
     msg_cnt = 0
     try:
-        for reply in core_stub.GetSearchSolutionsResults(\
+        for reply in core_stub.GetScoreSolutionResults(\
                 req, timeout=settings.TA2_GPRC_LONG_TIMEOUT):
 
 
             # Save the stored response
             #
-            msg_json_str = MessageToJson(\
-                                reply,
-                                including_default_value_fields=True)
+            msg_json_str = message_to_json(reply)
 
             msg_json_info = json_loads(msg_json_str)
             if not msg_json_info.success:
                 print('PROBLEM HERE TO LOG!')
-                #StoredRequest.set_error_status(\
-                #            stored_request_id,
-                #            msg_json_info.err_msg,
-                #            is_finished=False)
+
             else:
                 StoredResponse.add_response(\
                                 stored_request_id,

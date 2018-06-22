@@ -2,7 +2,7 @@
 from django.urls import path, re_path
 from tworaven_apps.ta2_interfaces import (\
         views_additional,
-        views_search_solutions,
+        views_streaming_requests,
         views_saved_requests,
         views_non_streaming_requests)
 
@@ -29,7 +29,7 @@ urlpatterns = (
          name='SearchSolutions'),
 
     path(r'GetSearchSolutionsResults',
-         views_search_solutions.view_get_search_solutions,
+         views_streaming_requests.view_get_search_solutions,
          name='GetSearchSolutionsResults'),
 
     path(r'EndSearchSolutions',
@@ -47,6 +47,10 @@ urlpatterns = (
     path(r'ScoreSolution',
          views_non_streaming_requests.view_score_solution,
          name='ScoreSolution'),
+
+    path(r'GetScoreSolutionResults',
+         views_streaming_requests.view_score_solutions,
+         name='GetScoreSolutionResults'),
 
     path(r'FitSolution',
          views_non_streaming_requests.view_fit_solution,

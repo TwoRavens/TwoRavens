@@ -12,6 +12,10 @@ from tworaven_apps.utils.view_helper import \
 
 from tworaven_apps.ta2_interfaces.req_stream_search_solutions import \
  (get_search_solutions_results)
+from tworaven_apps.ta2_interfaces.req_stream_score_solutions import \
+ (get_score_solutions_results)
+
+ 
 
 
 @csrf_exempt
@@ -31,7 +35,7 @@ def view_get_search_solutions(request):
     if ServiceCallEntry.record_d3m_call():
         call_entry = ServiceCallEntry.get_dm3_entry(\
                         request_obj=request,
-                        call_type='GetSearchSolutionsResultsRequest',
+                        call_type='GetSearchSolutionsResults',
                         request_msg=req_body_info.result_obj)
 
     # Let's call the TA2!
@@ -58,9 +62,14 @@ def view_get_search_solutions(request):
     return JsonResponse(json_info, safe=False)
 
 
+
 @csrf_exempt
-def xview_get_search_solutions(request):
-    """gRPC: Call from UI with a GetSearchSolutionsResultsRequest"""
+def view_score_solutions(request):
+    """gRPC: Call from UI with a GetScoreSolutionResultsRequest"""
+    user_info = get_authenticated_user(request)
+    if not user_info.success:
+        return JsonResponse(get_json_error(user_info.err_msg))
+
     req_body_info = get_request_body(request)
     if not req_body_info.success:
         return JsonResponse(get_json_error(req_body_info.err_msg))
@@ -71,19 +80,23 @@ def xview_get_search_solutions(request):
     if ServiceCallEntry.record_d3m_call():
         call_entry = ServiceCallEntry.get_dm3_entry(\
                         request_obj=request,
-                        call_type='GetSearchSolutionsResultsRequest',
+                        call_type='GetScoreSolutionResults',
                         request_msg=req_body_info.result_obj)
 
     # Let's call the TA2!
     #
-    search_info = get_search_solutions_results(req_body_info.result_obj)
+    search_info = get_score_solutions_results(\
+                                    req_body_info.result_obj,
+                                    user_info.result_obj)
+
     #print('search_info', search_info)
     if not search_info.success:
         return JsonResponse(get_json_error(search_info.err_msg))
 
     # Convert JSON str to python dict - err catch here
     #  - let it blow up for now--should always return JSON
-    json_dict = json.loads(search_info.result_obj, object_pairs_hook=OrderedDict)
+    json_dict = search_info.result_obj
+    #json.loads(search_info.result_obj, object_pairs_hook=OrderedDict)
 
     # Save D3M log
     #
