@@ -264,7 +264,7 @@ class StoredResponse(TimeStampedModel):
         assert isinstance(stored_response, StoredResponse), \
             'stored_response must be a StoredResponse instance'
 
-        # Is it already set?
+        # Is 'sent_to_user' already set?
         if stored_response.sent_to_user is False:
             return False
 
