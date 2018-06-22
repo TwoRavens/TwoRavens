@@ -270,7 +270,7 @@ export default class Recode {
                                         m('input[type=text]', {id: 'newVar', placeholder: 'New Variable', style : {'display':'inline-block' , 'margin':'10px', 'width':'40%'}}),
                                         m('br'),
                                         m('label',{ style : {'display':'inline-block', 'margin-right':'10px'}},'Variable Type : '),
-                                        m('div.dropdown',{ style : {'display':'inline-block','margin':'10px'}},[
+                                        m('div.dropdown',{style : {'display':'inline-block','margin':'10px'}},[
                                             m('select.form-control#typeSelect',{onchange: someFunction ,style:{'display':'inline-block'}, id:'varType'},[
                                                 m('option','Boolean'),
                                                 m('option','Nominal'),
@@ -299,7 +299,7 @@ export default class Recode {
                                     ]),
                                     
                                     m("br"),
-                                    m('button[type="button"]' ,{onclick: createNewCalculate,style:"float:left;"},'Create New Variable'),
+                                    m('button[type="button"]' ,{id:'createButton',onclick: createNewCalculate,style:"float:left;"},'Create New Variable'),
                                     m('button[type="submit"]',{id:'submitButton'},'Add Values'),
                                 ])
                             ]),
@@ -340,12 +340,22 @@ function unselectAllVars(){
 }
 
 function addOperations(elem){
-    var text = document.getElementById('variable');
-    text.value = this.textContent.split("(")[0]+"("+currentVal+")";
+    if(document.getElementById('recodeLink').className === 'active'){
+        var text = document.getElementById('variable');
+        text.value = this.textContent.split("(")[0]+"("+currentVal+")";
+    }
+    else if(document.getElementById('formulaLink').className === 'active'){
+        var text = document.getElementById('variables');
+        text.value += this.textContent.split("(")[0]+"("+currentVal+")";
+        document.getElementById('leftpanelMenuButtonBarVariables').click()
+    }
 }
 
 function clickVar(elem) {
     console.log(this.id)
+
+    document.getElementById('tabVariables').setAttribute("style","display:none");
+    document.getElementById('leftpanelMenuButtonBarOperations').click()
 
     document.getElementById(this.id).setAttribute("style", "background:"+app.hexToRgba("#28a4c9"));
 
@@ -368,8 +378,9 @@ function clickVar(elem) {
     if(document.getElementById('formulaLink').className === 'active'){
         //Only those variables of type "numeric" could be used to build formula
         if(dataDetails[this.textContent]['numchar'] === 'numeric'){
-            var text = document.getElementById('variables');
-            text.value = text.value + " " + this.textContent;
+            // var text = document.getElementById('variables');
+            // text.value = text.value + " " + this.textContent;
+            currentVal = this.textContent;
         }
      }
      
@@ -446,6 +457,10 @@ function createNewCalculate(){
         alert("Enter Variable Name!");
     }
     else{
+        document.getElementById("createButton").setAttribute("style", "display:none");
+        document.getElementById("typeSelect").setAttribute("disabled", "true");
+        document.getElementById("varDescription").setAttribute("disabled", "true");
+        
         var iter = 0;
     //createNewForm
     $('#createNewForm').find('tr').each(function(){
