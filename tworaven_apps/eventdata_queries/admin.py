@@ -3,7 +3,8 @@ from tworaven_apps.eventdata_queries.models import (EventDataSavedQuery, Archive
 # Register your models here.
 
 class EventDataSavedQueryAdmin(admin.ModelAdmin):
-    list_display = ('name',
+    list_display = ('id',
+                    'name',
                     'description',
                     'username',
                     'query',

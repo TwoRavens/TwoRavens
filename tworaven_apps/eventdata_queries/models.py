@@ -24,7 +24,7 @@ class EventDataSavedQuery(TimeStampedModel):
     """ Model to store queries"""
     name = models.CharField(blank=False,
                             max_length=255)
-    description = models.TextField(default=None)
+    description = models.TextField(blank=True)
     username = models.CharField(blank=False,
                                 max_length=255)
     query = jsonfield.JSONField(default=None,
@@ -35,13 +35,25 @@ class EventDataSavedQuery(TimeStampedModel):
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now_add=True)
     saved_to_dataverse = models.BooleanField(default=False)
-    dataverse_url = models.URLField(default=None)
-
-    def __str__(self):
-        return self.query
+    dataverse_url = models.URLField(blank=True)
 
     class Meta:
         ordering = ('-created',)
+
+    def __str__(self):
+        query_str = json.dumps(self.query, indent=4)
+        return str(query_str)
+
+    def get_query_id(self):
+        """return id"""
+        if self.id:
+            return self.id
+
+        return None
+
+    def save(self, *args, **kwargs):
+
+        super(EventDataSavedQuery, self).save(*args, **kwargs)
 
 
 class ArchiveQueryJob(TimeStampedModel):

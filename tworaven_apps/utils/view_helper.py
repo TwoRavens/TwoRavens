@@ -5,6 +5,7 @@ from collections import OrderedDict
 import json
 from tworaven_apps.utils.basic_response import (ok_resp, err_resp)
 
+
 def get_common_view_info(request):
     """For all pages, e.g. is user logged in, etc"""
 
