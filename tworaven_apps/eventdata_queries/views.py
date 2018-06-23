@@ -35,7 +35,7 @@ def api_add_query(request):
         return JsonResponse(usr_msg)
 
     # json is valid
-    print("input json : ", json_req_obj)
+    print("input json : ", json.dumps(json_req_obj))
     success, addquery_obj_err = EventJobUtil.add_query_db(json_req_obj)
 
     if not success:
