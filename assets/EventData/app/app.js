@@ -429,7 +429,7 @@ export function pageSetup(jsondata) {
     };
 
     if (subsetType === 'dyad' && jsondata['search'])
-        subsetData[jsondata['subsetName']][jsondata['tab']]['full'] = jsondata['data'];
+        subsetData[jsondata['subsetName']][jsondata['tab']]['full'] = jsondata['data'] || [];
     else
         subsetData[jsondata['subsetName']] = reformatters[subsetType](jsondata['data']);
 }

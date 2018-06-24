@@ -46,8 +46,9 @@ export default class PlotDyad {
             return "M" + bound.width / 2 + "," + 0 + "V" + bound.height;
         }).attr("stroke", "black");
 
+        let that = this;
         this.node_drag = d3.drag()
-            .on("start", (d) => this.dragstart(vnode, d))
+            .on("start", function (d) {that.dragstart(this, d)})
             .on("drag", (d) => this.dragmove(vnode, d))
             .on("end", () => this.dragend(vnode));
 
@@ -59,7 +60,7 @@ export default class PlotDyad {
         this.originNode = null; //node that is the start of drag link line
         this.destNode = null; //node that is the end of the drag link line
 
-        // furthest a node may move
+        // furthest a node may move - accessed from vnode.state later, since 'this' was rebound
         this.boundaryRight = Math.ceil(bound.width / 2) + 20; //max x coordinate target nodes can move
         this.boundaryLeft = Math.floor(bound.width / 2) - 20; //max x coordinate source nodes can move
 
@@ -137,12 +138,12 @@ export default class PlotDyad {
     }
 
     //function called at start of drag. 'i' is also passed but ignored
-    dragstart(vnode, d) {
+    dragstart(context, d) {
         this.actorForce.stop(); // stops the force auto positioning before you start dragging
         this.dragStarted = true;
         this.dragSelect = d;
         this.tooltipSVG.transition().duration(200).style("opacity", 0).style("display", "none");
-        // d3.select(this).moveToBack(); // TODO is this needed?
+        d3.select(context).moveToBack(); // if disabled, merging only works from new-> old node, since the start node may or may not be on top
     }
 
     //function called while dragging, binds (x, y) within SVG and boundaries
@@ -192,7 +193,7 @@ export default class PlotDyad {
                     }
                 }
             }
-            preferences['edges'].splice(preferences['edges'].indexOf(this.dragSelect), 1); //remove the old node
+            preferences['nodes'].splice(preferences['nodes'].indexOf(this.dragSelect), 1); //remove the old node
 
             //now set gui to show dragTarget data
             preferences['current_tab'] = this.dragTarget.actor;
@@ -203,6 +204,7 @@ export default class PlotDyad {
 
             if (app.selectedMode === "aggregate")
                 updateAggregTable();
+            m.redraw();
         }
         this.dragStarted = false; //now reset all drag variables
         this.dragSelect = null;
@@ -240,9 +242,8 @@ export default class PlotDyad {
                 return d.rev ? '#00cc00' : '#000';
             })
             .on('mousedown', (d) => {       //delete link
-
                 preferences['edges'].forEach((edge, i) => {
-                    if (edge.target !== d.source || edge.source !== d.target) return;
+                    if (edge.source !== d.source || edge.target !== d.target) return;
                     if (d.dup) edge.dup = false;
                     else preferences['edges'].splice(i, 1);
                 });
@@ -269,7 +270,10 @@ export default class PlotDyad {
             return d.name.replace(/\s/g, '') + "Group";
         }).call(this.node_drag)
             .each(function () {
-                d3.select(this).append("circle").attr("class", "actorNode").attr("r", actorNodeR)
+                d3.select(this)
+                    .append("circle")
+                    .attr("class", "actorNode")
+                    .attr("r", actorNodeR)
                     .style('fill', (d) => actorColors(d.id))
                     .style('opacity', "0.5")
                     .style('stroke', pebbleBorderColor)
@@ -289,8 +293,8 @@ export default class PlotDyad {
 
                         that.svg.on('mousemove', function() {that.lineMousemove(this)});
                     })
-                    .on("mouseup", (d) => {   //creates link  //TODO for some reason, this no longer fires
-                        d3.event.stopPropagation(); //prevents mouseup on svg
+                    .on("mouseup", function (d) {			//creates link		//for some reason, this no longer fires
+                        d3.event.stopPropagation();		//prevents mouseup on svg
                         createLink(d);
                         nodeClick(d);
                     })
@@ -409,10 +413,11 @@ export default class PlotDyad {
             d.x = Math.max(actorNodeR, Math.min(bound.width - actorNodeR, d.x)); //test SVG boundary conditions
             d.y = Math.max(actorNodeR, Math.min(bound.height - actorNodeR, d.y));
             let [leftTab, rightTab] = Object.keys(metadata['tabs']);
-            if (d.actor === leftTab && d.x > this.boundaryLeft)  //test source/target boundary conditions
-                d.x = this.boundaryLeft;
-            if (d.actor === rightTab && d.x < this.boundaryRight)
-                d.x = this.boundaryRight;
+            let {boundaryLeft, boundaryRight} = vnode.state;
+            if (d.actor === leftTab && d.x > boundaryLeft)  //test source/target boundary conditions
+                d.x = boundaryLeft;
+            if (d.actor === rightTab && d.x < boundaryRight)
+                d.x = boundaryRight;
             return "translate(" + d.x + "," + d.y + ")";
         });
 

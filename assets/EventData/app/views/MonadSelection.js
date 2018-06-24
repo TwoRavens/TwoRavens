@@ -143,6 +143,7 @@ export default class MonadSelection {
         return [
             m(`.actorLeft#allActors`,
                 m(TextField, {
+                    value: preferences['search'],
                     placeholder: `Search ${metadata['full']}`,
                     oninput: (value) => {
                         preferences['search'] = value;

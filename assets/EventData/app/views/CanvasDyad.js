@@ -30,7 +30,7 @@ export default class CanvasDyad {
         Object.keys(hasNode).forEach(tab => {
             if (!hasNode[tab]) {
                 preferences['nodes'].push({
-                    name: tab + ' ' + (preferences['nodes'] || []).length,
+                    name: tab + ' 0',
                     actor: tab,
                     selected: new Set(),
                     id: preferences['node_count']++
@@ -169,11 +169,11 @@ export default class CanvasDyad {
                         onclick: () => {
                             let names = new Set(preferences['nodes'].map(node => node['name']));
 
-                            let count = 0;
+                            let count = -1;
                             let foundName = false;
                             while (!foundName) {
-                                if (!names.has(preferences['current_tab'] + ' ' + count)) foundName = true;
                                 count++;
+                                if (!names.has(preferences['current_tab'] + ' ' + count)) foundName = true;
                             }
 
                             let newGroup = {
