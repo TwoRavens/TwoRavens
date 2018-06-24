@@ -34,7 +34,7 @@ export default class PlotDate {
         let datemax = d3.max(Object.keys(data).map(color => d3.max(data[color], getDate)));
         let freqmax = d3.max(Object.keys(data).map(color => d3.max(data[color], getFreq)));
 
-        let dateSVG = d3.select('#' + id.replace(/ /g,"_"));
+        let dateSVG = d3.select('#' + id.replace(/[^A-Za-z0-9]/g, ""));
         dateSVG.html('');
 
         let bound = dateSVG.node().getBoundingClientRect();

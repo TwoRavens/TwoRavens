@@ -406,8 +406,9 @@ export function pageSetup(jsondata) {
 
     let reformatters = {
         'categorical': _=>_,
-        'dyad': _=>_,
+        'categorical_grouped': _=>_,
         'coordinates': _=>_,
+        'dyad': _=>_,
 
         'date': data => data
             .filter(entry => !isNaN(entry['year'] && !isNaN(entry['month'])))
@@ -424,14 +425,7 @@ export function pageSetup(jsondata) {
                 }
                 out.push(entry);
                 return(out);
-            }, []),
-
-        'categorical_grouped': data => data
-            .filter(entry => ['', undefined].indexOf(entry['<country>'] === -1))
-            .reduce((out, entry) => {
-                out[entry['<country>']] = entry['total'];
-                return(out);
-            }, {})
+            }, [])
     };
 
     if (subsetType === 'dyad' && jsondata['search'])

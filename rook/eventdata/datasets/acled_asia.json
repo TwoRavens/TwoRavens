@@ -51,10 +51,10 @@
       ],
       "group_by": "region",
       "formats": [
-        "ISO-3"
+        "cowcode"
       ],
       "columns": [
-        "country_constructed"
+        "cowcode"
       ]
     },
     "Coordinates": {
@@ -95,8 +95,7 @@
     "TIMESTAMP"
   ],
   "columns_constructed": [
-    "TIMESTAMP_constructed",
-    "country_constructed"
+    "TIMESTAMP_constructed"
   ],
   "ontology_alignments": {
     "INTERACTION": "<interaction>",

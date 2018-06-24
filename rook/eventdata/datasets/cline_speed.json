@@ -141,10 +141,10 @@
     "Disruptive State Act Type": {
       "type": "categorical",
       "formats": [
-        "SPEED_stat_type"
+        "SPEED_stat_act"
       ],
       "columns": [
-        "STAT_TYPE"
+        "STAT_ACT"
       ]
     },
     "Victim Effect": {
@@ -174,7 +174,7 @@
         "property_damaged"
       ]
     },
-    "Property Ownder": {
+    "Property Owner": {
       "type": "categorical",
       "formats": [
         "SPEED_property_owner"
@@ -465,8 +465,10 @@
     "AD_VIOL": "SPEED_ad_viol",
     "ATK_TYPE": "SPEED_atk_type",
     "DSA_TYPE": "SPEED_dsa_type",
+    "STAT_ACT": "SPEED_stat_act",
     "EV_TYPE": "SPEED_ev_type",
     "EXP_TYPE": "SPEED_exp_type",
+    "SYM_TYPE": "SPEED_sym_type",
     "G_LVL_I": "SPEED_g_lvl",
     "G_LVL_T": "SPEED_g_lvl",
     "G_LVL_V": "SPEED_g_lvl",

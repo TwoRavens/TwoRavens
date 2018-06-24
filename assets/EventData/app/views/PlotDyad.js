@@ -26,7 +26,7 @@ export default class PlotDyad {
     oncreate(vnode) {
         let {id, preferences} = vnode.attrs;
 
-        this.svg = this.svg || d3.select('#' + id.replace(/ /g, "_"));
+        this.svg = this.svg || d3.select('#' + id.replace(/[^A-Za-z0-9]/g, ""));
 
         // set the dimensions and margins of the graph
         let bound = this.svg.node().getBoundingClientRect();

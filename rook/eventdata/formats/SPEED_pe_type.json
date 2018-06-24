@@ -1,13 +1,13 @@
 {
-  "11": "Other",
-  "10": "Form Assoc",
   "1": "Verbal",
-  "3": "Movie, Play, Etc.",
   "2": "Broadcast",
-  "5": "Banner",
+  "3": "Movie, Play, Etc.",
   "4": "Written",
-  "7": "Demonstration/March",
+  "5": "Banner",
   "6": "Digital",
+  "7": "Demonstration/March",
+  "8": "Job Action",
   "9": "Symbolic Act",
-  "8": "Job Action"
+  "10": "Form Assoc",
+  "11": "Other"
 }

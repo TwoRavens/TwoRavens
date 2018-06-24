@@ -192,7 +192,7 @@ export default class Body_EventData {
                                 }),
                                 m(PanelList, {
                                     id: 'variablesList',
-                                    items: Object.keys(app.genericMetadata[app.selectedDataset]['columns']).filter(col => col.includes(app.variableSearch)),
+                                    items: app.genericMetadata[app.selectedDataset]['columns'].filter(col => col.includes(app.variableSearch)),
                                     colors: {[common.selVarColor]: app.selectedVariables},
                                     callback: app.toggleVariableSelected,
                                     attrsAll: {style: {height: 'calc(100% - 44px)', overflow: 'auto'}}

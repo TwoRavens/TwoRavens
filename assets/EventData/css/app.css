@@ -42,6 +42,15 @@ main#EventData .filterExpand {
 main#EventData .filterCollapse {
     background-image: url(/static/EventData/images/collapse.png)
 }
+main#EventData .graph-config {
+    border: 1px solid #ADADAD;
+    padding-top: 3px;
+    background: #f9f9f9;
+    overflow: hidden;
+}
+main#EventData .item-bordered {
+    border: solid #000000;
+}
 
 /* TODO delete everything below */
 main#EventData .hidden {
@@ -718,62 +727,6 @@ main#EventData .SVGtooltip {
     border: 1px solid #F9F9F9;
     pointer-events: none;
 }
-main#EventData .action_graph_config {
-    border: 1px solid #ADADAD;
-    padding-top: 3px;
-    background: #f9f9f9;
-    overflow: hidden;
-}
-main#EventData #actionMainGraph text,
-main#EventData #actionSubGraph text {
-    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-    font-size: 14px;
-    line-height: 1.42857143;
-    color: #333;
-    /*
-        text-anchor: end;
-      */
-
-}
-main#EventData #actionMainGraph .axis {
-    /*
-          stroke: red;
-      */
-
-}
-main#EventData .actionBar_click {
-    fill: white;
-    cursor: pointer;
-    opacity: 0;
-}
-main#EventData .actionBar,
-main#EventData .actionBar_none {
-    fill: steelblue;
-    cursor: pointer;
-}
-main#EventData .actionBar_none:hover,
-main#EventData .actionBar_none_hover {
-    fill: brown;
-    cursor: pointer;
-}
-main#EventData .actionBar_some {
-    fill: url("#actionPattern");
-    cursor: pointer;
-}
-main#EventData .actionBar_some:hover,
-main#EventData .actionBar_some_hover {
-    fill: steelblue;
-    cursor: pointer;
-}
-main#EventData .actionBar_all {
-    fill: brown;
-    cursor: pointer;
-}
-main#EventData .actionBar_all:hover,
-main#EventData .actionBar_all_hover {
-    fill: steelblue;
-    cursor: pointer;
-}
 main#EventData .glyphicon {
     color: #818181;
 }
@@ -836,7 +789,4 @@ main#EventData #aggregTable {
 main#EventData #aggregTable th {
     width: 100px;
     padding: 0px 10px;
-}
-main#EventData .item-bordered {
-    border: solid #000000;
 }

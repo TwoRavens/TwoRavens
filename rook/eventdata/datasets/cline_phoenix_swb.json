@@ -67,7 +67,7 @@
         "ISO-3"
       ],
       "columns": [
-        "countryname_constructed"
+        "country_code"
       ]
     },
     "Coordinates": {

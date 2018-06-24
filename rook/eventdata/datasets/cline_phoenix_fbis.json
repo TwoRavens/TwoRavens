@@ -65,7 +65,7 @@
         "ISO-3"
       ],
       "columns": [
-        "countryname_constructed"
+        "country_code"
       ]
     },
     "Coordinates": {
@@ -102,8 +102,7 @@
     "year"
   ],
   "columns_constructed": [
-    "story_date_constructed",
-    "countryname_constructed"
+    "story_date_constructed"
   ],
   "alignments": {
     "countryname": "<country>",

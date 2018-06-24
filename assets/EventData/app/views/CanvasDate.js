@@ -58,11 +58,11 @@ export function interpolate(data, date) {
 export default class CanvasDate {
     oncreate(vnode) {
         let {subsetName, data, preferences} = vnode.attrs;
-
+        console.log(subsetName.replace(/[^A-Za-z0-9]/g, ""))
         let minDate = data[0]['Date'];
         let maxDate = data[data.length - 1]['Date'];
 
-        $(`#fromDate${subsetName}`).datepicker({
+        $(`#fromDate${subsetName.replace(/[^A-Za-z0-9]/g, "")}`).datepicker({
             dateFormat: 'yy-mm-dd',
             changeYear: true,
             changeMonth: true,
@@ -73,7 +73,7 @@ export default class CanvasDate {
             orientation: top,
             onSelect: function () {
                 preferences['userLower'] = new Date($(this).datepicker('getDate').getTime());
-                let toDate = $(`#toDate${subsetName}`);
+                let toDate = $(`#toDate${subsetName.replace(/[^A-Za-z0-9]/g, "")}`);
                 toDate.datepicker('option', 'minDate', preferences['userLower']);
                 toDate.datepicker('option', 'defaultDate', maxDate);
                 toDate.datepicker('option', 'maxDate', maxDate);
@@ -81,16 +81,16 @@ export default class CanvasDate {
             },
             onClose: function () {
                 setTimeout(function () {
-                    $(`#toDate${subsetName}`).focus();
+                    $(`#toDate${subsetName.replace(/[^A-Za-z0-9]/g, "")}`).focus();
                 }, 100);
 
                 // Update plot, but don't reset slider
-                $(`#toDate${subsetName}`).datepicker("show");
+                $(`#toDate${subsetName.replace(/[^A-Za-z0-9]/g, "")}`).datepicker("show");
             }
         });
 
 
-        $(`#toDate${subsetName}`).datepicker({
+        $(`#toDate${subsetName.replace(/[^A-Za-z0-9]/g, "")}`).datepicker({
             changeYear: true,
             changeMonth: true,
             yearRange: minDate.getFullYear() + ':' + maxDate.getFullYear(),
@@ -181,7 +181,7 @@ export default class CanvasDate {
                                 "margin-top": "10px"
                             }
                         }, "From:"),
-                        m("input.form-control[id='fromdate'][type='text']", {
+                        m(`input#fromDate${subsetName.replace(/[^A-Za-z0-9]/g, "")}.form-control[type='text']`, {
                             onblur: function () {
                                 setRedraw(subsetName, true);
                             },
@@ -196,7 +196,7 @@ export default class CanvasDate {
                                 "margin-top": "10px"
                             }
                         }, "To:"),
-                        m("input.form-control[id='todate'][type='text']", {
+                        m(`input#toDate${subsetName.replace(/[^A-Za-z0-9]/g, "")}.form-control[type='text']`, {
                             onblur: () => setRedraw(subsetName, true),
                             value: d3.timeFormat("%Y-%m-%d")(preferences['userUpper'])
                         })
@@ -231,7 +231,7 @@ export default class CanvasDate {
                         }
                     },
                     drawGraph && m(PlotDate, {
-                        id: 'dateSVG' + subsetName,
+                        id: 'dateSVG' + subsetName.replace(/[^A-Za-z0-9]/g, ""),
                         data: dataProcessed,
                         handles: [preferences['handleLower'], preferences['handleUpper']],
                         callbackHandles: setHandleDates,
