@@ -24,7 +24,7 @@ d3.selection.prototype.moveToBack = function () {
 
 export default class PlotDyad {
     oncreate(vnode) {
-        let {id, preferences} = vnode.attrs;
+        let {id, metadata} = vnode.attrs;
 
         this.svg = this.svg || d3.select('#' + id.replace(/[^A-Za-z0-9]/g, ""));
 
@@ -34,7 +34,7 @@ export default class PlotDyad {
         this.actorForce = d3.forceSimulation()
             .force("link", d3.forceLink().distance(100).strength(0.5)) //link force to keep nodes together
             .force("x", d3.forceX().x(function (d) {     //grouping by nodes
-                let multiplier = d.actor === Object.keys(preferences['tabs'])[0] ? 1 : 3;
+                let multiplier = d.actor === Object.keys(metadata['tabs'])[0] ? 1 : 3;
                 return Math.floor(multiplier * bound.width / 4);
             }).strength(0.06))
             .force("y", d3.forceY().y(function () {     //cluster nodes
@@ -102,7 +102,7 @@ export default class PlotDyad {
     }
 
     onupdate(vnode) {
-        let {preferences, redraw, setRedraw} = vnode.attrs;
+        let {metadata, redraw, setRedraw} = vnode.attrs;
         if (!redraw) return;
         setRedraw(false);
 
@@ -121,7 +121,7 @@ export default class PlotDyad {
 
         this.actorForce
             .force("x", d3.forceX().x(function (d) {
-                let multiplier = d.actor === Object.keys(preferences['tabs'])[0] ? 1 : 3;
+                let multiplier = d.actor === Object.keys(metadata['tabs'])[0] ? 1 : 3;
                 return Math.floor(multiplier * width / 4);
             }).strength(0.06))
             .force("y", d3.forceY().y(function () {
@@ -214,15 +214,15 @@ export default class PlotDyad {
 
     //updates elements in SVG, nodes updated on actorID
     updateSVG(vnode) {
-        let {preferences} = vnode.attrs;
+        let {preferences, metadata} = vnode.attrs;
 
         //update links
-        this.linkGroup = this.linkGroup.data(preferences['edges']);
+        this.linkGroup = this.linkGroup.data(preferences['edges'].filter(edge => edge.source.actor in metadata['tabs']));
 
         // remove old links
         this.linkGroup.exit().remove();
 
-        let [leftTab, rightTab] = Object.keys(preferences['tabs']);
+        let [leftTab, rightTab] = Object.keys(metadata['tabs']);
 
         this.linkGroup = this.linkGroup.enter().append('svg:path')
             .attr('class', 'link')
@@ -255,7 +255,7 @@ export default class PlotDyad {
 
 
         //now update nodes
-        this.nodeGroup = this.nodeGroup.data(preferences['nodes'], function (d) {
+        this.nodeGroup = this.nodeGroup.data(preferences['nodes'].filter(node => node.actor in metadata['tabs']), function (d) {
             return d.id;
         });
 
@@ -281,7 +281,6 @@ export default class PlotDyad {
                         that.originNode = d;
 
                         //displays arrow in proper direction (source->target and target->source)
-                        let [leftTab, rightTab] = Object.keys(preferences['tabs']);
                         that.drag_line
                             .style('marker-end', () => d.actor === leftTab ? 'url(#end-arrow)' : '')
                             .style('marker-start', () => d.actor === rightTab ? 'url(#start-arrow)' : '')
@@ -357,7 +356,7 @@ export default class PlotDyad {
                 return;
             }
 
-            let [leftTab, rightTab] = Object.keys(preferences['tabs']);
+            let [leftTab, rightTab] = Object.keys(metadata['tabs']);
             //here link is now made
             const actualSource = this.originNode.actor === leftTab ? this.originNode : this.destNode; //choose the node that is a source
             const actualTarget = this.destNode.actor === rightTab ? this.destNode : this.originNode;
@@ -394,12 +393,13 @@ export default class PlotDyad {
 
     //function that is called on every animated step of the SVG, handles boundary and node collision
     actorTick(vnode) {
-        let {preferences} = vnode.attrs;
+        let {preferences, metadata} = vnode.attrs;
         let bound = this.svg.node().getBoundingClientRect();
 
         if (!this.dragStarted) {
-            const q = d3.quadtree().x((d) => d.x).y((d) => d.y).addAll(preferences['nodes']);
-            preferences['nodes'].forEach(node => q.visit(this.collide(node)));
+            let filteredNodes = preferences['nodes'].filter(node => node.actor in metadata['tabs']);
+            const q = d3.quadtree().x((d) => d.x).y((d) => d.y).addAll(filteredNodes);
+            filteredNodes.forEach(node => q.visit(this.collide(node)));
         }
 
         //node movement and display constrained here
@@ -408,7 +408,7 @@ export default class PlotDyad {
             // console.log(d);
             d.x = Math.max(actorNodeR, Math.min(bound.width - actorNodeR, d.x)); //test SVG boundary conditions
             d.y = Math.max(actorNodeR, Math.min(bound.height - actorNodeR, d.y));
-            let [leftTab, rightTab] = Object.keys(preferences['tabs']);
+            let [leftTab, rightTab] = Object.keys(metadata['tabs']);
             if (d.actor === leftTab && d.x > this.boundaryLeft)  //test source/target boundary conditions
                 d.x = this.boundaryLeft;
             if (d.actor === rightTab && d.x < this.boundaryRight)
@@ -438,7 +438,7 @@ export default class PlotDyad {
                 targetPadding = actorNodeR + 5;
             }
             else {
-                let [leftTab, rightTab] = Object.keys(preferences['tabs']);
+                let [leftTab, rightTab] = Object.keys(metadata['tabs']);
                 sourcePadding = (d.source.actor === rightTab) ? actorNodeR + 5 : actorNodeR; //spacing on the line before arrow head
                 targetPadding = (d.target.actor === rightTab) ? actorNodeR + 5 : actorNodeR;
             }
@@ -498,9 +498,11 @@ export default class PlotDyad {
 
     //function to handle force and SVG updates
     updateAll(vnode) {
-        let {preferences} = vnode.attrs;
+        let {preferences, metadata} = vnode.attrs;
         this.updateSVG(vnode);
-        this.actorForce.nodes(preferences['nodes']).force("link").links(preferences['edges']);
+        this.actorForce
+            .nodes(preferences['nodes'].filter(node => node.actor in metadata['tabs'])).force("link")
+            .links(preferences['edges'].filter(edge => edge.source.actor in metadata['tabs']));
         this.actorForce.alpha(1).restart();
         this.resetMouseVars(vnode);
     }

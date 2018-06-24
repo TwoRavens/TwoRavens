@@ -6,39 +6,6 @@
   "codebook": "https://uofi.app.box.com/s/z8le27b1l8qwjdzm80g5izpnzq92hnlb",
   "host": "TwoRavens",
   "subsets": {
-    "Actor": {
-      "type": "dyad",
-      "tabs": {
-        "source": {
-          "full": "eventid",
-          "filters": [
-            "INI_IGRP1",
-            "TAR_IGRP1",
-            "VIC_IGRP1",
-            "INI_SGRP1",
-            "TAR_SGRP1",
-            "VIC_SGRP1",
-            "INI_PGRP1",
-            "TAR_PGRP1",
-            "VIC_PGRP1"
-          ]
-        },
-        "target": {
-          "full": "eventid",
-          "filters": [
-            "INI_IGRP1",
-            "TAR_IGRP1",
-            "VIC_IGRP1",
-            "INI_SGRP1",
-            "TAR_SGRP1",
-            "VIC_SGRP1",
-            "INI_PGRP1",
-            "TAR_PGRP1",
-            "VIC_PGRP1"
-          ]
-        }
-      }
-    },
     "Event Type": {
       "type": "categorical",
       "formats": [
