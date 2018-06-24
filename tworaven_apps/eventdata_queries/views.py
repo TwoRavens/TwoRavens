@@ -13,6 +13,7 @@ from tworaven_apps.utils.view_helper import \
      get_json_error,
      get_json_success)
 from tworaven_apps.eventdata_queries.event_job_util import EventJobUtil
+from tworaven_apps.eventdata_queries.forms import (EventDataSavedQueryForm)
 
 # Create your views here.
 
@@ -36,7 +37,16 @@ def api_add_query(request):
 
     # json is valid
     print("input json : ", json.dumps(json_req_obj))
-    success, addquery_obj_err = EventJobUtil.add_query_db(json_req_obj)
+
+    frm = EventDataSavedQueryForm(json_req_obj)
+
+    if not frm.is_valid():
+        user_msg = dict(success=False,
+                        message='Invalid input',
+                        errors=frm.errors)
+        return JsonResponse(user_msg)
+
+    success, addquery_obj_err = EventJobUtil.add_query_db(frm)
 
     if not success:
         return JsonResponse(addquery_obj_err)

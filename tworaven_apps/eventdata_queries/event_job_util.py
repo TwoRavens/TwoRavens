@@ -19,7 +19,7 @@ class EventJobUtil(object):
     def add_query_db(json_input):
         """ add the query to db"""
         job = EventDataSavedQuery()
-        job.save(json.dumps(json_input))
+        job.save(json_input)
         # return True,"All good"
         print("job :", job.id)
         if job.id:
