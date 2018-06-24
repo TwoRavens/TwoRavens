@@ -1,6 +1,7 @@
 import m from 'mithril';
 import {panelMargin} from "../../../common/common";
 import * as d3 from "d3";
+import TextField from "../../../common/views/TextField";
 
 // preferences contains:
 // latUpper
@@ -18,44 +19,82 @@ function clip(x, lower, upper) {
     return Math.max(Math.min(x, upper), lower);
 }
 
-export default class CanvasCoordinates {
+// called after a drag event
+let setInputBounds = (vnode, d) => {
+    let {preferences} = vnode.attrs;
+    preferences['latUpperLabel'] = "North Latitude";
+    preferences['latLowerLabel'] = "South Latitude";
 
-    oncreate(){
+    // 180, not 360 due to svg dimensions
+    preferences['latUpper'] = Math.round(1000 * -(d.y * 180 - 90)) / 1000;
+    preferences['latLower'] = Math.round(1000 * -((d.y + heightCoord) * 180 - 90)) / 1000;
+
+    preferences['lonLeftLabel'] = "West Longitude";
+    preferences['lonRightLabel'] = "East Longitude";
+
+    preferences['lonLeft'] = Math.round(1000 * (d.x * 180 - 180)) / 1000;
+    preferences['lonRight'] = Math.round(1000 * ((d.x + widthCoord) * 180 - 180)) / 1000;
+
+    m.redraw();
+};
+
+
+export default class CanvasCoordinates {
+    oninit(vnode) {
+        let {preferences} = vnode.attrs;
+
+        preferences['latUpperLabel'] = "North Latitude";
+        preferences['latLowerLabel'] = "South Latitude";
+
+        // 180, not 360 due to svg dimensions
+        preferences['latUpper'] = 56.682;
+        preferences['latLower'] = 26.381;
+
+        preferences['lonLeftLabel'] = "West Longitude";
+        preferences['lonRightLabel'] = "East Longitude";
+
+        preferences['lonLeft'] = -9.524;
+        preferences['lonRight'] = 17.823;
+    }
+
+    oncreate(vnode) {
+        let {preferences} = vnode.attrs;
+
         let drag = d3.drag()
             .subject(Object)
-            .on("drag", this.dragmove);
+            .on("drag", (d) => this.dragmove(vnode, d));
 
         let dragright = d3.drag()
             .subject(Object)
-            .on("drag", this.rdragresize);
+            .on("drag", (d) => this.rdragresize(vnode, d));
 
         let dragleft = d3.drag()
             .subject(Object)
-            .on("drag", this.ldragresize);
+            .on("drag", (d) => this.ldragresize(vnode, d));
 
         let dragtop = d3.drag()
             .subject(Object)
-            .on("drag", this.tdragresize);
+            .on("drag", (d) => this.tdragresize(vnode, d));
 
         let dragbottom = d3.drag()
             .subject(Object)
-            .on("drag", this.bdragresize);
+            .on("drag", (d) => this.bdragresize(vnode, d));
 
         let dragbottomright = d3.drag()
             .subject(Object)
-            .on("drag", this.brdragresize);
+            .on("drag", (d) => this.brdragresize(vnode, d));
 
         let dragbottomleft = d3.drag()
             .subject(Object)
-            .on("drag", this.bldragresize);
+            .on("drag", (d) => this.bldragresize(vnode, d));
 
         let dragtopright = d3.drag()
             .subject(Object)
-            .on("drag", this.trdragresize);
+            .on("drag", (d) => this.trdragresize(vnode, d));
 
-        let dragtopleft= d3.drag()
+        let dragtopleft = d3.drag()
             .subject(Object)
-            .on("drag", this.tldragresize);
+            .on("drag", (d) => this.tldragresize(vnode, d));
 
         this.svgMap = d3.select('#worldMap');
         this.imgs = this.svgMap.selectAll("image").data([0]);
@@ -73,8 +112,12 @@ export default class CanvasCoordinates {
 
         this.dragrect = this.newg.append("rect")
             .attr("id", "active")
-            .attr("x", function(d) { return d.x; })
-            .attr("y", function(d) { return d.y; })
+            .attr("x", function (d) {
+                return d.x;
+            })
+            .attr("y", function (d) {
+                return d.y;
+            })
             .attr("height", heightCoord)
             .attr("width", widthCoord)
             .attr("fill-opacity", .2)
@@ -85,8 +128,12 @@ export default class CanvasCoordinates {
             .call(drag);
 
         this.dragbarleft = this.newg.append("rect")
-            .attr("x", function(d) { return d.x - (dragbarw/2); })
-            .attr("y", function(d) { return d.y + (dragbarw/2); })
+            .attr("x", function (d) {
+                return d.x - (dragbarw / 2);
+            })
+            .attr("y", function (d) {
+                return d.y + (dragbarw / 2);
+            })
             .attr("height", heightCoord - dragbarw)
             .attr("id", "dragleft")
             .attr("width", dragbarw)
@@ -96,8 +143,12 @@ export default class CanvasCoordinates {
             .call(dragleft);
 
         this.dragbarright = this.newg.append("rect")
-            .attr("x", function(d) { return d.x + widthCoord - (dragbarw/2); })
-            .attr("y", function(d) { return d.y + (dragbarw/2); })
+            .attr("x", function (d) {
+                return d.x + widthCoord - (dragbarw / 2);
+            })
+            .attr("y", function (d) {
+                return d.y + (dragbarw / 2);
+            })
             .attr("id", "dragright")
             .attr("height", heightCoord - dragbarw)
             .attr("width", dragbarw)
@@ -107,8 +158,12 @@ export default class CanvasCoordinates {
             .call(dragright);
 
         this.dragbartop = this.newg.append("rect")
-            .attr("x", function(d) { return d.x + (dragbarw/2); })
-            .attr("y", function(d) { return d.y - (dragbarw/2); })
+            .attr("x", function (d) {
+                return d.x + (dragbarw / 2);
+            })
+            .attr("y", function (d) {
+                return d.y - (dragbarw / 2);
+            })
             .attr("height", dragbarw)
             .attr("id", "dragtop")
             .attr("width", widthCoord - dragbarw)
@@ -118,8 +173,12 @@ export default class CanvasCoordinates {
             .call(dragtop);
 
         this.dragbarbottom = this.newg.append("rect")
-            .attr("x", function(d) { return d.x + (dragbarw/2); })
-            .attr("y", function(d) { return d.y + heightCoord - (dragbarw/2); })
+            .attr("x", function (d) {
+                return d.x + (dragbarw / 2);
+            })
+            .attr("y", function (d) {
+                return d.y + heightCoord - (dragbarw / 2);
+            })
             .attr("id", "dragbottom")
             .attr("height", dragbarw)
             .attr("width", widthCoord - dragbarw)
@@ -129,8 +188,12 @@ export default class CanvasCoordinates {
             .call(dragbottom);
 
         this.dragbarbottomright = this.newg.append("rect")
-            .attr("x", function(d) { return d.x + widthCoord - (dragbarw/2); })
-            .attr("y", function(d) { return d.y + heightCoord - (dragbarw/2); })
+            .attr("x", function (d) {
+                return d.x + widthCoord - (dragbarw / 2);
+            })
+            .attr("y", function (d) {
+                return d.y + heightCoord - (dragbarw / 2);
+            })
             .attr("id", "dragbottomright")
             .attr("height", dragbarw)
             .attr("width", dragbarw)
@@ -140,8 +203,12 @@ export default class CanvasCoordinates {
             .call(dragbottomright);
 
         this.dragbarbottomleft = this.newg.append("rect")
-            .attr("x", function(d) { return d.x - (dragbarw/2); })
-            .attr("y", function(d) { return d.y + heightCoord - (dragbarw/2); })
+            .attr("x", function (d) {
+                return d.x - (dragbarw / 2);
+            })
+            .attr("y", function (d) {
+                return d.y + heightCoord - (dragbarw / 2);
+            })
             .attr("id", "dragbottomleft")
             .attr("height", dragbarw)
             .attr("width", dragbarw)
@@ -151,8 +218,12 @@ export default class CanvasCoordinates {
             .call(dragbottomleft);
 
         this.dragbartopleft = this.newg.append("rect")
-            .attr("x", function(d) { return d.x - (dragbarw/2); })
-            .attr("y", function(d) { return d.y - (dragbarw/2); })
+            .attr("x", function (d) {
+                return d.x - (dragbarw / 2);
+            })
+            .attr("y", function (d) {
+                return d.y - (dragbarw / 2);
+            })
             .attr("id", "dragtopleft")
             .attr("height", dragbarw)
             .attr("width", dragbarw)
@@ -162,8 +233,12 @@ export default class CanvasCoordinates {
             .call(dragtopleft);
 
         this.dragbartopright = this.newg.append("rect")
-            .attr("x", function(d) { return d.x + widthCoord - (dragbarw/2); })
-            .attr("y", function(d) { return d.y - (dragbarw/2); })
+            .attr("x", function (d) {
+                return d.x + widthCoord - (dragbarw / 2);
+            })
+            .attr("y", function (d) {
+                return d.y - (dragbarw / 2);
+            })
             .attr("id", "dragtopleft")
             .attr("height", dragbarw)
             .attr("width", dragbarw)
@@ -173,84 +248,128 @@ export default class CanvasCoordinates {
             .call(dragtopright);
 
 
-        this.updateLatitude();
-        this.updateLongitude();
+        this.updateLatitude(preferences);
+        this.updateLongitude(preferences);
     }
 
 
-    dragmove(d) {
+    dragmove(vnode, d) {
         this.dragrect
             .attr("x", d.x = Math.max(0, Math.min(2 - widthCoord, d3.event.x)));
         this.dragbarleft
-            .attr("x", function(d) { return d.x - (dragbarw/2); });
+            .attr("x", function (d) {
+                return d.x - (dragbarw / 2);
+            });
         this.dragbarright
-            .attr("x", function(d) { return d.x + widthCoord - (dragbarw/2); });
+            .attr("x", function (d) {
+                return d.x + widthCoord - (dragbarw / 2);
+            });
         this.dragbartop
-            .attr("x", function(d) { return d.x + (dragbarw/2); });
+            .attr("x", function (d) {
+                return d.x + (dragbarw / 2);
+            });
         this.dragbarbottom
-            .attr("x", function(d) { return d.x + (dragbarw/2); });
+            .attr("x", function (d) {
+                return d.x + (dragbarw / 2);
+            });
 
         this.dragrect
             .attr("y", d.y = Math.max(0, Math.min(1 - heightCoord, d3.event.y)));
         this.dragbarleft
-            .attr("y", function(d) { return d.y + (dragbarw/2); });
+            .attr("y", function (d) {
+                return d.y + (dragbarw / 2);
+            });
         this.dragbarright
-            .attr("y", function(d) { return d.y + (dragbarw/2); });
+            .attr("y", function (d) {
+                return d.y + (dragbarw / 2);
+            });
         this.dragbartop
-            .attr("y", function(d) { return d.y - (dragbarw/2); });
+            .attr("y", function (d) {
+                return d.y - (dragbarw / 2);
+            });
         this.dragbarbottom
-            .attr("y", function(d) { return d.y + heightCoord - (dragbarw/2); });
+            .attr("y", function (d) {
+                return d.y + heightCoord - (dragbarw / 2);
+            });
 
         this.dragbarbottomleft
-            .attr("x", function(d) { return d.x - (dragbarw/2); });
+            .attr("x", function (d) {
+                return d.x - (dragbarw / 2);
+            });
         this.dragbarbottomright
-            .attr("x", function(d) { return d.x + widthCoord - (dragbarw/2); });
+            .attr("x", function (d) {
+                return d.x + widthCoord - (dragbarw / 2);
+            });
         this.dragbartopleft
-            .attr("x", function(d) { return d.x - (dragbarw/2); });
+            .attr("x", function (d) {
+                return d.x - (dragbarw / 2);
+            });
         this.dragbartopright
-            .attr("x", function(d) { return d.x + widthCoord - (dragbarw/2); });
+            .attr("x", function (d) {
+                return d.x + widthCoord - (dragbarw / 2);
+            });
 
         this.dragbarbottomleft
-            .attr("y", function(d) { return d.y + heightCoord - (dragbarw/2); });
+            .attr("y", function (d) {
+                return d.y + heightCoord - (dragbarw / 2);
+            });
         this.dragbarbottomright
-            .attr("y", function(d) { return d.y + heightCoord - (dragbarw/2); });
+            .attr("y", function (d) {
+                return d.y + heightCoord - (dragbarw / 2);
+            });
         this.dragbartopleft
-            .attr("y", function(d) { return d.y - (dragbarw/2); });
+            .attr("y", function (d) {
+                return d.y - (dragbarw / 2);
+            });
         this.dragbartopright
-            .attr("y", function(d) { return d.y - (dragbarw/2); });
+            .attr("y", function (d) {
+                return d.y - (dragbarw / 2);
+            });
 
-        this.setInputBounds(d)
+        setInputBounds(vnode, d)
     };
 
-    ldragresize(d) {
+    ldragresize(vnode, d) {
         let oldx = d.x;
         //Max x on the right is x + width - dragbarw
         //Max x on the left is 0 - (dragbarw/2)
         d.x = Math.max(0, Math.min(d.x + widthCoord - (dragbarw / 2), d3.event.x));
         widthCoord = widthCoord + (oldx - d.x);
         this.dragbarleft
-            .attr("x", function(d) { return d.x - (dragbarw / 2); });
+            .attr("x", function (d) {
+                return d.x - (dragbarw / 2);
+            });
 
         this.dragrect
-            .attr("x", function(d) { return d.x; })
+            .attr("x", function (d) {
+                return d.x;
+            })
             .attr("width", widthCoord);
 
         this.dragbartop
-            .attr("x", function(d) { return d.x + (dragbarw/2); })
+            .attr("x", function (d) {
+                return d.x + (dragbarw / 2);
+            })
             .attr("width", widthCoord - dragbarw);
         this.dragbarbottom
-            .attr("x", function(d) { return d.x + (dragbarw/2); })
+            .attr("x", function (d) {
+                return d.x + (dragbarw / 2);
+            })
             .attr("width", widthCoord - dragbarw);
 
         this.dragbarbottomleft
-            .attr("x", function(d) { return d.x - (dragbarw/2); });
+            .attr("x", function (d) {
+                return d.x - (dragbarw / 2);
+            });
         this.dragbartopleft
-            .attr("x", function(d) { return d.x - (dragbarw/2); });
+            .attr("x", function (d) {
+                return d.x - (dragbarw / 2);
+            });
 
-        this.setInputBounds(d)
+        setInputBounds(vnode, d)
     };
 
-    rdragresize (d) {
+    rdragresize(vnode, d) {
         //Max x on the left is x - width
         //Max x on the right is width of screen + (dragbarw/2)
         let dragx = Math.max(d.x + (dragbarw / 2), Math.min(2, d.x + widthCoord + d3.event.dx));
@@ -259,7 +378,9 @@ export default class CanvasCoordinates {
 
         //move the right drag handle
         this.dragbarright
-            .attr("x", function() { return dragx - (dragbarw/2) });
+            .attr("x", function () {
+                return dragx - (dragbarw / 2)
+            });
 
         //resize the drag rectangle
         //as we are only resizing from the right, the x coordinate does not need to change
@@ -271,15 +392,19 @@ export default class CanvasCoordinates {
             .attr("width", widthCoord - dragbarw);
 
         this.dragbarbottomright
-            .attr("x", function(d) { return d.x + widthCoord - (dragbarw/2); });
+            .attr("x", function (d) {
+                return d.x + widthCoord - (dragbarw / 2);
+            });
         this.dragbartopright
-            .attr("x", function(d) { return d.x + widthCoord - (dragbarw/2); });
+            .attr("x", function (d) {
+                return d.x + widthCoord - (dragbarw / 2);
+            });
 
-        this.setInputBounds(d)
+        setInputBounds(vnode, d)
     };
 
 
-    tdragresize(d) {
+    tdragresize(vnode, d) {
 
         let oldy = d.y;
         //Max x on the right is x + width - dragbarw
@@ -288,28 +413,40 @@ export default class CanvasCoordinates {
 
         heightCoord = heightCoord + (oldy - d.y);
         this.dragbartop
-            .attr("y", function(d) { return d.y - (dragbarw / 2); });
+            .attr("y", function (d) {
+                return d.y - (dragbarw / 2);
+            });
 
         this.dragrect
-            .attr("y", function(d) { return d.y; })
+            .attr("y", function (d) {
+                return d.y;
+            })
             .attr("height", heightCoord);
 
         this.dragbarleft
-            .attr("y", function(d) { return d.y + (dragbarw/2); })
+            .attr("y", function (d) {
+                return d.y + (dragbarw / 2);
+            })
             .attr("height", heightCoord - dragbarw);
         this.dragbarright
-            .attr("y", function(d) { return d.y + (dragbarw/2); })
+            .attr("y", function (d) {
+                return d.y + (dragbarw / 2);
+            })
             .attr("height", heightCoord - dragbarw);
 
         this.dragbartopleft
-            .attr("y", function(d) { return d.y - (dragbarw/2); });
+            .attr("y", function (d) {
+                return d.y - (dragbarw / 2);
+            });
         this.dragbartopright
-            .attr("y", function(d) { return d.y - (dragbarw/2); });
+            .attr("y", function (d) {
+                return d.y - (dragbarw / 2);
+            });
 
-        this.setInputBounds(d)
+        setInputBounds(vnode, d)
     };
 
-    bdragresize(d) {
+    bdragresize(vnode, d) {
         //Max x on the left is x - width
         //Max x on the right is width of screen + (dragbarw/2)
         let dragy = Math.max(d.y + (dragbarw / 2), Math.min(2, d.y + heightCoord + d3.event.dy));
@@ -319,7 +456,9 @@ export default class CanvasCoordinates {
 
         //move the right drag handle
         this.dragbarbottom
-            .attr("y", function() { return dragy - (dragbarw/2) });
+            .attr("y", function () {
+                return dragy - (dragbarw / 2)
+            });
 
         //resize the drag rectangle
         //as we are only resizing from the right, the x coordinate does not need to change
@@ -331,38 +470,42 @@ export default class CanvasCoordinates {
             .attr("height", heightCoord - dragbarw);
 
         this.dragbarbottomleft
-            .attr("y", function(d) { return d.y + heightCoord - (dragbarw/2); });
+            .attr("y", function (d) {
+                return d.y + heightCoord - (dragbarw / 2);
+            });
         this.dragbarbottomright
-            .attr("y", function(d) { return d.y + heightCoord - (dragbarw/2); });
+            .attr("y", function (d) {
+                return d.y + heightCoord - (dragbarw / 2);
+            });
 
-        this.setInputBounds(d)
+        setInputBounds(vnode, d)
     };
 
-    trdragresize(d) {
-        this.tdragresize(d);
-        this.rdragresize(d);
+    trdragresize(vnode, d) {
+        this.tdragresize(vnode, d);
+        this.rdragresize(vnode, d);
     };
 
-    tldragresize(d) {
-        this.tdragresize(d);
-        this.ldragresize(d);
+    tldragresize(vnode, d) {
+        this.tdragresize(vnode, d);
+        this.ldragresize(vnode, d);
     };
 
-    bldragresize(d) {
-        this.bdragresize(d);
-        this.ldragresize(d);
+    bldragresize(vnode, d) {
+        this.bdragresize(vnode, d);
+        this.ldragresize(vnode, d);
     };
 
-    brdragresize(d) {
-        this.bdragresize(d);
-        this.rdragresize(d);
+    brdragresize(vnode, d) {
+        this.bdragresize(vnode, d);
+        this.rdragresize(vnode, d);
     };
 
     updateLatitude(preferences) {
 
         // Validation
-        if (isNaN(preferences['latLower']) || preferences['latLower'].val() === '') return;
-        if (isNaN(preferences['latUpper']) || preferences['latUpper'].val() === '') return;
+        if (isNaN(preferences['latLower']) || preferences['latLower'] === '') return;
+        if (isNaN(preferences['latUpper']) || preferences['latUpper'] === '') return;
 
         let valLower = parseFloat(preferences['latLower']);
         if (valLower < -90 || valLower > 90) {
@@ -397,28 +540,47 @@ export default class CanvasCoordinates {
         this.newg.attr("y", upperBound);
 
         this.dragrect
-            .attr("y", function(d) { d.y = upperBound; return upperBound; })
+            .attr("y", function (d) {
+                d.y = upperBound;
+                return upperBound;
+            })
             .attr("height", heightCoord);
 
         this.dragbarleft
-            .attr("y", function() { return upperBound + (dragbarw/2); })
+            .attr("y", function () {
+                return upperBound + (dragbarw / 2);
+            })
             .attr("height", heightCoord - dragbarw);
         this.dragbarright
-            .attr("y", function() { return upperBound + (dragbarw/2); })
+            .attr("y", function () {
+                return upperBound + (dragbarw / 2);
+            })
             .attr("height", heightCoord - dragbarw);
         this.dragbartop
-            .attr("y", function() { return upperBound - (dragbarw/2); });
+            .attr("y", function () {
+                return upperBound - (dragbarw / 2);
+            });
         this.dragbarbottom
-            .attr("y", function() { return upperBound + heightCoord - (dragbarw/2); });
+            .attr("y", function () {
+                return upperBound + heightCoord - (dragbarw / 2);
+            });
 
         this.dragbarbottomleft
-            .attr("y", function() { return upperBound + heightCoord - (dragbarw/2); });
+            .attr("y", function () {
+                return upperBound + heightCoord - (dragbarw / 2);
+            });
         this.dragbarbottomright
-            .attr("y", function() { return upperBound + heightCoord - (dragbarw/2); });
+            .attr("y", function () {
+                return upperBound + heightCoord - (dragbarw / 2);
+            });
         this.dragbartopleft
-            .attr("y", function() { return upperBound - (dragbarw/2); });
+            .attr("y", function () {
+                return upperBound - (dragbarw / 2);
+            });
         this.dragbartopright
-            .attr("y", function() { return upperBound - (dragbarw/2); });
+            .attr("y", function () {
+                return upperBound - (dragbarw / 2);
+            });
     }
 
     updateLongitude(preferences) {
@@ -465,51 +627,51 @@ export default class CanvasCoordinates {
         this.newg.attr("x", leftBound);
 
         this.dragrect
-            .attr("x", function(d) { d.x = leftBound; return leftBound })
+            .attr("x", function (d) {
+                d.x = leftBound;
+                return leftBound
+            })
             .attr("width", widthCoord);
 
         this.dragbartop
-            .attr("x", function() { return leftBound + (dragbarw/2); })
+            .attr("x", function () {
+                return leftBound + (dragbarw / 2);
+            })
             .attr("width", widthCoord - dragbarw);
         this.dragbarbottom
-            .attr("x", function() { return leftBound + (dragbarw/2); })
+            .attr("x", function () {
+                return leftBound + (dragbarw / 2);
+            })
             .attr("width", widthCoord - dragbarw);
         this.dragbarleft
-            .attr("x", function() { return leftBound - (dragbarw/2); });
+            .attr("x", function () {
+                return leftBound - (dragbarw / 2);
+            });
         this.dragbarright
-            .attr("x", function() { return leftBound + widthCoord - (dragbarw/2); });
+            .attr("x", function () {
+                return leftBound + widthCoord - (dragbarw / 2);
+            });
 
         this.dragbarbottomleft
-            .attr("x", function() { return leftBound - (dragbarw/2); });
+            .attr("x", function () {
+                return leftBound - (dragbarw / 2);
+            });
         this.dragbarbottomright
-            .attr("x", function() { return leftBound + widthCoord - (dragbarw/2); });
+            .attr("x", function () {
+                return leftBound + widthCoord - (dragbarw / 2);
+            });
         this.dragbartopleft
-            .attr("x", function() { return leftBound - (dragbarw/2); });
+            .attr("x", function () {
+                return leftBound - (dragbarw / 2);
+            });
         this.dragbartopright
-            .attr("x", function() { return leftBound + widthCoord - (dragbarw/2); });
+            .attr("x", function () {
+                return leftBound + widthCoord - (dragbarw / 2);
+            });
     }
 
-    // TODO fix preferences scoping
-    setInputBounds(d) {
-        this.preferences['latUpperLabel'] = "North Latitude";
-        this.preferences['latLowerLabel'] = "South Latitude";
-
-        // 180, not 360 due to svg dimensions
-        this.preferences['latUpper'] = Math.round(1000 * -(d.y * 180 - 90)) / 1000;
-        this.preferences['latLower'] = Math.round(1000 * -((d.y + heightCoord) * 180 - 90)) / 1000;
-
-        this.preferences['lonLeftLabel'] = "West Longitude";
-        this.preferences['lonRightLabel'] = "East Longitude";
-
-        this.preferences['lonLeft'] = Math.round(1000 * (d.x * 180 - 180)) / 1000;
-        this.preferences['lonRight'] = Math.round(1000 * ((d.x + widthCoord) * 180 - 180)) / 1000;
-    };
-
     onupdate(vnode) {
-        let {subsetName, preferences, redraw, setRedraw} = vnode.attrs;
-        if (!redraw) return;
-        setRedraw(subsetName, false);
-
+        let {preferences} = vnode.attrs;
         this.updateLatitude(preferences);
         this.updateLongitude(preferences);
     }
@@ -535,15 +697,14 @@ export default class CanvasCoordinates {
                                 "margin-top": "10px"
                             }
                         }, preferences['latUpperLabel']),
-                        m("input#latUpper.form-control[type='text'][value='56.682']", {
-                            style: {
-                                "display": "inline-block",
-                                "float": "left"
-                            },
-                            onchange: vnode.withAttr('value', (value) => {
+                        m(TextField, {
+                            id: 'latUpper',
+                            value: preferences['latUpper'],
+                            style: {"display": "inline-block", "float": "left", "width": "auto"},
+                            oninput: (value) => {
                                 preferences['latUpper'] = value;
                                 this.updateLatitude(preferences);
-                            })
+                            }
                         }),
                         m("label#latLowerLabel[for='latLower']", {
                             style: {
@@ -554,15 +715,14 @@ export default class CanvasCoordinates {
                                 "margin-left": "10px"
                             }
                         }, preferences['latLowerLabel']),
-                        m("input#latLower.form-control[type='text'][value='26.381']", {
-                            style: {
-                                "display": "inline-block",
-                                "float": "left"
-                            },
-                            onchange: vnode.withAttr('value', (value) => {
+                        m(TextField, {
+                            id: 'latLower',
+                            value: preferences['latLower'],
+                            style: {"display": "inline-block", "float": "left", "width": "auto"},
+                            oninput: (value) => {
                                 preferences['latLower'] = value;
                                 this.updateLatitude(preferences);
-                            })
+                            }
                         })
                     ]
                 ),
@@ -581,17 +741,15 @@ export default class CanvasCoordinates {
                                 "float": "left",
                                 "display": "inline-block",
                                 "margin-top": "10px"
-                            },
-                            onchange: vnode.withAttr('value', (value) => {
+                            }
+                        }, preferences['lonLeftLabel']),
+                        m(TextField, {
+                            id: 'lonLeft',
+                            value: preferences['lonLeft'],
+                            style: {"display": "inline-block", "float": "left", "width": "auto"},
+                            oninput: (value) => {
                                 preferences['lonLeft'] = value;
                                 this.updateLongitude(preferences);
-                            })
-                        }, preferences['lonLeftLabel']),
-                        // TODO move value attribute out into default preferences
-                        m("input#lonLeft.form-control[type='text'][value='-9.524']", {
-                            style: {
-                                "display": "inline-block",
-                                "float": "left"
                             }
                         }),
                         m("label#lonRightLabel[for='lonRight']", {
@@ -601,16 +759,15 @@ export default class CanvasCoordinates {
                                 "display": "inline-block",
                                 "margin-top": "10px",
                                 "margin-left": "10px"
-                            },
-                            onchange: vnode.withAttr('value', (value) => {
+                            }
+                        }, preferences['lonRightLabel']),
+                        m(TextField, {
+                            id: 'lonRight',
+                            value: preferences['lonRight'],
+                            style: {"display": "inline-block", "float": "left", "width": "auto"},
+                            oninput: (value) => {
                                 preferences['lonRight'] = value;
                                 this.updateLongitude(preferences);
-                            })
-                        }, preferences['lonRightLabel']),
-                        m("input#lonRight.form-control[type='text'][value='17.823']", {
-                            style: {
-                                "display": "inline-block",
-                                "float": "left"
                             }
                         })
                     ]

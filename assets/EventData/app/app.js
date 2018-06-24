@@ -384,7 +384,7 @@ export function incrementMonth(date) {
 export let isSameMonth = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth();
 
 
-/**
+/*
  *   Draws all subset plots, often invoked as callback after server request for new plotting data
  */
 export function pageSetup(jsondata) {
