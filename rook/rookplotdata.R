@@ -100,7 +100,7 @@ plotdata.app <- function(env) {
         })
   }
   
-  if(plottype=="scatter" | plottype=="aggbar" | plottype=="binnedscatter" | plottype=="scattermeansd" | plottype=="scattermatrix" | plottype=="simplebar") {
+  if(plottype=="scatter" | plottype=="aggbar" | plottype=="binnedscatter" | plottype=="histogram" | plottype=="scattermeansd" | plottype=="scattermatrix" | plottype=="simplebar") {
         tryCatch({
         plotdata <<- list()
 

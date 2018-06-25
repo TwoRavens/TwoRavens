@@ -322,6 +322,7 @@ class Body {
                     thumb(14, 'scattermeansd', "Scatter with Overlays"),
                     thumb(15, 'scattermatrix', "Scatter Matrix"),
                     thumb(16, 'simplebar', "Simple Bar"),
+                    thumb(17, 'histogram', "Histogram"),
                 ]),
                 m('#plot', {style: 'display: block', oncreate: _ => node1 && node2 ? exp.plot(expnodes) : plot(node1, 'explore', true)})
             ]);
