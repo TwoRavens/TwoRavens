@@ -305,7 +305,7 @@ class Body {
                   m("figcaption", {style: {"text-align": "center"}}, title));
             let plot = node1 && node1.plottype === 'continuous' ? plots.density : plots.bars;
             return m('div', {style}, [
-                m('div', {style: 'max-width: 1000px; overflow: scroll; white-space: nowrap'}, [
+                m('div', {style: 'margin-bottom: 1em; max-width: 1000px; overflow: scroll; white-space: nowrap'}, [
                     thumb(1, 'scatter', "Scatter Plot"),
                     thumb(2, 'tableheat', "Heatmap"),
                     thumb(3, 'line', "Line Chart"),

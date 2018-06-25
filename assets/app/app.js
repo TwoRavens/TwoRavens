@@ -77,19 +77,22 @@ let is_explore_mode = false;
 let is_results_mode = false;
 
 export function set_mode(mode) {
-    if (!mode) mode = 'model';
-    mode = mode.toLowerCase();
+    mode = mode ? mode.toLowerCase() : 'model';
+
+    is_explore_mode = mode === 'explore';
+    is_results_mode = mode === 'results';
+
+    if (is_explore_mode) {
+        leftTab = 'Variables';
+    }
 
     if (currentMode !== mode) {
         updateRightPanelWidth();
         updateLeftPanelWidth();
 
         currentMode = mode;
-        m.route.set('/' + mode.toLowerCase());
+        m.route.set('/' + mode);
     }
-
-    is_explore_mode = mode === 'explore';
-    is_results_mode = mode === 'results';
 
     elem('#whitespace0').style.display = is_explore_mode ? 'none' : 'block';
 }

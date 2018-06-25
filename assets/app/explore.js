@@ -1618,7 +1618,7 @@ export async function plot(plotNodes, plottype="") {
         console.log(stringified);
         return JSON.parse(stringified);
     };
-    vegaEmbed('#plot', fillVega(json));
+    vegaEmbed('#plot', fillVega(json), {width: 800, height: 600});
 }
 
 export let exploreVar = '';
