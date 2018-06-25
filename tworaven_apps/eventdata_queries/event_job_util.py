@@ -20,7 +20,7 @@ class EventJobUtil(object):
     def add_query_db(input):
         """ add the query to db"""
 
-        # need to check again
+        #need to be checked by raman sir
         job = EventDataSavedQuery(name=input['name'],
       description=input['description'],
       username=input['username'],
@@ -30,14 +30,16 @@ class EventJobUtil(object):
       dataverse_url=input['dataverse_url'])
         job.save()
         # return True,"All good"
-        print("job :", job.id)
+        print("job :", job.as_dict())
         if job.id:
             """no error"""
             usr_dict = dict(success=True,
-                            id=job.id)
+                            message="query saved",
+                            data=job.as_dict())
             return ok_resp(usr_dict)
         else:
             """error"""
             usr_dict = dict(success=False,
+                            message="failed to save query",
                             id=job.id)
             return err_resp(usr_dict)

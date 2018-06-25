@@ -55,6 +55,32 @@ class EventDataSavedQuery(TimeStampedModel):
 
         super(EventDataSavedQuery, self).save(*args, **kwargs)
 
+    def as_dict(self):
+        """return info dict"""
+        od = OrderedDict()
+
+        for attr_name in self.__dict__.keys():
+
+            # check for attributes to skip...
+            if attr_name.startswith('_'):
+                continue
+
+            val = self.__dict__[attr_name]
+            if isinstance(val, models.fields.files.FieldFile):
+                # this is a file field...
+                #
+                val = str(val)  # file path or empty string
+                if val == '':
+                    val = None
+                od[attr_name] = val
+
+
+            else:
+                od[attr_name] = val
+
+
+        return od
+
 
 class ArchiveQueryJob(TimeStampedModel):
     """archive query job"""
