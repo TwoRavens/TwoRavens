@@ -1,5 +1,6 @@
 import json
 import pandas as pd
+from collections import OrderedDict
 from django.http import HttpResponse, JsonResponse
 from tworaven_apps.utils.view_helper import \
     (get_request_body_as_json,
@@ -16,10 +17,18 @@ class EventJobUtil(object):
 
 
     @staticmethod
-    def add_query_db(json_input):
+    def add_query_db(input):
         """ add the query to db"""
-        job = EventDataSavedQuery()
-        job.save(json_input)
+
+        # need to check again
+        job = EventDataSavedQuery(name=input['name'],
+      description=input['description'],
+      username=input['username'],
+      query=input['query'],
+      result_count=input['result_count'],
+      saved_to_dataverse=input['saved_to_dataverse'],
+      dataverse_url=input['dataverse_url'])
+        job.save()
         # return True,"All good"
         print("job :", job.id)
         if job.id:
