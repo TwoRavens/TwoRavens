@@ -21,6 +21,7 @@ import * as scattermeansd from './vega-schemas/scattermeansd';
 import * as scattermatrix from './vega-schemas/scattermatrix';
 import * as simplebar from './vega-schemas/univariate/simplebar';
 import * as histogram from './vega-schemas/univariate/histogram';
+import * as areauni from './vega-schemas/univariate/areauni';
 const $private = false;
 
 function heatmap(x_Axis_name, y_Axis_name) {
@@ -1580,6 +1581,7 @@ export async function plot(plotNodes, plottype="") {
         plottype[0] === "scattermatrix" ? scattermatrix:
         plottype[0] === "simplebar" ? simplebar:
         plottype[0] === "histogram" ? histogram:
+        plottype[0] === "areauni" ? areauni:
         alert("invalid plot type");
     console.log(schema);
 
