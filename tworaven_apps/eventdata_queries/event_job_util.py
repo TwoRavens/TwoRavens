@@ -43,3 +43,31 @@ class EventJobUtil(object):
                             message="failed to save query",
                             id=job.id)
             return err_resp(usr_dict)
+
+
+    @staticmethod
+    def get_list_all():
+        """get all the jobs"""
+        job = EventDataSavedQuery()
+        success, get_list_obj = job.get_all_objects()
+
+        if success:
+            return ok_resp(get_list_obj)
+
+        else:
+            return err_resp(get_list_obj)
+
+    @staticmethod
+    def get_object_by_id(job_id):
+        """get object by id"""
+        job = EventDataSavedQuery()
+        success, get_list_obj = job.get_objects_by_id(job_id)
+        print("event util obj", get_list_obj)
+
+        if success:
+            return ok_resp(get_list_obj)
+
+        else:
+            return err_resp(get_list_obj)
+
+
