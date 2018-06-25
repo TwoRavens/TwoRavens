@@ -94,7 +94,10 @@ export function set_mode(mode) {
         m.route.set('/' + mode);
     }
 
-    elem('#whitespace0').style.display = is_explore_mode ? 'none' : 'block';
+    let ws = elem('#whitespace0');
+    if (ws) {
+        ws.style.display = is_explore_mode ? 'none' : 'block';
+    }
 }
 
 // for debugging - if not in PRODUCTION, prints args
