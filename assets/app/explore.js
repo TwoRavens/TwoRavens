@@ -28,6 +28,7 @@ import * as trellishist from './vega-schemas/trellishist';
 import * as horizon from './vega-schemas/horizon';
 import * as interactivebarmean from './vega-schemas/interactivebarmean';
 import * as binnedcrossfilter from './vega-schemas/multi/binnedcrossfilter';
+import * as scattertri from './vega-schemas/trivariate/scattertri';
 const $private = false;
 
 function heatmap(x_Axis_name, y_Axis_name) {
@@ -1557,6 +1558,9 @@ export async function plot(plotNodes, plottype="") {
     //testing
     //plottype=["scattermatrix"];
     
+    //testing
+    //plotNodes[2]=app.allNodes[app.findNodeIndex("Position")];
+    
     if(plotNodes.length==2 && plottype=="") plottype = getPlotType();
     console.log(plotNodes);
     let plotvars = getNames(plotNodes);
@@ -1569,6 +1573,8 @@ export async function plot(plotNodes, plottype="") {
     if (!json) {
         return;
     }
+    
+    
 
     let schema = plottype[0] === "box" ? box2d :
         plottype[0] === "scatter" ? scatter :
@@ -1594,6 +1600,7 @@ export async function plot(plotNodes, plottype="") {
         plottype[0] === "dot" ? dot:
         plottype[0] === "horizon" ? horizon:
         plottype[0] === "binnedcrossfilter" ? binnedcrossfilter:
+        plottype[0] === "scattertri" ? scattertri:
         alert("invalid plot type");
     console.log(schema);
 
@@ -1602,6 +1609,9 @@ export async function plot(plotNodes, plottype="") {
         let stringified = JSON.stringify(schema);
         if(data["vars"].length>1) {
             stringified = stringified.replace(/tworavensY/g, data.vars[1]);
+        }
+        if(data["vars"].length>2) {
+            stringified = stringified.replace(/tworavensZ/g, data.vars[2]);
         }
         stringified = stringified.replace(/tworavensX/g, data.vars[0]);
         stringified = stringified.replace(/"tworavensFilter"/g, null);

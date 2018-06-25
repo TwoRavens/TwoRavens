@@ -329,7 +329,8 @@ class Body {
                     thumb(21, 'interactivebarmean', "Interactive Bar with Mean"),
                     thumb(22, 'dot', "Simple Dot Plot"),
                     thumb(23, 'horizon', "Horizon Plot"),
-                    thumb(24, 'binnedcrossfilter', "Binned Cross Filter")
+                    thumb(24, 'binnedcrossfilter', "Binned Cross Filter"),
+                    thumb(25, 'scattertri', "Scatterplot with Groups")
                 ]),
                 m('#plot', {style: 'display: block', oncreate: _ => node1 && node2 ? exp.plot(expnodes) : plot(node1, 'explore', true)})
             ]);
