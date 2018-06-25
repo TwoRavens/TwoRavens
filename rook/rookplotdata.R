@@ -207,6 +207,33 @@ plotdata.app <- function(env) {
         })
   }
   
+  if(plottype=="horizon") {
+        tryCatch({
+        plotdata <<- list()
+
+        ## plot data
+        plotd <- as.data.frame(mydata[,vars])
+        colnames(plotd) <- vars
+        plotd <- na.omit(plotd)
+        if (nrow(plotd) > 1000) {
+            plotd <- plotd[sample(1:nrow(plotd), 1000, replace=FALSE),,drop=FALSE]
+        }
+        
+        meanY <- mean(plotd[,2])
+        plotdata <- jsonlite:::toJSON(plotd)
+        rm(plotd)
+        
+        if (length(plotdata) !=0) {
+            return(send(list(plottype=plottype, vars=vars, plotdata=plotdata,meanY=meanY)))
+        } else {
+            return(send(list(warning="No plot data.")))
+        }
+        },
+        error = function(err) {
+        result <<- list(warning=paste("error: ", err))
+        })
+  }
+  
   if(plottype=="tableheat" | plottype=="binnedtableheat") {
         tryCatch({
         plotdata <<- list()

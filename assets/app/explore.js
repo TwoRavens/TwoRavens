@@ -25,6 +25,7 @@ import * as areauni from './vega-schemas/univariate/areauni';
 import * as histogrammean from './vega-schemas/univariate/histogrammean';
 import * as dot from './vega-schemas/univariate/dot';
 import * as trellishist from './vega-schemas/trellishist';
+import * as horizon from './vega-schemas/horizon';
 import * as interactivebarmean from './vega-schemas/interactivebarmean';
 const $private = false;
 
@@ -1590,6 +1591,7 @@ export async function plot(plotNodes, plottype="") {
         plottype[0] === "trellishist" ? trellishist:
         plottype[0] === "interactivebarmean" ? interactivebarmean:
         plottype[0] === "dot" ? dot:
+        plottype[0] === "horizon" ? horizon:
         alert("invalid plot type");
     console.log(schema);
 
@@ -1607,6 +1609,10 @@ export async function plot(plotNodes, plottype="") {
             let $colors = colors.splice(0, data["uniqueY"].length).map(col => `"${col}"`).join(',');
             stringified = stringified.replace(/"tworavensUniqueY"/g, "["+data.uniqueY+"]");
             stringified = stringified.replace(/"tworavensColors"/g, "["+$colors+"]");
+        }
+        if (data.meanY) {
+            stringified = stringified.replace(/"tworavensMeanY"/g, data.meanY);
+            stringified = stringified.replace(/tworavensMeanY/g, data.meanY); //both needed in this order
         }
         if(data.plottype=="scattermatrix") {
             let $matvars = data["vars"].map(myvar => `"${myvar}"`).join(',');
