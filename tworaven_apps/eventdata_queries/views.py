@@ -18,6 +18,7 @@ from tworaven_apps.utils.basic_response import (ok_resp,
 from tworaven_apps.eventdata_queries.event_job_util import EventJobUtil
 from tworaven_apps.eventdata_queries.forms import (EventDataSavedQueryForm)
 
+
 # Create your views here.
 
 @csrf_exempt
@@ -79,9 +80,8 @@ def api_get_list(request):
         return JsonResponse(usr_msg)
 
 
-
 @csrf_exempt
-def api_retrieve_object(request,job_id):
+def api_retrieve_object(request, job_id):
     """ get object by id"""
     success, jobs = EventJobUtil.get_object_by_id(job_id)
 
@@ -98,7 +98,56 @@ def api_retrieve_object(request,job_id):
         return JsonResponse(usr_msg)
 
 
+@csrf_exempt
+def api_search(request):
+    """Search about models data ( query data )
+    sample input : {
+    "name":"query1",
+    "description":"query desc",
+    "username":"tworavens"
+    }
 
+    """
+    success, json_req_obj = get_request_body_as_json(request)
+    # if json is not valid
+    if not success:
+        usr_msg = dict(success=False,
+                       error=get_json_error(json_req_obj))
+        return JsonResponse(usr_msg)
 
+    print(json_req_obj)
+    name = None
+    description = None
+    username = None
 
+    if 'name' not in json_req_obj:
+        name = None
+    else:
+        name = json_req_obj['name']
 
+    if 'description' not in json_req_obj:
+        description = None
+    else:
+        description = json_req_obj['description']
+
+    if 'username' not in json_req_obj:
+        username = None
+    else:
+        username = json_req_obj['username']
+
+    success, get_list_obj = EventJobUtil.search_object(name=name,
+                                                       description=description,
+                                                       username=username)
+    job_list = []
+    if success:
+        for job in get_list_obj:
+            job_list.append(job.as_dict())
+        user_msg = dict(success=True,
+                        message='list retrieved',
+                        data=job_list)
+        return JsonResponse(user_msg)
+    else:
+        user_msg = dict(success=False,
+                        message='list not retrieved',
+                        error=get_list_obj)
+        return JsonResponse(user_msg)

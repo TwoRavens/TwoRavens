@@ -11,6 +11,7 @@ from collections import OrderedDict
 from tworaven_apps.utils.basic_response import (ok_resp,
                                                 err_resp,
                                                 err_resp_with_data)
+from django.db.models import Q
 # For the prototype, set the current schema for now...
 from model_utils.models import TimeStampedModel
 
@@ -93,12 +94,27 @@ class EventDataSavedQuery(TimeStampedModel):
         else:
             return ok_resp(result)
 
-    def get_objects_by_id(self,job_id):
+    def get_objects_by_id(self, job_id):
         """return object by id"""
         result = EventDataSavedQuery.objects.filter(id=job_id).first()
 
         if not result:
             return err_resp('could not get the object for id %s' % job_id)
+
+        else:
+            return ok_resp(result)
+
+    def get_filtered_objects(self, **kwargs):
+        """get all the filtered objects"""
+        arguments = {}
+        for k, v in kwargs.items():
+            if v:
+                arguments[k] = v
+
+        result = EventDataSavedQuery.objects.filter(**arguments).all()
+
+        if not result:
+            return err_resp('could not get the object for the inputs')
 
         else:
             return ok_resp(result)

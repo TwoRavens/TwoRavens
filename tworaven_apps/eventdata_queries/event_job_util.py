@@ -70,4 +70,21 @@ class EventJobUtil(object):
         else:
             return err_resp(get_list_obj)
 
+    @staticmethod
+    def search_object(**kwargs):
+        """ return objects on the basis of request json"""
+
+        job = EventDataSavedQuery()
+        success, get_filtered_obj = job.get_filtered_objects(**kwargs)
+        # print("list of objects", get_filtered_obj)
+
+        if success:
+            return ok_resp(get_filtered_obj)
+
+        else:
+            return err_resp(get_filtered_obj)
+
+
+
+
 

@@ -18,5 +18,9 @@ urlpatterns = [
     re_path(r'api/get/(?P<job_id>[0-9]{1,10})$',
          views.api_retrieve_object,
          name='api_retrieve_object'
+         ),
+    path(r'api/search',
+         views.api_search,
+         name='api_search'
          )
 ]
