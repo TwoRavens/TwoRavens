@@ -19,6 +19,7 @@ import * as binnedtableheat from './vega-schemas/binnedtableheat';
 import * as averagediff from './vega-schemas/averagediff';
 import * as scattermeansd from './vega-schemas/scattermeansd';
 import * as scattermatrix from './vega-schemas/scattermatrix';
+import * as simplebar from './vega-schemas/univariate/simplebar';
 const $private = false;
 
 function heatmap(x_Axis_name, y_Axis_name) {
@@ -1497,7 +1498,7 @@ export async function explore() {
     m.redraw();
 }
 
-export async function plot(xNode, yNode, plottype="") {
+export async function plot(plotNodes, plottype="") {
     const colors = [
         "#e6194b", "#3cb44b", "#ffe119", "#0082c8", "#f58231", "#911eb4", "#46f0f0",
         "#f032e6", "#d2f53c", "#fabebe", "#008080", "#e6beff", "#aa6e28", "#fffac8",
@@ -1511,13 +1512,23 @@ export async function plot(xNode, yNode, plottype="") {
     console.log('zpop:', app.zparams);
 
     let getPlotType = () => {
-        let xCon = xNode.plottype === 'continuous';
-        let yCon = yNode.plottype === 'continuous';
+        let xCon = plotNodes[0].plottype === 'continuous';
+        let yCon = plotNodes[1].plottype === 'continuous';
         return xCon && yCon ? ['scatter'] :
             xCon && !yCon ? ['box', 'y'] :
             !xCon && yCon ? ['box', 'x'] :
             ['stackedbar'];
     };
+    
+    
+    function getNames(arr) {
+        let myarr = [];
+        for (var i=0; i<arr.length; i++) {
+            if (typeof arr[i] != 'undefined') {
+                myarr[i]=arr[i].name;}
+        }
+        return myarr;
+    }
  
     /* VJD: leaving this code for comparison and is more readable for me
     let getPlotType = () => {
@@ -1538,8 +1549,9 @@ export async function plot(xNode, yNode, plottype="") {
     //testing
     //plottype=["scattermatrix"];
     
-    if(plottype=="") plottype = getPlotType();
-    let plotvars = [xNode.name, yNode.name];
+    if(plotNodes.length==2 && plottype=="") plottype = getPlotType();
+    console.log(plotNodes);
+    let plotvars = getNames(plotNodes);
     let zd3mdata = app.zparams.zd3mdata;
     let jsonout = {plottype, plotvars, zd3mdata};
     console.log(jsonout);
@@ -1565,13 +1577,17 @@ export async function plot(xNode, yNode, plottype="") {
         plottype[0] === "averagediff" ? averagediff:
         plottype[0] === "scattermeansd" ? scattermeansd:
         plottype[0] === "scattermatrix" ? scattermatrix:
+        plottype[0] === "simplebar" ? simplebar:
         alert("invalid plot type");
     console.log(schema);
 
     // function to fill in the contents of the vega schema
     let fillVega = data => {
         let stringified = JSON.stringify(schema);
-        stringified = stringified.replace(/tworavensY/g, data.vars[1]);
+        console.log(data);
+        if(data["vars"].length>1) {
+            stringified = stringified.replace(/tworavensY/g, data.vars[1]);
+        }
         stringified = stringified.replace(/tworavensX/g, data.vars[0]);
         stringified = stringified.replace(/"tworavensFilter"/g, null);
         stringified = stringified.replace("url", "values");

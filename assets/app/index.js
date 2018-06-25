@@ -289,6 +289,7 @@ class Body {
         let style = `position: absolute; left: ${app.panelWidth.left}; top: 0; margin-top: 10px`;
         let node1 = app.findNode(var1);
         let node2 = app.findNode(var2);
+        let expnodes = [node1,node2];
         let sortedNodes = nodesExplore.concat().sort((x, y) => x.id - y.id);
 
         let exploreVars = () => {
@@ -299,7 +300,7 @@ class Body {
             let thumb = (idx, id, title) =>
                 m("figure", {style: 'display: inline-block'},
                   m(`img#${id}_img[alt=${id}][height=140px][width=260px][src=/static/images/thumb${idx}.png]`,
-                    {onclick: _ => exp.plot(node1,node2,[id]),
+                    {onclick: _ => exp.plot(expnodes,[id]),
                      style: {border: "1px solid #ddd", "border-radius": "3px", padding: "5px", margin: "3%", cursor: "pointer"}}),
                   m("figcaption", {style: {"text-align": "center"}}, title));
             let plot = node1 && node1.plottype === 'continuous' ? plots.density : plots.bars;
@@ -320,8 +321,9 @@ class Body {
                     thumb(13, 'averagediff', "Diff. from Avg."),
                     thumb(14, 'scattermeansd', "Scatter with Overlays"),
                     thumb(15, 'scattermatrix', "Scatter Matrix"),
+                    thumb(16, 'simplebar', "Simple Bar"),
                 ]),
-                m('#plot', {style: 'display: block', oncreate: _ => node1 && node2 ? exp.plot(node1, node2) : plot(node1, 'explore', true)})
+                m('#plot', {style: 'display: block', oncreate: _ => node1 && node2 ? exp.plot(expnodes) : plot(node1, 'explore', true)})
             ]);
         };
 

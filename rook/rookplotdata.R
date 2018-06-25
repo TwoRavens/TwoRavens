@@ -79,10 +79,11 @@ plotdata.app <- function(env) {
         plotdata <<- list()
 
         ## plot data
-        plotd <- mydata[,vars]
+        plotd <- as.data.frame(mydata[,vars])
+        colnames(plotd) <- vars
         plotd <- na.omit(plotd)
         if (nrow(plotd) > 1000) {
-            plotd <- plotd[sample(1:nrow(plotd), 1000, replace=FALSE),]
+            plotd <- plotd[sample(1:nrow(plotd), 1000, replace=FALSE),,drop=FALSE]
         }
         
         plotdata <- jsonlite:::toJSON(plotd)
@@ -99,15 +100,16 @@ plotdata.app <- function(env) {
         })
   }
   
-  if(plottype=="scatter" | plottype=="aggbar" | plottype=="binnedscatter" | plottype=="scattermeansd" | plottype=="scattermatrix") {
+  if(plottype=="scatter" | plottype=="aggbar" | plottype=="binnedscatter" | plottype=="scattermeansd" | plottype=="scattermatrix" | plottype=="simplebar") {
         tryCatch({
         plotdata <<- list()
 
         ## plot data
-        plotd <- mydata[,vars]
+        plotd <- as.data.frame(mydata[,vars])
+        colnames(plotd) <- vars
         plotd <- na.omit(plotd)
         if (nrow(plotd) > 1000) {
-            plotd <- plotd[sample(1:nrow(plotd), 1000, replace=FALSE),]
+            plotd <- plotd[sample(1:nrow(plotd), 1000, replace=FALSE),,drop=FALSE]
         }
         
         plotdata <- jsonlite:::toJSON(plotd)
@@ -129,10 +131,11 @@ plotdata.app <- function(env) {
         plotdata <<- list()
 
         ## plot data
-        plotd <- mydata[,vars]
+        plotd <- as.data.frame(mydata[,vars])
+        colnames(plotd) <- vars
         plotd <- na.omit(plotd)
         if (nrow(plotd) > 1000) {
-            plotd <- plotd[sample(1:nrow(plotd), 1000, replace=FALSE),]
+            plotd <- plotd[sample(1:nrow(plotd), 1000, replace=FALSE),,drop=FALSE]
         }
         
         uniqueY <- unique(plotd[,2])
@@ -155,10 +158,11 @@ plotdata.app <- function(env) {
         plotdata <<- list()
 
         ## plot data
-        plotd <- mydata[,vars]
+        plotd <- as.data.frame(mydata[,vars])
+        colnames(plotd) <- vars
         plotd <- na.omit(plotd)
         if (nrow(plotd) > 1000) {
-            plotd <- plotd[sample(1:nrow(plotd), 1000, replace=FALSE),]
+            plotd <- plotd[sample(1:nrow(plotd), 1000, replace=FALSE),,drop=FALSE]
         }
         
         uniqueY <- unique(plotd[,2])
@@ -181,10 +185,11 @@ plotdata.app <- function(env) {
         plotdata <<- list()
 
         ## plot data
-        plotd <- mydata[,vars]
+        plotd <- as.data.frame(mydata[,vars])
+        colnames(plotd) <- vars
         plotd <- na.omit(plotd)
         if (nrow(plotd) > 1000) {
-            plotd <- plotd[sample(1:nrow(plotd), 1000, replace=FALSE),]
+            plotd <- plotd[sample(1:nrow(plotd), 1000, replace=FALSE),,drop=FALSE]
         }
         
         uniqueY <- unique(plotd[,2])
@@ -207,10 +212,11 @@ plotdata.app <- function(env) {
         plotdata <<- list()
 
         ## plot data
-        plotd <- mydata[,vars]
+        plotd <- as.data.frame(mydata[,vars])
+        colnames(plotd) <- vars
         plotd <- na.omit(plotd)
         if (nrow(plotd) > 1000) {
-            plotd <- plotd[sample(1:nrow(plotd), 1000, replace=FALSE),]
+            plotd <- plotd[sample(1:nrow(plotd), 1000, replace=FALSE),,drop=FALSE]
         }
         
         uniqueY <- unique(plotd[,2])
