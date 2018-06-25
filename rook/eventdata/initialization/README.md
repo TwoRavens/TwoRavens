@@ -8,7 +8,7 @@ LOCAL SETUP STEPS:
      sudo service mongod start
 
 3. Create a new database using the mongoimport utility in the mongo bin (via cmd from ~/TwoRavens/)
-     Import statements are in ./mongoimports.txt
+     Import statements are in ./1_mongoimports.txt
      3a. To check that the csv data is available, run in new CMD:
          (connects to mongo server on default port, opens mongo prompt)
            mongo
@@ -17,10 +17,11 @@ LOCAL SETUP STEPS:
       c. Return all data from the phoenix_events table
            db.cline_speed.find({})
 
-4. Preprocess the event data by running ./preprocess.py. This script may take several hours to run.
-     Note that mongod must be running, and pymongo must be installed in your python interpreter.
+5. Construct date and location columns. Follow the filename steps in this folder.
+     Note that mongod must be running, and pymongo must be installed in your python interpreter. Python 3 features were used.
+     Note the data for constructing location columns is stored in a mongoexport file that is not in this repository.
 
-5. Start a local R server to make this file available here:
+6. Start a local R server to make this file available here:
      http://localhost:8000/custom/eventdatasubsetapp
 
      4a. Install/run R, to enter R prompt
@@ -29,9 +30,9 @@ LOCAL SETUP STEPS:
                so the server must be restarted after each edit.
       c. The mongolite package has some prerequisites - `https://jeroen.github.io/mongolite/`
 
-6. Submit query from local python server via eventdata web gui. This script will return the subsetted data
+7. Submit query from local python server via eventdata web gui. This script will return the subsetted data
 
-7. If you still have problems, try to permit CORS on your browser. This doesn't seem to work on Windows
+8. If you still have problems, try to permit CORS on your browser. This doesn't seem to work on Windows
      7a. Google Chrome: start with terminal argument
             google-chrome --disable-web-security
       b. Mozilla Firefox: in about:config settings

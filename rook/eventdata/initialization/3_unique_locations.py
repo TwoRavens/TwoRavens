@@ -1,51 +1,110 @@
 from pymongo import MongoClient
 import os
+import csv
 
 mongo_client = MongoClient(host='localhost', port=27017)  # Default port
 db = mongo_client.event_data
-locations = mongo_client.locations
+
+def icews_locations():
+    with open('locations_icews.csv', 'wb') as outfile:
+        writer = csv.writer(outfile, delimiter=',', quoting=csv.QUOTE_MINIMAL)
+        writer.writerow(['Country', 'District', 'Province', 'City'])
+
+        # for document in db.icews.aggregate([{"$limit": 200},{"$group": {"_id": {"lat": "$Latitude","lon": "$Longitude"}}}]):
+        for document in db.icews.aggregate([
+          {
+              "$project": {
+              "country": {"$toLower": "$Country"},
+              "district": {"$toLower": "$District"},
+              "province": {"$toLower": "$Province"},
+              "city": {"$toLower": "$City"}
+            }
+          },
+          {
+            "$group": {
+              "_id": {
+                  "Country": "$country",
+                "District": "$district",
+                "Province": "$province",
+                "City": "$city"
+              }
+            }
+          }
+        ]):
+            writer.writerow([document['_id'][out].encode('utf-8') for out in ['Country', 'District', 'Province', 'City']])
 
 
-def get_arcgis_id(dataset, document):
-    if dataset == 'icews':
-        relabeling = {
-            "Country": "country",
-            "Province": "region",
-            "District": "subregion",
-            "City": "city"
+def cline_locations():
+    locations = set()
+
+    for collection in ['cline_phoenix_nyt', 'cline_phoenix_swb', 'cline_phoenix_fbis']:
+        print(collection)
+        for document in db[collection].aggregate([
+          {
+            "$group": {
+              "_id": {
+                "Latitude": "$lat",
+                "Longitude": "$lon"
+              }
+            }
+          }
+        ]):
+            locations.add(','.join([str(document['_id'][out]) for out in ['Latitude', 'Longitude']]))
+
+    print("cline_speed")
+    for document in db.cline_speed.aggregate([
+      {
+        "$group": {
+          "_id": {
+              "Latitude": "$GP7",
+            "Longitude": "$GP8"
+          }
         }
-        return {relabeling[key]: document[key] for key in document.keys() & set(relabeling.keys())}
+      }
+    ]):
+        if 'Latitude' in document['_id']:
+            locations.add(','.join([str(document['_id'][out]) for out in ['Latitude', 'Longitude']]))
 
-    if dataset in ['cline_phoenix_nyt', 'cline_phoenix_fbis', 'cline_phoenix_swb']:
-        return {"singleLine": 'X:' + document['lat'] + ' Y:' + document['lon']}
-        # relabeling = {
-        #     "countryname": "country",
-        #     "statename": "region"
-        # }
-        # location = {relabeling[key]: document[key] for key in document.keys() & set(relabeling.keys())}
-        # if 'placename' in document and ('statename' not in document or document['placename'] != document['statename']):
-        #     location['city'] = document['placename']
-        # return location
-
-    if dataset in ['acled_africa', 'acled_middle_east', 'acled_asia']:
-        relabeling = {
-            "COUNTRY": "country",
-            "ADMIN1": "region",
-            "ADMIN2": "subregion",
-            "LOCATION": "city"
-        }
-        return {relabeling[key]: document[key] for key in document.keys() & set(relabeling.keys())}
-
-    if dataset == 'cline_speed':
-        return {"singleLine": 'X:' + document['gp7'] + ' Y:' + document['gp8']}
+    with open('locations_cline.csv', 'wb') as outfile:
+        outfile.write('Latitude,Longitude' + '\n')
+        for location in locations:
+            outfile.write(location + '\n')
 
 
-for collection in ['acled_africa', 'acled_middle_east', 'acled_asia']:  # db.collection_names():
-    print(collection)
-    for document in db[collection].find({}):
-        identifier = get_arcgis_id(collection, document)
-        if identifier:
-            # print(document)
-            # print(identifier)
+def acled_locations():
+    locations = set()
+    headers = ['Country', 'Region', 'Subregion', 'City']
 
-            locations.arcgis.update_one(identifier, {'$set': {**{'collection': collection}, **identifier}}, upsert=True)
+    for collection in ['acled_africa', 'acled_middle_east', 'acled_asia']:
+        print(collection)
+        for document in db[collection].aggregate([
+          {
+            "$project": {
+              "country": {"$toLower": "$COUNTRY"},
+              "region": {"$toLower": "$ADMIN1"},
+              "subregion": {"$toLower": "$ADMIN2"},
+              "city": {"$toLower": "$LOCATION"}
+            }
+          },
+          {
+            "$group": {
+              "_id": {
+                "Country": "$country",
+                "Region": "$region",
+                "Subregion": "$subregion",
+                "City": "$city"
+              }
+            }
+          }
+        ]):
+            identifier = {**{header: '' for header in headers}, **document['_id']}
+            locations.add(','.join([document['_id'][out] for out in headers]))
+
+    with open('locations_acled.csv', 'w') as outfile:
+        outfile.write(','.join(headers) + '\n')
+        for location in locations:
+            outfile.write(location + '\n')
+
+icews_locations()
+cline_locations()
+acled_locations()

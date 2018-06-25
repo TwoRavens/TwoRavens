@@ -1,3 +1,8 @@
+# Using the arcgis API to geocode locations.
+# This is a challenge due to the API token, so this wasn't included in the initialization path
+# It would be nice to use this for ongoing maintenance of datasets that are still being updated,
+#    since the singleLine= argument is much simpler than constructing the csv and running the reverse geocode
+
 import requests
 from pymongo import MongoClient
 import json

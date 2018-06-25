@@ -30,7 +30,7 @@
       "alignments": [
         "action"
       ],
-      "format": [
+      "formats": [
         "CAMEO",
         "root_code",
         "penta_class",

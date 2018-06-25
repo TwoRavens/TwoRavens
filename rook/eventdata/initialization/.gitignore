@@ -1,0 +1,2 @@
+# don't store the generated unique and filtered names in the repository
+locations_*.csv
