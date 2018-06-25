@@ -18,7 +18,7 @@ import * as area from './vega-schemas/area';
 import * as binnedtableheat from './vega-schemas/binnedtableheat';
 import * as averagediff from './vega-schemas/averagediff';
 import * as scattermeansd from './vega-schemas/scattermeansd';
-import * as scattermatrix from './vega-schemas/scattermatrix';
+import * as scattermatrix from './vega-schemas/multi/scattermatrix';
 import * as simplebar from './vega-schemas/univariate/simplebar';
 import * as histogram from './vega-schemas/univariate/histogram';
 import * as areauni from './vega-schemas/univariate/areauni';
@@ -27,6 +27,7 @@ import * as dot from './vega-schemas/univariate/dot';
 import * as trellishist from './vega-schemas/trellishist';
 import * as horizon from './vega-schemas/horizon';
 import * as interactivebarmean from './vega-schemas/interactivebarmean';
+import * as binnedcrossfilter from './vega-schemas/multi/binnedcrossfilter';
 const $private = false;
 
 function heatmap(x_Axis_name, y_Axis_name) {
@@ -1592,6 +1593,7 @@ export async function plot(plotNodes, plottype="") {
         plottype[0] === "interactivebarmean" ? interactivebarmean:
         plottype[0] === "dot" ? dot:
         plottype[0] === "horizon" ? horizon:
+        plottype[0] === "binnedcrossfilter" ? binnedcrossfilter:
         alert("invalid plot type");
     console.log(schema);
 
@@ -1618,6 +1620,10 @@ export async function plot(plotNodes, plottype="") {
             let $matvars = data["vars"].map(myvar => `"${myvar}"`).join(',');
             stringified = stringified.replace(/"tworavensRow"/g, $matvars);
             stringified = stringified.replace(/"tworavensCol"/g, $matvars);
+        }
+        if(data.plottype=="binnedcrossfilter") {
+            let $matvars = data["vars"].map(myvar => `"${myvar}"`).join(',');
+            stringified = stringified.replace(/"tworavensVars"/g, $matvars);
         }
 
         // VJD: if you enter this console.log into the vega editor https://vega.github.io/editor/#/edited the plot will render
