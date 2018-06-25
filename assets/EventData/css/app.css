@@ -122,12 +122,6 @@ main#EventData div.popover.variables div.popover-content.form-horizontal {
 main#EventData div.popover.variables div.popover-content.form-horizontal .form-group {
     margin-bottom: 0;
 }
-main#EventData table tr td {
-    padding: 0px !important;
-}
-main#EventData .table > tbody > tr:first-child > td {
-    border: none;
-}
 main#EventData #boolToggle.btn.active,
 main#EventData #boolToggle.btn:active {
     background-color: transparent;
@@ -159,14 +153,6 @@ main#EventData .handle {
     stroke-opacity: .5;
     stroke-width: 1.25px;
     pointer-events: fill;
-}
-main#EventData table,
-main#EventData th,
-main#EventData td {
-    border-collapse: collapse;
-}
-main#EventData td {
-    padding: 4px;
 }
 main#EventData .dropdownactorl1,
 main#EventData .dropdownactorl2,

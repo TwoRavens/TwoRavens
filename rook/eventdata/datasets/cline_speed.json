@@ -425,9 +425,12 @@
     "JUL_LED_constructed"
   ],
   "alignments": {
-    "AVERAGE_DATE_constructed": "<date>"
+    "AVERAGE_DATE_constructed": "date",
+    "GP7": "latitude",
+    "GP8": "longitude"
   },
   "formats": {
+    "cowcode": "cowcode",
     "AD_TACT": "SPEED_ad_tact",
     "AD_VIOL": "SPEED_ad_viol",
     "ATK_TYPE": "SPEED_atk_type",

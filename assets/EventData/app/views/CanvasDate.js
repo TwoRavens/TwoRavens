@@ -58,7 +58,6 @@ export function interpolate(data, date) {
 export default class CanvasDate {
     oncreate(vnode) {
         let {subsetName, data, preferences} = vnode.attrs;
-        console.log(subsetName.replace(/[^A-Za-z0-9]/g, ""))
         let minDate = data[0]['Date'];
         let maxDate = data[data.length - 1]['Date'];
 
@@ -126,6 +125,18 @@ export default class CanvasDate {
 
             preferences['handleLower'] = preferences['handleLower'] || data[0]['Date'];
             preferences['handleUpper'] = preferences['handleUpper'] || data[data.length - 1]['Date'];
+
+            // make sure the handles are valid when switching datasets
+            let minDate = data[0]['Date'];
+            let maxDate = data[data.length - 1]['Date'];
+            if (minDate > preferences['userLower']) {
+                preferences['userLower'] = new Date(minDate);
+                preferences['handleLower'] = preferences['userLower']
+            }
+            if (maxDate > preferences['userUpper']) {
+                preferences['userUpper'] = new Date(maxDate);
+                preferences['handleUpper'] = preferences['userUpper']
+            }
 
             // Filter highlighted data by date picked
             let selectedDates = data.filter(function (row) {

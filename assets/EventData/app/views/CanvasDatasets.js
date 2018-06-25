@@ -22,7 +22,8 @@ export default class CanvasDatasets {
         let markup = (key) => ({"title": italicize, "note": quote, "url": link}[key] || (_ => _));
         let format = (citation) => Object.keys(citation).map(key => [markup(key)(citation[key]), '. ']);
 
-        let coerceArray = (value) => Array.isArray(value) ? value : [value];
+        let columnFilter = (columns) => columns.map(column => column.replace('_constructed', ''));
+        let coerceArray = (value) => Array.isArray(value) ? value : value === undefined ? [] : [value];
 
         let tempDataset = this.dataset ? app.genericMetadata[this.dataset] : {};
 
@@ -34,7 +35,12 @@ export default class CanvasDatasets {
                 m('col', {span: 1, width: '50%'}));
         };
 
-        return m('div#canvasDatasets', {style: {display: display, width: '100%'}}, Object.values(app.genericMetadata).map((dataset) => {
+        return m('div#canvasDatasets', {
+            style: {
+                display: display,
+                width: '100%'
+            }
+        }, Object.values(app.genericMetadata).map((dataset) => {
             return m('div', {
                     style: {
                         width: '100%',
@@ -62,22 +68,59 @@ export default class CanvasDatasets {
                     m(Table, {
                         data: {
                             'API Reference Key': dataset['key'],
-                            'Time Interval': dataset['interval']
-                        }
+                            'Time Interval': dataset['interval'],
+                            'Codebook': link(dataset['codebook'])
+                        },
+                        attrsCells: {style: {'padding': '5px'}}
                     }),
+                    bold("Subsets:"),
                     m(Table, {
-                        headers: ['label', 'subset', 'format', 'columns'],
-                        data: Object.keys(tempDataset['subsets'] || {}).map(label => [
-                            label,
-                            tempDataset['subsets'][label]['type'],
-                            tempDataset['subsets'][label]['format'],
-                            m(ListTags, {
-                                tags: coerceArray(tempDataset['subsets'][label]['columns']),
-                                readonly: true,
-                                attrsTags: {style: {padding: '2px 4px'}}
-                            })
-                        ]),
-                        attrsCells: {style: {padding: '0.1em 1em'}},
+                        headers: ['label', 'subset', 'alignments', 'formats', 'columns'].map(name => m('[style=margin:0 0.5em]', name)),
+                        data: Object.keys(tempDataset['subsets'] || {}).map(label => {
+                            let subset = tempDataset['subsets'][label];
+
+                            let columns = [];
+                            if (subset['type'] === 'dyad') {
+                                Object.keys(subset['tabs']).map(tab => {
+                                    columns.push(subset['tabs'][tab]['full']);
+                                    columns = columns.concat(subset['tabs'][tab]['filters'])
+                                });
+                                columns = [...new Set(columns)]; // remove duplicates
+                            } else columns = coerceArray(subset['columns']);
+
+                            let alignments = coerceArray(tempDataset['subsets'][label]['alignments']);
+                            alignments = alignments.concat(columns
+                                .filter(column => column in tempDataset['alignments'])
+                                .map(column => tempDataset['alignments'][column]));
+                            alignments = [...new Set(alignments)];
+
+                            return [
+                                label,
+                                tempDataset['subsets'][label]['type'],
+                                alignments.length !== 0 && m(ListTags, {
+                                    tags: alignments,
+                                    readonly: true,
+                                    attrsTags: {style: {'padding-left': '4px', background: 'rgba(192, 192, 192, 0.5)'}}
+                                }),
+                                tempDataset['subsets'][label]['formats'] && m(ListTags, {
+                                    tags: coerceArray(tempDataset['subsets'][label]['formats']),
+                                    readonly: true,
+                                    attrsTags: {style: {'padding-left': '4px', background: 'rgba(192, 192, 192, 0.5)'}}
+                                }),
+                                columns.length !== 0 && m(ListTags, {
+                                    tags: columnFilter(columns),
+                                    readonly: true,
+                                    attrsTags: {style: {'padding-left': '4px', background: 'rgba(192, 192, 192, 0.5)'}}
+                                })
+                            ]
+                        }),
+                        attrsCells: {
+                            style: {
+                                padding: '0.1em 0.5em 0.1em 0.5em',
+                                'border-right': 'dotted 1px rgba(192, 192, 192, 0.5)',
+                                'border-left': 'dotted 1px rgba(192, 192, 192, 0.5)'
+                            }
+                        },
                         tableTags: colgroupDataset()
                     }),
                     dataset['citations'].map(citation => [m('br'), bold("Citation:"), m('br'), format(citation)])

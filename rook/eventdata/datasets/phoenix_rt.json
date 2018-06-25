@@ -88,18 +88,9 @@
     "url",
     "year"
   ],
-  "ontology_alignments": {
-    "code": "<cameo>",
-    "country_code": "<country>",
-    "goldstein": "<goldstein>",
-    "latitude": "<latitude>",
-    "longitude": "<longitude>",
-    "quad_class": "<quad_class>",
-    "root_code": "<root_code>",
-    "src_actor": "<src_country>",
-    "src_agent": "<src_sector>",
-    "tgt_actor": "<tgt_actor>",
-    "tgt_agent": "<tgt_sector>"
+  "alignments": {
+    "latitude": "latitude",
+    "longitude": "longitude"
   },
   "citations": [
     {

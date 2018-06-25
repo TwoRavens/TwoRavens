@@ -55,11 +55,14 @@ def date_cline_speed():
 def date_acled():
     for collection in ['acled_africa', 'acled_middle_east', 'acled_asia']:
         print('Processing: ' + collection)
-        for document in db[collection].find({'TIMESTAMP_constructed': {"$exists": 0}}):
+        for document in db[collection].find({'EVENT_DATE_constructed': {"$exists": 0}}):
             db[collection].update(
                 {'_id': document['_id']},
-                {'$set': {'TIMESTAMP_constructed': datetime.datetime.fromtimestamp(document['TIMESTAMP'])}}
-            )
+                {'$set': {
+                    'EVENT_DATE_constructed': datetime.datetime.strptime(document['EVENT_DATE'], '%m/%d/%Y') ,
+                    'TIMESTAMP_constructed': datetime.datetime.fromtimestamp(document['TIMESTAMP'])
+                }
+            })
 
 
 def date_icews():
@@ -78,6 +81,6 @@ remove_header()
 
 # add constructed date fields
 date_cline_phoenix()
-# date_cline_speed()
-# date_acled()
-# date_icews()
+date_cline_speed()
+date_acled()
+date_icews()

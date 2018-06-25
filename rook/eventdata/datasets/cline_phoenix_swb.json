@@ -107,11 +107,9 @@
     "story_date_constructed"
   ],
   "alignments": {
-    "countryname": "<country>",
-    "goldstein": "<goldstein>",
-    "lat": "<latitude>",
-    "lon": "<longitude>",
-    "story_date_constructed": "<date>"
+    "lat": "latitude",
+    "lon": "longitude",
+    "story_date_constructed": "date"
   },
   "formats": {
     "code": "CAMEO",

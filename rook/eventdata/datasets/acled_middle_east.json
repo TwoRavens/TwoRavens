@@ -2,7 +2,7 @@
   "name": "ACLED Middle East",
   "key": "acled_middle_east",
   "description": "Middle East event data from the Armed Conflict Location & Event Data Project (ACLED).",
-  "interval": "1997 - 9 June 2018",
+  "interval": "2017 - 9 June 2018",
   "codebook": "https://www.acleddata.com/wp-content/uploads/2017/12/ACLED_Codebook_2017FINAL.pdf",
   "host": "TwoRavens",
   "subsets": {
@@ -38,6 +38,13 @@
       ]
     },
     "Date": {
+      "type": "date",
+      "structure": "point",
+      "columns": [
+        "EVENT_DATE_constructed"
+      ]
+    },
+    "Code Date": {
       "type": "date",
       "structure": "point",
       "columns": [
@@ -97,12 +104,10 @@
   "columns_constructed": [
     "TIMESTAMP_constructed"
   ],
-  "ontology_alignments": {
-    "INTERACTION": "<interaction>",
-    "LATITUDE": "<latitude>",
-    "LONGITUDE": "<latitude>",
-    "country_constructed": "<country>",
-    "TIMESTAMP_constructed": "<date>"
+  "alignments": {
+    "LATITUDE": "latitude",
+    "LONGITUDE": "longitude",
+    "EVENT_DATE_constructed": "date"
   },
   "formats": {
     "INTERACTION": "ACLED_interaction",

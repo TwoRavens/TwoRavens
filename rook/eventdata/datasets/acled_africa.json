@@ -41,6 +41,13 @@
       "type": "date",
       "structure": "point",
       "columns": [
+        "EVENT_DATE_constructed"
+      ]
+    },
+    "Code Date": {
+      "type": "date",
+      "structure": "point",
+      "columns": [
         "TIMESTAMP_constructed"
       ]
     },
@@ -98,10 +105,9 @@
     "TIMESTAMP_constructed"
   ],
   "alignments": {
-    "LATITUDE": "<latitude>",
-    "LONGITUDE": "<latitude>",
-    "country_constructed": "<country>",
-    "TIMESTAMP_constructed": "<date>"
+    "LATITUDE": "latitude",
+    "LONGITUDE": "longitude",
+    "EVENT_DATE_constructed": "date"
   },
   "formats": {
     "INTERACTION": "ACLED_interaction",

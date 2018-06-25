@@ -8,6 +8,7 @@ import PlotBars from "./PlotBars";
 let coerceArray = (value) => Array.isArray(value) ? value : [value];
 
 let getLabel = (format, key) => {
+    if (!(format in app.formattingData)) return '';
     let title = app.formattingData[format][key];
     if (Array.isArray(app.formattingData[format][key])) title = title[0];
     else if (title !== undefined && typeof title === 'object') title = title['name'];
@@ -63,6 +64,7 @@ export default class CanvasCategoricalGrouped {
         });
 
         app.alignmentData[coerceArray(metadata['alignments'])[0]].forEach(equivalency => {
+            if (!(masterFormat in equivalency)) return;
             if (equivalency[masterFormat] in flattenedData)
                 subGroupPrep[equivalency[metadata['group_by']]][equivalency[masterFormat]] = flattenedData[equivalency[masterFormat]]
         });
@@ -75,7 +77,7 @@ export default class CanvasCategoricalGrouped {
             value: groupPrep[groupName] / totalRecords,
             'class': groupSelected[groupName].every(_ => _) ? 'bar-selected'
                 : groupSelected[groupName].some(_ => _) ? 'bar-some' : 'bar',
-            title: groupPrep[groupName]
+            title: groupPrep[groupName] + ' ' + groupName + ' ' + getLabel(metadata['group_by'], groupName)
         }));
 
         let subGroupData = {};
@@ -84,7 +86,7 @@ export default class CanvasCategoricalGrouped {
                 key: category,
                 value: subGroupPrep[subGroupName][category] / groupPrep[subGroupName],
                 'class': preferences['selections'].has(category) ? 'bar-selected' : 'bar',
-                title: subGroupPrep[subGroupName][category] + ' ' + category
+                title: subGroupPrep[subGroupName][category] + ' ' + category + ' ' + getLabel(masterFormat, category)
             })));
 
         let groupMaxChars = Object.keys(groupPrep).reduce((max, entry) => Math.max(max, entry.length), 0);

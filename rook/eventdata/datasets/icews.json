@@ -91,10 +91,9 @@
     "Country_constructed"
   ],
   "alignments": {
-    "Event Date_constructed": "<date>",
-    "country_constructed": "<country>",
-    "Latitude": "<latitude>",
-    "Longitude": "<longitude>"
+    "Event Date_constructed": "date",
+    "Latitude": "latitude",
+    "Longitude": "longitude"
   },
   "formats": {
     "Source Sectors": "icews",
