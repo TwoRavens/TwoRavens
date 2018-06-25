@@ -77,8 +77,6 @@ class EventDataSavedQuery(TimeStampedModel):
                 if val == '':
                     val = None
                 od[attr_name] = val
-
-
             else:
                 od[attr_name] = val
 

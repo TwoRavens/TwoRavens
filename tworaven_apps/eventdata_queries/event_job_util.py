@@ -17,17 +17,12 @@ class EventJobUtil(object):
 
 
     @staticmethod
-    def add_query_db(input):
+    def add_query_db(query_info):
         """ add the query to db"""
 
         #need to be checked by raman sir
-        job = EventDataSavedQuery(name=input['name'],
-      description=input['description'],
-      username=input['username'],
-      query=input['query'],
-      result_count=input['result_count'],
-      saved_to_dataverse=input['saved_to_dataverse'],
-      dataverse_url=input['dataverse_url'])
+        job = EventDataSavedQuery(**query_info)
+
         job.save()
         # return True,"All good"
         print("job :", job.as_dict())
@@ -83,8 +78,3 @@ class EventJobUtil(object):
 
         else:
             return err_resp(get_filtered_obj)
-
-
-
-
-
