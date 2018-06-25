@@ -325,6 +325,8 @@ class Body {
                     thumb(17, 'histogram', "Histogram Uni"),
                     thumb(18, 'areauni', "Area Chart Uni"),
                     thumb(19, 'histogrammean', "Histogram with Mean Uni"),
+                    thumb(20, 'trellishist', "Histogram Trellis"),
+                    thumb(21, 'interactivebarmean', "Interactive Bar with Mean")
                 ]),
                 m('#plot', {style: 'display: block', oncreate: _ => node1 && node2 ? exp.plot(expnodes) : plot(node1, 'explore', true)})
             ]);

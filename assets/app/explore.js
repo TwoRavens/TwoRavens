@@ -23,6 +23,8 @@ import * as simplebar from './vega-schemas/univariate/simplebar';
 import * as histogram from './vega-schemas/univariate/histogram';
 import * as areauni from './vega-schemas/univariate/areauni';
 import * as histogrammean from './vega-schemas/univariate/histogrammean';
+import * as trellishist from './vega-schemas/trellishist';
+import * as interactivebarmean from './vega-schemas/interactivebarmean';
 const $private = false;
 
 function heatmap(x_Axis_name, y_Axis_name) {
@@ -1584,6 +1586,8 @@ export async function plot(plotNodes, plottype="") {
         plottype[0] === "histogram" ? histogram:
         plottype[0] === "areauni" ? areauni:
         plottype[0] === "histogrammean" ? histogrammean:
+        plottype[0] === "trellishist" ? trellishist:
+        plottype[0] === "interactivebarmean" ? interactivebarmean:
         alert("invalid plot type");
     console.log(schema);
 
