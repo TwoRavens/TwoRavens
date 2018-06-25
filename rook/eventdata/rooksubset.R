@@ -57,7 +57,6 @@ eventdata_subset.app <- function(env) {
     # corresponds to one of the subset names from ./eventdata/datasets/*.json > 'subsets'
     subset = everything$subset
 
-    formatVar = function(var) {temp = list(); temp[[var]] = jsonlite::unbox(1); temp}
     if (type == 'datasets') {
         response$write(toString(jsonlite::toJSON(setNames(lapply(list.files('./eventdata/datasets/'), function(filename) {
             jsonlite::fromJSON(readLines(paste('./eventdata/datasets/', filename, sep = ""), warn = FALSE))
@@ -71,6 +70,7 @@ eventdata_subset.app <- function(env) {
     }
 
     datasetMetadata = jsonlite::fromJSON(readLines(paste("./eventdata/datasets/", dataset, '.json', sep = "")));
+    if (is.null(variables))variables = datasetMetadata$columns;
 
     # ~~~~ Data Retrieval ~~~~
 
@@ -115,7 +115,7 @@ eventdata_subset.app <- function(env) {
     }
 
     if (type == 'raw') {
-        variableQuery = jsonlite::toJSON(lapply(if (! is.null(variables))variables else datasetMetadata$columns, formatVar))
+        variableQuery = jsonlite::toJSON(setNames(as.list(rep(1, length(variables))), variables), auto_unbox = TRUE)
 
         result = getData('aggregate', paste(
         '[{"$match":', query, '},',
@@ -132,7 +132,7 @@ eventdata_subset.app <- function(env) {
     }
 
     if (type == 'peek') {
-        variableQuery = jsonlite::toJSON(lapply(if (! is.null(variables))variables else datasetMetadata$columns, formatVar))
+        variableQuery = jsonlite::toJSON(setNames(as.list(rep(1, length(variables))), variables), auto_unbox = TRUE)
 
         result = getData('aggregate', paste(
         '[{"$match":', query, '},',
@@ -194,11 +194,11 @@ eventdata_subset.app <- function(env) {
     if (subsetMetadata$type == 'date') {
         summary$data = tryCatch({
             do.call(data.frame, getData('aggregate', paste(
-                '[{"$match":', query, '},',
-                ' {"$project": {"Year": {"$year": "$', subsetMetadata$columns[[1]], '"},',
-                               '"Month": {"$month": "$', subsetMetadata$columns[[1]], '"}}},',
-                ' {"$group": { "_id": { "year": "$Year", "month": "$Month" }, "total": {"$sum": 1} }},',
-                ' {"$project": {"year": "$_id.year", "month": "$_id.month", "_id": 0, "total": 1}}]', sep = "")))
+            '[{"$match":', query, '},',
+            ' {"$project": {"Year": {"$year": "$', subsetMetadata$columns[[1]], '"},',
+            '"Month": {"$month": "$', subsetMetadata$columns[[1]], '"}}},',
+            ' {"$group": { "_id": { "year": "$Year", "month": "$Month" }, "total": {"$sum": 1} }},',
+            ' {"$project": {"year": "$_id.year", "month": "$_id.month", "_id": 0, "total": 1}}]', sep = "")))
         }, error = genericErrorHandler)
     }
 
@@ -206,8 +206,8 @@ eventdata_subset.app <- function(env) {
         formatName = datasetMetadata$formats[[subsetMetadata$columns[[1]]]]
         summary$data = tryCatch({
             do.call(data.frame, getData('aggregate', paste(
-                '[{"$match":', query, '},',
-                '{"$group": { "_id": { "', formatName,'": "$', subsetMetadata$columns[[1]], '"}, "total": {"$sum": 1} }}]', sep=""))) # Group by years and months
+            '[{"$match":', query, '},',
+            '{"$group": { "_id": { "', formatName, '": "$', subsetMetadata$columns[[1]], '"}, "total": {"$sum": 1} }}]', sep = ""))) # Group by years and months
         }, error = genericErrorHandler)
     }
     else if (subsetMetadata$type == 'dyad') {

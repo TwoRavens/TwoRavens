@@ -65,6 +65,7 @@ common.setPanelCallback('left', () => {
 });
 
 export function handleResize() {
+    if (selectedDataset === undefined || genericMetadata[selectedDataset] === undefined) return;
     document.getElementById('canvas').style['padding-right'] = common.panelOcclusion['right'];
     document.getElementById('canvas').style['padding-left'] = common.panelOcclusion['left'];
     Object.keys(genericMetadata[selectedDataset]['subsets']).forEach(subset => subsetRedraw[subset] = true);
@@ -335,11 +336,10 @@ let updatePeek = async () => {
     console.log("Query: " + JSON.stringify(subsetQuery));
 
     let query = {
-        subsets: JSON.stringify(subsetQuery),
+        query: JSON.stringify(subsetQuery),
         skip: peekSkip,
         limit: peekBatchSize,
         dataset: selectedDataset,
-        datasource: datasource,
         type: 'peek'
     };
 
@@ -367,9 +367,10 @@ let updatePeek = async () => {
     peekData = peekData.concat(data);
     peekSkip += data.length;
 
+    let tableHeaders = selectedVariables.size ? [...selectedVariables] : genericMetadata[selectedDataset]['columns'];
     // this gets noticed by the peek window
-    localStorage.setItem('peekHeader', selectedDataset['name']);
-    localStorage.setItem('peekTableHeaders', JSON.stringify([...selectedVariables]));
+    localStorage.setItem('peekHeader', selectedDataset);
+    localStorage.setItem('peekTableHeaders', JSON.stringify(tableHeaders));
     localStorage.setItem('peekTableData', JSON.stringify(peekData));
 };
 window.addEventListener('storage', onStorageEvent);

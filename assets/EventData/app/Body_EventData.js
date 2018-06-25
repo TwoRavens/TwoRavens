@@ -188,6 +188,7 @@ export default class Body_EventData {
                                 m(TextField, {
                                     id: 'searchVariables',
                                     placeholder: 'Search variables',
+                                    value: app.variableSearch,
                                     oninput: app.setVariableSearch
                                 }),
                                 m(PanelList, {
