@@ -286,7 +286,7 @@ class Body {
         }
 
         let overflow = explore_mode ? 'auto' : 'hidden';
-        let style = `position: absolute; left: ${app.panelWidth.left}; top: 0; margin-top: 10px; display: block`;
+        let style = `position: absolute; left: ${app.panelWidth.left}; top: 0; margin-top: 10px`;
         let node1 = app.findNode(var1);
         let node2 = app.findNode(var2);
         let sortedNodes = nodesExplore.concat().sort((x, y) => x.id - y.id);
@@ -297,14 +297,14 @@ class Body {
             }
 
             let thumb = (idx, id, title) =>
-                m("figure", {style: {float: "left"}},
+                m("figure", {style: 'display: inline-block'},
                   m(`img#${id}_img[alt=${id}][height=140px][width=260px][src=/static/images/thumb${idx}.png]`,
                     {onclick: _ => exp.plot(node1,node2,[id]),
                      style: {border: "1px solid #ddd", "border-radius": "3px", padding: "5px", margin: "3%", cursor: "pointer"}}),
                   m("figcaption", {style: {"text-align": "center"}}, title));
             let plot = node1 && node1.plottype === 'continuous' ? plots.density : plots.bars;
             return m('div', {style}, [
-                m('div', [
+                m('div', {style: 'max-width: 1000px; overflow: scroll; white-space: nowrap'}, [
                     thumb(1, 'scatter', "Scatter Plot"),
                     thumb(2, 'tableheat', "Heatmap"),
                     thumb(3, 'line', "Line Chart"),
@@ -321,7 +321,7 @@ class Body {
                     thumb(14, 'scattermeansd', "Scatter with Overlays"),
                     thumb(15, 'scattermatrix', "Scatter Matrix"),
                 ]),
-                m('#plot', {style: 'clear: both', oncreate: _ => node1 && node2 ? exp.plot(node1, node2) : plot(node1, 'explore', true)})
+                m('#plot', {style: 'display: block', oncreate: _ => node1 && node2 ? exp.plot(node1, node2) : plot(node1, 'explore', true)})
             ]);
         };
 
