@@ -20,6 +20,9 @@ import * as averagediff from './vega-schemas/averagediff';
 import * as scattermeansd from './vega-schemas/scattermeansd';
 import * as scattermatrix from './vega-schemas/scattermatrix';
 import * as simplebar from './vega-schemas/univariate/simplebar';
+import * as histogram from './vega-schemas/univariate/histogram';
+import * as areauni from './vega-schemas/univariate/areauni';
+import * as histogrammean from './vega-schemas/univariate/histogrammean';
 const $private = false;
 
 function heatmap(x_Axis_name, y_Axis_name) {
@@ -1578,13 +1581,15 @@ export async function plot(plotNodes, plottype="") {
         plottype[0] === "scattermeansd" ? scattermeansd:
         plottype[0] === "scattermatrix" ? scattermatrix:
         plottype[0] === "simplebar" ? simplebar:
+        plottype[0] === "histogram" ? histogram:
+        plottype[0] === "areauni" ? areauni:
+        plottype[0] === "histogrammean" ? histogrammean:
         alert("invalid plot type");
     console.log(schema);
 
     // function to fill in the contents of the vega schema
     let fillVega = data => {
         let stringified = JSON.stringify(schema);
-        console.log(data);
         if(data["vars"].length>1) {
             stringified = stringified.replace(/tworavensY/g, data.vars[1]);
         }
