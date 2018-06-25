@@ -100,7 +100,7 @@ plotdata.app <- function(env) {
         })
   }
   
-  if(plottype=="scatter" | plottype=="aggbar" | plottype=="binnedscatter" | plottype=="histogram" | plottype=="scattermeansd" | plottype=="scattermatrix" | plottype=="simplebar" | plottype=="areauni"| plottype=="histogrammean") {
+  if(plottype=="scatter" | plottype=="aggbar" | plottype=="binnedscatter" | plottype=="histogram" | plottype=="scattermeansd" | plottype=="scattermatrix" | plottype=="simplebar" | plottype=="areauni"| plottype=="histogrammean" | plottype=="trellishist" | plottype=="interactivebarmean" | plottype=="dot") {
         tryCatch({
         plotdata <<- list()
 
