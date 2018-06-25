@@ -40,7 +40,7 @@ def api_add_query(request):
         return JsonResponse(usr_msg)
 
     # json is valid
-    print("input json : ", json.dumps(json_req_obj))
+    # print("input json : ", json.dumps(json_req_obj))
 
     frm = EventDataSavedQueryForm(json_req_obj)
 
@@ -50,7 +50,7 @@ def api_add_query(request):
                         errors=frm.errors)
         return JsonResponse(user_msg)
 
-    print('frm.cleaned_data', frm.cleaned_data)
+    # print('frm.cleaned_data', frm.cleaned_data)
     success, addquery_obj_err = EventJobUtil.add_query_db(frm.cleaned_data)
 
     if not success:
@@ -116,7 +116,7 @@ def api_search(request):
                        error=get_json_error(json_req_obj))
         return JsonResponse(usr_msg)
 
-    print(json_req_obj)
+    # print(json_req_obj)
     name = None
     description = None
     username = None

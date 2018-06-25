@@ -20,7 +20,6 @@ class EventJobUtil(object):
     def add_query_db(query_info):
         """ add the query to db"""
 
-        #need to be checked by raman sir
         job = EventDataSavedQuery(**query_info)
 
         job.save()
