@@ -11,13 +11,19 @@ These repos are incorporated in two ways:
 
 ## Submodule Log
 
+**6/26/2018**
+
+- Remove repository [raven-metadata-service](https://github.com/TwoRavens/raven-metadata-service)
+  - remove it for now; may be back soon
+
+
 **6/11/2018**
 
 - Add repository [raven-metadata-service](https://github.com/TwoRavens/raven-metadata-service)
   - **version**: master
   - **method of inclusion**
     - `git submodule add https://github.com/TwoRavens/raven-metadata-service.git`
-    - 
+    -
 - Add repository: [ta3ta2-api](https://gitlab.com/datadrivendiscovery/ta3ta2-api)
   - **version**: v2018.6.2  
   - **method of inclusion**
