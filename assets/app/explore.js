@@ -29,6 +29,7 @@ import * as horizon from './vega-schemas/horizon';
 import * as interactivebarmean from './vega-schemas/interactivebarmean';
 import * as binnedcrossfilter from './vega-schemas/multi/binnedcrossfilter';
 import * as scattertri from './vega-schemas/trivariate/scattertri';
+import * as groupedbartri from './vega-schemas/trivariate/groupedbartri';
 const $private = false;
 
 function heatmap(x_Axis_name, y_Axis_name) {
@@ -1601,6 +1602,7 @@ export async function plot(plotNodes, plottype="") {
         plottype[0] === "horizon" ? horizon:
         plottype[0] === "binnedcrossfilter" ? binnedcrossfilter:
         plottype[0] === "scattertri" ? scattertri:
+        plottype[0] === "groupedbartri" ? groupedbartri:
         alert("invalid plot type");
     console.log(schema);
 
@@ -1620,6 +1622,11 @@ export async function plot(plotNodes, plottype="") {
         if (data.uniqueY) {
             let $colors = colors.splice(0, data["uniqueY"].length).map(col => `"${col}"`).join(',');
             stringified = stringified.replace(/"tworavensUniqueY"/g, "["+data.uniqueY+"]");
+            stringified = stringified.replace(/"tworavensColors"/g, "["+$colors+"]");
+        }
+        if (data.uniqueZ) {
+            let $colors = colors.splice(0, data["uniqueZ"].length).map(col => `"${col}"`).join(',');
+          //  stringified = stringified.replace(/"tworavensUniqueY"/g, "["+data.uniqueY+"]");
             stringified = stringified.replace(/"tworavensColors"/g, "["+$colors+"]");
         }
         if (data.meanY) {
