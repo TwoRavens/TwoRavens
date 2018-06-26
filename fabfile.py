@@ -7,11 +7,14 @@ import string
 import signal
 
 import sys
-from fabric.api import local, task
+from fabric.api import local, task, settings
 import django
 import subprocess
 
 import re
+
+
+
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 FAB_BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -494,11 +497,11 @@ def redis_run():
     """Run the local redis server"""
     redis_cmd = 'redis-server /usr/local/etc/redis.conf'
 
-    #with settings(warn_only=True):
-    result = local(redis_cmd, capture=True)
+    with settings(warn_only=True):
+        result = local(redis_cmd, capture=True)
 
-    if result.failed:
-        print('Redis may already be running...')
+        if result.failed:
+            print('Redis may already be running...')
 
 
 @task
@@ -506,22 +509,22 @@ def redis_clear():
     """Clear data from the *running* local redis server"""
 
     redis_cmd = 'redis-cli flushall'    #  /usr/local/etc/redis.conf'
-    #with settings(warn_only=True):
-    result = local(redis_cmd, capture=True)
+    with settings(warn_only=True):
+        result = local(redis_cmd, capture=True)
 
-    if result.failed:
-        print('Redis not running, nothing to clear')
+        if result.failed:
+            print('Redis not running, nothing to clear')
 
 @task
 def redis_stop():
     """Clear data from the *running* local redis server"""
 
     redis_cmd = 'pkill -f redis'
-    #with settings(warn_only=True):
-    result = local(redis_cmd, capture=True)
+    with settings(warn_only=True):
+        result = local(redis_cmd, capture=True)
 
-    if result.failed:
-        print('Nothing to stop')
+        if result.failed:
+            print('Nothing to stop')
 
 @task
 def redis_restart():
