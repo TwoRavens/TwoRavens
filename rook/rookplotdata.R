@@ -100,7 +100,7 @@ plotdata.app <- function(env) {
         })
   }
   
-  if(plottype=="scatter" | plottype=="aggbar" | plottype=="binnedscatter" | plottype=="histogram" | plottype=="scattermeansd" | plottype=="scattermatrix" | plottype=="simplebar" | plottype=="areauni"| plottype=="histogrammean" | plottype=="trellishist" | plottype=="interactivebarmean" | plottype=="dot") {
+  if(plottype=="scatter" | plottype=="aggbar" | plottype=="binnedscatter" | plottype=="histogram" | plottype=="scattermeansd" | plottype=="scattermatrix" | plottype=="simplebar" | plottype=="areauni"| plottype=="histogrammean" | plottype=="trellishist" | plottype=="interactivebarmean" | plottype=="dot" | plottype=="binnedcrossfilter" | plottype=="scattertri") {
         tryCatch({
         plotdata <<- list()
 
@@ -144,6 +144,33 @@ plotdata.app <- function(env) {
         
         if (length(plotdata) !=0) {
             return(send(list(plottype=plottype, vars=vars, plotdata=plotdata, uniqueY=uniqueY)))
+        } else {
+            return(send(list(warning="No plot data.")))
+        }
+        },
+        error = function(err) {
+        result <<- list(warning=paste("error: ", err))
+        })
+  }
+  
+    if(plottype=="groupedbartri") {
+        tryCatch({
+        plotdata <<- list()
+
+        ## plot data
+        plotd <- as.data.frame(mydata[,vars])
+        colnames(plotd) <- vars
+        plotd <- na.omit(plotd)
+        if (nrow(plotd) > 1000) {
+            plotd <- plotd[sample(1:nrow(plotd), 1000, replace=FALSE),,drop=FALSE]
+        }
+        
+        uniqueZ <- unique(plotd[,3])
+        plotdata <- jsonlite:::toJSON(plotd)
+        rm(plotd)
+        
+        if (length(plotdata) !=0) {
+            return(send(list(plottype=plottype, vars=vars, plotdata=plotdata, uniqueZ=uniqueZ)))
         } else {
             return(send(list(warning="No plot data.")))
         }
@@ -198,6 +225,33 @@ plotdata.app <- function(env) {
         
         if (length(plotdata) !=0) {
             return(send(list(plottype=plottype, vars=vars, plotdata=plotdata)))
+        } else {
+            return(send(list(warning="No plot data.")))
+        }
+        },
+        error = function(err) {
+        result <<- list(warning=paste("error: ", err))
+        })
+  }
+  
+  if(plottype=="horizon") {
+        tryCatch({
+        plotdata <<- list()
+
+        ## plot data
+        plotd <- as.data.frame(mydata[,vars])
+        colnames(plotd) <- vars
+        plotd <- na.omit(plotd)
+        if (nrow(plotd) > 1000) {
+            plotd <- plotd[sample(1:nrow(plotd), 1000, replace=FALSE),,drop=FALSE]
+        }
+        
+        meanY <- mean(plotd[,2])
+        plotdata <- jsonlite:::toJSON(plotd)
+        rm(plotd)
+        
+        if (length(plotdata) !=0) {
+            return(send(list(plottype=plottype, vars=vars, plotdata=plotdata,meanY=meanY)))
         } else {
             return(send(list(warning="No plot data.")))
         }

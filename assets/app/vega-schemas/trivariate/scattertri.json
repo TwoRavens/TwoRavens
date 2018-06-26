@@ -1,0 +1,12 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v2.json",
+  "description": "A scatterplot with groups.",
+  "data": {"url": "tworavensData"},
+  "mark": "point",
+  "encoding": {
+    "x": {"field": "tworavensX", "type": "quantitative"},
+    "y": {"field": "tworavensY", "type": "quantitative"},
+    "color": {"field": "tworavensZ", "type": "nominal"},
+    "shape": {"field": "tworavensZ", "type": "nominal"}
+  }
+}

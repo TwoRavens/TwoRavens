@@ -18,14 +18,18 @@ import * as area from './vega-schemas/area';
 import * as binnedtableheat from './vega-schemas/binnedtableheat';
 import * as averagediff from './vega-schemas/averagediff';
 import * as scattermeansd from './vega-schemas/scattermeansd';
-import * as scattermatrix from './vega-schemas/scattermatrix';
+import * as scattermatrix from './vega-schemas/multi/scattermatrix';
 import * as simplebar from './vega-schemas/univariate/simplebar';
 import * as histogram from './vega-schemas/univariate/histogram';
 import * as areauni from './vega-schemas/univariate/areauni';
 import * as histogrammean from './vega-schemas/univariate/histogrammean';
 import * as dot from './vega-schemas/univariate/dot';
 import * as trellishist from './vega-schemas/trellishist';
+import * as horizon from './vega-schemas/horizon';
 import * as interactivebarmean from './vega-schemas/interactivebarmean';
+import * as binnedcrossfilter from './vega-schemas/multi/binnedcrossfilter';
+import * as scattertri from './vega-schemas/trivariate/scattertri';
+import * as groupedbartri from './vega-schemas/trivariate/groupedbartri';
 const $private = false;
 
 function heatmap(x_Axis_name, y_Axis_name) {
@@ -1555,6 +1559,9 @@ export async function plot(plotNodes, plottype="") {
     //testing
     //plottype=["scattermatrix"];
     
+    //testing
+    //plotNodes[2]=app.allNodes[app.findNodeIndex("Position")];
+    
     if(plotNodes.length==2 && plottype=="") plottype = getPlotType();
     console.log(plotNodes);
     let plotvars = getNames(plotNodes);
@@ -1567,6 +1574,8 @@ export async function plot(plotNodes, plottype="") {
     if (!json) {
         return;
     }
+    
+    
 
     let schema = plottype[0] === "box" ? box2d :
         plottype[0] === "scatter" ? scatter :
@@ -1590,6 +1599,10 @@ export async function plot(plotNodes, plottype="") {
         plottype[0] === "trellishist" ? trellishist:
         plottype[0] === "interactivebarmean" ? interactivebarmean:
         plottype[0] === "dot" ? dot:
+        plottype[0] === "horizon" ? horizon:
+        plottype[0] === "binnedcrossfilter" ? binnedcrossfilter:
+        plottype[0] === "scattertri" ? scattertri:
+        plottype[0] === "groupedbartri" ? groupedbartri:
         alert("invalid plot type");
     console.log(schema);
 
@@ -1598,6 +1611,9 @@ export async function plot(plotNodes, plottype="") {
         let stringified = JSON.stringify(schema);
         if(data["vars"].length>1) {
             stringified = stringified.replace(/tworavensY/g, data.vars[1]);
+        }
+        if(data["vars"].length>2) {
+            stringified = stringified.replace(/tworavensZ/g, data.vars[2]);
         }
         stringified = stringified.replace(/tworavensX/g, data.vars[0]);
         stringified = stringified.replace(/"tworavensFilter"/g, null);
@@ -1608,10 +1624,23 @@ export async function plot(plotNodes, plottype="") {
             stringified = stringified.replace(/"tworavensUniqueY"/g, "["+data.uniqueY+"]");
             stringified = stringified.replace(/"tworavensColors"/g, "["+$colors+"]");
         }
+        if (data.uniqueZ) {
+            let $colors = colors.splice(0, data["uniqueZ"].length).map(col => `"${col}"`).join(',');
+          //  stringified = stringified.replace(/"tworavensUniqueY"/g, "["+data.uniqueY+"]");
+            stringified = stringified.replace(/"tworavensColors"/g, "["+$colors+"]");
+        }
+        if (data.meanY) {
+            stringified = stringified.replace(/"tworavensMeanY"/g, data.meanY);
+            stringified = stringified.replace(/tworavensMeanY/g, data.meanY); //both needed in this order
+        }
         if(data.plottype=="scattermatrix") {
             let $matvars = data["vars"].map(myvar => `"${myvar}"`).join(',');
             stringified = stringified.replace(/"tworavensRow"/g, $matvars);
             stringified = stringified.replace(/"tworavensCol"/g, $matvars);
+        }
+        if(data.plottype=="binnedcrossfilter") {
+            let $matvars = data["vars"].map(myvar => `"${myvar}"`).join(',');
+            stringified = stringified.replace(/"tworavensVars"/g, $matvars);
         }
 
         // VJD: if you enter this console.log into the vega editor https://vega.github.io/editor/#/edited the plot will render
