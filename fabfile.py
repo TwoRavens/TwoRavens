@@ -210,6 +210,17 @@ def run_featurelabs_ta2(config_json_path):
                   ' feature_labs --entrypoint=ta2_grpc_server'
                   ' featurelabs_ta2:stable') % (config_json_path)
 
+    docker_cmd = ('docker run --rm -t'
+                  ' --name ta2_server'
+                  ' -p50051:50051'
+                  ' -e D3MTIMEOUT=60'
+                  ' -e D3MINPUTDIR=/input'
+                  ' -e D3MOUTPUTDIR=/output'
+                  ' -e D3MRUN=ta2ta3'
+                  ' -v $(pwd)/data/datasets:/input'
+                  ' -v $(pwd)/data/output:/output'
+                  ' registry.datadrivendiscovery.org/jkanter/mit-fl-ta2')
+
     print('Running command: %s' % docker_cmd)
 
     local(docker_cmd)
@@ -522,15 +533,25 @@ def redis_restart():
     redis_run()
 
 @task
-def celery_run():
+def celery_run(ta2_external=False):
     """Clear redis and Start celery"""
     redis_clear()
 
     #celery_cmd = ('export TA2_STATIC_TEST_MODE=False;'
     #              'celery -A tworavensproject worker -l info')
+    if ta2_external:
+        celery_cmd = ('export TA2_STATIC_TEST_MODE=False;'
+                      'celery -A tworavensproject worker -l info')
+    else:
+        celery_cmd = ('celery -A tworavensproject worker -l info')
 
-    celery_cmd = ('celery -A tworavensproject worker -l info')
     local(celery_cmd)
+
+
+@task
+def celery_run_ta2_external():
+    """Run celery using an external TA2"""
+    celery_run(ta2_external=True)
 
 @task
 def celery_stop():
