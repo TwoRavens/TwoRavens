@@ -284,6 +284,7 @@ let rightClickLast = false;
 let selInteract = false;
 export let callHistory = []; // transform and subset calls
 let mytarget = '';
+let mytargetindex = '';
 
 export let configurations = {};
 let datadocument = {};
@@ -343,11 +344,13 @@ export let d3mMetrics = {
 };
 
 export let d3mProblemDescription = {
+    id: "",
+    version: "",
+    name: "",
+    description: "",
     taskType: "taskTypeUndefined",
     taskSubtype: "taskSubtypeUndefined",
- //   outputType: [3,"DEFAULT"],
-    metric: "metricUndefined",
-    taskDescription: ""
+    performanceMetrics: [{metric: "metricUndefined"}]
 };
 
 /*
@@ -536,7 +539,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     console.log(d3mPreprocess);
 
     // 3. Read the problem schema and set 'd3mProblemDescription'
-    // ...and make a call to start the session with TA2. if we get this far, data are guaranteed to exist for the frontend
+    // ...and make a call to Hello to check TA2 is up.  If we get this far, data are guaranteed to exist for the frontend
 
     res = await m.request("/config/d3m-config/get-problem-data-file-info");
     // The result of this call is similar to below:
@@ -579,13 +582,26 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     }
 
     // hardcoding this, once get-problem-data-file-info is revised this hardcode can go away and use the previous two LOC
-  //  zparams.zd3mdata = d3mData = d3mRootPath+"/dataset_TRAIN/tables/learningData.csv";
-  //  zparams.zd3mtarget = d3mRootPath+"/dataset_TRAIN/tables/learningData.csv";
+    //  zparams.zd3mdata = d3mData = d3mRootPath+"/dataset_TRAIN/tables/learningData.csv";
+    //  zparams.zd3mtarget = d3mRootPath+"/dataset_TRAIN/tables/learningData.csv";
 
     res = await m.request(d3mPS);
     console.log("prob schema data: ", res);
 
     mytarget = res.inputs.data[0].targets[0].colName; // easier way to access target name?
+    mytargetindex = res.inputs.data[0].targets[0].colIndex; // easier way to access target name?
+    if (typeof res.about.problemID !== 'undefined') {
+        d3mProblemDescription.id=res.about.problemID;
+    }
+    if (typeof res.about.problemVersion !== 'undefined') {
+        d3mProblemDescription.version=res.about.problemVersion;
+    }
+    if (typeof res.about.problemName !== 'undefined') {
+        d3mProblemDescription.name=res.about.problemName;
+    }
+    if (typeof res.about.problemDescription !== 'undefined') {
+        d3mProblemDescription.description = res.about.problemDescription;
+    }
     if (typeof res.about.taskType !== 'undefined') {
         d3mProblemDescription.taskType=res.about.taskType;
     }
@@ -593,12 +609,8 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         d3mProblemDescription.taskSubtype=res.about.taskSubType;
     }
     if (typeof res.inputs.performanceMetrics[0].metric !== 'undefined') {
-        d3mProblemDescription.metric = res.inputs.performanceMetrics[0].metric;
+        d3mProblemDescription.performanceMetrics = res.inputs.performanceMetrics;   // or? res.inputs.performanceMetrics[0].metric;
     }
-    if (typeof res.descriptionFile !== 'undefined') {
-        d3mProblemDescription.taskDescription = res.descriptionFile;
-    }
- //   d3mProblemDescription.outputType = res.expectedOutputs.predictionsFile;
 
     // making it case insensitive because the case seems to disagree all too often
     if (failset.includes(d3mProblemDescription.taskType.toUpperCase())) {
@@ -702,16 +714,16 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
       }
     }
     // 7. Start the user session
-    // rpc StartSession(SessionRequest) returns (SessionResponse) {}
-    res = await makeRequest(D3M_SVC_URL + '/startsession', {user_agent: 'some agent', version: 'some version'});
+    // rpc rpc Hello (HelloRequest) returns (HelloResponse) {}
+    res = await makeRequest(D3M_SVC_URL + '/Hello', {});
     if (res) {
-      if (res.responseInfo.status.code != "OK"){
-        const user_err_msg = "Failed to StartSession with TA2! status code: " + res.responseInfo.status.code;
+      console.log(res)
+      if (res.success != true){
+        const user_err_msg = "Failed to make Hello connection with TA2! status code: " + res.message;
         setModal(user_err_msg, "Error Connecting to TA2", true, "Reset", false, location.reload);
-          //  end_ta3_search(false, user_err_msg);
         return;
       } else {
-            zparams.zsessionid = res.context.sessionId;
+            zparams.zsessionid = "no session id in this API version";   // remove this eventually
         }
     }
 
@@ -2205,6 +2217,74 @@ function CreatePipelineData(predictors, depvar, aux) {
     }
 }
 
+// Update of old CreatePipelineData function that creates problem definition.
+function CreateProblemDefinition(depvar, aux) {
+   
+    let targetFeatures = [{ 'resource_id': "0", 'feature_name': depvar[0] }];    // not presently being used in this function
+    let my_target = depvar[0];
+
+
+    if(typeof aux==="undefined") { //default behavior for creating pipeline data
+        let my_problem = {
+            id: d3mProblemDescription.id,
+            version: d3mProblemDescription.version,
+            name: d3mProblemDescription.name,
+            description: d3mProblemDescription.description,
+            taskType: d3mTaskType[d3mProblemDescription.taskType][1],
+            taskSubtype: d3mTaskSubtype[d3mProblemDescription.taskSubtype][1],
+            performanceMetrics: [{metric: d3mMetrics[d3mProblemDescription.performanceMetrics[0].metric][1]} ]  // need to generalize to case with multiple metrics.  only passes on first presently.
+        };
+        let my_inputs =  [
+            {
+                "datasetId": datadocument.about.datasetID,
+                "targets": [
+                    {
+                        "resourceId": "0",
+                        "columnIndex": valueKey.indexOf(my_target) - 1,  // the -1 is to make zero indexed
+                        "columnName": my_target
+                    }
+                ]}];
+        console.log(my_problem);
+        console.log("valueKey");
+        console.log(valueKey);
+        return {problem: my_problem, inputs: my_inputs};
+    } else { //creating pipeline data for problem discovery using aux inputs
+
+        let my_problem = {
+            id: "id-of-this-problem",
+            version: "version of problem",
+            name: "name of the problem",
+            description: aux.description,
+            taskType: aux.task,
+            taskSubtype: "TASK_SUBTYPE_UNDEFINED",
+            performanceMetrics: [{metric: d3mMetrics[d3mProblemDescription.performanceMetrics[0].metric][1]}]  // need to generalize to case with multiple metrics.  only passes on first presently.
+        };
+        let my_inputs =  [
+            {
+                "datasetId": datadocument.about.datasetID,
+                "targets": [
+                    {
+                        "resourceId": "0",
+                        "columnIndex": valueKey.indexOf(my_target) - 1,  // the -1 is to make zero indexed
+                        "columnName": my_target
+                    }
+                ]}];
+        return {my_problem, my_inputs};
+        
+    }
+}
+
+
+function CreatePipelineDefinition(predictors, depvar, aux) {
+    let my_userAgent = "TwoRavens";                             // Get from elsewhere
+    let my_version = "2018.6.2";                                // Get from elsewhere
+    let my_allowedValueTypes = ["DATASET_URI", "CSV_URI"];      // Get from elsewhere
+    let my_problem = CreateProblemDefinition(depvar, aux);
+    console.log(my_problem);
+
+    return {userAgent: my_userAgent, version: my_version, timeBound: 5, priority: 1, allowedValueTypes: my_allowedValueTypes, problem: my_problem};
+}
+
 export function downloadIncomplete() {
     if (PRODUCTION && zparams.zsessionid === '') {
         alert('Warning: Data download is not complete. Try again soon.');
@@ -2300,7 +2380,7 @@ export async function estimate(btn) {
         }
 
         estimateLadda.start(); // start spinner
-        let res = await makeRequest(D3M_SVC_URL + '/CreatePipelines', CreatePipelineData(valueKey, mytarget));
+        let res = await makeRequest(D3M_SVC_URL + '/SearchSolutions', CreatePipelineDefinition(valueKey, mytarget));
         res && onPipelineCreate(res);
     } else { // we are in IS_D3M_DOMAIN no swandive
         // rpc CreatePipelines(PipelineCreateRequest) returns (stream PipelineCreateResult) {}
@@ -2319,7 +2399,7 @@ export async function estimate(btn) {
         //console.log("zparams zgroup1");
         //console.log(zparams.zgroup1);      // Notice zgroup1 is being sent with correct characters
 
-        let rookpipe = await makeRequest(ROOK_SVC_URL + 'pipelineapp', zparams);
+        let rookpipe = await makeRequest(ROOK_SVC_URL + 'pipelineapp', zparams);        // parse the center panel data into a formula like construction
 
         // 3. And check they come back correctly formed:
         //console.log("pipeline app return (rookpipe)");
@@ -2328,17 +2408,17 @@ export async function estimate(btn) {
         if (!rookpipe) {
             estimated = true;
         } else {
-
             setxTable(rookpipe.predictors);
-       //     let dvvals = res.dvvalues;
-        //    let dvvar = res.depvar[0];
-          let res = await makeRequest(D3M_SVC_URL + '/CreatePipelines', CreatePipelineData(rookpipe.predictors, rookpipe.depvar));
-         //   res = await makeRequest(ROOK_SVC_URL + 'createpipeline', zparams);
-            res && onPipelineCreate(res, rookpipe);
+            let res = await makeRequest(D3M_SVC_URL + '/SearchSolutions', CreatePipelineDefinition(rookpipe.predictors, rookpipe.depvar));
+            let searchId = res.data.searchId;
+            let res2 = await makeRequest(D3M_SVC_URL + '/GetSearchSolutionsResults', {searchId: searchId});
+            res && res2 && onPipelineCreate(res, rookpipe);
         }
     }
     task2_finished = true;
 }
+
+
 
 /** needs doc */
 export function ta2stuff() {
