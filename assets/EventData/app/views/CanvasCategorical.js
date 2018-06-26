@@ -4,14 +4,11 @@ import {panelMargin} from '../../../common/common'
 import m from 'mithril';
 import PlotBars from "./PlotBars";
 
-// because R doesn't have scalars
-let coerceArray = (value) => Array.isArray(value) ? value : [value];
-
 export default class CanvasCategorical {
     view(vnode) {
         let {data, metadata, preferences} = vnode.attrs;
 
-        let masterFormat = app.genericMetadata[app.selectedDataset]['formats'][coerceArray(metadata['columns'])[0]];
+        let masterFormat = app.genericMetadata[app.selectedDataset]['formats'][app.coerceArray(metadata['columns'])[0]];
         let allData = {};
 
         preferences['format'] = preferences['format'] || masterFormat;
@@ -29,7 +26,7 @@ export default class CanvasCategorical {
                 allData[format] = {};
                 allSelected[format] = {};
             });
-            app.alignmentData[coerceArray(metadata['alignments'])[0]].forEach(equivalency => {
+            app.alignmentData[app.coerceArray(metadata['alignments'])[0]].forEach(equivalency => {
                 metadata['formats'].forEach(format => {
                     let isSet = preferences['selections'].has(equivalency[masterFormat]);
                     if (equivalency[format] in allSelected[format])
@@ -135,7 +132,7 @@ export default class CanvasCategorical {
                             let target_state = bar.class === 'bar-some' || bar.class === 'bar';
 
                             if ('alignments' in metadata) {
-                                app.alignmentData[coerceArray(metadata['alignments'])[0]]
+                                app.alignmentData[app.coerceArray(metadata['alignments'])[0]]
                                     .filter(equivalency => equivalency[format] === bar.key)
                                     .forEach(equivalency => target_state
                                         ? preferences['selections'].add(equivalency[preferences['format']])

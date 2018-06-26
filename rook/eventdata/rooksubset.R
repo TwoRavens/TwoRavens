@@ -238,9 +238,10 @@ eventdata_subset.app <- function(env) {
     }
 
     if (! is.null(everything$countRecords) && everything$countRecords) {
-        summary$total = tryCatch({
+        total = tryCatch({
             jsonlite::unbox(getData('aggregate', paste('[{"$match":', query, '}, {"$count": "total"}]', sep = ""))$total)
         }, error = genericErrorHandler)
+        summary$total = if (!is.null(total)) total else 0
     }
 
     summary$subsetName = jsonlite::unbox(subset)

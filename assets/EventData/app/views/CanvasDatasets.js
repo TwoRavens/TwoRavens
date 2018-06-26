@@ -23,7 +23,6 @@ export default class CanvasDatasets {
         let format = (citation) => Object.keys(citation).map(key => [markup(key)(citation[key]), '. ']);
 
         let columnFilter = (columns) => columns.map(column => column.replace('_constructed', ''));
-        let coerceArray = (value) => Array.isArray(value) ? value : value === undefined ? [] : [value];
 
         let tempDataset = this.dataset ? app.genericMetadata[this.dataset] : {};
 
@@ -86,9 +85,9 @@ export default class CanvasDatasets {
                                     columns = columns.concat(subset['tabs'][tab]['filters'])
                                 });
                                 columns = [...new Set(columns)]; // remove duplicates
-                            } else columns = coerceArray(subset['columns']);
+                            } else columns = app.coerceArray(subset['columns']);
 
-                            let alignments = coerceArray(tempDataset['subsets'][label]['alignments']);
+                            let alignments = app.coerceArray(tempDataset['subsets'][label]['alignments']);
                             alignments = alignments.concat(columns
                                 .filter(column => column in tempDataset['alignments'])
                                 .map(column => tempDataset['alignments'][column]));
@@ -103,7 +102,7 @@ export default class CanvasDatasets {
                                     attrsTags: {style: {'padding-left': '4px', background: 'rgba(192, 192, 192, 0.5)'}}
                                 }),
                                 tempDataset['subsets'][label]['formats'] && m(ListTags, {
-                                    tags: coerceArray(tempDataset['subsets'][label]['formats']),
+                                    tags: app.coerceArray(tempDataset['subsets'][label]['formats']),
                                     readonly: true,
                                     attrsTags: {style: {'padding-left': '4px', background: 'rgba(192, 192, 192, 0.5)'}}
                                 }),

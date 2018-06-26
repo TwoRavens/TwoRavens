@@ -4,9 +4,6 @@ import * as app from '../app';
 
 import PlotBars from "./PlotBars";
 
-// because R doesn't have scalars
-let coerceArray = (value) => Array.isArray(value) ? value : [value];
-
 let getLabel = (format, key) => {
     if (!(format in app.formattingData)) return '';
     let title = app.formattingData[format][key];
@@ -33,7 +30,7 @@ export default class CanvasCategoricalGrouped {
     view(vnode) {
         let {subsetName, data, metadata, preferences} = vnode.attrs;
 
-        let masterFormat = app.genericMetadata[app.selectedDataset]['formats'][coerceArray(metadata['columns'])[0]];
+        let masterFormat = app.genericMetadata[app.selectedDataset]['formats'][app.coerceArray(metadata['columns'])[0]];
         preferences['selections'] = preferences['selections'] || new Set();
         preferences['format'] = preferences['format'] || metadata['formats'][0];
         preferences['plotted_subgroups'] = preferences['plotted_subgroups'] || {};
@@ -48,7 +45,7 @@ export default class CanvasCategoricalGrouped {
 
         let subGroupPrep = {};
 
-        app.alignmentData[coerceArray(metadata['alignments'])[0]].forEach(equivalency => {
+        app.alignmentData[app.coerceArray(metadata['alignments'])[0]].forEach(equivalency => {
             if (!(masterFormat in equivalency && metadata['group_by'])) return;
             let isSet = preferences['selections'].has(equivalency[masterFormat]);
             if (equivalency in groupSelected)
@@ -63,7 +60,7 @@ export default class CanvasCategoricalGrouped {
             subGroupPrep[equivalency[metadata['group_by']]] = {};
         });
 
-        app.alignmentData[coerceArray(metadata['alignments'])[0]].forEach(equivalency => {
+        app.alignmentData[app.coerceArray(metadata['alignments'])[0]].forEach(equivalency => {
             if (!(masterFormat in equivalency)) return;
             if (equivalency[masterFormat] in flattenedData)
                 subGroupPrep[equivalency[metadata['group_by']]][equivalency[masterFormat]] = flattenedData[equivalency[masterFormat]]
