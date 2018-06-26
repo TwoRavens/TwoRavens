@@ -2414,7 +2414,40 @@ export async function estimate(btn) {
             let res = await makeRequest(D3M_SVC_URL + '/SearchSolutions', CreatePipelineDefinition(rookpipe.predictors, rookpipe.depvar));
             let searchId = res.data.searchId;
             allsearchId.push(searchId); 
+
             let res2 = await makeRequest(D3M_SVC_URL + '/GetSearchSolutionsResults', {searchId: searchId});
+            let searchDetailsUrl = res2.data.details_url;
+
+            let searchFinished = false;
+            let solutionDetailsUrl = "";
+            let res3; 
+            let res4;
+            let oldCount = 0;
+            let newCount = 0;
+
+            while(!searchFinished){
+                res3 = await updateRequest(searchDetailsUrl, {});                // silent equivalent makeRequest() with no data argument.  Also, should check whether best to be synchronous here.
+                newCount = res3.data.responses.count;
+
+                if(newCount>oldCount){
+                    for (var i = oldCount; i < newCount; i++) {
+                        console.log(i);
+                        console.log(res3.data.responses.list[i].details_url);
+                        solutionDetailsUrl = res3.data.responses.list[i].details_url;
+                        res4 = await makeRequest(solutionDetailsUrl);
+                        console.log(res4.data.response.solutionId);
+                    };
+                    oldCount = newCount;
+                    searchFinished = res3.data.is_finished;
+                };
+            };
+
+
+            // Get to these shortly
+            //let res3 = await makeRequest(D3M_SVC_URL + `/FitSolutions`, {})
+            //let requestId = res3.data.requestId;
+            //let res4 = await makeRequest(D3M_SVC_URL + `/GetFitSolutionsResults`, {})
+
             res && res2 && onPipelineCreate(res, rookpipe);
         }
     }
@@ -2731,6 +2764,27 @@ async function transform(n, t, typeTransform) {
         showLog('transform', rCall);
     }
 }
+
+export async function updateRequest(url) {
+    //console.log('url:', url);
+    //console.log('POST:', data);
+    let res;
+    try {
+        res = await m.request(url, {method: 'POST', data:{}});       // maybe change the POST and data
+        //console.log('response:', res);
+        if (Object.keys(res)[0] === 'warning') {
+            alert('Warning: ' + res.warning);
+            end_ta3_search(false, res.warning);
+        }
+    } catch(err) {
+        end_ta3_search(false, err);
+        cdb(err);
+        alert(`Error: call to ${url} failed`);
+    }
+    return res;
+}
+
+
 
 export async function makeRequest(url, data) {
     console.log('url:', url);
