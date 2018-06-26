@@ -144,18 +144,18 @@ def load_d3m_config(config_file):
         print('> Failed to load D3M config.\n%s' % err_obj)
         return False
 
-@task
+#@task
 def run_featurelabs_choose_config(choice_num=''):
-    """Pick a config from /ravens_volume and run FeatureLabs"""
+    """Deprecated. Pick a config from /ravens_volume and run FeatureLabs"""
     run_ta2_choose_config(choice_num, ta2_name='FeatureLabs')
 
-@task
+#@task
 def run_isi_choose_config(choice_num=''):
-    """Pick a config from /ravens_volume and run ISI"""
+    """Deprecated. Pick a config from /ravens_volume and run ISI"""
     run_ta2_choose_config(choice_num, ta2_name='ISI')
 
 def run_ta2_choose_config(choice_num='', ta2_name='ISI'):
-    """Pick a config from /ravens_volume and run a TA2"""
+    """Deprecated. Pick a config from /ravens_volume and run a TA2"""
     ravens_dir = '/ravens_volume'
 
     # pull config files from ravens volume
@@ -192,23 +192,20 @@ def run_ta2_choose_config(choice_num='', ta2_name='ISI'):
     print('\nExample: fab run_isi_choose_config:1')
 
 
-def run_featurelabs_ta2(config_json_path):
-    """syntax: `fab run_featurelabs_ta2:config_json_path` Also sets django D3M config"""
-    if not os.path.isfile(config_json_path):
-        print('Config file not found: %s' % config_json_path)
+@task
+def run_featurelabs_ta2():
+    """Need to add a path param...."""
+    #if not os.path.isfile(config_json_path):
+    #    print('Config file not found: %s' % config_json_path)
 
-    print('-' * 40)
-    print('Django: Loading D3M config...')
-    print('-' * 40)
-    load_d3m_config(config_json_path)
+    #print('-' * 40)
+    #print('Django: Loading D3M config...')
+    #print('-' * 40)
+    #load_d3m_config(config_json_path)
 
     print('-' * 40)
     print('Run Feature Labs')
     print('-' * 40)
-    docker_cmd = ('docker run -ti --rm -v /ravens_volume:/ravens_volume -e'
-                  ' "CONFIG_JSON_PATH=%s" -p 45042:45042 --name'
-                  ' feature_labs --entrypoint=ta2_grpc_server'
-                  ' featurelabs_ta2:stable') % (config_json_path)
 
     docker_cmd = ('docker run --rm -t'
                   ' --name ta2_server'
@@ -219,7 +216,7 @@ def run_featurelabs_ta2(config_json_path):
                   ' -e D3MRUN=ta2ta3'
                   ' -v $(pwd)/data/datasets:/input'
                   ' -v $(pwd)/data/output:/output'
-                  ' registry.datadrivendiscovery.org/jkanter/mit-fl-ta2')
+                  ' registry.datadrivendiscovery.org/jkanter/mit-fl-ta2:stable')
 
     print('Running command: %s' % docker_cmd)
 

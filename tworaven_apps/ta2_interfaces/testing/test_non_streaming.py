@@ -8,6 +8,7 @@ from django.conf import settings
 from django.template.loader import render_to_string
 
 from tworaven_apps.ta2_interfaces.ta2_util import format_info_for_request
+from tworaven_apps.ta2_interfaces.grpc_util import TA3TA2Util
 from tworaven_apps.utils.msg_helper import msgt
 from tworaven_apps.raven_auth.models import User
 
@@ -64,7 +65,7 @@ class NonStreamingTests(TestCase):
         url = reverse('SearchSolutions')
 
         req_str = render_to_string('test_requests/req_SearchSolutions.json',
-                                   {})
+                                   dict(TA3TA2_API_VERSION=TA3TA2Util.get_api_version()))
 
         response = self.client.post(url,
                                     req_str,

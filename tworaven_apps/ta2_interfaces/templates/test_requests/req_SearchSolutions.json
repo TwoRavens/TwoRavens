@@ -1,6 +1,6 @@
 {
     "userAgent": "TA3 system",
-    "version": "2018.5.2_pre",
+    "version": "{{ TA3TA2_API_VERSION }}",
     "timeBound": 10,
     "priority": 101,
     "allowedValueTypes": [
