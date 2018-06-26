@@ -22,6 +22,20 @@ class EventDataQueryAddTest(TestCase):
 
         user_obj = User.objects.get_or_create(username='dev_admin')[0]
         self.client.force_login(user_obj)
+        self.input_json1 = {"name": "query1",
+                       "description": "query1 desc",
+                       "username": "two ravens",
+                       "query": {"ads": "asd"},
+                       "result_count": "4",
+                       "saved_to_dataverse": True,
+                       "dataverse_url": "www.google.com"}
+        self.input_json2 = {"name": "query2",
+                       "description": "query2 desc",
+                       "username": "two ravens",
+                       "query": {"ads": "asd"},
+                       "result_count": "4",
+                       "saved_to_dataverse": True,
+                       "dataverse_url": "www.google.com"}
 
     def test_010_Hello(self):
         """(10) Test Hello"""
@@ -61,15 +75,7 @@ class EventDataQueryAddTest(TestCase):
         msgt(self.test_020_add_query.__doc__)
         # url and info for call
         #
-        input_json = {"name": "query2",
-                      "description": "query1 desc",
-                      "username": "two ravens",
-                      "query": {"ads": "asd"},
-                      "result_count": "4",
-                      "saved_to_dataverse": True,
-                      "dataverse_url": "www.google.com"}
-
-        output_json = {'id': 1, 'name': 'query2', 'description': 'query1 desc',
+        output_json = {'id': 1, 'name': 'query1', 'description': 'query1 desc',
                                                                            'username': 'two ravens', 'query': {'ads': 'asd'},
                                                                            'result_count': 4, 'created': '2018-06-25T19:04:23.277Z',
                                                                            'modified': '2018-06-25T19:04:23.277Z', 'saved_to_dataverse': True,
@@ -78,7 +84,7 @@ class EventDataQueryAddTest(TestCase):
         url = reverse('api_add_query')
 
         response = self.client.post(url,
-                                    json.dumps(input_json),
+                                    json.dumps(self.input_json1),
                                     content_type="application/json")
 
         # 200 response
@@ -104,29 +110,13 @@ class EventDataQueryAddTest(TestCase):
         """(30) Test list all objects"""
         msgt(self.test_030_list.__doc__)
 
-        # add 2 objects
-        input_json1 = {"name": "query1",
-                      "description": "query1 desc",
-                      "username": "two ravens",
-                      "query": {"ads": "asd"},
-                      "result_count": "4",
-                      "saved_to_dataverse": True,
-                      "dataverse_url": "www.google.com"}
-        input_json2 = {"name": "query2",
-                      "description": "query1 desc",
-                      "username": "two ravens",
-                      "query": {"ads": "asd"},
-                      "result_count": "4",
-                      "saved_to_dataverse": True,
-                      "dataverse_url": "www.google.com"}
-
         url = reverse('api_add_query')
 
         response1 = self.client.post(url,
-                                    json.dumps(input_json1),
+                                    json.dumps(self.input_json1),
                                     content_type="application/json")
         response2 = self.client.post(url,
-                                     json.dumps(input_json2),
+                                     json.dumps(self.input_json2),
                                      content_type="application/json")
 
         # 200 response
@@ -158,17 +148,9 @@ class EventDataQueryAddTest(TestCase):
         """(40) Test retrieval of particular object"""
         msgt(self.test_040_retrieve_object.__doc__)
 
-        input_json = {"name": "query1",
-                      "description": "query1 desc",
-                      "username": "two ravens",
-                      "query": {"ads": "asd"},
-                      "result_count": "4",
-                      "saved_to_dataverse": True,
-                      "dataverse_url": "www.google.com"}
-
         url = reverse('api_add_query')
 
-        response = self.client.post(url, json.dumps(input_json),
+        response = self.client.post(url, json.dumps(self.input_json1),
                                     content_type="application/json")
 
         # 200 response
@@ -207,29 +189,14 @@ class EventDataQueryAddTest(TestCase):
             "description": "query1 desc1",
             "username": "two ravens"
         }
-        # add 2 objects
-        input_json1 = {"name": "query1",
-                       "description": "query1 desc",
-                       "username": "two ravens",
-                       "query": {"ads": "asd"},
-                       "result_count": "4",
-                       "saved_to_dataverse": True,
-                       "dataverse_url": "www.google.com"}
-        input_json2 = {"name": "query2",
-                       "description": "query2 desc",
-                       "username": "two ravens",
-                       "query": {"ads": "asd"},
-                       "result_count": "4",
-                       "saved_to_dataverse": True,
-                       "dataverse_url": "www.google.com"}
 
         url = reverse('api_add_query')
 
         response1 = self.client.post(url,
-                                     json.dumps(input_json1),
+                                     json.dumps(self.input_json1),
                                      content_type="application/json")
         response2 = self.client.post(url,
-                                     json.dumps(input_json2),
+                                     json.dumps(self.input_json2),
                                      content_type="application/json")
 
         # 200 response
@@ -240,7 +207,7 @@ class EventDataQueryAddTest(TestCase):
         url_search = reverse('api_search')
 
         response_search1 = self.client.post(url_search, json.dumps(search_json1),
-                                    content_type="application/json")
+                                            content_type="application/json")
 
         response_search2 = self.client.post(url_search, json.dumps(search_json2),
                                             content_type="application/json")
@@ -254,16 +221,17 @@ class EventDataQueryAddTest(TestCase):
         # print("json res", response_list)
         # self.assertEqual(json.loads(response_list)['name'], 'query1')
         for job in response_search1:
-            obj = json.loads(job)['data']
-            print("search 1 res", obj)
-            self.assertEqual(obj[0]['name'], 'query1')
-            self.assertEqual(obj[0]['id'], 1)
+            # print("test 50 ", job)
+            obj = json.loads(job)
+            print("search 1 res*****", obj['data'])
+            self.assertEqual(obj['data'][0]['name'], 'query1')
+            self.assertEqual(obj['data'][0]['id'], 1)
 
         for job in response_search2:
-            obj = json.loads(job)['data']
+            obj = json.loads(job)
             print("search 2 res", obj)
-            self.assertEqual(obj[0]['name'], 'query2')
-            self.assertEqual(obj[0]['id'], 2)
+            self.assertEqual(obj['data'][0]['name'], 'query2')
+            self.assertEqual(obj['data'][0]['id'], 2)
 
         for job in response_search3:
             obj = json.loads(job)
