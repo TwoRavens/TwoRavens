@@ -331,7 +331,8 @@ class Body {
                     thumb(23, 'horizon', "Horizon Plot"),
                     thumb(24, 'binnedcrossfilter', "Binned Cross Filter"),
                     thumb(25, 'scattertri', "Scatterplot with Groups"),
-                    thumb(26, 'groupedbartri', "Grouped Bar with Three")
+                    thumb(26, 'groupedbartri', "Grouped Bar with Three"),
+                    thumb(27, 'bubbletri', "Bubble Plot with Groups")
                 ]),
                 m('#plot', {style: 'display: block', oncreate: _ => node1 && node2 ? exp.plot(expnodes) : plot(node1, 'explore', true)})
             ]);

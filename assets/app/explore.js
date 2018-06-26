@@ -30,6 +30,7 @@ import * as interactivebarmean from './vega-schemas/interactivebarmean';
 import * as binnedcrossfilter from './vega-schemas/multi/binnedcrossfilter';
 import * as scattertri from './vega-schemas/trivariate/scattertri';
 import * as groupedbartri from './vega-schemas/trivariate/groupedbartri';
+import * as bubbletri from './vega-schemas/trivariate/bubbletri';
 const $private = false;
 
 function heatmap(x_Axis_name, y_Axis_name) {
@@ -1560,7 +1561,7 @@ export async function plot(plotNodes, plottype="") {
     //plottype=["scattermatrix"];
     
     //testing
-    //plotNodes[2]=app.allNodes[app.findNodeIndex("Position")];
+    //plotNodes[2]=app.allNodes[app.findNodeIndex("Runs")];
     
     if(plotNodes.length==2 && plottype=="") plottype = getPlotType();
     console.log(plotNodes);
@@ -1603,6 +1604,7 @@ export async function plot(plotNodes, plottype="") {
         plottype[0] === "binnedcrossfilter" ? binnedcrossfilter:
         plottype[0] === "scattertri" ? scattertri:
         plottype[0] === "groupedbartri" ? groupedbartri:
+        plottype[0] === "bubbletri" ? bubbletri:
         alert("invalid plot type");
     console.log(schema);
 
@@ -1624,7 +1626,7 @@ export async function plot(plotNodes, plottype="") {
             stringified = stringified.replace(/"tworavensUniqueY"/g, "["+data.uniqueY+"]");
             stringified = stringified.replace(/"tworavensColors"/g, "["+$colors+"]");
         }
-        if (data.uniqueZ) {
+        if (data.plottype=="groupedbartri") {
             let $colors = colors.splice(0, data["uniqueZ"].length).map(col => `"${col}"`).join(',');
           //  stringified = stringified.replace(/"tworavensUniqueY"/g, "["+data.uniqueY+"]");
             stringified = stringified.replace(/"tworavensColors"/g, "["+$colors+"]");
