@@ -100,9 +100,9 @@ class EventDataQueryAddTest(TestCase):
         self.assertEqual(json_resp['data']['query'], output_json['query'])
         self.assertEqual(json_resp['data']['result_count'], output_json['result_count'])
 
-    def test_030_add_query(self):
+    def test_030_list(self):
         """(30) Test list all objects"""
-        msgt(self.test_030_add_query.__doc__)
+        msgt(self.test_030_list.__doc__)
 
         # add 2 objects
         input_json1 = {"name": "query1",
@@ -154,9 +154,9 @@ class EventDataQueryAddTest(TestCase):
             self.assertEqual(obj[0]['name'], 'query2')
             self.assertEqual(obj[1]['name'], 'query1')
 
-    def test_040_add_query(self):
+    def test_040_retrieve_object(self):
         """(40) Test retrieval of particular object"""
-        msgt(self.test_040_add_query.__doc__)
+        msgt(self.test_040_retrieve_object.__doc__)
 
         input_json = {"name": "query1",
                       "description": "query1 desc",
@@ -187,6 +187,89 @@ class EventDataQueryAddTest(TestCase):
 
             self.assertEqual(obj['name'], 'query1')
 
+
+
+    def test_050_search(self):
+        """(50) Test for search """
+        msgt(self.test_050_search.__doc__)
+        search_json1 = {
+            "name": "query1",
+            "description": "query1 desc",
+            "username" : "two ravens"
+
+        }
+        search_json2 = {
+            "name": "query2",
+            "description": "query2 desc"
+        }
+        search_json3 = {
+            "name": "query1",
+            "description": "query1 desc1",
+            "username": "two ravens"
+        }
+        # add 2 objects
+        input_json1 = {"name": "query1",
+                       "description": "query1 desc",
+                       "username": "two ravens",
+                       "query": {"ads": "asd"},
+                       "result_count": "4",
+                       "saved_to_dataverse": True,
+                       "dataverse_url": "www.google.com"}
+        input_json2 = {"name": "query2",
+                       "description": "query2 desc",
+                       "username": "two ravens",
+                       "query": {"ads": "asd"},
+                       "result_count": "4",
+                       "saved_to_dataverse": True,
+                       "dataverse_url": "www.google.com"}
+
+        url = reverse('api_add_query')
+
+        response1 = self.client.post(url,
+                                     json.dumps(input_json1),
+                                     content_type="application/json")
+        response2 = self.client.post(url,
+                                     json.dumps(input_json2),
+                                     content_type="application/json")
+
+        # 200 response
+        #
+        self.assertEqual(response1.status_code, 200)
+        self.assertEqual(response2.status_code, 200)
+
+        url_search = reverse('api_search')
+
+        response_search1 = self.client.post(url_search, json.dumps(search_json1),
+                                    content_type="application/json")
+
+        response_search2 = self.client.post(url_search, json.dumps(search_json2),
+                                            content_type="application/json")
+
+        response_search3 = self.client.post(url_search, json.dumps(search_json3),
+                                            content_type="application/json")
+
+        self.assertEqual(response_search1.status_code, 200)
+        self.assertEqual(response_search2.status_code, 200)
+        self.assertEqual(response_search3.status_code, 200)
+        # print("json res", response_list)
+        # self.assertEqual(json.loads(response_list)['name'], 'query1')
+        for job in response_search1:
+            obj = json.loads(job)['data']
+            print("search 1 res", obj)
+            self.assertEqual(obj[0]['name'], 'query1')
+            self.assertEqual(obj[0]['id'], 1)
+
+        for job in response_search2:
+            obj = json.loads(job)['data']
+            print("search 2 res", obj)
+            self.assertEqual(obj[0]['name'], 'query2')
+            self.assertEqual(obj[0]['id'], 2)
+
+        for job in response_search3:
+            obj = json.loads(job)
+            print("search 3 res", obj)
+            self.assertEqual(obj['success'], False)
+            self.assertEqual(obj['message'], 'list not retrieved')
 
 
 
