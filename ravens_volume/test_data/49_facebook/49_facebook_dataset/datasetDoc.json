@@ -6,7 +6,8 @@
     "license": "public dataset (unknown license)",
     "citation": "@inproceedings{viswanath-2009-activity,\nauthor = {Bimal Viswanath and Alan Mislove and Meeyoung Cha and Krishna P. Gummadi},\ntitle = {On the Evolution of User Interaction in Facebook}, \nbooktitle = {Proceedings of the 2nd ACM SIGCOMM Workshop on Social Networks (WOSN'09)},\nlocation = {Barcelona, Spain}, \nmonth = {August},\nyear = {2009}",
     "source": "The Max Plank Institute",
-    "datasetSchemaVersion": "3.0",
+    "datasetVersion": "1.0",
+    "datasetSchemaVersion": "3.1.1",
     "redacted": false
   },
   "dataResources": [
@@ -48,7 +49,7 @@
         {
           "colIndex": 1,
           "colName": "G1.nodeID",
-          "colType": "string",
+          "colType": "integer",
           "role": [
             "attribute"
           ],
@@ -60,7 +61,7 @@
         {
           "colIndex": 2,
           "colName": "G2.nodeID",
-          "colType": "string",
+          "colType": "integer",
           "role": [
             "attribute"
           ],

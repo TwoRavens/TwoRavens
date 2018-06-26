@@ -4,7 +4,8 @@
     "problemName": "Facebook graph matching problem",
     "problemDescription": "Data for 49_facebook consists of two graphs G1 and G2 with a known partial mapping (both matches and mismatches) between the nodes. The problem is given a pair of nodes, to determine if they match or not",
     "taskType": "graphMatching",
-    "problemSchemaVersion": "3.0"
+    "problemVersion": "1.0",
+    "problemSchemaVersion": "3.1.1"
   },
   "inputs": {
     "data": [

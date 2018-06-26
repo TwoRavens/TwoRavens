@@ -1,0 +1,101 @@
+d3mIndex,Gender,Grade,Age,Race,Urban/Rural,School,Goals,Grades,Sports,Looks,Money
+1,boy,5.0,10.0,White,Rural,Elm,,2.0,1.0,4.0,3.0
+2,girl,5.0,11.0,White,Rural,Elm,,4.0,3.0,1.0,2.0
+3,girl,5.0,11.0,White,Rural,Elm,,2.0,3.0,4.0,1.0
+11,girl,4.0,10.0,White,Rural,Elm,,2.0,3.0,4.0,1.0
+12,boy,4.0,9.0,White,Rural,Elm,,2.0,3.0,4.0,1.0
+14,boy,4.0,9.0,Other,Rural,Elm,,4.0,3.0,2.0,1.0
+20,girl,4.0,9.0,White,Rural,Elm,,4.0,3.0,1.0,2.0
+22,girl,4.0,9.0,White,Suburban,Brentwood Elementary,,4.0,2.0,1.0,3.0
+35,boy,4.0,9.0,White,Suburban,Brentwood Elementary,,4.0,3.0,2.0,1.0
+40,boy,4.0,9.0,White,Suburban,Brentwood Elementary,,2.0,1.0,3.0,4.0
+46,boy,5.0,11.0,White,Suburban,Brentwood Elementary,,4.0,3.0,1.0,2.0
+49,boy,5.0,11.0,White,Suburban,Brentwood Elementary,,3.0,2.0,1.0,4.0
+54,boy,5.0,10.0,White,Suburban,Brentwood Elementary,,4.0,1.0,3.0,2.0
+55,boy,5.0,10.0,White,Suburban,Brentwood Elementary,,4.0,1.0,3.0,2.0
+56,boy,5.0,11.0,White,Suburban,Brentwood Elementary,,2.0,1.0,3.0,4.0
+57,boy,5.0,11.0,White,Suburban,Brentwood Elementary,,1.0,2.0,4.0,3.0
+77,girl,5.0,10.0,White,Suburban,Brentwood Elementary,,2.0,3.0,1.0,4.0
+87,girl,5.0,11.0,White,Suburban,Brentwood Elementary,,1.0,3.0,2.0,4.0
+94,girl,6.0,11.0,White,Suburban,Brentwood Middle,,1.0,2.0,3.0,4.0
+100,girl,6.0,11.0,White,Suburban,Brentwood Middle,,4.0,3.0,1.0,2.0
+103,girl,6.0,11.0,White,Suburban,Brentwood Middle,,4.0,3.0,1.0,2.0
+106,girl,6.0,11.0,White,Suburban,Brentwood Middle,,4.0,3.0,2.0,1.0
+107,girl,6.0,11.0,White,Suburban,Brentwood Middle,,1.0,2.0,3.0,4.0
+110,girl,6.0,12.0,White,Suburban,Brentwood Middle,,2.0,3.0,1.0,4.0
+112,girl,6.0,11.0,White,Suburban,Brentwood Middle,,2.0,3.0,1.0,4.0
+116,girl,6.0,11.0,White,Suburban,Brentwood Middle,,3.0,4.0,1.0,2.0
+117,girl,6.0,11.0,White,Suburban,Brentwood Middle,,4.0,3.0,1.0,2.0
+119,girl,6.0,11.0,White,Suburban,Brentwood Middle,,1.0,3.0,2.0,4.0
+124,girl,6.0,11.0,White,Suburban,Brentwood Middle,,4.0,2.0,1.0,3.0
+136,boy,6.0,11.0,White,Suburban,Brentwood Middle,,3.0,1.0,2.0,4.0
+139,boy,6.0,12.0,White,Suburban,Brentwood Middle,,2.0,1.0,4.0,3.0
+142,boy,6.0,12.0,White,Suburban,Brentwood Middle,,4.0,1.0,2.0,3.0
+144,boy,6.0,11.0,White,Suburban,Brentwood Middle,,2.0,3.0,1.0,4.0
+145,boy,6.0,11.0,White,Suburban,Brentwood Middle,,3.0,1.0,2.0,4.0
+160,boy,6.0,12.0,White,Suburban,Brentwood Middle,,2.0,3.0,1.0,4.0
+165,boy,6.0,12.0,White,Suburban,Brentwood Middle,,4.0,1.0,2.0,3.0
+166,boy,6.0,12.0,White,Suburban,Brentwood Middle,,4.0,3.0,1.0,2.0
+173,girl,4.0,9.0,White,Rural,Ridge,,1.0,3.0,2.0,4.0
+181,girl,4.0,9.0,White,Rural,Ridge,,2.0,1.0,3.0,4.0
+190,boy,4.0,9.0,White,Rural,Ridge,,1.0,2.0,4.0,3.0
+195,boy,5.0,10.0,White,Rural,Ridge,,1.0,3.0,2.0,4.0
+197,boy,5.0,10.0,White,Rural,Ridge,,4.0,2.0,1.0,3.0
+209,girl,5.0,10.0,White,Rural,Ridge,,3.0,2.0,1.0,4.0
+213,girl,5.0,10.0,White,Rural,Ridge,,1.0,2.0,4.0,3.0
+214,girl,5.0,11.0,White,Rural,Ridge,,4.0,2.0,1.0,3.0
+219,girl,5.0,10.0,White,Rural,Ridge,,1.0,2.0,3.0,4.0
+224,boy,5.0,10.0,White,Rural,Sand,,2.0,1.0,4.0,3.0
+226,boy,5.0,11.0,White,Rural,Sand,,4.0,2.0,3.0,1.0
+239,boy,4.0,10.0,White,Rural,Sand,,1.0,3.0,2.0,4.0
+247,girl,4.0,9.0,White,Rural,Sand,,2.0,1.0,3.0,4.0
+249,girl,6.0,11.0,White,Rural,Brown Middle,,3.0,4.0,1.0,2.0
+258,girl,6.0,11.0,White,Rural,Brown Middle,,2.0,1.0,3.0,4.0
+264,girl,6.0,12.0,White,Rural,Brown Middle,,4.0,2.0,1.0,3.0
+265,girl,6.0,11.0,White,Rural,Brown Middle,,2.0,3.0,1.0,4.0
+270,girl,6.0,11.0,White,Rural,Brown Middle,,4.0,2.0,1.0,3.0
+272,girl,6.0,11.0,White,Rural,Brown Middle,,2.0,4.0,1.0,3.0
+283,boy,6.0,11.0,White,Rural,Brown Middle,,4.0,1.0,2.0,3.0
+290,boy,6.0,12.0,Other,Rural,Brown Middle,,4.0,3.0,2.0,1.0
+295,boy,6.0,13.0,White,Rural,Brown Middle,,4.0,2.0,1.0,3.0
+297,boy,6.0,11.0,White,Rural,Brown Middle,,3.0,1.0,4.0,2.0
+303,girl,4.0,9.0,Other,Urban,Main,,4.0,1.0,2.0,3.0
+307,girl,4.0,10.0,White,Urban,Main,,3.0,2.0,1.0,4.0
+310,girl,4.0,9.0,White,Urban,Main,,1.0,3.0,2.0,4.0
+311,girl,4.0,9.0,White,Urban,Main,,1.0,2.0,3.0,4.0
+319,boy,4.0,9.0,White,Urban,Main,,3.0,1.0,2.0,4.0
+324,boy,4.0,10.0,White,Urban,Main,,2.0,1.0,4.0,3.0
+337,girl,5.0,10.0,White,Urban,Main,,4.0,3.0,2.0,1.0
+338,girl,5.0,10.0,White,Urban,Main,,1.0,4.0,2.0,3.0
+346,girl,5.0,10.0,White,Urban,Main,,1.0,2.0,3.0,4.0
+352,boy,5.0,10.0,White,Urban,Main,,1.0,2.0,4.0,3.0
+363,boy,5.0,11.0,White,Urban,Main,,3.0,1.0,2.0,4.0
+364,boy,5.0,9.0,Other,Urban,Main,,3.0,1.0,4.0,2.0
+367,girl,5.0,10.0,White,Urban,Main,,3.0,2.0,1.0,4.0
+368,girl,4.0,9.0,White,Urban,Portage,,4.0,3.0,1.0,2.0
+370,boy,4.0,9.0,Other,Urban,Portage,,4.0,3.0,1.0,2.0
+372,girl,4.0,9.0,White,Urban,Portage,,1.0,2.0,3.0,4.0
+375,girl,4.0,9.0,Other,Urban,Portage,,2.0,3.0,1.0,4.0
+386,girl,5.0,10.0,White,Urban,Portage,,1.0,3.0,2.0,4.0
+388,girl,5.0,10.0,White,Urban,Portage,,1.0,2.0,3.0,4.0
+391,girl,5.0,10.0,White,Urban,Portage,,1.0,2.0,3.0,4.0
+392,girl,5.0,11.0,White,Urban,Portage,,3.0,1.0,2.0,4.0
+393,girl,5.0,10.0,White,Urban,Portage,,2.0,3.0,1.0,4.0
+394,girl,5.0,10.0,White,Urban,Portage,,3.0,1.0,2.0,4.0
+395,girl,5.0,10.0,White,Urban,Portage,,1.0,3.0,2.0,4.0
+398,boy,5.0,11.0,White,Urban,Portage,,3.0,1.0,2.0,4.0
+399,boy,5.0,10.0,White,Urban,Portage,,3.0,2.0,1.0,4.0
+408,girl,5.0,11.0,Other,Urban,Portage,,2.0,4.0,1.0,3.0
+411,girl,5.0,11.0,White,Urban,Portage,,4.0,3.0,1.0,2.0
+413,boy,4.0,9.0,White,Urban,Portage,,3.0,2.0,4.0,1.0
+421,girl,4.0,9.0,White,Urban,Portage,,3.0,2.0,1.0,4.0
+427,girl,4.0,9.0,White,Urban,Portage,,3.0,2.0,1.0,4.0
+430,girl,6.0,11.0,White,Urban,Westdale Middle,,4.0,3.0,2.0,1.0
+432,girl,6.0,11.0,White,Urban,Westdale Middle,,4.0,2.0,1.0,3.0
+434,girl,6.0,11.0,White,Urban,Westdale Middle,,4.0,2.0,1.0,3.0
+446,girl,6.0,11.0,White,Urban,Westdale Middle,,3.0,2.0,1.0,4.0
+448,girl,6.0,12.0,White,Urban,Westdale Middle,,2.0,1.0,3.0,4.0
+454,girl,6.0,11.0,White,Urban,Westdale Middle,,3.0,4.0,1.0,2.0
+466,boy,6.0,11.0,White,Urban,Westdale Middle,,1.0,2.0,3.0,4.0
+471,boy,6.0,11.0,White,Urban,Westdale Middle,,4.0,2.0,1.0,3.0
+475,boy,6.0,11.0,White,Urban,Westdale Middle,,4.0,2.0,1.0,3.0
