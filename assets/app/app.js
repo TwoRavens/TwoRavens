@@ -2218,37 +2218,6 @@ function CreatePipelineData(predictors, depvar, aux) {
 }
 
 // Update of old CreatePipelineData function that creates problem definition.
-
-
-// "problem": {
-//         "problem": {
-//             "id": "id-of-this-problem",
-//             "version": "version of problem",
-//             "name": "name of the problem",
-//             "description": "predicting hall of fame inductees",
-//             "taskType": "REGRESSION",
-//             "taskSubtype": "MULTIVARIATE",
-//             "performanceMetrics": [
-//                 {
-//                     "metric": "ROOT_MEAN_SQUARED_ERROR"
-//                 }
-//             ]
-//         },
-//         "inputs": [
-//             {
-//                 "datasetId": "dataset_123",
-//                 "targets": [
-//                     {
-//                         "resourceId": "r52",
-//                         "columnIndex": 3,
-//                         "columnName": "at_bats"
-//                     }
-//                 ]
-//             }
-//         ]
-//     }
-
-// Update of old CreatePipelineData function that creates problem definition.
 function CreateProblemDefinition(depvar, aux) {
    
     let targetFeatures = [{ 'resource_id': "0", 'feature_name': depvar[0] }];    // not presently being used in this function
@@ -2306,46 +2275,6 @@ function CreateProblemDefinition(depvar, aux) {
 }
 
 
-
-// {
-//     "userAgent": "TA3 system",
-//     "version": "2018.5.2_pre",
-//     "timeBound": 10,
-//     "priority": 101,
-//     "allowedValueTypes": [
-//         "DATASET_URI",
-//         "CSV_URI"
-//     ],
-//     "problem": {
-//         "problem": {
-//             "id": "id-of-this-problem",
-//             "version": "version of problem",
-//             "name": "name of the problem",
-//             "description": "predicting hall of fame inductees",
-//             "taskType": "REGRESSION",
-//             "taskSubtype": "MULTIVARIATE",
-//             "performanceMetrics": [
-//                 {
-//                     "metric": "ROOT_MEAN_SQUARED_ERROR"
-//                 }
-//             ]
-//         },
-//         "inputs": [
-//             {
-//                 "datasetId": "dataset_123",
-//                 "targets": [
-//                     {
-//                         "resourceId": "r52",
-//                         "columnIndex": 3,
-//                         "columnName": "at_bats"
-//                     }
-//                 ]
-//             }
-//         ]
-//     }
-// }
-
-
 function CreatePipelineDefinition(predictors, depvar, aux) {
     let my_userAgent = "TwoRavens";                             // Get from elsewhere
     let my_version = "2018.6.2";                                // Get from elsewhere
@@ -2355,7 +2284,6 @@ function CreatePipelineDefinition(predictors, depvar, aux) {
 
     return {userAgent: my_userAgent, version: my_version, timeBound: 5, priority: 1, allowedValueTypes: my_allowedValueTypes, problem: my_problem};
 }
-
 
 export function downloadIncomplete() {
     if (PRODUCTION && zparams.zsessionid === '') {
@@ -2482,7 +2410,9 @@ export async function estimate(btn) {
         } else {
             setxTable(rookpipe.predictors);
             let res = await makeRequest(D3M_SVC_URL + '/SearchSolutions', CreatePipelineDefinition(rookpipe.predictors, rookpipe.depvar));
-            res && onPipelineCreate(res, rookpipe);
+            let searchId = res.data.searchId;
+            let res2 = await makeRequest(D3M_SVC_URL + '/GetSearchSolutionsResults', {searchId: searchId});
+            res && res2 && onPipelineCreate(res, rookpipe);
         }
     }
     task2_finished = true;
