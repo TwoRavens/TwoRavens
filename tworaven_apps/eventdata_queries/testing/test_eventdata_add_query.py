@@ -104,6 +104,100 @@ class EventDataQueryAddTest(TestCase):
         """(30) Test list all objects"""
         msgt(self.test_030_add_query.__doc__)
 
+        # add 2 objects
+        input_json1 = {"name": "query1",
+                      "description": "query1 desc",
+                      "username": "two ravens",
+                      "query": {"ads": "asd"},
+                      "result_count": "4",
+                      "saved_to_dataverse": True,
+                      "dataverse_url": "www.google.com"}
+        input_json2 = {"name": "query2",
+                      "description": "query1 desc",
+                      "username": "two ravens",
+                      "query": {"ads": "asd"},
+                      "result_count": "4",
+                      "saved_to_dataverse": True,
+                      "dataverse_url": "www.google.com"}
+
+        url = reverse('api_add_query')
+
+        response1 = self.client.post(url,
+                                    json.dumps(input_json1),
+                                    content_type="application/json")
+        response2 = self.client.post(url,
+                                     json.dumps(input_json2),
+                                     content_type="application/json")
+
+        # 200 response
+        #
+        self.assertEqual(response1.status_code, 200)
+        self.assertEqual(response2.status_code, 200)
+
+
+        # retrieve objects
+        url_list = reverse('api_get_list')
+
+        response_list = self.client.get(url_list)
+
+        self.assertEqual(response_list.status_code, 200)
+
+        # convert to JSON
+        #
+        for job in response_list:
+            # convert to JSON
+            #
+            obj = json.loads(job)['data']
+            # print('****json resp ****', json.loads(job)['data'])
+            self.assertEqual(obj[0]['id'], 2)
+            self.assertEqual(obj[1]['id'], 1)
+            self.assertEqual(obj[0]['name'], 'query2')
+            self.assertEqual(obj[1]['name'], 'query1')
+
+    def test_040_add_query(self):
+        """(40) Test retrieval of particular object"""
+        msgt(self.test_040_add_query.__doc__)
+
+        input_json = {"name": "query1",
+                      "description": "query1 desc",
+                      "username": "two ravens",
+                      "query": {"ads": "asd"},
+                      "result_count": "4",
+                      "saved_to_dataverse": True,
+                      "dataverse_url": "www.google.com"}
+
+        url = reverse('api_add_query')
+
+        response = self.client.post(url, json.dumps(input_json),
+                                    content_type="application/json")
+
+        # 200 response
+        #
+        self.assertEqual(response.status_code, 200)
+
+        # get object
+
+        url_get_obj = reverse('api_retrieve_object', kwargs={'job_id': 1})
+        response_list = self.client.get(url_get_obj)
+        self.assertEqual(response_list.status_code, 200)
+        # print("json res", response_list)
+        # self.assertEqual(json.loads(response_list)['name'], 'query1')
+        for job in response_list:
+            obj = json.loads(job)['data']
+
+            self.assertEqual(obj['name'], 'query1')
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
