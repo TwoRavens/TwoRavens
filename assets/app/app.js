@@ -105,6 +105,8 @@ export let task1_finished = false;
 export let task2_finished = false;
 export let univariate_finished = false;
 
+export let allsearchId = [];            // List of all the searchId's created on searches
+
 export let currentMode = 'model';
 let is_explore_mode = false;
 let is_results_mode = false;
@@ -413,7 +415,7 @@ function trigger(id, event) {
    page reload linked to btnReset
 */
 export const reset = async function reloadPage() {
-    let res = await makeRequest(D3M_SVC_URL + '/endsession', apiSession(zparams.zsessionid));
+    endAllSearches();
     byId("btnModel").click();
     location.reload();
 };
@@ -2411,6 +2413,7 @@ export async function estimate(btn) {
             setxTable(rookpipe.predictors);
             let res = await makeRequest(D3M_SVC_URL + '/SearchSolutions', CreatePipelineDefinition(rookpipe.predictors, rookpipe.depvar));
             let searchId = res.data.searchId;
+            allsearchId.push(searchId); 
             let res2 = await makeRequest(D3M_SVC_URL + '/GetSearchSolutionsResults', {searchId: searchId});
             res && res2 && onPipelineCreate(res, rookpipe);
         }
@@ -4383,4 +4386,14 @@ export function saveDisc(btn) {
             disco[i-1].description = newtext;
         }
     }
+}
+
+export async function endAllSearches() {
+    let res = await makeRequest(D3M_SVC_URL + '/EndSearchSolutions', {searchId: allsearchId[0]} );
+    if(allsearchId.length > 1){
+        for(let i = 1; i < allsearchId.length; i++) {
+            res = await makeRequest(D3M_SVC_URL + '/EndSearchSolutions', {searchId: allsearchId[i]} );
+        };
+    };
+    allsearchId = [];
 }
