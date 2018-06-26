@@ -136,9 +136,11 @@ def api_search(request):
     else:
         username = json_req_obj['username']
 
-    success, get_list_obj = EventJobUtil.search_object(name=name,
-                                                       description=description,
-                                                       username=username)
+    filters = {'description__icontains': description,
+               'name__icontains': name,
+               'username': username}
+
+    success, get_list_obj = EventJobUtil.search_object(**filters)
     job_list = []
     if success:
         for job in get_list_obj:
