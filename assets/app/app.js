@@ -4397,3 +4397,12 @@ export async function endAllSearches() {
     };
     allsearchId = [];
 }
+
+export async function stopAllSearches() {
+    let res = await makeRequest(D3M_SVC_URL + '/StopSearchSolutions', {searchId: allsearchId[0]} );
+    if(allsearchId.length > 1){
+        for(let i = 1; i < allsearchId.length; i++) {
+            res = await makeRequest(D3M_SVC_URL + '/StopSearchSolutions', {searchId: allsearchId[i]} );
+        };
+    };
+}
