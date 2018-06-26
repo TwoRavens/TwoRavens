@@ -16,4 +16,4 @@ def purify(meta):
         return [purify(v) for v in meta if v is not ""]
     return meta
 
-# TODO  
+# TODO
