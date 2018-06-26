@@ -52,7 +52,7 @@ def restart():
 
 @task
 def make_d3m_config_files():
-    """Make configs in /ravens_volume and load them to db"""
+    """Make configs in /ravens_volume and loads them to db"""
     clear_d3m_configs()
 
     from tworaven_apps.configurations.util_config_maker import TestConfigMaker

@@ -149,8 +149,8 @@ class D3MConfiguration(TimeStampedModel):
         """Return a dict in TA2 format to use with mounted volume"""
         od = OrderedDict()
         d3m_attributes = D3M_FILE_ATTRIBUTES + \
-                         D3M_DIR_ATTRIBUTES + \
-                         D3M_VALUE_ATTRIBUTES
+                         D3M_DIR_ATTRIBUTES #+ \
+                         #D3M_VALUE_ATTRIBUTES
         for name in d3m_attributes:
             val = self.__dict__.get(name, '(not set)')
             if val and isinstance(val, str):
