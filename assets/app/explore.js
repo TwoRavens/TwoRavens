@@ -1523,12 +1523,24 @@ export async function plot(plotNodes, plottype="") {
     console.log('zpop:', app.zparams);
 
     let getPlotType = () => {
-        let xCon = plotNodes[0].plottype === 'continuous';
-        let yCon = plotNodes[1].plottype === 'continuous';
-        return xCon && yCon ? ['scatter'] :
-            xCon && !yCon ? ['box', 'y'] :
-            !xCon && yCon ? ['box', 'x'] :
-            ['stackedbar'];
+        if(plotNodes.length>3) return['scattermatrix'];
+        let myCons = [];
+        for (var i=0; i<plotNodes.length; i++) {
+            myCons[i] = plotNodes[i].plottype === 'continuous' ? true : false;
+        }
+        if(plotNodes.length==2) {
+            return myCons[0] && myCons[1] ? ['scatter'] :
+                myCons[0] && !myCons[1] ? ['box', 'y'] :
+                !myCons[0] && myCons[1] ? ['box', 'x'] :
+                ['stackedbar'];
+        }
+        if(plotNodes.length==3) {
+            return myCons[0] && myCons[1] && myCons[2] ? ['scattermatrix'] :
+                myCons[0] && !myCons[1] && !myCons[2] ? ['groupedbartri'] :
+                myCons[0] && myCons[1] && !myCons[2] ? ['scattertri'] :
+                myCons[0] && !myCons[1] && myCons[2] ? ['bubbletri'] :
+                ['scattermatrix'];
+        }
     };
     
     
@@ -1540,6 +1552,8 @@ export async function plot(plotNodes, plottype="") {
         }
         return myarr;
     }
+    
+    let temp = getPlotType();
  
     /* VJD: leaving this code for comparison and is more readable for me
     let getPlotType = () => {
@@ -1563,7 +1577,7 @@ export async function plot(plotNodes, plottype="") {
     //testing
     //plotNodes[2]=app.allNodes[app.findNodeIndex("Runs")];
     
-    if(plotNodes.length==2 && plottype=="") plottype = getPlotType();
+    if(plottype=="") plottype = getPlotType();
     console.log(plotNodes);
     let plotvars = getNames(plotNodes);
     let zd3mdata = app.zparams.zd3mdata;

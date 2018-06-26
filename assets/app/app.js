@@ -1963,7 +1963,8 @@ export function clickVar(elem, $nodes) {
     if (is_explore_mode && !$nodes.map(x => x.name).includes(elem)) {
         let max = exploreVariate === 'Univariate' ? 1
             : exploreVariate === 'Bivariate' ? 2
-            : 3;
+            : exploreVariate === 'Trivariate' ? 3
+            : 5;
         if ($nodes.length >= max) {
             return;
         }

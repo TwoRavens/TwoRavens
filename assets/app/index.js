@@ -261,7 +261,10 @@ class Body {
     }
 
     view(vnode) {
-        let {mode, var1, var2} = vnode.attrs;
+        let vnodeVals = Object.values(vnode["attrs"]);
+        let mode = vnodeVals[0];
+        let vars = vnodeVals.slice(1);
+        let expnodes = [];
         let model_mode = !mode;
         let explore_mode = mode === 'explore';
         let results_mode = mode === 'results';
@@ -275,12 +278,12 @@ class Body {
 
         let overflow = explore_mode ? 'auto' : 'hidden';
         let style = `position: absolute; left: ${app.panelWidth.left}; top: 0; margin-top: 10px`;
-        let node1 = app.findNode(var1);
-        let node2 = app.findNode(var2);
-        let expnodes = [node1, node2];
+        for (var i=0; i<vars.length; i++) {
+            expnodes[i]=app.findNode(vars[i]);
+        }
 
         let exploreVars = (() => {
-            if (!node1 && !node2) {
+            if (!expnodes[0] && !expnodes[1]) {
                 return;
             }
 
@@ -290,7 +293,7 @@ class Body {
                     {onclick: _ => exp.plot(expnodes, [id]),
                      style: {border: "1px solid #ddd", "border-radius": "3px", padding: "5px", margin: "3%", cursor: "pointer"}}),
                   m("figcaption", {style: {"text-align": "center"}}, title));
-            let plot = node1 && node1.plottype === 'continuous' ? plots.density : plots.bars;
+            let plot = expnodes[0] && expnodes[0].plottype === 'continuous' ? plots.density : plots.bars;
             return m('', [
                 m('', {style: 'margin-bottom: 1em; max-width: 1000px; overflow: scroll; white-space: nowrap'}, [
                     thumb(1, 'scatter', "Scatter Plot"),
@@ -321,7 +324,7 @@ class Body {
                     thumb(26, 'groupedbartri', "Grouped Bar with Three"),
                     thumb(27, 'bubbletri', "Bubble Plot with Groups")
                 ]),
-                m('#plot', {style: 'display: block', oncreate: _ => node1 && node2 ? exp.plot(expnodes) : plot(node1, 'explore', true)})
+                m('#plot', {style: 'display: block', oncreate: _ => expnodes.length > 1 ? exp.plot(expnodes) : plot(expnodes[0], 'explore', true)})
             ]);
         })();
 
@@ -346,14 +349,14 @@ class Body {
                            attrsAll: {style: {width: '400px'}, class: 'btn-sm'},
                            onclick: x => {nodesExplore = []; app.setVariate(x)},
                            activeSection: app.exploreVariate,
-                           sections: [{value: 'Univariate'}, {value: 'Bivariate'}, {value: 'Multivariate'}]}),
+                           sections: [{value: 'Univariate'}, {value: 'Bivariate'}, {value: 'Trivariate'}, {value: 'Multivariate'}]}),
                         m(Button, {
                             id: 'exploreGo',
                             onclick: _ => {
                                 let variate = app.exploreVariate.toLowerCase();
                                 let selected = nodesExplore.map(x => x.name);
                                 let len = selected.length;
-                                if (variate === 'univariate' && len != 1 || variate === 'bivariate' && len != 2 || variate === 'multivariate' && len != 3) {
+                                if (variate === 'univariate' && len != 1 || variate === 'bivariate' && len != 2 || variate === 'trivariate' && len != 3 || variate === 'multivariate' && len < 2) {
                                     return;
                                 }
                                 m.route.set(`/explore/${variate}/${selected.join('/')}`);
@@ -592,6 +595,12 @@ m.route(document.body, '/model', {
         render: vnode => {
             let {var1, var2} = vnode.attrs;
             return m(Body, {mode: 'explore', var1, var2});
+        }
+    },
+    '/explore/trivariate/:var1/:var2/:var3': {
+        render: vnode => {
+            let {var1, var2,var3} = vnode.attrs;
+            return m(Body, {mode: 'explore', var1, var2, var3});
         }
     },
     '/results': {
