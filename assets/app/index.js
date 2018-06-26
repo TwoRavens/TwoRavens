@@ -39,7 +39,7 @@ let state = {
     }
 };
 
-let nodesExplore = [];
+let nodesExplore = null;
 
 function setBackgroundColor(color) {
     return function() {
@@ -63,7 +63,7 @@ function leftpanel(mode) {
         checked: app.checkedDiscoveryProblems.has(problem[0])
     })]);
 
-    let nodes = exploreMode ? nodesExplore : app.nodes;
+    let nodes = exploreMode ? nodesExplore || [] : app.nodes;
 
     return m(Panel, {
         side: 'left',
@@ -91,7 +91,7 @@ function leftpanel(mode) {
                      colors: {
                          [app.hexToRgba(common.selVarColor)]: nodes.map(n => n.name),
                          [app.hexToRgba(common.nomColor)]: app.zparams.znom,
-                         [app.hexToRgba(common.dvColor)]: app.zparams.zdv
+                         [app.hexToRgba(common.dvColor)]: exploreMode ? [] : app.zparams.zdv
                      },
                      classes: {'item-bordered': app.matchedVariables},
                      callback: x => app.clickVar(x, nodes),
@@ -220,9 +220,8 @@ function rightpanel(mode) {
     }));
 }
 
-
-let glyph = (icon, unstyled) => m(
-    `span.glyphicon.glyphicon-${icon}` + (unstyled ? '' : '[style=color: #818181; font-size: 1em; pointer-events: none]'));
+let glyph = (icon, unstyled) =>
+    m(`span.glyphicon.glyphicon-${icon}` + (unstyled ? '' : '[style=color: #818181; font-size: 1em; pointer-events: none]'));
 
 class Body {
     oninit(vnode) {
@@ -267,20 +266,9 @@ class Body {
         let explore_mode = mode === 'explore';
         let results_mode = mode === 'results';
 
-        let spaceBtn = (id, onclick, title, icon) => m(
-            `button#${id}.btn.btn-default`, {onclick, title}, glyph(icon, true));
-
         if (mode != this.last_mode) {
             app.set_mode(mode);
-            if (explore_mode) {
-                app.explored = false;
-                app.univariate_finished = false;
-                app.setRightTabExplore('Univariate');
-            } else if (results_mode) {
-                app.setRightTab(IS_D3M_DOMAIN ? 'Task Type' : 'Models');
-            } else if (!mode) {
-                app.setRightTab(IS_D3M_DOMAIN ? 'Task Type' : 'Models');
-            }
+            app.setRightTab(IS_D3M_DOMAIN ? 'Task Type' : 'Models');
             app.restart && app.restart();
             this.last_mode = mode;
         }
@@ -289,10 +277,9 @@ class Body {
         let style = `position: absolute; left: ${app.panelWidth.left}; top: 0; margin-top: 10px`;
         let node1 = app.findNode(var1);
         let node2 = app.findNode(var2);
-        let expnodes = [node1,node2];
-        let sortedNodes = nodesExplore.concat().sort((x, y) => x.id - y.id);
+        let expnodes = [node1, node2];
 
-        let exploreVars = () => {
+        let exploreVars = (() => {
             if (!node1 && !node2) {
                 return;
             }
@@ -300,12 +287,12 @@ class Body {
             let thumb = (idx, id, title) =>
                 m("figure", {style: 'display: inline-block'},
                   m(`img#${id}_img[alt=${id}][height=140px][width=260px][src=/static/images/thumb${idx}.png]`,
-                    {onclick: _ => exp.plot(expnodes,[id]),
+                    {onclick: _ => exp.plot(expnodes, [id]),
                      style: {border: "1px solid #ddd", "border-radius": "3px", padding: "5px", margin: "3%", cursor: "pointer"}}),
                   m("figcaption", {style: {"text-align": "center"}}, title));
             let plot = node1 && node1.plottype === 'continuous' ? plots.density : plots.bars;
-            return m('div', {style}, [
-                m('div', {style: 'margin-bottom: 1em; max-width: 1000px; overflow: scroll; white-space: nowrap'}, [
+            return m('', [
+                m('', {style: 'margin-bottom: 1em; max-width: 1000px; overflow: scroll; white-space: nowrap'}, [
                     thumb(1, 'scatter', "Scatter Plot"),
                     thumb(2, 'tableheat', "Heatmap"),
                     thumb(3, 'line', "Line Chart"),
@@ -331,7 +318,10 @@ class Body {
                 ]),
                 m('#plot', {style: 'display: block', oncreate: _ => node1 && node2 ? exp.plot(expnodes) : plot(node1, 'explore', true)})
             ]);
-        };
+        })();
+
+        let spaceBtn = (id, onclick, title, icon) =>
+            m(`button#${id}.btn.btn-default`, {onclick, title}, glyph(icon, true));
 
         return m('main', [
             m(Modal),
@@ -339,27 +329,46 @@ class Body {
             this.footer(mode),
             m(`#main.left`, {style: {overflow}},
               m("#innercarousel.carousel-inner", {style: {height: '100%', overflow}},
-                explore_mode && [
-                    exploreVars() ||
-                        m('table', {style}, [
-                            m('thead', [''].concat(sortedNodes).map(x => m('th', x.name))),
-                            m('tbody', sortedNodes.map(y => {
-                                return m('tr', [
-                                    m('td', {style: 'height: 160px; transform: rotate(-90deg); font-weight: bold'}, y.name),
-                                    sortedNodes.map(x => {
-                                        let td = x === y && x.plottype === 'continuous' ? 'density' :
-                                            x === y ? 'bars' :
-                                            x.plottype === y.plottype ? 'scatterplot' :
-                                            'box-whisker';
-                                        let title = x === y ? x.name : `${x.name}/${y.name}`;
-                                        return m('td', {style: 'height: 160px; width: 160px'},
-                                                 m('a', {href: `/explore/${title}`, oncreate: m.route.link},
-                                                   m('img', {src: `/static/images/${td}.png`, title, alt: title})));
-                                    })
-                                ]);
-                            }))
-                        ])
-                ],
+                explore_mode
+                && [exploreVars
+                    ? m('', {style},
+                        m('a', {onclick: _ => m.route.set('/explore')}, '<- back to variables'),
+                        m('br'),
+                        exploreVars)
+                    : m('', {style},
+                        m(ButtonRadio,
+                          {id: 'exploreButtonBar',
+                           attrsAll: {style: {width: '400px'}, class: 'btn-sm'},
+                           onclick: x => {nodesExplore = []; app.setVariate(x)},
+                           activeSection: app.exploreVariate,
+                           sections: [{value: 'Univariate'}, {value: 'Bivariate'}, {value: 'Multivariate'}]}),
+                        m(Button, {
+                            id: 'exploreGo',
+                            onclick: _ => {
+                                let variate = app.exploreVariate.toLowerCase();
+                                let selected = nodesExplore.map(x => x.name);
+                                let len = selected.length;
+                                if (variate === 'univariate' && len != 1 || variate === 'bivariate' && len != 2 || variate === 'multivariate' && len != 3) {
+                                    return;
+                                }
+                                m.route.set(`/explore/${variate}/${selected.join('/')}`);
+                            }
+                        }, 'go'),
+                        m('br'),
+                        m('', {style: `display: flex; flex-direction: row; flex-wrap: wrap`}, app.valueKey.map(x => {
+                            return m('span', {
+                                onclick: _ => app.clickVar(x, nodesExplore),
+                                style: {
+                                    display: 'flex',
+                                    height: '250px',
+                                    margin: '1em',
+                                    width: '250px',
+                                    'align-items': 'center',
+                                    'background-color': app.hexToRgba(common[nodesExplore.map(x => x.name).includes(x) ? 'selVarColor' : 'varColor']),
+                                    'justify-content': 'center'
+                                }
+                            }, x);
+                        })))],
                 m('svg#whitespace')),
               model_mode && m("#spacetools.spaceTool", {style: {right: app.panelWidth['right'], 'z-index': 16}},
                               m(`button#btnLock.btn.btn-default`, {
@@ -540,7 +549,7 @@ class Body {
             m(ButtonRadio,
               {id: 'modeButtonBar',
                attrsAll: {
-                  style: {'padding-top':'2px', width: '200px'}, class: 'navbar-left btn-sm'},
+                   style: {'padding-top':'2px', width: '200px'}, class: 'navbar-left btn-sm'},
                onclick: app.set_mode,
                activeSection: mode || 'model',
                // {value: 'Results', id: 'btnResultsMode'}] VJD: commenting out the results mode button since we don't have this yet
@@ -565,16 +574,16 @@ m.route(document.body, '/model', {
     '/model': {render: () => m(Body)},
     '/explore': {
         onmatch() {
-            if (m.route.get() === '/model') {
-                nodesExplore = app.nodes.concat();
+            if (m.route.get() === '/model' && nodesExplore === null) {
+                nodesExplore = [];
             }
         },
         render: () => m(Body, {mode: 'explore'})
     },
-    '/explore/:var1': {
+    '/explore/univariate/:var1': {
         render: vnode => m(Body, {mode: 'explore', var1: vnode.attrs.var1})
     },
-    '/explore/:var1/:var2': {
+    '/explore/bivariate/:var1/:var2': {
         render: vnode => {
             let {var1, var2} = vnode.attrs;
             return m(Body, {mode: 'explore', var1, var2});

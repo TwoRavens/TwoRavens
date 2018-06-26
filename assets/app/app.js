@@ -68,6 +68,11 @@ function resetPeek() {
 
 resetPeek();
 
+export let exploreVariate = 'Univariate';
+export function setVariate(variate) {
+    exploreVariate = variate;
+}
+
 export let task1_finished = false;
 export let task2_finished = false;
 export let univariate_finished = false;
@@ -1955,6 +1960,15 @@ function updateNode(id, nodes) {
  every time a variable in leftpanel is clicked, nodes updates and background color changes
  */
 export function clickVar(elem, $nodes) {
+    if (is_explore_mode && !$nodes.map(x => x.name).includes(elem)) {
+        let max = exploreVariate === 'Univariate' ? 1
+            : exploreVariate === 'Bivariate' ? 2
+            : 3;
+        if ($nodes.length >= max) {
+            return;
+        }
+    }
+
     if (updateNode(elem, $nodes || nodes)) {
         // panelPlots(); is this necessary?
         restart();
