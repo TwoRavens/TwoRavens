@@ -34,6 +34,7 @@ import * as horizgroupbar from './vega-schemas/trivariate/horizgroupbar';
 import * as bubbletri from './vega-schemas/trivariate/bubbletri';
 import * as bubbleqqq from './vega-schemas/trivariate/bubbleqqq';
 import * as scatterqqq from './vega-schemas/trivariate/scatterqqq';
+import * as trellisscatterqqn from './vega-schemas/trivariate/trellisscatterqqn';
 const $private = false;
 
 function heatmap(x_Axis_name, y_Axis_name) {
@@ -1612,6 +1613,7 @@ export async function plot(plotNodes, plottype="") {
         plottype[0] === "horizgroupbar" ? horizgroupbar:
         plottype[0] === "bubbleqqq" ? bubbleqqq:
         plottype[0] === "scatterqqq" ? scatterqqq:
+        plottype[0] === "trellisscatterqqn" ? trellisscatterqqn:
         alert("invalid plot type");
     console.log(schema);
 
