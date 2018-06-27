@@ -246,6 +246,8 @@ let failset = ["TIME_SERIES_FORECASTING","GRAPH_MATCHING","LINK_PREDICTION","tim
 
 // object that contains all information about the returned pipelines
 export let allPipelineInfo = {};
+export let pipelineHeader = ['Hidden_UID', 'PipelineID', 'Metric', 'Score'];
+export let pipelineTable = [];
 
 export let logArray = [];
 export let zparams = {
@@ -2080,33 +2082,47 @@ export let setSelectedPipeline = (result) => {
     }
 }
 
-export let pipelineHeader = ['Hidden_UID', 'PipelineID', 'Metric', 'Score'];
-export let pipelineTable;
+// Update table when pipeline is fitted
+function onPipelineCreate(PipelineCreateResult, id) {
 
-function onPipelineCreate(PipelineCreateResult, rookpipe) {
+    //let myval = "";
+    //let myscores = [];  // attempt to deal w multiple scores
+
+    for(var i = 0; i < pipelineTable.length; i++) {
+        if (pipelineTable[i][2] == id) {
+            pipelineTable[i][4] = "10";
+        };
+    };
+                // myid=key;
+                // mymetric="metric here" //allPipelineInfo[key].  SOMETHING HERE;
+                // myval="scoring"; //+myscores[i].value.toFixed(3);
+                // pipelineTable.push([pipelineTable.length, myid, mymetric, myval])
+
+    //if(!swandive) {
+    //    resultsplotinit(pipelineTable[0][1]);
+    //}
+
+    //if (IS_D3M_DOMAIN){
+    //    byId("btnSetx").click();   // Was "btnResults" - changing to simplify user experience for testing.
+    //};
+}
+
+// Update table when pipeline is solved
+function onPipelinePrime(PipelineCreateResult, rookpipe) {
+
+    // Need to deal with (exclude) pipelines that are reported, but failed.  For approach, see below.
 
     if(PipelineCreateResult.hash_id in allPipelineInfo) {
         allPipelineInfo[PipelineCreateResult.id]=Object.assign(allPipelineInfo[PipelineCreateResult.id],PipelineCreateResult);
     } else {
         allPipelineInfo[PipelineCreateResult.id]=PipelineCreateResult;
-    }
+        let myid = PipelineCreateResult.id;
+        let mymetric = d3mProblemDescription.performanceMetrics[0].metric;    // Need to generalize to multiple metrics
+        let myval = "scoring";
+        console.log(pipelineTable);
+        pipelineTable.push([pipelineTable.length, myid, mymetric, myval]);
+    };
 
-    console.log(allPipelineInfo);
-    // to get all pipeline ids: Object.keys(allPipelineInfo)
-
-    let myid = "";
-    let mymetric = "";
-    let myval = "";
-    //let myscores = [];  // attempt to deal w multiple scores
-
-    pipelineTable = [];                    // Rebuilds from scratch every time because prior information might have been updated.  But might not be necessary.
-    for(var key in allPipelineInfo) {
-        console.log(key);
-        console.log(allPipelineInfo[key]);
-
-        if(key == "rookpipe"){   // happens when multiple CreatePipelines calls have been made
-            continue;
-        }
         // this will NOT report the pipeline to user if pipeline has failed, if pipeline is still running, or if it has not completed
         // if(allPipelineInfo[key].responseInfo.status.details == "Pipeline Failed")  {
         //     continue;
@@ -2115,36 +2131,12 @@ function onPipelineCreate(PipelineCreateResult, rookpipe) {
         //     continue;
         // }
 
-        // if(allPipelineInfo[key].progressInfo == "COMPLETED"){
-        //    myscores = allPipelineInfo[key].pipelineInfo.scores;
-        //     for(var i = 0; i < myscores.length; i++) {
-                //if(i==0) {myid=key;}
-                //   else myid="";
-                myid=key;
-                mymetric="metric here" //allPipelineInfo[key].  SOMETHING HERE;
-                myval=999; //+myscores[i].value.toFixed(3);
-                pipelineTable.push([pipelineTable.length, myid, mymetric, myval])
-        //     }
-        //} else { // if progressInfo is not "COMPLETED"
-        //     continue;
-        // }
-    }
-
-    //console.table(pipelineTable, [1, 2, 3]);
-
     if (IS_D3M_DOMAIN){
         byId("btnSetx").click();   // Was "btnResults" - changing to simplify user experience for testing.
     };
 
     //adding rookpipe to allPipelineInfo
     allPipelineInfo.rookpipe=rookpipe;                // This is setting rookpipe for the entire table, but when there are multiple CreatePipelines calls, this is only recording latest values
-
-    // this initializes the results windows using the first pipeline ID
-
-    //if(!swandive) {
-    //    resultsplotinit(pipelineTable[0][1]);
-    //}
-
 
     // VJD: these two functions are built and (I believe) functioning as intended. These exercise two core API calls that are currently unnecessary
     //exportpipeline(pipelineTable[1][1]);
@@ -2444,16 +2436,17 @@ export async function estimate(btn) {
             setxTable(rookpipe.predictors);
             let res = await makeRequest(D3M_SVC_URL + '/SearchSolutions', CreatePipelineDefinition(rookpipe.predictors, rookpipe.depvar));
             let searchId = res.data.searchId;
+            let solutionId = "";
+            let requestId = "";
             allsearchId.push(searchId); 
 
             let res2 = await makeRequest(D3M_SVC_URL + '/GetSearchSolutionsResults', {searchId: searchId});
             let searchDetailsUrl = res2.data.details_url;
             let fitDetailsUrl = "";
+            let solutionDetailsUrl = "";
 
             let searchFinished = false;
             let fitFinished = false;
-            let solutionDetailsUrl = "";
-            let requestId = "";
             let res3, res4, res5, res6, res7; 
             let oldCount = 0;
             let newCount = 0;
@@ -2470,18 +2463,21 @@ export async function estimate(btn) {
                         console.log(res3.data.responses.list[i].details_url); 
                         solutionDetailsUrl = res3.data.responses.list[i].details_url;
                         res4 = await updateRequest(solutionDetailsUrl);
-                        //console.log(res4.data.response.solutionId);
-                    //res5 = await makeRequest(D3M_SVC_URL + '/FitSolution', CreateFitDefinition(res4.data.response.solutionId));
-                    //requestId = res5.data.requestId;
-                    //let res6 = await makeRequest(D3M_SVC_URL + `/GetFitSolutionResults`, {requestId: requestId});
-                    //fitFinished = false;
-                        // while(!fitFinished){
-                        //     fitDetailsUrl = res7.data.details_url;
-                        //     res7 = await updateRequest(fitDetailsUrl);   // check
-                        //     fitFinished = res7.data.is_finished;         // check
-                        // }
-                        onPipelineCreate(res4.data, rookpipe);                     // Should move to later in call sequence as more of API is incorporated.
-                        //onPipelineCreate(res7.data, rookpipe);  // arguments have changed
+                        solutionId = res4.data.response.solutionId;
+                        onPipelinePrime(res4.data, rookpipe);
+
+                        res5 = await makeRequest(D3M_SVC_URL + '/FitSolution', CreateFitDefinition(solutionId));
+                        requestId = res5.data.requestId;
+                        res6 = await makeRequest(D3M_SVC_URL + `/GetFitSolutionResults`, {requestId: requestId});
+                        fitDetailsUrl = res6.data.details_url;
+                        
+                        // Possibly this belongs elsewhere, like a callback function above.
+                        //fitFinished = false;
+                        //while(!fitFinished){
+                        //    res7 = await updateRequest(fitDetailsUrl);   // check
+                        //    fitFinished = res7.data.is_finished;         // check
+                        //}
+                        //onPipelineCreate(res7.data, res4.data.id);  // arguments have changed
                     };
                     oldCount = newCount;
                     searchFinished = res3.data.is_finished;
