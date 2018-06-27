@@ -336,7 +336,7 @@ class Body {
                 m('', {style: 'margin-bottom: 1em; max-width: 1000px; overflow: scroll; white-space: nowrap'}, filtered.split(' ').map(x => {
                     return m("figure", {style: 'display: inline-block'},
                       m(`img#${x}_img[alt=${x}][height=140px][width=260px][src=/static/images/${x}.png]`,
-                        {onclick: _ => exp.plot(expnodes, [x]),
+                        {onclick: _ => exp.plot(expnodes, x),
                          style: {border: "1px solid #ddd", "border-radius": "3px", padding: "5px", margin: "3%", cursor: "pointer"}}),
                              m("figcaption", {style: {"text-align": "center"}}, plotMap[x]));
                 })),

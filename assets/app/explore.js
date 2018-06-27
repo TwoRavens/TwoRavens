@@ -1522,24 +1522,29 @@ export async function plot(plotNodes, plottype="") {
     app.zPop();
     console.log('zpop:', app.zparams);
 
-    let getPlotType = () => {
+    let getPlotType = (pt) => {
         if(plotNodes.length>3) return['scattermatrix'];
         let myCons = [];
+        let vt = "";
         for (var i=0; i<plotNodes.length; i++) {
             myCons[i] = plotNodes[i].plottype === 'continuous' ? true : false;
+            plotNodes[i].plottype === 'continuous' ? vt=vt+'q' : vt=vt+'n';
         }
+        
+        if(pt != "") return [pt,vt];
+        
         if(plotNodes.length==2) {
-            return myCons[0] && myCons[1] ? ['scatter'] :
-                myCons[0] && !myCons[1] ? ['box', 'y'] :
-                !myCons[0] && myCons[1] ? ['box', 'x'] :
-                ['stackedbar'];
+            return myCons[0] && myCons[1] ? ['scatter','qq'] :
+                myCons[0] && !myCons[1] ? ['box', 'qn'] :
+                !myCons[0] && myCons[1] ? ['box', 'nq'] :
+                ['stackedbar','nn'];
         }
         if(plotNodes.length==3) {
-            return myCons[0] && myCons[1] && myCons[2] ? ['scattermatrix'] :
-                myCons[0] && !myCons[1] && !myCons[2] ? ['groupedbartri'] :
-                myCons[0] && myCons[1] && !myCons[2] ? ['scattertri'] :
-                myCons[0] && !myCons[1] && myCons[2] ? ['bubbletri'] :
-                ['scattermatrix'];
+            return myCons[0] && myCons[1] && myCons[2] ? ['scattermatrix','qqq'] :
+                myCons[0] && !myCons[1] && !myCons[2] ? ['groupedbartri','qnn'] :
+                myCons[0] && myCons[1] && !myCons[2] ? ['scattertri','qqn'] :
+                myCons[0] && !myCons[1] && myCons[2] ? ['bubbletri','qnq'] :
+                ['scattermatrix','aaa'];
         }
     };
     
@@ -1553,31 +1558,12 @@ export async function plot(plotNodes, plottype="") {
         return myarr;
     }
     
-    let temp = getPlotType();
- 
-    /* VJD: leaving this code for comparison and is more readable for me
-    let getPlotType = () => {
-        if(xNode.plottype=="continuous") {
-            if(yNode.plottype=="continuous")
-                return ["scatter"];
-            if(yNode.plottype=="bar")
-                return ["box","y"];
-        } else if (xNode.plottype=="bar") {
-            if(yNode.plottype=="continuous")
-                return ["box","x"];
-            if(yNode.plottype=="bar")
-               return ["stackedbar"];
-        }
-    };
-    */
-    
     //testing
     //plottype=["scattermatrix"];
     
     //testing
     //plotNodes[2]=app.allNodes[app.findNodeIndex("Runs")];
-    
-    if(plottype=="") plottype = getPlotType();
+    plottype = getPlotType(plottype); // VJD: second element in array tags the variables for the plot e.g., qq means quantitative,quantitative; qn means quantitative,nominal
     console.log(plotNodes);
     let plotvars = getNames(plotNodes);
     let zd3mdata = app.zparams.zd3mdata;
@@ -1622,9 +1608,29 @@ export async function plot(plotNodes, plottype="") {
         alert("invalid plot type");
     console.log(schema);
 
-    // function to fill in the contents of the vega schema
-    let fillVega = data => {
+    // function returns whether to flip a plot. for example, if plot expects 'nq' and users gives 'qn', flip should return true. this may have to be generalized for 3+ dimension plots
+    let plotflip = (pt) => {
+        return pt[0] === "box" && pt[1] === "qn" ? true : false;
+    };
+    
+    // function to fill in the contents of the vega schema.
+    let fillVega = (data,flip) => {
         let stringified = JSON.stringify(schema);
+        console.log(flip);
+        if(flip) {
+            stringified = stringified.replace(/"x"/g,'"t"');
+            stringified = stringified.replace(/"x2"/g, '"t2"');
+            stringified = stringified.replace(/"y"/g, '"x"');
+            stringified = stringified.replace(/"y2"/g, '"x2"');
+            stringified = stringified.replace(/"t"/g, '"y"');
+            stringified = stringified.replace(/"t2"/g, '"y2"');
+            
+            let temp = data.vars[0];
+            data.vars[0] = data.vars[1];
+            data.vars[1] = temp;
+        }
+        
+        
         if(data["vars"].length>1) {
             stringified = stringified.replace(/tworavensY/g, data.vars[1]);
         }
@@ -1637,7 +1643,8 @@ export async function plot(plotNodes, plottype="") {
         stringified = stringified.replace('"tworavensData"',data.plotdata[0]);
         if (data.uniqueY) {
             let $colors = colors.splice(0, data["uniqueY"].length).map(col => `"${col}"`).join(',');
-            stringified = stringified.replace(/"tworavensUniqueY"/g, "["+data.uniqueY+"]");
+            let $uniques = data["uniqueY"].map(uni => `"${uni}"`).join(',');
+            stringified = stringified.replace(/"tworavensUniqueY"/g, "["+$uniques+"]");
             stringified = stringified.replace(/"tworavensColors"/g, "["+$colors+"]");
         }
         if (data.plottype=="groupedbartri") {
@@ -1663,7 +1670,8 @@ export async function plot(plotNodes, plottype="") {
         console.log(stringified);
         return JSON.parse(stringified);
     };
-    vegaEmbed('#plot', fillVega(json), {width: 800, height: 600});
+    let flip = plotflip(plottype);
+    vegaEmbed('#plot', fillVega(json,flip), {width: 800, height: 600});
 }
 
 export let exploreVar = '';
