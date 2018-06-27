@@ -1,11 +1,12 @@
 from datetime import datetime
 import json
 import requests  # http://docs.python-requests.org/en/master/
+from tworavensproject.settings.base import (DATAVERSE_SERVER, DATAVERSE_API_KEY, DATASET_PERSISTENT_ID)
 
-dataverse_server = 'https://dataverse.harvard.edu'  # no trailing slash
-api_key = '623d7768-fa3d-42c5-8a03-16d473dc8953'    # generated from kripanshu's account
+dataverse_server = DATAVERSE_SERVER  # no trailing slash
+api_key = DATAVERSE_API_KEY    # generated from kripanshu's account
 # dataset_id = 1  # database id of the dataset
-persistentId = 'doi%3A10.7910%2FDVN%2FSJWX4S'   # doi or hdl of the dataset
+persistentId = DATASET_PERSISTENT_ID   # doi or hdl of the dataset
 
 # --------------------------------------------------
 # Using a "jsonData" parameter, add optional description + file tags

@@ -37,42 +37,9 @@ class EventDataQueryAddTest(TestCase):
                        "saved_to_dataverse": True,
                        "dataverse_url": "www.google.com"}
 
-    def test_010_Hello(self):
-        """(10) Test Hello"""
-        msgt(self.test_010_Hello.__doc__)
-
-        # url and info for call
-        #
-        url = reverse('Hello')
-        info = dict()
-
-        response = self.client.post(url,
-                                    json.dumps(info),
-                                    content_type="application/json")
-
-        # 200 response
-        #
-        self.assertEqual(response.status_code, 200)
-
-        # convert to JSON
-        #
-        json_resp = response.json()
-        print('json_resp', json_resp)
-
-        # status code 'OK'
-        #
-        self.assertEqual(json_resp['success'], True)
-
-        # data section returned
-        #
-        self.assertTrue('data' in json_resp)
-
-        self.assertTrue('userAgent' in json_resp['data'])
-        self.assertTrue('version' in json_resp['data'])
-
-    def test_020_add_query(self):
-        """(20) Test AddQuery"""
-        msgt(self.test_020_add_query.__doc__)
+    def test_010_add_query(self):
+        """(10) Test AddQuery"""
+        msgt(self.test_010_add_query.__doc__)
         # url and info for call
         #
         output_json = {'id': 1, 'name': 'query1', 'description': 'query1 desc',
@@ -106,9 +73,9 @@ class EventDataQueryAddTest(TestCase):
         self.assertEqual(json_resp['data']['query'], output_json['query'])
         self.assertEqual(json_resp['data']['result_count'], output_json['result_count'])
 
-    def test_030_list(self):
-        """(30) Test list all objects"""
-        msgt(self.test_030_list.__doc__)
+    def test_020_list(self):
+        """(20) Test list all objects"""
+        msgt(self.test_020_list.__doc__)
 
         url = reverse('api_add_query')
 
@@ -144,9 +111,9 @@ class EventDataQueryAddTest(TestCase):
             self.assertEqual(obj[0]['name'], 'query2')
             self.assertEqual(obj[1]['name'], 'query1')
 
-    def test_040_retrieve_object(self):
-        """(40) Test retrieval of particular object"""
-        msgt(self.test_040_retrieve_object.__doc__)
+    def test_030_retrieve_object(self):
+        """(30) Test retrieval of particular object"""
+        msgt(self.test_030_retrieve_object.__doc__)
 
         url = reverse('api_add_query')
 
@@ -171,9 +138,9 @@ class EventDataQueryAddTest(TestCase):
 
 
 
-    def test_050_search(self):
-        """(50) Test for search """
-        msgt(self.test_050_search.__doc__)
+    def test_040_search(self):
+        """(40) Test for search """
+        msgt(self.test_040_search.__doc__)
         search_json1 = {
             "name": "query1",
             "description": "query1 desc",

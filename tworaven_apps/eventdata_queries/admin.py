@@ -14,6 +14,10 @@ class EventDataSavedQueryAdmin(admin.ModelAdmin):
                     'saved_to_dataverse',
                     'dataverse_url')
 
+    save_on_top = True
+    readonly_fields = ('modified', 'created')
+    list_filter = ('saved_to_dataverse',)
+
 
 
 
@@ -30,6 +34,9 @@ class ArchiveQueryJobAdmin(admin.ModelAdmin):
                     'created',
                     'modified')
 
+    save_on_top = True
+    readonly_fields = ('modified', 'created')
+    list_filter = ('is_finished', 'is_success')
 
 
 

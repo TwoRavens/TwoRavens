@@ -625,7 +625,7 @@ def clear_eventdata_queries():
     #     print('For testing! Only if ALLOW_FAB_DELETE settings is True')
     #     return
 
-    from tworaven_apps.eventdata_queries.models import ArchiveQueryJob, EventDataSavedQuery
+    from tworaven_apps.eventdata_queries.models import EventDataSavedQuery
 
     mcnt = EventDataSavedQuery.objects.count()
     print('\n%d Eventdata Objects(s) found' % mcnt)
@@ -634,4 +634,24 @@ def clear_eventdata_queries():
             meta_obj.delete()
         print('Deleted...')
     else:
-        print('No MetadataUpdate objects found.\n')
+        print('No EventData objects found.\n')
+
+
+@task
+def clear_archive_queries():
+    """Delete all eventdata queries objects"""
+    from django.conf import settings
+    # if not settings.ALLOW_FAB_DELETE:
+    #     print('For testing! Only if ALLOW_FAB_DELETE settings is True')
+    #     return
+
+    from tworaven_apps.eventdata_queries.models import ArchiveQueryJob
+
+    mcnt = ArchiveQueryJob.objects.count()
+    print('\n%d Eventdata archive Objects(s) found' % mcnt)
+    if mcnt > 0:
+        for meta_obj in ArchiveQueryJob.objects.all().order_by('-id'):
+            meta_obj.delete()
+        print('Deleted...')
+    else:
+        print('No ArchiveData objects found.\n')
