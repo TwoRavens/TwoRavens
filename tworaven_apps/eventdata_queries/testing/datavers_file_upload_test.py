@@ -1,7 +1,7 @@
 from datetime import datetime
 import json
 import requests  # http://docs.python-requests.org/en/master/
-from tworavensproject.settings.base import (DATAVERSE_SERVER, DATAVERSE_API_KEY, DATASET_PERSISTENT_ID)
+from TwoRavens.tworavensproject.settings.base import (DATAVERSE_SERVER, DATAVERSE_API_KEY, DATASET_PERSISTENT_ID)
 
 dataverse_server = DATAVERSE_SERVER  # no trailing slash
 api_key = DATAVERSE_API_KEY    # generated from kripanshu's account
