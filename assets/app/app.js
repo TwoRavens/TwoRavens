@@ -2086,14 +2086,13 @@ export let pipelineTable;
 function onPipelineCreate(PipelineCreateResult, rookpipe) {
 
     if(PipelineCreateResult.hash_id in allPipelineInfo) {
-        allPipelineInfo[PipelineCreateResult.hash_id]=Object.assign(allPipelineInfo[PipelineCreateResult.hash_id],PipelineCreateResult);
+        allPipelineInfo[PipelineCreateResult.id]=Object.assign(allPipelineInfo[PipelineCreateResult.id],PipelineCreateResult);
     } else {
-        allPipelineInfo[PipelineCreateResult.hash_id]=PipelineCreateResult;
+        allPipelineInfo[PipelineCreateResult.id]=PipelineCreateResult;
     }
 
     console.log(allPipelineInfo);
     // to get all pipeline ids: Object.keys(allPipelineInfo)
-
 
     let myid = "";
     let mymetric = "";
@@ -2279,6 +2278,46 @@ function CreatePipelineDefinition(predictors, depvar, aux) {
     return {userAgent: my_userAgent, version: my_version, timeBound: 5, priority: 1, allowedValueTypes: my_allowedValueTypes, problem: my_problem};
 }
 
+
+// {
+//     "solutionId": "solutionId_kzu9a8",
+//     "inputs": [
+//         {
+//             "csvUri": "file://uri/to-a/csv"
+//         },
+//         {
+//             "datasetUri": "file://uri/to-a/dataset"
+//         }
+//     ],
+//     "exposeOutputs": [
+//         "steps.1.steps.4.produce"
+//     ],
+//     "exposeValueTypes": [
+//         "PICKLE_URI",
+//         "VALUE_TYPE_UNDEFINED"
+//     ],
+//     "users": [
+//         {
+//             "id": "uuid of user",
+//             "choosen": true,
+//             "reason": "best solution"
+//         },
+//         {
+//             "id": "uuid of user",
+//             "choosen": false,
+//             "reason": ""
+//         }
+//     ]
+// }
+
+function CreateFitDefinition(solutionId){
+    let inputs = [{ csvUri: "need to fix filepath" }];            // need to fix
+    let my_exposeOutputs = ["steps.3.produce"];  // need to fix
+    let my_exposeValueTypes = ["DATASET_URI", "CSV_URI"];
+    let my_users = [{id: "TwoRavens", choosen: false, reason: ""}];
+    return {solutionId: solutionId, exposeOutputs: my_exposeOutputs, exposeValueTypes: my_exposeValueTypes, users: my_users};
+}
+
 export function downloadIncomplete() {
     if (PRODUCTION && zparams.zsessionid === '') {
         alert('Warning: Data download is not complete. Try again soon.');
@@ -2409,11 +2448,13 @@ export async function estimate(btn) {
 
             let res2 = await makeRequest(D3M_SVC_URL + '/GetSearchSolutionsResults', {searchId: searchId});
             let searchDetailsUrl = res2.data.details_url;
+            let fitDetailsUrl = "";
 
             let searchFinished = false;
+            let fitFinished = false;
             let solutionDetailsUrl = "";
-            let res3; 
-            let res4;
+            let requestId = "";
+            let res3, res4, res5, res6, res7; 
             let oldCount = 0;
             let newCount = 0;
 
@@ -2423,13 +2464,24 @@ export async function estimate(btn) {
                 console.log("newCount" + newCount)
 
                 if(newCount>oldCount){
-                    for (var i = oldCount; i < newCount; i++) {
+                    //for (var i = oldCount; i < newCount; i++) {       //  for statement if new items are pushed instead
+                    for (var i = 0; i < (newCount-oldCount); i++) {     //  instead, updates are at top of list
                         console.log(i);
-                        console.log(res3.data.responses.list[i].details_url);
+                        console.log(res3.data.responses.list[i].details_url); 
                         solutionDetailsUrl = res3.data.responses.list[i].details_url;
                         res4 = await updateRequest(solutionDetailsUrl);
+                        //console.log(res4.data.response.solutionId);
+                    //res5 = await makeRequest(D3M_SVC_URL + '/FitSolution', CreateFitDefinition(res4.data.response.solutionId));
+                    //requestId = res5.data.requestId;
+                    //let res6 = await makeRequest(D3M_SVC_URL + `/GetFitSolutionResults`, {requestId: requestId});
+                    //fitFinished = false;
+                        // while(!fitFinished){
+                        //     fitDetailsUrl = res7.data.details_url;
+                        //     res7 = await updateRequest(fitDetailsUrl);   // check
+                        //     fitFinished = res7.data.is_finished;         // check
+                        // }
                         onPipelineCreate(res4.data, rookpipe);                     // Should move to later in call sequence as more of API is incorporated.
-                        console.log(res4.data.response.solutionId);
+                        //onPipelineCreate(res7.data, rookpipe);  // arguments have changed
                     };
                     oldCount = newCount;
                     searchFinished = res3.data.is_finished;
