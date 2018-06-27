@@ -301,8 +301,10 @@
     "Coordinates": {
       "type": "coordinates",
       "format": "signed degrees",
-      "latitude": "GP7",
-      "longitude": "GP8"
+      "columns": [
+        "GP7",
+        "GP8"
+      ]
     }
   },
   "columns": [

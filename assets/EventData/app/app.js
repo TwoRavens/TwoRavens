@@ -145,7 +145,7 @@ export let reloadSubset = (subsetName) => {
 
     let stagedSubsetData = [];
     for (let child of abstractQuery) {
-        if (child.name.indexOf("Query") !== -1) {
+        if (child.type === 'query') {
             stagedSubsetData.push(child)
         }
     }
@@ -198,7 +198,7 @@ export let abstractQuery = [];
 // Don't use constraints outside of submitted queries
 let stagedSubsetData = [];
 for (let child of abstractQuery) {
-    if (child.name.indexOf("Query") !== -1) {
+    if (child.type === 'query') {
         stagedSubsetData.push(child)
     }
 }
@@ -403,13 +403,10 @@ export function pageSetup(jsondata) {
 
     let subsetType = genericMetadata[selectedDataset]['subsets'][jsondata['subsetName']]['type'];
 
-    let reformatters = {
-        'categorical': _ => _,
-        'categorical_grouped': _ => _,
-        'coordinates': _ => _,
-        'dyad': _ => _,
-
-        'date': data => data
+    if (subsetType === 'dyad' && jsondata['search'])
+        subsetData[jsondata['subsetName']][jsondata['tab']]['full'] = jsondata['data'] || [];
+    else if (subsetType === 'date')
+        subsetData[jsondata['subsetName']] = jsondata['data']
             .filter(entry => !isNaN(entry['year'] && !isNaN(entry['month'])))
             .map(entry => ({'Date': new Date(entry['year'], entry['month'] - 1, 0), 'Freq': entry.total}))
             .sort(dateSort)
@@ -424,13 +421,9 @@ export function pageSetup(jsondata) {
                 }
                 out.push(entry);
                 return (out);
-            }, [])
-    };
-
-    if (subsetType === 'dyad' && jsondata['search'])
-        subsetData[jsondata['subsetName']][jsondata['tab']]['full'] = jsondata['data'] || [];
+            }, []);
     else
-        subsetData[jsondata['subsetName']] = reformatters[subsetType](jsondata['data']);
+        subsetData[jsondata['subsetName']] = jsondata['data'];
 }
 
 
@@ -492,7 +485,7 @@ export function setupQueryTree() {
                 $li.find('.jqtree-element').prepend(buttonNegate(node.id, node.negate));
             }
             if ((!('show_op' in node) || ('show_op' in node && node.show_op)) && 'operation' in node) {
-                let canChange = node.name.indexOf('Query') === -1 && !node.editable;
+                let canChange = node.type !== 'query' && !node.editable;
                 $li.find('.jqtree-element').prepend(buttonOperator(node.id, node.operation, canChange));
             }
             if (!('cancellable' in node) || (node['cancellable'] === true)) {
@@ -509,28 +502,25 @@ export function setupQueryTree() {
                 return false
             }
 
+            console.log(node.type);
             // Subset and Group may be moved
-            let is_country = ('type' in node && node.type === 'country');
-            return (node.name.indexOf('Subset') !== -1 || node.name.indexOf('Group') !== -1 || is_country);
+            return (node.type === 'rule' || node.type === 'query');
         },
         onCanMoveTo: function (moved_node, target_node, position) {
-
             // Cannot move to uneditable queries
-            if ('editable' in target_node && !target_node.editable) {
-                return false
-            }
+            if ('editable' in target_node && !target_node.editable) return false;
 
-            // Countries can be moved to child of location subset group
-            if ('type' in moved_node && moved_node.type === 'country') {
-                return position === 'after' && target_node.parent.name === 'Location Subset';
+            // Categories may be reordered or swapped between similar subsets
+            if (['categorical', 'categorical_grouped'].indexOf(moved_node.type) !== -1) {
+                return position === 'after' && target_node.parent.name === moved_node.parent.name;
             }
             // Rules may be moved next to another rule or grouping
-            if (position === 'after' && (target_node.name.indexOf('Subset') !== -1 || target_node.name.indexOf('Group') !== -1)) {
+            if (position === 'after' && (target_node.type === 'rule' || target_node.type === 'group')) {
                 return true;
             }
             // Rules may be moved inside a group or root
             // noinspection RedundantIfStatementJS
-            if ((position === 'inside') && (target_node.name.indexOf('Subsets') !== -1 || target_node.name.indexOf('Group') !== -1)) {
+            if ((position === 'inside') && (target_node.name.indexOf('Subsets') !== -1 || target_node.type === 'group')) {
                 return true;
             }
             return false;
@@ -576,7 +566,8 @@ export function setupQueryTree() {
             if ($.isEmptyObject(tempQuery)) {
                 alert("\"" + event.node.name + "\" is too specific to parse into a query.");
             } else {
-                subsetPreferences['custom']['text'] = JSON.stringify(node.custom, null, '\t');
+                subsetPreferences['custom'] = subsetPreferences['custom'] || {};
+                subsetPreferences['custom']['text'] = JSON.stringify(tempQuery, null, '\t');
                 subsetRedraw['custom'] = true;
                 setSelectedCanvas("Custom");
             }
@@ -659,7 +650,7 @@ window.callbackDelete = function (id) {
     // noinspection JSJQueryEfficiency
     let subsetTree = $('#subsetTree');
     let node = subsetTree.tree('getNodeById', id);
-    if (node.name.indexOf('Query') !== -1) {
+    if (node.type === 'query') {
         if (!confirm("You are deleting a query. This will return your subsetting to an earlier state.")) {
             return;
         }
@@ -678,12 +669,12 @@ window.callbackDelete = function (id) {
         qtree.tree('loadData', abstractQuery);
         qtree.tree('setState', state);
 
-        if (node.name.indexOf('Query') !== -1) {
+        if (node.type === 'query') {
 
             // Don't use constraints outside of submitted queries
             stagedSubsetData = [];
             for (let child of abstractQuery) {
-                if (child.name.indexOf("Query") !== -1) {
+                if (child.type === 'query') {
                     stagedSubsetData.push(child)
                 }
             }
@@ -786,12 +777,12 @@ window.addGroup = function (query = false) {
         let child = abstractQuery[child_id];
 
         // Don't put groups inside groups! Only a drag can do that.
-        if (!query && child.name.indexOf('Subset') !== -1) {
+        if (!query && child.type === 'rule') {
             movedChildren.push(child);
             removeIds.push(child_id);
 
             // A query grouping can, however put groups inside of groups.
-        } else if (query && child.name.indexOf('Query') === -1) {
+        } else if (query && child.type !== 'query') {
             movedChildren.push(child);
             removeIds.push(child_id);
         }
@@ -842,31 +833,28 @@ window.addGroup = function (query = false) {
 };
 
 export function addRule() {
-    // Index zero is root node. Add subset pref to nodes
-    if (selectedCanvas !== "") {
-        let preferences = getSubsetPreferences();
+    let preferences = getSubsetPreferences();
 
-        // Don't add an empty preference
-        if (Object.keys(preferences).length === 0) {
-            alert("No options have been selected. Please make a selection.");
-            return;
-        }
-
-        common.setPanelOpen('right');
-
-        // Don't show the boolean operator on the first element
-        if (abstractQuery.length === 0) {
-            preferences['show_op'] = false;
-        }
-
-        abstractQuery.push(preferences);
-
-        let qtree = $('#subsetTree');
-        let state = qtree.tree('getState');
-        qtree.tree('loadData', abstractQuery);
-        qtree.tree('setState', state);
-        qtree.tree('closeNode', qtree.tree('getNodeById', preferences['id']), false);
+    // Don't add an empty preference
+    if (Object.keys(preferences).length === 0) {
+        alert("No options have been selected. Please make a selection.");
+        return;
     }
+
+    common.setPanelOpen('right');
+
+    // Don't show the boolean operator on the first element
+    if (abstractQuery.length === 0) {
+        preferences['show_op'] = false;
+    }
+
+    abstractQuery.push(preferences);
+
+    let qtree = $('#subsetTree');
+    let state = qtree.tree('getState');
+    qtree.tree('loadData', abstractQuery);
+    qtree.tree('setState', state);
+    qtree.tree('closeNode', qtree.tree('getNodeById', preferences['id']), false);
 }
 
 /**
@@ -880,7 +868,7 @@ function getSubsetPreferences() {
 
     let subsetType = metadata['type'];
 
-    if (subsetType === 'actor') {
+    if (subsetType === 'dyad') {
         // Make parent node
         let subset = {
             id: String(nodeId++),
@@ -892,7 +880,7 @@ function getSubsetPreferences() {
         };
 
         // ignore edges from shared dyad menus in other datasets
-        let filteredEdges = preferences[selectedSubsetName]['edges']
+        let filteredEdges = preferences['edges']
             .filter(edge => edge.source.actor in metadata['tabs'] && edge.target.actor in metadata['tabs']);
 
         for (let linkId in filteredEdges) {
@@ -1147,7 +1135,7 @@ export function submitQuery(datasetChanged = false) {
     // Only construct and submit the query if new subsets have been added since last query
     let newSubsets = false;
     for (let idx in abstractQuery) {
-        if (abstractQuery[idx].name.indexOf('Query') === -1) {
+        if (abstractQuery[idx].type !== 'query') {
             newSubsets = true;
             break
         }
@@ -1187,7 +1175,7 @@ export function submitQuery(datasetChanged = false) {
 
                 if (node) {
                     subsetTree.tree("addToSelection", node);
-                    if (node.name.indexOf('Query') === -1) node.editable = false;
+                    if (node.type !== 'query') node.editable = false;
                 }
             }
         );
@@ -1332,11 +1320,11 @@ function processRule(rule) {
                 column = child.column;
                 if ('fromDate' in child) {
                     child.fromDate = new Date(child.fromDate);
-                    rule_query_inner['$gte'] = child.fromDate.getDate() + "-" + (child.fromDate.getMonth() + 1) + "-" + child.fromDate.getFullYear();
+                    rule_query_inner['$gte'] = {'$date': {'$numberLong': String(child.fromDate.getTime())}}
                 }
                 if ('toDate' in child) {
                     child.toDate = new Date(child.toDate);
-                    rule_query_inner['$lte'] = child.toDate.getDate() + "-" + (child.toDate.getMonth() + 1) + "-" + child.toDate.getFullYear();
+                    rule_query_inner['$lte'] = {'$date': {'$numberLong': String(child.toDate.getTime())}}
                 }
             }
             rule_query[column] = rule_query_inner;
@@ -1345,13 +1333,13 @@ function processRule(rule) {
                 if ('fromDate' in child) {
                     child.fromDate = new Date(child.fromDate);
                     rule_query[child.column] = {
-                        '$gte': child.fromDate.getDate() + "-" + (child.fromDate.getMonth() + 1) + "-" + child.fromDate.getFullYear()
+                        '$gte': {'$date': {'$numberLong': String(child.fromDate.getTime())}}
                     };
                 }
                 if ('toDate' in child) {
                     child.toDate = new Date(child.toDate);
                     rule_query[child.column] = {
-                        '$lte': child.toDate.getDate() + "-" + (child.toDate.getMonth() + 1) + "-" + child.toDate.getFullYear()
+                        '$lte': {'$date': {'$numberLong': String(child.toDate.getTime())}}
                     };
                 }
             }
@@ -1394,9 +1382,10 @@ function processRule(rule) {
         let rule_query_inner = [];
 
         for (let child of rule.children) {
+            console.log(child);
             if (child.name === 'Latitude') {
                 let latitude = {
-                    [rule.column]: {
+                    [child.column]: {
                         '$lte': parseFloat(child.children[0].name),
                         '$gte': parseFloat(child.children[1].name)
                     }
@@ -1409,7 +1398,7 @@ function processRule(rule) {
 
             } else if (child.name === 'Longitude') {
                 let longitude = {
-                    [rule.column]: {
+                    [child.column]: {
                         '$lte': parseFloat(child.children[0].name),
                         '$gte': parseFloat(child.children[1].name)
                     }

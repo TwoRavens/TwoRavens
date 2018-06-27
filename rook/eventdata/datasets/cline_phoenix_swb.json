@@ -73,8 +73,10 @@
     "Coordinates": {
       "type": "coordinates",
       "format": "signed degrees",
-      "latitude": "lat",
-      "longitude": "lon"
+      "columns": [
+        "lat",
+        "lon"
+      ]
     }
   },
   "columns": [

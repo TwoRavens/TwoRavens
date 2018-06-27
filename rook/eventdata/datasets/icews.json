@@ -60,8 +60,10 @@
     "Coordinates": {
       "type": "coordinates",
       "format": "signed degrees",
-      "latitude": "Latitude",
-      "longitude": "Longitude"
+      "columns": [
+        "Latitude",
+        "Longitude"
+      ]
     }
   },
   "columns": [
