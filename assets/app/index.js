@@ -261,9 +261,10 @@ class Body {
     }
 
     view(vnode) {
-        let vnodeVals = Object.values(vnode["attrs"]);
+        let vnodeVals = Object.values(vnode.attrs);
         let mode = vnodeVals[0];
-        let vars = vnodeVals.slice(1);
+        let variate = vnodeVals[1];
+        let vars = vnodeVals.slice(2);
         let expnodes = [];
         let model_mode = !mode;
         let explore_mode = mode === 'explore';
@@ -278,52 +279,67 @@ class Body {
 
         let overflow = explore_mode ? 'auto' : 'hidden';
         let style = `position: absolute; left: ${app.panelWidth.left}; top: 0; margin-top: 10px`;
-        for (var i=0; i<vars.length; i++) {
-            expnodes[i]=app.findNode(vars[i]);
-        }
 
+        vars.forEach(x => {
+            let node = app.findNode(x);
+            node && expnodes.push(node);
+        });
         let exploreVars = (() => {
             if (!expnodes[0] && !expnodes[1]) {
                 return;
             }
 
-            let thumb = (idx, id, title) =>
-                m("figure", {style: 'display: inline-block'},
-                  m(`img#${id}_img[alt=${id}][height=140px][width=260px][src=/static/images/thumb${idx}.png]`,
-                    {onclick: _ => exp.plot(expnodes, [id]),
-                     style: {border: "1px solid #ddd", "border-radius": "3px", padding: "5px", margin: "3%", cursor: "pointer"}}),
-                  m("figcaption", {style: {"text-align": "center"}}, title));
+            let plotMap = {
+                scatter: "Scatter Plot",
+                tableheat: "Heatmap",
+                line: "Line Chart",
+                stackedbar: "Stacked Bar",
+                box: "Box Plot",
+                groupedbar: "Grouped Bar",
+                strip: "Strip Plot",
+                aggbar: "Aggregate Bar",
+                binnedscatter: "Binned Scatter",
+                step: "Step Chart",
+                area: "Area Chart",
+                binnedtableheat: "Binned Heatmap",
+                averagediff: "Diff. from Avg.",
+                scattermeansd: "Scatter with Overlays",
+                scattermatrix: "Scatter Matrix",
+                simplebar: "Simple Bar Uni",
+                histogram: "Histogram Uni",
+                areauni: "Area Chart Uni",
+                histogrammean: "Histogram with Mean Uni",
+                trellishist: "Histogram Trellis",
+                interactivebarmean: "Interactive Bar with Mean",
+                dot: "Simple Dot Plot",
+                horizon: "Horizon Plot",
+                binnedcrossfilter: "Binned Cross Filter",
+                scattertri: "Scatterplot with Groups",
+                groupedbartri: "Grouped Bar with Three",
+                bubbletri: "Bubble Plot with Groups"
+            };
+            let schemas = {
+                univariate: 'areauni dot histogram histogrammean simplebar',
+                bivariate: 'aggbar area averagediff binnedscatter binnedtableheat box2d'
+                    + 'groupedbar horizon interactivebarmean line scatter scattermatrix scattermeansd stackedbar step strip tableheat trellishist',
+                trivariate: 'bubbletri groupedbartri scattertri',
+                multi: 'binnedscrossfilter scattermatrix'
+            };
+            let filtered = schemas[variate];
+            if (variate === 'bivariate' || variate === 'trivariate') {
+                filtered = `${filtered} ${schemas.multi}`;
+            }
+
             let plot = expnodes[0] && expnodes[0].plottype === 'continuous' ? plots.density : plots.bars;
+
             return m('', [
-                m('', {style: 'margin-bottom: 1em; max-width: 1000px; overflow: scroll; white-space: nowrap'}, [
-                    thumb(1, 'scatter', "Scatter Plot"),
-                    thumb(2, 'tableheat', "Heatmap"),
-                    thumb(3, 'line', "Line Chart"),
-                    thumb(4, 'stackedbar', "Stacked Bar"),
-                    thumb(5, 'box', "Box Plot"),
-                    thumb(6, 'groupedbar', "Grouped Bar"),
-                    thumb(7, 'strip', "Strip Plot"),
-                    thumb(8, 'aggbar', "Aggregate Bar"),
-                    thumb(9, 'binnedscatter', "Binned Scatter"),
-                    thumb(10, 'step', "Step Chart"),
-                    thumb(11, 'area', "Area Chart"),
-                    thumb(12, 'binnedtableheat', "Binned Heatmap"),
-                    thumb(13, 'averagediff', "Diff. from Avg."),
-                    thumb(14, 'scattermeansd', "Scatter with Overlays"),
-                    thumb(15, 'scattermatrix', "Scatter Matrix"),
-                    thumb(16, 'simplebar', "Simple Bar Uni"),
-                    thumb(17, 'histogram', "Histogram Uni"),
-                    thumb(18, 'areauni', "Area Chart Uni"),
-                    thumb(19, 'histogrammean', "Histogram with Mean Uni"),
-                    thumb(20, 'trellishist', "Histogram Trellis"),
-                    thumb(21, 'interactivebarmean', "Interactive Bar with Mean"),
-                    thumb(22, 'dot', "Simple Dot Plot"),
-                    thumb(23, 'horizon', "Horizon Plot"),
-                    thumb(24, 'binnedcrossfilter', "Binned Cross Filter"),
-                    thumb(25, 'scattertri', "Scatterplot with Groups"),
-                    thumb(26, 'groupedbartri', "Grouped Bar with Three"),
-                    thumb(27, 'bubbletri', "Bubble Plot with Groups")
-                ]),
+                m('', {style: 'margin-bottom: 1em; max-width: 1000px; overflow: scroll; white-space: nowrap'}, filtered.split(' ').map(x => {
+                    return m("figure", {style: 'display: inline-block'},
+                      m(`img#${x}_img[alt=${x}][height=140px][width=260px][src=/static/images/${x}.png]`,
+                        {onclick: _ => exp.plot(expnodes, [x]),
+                         style: {border: "1px solid #ddd", "border-radius": "3px", padding: "5px", margin: "3%", cursor: "pointer"}}),
+                             m("figcaption", {style: {"text-align": "center"}}, plotMap[x]));
+                })),
                 m('#plot', {style: 'display: block', oncreate: _ => expnodes.length > 1 ? exp.plot(expnodes) : plot(expnodes[0], 'explore', true)})
             ]);
         })();
@@ -578,6 +594,13 @@ class Body {
     }
 }
 
+let exploreVars = {
+    render(vnode) {
+        let {variate, var1, var2, var3} = vnode.attrs;
+        return m(Body, {mode: 'explore', variate, var1, var2, var3});
+    }
+};
+
 m.route(document.body, '/model', {
     '/model': {render: () => m(Body)},
     '/explore': {
@@ -588,22 +611,10 @@ m.route(document.body, '/model', {
         },
         render: () => m(Body, {mode: 'explore'})
     },
-    '/explore/univariate/:var1': {
-        render: vnode => m(Body, {mode: 'explore', var1: vnode.attrs.var1})
-    },
-    '/explore/bivariate/:var1/:var2': {
-        render: vnode => {
-            let {var1, var2} = vnode.attrs;
-            return m(Body, {mode: 'explore', var1, var2});
-        }
-    },
-    '/explore/trivariate/:var1/:var2/:var3': {
-        render: vnode => {
-            let {var1, var2,var3} = vnode.attrs;
-            return m(Body, {mode: 'explore', var1, var2, var3});
-        }
-    },
-    '/results': {
+    '/explore/:variate/:var1': exploreVars,
+    '/explore/:variate/:var1/:var2': exploreVars,
+    '/explore/:variate/:var1/:var2/:var3': exploreVars,
+    /*'/results': {
         onmatch() {
             app.set_mode('results');
             state.get_pipelines();
@@ -612,6 +623,6 @@ m.route(document.body, '/model', {
         render() {
             return m(Body, {mode: 'results'});
         }
-    },
+    },*/
     '/data': Peek
 });
