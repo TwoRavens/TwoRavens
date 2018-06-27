@@ -5,7 +5,7 @@ export let selVarColor = '#fa8072'; // d3.rgb("salmon");
 
 // function to use d3 to graph density plots with preprocessed data
 export function density(node, div, priv) {
-    div = {setxLeft: '#setxLeft', setxLeftTopRight: '#setxLeftTopRight', Summary: '#tabSummary'}[div];
+    div = {setxLeft: '#setxLeft', setxLeftTopRight: '#setxLeftTopRight', Summary: '#tabSummary', explore: '#plot'}[div];
 
     if (!div) return alert("Error: incorrect div selected for plots: " + div);
 
@@ -29,7 +29,7 @@ export function density(node, div, priv) {
     };
 
     // Need to fix automatic width and height settings for leftpanel (#tabSubset, #tabSummary)
-    if (div == "#tabSummary") {
+    if (div == "#tabSummary" || div === '#plot') {
         [width, height] = [242,150]; //[242, 250];             // These should not be hard coded
         // width = 0.7 * (width - margin.left - margin.right),
         // height = 0.3 * (height - margin.top - margin.bottom);
@@ -314,16 +314,15 @@ export function density(node, div, priv) {
         handle2.attr("points", _ => (xpos - s) + "," + s + " " + (xpos + s) + "," + s + " " + xpos + "," + (-s * 1.3));
         plotsvg.select("text#range2")
         .text(_ => {
-              let returnval = "x1: ".concat((invx(xpos)).toPrecision(4));
-              let x1val = invx(xpos).toPrecision(4);
-              let mycell = node.name+"To"; // hardcoded here
-              if(document.getElementById(mycell)) {
+            let returnval = "x1: ".concat((invx(xpos)).toPrecision(4));
+            let x1val = invx(xpos).toPrecision(4);
+            let mycell = node.name+"To"; // hardcoded here
+            if(document.getElementById(mycell)) {
                 document.getElementById(mycell).innerText=x1val;
-              }
-              return returnval});
+            }
+            return returnval;
+        });
         node.setxvals[1] = (invx(xpos)).toPrecision(4);
-        
-        
     }
 }
 
@@ -392,14 +391,16 @@ export function bars(node, div, priv) {
 
     let mydiv;
     if (div == "setxLeft") mydiv = "#setxLeft";
+    else if (div == 'explore') mydiv = '#plot';
     else if (div == "Summary") mydiv = "#tabSummary";
     else if (div == "setxLeftTopRight") mydiv = "#setxLeftTopRight";
-    else
+    else {
         return alert("Error: incorrect div selected for plots");
+    }
 
-    var tempWidth = d3.select(mydiv).style("width")
+    var tempWidth = d3.select(mydiv).style("width");
     var width = tempWidth.substring(0, (tempWidth.length - 2));
-    var tempHeight = d3.select(mydiv).style("height")
+    var tempHeight = d3.select(mydiv).style("height");
     var height = tempHeight.substring(0, (tempHeight.length - 2));
 
     var margin = {
@@ -411,7 +412,7 @@ export function bars(node, div, priv) {
     let tw = document.getElementById('main').offsetWidth;
 
     // Need to fix automatic width and height settings for leftpanel (#tabSubset, #tabSummary)
-    if (mydiv == "#tabSummary") {
+    if (mydiv == "#tabSummary" || mydiv === '#plot') {
         [width, height] = [242,150]; //[242, 250];       // These should not be hard coded
         // width = 0.7 * (width - margin.left - margin.right);
         // height = 0.3 * (height - margin.top - margin.bottom);
@@ -472,7 +473,6 @@ export function bars(node, div, priv) {
         var plotsvg = d3.select(mydiv)
             .selectAll("svg")
             .remove();
-
         var plotsvg = d3.select(mydiv)
             .append("svg")
             .attr("id", () => node.name.toString().concat(mydiv.substr(1)))
@@ -515,11 +515,11 @@ export function bars(node, div, priv) {
                 .append("line")
                 .style("stroke", "black")
                 .attr("x1", function(d, i) {
-                    return x(xVals[i] - 0.5 + barPadding) + rectWidth / 2
+                    return x(xVals[i] - 0.5 + barPadding) + rectWidth / 2;
                 })
         	.attr("y1", d => y(maxY - d))
                 .attr("x2", function(d, i) {
-                    return x(xVals[i] - 0.5 + barPadding) + rectWidth / 2
+                    return x(xVals[i] - 0.5 + barPadding) + rectWidth / 2;
                 })
                 .attr("y2", d => {
                     let y2 = y(maxY - d + ciSize);
@@ -536,9 +536,9 @@ export function bars(node, div, priv) {
                 .style("stroke", "black")
                 .attr("x1", function(d, i) {
                     if (yVals.length > 20) {
-                        return x(xVals[i] - 0.5 + barPadding) //make tick bigger to increase visibility
+                        return x(xVals[i] - 0.5 + barPadding); //make tick bigger to increase visibility
                     } else {
-                        return x(xVals[i] - 0.5 + barPadding) + 0.4 * rectWidth
+                        return x(xVals[i] - 0.5 + barPadding) + 0.4 * rectWidth;
                     }
                 })
                 .attr("y1", function(d) {
@@ -546,9 +546,9 @@ export function bars(node, div, priv) {
                 })
                 .attr("x2", function(d, i) {
                     if (yVals.length > 20) {
-                        return x(xVals[i] - 0.5 + barPadding) + rectWidth //make tick bigger to increase visibility
+                        return x(xVals[i] - 0.5 + barPadding) + rectWidth; //make tick bigger to increase visibility
                     } else {
-                        return x(xVals[i] - 0.5 + barPadding) + 0.6 * rectWidth
+                        return x(xVals[i] - 0.5 + barPadding) + 0.6 * rectWidth;
                     }
                 })
                 .attr("y2", d => y(maxY - d));
@@ -562,17 +562,17 @@ export function bars(node, div, priv) {
                 .style("stroke", "black")
                 .attr("x1", function(d, i) {
                     if (yVals.length > 20) {
-                        return x(xVals[i] - 0.5 + barPadding)
+                        return x(xVals[i] - 0.5 + barPadding);
                     } else {
-                        return x(xVals[i] - 0.5 + barPadding) + 0.4 * rectWidth
+                        return x(xVals[i] - 0.5 + barPadding) + 0.4 * rectWidth;
                     }
                 })
                 .attr("y1", d => y(maxY - d))
                 .attr("x2", function(d, i) {
                     if (yVals.length > 20) {
-                        return x(xVals[i] - 0.5 + barPadding) + rectWidth
+                        return x(xVals[i] - 0.5 + barPadding) + rectWidth;
                     } else {
-                        return x(xVals[i] - 0.5 + barPadding) + 0.6 * rectWidth
+                        return x(xVals[i] - 0.5 + barPadding) + 0.6 * rectWidth;
                     }
                 })
                 .attr("y2", d => y(maxY - d));
@@ -615,7 +615,7 @@ export function bars(node, div, priv) {
                         return x(maxX + 0.5 - barPadding);
                     }
                 })
-                .attr("y2", y(maxY) - node.threshold)
+                .attr("y2", y(maxY) - node.threshold);
         }
     }
 
@@ -906,12 +906,8 @@ export function barsSubset(node) {
         xi = xi + 1;
     }
     if (node.nature === "nominal") { // if nominal, orders bars left to right, highest frequency to lowest
-        yValKey.sort(function(a, b) {
-            return b.y - a.y
-        }); // array of objects, each object has y, the same as yVals, and x, the category
-        yVals.sort(function(a, b) {
-            return b - a
-        }); // array of y values, the height of the bars
+        yValKey.sort((a, b) => b.y - a.y); // array of objects, each object has y, the same as yVals, and x, the category
+        yVals.sort((a, b) => b - a); // array of y values, the height of the bars
     }
 
     plotXaxis = false;
@@ -1042,7 +1038,7 @@ export function barsSubset(node) {
                         var selecteds = new Array;
                         a.forEach(function(val) {
                             selecteds.push(yValKey[val].x);
-                        })
+                        });
                         return ("Selected: " + selecteds);
                     }
                 });
@@ -1091,7 +1087,6 @@ export function barsSubset(node) {
             return "Selected: " + selecteds;
         });
 }
-
 
 export function densityNode(node, obj, radius) {
     var myname = node.name.toString().concat("nodeplot");
@@ -1230,5 +1225,161 @@ export function barsNode(node, obj, radius) {
         .attr("fill", "#1f77b4");
 }
 
+export function scatter(x_Axis, y_Axis, x_Axis_name, y_Axis_name, id='#setxLeftPlot') {
+    d3.select(id).html("");
+    d3.select(id).select("svg").remove();
+
+    x_Axis = x_Axis.map(Number);
+    y_Axis = y_Axis.map(Number);
+
+    console.log(x_Axis);
+    console.log(y_Axis);
+
+    let mainwidth = elem('#main').clientWidth;
+    let mainheight = elem('#main').clientHeight;
+
+    // scatter plot
+    let data_plot = [];
+    var nanCount = 0;
+    for (var i = 0; i < x_Axis.length; i++) {
+        if (isNaN(x_Axis[i]) || isNaN(y_Axis[i])) {
+            nanCount++;
+        } else {
+            var newNumber1 = x_Axis[i];
+            var newNumber2 = y_Axis[i];
+            data_plot.push({xaxis: newNumber1, yaxis: newNumber2, score: Math.random() * 100});
+        }
+    }
+
+    var margin = {top: 35, right: 35, bottom: 35, left: 35};
+    var width = mainwidth*.25- margin.left - margin.right;
+    var height = mainwidth*.25 - margin.top - margin.bottom;
+    var padding = 100;
+
+    var min_x = d3.min(data_plot, (d, i) => data_plot[i].xaxis);
+    var max_x = d3.max(data_plot, (d, i) => data_plot[i].xaxis);
+    var avg_x = (max_x - min_x) / 10;
+    var min_y = d3.min(data_plot, (d, i) => data_plot[i].yaxis);
+    var max_y = d3.max(data_plot, (d, i) => data_plot[i].yaxis);
+    var avg_y = (max_y - min_y) / 10;
+
+    var xScale = d3.scale.linear()
+        .domain([min_x - avg_x, max_x + avg_x])
+        .range([0, width]);
+    var yScale = d3.scale.linear()
+        .domain([min_y - avg_y, max_y + avg_y])
+        .range([height, 0]);
+    var xAxis = d3.svg.axis()
+        .scale(xScale)
+        .orient('bottom')
+        .tickSize(-height);
+    var yAxis = d3.svg.axis()
+        .scale(yScale)
+        .orient('left')
+        .ticks(5)
+        .tickSize(-width);
+    var zoom = d3.behavior.zoom()
+        .x(xScale)
+        .y(yScale)
+        .scaleExtent([1, 10])
+        .on("zoom", zoomed);
+
+    var chart_scatter = d3.select(id)
+        .append('svg:svg')
+        .attr('width', width + margin.right + margin.left)
+        .attr('height', height + margin.top + margin.bottom);
+    // .call(zoom); dropping this for now, until the line zooms properly
+    var main1 = chart_scatter.append('g')
+        .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')')
+        .attr('width', width+ margin.right + margin.left)
+        .attr('height', height + margin.top + margin.bottom)
+        .attr('class', 'main');
+    let gX = main1.append('g')
+        .attr('transform', 'translate(0,' + height + ')')
+        .attr('class', 'x axis')
+        .call(xAxis);
+    let gY = main1.append('g')
+        .attr('transform', 'translate(0,0)')
+        .attr('class', 'y axis')
+        .call(yAxis);
+    var clip = main1.append("defs").append("svg:clipPath")
+        .attr("id", "clip")
+        .append("svg:rect")
+        .attr("id", "clip-rect")
+        .attr("x", "0")
+        .attr("y", "0")
+        .attr('width', width)
+        .attr('height', height);
+
+    main1.append("g").attr("clip-path", "url(#clip)")
+        .selectAll("circle")
+        .data(data_plot)
+        .enter()
+        .append("circle")
+        .attr("cx", (d, i) => xScale(data_plot[i].xaxis))
+        .attr("cy", (d, i) => yScale(data_plot[i].yaxis))
+        .attr("r", 2)
+        .style("fill", "#B71C1C");
+    chart_scatter.append("text")
+        .attr("text-anchor", "middle")  // this makes it easy to centre the text as the transform is applied to the anchor
+        .attr("transform", "translate(" + padding / 5 + "," + (height / 2) + ")rotate(-90)")  // text is drawn off the screen top left, move down and out and rotate
+        .text(y_Axis_name)
+        .style("fill", "#424242")
+        .style("text-indent","20px")
+        .style("font-size","12px")
+        .style("font-weight","bold");
+    chart_scatter.append("text")
+        .attr("text-anchor", "middle")  // this makes it easy to centre the text as the transform is applied to the anchor
+        .attr("transform", "translate(" + (width / 2) + "," + (height + (padding / 2)) + ")")  // centre below axis
+        .text(x_Axis_name)
+        .style("fill", "#424242")
+        .style("text-indent","20px")
+        .style("font-size","12px")
+        .style("font-weight","bold");
+    main1.append("line")
+        .attr("x1", xScale(min_x))
+        .attr("y1", yScale(min_x))
+        .attr("x2", xScale(max_x))
+        .attr("y2", yScale(max_x))
+        .attr("stroke-width", 2)
+        .attr("stroke", "black");
+
+    function zoomed() {
+        var panX = d3.event.translate[0];
+        var panY = d3.event.translate[1];
+        var scale = d3.event.scale;
+
+        panX = panX > 10 ? 10 : panX;
+        var maxX = -(scale - 1) * width - 10;
+        panX = panX < maxX ? maxX : panX;
+
+        panY = panY > 10 ? 10 : panY;
+        var maxY = -(scale - 1) * height - 10;
+        panY = panY < maxY ? maxY : panY;
+
+        zoom.translate([panX, panY]);
+
+        main1.select(".x.axis").call(xAxis);
+        main1.select(".y.axis").call(yAxis);
+        main1.selectAll("circle")
+            .attr("cx", (d, i) => {
+                console.log("circle x ", xScale(5));
+                return xScale(data_plot[i].xaxis);
+            })
+            .attr("cy", (d, i) => yScale(data_plot[i].yaxis))
+            .attr("r", 2.5)
+            .style("fill", "#B71C1C");
+
+        // below doesn't work, so I'm just dropping the zoom
+        main1.select("line")
+            .attr("x1", (d, i) => xScale(min_x))
+            .attr("y1", (d, i) => xScale(min_x))
+            .attr("x2", (d, i) => xScale(max_x))
+            .attr("y2", (d, i) => yScale(max_x))
+            .attr("stroke-width", 2)
+            .attr("stroke", "black");
+    }
+    //  d3.select("#NAcount").text("There are " + nanCount + " number of NA values in the relation.");
+}
 
 
