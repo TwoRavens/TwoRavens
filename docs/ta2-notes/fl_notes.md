@@ -30,7 +30,8 @@ For each command below, **FIRST**:
 1. `cd` into the top-level `TwoRavens` directory
 1. `workon 2ravens`
 
-Commands:
+### Commands:
+
 1. Redis
     ```
     docker run --rm -p 6379:6379 -v /ravens_volume:/ravens_volume redis:4
