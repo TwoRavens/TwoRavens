@@ -47,14 +47,14 @@ def api_add_query(request):
     if not frm.is_valid():
         user_msg = dict(success=False,
                         message='Invalid input',
-                        errors=frm.errors)
+                        errors=get_json_error(frm))
         return JsonResponse(user_msg)
 
     # print('frm.cleaned_data', frm.cleaned_data)
     success, addquery_obj_err = EventJobUtil.add_query_db(frm.cleaned_data)
 
     if not success:
-        return JsonResponse(addquery_obj_err)
+        return JsonResponse(get_json_error(addquery_obj_err))
 
     return JsonResponse(addquery_obj_err)
 
@@ -66,7 +66,7 @@ def api_get_list(request):
     # print(jobs)
     if not success:
         usr_msg = dict(success=False,
-                       message=jobs)
+                       message=get_json_error(jobs))
         return JsonResponse(usr_msg)
 
     else:
@@ -88,7 +88,7 @@ def api_retrieve_object(request, job_id):
 
     if not success:
         usr_msg = dict(success=False,
-                       message=jobs.as_dict())
+                       message=get_json_error(jobs))
         return JsonResponse(usr_msg)
 
     else:
@@ -152,5 +152,5 @@ def api_search(request):
     else:
         user_msg = dict(success=False,
                         message='list not retrieved',
-                        error=get_list_obj)
+                        error=get_json_error(get_list_obj))
         return JsonResponse(user_msg)

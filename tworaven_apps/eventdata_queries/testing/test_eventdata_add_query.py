@@ -101,15 +101,13 @@ class EventDataQueryAddTest(TestCase):
 
         # convert to JSON
         #
-        for job in response_list:
-            # convert to JSON
-            #
-            obj = json.loads(job)['data']
-            # print('****json resp ****', json.loads(job)['data'])
-            self.assertEqual(obj[0]['id'], 2)
-            self.assertEqual(obj[1]['id'], 1)
-            self.assertEqual(obj[0]['name'], 'query2')
-            self.assertEqual(obj[1]['name'], 'query1')
+        json_resp = response_list.json()
+        obj = json_resp['data']
+        # print('****json resp ****', json.loads(job)['data'])
+        self.assertEqual(obj[0]['id'], 2)
+        self.assertEqual(obj[1]['id'], 1)
+        self.assertEqual(obj[0]['name'], 'query2')
+        self.assertEqual(obj[1]['name'], 'query1')
 
     def test_030_retrieve_object(self):
         """(30) Test retrieval of particular object"""
@@ -131,10 +129,11 @@ class EventDataQueryAddTest(TestCase):
         self.assertEqual(response_list.status_code, 200)
         # print("json res", response_list)
         # self.assertEqual(json.loads(response_list)['name'], 'query1')
-        for job in response_list:
-            obj = json.loads(job)['data']
+        json_resp = response_list.json()
 
-            self.assertEqual(obj['name'], 'query1')
+        obj = json_resp['data']
+
+        self.assertEqual(obj['name'], 'query1')
 
 
 
@@ -187,24 +186,17 @@ class EventDataQueryAddTest(TestCase):
         self.assertEqual(response_search3.status_code, 200)
         # print("json res", response_list)
         # self.assertEqual(json.loads(response_list)['name'], 'query1')
-        for job in response_search1:
-            # print("test 50 ", job)
-            obj = json.loads(job)
-            print("search 1 res*****", obj['data'])
-            self.assertEqual(obj['data'][0]['name'], 'query1')
-            self.assertEqual(obj['data'][0]['id'], 1)
+        json_resp1 = response_search1.json()
+        self.assertEqual(json_resp1['data'][0]['name'], 'query1')
+        self.assertEqual(json_resp1['data'][0]['id'], 1)
 
-        for job in response_search2:
-            obj = json.loads(job)
-            print("search 2 res", obj)
-            self.assertEqual(obj['data'][0]['name'], 'query2')
-            self.assertEqual(obj['data'][0]['id'], 2)
+        json_resp2 = response_search2.json()
+        self.assertEqual(json_resp2['data'][0]['name'], 'query2')
+        self.assertEqual(json_resp2['data'][0]['id'], 2)
 
-        for job in response_search3:
-            obj = json.loads(job)
-            print("search 3 res", obj)
-            self.assertEqual(obj['success'], False)
-            self.assertEqual(obj['message'], 'list not retrieved')
+        json_resp3 = response_search3.json()
+        self.assertEqual(json_resp3['success'], False)
+        self.assertEqual(json_resp3['message'], 'list not retrieved')
 
 
 
