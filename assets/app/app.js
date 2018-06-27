@@ -2472,10 +2472,10 @@ export async function estimate(btn) {
                         solutionId = res4.data.response.solutionId;
                         onPipelinePrime(res4.data, rookpipe);
 
-                        res5 = await makeRequest(D3M_SVC_URL + '/FitSolution', CreateFitDefinition(solutionId));
-                        requestId = res5.data.requestId;
-                        res6 = await makeRequest(D3M_SVC_URL + `/GetFitSolutionResults`, {requestId: requestId});
-                        fitDetailsUrl = res6.data.details_url;
+                        //res5 = await makeRequest(D3M_SVC_URL + '/FitSolution', CreateFitDefinition(solutionId));
+                        //requestId = res5.data.requestId;
+                        //res6 = await makeRequest(D3M_SVC_URL + `/GetFitSolutionResults`, {requestId: requestId});
+                        //fitDetailsUrl = res6.data.details_url;
                         
                         // Possibly this belongs elsewhere, like a callback function above.
                         //fitFinished = false;
