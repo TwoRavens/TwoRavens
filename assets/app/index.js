@@ -315,14 +315,15 @@ class Body {
                 horizon: "Horizon Plot",
                 binnedcrossfilter: "Binned Cross Filter",
                 scattertri: "Scatterplot with Groups",
-                groupedbartri: "Grouped Bar with Three",
+                groupedbartri: "Grouped Bar",
+                horizgroupbar: "Horizontal Grouped Bar",
                 bubbletri: "Bubble Plot with Groups"
             };
             let schemas = {
                 univariate: 'areauni dot histogram histogrammean simplebar',
                 bivariate: 'aggbar area averagediff binnedscatter binnedtableheat box'
                     + ' groupedbar horizon interactivebarmean line scatter scattermatrix scattermeansd stackedbar step strip tableheat trellishist',
-                trivariate: 'bubbletri groupedbartri scattertri',
+                trivariate: 'bubbletri groupedbartri horizgroupbar scattertri',
                 multi: 'binnedcrossfilter scattermatrix'
             };
             let filtered = schemas[variate];
