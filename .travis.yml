@@ -34,6 +34,11 @@ after_success:
     docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
     docker push tworavens/ravens-main:latest;
     fi
+  - if [ "$TRAVIS_BRANCH" == "develop" ]; then
+    docker build -t tworavens/ravens-main:develop .;
+    docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
+    docker push tworavens/ravens-main:develop;
+    fi
 
 # send report to coveralls
 after_success:
