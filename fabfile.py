@@ -114,19 +114,37 @@ def make_d3m_config():
 
 @task
 def load_d3m_config_from_env():
-    """Load docker config file from path specified in the environment variable D3M_CONFIG_FILEPATH. The information in this file becomes the default D3MConfiguration object. If D3M_CONFIG_FILEPATH doesn't exist, display error message and keep running."""
+    """6/27/2018 update
+    - Look for an environment variable named "D3MINPUTDIR"
+        - This is the data directory which should include a file named
+            "search_config.json"
+        - Load "search_config.json" as the D3M config
+    - If "D3MINPUTDIR" doesn't exist, display error message and keep running
+    """
     from django.core import management
-    from tworaven_apps.configurations.models_d3m import CONFIG_JSON_PATH
+    from tworaven_apps.configurations.models_d3m import \
+        (D3M_ENV_INPUT_DIR, D3M_SEARCH_CONFIG_NAME)
 
-    print('> Attempt to load D3M config from env variable: %s' % CONFIG_JSON_PATH)
-    config_file = os.environ.get(CONFIG_JSON_PATH, None)
-    if not config_file:
-        print('Environment variable %s not set.' % CONFIG_JSON_PATH)
+    print('-' * 40)
+    print('> Attempt to load D3M config based on env variable: "%s"' % \
+          D3M_ENV_INPUT_DIR)
+    print('-' * 40)
+
+    d3m_data_dir = os.environ.get(D3M_ENV_INPUT_DIR, None)
+    if not d3m_data_dir:
+        print('Environment variable "%s" not set.' % D3M_ENV_INPUT_DIR)
         return
 
-    config_file = config_file.strip()
+    d3m_data_dir = d3m_data_dir.strip()
+    if not os.path.isdir(d3m_data_dir):
+        print('This data directory doesn\'t exist (or is not reachable): %s' % \
+              d3m_data_dir)
+        return
+
+    config_file = os.path.join(d3m_data_dir, D3M_SEARCH_CONFIG_NAME)
     if not os.path.isfile(config_file):
-        print('This config file doesn\'t exist (or is not reachable): %s' % config_file)
+        print('This config file doesn\'t exist (or is not reachable): %s' % \
+              config_file)
         return
 
     try:
@@ -136,18 +154,18 @@ def load_d3m_config_from_env():
 
 
 @task
-def load_d3m_config(config_file):
-    """Load D3M config file, saving it as the default D3MConfiguration object.  Pass the config file path: fab load_d3m_config:(path to config file)"""
+def load_d3m_config(config_data_dir):
+    """Load D3M config file, saving it as the default D3MConfiguration object.  Pass the config file path: fab load_d3m_config:(path to data dir)"""
     from django.core import management
 
     try:
-        management.call_command('load_config', config_file)
+        management.call_command('load_config', config_data_dir)
         return True
     except management.base.CommandError as err_obj:
         print('> Failed to load D3M config.\n%s' % err_obj)
         return False
 
-#@task
+@task
 def run_featurelabs_choose_config(choice_num=''):
     """Deprecated. Pick a config from /ravens_volume and run FeatureLabs"""
     run_ta2_choose_config(choice_num, ta2_name='FeatureLabs')
@@ -159,26 +177,32 @@ def run_isi_choose_config(choice_num=''):
 
 def run_ta2_choose_config(choice_num='', ta2_name='ISI'):
     """Deprecated. Pick a config from /ravens_volume and run a TA2"""
-    ravens_dir = '/ravens_volume'
+    from os.path import join, isdir, isfile
+    from tworaven_apps.configurations.models_d3m import \
+        (D3M_SEARCH_CONFIG_NAME,)
+
+    ravens_dir = '/ravens_volume/test_data'
+    ravens_output_dir = '/ravens_volume/test_output'
 
     # pull config files from ravens volume
     config_choices = [x for x in os.listdir(ravens_dir)
-                      if x.startswith('config_') and \
-                         x.endswith('.json')]
+                      if isdir(join(ravens_dir, x)) and \
+                         isfile(join(ravens_dir, x, D3M_SEARCH_CONFIG_NAME))]
 
-    # pair each config name with a number:
-    # [(1, config_185_baseball.json), (2, config_196_autoMpg.json), etc]
+    # pair each data directory with a number:
+    # [(1, 185_baseball), (2, 196_autoMpg), etc]
     #
     choice_pairs = [(idx, x) for idx, x in enumerate(config_choices, 1)]
     if choice_num.isdigit():
         choice_num = int(choice_num)
         if choice_num in [x[0] for x in choice_pairs]:
-            config_path = os.path.join(ravens_dir, choice_pairs[choice_num-1][1])
+            data_dir_path = join(ravens_dir, choice_pairs[choice_num-1][1])
+            output_dir_path = join(ravens_output_dir, choice_pairs[choice_num-1][1])
             if ta2_name == 'ISI':
-                run_isi_ta2(config_path)
+                #run_isi_ta2(data_dir_path, output_dir_path)
                 return
             elif ta2_name == 'FeatureLabs':
-                run_featurelabs_ta2(config_path)
+                run_featurelabs_ta2(data_dir_path, output_dir_path)
                 return
             else:
                 print('\n--> Error: "%s" is not a ta2 choice\n' % ta2_name)
@@ -196,15 +220,24 @@ def run_ta2_choose_config(choice_num='', ta2_name='ISI'):
 
 
 @task
-def run_featurelabs_ta2():
-    """Need to add a path param...."""
-    #if not os.path.isfile(config_json_path):
-    #    print('Config file not found: %s' % config_json_path)
+def run_featurelabs_ta2(data_dir_path, output_dir_path):
+    """inputs: data directory path, output directory path"""
+    from tworaven_apps.configurations.models_d3m import \
+        (D3M_SEARCH_CONFIG_NAME,)
 
-    #print('-' * 40)
-    #print('Django: Loading D3M config...')
-    #print('-' * 40)
-    #load_d3m_config(config_json_path)
+    if not os.path.isdir(data_dir_path):
+        print('ERROR: Data directory not found: %s' % data_dir_path)
+        return
+
+    config_file = os.path.join(data_dir_path, D3M_SEARCH_CONFIG_NAME)
+    if not os.path.isfile(config_file):
+        print('ERROR: config file not found: %s' % config_file)
+        return
+
+    if not os.path.isdir(output_dir_path):
+        os.makedirs(output_dir_path)
+        print('output directory created: %s' % output_dir_path)
+
 
     print('-' * 40)
     print('Run Feature Labs')
@@ -212,28 +245,29 @@ def run_featurelabs_ta2():
 
     docker_cmd = ('docker run --rm -t'
                   ' --name ta2_server'
-                  ' -p50051:50051'
+                  ' -p45042:50051'
                   ' -e D3MTIMEOUT=60'
-                  ' -e D3MINPUTDIR=/input'
-                  ' -e D3MOUTPUTDIR=/output'
+                  ' -e D3MINPUTDIR={0}'
+                  ' -e D3MOUTPUTDIR={1}'
                   ' -e D3MRUN=ta2ta3'
-                  ' -v $(pwd)/data/datasets:/input'
-                  ' -v $(pwd)/data/output:/output'
-                  ' registry.datadrivendiscovery.org/jkanter/mit-fl-ta2:stable')
+                  ' -v {0}:/input'
+                  ' -v {1}:/output'
+                  ' registry.datadrivendiscovery.org/jkanter/mit-fl-ta2:stable'
+                  '').format(data_dir_path, output_dir_path)
 
     print('Running command: %s' % docker_cmd)
 
     local(docker_cmd)
 
-def run_isi_ta2(config_json_path):
-    """syntax: `fab run_isi_ta2:[config_json_path]`.` Also sets django D3M config"""
-    if not os.path.isfile(config_json_path):
-        print('Config file not found: %s' % config_json_path)
+def run_isi_ta2(data_dir_path):
+    """syntax: `fab run_isi_ta2:[data_dir_path]`.` Also sets django D3M config"""
+    if not os.path.isdir(data_dir_path):
+        print('data dir path not found: %s' % data_dir_path)
 
     print('-' * 40)
     print('Django: Loading D3M config...')
     print('-' * 40)
-    load_d3m_config(config_json_path)
+    load_d3m_config(data_dir_path)
 
     print('-' * 40)
     print('Run ISI')

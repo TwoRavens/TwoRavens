@@ -32,7 +32,7 @@ ENV DJANGO_SETTINGS_MODULE=tworavensproject.settings.dev_container2
 ENV R_DEV_SERVER_BASE=http://rook-service:8000/custom/
 
 # TA2_TEST_SERVER_URL should be overridden in docker-compose
-ENV TA2_TEST_SERVER_URL=localhost:50051
+ENV TA2_TEST_SERVER_URL=localhost:45042
 
 # -------------------------------------
 # Copy the repo over
@@ -68,7 +68,7 @@ RUN pip3 install --no-cache-dir -r requirements/prod.txt && \
 # -------------------------------------
 # Expose ports for the web and gRPC communication
 # -------------------------------------
-EXPOSE 50051
+EXPOSE 45042
 
 WORKDIR /var/webapps/TwoRavens/tworaven_apps/ta2_interfaces
 
@@ -89,7 +89,7 @@ CMD python test_server.py
 # -----------------
 # run app
 # -----------------
-# >docker run -p 50051:50051 ta2-test:v2
+# >docker run -p 45042:45042 ta2-test:v2
 #
 # -----------------
 # > log into running app

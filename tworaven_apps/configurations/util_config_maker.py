@@ -101,7 +101,7 @@ class TestConfigMaker:
         #
         d3m_output_base = abspath(\
                             join(_TEST_DATA_OUTPUT_DIR,
-                                 'd3m_output_%s' % self.config_name))
+                                 '%s' % self.config_name))
 
 
         #self.add_gitkeep(d3m_output_base)
