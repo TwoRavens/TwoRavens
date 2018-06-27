@@ -290,7 +290,7 @@ class Body {
             let thumb = (idx, id, title) =>
                 m("figure", {style: 'display: inline-block'},
                   m(`img#${id}_img[alt=${id}][height=140px][width=260px][src=/static/images/thumb${idx}.png]`,
-                    {onclick: _ => exp.plot(expnodes, [id]),
+                    {onclick: _ => exp.plot(expnodes, id),
                      style: {border: "1px solid #ddd", "border-radius": "3px", padding: "5px", margin: "3%", cursor: "pointer"}}),
                   m("figcaption", {style: {"text-align": "center"}}, title));
             let plot = expnodes[0] && expnodes[0].plottype === 'continuous' ? plots.density : plots.bars;
