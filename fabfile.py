@@ -245,7 +245,8 @@ def run_featurelabs_ta2(data_dir_path, output_dir_path):
 
     docker_cmd = ('docker run --rm -t'
                   ' --name ta2_server'
-                  ' -p45042:50051'
+                  ' -p 45042:45042'
+                  ' -e D3MPORT=45042'
                   ' -e D3MTIMEOUT=60'
                   ' -e D3MINPUTDIR={0}'
                   ' -e D3MOUTPUTDIR={1}'
