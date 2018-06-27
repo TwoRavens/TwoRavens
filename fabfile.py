@@ -238,6 +238,7 @@ def run_featurelabs_ta2(data_dir_path, output_dir_path):
         os.makedirs(output_dir_path)
         print('output directory created: %s' % output_dir_path)
 
+    load_d3m_config(data_dir_path)
 
     print('-' * 40)
     print('Run Feature Labs')
