@@ -37,6 +37,13 @@ Mac:
    npm install
    ```
 
+- 6/27/2018
+  - if you get a python error, that you should use a version lower than 3.6, try:
+    ```
+    npm config set python [path to python 2]
+    ```
+    - e.g.: `npm config set python /usr/bin/python`
+
 ## Install Python/Django
 
 Mac:
