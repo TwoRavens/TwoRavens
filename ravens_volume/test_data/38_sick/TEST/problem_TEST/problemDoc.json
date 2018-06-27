@@ -5,7 +5,7 @@
     "taskType": "classification",
     "taskSubType": "binary",
     "problemVersion": "1.0",
-    "problemSchemaVersion": "3.0"
+    "problemSchemaVersion": "3.1.1"
   },
   "inputs": {
     "data": [

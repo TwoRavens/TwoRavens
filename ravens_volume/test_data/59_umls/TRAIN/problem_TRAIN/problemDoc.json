@@ -3,7 +3,7 @@
     "problemID": "59_us_problem_TRAIN",
     "problemName": "NULL",
     "taskType": "linkPrediction",
-    "problemSchemaVersion": "3.0",
+    "problemSchemaVersion": "3.1.1",
     "problemVersion": "1.0"
   },
   "inputs": {

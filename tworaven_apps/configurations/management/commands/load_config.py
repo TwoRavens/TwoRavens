@@ -1,9 +1,10 @@
-from os.path import isfile, isdir
+from os.path import isfile, isdir, join
 import json
 from datetime import datetime
 from collections import OrderedDict
 from django.core.management.base import BaseCommand, CommandError
-from tworaven_apps.configurations.models_d3m import D3MConfiguration
+from tworaven_apps.configurations.models_d3m import \
+    (D3MConfiguration, D3M_SEARCH_CONFIG_NAME)
 
 class Command(BaseCommand):
     help = ('Load a D3M config file containing JSON to the database'
@@ -13,25 +14,32 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         """The first (and required) argument to this command is the
         file path to a JSON config file"""
-        parser.add_argument('config_file',
+        parser.add_argument('data_directory',
                             nargs='+',
                             type=str,
-                            help='Path to a config file in JSON format')
+                            help=('Path to a data directory containing'
+                                  ' a "search_config.json" file.'))
 
     def handle(self, *args, **options):
         """Load the config file"""
-        for config_file in options['config_file']:
+        for data_dir in options['data_directory']:
 
             # Is this a legit file path?
             #
-            if not isfile(config_file):
-                if isdir(config_file):
-                    raise CommandError(('Please specify a config file, NOT a'
-                                        ' directory:  "%s"') %\
-                                        config_file)
-                raise CommandError(('This config file was not found: "%s".'
+            if not isdir(data_dir):
+                if isfile(data_dir):
+                    raise CommandError(('Please specify a data directory, NOT a'
+                                        ' file:  "%s"') %\
+                                        data_dir)
+                raise CommandError(('This data directory was not found: "%s".'
                                     ' Please check that the path is correct.') %\
-                                    config_file)
+                                    data_dir)
+
+
+            config_file = join(data_dir, D3M_SEARCH_CONFIG_NAME)
+            if not isfile(config_file):
+                raise CommandError('The config file was NOT found:' % \
+                                   config_file)
 
             # Is the file readable?
             #

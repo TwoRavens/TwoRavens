@@ -183,8 +183,8 @@ SERVER_SCHEME = 'http'  # or https
 # D3M - TA2 settings
 # ---------------------------
 TA2_STATIC_TEST_MODE = strtobool(os.environ.get('TA2_STATIC_TEST_MODE', 'True'))   # True: canned responses
-TA2_TEST_SERVER_URL = os.environ.get('TA2_TEST_SERVER_URL', 'localhost:50051')
-TA2_GPRC_USER_AGENT = os.environ.get('TA2_GPRC_USER_AGENT', 'tworavens')
+TA2_TEST_SERVER_URL = os.environ.get('TA2_TEST_SERVER_URL', 'localhost:45042')
+TA3_GPRC_USER_AGENT = os.environ.get('TA3_GPRC_USER_AGENT', 'tworavens')
 
 TA2_GPRC_SHORT_TIMEOUT = 3 # seconds
 TA2_GPRC_LONG_TIMEOUT = 5 * 60 # 5 minutes

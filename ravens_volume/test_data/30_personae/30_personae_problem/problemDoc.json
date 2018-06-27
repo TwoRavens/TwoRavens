@@ -5,7 +5,7 @@
     "problemDescription": "The task is to classify the personality of the author of an input text",
     "taskType": "classification",
     "taskSubType": "binary",
-    "problemSchemaVersion": "3.0",
+    "problemSchemaVersion": "3.1.1",
     "problemVersion": "1.0"
   },
   "inputs": {

@@ -22,7 +22,7 @@ TA2_STATIC_TEST_MODE = strtobool(\
 TA2_TEST_SERVER_URL = os.environ.get('TA2_TEST_SERVER_URL',
                                      'localhost:45042') # 'localhost:45042'
 
-TA2_GPRC_USER_AGENT = os.environ.get('TA2_GPRC_USER_AGENT',
+TA3_GPRC_USER_AGENT = os.environ.get('TA3_GPRC_USER_AGENT',
                                      'tworavens')
 
 SESSION_COOKIE_NAME = 'tworavens_deploy'

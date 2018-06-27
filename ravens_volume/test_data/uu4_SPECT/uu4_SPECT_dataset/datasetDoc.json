@@ -7,7 +7,7 @@
     "citation": "\n@misc{Lichman:2013 ,\nauthor = \"M. Lichman\",\nyear = \"2013\",\ntitle = \"{UCI} Machine Learning Repository\",\nurl = \"http://archive.ics.uci.edu/ml\",\ninstitution = \"University of California, Irvine, School of Information and Computer Sciences\" }\n",
     "source": "OpenML",
     "sourceURI": "https://archive.ics.uci.edu/ml/datasets/spect+heart",
-    "datasetSchemaVersion": "3.0",
+    "datasetSchemaVersion": "3.1.1",
     "redacted": false,
     "datasetVersion": "1.0"
   },

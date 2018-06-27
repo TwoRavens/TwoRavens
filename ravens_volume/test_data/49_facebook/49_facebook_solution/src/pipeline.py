@@ -68,7 +68,8 @@ def convert_graphs():
 
 def run_graph_align():
 	os.chdir(here)
-	cmd = './NETAL G1.tab G2.tab -a 0 -b 0 -c 1 -i 10'
+	cmd = './NETAL G1.tab G2.tab -a 0.0001 -b 0 -c 1 -i 10'
+
 	spinner = Spinner()
 	spinner.start()
 	run_subProcess(cmd)
@@ -83,7 +84,7 @@ def string_to_int(x):
 
 
 def get_solution_map(solutionFile):
-	pdf = pd.read_csv(os.path.join(here, solutionFile), sep='->', header=None)
+	pdf = pd.read_csv(os.path.join(here, solutionFile), sep=r'->', header=None, engine='python')
 	pdf[0]=pdf[0].apply(str)
 	pdf[0]=pdf[0].apply(str.strip)
 	pdf[0]=pdf[0].apply(string_to_int)
@@ -94,80 +95,43 @@ def get_solution_map(solutionFile):
 
 	pdf0 = pdf[0].values.tolist()
 	pdf1 = pdf[1].values.tolist()
-	d = dict(zip(pdf0, pdf1))
-	solutionMap = dict(zip(pdf1, pdf0))
+
+	solutionMap = dict(zip(pdf0, pdf1))
 	return solutionMap
 
 
 if __name__ == '__main__':
-	try:
-		pd.read_csv(os.path.join(here, 'G1.tab'))
-	except:
-		convert_graphs()
-
-	solutionFile = '(G1.tab-G2.tab)-a0-b0-c1-i10.alignment'
-
+	convert_graphs()
 	run_graph_align()
-
+	solutionFile = '(G1.tab-G2.tab)-a0.0001-b0-c1-i10.alignment'
 	solutionMap = get_solution_map(solutionFile)
-	# print(solutionMap)
-
-
+	
 	testData = d3mds.get_test_data()
-
-	# convert nodeIDs in testData to nodeIndexs
-	G1 = nx.read_gml(os.path.join(graphpath, 'G1.gml'))
-	g1_nodeIndex_map = create_map_between_nodeID_nodeIindex(G1)
-	# print(g1_nodeIndex_map)
-
-	G2 = nx.read_gml(os.path.join(graphpath, 'G2.gml'))
-	g2_nodeIndex_map = create_map_between_nodeID_nodeIindex(G2)
-	# print(g2_nodeIndex_map)
-
 	matchCol = []
 	for row in testData.iterrows():
-		node1 = row[1]['G1.nodeID']
-		node1_index = g1_nodeIndex_map[node1]
-
-		node2 = row[1]['G2.nodeID']
-		node2_index = g2_nodeIndex_map[node2]
-
-		if node1_index not in solutionMap:
-			matchCol.append(0)
-		else:
-			node2_tilde = solutionMap[node1_index]
-
-			# print(node2_index, node2_tilde, type(node2_index), type(node2_tilde))
-			
-			if node2_index == node2_tilde:
+		g1_node = row[1]['G1.nodeID']
+		g2_query_node = row[1]['G2.nodeID']
+		if g1_node in solutionMap.keys():
+			# there is a potential for a match. Check if it actually matches
+			g2_node_predicted = solutionMap[g1_node]
+			if g2_query_node==g2_node_predicted:
 				matchCol.append(1)
 			else:
 				matchCol.append(0)
-	
-	testData['match'] = matchCol
+		else:
+			# there is not potential for a match as this node is not in the solutionMap
+			matchCol.append(0)
 
+	y_pred = matchCol
+	y_truth =  d3mds.get_test_targets().ravel()
+	accuracy = accuracy_score(y_truth, y_pred)
+	print('accuracy on test data', accuracy)
+
+	testData['match'] = matchCol
 	testData.pop('G1.nodeID')
 	testData.pop('G2.nodeID')
 	testData.to_csv('predictions.csv')
 
-	y_pred = matchCol
-
-	try:
-		y_truth =  d3mds.get_test_targets().ravel()
-		accuracy = accuracy_score(y_truth, y_pred)
-		print('accuracy on test data', accuracy)
-		df = pd.DataFrame(columns=['metric', 'value'])
-		df.loc[len(df)] = ['accuracy', accuracy]
-		df.to_csv(os.path.join(solpath, 'scores.csv'))
-	except:
-		pass
-
-
-
-		
-
-	 
-
-
-
-
+	df = pd.DataFrame(columns=['metric', 'value'])
+	df.loc[len(df)] = ['accuracy', accuracy]
+	df.to_csv(os.path.join(solpath, 'scores.csv'))

@@ -1,0 +1,19 @@
+
+## Run against the FL docker image
+
+## Get the FL docker image:
+
+ - login is the same as gitlab credentials
+
+```
+docker login registry.datadrivendiscovery.org
+docker pull registry.datadrivendiscovery.org/jkanter/mit-fl-ta2:stable
+```
+
+## Run it with env variable
+
+Within a Terminal:
+1. `cd` into the top-level `TwoRavens` directory
+1. `workon 2ravens`
+1. `run_featurelabs_choose_config`
+1. `run_featurelabs_choose_config:[number of chosen dataset]`

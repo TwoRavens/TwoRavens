@@ -17,7 +17,8 @@ def view_test_form(request):
                      TA2_STATIC_TEST_MODE=settings.TA2_STATIC_TEST_MODE,
                      TA2_TEST_SERVER_URL=settings.TA2_TEST_SERVER_URL,
                      SETTINGS_MODULE=settings.SETTINGS_MODULE,
-                     TA3TA2_API_VERSION=TA3TA2Util.get_api_version())
+                     TA3TA2_API_VERSION=TA3TA2Util.get_api_version(),
+                     TA3_GPRC_USER_AGENT=settings.TA3_GPRC_USER_AGENT)
 
     if request.POST:
         client_form = ClientTestForm(request.POST)

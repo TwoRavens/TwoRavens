@@ -3,7 +3,7 @@
     "datasetID": "59_us_dataset_TRAIN",
     "datasetName": "NULL",
     "license": "public dataset, unknown license",
-    "datasetSchemaVersion": "3.0",
+    "datasetSchemaVersion": "3.1.1",
     "redacted": true,
     "datasetVersion": "1.0"
   },
@@ -37,7 +37,7 @@
         {
           "colIndex": 1,
           "colName": "source_nodeID",
-          "colType": "string",
+          "colType": "integer",
           "role": [
             "attribute"
           ],
@@ -49,7 +49,7 @@
         {
           "colIndex": 2,
           "colName": "target_nodeID",
-          "colType": "string",
+          "colType": "integer",
           "role": [
             "attribute"
           ],

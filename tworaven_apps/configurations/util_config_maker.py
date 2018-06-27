@@ -1,5 +1,8 @@
 """
 Make some configs for dev testing based on paths local to the installation
+
+6/26/2018 - updating configs for summer eval.
+    - The config is now placed ~within~ the dataset directory
 """
 import os
 import json
@@ -89,7 +92,8 @@ class TestConfigMaker:
             return
 
         if D3MConfiguration.objects.filter(name=self.config_name).first():
-            print('> D3M config "%s" already exists' % self.config_name)
+            print('> D3M config "%s" already exists in the database' % \
+                  self.config_name)
             return
 
 
@@ -97,14 +101,14 @@ class TestConfigMaker:
         #
         d3m_output_base = abspath(\
                             join(_TEST_DATA_OUTPUT_DIR,
-                                 'd3m_output_%s' % self.config_name))
+                                 '%s' % self.config_name))
 
 
         #self.add_gitkeep(d3m_output_base)
 
         # create output dirs
         #
-        output_dir_names = ['pipeline_logs',
+        output_dir_names = ['pipelines',
                             'executables',
                             D3M_DIR_TEMP_STORAGE_ROOT,
                             D3M_DIR_USER_PROBLEMS_ROOT]
@@ -152,12 +156,16 @@ class TestConfigMaker:
         if not self.config_files_only:
             print('\n>> D3M config added for: %s' % self.config_name)
 
-        # test-data deploy case with docker-compose or kubernetes
+        # Create a search_config.json file
+        #
         #
         if self.config_files_only:
             config_info = d3m_config.to_ta2_config_test(save_shortened_names=True)
             config_content = json.dumps(config_info, indent=4)
-            config_path = join(_TEST_BASE_DIR, 'config_%s.json' % self.config_name)
+
+            # path for search_config.json - exists within the data directory
+            #
+            config_path = join(data_dir, 'search_config.json')
             open(config_path, 'w').write(config_content)
             print('file written: %s' % config_path)
 
