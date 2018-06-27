@@ -1,5 +1,5 @@
 {
-    "userAgent": "TA3 system",
+    "userAgent": "{{ TA3_GPRC_USER_AGENT }}",
     "version": "{{ TA3TA2_API_VERSION }}",
     "timeBound": 10,
     "priority": 101,
