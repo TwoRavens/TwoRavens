@@ -320,7 +320,7 @@ class Body {
             };
             let schemas = {
                 univariate: 'areauni dot histogram histogrammean simplebar',
-                bivariate: 'aggbar area averagediff binnedscatter binnedtableheat box2d'
+                bivariate: 'aggbar area averagediff binnedscatter binnedtableheat box'
                     + ' groupedbar horizon interactivebarmean line scatter scattermatrix scattermeansd stackedbar step strip tableheat trellishist',
                 trivariate: 'bubbletri groupedbartri scattertri',
                 multi: 'binnedcrossfilter scattermatrix'
