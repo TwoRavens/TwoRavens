@@ -32,6 +32,8 @@ import * as scattertri from './vega-schemas/trivariate/scattertri';
 import * as groupedbartri from './vega-schemas/trivariate/groupedbartri';
 import * as horizgroupbar from './vega-schemas/trivariate/horizgroupbar';
 import * as bubbletri from './vega-schemas/trivariate/bubbletri';
+import * as bubbleqqq from './vega-schemas/trivariate/bubbleqqq';
+import * as scatterqqq from './vega-schemas/trivariate/scatterqqq';
 const $private = false;
 
 function heatmap(x_Axis_name, y_Axis_name) {
@@ -1541,7 +1543,7 @@ export async function plot(plotNodes, plottype="") {
                 ['stackedbar','nn'];
         }
         if(plotNodes.length==3) {
-            return myCons[0] && myCons[1] && myCons[2] ? ['scattermatrix','qqq'] :
+            return myCons[0] && myCons[1] && myCons[2] ? ['bubbleqqq','qqq'] :
                 myCons[0] && !myCons[1] && !myCons[2] ? ['horizgroupbar','qnn'] :
                 myCons[0] && myCons[1] && !myCons[2] ? ['scattertri','qqn'] :
                 myCons[0] && !myCons[1] && myCons[2] ? ['bubbletri','qnq'] :
@@ -1608,6 +1610,8 @@ export async function plot(plotNodes, plottype="") {
         plottype[0] === "groupedbartri" ? groupedbartri:
         plottype[0] === "bubbletri" ? bubbletri:
         plottype[0] === "horizgroupbar" ? horizgroupbar:
+        plottype[0] === "bubbleqqq" ? bubbleqqq:
+        plottype[0] === "scatterqqq" ? scatterqqq:
         alert("invalid plot type");
     console.log(schema);
 
