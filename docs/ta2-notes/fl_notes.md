@@ -15,9 +15,15 @@ docker pull registry.datadrivendiscovery.org/jkanter/mit-fl-ta2:stable
 Within a Terminal:
 1. `cd` into the top-level `TwoRavens` directory
 1. `workon 2ravens`
-1. `run_featurelabs_choose_config`
-1. `run_featurelabs_choose_config:[number of chosen dataset]`
-
+1. Show a list of datasets to run FL
+    ```
+    fab run_featurelabs_choose_config
+    ```
+1. Choose a dataset:
+    ```
+    fab run_featurelabs_choose_config:[number of chosen dataset]
+    ```
+    
 ## Run everything else....
 
 For each command below, **FIRST**:
