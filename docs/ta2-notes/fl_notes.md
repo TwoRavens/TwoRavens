@@ -29,14 +29,17 @@ Commands:
     ```
     docker run --rm -p 6379:6379 -v /ravens_volume:/ravens_volume redis:4
     ```
-    OR: `fab redis_run`
+    OR: 
+    ```
+    fab redis_run
+    ```
 1. Celery
     ```
     fab celery_run_with_ta2
-    ``
+    ```
 1. Main app
     ```
-    fab run_with_ta2`
+    fab run_with_ta2
     ```
 1. Rook
     ```
