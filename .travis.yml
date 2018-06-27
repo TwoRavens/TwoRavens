@@ -18,8 +18,6 @@ install:
   - pip install coveralls
 script:
   # Run django tests.  (Note django settings are an env variable)
-  #- cd submodules/raven-metadata-service/preprocess/code/;python -m unittest
-  #- cd ../../../..
   - python manage.py test tworaven_apps.ta2_interfaces tworaven_apps.workspaces
   - coverage run --source=tworaven_apps.ta2_interfaces manage.py test tworaven_apps.ta2_interfaces tworaven_apps.workspaces
   #- coverage run --source=tworaven_apps.raven_auth manage.py test tworaven_apps.raven_auth

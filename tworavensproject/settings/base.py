@@ -32,9 +32,9 @@ sys.path.append(TA3TA2_API_DIR)
 #
 # https://github.com/TwoRavens/raven-metadata-service
 # -----------------------------------------------------
-RAVEN_METADATA_SVC = join(BASE_DIR, 'submodules', 'raven-metadata-service')
-RAVEN_PREPROCESS = join(RAVEN_METADATA_SVC, 'preprocess', 'code')
-sys.path.append(RAVEN_PREPROCESS)
+#RAVEN_METADATA_SVC = join(BASE_DIR, 'submodules', 'raven-metadata-service')
+#RAVEN_PREPROCESS = join(RAVEN_METADATA_SVC, 'preprocess', 'code')
+#sys.path.append(RAVEN_PREPROCESS)
 
 
 # Quick-start development settings - unsuitable for production
