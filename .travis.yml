@@ -24,7 +24,6 @@ script:
   - coverage run --source=tworaven_apps.ta2_interfaces manage.py test tworaven_apps.ta2_interfaces tworaven_apps.workspaces
   #- coverage run --source=tworaven_apps.raven_auth manage.py test tworaven_apps.raven_auth
 
-# Don't push the image but instead trigger a build on dockerhub
 after_success:
   #
   # Build image and push to dockerhub
@@ -39,7 +38,7 @@ after_success:
     docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
     docker push tworavens/ravens-main:develop;
     fi
-
-# send report to coveralls
-after_success:
+  #
+  # send report to coveralls
+  #
   coveralls
