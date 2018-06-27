@@ -113,8 +113,8 @@ class EventDataQueryAddTest(TestCase):
         url = reverse('api_add_query')
 
         response1 = self.client.post(url,
-                                    json.dumps(self.input_json1),
-                                    content_type="application/json")
+                                     json.dumps(self.input_json1),
+                                     content_type="application/json")
         response2 = self.client.post(url,
                                      json.dumps(self.input_json2),
                                      content_type="application/json")
