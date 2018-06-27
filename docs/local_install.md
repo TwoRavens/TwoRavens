@@ -164,7 +164,7 @@ The following command will start the Django webserver as well as webpack.
 
 
 ```
-docker run --rm -p 6379:6379 redis:2.8 -v /ravens_volume:/ravens_volume
+docker run --rm -p 6379:6379 -v /ravens_volume:/ravens_volume redis:4
 ```
 
 **_Without_ docker**
@@ -267,7 +267,7 @@ As a shortcut to the above, assuming R is installed, from the command line, you 
 Read fully before going through the step.
 
 1. Follow the steps in previous section **EXCEPT**:
-     - For step (3)(i), the "Main app", use ```fab run_expect_ta2_external```
+     - For step (3)(i), the "Main app", use ```fab run_with_ta2```
 
 
 ### Run the python shell (if needed)

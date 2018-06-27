@@ -333,7 +333,7 @@ def run_with_rook():
     run(with_rook=True)
 
 @task
-def run_expect_ta2_external():
+def run_with_ta2():
     """Assumes there's a TA2 running at localhost:45042"""
     run(external_ta2=True)
 
@@ -584,7 +584,7 @@ def celery_run(ta2_external=False):
 
 
 @task
-def celery_run_ta2_external():
+def celery_run_with_ta2():
     """Run celery using an external TA2"""
     celery_run(ta2_external=True)
 

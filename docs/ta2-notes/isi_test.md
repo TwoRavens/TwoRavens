@@ -60,7 +60,7 @@ To make sure you're running shareable data from /ravens_volume:
 The next step assumes separate Terminals for rook and the django app, e.g.
 
 1. rook: `fab run_rook`
-2. python/ui: `fab run_expect_ta2_external`
+2. python/ui: `fab run_with_ta2`
   - this is instead of `fab run`
 
 ### Check the TA2 connection
