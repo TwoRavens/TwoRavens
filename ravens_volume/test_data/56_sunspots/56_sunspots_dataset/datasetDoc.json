@@ -1,0 +1,61 @@
+{
+  "about": {
+    "datasetID": "56_sunspots_dataset",
+    "datasetName": "sunspots",
+    "description": "Yearly and monthly numbers of sunspots from 1749 to present, as from the World Data Center, aka SIDC.",
+    "citation": "WDC-SILSO, Solar Influences Data Analysis Center (SIDC),  Royal Observatory of Belgium, Av. Circulaire, 3, B-1180 BRUSSELS, Currently at http://www.sidc.be/silso/datafiles",
+    "license": "general public domain",
+    "source": "WDC-SILSO, Solar Influences Data Analysis Center (SIDC)",
+    "sourceURI": "http://www.sidc.be/silso/datafiles",
+    "approximateSize": "",
+    "datasetSchemaVersion": "3.1.1",
+    "redacted": false,
+    "datasetVersion": "1.0"
+  },
+  "dataResources": [
+    {
+      "resID": "0",
+      "resPath": "tables/learningData.csv",
+      "resType": "table",
+      "resFormat": [
+        "text/csv"
+      ],
+      "isCollection": false,
+      "columns": [
+        {
+          "colIndex": 0,
+          "colName": "d3mIndex",
+          "colType": "integer",
+          "role": [
+            "index"
+          ]
+        },
+        {
+          "colIndex": 1,
+          "colName": "time",
+          "colType": "real",
+          "role": [
+            "attribute",
+            "timeIndicator"
+          ]
+        },
+        {
+          "colIndex": 2,
+          "colName": "sunspot.year",
+          "colType": "real",
+          "role": [
+            "suggestedTarget"
+          ]
+        },
+        {
+          "colIndex": 3,
+          "colName": "sunspot.month",
+          "colType": "real",
+          "role": [
+            "suggestedTarget"
+          ]
+        }
+      ]
+    }
+  ]
+}

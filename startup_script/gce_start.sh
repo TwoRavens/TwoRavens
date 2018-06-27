@@ -17,7 +17,7 @@ fab make_d3m_config_files
 printf "\n(30) Copy data to ravens_volume"
 cp -r /var/webapps/TwoRavens/ravens_volume/. /ravens_volume/
 
-# (40) if it exists, attempt to load info from CONFIG_JSON_PATH
+# (40) if it exists, attempt to load info from D3MINPUTDIR
 printf "\n(40) Copy data to ravens_volume"
 fab load_d3m_config_from_env
 

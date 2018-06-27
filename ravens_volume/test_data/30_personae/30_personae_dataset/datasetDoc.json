@@ -8,7 +8,7 @@
     "source": "CLiPS Research Center, University of Antwerp",
     "sourceURI": "http://www.clips.ua.ac.be/datasets/personae-corpus",
     "approximateSize": "1.36 MB",
-    "datasetSchemaVersion": "3.0",
+    "datasetSchemaVersion": "3.1.1",
     "redacted": false,
     "datasetVersion": "1.0"
   },

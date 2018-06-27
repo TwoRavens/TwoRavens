@@ -1,0 +1,36 @@
+{
+  "progress": {
+    "state": "PENDING",
+    "start": "2018-06-22T02:17:28.465807914Z",
+    "status": ""
+  },
+  "steps": [
+    {
+      "progress": {
+        "state": "COMPLETED",
+        "status": "TA2 status message here...",
+        "start": "2018-06-22T02:17:28.465705871Z",
+        "end": "2018-06-22T02:17:38.465687990Z"
+      },
+      "steps": [
+        {
+          "progress": {
+            "state": "PENDING",
+            "start": "2018-06-22T02:17:28.465753078Z",
+            "status": ""
+          },
+          "steps": []
+        }
+      ]
+    }
+  ],
+  "exposedOutputs": {
+    "key1": {
+      "csvUri": "file://uri/to-a/csv"
+    },
+    "key2": {
+      "datasetUri": "file://uri/to-a/dataset"
+    }
+  },
+  "fittedSolutionId": "solutionId_dvw951"
+}

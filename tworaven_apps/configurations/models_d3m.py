@@ -36,6 +36,8 @@ D3M_REQUIRED = D3M_FILE_ATTRIBUTES + ('training_data_root', 'problem_root')
 
 # environment variable name to store a d3m config filepath for startup
 CONFIG_JSON_PATH = 'CONFIG_JSON_PATH'
+D3M_ENV_INPUT_DIR = 'D3MINPUTDIR'
+D3M_SEARCH_CONFIG_NAME = 'search_config.json'
 
 class D3MConfiguration(TimeStampedModel):
     """
@@ -149,8 +151,8 @@ class D3MConfiguration(TimeStampedModel):
         """Return a dict in TA2 format to use with mounted volume"""
         od = OrderedDict()
         d3m_attributes = D3M_FILE_ATTRIBUTES + \
-                         D3M_DIR_ATTRIBUTES + \
-                         D3M_VALUE_ATTRIBUTES
+                         D3M_DIR_ATTRIBUTES #+ \
+                         #D3M_VALUE_ATTRIBUTES
         for name in d3m_attributes:
             val = self.__dict__.get(name, '(not set)')
             if val and isinstance(val, str):
@@ -243,8 +245,8 @@ class D3MConfiguration(TimeStampedModel):
         # Load the fields, defaulting to "" (blank)
         #
         d3m_config_attrs = D3M_FILE_ATTRIBUTES + \
-                           D3M_DIR_ATTRIBUTES + \
-                           D3M_VALUE_ATTRIBUTES
+                           D3M_DIR_ATTRIBUTES #+ \
+                           #D3M_VALUE_ATTRIBUTES
         for key in d3m_config_attrs:
             val = d3m_dict.get(key, '')
             d3m_config.__dict__[key] = val

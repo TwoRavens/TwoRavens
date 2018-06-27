@@ -42,9 +42,12 @@ def ta2_hello():
     # -- then return canned response
     #
     if settings.TA2_STATIC_TEST_MODE:
+
+        info = dict(TA3TA2_API_VERSION=TA3TA2Util.get_api_version(),
+                    TA3_GPRC_USER_AGENT=settings.TA3_GPRC_USER_AGENT)
         resp_str = get_grpc_test_json(\
                         'test_responses/Hello_ok.json',
-                        dict())
+                        info)
         return ok_resp(resp_str)
 
     # --------------------------------

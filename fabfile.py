@@ -7,11 +7,14 @@ import string
 import signal
 
 import sys
-from fabric.api import local, task
+from fabric.api import local, task, settings
 import django
 import subprocess
 
 import re
+
+
+
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 FAB_BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -49,7 +52,7 @@ def restart():
 
 @task
 def make_d3m_config_files():
-    """Make configs in /ravens_volume and load them to db"""
+    """Make configs in /ravens_volume and loads them to db"""
     clear_d3m_configs()
 
     from tworaven_apps.configurations.util_config_maker import TestConfigMaker
@@ -111,19 +114,37 @@ def make_d3m_config():
 
 @task
 def load_d3m_config_from_env():
-    """Load docker config file from path specified in the environment variable D3M_CONFIG_FILEPATH. The information in this file becomes the default D3MConfiguration object. If D3M_CONFIG_FILEPATH doesn't exist, display error message and keep running."""
+    """6/27/2018 update
+    - Look for an environment variable named "D3MINPUTDIR"
+        - This is the data directory which should include a file named
+            "search_config.json"
+        - Load "search_config.json" as the D3M config
+    - If "D3MINPUTDIR" doesn't exist, display error message and keep running
+    """
     from django.core import management
-    from tworaven_apps.configurations.models_d3m import CONFIG_JSON_PATH
+    from tworaven_apps.configurations.models_d3m import \
+        (D3M_ENV_INPUT_DIR, D3M_SEARCH_CONFIG_NAME)
 
-    print('> Attempt to load D3M config from env variable: %s' % CONFIG_JSON_PATH)
-    config_file = os.environ.get(CONFIG_JSON_PATH, None)
-    if not config_file:
-        print('Environment variable %s not set.' % CONFIG_JSON_PATH)
+    print('-' * 40)
+    print('> Attempt to load D3M config based on env variable: "%s"' % \
+          D3M_ENV_INPUT_DIR)
+    print('-' * 40)
+
+    d3m_data_dir = os.environ.get(D3M_ENV_INPUT_DIR, None)
+    if not d3m_data_dir:
+        print('Environment variable "%s" not set.' % D3M_ENV_INPUT_DIR)
         return
 
-    config_file = config_file.strip()
+    d3m_data_dir = d3m_data_dir.strip()
+    if not os.path.isdir(d3m_data_dir):
+        print('This data directory doesn\'t exist (or is not reachable): %s' % \
+              d3m_data_dir)
+        return
+
+    config_file = os.path.join(d3m_data_dir, D3M_SEARCH_CONFIG_NAME)
     if not os.path.isfile(config_file):
-        print('This config file doesn\'t exist (or is not reachable): %s' % config_file)
+        print('This config file doesn\'t exist (or is not reachable): %s' % \
+              config_file)
         return
 
     try:
@@ -133,12 +154,12 @@ def load_d3m_config_from_env():
 
 
 @task
-def load_d3m_config(config_file):
-    """Load D3M config file, saving it as the default D3MConfiguration object.  Pass the config file path: fab load_d3m_config:(path to config file)"""
+def load_d3m_config(config_data_dir):
+    """Load D3M config file, saving it as the default D3MConfiguration object.  Pass the config file path: fab load_d3m_config:(path to data dir)"""
     from django.core import management
 
     try:
-        management.call_command('load_config', config_file)
+        management.call_command('load_config', config_data_dir)
         return True
     except management.base.CommandError as err_obj:
         print('> Failed to load D3M config.\n%s' % err_obj)
@@ -146,36 +167,42 @@ def load_d3m_config(config_file):
 
 @task
 def run_featurelabs_choose_config(choice_num=''):
-    """Pick a config from /ravens_volume and run FeatureLabs"""
+    """Deprecated. Pick a config from /ravens_volume and run FeatureLabs"""
     run_ta2_choose_config(choice_num, ta2_name='FeatureLabs')
 
-@task
+#@task
 def run_isi_choose_config(choice_num=''):
-    """Pick a config from /ravens_volume and run ISI"""
+    """Deprecated. Pick a config from /ravens_volume and run ISI"""
     run_ta2_choose_config(choice_num, ta2_name='ISI')
 
 def run_ta2_choose_config(choice_num='', ta2_name='ISI'):
-    """Pick a config from /ravens_volume and run a TA2"""
-    ravens_dir = '/ravens_volume'
+    """Deprecated. Pick a config from /ravens_volume and run a TA2"""
+    from os.path import join, isdir, isfile
+    from tworaven_apps.configurations.models_d3m import \
+        (D3M_SEARCH_CONFIG_NAME,)
+
+    ravens_dir = '/ravens_volume/test_data'
+    ravens_output_dir = '/ravens_volume/test_output'
 
     # pull config files from ravens volume
     config_choices = [x for x in os.listdir(ravens_dir)
-                      if x.startswith('config_') and \
-                         x.endswith('.json')]
+                      if isdir(join(ravens_dir, x)) and \
+                         isfile(join(ravens_dir, x, D3M_SEARCH_CONFIG_NAME))]
 
-    # pair each config name with a number:
-    # [(1, config_185_baseball.json), (2, config_196_autoMpg.json), etc]
+    # pair each data directory with a number:
+    # [(1, 185_baseball), (2, 196_autoMpg), etc]
     #
     choice_pairs = [(idx, x) for idx, x in enumerate(config_choices, 1)]
     if choice_num.isdigit():
         choice_num = int(choice_num)
         if choice_num in [x[0] for x in choice_pairs]:
-            config_path = os.path.join(ravens_dir, choice_pairs[choice_num-1][1])
+            data_dir_path = join(ravens_dir, choice_pairs[choice_num-1][1])
+            output_dir_path = join(ravens_output_dir, choice_pairs[choice_num-1][1])
             if ta2_name == 'ISI':
-                run_isi_ta2(config_path)
+                #run_isi_ta2(data_dir_path, output_dir_path)
                 return
             elif ta2_name == 'FeatureLabs':
-                run_featurelabs_ta2(config_path)
+                run_featurelabs_ta2(data_dir_path, output_dir_path)
                 return
             else:
                 print('\n--> Error: "%s" is not a ta2 choice\n' % ta2_name)
@@ -192,37 +219,56 @@ def run_ta2_choose_config(choice_num='', ta2_name='ISI'):
     print('\nExample: fab run_isi_choose_config:1')
 
 
-def run_featurelabs_ta2(config_json_path):
-    """syntax: `fab run_featurelabs_ta2:config_json_path` Also sets django D3M config"""
-    if not os.path.isfile(config_json_path):
-        print('Config file not found: %s' % config_json_path)
+@task
+def run_featurelabs_ta2(data_dir_path, output_dir_path):
+    """inputs: data directory path, output directory path"""
+    from tworaven_apps.configurations.models_d3m import \
+        (D3M_SEARCH_CONFIG_NAME,)
 
-    print('-' * 40)
-    print('Django: Loading D3M config...')
-    print('-' * 40)
-    load_d3m_config(config_json_path)
+    if not os.path.isdir(data_dir_path):
+        print('ERROR: Data directory not found: %s' % data_dir_path)
+        return
+
+    config_file = os.path.join(data_dir_path, D3M_SEARCH_CONFIG_NAME)
+    if not os.path.isfile(config_file):
+        print('ERROR: config file not found: %s' % config_file)
+        return
+
+    if not os.path.isdir(output_dir_path):
+        os.makedirs(output_dir_path)
+        print('output directory created: %s' % output_dir_path)
+
 
     print('-' * 40)
     print('Run Feature Labs')
     print('-' * 40)
-    docker_cmd = ('docker run -ti --rm -v /ravens_volume:/ravens_volume -e'
-                  ' "CONFIG_JSON_PATH=%s" -p 45042:45042 --name'
-                  ' feature_labs --entrypoint=ta2_grpc_server'
-                  ' featurelabs_ta2:stable') % (config_json_path)
+
+    docker_cmd = ('docker run --rm -t'
+                  ' --name ta2_server'
+                  ' -p 45042:45042'
+                  ' -e D3MPORT=45042'
+                  ' -e D3MTIMEOUT=60'
+                  ' -e D3MINPUTDIR={0}'
+                  ' -e D3MOUTPUTDIR={1}'
+                  ' -e D3MRUN=ta2ta3'
+                  ' -v {0}:/input'
+                  ' -v {1}:/output'
+                  ' registry.datadrivendiscovery.org/jkanter/mit-fl-ta2:stable'
+                  '').format(data_dir_path, output_dir_path)
 
     print('Running command: %s' % docker_cmd)
 
     local(docker_cmd)
 
-def run_isi_ta2(config_json_path):
-    """syntax: `fab run_isi_ta2:[config_json_path]`.` Also sets django D3M config"""
-    if not os.path.isfile(config_json_path):
-        print('Config file not found: %s' % config_json_path)
+def run_isi_ta2(data_dir_path):
+    """syntax: `fab run_isi_ta2:[data_dir_path]`.` Also sets django D3M config"""
+    if not os.path.isdir(data_dir_path):
+        print('data dir path not found: %s' % data_dir_path)
 
     print('-' * 40)
     print('Django: Loading D3M config...')
     print('-' * 40)
-    load_d3m_config(config_json_path)
+    load_d3m_config(data_dir_path)
 
     print('-' * 40)
     print('Run ISI')
@@ -287,7 +333,7 @@ def run_with_rook():
     run(with_rook=True)
 
 @task
-def run_expect_ta2_external():
+def run_with_ta2():
     """Assumes there's a TA2 running at localhost:45042"""
     run(external_ta2=True)
 
@@ -304,7 +350,7 @@ def run(**kwargs):
     init_db()
     check_config()  # make sure the db has something
     #load_d3m_config_from_env() # default the D3M setting to the env variable
-    ta3_listener_add() # add MessageListener object
+    #ta3_listener_add() # add MessageListener object
 
     commands = [
         # start webpack
@@ -478,33 +524,6 @@ def run_grpc_tests():
     local('python manage.py test tworaven_apps.ta2_interfaces')
 
 
-@task
-def ta3_listener_add():
-    """Add local web server address for ta3_search messages"""
-    from tworaven_apps.ta3_search.message_util import MessageUtil
-
-    web_url = 'http://0.0.0.0:8001'
-    success, mlistener = MessageUtil.add_listener(web_url, 'ta3 listener')
-
-    user_msg = ('listener registered: %s at %s') % \
-                (mlistener, mlistener.web_url)
-
-    print(user_msg)
-
-@task
-def ta3_listener_run():
-    """Start a flask server that receives messages from the UI
-    Part of scaffolding for the D3M eval"""
-    ta3_dir = os.path.join(FAB_BASE_DIR,
-                           'tworaven_apps',
-                           'ta3_search')
-
-    flask_cmd = ('cd %s;'
-                 'FLASK_APP=ta3_listener.py flask run -p8001') % \
-                 (ta3_dir,)
-
-    local(flask_cmd)
-
 # -----------------------------------
 #   Redis and celery tasks
 # -----------------------------------
@@ -513,11 +532,11 @@ def redis_run():
     """Run the local redis server"""
     redis_cmd = 'redis-server /usr/local/etc/redis.conf'
 
-    #with settings(warn_only=True):
-    result = local(redis_cmd, capture=True)
+    with settings(warn_only=True):
+        result = local(redis_cmd, capture=True)
 
-    if result.failed:
-        print('Redis may already be running...')
+        if result.failed:
+            print('Redis may already be running...')
 
 
 @task
@@ -525,22 +544,22 @@ def redis_clear():
     """Clear data from the *running* local redis server"""
 
     redis_cmd = 'redis-cli flushall'    #  /usr/local/etc/redis.conf'
-    #with settings(warn_only=True):
-    result = local(redis_cmd, capture=True)
+    with settings(warn_only=True):
+        result = local(redis_cmd, capture=True)
 
-    if result.failed:
-        print('Redis not running, nothing to clear')
+        if result.failed:
+            print('Redis not running, nothing to clear')
 
 @task
 def redis_stop():
     """Clear data from the *running* local redis server"""
 
     redis_cmd = 'pkill -f redis'
-    #with settings(warn_only=True):
-    result = local(redis_cmd, capture=True)
+    with settings(warn_only=True):
+        result = local(redis_cmd, capture=True)
 
-    if result.failed:
-        print('Nothing to stop')
+        if result.failed:
+            print('Nothing to stop')
 
 @task
 def redis_restart():
@@ -549,15 +568,25 @@ def redis_restart():
     redis_run()
 
 @task
-def celery_run():
+def celery_run(ta2_external=False):
     """Clear redis and Start celery"""
     redis_clear()
 
     #celery_cmd = ('export TA2_STATIC_TEST_MODE=False;'
     #              'celery -A tworavensproject worker -l info')
+    if ta2_external:
+        celery_cmd = ('export TA2_STATIC_TEST_MODE=False;'
+                      'celery -A tworavensproject worker -l info')
+    else:
+        celery_cmd = ('celery -A tworavensproject worker -l info')
 
-    celery_cmd = ('celery -A tworavensproject worker -l info')
     local(celery_cmd)
+
+
+@task
+def celery_run_with_ta2():
+    """Run celery using an external TA2"""
+    celery_run(ta2_external=True)
 
 @task
 def celery_stop():

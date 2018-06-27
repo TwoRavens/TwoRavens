@@ -1,6 +1,6 @@
 {
-  "userAgent": "TA2-aromatic roaster",
-  "version": "2018.5.2_pre",
+  "userAgent": "{{ TA3_GPRC_USER_AGENT }}",
+  "version": "{{ TA3TA2_API_VERSION }}",
   "allowedValueTypes": [
     "RAW",
     "DATASET_URI",

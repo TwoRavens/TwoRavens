@@ -7,7 +7,7 @@
     "citation": "\n@inproceedings{kemp2006learning,\n  title={Learning systems of concepts with an infinite relational model},\n  author={Kemp, Charles and Tenenbaum, Joshua B and Griffiths, Thomas L and Yamada, Takeshi and Ueda, Naonori},\n  booktitle={AAAI},\n  volume={3},\n  pages={5},\n  year={2006}\n}\n",
     "source": "NCBI NIH",
     "sourceURI": "https://alchemy.cs.washington.edu/data/umls/",
-    "datasetSchemaVersion": "3.0",
+    "datasetSchemaVersion": "3.1.1",
     "redacted": false,
     "datasetVersion": "1.0"
   },
@@ -41,7 +41,7 @@
         {
           "colIndex": 1,
           "colName": "source_nodeID",
-          "colType": "string",
+          "colType": "integer",
           "role": [
             "attribute"
           ],
@@ -53,7 +53,7 @@
         {
           "colIndex": 2,
           "colName": "target_nodeID",
-          "colType": "string",
+          "colType": "integer",
           "role": [
             "attribute"
           ],

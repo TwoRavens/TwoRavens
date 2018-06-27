@@ -20,8 +20,6 @@ urlpatterns = [
 
     url(r'^api/', include('tworaven_apps.api_docs.urls')),
 
-    url(r'^ta3-search/', include('tworaven_apps.ta3_search.urls')),
-
     # for testing
     #url(r'^data/', include('tworaven_apps.test_data.urls')),
 

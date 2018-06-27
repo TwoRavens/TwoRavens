@@ -1,0 +1,37 @@
+{
+    "userAgent": "{{ TA3_GPRC_USER_AGENT }}",
+    "version": "{{ TA3TA2_API_VERSION }}",
+    "timeBound": 10,
+    "priority": 101,
+    "allowedValueTypes": [
+        "DATASET_URI",
+        "CSV_URI"
+    ],
+    "problem": {
+        "problem": {
+            "id": "id-of-this-problem",
+            "version": "version of problem",
+            "name": "name of the problem",
+            "description": "predicting hall of fame inductees",
+            "taskType": "REGRESSION",
+            "taskSubtype": "MULTIVARIATE",
+            "performanceMetrics": [
+                {
+                    "metric": "ROOT_MEAN_SQUARED_ERROR"
+                }
+            ]
+        },
+        "inputs": [
+            {
+                "datasetId": "dataset_123",
+                "targets": [
+                    {
+                        "resourceId": "r52",
+                        "columnIndex": 3,
+                        "columnName": "at_bats"
+                    }
+                ]
+            }
+        ]
+    }
+}

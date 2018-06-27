@@ -5,7 +5,7 @@
     "problemDescription": "This is a binary classification problem on the SPECT dataset - data on cardiac Single Proton Emission Computed Tomography (SPECT) images. Each patient classified into two categories: normal and abnormal.",
     "taskType": "classification",
     "taskSubType": "binary",
-    "problemSchemaVersion": "3.0",
+    "problemSchemaVersion": "3.1.1",
     "problemVersion": "1.0"
   },
   "inputs": {

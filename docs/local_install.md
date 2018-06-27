@@ -162,8 +162,9 @@ The following command will start the Django webserver as well as webpack.
 
 **With docker:**
 
+
 ```
-docker run --rm -p 6379:6379 redis:2.8
+docker run --rm -p 6379:6379 -v /ravens_volume:/ravens_volume redis:4
 ```
 
 **_Without_ docker**
@@ -250,10 +251,10 @@ As a shortcut to the above, assuming R is installed, from the command line, you 
 1. Next are commands to run--one for each Terminal
     1. Main app: ```fab run```
     1. Rook: ```fab run_rook```
-    1. Redis: ```docker run --rm -p 6379:6379 redis:2.8``` 
+    1. Redis: ```docker run --rm -p 6379:6379 redis:2.8```
          - If you don't have docker:
              - install redis (see above)
-             - redis: ```fab run_redis``` 
+             - redis: ```fab run_redis```
     1. Celery: ```fab celery_run```
 1. Go to Two Ravens: http://127.0.0.1:8080/
     - Go to the Django admin: http://127.0.0.1:8080/admin
@@ -266,7 +267,7 @@ As a shortcut to the above, assuming R is installed, from the command line, you 
 Read fully before going through the step.
 
 1. Follow the steps in previous section **EXCEPT**:
-     - For step (3)(i), the "Main app", use ```fab run_expect_ta2_external```
+     - For step (3)(i), the "Main app", use ```fab run_with_ta2```
 
 
 ### Run the python shell (if needed)

@@ -1,0 +1,50 @@
+{
+  "progress": {
+    "state": "COMPLETED",
+    "status": "TA2 status message here...",
+    "start": "2018-06-22T01:16:13.372101783Z",
+    "end": "2018-06-22T01:16:23.372089147Z"
+  },
+  "scores": [
+    {
+      "metric": {
+        "metric": "PRECISION_AT_TOP_K",
+        "k": 0,
+        "posLabel": ""
+      },
+      "targets": [
+        {
+          "targetIndex": 0,
+          "resourceId": "",
+          "columnIndex": 0,
+          "columnName": "",
+          "clustersNumber": 0
+        }
+      ],
+      "value": {
+        "double": 273.0
+      },
+      "fold": 0
+    },
+    {
+      "metric": {
+        "metric": "MEAN_ABSOLUTE_ERROR",
+        "k": 0,
+        "posLabel": ""
+      },
+      "targets": [
+        {
+          "targetIndex": 0,
+          "resourceId": "",
+          "columnIndex": 0,
+          "columnName": "",
+          "clustersNumber": 0
+        }
+      ],
+      "value": {
+        "double": 764.0
+      },
+      "fold": 0
+    }
+  ]
+}

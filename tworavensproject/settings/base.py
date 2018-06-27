@@ -70,7 +70,6 @@ INSTALLED_APPS = [
     'tworaven_apps.rook_services', # sending UI calls to rook and back again
     'tworaven_apps.api_docs',
     'tworaven_apps.call_captures', # capture data sent from UI out to rook/TA2
-    'tworaven_apps.ta3_search', # ta3_search for NIST
     'tworaven_apps.eventdata_queries', # eventdata API services
 
     # webpack!
@@ -185,7 +184,7 @@ SERVER_SCHEME = 'http'  # or https
 # ---------------------------
 TA2_STATIC_TEST_MODE = strtobool(os.environ.get('TA2_STATIC_TEST_MODE', 'True'))   # True: canned responses
 TA2_TEST_SERVER_URL = os.environ.get('TA2_TEST_SERVER_URL', 'localhost:45042')
-TA2_GPRC_USER_AGENT = os.environ.get('TA2_GPRC_USER_AGENT', 'tworavens')
+TA3_GPRC_USER_AGENT = os.environ.get('TA3_GPRC_USER_AGENT', 'tworavens')
 
 TA2_GPRC_SHORT_TIMEOUT = 3 # seconds
 TA2_GPRC_LONG_TIMEOUT = 5 * 60 # 5 minutes

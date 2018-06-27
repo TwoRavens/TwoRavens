@@ -3,7 +3,8 @@
     "problemID": "49_fk_problem_TEST",
     "problemName": "NULL",
     "taskType": "graphMatching",
-    "problemSchemaVersion": "3.0"
+    "problemVersion": "1.0",
+    "problemSchemaVersion": "3.1.1"
   },
   "inputs": {
     "data": [

@@ -1,0 +1,36 @@
+{
+  "dataset_dir": "../../LL0_186_braziltourism",
+  "estimator": {
+    "estimator": "SGDClassifierEstimator", 
+    "params": {
+      "alpha": 0.01, 
+      "fit_intercept": true, 
+      "l1_ratio": 0.5, 
+      "loss": "squared_hinge", 
+      "penalty": "elasticnet"
+    }
+  }, 
+  "feature_extractors": {
+    "Age,Sex,Income,Travel_cost,Access_road,Active,Passive,Logged_income": {
+      "feature_extractor": "AnnotatedTabularExtractor", 
+      "params": {
+        "add_missing_indicator": false, 
+        "categorize": true, 
+        "normalize_text": true, 
+        "numeric_strategy": "mean"
+      }, 
+      "uuid": "b574b10edb3811e7bb880002c95915b0"
+    }
+  }, 
+  "feature_selector": {
+    "feature_selector": "SelectFromLinearSVC", 
+    "params": {
+      "C": 17.886495290574352, 
+      "threshold": 1e-05
+    }
+  }, 
+  "performance": {
+    "cv_performance": 0.2577189758907897, 
+    "metric": "f1Macro"
+  }
+}

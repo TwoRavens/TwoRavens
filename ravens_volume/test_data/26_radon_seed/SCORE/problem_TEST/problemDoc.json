@@ -4,7 +4,7 @@
     "problemName": "NULL",
     "taskType": "regression",
     "taskSubType": "univariate",
-    "problemSchemaVersion": "3.0",
+    "problemSchemaVersion": "3.1.1",
     "problemVersion": "1.0"
   },
   "inputs": {

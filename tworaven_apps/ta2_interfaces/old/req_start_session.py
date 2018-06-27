@@ -27,7 +27,7 @@ def start_session(raven_json_str=None):
         err_msg = 'No data found.  Please send a "user_agent"'
         return get_failed_precondition_sess_response(err_msg)
         # Default if the user_agent is not from the UI
-        #raven_dict = dict(user_agent=settings.TA2_GPRC_USER_AGENT)
+        #raven_dict = dict(user_agent=settings.TA3_GPRC_USER_AGENT)
 
     # The UI has sent JSON in string format that contains the user_agent
     try:
