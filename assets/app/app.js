@@ -2451,11 +2451,11 @@ export async function estimate(btn) {
             let oldCount = 0;
             let newCount = 0;
 
-            while(!searchFinished){
+            let refreshIntervalId = setInterval(async function() {
                 res3 = await updateRequest(searchDetailsUrl);                // silent equivalent makeRequest() with no data argument.  Also, should check whether best to be synchronous here.
                 newCount = res3.data.responses.count;
-                console.log("newCount" + newCount)
 
+                // Check if new pipeline to add and inspect
                 if(newCount>oldCount){
                     //for (var i = oldCount; i < newCount; i++) {       //  for statement if new items are pushed instead
                     for (var i = 0; i < (newCount-oldCount); i++) {     //  instead, updates are at top of list
@@ -2480,22 +2480,24 @@ export async function estimate(btn) {
                         //onPipelineCreate(res7.data, res4.data.id);  // arguments have changed
                     };
                     oldCount = newCount;
-                    searchFinished = res3.data.is_finished;
                 };
-            };
+                
+                searchFinished = res3.data.is_finished;   
 
-            // Get to these shortly
-            //let res3 = await makeRequest(D3M_SVC_URL + `/FitSolutions`, {})
-            //let requestId = res3.data.requestId;
-            //let res4 = await makeRequest(D3M_SVC_URL + `/GetFitSolutionsResults`, {})
+                // Check if search is finished
+                if(searchFinished){
+                    // stop spinner
+                    estimateLadda.stop(); 
+                    // change status of buttons for estimating problem and marking problem as finished
+                    byId("btnEstimate").classList.remove("btn-success");
+                    byId("btnEstimate").classList.add("btn-default");
+                    byId("btnEndSession").classList.remove("btn-default");
+                    byId("btnEndSession").classList.add("btn-success");
+                    // stop the interval process
+                    clearInterval(refreshIntervalId);
+                };
+            }, 1000);
 
-            // stop spinner
-            estimateLadda.stop(); 
-            // change status of buttons for estimating problem and marking problem as finished
-            byId("btnEstimate").classList.remove("btn-success");
-            byId("btnEstimate").classList.add("btn-default");
-            byId("btnEndSession").classList.remove("btn-default");
-            byId("btnEndSession").classList.add("btn-success");
         }
     }
     task2_finished = true;
