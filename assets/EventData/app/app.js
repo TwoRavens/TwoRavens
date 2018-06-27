@@ -141,6 +141,9 @@ if (localStorage.getItem("dataset") !== null) {
 
 export let reloadSubset = (subsetName) => {
     if (isLoading[subsetName]) return;
+
+    // the custom subset never uses data
+    if (subsetName === 'Custom') return;
     isLoading[subsetName] = true;
 
     let stagedSubsetData = [];
@@ -502,7 +505,6 @@ export function setupQueryTree() {
                 return false
             }
 
-            console.log(node.type);
             // Subset and Group may be moved
             return (node.type === 'rule' || node.type === 'query');
         },
@@ -548,9 +550,11 @@ export function setupQueryTree() {
         function (event) {
             let node = event.node;
             if (node.name === 'Custom Subset') {
-                subsetPreferences['custom']['text'] = JSON.stringify(node.custom, null, '\t');
-                subsetRedraw['custom'] = true;
+                canvasPreferences['Custom'] = canvasPreferences['Custom'] || {};
+                canvasPreferences['Custom']['text'] = JSON.stringify(node.custom, null, '\t');
+                canvasRedraw['Custom'] = true;
                 setSelectedCanvas("Custom");
+                m.redraw()
             }
 
             if (event.node.hasChildren()) {
@@ -566,10 +570,11 @@ export function setupQueryTree() {
             if ($.isEmptyObject(tempQuery)) {
                 alert("\"" + event.node.name + "\" is too specific to parse into a query.");
             } else {
-                subsetPreferences['custom'] = subsetPreferences['custom'] || {};
-                subsetPreferences['custom']['text'] = JSON.stringify(tempQuery, null, '\t');
-                subsetRedraw['custom'] = true;
+                canvasPreferences['Custom'] = canvasPreferences['Custom'] || {};
+                canvasPreferences['Custom']['text'] = JSON.stringify(tempQuery, null, '\t');
+                canvasRedraw['Custom'] = true;
                 setSelectedCanvas("Custom");
+                m.redraw()
             }
         }
     );
@@ -862,6 +867,18 @@ export function addRule() {
  * @returns {{}} : dictionary of preferences
  */
 function getSubsetPreferences() {
+
+    if (selectedCanvas === 'Custom') {
+        return {
+            id: String(nodeId++),
+            name: 'Custom Subset',
+            type: 'rule',
+            subset: 'custom',
+            custom: JSON.parse(canvasPreferences['Custom']['text'])
+        }
+    }
+
+
     let data = subsetData[selectedSubsetName];
     let metadata = genericMetadata[selectedDataset]['subsets'][selectedSubsetName];
     let preferences = subsetPreferences[selectedSubsetName];
@@ -1074,16 +1091,6 @@ function getSubsetPreferences() {
         return subset
 
     }
-
-    if (selectedSubsetName === 'Custom') {
-        return {
-            id: String(nodeId++),
-            name: 'Custom Subset',
-            type: 'rule',
-            subset: 'custom',
-            custom: JSON.parse(subsetPreferences['custom']['text'])
-        }
-    }
 }
 
 export function reset() {
@@ -1195,9 +1202,6 @@ export function submitQuery(datasetChanged = false) {
         // localStorage.setItem('groupId', String(groupId));
         // localStorage.setItem('queryId', String(queryId));
     }
-
-    console.log("Abstract Query");
-    console.log(abstractQuery);
 
     let subsetQuery = buildSubset(abstractQuery);
     console.log("Query: " + JSON.stringify(subsetQuery));
@@ -1382,7 +1386,6 @@ function processRule(rule) {
         let rule_query_inner = [];
 
         for (let child of rule.children) {
-            console.log(child);
             if (child.name === 'Latitude') {
                 let latitude = {
                     [child.column]: {

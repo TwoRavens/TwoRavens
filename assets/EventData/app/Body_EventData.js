@@ -22,12 +22,10 @@ import CanvasDate from "./views/CanvasDate";
 import CanvasCategoricalGrouped from "./views/CanvasCategoricalGrouped";
 import CanvasRootCode from "./views/CanvasRootCode";
 import CanvasAggregTS from "./views/CanvasAggregTS";
+import CanvasCustom from "./views/CanvasCustom";
+import CanvasCoordinates from "./views/CanvasCoordinates";
 
 import TableAggregation from "./views/TableAggregation";
-import CanvasCoordinates from "./views/CanvasCoordinates";
-import {selectedDataset} from "./app";
-import {datasource} from "./app";
-import {genericMetadata} from "./app";
 
 export default class Body_EventData {
 
@@ -170,6 +168,25 @@ export default class Body_EventData {
         }
 
         if (mode === 'subset') {
+            let alignedColumns = app.genericMetadata[app.selectedDataset]['alignments'];
+            let metadataSubsets = app.genericMetadata[app.selectedDataset]['subsets'];
+
+            let isAligned = (subsetName) => {
+                if ('alignments' in metadataSubsets[subsetName]) return 'Aligned';
+                if (metadataSubsets[subsetName]['type'] === 'dyad')
+                    for (let tab of Object.values(metadataSubsets[subsetName]['tabs'])) {
+                        if (tab['full'] in alignedColumns) return 'Aligned';
+                        for (let filter of tab['filters']) if (filter in alignedColumns) return 'Aligned';
+                    }
+                else for (let column of app.coerceArray(metadataSubsets[subsetName]['columns']))
+                    if (column in alignedColumns) return 'Aligned';
+                return 'Unaligned';
+            };
+
+            let subsetLists = Object.keys(app.genericMetadata[app.selectedDataset]['subsets'])
+                .reduce((out, subset) => {out[isAligned(subset)].push(subset); return out;}, {Aligned: [], Unaligned: []});
+            subsetLists['Unaligned'].push('Custom');
+
             return m(Panel, {
                 side: 'left',
                 label: 'Data Selection',
@@ -203,12 +220,20 @@ export default class Body_EventData {
                         {
                             value: 'Subsets',
                             title: 'Restrict by contents of rows.',
-                            contents: m(PanelList, {
-                                id: 'subsetsList',
-                                items: Object.keys(app.genericMetadata[app.selectedDataset]['subsets']),
-                                colors: {[common.selVarColor]: [app.selectedSubsetName]},
-                                callback: app.setSelectedSubsetName,
-                                attrsAll: {style: {height: 'calc(100% - 39px)', overflow: 'auto'}}
+                            contents: m(MenuHeaders, {
+                                id: 'subsetsMenu',
+                                attrsAll: {style: {height: '100%', overflow: 'auto'}},
+                                sections: Object.keys(subsetLists)
+                                    .filter(key => subsetLists[key].length)
+                                    .map(key => ({
+                                        value: key + ' Subsets',
+                                        contents: m(PanelList, {
+                                            id: 'subsetsList' + key,
+                                            items: subsetLists[key],
+                                            colors: {[common.selVarColor]: app.selectedCanvas === 'Custom' ? ['Custom'] : [app.selectedSubsetName]},
+                                            callback: (subset) => (subset === 'Custom' ? app.setSelectedCanvas : app.setSelectedSubsetName)(subset)
+                                        })
+                                    }))
                             })
                         }
                     ]
@@ -348,6 +373,7 @@ export default class Body_EventData {
             }
 
             let subsetType = app.genericMetadata[app.selectedDataset]['subsets'][app.selectedSubsetName]['type'];
+
             return m({
                 'date': CanvasDate,
                 'dyad': CanvasDyad,
@@ -366,16 +392,18 @@ export default class Body_EventData {
         }
 
         // TODO add CanvasAnalysis
+        app.canvasPreferences[app.selectedCanvas] = app.canvasPreferences[app.selectedCanvas] || {};
         return m({
             'Datasets': CanvasDatasets,
             'PentaClass': CanvasDatasets,
             'RootCode': CanvasRootCode,
-            'Time Series': CanvasAggregTS
+            'Time Series': CanvasAggregTS,
+            'Custom': CanvasCustom
         }[app.selectedCanvas], {
             mode: app.selectedMode,
             preferences: app.canvasPreferences[app.selectedCanvas],
             redraw: app.canvasRedraw[app.selectedCanvas],
-            setRedraw: app.setCanvasRedraw
+            setRedraw: (state) => app.setCanvasRedraw(app.selectedCanvas, state)
         });
     }
 

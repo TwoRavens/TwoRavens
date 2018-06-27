@@ -2,12 +2,12 @@ import m from 'mithril';
 import {abstractQuery, buildSubset} from '../app';
 import {panelMargin} from '../../../common/common';
 
-import '../../../node_modules/ace-builds/src-min-noconflict/ace.js';
+import '../../../../node_modules/ace-builds/src-min-noconflict/ace.js';
 
 import {tourStartCustomExamples} from "../tour";
 
 export default class CanvasCustom {
-    oncreate(vnode){
+    oncreate(vnode) {
         let {preferences} = vnode.attrs;
         // The editor menu for the custom subsets
         this.editor = ace.edit("subsetCustomEditor");
@@ -25,12 +25,16 @@ export default class CanvasCustom {
         // editor.textInput.getElement().disabled = true;
     }
 
-    view(vnode) {
+    onupdate(vnode) {
         let {preferences, redraw, setRedraw} = vnode.attrs;
         if (redraw) {
-            this.editor.setValue(preferences['text']);
-            setRedraw('custom', false);
+            setRedraw(false);
+            this.editor.setValue(preferences['text'] || '')
         }
+    }
+
+    view(vnode) {
+        let {preferences} = vnode.attrs;
 
         return (m("#canvasCustom", {style: {height: '100%', 'padding-top': panelMargin}},
             [
@@ -48,7 +52,10 @@ export default class CanvasCustom {
                     style: {
                         "display": "inline"
                     },
-                    onclick: () => preferences['text'] = JSON.stringify(buildSubset(abstractQuery), null, '	')
+                    onclick: () => {
+                        preferences['text'] = JSON.stringify(buildSubset(abstractQuery), null, '	');
+                        this.editor.setValue(preferences['text'] || '')
+                    }
                 }, "Show All"),
 
                 // Examples Button

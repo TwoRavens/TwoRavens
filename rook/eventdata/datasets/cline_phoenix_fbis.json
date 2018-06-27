@@ -8,7 +8,9 @@
   "subsets": {
     "Actor": {
       "type": "dyad",
-      "alignment": "actor",
+      "alignments": [
+        "actor"
+      ],
       "formats": [
         "phoenix"
       ],
