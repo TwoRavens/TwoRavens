@@ -14,8 +14,14 @@ docker pull registry.datadrivendiscovery.org/jkanter/mit-fl-ta2:stable
 
 Within a Terminal:
 1. `cd` into the top-level `TwoRavens` directory
-1. `workon 2ravens`
-1. make config files: `fab make_d3m_config_files`
+1. Start the virtualenv:
+    ```
+    workon 2ravens
+    ```
+1. make config files
+    ```
+    fab make_d3m_config_files
+    ```
 1. Show a list of datasets to run FL
     ```
     fab run_featurelabs_choose_config
