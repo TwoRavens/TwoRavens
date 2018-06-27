@@ -41,11 +41,11 @@ For each command below, **FIRST**:
 
 1. Redis
     ```
-    docker run --rm -p 6379:6379 -v /ravens_volume:/ravens_volume redis:4
+    fab redis_run
     ```
     OR: 
     ```
-    fab redis_run
+    docker run --rm -p 6379:6379 -v /ravens_volume:/ravens_volume redis:4
     ```
 1. Celery
     ```
