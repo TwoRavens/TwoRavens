@@ -2084,28 +2084,23 @@ export let pipelineHeader = ['Hidden_UID', 'PipelineID', 'Metric', 'Score'];
 export let pipelineTable;
 
 function onPipelineCreate(PipelineCreateResult, rookpipe) {
-    // rpc GetExecutePipelineResults(PipelineExecuteResultsRequest) returns (stream PipelineExecuteResult) {}
-    estimateLadda.stop(); // stop spinner
-    console.log(PipelineCreateResult);
 
-    // change status of buttons for estimating problem and marking problem as finished
-    byId("btnEstimate").classList.remove("btn-success");
-    byId("btnEstimate").classList.add("btn-default");
-    byId("btnEndSession").classList.remove("btn-default");
-    byId("btnEndSession").classList.add("btn-success");
-
-    let context = apiSession(zparams.zsessionid);
-    for (var i = 0; i<PipelineCreateResult.length; i++) {
-        if(PipelineCreateResult[i].pipelineId in allPipelineInfo) {
-            allPipelineInfo[PipelineCreateResult[i].pipelineId]=Object.assign(allPipelineInfo[PipelineCreateResult[i].pipelineId],PipelineCreateResult[i]);
-        } else {
-            allPipelineInfo[PipelineCreateResult[i].pipelineId]=PipelineCreateResult[i];
-        }
+    if(PipelineCreateResult.hash_id in allPipelineInfo) {
+        allPipelineInfo[PipelineCreateResult.hash_id]=Object.assign(allPipelineInfo[PipelineCreateResult.hash_id],PipelineCreateResult);
+    } else {
+        allPipelineInfo[PipelineCreateResult.hash_id]=PipelineCreateResult;
     }
+
     console.log(allPipelineInfo);
     // to get all pipeline ids: Object.keys(allPipelineInfo)
 
-    pipelineTable = [];
+
+    let myid = "";
+    let mymetric = "";
+    let myval = "";
+    //let myscores = [];  // attempt to deal w multiple scores
+
+    pipelineTable = [];                    // Rebuilds from scratch every time because prior information might have been updated.  But might not be necessary.
     for(var key in allPipelineInfo) {
         console.log(key);
         console.log(allPipelineInfo[key]);
@@ -2114,35 +2109,29 @@ function onPipelineCreate(PipelineCreateResult, rookpipe) {
             continue;
         }
         // this will NOT report the pipeline to user if pipeline has failed, if pipeline is still running, or if it has not completed
-        if(allPipelineInfo[key].responseInfo.status.details == "Pipeline Failed")  {
-            continue;
-        }
-        if(allPipelineInfo[key].progressInfo == "RUNNING")  {
-            continue;
-        }
+        // if(allPipelineInfo[key].responseInfo.status.details == "Pipeline Failed")  {
+        //     continue;
+        // }
+        // if(allPipelineInfo[key].progressInfo == "RUNNING")  {
+        //     continue;
+        // }
 
-        let myid = "";
-        let mymetric = "";
-        let myval = "";
-        console.log(key);
-        console.log(allPipelineInfo[key].progressInfo);
-        let myscores = [];
-        if(allPipelineInfo[key].progressInfo == "COMPLETED"){
-            myscores = allPipelineInfo[key].pipelineInfo.scores;
-            for(var i = 0; i < myscores.length; i++) {
+        // if(allPipelineInfo[key].progressInfo == "COMPLETED"){
+        //    myscores = allPipelineInfo[key].pipelineInfo.scores;
+        //     for(var i = 0; i < myscores.length; i++) {
                 //if(i==0) {myid=key;}
                 //   else myid="";
                 myid=key;
-                mymetric=myscores[i].metric;
-                myval=+myscores[i].value.toFixed(3);
+                mymetric="metric here" //allPipelineInfo[key].  SOMETHING HERE;
+                myval=999; //+myscores[i].value.toFixed(3);
                 pipelineTable.push([pipelineTable.length, myid, mymetric, myval])
-            }
-        } else { // if progressInfo is not "COMPLETED"
-            continue;
-        }
+        //     }
+        //} else { // if progressInfo is not "COMPLETED"
+        //     continue;
+        // }
     }
 
-    console.table(pipelineTable, [1, 2, 3]);
+    //console.table(pipelineTable, [1, 2, 3]);
 
     if (IS_D3M_DOMAIN){
         byId("btnSetx").click();   // Was "btnResults" - changing to simplify user experience for testing.
@@ -2152,9 +2141,12 @@ function onPipelineCreate(PipelineCreateResult, rookpipe) {
     allPipelineInfo.rookpipe=rookpipe;                // This is setting rookpipe for the entire table, but when there are multiple CreatePipelines calls, this is only recording latest values
 
     // this initializes the results windows using the first pipeline ID
-    if(!swandive) {
-        resultsplotinit(pipelineTable[0][1]);
-    }
+
+    //if(!swandive) {
+    //    resultsplotinit(pipelineTable[0][1]);
+    //}
+
+
     // VJD: these two functions are built and (I believe) functioning as intended. These exercise two core API calls that are currently unnecessary
     //exportpipeline(pipelineTable[1][1]);
     //listpipelines();
@@ -2426,15 +2418,17 @@ export async function estimate(btn) {
             let newCount = 0;
 
             while(!searchFinished){
-                res3 = await updateRequest(searchDetailsUrl, {});                // silent equivalent makeRequest() with no data argument.  Also, should check whether best to be synchronous here.
+                res3 = await updateRequest(searchDetailsUrl);                // silent equivalent makeRequest() with no data argument.  Also, should check whether best to be synchronous here.
                 newCount = res3.data.responses.count;
+                console.log("newCount" + newCount)
 
                 if(newCount>oldCount){
                     for (var i = oldCount; i < newCount; i++) {
                         console.log(i);
                         console.log(res3.data.responses.list[i].details_url);
                         solutionDetailsUrl = res3.data.responses.list[i].details_url;
-                        res4 = await makeRequest(solutionDetailsUrl);
+                        res4 = await updateRequest(solutionDetailsUrl);
+                        onPipelineCreate(res4.data, rookpipe);                     // Should move to later in call sequence as more of API is incorporated.
                         console.log(res4.data.response.solutionId);
                     };
                     oldCount = newCount;
@@ -2442,13 +2436,18 @@ export async function estimate(btn) {
                 };
             };
 
-
             // Get to these shortly
             //let res3 = await makeRequest(D3M_SVC_URL + `/FitSolutions`, {})
             //let requestId = res3.data.requestId;
             //let res4 = await makeRequest(D3M_SVC_URL + `/GetFitSolutionsResults`, {})
 
-            res && res2 && onPipelineCreate(res, rookpipe);
+            // stop spinner
+            estimateLadda.stop(); 
+            // change status of buttons for estimating problem and marking problem as finished
+            byId("btnEstimate").classList.remove("btn-success");
+            byId("btnEstimate").classList.add("btn-default");
+            byId("btnEndSession").classList.remove("btn-default");
+            byId("btnEndSession").classList.add("btn-success");
         }
     }
     task2_finished = true;
