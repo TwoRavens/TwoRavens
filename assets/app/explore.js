@@ -36,6 +36,7 @@ import * as bubbleqqq from './vega-schemas/trivariate/bubbleqqq';
 import * as scatterqqq from './vega-schemas/trivariate/scatterqqq';
 import * as trellisscatterqqn from './vega-schemas/trivariate/trellisscatterqqn';
 import * as heatmapnnq from './vega-schemas/trivariate/heatmapnnq';
+import * as dotdashqqn from './vega-schemas/trivariate/dotdashqqn';
 const $private = false;
 
 function heatmap(x_Axis_name, y_Axis_name) {
@@ -1617,6 +1618,7 @@ export async function plot(plotNodes, plottype="") {
         plottype[0] === "scatterqqq" ? scatterqqq:
         plottype[0] === "trellisscatterqqn" ? trellisscatterqqn:
         plottype[0] === "heatmapnnq" ? heatmapnnq:
+        plottype[0] === "dotdashqqn" ? dotdashqqn:
         alert("invalid plot type");
     console.log(schema);
 
