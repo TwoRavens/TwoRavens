@@ -53,3 +53,4 @@ rook/rook-files/o_185/data/trainDatamerged.tsv
 rook/rook-files/o_185/preprocess/preprocess.json
 assets/pkgs/swagger-ui/dist/*.map
 .Rhistory
+/ravens_volume/test_data/*/search_config.json
