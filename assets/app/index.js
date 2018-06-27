@@ -320,13 +320,14 @@ class Body {
                 bubbletri: "Bubble Plot with Groups",
                 bubbleqqq: "Bubble Plot with Binned Groups",
                 scatterqqq: "Interactive Scatterplot with Binned Groups",
-                trellisscatterqqn: "Scatterplot Trellis"
+                trellisscatterqqn: "Scatterplot Trellis",
+                heatmapnnq: "Heatmap with Mean Z"
             };
             let schemas = {
                 univariate: 'areauni dot histogram histogrammean simplebar',
                 bivariate: 'aggbar area averagediff binnedscatter binnedtableheat box'
                     + ' groupedbar horizon interactivebarmean line scatter scattermatrix scattermeansd stackedbar step strip tableheat trellishist',
-                trivariate: 'bubbletri groupedbartri horizgroupbar scattertri bubbleqqq scatterqqq trellisscatterqqn',
+                trivariate: 'bubbletri groupedbartri horizgroupbar scattertri bubbleqqq scatterqqq trellisscatterqqn heatmapnnq',
                 multi: 'binnedcrossfilter scattermatrix'
             };
             let filtered = schemas[variate];
