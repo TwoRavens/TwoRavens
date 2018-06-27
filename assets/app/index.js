@@ -321,9 +321,9 @@ class Body {
             let schemas = {
                 univariate: 'areauni dot histogram histogrammean simplebar',
                 bivariate: 'aggbar area averagediff binnedscatter binnedtableheat box2d'
-                    + 'groupedbar horizon interactivebarmean line scatter scattermatrix scattermeansd stackedbar step strip tableheat trellishist',
+                    + ' groupedbar horizon interactivebarmean line scatter scattermatrix scattermeansd stackedbar step strip tableheat trellishist',
                 trivariate: 'bubbletri groupedbartri scattertri',
-                multi: 'binnedscrossfilter scattermatrix'
+                multi: 'binnedcrossfilter scattermatrix'
             };
             let filtered = schemas[variate];
             if (variate === 'bivariate' || variate === 'trivariate') {
