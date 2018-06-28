@@ -62,15 +62,12 @@ export default class Recode {
             for(var variable in dataDetails){
                 varList.push(variable);  
             }
-            console.log('daaa')
-            console.log(varList)
         });
         
 
         m.request(`rook-custom/rook-files/${configName}/data/trainData.tsv`, {
             deserialize: x => x.split('\n').map(y => y.split('\t'))
         }).then(data => {
-            console.log(data.length)
             // simulate only loading some of the data... by just deleting all the other data
             let headers = data[0].map(x => x.replace(/"/g, ''));
             let newData = data.slice(1, data.length-1);
@@ -291,7 +288,6 @@ function onRecodeStorageEvent(recode, e){
 }
 
 function createList(elem){
-    console.log(elem.dom.id)
     if(elem.dom.id !== "varList"){
         document.getElementById(elem.dom.id).setAttribute("style", "background-color:"+app.hexToRgba("#FA8072"));
     }
@@ -320,20 +316,31 @@ function addOperations(elem){
     }
     else if(document.getElementById('formulaLink').className === 'active'){
         var text = document.getElementById('variables');
-        text.value += this.textContent.split("(")[0]+"("+currentVal+")";
+        if(text.value === ""){
+            text.value += this.textContent.split("(")[0]+"("+currentVal+")";
+        }else{
+            text.value += "*"+this.textContent.split("(")[0]+"("+currentVal+")";
+        }
         document.getElementById('leftpanelMenuButtonBarVariables').click()
     }
 }
 
 function clickVar(elem) {    
 
-    document.getElementById('tabVariables').setAttribute("style","display:none");
-    document.getElementById('leftpanelMenuButtonBarOperations').click()
+    // document.getElementById('tabVariables').setAttribute("style","display:none");
+    // document.getElementById('leftpanelMenuButtonBarOperations').attr('disabled', 'disabled');
 
-    document.getElementById(this.id).setAttribute("style", "background:"+app.hexToRgba("#28a4c9"));
 
     if(document.getElementById('recodeLink').className === 'active'){
-      
+        
+        document.getElementById('plot_a').innerHTML ="";
+        
+        var list = document.getElementsByClassName('var');
+        for (var i = 0; i < list.length; i++ ) {
+            list[i].setAttribute("style", "background:"+app.hexToRgba("#FA8072"));
+        }
+        document.getElementById(this.id).setAttribute("style", "background:"+app.hexToRgba("#28a4c9"));
+        
         //If the variable is a of the type 'character', cannot apply mathematical transformations on it.
         if(dataDetails[this.textContent]['numchar'] != 'numeric'){
             var transform =  document.getElementById('div1_recode');
@@ -344,7 +351,6 @@ function clickVar(elem) {
             transform.style.display = 'block';
             var node = dataDetails[this.textContent];
             if (node.plottype === "continuous") {
-                console.log('conti')
                 density_cross(node);
                 
             }else if (node.plottype === "bar") {
@@ -355,19 +361,16 @@ function clickVar(elem) {
     }
 
     if(document.getElementById('formulaLink').className === 'active'){
+        document.getElementById(this.id).setAttribute("style", "background:"+app.hexToRgba("#28a4c9"));
+        document.getElementById('leftpanelMenuButtonBarOperations').click();
         //Only those variables of type "numeric" could be used to build formula
         if(dataDetails[this.textContent]['numchar'] === 'numeric'){
-            // var text = document.getElementById('variables');
-            // text.value = text.value + " " + this.textContent;
             currentVal = this.textContent;
         }
      }
      
 }
 function addValue(elem){
-    console.log('Values Added')
-    console.log(elem.target[3].value)
-    //selectedOptions
     var newVarValue = [];
 
     if(document.getElementById('typeSelect').selectedIndex === 0){
@@ -387,14 +390,9 @@ function addValue(elem){
             newVarValue.push({row:i,value:elem.target[2+i].value})
         }
     }
-    
-    console.log(newVarValue);   
-    console.log(n)
 }
 
 function filterTable(elem){
-    console.log($("input[type=checkbox]:checked").size());
-
     if($("input[type=checkbox]:checked").size()<1){
         alert('Select atleast one variable')
     }
@@ -431,7 +429,6 @@ function hideTooltip(){
 }
 
 function createNewCalculate(){
-    console.log(document.getElementById('typeSelect').selectedIndex)
     if(document.getElementById('newVar').value===""){
         alert("Enter Variable Name!");
     }
@@ -486,7 +483,6 @@ function calculate2(elem){
         'replacement': elem.target[2].value
     }
     app.callTransform();
-    // console.log(json)
 }
 function calculate(elem){
     var recodeString = elem.target[0].value;
@@ -504,6 +500,7 @@ function createClick(){
     
     document.getElementById("filterTableDiv").setAttribute("style", "display:block");
     document.getElementById("nominalDiv").setAttribute("style", "display:none");
+    // document.getElementById('btnOperations').style.visibility = 'visible';
     
     var elem = document.getElementById('formulaDiv');
     elem.style.display="none";
@@ -552,11 +549,13 @@ function createCreate(){
 function recodeCreate(){
     var elem = document.getElementById('recodeLink');
     elem.className = 'active';
+    $('#btnOperations').css('display', 'none');
 
     var elem = document.getElementById('centralPanel');
     elem.style.display ='none';
+    document.getElementById('btnOperations').disabled = 'disabled';
+    
 
-    console.log(varList.length)
     // for(var i =1;i< varList.length;i++){
     //     console.log('here')
     //     // console.log(document.getElementById('varList'+varList[i].replace(/\W/g, '_')))
@@ -565,6 +564,7 @@ function recodeCreate(){
 function recodeClick(){
     var elem = document.getElementById('recodeLink');
     elem.className = 'active';
+    $('#btnOperations').css('display', 'none');
 
     var elem = document.getElementById('centralPanel');
     elem.style.display="none"
@@ -601,6 +601,7 @@ function formulaClick(){
 
     var elem = document.getElementById('centralPanel');
     elem.style.display ='none';
+    $('#btnOperations').css('display', 'block');
 
     var elem = document.getElementById('createTableDiv');
     elem.style.display="none";
@@ -683,8 +684,6 @@ function reorderCreate(){
         var min_x = d3.min(data2, function (d, i) {
             return data2[i].x;
         });
-        console.log('min_x')
-        console.log(min_x)
         var max_x = d3.max(data2, function (d, i) {
             return data2[i].x;
         });
@@ -763,8 +762,6 @@ function reorderCreate(){
             .style("text-indent","20px")
             .style("font-size","12px")
             .style("font-weight","bold");
-        console.log('plotsvg')
-        console.log(plotsvg)
 
         if (isNaN(a) || a === 0) {
             var upper_limit = d3.max(xVals);
@@ -948,10 +945,8 @@ function reorderCreate(){
             .style("font-weight","bold");
 
         if(isNaN(a)|| a===0) {
+            var x_coor2 = [];
             x_cord2 = equimass_bar(bar_env, keys.length)
-            console.log('bar_env')
-            console.log(bar_env)
-            console.log(keys)
             for (var i = 0; i < keys.length - 1; i++) {
                 plotsvg1.append("line")
                     .attr("id", "line2")
@@ -1002,21 +997,19 @@ function reorderCreate(){
 
     function calculateBin(elem){
         var bin = elem.target[0].value;
-        console.log(bin)
         var varName = currentVal;
-
-        equidistance(varName,bin);
+        if(elem.target[1][0].selected){
+            equidistance(varName,bin);
+        }else if(elem.target[1][1].selected){
+            equimass(varName, bin);
+        }
 
     }
 
     function equidistance(varName,bin) {
 
         console.log('elem equidistance')
-        // console.log(elem.target[0].value)
-        
-        // console.log(plot_nodes)
         var method_name= "equidistance";
-        // json object to be sent to r server
         var obj = new Object();
         obj.plotNameA = varName;
         obj.equidistance = bin;
@@ -1024,13 +1017,143 @@ function reorderCreate(){
         if(varName != "variable"){
             var node = dataDetails[varName];
             if (node.plottype === "continuous") {
-                console.log()
                 document.getElementById('plot_a').innerHTML ="";
-
-                $("#plot_a").html = "";
-                // remove("#plotsvg_id");
+                density_cross(node,bin,method_name);
+            }else if (node.plottype === "bar") {
+                document.getElementById('plot_a').innerHTML ="";
+                bar_cross(node,bin,method_name);
+            }
+        }
+    }
+    function equimass(varName,bin) {
+        //equimass function to call the plot function
+        var method_name= "equimass";
+        var obj = new Object();
+        obj.plotNameA = varName;
+        obj.equidistance = bin;
+        var string = JSON.stringify(obj);
+        if(varName != "variable"){
+            var node = dataDetails[varName];
+            if (node.plottype === "continuous") {
+                document.getElementById('plot_a').innerHTML ="";
                 density_cross(node,bin,method_name);
             }
+            else if (node.plottype === "bar") {
+                document.getElementById('plot_a').innerHTML ="";
+                bar_cross(node,bin,method_name);
+            }
+        }        
+    }
+    function equimassCalculation(plot_ev,n) {
+        // here we find the coordinates using CDF values
+        //var n =v-1;
+        var arr_y=[];
+        var arr_x=[];
+
+        arr_y=plot_ev.cdfploty;// cdfploty data stored
+        arr_x=plot_ev.cdfplotx;// cdfplotx data stored
+
+        var Upper_limitY= d3.max(arr_y);
+        var Lower_limitY=d3.min(arr_y);
+        var diffy=Upper_limitY-Lower_limitY;
+        var e=(diffy)/n; // e is the variable to store the average distance between the points in the cdfy in order to divide the cdfy
+
+        var arr_c=[]; //array to store the cdfy divided coordinates data
+        var push_data=arr_y[0];
+        for(var i=0;i<n;i++) {
+            push_data=push_data+e;
+            arr_c.push(push_data);
+        }
+
+        var temp_cdfx=[];
+        var temp=[];
+        var store=[];
+
+        for (var i=0; i<n; i++)//to get through each arr_c
+        {
+            for (var j = 0; j < 50; j++)// to compare with cdfy or arr_y
+            {
+                if (arr_c[i] === arr_y[j]) {
+                    store.push({val: i, coor1: j, coor2: j, diff1: 0.34, diff2: 0});// for testing purpose
+                }
+            }
+        }
+        for(var i=0; i<n;i++) {
+            var diff_val1, diff_val2;// here the diff is not actual difference, it is the fraction of the distance from the two points
+            var x1, x2, x3,x4;
+            for (var j = 0; j < 50; j++) {
+                if (arr_y[j] < arr_c[i] && arr_c[i] < arr_y[j + 1]) {
+                    x1 = arr_c[i];
+                    x2 = arr_c[i]-arr_y[j];
+                    x3 = arr_y[j+1]-arr_c[i];
+                    x4=arr_y[j+1]-arr_y[j];
+                    diff_val1 = x2/ x4;
+                    diff_val2 = x3 / x4;
+                    store.push({val: i, coor1: j, coor2: j + 1, diff1: diff_val1, diff2: diff_val2});
+                }
+            }
+        }
+
+        for(var i=0; i<n; i++) {
+            var y1,y2,y3,diffy1,diffy2;
+            y1=store[i].val;
+            y2= store[i].coor1;
+            y3= store[i].coor2;
+            diffy1=store[i].diff1;
+            diffy2=store[i].diff2;
+            var x_coor1= arr_x[y2];
+            var x_coor2=arr_x[y3];
+            var x_diff=x_coor2-x_coor1;
+            var distance1= x_diff*diffy1;
+            var val_x=x_coor1+distance1;
+            temp.push(val_x);
+        }
+        return temp;
+    }
+    function equimass_bar(plot_ev,n) {
+        var keys = Object.keys(plot_ev.plotvalues);
+        var k = keys.length;
+        var temp = [];
+        var count = 0;
+
+        if (k < n) {
+            alert("error enter vaild size");
+        } else {
+            while (k > 0) {
+                temp.push({pos: count, val: k});
+                count++;
+                k--;
+                if (count >= n) {
+                    count = 0;
+                }
+            }
+
+            var temp2 = new Array(n);
+            for (var i = 0; i < temp2.length; i++) {
+                temp2[i] = 0;
+            }
+            for (var i = 0; i < keys.length; i++) {
+                keys[i] = (keys[i] + 5) / 10;// to get the increase in the actual values by 0.5 according to the xaxis in plot
+            }
+            for (var i = 0; i < n; i++) {
+                for (var j = 0; j < temp.length; j++) {
+                    if (temp[j].pos === i) {
+                        temp2[i] = temp2[i] + 1;
+                    }
+                }
+            }
+
+            var j = 0, k = 0;
+            var temp_final = new Array(n);
+            for (var i = 0; i < keys.length; i++) {
+                temp2[j] = temp2[j] - 1;
+                if (temp2[j] === 0) {
+                    j++;
+                    temp_final[k] = keys[i];
+                    k++;
+                }
+            }
+            return temp_final;
         }
     }
 
