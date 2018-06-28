@@ -254,6 +254,7 @@ def run_featurelabs_ta2(data_dir_path, output_dir_path):
                   ' -e D3MRUN=ta2ta3'
                   ' -v {0}:/input'
                   ' -v {1}:/output'
+                  ' -v /ravens_volume:/ravens_volume'
                   ' registry.datadrivendiscovery.org/jkanter/mit-fl-ta2:stable'
                   '').format(data_dir_path, output_dir_path)
 
