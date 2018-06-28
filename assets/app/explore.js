@@ -39,6 +39,7 @@ import * as heatmapnnq from './vega-schemas/trivariate/heatmapnnq';
 import * as dotdashqqn from './vega-schemas/trivariate/dotdashqqn';
 import * as tablebubblennq from './vega-schemas/trivariate/tablebubblennq';
 import * as stackedbarnnn from './vega-schemas/trivariate/stackedbarnnn';
+import * as facetbox from './vega-schemas/trivariate/facetbox';
 const $private = false;
 
 function heatmap(x_Axis_name, y_Axis_name) {
@@ -1624,12 +1625,14 @@ export async function plot(plotNodes, plottype="") {
         plottype[0] === "dotdashqqn" ? dotdashqqn:
         plottype[0] === "tablebubblennq" ? tablebubblennq:
         plottype[0] === "stackedbarnnn" ? stackedbarnnn:
+        plottype[0] === "facetbox" ? facetbox:
         alert("invalid plot type");
     console.log(schema);
 
     // function returns whether to flip a plot. for example, if plot expects 'nq' and users gives 'qn', flip should return true. this may have to be generalized for 3+ dimension plots
     let plotflip = (pt) => {
-        return pt[0] === "box" && pt[1] === "qn" ? true : false;
+        return  pt[0] === "box" && pt[1] === "qn" ? true :
+                pt[0] === "facetbox" && pt[1] === "qnn" ? true : false;
     };
     
     // function to fill in the contents of the vega schema.

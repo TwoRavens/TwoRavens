@@ -324,13 +324,14 @@ class Body {
                 heatmapnnq: "Heatmap with Mean Z",
                 dotdashqqn: "Dot-dash Plot",
                 tablebubblennq: "Table Bubble Plot",
-                stackedbarnnn: "Stacked Bar Plot"
+                stackedbarnnn: "Stacked Bar Plot",
+                facetbox: "Faceted Box Plot"
             };
             let schemas = {
                 univariate: 'areauni dot histogram histogrammean simplebar',
                 bivariate: 'aggbar area averagediff binnedscatter binnedtableheat box'
                     + ' groupedbar horizon interactivebarmean line scatter scattermatrix scattermeansd stackedbar step strip tableheat trellishist',
-                trivariate: 'bubbletri groupedbartri horizgroupbar scattertri bubbleqqq scatterqqq trellisscatterqqn heatmapnnq dotdashqqn tablebubblennq stackedbarnnn',
+                trivariate: 'bubbletri groupedbartri horizgroupbar scattertri bubbleqqq scatterqqq trellisscatterqqn heatmapnnq dotdashqqn tablebubblennq stackedbarnnn facetbox',
                 multi: 'binnedcrossfilter scattermatrix'
             };
             let filtered = schemas[variate];
@@ -373,14 +374,14 @@ class Body {
                            attrsAll: {style: {width: '400px'}, class: 'btn-sm'},
                            onclick: x => {nodesExplore = []; app.setVariate(x)},
                            activeSection: app.exploreVariate,
-                           sections: [{value: 'Univariate'}, {value: 'Bivariate'}, {value: 'Trivariate'}, {value: 'Multivariate'}]}),
+                           sections: [{value: 'Univariate'}, {value: 'Bivariate'}, {value: 'Trivariate'}, {value: 'Multiple'}]}),
                         m(Button, {
                             id: 'exploreGo',
                             onclick: _ => {
                                 let variate = app.exploreVariate.toLowerCase();
                                 let selected = nodesExplore.map(x => x.name);
                                 let len = selected.length;
-                                if (variate === 'univariate' && len != 1 || variate === 'bivariate' && len != 2 || variate === 'trivariate' && len != 3 || variate === 'multivariate' && len < 2) {
+                                if (variate === 'univariate' && len != 1 || variate === 'bivariate' && len != 2 || variate === 'trivariate' && len != 3 || variate === 'multiple' && len < 2) {
                                     return;
                                 }
                                 m.route.set(`/explore/${variate}/${selected.join('/')}`);
