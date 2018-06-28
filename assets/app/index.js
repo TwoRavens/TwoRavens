@@ -280,11 +280,11 @@ class Body {
         let overflow = explore_mode ? 'auto' : 'hidden';
         let style = `position: absolute; left: ${app.panelWidth.left}; top: 0; margin-top: 10px`;
 
-        vars.forEach(x => {
-            let node = app.findNode(x);
-            node && expnodes.push(node);
-        });
         let exploreVars = (() => {
+            vars.forEach(x => {
+                let node = app.findNode(x);
+                node && expnodes.push(node);
+            });
             if (!expnodes[0] && !expnodes[1]) {
                 return;
             }
@@ -333,13 +333,16 @@ class Body {
             let plot = expnodes[0] && expnodes[0].plottype === 'continuous' ? plots.density : plots.bars;
 
             return m('', [
-                m('', {style: 'margin-bottom: 1em; max-width: 1000px; overflow: scroll; white-space: nowrap'}, filtered.split(' ').map(x => {
-                    return m("figure", {style: 'display: inline-block'},
-                      m(`img#${x}_img[alt=${x}][height=140px][width=260px][src=/static/images/${x}.png]`,
-                        {onclick: _ => exp.plot(expnodes, x),
-                         style: {border: "1px solid #ddd", "border-radius": "3px", padding: "5px", margin: "3%", cursor: "pointer"}}),
-                             m("figcaption", {style: {"text-align": "center"}}, plotMap[x]));
-                })),
+                m('', {style: 'margin-bottom: 1em; max-width: 1000px; overflow: scroll; white-space: nowrap'},
+                  filtered.split(' ').map(x => {
+                      return m("figure", {style: 'display: inline-block'}, [
+                          m(`img#${x}_img[alt=${x}][height=140px][width=260px][src=/static/images/${x}.png]`, {
+                              onclick: _ => exp.plot(expnodes, x),
+                              style: {border: "1px solid #ddd", "border-radius": "3px", padding: "5px", margin: "3%", cursor: "pointer"}
+                          }),
+                          m("figcaption", {style: {"text-align": "center"}}, plotMap[x])
+                      ]);
+                  })),
                 m('#plot', {style: 'display: block', oncreate: _ => expnodes.length > 1 ? exp.plot(expnodes) : plot(expnodes[0], 'explore', true)})
             ]);
         })();
@@ -380,6 +383,9 @@ class Body {
                         }, 'go'),
                         m('br'),
                         m('', {style: `display: flex; flex-direction: row; flex-wrap: wrap`}, app.valueKey.map(x => {
+                            let show = app.exploreVariate === 'Bivariate' || app.exploreVariate === 'Trivariate';
+                            let len = nodesExplore.length;
+                            let [n0, n1, n2] = nodesExplore;
                             return m('span', {
                                 onclick: _ => app.clickVar(x, nodesExplore),
                                 style: {
@@ -391,7 +397,10 @@ class Body {
                                     'background-color': app.hexToRgba(common[nodesExplore.map(x => x.name).includes(x) ? 'selVarColor' : 'varColor']),
                                     'justify-content': 'center'
                                 }
-                            }, x);
+                            }, show && n0 && n0.name === x ? `${x} (x)`
+                                     : show && n1 && n1.name === x ? `${x} (y)`
+                                     : show && n2 && n2.name === x ? `${x} (z)`
+                                     : x);
                         })))],
                 m('svg#whitespace')),
               model_mode && m("#spacetools.spaceTool", {style: {right: app.panelWidth['right'], 'z-index': 16}},
