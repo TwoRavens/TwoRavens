@@ -344,7 +344,7 @@ function crossTabPlots(PlotNameA, PlotNameB, json_obj) {
         });
 
     var plot_nodes = app.nodes.slice();
-    for (let node of plot_nodes) {
+        for (let node of plot_nodes) {
         if (node.name === PlotNameA) {
             if (node.plottype === "continuous") {
                 continuous_n++;

@@ -9,6 +9,7 @@ import MenuTabbed from './MenuTabbed';
 import * as common from "../common";
 import * as index from "../../../app/index";
 import * as app from "../../../app/app";
+import * as explore from "../../../app/explore";
 
 import {
     borderColor,
@@ -19,6 +20,11 @@ import {
     scrollbarWidth,
 } from "../common";
 
+const $private = false;
+var margin_cross = {top: 30, right: 35, bottom: 40, left: 40},
+width_cross = 300 - margin_cross.left - margin_cross.right,
+height_cross = 160 - margin_cross.top - margin_cross.bottom;
+var padding_cross = 100;
 
 let varList = [];
 let currentVal = "variable" ;
@@ -56,6 +62,8 @@ export default class Recode {
             for(var variable in dataDetails){
                 varList.push(variable);  
             }
+            console.log('daaa')
+            console.log(varList)
         });
         
 
@@ -157,67 +165,33 @@ export default class Recode {
                     m('div.container-fluid ',{id: 'recodeDiv'},[
         
                         m('div.container-fluid', {id : 'div1_recode' , style : {'height': '220px','padding':'20px'}}, [
-                            m('form',{ onsubmit: calculate},[
+                            m('form',{ onsubmit: calculateBin},[
                                 m('div',{style :{'display': 'block','overflow': 'hidden'}},[
-                                    m('input[type=text]', {id: 'variable', placeholder: 'Variable', style : {'width': '100%','box-sizing':'border-box'}}),
-                                    m('span',{ onmouseover:_=> showTooltip() , onmouseout:_=> hideTooltip(),style: {'position': 'absolute','display': 'inline','top': '25px','color': 'grey','padding-left': '5px', 'font-size':'17px'}},"?"),
-                                    m('div',{id:'tooltip', style: 'right:0; display: none; margin-right: 35px'},[
-                                        m('table',[
-                                            m('tr',[
-                                                m('th','Use..'),
-                                                m('th','to do...'),
-                                            ]),
-                                            m('tr',[
-                                                m('td',{style:{'font-family': 'Courier New'}},'sqrt('+currentVal+')'),
-                                                m('td','square root of a variable'),
-                                            ]),
-                                            m('tr',[
-                                                m('td',{style:{'font-family': 'Courier New'}},'abs('+currentVal+')'),
-                                                m('td','absolute value of the variable'),
-                                            ]),
-                                            m('tr',[
-                                                m('td',{style:{'font-family': 'Courier New'}},'exp('+currentVal+')'),
-                                                m('td','exponential of the variable'),
-                                            ]),
-                                            m('tr',[
-                                                m('td',{style:{'font-family': 'Courier New'}},'log('+currentVal+')'),
-                                                m('td','logarithmic value of a variable'),
-                                            ]),
-                                            m('tr',[
-                                                m('td',{style:{'font-family': 'Courier New'}},'log10('+currentVal+')'),
-                                                m('td','logarithmic base 10 value of a variable'),
-                                            ]),
-                                            m('tr',[
-                                                m('td',{style:{'font-family': 'Courier New'}},'factorial('+currentVal+')'),
-                                                m('td','factorial of a variable'),
-                                            ]),
-                                            m('tr',[
-                                                m('td',{style:{'font-family': 'Courier New'}},'ceiling('+currentVal+')'),
-                                                m('td','ceiling value of a variable'),
-                                            ]),
-                                            m('tr',[
-                                                m('td',{style:{'font-family': 'Courier New'}},'floor('+currentVal+')'),
-                                                m('td','floor value of a variable'),
-                                            ]),
+                                    m('input[type=number]',{id:'bin',placeholder:'Number of bins'}),
+                                    m('div.dropdownBin',{style : {'display':'inline-block','margin':'10px'}},[
+                                        m('select.form-control',{onchange: someFunction ,style:{'display':'inline-block'}, id:'binType'},[
+                                            m('option','Equidistance'),
+                                            m('option','Equimass')
                                         ])
-                                    ]),                            
+                                    ]),
+                                    m('div',{id:'plot_a'}),                         
                                 ]),
                                 m("br"),
-                                m('button[type="submit"]',{style: {'float':'right'}}, 'Customize'),
+                                m('button[type="submit"]',{style: {'float':'left'}}, 'Customize'),
                             ]),]),
                             m('div.container-fluid', {id : 'div2' , style : {'display':'block','height': '250px','padding':'20px'}}, [
-                            m('form',{ onsubmit: calculate2},[
-                                m('span',{style :{'display': 'block','overflow': 'hidden'}},[
-                                    m('input[type=text]', {id: 'value1', placeholder: 'value 1', style : {'display':'inline-block' , 'margin-right':'10px', 'width':'20%'}}),
-                                    m('h3',{ style : {'display':'inline-block', 'margin-right':'10px'}},'-'),
-                                    m('input[type=text]', {id: 'value2', placeholder: 'value 1', style : {'display':'inline-block' , 'margin-right':'10px', 'width':'20%'}}),
-                                    m('h3',{ style : {'display':'inline-block', 'margin-right':'10px'}},'='),
-                                    m('input[type=text]', {id: 'newValue', placeholder: 'New Value', style : {'display':'inline-block' , 'width':'20%'}}),
-                                ]),
+                            // m('form',{ onsubmit: calculate2},[
+                            //     m('span',{style :{'display': 'block','overflow': 'hidden'}},[
+                            //         m('input[type=text]', {id: 'value1', placeholder: 'value 1', style : {'display':'inline-block' , 'margin-right':'10px', 'width':'20%'}}),
+                            //         m('h3',{ style : {'display':'inline-block', 'margin-right':'10px'}},'-'),
+                            //         m('input[type=text]', {id: 'value2', placeholder: 'value 1', style : {'display':'inline-block' , 'margin-right':'10px', 'width':'20%'}}),
+                            //         m('h3',{ style : {'display':'inline-block', 'margin-right':'10px'}},'='),
+                            //         m('input[type=text]', {id: 'newValue', placeholder: 'New Value', style : {'display':'inline-block' , 'width':'20%'}}),
+                            //     ]),
                                 
-                                m("br"),
-                                m('button[type="submit"]',{style: {'float': 'right'}} ,'Customize'),
-                            ])
+                            //     m("br"),
+                            //     m('button[type="submit"]',{style: {'float': 'right'}} ,'Customize'),
+                            // ])
                         ])
                     
                     ]),
@@ -351,8 +325,7 @@ function addOperations(elem){
     }
 }
 
-function clickVar(elem) {
-    console.log(this.id)
+function clickVar(elem) {    
 
     document.getElementById('tabVariables').setAttribute("style","display:none");
     document.getElementById('leftpanelMenuButtonBarOperations').click()
@@ -369,8 +342,14 @@ function clickVar(elem) {
         else {
             var transform =  document.getElementById('div1_recode');
             transform.style.display = 'block';
-            // var text = document.getElementById('variable');
-            // text.value = this.textContent;
+            var node = dataDetails[this.textContent];
+            if (node.plottype === "continuous") {
+                console.log('conti')
+                density_cross(node);
+                
+            }else if (node.plottype === "bar") {
+                bar_cross(node);
+            }
             currentVal = this.textContent;  
         }
     }
@@ -685,6 +664,375 @@ function reorderCreate(){
     var elem = document.getElementById('createTableDiv');
     elem.style.display="none";
 }
+    // this is the function to add  the density plot if any
+    function density_cross(density_env,a,method_name) {
+        // setup the x_cord according to the size given by user
+        var yVals = density_env.ploty;
+        var xVals = density_env.plotx;
+
+        // an array of objects
+        var data2 = [];
+        for (var i = 0; i < density_env.plotx.length; i++) {
+            data2.push({x: density_env.plotx[i], y: density_env.ploty[i]});
+        }
+        data2.forEach(function (d) {
+            d.x = +d.x;
+            d.y = +d.y;
+        });
+
+        var min_x = d3.min(data2, function (d, i) {
+            return data2[i].x;
+        });
+        console.log('min_x')
+        console.log(min_x)
+        var max_x = d3.max(data2, function (d, i) {
+            return data2[i].x;
+        });
+        var avg_x = (max_x - min_x) / 10;
+        var min_y = d3.min(data2, function (d, i) {
+            return data2[i].y;
+        });
+        var max_y = d3.max(data2, function (d, i) {
+            return data2[i].y;
+        });
+        var avg_y = (max_y - min_y) / 10;
+        var x = d3.scale.linear()
+            .domain([d3.min(xVals), d3.max(xVals)])
+            .range([0, width_cross]);
+        var invx = d3.scale.linear()
+            .range([d3.min(data2.map(function (d) {
+                return d.x;
+            })), d3.max(data2.map(function (d) {
+                return d.x;
+            }))])
+            .domain([0, width_cross]);
+        var y = d3.scale.linear()
+            .domain([d3.min(data2.map(function (d) {
+                return d.y;
+            })), d3.max(data2.map(function (d) {
+                return d.y;
+            }))])
+            .range([height_cross, 0]);
+        var xAxis = d3.svg.axis()
+            .scale(x)
+            .ticks(5)
+            .orient("bottom");
+        var yAxis = d3.svg.axis()
+            .scale(y)
+            .orient("left");
+        var area = d3.svg.area()
+            .interpolate("monotone")
+            .x(function (d) {
+                return x(d.x);
+            })
+            .y0(height_cross - avg_y)
+            .y1(function (d) {
+                return y(d.y);
+            });
+        var line = d3.svg.line()
+            .x(function (d) {
+                return x(d.x);
+            })
+            .y(function (d) {
+                return y(d.y);
+            })
+            .interpolate("monotone");
+
+        var plotsvg = d3.select("#plot_a")
+            .append("svg")
+            .attr("id", "plotsvg_id")
+            .style("width", width_cross + margin_cross.left + margin_cross.right) //setting height to the height of #main.left
+            .style("height", height_cross + margin_cross.top + margin_cross.bottom)
+            .style("margin-left","20px")
+            .append("g")
+            .attr("transform", "translate(0," + margin_cross.top + ")");
+        plotsvg.append("path")
+            .attr("id", "path1")
+            .datum(data2)
+            .attr("class", "area")
+            .attr("d", area);
+        plotsvg.append("g")
+            .attr("class", "x axis")
+            .attr("transform", "translate(0," + (height_cross  ) + ")")
+            .call(xAxis);
+        plotsvg.append("text")
+            .attr("x", (width_cross / 2))
+            .attr("y", (margin_cross.top + padding_cross -10))
+            .attr("text-anchor", "middle")
+            .text(density_env.name)
+            .style("text-indent","20px")
+            .style("font-size","12px")
+            .style("font-weight","bold");
+        console.log('plotsvg')
+        console.log(plotsvg)
+
+        if (isNaN(a) || a === 0) {
+            var upper_limit = d3.max(xVals);
+            var lower_limit = d3.min(xVals);
+            var z = 10;
+            var diff = upper_limit - lower_limit;
+            var buffer = diff / z;
+            var x_cord = [];
+            var push_data = lower_limit;
+            for (var i = 0; i < z - 1; i++) {
+                push_data = push_data + buffer;
+                x_cord.push(push_data);
+                plotsvg.append("line")
+                    .attr("id", "line1")
+                    .attr("x1", x(x_cord[i]))
+                    .attr("x2", x(x_cord[i]))
+                    .attr("y1", y(d3.min(yVals)))
+                    .attr("y2", y(d3.max(yVals)))
+                    .style("stroke", "#0D47A1")
+                    .style("stroke-dasharray", "3");
+            }
+        } else {
+            if (method_name === "equidistance") {
+                var upper_limit = d3.max(xVals);
+                var lower_limit = d3.min(xVals);
+                var diff = upper_limit - lower_limit;
+                var buffer = diff / a;
+                var x_cord = [];
+                var push_data = lower_limit;
+                for (var i = 0; i < a - 1; i++) {
+                    push_data = push_data + buffer;
+                    x_cord.push(push_data);
+                    plotsvg.append("line")
+                        .attr("id", "line1")
+                        .attr("x1", x(x_cord[i]))
+                        .attr("x2", x(x_cord[i]))
+                        .attr("y1", y(d3.min(yVals)))
+                        .attr("y2", y(d3.max(yVals)))
+                        .style("stroke", "#0D47A1")
+                        .style("stroke-dasharray", "4");
+                }
+            } else if (method_name === "equimass") {
+                // here we use the data from equimassCalculation to draw lines
+                var temp = [];
+                temp = equimassCalculation(density_env, a);
+                for (var i = 1; i < a; i++) {
+                    plotsvg.append("line")
+                        .attr("id", "line1")
+                        .attr("x1", x(temp[i]))
+                        .attr("x2", x(temp[i]))
+                        .attr("y1", y(d3.min(yVals)))
+                        .attr("y2", y(d3.max(yVals)))
+                        .style("stroke", "#0D47A1")
+                        .style("stroke-dasharray", "4");
+                }
+            }
+        }
+    }
+    // this is the function to add the bar plot if any
+    function bar_cross(bar_env,a,method_name) {
+        var barPadding = .015;  // Space between bars
+        var topScale = 1.2;      // Multiplicative factor to assign space at top within graph - currently removed from implementation
+        var plotXaxis = true;
+
+        // Data
+        var keys = Object.keys(bar_env.plotvalues);
+        var yVals = new Array;
+        var ciUpperVals = new Array;
+        var ciLowerVals = new Array;
+        var ciSize;
+
+        var xVals = new Array;
+        var yValKey = new Array;
+
+        if (bar_env.nature === "nominal") {
+            var xi = 0;
+            for (var i = 0; i < keys.length; i++) {
+                if (bar_env.plotvalues[keys[i]] == 0) {
+                    continue;
+                }
+                yVals[xi] = bar_env.plotvalues[keys[i]];
+                xVals[xi] = xi;
+                if ($private) {
+                    if (bar_env.plotvaluesCI) {
+                        ciLowerVals[xi] = bar_env.plotValuesCI.lowerBound[keys[i]];
+                        ciUpperVals[xi] = bar_env.plotValuesCI.upperBound[keys[i]];
+                    }
+                    ciSize = ciUpperVals[xi] - ciLowerVals[xi];
+                }
+                yValKey.push({y: yVals[xi], x: keys[i]});
+                xi = xi + 1;
+            }
+            yValKey.sort((a, b) => b.y - a.y); // array of objects, each object has y, the same as yVals, and x, the category
+            yVals.sort((a, b) => b - a); // array of y values, the height of the bars
+            ciUpperVals.sort((a, b) => b.y - a.y); // ?
+            ciLowerVals.sort((a, b) => b.y - a.y); // ?
+        } else {
+            for (var i = 0; i < keys.length; i++) {
+                yVals[i] = bar_env.plotvalues[keys[i]];
+                xVals[i] = Number(keys[i]);
+                if ($private) {
+                    if (bar_env.plotvaluesCI) {
+                        ciLowerVals[i] = bar_env.plotvaluesCI.lowerBound[keys[i]];
+                        ciUpperVals[i] = bar_env.plotvaluesCI.upperBound[keys[i]];
+                    }
+                    ciSize = ciUpperVals[i] - ciLowerVals[i];
+                }
+            }
+        }
+
+        if ((yVals.length > 15 & bar_env.numchar === "numeric") | (yVals.length > 5 & bar_env.numchar === "character")) {
+            plotXaxis = false;
+        }
+        var minY=d3.min(yVals);
+        var  maxY = d3.max(yVals); // in the future, set maxY to the value of the maximum confidence limit
+        var  minX = d3.min(xVals);
+        var  maxX = d3.max(xVals);
+        var   x_1 = d3.scale.linear()
+            .domain([minX - 0.5, maxX + 0.5])
+            .range([0, width_cross]);
+
+        var invx = d3.scale.linear()
+            .range([minX - 0.5, maxX + 0.5])
+            .domain([0, width_cross]);
+
+        var  y_1 = d3.scale.linear()
+        // .domain([0, maxY])
+            .domain([0, maxY])
+            .range([0, height_cross]);
+
+        var xAxis = d3.svg.axis()
+            .scale(x_1)
+            .ticks(yVals.length)
+            .orient("bottom");
+
+        var yAxis = d3.svg.axis()
+            .scale(y_1)
+            .orient("left");
+
+        var plotsvg1 = d3.select('#plot_a')
+            .append("svg")
+            .attr("id","plotsvg1_id")
+            .style("width", width_cross + margin_cross.left + margin_cross.right) //setting height to the height of #main.left
+            .style("height", height_cross + margin_cross.top + margin_cross.bottom)
+            .style("margin-left","20px")
+            .append("g")
+            .attr("transform", "translate(0," + margin_cross.top + ")");
+
+        var rectWidth = x_1(minX + 0.5 - 2 * barPadding); //the "width" is the coordinate of the end of the first bar
+        plotsvg1.selectAll("rect")
+            .data(yVals)
+            .enter()
+            .append("rect")
+            .attr("id","path2")
+            .attr("x", function (d, i) {
+                return x_1(xVals[i] - 0.5 + barPadding);
+            })
+            .attr("y", function (d) {
+                return y_1(maxY - d);
+            })
+            .attr("width", rectWidth)
+            .attr("height", function (d) {
+                return y_1(d);
+            })
+            .attr("fill", "#fa8072");
+
+        if (plotXaxis) {
+            plotsvg1.append("g")
+                .attr("class", "x axis")
+                .attr("transform", "translate(0," + height_cross + ")")
+                .call(xAxis);
+        }
+
+        plotsvg1.append("text")
+            .attr("x", (width_cross / 2))
+            .attr("y", margin_cross.top + padding_cross-10)
+            .attr("text-anchor", "middle")
+            .text(bar_env.name)
+            .style("text-indent","20px")
+            .style("font-size","12px")
+            .style("font-weight","bold");
+
+        if(isNaN(a)|| a===0) {
+            x_cord2 = equimass_bar(bar_env, keys.length)
+            console.log('bar_env')
+            console.log(bar_env)
+            console.log(keys)
+            for (var i = 0; i < keys.length - 1; i++) {
+                plotsvg1.append("line")
+                    .attr("id", "line2")
+                    .attr("x1", x_1(x_cord2[i] ))
+                    .attr("x2", x_1(x_cord2[i] ))
+                    .attr("y1", y_1(0))
+                    .attr("y2", y_1(maxY))
+                    .style("stroke", "#212121")
+                    .style("stroke-dasharray", "4");
+            }
+        }
+        else {
+            if (method_name === "equidistance") {
+                var upper_limit1 = maxX;
+                var lower_limit1 = minX;
+                var diff1 = upper_limit1 - lower_limit1;
+                var buffer1 = diff1 / a;
+                var x_cord1 = [];
+                var push_data1 = lower_limit1;
+                for (var i = 0; i < a - 1; i++) {
+                    push_data1 = push_data1 + buffer1;
+                    x_cord1.push(push_data1);
+                    plotsvg1.append("line")
+                        .attr("id", "line2")
+                        .attr("x1", x_1(x_cord1[i]))
+                        .attr("x2", x_1(x_cord1[i]))
+                        .attr("y1", y_1(0))
+                        .attr("y2", y_1(maxY))
+                        .style("stroke", "#0D47A1")
+                        .style("stroke-dasharray", "4");
+                }
+            } else if (method_name==="equimass") {
+                var x_cord2 = [];
+                x_cord2 = equimass_bar(bar_env, a);
+                for (var i = 0; i < a - 1; i++) {
+                    plotsvg1.append("line")
+                        .attr("id", "line2")
+                        .attr("x1", x_1(x_cord2[i] ))
+                        .attr("x2", x_1(x_cord2[i] ))
+                        .attr("y1", y_1(0))
+                        .attr("y2", y_1(maxY))
+                        .style("stroke", "#0D47A1")
+                        .style("stroke-dasharray", "4");
+                }
+            }
+        }
+    }
+
+    function calculateBin(elem){
+        var bin = elem.target[0].value;
+        console.log(bin)
+        var varName = currentVal;
+
+        equidistance(varName,bin);
+
+    }
+
+    function equidistance(varName,bin) {
+
+        console.log('elem equidistance')
+        // console.log(elem.target[0].value)
+        
+        // console.log(plot_nodes)
+        var method_name= "equidistance";
+        // json object to be sent to r server
+        var obj = new Object();
+        obj.plotNameA = varName;
+        obj.equidistance = bin;
+        var string = JSON.stringify(obj);
+        if(varName != "variable"){
+            var node = dataDetails[varName];
+            if (node.plottype === "continuous") {
+                console.log()
+                document.getElementById('plot_a').innerHTML ="";
+
+                $("#plot_a").html = "";
+                // remove("#plotsvg_id");
+                density_cross(node,bin,method_name);
+            }
+        }
+    }
 
 $(window).resize(function(){
     $('#rightpanel').css({
