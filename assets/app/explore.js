@@ -38,6 +38,7 @@ import * as trellisscatterqqn from './vega-schemas/trivariate/trellisscatterqqn'
 import * as heatmapnnq from './vega-schemas/trivariate/heatmapnnq';
 import * as dotdashqqn from './vega-schemas/trivariate/dotdashqqn';
 import * as tablebubblennq from './vega-schemas/trivariate/tablebubblennq';
+import * as stackedbarnnn from './vega-schemas/trivariate/stackedbarnnn';
 const $private = false;
 
 function heatmap(x_Axis_name, y_Axis_name) {
@@ -1553,7 +1554,7 @@ export async function plot(plotNodes, plottype="") {
                 myCons[0] && !myCons[1] && myCons[2] ? ['bubbletri','qnq'] :
                 !myCons[0] && myCons[1] && !myCons[2] ? ['groupedbartri','nqn'] :
                 !myCons[0] && !myCons[1] && myCons[2] ? ['heatmapnnq','nnq'] :
-                !myCons[0] && !myCons[1] && !myCons[2] ? ['tablebubble','nnn'] :
+                !myCons[0] && !myCons[1] && !myCons[2] ? ['stackedbarnnn','nnn'] :
                 ['scattermatrix','aaa'];
         }
     };
@@ -1622,6 +1623,7 @@ export async function plot(plotNodes, plottype="") {
         plottype[0] === "heatmapnnq" ? heatmapnnq:
         plottype[0] === "dotdashqqn" ? dotdashqqn:
         plottype[0] === "tablebubblennq" ? tablebubblennq:
+        plottype[0] === "stackedbarnnn" ? stackedbarnnn:
         alert("invalid plot type");
     console.log(schema);
 
