@@ -148,7 +148,7 @@ def load_d3m_config_from_env():
         return
 
     try:
-        management.call_command('load_config', config_file)
+        management.call_command('load_config', d3m_data_dir)
     except management.base.CommandError as err_obj:
         print('> Failed to load D3M config.\n%s' % err_obj)
 
