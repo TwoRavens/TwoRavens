@@ -40,6 +40,7 @@ import * as dotdashqqn from './vega-schemas/trivariate/dotdashqqn';
 import * as tablebubblennq from './vega-schemas/trivariate/tablebubblennq';
 import * as stackedbarnnn from './vega-schemas/trivariate/stackedbarnnn';
 import * as facetbox from './vega-schemas/trivariate/facetbox';
+import * as facetheatmap from './vega-schemas/trivariate/facetheatmap';
 const $private = false;
 
 function heatmap(x_Axis_name, y_Axis_name) {
@@ -1626,6 +1627,7 @@ export async function plot(plotNodes, plottype="") {
         plottype[0] === "tablebubblennq" ? tablebubblennq:
         plottype[0] === "stackedbarnnn" ? stackedbarnnn:
         plottype[0] === "facetbox" ? facetbox:
+        plottype[0] === "facetheatmap" ? facetheatmap:
         alert("invalid plot type");
     console.log(schema);
 
