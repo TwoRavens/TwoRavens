@@ -100,7 +100,7 @@ plotdata.app <- function(env) {
         })
   }
   
-  if(plottype=="scatter" | plottype=="aggbar" | plottype=="binnedscatter" | plottype=="histogram" | plottype=="scattermeansd" | plottype=="scattermatrix" | plottype=="simplebar" | plottype=="areauni"| plottype=="histogrammean" | plottype=="trellishist" | plottype=="interactivebarmean" | plottype=="dot" | plottype=="binnedcrossfilter" | plottype=="scattertri" | plottype=="bubbletri") {
+  if(plottype=="scatter" | plottype=="aggbar" | plottype=="binnedscatter" | plottype=="histogram" | plottype=="scattermeansd" | plottype=="scattermatrix" | plottype=="simplebar" | plottype=="areauni"| plottype=="histogrammean" | plottype=="trellishist" | plottype=="interactivebarmean" | plottype=="dot" | plottype=="binnedcrossfilter" | plottype=="scattertri" | plottype=="bubbletri" | plottype=="horizgroupbar" | plottype=="bubbleqqq" | plottype=="scatterqqq" | plottype=="trellisscatterqqn" | plottype=="heatmapnnq" | plottype=="dotdashqqn"| plottype=="tablebubblennq") {
         tryCatch({
         plotdata <<- list()
 
@@ -126,7 +126,7 @@ plotdata.app <- function(env) {
         })
   }
   
-  if(plottype=="stackedbar" | plottype=="groupedbar" | plottype=="averagediff") {
+  if(plottype=="stackedbar" | plottype=="groupedbar" | plottype=="averagediff" | plottype=="stackedbarnnn") {
         tryCatch({
         plotdata <<- list()
 

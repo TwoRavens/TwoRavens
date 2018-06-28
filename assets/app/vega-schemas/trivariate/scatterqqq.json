@@ -1,0 +1,20 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v2.json",
+  "data": {"url": "tworavensData"},
+  "description": "An interactive scatterplot for three quantitative variables.",
+  "selection": {
+    "grid": {
+      "type": "interval", "bind": "scales"
+    }
+  },
+  "mark": "circle",
+  "encoding": {
+    "x": {
+      "field": "tworavensX", "type": "quantitative"
+    },
+    "y": {
+      "field": "tworavensY", "type": "quantitative"
+    },
+    "size": {"field": "tworavensZ", "type": "quantitative"}
+  }
+}

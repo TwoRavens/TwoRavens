@@ -30,7 +30,15 @@ import * as interactivebarmean from './vega-schemas/interactivebarmean';
 import * as binnedcrossfilter from './vega-schemas/multi/binnedcrossfilter';
 import * as scattertri from './vega-schemas/trivariate/scattertri';
 import * as groupedbartri from './vega-schemas/trivariate/groupedbartri';
+import * as horizgroupbar from './vega-schemas/trivariate/horizgroupbar';
 import * as bubbletri from './vega-schemas/trivariate/bubbletri';
+import * as bubbleqqq from './vega-schemas/trivariate/bubbleqqq';
+import * as scatterqqq from './vega-schemas/trivariate/scatterqqq';
+import * as trellisscatterqqn from './vega-schemas/trivariate/trellisscatterqqn';
+import * as heatmapnnq from './vega-schemas/trivariate/heatmapnnq';
+import * as dotdashqqn from './vega-schemas/trivariate/dotdashqqn';
+import * as tablebubblennq from './vega-schemas/trivariate/tablebubblennq';
+import * as stackedbarnnn from './vega-schemas/trivariate/stackedbarnnn';
 const $private = false;
 
 function heatmap(x_Axis_name, y_Axis_name) {
@@ -1523,7 +1531,7 @@ export async function plot(plotNodes, plottype="") {
     console.log('zpop:', app.zparams);
 
     let getPlotType = (pt) => {
-        if(plotNodes.length>3) return['scattermatrix'];
+        if(plotNodes.length>3) return['scattermatrix','aaa'];
         let myCons = [];
         let vt = "";
         for (var i=0; i<plotNodes.length; i++) {
@@ -1540,10 +1548,13 @@ export async function plot(plotNodes, plottype="") {
                 ['stackedbar','nn'];
         }
         if(plotNodes.length==3) {
-            return myCons[0] && myCons[1] && myCons[2] ? ['scattermatrix','qqq'] :
-                myCons[0] && !myCons[1] && !myCons[2] ? ['groupedbartri','qnn'] :
+            return myCons[0] && myCons[1] && myCons[2] ? ['bubbleqqq','qqq'] :
+                myCons[0] && !myCons[1] && !myCons[2] ? ['horizgroupbar','qnn'] :
                 myCons[0] && myCons[1] && !myCons[2] ? ['scattertri','qqn'] :
                 myCons[0] && !myCons[1] && myCons[2] ? ['bubbletri','qnq'] :
+                !myCons[0] && myCons[1] && !myCons[2] ? ['groupedbartri','nqn'] :
+                !myCons[0] && !myCons[1] && myCons[2] ? ['heatmapnnq','nnq'] :
+                !myCons[0] && !myCons[1] && !myCons[2] ? ['stackedbarnnn','nnn'] :
                 ['scattermatrix','aaa'];
         }
     };
@@ -1605,6 +1616,14 @@ export async function plot(plotNodes, plottype="") {
         plottype[0] === "scattertri" ? scattertri:
         plottype[0] === "groupedbartri" ? groupedbartri:
         plottype[0] === "bubbletri" ? bubbletri:
+        plottype[0] === "horizgroupbar" ? horizgroupbar:
+        plottype[0] === "bubbleqqq" ? bubbleqqq:
+        plottype[0] === "scatterqqq" ? scatterqqq:
+        plottype[0] === "trellisscatterqqn" ? trellisscatterqqn:
+        plottype[0] === "heatmapnnq" ? heatmapnnq:
+        plottype[0] === "dotdashqqn" ? dotdashqqn:
+        plottype[0] === "tablebubblennq" ? tablebubblennq:
+        plottype[0] === "stackedbarnnn" ? stackedbarnnn:
         alert("invalid plot type");
     console.log(schema);
 
@@ -1647,7 +1666,7 @@ export async function plot(plotNodes, plottype="") {
             stringified = stringified.replace(/"tworavensUniqueY"/g, "["+$uniques+"]");
             stringified = stringified.replace(/"tworavensColors"/g, "["+$colors+"]");
         }
-        if (data.plottype=="groupedbartri") {
+        if (data.plottype[0]=="groupedbartri") {
             let $colors = colors.splice(0, data["uniqueZ"].length).map(col => `"${col}"`).join(',');
           //  stringified = stringified.replace(/"tworavensUniqueY"/g, "["+data.uniqueY+"]");
             stringified = stringified.replace(/"tworavensColors"/g, "["+$colors+"]");
@@ -1656,12 +1675,12 @@ export async function plot(plotNodes, plottype="") {
             stringified = stringified.replace(/"tworavensMeanY"/g, data.meanY);
             stringified = stringified.replace(/tworavensMeanY/g, data.meanY); //both needed in this order
         }
-        if(data.plottype=="scattermatrix") {
+        if(data.plottype[0]=="scattermatrix") {
             let $matvars = data["vars"].map(myvar => `"${myvar}"`).join(',');
             stringified = stringified.replace(/"tworavensRow"/g, $matvars);
             stringified = stringified.replace(/"tworavensCol"/g, $matvars);
         }
-        if(data.plottype=="binnedcrossfilter") {
+        if(data.plottype[0]=="binnedcrossfilter") {
             let $matvars = data["vars"].map(myvar => `"${myvar}"`).join(',');
             stringified = stringified.replace(/"tworavensVars"/g, $matvars);
         }
