@@ -408,6 +408,7 @@ export const reset = async function reloadPage() {
 export let restart;
 
 let dataurl = '';
+let datasetdocurl = '';
 
 export let step = (target, placement, title, content) => ({
     target,
@@ -509,6 +510,8 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         url: "/config/d3m-config/json/latest"
     });
     console.log(res);
+    datasetdocurl = res.dataset_schema;
+
     // 2. Set 'configurations'
     configurations = JSON.parse(JSON.stringify(res)); // this is just copying res
     d3mRootPath = configurations.training_data_root.replace(/\/data/,'');
@@ -2265,48 +2268,16 @@ function CreateProblemDefinition(depvar, aux) {
     }
 }
 
-
 function CreatePipelineDefinition(predictors, depvar, aux) {
     let my_userAgent = "TwoRavens";                             // Get from elsewhere
     let my_version = "2018.6.2";                                // Get from elsewhere
     let my_allowedValueTypes = ["DATASET_URI", "CSV_URI"];      // Get from elsewhere
     let my_problem = CreateProblemDefinition(depvar, aux);
-    console.log(my_problem);
-
-    return {userAgent: my_userAgent, version: my_version, timeBound: 5, priority: 1, allowedValueTypes: my_allowedValueTypes, problem: my_problem};
+    //console.log(my_problem);
+    let my_dataseturi = "file://" + datasetdocurl;
+    // console.log(my_dataseturi);
+    return {userAgent: my_userAgent, version: my_version, timeBound: 5, priority: 1, allowedValueTypes: my_allowedValueTypes, problem: my_problem, inputs: [{dataset_uri: my_dataseturi}] };
 }
-
-
-// {
-//     "solutionId": "solutionId_kzu9a8",
-//     "inputs": [
-//         {
-//             "csvUri": "file://uri/to-a/csv"
-//         },
-//         {
-//             "datasetUri": "file://uri/to-a/dataset"
-//         }
-//     ],
-//     "exposeOutputs": [
-//         "steps.1.steps.4.produce"
-//     ],
-//     "exposeValueTypes": [
-//         "PICKLE_URI",
-//         "VALUE_TYPE_UNDEFINED"
-//     ],
-//     "users": [
-//         {
-//             "id": "uuid of user",
-//             "choosen": true,
-//             "reason": "best solution"
-//         },
-//         {
-//             "id": "uuid of user",
-//             "choosen": false,
-//             "reason": ""
-//         }
-//     ]
-// }
 
 function CreateFitDefinition(solutionId){
     let inputs = [{ csvUri: "need to fix filepath" }];            // need to fix
