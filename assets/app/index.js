@@ -326,13 +326,14 @@ class Body {
                 tablebubblennq: "Table Bubble Plot",
                 stackedbarnnn: "Stacked Bar Plot",
                 facetbox: "Faceted Box Plot",
-                facetheatmap: "Faceted Heatmap"
+                facetheatmap: "Faceted Heatmap",
+                groupedbarnqq: "Grouped Bar with Binned Z"
             };
             let schemas = {
                 univariate: 'areauni dot histogram histogrammean simplebar',
                 bivariate: 'aggbar area averagediff binnedscatter binnedtableheat box'
                     + ' groupedbar horizon interactivebarmean line scatter scattermatrix scattermeansd stackedbar step strip tableheat trellishist',
-                trivariate: 'bubbletri groupedbartri horizgroupbar scattertri bubbleqqq scatterqqq trellisscatterqqn heatmapnnq dotdashqqn tablebubblennq stackedbarnnn facetbox facetheatmap',
+                trivariate: 'bubbletri groupedbartri horizgroupbar scattertri bubbleqqq scatterqqq trellisscatterqqn heatmapnnq dotdashqqn tablebubblennq stackedbarnnn facetbox facetheatmap groupedbarnqq',
                 multi: 'binnedcrossfilter scattermatrix'
             };
             let filtered = schemas[variate];

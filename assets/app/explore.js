@@ -41,6 +41,7 @@ import * as tablebubblennq from './vega-schemas/trivariate/tablebubblennq';
 import * as stackedbarnnn from './vega-schemas/trivariate/stackedbarnnn';
 import * as facetbox from './vega-schemas/trivariate/facetbox';
 import * as facetheatmap from './vega-schemas/trivariate/facetheatmap';
+import * as groupedbarnqq from './vega-schemas/trivariate/groupedbarnqq';
 const $private = false;
 
 function heatmap(x_Axis_name, y_Axis_name) {
@@ -1555,6 +1556,7 @@ export async function plot(plotNodes, plottype="") {
                 myCons[0] && myCons[1] && !myCons[2] ? ['scattertri','qqn'] :
                 myCons[0] && !myCons[1] && myCons[2] ? ['bubbletri','qnq'] :
                 !myCons[0] && myCons[1] && !myCons[2] ? ['groupedbartri','nqn'] :
+                !myCons[0] && myCons[1] && myCons[2] ? ['groupedbarnqq','nqq'] :
                 !myCons[0] && !myCons[1] && myCons[2] ? ['heatmapnnq','nnq'] :
                 !myCons[0] && !myCons[1] && !myCons[2] ? ['stackedbarnnn','nnn'] :
                 ['scattermatrix','aaa'];
@@ -1628,6 +1630,7 @@ export async function plot(plotNodes, plottype="") {
         plottype[0] === "stackedbarnnn" ? stackedbarnnn:
         plottype[0] === "facetbox" ? facetbox:
         plottype[0] === "facetheatmap" ? facetheatmap:
+        plottype[0] === "groupedbarnqq" ? groupedbarnqq:
         alert("invalid plot type");
     console.log(schema);
 
