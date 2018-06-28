@@ -35,6 +35,11 @@ RUN pip3 install --no-cache-dir -r requirements/prod.txt
 COPY . .
 
 # -------------------------------------
+# Create a volume for sharing between containers
+# -------------------------------------
+VOLUME /ravens_volume
+
+# -------------------------------------
 # Set some environment variables
 #   (This can be overridden in docker compose/kubernetes)
 #
@@ -49,12 +54,8 @@ ENV DJANGO_SETTINGS_MODULE=tworavensproject.settings.dev_container2 \
     TA2_STATIC_TEST_MODE=False \
     TA2_TEST_SERVER_URL=localhost:45042 \
     CODE_REPOSITORY=/var/webapps/TwoRavens \
-    LC_ALL=C.UTF-8
-
-# -------------------------------------
-# Create a volume for sharing between containers
-# -------------------------------------
-VOLUME /ravens_volume
+    LC_ALL=C.UTF-8 \
+    LOCAL_SETUP_DIR=/ravens_volume/2ravens_local_setup
 
 # -------------------------------------
 # Run setup scripts
