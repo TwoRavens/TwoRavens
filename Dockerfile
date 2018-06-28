@@ -72,15 +72,12 @@ VOLUME /ravens_volume
 #                             (not used for eval)
 #   - make_d3m_config - WARNING: for testing. Loads D3M info based on the test data
 #
-#   - ta3_listener_add - add TA3 listener url for terminal window
-#
 # -------------------------------------
 RUN fab init_db && \
     fab create_django_superuser && \
     fab create_test_user  && \
     fab load_docker_ui_config && \
-    fab collect_static && \
-    fab ta3_listener_add
+    fab collect_static
 
 #    fab make_d3m_config_files && \
 
