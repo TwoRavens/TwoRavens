@@ -44,7 +44,7 @@ class DataverseFileUpload(object):
         # -------------------
         # Update the file content to avoid a duplicate file error
         # -------------------
-        file_open = file_obj
+        file_open = open(file_obj, 'r').read()
         file_content = 'query: %s' % file_open
         file_name = 'temp_query' + str(uuid.uuid4())
         files = {'file': (file_name, file_content)}
