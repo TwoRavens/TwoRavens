@@ -32,9 +32,9 @@ sys.path.append(TA3TA2_API_DIR)
 #
 # https://github.com/TwoRavens/raven-metadata-service
 # -----------------------------------------------------
-RAVEN_METADATA_SVC = join(BASE_DIR, 'submodules', 'raven-metadata-service')
-RAVEN_PREPROCESS = join(RAVEN_METADATA_SVC, 'preprocess', 'code')
-sys.path.append(RAVEN_PREPROCESS)
+#RAVEN_METADATA_SVC = join(BASE_DIR, 'submodules', 'raven-metadata-service')
+#RAVEN_PREPROCESS = join(RAVEN_METADATA_SVC, 'preprocess', 'code')
+#sys.path.append(RAVEN_PREPROCESS)
 
 
 # Quick-start development settings - unsuitable for production
@@ -70,7 +70,7 @@ INSTALLED_APPS = [
     'tworaven_apps.rook_services', # sending UI calls to rook and back again
     'tworaven_apps.api_docs',
     'tworaven_apps.call_captures', # capture data sent from UI out to rook/TA2
-    #'tworaven_apps.ta3_search', # ta3_search for NIST
+    'tworaven_apps.eventdata_queries', # eventdata API services
 
     # webpack!
     'webpack_loader',
@@ -204,3 +204,12 @@ REDIS_PORT = os.environ.get('REDIS_PORT', 6379)
 
 CELERY_BROKER_URL = 'redis://%s:%d' % (REDIS_HOST, REDIS_PORT)
 CELERY_RESULT_BACKEND = 'redis://%s:%d' % (REDIS_HOST, REDIS_PORT)
+
+# ---------------------------
+#  For depositing Dataverse data
+# ---------------------------
+DATAVERSE_SERVER = os.environ.get('DATAVERSE_SERVER', 'https://dataverse.harvard.edu')
+DATAVERSE_API_KEY = os.environ.get('DATAVERSE_API_KEY', '1a0f75f2-31b3-4a7e-937c-b4acd2579c69')
+DATASET_PERSISTENT_ID = os.environ.get('DATASET_PERSISTENT_ID', 'doi%3A10.7910%2FDVN%2FSJWX4S')
+
+# otg  623d7768-fa3d-42c5-8a03-16d473dc8953
