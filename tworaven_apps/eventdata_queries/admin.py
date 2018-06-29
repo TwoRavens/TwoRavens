@@ -25,14 +25,15 @@ admin.site.register(EventDataSavedQuery, EventDataSavedQueryAdmin)
 
 
 class ArchiveQueryJobAdmin(admin.ModelAdmin):
-    list_display = ('what',
-                    'saved_query',
+    list_display = ('saved_query',
                     'status',
                     'is_finished',
                     'is_success',
                     'message',
                     'created',
-                    'modified')
+                    'modified',
+                    'dataverse_response',
+                    'archive_url')
 
     save_on_top = True
     readonly_fields = ('modified', 'created')

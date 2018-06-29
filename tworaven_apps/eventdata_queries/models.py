@@ -132,6 +132,9 @@ class ArchiveQueryJob(TimeStampedModel):
     message = models.TextField(default=None)
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now_add=True)
+    dataverse_response = jsonfield.JSONField(blank=True,
+                                             load_kwargs=dict(object_pairs_hook=OrderedDict))
+    archive_url = models.URLField(blank=True)
 
     class Meta:
         ordering = ('-created',)
