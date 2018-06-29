@@ -154,3 +154,21 @@ def api_search(request):
                         message='list not retrieved',
                         error=get_json_error(get_list_obj))
         return JsonResponse(user_msg)
+
+
+@csrf_exempt
+def api_upload_to_dataverse(request, query_id):
+    """ get query id to upload to dataverse"""
+
+    success, res_obj = EventJobUtil.get_query_from_object(query_id)
+    if success:
+        user_msg = dict(data=res_obj)
+        return JsonResponse(user_msg)
+    else:
+        user_msg = dict(error=get_json_error(res_obj))
+        return JsonResponse(user_msg)
+
+
+
+
+

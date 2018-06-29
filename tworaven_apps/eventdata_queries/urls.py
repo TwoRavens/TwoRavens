@@ -22,5 +22,10 @@ urlpatterns = [
     path(r'api/search',
          views.api_search,
          name='api_search'
-         )
+         ),
+    re_path(r'api/upload-dataverse/get/(?P<query_id>[0-9]{1,10})$',
+         views.api_upload_to_dataverse,
+         name='api_upload_to_dataverse'
+         ),
+
 ]

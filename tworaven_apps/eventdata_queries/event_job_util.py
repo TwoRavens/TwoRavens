@@ -10,6 +10,7 @@ from tworaven_apps.utils.basic_response import (ok_resp,
                                                 err_resp,
                                                 err_resp_with_data)
 from tworaven_apps.eventdata_queries.models import (EventDataSavedQuery, ArchiveQueryJob)
+from tworaven_apps.eventdata_queries.dataverse.named_temporary_file import NamedTemporaryFile
 
 
 class EventJobUtil(object):
@@ -77,3 +78,25 @@ class EventJobUtil(object):
 
         else:
             return err_resp(get_filtered_obj)
+
+    @staticmethod
+    def get_query_from_object(query_id):
+        """ return query obj"""
+        success, event_obj = EventJobUtil.get_object_by_id(query_id)
+
+        if not success:
+            return get_json_error(event_obj)
+
+        else:
+            print("event data obj ", event_obj.as_dict()['query'])
+            json_dump = json.dumps(event_obj.as_dict()['query'])
+            temp_file_obj = NamedTemporaryFile(json_dump)
+
+            succ, res_obj = temp_file_obj.return_status()
+
+            if not succ:
+                return err_resp(res_obj)
+            else:
+                return ok_resp(res_obj)
+
+
