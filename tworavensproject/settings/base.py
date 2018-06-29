@@ -209,7 +209,7 @@ CELERY_RESULT_BACKEND = 'redis://%s:%d' % (REDIS_HOST, REDIS_PORT)
 #  For depositing Dataverse data
 # ---------------------------
 DATAVERSE_SERVER = os.environ.get('DATAVERSE_SERVER', 'https://dataverse.harvard.edu')
-DATAVERSE_API_KEY = os.environ.get('DATAVERSE_API_KEY', '1a0f75f2-31b3-4a7e-937c-b4acd2579c69')
+DATAVERSE_API_KEY = os.environ.get('DATAVERSE_API_KEY', 'c9fe3570-b3bb-4728-8575-095f6a1f4717')
 DATASET_PERSISTENT_ID = os.environ.get('DATASET_PERSISTENT_ID', 'doi%3A10.7910%2FDVN%2FSJWX4S')
 
 # otg  623d7768-fa3d-42c5-8a03-16d473dc8953

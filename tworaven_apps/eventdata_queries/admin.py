@@ -19,8 +19,6 @@ class EventDataSavedQueryAdmin(admin.ModelAdmin):
     list_filter = ('saved_to_dataverse',)
 
 
-
-
 admin.site.register(EventDataSavedQuery, EventDataSavedQueryAdmin)
 
 
@@ -38,7 +36,6 @@ class ArchiveQueryJobAdmin(admin.ModelAdmin):
     save_on_top = True
     readonly_fields = ('modified', 'created')
     list_filter = ('is_finished', 'is_success')
-
 
 
 admin.site.register(ArchiveQueryJob, ArchiveQueryJobAdmin)

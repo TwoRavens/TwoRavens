@@ -93,10 +93,44 @@ class EventJobUtil(object):
             temp_file_obj = NamedTemporaryFile(json_dump)
 
             succ, res_obj = temp_file_obj.return_status()
-
+            print("res po", res_obj)
             if not succ:
                 return err_resp(res_obj)
             else:
-                return ok_resp(res_obj)
+                url_input = 'https://dataverse.harvard.edu/file.xhtml?fileId='+str(res_obj['data']['files'][0]['dataFile']['id'])+'&version=DRAFT'
 
+                succ, add_archive = EventJobUtil.add_archive_query_job(saved_query=json_dump,
+                                                                       status='complete',
+                                                                       is_finished=True,
+                                                                       is_success=True,
+                                                                       message='query result successfully created',
+                                                                       dataverse_response=res_obj,
+                                                                       archive_url=url_input)
+
+                if not succ:
+                    return err_resp(add_archive)
+                else:
+                    return ok_resp(add_archive)
+
+
+    @staticmethod
+    def add_archive_query_job(**kwargs):
+        """ add to the database of archive jobs"""
+        job = ArchiveQueryJob(**kwargs)
+
+        job.save()
+        # return True,"All good"
+        print("job :", job.as_dict())
+        if job.id:
+            """no error"""
+            usr_dict = dict(success=True,
+                            message="query job archived",
+                            data=job.as_dict())
+            return ok_resp(usr_dict)
+        else:
+            """error"""
+            usr_dict = dict(success=False,
+                            message="failed to archive query",
+                            id=job.id)
+            return err_resp(usr_dict)
 
