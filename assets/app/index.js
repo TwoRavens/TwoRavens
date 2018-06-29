@@ -27,6 +27,7 @@ import Header from '../common/views/Header';
 import PanelList from '../common/views/PanelList';
 import TextField from '../common/views/TextField';
 import Peek from '../common/views/Peek';
+import Modal from '../common/views/Modal';
 
 
 // EVENTDATA
@@ -496,7 +497,8 @@ class Body {
 
         return m(Header, {
             style: mode === 'explore' ? {'background-image': '-webkit-linear-gradient(top, #fff 0, rgb(227, 242, 254) 100%)'} : {}
-        }, [m('#dataField.field[style=text-align: center]', [
+        }, [
+            m('#dataField.field[style=text-align: center]',
             m('h4#dataName[style=display: inline-block; margin-right:2em; margin-top: 7px]',
               {onclick: _ => this.cite = this.citeHidden = !this.citeHidden,
                onmouseout: _ => this.citeHidden || (this.cite = false),
@@ -566,15 +568,12 @@ class Body {
 
                         transform(t.slice(0, t.length - 1), t[t.length - 1], typeTransform = false);
                     }
-
-                }),
-                m('#transformations.transformTool', {
-                        title: `Construct transformations of existing variables using valid R syntax.
-                              For example, assuming a variable named d, you can enter "log(d)" or "d^2".`
-                    },
-                    transformation('transSel', ['a', 'b']),
-                    transformation('transList', app.transformList)))
-        });
+                }
+            },
+                m('#transformations.transformTool',
+                    {title: 'Construct transformations of existing variables using valid R syntax. For example, assuming a variable named d, you can enter "log(d)" or "d^2".'},
+                    [transformation('transSel', ['a', 'b']),
+                        transformation('transList', app.transformList)])))]);
     }
 
     footer(mode) {
@@ -632,19 +631,20 @@ if (IS_EVENTDATA_DOMAIN) {
         '/data': {render: () => m(Peek, {image: '/static/images/TwoRavens.png'})}
     });
 }
-
-m.route(document.body, '/model', {
-    '/model': {render: () => m(Body)},
-    '/explore': {render: () => m(Body, {mode: 'explore'})},
-    '/results': {
-        onmatch() {
-            app.set_mode('results');
-            state.get_pipelines();
-            layout.init();
+else {
+    m.route(document.body, '/model', {
+        '/model': {render: () => m(Body)},
+        '/explore': {render: () => m(Body, {mode: 'explore'})},
+        '/results': {
+            onmatch() {
+                app.set_mode('results');
+                state.get_pipelines();
+                layout.init();
+            },
+            render() {
+                return m(Body, {mode: 'results'});
+            }
         },
-        render() {
-            return m(Body, {mode: 'results'});
-        }
-    },
-    '/data': Peek
-});
+        '/data': Peek
+    });
+}
