@@ -8,30 +8,30 @@ db = mongo_client.event_data
 def icews_locations():
     with open('locations_icews.csv', 'wb') as outfile:
         writer = csv.writer(outfile, delimiter=',', quoting=csv.QUOTE_MINIMAL)
-        writer.writerow(['Country', 'District', 'Province', 'City'])
+        writer.writerow(['Country', 'Province', 'District', 'City'])
 
         # for document in db.icews.aggregate([{"$limit": 200},{"$group": {"_id": {"lat": "$Latitude","lon": "$Longitude"}}}]):
         for document in db.icews.aggregate([
           {
               "$project": {
               "country": {"$toLower": "$Country"},
-              "district": {"$toLower": "$District"},
               "province": {"$toLower": "$Province"},
+              "district": {"$toLower": "$District"},
               "city": {"$toLower": "$City"}
             }
           },
           {
             "$group": {
               "_id": {
-                  "Country": "$country",
-                "District": "$district",
+                "Country": "$country",
                 "Province": "$province",
+                "District": "$district",
                 "City": "$city"
               }
             }
           }
         ]):
-            writer.writerow([document['_id'][out].encode('utf-8') for out in ['Country', 'District', 'Province', 'City']])
+            writer.writerow([document['_id'][out].encode('utf-8') for out in ['Country', 'Province', 'District', 'City']])
 
 
 def cline_locations():
@@ -56,7 +56,7 @@ def cline_locations():
       {
         "$group": {
           "_id": {
-              "Latitude": "$GP7",
+            "Latitude": "$GP7",
             "Longitude": "$GP8"
           }
         }

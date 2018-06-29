@@ -1,0 +1,19 @@
+
+{
+	"$group": {
+		"_id": {
+			"date": {"$dateToString": {"format": "%Y-%m", "date": "$story_date"}},
+			"link1": {"source": {"$in": ["AFG", "MUS"]}, "target": {"$in": ["AFG", "MUS"]}},
+			"link2": {"source": {"$in": ["AFG", "MUS"]}, "target": {"$in": ["AFG", "MUS"]}}
+		},
+		"02": {"$sum": {"$cond": [
+			{"$anyElementTrue": { "$map": {"input": [ 0,100,101,102,103,104,105 ],"as": "el","in": { "$eq": ["$$el", "$CAMEO"]}}}},
+            1,
+            0]}},
+		"03": {"$sum": {"$cond": [
+			{"$eq": ["$rootCode", "03"]}, 
+			1, 
+			0]}}
+	},
+	"$project": {}
+}
