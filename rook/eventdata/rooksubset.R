@@ -82,7 +82,8 @@ eventdata_subset.app <- function(env) {
     getData = function(type, query, key=NULL) {
         # print(paste("GETTING", toString(type), toString(key), toString(query)))
         if (datasetMetadata$host == 'TwoRavens') {
-            connect = mongolite::mongo(dataset, db = "event_data", url = "mongodb://localhost:27017")
+            url = sprintf("mongodb://%s:%s@%s/ldap?authMechanism=PLAIN", EVENTDATA_MONGO_USERNAME, EVENTDATA_MONGO_PASSWORD, EVENTDATA_LOCAL_SERVER_ADDRESS)
+            connect = mongolite::mongo(collection = dataset, db = "event_data", url = url)
 
             if (type == 'find') {
                 data = connect$find(query)
