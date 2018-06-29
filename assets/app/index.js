@@ -10,6 +10,7 @@ import m from 'mithril';
 import * as app from './app';
 import * as exp from './explore';
 import * as layout from './layout';
+import * as plots from './plots';
 import * as results from './results';
 import {elem, fadeIn, fadeOut} from './utils';
 
@@ -38,6 +39,8 @@ let state = {
     }
 };
 
+let nodesExplore = null;
+
 function setBackgroundColor(color) {
     return function() {
         this.style['background-color'] = color;
@@ -45,6 +48,8 @@ function setBackgroundColor(color) {
 }
 
 function leftpanel(mode) {
+    let exploreMode = mode === 'explore';
+
     if (mode === 'results') {
         return results.leftpanel(Object.keys(app.allPipelineInfo));
     }
@@ -57,6 +62,8 @@ function leftpanel(mode) {
         onclick: m.withAttr("checked", (checked) => app.setCheckedDiscoveryProblem(checked, problem[0])),
         checked: app.checkedDiscoveryProblems.has(problem[0])
     })]);
+
+    let nodes = exploreMode ? nodesExplore || [] : app.nodes;
 
     return m(Panel, {
         side: 'left',
@@ -82,15 +89,16 @@ function leftpanel(mode) {
                      id: 'varList',
                      items: app.valueKey,
                      colors: {
-                         [app.hexToRgba(common.selVarColor)]: app.nodes.map(n => n.name),
+                         [app.hexToRgba(common.selVarColor)]: nodes.map(n => n.name),
                          [app.hexToRgba(common.nomColor)]: app.zparams.znom,
-                         [app.hexToRgba(common.dvColor)]: app.zparams.zdv
+                         [app.hexToRgba(common.dvColor)]: exploreMode ? [] : app.zparams.zdv
                      },
                      classes: {'item-bordered': app.matchedVariables},
-                     callback: app.clickVar,
-                     popup: (variable) => app.popoverContent(app.findNodeIndex(variable, true)),
+                     callback: x => app.clickVar(x, nodes),
+                     popup: variable => app.popoverContent(app.findNodeIndex(variable, true)),
                      attrsItems: {'data-placement': 'right', 'data-original-title': 'Summary Statistics'}})]},
             {value: 'Discovery',
+             display: exploreMode ? 'none' : 'block',
              contents: [
                  m(Table, {
                      id: 'discoveryTable',
@@ -109,6 +117,7 @@ function leftpanel(mode) {
                  m(Button, {id: 'btnSubmitDisc', classes: 'btn-success', style: 'float: right', onclick:_=>app.submitDiscProb(), title: 'Submit all checked discovered problems.'}, 'Submit Disc. Probs.')]},
             {value: 'Summary',
              title: 'Select a variable from within the visualization in the center panel to view its summary statistics.',
+             display: 'none',
              contents: [
                  m('center',
                    m('b', app.summary.name),
@@ -118,8 +127,7 @@ function leftpanel(mode) {
                      td => m('td',
                              {onmouseover: setBackgroundColor('aliceblue'),
                               onmouseout: setBackgroundColor('f9f9f9')},
-                             td)))))],
-             display: 'none'}
+                             td)))))]}
         ]
     }));
 }
@@ -138,113 +146,8 @@ let righttab = (id, task, title, probDesc) => m(PanelList, {
 });
 
 function rightpanel(mode) {
-    let thumb = (idx, id, title) =>
-        m("th",
-          m("figure", {style: {float: "left"}},
-            m(`img#${id}_img[alt=${id}][src=/static/images/thumb${idx}.png]`,
-              {style: {width: "75%", height: "75%", border: "1px solid #ddd", "border-radius": "3px", padding: "5px", margin: "3%", cursor: "pointer"}}),
-            m("figcaption", {style: {"text-align": "center"}}, title)));
-
     if (mode === 'results') return [];
-    if (mode === 'explore') {
-        let sectionsExplore = [
-            {
-                value: 'Univariate',
-                contents: [
-                    m('#decision_prompt',
-                        `Right click pebble variables to draw links between them. Select a variable in the list of linked pebbles below to draw a decision tree for that variable.`),
-                    m('#decisionTree[style=width: 100%; height:80%; overflow-y:scroll; float: left; white-space: nowrap; margin-top: 2px;]'),
-                    m(PanelList, {
-                        id: 'varListExplore',
-                        items: app.nodes.map(n => n.name),
-                        colors: {[app.hexToRgba(common.selVarColor)]: [exp.exploreVar]},
-                        callback: variable => exp.callTreeApp(variable, app),
-                        attrsAll: {style: {float: 'left', width: '100%', height: '20%'}}
-                    })
-                    // m('#varList[style=display: block]',
-                    //     unique_link_names().map(x => m(`p#${x.replace(/\W/g, '_')}`, {onclick: _=> exp.callTreeApp(x, app), style: {'background-color': app.varColor}}, x))))
-                ]
-            },
-            {
-                value: 'Bivariate',
-                contents: [
-                    m('#result_prompt', {style: {display: app.explored ? 'none' : 'block'}}, `Click 'Explore' for interactive plots.`),
-                    m('#modelView_Container', {style: `width: 100%; float: left; white-space: nowrap;`},
-                        m('#modelView', {style: 'width: 100%; float: left'})),
-                    app.pipelineTable ? m(Table, {
-                        id: 'pipelineTableExplore',
-                        headers: app.pipelineHeader,
-                        data: app.pipelineTable,
-                        activeRow: app.selectedPipeline[app.currentMode],
-                        onclick: app.setSelectedPipeline,
-                        showUID: false,
-                        abbreviation: 20
-                    }) : undefined,
-                    m('#result_left',
-                        {style: {display: app.explored ? 'block' : 'none',
-                                "width": "50%", "height": "100%",
-                                "float": "left", "overflow-y": "auto",
-                                "white-space": "nowrap", "padding-right": "10px"}},
-                        m('#left_thumbnail', {style: {"width": "100%", "white-space": "nowrap"}},
-                            thumb(1, 'scatterplot', "Scatter Plot"), thumb(2, 'heatmap', "Heatmap"), thumb(3, 'linechart', "Linechart")),
-                        m('#result_left1', {style: {width: "100%", "text-align": "center", "white-space": "nowrap"}},
-                            m(".container3[id=scatterplot]", {style: {"width": "500px", "height": "80%", "float": "left", "overflow": "hidden"}}),
-                            m(".container4[id=heatchart]", {style: {"display": "none", "width": "500px", "height": "80%", "float": "left", "overflow": "hidden"}}),
-                            m(".container4[id=linechart]", {style: {"display": "none", "width": "500px", "height": "80%", "float": "left", "overflow": "hidden"}})),
-                        m("div", {style: {"display": "inline-block", "width": "100%", "float": "left", "text-align": "center"}},
-                            m("h5#NAcount", {style: {" margin-bottom": "0"}})),
-                        m(".container2[id='resultsView_statistics']",
-                            {style: {"width": "100%", "float": "left", "white-space": "nowrap"}})),
-                    m('#result_right',
-                        {style: {display: app.explored ? 'block' : 'none',
-                                width: "50%", height: "100%",
-                                float: "right", "white-space": "nowrap", "padding-left": "10px"}},
-                        m('#resultsView_tabular.container1',
-                            {style: {width: "100%", height: "100%", float: "left", overflow: "auto", "white-space": "nowrap"}},
-                            m('#SelectionData', {style: {width: "100%"}},
-                                m("fieldset",
-                                    m("h4", {style: {"text-align": "center"}}, "Data Distribution Selection"),
-                                    m("p", "Enter number for each variable to specify the break points, and select between Equidistant/Equimass")),
-                                m('#plotBreakInputs', {style: {height: '60px'}},
-                                    m('#forPlotA', {style: {display: 'inline', float: "left", width: '50%'}},
-                                        m("input#input1[name='fname'][type='text']", {style: {"margin-left": "2%"}}),
-                                        m('span#tooltipPlotA.tooltiptext[style=visibility: hidden]'),
-                                        m("button.btn.btn-default.btn-xs#Equidistance1[type='button']", {style: {float: "left", "margin-left": "2%"}}, "EQUIDISTANCE"),
-                                        m("button.btn.btn-default.btn-xs#Equimass1[type='button']", {style: {float: "left", "margin-left": "2%"}}, "EQUIMASS")),
-                                    m('#forPlotB', {style: {display: 'inline', float: "right", width: '50%'}},
-                                        m("input#input2[name='fname1'][type='text']", {style: {"margin-left": "2%"}}),
-                                        m('span#tooltipPlotB.tooltiptext1[style=visibility: hidden]'),
-                                        m("button.btn.btn-default.btn-xs#Equidistance2[type='button']", {style: {float: "left", "margin-left": "2%"}}, "EQUIDISTANCE"),
-                                        m("button.btn.btn-default.btn-xs#Equimass2[type='button']", {style: {float: "left", "margin-left": "2%"}}, "EQUIMASS"))
-                                ),
-                                m('div#statusesBivariate',
-                                    m("div#plotA_status", {style: {width: '100%'}}),
-                                    m("div#plotB_status", {style: {width: '100%'}}),
-                                    m('h5[style=color: #ac2925; margin-top: 1%; margin-left: 2%]', 'Selection History'),
-                                ),
-                                m("button.btn.btn-default.btn-sm[id='SelectionData1'][type='button']", {style: {display: "block", margin: "0 auto", position: "relative"}},
-                                    "Create")),
-                            m('#tabular_1', {style: {width: "100%", height: "200px"}},
-                                m('#plotA', {style: {width: exp.get_width('plotA') + '%', height: "100%", float: "left", overflow: "hidden"}}, "plotA"),
-                                m('#plotB', {style: {width: exp.get_width('plotB') + '%', height: "100%", float: "right", overflow: "hidden"}}, "plotB")),
-                            m('#tabular_2', {style: {width: "100%"}})))
-                ]
-            }
-        ];
-
-        return m(Panel, {
-            side: 'right',
-            label: 'Result Exploration',
-            hover: true,
-            width: app.exploreRightPanelWidths[app.rightTabExplore]
-        }, m(MenuTabbed, {
-            id: 'rightPanelMenuExplore',
-            currentTab: app.rightTabExplore,
-            callback: app.setRightTabExplore,
-            sections: sectionsExplore,
-            attrsAll: {style: {height: 'calc(100% - 39px)'}}
-        }));
-    }
+    if (mode === 'explore') return [];
 
     // mode == null (model mode)
 
@@ -317,9 +220,8 @@ function rightpanel(mode) {
     }));
 }
 
-
-let glyph = (icon, unstyled) => m(
-    `span.glyphicon.glyphicon-${icon}` + (unstyled ? '' : '[style=color: #818181; font-size: 1em; pointer-events: none]'));
+let glyph = (icon, unstyled) =>
+    m(`span.glyphicon.glyphicon-${icon}` + (unstyled ? '' : '[style=color: #818181; font-size: 1em; pointer-events: none]'));
 
 class Body {
     oninit(vnode) {
@@ -359,79 +261,202 @@ class Body {
     }
 
     view(vnode) {
-        let {mode} = vnode.attrs;
+        let vnodeVals = Object.values(vnode.attrs);
+        let mode = vnodeVals[0];
+        let variate = vnodeVals[1];
+        let vars = vnodeVals.slice(2);
+        let expnodes = [];
+        let model_mode = !mode;
         let explore_mode = mode === 'explore';
         let results_mode = mode === 'results';
 
-        let spaceBtn = (id, onclick, title, icon) => m(
-            `button#${id}.btn.btn-default`, {onclick, title}, glyph(icon, true));
-
         if (mode != this.last_mode) {
             app.set_mode(mode);
-            if (explore_mode) {
-                app.explored = false;
-                app.univariate_finished = false;
-                app.setRightTabExplore('Univariate');
-            } else if (results_mode) {
-                app.setRightTab(IS_D3M_DOMAIN ? 'Task Type' : 'Models');
-            } else if (!mode) {
-                app.setRightTab(IS_D3M_DOMAIN ? 'Task Type' : 'Models');
-            }
+            app.setRightTab(IS_D3M_DOMAIN ? 'Task Type' : 'Models');
             app.restart && app.restart();
             this.last_mode = mode;
         }
+
+        let overflow = explore_mode ? 'auto' : 'hidden';
+        let style = `position: absolute; left: ${app.panelWidth.left}; top: 0; margin-top: 10px`;
+
+        let exploreVars = (() => {
+            vars.forEach(x => {
+                let node = app.findNode(x);
+                node && expnodes.push(node);
+            });
+            if (!expnodes[0] && !expnodes[1]) {
+                return;
+            }
+
+            let plotMap = {
+                scatter: "Scatter Plot",
+                tableheat: "Heatmap",
+                line: "Line Chart",
+                stackedbar: "Stacked Bar",
+                box: "Box Plot",
+                groupedbar: "Grouped Bar",
+                strip: "Strip Plot",
+                aggbar: "Aggregate Bar",
+                binnedscatter: "Binned Scatter",
+                step: "Step Chart",
+                area: "Area Chart",
+                binnedtableheat: "Binned Heatmap",
+                averagediff: "Diff. from Avg.",
+                scattermeansd: "Scatter with Overlays",
+                scattermatrix: "Scatter Matrix",
+                simplebar: "Simple Bar Uni",
+                histogram: "Histogram Uni",
+                areauni: "Area Chart Uni",
+                histogrammean: "Histogram with Mean Uni",
+                trellishist: "Histogram Trellis",
+                interactivebarmean: "Interactive Bar with Mean",
+                dot: "Simple Dot Plot",
+                horizon: "Horizon Plot",
+                binnedcrossfilter: "Binned Cross Filter",
+                scattertri: "Scatterplot with Groups",
+                groupedbartri: "Grouped Bar",
+                horizgroupbar: "Horizontal Grouped Bar",
+                bubbletri: "Bubble Plot with Groups",
+                bubbleqqq: "Bubble Plot with Binned Groups",
+                scatterqqq: "Interactive Scatterplot with Binned Groups",
+                trellisscatterqqn: "Scatterplot Trellis",
+                heatmapnnq: "Heatmap with Mean Z",
+                dotdashqqn: "Dot-dash Plot",
+                tablebubblennq: "Table Bubble Plot",
+                stackedbarnnn: "Stacked Bar Plot",
+                facetbox: "Faceted Box Plot",
+                facetheatmap: "Faceted Heatmap",
+                groupedbarnqq: "Grouped Bar with Binned Z"
+            };
+            let schemas = {
+                univariate: 'areauni dot histogram histogrammean simplebar',
+                bivariate: 'aggbar area averagediff binnedscatter binnedtableheat box'
+                    + ' groupedbar horizon interactivebarmean line scatter scattermatrix scattermeansd stackedbar step strip tableheat trellishist',
+                trivariate: 'bubbletri groupedbartri horizgroupbar scattertri bubbleqqq scatterqqq trellisscatterqqn heatmapnnq dotdashqqn tablebubblennq stackedbarnnn facetbox facetheatmap groupedbarnqq',
+                multi: 'binnedcrossfilter scattermatrix'
+            };
+            let filtered = schemas[variate];
+            if (variate === 'bivariate' || variate === 'trivariate') {
+                filtered = `${filtered} ${schemas.multi}`;
+            }
+
+            let plot = expnodes[0] && expnodes[0].plottype === 'continuous' ? plots.density : plots.bars;
+
+            return m('', [
+                m('', {style: 'margin-bottom: 1em; max-width: 1000px; overflow: scroll; white-space: nowrap'},
+                  filtered.split(' ').map(x => {
+                      return m("figure", {style: 'display: inline-block'}, [
+                          m(`img#${x}_img[alt=${x}][height=140px][width=260px][src=/static/images/${x}.png]`, {
+                              onclick: _ => exp.plot(expnodes, x),
+                              style: {border: "1px solid #ddd", "border-radius": "3px", padding: "5px", margin: "3%", cursor: "pointer"}
+                          }),
+                          m("figcaption", {style: {"text-align": "center"}}, plotMap[x])
+                      ]);
+                  })),
+                m('#plot', {style: 'display: block', oncreate: _ => expnodes.length > 1 ? exp.plot(expnodes) : plot(expnodes[0], 'explore', true)})
+            ]);
+        })();
+
+        let spaceBtn = (id, onclick, title, icon) =>
+            m(`button#${id}.btn.btn-default`, {onclick, title}, glyph(icon, true));
 
         return m('main', [
             m(Modal),
             this.header(mode),
             this.footer(mode),
-            m(`#main.left.carousel.slide.svg-leftpanel.svg-rightpanel[style=overflow: hidden]`,
-              m("#innercarousel.carousel-inner", {style: {height: `calc(100% + ${app.marginTopCarousel}px)`}},
-                m('#m0.item.active', {style: {height: '100%', 'text-align': "center"}},
-                  m('svg#whitespace'))),
-              m("#spacetools.spaceTool", {style: {right: app.panelWidth['right'], 'z-index': 16}},
-                  m(`button#btnLock.btn.btn-default`, {
-                      class: app.locktoggle ? 'active' : '',
-                      onclick: () => app.lockDescription(!app.locktoggle),
-                      title: 'Lock selection of problem description'
-                  }, glyph(app.locktoggle ? 'lock' : 'pencil', true)),
-                spaceBtn('btnJoin', _ => {
-                    let links = [];
-                    console.log("doing connect all");
-                    if (explore_mode) {
-                        for (let node of app.nodes) {
-                            for (let node1 of app.nodes) {
-                                if (node !== node1 && links.filter(l => l.target === node1 && l.source === node).length === 0) {
-                                    links.push({left: false, right: false, target: node, source: node1});
+            m(`#main.left`, {style: {overflow}},
+              m("#innercarousel.carousel-inner", {style: {height: '100%', overflow}},
+                explore_mode
+                && [exploreVars
+                    ? m('', {style},
+                        m('a', {onclick: _ => m.route.set('/explore')}, '<- back to variables'),
+                        m('br'),
+                        exploreVars)
+                    : m('', {style},
+                        m(ButtonRadio,
+                          {id: 'exploreButtonBar',
+                           attrsAll: {style: {width: '400px'}, class: 'btn-sm'},
+                           onclick: x => {nodesExplore = []; app.setVariate(x)},
+                           activeSection: app.exploreVariate,
+                           sections: [{value: 'Univariate'}, {value: 'Bivariate'}, {value: 'Trivariate'}, {value: 'Multiple'}]}),
+                        m(Button, {
+                            id: 'exploreGo',
+                            onclick: _ => {
+                                let variate = app.exploreVariate.toLowerCase();
+                                let selected = nodesExplore.map(x => x.name);
+                                let len = selected.length;
+                                if (variate === 'univariate' && len != 1 || variate === 'bivariate' && len != 2 || variate === 'trivariate' && len != 3 || variate === 'multiple' && len < 2) {
+                                    return;
                                 }
+                                m.route.set(`/explore/${variate}/${selected.join('/')}`);
                             }
-                        }
-                    } else {
-                        let dvs = app.nodes.filter(n => app.zparams.zdv.includes(n.name));
-                        let nolink = app.zparams.zdv.concat(app.zparams.zgroup1).concat(app.zparams.zgroup2);
-                        let ivs = app.nodes.filter(n => !nolink.includes(n.name));
+                        }, 'go'),
+                        m('br'),
+                        m('', {style: `display: flex; flex-direction: row; flex-wrap: wrap`}, app.valueKey.map(x => {
+                            let show = app.exploreVariate === 'Bivariate' || app.exploreVariate === 'Trivariate';
+                            let len = nodesExplore.length;
+                            let [n0, n1, n2] = nodesExplore;
+                            return m('span', {
+                                onclick: _ => app.clickVar(x, nodesExplore),
+                                style: {
+                                    display: 'flex',
+                                    height: '250px',
+                                    margin: '1em',
+                                    width: '250px',
+                                    'align-items': 'center',
+                                    'background-color': app.hexToRgba(common[nodesExplore.map(x => x.name).includes(x) ? 'selVarColor' : 'varColor']),
+                                    'justify-content': 'center'
+                                }
+                            }, show && n0 && n0.name === x ? `${x} (x)`
+                                     : show && n1 && n1.name === x ? `${x} (y)`
+                                     : show && n2 && n2.name === x ? `${x} (z)`
+                                     : x);
+                        })))],
+                m('svg#whitespace')),
+              model_mode && m("#spacetools.spaceTool", {style: {right: app.panelWidth['right'], 'z-index': 16}},
+                              m(`button#btnLock.btn.btn-default`, {
+                                  class: app.locktoggle ? 'active' : '',
+                                  onclick: () => app.lockDescription(!app.locktoggle),
+                                  title: 'Lock selection of problem description'
+                              }, glyph(app.locktoggle ? 'lock' : 'pencil', true)),
+                              spaceBtn('btnJoin', _ => {
+                                  let links = [];
+                                  console.log("doing connect all");
+                                  if (explore_mode) {
+                                      for (let node of app.nodes) {
+                                          for (let node1 of app.nodes) {
+                                              if (node !== node1 && links.filter(l => l.target === node1 && l.source === node).length === 0) {
+                                                  links.push({left: false, right: false, target: node, source: node1});
+                                              }
+                                          }
+                                      }
+                                  } else {
+                                      let dvs = app.nodes.filter(n => app.zparams.zdv.includes(n.name));
+                                      let nolink = app.zparams.zdv.concat(app.zparams.zgroup1).concat(app.zparams.zgroup2);
+                                      let ivs = app.nodes.filter(n => !nolink.includes(n.name));
 
-                        links = dvs.map(dv => ivs.map(iv => ({
-                            left: true,
-                            right: false,
-                            target: iv,
-                            source: dv
-                        })));
-                    }
-                    app.restart([].concat(...links));
-                }, 'Make all possible connections between nodes', 'link'),
-                spaceBtn('btnDisconnect', _ => app.restart([]), 'Delete all connections between nodes', 'remove-circle'),
-                spaceBtn('btnForce', app.forceSwitch, 'Pin the variable pebbles to the page', 'pushpin'),
-                spaceBtn('btnEraser', app.erase, 'Wipe all variables from the modeling space', 'magnet')),
-              m(Subpanel,
-                {title: "Legend",
-                 buttons: [
-                     ['timeButton', 'ztime', 'Time'],
-                     ['csButton', 'zcross', 'Cross Sec'],
-                     ['dvButton', 'zdv', 'Dep Var'],
-                     ['nomButton', 'znom', 'Nom Var'],
-                     ['gr1Button', 'zgroup1', 'Group 1'],
-                     ['gr2Button', 'zgroup2', 'Group 2']]}),
+                                      links = dvs.map(dv => ivs.map(iv => ({
+                                          left: true,
+                                          right: false,
+                                          target: iv,
+                                          source: dv
+                                      })));
+                                  }
+                                  app.restart([].concat(...links));
+                              }, 'Make all possible connections between nodes', 'link'),
+                              spaceBtn('btnDisconnect', _ => app.restart([]), 'Delete all connections between nodes', 'remove-circle'),
+                              spaceBtn('btnForce', app.forceSwitch, 'Pin the variable pebbles to the page', 'pushpin'),
+                              spaceBtn('btnEraser', app.erase, 'Wipe all variables from the modeling space', 'magnet')),
+              model_mode && m(Subpanel,
+                              {title: "Legend",
+                               buttons: [
+                                   ['timeButton', 'ztime', 'Time'],
+                                   ['csButton', 'zcross', 'Cross Sec'],
+                                   ['dvButton', 'zdv', 'Dep Var'],
+                                   ['nomButton', 'znom', 'Nom Var'],
+                                   ['gr1Button', 'zgroup1', 'Group 1'],
+                                   ['gr2Button', 'zgroup2', 'Group 2']]}),
               m(Subpanel, {title: "History"}),
               leftpanel(mode),
               rightpanel(mode))
@@ -443,9 +468,9 @@ class Body {
             {title: "Log in", url: login_url},
             {title: "Sign up", url: signup_url}
         ] : [{title: "Workspaces", url: workspaces_url},
-            {title: "Settings", url: settings_url},
-            {title: "Links", url: devlinks_url},
-            {title: "Logout", url: logout_url}];
+             {title: "Settings", url: settings_url},
+             {title: "Links", url: devlinks_url},
+             {title: "Logout", url: logout_url}];
 
         let _navBtn = (id, left, right, onclick, args, min) => m(
             `button#${id}.btn.navbar-right`,
@@ -507,15 +532,7 @@ class Body {
                   [username, " ", glyph('triangle-bottom')]),
                 m('ul.dropdown-menu[role=menu][aria-labelledby=drop]',
                   userlinks.map(link => m('a[style=padding: 0.5em]', {href: link.url}, link.title, m('br'))))),
-              navBtn('btnEstimate.btn-default', 2, 1, mode === 'explore' ? _ => {
-                  if (app.links.length === 0) {
-                      setModal('Please link pebbles first.', 'Warning', true, 'Ok', true);
-                      return;
-                  }
-
-                  exp.explore();
-                  app.setRightTabExplore('Bivariate');
-              } : app.estimate, m("span.ladda-label", mode === 'explore' ? 'Explore' : 'Solve This Problem'), '150px'),
+              mode ? null : navBtn('btnEstimate.btn-default', 2, 1, app.estimate, m("span.ladda-label", mode === 'explore' ? 'Explore' : 'Solve This Problem'), '150px'),
               m('div.btn-group[role=group][aria-label="..."]', {style:{"float":"right", "margin-left": "2em"}},
                 navBtnGroup('btnTA2.btn-default', _ => hopscotch.startTour(app.mytour, 0), ['Help Tour ', glyph('road')]),
                 navBtnGroup('btnTA2.btn-default', _ => app.helpmaterials('video'), ['Video ', glyph('expand')]),
@@ -576,7 +593,7 @@ class Body {
             m(ButtonRadio,
               {id: 'modeButtonBar',
                attrsAll: {
-                  style: {'padding-top':'2px', width: '200px'}, class: 'navbar-left btn-sm'},
+                   style: {'padding-top':'2px', width: '200px'}, class: 'navbar-left btn-sm'},
                onclick: app.set_mode,
                activeSection: mode || 'model',
                // {value: 'Results', id: 'btnResultsMode'}] VJD: commenting out the results mode button since we don't have this yet
@@ -597,10 +614,27 @@ class Body {
     }
 }
 
+let exploreVars = {
+    render(vnode) {
+        let {variate, var1, var2, var3} = vnode.attrs;
+        return m(Body, {mode: 'explore', variate, var1, var2, var3});
+    }
+};
+
 m.route(document.body, '/model', {
     '/model': {render: () => m(Body)},
-    '/explore': {render: () => m(Body, {mode: 'explore'})},
-    '/results': {
+    '/explore': {
+        onmatch() {
+            if (m.route.get() === '/model' && nodesExplore === null) {
+                nodesExplore = [];
+            }
+        },
+        render: () => m(Body, {mode: 'explore'})
+    },
+    '/explore/:variate/:var1': exploreVars,
+    '/explore/:variate/:var1/:var2': exploreVars,
+    '/explore/:variate/:var1/:var2/:var3': exploreVars,
+    /*'/results': {
         onmatch() {
             app.set_mode('results');
             state.get_pipelines();
@@ -609,6 +643,6 @@ m.route(document.body, '/model', {
         render() {
             return m(Body, {mode: 'results'});
         }
-    },
+    },*/
     '/data': Peek
 });

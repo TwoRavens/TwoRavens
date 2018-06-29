@@ -1,0 +1,11 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v2.json",
+  "description": "A line chart.",
+  "data": {"url": "tworavensData"},
+  "transform": "tworavensFilter",
+  "mark": "line",
+  "encoding": {
+    "x": {"field": "tworavensX", "type": "quantitative"},
+    "y": {"field": "tworavensY", "type": "quantitative"}
+  }
+}

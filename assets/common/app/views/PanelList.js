@@ -1,5 +1,5 @@
-import m from 'mithril'
-import {mergeAttributes, varColor} from '../common'
+import m from 'mithril';
+import {mergeAttributes, varColor} from '../common';
 
 // ```
 // m(PanelList, {

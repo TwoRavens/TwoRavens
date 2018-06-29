@@ -1,0 +1,17 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v2.json",
+  "description": "A histogram.",
+  "data": {"url": "tworavensData"},
+  "mark": "bar",
+  "encoding": {
+    "x": {
+      "bin": true,
+      "field": "tworavensX",
+      "type": "quantitative"
+    },
+    "y": {
+      "aggregate": "count",
+      "type": "quantitative"
+    }
+  }
+}

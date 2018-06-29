@@ -5,47 +5,14 @@ import {heightHeader} from "../common/app/common";
 import * as common from "../common/app/common";
 import {setModal} from '../common/app/views/Modal';
 
-import {bars, barsNode, barsSubset, density, densityNode, selVarColor} from './plots.js';
+import {bars, barsNode, barsSubset, density, densityNode, scatter, selVarColor} from './plots.js';
 import {elem, fadeOut} from './utils';
 import {searchIndex} from "./views/Search";
-
-// hostname default - the app will use it to obtain the variable metadata
-// (ddi) and pre-processed data info if the file id is supplied as an
-// argument (for ex., gui.html?dfId=17), but hostname isn't.
-// Edit it to suit your installation.
-// (NOTE that if the file id isn't supplied, the app will default to the
-// local files specified below!)
-// NEW: it is also possible now to supply complete urls for the ddi and
-// the tab-delimited data file; the parameters are ddiurl and dataurl.
-// These new parameters are optional. If they are not supplied, the app
-// will go the old route - will try to cook standard dataverse urls
-// for both the data and metadata, if the file id is supplied; or the
-// local files if nothing is supplied.
 
 //-------------------------------------------------
 // NOTE: global variables are now set in the index.html file.
 //    Developers, see /template/index.html
 //-------------------------------------------------
-
-export let marginTopCarousel = 0;
-export let marginLeftCarousel = 0;
-
-window.onresize = () => {
-    if (m.route.get() === '/data') {
-        return;
-    }
-
-    let carousel = elem('#innercarousel');
-    let container = elem('#m0');
-    let whitespace = elem('#whitespace0');
-
-    marginTopCarousel = (carousel.offsetHeight - whitespace.getAttribute("height") - 16) / 2;
-    marginLeftCarousel = (carousel.offsetWidth - whitespace.getAttribute("width")) / 2;
-
-    container.style.marginTop = marginTopCarousel + 'px';
-    container.style.marginLeft = marginLeftCarousel + 'px';
-    container.style.height = `calc(100% + ${Math.abs(marginTopCarousel)}px)`;
-};
 
 let peekBatchSize = 100;
 let peekSkip = 0;
@@ -101,6 +68,11 @@ function resetPeek() {
 
 resetPeek();
 
+export let exploreVariate = 'Univariate';
+export function setVariate(variate) {
+    exploreVariate = variate;
+}
+
 export let task1_finished = false;
 export let task2_finished = false;
 export let univariate_finished = false;
@@ -112,19 +84,27 @@ let is_explore_mode = false;
 let is_results_mode = false;
 
 export function set_mode(mode) {
-    if (!mode) mode = 'model';
-    mode = mode.toLowerCase();
+    mode = mode ? mode.toLowerCase() : 'model';
+
+    is_explore_mode = mode === 'explore';
+    is_results_mode = mode === 'results';
+
+    if (is_explore_mode) {
+        leftTab = 'Variables';
+    }
 
     if (currentMode !== mode) {
         updateRightPanelWidth();
         updateLeftPanelWidth();
 
         currentMode = mode;
-        m.route.set('/' + mode.toLowerCase());
+        m.route.set('/' + mode);
     }
 
-    is_explore_mode = mode === 'explore';
-    is_results_mode = mode === 'results';
+    let ws = elem('#whitespace0');
+    if (ws) {
+        ws.style.display = is_explore_mode ? 'none' : 'block';
+    }
 }
 
 // for debugging - if not in PRODUCTION, prints args
@@ -170,7 +150,7 @@ export let modelRightPanelWidths = {
     'Subtype': '300px',
     'Metrics': '300px',
     //     'Set Covar.': '900px',
-    'Results': '900px'
+    'Results': '300px'
 };
 
 export let exploreRightPanelWidths = {
@@ -188,6 +168,10 @@ export let panelWidth = {
 };
 
 let updateRightPanelWidth = () => {
+    if (is_explore_mode) {
+        return panelWidth.right = `calc(${common.panelMargin * 2}px + 16px)`;
+    }
+
     if (common.panelOpen['right']) {
         let tempWidth = {
             'model': modelRightPanelWidths[rightTab],
@@ -246,6 +230,8 @@ let failset = ["TIME_SERIES_FORECASTING","GRAPH_MATCHING","LINK_PREDICTION","tim
 
 // object that contains all information about the returned pipelines
 export let allPipelineInfo = {};
+export let pipelineHeader = ['Hidden_UID', 'PipelineID', 'Metric', 'Score'];
+export let pipelineTable = [];
 
 export let logArray = [];
 export let zparams = {
@@ -422,6 +408,7 @@ export const reset = async function reloadPage() {
 export let restart;
 
 let dataurl = '';
+let datasetdocurl = '';
 
 export let step = (target, placement, title, content) => ({
     target,
@@ -523,6 +510,8 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         url: "/config/d3m-config/json/latest"
     });
     console.log(res);
+    datasetdocurl = res.dataset_schema;
+
     // 2. Set 'configurations'
     configurations = JSON.parse(JSON.stringify(res)); // this is just copying res
     d3mRootPath = configurations.training_data_root.replace(/\/data/,'');
@@ -1126,6 +1115,10 @@ export function layout(v, v2) {
 
     // update force layout (called automatically each iteration)
     function tick() {
+        if (is_explore_mode) {
+            return;
+        }
+
         function findcoords(findnames,allnames,coords,lengthen){
             var fcoords = new Array(findnames.length);   // found coordinates
             var addlocation = 0;
@@ -1942,34 +1935,42 @@ export function findNode(name) {
 }
 
 /** needs doc */
-function updateNode(id) {
+function updateNode(id, nodes) {
     let node = findNode(id);
-    if (node.grayout)
+    if (node.grayout) {
         return false;
+    }
 
     let name = node.name;
-    let names = () => nodes.map(n => n.name);
+    let names = _ => nodes.map(n => n.name);
     if (names().includes(name)) {
-        del(nodes, node.index);
-        links
-            .filter(l => l.source === node || l.target === node)
-            .forEach(l => del(links, -1, l));
-        zparamsReset(name);
+        del(nodes, node.index, is_explore_mode && node);
+        if (!is_explore_mode) {
+            links
+                .filter(l => l.source === node || l.target === node)
+                .forEach(l => del(links, -1, l));
+            zparamsReset(name);
 
-        // remove node name from group lists
-        node.group1 && del(zparams.zgroup1, -1, name);
-        node.group2 && del(zparams.zgroup2, -1, name);
-        node.group1 = node.group2 = false;
+            // remove node name from group lists
+            node.group1 && del(zparams.zgroup1, -1, name);
+            node.group2 && del(zparams.zgroup2, -1, name);
+            node.group1 = node.group2 = false;
 
-        // node reset - perhaps this will become a hard reset back to all original allNode values?
-        node.nodeCol = node.baseCol;
-        node.strokeColor = selVarColor;
-        node.strokeWidth = '1';
+            // node reset - perhaps this will become a hard reset back to all original allNode values?
+            node.nodeCol = node.baseCol;
+            node.strokeColor = selVarColor;
+            node.strokeWidth = '1';
 
-        borderState();
+            borderState();
+        }
     } else {
         nodes.push(node);
     }
+
+    if (is_explore_mode) {
+        return false;
+    }
+
     zparams.zvars = names();
     return true;
 }
@@ -1977,8 +1978,18 @@ function updateNode(id) {
 /**
  every time a variable in leftpanel is clicked, nodes updates and background color changes
  */
-export function clickVar(elem) {
-    if (updateNode(elem)) {
+export function clickVar(elem, $nodes) {
+    if (is_explore_mode && !$nodes.map(x => x.name).includes(elem)) {
+        let max = exploreVariate === 'Univariate' ? 1
+            : exploreVariate === 'Bivariate' ? 2
+            : exploreVariate === 'Trivariate' ? 3
+            : 5;
+        if ($nodes.length >= max) {
+            return;
+        }
+    }
+
+    if (updateNode(elem, $nodes || nodes)) {
         // panelPlots(); is this necessary?
         restart();
     }
@@ -2080,33 +2091,47 @@ export let setSelectedPipeline = (result) => {
     }
 }
 
-export let pipelineHeader = ['Hidden_UID', 'PipelineID', 'Metric', 'Score'];
-export let pipelineTable;
+// Update table when pipeline is fitted
+function onPipelineCreate(PipelineCreateResult, id) {
 
-function onPipelineCreate(PipelineCreateResult, rookpipe) {
+    //let myval = "";
+    //let myscores = [];  // attempt to deal w multiple scores
+
+    for(var i = 0; i < pipelineTable.length; i++) {
+        if (pipelineTable[i][2] == id) {
+            pipelineTable[i][4] = "10";
+        };
+    };
+                // myid=key;
+                // mymetric="metric here" //allPipelineInfo[key].  SOMETHING HERE;
+                // myval="scoring"; //+myscores[i].value.toFixed(3);
+                // pipelineTable.push([pipelineTable.length, myid, mymetric, myval])
+
+    //if(!swandive) {
+    //    resultsplotinit(pipelineTable[0][1]);
+    //}
+
+    //if (IS_D3M_DOMAIN){
+    //    byId("btnSetx").click();   // Was "btnResults" - changing to simplify user experience for testing.
+    //};
+}
+
+// Update table when pipeline is solved
+function onPipelinePrime(PipelineCreateResult, rookpipe) {
+
+    // Need to deal with (exclude) pipelines that are reported, but failed.  For approach, see below.
 
     if(PipelineCreateResult.hash_id in allPipelineInfo) {
         allPipelineInfo[PipelineCreateResult.id]=Object.assign(allPipelineInfo[PipelineCreateResult.id],PipelineCreateResult);
     } else {
         allPipelineInfo[PipelineCreateResult.id]=PipelineCreateResult;
-    }
+        let myid = PipelineCreateResult.id;
+        let mymetric = d3mProblemDescription.performanceMetrics[0].metric;    // Need to generalize to multiple metrics
+        let myval = "scoring";
+        console.log(pipelineTable);
+        pipelineTable.push([pipelineTable.length, myid, mymetric, myval]);
+    };
 
-    console.log(allPipelineInfo);
-    // to get all pipeline ids: Object.keys(allPipelineInfo)
-
-    let myid = "";
-    let mymetric = "";
-    let myval = "";
-    //let myscores = [];  // attempt to deal w multiple scores
-
-    pipelineTable = [];                    // Rebuilds from scratch every time because prior information might have been updated.  But might not be necessary.
-    for(var key in allPipelineInfo) {
-        console.log(key);
-        console.log(allPipelineInfo[key]);
-
-        if(key == "rookpipe"){   // happens when multiple CreatePipelines calls have been made
-            continue;
-        }
         // this will NOT report the pipeline to user if pipeline has failed, if pipeline is still running, or if it has not completed
         // if(allPipelineInfo[key].responseInfo.status.details == "Pipeline Failed")  {
         //     continue;
@@ -2115,36 +2140,12 @@ function onPipelineCreate(PipelineCreateResult, rookpipe) {
         //     continue;
         // }
 
-        // if(allPipelineInfo[key].progressInfo == "COMPLETED"){
-        //    myscores = allPipelineInfo[key].pipelineInfo.scores;
-        //     for(var i = 0; i < myscores.length; i++) {
-                //if(i==0) {myid=key;}
-                //   else myid="";
-                myid=key;
-                mymetric="metric here" //allPipelineInfo[key].  SOMETHING HERE;
-                myval=999; //+myscores[i].value.toFixed(3);
-                pipelineTable.push([pipelineTable.length, myid, mymetric, myval])
-        //     }
-        //} else { // if progressInfo is not "COMPLETED"
-        //     continue;
-        // }
-    }
-
-    //console.table(pipelineTable, [1, 2, 3]);
-
     if (IS_D3M_DOMAIN){
         byId("btnSetx").click();   // Was "btnResults" - changing to simplify user experience for testing.
     };
 
     //adding rookpipe to allPipelineInfo
     allPipelineInfo.rookpipe=rookpipe;                // This is setting rookpipe for the entire table, but when there are multiple CreatePipelines calls, this is only recording latest values
-
-    // this initializes the results windows using the first pipeline ID
-
-    //if(!swandive) {
-    //    resultsplotinit(pipelineTable[0][1]);
-    //}
-
 
     // VJD: these two functions are built and (I believe) functioning as intended. These exercise two core API calls that are currently unnecessary
     //exportpipeline(pipelineTable[1][1]);
@@ -2267,48 +2268,16 @@ function CreateProblemDefinition(depvar, aux) {
     }
 }
 
-
 function CreatePipelineDefinition(predictors, depvar, aux) {
     let my_userAgent = "TwoRavens";                             // Get from elsewhere
     let my_version = "2018.6.2";                                // Get from elsewhere
     let my_allowedValueTypes = ["DATASET_URI", "CSV_URI"];      // Get from elsewhere
     let my_problem = CreateProblemDefinition(depvar, aux);
-    console.log(my_problem);
-
-    return {userAgent: my_userAgent, version: my_version, timeBound: 5, priority: 1, allowedValueTypes: my_allowedValueTypes, problem: my_problem};
+    //console.log(my_problem);
+    let my_dataseturi = "file://" + datasetdocurl;
+    // console.log(my_dataseturi);
+    return {userAgent: my_userAgent, version: my_version, timeBound: 5, priority: 1, allowedValueTypes: my_allowedValueTypes, problem: my_problem, inputs: [{dataset_uri: my_dataseturi}] };
 }
-
-
-// {
-//     "solutionId": "solutionId_kzu9a8",
-//     "inputs": [
-//         {
-//             "csvUri": "file://uri/to-a/csv"
-//         },
-//         {
-//             "datasetUri": "file://uri/to-a/dataset"
-//         }
-//     ],
-//     "exposeOutputs": [
-//         "steps.1.steps.4.produce"
-//     ],
-//     "exposeValueTypes": [
-//         "PICKLE_URI",
-//         "VALUE_TYPE_UNDEFINED"
-//     ],
-//     "users": [
-//         {
-//             "id": "uuid of user",
-//             "choosen": true,
-//             "reason": "best solution"
-//         },
-//         {
-//             "id": "uuid of user",
-//             "choosen": false,
-//             "reason": ""
-//         }
-//     ]
-// }
 
 function CreateFitDefinition(solutionId){
     let inputs = [{ csvUri: "need to fix filepath" }];            // need to fix
@@ -2444,25 +2413,26 @@ export async function estimate(btn) {
             setxTable(rookpipe.predictors);
             let res = await makeRequest(D3M_SVC_URL + '/SearchSolutions', CreatePipelineDefinition(rookpipe.predictors, rookpipe.depvar));
             let searchId = res.data.searchId;
+            let solutionId = "";
+            let requestId = "";
             allsearchId.push(searchId); 
 
             let res2 = await makeRequest(D3M_SVC_URL + '/GetSearchSolutionsResults', {searchId: searchId});
             let searchDetailsUrl = res2.data.details_url;
             let fitDetailsUrl = "";
+            let solutionDetailsUrl = "";
 
             let searchFinished = false;
             let fitFinished = false;
-            let solutionDetailsUrl = "";
-            let requestId = "";
             let res3, res4, res5, res6, res7; 
             let oldCount = 0;
             let newCount = 0;
 
-            while(!searchFinished){
+            let refreshIntervalId = setInterval(async function() {
                 res3 = await updateRequest(searchDetailsUrl);                // silent equivalent makeRequest() with no data argument.  Also, should check whether best to be synchronous here.
                 newCount = res3.data.responses.count;
-                console.log("newCount" + newCount)
 
+                // Check if new pipeline to add and inspect
                 if(newCount>oldCount){
                     //for (var i = oldCount; i < newCount; i++) {       //  for statement if new items are pushed instead
                     for (var i = 0; i < (newCount-oldCount); i++) {     //  instead, updates are at top of list
@@ -2470,36 +2440,41 @@ export async function estimate(btn) {
                         console.log(res3.data.responses.list[i].details_url); 
                         solutionDetailsUrl = res3.data.responses.list[i].details_url;
                         res4 = await updateRequest(solutionDetailsUrl);
-                        //console.log(res4.data.response.solutionId);
-                    //res5 = await makeRequest(D3M_SVC_URL + '/FitSolution', CreateFitDefinition(res4.data.response.solutionId));
-                    //requestId = res5.data.requestId;
-                    //let res6 = await makeRequest(D3M_SVC_URL + `/GetFitSolutionResults`, {requestId: requestId});
-                    //fitFinished = false;
-                        // while(!fitFinished){
-                        //     fitDetailsUrl = res7.data.details_url;
-                        //     res7 = await updateRequest(fitDetailsUrl);   // check
-                        //     fitFinished = res7.data.is_finished;         // check
-                        // }
-                        onPipelineCreate(res4.data, rookpipe);                     // Should move to later in call sequence as more of API is incorporated.
-                        //onPipelineCreate(res7.data, rookpipe);  // arguments have changed
+                        solutionId = res4.data.response.solutionId;
+                        onPipelinePrime(res4.data, rookpipe);
+
+                        //res5 = await makeRequest(D3M_SVC_URL + '/FitSolution', CreateFitDefinition(solutionId));
+                        //requestId = res5.data.requestId;
+                        //res6 = await makeRequest(D3M_SVC_URL + `/GetFitSolutionResults`, {requestId: requestId});
+                        //fitDetailsUrl = res6.data.details_url;
+                        
+                        // Possibly this belongs elsewhere, like a callback function above.
+                        //fitFinished = false;
+                        //while(!fitFinished){
+                        //    res7 = await updateRequest(fitDetailsUrl);   // check
+                        //    fitFinished = res7.data.is_finished;         // check
+                        //}
+                        //onPipelineCreate(res7.data, res4.data.id);  // arguments have changed
                     };
                     oldCount = newCount;
-                    searchFinished = res3.data.is_finished;
                 };
-            };
+                
+                searchFinished = res3.data.is_finished;   
 
-            // Get to these shortly
-            //let res3 = await makeRequest(D3M_SVC_URL + `/FitSolutions`, {})
-            //let requestId = res3.data.requestId;
-            //let res4 = await makeRequest(D3M_SVC_URL + `/GetFitSolutionsResults`, {})
+                // Check if search is finished
+                if(searchFinished){
+                    // stop spinner
+                    estimateLadda.stop(); 
+                    // change status of buttons for estimating problem and marking problem as finished
+                    byId("btnEstimate").classList.remove("btn-success");
+                    byId("btnEstimate").classList.add("btn-default");
+                    byId("btnEndSession").classList.remove("btn-default");
+                    byId("btnEndSession").classList.add("btn-success");
+                    // stop the interval process
+                    clearInterval(refreshIntervalId);
+                };
+            }, 1000);
 
-            // stop spinner
-            estimateLadda.stop(); 
-            // change status of buttons for estimating problem and marking problem as finished
-            byId("btnEstimate").classList.remove("btn-success");
-            byId("btnEstimate").classList.add("btn-default");
-            byId("btnEndSession").classList.remove("btn-default");
-            byId("btnEndSession").classList.add("btn-success");
         }
     }
     task2_finished = true;
@@ -3131,6 +3106,10 @@ function setColors(n, c) {
 export function borderState() {
     let set = (id, param, attrs) => {
         let el = byId(id);
+        if (!el) {
+            return;
+        }
+
         zparams[param].length > 0 ?
             Object.entries(attrs).forEach(([x, y]) => el.querySelector('.rectColor svg circle').setAttribute(x, y)) :
             el.style['border-color'] = '#ccc';
@@ -3572,7 +3551,7 @@ export function resultsplotinit(pid) {
     } else {
         let xdata = "Actual";
         let ydata = "Predicted";
-        bivariatePlot(dvvalues, predvals, xdata, ydata);
+        scatter(dvvalues, predvals, xdata, ydata);
     }
 
     // add the list of predictors into setxLeftTopLeft
@@ -3947,200 +3926,6 @@ export function confusionmatrix(matrixdata, classes) {
 
     // not rendering this table for right now, left all the code in place though. maybe we use it eventually
     // var table = tabulate(computedData, ["F1", "PRECISION","RECALL","ACCURACY"]);
-}
-
-/**
-   scatterplot function to go to plots.js to be reused
-*/
-export function bivariatePlot(x_Axis, y_Axis, x_Axis_name, y_Axis_name) {
-    d3.select("#setxLeftPlot").html("");
-    d3.select("#setxLeftPlot").select("svg").remove();
-
-    x_Axis=x_Axis.map(Number);
-    y_Axis=y_Axis.map(Number);
-
-    console.log(x_Axis);
-    console.log(y_Axis);
-
-    let mainwidth = byId('main').clientWidth;
-    let mainheight = byId('main').clientHeight;
-
-    // scatter plot
-    let data_plot = [];
-    var nanCount = 0;
-    for (var i = 0; i < x_Axis.length; i++) {
-        if (isNaN(x_Axis[i]) || isNaN(y_Axis[i])) {
-            nanCount++;
-        } else {
-            var newNumber1 = x_Axis[i];
-            var newNumber2 = y_Axis[i];
-            data_plot.push({xaxis: newNumber1, yaxis: newNumber2, score: Math.random() * 100});
-
-        }
-    }
-
-
-    var margin = {top: 35, right: 35, bottom: 35, left: 35}
-    , width = mainwidth*.25- margin.left - margin.right
-    , height = mainwidth*.25 - margin.top - margin.bottom;
-    var padding = 100;
-
-    var min_x = d3.min(data_plot, function (d, i) {
-                       return data_plot[i].xaxis;
-                       });
-    var max_x = d3.max(data_plot, function (d, i) {
-                       return data_plot[i].xaxis;
-                       });
-    var avg_x = (max_x - min_x) / 10;
-    var min_y = d3.min(data_plot, function (d, i) {
-                       return data_plot[i].yaxis;
-                       });
-    var max_y = d3.max(data_plot, function (d, i) {
-                       return data_plot[i].yaxis;
-                       });
-    var avg_y = (max_y - min_y) / 10;
-
-    var xScale = d3.scale.linear()
-    .domain([min_x - avg_x, max_x + avg_x])
-    .range([0, width]);
-
-    var yScale = d3.scale.linear()
-    .domain([min_y - avg_y, max_y + avg_y])
-    .range([height, 0]);
-
-    var xAxis = d3.svg.axis()
-    .scale(xScale)
-    .orient('bottom')
-    .tickSize(-height);
-
-    var yAxis = d3.svg.axis()
-    .scale(yScale)
-    .orient('left')
-    .ticks(5)
-    .tickSize(-width);
-
-    var zoom = d3.behavior.zoom()
-    .x(xScale)
-    .y(yScale)
-    .scaleExtent([1, 10])
-    .on("zoom", zoomed);
-
-    var chart_scatter = d3.select('#setxLeftPlot')
-    .append('svg:svg')
-    .attr('width', width + margin.right + margin.left)
-    .attr('height', height + margin.top + margin.bottom);
-    // .call(zoom); dropping this for now, until the line zooms properly
-
-    var main1 = chart_scatter.append('g')
-    .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')')
-    .attr('width', width+ margin.right + margin.left)
-    .attr('height', height + margin.top + margin.bottom)
-    .attr('class', 'main');
-
-    let gX = main1.append('g')
-    .attr('transform', 'translate(0,' + height + ')')
-    .attr('class', 'x axis')
-    .call(xAxis);
-
-    let gY = main1.append('g')
-    .attr('transform', 'translate(0,0)')
-    .attr('class', 'y axis')
-    .call(yAxis);
-
-    var clip = main1.append("defs").append("svg:clipPath")
-    .attr("id", "clip")
-    .append("svg:rect")
-    .attr("id", "clip-rect")
-    .attr("x", "0")
-    .attr("y", "0")
-    .attr('width', width)
-    .attr('height', height);
-
-    main1.append("g").attr("clip-path", "url(#clip)")
-    .selectAll("circle")
-    .data(data_plot)
-    .enter()
-    .append("circle")
-    .attr("cx", (d, i) => xScale(data_plot[i].xaxis))
-    .attr("cy", (d, i) => yScale(data_plot[i].yaxis))
-    .attr("r", 2)
-    .style("fill", "#B71C1C");
-
-
-    chart_scatter.append("text")
-    .attr("text-anchor", "middle")  // this makes it easy to centre the text as the transform is applied to the anchor
-    .attr("transform", "translate(" + padding / 5 + "," + (height / 2) + ")rotate(-90)")  // text is drawn off the screen top left, move down and out and rotate
-    .text(y_Axis_name)
-    .style("fill", "#424242")
-    .style("text-indent","20px")
-    .style("font-size","12px")
-    .style("font-weight","bold");
-
-    chart_scatter.append("text")
-    .attr("text-anchor", "middle")  // this makes it easy to centre the text as the transform is applied to the anchor
-    .attr("transform", "translate(" + (width / 2) + "," + (height + (padding / 2)) + ")")  // centre below axis
-    .text(x_Axis_name)
-    .style("fill", "#424242")
-    .style("text-indent","20px")
-    .style("font-size","12px")
-    .style("font-weight","bold");
-
-
-    main1.append("line")
-    .attr("x1", xScale(min_x))
-    .attr("y1", yScale(min_x))
-    .attr("x2", xScale(max_x))
-    .attr("y2", yScale(max_x))
-    .attr("stroke-width", 2)
-    .attr("stroke", "black");
-
-    function zoomed() {
-        var panX = d3.event.translate[0];
-        var panY = d3.event.translate[1];
-        var scale = d3.event.scale;
-
-        panX = panX > 10 ? 10 : panX;
-        var maxX = -(scale - 1) * width - 10;
-        panX = panX < maxX ? maxX : panX;
-
-        panY = panY > 10 ? 10 : panY;
-        var maxY = -(scale - 1) * height - 10;
-        panY = panY < maxY ? maxY : panY;
-
-        zoom.translate([panX, panY]);
-
-
-        main1.select(".x.axis").call(xAxis);
-        main1.select(".y.axis").call(yAxis);
-        main1.selectAll("circle")
-        .attr("cx", function (d, i) {
-              console.log("circle x ",xScale(5));
-              return xScale(data_plot[i].xaxis);
-              })
-        .attr("cy", function (d, i) {
-              return yScale(data_plot[i].yaxis);
-              })
-        .attr("r", 2.5)
-        .style("fill", "#B71C1C");
-
-       // below doesn't work, so I'm just dropping the zoom
-        main1.select("line")
-        .attr("x1", function(d, i) {
-              return xScale(min_x);
-              })
-        .attr("y1", function(d, i) {
-              return xScale(min_x);
-              })
-        .attr("x2", function(d, i) {
-              return xScale(max_x);
-              })
-        .attr("y2", function(d, i) {
-              return yScale(max_x);
-              })
-        .attr("stroke-width", 2)
-        .attr("stroke", "black");
-    }
-    //  d3.select("#NAcount").text("There are " + nanCount + " number of NA values in the relation.");
 }
 
 /** needs doc */

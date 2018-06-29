@@ -16,8 +16,10 @@ from tworaven_apps.configurations.utils import get_latest_d3m_config,\
 def view_d3m_list(request):
     """List the D3m configurations in the db"""
 
+    configs = D3MConfiguration.objects.all().order_by('-is_default', 'name')
+
     tinfo = dict(title='D3M configurations',
-                 configs=D3MConfiguration.objects.all())
+                 configs=configs)
 
     return render(request,
                   'd3m_config_list.html',

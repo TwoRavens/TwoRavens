@@ -108,11 +108,6 @@ text.id {
     height: 100%;
 }
 
-#main.svg-leftpanel svg, #main.svg-rightpanel svg {width: 100%;} /* This is size when left/right panel minimized. Was: calc(100% - 300px);}*/
-
-#main.svg-leftpanel.svg-rightpanel svg {width: 100%;}   /*  Was: calc(100% - 300px);} /*
-/* Above changes fix issue when screen gets very small, and right margin is fixed at 300px, obscuring central display, even while left tab is shrinking below 300px */
-
 #leftpanel {
     border: 1px solid #ADADAD;
     position: fixed;
@@ -490,4 +485,8 @@ div#scatterplot .axis path {fill: none; stroke: #BDBDBD; shape-rendering: crispE
     /* Position the tooltip */
     position: relative;
     z-index: 1;
+}
+
+.vega-actions a {
+    padding-right: 1em;
 }

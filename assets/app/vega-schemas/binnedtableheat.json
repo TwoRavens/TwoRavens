@@ -1,0 +1,32 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v2.json",
+  "description": "A binned heatmap table.",
+  "data": {"url": "tworavensData"},
+  "mark": "rect",
+  "encoding": {
+    "x": {
+      "bin": {"maxbins":20},
+      "field": "tworavensX",
+      "type": "quantitative"
+    },
+    "y": {
+      "bin": {"maxbins": 20},
+      "field": "tworavensY",
+      "type": "quantitative"
+    },
+    "color": {
+      "aggregate": "count",
+      "type": "quantitative"
+    }
+  },
+  "config": {
+    "range": {
+      "heatmap": {
+        "scheme": "greenblue"
+      }
+    },
+    "view": {
+      "stroke": "transparent"
+    }
+  }
+}
