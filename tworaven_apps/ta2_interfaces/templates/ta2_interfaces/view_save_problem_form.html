@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+
+{% block main_content %}
+<div class="row">
+  <div class="col-12">
+    {% include "content_pages/snippet_return_to_links.html" %}
+  </div>
+</div>
+<div class="row">
+
+  <!-- start: form column -->
+  <div class="col-12 col-md-6">
+     <h3>save problem form</h3>
+
+      <form method=post action="{% url 'view_save_problem_form' %}">
+        <table>
+          {% csrf_token %}
+          {{ cform.as_table }}
+
+          <tr>
+            <td colspan="2">
+              <input type="submit" value="Submit" class="btn btn-default">
+            </td>
+          </tr>
+        </table>
+      </form>
+
+
+  </div><!-- end: form column -->
+  
+</div><!-- end: row -->
+
+
+{% endblock %}
