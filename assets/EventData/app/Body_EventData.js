@@ -1,7 +1,8 @@
 import m from 'mithril';
 
 import * as app from './app';
-import * as agg from './agg';
+import {aggregationData, eventMeasure, setEventMeasure, tableHeight, unitMeasure} from './app';
+import * as query from './query';
 import * as tour from "./tour";
 
 import * as common from '../../common/common';
@@ -15,15 +16,18 @@ import PanelList from '../../common/views/PanelList';
 import TextField from '../../common/views/TextField';
 import ButtonRadio from '../../common/views/ButtonRadio';
 
-import CanvasDatasets from "./views/CanvasDatasets";
-import CanvasCategorical from "./views/CanvasCategorical";
-import CanvasDyad from "./views/CanvasDyad";
-import CanvasDate from "./views/CanvasDate";
-import CanvasCategoricalGrouped from "./views/CanvasCategoricalGrouped";
-import CanvasTimeSeries from "./views/CanvasTimeSeries";
-import CanvasCustom from "./views/CanvasCustom";
-import CanvasCoordinates from "./views/CanvasCoordinates";
+import CanvasAbout from "./canvases/CanvasAbout";
+import CanvasDatasets from "./canvases/CanvasDatasets";
+import CanvasSavedQueries from "./canvases/CanvasSavedQueries";
 
+import CanvasCategorical from "./canvases/CanvasCategorical";
+import CanvasDyad from "./canvases/CanvasDyad";
+import CanvasDate from "./canvases/CanvasDate";
+import CanvasCategoricalGrouped from "./canvases/CanvasCategoricalGrouped";
+import CanvasCoordinates from "./canvases/CanvasCoordinates";
+import CanvasCustom from "./canvases/CanvasCustom";
+
+import CanvasTimeSeries from "./canvases/CanvasTimeSeries";
 import TableAggregation from "./views/TableAggregation";
 
 export default class Body_EventData {
@@ -42,7 +46,7 @@ export default class Body_EventData {
         app.setupQueryTree();
     }
 
-    header(mode) {
+    header() {
         return m(Header, {image: '/static/images/TwoRavens.png'},
 
             m('div', {style: {'flex-grow': 1}}),
@@ -80,10 +84,10 @@ export default class Body_EventData {
                 onclick: app.setSelectedMode,
                 activeSection: app.selectedMode,
                 sections: [
-                    {value: 'Datasets'}
+                    {value: 'Home', attrsInterface: {style: {'width': 'auto'}}}
                 ].concat(app.selectedDataset ? [
-                    {value: 'Subset', id: 'btnSubsetSubmit'},
-                    {value: 'Aggregate', id: 'aggSubmit'}
+                    {value: 'Subset', id: 'btnSubsetMode', attrsInterface: {style: {'width': 'auto'}}},
+                    {value: 'Aggregate', attrsInterface: {style: {'width': 'auto'}}}
                 ] : [])
             })
         );
@@ -130,7 +134,7 @@ export default class Body_EventData {
 
         let recordCount = {
             'subset': app.totalSubsetRecords,
-            'aggregate': agg.aggregationData.length
+            'aggregate': aggregationData.length
         }[app.selectedMode];
 
         return m(Footer, [
@@ -165,7 +169,19 @@ export default class Body_EventData {
 
     leftpanel(mode) {
         if (mode === 'datasets') {
-            common.setPanelOcclusion('left', `calc(2*${common.panelMargin} + 250px)`);
+            return m(Panel, {
+                side: 'left',
+                label: 'Navigation',
+                hover: false,
+                width: '250px',
+                contents: m(PanelList, {
+                    id: 'homePanelList',
+                    items: ['About', 'Datasets', 'Saved Queries'],
+                    colors: {[common.selVarColor]: [app.selectedCanvasHome]},
+                    callback: app.setSelectedCanvas,
+                    attrsAll: {style: {height: '100%', overflow: 'auto'}}
+                })
+            })
         }
 
         if (mode === 'subset') {
@@ -185,7 +201,10 @@ export default class Body_EventData {
             };
 
             let subsetLists = Object.keys(app.genericMetadata[app.selectedDataset]['subsets'])
-                .reduce((out, subset) => {out[isAligned(subset)].push(subset); return out;}, {Aligned: [], Unaligned: []});
+                .reduce((out, subset) => {
+                    out[isAligned(subset)].push(subset);
+                    return out;
+                }, {Aligned: [], Unaligned: []});
             subsetLists['Unaligned'].push('Custom');
 
             return m(Panel, {
@@ -245,7 +264,7 @@ export default class Body_EventData {
         if (mode === 'aggregate') {
 
             let timeSeries = false;
-            for (let subset of Object.keys(agg.unitMeasure)) {
+            for (let subset of Object.keys(unitMeasure)) {
                 if (app.genericMetadata[app.selectedDataset]['subsets'][subset]['type'] === 'date') {
                     timeSeries = true;
                     break;
@@ -261,7 +280,7 @@ export default class Body_EventData {
                 attrsAll: {
                     style: {
                         // subtract header, spacer, spacer, scrollbar, table, and footer
-                        height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${common.canvasScroll['horizontal'] ? common.scrollbarWidth : '0px'} - ${agg.tableHeight} - ${common.heightFooter})`
+                        height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${common.canvasScroll['horizontal'] ? common.scrollbarWidth : '0px'} - ${tableHeight} - ${common.heightFooter})`
                     }
                 },
                 contents: m(MenuHeaders, {
@@ -274,7 +293,7 @@ export default class Body_EventData {
                                 items: app.aggregateKeys().filter(subset => tempDataset['subsets'][subset]['measures'].indexOf('unit') !== -1),
                                 id: 'UMList',
                                 colors: {[common.selVarColor]: [app.selectedSubsetName]},
-                                classes: {['item-bordered']: Object.keys(agg.unitMeasure).filter(key => agg.unitMeasure[key])},
+                                classes: {['item-bordered']: Object.keys(unitMeasure).filter(key => unitMeasure[key])},
                                 callback: app.setSelectedSubsetName
                             })
                         },
@@ -284,8 +303,11 @@ export default class Body_EventData {
                                 items: app.aggregateKeys().filter(subset => tempDataset['subsets'][subset]['measures'].indexOf('event') !== -1),
                                 id: 'EMList',
                                 colors: {[common.selVarColor]: [app.selectedSubsetName]},
-                                classes: {['item-bordered']: [agg.eventMeasure]},
-                                callback: (subset) => {agg.setEventMeasure(subset); app.setSelectedSubsetName(subset);}
+                                classes: {['item-bordered']: [eventMeasure]},
+                                callback: (subset) => {
+                                    setEventMeasure(subset);
+                                    app.setSelectedSubsetName(subset);
+                                }
                             })
                         },
                         {
@@ -313,7 +335,7 @@ export default class Body_EventData {
         if (mode === 'datasets') styling = {display: 'none'};
         if (mode === 'aggregate') styling = {
             // subtract header, the two margins, scrollbar, table, and footer
-            height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${common.canvasScroll['horizontal'] ? common.scrollbarWidth : '0px'} - ${agg.tableHeight} - ${common.heightFooter})`
+            height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${common.canvasScroll['horizontal'] ? common.scrollbarWidth : '0px'} - ${tableHeight} - ${common.heightFooter})`
         };
 
         return m(Panel, {
@@ -343,7 +365,7 @@ export default class Body_EventData {
                                 style: {
                                     "float": "left"
                                 },
-                                onclick: addGroup
+                                onclick: app.addGroup
                             },
                             "Group"
                         ),
@@ -352,8 +374,8 @@ export default class Body_EventData {
                             id: 'btnUpdate',
                             style: {float: 'right'},
                             onclick: () => {
-                                if (mode === 'subset') app.submitQuery();
-                                if (mode === 'aggregate') agg.submitAggregation();
+                                if (mode === 'subset') query.submitQuery();
+                                if (mode === 'aggregate') query.submitAggregation();
                             }
                         }, 'Update')
                     ])
@@ -400,7 +422,9 @@ export default class Body_EventData {
         // TODO add CanvasAnalysis
         app.canvasPreferences[app.selectedCanvas] = app.canvasPreferences[app.selectedCanvas] || {};
         return m({
+            'About': CanvasAbout,
             'Datasets': CanvasDatasets,
+            'Saved Queries': CanvasSavedQueries,
             'PentaClass': CanvasDatasets,
             'Time Series': CanvasTimeSeries,
             'Custom': CanvasCustom
@@ -416,7 +440,7 @@ export default class Body_EventData {
         let {mode} = vnode.attrs;
 
         return m('main#EventData',
-            this.header(mode),
+            this.header(),
             this.leftpanel(mode),
             this.rightpanel(mode),
             m("button#btnStage.btn.btn-default[type='button']", {
@@ -432,7 +456,7 @@ export default class Body_EventData {
             m(Canvas, {
                 attrsAll: {
                     style: mode === 'aggregate'
-                        ? {height: `calc(100% - ${common.heightHeader} - ${agg.tableHeight} - ${common.heightFooter})`}
+                        ? {height: `calc(100% - ${common.heightHeader} - ${tableHeight} - ${common.heightFooter})`}
                         : {}
                 }
             }, this.canvasContent()),

@@ -2,6 +2,7 @@ import m from 'mithril';
 import {grayColor} from "../../../common/common";
 import TextField from '../../../common/views/TextField';
 import * as app from "../app";
+import * as query from '../query';
 
 let searchLag = 500;
 
@@ -55,7 +56,7 @@ export default class MonadSelection {
             }
         }
 
-        let stagedQuery = app.buildSubset(stagedSubsetData);
+        let stagedQuery = query.buildSubset(stagedSubsetData);
 
         // If no filters are set, don't add any filtering
         let subsets;
@@ -71,7 +72,7 @@ export default class MonadSelection {
         console.log("Actor Filter: " + this.cachedQuery);
 
         // Submit query and update listings
-        let query = {
+        let body = {
             'query': escape(this.cachedQuery),
             'dataset': app.selectedDataset,
             'type': 'summary',
@@ -94,7 +95,7 @@ export default class MonadSelection {
         this.waitForQuery++;
         m.request({
             url: app.subsetURL,
-            data: query,
+            data: body,
             method: 'POST'
         }).then(updateActorListing).catch(failedUpdateActorListing);
     }

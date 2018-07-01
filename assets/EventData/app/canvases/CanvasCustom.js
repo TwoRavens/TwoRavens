@@ -1,10 +1,11 @@
 import m from 'mithril';
-import {abstractQuery, buildSubset} from '../app';
+import * as app from '../app';
+import * as query from '../query';
+import * as tour from '../tour';
 import {panelMargin} from '../../../common/common';
 
 import '../../../../node_modules/ace-builds/src-min-noconflict/ace.js';
 
-import {tourStartCustomExamples} from "../tour";
 
 export default class CanvasCustom {
     oncreate(vnode) {
@@ -53,7 +54,7 @@ export default class CanvasCustom {
                         "display": "inline"
                     },
                     onclick: () => {
-                        preferences['text'] = JSON.stringify(buildSubset(abstractQuery), null, '	');
+                        preferences['text'] = JSON.stringify(query.buildSubset(app.abstractQuery), null, '  ');
                         this.editor.setValue(preferences['text'] || '')
                     }
                 }, "Show All"),
@@ -64,7 +65,7 @@ export default class CanvasCustom {
                         "margin-left": "2em",
                         "display": "inline"
                     },
-                    onclick: tourStartCustomExamples
+                    onclick: tour.tourStartCustomExamples
                 }, "Examples"),
 
                 // Ace editor

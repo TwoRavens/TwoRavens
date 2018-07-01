@@ -1,9 +1,8 @@
 import m from 'mithril';
-import {dateSort} from "./views/CanvasDate";
+import {dateSort} from "./canvases/CanvasDate";
 
 import * as common from '../../common/common';
-import * as agg from './agg';
-
+import * as query from './query';
 // Used for right panel query tree
 import '../../../node_modules/jqtree/tree.jquery.js';
 import '../../../node_modules/jqtree/jqtree.css';
@@ -74,6 +73,9 @@ export function handleResize() {
 
 window.addEventListener('resize', handleResize);
 
+// percent of the canvas to cover with the aggregation table
+export let tableHeight = '20%';
+
 export let selectedDataset;
 export let setSelectedDataset = (key) => {
     // trigger reloading of necessary menu elements
@@ -86,20 +88,20 @@ export let setSelectedDataset = (key) => {
         subsetPreferences[subset] = subsetPreferences[subset] || {};
     });
 
-    Object.keys(agg.unitMeasure).forEach(unit => {
+    Object.keys(unitMeasure).forEach(unit => {
         if (!(unit in genericMetadata[selectedDataset]['subsets']) || !('measure' in genericMetadata[selectedDataset['subsets'][unit]]))
-            delete agg.unitMeasure[unit];
+            delete unitMeasure[unit];
     });
-    agg.setEventMeasure(undefined);
-    agg.aggregationHeadersUnit = [];
-    agg.aggregationHeadersEvent = [];
-    agg.aggregationData = [];
+    setEventMeasure(undefined);
+    aggregationHeadersUnit = [];
+    aggregationHeadersEvent = [];
+    aggregationData = [];
 
     resetPeek();
 };
 
-let modeTypes = ['subset', 'aggregate'];
-export let selectedMode = "datasets";
+let modeTypes = ['home', 'subset', 'aggregate'];
+export let selectedMode = 'home';
 
 export function setSelectedMode(mode) {
     mode = mode.toLowerCase();
@@ -107,8 +109,8 @@ export function setSelectedMode(mode) {
     if (mode === selectedMode) return;
 
     // Some canvases only exist in certain modes. Fall back to default if necessary.
-    if (mode === 'datasets' && 'Datasets' !== selectedCanvas)
-        setSelectedCanvas('Datasets');
+    if (mode === 'home' && ['About', 'Datasets', 'Saved Queries'].indexOf(selectedCanvas) === -1)
+        setSelectedCanvas(selectedCanvasHome);
     if (mode === 'subset' && (selectedCanvas !== 'subset' || subsetKeys().indexOf(selectedSubsetName) === -1))
         setSelectedSubsetName(subsetKeys()[0]);
     if (mode === 'aggregate' && (selectedCanvas !== 'subset' || aggregateKeys().indexOf(selectedSubsetName) === -1))
@@ -117,20 +119,26 @@ export function setSelectedMode(mode) {
     selectedMode = mode;
 
     m.route.set('/' + mode.toLowerCase());
+
+    // wait until after the redraw to force a plot size update
     setTimeout(() => {Object.keys(genericMetadata[selectedDataset]['subsets']).forEach(subset => subsetRedraw[subset] = true); m.redraw();}, 100);
 }
 
 // dictates what menu is shown, but the value of selectedSubsetName is user-defined
-let subsetTypes = ['dyad', 'categorical', 'categorical_grouped', 'date', 'custom'];
+let subsetTypes = ['dyad', 'categorical', 'categorical_grouped', 'date', 'custom']; // not actually used, but maintained for documentation
 export let selectedSubsetName;
 export let setSelectedSubsetName = (subset) => {
     setSelectedCanvas('Subset');
     selectedSubsetName = subset;
 };
 
-let canvasTypes = ['Datasets', 'Subset', 'Time Series', 'Analysis'];
-export let selectedCanvas = 'Datasets';
-export let setSelectedCanvas = (canvasKey) => selectedCanvas = canvasKey;
+let canvasTypes = ['Home', 'Datasets', 'Saved Queries', 'Subset', 'Custom', 'Time Series', 'Analysis']; // not actually used, but maintained for documentation
+export let selectedCanvas = 'About';
+export let selectedCanvasHome = 'About';
+export let setSelectedCanvas = (canvasKey) => {
+    if (['About', 'Datasets', 'Saved Queries'].indexOf(canvasKey) !== -1) selectedCanvasHome = canvasKey;
+    selectedCanvas = canvasKey;
+};
 
 export let totalSubsetRecords;
 
@@ -168,7 +176,7 @@ export let reloadSubset = (subsetName) => {
     m.request({
         url: subsetURL,
         data: {
-            query: JSON.stringify(buildSubset(stagedSubsetData)),
+            query: JSON.stringify(query.buildSubset(stagedSubsetData)),
             dataset: selectedDataset,
             subset: selectedSubsetName,
 
@@ -216,7 +224,7 @@ for (let child of abstractQuery) {
 }
 
 // Construct queries for current subset tree
-export let subsetQuery = buildSubset(stagedSubsetData);
+export let subsetQuery = query.buildSubset(stagedSubsetData);
 
 export function setupBody() {
     laddaUpdate = Ladda.create(document.getElementById("btnUpdate"));
@@ -228,7 +236,7 @@ export function setupBody() {
 
     resetPeek();
 
-    let query = {
+    let body = {
         'query': escape(JSON.stringify(subsetQuery)),
         'variables': [...selectedVariables],
         'dataset': genericMetadata[selectedDataset]['key'],
@@ -240,7 +248,7 @@ export function setupBody() {
     // Initial load of preprocessed data
     m.request({
         url: subsetURL,
-        data: query,
+        data: body,
         method: 'POST'
     }).then(pageSetup).catch(laddaStop);
 }
@@ -278,23 +286,23 @@ export function download() {
     }
 
     if (selectedMode === "subset") {
-        let subsetQuery = buildSubset(abstractQuery);
+        let subsetQuery = query.buildSubset(abstractQuery);
 
         console.log("Query: " + JSON.stringify(subsetQuery));
 
-        let query = {
+        let body = {
             'query': escape(JSON.stringify(subsetQuery)),
             'dataset': selectedDataset,
             'type': 'raw'
         };
 
         // only pass projection if variables are loaded and selected
-        if (selectedVariables.size !== 0) Object.assign(query, {'variables': [...selectedVariables]});
+        if (selectedVariables.size !== 0) Object.assign(body, {'variables': [...selectedVariables]});
 
         laddaDownload.start();
         m.request({
             url: subsetURL,
-            data: query,
+            data: body,
             method: 'POST'
         }).then(save).catch(laddaStop);
     }
@@ -339,12 +347,12 @@ let onStorageEvent = (e) => {
 };
 
 let updatePeek = async () => {
-    let subsetQuery = buildSubset(abstractQuery);
+    let subsetQuery = query.buildSubset(abstractQuery);
 
     console.log("Peek Update");
     console.log("Query: " + JSON.stringify(subsetQuery));
 
-    let query = {
+    let body = {
         query: JSON.stringify(subsetQuery),
         skip: peekSkip,
         limit: peekBatchSize,
@@ -353,14 +361,14 @@ let updatePeek = async () => {
     };
 
     // conditionally pass variable projection
-    if (selectedVariables.size !== 0) query['variables'] = [...selectedVariables];
+    if (selectedVariables.size !== 0) body['variables'] = [...selectedVariables];
 
     // cancel the request
     if (!peekIsGetting) return;
 
     let data = await m.request({
         url: subsetURL,
-        data: query,
+        data: body,
         method: 'POST'
     });
 
@@ -438,6 +446,20 @@ export function pageSetup(jsondata) {
         subsetData[jsondata['subsetName']] = jsondata['data'];
 }
 
+export let aggregationData = [];
+export let setAggregationData = (data) => aggregationData = data;
+
+export let aggregationHeadersUnit = [];
+export let setAggregationHeadersUnit = (headersUnit) => aggregationHeadersUnit = headersUnit;
+
+export let aggregationHeadersEvent = [];
+export let setAggregationHeadersEvent = (headersEvent) => aggregationHeadersEvent = headersEvent;
+
+export let unitMeasure = {};
+
+export let eventMeasure; // string
+export let setEventMeasure = (measure) => eventMeasure = measure;
+
 
 // Right panel of subset menu
 
@@ -457,8 +479,8 @@ export function pageSetup(jsondata) {
 // names of variables comes from 'selectedVariables' variable
 let variableData = [];
 
-let nodeId = 1;
-let groupId = 1;
+export let nodeId = 1;
+export let groupId = 1;
 export var queryId = 1;
 
 // TAGGED: LOCALSTORE
@@ -547,7 +569,7 @@ export function setupQueryTree() {
             // Save changes when an element is moved
             abstractQuery = JSON.parse(subsetTree.tree('toJson'));
 
-            hide_first(abstractQuery);
+            hideFirst(abstractQuery);
             let state = subsetTree.tree('getState');
             subsetTree.tree('loadData', abstractQuery);
             subsetTree.tree('setState', state);
@@ -575,7 +597,7 @@ export function setupQueryTree() {
     subsetTree.bind(
         'tree.dblclick',
         function (event) {
-            let tempQuery = buildSubset([event.node]);
+            let tempQuery = query.buildSubset([event.node]);
             if ($.isEmptyObject(tempQuery)) {
                 alert("\"" + event.node.name + "\" is too specific to parse into a query.");
             } else {
@@ -676,7 +698,7 @@ window.callbackDelete = function (id) {
         subsetTree.tree('removeNode', node);
 
         abstractQuery = JSON.parse(subsetTree.tree('toJson'));
-        hide_first(abstractQuery);
+        hideFirst(abstractQuery);
 
         let qtree = subsetTree;
         let state = qtree.tree('getState');
@@ -693,12 +715,12 @@ window.callbackDelete = function (id) {
                 }
             }
 
-            let subsetQuery = buildSubset(stagedSubsetData);
+            let subsetQuery = query.buildSubset(stagedSubsetData);
 
             // console.log(JSON.stringify(subsetQuery));
             // console.log(JSON.stringify(variableQuery, null, '  '));
 
-            let query = {
+            let body = {
                 'query': escape(JSON.stringify(subsetQuery)),
                 'variables': [...selectedVariables],
                 'dataset': selectedDataset,
@@ -709,7 +731,7 @@ window.callbackDelete = function (id) {
 
             m.request({
                 url: subsetURL,
-                data: query,
+                data: body,
                 method: 'POST'
             }).then(pageSetup).catch(laddaStop);
 
@@ -752,30 +774,30 @@ function reloadRightPanelVariables() {
 // Load stored variables into the rightpanel variable tree on initial page load
 reloadRightPanelVariables();
 
-function disable_edit_recursive(node) {
+function disableEditRecursive(node) {
     node.editable = false;
     node.cancellable = false;
     if ('children' in node) {
         for (let child of node.children) {
-            child = disable_edit_recursive(child);
+            child = disableEditRecursive(child);
         }
     }
     return node
 }
 
-function hide_first(data) {
+function hideFirst(data) {
     for (let child_id in data) {
         // noinspection JSUnfilteredForInLoop
         let child = data[child_id];
         if ('children' in child) {
-            child.children = hide_first(child.children);
+            child.children = hideFirst(child.children);
         }
         child['show_op'] = child_id !== "0";
     }
     return data;
 }
 
-window.addGroup = function (query = false) {
+export function addGroup(query = false) {
     // When the query argument is set, groups will be included under a 'query group'
     let movedChildren = [];
     let removeIds = [];
@@ -812,7 +834,7 @@ window.addGroup = function (query = false) {
 
     if (query) {
         for (let child_id in movedChildren) {
-            movedChildren[child_id] = disable_edit_recursive(movedChildren[child_id]);
+            movedChildren[child_id] = disableEditRecursive(movedChildren[child_id]);
         }
         abstractQuery.push({
             id: String(nodeId++),
@@ -835,7 +857,7 @@ window.addGroup = function (query = false) {
         });
     }
 
-    hide_first(abstractQuery);
+    hideFirst(abstractQuery);
 
     let qtree = $('#subsetTree');
     let state = qtree.tree('getState');
@@ -844,7 +866,7 @@ window.addGroup = function (query = false) {
     if (!query) {
         qtree.tree('openNode', qtree.tree('getNodeById', nodeId - 1), true);
     }
-};
+}
 
 export function addRule() {
     let preferences = getSubsetPreferences();
@@ -1127,7 +1149,7 @@ export function reset() {
     reloadRightPanelVariables();
 
     if (!suppress) {
-        let query = {
+        let body = {
             'query': escape(JSON.stringify({})),
             'dataset': selectedDataset,
             'subset': selectedSubsetName
@@ -1137,306 +1159,20 @@ export function reset() {
 
         m.request({
             url: subsetURL,
-            data: query,
+            data: body,
             method: 'POST'
         }).then(pageSetup).catch(laddaStop);
     }
 }
 
-/**
- * Makes web request for rightpanel preferences
- */
-export function submitQuery(datasetChanged = false) {
-
-    // Only construct and submit the query if new subsets have been added since last query
-    let newSubsets = false;
-    for (let idx in abstractQuery) {
-        if (abstractQuery[idx].type !== 'query') {
-            newSubsets = true;
-            break
-        }
-    }
-
-    if (!newSubsets && !datasetChanged) {
-        alert("Nothing has been staged yet! Stage your preferences before subset.");
-        return;
-    }
-
-    function submitQueryCallback(jsondata) {
-        // If no records match, then don't lock the preferences behind a query
-        if (Array.isArray(jsondata['total'])) jsondata['total'] = jsondata['total'][0];
-        if (jsondata['total'] === 0) {
-            alert("No records match your subset. Plots will not be updated.");
-            laddaStop();
-            return;
-        }
-
-        // clear all subset data
-        subsetData = {};
-
-        pageSetup(jsondata);
-
-        // when requerying for switching datasets, don't make right panel edits
-        if (datasetChanged) return;
-
-        // True for adding a query group, all existing preferences are grouped under a 'query group'
-        addGroup(true);
-
-        // Add all nodes to selection
-        let nodeList = [...Array(nodeId).keys()];
-
-        let subsetTree = $('#subsetTree');
-        nodeList.forEach(
-            function (node_id) {
-                const node = subsetTree.tree("getNodeById", node_id);
-
-                if (node) {
-                    subsetTree.tree("addToSelection", node);
-                    if (node.type !== 'query') node.editable = false;
-                }
-            }
-        );
-
-        // Redraw tree
-        abstractQuery = JSON.parse(subsetTree.tree('toJson'));
-        let state = subsetTree.tree('getState');
-        subsetTree.tree('loadData', abstractQuery);
-        subsetTree.tree('setState', state);
-
-        // TAGGED: LOCALSTORE
-        // // Store user preferences in local data
-        // localStorage.setItem('selectedVariables', JSON.stringify([...selectedVariables]));
-        //
-        // localStorage.setItem('abstractQuery', subsetTree.tree('toJson'));
-        // localStorage.setItem('nodeId', String(nodeId));
-        // localStorage.setItem('groupId', String(groupId));
-        // localStorage.setItem('queryId', String(queryId));
-    }
-
-    let subsetQuery = buildSubset(abstractQuery);
-    console.log("Query: " + JSON.stringify(subsetQuery));
-
-    if (datasetChanged) laddaReset.start();
-    else laddaUpdate.start();
-
-    m.request({
-        url: subsetURL,
-        data: {
-            'type': 'summary',
-            'query': escape(JSON.stringify(subsetQuery)),
-            'dataset': selectedDataset,
-            'subset': selectedSubsetName,
-            'countRecords': true
-        },
-        method: 'POST'
-    }).then(submitQueryCallback) // TODO re-enable catch after debugging. Possibly make this one custom/explicit because tracking this down is annoying .catch(laddaStop);
-}
-
 // Construct mongoDB filter (subsets rows)
-export function buildSubset(tree) {
-    // Base case
-    if (tree.length === 0) return {};
-
-    let queryStack = [];
-    let stagedSubsetData = [];
-    for (let child of tree) {
-        if (child.type === 'query') {
-            queryStack.push(child)
-        } else {
-            stagedSubsetData.push(child)
-        }
-    }
-
-    // Treat staged subset data as just another query on the query stack
-    queryStack.push({'children': stagedSubsetData, 'operation': 'and', 'name': 'New Query', type: 'query'});
-    return processGroup({'children': queryStack})
-}
 
 // Recursively traverse the tree in the right panel. For each node, call processNode
 
 // If node is a group, then build up the overall operator tree via processGroup
 // If node is a subset, then consider it a leaf, use processRule to build query specific to subset
 
-function processNode(node) {
-    if (node.type === 'group' && 'children' in node && node.children.length !== 0) {
-        // Recursively process subgroups
-        return processGroup(node);
-    } else if (node.type === 'query' && 'children' in node && node.children.length !== 0) {
-        // Recursively process query
-        return processGroup(node);
-    }
-    else {
-        // Explicitly process rules
-        return processRule(node);
-    }
-}
-
 // Group precedence parser
 // Constructs a boolean operator tree via operator precedence between siblings (for groups and queries)
-function processGroup(group) {
-
-    // all rules are 'or'ed together
-    let group_query = {'$or': []};
-
-    // strings of rules conjoined by 'and' operators are clotted in semigroups that act together as one rule
-    let semigroup = [];
-
-    for (let child_id = 0; child_id < group.children.length - 1; child_id++) {
-        let op_self = group.children[child_id]['operation'];
-        let op_next = group.children[child_id + 1]['operation'];
-
-        // Clot together and operators
-        if (op_self === 'and' || op_next === 'and') {
-            semigroup.push(processNode(group.children[child_id]));
-            if (op_next === 'or') {
-                group_query['$or'].push({'$and': semigroup.slice()});
-                semigroup = [];
-            }
-        }
-
-        // If not part of an 'and' clot, simply add to the query
-        if (op_self === 'or' && op_next === 'or') {
-            group_query['$or'].push(processNode(group.children[child_id]));
-        }
-    }
-
-    // Process final sibling
-    if (group.children.length > 0 && group.children[group.children.length - 1]['operation'] === 'and') {
-        semigroup.push(processNode(group.children[group.children.length - 1]));
-        group_query['$or'].push({'$and': semigroup.slice()})
-
-    } else {
-        group_query['$or'].push(processNode(group.children[group.children.length - 1]));
-    }
-
-    // Remove unnecessary conjunctions
-    if (group_query['$or'].length === 1) {
-        group_query = group_query['$or'][0]
-    }
-    if ('$and' in group_query && group_query['$and'].length === 1) {
-        group_query = group_query['$and'][0]
-    }
-
-    return group_query;
-}
 
 // Return a mongoDB query for a rule data structure
-function processRule(rule) {
-    let rule_query = {};
-
-    if (rule.subset === 'date') {
-
-        let rule_query_inner = {};
-        if (rule.structure === 'point') {
-            let rule_query_inner = {};
-            let column;
-            for (let child of rule.children) {
-                column = child.column;
-                if ('fromDate' in child) {
-                    child.fromDate = new Date(child.fromDate);
-                    rule_query_inner['$gte'] = {'$date': {'$numberLong': String(child.fromDate.getTime())}}
-                }
-                if ('toDate' in child) {
-                    child.toDate = new Date(child.toDate);
-                    rule_query_inner['$lte'] = {'$date': {'$numberLong': String(child.toDate.getTime())}}
-                }
-            }
-            rule_query[column] = rule_query_inner;
-        } else if (rule.structure === 'interval') {
-            for (let child of rule.children) {
-                if ('fromDate' in child) {
-                    child.fromDate = new Date(child.fromDate);
-                    rule_query[child.column] = {
-                        '$gte': {'$date': {'$numberLong': String(child.fromDate.getTime())}}
-                    };
-                }
-                if ('toDate' in child) {
-                    child.toDate = new Date(child.toDate);
-                    rule_query[child.column] = {
-                        '$lte': {'$date': {'$numberLong': String(child.toDate.getTime())}}
-                    };
-                }
-            }
-        }
-    }
-
-    if (['categorical', 'categorical_grouped'].indexOf(rule.subset) !== -1) {
-        let rule_query_inner = [];
-        for (let child of rule.children) {
-            rule_query_inner.push(child.name);
-        }
-
-        rule_query_inner = {'$in': rule_query_inner};
-        if ('negate' in rule && !rule.negate) {
-            rule_query_inner = {'$not': rule_query_inner};
-        }
-
-        rule_query[rule.column] = rule_query_inner;
-    }
-
-    // Actor subset is itself a group of links. A link is a hardcoded group, and source/target lists are leaf nodes
-    if (rule.subset === 'dyad') {
-        return processGroup(rule);
-    }
-
-    if (rule.subset === 'link') {
-        return {
-            '$and': [
-                processNode(rule.children[0]),
-                processNode(rule.children[1])
-            ]
-        };
-    }
-
-    if (rule.subset === 'node') {
-        // semicolons are not parsed properly by R jsonlite or in the rook POST... ridiculous
-        return {[rule.column]: {'$in': rule.actors}}
-    }
-
-    if (rule.subset === 'coordinates') {
-        let rule_query_inner = [];
-
-        for (let child of rule.children) {
-            if (child.name === 'Latitude') {
-                let latitude = {
-                    [child.column]: {
-                        '$lte': parseFloat(child.children[0].name),
-                        '$gte': parseFloat(child.children[1].name)
-                    }
-                };
-
-                if ('negate' in child && !child.negate) {
-                    latitude = {'$not': latitude};
-                }
-                rule_query_inner.push(latitude);
-
-            } else if (child.name === 'Longitude') {
-                let longitude = {
-                    [child.column]: {
-                        '$lte': parseFloat(child.children[0].name),
-                        '$gte': parseFloat(child.children[1].name)
-                    }
-                };
-
-                if ('negate' in child && !child.negate) {
-                    longitude = {'$not': longitude};
-                }
-                rule_query_inner.push(longitude);
-            }
-        }
-
-        if ('negate' in rule && !rule.negate) {
-            rule_query_inner = {'$not': rule_query_inner};
-        }
-
-        rule_query['$and'] = rule_query_inner;
-    }
-
-    if (rule.subset === 'custom') {
-        // makes a copy and validates json
-        rule_query = JSON.parse(JSON.stringify(rule.custom));
-        console.log(rule_query);
-    }
-
-    return rule_query;
-}

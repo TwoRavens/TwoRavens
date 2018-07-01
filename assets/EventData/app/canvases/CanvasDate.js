@@ -2,14 +2,14 @@ import m from 'mithril';
 import * as d3 from "d3";
 import $ from 'jquery'
 import "jquery-ui/ui/widgets/datepicker"
-import * as agg from '../agg';
 // Used for rendering date calendar
 import '../../../../node_modules/jquery-ui/themes/base/datepicker.css'
 import '../../../../node_modules/jquery-ui-dist/jquery-ui.theme.min.css'
 
 import {panelMargin} from "../../../common/common";
 import ButtonRadio from '../../../common/views/ButtonRadio';
-import PlotDate from './PlotDate';
+import PlotDate from '../views/PlotDate';
+import * as app from '../app';
 
 export function dateSort(a, b) {
     if (a['Date'] === b['Date']) {
@@ -219,7 +219,7 @@ export default class CanvasDate {
                 attrsAll: {style: {width: '80px'}},
                 vertical: true,
                 onclick: (aggregation) => {
-                    agg.unitMeasure[subsetName] = aggregation !== 'None';
+                    app.unitMeasure[subsetName] = aggregation !== 'None';
                     preferences['aggregation'] = aggregation;
                 },
                 activeSection: preferences['aggregation'],

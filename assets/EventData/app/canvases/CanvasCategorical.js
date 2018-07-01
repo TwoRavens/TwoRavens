@@ -2,7 +2,7 @@ import * as app from '../app';
 import * as common from '../../../common/common'
 import {panelMargin} from '../../../common/common'
 import m from 'mithril';
-import PlotBars from "./PlotBars";
+import PlotBars from "../views/PlotBars";
 import ButtonRadio from "../../../common/views/ButtonRadio";
 
 export default class CanvasCategorical {
@@ -15,6 +15,8 @@ export default class CanvasCategorical {
         preferences['aggregation'] = preferences['aggregation'] || masterFormat;
         preferences['format'] = preferences['format'] || masterFormat;
         preferences['selections'] = preferences['selections'] || new Set();
+
+        console.log(preferences['selections']);
 
         let allSelected = {};
 

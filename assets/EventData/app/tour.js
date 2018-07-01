@@ -537,7 +537,7 @@ let aggregationTour = {
         {
             title: "Subset",
             content: "To make modifications to the subsetted data, or download the subsetted data before aggregation, return to the subset menu.",
-            target: "btnSubsetSubmit",
+            target: "btnSubsetMode",
             placement: "left"
         }
     ]

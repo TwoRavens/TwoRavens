@@ -1,12 +1,12 @@
 import m from 'mithril';
-import * as agg from '../agg';
 import {panelMargin} from '../../../common/common';
 import ButtonRadio from "../../../common/views/ButtonRadio";
 import Button from "../../../common/views/Button";
 import TextField from '../../../common/views/TextField';
 
-import MonadSelection from './MonadSelection';
-import PlotDyad from './PlotDyad';
+import MonadSelection from '../views/MonadSelection';
+import PlotDyad from '../views/PlotDyad';
+import {unitMeasure} from "../app";
 
 // Width of the actor selection panel
 let selectionWidth = '400px';
@@ -120,8 +120,8 @@ export default class CanvasDyad {
                         },
                         m("label.aggChkLbl",
                             m('input#aggregActorSelect.aggChk.aggActor[type=checkbox]', {
-                                onclick: m.withAttr("checked", (state) => agg.unitMeasure[subsetName] = state),
-                                checked: agg.unitMeasure[subsetName]
+                                onclick: m.withAttr("checked", (state) => unitMeasure[subsetName] = state),
+                                checked: unitMeasure[subsetName]
                             }),
                             "Use in aggregation"
                         ))

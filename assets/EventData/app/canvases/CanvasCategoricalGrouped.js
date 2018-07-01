@@ -2,7 +2,7 @@ import m from 'mithril';
 import * as common from '../../../common/common';
 import * as app from '../app';
 
-import PlotBars from "./PlotBars";
+import PlotBars from "../views/PlotBars";
 
 let getLabel = (format, key) => {
     if (!(format in app.formattingData)) return '';
