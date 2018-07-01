@@ -2,30 +2,15 @@ import * as app from './app';
 import * as tour from './tour';
 import m from 'mithril';
 
-export function submitAggregation() {
-    if (!app.eventMeasure) {
-        tour.tourStartEventMeasure();
-        return;
-    }
+// functions for generating database queries
+// subset queries are built from the abstractQuery, which is managed in app.js
+// aggregation queries contain the subset query as the first stage in the pipeline. The second group stage pulls data from subsetPreferences
 
-    let query = JSON.stringify(buildAggregation(app.abstractQuery, app.subsetPreferences));
-    console.log("Aggregation Query: " + query);
+// submit*() functions cause a state change/update the menus
+// build*() functions are pure and return mongo queries
+// process*() functions are for constructing the subset query, relative to a specific node, group, or rule on the query tree
 
-    m.request({
-        url: app.subsetURL,
-        data: {
-            'type': 'aggregate',
-            'query': escape(query),
-            'dataset': app.selectedDataset,
-            'subset': app.selectedSubsetName
-        },
-        method: 'POST'
-    }).then(reformatAggregation);
-}
 
-/**
- * Makes web request for rightpanel preferences
- */
 export function submitQuery(datasetChanged = false) {
 
     // Only construct and submit the query if new subsets have been added since last query
@@ -112,6 +97,7 @@ export function submitQuery(datasetChanged = false) {
     }).then(submitQueryCallback) // TODO re-enable catch after debugging. Possibly make this one custom/explicit because tracking this down is annoying .catch(app.laddaStop);
 }
 
+// Recursively traverse the tree in the right panel. For each node, call processNode
 export function buildSubset(tree) {
     // Base case
     if (tree.length === 0) return {};
@@ -131,6 +117,8 @@ export function buildSubset(tree) {
     return processGroup({'children': queryStack})
 }
 
+// If node is a group, then build up the overall operator tree via processGroup
+// If node is a subset, then consider it a leaf, use processRule to build query specific to subset
 function processNode(node) {
     if (node.type === 'group' && 'children' in node && node.children.length !== 0) {
         // Recursively process subgroups
@@ -145,6 +133,8 @@ function processNode(node) {
     }
 }
 
+// Group precedence parser
+// Constructs a boolean operator tree via operator precedence between siblings (for groups and queries)
 function processGroup(group) {
 
     // all rules are 'or'ed together
@@ -192,6 +182,7 @@ function processGroup(group) {
     return group_query;
 }
 
+// Return a mongoDB query for a rule data structure
 function processRule(rule) {
     let rule_query = {};
 
@@ -312,7 +303,32 @@ function processRule(rule) {
     return rule_query;
 }
 
-function buildAggregation(tree, preferences) {
+export function submitAggregation() {
+    if (!app.eventMeasure) {
+        tour.tourStartEventMeasure();
+        return;
+    }
+
+    let query = JSON.stringify(buildAggregation(app.abstractQuery, app.subsetPreferences));
+    console.log("Aggregation Query: " + query);
+
+    m.request({
+        url: app.subsetURL,
+        data: {
+            'type': 'aggregate',
+            'query': escape(query),
+            'dataset': app.selectedDataset,
+            'subset': app.selectedSubsetName
+        },
+        method: 'POST'
+    }).then(reformatAggregation).then(({data, headersUnit, headersEvent}) => {
+        app.setAggregationData(data);
+        app.setAggregationHeadersUnit(headersUnit);
+        app.setAggregationHeadersEvent(headersEvent);
+    });
+}
+
+export function buildAggregation(tree, preferences) {
     // unit of measure
     let unit = {};
 
@@ -321,6 +337,8 @@ function buildAggregation(tree, preferences) {
 
     let tempSubsets = app.genericMetadata[app.selectedDataset]['subsets'];
 
+    // note that only aggregation transforms for unit-date, unit-dyad and event-categorical have been written.
+    // To aggregate down to date events, for example, a new function would need to be added under ['event']['date'].
     let transforms = {
         'unit': {
             'date': (subset) => {
@@ -426,7 +444,8 @@ function buildAggregation(tree, preferences) {
     ];
 }
 
-function reformatAggregation(jsondata) {
+// almost pure- the function mutates the argument
+export function reformatAggregation(jsondata) {
     console.log(jsondata);
     if (jsondata.length === 0) return {data: jsondata, headers: []};
 
@@ -523,7 +542,9 @@ function reformatAggregation(jsondata) {
         }
     });
 
-    app.setAggregationData(jsondata);
-    app.setAggregationHeadersUnit(headers);
-    app.setAggregationHeadersEvent(events);
+    return {
+        data: jsondata,
+        headersUnit: headers,
+        headersEvent: events
+    }
 }

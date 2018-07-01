@@ -21,9 +21,8 @@ export default class TableAggregation {
             }
         }
 
-        return m("[id='aggregDataOutput']", {
+        return mode === 'aggregate' && m("[id='aggregDataOutput']", {
                 style: {
-                    "display": mode === 'aggregate' ? 'inline' : 'none',
                     "position": "fixed",
                     "bottom": heightFooter,
                     "height": app.tableHeight,

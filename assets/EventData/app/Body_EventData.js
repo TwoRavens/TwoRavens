@@ -1,7 +1,6 @@
 import m from 'mithril';
 
 import * as app from './app';
-import {aggregationData, eventMeasure, setEventMeasure, tableHeight, unitMeasure} from './app';
 import * as query from './query';
 import * as tour from "./tour";
 
@@ -134,7 +133,7 @@ export default class Body_EventData {
 
         let recordCount = {
             'subset': app.totalSubsetRecords,
-            'aggregate': aggregationData.length
+            'aggregate': app.aggregationData.length
         }[app.selectedMode];
 
         return m(Footer, [
@@ -151,9 +150,7 @@ export default class Body_EventData {
                         },
                         onclick: app.download
                     },
-                    m("span.ladda-label",
-                        "Download"
-                    )
+                    m("span.ladda-label", "Download")
                 ),
                 // Record Count
                 app.selectedDataset && recordCount !== undefined && m("span.label.label-default#recordCount", {
@@ -264,7 +261,7 @@ export default class Body_EventData {
         if (mode === 'aggregate') {
 
             let timeSeries = false;
-            for (let subset of Object.keys(unitMeasure)) {
+            for (let subset of Object.keys(app.unitMeasure)) {
                 if (app.genericMetadata[app.selectedDataset]['subsets'][subset]['type'] === 'date') {
                     timeSeries = true;
                     break;
@@ -280,7 +277,7 @@ export default class Body_EventData {
                 attrsAll: {
                     style: {
                         // subtract header, spacer, spacer, scrollbar, table, and footer
-                        height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${common.canvasScroll['horizontal'] ? common.scrollbarWidth : '0px'} - ${tableHeight} - ${common.heightFooter})`
+                        height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${common.canvasScroll['horizontal'] ? common.scrollbarWidth : '0px'} - ${app.tableHeight} - ${common.heightFooter})`
                     }
                 },
                 contents: m(MenuHeaders, {
@@ -293,7 +290,7 @@ export default class Body_EventData {
                                 items: app.aggregateKeys().filter(subset => tempDataset['subsets'][subset]['measures'].indexOf('unit') !== -1),
                                 id: 'UMList',
                                 colors: {[common.selVarColor]: [app.selectedSubsetName]},
-                                classes: {['item-bordered']: Object.keys(unitMeasure).filter(key => unitMeasure[key])},
+                                classes: {['item-bordered']: Object.keys(app.unitMeasure).filter(key => app.unitMeasure[key])},
                                 callback: app.setSelectedSubsetName
                             })
                         },
@@ -303,9 +300,9 @@ export default class Body_EventData {
                                 items: app.aggregateKeys().filter(subset => tempDataset['subsets'][subset]['measures'].indexOf('event') !== -1),
                                 id: 'EMList',
                                 colors: {[common.selVarColor]: [app.selectedSubsetName]},
-                                classes: {['item-bordered']: [eventMeasure]},
+                                classes: {['item-bordered']: [app.eventMeasure]},
                                 callback: (subset) => {
-                                    setEventMeasure(subset);
+                                    app.setEventMeasure(subset);
                                     app.setSelectedSubsetName(subset);
                                 }
                             })
@@ -335,7 +332,7 @@ export default class Body_EventData {
         if (mode === 'datasets') styling = {display: 'none'};
         if (mode === 'aggregate') styling = {
             // subtract header, the two margins, scrollbar, table, and footer
-            height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${common.canvasScroll['horizontal'] ? common.scrollbarWidth : '0px'} - ${tableHeight} - ${common.heightFooter})`
+            height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${common.canvasScroll['horizontal'] ? common.scrollbarWidth : '0px'} - ${app.tableHeight} - ${common.heightFooter})`
         };
 
         return m(Panel, {
@@ -456,7 +453,7 @@ export default class Body_EventData {
             m(Canvas, {
                 attrsAll: {
                     style: mode === 'aggregate'
-                        ? {height: `calc(100% - ${common.heightHeader} - ${tableHeight} - ${common.heightFooter})`}
+                        ? {height: `calc(100% - ${common.heightHeader} - ${app.tableHeight} - ${common.heightFooter})`}
                         : {}
                 }
             }, this.canvasContent()),

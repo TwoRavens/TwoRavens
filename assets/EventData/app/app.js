@@ -121,7 +121,10 @@ export function setSelectedMode(mode) {
     m.route.set('/' + mode.toLowerCase());
 
     // wait until after the redraw to force a plot size update
-    setTimeout(() => {Object.keys(genericMetadata[selectedDataset]['subsets']).forEach(subset => subsetRedraw[subset] = true); m.redraw();}, 100);
+    setTimeout(() => {
+        Object.keys(genericMetadata[selectedDataset]['subsets']).forEach(subset => subsetRedraw[subset] = true);
+        m.redraw();
+    }, 100);
 }
 
 // dictates what menu is shown, but the value of selectedSubsetName is user-defined
@@ -272,9 +275,27 @@ export function laddaStop() {
     laddaUpdate.stop();
 }
 
-export function download() {
+export function download(queryType, dataset, queryMongo) {
 
     function save(data) {
+        // postprocess aggregate to reformat dates to YYYY-MM-DD and collapse the dyad boolean array
+        if (queryType === 'aggregate') {
+            let headersUnit;
+            ({data, headersUnit} = query.reformatAggregation(data));
+
+            // reformat dates to strings
+            for (let header of headersUnit) {
+                if (genericMetadata[dataset]['subsets'][header]['type'] === 'date') {
+                    data = data
+                        .filter(entry => header in entry) // ignore entries with undefined dates
+                        .map(entry => {
+                            // because YYYY-MM-DD format rocks
+                            return Object.assign({}, entry, {[header]: entry[header].toISOString().slice(0, 10)})
+                        });
+                }
+            }
+        }
+
         let a = document.createElement('A');
         a.href = data.download;
         a.download = data.download.substr(data.download.lastIndexOf('/') + 1);
@@ -285,31 +306,38 @@ export function download() {
         document.body.removeChild(a);
     }
 
-    if (selectedMode === "subset") {
-        let subsetQuery = query.buildSubset(abstractQuery);
-
-        console.log("Query: " + JSON.stringify(subsetQuery));
-
-        let body = {
-            'query': escape(JSON.stringify(subsetQuery)),
-            'dataset': selectedDataset,
-            'type': 'raw'
-        };
-
-        // only pass projection if variables are loaded and selected
-        if (selectedVariables.size !== 0) Object.assign(body, {'variables': [...selectedVariables]});
-
-        laddaDownload.start();
-        m.request({
-            url: subsetURL,
-            data: body,
-            method: 'POST'
-        }).then(save).catch(laddaStop);
+    // fall back to document state if args are not passed
+    if (!queryType) queryType = selectedMode;
+    if (!dataset) dataset = selectedDataset;
+    if (!queryMongo) {
+        if (queryType === 'subset') {
+            let variables = selectedVariables.size === 0 ? genericMetadata[dataset]['columns'] : [...selectedVariables];
+            queryMongo = [
+                {"$match": query.buildSubset(abstractQuery)},
+                {
+                    "$project": variables.reduce((out, variable) => {
+                        out[variable] = 1;
+                        return out;
+                    }, {'_id': 0})
+                }
+            ];
+        }
+        else if (queryType === 'aggregate')
+            queryMongo = query.buildAggregation(abstractQuery, subsetPreferences);
     }
-    else if (selectedMode === "aggregate") {
-        laddaDownload.start();
-        // TODO handle download for aggregate
-    }
+
+    let body = {
+        'query': escape(JSON.stringify(queryMongo)),
+        'dataset': dataset,
+        'type': 'raw'
+    };
+
+    laddaDownload.start();
+    m.request({
+        url: subsetURL,
+        data: body,
+        method: 'POST'
+    }).then(save).catch(laddaStop);
 }
 
 let resetPeek = () => {
@@ -1049,7 +1077,7 @@ function getSubsetPreferences() {
 
         // Add each selection to the parent node as another rule
         [...preferences['selections']]
-            .sort((a, b) => typeof a === 'number' ? a-b : a.localeCompare(b))
+            .sort((a, b) => typeof a === 'number' ? a - b : a.localeCompare(b))
             .forEach(selection => subset['children'].push({
                 id: String(nodeId++),
                 name: String(selection),
@@ -1164,15 +1192,3 @@ export function reset() {
         }).then(pageSetup).catch(laddaStop);
     }
 }
-
-// Construct mongoDB filter (subsets rows)
-
-// Recursively traverse the tree in the right panel. For each node, call processNode
-
-// If node is a group, then build up the overall operator tree via processGroup
-// If node is a subset, then consider it a leaf, use processRule to build query specific to subset
-
-// Group precedence parser
-// Constructs a boolean operator tree via operator precedence between siblings (for groups and queries)
-
-// Return a mongoDB query for a rule data structure
