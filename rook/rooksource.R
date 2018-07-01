@@ -49,9 +49,6 @@ library(DescTools)
 library(rpart)
 library(mongolite)
 
-library("future") # submit EventData api requests asynchronously
-plan(multiprocess)
-
 #if (!production) {
 #    if(!("Zelig" %in% rownames(installed.packages()))) {
 #        install_github("IQSS/Zelig")
@@ -140,9 +137,7 @@ source("rookhealthcheck.R")
 source("rookexplore.R")
 source("rooktree.R")
 
-# Event Data
-source("eventdata/rooksubset.R")
-source("eventdata/rookaggreg.R")
+source("eventdata/rookeventdata.R")
 
 if(addPrivacy){
     source("rookprivate.R")
@@ -165,8 +160,7 @@ if(!is_rapache_mode){
     R.server$add(app = explore.app, name="exploreapp")
     R.server$add(app = tree.app, name="treeapp")
 
-    R.server$add(app = eventdata_subset.app, name="eventdatasubsetapp")
-    R.server$add(app = eventdata_aggreg.app, name="eventdataaggregapp")
+    R.server$add(app = eventdata.app, name="eventdataapp")
 
     # Serve files directly from rook
     R.server$add(app = File$new(PRE_PATH), name = "rook-files")

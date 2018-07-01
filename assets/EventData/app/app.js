@@ -1,8 +1,9 @@
 import m from 'mithril';
 import {dateSort} from "./views/CanvasDate";
-import {makeAggregQuery, updateToAggreg} from "./aggreg/aggreg";
 
 import * as common from '../../common/common';
+import * as agg from './agg';
+
 // Used for right panel query tree
 import '../../../node_modules/jqtree/tree.jquery.js';
 import '../../../node_modules/jqtree/jqtree.css';
@@ -22,7 +23,7 @@ if (!production) {
 // since R mangles literals and singletons
 export let coerceArray = (value) => Array.isArray(value) ? value : value === undefined ? [] : [value];
 
-let appname = 'eventdatasubsetapp';
+let appname = 'eventdataapp';
 export let subsetURL = rappURL + appname;
 
 // metadata for all available datasets and type formats
@@ -41,8 +42,8 @@ export let subsetPreferences = {};
 export let subsetRedraw = {};
 export let setSubsetRedraw = (subset, value) => subsetRedraw[subset] = value || false;
 
+// if selectedSubsetName: true, then the loading symbol is displayed instead of the menu
 export let isLoading = {};
-export let setIsLoading = (key, state) => isLoading[key] = state;
 
 // contains state for redrawing canvases
 export let canvasPreferences = {};
@@ -80,10 +81,19 @@ export let setSelectedDataset = (key) => {
 
     selectedDataset = key;
 
+    // ensure each subset has a place to store settings
     Object.keys(genericMetadata[selectedDataset]['subsets']).forEach(subset => {
-        // ensure each subset has a place to store settings
         subsetPreferences[subset] = subsetPreferences[subset] || {};
     });
+
+    Object.keys(agg.unitMeasure).forEach(unit => {
+        if (!(unit in genericMetadata[selectedDataset]['subsets']) || !('measure' in genericMetadata[selectedDataset['subsets'][unit]]))
+            delete agg.unitMeasure[unit];
+    });
+    agg.setEventMeasure(undefined);
+    agg.aggregationHeadersUnit = [];
+    agg.aggregationHeadersEvent = [];
+    agg.aggregationData = [];
 
     resetPeek();
 };
@@ -97,17 +107,17 @@ export function setSelectedMode(mode) {
     if (mode === selectedMode) return;
 
     // Some canvases only exist in certain modes. Fall back to default if necessary.
-    if (mode === 'subset' && subsetKeys().indexOf(selectedCanvas) === -1) setSelectedSubsetName(subsetKeys()[0]);
-    if (mode === 'aggregate' && aggregateKeys.indexOf(selectedCanvas) === -1) setSelectedSubsetName(subsetKeys()[0]);
-    if (mode === 'datasets' && 'Datasets' !== selectedCanvas) setSelectedCanvas('Datasets');
+    if (mode === 'datasets' && 'Datasets' !== selectedCanvas)
+        setSelectedCanvas('Datasets');
+    if (mode === 'subset' && (selectedCanvas !== 'subset' || subsetKeys().indexOf(selectedSubsetName) === -1))
+        setSelectedSubsetName(subsetKeys()[0]);
+    if (mode === 'aggregate' && (selectedCanvas !== 'subset' || aggregateKeys().indexOf(selectedSubsetName) === -1))
+        setSelectedSubsetName(aggregateKeys()[0]);
 
     selectedMode = mode;
 
-    if (mode === 'aggregate') {
-        updateToAggreg(false);
-    }
-
     m.route.set('/' + mode.toLowerCase());
+    setTimeout(() => {Object.keys(genericMetadata[selectedDataset]['subsets']).forEach(subset => subsetRedraw[subset] = true); m.redraw();}, 100);
 }
 
 // dictates what menu is shown, but the value of selectedSubsetName is user-defined
@@ -177,8 +187,7 @@ export let reloadSubset = (subsetName) => {
 };
 
 export let subsetKeys = () => Object.keys(genericMetadata[selectedDataset]['subsets']);
-// TODO conditionally draw based on available aggregates
-export let aggregateKeys = ["Actor", "Date", "Penta Class", "Root Code", "Time Series", "Analysis"];
+export let aggregateKeys = () => subsetKeys().filter(subset => 'measures' in genericMetadata[selectedDataset]['subsets'][subset]);
 
 // These get instantiated in the oncreate() method for the mithril Body_EventData class
 export let laddaUpdate;
@@ -220,7 +229,7 @@ export function setupBody() {
     resetPeek();
 
     let query = {
-        'query': JSON.stringify(subsetQuery),
+        'query': escape(JSON.stringify(subsetQuery)),
         'variables': [...selectedVariables],
         'dataset': genericMetadata[selectedDataset]['key'],
         'subsets': Object.keys(genericMetadata[selectedDataset]['subsets'])
@@ -249,7 +258,7 @@ export function toggleVariableSelected(variable) {
 }
 
 // useful for handling request errors
-function laddaStop() {
+export function laddaStop() {
     laddaDownload.stop();
     laddaReset.stop();
     laddaUpdate.stop();
@@ -274,7 +283,7 @@ export function download() {
         console.log("Query: " + JSON.stringify(subsetQuery));
 
         let query = {
-            'query': JSON.stringify(subsetQuery),
+            'query': escape(JSON.stringify(subsetQuery)),
             'dataset': selectedDataset,
             'type': 'raw'
         };
@@ -290,9 +299,8 @@ export function download() {
         }).then(save).catch(laddaStop);
     }
     else if (selectedMode === "aggregate") {
-        //merge my request code with makeCorsRequest and wrap table update in function
         laddaDownload.start();
-        makeAggregQuery("download", save);
+        // TODO handle download for aggregate
     }
 }
 
@@ -408,6 +416,7 @@ export function pageSetup(jsondata) {
 
     if (subsetType === 'dyad' && jsondata['search'])
         subsetData[jsondata['subsetName']][jsondata['tab']]['full'] = jsondata['data'] || [];
+
     else if (subsetType === 'date')
         subsetData[jsondata['subsetName']] = jsondata['data']
             .filter(entry => !isNaN(entry['year'] && !isNaN(entry['month'])))
@@ -690,7 +699,7 @@ window.callbackDelete = function (id) {
             // console.log(JSON.stringify(variableQuery, null, '  '));
 
             let query = {
-                'query': JSON.stringify(subsetQuery),
+                'query': escape(JSON.stringify(subsetQuery)),
                 'variables': [...selectedVariables],
                 'dataset': selectedDataset,
                 'subsets': Object.keys(genericMetadata[selectedDataset]['subsets'])
@@ -1119,7 +1128,7 @@ export function reset() {
 
     if (!suppress) {
         let query = {
-            'query': JSON.stringify({}),
+            'query': escape(JSON.stringify({})),
             'dataset': selectedDataset,
             'subset': selectedSubsetName
         };
@@ -1158,6 +1167,7 @@ export function submitQuery(datasetChanged = false) {
         if (Array.isArray(jsondata['total'])) jsondata['total'] = jsondata['total'][0];
         if (jsondata['total'] === 0) {
             alert("No records match your subset. Plots will not be updated.");
+            laddaStop();
             return;
         }
 
@@ -1213,7 +1223,7 @@ export function submitQuery(datasetChanged = false) {
         url: subsetURL,
         data: {
             'type': 'summary',
-            'query': JSON.stringify(subsetQuery),
+            'query': escape(JSON.stringify(subsetQuery)),
             'dataset': selectedDataset,
             'subset': selectedSubsetName,
             'countRecords': true
@@ -1379,6 +1389,7 @@ function processRule(rule) {
     }
 
     if (rule.subset === 'node') {
+        // semicolons are not parsed properly by R jsonlite or in the rook POST... ridiculous
         return {[rule.column]: {'$in': rule.actors}}
     }
 

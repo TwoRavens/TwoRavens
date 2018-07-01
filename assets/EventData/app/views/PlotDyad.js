@@ -1,9 +1,6 @@
 import m from 'mithril';
 import * as d3 from "d3";
-import * as app from "../app";
 import * as common from '../../../common/common';
-import {updateAggregTable} from "../aggreg/aggreg";
-
 
 export const actorColors = d3.scaleOrdinal(d3.schemeCategory20);
 const actorNodeR = 40; //various definitions for node display
@@ -201,9 +198,6 @@ export default class PlotDyad {
             preferences['tabs'][preferences['current_tab']]['show_selected'] = true;
 
             this.updateAll(vnode);
-
-            if (app.selectedMode === "aggregate")
-                updateAggregTable();
             m.redraw();
         }
         this.dragStarted = false; //now reset all drag variables
@@ -249,8 +243,7 @@ export default class PlotDyad {
                 });
 
                 this.updateAll(vnode);
-                if (app.selectedMode === "aggregate")
-                    updateAggregTable();
+                m.redraw()
             })
             .merge(this.linkGroup);
 
@@ -385,8 +378,7 @@ export default class PlotDyad {
             this.updateAll(vnode);
             this.resetMouseVars(vnode);
 
-            if (app.selectedMode === "aggregate")
-                updateAggregTable();
+            m.redraw()
         };
 
         //update all names of nodes - changeID and actorID are not updated on name change to save room for other changes; probably unneccesary for a normal user (unlikely they will perform so many changes)

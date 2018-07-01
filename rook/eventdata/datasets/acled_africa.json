@@ -7,6 +7,9 @@
   "host": "TwoRavens",
   "subsets": {
     "Actor": {
+      "measures": [
+        "unit"
+      ],
       "type": "dyad",
       "formats": [
         "ACLED_inter"
@@ -29,6 +32,9 @@
       }
     },
     "Action": {
+      "measures": [
+        "event"
+      ],
       "type": "categorical",
       "formats": [
         "ACLED_interaction"
@@ -38,6 +44,9 @@
       ]
     },
     "Date": {
+      "measures": [
+        "unit"
+      ],
       "type": "date",
       "structure": "point",
       "columns": [
@@ -45,6 +54,9 @@
       ]
     },
     "Code Date": {
+      "measures": [
+        "unit"
+      ],
       "type": "date",
       "structure": "point",
       "columns": [
@@ -58,10 +70,10 @@
       ],
       "group_by": "region",
       "formats": [
-        "cowcode"
+        "ISO-3"
       ],
       "columns": [
-        "cowcode"
+        "country_constructed"
       ]
     },
     "Coordinates": {

@@ -1,8 +1,6 @@
-import {setSelectedCanvas} from "./app";
 import hopscotch from 'hopscotch';
 import * as common from '../../common/common';
 import m from 'mithril';
-import {editor} from './app';
 
 export function tourStartGeneral() {
     hopscotch.endTour(false);
@@ -78,14 +76,13 @@ let generalTour = {
     ]
 };
 
-export function tourStartActor() {
-    setSelectedCanvas('Actor');
+export function tourStartDyad() {
     hopscotch.endTour(false);
-    hopscotch.startTour(actorTour);
+    hopscotch.startTour(dyadTour);
 }
 
-let actorTour = {
-    id: "subset-actor-tour",
+let dyadTour = {
+    id: "subset-dyad-tour",
     showPrevButton: true,
     nextOnTargetClick: true,
     steps: [
@@ -158,7 +155,6 @@ let actorTour = {
 };
 
 export function tourStartDate() {
-    setSelectedCanvas('Date');
     hopscotch.endTour(false);
     hopscotch.startTour(dateTour);
 }
@@ -197,14 +193,13 @@ let dateTour = {
     ]
 };
 
-export function tourStartAction() {
-    setSelectedCanvas('Action');
+export function tourStartCategorical() {
     hopscotch.endTour(false);
-    hopscotch.startTour(actionTour);
+    hopscotch.startTour(categoricalTour);
 }
 
-let actionTour = {
-    id: "subset-action-tour",
+let categoricalTour = {
+    id: "subset-categorical-tour",
     showPrevButton: true,
     nextOnTargetClick: true,
     steps: [,
@@ -239,14 +234,13 @@ let actionTour = {
     ]
 };
 
-export function tourStartLocation() {
-    setSelectedCanvas('Location');
+export function tourStartCategoricalGrouped() {
     hopscotch.endTour(false);
-    hopscotch.startTour(locationTour);
+    hopscotch.startTour(categoricalGroupedTour);
 }
 
-let locationTour = {
-    id: "subset-location-tour",
+let categoricalGroupedTour = {
+    id: "subset-categorical-grouped-tour",
     showPrevButton: true,
     nextOnTargetClick: true,
     steps: [
@@ -290,7 +284,6 @@ let locationTour = {
 
 
 export function tourStartCoordinates() {
-    setSelectedCanvas('Coordinates');
     hopscotch.endTour(false);
     hopscotch.startTour(coordinatesTour);
 }
@@ -334,7 +327,6 @@ let coordinatesTour = {
 
 
 export function tourStartCustom() {
-    setSelectedCanvas('Custom');
     hopscotch.endTour(false);
     hopscotch.startTour(customTour);
 }
@@ -502,7 +494,7 @@ export function tourStartAggregation() {
 }
 
 let aggregationTour = {
-    id: "subset-general-tour",
+    id: "aggregation-general-tour",
     showPrevButton: true,
     nextOnTargetClick: true,
     steps: [
@@ -547,6 +539,25 @@ let aggregationTour = {
             content: "To make modifications to the subsetted data, or download the subsetted data before aggregation, return to the subset menu.",
             target: "btnSubsetSubmit",
             placement: "left"
+        }
+    ]
+};
+
+export function tourStartEventMeasure() {
+    hopscotch.endTour(false);
+    hopscotch.startTour(unitMeasureTour);
+}
+
+let unitMeasureTour = {
+    id: "unit-measure-tour",
+    showPrevButton: true,
+    nextOnTargetClick: true,
+    steps: [
+        {
+            title: "Event Measure",
+            content: "Aggregation requires one event measure! Click an event measure to select it. The selected event measure will have a black border.",
+            target: "headerEvent_Measure",
+            placement: "right"
         }
     ]
 };

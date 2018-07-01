@@ -3,14 +3,16 @@ import * as common from '../../../common/common'
 import {panelMargin} from '../../../common/common'
 import m from 'mithril';
 import PlotBars from "./PlotBars";
+import ButtonRadio from "../../../common/views/ButtonRadio";
 
 export default class CanvasCategorical {
     view(vnode) {
-        let {data, metadata, preferences} = vnode.attrs;
+        let {mode, data, metadata, preferences} = vnode.attrs;
 
         let masterFormat = app.genericMetadata[app.selectedDataset]['formats'][app.coerceArray(metadata['columns'])[0]];
         let allData = {};
 
+        preferences['aggregation'] = preferences['aggregation'] || masterFormat;
         preferences['format'] = preferences['format'] || masterFormat;
         preferences['selections'] = preferences['selections'] || new Set();
 
@@ -55,7 +57,7 @@ export default class CanvasCategorical {
                 "height": 20 * Object.keys(allData[format]).length + 'px',
                 "width": "calc(100% - 10px)"
             };
-            if (Object.keys(allData).length === 1) return {
+            if (Object.keys(allData).length === 1 || mode === 'aggregation') return {
                 "height": "100%",
                 "width": "calc(100% - 10px)"
             };
@@ -66,6 +68,13 @@ export default class CanvasCategorical {
         };
 
         return m("#canvasCategorical", {style: {height: '100%', 'padding-top': panelMargin}},
+            mode === 'aggregate' && app.coerceArray(metadata['formats']).length > 1 && m(ButtonRadio, {
+                id: 'aggregationFormat',
+                onclick: (format) => preferences['aggregation'] = format,
+                activeSection: preferences['aggregation'],
+                sections: app.coerceArray(metadata['formats']).map(format => ({value: format})),
+                attrsAll: {"style": {"width": "auto", 'margin': '1em'}}
+            }),
             m("#SVGbin", {
                     style: {
                         "display": "inline-block",
@@ -74,6 +83,7 @@ export default class CanvasCategorical {
                     }
                 },
                 Object.keys(allData)
+                    .filter(format => mode !== 'aggregate' || format === preferences['aggregation']) // only render one plot in aggregation mode
                     .sort((a, b) => Object.keys(allData[a]).length - Object.keys(allData[b]).length)
                     .map(format => this.createPlot(vnode, format, allData[format], allSelected[format], getShape(format)))
             )

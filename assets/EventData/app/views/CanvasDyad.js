@@ -1,6 +1,6 @@
 import m from 'mithril';
+import * as agg from '../agg';
 import {panelMargin} from '../../../common/common';
-import {aggregActorOn, setAggregActor} from '../aggreg/aggreg';
 import ButtonRadio from "../../../common/views/ButtonRadio";
 import Button from "../../../common/views/Button";
 import TextField from '../../../common/views/TextField';
@@ -120,8 +120,8 @@ export default class CanvasDyad {
                         },
                         m("label.aggChkLbl",
                             m('input#aggregActorSelect.aggChk.aggActor[type=checkbox]', {
-                                onclick: m.withAttr("checked", setAggregActor),
-                                checked: aggregActorOn
+                                onclick: m.withAttr("checked", (state) => agg.unitMeasure[subsetName] = state),
+                                checked: agg.unitMeasure[subsetName]
                             }),
                             "Use in aggregation"
                         ))

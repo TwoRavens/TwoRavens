@@ -2,12 +2,10 @@ import m from 'mithril';
 import * as d3 from "d3";
 import $ from 'jquery'
 import "jquery-ui/ui/widgets/datepicker"
+import * as agg from '../agg';
 // Used for rendering date calendar
 import '../../../../node_modules/jquery-ui/themes/base/datepicker.css'
 import '../../../../node_modules/jquery-ui-dist/jquery-ui.theme.min.css'
-
-
-import * as aggreg from '../aggreg/aggreg';
 
 import {panelMargin} from "../../../common/common";
 import ButtonRadio from '../../../common/views/ButtonRadio';
@@ -108,6 +106,8 @@ export default class CanvasDate {
     view(vnode) {
         let {mode, subsetName, data, preferences, redraw, setRedraw} = vnode.attrs;
 
+        preferences['aggregation'] = preferences['aggregation'] || 'None';
+
         let setHandleDates = (handles) => {
             preferences['handleLower'] = handles[0];
             preferences['handleUpper'] = handles[1];
@@ -166,7 +166,7 @@ export default class CanvasDate {
         }
 
         let rightMenu = [
-            m("[id='dateOptions']",
+            mode === 'subset' && m("[id='dateOptions']",
                 m(".form-group[id='dateInterval']",
                     [
                         // Set date from slider
@@ -214,14 +214,15 @@ export default class CanvasDate {
                     ]
                 )
             ),
-            m('#dateAggreg', {
-                style: {display: mode === 'aggregate' ? 'block' : 'none'}
-            }, m(ButtonRadio, {
+            mode === 'aggregate' && m('#dateAggreg', m(ButtonRadio, {
                 id: 'dateAggregOption',
                 attrsAll: {style: {width: '80px'}},
                 vertical: true,
-                onclick: aggreg.setDateMeasure,
-                activeSection: ['None', 'Weekly', 'Monthly', 'Quarterly', 'Yearly'][aggreg.aggregDateOn],
+                onclick: (aggregation) => {
+                    agg.unitMeasure[subsetName] = aggregation !== 'None';
+                    preferences['aggregation'] = aggregation;
+                },
+                activeSection: preferences['aggregation'],
                 sections: [
                     {value: 'None'},
                     {value: 'Weekly'},

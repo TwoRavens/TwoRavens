@@ -8,6 +8,7 @@
   "subsets": {
     "Actor": {
       "type": "dyad",
+      "measures": ["unit"],
       "alignments": [
         "actor"
       ],
@@ -37,6 +38,7 @@
     },
     "Action": {
       "type": "categorical",
+      "measures": ["event"],
       "alignments": [
         "action"
       ],
@@ -52,6 +54,7 @@
     },
     "Date": {
       "type": "date",
+      "measures": ["unit"],
       "structure": "point",
       "columns": [
         "story_date_constructed"

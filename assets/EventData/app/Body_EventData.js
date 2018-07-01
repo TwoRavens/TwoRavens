@@ -1,7 +1,7 @@
 import m from 'mithril';
 
 import * as app from './app';
-import * as aggreg from './aggreg/aggreg';
+import * as agg from './agg';
 import * as tour from "./tour";
 
 import * as common from '../../common/common';
@@ -20,8 +20,7 @@ import CanvasCategorical from "./views/CanvasCategorical";
 import CanvasDyad from "./views/CanvasDyad";
 import CanvasDate from "./views/CanvasDate";
 import CanvasCategoricalGrouped from "./views/CanvasCategoricalGrouped";
-import CanvasRootCode from "./views/CanvasRootCode";
-import CanvasAggregTS from "./views/CanvasAggregTS";
+import CanvasTimeSeries from "./views/CanvasTimeSeries";
 import CanvasCustom from "./views/CanvasCustom";
 import CanvasCoordinates from "./views/CanvasCoordinates";
 
@@ -78,10 +77,7 @@ export default class Body_EventData {
             m(ButtonRadio, {
                 id: 'modeButtonBar',
                 attrsAll: {style: {width: 'auto', margin: '.25em 1em'}},
-                onclick: (mode) => {
-                    app.setSelectedMode(mode);
-                    // the route set doesn't work inside setSelectedMode... no clue why
-                },
+                onclick: app.setSelectedMode,
                 activeSection: app.selectedMode,
                 sections: [
                     {value: 'Datasets'}
@@ -97,7 +93,7 @@ export default class Body_EventData {
 
         let tourBar;
 
-        let tourButton = (name, tour) => m("button.btn.btn-default.btn-sm[id='tourButton${name}'][type='button']", {
+        let tourButton = (name, tour) => m(`button.btn.btn-default.btn-sm[id='tourButton${name}'][type='button']`, {
             style: {
                 "margin-left": "5px",
                 "margin-top": "4px"
@@ -107,18 +103,21 @@ export default class Body_EventData {
 
         if (mode === 'subset') {
             let tours = {
-                'General': tour.tourStartGeneral,
-                'Actor': tour.tourStartActor,
-                'Date': tour.tourStartDate,
-                'Action': tour.tourStartAction,
-                'Location': tour.tourStartLocation,
-                'Coordinates': tour.tourStartCoordinates,
-                'Custom': tour.tourStartCustom
+                'dyad': tour.tourStartDyad,
+                'date': tour.tourStartDate,
+                'categorical': tour.tourStartCategorical,
+                'categorical_grouped': tour.tourStartCategoricalGrouped,
+                'coordinates': tour.tourStartCoordinates,
+                'custom': tour.tourStartCustom
             };
-
+            let subsetType = app.genericMetadata[app.selectedDataset]['subsets'][app.selectedSubsetName]['type'];
             tourBar = [
                 m("span.label.label-default", {style: {"margin-left": "10px", "display": "inline-block"}}, "Tours"),
-                m("div[id='subsetTourBar']", {style: {"display": "inline-block"}}, Object.keys(tours).map(name => tourButton(name, tours[name])))];
+                m("div[id='subsetTourBar']", {style: {"display": "inline-block"}},
+                    tourButton('General', tour.tourStartGeneral),
+                    app.selectedCanvas === 'Subset' && tourButton(app.selectedSubsetName, tours[subsetType]),
+                    app.selectedCanvas === 'Custom' && tourButton('Custom', tour.tourStartCustom))
+            ];
         }
 
         if (mode === 'aggregate') {
@@ -128,6 +127,11 @@ export default class Body_EventData {
                     tourButton('Aggregation', tour.tourStartAggregation)
                 ])];
         }
+
+        let recordCount = {
+            'subset': app.totalSubsetRecords,
+            'aggregate': agg.aggregationData.length
+        }[app.selectedMode];
 
         return m(Footer, [
             tourBar,
@@ -148,16 +152,13 @@ export default class Body_EventData {
                     )
                 ),
                 // Record Count
-                app.selectedDataset && m("span.label.label-default#recordCount", {
+                app.selectedDataset && recordCount !== undefined && m("span.label.label-default#recordCount", {
                     style: {
                         "margin-left": "5px",
                         "margin-top": "10px",
                         "margin-right": "10px"
                     }
-                }, {
-                    'subset': app.totalSubsetRecords,
-                    'aggregate': aggreg.totalAggregRecords
-                }[app.selectedMode] + ' Records')
+                }, recordCount + ' Records')
             ]),
         ]);
     }
@@ -243,9 +244,14 @@ export default class Body_EventData {
 
         if (mode === 'aggregate') {
 
-            let disabledResults = [];
-            if (!aggreg.aggregResultsDate) disabledResults.push('Time Series');
-            if (!aggreg.aggregResults) disabledResults = ['Time Series', 'Analysis'];
+            let timeSeries = false;
+            for (let subset of Object.keys(agg.unitMeasure)) {
+                if (app.genericMetadata[app.selectedDataset]['subsets'][subset]['type'] === 'date') {
+                    timeSeries = true;
+                    break;
+                }
+            }
+            let tempDataset = app.genericMetadata[app.selectedDataset];
 
             return m(Panel, {
                 id: 'leftPanelMenu',
@@ -255,7 +261,7 @@ export default class Body_EventData {
                 attrsAll: {
                     style: {
                         // subtract header, spacer, spacer, scrollbar, table, and footer
-                        height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${common.canvasScroll['horizontal'] ? common.scrollbarWidth : '0px'} - ${aggreg.tableHeight} - ${common.heightFooter})`
+                        height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${common.canvasScroll['horizontal'] ? common.scrollbarWidth : '0px'} - ${agg.tableHeight} - ${common.heightFooter})`
                     }
                 },
                 contents: m(MenuHeaders, {
@@ -265,20 +271,21 @@ export default class Body_EventData {
                         {
                             value: 'Unit of Measure',
                             contents: m(PanelList, {
-                                items: ['Actor', 'Date'],
+                                items: app.aggregateKeys().filter(subset => tempDataset['subsets'][subset]['measures'].indexOf('unit') !== -1),
                                 id: 'UMList',
-                                colors: {[common.selVarColor]: [app.selectedCanvas]},
-                                callback: app.setSelectedCanvas
+                                colors: {[common.selVarColor]: [app.selectedSubsetName]},
+                                classes: {['item-bordered']: Object.keys(agg.unitMeasure).filter(key => agg.unitMeasure[key])},
+                                callback: app.setSelectedSubsetName
                             })
                         },
                         {
                             value: 'Event Measure',
                             contents: m(PanelList, {
-                                items: ['Penta Class', 'Root Code'],
+                                items: app.aggregateKeys().filter(subset => tempDataset['subsets'][subset]['measures'].indexOf('event') !== -1),
                                 id: 'EMList',
-                                colors: {[common.selVarColor]: [app.selectedCanvas]},
-                                classes: {['item-bordered']: [aggreg.eventMeasure]},
-                                callback: app.setSelectedCanvas
+                                colors: {[common.selVarColor]: [app.selectedSubsetName]},
+                                classes: {['item-bordered']: [agg.eventMeasure]},
+                                callback: (subset) => {agg.setEventMeasure(subset); app.setSelectedSubsetName(subset);}
                             })
                         },
                         {
@@ -287,12 +294,11 @@ export default class Body_EventData {
                                 items: ['Time Series', 'Analysis'],
                                 id: 'ResultsList',
                                 colors: {
-                                    [common.grayColor]: disabledResults,
+                                    [common.grayColor]: timeSeries ? [] : ['Time Series'],
                                     [common.selVarColor]: [app.selectedCanvas]
                                 },
-                                classes: {['item-bordered']: [aggreg.eventMeasure]},
                                 // only change the canvas if the canvas is not disabled
-                                callback: (canvas) => disabledResults.indexOf(canvas) === -1 && app.setSelectedCanvas(canvas)
+                                callback: (canvas) => (canvas !== 'Time Series' || timeSeries) && app.setSelectedCanvas(canvas)
                             })
                         }
                     ]
@@ -307,7 +313,7 @@ export default class Body_EventData {
         if (mode === 'datasets') styling = {display: 'none'};
         if (mode === 'aggregate') styling = {
             // subtract header, the two margins, scrollbar, table, and footer
-            height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${common.canvasScroll['horizontal'] ? common.scrollbarWidth : '0px'} - ${aggreg.tableHeight} - ${common.heightFooter})`
+            height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${common.canvasScroll['horizontal'] ? common.scrollbarWidth : '0px'} - ${agg.tableHeight} - ${common.heightFooter})`
         };
 
         return m(Panel, {
@@ -347,7 +353,7 @@ export default class Body_EventData {
                             style: {float: 'right'},
                             onclick: () => {
                                 if (mode === 'subset') app.submitQuery();
-                                if (mode === 'aggregate') aggreg.makeAggregQuery("aggreg");
+                                if (mode === 'aggregate') agg.submitAggregation();
                             }
                         }, 'Update')
                     ])
@@ -396,8 +402,7 @@ export default class Body_EventData {
         return m({
             'Datasets': CanvasDatasets,
             'PentaClass': CanvasDatasets,
-            'RootCode': CanvasRootCode,
-            'Time Series': CanvasAggregTS,
+            'Time Series': CanvasTimeSeries,
             'Custom': CanvasCustom
         }[app.selectedCanvas], {
             mode: app.selectedMode,
@@ -427,7 +432,7 @@ export default class Body_EventData {
             m(Canvas, {
                 attrsAll: {
                     style: mode === 'aggregate'
-                        ? {height: `calc(100% - ${common.heightHeader} - ${aggreg.tableHeight} - ${common.heightFooter})`}
+                        ? {height: `calc(100% - ${common.heightHeader} - ${agg.tableHeight} - ${common.heightFooter})`}
                         : {}
                 }
             }, this.canvasContent()),

@@ -40,7 +40,7 @@ export default class MonadSelection {
             }
             if (!('token_length' in metadata)) actorFilters.push({
                 [metadata['full']]: {
-                    '$regex': '.*' + preferences['search'] + '.*',
+                    '$regex': '.*' + preferences['search'].replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&") + '.*',
                     '$options': 'i'
                 }
             })
@@ -72,7 +72,7 @@ export default class MonadSelection {
 
         // Submit query and update listings
         let query = {
-            'query': this.cachedQuery,
+            'query': escape(this.cachedQuery),
             'dataset': app.selectedDataset,
             'type': 'summary',
             'subset': subsetName,
@@ -81,9 +81,9 @@ export default class MonadSelection {
         };
 
         let updateActorListing = (data) => {
-            this.waitForQuery--;
             preferences['full_limit'] = this.defaultPageSize;
             app.pageSetup(data);
+            this.waitForQuery--;
         };
 
         let failedUpdateActorListing = () => {

@@ -1,6 +1,6 @@
 source("rookconfig.R")
 
-eventdata_subset.app <- function(env) {
+eventdata.app <- function(env) {
 
     production = EVENTDATA_PRODUCTION_MODE     ## Toggle:  TRUE - Production, FALSE - Local Development
     cat("\nEVENTDATA_PRODUCTION_MODE: ", EVENTDATA_PRODUCTION_MODE)
@@ -27,6 +27,7 @@ eventdata_subset.app <- function(env) {
     print("Request received")
     post = names(request$POST())
 
+    print(post, quote=FALSE);
     # Ensure that request is valid
     if (! jsonlite::validate(post)) {
         response$write('{"warning": "The request is not valid json. Check for special characters."}')
@@ -45,24 +46,25 @@ eventdata_subset.app <- function(env) {
     type = everything$type
     if (is.null(type))type = 'summary'
 
-    # corresponds to dataset keys from ./eventdata/datasets/*.json
-    dataset = everything$dataset
-
-    # JSON-string MongoDB find or aggregation match query
-    query = everything$query
-
-    # list of variables or classifications to project to
-    variables = everything$variables
-
-    # corresponds to one of the subset names from ./eventdata/datasets/*.json > 'subsets'
-    subset = everything$subset
-
     if (type == 'datasets') {
         response$write(toString(jsonlite::toJSON(setNames(lapply(list.files('./eventdata/datasets/'), function(filename) {
             jsonlite::fromJSON(readLines(paste('./eventdata/datasets/', filename, sep = ""), warn = FALSE))
         }), lapply(list.files('./eventdata/datasets/'), function(val) {gsub('.json', '', val)})), auto_unbox = TRUE)))
         return(response$finish())
     }
+
+    # corresponds to dataset keys from ./eventdata/datasets/*.json
+    dataset = everything$dataset
+
+    # JSON-string MongoDB find or aggregation match query.
+    # HACK: the query must be passed as a string literal, because R will mangle it. Never parse the query.
+    query = Rook::Utils$unescape(everything$query)
+
+    # list of variables or classifications to project to
+    variables = everything$variables
+
+    # corresponds to one of the subset names from ./eventdata/datasets/*.json > 'subsets'
+    subset = everything$subset
 
     if (is.null(everything$dataset)) {
         response$write(paste('{"error": "no dataset is specified"}'))
@@ -82,7 +84,8 @@ eventdata_subset.app <- function(env) {
     getData = function(type, query, key=NULL) {
         # print(paste("GETTING", toString(type), toString(key), toString(query)))
         if (datasetMetadata$host == 'TwoRavens') {
-            url = sprintf("mongodb://%s:%s@%s/ldap?authMechanism=PLAIN", EVENTDATA_MONGO_USERNAME, EVENTDATA_MONGO_PASSWORD, EVENTDATA_LOCAL_SERVER_ADDRESS)
+            # url = sprintf("mongodb://%s:%s@%s/ldap?authMechanism=PLAIN", EVENTDATA_MONGO_USERNAME, EVENTDATA_MONGO_PASSWORD, EVENTDATA_LOCAL_SERVER_ADDRESS)
+            url = sprintf("mongodb://%s", EVENTDATA_LOCAL_SERVER_ADDRESS)
             connect = mongolite::mongo(collection = dataset, db = "event_data", url = url)
 
             if (type == 'find') {
@@ -129,6 +132,11 @@ eventdata_subset.app <- function(env) {
 
         event_data_files_url = paste('"', EVENTDATA_ROOK_URL_BASE, '/custom/eventdata-files/', sep = "")
         response$write(paste('{"download":', event_data_files_url, fileName, '.csv"}', sep = ""))
+        return(response$finish())
+    }
+
+    if (type == 'aggregate') {
+        response$write(toString(jsonlite::toJSON(getData('aggregate', query))))
         return(response$finish())
     }
 

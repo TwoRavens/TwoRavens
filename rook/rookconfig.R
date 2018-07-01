@@ -14,9 +14,9 @@ EVENTDATA_PRODUCTION_MODE <- identical(Sys.getenv(x='EVENTDATA_PRODUCTION_MODE',
 #	- local server
 # - default prod server
 #
-EVENTDATA_LOCAL_SERVER_ADDRESS <- Sys.getenv(x='EVENTDATA_LOCAL_SERVER_ADDRESS', unset="mongodb://localhost:27017")
+EVENTDATA_LOCAL_SERVER_ADDRESS <- Sys.getenv(x='EVENTDATA_LOCAL_SERVER_ADDRESS', unset="localhost:27017")
 EVENTDATA_MONGO_USERNAME <- Sys.getenv(x='EVENTDATA_MONGO_USERNAME', unset="TwoRavens")
-EVENTDATA_MONGO_PASSWORD <- Sys.getenv(x='EVENTDATA_MONGO_PASSWORD', unset=NA)
+EVENTDATA_MONGO_PASSWORD <- Sys.getenv(x='EVENTDATA_MONGO_PASSWORD', unset="blank")
 
 # Load prod server from ENV variable.  If it doesn't exist, use the PHOENIX address
 #

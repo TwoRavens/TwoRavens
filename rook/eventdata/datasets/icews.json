@@ -8,6 +8,7 @@
   "subsets": {
     "Actor": {
       "type": "dyad",
+      "measures": ["unit"],
       "tabs": {
         "source": {
           "full": "Source Name",
@@ -26,6 +27,7 @@
       }
     },
     "Action": {
+      "measures": ["event"],
       "type": "categorical",
       "alignments": [
         "action"
@@ -41,6 +43,7 @@
       ]
     },
     "Date": {
+      "measures": ["unit"],
       "type": "date",
       "structure": "point",
       "columns": [
@@ -54,7 +57,7 @@
         "ISO-3"
       ],
       "columns": [
-        "Country_constructed"
+        "country_constructed"
       ]
     },
     "Coordinates": {
@@ -90,7 +93,7 @@
   ],
   "columns_constructed": [
     "Event Date_constructed",
-    "Country_constructed"
+    "country_constructed"
   ],
   "alignments": {
     "Event Date_constructed": "date",

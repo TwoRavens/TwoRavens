@@ -7,6 +7,7 @@
   "host": "TwoRavens",
   "subsets": {
     "Actor": {
+      "measures": ["unit"],
       "type": "dyad",
       "alignments": [
         "actor"
@@ -36,6 +37,7 @@
       }
     },
     "Action": {
+      "measures": ["event"],
       "type": "categorical",
       "alignments": [
         "action"
@@ -51,6 +53,7 @@
       ]
     },
     "Date": {
+      "measures": ["unit"],
       "type": "date",
       "structure": "point",
       "columns": [
