@@ -400,6 +400,7 @@ class Body {
                             return m('span', {
                                 onclick: _ => app.clickVar(x, nodesExplore),
                                 style: {
+                                    'box-shadow': '3px 3px 7px rgba(0, 0, 0, 0.5)',
                                     display: 'flex',
                                     height: '250px',
                                     margin: '1em',
