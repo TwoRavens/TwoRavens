@@ -39,7 +39,7 @@ after_success:
     docker push tworavens/ravens-main:develop;
     fi
   - if [ "$TRAVIS_BRANCH" == "EventData_generalization" ]; then
-    docker build -t tworavens/eventdata-ravens-main:latest .;
+    docker build -f ./Dockerfile-eventdata -t tworavens/eventdata-ravens-main:latest .;
     docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
     docker push tworavens/eventdata-ravens-main:latest;
     fi  #
