@@ -17,22 +17,32 @@ install:
   - pip install --no-cache-dir -r requirements/prod.txt
   - pip install coveralls
 script:
+  - echo $TRAVIS_BRANCH;
   # Run django tests.  (Note django settings are an env variable)
   - python manage.py test tworaven_apps.ta2_interfaces tworaven_apps.workspaces
   - coverage run --source=tworaven_apps.ta2_interfaces manage.py test tworaven_apps.ta2_interfaces tworaven_apps.workspaces
   #- coverage run --source=tworaven_apps.raven_auth manage.py test tworaven_apps.raven_auth
 
-# Don't push the image but instead trigger a build on dockerhub
 after_success:
   #
-  # Build image and push to dockerhub
+  # Build images and push to dockerhub
   #
+  - echo $TRAVIS_BRANCH;
   - if [ "$TRAVIS_BRANCH" == "master" ]; then
     docker build -t tworavens/ravens-main:latest .;
     docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
     docker push tworavens/ravens-main:latest;
     fi
-
-# send report to coveralls
-after_success:
-  coveralls
+  - if [ "$TRAVIS_BRANCH" == "develop" ]; then
+    docker build -t tworavens/ravens-main:develop .;
+    docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
+    docker push tworavens/ravens-main:develop;
+    fi
+  - if [ "$TRAVIS_BRANCH" == "EventData_generalization" ]; then
+    docker build -t tworavens/eventdata-ravens-main:latest .;
+    docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
+    docker push tworavens/eventdata-ravens-main:latest;
+    fi  #
+  # send report to coveralls
+  #
+  - coveralls
