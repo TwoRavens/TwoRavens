@@ -97,9 +97,13 @@ class EventJobUtil(object):
             if not succ:
                 return err_resp(res_obj)
             else:
+                try:
+                    saved_query = EventDataSavedQuery.objects.get(id=query_id)
+                except ValueError:
+                    return err_resp('Could not retrieve query for id %s' % query_id)
                 url_input = 'https://dataverse.harvard.edu/file.xhtml?fileId='+str(res_obj['data']['files'][0]['dataFile']['id'])+'&version=DRAFT'
 
-                succ, add_archive = EventJobUtil.add_archive_query_job(saved_query=json_dump,
+                succ, add_archive = EventJobUtil.add_archive_query_job(saved_query=saved_query,
                                                                        status='complete',
                                                                        is_finished=True,
                                                                        is_success=True,
