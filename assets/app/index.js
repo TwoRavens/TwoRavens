@@ -401,7 +401,9 @@ class Body {
                             return m('span', {
                                 onclick: _ => app.clickVar(x, nodesExplore),
                                 style: {
-                                    'box-shadow': '3px 3px 7px rgba(0, 0, 0, 0.5)',
+                                    border: '1px solid rgba(0, 0, 0, .2)',
+                                    'border-radius': '5px',
+                                    'box-shadow': '0px 5px 10px rgba(0, 0, 0, .2)',
                                     display: 'flex',
                                     height: '250px',
                                     margin: '1em',
