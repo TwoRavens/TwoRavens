@@ -44,7 +44,7 @@ COPY . .
 # - TA2_TEST_SERVER_URL - TA2 test server
 # - CODE_REPOSITORY - repository where code will be copied
 # -------------------------------------
-ENV DJANGO_SETTINGS_MODULE=tworavensproject.settings.dev_container2 \
+ENV DJANGO_SETTINGS_MODULE=tworavensproject.settings.event_data_gce \
     R_DEV_SERVER_BASE=http://rook-service:8000/custom/ \
     TA2_STATIC_TEST_MODE=True \
     CODE_REPOSITORY=/var/webapps/TwoRavens \

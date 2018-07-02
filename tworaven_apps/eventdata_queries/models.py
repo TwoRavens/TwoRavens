@@ -125,8 +125,8 @@ class ArchiveQueryJob(TimeStampedModel):
     saved_query = models.ForeignKey(EventDataSavedQuery,
                                     on_delete=models.PROTECT)
     status = models.CharField(max_length=100,
-                             choices=STATUS_CHOICES,
-                             default=IN_PROCESS)
+                              choices=STATUS_CHOICES,
+                              default=IN_PROCESS)
     is_finished = models.BooleanField(default=False)
     is_success = models.BooleanField(default=False)
     message = models.TextField(default=None)
