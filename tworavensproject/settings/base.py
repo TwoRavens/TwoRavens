@@ -206,10 +206,27 @@ CELERY_BROKER_URL = 'redis://%s:%d' % (REDIS_HOST, REDIS_PORT)
 CELERY_RESULT_BACKEND = 'redis://%s:%d' % (REDIS_HOST, REDIS_PORT)
 
 # ---------------------------
-#  For depositing Dataverse data
+# EventData: depositing Dataverse data
 # ---------------------------
-DATAVERSE_SERVER = os.environ.get('DATAVERSE_SERVER', 'https://dataverse.harvard.edu')
-DATAVERSE_API_KEY = os.environ.get('DATAVERSE_API_KEY', '1a0f75f2-31b3-4a7e-937c-b4acd2579c69')
-DATASET_PERSISTENT_ID = os.environ.get('DATASET_PERSISTENT_ID', 'doi%3A10.7910%2FDVN%2FSJWX4S')
+DATAVERSE_SERVER = os.environ.get('DATAVERSE_SERVER',
+                                  'https://dataverse.harvard.edu')
 
-# otg  623d7768-fa3d-42c5-8a03-16d473dc8953
+DATAVERSE_API_KEY = os.environ.get('DATAVERSE_API_KEY',
+                                   'some-key')
+DATASET_PERSISTENT_ID = os.environ.get(\
+                            'DATASET_PERSISTENT_ID',
+                            'doi%3A10.7910%2FDVN%2FSJWX4S')
+
+
+# -------------------------
+# EventData: mongo related
+# -------------------------
+EVENTDATA_LOCAL_SERVER_ADDRESS = os.environ.get(\
+                        'EVENTDATA_LOCAL_SERVER_ADDRESS'\
+                        'localhost:27017')
+
+EVENTDATA_MONGO_USERNAME = os.environ.get('EVENTDATA_MONGO_USERNAME',
+                                          'TwoRavens')
+
+EVENTDATA_MONGO_PASSWORD = os.environ.get('EVENTDATA_MONGO_PASSWORD',
+                                          '')
