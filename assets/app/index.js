@@ -382,6 +382,7 @@ class Body {
                            sections: [{value: 'Univariate'}, {value: 'Bivariate'}, {value: 'Trivariate'}, {value: 'Multiple'}]}),
                         m(Button, {
                             id: 'exploreGo',
+                            classes: 'btn-success',
                             onclick: _ => {
                                 let variate = app.exploreVariate.toLowerCase();
                                 let selected = nodesExplore.map(x => x.name);
