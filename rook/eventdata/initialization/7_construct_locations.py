@@ -31,19 +31,21 @@ def format_placename(document):
 for collection in db.collection_names():
     print(collection)
 
-    for document in db[collection].find({"country_constructed": {"$exists": 0}}):
+    for document in db[collection].aggregate([{"$match": {"country_constructed": {"$exists": 0}}}]):
         if 'cline' in collection:
-            docname = {'GP7': 'Latitude', 'GP8': 'Longitude'} if collection == 'cline_speed' else {'lat': 'Latitude', 'lon': 'Longitude'}
+            keys = ['GP7', 'GP8'] if collection == 'cline_speed' else ['lat', 'lon']
+            docname = {key: value for key, value in zip(keys, ['Latitude', 'Longitude'])}
             
-            identifier = {docname[key]: document[key] for key in set(['GP7', 'GP8']) & set(document.keys())}
+            identifier = {docname[key]: document[key] for key in set(keys) & set(document.keys())}
             if not identifier: continue
             
             match = list(locations.arcgis.find(identifier))
             if not match: continue
             
             constructed = format_coordinate(match[0])
+            print(constructed)
             if not constructed: continue
-            locations.arcgis.update_one(
+            db[collection].update_one(
                 {'_id': document['_id']},
                 {'$set': constructed})
 
@@ -62,6 +64,6 @@ for collection in db.collection_names():
             constructed = format_placename(match[0])
             if not constructed: continue
 
-            locations.arcgis.update_one(
+            db[collection].update_one(
                 {'_id': document['_id']},
                 {'$set': constructed})

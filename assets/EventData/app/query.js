@@ -96,7 +96,7 @@ export function submitQuery(datasetChanged = false) {
         method: 'POST'
     }).then(submitQueryCallback) // TODO re-enable catch after debugging. Possibly make this one custom/explicit because tracking this down is annoying .catch(app.laddaStop);
 }
-
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    
 // Recursively traverse the tree in the right panel. For each node, call processNode
 export function buildSubset(tree) {
     // Base case
@@ -242,16 +242,10 @@ function processRule(rule) {
     }
 
     if (rule.subset === 'link') {
-        return {
-            '$and': [
-                processNode(rule.children[0]),
-                processNode(rule.children[1])
-            ]
-        };
+        return {'$and': rule.children.map(child => processNode(child))};
     }
 
     if (rule.subset === 'node') {
-        // semicolons are not parsed properly by R jsonlite or in the rook POST... ridiculous
         return {[rule.column]: {'$in': rule.actors}}
     }
 
