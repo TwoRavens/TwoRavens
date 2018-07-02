@@ -43,10 +43,11 @@ class EventDataSavedQuery(TimeStampedModel):
 
     class Meta:
         ordering = ('-created',)
+        verbose_name_plural = 'Event data saved queries'
+
 
     def __str__(self):
-        query_str = json.dumps(self.query, indent=4)
-        return str(query_str)
+        return self.name
 
     def get_query_id(self):
         """return id"""
@@ -121,7 +122,7 @@ class EventDataSavedQuery(TimeStampedModel):
 class ArchiveQueryJob(TimeStampedModel):
     """archive query job"""
 
-    what = models.TextField(default=None)
+    description = models.TextField(default=None)
     saved_query = models.ForeignKey(EventDataSavedQuery,
                                     on_delete=models.PROTECT)
     status = models.CharField(max_length=100,
@@ -135,3 +136,6 @@ class ArchiveQueryJob(TimeStampedModel):
 
     class Meta:
         ordering = ('-created',)
+
+    def __str__(self):
+        return self.name

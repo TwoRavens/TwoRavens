@@ -1,2 +1,7 @@
 -r base.txt
 gunicorn==19.7.1
+
+
+# mySQL
+#
+mysqlclient==1.3.13

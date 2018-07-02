@@ -9,10 +9,10 @@ import os
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.environ.get('EVENTDATA_DB_NAME', 'raven_EventData'),
-        'USER': os.environ.get('EVENTDATA_DB_USER'),
-        'PASSWORD': os.environ.get('EVENTDATA_DB_PASSWORD'),
-        'HOST': os.environ.get('EVENTDATA_DB_HOST', '127.0.0.1'),
-        'PORT': os.environ.get('EVENTDATA_DB_PORT', 3306),
+        'NAME': os.environ.get('DB_NAME', 'gce_raven_eventdata'),
+        'USER': os.environ.get('DB_USER'),
+        'PASSWORD': os.environ.get('DB_PASSWORD'),
+        'HOST': os.environ.get('DB_HOST', '127.0.0.1'),
+        'PORT': os.environ.get('DB_PORT', 3306),
     }
 }

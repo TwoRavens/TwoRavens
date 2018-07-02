@@ -98,5 +98,3 @@ class EventJobUtil(object):
                 return err_resp(res_obj)
             else:
                 return ok_resp(res_obj)
-
-
