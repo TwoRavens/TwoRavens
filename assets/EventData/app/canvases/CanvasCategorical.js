@@ -1,9 +1,9 @@
 import * as app from '../app';
-import * as common from '../../../common/common'
-import {panelMargin} from '../../../common/common'
+import * as common from '../../../common-eventdata/common'
+import {panelMargin} from '../../../common-eventdata/common'
 import m from 'mithril';
 import PlotBars from "../views/PlotBars";
-import ButtonRadio from "../../../common/views/ButtonRadio";
+import ButtonRadio from "../../../common-eventdata/views/ButtonRadio";
 
 export default class CanvasCategorical {
     view(vnode) {
@@ -15,8 +15,6 @@ export default class CanvasCategorical {
         preferences['aggregation'] = preferences['aggregation'] || masterFormat;
         preferences['format'] = preferences['format'] || masterFormat;
         preferences['selections'] = preferences['selections'] || new Set();
-
-        console.log(preferences['selections']);
 
         let allSelected = {};
 

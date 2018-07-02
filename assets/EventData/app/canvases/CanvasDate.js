@@ -6,8 +6,8 @@ import "jquery-ui/ui/widgets/datepicker"
 import '../../../../node_modules/jquery-ui/themes/base/datepicker.css'
 import '../../../../node_modules/jquery-ui-dist/jquery-ui.theme.min.css'
 
-import {panelMargin} from "../../../common/common";
-import ButtonRadio from '../../../common/views/ButtonRadio';
+import {panelMargin} from "../../../common-eventdata/common";
+import ButtonRadio from '../../../common-eventdata/views/ButtonRadio';
 import PlotDate from '../views/PlotDate';
 import * as app from '../app';
 

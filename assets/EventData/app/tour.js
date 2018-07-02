@@ -1,5 +1,5 @@
 import hopscotch from 'hopscotch';
-import * as common from '../../common/common';
+import * as common from '../../common-eventdata/common';
 import m from 'mithril';
 
 export function tourStartGeneral() {

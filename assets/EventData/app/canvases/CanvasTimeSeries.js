@@ -1,5 +1,5 @@
 import m from 'mithril';
-import {panelMargin} from "../../../common/common";
+import {panelMargin} from "../../../common-eventdata/common";
 
 export default class CanvasTimeSeries {
     view(vnode) {

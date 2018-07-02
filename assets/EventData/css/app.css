@@ -75,6 +75,10 @@ main#EventData .item-bordered {
     stroke: #000000;
 }
 
+.required-form {
+    border-color: #dc3545;
+}
+
 /* TODO delete everything below */
 main#EventData .hidden {
     display: none;

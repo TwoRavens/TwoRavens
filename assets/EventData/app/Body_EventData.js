@@ -4,16 +4,16 @@ import * as app from './app';
 import * as query from './query';
 import * as tour from "./tour";
 
-import * as common from '../../common/common';
-import Panel from '../../common/views/Panel';
-import Header from '../../common/views/Header';
-import Footer from '../../common/views/Footer';
-import Canvas from '../../common/views/Canvas';
-import MenuTabbed from '../../common/views/MenuTabbed';
-import MenuHeaders from '../../common/views/MenuHeaders';
-import PanelList from '../../common/views/PanelList';
-import TextField from '../../common/views/TextField';
-import ButtonRadio from '../../common/views/ButtonRadio';
+import * as common from '../../common-eventdata/common';
+import Panel from '../../common-eventdata/views/Panel';
+import Header from '../../common-eventdata/views/Header';
+import Footer from '../../common-eventdata/views/Footer';
+import Canvas from '../../common-eventdata/views/Canvas';
+import MenuTabbed from '../../common-eventdata/views/MenuTabbed';
+import MenuHeaders from '../../common-eventdata/views/MenuHeaders';
+import PanelList from '../../common-eventdata/views/PanelList';
+import TextField from '../../common-eventdata/views/TextField';
+import ButtonRadio from '../../common-eventdata/views/ButtonRadio';
 
 import CanvasAbout from "./canvases/CanvasAbout";
 import CanvasDatasets from "./canvases/CanvasDatasets";
@@ -28,6 +28,9 @@ import CanvasCustom from "./canvases/CanvasCustom";
 
 import CanvasTimeSeries from "./canvases/CanvasTimeSeries";
 import TableAggregation from "./views/TableAggregation";
+import Button from "../../common-eventdata/views/Button";
+import ModalVanilla from "../../common-eventdata/views/ModalVanilla";
+import SaveQuery from "./views/SaveQuery";
 
 export default class Body_EventData {
 
@@ -140,9 +143,14 @@ export default class Body_EventData {
             tourBar,
             m("#recordBar", {style: {display: "inline-block", float: 'right'}}, [
 
+                app.selectedMode !== 'home' && m(Button, {
+                    class: ['btn-sm'],
+                    onclick: () => app.setDisplayModal(true), style: {'margin-top': '4px'}
+                }, 'Save'),
+
                 m("button.btn.btn-default.btn-sm.ladda-button[data-spinner-color='#818181'][id='buttonDownload'][type='button']", {
                         style: {
-                            display: app.selectedDataset ? 'inline-block' : 'none',
+                            display: app.selectedDataset ? 'inline-block' : 'none', // don't conditionally draw, because of ladda
                             "margin-right": "6px",
                             'margin-top': '4px',
                             'margin-left': '6px',
@@ -422,7 +430,6 @@ export default class Body_EventData {
             'About': CanvasAbout,
             'Datasets': CanvasDatasets,
             'Saved Queries': CanvasSavedQueries,
-            'PentaClass': CanvasDatasets,
             'Time Series': CanvasTimeSeries,
             'Custom': CanvasCustom
         }[app.selectedCanvas], {
@@ -437,6 +444,14 @@ export default class Body_EventData {
         let {mode} = vnode.attrs;
 
         return m('main#EventData',
+
+            app.selectedMode !== 'Home' && m(ModalVanilla, {
+                id: 'SaveQuery',
+                display: app.displayModal,
+                setDisplay: app.setDisplayModal,
+                contents: m(SaveQuery, {preferences: app.saveQuery[app.selectedMode]})
+            }),
+
             this.header(),
             this.leftpanel(mode),
             this.rightpanel(mode),

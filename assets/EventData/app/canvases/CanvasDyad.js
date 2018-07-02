@@ -1,8 +1,8 @@
 import m from 'mithril';
-import {panelMargin} from '../../../common/common';
-import ButtonRadio from "../../../common/views/ButtonRadio";
-import Button from "../../../common/views/Button";
-import TextField from '../../../common/views/TextField';
+import {panelMargin} from '../../../common-eventdata/common';
+import ButtonRadio from "../../../common-eventdata/views/ButtonRadio";
+import Button from "../../../common-eventdata/views/Button";
+import TextField from '../../../common-eventdata/views/TextField';
 
 import MonadSelection from '../views/MonadSelection';
 import PlotDyad from '../views/PlotDyad';

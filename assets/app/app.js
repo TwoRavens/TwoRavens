@@ -1,8 +1,8 @@
 import hopscotch from 'hopscotch';
 import m from 'mithril';
 
-import * as common from "../common/common";
-import {setModal} from '../common/views/Modal';
+import * as common from "../common/app/common";
+import {setModal} from '../common/app/views/Modal';
 
 import {bars, barsNode, barsSubset, density, densityNode, selVarColor} from './plots.js';
 import {elem, fadeOut} from './utils';

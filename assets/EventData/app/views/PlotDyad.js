@@ -1,6 +1,6 @@
 import m from 'mithril';
 import * as d3 from "d3";
-import * as common from '../../../common/common';
+import * as common from '../../../common-eventdata/common';
 
 export const actorColors = d3.scaleOrdinal(d3.schemeCategory20);
 const actorNodeR = 40; //various definitions for node display

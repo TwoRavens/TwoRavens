@@ -1,6 +1,6 @@
 import m from 'mithril';
-import {grayColor} from "../../../common/common";
-import TextField from '../../../common/views/TextField';
+import {grayColor} from "../../../common-eventdata/common";
+import TextField from '../../../common-eventdata/views/TextField';
 import * as app from "../app";
 import * as query from '../query';
 

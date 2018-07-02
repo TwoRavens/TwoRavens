@@ -2,7 +2,7 @@ import m from 'mithril';
 import * as app from '../app';
 import * as query from '../query';
 import * as tour from '../tour';
-import {panelMargin} from '../../../common/common';
+import {panelMargin} from '../../../common-eventdata/common';
 
 import '../../../../node_modules/ace-builds/src-min-noconflict/ace.js';
 

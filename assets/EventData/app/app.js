@@ -1,7 +1,7 @@
 import m from 'mithril';
 import {dateSort} from "./canvases/CanvasDate";
 
-import * as common from '../../common/common';
+import * as common from '../../common-eventdata/common';
 import * as query from './query';
 // Used for right panel query tree
 import '../../../node_modules/jqtree/tree.jquery.js';
@@ -18,6 +18,9 @@ if (!production) {
 } else {
     rappURL = "https://beta.dataverse.org/custom/"; //this will change when/if the production host changes
 }
+
+// TODO login
+export let username = 'TwoRavens';
 
 // since R mangles literals and singletons
 export let coerceArray = (value) => Array.isArray(value) ? value : value === undefined ? [] : [value];
@@ -52,6 +55,16 @@ export let setCanvasRedraw = (canvas, value) => canvasRedraw[canvas] = value || 
 // Select which tab is shown in the left panel
 export let setLeftTab = (tab) => leftTab = tab;
 export let leftTab = 'Subsets';
+
+export let displayModal = false;
+export let setDisplayModal = (state) => displayModal = state;
+
+// stores user info for the save query modal menu. Subset and aggregate are separate
+export let saveQuery = {
+    'home': {},
+    'subset': {},
+    'aggregate': {}
+};
 
 common.setPanelCallback('right', () => {
     common.setPanelOcclusion('right', `calc(${common.panelOpen['right'] ? '250px' : '16px'} + 2*${common.panelMargin})`);

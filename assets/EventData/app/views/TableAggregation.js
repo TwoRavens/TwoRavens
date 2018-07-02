@@ -1,7 +1,7 @@
 import m from 'mithril';
 import * as app from '../app';
-import {heightFooter} from "../../../common/common";
-import Table from '../../../common/views/Table';
+import {heightFooter} from "../../../common-eventdata/common";
+import Table from '../../../common-eventdata/views/Table';
 
 export default class TableAggregation {
     view(vnode) {

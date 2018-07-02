@@ -1,5 +1,5 @@
 import m from 'mithril';
-import * as common from '../../../common/common';
+import * as common from '../../../common-eventdata/common';
 import * as app from '../app';
 
 import PlotBars from "../views/PlotBars";
