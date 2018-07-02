@@ -14,19 +14,19 @@ import subprocess
 import re
 
 
-
-
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 FAB_BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(FAB_BASE_DIR)
 
-
-if FAB_BASE_DIR == '/srv/webapps/TwoRavens':
+if 'DJANGO_SETTINGS_MODULE' in os.environ:
+    pass    # use the existing environ variable
+elif FAB_BASE_DIR == '/srv/webapps/TwoRavens':
     os.environ.setdefault('DJANGO_SETTINGS_MODULE',
                           'tworavensproject.settings.dev_container2')
 else:
     os.environ.setdefault('DJANGO_SETTINGS_MODULE',
                           'tworavensproject.settings.local_settings')
+
 try:
     django.setup()
 except Exception as e:

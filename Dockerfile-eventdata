@@ -44,7 +44,7 @@ COPY . .
 # - TA2_TEST_SERVER_URL - TA2 test server
 # - CODE_REPOSITORY - repository where code will be copied
 # -------------------------------------
-ENV DJANGO_SETTINGS_MODULE=tworavensproject.settings.event_data_gce \
+ENV DJANGO_SETTINGS_MODULE=tworavensproject.settings.dev_container2 \
     R_DEV_SERVER_BASE=http://rook-service:8000/custom/ \
     TA2_STATIC_TEST_MODE=True \
     CODE_REPOSITORY=/var/webapps/TwoRavens \
@@ -80,6 +80,13 @@ RUN fab init_db && \
 # - web: 8080
 # -------------------------------------
 EXPOSE 8080
+
+# -------------------------------------
+# Copy the event data start command 
+# -------------------------------------
+COPY startup_script/event_data_start.sh /usr/bin/event_data_start.sh
+
+RUN chmod u+x /usr/bin/event_data_start.sh
 
 CMD echo 'Starting TwoRavens python server.' && \
     cp -r ravens_volume/. /ravens_volume/ && \
