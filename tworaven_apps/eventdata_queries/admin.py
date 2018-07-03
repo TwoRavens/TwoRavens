@@ -23,7 +23,8 @@ admin.site.register(EventDataSavedQuery, EventDataSavedQueryAdmin)
 
 
 class ArchiveQueryJobAdmin(admin.ModelAdmin):
-    list_display = ('saved_query',
+    list_display = ('datafile_id',
+                    'saved_query',
                     'status',
                     'is_finished',
                     'is_success',

@@ -27,5 +27,20 @@ urlpatterns = [
          views.api_upload_to_dataverse,
          name='api_upload_to_dataverse'
          ),
+    re_path(r'api/publish-dataset/get/(?P<dataset_id>[0-9]{1,10})$',
+         views.api_publish_dataset,
+         name='api_publish_dataset'
+         ),
+    re_path(r'api/get-archive-query-object/get/(?P<datafile_id>[0-9]{1,10})$',
+         views.api_get_archive_query_object,
+         name='api_get_archive_query_object'
+         ),
+    path(r'api/archive_list',
+         views.api_get_archive_list,
+         name='api_get_archive_list'
+         ),
+
+
+
 
 ]

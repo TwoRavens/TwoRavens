@@ -169,6 +169,49 @@ def api_upload_to_dataverse(request, query_id):
         return JsonResponse(user_msg)
 
 
+@csrf_exempt
+def api_publish_dataset(request, dataset_id):
+    """ Get the dataset Id from the response"""
+
+@csrf_exempt
+def api_get_archive_list(request):
+    """ get list"""
+    success, jobs = EventJobUtil.get_all_archive_query_objects()
+    # print(jobs)
+    if not success:
+        usr_msg = dict(success=False,
+                       message=get_json_error(jobs))
+        return JsonResponse(usr_msg)
+
+    else:
+        job_list = []
+        for job in jobs:
+            job_list.append(job.as_dict())
+
+        usr_msg = dict(success=True,
+                       message='archive list retrieved',
+                       data=job_list)
+
+        return JsonResponse(usr_msg)
+
+@csrf_exempt
+def api_get_archive_query_object(request, datafile_id):
+    """ get object by id"""
+    success, jobs = EventJobUtil.get_archive_query_object(datafile_id)
+
+    if not success:
+        usr_msg = dict(success=False,
+                       message=get_json_error(jobs))
+        return JsonResponse(usr_msg)
+
+    else:
+        usr_msg = dict(success=True,
+                       message='object retrieved',
+                       data=jobs.as_dict())
+
+        return JsonResponse(usr_msg)
+
+
 
 
 

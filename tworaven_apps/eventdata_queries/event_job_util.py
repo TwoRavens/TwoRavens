@@ -97,13 +97,23 @@ class EventJobUtil(object):
             if not succ:
                 return err_resp(res_obj)
             else:
+
                 try:
                     saved_query = EventDataSavedQuery.objects.get(id=query_id)
+
                 except ValueError:
                     return err_resp('Could not retrieve query for id %s' % query_id)
-                url_input = 'https://dataverse.harvard.edu/file.xhtml?fileId='+str(res_obj['data']['files'][0]['dataFile']['id'])+'&version=DRAFT'
 
-                succ, add_archive = EventJobUtil.add_archive_query_job(saved_query=saved_query,
+                try:
+                    datafile_id = res_obj['data']['files'][0]['dataFile']['id']
+
+                except ValueError:
+                    return err_resp('Could not retrieve datafile id for query_id %s' % query_id)
+
+                url_input = 'https://dataverse.harvard.edu/file.xhtml?fileId='+str(datafile_id)+'&version=DRAFT'
+
+                succ, add_archive = EventJobUtil.add_archive_query_job(datafile_id=int(datafile_id),
+                                                                       saved_query=saved_query,
                                                                        status='complete',
                                                                        is_finished=True,
                                                                        is_success=True,
@@ -137,4 +147,31 @@ class EventJobUtil(object):
                             message="failed to archive query",
                             id=job.id)
             return err_resp(usr_dict)
+
+
+    @staticmethod
+    def get_archive_query_object(datafile_id):
+        """ get the data for datafile_id object"""
+        job = ArchiveQueryJob()
+        success, get_list_obj = job.get_objects_by_id(datafile_id)
+        print("event util obj", get_list_obj)
+
+        if success:
+            return ok_resp(get_list_obj)
+
+        else:
+            return err_resp(get_list_obj)
+
+    @staticmethod
+    def get_all_archive_query_objects():
+        """ get list of all objects"""
+        job = ArchiveQueryJob()
+        success, get_list_obj = job.get_all_objects()
+
+        if success:
+            return ok_resp(get_list_obj)
+
+        else:
+            return err_resp(get_list_obj)
+
 

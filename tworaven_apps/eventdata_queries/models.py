@@ -120,7 +120,7 @@ class EventDataSavedQuery(TimeStampedModel):
 
 class ArchiveQueryJob(TimeStampedModel):
     """archive query job"""
-
+    datafile_id = models.IntegerField(default=1)
     saved_query = models.ForeignKey(EventDataSavedQuery,
                                     on_delete=models.PROTECT)
     status = models.CharField(max_length=100,
@@ -142,6 +142,14 @@ class ArchiveQueryJob(TimeStampedModel):
         """return id"""
         if self.id:
             return self.id
+
+        return None
+
+    def get_datafile_id(self):
+        """return datafile id"""
+
+        if self.datafile_id:
+            return self.datafile_id
 
         return None
 
@@ -182,12 +190,12 @@ class ArchiveQueryJob(TimeStampedModel):
         else:
             return ok_resp(result)
 
-    def get_objects_by_id(self, job_id):
+    def get_objects_by_id(self, datafile_id):
         """return object by id"""
-        result = ArchiveQueryJob.objects.filter(id=job_id).first()
+        result = ArchiveQueryJob.objects.filter(datafile_id=datafile_id).first()
 
         if not result:
-            return err_resp('could not get the object for id %s' % job_id)
+            return err_resp('could not get the object for id %s' % datafile_id)
 
         else:
             return ok_resp(result)
