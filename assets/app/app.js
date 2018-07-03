@@ -403,7 +403,9 @@ function trigger(id, event) {
 export const reset = async function reloadPage() {
     endAllSearches();
     byId("btnModel").click();
-    location.reload();
+    //clearInterval(interiorIntervalId);
+    //clearInterval(requestIntervalId);
+    //location.reload();
 };
 export let restart;
 
@@ -2094,14 +2096,17 @@ export let setSelectedPipeline = (result) => {
 // Update table when pipeline is fitted
 function onPipelineCreate(PipelineCreateResult, id) {
 
-    //let myval = "";
-    //let myscores = [];  // attempt to deal w multiple scores
+    let myscore = PipelineCreateResult.data.response.scores[0].value.double.toPrecision(3);;  // attempt to deal w multiple scores
+
+    console.log(PipelineCreateResult);
 
     for(var i = 0; i < pipelineTable.length; i++) {
-        if (pipelineTable[i][2] == id) {
-            pipelineTable[i][4] = "10";
+        if (pipelineTable[i][1] == parseInt(id, 10)) {
+            pipelineTable[i][3] = myscore.toString();
         };
     };
+
+    console.log(pipelineTable);
                 // myid=key;
                 // mymetric="metric here" //allPipelineInfo[key].  SOMETHING HERE;
                 // myval="scoring"; //+myscores[i].value.toFixed(3);
@@ -2121,7 +2126,7 @@ function onPipelinePrime(PipelineCreateResult, rookpipe) {
 
     // Need to deal with (exclude) pipelines that are reported, but failed.  For approach, see below.
 
-    if(PipelineCreateResult.hash_id in allPipelineInfo) {
+    if(PipelineCreateResult.id in allPipelineInfo) {
         allPipelineInfo[PipelineCreateResult.id]=Object.assign(allPipelineInfo[PipelineCreateResult.id],PipelineCreateResult);
     } else {
         allPipelineInfo[PipelineCreateResult.id]=PipelineCreateResult;
@@ -2139,10 +2144,6 @@ function onPipelinePrime(PipelineCreateResult, rookpipe) {
         // if(allPipelineInfo[key].progressInfo == "RUNNING")  {
         //     continue;
         // }
-
-    if (IS_D3M_DOMAIN){
-        byId("btnSetx").click();   // Was "btnResults" - changing to simplify user experience for testing.
-    };
 
     //adding rookpipe to allPipelineInfo
     allPipelineInfo.rookpipe=rookpipe;                // This is setting rookpipe for the entire table, but when there are multiple CreatePipelines calls, this is only recording latest values
@@ -2276,15 +2277,37 @@ function CreatePipelineDefinition(predictors, depvar, aux) {
     //console.log(my_problem);
     let my_dataseturi = "file://" + datasetdocurl;
     // console.log(my_dataseturi);
-    return {userAgent: my_userAgent, version: my_version, timeBound: 5, priority: 1, allowedValueTypes: my_allowedValueTypes, problem: my_problem, inputs: [{dataset_uri: my_dataseturi}] };
+    return {userAgent: my_userAgent, version: my_version, timeBound: 1, priority: 1, allowedValueTypes: my_allowedValueTypes, problem: my_problem, inputs: [{dataset_uri: my_dataseturi}] };
 }
 
 function CreateFitDefinition(solutionId){
-    let inputs = [{ csvUri: "need to fix filepath" }];            // need to fix
-    let my_exposeOutputs = ["steps.3.produce"];  // need to fix
-    let my_exposeValueTypes = ["DATASET_URI", "CSV_URI"];
+    let my_solutionId = solutionId;
+    let my_dataseturi = "file://" + datasetdocurl;
+    let my_inputs = [{dataset_uri: my_dataseturi}];
+    let my_exposeOutputs = [];   // eg. ["steps.3.produce"];  need to fix
+    let my_exposeValueTypes = ["CSV_URI"];
     let my_users = [{id: "TwoRavens", choosen: false, reason: ""}];
-    return {solutionId: solutionId, exposeOutputs: my_exposeOutputs, exposeValueTypes: my_exposeValueTypes, users: my_users};
+    return {solutionId: my_solutionId, inputs: my_inputs, exposeOutputs: my_exposeOutputs, exposeValueTypes: my_exposeValueTypes, users: my_users};
+}
+
+
+//     "configuration": {
+//         "method": "EVALUATION_METHOD_UNDEFINED",
+//         "folds": 0,
+//         "trainTestRatio": 0,
+//         "shuffle": false,
+//         "randomSeed": 0,
+//         "stratified": false
+//     }
+
+function CreateScoreDefinition(res){
+    let my_solutionId = res.data.response.solutionId;
+    let my_dataseturi = 'file://' + datasetdocurl;
+    let my_inputs = [{dataset_uri: my_dataseturi}];
+    let my_performanceMetrics = [{metric: d3mMetrics[d3mProblemDescription.performanceMetrics[0].metric][1]} ];  // need to generalize to case with multiple metrics.  only passes on first presently.;
+    let my_users = [{id: 'TwoRavens', choosen: false, reason: ""}];
+    let my_configuration = {method: 'HOLDOUT', folds: 0, trainTestRatio: 0, shuffle: false, randomSeed: 0, stratified: false};
+    return {solutionId: my_solutionId, inputs: my_inputs, performanceMetrics: my_performanceMetrics, users: my_users, configuration: my_configuration};
 }
 
 export function downloadIncomplete() {
@@ -2414,19 +2437,22 @@ export async function estimate(btn) {
             let res = await makeRequest(D3M_SVC_URL + '/SearchSolutions', CreatePipelineDefinition(rookpipe.predictors, rookpipe.depvar));
             let searchId = res.data.searchId;
             let solutionId = "";
-            let requestId = "";
+            let fittedId = "";
             allsearchId.push(searchId); 
 
             let res2 = await makeRequest(D3M_SVC_URL + '/GetSearchSolutionsResults', {searchId: searchId});
             let searchDetailsUrl = res2.data.details_url;
-            let fitDetailsUrl = "";
+            let fittedDetailsUrl = "";
             let solutionDetailsUrl = "";
 
             let searchFinished = false;
             let fitFinished = false;
-            let res3, res4, res5, res6, res7; 
+            let res3, res4, res5, res6; 
             let oldCount = 0;
             let newCount = 0;
+            let resizeTriggered = false;
+
+            let fitFlag = false;
 
             let refreshIntervalId = setInterval(async function() {
                 res3 = await updateRequest(searchDetailsUrl);                // silent equivalent makeRequest() with no data argument.  Also, should check whether best to be synchronous here.
@@ -2436,25 +2462,88 @@ export async function estimate(btn) {
                 if(newCount>oldCount){
                     //for (var i = oldCount; i < newCount; i++) {       //  for statement if new items are pushed instead
                     for (var i = 0; i < (newCount-oldCount); i++) {     //  instead, updates are at top of list
-                        console.log(i);
-                        console.log(res3.data.responses.list[i].details_url); 
+                        //console.log(res3.data.responses.list[i].details_url); 
                         solutionDetailsUrl = res3.data.responses.list[i].details_url;
                         res4 = await updateRequest(solutionDetailsUrl);
+                        let res4DataId = res4.data.id;
+                        //console.log(res4);
                         solutionId = res4.data.response.solutionId;
                         onPipelinePrime(res4.data, rookpipe);
 
-                        //res5 = await makeRequest(D3M_SVC_URL + '/FitSolution', CreateFitDefinition(solutionId));
-                        //requestId = res5.data.requestId;
-                        //res6 = await makeRequest(D3M_SVC_URL + `/GetFitSolutionResults`, {requestId: requestId});
-                        //fitDetailsUrl = res6.data.details_url;
-                        
-                        // Possibly this belongs elsewhere, like a callback function above.
-                        //fitFinished = false;
-                        //while(!fitFinished){
-                        //    res7 = await updateRequest(fitDetailsUrl);   // check
-                        //    fitFinished = res7.data.is_finished;         // check
-                        //}
-                        //onPipelineCreate(res7.data, res4.data.id);  // arguments have changed
+                        // Once pipelineTable exist, can rebuild the window to start exploring results
+                        if(!resizeTriggered){
+                            if (IS_D3M_DOMAIN){
+                                byId("btnSetx").click();   // Was "btnResults" - changing to simplify user experience for testing.
+                            };
+                            resizeTriggered = true;
+                               // this initializes the results windows using the first pipeline ID
+                        //     if(!swandive) {
+                        //         resultsplotinit(pipelineTable[0][1]);
+                        //     }     
+                        };
+
+                        let res10, res11;
+                        let scoreDetailsUrl;
+
+                        if(typeof solutionId != 'undefined'){
+
+                            res10 = await makeRequest(D3M_SVC_URL + '/ScoreSolution', CreateScoreDefinition(res4));
+                            //let scoreId = res10.data.requestId;
+                            //res11 = await makeRequest(D3M_SVC_URL + '/GetScoreSolutionResults', {requestId: scoreId});
+
+                            if(typeof res10.data.requestId != 'undefined'){
+                                console.log(res10.data.requestId);
+                                let scoreId = res10.data.requestId;
+                                res11 = await makeRequest(D3M_SVC_URL + '/GetScoreSolutionResults', {requestId: scoreId});
+                                console.log("This is res11");
+                                console.log(res11);
+                                scoreDetailsUrl = res11.data.details_url;  //responses.list[0].details_url;
+                                console.log("this is scoreDetailsUrl: " + scoreDetailsUrl);
+                            };
+
+
+
+                            if(fitFlag){
+                                res5 = await makeRequest(D3M_SVC_URL + '/FitSolution', CreateFitDefinition(solutionId));
+                                console.log("This is res5:")
+                                console.log(res5);
+                           
+                                if(typeof res5.data.requestId != 'undefined'){
+                                    console.log(res5.data.requestId);
+                                    fittedId = res5.data.requestId;
+                            
+                                    res6 = await makeRequest(D3M_SVC_URL + `/GetFitSolutionResults`, {requestId: fittedId});
+                                    fittedDetailsUrl = res6.data.details_url;
+                                    console.log("this is fittedDetailsUrl: " + fittedDetailsUrl);
+                                };
+                            };
+                        };
+  
+                        // Possibly these belong elsewhere, like a callback function above.
+
+                        let scoringIntervalId = setInterval(async function() {
+                            let res12 = await updateRequest(scoreDetailsUrl);   // check
+                            if(typeof res12.data.is_finished != 'undefined'){
+                                if(res12.data.is_finished){
+                                    console.log('finished scoring');
+                                    clearInterval(scoringIntervalId);
+                                    let finalScoreUrl = res12.data.responses.list[0].details_url;
+                                    let res13 = await updateRequest(finalScoreUrl);
+                                    onPipelineCreate(res13, res4DataId);  // arguments have changed
+                                };
+                            };            
+                        }, 2700);
+
+                        if(fitFlag){
+                            let fittingIntervalId = setInterval(async function() {
+                                let res7 = await updateRequest(fittedDetailsUrl);   // check
+                                if(typeof res7.data.is_finished != 'undefined'){
+                                    if(res7.data.is_finished){
+                                        clearInterval(fittingIntervalId);
+                                    };
+                                };            
+                            }, 2700);
+                        };
                     };
                     oldCount = newCount;
                 };
@@ -3314,16 +3403,23 @@ export async function endsession() {
     }
     let selected = table.rows[tableposition].cells[0].innerHTML;  // was "none"; as default
 
+    console.log("== this should be the selected solution ==");
+    console.log(allPipelineInfo[selected]);
+    console.log(allPipelineInfo[selected].response.solutionId);
+
+    let chosenSolutionId = allPipelineInfo[selected].response.solutionId;
+
     // calling exportpipeline
-    let end = await exportpipeline(selected);
+    let end = await exportpipeline(chosenSolutionId);
 
    // makeRequest(D3M_SVC_URL + '/endsession', apiSession(zparams.zsessionid));
-    let res = await makeRequest(D3M_SVC_URL + '/endsession', apiSession(zparams.zsessionid));
-    let mystatus = res.status.code.toUpperCase();
-    if(mystatus == "OK") {
+    //let res = await makeRequest(D3M_SVC_URL + '/endsession', apiSession(zparams.zsessionid));
+    endAllSearches()
+    //let mystatus = res.status.code.toUpperCase();
+    //if(mystatus == "OK") {
         end_ta3_search(true, "Problem marked as complete.");
         setModal("Your selected pipeline has been submitted.", "Task Complete", true, false, false, location.reload);
-    }
+    //}
 }
 
 /**
@@ -4002,25 +4098,53 @@ export function setxTable(features) {
 }
 
 /**
-  rpc ExportPipeline(PipelineExportRequest) returns (Response) {}
+  rpc SolutionExport (SolutionExportRequest) returns (SolutionExportResponse) {}
 */
 
+// Example call:
+// {
+//     "fittedSolutionId": "solutionId_gtk2c2",
+//     "rank": 0.122
+// }
+
 export async function exportpipeline(pipelineId) {
-    let temp = {pipelineId, context: apiSession(zparams.zsessionid), pipelineExecUri: '<<EXECUTABLE_URI>>'};
 
-    let res = await makeRequest(
-        D3M_SVC_URL + '/exportpipeline',
-        {pipelineId, context: apiSession(zparams.zsessionid), pipelineExecUri: '<<EXECUTABLE_URI>>'});
+    let finalFittedId, finalFittedDetailsUrl;
+    let res, res8;
 
-    // we need standardized status messages...
-    let mystatus = res.status;
-    if (typeof mystatus !== 'undefined') {
-    if(mystatus.code=="FAILED_PRECONDITION") {
-        console.log("TA2 has not written the executable.");    // was alert(), but testing on NIST infrastructure suggests these are getting written but triggering alert.
-    }
-    else {
-        console.log(`Executable for ${pipelineId} has been written`);
-    }}
+    let res5 = await makeRequest(D3M_SVC_URL + '/FitSolution', CreateFitDefinition(pipelineId));
+    console.log("This is res5:")
+    console.log(res5);
+    let fittedId = res5.data.requestId;
+    let res6 = await makeRequest(D3M_SVC_URL + `/GetFitSolutionResults`, {requestId: fittedId});
+    let fittedDetailsUrl = res6.data.details_url;
+    console.log("this is fittedDetailsUrl: " + fittedDetailsUrl);
+
+    let fittingIntervalId = setInterval(async function() {
+        let res7 = await updateRequest(fittedDetailsUrl);   // check
+        if(typeof res7.data.is_finished != 'undefined'){
+            if(res7.data.is_finished){
+                finalFittedDetailsUrl = res7.data.responses.list[0].details_url;
+                res8 = await updateRequest(finalFittedDetailsUrl);
+                finalFittedId = res8.data.response.fittedSolutionId;   
+                console.log(finalFittedId);
+                res = await makeRequest(D3M_SVC_URL + '/SolutionExport', {fittedSolutionId: finalFittedId, rank: 0.5})
+
+                // we need standardized status messages...
+                let mystatus = res.status;
+                if (typeof mystatus !== 'undefined') {
+                if(mystatus.code=="FAILED_PRECONDITION") {
+                    console.log("TA2 has not written the executable.");    // was alert(), but testing on NIST infrastructure suggests these are getting written but triggering alert.
+                }
+                else {
+                    console.log(`Executable for ${pipelineId} has been written`);
+                }}
+
+                clearInterval(fittingIntervalId); 
+            };
+        };            
+    }, 500);
+
     return res;
 }
 
@@ -4279,6 +4403,9 @@ export function saveDisc(btn) {
 }
 
 export async function endAllSearches() {
+    console.log("Attempting to End All Searches");
+    console.log(allsearchId);
+    console.log(allsearchId[0]);
     let res = await makeRequest(D3M_SVC_URL + '/EndSearchSolutions', {searchId: allsearchId[0]} );
     if(allsearchId.length > 1){
         for(let i = 1; i < allsearchId.length; i++) {
