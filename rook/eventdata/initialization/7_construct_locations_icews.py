@@ -6,6 +6,10 @@ db = mongo_client.event_data
 locations = mongo_client.locations
 batch = 100
 
+# originally meant to handle applying all arcgis data to events.
+# I ultimately decided it was really only efficient for the icews dataset
+# for all other datasets run 7_construct_locations_multiprocess
+
 
 def format_coordinate(document):
     mapname = {
@@ -35,7 +39,7 @@ def format_placename(document):
             set(mapname.keys()) & set(document['attributes'].keys())}
 
 
-for collection in ['cline_speed']:
+for collection in ['icews']:
     print(collection)
 
     count = 0

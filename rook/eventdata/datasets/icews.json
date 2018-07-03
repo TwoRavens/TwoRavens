@@ -103,7 +103,8 @@
   "formats": {
     "Source Sectors": "icews",
     "Target Sectors": "icews",
-    "CAMEO Code": "CAMEO"
+    "CAMEO Code": "CAMEO",
+    "country_constructed": "ISO-3"
   },
   "citations": [
     {

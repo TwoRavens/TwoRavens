@@ -149,8 +149,8 @@ export let setSelectedSubsetName = (subset) => {
 };
 
 let canvasTypes = ['Home', 'Datasets', 'Saved Queries', 'Subset', 'Custom', 'Time Series', 'Analysis']; // not actually used, but maintained for documentation
-export let selectedCanvas = 'About';
-export let selectedCanvasHome = 'About';
+export let selectedCanvas = 'Datasets';
+export let selectedCanvasHome = selectedCanvas;
 export let setSelectedCanvas = (canvasKey) => {
     if (['About', 'Datasets', 'Saved Queries'].indexOf(canvasKey) !== -1) selectedCanvasHome = canvasKey;
     selectedCanvas = canvasKey;

@@ -49,6 +49,10 @@ export default class Body_EventData {
     }
 
     header() {
+
+        let attrsInterface = {style: {width: 'auto'}};
+        let isHome = ['About', 'Datasets', 'Saved Queries'].indexOf(app.selectedCanvas) !== -1;
+
         return m(Header, {image: '/static/images/TwoRavens.png'},
 
             m('div', {style: {'flex-grow': 1}}),
@@ -56,7 +60,7 @@ export default class Body_EventData {
                 app.selectedDataset ? app.genericMetadata[app.selectedDataset]['name'] : '')),
 
             m('div', {style: {'flex-grow': 1}}),
-            app.selectedDataset && m("button#btnPeek.btn.btn-default", {
+            app.selectedDataset && !isHome && m("button#btnPeek.btn.btn-default", {
                 title: 'Display a data preview',
                 style: {margin: '.25em 1em'},
                 onclick: () => window.open('#!/data', 'data')
@@ -64,11 +68,23 @@ export default class Body_EventData {
             'Data'
             ),
 
+            isHome && m(ButtonRadio, {
+                id: 'homeCanvasButtons',
+                sections: [
+                    {value: 'Datasets', attrsInterface},
+                    {value: 'Saved Queries', attrsInterface},
+                    {value: 'About', attrsInterface}
+                ],
+                activeSection: app.selectedCanvasHome,
+                onclick: app.setSelectedCanvas,
+                attrsAll: {style: {width: 'auto'}}
+            }),
+
             // Button Reset
             m("button#btnReset.btn.btn-default.ladda-button[title='Reset']", {
                     'data-style': 'zoom-in',
                     'data-spinner-color': '#818181',
-                    style: {margin: '1em', display: app.selectedDataset ? 'block' : 'none'},
+                    style: {margin: '1em', display: app.selectedDataset && !isHome ? 'block' : 'none'},
                     onclick: app.reset
                 },
                 m("span.ladda-label.glyphicon.glyphicon-repeat", {
@@ -174,19 +190,7 @@ export default class Body_EventData {
 
     leftpanel(mode) {
         if (mode === 'datasets') {
-            return m(Panel, {
-                side: 'left',
-                label: 'Navigation',
-                hover: false,
-                width: '250px',
-                contents: m(PanelList, {
-                    id: 'homePanelList',
-                    items: ['About', 'Datasets', 'Saved Queries'],
-                    colors: {[common.selVarColor]: [app.selectedCanvasHome]},
-                    callback: app.setSelectedCanvas,
-                    attrsAll: {style: {height: '100%', overflow: 'auto'}}
-                })
-            })
+            common.setPanelOcclusion('left', `calc(2*${common.panelMargin} + 250px)`);
         }
 
         if (mode === 'subset') {

@@ -1,12 +1,13 @@
 from pymongo import MongoClient
 import sys
 import time
-from multiprocessing import Queue, Process, cpu_count
+from multiprocessing import Queue, Process
 
 # Does the same thing as 7_construct_locations, but iterates over partitions of the arcgis locations.
 # Takes advantage of multiprocessing and batch updates. Very intensive.
+# The batch updating is a nightmare on icews
 
-batch = 10
+batch = 5
 
 
 def format_coordinate(document):
@@ -39,7 +40,13 @@ def format_placename(document):
 
 
 def process_partition(locations, partition, db):
-    for document in locations.arcgis.find(partition).batch_size(batch):
+    result = list(locations.arcgis.aggregate([{"$match": {**partition, "mapped": {"$exists": 1}}}, {"$count": "count"}]))
+    count = result[0]['count'] if result else 0
+    total = list(locations.arcgis.aggregate([{"$match": partition}, {"$count": "count"}]))[0]['count']
+
+    for document in locations.arcgis.find({**partition, "mapped": {"$exists": 0}}).batch_size(batch):
+        count += 1
+        print(str(partition) + ' ' + str(count) + '/' + str(total))
 
         if 'Latitude' in document:
             for collection in ['cline_speed', 'cline_phoenix_nyt', 'cline_phoenix_fbis', 'cline_phoenix_swb']:
@@ -49,10 +56,10 @@ def process_partition(locations, partition, db):
                 new_data = format_coordinate(document)
 
                 if new_data:
-                    db[collection].update_many(query, {"$set": new_data})
+                    db[collection].update_many(query, {"$set": new_data}, upsert=False)
 
         else:
-            for collection in ['icews', 'acled_africa', 'acled_middle_east', 'acled_asia']:
+            for collection in ['acled_africa', 'acled_middle_east', 'acled_asia']:
                 if collection == 'icews':
                     docname = {'Country': 'Country', 'Region': 'District', 'Subregion': 'Province', 'City': 'City'}
                 elif 'acled' in collection:
@@ -66,6 +73,8 @@ def process_partition(locations, partition, db):
 
                 if new_data:
                     db[collection].update_many(query, {"$set": new_data})
+
+        locations.arcgis.update({"_id": document["_id"]}, {"$set": {"mapped": True}})
 
 
 def reformat_database():
@@ -85,7 +94,7 @@ def reformat_database():
 
     total_size = partition_queue.qsize()
     pool = [Process(target=process_wrapper, args=(partition_queue,), name=str(proc))
-            for proc in range(cpu_count())]
+            for proc in range(4)]
 
     for proc in pool:
         proc.start()

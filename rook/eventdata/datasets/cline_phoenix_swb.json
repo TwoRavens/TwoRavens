@@ -70,7 +70,7 @@
         "ISO-3"
       ],
       "columns": [
-        "country_code"
+        "country_constructed"
       ]
     },
     "Coordinates": {
@@ -123,7 +123,8 @@
     "source_agent": "phoenix",
     "source_root": "phoenix",
     "target_agent": "phoenix",
-    "target_root": "phoenix"
+    "target_root": "phoenix",
+    "country_constructed": "ISO-3"
   },
   "deconstruct": {
     "source_others": ";",

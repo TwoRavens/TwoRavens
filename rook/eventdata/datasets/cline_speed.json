@@ -552,7 +552,8 @@
     "TAR_TYPE": "SPEED_tar_type",
     "VIC_TYPE": "SPEED_vic_type",
     "victim_effect": "SPEED_victim_effect",
-    "weapon": "SPEED_weapon"
+    "weapon": "SPEED_weapon",
+    "country_constructed": "ISO-3"
   },
   "citations": [
     {

@@ -126,7 +126,8 @@
   "formats": {
     "INTERACTION": "ACLED_interaction",
     "INTER1": "ACLED_inter",
-    "INTER2": "ACLED_inter"
+    "INTER2": "ACLED_inter",
+    "country_constructed": "ISO-3"
   },
   "citations": [
     {
