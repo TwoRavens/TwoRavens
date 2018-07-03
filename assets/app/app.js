@@ -2140,10 +2140,6 @@ function onPipelinePrime(PipelineCreateResult, rookpipe) {
         //     continue;
         // }
 
-    if (IS_D3M_DOMAIN){
-        byId("btnSetx").click();   // Was "btnResults" - changing to simplify user experience for testing.
-    };
-
     //adding rookpipe to allPipelineInfo
     allPipelineInfo.rookpipe=rookpipe;                // This is setting rookpipe for the entire table, but when there are multiple CreatePipelines calls, this is only recording latest values
 
@@ -2279,12 +2275,14 @@ function CreatePipelineDefinition(predictors, depvar, aux) {
     return {userAgent: my_userAgent, version: my_version, timeBound: 5, priority: 1, allowedValueTypes: my_allowedValueTypes, problem: my_problem, inputs: [{dataset_uri: my_dataseturi}] };
 }
 
-function CreateFitDefinition(solutionId){
-    let inputs = [{ csvUri: "need to fix filepath" }];            // need to fix
-    let my_exposeOutputs = ["steps.3.produce"];  // need to fix
-    let my_exposeValueTypes = ["DATASET_URI", "CSV_URI"];
+function CreateFitDefinition(res){
+    let my_solutionId = res.data.response.solutionId;
+    let my_dataseturi = "file://" + datasetdocurl;
+    let my_inputs = [{dataset_uri: my_dataseturi}];
+    let my_exposeOutputs = [];   // eg. ["steps.3.produce"];  need to fix
+    let my_exposeValueTypes = ["CSV_URI"];
     let my_users = [{id: "TwoRavens", choosen: false, reason: ""}];
-    return {solutionId: solutionId, exposeOutputs: my_exposeOutputs, exposeValueTypes: my_exposeValueTypes, users: my_users};
+    return {solutionId: my_solutionId, inputs: my_inputs, exposeOutputs: my_exposeOutputs, exposeValueTypes: my_exposeValueTypes, users: my_users};
 }
 
 export function downloadIncomplete() {
@@ -2427,6 +2425,7 @@ export async function estimate(btn) {
             let res3, res4, res5, res6, res7; 
             let oldCount = 0;
             let newCount = 0;
+            let resizeTriggered = false;
 
             let refreshIntervalId = setInterval(async function() {
                 res3 = await updateRequest(searchDetailsUrl);                // silent equivalent makeRequest() with no data argument.  Also, should check whether best to be synchronous here.
@@ -2440,10 +2439,24 @@ export async function estimate(btn) {
                         console.log(res3.data.responses.list[i].details_url); 
                         solutionDetailsUrl = res3.data.responses.list[i].details_url;
                         res4 = await updateRequest(solutionDetailsUrl);
+                        console.log(res4);
                         solutionId = res4.data.response.solutionId;
                         onPipelinePrime(res4.data, rookpipe);
 
-                        //res5 = await makeRequest(D3M_SVC_URL + '/FitSolution', CreateFitDefinition(solutionId));
+                        // Once pipelineTable exist, can rebuild the window to start exploring results
+                        if(!resizeTriggered){
+                            if (IS_D3M_DOMAIN){
+                                byId("btnSetx").click();   // Was "btnResults" - changing to simplify user experience for testing.
+                            };
+                            resizeTriggered = true;
+                               // this initializes the results windows using the first pipeline ID
+                        //     if(!swandive) {
+                        //         resultsplotinit(pipelineTable[0][1]);
+                        //     }     
+                        };
+
+                        res5 = await makeRequest(D3M_SVC_URL + '/FitSolution', CreateFitDefinition(res4));
+                        console.log(res5);
                         //requestId = res5.data.requestId;
                         //res6 = await makeRequest(D3M_SVC_URL + `/GetFitSolutionResults`, {requestId: requestId});
                         //fitDetailsUrl = res6.data.details_url;
