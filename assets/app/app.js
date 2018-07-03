@@ -403,6 +403,8 @@ function trigger(id, event) {
 export const reset = async function reloadPage() {
     endAllSearches();
     byId("btnModel").click();
+    //clearInterval(interiorIntervalId);
+    //clearInterval(requestIntervalId);
     //location.reload();
 };
 export let restart;
@@ -2121,7 +2123,7 @@ function onPipelinePrime(PipelineCreateResult, rookpipe) {
 
     // Need to deal with (exclude) pipelines that are reported, but failed.  For approach, see below.
 
-    if(PipelineCreateResult.hash_id in allPipelineInfo) {
+    if(PipelineCreateResult.id in allPipelineInfo) {
         allPipelineInfo[PipelineCreateResult.id]=Object.assign(allPipelineInfo[PipelineCreateResult.id],PipelineCreateResult);
     } else {
         allPipelineInfo[PipelineCreateResult.id]=PipelineCreateResult;
@@ -2422,7 +2424,7 @@ export async function estimate(btn) {
 
             let searchFinished = false;
             let fitFinished = false;
-            let res3, res4, res5, res6, res7; 
+            let res3, res4, res5, res6; 
             let oldCount = 0;
             let newCount = 0;
             let resizeTriggered = false;
@@ -2457,11 +2459,10 @@ export async function estimate(btn) {
 
                         if(typeof solutionId != 'undefined'){
                             res5 = await makeRequest(D3M_SVC_URL + '/FitSolution', CreateFitDefinition(res4));
-                            //console.log("This is res5");
-                            //console.log(res5.data.requstId);
-
-                            fittedId = res5.data.requestId;
-                            if(typeof fittedId != 'undefined'){
+                       
+                            if(typeof res5.data.requestId != 'undefined'){
+                                console.log(res5.data.requestId);
+                                fittedId = res5.data.requestId;
                         
                                 res6 = await makeRequest(D3M_SVC_URL + `/GetFitSolutionResults`, {requestId: fittedId});
                                 fittedDetailsUrl = res6.data.details_url;
@@ -2469,13 +2470,18 @@ export async function estimate(btn) {
                             };
                         };
                         
+
                         // Possibly this belongs elsewhere, like a callback function above.
-                        //fitFinished = false;
-                        //while(!fitFinished){
-                        //    res7 = await updateRequest(fitDetailsUrl);   // check
-                        //    fitFinished = res7.data.is_finished;         // check
-                        //}
+                        let interiorIntervalId = setInterval(async function() {
+                            let res7 = await updateRequest(fittedDetailsUrl);   // check
+                            if(typeof res7.data.fittedId != 'undefined'){
+                                if(res7.data.is_finished){
+                                    clearInterval(interiorIntervalId);
+                                };
+                            };            
                         //onPipelineCreate(res7.data, res4.data.id);  // arguments have changed
+                        }, 2700);
+
                     };
                     oldCount = newCount;
                 };
@@ -4300,6 +4306,7 @@ export function saveDisc(btn) {
 }
 
 export async function endAllSearches() {
+    console.log("Attempting to End All Searches");
     console.log(allsearchId);
     console.log(allsearchId[0]);
     let res = await makeRequest(D3M_SVC_URL + '/EndSearchSolutions', {searchId: allsearchId[0]} );
