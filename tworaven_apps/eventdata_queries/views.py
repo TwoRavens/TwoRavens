@@ -172,6 +172,18 @@ def api_upload_to_dataverse(request, query_id):
 @csrf_exempt
 def api_publish_dataset(request, dataset_id):
     """ Get the dataset Id from the response"""
+    success, res = EventJobUtil.publish_dataset(dataset_id)
+    if not success:
+        usr_msg = dict(success=False,
+                       message=get_json_error(res))
+        return JsonResponse(usr_msg)
+
+    else:
+        usr_msg = dict(success=True,
+                       message='published to dataverse',
+                       data=res)
+
+        return JsonResponse(usr_msg)
 
 @csrf_exempt
 def api_get_archive_list(request):
