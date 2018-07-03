@@ -31,6 +31,7 @@ let currentVal = "variable" ;
 let config = '';
 let configName = '';
 let dataDetails = {};
+var dataNode = [];
 
 let peekSkip = 0;
 let peekData = [];
@@ -174,21 +175,24 @@ export default class Recode {
                                     m('div',{id:'plot_a'}),                         
                                 ]),
                                 m("br"),
-                                m('button[type="submit"]',{style: {'float':'left'}}, 'Customize'),
+                                m('div#tableBinDiv',{style :{'width':'60%','float':'left','height':(window.innerHeight-150)+'px' ,'overflow-y': 'auto','border-style': 'solid','border-width': 'thin'}},[
+                                    m('table.table.table-bordered',{id:'binTable',style:{ 'overflow': 'scroll'}},[
+                                        m('tr#binheader',[
+                                            m('th.col-xs-4',{style : {'border': '1px solid #ddd','text-align': 'center'}},currentVal),
+                                            m('th.col-xs-4',{style : {'border': '1px solid #ddd','text-align': 'center'}},'New Bin Value')                                            
+                                        ]),
+                                        dataNode.map((row)=> m('tr#binValues',[
+                                            m('td',{style : {'border': '1px solid #ddd','text-align': 'center'}},row),
+                                            m('td',{style : {'border': '1px solid #ddd','text-align': 'center'}},m('input[type=text]')),                                            
+                                        ],
+                                            
+                                        ))
+                                    ])                                                                        
+                                ]),
+                                m("br"),
+                                m('button[type="submit"]',{style: {'display':'block'}}, 'Customize'),
                             ]),]),
                             m('div.container-fluid', {id : 'div2' , style : {'display':'block','height': '250px','padding':'20px'}}, [
-                            // m('form',{ onsubmit: calculate2},[
-                            //     m('span',{style :{'display': 'block','overflow': 'hidden'}},[
-                            //         m('input[type=text]', {id: 'value1', placeholder: 'value 1', style : {'display':'inline-block' , 'margin-right':'10px', 'width':'20%'}}),
-                            //         m('h3',{ style : {'display':'inline-block', 'margin-right':'10px'}},'-'),
-                            //         m('input[type=text]', {id: 'value2', placeholder: 'value 1', style : {'display':'inline-block' , 'margin-right':'10px', 'width':'20%'}}),
-                            //         m('h3',{ style : {'display':'inline-block', 'margin-right':'10px'}},'='),
-                            //         m('input[type=text]', {id: 'newValue', placeholder: 'New Value', style : {'display':'inline-block' , 'width':'20%'}}),
-                            //     ]),
-                                
-                            //     m("br"),
-                            //     m('button[type="submit"]',{style: {'float': 'right'}} ,'Customize'),
-                            // ])
                         ])
                     
                     ]),
@@ -310,11 +314,7 @@ function unselectAllVars(){
 }
 
 function addOperations(elem){
-    if(document.getElementById('recodeLink').className === 'active'){
-        var text = document.getElementById('variable');
-        text.value = this.textContent.split("(")[0]+"("+currentVal+")";
-    }
-    else if(document.getElementById('formulaLink').className === 'active'){
+    if(document.getElementById('formulaLink').className === 'active'){
         var text = document.getElementById('variables');
         if(text.value === ""){
             text.value += this.textContent.split("(")[0]+"("+currentVal+")";
@@ -325,11 +325,23 @@ function addOperations(elem){
     }
 }
 
-function clickVar(elem) {    
+function onlyUnique(value, index, self) { 
+    return self.indexOf(value) === index;
+}
 
-    // document.getElementById('tabVariables').setAttribute("style","display:none");
-    // document.getElementById('leftpanelMenuButtonBarOperations').attr('disabled', 'disabled');
+function clickVar(elem) {  
+    
+    var elmtTable = document.getElementById('binTable');
+    var tableRows = elmtTable.getElementsByTagName('tr');
+    var rowCount = tableRows.length;
 
+    for (var x=rowCount-1; x>0; x--) {
+        elmtTable.deleteRow(x);
+    }
+
+    var index = tableHeader.indexOf(this.textContent);
+    tableData.map((row,i) => dataNode.push(row[index]))
+    dataNode = dataNode.filter( onlyUnique )
 
     if(document.getElementById('recodeLink').className === 'active'){
         
@@ -341,28 +353,29 @@ function clickVar(elem) {
         }
         document.getElementById(this.id).setAttribute("style", "background:"+app.hexToRgba("#28a4c9"));
         
-        //If the variable is a of the type 'character', cannot apply mathematical transformations on it.
-        if(dataDetails[this.textContent]['numchar'] != 'numeric'){
-            var transform =  document.getElementById('div1_recode');
-            transform.style.display = 'none';
-        }
-        else {
-            var transform =  document.getElementById('div1_recode');
-            transform.style.display = 'block';
-            var node = dataDetails[this.textContent];
-            if (node.plottype === "continuous") {
-                density_cross(node);
-                
-            }else if (node.plottype === "bar") {
-                bar_cross(node);
-            }
-            currentVal = this.textContent;  
-        }
+        var transform =  document.getElementById('div1_recode');
+        transform.style.display = 'block';
+        
+        var node = dataDetails[this.textContent];
+        console.log('node')
+        console.log(node)
+        
+        if (node.plottype === "continuous") {
+            density_cross(node);    
+        }else if (node.plottype === "bar") {
+            bar_cross(node);
+        }else if(node.nature === "nominal"){
+            $('#tableBinDiv').css('display', 'block');
+
+        }      
+        currentVal = this.textContent;  
     }
 
     if(document.getElementById('formulaLink').className === 'active'){
+        
         document.getElementById(this.id).setAttribute("style", "background:"+app.hexToRgba("#28a4c9"));
         document.getElementById('leftpanelMenuButtonBarOperations').click();
+
         //Only those variables of type "numeric" could be used to build formula
         if(dataDetails[this.textContent]['numchar'] === 'numeric'){
             currentVal = this.textContent;
@@ -550,6 +563,7 @@ function recodeCreate(){
     var elem = document.getElementById('recodeLink');
     elem.className = 'active';
     $('#btnOperations').css('display', 'none');
+    $('#tableBinDiv').css('display', 'none');
 
     var elem = document.getElementById('centralPanel');
     elem.style.display ='none';
@@ -565,6 +579,7 @@ function recodeClick(){
     var elem = document.getElementById('recodeLink');
     elem.className = 'active';
     $('#btnOperations').css('display', 'none');
+    $('#tableBinDiv').css('display', 'none');
 
     var elem = document.getElementById('centralPanel');
     elem.style.display="none"
