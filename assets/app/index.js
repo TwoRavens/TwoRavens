@@ -98,7 +98,7 @@ function leftpanel(mode) {
                      popup: variable => app.popoverContent(app.findNodeIndex(variable, true)),
                      attrsItems: {'data-placement': 'right', 'data-original-title': 'Summary Statistics'}})]},
             {value: 'Discovery',
-             display: exploreMode ? 'none' : 'block',
+             display: 'block',
              contents: [
                  m(Table, {
                      id: 'discoveryTable',
@@ -113,8 +113,9 @@ function leftpanel(mode) {
                  m('textarea#discoveryInput[style=display:block; float: left; width: 100%; height:calc(20% - 35px); overflow: auto; background-color: white]', {
                      value: app.disco[app.selectedProblem] === undefined ? '' : app.disco[app.selectedProblem].description
                  }),
-                 m(Button, {id: 'btnSave', onclick:_=>app.saveDisc('btnSave'),title: 'Saves your revised problem description.'}, 'Save Desc.'),
-                 m(Button, {id: 'btnSubmitDisc', classes: 'btn-success', style: 'float: right', onclick:_=>app.submitDiscProb(), title: 'Submit all checked discovered problems.'}, 'Submit Disc. Probs.')]},
+                 m(Button, {id: 'btnSave', onclick: _ => app.saveDisc('btnSave'),title: 'Saves your revised problem description.'}, 'Save Desc.'),
+                 m(Button, {id: 'btnSubmitDisc', classes: 'btn-success', style: 'float: right', onclick: _ => app.submitDiscProb(), title: 'Submit all checked discovered problems.'}, 'Submit Disc. Probs.'),
+                 m(Button, {id: 'btnExplore', classes: 'btn-default', style: 'float: right', onclick: _ => m.route.set('/explore'), title: 'Explore problems.'}, 'Explore')]},
             {value: 'Summary',
              title: 'Select a variable from within the visualization in the center panel to view its summary statistics.',
              display: 'none',
@@ -426,7 +427,7 @@ class Body {
                                     margin: '1em',
                                     width: '250px',
                                     'align-items': 'center',
-                                    'background-color': app.hexToRgba(common[nodesExplore.map(x => x.name).includes(x) ? 'selVarColor' : 'varColor']),
+                                    'background-color': app.hexToRgba(common[nodesExplore.map(x => x.name).includes(x) ? 'selVarColor' : 'varColor'])
                                 }
                             }, [
                                 m('', {

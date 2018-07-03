@@ -89,10 +89,6 @@ export function set_mode(mode) {
     is_explore_mode = mode === 'explore';
     is_results_mode = mode === 'results';
 
-    if (is_explore_mode) {
-        leftTab = 'Variables';
-    }
-
     if (currentMode !== mode) {
         updateRightPanelWidth();
         updateLeftPanelWidth();
@@ -140,7 +136,7 @@ export let rightTabExplore = 'Univariate';
 
 export let modelLeftPanelWidths = {
     'Variables': '300px',
-    'Discovery': 'auto',
+    'Discovery': m.route.get() === '/model' ? 'auto' : '640px',
     'Summary': '300px'
 };
 
