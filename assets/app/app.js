@@ -2277,11 +2277,11 @@ function CreatePipelineDefinition(predictors, depvar, aux) {
     //console.log(my_problem);
     let my_dataseturi = "file://" + datasetdocurl;
     // console.log(my_dataseturi);
-    return {userAgent: my_userAgent, version: my_version, timeBound: 2, priority: 1, allowedValueTypes: my_allowedValueTypes, problem: my_problem, inputs: [{dataset_uri: my_dataseturi}] };
+    return {userAgent: my_userAgent, version: my_version, timeBound: 1, priority: 1, allowedValueTypes: my_allowedValueTypes, problem: my_problem, inputs: [{dataset_uri: my_dataseturi}] };
 }
 
-function CreateFitDefinition(res){
-    let my_solutionId = res.data.response.solutionId;
+function CreateFitDefinition(solutionId){
+    let my_solutionId = solutionId;
     let my_dataseturi = "file://" + datasetdocurl;
     let my_inputs = [{dataset_uri: my_dataseturi}];
     let my_exposeOutputs = [];   // eg. ["steps.3.produce"];  need to fix
@@ -2504,7 +2504,7 @@ export async function estimate(btn) {
 
 
                             if(fitFlag){
-                                res5 = await makeRequest(D3M_SVC_URL + '/FitSolution', CreateFitDefinition(res4));
+                                res5 = await makeRequest(D3M_SVC_URL + '/FitSolution', CreateFitDefinition(solutionId));
                                 console.log("This is res5:")
                                 console.log(res5);
                            
@@ -3403,16 +3403,23 @@ export async function endsession() {
     }
     let selected = table.rows[tableposition].cells[0].innerHTML;  // was "none"; as default
 
+    console.log("== this should be the selected solution ==");
+    console.log(allPipelineInfo[selected]);
+    console.log(allPipelineInfo[selected].response.solutionId);
+
+    let chosenSolutionId = allPipelineInfo[selected].response.solutionId;
+
     // calling exportpipeline
-    let end = await exportpipeline(selected);
+    let end = await exportpipeline(chosenSolutionId);
 
    // makeRequest(D3M_SVC_URL + '/endsession', apiSession(zparams.zsessionid));
-    let res = await makeRequest(D3M_SVC_URL + '/endsession', apiSession(zparams.zsessionid));
-    let mystatus = res.status.code.toUpperCase();
-    if(mystatus == "OK") {
+    //let res = await makeRequest(D3M_SVC_URL + '/endsession', apiSession(zparams.zsessionid));
+    endAllSearches()
+    //let mystatus = res.status.code.toUpperCase();
+    //if(mystatus == "OK") {
         end_ta3_search(true, "Problem marked as complete.");
         setModal("Your selected pipeline has been submitted.", "Task Complete", true, false, false, location.reload);
-    }
+    //}
 }
 
 /**
@@ -4091,25 +4098,53 @@ export function setxTable(features) {
 }
 
 /**
-  rpc ExportPipeline(PipelineExportRequest) returns (Response) {}
+  rpc SolutionExport (SolutionExportRequest) returns (SolutionExportResponse) {}
 */
 
+// Example call:
+// {
+//     "fittedSolutionId": "solutionId_gtk2c2",
+//     "rank": 0.122
+// }
+
 export async function exportpipeline(pipelineId) {
-    let temp = {pipelineId, context: apiSession(zparams.zsessionid), pipelineExecUri: '<<EXECUTABLE_URI>>'};
 
-    let res = await makeRequest(
-        D3M_SVC_URL + '/exportpipeline',
-        {pipelineId, context: apiSession(zparams.zsessionid), pipelineExecUri: '<<EXECUTABLE_URI>>'});
+    let finalFittedId, finalFittedDetailsUrl;
+    let res, res8;
 
-    // we need standardized status messages...
-    let mystatus = res.status;
-    if (typeof mystatus !== 'undefined') {
-    if(mystatus.code=="FAILED_PRECONDITION") {
-        console.log("TA2 has not written the executable.");    // was alert(), but testing on NIST infrastructure suggests these are getting written but triggering alert.
-    }
-    else {
-        console.log(`Executable for ${pipelineId} has been written`);
-    }}
+    let res5 = await makeRequest(D3M_SVC_URL + '/FitSolution', CreateFitDefinition(pipelineId));
+    console.log("This is res5:")
+    console.log(res5);
+    let fittedId = res5.data.requestId;
+    let res6 = await makeRequest(D3M_SVC_URL + `/GetFitSolutionResults`, {requestId: fittedId});
+    let fittedDetailsUrl = res6.data.details_url;
+    console.log("this is fittedDetailsUrl: " + fittedDetailsUrl);
+
+    let fittingIntervalId = setInterval(async function() {
+        let res7 = await updateRequest(fittedDetailsUrl);   // check
+        if(typeof res7.data.is_finished != 'undefined'){
+            if(res7.data.is_finished){
+                finalFittedDetailsUrl = res7.data.responses.list[0].details_url;
+                res8 = await updateRequest(finalFittedDetailsUrl);
+                finalFittedId = res8.data.response.fittedSolutionId;   
+                console.log(finalFittedId);
+                res = await makeRequest(D3M_SVC_URL + '/SolutionExport', {fittedSolutionId: finalFittedId, rank: 0.5})
+
+                // we need standardized status messages...
+                let mystatus = res.status;
+                if (typeof mystatus !== 'undefined') {
+                if(mystatus.code=="FAILED_PRECONDITION") {
+                    console.log("TA2 has not written the executable.");    // was alert(), but testing on NIST infrastructure suggests these are getting written but triggering alert.
+                }
+                else {
+                    console.log(`Executable for ${pipelineId} has been written`);
+                }}
+
+                clearInterval(fittingIntervalId); 
+            };
+        };            
+    }, 500);
+
     return res;
 }
 
