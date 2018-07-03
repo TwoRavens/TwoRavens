@@ -400,6 +400,21 @@ class Body {
                             let [n0, n1, n2] = nodesExplore;
                             return m('span', {
                                 onclick: _ => app.clickVar(x, nodesExplore),
+                                onmouseover: function() {
+                                    $(this).popover('toggle');
+                                    $('body div.popover')
+                                        .addClass('variables');
+                                    $('body div.popover div.popover-content')
+                                        .addClass('form-horizontal');
+                                },
+                                onmouseout: "$(this).popover('toggle');",
+                                'data-container': 'body',
+                                'data-content': app.popoverContent(app.findNodeIndex(x, true)),
+                                'data-html': 'true',
+                                'data-original-title': 'Summary Statistics',
+                                'data-placement': 'left',
+                                'data-toggle': 'popover',
+                                'data-trigger': 'hover',
                                 style: {
                                     border: '1px solid rgba(0, 0, 0, .2)',
                                     'border-radius': '5px',

@@ -91,13 +91,6 @@ text.id {
     font-weight: bold;
 }
 
-.left {
-    width: 33.3%;
-    height: 100%; /*was 600px;*/
-    box-sizing: border-box; margin: 0;
-    overflow:scroll;
-}
-
 .navbar-default {
     height: 62px;
 }
