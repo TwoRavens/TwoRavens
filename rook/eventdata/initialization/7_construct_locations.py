@@ -1,4 +1,5 @@
-from pymongo import MongoClient, UpdateOne
+from pymongo import MongoClient
+import sys
 
 mongo_client = MongoClient(host='localhost', port=27017)  # Default port
 db = mongo_client.event_data
@@ -34,8 +35,10 @@ def format_placename(document):
             set(mapname.keys()) & set(document['attributes'].keys())}
 
 
-for collection in db.collection_names():
+for collection in ['cline_speed']:
     print(collection)
+
+    count = 0
 
     for document in db[collection].aggregate([{"$match": {"$and": [
             {"region_constructed": {"$exists": 0}},
@@ -43,6 +46,11 @@ for collection in db.collection_names():
             {"city_constructed": {"$exists": 0}},
             {"address_constructed": {"$exists": 0}}
         ]}}]).batch_size(batch):
+
+        # Show status
+        count += 1
+        sys.stdout.write("\r\x1b[KRecord: " + str(count))
+        sys.stdout.flush()
 
         if 'cline' in collection:
             keys = ['GP7', 'GP8'] if collection == 'cline_speed' else ['lat', 'lon']
@@ -57,7 +65,7 @@ for collection in db.collection_names():
                 continue
 
             constructed = format_coordinate(match[0])
-            print(constructed)
+
             if not constructed:
                 continue
             db[collection].update_one(
@@ -80,7 +88,7 @@ for collection in db.collection_names():
                 continue
 
             constructed = format_placename(match[0])
-            print(constructed)
+
             if not constructed:
                 continue
 

@@ -1,6 +1,7 @@
 from pymongo import MongoClient
 import json
 import os
+import sys
 
 # fill in any records that weren't matched by arcgis with alignments from existing fields
 
@@ -50,10 +51,17 @@ for collection in ['icews']: # db.collection_names():
 
     elif 'icews' == collection:
         placename = {}
+
         for equivalency in alignment:
             if 'ICEWS' in equivalency:
                 placename[equivalency['ICEWS']] = equivalency['ISO-3']
+        count = 0
         for document in db[collection].aggregate(query).batch_size(batch):
+            # Show status
+            count += 1
+            sys.stdout.write("\r\x1b[KRecord: " + str(count))
+            sys.stdout.flush()
+
             if 'Country' in document and document['Country'] in placename:
                 db[collection].update_one(
                     {'_id': document['_id']},
