@@ -2096,14 +2096,17 @@ export let setSelectedPipeline = (result) => {
 // Update table when pipeline is fitted
 function onPipelineCreate(PipelineCreateResult, id) {
 
-    //let myval = "";
-    //let myscores = [];  // attempt to deal w multiple scores
+    let myscore = PipelineCreateResult.data.response.scores[0].value.double.toPrecision(3);;  // attempt to deal w multiple scores
+
+    console.log(PipelineCreateResult);
 
     for(var i = 0; i < pipelineTable.length; i++) {
-        if (pipelineTable[i][2] == id) {
-            pipelineTable[i][4] = "10";
+        if (pipelineTable[i][1] == parseInt(id, 10)) {
+            pipelineTable[i][3] = myscore.toString();
         };
     };
+
+    console.log(pipelineTable);
                 // myid=key;
                 // mymetric="metric here" //allPipelineInfo[key].  SOMETHING HERE;
                 // myval="scoring"; //+myscores[i].value.toFixed(3);
@@ -2274,7 +2277,7 @@ function CreatePipelineDefinition(predictors, depvar, aux) {
     //console.log(my_problem);
     let my_dataseturi = "file://" + datasetdocurl;
     // console.log(my_dataseturi);
-    return {userAgent: my_userAgent, version: my_version, timeBound: 5, priority: 1, allowedValueTypes: my_allowedValueTypes, problem: my_problem, inputs: [{dataset_uri: my_dataseturi}] };
+    return {userAgent: my_userAgent, version: my_version, timeBound: 2, priority: 1, allowedValueTypes: my_allowedValueTypes, problem: my_problem, inputs: [{dataset_uri: my_dataseturi}] };
 }
 
 function CreateFitDefinition(res){
@@ -2285,6 +2288,26 @@ function CreateFitDefinition(res){
     let my_exposeValueTypes = ["CSV_URI"];
     let my_users = [{id: "TwoRavens", choosen: false, reason: ""}];
     return {solutionId: my_solutionId, inputs: my_inputs, exposeOutputs: my_exposeOutputs, exposeValueTypes: my_exposeValueTypes, users: my_users};
+}
+
+
+//     "configuration": {
+//         "method": "EVALUATION_METHOD_UNDEFINED",
+//         "folds": 0,
+//         "trainTestRatio": 0,
+//         "shuffle": false,
+//         "randomSeed": 0,
+//         "stratified": false
+//     }
+
+function CreateScoreDefinition(res){
+    let my_solutionId = res.data.response.solutionId;
+    let my_dataseturi = 'file://' + datasetdocurl;
+    let my_inputs = [{dataset_uri: my_dataseturi}];
+    let my_performanceMetrics = [{metric: d3mMetrics[d3mProblemDescription.performanceMetrics[0].metric][1]} ];  // need to generalize to case with multiple metrics.  only passes on first presently.;
+    let my_users = [{id: 'TwoRavens', choosen: false, reason: ""}];
+    let my_configuration = {method: 'HOLDOUT', folds: 0, trainTestRatio: 0, shuffle: false, randomSeed: 0, stratified: false};
+    return {solutionId: my_solutionId, inputs: my_inputs, performanceMetrics: my_performanceMetrics, users: my_users, configuration: my_configuration};
 }
 
 export function downloadIncomplete() {
@@ -2429,6 +2452,8 @@ export async function estimate(btn) {
             let newCount = 0;
             let resizeTriggered = false;
 
+            let fitFlag = false;
+
             let refreshIntervalId = setInterval(async function() {
                 res3 = await updateRequest(searchDetailsUrl);                // silent equivalent makeRequest() with no data argument.  Also, should check whether best to be synchronous here.
                 newCount = res3.data.responses.count;
@@ -2437,11 +2462,11 @@ export async function estimate(btn) {
                 if(newCount>oldCount){
                     //for (var i = oldCount; i < newCount; i++) {       //  for statement if new items are pushed instead
                     for (var i = 0; i < (newCount-oldCount); i++) {     //  instead, updates are at top of list
-                        console.log(i);
-                        console.log(res3.data.responses.list[i].details_url); 
+                        //console.log(res3.data.responses.list[i].details_url); 
                         solutionDetailsUrl = res3.data.responses.list[i].details_url;
                         res4 = await updateRequest(solutionDetailsUrl);
-                        console.log(res4);
+                        let res4DataId = res4.data.id;
+                        //console.log(res4);
                         solutionId = res4.data.response.solutionId;
                         onPipelinePrime(res4.data, rookpipe);
 
@@ -2457,31 +2482,68 @@ export async function estimate(btn) {
                         //     }     
                         };
 
+                        let res10, res11;
+                        let scoreDetailsUrl;
+
                         if(typeof solutionId != 'undefined'){
-                            res5 = await makeRequest(D3M_SVC_URL + '/FitSolution', CreateFitDefinition(res4));
-                       
-                            if(typeof res5.data.requestId != 'undefined'){
-                                console.log(res5.data.requestId);
-                                fittedId = res5.data.requestId;
-                        
-                                res6 = await makeRequest(D3M_SVC_URL + `/GetFitSolutionResults`, {requestId: fittedId});
-                                fittedDetailsUrl = res6.data.details_url;
-                                console.log("this is fittedDetailsUrl: " + fittedDetailsUrl);
+
+                            res10 = await makeRequest(D3M_SVC_URL + '/ScoreSolution', CreateScoreDefinition(res4));
+                            //let scoreId = res10.data.requestId;
+                            //res11 = await makeRequest(D3M_SVC_URL + '/GetScoreSolutionResults', {requestId: scoreId});
+
+                            if(typeof res10.data.requestId != 'undefined'){
+                                console.log(res10.data.requestId);
+                                let scoreId = res10.data.requestId;
+                                res11 = await makeRequest(D3M_SVC_URL + '/GetScoreSolutionResults', {requestId: scoreId});
+                                console.log("This is res11");
+                                console.log(res11);
+                                scoreDetailsUrl = res11.data.details_url;  //responses.list[0].details_url;
+                                console.log("this is scoreDetailsUrl: " + scoreDetailsUrl);
+                            };
+
+
+
+                            if(fitFlag){
+                                res5 = await makeRequest(D3M_SVC_URL + '/FitSolution', CreateFitDefinition(res4));
+                                console.log("This is res5:")
+                                console.log(res5);
+                           
+                                if(typeof res5.data.requestId != 'undefined'){
+                                    console.log(res5.data.requestId);
+                                    fittedId = res5.data.requestId;
+                            
+                                    res6 = await makeRequest(D3M_SVC_URL + `/GetFitSolutionResults`, {requestId: fittedId});
+                                    fittedDetailsUrl = res6.data.details_url;
+                                    console.log("this is fittedDetailsUrl: " + fittedDetailsUrl);
+                                };
                             };
                         };
-                        
+  
+                        // Possibly these belong elsewhere, like a callback function above.
 
-                        // Possibly this belongs elsewhere, like a callback function above.
-                        let interiorIntervalId = setInterval(async function() {
-                            let res7 = await updateRequest(fittedDetailsUrl);   // check
-                            if(typeof res7.data.fittedId != 'undefined'){
-                                if(res7.data.is_finished){
-                                    clearInterval(interiorIntervalId);
+                        let scoringIntervalId = setInterval(async function() {
+                            let res12 = await updateRequest(scoreDetailsUrl);   // check
+                            if(typeof res12.data.is_finished != 'undefined'){
+                                if(res12.data.is_finished){
+                                    console.log('finished scoring');
+                                    clearInterval(scoringIntervalId);
+                                    let finalScoreUrl = res12.data.responses.list[0].details_url;
+                                    let res13 = await updateRequest(finalScoreUrl);
+                                    onPipelineCreate(res13, res4DataId);  // arguments have changed
                                 };
                             };            
-                        //onPipelineCreate(res7.data, res4.data.id);  // arguments have changed
                         }, 2700);
 
+                        if(fitFlag){
+                            let fittingIntervalId = setInterval(async function() {
+                                let res7 = await updateRequest(fittedDetailsUrl);   // check
+                                if(typeof res7.data.is_finished != 'undefined'){
+                                    if(res7.data.is_finished){
+                                        clearInterval(fittingIntervalId);
+                                    };
+                                };            
+                            }, 2700);
+                        };
                     };
                     oldCount = newCount;
                 };
