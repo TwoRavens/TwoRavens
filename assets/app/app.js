@@ -403,7 +403,7 @@ function trigger(id, event) {
 export const reset = async function reloadPage() {
     endAllSearches();
     byId("btnModel").click();
-    location.reload();
+    //location.reload();
 };
 export let restart;
 
@@ -2412,12 +2412,12 @@ export async function estimate(btn) {
             let res = await makeRequest(D3M_SVC_URL + '/SearchSolutions', CreatePipelineDefinition(rookpipe.predictors, rookpipe.depvar));
             let searchId = res.data.searchId;
             let solutionId = "";
-            let requestId = "";
+            let fittedId = "";
             allsearchId.push(searchId); 
 
             let res2 = await makeRequest(D3M_SVC_URL + '/GetSearchSolutionsResults', {searchId: searchId});
             let searchDetailsUrl = res2.data.details_url;
-            let fitDetailsUrl = "";
+            let fittedDetailsUrl = "";
             let solutionDetailsUrl = "";
 
             let searchFinished = false;
@@ -2455,11 +2455,19 @@ export async function estimate(btn) {
                         //     }     
                         };
 
-                        res5 = await makeRequest(D3M_SVC_URL + '/FitSolution', CreateFitDefinition(res4));
-                        console.log(res5);
-                        //requestId = res5.data.requestId;
-                        //res6 = await makeRequest(D3M_SVC_URL + `/GetFitSolutionResults`, {requestId: requestId});
-                        //fitDetailsUrl = res6.data.details_url;
+                        if(typeof solutionId != 'undefined'){
+                            res5 = await makeRequest(D3M_SVC_URL + '/FitSolution', CreateFitDefinition(res4));
+                            //console.log("This is res5");
+                            //console.log(res5.data.requstId);
+
+                            fittedId = res5.data.requestId;
+                            if(typeof fittedId != 'undefined'){
+                        
+                                res6 = await makeRequest(D3M_SVC_URL + `/GetFitSolutionResults`, {requestId: fittedId});
+                                fittedDetailsUrl = res6.data.details_url;
+                                console.log("this is fittedDetailsUrl: " + fittedDetailsUrl);
+                            };
+                        };
                         
                         // Possibly this belongs elsewhere, like a callback function above.
                         //fitFinished = false;
@@ -4292,6 +4300,8 @@ export function saveDisc(btn) {
 }
 
 export async function endAllSearches() {
+    console.log(allsearchId);
+    console.log(allsearchId[0]);
     let res = await makeRequest(D3M_SVC_URL + '/EndSearchSolutions', {searchId: allsearchId[0]} );
     if(allsearchId.length > 1){
         for(let i = 1; i < allsearchId.length; i++) {
