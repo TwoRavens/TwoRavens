@@ -855,7 +855,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
     cdb('--dataurl: ' + dataurl);
     cdb('--dataverseurl: ' + dataverseurl);
 
-    let tempWidth = d3.select('#main.left').style('width');
+    let tempWidth = d3.select('#main').style('width');
     width = tempWidth.substring(0, tempWidth.length - 2);
     height = window.innerHeight - 120; // hard code header, footer, and bottom margin
 

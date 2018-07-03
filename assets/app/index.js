@@ -365,7 +365,7 @@ class Body {
             m(Modal),
             this.header(mode),
             this.footer(mode),
-            m(`#main.left`, {style: {overflow}},
+            m(`#main`, {style: {overflow}},
               m("#innercarousel.carousel-inner", {style: {height: '100%', overflow}},
                 explore_mode
                 && [exploreVars
@@ -395,6 +395,7 @@ class Body {
                         }, 'go'),
                         m('br'),
                         m('', {style: `display: flex; flex-direction: row; flex-wrap: wrap`}, app.valueKey.map(x => {
+                            let node = app.findNodeIndex(x, true);
                             let show = app.exploreVariate === 'Bivariate' || app.exploreVariate === 'Trivariate';
                             let len = nodesExplore.length;
                             let [n0, n1, n2] = nodesExplore;
@@ -409,7 +410,7 @@ class Body {
                                 },
                                 onmouseout: "$(this).popover('toggle');",
                                 'data-container': 'body',
-                                'data-content': app.popoverContent(app.findNodeIndex(x, true)),
+                                'data-content': app.popoverContent(node),
                                 'data-html': 'true',
                                 'data-original-title': 'Summary Statistics',
                                 'data-placement': 'left',
@@ -420,17 +421,26 @@ class Body {
                                     'border-radius': '5px',
                                     'box-shadow': '0px 5px 10px rgba(0, 0, 0, .2)',
                                     display: 'flex',
+                                    'flex-direction': 'column',
                                     height: '250px',
                                     margin: '1em',
                                     width: '250px',
                                     'align-items': 'center',
                                     'background-color': app.hexToRgba(common[nodesExplore.map(x => x.name).includes(x) ? 'selVarColor' : 'varColor']),
-                                    'justify-content': 'center'
                                 }
-                            }, show && n0 && n0.name === x ? `${x} (x)`
-                                     : show && n1 && n1.name === x ? `${x} (y)`
-                                     : show && n2 && n2.name === x ? `${x} (z)`
-                                     : x);
+                            }, [
+                                m('', {
+                                    oncreate(vnode) {
+                                        let plot = node.plottype === 'continuous' ? plots.densityNode : plots.barsNode;
+                                        plot(node, vnode.dom, 120, true);
+                                    }
+                                }),
+                                m('',
+                                  show && n0 && n0.name === x ? `${x} (x)`
+                                  : show && n1 && n1.name === x ? `${x} (y)`
+                                  : show && n2 && n2.name === x ? `${x} (z)`
+                                  : x),
+                            ]);
                         })))],
                 m('svg#whitespace')),
               model_mode && m("#spacetools.spaceTool", {style: {right: app.panelWidth['right'], 'z-index': 16}},
