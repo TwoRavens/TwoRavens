@@ -45,9 +45,10 @@ def api_add_query(request):
     frm = EventDataSavedQueryForm(json_req_obj)
 
     if not frm.is_valid():
+        print(" frm error ")
         user_msg = dict(success=False,
                         message='Invalid input',
-                        errors=get_json_error(frm))
+                        errors=frm.errors)
         return JsonResponse(user_msg)
 
     # print('frm.cleaned_data', frm.cleaned_data)

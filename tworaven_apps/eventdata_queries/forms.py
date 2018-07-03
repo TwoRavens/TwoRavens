@@ -3,6 +3,7 @@ from collections import OrderedDict
 from django import forms
 from django.conf import settings
 from tworaven_apps.eventdata_queries.models import (EventDataSavedQuery, ArchiveQueryJob)
+from tworaven_apps.eventdata_queries.models import (AGGREGATE, SUBSET, TYPE_OPTIONS, TYPE_CHOICES)
 
 
 class EventDataSavedQueryForm(forms.Form):
@@ -15,6 +16,8 @@ class EventDataSavedQueryForm(forms.Form):
     result_count = forms.IntegerField(required=True, label='result_count')
     saved_to_dataverse = forms.NullBooleanField(required=False,initial=False)
     dataverse_url = forms.URLField(required=True)
+    dataset = forms.CharField(widget=forms.Textarea)
+    dataset_type = forms.CharField(required=True, initial= SUBSET)
 
     def clean_name(self):
         name = self.cleaned_data.get('name')
@@ -68,3 +71,19 @@ class EventDataSavedQueryForm(forms.Form):
         dataverse_url = self.cleaned_data.get('dataverse_url')
 
         return dataverse_url
+
+    def clean_dataset(self):
+        dataset_input = self.cleaned_data.get('dataset')
+
+        return dataset_input
+
+    def clean_dataset_type(self):
+        dataset_type = self.cleaned_data.get('dataset_type')
+        print("type choces", list(TYPE_OPTIONS))
+        if dataset_type in TYPE_OPTIONS:
+            return dataset_type
+        else:
+            raise forms.ValidationError("The type input is not among subset or aggregate: %s" % dataset_type)
+
+
+

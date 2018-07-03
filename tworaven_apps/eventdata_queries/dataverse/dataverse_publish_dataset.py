@@ -25,17 +25,20 @@ class DataversePublishDataset(object):
         self.res = None
         dataverse_server = DATAVERSE_SERVER  # no trailing slash
         api_key = DATAVERSE_API_KEY  # generated from kripanshu's account
-        # dataset_id = 1  # database id of the dataset
+        dataset_id = 1  # database id of the dataset
         persistentId = DATASET_PERSISTENT_ID  # doi or hdl of the dataset
 
         type_input = 'major'    # for testing
-
-        publish_url = '%s/api/datasets/:persistentId/actions/' \
-                      ':publish?type=%s&persistentId=%skey=%s'% \
-                      (dataverse_server,
-                       type_input,
-                       persistentId,
-                       api_key)
+        publish_url = '%s/api/datasets/%s/actions/:publish?type=%s&key=%s' %(dataverse_server,
+                                                                            dataset_id,
+                                                                            type_input,
+                                                                            api_key)
+        # publish_url = '%s/api/datasets/:persistentId/actions/' \
+        #               ':publish?type=%s&persistentId=%skey=%s'% \
+        #               (dataverse_server,
+        #                type_input,
+        #                persistentId,
+        #                api_key)
 
         print('-' * 40)
         print('making request: %s' % publish_url)

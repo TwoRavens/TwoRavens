@@ -19,7 +19,10 @@ IN_PROCESS = u'PENDING'
 ERROR = u'FAILURE'
 COMPLETE = u'SUCCESS'
 STATUS_STATES = (IN_PROCESS, ERROR, COMPLETE)
-
+SUBSET = u'subset'
+AGGREGATE = u'aggregate'
+TYPE_OPTIONS = ( SUBSET, AGGREGATE)
+TYPE_CHOICES = [(x,x) for x in TYPE_OPTIONS]
 STATUS_CHOICES = [(x, x) for x in STATUS_STATES]
 # Create your models here.
 
@@ -40,6 +43,11 @@ class EventDataSavedQuery(TimeStampedModel):
     modified = models.DateTimeField(auto_now_add=True)
     saved_to_dataverse = models.BooleanField(default=False)
     dataverse_url = models.URLField(blank=True)
+    dataset = models.TextField(blank=True)
+    dataset_type = models.CharField(blank=False,
+                                    max_length=255,
+                                    choices=TYPE_CHOICES,
+                                    default=SUBSET)
 
     class Meta:
         ordering = ('-created',)
