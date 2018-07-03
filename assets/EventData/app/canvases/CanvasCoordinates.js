@@ -678,6 +678,7 @@ export default class CanvasCoordinates {
 
     view(vnode) {
         let {preferences} = vnode.attrs;
+        if (Object.keys(preferences).length === 0) this.oninit(vnode);
         return (m("#canvasCoordinates", {style: {'padding-top': panelMargin}},
             [
                 m("#latitudeInterval.form-inline", {

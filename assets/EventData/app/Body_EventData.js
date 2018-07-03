@@ -35,9 +35,9 @@ import SaveQuery from "./views/SaveQuery";
 export default class Body_EventData {
 
     oninit(vnode) {
-        if (vnode.attrs.mode !== 'datasets') {
-            m.route.set('/datasets');
-            vnode.attrs.mode = 'datasets';
+        if (vnode.attrs.mode !== 'home') {
+            m.route.set('/home');
+            vnode.attrs.mode = 'home';
         }
         // reset peeked data on page load
         localStorage.removeItem('peekTableData');
@@ -64,9 +64,7 @@ export default class Body_EventData {
                 title: 'Display a data preview',
                 style: {margin: '.25em 1em'},
                 onclick: () => window.open('#!/data', 'data')
-            },
-            'Data'
-            ),
+            }, 'Data'),
 
             isHome && m(ButtonRadio, {
                 id: 'homeCanvasButtons',
@@ -161,7 +159,10 @@ export default class Body_EventData {
 
                 app.selectedMode !== 'home' && m(Button, {
                     class: ['btn-sm'],
-                    onclick: () => app.setDisplayModal(true), style: {'margin-top': '4px'}
+                    onclick: () => {
+                        if (app.abstractQuery.length === 0) tour.tourStartSaveQueryEmpty();
+                        else app.setDisplayModal(true)
+                    }, style: {'margin-top': '4px'}
                 }, 'Save'),
 
                 m("button.btn.btn-default.btn-sm.ladda-button[data-spinner-color='#818181'][id='buttonDownload'][type='button']", {
@@ -172,7 +173,10 @@ export default class Body_EventData {
                             'margin-left': '6px',
                             "data-style": "zoom-in"
                         },
-                        onclick: app.download
+                        onclick: () => {
+                            if (app.abstractQuery.length === 0) tour.tourStartSaveQueryEmpty();
+                            else app.download();
+                        }
                     },
                     m("span.ladda-label", "Download")
                 ),
@@ -189,7 +193,7 @@ export default class Body_EventData {
     }
 
     leftpanel(mode) {
-        if (mode === 'datasets') {
+        if (mode === 'home') {
             common.setPanelOcclusion('left', `calc(2*${common.panelMargin} + 250px)`);
         }
 
@@ -341,7 +345,7 @@ export default class Body_EventData {
     rightpanel(mode) {
 
         let styling = {};
-        if (mode === 'datasets') styling = {display: 'none'};
+        if (mode === 'home') styling = {display: 'none'};
         if (mode === 'aggregate') styling = {
             // subtract header, the two margins, scrollbar, table, and footer
             height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${common.canvasScroll['horizontal'] ? common.scrollbarWidth : '0px'} - ${app.tableHeight} - ${common.heightFooter})`
@@ -371,12 +375,10 @@ export default class Body_EventData {
                     },
                     [
                         m("button.btn.btn-default[id='buttonAddGroup'][type='button']", {
-                                style: {
-                                    "float": "left"
-                                },
-                                onclick: app.addGroup
+                                style: {"float": "left"},
+                                onclick: () => app.addGroup(false)
                             },
-                            "Group"
+                            'Group'
                         ),
 
                         m("button.btn.btn-default.ladda-button[data-spinner-color='#818181'][type='button']", {

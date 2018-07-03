@@ -41,17 +41,24 @@ export default class SaveQuery {
         let {preferences} = vnode.attrs;
 
         let format = (text) => m('[style=margin-left:1em;text-align:left;word-break:break-all;width:100%]', text);
+        let warn = (text) => m('[style=color:#dc3545;display:inline-block;margin-left:1em;]', text);
 
         let tableData = {
             'Name': m(TextField, {
                 value: preferences['name'] || '',
                 class: (preferences['name'] || '').length === 0 && ['required-form'],
-                oninput: (value) => {this.saved = false; preferences['name'] = value;}
+                oninput: (value) => {
+                    this.saved = false;
+                    preferences['name'] = value;
+                }
             }),
             'Description': m(TextField, {
                 value: preferences['description'] || '',
                 class: (preferences['description'] || '').length === 0 && ['required-form'],
-                oninput: (value) => {this.saved = false; preferences['description'] = value;}
+                oninput: (value) => {
+                    this.saved = false;
+                    preferences['description'] = value;
+                }
             }),
             'Save to Dataverse': m(ButtonRadio, {
                 id: 'modeButtonBar',
@@ -66,14 +73,14 @@ export default class SaveQuery {
             }),
             'Username': format([
                 preferences['username'],
-                preferences['username'] === undefined && m('[style=color:#dc3545;display:inline-block;margin-left:1em;]', 'Please log in to save queries.')]),
+                preferences['username'] === undefined && warn('Please log in to save queries.')]),
             'Dataset': format(preferences['dataset']),
             'Result Count': format([
                 preferences['result_count'],
-                preferences['result_count'] === 0 && m('[style=color:#dc3545;display:inline-block;margin-left:1em;]', 'The query does not match any data.')]),
+                preferences['result_count'] === 0 && warn('The query does not match any data.')]),
             'Query': format([
                 preferences['query'],
-                preferences['query'] === '{}' && m('[style=color:#dc3545;display:inline-block;margin-left:1em;]', "The query is trivial. Please subset the data. Did you click 'update' first?")])
+                app.abstractQuery.filter(branch => branch.type !== 'query').length !== 0 && warn('Take note that subsets that are not grouped under a query are not included. Click update in the query summary to group them under a query.')])
         };
 
         let invalids = {
@@ -88,7 +95,7 @@ export default class SaveQuery {
         };
 
         let disabled = this.saved || !Object.keys(invalids).map(key =>
-            key in preferences && preferences[key] !== undefined && invalids[key] !== preferences[key]).every(_=>_);
+            key in preferences && preferences[key] !== undefined && invalids[key] !== preferences[key]).every(_ => _);
 
         return m('div',
             m(Button, {

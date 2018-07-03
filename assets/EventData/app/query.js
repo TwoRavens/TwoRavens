@@ -22,6 +22,8 @@ export function submitQuery(datasetChanged = false) {
         }
     }
 
+    console.log(JSON.stringify(app.abstractQuery));
+
     if (!newSubsets && !datasetChanged) {
         alert("Nothing has been staged yet! Stage your preferences before subset.");
         return;
@@ -94,7 +96,7 @@ export function submitQuery(datasetChanged = false) {
             'countRecords': true
         },
         method: 'POST'
-    }).then(submitQueryCallback) // TODO re-enable catch after debugging. Possibly make this one custom/explicit because tracking this down is annoying .catch(app.laddaStop);
+    }).then(submitQueryCallback).catch(app.laddaStop)
 }
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     
 // Recursively traverse the tree in the right panel. For each node, call processNode

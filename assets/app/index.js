@@ -31,7 +31,8 @@ import Modal from '../common/app/views/Modal';
 
 
 // EVENTDATA
-import Body_EventData from '../EventData/app/Body_EventData'
+import Body_EventData from '../EventData/app/Body_EventData';
+import Peek_EventData from '../common-eventdata/views/Peek';
 import '../EventData/css/app.css'
 import '../EventData/app/app'
 
@@ -624,11 +625,11 @@ class Body {
 }
 
 if (IS_EVENTDATA_DOMAIN) {
-    m.route(document.body, '/datasets', {
-        '/datasets': {render: () => m(Body_EventData, {mode: 'datasets'})},
+    m.route(document.body, '/home', {
+        '/home': {render: () => m(Body_EventData, {mode: 'home'})},
         '/subset': {render: () => m(Body_EventData, {mode: 'subset'})},
         '/aggregate': {render: () => m(Body_EventData, {mode: 'aggregate'})},
-        '/data': {render: () => m(Peek, {image: '/static/images/TwoRavens.png'})}
+        '/data': {render: () => m(Peek_EventData, {id: 'eventdata', image: '/static/images/TwoRavens.png'})}
     });
 }
 else {

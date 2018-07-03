@@ -34,6 +34,7 @@ export default class CanvasCategoricalGrouped {
         preferences['selections'] = preferences['selections'] || new Set();
         preferences['format'] = preferences['format'] || metadata['formats'][0];
         preferences['plotted_subgroups'] = preferences['plotted_subgroups'] || {};
+        if (!('plotted_grouped' in preferences)) preferences['plotted_grouped'] = true;
 
         if (data.length === 0) return 'No data from ' + metadata['group_by'] + ' is matched.';
 
@@ -126,7 +127,7 @@ export default class CanvasCategoricalGrouped {
 
                 // Global Graph
                 graphContainer(metadata['group_by'],
-                    m(PlotBars, {
+                    preferences['plotted_grouped'] && m(PlotBars, {
                         id: 'barPlotGroups' + subsetName.replace(/[^A-Za-z0-9]/g, ""),
                         margin: {top: 10, right: 30, bottom: 50, left: groupMaxChars * 6 + 20},
                         data: groupData,

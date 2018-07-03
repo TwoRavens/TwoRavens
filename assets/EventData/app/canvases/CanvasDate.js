@@ -105,6 +105,7 @@ export default class CanvasDate {
 
     view(vnode) {
         let {mode, subsetName, data, preferences, redraw, setRedraw} = vnode.attrs;
+        if (Object.keys(preferences).length === 0) this.oncreate(vnode);
 
         preferences['aggregation'] = preferences['aggregation'] || 'None';
 
@@ -143,20 +144,25 @@ export default class CanvasDate {
                 return row.Date >= preferences['userLower'] && row.Date <= preferences['userUpper'];
             });
 
-            let interpolatedMin = {
-                "Date": preferences['userLower'],
-                "Freq": interpolate(allDates, preferences['userLower'])
-            };
-            let interpolatedMax = {
-                "Date": preferences['userUpper'],
-                "Freq": interpolate(allDates, preferences['userUpper'])
-            };
+            if (preferences['userLower'] !== data[0]['Date']) {
+                let interpolatedMin = {
+                    "Date": preferences['userLower'],
+                    "Freq": interpolate(allDates, preferences['userLower'])
+                };
 
-            selectedDates.unshift(interpolatedMin);
-            selectedDates.push(interpolatedMax);
+                selectedDates.unshift(interpolatedMin);
+                allDates.push(interpolatedMin);
+            }
 
-            allDates.push(interpolatedMin);
-            allDates.push(interpolatedMax);
+            if (preferences['userUpper'] !== data[data.length - 1]['Date']) {
+                let interpolatedMax = {
+                    "Date": preferences['userUpper'],
+                    "Freq": interpolate(allDates, preferences['userUpper'])
+                };
+                selectedDates.push(interpolatedMax);
+                allDates.push(interpolatedMax);
+            }
+
             allDates = allDates.sort(dateSort);
 
             dataProcessed = {
@@ -196,7 +202,7 @@ export default class CanvasDate {
                             onblur: function () {
                                 setRedraw(subsetName, true);
                             },
-                            value: d3.timeFormat("%Y-%m-%d")(preferences['userUpper'])
+                            value: d3.timeFormat("%Y-%m-%d")(preferences['userLower'])
                         }),
 
                         // To date

@@ -7,6 +7,7 @@ import * as query from './query';
 import '../../../node_modules/jqtree/tree.jquery.js';
 import '../../../node_modules/jqtree/jqtree.css';
 import '../pkgs/jqtree/jqtree.style.css';
+import {buildSubset} from "./query";
 
 let production = false;
 
@@ -231,18 +232,8 @@ export let abstractQuery = [];
 //     abstractQuery = JSON.parse(localStorage.getItem('abstractQuery'));
 // }
 
-// Don't use constraints outside of submitted queries
-let stagedSubsetData = [];
-for (let child of abstractQuery) {
-    if (child.type === 'query') {
-        stagedSubsetData.push(child)
-    }
-}
-
-// Construct queries for current subset tree
-export let subsetQuery = query.buildSubset(stagedSubsetData);
-
 export function setupBody() {
+
     laddaUpdate = Ladda.create(document.getElementById("btnUpdate"));
     laddaReset = Ladda.create(document.getElementById("btnReset"));
     laddaDownload = Ladda.create(document.getElementById("buttonDownload"));
@@ -252,8 +243,15 @@ export function setupBody() {
 
     resetPeek();
 
+    let stagedSubsetData = [];
+    for (let child of abstractQuery) {
+        if (child.type === 'query') {
+            stagedSubsetData.push(child)
+        }
+    }
+
     let body = {
-        'query': escape(JSON.stringify(subsetQuery)),
+        'query': escape(JSON.stringify(query.buildSubset(stagedSubsetData))),
         'variables': [...selectedVariables],
         'dataset': genericMetadata[selectedDataset]['key'],
         'subsets': Object.keys(genericMetadata[selectedDataset]['subsets'])
@@ -282,10 +280,11 @@ export function toggleVariableSelected(variable) {
 }
 
 // useful for handling request errors
-export function laddaStop() {
+export function laddaStop(err) {
     laddaDownload.stop();
     laddaReset.stop();
     laddaUpdate.stop();
+    console.error(err);
 }
 
 export function download(queryType, dataset, queryMongo) {
@@ -361,8 +360,15 @@ let resetPeek = () => {
     peekIsGetting = false;
 
     // this will cause a redraw in the peek menu
-    localStorage.removeItem('peekTableData');
+    if (localStorage.getItem('peekTableData' + peekId)) {
+        localStorage.removeItem('peekHeader' + peekId);
+        localStorage.removeItem('peekTableHeaders' + peekId);
+        localStorage.removeItem('peekTableData' + peekId);
+    }
+    else updatePeek();
 };
+
+let peekId = 'eventdata';
 
 let peekBatchSize = 100;
 let peekSkip = 0;
@@ -371,27 +377,38 @@ let peekData = [];
 let peekAllDataReceived = false;
 let peekIsGetting = false;
 
-if (selectedMode !== 'peek') {
-    localStorage.setItem('peekHeader', (genericMetadata[selectedDataset] || {})['name']);
-    localStorage.removeItem('peekTableData');
-}
-// localStorage.setItem('peekTableData', JSON.stringify(peekData));
-
 let onStorageEvent = (e) => {
-    if (e.key !== 'peekMore' || peekIsGetting) return;
+    if (e.key !== 'peekMore' + peekId || peekIsGetting) return;
 
-    if (localStorage.getItem('peekMore') === 'true' && !peekAllDataReceived) {
-        localStorage.setItem('peekMore', 'false');
+    if (localStorage.getItem('peekMore' + peekId) === 'true' && !peekAllDataReceived) {
+        localStorage.setItem('peekMore' + peekId, 'false');
         peekIsGetting = true;
         updatePeek();
     }
 };
 
 let updatePeek = async () => {
-    let subsetQuery = query.buildSubset(abstractQuery);
+    if (!selectedDataset) return;
+
+    let stagedSubsetData = [];
+    for (let child of abstractQuery) {
+        if (child.type === 'query') {
+            stagedSubsetData.push(child)
+        }
+    }
+    let subsetQuery = query.buildSubset(stagedSubsetData);
 
     console.log("Peek Update");
     console.log("Query: " + JSON.stringify(subsetQuery));
+
+    let tableHeaders = JSON.stringify(selectedVariables.size
+        ? [...selectedVariables]
+        : genericMetadata[selectedDataset]['columns']);
+
+    if (tableHeaders !== localStorage.getItem('peekTableHeaders' + peekId)) {
+        peekData = [];
+        peekSkip = 0;
+    }
 
     let body = {
         query: JSON.stringify(subsetQuery),
@@ -413,7 +430,6 @@ let updatePeek = async () => {
         method: 'POST'
     });
 
-    console.log(data);
     peekIsGetting = false;
 
     if (data.length === 0) {
@@ -425,11 +441,10 @@ let updatePeek = async () => {
     peekData = peekData.concat(data);
     peekSkip += data.length;
 
-    let tableHeaders = selectedVariables.size ? [...selectedVariables] : genericMetadata[selectedDataset]['columns'];
     // this gets noticed by the peek window
-    localStorage.setItem('peekHeader', selectedDataset);
-    localStorage.setItem('peekTableHeaders', JSON.stringify(tableHeaders));
-    localStorage.setItem('peekTableData', JSON.stringify(peekData));
+    localStorage.setItem('peekHeader' + peekId, selectedDataset);
+    localStorage.setItem('peekTableHeaders' + peekId, tableHeaders);
+    localStorage.setItem('peekTableData' + peekId, JSON.stringify(peekData));
 };
 window.addEventListener('storage', onStorageEvent);
 
@@ -723,8 +738,9 @@ function buttonDelete(id) {
     return "<button type='button' class='btn btn-default btn-xs' style='background:none;border:none;box-shadow:none;float:right;margin-top:2px;height:18px' onclick='callbackDelete(" + String(id) + ")'><span class='glyphicon glyphicon-remove' style='color:#ADADAD'></span></button></div>";
 }
 
+// attached to window due to html injection in jqtree
 window.callbackDelete = function (id) {
-    // noinspection JSJQueryEfficiency
+
     let subsetTree = $('#subsetTree');
     let node = subsetTree.tree('getNodeById', id);
     if (node.type === 'query') {
@@ -747,34 +763,33 @@ window.callbackDelete = function (id) {
         qtree.tree('setState', state);
 
         if (node.type === 'query') {
-
             // Don't use constraints outside of submitted queries
-            stagedSubsetData = [];
+            let stagedSubsetData = [];
             for (let child of abstractQuery) {
                 if (child.type === 'query') {
                     stagedSubsetData.push(child)
                 }
             }
-
-            let subsetQuery = query.buildSubset(stagedSubsetData);
-
-            // console.log(JSON.stringify(subsetQuery));
-            // console.log(JSON.stringify(variableQuery, null, '  '));
-
-            let body = {
-                'query': escape(JSON.stringify(subsetQuery)),
-                'variables': [...selectedVariables],
-                'dataset': selectedDataset,
-                'subsets': Object.keys(genericMetadata[selectedDataset]['subsets'])
-            };
+            let subsetQuery = buildSubset(stagedSubsetData);
+            console.log("Query: " + JSON.stringify(subsetQuery));
 
             laddaUpdate.start();
 
             m.request({
                 url: subsetURL,
-                data: body,
+                data: {
+                    'type': 'summary',
+                    'query': escape(JSON.stringify(subsetQuery)),
+                    'dataset': selectedDataset,
+                    'subset': selectedSubsetName,
+                    'countRecords': true
+                },
                 method: 'POST'
-            }).then(pageSetup).catch(laddaStop);
+            }).then((jsondata) => {
+                jsondata['total'] = jsondata['total'][0];
+                subsetData = {};
+                pageSetup(jsondata);
+            }).catch(laddaStop);
 
             if (abstractQuery.length === 0) {
                 groupId = 1;
@@ -1166,42 +1181,50 @@ function getSubsetPreferences() {
 }
 
 export function reset() {
+
+    let scorchTheEarth = () => {
+        // TAGGED: LOCALSTORE
+        // localStorage.removeItem('selectedVariables');
+        // localStorage.removeItem('abstractQuery');
+        // localStorage.removeItem('nodeId');
+        // localStorage.removeItem('groupId');
+        // localStorage.removeItem('queryId');
+
+        abstractQuery.length = 0;
+        $('#subsetTree').tree('loadData', abstractQuery);
+
+        selectedVariables.clear();
+        reloadRightPanelVariables();
+
+        nodeId = 1;
+        groupId = 1;
+        queryId = 1;
+
+        Object.keys(genericMetadata[selectedDataset]['subsets']).forEach(subset => {
+            subsetPreferences[subset] = {};
+            subsetRedraw[subset] = true
+        });
+    };
+
     // suppress server queries from the reset button when the webpage is already reset
-    let suppress = selectedVariables.size === 0 && abstractQuery.length === 0;
+    if (abstractQuery.length === 0) {
+        scorchTheEarth();
+        return;
+    }
 
-    // TAGGED: LOCALSTORE
-    // localStorage.removeItem('selectedVariables');
-    // localStorage.removeItem('abstractQuery');
-    // localStorage.removeItem('nodeId');
-    // localStorage.removeItem('groupId');
-    // localStorage.removeItem('queryId');
-
-    abstractQuery.length = 0;
-    $('#subsetTree').tree('loadData', abstractQuery);
-
-    selectedVariables.clear();
-    nodeId = 1;
-    groupId = 1;
-    queryId = 1;
-
-    subsetData = {};
-    subsetPreferences = {};
-
-    reloadRightPanelVariables();
-
-    if (!suppress) {
-        let body = {
+    laddaReset.start();
+    m.request({
+        url: subsetURL,
+        data: {
             'query': escape(JSON.stringify({})),
             'dataset': selectedDataset,
             'subset': selectedSubsetName
-        };
-
-        laddaReset.start();
-
-        m.request({
-            url: subsetURL,
-            data: body,
-            method: 'POST'
-        }).then(pageSetup).catch(laddaStop);
-    }
+        },
+        method: 'POST'
+    }).then((jsondata) => {
+        // clear all subset data. Note this is intentionally mutating the object, not rebinding it
+        for (let member in subsetData) delete subsetData[member];
+        scorchTheEarth();
+        pageSetup(jsondata)
+    }).catch(laddaStop);
 }

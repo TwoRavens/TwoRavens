@@ -561,3 +561,28 @@ let unitMeasureTour = {
         }
     ]
 };
+
+export function tourStartSaveQueryEmpty() {
+    hopscotch.endTour(false);
+    hopscotch.startTour(saveQueryTourEmpty)
+}
+
+let saveQueryTourEmpty = {
+    id: "save-query-tour",
+    showPrevButton: true,
+    nextOnTargetClick: true,
+    steps: [
+        {
+            title: "Stage Subset",
+            content: "Before downloading or saving, first stage a subset of the data.",
+            target: "btnStage",
+            placement: "top"
+        },
+        {
+            title: "Update Subset",
+            content: "Then click update to construct a query with any staged subsets. Staged subsets that are not part of a query are not saved or included in the download.",
+            target: "btnUpdate",
+            placement: "left"
+        }
+    ]
+};

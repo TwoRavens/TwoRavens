@@ -57,6 +57,8 @@ export default class CanvasDyad {
 
     view(vnode) {
         let {preferences, metadata, redraw, setRedraw} = vnode.attrs;
+        if (!Object.keys(preferences).length) this.oninit(vnode);
+
         return m("#canvasActor", {style: {height: `calc(100% - ${panelMargin})`}},
             [
                 m("div#actorSelectionDiv", {
