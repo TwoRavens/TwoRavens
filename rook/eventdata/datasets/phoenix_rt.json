@@ -7,19 +7,24 @@
   "subsets": {
     "Actor": {
       "type": "dyad",
+      "measures": [
+        "unit"
+      ],
+      "alignments": [
+        "actor"
+      ],
+      "formats": [
+        "phoenix"
+      ],
       "tabs": {
         "source": {
-          "format": "phoenix",
           "full": "source",
           "filters": [
             "src_agent",
             "src_other_agent",
             "src_actor"
           ],
-          "token_length": 3,
-          "deconstruct": [
-            "src_other_agent"
-          ]
+          "token_length": 3
         },
         "target": {
           "format": "phoenix",
@@ -29,30 +34,47 @@
             "tgt_other_agent",
             "tgt_actor"
           ],
-          "token_length": 3,
-          "deconstruct": [
-            "tgt_other_agent"
-          ]
+          "token_length": 3
         }
       }
     },
     "Action": {
-      "type": "action",
-      "format": "CAMEO root code",
+      "type": "categorical",
+      "measures": [
+        "event"
+      ],
+      "alignments": [
+        "action"
+      ],
+      "formats": [
+        "CAMEO",
+        "root_code",
+        "penta_class",
+        "PLOVER"
+      ],
       "columns": [
-        "root code"
+        "code"
       ]
     },
     "Date": {
       "type": "date",
-      "format": "YYYYMMDD",
+      "measures": [
+        "unit"
+      ],
+      "structure": "point",
       "columns": [
-        "date8"
+        "date8_val"
       ]
     },
     "Location": {
-      "type": "location",
-      "format": "ISO-3",
+      "type": "categorical_grouped",
+      "alignments": [
+        "location"
+      ],
+      "group_by": "region",
+      "formats": [
+        "ISO-3"
+      ],
       "columns": [
         "country_code"
       ]
@@ -60,7 +82,10 @@
     "Coordinates": {
       "type": "coordinates",
       "format": "signed degrees",
-      "columns": []
+      "columns": [
+        "latitude",
+        "longitude"
+      ]
     }
   },
   "columns": [
@@ -88,9 +113,31 @@
     "url",
     "year"
   ],
+  "columns_constructed": [
+    "date8_val"
+  ],
   "alignments": {
     "latitude": "latitude",
-    "longitude": "longitude"
+    "longitude": "longitude",
+    "date8_val": "date"
+  },
+  "formats": {
+    "code": "CAMEO",
+    "quad_class": "penta_class",
+    "root_code": "root_code",
+    "source": "phoenix",
+    "src_actor": "phoenix",
+    "src_agent": "phoenix",
+    "src_other_agent": "phoenix",
+    "target": "phoenix",
+    "tgt_actor": "phoenix",
+    "tgt_agent": "phoenix",
+    "tgt_other_agent": "phoenix",
+    "country_code": "ISO-3"
+  },
+  "deconstruct": {
+    "src_other_agent": ";",
+    "tgt_other_agent": ";"
   },
   "citations": [
     {

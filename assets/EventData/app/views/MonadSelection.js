@@ -124,18 +124,20 @@ export default class MonadSelection {
             'data-toggle': 'popover',
             'data-placement': 'right',
             'data-trigger': 'hover',
-            'onmouseover': function(e) {
+            'onmouseover': function (e) {
                 e.redraw = false;
-                let translation = metadata['token_length']
-                    ? value.match(new RegExp(`.{${metadata['token_length']}}`, 'g'))
-                        .map(token => app.formattingData[app.genericMetadata[app.selectedDataset]['formats'][column]][token] || '?').join(' ')
-                    : app.formattingData[app.genericMetadata[app.selectedDataset]['formats'][column]][value];
+                let translation = !value
+                    ? ''
+                    : 'token_length' in metadata
+                        ? value.match(new RegExp(`.{${metadata['token_length']}}`, 'g'))
+                            .map(token => app.formattingData[app.genericMetadata[app.selectedDataset]['formats'][column]][token] || '?').join(' ')
+                        : app.formattingData[app.genericMetadata[app.selectedDataset]['formats'][column]][value];
                 if (translation) {
                     $(this).attr('data-content', translation);
                     setTimeout(() => $(this).popover("show"), 200);
                 }
             },
-            'onmouseout': function(e) {
+            'onmouseout': function (e) {
                 e.redraw = false;
                 setTimeout(() => $(".popover").remove(), 200);
             }

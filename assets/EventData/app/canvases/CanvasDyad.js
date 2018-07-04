@@ -56,7 +56,7 @@ export default class CanvasDyad {
 
 
     view(vnode) {
-        let {preferences, metadata, redraw, setRedraw} = vnode.attrs;
+        let {mode, preferences, metadata, redraw, setRedraw} = vnode.attrs;
         if (!Object.keys(preferences).length) this.oninit(vnode);
 
         return m("#canvasActor", {style: {height: `calc(100% - ${panelMargin})`}},
@@ -147,7 +147,9 @@ export default class CanvasDyad {
                 style: {"width": "calc(100% - 10px)", 'margin-left': '5px', 'margin-bottom': 0, 'height': '22px'}
             }),
 
-            m("#fullContainer", m(`.actorTabContent#actorDiv`,
+            m("#fullContainer", m(`.actorTabContent#actorDiv`, {
+                    style: {height: mode === 'subset' ? '100%' : 'calc(100% - 25px)'}
+                },
                 m(MonadSelection, {
                     subsetName: subsetName,
                     data: data[preferences['current_tab']],

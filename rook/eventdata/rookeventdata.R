@@ -82,7 +82,7 @@ eventdata.app <- function(env) {
 
     genericErrorHandler = function(err) {
         print(err, quote = FALSE)
-        return(data);
+        return(list("internal error"))
     }
 
     getData = function(type, query, key=NULL) {
@@ -107,14 +107,16 @@ eventdata.app <- function(env) {
 
         if (datasetMetadata$host == 'UTDallas') {
             url = paste(EVENTDATA_PRODUCTION_SERVER_ADDRESS, EVENTDATA_SERVER_API_KEY, "&datasource=", dataset, sep = "")
+            query_escaped = Rook::Utils$escape(query)
             if (type == 'find') {
-                data = readLines(paste(url, '&query=', query, sep = ""), warn = FALSE)
+                data = readLines(paste(url, '&query=', query_escaped, sep = ""), warn = FALSE)
             }
             if (type == 'aggregate') {
-                data = readLines(paste(url, '&aggregate=', query, sep = ""), warn = FALSE)
+                # print(paste(url, '&aggregate=', query_escaped, sep = ""), quote=FALSE)
+                data = readLines(paste(url, '&aggregate=', query_escaped, sep = ""), warn = FALSE)
             }
             if (type == 'distinct') {
-                data = readLines(paste(url, '&query=', query, '&unique=', key, sep = ""), warn = FALSE)
+                data = readLines(paste(url, '&query=', query_escaped, '&unique=', key, sep = ""), warn = FALSE)
             }
             tryCatch({
                 return(jsonlite::fromJSON(data)$data)

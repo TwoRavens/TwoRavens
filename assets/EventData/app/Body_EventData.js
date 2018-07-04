@@ -161,7 +161,7 @@ export default class Body_EventData {
                     class: ['btn-sm'],
                     onclick: () => {
                         if (app.abstractQuery.length === 0) tour.tourStartSaveQueryEmpty();
-                        else app.setDisplayModal(true)
+                        else app.setShowSaveQuery(true)
                     }, style: {'margin-top': '4px'}
                 }, 'Save'),
 
@@ -449,13 +449,33 @@ export default class Body_EventData {
     view(vnode) {
         let {mode} = vnode.attrs;
 
+        let logLength = app.alignmentLog.length + app.preferencesLog.length + app.variablesLog.length;
         return m('main#EventData',
 
-            app.selectedMode !== 'Home' && m(ModalVanilla, {
+            app.showSaveQuery && app.selectedMode !== 'Home' && m(ModalVanilla, {
                 id: 'SaveQuery',
-                display: app.displayModal,
-                setDisplay: app.setDisplayModal,
+                setDisplay: app.setShowSaveQuery,
                 contents: m(SaveQuery, {preferences: app.saveQuery[app.selectedMode]})
+            }),
+
+            app.showAlignmentLog && logLength !== 0 && m(ModalVanilla, {
+                id: 'AlignmentLog',
+                setDisplay: app.setShowAlignmentLog,
+                contents: [
+                    m('div[style=font-weight:bold]', 'Re-alignment from ' + app.previousSelectedDataset + ' to ' + app.selectedDataset),
+                    app.alignmentLog.length !== 0 && [
+                        m('div', 'Query re-alignments:'),
+                        m('ul', app.alignmentLog.map(log => m('li', log)))
+                    ],
+                    app.preferencesLog.length !== 0 && [
+                        m('div', 'Subset menu re-alignments:'),
+                        m('ul', app.preferencesLog.map(log => m('li', log)))
+                    ],
+                    app.variablesLog.length !== 0 && [
+                        m('div', 'Variable re-alignments:'),
+                        m('ul', app.variablesLog.map(log => m('li', log)))
+                    ]
+                ]
             }),
 
             this.header(),
