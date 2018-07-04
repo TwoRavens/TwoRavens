@@ -119,8 +119,12 @@ def api_search(request):
                        error=get_json_error(json_req_obj))
         return JsonResponse(usr_msg)
 
+    # check if json is empty
     count = 0
     for key in json_req_obj:
+        if count > 1:
+            # avoid a long running loop
+            break
         count += 1
     if count == 0:
         user_msg = dict(success=False,
@@ -128,6 +132,7 @@ def api_search(request):
                         errors='zero parameters given')
         return JsonResponse(user_msg)
 
+    # check if input contains correct search parameters
     for key in json_req_obj:
         if key not in SEARCH_PARAMETERS:
             user_msg = dict(success=False,
@@ -135,6 +140,7 @@ def api_search(request):
                             errors=' %s in not valid input, Valid input is among %s' % (key, SEARCH_PARAMETERS))
             return JsonResponse(user_msg)
 
+    # check if the form is valid
     frm = EventDataQueryFormSearch(json_req_obj)
 
     if not frm.is_valid():
@@ -144,20 +150,20 @@ def api_search(request):
                         errors=frm.errors)
         return JsonResponse(user_msg)
 
-    if 'name' not in json_req_obj:
+    if 'name' not in frm.cleaned_data:
         name = None
     else:
-        name = json_req_obj['name']
+        name = frm.cleaned_data['name']
 
-    if 'description' not in json_req_obj:
+    if 'description' not in frm.cleaned_data:
         description = None
     else:
-        description = json_req_obj['description']
+        description = frm.cleaned_data['description']
 
-    if 'username' not in json_req_obj:
+    if 'username' not in frm.cleaned_data:
         username = None
     else:
-        username = json_req_obj['username']
+        username = frm.cleaned_data['username']
 
     filters = {'description__icontains': description,
                'name__icontains': name,
