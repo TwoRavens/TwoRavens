@@ -1,5 +1,9 @@
 source("rookconfig.R")
 
+library(jsonlite)
+library(rjson)
+library(mongolite)
+
 eventdata.app <- function(env) {
 
     production = EVENTDATA_PRODUCTION_MODE     ## Toggle:  TRUE - Production, FALSE - Local Development

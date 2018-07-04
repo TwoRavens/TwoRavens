@@ -22,7 +22,8 @@ RUN apt-get update && \
     apt-get -y install libxml2-dev && \
     apt-get -y install libssh2-1-dev && \
     apt-get -y install libssl-dev && \
-    apt-get -y install libcurl4-openssl-dev
+    apt-get -y install libcurl4-openssl-dev && \
+    apt-get -y install libsasl2-dev
 
 # -------------------------------------
 # Install R packages for TwoRavens
@@ -51,6 +52,6 @@ RUN  R -e 'install.packages("Rcpp", repos="http://cran.rstudio.org")' && \
 # -------------------------------------
 # another package...
 # -------------------------------------
-RUN R -e 'install.packages("future", repos="http://cran.rstudio.org")'
+RUN R -e 'install.packages("mongolite", repos="http://cran.rstudio.org")'
 
 EXPOSE 8000
