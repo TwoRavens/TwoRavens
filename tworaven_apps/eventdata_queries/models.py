@@ -26,6 +26,12 @@ TYPE_CHOICES = [(x,x) for x in TYPE_OPTIONS]
 STATUS_CHOICES = [(x, x) for x in STATUS_STATES]
 # Create your models here.
 
+NAME = u'name'
+DESC = u'description'
+USERNAME = u'username'
+
+SEARCH_PARAMETERS = (NAME, DESC, USERNAME)
+
 
 class EventDataSavedQuery(TimeStampedModel):
     """ Model to store queries"""

@@ -16,7 +16,8 @@ from tworaven_apps.utils.basic_response import (ok_resp,
                                                 err_resp,
                                                 err_resp_with_data)
 from tworaven_apps.eventdata_queries.event_job_util import EventJobUtil
-from tworaven_apps.eventdata_queries.forms import (EventDataSavedQueryForm)
+from tworaven_apps.eventdata_queries.forms import (EventDataSavedQueryForm, EventDataQueryFormSearch)
+from tworaven_apps.eventdata_queries.models import (SEARCH_PARAMETERS)
 
 
 # Create your views here.
@@ -118,10 +119,30 @@ def api_search(request):
                        error=get_json_error(json_req_obj))
         return JsonResponse(usr_msg)
 
-    # print(json_req_obj)
-    name = None
-    description = None
-    username = None
+    count = 0
+    for key in json_req_obj:
+        count += 1
+    if count == 0:
+        user_msg = dict(success=False,
+                        message='Invalid Input',
+                        errors='zero parameters given')
+        return JsonResponse(user_msg)
+
+    for key in json_req_obj:
+        if key not in SEARCH_PARAMETERS:
+            user_msg = dict(success=False,
+                            message='Invalid Input',
+                            errors=' %s in not valid input, Valid input is among %s' % (key, SEARCH_PARAMETERS))
+            return JsonResponse(user_msg)
+
+    frm = EventDataQueryFormSearch(json_req_obj)
+
+    if not frm.is_valid():
+        print(" frm error ")
+        user_msg = dict(success=False,
+                        message='Invalid input',
+                        errors=frm.errors)
+        return JsonResponse(user_msg)
 
     if 'name' not in json_req_obj:
         name = None
