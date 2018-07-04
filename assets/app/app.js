@@ -150,7 +150,7 @@ export let modelRightPanelWidths = {
     'Subtype': '300px',
     'Metrics': '300px',
     //     'Set Covar.': '900px',
-    'Results': '300px'
+    'Results': '900px'
 };
 
 export let exploreRightPanelWidths = {
@@ -2492,29 +2492,17 @@ export async function estimate(btn) {
                             //res11 = await makeRequest(D3M_SVC_URL + '/GetScoreSolutionResults', {requestId: scoreId});
 
                             if(typeof res10.data.requestId != 'undefined'){
-                                console.log(res10.data.requestId);
                                 let scoreId = res10.data.requestId;
                                 res11 = await makeRequest(D3M_SVC_URL + '/GetScoreSolutionResults', {requestId: scoreId});
-                                console.log("This is res11");
-                                console.log(res11);
                                 scoreDetailsUrl = res11.data.details_url;  //responses.list[0].details_url;
-                                console.log("this is scoreDetailsUrl: " + scoreDetailsUrl);
                             };
 
-
-
                             if(fitFlag){
-                                res5 = await makeRequest(D3M_SVC_URL + '/FitSolution', CreateFitDefinition(solutionId));
-                                console.log("This is res5:")
-                                console.log(res5);
-                           
+                                res5 = await makeRequest(D3M_SVC_URL + '/FitSolution', CreateFitDefinition(solutionId));                           
                                 if(typeof res5.data.requestId != 'undefined'){
-                                    console.log(res5.data.requestId);
-                                    fittedId = res5.data.requestId;
-                            
+                                    fittedId = res5.data.requestId;                            
                                     res6 = await makeRequest(D3M_SVC_URL + `/GetFitSolutionResults`, {requestId: fittedId});
                                     fittedDetailsUrl = res6.data.details_url;
-                                    console.log("this is fittedDetailsUrl: " + fittedDetailsUrl);
                                 };
                             };
                         };
@@ -2570,11 +2558,11 @@ export async function estimate(btn) {
 }
 
 
-
+// This appears not to be used:
 /** needs doc */
-export function ta2stuff() {
-    console.log(d3mProblemDescription);
-}
+//export function ta2stuff() {
+//    console.log(d3mProblemDescription);
+//}
 
 /** needs doc */
 async function dataDownload() {
@@ -4108,18 +4096,13 @@ export function setxTable(features) {
 // }
 
 export async function exportpipeline(pipelineId) {
-
     let finalFittedId, finalFittedDetailsUrl;
     let res, res8;
 
     let res5 = await makeRequest(D3M_SVC_URL + '/FitSolution', CreateFitDefinition(pipelineId));
-    console.log("This is res5:")
-    console.log(res5);
     let fittedId = res5.data.requestId;
     let res6 = await makeRequest(D3M_SVC_URL + `/GetFitSolutionResults`, {requestId: fittedId});
     let fittedDetailsUrl = res6.data.details_url;
-    console.log("this is fittedDetailsUrl: " + fittedDetailsUrl);
-
     let fittingIntervalId = setInterval(async function() {
         let res7 = await updateRequest(fittedDetailsUrl);   // check
         if(typeof res7.data.is_finished != 'undefined'){
@@ -4132,19 +4115,18 @@ export async function exportpipeline(pipelineId) {
 
                 // we need standardized status messages...
                 let mystatus = res.status;
+                console.log(res);
                 if (typeof mystatus !== 'undefined') {
                 if(mystatus.code=="FAILED_PRECONDITION") {
                     console.log("TA2 has not written the executable.");    // was alert(), but testing on NIST infrastructure suggests these are getting written but triggering alert.
                 }
                 else {
-                    console.log(`Executable for ${pipelineId} has been written`);
+                    console.log(`Executable for solution ${pipelineId} with fittedsolution ${finalFittedId} has been written`);
                 }}
-
                 clearInterval(fittingIntervalId); 
             };
         };            
     }, 500);
-
     return res;
 }
 
