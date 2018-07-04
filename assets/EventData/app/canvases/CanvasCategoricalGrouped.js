@@ -36,7 +36,7 @@ export default class CanvasCategoricalGrouped {
         preferences['plotted_subgroups'] = preferences['plotted_subgroups'] || {};
         if (!('plotted_grouped' in preferences)) preferences['plotted_grouped'] = true;
 
-        if (data.length === 0) return 'No data from ' + metadata['group_by'] + ' is matched.';
+        if (data.length === 0) return 'No data from "' + metadata['group_by'] + '" is matched.';
 
         let flattenedData = data.reduce((out, entry) => {
             out[entry[masterFormat.replace('-', '.')]] = entry['total'];

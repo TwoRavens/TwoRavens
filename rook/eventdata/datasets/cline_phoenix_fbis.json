@@ -7,8 +7,10 @@
   "host": "TwoRavens",
   "subsets": {
     "Actor": {
-      "measures": ["unit"],
       "type": "dyad",
+      "measures": [
+        "unit"
+      ],
       "alignments": [
         "actor"
       ],
@@ -37,8 +39,10 @@
       }
     },
     "Action": {
-      "measures": ["event"],
       "type": "categorical",
+      "measures": [
+        "event"
+      ],
       "alignments": [
         "action"
       ],
@@ -53,8 +57,10 @@
       ]
     },
     "Date": {
-      "measures": ["unit"],
       "type": "date",
+      "measures": [
+        "unit"
+      ],
       "structure": "point",
       "columns": [
         "story_date_constructed"
@@ -120,8 +126,10 @@
     "code": "CAMEO",
     "quad_class": "penta_class",
     "root_code": "root_code",
+    "source": "phoenix",
     "source_agent": "phoenix",
     "source_root": "phoenix",
+    "target": "phoenix",
     "target_agent": "phoenix",
     "target_root": "phoenix",
     "country_constructed": "ISO-3"

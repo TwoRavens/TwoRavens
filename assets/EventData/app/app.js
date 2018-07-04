@@ -57,8 +57,8 @@ export let setCanvasRedraw = (canvas, value) => canvasRedraw[canvas] = value || 
 export let setLeftTab = (tab) => leftTab = tab;
 export let leftTab = 'Subsets';
 
-export let displayModal = false;
-export let setDisplayModal = (state) => displayModal = state;
+export let showSaveQuery = false;
+export let setShowSaveQuery = (state) => showSaveQuery = state;
 
 // stores user info for the save query modal menu. Subset and aggregate are separate
 export let saveQuery = {
@@ -92,10 +92,24 @@ export let tableHeight = '20%';
 
 export let selectedDataset;
 export let setSelectedDataset = (key) => {
-    // trigger reloading of necessary menu elements
-    if (key !== selectedDataset) subsetData = {};
-
+    previousSelectedDataset = selectedDataset;
     selectedDataset = key;
+
+    if (previousSelectedDataset !== undefined && previousSelectedDataset !== selectedDataset)  {
+        // trigger reloading of necessary menu elements
+        subsetData = {};
+
+        // this modifies the abstract query, preferences, selected vars to be compatible with the new dataset
+        alignmentLog = query.realignQuery(previousSelectedDataset, selectedDataset);
+        preferencesLog = query.realignPreferences(previousSelectedDataset, selectedDataset);
+        variablesLog = query.realignVariables(previousSelectedDataset, selectedDataset);
+
+        let subsetTree = $('#subsetTree');
+        let state = subsetTree.tree('getState');
+        subsetTree.tree('loadData', abstractQuery);
+        subsetTree.tree('setState', state);
+        showAlignmentLog = true;
+    }
 
     // ensure each subset has a place to store settings
     Object.keys(genericMetadata[selectedDataset]['subsets']).forEach(subset => {
@@ -103,7 +117,7 @@ export let setSelectedDataset = (key) => {
     });
 
     Object.keys(unitMeasure).forEach(unit => {
-        if (!(unit in genericMetadata[selectedDataset]['subsets']) || !('measure' in genericMetadata[selectedDataset['subsets'][unit]]))
+        if (!(unit in genericMetadata[selectedDataset]['subsets']) || !('measure' in genericMetadata[selectedDataset]['subsets'][unit]))
             delete unitMeasure[unit];
     });
     setEventMeasure(undefined);
@@ -113,6 +127,13 @@ export let setSelectedDataset = (key) => {
 
     resetPeek();
 };
+
+export let previousSelectedDataset;
+export let showAlignmentLog = false;
+export let setShowAlignmentLog = (state) => showAlignmentLog = state;
+export let alignmentLog = [];
+export let preferencesLog = [];
+export let variablesLog = [];
 
 let modeTypes = ['home', 'subset', 'aggregate'];
 export let selectedMode = 'home';
@@ -220,8 +241,13 @@ export let laddaReset;
 export let laddaDownload;
 
 export let selectedVariables = new Set();
+export let setSelectedVariables = (vars) => {
+    selectedVariables = vars;
+    reloadRightPanelVariables();
+};
 
 export let abstractQuery = [];
+export let setAbstractQuery = (query) => abstractQuery = query;
 
 // TAGGED: LOCALSTORE
 // // Attempt to load stored settings

@@ -16,6 +16,7 @@ export default class CanvasCategorical {
         preferences['format'] = preferences['format'] || masterFormat;
         preferences['selections'] = preferences['selections'] || new Set();
 
+        if (data.length === 0) return 'No data from "' + app.coerceArray(metadata['columns'])[0] + '" is matched.';
         let allSelected = {};
 
         let flattenedData = data.reduce((out, entry) => {

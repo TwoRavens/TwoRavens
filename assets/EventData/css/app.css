@@ -628,6 +628,7 @@ main#EventData .actorBottomTry {
     width: 398px;
     bottom: 12px;
     position: absolute;
+    margin-left: 1px;
 }
 main#EventData .actorNewGroup {
     float: right;
