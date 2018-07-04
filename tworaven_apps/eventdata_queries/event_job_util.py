@@ -45,7 +45,7 @@ class EventJobUtil(object):
     def get_list_all():
         """get all the jobs"""
         job = EventDataSavedQuery()
-        success, get_list_obj = job.get_all_objects()
+        success, get_list_obj = job.get_all_fields_except_query_list()
 
         if success:
             return ok_resp(get_list_obj)

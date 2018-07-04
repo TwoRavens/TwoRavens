@@ -73,7 +73,8 @@ def api_get_list(request):
     else:
         job_list = []
         for job in jobs:
-            job_list.append(job.as_dict())
+            # print("list : ",job)
+            job_list.append(job)
 
         usr_msg = dict(success=True,
                        message='list retrieved',
@@ -145,7 +146,7 @@ def api_search(request):
     job_list = []
     if success:
         for job in get_list_obj:
-            job_list.append(job.as_dict())
+            job_list.append(job)
         user_msg = dict(success=True,
                         message='list retrieved',
                         data=job_list)
