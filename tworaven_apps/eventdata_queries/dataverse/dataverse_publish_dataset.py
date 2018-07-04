@@ -25,7 +25,7 @@ class DataversePublishDataset(object):
         self.res = None
         dataverse_server = DATAVERSE_SERVER  # no trailing slash
         api_key = DATAVERSE_API_KEY  # generated from kripanshu's account
-        dataset_id = 1  # database id of the dataset
+        dataset_id = 3178257  # database id of the dataset
         persistentId = DATASET_PERSISTENT_ID  # doi or hdl of the dataset
 
         type_input = 'major'    # for testing
@@ -39,6 +39,10 @@ class DataversePublishDataset(object):
         #                type_input,
         #                persistentId,
         #                api_key)
+
+        # Get JSON Representation of a Dataset
+        # publish_url = '%s/api/datasets/:persistentId/?persistentId=%s'% (dataverse_server,
+        #                                                                 persistentId)
 
         print('-' * 40)
         print('making request: %s' % publish_url)
