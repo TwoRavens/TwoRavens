@@ -4402,9 +4402,9 @@ export async function submitDiscProb() {
         //let res2 = await makeRequest(D3M_SVC_URL + '/store-user-problem', {file: filename_ps, data: problemProblemSchema } );
     }
 
-    console.log(outputCSV);
     // write the CSV file requested by NIST that describes properties of the solutions
-    //let res3 = await makeRequest(D3M_SVC_URL + '/store-user-problem', {file: 'labels.csv', data: outputCSV});
+    console.log(outputCSV);
+    let res3 = await makeRequest(D3M_SVC_URL + '/store-user-problem', {file: 'labels.csv', data: outputCSV});
 
     discoveryLadda.stop();
     // change status of buttons for estimating problem and marking problem as finished
