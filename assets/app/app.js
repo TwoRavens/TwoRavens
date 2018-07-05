@@ -233,6 +233,9 @@ export let allPipelineInfo = {};
 export let pipelineHeader = ['Hidden_UID', 'PipelineID', 'Metric', 'Score'];
 export let pipelineTable = [];
 
+export let discoveryHeader = ['problem_id', 'system', 'meaningful'];
+export let discoveryTable = [];
+
 export let logArray = [];
 export let zparams = {
     zdata: [],
@@ -4317,12 +4320,16 @@ export function discovery(preprocess_file) {
         let current_rating = 3;
         let current_description = current_target + " is predicted by " + current_predictors.join(" and ");
         let current_metric = node.plottype === "bar" ? 'f1Macro' : 'meanSquaredError';
-        let current_disco = {target: current_target, predictors: current_predictors, task: current_task, rating: current_rating, description: current_description, metric: current_metric};
+        let current_id = "problem" + (i+1);
+        let current_disco = {problem_id: current_id, system: "auto", meaningful: "no", target: current_target, predictors: current_predictors, task: current_task, rating: current_rating, description: current_description, metric: current_metric, };
         //jQuery.extend(true, current_disco, names);
         disco[i] = current_disco;
     };
     /* Problem Array of the Form:
-        [1: {target:"Home_runs",
+        [1: {problem_id: "problem 1",       
+            system: "auto",
+            meaningful: "no",
+            target:"Home_runs",
             predictors:["Walks","RBIs"],
             task:"regression",
             rating:5,
@@ -4347,7 +4354,13 @@ export let setCheckedDiscoveryProblem = (status, problem) => {
 
 export async function submitDiscProb() {
     discoveryLadda.start();
+
+    let outputCSV = "problem_id, system, meaningful \n";
+
     for(let i = 0; i < disco.length; i++) {
+
+        outputCSV = outputCSV + disco[i].problem_id + ", \"" + disco[i].system + "\", \"" + disco[i].meaningful + "\"\n";
+
         if(!checkedDiscoveryProblems.has(i)) continue;
         //createpipeline call
         console.log(disco);
@@ -4359,6 +4372,10 @@ export async function submitDiscProb() {
             let res = await makeRequest(D3M_SVC_URL + '/write-user-problem', CreatePipelineData(disco[i].predictors, [disco[i].target], aux));
       //  }
     }
+
+    console.log(outputCSV);
+    // write the CSV file requested by NIST that describes properties of the solutions
+    let res2 = await makeRequest(D3M_SVC_URL + '/store-user-problem', {file: 'labels.csv', data: outputCSV});
 
     discoveryLadda.stop();
     // change status of buttons for estimating problem and marking problem as finished
