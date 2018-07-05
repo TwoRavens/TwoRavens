@@ -2215,7 +2215,7 @@ function CreatePipelineData(predictors, depvar, aux) {
     }
 }
 
-// Update of old CreatePipelineData function that creates problem definition.
+// Update of old CreatePipelineData function that creates problem definition for SearchSolutions call.
 function CreateProblemDefinition(depvar, aux) {
    
     let targetFeatures = [{ 'resource_id': "0", 'feature_name': depvar[0] }];    // not presently being used in this function
@@ -2234,37 +2234,37 @@ function CreateProblemDefinition(depvar, aux) {
         };
         let my_inputs =  [
             {
-                "datasetId": datadocument.about.datasetID,
-                "targets": [
+                datasetId: datadocument.about.datasetID,
+                targets: [
                     {
-                        "resourceId": "0",
-                        "columnIndex": valueKey.indexOf(my_target) - 1,  // the -1 is to make zero indexed
-                        "columnName": my_target
+                        resourceId: '0',
+                        columnIndex: valueKey.indexOf(my_target) - 1,  // the -1 is to make zero indexed
+                        columnName: my_target
                     }
                 ]}];
         console.log(my_problem);
         console.log("valueKey");
         console.log(valueKey);
         return {problem: my_problem, inputs: my_inputs};
-    } else { //creating pipeline data for problem discovery using aux inputs
+    } else { //creating pipeline data for problem discovery using aux inputs from disco line
 
         let my_problem = {
-            id: "id-of-this-problem",
-            version: "version of problem",
-            name: "name of the problem",
+            id: aux.problem_id,
+            version: '1.0',
+            name: aux.problem_id,
             description: aux.description,
-            taskType: aux.task,
-            taskSubtype: "TASK_SUBTYPE_UNDEFINED",
-            performanceMetrics: [{metric: d3mMetrics[d3mProblemDescription.performanceMetrics[0].metric][1]}]  // need to generalize to case with multiple metrics.  only passes on first presently.
+            taskType: d3mTaskType[aux.task][1],
+            taskSubtype: 'TASK_SUBTYPE_UNDEFINED',
+            performanceMetrics: [{metric: d3mMetrics[aux.metric][1]}]  // need to generalize to case with multiple metrics.  only passes on first presently.
         };
         let my_inputs =  [
             {
-                "datasetId": datadocument.about.datasetID,
-                "targets": [
+                datasetId: datadocument.about.datasetID,
+                targets: [
                     {
-                        "resourceId": "0",
-                        "columnIndex": valueKey.indexOf(my_target) - 1,  // the -1 is to make zero indexed
-                        "columnName": my_target
+                        resourceId: '0',
+                        columnIndex: valueKey.indexOf(my_target) - 1,  // the -1 is to make zero indexed
+                        columnName: my_target
                     }
                 ]}];
         return {my_problem, my_inputs};
@@ -2272,36 +2272,67 @@ function CreateProblemDefinition(depvar, aux) {
     }
 }
 
-function CreatePipelineDefinition(predictors, depvar, aux) {
-    let my_userAgent = "TwoRavens";                             // Get from elsewhere
-    let my_version = "2018.6.2";                                // Get from elsewhere
-    let my_allowedValueTypes = ["DATASET_URI", "CSV_URI"];      // Get from elsewhere
+// Create a problem description that follows the Problem Schema, for the Task 1 output.
+function CreateProblemSchema(aux){
+    let my_target = aux.target;
+
+    let my_about = {
+        problemID: aux.problem_id,
+        problemName: aux.problem_id,
+        problemDescription: aux.description,
+        taskType: d3mTaskType[aux.task][1],
+        problemVersion: '1.0',
+        problemSchemaVersion: '3.1.1'
+    };
+    let my_inputs = {
+        data: [
+            {
+                datasetId: datadocument.about.datasetID,
+                targets: [
+                    {
+                        resourceId: '0',
+                        columnIndex: valueKey.indexOf(my_target) - 1,  // the -1 is to make zero indexed
+                        columnName: my_target
+                    }
+                ]}], 
+        dataSplits: {
+            method: 'holdOut',
+            testSize: 0.2,
+            stratified: true,
+            numRepeats: 0,
+            randomSeed: 123,
+            splitsFile: 'dataSplits.csv'
+            }, 
+        performanceMetrics: [{metric: d3mMetrics[aux.metric][1]}]
+    };
+
+    return {about: my_about, inputs: my_inputs, expectedOutputs: {predictionsFile: 'predictions.csv'}};
+}
+
+function CreatePipelineDefinition(predictors, depvar, timeBound, aux) {
+    let my_timeBound = 1;
+    if(typeof timeBound !== 'undefined'){
+        my_timeBound = timeBound;
+    }
+    let my_userAgent = 'TwoRavens';                             // Get from elsewhere
+    let my_version = '2018.6.2';                                // Get from elsewhere
+    let my_allowedValueTypes = ['DATASET_URI', 'CSV_URI'];      // Get from elsewhere
     let my_problem = CreateProblemDefinition(depvar, aux);
     //console.log(my_problem);
-    let my_dataseturi = "file://" + datasetdocurl;
+    let my_dataseturi = 'file://' + datasetdocurl;
     // console.log(my_dataseturi);
-    return {userAgent: my_userAgent, version: my_version, timeBound: 1, priority: 1, allowedValueTypes: my_allowedValueTypes, problem: my_problem, inputs: [{dataset_uri: my_dataseturi}] };
+    return {userAgent: my_userAgent, version: my_version, timeBound: my_timeBound, priority: 1, allowedValueTypes: my_allowedValueTypes, problem: my_problem, inputs: [{dataset_uri: my_dataseturi}] };
 }
 
 function CreateFitDefinition(solutionId){
     let my_solutionId = solutionId;
-    let my_dataseturi = "file://" + datasetdocurl;
+    let my_dataseturi = 'file://' + datasetdocurl;
     let my_inputs = [{dataset_uri: my_dataseturi}];
     let my_exposeOutputs = [];   // eg. ["steps.3.produce"];  need to fix
-    let my_exposeValueTypes = ["CSV_URI"];
-    let my_users = [{id: "TwoRavens", choosen: false, reason: ""}];
+    let my_exposeValueTypes = ['CSV_URI'];
+    let my_users = [{id: 'TwoRavens', choosen: false, reason: ''}];
     return {solutionId: my_solutionId, inputs: my_inputs, exposeOutputs: my_exposeOutputs, exposeValueTypes: my_exposeValueTypes, users: my_users};
 }
-
-
-//     "configuration": {
-//         "method": "EVALUATION_METHOD_UNDEFINED",
-//         "folds": 0,
-//         "trainTestRatio": 0,
-//         "shuffle": false,
-//         "randomSeed": 0,
-//         "stratified": false
-//     }
 
 function CreateScoreDefinition(res){
     let my_solutionId = res.data.response.solutionId;
@@ -4354,28 +4385,26 @@ export let setCheckedDiscoveryProblem = (status, problem) => {
 
 export async function submitDiscProb() {
     discoveryLadda.start();
-
+    console.log("This is disco");
+    console.log(disco);
     let outputCSV = "problem_id, system, meaningful \n";
 
     for(let i = 0; i < disco.length; i++) {
-
+        // build up the required .csv file line by line
         outputCSV = outputCSV + disco[i].problem_id + ", \"" + disco[i].system + "\", \"" + disco[i].meaningful + "\"\n";
 
-        if(!checkedDiscoveryProblems.has(i)) continue;
-        //createpipeline call
-        console.log(disco);
-        let aux = {"task":d3mTaskType[disco[i].task][1], "metrics":d3mMetrics[disco[i].metric][1], "description":disco[i].description};
-        console.log(aux);
-        // VJD: this is the code to ask TA2 for a single pipeline, to check viability. However, TA2s might not actually handle 'maxpipelines', making this take a very long time to run. Bypassing this for now
-      //  let res = await makeRequest(D3M_SVC_URL + '/CreatePipelines', CreatePipelineData(disco[i].predictors, [disco[i].target], aux)); // creating a single pipeline for a discovered problem, to check viability
-      //  if(res) { // have to check if the response went through ok, this just checks if res exists
-            let res = await makeRequest(D3M_SVC_URL + '/write-user-problem', CreatePipelineData(disco[i].predictors, [disco[i].target], aux));
-      //  }
+        // construct and write out the api call and problem description for each discovered problem
+        let problemApiCall = CreatePipelineDefinition(disco[i].predictors, disco[i].target, 10, disco[i]);
+        let problemProblemSchema = CreateProblemSchema(disco[i]);  
+        let filename_api = disco[i].problem_id + '/ss_api.json'
+        let filename_ps = disco[i].problem_id + '/schema.json'
+        //let res1 = await makeRequest(D3M_SVC_URL + '/store-user-problem', {file: filename_api, data: problemApiCall } );
+        //let res2 = await makeRequest(D3M_SVC_URL + '/store-user-problem', {file: filename_ps, data: problemProblemSchema } );
     }
 
     console.log(outputCSV);
     // write the CSV file requested by NIST that describes properties of the solutions
-    let res2 = await makeRequest(D3M_SVC_URL + '/store-user-problem', {file: 'labels.csv', data: outputCSV});
+    //let res3 = await makeRequest(D3M_SVC_URL + '/store-user-problem', {file: 'labels.csv', data: outputCSV});
 
     discoveryLadda.stop();
     // change status of buttons for estimating problem and marking problem as finished
