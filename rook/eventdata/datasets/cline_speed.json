@@ -8,9 +8,6 @@
   "subsets": {
     "Event Type": {
       "type": "categorical",
-      "formats": [
-        "SPEED_ev_type"
-      ],
       "columns": [
         "EV_TYPE"
       ]
@@ -19,9 +16,6 @@
       "type": "categorical",
       "measures": [
         "event"
-      ],
-      "formats": [
-        "SPEED_posthoc"
       ],
       "columns": [
         "posthoc"
@@ -32,9 +26,6 @@
       "measures": [
         "event"
       ],
-      "formats": [
-        "SPEED_link_type"
-      ],
       "columns": [
         "LINK_TYPE"
       ]
@@ -43,9 +34,6 @@
       "type": "categorical",
       "measures": [
         "event"
-      ],
-      "formats": [
-        "SPEED_loc_type"
       ],
       "columns": [
         "LOC_TYPE"
@@ -56,9 +44,6 @@
       "measures": [
         "event"
       ],
-      "formats": [
-        "SPEED_pe_type"
-      ],
       "columns": [
         "PE_TYPE"
       ]
@@ -67,9 +52,6 @@
       "type": "categorical",
       "measures": [
         "event"
-      ],
-      "formats": [
-        "SPEED_exp_type"
       ],
       "columns": [
         "EXP_TYPE"
@@ -80,9 +62,6 @@
       "measures": [
         "event"
       ],
-      "formats": [
-        "SPEED_sym_type"
-      ],
       "columns": [
         "SYM_TYPE"
       ]
@@ -91,9 +70,6 @@
       "type": "categorical",
       "measures": [
         "event"
-      ],
-      "formats": [
-        "SPEED_ad_viol"
       ],
       "columns": [
         "AD_VIOL"
@@ -104,9 +80,6 @@
       "measures": [
         "event"
       ],
-      "formats": [
-        "SPEED_ad_tact"
-      ],
       "columns": [
         "AD_TACT"
       ]
@@ -115,9 +88,6 @@
       "type": "categorical",
       "measures": [
         "event"
-      ],
-      "formats": [
-        "SPEED_atk_type"
       ],
       "columns": [
         "ATK_TYPE"
@@ -128,9 +98,6 @@
       "measures": [
         "event"
       ],
-      "formats": [
-        "SPEED_dsa_type"
-      ],
       "columns": [
         "DSA_TYPE"
       ]
@@ -139,9 +106,6 @@
       "type": "categorical",
       "measures": [
         "event"
-      ],
-      "formats": [
-        "SPEED_stat_act"
       ],
       "columns": [
         "STAT_ACT"
@@ -152,9 +116,6 @@
       "measures": [
         "event"
       ],
-      "formats": [
-        "SPEED_victim_effect"
-      ],
       "columns": [
         "victim_effect"
       ]
@@ -163,9 +124,6 @@
       "type": "categorical",
       "measures": [
         "event"
-      ],
-      "formats": [
-        "SPEED_weapon"
       ],
       "columns": [
         "weapon"
@@ -176,9 +134,6 @@
       "measures": [
         "event"
       ],
-      "formats": [
-        "SPEED_property_damaged"
-      ],
       "columns": [
         "property_damaged"
       ]
@@ -187,9 +142,6 @@
       "type": "categorical",
       "measures": [
         "event"
-      ],
-      "formats": [
-        "SPEED_property_owner"
       ],
       "columns": [
         "property_owner"
@@ -200,9 +152,6 @@
       "measures": [
         "event"
       ],
-      "formats": [
-        "SPEED_gp_type"
-      ],
       "columns": [
         "GP_TYPE"
       ]
@@ -211,9 +160,6 @@
       "type": "categorical",
       "measures": [
         "event"
-      ],
-      "formats": [
-        "SPEED_know_ini"
       ],
       "columns": [
         "KNOW_INI"
@@ -224,9 +170,6 @@
       "measures": [
         "event"
       ],
-      "formats": [
-        "SPEED_ini_type"
-      ],
       "columns": [
         "INI_TYPE"
       ]
@@ -235,9 +178,6 @@
       "type": "categorical",
       "measures": [
         "event"
-      ],
-      "formats": [
-        "SPEED_tar_type"
       ],
       "columns": [
         "TAR_TYPE"
@@ -248,9 +188,6 @@
       "measures": [
         "event"
       ],
-      "formats": [
-        "SPEED_vic_type"
-      ],
       "columns": [
         "VIC_TYPE"
       ]
@@ -259,9 +196,6 @@
       "type": "categorical",
       "measures": [
         "event"
-      ],
-      "formats": [
-        "SPEED_ngov_i1"
       ],
       "columns": [
         "NGOV_I1"
@@ -272,9 +206,6 @@
       "measures": [
         "event"
       ],
-      "formats": [
-        "SPEED_gov_i1"
-      ],
       "columns": [
         "GOV_I1"
       ]
@@ -283,9 +214,6 @@
       "type": "categorical",
       "measures": [
         "event"
-      ],
-      "formats": [
-        "SPEED_g_lvl"
       ],
       "columns": [
         "G_LVL_I"
@@ -296,9 +224,6 @@
       "measures": [
         "event"
       ],
-      "formats": [
-        "SPEED_g_lvl"
-      ],
       "columns": [
         "G_LVL_T"
       ]
@@ -307,9 +232,6 @@
       "type": "categorical",
       "measures": [
         "event"
-      ],
-      "formats": [
-        "SPEED_g_lvl"
       ],
       "columns": [
         "G_LVL_V"
@@ -380,20 +302,13 @@
     },
     "Location": {
       "type": "categorical_grouped",
-      "alignments": [
-        "location"
-      ],
       "group_by": "region",
-      "formats": [
-        "ISO-3"
-      ],
       "columns": [
         "country_constructed"
       ]
     },
     "Coordinates": {
       "type": "coordinates",
-      "format": "signed degrees",
       "columns": [
         "GP7",
         "GP8"
@@ -522,7 +437,8 @@
   "alignments": {
     "AVERAGE_DATE_constructed": "date",
     "GP7": "latitude",
-    "GP8": "longitude"
+    "GP8": "longitude",
+    "country_constructed": "country"
   },
   "formats": {
     "cowcode": "cowcode",

@@ -241,15 +241,17 @@ eventdata.app <- function(env) {
 
     # Additional metadata
     if (! is.null(everything$alignments)) {
-        summary$alignments = sapply(everything$alignments, function(format) {
-            jsonlite::fromJSON(readLines(paste('./eventdata/alignments/', format, '.json', sep = ""), warn = FALSE))
-        }, simplify = FALSE, USE.NAMES = TRUE)
+        summary$alignments = Filter(Negate(is.null), sapply(everything$alignments, function(format) {
+            filepath = paste('./eventdata/alignments/', format, '.json', sep = "");
+            if (file.exists(filepath)) jsonlite::fromJSON(readLines(filepath, warn = FALSE))
+        }, simplify = FALSE, USE.NAMES = TRUE))
     }
 
     if (! is.null(everything$formats)) {
-        summary$formats = sapply(everything$formats, function(format) {
-            jsonlite::fromJSON(readLines(paste('./eventdata/formats/', format, '.json', sep = ""), warn = FALSE))
-        }, simplify = FALSE, USE.NAMES = TRUE)
+        summary$formats = Filter(Negate(is.null), sapply(everything$formats, function(format) {
+            filepath = paste('./eventdata/formats/', format, '.json', sep = "");
+            if (file.exists(filepath)) jsonlite::fromJSON(readLines(filepath, warn = FALSE))
+        }, simplify = FALSE, USE.NAMES = TRUE))
     }
 
     if (! is.null(everything$countRecords) && everything$countRecords) {

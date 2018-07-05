@@ -8,12 +8,8 @@
   "subsets": {
     "Actor": {
       "type": "dyad",
-      "measures": ["unit"],
-      "alignments": [
-        "actor"
-      ],
-      "formats": [
-        "phoenix"
+      "measures": [
+        "unit"
       ],
       "tabs": {
         "source": {
@@ -38,9 +34,8 @@
     },
     "Action": {
       "type": "categorical",
-      "measures": ["event"],
-      "alignments": [
-        "action"
+      "measures": [
+        "event"
       ],
       "formats": [
         "CAMEO",
@@ -54,7 +49,9 @@
     },
     "Date": {
       "type": "date",
-      "measures": ["unit"],
+      "measures": [
+        "unit"
+      ],
       "structure": "point",
       "columns": [
         "story_date_constructed"
@@ -62,20 +59,13 @@
     },
     "Location": {
       "type": "categorical_grouped",
-      "alignments": [
-        "location"
-      ],
       "group_by": "region",
-      "formats": [
-        "ISO-3"
-      ],
       "columns": [
         "country_constructed"
       ]
     },
     "Coordinates": {
       "type": "coordinates",
-      "format": "signed degrees",
       "columns": [
         "lat",
         "lon"
@@ -112,19 +102,29 @@
     "story_date_constructed"
   ],
   "alignments": {
+    "code": "action",
+    "quad_class": "action",
+    "root_code": "action",
+    "source": "sector",
+    "source_agent": "country",
+    "source_root": "sector",
+    "target": "sector",
+    "target_agent": "country",
+    "target_root": "sector",
+    "story_date_constructed": "date",
     "lat": "latitude",
     "lon": "longitude",
-    "story_date_constructed": "date"
+    "country_constructed": "country"
   },
   "formats": {
     "code": "CAMEO",
     "quad_class": "penta_class",
     "root_code": "root_code",
     "source": "phoenix",
-    "source_agent": "phoenix",
+    "source_agent": "ISO-3",
     "source_root": "phoenix",
     "target": "phoenix",
-    "target_agent": "phoenix",
+    "target_agent": "ISO-3",
     "target_root": "phoenix",
     "country_constructed": "ISO-3"
   },

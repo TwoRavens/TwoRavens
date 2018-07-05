@@ -7,12 +7,9 @@
   "host": "TwoRavens",
   "subsets": {
     "Actor": {
+      "type": "dyad",
       "measures": [
         "unit"
-      ],
-      "type": "dyad",
-      "formats": [
-        "ACLED_inter"
       ],
       "tabs": {
         "actor 1": {
@@ -32,32 +29,29 @@
       }
     },
     "Action": {
+      "type": "categorical",
       "measures": [
         "event"
-      ],
-      "type": "categorical",
-      "formats": [
-        "ACLED_interaction"
       ],
       "columns": [
         "INTERACTION"
       ]
     },
     "Date": {
+      "type": "date",
       "measures": [
         "unit"
       ],
-      "type": "date",
       "structure": "point",
       "columns": [
         "EVENT_DATE_constructed"
       ]
     },
     "Code Date": {
+      "type": "date",
       "measures": [
         "unit"
       ],
-      "type": "date",
       "structure": "point",
       "columns": [
         "TIMESTAMP_constructed"
@@ -65,20 +59,13 @@
     },
     "Location": {
       "type": "categorical_grouped",
-      "alignments": [
-        "location"
-      ],
       "group_by": "region",
-      "formats": [
-        "ISO-3"
-      ],
       "columns": [
         "country_constructed"
       ]
     },
     "Coordinates": {
       "type": "coordinates",
-      "format": "signed degrees",
       "columns": [
         "LATITUDE",
         "LONGITUDE"
@@ -121,7 +108,8 @@
   "alignments": {
     "LATITUDE": "latitude",
     "LONGITUDE": "longitude",
-    "EVENT_DATE_constructed": "date"
+    "EVENT_DATE_constructed": "date",
+    "country_constructed": "country"
   },
   "formats": {
     "INTERACTION": "ACLED_interaction",

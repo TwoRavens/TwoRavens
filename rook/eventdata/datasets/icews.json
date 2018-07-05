@@ -8,7 +8,9 @@
   "subsets": {
     "Actor": {
       "type": "dyad",
-      "measures": ["unit"],
+      "measures": [
+        "unit"
+      ],
       "tabs": {
         "source": {
           "full": "Source Name",
@@ -27,11 +29,10 @@
       }
     },
     "Action": {
-      "measures": ["event"],
-      "type": "categorical",
-      "alignments": [
-        "action"
+      "measures": [
+        "event"
       ],
+      "type": "categorical",
       "formats": [
         "CAMEO",
         "root_code",
@@ -43,8 +44,10 @@
       ]
     },
     "Date": {
-      "measures": ["unit"],
       "type": "date",
+      "measures": [
+        "unit"
+      ],
       "structure": "point",
       "columns": [
         "Event Date_constructed"
@@ -53,16 +56,12 @@
     "Location": {
       "type": "categorical_grouped",
       "group_by": "region",
-      "formats": [
-        "ISO-3"
-      ],
       "columns": [
         "country_constructed"
       ]
     },
     "Coordinates": {
       "type": "coordinates",
-      "format": "signed degrees",
       "columns": [
         "Latitude",
         "Longitude"
@@ -98,7 +97,8 @@
   "alignments": {
     "Event Date_constructed": "date",
     "Latitude": "latitude",
-    "Longitude": "longitude"
+    "Longitude": "longitude",
+    "country_constructed": "country"
   },
   "formats": {
     "Source Sectors": "icews",

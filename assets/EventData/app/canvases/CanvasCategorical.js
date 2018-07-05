@@ -9,14 +9,17 @@ export default class CanvasCategorical {
     view(vnode) {
         let {mode, data, metadata, preferences} = vnode.attrs;
 
-        let masterFormat = app.genericMetadata[app.selectedDataset]['formats'][app.coerceArray(metadata['columns'])[0]];
+        let masterColumn = app.coerceArray(metadata['columns'])[0];
+        let masterFormat = app.genericMetadata[app.selectedDataset]['formats'][masterColumn];
+        let masterAlignment = app.genericMetadata[app.selectedDataset]['alignments'][masterColumn];
+
         let allData = {};
 
         preferences['aggregation'] = preferences['aggregation'] || masterFormat;
         preferences['format'] = preferences['format'] || masterFormat;
         preferences['selections'] = preferences['selections'] || new Set();
 
-        if (data.length === 0) return 'No data from "' + app.coerceArray(metadata['columns'])[0] + '" is matched.';
+        if (data.length === 0) return 'No data from "' + masterColumn + '" is matched.';
         let allSelected = {};
 
         let flattenedData = data.reduce((out, entry) => {
@@ -24,13 +27,13 @@ export default class CanvasCategorical {
             return out;
         }, {});
 
-        if ('alignments' in metadata) {
-            metadata['formats'].forEach(format => {
+        if (masterAlignment) {
+            app.coerceArray(metadata['formats']).forEach(format => {
                 allData[format] = {};
                 allSelected[format] = {};
             });
-            app.alignmentData[app.coerceArray(metadata['alignments'])[0]].forEach(equivalency => {
-                metadata['formats'].forEach(format => {
+            app.alignmentData[masterAlignment].forEach(equivalency => {
+                app.coerceArray(metadata['formats']).forEach(format => {
                     let isSet = preferences['selections'].has(equivalency[masterFormat]);
                     if (equivalency[format] in allSelected[format])
                         allSelected[format][equivalency[format]].push(isSet);
@@ -43,7 +46,8 @@ export default class CanvasCategorical {
 
                 })
             })
-        } else if ('formats' in metadata) {
+            console.log(allData);
+        } else if (masterFormat) {
             allData[masterFormat] = {};
             allSelected[masterFormat] = {};
             Object.keys(app.formattingData[masterFormat]).forEach(key => {
@@ -68,6 +72,74 @@ export default class CanvasCategorical {
             };
         };
 
+        let createPlot = (format, data, selections) => {
+            let maxCharacters = 0;
+
+            // resize left margin to keep labels within svg. If greater than 25 keys, then ignore zero-value keys
+            let keepZeros = Object.keys(data).length <= 25;
+            let keepKeys = Object.keys(data)
+                .filter(key => key !== 'undefined' && (keepZeros || data[key] !== 0));
+            keepKeys.forEach(entry => maxCharacters = Math.max(entry.length, maxCharacters));
+
+            let total = keepKeys.map(key => data[key]).reduce((total, value) => total + value);
+
+            let plotData = keepKeys.sort()
+                .map((key) => {
+                    let title = app.formattingData[format][key];
+                    if (Array.isArray(app.formattingData[format][key])) title = title[0];
+                    else if (title !== undefined && typeof title === 'object') title = title['name'];
+
+                    return {
+                        key: key,
+                        value: data[key] / total,
+                        'class': selections[key].every(_ => _)
+                            ? 'bar-selected'
+                            : selections[key].some(_ => _)
+                                ? 'bar-some' : 'bar',
+                        title: data[key] + ' ' + title
+                    }
+                });
+
+            return m(".graph-config", {
+                    style: common.mergeAttributes({
+                        "display": "inline-block",
+                        "vertical-align": "top",
+                        "margin-right": '10px',
+                        "margin-bottom": '10px'
+                    }, getShape(format)),
+                },
+                [
+                    m(".panel-heading.text-center", {
+                            style: {"float": "left", "padding-top": "9px"}
+                        }, m("h3.panel-title", format)
+                    ),
+                    m("br"),
+                    m('div', {'style': {'height': 'calc(100% - 40px)'}},
+                        m(PlotBars, {
+                            id: 'barPlot' + format,
+                            margin: {top: 10, right: 30, bottom: 50, left: maxCharacters * 6 + 20},
+                            data: plotData,
+                            callbackBar: (bar) => {
+                                let target_state = bar.class === 'bar-some' || bar.class === 'bar';
+
+                                if (masterAlignment) {
+                                    app.alignmentData[masterAlignment]
+                                        .filter(equivalency => equivalency[format] === bar.key)
+                                        .forEach(equivalency => target_state
+                                            ? preferences['selections'].add(equivalency[preferences['format']])
+                                            : preferences['selections'].delete(equivalency[preferences['format']]))
+                                } else target_state
+                                    ? preferences['selections'].add(bar.key)
+                                    : preferences['selections'].delete(bar.key);
+                            },
+                            orient: 'vertical',
+                            yLabel: 'Density'
+                        })
+                    )
+                ]
+            );
+        };
+
         return m("#canvasCategorical", {style: {height: '100%', 'padding-top': panelMargin}},
             mode === 'aggregate' && app.coerceArray(metadata['formats']).length > 1 && m(ButtonRadio, {
                 id: 'aggregationFormat',
@@ -86,77 +158,8 @@ export default class CanvasCategorical {
                 Object.keys(allData)
                     .filter(format => mode !== 'aggregate' || format === preferences['aggregation']) // only render one plot in aggregation mode
                     .sort((a, b) => Object.keys(allData[a]).length - Object.keys(allData[b]).length)
-                    .map(format => this.createPlot(vnode, format, allData[format], allSelected[format], getShape(format)))
+                    .map(format => createPlot(format, allData[format], allSelected[format]))
             )
-        );
-    }
-
-    createPlot(vnode, format, data, selections, shape) {
-        let {metadata, preferences} = vnode.attrs;
-        let maxCharacters = 0;
-
-        // resize left margin to keep labels within svg. If greater than 25 keys, then ignore zero-value keys
-        let keepZeros = Object.keys(data).length <= 25;
-        let keepKeys = Object.keys(data)
-            .filter(key => key !== 'undefined' && (keepZeros || data[key] !== 0));
-        keepKeys.forEach(entry => maxCharacters = Math.max(entry.length, maxCharacters));
-
-        let total = keepKeys.map(key => data[key]).reduce((total, value) => total + value);
-
-        let plotData = keepKeys.sort()
-            .map((key) => {
-                let title = app.formattingData[format][key];
-                if (Array.isArray(app.formattingData[format][key])) title = title[0];
-                else if (title !== undefined && typeof title === 'object') title = title['name'];
-
-                return {
-                    key: key,
-                    value: data[key] / total,
-                    'class': selections[key].every(_ => _)
-                        ? 'bar-selected'
-                        : selections[key].some(_ => _)
-                            ? 'bar-some' : 'bar',
-                    title: data[key] + ' ' + title
-                }
-            });
-
-        return m(".graph-config", {
-                style: common.mergeAttributes({
-                    "display": "inline-block",
-                    "vertical-align": "top",
-                    "margin-right": '10px',
-                    "margin-bottom": '10px'
-                }, shape),
-            },
-            [
-                m(".panel-heading.text-center", {
-                        style: {"float": "left", "padding-top": "9px"}
-                    }, m("h3.panel-title", format)
-                ),
-                m("br"),
-                m('div', {'style': {'height': 'calc(100% - 40px)'}},
-                    m(PlotBars, {
-                        id: 'barPlot' + format,
-                        margin: {top: 10, right: 30, bottom: 50, left: maxCharacters * 6 + 20},
-                        data: plotData,
-                        callbackBar: (bar) => {
-                            let target_state = bar.class === 'bar-some' || bar.class === 'bar';
-
-                            if ('alignments' in metadata) {
-                                app.alignmentData[app.coerceArray(metadata['alignments'])[0]]
-                                    .filter(equivalency => equivalency[format] === bar.key)
-                                    .forEach(equivalency => target_state
-                                        ? preferences['selections'].add(equivalency[preferences['format']])
-                                        : preferences['selections'].delete(equivalency[preferences['format']]))
-                            } else target_state
-                                ? preferences['selections'].add(bar.key)
-                                : preferences['selections'].delete(bar.key);
-                        },
-                        orient: 'vertical',
-                        yLabel: 'Density'
-                    })
-                )
-            ]
         );
     }
 }

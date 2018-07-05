@@ -386,12 +386,14 @@ export function buildAggregation(tree, preferences) {
             'categorical': (subset) => {
                 if (app.eventMeasure !== subset) return;
 
-                let masterFormat = app.genericMetadata[app.selectedDataset]['formats'][app.coerceArray(tempSubsets[subset]['columns'])[0]];
+                let masterColumn = app.coerceArray(tempSubsets[subset]['columns'])[0];
+                let masterFormat = app.genericMetadata[app.selectedDataset]['formats'][masterColumn];
+                let masterAlignment = app.genericMetadata[app.selectedDataset]['alignments'][masterColumn];
                 let targetFormat = preferences[subset]['aggregation'];
 
                 let bins = {};
-                if ('alignments' in tempSubsets[subset]) {
-                    for (let equivalency of app.alignmentData[app.coerceArray(tempSubsets[subset]['alignments'])[0]]) {
+                if (masterAlignment) {
+                    for (let equivalency of app.alignmentData[masterAlignment]) {
                         if (!(masterFormat in equivalency && targetFormat in equivalency)) continue;
                         if (!preferences[subset]['selections'].has(equivalency[masterFormat])) continue;
 
@@ -405,7 +407,7 @@ export function buildAggregation(tree, preferences) {
                     if (bins[bin].size === 1) event[bin] = {
                         "$sum": {
                             "$cond": [{
-                                "$eq": ["$" + app.coerceArray(tempSubsets[subset]['columns'])[0], [...bins[bin]][0]]
+                                "$eq": ["$" + masterColumn, [...bins[bin]][0]]
                             }, 1, 0]
                         }
                     };
@@ -416,7 +418,7 @@ export function buildAggregation(tree, preferences) {
                                     "$map": {
                                         "input": [...bins[bin]],
                                         "as": "el",
-                                        "in": {"$eq": ["$$el", "$" + app.coerceArray(tempSubsets[subset]['columns'])[0]]}
+                                        "in": {"$eq": ["$$el", "$" + masterColumn]}
                                     }
                                 }
                             }, 1, 0]
@@ -592,8 +594,8 @@ export function realignQuery(source, target) {
                     return;
                 }
 
-                let sourceAlignment = app.coerceArray(sourceSubsets[subsetName]['alignments'])[0];
-                let targetAlignment = app.coerceArray(targetSubsets[subsetName]['alignments'])[0];
+                let sourceAlignment = app.genericMetadata[source]['alignments'][sourceFull];
+                let targetAlignment = app.genericMetadata[target]['alignments'][targetFull];
 
                 let relabelDyad = () => branch.children.forEach((monad, i) => monad['column'] = targetFull[i]);
                 if (sourceFormats.every((format, i) => format === targetFormats[i])) {
@@ -652,7 +654,7 @@ export function realignQuery(source, target) {
             }
 
             if (branch.subset === 'custom') {
-                log.push('Removed ' + branch.name + ', because custom queries do not have ontological alignments.')
+                log.push('Removed ' + branch.name + ', because custom queries do not have ontological alignments.');
                 return;
             }
 
@@ -700,7 +702,7 @@ export function realignVariables(source, target) {
     let newSelectedVariables = new Set();
     app.selectedVariables.forEach(variable => {
         if (!(variable in app.genericMetadata[source]['formats'])) {
-            log.push('De-selected ' + variable + ', because it has no recorded equivalent in ' + target + '.')
+            log.push('De-selected ' + variable + ', because it has no recorded equivalent in ' + target + '.');
             return;
         }
         Object.keys(app.genericMetadata[target]['formats']).forEach(targetVar => {

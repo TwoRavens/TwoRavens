@@ -3,11 +3,11 @@ import {dateSort} from "./canvases/CanvasDate";
 
 import * as common from '../../common-eventdata/common';
 import * as query from './query';
+import {buildSubset} from './query';
 // Used for right panel query tree
 import '../../../node_modules/jqtree/tree.jquery.js';
 import '../../../node_modules/jqtree/jqtree.css';
 import '../pkgs/jqtree/jqtree.style.css';
-import {buildSubset} from "./query";
 
 let production = false;
 
@@ -95,7 +95,7 @@ export let setSelectedDataset = (key) => {
     previousSelectedDataset = selectedDataset;
     selectedDataset = key;
 
-    if (previousSelectedDataset !== undefined && previousSelectedDataset !== selectedDataset)  {
+    if (previousSelectedDataset !== undefined && previousSelectedDataset !== selectedDataset) {
         // trigger reloading of necessary menu elements
         subsetData = {};
 
@@ -109,6 +109,8 @@ export let setSelectedDataset = (key) => {
         subsetTree.tree('loadData', abstractQuery);
         subsetTree.tree('setState', state);
         showAlignmentLog = true;
+
+        totalSubsetRecords = undefined;
     }
 
     // ensure each subset has a place to store settings
@@ -211,18 +213,29 @@ export let reloadSubset = (subsetName) => {
 
     let subsetMetadata = genericMetadata[selectedDataset]['subsets'][selectedSubsetName];
 
+    let columns = coerceArray(subsetMetadata['columns']);
+    if (subsetMetadata['type'] === 'dyad') Object.keys(subsetMetadata['tabs'])
+        .forEach(tab => columns = columns.concat([subsetMetadata['tabs'][tab]['full'], ... subsetMetadata['tabs'][tab]['filters']]));
+
+    let alignments = columns
+        .filter(column => column in genericMetadata[selectedDataset]['alignments'])
+        .map(column => genericMetadata[selectedDataset]['alignments'][column]);
+
+    let formats = columns
+        .filter(column => column in genericMetadata[selectedDataset]['formats'])
+        .map(column => genericMetadata[selectedDataset]['formats'][column]);
+
+    if (subsetMetadata['type'] === 'categorical')
+        formats = formats.concat(coerceArray(subsetMetadata['formats']));
+
     m.request({
         url: subsetURL,
         data: {
             query: JSON.stringify(query.buildSubset(stagedSubsetData)),
             dataset: selectedDataset,
             subset: selectedSubsetName,
-
-            alignments: coerceArray(subsetMetadata['alignments'] || [])
-                .filter(alignment => !(alignment in alignmentData)),
-            formats: coerceArray(subsetMetadata['formats'] || [])
-                .filter(format => !(format in formattingData)),
-
+            alignments: [...new Set(alignments)],
+            formats: [...new Set(formats)],
             countRecords: totalSubsetRecords === undefined
         },
         method: 'POST'
