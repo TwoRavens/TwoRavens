@@ -39,6 +39,9 @@ urlpatterns = [
          views.api_get_archive_list,
          name='api_get_archive_list'
          ),
+    re_path(r'api/dataverse-get-files-list/(?P<version_id>[0-9]{1,10})$',
+         views.api_get_files_list,
+         name='api_get_files_list')
 
 
 

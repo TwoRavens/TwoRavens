@@ -253,6 +253,20 @@ def api_get_archive_query_object(request, datafile_id):
         return JsonResponse(usr_msg)
 
 
+def api_get_files_list(request, version_id):
+    """ get dataverse files list"""
 
+    success, jobs = EventJobUtil.get_dataverse_files(version_id)
 
+    if not success:
+        usr_msg = dict(success=False,
+                       message=get_json_error(jobs))
+        return JsonResponse(usr_msg)
+
+    else:
+        usr_msg = dict(success=True,
+                       message='dataverse files object retrieved',
+                       data=jobs)
+
+        return JsonResponse(usr_msg)
 

@@ -12,6 +12,7 @@ from tworaven_apps.utils.basic_response import (ok_resp,
 from tworaven_apps.eventdata_queries.models import (EventDataSavedQuery, ArchiveQueryJob)
 from tworaven_apps.eventdata_queries.dataverse.named_temporary_file import NamedTemporaryFile
 from tworaven_apps.eventdata_queries.dataverse.dataverse_publish_dataset import DataversePublishDataset
+from tworaven_apps.eventdata_queries.dataverse.dataverse_list_files_dataset import ListFilesInDataset
 
 
 class EventJobUtil(object):
@@ -191,6 +192,15 @@ class EventJobUtil(object):
 
 
 
+    @staticmethod
+    def get_dataverse_files(version_id):
+        """ get list"""
+        list_obj = ListFilesInDataset(version_id)
+        succ, res = list_obj.return_status()
+        if succ:
+            return ok_resp(res)
 
+        else:
+            return err_resp(res)
 
 
