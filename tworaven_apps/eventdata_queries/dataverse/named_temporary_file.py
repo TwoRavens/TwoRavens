@@ -46,9 +46,8 @@ class NamedTemporaryFile(object):
         # Do something (like send it to Dataverse)
         # ---------------------------
         self.msgt('(3) show file contents')
-        file_out = open(temp_file_path, 'r').read()
 
-        temp_obj = DataverseFileUpload(file_out)
+        temp_obj = DataverseFileUpload(temp_file_path)
 
         succ, res_obj = temp_obj.return_status()
         self.success_status = succ

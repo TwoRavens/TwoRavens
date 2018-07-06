@@ -12,32 +12,33 @@ class EventDataSavedQueryAdmin(admin.ModelAdmin):
                     'created',
                     'modified',
                     'saved_to_dataverse',
-                    'dataverse_url')
+                    'dataverse_url',
+                    'dataset',
+                    'dataset_type')
 
     save_on_top = True
     readonly_fields = ('modified', 'created')
     list_filter = ('saved_to_dataverse',)
 
 
-
-
 admin.site.register(EventDataSavedQuery, EventDataSavedQueryAdmin)
 
 
 class ArchiveQueryJobAdmin(admin.ModelAdmin):
-    list_display = ('description',
+    list_display = ('datafile_id',
                     'saved_query',
                     'status',
                     'is_finished',
                     'is_success',
                     'message',
                     'created',
-                    'modified')
+                    'modified',
+                    'dataverse_response',
+                    'archive_url')
 
     save_on_top = True
     readonly_fields = ('modified', 'created')
     list_filter = ('is_finished', 'is_success')
-
 
 
 admin.site.register(ArchiveQueryJob, ArchiveQueryJobAdmin)

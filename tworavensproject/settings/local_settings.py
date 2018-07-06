@@ -12,7 +12,9 @@ DEBUG = True
 
 SECRET_KEY = 'ye-local-laptop-secret-key'
 
-LOCAL_SETUP_DIR = join(BASE_DIR, 'test_setup_local')
+LOCAL_SETUP_DIR = os.environ.get(\
+                        'LOCAL_SETUP_DIR',
+                        join(BASE_DIR, 'test_setup_local'))
 if not isdir(LOCAL_SETUP_DIR):
     makedirs(LOCAL_SETUP_DIR)
 

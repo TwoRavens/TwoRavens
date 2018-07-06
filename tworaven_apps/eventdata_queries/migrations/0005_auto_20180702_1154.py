@@ -10,9 +10,4 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RenameField(
-            model_name='archivequeryjob',
-            old_name='what',
-            new_name='description',
-        ),
     ]

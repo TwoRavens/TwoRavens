@@ -122,7 +122,7 @@ class D3MConfiguration(TimeStampedModel):
         return self.name
 
     class Meta:
-        ordering = ('name', '-modified')
+        ordering = ('-is_default', 'name', '-modified')
         verbose_name = 'D3M Configuration'
         verbose_name_plural = 'D3M Configurations'
 

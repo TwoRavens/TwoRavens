@@ -27,7 +27,7 @@ export default class SaveQuery {
             'query': JSON.stringify(queryMongo),
             'username': app.username,
             'dataset': app.selectedDataset,
-            'type': app.selectedMode,
+            'dataset_type': app.selectedMode,
             'dataverse_url': 'http://2ravens.org', // TODO: not sure what the plan is with this argument
             'result_count': {
                 'subset': app.totalSubsetRecords,
@@ -87,7 +87,7 @@ export default class SaveQuery {
             'query': '{}',
             'username': '',
             'dataset': '',
-            'type': '',
+            'dataset_type': '',
             'result_count': 0,
             'name': '',
             'description': '',
@@ -107,6 +107,7 @@ export default class SaveQuery {
                         data: preferences,
                         method: 'POST'
                     });
+                    console.log(response);
                     if (response.success) {
                         this.status = 'Saved as query ID ' + response.data.id;
                         this.saved = true;

@@ -148,7 +148,7 @@ def load_d3m_config_from_env():
         return
 
     try:
-        management.call_command('load_config', config_file)
+        management.call_command('load_config', d3m_data_dir)
     except management.base.CommandError as err_obj:
         print('> Failed to load D3M config.\n%s' % err_obj)
 
@@ -238,6 +238,7 @@ def run_featurelabs_ta2(data_dir_path, output_dir_path):
         os.makedirs(output_dir_path)
         print('output directory created: %s' % output_dir_path)
 
+    load_d3m_config(data_dir_path)
 
     print('-' * 40)
     print('Run Feature Labs')
@@ -253,6 +254,7 @@ def run_featurelabs_ta2(data_dir_path, output_dir_path):
                   ' -e D3MRUN=ta2ta3'
                   ' -v {0}:/input'
                   ' -v {1}:/output'
+                  ' -v /ravens_volume:/ravens_volume'
                   ' registry.datadrivendiscovery.org/jkanter/mit-fl-ta2:stable'
                   '').format(data_dir_path, output_dir_path)
 

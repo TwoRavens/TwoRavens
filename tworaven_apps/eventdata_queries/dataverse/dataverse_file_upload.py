@@ -14,7 +14,7 @@ from tworaven_apps.utils.basic_response import (ok_resp,
 
 class DataverseFileUpload(object):
 
-    def __init__(self, file_obj):
+    def __init__(self, temp_file_path):
         """function to upload the file"""
 
         self.status_code = None
@@ -44,7 +44,7 @@ class DataverseFileUpload(object):
         # -------------------
         # Update the file content to avoid a duplicate file error
         # -------------------
-        file_open = file_obj
+        file_open = open(temp_file_path, 'r').read()
         file_content = 'query: %s' % file_open
         file_name = 'temp_query' + str(uuid.uuid4())
         files = {'file': (file_name, file_content)}
