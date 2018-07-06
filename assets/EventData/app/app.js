@@ -349,7 +349,7 @@ export function download(queryType, dataset, queryMongo) {
         a.href = data.download;
         a.download = data.download.substr(data.download.lastIndexOf('/') + 1);
         document.body.appendChild(a);
-        // a.click();
+        a.click();
 
         laddaDownload.stop();
         document.body.removeChild(a);
@@ -361,7 +361,6 @@ export function download(queryType, dataset, queryMongo) {
     if (!queryMongo) {
         if (queryType === 'subset') {
             let variables = selectedVariables.size === 0 ? genericMetadata[dataset]['columns'] : [...selectedVariables];
-            console.log(variables);
             queryMongo = [
                 {"$match": query.buildSubset(abstractQuery)},
                 {

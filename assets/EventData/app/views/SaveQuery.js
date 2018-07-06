@@ -43,7 +43,7 @@ export default class SaveQuery {
         let warn = (text) => m('[style=color:#dc3545;display:inline-block;margin-left:1em;]', text);
 
         let tableData = {
-            'Name': m(TextField, {
+            'Query Name': m(TextField, {
                 value: preferences['name'] || '',
                 class: (preferences['name'] || '').length === 0 && ['required-form'],
                 oninput: (value) => {
