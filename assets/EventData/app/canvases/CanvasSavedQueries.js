@@ -43,6 +43,7 @@ export default class CanvasSavedQueries {
     }
 
     async getQuery(preferences, id) {
+        if (this.result === id) return;
 
         this.result = id;
         delete preferences['query'];
@@ -89,7 +90,8 @@ export default class CanvasSavedQueries {
                         'padding': '10px',
                         'border': common.borderColor
                     },
-                    onclick: this.result === result.id ? Function : () => this.getQuery(preferences, result.id)
+                    onclick: () => this.getQuery(preferences, result.id),
+                    ondblclick: () => this.result = undefined
                 },
                 m('h4', result['name'],
                     m(Button, {

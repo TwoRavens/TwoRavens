@@ -441,14 +441,10 @@ export function buildAggregation(tree, preferences) {
             (transforms[measure][tempSubsets[subset]['type']] || Function)(subset);
     });
 
-    let query = [
+    return [
         {"$match": buildSubset(tree)},
         {"$group": Object.assign({"_id": unit}, event)}
     ];
-    console.log("FROM CONSTRUCT AGGREG QUERY");
-    console.log(query);
-
-    return query;
 }
 
 // almost pure- the function mutates the argument

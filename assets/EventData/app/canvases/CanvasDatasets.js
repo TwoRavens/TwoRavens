@@ -49,7 +49,8 @@ export default class CanvasDatasets {
                         'padding': '10px',
                         'border': common.borderColor
                     },
-                    onclick: () => this.dataset = dataset['key']
+                    onclick: () => this.dataset = dataset['key'],
+                    ondblclick: () => this.dataset = undefined
                 },
                 m('h4', [
                     dataset['name'],

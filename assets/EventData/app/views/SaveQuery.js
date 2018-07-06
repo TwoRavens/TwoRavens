@@ -110,8 +110,6 @@ export default class SaveQuery {
         let disabled = this.saved || !Object.keys(invalids).map(key =>
             key in preferences && preferences[key] !== undefined && invalids[key] !== preferences[key]).every(_ => _);
 
-        console.log("SAVEQUERY");
-        console.log(preferences);
         return m('div',
             m(Button, {
                 disabled: disabled,
@@ -123,7 +121,6 @@ export default class SaveQuery {
                         data: preferences,
                         method: 'POST'
                     });
-                    console.log(response);
                     if (response.success) {
                         this.status = 'Saved as query ID ' + response.data.id;
                         this.saved = true;
