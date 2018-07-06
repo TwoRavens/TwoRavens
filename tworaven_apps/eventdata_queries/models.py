@@ -125,7 +125,7 @@ class EventDataSavedQuery(TimeStampedModel):
 
         result = EventDataSavedQuery.objects.values('name', 'username', 'description','result_count',
                                                     'created', 'modified', 'saved_to_dataverse',
-                                                    'dataverse_url', 'dataset', 'dataset_type'
+                                                    'dataverse_url', 'dataset', 'dataset_type', 'id'
                                                     ).filter(**arguments).all()
 
         if not result:
