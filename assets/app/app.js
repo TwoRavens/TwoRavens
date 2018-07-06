@@ -2468,7 +2468,7 @@ export async function estimate(btn) {
             estimated = true;
         } else {
             setxTable(rookpipe.predictors);
-            let res = await makeRequest(D3M_SVC_URL + '/SearchSolutions', CreatePipelineDefinition(rookpipe.predictors, rookpipe.depvar));
+            let res = await makeRequest(D3M_SVC_URL + '/SearchSolutions', CreatePipelineDefinition(rookpipe.predictors, rookpipe.depvar, 2));
             let searchId = res.data.searchId;
             let solutionId = "";
             let fittedId = "";
@@ -4396,15 +4396,15 @@ export async function submitDiscProb() {
         // construct and write out the api call and problem description for each discovered problem
         let problemApiCall = CreatePipelineDefinition(disco[i].predictors, disco[i].target, 10, disco[i]);
         let problemProblemSchema = CreateProblemSchema(disco[i]);  
-        let filename_api = disco[i].problem_id + '/ss_api.json'
-        let filename_ps = disco[i].problem_id + '/schema.json'
-        //let res1 = await makeRequest(D3M_SVC_URL + '/store-user-problem', {file: filename_api, data: problemApiCall } );
-        //let res2 = await makeRequest(D3M_SVC_URL + '/store-user-problem', {file: filename_ps, data: problemProblemSchema } );
+        let filename_api = disco[i].problem_id + '_ss_api.json';  // should be /ss... not _ss...
+        let filename_ps = disco[i].problem_id + '_schema.json';   // should be /scheme... not _schema...
+        let res1 = await makeRequest(D3M_SVC_URL + '/store-user-problem', {filename: filename_api, data: problemApiCall } );
+        let res2 = await makeRequest(D3M_SVC_URL + '/store-user-problem', {filename: filename_ps, data: problemProblemSchema } );
     }
 
     // write the CSV file requested by NIST that describes properties of the solutions
     console.log(outputCSV);
-    let res3 = await makeRequest(D3M_SVC_URL + '/store-user-problem', {file: 'labels.csv', data: outputCSV});
+    let res3 = await makeRequest(D3M_SVC_URL + '/store-user-problem', {filename: 'labels.csv', data: outputCSV});
 
     discoveryLadda.stop();
     // change status of buttons for estimating problem and marking problem as finished
