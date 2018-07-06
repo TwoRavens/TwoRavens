@@ -138,7 +138,7 @@ class EventDataSavedQuery(TimeStampedModel):
         """ get all fields expect query"""
         result = EventDataSavedQuery.objects.values('name', 'username', 'description',
                                                     'result_count', 'created', 'modified', 'saved_to_dataverse',
-                                                    'dataverse_url', 'dataset', 'dataset_type').all()
+                                                    'dataverse_url', 'dataset', 'dataset_type', 'id').all()
 
         if not result:
             return err_resp('could not get the object list')

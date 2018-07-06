@@ -28,7 +28,6 @@ export default class SaveQuery {
             'username': app.username,
             'dataset': app.selectedDataset,
             'dataset_type': app.selectedMode,
-            'dataverse_url': 'http://2ravens.org', // TODO: not sure what the plan is with this argument
             'result_count': {
                 'subset': app.totalSubsetRecords,
                 'aggregate': app.aggregationData.length
@@ -102,12 +101,12 @@ export default class SaveQuery {
                 disabled: disabled,
                 onclick: async () => {
                     if (disabled) return;
+
                     let response = await m.request({
                         url: '/eventdata/api/add-query',
                         data: preferences,
                         method: 'POST'
                     });
-                    console.log(response);
                     if (response.success) {
                         this.status = 'Saved as query ID ' + response.data.id;
                         this.saved = true;

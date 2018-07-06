@@ -432,7 +432,8 @@
     "JUL_PED_constructed",
     "JUL_PSD_constructed",
     "JUL_EED_constructed",
-    "JUL_LED_constructed"
+    "JUL_LED_constructed",
+    "country_constructed"
   ],
   "alignments": {
     "AVERAGE_DATE_constructed": "date",

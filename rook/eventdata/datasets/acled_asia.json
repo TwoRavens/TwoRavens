@@ -104,7 +104,8 @@
   ],
   "columns_constructed": [
     "EVENT_DATE_constructed",
-    "TIMESTAMP_constructed"
+    "TIMESTAMP_constructed",
+    "country_constructed"
   ],
   "alignments": {
     "LATITUDE": "latitude",

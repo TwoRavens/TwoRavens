@@ -99,18 +99,17 @@
     "year"
   ],
   "columns_constructed": [
-    "story_date_constructed"
+    "story_date_constructed",
+    "country_constructed"
   ],
   "alignments": {
     "code": "action",
     "quad_class": "action",
     "root_code": "action",
-    "source": "sector",
-    "source_agent": "country",
-    "source_root": "sector",
-    "target": "sector",
-    "target_agent": "country",
-    "target_root": "sector",
+    "source_agent": "sector",
+    "source_root": "country",
+    "target_agent": "sector",
+    "target_root": "country",
     "story_date_constructed": "date",
     "lat": "latitude",
     "lon": "longitude",
@@ -121,11 +120,13 @@
     "quad_class": "penta_class",
     "root_code": "root_code",
     "source": "phoenix",
-    "source_agent": "ISO-3",
-    "source_root": "phoenix",
+    "source_agent": "phoenix",
+    "source_root": "ISO-3",
+    "source_others": "phoenix",
     "target": "phoenix",
-    "target_agent": "ISO-3",
-    "target_root": "phoenix",
+    "target_agent": "phoenix",
+    "target_root": "ISO-3",
+    "target_others": "phoenix",
     "country_constructed": "ISO-3"
   },
   "deconstruct": {

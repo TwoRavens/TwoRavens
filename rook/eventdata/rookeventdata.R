@@ -127,7 +127,6 @@ eventdata.app <- function(env) {
         result = getData('aggregate', query)
         result['_id'] = NULL
 
-        print(result)
         fileName = format(Sys.time(), '%Y-%m-%d-%H-%M-%OS4')
         dir.create('./eventdata/downloads/', showWarnings = FALSE)
         write.csv(result, file = paste('./eventdata/downloads/', fileName, ".csv", sep = ""))

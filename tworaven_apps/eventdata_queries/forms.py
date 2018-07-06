@@ -14,7 +14,7 @@ class EventDataSavedQueryForm(forms.Form):
     query = forms.CharField(widget=forms.Textarea)
     result_count = forms.IntegerField(required=True, label='result_count')
     saved_to_dataverse = forms.NullBooleanField(required=False,initial=False)
-    dataverse_url = forms.URLField(required=True)
+    dataverse_url = forms.URLField(required=False)
     dataset = forms.CharField(widget=forms.Textarea)
     dataset_type = forms.CharField(required=True, initial= SUBSET)
 

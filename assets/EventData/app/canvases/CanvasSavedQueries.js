@@ -39,11 +39,11 @@ export default class CanvasSavedQueries {
         });
 
         if (response.success) preferences['results'] = response.data;
-        else if (response.message === 'list not retrieved') preferences['results'] = [];
-        else alert(response.message);
+        else preferences['results'] = [];
     }
 
     async getQuery(preferences, id) {
+
         this.result = id;
         delete preferences['query'];
         let response = await m.request({
@@ -96,10 +96,8 @@ export default class CanvasSavedQueries {
                         style: {margin: '0 0.25em', float: 'right'},
                         onclick: async (e) => {
                             e.stopPropagation();
-                            if (this.result !== result.id || !preferences['query']) await this.getQuery(preferences, id);
-                            // TODO the API doesn't have result.type. For now default to subset
-                            // TODO the API doesn't have result.dataset. For now default to cline_phoenix_nyt
-                            app.download(result.type || 'subset', result.dataset || 'cline_phoenix_nyt', JSON.stringify(preferences['query']));
+                            if (this.result !== result.id || !preferences['query']) await this.getQuery(preferences, result.id);
+                            app.download(result.dataset_type, result.dataset, [{$match: preferences['query']}]);
                         }
                     }, 'Download')
                 ),
@@ -107,7 +105,9 @@ export default class CanvasSavedQueries {
                 this.result === result.id && [
                     m(Table, {
                         data: {
+                            'Dataset': result['dataset'],
                             'Result Count': result['result_count'],
+                            'Dataset Type': result['dataset_type'],
                             'Username': result['username'],
                             'Created': new Date(result['created']).toLocaleString(),
                             'Modified': new Date(result['modified']).toLocaleString(),

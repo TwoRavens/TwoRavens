@@ -349,7 +349,7 @@ export function download(queryType, dataset, queryMongo) {
         a.href = data.download;
         a.download = data.download.substr(data.download.lastIndexOf('/') + 1);
         document.body.appendChild(a);
-        a.click();
+        // a.click();
 
         laddaDownload.stop();
         document.body.removeChild(a);
@@ -628,16 +628,20 @@ export function setupQueryTree() {
         },
         onCanMove: function (node) {
             // Cannot move nodes in uneditable queries
-            if ('editable' in node && !node.editable) {
-                return false
-            }
+            if ('editable' in node && !node.editable) return false;
+
+            // Actor nodes and links may be moved
+            if (['link', 'node'].indexOf(node.subset) !== -1) return true;
 
             // Subset and Group may be moved
-            return (node.type === 'rule' || node.type === 'query');
+            return (['rule', 'group'].indexOf(node.type) !== -1);
         },
         onCanMoveTo: function (moved_node, target_node, position) {
             // Cannot move to uneditable queries
             if ('editable' in target_node && !target_node.editable) return false;
+
+            if (moved_node.subset === 'link') return position === 'after' && target_node.subset === 'link';
+            if (moved_node.subset === 'node') return position === 'after' && target_node.subset === 'node';
 
             // Categories may be reordered or swapped between similar subsets
             if (['categorical', 'categorical_grouped'].indexOf(moved_node.type) !== -1) {
@@ -1040,7 +1044,7 @@ function getSubsetPreferences() {
                     id: String(nodeId++),
                     name: Object.keys(metadata['tabs'])[0] + ': ' + filteredEdges[linkId].source.name,
                     show_op: false,
-                    cancellable: false,
+                    cancellable: true,
                     actors: [...filteredEdges[linkId].source.selected],
                     subset: 'node',
                     column: metadata['tabs'][Object.keys(metadata['tabs'])[0]]['full']
@@ -1048,7 +1052,7 @@ function getSubsetPreferences() {
                     id: String(nodeId++),
                     name: Object.keys(metadata['tabs'])[1] + ': ' + filteredEdges[linkId].target.name,
                     show_op: false,
-                    cancellable: false,
+                    cancellable: true,
                     actors: [...filteredEdges[linkId].target.selected],
                     subset: 'node',
                     column: metadata['tabs'][Object.keys(metadata['tabs'])[1]]['full']
