@@ -3,6 +3,7 @@ import {grayColor} from "../../../common-eventdata/common";
 import TextField from '../../../common-eventdata/views/TextField';
 import * as app from "../app";
 import * as query from '../query';
+import {actorContains} from '../canvases/CanvasDyad';
 
 let searchLag = 500;
 
@@ -13,7 +14,7 @@ export default class MonadSelection {
         this.searchTimeout = null;
     }
 
-    search(subsetName, metadata, preferences, currentTab, force = false) {
+    search(subsetName, metadata, preferences, currentTab) {
 
         const operator = '$and';
 
@@ -22,30 +23,13 @@ export default class MonadSelection {
             let filter = {};
             let deconstruct = app.genericMetadata[app.selectedDataset]['deconstruct'] || {};
 
-            if (column in deconstruct) filter[app.ontologyAlign(column)] = {
-                '$regex': `^(.*${deconstruct[column]})*(${[...preferences['filters'][column]['selected']].join('|')})`
+            if (column in deconstruct) filter[column] = {
+                '$regex': `^(.*${deconstruct[column]})*(${[...preferences['filters'][column]['selected']].join('|')})`,
+                "$options" : "i"
             };
             else filter[column] = {'$in': [...preferences['filters'][column]['selected']]};
             return out.concat([filter]);
         }, []);
-
-        if (preferences['search'].length !== 0) {
-            if ('token_length' in metadata && preferences['search'].length % metadata['token_length'] === 0) {
-                const tags = preferences['search'].match(new RegExp(`.{${metadata['token_length']}}`, 'g'));
-                actorFilters.push({
-                    [metadata['full']]: {
-                        '$regex': tags.map(tag => `(?=^(...)*${tag})`).join() + ".*",
-                        '$options': 'i'
-                    }
-                })
-            }
-            if (!('token_length' in metadata)) actorFilters.push({
-                [metadata['full']]: {
-                    '$regex': '.*' + preferences['search'].replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&") + '.*',
-                    '$options': 'i'
-                }
-            })
-        }
 
         let actorFiltersOp = {[operator]: actorFilters};
 
@@ -66,7 +50,7 @@ export default class MonadSelection {
             subsets = stagedQuery;
         }
 
-        if (!force && JSON.stringify(subsets) === this.cachedQuery) return;
+        if (JSON.stringify(subsets) === this.cachedQuery) return;
         this.cachedQuery = JSON.stringify(subsets);
 
         console.log("Actor Filter: " + this.cachedQuery);
@@ -126,7 +110,7 @@ export default class MonadSelection {
             'data-trigger': 'hover',
             'onmouseover': function (e) {
                 e.redraw = false;
-                let translation = !value
+                let translation = value === undefined
                     ? ''
                     : 'token_length' in metadata
                         ? value.match(new RegExp(`.{${metadata['token_length']}}`, 'g'))
@@ -148,12 +132,7 @@ export default class MonadSelection {
                 m(TextField, {
                     value: preferences['search'],
                     placeholder: `Search ${metadata['full']}`,
-                    oninput: (value) => {
-                        preferences['search'] = value;
-                        clearTimeout(this.searchTimeout);
-                        this.searchTimeout = setTimeout(
-                            () => this.search(subsetName, metadata, preferences, currentTab), searchLag);
-                    }
+                    oninput: (value) => preferences['search'] = value
                 }),
                 m(`.actorFullList#searchListActors`, {
                         style: Object.assign({"text-align": "left"},
@@ -169,6 +148,7 @@ export default class MonadSelection {
                     },
                     this.waitForQuery === 0 && data['full']
                         .filter(actor => !preferences['show_selected'] || preferences['node']['selected'].has(actor))
+                        .filter(actor => actorContains(actor, preferences['search'], metadata['token_length']))
                         .slice(0, preferences['full_limit'])
                         .map(actor =>
                             m('div', popupAttributes(metadata['full'], actor),
@@ -211,7 +191,9 @@ export default class MonadSelection {
                         m("label.actorHead4", {
                             onclick: () => preferences['filters'][filter]['expanded'] = !preferences['filters'][filter]['expanded']
                         }, m("b", filter)),
-                        preferences['filters'][filter]['expanded'] && data['filters'][filter].map(actor => m('div',
+                        preferences['filters'][filter]['expanded'] && data['filters'][filter]
+                            .filter(actor => actor.includes(preferences['search']))
+                            .map(actor => m('div',
                             popupAttributes(filter, actor),
                             m(`input.actorChk[type=checkbox]`, {
                                 checked: preferences['filters'][filter]['selected'].has(actor),

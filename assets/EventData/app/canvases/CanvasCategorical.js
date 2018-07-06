@@ -46,7 +46,6 @@ export default class CanvasCategorical {
 
                 })
             })
-            console.log(allData);
         } else if (masterFormat) {
             allData[masterFormat] = {};
             allSelected[masterFormat] = {};

@@ -1,7 +1,6 @@
 source("rookconfig.R")
 
 library(jsonlite)
-library(rjson)
 library(mongolite)
 
 eventdata.app <- function(env) {
@@ -125,13 +124,10 @@ eventdata.app <- function(env) {
     }
 
     if (type == 'raw') {
-        variableQuery = jsonlite::toJSON(setNames(as.list(rep(1, length(variables))), variables), auto_unbox = TRUE)
-
-        result = getData('aggregate', paste(
-        '[{"$match":', query, '},',
-        '{"$project":', variableQuery, '}]', sep = ""))
-
+        result = getData('aggregate', query)
         result['_id'] = NULL
+
+        print(result)
         fileName = format(Sys.time(), '%Y-%m-%d-%H-%M-%OS4')
         dir.create('./eventdata/downloads/', showWarnings = FALSE)
         write.csv(result, file = paste('./eventdata/downloads/', fileName, ".csv", sep = ""))

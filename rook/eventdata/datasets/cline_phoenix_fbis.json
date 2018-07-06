@@ -15,18 +15,18 @@
         "source": {
           "full": "source",
           "filters": [
+            "source_root",
             "source_agent",
-            "source_others",
-            "source_root"
+            "source_others"
           ],
           "token_length": 3
         },
         "target": {
           "full": "target",
           "filters": [
+            "target_root",
             "target_agent",
-            "target_others",
-            "target_root"
+            "target_others"
           ],
           "token_length": 3
         }

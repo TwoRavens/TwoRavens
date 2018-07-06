@@ -134,7 +134,7 @@ export default class CanvasDate {
                 preferences['userLower'] = new Date(minDate);
                 preferences['handleLower'] = preferences['userLower']
             }
-            if (maxDate > preferences['userUpper']) {
+            if (maxDate < preferences['userUpper']) {
                 preferences['userUpper'] = new Date(maxDate);
                 preferences['handleUpper'] = preferences['userUpper']
             }

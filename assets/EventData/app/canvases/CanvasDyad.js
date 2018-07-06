@@ -11,6 +11,18 @@ import {unitMeasure} from "../app";
 // Width of the actor selection panel
 let selectionWidth = '400px';
 
+// determine if a particular actor matches criteria
+export let actorContains = (actor, search, token_length) => {
+    if (search.length === 0) return true;
+    if (token_length) {
+        const tags = search
+            .replace(/[\-\[\]\/\{\}\(\)\*\+\?\\\^\$\|]/g, ".")
+            .match(new RegExp(`.{${token_length}}`, 'g')) || [];
+        return new RegExp(tags.map(tag => `(?=^(...)*${tag})`).join('') + ".*", 'i').test(actor);
+    }
+    return actor.match(new RegExp('.*' + search.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&") + '.*', 'i'));
+};
+
 export default class CanvasDyad {
 
     oninit(vnode) {
@@ -160,12 +172,23 @@ export default class CanvasDyad {
                 m(".actorBottomTry",
                     m(Button, {
                         id: 'actorSelectAll',
-                        onclick: () => preferences['tabs'][preferences['current_tab']]['node']['selected'] = new Set(data[preferences['current_tab']]['full']),
+                        onclick: () => {
+                            let tabPref = preferences['tabs'][preferences['current_tab']];
+                            let tabMeta = metadata['tabs'][preferences['current_tab']];
+                            tabPref['node']['selected'] = new Set([
+                                ...tabPref['node']['selected'],
+                                ...data[preferences['current_tab']]['full']
+                                    .filter(actor => actorContains(actor, tabPref['search'], tabMeta['token_length']))]);
+                        },
                         title: `Selects all ${preferences['tabs'][preferences['current_tab']]['node']['name']}s that match the filter criteria`
                     }, 'Select All'),
                     m(Button, {
                         id: 'actorClearAll',
-                        onclick: () => preferences['tabs'][preferences['current_tab']]['node']['selected'] = new Set(),
+                        onclick: () => {
+                            let tabPref = preferences['tabs'][preferences['current_tab']];
+                            let tabMeta = metadata['tabs'][preferences['current_tab']];
+                            tabPref['node']['selected'] = new Set([...tabPref['node']['selected']]
+                                .filter(actor => !actorContains(actor, tabPref['search'], tabMeta['token_length'])))},
                         title: `Clears all ${preferences['tabs'][preferences['current_tab']]['node']['name']} that match the filter criteria`
                     }, 'Clear All'),
                     m(Button, {

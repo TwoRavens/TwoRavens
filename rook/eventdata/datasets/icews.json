@@ -6,6 +6,16 @@
   "codebook": "https://dataverse.harvard.edu/file.xhtml?fileId=2548466&version=RELEASED&version=.0",
   "host": "TwoRavens",
   "subsets": {
+    "Date": {
+      "type": "date",
+      "measures": [
+        "unit"
+      ],
+      "structure": "point",
+      "columns": [
+        "Event Date_constructed"
+      ]
+    },
     "Actor": {
       "type": "dyad",
       "measures": [
@@ -13,16 +23,16 @@
       ],
       "tabs": {
         "source": {
-          "full": "Source Name",
+          "full": "Soure Name",
           "filters": [
-            "Source Sectors",
+            "Source Sectors Grouped",
             "Source Country"
           ]
         },
         "target": {
           "full": "Target Name",
           "filters": [
-            "Target Sectors",
+            "Target Sectors Grouped",
             "Target Country"
           ]
         }
@@ -41,16 +51,6 @@
       ],
       "columns": [
         "CAMEO Code"
-      ]
-    },
-    "Date": {
-      "type": "date",
-      "measures": [
-        "unit"
-      ],
-      "structure": "point",
-      "columns": [
-        "Event Date_constructed"
       ]
     },
     "Location": {
@@ -98,6 +98,7 @@
     "Event Date_constructed": "date",
     "Latitude": "latitude",
     "Longitude": "longitude",
+    "CAMEO Code": "action",
     "country_constructed": "country"
   },
   "formats": {

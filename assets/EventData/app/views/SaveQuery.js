@@ -68,7 +68,7 @@ export default class SaveQuery {
                     preferences['saved_to_dataverse'] = value === 'true';
                     this.saved = false;
                 },
-                activeSection: preferences['saved_to_dataverse'] + '' || 'false',
+                activeSection: (preferences['saved_to_dataverse'] || 'false') + '',
                 sections: [{value: 'true'}, {value: 'false'}]
             }),
             'Username': format([

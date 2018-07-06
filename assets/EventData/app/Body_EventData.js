@@ -26,7 +26,6 @@ import CanvasCategoricalGrouped from "./canvases/CanvasCategoricalGrouped";
 import CanvasCoordinates from "./canvases/CanvasCoordinates";
 import CanvasCustom from "./canvases/CanvasCustom";
 
-import CanvasTimeSeries from "./canvases/CanvasTimeSeries";
 import TableAggregation from "./views/TableAggregation";
 import Button from "../../common-eventdata/views/Button";
 import ModalVanilla from "../../common-eventdata/views/ModalVanilla";
@@ -160,7 +159,10 @@ export default class Body_EventData {
                 app.selectedMode !== 'home' && m(Button, {
                     class: ['btn-sm'],
                     onclick: () => {
-                        if (app.abstractQuery.length === 0) tour.tourStartSaveQueryEmpty();
+                        if ('subset' === app.selectedMode && app.abstractQuery.length === 0)
+                            tour.tourStartSaveQueryEmpty();
+                        else if ('aggregate' === app.selectedMode && !app.eventMeasure)
+                            tour.tourStartEventMeasure();
                         else app.setShowSaveQuery(true)
                     }, style: {'margin-top': '4px'}
                 }, 'Save'),
@@ -174,7 +176,10 @@ export default class Body_EventData {
                             "data-style": "zoom-in"
                         },
                         onclick: () => {
-                            if (app.abstractQuery.length === 0) tour.tourStartSaveQueryEmpty();
+                            if ('subset' === app.selectedMode && app.abstractQuery.length === 0)
+                                tour.tourStartSaveQueryEmpty();
+                            else if ('aggregate' === app.selectedMode && !app.eventMeasure)
+                                tour.tourStartEventMeasure();
                             else app.download();
                         }
                     },
@@ -322,19 +327,6 @@ export default class Body_EventData {
                                     app.setSelectedSubsetName(subset);
                                 }
                             })
-                        },
-                        {
-                            value: 'Results',
-                            contents: m(PanelList, {
-                                items: ['Time Series', 'Analysis'],
-                                id: 'ResultsList',
-                                colors: {
-                                    [common.grayColor]: timeSeries ? [] : ['Time Series'],
-                                    [common.selVarColor]: [app.selectedCanvas]
-                                },
-                                // only change the canvas if the canvas is not disabled
-                                callback: (canvas) => (canvas !== 'Time Series' || timeSeries) && app.setSelectedCanvas(canvas)
-                            })
                         }
                     ]
                 })
@@ -436,7 +428,6 @@ export default class Body_EventData {
             'About': CanvasAbout,
             'Datasets': CanvasDatasets,
             'Saved Queries': CanvasSavedQueries,
-            'Time Series': CanvasTimeSeries,
             'Custom': CanvasCustom
         }[app.selectedCanvas], {
             mode: app.selectedMode,

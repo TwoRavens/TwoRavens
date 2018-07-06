@@ -34,9 +34,6 @@ export let genericMetadata = {};
 export let formattingData = {};
 export let alignmentData = {};
 
-export let getVariables = (dataset) => Object.values((dataset || {})['columns'] || {});
-export let ontologyAlign = (column) => genericMetadata[selectedDataset]['columns'][column];
-
 // metadata computed on the dataset for each subset
 export let subsetData = {};
 
@@ -234,8 +231,8 @@ export let reloadSubset = (subsetName) => {
             query: JSON.stringify(query.buildSubset(stagedSubsetData)),
             dataset: selectedDataset,
             subset: selectedSubsetName,
-            alignments: [...new Set(alignments)],
-            formats: [...new Set(formats)],
+            alignments: [...new Set(alignments)].filter(alignment => !(alignment in alignmentData)),
+            formats: [...new Set(formats)].filter(format => !(format in formattingData)),
             countRecords: totalSubsetRecords === undefined
         },
         method: 'POST'
@@ -330,22 +327,23 @@ export function download(queryType, dataset, queryMongo) {
 
     function save(data) {
         // postprocess aggregate to reformat dates to YYYY-MM-DD and collapse the dyad boolean array
-        if (queryType === 'aggregate') {
-            let headersUnit;
-            ({data, headersUnit} = query.reformatAggregation(data));
-
-            // reformat dates to strings
-            for (let header of headersUnit) {
-                if (genericMetadata[dataset]['subsets'][header]['type'] === 'date') {
-                    data = data
-                        .filter(entry => header in entry) // ignore entries with undefined dates
-                        .map(entry => {
-                            // because YYYY-MM-DD format rocks
-                            return Object.assign({}, entry, {[header]: entry[header].toISOString().slice(0, 10)})
-                        });
-                }
-            }
-        }
+        // disabled because the final file is packaged by rook. If we construct csv from the browser, then this is useful
+        // if (queryType === 'aggregate') {
+        //     let headersUnit;
+        //     ({data, headersUnit} = query.reformatAggregation(data));
+        //
+        //     // reformat dates to strings
+        //     for (let header of headersUnit) {
+        //         if (genericMetadata[dataset]['subsets'][header]['type'] === 'date') {
+        //             data = data
+        //                 .filter(entry => header in entry) // ignore entries with undefined dates
+        //                 .map(entry => {
+        //                     // because YYYY-MM-DD format rocks
+        //                     return Object.assign({}, entry, {[header]: entry[header].toISOString().slice(0, 10)})
+        //                 });
+        //         }
+        //     }
+        // }
 
         let a = document.createElement('A');
         a.href = data.download;
@@ -363,6 +361,7 @@ export function download(queryType, dataset, queryMongo) {
     if (!queryMongo) {
         if (queryType === 'subset') {
             let variables = selectedVariables.size === 0 ? genericMetadata[dataset]['columns'] : [...selectedVariables];
+            console.log(variables);
             queryMongo = [
                 {"$match": query.buildSubset(abstractQuery)},
                 {
@@ -376,6 +375,8 @@ export function download(queryType, dataset, queryMongo) {
         else if (queryType === 'aggregate')
             queryMongo = query.buildAggregation(abstractQuery, subsetPreferences);
     }
+
+    console.log("Download Query: " + JSON.stringify(queryMongo));
 
     let body = {
         'query': escape(JSON.stringify(queryMongo)),
@@ -545,10 +546,10 @@ export let aggregationData = [];
 export let setAggregationData = (data) => aggregationData = data;
 
 export let aggregationHeadersUnit = [];
-export let setAggregationHeadersUnit = (headersUnit) => aggregationHeadersUnit = headersUnit;
+export let setAggregationHeadersUnit = (headersUnit) => aggregationHeadersUnit = headersUnit || [];
 
 export let aggregationHeadersEvent = [];
-export let setAggregationHeadersEvent = (headersEvent) => aggregationHeadersEvent = headersEvent;
+export let setAggregationHeadersEvent = (headersEvent) => aggregationHeadersEvent = headersEvent || [];
 
 export let unitMeasure = {};
 
@@ -1027,6 +1028,7 @@ function getSubsetPreferences() {
             .filter(edge => edge.source.actor in metadata['tabs'] && edge.target.actor in metadata['tabs']);
 
         for (let linkId in filteredEdges) {
+
             // Add each link to the parent node as another rule
             let link = {
                 id: String(nodeId++),
@@ -1052,27 +1054,6 @@ function getSubsetPreferences() {
                     column: metadata['tabs'][Object.keys(metadata['tabs'])[1]]['full']
                 }]
             };
-
-            // // add an entry for every checked value. Disabled for performance
-            // for (let source of actorLinks[linkId].source.group) {
-            //     if (source !== undefined) {
-            //         link['children'][0]['children'].push({
-            //             id: String(nodeId++),
-            //             name: source,
-            //             show_op: false
-            //         });
-            //     }
-            // }
-            //
-            // for (let target of actorLinks[linkId].target.group) {
-            //     if (target !== undefined) {
-            //         link['children'][1]['children'].push({
-            //             id: String(nodeId++),
-            //             name: target,
-            //             show_op: false
-            //         });
-            //     }
-            // }
 
             subset['children'].push(link);
         }

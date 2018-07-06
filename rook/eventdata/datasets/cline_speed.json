@@ -237,7 +237,7 @@
         "G_LVL_V"
       ]
     },
-    "Date Coded": {
+    "Code Date": {
       "type": "date",
       "measures": [
         "unit"
@@ -247,7 +247,7 @@
         "CODE_DATE_constructed"
       ]
     },
-    "Date Published": {
+    "Publish Date": {
       "type": "date",
       "measures": [
         "unit"
@@ -257,7 +257,7 @@
         "PUB_DATE_constructed"
       ]
     },
-    "Date Average": {
+    "Date": {
       "type": "date",
       "measures": [
         "unit"
@@ -267,7 +267,7 @@
         "AVERAGE_DATE_constructed"
       ]
     },
-    "Date Earliest/Latest": {
+    "Earliest/Latest Date": {
       "type": "date",
       "measures": [
         "unit"
@@ -278,7 +278,7 @@
         "JUL_START_DATE_constructed"
       ]
     },
-    "Date Precise": {
+    "Precise Date": {
       "type": "date",
       "measures": [
         "unit"
@@ -289,7 +289,7 @@
         "JUL_PSD_constructed"
       ]
     },
-    "Date Estimated": {
+    "Estimated Date": {
       "type": "date",
       "measures": [
         "unit"

@@ -103,6 +103,7 @@
     "TIMESTAMP"
   ],
   "columns_constructed": [
+    "EVENT_DATE_constructed",
     "TIMESTAMP_constructed"
   ],
   "alignments": {
