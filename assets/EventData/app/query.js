@@ -23,8 +23,6 @@ export function submitQuery(datasetChanged = false) {
         }
     }
 
-    console.log(JSON.stringify(app.abstractQuery));
-
     if (!newSubsets && !datasetChanged) {
         alert("Nothing has been staged yet! Stage your preferences before subset.");
         return;
@@ -443,10 +441,14 @@ export function buildAggregation(tree, preferences) {
             (transforms[measure][tempSubsets[subset]['type']] || Function)(subset);
     });
 
-    return [
+    let query = [
         {"$match": buildSubset(tree)},
         {"$group": Object.assign({"_id": unit}, event)}
     ];
+    console.log("FROM CONSTRUCT AGGREG QUERY");
+    console.log(query);
+
+    return query;
 }
 
 // almost pure- the function mutates the argument

@@ -17,14 +17,28 @@ export default class SaveQuery {
             }
         }
 
-        let queryMongo = app.selectedMode === 'subset'
-            ? query.buildSubset(stagedSubsetData)
-            : query.buildAggregation(stagedSubsetData, app.subsetPreferences);
+        let queryMongo;
+        if (app.selectedMode === 'subset') {
+            let variables = app.selectedVariables.size === 0
+                ? app.genericMetadata[app.selectedDataset]['columns']
+                : [...app.selectedVariables];
+            queryMongo = [
+                {"$match": query.buildSubset(app.abstractQuery)},
+                {
+                    "$project": variables.reduce((out, variable) => {
+                        out[variable] = 1;
+                        return out;
+                    }, {'_id': 0})
+                }
+            ];
+        }
+        else if (app.selectedMode === 'aggregate')
+            queryMongo = query.buildAggregation(stagedSubsetData, app.subsetPreferences);
 
         let {preferences} = vnode.attrs;
         // set the static preferences upon initialization
         Object.assign(preferences, {
-            'query': JSON.stringify(queryMongo),
+            'query': queryMongo,
             'username': app.username,
             'dataset': app.selectedDataset,
             'dataset_type': app.selectedMode,
@@ -78,7 +92,7 @@ export default class SaveQuery {
                 preferences['result_count'],
                 preferences['result_count'] === 0 && warn('The query does not match any data.')]),
             'Query': format([
-                preferences['query'],
+                JSON.stringify(preferences['query']),
                 app.abstractQuery.filter(branch => branch.type !== 'query').length !== 0 && warn('Take note that subsets that are not grouped under a query are not included. Click update in the query summary to group them under a query.')])
         };
 
@@ -96,6 +110,8 @@ export default class SaveQuery {
         let disabled = this.saved || !Object.keys(invalids).map(key =>
             key in preferences && preferences[key] !== undefined && invalids[key] !== preferences[key]).every(_ => _);
 
+        console.log("SAVEQUERY");
+        console.log(preferences);
         return m('div',
             m(Button, {
                 disabled: disabled,
@@ -107,6 +123,7 @@ export default class SaveQuery {
                         data: preferences,
                         method: 'POST'
                     });
+                    console.log(response);
                     if (response.success) {
                         this.status = 'Saved as query ID ' + response.data.id;
                         this.saved = true;

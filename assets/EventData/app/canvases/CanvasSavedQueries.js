@@ -97,7 +97,7 @@ export default class CanvasSavedQueries {
                         onclick: async (e) => {
                             e.stopPropagation();
                             if (this.result !== result.id || !preferences['query']) await this.getQuery(preferences, result.id);
-                            app.download(result.dataset_type, result.dataset, [{$match: preferences['query']}]);
+                            app.download(result.dataset_type, result.dataset, preferences['query']);
                         }
                     }, 'Download')
                 ),

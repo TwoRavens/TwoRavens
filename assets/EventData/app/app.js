@@ -228,7 +228,7 @@ export let reloadSubset = (subsetName) => {
     m.request({
         url: subsetURL,
         data: {
-            query: JSON.stringify(query.buildSubset(stagedSubsetData)),
+            query: escape(JSON.stringify(query.buildSubset(stagedSubsetData))),
             dataset: selectedDataset,
             subset: selectedSubsetName,
             alignments: [...new Set(alignments)].filter(alignment => !(alignment in alignmentData)),
