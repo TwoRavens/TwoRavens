@@ -53,7 +53,7 @@ def api_add_query(request):
         return JsonResponse(user_msg)
 
     # print('frm.cleaned_data', frm.cleaned_data)
-    success, addquery_obj_err = EventJobUtil.add_query_db(frm.cleaned_data)
+    success, addquery_obj_err = EventJobUtil.add_query_db(json_req_obj)
 
     if not success:
         return JsonResponse(get_json_error(addquery_obj_err))
