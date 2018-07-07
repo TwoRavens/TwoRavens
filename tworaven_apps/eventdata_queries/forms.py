@@ -39,9 +39,26 @@ class EventDataSavedQueryForm(forms.Form):
             - e.g. input: "OrderedDict([('ads', 'asd')])"
         """
         query_str = self.cleaned_data.get('query')
-        # if it doesn't give error in json.dumps( ) then it can be converted into Ordereddict,
-        #  Also to consider list as json, dict should not be checked as dict does not take lists
-        return json.dumps(query_str)
+
+        try:
+            dict_type = eval(query_str)
+        except SyntaxError:
+            raise forms.ValidationError("The query is invalid: %s" % query_str)
+        except NameError:
+            raise forms.ValidationError("The query is invalid: %s" % query_str)
+
+        if isinstance(dict_type, dict):
+            print("dict type ")
+            return dict_type
+        else:
+            try:
+                print("non dict type")
+                non_dict_type = json.dumps(query_str)
+                return non_dict_type
+            except SyntaxError:
+                raise forms.ValidationError("The query is invalid and non_dict type: %s" % query_str)
+            except NameError:
+                raise forms.ValidationError("The query is invalid and non dict type: %s" % query_str)
 
     def clean_result_count(self):
         res_count = self.cleaned_data.get('result_count')
