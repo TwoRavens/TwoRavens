@@ -95,7 +95,7 @@ export function submitQuery(datasetChanged = false) {
             'countRecords': true
         },
         method: 'POST'
-    }).then(submitQueryCallback).catch(app.laddaStop)
+    }).then(submitQueryCallback) // .catch(app.laddaStop)
 }
 
 // Recursively traverse the tree in the right panel. For each node, call processNode
@@ -457,8 +457,7 @@ export function reformatAggregation(jsondata) {
 
     // reformat data for each unit measure
     headers.forEach(unit => {
-        if (app.genericMetadata[app.selectedDataset]['subsets'][unit]['type'] === 'dyad') {
-            console.log('dyad');
+        if (app.genericMetadata[app.selectedDataset]['subsets'][unit]['type'] === 'dyad' && jsondata.length !== 0) {
 
             let jsondataMerged = [];
             let mergeAggEntry = (newEntry) => {
@@ -499,7 +498,7 @@ export function reformatAggregation(jsondata) {
             });
             jsondata = jsondataMerged;
         }
-        else if (app.genericMetadata[app.selectedDataset]['subsets'][unit]['type'] === 'date') {
+        else if (app.genericMetadata[app.selectedDataset]['subsets'][unit]['type'] === 'date' && jsondata.length !== 0) {
             // date ids are of the format: '[unit]-[dateFormat]'; grab the dateFormat from the id:
             let format = Object.keys(jsondata[0]._id).filter(id => id.split('-')[0] === unit)[0].split('-')[1];
 
@@ -508,17 +507,14 @@ export function reformatAggregation(jsondata) {
                     entry._id[unit] = {
                         'Weekly': dateStr => {
                             let [year, week] = dateStr.split('-');
-                            return new Date(new Date(year, 0).setDate(week * 7));
+                            let date = new Date(new Date(year, 0).setDate(week * 7));
+                            return date.toISOString().slice(0, 10);
                         },
-                        'Monthly': (dateStr) => {
-                            let [year, month] = dateStr.split('-');
-                            return new Date(year, month);
-                        },
-                        'Yearly': (dateStr) => new Date(dateStr),
+                        'Monthly': (dateStr) => dateStr + '-01',
+                        'Yearly': (dateStr) => dateStr + '-01-01',
                         'Quarterly': (dateStr) => {
                             let [year, quarter] = dateStr.split('-');
-
-                            return new Date(year, quarter * 3);
+                            return year + '-' + app.pad(quarter * 3, 2) + '-01'; // weak typing '2' * 2 = 4
                         },
                     }[format](entry._id[unit + '-' + format]);
                     delete entry._id[unit + '-' + format];
@@ -545,8 +541,7 @@ export function reformatAggregation(jsondata) {
             if (!(header in a) || !(header in b)) continue;
             let compare = {
                 'number': () => a[header] - b[header],
-                'string': () => a[header].localeCompare(b[header]),
-                'object': () => a[header].getTime() - b[header].getTime()
+                'string': () => a[header].localeCompare(b[header])
             }[typeof a[header]]();
             if (compare) return compare;
         }

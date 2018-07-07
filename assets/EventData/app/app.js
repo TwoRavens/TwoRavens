@@ -169,11 +169,11 @@ export let setSelectedSubsetName = (subset) => {
     selectedSubsetName = subset;
 };
 
-let canvasTypes = ['Home', 'Datasets', 'Saved Queries', 'Subset', 'Custom', 'Time Series', 'Analysis']; // not actually used, but maintained for documentation
+let canvasTypes = ['Datasets', 'Saved Queries', 'Subset', 'Custom', 'Time Series', 'Analysis']; // not actually used, but maintained for documentation
 export let selectedCanvas = 'Datasets';
 export let selectedCanvasHome = selectedCanvas;
 export let setSelectedCanvas = (canvasKey) => {
-    if (['About', 'Datasets', 'Saved Queries'].indexOf(canvasKey) !== -1) selectedCanvasHome = canvasKey;
+    if (['About', 'Datasets', 'Saved Queries', 'Time Series'].indexOf(canvasKey) !== -1) selectedCanvasHome = canvasKey;
     selectedCanvas = canvasKey;
 };
 
@@ -328,22 +328,7 @@ export function download(queryType, dataset, queryMongo) {
     function save(data) {
         // postprocess aggregate to reformat dates to YYYY-MM-DD and collapse the dyad boolean array
         // disabled because the final file is packaged by rook. If we construct csv from the browser, then this is useful
-        // if (queryType === 'aggregate') {
-        //     let headersUnit;
-        //     ({data, headersUnit} = query.reformatAggregation(data));
-        //
-        //     // reformat dates to strings
-        //     for (let header of headersUnit) {
-        //         if (genericMetadata[dataset]['subsets'][header]['type'] === 'date') {
-        //             data = data
-        //                 .filter(entry => header in entry) // ignore entries with undefined dates
-        //                 .map(entry => {
-        //                     // because YYYY-MM-DD format rocks
-        //                     return Object.assign({}, entry, {[header]: entry[header].toISOString().slice(0, 10)})
-        //                 });
-        //         }
-        //     }
-        // }
+        // ({data, headersUnit} = query.reformatAggregation(data));
 
         let a = document.createElement('A');
         a.href = data.download;
@@ -404,7 +389,7 @@ let resetPeek = () => {
         localStorage.removeItem('peekTableHeaders' + peekId);
         localStorage.removeItem('peekTableData' + peekId);
     }
-    else updatePeek();
+    else if (localStorage.getItem('peekMore' + peekId) === 'true') updatePeek();
 };
 
 let peekId = 'eventdata';
@@ -419,15 +404,17 @@ let peekIsGetting = false;
 let onStorageEvent = (e) => {
     if (e.key !== 'peekMore' + peekId || peekIsGetting) return;
 
-    if (localStorage.getItem('peekMore' + peekId) === 'true' && !peekAllDataReceived) {
-        localStorage.setItem('peekMore' + peekId, 'false');
-        peekIsGetting = true;
+    if (localStorage.getItem('peekMore' + peekId) === 'true' && !peekAllDataReceived)
         updatePeek();
-    }
 };
 
 let updatePeek = async () => {
-    if (!selectedDataset) return;
+    if (!selectedDataset) {
+        localStorage.setItem('peekMore' + peekId, 'false');
+        return;
+    }
+
+    peekIsGetting = true;
 
     let stagedSubsetData = [];
     for (let child of abstractQuery) {
@@ -496,6 +483,8 @@ export function incrementMonth(date) {
 
 export let isSameMonth = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth();
 
+// positive ints only
+export let pad = (number, length) => '0'.repeat(length - String(number).length) + number;
 
 /*
  *   Draws all subset plots, often invoked as callback after server request for new plotting data

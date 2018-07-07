@@ -25,11 +25,12 @@ import CanvasDate from "./canvases/CanvasDate";
 import CanvasCategoricalGrouped from "./canvases/CanvasCategoricalGrouped";
 import CanvasCoordinates from "./canvases/CanvasCoordinates";
 import CanvasCustom from "./canvases/CanvasCustom";
+import CanvasTimeSeries from "./canvases/CanvasTimeSeries";
 
-import TableAggregation from "./views/TableAggregation";
 import Button from "../../common-eventdata/views/Button";
 import ModalVanilla from "../../common-eventdata/views/ModalVanilla";
 import SaveQuery from "./views/SaveQuery";
+import Table from "../../common-eventdata/views/Table";
 
 export default class Body_EventData {
 
@@ -70,7 +71,8 @@ export default class Body_EventData {
                 sections: [
                     {value: 'Datasets', attrsInterface},
                     {value: 'Saved Queries', attrsInterface},
-                    {value: 'About', attrsInterface}
+                    {value: 'About', attrsInterface},
+                    {value: 'Time Series', attrsInterface}
                 ],
                 activeSection: app.selectedCanvasHome,
                 onclick: app.setSelectedCanvas,
@@ -428,13 +430,33 @@ export default class Body_EventData {
             'About': CanvasAbout,
             'Datasets': CanvasDatasets,
             'Saved Queries': CanvasSavedQueries,
-            'Custom': CanvasCustom
+            'Custom': CanvasCustom,
+            'Time Series': CanvasTimeSeries
         }[app.selectedCanvas], {
             mode: app.selectedMode,
             preferences: app.canvasPreferences[app.selectedCanvas],
             redraw: app.canvasRedraw[app.selectedCanvas],
             setRedraw: (state) => app.setCanvasRedraw(app.selectedCanvas, state)
         });
+    }
+
+    aggregationTable() {
+        return m("[id='aggregDataOutput']", {
+                style: {
+                    "position": "fixed",
+                    "bottom": common.heightFooter,
+                    "height": app.tableHeight,
+                    "width": "100%",
+                    "border-top": "1px solid #ADADAD",
+                    "overflow-y": "scroll",
+                    "overflow-x": "auto"
+                }
+            },
+            app.unitMeasure ? m(Table, {
+                headers: [...app.aggregationHeadersUnit, ...app.aggregationHeadersEvent],
+                data: app.aggregationData
+            }) : "Select event measures, then click 'Update' to display aggregated data."
+        );
     }
 
     view(vnode) {
@@ -489,7 +511,7 @@ export default class Body_EventData {
                         : {}
                 }
             }, this.canvasContent()),
-            m(TableAggregation, {mode: mode}),
+            mode === 'aggregate' && this.aggregationTable(),
             this.footer(mode)
         );
     }
