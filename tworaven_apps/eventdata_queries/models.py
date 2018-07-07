@@ -123,7 +123,7 @@ class EventDataSavedQuery(TimeStampedModel):
             if v:
                 arguments[k] = v
 
-        result = EventDataSavedQuery.objects.values('name', 'username', 'description','result_count',
+        result = EventDataSavedQuery.objects.values('id', 'name', 'username', 'description','result_count',
                                                     'created', 'modified', 'saved_to_dataverse',
                                                     'dataverse_url', 'dataset', 'dataset_type'
                                                     ).filter(**arguments).all()
@@ -136,7 +136,7 @@ class EventDataSavedQuery(TimeStampedModel):
 
     def get_all_fields_except_query_list(self):
         """ get all fields expect query"""
-        result = EventDataSavedQuery.objects.values('name', 'username', 'description',
+        result = EventDataSavedQuery.objects.values('id','name', 'username', 'description',
                                                     'result_count', 'created', 'modified', 'saved_to_dataverse',
                                                     'dataverse_url', 'dataset', 'dataset_type').all()
 
