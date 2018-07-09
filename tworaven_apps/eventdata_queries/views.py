@@ -47,7 +47,7 @@ def api_add_query(request):
     if not frm.is_valid():
         user_msg = dict(success=False,
                         message='Invalid input',
-                        errors=get_json_error(frm))
+                        errors=get_json_error(frm.errors))
         return JsonResponse(user_msg)
 
     # print('frm.cleaned_data', frm.cleaned_data)
@@ -167,8 +167,3 @@ def api_upload_to_dataverse(request, query_id):
     else:
         user_msg = dict(error=get_json_error(res_obj))
         return JsonResponse(user_msg)
-
-
-
-
-
