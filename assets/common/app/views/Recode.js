@@ -31,6 +31,7 @@ let currentVal = "variable" ;
 let config = '';
 let configName = '';
 let dataDetails = {};
+let transformData = {};
 var dataNode = [];
 
 let peekSkip = 0;
@@ -53,9 +54,14 @@ export default class Recode {
 
         this.configuration = localStorage.getItem('configuration');
         this.configName = localStorage.getItem('configName');
+        this.transformData = JSON.parse(localStorage.getItem('tranformData'));
+        
+        localStorage.setItem('tranformData',JSON.stringify(this.transformData));
+
         config = this.configuration;
         configName = this.configName
-        //data/ traindata.csv
+        transformData = this.transformData;
+        
         m.request(config).then(data => {
             
             Object.assign(dataDetails,  data['variables']);
@@ -166,12 +172,8 @@ export default class Recode {
                             m('form',{ onsubmit: calculateBin},[
                                 m('div',{style :{'display': 'block','overflow': 'hidden'}},[
                                     m('input[type=number]',{id:'bin',placeholder:'Number of bins'}),
-                                    m('div.dropdownBin',{style : {'display':'inline-block','margin':'10px'}},[
-                                        m('select.form-control',{onchange: someFunction ,style:{'display':'inline-block'}, id:'binType'},[
-                                            m('option','Equidistance'),
-                                            m('option','Equimass')
-                                        ])
-                                    ]),
+                                    m('button',{onclick: equidistance_btn},'Equidistance'),
+                                    m('button',{onclick: equimass_btn},'Equimass'),
                                     m('div',{id:'plot_a'}),                         
                                 ]),
                                 m("br"),
@@ -285,9 +287,22 @@ export default class Recode {
             ]}
         }
 
+function equidistance_btn(){
+    var bin = document.getElementById('bin').value;
+    var varName = currentVal;
+    equidistance(varName,bin);
+    localStorage.setItem('tranformData',JSON.stringify(transformData)); 
+}
+
+function equimass_btn(){
+    var bin = document.getElementById('bin').value;
+    var varName = currentVal;
+    equimass(varName,bin);
+}
 function onRecodeStorageEvent(recode, e){
     recode.configuration = localStorage.getItem('configuration');
     recode.configName = localStorage.getItem('configName');
+    recode.transformData = JSON.parse(localStorage.getItem('tranformData'));
     m.redraw();
 }
 
@@ -446,9 +461,12 @@ function createNewCalculate(){
         alert("Enter Variable Name!");
     }
     else{
+        transformData.
         document.getElementById("createButton").setAttribute("style", "display:none");
         document.getElementById("typeSelect").setAttribute("disabled", "true");
         document.getElementById("varDescription").setAttribute("disabled", "true");
+
+
         
         var iter = 0;
     //createNewForm
@@ -568,18 +586,18 @@ function recodeCreate(){
     var elem = document.getElementById('centralPanel');
     elem.style.display ='none';
     document.getElementById('btnOperations').disabled = 'disabled';
-    
-
-    // for(var i =1;i< varList.length;i++){
-    //     console.log('here')
-    //     // console.log(document.getElementById('varList'+varList[i].replace(/\W/g, '_')))
-    // }
 }
 function recodeClick(){
     var elem = document.getElementById('recodeLink');
     elem.className = 'active';
     $('#btnOperations').css('display', 'none');
     $('#tableBinDiv').css('display', 'none');
+
+    var list = document.getElementsByClassName('var');
+    for (var i = 0; i < list.length; i++ ) {
+        list[i].setAttribute("style", "background:"+app.hexToRgba("#FA8072"));
+    }
+    document.getElementById('plot_a').innerHTML ="";
 
     var elem = document.getElementById('centralPanel');
     elem.style.display="none"
@@ -617,6 +635,11 @@ function formulaClick(){
     var elem = document.getElementById('centralPanel');
     elem.style.display ='none';
     $('#btnOperations').css('display', 'block');
+
+    var list = document.getElementsByClassName('var');
+    for (var i = 0; i < list.length; i++ ) {
+        list[i].setAttribute("style", "background:"+app.hexToRgba("#FA8072"));
+    }
 
     var elem = document.getElementById('createTableDiv');
     elem.style.display="none";
@@ -777,6 +800,8 @@ function reorderCreate(){
             .style("text-indent","20px")
             .style("font-size","12px")
             .style("font-weight","bold");
+        
+        var data = [];
 
         if (isNaN(a) || a === 0) {
             var upper_limit = d3.max(xVals);
@@ -809,6 +834,7 @@ function reorderCreate(){
                 for (var i = 0; i < a - 1; i++) {
                     push_data = push_data + buffer;
                     x_cord.push(push_data);
+                    data.push([push_data, i]);
                     plotsvg.append("line")
                         .attr("id", "line1")
                         .attr("x1", x(x_cord[i]))
@@ -818,11 +844,16 @@ function reorderCreate(){
                         .style("stroke", "#0D47A1")
                         .style("stroke-dasharray", "4");
                 }
+                var last_index = a-1;
+                data.push([upper_limit,last_index]);
             } else if (method_name === "equimass") {
                 // here we use the data from equimassCalculation to draw lines
                 var temp = [];
+                data = [];
                 temp = equimassCalculation(density_env, a);
+                console.log(d3.max(xVals))
                 for (var i = 1; i < a; i++) {
+                    data.push([temp[i],i-1])
                     plotsvg.append("line")
                         .attr("id", "line1")
                         .attr("x1", x(temp[i]))
@@ -832,6 +863,7 @@ function reorderCreate(){
                         .style("stroke", "#0D47A1")
                         .style("stroke-dasharray", "4");
                 }
+                data.push([d3.max(xVals),a-1]);
             }
         }
     }
@@ -1010,20 +1042,8 @@ function reorderCreate(){
         }
     }
 
-    function calculateBin(elem){
-        var bin = elem.target[0].value;
-        var varName = currentVal;
-        if(elem.target[1][0].selected){
-            equidistance(varName,bin);
-        }else if(elem.target[1][1].selected){
-            equimass(varName, bin);
-        }
-
-    }
-
+    function calculateBin(elem){}
     function equidistance(varName,bin) {
-
-        console.log('elem equidistance')
         var method_name= "equidistance";
         var obj = new Object();
         obj.plotNameA = varName;

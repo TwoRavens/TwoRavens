@@ -27,6 +27,20 @@ import {searchIndex} from "./views/Search";
 //    Developers, see /template/index.html
 //-------------------------------------------------
 
+var transform_data ={  
+    "preprocess_id":0,
+    "current_variable":"",
+    "description" : "",
+    "transform_variable":[  
+       "any name (optional)"
+    ],
+    "transform_type":{  
+       "manual_transform":true,
+       "functional_transform":false
+    },
+    "transform_data":""
+ }
+
 export let marginTopCarousel = 0;
 export let marginLeftCarousel = 0;
 
@@ -536,6 +550,17 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     console.log(d3mPreprocess);
     localStorage.setItem('configuration',d3mPreprocess);//For Recode
     localStorage.setItem('configName',d3mDataName);//For Recode
+    localStorage.setItem('tranformData',JSON.stringify(transform_data));// For Recode
+
+    setInterval(function(){ 
+        if(JSON.stringify(transform_data) != JSON.stringify(localStorage.getItem('tranformData'))){
+            console.log('changed!')
+            transform_data = localStorage.getItem('tranformData');
+        }else{
+            console.log('back to normal!!');
+        }
+
+    }, 3000);
 
     // 3. Read the problem schema and set 'd3mProblemDescription'
     // ...and make a call to start the session with TA2. if we get this far, data are guaranteed to exist for the frontend
