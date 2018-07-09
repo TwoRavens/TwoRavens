@@ -2,7 +2,7 @@ from datetime import datetime
 import json
 import uuid
 import requests  # http://docs.python-requests.org/en/master/
-from tworavensproject.settings.base import (DATAVERSE_SERVER, DATAVERSE_API_KEY, DATASET_PERSISTENT_ID)
+from django.conf import settings
 from tworaven_apps.utils.view_helper import \
     (get_request_body_as_json,
      get_json_error,
@@ -19,10 +19,10 @@ class DataverseFileUpload(object):
 
         self.status_code = None
         self.res = None
-        dataverse_server = DATAVERSE_SERVER  # no trailing slash
-        api_key = DATAVERSE_API_KEY    # generated from kripanshu's account
+        dataverse_server = settings.DATAVERSE_SERVER  # no trailing slash
+        api_key = settings.DATAVERSE_API_KEY    # generated from kripanshu's account
         # dataset_id = 1  # database id of the dataset
-        persistentId = DATASET_PERSISTENT_ID   # doi or hdl of the dataset
+        persistentId = settings.DATASET_PERSISTENT_ID   # doi or hdl of the dataset
 
         # --------------------------------------------------
         # Using a "jsonData" parameter, add optional description + file tags
@@ -63,10 +63,13 @@ class DataverseFileUpload(object):
         print(r.json())
         print(r.status_code)
         self.status_code = r.status_code
-        self.res = r.json()
+        if r.status_code == 200:
+            self.res = r.json()
+        else:
+            self.res = None
 
     def return_status(self):
-        if self.status_code == 200:
+        if self.res is not None:
             return ok_resp(self.res)
         else:
             return err_resp(self.res)

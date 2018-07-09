@@ -10,7 +10,7 @@ from tworaven_apps.utils.basic_response import (ok_resp,
                                                 err_resp,
                                                 err_resp_with_data)
 from tworaven_apps.eventdata_queries.models import (EventDataSavedQuery, ArchiveQueryJob)
-from tworaven_apps.eventdata_queries.dataverse.named_temporary_file import NamedTemporaryFile
+from tworaven_apps.eventdata_queries.dataverse.NamedTemporaryFile import NamedTemporaryFile
 from tworaven_apps.eventdata_queries.dataverse.dataverse_publish_dataset import DataversePublishDataset
 from tworaven_apps.eventdata_queries.dataverse.dataverse_list_files_dataset import ListFilesInDataset
 from tworaven_apps.eventdata_queries.dataverse.get_dataset_file_info import GetDataSetFileInfo

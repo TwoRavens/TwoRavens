@@ -47,8 +47,6 @@ class EventDataSavedQuery(TimeStampedModel):
     result_count = models.IntegerField(default=-1)
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now_add=True)
-    saved_to_dataverse = models.BooleanField(default=False)
-    dataverse_url = models.URLField(blank=True)
     dataset = models.TextField(blank=True)
     dataset_type = models.CharField(blank=False,
                                     max_length=255,
@@ -59,8 +57,8 @@ class EventDataSavedQuery(TimeStampedModel):
         ordering = ('-created',)
 
     def __str__(self):
-        query_str = json.dumps(self.query, indent=4)
-        return str(query_str)
+        # query_str = json.dumps(self.query, indent=4)
+        return self.name
 
     def get_query_id(self):
         """return id"""
@@ -125,8 +123,7 @@ class EventDataSavedQuery(TimeStampedModel):
                 arguments[k] = v
 
         result = EventDataSavedQuery.objects.values('id', 'name', 'username', 'description','result_count',
-                                                    'created', 'modified', 'saved_to_dataverse',
-                                                    'dataverse_url', 'dataset', 'dataset_type'
+                                                    'created', 'modified', 'dataset', 'dataset_type'
                                                     ).filter(**arguments).all()
 
         if not result:
@@ -138,8 +135,7 @@ class EventDataSavedQuery(TimeStampedModel):
     def get_all_fields_except_query_list(self):
         """ get all fields expect query"""
         result = EventDataSavedQuery.objects.values('id','name', 'username', 'description',
-                                                    'result_count', 'created', 'modified', 'saved_to_dataverse',
-                                                    'dataverse_url', 'dataset', 'dataset_type').all()
+                                                    'result_count', 'created', 'modified', 'dataset', 'dataset_type').all()
 
         if not result:
             return err_resp('could not get the object list')
@@ -150,7 +146,7 @@ class EventDataSavedQuery(TimeStampedModel):
 
 class ArchiveQueryJob(TimeStampedModel):
     """archive query job"""
-    datafile_id = models.IntegerField(default=1)
+    datafile_id = models.IntegerField(default=-1)
     saved_query = models.ForeignKey(EventDataSavedQuery,
                                     on_delete=models.PROTECT)
     status = models.CharField(max_length=100,
@@ -167,6 +163,9 @@ class ArchiveQueryJob(TimeStampedModel):
 
     class Meta:
         ordering = ('-created',)
+
+    def __str__(self):
+        return '%s' % self.saved_query
 
     def get_archive_id(self):
         """return id"""

@@ -12,14 +12,11 @@ class EventDataSavedQueryAdmin(admin.ModelAdmin):
                     'result_count',
                     'created',
                     'modified',
-                    'saved_to_dataverse',
-                    'dataverse_url',
                     'dataset',
                     'dataset_type')
 
     save_on_top = True
     readonly_fields = ('modified', 'created')
-    list_filter = ('saved_to_dataverse',)
 
 
 admin.site.register(EventDataSavedQuery, EventDataSavedQueryAdmin)

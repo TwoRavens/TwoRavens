@@ -31,7 +31,7 @@ urlpatterns = [
          views.api_publish_dataset,
          name='api_publish_dataset'
          ),
-    re_path(r'api/get-archive-query-object/get/(?P<datafile_id>[0-9]{1,10})$',
+    re_path(r'api/get-archive-query-object/get/(?P<query_id>[0-9]{1,10})$',
          views.api_get_archive_query_object,
          name='api_get_archive_query_object'
          ),
