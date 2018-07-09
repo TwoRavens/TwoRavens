@@ -4,8 +4,9 @@ to an output file"""
 import json
 from datetime import datetime as dt
 import os
-from os.path import dirname, isdir, isfile, join
+from os.path import dirname, isdir, isfile, join, normpath
 from collections import OrderedDict
+from tworaven_apps.utils.json_helper import json_dumps
 from tworaven_apps.utils.view_helper import \
     (get_request_body_as_json,
      get_json_error,
@@ -45,37 +46,50 @@ class BasicProblemWriter(object):
         self.has_error = True
         self.error_message = user_msg
 
-    def write_file(self):
-        """Initial cut--just write the data to a file"""
+
+    def check_filename(self):
+        """check the filename"""
         if not self.filename:
             self.add_error_message('"filename" is not specified (cannot be blank)')
+            return
+
+        # take out any '..', etc
+        #
+        self.filename = normpath(self.filename)
+
+
+    def write_file(self):
+        """Initial cut--just write the data to a file"""
+        self.check_filename()
+        if self.has_error:
             return
 
         if not self.file_data:
             self.add_error_message('"data" is not specified (cannot be blank)')
             return
 
-        attempted_dirs = [OUTPUT_PROBLEMS_DIR]
+        attempted_dirs = []
 
         # (1) Try the "/output/problems" directory
         #
-        success_dirmake1 = self.make_directory(OUTPUT_PROBLEMS_DIR)
+        success_dirmake1, output_dir1 = self.make_directory(OUTPUT_PROBLEMS_DIR)
         if success_dirmake1:
-            fullpath = join(OUTPUT_PROBLEMS_DIR, self.filename)
-            self.write_new_file(fullpath)
+            fullpath = join(output_dir1, self.filename)
+            self.write_new_file(fullpath, output_dir1)
             return
+        attempted_dirs = [output_dir1]
 
         # (2) Try the "user_problems_root" directory
         #
         d3m_config = get_latest_d3m_config()
         if d3m_config and d3m_config.user_problems_root:
             user_problems_root = d3m_config.user_problems_root
-            success_dirmake2 = self.make_directory(user_problems_root)
+            success_dirmake2, output_dir2 = self.make_directory(user_problems_root)
             if success_dirmake2:
-                fullpath = join(user_problems_root, self.filename)
-                self.write_new_file(fullpath)
+                fullpath = join(output_dir2, self.filename)
+                self.write_new_file(fullpath, output_dir2)
                 return
-            attempted_dirs.append(user_problems_root)
+            attempted_dirs.append(output_dir2)
 
 
         # (3) Try the "temp_storage_root" directory
@@ -83,12 +97,12 @@ class BasicProblemWriter(object):
         d3m_config = get_latest_d3m_config()
         if d3m_config and d3m_config.temp_storage_root:
             temp_storage_root = join(d3m_config.temp_storage_root, 'problems')
-            success = self.make_directory(temp_storage_root)
+            success, output_dir3 = self.make_directory(temp_storage_root)
             if success:
-                fullpath = join(temp_storage_root, self.filename)
-                self.write_new_file(fullpath)
+                fullpath = join(output_dir3, self.filename)
+                self.write_new_file(fullpath, output_dir3)
                 return
-            attempted_dirs.append(temp_storage_root)
+            attempted_dirs.append(output_dir3)
 
         self.add_error_message(('Failed to save file!'
                                 ' Tried these directories:') %
@@ -96,10 +110,38 @@ class BasicProblemWriter(object):
 
 
 
-    def write_new_file(self, fullpath, overwrite_ok=True):
+    def write_new_file(self, fullpath, expected_base_dir, overwrite_ok=True):
         """Write a file"""
         if self.has_error:
             return
+
+        fullpath = normpath(fullpath)
+
+        if not fullpath.startswith(expected_base_dir):
+            user_msg = ('Unexpected base directory.'
+                        '\n Expected base directory: "%s"'
+                        '\n But not found in: "%s"') % \
+                        (expected_base_dir, fullpath)
+            self.add_error_message(user_msg)
+            return False
+
+        # make new directory for the problem, if needed
+        #
+        file_dirname = dirname(fullpath)
+        if not file_dirname:
+            user_msg = ('Did not find a base directory.'
+                        '\n full path: "%s"') % \
+                        (fullpath,)
+            self.add_error_message(user_msg)
+            return False
+
+        success, _updated_dir = self.make_directory(file_dirname)
+        if not success:
+            user_msg = ('Failed to create directory: %s') % \
+                       (file_dirname,)
+            self.add_error_message(user_msg)
+            return False
+
 
         if not fullpath:
             self.add_error_message('"fullpath" is not specified (cannot be blank)')
@@ -114,7 +156,12 @@ class BasicProblemWriter(object):
             return False
 
         if not isinstance(self.file_data, str):
-            self.file_data = str(self.file_data)
+            json_info = json_dumps(self.file_data)
+            if json_info.success:
+                self.file_data = json_info.result_obj
+            else:
+                self.file_data = str(self.file_data)
+
         try:
             with open(fullpath, 'w') as the_file:
                 the_file.write(self.file_data)
@@ -133,14 +180,16 @@ class BasicProblemWriter(object):
             self.add_error_message('"new_dirname" is not specified (cannot be blank)')
             return False
 
+        new_dirname = normpath(new_dirname)
+
         try:
             os.makedirs(new_dirname, exist_ok=True)
         except OSError as err_obj:
             user_msg = 'Could not create the directory: %s' % \
                        new_dirname
-            return False
+            return err_resp(user_msg)
 
-        return True
+        return ok_resp(new_dirname)
 
 
 
