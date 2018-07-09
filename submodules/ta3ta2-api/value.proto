@@ -63,24 +63,29 @@ message ValueError {
     string message = 1;
 }
 
-message DoubleList {
-    repeated double list = 1;
+message ValueList {
+    repeated ValueRaw items = 1;
 }
 
-message Int64List {
-    repeated int64 list = 1;
+message ValueDict {
+    map<string, ValueRaw> items = 1;
 }
 
-message BoolList {
-    repeated bool list = 1;
+enum NullValue {
+  NULL_VALUE = 0;
 }
 
-message StringList {
-    repeated string list = 1;
-}
-
-message BytesList {
-    repeated bytes list = 1;
+message ValueRaw {
+    oneof raw {
+        NullValue null = 1;
+        double double = 2;
+        int64 int64 = 3;
+        bool bool = 4;
+        string string = 5;
+        bytes bytes = 6;
+        ValueList list = 7;
+        ValueDict dict = 8;
+    }
 }
 
 message Value {
@@ -89,25 +94,16 @@ message Value {
         // value type and no other value type was available to be used.
         ValueError error = 1;
         // Raw values directly provided in the message.
-        double double = 2;
-        int64 int64 = 3;
-        bool bool = 4;
-        string string = 5;
-        bytes bytes = 6;
-        DoubleList double_list = 7;
-        Int64List int64_list = 8;
-        BoolList bool_list = 9;
-        StringList string_list = 10;
-        BytesList bytes_list = 11;
+        ValueRaw raw = 2;
         // An URI pointing to a dataset. Resulting value is Dataset container value from loading this URI.
-        string dataset_uri = 12;
+        string dataset_uri = 3;
         // An URI pointing to a CSV file.
-        string csv_uri = 13;
+        string csv_uri = 4;
         // An URI to a Python-pickled value.
-        string pickle_uri = 14;
+        string pickle_uri = 5;
         // A Python-pickled value itself.
-        bytes pickle_blob = 15;
+        bytes pickle_blob = 6;
         // 20 bytes of Plasma ObjectID of the value.
-        bytes plasma_id = 16;
+        bytes plasma_id = 7;
     }
 }

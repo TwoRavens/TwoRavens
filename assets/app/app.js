@@ -2217,7 +2217,7 @@ function CreatePipelineData(predictors, depvar, aux) {
 
 // Update of old CreatePipelineData function that creates problem definition for SearchSolutions call.
 function CreateProblemDefinition(depvar, aux) {
-   
+
     let targetFeatures = [{ 'resource_id': "0", 'feature_name': depvar[0] }];    // not presently being used in this function
     let my_target = depvar[0];
 
@@ -2268,7 +2268,7 @@ function CreateProblemDefinition(depvar, aux) {
                     }
                 ]}];
         return {my_problem, my_inputs};
-        
+
     }
 }
 
@@ -2294,7 +2294,7 @@ function CreateProblemSchema(aux){
                         columnIndex: valueKey.indexOf(my_target) - 1,  // the -1 is to make zero indexed
                         columnName: my_target
                     }
-                ]}], 
+                ]}],
         dataSplits: {
             method: 'holdOut',
             testSize: 0.2,
@@ -2302,7 +2302,7 @@ function CreateProblemSchema(aux){
             numRepeats: 0,
             randomSeed: 123,
             splitsFile: 'dataSplits.csv'
-            }, 
+            },
         performanceMetrics: [{metric: d3mMetrics[aux.metric][1]}]
     };
 
@@ -2314,8 +2314,8 @@ function CreatePipelineDefinition(predictors, depvar, timeBound, aux) {
     if(typeof timeBound !== 'undefined'){
         my_timeBound = timeBound;
     }
-    let my_userAgent = 'TwoRavens';                             // Get from elsewhere
-    let my_version = '2018.6.2';                                // Get from elsewhere
+    let my_userAgent = TA3_GPRC_USER_AGENT;              // set on django server
+    let my_version = TA3TA2_API_VERSION;                 // set on django server
     let my_allowedValueTypes = ['DATASET_URI', 'CSV_URI'];      // Get from elsewhere
     let my_problem = CreateProblemDefinition(depvar, aux);
     //console.log(my_problem);
@@ -2472,7 +2472,7 @@ export async function estimate(btn) {
             let searchId = res.data.searchId;
             let solutionId = "";
             let fittedId = "";
-            allsearchId.push(searchId); 
+            allsearchId.push(searchId);
 
             let res2 = await makeRequest(D3M_SVC_URL + '/GetSearchSolutionsResults', {searchId: searchId});
             let searchDetailsUrl = res2.data.details_url;
@@ -2481,7 +2481,7 @@ export async function estimate(btn) {
 
             let searchFinished = false;
             let fitFinished = false;
-            let res3, res4, res5, res6; 
+            let res3, res4, res5, res6;
             let oldCount = 0;
             let newCount = 0;
             let resizeTriggered = false;
@@ -2496,7 +2496,7 @@ export async function estimate(btn) {
                 if(newCount>oldCount){
                     //for (var i = oldCount; i < newCount; i++) {       //  for statement if new items are pushed instead
                     for (var i = 0; i < (newCount-oldCount); i++) {     //  instead, updates are at top of list
-                        //console.log(res3.data.responses.list[i].details_url); 
+                        //console.log(res3.data.responses.list[i].details_url);
                         solutionDetailsUrl = res3.data.responses.list[i].details_url;
                         res4 = await updateRequest(solutionDetailsUrl);
                         let res4DataId = res4.data.id;
@@ -2513,7 +2513,7 @@ export async function estimate(btn) {
                                // this initializes the results windows using the first pipeline ID
                         //     if(!swandive) {
                         //         resultsplotinit(pipelineTable[0][1]);
-                        //     }     
+                        //     }
                         };
 
                         let res10, res11;
@@ -2532,15 +2532,15 @@ export async function estimate(btn) {
                             };
 
                             if(fitFlag){
-                                res5 = await makeRequest(D3M_SVC_URL + '/FitSolution', CreateFitDefinition(solutionId));                           
+                                res5 = await makeRequest(D3M_SVC_URL + '/FitSolution', CreateFitDefinition(solutionId));
                                 if(typeof res5.data.requestId != 'undefined'){
-                                    fittedId = res5.data.requestId;                            
+                                    fittedId = res5.data.requestId;
                                     res6 = await makeRequest(D3M_SVC_URL + `/GetFitSolutionResults`, {requestId: fittedId});
                                     fittedDetailsUrl = res6.data.details_url;
                                 };
                             };
                         };
-  
+
                         // Possibly these belong elsewhere, like a callback function above.
 
                         let scoringIntervalId = setInterval(async function() {
@@ -2553,7 +2553,7 @@ export async function estimate(btn) {
                                     let res13 = await updateRequest(finalScoreUrl);
                                     onPipelineCreate(res13, res4DataId);  // arguments have changed
                                 };
-                            };            
+                            };
                         }, 2700);
 
                         if(fitFlag){
@@ -2563,19 +2563,19 @@ export async function estimate(btn) {
                                     if(res7.data.is_finished){
                                         clearInterval(fittingIntervalId);
                                     };
-                                };            
+                                };
                             }, 2700);
                         };
                     };
                     oldCount = newCount;
                 };
-                
-                searchFinished = res3.data.is_finished;   
+
+                searchFinished = res3.data.is_finished;
 
                 // Check if search is finished
                 if(searchFinished){
                     // stop spinner
-                    estimateLadda.stop(); 
+                    estimateLadda.stop();
                     // change status of buttons for estimating problem and marking problem as finished
                     byId("btnEstimate").classList.remove("btn-success");
                     byId("btnEstimate").classList.add("btn-default");
@@ -4143,7 +4143,7 @@ export async function exportpipeline(pipelineId) {
             if(res7.data.is_finished){
                 finalFittedDetailsUrl = res7.data.responses.list[0].details_url;
                 res8 = await updateRequest(finalFittedDetailsUrl);
-                finalFittedId = res8.data.response.fittedSolutionId;   
+                finalFittedId = res8.data.response.fittedSolutionId;
                 console.log(finalFittedId);
                 res = await makeRequest(D3M_SVC_URL + '/SolutionExport', {fittedSolutionId: finalFittedId, rank: 0.5})
 
@@ -4157,9 +4157,9 @@ export async function exportpipeline(pipelineId) {
                 else {
                     console.log(`Executable for solution ${pipelineId} with fittedsolution ${finalFittedId} has been written`);
                 }}
-                clearInterval(fittingIntervalId); 
+                clearInterval(fittingIntervalId);
             };
-        };            
+        };
     }, 500);
     return res;
 }
@@ -4357,7 +4357,7 @@ export function discovery(preprocess_file) {
         disco[i] = current_disco;
     };
     /* Problem Array of the Form:
-        [1: {problem_id: "problem 1",       
+        [1: {problem_id: "problem 1",
             system: "auto",
             meaningful: "no",
             target:"Home_runs",
@@ -4395,7 +4395,7 @@ export async function submitDiscProb() {
 
         // construct and write out the api call and problem description for each discovered problem
         let problemApiCall = CreatePipelineDefinition(disco[i].predictors, disco[i].target, 10, disco[i]);
-        let problemProblemSchema = CreateProblemSchema(disco[i]);  
+        let problemProblemSchema = CreateProblemSchema(disco[i]);
         let filename_api = disco[i].problem_id + '_ss_api.json';  // should be /ss... not _ss...
         let filename_ps = disco[i].problem_id + '_schema.json';   // should be /scheme... not _schema...
         let res1 = await makeRequest(D3M_SVC_URL + '/store-user-problem', {filename: filename_api, data: problemApiCall } );
