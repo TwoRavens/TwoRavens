@@ -17,7 +17,7 @@ extend google.protobuf.FileOptions {
 
 // Date-based version string. Use this to populate version field in "SearchSolutionsRequest"
 // and "SearchSolutionsResponse" messages.
-option (protocol_version) = "2018.6.2";
+option (protocol_version) = "2018.7.7";
 
 enum EvaluationMethod {
     // Default value. Not to be used.

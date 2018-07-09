@@ -150,7 +150,7 @@ export let modelRightPanelWidths = {
     'Subtype': '300px',
     'Metrics': '300px',
     //     'Set Covar.': '900px',
-    'Results': '300px'
+    'Results': '900px'
 };
 
 export let exploreRightPanelWidths = {
@@ -232,6 +232,9 @@ let failset = ["TIME_SERIES_FORECASTING","GRAPH_MATCHING","LINK_PREDICTION","tim
 export let allPipelineInfo = {};
 export let pipelineHeader = ['Hidden_UID', 'PipelineID', 'Metric', 'Score'];
 export let pipelineTable = [];
+
+export let discoveryHeader = ['problem_id', 'system', 'meaningful'];
+export let discoveryTable = [];
 
 export let logArray = [];
 export let zparams = {
@@ -403,7 +406,9 @@ function trigger(id, event) {
 export const reset = async function reloadPage() {
     endAllSearches();
     byId("btnModel").click();
-    location.reload();
+    //clearInterval(interiorIntervalId);
+    //clearInterval(requestIntervalId);
+    //location.reload();
 };
 export let restart;
 
@@ -2094,14 +2099,17 @@ export let setSelectedPipeline = (result) => {
 // Update table when pipeline is fitted
 function onPipelineCreate(PipelineCreateResult, id) {
 
-    //let myval = "";
-    //let myscores = [];  // attempt to deal w multiple scores
+    let myscore = PipelineCreateResult.data.response.scores[0].value.double.toPrecision(3);;  // attempt to deal w multiple scores
+
+    console.log(PipelineCreateResult);
 
     for(var i = 0; i < pipelineTable.length; i++) {
-        if (pipelineTable[i][2] == id) {
-            pipelineTable[i][4] = "10";
+        if (pipelineTable[i][1] == parseInt(id, 10)) {
+            pipelineTable[i][3] = myscore.toString();
         };
     };
+
+    console.log(pipelineTable);
                 // myid=key;
                 // mymetric="metric here" //allPipelineInfo[key].  SOMETHING HERE;
                 // myval="scoring"; //+myscores[i].value.toFixed(3);
@@ -2121,7 +2129,7 @@ function onPipelinePrime(PipelineCreateResult, rookpipe) {
 
     // Need to deal with (exclude) pipelines that are reported, but failed.  For approach, see below.
 
-    if(PipelineCreateResult.hash_id in allPipelineInfo) {
+    if(PipelineCreateResult.id in allPipelineInfo) {
         allPipelineInfo[PipelineCreateResult.id]=Object.assign(allPipelineInfo[PipelineCreateResult.id],PipelineCreateResult);
     } else {
         allPipelineInfo[PipelineCreateResult.id]=PipelineCreateResult;
@@ -2139,10 +2147,6 @@ function onPipelinePrime(PipelineCreateResult, rookpipe) {
         // if(allPipelineInfo[key].progressInfo == "RUNNING")  {
         //     continue;
         // }
-
-    if (IS_D3M_DOMAIN){
-        byId("btnSetx").click();   // Was "btnResults" - changing to simplify user experience for testing.
-    };
 
     //adding rookpipe to allPipelineInfo
     allPipelineInfo.rookpipe=rookpipe;                // This is setting rookpipe for the entire table, but when there are multiple CreatePipelines calls, this is only recording latest values
@@ -2211,9 +2215,9 @@ function CreatePipelineData(predictors, depvar, aux) {
     }
 }
 
-// Update of old CreatePipelineData function that creates problem definition.
+// Update of old CreatePipelineData function that creates problem definition for SearchSolutions call.
 function CreateProblemDefinition(depvar, aux) {
-   
+
     let targetFeatures = [{ 'resource_id': "0", 'feature_name': depvar[0] }];    // not presently being used in this function
     let my_target = depvar[0];
 
@@ -2230,61 +2234,114 @@ function CreateProblemDefinition(depvar, aux) {
         };
         let my_inputs =  [
             {
-                "datasetId": datadocument.about.datasetID,
-                "targets": [
+                datasetId: datadocument.about.datasetID,
+                targets: [
                     {
-                        "resourceId": "0",
-                        "columnIndex": valueKey.indexOf(my_target) - 1,  // the -1 is to make zero indexed
-                        "columnName": my_target
+                        resourceId: '0',
+                        columnIndex: valueKey.indexOf(my_target) - 1,  // the -1 is to make zero indexed
+                        columnName: my_target
                     }
                 ]}];
         console.log(my_problem);
         console.log("valueKey");
         console.log(valueKey);
         return {problem: my_problem, inputs: my_inputs};
-    } else { //creating pipeline data for problem discovery using aux inputs
+    } else { //creating pipeline data for problem discovery using aux inputs from disco line
 
         let my_problem = {
-            id: "id-of-this-problem",
-            version: "version of problem",
-            name: "name of the problem",
+            id: aux.problem_id,
+            version: '1.0',
+            name: aux.problem_id,
             description: aux.description,
-            taskType: aux.task,
-            taskSubtype: "TASK_SUBTYPE_UNDEFINED",
-            performanceMetrics: [{metric: d3mMetrics[d3mProblemDescription.performanceMetrics[0].metric][1]}]  // need to generalize to case with multiple metrics.  only passes on first presently.
+            taskType: d3mTaskType[aux.task][1],
+            taskSubtype: 'TASK_SUBTYPE_UNDEFINED',
+            performanceMetrics: [{metric: d3mMetrics[aux.metric][1]}]  // need to generalize to case with multiple metrics.  only passes on first presently.
         };
         let my_inputs =  [
             {
-                "datasetId": datadocument.about.datasetID,
-                "targets": [
+                datasetId: datadocument.about.datasetID,
+                targets: [
                     {
-                        "resourceId": "0",
-                        "columnIndex": valueKey.indexOf(my_target) - 1,  // the -1 is to make zero indexed
-                        "columnName": my_target
+                        resourceId: '0',
+                        columnIndex: valueKey.indexOf(my_target) - 1,  // the -1 is to make zero indexed
+                        columnName: my_target
                     }
                 ]}];
         return {my_problem, my_inputs};
-        
+
     }
 }
 
-function CreatePipelineDefinition(predictors, depvar, aux) {
-    let my_userAgent = "TwoRavens";                             // Get from elsewhere
-    let my_version = "2018.6.2";                                // Get from elsewhere
-    let my_allowedValueTypes = ["DATASET_URI", "CSV_URI"];      // Get from elsewhere
+// Create a problem description that follows the Problem Schema, for the Task 1 output.
+function CreateProblemSchema(aux){
+    let my_target = aux.target;
+
+    let my_about = {
+        problemID: aux.problem_id,
+        problemName: aux.problem_id,
+        problemDescription: aux.description,
+        taskType: d3mTaskType[aux.task][1],
+        problemVersion: '1.0',
+        problemSchemaVersion: '3.1.1'
+    };
+    let my_inputs = {
+        data: [
+            {
+                datasetId: datadocument.about.datasetID,
+                targets: [
+                    {
+                        resourceId: '0',
+                        columnIndex: valueKey.indexOf(my_target) - 1,  // the -1 is to make zero indexed
+                        columnName: my_target
+                    }
+                ]}],
+        dataSplits: {
+            method: 'holdOut',
+            testSize: 0.2,
+            stratified: true,
+            numRepeats: 0,
+            randomSeed: 123,
+            splitsFile: 'dataSplits.csv'
+            },
+        performanceMetrics: [{metric: d3mMetrics[aux.metric][1]}]
+    };
+
+    return {about: my_about, inputs: my_inputs, expectedOutputs: {predictionsFile: 'predictions.csv'}};
+}
+
+function CreatePipelineDefinition(predictors, depvar, timeBound, aux) {
+    let my_timeBound = 1;
+    if(typeof timeBound !== 'undefined'){
+        my_timeBound = timeBound;
+    }
+    let my_userAgent = TA3_GPRC_USER_AGENT;              // set on django server
+    let my_version = TA3TA2_API_VERSION;                 // set on django server
+    let my_allowedValueTypes = ['DATASET_URI', 'CSV_URI'];      // Get from elsewhere
     let my_problem = CreateProblemDefinition(depvar, aux);
     //console.log(my_problem);
-    let my_dataseturi = "file://" + datasetdocurl;
+    let my_dataseturi = 'file://' + datasetdocurl;
     // console.log(my_dataseturi);
-    return {userAgent: my_userAgent, version: my_version, timeBound: 5, priority: 1, allowedValueTypes: my_allowedValueTypes, problem: my_problem, inputs: [{dataset_uri: my_dataseturi}] };
+    return {userAgent: my_userAgent, version: my_version, timeBound: my_timeBound, priority: 1, allowedValueTypes: my_allowedValueTypes, problem: my_problem, inputs: [{dataset_uri: my_dataseturi}] };
 }
 
 function CreateFitDefinition(solutionId){
-    let inputs = [{ csvUri: "need to fix filepath" }];            // need to fix
-    let my_exposeOutputs = ["steps.3.produce"];  // need to fix
-    let my_exposeValueTypes = ["DATASET_URI", "CSV_URI"];
-    let my_users = [{id: "TwoRavens", choosen: false, reason: ""}];
-    return {solutionId: solutionId, exposeOutputs: my_exposeOutputs, exposeValueTypes: my_exposeValueTypes, users: my_users};
+    let my_solutionId = solutionId;
+    let my_dataseturi = 'file://' + datasetdocurl;
+    let my_inputs = [{dataset_uri: my_dataseturi}];
+    let my_exposeOutputs = [];   // eg. ["steps.3.produce"];  need to fix
+    let my_exposeValueTypes = ['CSV_URI'];
+    let my_users = [{id: 'TwoRavens', choosen: false, reason: ''}];
+    return {solutionId: my_solutionId, inputs: my_inputs, exposeOutputs: my_exposeOutputs, exposeValueTypes: my_exposeValueTypes, users: my_users};
+}
+
+function CreateScoreDefinition(res){
+    let my_solutionId = res.data.response.solutionId;
+    let my_dataseturi = 'file://' + datasetdocurl;
+    let my_inputs = [{dataset_uri: my_dataseturi}];
+    let my_performanceMetrics = [{metric: d3mMetrics[d3mProblemDescription.performanceMetrics[0].metric][1]} ];  // need to generalize to case with multiple metrics.  only passes on first presently.;
+    let my_users = [{id: 'TwoRavens', choosen: false, reason: ""}];
+    let my_configuration = {method: 'HOLDOUT', folds: 0, trainTestRatio: 0, shuffle: false, randomSeed: 0, stratified: false};
+    return {solutionId: my_solutionId, inputs: my_inputs, performanceMetrics: my_performanceMetrics, users: my_users, configuration: my_configuration};
 }
 
 export function downloadIncomplete() {
@@ -2411,22 +2468,25 @@ export async function estimate(btn) {
             estimated = true;
         } else {
             setxTable(rookpipe.predictors);
-            let res = await makeRequest(D3M_SVC_URL + '/SearchSolutions', CreatePipelineDefinition(rookpipe.predictors, rookpipe.depvar));
+            let res = await makeRequest(D3M_SVC_URL + '/SearchSolutions', CreatePipelineDefinition(rookpipe.predictors, rookpipe.depvar, 2));
             let searchId = res.data.searchId;
             let solutionId = "";
-            let requestId = "";
-            allsearchId.push(searchId); 
+            let fittedId = "";
+            allsearchId.push(searchId);
 
             let res2 = await makeRequest(D3M_SVC_URL + '/GetSearchSolutionsResults', {searchId: searchId});
             let searchDetailsUrl = res2.data.details_url;
-            let fitDetailsUrl = "";
+            let fittedDetailsUrl = "";
             let solutionDetailsUrl = "";
 
             let searchFinished = false;
             let fitFinished = false;
-            let res3, res4, res5, res6, res7; 
+            let res3, res4, res5, res6;
             let oldCount = 0;
             let newCount = 0;
+            let resizeTriggered = false;
+
+            let fitFlag = false;
 
             let refreshIntervalId = setInterval(async function() {
                 res3 = await updateRequest(searchDetailsUrl);                // silent equivalent makeRequest() with no data argument.  Also, should check whether best to be synchronous here.
@@ -2436,35 +2496,86 @@ export async function estimate(btn) {
                 if(newCount>oldCount){
                     //for (var i = oldCount; i < newCount; i++) {       //  for statement if new items are pushed instead
                     for (var i = 0; i < (newCount-oldCount); i++) {     //  instead, updates are at top of list
-                        console.log(i);
-                        console.log(res3.data.responses.list[i].details_url); 
+                        //console.log(res3.data.responses.list[i].details_url);
                         solutionDetailsUrl = res3.data.responses.list[i].details_url;
                         res4 = await updateRequest(solutionDetailsUrl);
+                        let res4DataId = res4.data.id;
+                        //console.log(res4);
                         solutionId = res4.data.response.solutionId;
                         onPipelinePrime(res4.data, rookpipe);
 
-                        //res5 = await makeRequest(D3M_SVC_URL + '/FitSolution', CreateFitDefinition(solutionId));
-                        //requestId = res5.data.requestId;
-                        //res6 = await makeRequest(D3M_SVC_URL + `/GetFitSolutionResults`, {requestId: requestId});
-                        //fitDetailsUrl = res6.data.details_url;
-                        
-                        // Possibly this belongs elsewhere, like a callback function above.
-                        //fitFinished = false;
-                        //while(!fitFinished){
-                        //    res7 = await updateRequest(fitDetailsUrl);   // check
-                        //    fitFinished = res7.data.is_finished;         // check
-                        //}
-                        //onPipelineCreate(res7.data, res4.data.id);  // arguments have changed
+                        // Once pipelineTable exist, can rebuild the window to start exploring results
+                        if(!resizeTriggered){
+                            if (IS_D3M_DOMAIN){
+                                byId("btnSetx").click();   // Was "btnResults" - changing to simplify user experience for testing.
+                            };
+                            resizeTriggered = true;
+                               // this initializes the results windows using the first pipeline ID
+                        //     if(!swandive) {
+                        //         resultsplotinit(pipelineTable[0][1]);
+                        //     }
+                        };
+
+                        let res10, res11;
+                        let scoreDetailsUrl;
+
+                        if(typeof solutionId != 'undefined'){
+
+                            res10 = await makeRequest(D3M_SVC_URL + '/ScoreSolution', CreateScoreDefinition(res4));
+                            //let scoreId = res10.data.requestId;
+                            //res11 = await makeRequest(D3M_SVC_URL + '/GetScoreSolutionResults', {requestId: scoreId});
+
+                            if(typeof res10.data.requestId != 'undefined'){
+                                let scoreId = res10.data.requestId;
+                                res11 = await makeRequest(D3M_SVC_URL + '/GetScoreSolutionResults', {requestId: scoreId});
+                                scoreDetailsUrl = res11.data.details_url;  //responses.list[0].details_url;
+                            };
+
+                            if(fitFlag){
+                                res5 = await makeRequest(D3M_SVC_URL + '/FitSolution', CreateFitDefinition(solutionId));
+                                if(typeof res5.data.requestId != 'undefined'){
+                                    fittedId = res5.data.requestId;
+                                    res6 = await makeRequest(D3M_SVC_URL + `/GetFitSolutionResults`, {requestId: fittedId});
+                                    fittedDetailsUrl = res6.data.details_url;
+                                };
+                            };
+                        };
+
+                        // Possibly these belong elsewhere, like a callback function above.
+
+                        let scoringIntervalId = setInterval(async function() {
+                            let res12 = await updateRequest(scoreDetailsUrl);   // check
+                            if(typeof res12.data.is_finished != 'undefined'){
+                                if(res12.data.is_finished){
+                                    console.log('finished scoring');
+                                    clearInterval(scoringIntervalId);
+                                    let finalScoreUrl = res12.data.responses.list[0].details_url;
+                                    let res13 = await updateRequest(finalScoreUrl);
+                                    onPipelineCreate(res13, res4DataId);  // arguments have changed
+                                };
+                            };
+                        }, 2700);
+
+                        if(fitFlag){
+                            let fittingIntervalId = setInterval(async function() {
+                                let res7 = await updateRequest(fittedDetailsUrl);   // check
+                                if(typeof res7.data.is_finished != 'undefined'){
+                                    if(res7.data.is_finished){
+                                        clearInterval(fittingIntervalId);
+                                    };
+                                };
+                            }, 2700);
+                        };
                     };
                     oldCount = newCount;
                 };
-                
-                searchFinished = res3.data.is_finished;   
+
+                searchFinished = res3.data.is_finished;
 
                 // Check if search is finished
                 if(searchFinished){
                     // stop spinner
-                    estimateLadda.stop(); 
+                    estimateLadda.stop();
                     // change status of buttons for estimating problem and marking problem as finished
                     byId("btnEstimate").classList.remove("btn-success");
                     byId("btnEstimate").classList.add("btn-default");
@@ -2481,11 +2592,11 @@ export async function estimate(btn) {
 }
 
 
-
+// This appears not to be used:
 /** needs doc */
-export function ta2stuff() {
-    console.log(d3mProblemDescription);
-}
+//export function ta2stuff() {
+//    console.log(d3mProblemDescription);
+//}
 
 /** needs doc */
 async function dataDownload() {
@@ -3314,16 +3425,23 @@ export async function endsession() {
     }
     let selected = table.rows[tableposition].cells[0].innerHTML;  // was "none"; as default
 
+    console.log("== this should be the selected solution ==");
+    console.log(allPipelineInfo[selected]);
+    console.log(allPipelineInfo[selected].response.solutionId);
+
+    let chosenSolutionId = allPipelineInfo[selected].response.solutionId;
+
     // calling exportpipeline
-    let end = await exportpipeline(selected);
+    let end = await exportpipeline(chosenSolutionId);
 
    // makeRequest(D3M_SVC_URL + '/endsession', apiSession(zparams.zsessionid));
-    let res = await makeRequest(D3M_SVC_URL + '/endsession', apiSession(zparams.zsessionid));
-    let mystatus = res.status.code.toUpperCase();
-    if(mystatus == "OK") {
+    //let res = await makeRequest(D3M_SVC_URL + '/endsession', apiSession(zparams.zsessionid));
+    endAllSearches()
+    //let mystatus = res.status.code.toUpperCase();
+    //if(mystatus == "OK") {
         end_ta3_search(true, "Problem marked as complete.");
         setModal("Your selected pipeline has been submitted.", "Task Complete", true, false, false, location.reload);
-    }
+    //}
 }
 
 /**
@@ -4002,25 +4120,47 @@ export function setxTable(features) {
 }
 
 /**
-  rpc ExportPipeline(PipelineExportRequest) returns (Response) {}
+  rpc SolutionExport (SolutionExportRequest) returns (SolutionExportResponse) {}
 */
 
+// Example call:
+// {
+//     "fittedSolutionId": "solutionId_gtk2c2",
+//     "rank": 0.122
+// }
+
 export async function exportpipeline(pipelineId) {
-    let temp = {pipelineId, context: apiSession(zparams.zsessionid), pipelineExecUri: '<<EXECUTABLE_URI>>'};
+    let finalFittedId, finalFittedDetailsUrl;
+    let res, res8;
 
-    let res = await makeRequest(
-        D3M_SVC_URL + '/exportpipeline',
-        {pipelineId, context: apiSession(zparams.zsessionid), pipelineExecUri: '<<EXECUTABLE_URI>>'});
+    let res5 = await makeRequest(D3M_SVC_URL + '/FitSolution', CreateFitDefinition(pipelineId));
+    let fittedId = res5.data.requestId;
+    let res6 = await makeRequest(D3M_SVC_URL + `/GetFitSolutionResults`, {requestId: fittedId});
+    let fittedDetailsUrl = res6.data.details_url;
+    let fittingIntervalId = setInterval(async function() {
+        let res7 = await updateRequest(fittedDetailsUrl);   // check
+        if(typeof res7.data.is_finished != 'undefined'){
+            if(res7.data.is_finished){
+                finalFittedDetailsUrl = res7.data.responses.list[0].details_url;
+                res8 = await updateRequest(finalFittedDetailsUrl);
+                finalFittedId = res8.data.response.fittedSolutionId;
+                console.log(finalFittedId);
+                res = await makeRequest(D3M_SVC_URL + '/SolutionExport', {fittedSolutionId: finalFittedId, rank: 0.5})
 
-    // we need standardized status messages...
-    let mystatus = res.status;
-    if (typeof mystatus !== 'undefined') {
-    if(mystatus.code=="FAILED_PRECONDITION") {
-        console.log("TA2 has not written the executable.");    // was alert(), but testing on NIST infrastructure suggests these are getting written but triggering alert.
-    }
-    else {
-        console.log(`Executable for ${pipelineId} has been written`);
-    }}
+                // we need standardized status messages...
+                let mystatus = res.status;
+                console.log(res);
+                if (typeof mystatus !== 'undefined') {
+                if(mystatus.code=="FAILED_PRECONDITION") {
+                    console.log("TA2 has not written the executable.");    // was alert(), but testing on NIST infrastructure suggests these are getting written but triggering alert.
+                }
+                else {
+                    console.log(`Executable for solution ${pipelineId} with fittedsolution ${finalFittedId} has been written`);
+                }}
+                clearInterval(fittingIntervalId);
+            };
+        };
+    }, 500);
     return res;
 }
 
@@ -4211,12 +4351,16 @@ export function discovery(preprocess_file) {
         let current_rating = 3;
         let current_description = current_target + " is predicted by " + current_predictors.join(" and ");
         let current_metric = node.plottype === "bar" ? 'f1Macro' : 'meanSquaredError';
-        let current_disco = {target: current_target, predictors: current_predictors, task: current_task, rating: current_rating, description: current_description, metric: current_metric};
+        let current_id = "problem" + (i+1);
+        let current_disco = {problem_id: current_id, system: "auto", meaningful: "no", target: current_target, predictors: current_predictors, task: current_task, rating: current_rating, description: current_description, metric: current_metric, };
         //jQuery.extend(true, current_disco, names);
         disco[i] = current_disco;
     };
     /* Problem Array of the Form:
-        [1: {target:"Home_runs",
+        [1: {problem_id: "problem 1",
+            system: "auto",
+            meaningful: "no",
+            target:"Home_runs",
             predictors:["Walks","RBIs"],
             task:"regression",
             rating:5,
@@ -4241,18 +4385,26 @@ export let setCheckedDiscoveryProblem = (status, problem) => {
 
 export async function submitDiscProb() {
     discoveryLadda.start();
+    console.log("This is disco");
+    console.log(disco);
+    let outputCSV = "problem_id, system, meaningful \n";
+
     for(let i = 0; i < disco.length; i++) {
-        if(!checkedDiscoveryProblems.has(i)) continue;
-        //createpipeline call
-        console.log(disco);
-        let aux = {"task":d3mTaskType[disco[i].task][1], "metrics":d3mMetrics[disco[i].metric][1], "description":disco[i].description};
-        console.log(aux);
-        // VJD: this is the code to ask TA2 for a single pipeline, to check viability. However, TA2s might not actually handle 'maxpipelines', making this take a very long time to run. Bypassing this for now
-      //  let res = await makeRequest(D3M_SVC_URL + '/CreatePipelines', CreatePipelineData(disco[i].predictors, [disco[i].target], aux)); // creating a single pipeline for a discovered problem, to check viability
-      //  if(res) { // have to check if the response went through ok, this just checks if res exists
-            let res = await makeRequest(D3M_SVC_URL + '/write-user-problem', CreatePipelineData(disco[i].predictors, [disco[i].target], aux));
-      //  }
+        // build up the required .csv file line by line
+        outputCSV = outputCSV + disco[i].problem_id + ", \"" + disco[i].system + "\", \"" + disco[i].meaningful + "\"\n";
+
+        // construct and write out the api call and problem description for each discovered problem
+        let problemApiCall = CreatePipelineDefinition(disco[i].predictors, disco[i].target, 10, disco[i]);
+        let problemProblemSchema = CreateProblemSchema(disco[i]);
+        let filename_api = disco[i].problem_id + '_ss_api.json';  // should be /ss... not _ss...
+        let filename_ps = disco[i].problem_id + '_schema.json';   // should be /scheme... not _schema...
+        let res1 = await makeRequest(D3M_SVC_URL + '/store-user-problem', {filename: filename_api, data: problemApiCall } );
+        let res2 = await makeRequest(D3M_SVC_URL + '/store-user-problem', {filename: filename_ps, data: problemProblemSchema } );
     }
+
+    // write the CSV file requested by NIST that describes properties of the solutions
+    console.log(outputCSV);
+    let res3 = await makeRequest(D3M_SVC_URL + '/store-user-problem', {filename: 'labels.csv', data: outputCSV});
 
     discoveryLadda.stop();
     // change status of buttons for estimating problem and marking problem as finished
@@ -4279,6 +4431,9 @@ export function saveDisc(btn) {
 }
 
 export async function endAllSearches() {
+    console.log("Attempting to End All Searches");
+    console.log(allsearchId);
+    console.log(allsearchId[0]);
     let res = await makeRequest(D3M_SVC_URL + '/EndSearchSolutions', {searchId: allsearchId[0]} );
     if(allsearchId.length > 1){
         for(let i = 1; i < allsearchId.length; i++) {
