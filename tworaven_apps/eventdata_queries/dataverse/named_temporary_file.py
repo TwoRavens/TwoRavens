@@ -94,4 +94,3 @@ class NamedTemporaryFile(object):
             return err_resp(self.temp_obj)
         else:
             return ok_resp(self.temp_obj)
-

@@ -167,8 +167,3 @@ def api_upload_to_dataverse(request, query_id):
     else:
         user_msg = dict(error=get_json_error(res_obj))
         return JsonResponse(user_msg)
-
-
-
-
-

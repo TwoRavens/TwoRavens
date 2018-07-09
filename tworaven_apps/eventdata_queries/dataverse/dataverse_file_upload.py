@@ -70,4 +70,3 @@ class DataverseFileUpload(object):
             return ok_resp(self.res)
         else:
             return err_resp(self.res)
-
