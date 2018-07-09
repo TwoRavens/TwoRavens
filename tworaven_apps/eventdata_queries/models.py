@@ -94,8 +94,8 @@ class EventDataSavedQuery(TimeStampedModel):
             else:
                 od[attr_name] = val
 
-
         return od
+
 
     def get_all_objects(self):
         """return all objects"""
@@ -105,6 +105,7 @@ class EventDataSavedQuery(TimeStampedModel):
             return err_resp('could not get the object list as %s' % result)
         else:
             return ok_resp(result)
+
 
     def get_objects_by_id(self, job_id):
         """return object by id"""
@@ -153,8 +154,8 @@ class ArchiveQueryJob(TimeStampedModel):
     saved_query = models.ForeignKey(EventDataSavedQuery,
                                     on_delete=models.PROTECT)
     status = models.CharField(max_length=100,
-                             choices=STATUS_CHOICES,
-                             default=IN_PROCESS)
+                              choices=STATUS_CHOICES,
+                              default=IN_PROCESS)
     is_finished = models.BooleanField(default=False)
     is_success = models.BooleanField(default=False)
     message = models.TextField(default=None)

@@ -24,12 +24,17 @@ class DataversePublishDataset(object):
         """
         self.status_code = None
         self.res = None
+        self.res_info = None
         dataverse_server = DATAVERSE_SERVER  # no trailing slash
         api_key = DATAVERSE_API_KEY  # generated from kripanshu's account
         persistentId = DATASET_PERSISTENT_ID  # doi or hdl of the dataset
 
         # get dataset ID
         my_obj = GetDataSetFileInfo()
+        succ, file_info_obj = my_obj.return_status()
+        if not succ:
+            self.res_info = file_info_obj
+
         succ, err_or_obj = my_obj.get_dataset_id()
         if not succ:
             self.res = err_or_obj
@@ -68,9 +73,16 @@ class DataversePublishDataset(object):
 
     def return_status(self):
         if self.status_code == 200:
+            print("Res check", self.res)
             return ok_resp(self.res)
         else:
             return err_resp(self.res)
+
+    def get_dataset_file_info(self):
+        if self.status_code == 200:
+            return ok_resp(self.res_info)
+        else:
+            return err_resp(self.res_info)
 
 
 

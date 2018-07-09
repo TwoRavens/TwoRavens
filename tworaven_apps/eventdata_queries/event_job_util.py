@@ -13,6 +13,7 @@ from tworaven_apps.eventdata_queries.models import (EventDataSavedQuery, Archive
 from tworaven_apps.eventdata_queries.dataverse.named_temporary_file import NamedTemporaryFile
 from tworaven_apps.eventdata_queries.dataverse.dataverse_publish_dataset import DataversePublishDataset
 from tworaven_apps.eventdata_queries.dataverse.dataverse_list_files_dataset import ListFilesInDataset
+from tworaven_apps.eventdata_queries.dataverse.get_dataset_file_info import GetDataSetFileInfo
 
 
 class EventJobUtil(object):
@@ -183,14 +184,29 @@ class EventJobUtil(object):
         might be using dataset_id later according to actual API request
         """
         job = DataversePublishDataset()
+        job2 = GetDataSetFileInfo()
         succ, res = job.return_status()
         if succ:
-            return ok_resp(res)
+            success, res_info = job2.return_status()
+            print("Res : ********* : ", res_info)
+            if success:
+                job_archive = ArchiveQueryJob()
+                for d in res_info['data']['latestVersion']['files']:
+                    print("*******")
+                    file_id = d['dataFile']['id']
+                    file_url= d['dataFile']['pidURL']
+                    success, archive_job = job_archive.get_objects_by_id(file_id)
+                    if success:
+                        archive_job.archive_url = file_url
+                        archive_job.save()
+                        return ok_resp(res)
+                    else:
+                        return err_resp(archive_job)
+            else:
+                return err_resp(res_info)
 
         else:
             return err_resp(res)
-
-
 
     @staticmethod
     def get_dataverse_files(version_id):
