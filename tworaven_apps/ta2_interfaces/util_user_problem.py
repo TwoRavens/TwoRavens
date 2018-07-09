@@ -25,13 +25,25 @@ from tworaven_apps.configurations.utils import \
 
 
 OUTPUT_PROBLEMS_DIR = '/output/problems' # temp use while eval specs worked on
+ERR_MSG_UNEXPECTED_DIRECTORY = 'Unexpected base directory'
+ERR_MSG_NO_FILENAME = '"filename" is not specified (cannot be blank)'
+ERR_MSG_NO_DATA = '"data" is not specified (cannot be blank)'
 
 
 class BasicProblemWriter(object):
 
-    def __init__(self, filename, data):
+    def __init__(self, filename, data, **kwargs):
+        """
+        filename - may also include a directory, but not fullpath
+        file_data - data to write
+        write_directory - optional base directory if no directory in the config
+        """
         self.filename = filename
         self.file_data = data
+
+        # alternate write directory, if not, uses dirs in the d3m config
+        #
+        self.write_directory = kwargs.get('write_directory', OUTPUT_PROBLEMS_DIR)
 
         self.has_error = False
         self.error_message = None
@@ -50,7 +62,7 @@ class BasicProblemWriter(object):
     def check_filename(self):
         """check the filename"""
         if not self.filename:
-            self.add_error_message('"filename" is not specified (cannot be blank)')
+            self.add_error_message(ERR_MSG_NO_FILENAME)
             return
 
         # take out any '..', etc
@@ -65,19 +77,20 @@ class BasicProblemWriter(object):
             return
 
         if not self.file_data:
-            self.add_error_message('"data" is not specified (cannot be blank)')
+            self.add_error_message(ERR_MSG_NO_DATA)
             return
 
         attempted_dirs = []
 
         # (1) Try the "/output/problems" directory
         #
-        success_dirmake1, output_dir1 = self.make_directory(OUTPUT_PROBLEMS_DIR)
-        if success_dirmake1:
-            fullpath = join(output_dir1, self.filename)
-            self.write_new_file(fullpath, output_dir1)
-            return
-        attempted_dirs = [output_dir1]
+        if self.write_directory:
+            success_dirmake1, output_dir1 = self.make_directory(self.write_directory)
+            if success_dirmake1:
+                fullpath = join(output_dir1, self.filename)
+                self.write_new_file(fullpath, output_dir1)
+                return
+            attempted_dirs = [output_dir1]
 
         # (2) Try the "user_problems_root" directory
         #
@@ -118,10 +131,9 @@ class BasicProblemWriter(object):
         fullpath = normpath(fullpath)
 
         if not fullpath.startswith(expected_base_dir):
-            user_msg = ('Unexpected base directory.'
-                        '\n Expected base directory: "%s"'
+            user_msg = ('%s\n Expected base directory: "%s"'
                         '\n But not found in: "%s"') % \
-                        (expected_base_dir, fullpath)
+                        (ERR_MSG_UNEXPECTED_DIRECTORY, expected_base_dir, fullpath)
             self.add_error_message(user_msg)
             return False
 
