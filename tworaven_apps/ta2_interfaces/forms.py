@@ -7,7 +7,7 @@ PROBLEM_REQ_DATA = 'data'
 class SaveProblemForm(forms.Form):
     """Test gRPC requests, as originating from the UI"""
 
-    filename = forms.CharField(help_text='do NOT include the directory name')
+    filename = forms.CharField()
 
     data = forms.CharField(widget=forms.Textarea,
                            initial='',
