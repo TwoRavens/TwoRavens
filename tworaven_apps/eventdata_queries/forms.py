@@ -16,7 +16,7 @@ class EventDataSavedQueryForm(forms.Form):
     saved_to_dataverse = forms.NullBooleanField(required=False,initial=False)
     dataverse_url = forms.URLField(required=True)
     dataset = forms.CharField(widget=forms.Textarea)
-    dataset_type = forms.CharField(required=True, initial= SUBSET)
+    dataset_type = forms.CharField(required=True, initial=SUBSET)
 
     def clean_name(self):
         name = self.cleaned_data.get('name')
@@ -113,4 +113,3 @@ class EventDataQueryFormSearch(forms.Form):
         desc = self.cleaned_data.get('description')
 
         return desc
-
