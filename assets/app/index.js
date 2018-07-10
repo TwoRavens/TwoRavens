@@ -40,6 +40,7 @@ let state = {
 };
 
 let nodesExplore = null;
+let valueKey = app.valueKey;
 
 function setBackgroundColor(color) {
     return function() {
@@ -115,7 +116,13 @@ function leftpanel(mode) {
                  }),
                  m(Button, {id: 'btnSave', onclick: _ => app.saveDisc('btnSave'),title: 'Saves your revised problem description.'}, 'Save Desc.'),
                  m(Button, {id: 'btnSubmitDisc', classes: 'btn-success', style: 'float: right', onclick: _ => app.submitDiscProb(), title: 'Submit all checked discovered problems.'}, 'Submit Disc. Probs.'),
-                 m(Button, {id: 'btnExplore', classes: 'btn-default', style: 'float: right', onclick: _ => m.route.set('/explore'), title: 'Explore problems.'}, 'Explore')]},
+                 m(Button, {id: 'btnExplore', classes: 'btn-default', style: 'float: right', onclick: _ => {
+                     let prob = app.disco[app.selectedProblem];
+                     if (prob) {
+                         valueKey = [prob.target].concat(prob.predictors);
+                         m.route.set('/explore');
+                     }
+                 }, title: 'Explore problems.'}, 'Explore')]},
             {value: 'Summary',
              title: 'Select a variable from within the visualization in the center panel to view its summary statistics.',
              display: 'none',
@@ -395,7 +402,7 @@ class Body {
                             }
                         }, 'go'),
                         m('br'),
-                        m('', {style: `display: flex; flex-direction: row; flex-wrap: wrap`}, app.valueKey.map(x => {
+                        m('', {style: `display: flex; flex-direction: row; flex-wrap: wrap`}, valueKey.map(x => {
                             let node = app.findNodeIndex(x, true);
                             let show = app.exploreVariate === 'Bivariate' || app.exploreVariate === 'Trivariate';
                             let len = nodesExplore.length;
@@ -655,8 +662,11 @@ m.route(document.body, '/model', {
     '/model': {render: () => m(Body)},
     '/explore': {
         onmatch() {
-            if (m.route.get() === '/model' && nodesExplore === null) {
-                nodesExplore = [];
+            if (m.route.get() === '/model') {
+                valueKey = app.valueKey;
+                if (nodesExplore === null) {
+                    nodesExplore = [];
+                }
             }
         },
         render: () => m(Body, {mode: 'explore'})
