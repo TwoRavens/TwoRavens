@@ -342,11 +342,11 @@ class Body {
                 bivariate: 'aggbar area averagediff binnedscatter binnedtableheat box'
                     + ' groupedbar horizon interactivebarmean line scatter scattermatrix scattermeansd stackedbar step strip tableheat trellishist',
                 trivariate: 'bubbletri groupedbartri horizgroupbar scattertri bubbleqqq scatterqqq trellisscatterqqn heatmapnnq dotdashqqn tablebubblennq stackedbarnnn facetbox facetheatmap groupedbarnqq',
-                multi: 'binnedcrossfilter scattermatrix'
+                multiple: 'binnedcrossfilter scattermatrix'
             };
             let filtered = schemas[variate];
             if (variate === 'bivariate' || variate === 'trivariate') {
-                filtered = `${filtered} ${schemas.multi}`;
+                filtered = `${filtered} ${schemas.multiple}`;
             }
 
             let plot = expnodes[0] && expnodes[0].plottype === 'continuous' ? plots.density : plots.bars;
@@ -653,8 +653,8 @@ class Body {
 
 let exploreVars = {
     render(vnode) {
-        let {variate, var1, var2, var3} = vnode.attrs;
-        return m(Body, {mode: 'explore', variate, var1, var2, var3});
+        let {variate, var1, var2, var3, var4, var5} = vnode.attrs;
+        return m(Body, {mode: 'explore', variate, var1, var2, var3, var4, var5});
     }
 };
 
@@ -676,6 +676,8 @@ m.route(document.body, '/model', {
     '/explore/:variate/:var1': exploreVars,
     '/explore/:variate/:var1/:var2': exploreVars,
     '/explore/:variate/:var1/:var2/:var3': exploreVars,
+    '/explore/:variate/:var1/:var2/:var3/:var4': exploreVars,
+    '/explore/:variate/:var1/:var2/:var3/:var4/:var5': exploreVars,
     /*'/results': {
       onmatch() {
       app.set_mode('results');
