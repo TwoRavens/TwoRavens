@@ -4396,8 +4396,8 @@ export async function submitDiscProb() {
         // construct and write out the api call and problem description for each discovered problem
         let problemApiCall = CreatePipelineDefinition(disco[i].predictors, disco[i].target, 10, disco[i]);
         let problemProblemSchema = CreateProblemSchema(disco[i]);
-        let filename_api = disco[i].problem_id + '_ss_api.json';  // should be /ss... not _ss...
-        let filename_ps = disco[i].problem_id + '_schema.json';   // should be /scheme... not _schema...
+        let filename_api = disco[i].problem_id + '/ss_api.json';  
+        let filename_ps = disco[i].problem_id + '/schema.json';   
         let res1 = await makeRequest(D3M_SVC_URL + '/store-user-problem', {filename: filename_api, data: problemApiCall } );
         let res2 = await makeRequest(D3M_SVC_URL + '/store-user-problem', {filename: filename_ps, data: problemProblemSchema } );
     }
