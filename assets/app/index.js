@@ -659,14 +659,16 @@ let exploreVars = {
 };
 
 m.route(document.body, '/model', {
-    '/model': {render: () => m(Body)},
+    '/model': {
+        onmatch() {
+            valueKey = app.valueKey;
+        },
+        render: () => m(Body)
+    },
     '/explore': {
         onmatch() {
-            if (m.route.get() === '/model') {
-                valueKey = app.valueKey;
-                if (nodesExplore === null) {
-                    nodesExplore = [];
-                }
+            if (m.route.get() === '/model' && nodesExplore === null) {
+                nodesExplore = [];
             }
         },
         render: () => m(Body, {mode: 'explore'})
@@ -675,10 +677,10 @@ m.route(document.body, '/model', {
     '/explore/:variate/:var1/:var2': exploreVars,
     '/explore/:variate/:var1/:var2/:var3': exploreVars,
     /*'/results': {
-        onmatch() {
-            app.set_mode('results');
-            state.get_pipelines();
-            layout.init();
+      onmatch() {
+      app.set_mode('results');
+      state.get_pipelines();
+      layout.init();
         },
         render() {
             return m(Body, {mode: 'results'});
