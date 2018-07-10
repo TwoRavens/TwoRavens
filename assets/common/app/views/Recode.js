@@ -34,6 +34,8 @@ let dataDetails = {};
 let transformData = {};
 var dataNode = [];
 
+var data = [];
+
 let peekSkip = 0;
 let peekData = [];
 
@@ -54,9 +56,7 @@ export default class Recode {
 
         this.configuration = localStorage.getItem('configuration');
         this.configName = localStorage.getItem('configName');
-        this.transformData = JSON.parse(localStorage.getItem('tranformData'));
-        
-        localStorage.setItem('tranformData',JSON.stringify(this.transformData));
+        this.transformData =  JSON.parse(localStorage.getItem('transformData'));
 
         config = this.configuration;
         configName = this.configName
@@ -101,8 +101,6 @@ export default class Recode {
                             m('a',{oncreate: formulaCreate, onclick: formulaClick}, "Formula Builder")),
                             m('li',{id:'recodeLink'},
                             m('a', {oncreate: recodeCreate, onclick: recodeClick}, "Recode")),
-                            m('li',{id:'reorderLink'},
-                            m('a', {oncreate: reorderCreate, onclick: reorderClick}, "Reorder")),
                         ]),
                     ])
                 ]),
@@ -177,7 +175,7 @@ export default class Recode {
                                     m('div',{id:'plot_a'}),                         
                                 ]),
                                 m("br"),
-                                m('div#tableBinDiv',{style :{'width':'60%','float':'left','height':(window.innerHeight-150)+'px' ,'overflow-y': 'auto','border-style': 'solid','border-width': 'thin'}},[
+                                m('div#tableBinDiv',{style :{'width':'60%','overflow-y': 'auto','border-style': 'solid','border-width': 'thin'}},[
                                     m('table.table.table-bordered',{id:'binTable',style:{ 'overflow': 'scroll'}},[
                                         m('tr#binheader',[
                                             m('th.col-xs-4',{style : {'border': '1px solid #ddd','text-align': 'center'}},currentVal),
@@ -291,7 +289,7 @@ function equidistance_btn(){
     var bin = document.getElementById('bin').value;
     var varName = currentVal;
     equidistance(varName,bin);
-    localStorage.setItem('tranformData',JSON.stringify(transformData)); 
+    localStorage.setItem('transformData',JSON.stringify(transformData)); 
 }
 
 function equimass_btn(){
@@ -302,7 +300,7 @@ function equimass_btn(){
 function onRecodeStorageEvent(recode, e){
     recode.configuration = localStorage.getItem('configuration');
     recode.configName = localStorage.getItem('configName');
-    recode.transformData = JSON.parse(localStorage.getItem('tranformData'));
+    recode.transformData =  JSON.parse(localStorage.getItem('transformData'));
     m.redraw();
 }
 
@@ -374,15 +372,16 @@ function clickVar(elem) {
         var node = dataDetails[this.textContent];
         console.log('node')
         console.log(node)
-        
-        if (node.plottype === "continuous") {
-            density_cross(node);    
-        }else if (node.plottype === "bar") {
-            bar_cross(node);
-        }else if(node.nature === "nominal"){
+        if(node.nature === "nominal"){
             $('#tableBinDiv').css('display', 'block');
 
-        }      
+        }else if (node.plottype === "continuous") {
+            $('#tableBinDiv').css('display', 'none');
+            density_cross(node);    
+        }else if (node.plottype === "bar") {
+            $('#tableBinDiv').css('display', 'none  ');
+            bar_cross(node);
+        }
         currentVal = this.textContent;  
     }
 
@@ -399,11 +398,13 @@ function clickVar(elem) {
      
 }
 function addValue(elem){
+    console.log(elem)
     var newVarValue = [];
 
     if(document.getElementById('typeSelect').selectedIndex === 0){
-        for(var i =0;i<tableData.length;i++){
-            if(elem.target[2+i].checked){
+        newVarValue = [];
+        for(var i = 0;i<tableData.length;i++){
+            if(elem.target[4+i].checked){
                 newVarValue.push({row:i,value:'yes'})
             }else{
                 newVarValue.push({row:i,value:'no'})
@@ -418,6 +419,11 @@ function addValue(elem){
             newVarValue.push({row:i,value:elem.target[2+i].value})
         }
     }
+    console.log(newVarValue);
+    transformData.transform_type.manual_transform = true;
+    transformData.transform_type.functional_transform = false;
+    transformData.transform_data = newVarValue;
+    localStorage.setItem('transformData',JSON.stringify(transformData));
 }
 
 function filterTable(elem){
@@ -461,7 +467,8 @@ function createNewCalculate(){
         alert("Enter Variable Name!");
     }
     else{
-        transformData.
+        transformData.current_variable = document.getElementById('newVar').value;
+        transformData.description = document.getElementById('varDescription').value;
         document.getElementById("createButton").setAttribute("style", "display:none");
         document.getElementById("typeSelect").setAttribute("disabled", "true");
         document.getElementById("varDescription").setAttribute("disabled", "true");
@@ -554,9 +561,6 @@ function createClick(){
     elem.className = '';
     var elem = document.getElementById('recodeLink');
     elem.className = '';
-    var elem = document.getElementById('reorderLink');
-    elem.className = '';
-
     var elem = document.getElementById('leftpanel');
     elem.style.display ='none';
     
@@ -616,9 +620,6 @@ function recodeClick(){
 
     var elem = document.getElementById('createTableDiv');
     elem.style.display="none";
-
-    var elem = document.getElementById('reorderLink');
-    elem.className = '';
     var elem = document.getElementById('formulaLink');
     elem.className = '';
     var elem = document.getElementById('createLink');
@@ -658,51 +659,13 @@ function formulaClick(){
     
     var elem = document.getElementById('formulaLink');
     elem.className = 'active';
-    var elem = document.getElementById('reorderLink');
-    elem.className = '';
+    
     var elem = document.getElementById('recodeLink');
     elem.className = '';
     var elem = document.getElementById('createLink');
     elem.className = '';
 }
 
-function reorderClick(){
-    var elem = document.getElementById('reorderLink');
-    elem.className = 'active';
-    var elem = document.getElementById('formulaLink');
-    elem.className = '';
-    var elem = document.getElementById('recodeLink');
-    elem.className = '';
-    var elem = document.getElementById('createLink');
-    elem.className = '';
-
-    var elem = document.getElementById('formulaDiv');
-    elem.style.display="none";
-
-    var elem = document.getElementById('recodeDiv');
-    elem.style.display = 'none';
-
-    var elem = document.getElementById('centralPanel');
-    elem.style.display ='none'; 
-
-    var elem = document.getElementById('leftpanel');
-    elem.style.display ='block';
-    
-    var elem = document.getElementById('rightpanel');
-    elem.style.display ='block';
-
-    var elem = document.getElementById('createTableDiv');
-    elem.style.display="none";
-    
-}
-function reorderCreate(){
-
-    var elem = document.getElementById('centralPanel');
-    elem.style.display ='none';
-
-    var elem = document.getElementById('createTableDiv');
-    elem.style.display="none";
-}
     // this is the function to add  the density plot if any
     function density_cross(density_env,a,method_name) {
         // setup the x_cord according to the size given by user
@@ -801,7 +764,7 @@ function reorderCreate(){
             .style("font-size","12px")
             .style("font-weight","bold");
         
-        var data = [];
+        // var data = [];
 
         if (isNaN(a) || a === 0) {
             var upper_limit = d3.max(xVals);
@@ -830,6 +793,7 @@ function reorderCreate(){
                 var diff = upper_limit - lower_limit;
                 var buffer = diff / a;
                 var x_cord = [];
+                data = [];
                 var push_data = lower_limit;
                 for (var i = 0; i < a - 1; i++) {
                     push_data = push_data + buffer;
@@ -1042,7 +1006,9 @@ function reorderCreate(){
         }
     }
 
-    function calculateBin(elem){}
+    function calculateBin(elem){
+        console.log(elem);
+    }
     function equidistance(varName,bin) {
         var method_name= "equidistance";
         var obj = new Object();

@@ -69,6 +69,12 @@ let peekAllDataReceived = false;
 let peekIsGetting = false;
 
 function onStorageEvent(e) {
+    
+    if(e.key === 'transformData'){
+        console.log('change in transform');
+        transform_data =  JSON.parse(e.newValue);
+
+    }
     if (e.key !== 'peekMore' || peekIsGetting) return;
 
     if (localStorage.getItem('peekMore') === 'true' && !peekAllDataReceived) {
@@ -550,17 +556,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     console.log(d3mPreprocess);
     localStorage.setItem('configuration',d3mPreprocess);//For Recode
     localStorage.setItem('configName',d3mDataName);//For Recode
-    localStorage.setItem('tranformData',JSON.stringify(transform_data));// For Recode
-
-    setInterval(function(){ 
-        if(JSON.stringify(transform_data) != JSON.stringify(localStorage.getItem('tranformData'))){
-            console.log('changed!')
-            transform_data = localStorage.getItem('tranformData');
-        }else{
-            console.log('back to normal!!');
-        }
-
-    }, 3000);
+    localStorage.setItem('transformData',JSON.stringify(transform_data));// For Recode
 
     // 3. Read the problem schema and set 'd3mProblemDescription'
     // ...and make a call to start the session with TA2. if we get this far, data are guaranteed to exist for the frontend
