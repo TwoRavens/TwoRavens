@@ -194,7 +194,7 @@ class EventJobUtil(object):
                 for d in res_info['data']['latestVersion']['files']:
                     print("*******")
                     file_id = d['dataFile']['id']
-                    file_url= d['dataFile']['pidURL']
+                    file_url = d['dataFile']['pidURL']
                     success, archive_job = job_archive.get_objects_by_id(file_id)
                     if success:
                         archive_job.archive_url = file_url
