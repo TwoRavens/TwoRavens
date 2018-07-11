@@ -10,7 +10,7 @@ from tworaven_apps.utils.basic_response import (ok_resp,
                                                 err_resp,
                                                 err_resp_with_data)
 
-class NamedTemporaryFile(object):
+class TemporaryFileMaker(object):
 
     def __init__(self, query_json):
         """generate temp file"""
