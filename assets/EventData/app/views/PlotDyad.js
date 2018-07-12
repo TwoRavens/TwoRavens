@@ -2,10 +2,10 @@ import m from 'mithril';
 import * as d3 from "d3";
 import * as common from '../../../common-eventdata/common';
 
-export const actorColors = d3.scaleOrdinal(d3.schemeCategory20);
-const actorNodeR = 40; //various definitions for node display
-const actorPadding = 5;
-const pebbleBorderColor = '#fa8072';
+export let nodeColors;
+const dyadNodeRadius = 40; //various definitions for node display
+const dyadNodePadding = 5;
+const pebbleBorderColor = '#949494';
 const fillRatio = 0.6;
 
 //moves node to back of HTML index in order to allow mouseover detection
@@ -20,18 +20,24 @@ d3.selection.prototype.moveToBack = function () {
 };
 
 export default class PlotDyad {
-    oncreate(vnode) {
-        let {id, metadata} = vnode.attrs;
 
-        this.svg = this.svg || d3.select('#' + id.replace(/[^A-Za-z0-9]/g, ""));
+    oninit() {
+        // This shuffle is biased towards elements at the start of the color scheme. But that's just fine, the first colors are better
+        nodeColors = d3.scaleOrdinal(d3.schemeCategory10.sort(() => .5 - Math.random()));
+    }
+
+    oncreate(vnode) {
+        let {metadata} = vnode.attrs;
+
+        this.svg = this.svg || d3.select(vnode.dom);
 
         // set the dimensions and margins of the graph
         let bound = this.svg.node().getBoundingClientRect();
 
-        this.actorForce = d3.forceSimulation()
+        this.dyadForce = d3.forceSimulation()
             .force("link", d3.forceLink().distance(100).strength(0.5)) //link force to keep nodes together
             .force("x", d3.forceX().x(function (d) {     //grouping by nodes
-                let multiplier = d.actor === Object.keys(metadata['tabs'])[0] ? 1 : 3;
+                let multiplier = d.tab === Object.keys(metadata['tabs'])[0] ? 1 : 3;
                 return Math.floor(multiplier * bound.width / 4);
             }).strength(0.06))
             .force("y", d3.forceY().y(function () {     //cluster nodes
@@ -45,7 +51,9 @@ export default class PlotDyad {
 
         let that = this;
         this.node_drag = d3.drag()
-            .on("start", function (d) {that.dragstart(this, d)})
+            .on("start", function (d) {
+                that.dragstart(this, d)
+            })
             .on("drag", (d) => this.dragmove(vnode, d))
             .on("end", () => this.dragend(vnode));
 
@@ -95,7 +103,7 @@ export default class PlotDyad {
         this.drag_line = this.svg.append('svg:path').attr('class', 'link dragline hidden').attr('d', 'M0,0L0,0');
 
         this.updateSVG(vnode);
-        this.actorForce.on("tick", () => this.actorTick(vnode)); //custom tick function
+        this.dyadForce.on("tick", () => this.dyadTick(vnode)); //custom tick function
         this.updateAll(vnode);
     }
 
@@ -104,8 +112,8 @@ export default class PlotDyad {
         if (!redraw) return;
         setRedraw(false);
 
-        let actorLinkDiv = $("#actorLinkDiv");
-        let [width, height] = [actorLinkDiv.width(), actorLinkDiv.height()];
+        let dyadLinkDiv = $("#dyadLinkDiv");
+        let [width, height] = [dyadLinkDiv.width(), dyadLinkDiv.height()];
 
         this.svg.attr("width", width);
         this.svg.attr("height", height);
@@ -117,9 +125,9 @@ export default class PlotDyad {
             return "M" + width / 2 + "," + 0 + "V" + height;
         });
 
-        this.actorForce
+        this.dyadForce
             .force("x", d3.forceX().x(function (d) {
-                let multiplier = d.actor === Object.keys(metadata['tabs'])[0] ? 1 : 3;
+                let multiplier = d.tab === Object.keys(metadata['tabs'])[0] ? 1 : 3;
                 return Math.floor(multiplier * width / 4);
             }).strength(0.06))
             .force("y", d3.forceY().y(function () {
@@ -136,7 +144,7 @@ export default class PlotDyad {
 
     //function called at start of drag. 'i' is also passed but ignored
     dragstart(context, d) {
-        this.actorForce.stop(); // stops the force auto positioning before you start dragging
+        this.dyadForce.stop(); // stops the force auto positioning before you start dragging
         this.dragStarted = true;
         this.dragSelect = d;
         this.tooltipSVG.transition().duration(200).style("opacity", 0).style("display", "none");
@@ -146,9 +154,9 @@ export default class PlotDyad {
     //function called while dragging, binds (x, y) within SVG and boundaries
     dragmove(vnode, d) {
         let bound = this.svg.node().getBoundingClientRect();
-        d.x = Math.max(actorNodeR, Math.min(bound.width - actorNodeR, d3.event.x));
-        d.y = Math.max(actorNodeR, Math.min(bound.height - actorNodeR, d3.event.y));
-        this.actorTick(vnode);
+        d.x = Math.max(dyadNodeRadius, Math.min(bound.width - dyadNodeRadius, d3.event.x));
+        d.y = Math.max(dyadNodeRadius, Math.min(bound.height - dyadNodeRadius, d3.event.y));
+        this.dyadTick(vnode);
     }
 
     //function called at end of drag, merges dragSelect and dragTarget if dragTarget exists
@@ -156,7 +164,7 @@ export default class PlotDyad {
         let {preferences} = vnode.attrs;
         //merge dragSel and dragTarg
         if (this.dragTarget) {
-            d3.select(this.dragTargetHTML).transition().attr("r", actorNodeR); //transition back to normal size
+            d3.select(this.dragTargetHTML).transition().attr("r", dyadNodeRadius); //transition back to normal size
 
             this.dragTarget['selected'] = new Set([...this.dragSelect['selected'], ...this.dragTarget['selected']]);
 
@@ -193,7 +201,7 @@ export default class PlotDyad {
             preferences['nodes'].splice(preferences['nodes'].indexOf(this.dragSelect), 1); //remove the old node
 
             //now set gui to show dragTarget data
-            preferences['current_tab'] = this.dragTarget.actor;
+            preferences['current_tab'] = this.dragTarget.tab;
             preferences['tabs'][preferences['current_tab']]['node'] = this.dragTarget;
             preferences['tabs'][preferences['current_tab']]['show_selected'] = true;
 
@@ -204,16 +212,16 @@ export default class PlotDyad {
         this.dragSelect = null;
         this.dragTarget = null;
         this.dragTargetHTML = null;
-        this.actorTick(vnode);
-        this.actorForce.alpha(1).restart();
+        this.dyadTick(vnode);
+        this.dyadForce.alpha(1).restart();
     }
 
-    //updates elements in SVG, nodes updated on actorID
+    //updates elements in SVG, nodes updated on id
     updateSVG(vnode) {
         let {preferences, metadata} = vnode.attrs;
 
         //update links
-        this.linkGroup = this.linkGroup.data(preferences['edges'].filter(edge => edge.source.actor in metadata['tabs']));
+        this.linkGroup = this.linkGroup.data(preferences['edges'].filter(edge => edge.source.tab in metadata['tabs']));
 
         // remove old links
         this.linkGroup.exit().remove();
@@ -222,14 +230,14 @@ export default class PlotDyad {
 
         this.linkGroup = this.linkGroup.enter().append('svg:path')
             .attr('class', 'link')
-            //~ .style('marker-start', function(d) { return d.source.actor == "target" ? 'url(#start-arrow)' : ''; })
-            //~ .style('marker-end', function(d) { return d.target.actor == "target" ? 'url(#end-arrow)' : ''; })
+            //~ .style('marker-start', function(d) { return d.source.tab == "target" ? 'url(#start-arrow)' : ''; })
+            //~ .style('marker-end', function(d) { return d.target.tab == "target" ? 'url(#end-arrow)' : ''; })
             .style('marker-start', function (d) {
-                if (!d.rev) return d.source.actor === rightTab ? 'url(#start-arrow)' : '';
+                if (!d.rev) return d.source.tab === rightTab ? 'url(#start-arrow)' : '';
                 return 'url(#start-arrow)';
             })
             .style('marker-end', function (d) {
-                if (!d.rev) return d.target.actor === rightTab ? 'url(#end-arrow)' : '';
+                if (!d.rev) return d.target.tab === rightTab ? 'url(#end-arrow)' : '';
                 return 'url(#end-arrow)';
             })
             .style('stroke', function (d) {
@@ -249,7 +257,7 @@ export default class PlotDyad {
 
 
         //now update nodes
-        this.nodeGroup = this.nodeGroup.data(preferences['nodes'].filter(node => node.actor in metadata['tabs']), function (d) {
+        this.nodeGroup = this.nodeGroup.data(preferences['nodes'].filter(node => node.tab in metadata['tabs']), function (d) {
             return d.id;
         });
 
@@ -259,15 +267,17 @@ export default class PlotDyad {
         let that = this;
 
         //define circle for node
-        this.nodeGroup = this.nodeGroup.enter().append("g").attr("id", function (d) {
-            return d.name.replace(/\s/g, '') + "Group";
-        }).call(this.node_drag)
+        this.nodeGroup = this.nodeGroup.enter()
+            .append("g")
+            .attr("id", function (d) {
+                return d.name.replace(/\s/g, '') + "Group";
+            })
+            .style('cursor', 'pointer').call(this.node_drag)
             .each(function () {
                 d3.select(this)
                     .append("circle")
-                    .attr("class", "actorNode")
-                    .attr("r", actorNodeR)
-                    .style('fill', (d) => actorColors(d.id))
+                    .attr("r", dyadNodeRadius)
+                    .style('fill', (d) => nodeColors(d.id))
                     .style('opacity', "0.5")
                     .style('stroke', pebbleBorderColor)
                     .style("pointer-events", "all")
@@ -279,12 +289,14 @@ export default class PlotDyad {
 
                         //displays arrow in proper direction (source->target and target->source)
                         that.drag_line
-                            .style('marker-end', () => d.actor === leftTab ? 'url(#end-arrow)' : '')
-                            .style('marker-start', () => d.actor === rightTab ? 'url(#start-arrow)' : '')
+                            .style('marker-end', () => d.tab === leftTab ? 'url(#end-arrow)' : '')
+                            .style('marker-start', () => d.tab === rightTab ? 'url(#start-arrow)' : '')
                             .classed('hidden', false)
                             .attr('d', 'M' + that.originNode.x + ',' + that.originNode.y + 'L' + that.originNode.x + ',' + that.originNode.y);
 
-                        that.svg.on('mousemove', function() {that.lineMousemove(this)});
+                        that.svg.on('mousemove', function () {
+                            that.lineMousemove(this)
+                        });
                     })
                     .on("mouseup", function (d) {			//creates link		//for some reason, this no longer fires
                         d3.event.stopPropagation();		//prevents mouseup on svg
@@ -296,19 +308,19 @@ export default class PlotDyad {
                         nodeClick(d);
                     })
                     .on("mouseover", function (d) {  //displays animation for visual indication of mouseover while dragging and sets tooltip
-                        if (that.dragSelect && that.dragSelect !== d && that.dragSelect.actor === d.actor) {
-                            d3.select(this).transition().attr("r", actorNodeR + 10);
+                        if (that.dragSelect && that.dragSelect !== d && that.dragSelect.tab === d.tab) {
+                            d3.select(this).transition().attr("r", dyadNodeRadius + 10);
                             that.dragTarget = d;
                             that.dragTargetHTML = this;
                         }
 
-                        if (!that.dragStarted) {
+                        if (!that.dragStarted && d.name.length > 12) {
                             that.tooltipSVG.html(d.name).style("display", "block");
                             that.tooltipSVG.transition().duration(200).style("opacity", 1);
                         }
                     })
                     .on("mouseout", function () {  //display animation for visual indication of mouseout and resets dragTarget variables
-                        d3.select(this).transition().attr("r", actorNodeR);
+                        d3.select(this).transition().attr("r", dyadNodeRadius);
                         that.dragTarget = null;
                         that.dragTargetHTML = null;
 
@@ -329,10 +341,10 @@ export default class PlotDyad {
             .merge(this.nodeGroup);
 
 
-        //performs on "click" of node, shows actor selection on node click; call moved to mousedown because click() did not fire for Chrome
+        //performs on "click" of node, shows dyad selection on node click; call moved to mousedown because click() did not fire for Chrome
         function nodeClick(d) {
-            preferences['current_tab'] = d.actor;
-            preferences['tabs'][d.actor]['node'] = d;
+            preferences['current_tab'] = d.tab;
+            preferences['tabs'][d.tab]['node'] = d;
             m.redraw();
         }
 
@@ -346,17 +358,17 @@ export default class PlotDyad {
 
             this.drag_line.classed('hidden', true).style('marker-end', ''); //hide drag line
 
-            // check for drag-to-self and same actor to actor (source to source)
+            // check for drag-to-self and same tab to tab (source to source)
             this.destNode = d;
-            if (this.destNode === this.originNode || this.destNode.actor === this.originNode.actor) {
+            if (this.destNode === this.originNode || this.destNode.tab === this.originNode.tab) {
                 this.resetMouseVars(vnode);
                 return;
             }
 
             let [leftTab, rightTab] = Object.keys(metadata['tabs']);
             //here link is now made
-            const actualSource = this.originNode.actor === leftTab ? this.originNode : this.destNode; //choose the node that is a source
-            const actualTarget = this.destNode.actor === rightTab ? this.destNode : this.originNode;
+            const actualSource = this.originNode.tab === leftTab ? this.originNode : this.destNode; //choose the node that is a source
+            const actualTarget = this.destNode.tab === rightTab ? this.destNode : this.originNode;
 
             let foundLink;
             for (let idx in preferences['edges'])
@@ -364,7 +376,7 @@ export default class PlotDyad {
                     foundLink = idx;
 
             //link exists for source -> target, check if origin is a target and link does not exist yet
-            if (foundLink && this.originNode.actor === rightTab) {
+            if (foundLink && this.originNode.tab === rightTab) {
                 preferences['edges'][foundLink].dup = true;
             }
 
@@ -381,19 +393,19 @@ export default class PlotDyad {
             m.redraw()
         };
 
-        //update all names of nodes - changeID and actorID are not updated on name change to save room for other changes; probably unneccesary for a normal user (unlikely they will perform so many changes)
+        //update all names of nodes - changeID and id are not updated on name change to save room for other changes; probably unneccesary for a normal user (unlikely they will perform so many changes)
         this.svg.selectAll("text").text(function (d) {
             return d.name.length > 12 ? d.name.substring(0, 9) + "..." : d.name;
         });
     }
 
     //function that is called on every animated step of the SVG, handles boundary and node collision
-    actorTick(vnode) {
+    dyadTick(vnode) {
         let {preferences, metadata} = vnode.attrs;
         let bound = this.svg.node().getBoundingClientRect();
 
         if (!this.dragStarted) {
-            let filteredNodes = preferences['nodes'].filter(node => node.actor in metadata['tabs']);
+            let filteredNodes = preferences['nodes'].filter(node => node.tab in metadata['tabs']);
             const q = d3.quadtree().x((d) => d.x).y((d) => d.y).addAll(filteredNodes);
             filteredNodes.forEach(node => q.visit(this.collide(node)));
         }
@@ -402,13 +414,13 @@ export default class PlotDyad {
         this.nodeGroup.attr("transform", function (d) {
             // console.log("transform D: ");
             // console.log(d);
-            d.x = Math.max(actorNodeR, Math.min(bound.width - actorNodeR, d.x)); //test SVG boundary conditions
-            d.y = Math.max(actorNodeR, Math.min(bound.height - actorNodeR, d.y));
+            d.x = Math.max(dyadNodeRadius, Math.min(bound.width - dyadNodeRadius, d.x)); //test SVG boundary conditions
+            d.y = Math.max(dyadNodeRadius, Math.min(bound.height - dyadNodeRadius, d.y));
             let [leftTab, rightTab] = Object.keys(metadata['tabs']);
             let {boundaryLeft, boundaryRight} = vnode.state;
-            if (d.actor === leftTab && d.x > boundaryLeft)  //test source/target boundary conditions
+            if (d.tab === leftTab && d.x > boundaryLeft)  //test source/target boundary conditions
                 d.x = boundaryLeft;
-            if (d.actor === rightTab && d.x < boundaryRight)
+            if (d.tab === rightTab && d.x < boundaryRight)
                 d.x = boundaryRight;
             return "translate(" + d.x + "," + d.y + ")";
         });
@@ -427,17 +439,15 @@ export default class PlotDyad {
             const deltaX = d.target.x - d.source.x, deltaY = d.target.y - d.source.y,
                 dist = Math.sqrt(deltaX * deltaX + deltaY * deltaY), normX = deltaX / dist, normY = deltaY / dist;
 
-            //~ sourcePadding = (d.source.actor == "target") ? actorNodeR+5 : actorNodeR,  //spacing on the line before arrow head
-            //~ targetPadding = (d.target.actor == "target") ? actorNodeR+5 : actorNodeR,
             let sourcePadding, targetPadding;
             if (d.dup) {
-                sourcePadding = actorNodeR + 5;
-                targetPadding = actorNodeR + 5;
+                sourcePadding = dyadNodeRadius + 5;
+                targetPadding = dyadNodeRadius + 5;
             }
             else {
                 let [leftTab, rightTab] = Object.keys(metadata['tabs']);
-                sourcePadding = (d.source.actor === rightTab) ? actorNodeR + 5 : actorNodeR; //spacing on the line before arrow head
-                targetPadding = (d.target.actor === rightTab) ? actorNodeR + 5 : actorNodeR;
+                sourcePadding = (d.source.tab === rightTab) ? dyadNodeRadius + 5 : dyadNodeRadius; //spacing on the line before arrow head
+                targetPadding = (d.target.tab === rightTab) ? dyadNodeRadius + 5 : dyadNodeRadius;
             }
 
             const sourceX = d.source.x + (sourcePadding * normX), sourceY = d.source.y + (sourcePadding * normY),
@@ -447,15 +457,15 @@ export default class PlotDyad {
         });
     }
 
-    //function called per actorTick() to prevent collisions among nodes
+    //function called per dyadTick() to prevent collisions among nodes
     collide(node) {
-        const r = actorNodeR + actorPadding, nx1 = node.x - r, nx2 = node.x + r, ny1 = node.y - r, ny2 = node.y + r;
+        const r = dyadNodeRadius + dyadNodePadding, nx1 = node.x - r, nx2 = node.x + r, ny1 = node.y - r, ny2 = node.y + r;
         return function (quad, x1, y1, x2, y2) {
             if (quad.data && (quad.data !== node)) {
                 let x = node.x - quad.data.x;
                 let y = node.y - quad.data.y;
                 let l = Math.sqrt(x * x + y * y);
-                const r = actorNodeR + actorNodeR + actorPadding;
+                const r = dyadNodeRadius + dyadNodeRadius + dyadNodePadding;
 
                 if (l < r) {
                     l = (l - r) / l * .5;
@@ -497,10 +507,10 @@ export default class PlotDyad {
     updateAll(vnode) {
         let {preferences, metadata} = vnode.attrs;
         this.updateSVG(vnode);
-        this.actorForce
-            .nodes(preferences['nodes'].filter(node => node.actor in metadata['tabs'])).force("link")
-            .links(preferences['edges'].filter(edge => edge.source.actor in metadata['tabs']));
-        this.actorForce.alpha(1).restart();
+        this.dyadForce
+            .nodes(preferences['nodes'].filter(node => node.tab in metadata['tabs'])).force("link")
+            .links(preferences['edges'].filter(edge => edge.source.tab in metadata['tabs']));
+        this.dyadForce.alpha(1).restart();
         this.resetMouseVars(vnode);
     }
 }

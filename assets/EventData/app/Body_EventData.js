@@ -14,6 +14,9 @@ import MenuHeaders from '../../common-eventdata/views/MenuHeaders';
 import PanelList from '../../common-eventdata/views/PanelList';
 import TextField from '../../common-eventdata/views/TextField';
 import ButtonRadio from '../../common-eventdata/views/ButtonRadio';
+import Button from "../../common-eventdata/views/Button";
+import ModalVanilla from "../../common-eventdata/views/ModalVanilla";
+import Table from "../../common-eventdata/views/Table";
 
 import CanvasAbout from "./canvases/CanvasAbout";
 import CanvasDatasets from "./canvases/CanvasDatasets";
@@ -25,12 +28,10 @@ import CanvasDate from "./canvases/CanvasDate";
 import CanvasCategoricalGrouped from "./canvases/CanvasCategoricalGrouped";
 import CanvasCoordinates from "./canvases/CanvasCoordinates";
 import CanvasCustom from "./canvases/CanvasCustom";
-import CanvasTimeSeries from "./canvases/CanvasTimeSeries";
+import CanvasResults from "./canvases/CanvasResults";
 
-import Button from "../../common-eventdata/views/Button";
-import ModalVanilla from "../../common-eventdata/views/ModalVanilla";
 import SaveQuery from "./views/SaveQuery";
-import Table from "../../common-eventdata/views/Table";
+import {TreeQuery, TreeVariables} from "./views/TreeSubset";
 
 export default class Body_EventData {
 
@@ -39,19 +40,21 @@ export default class Body_EventData {
             m.route.set('/home');
             vnode.attrs.mode = 'home';
         }
-        // reset peeked data on page load
-        localStorage.removeItem('peekTableData');
-    }
 
-    oncreate() {
-        app.setupBody();
-        app.setupQueryTree();
+        app.resetPeek();
+
+        // Load the metadata for all available datasets
+        m.request({
+            url: app.subsetURL,
+            data: {'type': 'datasets'},
+            method: 'POST'
+        }).then(app.setGenericMetadata).catch(app.laddaStopAll);
     }
 
     header() {
 
         let attrsInterface = {style: {width: 'auto'}};
-        let isHome = ['About', 'Datasets', 'Saved Queries'].indexOf(app.selectedCanvas) !== -1;
+        let isHome = app.selectedCanvas === app.selectedCanvasHome;
 
         return m(Header, {image: '/static/images/TwoRavens.png'},
 
@@ -80,19 +83,19 @@ export default class Body_EventData {
             }),
 
             // Button Reset
-            m("button#btnReset.btn.btn-default.ladda-button[title='Reset']", {
-                    'data-style': 'zoom-in',
-                    'data-spinner-color': '#818181',
-                    style: {margin: '1em', display: app.selectedDataset && !isHome ? 'block' : 'none'},
-                    onclick: app.reset
-                },
-                m("span.ladda-label.glyphicon.glyphicon-repeat", {
-                    style: {
-                        "font-size": ".25em 1em",
-                        "color": "#818181",
-                        "pointer-events": "none"
-                    }
-                })
+            app.selectedDataset && !isHome && m("button#btnReset.btn.btn-default.ladda-button[title='Reset']", {
+                'data-style': 'zoom-in',
+                'data-spinner-color': '#818181',
+                style: {margin: '1em'},
+                onclick: app.reset
+            },
+            m("span.ladda-label.glyphicon.glyphicon-repeat", {
+                style: {
+                    "font-size": ".25em 1em",
+                    "color": "#818181",
+                    "pointer-events": "none"
+                }
+            })
             ),
 
             m(ButtonRadio, {
@@ -159,7 +162,7 @@ export default class Body_EventData {
             m("#recordBar", {style: {display: "inline-block", float: 'right'}}, [
 
                 app.selectedMode !== 'home' && m(Button, {
-                    class: ['btn-sm'],
+                    class: 'btn-sm',
                     onclick: () => {
                         if ('subset' === app.selectedMode && app.abstractQuery.length === 0)
                             tour.tourStartSaveQueryEmpty();
@@ -169,24 +172,25 @@ export default class Body_EventData {
                     }, style: {'margin-top': '4px'}
                 }, 'Save'),
 
-                m("button.btn.btn-default.btn-sm.ladda-button[data-spinner-color='#818181'][id='buttonDownload'][type='button']", {
-                        style: {
-                            display: app.selectedDataset ? 'inline-block' : 'none', // don't conditionally draw, because of ladda
-                            "margin-right": "6px",
-                            'margin-top': '4px',
-                            'margin-left': '6px',
-                            "data-style": "zoom-in"
-                        },
-                        onclick: () => {
-                            if ('subset' === app.selectedMode && app.abstractQuery.length === 0)
-                                tour.tourStartSaveQueryEmpty();
-                            else if ('aggregate' === app.selectedMode && !app.eventMeasure)
-                                tour.tourStartEventMeasure();
-                            else app.download();
-                        }
+                app.selectedMode !== 'home' && m(Button, {
+                    id: 'btnDownload',
+                    class: 'btn-sm ladda-button',
+                    style: {
+                        'margin-right': '6px',
+                        'margin-top': '4px',
+                        'margin-left': '6px',
+                        'data-style': 'zoom-in',
+                        'data-spinner-color': '#818181'
                     },
-                    m("span.ladda-label", "Download")
-                ),
+                    onclick: () => {
+                        if ('subset' === app.selectedMode && app.abstractQuery.length === 0)
+                            tour.tourStartSaveQueryEmpty();
+                        else if ('aggregate' === app.selectedMode && !app.eventMeasure)
+                            tour.tourStartEventMeasure();
+                        else app.download();
+                    }
+                }, m("span.ladda-label", "Download")),
+
                 // Record Count
                 app.selectedDataset && recordCount !== undefined && m("span.label.label-default#recordCount", {
                     style: {
@@ -234,8 +238,8 @@ export default class Body_EventData {
                 width: '250px',
                 contents: m(MenuTabbed, {
                     id: 'leftPanelMenu',
-                    callback: app.setLeftTab,
-                    currentTab: app.leftTab,
+                    callback: app.setLeftTabSubset,
+                    currentTab: app.leftTabSubset,
                     attrsAll: {style: {height: 'calc(100% - 39px)'}},
                     sections: [
                         {
@@ -252,7 +256,7 @@ export default class Body_EventData {
                                     id: 'variablesList',
                                     items: app.genericMetadata[app.selectedDataset]['columns'].filter(col => col.includes(app.variableSearch)),
                                     colors: {[common.selVarColor]: app.selectedVariables},
-                                    callback: app.toggleVariableSelected,
+                                    callback: app.toggleSelectedVariable,
                                     attrsAll: {style: {height: 'calc(100% - 44px)', overflow: 'auto'}}
                                 })
                             ]
@@ -292,6 +296,9 @@ export default class Body_EventData {
             }
             let tempDataset = app.genericMetadata[app.selectedDataset];
 
+            let aggregateKeys = Object.keys(app.genericMetadata[app.selectedDataset]['subsets'])
+                .filter(subset => 'measures' in app.genericMetadata[app.selectedDataset]['subsets'][subset]);
+
             return m(Panel, {
                 id: 'leftPanelMenu',
                 side: 'left',
@@ -310,7 +317,7 @@ export default class Body_EventData {
                         {
                             value: 'Unit of Measure',
                             contents: m(PanelList, {
-                                items: app.aggregateKeys().filter(subset => tempDataset['subsets'][subset]['measures'].indexOf('unit') !== -1),
+                                items: aggregateKeys.filter(subset => tempDataset['subsets'][subset]['measures'].indexOf('unit') !== -1),
                                 id: 'UMList',
                                 colors: {[common.selVarColor]: [app.selectedSubsetName]},
                                 classes: {['item-bordered']: Object.keys(app.unitMeasure).filter(key => app.unitMeasure[key])},
@@ -320,7 +327,7 @@ export default class Body_EventData {
                         {
                             value: 'Event Measure',
                             contents: m(PanelList, {
-                                items: app.aggregateKeys().filter(subset => tempDataset['subsets'][subset]['measures'].indexOf('event') !== -1),
+                                items: aggregateKeys.filter(subset => tempDataset['subsets'][subset]['measures'].indexOf('event') !== -1),
                                 id: 'EMList',
                                 colors: {[common.selVarColor]: [app.selectedSubsetName]},
                                 classes: {['item-bordered']: [app.eventMeasure]},
@@ -336,38 +343,33 @@ export default class Body_EventData {
         }
     }
 
+
     rightpanel(mode) {
 
-        let styling = {};
-        if (mode === 'home') styling = {display: 'none'};
-        if (mode === 'aggregate') styling = {
-            // subtract header, the two margins, scrollbar, table, and footer
-            height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${common.canvasScroll['horizontal'] ? common.scrollbarWidth : '0px'} - ${app.tableHeight} - ${common.heightFooter})`
-        };
+        if (mode === 'home') common.setPanelOcclusion('right', '250px');
 
-        return m(Panel, {
-            id: 'rightPanelMenu',
-            side: 'right',
-            label: 'Query Summary',
-            width: '250px',
-            attrsAll: {style: styling},
-            contents: [
-                m(MenuHeaders, {
-                    id: 'querySummaryMenu',
-                    attrsAll: {style: {height: 'calc(100% - 85px)', overflow: 'auto'}},
-                    sections: [
-                        {value: 'Variables', contents: m('div#variableTree')},
-                        {value: 'Subsets', contents: m('div#subsetTree')}
-                    ]
-                }),
-                m("#rightpanelButtonBar", {
-                        style: {
-                            width: "calc(100% - 25px)",
-                            "position": "absolute",
-                            "bottom": '5px'
-                        }
-                    },
-                    [
+        if (mode === 'subset') {
+            return m(Panel, {
+                id: 'rightPanelMenu',
+                side: 'right',
+                label: 'Query Summary',
+                width: '250px',
+                contents: [
+                    m(MenuHeaders, {
+                        id: 'querySummaryMenu',
+                        attrsAll: {style: {height: 'calc(100% - 85px)', overflow: 'auto'}},
+                        sections: [
+                            {value: 'Variables', contents: m(TreeVariables)},
+                            {value: 'Subsets', contents: m(TreeQuery)}
+                        ]
+                    }),
+                    m("#rightpanelButtonBar", {
+                            style: {
+                                width: "calc(100% - 25px)",
+                                "position": "absolute",
+                                "bottom": '5px'
+                            }
+                        },
                         m("button.btn.btn-default[id='buttonAddGroup'][type='button']", {
                                 style: {"float": "left"},
                                 onclick: () => app.addGroup(false)
@@ -383,9 +385,34 @@ export default class Body_EventData {
                                 if (mode === 'aggregate') query.submitAggregation();
                             }
                         }, 'Update')
-                    ])
-            ]
-        })
+                    )
+                ]
+            })
+        }
+
+        if (mode === 'aggregate') {
+            return m(Panel, {
+                id: 'rightPanelMenu',
+                side: 'right',
+                label: 'Results',
+                width: '250px',
+                attrsAll: {
+                    style: {
+                        // subtract header, the two margins, scrollbar, table, and footer
+                        height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${common.canvasScroll['horizontal'] ? common.scrollbarWidth : '0px'} - ${app.tableHeight} - ${common.heightFooter})`
+                    }
+                },
+                contents: [
+                    m(PanelList, {
+                        id: 'resultsList',
+                        items: ['Line Plot'],
+                        colors: {[common.selVarColor]: [app.selectedResult]},
+                        callback: app.setSelectedResult,
+                        attrsAll: {style: {height: 'calc(100% - 44px)', overflow: 'auto'}}
+                    })
+                ]
+            })
+        }
     }
 
     canvasContent() {
@@ -393,7 +420,7 @@ export default class Body_EventData {
             if (app.subsetData[app.selectedSubsetName] === undefined) {
 
                 if (!app.isLoading[app.selectedSubsetName])
-                    app.reloadSubset(app.selectedSubsetName);
+                    app.loadSubset(app.selectedSubsetName);
 
                 return m('#loading.loader', {
                     style: {
@@ -431,7 +458,7 @@ export default class Body_EventData {
             'Datasets': CanvasDatasets,
             'Saved Queries': CanvasSavedQueries,
             'Custom': CanvasCustom,
-            'Time Series': CanvasTimeSeries
+            'Time Series': CanvasResults
         }[app.selectedCanvas], {
             mode: app.selectedMode,
             preferences: app.canvasPreferences[app.selectedCanvas],
@@ -452,7 +479,7 @@ export default class Body_EventData {
                     "overflow-x": "auto"
                 }
             },
-            app.unitMeasure ? m(Table, {
+            app.aggregationData.length !== 0 ? m(Table, {
                 headers: [...app.aggregationHeadersUnit, ...app.aggregationHeadersEvent],
                 data: app.aggregationData
             }) : "Select event measures, then click 'Update' to display aggregated data."
@@ -494,16 +521,18 @@ export default class Body_EventData {
             this.header(),
             this.leftpanel(mode),
             this.rightpanel(mode),
-            m("button#btnStage.btn.btn-default[type='button']", {
+            m(Button, {
+                id: 'btnStage',
                 style: {
                     display: app.selectedMode === 'subset' ? 'block' : 'none',
                     right: `calc(${common.panelOcclusion['right'] || '275px'} + 5px)`,
                     bottom: `calc(${common.heightFooter} + ${common.panelMargin} + 6px)`,
                     position: 'fixed',
-                    'z-index': 100
+                    'z-index': 100,
+                    'box-shadow': 'rgba(0, 0, 0, 0.3) 0px 2px 3px'
                 },
                 onclick: app.addRule
-            }, "Stage"),
+            }, 'Stage'),
             m(Canvas, {
                 attrsAll: {
                     style: mode === 'aggregate'

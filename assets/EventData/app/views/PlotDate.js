@@ -26,7 +26,7 @@ export default class PlotDate {
     }
 
     plot(vnode) {
-        let {id, data, callbackHandles} = vnode.attrs;
+        let {id, data, callbackHandles, labelY} = vnode.attrs;
         if (data === undefined) return;
 
         // Set calendar ranges
@@ -34,7 +34,7 @@ export default class PlotDate {
         let datemax = d3.max(Object.keys(data).map(color => d3.max(data[color], getDate)));
         let freqmax = d3.max(Object.keys(data).map(color => d3.max(data[color], getFreq)));
 
-        let dateSVG = d3.select('#' + id.replace(/[^A-Za-z0-9]/g, ""));
+        let dateSVG = d3.select(vnode.dom);
         dateSVG.html('');
 
         let bound = dateSVG.node().getBoundingClientRect();
@@ -196,7 +196,7 @@ export default class PlotDate {
             .attr("x", 0 - (dateheight / 2))
             .attr("dy", "2em")
             .style("text-anchor", "middle")
-            .text("Frequency");
+            .text(labelY || "Frequency");
     }
 
     view(vnode) {

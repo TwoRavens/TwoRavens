@@ -1,17 +1,20 @@
 main#EventData .loader {
-    border: 10px solid #f5f5f5; /* Light grey */
+    border: 10px solid #f5f5f5;
     border-top: 10px solid #419641;
     border-radius: 50%;
     width: 120px;
     height: 120px;
     animation: spin 2s linear infinite;
 }
-
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
 }
-
+main#EventData .zoom {
+    cursor: move;
+    fill: none;
+    pointer-events: all;
+}
 main#EventData .ui-datepicker-prev {
     display: inline-block;
     margin-left: 0;
@@ -20,12 +23,13 @@ main#EventData .ui-datepicker-next {
     display: inline-block;
     float: right;
 }
-
-main#EventData .location-entry:hover {
+main#EventData .selected-entry:hover {
     text-decoration: line-through;
 }
-
-main#EventData .filterBase {
+main#EventData .axis {
+    font-size: 12px;
+}
+main#EventData .filter-base {
     display: inline-block;
     padding: 0px;
     height: 20px;
@@ -36,10 +40,10 @@ main#EventData .filterBase {
     background-position: 0px 0px;
     border: none;
 }
-main#EventData .filterExpand {
+main#EventData .filter-expand {
     background-image: url(/static/EventData/images/expand.png);
 }
-main#EventData .filterCollapse {
+main#EventData .filter-collapse {
     background-image: url(/static/EventData/images/collapse.png)
 }
 main#EventData .graph-config {
@@ -51,426 +55,36 @@ main#EventData .graph-config {
 main#EventData .item-bordered {
     border: solid #000000;
 }
-
 /* bar plot */
-.bar {
+main#EventData .bar {
     fill: steelblue;
     cursor: pointer;
 }
-.bar:hover {
+main#EventData .bar:hover {
     stroke: #000000;
 }
-.bar-selected {
+main#EventData .bar-selected {
     fill: #419641;
     cursor: pointer;
 }
-.bar-selected:hover {
+main#EventData .bar-selected:hover {
     stroke: #000000;
 }
-.bar-some {
+main#EventData .bar-some {
     fill: url(#plotBarsStripes);
     cursor: pointer;
 }
-.bar-some:hover {
+main#EventData .bar-some:hover {
     stroke: #000000;
 }
-
-.required-form {
+main#EventData .required-form {
     border-color: #dc3545;
-}
-
-/* TODO delete everything below */
-main#EventData .hidden {
-    display: none;
-}
-main#EventData .arc path {
-    stroke: #fff;
-}
-main#EventData svg:not(.active):not(.ctrl) {
-    cursor: crosshair;
-}
-main#EventData path.link {
-    fill: none;
-    stroke: #000;
-    stroke-width: 2px;
-    cursor: default;
-}
-main#EventData svg:not(.active):not(.ctrl) path.link {
-    cursor: pointer;
-}
-main#EventData path.link.selected {
-    stroke-dasharray: 10, 3;
-}
-main#EventData path.link.dragline {
-    pointer-events: none;
-}
-main#EventData path.link.hidden {
-    stroke-width: 0;
-}
-main#EventData circle.node {
-    stroke-width: 1.5px;
-    cursor: pointer;
-}
-main#EventData text {
-    font: 12px sans-serif;
-    pointer-events: none;
-}
-main#EventData text.id {
-    text-anchor: middle;
-    font-weight: bold;
-}
-main#EventData .left {
-    width: 33.3%;
-    height: 100%;
-    /*was 600px;*/
-
-    box-sizing: border-box;
-    margin: 0;
-    overflow: scroll;
-}
-main#EventData #canvasLocation svg {
-    background-color: transparent;
-    /*width:500px;*/
-
-    height: 386px;
-    /*was 600px;*/
-
-}
-main#EventData div.popover.variables {
-    max-width: 275px;
-    width: 275px;
-}
-main#EventData div.popover {
-    z-index: 1050;
-}
-main#EventData div.popover.variables div.popover-content.form-horizontal {
-    padding: 0;
-}
-main#EventData div.popover.variables div.popover-content.form-horizontal .form-group {
-    margin-bottom: 0;
 }
 main#EventData #boolToggle.btn.active,
 main#EventData #boolToggle.btn:active {
     background-color: transparent;
     border-color: slategray;
     color: lightgray;
-}
-main#EventData #logToggle.btn.active,
-main#EventData #logToggle.btn:active {
-    background-color: #428bca;
-    border-color: #357ebd;
-}
-main#EventData path {
-    fill: steelblue;
-}
-main#EventData .axis path,
-main#EventData .axis line {
-    fill: none;
-    stroke: #000;
-    shape-rendering: crispEdges;
-}
-main#EventData .brush .extent {
-    stroke: #fff;
-    fill-opacity: .125;
-    shape-rendering: crispEdges;
-}
-main#EventData .handle {
-    fill: #fff;
-    stroke: #000;
-    stroke-opacity: .5;
-    stroke-width: 1.25px;
-    pointer-events: fill;
-}
-main#EventData .dropdownactorl1,
-main#EventData .dropdownactorl2,
-main#EventData .dropdownactorl3,
-main#EventData .dropdownactorl4 {
-    position: relative;
-    float: left;
-    /*margin-left: 43%;*/
-
-    height: 50px;
-    z-index: 100;
-}
-main#EventData .tdropdownactorl1,
-main#EventData .tdropdownactorl2,
-main#EventData .tdropdownactorl3,
-main#EventData .tdropdownactorl4 {
-    position: relative;
-    /*margin-left: 43%;*/
-
-    height: 50px;
-    z-index: 100;
-}
-main#EventData .dropdownevent {
-    position: relative;
-    /*margin-left: 43%;*/
-
-    height: 50px;
-    z-index: 100;
-}
-main#EventData a {
-    color: #fff;
-    height: 40px;
-}
-main#EventData .dropdownactorl1 dd,
-main#EventData .dropdownactorl1 dt,
-main#EventData .dropdownactorl2 dd,
-main#EventData .dropdownactorl2 dt,
-main#EventData .dropdownactorl3 dd,
-main#EventData .dropdownactorl3 dt,
-main#EventData .dropdownactorl4 dd,
-main#EventData .dropdownactorl4 dt {
-    /*margin-left: 43%;*/
-
-    text-align: center;
-    padding: 0px;
-    width: 100%;
-    z-index: 100;
-}
-main#EventData .tdropdownactorl1 dd,
-main#EventData .tdropdownactorl1 dt,
-main#EventData .tdropdownactorl2 dd,
-main#EventData .tdropdownactorl2 dt,
-main#EventData .tdropdownactorl3 dd,
-main#EventData .tdropdownactorl3 dt,
-main#EventData .tdropdownactorl4 dd,
-main#EventData .tdropdownactorl4 dt {
-    /*margin-left: 43%;*/
-
-    padding: 0px;
-    width: 100%;
-    z-index: 100;
-    text-align: center;
-}
-main#EventData .dropdownevent dd,
-main#EventData .dropdownevent dt {
-    padding: 0px;
-    width: 100%;
-    z-index: 100;
-    text-align: center;
-}
-main#EventData .area {
-    clip-path: url(#clip);
-}
-main#EventData .areauser {
-    clip-path: url(#clip);
-}
-main#EventData .zoom {
-    cursor: move;
-    fill: none;
-    pointer-events: all;
-}
-main#EventData .dropdownactorl1 ul,
-main#EventData .dropdownactorl2 ul,
-main#EventData .dropdownactorl3 ul,
-main#EventData .dropdownactorl4 ul,
-main#EventData .tdropdownactorl1 ul,
-main#EventData .tdropdownactorl2 ul,
-main#EventData .tdropdownactorl3 ul,
-main#EventData .tdropdownactorl4 ul,
-main#EventData .dropdownevent {
-    margin: 0 0 0 0;
-    width: 272px;
-    /*margin-left: 43%;*/
-
-    z-index: 100;
-}
-main#EventData .dropdownactorl1 dd,
-main#EventData .dropdownactorl2 dd,
-main#EventData .dropdownactorl3 dd,
-main#EventData .dropdownactorl4 dd,
-main#EventData .tdropdownactorl1 dd,
-main#EventData .tdropdownactorl2 dd,
-main#EventData .tdropdownactorl3 dd,
-main#EventData .tdropdownactorl4 dd,
-main#EventData .dropdownevent {
-    position: relative;
-    z-index: 100;
-}
-main#EventData .dropdownactorl1 a,
-main#EventData .dropdownactorl1 a:visited,
-main#EventData .dropdownactorl2 a,
-main#EventData .dropdownactorl2 a:visited,
-main#EventData .dropdownactorl3 a,
-main#EventData .dropdownactorl3 a:visited,
-main#EventData .dropdownactorl4 a,
-main#EventData .dropdownactorl4 a:visited,
-main#EventData .tdropdownactorl1 a,
-main#EventData .tdropdownactorl1 a:visited,
-main#EventData .tdropdownactorl2 a,
-main#EventData .tdropdownactorl2 a:visited,
-main#EventData .tdropdownactorl3 a,
-main#EventData .tdropdownactorl3 a:visited,
-main#EventData .tdropdownactorl4 a,
-main#EventData .tdropdownactorl4 a:visited,
-main#EventData .dropdownevent a,
-main#EventData .dropdownevent a:visited {
-    color: #fff;
-    text-decoration: none;
-    outline: none;
-    font-size: 12px;
-}
-main#EventData .dropdownactorl1 dt a,
-main#EventData .dropdownactorl2 dt a,
-main#EventData .dropdownactorl3 dt a,
-main#EventData .dropdownactorl4 dt a,
-main#EventData .tdropdownactorl1 dt a,
-main#EventData .tdropdownactorl2 dt a,
-main#EventData .tdropdownactorl3 dt a,
-main#EventData .tdropdownactorl4 dt a,
-main#EventData .dropdownevent dt a {
-    background-color: #4F6877;
-    display: block;
-    padding: 8px 20px 5px 10px;
-    min-height: 25px;
-    line-height: 24px;
-    overflow: hidden;
-    border: 0;
-    width: 272px;
-    z-index: 100;
-}
-main#EventData .dropdownactorl1 dt a span,
-main#EventData .dropdownactorl2 dt a span,
-main#EventData .dropdownactorl3 dt a span,
-main#EventData .dropdownactorl4 dt a span,
-main#EventData .tdropdownactorl1 dt a span,
-main#EventData .tdropdownactorl2 dt a span,
-main#EventData .tdropdownactorl3 dt a span,
-main#EventData .tdropdownactorl4 dt a span,
-main#EventData .multiSel span,
-main#EventData .multiSelevent span {
-    cursor: pointer;
-    display: inline-block;
-    padding: 0 3px 2px 0;
-}
-main#EventData .dropdownactorl1 dd ul,
-main#EventData .dropdownactorl2 dd ul,
-main#EventData .dropdownactorl3 dd ul,
-main#EventData .dropdownactorl4 dd ul,
-main#EventData .tdropdownactorl1 dd ul,
-main#EventData .tdropdownactorl2 dd ul,
-main#EventData .tdropdownactorl3 dd ul,
-main#EventData .tdropdownactorl4 dd ul,
-main#EventData .dropdownevent dd ul {
-    background-color: #4F6877;
-    border: 0;
-    color: #fff;
-    display: none;
-    /*left: 0px;*/
-
-    margin-left: 25%;
-    padding: 2px 15px 2px 5px;
-    position: absolute;
-    top: 2px;
-    width: 272px;
-    list-style: none;
-    height: 200px;
-    overflow: auto;
-    text-align: left;
-}
-main#EventData .dropdownactorl1 span.value,
-main#EventData .dropdownactorl2 span.value,
-main#EventData .dropdownactorl3 span.value,
-main#EventData .dropdownactorl4 span.value,
-main#EventData .tdropdownactorl1 span.value,
-main#EventData .tdropdownactorl2 span.value,
-main#EventData .tdropdownactorl3 span.value,
-main#EventData .tdropdownactorl4 span.value,
-main#EventData .dropdownevent span.value {
-    display: none;
-}
-main#EventData .dropdownactorl1 dd ul li a,
-main#EventData .dropdownactorl2 dd ul li a,
-main#EventData .dropdownactorl3 dd ul li a,
-main#EventData .dropdownactorl4 dd ul li a,
-main#EventData .tdropdownactorl1 dd ul li a,
-main#EventData .tdropdownactorl2 dd ul li a,
-main#EventData .tdropdownactorl3 dd ul li a,
-main#EventData .tdropdownactorl4 dd ul li a,
-main#EventData .dropdownevent dd ul li a {
-    padding: 5px;
-    display: block;
-}
-main#EventData .dropdownactorl1 dd ul li a:hover,
-main#EventData .dropdownactorl2 dd ul li a:hover,
-main#EventData .dropdownactorl3 dd ul li a:hover,
-main#EventData .dropdownactorl4 dd ul li a:hover,
-main#EventData .tdropdownactorl1 dd ul li a:hover,
-main#EventData .tdropdownactorl2 dd ul li a:hover,
-main#EventData .tdropdownactorl3 dd ul li a:hover,
-main#EventData .tdropdownactorl4 dd ul li a:hover,
-main#EventData .dropdownevent dd ul li a:hover {
-    background-color: #fff;
-}
-main#EventData .graph_axis_label {
-    font-size: 20px;
-}
-main#EventData .graph_collapse {
-    overflow: hidden;
-    display: inline-block;
-    /* or float:left; */
-
-    height: 44px;
-    width: auto;
-    -webkit-transition: all 0.5s ease;
-}
-main#EventData .graph_close {
-    border: 1px solid #ADADAD;
-    padding-top: 3px;
-    background: #f9f9f9;
-    margin-bottom: 5px;
-    overflow: hidden;
-    display: inline-block;
-    /* or float:left; */
-
-    height: 36px;
-    width: 480px;
-    -webkit-transition: all 0.5s ease;
-}
-main#EventData .graph_config {
-    width: 480px;
-    border: 1px solid #ADADAD;
-    padding-top: 3px;
-    background: #f9f9f9;
-    overflow: hidden;
-    display: inline-block;
-    /* or float:left; */
-
-    height: 432px;
-    -webkit-transition: all 0.5s ease;
-    margin-bottom: 5px;
-}
-main#EventData .countrytable_collapse {
-    overflow: hidden;
-    display: inline-block;
-    /* or float:left; */
-
-    height: 0;
-    width: auto;
-    -webkit-transition: all 0.5s ease;
-}
-main#EventData .country_table_config {
-    overflow: hidden;
-    float: left;
-    /* or float:left; */
-
-    width: auto;
-    -webkit-transition: all 1s ease;
-}
-main#EventData .hide_label {
-    display: none;
-}
-main#EventData .graph_container {
-    width: auto;
-    height: 500px;
-    overflow-x: scroll;
-    overflow-y: scroll;
-}
-main#EventData .bar_click {
-    fill: white;
-    cursor: pointer;
-    opacity: 0;
 }
 main#EventData .axis path,
 main#EventData .axis line {
@@ -479,61 +93,19 @@ main#EventData .axis line {
     stroke-width: 1px;
     shape-rendering: crispEdges;
 }
-main#EventData .x path {
-    display: none;
-}
-main#EventData #svg_graph_table tr:nth-child(odd) {
-    background: #ADADAD;
-}
-main#EventData #svg_graph_table tr:nth-child(even) {
-    background: #ADADAD;
-}
-main#EventData .strike_through:hover {
-    text-decoration: line-through;
-}
-main#EventData #svg_graph_table tr:nth-child(odd) {
-    background: #ADADAD;
-}
-main#EventData #svg_graph_table tr:nth-child(even) {
-    background: #ADADAD;
-}
-main#EventData .strike_through:hover {
-    text-decoration: line-through;
-}
-main#EventData #tabDiv {
-    margin-left: 5px;
-    margin-right: 5px;
-}
-main#EventData #sourceTabBtn {
-    width: 50%;
-    border-top-right-radius: 0;
-    border-bottom-right-radius: 0;
-    margin-left: 0;
-}
-main#EventData #targetTabBtn {
-    width: 50%;
-    border-top-left-radius: 0;
-    border-bottom-left-radius: 0;
-    margin-left: -1px;
-}
-main#EventData div.actorTab button {
-    position: relative;
-    float: left;
-    border: none !important;
-    outline: none !important;
-}
-main#EventData div.actorTab button.active {
-    background-image: none;
-    outline: 0;
-    -webkit-box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.125);
-    box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.125);
-}
-main#EventData .actorTabContent {
+main#EventData #dyadSelectionDiv {
+    border: 1px solid #ADADAD;
+    background: #F9F9F9;
     height: 100%;
-    -webkit-animation: fadeEffect 0.5s;
-    animation: fadeEffect 0.5s;
+    margin-bottom: 3px;
 }
-@-webkit-keyframes fadeEffect {
+main#EventData .monad-content {
+    height: 100%;
+    width: 100%;
+    -webkit-animation: fadeEffect 0.5s;
+    animation: fade-effect 0.5s;
+}
+@-webkit-keyframes fade-effect {
     from {
         opacity: 0;
     }
@@ -541,7 +113,7 @@ main#EventData .actorTabContent {
         opacity: 1;
     }
 }
-@keyframes fadeEffect {
+@keyframes fade-effect {
     from {
         opacity: 0;
     }
@@ -554,28 +126,19 @@ main#EventData #fullContainer {
     height: calc(100% - 130px);
     box-sizing: border-box;
 }
-main#EventData .actorTabContent {
-    width: 100%;
-    height: 100%;
-}
-main#EventData .actorLeft {
+main#EventData .monad-left {
     width: 50%;
     height: 100%;
     display: inline-block;
     vertical-align: top;
 }
-main#EventData .actorRight {
+main#EventData .monad-right {
     width: 50%;
     height: 100%;
     display: inline-block;
     vertical-align: top;
 }
-main#EventData .actorSearch {
-    margin: 5px 0 5px 5px;
-    height: 30px;
-    width: 170px !important;
-}
-main#EventData .actorFullList {
+main#EventData .monad-full-list {
     display: inline-block;
     width: 100%;
     height: calc(100% - 54px);
@@ -583,7 +146,7 @@ main#EventData .actorFullList {
     overflow-y: scroll;
     white-space: nowrap;
 }
-main#EventData .actorFilterList {
+main#EventData .monad-filter-list {
     width: 100%;
     height: calc(100% - 54px);
     margin-top: 3px;
@@ -591,67 +154,43 @@ main#EventData .actorFilterList {
     overflow-y: scroll;
     white-space: nowrap;
 }
-main#EventData .clearActorBtn {
+main#EventData .monad-clear {
     display: block;
     margin: 5px 38px 5px 5px;
     width: calc(100% - 43px);
     height: 30px;
 }
-main#EventData #actorSelectionDiv {
-    border: 1px solid #ADADAD;
-    background: #F9F9F9;
-    height: 100%;
-    margin-bottom: 3px;
-}
-main#EventData .actorSelectAll {
-    float: left;
-}
-main#EventData .actorClearAll {
-    float: left;
-}
-main#EventData #actorLinkDiv {
+main#EventData #dyadLinkDiv {
     float: left;
     margin-left: 10px;
-    /*width:calc(100% - 45px);*/
-
     min-width: 200px;
     overflow-x: auto;
     overflow-y: hidden;
     border: 1px solid #ADADAD;
     display: block;
 }
-main#EventData .actorBottom {
-    margin-left: 2px;
-    margin-top: 6px;
-}
-main#EventData .actorBottomTry {
+main#EventData .monad-bottom {
     width: 398px;
     bottom: 12px;
     position: absolute;
     margin-left: 1px;
 }
-main#EventData .actorNewGroup {
-    float: right;
-    margin-right: 3px;
-}
-main#EventData .actorShowSelected {
+main#EventData .monad-show-selected {
     display: inline-block;
 }
-main#EventData .actorHead4 {
+main#EventData .monad-filter-heading {
     margin-bottom: 0px;
     display: inline-block;
     font-size: 18px;
 }
-main#EventData .sourceChk,
-main#EventData .targetChk,
-main#EventData .actorChk,
-main#EventData .aggChk {
+main#EventData .monad-chk,
+main#EventData .agg-chk {
     display: inline-block;
     vertical-align: text-bottom;
     margin: 1px 5px 0px 5px !important;
 }
-main#EventData .actorChkLbl,
-main#EventData .aggChkLbl {
+main#EventData .monad-chk-lbl,
+main#EventData .agg-chk-lbl {
     display: inline-block;
     margin-right: 10px;
 }
@@ -674,30 +213,14 @@ main#EventData #editGroupName:hover {
     background-color: white;
     border: 1px solid black;
 }
-main#EventData #deleteGroup {
-    display: inline-block;
-    top: 0px;
-    margin-right: 20px;
-    padding: 0px;
-    height: 15px;
-    width: 15px;
-    vertical-align: middle;
-    outline: none;
-    background-color: #F9F9F9;
-    background-image: url(../images/delete.png);
-    background-repeat: no-repeat;
-    background-position: 0px 0px;
-    border: none;
-}
 main#EventData #linkTitleLeft,
 main#EventData #linkTitleRight {
     width: 50%;
     float: left;
     border-bottom: 1px solid #ADADAD;
 }
-main#EventData #actorLinkSVG {
+main#EventData #dyadLinkSVG {
     background-color: #FFF;
-    cursor: default;
     -webkit-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
@@ -713,24 +236,6 @@ main#EventData path.link {
     stroke-width: 3px;
     cursor: pointer;
 }
-main#EventData path.link.dragline {
-    pointer-events: none;
-}
-main#EventData path.link.hidden {
-    stroke-width: 0;
-}
-main#EventData circle.node {
-    stroke-width: 1.5px;
-    cursor: pointer;
-}
-main#EventData text {
-    font: 12px sans-serif;
-    pointer-events: none;
-}
-main#EventData text.id {
-    text-anchor: middle;
-    font-weight: bold;
-}
 main#EventData .SVGtooltip {
     display: none;
     position: absolute;
@@ -743,64 +248,4 @@ main#EventData .SVGtooltip {
 }
 main#EventData .glyphicon {
     color: #818181;
-}
-main#EventData .container {
-    width: 400px;
-    height: 200px;
-}
-main#EventData .trigger {
-    color: #777;
-}
-main#EventData .popoverContentContainer {
-    position: relative;
-    top: 0px;
-    left: 0px;
-    width: 100%;
-    height: 220px;
-}
-main#EventData #optionMenu,
-main#EventData .optionView {
-    width: 100%;
-    position: absolute;
-    top: 0px;
-    left: 0px;
-}
-main#EventData #optionMenu button,
-main#EventData #optionMenu a {
-    width: 100%;
-    margin: 5px 0;
-}
-main#EventData .optionView button {
-    float: left;
-}
-main#EventData .optionView p {
-    color: #777;
-    float: left;
-    width: 100%;
-    padding: 10px 0 0 0;
-}
-main#EventData .optionView a {
-    float: left;
-}
-main#EventData .popover {
-    width: 400px;
-}
-main#EventData .popover-inner {
-    position: relative;
-}
-main#EventData .popover-title {
-    text-align: center;
-    color: #555;
-}
-main#EventData .aggregPentaSelect {
-    padding: 10px;
-    width: 300px;
-}
-main#EventData #aggregTable {
-    width: 100%;
-    table-layout: fixed;
-}
-main#EventData #aggregTable th {
-    width: 100px;
-    padding: 0px 10px;
 }

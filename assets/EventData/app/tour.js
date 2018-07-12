@@ -62,7 +62,7 @@ let generalTour = {
         {
             title: "Download",
             content: "Download the data at any time. The downloaded file reflects the current constraints in the query summary panel, not submitted subsets. The variables menu is used to select columns in this table. If no variables are selected, all are returned.",
-            target: "buttonDownload",
+            target: "btnDownload",
             placement: "left",
             arrowOffset: 140,
             height: 150
@@ -70,7 +70,7 @@ let generalTour = {
         {
             title: "Reset",
             content: "This clears all selected variables and subsets, but does not clear the preferences in the various subset panels.",
-            target: "#btnReset",
+            target: "btnReset",
             placement: "left"
         }
     ]
@@ -89,66 +89,66 @@ let dyadTour = {
         {
             title: "Overview",
             content: "The actor menu provides a flexible way to find relationships between two sets of actors.",
-            target: "subsetsListActor",
+            target: "leftPanelTitle",
             placement: "bottom",
             width: 200
         },
         {
             title: "Source vs. Target",
-            content: "Both the source node and target node must be populated with actor tags, and a relationship must be drawn between the nodes. There is more information about this later.",
-            target: "actorRadio",
+            content: "Both the source node and target node must be populated with selections from the left panel, and a relationship must be drawn between the nodes. There is more information about this later.",
+            target: "dyadTab",
             placement: "left",
             width: 200
         },
         {
-            title: "Actor Selection",
-            content: "Select the source actors that should be in the relationship in the left panel. This may seem daunting, but there are many tools available to make this task easier.",
-            target: "#fullContainer",
+            title: "Dyad Selection",
+            content: "Select the sources that should be in the relationship in the left panel. This may seem daunting, but there are many tools available to make this task easier.",
+            target: "searchListMonads",
             placement: "left",
             width: 200
         },
         {
-            title: "Actor Selection: Filtering",
-            content: "Use the right panel filters to view a specific portion of the actor list. When enabled, the actors in the left panel are reduced to the matching tags. Filtering can detect countries, organizations, attributes and roles.",
-            target: "#fullContainer",
+            title: "Dyad Selection: Filtering",
+            content: "Use the right panel filters to view a specific portion of selection list. When enabled, the options in the left panel are reduced to the records that match the filter.",
+            target: "searchListMonads",
             placement: "right",
             width: 200
         },
         {
-            title: "Actor Selection: Filtering",
-            content: "When the actor list is filtered, use the 'Select All' and 'Clear All' to select all the contents of a filter quickly. Use the 'Clear All Filters' button to return to the full list of actors. Notice that selections made before the filter are not lost.",
-            target: "#fullContainer",
+            title: "Dyad Selection: Filtering",
+            content: "When the selection list is filtered, use the 'Select All' and 'Clear All' buttons to select all the contents of a filter quickly. Use the 'Clear All Filters' button to return to the full list of actors. Notice the selections that are not matched by the filter do not change.",
+            target: "dyadSelectAll",
             placement: "right",
             width: 200
         },
         {
             title: "Nodes",
-            content: "All of the selected actors are now elements of the bolded node in the diagram to the right. The 'Show Selected' checkbox, back in the filters menu, is useful for viewing the contents of the bolded node. You can also switch between nodes by selecting them in the diagram.",
-            target: "#actorLinkDiv",
+            content: "All of the selections are now elements of the bolded node in the diagram on the right. The 'Show Selected' checkbox, back in the filters menu, is useful for viewing the contents of the bolded node. You can also switch between nodes by selecting them in the diagram.",
+            target: "actorLinkDiv",
             placement: "left",
         },
         {
             title: "Nodes: Properties",
             content: "Rename nodes to make them easier to identify, or delete them if no longer useful. New nodes may also be added via 'New Group.' Notice the node is added with respect to the 'Sources/Targets' radio button.",
-            target: "#editGroupName",
+            target: "editGroupName",
             placement: "right",
         },
         {
             title: "Nodes: Relationships",
-            content: "Add a relationship between two groups of actors by right clicking on the source node, then clicking on the target node. Now all records with a source actor in the source node and a target actor in the target node will be matched by the actor filter.",
-            target: "#actorLinkDiv",
+            content: "Add a relationship between two groups of actors by right clicking on the source node, then clicking on the target node. Now all records where a source value selected in the source node and a target value selected in the target node will be matched in the dyad.",
+            target: "actorLinkDiv",
             placement: "left",
         },
         {
             title: "Nodes: Relationships",
             content: "When two nodes are connected, upgrade to a bi-directional relationship by connecting the target node to the source node. Two nodes can also be merged by dragging one above the other.",
-            target: "#actorLinkDiv",
+            target: "actorLinkDiv",
             placement: "left",
         },
         {
             title: "Stage",
-            content: "Use 'Stage' to take a snapshot of the relationships actor lists in the diagram and place it in the right panel.",
-            target: "#btnStage",
+            content: "Use 'Stage' to take a snapshot of the dyad relationships shown in the diagram and stage it in the right panel.",
+            target: 'btnStage',
             placement: "left",
         }
     ]
@@ -167,26 +167,26 @@ let dateTour = {
         {
             title: "Broad Selection",
             content: "Use the brushes at the bottom of the plot to zoom into the date region of interest.",
-            target: "#dateSVG",
+            target: "#dateSVGdiv",
             placement: "bottom",
             width: 200
         },
         {
             title: "Apply Broad Selection",
             content: "Use the zoom in the date plot to set a constrained date interval. The blue region is selected, and the grey region is excluded.",
-            target: "#setDatefromSlider",
+            target: "setDatefromSlider",
             placement: "left"
         },
         {
             title: "Fine Selection",
             content: "Tune the date interval to the exact day. The calendars can be helpful, but formatted text works as well.",
-            target: "#dateFromLab",
+            target: "dateFromLab",
             placement: "left"
         },
         {
             title: "Stage",
             content: "'Stage' places the selected date range in the query summary.",
-            target: "#btnStage",
+            target: "btnStage",
             placement: "left",
             arrowOffset: 50
         }
@@ -205,29 +205,29 @@ let categoricalTour = {
     steps: [,
         {
             title: "Overview",
-            content: "Action codes are used to categorize the action summarized in a given news record.",
-            target: "#actionMainGraph",
+            content: "The bar plot shows the frequencies of each category in a column of a dataset. Hover over a bar to see the exact count of elements in the category and additional formatting information.",
+            target: "SVGbin",
             placement: "left",
             width: 200
         },
         {
-            title: "Penta Classes",
-            content: "There are five primary classification classes, with a total of 20 subclasses. The names of these classes are visible on hover. Selection of a penta-class will select all its inherited CAMEO codes.",
-            target: "#actionMainGraph",
-            placement: "right",
+            title: "Multiple Plots",
+            content: "Some datatypes may have multiple representations in different formats. For instance, action CAMEO codes may have penta class, root code and PLOVER representations, each with their own plot.",
+            target: "SVGbin",
+            placement: "left",
             width: 200
         },
         {
-            title: "CAMEO Codes",
-            content: "CAMEO is a coding scheme for classifying articles. 20 bins of CAMEO codes are available in the dataset.",
-            target: "#actionSubGraph",
+            title: "Overview",
+            content: "Click on a bar to select that category. Making a selection will update all representations. A striped bar denotes selection of a portion of said category.",
+            target: "SVGbin",
             placement: "left",
             width: 200
         },
         {
             title: "Stage",
-            content: "'Stage' places the selected codes in the query summary. The faded 'not' in the query summary permits a negation: all records NOT in the selected codes will be matched.",
-            target: "#btnStage",
+            content: "'Stage' places the selected categories in the query summary. The faded 'not' in the query summary permits a negation: all records NOT in the selected categories will be matched.",
+            target: "btnStage",
             placement: "left",
             arrowOffset: 100
         }
@@ -246,36 +246,29 @@ let categoricalGroupedTour = {
     steps: [
         {
             title: "Overview",
-            content: "Select a world region to draw a second graph with the countries in said region at the bottom of the page. Region plots have selectable bars for adding countries to the 'Selected Countries' box.",
-            target: "#regionLabel",
+            content: "The initial graph shows the frequencies of a more granular category, aggregated into groups. For example, country frequencies may be aggregated into regions. Click a bar to draw a second graph with the categories contained in that group.",
+            target: "subGraphContainer",
             placement: "bottom",
             width: 200
         },
         {
             title: "Selecting Plot Elements",
-            content: "The world region plot has the option to plot all regions, whereas individual region plots have options to select all or deselect all. The shrinker is helpful for navigating the page quickly.",
-            target: "#regionLabel",
+            content: "The grouped frequencies plot has the option to plot all groups, whereas individual group plots have options to select all or deselect all. The shrinker is helpful for navigating the page quickly.",
+            target: "subGraphContainer",
             placement: "left",
             width: 200
         },
         {
-            title: "Plotting Tools",
-            content: "The world region plot has the option to plot all regions, whereas individual region plots have options to select all or deselect all. The shrinker is helpful for navigating the page quickly.",
-            target: "#Collapse_All",
-            placement: "left",
-            width: 200
-        },
-        {
-            title: "Selected Countries",
-            content: "Click on a country to delete it, or use the reset button to start over.",
-            target: "#countryTableHeader",
+            title: "Selected Categories",
+            content: "Click on a selection to delete it, or use the reset button to start over.",
+            target: "selectedCategoriesHeader",
             placement: "left",
             width: 200
         },
         {
             title: "Stage",
-            content: "'Stage' places the selected countries list in the query summary. The faded 'not' in the query summmary permits a negation: all records NOT in the selected countries list will be matched.",
-            target: "#btnStage",
+            content: "'Stage' places the selected countries list in the query summary. Click the faded 'not' in the query summmary to negate the selection: all records NOT in the selection list will be matched.",
+            target: "btnStage",
             placement: "left",
             arrowOffset: 100
         }
@@ -351,48 +344,20 @@ let customTour = {
             width: 200
         },
         {
-            title: "Column Names",
-            content: "Column names are generalized to be compatible across datasets using the <> notation. These generalized columns, or the column names specific to the dataset, are compatible with a separate Event Data R-package developed at the University of Texas at Dallas.",
-            target: "#subsetCustomEditor",
+            title: "Validate",
+            content: "Check if the query is valid JSON, and check that the query can be interpreted by MongoDB.",
+            target: "#subsetCustomValidate",
             placement: "left",
             width: 200
         },
         {
-            title: "R Package",
-            content: "Any query here may be reused in the <a style='color: #0645AD;' href='https://github.com/KateHyoung/UTDEventData/' target='_blank'>Event Data R-Package</a>.",
-            target: "#subsetCustomEditor",
+            title: "Stage",
+            content: "'Stage' places the selected bounds in the query summary. If the custom query is not valid, a warning will be provided. Keep in mind that matching on a non-existent column is completely valid and will match zero records.",
+            target: "#btnStage",
             placement: "left",
-            width: 200
-        },
-        {
-            title: "API Endpoint",
-            content: "Alternatively, Mongo queries may be submitted directly to the <a style='color: #0645AD;' href='https://github.com/Sayeedsalam/spec-event-data-server/' target='_blank'>API linked here</a>. Note that generalized column names are not supported, but there are endpoints for retrieving dataset-specific column names.",
-            target: "#subsetCustomEditor",
-            placement: "left",
-            width: 200
-        },
-        {
-            title: "Data Source",
-            content: "Data is hosted at <a style='color: #0645AD;' href='http://eventdata.utdallas.edu/data.html' target='_blank'>the Real Time Event Data service</a>.",
-            target: "#subsetCustomEditor",
-            placement: "left",
+            arrowOffset: 140,
             width: 200
         }
-        // {
-        //     title: "Validate",
-        //     content: "Check if the query is valid JSON, and check that the query can be interpreted by MongoDB.",
-        //     target: "#subsetCustomValidate",
-        //     placement: "left",
-        //     width: 200
-        // },
-        // {
-        //     title: "Stage",
-        //     content: "'Stage' places the selected bounds in the query summary. If the custom query is not valid, a warning will be provided. Keep in mind that matching on a non-existent column is completely valid.",
-        //     target: "#btnStage",
-        //     placement: "left",
-        //     arrowOffset: 140,
-        //     width: 200
-        // }
     ]
 };
 
@@ -419,7 +384,7 @@ let example_group = `{
       }
     },
     {
-      "<CAMEO>": 1
+      "<CAMEO>": "0314"
     }
   ]
 }`;
@@ -437,7 +402,7 @@ let example_actor = `{
       }
     }
   ],
-  "<CAMEO>": 1
+  "<CAMEO>": {"$in": ["022", "0314"]}
 }`;
 
 let customExampleTour = {
@@ -447,7 +412,7 @@ let customExampleTour = {
     steps: [
         {
             title: "Overview",
-            content: "This is a walkthrough with examples on how to get started building your own queries.",
+            content: "This is a walkthrough with examples on how to get started building your own queries. Note that contents in <brackets> denote column names. These must match the column names of the current dataset.",
             onNext: () => {
                 editor.setValue(example_date);
                 editor.clearSelection();
@@ -469,7 +434,7 @@ let customExampleTour = {
         },
         {
             title: "Group Example",
-            content: "Restrict to any event ",
+            content: "Use $and and $or to construct more complex groupings of restrictions on the data.",
             onNext: () => {
                 editor.setValue(example_actor);
                 editor.clearSelection();
@@ -480,7 +445,7 @@ let customExampleTour = {
         },
         {
             title: "Actor Example",
-            content: "Restrict to any event with an actor that contains the substring \"MUS\" as well as CAMEO code 1.",
+            content: "Restrict to any event with an actor that contains the substring \"MUS\" and the CAMEO code is 022 or 0314. Note that this example is only relevant for a phoenix dataset.",
             target: "#subsetCustomEditor",
             placement: "left",
             width: 200
@@ -512,26 +477,26 @@ let aggregationTour = {
         },
         {
             title: "Event Measure",
-            content: "Once the data is grouped, the number of events with the specified event measure are counted. For example, there may be 200 events with CAMEO code '12' during the month of October, 1992.",
+            content: "Once the data is grouped, the number of events with the specified event measure are counted. For example, there may be 200 events with CAMEO code '120' during the month of October, 1992.",
             target: "headerEvent_Measure",
             placement: "right"
         },
         {
-            title: "Data Results",
-            content: "The Date, Source, and Target columns indicate how data will be grouped. Depending on the chosen Event Measure, frequencies will be displayed in columns by CAMEO root codes or penta classes.",
-            target: "aggregTable",
-            placement: "top"
-        },
-        {
             title: "Aggregate",
-            content: "The TBD values in the Data Results are updated with the actual frequencies when the Update button is clicked.",
+            content: "Display the frequencies in the results table by clicking update.",
             target: "btnUpdate",
             placement: "left"
         },
         {
+            title: "Data Results",
+            content: "The Date, Source, and Target columns indicate how data will be grouped. Depending on the chosen Event Measure, frequencies will be displayed in columns.",
+            target: "aggregDataOutput",
+            placement: "top"
+        },
+        {
             title: "Download",
             content: "Download the aggregated data here!",
-            target: "buttonDownload",
+            target: "btnDownload",
             placement: "left"
         },
         {

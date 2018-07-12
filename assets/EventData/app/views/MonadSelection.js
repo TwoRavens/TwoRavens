@@ -3,7 +3,7 @@ import {grayColor} from "../../../common-eventdata/common";
 import TextField from '../../../common-eventdata/views/TextField';
 import * as app from "../app";
 import * as query from '../query';
-import {actorContains} from '../canvases/CanvasDyad';
+import {entryContains} from '../canvases/CanvasDyad';
 
 let searchLag = 500;
 
@@ -18,20 +18,20 @@ export default class MonadSelection {
 
         const operator = '$and';
 
-        let actorFilters = Object.keys(preferences['filters']).reduce((out, column) => {
+        let tabFilters = Object.keys(preferences['filters']).reduce((out, column) => {
             if (preferences['filters'][column]['selected'].size === 0) return out;
             let filter = {};
             let deconstruct = app.genericMetadata[app.selectedDataset]['deconstruct'] || {};
 
             if (column in deconstruct) filter[column] = {
                 '$regex': `^(.*${deconstruct[column]})*(${[...preferences['filters'][column]['selected']].join('|')})`,
-                "$options" : "i"
+                "$options": "i"
             };
             else filter[column] = {'$in': [...preferences['filters'][column]['selected']]};
             return out.concat([filter]);
         }, []);
 
-        let actorFiltersOp = {[operator]: actorFilters};
+        let tabFiltersOp = {[operator]: tabFilters};
 
         let stagedSubsetData = [];
         for (let child of app.abstractQuery) {
@@ -44,8 +44,8 @@ export default class MonadSelection {
 
         // If no filters are set, don't add any filtering
         let subsets;
-        if (actorFilters.length !== 0) {
-            subsets = {'$and': [stagedQuery, actorFiltersOp]};
+        if (tabFilters.length !== 0) {
+            subsets = {'$and': [stagedQuery, tabFiltersOp]};
         } else {
             subsets = stagedQuery;
         }
@@ -53,7 +53,7 @@ export default class MonadSelection {
         if (JSON.stringify(subsets) === this.cachedQuery) return;
         this.cachedQuery = JSON.stringify(subsets);
 
-        console.log("Actor Filter: " + this.cachedQuery);
+        console.log("Monad Filter: " + this.cachedQuery);
 
         // Submit query and update listings
         let body = {
@@ -65,14 +65,14 @@ export default class MonadSelection {
             'search': true
         };
 
-        let updateActorListing = (data) => {
+        let updateMonadListing = (data) => {
             preferences['full_limit'] = this.defaultPageSize;
-            app.pageSetup(data);
+            app.setupSubset(data);
             this.waitForQuery--;
         };
 
-        let failedUpdateActorListing = () => {
-            console.log("UPDATE TO ACTOR LISTING FAILED");
+        let failedUpdateMonadListing = () => {
+            console.warn("Network Issue: Update to monad listing failed");
             this.waitForQuery--;
         };
 
@@ -81,7 +81,7 @@ export default class MonadSelection {
             url: app.subsetURL,
             data: body,
             method: 'POST'
-        }).then(updateActorListing).catch(failedUpdateActorListing);
+        }).then(updateMonadListing).catch(failedUpdateMonadListing);
     }
 
     view(vnode) {
@@ -89,14 +89,14 @@ export default class MonadSelection {
 
         preferences['full_limit'] = preferences['full_limit'] || this.defaultPageSize;
 
-        let toggleFull = (actor) => preferences['node']['selected'].has(actor)
-            ? preferences['node']['selected'].delete(actor)
-            : preferences['node']['selected'].add(actor);
+        let toggleFull = (entry) => preferences['node']['selected'].has(entry)
+            ? preferences['node']['selected'].delete(entry)
+            : preferences['node']['selected'].add(entry);
 
-        let toggleFilter = (filter, actor) => {
-            preferences['filters'][filter]['selected'].has(actor)
-                ? preferences['filters'][filter]['selected'].delete(actor)
-                : preferences['filters'][filter]['selected'].add(actor);
+        let toggleFilter = (filter, entry) => {
+            preferences['filters'][filter]['selected'].has(entry)
+                ? preferences['filters'][filter]['selected'].delete(entry)
+                : preferences['filters'][filter]['selected'].add(entry);
 
             clearTimeout(this.searchTimeout);
             this.searchTimeout = setTimeout(
@@ -127,41 +127,51 @@ export default class MonadSelection {
             }
         };
 
+        // I avoided the usual declarative filtering constructs here because this loop has a sweet early exit, usually around 100 elements
+        let getTopValues = () => {
+            let matches = [];
+            let idx = 0;
+            while (idx < data['full'].length && matches.length < preferences['full_limit']) {
+                let selectFilter = !preferences['show_selected'] || preferences['node']['selected'].has(data['full'][idx]);
+                let searchFilter = entryContains(data['full'][idx], preferences['search'], metadata['token_length']);
+
+                if (selectFilter && searchFilter) matches.push(data['full'][idx]);
+                idx += 1;
+            }
+            return matches;
+        };
+
         return [
-            m(`.actorLeft#allActors`,
+            m('#allEntries.monad-left',
                 m(TextField, {
                     value: preferences['search'],
                     placeholder: `Search ${metadata['full']}`,
                     oninput: (value) => preferences['search'] = value
                 }),
-                m(`.actorFullList#searchListActors`, {
+                m('#searchListMonads.monad-full-list', {
                         style: Object.assign({"text-align": "left"},
                             this.waitForQuery && {'pointer-events': 'none', 'background': grayColor}),
                         onscroll: () => {
-                            // don't apply infinite scrolling when actor list is empty
+                            // don't apply infinite scrolling when monad list is empty
                             if (data.length === 0) return;
 
-                            let container = document.querySelector('#searchListActors');
+                            let container = document.querySelector('#searchListMonads');
                             let scrollHeight = container.scrollHeight - container.scrollTop;
                             if (scrollHeight < container.offsetHeight) preferences['full_limit'] += this.defaultPageSize;
                         }
                     },
-                    this.waitForQuery === 0 && data['full']
-                        .filter(actor => !preferences['show_selected'] || preferences['node']['selected'].has(actor))
-                        .filter(actor => actorContains(actor, preferences['search'], metadata['token_length']))
-                        .slice(0, preferences['full_limit'])
-                        .map(actor =>
-                            m('div', popupAttributes(metadata['full'], actor),
-                                m(`input.actorChk[type=checkbox]`, {
-                                    checked: preferences['node']['selected'].has(actor),
-                                    onclick: () => toggleFull(actor)
-                                }),
-                                m('label', {onclick: () => toggleFull(actor)}, actor)))
+                    this.waitForQuery === 0 && getTopValues().map(entry =>
+                        m('div', popupAttributes(metadata['full'], entry),
+                            m(`input.monad-chk[type=checkbox]`, {
+                                checked: preferences['node']['selected'].has(entry),
+                                onclick: () => toggleFull(entry)
+                            }),
+                            m('label', {onclick: () => toggleFull(entry)}, entry)))
                 )
             ),
-            m(`.actorRight[id='actorRight']`,
+            m('#actorRight.monad-right',
 
-                m(`button#clearAllActors.btn.btn-default.clearActorBtn[data-toggle='tooltip'][type='button']`, {
+                m(`button#clearAllActors.btn.btn-default.monad-clear[type='button']`, {
                         title: 'Clear search text and filters',
                         onclick: () => {
                             preferences['search'] = '';
@@ -173,11 +183,11 @@ export default class MonadSelection {
                     },
                     "Clear All Filters"
                 ),
-                m(`.actorFilterList#actorFilter`, {style: {"text-align": "left"}},
-                    m(`label.actorShowSelectedLbl.actorChkLbl[data-toggle='tooltip']`, {
+                m('#actorFilter.monad-filter-list', {style: {"text-align": "left"}},
+                    m(`label.monad-show-selected-lbl.monad-chk-lbl[data-toggle='tooltip']`, {
                             title: `Show selected ${metadata['full']}`
                         },
-                        m("input.actorChk.actorShowSelected#actorShowSelected[name='actorShowSelected'][type='checkbox']", {
+                        m("input#monad-show-selected.monad-chk.monad-show-selected[name='actorShowSelected'][type='checkbox']", {
                             checked: preferences['show_selected'],
                             onchange: m.withAttr('checked', (state) => preferences['show_selected'] = state)
                         }),
@@ -185,22 +195,22 @@ export default class MonadSelection {
                     ),
                     Object.keys(data['filters']).map(filter => [
                         m(".separator"),
-                        m("button.filterBase" + (preferences['filters'][filter]['expanded'] ? '.filterCollapse' : '.filterExpand'), {
+                        m("button.filter-base" + (preferences['filters'][filter]['expanded'] ? '.filter-collapse' : '.filter-expand'), {
                             onclick: () => preferences['filters'][filter]['expanded'] = !preferences['filters'][filter]['expanded']
                         }),
-                        m("label.actorHead4", {
+                        m("label.monad-filter-heading", {
                             onclick: () => preferences['filters'][filter]['expanded'] = !preferences['filters'][filter]['expanded']
                         }, m("b", filter)),
                         preferences['filters'][filter]['expanded'] && data['filters'][filter]
                             .filter(actor => actor.includes(preferences['search']))
                             .map(actor => m('div',
-                            popupAttributes(filter, actor),
-                            m(`input.actorChk[type=checkbox]`, {
-                                checked: preferences['filters'][filter]['selected'].has(actor),
-                                onclick: () => toggleFilter(filter, actor)
-                            }),
-                            m('label', {onclick: () => toggleFilter(filter, actor)}, actor)
-                        ))
+                                popupAttributes(filter, actor),
+                                m(`input.monad-chk[type=checkbox]`, {
+                                    checked: preferences['filters'][filter]['selected'].has(actor),
+                                    onclick: () => toggleFilter(filter, actor)
+                                }),
+                                m('label', {onclick: () => toggleFilter(filter, actor)}, actor)
+                            ))
                     ])
                 )
             )

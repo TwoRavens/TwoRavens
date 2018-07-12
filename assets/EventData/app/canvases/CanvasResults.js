@@ -21,7 +21,7 @@ function melt(data, factors) {
     return outData;
 }
 
-export default class CanvasTimeSeries {
+export default class CanvasResults {
 
     oninit(vnode) {
 

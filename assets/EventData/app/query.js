@@ -1,7 +1,6 @@
 import * as app from './app';
 import * as tour from './tour';
 import m from 'mithril';
-import {laddaStop} from "./app";
 
 // functions for generating database queries
 // subset queries are built from the abstractQuery, which is managed in app.js
@@ -13,6 +12,7 @@ import {laddaStop} from "./app";
 
 
 export function submitQuery(datasetChanged = false) {
+    console.log(app.abstractQuery);
 
     // Only construct and submit the query if new subsets have been added since last query
     let newSubsets = false;
@@ -33,14 +33,14 @@ export function submitQuery(datasetChanged = false) {
         if (Array.isArray(jsondata['total'])) jsondata['total'] = jsondata['total'][0];
         if (jsondata['total'] === 0) {
             alert("No records match your subset. Plots will not be updated.");
-            app.laddaStop();
+            app.laddaStopAll();
             return;
         }
 
         // clear all subset data. Note this is intentionally mutating the object, not rebinding it
         for (let member in app.subsetData) delete app.subsetData[member];
 
-        app.pageSetup(jsondata);
+        app.setupSubset(jsondata);
 
         // when requerying for switching datasets, don't make right panel edits
         if (datasetChanged) return;
@@ -64,7 +64,7 @@ export function submitQuery(datasetChanged = false) {
         );
 
         // Redraw tree
-        app.abstractQuery = JSON.parse(subsetTree.tree('toJson'));
+        app.setAbstractQuery(JSON.parse(subsetTree.tree('toJson')));
         let state = subsetTree.tree('getState');
         subsetTree.tree('loadData', app.abstractQuery);
         subsetTree.tree('setState', state);
@@ -82,8 +82,8 @@ export function submitQuery(datasetChanged = false) {
     let subsetQuery = buildSubset(app.abstractQuery);
     console.log("Query: " + JSON.stringify(subsetQuery));
 
-    if (datasetChanged) app.laddaReset.start();
-    else app.laddaUpdate.start();
+    if (datasetChanged) app.setLaddaSpinner('btnReset', true);
+    else app.setLaddaSpinner('btnUpdate', true);
 
     m.request({
         url: app.subsetURL,
@@ -95,7 +95,7 @@ export function submitQuery(datasetChanged = false) {
             'countRecords': true
         },
         method: 'POST'
-    }).then(submitQueryCallback) // .catch(app.laddaStop)
+    }).then(submitQueryCallback) // .catch(app.laddaStopAll)
 }
 
 // Recursively traverse the tree in the right panel. For each node, call processNode
@@ -307,7 +307,7 @@ export function submitAggregation() {
     let query = JSON.stringify(buildAggregation(app.abstractQuery, app.subsetPreferences));
     console.log("Aggregation Query: " + query);
 
-    app.laddaUpdate.start();
+    app.setLaddaSpinner('btnUpdate', true);
 
     m.request({
         url: app.subsetURL,
@@ -322,7 +322,7 @@ export function submitAggregation() {
         app.setAggregationData(data);
         app.setAggregationHeadersUnit(headersUnit);
         app.setAggregationHeadersEvent(headersEvent);
-    }).then(() => app.laddaUpdate.stop()).catch(laddaStop);
+    }).then(() => app.setLaddaSpinner('btnUpdate', true)).catch(app.laddaStopAll);
 }
 
 export function buildAggregation(tree, preferences) {

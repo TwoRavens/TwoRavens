@@ -88,22 +88,25 @@ export default class CanvasDatasets {
                                 columns = [...new Set(columns)]; // remove duplicates
                             } else columns = app.coerceArray(subset['columns']);
 
-                            let alignments = app.coerceArray(tempDataset['subsets'][label]['alignments']);
-                            alignments = alignments.concat(columns
+                            let alignments = columns
                                 .filter(column => column in tempDataset['alignments'])
-                                .map(column => tempDataset['alignments'][column]));
-                            alignments = [...new Set(alignments)];
+                                .map(column => tempDataset['alignments'][column]);
+
+                            let formats = columns
+                                .filter(column => column in tempDataset['formats'])
+                                .map(column => tempDataset['formats'][column]);
+                            formats = formats.concat(app.coerceArray(tempDataset['subsets'][label]['formats']));
 
                             return [
                                 label,
                                 tempDataset['subsets'][label]['type'],
                                 alignments.length !== 0 && m(ListTags, {
-                                    tags: alignments,
+                                    tags: [...new Set(alignments)],
                                     readonly: true,
                                     attrsTags: {style: {'padding-left': '4px', background: 'rgba(192, 192, 192, 0.5)'}}
                                 }),
-                                tempDataset['subsets'][label]['formats'] && m(ListTags, {
-                                    tags: app.coerceArray(tempDataset['subsets'][label]['formats']),
+                                formats.length !== 0 && m(ListTags, {
+                                    tags: [...new Set(formats)],
                                     readonly: true,
                                     attrsTags: {style: {'padding-left': '4px', background: 'rgba(192, 192, 192, 0.5)'}}
                                 }),

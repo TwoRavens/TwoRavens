@@ -8,19 +8,19 @@ import MonadSelection from '../views/MonadSelection';
 import PlotDyad from '../views/PlotDyad';
 import {unitMeasure} from "../app";
 
-// Width of the actor selection panel
+// Width of the dyad selection panel
 let selectionWidth = '400px';
 
-// determine if a particular actor matches criteria
-export let actorContains = (actor, search, token_length) => {
+// determine if a particular dyad matches criteria
+export let entryContains = (entry, search, token_length) => {
     if (search.length === 0) return true;
     if (token_length) {
         const tags = search
             .replace(/[\-\[\]\/\{\}\(\)\*\+\?\\\^\$\|]/g, ".")
             .match(new RegExp(`.{${token_length}}`, 'g')) || [];
-        return new RegExp(tags.map(tag => `(?=^(...)*${tag})`).join('') + ".*", 'i').test(actor);
+        return new RegExp(tags.map(tag => `(?=^(...)*${tag})`).join('') + ".*", 'i').test(entry);
     }
-    return actor.match(new RegExp('.*' + search.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&") + '.*', 'i'));
+    return entry.match(new RegExp('.*' + search.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&") + '.*', 'i'));
 };
 
 export default class CanvasDyad {
@@ -35,7 +35,7 @@ export default class CanvasDyad {
             out[entry] = false;
             return out;
         }, {});
-        preferences['nodes'].forEach(node => hasNode[node['actor']] = true);
+        preferences['nodes'].forEach(node => hasNode[node['tab']] = true);
 
         preferences['tabs'] = preferences['tabs'] || {};
 
@@ -43,7 +43,7 @@ export default class CanvasDyad {
             if (!hasNode[tab]) {
                 preferences['nodes'].push({
                     name: tab + ' 0',
-                    actor: tab,
+                    tab: tab,
                     selected: new Set(),
                     id: preferences['node_count']++
                 });
@@ -56,7 +56,7 @@ export default class CanvasDyad {
                     }, {}),
                     search: '',
                     visible_elements: 0,
-                    node: preferences['nodes'].filter(node => node['actor'] === tab)[0]
+                    node: preferences['nodes'].filter(node => node['tab'] === tab)[0]
                 }
             }
         });
@@ -68,20 +68,20 @@ export default class CanvasDyad {
 
 
     view(vnode) {
-        let {mode, preferences, metadata, redraw, setRedraw} = vnode.attrs;
+        let {preferences, metadata, redraw, setRedraw} = vnode.attrs;
         if (!Object.keys(preferences).length) this.oninit(vnode);
 
-        return m("#canvasActor", {style: {height: `calc(100% - ${panelMargin})`}},
+        return m("#canvasDyad", {style: {height: `calc(100% - ${panelMargin})`}},
             [
-                m("div#actorSelectionDiv", {
+                m("div#dyadSelectionDiv", {
                     style: {
                         float: "left",
                         height: `calc(100% - ${panelMargin})`,
                         width: selectionWidth,
                         'margin-top': "10px"
                     }
-                }, this.actorSelection(vnode)),
-                m("div#actorLinkDiv", {
+                }, this.dyadSelection(vnode)),
+                m("div#dyadLinkDiv", {
                     style: {
                         'margin-left': panelMargin,
                         'margin-top': panelMargin,
@@ -91,23 +91,23 @@ export default class CanvasDyad {
                 }, [
                     m("[id='linkTitle']",
                         [
-                            m("h3.panel-title.text-center[id='linkTitleLeft']",
+                            m("h3#linkTitleLeft.panel-title.text-center",
                                 "Sources"
                             ),
-                            m("h3.panel-title.text-center[id='linkTitleRight']",
+                            m("h3#linkTitleRight.panel-title.text-center",
                                 "Targets"
                             )
                         ]
                     ),
                     m(PlotDyad, {
-                        id: 'actorSVG',
+                        id: 'dyadSVG',
                         preferences: preferences,
                         redraw: redraw,
                         setRedraw: setRedraw,
                         metadata: metadata
                     })
                 ]),
-                m("div#actorFormatDiv", {
+                m("div#dyadFormatDiv", {
                     style: {
                         clear: 'both',
                         height: '1px',
@@ -119,21 +119,21 @@ export default class CanvasDyad {
             ]);
     }
 
-    actorSelection(vnode) {
+    dyadSelection(vnode) {
         let {mode, subsetName, data, metadata, preferences, setRedraw} = vnode.attrs;
         return [
-            m(".panel-heading.text-center[id='actorSelectionTitle']", {style: {"padding-bottom": "5px"}},
-                m("[id='actorPanelTitleDiv']",
+            m(".panel-heading.text-center[id='dyadSelectionTitle']", {style: {"padding-bottom": "5px"}},
+                m("[id='dyadPanelTitleDiv']",
                     m("h3.panel-title", {style: {'padding-top': '2px', 'padding-bottom': '2px'}}, "Dyad Selection")),
                 mode === 'aggregate' && [
-                    m("[id='actorAggToggleDiv']", {
+                    m("[id='dyadAggToggleDiv']", {
                             style: {
                                 "position": "relative",
                                 "top": "-2px"
                             }
                         },
-                        m("label.aggChkLbl",
-                            m('input#aggregActorSelect.aggChk.aggActor[type=checkbox]', {
+                        m("label.agg-chk-lbl",
+                            m('input#aggregDyadSelect.agg-chk[type=checkbox]', {
                                 onclick: m.withAttr("checked", (state) => unitMeasure[subsetName] = state),
                                 checked: unitMeasure[subsetName]
                             }),
@@ -142,7 +142,7 @@ export default class CanvasDyad {
                 ]
             ),
             m(ButtonRadio, {
-                id: 'actorTab',
+                id: 'dyadTab',
                 onclick: (tab) => preferences['current_tab'] = tab,
                 activeSection: preferences['current_tab'],
                 sections: Object.keys(metadata['tabs']).map(entry => ({value: entry})),
@@ -159,7 +159,7 @@ export default class CanvasDyad {
                 style: {"width": "calc(100% - 10px)", 'margin-left': '5px', 'margin-bottom': 0, 'height': '22px'}
             }),
 
-            m("#fullContainer", m(`.actorTabContent#actorDiv`, {
+            m("#fullContainer", m(`#dyadDiv.monad-content`, {
                     style: {height: mode === 'subset' ? '100%' : 'calc(100% - 25px)'}
                 },
                 m(MonadSelection, {
@@ -169,30 +169,31 @@ export default class CanvasDyad {
                     metadata: metadata['tabs'][preferences['current_tab']],
                     currentTab: preferences['current_tab']
                 }),
-                m(".actorBottomTry",
+                m(".monad-bottom",
                     m(Button, {
-                        id: 'actorSelectAll',
+                        id: 'dyadSelectAll',
                         onclick: () => {
                             let tabPref = preferences['tabs'][preferences['current_tab']];
                             let tabMeta = metadata['tabs'][preferences['current_tab']];
+                            if (tabPref['show_selected']) return;
                             tabPref['node']['selected'] = new Set([
                                 ...tabPref['node']['selected'],
                                 ...data[preferences['current_tab']]['full']
-                                    .filter(actor => actorContains(actor, tabPref['search'], tabMeta['token_length']))]);
+                                    .filter(entry => entryContains(entry, tabPref['search'], tabMeta['token_length']))]);
                         },
                         title: `Selects all ${preferences['tabs'][preferences['current_tab']]['node']['name']}s that match the filter criteria`
                     }, 'Select All'),
                     m(Button, {
-                        id: 'actorClearAll',
+                        id: 'dyadClearAll',
                         onclick: () => {
                             let tabPref = preferences['tabs'][preferences['current_tab']];
                             let tabMeta = metadata['tabs'][preferences['current_tab']];
                             tabPref['node']['selected'] = new Set([...tabPref['node']['selected']]
-                                .filter(actor => !actorContains(actor, tabPref['search'], tabMeta['token_length'])))},
+                                .filter(entry => !entryContains(entry, tabPref['search'], tabMeta['token_length'])))},
                         title: `Clears all ${preferences['tabs'][preferences['current_tab']]['node']['name']} that match the filter criteria`
                     }, 'Clear All'),
                     m(Button, {
-                        id: 'actorNewGroup',
+                        id: 'dyadNewGroup',
                         onclick: () => {
                             let names = new Set(preferences['nodes'].map(node => node['name']));
 
@@ -205,7 +206,7 @@ export default class CanvasDyad {
 
                             let newGroup = {
                                 name: preferences['current_tab'] + ' ' + count,
-                                actor: preferences['current_tab'],
+                                tab: preferences['current_tab'],
                                 selected: new Set(),
                                 id: preferences['node_count']++
                             };
@@ -217,10 +218,10 @@ export default class CanvasDyad {
                         style: {'margin-right': '2px', float: 'right'}
                     }, 'New Group'),
                     m(Button, {
-                        id: 'actorDeleteGroup',
+                        id: 'dyadDeleteGroup',
                         onclick: () => {
                             let filteredNodes = preferences['nodes']
-                                .filter(node => node['actor'] === preferences['current_tab']);
+                                .filter(node => node['tab'] === preferences['current_tab']);
 
                             if (filteredNodes.length === 1) {
                                 alert('There must be at least one "' + preferences['current_tab'] + '" node.');

@@ -15,11 +15,11 @@ export default class PlotBars {
     oncreate(vnode) {this.plot(vnode)}
 
     plot(vnode) {
-        let {id, data, orient, callbackBar, margin, xLabel, yLabel} = vnode.attrs;
+        let {data, orient, callbackBar, margin, xLabel, yLabel} = vnode.attrs;
         if (data === undefined) return;
         let horizontal = orient === 'horizontal';
 
-        let svg = d3.select('#' + id.replace(/ /g,"_"));
+        let svg = d3.select(vnode.dom);
 
         svg.html('');
 

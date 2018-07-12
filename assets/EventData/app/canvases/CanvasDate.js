@@ -74,6 +74,7 @@ export default class CanvasDate {
                 toDate.datepicker('option', 'minDate', preferences['userLower']);
                 toDate.datepicker('option', 'defaultDate', maxDate);
                 toDate.datepicker('option', 'maxDate', maxDate);
+                m.redraw();
                 // fromdatestring = dateminUser.getFullYear() + "" + ('0' + (dateminUser.getMonth() + 1)).slice(-2) + "" + ('0' + dateminUser.getDate()).slice(-2);
             },
             onClose: function () {
@@ -98,6 +99,7 @@ export default class CanvasDate {
             orientation: top,
             onSelect: function () {
                 preferences['userUpper'] = new Date($(this).datepicker('getDate').getTime());
+                m.redraw();
                 // todatestring = datemaxUser.getFullYear() + "" + ('0' + (datemaxUser.getMonth() + 1)).slice(-2) + "" + ('0' + datemaxUser.getDate()).slice(-2);
             }
         });
@@ -177,6 +179,7 @@ export default class CanvasDate {
                     [
                         // Set date from slider
                         m("button.btn.btn-default[type='button']", {
+                            id: 'setDatefromSlider',
                             style: {
                                 "margin-top": "10px",
                                 "text-align": "center"
@@ -254,6 +257,7 @@ export default class CanvasDate {
                         handles: [preferences['handleLower'], preferences['handleUpper']],
                         callbackHandles: setHandleDates,
                         dataProcessed,
+                        labelY: 'Monthy Frequency'
                     })),
                 m("div",
                     {

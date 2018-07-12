@@ -57,7 +57,7 @@ export default class CanvasCategorical {
 
         // change the size of the graph based on the number of available plots
         let getShape = (format) => {
-            if (Object.keys(allData[format]).length > 25) return {
+            if (Math.min(Object.keys(allData[format]).filter(key => allData[format][key]).length) > 25) return {
                 "height": 20 * Object.keys(allData[format]).length + 'px',
                 "width": "calc(100% - 10px)"
             };
@@ -107,35 +107,33 @@ export default class CanvasCategorical {
                         "margin-bottom": '10px'
                     }, getShape(format)),
                 },
-                [
-                    m(".panel-heading.text-center", {
-                            style: {"float": "left", "padding-top": "9px"}
-                        }, m("h3.panel-title", format)
-                    ),
-                    m("br"),
-                    m('div', {'style': {'height': 'calc(100% - 40px)'}},
-                        m(PlotBars, {
-                            id: 'barPlot' + format,
-                            margin: {top: 10, right: 30, bottom: 50, left: maxCharacters * 6 + 20},
-                            data: plotData,
-                            callbackBar: (bar) => {
-                                let target_state = bar.class === 'bar-some' || bar.class === 'bar';
+                m(".panel-heading.text-center", {
+                        style: {"float": "left", "padding-top": "9px"}
+                    }, m("h3.panel-title", format)
+                ),
+                m("br"),
+                m('div', {'style': {'height': 'calc(100% - 40px)'}},
+                    m(PlotBars, {
+                        id: 'barPlot' + format,
+                        margin: {top: 10, right: 30, bottom: 50, left: maxCharacters * 6 + 20},
+                        data: plotData,
+                        callbackBar: (bar) => {
+                            let target_state = bar.class === 'bar-some' || bar.class === 'bar';
 
-                                if (masterAlignment) {
-                                    app.alignmentData[masterAlignment]
-                                        .filter(equivalency => equivalency[format] === bar.key)
-                                        .forEach(equivalency => target_state
-                                            ? preferences['selections'].add(equivalency[preferences['format']])
-                                            : preferences['selections'].delete(equivalency[preferences['format']]))
-                                } else target_state
-                                    ? preferences['selections'].add(bar.key)
-                                    : preferences['selections'].delete(bar.key);
-                            },
-                            orient: 'vertical',
-                            yLabel: 'Density'
-                        })
-                    )
-                ]
+                            if (masterAlignment) {
+                                app.alignmentData[masterAlignment]
+                                    .filter(equivalency => equivalency[format] === bar.key)
+                                    .forEach(equivalency => target_state
+                                        ? preferences['selections'].add(equivalency[preferences['format']])
+                                        : preferences['selections'].delete(equivalency[preferences['format']]))
+                            } else target_state
+                                ? preferences['selections'].add(bar.key)
+                                : preferences['selections'].delete(bar.key);
+                        },
+                        orient: 'vertical',
+                        yLabel: 'Density'
+                    })
+                )
             );
         };
 

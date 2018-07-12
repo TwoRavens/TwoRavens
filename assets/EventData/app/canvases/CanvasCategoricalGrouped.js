@@ -52,9 +52,9 @@ export default class CanvasCategoricalGrouped {
         let subGroupPrep = {};
 
         app.alignmentData[masterAlignment].forEach(equivalency => {
-            if (!(masterFormat in equivalency && metadata['group_by'])) return;
+            if (!(masterFormat in equivalency) || !(equivalency[masterFormat] in flattenedData)) return;
             let isSet = preferences['selections'].has(equivalency[masterFormat]);
-            if (equivalency in groupSelected)
+            if (equivalency[metadata['group_by']] in groupSelected)
                 groupSelected[equivalency[metadata['group_by']]].push(isSet);
             else
                 groupSelected[equivalency[metadata['group_by']]] = [isSet];
@@ -75,13 +75,15 @@ export default class CanvasCategoricalGrouped {
         let totalRecords = Object.values(groupPrep).reduce((total, entry) => total + entry);
 
         // reformat into presentation data
-        let groupData = Object.keys(groupPrep).map(groupName => ({
-            key: groupName,
-            value: groupPrep[groupName] / totalRecords,
-            'class': groupSelected[groupName].every(_ => _) ? 'bar-selected'
-                : groupSelected[groupName].some(_ => _) ? 'bar-some' : 'bar',
-            title: groupPrep[groupName] + ' ' + groupName + ' ' + getLabel(metadata['group_by'], groupName)
-        }));
+        let groupData = Object.keys(groupPrep)
+            .filter(groupName => groupPrep[groupName] !== 0)
+            .map(groupName => ({
+                key: groupName,
+                value: groupPrep[groupName] / totalRecords,
+                'class': groupSelected[groupName].every(_ => _) ? 'bar-selected'
+                    : groupSelected[groupName].some(_ => _) ? 'bar-some' : 'bar',
+                title: groupPrep[groupName] + ' ' + groupName + ' ' + getLabel(metadata['group_by'], groupName)
+            }));
 
         let subGroupData = {};
         Object.keys(subGroupPrep).forEach(subGroupName =>
@@ -119,7 +121,7 @@ export default class CanvasCategoricalGrouped {
                 shown && graph
             );
 
-        return m("#canvasLocation", {style: {'padding-top': common.panelMargin}},
+        return m("#canvasCategoricalGrouped", {style: {'padding-top': common.panelMargin}},
             m("#locationPlotsDiv[tabindex='0']", {
                     style: {
                         "outline": "none",
@@ -131,7 +133,7 @@ export default class CanvasCategoricalGrouped {
                 // Global Graph
                 graphContainer(metadata['group_by'],
                     preferences['plotted_grouped'] && m(PlotBars, {
-                        id: 'barPlotGroups' + subsetName.replace(/[^A-Za-z0-9]/g, ""),
+                        id: 'barPlotGroups',
                         margin: {top: 10, right: 30, bottom: 50, left: groupMaxChars * 6 + 20},
                         data: groupData,
                         callbackBar: (bar) => {
@@ -144,33 +146,36 @@ export default class CanvasCategoricalGrouped {
                             }
                         },
                         orient: 'vertical',
-                        yLabel: 'Frequency'
+                        yLabel: 'Frequency',
+                        attrsAll: {style: {height: '386px'}}
                     }),
-                    m("button#expandButton.btn.btn-default", {
+                    [
+                        m("button#expandButton.btn.btn-default", {
+                                style: {
+                                    "float": "right",
+                                    "margin-right": "5px"
+                                },
+                                onclick: () => preferences['plotted_grouped'] = !preferences['plotted_grouped']
+                            },
+                            m(`span.glyphicon.glyphicon-resize-${preferences['plotted_grouped'] ? 'small' : 'full'}`,
+                                {style: {"color": "#818181"}})),
+
+                        m("button.btn.btn-default[data-toggle='tooltip'][type='button']", {
                             style: {
                                 "float": "right",
                                 "margin-right": "5px"
                             },
-                            onclick: () => preferences['plotted_grouped'] = !preferences['plotted_grouped']
-                        },
-                        m(`span.glyphicon.glyphicon-resize-${preferences['plotted_grouped'] ? 'small' : 'full'}`,
-                            {style: {"color": "#818181"}})),
+                            onclick: () => groupData.forEach(entry => preferences['plotted_subgroups'][entry['key']] = true)
+                        }, "Plot All"),
 
-                    m("button.btn.btn-default[data-toggle='tooltip'][type='button']", {
-                        style: {
-                            "float": "right",
-                            "margin-right": "5px"
-                        },
-                        onclick: () => Object.keys(groupData).forEach(key => preferences['plotted_subgroups'][key] = true)
-                    }, "Plot All"),
-
-                    m("button.btn.btn-default[data-toggle='tooltip'][id='Collapse_All'][type='button']", {
-                        style: {
-                            "float": "right",
-                            "margin-right": "5px"
-                        },
-                        onclick: () => preferences['plotted_subgroups'] = {}
-                    }, "Plot None"),
+                        m("button.btn.btn-default[data-toggle='tooltip'][type='button']", {
+                            style: {
+                                "float": "right",
+                                "margin-right": "5px"
+                            },
+                            onclick: () => preferences['plotted_subgroups'] = {}
+                        }, "Plot None")
+                    ],
                     // determines if div is collapsed
                     preferences['plotted_grouped']),
 
@@ -183,7 +188,8 @@ export default class CanvasCategoricalGrouped {
                             ? preferences['selections'].delete(bar.key)
                             : preferences['selections'].add(bar.key),
                         orient: 'vertical',
-                        yLabel: 'Frequency'
+                        yLabel: 'Frequency',
+                        attrsAll: {style: {height: '386px'}}
                     }), [
                         m("button#expandButton.btn.btn-default", {
                                 style: {
@@ -216,7 +222,7 @@ export default class CanvasCategoricalGrouped {
             ),
 
             // Country Table
-            m("[id='country_table']", {
+            m("#selectedCategoriesTable", {
                     style: {
                         "position": "fixed",
                         "margin-left": "10px",
@@ -229,7 +235,7 @@ export default class CanvasCategoricalGrouped {
                     }
                 },
                 [
-                    m("[id='countryTableHeader']", {style: {"width": "250px", "display": "inline-block"}},
+                    m("selectedCategoriesHeader", {style: {"width": "250px", "display": "inline-block"}},
                         [
 
                             m("h3.panel-title", {
@@ -267,7 +273,7 @@ export default class CanvasCategoricalGrouped {
                                 "width": "243px"
                             }
                         },
-                        [...preferences['selections']].map(code => m('.location-entry', {
+                        [...preferences['selections']].map(code => m('.selected-entry', {
                             onclick: () => preferences['selections'].delete(code)
                         }, code + ' ' + getLabel(masterFormat, code)))
                     )
