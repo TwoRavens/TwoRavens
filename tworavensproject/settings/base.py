@@ -209,6 +209,18 @@ CELERY_RESULT_BACKEND = 'redis://%s:%d' % (REDIS_HOST, REDIS_PORT)
 #  For depositing Dataverse data
 # ---------------------------
 DATAVERSE_SERVER = os.environ.get('DATAVERSE_SERVER', 'https://dataverse.harvard.edu')
-# DATAVERSE_API_KEY = os.environ.get('DATAVERSE_API_KEY', 'Get API Key from dataverse')
+DATAVERSE_API_KEY = os.environ.get('DATAVERSE_API_KEY', 'Get API Key from dataverse')
 DATASET_PERSISTENT_ID = os.environ.get('DATASET_PERSISTENT_ID', 'doi%3A10.7910%2FDVN%2FSJWX4S')
 
+# -------------------------
+# EventData: mongo related
+# -------------------------
+EVENTDATA_MONGO_DB_ADDRESS = os.environ.get(\
+                        'EVENTDATA_MONGO_DB_ADDRESS'\
+                        '127.0.0.1:27017')
+
+EVENTDATA_MONGO_USERNAME = os.environ.get('EVENTDATA_MONGO_USERNAME',
+                                          'AdminEvent')
+
+EVENTDATA_MONGO_PASSWORD = os.environ.get('EVENTDATA_MONGO_PASSWORD',
+                                          '')
