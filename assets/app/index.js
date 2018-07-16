@@ -421,10 +421,10 @@ class Body {
                                 },
                                 onmouseout: "$(this).popover('toggle');",
                                 'data-container': 'body',
-                                'data-content': app.popoverContent(node),
+                                'data-content': node.labl || '<i>none provided</i>',
                                 'data-html': 'true',
-                                'data-original-title': 'Summary Statistics',
-                                'data-placement': 'left',
+                                'data-original-title': 'Description',
+                                'data-placement': 'top',
                                 'data-toggle': 'popover',
                                 'data-trigger': 'hover',
                                 style: {
