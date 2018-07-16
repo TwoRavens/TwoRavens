@@ -1,12 +1,21 @@
 """URLs for the UI to initiate TA2 calls"""
 from django.urls import path, re_path
 from tworaven_apps.ta2_interfaces import (\
+        views_user_problem,
         views_additional,
         views_streaming_requests,
         views_saved_requests,
         views_non_streaming_requests)
 
 urlpatterns = (
+
+    path(r'store-problem-form',
+         views_user_problem.view_save_problem_form,
+         name='view_save_problem_form'),
+
+    path(r'store-user-problem',
+         views_user_problem.view_store_basic_problem,
+         name='view_store_basic_problem'),
 
     path(r'get-problem-schema',
          views_additional.view_get_problem_schema,

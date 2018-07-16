@@ -13,10 +13,8 @@ class EventDataSavedQueryForm(forms.Form):
     username = forms.CharField(required=True, label='UserName')
     query = forms.CharField(widget=forms.Textarea)
     result_count = forms.IntegerField(required=True, label='result_count')
-    saved_to_dataverse = forms.NullBooleanField(required=False,initial=False)
-    dataverse_url = forms.URLField(required=False)
     dataset = forms.CharField(widget=forms.Textarea)
-    dataset_type = forms.CharField(required=True, initial= SUBSET)
+    dataset_type = forms.CharField(required=True, initial=SUBSET)
 
     def clean_name(self):
         name = self.cleaned_data.get('name')
@@ -39,27 +37,31 @@ class EventDataSavedQueryForm(forms.Form):
             - e.g. input: "OrderedDict([('ads', 'asd')])"
         """
         query_str = self.cleaned_data.get('query')
-        # if it doesn't give error in json.dumps( ) then it can be converted into Ordereddict,
-        #  Also to consider list as json, dict should not be checked as dict does not take lists
-        return json.dumps(query_str)
+
+        try:
+            dict_type = eval(query_str)
+        except SyntaxError:
+            raise forms.ValidationError("The query is invalid: %s" % query_str)
+        except NameError:
+            raise forms.ValidationError("The query is invalid: %s" % query_str)
+
+        if isinstance(dict_type, dict):
+            print("dict type ")
+            return dict_type
+        else:
+            try:
+                print("non dict type")
+                non_dict_type = json.dumps(query_str)
+                return non_dict_type
+            except SyntaxError:
+                raise forms.ValidationError("The query is invalid and non_dict type: %s" % query_str)
+            except NameError:
+                raise forms.ValidationError("The query is invalid and non dict type: %s" % query_str)
 
     def clean_result_count(self):
         res_count = self.cleaned_data.get('result_count')
 
         return res_count
-
-    def clean_saved_to_dataverse(self):
-        """ check if the format is valid"""
-        input_saved_to_dataverse = self.cleaned_data.get('saved_to_dataverse')
-        if not input_saved_to_dataverse:
-            input_saved_to_dataverse = False
-
-        return input_saved_to_dataverse
-
-    def clean_dataverse_url(self):
-        dataverse_url = self.cleaned_data.get('dataverse_url')
-
-        return dataverse_url
 
     def clean_dataset(self):
         dataset_input = self.cleaned_data.get('dataset')
@@ -96,4 +98,3 @@ class EventDataQueryFormSearch(forms.Form):
         desc = self.cleaned_data.get('description')
 
         return desc
-

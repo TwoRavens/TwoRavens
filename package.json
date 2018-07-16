@@ -28,6 +28,7 @@
     "hopscotch": "^0.3.1",
     "http-server": "^0.10.0",
     "mithril": "^1.1.1",
+    "npm": "^6.1.0",
     "vega": "^4.0.0-rc.3",
     "vega-embed": "^3.15.0",
     "vega-lite": "^2.5.2"

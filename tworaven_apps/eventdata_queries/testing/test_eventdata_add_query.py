@@ -26,16 +26,17 @@ class EventDataQueryAddTest(TestCase):
                        "description": "query1 desc",
                        "username": "two ravens",
                        "query": {"ads": "asd"},
-                       "result_count": "4",
-                       "saved_to_dataverse": True,
-                       "dataverse_url": "www.google.com"}
+                       "result_count": 4,
+                            "dataset": "this is the dataset, should it be json ?",
+                            "dataset_type": "subset"
+                            }
         self.input_json2 = {"name": "query2",
                        "description": "query2 desc",
                        "username": "two ravens",
                        "query": {"ads": "asd"},
-                       "result_count": "4",
-                       "saved_to_dataverse": True,
-                       "dataverse_url": "www.google.com"}
+                       "result_count": 4,
+                        "dataset": "this is the dataset, should it be json ?",
+                            "dataset_type": "subset"}
 
     def test_010_add_query(self):
         """(10) Test AddQuery"""
@@ -43,10 +44,10 @@ class EventDataQueryAddTest(TestCase):
         # url and info for call
         #
         output_json = {'id': 1, 'name': 'query1', 'description': 'query1 desc',
-                                                                           'username': 'two ravens', 'query': {'ads': 'asd'},
-                                                                           'result_count': 4, 'created': '2018-06-25T19:04:23.277Z',
-                                                                           'modified': '2018-06-25T19:04:23.277Z', 'saved_to_dataverse': True,
-                                                                           'dataverse_url': 'http://www.google.com'}
+                       'username': 'two ravens', 'query': {'ads': 'asd'},
+                       'result_count': 4, 'created': '2018-06-25T19:04:23.277Z',
+                       'modified': '2018-06-25T19:04:23.277Z',  "dataset": "this is the dataset, should it be json ?",
+                            "dataset_type": "subset"}
 
         url = reverse('api_add_query')
 
@@ -134,8 +135,6 @@ class EventDataQueryAddTest(TestCase):
         obj = json_resp['data']
 
         self.assertEqual(obj['name'], 'query1')
-
-
 
     def test_040_search(self):
         """(40) Test for search """

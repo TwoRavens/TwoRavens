@@ -11,6 +11,17 @@ These repos are incorporated in two ways:
 
 ## Submodule Log
 
+**7/9/2018**
+
+- Update repostiory: [ta3ta2-api](https://gitlab.com/datadrivendiscovery/ta3ta2-api)
+  - **version**: v2018.7.7
+  - **method of inclusion**
+    - downloaded version manually--it's in a private gitlab
+    - adding it to the `sys.path` in `settings/base.py`
+    - ran `fab compile_ta3ta2_api`
+    - checked it in
+
+
 **6/26/2018**
 
 - Remove repository [raven-metadata-service](https://github.com/TwoRavens/raven-metadata-service)

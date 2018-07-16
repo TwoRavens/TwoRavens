@@ -214,6 +214,7 @@ def api_publish_dataset(request, dataset_id):
 
         return JsonResponse(usr_msg)
 
+
 @csrf_exempt
 def api_get_archive_list(request):
     """ get list"""
@@ -235,6 +236,7 @@ def api_get_archive_list(request):
 
         return JsonResponse(usr_msg)
 
+
 @csrf_exempt
 def api_get_archive_query_object(request, datafile_id):
     """ get object by id"""
@@ -253,6 +255,7 @@ def api_get_archive_query_object(request, datafile_id):
         return JsonResponse(usr_msg)
 
 
+@csrf_exempt
 def api_get_files_list(request, version_id):
     """ get dataverse files list"""
 
@@ -269,4 +272,3 @@ def api_get_files_list(request, version_id):
                        data=jobs)
 
         return JsonResponse(usr_msg)
-
