@@ -39,7 +39,7 @@ export default class Table {
         let abbreviate = (item) => {
             if (typeof(item) === 'string' && item.length > abbreviation) {
                 return m('div', {'data-toggle': 'tooltip', title: item},
-                    item.substring(0, abbreviation - 3).trim() + '...')
+                         item.substring(0, abbreviation - 3).trim() + '...');
             }
             else return item;
         };
@@ -52,7 +52,7 @@ export default class Table {
 
             ...data.map((row, i) => m('tr', mergeAttributes(
                 i % 2 === 1 ? {style: {'background': '#fcfcfc'}} : {},
-                row[0] === activeRow ? {style: {'background': selVarColor}} : {},
+                activeRow.includes(row[0]) ? {style: {'background': selVarColor}} : {},
                 attrsRows),
                 row.filter((item, j) => j !== 0 || showUID).map((item, j) =>
                     m('td', mergeAttributes(onclick ? {onclick: () => onclick(row[0], j)} : {}, attrsCells), abbreviate(item)))

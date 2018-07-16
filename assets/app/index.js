@@ -39,7 +39,7 @@ let state = {
     }
 };
 
-let nodesExplore = null;
+let nodesExplore = [];
 let valueKey = app.valueKey;
 
 function setBackgroundColor(color) {
@@ -64,7 +64,7 @@ function leftpanel(mode) {
         checked: app.checkedDiscoveryProblems.has(problem[0])
     })]);
 
-    let nodes = exploreMode ? nodesExplore || [] : app.nodes;
+    let nodes = exploreMode ? nodesExplore : app.nodes;
 
     return m(Panel, {
         side: 'left',
@@ -105,14 +105,17 @@ function leftpanel(mode) {
                      id: 'discoveryTable',
                      headers: ['Hidden_UID', 'Target', 'Predictors', 'Task', 'Metric', discoveryAllCheck],
                      data: discoveryTableData,
-                     activeRow: app.selectedProblem,
-                     onclick: app.setSelectedProblem,
+                     activeRow: app.selectedProblems,
+                     onclick: app.setSelectedProblems,
                      showUID: false,
                      abbreviation: 40,
-                     attrsAll: {style: {height: '80%', overflow: 'auto', display: 'block', 'margin-right': '16px', 'margin-bottom': 0, 'max-width': (window.innerWidth - 90) + 'px'}}
+                     attrsAll: {ondblclick: _ => {
+                         let prob = app.selectedProblem();
+                         m.route.set(`/explore/multiple/${[prob.target].concat(prob.predictors).join('/')}`);
+                     }, style: {height: '80%', overflow: 'auto', display: 'block', 'margin-right': '16px', 'margin-bottom': 0, 'max-width': (window.innerWidth - 90) + 'px'}}
                  }),
                  m('textarea#discoveryInput[style=display:block; float: left; width: 100%; height:calc(20% - 35px); overflow: auto; background-color: white]', {
-                     value: app.disco[app.selectedProblem] === undefined ? '' : app.disco[app.selectedProblem].description
+                     value: app.selectedProblem() === undefined ? '' : app.selectedProblem().description
                  }),
                  m(Button, {id: 'btnSave', onclick: _ => app.saveDisc('btnSave'),title: 'Saves your revised problem description.'}, 'Save Desc.'),
                  m(Button, {id: 'btnSubmitDisc', classes: 'btn-success', style: 'float: right', onclick: _ => app.submitDiscProb(), title: 'Submit all checked discovered problems.'}, 'Submit Disc. Probs.'),
@@ -666,11 +669,6 @@ m.route(document.body, '/model', {
         render: () => m(Body)
     },
     '/explore': {
-        onmatch() {
-            if (m.route.get() === '/model' && nodesExplore === null) {
-                nodesExplore = [];
-            }
-        },
         render: () => m(Body, {mode: 'explore'})
     },
     '/explore/:variate/:var1': exploreVars,
