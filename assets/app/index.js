@@ -363,7 +363,7 @@ class Body {
 
         let spaceBtn = (id, onclick, title, icon) =>
             m(`button#${id}.btn.btn-default`, {onclick, title}, glyph(icon, true));
-
+        let discovery = app.leftTab === 'Discovery';
         return m('main', [
             m(Modal),
             this.header(mode),
@@ -382,15 +382,15 @@ class Body {
                            attrsAll: {style: {width: '400px'}, class: 'btn-sm'},
                            onclick: x => {nodesExplore = []; app.setVariate(x)},
                            activeSection: app.exploreVariate,
-                           sections: app.leftTab === 'Discovery' ? [{value: 'Univariate'}] : [{value: 'Univariate'}, {value: 'Bivariate'}, {value: 'Trivariate'}, {value: 'Multiple'}]}),
+                           sections: discovery ? [{value: 'Problem'}] : [{value: 'Univariate'}, {value: 'Bivariate'}, {value: 'Trivariate'}, {value: 'Multiple'}]}),
                         m(Button, {
                             id: 'exploreGo',
                             classes: 'btn-success',
                             onclick: _ => {
                                 let variate = app.exploreVariate.toLowerCase();
-                                let selected = nodesExplore.map(x => x.name);
+                                let selected = discovery ? [app.selectedProblem] : nodesExplore.map(x => x.name);
                                 let len = selected.length;
-                                if (variate === 'univariate' && len != 1 || variate === 'bivariate' && len != 2 || variate === 'trivariate' && len != 3 || variate === 'multiple' && len < 2) {
+                                if (variate === 'univariate' || variate === 'problem' && len != 1 || variate === 'bivariate' && len != 2 || variate === 'trivariate' && len != 3 || variate === 'multiple' && len < 2) {
                                     return;
                                 }
                                 m.route.set(`/explore/${variate}/${selected.join('/')}`);
@@ -398,7 +398,7 @@ class Body {
                         }, 'go'),
                         m('br'),
                         m('', {style: `display: flex; flex-direction: row; flex-wrap: wrap`},
-                          (app.leftTab === 'Discovery' ? app.disco : valueKey).map(x => {
+                          (discovery ? app.disco : valueKey).map(x => {
                               let {predictors} = x;
                               if (x.predictors) {
                                   x = x.target;

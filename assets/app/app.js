@@ -2875,7 +2875,10 @@ export let setLeftTab = (tab) => {
         }
 
         document.getElementById("discoveryInput").value=disco[0].description;
+        exploreVariate = 'Problem';
+        return;
     }
+    exploreVariate = 'Univariate';
 };
 
 export let summary = {data: []};
