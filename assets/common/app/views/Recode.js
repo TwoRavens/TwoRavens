@@ -168,14 +168,16 @@ export default class Recode {
         
                         m('div.container-fluid', {id : 'div1_recode' , style : {'height': '220px','padding':'20px'}}, [
                             m('form',{ onsubmit: calculateBin},[
-                                m('div',{style :{'display': 'block','overflow': 'hidden'}},[
+                                m('div',{id:'ordinalDiv',style :{'overflow': 'hidden'}},[
                                     m('input[type=number]',{id:'bin',placeholder:'Number of bins'}),
                                     m('button',{onclick: equidistance_btn},'Equidistance'),
                                     m('button',{onclick: equimass_btn},'Equimass'),
                                     m('div',{id:'plot_a'}),                         
+                                    m('input[type=text]',{id: 'binInterval',style:{'display':'inline-block'}}),
+                                    m('button',{onclick: calculate_bin},'Custom Bin'),                 
                                 ]),
                                 m("br"),
-                                m('div#tableBinDiv',{style :{'width':'60%','overflow-y': 'auto','border-style': 'solid','border-width': 'thin'}},[
+                                m('div#tableBinDiv',{style :{'overflow-y': 'auto','border-style': 'solid','border-width': 'thin'}},[
                                     m('table.table.table-bordered',{id:'binTable',style:{ 'overflow': 'scroll'}},[
                                         m('tr#binheader',[
                                             m('th.col-xs-4',{style : {'border': '1px solid #ddd','text-align': 'center'}},currentVal),
@@ -190,11 +192,9 @@ export default class Recode {
                                     ])                                                                        
                                 ]),
                                 m("br"),
-                                m('button[type="submit"]',{style: {'display':'block'}}, 'Customize'),
-                            ]),]),
-                            m('div.container-fluid', {id : 'div2' , style : {'display':'block','height': '250px','padding':'20px'}}, [
-                        ])
-                    
+                                m('button[type="submit"]',{id:'customRecodeBtn',style: {'display':'block'}}, 'Customize'),
+                            ]),
+                        ]),
                     ]),
                     m('div.container-fluid', {id: 'formulaDiv'},[
         
@@ -344,45 +344,55 @@ function onlyUnique(value, index, self) {
 
 function clickVar(elem) {  
     
-    var elmtTable = document.getElementById('binTable');
-    var tableRows = elmtTable.getElementsByTagName('tr');
-    var rowCount = tableRows.length;
-
-    for (var x=rowCount-1; x>0; x--) {
-        elmtTable.deleteRow(x);
-    }
-
-    var index = tableHeader.indexOf(this.textContent);
-    tableData.map((row,i) => dataNode.push(row[index]))
-    dataNode = dataNode.filter( onlyUnique )
 
     if(document.getElementById('recodeLink').className === 'active'){
         
-        document.getElementById('plot_a').innerHTML ="";
-        
-        var list = document.getElementsByClassName('var');
-        for (var i = 0; i < list.length; i++ ) {
-            list[i].setAttribute("style", "background:"+app.hexToRgba("#FA8072"));
-        }
-        document.getElementById(this.id).setAttribute("style", "background:"+app.hexToRgba("#28a4c9"));
-        
-        var transform =  document.getElementById('div1_recode');
-        transform.style.display = 'block';
-        
-        var node = dataDetails[this.textContent];
-        console.log('node')
-        console.log(node)
-        if(node.nature === "nominal"){
-            $('#tableBinDiv').css('display', 'block');
+        if(this.textContent !== currentVal){
+            currentVal = this.textContent;
+            document.getElementById('bin').value = "";
 
-        }else if (node.plottype === "continuous") {
-            $('#tableBinDiv').css('display', 'none');
-            density_cross(node);    
-        }else if (node.plottype === "bar") {
-            $('#tableBinDiv').css('display', 'none  ');
-            bar_cross(node);
+            document.getElementById('customRecodeBtn').disabled = true;
+            
+            var elmtTable = document.getElementById('binTable');
+            var tableRows = elmtTable.getElementsByTagName('tr');
+            var rowCount = tableRows.length;
+
+            for (var x=rowCount-1; x>0; x--) {
+                elmtTable.deleteRow(x);
+            }
+
+            var index = tableHeader.indexOf(this.textContent);
+            tableData.map((row,i) => dataNode.push(row[index]))
+            dataNode = dataNode.filter( onlyUnique )
+            
+            document.getElementById('plot_a').innerHTML ="";
+            
+            var list = document.getElementsByClassName('var');
+            for (var i = 0; i < list.length; i++ ) {
+                list[i].setAttribute("style", "background:"+app.hexToRgba("#FA8072"));
+            }
+            document.getElementById(this.id).setAttribute("style", "background:"+app.hexToRgba("#28a4c9"));
+            
+            var transform =  document.getElementById('div1_recode');
+            transform.style.display = 'block';
+            
+            var node = dataDetails[currentVal];
+            console.log('node')
+            console.log(node)
+            if(node.nature === "nominal"){
+                $('#tableBinDiv').css('display', 'block');
+                $('#ordinalDiv').css('display','none');
+
+            }else if (node.plottype === "continuous") {
+                $('#ordinalDiv').css('display','block');
+                $('#tableBinDiv').css('display', 'none');
+                density_cross(node);    
+            }else if (node.plottype === "bar") {
+                $('#ordinalDiv').css('display','block');
+                $('#tableBinDiv').css('display', 'none  ');
+                bar_cross(node);
+            }  
         }
-        currentVal = this.textContent;  
     }
 
     if(document.getElementById('formulaLink').className === 'active'){
@@ -512,15 +522,25 @@ function createNewCalculate(){
     $('#tableDiv').animate({scrollLeft:'+=1500'},500);
     
 }
-function calculate2(elem){
-    var json = {
-        'configuration': config,
-        'variable': currentVal,
-        'start': elem.target[0].value,
-        'end': elem.target[1].value,
-        'replacement': elem.target[2].value
-    }
-    app.callTransform();
+function calculate_bin(){
+    document.getElementById('customRecodeBtn').disabled = false;
+
+        var method_name= "custom";
+        var bin = document.getElementById('binInterval').value.split(',').length;
+        console.log(bin)
+        if(currentVal != "variable"){
+            var node = dataDetails[currentVal];
+            if (node.plottype === "continuous") {
+                console.log('conti...')
+                document.getElementById('plot_a').innerHTML ="";
+                density_cross(node,bin,method_name);
+            }else if (node.plottype === "bar") {
+                console.log('bar...')
+                document.getElementById('plot_a').innerHTML ="";
+                bar_cross(node,bin,method_name);
+            }
+        }
+        
 }
 function calculate(elem){
     var recodeString = elem.target[0].value;
@@ -586,6 +606,8 @@ function recodeCreate(){
     elem.className = 'active';
     $('#btnOperations').css('display', 'none');
     $('#tableBinDiv').css('display', 'none');
+    $('#ordinalDiv').css('display','none');
+    document.getElementById('customRecodeBtn').disabled = true;
 
     var elem = document.getElementById('centralPanel');
     elem.style.display ='none';
@@ -596,6 +618,7 @@ function recodeClick(){
     elem.className = 'active';
     $('#btnOperations').css('display', 'none');
     $('#tableBinDiv').css('display', 'none');
+    $('#ordinalDiv').css('display','none');
 
     var list = document.getElementsByClassName('var');
     for (var i = 0; i < list.length; i++ ) {
@@ -829,6 +852,40 @@ function formulaClick(){
                 }
                 data.push([d3.max(xVals),a-1]);
             }
+            else if (method_name === 'custom'){
+                var intervals = document.getElementById('binInterval').value.split(',').sort();
+                console.log('intervals');
+                console.log(intervals);
+
+                var upper_limit = d3.max(xVals);
+                var lower_limit = d3.min(xVals);
+                var diff = upper_limit - lower_limit;
+                var buffer = diff / a;
+                var x_cord = [];
+                data = [];
+                var push_data = lower_limit;
+                for (var i = 0; i < a; i++) {
+                    if(intervals[i] > upper_limit){
+                        break;
+                    }
+                    push_data = intervals[i];
+                    x_cord.push(push_data);
+                    data.push([push_data, i]);
+                    plotsvg.append("line")
+                        .attr("id", "line1")
+                        .attr("x1", x(x_cord[i]))
+                        .attr("x2", x(x_cord[i]))
+                        .attr("y1", y(d3.min(yVals)))
+                        .attr("y2", y(d3.max(yVals)))
+                        .style("stroke", "#0D47A1")
+                        .style("stroke-dasharray", "4");
+                }
+                var last_index = a-1;
+                data.push([upper_limit,last_index]);
+                console.log('data');
+                console.log(data);
+
+            }
         }
     }
     // this is the function to add the bar plot if any
@@ -1003,6 +1060,40 @@ function formulaClick(){
                         .style("stroke-dasharray", "4");
                 }
             }
+            else if (method_name === 'custom'){
+                var intervals = document.getElementById('binInterval').value.split(',').sort();
+                console.log('intervals');
+                console.log(intervals);
+                var upper_limit1 = maxX;
+                var lower_limit1 = minX;
+                var diff1 = upper_limit1 - lower_limit1;
+                var buffer1 = diff1 / a;
+                var x_cord1 = [];
+                var push_data1 = lower_limit1;
+                
+                data = [];
+                for (var i = 0; i < a; i++) {
+                    if(intervals[i] > upper_limit1){
+                        break;
+                    }
+                    push_data1 = intervals[i];
+                    x_cord1.push(push_data1);
+                    data.push([push_data1, i]);
+                    plotsvg1.append("line")
+                        .attr("id", "line2")
+                        .attr("x1", x_1(x_cord1[i]))
+                        .attr("x2", x_1(x_cord1[i]))
+                        .attr("y1", y_1(0))
+                        .attr("y2", y_1(maxY))
+                        .style("stroke", "#0D47A1")
+                        .style("stroke-dasharray", "4");
+                }
+                var last_index = a-1;
+                data.push([upper_limit1,last_index]);
+                console.log('data');
+                console.log(data);
+
+            }
         }
     }
 
@@ -1010,6 +1101,7 @@ function formulaClick(){
         console.log(elem);
     }
     function equidistance(varName,bin) {
+        document.getElementById('customRecodeBtn').disabled = false;
         var method_name= "equidistance";
         var obj = new Object();
         obj.plotNameA = varName;
@@ -1027,6 +1119,7 @@ function formulaClick(){
         }
     }
     function equimass(varName,bin) {
+        document.getElementById('customRecodeBtn').disabled = false;
         //equimass function to call the plot function
         var method_name= "equimass";
         var obj = new Object();
