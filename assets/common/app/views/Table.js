@@ -52,7 +52,7 @@ export default class Table {
 
             ...data.map((row, i) => m('tr', mergeAttributes(
                 i % 2 === 1 ? {style: {'background': '#fcfcfc'}} : {},
-                activeRow.includes(row[0]) ? {style: {'background': selVarColor}} : {},
+                activeRow === row[0] ? {style: {'background': selVarColor}} : {},
                 attrsRows),
                 row.filter((item, j) => j !== 0 || showUID).map((item, j) =>
                     m('td', mergeAttributes(onclick ? {onclick: () => onclick(row[0], j)} : {}, attrsCells), abbreviate(item)))

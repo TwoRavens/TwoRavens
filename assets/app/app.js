@@ -4226,14 +4226,9 @@ export function discovery(preprocess_file) {
 // This stores discovery problems
 export let probtable = [];
 
-export let selectedProblems = [];
-export function setSelectedProblems(prob) {
-    let s = selectedProblems;
-    s.includes(prob) ? s.splice(s.indexOf(prob), 1) : s.push(prob);
-}
-
-export function selectedProblem() {
-    return disco[selectedProblems[selectedProblems.length - 1]];
+export let selectedProblem;
+export function setSelectedProblem(prob) {
+    selectedProblem = prob;
 }
 
 export let checkedDiscoveryProblems = new Set();

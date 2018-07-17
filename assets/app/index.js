@@ -105,27 +105,19 @@ function leftpanel(mode) {
                      id: 'discoveryTable',
                      headers: ['Hidden_UID', 'Target', 'Predictors', 'Task', 'Metric', discoveryAllCheck],
                      data: discoveryTableData,
-                     activeRow: app.selectedProblems,
-                     onclick: app.setSelectedProblems,
+                     activeRow: app.selectedProblem,
+                     onclick: app.setSelectedProblem,
                      showUID: false,
                      abbreviation: 40,
-                     attrsAll: {ondblclick: _ => {
-                         let prob = app.selectedProblem();
-                         m.route.set(`/explore/multiple/${[prob.target].concat(prob.predictors).join('/')}`);
-                     }, style: {height: '80%', overflow: 'auto', display: 'block', 'margin-right': '16px', 'margin-bottom': 0, 'max-width': (window.innerWidth - 90) + 'px'}}
+                     attrsAll: {
+                         style: {height: '80%', overflow: 'auto', display: 'block', 'margin-right': '16px', 'margin-bottom': 0, 'max-width': (window.innerWidth - 90) + 'px'}}
                  }),
                  m('textarea#discoveryInput[style=display:block; float: left; width: 100%; height:calc(20% - 35px); overflow: auto; background-color: white]', {
-                     value: app.selectedProblem() === undefined ? '' : app.selectedProblem().description
+                     value: app.selectedProblem === undefined ? '' : app.disco[app.selectedProblem].description
                  }),
                  m(Button, {id: 'btnSave', onclick: _ => app.saveDisc('btnSave'),title: 'Saves your revised problem description.'}, 'Save Desc.'),
                  m(Button, {id: 'btnSubmitDisc', classes: 'btn-success', style: 'float: right', onclick: _ => app.submitDiscProb(), title: 'Submit all checked discovered problems.'}, 'Submit Disc. Probs.'),
-                 m(Button, {id: 'btnExplore', classes: 'btn-default', style: 'float: right', onclick: _ => {
-                     let prob = app.disco[app.selectedProblem];
-                     if (prob) {
-                         valueKey = [prob.target].concat(prob.predictors);
-                         m.route.set('/explore');
-                     }
-                 }, title: 'Explore problems.'}, 'Explore')]},
+             ]},
             {value: 'Summary',
              title: 'Select a variable from within the visualization in the center panel to view its summary statistics.',
              display: 'none',
@@ -390,7 +382,7 @@ class Body {
                            attrsAll: {style: {width: '400px'}, class: 'btn-sm'},
                            onclick: x => {nodesExplore = []; app.setVariate(x)},
                            activeSection: app.exploreVariate,
-                           sections: [{value: 'Univariate'}, {value: 'Bivariate'}, {value: 'Trivariate'}, {value: 'Multiple'}]}),
+                           sections: app.leftTab === 'Discovery' ? [{value: 'Univariate'}] : [{value: 'Univariate'}, {value: 'Bivariate'}, {value: 'Trivariate'}, {value: 'Multiple'}]}),
                         m(Button, {
                             id: 'exploreGo',
                             classes: 'btn-success',
@@ -405,54 +397,60 @@ class Body {
                             }
                         }, 'go'),
                         m('br'),
-                        m('', {style: `display: flex; flex-direction: row; flex-wrap: wrap`}, valueKey.map(x => {
-                            let node = app.findNodeIndex(x, true);
-                            let show = app.exploreVariate === 'Bivariate' || app.exploreVariate === 'Trivariate';
-                            let len = nodesExplore.length;
-                            let [n0, n1, n2] = nodesExplore;
-                            return m('span', {
-                                onclick: _ => app.clickVar(x, nodesExplore),
-                                onmouseover: function() {
-                                    $(this).popover('toggle');
-                                    $('body div.popover')
-                                        .addClass('variables');
-                                    $('body div.popover div.popover-content')
-                                        .addClass('form-horizontal');
-                                },
-                                onmouseout: "$(this).popover('toggle');",
-                                'data-container': 'body',
-                                'data-content': node.labl || '<i>none provided</i>',
-                                'data-html': 'true',
-                                'data-original-title': 'Description',
-                                'data-placement': 'top',
-                                'data-toggle': 'popover',
-                                'data-trigger': 'hover',
-                                style: {
-                                    border: '1px solid rgba(0, 0, 0, .2)',
-                                    'border-radius': '5px',
-                                    'box-shadow': '0px 5px 10px rgba(0, 0, 0, .2)',
-                                    display: 'flex',
-                                    'flex-direction': 'column',
-                                    height: '250px',
-                                    margin: '1em',
-                                    width: '250px',
-                                    'align-items': 'center',
-                                    'background-color': app.hexToRgba(common[nodesExplore.map(x => x.name).includes(x) ? 'selVarColor' : 'varColor'])
-                                }
-                            }, [
-                                m('', {
-                                    oncreate(vnode) {
-                                        let plot = node.plottype === 'continuous' ? plots.densityNode : plots.barsNode;
-                                        plot(node, vnode.dom, 120, true);
-                                    }
-                                }),
-                                m('',
-                                  show && n0 && n0.name === x ? `${x} (x)`
-                                  : show && n1 && n1.name === x ? `${x} (y)`
-                                  : show && n2 && n2.name === x ? `${x} (z)`
-                                  : x),
-                            ]);
-                        })))],
+                        m('', {style: `display: flex; flex-direction: row; flex-wrap: wrap`},
+                          (app.leftTab === 'Discovery' ? app.disco : valueKey).map(x => {
+                              let {predictors} = x;
+                              if (x.predictors) {
+                                  x = x.target;
+                              }
+                              let node = app.findNodeIndex(x, true);
+                              let show = app.exploreVariate === 'Bivariate' || app.exploreVariate === 'Trivariate';
+                              let len = nodesExplore.length;
+                              let [n0, n1, n2] = nodesExplore;
+                              return m('span', {
+                                  onclick: _ => app.clickVar(x, nodesExplore),
+                                  onmouseover: function() {
+                                      $(this).popover('toggle');
+                                      $('body div.popover')
+                                          .addClass('variables');
+                                      $('body div.popover div.popover-content')
+                                          .addClass('form-horizontal');
+                                  },
+                                  onmouseout: "$(this).popover('toggle');",
+                                  'data-container': 'body',
+                                  'data-content': node.labl || '<i>none provided</i>',
+                                  'data-html': 'true',
+                                  'data-original-title': 'Description',
+                                  'data-placement': 'top',
+                                  'data-toggle': 'popover',
+                                  'data-trigger': 'hover',
+                                  style: {
+                                      border: '1px solid rgba(0, 0, 0, .2)',
+                                      'border-radius': '5px',
+                                      'box-shadow': '0px 5px 10px rgba(0, 0, 0, .2)',
+                                      display: 'flex',
+                                      'flex-direction': 'column',
+                                      height: '250px',
+                                      margin: '1em',
+                                      width: '250px',
+                                      'align-items': 'center',
+                                      'background-color': app.hexToRgba(common[nodesExplore.map(x => x.name).includes(x) ? 'selVarColor' : 'varColor'])
+                                  }
+                              }, [
+                                  m('', {
+                                      oncreate(vnode) {
+                                          let plot = node.plottype === 'continuous' ? plots.densityNode : plots.barsNode;
+                                          plot(node, vnode.dom, 120, true);
+                                      }
+                                  }),
+                                  m('',
+                                    show && n0 && n0.name === x ? `${x} (x)`
+                                    : show && n1 && n1.name === x ? `${x} (y)`
+                                    : show && n2 && n2.name === x ? `${x} (z)`
+                                    : predictors ? [`${x}`, m('br'), `${predictors.join(', ')}`]
+                                    : x),
+                              ]);
+                          })))],
                 m('svg#whitespace')),
               model_mode && m("#spacetools.spaceTool", {style: {right: app.panelWidth['right'], 'z-index': 16}},
                               m(`button#btnLock.btn.btn-default`, {
