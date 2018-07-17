@@ -32,9 +32,10 @@ let config = '';
 let configName = '';
 let dataDetails = {};
 let transformData = {};
-var dataNode = [];
+let dataNode = [];
+let formulaList = [];
 
-var data = [];
+let data = [];
 
 let peekSkip = 0;
 let peekData = [];
@@ -185,14 +186,14 @@ export default class Recode {
                                         ]),
                                         dataNode.map((row)=> m('tr#binValues',[
                                             m('td',{style : {'border': '1px solid #ddd','text-align': 'center'}},row),
-                                            m('td',{style : {'border': '1px solid #ddd','text-align': 'center'}},m('input[type=text]')),                                            
+                                            m('td',{style : {'border': '1px solid #ddd','text-align': 'center'}},m('input[type=text]',{class :'newBinVal'})),                                            
                                         ],
                                             
                                         ))
                                     ])                                                                        
                                 ]),
                                 m("br"),
-                                m('button[type="submit"]',{id:'customRecodeBtn',style: {'display':'block'}}, 'Customize'),
+                                m('button[type="submit"]',{id:'customRecodeBtn'}, 'Customize'),
                             ]),
                         ]),
                     ]),
@@ -200,8 +201,12 @@ export default class Recode {
         
                         m('div.container-fluid', {id : 'div1' , style : {'display':'block','height': '220px','padding':'20px'}}, [
                             m('form',{ onsubmit: formulaCalculate},[
+                                m('span',{style :{'display': 'block','overflow': 'hidden'}},[m('input[type=text]', {id: 'newVarName', placeholder: 'Variable Name', style : {'width': '100%','box-sizing':'border-box','white-space': 'nowrap;'}}),]),
+                                m("br"),
                                 m('span',{style :{'display': 'block','overflow': 'hidden'}},[m('input[type=text]', {id: 'variables', placeholder: 'Variable', style : {'width': '100%','box-sizing':'border-box','white-space': 'nowrap;'}}),]),
                                 m("br"),
+                                m('textarea',{id:'varDescription',cols:"40",rows:'5',placeholder:'Variable Description'}),
+                                m('br'),
                                 m('button[type="submit"]',{style: {'float':'right'}}, 'Customize'),
                             ]),])
                     ])
@@ -289,7 +294,6 @@ function equidistance_btn(){
     var bin = document.getElementById('bin').value;
     var varName = currentVal;
     equidistance(varName,bin);
-    localStorage.setItem('transformData',JSON.stringify(transformData)); 
 }
 
 function equimass_btn(){
@@ -328,6 +332,7 @@ function unselectAllVars(){
 
 function addOperations(elem){
     if(document.getElementById('formulaLink').className === 'active'){
+        formulaList.push(currentVal);
         var text = document.getElementById('variables');
         if(text.value === ""){
             text.value += this.textContent.split("(")[0]+"("+currentVal+")";
@@ -342,7 +347,9 @@ function onlyUnique(value, index, self) {
     return self.indexOf(value) === index;
 }
 
-function clickVar(elem) {  
+function clickVar(elem) {
+    $('#customRecodeBtn').css('display','block');
+    document.getElementById('customRecodeBtn').disabled = true;  
     
 
     if(document.getElementById('recodeLink').className === 'active'){
@@ -350,6 +357,7 @@ function clickVar(elem) {
         if(this.textContent !== currentVal){
             currentVal = this.textContent;
             document.getElementById('bin').value = "";
+            document.getElementById('binInterval').value = "";
 
             document.getElementById('customRecodeBtn').disabled = true;
             
@@ -361,7 +369,7 @@ function clickVar(elem) {
                 elmtTable.deleteRow(x);
             }
 
-            var index = tableHeader.indexOf(this.textContent);
+            var index = tableHeader.indexOf(currentVal);
             tableData.map((row,i) => dataNode.push(row[index]))
             dataNode = dataNode.filter( onlyUnique )
             
@@ -382,7 +390,8 @@ function clickVar(elem) {
             if(node.nature === "nominal"){
                 $('#tableBinDiv').css('display', 'block');
                 $('#ordinalDiv').css('display','none');
-
+                document.getElementById('customRecodeBtn').disabled = false;
+                
             }else if (node.plottype === "continuous") {
                 $('#ordinalDiv').css('display','block');
                 $('#tableBinDiv').css('display', 'none');
@@ -453,7 +462,17 @@ function filterTable(elem){
     }
 }
 
-function formulaCalculate(){}
+function formulaCalculate(elem){
+    console.log(elem.target[0])
+    console.log(formulaList);
+    transformData.transform_type.manual_transform = false;
+    transformData.transform_type.functional_transform = true;
+    transformData.transform_variable = formulaList;
+    transformData.current_variable = elem.target[0].value;
+    transformData.description =elem.target[2].value;
+    transformData.transform_data = elem.target[1].value;
+    localStorage.setItem('transformData',JSON.stringify(transformData));
+}
 
 function showTooltip(){
     var tooltip = document.getElementById('tooltip');
@@ -607,6 +626,7 @@ function recodeCreate(){
     $('#btnOperations').css('display', 'none');
     $('#tableBinDiv').css('display', 'none');
     $('#ordinalDiv').css('display','none');
+    $('#customRecodeBtn').css('display','none');
     document.getElementById('customRecodeBtn').disabled = true;
 
     var elem = document.getElementById('centralPanel');
@@ -619,6 +639,9 @@ function recodeClick(){
     $('#btnOperations').css('display', 'none');
     $('#tableBinDiv').css('display', 'none');
     $('#ordinalDiv').css('display','none');
+    $('#customRecodeBtn').css('display','none');
+    document.getElementById('leftpanelMenuButtonBarVariables').click();
+    
 
     var list = document.getElementsByClassName('var');
     for (var i = 0; i < list.length; i++ ) {
@@ -853,10 +876,7 @@ function formulaClick(){
                 data.push([d3.max(xVals),a-1]);
             }
             else if (method_name === 'custom'){
-                var intervals = document.getElementById('binInterval').value.split(',').sort();
-                console.log('intervals');
-                console.log(intervals);
-
+                var intervals = document.getElementById('binInterval').value.split(',').map(function(x){return parseInt(x)}).sort();
                 var upper_limit = d3.max(xVals);
                 var lower_limit = d3.min(xVals);
                 var diff = upper_limit - lower_limit;
@@ -1098,7 +1118,30 @@ function formulaClick(){
     }
 
     function calculateBin(elem){
-        console.log(elem);
+
+        var node = dataDetails[currentVal];
+
+        if(node.nature === "nominal"){
+            var empty = true;
+            data = []
+            for(var i = 0; i< dataNode.length;i++){
+                if(elem.target[5+i].value !== ""){
+                    data.push([dataNode[i],elem.target[5+i].value]);
+                    empty = false;
+                }
+            }
+            if(empty){
+                alert('Enter new Bin Value!')
+            }
+        }
+
+        transformData.transform_type.manual_transform = true;
+        transformData.transform_type.functional_transform = false;
+        transformData.transform_variable = [];
+        transformData.current_variable = currentVal;
+        transformData.description = "Bin Values";
+        transformData.transform_data = data;
+        localStorage.setItem('transformData',JSON.stringify(transformData));
     }
     function equidistance(varName,bin) {
         document.getElementById('customRecodeBtn').disabled = false;
