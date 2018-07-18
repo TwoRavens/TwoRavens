@@ -216,7 +216,7 @@ DATASET_PERSISTENT_ID = os.environ.get('DATASET_PERSISTENT_ID', 'doi%3A10.7910%2
 # EventData: mongo related
 # -------------------------
 EVENTDATA_MONGO_DB_ADDRESS = os.environ.get(\
-                        'EVENTDATA_MONGO_DB_ADDRESS'\
+                        'EVENTDATA_MONGO_DB_ADDRESS',
                         '127.0.0.1:27017')
 
 EVENTDATA_MONGO_USERNAME = os.environ.get('EVENTDATA_MONGO_USERNAME',
@@ -224,3 +224,5 @@ EVENTDATA_MONGO_USERNAME = os.environ.get('EVENTDATA_MONGO_USERNAME',
 
 EVENTDATA_MONGO_PASSWORD = os.environ.get('EVENTDATA_MONGO_PASSWORD',
                                           '')
+
+EVENTDATA_DB_NAME = os.environ.get('EVENTDATA_DB_NAME', 'event_data')
