@@ -99,7 +99,7 @@ class MongoRetrieveUtil(BasicErrCheck):
         print('collection record count: ', collection.count())
 
         qs = collection.find({'Country': 'Russian Federation'}).limit(2)
-        import ipdb; ipdb.set_trace()
+
         #print('count:', qs.count())
         size = 0
         for doc in qs:
