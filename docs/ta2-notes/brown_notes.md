@@ -3,13 +3,14 @@
 
 Updated 7/17/2018.
 
-## Get the FL docker image:
+## Get the Brown docker image:
 
+ - reference: https://gitlab.datadrivendiscovery.org/zshang/Brown/blob/master/ta3_ta2_pair.yml
  - login is the same as gitlab credentials
 
 ```
 docker login registry.datadrivendiscovery.org
-docker pull registry.datadrivendiscovery.org/jkanter/mit-fl-ta2:stable
+docker pull registry.datadrivendiscovery.org/zshang/brown:ta2
 ```
 
 ## Run it with env variable
