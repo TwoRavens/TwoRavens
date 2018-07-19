@@ -220,7 +220,7 @@ EVENTDATA_MONGO_DB_ADDRESS = os.environ.get(\
                         '127.0.0.1:27017')
 
 EVENTDATA_MONGO_USERNAME = os.environ.get('EVENTDATA_MONGO_USERNAME',
-                                          'AdminEvent')
+                                          '')   # AdminEvent
 
 EVENTDATA_MONGO_PASSWORD = os.environ.get('EVENTDATA_MONGO_PASSWORD',
                                           '')

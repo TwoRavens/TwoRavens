@@ -9,6 +9,16 @@
     mongod --config /usr/local/etc/mongod.conf
     ```
 
+## Loading from archived databases (easier)
+
+- Collection files:
+  - https://drive.google.com/open?id=18EOwNYVaOZt3wJM23RHybpiFCg80H6PP
+- Load command
+    ```
+    mongorestore -d event_data --archive=path/to/file
+    ```
+
+
 ## Loading csv collections
 
 - Based on notes from @Shoeboxam notes.
