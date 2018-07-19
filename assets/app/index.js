@@ -39,7 +39,8 @@ let state = {
     }
 };
 
-let nodesExplore = null;
+let nodesExplore = [];
+let valueKey = app.valueKey;
 
 function setBackgroundColor(color) {
     return function() {
@@ -63,7 +64,7 @@ function leftpanel(mode) {
         checked: app.checkedDiscoveryProblems.has(problem[0])
     })]);
 
-    let nodes = exploreMode ? nodesExplore || [] : app.nodes;
+    let nodes = exploreMode ? nodesExplore : app.nodes;
 
     return m(Panel, {
         side: 'left',
@@ -98,7 +99,7 @@ function leftpanel(mode) {
                      popup: variable => app.popoverContent(app.findNodeIndex(variable, true)),
                      attrsItems: {'data-placement': 'right', 'data-original-title': 'Summary Statistics'}})]},
             {value: 'Discovery',
-             display: exploreMode ? 'none' : 'block',
+             display: 'block',
              contents: [
                  m(Table, {
                      id: 'discoveryTable',
@@ -108,13 +109,15 @@ function leftpanel(mode) {
                      onclick: app.setSelectedProblem,
                      showUID: false,
                      abbreviation: 40,
-                     attrsAll: {style: {height: '80%', overflow: 'auto', display: 'block', 'margin-right': '16px', 'margin-bottom': 0, 'max-width': (window.innerWidth - 90) + 'px'}}
+                     attrsAll: {
+                         style: {height: '80%', overflow: 'auto', display: 'block', 'margin-right': '16px', 'margin-bottom': 0, 'max-width': (window.innerWidth - 90) + 'px'}}
                  }),
                  m('textarea#discoveryInput[style=display:block; float: left; width: 100%; height:calc(20% - 35px); overflow: auto; background-color: white]', {
-                     value: app.disco[app.selectedProblem] === undefined ? '' : app.disco[app.selectedProblem].description
+                     value: app.selectedProblem === undefined ? '' : app.disco[app.selectedProblem].description
                  }),
-                 m(Button, {id: 'btnSave', onclick:_=>app.saveDisc('btnSave'),title: 'Saves your revised problem description.'}, 'Save Desc.'),
-                 m(Button, {id: 'btnSubmitDisc', classes: 'btn-success', style: 'float: right', onclick:_=>app.submitDiscProb(), title: 'Submit all checked discovered problems.'}, 'Submit Disc. Probs.')]},
+                 m(Button, {id: 'btnSave', onclick: _ => app.saveDisc('btnSave'),title: 'Saves your revised problem description.'}, 'Save Desc.'),
+                 m(Button, {id: 'btnSubmitDisc', classes: 'btn-success', style: 'float: right', onclick: _ => app.submitDiscProb(), title: 'Submit all checked discovered problems.'}, 'Submit Disc. Probs.'),
+             ]},
             {value: 'Summary',
              title: 'Select a variable from within the visualization in the center panel to view its summary statistics.',
              display: 'none',
@@ -334,11 +337,11 @@ class Body {
                 bivariate: 'aggbar area averagediff binnedscatter binnedtableheat box'
                     + ' groupedbar horizon interactivebarmean line scatter scattermatrix scattermeansd stackedbar step strip tableheat trellishist',
                 trivariate: 'bubbletri groupedbartri horizgroupbar scattertri bubbleqqq scatterqqq trellisscatterqqn heatmapnnq dotdashqqn tablebubblennq stackedbarnnn facetbox facetheatmap groupedbarnqq',
-                multi: 'binnedcrossfilter scattermatrix'
+                multiple: 'binnedcrossfilter scattermatrix'
             };
             let filtered = schemas[variate];
             if (variate === 'bivariate' || variate === 'trivariate') {
-                filtered = `${filtered} ${schemas.multi}`;
+                filtered = `${filtered} ${schemas.multiple}`;
             }
 
             let plot = expnodes[0] && expnodes[0].plottype === 'continuous' ? plots.density : plots.bars;
@@ -360,12 +363,12 @@ class Body {
 
         let spaceBtn = (id, onclick, title, icon) =>
             m(`button#${id}.btn.btn-default`, {onclick, title}, glyph(icon, true));
-
+        let discovery = app.leftTab === 'Discovery';
         return m('main', [
             m(Modal),
             this.header(mode),
             this.footer(mode),
-            m(`#main.left`, {style: {overflow}},
+            m(`#main`, {style: {overflow}},
               m("#innercarousel.carousel-inner", {style: {height: '100%', overflow}},
                 explore_mode
                 && [exploreVars
@@ -379,41 +382,75 @@ class Body {
                            attrsAll: {style: {width: '400px'}, class: 'btn-sm'},
                            onclick: x => {nodesExplore = []; app.setVariate(x)},
                            activeSection: app.exploreVariate,
-                           sections: [{value: 'Univariate'}, {value: 'Bivariate'}, {value: 'Trivariate'}, {value: 'Multiple'}]}),
+                           sections: discovery ? [{value: 'Problem'}] : [{value: 'Univariate'}, {value: 'Bivariate'}, {value: 'Trivariate'}, {value: 'Multiple'}]}),
                         m(Button, {
                             id: 'exploreGo',
+                            classes: 'btn-success',
                             onclick: _ => {
                                 let variate = app.exploreVariate.toLowerCase();
-                                let selected = nodesExplore.map(x => x.name);
+                                let selected = discovery ? [app.selectedProblem] : nodesExplore.map(x => x.name);
                                 let len = selected.length;
-                                if (variate === 'univariate' && len != 1 || variate === 'bivariate' && len != 2 || variate === 'trivariate' && len != 3 || variate === 'multiple' && len < 2) {
+                                if (variate === 'univariate' || variate === 'problem' && len != 1 || variate === 'bivariate' && len != 2 || variate === 'trivariate' && len != 3 || variate === 'multiple' && len < 2) {
                                     return;
                                 }
                                 m.route.set(`/explore/${variate}/${selected.join('/')}`);
                             }
                         }, 'go'),
                         m('br'),
-                        m('', {style: `display: flex; flex-direction: row; flex-wrap: wrap`}, app.valueKey.map(x => {
-                            let show = app.exploreVariate === 'Bivariate' || app.exploreVariate === 'Trivariate';
-                            let len = nodesExplore.length;
-                            let [n0, n1, n2] = nodesExplore;
-                            return m('span', {
-                                onclick: _ => app.clickVar(x, nodesExplore),
-                                style: {
-                                    'box-shadow': '3px 3px 7px rgba(0, 0, 0, 0.5)',
-                                    display: 'flex',
-                                    height: '250px',
-                                    margin: '1em',
-                                    width: '250px',
-                                    'align-items': 'center',
-                                    'background-color': app.hexToRgba(common[nodesExplore.map(x => x.name).includes(x) ? 'selVarColor' : 'varColor']),
-                                    'justify-content': 'center'
-                                }
-                            }, show && n0 && n0.name === x ? `${x} (x)`
-                                     : show && n1 && n1.name === x ? `${x} (y)`
-                                     : show && n2 && n2.name === x ? `${x} (z)`
-                                     : x);
-                        })))],
+                        m('', {style: `display: flex; flex-direction: row; flex-wrap: wrap`},
+                          (discovery ? app.disco : valueKey).map(x => {
+                              let {predictors} = x;
+                              if (x.predictors) {
+                                  x = x.target;
+                              }
+                              let node = app.findNodeIndex(x, true);
+                              let show = app.exploreVariate === 'Bivariate' || app.exploreVariate === 'Trivariate';
+                              let len = nodesExplore.length;
+                              let [n0, n1, n2] = nodesExplore;
+                              return m('span', {
+                                  onclick: _ => app.clickVar(x, nodesExplore),
+                                  onmouseover: function() {
+                                      $(this).popover('toggle');
+                                      $('body div.popover')
+                                          .addClass('variables');
+                                      $('body div.popover div.popover-content')
+                                          .addClass('form-horizontal');
+                                  },
+                                  onmouseout: "$(this).popover('toggle');",
+                                  'data-container': 'body',
+                                  'data-content': node.labl || '<i>none provided</i>',
+                                  'data-html': 'true',
+                                  'data-original-title': 'Description',
+                                  'data-placement': 'top',
+                                  'data-toggle': 'popover',
+                                  'data-trigger': 'hover',
+                                  style: {
+                                      border: '1px solid rgba(0, 0, 0, .2)',
+                                      'border-radius': '5px',
+                                      'box-shadow': '0px 5px 10px rgba(0, 0, 0, .2)',
+                                      display: 'flex',
+                                      'flex-direction': 'column',
+                                      height: '250px',
+                                      margin: '1em',
+                                      width: '250px',
+                                      'align-items': 'center',
+                                      'background-color': app.hexToRgba(common[nodesExplore.map(x => x.name).includes(x) ? 'selVarColor' : 'varColor'])
+                                  }
+                              }, [
+                                  m('', {
+                                      oncreate(vnode) {
+                                          let plot = node.plottype === 'continuous' ? plots.densityNode : plots.barsNode;
+                                          plot(node, vnode.dom, 120, true);
+                                      }
+                                  }),
+                                  m('',
+                                    show && n0 && n0.name === x ? `${x} (x)`
+                                    : show && n1 && n1.name === x ? `${x} (y)`
+                                    : show && n2 && n2.name === x ? `${x} (z)`
+                                    : predictors ? [`${x}`, m('br'), `${predictors.join(', ')}`]
+                                    : x),
+                              ]);
+                          })))],
                 m('svg#whitespace')),
               model_mode && m("#spacetools.spaceTool", {style: {right: app.panelWidth['right'], 'z-index': 16}},
                               m(`button#btnLock.btn.btn-default`, {
@@ -617,29 +654,31 @@ class Body {
 
 let exploreVars = {
     render(vnode) {
-        let {variate, var1, var2, var3} = vnode.attrs;
-        return m(Body, {mode: 'explore', variate, var1, var2, var3});
+        let {variate, var1, var2, var3, var4, var5} = vnode.attrs;
+        return m(Body, {mode: 'explore', variate, var1, var2, var3, var4, var5});
     }
 };
 
 m.route(document.body, '/model', {
-    '/model': {render: () => m(Body)},
-    '/explore': {
+    '/model': {
         onmatch() {
-            if (m.route.get() === '/model' && nodesExplore === null) {
-                nodesExplore = [];
-            }
+            valueKey = app.valueKey;
         },
+        render: () => m(Body)
+    },
+    '/explore': {
         render: () => m(Body, {mode: 'explore'})
     },
     '/explore/:variate/:var1': exploreVars,
     '/explore/:variate/:var1/:var2': exploreVars,
     '/explore/:variate/:var1/:var2/:var3': exploreVars,
+    '/explore/:variate/:var1/:var2/:var3/:var4': exploreVars,
+    '/explore/:variate/:var1/:var2/:var3/:var4/:var5': exploreVars,
     /*'/results': {
-        onmatch() {
-            app.set_mode('results');
-            state.get_pipelines();
-            layout.init();
+      onmatch() {
+      app.set_mode('results');
+      state.get_pipelines();
+      layout.init();
         },
         render() {
             return m(Body, {mode: 'results'});
