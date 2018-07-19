@@ -123,7 +123,7 @@ export let setSelectedSubsetName = (subset) => {
     selectedSubsetName = subset;
 };
 
-// 'Datasets', 'Saved Queries', 'Subset', 'Custom', 'Results', 'Analysis'
+let canvasTypes = ['Datasets', 'Saved Queries', 'Subset', 'Custom', 'Results', 'Analysis'];
 export let selectedCanvas = 'Datasets';
 export let selectedCanvasHome = selectedCanvas;
 export let setSelectedCanvas = (canvasKey) => {
@@ -193,6 +193,7 @@ export function handleResize() {
     document.getElementById('canvas').style['padding-right'] = common.panelOcclusion['right'];
     document.getElementById('canvas').style['padding-left'] = common.panelOcclusion['left'];
     Object.keys(genericMetadata[selectedDataset]['subsets']).forEach(subset => subsetRedraw[subset] = true);
+    canvasTypes.forEach(canvas => canvasRedraw[canvas] = true);
     m.redraw();
 }
 

@@ -53,7 +53,7 @@ export default class CanvasResults {
             },
 
             // if there are actors, then user picks how to melt the data
-            actorHeaders.length && m(ButtonRadio, {
+            actorHeaders.length !== 0 && m(ButtonRadio, {
                 id: 'btnMelt',
                 sections: [...actorHeaders, ...app.aggregationHeadersEvent].map(header => ({value: header})),
                 activeSection: preferences['melt'],
@@ -78,7 +78,7 @@ export default class CanvasResults {
                 },
                 attrsAll: {style: {width: 'auto'}}
             })),
-            m('div#plotTimeSeries', {style: {width: "100%", height: "100%"}}))
+            m('div#plotResults', {style: {width: "100%", height: "100%"}}))
     }
 
     onupdate(vnode) {
@@ -96,21 +96,20 @@ export default class CanvasResults {
     plot(vnode) {
         let {preferences} = vnode.attrs;
 
-        let isUnitMelt = app.aggregationHeadersUnit.indexOf(preferences['melt']) !== -1;
-
-        let factors = isUnitMelt ? app.aggregationHeadersUnit : ['Date', preferences['melt']];
-        let processed = melt(app.aggregationData, factors);
+        let width = Math.max(window.innerWidth
+            - document.getElementById('leftpanel').getBoundingClientRect().width
+            - document.getElementById('rightpanel').getBoundingClientRect().width
+            - 40 - 133, 400);
+        let height = Math.max(window.innerHeight
+            - document.getElementById('aggregDataOutput').getBoundingClientRect().height
+            - 40 - 153, 400);
 
         let vegaSchema;
-
-        if (isUnitMelt) {
-            // filter to one group of actors
-            Object.keys(preferences['filters'])
-                .forEach(header => processed = processed.filter(point => point[header] === preferences['filters'][header]));
-
+        if (app.aggregationHeadersUnit.length === 1
+            && app.genericMetadata[app.selectedDataset]['subsets'][app.aggregationHeadersUnit[0]]['type'] === 'date') {
             vegaSchema = {
                 "$schema": "https://vega.github.io/schema/vega-lite/v2.0.json",
-                "data": {"values": processed},
+                "data": {"values": melt(app.aggregationData, app.aggregationHeadersUnit)},
                 "mark": "line",
                 "encoding": {
                     "x": {"field": "Date", "type": "temporal", "axis": {"format": "%Y-%m-%d"}},
@@ -120,22 +119,44 @@ export default class CanvasResults {
             };
         }
         else {
-            // filter to one event measure
-            processed = processed.filter(point => point['variable'] === 'Actor'); // note this 'Actor' is hardcoded
+            let isUnitMelt = app.aggregationHeadersUnit.indexOf(preferences['melt']) !== -1;
 
-            vegaSchema = {
-                "$schema": "https://vega.github.io/schema/vega-lite/v2.0.json",
-                "data": {"values": processed},
-                "mark": "line",
-                "encoding": {
-                    "x": {"field": "Date", "type": "temporal", "axis": {"format": "%Y-%m-%d"}},
-                    "y": {"field": preferences['melt'], "type": "quantitative"},
-                    "color": {"field": "value", "type": "nominal"}
-                }
-            };
+            let factors = isUnitMelt ? app.aggregationHeadersUnit : ['Date', preferences['melt']];
+            let processed = melt(app.aggregationData, factors);
+
+            if (isUnitMelt) {
+                // filter to one group of actors
+                Object.keys(preferences['filters'])
+                    .forEach(header => processed = processed.filter(point => point[header] === preferences['filters'][header]));
+
+                vegaSchema = {
+                    "$schema": "https://vega.github.io/schema/vega-lite/v2.0.json",
+                    "data": {"values": processed},
+                    "mark": "line",
+                    "encoding": {
+                        "x": {"field": "Date", "type": "temporal", "axis": {"format": "%Y-%m-%d"}},
+                        "y": {"field": "value", "type": "quantitative"},
+                        "color": {"field": "variable", "type": "nominal"}
+                    }
+                };
+            }
+            else {
+                // filter to one event measure
+                processed = processed.filter(point => point['variable'] === 'Actor'); // note this 'Actor' is hardcoded
+
+                vegaSchema = {
+                    "$schema": "https://vega.github.io/schema/vega-lite/v2.0.json",
+                    "data": {"values": processed},
+                    "mark": "line",
+                    "encoding": {
+                        "x": {"field": "Date", "type": "temporal", "axis": {"format": "%Y-%m-%d"}},
+                        "y": {"field": preferences['melt'], "type": "quantitative"},
+                        "color": {"field": "value", "type": "nominal"}
+                    }
+                };
+            }
         }
 
-        let bounds = document.getElementById('plotTimeSeries').getBoundingClientRect();
-        vegaEmbed('#plotTimeSeries', vegaSchema, {actions: false, width: bounds.width, height: bounds.height});
+        vegaEmbed('#plotResults', vegaSchema, {actions: false, width: width, height: height});
     }
 }

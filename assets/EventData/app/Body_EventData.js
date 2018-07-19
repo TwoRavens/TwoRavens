@@ -305,8 +305,6 @@ export default class Body_EventData {
             let aggregateKeys = Object.keys(app.genericMetadata[app.selectedDataset]['subsets'])
                 .filter(subset => 'measures' in app.genericMetadata[app.selectedDataset]['subsets'][subset]);
 
-            let selectedColor = app.selectedCanvas === 'Results' ? common.grayColor : common.selVarColor;
-
             return m(Panel, {
                 id: 'leftPanelMenu',
                 side: 'left',
@@ -327,7 +325,7 @@ export default class Body_EventData {
                             contents: m(PanelList, {
                                 items: aggregateKeys.filter(subset => tempDataset['subsets'][subset]['measures'].indexOf('unit') !== -1),
                                 id: 'UMList',
-                                colors: {[selectedColor]: [app.selectedSubsetName]},
+                                colors: {[common.selVarColor]: app.selectedCanvas !== 'Results' ? [app.selectedSubsetName] : []},
                                 classes: {['item-bordered']: Object.keys(app.unitMeasure).filter(key => app.unitMeasure[key])},
                                 callback: app.setSelectedSubsetName
                             })
@@ -337,7 +335,7 @@ export default class Body_EventData {
                             contents: m(PanelList, {
                                 items: aggregateKeys.filter(subset => tempDataset['subsets'][subset]['measures'].indexOf('event') !== -1),
                                 id: 'EMList',
-                                colors: {[selectedColor]: [app.selectedSubsetName]},
+                                colors: {[common.selVarColor]: app.selectedCanvas !== 'Results' ? [app.selectedSubsetName] : []},
                                 classes: {['item-bordered']: [app.eventMeasure]},
                                 callback: (subset) => {
                                     app.setEventMeasure(subset);
@@ -396,7 +394,6 @@ export default class Body_EventData {
         }
 
         if (mode === 'aggregate') {
-            let selectedColor = app.selectedCanvas === 'Results' ? common.selVarColor : common.grayColor;
             return m(Panel, {
                 id: 'rightPanelMenu',
                 side: 'right',
@@ -412,7 +409,7 @@ export default class Body_EventData {
                     m(PanelList, {
                         id: 'resultsList',
                         items: ['Line Plot'],
-                        colors: {[selectedColor]: [app.selectedResult]},
+                        colors: {[common.selVarColor]: app.selectedCanvas === 'Results' ? [app.selectedResult] : []},
                         callback: app.setSelectedResult,
                         attrsAll: {style: {height: 'calc(100% - 78px)', overflow: 'auto'}}
                     }),
