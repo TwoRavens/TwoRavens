@@ -1534,9 +1534,18 @@ export async function plot(plotNodes, plottype="") {
     console.log('zpop:', app.zparams);
 
     let getPlotType = (pt) => {
+    
+        // returns true if uniques is equal to, one less than, or two less than the number of valid observations
+        function uniqueValids (pn) {
+            return pn.uniques===pn.valid ? true :
+                pn.uniques===pn.valid-1 ? true :
+                pn.uniques===pn.valid-2 ? true : false;
+        }
+        
         if(plotNodes.length>3) return['scattermatrix','aaa'];
         let myCons = [];
         let vt = "";
+        
         for (var i=0; i<plotNodes.length; i++) {
             myCons[i] = plotNodes[i].plottype === 'continuous' ? true : false;
             plotNodes[i].plottype === 'continuous' ? vt=vt+'q' : vt=vt+'n';
@@ -1545,6 +1554,14 @@ export async function plot(plotNodes, plottype="") {
         if(pt != "") return [pt,vt];
         
         if(plotNodes.length==2) {
+            // check uniqueValids. if so, make difference from mean the default plot
+            let uvs = [uniqueValids(plotNodes[0]), uniqueValids(plotNodes[1])];
+            console.log(uvs);
+            if(uvs[0] === true && uvs[1] === false)
+                return ['averagediff', 'nq'];
+            else if (uvs[0] === false && uvs[1] === true)
+                return ['averagediff', 'qn'];
+            
             return myCons[0] && myCons[1] ? ['scatter','qq'] :
                 myCons[0] && !myCons[1] ? ['box', 'qn'] :
                 !myCons[0] && myCons[1] ? ['box', 'nq'] :
