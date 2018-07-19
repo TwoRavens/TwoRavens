@@ -1654,7 +1654,8 @@ export async function plot(plotNodes, plottype="") {
     // function returns whether to flip a plot. for example, if plot expects 'nq' and users gives 'qn', flip should return true. this may have to be generalized for 3+ dimension plots
     let plotflip = (pt) => {
         return  pt[0] === "box" && pt[1] === "qn" ? true :
-                pt[0] === "facetbox" && pt[1] === "qnn" ? true : false;
+                pt[0] === "facetbox" && pt[1] === "qnn" ? true :
+                pt[0] === "averagediff" && pt[1] === "nq" ? true : false;
     };
     
     // function to fill in the contents of the vega schema.
