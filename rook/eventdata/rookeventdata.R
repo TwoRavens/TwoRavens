@@ -91,9 +91,9 @@ eventdata.app <- function(env) {
 
             if(nchar(EVENTDATA_MONGO_PASSWORD)> 3){
 
-              mongo_url = sprintf("mongodb://%s:%s@%s/", EVENTDATA_MONGO_USERNAME, EVENTDATA_MONGO_PASSWORD, EVENTDATA_LOCAL_SERVER_ADDRESS)
+              mongo_url = sprintf("mongodb://%s:%s@%s/", EVENTDATA_MONGO_USERNAME, EVENTDATA_MONGO_PASSWORD, EVENTDATA_MONGO_DB_ADDRESS)
             }else{
-              mongo_url = sprintf("mongodb://%s", EVENTDATA_LOCAL_SERVER_ADDRESS)
+              mongo_url = sprintf("mongodb://%s", EVENTDATA_MONGO_DB_ADDRESS)
             }
             print(paste("mongo url:", gsub(EVENTDATA_MONGO_PASSWORD, "some-pw", mongo_url)))
             connect = mongolite::mongo(collection = dataset, db = "event_data", url = mongo_url)
