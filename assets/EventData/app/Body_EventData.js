@@ -74,8 +74,7 @@ export default class Body_EventData {
                 sections: [
                     {value: 'Datasets', attrsInterface},
                     {value: 'Saved Queries', attrsInterface},
-                    {value: 'About', attrsInterface},
-                    {value: 'Time Series', attrsInterface}
+                    {value: 'About', attrsInterface}
                 ],
                 activeSection: app.selectedCanvasHome,
                 onclick: app.setSelectedCanvas,
@@ -163,12 +162,19 @@ export default class Body_EventData {
 
                 app.selectedMode !== 'home' && m(Button, {
                     class: 'btn-sm',
-                    onclick: () => {
+                    onclick: async () => {
                         if ('subset' === app.selectedMode && app.abstractQuery.length === 0)
                             tour.tourStartSaveQueryEmpty();
                         else if ('aggregate' === app.selectedMode && !app.eventMeasure)
                             tour.tourStartEventMeasure();
-                        else app.setShowSaveQuery(true)
+                        else {
+                            if ('aggregate' === app.selectedMode && app.aggregationStaged) {
+                                app.setLaddaSpinner('btnSave');
+                                await query.submitAggregation();
+                                app.laddaStopAll();
+                            }
+                            app.setShowSaveQuery(true)
+                        }
                     }, style: {'margin-top': '4px'}
                 }, 'Save'),
 
@@ -299,6 +305,8 @@ export default class Body_EventData {
             let aggregateKeys = Object.keys(app.genericMetadata[app.selectedDataset]['subsets'])
                 .filter(subset => 'measures' in app.genericMetadata[app.selectedDataset]['subsets'][subset]);
 
+            let selectedColor = app.selectedCanvas === 'Results' ? common.grayColor : common.selVarColor;
+
             return m(Panel, {
                 id: 'leftPanelMenu',
                 side: 'left',
@@ -319,7 +327,7 @@ export default class Body_EventData {
                             contents: m(PanelList, {
                                 items: aggregateKeys.filter(subset => tempDataset['subsets'][subset]['measures'].indexOf('unit') !== -1),
                                 id: 'UMList',
-                                colors: {[common.selVarColor]: [app.selectedSubsetName]},
+                                colors: {[selectedColor]: [app.selectedSubsetName]},
                                 classes: {['item-bordered']: Object.keys(app.unitMeasure).filter(key => app.unitMeasure[key])},
                                 callback: app.setSelectedSubsetName
                             })
@@ -329,7 +337,7 @@ export default class Body_EventData {
                             contents: m(PanelList, {
                                 items: aggregateKeys.filter(subset => tempDataset['subsets'][subset]['measures'].indexOf('event') !== -1),
                                 id: 'EMList',
-                                colors: {[common.selVarColor]: [app.selectedSubsetName]},
+                                colors: {[selectedColor]: [app.selectedSubsetName]},
                                 classes: {['item-bordered']: [app.eventMeasure]},
                                 callback: (subset) => {
                                     app.setEventMeasure(subset);
@@ -380,10 +388,7 @@ export default class Body_EventData {
                         m("button.btn.btn-default.ladda-button[data-spinner-color='#818181'][type='button']", {
                             id: 'btnUpdate',
                             style: {float: 'right'},
-                            onclick: () => {
-                                if (mode === 'subset') query.submitQuery();
-                                if (mode === 'aggregate') query.submitAggregation();
-                            }
+                            onclick: () => query.submitQuery() // wrap in anonymous function to ignore the mouseEvent
                         }, 'Update')
                     )
                 ]
@@ -391,6 +396,7 @@ export default class Body_EventData {
         }
 
         if (mode === 'aggregate') {
+            let selectedColor = app.selectedCanvas === 'Results' ? common.selVarColor : common.grayColor;
             return m(Panel, {
                 id: 'rightPanelMenu',
                 side: 'right',
@@ -406,10 +412,19 @@ export default class Body_EventData {
                     m(PanelList, {
                         id: 'resultsList',
                         items: ['Line Plot'],
-                        colors: {[common.selVarColor]: [app.selectedResult]},
+                        colors: {[selectedColor]: [app.selectedResult]},
                         callback: app.setSelectedResult,
-                        attrsAll: {style: {height: 'calc(100% - 44px)', overflow: 'auto'}}
-                    })
+                        attrsAll: {style: {height: 'calc(100% - 78px)', overflow: 'auto'}}
+                    }),
+                    m("button.btn.btn-default.ladda-button[data-spinner-color='#818181'][type='button']", {
+                        id: 'btnUpdate',
+                        class: app.aggregationStaged && ['btn-success'],
+                        style: {float: 'right'},
+                        onclick: () => {
+                            app.setAggregationStaged(false);
+                            query.submitAggregation() // wrap in anonymous function to ignore the mouseEvent
+                        }
+                    }, 'Update')
                 ]
             })
         }
@@ -458,7 +473,7 @@ export default class Body_EventData {
             'Datasets': CanvasDatasets,
             'Saved Queries': CanvasSavedQueries,
             'Custom': CanvasCustom,
-            'Time Series': CanvasResults
+            'Results': CanvasResults
         }[app.selectedCanvas], {
             mode: app.selectedMode,
             preferences: app.canvasPreferences[app.selectedCanvas],

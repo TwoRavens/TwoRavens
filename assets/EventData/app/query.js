@@ -12,7 +12,6 @@ import m from 'mithril';
 
 
 export function submitQuery(datasetChanged = false) {
-    console.log(app.abstractQuery);
 
     // Only construct and submit the query if new subsets have been added since last query
     let newSubsets = false;
@@ -52,16 +51,13 @@ export function submitQuery(datasetChanged = false) {
         let nodeList = [...Array(app.nodeId).keys()];
 
         let subsetTree = $('#subsetTree');
-        nodeList.forEach(
-            function (node_id) {
-                const node = subsetTree.tree("getNodeById", node_id);
 
-                if (node) {
-                    subsetTree.tree("addToSelection", node);
-                    if (node.type !== 'query') node.editable = false;
-                }
-            }
-        );
+        nodeList.forEach((node_id) => {
+            const node = subsetTree.tree("getNodeById", node_id);
+            if (!node) return;
+            subsetTree.tree("addToSelection", node);
+            if (node.type !== 'query') node.editable = false;
+        });
 
         // Redraw tree
         app.setAbstractQuery(JSON.parse(subsetTree.tree('toJson')));
@@ -99,23 +95,21 @@ export function submitQuery(datasetChanged = false) {
 }
 
 // Recursively traverse the tree in the right panel. For each node, call processNode
-export function buildSubset(tree) {
+export function buildSubset(tree, useStaged = true) {
     // Base case
     if (tree.length === 0) return {};
 
     let queryStack = [];
     let stagedSubsetData = [];
     for (let child of tree) {
-        if (child.type === 'query') {
-            queryStack.push(child)
-        } else {
-            stagedSubsetData.push(child)
-        }
+        if (child.type === 'query') queryStack.push(child);
+        else stagedSubsetData.push(child)
     }
 
     // Treat staged subset data as just another query on the query stack
-    queryStack.push({'children': stagedSubsetData, 'operation': 'and', 'name': 'New Query', type: 'query'});
-    return processGroup({'children': queryStack})
+    if (useStaged && stagedSubsetData.length)
+        queryStack.push({'children': stagedSubsetData, 'operation': 'and', 'name': 'New Query', type: 'query'});
+    return processGroup({'children': queryStack});
 }
 
 // If node is a group, then build up the overall operator tree via processGroup
@@ -167,10 +161,8 @@ function processGroup(group) {
     if (group.children.length > 0 && group.children[group.children.length - 1]['operation'] === 'and') {
         semigroup.push(processNode(group.children[group.children.length - 1]));
         group_query['$or'].push({'$and': semigroup.slice()})
-
-    } else {
+    } else
         group_query['$or'].push(processNode(group.children[group.children.length - 1]));
-    }
 
     // Remove unnecessary conjunctions
     if (group_query['$or'].length === 1) {
@@ -318,11 +310,16 @@ export function submitAggregation() {
             'subset': app.selectedSubsetName
         },
         method: 'POST'
-    }).then(reformatAggregation).then(({data, headersUnit, headersEvent}) => {
-        app.setAggregationData(data);
-        app.setAggregationHeadersUnit(headersUnit);
-        app.setAggregationHeadersEvent(headersEvent);
-    }).then(() => app.setLaddaSpinner('btnUpdate', true)).catch(app.laddaStopAll);
+    })
+        .then(reformatAggregation)
+        .then(({data, headersUnit, headersEvent}) => {
+            app.setAggregationData(data);
+            app.setAggregationHeadersUnit(headersUnit);
+            app.setAggregationHeadersEvent(headersEvent);
+        })
+        .then(() => app.setLaddaSpinner('btnUpdate', false))
+        .then(() => app.setAggregationStaged(false))
+        .catch(app.laddaStopAll);
 }
 
 export function buildAggregation(tree, preferences) {
@@ -372,12 +369,12 @@ export function buildAggregation(tree, preferences) {
 
                 let [leftTab, rightTab] = Object.keys(tempSubsets[subset]['tabs']);
                 let filteredLinks = preferences[subset]['edges']
-                    .filter(link => link.source.actor === leftTab && link.target.actor === rightTab);
+                    .filter(link => link.source.tab === leftTab && link.target.tab === rightTab);
 
                 for (let idx in filteredLinks) {
                     let link = filteredLinks[idx];
-                    let leftTabColumn = tempSubsets[subset]['tabs'][link.source.actor]['full'];
-                    let rightTabColumn = tempSubsets[subset]['tabs'][link.target.actor]['full'];
+                    let leftTabColumn = tempSubsets[subset]['tabs'][link.source.tab]['full'];
+                    let rightTabColumn = tempSubsets[subset]['tabs'][link.target.tab]['full'];
                     unit[subset.replace(/[$.-]/g, '') + '-' + link.source.name.replace(/[$.-]/g, '') + '-' + link.target.name.replace(/[$.-]/g, '')] = {
                         '$and': [
                             {'$in': ['$' + leftTabColumn, [...link.source.selected]]},
@@ -441,10 +438,11 @@ export function buildAggregation(tree, preferences) {
             (transforms[measure][tempSubsets[subset]['type']] || Function)(subset);
     });
 
-    return [
-        {"$match": buildSubset(tree)},
-        {"$group": Object.assign({"_id": unit}, event)}
-    ];
+    let pipeline = [];
+    const subset = buildSubset(tree);
+    if (subset.length) pipeline.push({"$match": subset});
+    pipeline.push({"$group": Object.assign({"_id": unit}, event)});
+    return pipeline;
 }
 
 // almost pure- the function mutates the argument
@@ -549,8 +547,8 @@ export function reformatAggregation(jsondata) {
 
     return {
         data: jsondata,
-        headersUnit: headers,
-        headersEvent: events
+        headersUnit: [...headers],
+        headersEvent: [...events]
     }
 }
 
@@ -697,7 +695,7 @@ export function realignPreferences(source, target) {
     Object.keys(app.subsetPreferences).forEach(subset => {
         if (Object.keys(app.subsetPreferences[subset]).length === 0) return;
         if (!(subset in targetSubsets)) {
-            log.push(subset + ' is not available for ' + target + ', but subset preferences have been cached.')
+            log.push(subset + ' is not available for ' + target + ', but subset preferences have been cached.');
             return;
         }
 

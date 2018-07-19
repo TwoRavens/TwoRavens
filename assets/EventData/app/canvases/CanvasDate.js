@@ -230,6 +230,7 @@ export default class CanvasDate {
                 onclick: (aggregation) => {
                     app.unitMeasure[subsetName] = aggregation !== 'None';
                     preferences['aggregation'] = aggregation;
+                    app.setAggregationStaged(true);
                 },
                 activeSection: preferences['aggregation'],
                 sections: [

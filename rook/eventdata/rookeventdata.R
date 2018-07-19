@@ -261,8 +261,6 @@ eventdata.app <- function(env) {
     # NOTE: R jsonlite interprets literals as singleton literal arrays, since R has no scalar datatype.
     response$write(toString(jsonlite::toJSON(summary)))
 
-    # If your R installation does not support futures multiprocessing, it will fall back to multisession processing
-    # In the multisession fallback case, prints are sent to different R sessions and not the server console
     print("Request completed")
     return(response$finish())
 }

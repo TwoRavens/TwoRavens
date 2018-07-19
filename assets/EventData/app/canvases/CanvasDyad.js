@@ -6,7 +6,7 @@ import TextField from '../../../common-eventdata/views/TextField';
 
 import MonadSelection from '../views/MonadSelection';
 import PlotDyad from '../views/PlotDyad';
-import {unitMeasure} from "../app";
+import * as app from "../app";
 
 // Width of the dyad selection panel
 let selectionWidth = '400px';
@@ -134,8 +134,11 @@ export default class CanvasDyad {
                         },
                         m("label.agg-chk-lbl",
                             m('input#aggregDyadSelect.agg-chk[type=checkbox]', {
-                                onclick: m.withAttr("checked", (state) => unitMeasure[subsetName] = state),
-                                checked: unitMeasure[subsetName]
+                                onclick: m.withAttr("checked", (state) => {
+                                    if (mode === 'aggregate') app.setAggregationStaged(true);
+                                    app.unitMeasure[subsetName] = state
+                                }),
+                                checked: app.unitMeasure[subsetName]
                             }),
                             "Use in aggregation"
                         ))
@@ -173,6 +176,7 @@ export default class CanvasDyad {
                     m(Button, {
                         id: 'dyadSelectAll',
                         onclick: () => {
+                            if (mode === 'aggregate') app.setAggregationStaged(true);
                             let tabPref = preferences['tabs'][preferences['current_tab']];
                             let tabMeta = metadata['tabs'][preferences['current_tab']];
                             if (tabPref['show_selected']) return;

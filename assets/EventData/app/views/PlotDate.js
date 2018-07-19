@@ -26,7 +26,7 @@ export default class PlotDate {
     }
 
     plot(vnode) {
-        let {id, data, callbackHandles, labelY} = vnode.attrs;
+        let {data, callbackHandles, labelY} = vnode.attrs;
         if (data === undefined) return;
 
         // Set calendar ranges

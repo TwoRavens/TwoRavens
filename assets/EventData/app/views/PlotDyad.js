@@ -6,7 +6,6 @@ export let nodeColors;
 const dyadNodeRadius = 40; //various definitions for node display
 const dyadNodePadding = 5;
 const pebbleBorderColor = '#949494';
-const fillRatio = 0.6;
 
 //moves node to back of HTML index in order to allow mouseover detection
 // noinspection JSPotentiallyInvalidConstructorUsage

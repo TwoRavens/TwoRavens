@@ -123,11 +123,11 @@ export let setSelectedSubsetName = (subset) => {
     selectedSubsetName = subset;
 };
 
-// 'Datasets', 'Saved Queries', 'Subset', 'Custom', 'Time Series', 'Analysis'
+// 'Datasets', 'Saved Queries', 'Subset', 'Custom', 'Results', 'Analysis'
 export let selectedCanvas = 'Datasets';
 export let selectedCanvasHome = selectedCanvas;
 export let setSelectedCanvas = (canvasKey) => {
-    if (['About', 'Datasets', 'Saved Queries', 'Time Series'].indexOf(canvasKey) !== -1) selectedCanvasHome = canvasKey;
+    if (['About', 'Datasets', 'Saved Queries'].indexOf(canvasKey) !== -1) selectedCanvasHome = canvasKey;
     selectedCanvas = canvasKey;
 };
 
@@ -159,6 +159,9 @@ export let setEventMeasure = (measure) => eventMeasure = measure;
 
 export let showSaveQuery = false;
 export let setShowSaveQuery = (state) => showSaveQuery = state;
+
+export let aggregationStaged = false;
+export let setAggregationStaged = (state) => aggregationStaged = state;
 
 export let selectedResult;
 export let setSelectedResult = (result) => {
@@ -680,7 +683,7 @@ function getSubsetPreferences() {
 
         // ignore edges from shared dyad menus in other datasets
         let filteredEdges = preferences['edges']
-            .filter(edge => edge.source.actor in metadata['tabs'] && edge.target.actor in metadata['tabs']);
+            .filter(edge => edge.source.tab in metadata['tabs'] && edge.target.tab in metadata['tabs']);
 
         for (let linkId in filteredEdges) {
 
