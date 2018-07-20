@@ -2107,6 +2107,21 @@ function onPipelineCreate(PipelineCreateResult, id) {
             pipelineTable[i][3] = myscore.toString();
         };
     };
+    pipelineTable = pipelineTable.sort(function(a,b){
+        if (a[3]===b[3]){
+            return(0)
+        } else if (a[3]=="scoring"){
+            return(100)
+        } else if (b[3]=="scoring") {
+            return(-100)
+        } else if (a[3]=="no score"){
+            return(1000) 
+        } else if (b[3]=="no score"){
+            return(-1000)
+        } else {
+            return parseFloat(b[3]) - parseFloat(a[3]) ;
+        };
+    });
 
     console.log(pipelineTable);
                 // myid=key;
@@ -2563,6 +2578,21 @@ export async function estimate(btn) {
                                                 pipelineTable[i][3] = "no score";
                                             };
                                         };
+                                        pipelineTable = pipelineTable.sort(function(a,b){
+                                            if (a[3]===b[3]){
+                                                return(0)
+                                            } else if (a[3]=="scoring"){
+                                                return(100)
+                                            } else if (b[3]=="scoring") {
+                                                return(-100)
+                                            } else if (a[3]=="no score"){
+                                                return(1000) 
+                                            } else if (b[3]=="no score"){
+                                                return(-1000)
+                                            } else {
+                                                return parseFloat(b[3]) - parseFloat(a[3]);
+                                            };
+                                        });
                                     };
                                 };
                             };
