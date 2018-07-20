@@ -2095,7 +2095,10 @@ export let setSelectedPipeline = (result) => {
 // Update table when pipeline is fitted
 function onPipelineCreate(PipelineCreateResult, id) {
 
-    let myscore = PipelineCreateResult.data.response.scores[0].value.double.toPrecision(3);;  // attempt to deal w multiple scores
+    console.log("** PipelineCreateResult **");
+    console.log(PipelineCreateResult.data.response.scores[0].value.raw.double.toPrecision(3));   // Makes a number of assumptions about how values are returned
+
+    let myscore = PipelineCreateResult.data.response.scores[0].value.raw.double.toPrecision(3);   // Makes a number of assumptions about how values are returned, also need to attempt to deal w multiple scores
 
     console.log(PipelineCreateResult);
 
@@ -2543,11 +2546,24 @@ export async function estimate(btn) {
                             let res12 = await updateRequest(scoreDetailsUrl);   // check
                             if(typeof res12.data.is_finished != 'undefined'){
                                 if(res12.data.is_finished){
-                                    console.log('finished scoring');
-                                    clearInterval(scoringIntervalId);
-                                    let finalScoreUrl = res12.data.responses.list[0].details_url;
-                                    let res13 = await updateRequest(finalScoreUrl);
-                                    onPipelineCreate(res13, res4DataId);  // arguments have changed
+                                    if(res12.data.responses.list.length > 0){   // need to understand why this comes back is.finished=true but also length=0
+                                        console.log('finished scoring');
+                                        clearInterval(scoringIntervalId);
+                                        console.log(res12.data);
+                                        let finalScoreUrl = res12.data.responses.list[0].details_url;
+                                        let res13 = await updateRequest(finalScoreUrl);
+                                        onPipelineCreate(res13, res4DataId);  // arguments have changed
+                                    } else {
+                                        console.log('finished scoring but broken');
+                                        clearInterval(scoringIntervalId);
+                                        console.log(res4DataId);
+                                        console.log(res12.data);
+                                        for(var i = 0; i < pipelineTable.length; i++) {
+                                            if (pipelineTable[i][1] == parseInt(res4DataId, 10)) {
+                                                pipelineTable[i][3] = "no score";
+                                            };
+                                        };
+                                    };
                                 };
                             };
                         }, 2700);
