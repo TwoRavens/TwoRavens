@@ -45,7 +45,10 @@ export default class MonadSelection {
         // If no filters are set, don't add any filtering
         let subsets;
         if (tabFilters.length !== 0) {
-            subsets = {'$and': [stagedQuery, tabFiltersOp]};
+            if (Object.keys(stagedQuery).length)
+                subsets = {'$and': [stagedQuery, tabFiltersOp]};
+            else
+                subsets = tabFiltersOp; // permits mongo indexing optimization
         } else {
             subsets = stagedQuery;
         }
@@ -77,6 +80,8 @@ export default class MonadSelection {
         };
 
         this.waitForQuery++;
+        m.redraw(); // since this.search is async, waitForQuery is incremented after the bound callback completes
+
         m.request({
             url: app.subsetURL,
             data: body,

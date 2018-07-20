@@ -32,8 +32,7 @@ def date_cline_phoenix():
 
 def date_cline_speed():
     origin = datetime.datetime.strptime('01/01/1945', "%m/%d/%Y")  # taken from footer note 1 within codebook
-    for document in db.cline_speed.find({'CODE_DATE_constructed': {"$exists": 0}}):
-
+    for document in db.cline_speed.find({'AVERAGE_DATE_constructed': {"$exists": 0}}):
         fields = {
             'CODE_DATE_constructed': datetime.datetime(document['CODE_YEAR'], document['CODE_MONTH'], document['CODE_DAY']),
             'PUB_DATE_constructed': datetime.datetime(document['PUB_YEAR'], document['PUB_MON'], document['PUB_DATE'])
@@ -43,8 +42,10 @@ def date_cline_speed():
             if column in document:
                 fields[column + '_constructed'] = origin + datetime.timedelta(days=document[column])
 
-        if 'day' in document and 'month' in document and 'year' in document:
-            fields['AVERAGE_DATE_constructed'] = datetime.datetime(document['year'], document['month'], document['day'])
+        day = 1 if 'day' not in document else document['day']
+        month = 1 if 'month' not in document else document['month']
+        if 'year' in document:
+            fields['AVERAGE_DATE_constructed'] = datetime.datetime(document['year'], month, day)
 
         db.cline_speed.update(
             {'_id': document['_id']},
@@ -77,7 +78,7 @@ def date_icews():
             print(document['_id'])
 
 
-remove_header()
+#remove_header()
 
 # add constructed date fields
 date_cline_phoenix()

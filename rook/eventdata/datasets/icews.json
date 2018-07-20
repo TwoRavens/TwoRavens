@@ -23,7 +23,7 @@
       ],
       "tabs": {
         "source": {
-          "full": "Soure Name",
+          "full": "Source Name",
           "filters": [
             "Source Sectors Grouped",
             "Source Country"
@@ -94,6 +94,10 @@
     "Event Date_constructed",
     "country_constructed"
   ],
+  "deconstruct": {
+    "Source Sectors Grouped": ",",
+    "Target Sectors Grouped": ","
+  },
   "alignments": {
     "Event Date_constructed": "date",
     "Latitude": "latitude",

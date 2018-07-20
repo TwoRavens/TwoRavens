@@ -30,7 +30,7 @@ eventdata.app <- function(env) {
     print("Request received")
     post = names(request$POST())
 
-    print(post, quote=FALSE);
+    print(post, quote = FALSE);
     # Ensure that request is valid
     if (! jsonlite::validate(post)) {
         response$write('{"warning": "The request is not valid json. Check for special characters."}')
@@ -100,6 +100,9 @@ eventdata.app <- function(env) {
             if (type == 'distinct') {
                 data = connect$distinct(key, query)
             }
+            if (type == 'count') {
+                data = connect$count(query)
+            }
             rm(connect)
             return(data)
         }
@@ -116,6 +119,12 @@ eventdata.app <- function(env) {
             }
             if (type == 'distinct') {
                 data = readLines(paste(url, '&query=', query_escaped, '&unique=', key, sep = ""), warn = FALSE)
+            }
+            if (type == 'count') {
+                data = readLines(paste(url, '&aggregate=', '[{"$match":', query, '}, {"$count": "total"}]', sep = ""), warn = FALSE)
+                return(tryCatch({
+                    return(jsonlite::fromJSON(data)$data)
+                }, error = genericErrorHandler)$total)
             }
             tryCatch({
                 return(jsonlite::fromJSON(data)$data)
@@ -203,11 +212,9 @@ eventdata.app <- function(env) {
 
     if (subsetMetadata$type == 'date') {
         summary$data = tryCatch({
-            do.call(data.frame, getData('aggregate', paste(
-            '[{"$match":', query, '},',
-            ' {"$project": {"Year": {"$year": "$', subsetMetadata$columns[[1]], '"},',
-            '"Month": {"$month": "$', subsetMetadata$columns[[1]], '"}}},',
-            ' {"$group": { "_id": { "year": "$Year", "month": "$Month" }, "total": {"$sum": 1} }},',
+            do.call(data.frame, getData('aggregate', paste('[',
+            if (query == '{}')'' else paste('{"$match":', query, '},', sep = ""),
+            ' {"$group": { "_id": { "year": {"$year": "$', subsetMetadata$columns[[1]], '"}, "month": {"$month": "$', subsetMetadata$columns[[1]], '"}}, "total": {"$sum": 1} }},',
             ' {"$project": {"year": "$_id.year", "month": "$_id.month", "_id": 0, "total": 1}}]', sep = "")))
         }, error = genericErrorHandler)
     }
@@ -232,7 +239,9 @@ eventdata.app <- function(env) {
         if (! is.null(everything$search) && everything$search)summary$data = collectColumn(subsetMetadata$full)
         else summary$data = collectMonad(subsetMetadata)
     }
-    else summary$data = sapply(subsetMetadata$columns, collectColumn, simplify = FALSE, USE.NAMES = TRUE)
+    else if (subsetMetadata$type == 'coordinates') {
+        summary$data = list()
+    } else summary$data = sapply(subsetMetadata$columns, collectColumn, simplify = FALSE, USE.NAMES = TRUE)
 
     # Additional metadata
     if (! is.null(everything$alignments)) {
@@ -251,9 +260,9 @@ eventdata.app <- function(env) {
 
     if (! is.null(everything$countRecords) && everything$countRecords) {
         total = tryCatch({
-            jsonlite::unbox(getData('aggregate', paste('[{"$match":', query, '}, {"$count": "total"}]', sep = ""))$total)
+            jsonlite::unbox(getData('count', query))
         }, error = genericErrorHandler)
-        summary$total = if (!is.null(total)) total else 0
+        summary$total = if (! is.null(total))total else 0
     }
 
     summary$subsetName = jsonlite::unbox(subset)
