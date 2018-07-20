@@ -74,7 +74,7 @@ export default class Body_EventData {
                 sections: [
                     {value: 'Datasets', attrsInterface},
                     {value: 'Saved Queries', attrsInterface},
-                    {value: 'About', attrsInterface}
+                    // {value: 'About', attrsInterface}
                 ],
                 activeSection: app.selectedCanvasHome,
                 onclick: app.setSelectedCanvas,
@@ -94,8 +94,7 @@ export default class Body_EventData {
                     "color": "#818181",
                     "pointer-events": "none"
                 }
-            })
-            ),
+            })),
 
             m(ButtonRadio, {
                 id: 'modeButtonBar',
@@ -153,7 +152,7 @@ export default class Body_EventData {
 
         let recordCount = {
             'subset': app.totalSubsetRecords,
-            'aggregate': app.aggregationData.length
+            'aggregate': app.aggregationData && app.aggregationData.length
         }[app.selectedMode];
 
         return m(Footer, [
@@ -240,7 +239,7 @@ export default class Body_EventData {
             return m(Panel, {
                 side: 'left',
                 label: 'Data Selection',
-                hover: false,
+                hover: window.innerWidth < 1200,
                 width: '250px',
                 contents: m(MenuTabbed, {
                     id: 'leftPanelMenu',
@@ -307,6 +306,7 @@ export default class Body_EventData {
 
             return m(Panel, {
                 id: 'leftPanelMenu',
+                hover: window.innerWidth < 1200,
                 side: 'left',
                 width: '250px',
                 label: 'Data Selection',
@@ -352,13 +352,17 @@ export default class Body_EventData {
 
     rightpanel(mode) {
 
-        if (mode === 'home') common.setPanelOcclusion('right', '250px');
+        if (mode === 'home') {
+            common.setPanelOcclusion('left', window.innerWidth < 1200 ? `calc(${common.panelMargin}*2)` : '250px');
+            common.setPanelOcclusion('right', window.innerWidth < 1200 ? `calc(${common.panelMargin}*2)` : '250px');
+        }
 
         if (mode === 'subset') {
             return m(Panel, {
                 id: 'rightPanelMenu',
                 side: 'right',
                 label: 'Query Summary',
+                hover: window.innerWidth < 1200,
                 width: '250px',
                 contents: [
                     m(MenuHeaders, {
@@ -398,6 +402,7 @@ export default class Body_EventData {
                 id: 'rightPanelMenu',
                 side: 'right',
                 label: 'Results',
+                hover: window.innerWidth < 1200,
                 width: '250px',
                 attrsAll: {
                     style: {
@@ -410,7 +415,13 @@ export default class Body_EventData {
                         id: 'resultsList',
                         items: ['Line Plot'],
                         colors: {[common.selVarColor]: app.selectedCanvas === 'Results' ? [app.selectedResult] : []},
-                        callback: app.setSelectedResult,
+                        callback: (result) => {
+                            if (!app.aggregationData) {
+                                tour.tourStartAggregation();
+                                return;
+                            }
+                            app.setSelectedResult(result);
+                        },
                         attrsAll: {style: {height: 'calc(100% - 78px)', overflow: 'auto'}}
                     }),
                     m("button.btn.btn-default.ladda-button[data-spinner-color='#818181'][type='button']", {
@@ -419,7 +430,7 @@ export default class Body_EventData {
                         style: {float: 'right'},
                         onclick: () => {
                             app.setAggregationStaged(false);
-                            query.submitAggregation() // wrap in anonymous function to ignore the mouseEvent
+                            query.submitAggregation()
                         }
                     }, 'Update')
                 ]
@@ -491,7 +502,7 @@ export default class Body_EventData {
                     "overflow-x": "auto"
                 }
             },
-            app.aggregationData.length !== 0 ? m(Table, {
+            app.aggregationData ? m(Table, {
                 headers: [...app.aggregationHeadersUnit, ...app.aggregationHeadersEvent],
                 data: app.aggregationData
             }) : "Select event measures, then click 'Update' to display aggregated data."

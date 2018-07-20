@@ -7,7 +7,6 @@ db.icews.createIndex({"Source Country": 1, "Source Name": 1})
 db.icews.createIndex({"Target Country": 1, "Target Name": 1})
 db.icews.createIndex({"Source Sectors Grouped": 1})
 db.icews.createIndex({"Target Sectors Grouped": 1})
-db.icews.createIndex({"Event Date_constructed": 1, "CAMEO Code": 1})
 
 db.cline_phoenix_swb.createIndex({"source": 1, "target": 1})
 db.cline_phoenix_swb.createIndex({"target": 1})

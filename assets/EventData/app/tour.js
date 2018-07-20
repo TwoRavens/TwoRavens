@@ -1,4 +1,5 @@
 import hopscotch from 'hopscotch';
+import '../pkgs/hopscotch/hopscotch.style.css'
 import * as common from '../../common-eventdata/common';
 import m from 'mithril';
 
@@ -247,14 +248,14 @@ let categoricalGroupedTour = {
         {
             title: "Overview",
             content: "The initial graph shows the frequencies of a more granular category, aggregated into groups. For example, country frequencies may be aggregated into regions. Click a bar to draw a second graph with the categories contained in that group.",
-            target: "subGraphContainer",
+            target: "graphContainer",
             placement: "bottom",
             width: 200
         },
         {
             title: "Selecting Plot Elements",
             content: "The grouped frequencies plot has the option to plot all groups, whereas individual group plots have options to select all or deselect all. The shrinker is helpful for navigating the page quickly.",
-            target: "subGraphContainer",
+            target: "graphContainer",
             placement: "left",
             width: 200
         },

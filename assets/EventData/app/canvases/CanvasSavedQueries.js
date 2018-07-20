@@ -62,7 +62,11 @@ export default class CanvasSavedQueries {
         let link = (url) => m('a', {href: url, style: {color: 'darkblue'}, target: '_blank', display: 'inline'}, url);
         let italicize = (value) => m('div', {style: {'font-style': 'italic', display: 'inline'}}, value);
 
-        return m('#canvasSavedQueries', {style: {'margin-top': common.panelMargin}},
+        return m('#canvasSavedQueries', {
+                style: {
+                    'margin-top': common.panelMargin, 'margin-bottom': common.panelMargin
+                }
+            },
             ['name', 'description', 'username'].map(searchType =>
                 m('div',
                     m(`label#labelSearch${searchType}`, {
@@ -122,7 +126,7 @@ export default class CanvasSavedQueries {
                     }),
                     preferences['query'] && [
                         bold("Query:"), m('br'),
-                        JSON.stringify(preferences['query'])
+                        m('div', {style: {'word-break':'break-all'}}, JSON.stringify(preferences['query']))
                     ]
                 ])
             )

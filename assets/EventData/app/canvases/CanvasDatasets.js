@@ -37,7 +37,8 @@ export default class CanvasDatasets {
         return m('div#canvasDatasets', {
             style: {
                 display: display,
-                width: '100%'
+                width: '100%',
+                'margin-bottom': common.panelMargin
             }
         }, Object.values(app.genericMetadata).map((dataset) => {
             return m('div', {

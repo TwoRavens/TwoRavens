@@ -1,6 +1,7 @@
 import m from 'mithril';
 import * as d3 from "d3";
 import * as common from '../../../common-eventdata/common';
+import * as app from "../app";
 
 // This shuffle is biased towards elements at the start of the color scheme. But that's just fine, the first colors are better
 export let nodeColors = d3.scaleOrdinal(d3.schemeCategory10.sort(() => .5 - Math.random()));
@@ -381,6 +382,10 @@ export default class PlotDyad {
                 rev: !!foundLink,
                 dup: !!foundLink
             });
+
+            // enable aggregation on dyads by default
+            if (!(app.selectedSubsetName in app.unitMeasure))
+                app.unitMeasure[app.selectedSubsetName] = true;
 
             this.updateAll(vnode);
             this.resetMouseVars(vnode);

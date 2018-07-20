@@ -72,7 +72,7 @@ export let setSelectedDataset = (key) => {
     setEventMeasure(undefined);
     aggregationHeadersUnit = [];
     aggregationHeadersEvent = [];
-    aggregationData = [];
+    aggregationData = undefined;
 
     resetPeek();
 };
@@ -100,9 +100,9 @@ export function setSelectedMode(mode) {
     // Some canvases only exist in certain modes. Fall back to default if necessary.
     if (mode === 'home' && selectedCanvas !== selectedCanvasHome)
         setSelectedCanvas(selectedCanvasHome);
-    if (mode === 'subset' && (selectedCanvas !== 'subset' || subsetKeys.indexOf(selectedSubsetName) === -1))
+    if (mode === 'subset' && (selectedCanvas !== 'Subset' || subsetKeys.indexOf(selectedSubsetName) === -1))
         setSelectedSubsetName(subsetKeys[0]);
-    if (mode === 'aggregate' && (selectedCanvas !== 'subset' || aggregateKeys.indexOf(selectedSubsetName) === -1))
+    if (mode === 'aggregate' && (selectedCanvas !== 'Subset' || aggregateKeys.indexOf(selectedSubsetName) === -1))
         setSelectedSubsetName(aggregateKeys[0]);
 
     selectedMode = mode;
@@ -143,7 +143,7 @@ export let setVariableSearch = (text) => variableSearch = text;
 export let abstractQuery = [];
 export let setAbstractQuery = (query) => abstractQuery = query;
 
-export let aggregationData = [];
+export let aggregationData;
 export let setAggregationData = (data) => aggregationData = data;
 
 export let aggregationHeadersUnit = [];
@@ -189,11 +189,16 @@ export let saveQuery = {
 
 // ~~~~ PAGE RESIZE HANDLING ~~~~
 export function handleResize() {
-    if (selectedDataset === undefined || genericMetadata[selectedDataset] === undefined) return;
-    document.getElementById('canvas').style['padding-right'] = common.panelOcclusion['right'];
-    document.getElementById('canvas').style['padding-left'] = common.panelOcclusion['left'];
+    if (selectedMode === 'home') {
+        common.setPanelOcclusion('left', window.innerWidth < 1000 ? `calc(${common.panelMargin}*2)` : '250px');
+        common.setPanelOcclusion('right', window.innerWidth < 1000 ? `calc(${common.panelMargin}*2)` : '250px');
+        m.redraw();
+        return;
+    }
+
     Object.keys(genericMetadata[selectedDataset]['subsets']).forEach(subset => subsetRedraw[subset] = true);
     canvasTypes.forEach(canvas => canvasRedraw[canvas] = true);
+
     m.redraw();
 }
 

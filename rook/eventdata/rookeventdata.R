@@ -87,15 +87,12 @@ eventdata.app <- function(env) {
     getData = function(type, query, key=NULL) {
         # print(paste("GETTING", toString(type), toString(key), toString(query)))
         if (datasetMetadata$host == 'TwoRavens') {
-
-
-            if(nchar(EVENTDATA_MONGO_PASSWORD)> 3){
-
-              mongo_url = sprintf("mongodb://%s:%s@%s/", EVENTDATA_MONGO_USERNAME, EVENTDATA_MONGO_PASSWORD, EVENTDATA_MONGO_DB_ADDRESS)
-            }else{
-              mongo_url = sprintf("mongodb://%s", EVENTDATA_MONGO_DB_ADDRESS)
+            if (nchar(EVENTDATA_MONGO_PASSWORD) > 3) {
+                mongo_url = sprintf("mongodb://%s:%s@%s/", EVENTDATA_MONGO_USERNAME, EVENTDATA_MONGO_PASSWORD, EVENTDATA_MONGO_DB_ADDRESS)
+            }else {
+                mongo_url = sprintf("mongodb://%s", EVENTDATA_MONGO_DB_ADDRESS)
             }
-            print(paste("mongo url:", gsub(EVENTDATA_MONGO_PASSWORD, "some-pw", mongo_url)))
+
             connect = mongolite::mongo(collection = dataset, db = "event_data", url = mongo_url)
 
             if (type == 'find') {
@@ -221,6 +218,7 @@ eventdata.app <- function(env) {
         summary$data = tryCatch({
             do.call(data.frame, getData('aggregate', paste('[',
             if (query == '{}')'' else paste('{"$match":', query, '},', sep = ""),
+            ' {"$match": {"', subsetMetadata$columns[[1]], '": {"$exists": 1}}},', # avoid an error for records that do not have date fields
             ' {"$group": { "_id": { "year": {"$year": "$', subsetMetadata$columns[[1]], '"}, "month": {"$month": "$', subsetMetadata$columns[[1]], '"}}, "total": {"$sum": 1} }},',
             ' {"$project": {"year": "$_id.year", "month": "$_id.month", "_id": 0, "total": 1}}]', sep = "")))
         }, error = genericErrorHandler)

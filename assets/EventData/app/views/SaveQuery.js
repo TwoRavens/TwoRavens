@@ -47,7 +47,7 @@ export default class SaveQuery {
                 'aggregate': app.aggregationData.length
             }[app.selectedMode]
         });
-        if (!('saved_to_dataverse' in preferences)) preferences['saved_to_dataverse'] = false;
+        // if (!('saved_to_dataverse' in preferences)) preferences['saved_to_dataverse'] = false;
     }
 
     view(vnode) {
@@ -73,17 +73,17 @@ export default class SaveQuery {
                     preferences['description'] = value;
                 }
             }),
-            'Save to Dataverse': m(ButtonRadio, {
-                id: 'modeButtonBar',
-                attrsAll: {style: {width: 'auto', margin: '.25em 1em', float: 'left'}},
-                onclick: (value) => {
-                    if (preferences['saved_to_dataverse'] === (value === 'true')) return;
-                    preferences['saved_to_dataverse'] = value === 'true';
-                    this.saved = false;
-                },
-                activeSection: (preferences['saved_to_dataverse'] || 'false') + '',
-                sections: [{value: 'true'}, {value: 'false'}]
-            }),
+            // 'Save to Dataverse': m(ButtonRadio, {
+            //     id: 'modeButtonBar',
+            //     attrsAll: {style: {width: 'auto', margin: '.25em 1em', float: 'left'}},
+            //     onclick: (value) => {
+            //         if (preferences['saved_to_dataverse'] === (value === 'true')) return;
+            //         preferences['saved_to_dataverse'] = value === 'true';
+            //         this.saved = false;
+            //     },
+            //     activeSection: (preferences['saved_to_dataverse'] || 'false') + '',
+            //     sections: [{value: 'true'}, {value: 'false'}]
+            // }),
             'Username': format([
                 preferences['username'],
                 preferences['username'] === undefined && warn('Please log in to save queries.')]),
@@ -103,8 +103,7 @@ export default class SaveQuery {
             'dataset_type': '',
             'result_count': 0,
             'name': '',
-            'description': '',
-            'saved_to_dataverse': ''
+            'description': ''
         };
 
         let disabled = this.saved || !Object.keys(invalids).map(key =>

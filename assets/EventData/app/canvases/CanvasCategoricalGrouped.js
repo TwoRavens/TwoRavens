@@ -122,7 +122,7 @@ export default class CanvasCategoricalGrouped {
             );
 
         return m("#canvasCategoricalGrouped", {style: {'padding-top': common.panelMargin}},
-            m("#locationPlotsDiv[tabindex='0']", {
+            m("#graphContainer[tabindex='0']", {
                     style: {
                         "outline": "none",
                         "width": "480px",
