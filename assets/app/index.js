@@ -390,7 +390,11 @@ class Body {
                                 let variate = app.exploreVariate.toLowerCase();
                                 let selected = discovery ? [app.selectedProblem] : nodesExplore.map(x => x.name);
                                 let len = selected.length;
-                                if (variate === 'univariate' || variate === 'problem' && len != 1 || variate === 'bivariate' && len != 2 || variate === 'trivariate' && len != 3 || variate === 'multiple' && len < 2) {
+                                if (variate === 'univariate' && len != 1
+                                    || variate === 'problem' && len != 1
+                                    || variate === 'bivariate' && len != 2
+                                    || variate === 'trivariate' && len != 3
+                                    || variate === 'multiple' && len < 2) {
                                     return;
                                 }
                                 m.route.set(`/explore/${variate}/${selected.join('/')}`);
@@ -399,13 +403,13 @@ class Body {
                         m('br'),
                         m('', {style: `display: flex; flex-direction: row; flex-wrap: wrap`},
                           (discovery ? app.disco : valueKey).map(x => {
+                              let selected = discovery ? x === app.disco[app.selectedProblem] : nodesExplore.map(x => x.name).includes(x);
                               let {predictors} = x;
                               if (x.predictors) {
                                   x = x.target;
                               }
                               let node = app.findNodeIndex(x, true);
                               let show = app.exploreVariate === 'Bivariate' || app.exploreVariate === 'Trivariate';
-                              let len = nodesExplore.length;
                               let [n0, n1, n2] = nodesExplore;
                               return m('span', {
                                   onclick: _ => app.clickVar(x, nodesExplore),
@@ -434,23 +438,21 @@ class Body {
                                       margin: '1em',
                                       width: '250px',
                                       'align-items': 'center',
-                                      'background-color': app.hexToRgba(common[nodesExplore.map(x => x.name).includes(x) ? 'selVarColor' : 'varColor'])
+                                      'background-color': app.hexToRgba(common[selected ? 'selVarColor' : 'varColor'])
                                   }
-                              }, [
-                                  m('', {
-                                      oncreate(vnode) {
-                                          let plot = node.plottype === 'continuous' ? plots.densityNode : plots.barsNode;
-                                          plot(node, vnode.dom, 120, true);
-                                      }
-                                  }),
-                                  m('',
-                                    show && n0 && n0.name === x ? `${x} (x)`
+                              }, [m('', {
+                                  oncreate(vnode) {
+                                      let plot = node.plottype === 'continuous' ? plots.densityNode : plots.barsNode;
+                                      plot(node, vnode.dom, 120, true);
+                                  }}),
+                                  m('', show && n0 && n0.name === x ? `${x} (x)`
                                     : show && n1 && n1.name === x ? `${x} (y)`
                                     : show && n2 && n2.name === x ? `${x} (z)`
                                     : predictors ? [`${x}`, m('br'), `${predictors.join(', ')}`]
-                                    : x),
-                              ]);
-                          })))],
+                                    : x)
+                                 ]);
+                          }))
+                       )],
                 m('svg#whitespace')),
               model_mode && m("#spacetools.spaceTool", {style: {right: app.panelWidth['right'], 'z-index': 16}},
                               m(`button#btnLock.btn.btn-default`, {
