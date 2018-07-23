@@ -402,7 +402,7 @@ class Body {
                         }, 'go'),
                         m('br'),
                         m('', {style: `display: flex; flex-direction: row; flex-wrap: wrap`},
-                          (discovery ? app.disco : valueKey).map(x => {
+                          (discovery ? app.disco : valueKey).map((x, i) => {
                               let selected = discovery ? x === app.disco[app.selectedProblem] : nodesExplore.map(x => x.name).includes(x);
                               let {predictors} = x;
                               if (x.predictors) {
@@ -412,7 +412,7 @@ class Body {
                               let show = app.exploreVariate === 'Bivariate' || app.exploreVariate === 'Trivariate';
                               let [n0, n1, n2] = nodesExplore;
                               return m('span', {
-                                  onclick: _ => app.clickVar(x, nodesExplore),
+                                  onclick:  _ => discovery ? app.setSelectedProblem(i) : app.clickVar(x, nodesExplore),
                                   onmouseover: function() {
                                       $(this).popover('toggle');
                                       $('body div.popover')
