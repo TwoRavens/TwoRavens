@@ -371,11 +371,16 @@ class Body {
             m(`#main`, {style: {overflow}},
               m("#innercarousel.carousel-inner", {style: {height: '100%', overflow}},
                 explore_mode
-                && [exploreVars
-                    ? m('', {style},
+                && [variate === 'problem' ?
+                    m('', {style},
                         m('a', {onclick: _ => m.route.set('/explore')}, '<- back to variables'),
                         m('br'),
-                        exploreVars)
+                      JSON.stringify(app.disco[app.selectedProblem]))
+                    : exploreVars ?
+                    m('', {style},
+                      m('a', {onclick: _ => m.route.set('/explore')}, '<- back to variables'),
+                      m('br'),
+                      exploreVars)
                     : m('', {style},
                         m(ButtonRadio,
                           {id: 'exploreButtonBar',
