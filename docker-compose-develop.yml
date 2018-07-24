@@ -35,7 +35,8 @@ services:
       - TA2_TEST_SERVER_URL=ta2-main:50051
       #- CONFIG_JSON_PATH=/ravens_volume/config_o_4550seed.json
       #- CONFIG_JSON_PATH=/ravens_volume/config_o_196.json
-    command: /usr/bin/d3m_start.sh
+    entrypoint: ["d3m_start.sh"]
+    #/usr/bin/d3m_start.sh
     links:
       - rook-service
     ports:
@@ -66,7 +67,11 @@ services:
     image: redis:4.0
     expose:
       - "6379"
+  # -------------------------
+  # 3 of 6: rook
+  # -------------------------
   rook-service:
+    #image: rookit:latest
     image: tworavens/ravens-r-service:develop
     environment:
       # Note: this variable is also set in Dockerfile-r-service
