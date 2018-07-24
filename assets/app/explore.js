@@ -1520,7 +1520,11 @@ export async function explore() {
     m.redraw();
 }
 
-export async function plot(plotNodes, plottype="") {
+export async function plot(plotNodes, plottype="", problem={}) {
+
+//for now, to get a single plot in there for DP plots...
+plotNodes = plotNodes.length===0 ? [app.findNodeIndex(problem.predictors[0],true),app.findNodeIndex(problem.target,true)] : plotNodes;
+
     const colors = [
         "#e6194b", "#3cb44b", "#ffe119", "#0082c8", "#f58231", "#911eb4", "#46f0f0",
         "#f032e6", "#d2f53c", "#fabebe", "#008080", "#e6beff", "#aa6e28", "#fffac8",

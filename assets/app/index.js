@@ -309,6 +309,11 @@ class Body {
                 let node = app.findNode(x);
                 node && expnodes.push(node);
             });
+            if (variate=="problem") {
+                return m('', [
+                m('#plot', {style: 'display: block', oncreate: _ => exp.plot([],"",app.disco[app.selectedProblem])})
+                ]);
+            }
             if (!expnodes[0] && !expnodes[1]) {
                 return;
             }
@@ -396,7 +401,8 @@ class Body {
                     m('', {style},
                         m('a', {onclick: _ => m.route.set('/explore')}, '<- back to variables'),
                         m('br'),
-                      JSON.stringify(app.disco[app.selectedProblem]))
+                        exploreVars)
+//                        JSON.stringify(app.disco[app.selectedProblem]))
                     : exploreVars ?
                     m('', {style},
                       m('a', {onclick: _ => m.route.set('/explore')}, '<- back to variables'),
