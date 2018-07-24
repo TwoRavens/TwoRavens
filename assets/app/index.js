@@ -124,7 +124,14 @@ function leftpanel(mode) {
                          if (prob) {
                              let {target, predictors} = prob;
                              app.erase('Discovery');
-                             [target].concat(predictors).map(x => app.clickVar(x));
+                             (app.zparams.zdv = [target]).concat(predictors).map(x => app.clickVar(x));
+                             //app.zparams.zgroup1 = app.zparams.vars = predictors;
+                             predictors.forEach(x => app.findNode(x).group1 = true);
+                             let d = app.findNode(target);
+                             app.setColors(d, app.dvColor);
+                             app.legend(app.dvColor);
+                             d.group1 = d.group2 = false;
+                             app.restart();
                          }
                      }, 500);
                  }, title: 'Model problem'}, 'Model problem')
