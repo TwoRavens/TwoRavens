@@ -20,7 +20,7 @@ from tworaven_apps.eventdata_queries.mongo_retrieve_util import MongoRetrieveUti
 def check_mongo():
     """test"""
     # ['cline_phoenix_nyt', 'icews', 'cline_phoenix_swb', 'acled_asia', 'cline_speed', 'acled_africa', 'acled_middle_east', 'cline_phoenix_fbis']
-    mr = MongoRetrieveUtil('acled_africa', '*')
+    mr = MongoRetrieveUtil('cline_phoenix_fbis', '*')
     if mr.has_error():
         print(mr.error_message)
 

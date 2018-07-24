@@ -27,7 +27,7 @@ urlpatterns = [
          views.api_upload_to_dataverse,
          name='api_upload_to_dataverse'
          ),
-    re_path(r'api/publish-dataset/(?P<dataset_id>[0-9]{1,10})$',
+    re_path(r'api/publish-dataset/(?P<query_id>[0-9]{1,10})$',
          views.api_publish_dataset,
          name='api_publish_dataset'
          ),
