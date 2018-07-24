@@ -1,0 +1,10 @@
+{
+    "dataset_schema": "/ravens_volume/test_data/TR1_Greed_Versus_Grievance/TRAIN/dataset_TRAIN/datasetDoc.json",
+    "problem_schema": "/ravens_volume/test_data/TR1_Greed_Versus_Grievance/TRAIN/problem_TRAIN/problemDoc.json",
+    "training_data_root": "/ravens_volume/test_data/TR1_Greed_Versus_Grievance/TRAIN/dataset_TRAIN",
+    "problem_root": "/ravens_volume/test_data/TR1_Greed_Versus_Grievance/TRAIN/problem_TRAIN",
+    "pipeline_logs_root": "/ravens_volume/test_output/TR1_Greed_Versus_Grievance/pipelines",
+    "executables_root": "/ravens_volume/test_output/TR1_Greed_Versus_Grievance/executables",
+    "temp_storage_root": "/ravens_volume/test_output/TR1_Greed_Versus_Grievance/temp_storage_root",
+    "user_problems_root": "/ravens_volume/test_output/TR1_Greed_Versus_Grievance/user_problems_root"
+}

@@ -1,0 +1,10 @@
+{
+    "dataset_schema": "/ravens_volume/test_data/196_autoMpg/TRAIN/dataset_TRAIN/datasetDoc.json",
+    "problem_schema": "/ravens_volume/test_data/196_autoMpg/TRAIN/problem_TRAIN/problemDoc.json",
+    "training_data_root": "/ravens_volume/test_data/196_autoMpg/TRAIN/dataset_TRAIN",
+    "problem_root": "/ravens_volume/test_data/196_autoMpg/TRAIN/problem_TRAIN",
+    "pipeline_logs_root": "/ravens_volume/test_output/196_autoMpg/pipelines",
+    "executables_root": "/ravens_volume/test_output/196_autoMpg/executables",
+    "temp_storage_root": "/ravens_volume/test_output/196_autoMpg/temp_storage_root",
+    "user_problems_root": "/ravens_volume/test_output/196_autoMpg/user_problems_root"
+}

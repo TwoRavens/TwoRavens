@@ -1,0 +1,10 @@
+{
+    "dataset_schema": "/ravens_volume/test_data/TR3b_PITF/TRAIN/dataset_TRAIN/datasetDoc.json",
+    "problem_schema": "/ravens_volume/test_data/TR3b_PITF/TRAIN/problem_TRAIN/problemDoc.json",
+    "training_data_root": "/ravens_volume/test_data/TR3b_PITF/TRAIN/dataset_TRAIN",
+    "problem_root": "/ravens_volume/test_data/TR3b_PITF/TRAIN/problem_TRAIN",
+    "pipeline_logs_root": "/ravens_volume/test_output/TR3b_PITF/pipelines",
+    "executables_root": "/ravens_volume/test_output/TR3b_PITF/executables",
+    "temp_storage_root": "/ravens_volume/test_output/TR3b_PITF/temp_storage_root",
+    "user_problems_root": "/ravens_volume/test_output/TR3b_PITF/user_problems_root"
+}
