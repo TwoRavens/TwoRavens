@@ -127,7 +127,11 @@
     "target_agent": "phoenix",
     "target_root": "ISO-3",
     "target_others": "phoenix",
-    "country_constructed": "ISO-3"
+    "country_constructed": "ISO-3",
+    "goldstein": "goldstein",
+    "month": "%m",
+    "day": "%d",
+    "year": "%Y"
   },
   "deconstruct": {
     "source_others": ";",

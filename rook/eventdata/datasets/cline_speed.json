@@ -470,7 +470,10 @@
     "VIC_TYPE": "SPEED_vic_type",
     "victim_effect": "SPEED_victim_effect",
     "weapon": "SPEED_weapon",
-    "country_constructed": "ISO-3"
+    "country_constructed": "ISO-3",
+    "month": "%m",
+    "day": "%d",
+    "year": "%Y"
   },
   "citations": [
     {

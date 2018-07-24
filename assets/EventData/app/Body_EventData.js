@@ -32,6 +32,7 @@ import CanvasResults from "./canvases/CanvasResults";
 
 import SaveQuery from "./views/SaveQuery";
 import {TreeQuery, TreeVariables} from "./views/TreeSubset";
+import {getSubsetMetadata} from "./app";
 
 export default class Body_EventData {
 
@@ -236,6 +237,45 @@ export default class Body_EventData {
                 }, {Aligned: [], Unaligned: []});
             subsetLists['Unaligned'].push('Custom');
 
+            let popoverContentSubset = (subset) => {
+                let metadata = app.genericMetadata[app.selectedDataset]['subsets'][subset];
+                if (!metadata) return;
+                let {alignments, formats, columns} = app.getSubsetMetadata(app.selectedDataset, subset);
+                let text = '<table class="table table-sm table-striped" style="margin-bottom:0"><tbody>';
+                let div = (name, val) =>
+                    text += `<tr><th>${name}</th><td><p class="text-left">${val}</p></td></tr>`;
+                columns.length && div('Columns', columns.join(', '));
+                formats.length && div('Formats', formats.join(', '));
+                alignments.length && div('Alignments', alignments.join(', '));
+
+                if ('type' in metadata) div('Type', metadata['type']);
+                if ('structure' in metadata) div('Structure', metadata['structure']);
+                if ('tabs' in metadata) div('Tabs', Object.keys(metadata['tabs']).join(', '));
+                if ('group_by' in metadata) div('Group By', metadata['group_by']);
+                return text + '</tbody></table>';
+            };
+
+            let popoverContentVariable = (variable) => {
+                let metadata = app.genericMetadata[app.selectedDataset];
+                let text = '<table class="table table-sm table-striped" style="margin-bottom:0"><tbody>';
+                let div = (name, val) =>
+                    text += `<tr><th>${name}</th><td><p class="text-left">${val}</p></td></tr>`;
+
+                if ('formats' in metadata) {
+                    let format = metadata['formats'][variable];
+                    format && div('Format', format);
+                }
+                if ('alignments' in metadata) {
+                    let alignment = metadata['alignments'][variable];
+                    alignment && div('Alignment', alignment);
+                }
+                if ('deconstruct' in metadata) {
+                    let deconstruct = metadata['deconstruct'][variable];
+                    deconstruct && div('Delimiter', deconstruct);
+                }
+                return text + '</tbody></table>';
+            };
+
             return m(Panel, {
                 side: 'left',
                 label: 'Data Selection',
@@ -262,7 +302,12 @@ export default class Body_EventData {
                                     items: app.genericMetadata[app.selectedDataset]['columns'].filter(col => col.includes(app.variableSearch)),
                                     colors: {[common.selVarColor]: app.selectedVariables},
                                     callback: app.toggleSelectedVariable,
-                                    attrsAll: {style: {height: 'calc(100% - 44px)', overflow: 'auto'}}
+                                    attrsAll: {style: {height: 'calc(100% - 44px)', overflow: 'auto'}},
+                                    popup: popoverContentVariable,
+                                    attrsItems: {
+                                        'data-placement': 'right',
+                                        'data-container': '#variablesList'
+                                    }
                                 })
                             ]
                         },
@@ -280,7 +325,13 @@ export default class Body_EventData {
                                             id: 'subsetsList' + key,
                                             items: subsetLists[key],
                                             colors: {[common.selVarColor]: app.selectedCanvas === 'Custom' ? ['Custom'] : [app.selectedSubsetName]},
-                                            callback: (subset) => (subset === 'Custom' ? app.setSelectedCanvas : app.setSelectedSubsetName)(subset)
+                                            callback: (subset) => (subset === 'Custom' ? app.setSelectedCanvas : app.setSelectedSubsetName)(subset),
+                                            popup: popoverContentSubset,
+                                            attrsItems: {
+                                                'data-placement': 'right',
+                                                'data-container': '#subsetsMenu',
+                                                'data-delay': 500
+                                            }
                                         })
                                     }))
                             })

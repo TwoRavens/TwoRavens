@@ -95,6 +95,9 @@ eventdata.app <- function(env) {
 
             connect = mongolite::mongo(collection = dataset, db = "event_data", url = mongo_url)
 
+            if (type == 'count') {
+                data = connect$count(query)
+            }
             if (type == 'find') {
                 data = connect$find(query)
             }
@@ -104,15 +107,17 @@ eventdata.app <- function(env) {
             if (type == 'distinct') {
                 data = connect$distinct(key, query)
             }
-            if (type == 'count') {
-                data = connect$count(query)
-            }
             rm(connect)
             return(data)
         }
 
         if (datasetMetadata$host == 'UTDallas') {
             url = paste(EVENTDATA_PRODUCTION_SERVER_ADDRESS, EVENTDATA_SERVER_API_KEY, "&datasource=", dataset, sep = "")
+            if (type == 'count') {
+                query_escaped = Rook::Utils$escape(paste('[{"$match":', query, '}, {"$count": "total"}]', sep=""))
+                data = readLines(paste(url, '&aggregate=', query_escaped, sep = ""), warn = FALSE)
+                return(tryCatch({jsonlite::fromJSON(data)$data$total}, error = genericErrorHandler))
+            }
             query_escaped = Rook::Utils$escape(query)
             if (type == 'find') {
                 data = readLines(paste(url, '&query=', query_escaped, sep = ""), warn = FALSE)
@@ -124,15 +129,7 @@ eventdata.app <- function(env) {
             if (type == 'distinct') {
                 data = readLines(paste(url, '&query=', query_escaped, '&unique=', key, sep = ""), warn = FALSE)
             }
-            if (type == 'count') {
-                data = readLines(paste(url, '&aggregate=', '[{"$match":', query, '}, {"$count": "total"}]', sep = ""), warn = FALSE)
-                return(tryCatch({
-                    return(jsonlite::fromJSON(data)$data)
-                }, error = genericErrorHandler)$total)
-            }
-            tryCatch({
-                return(jsonlite::fromJSON(data)$data)
-            }, error = genericErrorHandler)
+            return(tryCatch({jsonlite::fromJSON(data)$data}, error = genericErrorHandler))
         }
     }
 

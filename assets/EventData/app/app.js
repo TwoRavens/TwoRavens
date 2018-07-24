@@ -3,6 +3,7 @@ import {dateSort} from "./canvases/CanvasDate";
 
 import * as common from '../../common-eventdata/common';
 import * as query from './query';
+import {swandive} from "../../app/app";
 
 // Note: The ROOK_SVC_URL is set by django in /templates/index.html
 export let subsetURL = ROOK_SVC_URL + 'eventdataapp';
@@ -318,6 +319,33 @@ async function updatePeek() {
 window.addEventListener('storage', onStorageEvent);
 
 // ~~~~ GLOBAL FUNCTIONS ~~~~
+export let getSubsetMetadata = (dataset, subset) => {
+
+    let subsetMetadata = genericMetadata[dataset]['subsets'][subset];
+    if (!subsetMetadata) return;
+
+    let columns = coerceArray(subsetMetadata['columns']);
+    if (subsetMetadata['type'] === 'dyad') Object.keys(subsetMetadata['tabs'])
+        .forEach(tab => columns = columns.concat([subsetMetadata['tabs'][tab]['full'], ...subsetMetadata['tabs'][tab]['filters']]));
+
+    let alignments = columns
+        .filter(column => column in genericMetadata[dataset]['alignments'])
+        .map(column => genericMetadata[dataset]['alignments'][column]);
+
+    let formats = columns
+        .filter(column => column in genericMetadata[dataset]['formats'])
+        .map(column => genericMetadata[dataset]['formats'][column]);
+
+    if (subsetMetadata['type'] === 'categorical')
+        formats = formats.concat(coerceArray(subsetMetadata['formats']));
+
+    columns = [...new Set(columns)];
+    alignments = [...new Set(alignments)];
+    formats = [...new Set(formats)];
+
+    return {alignments, formats, columns};
+};
+
 export let loadSubset = (subsetName) => {
     if (isLoading[subsetName] || subsetName === 'Custom') return;
     isLoading[subsetName] = true;
@@ -329,22 +357,7 @@ export let loadSubset = (subsetName) => {
         }
     }
 
-    let subsetMetadata = genericMetadata[selectedDataset]['subsets'][selectedSubsetName];
-
-    let columns = coerceArray(subsetMetadata['columns']);
-    if (subsetMetadata['type'] === 'dyad') Object.keys(subsetMetadata['tabs'])
-        .forEach(tab => columns = columns.concat([subsetMetadata['tabs'][tab]['full'], ... subsetMetadata['tabs'][tab]['filters']]));
-
-    let alignments = columns
-        .filter(column => column in genericMetadata[selectedDataset]['alignments'])
-        .map(column => genericMetadata[selectedDataset]['alignments'][column]);
-
-    let formats = columns
-        .filter(column => column in genericMetadata[selectedDataset]['formats'])
-        .map(column => genericMetadata[selectedDataset]['formats'][column]);
-
-    if (subsetMetadata['type'] === 'categorical')
-        formats = formats.concat(coerceArray(subsetMetadata['formats']));
+    let {alignments, formats} = getSubsetMetadata(selectedDataset, subsetName);
 
     m.request({
         url: subsetURL,

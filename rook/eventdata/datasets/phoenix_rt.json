@@ -129,7 +129,11 @@
     "tgt_actor": "ISO-3",
     "tgt_agent": "phoenix",
     "tgt_other_agent": "phoenix",
-    "country_code": "ISO-3"
+    "country_code": "ISO-3",
+    "goldstein": "goldstein",
+    "month": "%m",
+    "day": "%d",
+    "year": "%Y"
   },
   "deconstruct": {
     "src_other_agent": ";",

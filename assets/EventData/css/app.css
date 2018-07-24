@@ -1,3 +1,11 @@
+div#leftpanel .popover {
+    max-width: none;
+}
+
+div#leftpanel .popover-content {
+    padding: 9px 0;
+}
+
 main#EventData .loader {
     border: 10px solid #f5f5f5;
     border-top: 10px solid #419641;

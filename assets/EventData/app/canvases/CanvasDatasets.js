@@ -78,36 +78,19 @@ export default class CanvasDatasets {
                     m(Table, {
                         headers: ['label', 'subset', 'alignments', 'formats', 'columns'].map(name => m('[style=margin:0 0.5em]', name)),
                         data: Object.keys(tempDataset['subsets'] || {}).map(label => {
-                            let subset = tempDataset['subsets'][label];
 
-                            let columns = [];
-                            if (subset['type'] === 'dyad') {
-                                Object.keys(subset['tabs']).map(tab => {
-                                    columns.push(subset['tabs'][tab]['full']);
-                                    columns = columns.concat(subset['tabs'][tab]['filters'])
-                                });
-                                columns = [...new Set(columns)]; // remove duplicates
-                            } else columns = app.coerceArray(subset['columns']);
-
-                            let alignments = columns
-                                .filter(column => column in tempDataset['alignments'])
-                                .map(column => tempDataset['alignments'][column]);
-
-                            let formats = columns
-                                .filter(column => column in tempDataset['formats'])
-                                .map(column => tempDataset['formats'][column]);
-                            formats = formats.concat(app.coerceArray(tempDataset['subsets'][label]['formats']));
+                            let {alignments, formats, columns} = app.getSubsetMetadata(this.dataset, label);
 
                             return [
                                 label,
                                 tempDataset['subsets'][label]['type'],
                                 alignments.length !== 0 && m(ListTags, {
-                                    tags: [...new Set(alignments)],
+                                    tags: alignments,
                                     readonly: true,
                                     attrsTags: {style: {'padding-left': '4px', background: 'rgba(192, 192, 192, 0.5)'}}
                                 }),
                                 formats.length !== 0 && m(ListTags, {
-                                    tags: [...new Set(formats)],
+                                    tags: formats,
                                     readonly: true,
                                     attrsTags: {style: {'padding-left': '4px', background: 'rgba(192, 192, 192, 0.5)'}}
                                 }),

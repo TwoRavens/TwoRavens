@@ -115,7 +115,7 @@ export default class MonadSelection {
             'data-trigger': 'hover',
             'onmouseover': function (e) {
                 e.redraw = false;
-                let translation = value === undefined
+                let translation = (value === undefined || value === '')
                     ? ''
                     : 'token_length' in metadata
                         ? value.match(new RegExp(`.{${metadata['token_length']}}`, 'g'))
