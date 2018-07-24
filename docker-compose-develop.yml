@@ -1,0 +1,100 @@
+# TwoRavens application
+# - This compose file uses these images:
+#   (1) TwoRavens specific images
+#       - Repository: https://hub.docker.com/r/tworavens
+#       - Tag: "develop"
+#   (2) "General" images from dockerhub
+#       - redis
+#       -
+# - In
+version: '3'
+
+services:
+  # -------------------------
+  # 1 of 6: TwoRavens - TA3 main app
+  #  - Listed 1st b/c contains the /ravens_volume data
+  # -------------------------
+  tworavens:
+    image: tworavens/ravens-main:develop
+    environment:
+      # ----------------------------------
+      # Redis connection
+      # ----------------------------------
+      - REDIS_HOST=redis
+      # ---------------------------------------------------
+      # If True, don't use an actual TA2, returns canned responses
+      # ---------------------------------------------------
+      - TA2_STATIC_TEST_MODE=True
+      # ---------------------------------------------------
+      # Local files/sqlite db; shared between this container and celery
+      # ---------------------------------------------------
+      - LOCAL_SETUP_DIR=/ravens_volume/2ravens_local_setup
+      # ---------------------------------------------------
+      # Example of specifying a TA2 service
+      # ---------------------------------------------------
+      - TA2_TEST_SERVER_URL=ta2-main:50051
+      #- CONFIG_JSON_PATH=/ravens_volume/config_o_4550seed.json
+      #- CONFIG_JSON_PATH=/ravens_volume/config_o_196.json
+    command: /usr/bin/d3m_start.sh
+    links:
+      - rook-service
+    ports:
+      - 8080:8080
+    #expose:
+    #  - "8080"
+    volumes:
+      - ravens-volume:/ravens_volume
+  # -------------------------
+  # 1 of 6: Ravens nginx
+  # -------------------------
+  #nginx:
+  #  image: tworavens/ravens-nginx:develop
+  #  links:
+  #    - rook-service:rook-service
+  #    - tworavens:tworavens
+  #  ports:
+  #    - 80:80
+  #  depends_on:
+  #    - tworavens
+  #    - rook-service
+  #  volumes:
+  #    - ravens-volume:/ravens_volume
+  # -------------------------
+  # 2 of 6: redis
+  # -------------------------
+  redis:
+    image: redis:4.0
+    expose:
+      - "6379"
+  rook-service:
+    image: tworavens/ravens-r-service:develop
+    environment:
+      # Note: this variable is also set in Dockerfile-r-service
+      - ROOK_USE_PRODUCTION_MODE=yes
+    ports:
+      - 8000:8000
+    volumes:
+      - ./ravens_volume:/ravens_volume
+      # ----------------------------------
+      # D3M: new mount paths containing
+      # config, etc
+      # ----------------------------------
+      #- name: input-data
+      #  mountPath: /input
+      #  readOnly: true
+      #- name: output-data
+      #  mountPath: /output
+      #  readOnly: false
+
+  #ta2-main:
+  #  image: registry.datadrivendiscovery.org/ta2/isi_ta2:latest
+  #  environment:
+  #    - CONFIG_JSON_PATH=/ravens_volume/config_o_196.json
+  #  volumes:
+  #    - ./ravens_volume:/ravens_volume
+  #  ports:
+  #    # 50051: grpc connection
+  #    - 50051:50051
+volumes:
+  ravens-volume:
+  #dbdata:
