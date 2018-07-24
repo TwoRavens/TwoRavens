@@ -105,9 +105,9 @@ preprocess.app <- function(env){
     # This reg expression stopped working with .csv.gz extensions:
     #merge_name_stub <- sub("(.*\\/)([^.]+)(\\.[[:alnum:]]+$)", "\\2", mydataloc)   # Extract the filename stub from the provided training data path.  Generally "trainData".
 
-    rook_output_data <- paste(PRE_PATH, mydatastub, "/data/", sep="")
-    rook_output_images <- paste(PRE_PATH, mydatastub, "/images/", sep="")
-    rook_output_preprocess <- paste(PRE_PATH, mydatastub, "/preprocess/", sep="")
+    rook_output_data <- paste(PREPROCESS_OUTPUT_PATH, mydatastub, "/data/", sep="")
+    rook_output_images <- paste(PREPROCESS_OUTPUT_PATH, mydatastub, "/images/", sep="")
+    rook_output_preprocess <- paste(PREPROCESS_OUTPUT_PATH, mydatastub, "/preprocess/", sep="")
 
     # R won't write to a directory that doesn't exist.
     if (!dir.exists(rook_output_data)){

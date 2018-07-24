@@ -12,12 +12,31 @@ print(paste("production: ", production, sep=""))
 d3m_mode <- TRUE
 addPrivacy<-TRUE      ## Toggle:  TRUE - Add .apps for differential privacy, FALSE - Do not add privacy .apps
 
-# to differentiate older Rapache code
-is_rapache_mode <- FALSE
+# -------------------------------------
+# start: rook output file path
+# -------------------------------------
+# Set the path where rook apps can write output
+#
+default_output_path <- paste(getwd(), "/rook-files/", sep="")
+PREPROCESS_OUTPUT_PATH <- Sys.getenv(x='PREPROCESS_OUTPUT_PATH', unset=default_output_path)
 
+# Make sure the path exists
+#
+if (nchar(PREPROCESS_OUTPUT_PATH)==0){
+	print("EXISTING: PREPROCESS_OUTPUT_PATH is not set.")
+	stop()
+}
 
-## Set paths where rook apps can write output
-PRE_PATH <- paste(getwd(), "/rook-files/", sep="")
+# Make sure the path ends with "/"
+#
+if(substring(PREPROCESS_OUTPUT_PATH, nchar(PREPROCESS_OUTPUT_PATH)) != "/"){
+	 PREPROCESS_OUTPUT_PATH <- paste(PREPROCESS_OUTPUT_PATH, "/", sep="")
+}
+print(paste("PREPROCESS_OUTPUT_PATH: ", PREPROCESS_OUTPUT_PATH, sep=""))
+
+# -------------------------------------
+# end: rook output file path
+# -------------------------------------
 
 if(production){
 	server_name <- ""
