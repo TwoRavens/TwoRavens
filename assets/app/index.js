@@ -124,7 +124,7 @@ function leftpanel(mode) {
                          if (prob) {
                              let {target, predictors} = prob;
                              app.erase('Discovery');
-                             (app.zparams.zdv = [target]).concat(predictors).map(x => app.clickVar(x));
+                             [target].concat(predictors).map(x => app.clickVar(x));
                              //app.zparams.zgroup1 = app.zparams.vars = predictors;
                              predictors.forEach(x => app.findNode(x).group1 = true);
                              let d = app.findNode(target);
