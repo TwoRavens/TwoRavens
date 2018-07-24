@@ -93,7 +93,7 @@ class EventJobUtil(object):
         else:
             print("event data obj ", event_obj.as_dict()['query'])
             json_dump = json.dumps(event_obj.as_dict()['query'])
-            temp_file_obj = NamedTemporaryFile(json_dump)
+            temp_file_obj = TemporaryFileMaker(json_dump)
 
             succ, res_obj = temp_file_obj.return_status()
             print("res po", res_obj)
@@ -179,7 +179,7 @@ class EventJobUtil(object):
 
 
     @staticmethod
-    def publish_dataset(dataset_id):
+    def publish_dataset(query_id):
         """ publish dataset
         might be using dataset_id later according to actual API request
         """
@@ -188,11 +188,11 @@ class EventJobUtil(object):
         succ, res = job.return_status()
         if succ:
             success, res_info = job2.return_status()
-            print("Res : ********* : ", res_info)
+            # print("Res : ********* : ", res_info)
             if success:
                 job_archive = ArchiveQueryJob()
                 for d in res_info['data']['latestVersion']['files']:
-                    print("*******")
+                    # print("*******")
                     file_id = d['dataFile']['id']
                     file_url = d['dataFile']['pidURL']
                     success, archive_job = job_archive.get_objects_by_id(file_id)
@@ -218,5 +218,21 @@ class EventJobUtil(object):
 
         else:
             return err_resp(res)
+
+
+    @staticmethod
+    def upload_query_result(json_obj):
+        """ upload query result to dataverse"""
+        json_dump = json.dumps(json_obj)
+        temp_file_obj = TemporaryFileMaker(json_dump)
+
+        succ, res_obj = temp_file_obj.return_status()
+        print("query result upload : ", res_obj)
+
+        if succ:
+            return ok_resp(res_obj)
+
+        else:
+            return err_resp(res_obj)
 
 
