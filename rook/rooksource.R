@@ -93,13 +93,19 @@ if(!is_rapache_mode){
         stop()
     }
 
+    # Allow listening outside of the local host
+    #
     unlockBinding("httpdPort", environment(tools:::startDynamicHelp))
     assign("httpdPort", myPort, environment(tools:::startDynamicHelp))
 
+    # Start the http server
+    #
     R.server <- Rhttpd$new()
 
     cat("Type:", typeof(R.server), "Class:", class(R.server))
 
+    # Set the IP Address and Port
+    #
     R.server$listenAddr <- myInterface
     R.server$listenPort <- myPort
 }
