@@ -125,8 +125,11 @@ function leftpanel(mode) {
                              let {target, predictors} = prob;
                              app.erase('Discovery');
                              [target].concat(predictors).map(x => app.clickVar(x));
-                             //app.zparams.zgroup1 = app.zparams.vars = predictors;
-                             predictors.forEach(x => app.findNode(x).group1 = true);
+                             predictors.forEach(x => {
+                                 let d = app.findNode(x);
+                                 app.setColors(d, app.gr1Color);
+                                 app.legend(app.gr1Color);
+                             });
                              let d = app.findNode(target);
                              app.setColors(d, app.dvColor);
                              app.legend(app.dvColor);
