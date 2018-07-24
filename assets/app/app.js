@@ -1980,7 +1980,7 @@ function updateNode(id, nodes) {
  every time a variable in leftpanel is clicked, nodes updates and background color changes
  */
 export function clickVar(elem, $nodes) {
-    if (is_explore_mode && !$nodes.map(x => x.name).includes(elem)) {
+    if (is_explore_mode && $nodes && !$nodes.map(x => x.name).includes(elem)) {
         let max = exploreVariate === 'Univariate' ? 1
             : exploreVariate === 'Bivariate' ? 2
             : exploreVariate === 'Trivariate' ? 3
@@ -3010,9 +3010,8 @@ export function legend() {
 /**
    programmatically deselect every selected variable
 */
-export function erase() {
-    setLeftTab('Variables');
-
+export function erase(disc) {
+    setLeftTab(disc == 'Discovery' ? 'Discovery' : 'Variables');
     valueKey.forEach(function(element){
       if (zparams.zdv.concat(zparams.znom, zparams.zvars).includes(element))   // names start with varList now
         clickVar(element);
@@ -3171,7 +3170,7 @@ export let hexToRgba = hex => {
 /**
    takes node and color and updates zparams
 */
-function setColors(n, c) {
+export function setColors(n, c) {
     if (n.strokeWidth == '1') {
         if (c == gr1Color){
             var tempindex = zparams.zgroup1.indexOf(n.name);
