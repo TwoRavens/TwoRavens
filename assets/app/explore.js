@@ -1522,9 +1522,6 @@ export async function explore() {
 
 export async function plot(plotNodes, plottype="", problem={}) {
 
-//for now, to get a single plot in there for DP plots...
-plotNodes = plotNodes.length===0 ? [app.findNodeIndex(problem.predictors[0],true),app.findNodeIndex(problem.target,true)] : plotNodes;
-
     const colors = [
         "#e6194b", "#3cb44b", "#ffe119", "#0082c8", "#f58231", "#911eb4", "#46f0f0",
         "#f032e6", "#d2f53c", "#fabebe", "#008080", "#e6beff", "#aa6e28", "#fffac8",
@@ -1537,29 +1534,29 @@ plotNodes = plotNodes.length===0 ? [app.findNodeIndex(problem.predictors[0],true
     app.zPop();
     console.log('zpop:', app.zparams);
 
-    let getPlotType = (pt) => {
+    let getPlotType = (pt,pn) => {
     
-        // returns true if uniques is equal to, one less than, or two less than the number of valid observations
+    // returns true if uniques is equal to, one less than, or two less than the number of valid observations
         function uniqueValids (pn) {
             return pn.uniques===pn.valid ? true :
                 pn.uniques===pn.valid-1 ? true :
                 pn.uniques===pn.valid-2 ? true : false;
         }
         
-        if(plotNodes.length>3) return['scattermatrix','aaa'];
+        if(pn.length>3) return['scattermatrix','aaa'];
         let myCons = [];
         let vt = "";
         
-        for (var i=0; i<plotNodes.length; i++) {
-            myCons[i] = plotNodes[i].plottype === 'continuous' ? true : false;
-            plotNodes[i].plottype === 'continuous' ? vt=vt+'q' : vt=vt+'n';
+        for (var i=0; i<pn.length; i++) {
+            myCons[i] = pn[i].plottype === 'continuous' ? true : false;
+            pn[i].plottype === 'continuous' ? vt=vt+'q' : vt=vt+'n';
         }
         
         if(pt != "") return [pt,vt];
         
-        if(plotNodes.length==2) {
+        if(pn.length==2) {
             // check uniqueValids. if so, make difference from mean the default plot
-            let uvs = [uniqueValids(plotNodes[0]), uniqueValids(plotNodes[1])];
+            let uvs = [uniqueValids(pn[0]), uniqueValids(pn[1])];
             console.log(uvs);
             if(uvs[0] === true && uvs[1] === false)
                 return ['averagediff', 'nq'];
@@ -1571,7 +1568,7 @@ plotNodes = plotNodes.length===0 ? [app.findNodeIndex(problem.predictors[0],true
                 !myCons[0] && myCons[1] ? ['box', 'nq'] :
                 ['stackedbar','nn'];
         }
-        if(plotNodes.length==3) {
+        if(pn.length==3) {
             return myCons[0] && myCons[1] && myCons[2] ? ['bubbleqqq','qqq'] :
                 myCons[0] && !myCons[1] && !myCons[2] ? ['horizgroupbar','qnn'] :
                 myCons[0] && myCons[1] && !myCons[2] ? ['scattertri','qqn'] :
@@ -1584,7 +1581,6 @@ plotNodes = plotNodes.length===0 ? [app.findNodeIndex(problem.predictors[0],true
         }
     };
     
-    
     function getNames(arr) {
         let myarr = [];
         for (var i=0; i<arr.length; i++) {
@@ -1594,67 +1590,6 @@ plotNodes = plotNodes.length===0 ? [app.findNodeIndex(problem.predictors[0],true
         return myarr;
     }
     
-    //testing
-    //plottype=["scattermatrix"];
-    
-    //testing
-    //plotNodes[2]=app.allNodes[app.findNodeIndex("Runs")];
-    plottype = getPlotType(plottype); // VJD: second element in array tags the variables for the plot e.g., qq means quantitative,quantitative; qn means quantitative,nominal
-    console.log(plotNodes);
-    let plotvars = getNames(plotNodes);
-    let zd3mdata = app.zparams.zd3mdata;
-    let jsonout = {plottype, plotvars, zd3mdata};
-    console.log(jsonout);
-
-    // write links to file & run R CMD
-    let json = await app.makeRequest(ROOK_SVC_URL + 'plotdataapp', jsonout);
-    if (!json) {
-        return;
-    }
-    
-    
-
-    let schema = plottype[0] === "box" ? box2d :
-        plottype[0] === "scatter" ? scatter :
-        plottype[0] === "stackedbar" ? stackedbar:
-        plottype[0] === "line" ? line:
-        plottype[0] === "tableheat" ? tableheat:
-        plottype[0] === "groupedbar" ? groupedbar:
-        plottype[0] === "strip" ? strip:
-        plottype[0] === "aggbar" ? aggbar:
-        plottype[0] === "binnedscatter" ? binnedscatter:
-        plottype[0] === "step" ? step:
-        plottype[0] === "area" ? area:
-        plottype[0] === "binnedtableheat" ? binnedtableheat:
-        plottype[0] === "averagediff" ? averagediff:
-        plottype[0] === "scattermeansd" ? scattermeansd:
-        plottype[0] === "scattermatrix" ? scattermatrix:
-        plottype[0] === "simplebar" ? simplebar:
-        plottype[0] === "histogram" ? histogram:
-        plottype[0] === "areauni" ? areauni:
-        plottype[0] === "histogrammean" ? histogrammean:
-        plottype[0] === "trellishist" ? trellishist:
-        plottype[0] === "interactivebarmean" ? interactivebarmean:
-        plottype[0] === "dot" ? dot:
-        plottype[0] === "horizon" ? horizon:
-        plottype[0] === "binnedcrossfilter" ? binnedcrossfilter:
-        plottype[0] === "scattertri" ? scattertri:
-        plottype[0] === "groupedbartri" ? groupedbartri:
-        plottype[0] === "bubbletri" ? bubbletri:
-        plottype[0] === "horizgroupbar" ? horizgroupbar:
-        plottype[0] === "bubbleqqq" ? bubbleqqq:
-        plottype[0] === "scatterqqq" ? scatterqqq:
-        plottype[0] === "trellisscatterqqn" ? trellisscatterqqn:
-        plottype[0] === "heatmapnnq" ? heatmapnnq:
-        plottype[0] === "dotdashqqn" ? dotdashqqn:
-        plottype[0] === "tablebubblennq" ? tablebubblennq:
-        plottype[0] === "stackedbarnnn" ? stackedbarnnn:
-        plottype[0] === "facetbox" ? facetbox:
-        plottype[0] === "facetheatmap" ? facetheatmap:
-        plottype[0] === "groupedbarnqq" ? groupedbarnqq:
-        alert("invalid plot type");
-    console.log(schema);
-
     // function returns whether to flip a plot. for example, if plot expects 'nq' and users gives 'qn', flip should return true. this may have to be generalized for 3+ dimension plots
     let plotflip = (pt) => {
         return  pt[0] === "box" && pt[1] === "qn" ? true :
@@ -1663,7 +1598,7 @@ plotNodes = plotNodes.length===0 ? [app.findNodeIndex(problem.predictors[0],true
     };
     
     // function to fill in the contents of the vega schema.
-    let fillVega = (data,flip) => {
+    let fillVega = (data,flip,schema) => {
         let stringified = JSON.stringify(schema);
         console.log(flip);
         if(flip) {
@@ -1719,8 +1654,99 @@ plotNodes = plotNodes.length===0 ? [app.findNodeIndex(problem.predictors[0],true
         console.log(stringified);
         return JSON.parse(stringified);
     };
-    let flip = plotflip(plottype);
-    vegaEmbed('#plot', fillVega(json,flip), {width: 800, height: 600});
+    
+    let myx = [];
+    let myy = {};
+    let mypn = [];
+    let vegajson = {};
+    let jsonarr = [];
+    
+    if(plotNodes.length===0) {
+        myy = app.findNodeIndex(problem.target,true);
+        for (var i=0; i<problem["predictors"].length; i++) {
+            myx[i] = app.findNodeIndex(problem.predictors[i],true);
+        }
+    } else {
+        myx[0] = "oneshot"; // necessary to work out the looping
+        mypn=plotNodes;
+    }
+    
+    for(var i=0; i<myx.length; i++) {
+        if(plotNodes.length===0) { // note only drawing bivariate plots 
+            mypn=[myx[i],myy];
+        }
+        plottype = i>0 ? "" : plottype;
+        plottype = getPlotType(plottype,mypn); // VJD: second element in array tags the variables for the plot e.g., qq means quantitative,quantitative; qn means quantitative,nominal
+        console.log(mypn);
+        let plotvars = getNames(mypn);
+        let zd3mdata = app.zparams.zd3mdata;
+        let jsonout = {plottype, plotvars, zd3mdata};
+        console.log(jsonout);
+
+        // write links to file & run R CMD
+        let json = await app.makeRequest(ROOK_SVC_URL + 'plotdataapp', jsonout);
+        if (!json) {
+            return;
+        }
+
+        let schema = plottype[0] === "box" ? box2d :
+            plottype[0] === "scatter" ? scatter :
+            plottype[0] === "stackedbar" ? stackedbar:
+            plottype[0] === "line" ? line:
+            plottype[0] === "tableheat" ? tableheat:
+            plottype[0] === "groupedbar" ? groupedbar:
+            plottype[0] === "strip" ? strip:
+            plottype[0] === "aggbar" ? aggbar:
+            plottype[0] === "binnedscatter" ? binnedscatter:
+            plottype[0] === "step" ? step:
+            plottype[0] === "area" ? area:
+            plottype[0] === "binnedtableheat" ? binnedtableheat:
+            plottype[0] === "averagediff" ? averagediff:
+            plottype[0] === "scattermeansd" ? scattermeansd:
+            plottype[0] === "scattermatrix" ? scattermatrix:
+            plottype[0] === "simplebar" ? simplebar:
+            plottype[0] === "histogram" ? histogram:
+            plottype[0] === "areauni" ? areauni:
+            plottype[0] === "histogrammean" ? histogrammean:
+            plottype[0] === "trellishist" ? trellishist:
+            plottype[0] === "interactivebarmean" ? interactivebarmean:
+            plottype[0] === "dot" ? dot:
+            plottype[0] === "horizon" ? horizon:
+            plottype[0] === "binnedcrossfilter" ? binnedcrossfilter:
+            plottype[0] === "scattertri" ? scattertri:
+            plottype[0] === "groupedbartri" ? groupedbartri:
+            plottype[0] === "bubbletri" ? bubbletri:
+            plottype[0] === "horizgroupbar" ? horizgroupbar:
+            plottype[0] === "bubbleqqq" ? bubbleqqq:
+            plottype[0] === "scatterqqq" ? scatterqqq:
+            plottype[0] === "trellisscatterqqn" ? trellisscatterqqn:
+            plottype[0] === "heatmapnnq" ? heatmapnnq:
+            plottype[0] === "dotdashqqn" ? dotdashqqn:
+            plottype[0] === "tablebubblennq" ? tablebubblennq:
+            plottype[0] === "stackedbarnnn" ? stackedbarnnn:
+            plottype[0] === "facetbox" ? facetbox:
+            plottype[0] === "facetheatmap" ? facetheatmap:
+            plottype[0] === "groupedbarnqq" ? groupedbarnqq:
+            alert("invalid plot type");
+    //    console.log(schema);
+
+        let flip = plotflip(plottype);
+        jsonarr[i] = fillVega(json,flip,schema);
+    }
+    
+    if(jsonarr.length===1) {
+        vegajson = jsonarr[0];
+    } else {
+        vegajson = "{\"vconcat\":[";
+        for(var i=0; i<jsonarr.length; i++) {
+            vegajson = vegajson + JSON.stringify(jsonarr[i]) + ",";
+        }
+        vegajson = vegajson.slice(0,-1);
+        vegajson = vegajson + "],\"config\":{\"axisY\":{\"minExtent\":30}}}";
+        vegajson = JSON.parse(vegajson);
+    }
+    console.log(vegajson);
+    vegaEmbed('#plot', vegajson, {width: 800, height: 600});
 }
 
 export let exploreVar = '';
