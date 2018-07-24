@@ -1,6 +1,4 @@
 
-## Run against the FL docker image
-
 Updated 7/17/2018.
 
 ## Get the Brown docker image:
