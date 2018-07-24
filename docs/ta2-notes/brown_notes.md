@@ -1,6 +1,4 @@
 
-## Run against the FL docker image
-
 Updated 7/17/2018.
 
 ## Get the Brown docker image:
@@ -25,13 +23,13 @@ Within a Terminal:
     ```
     fab make_d3m_config_files
     ```
-1. Show a list of datasets to run FL
+1. Show a list of datasets to run with the TA2
     ```
-    fab run_featurelabs_choose_config
+    fab run_brown_choose_config
     ```
 1. Choose a dataset:
     ```
-    fab run_featurelabs_choose_config:[number of chosen dataset]
+    fab run_brown_choose_config:[number of chosen dataset]
     ```
 
 - *Note*: To stop the server:

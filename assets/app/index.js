@@ -117,10 +117,31 @@ function leftpanel(mode) {
                  }),
                  m(Button, {id: 'btnSave', onclick: _ => app.saveDisc('btnSave'),title: 'Saves your revised problem description.'}, 'Save Desc.'),
                  m(Button, {id: 'btnSubmitDisc', classes: 'btn-success', style: 'float: right', onclick: _ => app.submitDiscProb(), title: 'Submit all checked discovered problems.'}, 'Submit Disc. Probs.'),
+                 m(Button, {id: 'btnModelProblem', classes: 'btn-default', style: 'float: right', onclick: _ => {
+                     m.route.set('/model');
+                     setTimeout(_ => {
+                         let prob = app.disco[app.selectedProblem];
+                         if (prob) {
+                             let {target, predictors} = prob;
+                             app.erase('Discovery');
+                             [target].concat(predictors).map(x => app.clickVar(x));
+                             predictors.forEach(x => {
+                                 let d = app.findNode(x);
+                                 app.setColors(d, app.gr1Color);
+                                 app.legend(app.gr1Color);
+                             });
+                             let d = app.findNode(target);
+                             app.setColors(d, app.dvColor);
+                             app.legend(app.dvColor);
+                             d.group1 = d.group2 = false;
+                             app.restart();
+                         }
+                     }, 500);
+                 }, title: 'Model problem'}, 'Model problem')
              ]},
-            {value: 'Summary',
-             title: 'Select a variable from within the visualization in the center panel to view its summary statistics.',
-             display: 'none',
+         {value: 'Summary',
+          title: 'Select a variable from within the visualization in the center panel to view its summary statistics.',
+          display: 'none',
              contents: [
                  m('center',
                    m('b', app.summary.name),
@@ -288,6 +309,11 @@ class Body {
                 let node = app.findNode(x);
                 node && expnodes.push(node);
             });
+            if (variate=="problem") {
+                return m('', [
+                m('#plot', {style: 'display: block', oncreate: _ => exp.plot([],"",app.disco[app.selectedProblem])})
+                ]);
+            }
             if (!expnodes[0] && !expnodes[1]) {
                 return;
             }
@@ -371,11 +397,17 @@ class Body {
             m(`#main`, {style: {overflow}},
               m("#innercarousel.carousel-inner", {style: {height: '100%', overflow}},
                 explore_mode
-                && [exploreVars
-                    ? m('', {style},
+                && [variate === 'problem' ?
+                    m('', {style},
                         m('a', {onclick: _ => m.route.set('/explore')}, '<- back to variables'),
                         m('br'),
                         exploreVars)
+//                        JSON.stringify(app.disco[app.selectedProblem]))
+                    : exploreVars ?
+                    m('', {style},
+                      m('a', {onclick: _ => m.route.set('/explore')}, '<- back to variables'),
+                      m('br'),
+                      exploreVars)
                     : m('', {style},
                         m(ButtonRadio,
                           {id: 'exploreButtonBar',
@@ -390,7 +422,11 @@ class Body {
                                 let variate = app.exploreVariate.toLowerCase();
                                 let selected = discovery ? [app.selectedProblem] : nodesExplore.map(x => x.name);
                                 let len = selected.length;
-                                if (variate === 'univariate' || variate === 'problem' && len != 1 || variate === 'bivariate' && len != 2 || variate === 'trivariate' && len != 3 || variate === 'multiple' && len < 2) {
+                                if (variate === 'univariate' && len != 1
+                                    || variate === 'problem' && len != 1
+                                    || variate === 'bivariate' && len != 2
+                                    || variate === 'trivariate' && len != 3
+                                    || variate === 'multiple' && len < 2) {
                                     return;
                                 }
                                 m.route.set(`/explore/${variate}/${selected.join('/')}`);
@@ -398,17 +434,17 @@ class Body {
                         }, 'go'),
                         m('br'),
                         m('', {style: `display: flex; flex-direction: row; flex-wrap: wrap`},
-                          (discovery ? app.disco : valueKey).map(x => {
+                          (discovery ? app.disco : valueKey).map((x, i) => {
+                              let selected = discovery ? x === app.disco[app.selectedProblem] : nodesExplore.map(x => x.name).includes(x);
                               let {predictors} = x;
                               if (x.predictors) {
                                   x = x.target;
                               }
                               let node = app.findNodeIndex(x, true);
                               let show = app.exploreVariate === 'Bivariate' || app.exploreVariate === 'Trivariate';
-                              let len = nodesExplore.length;
                               let [n0, n1, n2] = nodesExplore;
                               return m('span', {
-                                  onclick: _ => app.clickVar(x, nodesExplore),
+                                  onclick:  _ => discovery ? app.setSelectedProblem(i) : app.clickVar(x, nodesExplore),
                                   onmouseover: function() {
                                       $(this).popover('toggle');
                                       $('body div.popover')
@@ -434,23 +470,21 @@ class Body {
                                       margin: '1em',
                                       width: '250px',
                                       'align-items': 'center',
-                                      'background-color': app.hexToRgba(common[nodesExplore.map(x => x.name).includes(x) ? 'selVarColor' : 'varColor'])
+                                      'background-color': app.hexToRgba(common[selected ? 'selVarColor' : 'varColor'])
                                   }
-                              }, [
-                                  m('', {
-                                      oncreate(vnode) {
-                                          let plot = node.plottype === 'continuous' ? plots.densityNode : plots.barsNode;
-                                          plot(node, vnode.dom, 120, true);
-                                      }
-                                  }),
-                                  m('',
-                                    show && n0 && n0.name === x ? `${x} (x)`
+                              }, [m('', {
+                                  oncreate(vnode) {
+                                      let plot = node.plottype === 'continuous' ? plots.densityNode : plots.barsNode;
+                                      plot(node, vnode.dom, 120, true);
+                                  }}),
+                                  m('', show && n0 && n0.name === x ? `${x} (x)`
                                     : show && n1 && n1.name === x ? `${x} (y)`
                                     : show && n2 && n2.name === x ? `${x} (z)`
                                     : predictors ? [`${x}`, m('br'), `${predictors.join(', ')}`]
-                                    : x),
-                              ]);
-                          })))],
+                                    : x)
+                                 ]);
+                          }))
+                       )],
                 m('svg#whitespace')),
               model_mode && m("#spacetools.spaceTool", {style: {right: app.panelWidth['right'], 'z-index': 16}},
                               m(`button#btnLock.btn.btn-default`, {

@@ -91,30 +91,23 @@ if(!is_rapache_mode){
     if( status!=0 ){
         print("WARNING: Error setting interface or port")
         stop()
-    }   #else{
-    #    unlockBinding("httpdPort", environment(tools:::startDynamicHelp))
-    #    assign("httpdPort", myPort, environment(tools:::startDynamicHelp))
-    #}
+    }
 
+    # Allow listening outside of the local host
+    #
+    unlockBinding("httpdPort", environment(tools:::startDynamicHelp))
+    assign("httpdPort", myPort, environment(tools:::startDynamicHelp))
+
+    # Start the http server
+    #
     R.server <- Rhttpd$new()
 
     cat("Type:", typeof(R.server), "Class:", class(R.server))
-    #R.server$add(app = File$new(getwd()), name = "pic_dir")
 
-    #rookFilesDir = "/Users/ramanprasad/Documents/github-rp/TwoRavens//data/d3m/o_196seed/data"
-    #<- paste(getwd(), "/../data/d3m", sep="");
-    print("--- rookFilesDir")
-    #print(rookFilesDir)
-    #R.server$add(app = File$new(rookFilesDir), name = "rook-files")
-
-
-    print(R.server)
-
-    #if(!production){
-      R.server$start(listen=myInterface, port=myPort)
-      R.server$listenAddr <- myInterface
-      R.server$listenPort <- myPort
-    #}
+    # Set the IP Address and Port
+    #
+    R.server$listenAddr <- myInterface
+    R.server$listenPort <- myPort
 }
 
 
