@@ -55,3 +55,7 @@ assets/pkgs/swagger-ui/dist/*.map
 .Rhistory
 ravens_volume/test_data/*/search_config.json
 ravens_volume/2ravens_local_setup
+
+
+# IDE
+.idea/

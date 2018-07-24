@@ -9,22 +9,20 @@ import m from 'mithril';
 
 import * as app from './app';
 import * as exp from './explore';
-import * as layout from './layout';
 import * as plots from './plots';
 import * as results from './results';
-import {elem, fadeIn, fadeOut} from './utils';
+import {fadeIn, fadeOut} from './utils';
 
 import Button from './views/PanelButton';
-import List from './views/PanelList';
-import Search from './views/Search';
 import Subpanel from './views/Subpanel';
+import Flowchart from './views/Flowchart';
 
 import * as common from '../common/app/common';
 import ButtonRadio from '../common/app/views/ButtonRadio';
 import Footer from '../common/app/views/Footer';
 import Header from '../common/app/views/Header';
 import MenuTabbed from '../common/app/views/MenuTabbed';
-import Modal, {setModal} from '../common/app/views/Modal';
+import Modal from '../common/app/views/Modal';
 import Panel from '../common/app/views/Panel';
 import PanelList from '../common/app/views/PanelList';
 import Peek from '../common/app/views/Peek';
@@ -709,7 +707,180 @@ let exploreVars = {
     }
 };
 
+function pipelineFlowchart(pipeline) {
+    if (!pipeline) pipeline = {
+        "id": "2afd8af4-15b6-4575-b4a5-24c333b32b3e",
+        "schema": "https://metadata.datadrivendiscovery.org/schemas/v0/pipeline.json",
+        "created": "2018-05-30T11:09:25.384729Z",
+        "context": "TESTING",
+        "inputs": [
+            {
+                "name": "input dataset"
+            }
+        ],
+        "outputs": [
+            {
+                "data": "steps.5.produce",
+                "name": "predictions"
+            }
+        ],
+        "steps": [
+            {
+                "type": "PRIMITIVE",
+                "primitive": {
+                    "id": "4b42ce1e-9b98-4a25-b68e-fad13311eb65",
+                    "version": "0.2.0",
+                    "python_path": "d3m.primitives.datasets.DatasetToDataFrame",
+                    "name": "Dataset to DataFrame converter"
+                },
+                "arguments": {
+                    "inputs": {
+                        "data": "inputs.0",
+                        "type": "CONTAINER"
+                    }
+                },
+                "outputs": [
+                    {
+                        "id": "produce"
+                    }
+                ]
+            },
+            {
+                "type": "PRIMITIVE",
+                "primitive": {
+                    "id": "d510cb7a-1782-4f51-b44c-58f0236e47c7",
+                    "version": "0.2.0",
+                    "python_path": "d3m.primitives.data.ColumnParser",
+                    "name": "Parses strings into their types"
+                },
+                "arguments": {
+                    "inputs": {
+                        "data": "steps.0.produce",
+                        "type": "CONTAINER"
+                    }
+                },
+                "outputs": [
+                    {
+                        "id": "produce"
+                    }
+                ]
+            },
+            {
+                "type": "PRIMITIVE",
+                "primitive": {
+                    "id": "ebfeb6f0-e366-4082-b1a7-602fd50acc96",
+                    "version": "0.1.0",
+                    "python_path": "d3m.primitives.byudml.imputer.RandomSamplingImputer",
+                    "name": "Random Sampling Imputer"
+                },
+                "arguments": {
+                    "inputs": {
+                        "data": "steps.1.produce",
+                        "type": "CONTAINER"
+                    }
+                },
+                "outputs": [
+                    {
+                        "id": "produce"
+                    }
+                ]
+            },
+            {
+                "type": "PRIMITIVE",
+                "primitive": {
+                    "id": "91fe0a56-f400-483a-8641-4e26d005c621",
+                    "version": "0.2.0",
+                    "python_path": "d3m.primitives.data.ExtractAttributes",
+                    "name": "Extracts attribute columns"
+                },
+                "arguments": {
+                    "inputs": {
+                        "data": "steps.2.produce",
+                        "type": "CONTAINER"
+                    }
+                },
+                "outputs": [
+                    {
+                        "id": "produce"
+                    }
+                ]
+            },
+            {
+                "type": "PRIMITIVE",
+                "primitive": {
+                    "id": "a7feadd5-997f-4302-bd5d-caa86e7bbd4f",
+                    "version": "0.2.0",
+                    "python_path": "d3m.primitives.data.ExtractTargets",
+                    "name": "Extracts target columns"
+                },
+                "arguments": {
+                    "inputs": {
+                        "data": "steps.2.produce",
+                        "type": "CONTAINER"
+                    }
+                },
+                "outputs": [
+                    {
+                        "id": "produce"
+                    }
+                ]
+            },
+            {
+                "type": "PRIMITIVE",
+                "primitive": {
+                    "id": "028dcbce-be8c-32a6-af05-50c8cacaaadb",
+                    "version": "0.1.0",
+                    "python_path": "d3m.primitives.sklearn_wrap.SKAdaBoostClassifier",
+                    "name": "sklearn.ensemble.weight_boosting.AdaBoostClassifier"
+                },
+                "arguments": {
+                    "inputs": {
+                        "data": "steps.3.produce",
+                        "type": "CONTAINER"
+                    },
+                    "outputs": {
+                        "data": "steps.4.produce",
+                        "type": "CONTAINER"
+                    }
+                },
+                "outputs": [
+                    {
+                        "id": "produce"
+                    }
+                ]
+            }
+        ]
+    };
+
+    let bold = (value) => m('div', {style: {'font-weight': 'bold', display: 'inline'}}, value);
+
+    return pipeline.steps.map((pipeStep, i) => ({
+        title: 'Step ' + i,
+        content: [
+            'primitive' in pipeStep && [
+                bold('Type: '), pipeStep.type, m('br'),
+                m(Table, {
+                    id: 'pipelineTableStepPrimitive' + i,
+                    abbreviation: 40,
+                    data: pipeStep.primitive
+                })
+            ],
+            'arguments' in pipeStep && Object.keys(pipeStep['arguments']).map(arg => [
+                bold('Argument: '), arg, m('br'),
+                m(Table, {
+                    id: 'pipelineTableStep' + i + 'Arguments' + arg,
+                    abbreviation: 40,
+                    data: pipeStep['arguments'][arg]
+                })
+            ])
+        ]
+    }));
+}
+
 m.route(document.body, '/model', {
+    '/flowchart': {
+        render: () => m(Flowchart, {steps: pipelineFlowchart()})
+    },
     '/model': {
         onmatch() {
             valueKey = app.valueKey;
