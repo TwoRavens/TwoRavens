@@ -117,10 +117,21 @@ function leftpanel(mode) {
                  }),
                  m(Button, {id: 'btnSave', onclick: _ => app.saveDisc('btnSave'),title: 'Saves your revised problem description.'}, 'Save Desc.'),
                  m(Button, {id: 'btnSubmitDisc', classes: 'btn-success', style: 'float: right', onclick: _ => app.submitDiscProb(), title: 'Submit all checked discovered problems.'}, 'Submit Disc. Probs.'),
+                 m(Button, {id: 'btnModelProblem', classes: 'btn-default', style: 'float: right', onclick: _ => {
+                     m.route.set('/model');
+                     setTimeout(_ => {
+                         let prob = app.disco[app.selectedProblem];
+                         if (prob) {
+                             let {target, predictors} = prob;
+                             app.erase();
+                             [target].concat(predictors).map(x => app.clickVar(x));
+                         }
+                     }, 500);
+                 }, title: 'Model problem'}, 'Model problem')
              ]},
-            {value: 'Summary',
-             title: 'Select a variable from within the visualization in the center panel to view its summary statistics.',
-             display: 'none',
+         {value: 'Summary',
+          title: 'Select a variable from within the visualization in the center panel to view its summary statistics.',
+          display: 'none',
              contents: [
                  m('center',
                    m('b', app.summary.name),

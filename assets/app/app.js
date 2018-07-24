@@ -1975,7 +1975,7 @@ function updateNode(id, nodes) {
  every time a variable in leftpanel is clicked, nodes updates and background color changes
  */
 export function clickVar(elem, $nodes) {
-    if (is_explore_mode && !$nodes.map(x => x.name).includes(elem)) {
+    if (is_explore_mode && $nodes && !$nodes.map(x => x.name).includes(elem)) {
         let max = exploreVariate === 'Univariate' ? 1
             : exploreVariate === 'Bivariate' ? 2
             : exploreVariate === 'Trivariate' ? 3
