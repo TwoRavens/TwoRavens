@@ -2853,9 +2853,8 @@ export function legend() {
 /**
    programmatically deselect every selected variable
 */
-export function erase() {
-    setLeftTab('Variables');
-
+export function erase(left) {
+    setLeftTab(left || 'Variables');
     valueKey.forEach(function(element){
       if (zparams.zdv.concat(zparams.znom, zparams.zvars).includes(element))   // names start with varList now
         clickVar(element);

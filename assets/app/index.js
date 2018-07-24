@@ -123,7 +123,7 @@ function leftpanel(mode) {
                          let prob = app.disco[app.selectedProblem];
                          if (prob) {
                              let {target, predictors} = prob;
-                             app.erase();
+                             app.erase('Discovery');
                              [target].concat(predictors).map(x => app.clickVar(x));
                          }
                      }, 500);
