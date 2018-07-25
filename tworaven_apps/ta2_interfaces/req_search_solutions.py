@@ -44,6 +44,11 @@ def search_solutions(raven_json_str=None):
         err_msg = 'Failed to convert JSON to gRPC: %s' % (err_obj)
         return err_resp(err_msg)
 
+    print('req', req)
+    print('-' * 40)
+    print('raven_json_str', raven_json_str)
+    print('-' * 40)
+
     # In test mode, return canned response
     #
     if settings.TA2_STATIC_TEST_MODE:

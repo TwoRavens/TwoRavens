@@ -26,11 +26,11 @@ Within a Terminal:
     ```
 1. Show a list of datasets to run FL
     ```
-    fab run_featurelabs_choose_config
+    fab run_ta2_featurelabs_with_config
     ```
 1. Choose a dataset:
     ```
-    fab run_featurelabs_choose_config:[number of chosen dataset]
+    fab run_ta2_featurelabs_with_config:[number of chosen dataset]
     ```
 
 - *Note*: To stop the server:
