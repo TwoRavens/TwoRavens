@@ -44,6 +44,8 @@ import * as facetheatmap from './vega-schemas/trivariate/facetheatmap';
 import * as groupedbarnqq from './vega-schemas/trivariate/groupedbarnqq';
 const $private = false;
 
+let approps = {qq: ["scatter","line","area","binnedscatter","binnedtableheat","horizon","scattermatrix","scattermeansd","step"], nn: ["stackedbar","tableheat",], nq: ["box","interactivebarmean"], qn:["aggbar","box","strip","trellishist"], qqq:["bubbleqqq","scatterqqq","scattermatrix"], qnn:["horizgroupbar","facetbox"],qqn:["scattertri","trellisscatterqqn","dotdashqqn"],qnq:["bubbletri"],nqn:["groupedbartri","facetbox"],nqq:["groupedbarnqq"],nnq:["heatmapnnq","tablebubblennq"],nnn:["stackedbarnnn","facetheatmap"]};
+
 function heatmap(x_Axis_name, y_Axis_name) {
     let heatchart = elem('#heatchart');
     heatchart.style.display = "block";
@@ -1520,21 +1522,7 @@ export async function explore() {
     m.redraw();
 }
 
-export async function plot(plotNodes, plottype="", problem={}) {
-
-    const colors = [
-        "#e6194b", "#3cb44b", "#ffe119", "#0082c8", "#f58231", "#911eb4", "#46f0f0",
-        "#f032e6", "#d2f53c", "#fabebe", "#008080", "#e6beff", "#aa6e28", "#fffac8",
-        "#800000", "#aaffc3", "#808000", "#ffd8b1", "#000080", "#808080"
-    ];
-    if (app.downloadIncomplete()) {
-        return;
-    }
-
-    app.zPop();
-    console.log('zpop:', app.zparams);
-
-    let getPlotType = (pt,pn) => {
+let getPlotType = (pt,pn) => {
     
     // returns true if uniques is equal to, one less than, or two less than the number of valid observations
         function uniqueValids (pn) {
@@ -1542,18 +1530,18 @@ export async function plot(plotNodes, plottype="", problem={}) {
                 pn.uniques===pn.valid-1 ? true :
                 pn.uniques===pn.valid-2 ? true : false;
         }
-        
+    
         if(pn.length>3) return['scattermatrix','aaa'];
         let myCons = [];
         let vt = "";
-        
+    
         for (var i=0; i<pn.length; i++) {
             myCons[i] = pn[i].plottype === 'continuous' ? true : false;
             pn[i].plottype === 'continuous' ? vt=vt+'q' : vt=vt+'n';
         }
-        
+    
         if(pt != "") return [pt,vt];
-        
+    
         if(pn.length==2) {
             // check uniqueValids. if so, make difference from mean the default plot
             let uvs = [uniqueValids(pn[0]), uniqueValids(pn[1])];
@@ -1579,7 +1567,21 @@ export async function plot(plotNodes, plottype="", problem={}) {
                 !myCons[0] && !myCons[1] && !myCons[2] ? ['stackedbarnnn','nnn'] :
                 ['scattermatrix','aaa'];
         }
-    };
+}
+
+export async function plot(plotNodes, plottype="", problem={}) {
+
+    const colors = [
+        "#e6194b", "#3cb44b", "#ffe119", "#0082c8", "#f58231", "#911eb4", "#46f0f0",
+        "#f032e6", "#d2f53c", "#fabebe", "#008080", "#e6beff", "#aa6e28", "#fffac8",
+        "#800000", "#aaffc3", "#808000", "#ffd8b1", "#000080", "#808080"
+    ];
+    if (app.downloadIncomplete()) {
+        return;
+    }
+
+    app.zPop();
+    console.log('zpop:', app.zparams);
     
     function getNames(arr) {
         let myarr = [];
@@ -1747,6 +1749,15 @@ export async function plot(plotNodes, plottype="", problem={}) {
     }
     console.log(vegajson);
     vegaEmbed('#plot', vegajson, {width: 800, height: 600});
+}
+
+export function thumbsty(plotNodes, thumb) {
+    let plottype = getPlotType("",plotNodes); // VJD: this is executing a lot
+    console.log(approps[plottype[1]].indexOf(thumb) > -1);
+    console.log(approps[plottype[1]]);
+    console.log(thumb);
+    
+    return approps[plottype[1]].indexOf(thumb) > -1 ?{border: "2px solid #0F0", "border-radius": "3px", padding: "5px", margin: "3%", cursor: "pointer"} : {border: "2px solid #F00", "border-radius": "3px", padding: "5px", margin: "3%", cursor: "pointer"};
 }
 
 export let exploreVar = '';

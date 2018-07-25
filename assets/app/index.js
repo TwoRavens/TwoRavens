@@ -378,7 +378,8 @@ class Body {
                       return m("figure", {style: 'display: inline-block'}, [
                           m(`img#${x}_img[alt=${x}][height=140px][width=260px][src=/static/images/${x}.png]`, {
                               onclick: _ => exp.plot(expnodes, x),
-                              style: {border: "1px solid #ddd", "border-radius": "3px", padding: "5px", margin: "3%", cursor: "pointer"}
+                              style: exp.thumbsty(expnodes,x)
+//                              style: {border: "2px solid #ddd", "border-radius": "3px", padding: "5px", margin: "3%", cursor: "pointer"}
                           }),
                           m("figcaption", {style: {"text-align": "center"}}, plotMap[x])
                       ]);
