@@ -1,0 +1,152 @@
+version: '3.5'
+
+# -----------------------------------------
+# To add/run a TA2:
+#
+# (1) Set the appropriate input/output directories on your host machine
+#   - See: "x-d3m-input", "x-d3m-output"
+#
+# (2) Update or add environment variables
+#   - See "x-shared-env-variables"
+#     - These are shared with most containers, including the TA2
+#       e.g. don't remove any variables
+#
+# (3) Update "ta2-main" container section to point to the
+#   appropriate image, add any "command" or "entrypoint" values, etc
+# -----------------------------------------
+
+# -----------------------------------------
+# shared mounted volumes
+# reference: https://github.com/docker/compose/issues/4675#issuecomment-403865965
+# -----------------------------------------
+x-d3m-input:
+  # -----------------------------------------
+  # D3M input volume
+  # - Set the source directory to a specific
+  #   seed dataset on the host machine
+  # - A "search_config.json" file is expected
+  #   within this directory
+  # -----------------------------------------
+  &d3m-input
+  type: bind
+  source: /ravens_volume/test_data/196_autoMpg
+  target: /input
+  read_only: true
+x-d3m-output:
+  # -----------------------------------------
+  # D3M output volume
+  # - TA2/TA3 output may be written here
+  # -----------------------------------------
+  &d3m-output
+  type: bind
+  source: /ravens_volume/test_output
+  target: /output
+x-shared-env-variables:
+  &shared-env-variables
+  # -----------------------------------------
+  # D3M env variables
+  # -----------------------------------------
+  - D3MRUN=ta2ta3
+  - D3MINPUTDIR=/input
+  - D3MOUTPUTDIR=/output
+  #- D3MCPU="1"
+  #- D3MRAM="512Mi"
+  - D3MTIMEOUT=10
+  # port variable not used by all TA2s
+  - D3MPORT=45052
+  # -----------------------------------------
+  # django/celery env variables
+  #  (added to additional containers but not used)
+  # -----------------------------------------
+  # Redis connection
+  - REDIS_HOST=redis
+  #
+  # If True, don't use an actual TA2, returns canned responses
+  - TA2_STATIC_TEST_MODE=False
+  #
+  # Local files/sqlite db; shared between this container and celery
+  - LOCAL_SETUP_DIR=/ravens_volume/2ravens_local_setup
+  #
+  # Link to the TA2 service via gRPC
+  - TA2_TEST_SERVER_URL=ta2-main:45052
+
+services:
+  # -------------------------
+  # 1 of 6: Ravens nginx
+  # -------------------------
+  #nginx:
+  #  image: tworavens/ravens-nginx:develop
+  #  links:
+  #    - rook-service:rook-service
+  #    - tworavens:tworavens
+  #  ports:
+  #    - 80:80
+  #  depends_on:
+  #    - tworavens
+  #    - rook-service
+  #  volumes:
+  #    - ravens-volume:/ravens_volume
+  # -------------------------
+  # 2 of 6: redis
+  # -------------------------
+  redis:
+    image: redis:4.0
+    expose:
+      - "6379"
+  # -------------------------
+  # 3 of 6: TwoRavens - TA3 main app
+  # -------------------------
+  tworavens:
+    image: tworavens/ravens-main:develop
+    # script to initialize app
+    #
+    entrypoint: ["d3m_start.sh"]
+    environment: *shared-env-variables
+    links:
+      - rook-service
+    ports:
+      - 8080:8080
+    volumes:
+      - ravens-volume:/ravens_volume
+      - *d3m-input
+      - *d3m-output
+  # -------------------------
+  # 4 of 6: celery
+  # -------------------------
+  celery-worker:
+    image: tworavens/ravens-main:develop
+    entrypoint: ['celery', '-A', 'tworavensproject', 'worker', '-l', 'info']
+    environment: *shared-env-variables
+    volumes:
+      - ravens-volume:/ravens_volume
+      - *d3m-input
+      - *d3m-output
+  # -------------------------
+  # 5 of 6: rook
+  # -------------------------
+  rook-service:
+    #image: rookit:latest
+    image: tworavens/ravens-r-service:develop
+    environment: *shared-env-variables
+    # Also set in the docker file
+    #  - ROOK_USE_PRODUCTION_MODE=yes
+    ports:
+      - 8000
+    volumes:
+      - ravens-volume:/ravens_volume
+      - *d3m-input
+      - *d3m-output
+  # -------------------------
+  # 6 of 6: TA2 main container
+  # -------------------------
+  ta2-main:
+    image: registry.datadrivendiscovery.org/jkanter/mit-fl-ta2:stable
+    ports:
+      - 45042:45042
+    environment: *shared-env-variables
+    volumes:
+      - ravens-volume:/ravens_volume
+      - *d3m-input
+      - *d3m-output
+volumes:
+  ravens-volume:
