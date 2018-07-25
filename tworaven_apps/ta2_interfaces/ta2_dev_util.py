@@ -18,8 +18,11 @@ RAVENS_OUTPUT_DIR = '/ravens_volume/test_output'
 
 TA2_FeatureLabs = 'TA2_FeatureLabs'
 TA2_Brown = 'TA2_Brown'
+TA2_ISI = 'TA2_ISI'
 
-TA2_NAMES = (TA2_FeatureLabs, TA2_Brown)
+TA2_NAMES = (TA2_FeatureLabs,
+             TA2_Brown,
+             TA2_ISI)
 
 TA2_IMAGE_INFO = [
     # Feature Labs
@@ -31,6 +34,11 @@ TA2_IMAGE_INFO = [
     (TA2_Brown,
      'registry.datadrivendiscovery.org/zshang/brown:ta2 ta2_search',
      '-e D3MTESTOPT=xxx -e D3MCPU=1 -e D3MRAM=1Gi'),
+
+    # Brown
+    (TA2_ISI,
+     'registry.datadrivendiscovery.org/ta2-submissions-summer/ta2-isi/ta3ta2-image:latest',
+     ''),
 ]
 
 class TA2Helper(BasicErrCheck):
@@ -107,7 +115,7 @@ class TA2Helper(BasicErrCheck):
         choice_num = int(choice_num)
         if choice_num in [x[0] for x in choice_pairs]:
             data_dir_path = join(RAVENS_DIR, choice_pairs[choice_num-1][1])
-            output_dir_path = join(RAVENS_DIR, choice_pairs[choice_num-1][1])
+            output_dir_path = join(RAVENS_OUTPUT_DIR, choice_pairs[choice_num-1][1])
         else:
             print('\n--> Error: "%d" is not a valid choice\n' % choice_num)
             TA2Helper.show_choices(cmd_name)
@@ -135,7 +143,10 @@ class TA2Helper(BasicErrCheck):
         image_name = ta2_info[1]
         additional_options = ta2_info[2]
 
-        docker_cmd = ('docker run --rm -t'
+        print('INPUT', self.data_input_dir)
+        print('OUTPUT', self.data_output_dir)
+
+        docker_cmd = ('docker run --rm'
                       ' --name ta2_server'
                       ' -p 45042:45042'
                       ' -e D3MPORT=45042'
