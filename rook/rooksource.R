@@ -102,6 +102,7 @@ cat("Type:", typeof(R.server), "Class:", class(R.server))
 
 # Set the IP Address and Port
 #
+#R.server$start(listen=myInterface, port=myPort) # doesn't work with unlockBinding; redundant?
 R.server$listenAddr <- myInterface
 R.server$listenPort <- myPort
 
