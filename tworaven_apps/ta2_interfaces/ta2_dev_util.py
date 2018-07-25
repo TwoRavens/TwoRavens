@@ -19,26 +19,33 @@ RAVENS_OUTPUT_DIR = '/ravens_volume/test_output'
 TA2_FeatureLabs = 'TA2_FeatureLabs'
 TA2_Brown = 'TA2_Brown'
 TA2_ISI = 'TA2_ISI'
+TA2_STANFORD = 'TA2_STANFORD'
 
 TA2_NAMES = (TA2_FeatureLabs,
              TA2_Brown,
-             TA2_ISI)
+             TA2_ISI,
+             TA2_STANFORD)
 
 TA2_IMAGE_INFO = [
-    # Feature Labs
+    # Feature Labs: may not be using D3MPORT
     (TA2_FeatureLabs,
      'registry.datadrivendiscovery.org/jkanter/mit-fl-ta2:stable',
-     ''),
+     '-p 45042:45042 -e D3MPORT=45042'),
 
-    # Brown
+    # Brown: may not be using D3MPORT
     (TA2_Brown,
      'registry.datadrivendiscovery.org/zshang/brown:ta2 ta2_search',
-     '-e D3MTESTOPT=xxx -e D3MCPU=1 -e D3MRAM=1Gi'),
+     '-p 45042:45042  -e D3MPORT=45042 -e D3MTESTOPT=xxx -e D3MCPU=1 -e D3MRAM=1Gi'),
 
-    # Brown
+    # ISI: not using D3MPORT
     (TA2_ISI,
      'registry.datadrivendiscovery.org/ta2-submissions-summer/ta2-isi/ta3ta2-image:latest',
-     ''),
+     '-p 45042:45042 --memory 10g -e D3MRAM=10Gi -e D3MCPU=1'),
+
+    # STANFORD: not using D3MPORT
+    (TA2_STANFORD,
+     'registry.datadrivendiscovery.org/jdunnmon/d3m-ta2-stanford:latest',
+     '-p 50051:50051 --memory 10g'),
 ]
 
 class TA2Helper(BasicErrCheck):
@@ -148,8 +155,6 @@ class TA2Helper(BasicErrCheck):
 
         docker_cmd = ('docker run --rm'
                       ' --name ta2_server'
-                      ' -p 45042:45042'
-                      ' -e D3MPORT=45042'
                       ' -e D3MTIMEOUT=60'
                       ' -e D3MINPUTDIR=/input'
                       ' -e D3MOUTPUTDIR=/output'

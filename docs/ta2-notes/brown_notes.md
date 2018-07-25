@@ -25,11 +25,11 @@ Within a Terminal:
     ```
 1. Show a list of datasets to run with the TA2
     ```
-    fab run_brown_choose_config
+    fab run_ta2_brown_choose_config
     ```
 1. Choose a dataset:
     ```
-    fab run_brown_choose_config:[number of chosen dataset]
+    fab run_ta2_brown_choose_config:[number of chosen dataset]
     ```
 
 - *Note*: To stop the server:
