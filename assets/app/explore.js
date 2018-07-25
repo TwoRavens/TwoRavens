@@ -1753,9 +1753,6 @@ export async function plot(plotNodes, plottype="", problem={}) {
 
 export function thumbsty(plotNodes, thumb) {
     let plottype = getPlotType("",plotNodes); // VJD: this is executing a lot
-    console.log(approps[plottype[1]].indexOf(thumb) > -1);
-    console.log(approps[plottype[1]]);
-    console.log(thumb);
     
     return approps[plottype[1]].indexOf(thumb) > -1 ?{border: "2px solid #0F0", "border-radius": "3px", padding: "5px", margin: "3%", cursor: "pointer"} : {border: "2px solid #F00", "border-radius": "3px", padding: "5px", margin: "3%", cursor: "pointer"};
 }
