@@ -3,38 +3,50 @@ import * as common from '../../common/app/common';
 
 export default class Flowchart {
     view(vnode) {
-        let {steps} = vnode.attrs;
+        let {steps, attrsAll} = vnode.attrs;
+        let bold = (value) => m('div', {style: {'font-weight': 'bold', display: 'inline'}}, value);
 
-        let makeCard = ({title, content}) => m('div', {
-            style: {
-                'background': common.menuColor,
-                'border': common.borderColor,
-                'display': 'inline-block'
-            }
-        },
-            title && [m('h5', {style: {display: 'inline-block'}}, title), m('br')], content);
+        let makeCard = ({key, color, content, summary}) => m('table', {
+                onclick: () => this.key = key,
+                ondblclick: () => this.key = undefined,
+                style: {
+                    'background': common.menuColor,
+                    'border': common.borderColor,
+                    margin: '1em',
+                    'box-shadow': '0px 5px 5px rgba(0, 0, 0, .2)',
+                    width: 'calc(100% - 2em)'
+                }
+            },
+            m('tr',
+                m('td', {
+                    style: {
+                        background: color,
+                        height: '100%',
+                        padding: '1em',
+                        width: 0, // makes div width wrap content
+                        'border-right': common.borderColor
+                    }
+                }, bold(key)),
+                m('td', {
+                    style: {width: 'calc(100% - 2em)', padding: '1em'}
+                }, this.key === key ? content : summary)
+            )
+        );
 
         let arrow = m('div', {
             style: {
                 border: 'solid black',
                 'border-width': '0 3px 3px 0',
-                display: 'inline-block',
-                padding: '3px',
-                transform: 'rotate(-45deg)',
-                '-webkit-transform': 'rotate(-45deg)',
-                margin: '1em'
+                padding: '4px',
+                width: '10px',
+                'margin-left': '50%',
+                'margin-bottom': '20px',
+                transform: 'rotate(45deg) scale(1.5)'
             }
         });
-        let format = (arr) => steps.map((elem, i) => i + 1 === arr.length ? makeCard(elem) : [makeCard(elem), arrow]);
 
-        return m('div', {
-            display: 'flex',
-            'flex-direction': 'column',
-            'align-items': 'center',
-            'justify-content': 'center',
-            'overflow': 'auto',
-            'width': '100%'
-        }, format(steps))
+        return m('div', common.mergeAttributes({style: {'white-space': 'nowrap'}}, attrsAll),
+            steps.map((step, i) => i + 1 === steps.length ? makeCard(step) : [makeCard(step), arrow]))
 
     }
 }

@@ -226,7 +226,7 @@ let failset = ["TIME_SERIES_FORECASTING","GRAPH_MATCHING","LINK_PREDICTION","tim
 
 // object that contains all information about the returned pipelines
 export let allPipelineInfo = {};
-export let pipelineHeader = ['Hidden_UID', 'PipelineID', 'Metric', 'Score'];
+export let pipelineHeader = ['PipelineID', 'Metric', 'Score'];
 export let pipelineTable = [];
 
 export let discoveryHeader = ['problem_id', 'system', 'meaningful'];
@@ -2083,22 +2083,22 @@ export function zPop() {
 
 // when selected, the key/value [mode]: [pipelineID] is set.
 export let selectedPipeline = {};
-export let setSelectedPipeline = (result) => {
+export let setSelectedPipeline = result => {
     selectedPipeline[currentMode] = result;
-    if (currentMode === 'model') {
-        // the 'find' function would have been nice here-- es6 only. Find pipeline with UID, then pass pipeline_id
-        let pipeline = pipelineTable.filter((row) => row[0] == result)[0];
-        resultsplotinit(pipeline[1]);
-    }
+    if (currentMode === 'model') resultsplotinit(result);
 }
+
+export let selectedResultsMenu;
+export let setSelectedResultsMenu = result => selectedResultsMenu = result;
 
 // Update table when pipeline is fitted
 function onPipelineCreate(PipelineCreateResult, id) {
 
     console.log("** PipelineCreateResult **");
-    console.log(PipelineCreateResult.data.response.scores[0].value.raw.double.toPrecision(3));   // Makes a number of assumptions about how values are returned
+    console.log(PipelineCreateResult);
+    console.log(PipelineCreateResult.data.response.scores[0].value.double.toPrecision(3));   // Makes a number of assumptions about how values are returned
 
-    let myscore = PipelineCreateResult.data.response.scores[0].value.raw.double.toPrecision(3);   // Makes a number of assumptions about how values are returned, also need to attempt to deal w multiple scores
+    let myscore = PipelineCreateResult.data.response.scores[0].value.double.toPrecision(3);   // Makes a number of assumptions about how values are returned, also need to attempt to deal w multiple scores
 
     console.log(PipelineCreateResult);
 
@@ -2108,18 +2108,18 @@ function onPipelineCreate(PipelineCreateResult, id) {
         };
     };
     pipelineTable = pipelineTable.sort(function(a,b){
-        if (a[3]===b[3]){
+        if (a[2]===b[2]){
             return(0)
-        } else if (a[3]=="scoring"){
+        } else if (a[2]=="scoring"){
             return(100)
-        } else if (b[3]=="scoring") {
+        } else if (b[2]=="scoring") {
             return(-100)
-        } else if (a[3]=="no score"){
+        } else if (a[2]=="no score"){
             return(1000) 
-        } else if (b[3]=="no score"){
+        } else if (b[2]=="no score"){
             return(-1000)
         } else {
-            return parseFloat(b[3]) - parseFloat(a[3]) ;
+            return parseFloat(b[2]) - parseFloat(a[2]) ;
         };
     });
 
@@ -2148,11 +2148,12 @@ function onPipelinePrime(PipelineCreateResult, rookpipe) {
     if(PipelineCreateResult.id in allPipelineInfo) {
         allPipelineInfo[PipelineCreateResult.id] = Object.assign(allPipelineInfo[PipelineCreateResult.id], PipelineCreateResult);
     } else {
-        allPipelineInfo[PipelineCreateResult.id] = PipelineCreateResult;
-        let myid = PipelineCreateResult.id;
-        let mymetric = d3mProblemDescription.performanceMetrics[0].metric;    // Need to generalize to multiple metrics
-        let myval = "scoring";
-        pipelineTable.push([pipelineTable.length, myid, mymetric, myval]);
+        allPipelineInfo[PipelineCreateResult.id]=PipelineCreateResult;
+        pipelineTable.push({
+            'PipelineID': PipelineCreateResult.id,
+            'Metric': d3mProblemDescription.performanceMetrics[0].metric,
+            'Score': "scoring"
+        });
     };
 
         // this will NOT report the pipeline to user if pipeline has failed, if pipeline is still running, or if it has not completed
@@ -2589,18 +2590,18 @@ export async function estimate(btn) {
                                             };
                                         };
                                         pipelineTable = pipelineTable.sort(function(a,b){
-                                            if (a[3]===b[3]){
+                                            if (a['Score']===b['Score']){
                                                 return(0)
-                                            } else if (a[3]=="scoring"){
+                                            } else if (a['Score']=="scoring"){
                                                 return(100)
-                                            } else if (b[3]=="scoring") {
+                                            } else if (b['Score']=="scoring") {
                                                 return(-100)
-                                            } else if (a[3]=="no score"){
+                                            } else if (a['Score']=="no score"){
                                                 return(1000) 
-                                            } else if (b[3]=="no score"){
+                                            } else if (b['Score']=="no score"){
                                                 return(-1000)
                                             } else {
-                                                return parseFloat(b[3]) - parseFloat(a[3]);
+                                                return parseFloat(b['Score']) - parseFloat(a['Score']);
                                             };
                                         });
                                     };
@@ -3539,8 +3540,8 @@ export async function listpipelines() {
 export async function executepipeline() {
     let context = apiSession(zparams.zsessionid);
     let tablerow = document.querySelector('#setxRight tr.item-select');
-    if(tablerow == null) {alert("Please select a pipeline to execute on."); return;}
-    let pipelineId=tablerow.firstChild.innerText;
+    if (selectedPipeline === undefined) {alert("Please select a pipeline to execute on."); return;}
+
 
     zPop();
     zparams.callHistory = callHistory;
@@ -3566,10 +3567,10 @@ export async function executepipeline() {
         data.push(mydata);
     }
 
-    let temp = {context, pipelineId, data};
+    let temp = {context, selectedPipeline, data};
     temp = JSON.stringify(temp);
     console.log(temp);
-    let res = await makeRequest(D3M_SVC_URL + '/ExecutePipeline', {context, pipelineId, data});
+    let res = await makeRequest(D3M_SVC_URL + '/ExecutePipeline', {context, selectedPipeline, data});
     // I think we want to do this here, but will wait for ISI image to test against
    // if(res.progressInfo=="COMPLETED") {
         res && addPredictions(res);
@@ -4356,20 +4357,6 @@ export function record_user_metadata(){
       } catch (err) {
           console.log('record_user_metadata failed: ' + err);
       }
-}
-
-export function showPredPlot (btn) {
-    if(document.getElementById("setxLeftGen").style.display=="none")
-        return;
-    document.getElementById("setxLeftPlot").style.display="block";
-    document.getElementById("setxLeftGen").style.display="none";
-}
-
-export function showGenPreds (btn) {
-    if(document.getElementById("setxLeftPlot").style.display=="none")
-        return;
-    document.getElementById("setxLeftPlot").style.display="none";
-    document.getElementById("setxLeftGen").style.display="block";
 }
 
 function singlePlot(pred) {

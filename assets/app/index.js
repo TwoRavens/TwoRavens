@@ -168,8 +168,8 @@ let righttab = (id, task, title, probDesc) => m(PanelList, {
 });
 
 function rightpanel(mode) {
-    if (mode === 'results') return [];
-    if (mode === 'explore') return [];
+    if (mode === 'results') return; // returns undefined, which mithril ignores
+    if (mode === 'explore') return;
 
     // mode == null (model mode)
 
@@ -188,41 +188,54 @@ function rightpanel(mode) {
          display: !app.swandive || app.IS_D3M_DOMAIN ? 'block' : 'none',
          idSuffix: 'Setx',
          contents: [
-             m('#setxRight[style=display:block; float: right; width: 25%; height:100%; background-color: white]',
-               app.pipelineTable ? m(Table, {
+             m('#setxRight[style=display:block; float: right; width: 25%; background-color: white]',
+               app.pipelineTable && m(Table, {
                    id: 'pipelineTable',
                    headers: app.pipelineHeader,
                    data: app.pipelineTable,
                    activeRow: app.selectedPipeline[app.currentMode],
                    onclick: app.setSelectedPipeline,
-                   showUID: false,
                    abbreviation: 20
-               }) : undefined),
-             m('#setxTop[style=display:block; float: left; width: 75%; height:10%; overflow: auto; background-color: white]',
-               m("button.btn.btn-default.btn-xs#btnPredPlot[type='button']", {
-                   onclick: () => app.showPredPlot('btnPredPlot'),
-                   style: {float: "left", "margin-left": "2%"}
-               }, "Prediction Summary"),
-               m("button.btn.btn-default.btn-xs#btnGenPreds[type='button']", {
-                   onclick: () => app.showGenPreds('btnGenPreds'),
-                   style: {float: "left", "margin-left": "2%"}
-               }, "Generate New Predictions")),
-             m('#setxLeftPlot[style=display:block; float: left; width: 75%; height:95%; overflow: auto; background-color: white]'),
-             m('#setxLeft[style=display:none; float: left; width: 75%; height:95%; overflow: auto; background-color: white]'),
-             m('#setxLeftGen[style=display:none; float: left; width: 75%; height:95%; overflow: auto; background-color: white]',
-               m('#setxLeftTop[style=display:block; float: left; width: 100%; height:50%; overflow: auto; background-color: white]',
-                 m('#setxLeftTopLeft[style=display:block; float: left; width: 30%; height:100%; overflow: auto; background-color: white]'),
-                 m('#setxLeftTopRight[style=display:block; float: left; width: 70%; height:100%; overflow: auto; background-color: white]')),
-               m('#setxLeftBottomLeft[style=display:block; float: left; width: 70%; height:50%; overflow: auto; background-color: white]'),
-               m('#setxLeftBottomRightTop[style=display:block; float: left; width: 30%; height:10%; overflow: auto; background-color: white]',
-                 m(Button,
-                   {id: 'btnExecutePipe',
-                    classes: 'btn-default.ladda-button[data-spinner-color=#000000][data-style=zoom-in]',
-                    onclick: () => app.executepipeline('btnExecutePipe'),
-                    style: `display:inline; float: left; margin-right: 10px`,
-                    title: 'Execute pipeline.'},
-                   m('span.ladda-label[style=pointer-events: none]', 'Execute Generation'))),
-               m('#setxLeftBottomRightBottom[style=display:block; float: left; width: 30%; height:40%; overflow: auto; background-color: white]'))
+               })),
+             m(ButtonRadio, {
+                 id: 'resultsButtonBar',
+                 attrsAll: {style: {width: 'auto'}},
+                 attrsButtons: {class: ['btn-sm'], style: {width: 'auto'}},
+                 onclick: app.setSelectedResultsMenu,
+                 activeSection: app.selectedResultsMenu,
+                 sections: [
+                     {value: 'Prediction Summary', id: 'btnPredPlot'},
+                     {value: 'Generate New Predictions', id: 'btnGenPreds'},
+                     {value: 'Visualize Pipeline', id: 'btnVisPipe'}
+                 ]
+             }),
+             m(`div#predictionSummary[style=display:${app.selectedResultsMenu === 'Prediction Summary' ? 'block' : 'none'}]`,
+                 m('#setxLeftPlot[style=display:block; float: left; width: 75%; height:95%; overflow: auto; background-color: white]'),
+                 m('#setxLeft[style=display:none; float: left; width: 75%; height:95%; overflow: auto; background-color: white]'),
+             ),
+             m(`#setxLeftGen[style=display:${app.selectedResultsMenu === 'Generate New Predictions' ? 'block' : 'none'}; float: left; width: 75%; height:95%; overflow: auto; background-color: white]`,
+                 m('#setxLeftTop[style=display:block; float: left; width: 100%; height:50%; overflow: auto; background-color: white]',
+                     m('#setxLeftTopLeft[style=display:block; float: left; width: 30%; height:100%; overflow: auto; background-color: white]'),
+                     m('#setxLeftTopRight[style=display:block; float: left; width: 70%; height:100%; overflow: auto; background-color: white]')),
+                 m('#setxLeftBottomLeft[style=display:block; float: left; width: 70%; height:50%; overflow: auto; background-color: white]'),
+                 m('#setxLeftBottomRightTop[style=display:block; float: left; width: 30%; height:10%; overflow: auto; background-color: white]',
+                     m(Button, {
+                         id: 'btnExecutePipe',
+                         classes: 'btn-default.ladda-button[data-spinner-color=#000000][data-style=zoom-in]',
+                         onclick: app.executepipeline,
+                         style: {
+                             display: app.selectedPipeline === undefined ? 'none' : 'block',
+                             float: 'left',
+                             'margin-right': '10px'
+                         },
+                         title: 'Execute pipeline'
+                     }, m('span.ladda-label[style=pointer-events: none]', 'Execute Generation'))),
+                 m('#setxLeftBottomRightBottom[style=display:block; float: left; width: 30%; height:40%; overflow: auto; background-color: white]')),
+             app.selectedResultsMenu === 'Visualize Pipeline' && m(Flowchart, {
+                 // TODO replace pipeline with value returned from D3M. Currently hardcoded
+                 steps: pipelineFlowchartPrep(pipeline),
+                 attrsAll: {style: {width: '75%', height: 'calc(100% - 30px)', overflow: 'auto'}}
+             })
          ]}
     ];
 
@@ -410,7 +423,8 @@ class Body {
                     : m('', {style},
                         m(ButtonRadio,
                           {id: 'exploreButtonBar',
-                           attrsAll: {style: {width: '400px'}, class: 'btn-sm'},
+                           attrsAll: {style: {width: '400px'}},
+                           attrsButtons: {class: ['btn-sm']},
                            onclick: x => {nodesExplore = []; app.setVariate(x)},
                            activeSection: app.exploreVariate,
                            sections: discovery ? [{value: 'Problem'}] : [{value: 'Univariate'}, {value: 'Bivariate'}, {value: 'Trivariate'}, {value: 'Multiple'}]}),
@@ -676,14 +690,15 @@ class Body {
 
     footer(mode) {
         return m(Footer, [
-            m(ButtonRadio,
-              {id: 'modeButtonBar',
-               attrsAll: {
-                   style: {'padding-top':'2px', width: '200px'}, class: 'navbar-left btn-sm'},
-               onclick: app.set_mode,
-               activeSection: mode || 'model',
-               // {value: 'Results', id: 'btnResultsMode'}] VJD: commenting out the results mode button since we don't have this yet
-               sections: [{value: 'Model'}, {value: 'Explore'}]}),
+            m(ButtonRadio, {
+                id: 'modeButtonBar',
+                attrsAll: {style: {margin: '2px', width: 'auto'}, class: 'navbar-left'},
+                // attrsButtons: {class: ['btn-sm']}, // if you'd like small buttons (btn-sm should be applied to individual buttons, not the entire component)
+                onclick: app.set_mode,
+                activeSection: mode || 'model',
+                // {value: 'Results', id: 'btnResultsMode'}] VJD: commenting out the results mode button since we don't have this yet
+                sections: [{value: 'Model'}, {value: 'Explore'}]
+            }),
             m("a#logID[href=somelink][target=_blank]", "Replication"),
             m("span[style=color:#337ab7]", " | "),
             // dev links...
@@ -707,158 +722,29 @@ let exploreVars = {
     }
 };
 
-function pipelineFlowchart(pipeline) {
-    if (!pipeline) pipeline = {
-        "id": "2afd8af4-15b6-4575-b4a5-24c333b32b3e",
-        "schema": "https://metadata.datadrivendiscovery.org/schemas/v0/pipeline.json",
-        "created": "2018-05-30T11:09:25.384729Z",
-        "context": "TESTING",
-        "inputs": [
-            {
-                "name": "input dataset"
-            }
-        ],
-        "outputs": [
-            {
-                "data": "steps.5.produce",
-                "name": "predictions"
-            }
-        ],
-        "steps": [
-            {
-                "type": "PRIMITIVE",
-                "primitive": {
-                    "id": "4b42ce1e-9b98-4a25-b68e-fad13311eb65",
-                    "version": "0.2.0",
-                    "python_path": "d3m.primitives.datasets.DatasetToDataFrame",
-                    "name": "Dataset to DataFrame converter"
-                },
-                "arguments": {
-                    "inputs": {
-                        "data": "inputs.0",
-                        "type": "CONTAINER"
-                    }
-                },
-                "outputs": [
-                    {
-                        "id": "produce"
-                    }
-                ]
-            },
-            {
-                "type": "PRIMITIVE",
-                "primitive": {
-                    "id": "d510cb7a-1782-4f51-b44c-58f0236e47c7",
-                    "version": "0.2.0",
-                    "python_path": "d3m.primitives.data.ColumnParser",
-                    "name": "Parses strings into their types"
-                },
-                "arguments": {
-                    "inputs": {
-                        "data": "steps.0.produce",
-                        "type": "CONTAINER"
-                    }
-                },
-                "outputs": [
-                    {
-                        "id": "produce"
-                    }
-                ]
-            },
-            {
-                "type": "PRIMITIVE",
-                "primitive": {
-                    "id": "ebfeb6f0-e366-4082-b1a7-602fd50acc96",
-                    "version": "0.1.0",
-                    "python_path": "d3m.primitives.byudml.imputer.RandomSamplingImputer",
-                    "name": "Random Sampling Imputer"
-                },
-                "arguments": {
-                    "inputs": {
-                        "data": "steps.1.produce",
-                        "type": "CONTAINER"
-                    }
-                },
-                "outputs": [
-                    {
-                        "id": "produce"
-                    }
-                ]
-            },
-            {
-                "type": "PRIMITIVE",
-                "primitive": {
-                    "id": "91fe0a56-f400-483a-8641-4e26d005c621",
-                    "version": "0.2.0",
-                    "python_path": "d3m.primitives.data.ExtractAttributes",
-                    "name": "Extracts attribute columns"
-                },
-                "arguments": {
-                    "inputs": {
-                        "data": "steps.2.produce",
-                        "type": "CONTAINER"
-                    }
-                },
-                "outputs": [
-                    {
-                        "id": "produce"
-                    }
-                ]
-            },
-            {
-                "type": "PRIMITIVE",
-                "primitive": {
-                    "id": "a7feadd5-997f-4302-bd5d-caa86e7bbd4f",
-                    "version": "0.2.0",
-                    "python_path": "d3m.primitives.data.ExtractTargets",
-                    "name": "Extracts target columns"
-                },
-                "arguments": {
-                    "inputs": {
-                        "data": "steps.2.produce",
-                        "type": "CONTAINER"
-                    }
-                },
-                "outputs": [
-                    {
-                        "id": "produce"
-                    }
-                ]
-            },
-            {
-                "type": "PRIMITIVE",
-                "primitive": {
-                    "id": "028dcbce-be8c-32a6-af05-50c8cacaaadb",
-                    "version": "0.1.0",
-                    "python_path": "d3m.primitives.sklearn_wrap.SKAdaBoostClassifier",
-                    "name": "sklearn.ensemble.weight_boosting.AdaBoostClassifier"
-                },
-                "arguments": {
-                    "inputs": {
-                        "data": "steps.3.produce",
-                        "type": "CONTAINER"
-                    },
-                    "outputs": {
-                        "data": "steps.4.produce",
-                        "type": "CONTAINER"
-                    }
-                },
-                "outputs": [
-                    {
-                        "id": "produce"
-                    }
-                ]
-            }
-        ]
-    };
+function pipelineFlowchartPrep(pipeline) {
 
     let bold = (value) => m('div', {style: {'font-weight': 'bold', display: 'inline'}}, value);
 
     return pipeline.steps.map((pipeStep, i) => ({
-        title: 'Step ' + i,
+        key: 'Step ' + i,
+        color: {
+            // 'data': common.grayColor,
+            'byudml': common.dvColor,
+            'sklearn_wrap': common.csColor
+        }[pipeStep.primitive.python_path.split('.')[2]] || common.grayColor,
+        summary: m(Table, {
+            id: 'pipelineFlowchartSummary' + i,
+            abbreviation: 40,
+            data: {
+                'Name': pipeStep.primitive.name,
+                'Method': pipeStep.primitive.python_path.split('.').slice(-1)[0]
+            },
+            attrsAll: {style: {'margin-bottom': 0}}
+        }),
         content: [
             'primitive' in pipeStep && [
-                bold('Type: '), pipeStep.type, m('br'),
+                m('[style=float:left]', bold('Type: '), pipeStep.type), m('br'),
                 m(Table, {
                     id: 'pipelineTableStepPrimitive' + i,
                     abbreviation: 40,
@@ -866,21 +752,169 @@ function pipelineFlowchart(pipeline) {
                 })
             ],
             'arguments' in pipeStep && Object.keys(pipeStep['arguments']).map(arg => [
-                bold('Argument: '), arg, m('br'),
+                m('[style=float:left]', bold('Argument: '), arg), m('br'),
                 m(Table, {
                     id: 'pipelineTableStep' + i + 'Arguments' + arg,
                     abbreviation: 40,
                     data: pipeStep['arguments'][arg]
                 })
-            ])
+            ]),
+            'outputs' in pipeStep && [
+                m('[style=float:left]', bold('Outputs: ')), m('br'),
+                pipeStep['outputs'].map((output, j) => m(Table, {
+                    id: 'pipelineTableStep' + i + 'Output' + j,
+                    abbreviation: 40,
+                    data: output
+            }))]
         ]
     }));
 }
 
+let pipeline = {
+    "id": "2afd8af4-15b6-4575-b4a5-24c333b32b3e",
+    "schema": "https://metadata.datadrivendiscovery.org/schemas/v0/pipeline.json",
+    "created": "2018-05-30T11:09:25.384729Z",
+    "context": "TESTING",
+    "inputs": [
+        {
+            "name": "input dataset"
+        }
+    ],
+    "outputs": [
+        {
+            "data": "steps.5.produce",
+            "name": "predictions"
+        }
+    ],
+    "steps": [
+        {
+            "type": "PRIMITIVE",
+            "primitive": {
+                "id": "4b42ce1e-9b98-4a25-b68e-fad13311eb65",
+                "version": "0.2.0",
+                "python_path": "d3m.primitives.datasets.DatasetToDataFrame",
+                "name": "Dataset to DataFrame converter"
+            },
+            "arguments": {
+                "inputs": {
+                    "data": "inputs.0",
+                    "type": "CONTAINER"
+                }
+            },
+            "outputs": [
+                {
+                    "id": "produce"
+                }
+            ]
+        },
+        {
+            "type": "PRIMITIVE",
+            "primitive": {
+                "id": "d510cb7a-1782-4f51-b44c-58f0236e47c7",
+                "version": "0.2.0",
+                "python_path": "d3m.primitives.data.ColumnParser",
+                "name": "Parses strings into their types"
+            },
+            "arguments": {
+                "inputs": {
+                    "data": "steps.0.produce",
+                    "type": "CONTAINER"
+                }
+            },
+            "outputs": [
+                {
+                    "id": "produce"
+                }
+            ]
+        },
+        {
+            "type": "PRIMITIVE",
+            "primitive": {
+                "id": "ebfeb6f0-e366-4082-b1a7-602fd50acc96",
+                "version": "0.1.0",
+                "python_path": "d3m.primitives.byudml.imputer.RandomSamplingImputer",
+                "name": "Random Sampling Imputer"
+            },
+            "arguments": {
+                "inputs": {
+                    "data": "steps.1.produce",
+                    "type": "CONTAINER"
+                }
+            },
+            "outputs": [
+                {
+                    "id": "produce"
+                }
+            ]
+        },
+        {
+            "type": "PRIMITIVE",
+            "primitive": {
+                "id": "91fe0a56-f400-483a-8641-4e26d005c621",
+                "version": "0.2.0",
+                "python_path": "d3m.primitives.data.ExtractAttributes",
+                "name": "Extracts attribute columns"
+            },
+            "arguments": {
+                "inputs": {
+                    "data": "steps.2.produce",
+                    "type": "CONTAINER"
+                }
+            },
+            "outputs": [
+                {
+                    "id": "produce"
+                }
+            ]
+        },
+        {
+            "type": "PRIMITIVE",
+            "primitive": {
+                "id": "a7feadd5-997f-4302-bd5d-caa86e7bbd4f",
+                "version": "0.2.0",
+                "python_path": "d3m.primitives.data.ExtractTargets",
+                "name": "Extracts target columns"
+            },
+            "arguments": {
+                "inputs": {
+                    "data": "steps.2.produce",
+                    "type": "CONTAINER"
+                }
+            },
+            "outputs": [
+                {
+                    "id": "produce"
+                }
+            ]
+        },
+        {
+            "type": "PRIMITIVE",
+            "primitive": {
+                "id": "028dcbce-be8c-32a6-af05-50c8cacaaadb",
+                "version": "0.1.0",
+                "python_path": "d3m.primitives.sklearn_wrap.SKAdaBoostClassifier",
+                "name": "sklearn.ensemble.weight_boosting.AdaBoostClassifier"
+            },
+            "arguments": {
+                "inputs": {
+                    "data": "steps.3.produce",
+                    "type": "CONTAINER"
+                },
+                "outputs": {
+                    "data": "steps.4.produce",
+                    "type": "CONTAINER"
+                }
+            },
+            "outputs": [
+                {
+                    "id": "produce"
+                }
+            ]
+        }
+    ]
+};
+
 m.route(document.body, '/model', {
-    '/flowchart': {
-        render: () => m(Flowchart, {steps: pipelineFlowchart()})
-    },
     '/model': {
         onmatch() {
             valueKey = app.valueKey;
