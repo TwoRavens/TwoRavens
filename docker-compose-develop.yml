@@ -1,6 +1,21 @@
 version: '3.5'
 
 # -----------------------------------------
+# To add/run a TA2:
+#
+# (1) Set the appropriate input/output directories on your host machine
+#   - See: "x-d3m-input", "x-d3m-output"
+#
+# (2) Update or add environment variables
+#   - See "x-shared-env-variables"
+#     - These are shared with most containers, including the TA2
+#       e.g. don't remove any variables
+#
+# (3) Update "ta2-main" container section to point to the
+#   appropriate image, add any "command" or "entrypoint" values, etc
+# -----------------------------------------
+
+# -----------------------------------------
 # shared mounted volumes
 # reference: https://github.com/docker/compose/issues/4675#issuecomment-403865965
 # -----------------------------------------
