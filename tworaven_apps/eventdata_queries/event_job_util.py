@@ -14,6 +14,8 @@ from tworaven_apps.eventdata_queries.dataverse.temporary_file_maker import Tempo
 from tworaven_apps.eventdata_queries.dataverse.dataverse_publish_dataset import DataversePublishDataset
 from tworaven_apps.eventdata_queries.dataverse.dataverse_list_files_dataset import ListFilesInDataset
 from tworaven_apps.eventdata_queries.dataverse.get_dataset_file_info import GetDataSetFileInfo
+from tworaven_apps.eventdata_queries.mongo_retrieve_util import MongoRetrieveUtil
+from tworaven_apps.eventdata_queries.generate_readme import GenerateReadMe
 
 
 class EventJobUtil(object):
@@ -90,45 +92,58 @@ class EventJobUtil(object):
         if not success:
             return get_json_error(event_obj)
 
-        else:
-            print("event data obj ", event_obj.as_dict()['query'])
-            json_dump = json.dumps(event_obj.as_dict()['query'])
-            temp_file_obj = TemporaryFileMaker(json_dump)
+        # print("event data obj ", event_obj.as_dict()['query'])
 
-            succ, res_obj = temp_file_obj.return_status()
-            print("res po", res_obj)
-            if not succ:
-                return err_resp(res_obj)
-            else:
+        # make readme file and upload
 
-                try:
-                    saved_query = EventDataSavedQuery.objects.get(id=query_id)
+        success_readme, readme_ob = EventJobUtil.upload_query_readme(event_obj.as_dict())
+        if not success_readme:
+            return get_json_error(readme_ob)
 
-                except ValueError:
-                    return err_resp('Could not retrieve query for id %s' % query_id)
+        print("Generated read me uploaded to dataverse",readme_ob)
 
-                try:
-                    datafile_id = res_obj['data']['files'][0]['dataFile']['id']
+        # send query_file to dataverse:
+        success_query, query_obj = EventJobUtil.upload_query_result(event_obj.as_dict()['collection_name'], event_obj.as_dict()['query'])
+        if not success_query:
+            return get_json_error(query_obj)
 
-                except ValueError:
-                    return err_resp('Could not retrieve datafile id for query_id %s' % query_id)
+        return ok_resp('Queries with readme Uploaded to dataverse')
 
-                url_input = 'https://dataverse.harvard.edu/file.xhtml?fileId='+str(datafile_id)+'&version=DRAFT'
+        # print(""" files has been successfully uploaded to dataverse, saving to database  EventDataSavedQuery""")
+        # NOW UPLOAD TO EventDataSavedQuery
+        # succ, res_obj = temp_file_obj.return_status()
+        # print("res po", res_obj)
+        # if not succ:
+        #     return err_resp(res_obj)
+        # else:
+        #
+        # try:
+        #     saved_query = EventDataSavedQuery.objects.get(id=query_id)
+        #
+        # except ValueError:
+        #     return err_resp('Could not retrieve query for id %s' % query_id)
+        #
+        # try:
+        #     datafile_id = res_status['data']['files'][0]['dataFile']['id']
+        #
+        # except ValueError:
+        #     return err_resp('Could not retrieve datafile id for query_id %s' % query_id)
+        #
+        # url_input = 'https://dataverse.harvard.edu/file.xhtml?fileId=' + str(datafile_id) + '&version=DRAFT'
+        #
+        # succ, add_archive = EventJobUtil.add_archive_query_job(datafile_id=int(datafile_id),
+        #                                                        saved_query=saved_query,
+        #                                                        status='complete',
+        #                                                        is_finished=True,
+        #                                                        is_success=True,
+        #                                                        message='query result successfully created',
+        #                                                        dataverse_response=r,
+        #                                                        archive_url=url_input)
 
-                succ, add_archive = EventJobUtil.add_archive_query_job(datafile_id=int(datafile_id),
-                                                                       saved_query=saved_query,
-                                                                       status='complete',
-                                                                       is_finished=True,
-                                                                       is_success=True,
-                                                                       message='query result successfully created',
-                                                                       dataverse_response=res_obj,
-                                                                       archive_url=url_input)
-
-                if not succ:
-                    return err_resp(add_archive)
-                else:
-                    return ok_resp(add_archive)
-
+        # if not succ:
+        #     return err_resp(add_archive)
+        # else:
+        #     return ok_resp(add_archive)
 
     @staticmethod
     def add_archive_query_job(**kwargs):
@@ -221,9 +236,16 @@ class EventJobUtil(object):
 
 
     @staticmethod
-    def upload_query_result(json_obj):
+    def upload_query_result(collection_name, json_obj):
         """ upload query result to dataverse"""
-        json_dump = json.dumps(json_obj)
+
+        obj = MongoRetrieveUtil(collection_name, json_obj)
+        success, mongo_obj = obj.run_query()
+
+        if not success:
+            return err_resp(mongo_obj)
+
+        json_dump = json.dumps(mongo_obj)
         temp_file_obj = TemporaryFileMaker(json_dump)
 
         succ, res_obj = temp_file_obj.return_status()
@@ -234,5 +256,30 @@ class EventJobUtil(object):
 
         else:
             return err_resp(res_obj)
+
+
+    @staticmethod
+    def upload_query_readme(kwargs):
+        """upload query_readme result to dataverse """
+        obj = GenerateReadMe(kwargs)
+        success, readme_obj = obj.generate_readme()
+
+        if not success:
+            return err_resp(readme_obj)
+
+        temp_file_obj = TemporaryFileMaker(readme_obj)
+
+        succ, res_obj = temp_file_obj.return_status()
+        print("query_readme result upload : ", res_obj)
+        # res_obj = readme_obj
+        # succ = True
+        if succ:
+            return ok_resp(res_obj)
+
+        else:
+            return err_resp(res_obj)
+
+
+
 
 

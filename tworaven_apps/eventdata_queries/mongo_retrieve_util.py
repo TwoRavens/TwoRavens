@@ -8,7 +8,10 @@ from urllib.parse import quote_plus
 from pymongo import MongoClient
 from pymongo.errors import \
     (ConfigurationError, ConnectionFailure)
-from tworaven_apps.eventdata_queries.event_job_util import EventJobUtil
+
+from tworaven_apps.utils.basic_response import (ok_resp,
+                                                err_resp,
+                                                err_resp_with_data)
 
 from django.conf import settings
 
@@ -34,7 +37,9 @@ class MongoRetrieveUtil(BasicErrCheck):
         query: query to run
         """
         self.collection_name = collection_name
+        # 'cline_phoenix_fbis'
         self.query = query
+        # [{"$match":{"year": 1998, "target_root" : "RUS", "target_agent":"GOV"}}, {"$count": "year_1998"}]
 
         self.mongo_client = None
 
@@ -103,8 +108,8 @@ class MongoRetrieveUtil(BasicErrCheck):
         # agg_query = [{"$match":{"$and":[{"$and":[{"INTERACTION":{"$not":{"$in":["12","13","20","27","28","35","37"]}}},{"EVENT_DATE_constructed":{"$gte":{"$date":{"$numberLong":"1122304320000"}},"$lte":{"$date":{"$numberLong":"1428072507000"}}}}]},{}]}},{"$project":{"_id":0,"ISO":1,"EVENT_ID_CNTY":1,"EVENT_ID_NO_CNTY":1,"EVENT_DATE":1,"YEAR":1,"TIME_PRECISION":1,"EVENT_TYPE":1,"ACTOR1":1,"ASSOC_ACTOR_1":1,"INTER1":1,"ACTOR2":1,"ASSOC_ACTOR_2":1,"INTER2":1,"INTERACTION":1,"REGION":1,"COUNTRY":1,"ADMIN1":1,"ADMIN2":1,"ADMIN3":1,"LOCATION":1,"LATITUDE":1,"LONGITUDE":1,"GEO_PRECISION":1,"SOURCE":1,"SOURCE_SCALE":1,"NOTES":1,"FATALITIES":1,"TIMESTAMP":1}}]
         agg_query = [{"$match":{"year": 1998, "target_root" : "RUS", "target_agent":"GOV"}}, {"$count": "year_1998"}]
         print('agg query->')
-        print(list(collection.aggregate(agg_query)))
-        result = list(collection.aggregate(agg_query))
+        print(list(collection.aggregate(self.query)))
+        result = list(collection.aggregate(self.query))
 
         #print('size: ', Object.bsonsize(doc))
 
@@ -116,14 +121,11 @@ class MongoRetrieveUtil(BasicErrCheck):
         #num_results = db.find(self.query).count()
         # result = db.acled_africa.aggregate(agg_query)
         # print(list(result))
-        success, res = EventJobUtil.upload_query_result(result)
 
-        if not success:
-            print('error came up %s' % res)
-
+        if not result:
+            return err_resp(result)
         else:
-            print(res)
-
+            return ok_resp(result)
 
 
     def get_mongo_client(self):

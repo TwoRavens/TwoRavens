@@ -47,11 +47,12 @@ class EventDataSavedQuery(TimeStampedModel):
     result_count = models.IntegerField(default=-1)
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now_add=True)
-    dataset = models.TextField(blank=True)
-    dataset_type = models.CharField(blank=False,
+    collection_type = models.CharField(blank=False,
                                     max_length=255,
                                     choices=TYPE_CHOICES,
                                     default=SUBSET)
+    collection_name = models.CharField(blank=False,max_length=255, default="mongo dataset")
+    save_to_dataverse = models.BooleanField(blank=True, default=False)
 
     class Meta:
         ordering = ('-created',)
@@ -142,6 +143,17 @@ class EventDataSavedQuery(TimeStampedModel):
 
         else:
             return ok_resp(result)
+
+    def queries_to_dataverse(self):
+        """ get list of all the queries to be saved to dataverse"""
+        result = EventDataSavedQuery.objects.filter(save_to_dataverse=True)
+
+        if not result:
+            return err_resp('could not get the object list')
+
+        else:
+            return ok_resp(result)
+
 
 
 class ArchiveQueryJob(TimeStampedModel):
