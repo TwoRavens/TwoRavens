@@ -2108,18 +2108,18 @@ function onPipelineCreate(PipelineCreateResult, id) {
         };
     };
     pipelineTable = pipelineTable.sort(function(a,b){
-        if (a[2]===b[2]){
+        if (a['Score']===b['Score']){
             return(0)
-        } else if (a[2]=="scoring"){
+        } else if (a['Score']=="scoring"){
             return(100)
-        } else if (b[2]=="scoring") {
+        } else if (b['Score']=="scoring") {
             return(-100)
-        } else if (a[2]=="no score"){
+        } else if (a['Score']=="no score"){
             return(1000) 
-        } else if (b[2]=="no score"){
+        } else if (b['Score']=="no score"){
             return(-1000)
         } else {
-            return parseFloat(b[2]) - parseFloat(a[2]) ;
+            return parseFloat(b['Score']) - parseFloat(a['Score']) ;
         };
     });
 

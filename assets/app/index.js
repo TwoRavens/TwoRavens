@@ -728,11 +728,13 @@ function pipelineFlowchartPrep(pipeline) {
 
     return pipeline.steps.map((pipeStep, i) => ({
         key: 'Step ' + i,
-        color: {
-            // 'data': common.grayColor,
-            'byudml': common.dvColor,
-            'sklearn_wrap': common.csColor
-        }[pipeStep.primitive.python_path.split('.')[2]] || common.grayColor,
+        color: common.grayColor,
+        // special coloring is not enabled for now
+        // color: {
+        //     'data': common.grayColor,
+        //     'byudml': common.dvColor,
+        //     'sklearn_wrap': common.csColor
+        // }[pipeStep.primitive.python_path.split('.')[2]] || common.grayColor,
         summary: m(Table, {
             id: 'pipelineFlowchartSummary' + i,
             abbreviation: 40,
