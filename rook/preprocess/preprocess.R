@@ -381,7 +381,9 @@ disco <- function(names, cor, n=3){
             temporder <- order(cor[i,], decreasing=TRUE)[1:r]
             keep <- names[temporder]
             rating <- c(rating,sum(cor[i,temporder]))
-            found[[count]] <- list(target=names[i], predictors=keep)
+            
+            ## VJD: adding fields to found list for more advanced problem discovery. 0 means do nothing with them
+            found[[count]] <- list(target=names[i], predictors=keep, transform=0, subsetObs=0, subsetFeats=0) 
         }
 
     }
@@ -391,7 +393,7 @@ disco <- function(names, cor, n=3){
     for(i in 1:length(rating)){
         newfound[[i]] <- found[[ neworder[i] ]]
     }
-
+    
     return(newfound)
 }
 

@@ -2332,10 +2332,11 @@ function CreatePipelineDefinition(predictors, depvar, timeBound, aux) {
     let my_version = TA3TA2_API_VERSION;                 // set on django server
     let my_allowedValueTypes = ['DATASET_URI', 'CSV_URI'];      // Get from elsewhere
     let my_problem = CreateProblemDefinition(depvar, aux);
+    let my_template = makePipelineTemplate(aux);
     //console.log(my_problem);
     let my_dataseturi = 'file://' + datasetdocurl;
     // console.log(my_dataseturi);
-    return {userAgent: my_userAgent, version: my_version, timeBound: my_timeBound, priority: 1, allowedValueTypes: my_allowedValueTypes, problem: my_problem, inputs: [{dataset_uri: my_dataseturi}] };
+    return {userAgent: my_userAgent, version: my_version, timeBound: my_timeBound, priority: 1, allowedValueTypes: my_allowedValueTypes, problem: my_problem, template: my_template, inputs: [{dataset_uri: my_dataseturi}] };
 }
 
 function CreateFitDefinition(solutionId){
@@ -4388,6 +4389,9 @@ export function discovery(preprocess_file) {
     for (let i = 0; i < extract.length; i++) {
         names[i] = "Problem" + (i + 1);
         let current_target = extract[i]["target"];
+        let current_transform = extract[i]["transform"];
+        let current_subsetObs = extract[i]["subsetObs"];
+        let current_subsetFeats = extract[i]["subsetFeats"];
         let j = findNodeIndex(current_target);
         let node = allNodes[j];
         let current_predictors = extract[i]["predictors"];
@@ -4396,7 +4400,7 @@ export function discovery(preprocess_file) {
         let current_description = current_target + " is predicted by " + current_predictors.join(" and ");
         let current_metric = node.plottype === "bar" ? 'f1Macro' : 'meanSquaredError';
         let current_id = "problem" + (i+1);
-        let current_disco = {problem_id: current_id, system: "auto", meaningful: "no", target: current_target, predictors: current_predictors, task: current_task, rating: current_rating, description: current_description, metric: current_metric, };
+        let current_disco = {problem_id: current_id, system: "auto", meaningful: "no", target: current_target, predictors: current_predictors, transform: current_transform, subsetObs: current_subsetObs, subsetFeats: current_subsetFeats, task: current_task, rating: current_rating, description: current_description, metric: current_metric, };
         //jQuery.extend(true, current_disco, names);
         disco[i] = current_disco;
     };
@@ -4497,3 +4501,72 @@ export async function stopAllSearches() {
         };
     };
 }
+
+/**
+ *  Function takes as input the pipeline template information (currently aux) and returns a valid pipline template in json. This json is to be inserted into SearchSolutions. e.g., problem = {...}, template = {...}, inputs = [dataset_uri]
+ */
+function makePipelineTemplate (aux) {
+    console.log(aux);
+    // aux.transform, aux.subsetFeats, aux.Obs are all by default 0. if not 0, which is set in preprocess, then steps should build the corresponding primitive call.
+    let inputs = [];
+    let outputs = [];
+    let steps = [];
+    return {inputs:inputs,outputs:outputs,steps:steps};
+    
+    // example inputs:
+    /*
+        "inputs": [
+        {
+            "name": "dataset"
+        }
+        ]
+    */
+    // example outputs:
+    /*
+        "outputs": [
+        {
+            "name": "dataset",
+            "data": "step.0.produce"
+        }
+        ]
+    */
+    // example steps:
+    /*
+        "steps": [
+                {
+                    "primitive": {
+                        "primitive": {
+                            "id": "id",
+                            "version": "version",
+                            "pythonPath": "python_path",
+                            "name": "name",
+                            "digest": "optional--some locally registered primitives might not have it"
+                        },
+                        "arguments": {
+                            "arg1": {
+                                "container": {
+                                    "data": "data reference"
+                                }
+                            }},
+                        "outputs": [
+                            {
+                                "id": "id for data ref"
+                            }
+                        ],
+                        "hyperparams": {
+                            "param 1": {
+                                "container": {
+                                    "data": "data reference"
+                                }
+                            }
+                        }
+                    }
+                }
+            ]
+    */
+}
+
+
+
+
+
