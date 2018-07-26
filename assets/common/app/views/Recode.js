@@ -96,12 +96,15 @@ export default class Recode {
                 [
                     m('div.container-fluid',[
                         m('ul.nav.navbar-nav',[
-                            m('li',{id:'createLink'},
+                            m('li',{id:'createLink',onmouseenter:showTooltip, onmouseleave:hideTooltip},
                             m('a',{oncreate: createCreate, onclick: createClick},  "Create New Variable")),
-                            m('li',{id:'formulaLink'},
+                            m('li',{id:'formulaLink', onmouseenter:showTooltip, onmouseleave:hideTooltip},
                             m('a',{oncreate: formulaCreate, onclick: formulaClick}, "Formula Builder")),
-                            m('li',{id:'recodeLink'},
+                            m('li',{id:'recodeLink',onmouseenter:showTooltip, onmouseleave:hideTooltip},
                             m('a', {oncreate: recodeCreate, onclick: recodeClick}, "Recode")),
+                        ]),
+                        m('div',{id:'tooltip',style:{'z-index':'999','margin-left':'400px'}},[
+
                         ]),
                     ])
                 ]),
@@ -201,11 +204,11 @@ export default class Recode {
         
                         m('div.container-fluid', {id : 'div1' , style : {'display':'block','height': '220px','padding':'20px'}}, [
                             m('form',{ onsubmit: formulaCalculate},[
-                                m('span',{style :{'display': 'block','overflow': 'hidden'}},[m('input[type=text]', {id: 'newVarName', placeholder: 'Variable Name', style : {'width': '100%','box-sizing':'border-box','white-space': 'nowrap;'}}),]),
+                                m('span',{style :{'display': 'block','overflow': 'hidden'}},[m('input[type=text]', {id: 'variables', placeholder: 'New Formula', style : {'width': '100%','box-sizing':'border-box','white-space': 'nowrap;'}}),]),
                                 m("br"),
-                                m('span',{style :{'display': 'block','overflow': 'hidden'}},[m('input[type=text]', {id: 'variables', placeholder: 'Variable', style : {'width': '100%','box-sizing':'border-box','white-space': 'nowrap;'}}),]),
+                                m('span',{style :{'display': 'block','overflow': 'hidden'}},[m('input[type=text]', {id: 'newVarName', placeholder: 'New Variable Name', style : {'width': '100%','box-sizing':'border-box','white-space': 'nowrap;'}}),]),
                                 m("br"),
-                                m('textarea',{id:'varDescription',cols:"40",rows:'5',placeholder:'Variable Description'}),
+                                m('textarea',{id:'varDescription',cols:"40",rows:'5',placeholder:'New Variable Description'}),
                                 m('br'),
                                 m('button[type="submit"]',{style: {'float':'right'}}, 'Customize'),
                             ]),])
@@ -246,10 +249,10 @@ export default class Recode {
                                 m('form#createNewForm',{ onsubmit: addValue},[
                                     m('div',{style :{'float':'left'  ,'overflow':'hidden','width':'40%'}},[
                                         m('br'),
-                                        m('label',{ style : {'display':'inline-block', 'margin-right':'10px'}},'Variable Name : '),
-                                        m('input[type=text]', {id: 'newVar', placeholder: 'New Variable', style : {'display':'inline-block' , 'margin':'10px', 'width':'40%'}}),
+                                        m('label',{ style : {'display':'inline-block', 'margin-right':'10px'}},'New Variable Name : '),
+                                        m('input[type=text]', {id: 'newVar', placeholder: ' New Variable', style : {'display':'inline-block' , 'margin':'10px', 'width':'40%'}}),
                                         m('br'),
-                                        m('label',{ style : {'display':'inline-block', 'margin-right':'10px'}},'Variable Type : '),
+                                        m('label',{ style : {'display':'inline-block', 'margin-right':'10px'}},'New Variable Type : '),
                                         m('div.dropdown',{style : {'display':'inline-block','margin':'10px'}},[
                                             m('select.form-control#typeSelect',{onchange: someFunction ,style:{'display':'inline-block'}, id:'varType'},[
                                                 m('option','Boolean'),
@@ -261,7 +264,7 @@ export default class Recode {
                                             m('label',{ style : { 'margin-right':'10px'}},'Class List : '),
                                             m('input[type=text]',{id:'nominalList', placeholder:'Nominal', style:{'margin':'10px'}},),
                                         ]),
-                                        m('label',{ style : {'display':'block', 'margin-right':'10px'}},'Variable Description : '),
+                                        m('label',{ style : {'display':'block', 'margin-right':'10px'}},'New Variable Description : '),
                                         m('textarea',{id:'varDescription',cols:"40",rows:'5'}),
                                     ]),m('div#tableDiv',{style :{'display': 'block','width':'60%','float':'right','height':(window.innerHeight-150)+'px' ,'overflow-y': 'auto','border-style': 'solid','border-width': 'thin'}},[
                                         m('table.table.table-bordered',{id:'createTable',style:{ 'overflow': 'scroll'}},[
@@ -475,6 +478,45 @@ function formulaCalculate(elem){
 }
 
 function showTooltip(){
+    if(this.id === 'createLink'){
+        document.getElementById('tooltip').innerHTML = 
+        "<b>Create a new variable without any transformation on the existing variable(s).</b>"+
+        "<br>How to create new variable"+
+        "<ul>"+
+        "<li>Select the existing variable(s) to filter the table.</li>"+
+        "<li>Manually creating new variable,by specifying name, type and description.</li>"+
+        "<li>Click on 'Create New Variable'.</li>"+
+        "<li>Manually enter/select the new value for the corrsponding row.</li>"+
+        "<li>By clicking on 'Add Values', new variable is created with the associated values.</li>"+
+        " </ul>";
+    }
+    else if(this.id === 'formulaLink'){
+        document.getElementById('tooltip').innerHTML = 
+        "<b>Create a new variable by formulating the existing variable(s).</b>"+
+        "<br>How to achieve a formula transformation"+
+        "<ul>"+
+        "<li>Select the existing variable from the left panel which propmts a list of <br> transformation to appear on the left panel.</li>"+
+        "<li>Select one of the transformation to be applies on the selected variable.</li>"+
+        "<li>Muliple variables with various transformation can be applied to the formula.</li>"+
+        "<li>Specify the name and description of the transformation (formula)</li>"+
+        "<li>By clicking on 'Customize', new variable is created with the values derived <br>from the transformation.</li>"+
+        " </ul>";
+        
+    }
+    else if(this.id === 'recodeLink'){
+        document.getElementById('tooltip').innerHTML = 
+        "<b>Create a new variable by applying equidistance/equimass/custom binning <br> on the existinig variable .</b>"+
+        "<br>How to bin an existing variable"+
+        "<ul>"+
+        "<li>Select the existing variable from the left panel.</li>"+
+        "<li>This displays the distribution of the variable</li>"+
+        "<li>Equidistance and equimass binning can be applied by entering the number <br>of bins and clicking on the associated bin button</li>"+
+        "<li>Custom bin can be created by entering comma seperated break points to <br>create the bins</li>"+
+        "<li>Specify the name and description of the binning applied</li>"+
+        "<li>By clicking on 'Customize', new variable is created with the values derived <br>from the binning.</li>"+
+        " </ul>";
+    }
+    
     var tooltip = document.getElementById('tooltip');
     tooltip.style.display = 'block';
     tooltip.style.position ='absolute';
@@ -482,7 +524,7 @@ function showTooltip(){
     tooltip.style.border = '1px solid black';
     tooltip.style.borderRadius = '5px';
     tooltip.style.padding= "5px";
-    tooltip.style.zIndex= "1";
+    tooltip.style.zIndex= "9999";
     tooltip.style.backgroundColor= 'white';
     
 }
@@ -632,6 +674,9 @@ function recodeCreate(){
     var elem = document.getElementById('centralPanel');
     elem.style.display ='none';
     document.getElementById('btnOperations').disabled = 'disabled';
+
+    var tooltip = document.getElementById('tooltip');
+    tooltip.style.display = 'none'
 }
 function recodeClick(){
     var elem = document.getElementById('recodeLink');
