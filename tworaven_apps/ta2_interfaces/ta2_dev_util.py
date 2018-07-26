@@ -45,7 +45,7 @@ TA2_IMAGE_INFO = [
     # STANFORD: not using D3MPORT
     (TA2_STANFORD,
      'registry.datadrivendiscovery.org/jdunnmon/d3m-ta2-stanford:latest',
-     '-p 50051:50051 --memory 10g'),
+     '-p 45042:50051 --memory 10g -e D3MRAM=10Gi -e D3MCPU=1'),
 ]
 
 class TA2Helper(BasicErrCheck):
