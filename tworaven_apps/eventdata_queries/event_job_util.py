@@ -93,6 +93,16 @@ class EventJobUtil(object):
             return get_json_error(event_obj)
 
         # print("event data obj ", event_obj.as_dict()['query'])
+        if not event_obj.as_dict()['save_to_dataverse']:
+            return err_resp('This query is not allowed to get uploaded to dataverse')
+
+
+        # send query_file to dataverse:
+        success_query, query_obj = EventJobUtil.upload_query_result(event_obj)
+        if not success_query:
+            return get_json_error(query_obj)
+
+
 
         # make readme file and upload
 
@@ -100,12 +110,7 @@ class EventJobUtil(object):
         if not success_readme:
             return get_json_error(readme_ob)
 
-        print("Generated read me uploaded to dataverse",readme_ob)
-
-        # send query_file to dataverse:
-        success_query, query_obj = EventJobUtil.upload_query_result(event_obj.as_dict()['collection_name'], event_obj.as_dict()['query'])
-        if not success_query:
-            return get_json_error(query_obj)
+        print("Generated read me uploaded to dataverse", readme_ob)
 
         return ok_resp('Queries with readme Uploaded to dataverse')
 
@@ -236,17 +241,20 @@ class EventJobUtil(object):
 
 
     @staticmethod
-    def upload_query_result(collection_name, json_obj):
+    def upload_query_result(event_obj):
         """ upload query result to dataverse"""
-
-        obj = MongoRetrieveUtil(collection_name, json_obj)
+        collection_name = event_obj.as_dict()['collection_name']
+        query_obj = event_obj.as_dict()['query']
+        query_id = event_obj.as_dict()['id']
+        filename = '%s_%s.txt' % (str(query_id), str(collection_name))
+        obj = MongoRetrieveUtil(collection_name, query_obj)
         success, mongo_obj = obj.run_query()
 
         if not success:
             return err_resp(mongo_obj)
 
         json_dump = json.dumps(mongo_obj)
-        temp_file_obj = TemporaryFileMaker(json_dump)
+        temp_file_obj = TemporaryFileMaker(filename, json_dump)
 
         succ, res_obj = temp_file_obj.return_status()
         print("query result upload : ", res_obj)
@@ -267,18 +275,7 @@ class EventJobUtil(object):
         if not success:
             return err_resp(readme_obj)
 
-        temp_file_obj = TemporaryFileMaker(readme_obj)
-
-        succ, res_obj = temp_file_obj.return_status()
-        print("query_readme result upload : ", res_obj)
-        # res_obj = readme_obj
-        # succ = True
-        if succ:
-            return ok_resp(res_obj)
-
-        else:
-            return err_resp(res_obj)
-
+        return ok_resp(readme_obj)
 
 
 
