@@ -186,7 +186,9 @@ TA2_STATIC_TEST_MODE = strtobool(os.environ.get('TA2_STATIC_TEST_MODE', 'True'))
 TA2_TEST_SERVER_URL = os.environ.get('TA2_TEST_SERVER_URL', 'localhost:45042')
 TA3_GPRC_USER_AGENT = os.environ.get('TA3_GPRC_USER_AGENT', 'TwoRavens')
 
-TA2_GPRC_SHORT_TIMEOUT = 3 # seconds
+# for non-streaming responses
+TA2_GPRC_SHORT_TIMEOUT = 7 # seconds
+# for streaming responses
 TA2_GPRC_LONG_TIMEOUT = 5 * 60 # 5 minutes
 
 # D3M - gRPC file uris
