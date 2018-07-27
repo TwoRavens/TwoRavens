@@ -181,19 +181,7 @@ export default class Recode {
                                     m('button',{onclick: calculate_bin},'Custom Bin'),                 
                                 ]),
                                 m("br"),
-                                m('div#tableBinDiv',{style :{'overflow-y': 'auto','border-style': 'solid','border-width': 'thin'}},[
-                                    m('table.table.table-bordered',{id:'binTable',style:{ 'overflow': 'scroll'}},[
-                                        m('tr#binheader',[
-                                            m('th.col-xs-4',{style : {'border': '1px solid #ddd','text-align': 'center'}},currentVal),
-                                            m('th.col-xs-4',{style : {'border': '1px solid #ddd','text-align': 'center'}},'New Bin Value')                                            
-                                        ]),
-                                        dataNode.map((row)=> m('tr#binValues',[
-                                            m('td',{style : {'border': '1px solid #ddd','text-align': 'center'}},row),
-                                            m('td',{style : {'border': '1px solid #ddd','text-align': 'center'}},m('input[type=text]',{class :'newBinVal'})),                                            
-                                        ],
-                                            
-                                        ))
-                                    ])                                                                        
+                                m('div#tableBinDiv',{style :{'overflow-y': 'auto'}},[                                                                       
                                 ]),
                                 m("br"),
                                 m('button[type="submit"]',{id:'customRecodeBtn'}, 'Customize'),
@@ -240,9 +228,12 @@ export default class Recode {
                                             
                                         ])),
                                     ]),
-                                    m('button[type="button"]',{onclick: selectAllVars},'Select All Variables'),
-                                    m('button[type="submit"]','Filter Table'),
-                                    m('button[type="button"]',{onclick: unselectAllVars},'Unselect All Variables'),
+                                    m('div',{style:{ 'margin':'0 auto', 'text-align': 'left', 'width':'500px'}},[
+                                        m('button[type="button"]',{onclick: selectAllVars},'Select All Variables'),
+                                        m('button[type="submit"]','Filter Table'),
+                                        m('button[type="button"]',{onclick: unselectAllVars},'Unselect All Variables'),
+                                    ]),
+                                    
                                 ]),
                             ]),
                             m('div',{id:'createTableDiv'},[
@@ -364,17 +355,53 @@ function clickVar(elem) {
 
             document.getElementById('customRecodeBtn').disabled = true;
             
-            var elmtTable = document.getElementById('binTable');
-            var tableRows = elmtTable.getElementsByTagName('tr');
-            var rowCount = tableRows.length;
+            //Updating the dataNode
+            $( "#binTable" ).remove();
 
-            for (var x=rowCount-1; x>0; x--) {
-                elmtTable.deleteRow(x);
-            }
-
+            dataNode = [];
             var index = tableHeader.indexOf(currentVal);
             tableData.map((row,i) => dataNode.push(row[index]))
             dataNode = dataNode.filter( onlyUnique )
+
+            var tableDiv =document.getElementById('tableBinDiv');
+            var tbl = document.createElement('table')
+            tbl.id = 'binTable'
+            tbl.className = "table table-bordered";
+    
+            
+            for(var rownum = -1; rownum < dataNode.length;rownum++){
+                var tr = tbl.insertRow();
+                if(rownum == -1){
+                    tr.id ="binheader"
+                }else{
+                    tr.id = "binValues"
+                }
+
+                for(var j = 0; j < 2; j++){
+                    var td = tr.insertCell();
+                    td.style = "border: 1px solid rgb(221, 221, 221); text-align: center;"
+                    if(rownum === -1){
+                        if(j === 0){
+                            td.appendChild(document.createTextNode(currentVal));
+                        }else{
+                            td.appendChild(document.createTextNode('New Bin Value'));
+                        }
+                    }else{
+                        if(j === 0){
+                            td.appendChild(document.createTextNode(dataNode[rownum]));
+                        }else{
+                            var input = document.createElement('input');
+                            input.type = 'text';
+                            td.appendChild(input);
+                        }
+                    }
+                   
+                    td.style.border = '1px solid black';
+
+                }
+            }
+            tableDiv.appendChild(tbl)
+            //----------------------------------------------------------
             
             document.getElementById('plot_a').innerHTML ="";
             
@@ -592,11 +619,9 @@ function calculate_bin(){
         if(currentVal != "variable"){
             var node = dataDetails[currentVal];
             if (node.plottype === "continuous") {
-                console.log('conti...')
                 document.getElementById('plot_a').innerHTML ="";
                 density_cross(node,bin,method_name);
             }else if (node.plottype === "bar") {
-                console.log('bar...')
                 document.getElementById('plot_a').innerHTML ="";
                 bar_cross(node,bin,method_name);
             }
