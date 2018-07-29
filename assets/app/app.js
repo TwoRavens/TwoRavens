@@ -2143,14 +2143,15 @@ function onPipelinePrime(PipelineCreateResult, rookpipe) {
 
     // Need to deal with (exclude) pipelines that are reported, but failed.  For approach, see below.
 
+
+
     if(PipelineCreateResult.id in allPipelineInfo) {
-        allPipelineInfo[PipelineCreateResult.id]=Object.assign(allPipelineInfo[PipelineCreateResult.id],PipelineCreateResult);
+        allPipelineInfo[PipelineCreateResult.id] = Object.assign(allPipelineInfo[PipelineCreateResult.id], PipelineCreateResult);
     } else {
-        allPipelineInfo[PipelineCreateResult.id]=PipelineCreateResult;
+        allPipelineInfo[PipelineCreateResult.id] = PipelineCreateResult;
         let myid = PipelineCreateResult.id;
         let mymetric = d3mProblemDescription.performanceMetrics[0].metric;    // Need to generalize to multiple metrics
         let myval = "scoring";
-        console.log(pipelineTable);
         pipelineTable.push([pipelineTable.length, myid, mymetric, myval]);
     };
 
@@ -2530,19 +2531,27 @@ export async function estimate(btn) {
                         //     }
                         };
 
-                        let res10, res11;
+                        let res10, res11, res77;
                         let scoreDetailsUrl;
 
-                        if(typeof solutionId != 'undefined'){
+                        if(typeof solutionId != 'undefined'){         // Find out when this happens
 
+                            // [1] Get the template language description of the pipeline solution
+                            res77 = await makeRequest(D3M_SVC_URL + '/DescribeSolution', {solutionId: solutionId});                            
+                            // Add pipeline descriptions to allPipelineInfo
+                            // More overwriting than is necessary here.
+                            allPipelineInfo[res4.data.id] = Object.assign(allPipelineInfo[res4.data.id], res4.data, res77.data);
+
+                            console.log("pipeline description here:")
+                            console.log(allPipelineInfo[res4.data.id].pipeline);
+
+                            // [2] Ask for a solution to be scored
                             res10 = await makeRequest(D3M_SVC_URL + '/ScoreSolution', CreateScoreDefinition(res4));
-                            //let scoreId = res10.data.requestId;
-                            //res11 = await makeRequest(D3M_SVC_URL + '/GetScoreSolutionResults', {requestId: scoreId});
-
+                            
                             if(typeof res10.data.requestId != 'undefined'){
                                 let scoreId = res10.data.requestId;
                                 res11 = await makeRequest(D3M_SVC_URL + '/GetScoreSolutionResults', {requestId: scoreId});
-                                scoreDetailsUrl = res11.data.details_url;  //responses.list[0].details_url;
+                                scoreDetailsUrl = res11.data.details_url;  
                             };
 
                             if(fitFlag){
