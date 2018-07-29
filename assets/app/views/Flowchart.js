@@ -28,7 +28,7 @@ export default class Flowchart {
                     }
                 }, bold(key)),
                 m('td', {
-                    style: {width: 'calc(100% - 2em)', padding: '1em'}
+                    style: {width: 'calc(100% - 2em)'}
                 }, this.key === key ? content : summary)
             )
         );

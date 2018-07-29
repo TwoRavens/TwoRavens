@@ -28,6 +28,7 @@ import PanelList from '../common/app/views/PanelList';
 import Peek from '../common/app/views/Peek';
 import Table from '../common/app/views/Table';
 import TextField from '../common/app/views/TextField';
+import TableJSON from './views/TableJSON';
 
 let state = {
     pipelines: [],
@@ -173,6 +174,52 @@ function rightpanel(mode) {
 
     // mode == null (model mode)
 
+    // only called if the pipeline flowchart is rendered
+    function pipelineFlowchartPrep(pipeline) {
+        let steps = pipeline.steps.map((pipeStep, i) => ({
+            key: 'Step ' + i,
+            color: common.grayColor,
+            // special coloring is not enabled for now
+            // color: {
+            //     'data': common.grayColor,
+            //     'byudml': common.dvColor,
+            //     'sklearn_wrap': common.csColor
+            // }[pipeStep.primitive.python_path.split('.')[2]] || common.grayColor,
+            summary: m(Table, {
+                id: 'pipelineFlowchartSummary' + i,
+                abbreviation: 40,
+                data: {
+                    // NOTE: I'm not sure if MIT-FL is to spec here, and if not, then this will break on other TAs
+                    'Name': pipeStep['primitive']['primitive'].name,
+                    'Method': pipeStep['primitive']['primitive']['pythonPath'].split('.').slice(-1)[0]
+                },
+                attrsAll: {style: {'margin-bottom': 0, padding: '1em'}}
+            }),
+            content: m(TableJSON, {
+                id: 'pipelineTableStep' + i,
+                abbreviation: 40,
+                data: pipeStep
+            })
+        }));
+
+        let inputs = 'inputs' in pipeline && m(Table, {
+            id: 'pipelineInputsTable',
+            data: pipeline.inputs,
+            attrsAll: {style: {'margin-bottom': 0, 'padding': '1em'}}
+        });
+        let outputs = 'outputs' in pipeline && m(Table, {
+            id: 'pipelineOutputsTable',
+            data: pipeline.outputs,
+            attrsAll: {style: {'margin-bottom': 0, 'padding': '1em'}}
+        });
+
+        return [
+            {color: common.csColor, key: 'Inputs', summary: inputs, content: inputs},
+            ...steps,
+            {color: common.csColor, key: 'Outputs', summary: outputs, content: outputs}
+        ]
+    }
+
     let sections = [
         // {value: 'Models',
         //  display: app.IS_D3M_DOMAIN ? 'block' : 'none',
@@ -193,11 +240,14 @@ function rightpanel(mode) {
                    id: 'pipelineTable',
                    headers: app.pipelineHeader,
                    data: app.pipelineTable,
-                   activeRow: app.selectedPipeline[app.currentMode],
+                   activeRow: app.selectedPipeline,
                    onclick: app.setSelectedPipeline,
                    abbreviation: 20
                })),
-             m(ButtonRadio, {
+
+             app.selectedPipeline === undefined && 'Click a pipeline to explore results.',
+
+             app.selectedPipeline && m(ButtonRadio, {
                  id: 'resultsButtonBar',
                  attrsAll: {style: {width: 'auto'}},
                  attrsButtons: {class: ['btn-sm'], style: {width: 'auto'}},
@@ -231,12 +281,35 @@ function rightpanel(mode) {
                          title: 'Execute pipeline'
                      }, m('span.ladda-label[style=pointer-events: none]', 'Execute Generation'))),
                  m('#setxLeftBottomRightBottom[style=display:block; float: left; width: 30%; height:40%; overflow: auto; background-color: white]')),
-             app.selectedResultsMenu === 'Visualize Pipeline' && m(Flowchart, {
-                 // TODO replace pipeline with value returned from D3M. Currently hardcoded
-                 steps: pipelineFlowchartPrep(pipeline),
-                 attrsAll: {style: {width: '75%', height: 'calc(100% - 30px)', overflow: 'auto'}}
-             })
-         ]}
+             app.selectedResultsMenu === 'Visualize Pipeline' && app.selectedPipeline in app.allPipelineInfo && m('div', {
+                     style: {
+                         width: '75%',
+                         height: 'calc(100% - 30px)',
+                         overflow: 'auto'
+                     }
+                 },
+                 m('div', {style: {'font-weight': 'bold', 'margin': '1em'}}, 'Overview: '),
+                 m(TableJSON, {
+                     id: 'pipelineOverviewTable',
+                     data: Object.keys(app.allPipelineInfo[app.selectedPipeline].pipeline).reduce((out, entry) => {
+                         if (['inputs', 'steps', 'outputs'].indexOf(entry) === -1)
+                             out[entry] = app.allPipelineInfo[app.selectedPipeline].pipeline[entry];
+                         return out;
+                     }, {}),
+                     attrsAll: {
+                         style: {
+                             margin: '1em',
+                             width: 'calc(100% - 2em)',
+                             border: common.borderColor,
+                             'box-shadow': '0px 5px 5px rgba(0, 0, 0, .2)'
+                         }
+                     }
+                 }),
+                 m('div', {style: {'font-weight': 'bold', 'margin': '1em'}}, 'Steps: '),
+                 m(Flowchart, {steps: pipelineFlowchartPrep(app.allPipelineInfo[app.selectedPipeline].pipeline)})
+             )
+         ]
+        }
     ];
 
     return m(Panel, {
@@ -720,200 +793,6 @@ let exploreVars = {
         let {variate, var1, var2, var3, var4, var5} = vnode.attrs;
         return m(Body, {mode: 'explore', variate, var1, var2, var3, var4, var5});
     }
-};
-
-function pipelineFlowchartPrep(pipeline) {
-
-    let bold = (value) => m('div', {style: {'font-weight': 'bold', display: 'inline'}}, value);
-
-    return pipeline.steps.map((pipeStep, i) => ({
-        key: 'Step ' + i,
-        color: common.grayColor,
-        // special coloring is not enabled for now
-        // color: {
-        //     'data': common.grayColor,
-        //     'byudml': common.dvColor,
-        //     'sklearn_wrap': common.csColor
-        // }[pipeStep.primitive.python_path.split('.')[2]] || common.grayColor,
-        summary: m(Table, {
-            id: 'pipelineFlowchartSummary' + i,
-            abbreviation: 40,
-            data: {
-                'Name': pipeStep.primitive.name,
-                'Method': pipeStep.primitive.python_path.split('.').slice(-1)[0]
-            },
-            attrsAll: {style: {'margin-bottom': 0}}
-        }),
-        content: [
-            'primitive' in pipeStep && [
-                m('[style=float:left]', bold('Type: '), pipeStep.type), m('br'),
-                m(Table, {
-                    id: 'pipelineTableStepPrimitive' + i,
-                    abbreviation: 40,
-                    data: pipeStep.primitive
-                })
-            ],
-            'arguments' in pipeStep && Object.keys(pipeStep['arguments']).map(arg => [
-                m('[style=float:left]', bold('Argument: '), arg), m('br'),
-                m(Table, {
-                    id: 'pipelineTableStep' + i + 'Arguments' + arg,
-                    abbreviation: 40,
-                    data: pipeStep['arguments'][arg]
-                })
-            ]),
-            'outputs' in pipeStep && [
-                m('[style=float:left]', bold('Outputs: ')), m('br'),
-                pipeStep['outputs'].map((output, j) => m(Table, {
-                    id: 'pipelineTableStep' + i + 'Output' + j,
-                    abbreviation: 40,
-                    data: output
-            }))]
-        ]
-    }));
-}
-
-let pipeline = {
-    "id": "2afd8af4-15b6-4575-b4a5-24c333b32b3e",
-    "schema": "https://metadata.datadrivendiscovery.org/schemas/v0/pipeline.json",
-    "created": "2018-05-30T11:09:25.384729Z",
-    "context": "TESTING",
-    "inputs": [
-        {
-            "name": "input dataset"
-        }
-    ],
-    "outputs": [
-        {
-            "data": "steps.5.produce",
-            "name": "predictions"
-        }
-    ],
-    "steps": [
-        {
-            "type": "PRIMITIVE",
-            "primitive": {
-                "id": "4b42ce1e-9b98-4a25-b68e-fad13311eb65",
-                "version": "0.2.0",
-                "python_path": "d3m.primitives.datasets.DatasetToDataFrame",
-                "name": "Dataset to DataFrame converter"
-            },
-            "arguments": {
-                "inputs": {
-                    "data": "inputs.0",
-                    "type": "CONTAINER"
-                }
-            },
-            "outputs": [
-                {
-                    "id": "produce"
-                }
-            ]
-        },
-        {
-            "type": "PRIMITIVE",
-            "primitive": {
-                "id": "d510cb7a-1782-4f51-b44c-58f0236e47c7",
-                "version": "0.2.0",
-                "python_path": "d3m.primitives.data.ColumnParser",
-                "name": "Parses strings into their types"
-            },
-            "arguments": {
-                "inputs": {
-                    "data": "steps.0.produce",
-                    "type": "CONTAINER"
-                }
-            },
-            "outputs": [
-                {
-                    "id": "produce"
-                }
-            ]
-        },
-        {
-            "type": "PRIMITIVE",
-            "primitive": {
-                "id": "ebfeb6f0-e366-4082-b1a7-602fd50acc96",
-                "version": "0.1.0",
-                "python_path": "d3m.primitives.byudml.imputer.RandomSamplingImputer",
-                "name": "Random Sampling Imputer"
-            },
-            "arguments": {
-                "inputs": {
-                    "data": "steps.1.produce",
-                    "type": "CONTAINER"
-                }
-            },
-            "outputs": [
-                {
-                    "id": "produce"
-                }
-            ]
-        },
-        {
-            "type": "PRIMITIVE",
-            "primitive": {
-                "id": "91fe0a56-f400-483a-8641-4e26d005c621",
-                "version": "0.2.0",
-                "python_path": "d3m.primitives.data.ExtractAttributes",
-                "name": "Extracts attribute columns"
-            },
-            "arguments": {
-                "inputs": {
-                    "data": "steps.2.produce",
-                    "type": "CONTAINER"
-                }
-            },
-            "outputs": [
-                {
-                    "id": "produce"
-                }
-            ]
-        },
-        {
-            "type": "PRIMITIVE",
-            "primitive": {
-                "id": "a7feadd5-997f-4302-bd5d-caa86e7bbd4f",
-                "version": "0.2.0",
-                "python_path": "d3m.primitives.data.ExtractTargets",
-                "name": "Extracts target columns"
-            },
-            "arguments": {
-                "inputs": {
-                    "data": "steps.2.produce",
-                    "type": "CONTAINER"
-                }
-            },
-            "outputs": [
-                {
-                    "id": "produce"
-                }
-            ]
-        },
-        {
-            "type": "PRIMITIVE",
-            "primitive": {
-                "id": "028dcbce-be8c-32a6-af05-50c8cacaaadb",
-                "version": "0.1.0",
-                "python_path": "d3m.primitives.sklearn_wrap.SKAdaBoostClassifier",
-                "name": "sklearn.ensemble.weight_boosting.AdaBoostClassifier"
-            },
-            "arguments": {
-                "inputs": {
-                    "data": "steps.3.produce",
-                    "type": "CONTAINER"
-                },
-                "outputs": {
-                    "data": "steps.4.produce",
-                    "type": "CONTAINER"
-                }
-            },
-            "outputs": [
-                {
-                    "id": "produce"
-                }
-            ]
-        }
-    ]
 };
 
 m.route(document.body, '/model', {
