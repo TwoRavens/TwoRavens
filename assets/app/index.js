@@ -474,7 +474,7 @@ class Body {
                                       'background-color': app.hexToRgba(common[selected ? 'selVarColor' : 'varColor'])
                                   }
                               }, [m('', {
-                                  oncreate(vnode) {
+                                  onupdate(vnode) {
                                       let node = app.findNodeIndex(x, true);
                                       let plot = node.plottype === 'continuous' ? plots.densityNode : plots.barsNode;
                                       plot(node, vnode.dom, 110, true);
