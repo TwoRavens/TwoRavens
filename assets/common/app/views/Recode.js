@@ -97,13 +97,13 @@ export default class Recode {
                     m('div.container-fluid',[
                         m('ul.nav.navbar-nav',[
                             m('li',{id:'createLink',onmouseenter:showTooltip, onmouseleave:hideTooltip},
-                            m('a',{oncreate: createCreate, onclick: createClick},  "Create New Variable")),
+                            m('a',{oncreate: createCreate, onclick: createClick},  "Manually Create Variable")),
                             m('li',{id:'formulaLink', onmouseenter:showTooltip, onmouseleave:hideTooltip},
                             m('a',{oncreate: formulaCreate, onclick: formulaClick}, "Formula Builder")),
                             m('li',{id:'recodeLink',onmouseenter:showTooltip, onmouseleave:hideTooltip},
                             m('a', {oncreate: recodeCreate, onclick: recodeClick}, "Recode")),
                         ]),
-                        m('div',{id:'tooltip',style:{'z-index':'999','margin-left':'400px'}},[
+                        m('div',{id:'tooltip',style:{'z-index':'999','margin-left':'450px'}},[
 
                         ]),
                     ])
@@ -172,12 +172,18 @@ export default class Recode {
         
                         m('div.container-fluid', {id : 'div1_recode' , style : {'height': '220px','padding':'20px'}}, [
                             m('form',{ onsubmit: calculateBin},[
+                                m('div',{id:'binInfo',style:{'margin-bottom':'1%'}},[
+                                    m('span',{style :{'display': 'block','overflow': 'hidden'}},[m('input[type=text]', {id: 'newBinName', placeholder: 'New Variable Name', style : {'width': '100%','box-sizing':'border-box','white-space': 'nowrap;'}}),]),
+                                    m("br"),
+                                    m('textarea',{id:'binDescription',cols:"40",rows:'5',placeholder:'New Variable Description'}),
+                                    m('br'),
+                                ]),
                                 m('div',{id:'ordinalDiv',style :{'overflow': 'hidden'}},[
                                     m('input[type=number]',{id:'bin',placeholder:'Number of bins'}),
                                     m('button',{onclick: equidistance_btn},'Equidistance'),
                                     m('button',{onclick: equimass_btn},'Equimass'),
                                     m('div',{id:'plot_a'}),                         
-                                    m('input[type=text]',{id: 'binInterval',style:{'display':'inline-block'}}),
+                                    m('input[type=text]',{id: 'binInterval',style:{'display':'inline-block'},placeholder:'5,10,15,20'}),
                                     m('button',{onclick: calculate_bin},'Custom Bin'),                 
                                 ]),
                                 m("br"),
@@ -258,6 +264,7 @@ export default class Recode {
                                         m('label',{ style : {'display':'block', 'margin-right':'10px'}},'New Variable Description : '),
                                         m('textarea',{id:'varDescription',cols:"40",rows:'5'}),
                                     ]),m('div#tableDiv',{style :{'display': 'block','width':'60%','float':'right','height':(window.innerHeight-150)+'px' ,'overflow-y': 'auto','border-style': 'solid','border-width': 'thin'}},[
+                                        // m('button',{onclick:topFunction,id:'myBtn',title:"Go to top",style:{'position': 'fixed','bottom': '20px', 'right': '30px', 'z-index': '999','font-size': '18px','border': 'none','outline': 'none','background-color': 'red', 'color': 'white',  'cursor': 'pointer','padding': '15px','border-radius': '4px'}},'Top'),
                                         m('table.table.table-bordered',{id:'createTable',style:{ 'overflow': 'scroll'}},[
                                             m('tr#colheader',[
                                                 (tableHeader.slice(1)).filter((header)=> filterVars.includes(header)).map((header) => m('th.col-xs-4',{style : {'border': '1px solid #ddd','text-align': 'center'}},header)),
@@ -343,7 +350,15 @@ function onlyUnique(value, index, self) {
 
 function clickVar(elem) {
     $('#customRecodeBtn').css('display','block');
-    document.getElementById('customRecodeBtn').disabled = true;  
+    $('#binInfo').css('display','block');
+    document.getElementById('customRecodeBtn').disabled = true; 
+    
+    var list = document.getElementsByClassName('var');
+    for (var i = 0; i < list.length; i++ ) {
+        list[i].setAttribute("style", "background:"+app.hexToRgba("#FA8072"));
+    }
+    document.getElementById(this.id).setAttribute("style", "background:"+app.hexToRgba("#28a4c9"));
+            
     
 
     if(document.getElementById('recodeLink').className === 'active'){
@@ -405,12 +420,6 @@ function clickVar(elem) {
             
             document.getElementById('plot_a').innerHTML ="";
             
-            var list = document.getElementsByClassName('var');
-            for (var i = 0; i < list.length; i++ ) {
-                list[i].setAttribute("style", "background:"+app.hexToRgba("#FA8072"));
-            }
-            document.getElementById(this.id).setAttribute("style", "background:"+app.hexToRgba("#28a4c9"));
-            
             var transform =  document.getElementById('div1_recode');
             transform.style.display = 'block';
             
@@ -436,7 +445,7 @@ function clickVar(elem) {
 
     if(document.getElementById('formulaLink').className === 'active'){
         
-        document.getElementById(this.id).setAttribute("style", "background:"+app.hexToRgba("#28a4c9"));
+        // document.getElementById(this.id).setAttribute("style", "background:"+app.hexToRgba("#28a4c9"));
         document.getElementById('leftpanelMenuButtonBarOperations').click();
 
         //Only those variables of type "numeric" could be used to build formula
@@ -693,6 +702,7 @@ function recodeCreate(){
     $('#btnOperations').css('display', 'none');
     $('#tableBinDiv').css('display', 'none');
     $('#ordinalDiv').css('display','none');
+    $('#binInfo').css('display','none');
     $('#customRecodeBtn').css('display','none');
     document.getElementById('customRecodeBtn').disabled = true;
 
@@ -702,6 +712,13 @@ function recodeCreate(){
 
     var tooltip = document.getElementById('tooltip');
     tooltip.style.display = 'none'
+
+    setTimeout( function(){ 
+        console.log(document.getElementById('varList').firstChild.click())
+      }  , 500 );
+
+
+    
 }
 function recodeClick(){
     var elem = document.getElementById('recodeLink');
@@ -709,9 +726,10 @@ function recodeClick(){
     $('#btnOperations').css('display', 'none');
     $('#tableBinDiv').css('display', 'none');
     $('#ordinalDiv').css('display','none');
+    $('#binInfo').css('display','none');
     $('#customRecodeBtn').css('display','none');
     document.getElementById('leftpanelMenuButtonBarVariables').click();
-    
+   
 
     var list = document.getElementsByClassName('var');
     for (var i = 0; i < list.length; i++ ) {
@@ -740,6 +758,8 @@ function recodeClick(){
     elem.className = '';
     var elem = document.getElementById('createLink');
     elem.className = '';
+
+    document.getElementById('varList').childNodes[0].click();
 }
 
 function formulaCreate(){
@@ -1189,14 +1209,16 @@ function formulaClick(){
 
     function calculateBin(elem){
 
+        console.log(elem.target)
+
         var node = dataDetails[currentVal];
 
         if(node.nature === "nominal"){
             var empty = true;
             data = []
             for(var i = 0; i< dataNode.length;i++){
-                if(elem.target[5+i].value !== ""){
-                    data.push([dataNode[i],elem.target[5+i].value]);
+                if(elem.target[7+i].value !== ""){
+                    data.push([dataNode[i],elem.target[7+i].value]);
                     empty = false;
                 }
             }
@@ -1209,7 +1231,7 @@ function formulaClick(){
         transformData.transform_type.functional_transform = false;
         transformData.transform_variable = [];
         transformData.current_variable = currentVal;
-        transformData.description = "Bin Values";
+        transformData.description = elem.target[1].value;
         transformData.transform_data = data;
         localStorage.setItem('transformData',JSON.stringify(transformData));
     }
