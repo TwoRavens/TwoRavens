@@ -474,10 +474,20 @@ class Body {
                                       'background-color': app.hexToRgba(common[selected ? 'selVarColor' : 'varColor'])
                                   }
                               }, [m('', {
+                                  oninit() {
+                                      this.node = app.findNodeIndex(x, true);
+                                  },
+                                  oncreate(vnode) {
+                                      let plot = this.node.plottype === 'continuous' ? plots.densityNode : plots.barsNode;
+                                      plot(this.node, vnode.dom, 110, true);
+                                  },
                                   onupdate(vnode) {
                                       let node = app.findNodeIndex(x, true);
-                                      let plot = node.plottype === 'continuous' ? plots.densityNode : plots.barsNode;
-                                      plot(node, vnode.dom, 110, true);
+                                      if (node != this.node) {
+                                          let plot = node.plottype === 'continuous' ? plots.densityNode : plots.barsNode;
+                                          plot(node, vnode.dom, 110, true);
+                                          this.node = node;
+                                      }
                                   },
                                   style: 'height: 65%'}),
                                   m('', {style: 'margin: 1em'},

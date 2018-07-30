@@ -3033,7 +3033,7 @@ export let setLeftTab = (tab) => {
     leftTab = tab;
     updateLeftPanelWidth();
 
-    if (tab === "Discovery"){
+    if (tab === "Discovery") {
         probtable.length = 0;
         for(let i = 0; i < disco.length; i++) {
             let mypredictors = disco[i].predictors.join();
