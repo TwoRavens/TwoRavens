@@ -434,7 +434,7 @@ class Body {
                             }
                         }, 'go'),
                         m('br'),
-                        m('', {style: `display: flex; flex-direction: row; flex-wrap: wrap`},
+                        m('', {style: 'display: flex; flex-direction: row; flex-wrap: wrap'},
                           (discovery ? app.disco : valueKey).map((x, i) => {
                               let selected = discovery ? x === app.disco[app.selectedProblem] : nodesExplore.map(x => x.name).includes(x);
                               let {predictors} = x;
@@ -475,13 +475,18 @@ class Body {
                                   }
                               }, [m('', {
                                   oncreate(vnode) {
+                                      let node = app.findNodeIndex(x, true);
                                       let plot = node.plottype === 'continuous' ? plots.densityNode : plots.barsNode;
-                                      plot(node, vnode.dom, 120, true);
-                                  }}),
-                                  m('', show && n0 && n0.name === x ? `${x} (x)`
+                                      plot(node, vnode.dom, 110, true);
+                                  },
+                                  style: 'height: 65%'}),
+                                  m('', {style: 'margin: 1em'},
+                                    show && n0 && n0.name === x ? `${x} (x)`
                                     : show && n1 && n1.name === x ? `${x} (y)`
                                     : show && n2 && n2.name === x ? `${x} (z)`
-                                    : predictors ? [`${x}`, m('br'), `${predictors.join(', ')}`]
+                                    : predictors ? [
+                                        m('b', x),
+                                        m('p', predictors.join(', '))]
                                     : x)
                                  ]);
                           }))
