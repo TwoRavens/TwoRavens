@@ -434,7 +434,7 @@ class Body {
                             }
                         }, 'go'),
                         m('br'),
-                        m('', {style: `display: flex; flex-direction: row; flex-wrap: wrap`},
+                        m('', {style: 'display: flex; flex-direction: row; flex-wrap: wrap'},
                           (discovery ? app.disco : valueKey).map((x, i) => {
                               let selected = discovery ? x === app.disco[app.selectedProblem] : nodesExplore.map(x => x.name).includes(x);
                               let {predictors} = x;
@@ -474,14 +474,29 @@ class Body {
                                       'background-color': app.hexToRgba(common[selected ? 'selVarColor' : 'varColor'])
                                   }
                               }, [m('', {
+                                  oninit() {
+                                      this.node = app.findNodeIndex(x, true);
+                                  },
                                   oncreate(vnode) {
-                                      let plot = node.plottype === 'continuous' ? plots.densityNode : plots.barsNode;
-                                      plot(node, vnode.dom, 120, true);
-                                  }}),
-                                  m('', show && n0 && n0.name === x ? `${x} (x)`
+                                      let plot = this.node.plottype === 'continuous' ? plots.densityNode : plots.barsNode;
+                                      plot(this.node, vnode.dom, 110, true);
+                                  },
+                                  onupdate(vnode) {
+                                      let node = app.findNodeIndex(x, true);
+                                      if (node != this.node) {
+                                          let plot = node.plottype === 'continuous' ? plots.densityNode : plots.barsNode;
+                                          plot(node, vnode.dom, 110, true);
+                                          this.node = node;
+                                      }
+                                  },
+                                  style: 'height: 65%'}),
+                                  m('', {style: 'margin: 1em'},
+                                    show && n0 && n0.name === x ? `${x} (x)`
                                     : show && n1 && n1.name === x ? `${x} (y)`
                                     : show && n2 && n2.name === x ? `${x} (z)`
-                                    : predictors ? [`${x}`, m('br'), `${predictors.join(', ')}`]
+                                    : predictors ? [
+                                        m('b', x),
+                                        m('p', predictors.join(', '))]
                                     : x)
                                  ]);
                           }))
