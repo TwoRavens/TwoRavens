@@ -2238,7 +2238,7 @@ function CreateProblemDefinition(depvar, aux) {
 
 
     if(typeof aux==="undefined") { //default behavior for creating pipeline data
-        let my_problem = {
+        let problem = {
             id: d3mProblemDescription.id,
             version: d3mProblemDescription.version,
             name: d3mProblemDescription.name,
@@ -2247,7 +2247,7 @@ function CreateProblemDefinition(depvar, aux) {
             taskSubtype: d3mTaskSubtype[d3mProblemDescription.taskSubtype][1],
             performanceMetrics: [{metric: d3mMetrics[d3mProblemDescription.performanceMetrics[0].metric][1]} ]  // need to generalize to case with multiple metrics.  only passes on first presently.
         };
-        let my_inputs =  [
+        let inputs =  [
             {
                 datasetId: datadocument.about.datasetID,
                 targets: [
@@ -2257,13 +2257,13 @@ function CreateProblemDefinition(depvar, aux) {
                         columnName: my_target
                     }
                 ]}];
-        console.log(my_problem);
+        console.log(problem);
         console.log("valueKey");
         console.log(valueKey);
-        return {problem: my_problem, inputs: my_inputs};
+        return {problem: problem, inputs: inputs};
     } else { //creating pipeline data for problem discovery using aux inputs from disco line
 
-        let my_problem = {
+        let problem = {
             id: aux.problem_id,
             version: '1.0',
             name: aux.problem_id,
@@ -2272,7 +2272,7 @@ function CreateProblemDefinition(depvar, aux) {
             taskSubtype: 'TASK_SUBTYPE_UNDEFINED',
             performanceMetrics: [{metric: d3mMetrics[aux.metric][1]}]  // need to generalize to case with multiple metrics.  only passes on first presently.
         };
-        let my_inputs =  [
+        let inputs =  [
             {
                 datasetId: datadocument.about.datasetID,
                 targets: [
@@ -2282,7 +2282,7 @@ function CreateProblemDefinition(depvar, aux) {
                         columnName: my_target
                     }
                 ]}];
-        return {my_problem, my_inputs};
+        return {problem, inputs};
 
     }
 }
