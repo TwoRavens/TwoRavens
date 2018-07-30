@@ -133,6 +133,8 @@ class StoredRequest(TimeStampedModel):
         stored_request.is_finished = True
         if user_message:
             stored_request.user_message = user_message
+        else:
+            stored_request.user_message = "Call completed successfully."
 
         stored_request.save()
 
@@ -141,7 +143,7 @@ class StoredRequest(TimeStampedModel):
     def as_dict(self, short_version=False):
         """Return info as a dict"""
         attr_names = ('id', 'name', 'hash_id',
-                      'is_finished', 'status',
+                      'is_finished', 'status', 'user_message',
                       'workspace', 'request_type',
                       DETAILS_URL,
                       'request')
