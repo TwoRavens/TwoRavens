@@ -76,7 +76,6 @@ export default class Recode {
         m.request(`rook-custom/rook-files/${configName}/data/trainData.tsv`, {
             deserialize: x => x.split('\n').map(y => y.split('\t'))
         }).then(data => {
-            // simulate only loading some of the data... by just deleting all the other data
             let headers = data[0].map(x => x.replace(/"/g, ''));
             let newData = data.slice(1, data.length-1);
        
@@ -147,7 +146,6 @@ export default class Recode {
                                             style: {
                                                 'margin-top': '5px',
                                                 'text-align': "center",
-                                                // 'background-color': app.hexToRgba("#FA8072")
                                             },
                                             class: 'var',
                                             onclick: addOperations,
@@ -206,87 +204,54 @@ export default class Recode {
                                 m('br'),
                                 m('button[type="submit"]',{style: {'float':'right'}}, 'Customize'),
                             ]),])
+                    ]),
+                    m('div.container-fluid', {id: 'createDiv'},[
+                        m('form#createNewForm',{ onsubmit: addValue},[
+                        m('div.container-fluid', {id : 'div1' , style : {'display':'block','height': '220px','padding':'20px'}}, [
+
+                            m('div',{style:'margin:10px;'},[
+                                m('label',{ style : {'display':'inline-block', 'margin-right':'10px'}},'New Variable Name : '),
+                                m('input[type=text]', {id: 'newVar', placeholder: ' New Variable', style : {'display':'inline-block' , 'margin':'10px', 'width':'40%'}}),
+                                m('br'),
+                                m('label',{ style : {'display':'inline-block', 'margin-right':'10px'}},'New Variable Type : '),
+                                m('div.dropdown',{style : {'display':'inline-block','margin':'10px'}},[
+                                    m('select.form-control#typeSelect',{onchange: someFunction ,style:{'display':'inline-block'}, id:'varType'},[
+                                        m('option','Boolean'),
+                                        m('option','Nominal'),
+                                        m('option','Numchar')
+                                    ])
+                                ]),
+                                m('div#nominalDiv',{style:{'margin':'10px'}},[
+                                    m('label',{ style : { 'margin-right':'10px'}},'Class List : '),
+                                    m('input[type=text]',{id:'nominalList', placeholder:'Nominal', style:{'margin':'10px'}},),
+                                ]),
+                                m('label',{ style : {'display':'block', 'margin-right':'10px'}},'New Variable Description : '),
+                                m('textarea',{id:'varDescription',cols:"40",rows:'5'}),
+    
+                                m("br"),
+                                m('button[type="button"]' ,{id:'createButton',onclick: createNewCalculate,style:"float:left;"},'Create New Variable'),
+                                m('button[type="submit"]',{id:'submitButton'},'Add Values'),
+                            ]),
+                            m('div#tableDiv',{style :{'display': 'block','width':'100%','height':(window.innerHeight-150)+'px' ,'overflow-y': 'auto','border-style': 'solid','border-width': 'thin'}},[
+                                
+                                m('table.table.table-bordered',{id:'createTable',style:{ 'overflow': 'scroll'}},[
+                                    m('tr#colheader',[
+                                        (tableHeader.slice(1)).filter((header)=> filterVars.includes(header)).map((header) => m('th.col-xs-4',{style : {'border': '1px solid #ddd','text-align': 'center'}},header)),
+                                        
+                                    ]),
+                                    tableData.map((row,i)=> m('tr#colValues',[
+                                        row.filter((item,j) => filterIndex.indexOf(j)>=0 ).map((item,j) => m('td',{style : {'border': '1px solid #ddd','text-align': 'center'}},item)),
+                                        
+                                    ],
+                                        
+                                    ))
+                                ])                                                                        
+                            ]),
+
+                        ]),
+                    ]),
                     ])
                 ),
-                m('#centralPanel.container.sidepanel.clearfix', mergeAttributes({
-                    style: {
-                        overflow: 'scroll',
-                        background: menuColor,
-                        border: borderColor,
-                        width: (window.innerWidth-25)+'px' ,
-                        height: `calc(100% - ${heightHeader + heightFooter}px - ${2 * panelMargin}px - ${canvasScroll['horizontal'] ? scrollbarWidth : 0}px)`,
-                        position: 'fixed',
-                        display:'block',
-                        top: heightHeader + panelMargin  + 'px',
-                        
-                    }}),[
-                        // m('div.container', {id : 'createDiv' , style : {'overflow':'scroll','width': '100%','height':'100%'}}, [
-                            m('div',{id:'filterTableDiv'},[
-                                m('form#selectVars',{onsubmit: filterTable},[
-                                    m('table.table.table-bordered',{id:'tableVars'},[
-                                        m('tr#colheader',[
-                                            m('td.col-xs-4',{style : {'border': '1px solid #ddd','text-align': 'center','font-weight': 'bold'}},'Variables'),
-                                            m('td.col-xs-4',{style : {'border': '1px solid #ddd','text-align': 'center','font-weight': 'bold'}},'Checked')
-                                        ]),
-                                        varList.filter((varItem,j) => j !== 0 ).map((varItem,j)=>m('tr',[
-                                            m('td',{style : {'border': '1px solid #ddd','text-align': 'center'}},m('span',varItem)),
-                                            m('td',{style : {'border': '1px solid #ddd','text-align': 'center'}},m('input[type=checkbox]',{id:'filterVal'+j,value:varItem+","+j})),
-                                            
-                                        ])),
-                                    ]),
-                                    m('div',{style:{ 'margin':'0 auto', 'text-align': 'left', 'width':'500px'}},[
-                                        m('button[type="button"]',{onclick: selectAllVars},'Select All Variables'),
-                                        m('button[type="submit"]','Filter Table'),
-                                        m('button[type="button"]',{onclick: unselectAllVars},'Unselect All Variables'),
-                                    ]),
-                                    
-                                ]),
-                            ]),
-                            m('div',{id:'createTableDiv'},[
-                                m('form#createNewForm',{ onsubmit: addValue},[
-                                    m('div',{style :{'float':'left'  ,'overflow':'hidden','width':'40%'}},[
-                                        m('br'),
-                                        m('label',{ style : {'display':'inline-block', 'margin-right':'10px'}},'New Variable Name : '),
-                                        m('input[type=text]', {id: 'newVar', placeholder: ' New Variable', style : {'display':'inline-block' , 'margin':'10px', 'width':'40%'}}),
-                                        m('br'),
-                                        m('label',{ style : {'display':'inline-block', 'margin-right':'10px'}},'New Variable Type : '),
-                                        m('div.dropdown',{style : {'display':'inline-block','margin':'10px'}},[
-                                            m('select.form-control#typeSelect',{onchange: someFunction ,style:{'display':'inline-block'}, id:'varType'},[
-                                                m('option','Boolean'),
-                                                m('option','Nominal'),
-                                                m('option','Numchar')
-                                            ])
-                                        ]),
-                                        m('div#nominalDiv',{style:{'margin':'10px'}},[
-                                            m('label',{ style : { 'margin-right':'10px'}},'Class List : '),
-                                            m('input[type=text]',{id:'nominalList', placeholder:'Nominal', style:{'margin':'10px'}},),
-                                        ]),
-                                        m('label',{ style : {'display':'block', 'margin-right':'10px'}},'New Variable Description : '),
-                                        m('textarea',{id:'varDescription',cols:"40",rows:'5'}),
-                                    ]),m('div#tableDiv',{style :{'display': 'block','width':'60%','float':'right','height':(window.innerHeight-150)+'px' ,'overflow-y': 'auto','border-style': 'solid','border-width': 'thin'}},[
-                                        // m('button',{onclick:topFunction,id:'myBtn',title:"Go to top",style:{'position': 'fixed','bottom': '20px', 'right': '30px', 'z-index': '999','font-size': '18px','border': 'none','outline': 'none','background-color': 'red', 'color': 'white',  'cursor': 'pointer','padding': '15px','border-radius': '4px'}},'Top'),
-                                        m('table.table.table-bordered',{id:'createTable',style:{ 'overflow': 'scroll'}},[
-                                            m('tr#colheader',[
-                                                (tableHeader.slice(1)).filter((header)=> filterVars.includes(header)).map((header) => m('th.col-xs-4',{style : {'border': '1px solid #ddd','text-align': 'center'}},header)),
-                                                
-                                            ]),
-                                            tableData.map((row,i)=> m('tr#colValues',[
-                                                row.filter((item,j) => filterIndex.indexOf(j)>=0 ).map((item,j) => m('td',{style : {'border': '1px solid #ddd','text-align': 'center'}},item)),
-                                                
-                                            ],
-                                                
-                                            ))
-                                        ])                                                                        
-                                    ]),
-                                    
-                                    m("br"),
-                                    m('button[type="button"]' ,{id:'createButton',onclick: createNewCalculate,style:"float:left;"},'Create New Variable'),
-                                    m('button[type="submit"]',{id:'submitButton'},'Add Values'),
-                                ])
-                            ]),
-                            
-                        // ])
-                    ])
                 ]),
             ]}
         }
@@ -443,7 +408,7 @@ function clickVar(elem) {
         }
     }
 
-    if(document.getElementById('formulaLink').className === 'active'){
+    else if(document.getElementById('formulaLink').className === 'active'){
         
         // document.getElementById(this.id).setAttribute("style", "background:"+app.hexToRgba("#28a4c9"));
         document.getElementById('leftpanelMenuButtonBarOperations').click();
@@ -452,6 +417,27 @@ function clickVar(elem) {
         if(dataDetails[this.textContent]['numchar'] === 'numeric'){
             currentVal = this.textContent;
         }
+     }
+
+     else if(document.getElementById('createLink').className === 'active'){
+        currentVal = this.textContent;
+
+        dataNode = [];
+        var index = tableHeader.indexOf(currentVal);
+        tableData.map((row,i) => dataNode.push(row[index]))
+
+        var iter = 0;
+        $('#createNewForm').find('tr').each(function(){
+            var trow = $(this);    
+            if(iter == 0){
+                trow.append('<th style ="border: 1px solid #ddd; text-align: center;">'+currentVal+'</th>');
+                iter++;
+            }else{
+                trow.append('<td style ="border: 1px solid #ddd;text-align: center;">'+ dataNode[iter-1]+'</td>');              
+                iter++
+            }
+            
+        });
      }
      
 }
@@ -496,8 +482,8 @@ function filterTable(elem){
             }
         }
     
-        document.getElementById("createTableDiv").setAttribute("style", "display:block");
-        document.getElementById("filterTableDiv").setAttribute("style", "display:none");
+        // document.getElementById("createTableDiv").setAttribute("style", "display:block");
+        // document.getElementById("filterTableDiv").setAttribute("style", "display:none");
     }
 }
 
@@ -588,7 +574,7 @@ function createNewCalculate(){
         var trow = $(this);
 
         if(iter == 0){
-            trow.append('<th class = "col-xs-4" style ="border: 1px solid #ddd; text-align: center;">'+document.getElementById('newVar').value+'</th>');
+            trow.append('<th style ="border: 1px solid #ddd; text-align: center;">'+document.getElementById('newVar').value+'</th>');
             iter++;
         }else{
             if(document.getElementById('typeSelect').selectedIndex === 0){
@@ -651,15 +637,18 @@ function calculate(elem){
 
 function createClick(){
     
-    document.getElementById("filterTableDiv").setAttribute("style", "display:block");
+    // document.getElementById("filterTableDiv").setAttribute("style", "display:block");
     document.getElementById("nominalDiv").setAttribute("style", "display:none");
     // document.getElementById('btnOperations').style.visibility = 'visible';
     
     var elem = document.getElementById('formulaDiv');
     elem.style.display="none";
 
-    var elem = document.getElementById('createTableDiv');
-    elem.style.display="none";
+    // var elem = document.getElementById('createTableDiv');
+    // elem.style.display="none";
+
+    var elem = document.getElementById('createDiv');
+    elem.style.display="block";
 
     var elem = document.getElementById('nominalDiv');
     elem.style.visibility="hidden";
@@ -675,28 +664,28 @@ function createClick(){
     var elem = document.getElementById('formulaLink');
     elem.className = '';
     var elem = document.getElementById('recodeLink');
-    elem.className = '';
-    var elem = document.getElementById('leftpanel');
-    elem.style.display ='none';
-    
-    var elem = document.getElementById('rightpanel');
-    elem.style.display ='none';
-    
-    var elem = document.getElementById('centralPanel');
-    elem.style.display ='block';
+    elem.className = '';    
+    // var elem = document.getElementById('centralPanel');
+    // elem.style.display ='block';
+
+    document.getElementById('varList').firstChild.click()
     
 }
 function createCreate(){
 
-    var elem = document.getElementById('createTableDiv');
-    elem.style.display="none";
+    var elem = document.getElementById('createDiv');
+    elem.style.display="block";
+
     var elem = document.getElementById('formulaDiv');
     elem.style.display = 'none';
-    var elem = document.getElementById('centralPanel');
-    elem.style.display ='none';
+    // var elem = document.getElementById('centralPanel');
+    // elem.style.display ='none';
 }
 
 function recodeCreate(){
+    var elem = document.getElementById('createDiv');
+    elem.style.display="none";
+
     var elem = document.getElementById('recodeLink');
     elem.className = 'active';
     $('#btnOperations').css('display', 'none');
@@ -706,8 +695,8 @@ function recodeCreate(){
     $('#customRecodeBtn').css('display','none');
     document.getElementById('customRecodeBtn').disabled = true;
 
-    var elem = document.getElementById('centralPanel');
-    elem.style.display ='none';
+    // var elem = document.getElementById('centralPanel');
+    // elem.style.display ='none';
     document.getElementById('btnOperations').disabled = 'disabled';
 
     var tooltip = document.getElementById('tooltip');
@@ -721,6 +710,10 @@ function recodeCreate(){
     
 }
 function recodeClick(){
+
+    var elem = document.getElementById('createDiv');
+    elem.style.display="none";
+
     var elem = document.getElementById('recodeLink');
     elem.className = 'active';
     $('#btnOperations').css('display', 'none');
@@ -737,8 +730,8 @@ function recodeClick(){
     }
     document.getElementById('plot_a').innerHTML ="";
 
-    var elem = document.getElementById('centralPanel');
-    elem.style.display="none"
+    // var elem = document.getElementById('centralPanel');
+    // elem.style.display="none"
 
     var elem = document.getElementById('rightpanel');
     elem.style.display="block"
@@ -752,8 +745,8 @@ function recodeClick(){
     var elem = document.getElementById('formulaDiv');
     elem.style.display="none";
 
-    var elem = document.getElementById('createTableDiv');
-    elem.style.display="none";
+    // var elem = document.getElementById('createTableDiv');
+    // elem.style.display="none";
     var elem = document.getElementById('formulaLink');
     elem.className = '';
     var elem = document.getElementById('createLink');
@@ -764,13 +757,20 @@ function recodeClick(){
 
 function formulaCreate(){
 
-    var elem = document.getElementById('centralPanel');
-    elem.style.display ='none';
+    // var elem = document.getElementById('centralPanel');
+    // elem.style.display ='none';
+    var elem = document.getElementById('createDiv');
+    elem.style.display="none";
+
 }
 function formulaClick(){
 
-    var elem = document.getElementById('centralPanel');
-    elem.style.display ='none';
+    // var elem = document.getElementById('centralPanel');
+    // elem.style.display ='none';
+
+    var elem = document.getElementById('createDiv');
+    elem.style.display="none";
+
     $('#btnOperations').css('display', 'block');
 
     var list = document.getElementsByClassName('var');
@@ -778,8 +778,8 @@ function formulaClick(){
         list[i].setAttribute("style", "background:"+app.hexToRgba("#FA8072"));
     }
 
-    var elem = document.getElementById('createTableDiv');
-    elem.style.display="none";
+    // var elem = document.getElementById('createTableDiv');
+    // elem.style.display="none";
     
     var elem = document.getElementById('rightpanel');
     elem.style.display="block"
@@ -1390,9 +1390,9 @@ $(window).resize(function(){
     $('#rightpanel').css({
         'width':  (window.innerWidth - 300)+'px',
     });
-    $('#centralPanel').css({
-        'width':  (window.innerWidth-25)+'px',
-    });
+    // $('#centralPanel').css({
+    //     'width':  (window.innerWidth-25)+'px',
+    // });
     $('#tableDiv').css({
         'height': (window.innerHeight-150)+'px',
     });
