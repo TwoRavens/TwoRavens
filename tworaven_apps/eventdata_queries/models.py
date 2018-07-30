@@ -19,9 +19,18 @@ IN_PROCESS = u'PENDING'
 ERROR = u'FAILURE'
 COMPLETE = u'SUCCESS'
 STATUS_STATES = (IN_PROCESS, ERROR, COMPLETE)
-
+SUBSET = u'subset'
+AGGREGATE = u'aggregate'
+TYPE_OPTIONS = ( SUBSET, AGGREGATE)
+TYPE_CHOICES = [(x,x) for x in TYPE_OPTIONS]
 STATUS_CHOICES = [(x, x) for x in STATUS_STATES]
 # Create your models here.
+
+NAME = u'name'
+DESC = u'description'
+USERNAME = u'username'
+
+SEARCH_PARAMETERS = (NAME, DESC, USERNAME)
 
 
 class EventDataSavedQuery(TimeStampedModel):
@@ -38,15 +47,18 @@ class EventDataSavedQuery(TimeStampedModel):
     result_count = models.IntegerField(default=-1)
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now_add=True)
-    saved_to_dataverse = models.BooleanField(default=False)
-    dataverse_url = models.URLField(blank=True)
+    dataset = models.TextField(blank=True)
+    dataset_type = models.CharField(blank=False,
+                                    max_length=255,
+                                    choices=TYPE_CHOICES,
+                                    default=SUBSET)
 
     class Meta:
         ordering = ('-created',)
 
     def __str__(self):
-        query_str = json.dumps(self.query, indent=4)
-        return str(query_str)
+        # query_str = json.dumps(self.query, indent=4)
+        return self.name
 
     def get_query_id(self):
         """return id"""
@@ -80,8 +92,8 @@ class EventDataSavedQuery(TimeStampedModel):
             else:
                 od[attr_name] = val
 
-
         return od
+
 
     def get_all_objects(self):
         """return all objects"""
@@ -91,6 +103,7 @@ class EventDataSavedQuery(TimeStampedModel):
             return err_resp('could not get the object list as %s' % result)
         else:
             return ok_resp(result)
+
 
     def get_objects_by_id(self, job_id):
         """return object by id"""
@@ -109,7 +122,9 @@ class EventDataSavedQuery(TimeStampedModel):
             if v:
                 arguments[k] = v
 
-        result = EventDataSavedQuery.objects.filter(**arguments).all()
+        result = EventDataSavedQuery.objects.values('id', 'name', 'username', 'description','result_count',
+                                                    'created', 'modified', 'dataset', 'dataset_type'
+                                                    ).filter(**arguments).all()
 
         if not result:
             return err_resp('could not get the object for the inputs')
@@ -117,21 +132,115 @@ class EventDataSavedQuery(TimeStampedModel):
         else:
             return ok_resp(result)
 
+    def get_all_fields_except_query_list(self):
+        """ get all fields expect query"""
+        result = EventDataSavedQuery.objects.values('id','name', 'username', 'description',
+                                                    'result_count', 'created', 'modified', 'dataset', 'dataset_type').all()
+
+        if not result:
+            return err_resp('could not get the object list')
+
+        else:
+            return ok_resp(result)
+
 
 class ArchiveQueryJob(TimeStampedModel):
     """archive query job"""
-
-    what = models.TextField(default=None)
+    datafile_id = models.IntegerField(default=-1)
     saved_query = models.ForeignKey(EventDataSavedQuery,
                                     on_delete=models.PROTECT)
     status = models.CharField(max_length=100,
-                             choices=STATUS_CHOICES,
-                             default=IN_PROCESS)
+                              choices=STATUS_CHOICES,
+                              default=IN_PROCESS)
     is_finished = models.BooleanField(default=False)
     is_success = models.BooleanField(default=False)
     message = models.TextField(default=None)
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now_add=True)
+    dataverse_response = jsonfield.JSONField(blank=True,
+                                             load_kwargs=dict(object_pairs_hook=OrderedDict))
+    archive_url = models.URLField(blank=True)
 
     class Meta:
         ordering = ('-created',)
+
+    def __str__(self):
+        return '%s' % self.saved_query
+
+    def get_archive_id(self):
+        """return id"""
+        if self.id:
+            return self.id
+
+        return None
+
+    def get_datafile_id(self):
+        """return datafile id"""
+
+        if self.datafile_id:
+            return self.datafile_id
+
+        return None
+
+    def save(self, *args, **kwargs):
+
+        super(ArchiveQueryJob, self).save(*args, **kwargs)
+
+    def as_dict(self):
+        """return info dict"""
+        od = OrderedDict()
+
+        for attr_name in self.__dict__.keys():
+
+            # check for attributes to skip...
+            if attr_name.startswith('_'):
+                continue
+
+            val = self.__dict__[attr_name]
+            if isinstance(val, models.fields.files.FieldFile):
+                # this is a file field...
+                #
+                val = str(val)  # file path or empty string
+                if val == '':
+                    val = None
+                od[attr_name] = val
+            else:
+                od[attr_name] = val
+
+
+        return od
+
+    def get_all_objects(self):
+        """return all objects"""
+        result = ArchiveQueryJob.objects.all()
+
+        if not result:
+            return err_resp('could not get the object list as %s' % result)
+        else:
+            return ok_resp(result)
+
+    def get_objects_by_id(self, datafile_id):
+        """return object by id"""
+        result = ArchiveQueryJob.objects.filter(datafile_id=datafile_id).first()
+
+        if not result:
+            return err_resp('could not get the object for id %s' % datafile_id)
+
+        else:
+            return ok_resp(result)
+
+    def get_filtered_objects(self, **kwargs):
+        """get all the filtered objects"""
+        arguments = {}
+        for k, v in kwargs.items():
+            if v:
+                arguments[k] = v
+
+        result = ArchiveQueryJob.objects.filter(**arguments).all()
+
+        if not result:
+            return err_resp('could not get the object for the inputs')
+
+        else:
+            return ok_resp(result)
+

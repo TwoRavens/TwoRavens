@@ -184,7 +184,7 @@ SERVER_SCHEME = 'http'  # or https
 # ---------------------------
 TA2_STATIC_TEST_MODE = strtobool(os.environ.get('TA2_STATIC_TEST_MODE', 'True'))   # True: canned responses
 TA2_TEST_SERVER_URL = os.environ.get('TA2_TEST_SERVER_URL', 'localhost:45042')
-TA3_GPRC_USER_AGENT = os.environ.get('TA3_GPRC_USER_AGENT', 'tworavens')
+TA3_GPRC_USER_AGENT = os.environ.get('TA3_GPRC_USER_AGENT', 'TwoRavens')
 
 TA2_GPRC_SHORT_TIMEOUT = 3 # seconds
 TA2_GPRC_LONG_TIMEOUT = 5 * 60 # 5 minutes
@@ -209,7 +209,18 @@ CELERY_RESULT_BACKEND = 'redis://%s:%d' % (REDIS_HOST, REDIS_PORT)
 #  For depositing Dataverse data
 # ---------------------------
 DATAVERSE_SERVER = os.environ.get('DATAVERSE_SERVER', 'https://dataverse.harvard.edu')
-DATAVERSE_API_KEY = os.environ.get('DATAVERSE_API_KEY', '1a0f75f2-31b3-4a7e-937c-b4acd2579c69')
+DATAVERSE_API_KEY = os.environ.get('DATAVERSE_API_KEY', 'Get API Key from dataverse')
 DATASET_PERSISTENT_ID = os.environ.get('DATASET_PERSISTENT_ID', 'doi%3A10.7910%2FDVN%2FSJWX4S')
 
-# otg  623d7768-fa3d-42c5-8a03-16d473dc8953
+# -------------------------
+# EventData: mongo related
+# -------------------------
+EVENTDATA_MONGO_DB_ADDRESS = os.environ.get(\
+                        'EVENTDATA_MONGO_DB_ADDRESS'\
+                        '127.0.0.1:27017')
+
+EVENTDATA_MONGO_USERNAME = os.environ.get('EVENTDATA_MONGO_USERNAME',
+                                          'AdminEvent')
+
+EVENTDATA_MONGO_PASSWORD = os.environ.get('EVENTDATA_MONGO_PASSWORD',
+                                          '')

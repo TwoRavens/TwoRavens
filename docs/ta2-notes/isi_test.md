@@ -1,4 +1,6 @@
 
+## 7/24 - out of date instructions
+
 ## Run against the ISI docker image
 
 ## Get the ISI docker image:

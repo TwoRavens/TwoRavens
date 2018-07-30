@@ -1,16 +1,31 @@
+## v2018.7.7
+
+* Message `Value` has replaced most simple types with a message `ValueRaw` 
+  that enumerates those types and also includes a `null`.  This crucially 
+  allows nulls to be passed as arguments in templates in the API.
+  [!100](https://gitlab.com/datadrivendiscovery/ta3ta2-api/merge_requests/100)
+
 ## v2018.6.2
 
 * Fitted solutions now have separate id, and field `solution_id` changed to
   `fitted_solution_id` where appropriate.
+  [!92](https://gitlab.com/datadrivendiscovery/ta3ta2-api/merge_requests/92)
 * The field `rank` in `SolutionExportRequest` has changed from type `int32` to 
   type `double` and the comments defining this field have also changed, in 
   combination with revisions to NIST's solution export spec.
+  [!93](https://gitlab.com/datadrivendiscovery/ta3ta2-api/merge_requests/93)
 * New task `OBJECT_DETECTION` and new metric `OBJECT_DETECTION_AVERAGE_PRECISION`
-  are added to mirror changes in ProblemDoc v3.1.1
-* Metrics `PRECISION` and `RECALL` added to mirror changes in ProblemDoc v3.1
+  are added to mirror changes in ProblemDoc v3.1.1.
+  [!93](https://gitlab.com/datadrivendiscovery/ta3ta2-api/merge_requests/93)
+* Metrics `PRECISION` and `RECALL` added to mirror changes in ProblemDoc v3.1.
+  [!93](https://gitlab.com/datadrivendiscovery/ta3ta2-api/merge_requests/93)
 * Field `clusters_number` added to message `ProblemTarget`.
+  [!93](https://gitlab.com/datadrivendiscovery/ta3ta2-api/merge_requests/93)
 * Lists of raw values are now supported in the `Value` message.
+  [!98](https://gitlab.com/datadrivendiscovery/ta3ta2-api/merge_requests/98)
 * The README has been updated, particularly with a flow diagram of calls.
+  [!94](https://gitlab.com/datadrivendiscovery/ta3ta2-api/merge_requests/94)
+  [!95](https://gitlab.com/datadrivendiscovery/ta3ta2-api/merge_requests/95)
 
 ## v2018.5.1
 
@@ -18,10 +33,12 @@
   See the README.md for overview of rpc calls. In particular, TA3 systems can
   specify early ("preprocessing") steps of pipelines, and TA2 systems can 
   communicate a description of the pipeline of any found solution.
+  [!82](https://gitlab.com/datadrivendiscovery/ta3ta2-api/merge_requests/82)
 * As part of this change, API now uses native gRPC error codes.
+  [#49](https://gitlab.com/datadrivendiscovery/ta3ta2-api/issues/49)
 * The CONTRIBUTING.md has been updated to reflect current API development process
   and define baseline functionality in the core API.
-
+  [!90](https://gitlab.com/datadrivendiscovery/ta3ta2-api/merge_requests/90)
 
 ## v2017.12.20
 
