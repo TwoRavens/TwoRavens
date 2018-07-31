@@ -4453,7 +4453,7 @@ export async function submitDiscProb() {
         outputCSV = outputCSV + disco[i].problem_id + ", \"" + disco[i].system + "\", \"" + disco[i].meaningful + "\"\n";
 
         // construct and write out the api call and problem description for each discovered problem
-        let problemApiCall = CreatePipelineDefinition(disco[i].predictors, disco[i].target, 10, disco[i]);
+        let problemApiCall = CreatePipelineDefinition(disco[i].predictors, [disco[i].target], 10, disco[i]);
         let problemProblemSchema = CreateProblemSchema(disco[i]);
         let filename_api = disco[i].problem_id + '/ss_api.json';  
         let filename_ps = disco[i].problem_id + '/schema.json';   
