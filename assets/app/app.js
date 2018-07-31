@@ -404,7 +404,7 @@ export const reset = async function reloadPage() {
     byId("btnModel").click();
     //clearInterval(interiorIntervalId);
     //clearInterval(requestIntervalId);
-    //location.reload();
+    location.reload();
 };
 export let restart;
 
