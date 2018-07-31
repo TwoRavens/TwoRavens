@@ -40,6 +40,14 @@ urlpatterns = [
 
     re_path(r'api/dataverse-get-files-list/(?P<version_id>[0-9]{1,10})$',
             views.api_get_files_list,
-            name='api_get_files_list')
+            name='api_get_files_list'),
+
+    path(r'api/get-data',
+         views.api_get_data,
+         name='api_get_data'),
+
+    path(r'api/get-metadata',
+         views.api_get_metadata,
+         name='api_get_metadata'),
 
 ]

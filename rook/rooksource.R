@@ -107,12 +107,6 @@ if(!is_rapache_mode){
     #R.server$add(app = File$new(getwd()), name = "pic_dir")
     #<- paste(getwd(), "/../data/d3m", sep="");
 
-    eventdataFilesDir = "eventdata/downloads/"
-    print("--- eventdataFilesDir")
-    print(paste(getwd(), eventdataFilesDir, sep=""))
-    R.server$add(app = File$new(eventdataFilesDir), name = "eventdata-files")
-
-
     print(R.server)
 
     #if(!production){
@@ -138,8 +132,6 @@ source("rookexplore.R")
 source("rookplotdata.R")
 source("rooktree.R")
 
-source("eventdata/rookeventdata.R")
-
 if(addPrivacy){
     source("rookprivate.R")
 }
@@ -161,8 +153,6 @@ if(!is_rapache_mode){
     R.server$add(app = explore.app, name="exploreapp")
     R.server$add(app = plotdata.app, name="plotdataapp")
     R.server$add(app = tree.app, name="treeapp")
-
-    R.server$add(app = eventdata.app, name="eventdataapp")
 
     # Serve files directly from rook
     R.server$add(app = File$new(PRE_PATH), name = "rook-files")

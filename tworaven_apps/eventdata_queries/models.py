@@ -21,11 +21,13 @@ COMPLETE = u'SUCCESS'
 STATUS_STATES = (IN_PROCESS, ERROR, COMPLETE)
 SUBSET = u'subset'
 AGGREGATE = u'aggregate'
-TYPE_OPTIONS = ( SUBSET, AGGREGATE)
+TYPE_OPTIONS = (SUBSET, AGGREGATE)
 TYPE_CHOICES = [(x,x) for x in TYPE_OPTIONS]
 STATUS_CHOICES = [(x, x) for x in STATUS_STATES]
-# Create your models here.
+METHOD_CHOICES = (u'find', u'aggregate', u'count', u'distinct')  # the valid mongodb collection methods
+HOST_CHOICES = (u'TwoRavens', 'UTDallas')
 
+# Create your models here.
 NAME = u'name'
 DESC = u'description'
 USERNAME = u'username'

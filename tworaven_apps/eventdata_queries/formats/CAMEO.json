@@ -1,0 +1,2473 @@
+{
+  "010": {
+    "description": "All public statements expressed verbally or in action not otherwise specified.",
+    "examples": [
+      "U.S. military chief General Colin Powell said on Wednesday NATO would need to remain strong."
+    ],
+    "name": "Make statement, not specificed below",
+    "usage notes": "This residual category is not coded except when distinctions among 011 to 017 cannot be made. Note that statements are typically subordinate events; events such as comments are coded as mere statements only when they do not further imply appeals, agreements, support, apologies, demands, disapprovals, rejections, threats, etc."
+  },
+  "011": {
+    "description": "Explicitly decline or refuse to comment on a situation.",
+    "examples": [
+      "NATO on Monday declined to comment on an estimate that Yugoslav army and special police troops in Kosovo were losing 90 to 100 dead per day in NATO air strikes. 6 "
+    ],
+    "name": "Decline comment",
+    "usage notes": "This event form is a verbal act. The target could be who the source actor declines to make a comment to or about."
+  },
+  "012": {
+    "description": "Express pessimism, negative outlook.",
+    "examples": [
+      "Former West Germany Chancellor Willy Brandt said in a radio interview broadcast today he was skeptical over Moscow’s will to agree on limiting European-based nuclear weapons.",
+      "Israeli Prime Minister Ehud Barak said Friday he was very pessimistic about the chances of resuming peace talks with Syria, Israel radio reported."
+    ],
+    "name": "Make pessimistic comment",
+    "usage notes": "This event form is a verbal act. Only statements with explicit pessimistic components should be coded as 012; otherwise, default to 010."
+  },
+  "013": {
+    "description": "Express optimism, assurance, confidence.",
+    "examples": [
+      "Turkish President Turgut Ozal said on Wednesday he was confident that the United States would remove irritants damaging relations between the two NATO allies.",
+      "The European Community said on Thursday it hoped the lifting of martial law in Beijing would lead to an improvement in human rights."
+    ],
+    "name": "Make optimistic comment",
+    "usage notes": "This event form is a verbal act. Only statements with explicit optimistic components should be coded as 013; otherwise, default to 010."
+  },
+  "014": {
+    "description": "Review, reflect upon, or study policy option.",
+    "examples": [
+      "Europe’s leading security forum is exploring the possibility of international patrols to monitor the former Yugoslav republic of Macedonia’s border with Serbia, its envoy said on Friday.",
+      "Malaysia is considering giving money to 20,000 Vietnamese boat people in the country to entice them to return home, foreign minister said on Tuesday."
+    ],
+    "name": "Consider policy option",
+    "usage notes": "This event form is typically, although not exclusively, a verbal act. There is no limitation on types of policies that could be under consideration."
+  },
+  "015": {
+    "description": "Non-apologetically claim responsibility, admit an error or wrongdoing, or retract a statement without expression of remorse.",
+    "examples": [
+      "A Damascus-based Palestinian guerrilla group claimed responsibility on Saturday for attacks on Israeli troops from Jordan in the past two days."
+    ],
+    "name": "Acknowledge or claim responsibility",
+    "usage notes": "This event form is a verbal act. Remorseful acknowledgements should be coded as ‘Apologize’ (055) instead."
+  },
+  "016": {
+    "description": "Discard or deny accusations or charges.",
+    "examples": [
+      "The government of Liberia denied on Thursday charges by Ivory Coast that Monrovia is committing genocide.",
+      "South Korea on Friday rejected as “totally baseless” accusations by Amnesty International that it had carried out mass arrests of political prisoners, but church human rights groups here supported the accusations."
+    ],
+    "name": "Reject accusation, deny responsibility",
+    "usage notes": "This event form is a verbal act. The target for this event type is the party that introduces some accusation or charge against the source actor who denies responsibility."
+  },
+  "017": {
+    "description": "Engage in symbolic activities such as holding vigils, attending funerals, and laying wreath.",
+    "name": "Engage in symbolic act",
+    "usage notes": "Use this event form for all symbolic acts, including those that imply empathy. Use 018 to code only empathetic comments (i.e. not actions)."
+  },
+  "018": {
+    "description": "Express empathy, condolences, sympathy, understanding.",
+    "examples": [
+      "Secretary-General Boutros Boutros-Ghali on Saturday expressed condolences to the United States for the death of three American diplomats."
+    ],
+    "name": "Make empathetic comment",
+    "usage notes": "This event form refers exclusively to verbal acts or comments. Empathetic and other symbolic actions should be coded as 017 instead."
+  },
+  "019": {
+    "description": "Express common understanding, agreement, or accord.",
+    "examples": [
+      "President Reagan and Egyptian President Hosni Mubarak agreed today there was an urgent need for progress towards a Middle East settlement and that a freeze on Israeli settlements in occupied territories was also needed.",
+      "Note Two reciprocal events (both 019) are coded with actors reversed. 2.2 APPEAL"
+    ],
+    "name": "Express accord",
+    "usage notes": "This event form refers exclusively to verbal acts or comments. Use this code when actors indicate that they simply agree or concur on an issue but do not imply commitment or intent to cooperate on that issue. These are typically reciprocal events (see example below) and require coding of more than one 019 event with actors reversed."
+  },
+  "020": {
+    "description": "All requests, proposals, suggestions and appeals not otherwise specified.",
+    "name": "Make an appeal or request, not specified below",
+    "usage notes": "This residual category is not coded except when distinctions among 021 through 028 cannot be made. Events coded under this category refer to pleas made either on the source actor’s own behalf or on behalf of another party (i.e. the source asks that the target does something either for self or for a third party). Note that this and all the subcategories are distinct from demands, which are more forceful, and from pledges, which imply commitments, agreements, or promises on the part of the source actor."
+  },
+  "021": {
+    "description": "Make an appeal for, request, or suggest material cooperation.",
+    "examples": [
+      "Kenyan President Daniel Arap Moi on Monday urged Uganda to to repatriate “all Kenyan criminals hiding there” to face trial, accusing them of killing Kenyan policemen in cross-border raids recently.",
+      "Outspoken Serbian ultra-nationalist leader Vojislav Seselj called on Arab countries to join forces against a possible US-led attack on Iraq, Tanjug news agency reported Wednesday."
+    ],
+    "name": "Appeal for material cooperation",
+    "usage notes": "This event form is typically, though not exclusively, a verbal act. It refers to appeals for material cooperation specifically; appeals for diplomatic cooperation, such as for the provision of support on a particular policy, are coded as 022 instead. (Note that the actual events of material cooperation are coded under category 06.)"
+  },
+  "0211": {
+    "description": "Make an appeal for, request, or suggest initiating or expanding economic ties. ",
+    "examples": [
+      "Indian business leaders Friday called for greater impetus towards free trade despite mounting tensions between India and Pakistan."
+    ],
+    "name": "Appeal for economic cooperation",
+    "usage notes": "Use this code for requests to develop or expand trade and other forms of economic exchange. Appeals for provision of economic aid-not mutual exchangeare coded as 0231 instead. Actual events of economic cooperation are coded as 061."
+  },
+  "0212": {
+    "description": "Make an appeal for, request, or suggest initiating or expanding military ties.",
+    "examples": [
+      "South Korea has requested to lease a Russian military training ground, military officers in Seoul said on Thursday."
+    ],
+    "name": "Appeal for military cooperation",
+    "usage notes": "Use this code for requests to develop or expand military relations by engaging in acts such as joint military maneuvers or exercises. Appeals for provision of military aid-not mutual exchange-are coded as 0232 instead. Actual events of military cooperation are coded as 062."
+  },
+  "0213": {
+    "description": "Make an appeal for, request, or suggest initiating or expanding cooperation in judicial matters.",
+    "examples": [
+      "Turkey renewed an appeal to Belgium to extradite a far-left militant wanted for murder, Justice Minister Cemil Cicek said Thursday, slamming what he called lax international cooperation against terrorism."
+    ],
+    "name": "Appeal for judicial cooperation",
+    "usage notes": "Use this code for requests to develop or expand cooperation in such matters as extraditions. Appeals for information or other investigative tools, even if to be used in courts of law, are coded as 0214 instead. Note that in case of extraditions, the target for this event type is not the subject but the country he would be extradited to. Actual events of judicial cooperation are coded as 063."
+  },
+  "0214": {
+    "description": "Make an appeal for, request, or suggest sharing of intelligence.",
+    "examples": [
+      "Turkey said Monday it had asked Tehran and Damascus to provide urgent information about arms and ammunition seized last week in southeastern Turkey aboard six trucks travelling from Iran to Syria."
+    ],
+    "name": "Appeal for intelligence cooperation",
+    "usage notes": "Use this code for requests to develop or expand intelligence and information sharing. Actual events of intelligence cooperation are coded as 064."
+  },
+  "022": {
+    "description": "Make an appeal for, request, or suggest expansion of diplomatic ties or cooperation.",
+    "examples": [
+      "North Korean state media have called on the United States to forge “ties of confidence” with Pyongyang ahead of six-party nuclear talks expected to be held in Beijing on July 26.",
+      "Charles Taylor called on Liberians to stand by him during these difficult days, “Soon this bad wind shall pass,” he moaned.",
+      "Lebanese President Amin Gemayel has asked President Reagan for full United States support for Lebanon’s cause, the White House said today."
+    ],
+    "name": "Appeal for diplomatic cooperation (such as policy support)",
+    "usage notes": "This event form is typically, although not exclusively, a verbal act. It refers to appeals for expanded diplomatic ties and non-tangible support on particular policies. Appeals for more specific forms of diplomacy, such as mediation and negotiation, are coded elsewhere within category 02."
+  },
+  "023": {
+    "description": "Make an appeal for, request, or suggest provision of material assistance not otherwise specified.",
+    "examples": [
+      "Romania has asked the European Community for immediate delivery of additional aid, EC sources said on Thursday."
+    ],
+    "name": "Appeal for material aid, not specified below",
+    "usage notes": "This category contains sub-forms for more detailed coding whenever possible. The source could be requesting aid for itself or on behalf of a third party; in either case, the actor whom the request is directed to should be coded as the target. Note that only requests for or suggestions of material aid are coded under this category; events coded under 023 imply neither the receipt or delivery of material aid nor a commitment on the part of the source actor to provide such aid. For the latter two cases, refer instead to categories 07 and 033, respectively."
+  },
+  "0231": {
+    "description": "Make an appeal for, request, or suggest economic assistance.",
+    "examples": [
+      "Russia and China will ask Asian banks to help finance construction of an $8 billion Trans-Siberian natural gas link to China.",
+      "Note Because of the compound source (Russia and China), two events are coded."
+    ],
+    "name": "Appeal for economic aid",
+    "usage notes": "This event form is typically, although not exclusively, a verbal act. Requests or suggestions for loans or debt relief are also coded here. Appeals for reciprocal economic exchange, such as trade, should be coded as 0212 instead. The source could be requesting support for itself or on behalf of another party. "
+  },
+  "0232": {
+    "description": "Make an appeal for, request, or suggest military assistance.",
+    "examples": [
+      "Angola has asked Portugal for military aid, especially instructors for its Soviet- and Cuban-trained armed forces, a Lisbon newspaper said today."
+    ],
+    "name": "Appeal for military aid.",
+    "usage notes": "This event form is typically, although not exclusively, a verbal act. Requests for or suggestions of joint military actions, rather than unilateral military aid, should be coded as 0212 instead."
+  },
+  "0233": {
+    "description": "Make an appeal for, request, or suggest humanitarian assistance.",
+    "examples": [
+      "Oxfam Canada today called on the world community to help save tens of thousands of Afghan civilians threatened with starvation."
+    ],
+    "name": "Appeal for humanitarian aid",
+    "usage notes": "Requests for or suggestions of food, medicine, and related personnel, as well as shelter and protection, are all coded as 0233. Calls by refugees to be let into the territories of other countries (which should be coded as targets) and asylum requests all fit here."
+  },
+  "0234": {
+    "description": "Make an appeal for, request, or suggest deployment of peacekeepers or other military forces to preserve peace, enforce ceasefires, or protect civilians.",
+    "examples": [
+      "A group of prominent Liberians have written to President George Bush urging him to send U.S. peacekeeping troops to their capital Monrovia."
+    ],
+    "name": "Appeal for military protection or peacekeeping",
+    "usage notes": "This event form is typically, although not exclusively, a verbal act. The source actor could be making the appeal for itself or on behalf of another party; the target should represent the actor who is expected to provide the forces. "
+  },
+  "024": {
+    "description": "Make an appeal for, request, or suggest political change not otherwise specified.",
+    "examples": [
+      "About 300 representatives from Egyptian civil society organizations submitted the most recent in a series of reform petitions, under the title “In Defense of the Nation” to the Saudi royal family.",
+      "European ministers had called for Burma to institute reforms before joining the ASEAN."
+    ],
+    "name": "Appeal for political reform, not specified below",
+    "usage notes": "This event form refers to verbal and non-threatening appeals. More forceful “demands” for political change are coded under 104; expressions that take the form of demonstrations, protests, etc. are coded under category 14. Source actors can be local citizens as well as international actors; they could be making the appeal on their own behalf or on behalf of others. Note that when the requested reform clearly constitutes some form of concession or yielding by the target such as the easing of administrative sanctions, a more appropriate ‘Appeal’ code might be found under 025."
+  },
+  "0241": {
+    "description": "Make an appeal for, request, or suggest change in leadership or power.",
+    "examples": [
+      "Members of parliament from Kenya’s Liberal Democratic Party called on Energy Minister Kiraitu Murungi to resign in the wake of new evidence over the $7 billion scandals.",
+      "The UN Security Council has called on Haiti’s interim government to hold elections by 7 February."
+    ],
+    "name": "Appeal for leadership change",
+    "usage notes": "This event form refers to verbal and non-threatening appeals. More forceful “demands” for leadership change are coded as 1041; demonstrations, protests, etc. demanding change in leadership/power are coded under category 14. Note that even though calls for the target to resign or relinquish power are forms of yielding, they are still coded here. Also code appeals for elections here."
+  },
+  "0242": {
+    "description": "Make an appeal for, request, or suggest change in any particular policy.",
+    "examples": [
+      "U.S. President George W. Bush said Friday that he will tell Japanese Prime Minister Junichiro Koizumi that Japan needs to enact significant economic reforms. ",
+      "Carl Bildt called for three urgent reforms in Swedish politics—tax reform, business reform and welfare reform—and stressed the creation of new jobs as the principal task for the future."
+    ],
+    "name": "Appeal for policy change",
+    "usage notes": "This event form refers to verbal and non-threatening appeals. More forceful “demands” for policy change are coded as 1042; demonstrations, protests, etc. demanding change in leadership/power are coded under category 14. Just like the source actor, the policy in question can also be domestic or international in nature. If it is clear from the lead that by requesting certain policy changes the source is in fact appealing to the target to yield or concede, the event might be better coded under 035."
+  },
+  "0243": {
+    "description": "Make an appeal for, request, or suggest provision or expansion of social, political, or other rights.",
+    "examples": [
+      "The UN urged the Maoists rebels in Nepal to honor human rights, according to the UN High Commissioner for Human Rights (UNHCR).",
+      "The international committee of the Lebanese Living Abroad movement is contacting a number of Lebanese legislatures to propose a new addendum incorporating the right to vote abroad into the electoral law adopted for the upcoming parliamentary elections."
+    ],
+    "name": "Appeal for rights",
+    "usage notes": "This event form refers to verbal and non-threatening appeals. More forceful “demands” for rights are coded as 1043; demonstrations, protests, etc. demanding certain rights are coded under category 14. If it is clear from the lead that by requesting certain rights the source is in fact appealing to the target to yield or concede, the event might be better coded under 025. Appeals for provision of compensation for previously violated rights, for instance, are coded as 025."
+  },
+  "0244": {
+    "description": "Make an appeal for, request, or suggest major institutional, constitutional, or regime change.",
+    "examples": [
+      "President Emile Lahoud has pushed the Lebanese Parliament for a new election law two days before he is to call parliamentary elections.",
+      "Scandal-plagued President Gloria Macapagal Arroyo on Monday urged Congress in the Philippines to change the constitution to shift to a parliamentary form of government to ease the country’s constant political instability."
+    ],
+    "name": "Appeal for change in institutions, regime",
+    "usage notes": "This event form refers to verbal and non-threatening appeals. More forceful “demands” for institutional change are coded as 1044; demonstrations, protests, etc. demanding such change are coded under category 14. Institutional change is different from policy change in that the former directly alters the rules of the game. Requests for fundamental changes in the political system (e.g. democratization) as well as for more limited institutional changes (e.g. changing electoral law) are coded here."
+  },
+  "025": {
+    "description": "Make an appeal for, request, or suggest that target yields or concedes; not otherwise specified.",
+    "examples": [
+      "Israeli Prime Minister Ariel Sharon wants Germany to pay more compensation to the families of 11 Israeli athletes killed at the 1972 Munich Olympic Games, a statement from his office said Tuesday."
+    ],
+    "name": "Appeal to yield, not specified below",
+    "usage notes": "This event form is typically, although not exclusively, a verbal act. The source for this event type may or may not be one of the adversaries; a third party could also be appealing to one or more of the parties in conflict (who are coded as targets) to yield. When the source itself expresses its intent to yield—rather than requesting it from another party—the event should be coded under 035 instead. When yielding actually takes place, use the appropriate code under category 08."
+  },
+  "0251": {
+    "description": "Make an appeal for, request, or suggest that target relaxes administrative restrictions. ",
+    "examples": [
+      "Dozens of journalists at Sudan’s most respected daily newspaper appealed to the Sudanese government on Wednesday to let them resume publishing and compensate them for lost wages.",
+      "Human Rights Watch also called on Yemen, Algeria andMalaysia to immediately lift bans on newspapers closed in recent days for printing the caricatures. ",
+      "Note Because of the compound target, three separate events are coded."
+    ],
+    "name": "Appeal for easing of administrative sanction",
+    "usage notes": "Use this code when a government is requested to undertake some political changes that clearly constitute some form of concession or yielding, such as relaxing or removing bans or other restrictions that are already in place."
+  },
+  "0252": {
+    "description": "Make an appeal for, request, or suggest that target stops political protest activities. ",
+    "examples": [
+      "Islamic fundamentalist leaders appealed to their Muslim followers for an end to anti-government agitation, authorities said Monday."
+    ],
+    "name": "Appeal for easing of political dissent",
+    "usage notes": "Use this code for requests for the target to stop engaging in protests, demonstrations, strikes, etc."
+  },
+  "0253": {
+    "description": "Make an appeal for, request, or suggest that target releases persons or property.",
+    "examples": [
+      "The United States called on Israel to move forward with its “courageous and historic” disengagement plan as fast as possible.",
+      "Note While “disengagement” does not necessarily involve any kind of release of persons or property, in the case of Israel we can safely assume that any mention of the “disengagement plan” refers primarily to the withdrawal of settlements, hence, the return of land to the Palestinians; phrases involving “disengagement” or “settlements” can be entered into verb dictionaries, particularly the Middle East dictionary, as the appropriate codes pertaining to the release of property."
+    ],
+    "name": "Appeal for release of persons or property",
+    "usage notes": "Use this code for requests for the target to release prisoners, hostages, and any confiscated property."
+  },
+  "0254": {
+    "description": "Make an appeal for, request, or suggest that target stops or eases economic sanctions, boycott, or embargo.",
+    "examples": [
+      "Iraq on Saturday appealed to the U.N. to bring an end to their trade embargo, which it said is causing huge shortages of medicine and food."
+    ],
+    "name": "Appeal for easing of economic sanctions, boycott, or embargo",
+    "usage notes": "Use this code only for economic sanctions, boycotts, or embargoes."
+  },
+  "0255": {
+    "description": "Make an appeal for, request, or suggest that target allows the entry of international actors, such as observers, humanitarian agencies, and peacekeeping forces. ",
+    "examples": [
+      "An international aid agency appealed to the Sudanese government on Friday to urgently reconsider its ban on relief flights to southern Sudan.",
+      "Note Because the identity of the agency is not provided, the general NGO code will be used."
+    ],
+    "name": "Appeal to allow international involvement (non-mediation)",
+    "usage notes": "Requests for adversaries to allow mediation are coded as 028 instead."
+  },
+  "0256": {
+    "description": "Make an appeal for, request, or suggest that target stops fighting or takes measures to ease military conflict or tension.",
+    "examples": [
+      "The presidents of Iraq and Egypt called on Tuesday for the withdrawal of Syrian and other foreign forces from Lebanon to end 14 years of civil war there. ",
+      "Note Because of the compound source (governments of Iraq and Egypt), two events are coded.",
+      "Leaders of the 16-member Economic Community of West African States (ECOWAS) called on Wednesday for an immediate ceasefire in war-torn Liberia. "
+    ],
+    "name": "Appeal for target to de-escalation of military engagement",
+    "usage notes": "Use this code for appeals for ceasefires, military withdrawals, and demobilization."
+  },
+  "026": {
+    "description": "Propose or suggest meeting, negotiation, or discussion among other parties.",
+    "examples": [
+      "El Salvador on Monday requested an urgent Security Council meeting on Wednesday to deal with what it called violations by Nicaragua of the Central American peace accords."
+    ],
+    "name": "Appeal to others to meet or negotiate",
+    "usage notes": "This event form is typically, although not exclusively, a verbal act. The source for this event cannot be the actors whose meeting or negotiation is called for; it has to be third parties who appeal to one or more actors— target actors—to meet and/or negotiate. When parties themselves express their intent to meet and/or negotiate, use 036 instead. When meetings or negotiations do take place, use the appropriate code under category 04."
+  },
+  "027": {
+    "description": "Propose or suggest that others reach a settlement, agreement, or resolution of conflict.",
+    "examples": [
+      "The Russian Foreign Minister Sergei Lavrov said here Saturday that he urges Iran and the EU trio (France, Germany, and Britain) to reach an agreement in their talks on Iran’s nuclear program.",
+      "Note Given the presence of four different targets, four events are coded."
+    ],
+    "name": "Appeal to others to settle dispute",
+    "usage notes": "This event form is typically, although not exclusively, a verbal act. Note that the source for this event cannot be the adversaries themselves. When one or more parties to a conflict call for ending the conflict, that is taken to be an expression of intent on the part of that source actor to reach a settlement and is thus coded as 037 instead."
+  },
+  "028": {
+    "description": "Propose or suggest that target mediates or accepts the mediation of others.",
+    "examples": [
+      "The International Crisis Group has called on the UN stabilization mission in Haiti to broker an agreement among Haitians that “establishes common objectives for the next government.” 2.3 EXPRESS INTENT TO COOPERATE"
+    ],
+    "name": "Appeal to others to engage in or accept mediation",
+    "usage notes": "This event form is typically, although not exclusively, a verbal act. Note that the source for this event cannot be the potential mediator or parties to the conflict. When an actor proposes to play the role of mediator himself, this is assumed to be a commitment on his part and is coded as 039 instead. When one or more of the adversaries request that another party plays the role of a mediator, this is understood to be a commitment on their part to accept mediation and is thus coded as 038. The target can either be a potential mediator (whose mediation is being requested) or one of the adversaries (who is requested to allow involvement of mediators)."
+  },
+  "030": {
+    "description": "Offer, promise, agree to, or otherwise indicate willingness or commitment to cooperate not otherwise specified.",
+    "examples": [
+      "Senior Hungarian and Romanian officials agreed on Wednesday that their countries should cooperate to encourage Romanian refugees in Hungary to return home.",
+      "Note Two reciprocal events are coded with actors reversed."
+    ],
+    "name": "Express intent to cooperate, not specified below",
+    "usage notes": "This residual category is not coded except when distinctions among codes 031 through 039 cannot be made. All cooperative actions reported in future tense are also taken to imply intentions, if not promises or commitments, to cooperate and are hence coded under this category. These events can be reciprocal or unilateral."
+  },
+  "031": {
+    "description": "Offer, promise, agree to, or otherwise indicate willingness or commitment to engage in or expand material cooperative exchange not otherwise specified.",
+    "examples": [
+      "The Asia-Pacific Economic Cooperation (APEC) forum has agreed to set up an energy research center in Tokyo to further develop its regional energy projections, officials said Thursday."
+    ],
+    "name": "Express intent to engage in material cooperation, not specified below ",
+    "usage notes": "This category contains sub-forms for more detailed coding whenever possible. This event form refers to commitments or indications of intent by parties to boost their material exchange; they could be reciprocal or unilateral agreements, promises, commitments, or other indications of intent to cooperate. Pledges to provide unilateral material aid, however, are coded under category 033. Expressions of intent to engage in or further diplomatic cooperation, such as negotiations, settling disputes, or provision of policy support are coded elsewhere under category 03. Note that events coded here are intents and commitments, and not actual events of cooperation, which should be coded under 06."
+  },
+  "0311": {
+    "description": "Offer, promise, agree to, or otherwise indicate willingness or commitment to engage in or expand economic ties.",
+    "examples": [
+      "The United States and Jordan have agreed upon a new free-trade pact between the two countries, the White House announced Tuesday.",
+      "Note Two reciprocal events are coded with actors reversed."
+    ],
+    "name": "Express intent to cooperate economically",
+    "usage notes": "This event form refers to agreements, promises, commitments, or other indications of intent to develop or expand trade and other forms of economic exchange. Offers, promises, or commitments by one actor to provide economic aid to another should be coded as 0331 instead."
+  },
+  "0312": {
+    "description": "Offer, promise, agree to, or otherwise indicate willingness or commitment to engage in or expand military ties.",
+    "examples": [
+      "Jordan and Britain have agreed to undertake joint military exercises this month, a Jordanian official confirmed.",
+      "Note Two reciprocal events are coded with actors reversed."
+    ],
+    "name": "Express intent to cooperate militarily",
+    "usage notes": "This event form refers to agreements, promises, commitments, or other indications of intent to develop or expand military relations by engaging in such acts as joint military maneuvers or exercises. Offers, promises, or commitments by one actor to provide military aid to another should be coded as 0332 instead."
+  },
+  "0313": {
+    "description": "Offer, promise, agree to, or otherwise indicate willingness or commitment to engage in or expand judicial cooperation.",
+    "examples": [
+      "Libya has offered to hand over to an Arab country two of its nationals suspected by the West of blowing up a Pan Am plane in 1988, a state-owned Egyptian newspaper said."
+    ],
+    "name": "Express intent to cooperate on judicial matters",
+    "usage notes": "This event form refers to agreements, promises, commitments, or other indications of intent to develop or expand judicial cooperation by engaging in such acts as extraditions."
+  },
+  "0314": {
+    "description": "Offer, promise, agree to, or otherwise indicate willingness or commitment to engage in or expand intelligence sharing.",
+    "examples": [
+      "Israel and the Palestinians reached a consensus to exchange information on water resources on the second day of a multilateral conference on water problems in the Middle East here Thursday, the meeting’s co-chairman said.",
+      "Note Two reciprocal events are coded with actors reversed.",
+      "The Turkish-Cypriot and Greek-Cypriot sides of this divided Mediterranean island have agreed to share information Friday on missing people from both communities, a UN official said on Monday.",
+      "Note Two reciprocal events are coded with actors reversed."
+    ],
+    "name": "Express intent to cooperate on intelligence",
+    "usage notes": "This event form refers to agreements, promises, commitments, or other indications of intent to develop or expand intelligence cooperation by providing or exchanging intelligence or information."
+  },
+  "032": {
+    "description": "Offer, promise, agree to, or otherwise indicate willingness or commitment to expand diplomatic ties or cooperation.",
+    "examples": [
+      "Portugal will support Turkey’s efforts to become a full member of the European Community, Portuguese President Mario Soares said on Tuesday.",
+      "Note Note that the future tense used in the lead indicates future commitment.",
+      "Hungary has said it will support a U.N. Security Council resolution that aims to tighten sanctions and impose a naval blockade against neighboring Yugoslavia. ",
+      "Note Note that the future tense used in the lead indicates future commitment."
+    ],
+    "name": "Express intent to engage in diplomatic cooperation (such as policy support) ",
+    "usage notes": "This event form is typically, although not exclusively, a verbal act. The offered or promised support should be non-material, such as supporting or backing particular policies and/or goals. Note that agreements or promises to engage in more specific forms of diplomatic cooperation, such as negotiations and mediation, are coded elsewhere under category 03. The target should be the recipient of the potential support."
+  },
+  "033": {
+    "description": "Offer, promise, agree to, or otherwise indicate willingness or commitment to provide some form of material support not otherwise specified.",
+    "examples": [
+      "NATO-member Norway is willing to send material to help defend Saudi Arabia if it is attacked, Norway’s foreign minister said."
+    ],
+    "name": "Express intent to provide material aid, not specified below",
+    "usage notes": "This event category contains sub-forms for more detailed coding whenever possible. Note that more general commitments to broaden material exchange or cooperation are coded under 031 instead. Reported deliveries of material support are coded under category 07. The target should be the prospective recipient of aid."
+  },
+  "0331": {
+    "description": "Offer, promise, agree to, or otherwise indicate willingness or commitment to provide economic support.",
+    "examples": [
+      "Finland will give Tanzania a grant of 580 million shillings (64.45 million dollars) over the next three years to finance several projects in the country, a statement issued by the ministry of finance said today.",
+      "Note Note that the future tense used in the lead indicates future commitment.",
+      "European Community foreign ministers agreed in principle on Saturday to provide about 70 million dollars of aid for Romania and Poland.",
+      "Note Due to the compound target actor, two events are coded."
+    ],
+    "name": "Express intent to provide economic aid",
+    "usage notes": "Code commitments to provide financial support, in form of grants, loans, or debt relief under this event code. Trade commitments should be coded as 0311 instead."
+  },
+  "0332": {
+    "description": "Offer, promise, agree to, or otherwise indicate willingness or commitment to provide military support.",
+    "examples": [
+      "British Defence Secretary Tom King has promised to continue military aid to war-torn Mozambique.",
+      "Syria has again offered its troops to Lebanon’s new President Elias Hrawi to help him oust General Michel Aoun from the Christian enclave Aoun controls. "
+    ],
+    "name": "Express intent to provide military aid",
+    "usage notes": "Use this event form to code commitments to provide all forms of military aid. Promises to engage in bilateral or multilateral military cooperation should be coded as 0312 instead."
+  },
+  "0333": {
+    "description": "Offer, promise, agree to, or otherwise indicate willingness or commitment to provide humanitarian support.",
+    "examples": [
+      "The United Nations will provide nearly 25,000 tons of emergency food aid to refugees fleeing the civil war in Liberia, the World Food Program (WFP) said on Monday."
+    ],
+    "name": "Express intent to provide humanitarian aid",
+    "usage notes": "Use this code for commitments to provide all forms of humanitarian aid, including evacuations from dangerous zones and shelter for refugees. However, note that expressions of intent to provide military security or peacekeeping forces are coded as 0334 instead. Actual provisions of humanitarian aid are coded as 073."
+  },
+  "0334": {
+    "description": "Offer, promise, agree to, or otherwise indicate willingness or commitment to deploy peacekeeping or other military forces for security.",
+    "examples": [
+      "France is ready to contribute up to 4,000 troops to an international peacekeeping force in Yugoslavia, Defence Minister Pierre Joxe said on Monday.",
+      "The Security Council today agreed to a six-month extension of the mandate for the peacekeeping force in Lebanon (UNIFIL) despite Israel’s wish for a shorter period."
+    ],
+    "name": "Express intent to provide military protection or peacekeeping",
+    "usage notes": "Source actor for this event is the party making the commitment to provide forces, while the target represents the prospective location of deployment. Actual deployments should be coded as linked events ‘Provide military protection or peacekeeping’ (074) and ‘Receive deployment of peacekeepers’ (0861) with actors reversed. Commitments by adversaries to accept peacekeepers should be coded as 0355."
+  },
+  "034": {
+    "description": "Offer, promise, agree to, or otherwise indicate willingness or commitment to institute political change not otherwise specified.",
+    "name": "Express intent to institute political reform, not specified below",
+    "usage notes": "If the promised reforms clearly constitutes some form of concession or yielding by the source, such as the easing of existing administrative sanctions, a more appropriate code might be found under 035. If there are specific groups or individuals asking for that change and that information is codeable given the structure of the lead, those actors should be coded as targets; otherwise, the country in general or actors to be affected by the change should be coded as the target."
+  },
+  "0341": {
+    "description": "Offer, promise, agree to, or otherwise indicate willingness or commitment to change leadership or relinquish power.",
+    "examples": [
+      "Ousted President Askar Akayev has agreed to resign without returning to the Kyrgyzstan, the Parliament speaker said Saturday.",
+      "Note Because no specific group is mentioned, the country alone is coded as the target. "
+    ],
+    "name": "Express intent to change leadership",
+    "usage notes": "Commitments to resign or hand over power, as well to hold elections that might open the way for change in leadership, are coded here. Note that while commitments for other forms of yielding are coded under 035, commitments to give up power are coded here."
+  },
+  "0342": {
+    "description": "Offer, promise, agree to, or otherwise indicate willingness or commitment for policy change.",
+    "examples": [
+      "Planning and Investment Minister Tran Xuan Gia said Vietnam is committed to opening up the economy but will not be rushed, in a rare interview late on Friday.",
+      "Note Vietnam can be coded as the target since the country in general is obviously going to be affected from such a change in policy."
+    ],
+    "name": "Express intent to change policy",
+    "usage notes": "Use this code for commitments to bring policy change—political, economic, military, social, or otherwise. If the policy change in question clearly represents a form of yielding, the appropriate code under 035 should be used instead. "
+  },
+  "0343": {
+    "description": "Offer, promise, agree to, or otherwise indicate willingness or commitment to provide social, political, economic, or other rights and freedoms.",
+    "examples": [
+      "Turkey will allow up to 13,000 Turkish Kurd refugees who have lived in Iraq for more than a decade to return home as part of a UN-brokered deal.",
+      "Note Allowing the voluntary repatriation of refugees constitutes provision of the right to go home."
+    ],
+    "name": "Express intent to provide rights",
+    "usage notes": "If it is clear from the lead that by promising to provide certain rights the source is in fact committing to yield, the event might be better coded under 035. Commitments to provide compensation for previously violated rights, for instance, are coded as 035."
+  },
+  "0344": {
+    "description": "Offer, promise, agree to, or otherwise indicate willingness or commitment to make fundamental political changes, such as moving from one type of political system to another and reforming political institutions or key laws.",
+    "examples": [
+      "Serbian President Vojislav Kostunica promised to democratize Serbia and establish the rule of law as he succeeded Milosevic."
+    ],
+    "name": "Express intent to change institutions, regime",
+    "usage notes": "Note the difference between institutional/regime changes and policy reforms."
+  },
+  "035": {
+    "description": "Offer, promise, agree to, or otherwise indicate willingness or commitment to yield not otherwise specified.",
+    "examples": [
+      "A Soviet official offered concessions last November that U.S. negotiator Paul Nitze believed could lead to an agreement on reducing nuclear missiles in Europe, according to a senator who acted as a go-between at the talks."
+    ],
+    "name": "Express intent to yield, not specified below",
+    "usage notes": "This event form refers to general expressions of willingness or commitment to concede; use the subcategories for more detailed coding. The actual events of yielding are coded under category 08."
+  },
+  "0351": {
+    "description": "Offer, promise, agree to, or otherwise indicate willingness or commitment to ease administrative sanctions, such as censorship, curfew, state of emergency, and martial law.",
+    "examples": [
+      "In an interview this weekend, President Abdelaziz Bouteflika said he is prepared to lift ban on Islamic Salvation Front (FIS) but not with its historical leadership. "
+    ],
+    "name": "Express intent to ease administrative sanctions"
+  },
+  "0352": {
+    "description": "Offer, promise, agree to, or otherwise indicate willingness or commitment to reduce or stop political protest activities, such as demonstrations and rallies.",
+    "examples": [
+      "Leaders of the Azadliq (Freedom) opposition coalition agreed to postpone the demonstration in Baku until 9 November."
+    ],
+    "name": "Express intent to ease popular dissent"
+  },
+  "0353": {
+    "description": "Offer, promise, agree to, or otherwise indicate willingness or commitment to release or return persons or property.",
+    "examples": [
+      "The Fijian rebels said they will release Prime Minister Mahendra Chaudhry and more than 30 members of his government, whom they had taken hostage two weeks ago, on the weekend.",
+      "The rebel Revolutionary United Front (RUF) announced it will return weapons and military equipment seized last year from United Nations peacekeepers, according to reports reaching here from the country’s capital Freetown.",
+      "Under the disengagement plan, Isreal will evacuate all 21 settlements in the Gaza Strip in mid-August, said spokesperson for the Israeli prime minister."
+    ],
+    "name": "Express intent to release persons or property",
+    "usage notes": "Commitments to release or exchange prisoners and hostages, as well as commitments to return previously confiscated properties, are coded here."
+  },
+  "0354": {
+    "description": "Offer, promise, agree to, or otherwise indicate willingness or commitment to reduce or eliminate economic sanctions, boycotts, or embargoes.",
+    "examples": [
+      "The US Congress agreed to lift embargoes on pharmaceutical sales in late February to Iran, Libya, North Korea, Sudan, and with strings attached, Cuba. ",
+      "Note Due to the compound target, five separate events are coded."
+    ],
+    "name": "Express intent to ease economic sanctions, boycott, or embargo",
+    "usage notes": "Use this code only for economic sanctions, boycotts, or embargoes."
+  },
+  "0355": {
+    "description": "Offer, promise, agree to, or otherwise indicate willingness or commitment to allow access to international actors, such as observers, humanitarian agencies, and peacekeeping forces.",
+    "examples": [
+      "Ethopia has agreed to re-open its borders to UN peackeepers, who are depolyed in the region to oversee a ceasefire between Ethiopia and its neighbor, Eritrea. ",
+      "In a letter handed over to the United Nations on Monday, Iraq said it would allow the return of U.N. weapons inspectors “without conditions” to “remove any doubts Iraq still possesses weapons of mass destruction.”",
+      "With the signing of a Memorandum of Understanding (MOU) on Cessation of Hostilities, the Sudanese government and SPLM/A have agreed to allow “unimpeded humanitarian access to all areas and for people in need.”",
+      "Note Two reciprocal events are coded with actors reversed."
+    ],
+    "name": "Express intent to allow international involvement (non-mediation)",
+    "usage notes": "Prospective peacekeepers, observers, etc. are coded as targets. Commitments to accept mediation by third parties are coded as 038 instead."
+  },
+  "0356": {
+    "description": "Offer, promise, agree to, or otherwise indicate willingness or commitment to stop fighting or take measures to ease military conflict or tension.",
+    "examples": [
+      "Yugoslavia and Slovenia agreed to a ceasefire after two days of fierce fighting but media reports said sporadic clashes were still continuing.",
+      "Note Two reciprocal events are coded with actors reversed.",
+      "Shefket Musliu said on 21 May in Konculj, in the Federal Republic of Yugoslavia, that his forces will lay down their weapons and disband by the end of the month because “the time has come...to seek changes through political means,” AP reported.",
+      "Syria says it is willing to withdraw its troops from neighboring Lebanon, after fifteen years of effective military occupation."
+    ],
+    "name": "Express intent to de-escalate military engagement",
+    "usage notes": "Use this code for appeals for ceasefires, military withdrawals, and demobilization."
+  },
+  "036": {
+    "description": "Offer, promise, agree to, or otherwise indicate willingness or commitment to meet, visit, or engage in talks or negotiations.",
+    "examples": [
+      "East German Foreign Minister Oskar Fischer will visit Albania in June, the first Warsaw Pact foreign minister to do so since Tirana split with Moscow in 1961, the Albanian embassy said.",
+      "Note Given the wording of this lead, which implies that Albania has already committed to receive the German minister, two reciprocal events of 038 are coded with actors reversed. This example fits under this category since the future tense used implies a future commitment to meet.",
+      "On September 29, Putin offered to negotiate with Chechen President Aslan Maskhadov following the invasions of Dagestan.",
+      "Note Unlike the previous example, this lead does not suggest that Maskhadov has also committed to meeting with Putin, hence only one 036 event is coded with the Russian government as the source actor."
+    ],
+    "name": "Express intent to meet or negotiate",
+    "usage notes": "This event code refers to future commitments to meet and/or negotiate; when meetings, negotiations, or other talks do take place, those are coded under category 04 instead. When mediation is mentioned specifically, appropriate mediation-related codes take precedence over meetings or negotiations."
+  },
+  "037": {
+    "description": "Offer, promise, agree to, or otherwise indicate willingness or commitment to reach a comprehensive settlement, agreement, or resolution to conflict.",
+    "examples": [
+      "Denmark today accepted a formula for ending its fisheries dispute with its European common market partners, government officials said."
+    ],
+    "name": "Express intent to settle dispute",
+    "usage notes": "Note that specific commitments to yield, which might be present steps to settling disputes, are coded elsewhere under category 03. Both the source and the target for this event type should be adversaries themselves. When other parties make appeals to end disputes in which they are not directly involved, use ‘Appeal to others to settle dispute’ (027) instead."
+  },
+  "038": {
+    "description": "Offer, promise, agree to, or otherwise indicate willingness or commitment to accept mediation.",
+    "examples": [
+      "Afghan rebel leaders said on Wednesday they would meet U.N. mediator Diego Cordovez if he gave them a veto over any settlement reached in peace talks. ",
+      "Israeli Prime Minister Ehud Barak has agreed to US mediation in the final status talks with the Palestinians, a senior Israeli official said."
+    ],
+    "name": "Express intent to accept mediation",
+    "usage notes": "This code represents adversaries’ commitments to receive mediation by third parties. The latter should be coded as targets, while the source has to be one or more of the parties in conflict for this event. Note that when reports involve references to mediation specifically, mediation-related codes such as this take precedence over others, such as ‘Agree to meet or negotiate,’ ‘Make a visit,’ ‘Host a visit,’ and ‘Meet at a third location.’ For commitments by third parties to mediate refer to code 039 instead. For simple suggestions by actors other than adversaries and potential mediators that mediation occurs, use ‘Appeal to others to engage in or accept mediation’ (028)."
+  },
+  "039": {
+    "description": "Offer, promise, agree to, or otherwise indicate willingness or commitment to play the role of a mediator.",
+    "examples": [
+      "Gambian President Dawda Jawara will visit Mauritania and Senegal to mediate in a border dispute between the two West African neighbors, diplomatic sources said on Wednesday.",
+      "Note Given the wording used in this particular lead, which implies that Mauritania and Senegal have already agreed to Gambia’s mediation, two types of linked events are coded—‘Express intent to mediate’ (039) with the Gambian president as the source, and ‘Express intent to accept mediation’ (038) with Mauritania and Senegal as sources. Two different events are coded for each of these event types since Mauritania and Senegal are compound actors.",
+      "King Hassan of Morocco was quoted today as saying he would be ready to host a meeting between an Israeli peace movement and the Palestine Liberation Organization (PLO).",
+      "Note Unlike the previous example, this lead does not imply that either the Israeli or the Palestinian parties have accepted King Hassan’s offer to mediate, hence no ‘Agree to mediation’ event is coded. Given the compound target, two separate 039 events are coded. 2.4 CONSULT"
+    ],
+    "name": "Express intent to mediate",
+    "usage notes": "This code represents a commitment by third parties to mediate between parties in conflict. The former should be coded as source and the later as targets for this event. Note that when reports involve references to mediation specifically, mediation-related codes such as this take precedence over others, such as ‘Agree to meet or negotiate,’ ‘Make a visit,’ ‘Host a visit,’ and ‘Meet at a third location.’ For commitments of adversaries to accept mediation by actors other than the adversaries and potential mediators that mediation occurs, refer to ‘Appeal to others to engage in or accept mediation’ (028)."
+  },
+  "040": {
+    "description": "All consultations and meetings not otherwise specified.",
+    "examples": [
+      "A group of African diplomats held their first meeting with President Parvanov at a lunch hosted by the Ambassador of Kingdom of Morocco.",
+      "Note This lead is coded as 040 since the place of the meeting is not explicit in the lead, hence we cannot code it as a visit made or hosted, and no negotiations are implied (so, we cannot code it as ‘Engage in negotiation’)."
+    ],
+    "name": "Consult, not specified below",
+    "usage notes": "This residual category is not coded except when distinctions among 041 through 046 cannot be made. Note that events coded under 04 are typically, although not always, reciprocal events."
+  },
+  "041": {
+    "description": "Consult, talk on the telephone.",
+    "examples": [
+      "U.S. Secretary of State Warren Christopher telephoned Russian Foreign Minister Andrei Kozyrev on Tuesday to discuss efforts to forge a peace settlement in former Yugoslavia, Itar-Tass news agency said.",
+      "Note Two events of the same type are coded with actors reversed."
+    ],
+    "name": "Discuss by telephone",
+    "usage notes": "This is typically a reciprocal event. The nature of the phone conversation is not of significance."
+  },
+  "042": {
+    "description": "Travel to another location for a meeting or other event.",
+    "examples": [
+      "Taiwan’s Vice Foreign Minister visited Russia today, becoming the island’s highest ranking government official to go there.",
+      "Note Two events are coded: 042 with the Taiwanese government as the source and Russia as the target, and 043 with actors reversed.",
+      "Iraqi President Saddam Hussein arrived in Amman on a previously unannounced visit on Wednesday.",
+      "Note Two events are coded: 042 with the Iraqi government as the source and Jordan as the target, and 043 with actors reversed."
+    ],
+    "name": "Make a visit",
+    "usage notes": "All visits and travels should be coded under this category. Note that this event is typically accompanied by the linked event ‘Host a visit’ (043). If mediation or negotiation is mentioned specifically as having taken place, those events take precedence over unspecified visits or meetings."
+  },
+  "043": {
+    "description": "Host or receive a visitor at residence, office or home country.",
+    "examples": [
+      "Russian President Boris Yeltsin on Saturday hosted Japanese Prime Minister Ryutaro Hashimoto in this Siberian city for an informal meeting aimed at establishing close personal relations between the two leaders.",
+      "Note Two events are coded: 043 with the Russian government as the source and the Japanese government as the target, and 042 with the actors reversed.",
+      "President Francois Mitterand gave a warm welcome on Thursday to South African leader F.W. de Klerk who is attempting to break his country’s international isolation.",
+      "Note Two events are coded: 043 with the French government as the source and the South African government as the target, and 042 with actors reversed."
+    ],
+    "name": "Host a visit",
+    "usage notes": "This event is typically accompanied by the linked event ‘Make a visit’ (042). If mediation or negotiation is mentioned specifically as having taken place, those events take precedence over unspecified visits or meetings."
+  },
+  "044": {
+    "description": "Meet, come together, gather with others at a neutral location—some place with which none of the attending parties are associated. If mediation or negotiation is mentioned specifically as having taken place, those events take precedence over unspecified visits or meetings.",
+    "examples": [
+      "U.S. and Soviet negotiators return to Geneva this week for talk on limiting the number of European-based nuclear missiles, an issue likely to dominate East-West relations this year.",
+      "Note Six events are coded: two reciprocal ‘Meet at a third location’ events with US and the Soviet Union as actors; two ’‘Make a visit’ events with Switzerland as the target, and the US and the Soviet Union as the two different sources; and two ‘Host a visit’ events with Switzerland as the source and the US and the Soviet as the two different targets."
+    ],
+    "name": "Meet at a ‘third’ location",
+    "usage notes": "This event type is typically accompanied by two other linked events, ‘Make a visit’ (042) and ‘Host a visit’ (043), and the event itself is reciprocal. For 044, the source and the target are the actors who are meeting; the location of the meeting is ignored."
+  },
+  "045": {
+    "description": "Mediate between two or more parties.",
+    "examples": [
+      "Arab League Secretary General Chadli Klibi undertook mediation mission between Syria and Palestinian leader Yasser Arafat.",
+      "Note Because of the compound target actor, two events are coded.",
+      "Quatar’s emir, Sheikh Hamad bin Khalifa al-Thani launched a mediation effort on Saturday between the Emirates and Saudi Arabia whose ties have been strained by Riyadh’s new friendship with Tehran.",
+      "Note Because of the compound target actor, two events are coded."
+    ],
+    "name": "Engage in mediation",
+    "usage notes": "This event code should be used only when a party meets with others explicitly as a mediator. The source is always the mediator and adversaries are the targets. All other cases of meetings and negotiations, where the purpose of the meeting or the role of the source actor is not specified, should be coded elsewhere under category 04. If meetings, discussions, or negotiations are explicitly reported as involving mediators, the mediation code takes precedence as long as the party acting as the mediator is identified in the lead. "
+  },
+  "046": {
+    "description": "Negotiate or bargain with others.",
+    "examples": [
+      "Israel and Lebanon renewed negotiations today on an Israeli troop pullback from Lebanon and their future relations.",
+      "Note Two 046 events are coded with actors reversed.",
+      "French National Assembly president Laurent Fabius and a group of deputies held talks with leaders of Romania’s new government on Tuesday, the first high level Western delegation to visit Bucharest since last month’s revolution.",
+      "Note Two 046 events are coded with actors reversed. 2.5 ENGAGE IN DIPLOMATIC COOPERATION"
+    ],
+    "name": "Engage in negotiation",
+    "usage notes": "This event code should be used only when the report makes clear that negotiations, bargaining, or discussions are involved in the meetings or consultations in question. “Holding talks” and “discussions” are treated as negotiations. These are reciprocal events."
+  },
+  "050": {
+    "description": "Initiate, resume, improve, or expand diplomatic, non-material cooperation or exchange not otherwise specified.",
+    "examples": [
+      "Czechoslovakia and Albania have upgraded their diplomatic ties back up to ambassadorial level after an 18-year break, the official CTK news agency said on Wednesday.",
+      "Note Two reciprocal events are coded with actors reversed."
+    ],
+    "name": "Engage in diplomatic cooperation, not specified below",
+    "usage notes": "This residual category is not coded except when the support in question cannot be further specified and codes 051-057 cannot be used."
+  },
+  "051": {
+    "description": "Express support for, commend, approve policy, action, or actor.",
+    "examples": [
+      "A top U.S. official today praised Haiti’s efforts to improve its record on human rights and said it was an important partner for the United States.",
+      "The West German government today welcomed President Reagan’s latest policy statement as proof of Washington’s earnest wish for a settlement to be reached in U.S.-Soviet nuclear talks."
+    ],
+    "name": "Praise or endorse",
+    "usage notes": "This event form is typically, although not exclusively, a verbal act."
+  },
+  "052": {
+    "description": "Defend verbally, justify policy, action or actor.",
+    "examples": [
+      "The United States on Thursday defended the right of Soviet troops to fire protectively on militants in Azerbaijan and insisted unrest there reflected age-old ethnic tensions, not a fight for political independence.",
+      "Palestinian leader Yasser Arafat defended Iraq and Libya on Friday against Western criticism of their arms industries and said the West was applying double standards on human rights.",
+      "Note Because of the compound target, two events are coded."
+    ],
+    "name": "Defend verbally",
+    "usage notes": "This event form is a verbal act. Use this code only for political, diplomatic, and non-material defense; military cooperation or defense should be coded elsewhere. "
+  },
+  "053": {
+    "description": "Call on other parties to support the target.",
+    "examples": [
+      "Arab League Secretary-General Chedli Klibi today urged the European Community to support the Palestinian Liberation Organization (PLO), which he said would create a favorable climate for peace talks.",
+      "Saudi Arabia has mobilized pressure groups in the United States to help support the rights of Palestinians in their struggle against Israel, a top minister said in comments published Thursday."
+    ],
+    "name": "Rally support on behalf of",
+    "usage notes": "This event form is typically, although not exclusively, a verbal act. Use this event form to code instances where one party (the source) solicits the support of third parties for another party (the target)."
+  },
+  "054": {
+    "description": "Grant diplomatic recognition, initiate diplomatic relations with a state or a government. ",
+    "examples": [
+      "Sri Lanka has established diplomatic ties with and opened an embassy in Tehran, the foreign ministry said on Wednesday."
+    ],
+    "name": "Grant diplomatic recognition",
+    "usage notes": "This event form is typically, although not exclusively, a verbal act. Recognition of newly independent states, new governments that might have come to power through unconventional means, and initiation of diplomatic ties with an entity for the first time are all coded here."
+  },
+  "055": {
+    "description": "Express regret or remorse for an action or situation.",
+    "examples": [
+      "Argentina has apologized to Brazil for one of its gunboats intercepting a Brazilian ship in the Beagle Channel, disputed by Argentina and Chile."
+    ],
+    "name": "Apologize",
+    "usage notes": "Although this event form is typically a verbal act, it should also be used to code all nonverbal acts that express remorse."
+  },
+  "056": {
+    "description": "Express forgiveness, pardon.",
+    "examples": [
+      "A group of Yoruba leaders announced yesterday that they are willing to forgive President Olusegun Obasanjo and queue behind him for a second term. "
+    ],
+    "name": "Forgive",
+    "usage notes": "Use this event form to code verbal and nonverbal gestures of forgiveness and explicitly conciliatory actions or announcements. Formal pardons and amnesties of arrested persons, as well as the release or exchange of prisoners, should be coded as CAMEO 0841 instead."
+  },
+  "057": {
+    "description": "Ratify, sign, finalize an agreement, treaty.",
+    "examples": [
+      "Libyan leader Muammar Gaddafi and Bulgarian President Todor Zhivkov today signed a treaty of friendship and cooperation, the BTA reported.",
+      "Note Two reciprocal events are coded with actors reversed.",
+      "Czechoslovakia and China signed an agreement today to increase trade in 1983 by 50 percent compared with last year, the official Czechoslovak news agency Ceteka said today.",
+      "Note Two reciprocal events are coded with actors reversed. 2.6 ENGAGE IN MATERIAL COOPERATION"
+    ],
+    "name": "Sign formal agreement",
+    "usage notes": "This category excludes promises to sign or ratify agreements and treaties. Events should be coded under this category only when agreements are reportedly finalized or signed. This event code is typically reciprocal. Even when the agreement in question implies a formal commitment to boost material cooperation, provide aid, or yield in some way, the event of signing the agreement or treaty is still coded here since signing of an agreement or treaty represents diplomatic cooperation but does not guarantee implementation— whatever its terms."
+  },
+  "060": {
+    "description": "Initiate, resume, improve, or expand material cooperation or exchange, not otherwise specified.",
+    "examples": [
+      "Taliban ruled Afghanistan has been sharing expertise with the Liberation Tigers of Tamil Eelam according to a special report submitted to the Canadian Security Intelligence Service.",
+      "Note Two reciprocal events are coded with actors reversed."
+    ],
+    "name": "Engage in material cooperation, not specified below",
+    "usage notes": "This residual category is not coded except when distinctions among codes 061-064 cannot be made."
+  },
+  "061": {
+    "description": "Initiate, resume, improve, or expand economic exchange or cooperation.",
+    "examples": [
+      "European foreign direct investment flows in Latin America and the Caribbean rose more than eightfold during the second half of the 1990s compared with the first half of that decade, according to a study presented in Paris by the Inter-American Development Bank.",
+      "Note Two 061 events are coded due to the compound target."
+    ],
+    "name": "Cooperate economically",
+    "usage notes": "Trade relations and other economic exchanges that are reciprocal in nature— event if the particular event in question cannot be coded as reciprocal— should be coded here. Unilateral and potentially altruistic provisions of economic aid should be coded as 071 instead."
+  },
+  "062": {
+    "description": "Initiate, resume, improve, or expand military exchange or cooperation.",
+    "examples": [
+      "French and Egyptian warships on Monday launched 10 days of war games in the Mediterranean Sea, expected to be joined later by Italian and German vessels, the French embassy said Monday.",
+      "Note Two reciprocal events are coded with actors reversed."
+    ],
+    "name": "Cooperate militarily",
+    "usage notes": "Military exchanges such as joint military games and maneuvers should be coded here. Unilateral and potentially altruistic provisions of aid should be coded under ‘Provide Aid’ (07) instead."
+  },
+  "063": {
+    "description": "Initiate, resume, improve, or expand judicial cooperation.",
+    "examples": [
+      "Zambia extradited suspected British militant Haroon Rashid Aswad to Britain on Sunday, a senior Zambian government official said.",
+      "Note Given that this is a cooperative code, the location where the subject is being extradited to—and not the identity of the suspect—should be coded as the target. "
+    ],
+    "name": "Engage in judicial cooperation",
+    "usage notes": "This code represents cooperation on judicial matters, such as extraditions and war crimes."
+  },
+  "064": {
+    "description": "Provide, share, or exchange intelligence or information.",
+    "examples": [
+      "Israeli intelligence officials have shared evidence with the U.S. about contacts between al Qaeda and senior members of Saddam Hussein’s Ba’ath Party, according to governmental officials. 2.7 PROVIDE AID"
+    ],
+    "name": "Share intelligence or information",
+    "usage notes": "Voluntary exchanges or sharing of intelligence and other significant information should be coded here."
+  },
+  "070": {
+    "description": "All provisions, extension of material aid, not otherwise specified.",
+    "examples": [
+      "Doctors from two American aid groups donated and personally delivered $50,000 worth of goods to Baghdad University Medical School, risking as much as 12 years in prison and $500,000 in fines."
+    ],
+    "name": "Provide aid, not specified below",
+    "usage notes": "This residual category is not coded except when distinctions among codes 071-075 cannot be made. In order to be coded under this category, the leads must report the delivery of aids; promises to provide aid should be coded under category 033 instead."
+  },
+  "071": {
+    "description": "Extend, provide monetary aid and financial guarantees, grants, gifts and credit. ",
+    "examples": [
+      "The European Community on Monday gave the Ivory Coast 5.1 million dollars of aid for agricultural development projects."
+    ],
+    "name": "Provide economic aid",
+    "usage notes": "The lead must report the delivery of such aid; promises to provide aid should be coded under 033 instead. Debt relief should also be coded as 071."
+  },
+  "072": {
+    "description": "Extend, provide military and police assistance including arms and personnel.",
+    "examples": [
+      "The United States continued to send arms to Pakistan last year, a State Department Spokesman said Wednesday.",
+      "The United States is providing aerial photographs and other military intelligence to Macedonia which is preparing a major offensive against ethnic Albanian guerrillas, the Washington Post said Wednesday."
+    ],
+    "name": "Provide military aid",
+    "usage notes": "The lead must report the delivery of such aid; promises to provide aid should be coded under category 033 instead."
+  },
+  "073": {
+    "description": "Extend, provide humanitarian aid, mainly in the form of emergency assistance.",
+    "examples": [
+      "Swiss doctors handed over 700 kg of medicine to the Red Crescent in Bam, Iran, according to the Swiss Agency for Development and Cooperation.",
+      "Benin opened its borders today to most West Africans ordered out of Nigeria as illegal aliens, but was still refusing admittance to Ghanaians, by far the biggest group involved, Benin police said.",
+      "U.N. helicopters evacuated the wounded from the besieged Bosnian town of Gorazde on Friday."
+    ],
+    "name": "Provide humanitarian aid",
+    "usage notes": "This code refers to events such as provisions of shelter, food, medicine, and evacuation of victims. The lead must report the delivery of such aid; promises to provide aid should be coded under category 033. Note that provisions of peacekeeping or other military forces are coded as 074 instead."
+  },
+  "074": {
+    "description": "Provide peacekeepers or other military forces for protection, extend or expand their mandates.",
+    "examples": [
+      "The first deployment of NATO peacekeeping troops have arrived in Bosnia, Defense Secretary William Perry said.",
+      "Two linked events—074 and 0861—should be coded with actors reversed."
+    ],
+    "name": "Provide military protection or peacekeeping",
+    "usage notes": "Code here reported deployment of forces; verbal promises and commitments to provide peacekeepers should be coded as 0334. Note that this event form is accompanied by the linked event ’Receive deployment of peacekeepers’ (0861). "
+  },
+  "075": {
+    "description": "Provide, grant asylum to persons.",
+    "examples": [
+      "Peru has granted diplomatic asylum to five Panamanian army officers holed up in a diplomatic residence since last month’s U.S. invasion, the Peruvian embassy said on Tuesday.",
+      "Uganda has granted political asylum to 18 Zairean rebels who entered the country illegally two years ago and are wanted at home on treason charges, a United Nations official said on Friday. 2.8 YIELD"
+    ],
+    "name": "Grant asylum",
+    "usage notes": "Asylum is typically granted by states to persons in its territories (territorial asylum) and it constitutes a legal protection awarded to those persons against other states. Diplomatic asylum, protection typically accorded on the premises of an embassy, can also be granted and is similarly coded here. Not that ‘Grant asylum’ refers to a specific legal event type; informal provisions of shelter or opening of borders to masses of refugees should be coded as ‘Provide humanitarian aid’ (073) instead."
+  },
+  "080": {
+    "description": "All yieldings, concessions not otherwise specified.",
+    "examples": [
+      "Uganda said on Sunday it had paid compensation to 67 elderly British nationals, most of the Asians, for assets they lost when former dictator Idi Amin expelled them 18 years ago."
+    ],
+    "name": "Yield, not specified below",
+    "usage notes": "This residual category is not coded except when distinctions among codes 081-087 cannot be made. Not that all of the event forms under this category refer to reported yieldings and tot to future commitments, agreements, or promises. "
+  },
+  "081": {
+    "description": "Relax or remove all administrative non-force sanctions and penalties, not otherwise specified.",
+    "examples": [
+      "President Omar Hassan al-Bashir, following the partial peace deal, has taken several tentative steps to enhance political freedoms and promote an image of openness and tolerance in Sudan."
+    ],
+    "name": "Ease administrative sanctions, not specified below",
+    "usage notes": "This event category contains sub-forms for more detailed coding whenever possible. "
+  },
+  "0811": {
+    "description": "Relax or remove administrative restrictions on fundamental political freedoms such as freedoms of speech, expression, and assembly.",
+    "examples": [
+      "The Latvian Constitutional Court cancelled restrictions on the use of the Russian language on national radio and television."
+    ],
+    "name": "Ease restrictions on political freedoms"
+  },
+  "0812": {
+    "description": "Relax or remove administrative restrictions on the establishment or activities of political parties or certain politicians.",
+    "examples": [
+      "The Ivory Coast’s Supreme Court decided to allow candidate Alassane Ouattara to participate in the country’s upcoming elections."
+    ],
+    "name": "Ease ban on political parties or politicians"
+  },
+  "0813": {
+    "description": "Relax or remove regulations that require people to be off the streets at a given hour.",
+    "examples": [
+      "Yugoslavia lifted a night curfew in Kosovo where 28 people have been killed in ethnic riots this year and the province was reported quiet on Sunday.",
+      "President Omar El Bashir on Thursday shortened by one hour the nightly curfew imposed in Sudan after a June 30 coup toppled the civilian government."
+    ],
+    "name": "Ease curfew"
+  },
+  "0814": {
+    "description": "Relax or remove emergency regulations that suspend certain given rights, or relax or remove temporary rule by military authorities.",
+    "examples": [
+      "Yugoslavia eased emergency measures on Wednesday in Kosovo province, the scene of ethnic violence last March, as authorities in Croatia cracked down on Serbian nationalists.",
+      "Sudan’s government on Sunday lifted a state of emergency in West Darfur State that was imposed six months ago after bloody tribal clashes there, Omdurman radio reported Sunday."
+    ],
+    "name": "Ease state of emergency or martial law"
+  },
+  "082": {
+    "description": "Cancel, suspend, or postpone any (non-war) activity that constitutes political dissent.",
+    "examples": [
+      "The Nigerian Union of Teachers (NUT), the umbrella union for primary school teachers, announced Thursday that it has called off a four-day strike after deliberations with the Nigerian government."
+    ],
+    "name": "Ease political dissent",
+    "usage notes": "Use this code for concessions by opposition groups in form of ending or putting on hold demonstrations, protests, rallies, etc."
+  },
+  "083": {
+    "description": "Yield by instituting requested political changes.",
+    "examples": [
+      "The Rwandan government on Thursday accepted demands from Hutu rebels that it initiate political reforms."
+    ],
+    "name": "Accede to requests or demands for political reform, not specified below ",
+    "usage notes": "Note that this event type is different from ‘Express intent to institute political reform’ (034) as it involves the actual event of change—not just its promise. Just like military forms of yield, these could be voluntary concessions or involuntary surrenders."
+  },
+  "0831": {
+    "description": "Yield by relinquishing political power.",
+    "examples": [
+      "Tuesday the Serbian parliament approved a “special law” recognizing victories by Zoran Djindjic’s opposition coalition in November 17 municipal elections in 14 of the 18 most important Serbian cities, including Belgrade.",
+      "Georgian President Eduard Shevardnadze resigned Sunday as the opposition threatened to storm his residence in Tbilisi."
+    ],
+    "name": "Accede to demands for change in leadership",
+    "usage notes": "Use this code when source surrenders power after being challenged through legitimate institutional channels (e.g. elections) or other coercive strategies (e.g. military coups). The target can either be the challenger(s) or the country as a whole."
+  },
+  "0832": {
+    "description": "Yield by instituting demanded policy changes.",
+    "examples": [
+      "As part of its fight to eradicate poverty, the governing Labour Party has introduced a legally-binding minimum rate of pay in Britain for the first time. "
+    ],
+    "name": "Accede to demands for change in policy",
+    "usage notes": "Note the difference between policy and institutional change; the former can relate to any issue (economic, social, etc.) but it does not change the rules by which the political system functions. If another code within category 08 fits the policy in question more specifically, that code should take precedence (e.g. changing policy on economic sanctions should be coded as 085 instead). More often than not policies that fit under this particular code will be on domestic issues."
+  },
+  "0833": {
+    "description": "Yield by establishing, providing, or respecting political, social, or other rights. ",
+    "examples": [
+      "The Federal Minister for Interior Aftab Ahmad Khan Sherpao allowed opposition leader Maulana Fazl-ur-Rehman to bring out ‘Shan-e-Mustafa (SAW)’ Rally after an agreement on carrying out a violence free protest demonstration, according to the Pakistani Federal Secretary Interior."
+    ],
+    "name": "Accede to demands for rights",
+    "usage notes": "Allowing repatriation of refugees should also be coded here. If another code within category 08 fits the rights in question more specifically, that code should take precedence (e.g. respecting property rights by returning confiscated property should be coded as 0842 instead)."
+  },
+  "0834": {
+    "description": "Yield by undertaking major reforms that change how the political system functions. ",
+    "examples": [
+      "President Dos Sontas has reportedly conceded at last to demands from National Union for the Total Independence of Angola (UNITA) to overhaul the judiciary. ",
+      "Lt. Gen. Prosper Avril resigned yesterday to allow Haiti’s first democratic elections to take place.",
+      "Note The political change in this lead is more fundamental than leadership change given the mention of “first” democratic elections, which points to potential change in the overall political system (i.e. democratization)."
+    ],
+    "name": "Accede to demands for change in institutions, regime",
+    "usage notes": "Changes from one type of a political system to another (e.g. from military dictatorship to multiparty democracy), as well as less comprehensive institutional changes that nevertheless modify the rules of the game (e.g. political party laws, electoral laws, powers and functions of different branches) are coded here."
+  },
+  "084": {
+    "description": "All acts of releasing or returning not otherwise specified.",
+    "examples": [
+      "According to a zoo spokesperson Malaysian authorities have initiated the process of returning the four baby gorillas to Nigeria, amid speculations they were illegally captured in the wild."
+    ],
+    "name": "Return, release, not specified below",
+    "usage notes": "This category contains sub-forms for more detailed coding whenever possible."
+  },
+  "0841": {
+    "description": "Release people, including prisoners and hostages, from detention or arrest.",
+    "examples": [
+      "Polish police today released the correspondent of the American news agency United Press International, who was detained for 23 hours and questioned in connection with an inquiry into alleged illegal activities.",
+      "Bosnian Serb forces Tuesday let free six French UN peacekeepers held captive inside a UN armored personnel carrier since Friday, a UN spokesman said."
+    ],
+    "name": "Return, release persons",
+    "usage notes": "Formal pardons, amnesties, commutations, and exchanges of prisoners should all be coded here."
+  },
+  "0842": {
+    "description": "Return or release previously controlled, confiscated property, including land.",
+    "examples": [
+      "French maritime authorities today release an impounded ship operated by the Greenpeace ecology movement, port officials said.",
+      "An Egyptian court released a Lebanese millionaire’s assets of nearly 19 million dollars on Saturday six years after they were frozen in a major bank scandal. "
+    ],
+    "name": "Return, release property",
+    "usage notes": "When confiscated property or other rights are not returned but compensation is provided instead, those incidents should be coded as 080."
+  },
+  "085": {
+    "description": "Lift, relax, or lessen economic sanctions, boycott, embargoes, or penalties.",
+    "examples": [
+      "Germany on Wednesday lifted sanctions against gold from South Africa in recognition of the country’s moves to abolish apartheid, a government spokesman said.",
+      "The United Arab Emirates (UAE) has lifted its boycott of trade in oil on Namibia, effective since March 31.",
+      "The European Union failed Wednesday to renew sanctions against Zimbabwe, with the fate of an EU-Africa summit scheduled for April hanging in the balance."
+    ],
+    "name": "Ease economic sanction, boycott, or embargo",
+    "usage notes": "Use this event form to code state activities that imply easing of limitations to normal economic relations."
+  },
+  "086": {
+    "description": "Allow entry of or intervention by international actors not further specified.",
+    "examples": [
+      "Kyrgyz Prime Minister Nikolai Tanaev received a mission of observers from the OSCE, informing them in detail on the economic situation of the country."
+    ],
+    "name": "Allow international involvement, not specified below",
+    "usage notes": "Use the following sub-categories whenever possible. The types of international involvement covered in this category require physical access to territories under the source’s control. Note that accepting international involvement in the form of mediation is coded under 04. The target should be the international actor whose involvement is allowed or received."
+  },
+  "0861": {
+    "description": "Allow, receive peacekeeping forces in territories controlled by the source.",
+    "examples": [
+      "A first patch of Bangladeshi peacekeeping troops arrived in Sierra Leone Tuesday, joining 12 unarmed military observers as the first element of an 800-strong Bangladeshi contingent due here, U.N. officials said.",
+      "Note Two linked events (0861 and 074) are coded with actors reversed."
+    ],
+    "name": "Receive deployment of peacekeepers",
+    "usage notes": "Code here reported deployment of peacekeeping forces (with location of deployment as the source); mere promises or agreements by fighting parties or a country to accept deployment of peacekeeping forces in its territories should be coded as 0355, and commitments to provide peacekeepers should be coded as 0334. The target for an 084 event should be the actor providing the peacekeepers. Note that this event form is accompanied by the linked event ‘Provide military protection or peacekeeping’ (074)."
+  },
+  "0862": {
+    "description": "Allow, receive inspectors in territories controlled by the source actor.",
+    "examples": [
+      "The IAEA has dispatched inspectors to Esfahan Uranium Conversion Facilities (UCF) in central Iran to monitor resumption of peaceful nuclear work at the plant.",
+      "Note Two linked events (0862 and 090) are coded with actors reversed."
+    ],
+    "name": "Receive inspectors",
+    "usage notes": "Code here reported deployment or arrival of inspectors; mere promises or agreements to accept their deployment should be coded as 0355 instead. The target for an 085 event should be the inspectors or the country/agency providing them. This event form is typically accompanied by code under category 09."
+  },
+  "0863": {
+    "description": "Allow access to, receive humanitarian agencies in territories controlled by the source actor.",
+    "examples": [
+      "Humanitarian access for the Darfur region has improved significantly since September as the Khartoum government tried to secure international favor.",
+      "Uzbekistan finally opened the Friendship Bridge after four years to allow the delivery of 1,000 tons of grain and flour to Afghanistan, where millions of people are at risk of starvation as winter sets in, reports aid agencies."
+    ],
+    "name": "Allow for humanitarian access",
+    "usage notes": "Mere promises to allow such access should be coded as 0355. Note that this event form is accompanied by the linked event ‘Provide humanitarian aid’ (073) if the target is the humanitarian agency; in some cases the target would be the particular area that is given access."
+  },
+  "087": {
+    "description": "Concede militarily, stop fighting, or take measures to ease military conflict or tension not further specified.",
+    "name": "De-escalate military engagement, not specified below",
+    "usage notes": "Use sub-categories for more detailed coding whenever possible. Note that only real manifestations of de-escalation are coded here, expressions of intent to de-escalate are not."
+  },
+  "0871": {
+    "description": "Declare or observe truce or ceasefire to interrupt fighting.",
+    "examples": [
+      "The pro-Iranian Hizbollah (Party of God) group declared a unilateral ceasefire on Wednesday in south Lebanon after 12 days of battles with the Syrianbacked Amal militia."
+    ],
+    "name": "Declare truce, ceasefire",
+    "usage notes": "Although mere declarations of ceasefire, or agreements to commence a ceasefire, do not guarantee that military engagement is actually halted, they are still coded here. The target could be the location for the ceasefire or the opponent. "
+  },
+  "0872": {
+    "description": "Lessen or halt use of armed (military, police, or security) forces to seal off a territory to prevent exit or entry of goods and/or people.",
+    "examples": [
+      "The Israeli army lifted Friday a day-old blockade on Palestinian lorries passing through this crossing point between the Gaza Strip and the Jewish state, officials told AFP."
+    ],
+    "name": "Ease military blockade"
+  },
+  "0873": {
+    "description": "Hand over or otherwise reduce or eliminate arms, weapons; discharge soldiers or other armed personnel.",
+    "examples": [
+      "One third of ethnic Albanian guerrillas operating in Macedonia have been demobilized since the August 13 peace accord between Macedonian and ethnic Albanian political parties, two rebel commanders told AFP by phone Sunday. "
+    ],
+    "name": "Demobilize armed forces",
+    "usage notes": "The source actor for this event is the demobilizing party; the target is either the party against whom the source was formerly fighting or the actor to whom weaponry is turned in."
+  },
+  "0874": {
+    "description": "Retreat, withdraw, yield control of a location or territory by pulling out armed forces.",
+    "examples": [
+      "Five hundred Ugandan rebels surrendered last week in the eastern town in Soroti followin a government offensive in the area, a local official said.",
+      "The United States speeded up the withdrawal of some invasion forces from Panama on Wednesday, but defence officials cautioned that no deadline had been set for complete removal of the troops.",
+      "Bosnian Serbs said on Tuesday their forces had completed their withdrawal from the beseiged Bosnian town of Gorazde. 2.9 INVESTIGATE"
+    ],
+    "name": "Retreat or surrender militarily",
+    "usage notes": "Note that the yielding should involve a comprehensive military disengagement, at least from a certain area of contention."
+  },
+  "090": {
+    "description": "All non-covert investigations not otherwise specified.",
+    "examples": [
+      "The United Nations has sent 21 military and civilian personnel to Yugoslavia on Wednesday to investigate the feasibility of a 10,000-member peacekeeping force, a U.N. spokesman said on Monday."
+    ],
+    "name": "Investigate, not specified below",
+    "usage notes": "This residual category is not coded except when distinctions among codes 091-094 cannot be made. Also note that category 09 should be used only when investigations are being or have been carried out. Investigation of historical cases should also be coded here."
+  },
+  "091": {
+    "description": "Question or inquire criminal (theft, killing, etc) or corruption cases.",
+    "examples": [
+      "Judge Alejandro Rivera opened fraud investigations against 28 Chilean government officials suspected of taking kickbacks, the court said Friday.",
+      "A US national has been put under investigation in Italy for her possible role in rioting during a G8 summit in Genoa last month, Ansa news agency reported. "
+    ],
+    "name": "Investigate crime, corruption"
+  },
+  "092": {
+    "description": "Inquire or search into human rights abuses such as rape, torture, targeted assassinations, and violations of basic freedoms.",
+    "examples": [
+      "Members of the Association of African Jurists, a body linked to the Organization of African Unity, investigated welfare of nearly 2,000 Libyans, some of whom have been held as long as seven years.",
+      "Israel’s high court opened a landmark hearing Wednesday into the legality of secret interrogation techniques used against Palestinian detainees."
+    ],
+    "name": "Investigate human rights abuses",
+    "usage notes": "Investigations of war crimes are coded as 094 instead. Alleged or potential perpetrators should be coded as targets."
+  },
+  "093": {
+    "description": "Inquire or search into military activities such as violations of ceasefire, seizures, and invasions.",
+    "examples": [
+      "The Ceasefire Violations Committee (CFVC) has completed its investigation into an allegation by the Liberian Peace Council (LPC) that the NPFL had taken over the city of Greenville."
+    ],
+    "name": "Investigate military action",
+    "usage notes": "If military actions in question involve potential human rights violations or war crimes specifically, code them as 092 or 094 instead. The perpetrator of the questionable military action should be coded as the target."
+  },
+  "094": {
+    "description": "Inquire or investigate potential war crimes or look into allegations of war crimes. ",
+    "examples": [
+      "Croatia is investigating alleged war crimes by Croatian extremists against Serb civilians and prisoners and will bring suspects to trial, a Croatian official said. ",
+      "Serbian military police have launched an investigation into alleged crimes committed by Croat forces against ethnic Serb civilians and Montenegrin prisoners of war during the 1991-1995 Serbo-Croatian conflict, the newspaper Jutarnji list reported Thursday. 2.10 DEMAND"
+    ],
+    "name": "Investigate war crimes",
+    "usage notes": "If the question surrounding a military action is not specified to be potential war crimes, 093 should be used instead. The perpetrator of the questionable military action should be coded as the target."
+  },
+  "100": {
+    "description": "All demands and orders not otherwise specified.",
+    "examples": [
+      "Poland’s parliament has demanded an immediate admission by Moscow that Soviet NKVD security forces murdered more than 15,000 captive Polish officers during World War Two."
+    ],
+    "name": "Demand, not specified below",
+    "usage notes": "This residual category is not coded except when distinctions among codes 101-108 cannot be made. Note that demands are stronger or more forceful and potentially carry more serious repercussions—although not as much as threats—than simple appeals. We rely primarily on the language used by reporters to make this distinction. All demands are verbal acts."
+  },
+  "101": {
+    "description": "Require, demand that target engages in some form of material exchange.",
+    "examples": [
+      "French President Jacques Chirac issued a stern reminder Saturday to Iraq that it must cooperate fully with UN inspectors probing suspect sites for weapons of mass destruction.",
+      "An Argentine judge has ordered former president Carlos Menem to appear October 16 for questioning in an investigation of illegal arms sales to Croatia and Ecuador in the 1990s, court sources said Wednesday."
+    ],
+    "name": "Demand material cooperation, not specified below",
+    "usage notes": "Use the following sub-categories whenever possible. Demands for judicial cooperation, such as extradition of criminals, or compliance with requirements of an investigation are coded here."
+  },
+  "1011": {
+    "description": "Require, demand that target engages in economic exchange or expands such ties. ",
+    "examples": [
+      "The Bush administration declared Tuesday that China must drop barriers to U.S. exports or face tariff penalties for maintaining unfair trade practices."
+    ],
+    "name": "Demand economic cooperation",
+    "usage notes": "Use this code for demands for economic activities such as trade and investment. Demands for provision of economic aid—not mutual exchange—are coded as 1031 instead."
+  },
+  "1012": {
+    "description": "Require, demand that target engages in or expands military relations.",
+    "examples": [
+      "The PRC on Tuesday demanded that the US cancel plans to sell air-tosurface anti-tank weapons to Taiwan to avoid “new damage” to US-PRC relations. ",
+      "Note While the requested policy does not directly involve material exchange between the source and the target, the former is clearly demanding cooperation on military issues."
+    ],
+    "name": "Demand military cooperation",
+    "usage notes": "Use this code for demands that target engages in military cooperation, such as through joint exercises or weapon sales. Demands for provision of military aid—not mutual exchange—are coded as 1032 instead."
+  },
+  "1013": {
+    "description": "Require, demand that target engages in or expands cooperation in judicial matters. ",
+    "examples": [
+      "A senior British minister reiterated that Libya must hand over alleged bombers of the U.S. airliner as he embarked on a trip to North Africa to seek Arab support for the demand."
+    ],
+    "name": "Demand judicial cooperation",
+    "usage notes": "Use this code for demands that target engages in judicial cooperation, such as through extraditing wanted individuals."
+  },
+  "1014": {
+    "description": "Require, demand that target exchanges intelligence or information.",
+    "examples": [
+      "The rebel Kurdistan Workers’ Party issued a declaration demanding that the Turkish government provide information on the safety of its leader Abdullah Ocalan. "
+    ],
+    "name": "Demand intelligence cooperation",
+    "usage notes": "Use this code for demands that target engages in intelligence cooperation, including but not limited to the exchange of information in security matters."
+  },
+  "102": {
+    "description": "Require, demand expansion of diplomatic ties or cooperation.",
+    "examples": [
+      "Kosovo Municipality Association (AKK) officials demanded support from the Kosovo Assembly in regaining control over the properties that belonged to them before.",
+      "Greece bluntly demanded that its European Community partners refuse to recognize the Former Yugoslav Republic of Macedonia, on Greece’s northern border, as long as it keeps that name.",
+      "Palestinian officials demanded Friday that the United States match the European Union’s support for Palestinian statehood."
+    ],
+    "name": "Demand for diplomatic cooperation (such as policy support)",
+    "usage notes": "This code refers to demands for expanded diplomatic ties and non-tangible support on particular policies. Demands for more specific forms of diplomacy, such as mediation and negotiation are coded elsewhere within category 10. "
+  },
+  "103": {
+    "description": "Require, demand provision of material assistance not otherwise specified.",
+    "examples": [
+      "The Third World Water Forum concluded on Saturday that the US and other developed nations must allocate greater financial resources to help with the battle against the global water and sanitation crisis."
+    ],
+    "name": "Demand material aid, not specified below",
+    "usage notes": "This category contains sub-forms for more detailed coding whenever possible. The source could be demanding aid for itself or on behalf of a third party; in either case, the actor who is expected to provide assistance should be coded as the target."
+  },
+  "1031": {
+    "description": "Require, demand provision of economic assistance.",
+    "examples": [
+      "According to reports the UK is pushing hard for the US support its debt relief plan to tackle poverty in Africa."
+    ],
+    "name": "Demand economic aid",
+    "usage notes": "This event form is typically, although not exclusively, a verbal act. Demands for loans or debt relief are also coded here. Demands for reciprocal economic exchange, such as trade, should be coded as 1011 instead."
+  },
+  "1032": {
+    "description": "Require, demand provision of military assistance.",
+    "name": "Demand military aid",
+    "usage notes": "Note that demands for military security and deployment of peacekeepers are coded as 1034 instead."
+  },
+  "1033": {
+    "description": "Require, demand provision of humanitarian aid.",
+    "examples": [
+      "Some 800,000 Iraqi Kurds sought refuge in Germany last month."
+    ],
+    "name": "Demand humanitarian aid",
+    "usage notes": "Demands by refugees to be let into the territories of other countries (which should be coded as targets) and asylum demands all fit here. These are not necessarily verbal acts; refugees could be actively seeking shelter or refuge in target countries or regions."
+  },
+  "1034": {
+    "description": "Require, demand that the target provides military protection or peacekeeping forces.",
+    "examples": [
+      "Ethnic Albanians in south Serbia are demanding a U.N. military presence to protect them against a heavily armed ruling Serb minority and prevent a Bosnia-style civil war, but some foreign monitors are skeptical.",
+      "The Red Cross operating in Iraq said US and British forces must ensure security to allow emergency water, food, and medical supplies to reach the needy. ",
+      "Note Two events are coded due to the compound target."
+    ],
+    "name": "Demand military protection or peacekeeping",
+    "usage notes": "The source that demands peacekeepers could demand that for itself or on behalf of another party."
+  },
+  "104": {
+    "description": "Require, demand political change not otherwise specified.",
+    "examples": [
+      "At the end of a seminar on reform, around 100 Arab intellectuals and activists published a declaration demanding wide-ranging political changes in the Arab world."
+    ],
+    "name": "Demand political reform, not specified below",
+    "usage notes": "This event form refers to verbal and non-threatening appeals. Demands that take the form of demonstrations, protests, etc. are coded under category 14 instead. Source actors can be local citizens as well as international actors; they could be making the appeal on their own behalf or on behalf of others. Note that when the requested reform clearly constitutes some form of concession or yielding by the target, such as the easing of administrative sanctions, a more appropriate “Demand” code might be found under 105."
+  },
+  "1041": {
+    "description": "Require, demand change in leadership or power.",
+    "examples": [
+      "Sunnis have demanded that control of the Interior Ministry be taken away from Shiite religious parties in the next government.",
+      "Rwandan rebels demanded the removal of President Juvenal Habyariman and his ruling party at the fourth round of talks aimed at ending a 23-month civil war.",
+      "Former Socialist prime minister Andreas Papandreou demanded immediate elections after a special court cleared him of all charges in Greece’s biggest corruption trial this century."
+    ],
+    "name": "Demand leadership change",
+    "usage notes": "This event form refers to verbal and non-threatening appeals. Demands that take the form of demonstrations, protests, etc. are coded under category 14 instead. Note that even though demands for the target to resign or relinquish power are forms of yielding, they are still coded here. Also code demands for elections here (unless they are first-time elections and hence constitute major institutional change)."
+  },
+  "1042": {
+    "description": "Require, demand change in any particular policy.",
+    "examples": [
+      "Opposition groups in Zimbabwe are demanding that President Mugabe abandon his controversial policy of land confiscations."
+    ],
+    "name": "Demand policy change",
+    "usage notes": "This event form refers to verbal and non-threatening demands. Demands that take the form of demonstrations, protests, etc. are coded under category 14 instead. Just like the source actor, the policy in question can also be domestic or international in nature. If it is clear from the lead that by demanding certain policy changes the source is in fact demanding that the target yield or concede, the event might be better coded under 105 (e.g. demands for military withdrawal should be coded as 1056)."
+  },
+  "1043": {
+    "description": "Require, demand provision or expansion of social, political, or other rights.",
+    "examples": [
+      "The main Hutu rebel group, Forces for Defence of Democracy (FDD), insisted on its demands that Burundi’s government grant the Hutu majority more rights."
+    ],
+    "name": "Demand rights",
+    "usage notes": "This event form refers to verbal and non-threatening demands. Demands that take the form of demonstrations, protests, etc. are coded under category 14 instead. If it is clear from the lead that by demanding certain rights the source is in fact demanding that the target yield or concede, the event might be better coded under 105. Demands for provision of compensation for previously violated rights, for instance, are coded as 105."
+  },
+  "1044": {
+    "description": "Require, demand major institutional, constitutional, or regime change.",
+    "examples": [
+      "Rwandan rebels announced that President Kagame and his Rwandan Patriotic Front must agree to major constitutional changes before they demobilize.",
+      "The Albanians of southern Serbia are demanding political and territorial autonomy from Serbian authorities."
+    ],
+    "name": "Demand change in institutions, regime",
+    "usage notes": "This event form refers to verbal and non-threatening demands. Demands that take the form of demonstrations, protests, etc. are coded under category 14 instead. Institutional change is different from policy change in that the former directly alters the rules of the game. Demands for fundamental changes in the political system (e.g. democratization) as well as more limited institutional changes (e.g. changing electoral law) are coded here."
+  },
+  "105": {
+    "description": "Require, demand that target yields or concedes, not otherwise specified.",
+    "examples": [
+      "The United States on Thursday demanded that the Democratic People’s Republic of Korea (DPRK) forsake its nuclear program.",
+      "Note Because no military engagement has yet occurred, this default code is used instead of 1056."
+    ],
+    "name": "Demand that target yield, not specified below",
+    "usage notes": "This event form is typically, although not exclusively, a verbal act. The source for this event type may or may not be one of the adversaries; a third party could also be demanding that one or more of the parties in conflict (who are coded as targets) to yield. When a threat is attached to a demand for yielding, the appropriate code under category 13 should be used instead. Also, if accompanied by some form of protest activity, codes under category 14 should be used. When yielding actually takes place, use the appropriate code under category 08."
+  },
+  "1051": {
+    "description": "Require, demand that target relaxes administrative restrictions.",
+    "examples": [
+      "Human rights organization Amnesty International demanded that the Sudanese government end curbs on press freedom.",
+      "The International Labor Office (ILO) reiterated its demand today that Israel ease restrictions on the movement of Palestinian workers."
+    ],
+    "name": "Demand easing of administrative sanctions",
+    "usage notes": "Use this code when a government is pushed to undertake some political changes that clearly constitute some form of concession or yielding, such as relaxing or removing bans, curfews, or other restrictions that are already in place. Demands that take the form of demonstrations, protests, etc. are coded under category 14 instead."
+  },
+  "1052": {
+    "description": "Require, demand that target stops political protest activities.",
+    "examples": [
+      "Iranian authorities have been pressuring workers of the United Bus Company of Tehran (Sharekat-e Vahed) to cancel the strike they have been planning for better pay and working conditions."
+    ],
+    "name": "Demand easing of political dissent",
+    "usage notes": "Use this code for demands that the target stop engaging in protests, demonstrations, strikes, etc. Note that this code refers exclusively to verbal demands; if the source actively seeks to stop activities through repressive measures, 175 is used instead."
+  },
+  "1053": {
+    "description": "Require, demand that target releases persons or property.",
+    "examples": [
+      "Russia said on Tuesday that Sudan must return a Mi-26 helicopter that was captured by the Sudanese authorities last week."
+    ],
+    "name": "Demand release of persons or property",
+    "usage notes": "Use this code for demands that the target release prisoners, hostages, and any confiscated property."
+  },
+  "1054": {
+    "description": "Require, demand that target lifts or eases economic sanctions, boycott, or embargo. ",
+    "examples": [
+      "The 106th Inter-Parliamentary Union Conference stressed the obligation of the international community to take immediate action to lift embargoes and other sanctions which have negatively affected children in different parts of the world."
+    ],
+    "name": "Demand easing of economic sanctions, boycott, or embargo",
+    "usage notes": "Use this code only for economic sanctions, boycotts, or embargoes."
+  },
+  "1055": {
+    "description": "Require, demand that target allow access to international actors, such as observers, humanitarian agencies, and peacekeeping forces.",
+    "examples": [
+      "Kenzo Oshima, the United Nations Emergency Relief Coordinator, demanded parties to the conflict in Iraq to allow humanitarian workers the freedom of movement necessary for discharging their mandate."
+    ],
+    "name": "Demand to allow international involvement (non-mediation)",
+    "usage notes": "Demands for adversaries to allow mediation are coded as 108 instead."
+  },
+  "1056": {
+    "description": "Require, demand that target stops fighting or takes measures to ease military conflict or tension.",
+    "examples": [
+      "Washington along with its allies demanded that Hamas renounce its armed struggle against Israel.",
+      "European Community foreign ministers demanded the withdrawal of Yugoslav federal forces from Bosnia-Herzogovina on Monday calling them an occupying army, diplomats quoted an EC declaration as saying.",
+      "Bosnian Serbs demanded a truce with Moslem forces in east Bosnia before allowing U.N. aid conveys to feed starving Moslem civilians in the region."
+    ],
+    "name": "Demand de-escalation of military engagement",
+    "usage notes": "Use this code for demands for ceasefires, military withdrawals, and demobilization."
+  },
+  "106": {
+    "description": "Require, order party(ies) to meet, negotiate.",
+    "examples": [
+      "Yugoslavia on Tuesday demanded a meeting of the U.N. Security Council to discuss Croatia’s military advance into the Serb-held Krajina region, describing it as “a serious challenge to the world community.”"
+    ],
+    "name": "Demand meeting, negotiation",
+    "usage notes": "This event form can be initiated by either the adversaries or other third parties. "
+  },
+  "107": {
+    "description": "Order parties to a conflict to reach a settlement, agreement, or resolution of conflict. ",
+    "examples": [
+      "Jack Straw said on Friday that the Sudanese government and the rebels in Darfur must reach an agreement that stops the conflict for good before developmental assistance to the region is released.",
+      "Note Because of the compound target, two separate events are coded."
+    ],
+    "name": "Demand settling of dispute",
+    "usage notes": "This event form is typically, although not exclusively, a verbal act. Note that the source for this event cannot be the adversaries themselves. When one or more parties to a conflict call for ending the conflict, that is taken to be an expression of intent on the part of that source actor and is thus coded as 037 instead."
+  },
+  "108": {
+    "description": "Require or demand that a third party mediates a conflict or that adversaries accept mediation of another party.",
+    "examples": [
+      "Egyptian President Hosni Mubarak said here Wednesday that the US must be ready to mediate between Israelis and Palestinians as soon as the Israeli elections of January 28 are finalized. 2.11 DISAPPROVE"
+    ],
+    "name": "Demand mediation",
+    "usage notes": "This event form is a verbal act. It specifically refers to demands by actors other than potential mediators; either the adversaries or a prospective mediator can be coded as the target."
+  },
+  "110": {
+    "description": "Express disapprovals, objections, and complaints not otherwise specified.",
+    "examples": [
+      "On Tuesday, Nigerian junior foreign minister Dubem Oniya summoned Niger’s ambassador Brah Mohamane to complain of inaction over the gangs."
+    ],
+    "name": "Disapprove, not specified below",
+    "usage notes": "This residual category is not coded except when distinctions among codes 111-116 cannot be made. Disapprovals are typically verbal events."
+  },
+  "111": {
+    "description": "Condemn, decry a policy or an action; criticize, defame, denigrate responsible parties.",
+    "examples": [
+      "Albania on Friday denounced as an ugly crime Yugoslavia’s suppression of ethnic Albanian unrest in the southern Yugoslav province of Kosovo."
+    ],
+    "name": "Criticize or denounce"
+  },
+  "112": {
+    "description": "Charge, blame, incriminate for allegations not otherwise specified.",
+    "examples": [
+      "Zimbabwean Prime Minister Robert Mugabe today accused the United States of restoring the blackmail in the negotiations on independence for Namibia. "
+    ],
+    "name": "Accuse, not specified below",
+    "usage notes": "This event category contains sub-forms for more detailed coding whenever possible. Note that events coded under 112 are allegation made by actors and do not in any way imply that the alleged events have taken place."
+  },
+  "1121": {
+    "description": "Allege, charge the target with, or blame for engaging in crime or corruption.",
+    "examples": [
+      "Ousted president Jean-Bertrand Aristide has been accused of misusing up to US $50 million ($73 million) in public funds, much of it believed to have been embezzled, by current Haitian government officials."
+    ],
+    "name": "Accuse of crime, corruption"
+  },
+  "1122": {
+    "description": "Allege, charge the target with, or blame for human rights violations, such as arbitrary detentions for prosecutions, torture, and slavery.",
+    "examples": [
+      "Human rights watchdog Amnesty International accused the United States of violating human rights, ignoring international law and sending a “permissive signal to abusive governments”."
+    ],
+    "name": "Accuse of human rights abuses"
+  },
+  "1123": {
+    "description": "Allege, charge the target with, or blame for initiating hostilities or engaging in questionable or unjustifiable military actions such as violations of ceasefire.",
+    "examples": [
+      "The Sudanese government has accused Darfur rebels of violating a monthold ceasefire, a member of the Chadian team trying to broker a peace pact has said.",
+      "Palestinians blamed Israel for the bombing of Raed Karmi in the West Bank City of Tulkarm, which has set off a renewed wave of violence."
+    ],
+    "name": "Accuse of aggression",
+    "usage notes": "If the nature of the military action in question relates to human rights abuses or war crimes, they should be coded elsewhere within this category."
+  },
+  "1124": {
+    "description": "Allege, charge the target with, or blame for participation in war crimes/",
+    "examples": [
+      "Kosovo’s prime minister has been indicted by the U.N. war crimes court for his alleged part in atrocities during the fight against Serb forces and will resign. "
+    ],
+    "name": "Accuse of war crimes"
+  },
+  "1125": {
+    "description": "Allege, charge the target with, or blame for spying, espionage, or treason.",
+    "examples": [
+      "A Christian missionary from Calgary was arrested in Lebanon for collaborating with Israel, according to the Canadian Press.",
+      "Nigerian authorities jailed 52 members of the banned Movement for the Actualization of the Sovereign State of Biafra (MASSOB) on allegations of treason for playing in a youth football tournament in Lagos."
+    ],
+    "name": "Accuse of espionage, treason"
+  },
+  "113": {
+    "description": "Mobilize other parties against the target.",
+    "examples": [
+      "An official Syrian newspaper called Thursday on Arabs to unite and “mobilize” against Israeli right-winger Ariel Sharon, who has vowed not to return the Golan Heights to Syria if he is elected prime minister February 4.",
+      "Archbishop Desmond Tutu on Sunday called for sanctions against Nigeria in the wake of the execution of Ken Saro-Wiwa."
+    ],
+    "name": "Rally opposition against",
+    "usage notes": "This event form is typically, although not exclusively, a verbal act. Use this event form to code instances where one party (the source) solicits third parties to express disapproval of, protest against, or punish another party (the target). Note that only diplomatic solicitations—not military mobilizations—should be coded here."
+  },
+  "114": {
+    "description": "Written and institutionalized protests, appeals, and all petition drives and recalls. ",
+    "examples": [
+      "Yugoslavia lodged an official protest with Albania today, charging its neighbor with supporting dissidents here in what is said was tantamount to inciting revolution.",
+      "Lebanon complained to the United Nations on Tuesday over two Israeli air raids last Friday in which it said 20 people were killed or wounded."
+    ],
+    "name": "Complain officially"
+  },
+  "115": {
+    "description": "Sue, file civil or criminal lawsuit at domestic or international courts.",
+    "examples": [
+      "A Saudi businessman is suing the United States for damages to his pharmaceutical plant which were caused by a missile attack in August, his American lawyer said."
+    ],
+    "name": "Bring lawsuit against",
+    "usage notes": "Source must be the plaintiff or the state, and target must be the defendant."
+  },
+  "116": {
+    "description": "Find guilty or liable at a court of law.",
+    "examples": [
+      "A European court convicted Turkey of ”inhuman acts” Thursday for destroying the home of a Kurdish citizen in the country’s southeast. 2.12 REJECT"
+    ],
+    "name": "Find guilty or liable (legally)",
+    "usage notes": "Source must be the court in question, which could be domestic or international, and target must be the defendant. This event form refers typically to rulings against non-individuals, where imprisonment is not an issue. When individuals are found guilty and are therefore detained, use 173 instead."
+  },
+  "120": {
+    "description": "All rejections and refusals not otherwise specified.",
+    "examples": [
+      "The Palestinians reject proposed Israeli changes to the Wye River land-forsecurity deal, chief Palestinian negotiator Saeb Erakat said."
+    ],
+    "name": "Reject, not specified below",
+    "usage notes": "This residual category is not coded except when distinctions among codes 121-129 cannot be made. All rejections coded under this category should imply refusals to cooperate or yield in some way."
+  },
+  "121": {
+    "description": "Refuse to engage in or expand material exchange.",
+    "examples": [
+      "Yemen has rejected a U.S. request to interrogate detainees held after the escape of 23 al-Qaida prisoners, a security official said Tuesday."
+    ],
+    "name": "Reject material cooperation, not specified below",
+    "usage notes": "This category contains sub-forms for more detailed coding whenever possible. Refusals to provide unilateral material assistance—not mutual exchange— are coded as 122 instead. Note the difference between refusing to establish or expand material cooperation and reducing or eliminating existing ties (category 16)."
+  },
+  "1211": {
+    "description": "Refuse to engage in or expand economic ties.",
+    "examples": [
+      "Bangladesh has once again outright rejected an Indian proposal for signing Free Trade Agreement (FTA) with her, urging the counterpart to sign the proposed South Asia Free Trade Agreement (SAFTA) instead."
+    ],
+    "name": "Reject economic cooperation",
+    "usage notes": "Use this code for rejections of mutual economic exchange, such as trade and investment; rejection to provide financial aid (or cancel debt) is coded as 1221 instead."
+  },
+  "1212": {
+    "description": "Refuse to engage in or expand military ties.",
+    "examples": [
+      "South Korea has rejected North Korea’s consistent demand to sever a decades-long military alliance with Washington, which keeps troops here under a mutual defense pact."
+    ],
+    "name": "Reject military cooperation",
+    "usage notes": "Use this code for rejections of mutual military exchange; rejection to provide military aid is coded as 1222 instead."
+  },
+  "1213": {
+    "description": "Refuse to engage in or expand cooperation in judicial matters.",
+    "examples": [
+      "Yugoslavia on Thursday flatly rejected an Australian ultimatum to handover a guard involved in a shooting in front of the Yugoslav consulate in Sydney."
+    ],
+    "name": "Reject judicial cooperation",
+    "usage notes": "Use this code when the source actor refuses to cooperate in extraditions or other matters pertaining to legal proceedings."
+  },
+  "1214": {
+    "description": "Refuse to engage in or expand cooperation in intelligence or information sharing. ",
+    "examples": [
+      "The UN on Tuesday imposed a de facto information blackout on the withdrawal, collection and monitoring of heavy weapons around Sarajevo."
+    ],
+    "name": "Reject intelligence cooperation",
+    "usage notes": "Use this code when the source actor refuses to investigate or share information."
+  },
+  "122": {
+    "description": "Refuse to extend material aid not otherwise specified.",
+    "name": "Reject request or demand for material aid, not specified below",
+    "usage notes": "Use this event form to code refusals to provide material assistance. Use sub-categories whenever possible."
+  },
+  "1221": {
+    "description": "Refuse to extend financial assistance.",
+    "examples": [
+      "Bonn rejected recent calls by East Germany’s Communist rulers for immediate economic aid, saying it was withholding it until a democratically-elected government takes over."
+    ],
+    "name": "Reject request for economic aid"
+  },
+  "1222": {
+    "description": "Refuse to extend military assistance.",
+    "examples": [
+      "The Turkish government has refused to commit to any direct assistance to the US-led war against Iraq, citing domestic opposition."
+    ],
+    "name": "Reject request for military aid"
+  },
+  "1223": {
+    "description": "Refuse to extend humanitarian assistance.",
+    "examples": [
+      "Syria says it will not accept any more refugees if war starts in Iraq."
+    ],
+    "name": "Reject request for humanitarian aid",
+    "usage notes": "Refusals to provide shelter or refuge should also be coded here. When source refuses to grant humanitarian agencies access (instead of refusing to provide assistance itself), 1245 should be used instead."
+  },
+  "1224": {
+    "description": "Refuse to provide peacekeeping forces or other form of military protection.",
+    "examples": [
+      "The United Nations on Tuesday rejected a call for its peacekeeping forces to be deployed in East Timor.",
+      "Pakistan, a key U.S. ally in the war against terrorism, has refused to deploy peacekeepers in Iraq and has urged its citizens to avoid coming here."
+    ],
+    "name": "Reject request for military protection or peacekeeping",
+    "usage notes": "Refusals by prospective providers of protection and peacekeeping should be coded here; refusals by adversaries to grant access to peacekeepers should be coded as 1245 instead."
+  },
+  "123": {
+    "description": "Refuse to institute political change not otherwise specified.",
+    "examples": [
+      "The US on Thursday rejected calls by Kofi Annan, UN secretary-general, to adopt far-reaching United Nations reforms as a comprehensive package."
+    ],
+    "name": "Reject request or demand for political reform, not specified below",
+    "usage notes": "If the reform in question clearly constitutes some form of concession or yielding by the source, such as the easing of existing administrative sanctions, a more appropriate code might be found under 124 (’Refuse to yield’). Actors requesting the demand or those (the country or the people) that will be affected by the rejection should be coded as target depending on availability of information in the lead."
+  },
+  "1231": {
+    "description": "Refuse to change leadership or relinquish power.",
+    "examples": [
+      "Vice-President Moody Awori has declined to resign despite growing pressure by the Kenya Anti-Corruption Commision after he was implicated in a major scandal. "
+    ],
+    "name": "Reject request to change leadership",
+    "usage notes": "Rejections to resign or hand over power, as well as to hold elections that might open the way for change in leadership, are coded here. Note that while refusals to undertake other forms of yielding are coded under 124, refusals to give up power are coded here."
+  },
+  "1232": {
+    "description": "Refuse to change a given policy.",
+    "name": "Reject request to change policy",
+    "usage notes": "Use this code for refusals to acquiesce to demands for policy change— political, economic, military, social, or otherwise. If the policy change in question clearly represents a form of yielding, the appropriate code under 124 should be used instead."
+  },
+  "1233": {
+    "description": "Refuse to provide or respect social, political, economic or other rights and freedoms. ",
+    "examples": [
+      "Ankara’s C¸ankaya district administration has denied land allocation for the construction of an Alevite temple, Cemevi, in the district."
+    ],
+    "name": "Reject request for rights",
+    "usage notes": "If it is clear from the lead that by rejecting certain rights the source is in fact refusing to yield or concede, the event might be better coded under 124."
+  },
+  "1234": {
+    "description": "Refuse to make fundamental political changes, such as moving from one type of a political system to another and reforming political institutions or key laws. ",
+    "examples": [
+      "In what has been described as a policy u-turn, President Levy Mwanawasa has reneged on his commitment to the Zambian people for holding elections under a new constitution."
+    ],
+    "name": "Reject request for change in institutions, regime",
+    "usage notes": "Note the difference between institutional/regime changes and policy reforms."
+  },
+  "124": {
+    "description": "Reject requests, refuse, or decline to yield not otherwise specified.",
+    "name": "Refuse to yield, not specified below",
+    "usage notes": "This category contains sub-forms for more detailed coding whenever possible."
+  },
+  "1241": {
+    "description": "Reject requests, refuse or decline to ease administrative sanctions, such as censorship, curfew, state of emergency, and martial law.",
+    "examples": [
+      "Despite warnings of starvation by humanitarian agencies, the Israeli government is refusing to lift the curfew on Palestinians living in the West Bank and Gaza."
+    ],
+    "name": "Refuse to ease administrative sanctions"
+  },
+  "1242": {
+    "description": "Reject requests, refuse, or decline to reduce or stop political protest activities, such as demonstrations and rallies.",
+    "examples": [
+      "Around 1,800 of 2,200 Serbian teachers will not end their strike unless their demands for wage increases are met by textcolorblueBelgrade, a union official announced after three weeks of striking."
+    ],
+    "name": "Refuse to ease popular dissent"
+  },
+  "1243": {
+    "description": "Reject requests, refuse, or decline to release or return persons or property.",
+    "examples": [
+      "The U.S. said it would not meet hostage-takers demands to release prisoners in Iraq, including a number of females.",
+      "Note In an ideal scenario, the identity of the hostage-takers would have been codeable here."
+    ],
+    "name": "Refuse to release persons or property",
+    "usage notes": "Refusals to release or exchange prisoners and hostages, as well as to return previously confiscated properties, are coded here."
+  },
+  "1244": {
+    "description": "Reject requests, refuse, or decline to reduce or eliminate economic sanctions, boycotts, or embargoes.",
+    "examples": [
+      "US authorities said yesterday that removing the sanctions on Burma is currently out of the question as that would reward the regime for doing nothing."
+    ],
+    "name": "Refuse to ease economic sanctions, boycott, or embargo",
+    "usage notes": "Use this code only for economic sanctions, boycotts, or embargoes."
+  },
+  "1245": {
+    "description": "Reject requests, refuse or decline to allow access to international actors such as observers, humanitarian agencies, and peacekeeping forces.",
+    "examples": [
+      "The UNITA militarist wing refused to allow United Nations planes to land and evacuate 15 of its observers who were taken hostage, the United Nations Observer Mission in Angola (MONUA) said.",
+      "Beirut again rejected Thursday a United Nations appeal for deploying army troops along its borders with Israel."
+    ],
+    "name": "Refuse to allow international involvement (non-mediation)",
+    "usage notes": "Prospective peacekeepers, observers, etc. are coded as targets."
+  },
+  "1246": {
+    "description": "Reject requests, refuse, or decline to stop fighting or take measures to ease military conflict or tension.",
+    "examples": [
+      "Iran’s religious leader Ayatollah Ruhollah Khomeini today rejected Iraqi President Saddam Hussein’s proposal for a cease-fire during the Moslem holy month of Ramadan.",
+      "Rebels in the Ivory Coast on Wednesday dismissed an appeal from President Laurent Gbago to lay down their arms, saying they had lost all trust in the government they rose up against on September 19."
+    ],
+    "name": "Refuse to de-escalate military engagement",
+    "usage notes": "Use this code for rejections of ceasefires, military withdrawals, and demobilization."
+  },
+  "125": {
+    "description": "Refuse to meet, discuss, or negotiate.",
+    "examples": [
+      "Israeli President Moshe Katsav has refused to meet Jordan’s visiting King Abdullah II in Tel Aviv, saying he would only welcome him in Jerusalem, his office said Tuesday.",
+      "The radical Palestinian Islamic Jihad movement rejected an invitation to attend a meeting next week of Palestinian factions to debate plans for independence from Israel, the group said Wednesday.",
+      "Pakistan President Mohammad Zia-Ul-Haq today rejected a fresh offer from Afganistan for direct talks between the two neighbors."
+    ],
+    "name": "Reject proposal to meet, discuss, negotiate",
+    "usage notes": "Note that specific refusals to accept involvement of mediators or refusals to meet with mediators are coded as 126 instead."
+  },
+  "126": {
+    "description": "Refuse involvement of mediators or mediation initiatives.",
+    "examples": [
+      "Palestinian leader Yasser Arafat Wednesday rejected a US offer to host a summit in mid-July to hammer out a framework agreement for peace between the Israelis and the Palestinians.",
+      "Israel is opposed to French mediation in peace negotiations with Syria, a close aide to Prime Minister Ehud Barak said Wednesday."
+    ],
+    "name": "Reject mediation",
+    "usage notes": "The target for this event should be the potential mediators."
+  },
+  "127": {
+    "description": "Reject a proposal or request for a final, comprehensive settlement, peace proposal, or resolution.",
+    "examples": [
+      "Ivory Coast rebels on Friday again rejected a west African peace plan, and said they also opposed the deployment of a regional peacekeeping force until their political demands are met.",
+      "Newly appointed Palestinian Prime Minister Ismail Haniyeh has refused to respond to a demand from the US President to adhere to interim peace deals reached with Israel."
+    ],
+    "name": "Reject plan, agreement to settle dispute",
+    "usage notes": "This event form refers typically, although not exclusively, to written and/or formal proposals of comprehensive settlements that seek to resolve a conflict. The target should be the opponent with whom the source is involved in a conflict. "
+  },
+  "128": {
+    "description": "Disobey, challenge, or resist laws or norms.",
+    "examples": [
+      "The republic of Slovenia defied Yugoslav federal authority on Wednesday and was set to declare its right to secede from the country.",
+      "A newspaper based in Christian east Beirut has violated a ban by General Michel Aoun and described his rival Elias Hrawi as president."
+    ],
+    "name": "Defy norms, law",
+    "usage notes": "This event category covers both civilian disobedience and official defiance."
+  },
+  "129": {
+    "description": "Refuse to assent or formally reject legislative proposal, recommendation, or resolution. ",
+    "examples": [
+      "The United States on Wednesday vetoed a Security Council resolution censuring as a violation of international law its military sweep of the Nicaraguan ambassador’s home in Panama on December 29. 2.13 THREATEN"
+    ],
+    "name": "Veto"
+  },
+  "130": {
+    "description": "All threats, coercive or forceful warnings with serious potential repercussions, not otherwise specified.",
+    "examples": [
+      "President Reagan has threatened further action against the Soviet Union in an international television program beamed by satellite to more than 50 countries. "
+    ],
+    "name": "Threaten, not specified below",
+    "usage notes": "Threats are typically verbal acts. This residual category is not coded except when distinctions among codes 131-139 cannot be made. When any conflictual behavior is forecasted using future tense, it is treated as a “threat” (e.g. ’will attack’ is coded as ’Threaten to attack’)."
+  },
+  "131": {
+    "description": "All non-force threats not otherwise specified.",
+    "examples": [
+      "Iran on Tuesday threatened to cut off electricity to the autonomous Azerbaijani republic of Nakhichevan over non-payment of bills, the official IRNA news agency reported."
+    ],
+    "name": "Threaten non-force, not specified below",
+    "usage notes": "This event form is a verbal act. It contains sub-forms for more detailed coding whenever possible. When non-force threats are actually carried out codes 160-166 should be used instead. Threats of administrative sanctions, such as bans or curfews, should be coded under 132."
+  },
+  "1311": {
+    "description": "Threaten to reduce or stop providing material aid.",
+    "examples": [
+      "African states today announced that they will withdraw their peacekeeping force from Chad unless President Goukouni Oueddei arranged a ceasefire with rebels fighting to topple his government and held elections within four months. "
+    ],
+    "name": "Threaten to reduce or stop aid",
+    "usage notes": "Use this code for threats to reduce or eliminate provision of material assistance—economic, military, humanitarian, and peacekeeping."
+  },
+  "1312": {
+    "description": "Threaten to restrict normal economic interactions by imposing sanctions, boycotts, or embargoes.",
+    "examples": [
+      "A French minister threatened today to impose import restrictions against West German goods today as the leaders of the two countries sought to ease tensions in Franco-German relations."
+    ],
+    "name": "Threaten to boycott, embargo, or sanction",
+    "usage notes": "Use this code for the imposition of restrictions or restraints on economic exchange, typically on commerce and similar transactions as a way to protest or punish the target."
+  },
+  "1313": {
+    "description": "Threaten to reduce or formally sever ties.",
+    "examples": [
+      "The Azerbaijani parliament threatened on Monday to secede from the Soviet Union unless the Kremlin withdrew its troops from the republic.",
+      "Pakistan today threatened to break off diplomatic relations with Zaire and Costa Rica over their ties with Israel on the eve of a visit here by Palestine Liberation Organization (PLO) Chairman Yasser Arafat.",
+      "Note Because of the compound target, two events are coded in this example.",
+      "Palestinian leaders said they would boycott all official contact with the United States."
+    ],
+    "name": "Threaten to reduce or break relations",
+    "usage notes": "Non-force threats to declare independence, resign, withdraw diplomats, reduce or break diplomatic ties, etc. are all coded here."
+  },
+  "132": {
+    "description": "Threaten to impose or expand non-force administrative restrictions and penalties not otherwise specified.",
+    "examples": [
+      "Greece, like most other existing members, plans to impose restrictions on its labour market for new EU members for at least two years from 1 May."
+    ],
+    "name": "Threaten with administrative sanctions, not specified below",
+    "usage notes": "Use sub-categories for more detailed coding whenever possible."
+  },
+  "1321": {
+    "description": "Threaten to impose or expand restrictions on fundamental freedoms, such as freedoms of speech, expression, and assembly.",
+    "examples": [
+      "Israel threatened to ban voting in East Jerusalem if Hamas, which advocates Israel’s destruction, ran in the election."
+    ],
+    "name": "Threaten with restrictions on political freedoms",
+    "usage notes": "Note that if a threat indicates potential use of coercive repressive tactics as a way of enforcing the restrictions in question, 137 should be used instead."
+  },
+  "1322": {
+    "description": "Threaten to ban political activities of particular parties or individuals.",
+    "examples": [
+      "Israel’s Cabinet met Sunday and decided to approve a plan that will not allow candidates from the militant group Hamas on the ballots there.",
+      "President Yoweri Museveni has threatened to ban Ugandan opposition candidates from participating in the upcoming elections."
+    ],
+    "name": "Threaten to ban political parties or politicians",
+    "usage notes": "If the target is being threatened with imprisonment or other measures of repression, 137 should be used instead."
+  },
+  "1323": {
+    "description": "Threaten to enforce a deadline beyond which inhabitants of an area are not permitted to be on the streets or in public places.",
+    "examples": [
+      "President Laurent Gbagbo announced on Sunday that he will extend the night-time curfew in Algiers in response to recent unrest within the city.",
+      "Note Note that the future tense used in the lead implies a threat.",
+      "President Abdelaziz Bouteflicka threatened to institute a curfew in Algiers in response to recent unrest within the city."
+    ],
+    "name": "Threaten to impose curfew"
+  },
+  "1324": {
+    "description": "Threaten with suspending certain given rights or the whole constitution by imposing state of emergency or military rule.",
+    "examples": [
+      "Iraq’s interim government announced that it is prepared to impose martial law as street battles raged in central Baghdad between insurgents and security forces."
+    ],
+    "name": "Threaten to impose state of emergency or martial law"
+  },
+  "133": {
+    "description": "Threaten to mobilize or engage in actions of political dissent such as protest demonstrations, hunger strikes, strikes or boycotts, physical obstructions into buildings or areas, and riots.",
+    "examples": [
+      "Radical French farmers said on Friday they would blockade Paris from Monday night to demand an end to the European Community’s drastic farm reform. ",
+      "Druze inhabitants of the Syrian Golan Heights threatened today to hold a general strike unless Israel rescinded its annexation of the region within 10 days. "
+    ],
+    "name": "Threaten political dissent"
+  },
+  "134": {
+    "description": "Threaten to break-up or withdraw from discussion, negotiation, or meeting.",
+    "examples": [
+      "The Soviet Union has threatened to stop negotiations to reduce long-range nuclear weapons if the United States goes ahead with the planned deployment of new medium-range nuclear missiles in Europe, the Washington Post reported today."
+    ],
+    "name": "Threaten to halt negotiations",
+    "usage notes": "Use this code for threats and warnings by source actors to stop negotiations, typically presented as protests against particular actions or policies of target actors. "
+  },
+  "135": {
+    "description": "Threaten to stop mediation activities.",
+    "examples": [
+      "The European Community may halt mediation efforts among Yugoslavia’s feuding republics if cooperation by all parties founders, Dutch Foreign Minister Hans Van den Broek said on Tuesday."
+    ],
+    "name": "Threaten to halt mediation",
+    "usage notes": "This event form is a verbal act. Use this event form to code threats and warnings by source actors—mediators or adversaries—to stop mediating or engaging in mediated talks."
+  },
+  "136": {
+    "description": "Threaten to reduce or stop international intervention by expelling or withdrawing observers, humanitarian agencies, peacekeepers, etc.",
+    "examples": [
+      "U.N. Secretary-General Kofi Annan announced on Monday that he will withdraw weapons inspectors and humanitarian workers from Iraq.",
+      "Note Future tense in the lead indicates threat (i.e. it has not yet taken place)."
+    ],
+    "name": "Threaten to halt international involvement (non-mediation)",
+    "usage notes": "Threats by international agencies to withdraw their involvement as well as threats by host countries to expel such actors are coded here. Note that mediation related threats are coded as 135 instead."
+  },
+  "137": {
+    "description": "Threaten dissidents with forcible subjugation.",
+    "examples": [
+      "Cairo’s security chief has warned that police will no longer tolerate rallies by the Kifaya (“Enough”) group."
+    ],
+    "name": "Threaten with repression",
+    "usage notes": "Threats to imprison as well as to use force to clamp down on opposition activities are coded here. Note that even though it might involve use of violence by police or other security forces, repression of dissidents is different from use of military force against another armed group; threats to use military force or to engage in battle are coded under 138 instead."
+  },
+  "138": {
+    "description": "Threaten to use force not otherwise specified.",
+    "examples": [
+      "Osama bin Laden’s al-Qaeda terror network has threatened to deliver devastating blows to the United States and Israel, a Saudi-owned weekly reports.",
+      "Note Because of the compound target, two events are coded."
+    ],
+    "name": "Threaten with military force, not specified below",
+    "usage notes": "This event form is a verbal act and it contains sub-forms for more detailed coding whenever possible. More active expressions of threat to use force are coded under category 15."
+  },
+  "1381": {
+    "description": "Threaten to prevent entry into and/or exit from a territory using military measures. ",
+    "examples": [
+      "NATO confirmed on Wednesday it would tighten the naval blockade of the rump Yugoslav state in the Adriatic with Albania’s help."
+    ],
+    "name": "Threaten blockade",
+    "usage notes": "This event form is typically a verbal act."
+  },
+  "1382": {
+    "description": "Threaten to occupy, seize control of the whole or part of a territory.",
+    "examples": [
+      "Ethnic Albanians have sworn to fight until they gain control of villages near Macedonia’s border with Kosovo, Macedonian officials said Wednesday."
+    ],
+    "name": "Threaten occupation",
+    "usage notes": "This event form is typically a verbal act and is distinct from 192, which refers to military occupations that have been or are being carried out."
+  },
+  "1383": {
+    "description": "Threaten to use unconventional violence, including terrorist activities.",
+    "examples": [
+      "The Hamas threatened Monday to resume terrorist activities in Israel in an escalation of the intifada (uprising)."
+    ],
+    "name": "Threaten unconventional attack",
+    "usage notes": "This event form is typically a verbal act and is distinct from unconventional attacks that are actually carried out (category 18)."
+  },
+  "1384": {
+    "description": "Threaten to attack, use conventional weapons against a party.",
+    "examples": [
+      "Iran today threatened to launch a new military offensive in its Gulf war with Iraq unless Baghdad accepted its conditions for ending the 28-monthold conflict.",
+      "Iran threatened to shell Iraqi towns today in retaliation for an air raid on the southern city of Susangerd where, it said, 100 people were killed."
+    ],
+    "name": "Threaten conventional attack",
+    "usage notes": "This event form is typically a verbal act."
+  },
+  "1385": {
+    "description": "Threaten to use force potentially affecting large masses of people, including the use of weapons of mass destruction (nuclear or chemical-biologicalradiological attacks), mass expulsions or killings, as well as ethnic cleansing.",
+    "examples": [
+      "A terror group based in Trinidad claims to be manufacturing chemical and biological weapons to use against the United States and Britain, according to a media report Sunday.",
+      "Note Because of the compound target, two events are coded."
+    ],
+    "name": "Threaten unconventional mass violence",
+    "usage notes": "This event form is typically a verbal act. Use this code for threats to carry out actions best represented in cue category 20."
+  },
+  "139": {
+    "description": "Give a final warning, ultimate demand or order.",
+    "examples": [
+      "Peru has issued an ultimatum to Ecuador to halt attacks across their disputed jungle border. 2.14 PROTEST"
+    ],
+    "name": "Give ultimatum",
+    "usage notes": "This event form is typically a verbal act. Use it to code final demands, rejection of which carries the risk of some form of retaliation by the party issuing the ultimatum. Use of this code depends primarily on the terminology used by reporters—look for the word ’ultimatum’, otherwise, it is simply a threat."
+  },
+  "140": {
+    "description": "All civilian demonstrations and other collective actions carried out as protests against the target actor not otherwise specified.",
+    "examples": [
+      "The Homeland Union (Conservatives) began collecting signatures in part of a drive to convince the Lithuanian Parliament to amend the constitution so that same-sex marriages are banned."
+    ],
+    "name": "Engage in political dissent, not specified below.",
+    "usage notes": "This residual category is not coded except when distinctions among codes 141-145 cannot be made. Note that any form of civilian individual or collective action that is undertaken as a symbol of support—rather than protest— for the target actor should be coded elsewhere (potentially under category 05). "
+  },
+  "141": {
+    "description": "Dissent collectively, publicly show negative feelings or opinions; rally, gather to protest a policy, action, or actor(s).",
+    "examples": [
+      "Up to 100 ethnic Albanians demonstrated on Tuesday in the Yugoslav province of Kosovo, where 24 people were killed in nationalist riots last March, Belgrade radio said."
+    ],
+    "name": "Demonstrate or rally, not specified below",
+    "usage notes": "Use sub-categories if demands of protesters are known and codeable. The target for this event form is the party that the protest is directed against; the location of a demonstration sometimes represents the identity of the target."
+  },
+  "1411": {
+    "description": "Dissent collectively, gather, or rally demanding leadership change.",
+    "examples": [
+      "Angry activists from the defeated Fatah Party have staged rallies in the Gaza Strip against the party’s leader Mahmoud Abbas, saying he must resign."
+    ],
+    "name": "Demonstrate or rally for leadership change",
+    "usage notes": "Target should be the actor who is expected to relinquish power. Demonstrations that demand new elections should also be coded here."
+  },
+  "1412": {
+    "description": "Dissent collectively, gather, or rally demanding policy change.",
+    "examples": [
+      "Tens of thousands of university students throughout Indonesia staged mass demonstrations Saturday to demand political reforms by President Suharto’s government. "
+    ],
+    "name": "Demonstrate or rally for policy change",
+    "usage notes": "Use this code when demonstrators demand specific policy changes or unspecified political reforms."
+  },
+  "1413": {
+    "description": "Dissent collectively, gather, or rally demanding political, social, economic, or other rights.",
+    "examples": [
+      "Thousands of Nigerians from throughout the country were converging Thursday for a rally in Lagos to protest the rights violations under the recently imposed Sharia law by Islamic fundamentalists in the northern districts."
+    ],
+    "name": "Demonstrate for rights",
+    "usage notes": "Use this code for demonstrations that demand new rights or protest the violation of existing ones."
+  },
+  "1414": {
+    "description": "Dissent collectively, gather, or rally demanding major institutional, constitutional, or regime change.",
+    "examples": [
+      "Thousands of Iraqi Kurds demonstrated in the northern city of Kirkuk on Sunday calling for independence from Iraq, witnesses said."
+    ],
+    "name": "Demonstrate for change in institutions, regime",
+    "usage notes": "Note the difference between institutional/constitutional changes and policy reforms. Demonstrations that call for independence or autonomy essentially demand major changes to the whole system and are hence coded here."
+  },
+  "142": {
+    "description": "Protest by refusing to eat until certain demands are met, not further specified.",
+    "examples": [
+      "Up to 1,000 ethnic Turks began a hunger strike on Monday to protest against Sweden’s decision to send them back to Bulgaria, where they say they face imprisonment, homelessness and persecution."
+    ],
+    "name": "Conduct hunger strike, not specified below",
+    "usage notes": "Use sub-categories if demands of protesters are known and codeable. The target for this event form is the party against which the hunger strikers protest. "
+  },
+  "1421": {
+    "description": "Refuse to eat until demands for leadership change are met.",
+    "examples": [
+      "Islamic fundamentalists continued their hunger strike to demand the resignation of Algerian President Ahmed Ben Bella."
+    ],
+    "name": "Conduct hunger strike for leadership change",
+    "usage notes": "Target should be the actor who is expected to relinquish power. Hunger strikes that demand new elections should also be coded here."
+  },
+  "1422": {
+    "description": "Refuse to eat until demands for policy reform are met.",
+    "examples": [
+      "A member of the Syrian parliament, Mohammed Mamoun, started a hunger strike yesterday to protest President Assad’s failure to usher in meaningful political reforms."
+    ],
+    "name": "Conduct hunger strike for policy change",
+    "usage notes": "Use this code when protesters demand specific policy changes or unspecified political reforms."
+  },
+  "1423": {
+    "description": "Refuse to eat until demands for political, social, economic, or other rights are met.",
+    "examples": [
+      "Algerian landowners began a hunger strike outside Parliament to demand the return of property seized by Algerian government forces in the 1970s, APS news agency said.",
+      "Salaheddine Sidhoum, Algeria’s leading human rights activist, staged a 24hour hunger strike in prison on Sunday in protest against the widespread human rights violations by Algerian security forces, his lawyer said on Tuesday."
+    ],
+    "name": "Conduct hunger strike for rights",
+    "usage notes": "Use this code for hunger strikes that demand new rights or protest the violation of existing ones."
+  },
+  "1424": {
+    "description": "Refuse to eat until demands for major institutional, constitutional, or regime change. ",
+    "examples": [
+      "A group of Chenchen refugees are continuing a hunger strike in protest of the Russian government’s refusal to accept the independence of Chechnya."
+    ],
+    "name": "Conduct hunger strike for change in institutions, regime",
+    "usage notes": "Note the difference between institutional/constitutional changes and policy reforms. Hunger strikes that call for independence or autonomy essentially demand major changes to the whole system and are hence coded here."
+  },
+  "143": {
+    "description": "Protest by refusing to work or cooperate until certain demands are met, not specified further.",
+    "examples": [
+      "Palestinians of the Israeli-occupied West Bank shunned work on Monday to protest at settlement of Soviet Jewish immigrants on Arab land."
+    ],
+    "name": "Conduct strike or boycott, not specified below",
+    "usage notes": "Use sub-categories if demands of protesters are known and codeable. The target for this event form is the party against which the hunger strikers protest. This event form does not refer to military strikes, which are coded under category 19 instead."
+  },
+  "1431": {
+    "description": "Refuse to work or cooperate until demands for leadership change are met.",
+    "examples": [
+      "The fundamentalist Umma (Nation) party has said it will boycott Algeria’s first multi-party elections unless the president agrees to step down.",
+      "Note Ideally the Algerian president would have been coded as the target."
+    ],
+    "name": "Conduct strike or boycott for leadership change",
+    "usage notes": "Target should be the actor who is expected to relinquish power. Strikes or boycotts that demand new elections should also be coded here."
+  },
+  "1432": {
+    "description": "Refuse to work or cooperate until demands for policy reform are met.",
+    "examples": [
+      "Some 500,000 workers affiliated with the Serbian Workers’ Union (SSS) stopped work on the first day of an open-ended strike on Monday over a controversial employment bill signed in by Serbian Labour Minister Dragan Milovanovic. "
+    ],
+    "name": "Conduct strike or boycott for policy change",
+    "usage notes": "Use this code when protesters demand specific policy changes or unspecified political reforms."
+  },
+  "1433": {
+    "description": "Refuse to work or cooperate until demands for political, social, economic, or other rights are met.",
+    "examples": [
+      "Seven opposition parties in Nepal have organized a general strike that shut down Khatmandu in protest of last week’s arrest of a number of activists."
+    ],
+    "name": "Conduct strike or boycott for rights",
+    "usage notes": "Use this code for strikes or boycotts that demand new rights or protest the violation of existing ones."
+  },
+  "1434": {
+    "description": "Refuse to work or cooperate until demands for major institutional, constitutional, or regime change.",
+    "name": "Conduct strike or boycott for change in institutions, regime",
+    "usage notes": "Note the difference between institutional/constitutional changes and policy reforms. Strikes that call for independence or autonomy essentially demand major changes to the whole system and are hence coded here."
+  },
+  "144": {
+    "description": "Protest by blocking entry and/or exit into building or area, not otherwise specified. ",
+    "examples": [
+      "Angry French paper workers blocked the Europe Bridge spanning the Rhine from France to West Germany for more than three hours by dumping sawdust on the roadway, French border police said."
+    ],
+    "name": "Obstruct passage, block, not specified below",
+    "usage notes": "Use sub-categories if demands of protesters are known and codeable. Use this event form to code protest activities that seek to disrupt routine and normal proceedings by blocking roads, buildings, etc. When the blockade in question includes military forces, use 191 instead."
+  },
+  "1441": {
+    "description": "Obstruct passage, block entry/exit to demand leadership change.",
+    "examples": [
+      "About 200 supporters of former President Ahmed Ben Bella blocked roads in the capital city of Algiers demanding that he be reinstated as leader of the Algerian government.",
+      "Rebels in the Ivory Coast on Tuesday blocked transport into Abidjan as they continued their effort to overthrow the government of President Laurent Gbagbo. "
+    ],
+    "name": "Obstruct passage to demand leadership change",
+    "usage notes": "Target should be the actor who is expected to relinquish power. Obstructions that demand new elections should also be coded here."
+  },
+  "1442": {
+    "description": "Obstruct passage, block entry/exit to demand policy reform.",
+    "examples": [
+      "Demonstrators in Baghdad blocked a road to show their disapproval for the United States’ military policies, a newspaper reported Tuesday."
+    ],
+    "name": "Obstruct passage to demand policy change",
+    "usage notes": "Use this code when protesters demand specific policy changes or unspecified political reforms."
+  },
+  "1443": {
+    "description": "Obstruct passage, block entry/exit to demand political, social, economic, or other rights.",
+    "examples": [
+      "Young Algerians blocked roads leading to the city centre on Sunday to press their demands for greater freedom and opportunities from President Bouteflika’s government."
+    ],
+    "name": "Obstruct passage to demand rights",
+    "usage notes": "Use this code for obstructions that demand new rights or protest the violation of existing ones."
+  },
+  "1444": {
+    "description": "Obstruct passage, block entry/exit to demand major institutional, constitutional, or regime change.",
+    "examples": [
+      "Hundreds of thousands of people blocked streets in Hong Kong in defiance of Chinese authorities to demand democratic reforms."
+    ],
+    "name": "Obstruct passage to demand change in institutions, regime",
+    "usage notes": "Note the difference between institutional/constitutional changes and policy reforms. Obstructions that call for independence or autonomy essentially demand major changes to the whole system and are hence coded here."
+  },
+  "145": {
+    "description": "Protest forcefully, in a potentially destructive manner, not further specified.",
+    "examples": [
+      "Palestinian prisoners rioted Monday at this jail in northern Israel, setting fire to their mattresses and smashing furniture, police sources said."
+    ],
+    "name": "Protest violently, riot, not specified below",
+    "usage notes": "Use sub-categories if demands of protesters are known and codeable. Use this event form to code demonstrations and protests that turn violent. When the use of force to cause casualties is the primary purpose, use categories 18, 19, or 20 instead."
+  },
+  "1451": {
+    "description": "Protest forcefully, in a potentially destructive manner, to demand leadership change. ",
+    "examples": [
+      "Egyptian demonstrators rioted following a peaceful demonstration calling for the immediate removal of President Hosni Mubarak from office."
+    ],
+    "name": "Engage in violent protest for leadership change",
+    "usage notes": "Target should be the actor who is expected to relinquish power. Riots that demand new elections should also be coded here."
+  },
+  "1452": {
+    "description": "Protest forcefully, in a potentially destructive manner, to demand policy reform. ",
+    "examples": [
+      "Palestinian riots against Israeli military policies are still continuing with no end in sight."
+    ],
+    "name": "Engage in violent protest to demand policy change",
+    "usage notes": "Use this code when protesters demand specific policy changes or unspecified political reforms."
+  },
+  "1453": {
+    "description": "Protest forcefully, in a potentially destructive manner, to demand political, social, economic, or other rights.",
+    "examples": [
+      "Palestinian youths resorted to throwing stones during demonstrations against the alleged human rights violations by the Israeli military, officials said on Thursday."
+    ],
+    "name": "Engage in violent protest to demand rights",
+    "usage notes": "Use this code for riots that demand new rights or protest the violation of existing ones."
+  },
+  "1454": {
+    "description": "Protest forcefully, in a potentially destructive manner, to demand major institutional, constitutional, or regime change.",
+    "examples": [
+      "Prisoners rioted at a jail in East Timor’s capital Dili on Monday joining thousands of demonstrators in demanding a referendum on independence from Indonesian rule, locals said. 2.15 EXHIBIT MILITARY POSTURE"
+    ],
+    "name": "Engage in violent protest to demand change in institutions, regime",
+    "usage notes": "Note the difference between institutional/constitutional changes and policy reforms. Riots that call for independence or autonomy essentially demand major changes to the whole system and are hence coded here."
+  },
+  "150": {
+    "description": "All military or police moves that fall short of the actual use of force, not otherwise specified.",
+    "examples": [
+      "The Macedonian army prepared to resume shelling Albanian rebel-held territory as attempts to resolve the crisis on the political front were deadlocked."
+    ],
+    "name": "Exhibit military or police power, not specified below",
+    "usage notes": "This category is different from cue categories 18, 19, and 20, as they refer to uses of force, while military posturing falls short of actual use of force and is typically a demonstration of military capabilities and readiness. Category 15 is also distinct from category 13 in that the latter refers merely to threats, is typically verbal, and does not involve any activity that is undertaken to demonstrate military power. Note that source actors for codes 150-153 are not necessarily militaries affiliated with states but any organized armed groups. Targets are actors against whom the source mobilizes its military capabilities in a threatening manner."
+  },
+  "151": {
+    "description": "Need new description.",
+    "examples": [
+      "NEED EXAMPLE."
+    ],
+    "name": "Increase police alert status",
+    "usage notes": "Need new usage notes."
+  },
+  "152": {
+    "description": "Heighten military readiness and caution; be prepared to use force.",
+    "examples": [
+      "Israeli troops remained on alert in the occupied West Bank today to forestall more violence after a week of unprecedented Palestinian civil unrest."
+    ],
+    "name": "Increase military alert status",
+    "usage notes": "Use this event form to code formal military orders to go on alert. The party against whom the military move is directed is the target actor."
+  },
+  "153": {
+    "description": "Increase the number of military personnel and/or weapons.",
+    "examples": [
+      "The government of Sindh province has ordered patrols by police and paramilitary soldiers after violent protests by Muslim groups."
+    ],
+    "name": "Mobilize or increase police power",
+    "usage notes": "Use this code when the government mobilizes police power to demonstrate strength, mostly as a scare tactic."
+  },
+  "154": {
+    "description": "Increase the number of military personnel and/or weapons.",
+    "examples": [
+      "Israel has strengthened its forces in Lebanon following the discovery of Soviet-made Katyusha rockets in the area last week, military sources said today. ",
+      "Britain mobilized army reservists for a possible war against Iraq on Tuesday while UN arms inspectors said they needed more time."
+    ],
+    "name": "Mobilize or increase armed forces",
+    "usage notes": "The party against whom the military move is directed is the target actor."
+  },
+  "155": {
+    "description": "Increase the capacity to wage cyber-warfare.",
+    "examples": [
+      "North Korea has trained more than 500 computer hackers capable of launching cyber warfare against the United States, South Korea’s defense ministry said Monday. 2.16 REDUCE RELATIONS"
+    ],
+    "name": "Mobilize or increase cyber-forces",
+    "usage notes": "This event can only be coded when the move is directed against a specific target or targets, whether as an offensive or defensive move."
+  },
+  "160": {
+    "description": "All reductions in normal, routine, or cooperative relations not otherwise specified. ",
+    "examples": [
+      "Italy announced a suspension of air links with Yugoslavia on Wednesday, one day after a Yugoslav army jet shot down a helicopter carrying EC truce monitors. "
+    ],
+    "name": "Reduce relations, not specified below",
+    "usage notes": "This residual category is not coded except when distinctions among codes 161-166 cannot be made."
+  },
+  "161": {
+    "description": "Curtail, decrease, break, or terminate diplomatic exchange.",
+    "examples": [
+      "A French minister has cancelled a planned visit to Haiti after a state of siege was declared in the one-time French colony, the Foreign Affairs Ministry said on Sunday.",
+      "Switzerland said today it had expelled two Soviet diplomats based in Geneva for spying, adding to a long series of espionage scares."
+    ],
+    "name": "Reduce or break diplomatic relations",
+    "usage notes": "Cancellation of meetings, withdrawal, or expulsion of diplomats and termination of other diplomatic activities (excluding negotiations and mediations which are coded as 164 and 165 respectively) should be coded here."
+  },
+  "162": {
+    "description": "Reductions or terminations of aid not otherwise specified.",
+    "examples": [
+      "The United States announced Wednesday it would prohibit all aid to Albanian rebels in Macedonia and would deny entry to the United States to all individuals undermining stability there.",
+      "Red Cross officials suspended aid deliveries in Baghdad on Wednesday after two of their vehicles were hit by gunfire and a staff member went missing."
+    ],
+    "name": "Reduce or stop material aid, not specified below",
+    "usage notes": "This event form category contains sub-forms for more detailed coding whenever possible."
+  },
+  "1621": {
+    "description": "Decrease or terminate provision of economic aid.",
+    "examples": [
+      "Japan said on Tuesday it had halted economic aid to Yugoslavia in line with Western efforts to end the fighting there."
+    ],
+    "name": "Reduce or stop economic assistance"
+  },
+  "1622": {
+    "description": "Decrease or terminate provision of military aid.",
+    "examples": [
+      "The United States suspended part of a military aid program for Bosnia aimed at bringing Bosnian Croat and Moslem armed forces together as a unified identity, the New York Times reported on Friday."
+    ],
+    "name": "Reduce or stop military assistance"
+  },
+  "1623": {
+    "description": "Decrease or terminate provision of humanitarian aid.",
+    "examples": [
+      "The United Nations on Tuesday reduced food supplies to the biggest Cambodian refugee camp in Thailand because rice was being diverted to outside users, relief officials said."
+    ],
+    "name": "Reduce or stop humanitarian assistance"
+  },
+  "163": {
+    "description": "Stop or restrict commercial or other material exchange as a form of protest or punishment.",
+    "examples": [
+      "President Bill Clinton has imposed sanctions on the Taliban religious faction that controls Afghanistan for its support of suspected terrorist Osama bin Laden, the White House said Tuesday."
+    ],
+    "name": "Impose embargo, boycott, or sanctions"
+  },
+  "164": {
+    "description": "Terminate discussions, negotiations.",
+    "examples": [
+      "Palestinians and Israelis failed to reach agreement on the fate of Palestinian offices in east Jerusalem Sunday, despite hours of tense negotiations, sources on both sides reported.",
+      "Note Two reciprocal events are coded with actors reversed."
+    ],
+    "name": "Halt negotiations",
+    "usage notes": "Use this event form to code failed negotiations and walk-outs, as well as other disruptions of planned negotiations. Note that the termination can be either unilateral or bi/multi-lateral."
+  },
+  "165": {
+    "description": "Terminate mediation activities.",
+    "examples": [
+      "Syrian officers today ended mediation efforts between rival militias in Tripoli as shells continued crashing into the north Lebanese port and the death toll rose to more than 200."
+    ],
+    "name": "Halt mediation",
+    "usage notes": "The source for this event form is typically the mediating party(ies). Use this event form to code failed mediation activities."
+  },
+  "166": {
+    "description": "Terminate the presence of groups or organizations not otherwise specified.",
+    "name": "Expel or withdraw, not specified below",
+    "usage notes": "Use this category to code both expulsions by host authorities and withdrawals by guest groups or organizations. Note that expulsions or deportations of individuals—typically a legal matter—are coded as 174 instead. Mass expulsions of peoples are coded as 201. Withdrawal of hostile military forces constitutes a form of yielding and is thus coded as 0874. When diplomats are withdrawn or expelled, use 161."
+  },
+  "1661": {
+    "description": "Terminate the deployment or presence of peacekeeping forces.",
+    "examples": [
+      "Eighty UN peacekeepers were shipped out of the eastern Bosnian enclave of Gorazde Friday, leaving just 100 UN troops to follow them out later this month. "
+    ],
+    "name": "Expel or withdraw peacekeepers",
+    "usage notes": "Use this event form to code both expulsions of peacekeeping forces by host countries and voluntary withdrawals by actors providing the peacekeeping forces. Note that while the host country should be coded as the source actor when coding an expulsion of peacekeeping forces, the provider of the forces becomes the source when coding withdrawals."
+  },
+  "1662": {
+    "description": "Terminate the presence of inspectors or other observers.",
+    "examples": [
+      "North Korea expelled inspectors of the International Atomic Energy Agency, or IAEA, from frozen nuclear facilities at Yongbyon after U.S. officials alleged that the North admitted it had a uranium-based program in late 2002."
+    ],
+    "name": "Expel or withdraw inspectors, observers",
+    "usage notes": "Use this event form to code both expulsions by host countries and withdrawals by providers of inspectors or observers."
+  },
+  "1663": {
+    "description": "Terminate the presence of aid agencies or other non-governmental organizations helping civilians.",
+    "examples": [
+      "Jakarta forced the UN refugee agency, UNHCR, out of the country following the relief operation, although it had more than £12m of unspent donations. 2.17 COERCE"
+    ],
+    "name": "Expel or withdraw aid agencies",
+    "usage notes": "Use this event form to code both expulsions by host countries and withdrawals by providers of humanitarian aid. When aid is simply reduced or halted but the expulsion or withdrawal of the provider is not mentioned, use 1623 instead."
+  },
+  "170": {
+    "description": "Repression, violence against civilians, or their rights or properties not otherwise specified.",
+    "examples": [
+      "Turkish police prevented the demonstration staged by students at Cumhuriyet University near AKP offices in Sivas on 15 October to protest the decision of sending troops to Iraq."
+    ],
+    "name": "Coerce, not specified below"
+  },
+  "171": {
+    "description": "Use of force against property or violation of property rights not otherwise specified. ",
+    "examples": [
+      "Croatian authorities are failing to uphold the property rights of Croatian Serb refugees, a human rights group protested here Wednesday."
+    ],
+    "name": "Seize or damage property, not specified below",
+    "usage notes": "This event form category contains sub-forms for more detailed coding whenever possible."
+  },
+  "1711": {
+    "description": "Use force to take control of somebody else’s property, confiscate, expropriate.",
+    "examples": [
+      "In an unprecedented move, Palestinian police in Jericho confiscated weapons and explosives from Palestinian armed groups, the Israeli army said Friday."
+    ],
+    "name": "Confiscate property",
+    "usage notes": "Use this event form to code raids and lootings as well as other confiscations."
+  },
+  "1712": {
+    "description": "Use force to destroy, demolish property.",
+    "examples": [
+      "Afghan guerillas blew up three main electric power lines leading into Kabul last month and nearly one third of the city’s power supply is still down, the Czechoslovak news agency Ceteka reported from Kabul today.",
+      "Jewish settlers in the West Bank city of Hebron set fire to the offices of the Palestinian administrators of Muslim property overnight following the killing of an Israeli man, Palestinian residents said Sunday.",
+      "Israeli army bulldozers demolished Palestinian homes and civilian buildings in southern Gaza on Sunday, Palestinian officials and US witnesses said."
+    ],
+    "name": "Destroy property"
+  },
+  "172": {
+    "description": "Formal decrees, laws, or policies aimed at curbing the rights of civilians not otherwise specified.",
+    "name": "Impose administrative sanctions, not specified below",
+    "usage notes": "This event form category contains sub-forms for more detailed coding whenever possible."
+  },
+  "1721": {
+    "description": "Violate or impose limitations on fundamental political rights such as freedoms of speech, expression, and assembly.",
+    "examples": [
+      "The British government on Monday outlawed the largest Protestant extremist organization in Northern Ireland because of what it called its direct involvement in killing in the strife-torn province.",
+      "Nicaragua’s Sandinista government today ordered the opposition newspaper La Prensa to suspend publication indefinitely, a spokesman for the paper said. "
+    ],
+    "name": "Impose restrictions on political freedoms",
+    "usage notes": "Restrictions on media and activities of political dissent are coded here. Note that if the event is about the actual enforcement of such restrictions through repressive tactics, such as imprisonments and dispersion of demonstrations, 175 should be used instead."
+  },
+  "1722": {
+    "description": "Prevent establishment or activities of political parties or politicians.",
+    "examples": [
+      "President Yoweri Museveni has banned Ugandan opposition candidates from participating in the upcoming elections."
+    ],
+    "name": "Ban political parties or politicians"
+  },
+  "1723": {
+    "description": "Set a deadline beyond which inhabitants of an area are not permitted to be on the streets or in public places.",
+    "examples": [
+      "Turkish authorities have imposed a curfew in the town of Cizre in southeastern Turkey after a demonstration over fraud allegations in Sunday’s local elections, security sources said here Tuesday."
+    ],
+    "name": "Impose curfew"
+  },
+  "1724": {
+    "description": "Suspend normal constitutional rights and provisions by installing state of emergency or military rule.",
+    "examples": [
+      "The military government of President Prosper Avril declared a 30-day state of siege in Haiti on Saturday, suspending parts of the constitution and arresting political opponents, a spokeswoman for the U.S. embassy said."
+    ],
+    "name": "Impose state of emergency or martial law"
+  },
+  "173": {
+    "description": "Legal or extrajudicial arrests, detentions, or imprisonments.",
+    "examples": [
+      "Israeli soldiers arrested more than 100 Palestinians on Saturday in a security sweep of the Hebron area of the occupied West Bank, military sources said."
+    ],
+    "name": "Arrest, detain",
+    "usage notes": "Use this code for both criminal and political detentions. Note, however, that taking of hostages is coded as 181 instead, and charges or lawsuits are coded as 115."
+  },
+  "174": {
+    "description": "Formal removal or expulsion of individuals from territories, typically following legal proceedings.",
+    "examples": [
+      "Ghanaian authorities have deported 168 Liberians for traveling without proper documents on a Swedish-registered vessel, a port official said Monday."
+    ],
+    "name": "Expel or deport individuals",
+    "usage notes": "Expulsion of diplomats constitute reduction of diplomatic relations and should be coded as ’Reduce or break diplomatic relations’ (161). Expulsion of peacekeepers, inspectors, or aid agencies refer to category 166. Mass political expulsions, with the purpose of ethnic cleansing for instance, are coded as 201 instead."
+  },
+  "175": {
+    "description": "Actively repress collective actions of dissent by forcing subjugation through crowd control tactics, arrests, etc.",
+    "examples": [
+      "Liberian riot police used tear gas to disperse demonstrators protesting election results in Monrovia."
+    ],
+    "name": "Use repression",
+    "usage notes": "Note the difference between repression of dissidents and military engagements."
+  },
+  "176": {
+    "description": "Illegal or unauthorized attack on computers, networks, or accounts.",
+    "examples": [
+      "North Korea has tried to hack into the computers of South Korean army officers, officials said Tuesday.",
+      "Muslim hackers angered by the publication of cartoons of the Prophet Mohammed have defaced nearly 3,000 Danish Web sites over the past month in the biggest politically motivated cyber attack long-time observers have ever seen.  2.18 ASSAULT"
+    ],
+    "name": "Attack cybernetically",
+    "usage notes": "Cyberattacks can be any of a wide range of acts, with an even wider range of motives. Vandalism of websites, theft of private electronic information, and the hostile shutting-down of networks all fit under this category."
+  },
+  "180": {
+    "description": "Use of unconventional forms of violence which do not require high levels of organization or conventional weaponry, not otherwise specified.",
+    "examples": [
+      "A temporary camp for Congolese refugees was attacked by Burundian militiamen armed with machetes, killing at least 156 people, the UN refugee agency reported."
+    ],
+    "name": "Use unconventional violence, not specified below",
+    "usage notes": "Use this event form to code use of forms of force and violence that do not require high levels of organization typical of state-military establishments. Terrorist attacks, if not further specified, should be coded here. Use this default code also for use of knives, rocks and other such unsophisticated weapons. This residual category is not coded except when distinctions among codes 181-186 cannot be made."
+  },
+  "181": {
+    "description": "Kidnap, take hostage, hijack, or forcibly seize control of an aircraft, car, bus, ship, etc.",
+    "examples": [
+      "Afghan rebels have kidnapped up to 16 Soviet civilian advisers from a town bazaar and exploded a series of bombs in the capital Kabul, western diplomatic sources in neighboring Pakistan said today."
+    ],
+    "name": "Abduct, hijack, take hostage"
+  },
+  "182": {
+    "description": "Attack physical well-being of individuals without the use of weaponry, not otherwise specified.",
+    "examples": [
+      "Israeli soldiers routinely beat up Palestinian detainees on the occupied West Bank with the knowledge of senior officers, a court martial was told today."
+    ],
+    "name": "Physically assault, not specified below",
+    "usage notes": "This event form category contains sub-forms for more detailed coding whenever possible. Beatings are coded here."
+  },
+  "1821": {
+    "description": "Sexually abuse, assault sexual integrity of individuals.",
+    "examples": [
+      "U.S. border patrol agents sexually abused illegal Mexican immigrants with impunity, a human rights organization charged on Saturday."
+    ],
+    "name": "Sexually assault",
+    "usage notes": "Use this event form to code rapes and other sexual assaults."
+  },
+  "1822": {
+    "description": "Torture, inflict extreme pain on individuals.",
+    "examples": [
+      "Security forces in Guinea have tortured scores of Sierra Leonean and Liberian refugees, whom authorities blame for a border conflict, Human Rights Watch (HWR) said Thursday."
+    ],
+    "name": "Torture",
+    "usage notes": "The distinction between 1822 and the default code 182 depend primarily on the particular terminology used by reporters. This code is used typically when “torture” is mentioned in the lead."
+  },
+  "1823": {
+    "description": "Kill individuals by physically assaulting them without the use of weaponry, through beating, torture, lynching, etc.",
+    "examples": [
+      "A Palestinian prisoner died as a result of torture while in Israeli police custody, according to a report by a pathologist sent to Israel by Physicians for Human Rights."
+    ],
+    "name": "Kill by physical assault",
+    "usage notes": "When a physical assault—beating, torture, lynching, etc.–is specifically mentioned to have caused death, this code takes precedence over other codes for physical assault."
+  },
+  "183": {
+    "description": "The use of explosive devices or improvised explosives outside of military engagements. ",
+    "examples": [
+      "Irish nationalist guerrillas wounded two British soldiers in a bomb attack on Thursday, police said."
+    ],
+    "name": "Conduct suicide, car, or other non-military bombing, not specified below ",
+    "usage notes": "This residual category is not coded except where distinctions among codes 1831-1834 cannot be made. Aerial bombings that involve the use of aircraft are coded as 195 instead."
+  },
+  "1831": {
+    "description": "Carry out bomb attack with the intention of causing own death as well as other casualties.",
+    "examples": [
+      "Two Palestinian suicide bombers killed 23 people as well as themselves late Sunday when they blew themselves up in Tel Aviv in the second-worst attack in the current Palestinian uprising, police said.",
+      "At least three Iraqi civilians have been killed in a suicide car bombing in central Baghdad, Iraqi police said."
+    ],
+    "name": "Carry out suicide bombing",
+    "usage notes": "Not every attack that results in the assailant’s death is necessarily a suicide attack; we rely on the terminology used by reporters to make that call—we code bombings as suicide bombings if the report identifies it as such."
+  },
+  "1832": {
+    "description": "Blow up a car or other vehicle to cause damage to surroundings.",
+    "examples": [
+      "A prominent anti-Syria journalist has been killed in a car bomb explosion in a residential sector of mostly Christian eastern Beirut."
+    ],
+    "name": "Carry out vehicular bombing",
+    "usage notes": "If a car bombing is also known to have been a suicide attack, the suicide component takes precedence and the event is coded as 1831."
+  },
+  "1833": {
+    "description": "Detonate explosives on the roadside to cause damage and casualties to passers-by. ",
+    "examples": [
+      "A roadside bombing near the town of Samarra on Sunday killed one U.S. soldier and wounded two others, the military said."
+    ],
+    "name": "Carry out roadside bombing",
+    "usage notes": "These bombs or explosives are typically left along the roads by assailants long before they are detonated, hence reports of such attacks can rarely credibly identify the actors responsible for placing those explosives. Therefore, the particular locations of such attacks are typically coded as source actors."
+  },
+  "1834": {
+    "description": "The use of pre-placed explosive device(s) with the intent of causing casualties and or/structural damage.",
+    "examples": [
+      "Three US servicemen were killed by an improvised explosive device outside of the Iraqi city of Basra."
+    ],
+    "name": "Carry out location bombing",
+    "usage notes": "The distinguishing factors for this code are the presence of placed munitions detonated either remotely or according to pre-set conditions (time, proximity, movement of the device, etc.). Suicide, vehicular bombing components, or roadside locations take precedence and are coded 1831, 1832 and 1833 respectively. Minefield casualties and the deployment of mines are specifically excluded from this code and are coded as 193 (Fight with small arms and light weapons) instead."
+  },
+  "184": {
+    "description": "Use civilians as buffer on the front lines or in other dangerous environments.",
+    "examples": [
+      "The Sri Lankan army has been holding thousands of Tamil civilian refugees as human shields in the battle zones of the southern sector of the Jaffna peninsula, according to a press release by the Liberation Tigers."
+    ],
+    "name": "Use as human shield"
+  },
+  "185": {
+    "description": "Attempt but fail to kill politically significant and influential persons.",
+    "examples": [
+      "An attempt to assassinate deputy governor of the Tyumen region, Oleg Chemezov, was thwarted in Khanty-Mansiysk (Siberia), the city’s police reported. ",
+      "Militants loyal to Iraq’s Al-Qaeda frontman Abu Musab al-Zarqawi said they attempted to assassinate outgoing Prime Minister Iyad Allawi, in a statement posted on the internet."
+    ],
+    "name": "Attempt to assassinate",
+    "usage notes": "Use this code only when an assassination attempt or targeted killing is foiled; when assassinations are successfully carried out, 186 is used instead. This distinction is made because consequences of these two types of events could be significantly different. The source of this event would ideally be the assailant; however, in many cases this information will not be available and the location of the attack would be coded as the source instead."
+  },
+  "186": {
+    "description": "Kill politically significant and influential persons.",
+    "examples": [
+      "Hezbollah guerrillas killed the deputy chief of Israel’s militia ally in southern Lebanon Sunday sources on both sides said.",
+      "Note This example is coded as an assassination because of the position the victim held (which is explicitly reported). 2.19 FIGHT"
+    ],
+    "name": "Assassinate",
+    "usage notes": "Use this event form to code targeted killings and assassinations of politically influential elites or leaders."
+  },
+  "190": {
+    "description": "All uses of conventional force and acts of war typically by organized armed groups not otherwise specified.",
+    "examples": [
+      "One Serb policeman was murdered in an attack on a police patrol by Kosovo Albanians near the border with Kosovo, state agency Tanjug reported Sunday.",
+      "Vietnamese and Kampuchean forces were battling for control of a strategic base near the border today, Thai military sources said.",
+      "Note Two reciprocal events are coded with actors reversed.",
+      "Palestinian gunmen attacked an Israeli village close to the West Bank Sunday and killed an Israeli, public television reported."
+    ],
+    "name": "Use conventional military force, not specified below",
+    "usage notes": "This residual category is not coded except when distinctions among codes 191-196 cannot be made. In addition to unspecified acts of fighting, “killings” of any kind when the weapons used are not specified should also be coded here. When news leads refer to acts of killing that take place during an attack or some form of military engagement as “murders”, those should still be coded here. However, murders in general—as criminal acts with no political connotations—are not coded under the CAMEO framework. The first example below illustrates how one can differentiate between these two different uses of the verb “murder”."
+  },
+  "191": {
+    "description": "Prevent entry into and/or exit from a territory using armed forces.",
+    "examples": [
+      "Israel Friday reimposed blockades in the West Bank following the shooting deaths of two Israelis a day earlier, a military spokesman announced.",
+      "The Soviet Union closed its southern borders with Iran and Turkey because of fighting between Azerbaijanis and Armenians, an editor at the official Armenian news agency said.",
+      "Note Due to the compound target, two events are coded."
+    ],
+    "name": "Impose blockade, restrict movement",
+    "usage notes": "Note that this event form is different from code 144 (‘Obstruct physically’), which refers to civilian protest activities that seek to disrupt routine and normal proceedings."
+  },
+  "192": {
+    "description": "Occupy, seize control of a territory using armed forces.",
+    "examples": [
+      "Vietnamese-led forces have retaken a strategic village in Western Kampuchea after fierce fighting with guerrillas who overran it late last month, Thai military sources said today.",
+      "Burmese troops have captured part of a Karen guerrilla stronghold on the Thai border after five days of fighting, Thai police here said on Monday.",
+      "Israel today mounted its long-threatened invasion of South Lebanon, ploughing through the United Nations lines on the coast of south of Tyre and thrusting forward in at least to inland areas."
+    ],
+    "name": "Occupy territory"
+  },
+  "193": {
+    "description": "Attack using small arms and light weapons such as rifles, machine-guns, and mortar shells.",
+    "examples": [
+      "Sudanese rebels shelled the southern regional capital Juba for the first time in a year on Sunday and Monday, killing about 20 people, relief officials in Nairobi said.",
+      "Egyptian police opened fire to disperse Moslem fundamentalist demonstrators on Monday night, killing one person and arresting 12, security sources said. ",
+      "Serb forces killed three ethnic Albanians in a gunbattle in southeastern Serbia Friday, a political council representing ethnic Albanians in the region said in remarks published here Sunday.",
+      "Note Note that because the type of weapon used is specified, this code is used instead of the default code 190.",
+      "A minefield explosion near the town of Samarra killed two Iraqi youths and wounded five others on Sunday."
+    ],
+    "name": "Fight with small arms and light weapons",
+    "usage notes": "Small arms include revolvers and self-loading pistols, rifles and carbines, sub-machine guns, assault rifles and light machine-guns. Light weapons include heavy-machine guns, hand-held under-barrel and mounted grenade launchers, portable anti-aircraft guns, portable anti-tank guns, recoilless rifles, portable launchers of anti-tank missile and rocket systems, portable launchers of anti-aircraft missile system, and mortars of calibers less than 100 mm."
+  },
+  "194": {
+    "description": "Attack using artillery, tanks, and rocket fire.",
+    "examples": [
+      "Vietnamese-led forces launched artillery, mortar, and rocket fire against Kampuchean guerrilla camps near the eastern Thai border today, killing or wounding 50, Thai military sources said.",
+      "Israeli tanks fired four shell bombs at targets in Jericho, witnesses said, in a rare incident in the West Bank city."
+    ],
+    "name": "Fight with artillery and tanks",
+    "usage notes": "Use this event form to code military engagements that involve the use of guns of large caliber that are too heavy to carry, such as cannon or missile launchers that are not portable, and tanks and/or warships. When both small arms or light weapons and heavy weaponry are used, this code takes precedence. "
+  },
+  "195": {
+    "description": "Attack, bomb from air, not specified below.",
+    "examples": [
+      "Soviet aircraft including helicopter gunships killed 46 Afghan civilians in an attack on a village in the western province of Heart.",
+      "Israeli helicopters and tanks shelled positions of the Palestinian security forces and residential areas near the town of Rafah."
+    ],
+    "name": "Employ aerial weapons, not specified below",
+    "usage notes": "Use this event form to code bombings that involve the use of military aircraft. When both aerial and other small types of weapons are used, this code takes precedence. This residual category is not coded except where distinctions among codes 1951-1952 cannot be made."
+  },
+  "1951": {
+    "description": "The use of aerial weapons that utilize internal and/or remote sensing and guidance controls to strike specific targets.",
+    "examples": [
+      "British aircraft using precision guided missiles killed 4 Iraqis in an attack on a suspected weapons supply in Basra."
+    ],
+    "name": "Employ precision-guided aerial munitions",
+    "usage notes": "The distinction between 1951 and the default 195 depends on whether the particular terminology used by reporters is indicative of guided or precision weapons. The weapons themselves must have guidance capability and should be differentiated from ”surgical aerial attacks” which are otherwise coded under the default 195."
+  },
+  "1952": {
+    "description": "The use of remotely piloted or unmanned aerial platforms for the delivery or ordinance.",
+    "examples": [
+      "Recent US Predator attacks, occurring about once every three days, have killed at least eight top al-Qaeda leaders since last July, according to Pentagon sources."
+    ],
+    "name": "Employ remotely piloted aerial munitions",
+    "usage notes": "Use this event form to code aerial attacks that involve the use of unmanned or remotely piloted vehicles. This code takes precedence over the use of precision guided munitions (1951)."
+  },
+  "196": {
+    "description": "Reinitiate fighting in the midst of a formal or informal ceasefire or truce.",
+    "examples": [
+      "Both the Phillippines military and the Moro Islamic Liberation Front are guilty of violating the ceasefire agreement signed in March 2001, according to a group that conducted simultaneous fact-finding missions in Lanao, Maguindanao, and Cotabato provinces last week.",
+      "Note Two reciprocal events of the same type are coded. 2.20 ENGAGE IN UNCONVENTIONAL MASS VIOLENCE"
+    ],
+    "name": "Violate ceasefire",
+    "usage notes": "Regardless of how the ceasefire is broken and what kinds of weapons are used, all ceasefire and truce violations are coded here."
+  },
+  "200": {
+    "description": "All uses of unconventional force that are meant to cause mass destruction, casualties, and suffering not otherwise specified.",
+    "name": "Use massive unconventional force, not specified below",
+    "usage notes": "This residual category is not coded except when distinctions among codes 201-204 cannot be made."
+  },
+  "201": {
+    "description": "Force large groups of people or populations out of some territory.",
+    "examples": [
+      "The Israeli army forced out on Wednesday more than 1,000 Palestinian refugees from their homes in a West Bank refugee camp during a 48-hour search for militants, residents said."
+    ],
+    "name": "Engage in mass expulsion",
+    "usage notes": "Note that this event form is different from expulsions of diplomats and international or non-governmental groups (166), and legal deportations (174). Mass expulsions coded here are typically carried out with the intention of clearing out a particular group of people out of a specific area."
+  },
+  "202": {
+    "description": "Kill a substantial number of people, typically with the intention of ridding a territory of a particular group of people.",
+    "examples": [
+      "Sudan’s government is responsible for mass killings and other atrocities in the Darfur region, according to a United Nations report."
+    ],
+    "name": "Engage in mass killings",
+    "usage notes": "Politically motivated mass killings and genocides are coded here, relying primarily on the specific terminology used by reporters to identify an event that involves “mass” killings."
+  },
+  "203": {
+    "description": "Use mass expulsions and/or mass killings targeting a specific ethnic group.",
+    "examples": [
+      "Serb forces were engaged in ethnic cleansing in Kosovo against the majority Albanian population of the province, according to the US government."
+    ],
+    "name": "Engage in ethnic cleansing",
+    "usage notes": "When a report identifies mass expulsions or mass killings as being motivated by ethnic cleansing, use this code instead. The only way we can code ethnic cleansings as such is only if reporters use that particular terminology; therefore, we will need to rely on careful analysis of our event data, whereby we would focus on particular dyads, to reliably measure ethnic cleansings."
+  },
+  "204": {
+    "description": "Attack with unconventional weapons that are meant to cause massive destruction and casualties.",
+    "name": "Use weapons of mass destruction, not specified below"
+  },
+  "2041": {
+    "description": "Attack using chemical, biological, or radiological weapons.",
+    "name": "Use chemical, biological, or radiological weapons"
+  },
+  "2042": {
+    "description": "Attack using nuclear",
+    "name": "Detonate nuclear weapons"
+  }
+}

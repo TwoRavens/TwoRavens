@@ -23,7 +23,8 @@ export default class CanvasCategorical {
         let allSelected = {};
 
         let flattenedData = data.reduce((out, entry) => {
-            out[entry[masterFormat]] = entry['total'];
+            if (entry[masterFormat])
+                out[entry[masterFormat]] = entry['total'];
             return out;
         }, {});
 

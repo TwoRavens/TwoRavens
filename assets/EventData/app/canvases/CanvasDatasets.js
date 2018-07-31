@@ -40,79 +40,77 @@ export default class CanvasDatasets {
                 width: '100%',
                 'margin-bottom': common.panelMargin
             }
-        }, Object.values(app.genericMetadata).map((dataset) => {
-            return m('div', {
-                    style: {
-                        width: '100%',
-                        background: this.dataset === dataset['key'] ? common.menuColor : '#f0f0f0',
-                        'box-shadow': '#0003 0px 2px 3px',
-                        'margin-top': common.panelMargin,
-                        'padding': '10px',
-                        'border': common.borderColor
-                    },
-                    onclick: () => this.dataset = dataset['key'],
-                    ondblclick: () => this.dataset = undefined
+        }, Object.values(app.genericMetadata).map((dataset) => m('div', {
+                style: {
+                    width: '100%',
+                    background: this.dataset === dataset['key'] ? common.menuColor : '#f0f0f0',
+                    'box-shadow': '#0003 0px 2px 3px',
+                    'margin-top': common.panelMargin,
+                    'padding': '10px',
+                    'border': common.borderColor
                 },
-                m('h4', [
-                    dataset['name'],
-                    m('button.btn.btn-default[type="button"]', {
-                        style: {margin: '0 0.25em', float: 'right'},
-                        onclick: () => {
-                            app.setSelectedDataset(dataset['key']);
-                            app.setSelectedMode('subset')
-                        },
-                        disabled: app.selectedDataset === dataset['key']
-                    }, 'Load' + (app.selectedDataset === dataset['key'] ? 'ed' : ''))
-                ]),
-                dataset['description'],
-                this.dataset === dataset['key'] && [
-                    m(Table, {
-                        data: {
-                            'API Reference Key': dataset['key'],
-                            'Time Interval': dataset['interval'],
-                            'Codebook': link(dataset['codebook'])
-                        },
-                        attrsCells: {style: {'padding': '5px'}}
-                    }),
-                    bold("Subsets:"),
-                    m(Table, {
-                        headers: ['label', 'subset', 'alignments', 'formats', 'columns'].map(name => m('[style=margin:0 0.5em]', name)),
-                        data: Object.keys(tempDataset['subsets'] || {}).map(label => {
+                onclick: () => this.dataset = dataset['key'],
+                ondblclick: () => this.dataset = undefined
+            },
+            m('h4', [
+                dataset['name'],
+                m('button.btn.btn-default[type="button"]', {
+                    style: {margin: '0 0.25em', float: 'right'},
+                    onclick: () => {
+                        app.setSelectedDataset(dataset['key']);
+                        app.setSelectedMode('subset')
+                    },
+                    disabled: app.selectedDataset === dataset['key']
+                }, 'Load' + (app.selectedDataset === dataset['key'] ? 'ed' : ''))
+            ]),
+            dataset['description'],
+            this.dataset === dataset['key'] && [
+                m(Table, {
+                    data: {
+                        'API Reference Key': dataset['key'],
+                        'Time Interval': dataset['interval'],
+                        'Codebook': link(dataset['codebook'])
+                    },
+                    attrsCells: {style: {'padding': '5px'}}
+                }),
+                bold("Subsets:"),
+                m(Table, {
+                    headers: ['label', 'subset', 'alignments', 'formats', 'columns'].map(name => m('[style=margin:0 0.5em]', name)),
+                    data: Object.keys(tempDataset['subsets'] || {}).map(label => {
 
-                            let {alignments, formats, columns} = app.getSubsetMetadata(this.dataset, label);
+                        let {alignments, formats, columns} = app.getSubsetMetadata(this.dataset, label);
 
-                            return [
-                                label,
-                                tempDataset['subsets'][label]['type'],
-                                alignments.length !== 0 && m(ListTags, {
-                                    tags: alignments,
-                                    readonly: true,
-                                    attrsTags: {style: {'padding-left': '4px', background: 'rgba(192, 192, 192, 0.5)'}}
-                                }),
-                                formats.length !== 0 && m(ListTags, {
-                                    tags: formats,
-                                    readonly: true,
-                                    attrsTags: {style: {'padding-left': '4px', background: 'rgba(192, 192, 192, 0.5)'}}
-                                }),
-                                columns.length !== 0 && m(ListTags, {
-                                    tags: columnFilter(columns),
-                                    readonly: true,
-                                    attrsTags: {style: {'padding-left': '4px', background: 'rgba(192, 192, 192, 0.5)'}}
-                                })
-                            ]
-                        }),
-                        attrsCells: {
-                            style: {
-                                padding: '0.1em 0.5em 0.1em 0.5em',
-                                'border-right': 'dotted 1px rgba(192, 192, 192, 0.5)',
-                                'border-left': 'dotted 1px rgba(192, 192, 192, 0.5)'
-                            }
-                        },
-                        tableTags: colgroupDataset()
+                        return [
+                            label,
+                            tempDataset['subsets'][label]['type'],
+                            alignments.length !== 0 && m(ListTags, {
+                                tags: alignments,
+                                readonly: true,
+                                attrsTags: {style: {'padding-left': '4px', background: 'rgba(192, 192, 192, 0.5)'}}
+                            }),
+                            formats.length !== 0 && m(ListTags, {
+                                tags: formats,
+                                readonly: true,
+                                attrsTags: {style: {'padding-left': '4px', background: 'rgba(192, 192, 192, 0.5)'}}
+                            }),
+                            columns.length !== 0 && m(ListTags, {
+                                tags: columnFilter(columns),
+                                readonly: true,
+                                attrsTags: {style: {'padding-left': '4px', background: 'rgba(192, 192, 192, 0.5)'}}
+                            })
+                        ]
                     }),
-                    dataset['citations'].map(citation => [m('br'), bold("Citation:"), m('br'), format(citation)])
-                ]
-            )
-        }))
+                    attrsCells: {
+                        style: {
+                            padding: '0.1em 0.5em 0.1em 0.5em',
+                            'border-right': 'dotted 1px rgba(192, 192, 192, 0.5)',
+                            'border-left': 'dotted 1px rgba(192, 192, 192, 0.5)'
+                        }
+                    },
+                    tableTags: colgroupDataset()
+                }),
+                dataset['citations'].map(citation => [m('br'), bold("Citation:"), m('br'), format(citation)])
+            ])
+        ))
     }
 }

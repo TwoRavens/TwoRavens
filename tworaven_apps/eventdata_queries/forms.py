@@ -3,7 +3,7 @@ from collections import OrderedDict
 from django import forms
 from django.conf import settings
 from tworaven_apps.eventdata_queries.models import (EventDataSavedQuery, ArchiveQueryJob)
-from tworaven_apps.eventdata_queries.models import (AGGREGATE, SUBSET, TYPE_OPTIONS, TYPE_CHOICES)
+from tworaven_apps.eventdata_queries.models import (AGGREGATE, SUBSET, TYPE_OPTIONS, TYPE_CHOICES, METHOD_CHOICES, HOST_CHOICES)
 
 class EventDataSavedQueryForm(forms.Form):
     """ form for event data queries"""
@@ -98,3 +98,55 @@ class EventDataQueryFormSearch(forms.Form):
         desc = self.cleaned_data.get('description')
 
         return desc
+
+
+class EventDataGetDataForm(forms.Form):
+    """ check if query submission parameters are ok"""
+
+    host = forms.CharField(required=False, widget=forms.Textarea, initial=HOST_CHOICES[0])
+    dataset = forms.CharField(required=True, widget=forms.Textarea)
+    method = forms.CharField(required=True, widget=forms.Textarea)
+    query = forms.CharField(required=True, widget=forms.Textarea)
+    distinct = forms.CharField(required=False, widget=forms.Textarea)
+
+    def clean_host(self):
+        host = self.cleaned_data.get('host')
+        if host in HOST_CHOICES:
+            return host
+        else:
+            raise forms.ValidationError('The host is not among %s: %s' % (str(HOST_CHOICES), host))
+
+    def clean_dataset(self):
+        return self.cleaned_data.get('dataset')
+
+    def clean_method(self):
+        method = self.cleaned_data.get('method')
+        if method in METHOD_CHOICES:
+            return method
+        else:
+            raise forms.ValidationError("The collection method is not among %s: %s" % (str(METHOD_CHOICES), method))
+
+    def clean_query(self):
+        print("Query")
+        print(self.cleaned_data.get('query'))
+        return json.loads(self.cleaned_data.get('query'))
+
+    def clean_distinct(self):
+        return self.cleaned_data.get('distinct')
+
+
+class EventDataGetMetadataForm(forms.Form):
+    """ check if metadata parameters are ok"""
+
+    alignments = forms.CharField(required=False, widget=forms.Textarea)
+    formats = forms.CharField(required=False, widget=forms.Textarea)
+    datasets = forms.CharField(required=False, widget=forms.Textarea)
+
+    def clean_alignments(self):
+        return self.cleaned_data.get('alignments')
+
+    def clean_formats(self):
+        return self.cleaned_data.get('formats')
+
+    def clean_datasets(self):
+        return self.cleaned_data.get('datasets')

@@ -16,7 +16,10 @@ from tworaven_apps.utils.basic_response import (ok_resp,
                                                 err_resp,
                                                 err_resp_with_data)
 from tworaven_apps.eventdata_queries.event_job_util import EventJobUtil
-from tworaven_apps.eventdata_queries.forms import (EventDataSavedQueryForm, EventDataQueryFormSearch)
+from tworaven_apps.eventdata_queries.forms import (EventDataSavedQueryForm,
+                                                   EventDataQueryFormSearch,
+                                                   EventDataGetDataForm,
+                                                   EventDataGetMetadataForm)
 from tworaven_apps.eventdata_queries.models import (SEARCH_PARAMETERS)
 
 
@@ -272,3 +275,44 @@ def api_get_files_list(request, version_id):
                        data=jobs)
 
         return JsonResponse(usr_msg)
+
+
+@csrf_exempt
+def api_get_data(request):
+    """ get data from query"""
+
+    success, json_req_obj = get_request_body_as_json(request)
+
+    if not success:
+        return JsonResponse({"success": False, "error": get_json_error(json_req_obj)})
+
+    # check if data is valid
+    form = EventDataGetDataForm(json_req_obj)
+    if not form.is_valid():
+        return JsonResponse({"success": False, "message": "invalid input", "errors": form.errors})
+
+    success, addquery_obj_err = EventJobUtil.get_data(
+        json_req_obj['host'],
+        json_req_obj['dataset'],
+        json_req_obj['method'],
+        json.loads(json_req_obj['query']),
+        json_req_obj.get('distinct', None))
+
+    return JsonResponse({'success': success, 'data': addquery_obj_err} if success else get_json_error(addquery_obj_err))
+
+
+@csrf_exempt
+def api_get_metadata(request):
+    """ get metadata (configs/formats/alignments)"""
+
+    success, json_req_obj = get_request_body_as_json(request)
+
+    if not success:
+        return JsonResponse({"success": False, "error": get_json_error(json_req_obj)})
+
+    # check if data is valid
+    form = EventDataGetMetadataForm(json_req_obj)
+    if not form.is_valid():
+        return JsonResponse({"success": False, "message": "invalid input", "errors": form.errors})
+    return JsonResponse(
+        {name: EventJobUtil.get_metadata(name, json_req_obj[name]) for name in ['datasets', 'formats', 'alignments'] if name in json_req_obj})

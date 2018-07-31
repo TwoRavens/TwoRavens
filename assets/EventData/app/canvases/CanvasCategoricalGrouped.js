@@ -42,7 +42,7 @@ export default class CanvasCategoricalGrouped {
         if (data.length === 0) return 'No data from "' + metadata['group_by'] + '" is matched.';
 
         let flattenedData = data.reduce((out, entry) => {
-            out[entry[masterFormat.replace('-', '.')]] = entry['total'];
+            out[entry[masterFormat]] = entry['total'];
             return out;
         }, {});
 

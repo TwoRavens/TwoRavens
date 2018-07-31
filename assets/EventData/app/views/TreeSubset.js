@@ -247,22 +247,23 @@ window.callbackDelete = function (id) {
             let subsetQuery = query.buildSubset(stagedSubsetData);
             console.log("Query: " + JSON.stringify(subsetQuery));
 
+            let [savedDataset, savedSubsetName] = [app.selectedDataset, app.selectedSubsetName];
+
             app.setLaddaSpinner('btnUpdate', true);
 
             m.request({
-                url: app.subsetURL,
+                url: app.eventdataURL,
                 data: {
-                    'type': 'summary',
-                    'query': escape(JSON.stringify(subsetQuery)),
-                    'dataset': app.selectedDataset,
-                    'subset': app.selectedSubsetName,
+                    'method': 'aggregate',
+                    'query': subsetQuery,
+                    'dataset': savedDataset,
                     'countRecords': true
                 },
                 method: 'POST'
             }).then((jsondata) => {
                 jsondata['total'] = jsondata['total'][0];
                 Object.keys(app.subsetData).forEach(key => delete app.subsetData[key]);
-                app.setupSubset(jsondata);
+                app.setupSubset(savedDataset, savedSubsetName, jsondata);
             }).catch(app.laddaStopAll);
 
             if (app.abstractQuery.length === 0) {

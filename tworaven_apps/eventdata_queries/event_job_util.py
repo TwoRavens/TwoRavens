@@ -1,5 +1,8 @@
+import os
 import json
+import requests
 import pandas as pd
+from django.conf import settings
 from collections import OrderedDict
 from django.http import HttpResponse, JsonResponse
 from tworaven_apps.utils.view_helper import \
@@ -14,6 +17,9 @@ from tworaven_apps.eventdata_queries.dataverse.temporary_file_maker import Tempo
 from tworaven_apps.eventdata_queries.dataverse.dataverse_publish_dataset import DataversePublishDataset
 from tworaven_apps.eventdata_queries.dataverse.dataverse_list_files_dataset import ListFilesInDataset
 from tworaven_apps.eventdata_queries.dataverse.get_dataset_file_info import GetDataSetFileInfo
+
+from tworaven_apps.eventdata_queries.mongo_retrieve_util2 import MongoRetrieveUtil2
+from bson.json_util import (loads, dumps)
 
 
 class EventJobUtil(object):
@@ -218,3 +224,67 @@ class EventJobUtil(object):
 
         else:
             return err_resp(res)
+
+    @staticmethod
+    def get_data(host, collection, method, query, distinct=None):
+        """ return data from mongo"""
+
+        if method == 'distinct' and not distinct:
+            return err_resp("the distinct method requires a 'keys' argument")
+
+        # grab the method from the collection that matches the user query type (safe because it must match the form enum)
+        try:
+            if host == 'TwoRavens':
+                retrieve_util = MongoRetrieveUtil(collection, query)
+                client = retrieve_util.get_mongo_client()
+
+                if retrieve_util.has_error():
+                    print("ERR making mongo")
+                    return err_resp(retrieve_util.get_error_message())
+
+                if collection not in client['event_data'].collection_names():
+                    return err_resp('%s is not a valid collection' % (collection,))
+
+                # execute query
+                if method == 'count':
+                    data = client['event_data'][collection].count(query)
+                elif method == 'find':
+                    data = client['event_data'][collection].find(query)
+                elif method == 'aggregate':
+                    data = client['event_data'][collection].aggregate(query)
+                elif method == 'distinct':
+                    data = client['event_data'][collection].find(query).distinct(distinct)
+
+                return ok_resp(json.loads(dumps(data)))
+
+            elif host == 'UTDallas':
+                url = settings.EVENTDATA_PRODUCTION_SERVER_ADDRESS + settings.EVENTDATA_SERVER_API_KEY + '&datasource=' + collection
+                if method == 'count':
+                    query = JSON.stringify([{'$match': query}, {'$count': "total"}])
+                    return ok_resp(JSON.loads(request.get(url + '&aggregate=' + query))['data']['total'])
+                elif method == 'find':
+                    data = requests.get(url + '&query=' + query)
+                elif method == 'aggregate':
+                    data = requests.get(url + '&aggregate=' + query)
+                elif method == 'distinct':
+                    data = requests.get(url + '&query=' + query + '&unique=' + distinct)
+
+                return ok_resp(JSON.loads(data))
+
+        except Exception as e:
+            return err_resp(str(e))
+
+    @staticmethod
+    def get_metadata(folder, names=None):
+        # `folder` is not a user-defined value
+        directory = os.path.join(os.getcwd(), 'tworaven_apps', 'eventdata_queries', folder)
+
+        if names:
+            # make sure name is in directory and has file extension
+            names = [name + '.json' for name in names if name + '.json' in os.listdir(directory)]
+        else:
+            names = os.listdir(directory)
+
+        return {
+            filename.replace('.json', ''): json.load(open(directory + os.sep + filename, 'r'), object_pairs_hook=OrderedDict) for filename in names
+        }

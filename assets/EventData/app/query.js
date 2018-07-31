@@ -27,7 +27,7 @@ export function submitQuery(datasetChanged = false) {
         return;
     }
 
-    function submitQueryCallback(jsondata) {
+    function submitQueryCallback(dataset, subset, jsondata) {
         // If no records match, then don't lock the preferences behind a query
         if (Array.isArray(jsondata['total'])) jsondata['total'] = jsondata['total'][0];
         if (jsondata['total'] === 0) {
@@ -39,7 +39,7 @@ export function submitQuery(datasetChanged = false) {
         // clear all subset data. Note this is intentionally mutating the object, not rebinding it
         for (let member in app.subsetData) delete app.subsetData[member];
 
-        app.setupSubset(jsondata);
+        app.setupSubset(dataset, subset, jsondata);
 
         // when requerying for switching datasets, don't make right panel edits
         if (datasetChanged) return;
@@ -80,18 +80,17 @@ export function submitQuery(datasetChanged = false) {
 
     if (datasetChanged) app.setLaddaSpinner('btnReset', true);
     else app.setLaddaSpinner('btnUpdate', true);
+    let [savedDataset, savedSubsetName] = [app.selectedDataset, app.selectedSubsetName];
 
     m.request({
-        url: app.subsetURL,
+        url: app.eventdataURL,
         data: {
-            'type': 'summary',
-            'query': escape(JSON.stringify(subsetQuery)),
-            'dataset': app.selectedDataset,
-            'subset': app.selectedSubsetName,
-            'countRecords': true
+            'query': subsetQuery,
+            'dataset': savedDataset,
+            'subset': savedSubsetName
         },
         method: 'POST'
-    }).then(submitQueryCallback) // .catch(app.laddaStopAll)
+    }).then((jsondata) => submitQueryCallback(app.selectedSubsetName, jsondata)) // .catch(app.laddaStopAll)
 }
 
 // Recursively traverse the tree in the right panel. For each node, call processNode
@@ -302,7 +301,7 @@ export function submitAggregation() {
     app.setLaddaSpinner('btnUpdate', true);
 
     m.request({
-        url: app.subsetURL,
+        url: app.eventdataURL,
         data: {
             'type': 'aggregate',
             'query': escape(query),

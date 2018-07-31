@@ -56,21 +56,23 @@ export default class MonadSelection {
         if (JSON.stringify(subsets) === this.cachedQuery) return;
         this.cachedQuery = JSON.stringify(subsets);
 
+        let [savedDataset, savedSubsetName] = [app.selectedDataset, app.selectedSubsetName];
+
         console.log("Monad Filter: " + this.cachedQuery);
 
         // Submit query and update listings
         let body = {
             'query': escape(this.cachedQuery),
-            'dataset': app.selectedDataset,
-            'type': 'summary',
-            'subset': subsetName,
+            'dataset': savedDataset,
+            'method': 'aggregate',
+            'subset': savedSubsetName,
             'tab': currentTab,
             'search': true
         };
 
-        let updateMonadListing = (data) => {
+        let updateMonadListing = (dataset, subset, data) => {
             preferences['full_limit'] = this.defaultPageSize;
-            app.setupSubset(data);
+            app.setupSubset(dataset, subset, data);
             this.waitForQuery--;
         };
 
@@ -83,10 +85,10 @@ export default class MonadSelection {
         m.redraw(); // since this.search is async, waitForQuery is incremented after the bound callback completes
 
         m.request({
-            url: app.subsetURL,
+            url: app.eventdataURL,
             data: body,
             method: 'POST'
-        }).then(updateMonadListing).catch(failedUpdateMonadListing);
+        }).then((data) => updateMonadListing(savedDataset, savedSubsetName, data)).catch(failedUpdateMonadListing);
     }
 
     view(vnode) {

@@ -1,0 +1,6 @@
+{
+  "0": "Initiator Unknown",
+  "1": "Initiator Known",
+  ".5": "Initiator Suspected",
+  "2": "Ambiguous Initiator"
+}

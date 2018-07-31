@@ -1,0 +1,242 @@
+{
+  "10": {
+    "examples": [
+      "base establishment by state forces; remote violence involving state military with no reported casualties; non-violent military operations"
+    ],
+    "name": "SOLE MILITARY ACTION"
+  },
+  "11": {
+    "examples": [
+      "military in-fighting; battles between a military and mutinous forces; arrests of military officials"
+    ],
+    "name": "MILITARY VERSUS MILITARY"
+  },
+  "12": {
+    "examples": [
+      "civil war violence between state forces and a rebel actor"
+    ],
+    "name": "MILITARY VERSUS REBELS"
+  },
+  "13": {
+    "examples": [
+      "violence between state forces and unidentified armed groups; violence between police and political party militias"
+    ],
+    "name": "MILITARY VERSUS POLITICAL MILITIA"
+  },
+  "14": {
+    "examples": [
+      "military engagement with a communal militia; police engagement with a vigilante militia"
+    ],
+    "name": "MILITARY VERSUS COMMUNAL MILITIA"
+  },
+  "15": {
+    "examples": [
+      "suppression of a demonstration by police or military"
+    ],
+    "name": "MILITARY VERSUS RIOTERS"
+  },
+  "16": {
+    "examples": [
+      "suppression of a demonstration by police or military"
+    ],
+    "name": "MILITARY VERSUS PROTESTERS"
+  },
+  "17": {
+    "examples": [
+      "state repression of c ivilians; arrests by police"
+    ],
+    "name": "MILITARY VERSUS CIVILIANS"
+  },
+  "18": {
+    "examples": [
+      "inter-state conflict; state engagement with private security forces or a UN operation; strategic developments between a regime and the UN or another external actor"
+    ],
+    "name": "MILITARY VERSUS OTHER"
+  },
+  "20": {
+    "examples": [
+      "base establishment; remote violence involving rebel groups with no reported casualties; accidental detonation by a rebel group "
+    ],
+    "name": "SOLE REBEL ACTION"
+  },
+  "22": {
+    "examples": [
+      "rebel in-fighting; violence between rebel groups and their splinter movements"
+    ],
+    "name": "REBELS VERSUS REBELS"
+  },
+  "23": {
+    "examples": [
+      "civil war violence between rebels and a pro-government militia; violence between rebels and unidentified armed groups"
+    ],
+    "name": "REBELS VERSUS POLITICAL MILIITA"
+  },
+  "24": {
+    "examples": [
+      "violence between rebels and vigilante militias or other local security p roviders"
+    ],
+    "name": "REBELS VERSUS COMMUNAL MILITIA"
+  },
+  "25": {
+    "examples": [
+      "spontaneous violence against a rebel group; a violent demonstration engaging a rebel group"
+    ],
+    "name": "REBELS VERSUS RIOTERS"
+  },
+  "26": {
+    "examples": [
+      "violence against protesters by rebels"
+    ],
+    "name": "REBELS VERSUS PROTESTERS"
+  },
+  "27": {
+    "examples": [
+      "rebel targeting of civilians [a strategy commonly used in civil war]"
+    ],
+    "name": "REBELS VERSUS CIVILIANS"
+  },
+  "28": {
+    "examples": [
+      "civil war violence between rebels and an allied state military; rebel violence against a UN operation"
+    ],
+    "name": "REBELS VERSUS OTHERS"
+  },
+  "30": {
+    "examples": [
+      "remote violence by an un identified armed group with no reported casualties; accidental detonation by a political militia; strategic arson as intimidation by a political party "
+    ],
+    "name": "SOLE POLITICAL MILITIA ACTION"
+  },
+  "33": {
+    "examples": [
+      "inter-elite violence "
+    ],
+    "name": "POLITICAL MILITIA VERSUS POLITICAL MILITIA"
+  },
+  "34": {
+    "examples": [
+      "violence between communal militia and an unidentified armed group; violence between political militia and vigilante militias or other local security providers"
+    ],
+    "name": "POLITICAL MILITIA VERSUS COMMUNAL MILITIA"
+  },
+  "35": {
+    "examples": [
+      "violent demonstration against a political party; spontaneous violence against a political party"
+    ],
+    "name": "POLITICAL MILITIA VERSUS RIOTERS"
+  },
+  "36": {
+    "examples": [
+      "peaceful demonstration engaging a political party"
+    ],
+    "name": "POLITICAL MILITIA VERSUS PROTESTERS"
+  },
+  "37": {
+    "examples": [
+      "out-sourced state repression carried out by pro-government militias; civilian targeting by political militias or unidentified armed groups"
+    ],
+    "name": "POLITICAL MILITIA VERSUS CIVILIANS"
+  },
+  "38": {
+    "examples": [
+      "violence between private security forces and unidentified armed groups; violence between pro-government militia and exter nal state military forces"
+    ],
+    "name": "POLITICAL MILITIA VERSUS OTHERS"
+  },
+  "40": {
+    "examples": [
+      "destruction of property by a communal militia; establishment of a local security militia"
+    ],
+    "name": "SOLE COMMUNAL MILITIA ACTION"
+  },
+  "44": {
+    "examples": [
+      "intercommunal violence "
+    ],
+    "name": "COMMUNAL MILITIA VERSUS COMMUNAL MILITIA"
+  },
+  "45": {
+    "examples": [
+      "violent demonstration against an identity militia; spontaneous violence against an identity militia"
+    ],
+    "name": "COMMUNAL MILITIA VERSUS RIOTERS"
+  },
+  "46": {
+    "examples": [
+      "peaceful demonstration engaging an identity militia"
+    ],
+    "name": "COMMUNAL MILITIA VERSUS PROTESTERS"
+  },
+  "47": {
+    "examples": [
+      "civilian targeting, especially in the context of intercommunal violence"
+    ],
+    "name": "COMMUNAL MILITIA VERSUS CIVILIAN S"
+  },
+  "48": {
+    "examples": [
+      "external state military engaging in violence against a communal militia"
+    ],
+    "name": "COMMUNAL MILITIA VERSUS OTHER"
+  },
+  "50": {
+    "examples": [
+      "1-sided violent demonstration; s pontaneous arson"
+    ],
+    "name": "SOLE RIOTER ACTION"
+  },
+  "55": {
+    "examples": [
+      "2-sided violent demonstration in which both sides engage in violence"
+    ],
+    "name": "RIOTERS VERSUS RIOTERS"
+  },
+  "56": {
+    "examples": [
+      "2-sided demonstration in which only 1 side engages in violence"
+    ],
+    "name": "RIOTERS VERSUS PROTESTERS"
+  },
+  "57": {
+    "examples": [
+      "violent demonstration in which civilians are injured/killed; spontaneous violence in which civilians are targeted"
+    ],
+    "name": "RIOTERS VERSUS CIVILIANS"
+  },
+  "58": {
+    "examples": [
+      "mob violence against regional or international operation"
+    ],
+    "name": "RIOTERS VERSUS OTHERS"
+  },
+  "60": {
+    "examples": [
+      "1-sided peaceful protest"
+    ],
+    "name": "SOLE PROTESTER ACTION"
+  },
+  "66": {
+    "examples": [
+      "2-sided peaceful protest"
+    ],
+    "name": "PROTESTERS VERSUS PROTESTERS"
+  },
+  "68": {
+    "examples": [
+      "peaceful demonstration engaging private security forces"
+    ],
+    "name": "PROTESTERS VERSUS OTHER"
+  },
+  "78": {
+    "examples": [
+      "regional or international operation targeting civilians; private security forces targeting civilians"
+    ],
+    "name": "OTHER ACTOR VERSUS CIVILIANS"
+  },
+  "80": {
+    "examples": [
+      "strategic developments involving international or regional operations; remote violence by external military forces with no reported casualties; non-violent external military operations"
+    ],
+    "name": "SOLE OTHER ACTION"
+  }
+}

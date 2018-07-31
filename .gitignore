@@ -2,7 +2,6 @@ node_modules/
 npm-debug.log
 
 # currently in rook directory
-rook/eventdata/downloads/
 #rook/
 rook/output*.png
 rook/.Rapp.history
@@ -13,10 +12,6 @@ rook/result.json
 rook/test.json
 rook/rook-files/*
 rook/log_*
-
-# EventData
-assets/EventData/node_modules/
-assets/EventData/build/
 
 #build/
 data/preprocessSubset*.txt
