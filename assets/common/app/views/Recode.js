@@ -34,6 +34,8 @@ let dataDetails = {};
 let transformData = {};
 let dataNode = [];
 let formulaList = [];
+let tableList =[];
+
 
 let data = [];
 
@@ -314,6 +316,7 @@ function onlyUnique(value, index, self) {
 }
 
 function clickVar(elem) {
+
     $('#customRecodeBtn').css('display','block');
     $('#binInfo').css('display','block');
     document.getElementById('customRecodeBtn').disabled = true; 
@@ -420,24 +423,36 @@ function clickVar(elem) {
      }
 
      else if(document.getElementById('createLink').className === 'active'){
-        currentVal = this.textContent;
 
+        currentVal = this.textContent;
         dataNode = [];
         var index = tableHeader.indexOf(currentVal);
         tableData.map((row,i) => dataNode.push(row[index]))
+        
+        if(!tableList.includes(currentVal)){
 
-        var iter = 0;
-        $('#createNewForm').find('tr').each(function(){
-            var trow = $(this);    
-            if(iter == 0){
-                trow.append('<th style ="border: 1px solid #ddd; text-align: center;">'+currentVal+'</th>');
-                iter++;
-            }else{
-                trow.append('<td style ="border: 1px solid #ddd;text-align: center;">'+ dataNode[iter-1]+'</td>');              
-                iter++
-            }
+            tableList.push(currentVal);
             
-        });
+            var iter = 0;
+            $('#createNewForm').find('tr').each(function(){
+                var trow = $(this);   
+                if(iter == 0){
+                    trow.append('<th style ="border: 1px solid #ddd; text-align: center;">'+currentVal+'</th>');
+                    iter++;
+                }else{
+                    trow.append('<td style ="border: 1px solid #ddd;text-align: center;">'+ dataNode[iter-1]+'</td>');              
+                    iter++
+                }
+            });
+         }else{
+             var pos = tableList.indexOf(currentVal);
+             console.log($('#createTable tr')[0].childNodes[pos])
+             for(var i = 0;i< dataNode.length;i++){
+                $('#createTable tr')[i].childNodes[pos].remove();
+             }
+             
+        $('#createTable tr').css('border-bottom', '1px solid #ddd');
+         }
      }
      
 }
@@ -505,7 +520,7 @@ function showTooltip(){
         "<b>Create a new variable without any transformation on the existing variable(s).</b>"+
         "<br>How to create new variable"+
         "<ul>"+
-        "<li>Select the existing variable(s) to filter the table.</li>"+
+        "<li>Select the existing variable(s) to be added to the table.</li>"+
         "<li>Manually creating new variable,by specifying name, type and description.</li>"+
         "<li>Click on 'Create New Variable'.</li>"+
         "<li>Manually enter/select the new value for the corrsponding row.</li>"+
