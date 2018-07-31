@@ -27,14 +27,11 @@ export async function submitQuery() {
         return;
     }
 
-    let subsetQuery = buildSubset(app.abstractQuery);
-    console.log("Query: " + JSON.stringify(subsetQuery));
-
     app.setLaddaSpinner('btnUpdate', true);
 
     let subsetName = app.selectedSubsetName;
 
-    let success = await app.loadSubset(app.selectedDataset, {includePending: true, recount: true, requireMatch: true});
+    let success = await app.loadSubset(subsetName, {includePending: true, recount: true, requireMatch: true});
     if (!success) return;
 
     // clear all subset data. Note this is intentionally mutating the object, not rebinding it
@@ -280,15 +277,11 @@ export function submitAggregation() {
 
     app.setLaddaSpinner('btnUpdate', true);
 
-    m.request({
-        url: app.eventdataURL,
-        data: {
-            'type': 'aggregate',
-            'query': escape(query),
-            'dataset': app.selectedDataset,
-            'subset': app.selectedSubsetName
-        },
-        method: 'POST'
+    app.getData({
+        host: app.genericMetadata[app.selectedDataset]['host'],
+        method: 'aggregate',
+        query: query,
+        dataset: app.selectedDataset
     })
         .then(reformatAggregation)
         .then(({data, headersUnit, headersEvent}) => {
@@ -297,7 +290,7 @@ export function submitAggregation() {
             app.setAggregationHeadersEvent(headersEvent);
         })
         .then(() => app.setLaddaSpinner('btnUpdate', false))
-        .then(() => app.setAggregationStaged(false))
+        .then(() => app.setAggregationStaged(false)).then(m.redraw)
         .catch(app.laddaStopAll);
 }
 

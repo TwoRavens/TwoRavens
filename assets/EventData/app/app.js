@@ -6,6 +6,7 @@ import * as query from './query';
 import {subset} from "../../app/app";
 
 export let eventdataURL = '/eventdata/api/';
+import { saveAs } from 'file-saver/FileSaver';
 
 // TODO login
 export let username = 'TwoRavens';
@@ -184,7 +185,10 @@ export let setLaddaSpinner = (id, state) => {
     if (!(id in laddaSpinners)) laddaSpinners[id] = Ladda.create(element);
     state ? laddaSpinners[id].start() : laddaSpinners[id].stop();
 };
-export let laddaStopAll = () => Object.keys(laddaSpinners).forEach(id => laddaSpinners[id].stop());
+export let laddaStopAll = (value) => {
+    value && console.error(value);
+    Object.keys(laddaSpinners).forEach(id => laddaSpinners[id].stop());
+};
 
 // stores user info for the save query modal menu. Subset and aggregate are separate
 export let saveQuery = {
@@ -368,8 +372,14 @@ export let loadSubset = async (subsetName, {includePending, recount, requireMatc
         if (child.type === 'query') stagedSubsetData.push(child);
         else pendingStage.push(child);
     }
-    if (includePending && pendingStage.length !== 0) stagedSubsetData.push(pendingStage);
+    if (includePending && pendingStage.length !== 0) stagedSubsetData.push({
+        type: 'query',
+        children: pendingStage
+    });
     let subsetQuery = query.buildSubset(stagedSubsetData);
+
+    console.log("Subset Query:");
+    console.log(JSON.stringify(subsetQuery));
 
     // metadata request
     let {alignments, formats} = getSubsetMetadata(selectedDataset, subsetName);
@@ -452,7 +462,6 @@ export let loadSubset = async (subsetName, {includePending, recount, requireMatc
                 query: JSON.stringify(subsetQuery)
             }).then(response => data[tab]['filters'][filter] = response)))
         });
-
     }
     else if (config['type'] === 'date') {
         let dateQuery = [
@@ -530,29 +539,16 @@ export let loadSubset = async (subsetName, {includePending, recount, requireMatc
     return true;
 };
 
-export function download(queryType, dataset, queryMongo) {
-
-    function save(data) {
-        // postprocess aggregate to reformat dates to YYYY-MM-DD and collapse the dyad boolean array
-        // disabled because the final file is packaged by rook. If we construct csv from the browser, then this is useful
-        // ({data, headersUnit} = query.reformatAggregation(data));
-
-        let a = document.createElement('A');
-        a.href = data.download;
-        a.download = data.download.substr(data.download.lastIndexOf('/') + 1);
-        document.body.appendChild(a);
-        a.click();
-
-        laddaStopAll();
-        document.body.removeChild(a);
-    }
+export async function download(queryType, dataset, queryMongo) {
 
     // fall back to document state if args are not passed
     if (!queryType) queryType = selectedMode;
     if (!dataset) dataset = selectedDataset;
+
+    let variables = selectedVariables.size === 0 ? genericMetadata[dataset]['columns'] : [...selectedVariables];
+
     if (!queryMongo) {
         if (queryType === 'subset') {
-            let variables = selectedVariables.size === 0 ? genericMetadata[dataset]['columns'] : [...selectedVariables];
             queryMongo = [
                 {"$match": query.buildSubset(abstractQuery)},
                 {
@@ -569,18 +565,25 @@ export function download(queryType, dataset, queryMongo) {
 
     console.log("Download Query: " + JSON.stringify(queryMongo));
 
-    let body = {
-        'dataset': dataset,
-        'method': 'find',
-        'query': JSON.stringify(queryMongo)
-    };
-
     setLaddaSpinner('btnDownload', true);
-    m.request({
-        url: eventdataURL,
-        data: body,
-        method: 'POST'
-    }).then(save).catch(laddaStopAll);
+    let data = await getData({
+        host: genericMetadata[dataset]['host'],
+        dataset: dataset,
+        method: 'aggregate',
+        query: JSON.stringify(queryMongo)
+    }).catch(laddaStopAll);
+
+    // postprocess aggregate to reformat dates to YYYY-MM-DD and collapse the dyad boolean array
+    if (selectedMode === 'aggregate') {
+        ({data} = query.reformatAggregation(data));
+        variables = [...aggregationHeadersUnit, ...aggregationHeadersEvent];
+    }
+
+    let text = data.map(record => variables.map(variable => record[variable] || '').join(',') + '\n');
+    let header = variables.join(',') + '\n';
+    let file = new File([header, ...text], 'EventData_' + selectedDataset + '.csv', {type: "text/plain;charset=utf-8"});
+    saveAs(file);
+    laddaStopAll();
 }
 
 export function reset() {
@@ -612,7 +615,7 @@ export function reset() {
 
     for (let member in subsetData) delete subsetData[member];
     scorchTheEarth();
-    loadSubset(selectedSubsetName, true).then(setupSubset);
+    loadSubset(selectedSubsetName, {recount: true});
 }
 
 // since R mangles literals and singletons

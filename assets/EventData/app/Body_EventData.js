@@ -32,7 +32,6 @@ import CanvasResults from "./canvases/CanvasResults";
 
 import SaveQuery from "./views/SaveQuery";
 import {TreeQuery, TreeVariables} from "./views/TreeSubset";
-import {getSubsetMetadata} from "./app";
 
 export default class Body_EventData {
 
@@ -494,7 +493,7 @@ export default class Body_EventData {
             if (app.subsetData[app.selectedSubsetName] === undefined) {
 
                 if (!app.isLoading[app.selectedSubsetName])
-                    app.loadSubset(app.selectedSubsetName).then(app.setupSubset);
+                    app.loadSubset(app.selectedSubsetName);
 
                 return m('#loading.loader', {
                     style: {

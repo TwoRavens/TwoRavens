@@ -237,34 +237,12 @@ window.callbackDelete = function (id) {
         m.redraw();
 
         if (node.type === 'query') {
-            // Don't use constraints outside of submitted queries
-            let stagedSubsetData = [];
-            for (let child of app.abstractQuery) {
-                if (child.type === 'query') {
-                    stagedSubsetData.push(child)
-                }
-            }
-            let subsetQuery = query.buildSubset(stagedSubsetData);
-            console.log("Query: " + JSON.stringify(subsetQuery));
+            app.loadSubset(app.selectedSubsetName, {recount: true});
 
-            let [savedDataset, savedSubsetName] = [app.selectedDataset, app.selectedSubsetName];
-
-            app.setLaddaSpinner('btnUpdate', true);
-
-            m.request({
-                url: app.eventdataURL,
-                data: {
-                    'method': 'aggregate',
-                    'query': subsetQuery,
-                    'dataset': savedDataset,
-                    'countRecords': true
-                },
-                method: 'POST'
-            }).then((jsondata) => {
-                jsondata['total'] = jsondata['total'][0];
-                Object.keys(app.subsetData).forEach(key => delete app.subsetData[key]);
-                app.setupSubset(savedDataset, savedSubsetName, jsondata);
-            }).catch(app.laddaStopAll);
+            // clear all subset data. Note this is intentionally mutating the object, not rebinding it
+            Object.keys(app.subsetData)
+                .filter(subset => subset !== app.selectedSubsetName)
+                .forEach(subset => delete app.subsetData[subset]);
 
             if (app.abstractQuery.length === 0) {
                 app.setNodeId(1);
