@@ -80,3 +80,8 @@ TA2_STATIC_TEST_MODE = strtobool(os.environ.get('TA2_STATIC_TEST_MODE', 'True'))
 # Note: the test server can be run via: https://gitlab.datadrivendiscovery.org/tworavens/TwoRavens/blob/master/docs/dev_notes.md#run-local-ta2-test-server
 #
 TA2_TEST_SERVER_URL = os.environ.get('TA2_TEST_SERVER_URL', 'localhost:45042')
+
+
+# Delete saved model objects via fab commands
+#
+ALLOW_FAB_DELETE = True

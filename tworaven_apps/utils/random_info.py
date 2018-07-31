@@ -1,6 +1,12 @@
 """Utility functions for generating random values"""
 import random
 import string
+from datetime import datetime as dt
+
+
+def get_timestamp_string():
+    """Return current time as YYYY-MM-DD_HH-MM-S"""
+    return dt.now().strftime('%Y-%m-%d_%H-%M-%S')
 
 
 def get_alphanumeric_uppercase(str_length):
@@ -12,7 +18,7 @@ def get_alphanumeric_uppercase(str_length):
 def get_alphanumeric_lowercase(str_length):
     """Get random alpha numeric string, with lowercase letters"""
 
-    params = dict(uppercase_only=True)
+    params = dict(uppercase_only=False)
     return get_alphanumeric_string(str_length, **params)
 
 def get_alphanumeric_mixedcase(str_length):
