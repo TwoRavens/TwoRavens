@@ -3,6 +3,7 @@ import {dateSort} from "./canvases/CanvasDate";
 
 import * as common from '../../common-eventdata/common';
 import * as query from './query';
+import {subset} from "../../app/app";
 
 export let eventdataURL = '/eventdata/api/';
 
@@ -271,35 +272,30 @@ async function updatePeek() {
     }
     let subsetQuery = query.buildSubset(stagedSubsetData);
 
-    console.log("Peek Update");
-    console.log("Query: " + JSON.stringify(subsetQuery));
+    let variables = selectedVariables.size ? [...selectedVariables] : genericMetadata[selectedDataset]['columns'];
 
-    let tableHeaders = JSON.stringify(selectedVariables.size
-        ? [...selectedVariables]
-        : genericMetadata[selectedDataset]['columns']);
-
-    if (tableHeaders !== localStorage.getItem('peekTableHeaders' + peekId)) {
+    if (JSON.stringify(variables) !== localStorage.getItem('peekTableHeaders' + peekId)) {
         peekData = [];
         peekSkip = 0;
     }
 
+    let projection = variables.reduce((out, entry) => {out[entry] = 1; return out;}, {});
+    let peekQuery = [{$match: subsetQuery}, {$project: projection}, {$skip: peekSkip}, {$limit: peekBatchSize}];
+
+    console.log("Peek Update");
+    console.log("Query: " + JSON.stringify(peekQuery));
+
     let body = {
+        host: genericMetadata[selectedDataset]['host'],
         dataset: selectedDataset,
         method: 'aggregate',
-        query: [{"$match": subsetQuery}, {"$skip": peekSkip}, {"$limit": peekBatchSize}]
+        query: peekQuery
     };
-
-    // conditionally pass variable projection
-    if (selectedVariables.size !== 0) body['variables'] = [...selectedVariables];
 
     // cancel the request
     if (!peekIsGetting) return;
 
-    let data = await m.request({
-        url: eventdataURL + 'get-data',
-        data: body,
-        method: 'POST'
-    });
+    let data = await getData(body);
 
     peekIsGetting = false;
 
@@ -308,13 +304,12 @@ async function updatePeek() {
         return;
     }
 
-    // for (let record of data) peekData.push(Object.keys(variableQuery).map((key) => record[key] || ""));
     peekData = peekData.concat(data);
     peekSkip += data.length;
 
     // this gets noticed by the peek window
     localStorage.setItem('peekHeader' + peekId, selectedDataset);
-    localStorage.setItem('peekTableHeaders' + peekId, tableHeaders);
+    localStorage.setItem('peekTableHeaders' + peekId, JSON.stringify(variables));
     localStorage.setItem('peekTableData' + peekId, JSON.stringify(peekData));
 }
 window.addEventListener('storage', onStorageEvent);
@@ -347,36 +342,33 @@ export let getSubsetMetadata = (dataset, subset) => {
     return {alignments, formats, columns};
 };
 
-let getData = async body => m.request({
+export let getData = async body => m.request({
     url: eventdataURL + 'get-data',
     method: 'POST',
     data: body
 }).then(response => {
-    if (!response.success) {
-        console.error(response);
-        return {};
-    }
+    if (!response.success) throw response;
     return response.data;
 });
 
-export let loadSubset = async (subsetName, recount=false) => {
+// download data for a subset
+export let loadSubset = async (subsetName, {includePending, recount, requireMatch, monadSearch}={}) => {
     if (isLoading[subsetName] || subsetName === 'Custom') return;
     isLoading[subsetName] = true;
 
     let promises = [];
-    let output = {data: {}};
 
     // in case selectedDataset changes while Promises are resolving
     let dataset = selectedDataset;
 
     // prep the query
     let stagedSubsetData = [];
+    let pendingStage = [];
     for (let child of abstractQuery) {
-        if (child.type === 'query') {
-            stagedSubsetData.push(child)
-        }
+        if (child.type === 'query') stagedSubsetData.push(child);
+        else pendingStage.push(child);
     }
-    let subsetType = genericMetadata[selectedDataset]['subsets'][subsetName]['type'];
+    if (includePending && pendingStage.length !== 0) stagedSubsetData.push(pendingStage);
     let subsetQuery = query.buildSubset(stagedSubsetData);
 
     // metadata request
@@ -398,36 +390,71 @@ export let loadSubset = async (subsetName, recount=false) => {
         dataset: dataset,
         method: 'count',
         query: JSON.stringify(subsetQuery)
-    }).then(data => totalSubsetRecords = data));
+    }).then(count => {
+        // intentionally breaks the entire downloading promise array and subsequent promise chain
+        if (!count && requireMatch) throw 'no records matched';
+        totalSubsetRecords = data
+    }));
 
     let config = genericMetadata[dataset]['subsets'][subsetName];
+    let data = [];
 
-    if (subsetType === 'dyad') {
-        output['data'] = Object.keys(config['tabs'])
-            .reduce((out, tab) => {
-                out[tab] = {filters: {}};
-                return out;
-            }, {});
+    if (config['type'] === 'dyad') {
+        if (monadSearch) data = subsetData[subsetName];
+        else data = Object.keys(config['tabs']).reduce((out, tab) => {
+            out[tab] = {filters: {}};
+            return out;
+        }, {});
 
         Object.keys(config['tabs']).forEach(tab => {
-            promises.push(getData({
-                host: genericMetadata[dataset]['host'],
-                dataset: dataset,
-                method: 'distinct',
-                distinct: config['tabs'][tab]['full'],
-                query: JSON.stringify(subsetQuery)
-            }).then(data => output['data'][tab]['full'] = data));
 
-            promises = promises.extend(config['tabs'][tab]['filters'].map(filter => getData({
+            if (!monadSearch || tab === monadSearch) {
+                let monadQuery = subsetQuery;
+
+                if ('tabs' in subsetPreferences[subsetName]) {
+                    let preferences = subsetPreferences[subsetName]['tabs'][tab];
+                    let tabFilters = Object.keys(preferences['filters']).reduce((out, column) => {
+                        if (preferences['filters'][column]['selected'].size === 0) return out;
+                        let filter = {};
+                        let deconstruct = genericMetadata[dataset]['deconstruct'] || {};
+
+                        if (column in deconstruct) filter[column] = {
+                            $regex: `^(.*${deconstruct[column]})*(${[...preferences['filters'][column]['selected']].join('|')})`,
+                            $options: 'i'
+                        };
+                        else filter[column] = {$in: [...preferences['filters'][column]['selected']]};
+                        return out.concat([filter]);
+                    }, []);
+
+                    // If no filters are set, don't add any filtering
+                    if (tabFilters.length !== 0) {
+                        if (Object.keys(subsetQuery).length)
+                            monadQuery = {'$and': [subsetQuery, {$and: tabFilters}]};
+                        else
+                            monadQuery = {$and: tabFilters}; // permits mongo indexing optimization
+                    }
+                }
+
+                promises.push(getData({
+                    host: genericMetadata[dataset]['host'],
+                    dataset: dataset,
+                    method: 'distinct',
+                    distinct: config['tabs'][tab]['full'],
+                    query: JSON.stringify(monadQuery)
+                }).then(response => data[tab]['full'] = response));
+            }
+
+            if (!monadSearch) promises = promises.concat(config['tabs'][tab]['filters'].map(filter => getData({
                 host: genericMetadata[dataset]['host'],
                 dataset: dataset,
                 method: 'distinct',
                 distinct: filter,
                 query: JSON.stringify(subsetQuery)
-            }).then(data => output['data'][tab]['filters'][filter] = data)))
+            }).then(response => data[tab]['filters'][filter] = response)))
         });
+
     }
-    else if (subsetType === 'date') {
+    else if (config['type'] === 'date') {
         let dateQuery = [
             {$match: subsetQuery},
             {
@@ -444,60 +471,7 @@ export let loadSubset = async (subsetName, recount=false) => {
             dataset: dataset,
             method: 'aggregate',
             query: JSON.stringify(dateQuery)
-        }).then(data => output['data'] = data));
-    }
-    else if (subsetType === 'categorical' || subsetType === 'categorical_grouped') {
-        let format = genericMetadata[dataset]['formats'][config['columns'][0]] || config['columns'][0];
-
-        let categoricalQuery = [
-            {$match: subsetQuery},
-            {$group: {_id: {[format]: '$' + config['columns'][0]}, total: {$sum: 1}}},
-            {$project: {[format]: '$_id.' + format, _id: 0, total: 1}}
-        ];
-
-        promises.push(getData({
-            host: genericMetadata[dataset]['host'],
-            dataset: dataset,
-            method: 'aggregate',
-            query: JSON.stringify(categoricalQuery)
-        }).then(data => output['data'] = data))
-    }
-
-    await Promise.all(promises);
-    isLoading[subsetName] = false;
-    setupSubset(dataset, subsetName, output);
-};
-
-// Draws all subset plots, often invoked as callback after server request for new plotting data
-export function setupSubset(dataset, subset, jsondata) {
-    if (dataset !== selectedDataset) return;
-
-    if ('total' in jsondata && jsondata['total'] === 0) {
-        alert("No records match your subset. Plots will not be updated.");
-        laddaStopAll();
-        return;
-    }
-
-    console.log("Server returned:");
-    console.log(jsondata);
-
-    laddaStopAll();
-
-    if ('total' in jsondata) totalSubsetRecords = jsondata['total'];
-
-    // trigger d3 redraw within current subset
-    subsetRedraw[subset] = true;
-
-    Object.keys(jsondata['formats'] || {}).forEach(format => formattingData[format] = jsondata['formats'][format]);
-    Object.keys(jsondata['alignments'] || {}).forEach(align => alignmentData[align] = jsondata['alignments'][align]);
-
-    let subsetType = genericMetadata[dataset]['subsets'][subset]['type'];
-
-    if (subsetType === 'dyad' && jsondata['search'])
-        subsetData[subset][jsondata['tab']]['full'] = jsondata['data'] || [];
-
-    else if (subsetType === 'date')
-        subsetData[subset] = jsondata['data']
+        }).then(response => data = response
             .filter(entry => !isNaN(entry['year'] && !isNaN(entry['month'])))
             .map(entry => ({'Date': new Date(entry['year'], entry['month'] - 1, 0), 'Freq': entry.total}))
             .sort(dateSort)
@@ -511,12 +485,50 @@ export function setupSubset(dataset, subset, jsondata) {
                 }
                 out.push(entry);
                 return (out);
-            }, []);
-    else
-        subsetData[subset] = jsondata['data'];
+            }, [])));
+    }
+    else if (config['type'] === 'categorical' || config['type'] === 'categorical_grouped') {
+        let format = genericMetadata[dataset]['formats'][config['columns'][0]] || config['columns'][0];
 
+        let categoricalQuery = [
+            {$match: subsetQuery},
+            {$group: {_id: {[format]: '$' + config['columns'][0]}, total: {$sum: 1}}},
+            {$project: {[format]: '$_id.' + format, _id: 0, total: 1}}
+        ];
+
+        promises.push(getData({
+            host: genericMetadata[dataset]['host'],
+            dataset: dataset,
+            method: 'aggregate',
+            query: JSON.stringify(categoricalQuery)
+        }).then(response => data = response))
+    }
+
+    let success = true;
+    let onError = err => {
+        if (err === 'no records matched') alert("No records match your subset. Plots will not be updated.");
+        else console.error(err);
+        success = false;
+    };
+
+    // wait until all requests have resolved
+    await Promise.all(promises).catch(onError);
+
+    laddaStopAll();
+    isLoading[subsetName] = false;
+
+    if (dataset !== selectedDataset) return false;
+    if (!success) return false;
+
+    console.log("Server returned:");
+    console.log(data);
+
+    subsetData[subsetName] = data;
+    subsetRedraw[subsetName] = true;
     m.redraw();
-}
+
+    return true;
+};
 
 export function download(queryType, dataset, queryMongo) {
 
@@ -558,9 +570,9 @@ export function download(queryType, dataset, queryMongo) {
     console.log("Download Query: " + JSON.stringify(queryMongo));
 
     let body = {
-        'query': escape(JSON.stringify(queryMongo)),
         'dataset': dataset,
-        'type': 'raw'
+        'method': 'find',
+        'query': JSON.stringify(queryMongo)
     };
 
     setLaddaSpinner('btnDownload', true);
@@ -595,23 +607,12 @@ export function reset() {
         scorchTheEarth();
         return;
     }
-    let [savedDataset, savedSubsetName] = [selectedDataset, selectedSubsetName];
 
     setLaddaSpinner('btnReset', true);
-    m.request({
-        url: eventdataURL,
-        data: {
-            'query': {},
-            'dataset': savedDataset,
-            'subset': savedSubsetName
-        },
-        method: 'POST'
-    }).then((jsondata) => {
-        // clear all subset data. Note this is intentionally mutating the object, not rebinding it
-        for (let member in subsetData) delete subsetData[member];
-        scorchTheEarth();
-        setupSubset(savedDataset, savedSubsetName, jsondata)
-    }).catch(laddaStopAll);
+
+    for (let member in subsetData) delete subsetData[member];
+    scorchTheEarth();
+    loadSubset(selectedSubsetName, true).then(setupSubset);
 }
 
 // since R mangles literals and singletons

@@ -494,7 +494,7 @@ export default class Body_EventData {
             if (app.subsetData[app.selectedSubsetName] === undefined) {
 
                 if (!app.isLoading[app.selectedSubsetName])
-                    app.loadSubset(app.selectedSubsetName);
+                    app.loadSubset(app.selectedSubsetName).then(app.setupSubset);
 
                 return m('#loading.loader', {
                     style: {

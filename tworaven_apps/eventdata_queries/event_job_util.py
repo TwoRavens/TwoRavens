@@ -235,7 +235,7 @@ class EventJobUtil(object):
         # grab the method from the collection that matches the user query type (safe because it must match the form enum)
         try:
             if host == 'TwoRavens':
-                retrieve_util = MongoRetrieveUtil(collection, query)
+                retrieve_util = MongoRetrieveUtil2(collection, query)
                 client = retrieve_util.get_mongo_client()
 
                 if retrieve_util.has_error():

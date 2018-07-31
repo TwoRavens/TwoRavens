@@ -14,67 +14,7 @@ export default class MonadSelection {
         this.searchTimeout = null;
     }
 
-    search(subsetName, metadata, preferences, currentTab) {
-
-        const operator = '$and';
-
-        let tabFilters = Object.keys(preferences['filters']).reduce((out, column) => {
-            if (preferences['filters'][column]['selected'].size === 0) return out;
-            let filter = {};
-            let deconstruct = app.genericMetadata[app.selectedDataset]['deconstruct'] || {};
-
-            if (column in deconstruct) filter[column] = {
-                '$regex': `^(.*${deconstruct[column]})*(${[...preferences['filters'][column]['selected']].join('|')})`,
-                "$options": "i"
-            };
-            else filter[column] = {'$in': [...preferences['filters'][column]['selected']]};
-            return out.concat([filter]);
-        }, []);
-
-        let tabFiltersOp = {[operator]: tabFilters};
-
-        let stagedSubsetData = [];
-        for (let child of app.abstractQuery) {
-            if (child.name.indexOf("Query") !== -1) {
-                stagedSubsetData.push(child)
-            }
-        }
-
-        let stagedQuery = query.buildSubset(stagedSubsetData);
-
-        // If no filters are set, don't add any filtering
-        let subsets;
-        if (tabFilters.length !== 0) {
-            if (Object.keys(stagedQuery).length)
-                subsets = {'$and': [stagedQuery, tabFiltersOp]};
-            else
-                subsets = tabFiltersOp; // permits mongo indexing optimization
-        } else {
-            subsets = stagedQuery;
-        }
-
-        if (JSON.stringify(subsets) === this.cachedQuery) return;
-        this.cachedQuery = JSON.stringify(subsets);
-
-        let [savedDataset, savedSubsetName] = [app.selectedDataset, app.selectedSubsetName];
-
-        console.log("Monad Filter: " + this.cachedQuery);
-
-        // Submit query and update listings
-        let body = {
-            'query': escape(this.cachedQuery),
-            'dataset': savedDataset,
-            'method': 'aggregate',
-            'subset': savedSubsetName,
-            'tab': currentTab,
-            'search': true
-        };
-
-        let updateMonadListing = (dataset, subset, data) => {
-            preferences['full_limit'] = this.defaultPageSize;
-            app.setupSubset(dataset, subset, data);
-            this.waitForQuery--;
-        };
+    async search(subsetName, currentTab) {
 
         let failedUpdateMonadListing = () => {
             console.warn("Network Issue: Update to monad listing failed");
@@ -84,11 +24,8 @@ export default class MonadSelection {
         this.waitForQuery++;
         m.redraw(); // since this.search is async, waitForQuery is incremented after the bound callback completes
 
-        m.request({
-            url: app.eventdataURL,
-            data: body,
-            method: 'POST'
-        }).then((data) => updateMonadListing(savedDataset, savedSubsetName, data)).catch(failedUpdateMonadListing);
+        await app.loadSubset(subsetName, {monadSearch: currentTab}).catch(failedUpdateMonadListing);
+        this.waitForQuery--;
     }
 
     view(vnode) {
@@ -106,8 +43,7 @@ export default class MonadSelection {
                 : preferences['filters'][filter]['selected'].add(entry);
 
             clearTimeout(this.searchTimeout);
-            this.searchTimeout = setTimeout(
-                () => this.search(subsetName, metadata, preferences, currentTab), searchLag);
+            this.searchTimeout = setTimeout(() => this.search(subsetName, currentTab), searchLag);
         };
 
         let popupAttributes = (column, value) => app.genericMetadata[app.selectedDataset]['formats'][column] && {
@@ -184,8 +120,7 @@ export default class MonadSelection {
                             preferences['search'] = '';
                             Object.keys(preferences['filters']).map(filter => preferences['filters'][filter]['selected'] = new Set());
                             clearTimeout(this.searchTimeout);
-                            this.searchTimeout = setTimeout(
-                                () => this.search(subsetName, metadata, preferences, currentTab), searchLag);
+                            this.searchTimeout = setTimeout(() => this.search(subsetName, currentTab), searchLag);
                         }
                     },
                     "Clear All Filters"
