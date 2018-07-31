@@ -23,6 +23,11 @@ class BasicErrCheck(object):
         self.error_found = True
         self.error_message = err_msg
 
+    def add_error_message(self, err_msg):
+        """Add an error message -- same as "add_err_msg" """
+        self.add_err_msg(err_msg)
+
+
 def try_it():
     """quick check"""
     b = BasicErrCheck()

@@ -67,7 +67,7 @@ class NonStreamingTests(TestCase):
         req_str = render_to_string(\
                     'test_requests/req_SearchSolutions.json',
                     dict(TA3TA2_API_VERSION=TA3TA2Util.get_api_version(),
-                         TA3_GPRC_USER_AGENT=settings.TA3_GPRC_USER_AGENT))
+                         TA3_GRPC_USER_AGENT=settings.TA3_GRPC_USER_AGENT))
 
         response = self.client.post(url,
                                     req_str,

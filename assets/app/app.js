@@ -2329,7 +2329,7 @@ function CreatePipelineDefinition(predictors, depvar, timeBound, aux) {
     if(typeof timeBound !== 'undefined'){
         my_timeBound = timeBound;
     }
-    let my_userAgent = TA3_GPRC_USER_AGENT;              // set on django server
+    let my_userAgent = TA3_GRPC_USER_AGENT;              // set on django server
     let my_version = TA3TA2_API_VERSION;                 // set on django server
     let my_allowedValueTypes = ['DATASET_URI', 'CSV_URI'];      // Get from elsewhere
     let my_problem = CreateProblemDefinition(depvar, aux);
