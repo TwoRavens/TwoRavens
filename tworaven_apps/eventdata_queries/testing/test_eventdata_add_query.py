@@ -147,6 +147,7 @@ class EventDataQueryAddTest(TestCase):
         #
         json_resp = response_list.json()
         obj = json_resp['data']
+        print("--------------- data obj -------------", obj)
         # print('****json resp ****', json.loads(job)['data'])
         self.assertEqual(obj[0]['id'], 2)
         self.assertEqual(obj[1]['id'], 1)
@@ -195,8 +196,8 @@ class EventDataQueryAddTest(TestCase):
         search_json3 = {
             "name": "query_1",
             "description": "query to get the data of year 1998",
-            "username": "two_ravens"
-        }
+            "username": "two ravens"
+        }   # this should not work as incorrect user name
 
         url = reverse('api_add_query')
 
@@ -237,6 +238,7 @@ class EventDataQueryAddTest(TestCase):
         self.assertEqual(json_resp2['data'][0]['id'], 2)
 
         json_resp3 = response_search3.json()
+        print("-------------json response 3 -----------", json_resp3)
         self.assertEqual(json_resp3['success'], False)
         self.assertEqual(json_resp3['message'], 'list not retrieved')
 
