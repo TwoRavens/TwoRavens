@@ -21,6 +21,11 @@ urlpatterns = (
          views_additional.view_get_problem_schema,
          name='get_problem_schema'),
 
+    path(r'debug-pipeline-steps',
+         views_additional.view_show_pipeline_steps,
+         name='view_show_pipeline_steps'),
+
+
     re_path((r'stored-request/(?P<hash_id>[\w]{40,200})$'),
             views_saved_requests.view_stored_request,
             name='view_stored_request'),

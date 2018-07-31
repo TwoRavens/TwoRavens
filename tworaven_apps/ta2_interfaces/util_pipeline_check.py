@@ -24,6 +24,7 @@ from tworaven_apps.utils.random_info import \
 
 #    error_found = False
 #    error_message = None
+ERR_TA2_CONNECT_FAILED = 'StatusCode.UNAVAILABLE, Connect Failed'
 
 class PipelineSteps(BasicErrCheck):
     """Object to hold PipelineResults"""
@@ -126,6 +127,7 @@ class PipelineInfoUtil(BasicErrCheck):
             user_msg = ('No StoredResponse objects found of type'
                         ' "GetSearchSolutionsResults"')
             msgt(user_msg)
+            self.add_error_message(user_msg)
             return
 
         # Iterate through GetSearchSolutionsResults,
@@ -155,7 +157,8 @@ class PipelineInfoUtil(BasicErrCheck):
 
             self.pipeline_results[sr.id] = self.run_describe_solution(solution_id)
 
-            if loop_cnt == 5:
+            if self.has_error():
+                # In case there is a timeout b/c a TA2 is not available
                 break
 
     def run_describe_solution(self, solution_id):
@@ -172,8 +175,15 @@ class PipelineInfoUtil(BasicErrCheck):
         #print('search_info', search_info)
         if not search_info.success:
             #print('search_info err', search_info.err_msg)
-            if search_info.err_msg.find('StatusCode.UNAVAILABLE, Connect Failed') > -1:
+            if search_info.err_msg.find(ERR_TA2_CONNECT_FAILED) > -1:
                 user_msg = 'TA2 unavailable! Message: %s' % search_info.err_msg
+
+                # TA2 unavailable, don't make more calls!
+                self.add_error_message(user_msg)
+
+            elif search_info.err_msg.find('StatusCode.UNKNOWN') > -1:
+                user_msg = ('TA2 may no longer have result!'
+                            ' Message: %s') % search_info.err_msg
             else:
                 user_msg = search_info.err_msg
             return PipelineSteps.create_with_error(user_msg)

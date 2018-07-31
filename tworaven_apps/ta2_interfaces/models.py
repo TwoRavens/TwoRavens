@@ -260,6 +260,7 @@ class StoredResponse(TimeStampedModel):
 
         return mark_safe(url_str)
 
+
     def response_as_json(self):
         """Display OrderedDict as JSON"""
         if not self.response:

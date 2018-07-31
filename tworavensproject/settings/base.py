@@ -184,12 +184,14 @@ SERVER_SCHEME = 'http'  # or https
 # ---------------------------
 TA2_STATIC_TEST_MODE = strtobool(os.environ.get('TA2_STATIC_TEST_MODE', 'True'))   # True: canned responses
 TA2_TEST_SERVER_URL = os.environ.get('TA2_TEST_SERVER_URL', 'localhost:45042')
-TA3_GPRC_USER_AGENT = os.environ.get('TA3_GPRC_USER_AGENT', 'TwoRavens')
+TA3_GRPC_USER_AGENT = os.environ.get('TA3_GRPC_USER_AGENT', 'TwoRavens')
 
 # for non-streaming responses
-TA2_GPRC_SHORT_TIMEOUT = 60 # seconds
+TA2_GRPC_FAST_TIMEOUT = 3 # seconds
+TA2_GRPC_SHORT_TIMEOUT = 60 # seconds
+
 # for streaming responses
-TA2_GPRC_LONG_TIMEOUT = 8 * 60 # 8 minutes
+TA2_GRPC_LONG_TIMEOUT = 8 * 60 # 8 minutes
 
 # D3M - gRPC file uris
 MAX_EMBEDDABLE_FILE_SIZE = .5 * 500000

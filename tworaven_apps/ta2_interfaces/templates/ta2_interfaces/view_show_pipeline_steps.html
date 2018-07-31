@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+
+{% block main_content %}
+<div class="row">
+  <div class="col-12">
+    {% include "content_pages/snippet_return_to_links.html" %}
+  </div>
+</div>
+<div class="row">
+
+  <!-- start: form column -->
+  <div class="col-12 col-md-12">
+    <h3>Pipeline Steps</h3>
+
+    <p>Each time this page is loaded, the following steps take place: </p>
+    <ol>
+      <li>Each saved <b>GetSearchSolutionsResultsResponse</b> is checked.
+        <br />  - See <a href="{% url 'admin:ta2_interfaces_storedresponse_changelist' %}?stored_request__request_type=GetSearchSolutionsResults">Stored Responses in the admin</a></li>
+      <li>If there's a <b>solutionId</b>, a <b>DescribeSolution</b> request is made to the TA2</li>
+      <li>The results are shown below</li>
+    </ol>
+    <hr />
+    {% if pipeline_util.has_error %}
+    <div class="alert alert-danger" role="alert">
+      {{ pipeline_util.error_message }}
+    </div>
+    {% endif %}
+
+    <table class="table table-bordered">
+      <thead>
+        <tr>
+          <td class="text-center font-weight-bold">#</a>
+          <td class="text-center font-weight-bold">StoredResponse id</td>
+          <td class="text-center font-weight-bold">Num Steps</td>
+          <td class="text-center font-weight-bold">Success?</td>
+          <!--
+          <td class="text-left font-weight-bold">DescribeSolutionResponse</td>
+          -->
+        </tr>
+      </thead>
+
+      <tbody>
+      {% for resp_id, pipeline_result in pipeline_util.pipeline_results.items %}
+        <tr>
+          <td rowspan="2">{{ forloop.counter }}</td>
+          <td class="text-left"><a href="{% url 'admin:ta2_interfaces_storedresponse_change' resp_id %}" target="stored_resp_admin">admin view: {{ resp_id }}</a></td>
+          <td class="text-center">{{ pipeline_result.get_num_pipeline_steps }}</td>
+          <td class="text-center">{% if pipeline_result.has_error %}
+              <span class="badge badge-danger">Not found</span>
+
+              {% else%}
+              <span class="badge badge-success">Success</span>
+
+              {% endif %}</td>
+        </tr>
+        <tr>
+          <td class="text-left" colspan="3">
+              {% if pipeline_result.has_error %}
+                {{ pipeline_result }}
+              {% else %}
+                <a class="btn btn-primary btn-sm" type="button" data-toggle="collapse" data-target="#result{{ forloop.counter }}" aria-expanded="false" aria-controls="result{{ forloop.counter }}">
+                    Show steps (JSON)
+                </a>
+                <div class="collapse" id="result{{ forloop.counter }}">
+                  <div class="card card-body">
+                    <pre>{{ pipeline_result }}</pre>
+                  </div>
+                </div>
+              {% endif %}
+            </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    <!--
+    for resp_id, pipeline_result in self.pipeline_results.items():
+        result_cnt += 1
+        msgt('(%s) id: %s, steps: %s' % \
+             (result_cnt,
+              resp_id,
+              pipeline_result.get_num_pipeline_steps()))
+
+        print('pipeline_result', type(pipeline_result))
+        msg(pipeline_result.__str__())   #[:40])
+    -->
+  </div>
+</div>
+{% endblock %}
