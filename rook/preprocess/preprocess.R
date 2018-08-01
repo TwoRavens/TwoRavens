@@ -173,7 +173,9 @@ preprocess<-function(hostname=NULL, fileid=NULL, testdata=NULL, types=NULL, file
     }
 
     # Add problems that use discovered splits and constructed variables
-    mydisco <- c(mydisco, disco2(mydata2, top=3), disco3(mydata2, top=3))  
+    mydisco <- c(mydisco, disco2(mydata2, top=3), disco3(mydata2, top=3)) 
+
+    cat("Successfully completed problem discovery \n") 
 
     datasetLevelInfo[["covarianceMatrix"]] <- mycov
     datasetLevelInfo[["discovery"]] <- mydisco
