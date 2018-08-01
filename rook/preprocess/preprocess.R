@@ -155,7 +155,13 @@ preprocess<-function(hostname=NULL, fileid=NULL, testdata=NULL, types=NULL, file
             }
         }
     }
+
+    # Only use numeric variables, and don't use d3mIndex if present
     mydata2 <- mydata2[sapply(mydata2,is.numeric)]
+    if ("d3mIndex" %in% names(mydata)){
+        d3mIndex.pos <- match("d3mIndex", names(mydata))
+        mydata2 <- mydata2[, -d3mIndex.pos]
+    }
 
     mycov <- tryCatch(cov(mydata2, use='complete.obs'), error=function(e) matrix(0)) # this will default to a 1x1 matrix with a 0
     mycor <- tryCatch(cor(mydata2, use='pairwise.complete.obs'), error=function(e) matrix(0)) # this will default to a 1x1 matrix with a 0
