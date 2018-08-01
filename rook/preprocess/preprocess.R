@@ -433,34 +433,46 @@ disco2 <- function(data, n=3, samplesize=2000, top=NULL){
         myformula <- as.formula(paste(allnames[i], "~", paste(allnames[-i], collapse="+") ))
         tempCART <- rpart(myformula, data, control=rpart.control(maxdepth=1))
 
-        splitvar <- tempCART$frame[1,1]
-        splitvar.pos <- match(splitvar,names(data))
-        split1 <- labels(tempCART)[2]
-        split2 <- labels(tempCART)[3]
-        
+        # Only run if split is found
+        if(nrow(tempCART$frame)==3){
 
-        flag1 <- eval(parse(text=paste("data$", split1, sep="")))
-        #flag2 <- eval(parse(text=paste("temp$", split2, sep="")))
+            splitvar <- tempCART$frame[1,1]
+            splitvar.pos <- match(splitvar,names(data))
+            split1 <- labels(tempCART)[2]
+            split2 <- labels(tempCART)[3]
+            
+            cat("--\n")
+            cat(split1, "\n")
+            print(myformula)
+            cat("--\n")
 
-        subdata1 <- data[ flag1, -splitvar.pos]     # split variables should not be used any more
-        subdata2 <- data[!flag1, -splitvar.pos]
+            print(summary(tempCART))
 
-        iposition <- match(allnames[i], names(subdata1))
-        out1 <- varfind(data=subdata1, i=iposition, r=r)
-        out2 <- varfind(data=subdata2, i=iposition, r=r)
+            flag1 <- eval(parse(text=paste("data$", split1, sep="")))
+            #flag2 <- eval(parse(text=paste("temp$", split2, sep="")))
 
-        if(!identical(out1$keep,out2$keep)){
-            #cat("found contrast:", out1$rating, out1$keep, "|", out2$keep, out2$rating,"\n")
-            count <- count+1
-            if(out1$rating>=out2$rating){
-                found[[count]] <- list(target=allnames[i], predictors=out1$keep, transform=0, subsetObs= split1, subsetFeats=0)
-            }else{
-                found[[count]] <- list(target=allnames[i], predictors=out2$keep, transform=0, subsetObs= split2, subsetFeats=0)
-            }
-            rating <- c(rating, abs(out1$rating - out2$rating))
-        } #else {
-            #cat("no contrast", out1$keep, out2$keep, "\n")
-        #}
+            subdata1 <- data[ flag1, -splitvar.pos]     # split variables should not be used any more
+            subdata2 <- data[!flag1, -splitvar.pos]
+
+            iposition <- match(allnames[i], names(subdata1))
+            out1 <- varfind(data=subdata1, i=iposition, r=r)
+            out2 <- varfind(data=subdata2, i=iposition, r=r)
+
+            if(!identical(out1$keep,out2$keep)){
+                #cat("found contrast:", out1$rating, out1$keep, "|", out2$keep, out2$rating,"\n")
+                count <- count+1
+                if(out1$rating>=out2$rating){
+                    found[[count]] <- list(target=allnames[i], predictors=out1$keep, transform=0, subsetObs= split1, subsetFeats=0)
+                }else{
+                    found[[count]] <- list(target=allnames[i], predictors=out2$keep, transform=0, subsetObs= split2, subsetFeats=0)
+                }
+                rating <- c(rating, abs(out1$rating - out2$rating))
+            } #else {
+                #cat("no contrast", out1$keep, out2$keep, "\n")
+            #}
+
+        }
+
     }
 
     newfound <- list()
