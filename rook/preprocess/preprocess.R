@@ -447,15 +447,8 @@ disco2 <- function(data, n=3, samplesize=2000, top=NULL){
             split1 <- labels(tempCART)[2]
             split2 <- labels(tempCART)[3]
             
-            cat("--\n")
-            cat(split1, "\n")
-            print(myformula)
-            cat("--\n")
-
-            print(summary(tempCART))
-
             flag1 <- eval(parse(text=paste("data$", split1, sep="")))
-            #flag2 <- eval(parse(text=paste("temp$", split2, sep="")))
+            #flag2 <- eval(parse(text=paste("data$", split2, sep="")))
 
             subdata1 <- data[ flag1, -splitvar.pos]     # split variables should not be used any more
             subdata2 <- data[!flag1, -splitvar.pos]
