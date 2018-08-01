@@ -166,6 +166,9 @@ preprocess<-function(hostname=NULL, fileid=NULL, testdata=NULL, types=NULL, file
         mydisco<-NULL
     }
 
+    # Add problems that use discovered splits
+    mydisco <- c(mydisco, disco2(mydata2, top=3))  
+
     datasetLevelInfo[["covarianceMatrix"]] <- mycov
     datasetLevelInfo[["discovery"]] <- mydisco
     
@@ -378,9 +381,9 @@ disco <- function(names, cor, n=3){
     for(i in 1:k){
         if(!identical(names[i],"d3mIndex")){
             count <- count+1
-            temporder <- order(cor[i,], decreasing=TRUE)[1:r]
+            temporder <- order(abs(cor[i,]), decreasing=TRUE)[1:r]
             keep <- names[temporder]
-            rating <- c(rating,sum(cor[i,temporder]))
+            rating <- c(rating,sum(abs(cor[i,temporder])))
             
             ## VJD: adding fields to found list for more advanced problem discovery. 0 means do nothing with them
             found[[count]] <- list(target=names[i], predictors=keep, transform=0, subsetObs=0, subsetFeats=0) 
@@ -395,6 +398,90 @@ disco <- function(names, cor, n=3){
     }
     
     return(newfound)
+}
+
+
+disco2 <- function(data, n=3, samplesize=2000, top=NULL){
+    library(rpart)
+
+    varfind <- function(data,i,r){
+        names <- names(data)
+        cor <- cor(data) 
+        cor[cor==1] <- 0        # don't use variables that are perfect
+        diag(cor) <- 0
+        temporder <- order(abs(cor[i,]), decreasing=TRUE)[1:r]
+        keep <- names[temporder]
+        rating <- sum(abs(cor[i,temporder]))
+
+        return(list(keep=keep,rating=rating))
+    }
+
+    k <- nrow(cor)
+    r <- min(k-1,n)  # How many predictor variables to keep
+    found <- list()
+    count <- 0
+    rating <- NULL
+
+    # The CART implementation rpart() can be slow on large datasets
+    if(nrow(data)>samplesize){
+        myindex <- sample(1:nrow(data),samplesize)
+        data <- data[myindex, ]
+    }
+
+    allnames <- names(data)
+    for(i in 1:length(allnames)){
+        myformula <- as.formula(paste(allnames[i], "~", paste(allnames[-i], collapse="+") ))
+        tempCART <- rpart(myformula, data, control=rpart.control(maxdepth=1))
+
+        splitvar <- tempCART$frame[1,1]
+        splitvar.pos <- match(splitvar,names(data))
+        split1 <- labels(tempCART)[2]
+        split2 <- labels(tempCART)[3]
+        
+
+        flag1 <- eval(parse(text=paste("data$", split1, sep="")))
+        #flag2 <- eval(parse(text=paste("temp$", split2, sep="")))
+
+        subdata1 <- data[ flag1, -splitvar.pos]     # split variables should not be used any more
+        subdata2 <- data[!flag1, -splitvar.pos]
+
+        iposition <- match(allnames[i], names(subdata1))
+        out1 <- varfind(data=subdata1, i=iposition, r=r)
+        out2 <- varfind(data=subdata2, i=iposition, r=r)
+
+        if(!identical(out1$keep,out2$keep)){
+            #cat("found contrast:", out1$rating, out1$keep, "|", out2$keep, out2$rating,"\n")
+            count <- count+1
+            if(out1$rating>=out2$rating){
+                found[[count]] <- list(target=allnames[i], predictors=out1$keep, transform=0, subsetObs= split1, subsetFeats=0)
+            }else{
+                found[[count]] <- list(target=allnames[i], predictors=out2$keep, transform=0, subsetObs= split2, subsetFeats=0)
+            }
+            rating <- c(rating, abs(out1$rating - out2$rating))
+        } #else {
+            #cat("no contrast", out1$keep, out2$keep, "\n")
+        #}
+    }
+
+    newfound <- list()
+    neworder <- order(rating, decreasing=TRUE)
+    for(i in 1:length(rating)){
+        newfound[[i]] <- found[[ neworder[i] ]]
+    }
+    
+    if(!is.null(top)){
+        if(top>length(newfound)){
+            top <- length(newfound)
+        }
+    } else {
+        top <- sum((rating/mean(rating))>1.1)
+        print(top)
+    }
+
+    newfound <- newfound[1:top]
+
+    return(newfound)
+
 }
 
 
