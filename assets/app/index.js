@@ -9,27 +9,26 @@ import m from 'mithril';
 
 import * as app from './app';
 import * as exp from './explore';
-import * as layout from './layout';
 import * as plots from './plots';
 import * as results from './results';
-import {elem, fadeIn, fadeOut} from './utils';
+import {fadeIn, fadeOut} from './utils';
 
 import Button from './views/PanelButton';
-import List from './views/PanelList';
-import Search from './views/Search';
 import Subpanel from './views/Subpanel';
+import Flowchart from './views/Flowchart';
 
 import * as common from '../common/app/common';
 import ButtonRadio from '../common/app/views/ButtonRadio';
 import Footer from '../common/app/views/Footer';
 import Header from '../common/app/views/Header';
 import MenuTabbed from '../common/app/views/MenuTabbed';
-import Modal, {setModal} from '../common/app/views/Modal';
+import Modal from '../common/app/views/Modal';
 import Panel from '../common/app/views/Panel';
 import PanelList from '../common/app/views/PanelList';
 import Peek from '../common/app/views/Peek';
 import Table from '../common/app/views/Table';
 import TextField from '../common/app/views/TextField';
+import TableJSON from './views/TableJSON';
 
 let state = {
     pipelines: [],
@@ -170,10 +169,56 @@ let righttab = (id, task, title, probDesc) => m(PanelList, {
 });
 
 function rightpanel(mode) {
-    if (mode === 'results') return [];
-    if (mode === 'explore') return [];
+    if (mode === 'results') return; // returns undefined, which mithril ignores
+    if (mode === 'explore') return;
 
     // mode == null (model mode)
+
+    // only called if the pipeline flowchart is rendered
+    function pipelineFlowchartPrep(pipeline) {
+        let steps = pipeline.steps.map((pipeStep, i) => ({
+            key: 'Step ' + i,
+            color: common.grayColor,
+            // special coloring is not enabled for now
+            // color: {
+            //     'data': common.grayColor,
+            //     'byudml': common.dvColor,
+            //     'sklearn_wrap': common.csColor
+            // }[pipeStep.primitive.python_path.split('.')[2]] || common.grayColor,
+            summary: m(Table, {
+                id: 'pipelineFlowchartSummary' + i,
+                abbreviation: 40,
+                data: {
+                    // NOTE: I'm not sure if MIT-FL is to spec here, and if not, then this will break on other TAs
+                    'Name': pipeStep['primitive']['primitive'].name,
+                    'Method': pipeStep['primitive']['primitive']['pythonPath'].split('.').slice(-1)[0]
+                },
+                attrsAll: {style: {'margin-bottom': 0, padding: '1em'}}
+            }),
+            content: m(TableJSON, {
+                id: 'pipelineTableStep' + i,
+                abbreviation: 40,
+                data: pipeStep
+            })
+        }));
+
+        let inputs = 'inputs' in pipeline && m(Table, {
+            id: 'pipelineInputsTable',
+            data: pipeline.inputs,
+            attrsAll: {style: {'margin-bottom': 0, 'padding': '1em'}}
+        });
+        let outputs = 'outputs' in pipeline && m(Table, {
+            id: 'pipelineOutputsTable',
+            data: pipeline.outputs,
+            attrsAll: {style: {'margin-bottom': 0, 'padding': '1em'}}
+        });
+
+        return [
+            {color: common.csColor, key: 'Inputs', summary: inputs, content: inputs},
+            ...steps,
+            {color: common.csColor, key: 'Outputs', summary: outputs, content: outputs}
+        ]
+    }
 
     let sections = [
         // {value: 'Models',
@@ -190,42 +235,81 @@ function rightpanel(mode) {
          display: !app.swandive || app.IS_D3M_DOMAIN ? 'block' : 'none',
          idSuffix: 'Setx',
          contents: [
-             m('#setxRight[style=display:block; float: right; width: 25%; height:100%; background-color: white]',
-               app.pipelineTable ? m(Table, {
+             m('#setxRight[style=display:block; float: right; width: 25%; background-color: white]',
+               app.pipelineTable && m(Table, {
                    id: 'pipelineTable',
                    headers: app.pipelineHeader,
                    data: app.pipelineTable,
-                   activeRow: app.selectedPipeline[app.currentMode],
+                   activeRow: app.selectedPipeline,
                    onclick: app.setSelectedPipeline,
-                   showUID: false,
                    abbreviation: 20
-               }) : undefined),
-             m('#setxTop[style=display:block; float: left; width: 75%; height:10%; overflow: auto; background-color: white]',
-               m("button.btn.btn-default.btn-xs#btnPredPlot[type='button']", {
-                   onclick: () => app.showPredPlot('btnPredPlot'),
-                   style: {float: "left", "margin-left": "2%"}
-               }, "Prediction Summary"),
-               m("button.btn.btn-default.btn-xs#btnGenPreds[type='button']", {
-                   onclick: () => app.showGenPreds('btnGenPreds'),
-                   style: {float: "left", "margin-left": "2%"}
-               }, "Generate New Predictions")),
-             m('#setxLeftPlot[style=display:block; float: left; width: 75%; height:95%; overflow: auto; background-color: white]'),
-             m('#setxLeft[style=display:none; float: left; width: 75%; height:95%; overflow: auto; background-color: white]'),
-             m('#setxLeftGen[style=display:none; float: left; width: 75%; height:95%; overflow: auto; background-color: white]',
-               m('#setxLeftTop[style=display:block; float: left; width: 100%; height:50%; overflow: auto; background-color: white]',
-                 m('#setxLeftTopLeft[style=display:block; float: left; width: 30%; height:100%; overflow: auto; background-color: white]'),
-                 m('#setxLeftTopRight[style=display:block; float: left; width: 70%; height:100%; overflow: auto; background-color: white]')),
-               m('#setxLeftBottomLeft[style=display:block; float: left; width: 70%; height:50%; overflow: auto; background-color: white]'),
-               m('#setxLeftBottomRightTop[style=display:block; float: left; width: 30%; height:10%; overflow: auto; background-color: white]',
-                 m(Button,
-                   {id: 'btnExecutePipe',
-                    classes: 'btn-default.ladda-button[data-spinner-color=#000000][data-style=zoom-in]',
-                    onclick: () => app.executepipeline('btnExecutePipe'),
-                    style: `display:inline; float: left; margin-right: 10px`,
-                    title: 'Execute pipeline.'},
-                   m('span.ladda-label[style=pointer-events: none]', 'Execute Generation'))),
-               m('#setxLeftBottomRightBottom[style=display:block; float: left; width: 30%; height:40%; overflow: auto; background-color: white]'))
-         ]}
+               })),
+
+             app.selectedPipeline === undefined && 'Click a pipeline to explore results.',
+
+             app.selectedPipeline && m(ButtonRadio, {
+                 id: 'resultsButtonBar',
+                 attrsAll: {style: {width: 'auto'}},
+                 attrsButtons: {class: ['btn-sm'], style: {width: 'auto'}},
+                 onclick: app.setSelectedResultsMenu,
+                 activeSection: app.selectedResultsMenu,
+                 sections: [
+                     {value: 'Prediction Summary', id: 'btnPredPlot'},
+                     {value: 'Generate New Predictions', id: 'btnGenPreds'},
+                     {value: 'Visualize Pipeline', id: 'btnVisPipe'}
+                 ]
+             }),
+             m(`div#predictionSummary[style=display:${app.selectedResultsMenu === 'Prediction Summary' ? 'block' : 'none'}]`,
+                 m('#setxLeftPlot[style=display:block; float: left; width: 75%; height:95%; overflow: auto; background-color: white]'),
+                 m('#setxLeft[style=display:none; float: left; width: 75%; height:95%; overflow: auto; background-color: white]'),
+             ),
+             m(`#setxLeftGen[style=display:${app.selectedResultsMenu === 'Generate New Predictions' ? 'block' : 'none'}; float: left; width: 75%; height:95%; overflow: auto; background-color: white]`,
+                 m('#setxLeftTop[style=display:block; float: left; width: 100%; height:50%; overflow: auto; background-color: white]',
+                     m('#setxLeftTopLeft[style=display:block; float: left; width: 30%; height:100%; overflow: auto; background-color: white]'),
+                     m('#setxLeftTopRight[style=display:block; float: left; width: 70%; height:100%; overflow: auto; background-color: white]')),
+                 m('#setxLeftBottomLeft[style=display:block; float: left; width: 70%; height:50%; overflow: auto; background-color: white]'),
+                 m('#setxLeftBottomRightTop[style=display:block; float: left; width: 30%; height:10%; overflow: auto; background-color: white]',
+                     m(Button, {
+                         id: 'btnExecutePipe',
+                         classes: 'btn-default.ladda-button[data-spinner-color=#000000][data-style=zoom-in]',
+                         onclick: app.executepipeline,
+                         style: {
+                             display: app.selectedPipeline === undefined ? 'none' : 'block',
+                             float: 'left',
+                             'margin-right': '10px'
+                         },
+                         title: 'Execute pipeline'
+                     }, m('span.ladda-label[style=pointer-events: none]', 'Execute Generation'))),
+                 m('#setxLeftBottomRightBottom[style=display:block; float: left; width: 30%; height:40%; overflow: auto; background-color: white]')),
+             app.selectedResultsMenu === 'Visualize Pipeline' && app.selectedPipeline in app.allPipelineInfo && m('div', {
+                     style: {
+                         width: '75%',
+                         height: 'calc(100% - 30px)',
+                         overflow: 'auto'
+                     }
+                 },
+                 m('div', {style: {'font-weight': 'bold', 'margin': '1em'}}, 'Overview: '),
+                 m(TableJSON, {
+                     id: 'pipelineOverviewTable',
+                     data: Object.keys(app.allPipelineInfo[app.selectedPipeline].pipeline).reduce((out, entry) => {
+                         if (['inputs', 'steps', 'outputs'].indexOf(entry) === -1)
+                             out[entry] = app.allPipelineInfo[app.selectedPipeline].pipeline[entry];
+                         return out;
+                     }, {}),
+                     attrsAll: {
+                         style: {
+                             margin: '1em',
+                             width: 'calc(100% - 2em)',
+                             border: common.borderColor,
+                             'box-shadow': '0px 5px 5px rgba(0, 0, 0, .2)'
+                         }
+                     }
+                 }),
+                 m('div', {style: {'font-weight': 'bold', 'margin': '1em'}}, 'Steps: '),
+                 m(Flowchart, {steps: pipelineFlowchartPrep(app.allPipelineInfo[app.selectedPipeline].pipeline)})
+             )
+         ]
+        }
     ];
 
     return m(Panel, {
@@ -412,7 +496,8 @@ class Body {
                     : m('', {style},
                         m(ButtonRadio,
                           {id: 'exploreButtonBar',
-                           attrsAll: {style: {width: '400px'}, class: 'btn-sm'},
+                           attrsAll: {style: {width: '400px'}},
+                           attrsButtons: {class: ['btn-sm']},
                            onclick: x => {nodesExplore = []; app.setVariate(x)},
                            activeSection: app.exploreVariate,
                            sections: discovery ? [{value: 'Problem'}] : [{value: 'Univariate'}, {value: 'Bivariate'}, {value: 'Trivariate'}, {value: 'Multiple'}]}),
@@ -678,14 +763,15 @@ class Body {
 
     footer(mode) {
         return m(Footer, [
-            m(ButtonRadio,
-              {id: 'modeButtonBar',
-               attrsAll: {
-                   style: {'padding-top':'2px', width: '200px'}, class: 'navbar-left btn-sm'},
-               onclick: app.set_mode,
-               activeSection: mode || 'model',
-               // {value: 'Results', id: 'btnResultsMode'}] VJD: commenting out the results mode button since we don't have this yet
-               sections: [{value: 'Model'}, {value: 'Explore'}]}),
+            m(ButtonRadio, {
+                id: 'modeButtonBar',
+                attrsAll: {style: {margin: '2px', width: 'auto'}, class: 'navbar-left'},
+                // attrsButtons: {class: ['btn-sm']}, // if you'd like small buttons (btn-sm should be applied to individual buttons, not the entire component)
+                onclick: app.set_mode,
+                activeSection: mode || 'model',
+                // {value: 'Results', id: 'btnResultsMode'}] VJD: commenting out the results mode button since we don't have this yet
+                sections: [{value: 'Model'}, {value: 'Explore'}]
+            }),
             m("a#logID[href=somelink][target=_blank]", "Replication"),
             m("span[style=color:#337ab7]", " | "),
             // dev links...

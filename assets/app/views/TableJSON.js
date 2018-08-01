@@ -1,6 +1,18 @@
 import m from 'mithril';
 
-import {selVarColor, mergeAttributes, menuColor} from "../common";
+import {mergeAttributes, selVarColor} from "../../common/app/common";
+
+let natives = new Set(['number', 'string', 'boolean']);
+let nestedStyle = {
+    style: {
+        background: 'rgba(0,0,0,.1)',
+        'box-shadow': '0px 5px 10px rgba(0, 0, 0, .2)',
+        margin: '10px 0'
+    }
+};
+
+// This is the same as the Table component, except that you can pass any json structure
+// This component will recursively nest tables and tabularize arrays. The background gets darker as nesting deepens
 
 // Interface specification
 //
@@ -8,7 +20,7 @@ import {selVarColor, mergeAttributes, menuColor} from "../common";
 // m(Table, {
 //     id: id (String),
 //     headers: ['col1Header', 'col2Header'],
-//     data: [['row1col1', 'row1col2'], ['row2col1', 'row2col2']] or function
+//     data: ANY JSON STRUCTURE,
 //     activeRow: 'row1col1', (optional)
 //     onclick: (uid, colID) => console.log(uid + " row was clicked, column number " + colID + " was clicked"), (optional)
 //     showUID: true | false, (optional)
@@ -33,7 +45,7 @@ import {selVarColor, mergeAttributes, menuColor} from "../common";
 // Table tags allows passing colgroups, captions, etc. into the table manually. Can be a single element or list
 
 // When abbreviation is set, strings are shortened to int number of characters
-export default class Table {
+export default class TableJSON {
     view(vnode) {
         let {id, data, headers, activeRow, onclick, showUID, abbreviation} = vnode.attrs;
         // Interface custom attributes
@@ -47,14 +59,31 @@ export default class Table {
         // deduce headers if passed an array of objects
         if (headers === undefined && data.some(row => !Array.isArray(row))) {
             let headersTemp = new Set();
-            data.forEach(row => Object.keys(row).forEach(key => headersTemp.add(key)));
+            data.forEach(row => row && Object.keys(row).forEach(key => headersTemp.add(key)));
             headers = [...headersTemp];
         }
 
         showUID = showUID !== false; // Default is 'true'
 
         // if abbreviation is not undefined, and string is too long, then shorten the string and add a tooltop
-        let abbreviate = (item) => {
+        let value = (item) => {
+            if (Array.isArray(item)) {
+                return m(TableJSON, {
+                    data: item.map((elem, i) => {
+                        if (natives.has(typeof elem)) return {"index": i, "value": elem};
+                        return elem;
+                    }),
+                    attrsAll: nestedStyle,
+                    abbreviation, attrsRows, attrsCells
+                })
+            }
+            if (typeof item === 'object')
+                return m(TableJSON, {
+                    data: item,
+                    attrsAll: nestedStyle,
+                    abbreviation, attrsRows, attrsCells
+                });
+
             if (typeof(item) === 'string' && item.length > abbreviation) {
                 return m('div', {'data-toggle': 'tooltip', title: item},
                     item.substring(0, abbreviation - 3).trim() + '...')
@@ -62,25 +91,29 @@ export default class Table {
             else return item;
         };
 
-        return m(`table.table#${id}`, mergeAttributes({style: {width: '100%'}}, attrsAll), [
-            tableTags,
-            headers && m('tr', {style: {width: '100%', background: menuColor, position: 'sticky', top: 0}}, [
-                ...(showUID ? headers : headers.slice(1)).map((header) => m('th', abbreviate(header)))
-            ]),
+        return m(`table.table#${id}`, mergeAttributes({
+                style: {width: '100%'}
+            }, attrsAll), [
+                tableTags,
+                headers && m('tr', {style: {width: '100%', background: 'rgba(0,0,0,0.1)', position: 'sticky', top: 0}}, [
+                    ...(showUID ? headers : headers.slice(1)).map((header) => m('th', value(header)))
+                ]),
 
-            ...data.map((row, i) => {
-                    // if a row is an Object of "header": "value" items, then convert to array with proper spacing
-                    if (headers && !Array.isArray(row)) row = headers.map(header => row[header]);
+                ...data.map((row, i) => {
+                        if (row === undefined || row === null) return;
 
-                    return m('tr', mergeAttributes(
-                        i % 2 === 1 ? {style: {'background': '#fcfcfc'}} : {},
-                        row[0] === activeRow ? {style: {'background': selVarColor}} : {},
-                        attrsRows),
-                        row.filter((item, j) => j !== 0 || showUID).map((item, j) =>
-                            m('td', mergeAttributes(onclick ? {onclick: () => onclick(row[0], j)} : {}, attrsCells), abbreviate(item)))
-                    )
-                }
-            )]
+                        // if a row is an Object of "header": "value" items, then convert to array with proper spacing
+                        if (headers && !Array.isArray(row)) row = headers.map(header => row[header]);
+
+                        return m('tr', mergeAttributes(
+                            i % 2 === 1 ? {style: {'background': 'rgba(1,1,1,.02)'}} : {},
+                            row[0] === activeRow ? {style: {'background': selVarColor}} : {},
+                            attrsRows),
+                            row.filter((item, j) => j !== 0 || showUID).map((item, j) =>
+                                m('td', mergeAttributes(onclick ? {onclick: () => onclick(row[0], j)} : {}, attrsCells), value(item)))
+                        )
+                    }
+                )]
         );
     };
 }
