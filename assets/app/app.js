@@ -4406,7 +4406,16 @@ export function discovery(preprocess_file) {
         let current_predictors = extract[i]["predictors"];
         let current_task = node.plottype === "bar" ? 'classification' : 'regression';
         let current_rating = 3;
-        let current_description = current_target + " is predicted by " + current_predictors.join(" and ");
+        let current_description = "";
+        console.log(current_transform);
+        if(current_transform != 0){
+            console.log("transform");
+            current_description = "The combination of " + current_transform.split('=')[1] + " is predicted by " + current_predictors.join(" and ");
+        } else if (current_subsetObs != 0){
+            current_description = current_target + " is predicted by " + current_predictors.join(" and ") + " whenever " + current_subsetObs;
+        } else {
+            current_description = current_target + " is predicted by " + current_predictors.join(" and ");
+        };
         let current_metric = node.plottype === "bar" ? 'f1Macro' : 'meanSquaredError';
         let current_id = "problem" + (i+1);
         let current_disco = {problem_id: current_id, system: "auto", meaningful: "no", target: current_target, predictors: current_predictors, transform: current_transform, subsetObs: current_subsetObs, subsetFeats: current_subsetFeats, task: current_task, rating: current_rating, description: current_description, metric: current_metric, };
