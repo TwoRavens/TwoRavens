@@ -414,7 +414,7 @@ disco2 <- function(data, n=3, samplesize=2000, top=NULL){
 
     varfind <- function(data,i,r){
         names <- names(data)
-        cor <- cor(data) 
+        cor <- tryCatch(cor(data, use='pairwise.complete.obs'), error=function(e) matrix(0)) # this will default to a 1x1 matrix with a 0     
         cor[cor==1] <- 0        # don't use variables that are perfect
         diag(cor) <- 0
         temporder <- order(abs(cor[i,]), decreasing=TRUE)[1:r]
@@ -504,7 +504,7 @@ disco3 <- function(data, n=3, top=3){
     count <- 0
     rating <- NULL
 
-    cor <- cor(data)
+    cor <- tryCatch(cor(data, use='pairwise.complete.obs'), error=function(e) matrix(0)) # this will default to a 1x1 matrix with a 0
     cor[cor==1] <- 0        # don't use variables that are perfect
     diag(cor) <- 0
 
@@ -512,7 +512,7 @@ disco3 <- function(data, n=3, top=3){
         temporder <- order(abs(cor[i,]), decreasing=TRUE)[1:(n+1)]
         tempdata <- data[,temporder[2:length(temporder)]]
         tempdata$newvar <- data[,i] + data[, temporder[1]]
-        newcor <- cor(tempdata)
+        newcor <- tryCatch(cor(tempdata, use='pairwise.complete.obs'), error=function(e) matrix(0)) # this will default to a 1x1 matrix with a 0
         newcor[newcor==1] <- 0        # don't use variables that are perfect
         diag(newcor) <- 0
 
