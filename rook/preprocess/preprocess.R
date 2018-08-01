@@ -166,8 +166,8 @@ preprocess<-function(hostname=NULL, fileid=NULL, testdata=NULL, types=NULL, file
         mydisco<-NULL
     }
 
-    # Add problems that use discovered splits
-    mydisco <- c(mydisco, disco2(mydata2, top=3))  
+    # Add problems that use discovered splits and constructed variables
+    mydisco <- c(mydisco, disco2(mydata2, top=3), disco3(mydata2, top=3))  
 
     datasetLevelInfo[["covarianceMatrix"]] <- mycov
     datasetLevelInfo[["discovery"]] <- mydisco
@@ -400,9 +400,9 @@ disco <- function(names, cor, n=3){
     return(newfound)
 }
 
+## Use CART trees to find splits, and then find the splits in which the predictive variables change on different sides of splits
 
 disco2 <- function(data, n=3, samplesize=2000, top=NULL){
-    library(rpart)
 
     varfind <- function(data,i,r){
         names <- names(data)
@@ -470,19 +470,59 @@ disco2 <- function(data, n=3, samplesize=2000, top=NULL){
     }
     
     if(!is.null(top)){
-        if(top>length(newfound)){
-            top <- length(newfound)
-        }
+        top <- min(top, length(newfound))
     } else {
         top <- sum((rating/mean(rating))>1.1)
-        print(top)
     }
-
     newfound <- newfound[1:top]
 
     return(newfound)
 
 }
 
+## Use Item Cluster Analysis to find sets of variables that are better explained than individual variables
 
+disco3 <- function(data, n=3, top=3){
+
+    allnames <- names(data)
+    k <- nrow(cor)
+    r <- min(k-1,n)  # How many predictor variables to keep
+    found <- list()
+    count <- 0
+    rating <- NULL
+
+    cor <- cor(data)
+    cor[cor==1] <- 0        # don't use variables that are perfect
+    diag(cor) <- 0
+
+    for(i in 1:length(allnames)){
+        temporder <- order(abs(cor[i,]), decreasing=TRUE)[1:(n+1)]
+        tempdata <- data[,temporder[2:length(temporder)]]
+        tempdata$newvar <- data[,i] + data[, temporder[1]]
+        newcor <- cor(tempdata)
+        newcor[newcor==1] <- 0        # don't use variables that are perfect
+        diag(newcor) <- 0
+
+        #if(sum(abs(newcor[(n+1),])) > sum(abs(cor[i,temporder[2:length(temporder)] ]))){
+            count <- count + 1
+            newtarget <- paste(allnames[i], "_", allnames[temporder[1]], sep="")
+            transform <- paste(newtarget, "=", allnames[i], "+", allnames[temporder[1]] )
+            found[[count]] <- list(target=allnames[i], predictors=allnames[temporder[2:length(temporder)]], transform=transform, subsetObs=0, subsetFeats=0)
+            rating[count] <- sum(abs(newcor[(n+1),])) - sum(abs(cor[i,temporder[2:length(temporder)] ]))
+        #}
+
+    }
+
+    newfound <- list()
+    neworder <- order(rating, decreasing=TRUE)
+    for(i in 1:length(rating)){
+        newfound[[i]] <- found[[ neworder[i] ]]
+    }
+
+    top <- min(top, length(newfound))
+    newfound <- newfound[1:top]
+
+    return(newfound)
+
+}
 
