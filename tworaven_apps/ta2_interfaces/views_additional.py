@@ -10,6 +10,7 @@ from django.http import JsonResponse    #, HttpResponse, Http404
 from django.views.decorators.cache import cache_page
 from django.views.decorators.csrf import csrf_exempt
 from tworaven_apps.ta2_interfaces.grpc_util import TA3TA2Util
+from tworaven_apps.ta2_interfaces.util_pipeline_check import PipelineInfoUtil
 
 @csrf_exempt
 @cache_page(settings.PAGE_CACHE_TIME)
@@ -26,3 +27,14 @@ def view_get_problem_schema(request):
     return JsonResponse(dict(success=True,
                              message='Success!',
                              data=info_dict))
+
+@csrf_exempt
+def view_show_pipeline_steps(request):
+    """If any are available, lists the pipeline steps in StoredResponse objects"""
+    putil = PipelineInfoUtil()
+
+    view_info = dict(pipeline_util=putil)
+
+    return render(request,
+                  'ta2_interfaces/view_show_pipeline_steps.html',
+                  view_info)

@@ -69,7 +69,7 @@ def search_solutions(raven_json_str=None):
     try:
         reply = core_stub.SearchSolutions(\
                             req,
-                            timeout=settings.TA2_GPRC_SHORT_TIMEOUT)
+                            timeout=settings.TA2_GRPC_SHORT_TIMEOUT)
     except Exception as err_obj:
         return err_resp(str(err_obj))
 
@@ -123,7 +123,7 @@ def end_search_solutions(raven_json_str=None):
     try:
         reply = core_stub.EndSearchSolutions(\
                             req,
-                            timeout=settings.TA2_GPRC_SHORT_TIMEOUT)
+                            timeout=settings.TA2_GRPC_SHORT_TIMEOUT)
     except Exception as err_obj:
         return err_resp(str(err_obj))
 
@@ -176,7 +176,7 @@ def stop_search_solutions(raven_json_str=None):
     try:
         reply = core_stub.StopSearchSolutions(\
                             req,
-                            timeout=settings.TA2_GPRC_SHORT_TIMEOUT)
+                            timeout=settings.TA2_GRPC_SHORT_TIMEOUT)
     except Exception as err_obj:
         return err_resp(str(err_obj))
 
@@ -230,7 +230,7 @@ def describe_solution(raven_json_str=None):
     try:
         reply = core_stub.DescribeSolution(\
                             req,
-                            timeout=settings.TA2_GPRC_SHORT_TIMEOUT)
+                            timeout=settings.TA2_GRPC_FAST_TIMEOUT)
     except Exception as err_obj:
         return err_resp(str(err_obj))
 
@@ -283,7 +283,7 @@ def score_solution(raven_json_str=None):
     try:
         reply = core_stub.ScoreSolution(\
                             req,
-                            timeout=settings.TA2_GPRC_SHORT_TIMEOUT)
+                            timeout=settings.TA2_GRPC_SHORT_TIMEOUT)
     except Exception as err_obj:
         return err_resp(str(err_obj))
 
@@ -336,7 +336,7 @@ def fit_solution(raven_json_str=None):
     try:
         reply = core_stub.FitSolution(\
                             req,
-                            timeout=settings.TA2_GPRC_SHORT_TIMEOUT)
+                            timeout=settings.TA2_GRPC_SHORT_TIMEOUT)
     except Exception as err_obj:
         return err_resp(str(err_obj))
 
@@ -389,7 +389,7 @@ def produce_solution(raven_json_str=None):
     try:
         reply = core_stub.ProduceSolution(\
                             req,
-                            timeout=settings.TA2_GPRC_SHORT_TIMEOUT)
+                            timeout=settings.TA2_GRPC_SHORT_TIMEOUT)
     except Exception as err_obj:
         return err_resp(str(err_obj))
 
@@ -442,7 +442,7 @@ def solution_export(raven_json_str=None):
     try:
         reply = core_stub.SolutionExport(\
                             req,
-                            timeout=settings.TA2_GPRC_SHORT_TIMEOUT)
+                            timeout=settings.TA2_GRPC_SHORT_TIMEOUT)
     except Exception as err_obj:
         return err_resp(str(err_obj))
 
@@ -494,7 +494,7 @@ def update_problem(raven_json_str=None):
     try:
         reply = core_stub.UpdateProblem(\
                             req,
-                            timeout=settings.TA2_GPRC_SHORT_TIMEOUT)
+                            timeout=settings.TA2_GRPC_SHORT_TIMEOUT)
     except Exception as err_obj:
         return err_resp(str(err_obj))
 
@@ -536,7 +536,7 @@ def list_primitives():
     try:
         reply = core_stub.ListPrimitives(\
                             req,
-                            timeout=settings.TA2_GPRC_SHORT_TIMEOUT)
+                            timeout=settings.TA2_GRPC_SHORT_TIMEOUT)
     except Exception as err_obj:
         return err_resp(str(err_obj))
 

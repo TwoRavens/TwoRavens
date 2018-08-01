@@ -616,9 +616,9 @@ def compile_ta3ta2_api():
 def clear_eventdata_queries():
     """Delete all eventdata queries objects"""
     from django.conf import settings
-    # if not settings.ALLOW_FAB_DELETE:
-    #     print('For testing! Only if ALLOW_FAB_DELETE settings is True')
-    #     return
+    if not settings.ALLOW_FAB_DELETE:
+        print('For testing! Task only available if ALLOW_FAB_DELETE = True')
+        return
 
     from tworaven_apps.eventdata_queries.models import EventDataSavedQuery
 
@@ -631,19 +631,39 @@ def clear_eventdata_queries():
     else:
         print('No EventData objects found.\n')
 
+@task
+def clear_ta2_stored_requests():
+    """Delete StoredResponse and StoredRequest objects"""
+    from django.conf import settings
+    if not settings.ALLOW_FAB_DELETE:
+        print('For testing! Task only available if ALLOW_FAB_DELETE = True')
+        return
+
+    from tworaven_apps.ta2_interfaces.models import StoredRequest, StoredResponse
+
+    for model_name in [StoredResponse, StoredRequest]:
+        mcnt = model_name.objects.count()
+        print('\n%d %s objects(s) found' % (mcnt, model_name.__name__))
+        if mcnt > 0:
+            for meta_obj in model_name.objects.all().order_by('-id'):
+                meta_obj.delete()
+            print('Deleted...')
+        else:
+            print('No %s objects found.\n' % (model_name.__name__,))
+
 
 @task
 def clear_archive_queries():
-    """Delete all eventdata queries objects"""
+    """Delete ArchiveQueryJob objects"""
     from django.conf import settings
-    # if not settings.ALLOW_FAB_DELETE:
-    #     print('For testing! Only if ALLOW_FAB_DELETE settings is True')
-    #     return
+    if not settings.ALLOW_FAB_DELETE:
+        print('For testing! Task only available if ALLOW_FAB_DELETE = True')
+        return
 
     from tworaven_apps.eventdata_queries.models import ArchiveQueryJob
 
     mcnt = ArchiveQueryJob.objects.count()
-    print('\n%d Eventdata archive Objects(s) found' % mcnt)
+    print('\n%d ArchiveQueryJob archive Objects(s) found' % mcnt)
     if mcnt > 0:
         for meta_obj in ArchiveQueryJob.objects.all().order_by('-id'):
             meta_obj.delete()

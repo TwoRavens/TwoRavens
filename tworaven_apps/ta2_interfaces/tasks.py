@@ -54,7 +54,7 @@ def stream_and_store_results(raven_json_str, stored_request_id,
     msg_cnt = 0
     try:
         for reply in grpc_rpc_call_function(\
-                req, timeout=settings.TA2_GPRC_LONG_TIMEOUT):
+                req, timeout=settings.TA2_GRPC_LONG_TIMEOUT):
 
             # Save the stored response
             #

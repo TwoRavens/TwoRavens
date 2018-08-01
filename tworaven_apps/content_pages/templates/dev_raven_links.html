@@ -29,6 +29,10 @@
             <ul>
               <li><a href="{% url 'view_test_form' %}">gRPC test form</a></li>
               <li><a href="{% url 'view_save_problem_form' %}">save problem test form</a></li>
+              <li><a href="{% url 'view_show_pipeline_steps' %}">Pipeline steps from DescribeSolution</a>
+                <br />(Note: May have stale data. To clear it:
+                <br /><code>fab clear_ta2_stored_requests</code>)</li>
+
             </ul>
         </div>
       </div>
@@ -68,21 +72,7 @@
     <!-- start: column -->
     <div class="col-12 col-md-6">
 
-      <div class="card">
-        <div class="card-header"><b>Test/in process</b></div>
-        <div class="card-body">
-          <ul>
-            <li><a href="{% url 'view_workspace_info' %}">view workspace info</a></li>
-          </ul>
-          <ul>
-            <li><a href="/static/pkgs/swagger-ui/dist/index.html?url={% url 'view_swagger_doc_v1' %}">swagger ui</a> </li>
-            <li><a href="{% url 'view_swagger_doc_v1' %}">swagger spec v1</a></li>
 
-          </ul>
-
-        </div>
-      </div>
-      <br />
 
       <!-- D3M config info -->
       <div class="card">
@@ -111,5 +101,23 @@
           </ul>
         </div>
       </div>
+
+      <!-- Test/in process -->
+      <br />
+      <div class="card">
+        <div class="card-header"><b>Test/in process</b></div>
+        <div class="card-body">
+          <ul>
+            <li><a href="{% url 'view_workspace_info' %}">view workspace info</a></li>
+          </ul>
+          <ul>
+            <li><a href="/static/pkgs/swagger-ui/dist/index.html?url={% url 'view_swagger_doc_v1' %}">swagger ui</a> </li>
+            <li><a href="{% url 'view_swagger_doc_v1' %}">swagger spec v1</a></li>
+
+          </ul>
+
+        </div>
+      </div>
+      <br />
     </div><!-- end: column -->
 {% endblock %}

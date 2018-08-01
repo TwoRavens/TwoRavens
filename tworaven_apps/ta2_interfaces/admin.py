@@ -9,8 +9,12 @@ class StoredResponseAdminInline(admin.TabularInline):
     #exclude = ('response',)
     readonly_fields = ('status', 'is_success',
                        'sent_to_user', 'hash_id',
-                       #'response',
+                       'response',
+                       'response_as_json',
                        'created', 'modified', )
+    fields = ('status',
+              'sent_to_user',
+              'response_as_json')
     extra = 0
     can_delete = True
     show_change_link = True
@@ -28,11 +32,25 @@ class StoredRequestAdmin(admin.ModelAdmin):
                     'workspace',
                     'created',
                     'modified')
-    list_filter = ('is_finished', 'status')
+    list_filter = ('is_finished',
+                   'status',
+                   'request_type')
     readonly_fields = ('request',
+                       'request_as_json',
+                       'request_type',
                        'hash_id',
                        'modified',
                        'created')
+    fields = ('name',
+              'request_type',
+              'is_finished',
+              'status',
+              'user',
+              'workspace',
+              'request',
+              'request_as_json',
+              ('created', 'modified'),)
+
 admin.site.register(StoredRequest, StoredRequestAdmin)
 
 
@@ -44,11 +62,25 @@ class StoredResponseAdmin(admin.ModelAdmin):
                     'sent_to_user',
                     'created',
                     'modified')
-    list_filter = ('is_success', 'sent_to_user', 'status')
+    list_filter = ('is_success',
+                   'sent_to_user',
+                   'status',
+                   'stored_request__request_type')
     readonly_fields = ('response',
+                       'response_as_json',
+                       'stored_request',
                        'hash_id',
+                       'link_to_request',
                        'modified',
                        'created')
+    fields = ('stored_request',
+              'link_to_request',
+              'status',
+              ('is_success', 'sent_to_user'),
+              'response',
+              'response_as_json',
+              'hash_id',
+              ('modified', 'created'))
 admin.site.register(StoredResponse, StoredResponseAdmin)
 
 """

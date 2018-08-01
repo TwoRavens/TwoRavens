@@ -11,6 +11,10 @@ KEY_GRPC_JSON = 'grpcrequest'
 
 # json keys
 #
+KEY_SOLUTION_ID = 'solutionId'  # DescribeSolutionRequest
+KEY_STEPS = 'steps'     # DescribeSolutionResponse
+KEY_PIPELINE = 'pipeline'   # DescribeSolutionResponse
+
 KEY_PIPELINE_ID = 'pipelineId'
 KEY_PIPELINE_INFO = 'pipelineInfo'
 KEY_PREDICT_RESULT_URI = 'predictResultUri'
