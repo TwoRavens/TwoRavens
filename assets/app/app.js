@@ -3746,7 +3746,7 @@ export async function resultsplotinit(pid) {
     let chosenSolutionId = allPipelineInfo[selectedPipeline].response.solutionId;
 
     let finalFittedId, finalFittedDetailsUrl, produceDetailsUrl, finalProduceDetailsUrl;
-    let res8, res55, res56, res58;
+    let res8, res55, res56, res58, hold3;
 
     let res5 = await makeRequest(D3M_SVC_URL + '/FitSolution', CreateFitDefinition(chosenSolutionId));
     let fittedId = res5.data.requestId;
@@ -3785,8 +3785,13 @@ export async function resultsplotinit(pid) {
                 if(res57.data.is_finished){
                     finalProduceDetailsUrl = res57.data.responses.list[0].details_url;
                     res58 = await updateRequest(finalProduceDetailsUrl);
-                    console.log("Long Awaited:")
-                    console.log(res58)
+                    console.log("Long Awaited:");
+                    console.log(res58);
+                    let hold = res58.data.response.exposedOutputs;
+                    let hold2 = hold[Object.keys(hold)[0]];  // There's an issue getting ."outputs.0".csvUri directly.
+                    hold3 = hold2.csvUri;
+
+                    console.log(hold3);
 
 
                     clearInterval(fittingIntervalId);
@@ -3796,7 +3801,6 @@ export async function resultsplotinit(pid) {
 
 
     }, 500);
-
 
 
 
