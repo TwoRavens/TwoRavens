@@ -62,7 +62,6 @@ class MongoRetrieveUtil(BasicErrCheck):
 
         # choose the database
         #
-        #import ipdb; ipdb.set_trace()
         db = mongo_client[self.dbname]
 
         # run the query

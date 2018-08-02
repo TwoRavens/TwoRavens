@@ -1,4 +1,6 @@
 
+
+D3M_OUTPUT_DIR = '/output'
 # ---------------------------------
 # keys to results in JSON
 # (mostly JSON sent from the UI)
