@@ -42,7 +42,6 @@ class PipelineSteps(BasicErrCheck):
 
     def __str__(self):
         """print method"""
-        #import ipdb; ipdb.set_trace()
         if self.has_steps():
             if self.solution_response:
                 # hack to create a str from `django.utils.safestring.SafeText`
