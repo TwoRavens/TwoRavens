@@ -3745,67 +3745,62 @@ export async function resultsplotinit(pid) {
 
     let chosenSolutionId = allPipelineInfo[selectedPipeline].response.solutionId;
 
-    let finalFittedId, finalFittedDetailsUrl, produceDetailsUrl, finalProduceDetailsUrl;
-    let res8, res55, res56, res58, hold3;
+    let finalFittedId, finalFittedDetailsUrl, produceDetailsUrl, finalProduceDetailsUrl, hold3;
+    let res8, res55, res56, res58, res59;
 
     let res5 = await makeRequest(D3M_SVC_URL + '/FitSolution', CreateFitDefinition(chosenSolutionId));
     let fittedId = res5.data.requestId;
     let res6 = await makeRequest(D3M_SVC_URL + `/GetFitSolutionResults`, {requestId: fittedId});
     let fittedDetailsUrl = res6.data.details_url;
-    let fittingfinished = false;
+    let fittingfinished = false;                     // Flag for whether we have a fitted solution available yet to produce predicted values from.
     let fittingIntervalId = setInterval(async function() {
 
+        // First get fitted solution
         if(!fittingfinished){
-            let res7 = await updateRequest(fittedDetailsUrl);   // check
+            let res7 = await updateRequest(fittedDetailsUrl);
             if(typeof res7.data.is_finished != 'undefined'){
                 if(res7.data.is_finished){
                     finalFittedDetailsUrl = res7.data.responses.list[0].details_url;
                     res8 = await updateRequest(finalFittedDetailsUrl);
                     finalFittedId = res8.data.response.fittedSolutionId;
                     console.log(finalFittedId);
-
                     res55 = await makeRequest(D3M_SVC_URL + '/ProduceSolution', CreateProduceDefinition(finalFittedId));
-                    console.log("Finished Fitting");
+                    console.log("--Finished Fitting");
                     console.log(res55);
-                    let produceId = res55.data.requestId; 
+                    let produceId = res55.data.requestId;
                     res56 = await makeRequest(D3M_SVC_URL + `/GetProduceSolutionResults`, {requestId: produceId});
-                    console.log("Get Produce");
+                    console.log("--Get Produce");
                     console.log(res56);
-                    
                     produceDetailsUrl = res56.data.details_url;
                     fittingfinished = true;
                 };
             };
         };
 
-
+        // Then produce predicted values from fitted solution
         if(fittingfinished){
             let res57 = await updateRequest(produceDetailsUrl);
             if(typeof res57.data.is_finished != 'undefined'){
                 if(res57.data.is_finished){
                     finalProduceDetailsUrl = res57.data.responses.list[0].details_url;
                     res58 = await updateRequest(finalProduceDetailsUrl);
-                    console.log("Long Awaited:");
-                    console.log(res58);
+                    console.log("--Long Awaited Predictions:");
                     let hold = res58.data.response.exposedOutputs;
                     let hold2 = hold[Object.keys(hold)[0]];  // There's an issue getting ."outputs.0".csvUri directly.
                     hold3 = hold2.csvUri;
-
                     console.log(hold3);
-
+                    res59 = await makeRequest(D3M_SVC_URL + `/retrieve-output-data`, {data_pointer: hold3});
+                    console.log(res59);
 
                     clearInterval(fittingIntervalId);
                 };
             };
         };
-
-
     }, 500);
 
 
-
     pid = allPipelineInfo[pid];
-    let mydv = allPipelineInfo.rookpipe.depvar[0];         // When there are multiple CreatePipelines calls, then this only has values from latest value
+    let mydv = allPipelineInfo.rookpipe.depvar[0];          // When there are multiple CreatePipelines calls, then this only has values from latest value
     let dvvalues = allPipelineInfo.rookpipe.dvvalues;       // When there are multiple CreatePipelines calls, then this only has values from latest value
     // let predfile = pid.pipelineInfo.predictResultData.file_1;
 
