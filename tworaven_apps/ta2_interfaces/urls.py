@@ -25,6 +25,9 @@ urlpatterns = (
          views_additional.view_show_pipeline_steps,
          name='view_show_pipeline_steps'),
 
+    path(r'retrieve-output-data',
+         views_additional.view_retrieve_d3m_output_data,
+         name='view_retrieve_d3m_output_data'),
 
     re_path((r'stored-request/(?P<hash_id>[\w]{40,200})$'),
             views_saved_requests.view_stored_request,

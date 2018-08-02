@@ -11,6 +11,8 @@ KEY_GRPC_JSON = 'grpcrequest'
 
 # json keys
 #
+KEY_DATA_POINTER = 'data_pointer' # Used for the TA3 UI to retrieve data
+
 KEY_SOLUTION_ID = 'solutionId'  # DescribeSolutionRequest
 KEY_STEPS = 'steps'     # DescribeSolutionResponse
 KEY_PIPELINE = 'pipeline'   # DescribeSolutionResponse
