@@ -2348,6 +2348,47 @@ function CreateFitDefinition(solutionId){
     return {solutionId: my_solutionId, inputs: my_inputs, exposeOutputs: my_exposeOutputs, exposeValueTypes: my_exposeValueTypes, users: my_users};
 }
 
+
+// {
+//     "fittedSolutionId": "solutionId_yztf3r",
+//     "inputs": [
+//         {
+//             "csvUri": "file://uri/to-a/csv"
+//         },
+//         {
+//             "datasetUri": "file://uri/to-a/dataset"
+//         }
+//     ],
+//     "exposeOutputs": [
+//         "steps.1.steps.4.produce"
+//     ],
+//     "exposeValueTypes": [
+//         "PICKLE_URI",
+//         "PLASMA_ID"
+//     ],
+//     "users": [
+//         {
+//             "id": "uuid of user",
+//             "choosen": true,
+//             "reason": "best solution"
+//         },
+//         {
+//             "id": "uuid of user",
+//             "choosen": false,
+//             "reason": ""
+//         }
+//     ]
+// }
+
+function CreateProduceDefinition(fsid){
+    let my_fittedSolutionId = fsid;
+    let my_dataseturi = 'file://' + datasetdocurl;
+    let my_inputs = [{dataset_uri: my_dataseturi}];
+    let my_exposeOutputs = [];  // Not sure about this.
+    let my_exposeValueTypes = ['CSV_URI']; // Not sure about this.
+    return {fittedSolutionId: my_fittedSolutionId, inputs: my_inputs, exposeOutputs: my_exposeOutputs, exposeValueTypes: my_exposeValueTypes};
+}
+
 function CreateScoreDefinition(res){
     let my_solutionId = res.data.response.solutionId;
     let my_dataseturi = 'file://' + datasetdocurl;
@@ -2495,7 +2536,7 @@ export async function estimate(btn) {
 
             let searchFinished = false;
             let fitFinished = false;
-            let res3, res4, res5, res6;
+            let res3, res4;
             let oldCount = 0;
             let newCount = 0;
             let resizeTriggered = false;
@@ -2530,7 +2571,7 @@ export async function estimate(btn) {
                         //     }
                         };
 
-                        let res10, res11, res77;
+                        let res10, res11, res77, res5, res6, res8;
                         let scoreDetailsUrl;
 
                         if(typeof solutionId != 'undefined'){         // Find out when this happens
@@ -2605,16 +2646,28 @@ export async function estimate(btn) {
                             };
                         }, 2700);
 
+                        let finalFittedId, finalFittedDetailsUrl;
                         if(fitFlag){
                             let fittingIntervalId = setInterval(async function() {
                                 let res7 = await updateRequest(fittedDetailsUrl);   // check
                                 if(typeof res7.data.is_finished != 'undefined'){
                                     if(res7.data.is_finished){
+                                        finalFittedDetailsUrl = res7.data.responses.list[0].details_url;
+                                        res8 = await updateRequest(finalFittedDetailsUrl);
+                                        finalFittedId = res8.data.response.fittedSolutionId;
+                                        console.log("finalfittedId:" + finalFittedId);
+
+                                        // PUT finalFittedId SOMEWHERE IT CAN BE FOUND : maybe allPipelineInfo
+
                                         clearInterval(fittingIntervalId);
                                     };
                                 };
-                            }, 2700);
+                            }, 500);
                         };
+
+
+
+
                     };
                     oldCount = newCount;
                 };
@@ -3685,8 +3738,72 @@ function setPebbleCharge(d){
 }
 
 /** needs doc */
-export function resultsplotinit(pid) {
+export async function resultsplotinit(pid) {
+
+    console.log("Plotting Results");
     console.log(pid);
+
+    let chosenSolutionId = allPipelineInfo[selectedPipeline].response.solutionId;
+
+    let finalFittedId, finalFittedDetailsUrl, produceDetailsUrl, finalProduceDetailsUrl;
+    let res8, res55, res56, res58, hold3;
+
+    let res5 = await makeRequest(D3M_SVC_URL + '/FitSolution', CreateFitDefinition(chosenSolutionId));
+    let fittedId = res5.data.requestId;
+    let res6 = await makeRequest(D3M_SVC_URL + `/GetFitSolutionResults`, {requestId: fittedId});
+    let fittedDetailsUrl = res6.data.details_url;
+    let fittingfinished = false;
+    let fittingIntervalId = setInterval(async function() {
+
+        if(!fittingfinished){
+            let res7 = await updateRequest(fittedDetailsUrl);   // check
+            if(typeof res7.data.is_finished != 'undefined'){
+                if(res7.data.is_finished){
+                    finalFittedDetailsUrl = res7.data.responses.list[0].details_url;
+                    res8 = await updateRequest(finalFittedDetailsUrl);
+                    finalFittedId = res8.data.response.fittedSolutionId;
+                    console.log(finalFittedId);
+
+                    res55 = await makeRequest(D3M_SVC_URL + '/ProduceSolution', CreateProduceDefinition(finalFittedId));
+                    console.log("Finished Fitting");
+                    console.log(res55);
+                    let produceId = res55.data.requestId; 
+                    res56 = await makeRequest(D3M_SVC_URL + `/GetProduceSolutionResults`, {requestId: produceId});
+                    console.log("Get Produce");
+                    console.log(res56);
+                    
+                    produceDetailsUrl = res56.data.details_url;
+                    fittingfinished = true;
+                };
+            };
+        };
+
+
+        if(fittingfinished){
+            let res57 = await updateRequest(produceDetailsUrl);
+            if(typeof res57.data.is_finished != 'undefined'){
+                if(res57.data.is_finished){
+                    finalProduceDetailsUrl = res57.data.responses.list[0].details_url;
+                    res58 = await updateRequest(finalProduceDetailsUrl);
+                    console.log("Long Awaited:");
+                    console.log(res58);
+                    let hold = res58.data.response.exposedOutputs;
+                    let hold2 = hold[Object.keys(hold)[0]];  // There's an issue getting ."outputs.0".csvUri directly.
+                    hold3 = hold2.csvUri;
+
+                    console.log(hold3);
+
+
+                    clearInterval(fittingIntervalId);
+                };
+            };
+        };
+
+
+    }, 500);
+
+
+
     pid = allPipelineInfo[pid];
     let mydv = allPipelineInfo.rookpipe.depvar[0];         // When there are multiple CreatePipelines calls, then this only has values from latest value
     let dvvalues = allPipelineInfo.rookpipe.dvvalues;       // When there are multiple CreatePipelines calls, then this only has values from latest value
