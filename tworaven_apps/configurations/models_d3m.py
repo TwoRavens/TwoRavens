@@ -28,6 +28,10 @@ D3M_FILE_ATTRIBUTES = (KEY_DATASET_SCHEMA, KEY_PROBLEM_SCHEMA)
 D3M_DIR_USER_PROBLEMS_ROOT = 'user_problems_root'
 D3M_DIR_TEMP_STORAGE_ROOT = 'temp_storage_root'
 
+# /output - for testing only
+OPTIONAL_DIR_OUTPUT_ROOT = 'root_output_directory'
+
+
 D3M_DIR_ATTRIBUTES = ('training_data_root', 'problem_root',
                       'pipeline_logs_root', 'executables_root',
                       D3M_DIR_TEMP_STORAGE_ROOT, D3M_DIR_USER_PROBLEMS_ROOT)
@@ -100,6 +104,11 @@ class D3MConfiguration(TimeStampedModel):
                         help_text=('Temporary storage root for performers'
                                    ' to use.'))
 
+    root_output_directory = models.TextField(\
+                        blank=True,
+                        help_text=(('Not an official field.  Used for testing'
+                                    ' to determine the "/output" directory')))
+
     timeout = models.IntegerField(\
                 default=-1,
                 help_text=('Allotted time for search, in minutes.'
@@ -151,8 +160,8 @@ class D3MConfiguration(TimeStampedModel):
         """Return a dict in TA2 format to use with mounted volume"""
         od = OrderedDict()
         d3m_attributes = D3M_FILE_ATTRIBUTES + \
-                         D3M_DIR_ATTRIBUTES #+ \
-                         #D3M_VALUE_ATTRIBUTES
+                         D3M_DIR_ATTRIBUTES + \
+                         (OPTIONAL_DIR_OUTPUT_ROOT,)
         for name in d3m_attributes:
             val = self.__dict__.get(name, '(not set)')
             if val and isinstance(val, str):
@@ -174,6 +183,7 @@ class D3MConfiguration(TimeStampedModel):
                  'executables_root', 'pipeline_logs_root',
                  'user_problems_root',
                  'temp_storage_root',
+                 OPTIONAL_DIR_OUTPUT_ROOT,
                  'timeout', 'cpus', 'ram']
         date_attrs = ['created', 'modified']
 
@@ -245,8 +255,8 @@ class D3MConfiguration(TimeStampedModel):
         # Load the fields, defaulting to "" (blank)
         #
         d3m_config_attrs = D3M_FILE_ATTRIBUTES + \
-                           D3M_DIR_ATTRIBUTES #+ \
-                           #D3M_VALUE_ATTRIBUTES
+                           D3M_DIR_ATTRIBUTES + \
+                           (OPTIONAL_DIR_OUTPUT_ROOT,)
         for key in d3m_config_attrs:
             val = d3m_dict.get(key, '')
             d3m_config.__dict__[key] = val

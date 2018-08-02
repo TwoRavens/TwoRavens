@@ -149,10 +149,11 @@ class TestConfigMaker:
             temp_storage_root=join(d3m_output_base, D3M_DIR_TEMP_STORAGE_ROOT),
             user_problems_root=join(d3m_output_base, D3M_DIR_USER_PROBLEMS_ROOT),
 
+            root_output_directory=d3m_output_base,
+
             cpus=0)
 
         d3m_config.save()
-
         if not self.config_files_only:
             print('\n>> D3M config added for: %s' % self.config_name)
 

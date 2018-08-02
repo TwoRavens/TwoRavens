@@ -27,7 +27,7 @@ Output:
 
 """
 import json
-from os.path import getsize, isfile
+from os.path import getsize, join, isfile
 from collections import OrderedDict
 
 from django.conf import settings
@@ -36,7 +36,9 @@ from tworaven_apps.utils.csv_to_json import convert_csv_file_to_json
 from tworaven_apps.utils.url_helper import format_file_uri_to_path
 from tworaven_apps.utils.number_formatting import add_commas_to_number
 from tworaven_apps.utils.static_keys import KEY_SUCCESS, KEY_DATA
+from tworaven_apps.ta2_interfaces.static_vals import D3M_OUTPUT_DIR
 from tworaven_apps.utils.json_helper import json_loads
+from tworaven_apps.configurations.utils import get_latest_d3m_config
 
 KEY_ERR_CODE = 'err_code'
 ERR_CODE_FILE_URI_NOT_SET = 'FILE_URI_NOT_SET'
@@ -102,7 +104,7 @@ class FileEmbedUtil(object):
     '''
 
 
-    def get_embed_result(self, file_uri):
+    def get_embed_result(self, file_uri, is_second_try=False):
         """Get the content from the file and format a JSON snippet
         that includes that content.
 
@@ -140,9 +142,23 @@ class FileEmbedUtil(object):
         # Is this path a file?
         #
         if not isfile(fpath):
-            err_msg = 'File not found: %s' % fpath
-            return self.format_embed_err(ERR_CODE_FILE_NOT_FOUND,
-                                         err_msg)
+
+            # For local testing, we'll try to map the :/output path back...
+            #
+            if fpath.startswith(D3M_OUTPUT_DIR) and not is_second_try:
+                return self.attempt_test_output_directory(fpath)
+            else:
+                if is_second_try:
+                    err_msg = ('File not found: %s'
+                               ' NOTE: This path was tried after the path'
+                               ' with the original'
+                               ' "%s" directory failed)') % \
+                               (fpath, D3M_OUTPUT_DIR)
+                else:
+                    err_msg = 'File not found: %s' % fpath
+
+                return self.format_embed_err(ERR_CODE_FILE_NOT_FOUND,
+                                             err_msg)
 
         # Are these file types embeddable?
         #
@@ -193,6 +209,43 @@ class FileEmbedUtil(object):
         embed_snippet[KEY_DATA] = py_list
 
         return embed_snippet
+
+
+    def attempt_test_output_directory(self, fpath):
+        """quick hack for local testing.
+        If the TA2 returns a file with file:///output/...,
+        then attempt to map it back to the local directory"""
+        d3m_config = get_latest_d3m_config()
+        if not d3m_config:
+            err_msg = ('No D3M config found and file'
+                       ' not found: %s') % fpath
+            return self.format_embed_err(ERR_CODE_FILE_NOT_FOUND,
+                                         err_msg)
+
+        # Make sure (1) there's a "d3m_config.root_output_directory"
+        # and (2) it DOES NOT start with "/output"
+        #
+        if d3m_config.root_output_directory == D3M_OUTPUT_DIR or \
+           not d3m_config.root_output_directory:
+            err_msg = ('File not found: %s'
+                       ' (Note: No alternate directory to try)') % \
+                       fpath
+            return self.format_embed_err(ERR_CODE_FILE_NOT_FOUND,
+                                         err_msg)
+
+
+        # Replace "/output" with the d3m_config.root_output_directory
+        #
+        new_fpath = fpath.replace(D3M_OUTPUT_DIR, '')
+
+        # chop any trailing slashes before joining
+        #
+        if new_fpath.startswith('/'):
+            new_fpath = new_fpath[1:]
+
+        new_fpath = join(d3m_config.root_output_directory, new_fpath)
+
+        return self.get_embed_result(new_fpath, is_second_try=True)
 
 
     def load_and_return_json_file(self, fpath):
