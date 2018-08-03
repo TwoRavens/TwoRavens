@@ -105,44 +105,44 @@ class EventJobUtil(object):
         if not event_obj.as_dict()['save_to_dataverse']:
             return err_resp('save to dataverse is set to False')
 
-        # print('-' * 40)
-        # print('Routine Dataverse Check')
-        # print('-' * 40)
-        #
-        # # run dataverse check :
-        # success_dataverse_check, check_obj = EventJobUtil.run_dataverse_check()
-        # if not success_dataverse_check:
-        #     # add to user notification model
-        #     EventJobUtil.add_to_user_model('test_user', query_id, check_obj)
-        #     return err_resp(check_obj)
-        #
-        # print('-' * 40)
-        # print('Uploading query file')
-        # print('-' * 40)
-        # # send query_file to dataverse:
-        # success_query, query_obj = EventJobUtil.upload_query_result(event_obj)
-        # if not success_query:
-        #     return get_json_error(query_obj)
-        #
-        # # make readme file and upload
-        # print('-' * 40)
-        # print('Uploading query result')
-        # print('-' * 40)
-        # success_readme, readme_ob = EventJobUtil.upload_query_readme(event_obj.as_dict())
-        # if not success_readme:
-        #     return get_json_error(readme_ob)
-        #
-        # print("Generated read me uploaded to dataverse", readme_ob)
-        #
-        # # publish dataset
-        # print('-' * 40)
-        # print('publishing dataset')
-        # print('-' * 40)
-        # success_publish_dataset, published_dataset_obj = EventJobUtil.publish_dataset()
-        # if not success_publish_dataset:
-        #     # add to user notification model
-        #     EventJobUtil.add_to_user_model('test_user', query_id, published_dataset_obj)
-        #     return err_resp(published_dataset_obj)
+        print('-' * 40)
+        print('Routine Dataverse Check')
+        print('-' * 40)
+
+        # run dataverse check :
+        success_dataverse_check, check_obj = EventJobUtil.run_dataverse_check()
+        if not success_dataverse_check:
+            # add to user notification model
+            EventJobUtil.add_to_user_model('test_user', query_id, check_obj)
+            return err_resp(check_obj)
+
+        print('-' * 40)
+        print('Uploading query file')
+        print('-' * 40)
+        # send query_file to dataverse:
+        success_query, query_obj = EventJobUtil.upload_query_result(event_obj)
+        if not success_query:
+            return get_json_error(query_obj)
+
+        # make readme file and upload
+        print('-' * 40)
+        print('Uploading query result')
+        print('-' * 40)
+        success_readme, readme_ob = EventJobUtil.upload_query_readme(event_obj.as_dict())
+        if not success_readme:
+            return get_json_error(readme_ob)
+
+        print("Generated read me uploaded to dataverse", readme_ob)
+
+        # publish dataset
+        print('-' * 40)
+        print('publishing dataset')
+        print('-' * 40)
+        success_publish_dataset, published_dataset_obj = EventJobUtil.publish_dataset()
+        if not success_publish_dataset:
+            # add to user notification model
+            EventJobUtil.add_to_user_model('test_user', query_id, published_dataset_obj)
+            return err_resp(published_dataset_obj)
 
         print('-' * 40)
         print('Adding Query Object')
