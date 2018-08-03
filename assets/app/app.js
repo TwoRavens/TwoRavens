@@ -2082,6 +2082,7 @@ export function zPop() {
 // when selected, the key/value [mode]: [pipelineID] is set.
 export let selectedPipeline;
 export let setSelectedPipeline = result => {
+    console.log("JUST DID THIS");
     selectedPipeline = result;
     if (currentMode === 'model') resultsplotinit(result);
 }
@@ -2504,6 +2505,7 @@ export async function estimate(btn) {
             let oldCount = 0;
             let newCount = 0;
             let resizeTriggered = false;
+            let predPlotTriggered = false;
 
             let fitFlag = false;
 
@@ -2529,10 +2531,10 @@ export async function estimate(btn) {
                                 byId("btnSetx").click();   // Was "btnResults" - changing to simplify user experience for testing.
                             };
                             resizeTriggered = true;
-                               // this initializes the results windows using the first pipeline ID
-                        //     if(!swandive) {
-                        //         resultsplotinit(pipelineTable[0]['PipelineID']);
-                        //     }
+                        };
+
+                        if(typeof selectedPipeline == 'undefined'){
+                            setSelectedPipeline(pipelineTable[0]['PipelineID']);
                         };
 
                         let res10, res11, res77, res5, res6, res8;
@@ -2581,6 +2583,11 @@ export async function estimate(btn) {
                                         let myscore = res13.data.response.scores[0].value.raw.double.toPrecision(3);   // Makes a number of assumptions about how values are returned, also need to attempt to deal w multiple scores
                                         let matchedPipeline = pipelineTable.find(candidate => candidate['PipelineID'] === parseInt(res4DataId, 10))
                                         matchedPipeline['Score'] = String(myscore);
+                                        if(!predPlotTriggered){
+                                            console.log(pipelineTable);
+                                                byId("btnPredPlot").click();   // Was "btnResults" - changing to simplify user experience for testing.
+                                            predPlotTriggered = true;
+                                        };
 
                                         //onPipelineCreate(res13, res4DataId);    // This function was getting shorter and shorter, and now just lives above.
                                     } else {
@@ -3767,7 +3774,6 @@ export function resultsplotgraph(pid){
     console.log(mydv);
     let dvvalues = allPipelineInfo.rookpipe.dvvalues;       // When there are multiple CreatePipelines calls, then this only has values from latest value
     console.log(dvvalues);
-    // let predfile = pid.pipelineInfo.predictResultData.file_1;
 
     // Terminate plot if predicted values not available
     if (!('predictedValues' in pipelineInfo)) return;
@@ -4189,13 +4195,13 @@ export function sortPipelineTable(pt){
         if (a['Score']===b['Score']){
             return(0)
         } else if (a['Score']=="scoring"){
-            return(100 * reverse)
+            return(100)
         } else if (b['Score']=="scoring") {
-            return(-100 * reverse)
+            return(-100)
         } else if (a['Score']=="no score"){
-            return(1000 * reverse) 
+            return(1000) 
         } else if (b['Score']=="no score"){
-            return(-1000 * reverse)
+            return(-1000)
         } else {
             return (parseFloat(b['Score']) - parseFloat(a['Score'])) * reverse;
         };
