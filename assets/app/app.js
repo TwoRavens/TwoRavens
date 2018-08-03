@@ -3741,73 +3741,95 @@ function setPebbleCharge(d){
 export async function resultsplotinit(pid) {
 
     console.log("Plotting Results");
+    console.log(pid);                  // This is passed argument
+    console.log(selectedPipeline);     // This is global
+
+    let pipelineInfo = allPipelineInfo[pid];
+
+    if (!('predictedValues' in pipelineInfo)){
+        // Need to generate and store predicted values
+        let finalFittedId, finalFittedDetailsUrl, produceDetailsUrl, finalProduceDetailsUrl, hold3;
+        let res8, res55, res56, res58, res59;
+
+        let chosenSolutionId = allPipelineInfo[selectedPipeline].response.solutionId;
+        let res5 = await makeRequest(D3M_SVC_URL + '/FitSolution', CreateFitDefinition(chosenSolutionId));
+        let fittedId = res5.data.requestId;
+        let res6 = await makeRequest(D3M_SVC_URL + `/GetFitSolutionResults`, {requestId: fittedId});
+        let fittedDetailsUrl = res6.data.details_url;
+        let fittingfinished = false;                     // Flag for whether we have a fitted solution available yet to produce predicted values from.
+        let fittingIntervalId = setInterval(async function() {
+
+            // First get fitted solution
+            if(!fittingfinished){
+                let res7 = await updateRequest(fittedDetailsUrl);
+                if(typeof res7.data.is_finished != 'undefined'){
+                    if(res7.data.is_finished){
+                        finalFittedDetailsUrl = res7.data.responses.list[0].details_url;
+                        res8 = await updateRequest(finalFittedDetailsUrl);
+                        finalFittedId = res8.data.response.fittedSolutionId;
+                        console.log(finalFittedId);
+                        res55 = await makeRequest(D3M_SVC_URL + '/ProduceSolution', CreateProduceDefinition(finalFittedId));
+                        console.log("--Finished Fitting");
+                        console.log(res55);
+                        let produceId = res55.data.requestId;
+                        res56 = await makeRequest(D3M_SVC_URL + `/GetProduceSolutionResults`, {requestId: produceId});
+                        console.log("--Get Produce");
+                        console.log(res56);
+                        produceDetailsUrl = res56.data.details_url;
+                        fittingfinished = true;
+                    };
+                };
+            };
+
+            // Then produce predicted values from fitted solution
+            if(fittingfinished){
+                let res57 = await updateRequest(produceDetailsUrl);
+                if(typeof res57.data.is_finished != 'undefined'){
+                    if(res57.data.is_finished){
+                        finalProduceDetailsUrl = res57.data.responses.list[0].details_url;
+                        res58 = await updateRequest(finalProduceDetailsUrl);
+                        console.log("--Long Awaited Predictions:");
+                        let hold = res58.data.response.exposedOutputs;
+                        let hold2 = hold[Object.keys(hold)[0]];  // There's an issue getting ."outputs.0".csvUri directly.
+                        hold3 = hold2.csvUri;
+                        console.log(hold3);
+                        res59 = await makeRequest(D3M_SVC_URL + `/retrieve-output-data`, {data_pointer: hold3});
+                        console.log(res59);
+
+                        allPipelineInfo[pid].predictedValues = res59;
+
+                        clearInterval(fittingIntervalId);
+
+                        resultsplotgraph(pid);
+                    };
+                };
+            };
+        }, 100);
+
+    } else {
+        // Predicted values already stored and ready for graphing
+        console.log("Skipping creating predicted values");
+        resultsplotgraph(pid);
+    }; 
+
+};
+
+export function resultsplotgraph(pid){
+    let pipelineInfo = allPipelineInfo[pid];
+    console.log("pid:");
     console.log(pid);
-
-    let chosenSolutionId = allPipelineInfo[selectedPipeline].response.solutionId;
-
-    let finalFittedId, finalFittedDetailsUrl, produceDetailsUrl, finalProduceDetailsUrl, hold3;
-    let res8, res55, res56, res58, res59;
-
-    let res5 = await makeRequest(D3M_SVC_URL + '/FitSolution', CreateFitDefinition(chosenSolutionId));
-    let fittedId = res5.data.requestId;
-    let res6 = await makeRequest(D3M_SVC_URL + `/GetFitSolutionResults`, {requestId: fittedId});
-    let fittedDetailsUrl = res6.data.details_url;
-    let fittingfinished = false;                     // Flag for whether we have a fitted solution available yet to produce predicted values from.
-    let fittingIntervalId = setInterval(async function() {
-
-        // First get fitted solution
-        if(!fittingfinished){
-            let res7 = await updateRequest(fittedDetailsUrl);
-            if(typeof res7.data.is_finished != 'undefined'){
-                if(res7.data.is_finished){
-                    finalFittedDetailsUrl = res7.data.responses.list[0].details_url;
-                    res8 = await updateRequest(finalFittedDetailsUrl);
-                    finalFittedId = res8.data.response.fittedSolutionId;
-                    console.log(finalFittedId);
-                    res55 = await makeRequest(D3M_SVC_URL + '/ProduceSolution', CreateProduceDefinition(finalFittedId));
-                    console.log("--Finished Fitting");
-                    console.log(res55);
-                    let produceId = res55.data.requestId;
-                    res56 = await makeRequest(D3M_SVC_URL + `/GetProduceSolutionResults`, {requestId: produceId});
-                    console.log("--Get Produce");
-                    console.log(res56);
-                    produceDetailsUrl = res56.data.details_url;
-                    fittingfinished = true;
-                };
-            };
-        };
-
-        // Then produce predicted values from fitted solution
-        if(fittingfinished){
-            let res57 = await updateRequest(produceDetailsUrl);
-            if(typeof res57.data.is_finished != 'undefined'){
-                if(res57.data.is_finished){
-                    finalProduceDetailsUrl = res57.data.responses.list[0].details_url;
-                    res58 = await updateRequest(finalProduceDetailsUrl);
-                    console.log("--Long Awaited Predictions:");
-                    let hold = res58.data.response.exposedOutputs;
-                    let hold2 = hold[Object.keys(hold)[0]];  // There's an issue getting ."outputs.0".csvUri directly.
-                    hold3 = hold2.csvUri;
-                    console.log(hold3);
-                    res59 = await makeRequest(D3M_SVC_URL + `/retrieve-output-data`, {data_pointer: hold3});
-                    console.log(res59);
-
-                    clearInterval(fittingIntervalId);
-                };
-            };
-        };
-    }, 500);
-
-
-    pid = allPipelineInfo[pid];
     let mydv = allPipelineInfo.rookpipe.depvar[0];          // When there are multiple CreatePipelines calls, then this only has values from latest value
+    console.log(mydv);
     let dvvalues = allPipelineInfo.rookpipe.dvvalues;       // When there are multiple CreatePipelines calls, then this only has values from latest value
+    console.log(dvvalues);
     // let predfile = pid.pipelineInfo.predictResultData.file_1;
 
-    if (!('pipelineInfo' in pid)) return;
-    if (pid.pipelineInfo.predictResultData.success == false) return;
+    // Terminate plot if predicted values not available
+    if (!('predictedValues' in pipelineInfo)) return;
+    if (pipelineInfo.predictedValues.success == false) return;
 
-    let allPreds = pid.pipelineInfo.predictResultData.data;
+
+    let allPreds = pipelineInfo.predictedValues.data;
     console.log(Object.keys(allPreds[1]));
     let predvals = [];
 
@@ -3827,8 +3849,12 @@ export async function resultsplotinit(pid) {
 
     // only do this for classification tasks
     if(d3mTaskType[d3mProblemDescription.taskType][1] == "CLASSIFICATION") {
+        console.log("class plot");
+        console.log(dvvalues);
+        console.log(predvals);
         genconfdata(dvvalues, predvals);
     } else {
+        console.log("resid plot");
         let xdata = "Actual";
         let ydata = "Predicted";
         scatter(dvvalues, predvals, xdata, ydata);
@@ -3939,6 +3965,7 @@ export function confusionmatrix(matrixdata, classes) {
 
 
     function Matrix(options) {
+
         let width = options.width,
         height = options.height,
         data = options.data,
