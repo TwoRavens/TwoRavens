@@ -4182,9 +4182,8 @@ export function confusionmatrix(matrixdata, classes) {
 
 
 export function sortPipelineTable(pt){
-
     let reverseSet = ["meanSquaredError", "rootMeanSquaredError", "rootMeanSquaredErrorAvg", "meanAbsoluteError"];  // array of metrics to sort low to high
-    let reverse (reverseSet.indexOf(d3mProblemDescription.performanceMetrics[0].metric) > -1) ? -1 : 1;
+    let reverse = (reverseSet.indexOf(d3mProblemDescription.performanceMetrics[0].metric) > -1) ? -1 : 1;
 
     pt = pt.sort(function(a,b){
         if (a['Score']===b['Score']){
