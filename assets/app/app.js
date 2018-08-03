@@ -2089,51 +2089,14 @@ export let setSelectedPipeline = result => {
 export let selectedResultsMenu;
 export let setSelectedResultsMenu = result => selectedResultsMenu = result;
 
+
+// No longer used:
 // Update table when pipeline is fitted
-function onPipelineCreate(PipelineCreateResult, id) {
-
-    console.log("** PipelineCreateResult **");
-    console.log(PipelineCreateResult);
-    console.log(PipelineCreateResult.data.response.scores[0].value.raw.double.toPrecision(3));   // Makes a number of assumptions about how values are returned
-
-    let myscore = PipelineCreateResult.data.response.scores[0].value.raw.double.toPrecision(3);   // Makes a number of assumptions about how values are returned, also need to attempt to deal w multiple scores
-
-    console.log(PipelineCreateResult);
-
-    let matchedPipeline = pipelineTable.find(candidate => candidate['PipelineID'] === parseInt(id, 10))
-    matchedPipeline['Score'] = String(myscore);
-
-    pipelineTable = pipelineTable.sort(function(a,b){
-        if (a['Score']===b['Score']){
-            return(0)
-        } else if (a['Score']=="scoring"){
-            return(100)
-        } else if (b['Score']=="scoring") {
-            return(-100)
-        } else if (a['Score']=="no score"){
-            return(1000) 
-        } else if (b['Score']=="no score"){
-            return(-1000)
-        } else {
-            return parseFloat(b['Score']) - parseFloat(a['Score']) ;
-        };
-    });
-
-    console.log('pipelineTable')
-    console.log(pipelineTable);
-                // myid=key;
-                // mymetric="metric here" //allPipelineInfo[key].  SOMETHING HERE;
-                // myval="scoring"; //+myscores[i].value.toFixed(3);
-                // pipelineTable.push([pipelineTable.length, myid, mymetric, myval])
-
-    //if(!swandive) {
-    //    resultsplotinit(pipelineTable[0][1]);
-    //}
-
-    //if (IS_D3M_DOMAIN){
-    //    byId("btnSetx").click();   // Was "btnResults" - changing to simplify user experience for testing.
-    //};
-}
+//function onPipelineCreate(PipelineCreateResult, id) {
+//    let myscore = PipelineCreateResult.data.response.scores[0].value.raw.double.toPrecision(3);   // Makes a number of assumptions about how values are returned, also need to attempt to deal w multiple scores
+//    let matchedPipeline = pipelineTable.find(candidate => candidate['PipelineID'] === parseInt(id, 10))
+//    matchedPipeline['Score'] = String(myscore);
+//}
 
 // Update table when pipeline is solved
 function onPipelinePrime(PipelineCreateResult, rookpipe) {
@@ -2495,7 +2458,8 @@ export async function estimate(btn) {
 
         estimateLadda.start(); // start spinner
         let res = await makeRequest(D3M_SVC_URL + '/SearchSolutions', CreatePipelineDefinition(valueKey, mytarget));
-        res && onPipelineCreate(res);
+        //res && onPipelineCreate(res);   // arguments were wrong, and this function no longer needed
+
     } else { // we are in IS_D3M_DOMAIN no swandive
         // rpc CreatePipelines(PipelineCreateRequest) returns (stream PipelineCreateResult) {}
         zPop();
@@ -2612,36 +2576,20 @@ export async function estimate(btn) {
                                 if(res12.data.is_finished){
                                     if(res12.data.responses.list.length > 0){   // need to understand why this comes back is.finished=true but also length=0
                                         console.log('finished scoring');
-                                        clearInterval(scoringIntervalId);
-                                        console.log(res12.data);
                                         let finalScoreUrl = res12.data.responses.list[0].details_url;
                                         let res13 = await updateRequest(finalScoreUrl);
-                                        onPipelineCreate(res13, res4DataId);  // arguments have changed
+                                        let myscore = res13.data.response.scores[0].value.raw.double.toPrecision(3);   // Makes a number of assumptions about how values are returned, also need to attempt to deal w multiple scores
+                                        let matchedPipeline = pipelineTable.find(candidate => candidate['PipelineID'] === parseInt(res4DataId, 10))
+                                        matchedPipeline['Score'] = String(myscore);
+
+                                        //onPipelineCreate(res13, res4DataId);    // This function was getting shorter and shorter, and now just lives above.
                                     } else {
                                         console.log('finished scoring but broken');
-                                        clearInterval(scoringIntervalId);
-                                        console.log(res4DataId);
-                                        console.log(res12.data);
-                                        let brokenPipeline = pipelineTable
-                                            .find(candidate => candidate['PipelineID'] === parseInt(res4DataId, 10))
+                                        let brokenPipeline = pipelineTable.find(candidate => candidate['PipelineID'] === parseInt(res4DataId, 10))
                                         brokenPipeline['Score'] = 'no score';
-
-                                        pipelineTable = pipelineTable.sort(function(a,b){
-                                            if (a['Score']===b['Score']){
-                                                return(0)
-                                            } else if (a['Score']=="scoring"){
-                                                return(100)
-                                            } else if (b['Score']=="scoring") {
-                                                return(-100)
-                                            } else if (a['Score']=="no score"){
-                                                return(1000) 
-                                            } else if (b['Score']=="no score"){
-                                                return(-1000)
-                                            } else {
-                                                return parseFloat(b['Score']) - parseFloat(a['Score']);
-                                            };
-                                        });
                                     };
+                                    pipelineTable = sortPipelineTable(pipelineTable);
+                                    clearInterval(scoringIntervalId);
                                 };
                             };
                         }, 2700);
@@ -2664,9 +2612,6 @@ export async function estimate(btn) {
                                 };
                             }, 500);
                         };
-
-
-
 
                     };
                     oldCount = newCount;
@@ -3056,7 +3001,7 @@ export async function makeRequest(url, data) {
     */
 
     if (!IS_D3M_DOMAIN){
-        estimateLadda.stop();    // estimateLadda is being stopped in onPipelineCreate in D3M
+        estimateLadda.stop();    // estimateLadda is being stopped somewhere else in D3M
     };
     return res;
 }
@@ -4234,6 +4179,25 @@ export function confusionmatrix(matrixdata, classes) {
     // not rendering this table for right now, left all the code in place though. maybe we use it eventually
     // var table = tabulate(computedData, ["F1", "PRECISION","RECALL","ACCURACY"]);
 }
+
+
+export function sortPipelineTable(pipelineTable){
+    pipelineTable = pipelineTable.sort(function(a,b){
+        if (a['Score']===b['Score']){
+            return(0)
+        } else if (a['Score']=="scoring"){
+            return(100)
+        } else if (b['Score']=="scoring") {
+            return(-100)
+        } else if (a['Score']=="no score"){
+            return(1000) 
+        } else if (b['Score']=="no score"){
+            return(-1000)
+        } else {
+            return parseFloat(b['Score']) - parseFloat(a['Score']) ;
+        };
+    });
+};
 
 /** needs doc */
 export function setxTable(features) {
