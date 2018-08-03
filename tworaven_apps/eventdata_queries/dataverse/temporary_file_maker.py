@@ -50,7 +50,7 @@ class TemporaryFileMaker(object):
         file_uploader = DataverseFileUpload(filename, **file_path)
         if file_uploader.has_error():
             # do something; tell user
-            return
+            self.temp_obj = file_uploader.get_error_message()
 
         succ, res_obj = file_uploader.return_status()
         self.success_status = succ

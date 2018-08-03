@@ -1,5 +1,5 @@
 from django.contrib import admin
-from tworaven_apps.eventdata_queries.models import (EventDataSavedQuery, ArchiveQueryJob)
+from tworaven_apps.eventdata_queries.models import (EventDataSavedQuery, ArchiveQueryJob, UserNotificationModel)
 # Register your models here.
 
 
@@ -41,4 +41,20 @@ class ArchiveQueryJobAdmin(admin.ModelAdmin):
 
 
 admin.site.register(ArchiveQueryJob, ArchiveQueryJobAdmin)
+
+
+class UserNotificationModelAdmin(admin.ModelAdmin):
+        list_display = ('user',
+                        'message',
+                        'archived_query',
+                        'created',
+                        'modified',
+                        'read'
+                        )
+
+        save_on_top = True
+        readonly_fields = ('created','modified')
+
+
+admin.site.register(UserNotificationModel, UserNotificationModelAdmin)
 
