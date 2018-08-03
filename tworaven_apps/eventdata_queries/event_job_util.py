@@ -11,7 +11,7 @@ from tworaven_apps.utils.view_helper import \
 from tworaven_apps.utils.basic_response import (ok_resp,
                                                 err_resp,
                                                 err_resp_with_data)
-from tworaven_apps.eventdata_queries.models import (EventDataSavedQuery, ArchiveQueryJob, UserNotificationModel)
+from tworaven_apps.eventdata_queries.models import (EventDataSavedQuery, ArchiveQueryJob, UserNotificationModel, IN_PROCESS, ERROR, COMPLETE)
 from tworaven_apps.eventdata_queries.dataverse.temporary_file_maker import TemporaryFileMaker
 from tworaven_apps.eventdata_queries.dataverse.dataverse_publish_dataset import DataversePublishDataset
 from tworaven_apps.eventdata_queries.dataverse.dataverse_list_files_dataset import ListFilesInDataset
@@ -105,44 +105,44 @@ class EventJobUtil(object):
         if not event_obj.as_dict()['save_to_dataverse']:
             return err_resp('save to dataverse is set to False')
 
-        print('-' * 40)
-        print('Routine Dataverse Check')
-        print('-' * 40)
-
-        # run dataverse check :
-        success_dataverse_check, check_obj = EventJobUtil.run_dataverse_check()
-        if not success_dataverse_check:
-            # add to user notification model
-            EventJobUtil.add_to_user_model('test_user', query_id, check_obj)
-            return err_resp(check_obj)
-
-        print('-' * 40)
-        print('Uploading query file')
-        print('-' * 40)
-        # send query_file to dataverse:
-        success_query, query_obj = EventJobUtil.upload_query_result(event_obj)
-        if not success_query:
-            return get_json_error(query_obj)
-
-        # make readme file and upload
-        print('-' * 40)
-        print('Uploading query result')
-        print('-' * 40)
-        success_readme, readme_ob = EventJobUtil.upload_query_readme(event_obj.as_dict())
-        if not success_readme:
-            return get_json_error(readme_ob)
-
-        print("Generated read me uploaded to dataverse", readme_ob)
-
-        # publish dataset
-        print('-' * 40)
-        print('publishing dataset')
-        print('-' * 40)
-        success_publish_dataset, published_dataset_obj = EventJobUtil.publish_dataset()
-        if not success_publish_dataset:
-            # add to user notification model
-            EventJobUtil.add_to_user_model('test_user', query_id, published_dataset_obj)
-            return err_resp(published_dataset_obj)
+        # print('-' * 40)
+        # print('Routine Dataverse Check')
+        # print('-' * 40)
+        #
+        # # run dataverse check :
+        # success_dataverse_check, check_obj = EventJobUtil.run_dataverse_check()
+        # if not success_dataverse_check:
+        #     # add to user notification model
+        #     EventJobUtil.add_to_user_model('test_user', query_id, check_obj)
+        #     return err_resp(check_obj)
+        #
+        # print('-' * 40)
+        # print('Uploading query file')
+        # print('-' * 40)
+        # # send query_file to dataverse:
+        # success_query, query_obj = EventJobUtil.upload_query_result(event_obj)
+        # if not success_query:
+        #     return get_json_error(query_obj)
+        #
+        # # make readme file and upload
+        # print('-' * 40)
+        # print('Uploading query result')
+        # print('-' * 40)
+        # success_readme, readme_ob = EventJobUtil.upload_query_readme(event_obj.as_dict())
+        # if not success_readme:
+        #     return get_json_error(readme_ob)
+        #
+        # print("Generated read me uploaded to dataverse", readme_ob)
+        #
+        # # publish dataset
+        # print('-' * 40)
+        # print('publishing dataset')
+        # print('-' * 40)
+        # success_publish_dataset, published_dataset_obj = EventJobUtil.publish_dataset()
+        # if not success_publish_dataset:
+        #     # add to user notification model
+        #     EventJobUtil.add_to_user_model('test_user', query_id, published_dataset_obj)
+        #     return err_resp(published_dataset_obj)
 
         print('-' * 40)
         print('Adding Query Object')
@@ -170,21 +170,23 @@ class EventJobUtil(object):
 
             try:
                 search_obj = ArchiveQueryJob.objects.get(datafile_id=file_id)
-                if not search_obj:
-                    succ, add_archive = EventJobUtil.add_archive_query_job(datafile_id=file_id,
+            except ArchiveQueryJob.DoesNotExist:
+                search_obj = None
+            if search_obj is None:
+                succ, add_archive = EventJobUtil.add_archive_query_job(datafile_id=file_id,
                                                                        saved_query=saved_query,
-                                                                       status='complete',
+                                                                       status=COMPLETE,
                                                                        is_finished=True,
                                                                        is_success=True,
                                                                        message='query result successfully created',
                                                                        dataverse_response=d,
                                                                        archive_url=file_url)
-                else:
+                if not succ:
                     has_error = True
-                    error_list.append('Object with file ID %s already exists' % file_id)
-            except ValueError:
+                    error_list.append('Could not add the object with file id %s' % file_id)
+            else:
                 has_error = True
-                error_list.append('Could not add object with file ID %s ' % file_id)
+                error_list.append('Object with file ID %s already exists' % file_id)
 
         if has_error:
             # save to user notification
