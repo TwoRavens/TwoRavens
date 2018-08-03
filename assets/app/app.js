@@ -4181,22 +4181,27 @@ export function confusionmatrix(matrixdata, classes) {
 }
 
 
-export function sortPipelineTable(pipelineTable){
-    pipelineTable = pipelineTable.sort(function(a,b){
+export function sortPipelineTable(pt){
+
+    let reverseSet = ["meanSquaredError", "rootMeanSquaredError", "rootMeanSquaredErrorAvg", "meanAbsoluteError"];  // array of metrics to sort low to high
+    let reverse (reverseSet.indexOf(d3mProblemDescription.performanceMetrics[0].metric) > -1) ? -1 : 1;
+
+    pt = pt.sort(function(a,b){
         if (a['Score']===b['Score']){
             return(0)
         } else if (a['Score']=="scoring"){
-            return(100)
+            return(100 * reverse)
         } else if (b['Score']=="scoring") {
-            return(-100)
+            return(-100 * reverse)
         } else if (a['Score']=="no score"){
-            return(1000) 
+            return(1000 * reverse) 
         } else if (b['Score']=="no score"){
-            return(-1000)
+            return(-1000 * reverse)
         } else {
-            return parseFloat(b['Score']) - parseFloat(a['Score']) ;
+            return (parseFloat(b['Score']) - parseFloat(a['Score'])) * reverse;
         };
     });
+    return pt;
 };
 
 /** needs doc */
