@@ -68,6 +68,9 @@ class FileEmbedUtil(object):
         self.data_pointer = data_pointer
         self.final_results = None
 
+        # List of paths where attempted to read a file
+        self.attempted_file_paths = []
+
         # for error capture
         #
         self.has_error = False
@@ -139,6 +142,9 @@ class FileEmbedUtil(object):
             return self.format_embed_err(ERR_CODE_FILE_URI_BAD_FORMAT,
                                          err_msg)
 
+
+        self.attempted_file_paths.append(fpath)
+
         # Is this path a file?
         #
         if not isfile(fpath):
@@ -149,11 +155,10 @@ class FileEmbedUtil(object):
                 return self.attempt_test_output_directory(fpath)
             else:
                 if is_second_try:
+                    path_list = ['%s' % p for p in self.attempted_file_paths]
                     err_msg = ('File not found: %s'
-                               ' NOTE: This path was tried after the path'
-                               ' with the original'
-                               ' "%s" directory failed)') % \
-                               (fpath, D3M_OUTPUT_DIR)
+                               ' (Paths attempted: %s)') % \
+                               (fpath, ', '.join(path_list))
                 else:
                     err_msg = 'File not found: %s' % fpath
 
