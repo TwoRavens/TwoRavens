@@ -261,9 +261,9 @@ function rightpanel(mode) {
              }),
              m(`div#predictionSummary[style=display:${app.selectedResultsMenu === 'Prediction Summary' ? 'block' : 'none'}]`,
                  m('#setxLeftPlot[style=display:block; float: left; width: 70%; height:95%; overflow: auto; background-color: white]'),
-                 m('#setxLeft[style=display:none; float: left; width: 75%; height:95%; overflow: auto; background-color: white]'),
+                 m('#setxLeft[style=display:none; float: left; width: 70%; height:95%; overflow: auto; background-color: white]'),
              ),
-             m(`#setxLeftGen[style=display:${app.selectedResultsMenu === 'Generate New Predictions' ? 'block' : 'none'}; float: left; width: 75%; height:95%; overflow: auto; background-color: white]`,
+             m(`#setxLeftGen[style=display:${app.selectedResultsMenu === 'Generate New Predictions' ? 'block' : 'none'}; float: left; width: 70%; height:95%; overflow: auto; background-color: white]`,
                  m('#setxLeftTop[style=display:block; float: left; width: 100%; height:50%; overflow: auto; background-color: white]',
                      m('#setxLeftTopLeft[style=display:block; float: left; width: 30%; height:100%; overflow: auto; background-color: white]'),
                      m('#setxLeftTopRight[style=display:block; float: left; width: 70%; height:100%; overflow: auto; background-color: white]')),
@@ -283,7 +283,7 @@ function rightpanel(mode) {
                  m('#setxLeftBottomRightBottom[style=display:block; float: left; width: 30%; height:40%; overflow: auto; background-color: white]')),
              app.selectedResultsMenu === 'Visualize Pipeline' && app.selectedPipeline in app.allPipelineInfo && m('div', {
                      style: {
-                         width: '75%',
+                         width: '70%',
                          height: 'calc(100% - 30px)',
                          overflow: 'auto'
                      }
