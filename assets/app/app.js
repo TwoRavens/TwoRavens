@@ -224,7 +224,7 @@ let failset = ["TIME_SERIES_FORECASTING","GRAPH_MATCHING","LINK_PREDICTION","tim
 
 // object that contains all information about the returned pipelines
 export let allPipelineInfo = {};
-export let pipelineHeader = ['PipelineID', 'Metric', 'Score'];
+export let pipelineHeader = ['PipelineID', 'Metric', 'Score'];   
 export let pipelineTable = [];
 
 export let discoveryHeader = ['problem_id', 'system', 'meaningful'];
@@ -3773,7 +3773,6 @@ export function resultsplotgraph(pid){
     let mydv = allPipelineInfo.rookpipe.depvar[0];          // When there are multiple CreatePipelines calls, then this only has values from latest value
     console.log(mydv);
     let dvvalues = allPipelineInfo.rookpipe.dvvalues;       // When there are multiple CreatePipelines calls, then this only has values from latest value
-    console.log(dvvalues);
 
     // Terminate plot if predicted values not available
     if (!('predictedValues' in pipelineInfo)) return;
@@ -3801,7 +3800,9 @@ export function resultsplotgraph(pid){
     // only do this for classification tasks
     if(d3mTaskType[d3mProblemDescription.taskType][1] == "CLASSIFICATION") {
         console.log("class plot");
+        console.log("actual:");
         console.log(dvvalues);
+        console.log("predicted:");
         console.log(predvals);
         genconfdata(dvvalues, predvals);
     } else {
@@ -3886,7 +3887,7 @@ export function confusionmatrix(matrixdata, classes) {
     d3.select("#setxLeftPlot").select("svg").remove();
 
     // adapted from this block: https://bl.ocks.org/arpitnarechania/dbf03d8ef7fffa446379d59db6354bac
-    let mainwidth = byId('main').clientWidth;
+    let mainwidth = byId('rightpanel').clientWidth; //byId('main').clientWidth;
     let mainheight = byId('main').clientHeight;
 
 
@@ -3898,7 +3899,7 @@ export function confusionmatrix(matrixdata, classes) {
     let condiv = document.createElement('div');
     condiv.id="confusioncontainer";
     condiv.style.display="inline-block";
-    condiv.style.width=+(mainwidth*.385)+'px';   // Need to not be hard coded
+    condiv.style.width=+(((mainwidth-50)*.7)-100)+'px';   // Need to not be hard coded
     condiv.style.marginLeft='20px';
     condiv.style.height=+(mainheight)+'px';      // Need to not be hard coded
     condiv.style.float="left";
@@ -3906,7 +3907,7 @@ export function confusionmatrix(matrixdata, classes) {
 
     let legdiv = document.createElement('div');
     legdiv.id="confusionlegend";
-    legdiv.style.width=+(mainwidth*.05)+'px';    // Need to not be hard coded
+    legdiv.style.width=+(90)+'px';    // Need to not be hard coded
     legdiv.style.marginLeft='5px';               // Margin between confusion matrix container and legend container
     legdiv.style.height=+(mainheight)+'px';      // Need to not be hard coded
     legdiv.style.display="inline-block";
@@ -4176,7 +4177,7 @@ export function confusionmatrix(matrixdata, classes) {
            labels    : classes,
            start_color : '#ffffff',
            end_color : '#e67e22',
-           width : mainwidth * .33 + 25 - leftmarginguess,      // Width of confusion matrix table: Need to not be hard coded
+           width : ((mainwidth-50)*.7) - 100 - leftmarginguess -30,//     // Width of confusion matrix table: Beginning of this is #confusioncontainer.width, but this div doesn't always exist yet
            height : mainheight * .6,    // Need to not be hard coded
            widthLegend : mainwidth*.04,
            x_offset : 30
