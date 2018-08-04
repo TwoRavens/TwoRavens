@@ -235,7 +235,7 @@ function rightpanel(mode) {
          display: !app.swandive || app.IS_D3M_DOMAIN ? 'block' : 'none',
          idSuffix: 'Setx',
          contents: [
-             m('#setxRight[style=display:block; float: right; width: 25%; background-color: white]',
+             m('#setxRight[style=display:block; float: right; width: 30%; background-color: white]',
                app.pipelineTable && m(Table, {
                    id: 'pipelineTable',
                    headers: app.pipelineHeader,
@@ -260,7 +260,7 @@ function rightpanel(mode) {
                  ]
              }),
              m(`div#predictionSummary[style=display:${app.selectedResultsMenu === 'Prediction Summary' ? 'block' : 'none'}]`,
-                 m('#setxLeftPlot[style=display:block; float: left; width: 75%; height:95%; overflow: auto; background-color: white]'),
+                 m('#setxLeftPlot[style=display:block; float: left; width: 70%; height:95%; overflow: auto; background-color: white]'),
                  m('#setxLeft[style=display:none; float: left; width: 75%; height:95%; overflow: auto; background-color: white]'),
              ),
              m(`#setxLeftGen[style=display:${app.selectedResultsMenu === 'Generate New Predictions' ? 'block' : 'none'}; float: left; width: 75%; height:95%; overflow: auto; background-color: white]`,
