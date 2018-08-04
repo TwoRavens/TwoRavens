@@ -10,7 +10,7 @@ These are the additional instructions, following those in:
 For each command below, **FIRST**:
 
 1. `cd` into the top-level `TwoRavens` directory
-1. `workon 2ravens`
+2. `workon 2ravens`
 
 ### Commands:
 
@@ -22,15 +22,15 @@ For each command below, **FIRST**:
     ```
     docker run --rm -p 6379:6379 -v /ravens_volume:/ravens_volume redis:4
     ```
-1. Celery
+2. Celery
     ```
     fab celery_run_with_ta2
     ```
-1. Main app
+3. Main app
     ```
     fab run_with_ta2
     ```
-1. Rook
+4. Rook
     ```
     fab run_rook
     ```

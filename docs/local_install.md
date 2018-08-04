@@ -79,7 +79,7 @@ Mac:
 
   - For Ubuntu users:
     1. Open a new terminal
-    2. Open your ```~/.profile``` for editing
+    2. Open your ```~/.bashrc``` for editing
     3. Add these lines
        ```
        export WORKON_HOME=$HOME/.virtualenvs
@@ -283,10 +283,11 @@ As a shortcut to the above, assuming R is installed, from the command line, you 
 #### _With_ a TA2
 
 Read fully before going through the step.
+Use the instructions in `./ta2-notes/ta3_run.md`.
 
-1. Follow the steps in previous section **EXCEPT**:
-     - For step (3)(i), the "Main app", use ```fab run_with_ta2```
-
+If error due to /ravens_volume/test_data not found:
+    A symlink is needed from root to `ravens_volume`. Adjust path as necessary. On Ubuntu:
+    ```sudo ln -s /home/shoe/TwoRavens/ravens_volume /```
 
 ### Run the python shell (if needed)
 
@@ -319,8 +320,8 @@ These commands will:
 ### Preliminaries
 
   1. Open a Terminal
-  1. ```cd``` into the TwoRavens directory
-  2. Activate the virtual environment
+  2. ```cd``` into the TwoRavens directory
+  3. Activate the virtual environment
       ```
       workon 2ravens
       ```
