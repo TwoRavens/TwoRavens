@@ -77,6 +77,17 @@ Mac:
         ```
     4. Reference: http://virtualenvwrapper.readthedocs.org/en/latest/install.html#shell-startup-file
 
+  - For Ubuntu users:
+    1. Open a new terminal
+    2. Open your ```~/.profile``` for editing
+    3. Add these lines
+       ```
+       export WORKON_HOME=$HOME/.virtualenvs
+       export PROJECT_HOME=$HOME/Devel
+       VIRTUALENVWRAPPER_PYTHON=/usr/bin/python3
+       source ~/.local/bin/virtualenvwrapper.sh
+       ``` 
+    
 ### Make a virtualenv and install requirements
 
 - From the Terminal and within the TwoRavens repository.
@@ -252,18 +263,18 @@ As a shortcut to the above, assuming R is installed, from the command line, you 
 #### _Without_ a TA2 (test mode)
 
 1. Open 4 separate Terminals
-1. For each Terminal:
+2. For each Terminal:
     - ```cd``` into the TwoRavens directory
     - ```workon 2ravens```
-1. Next are commands to run--one for each Terminal
-    1. Main app: ```fab run```
-    1. Rook: ```fab run_rook```
-    1. Redis: ```docker run --rm -p 6379:6379 redis:2.8```
+3. Next are commands to run--one for each Terminal
+    i. Main app: ```fab run```
+    j. Rook: ```fab run_rook```
+    k. Redis: ```docker run --rm -p 6379:6379 redis:2.8```
          - If you don't have docker:
              - install redis (see above)
              - redis: ```fab run_redis```
-    1. Celery: ```fab celery_run```
-1. Go to Two Ravens: http://127.0.0.1:8080/
+    l. Celery: ```fab celery_run```
+4. Go to Two Ravens: http://127.0.0.1:8080/
     - Go to the Django admin: http://127.0.0.1:8080/admin
       - username: `dev_admin`
       - password: [from create superuser step above](#create-a-django-superuser-optional)
