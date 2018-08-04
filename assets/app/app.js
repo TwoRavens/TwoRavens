@@ -3867,7 +3867,7 @@ export function genconfdata (dvvalues, predvals) {
 
     // line up actuals and predicted, and increment mycounts at index where mypair has a match for the 'actual,predicted'
     for (let i = 0; i < dvvalues.length; i++) {
-        let temppair = dvvalues[i]+','+predvals[i];
+        let temppair = predvals[i]+','+dvvalues[i];
         let myindex = mypairs.indexOf(temppair);
         mycounts[myindex] += 1;
     }
@@ -4086,7 +4086,7 @@ export function confusionmatrix(matrixdata, classes) {
         svg.append("text")
         .attr("transform", "translate(" + (width / 2) + " ," + (0 - 10) + ")")
         .style("text-anchor", "middle")
-        .text("Predicted Class");
+        .text("Actual Class");
 
         svg.append("text")
         .attr("transform", "rotate(-90)")
@@ -4094,7 +4094,7 @@ export function confusionmatrix(matrixdata, classes) {
         .attr("x",0 - (height / 2))
         //.attr("dy", "1em")
         .style("text-anchor", "middle")
-        .text("Actual Class");
+        .text("Predicted Class");
 
         // this y is for the legend
         y = d3.scale.linear()
