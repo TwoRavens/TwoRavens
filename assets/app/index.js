@@ -58,14 +58,26 @@ function leftpanel(mode) {
         return results.leftpanel(Object.keys(app.allPipelineInfo));
     }
 
+    let selectedDisco = app.disco.find(problem => problem.problem_id === app.selectedProblem);
+
     let discoveryAllCheck = m('input#discoveryAllCheck[type=checkbox]', {
         onclick: m.withAttr("checked", (checked) => app.setCheckedDiscoveryProblem(checked)),
-        checked: app.probtable.length === app.checkedDiscoveryProblems.size
+        checked: app.disco.length === app.checkedDiscoveryProblems.size
     });
-    let discoveryTableData = app.probtable.map((problem) => [...problem, m('input[type=checkbox]', {
-        onclick: m.withAttr("checked", (checked) => app.setCheckedDiscoveryProblem(checked, problem[0])),
-        checked: app.checkedDiscoveryProblems.has(problem[0])
-    })]);
+
+    let discoveryTableData = app.disco.map(problem => [
+        problem.problem_id,
+        problem.target,
+        problem.predictors.join(', '),
+        problem.task,
+        problem.metric,
+        !!problem.subsetObs && problem.subsetObs,
+        !!problem.transform && problem.transform,
+        m('input[type=checkbox]', {
+            onclick: m.withAttr("checked", (checked) => app.setCheckedDiscoveryProblem(checked, problem.problem_id)),
+            checked: app.checkedDiscoveryProblems.has(problem.problem_id)
+        })
+    ]);
 
     let nodes = exploreMode ? nodesExplore : app.nodes;
 
@@ -106,7 +118,7 @@ function leftpanel(mode) {
              contents: [
                  m(Table, {
                      id: 'discoveryTable',
-                     headers: ['Hidden_UID', 'Target', 'Predictors', 'Task', 'Metric', discoveryAllCheck],
+                     headers: ['problem_id', 'Target', 'Predictors', 'Task', 'Metric', 'Subset', 'Transform', discoveryAllCheck],
                      data: discoveryTableData,
                      activeRow: app.selectedProblem,
                      onclick: app.setSelectedProblem,
@@ -116,16 +128,15 @@ function leftpanel(mode) {
                          style: {height: '80%', overflow: 'auto', display: 'block', 'margin-right': '16px', 'margin-bottom': 0, 'max-width': (window.innerWidth - 90) + 'px'}}
                  }),
                  m('textarea#discoveryInput[style=display:block; float: left; width: 100%; height:calc(20% - 35px); overflow: auto; background-color: white]', {
-                     value: app.selectedProblem === undefined ? '' : app.disco[app.selectedProblem].description
+                     value: selectedDisco === undefined ? '' : selectedDisco.description
                  }),
-                 m(Button, {id: 'btnSave', onclick: _ => app.saveDisc('btnSave'),title: 'Saves your revised problem description.'}, 'Save Desc.'),
-                 m(Button, {id: 'btnSubmitDisc', classes: 'btn-success', style: 'float: right', onclick: _ => app.submitDiscProb(), title: 'Submit all checked discovered problems.'}, 'Submit Disc. Probs.'),
+                 m(Button, {id: 'btnSave', onclick: app.saveDisc, title: 'Saves your revised problem description.'}, 'Save Desc.'),
+                 m(Button, {id: 'btnSubmitDisc', classes: 'btn-success', style: 'float: right', onclick: app.submitDiscProb, title: 'Submit all checked discovered problems.'}, 'Submit Disc. Probs.'),
                  m(Button, {id: 'btnModelProblem', classes: 'btn-default', style: 'float: right', onclick: _ => {
                      m.route.set('/model');
                      setTimeout(_ => {
-                         let prob = app.disco[app.selectedProblem];
-                         if (prob) {
-                             let {target, predictors} = prob;
+                         if (selectedDisco) {
+                             let {target, predictors} = selectedDisco;
                              app.erase('Discovery');
                              [target].concat(predictors).map(x => app.clickVar(x));
                              predictors.forEach(x => {
@@ -404,9 +415,10 @@ class Body {
                 let node = app.findNode(x);
                 node && expnodes.push(node);
             });
-            if (variate=="problem") {
+            if (variate==="problem") {
+                let problem = app.disco.find(problem => problem.problem_id === app.selectedProblem);
                 return m('', [
-                m('#plot', {style: 'display: block', oncreate: _ => exp.plot([],"",app.disco[app.selectedProblem])})
+                m('#plot', {style: 'display: block', oncreate: _ => exp.plot([],"",problem)})
                 ]);
             }
             if (!expnodes[0] && !expnodes[1]) {
@@ -486,6 +498,7 @@ class Body {
         let spaceBtn = (id, onclick, title, icon) =>
             m(`button#${id}.btn.btn-default`, {onclick, title}, glyph(icon, true));
         let discovery = app.leftTab === 'Discovery';
+
         return m('main', [
             m(Modal),
             this.header(mode),
@@ -532,7 +545,7 @@ class Body {
                         m('br'),
                         m('', {style: 'display: flex; flex-direction: row; flex-wrap: wrap'},
                           (discovery ? app.disco : valueKey).map((x, i) => {
-                              let selected = discovery ? x === app.disco[app.selectedProblem] : nodesExplore.map(x => x.name).includes(x);
+                              let selected = discovery ? x.problem_id === app.selectedProblem : nodesExplore.map(x => x.name).includes(x);
                               let {predictors} = x;
                               if (x.predictors) {
                                   x = x.target;

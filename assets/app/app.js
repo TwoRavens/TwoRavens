@@ -134,7 +134,7 @@ export let rightTabExplore = 'Univariate';
 
 export let modelLeftPanelWidths = {
     'Variables': '300px',
-    'Discovery': m.route.get() === '/model' ? 'auto' : '640px',
+    'Discovery': 'auto',
     'Summary': '300px'
 };
 
@@ -143,7 +143,6 @@ export let modelRightPanelWidths = {
     'Task Type': '300px',
     'Subtype': '300px',
     'Metrics': '300px',
-    //     'Set Covar.': '900px',
     'Results': '900px'
 };
 
@@ -810,6 +809,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
             let myi = findNodeIndex(v.colName);
             allNodes[myi] = Object.assign(allNodes[myi], {d3mDescription: v});
         });
+        console.log("all nodes:");
         console.log(allNodes);
     }
 
@@ -822,6 +822,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         byId("btnDiscovery").classList.remove("btn-default");
         byId("btnDiscovery").classList.add("btn-success"); // Would be better to attach this as a class at creation, but don't see where it is created
 
+        console.log("disco:");
         console.log(disco);
     }
 
@@ -3033,19 +3034,7 @@ export function erase(disc) {
 export let setLeftTab = (tab) => {
     leftTab = tab;
     updateLeftPanelWidth();
-
-    if (tab === "Discovery") {
-        probtable.length = 0;
-        for(let i = 0; i < disco.length; i++) {
-            let mypredictors = disco[i].predictors.join();
-            probtable.push([i, disco[i].target, mypredictors, disco[i].task, disco[i].metric]);
-        }
-
-        document.getElementById("discoveryInput").value=disco[0].description;
-        exploreVariate = 'Problem';
-        return;
-    }
-    exploreVariate = 'Univariate';
+    exploreVariate = tab === 'Discovery' ? 'Problem' : 'Univariate';
 };
 
 export let summary = {data: []};
@@ -4530,19 +4519,15 @@ export function discovery(preprocess_file) {
     return disco;
 }
 
-// This stores discovery problems
-export let probtable = [];
 
 export let selectedProblem;
-export function setSelectedProblem(prob) {
-    selectedProblem = prob;
-}
+export function setSelectedProblem(prob) {selectedProblem = prob;}
 
 export let checkedDiscoveryProblems = new Set();
 export let setCheckedDiscoveryProblem = (status, problem) => {
     if (problem !== undefined) status ? checkedDiscoveryProblems.add(problem) : checkedDiscoveryProblems.delete(problem);
-    else checkedDiscoveryProblems = status ? new Set(probtable.map((problem) => problem[0])) : new Set();
-}
+    else checkedDiscoveryProblems = status ? new Set(disco.map(problem => problem.problem_id)) : new Set();
+};
 
 export async function submitDiscProb() {
     discoveryLadda.start();
@@ -4581,14 +4566,10 @@ export async function submitDiscProb() {
     trigger("btnVariables", 'click');
 }
 
-export function saveDisc(btn) {
-    let table = document.getElementById("discoveryTable");
-    let newtext = document.getElementById("discoveryInput").value;
-    for (let i = 1, row; row = table.rows[i]; i++) { //skipping the header
-        if (row.className === 'item-select') {
-            disco[i-1].description = newtext;
-        }
-    }
+export function saveDisc() {
+    let problem = disco.find(problem => problem.problem_id === selectedProblem);
+    problem.description = document.getElementById("discoveryInput").value;
+    console.log(problem);
 }
 
 export async function endAllSearches() {
