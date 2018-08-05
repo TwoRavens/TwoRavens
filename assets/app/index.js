@@ -66,17 +66,17 @@ function leftpanel(mode) {
     });
 
     let discoveryTableData = app.disco.map(problem => [
-        problem.problem_id,
+        problem.problem_id, // this is masked as the UID
+        m('input[type=checkbox]', {
+            onclick: m.withAttr("checked", (checked) => app.setCheckedDiscoveryProblem(checked, problem.problem_id)),
+            checked: app.checkedDiscoveryProblems.has(problem.problem_id)
+        }),
         problem.target,
         problem.predictors.join(', '),
         problem.task,
         problem.metric,
         !!problem.subsetObs && problem.subsetObs,
-        !!problem.transform && problem.transform,
-        m('input[type=checkbox]', {
-            onclick: m.withAttr("checked", (checked) => app.setCheckedDiscoveryProblem(checked, problem.problem_id)),
-            checked: app.checkedDiscoveryProblems.has(problem.problem_id)
-        })
+        !!problem.transform && problem.transform
     ]);
 
     let nodes = exploreMode ? nodesExplore : app.nodes;
@@ -118,7 +118,7 @@ function leftpanel(mode) {
              contents: [
                  m(Table, {
                      id: 'discoveryTable',
-                     headers: ['problem_id', 'Target', 'Predictors', 'Task', 'Metric', 'Subset', 'Transform', discoveryAllCheck],
+                     headers: ['problem_id', discoveryAllCheck, 'Target', 'Predictors', 'Task', 'Metric', 'Subset', 'Transform'],
                      data: discoveryTableData,
                      activeRow: app.selectedProblem,
                      onclick: app.setSelectedProblem,
