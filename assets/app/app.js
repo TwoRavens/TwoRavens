@@ -224,7 +224,7 @@ let failset = ["TIME_SERIES_FORECASTING","GRAPH_MATCHING","LINK_PREDICTION","tim
 
 // object that contains all information about the returned pipelines
 export let allPipelineInfo = {};
-export let pipelineHeader = ['PipelineID', 'Metric', 'Score'];   
+export let pipelineHeader = ['PipelineID', 'Score'];
 export let pipelineTable = [];
 
 export let discoveryHeader = ['problem_id', 'system', 'meaningful'];
@@ -2112,10 +2112,9 @@ function onPipelinePrime(PipelineCreateResult, rookpipe) {
         allPipelineInfo[PipelineCreateResult.id] = PipelineCreateResult;
         pipelineTable.push({
             'PipelineID': PipelineCreateResult.id,
-            'Metric': d3mProblemDescription.performanceMetrics[0].metric,  // Need to generalize to multiple metrics
             'Score': "scoring"
         });
-    };
+    }
 
         // this will NOT report the pipeline to user if pipeline has failed, if pipeline is still running, or if it has not completed
         // if(allPipelineInfo[key].responseInfo.status.details == "Pipeline Failed")  {
@@ -2531,11 +2530,11 @@ export async function estimate(btn) {
                                 byId("btnSetx").click();   // Was "btnResults" - changing to simplify user experience for testing.
                             };
                             resizeTriggered = true;
-                        };
+                        }
 
-                        if(typeof selectedPipeline == 'undefined'){
+                        if(selectedPipeline === undefined){
                             setSelectedPipeline(pipelineTable[0]['PipelineID']);
-                        };
+                        }
 
                         let res10, res11, res77, res5, res6, res8;
                         let scoreDetailsUrl;
@@ -3900,7 +3899,7 @@ export function confusionmatrix(matrixdata, classes) {
     condiv.id="confusioncontainer";
     condiv.style.display="inline-block";
     condiv.style.width=+(((mainwidth-50)*.7)-100)+'px';   // Need to not be hard coded
-    condiv.style.marginLeft='20px';
+    condiv.style.marginLeft='12px';
     condiv.style.height=+(mainheight)+'px';      // Need to not be hard coded
     condiv.style.float="left";
     byId('setxLeftPlot').appendChild(condiv);
