@@ -253,7 +253,7 @@ function rightpanel(mode) {
              m('#setxRight[style=float: right; width: 30%; height: 100%; overflow:auto]',
                  app.selectedPipeline && [
                      bold('Score Metric: '), app.d3mProblemDescription.performanceMetrics[0].metric, m('br'),
-                     'Larger numbers are better fits'
+                     app.resultsMetricDescription
                  ],
                  app.pipelineTable.length !== 0 && m(Table, {
                      id: 'pipelineTable',
