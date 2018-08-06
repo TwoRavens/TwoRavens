@@ -74,6 +74,7 @@ export function setVariate(variate) {
 export let task1_finished = false;
 export let task2_finished = false;
 export let univariate_finished = false;
+export let resultsMetricDescription = 'Larger numbers are better fits';
 
 export let allsearchId = [];            // List of all the searchId's created on searches
 
@@ -4179,6 +4180,9 @@ export function confusionmatrix(matrixdata, classes) {
 export function sortPipelineTable(pt){
     let reverseSet = ["meanSquaredError", "rootMeanSquaredError", "rootMeanSquaredErrorAvg", "meanAbsoluteError"];  // array of metrics to sort low to high
     let reverse = (reverseSet.indexOf(d3mProblemDescription.performanceMetrics[0].metric) > -1) ? -1 : 1;
+    if (reverse == -1){
+        resultsMetricDescription = "Smaller numbers are better fits"
+    }
 
     pt = pt.sort(function(a,b){
         if (a['Score']===b['Score']){
