@@ -65,7 +65,7 @@ export default class Panel {
             // handle
             m(`#toggle${side === 'left' ? 'L' : 'R'}panelicon.panelbar`, {
                 style: {height: '100%', [side]: 'calc(100% - 16px)'}
-            }, m('span', {onclick: () => togglePanelOpen(side)}, dot, dot, dot, dot)),
+            }, m('span', {id: 'spanToggle',onclick: () => togglePanelOpen(side)}, dot, dot, dot, dot)),
             // contents
             m(`div${panelOpen[side] ? '' : '.closepanel'}`, {
                 style: {

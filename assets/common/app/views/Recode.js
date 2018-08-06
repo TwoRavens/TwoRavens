@@ -210,8 +210,8 @@ export default class Recode {
                     m('div.container-fluid', {id: 'createDiv'},[
                         m('form#createNewForm',{ onsubmit: addValue},[
                         m('div.container-fluid', {id : 'div1' , style : {'display':'block','height': '220px','padding':'20px'}}, [
-
-                            m('div',{style:'margin:10px;'},[
+                            m('button',{'data-target':'#content', class:'btn btn-info btn-block', 'data-toggle':'collapse'},'New Variable'),
+                            m('div',{class:'collapse',id:"content",style:'margin:10px;'},[
                                 m('label',{ style : {'display':'inline-block', 'margin-right':'10px'}},'New Variable Name : '),
                                 m('input[type=text]', {id: 'newVar', placeholder: ' New Variable', style : {'display':'inline-block' , 'margin':'10px', 'width':'40%'}}),
                                 m('br'),
@@ -444,17 +444,15 @@ function clickVar(elem) {
                     iter++
                 }
             });
-         }else{
-             var pos = tableList.indexOf(currentVal);
-             console.log($('#createTable tr')[0].childNodes[pos])
-             for(var i = 0;i< dataNode.length;i++){
+        }else{
+            var pos = tableList.indexOf(currentVal);
+            tableList.splice(pos, 1);
+            console.log($('#createTable tr')[0].childNodes[pos])
+            for(var i = 0;i<= dataNode.length;i++){
                 $('#createTable tr')[i].childNodes[pos].remove();
-             }
-             
-        $('#createTable tr').css('border-bottom', '1px solid #ddd');
-         }
-     }
-     
+            }
+        }
+    }
 }
 function addValue(elem){
     console.log(elem)
@@ -651,7 +649,12 @@ function calculate(elem){
 }
 
 function createClick(){
-    
+
+    var elem = document.getElementById('recodeLink');
+    elem.className = 'active';
+    $('#btnOperations').css('display', 'none');
+    document.getElementById('leftpanelMenuButtonBarVariables').click();
+    document.getElementById('toggleLpanelicon').click();   
     // document.getElementById("filterTableDiv").setAttribute("style", "display:block");
     document.getElementById("nominalDiv").setAttribute("style", "display:none");
     // document.getElementById('btnOperations').style.visibility = 'visible';
@@ -680,10 +683,12 @@ function createClick(){
     elem.className = '';
     var elem = document.getElementById('recodeLink');
     elem.className = '';    
-    // var elem = document.getElementById('centralPanel');
-    // elem.style.display ='block';
-
-    document.getElementById('varList').firstChild.click()
+   
+    var first = document.getElementById('varList').firstChild.textContent
+    if(!tableData.includes(first)){
+        document.getElementById('varList').firstChild.click()
+    }
+   
     
 }
 function createCreate(){
@@ -693,8 +698,6 @@ function createCreate(){
 
     var elem = document.getElementById('formulaDiv');
     elem.style.display = 'none';
-    // var elem = document.getElementById('centralPanel');
-    // elem.style.display ='none';
 }
 
 function recodeCreate(){
@@ -708,10 +711,9 @@ function recodeCreate(){
     $('#ordinalDiv').css('display','none');
     $('#binInfo').css('display','none');
     $('#customRecodeBtn').css('display','none');
+    $('#spanToggle').css('display','none');
     document.getElementById('customRecodeBtn').disabled = true;
 
-    // var elem = document.getElementById('centralPanel');
-    // elem.style.display ='none';
     document.getElementById('btnOperations').disabled = 'disabled';
 
     var tooltip = document.getElementById('tooltip');
