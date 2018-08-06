@@ -64,7 +64,7 @@ export default class Table {
 
         return m(`table.table#${id}`, mergeAttributes({style: {width: '100%'}}, attrsAll), [
             tableTags,
-            headers && m('tr', {style: {width: '100%', background: menuColor, position: 'sticky', top: 0}}, [
+            headers && m('tr', {style: {width: '100%', background: menuColor}}, [
                 ...(showUID ? headers : headers.slice(1)).map((header) => m('th', abbreviate(header)))
             ]),
 
