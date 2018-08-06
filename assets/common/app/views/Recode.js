@@ -180,11 +180,11 @@ export default class Recode {
                                 ]),
                                 m('div',{id:'ordinalDiv',style :{'overflow': 'hidden'}},[
                                     m('input[type=number]',{id:'bin',placeholder:'Number of bins'}),
-                                    m('button',{onclick: equidistance_btn},'Equidistance'),
-                                    m('button',{onclick: equimass_btn},'Equimass'),
+                                    m('button[type=button]',{onclick: equidistance_btn},'Equidistance'),
+                                    m('button[type=button]',{onclick: equimass_btn},'Equimass'),
                                     m('div',{id:'plot_a'}),                         
                                     m('input[type=text]',{id: 'binInterval',style:{'display':'inline-block'},placeholder:'5,10,15,20'}),
-                                    m('button',{onclick: calculate_bin},'Custom Bin'),                 
+                                    m('button[type=button]',{onclick: calculate_bin},'Custom Bin'),                 
                                 ]),
                                 m("br"),
                                 m('div#tableBinDiv',{style :{'overflow-y': 'auto'}},[                                                                       
@@ -202,7 +202,7 @@ export default class Recode {
                                 m("br"),
                                 m('span',{style :{'display': 'block','overflow': 'hidden'}},[m('input[type=text]', {id: 'newVarName', placeholder: 'New Variable Name', style : {'width': '100%','box-sizing':'border-box','white-space': 'nowrap;'}}),]),
                                 m("br"),
-                                m('textarea',{id:'varDescription',cols:"40",rows:'5',placeholder:'New Variable Description'}),
+                                m('textarea',{id:'varDescriptionFormula',cols:"40",rows:'5',placeholder:'New Variable Description'}),
                                 m('br'),
                                 m('button[type="submit"]',{style: {'float':'right'}}, 'Customize'),
                             ]),])
@@ -210,7 +210,7 @@ export default class Recode {
                     m('div.container-fluid', {id: 'createDiv'},[
                         m('form#createNewForm',{ onsubmit: addValue},[
                         m('div.container-fluid', {id : 'div1' , style : {'display':'block','height': '220px','padding':'20px'}}, [
-                            m('button',{'data-target':'#content', class:'btn btn-info btn-block', 'data-toggle':'collapse'},'New Variable'),
+                            m('button[type=button]',{'data-target':'#content', class:'btn btn-info btn-block', 'data-toggle':'collapse'},'New Variable'),
                             m('div',{class:'collapse',id:"content",style:'margin:10px;'},[
                                 m('label',{ style : {'display':'inline-block', 'margin-right':'10px'}},'New Variable Name : '),
                                 m('input[type=text]', {id: 'newVar', placeholder: ' New Variable', style : {'display':'inline-block' , 'margin':'10px', 'width':'40%'}}),
@@ -228,7 +228,7 @@ export default class Recode {
                                     m('input[type=text]',{id:'nominalList', placeholder:'Nominal', style:{'margin':'10px'}},),
                                 ]),
                                 m('label',{ style : {'display':'block', 'margin-right':'10px'}},'New Variable Description : '),
-                                m('textarea',{id:'varDescription',cols:"40",rows:'5'}),
+                                m('textarea',{id:'varDescriptionCreate',cols:"40",rows:'5'}),
     
                                 m("br"),
                                 m('button[type="button"]' ,{id:'createButton',onclick: createNewCalculate,style:"float:left;"},'Create New Variable'),
@@ -455,13 +455,13 @@ function clickVar(elem) {
     }
 }
 function addValue(elem){
-    console.log(elem)
+    console.log(elem.target)
     var newVarValue = [];
 
     if(document.getElementById('typeSelect').selectedIndex === 0){
         newVarValue = [];
         for(var i = 0;i<tableData.length;i++){
-            if(elem.target[4+i].checked){
+            if(elem.target[7+i].checked){
                 newVarValue.push({row:i,value:'yes'})
             }else{
                 newVarValue.push({row:i,value:'no'})
@@ -469,11 +469,11 @@ function addValue(elem){
         }
     }else if(document.getElementById('typeSelect').selectedIndex === 1){
         for(var i =0;i<tableData.length;i++){
-            newVarValue.push({row:i,value:elem.target[3+i].value})
+            newVarValue.push({row:i,value:elem.target[7+i].value})
         }
     }else if(document.getElementById('typeSelect').selectedIndex === 2){
         for(var i =0;i<tableData.length;i++){
-            newVarValue.push({row:i,value:elem.target[2+i].value})
+            newVarValue.push({row:i,value:elem.target[7+i].value})
         }
     }
     console.log(newVarValue);
@@ -574,10 +574,8 @@ function createNewCalculate(){
     }
     else{
         transformData.current_variable = document.getElementById('newVar').value;
-        transformData.description = document.getElementById('varDescription').value;
+        transformData.description = document.getElementById('varDescriptionCreate').value;
         document.getElementById("createButton").setAttribute("style", "display:none");
-        document.getElementById("typeSelect").setAttribute("disabled", "true");
-        document.getElementById("varDescription").setAttribute("disabled", "true");
 
 
         
@@ -587,15 +585,17 @@ function createNewCalculate(){
         var trow = $(this);
 
         if(iter == 0){
-            trow.append('<th style ="border: 1px solid #ddd; text-align: center;">'+document.getElementById('newVar').value+'</th>');
+            trow.append('<th style ="border: 1px solid #ddd; text-align: center;">'+document.getElementById('newVar').value +' <button id ="buttonDelete" type="button" style="float:right;"> <span style="color:red;">&#10060;</span></button> </th>');
             iter++;
+            tableList.push(document.getElementById('newVar').value);
+            document.getElementById ("buttonDelete").addEventListener ("click", deleteNewVar, false);
         }else{
             if(document.getElementById('typeSelect').selectedIndex === 0){
                 trow.append('<td style ="border: 1px solid #ddd;text-align: center;"><input type="checkbox" name="newVarVal" id ="newVarVal'+(iter-1)+'" value = 1 /></td>');
             }else if(document.getElementById('typeSelect').selectedIndex === 1){
 
                 var classList = document.getElementById('nominalList').value.split(",");
-                trow.append('<td style ="border: 1px solid #ddd;"><select id ="newVarVal'+(iter-1)+'"></select></td>');
+                trow.append('<td style ="border: 1px solid #ddd;text-align: center;"><select id ="newVarVal'+(iter-1)+'"></select></td>');
                 
                 var selectBox = document.getElementById("newVarVal"+(iter-1))
                 for(var i =0 ;i<classList.length;i++){
@@ -650,6 +650,8 @@ function calculate(elem){
 
 function createClick(){
 
+    
+
     var elem = document.getElementById('recodeLink');
     elem.className = 'active';
     $('#btnOperations').css('display', 'none');
@@ -682,7 +684,8 @@ function createClick(){
     var elem = document.getElementById('formulaLink');
     elem.className = '';
     var elem = document.getElementById('recodeLink');
-    elem.className = '';    
+    elem.className = '';
+    
    
     var first = document.getElementById('varList').firstChild.textContent
     if(!tableData.includes(first)){
@@ -1414,3 +1417,24 @@ $(window).resize(function(){
         'height': (window.innerHeight-150)+'px',
     });
 });
+
+function deleteNewVar(){
+    var pos = tableList.indexOf(document.getElementById('newVar').value);
+    tableList.splice(pos, 1);
+    console.log($('#createTable tr')[0].childNodes[pos])
+    for(var i = 0;i<= dataNode.length;i++){
+        $('#createTable tr')[i].childNodes[pos].remove();
+    }
+
+    console.log(document.getElementById('varDescriptionCreate').value)
+
+    document.getElementById("nominalDiv").setAttribute("style", "display:none");
+    document.getElementById("createButton").setAttribute("style", "display:block");
+    var elem = document.getElementById('submitButton');
+    elem.style.visibility="hidden";
+
+    document.getElementById('newVar').value = "";
+    document.getElementById('nominalList').value = "";
+    document.getElementById('varDescriptionCreate').value = "";
+
+}
