@@ -62,14 +62,16 @@ function leftpanel(mode) {
 
     let discoveryAllCheck = m('input#discoveryAllCheck[type=checkbox]', {
         onclick: m.withAttr("checked", (checked) => app.setCheckedDiscoveryProblem(checked)),
-        checked: app.disco.length === app.checkedDiscoveryProblems.size
+        checked: app.disco.length === app.checkedDiscoveryProblems.size,
+        title: `mark ${app.disco.length === app.checkedDiscoveryProblems.size ? 'no' : 'all'} problems as meaningful`
     });
 
     let discoveryTableData = app.disco.map(problem => [
         problem.problem_id, // this is masked as the UID
         m('input[type=checkbox]', {
             onclick: m.withAttr("checked", (checked) => app.setCheckedDiscoveryProblem(checked, problem.problem_id)),
-            checked: app.checkedDiscoveryProblems.has(problem.problem_id)
+            checked: app.checkedDiscoveryProblems.has(problem.problem_id),
+            title: 'mark this problem as meaningful'
         }),
         problem.target,
         problem.predictors.join(', '),
