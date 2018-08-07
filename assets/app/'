@@ -220,16 +220,12 @@ function rightpanel(mode) {
         ];
     }
 
-    let dropdown = (label, key, task) => {
-        let desc = app.d3mProblemDescription[key];
-        return m('.dropdown',
-                 m('', m('label', label), m('br'),
-                   m('button.btn.btn-default.dropdown-toggle[data-toggle=dropdown]', {id: key},
-                     key === 'performanceMetrics' ? desc[0].metric : desc, m('span.caret')),
-                   m('ul.dropdown-menu', {'aria-labelledby': key}, Object.keys(task)
-                     .map(x => m('li', {onclick: _ => app.setD3mProblemDescription(key, x)},
-                                 x)))));
-    };
+    let dropdown = (label, key, task) =>
+        m('.dropdown',
+          m('', m('label', label), m('br'),
+            m('button.btn.btn-default.dropdown-toggle[data-toggle=dropdown]', {id: key},
+              app.d3mProblemDescription[key], m('span.caret')),
+            m('ul.dropdown-menu', {'aria-labelledby': key}, Object.keys(task).map(x => m('li', x)))));
     let sections = [
         // {value: 'Models',
         //  display: app.IS_D3M_DOMAIN ? 'block' : 'none',
@@ -240,12 +236,11 @@ function rightpanel(mode) {
              m(`button#btnLock.btn.btn-default`, {
                  class: app.locktoggle ? 'active' : '',
                  onclick: () => app.lockDescription(!app.locktoggle),
-                 title: 'Lock selection of problem description',
-                 //style: 'float: right',
+                 title: 'Lock selection of problem description'
              }, glyph(app.locktoggle ? 'lock' : 'pencil', true)),
              dropdown('Task', 'taskType', app.d3mTaskType),
              dropdown('Task Subtype', 'taskSubtype', app.d3mTaskSubtype),
-             dropdown('Metric', 'performanceMetrics', app.d3mMetrics)
+             dropdown('Metric', 'metric', app.d3mMetrics)
          ]},
         {value: 'Results',
          display: !app.swandive || app.IS_D3M_DOMAIN ? 'block' : 'none',
