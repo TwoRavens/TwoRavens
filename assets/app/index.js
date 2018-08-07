@@ -222,13 +222,18 @@ function rightpanel(mode) {
 
     let dropdown = (label, key, task) => {
         let desc = app.d3mProblemDescription[key];
-        return m('.dropdown',
+        desc = key === 'performanceMetrics' ? desc[0].metric : desc;
+        return m('.dropdown', {style: 'padding: .5em'},
                  m('', m('label', label), m('br'),
-                   m('button.btn.btn-default.dropdown-toggle[data-toggle=dropdown]', {id: key},
-                     key === 'performanceMetrics' ? desc[0].metric : desc, m('span.caret')),
-                   m('ul.dropdown-menu', {'aria-labelledby': key}, Object.keys(task)
-                     .map(x => m('li', {onclick: _ => app.setD3mProblemDescription(key, x)},
-                                 x)))));
+                   app.locktoggle ? m('button.btn.btn-disabled', desc) : [
+                       m('button.btn.btn-default.dropdown-toggle[data-toggle=dropdown]', {id: key},
+                         desc, m('span.caret')),
+                       m('ul.dropdown-menu', {'aria-labelledby': key}, Object.keys(task)
+                         .map(x => m('li', {
+                             style: 'padding: 0.25em',
+                             onclick: _ => app.setD3mProblemDescription(key, x)
+                         }, x)))
+                   ]));
     };
     let sections = [
         // {value: 'Models',
@@ -241,11 +246,12 @@ function rightpanel(mode) {
                  class: app.locktoggle ? 'active' : '',
                  onclick: () => app.lockDescription(!app.locktoggle),
                  title: 'Lock selection of problem description',
-                 //style: 'float: right',
+                 style: 'float: right',
              }, glyph(app.locktoggle ? 'lock' : 'pencil', true)),
-             dropdown('Task', 'taskType', app.d3mTaskType),
-             dropdown('Task Subtype', 'taskSubtype', app.d3mTaskSubtype),
-             dropdown('Metric', 'performanceMetrics', app.d3mMetrics)
+             m('', {style: 'float: left'},
+               dropdown('Task', 'taskType', app.d3mTaskType),
+               dropdown('Task Subtype', 'taskSubtype', app.d3mTaskSubtype),
+               dropdown('Metric', 'performanceMetrics', app.d3mMetrics))
          ]},
         {value: 'Results',
          display: !app.swandive || app.IS_D3M_DOMAIN ? 'block' : 'none',
