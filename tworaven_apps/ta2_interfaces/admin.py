@@ -7,6 +7,8 @@ class StoredResponseAdminInline(admin.TabularInline):
     model = StoredResponse
     #fk_name = "orig_metadata"
     #exclude = ('response',)
+    search_fields = ['hash_id']
+
     readonly_fields = ('status', 'is_success',
                        'sent_to_user', 'hash_id',
                        'response',
@@ -24,6 +26,8 @@ class StoredResponseAdminInline(admin.TabularInline):
 class StoredRequestAdmin(admin.ModelAdmin):
     save_on_top = True
     inlines = (StoredResponseAdminInline,)
+    search_fields = ['hash_id']
+
     list_display = ('name',
                     'request_type',
                     'is_finished',
@@ -32,6 +36,7 @@ class StoredRequestAdmin(admin.ModelAdmin):
                     'workspace',
                     'created',
                     'modified')
+
     list_filter = ('is_finished',
                    'status',
                    'request_type')
@@ -46,9 +51,11 @@ class StoredRequestAdmin(admin.ModelAdmin):
               'is_finished',
               'status',
               'user',
+              'hash_id',
               'workspace',
               'request',
               'request_as_json',
+              'user_message',
               ('created', 'modified'),)
 
 admin.site.register(StoredRequest, StoredRequestAdmin)
