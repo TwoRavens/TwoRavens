@@ -3680,14 +3680,16 @@ function setPebbleCharge(d){
 
 /** needs doc */
 export async function resultsplotinit(pid) {
+    if (!('predictedValues' in allPipelineInfo[pid])){
+        generatePredictions(pid, true);                    // generate predicted values, and then plot
+    } else {
+        resultsplotgraph(pid);                             // predicted values already exist
+    };
+}
 
-    console.log("Plotting Results");
-    console.log(pid);                  // This is passed argument
-    console.log(selectedPipeline);     // This is global
+export async function generatePredictions(pid, plotflag) {
 
-    let pipelineInfo = allPipelineInfo[pid];
-
-    if (!('predictedValues' in pipelineInfo)){
+    if (!('predictedValues' in allPipelineInfo[pid])){
         // Need to generate and store predicted values
         let finalFittedId, finalFittedDetailsUrl, produceDetailsUrl, finalProduceDetailsUrl, hold3;
         let res8, res55, res56, res58, res59;
@@ -3703,22 +3705,33 @@ export async function resultsplotinit(pid) {
             // First get fitted solution
             if(!fittingfinished){
                 let res7 = await updateRequest(fittedDetailsUrl);
-                if(typeof res7.data.is_finished != 'undefined'){
+                
+                if(res7.success){//(typeof res7.data.is_finished != 'undefined'){
                     if(res7.data.is_finished){
-                        finalFittedDetailsUrl = res7.data.responses.list[0].details_url;
-                        res8 = await updateRequest(finalFittedDetailsUrl);
-                        finalFittedId = res8.data.response.fittedSolutionId;
-                        console.log(finalFittedId);
-                        res55 = await makeRequest(D3M_SVC_URL + '/ProduceSolution', CreateProduceDefinition(finalFittedId));
-                        console.log("--Finished Fitting");
-                        console.log(res55);
-                        let produceId = res55.data.requestId;
-                        res56 = await makeRequest(D3M_SVC_URL + `/GetProduceSolutionResults`, {requestId: produceId});
-                        console.log("--Get Produce");
-                        console.log(res56);
-                        produceDetailsUrl = res56.data.details_url;
-                        fittingfinished = true;
+                        if(res7.data.is_error){
+                            clearInterval(fittingIntervalId);
+                        }else{
+                            finalFittedDetailsUrl = res7.data.responses.list[0].details_url;
+                            res8 = await updateRequest(finalFittedDetailsUrl);
+                            if(res8.success){
+                                finalFittedId = res8.data.response.fittedSolutionId;
+                                console.log(finalFittedId);
+                                res55 = await makeRequest(D3M_SVC_URL + '/ProduceSolution', CreateProduceDefinition(finalFittedId));
+                                console.log("--Finished Fitting");
+                                console.log(res55);
+                                let produceId = res55.data.requestId;
+                                res56 = await makeRequest(D3M_SVC_URL + `/GetProduceSolutionResults`, {requestId: produceId});
+                                console.log("--Get Produce");
+                                console.log(res56);
+                                produceDetailsUrl = res56.data.details_url;
+                                fittingfinished = true;
+                            } else {
+                                clearInterval(fittingIntervalId);
+                            };
+                        };
                     };
+                } else {
+                    clearInterval();
                 };
             };
 
@@ -3741,16 +3754,20 @@ export async function resultsplotinit(pid) {
 
                         clearInterval(fittingIntervalId);
 
-                        resultsplotgraph(pid);
+                        if(plotflag){
+                            resultsplotgraph(pid);
+                        };
                     };
                 };
             };
-        }, 100);
+        }, 500);
 
     } else {
         // Predicted values already stored and ready for graphing
         console.log("Skipping creating predicted values");
-        resultsplotgraph(pid);
+        if(plotflag){
+            resultsplotgraph(pid);
+        };
     }; 
 
 };
