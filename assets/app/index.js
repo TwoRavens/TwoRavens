@@ -625,7 +625,17 @@ class Body {
                                   let {taskType, performanceMetrics} = app.d3mProblemDescription;
                                   rookpipe.task = taskType;
                                   rookpipe.metric = performanceMetrics[0].metric;
+                                  rookpipe.meaningful = "yes";
+                                  rookpipe.subsetObs = 0;
+                                  rookpipe.subsetFeats = 0;
+                                  rookpipe.transform = 0;
+                                  rookpipe.system = "user";
+                                  let problemId = app.disco.length + 1;
+                                  rookpipe.problem_id = "problem" + problemId;
+                                  console.log("pushing this:");
+                                  console.log(rookpipe);
                                   app.disco.push(rookpipe);
+                                  console.log(app.disco);
                                   app.setLeftTab('Discovery');
                                   m.redraw();
                               }, 'Add model to problems.', 'plus'),
