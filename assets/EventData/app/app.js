@@ -4,9 +4,8 @@ import {dateSort} from "./canvases/CanvasDate";
 import * as common from '../../common-eventdata/common';
 import * as query from './query';
 import {subset} from "../../app/app";
-
+import {saveAs} from 'file-saver/FileSaver';
 export let eventdataURL = '/eventdata/api/';
-import { saveAs } from 'file-saver/FileSaver';
 
 // TODO login
 export let username = 'TwoRavens';

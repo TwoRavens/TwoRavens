@@ -6,34 +6,11 @@ import {setModal} from '../common/app/views/Modal';
 
 import {bars, barsNode, barsSubset, density, densityNode, scatter, selVarColor} from './plots.js';
 import {elem, fadeOut} from './utils';
-import {searchIndex} from "./views/Search";
 
 //-------------------------------------------------
 // NOTE: global variables are now set in the index.html file.
 //    Developers, see /template/index.html
 //-------------------------------------------------
-
-export let marginTopCarousel = 0;
-export let marginLeftCarousel = 0;
-
-if (IS_D3M_DOMAIN || IS_DATAVERSE_DOMAIN) {
-    window.onresize = () => {
-        if (m.route.get() === '/data') {
-            return;
-        }
-
-        let carousel = elem('#innercarousel');
-        let container = elem('#m0');
-        let whitespace = elem('#whitespace0');
-
-        marginTopCarousel = (carousel.offsetHeight - whitespace.getAttribute("height") - 16) / 2;
-        marginLeftCarousel = (carousel.offsetWidth - whitespace.getAttribute("width")) / 2;
-
-        container.style.marginTop = marginTopCarousel + 'px';
-        container.style.marginLeft = marginLeftCarousel + 'px';
-        container.style.height = `calc(100% + ${Math.abs(marginTopCarousel)}px)`;
-    };
-}
 
 let peekBatchSize = 100;
 let peekSkip = 0;
@@ -97,6 +74,7 @@ export function setVariate(variate) {
 export let task1_finished = false;
 export let task2_finished = false;
 export let univariate_finished = false;
+export let resultsMetricDescription = 'Larger numbers are better fits';
 
 export let allsearchId = [];            // List of all the searchId's created on searches
 
@@ -109,10 +87,6 @@ export function set_mode(mode) {
 
     is_explore_mode = mode === 'explore';
     is_results_mode = mode === 'results';
-
-    if (is_explore_mode) {
-        leftTab = 'Variables';
-    }
 
     if (currentMode !== mode) {
         updateRightPanelWidth();
@@ -170,7 +144,6 @@ export let modelRightPanelWidths = {
     'Task Type': '300px',
     'Subtype': '300px',
     'Metrics': '300px',
-    //     'Set Covar.': '900px',
     'Results': '900px'
 };
 
@@ -199,14 +172,14 @@ let updateRightPanelWidth = () => {
             'explore': exploreRightPanelWidths[rightTabExplore]
         }[currentMode];
 
-        panelWidth['right'] = `calc(2*${common.panelMargin}px + ${tempWidth})`;
+        panelWidth['right'] = `calc(${common.panelMargin * 2}px + ${tempWidth})`;
     }
-    else panelWidth['right'] = `calc(2*${common.panelMargin}px + 16px)`;
+    else panelWidth['right'] = `calc(${common.panelMargin * 2}px + 16px)`;
 };
 let updateLeftPanelWidth = () => {
     if (common.panelOpen['left'])
-        panelWidth['left'] = `calc(2*${common.panelMargin}px + ${modelLeftPanelWidths[leftTab]})`;
-    else panelWidth['left'] = `calc(2*${common.panelMargin}px + 16px)`;
+        panelWidth['left'] = `calc(${common.panelMargin * 2}px + ${modelLeftPanelWidths[leftTab]})`;
+    else panelWidth['left'] = `calc(${common.panelMargin * 2}px + 16px)`;
 };
 
 updateRightPanelWidth();
@@ -251,7 +224,7 @@ let failset = ["TIME_SERIES_FORECASTING","GRAPH_MATCHING","LINK_PREDICTION","tim
 
 // object that contains all information about the returned pipelines
 export let allPipelineInfo = {};
-export let pipelineHeader = ['Hidden_UID', 'PipelineID', 'Metric', 'Score'];
+export let pipelineHeader = ['PipelineID', 'Score'];
 export let pipelineTable = [];
 
 export let discoveryHeader = ['problem_id', 'system', 'meaningful'];
@@ -429,7 +402,7 @@ export const reset = async function reloadPage() {
     byId("btnModel").click();
     //clearInterval(interiorIntervalId);
     //clearInterval(requestIntervalId);
-    //location.reload();
+    location.reload();
 };
 export let restart;
 
@@ -837,6 +810,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
             let myi = findNodeIndex(v.colName);
             allNodes[myi] = Object.assign(allNodes[myi], {d3mDescription: v});
         });
+        console.log("all nodes:");
         console.log(allNodes);
     }
 
@@ -849,6 +823,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         byId("btnDiscovery").classList.remove("btn-default");
         byId("btnDiscovery").classList.add("btn-success"); // Would be better to attach this as a class at creation, but don't see where it is created
 
+        console.log("disco:");
         console.log(disco);
     }
 
@@ -881,7 +856,7 @@ export function main(fileid, hostname, ddiurl, dataurl, apikey) {
     cdb('--dataurl: ' + dataurl);
     cdb('--dataverseurl: ' + dataverseurl);
 
-    let tempWidth = d3.select('#main.left').style('width');
+    let tempWidth = d3.select('#main').style('width');
     width = tempWidth.substring(0, tempWidth.length - 2);
     height = window.innerHeight - 120; // hard code header, footer, and bottom margin
 
@@ -2005,7 +1980,7 @@ function updateNode(id, nodes) {
  every time a variable in leftpanel is clicked, nodes updates and background color changes
  */
 export function clickVar(elem, $nodes) {
-    if (is_explore_mode && !$nodes.map(x => x.name).includes(elem)) {
+    if (is_explore_mode && $nodes && !$nodes.map(x => x.name).includes(elem)) {
         let max = exploreVariate === 'Univariate' ? 1
             : exploreVariate === 'Bivariate' ? 2
             : exploreVariate === 'Trivariate' ? 3
@@ -2107,59 +2082,41 @@ export function zPop() {
 }
 
 // when selected, the key/value [mode]: [pipelineID] is set.
-export let selectedPipeline = {};
-export let setSelectedPipeline = (result) => {
-    selectedPipeline[currentMode] = result;
-    if (currentMode === 'model') {
-        // the 'find' function would have been nice here-- es6 only. Find pipeline with UID, then pass pipeline_id
-        let pipeline = pipelineTable.filter((row) => row[0] == result)[0];
-        resultsplotinit(pipeline[1]);
-    }
+export let selectedPipeline;
+export let setSelectedPipeline = result => {
+    console.log("JUST DID THIS");
+    selectedPipeline = result;
+    if (currentMode === 'model') resultsplotinit(result);
 }
 
+export let selectedResultsMenu;
+export let setSelectedResultsMenu = result => selectedResultsMenu = result;
+
+
+// No longer used:
 // Update table when pipeline is fitted
-function onPipelineCreate(PipelineCreateResult, id) {
-
-    let myscore = PipelineCreateResult.data.response.scores[0].value.double.toPrecision(3);;  // attempt to deal w multiple scores
-
-    console.log(PipelineCreateResult);
-
-    for(var i = 0; i < pipelineTable.length; i++) {
-        if (pipelineTable[i][1] == parseInt(id, 10)) {
-            pipelineTable[i][3] = myscore.toString();
-        };
-    };
-
-    console.log(pipelineTable);
-                // myid=key;
-                // mymetric="metric here" //allPipelineInfo[key].  SOMETHING HERE;
-                // myval="scoring"; //+myscores[i].value.toFixed(3);
-                // pipelineTable.push([pipelineTable.length, myid, mymetric, myval])
-
-    //if(!swandive) {
-    //    resultsplotinit(pipelineTable[0][1]);
-    //}
-
-    //if (IS_D3M_DOMAIN){
-    //    byId("btnSetx").click();   // Was "btnResults" - changing to simplify user experience for testing.
-    //};
-}
+//function onPipelineCreate(PipelineCreateResult, id) {
+//    let myscore = PipelineCreateResult.data.response.scores[0].value.raw.double.toPrecision(3);   // Makes a number of assumptions about how values are returned, also need to attempt to deal w multiple scores
+//    let matchedPipeline = pipelineTable.find(candidate => candidate['PipelineID'] === parseInt(id, 10))
+//    matchedPipeline['Score'] = String(myscore);
+//}
 
 // Update table when pipeline is solved
 function onPipelinePrime(PipelineCreateResult, rookpipe) {
 
     // Need to deal with (exclude) pipelines that are reported, but failed.  For approach, see below.
 
+
+
     if(PipelineCreateResult.id in allPipelineInfo) {
-        allPipelineInfo[PipelineCreateResult.id]=Object.assign(allPipelineInfo[PipelineCreateResult.id],PipelineCreateResult);
+        allPipelineInfo[PipelineCreateResult.id] = Object.assign(allPipelineInfo[PipelineCreateResult.id], PipelineCreateResult);
     } else {
-        allPipelineInfo[PipelineCreateResult.id]=PipelineCreateResult;
-        let myid = PipelineCreateResult.id;
-        let mymetric = d3mProblemDescription.performanceMetrics[0].metric;    // Need to generalize to multiple metrics
-        let myval = "scoring";
-        console.log(pipelineTable);
-        pipelineTable.push([pipelineTable.length, myid, mymetric, myval]);
-    };
+        allPipelineInfo[PipelineCreateResult.id] = PipelineCreateResult;
+        pipelineTable.push({
+            'PipelineID': PipelineCreateResult.id,
+            'Score': "scoring"
+        });
+    }
 
         // this will NOT report the pipeline to user if pipeline has failed, if pipeline is still running, or if it has not completed
         // if(allPipelineInfo[key].responseInfo.status.details == "Pipeline Failed")  {
@@ -2244,7 +2201,7 @@ function CreateProblemDefinition(depvar, aux) {
 
 
     if(typeof aux==="undefined") { //default behavior for creating pipeline data
-        let my_problem = {
+        let problem = {
             id: d3mProblemDescription.id,
             version: d3mProblemDescription.version,
             name: d3mProblemDescription.name,
@@ -2253,7 +2210,7 @@ function CreateProblemDefinition(depvar, aux) {
             taskSubtype: d3mTaskSubtype[d3mProblemDescription.taskSubtype][1],
             performanceMetrics: [{metric: d3mMetrics[d3mProblemDescription.performanceMetrics[0].metric][1]} ]  // need to generalize to case with multiple metrics.  only passes on first presently.
         };
-        let my_inputs =  [
+        let inputs =  [
             {
                 datasetId: datadocument.about.datasetID,
                 targets: [
@@ -2263,13 +2220,13 @@ function CreateProblemDefinition(depvar, aux) {
                         columnName: my_target
                     }
                 ]}];
-        console.log(my_problem);
+        console.log(problem);
         console.log("valueKey");
         console.log(valueKey);
-        return {problem: my_problem, inputs: my_inputs};
+        return {problem: problem, inputs: inputs};
     } else { //creating pipeline data for problem discovery using aux inputs from disco line
 
-        let my_problem = {
+        let problem = {
             id: aux.problem_id,
             version: '1.0',
             name: aux.problem_id,
@@ -2278,7 +2235,7 @@ function CreateProblemDefinition(depvar, aux) {
             taskSubtype: 'TASK_SUBTYPE_UNDEFINED',
             performanceMetrics: [{metric: d3mMetrics[aux.metric][1]}]  // need to generalize to case with multiple metrics.  only passes on first presently.
         };
-        let my_inputs =  [
+        let inputs =  [
             {
                 datasetId: datadocument.about.datasetID,
                 targets: [
@@ -2288,7 +2245,7 @@ function CreateProblemDefinition(depvar, aux) {
                         columnName: my_target
                     }
                 ]}];
-        return {my_problem, my_inputs};
+        return {problem, inputs};
 
     }
 }
@@ -2335,14 +2292,15 @@ function CreatePipelineDefinition(predictors, depvar, timeBound, aux) {
     if(typeof timeBound !== 'undefined'){
         my_timeBound = timeBound;
     }
-    let my_userAgent = TA3_GPRC_USER_AGENT;              // set on django server
+    let my_userAgent = TA3_GRPC_USER_AGENT;              // set on django server
     let my_version = TA3TA2_API_VERSION;                 // set on django server
     let my_allowedValueTypes = ['DATASET_URI', 'CSV_URI'];      // Get from elsewhere
     let my_problem = CreateProblemDefinition(depvar, aux);
+    let my_template = makePipelineTemplate(aux);
     //console.log(my_problem);
     let my_dataseturi = 'file://' + datasetdocurl;
     // console.log(my_dataseturi);
-    return {userAgent: my_userAgent, version: my_version, timeBound: my_timeBound, priority: 1, allowedValueTypes: my_allowedValueTypes, problem: my_problem, inputs: [{dataset_uri: my_dataseturi}] };
+    return {userAgent: my_userAgent, version: my_version, timeBound: my_timeBound, priority: 1, allowedValueTypes: my_allowedValueTypes, problem: my_problem, template: my_template, inputs: [{dataset_uri: my_dataseturi}] };
 }
 
 function CreateFitDefinition(solutionId){
@@ -2353,6 +2311,47 @@ function CreateFitDefinition(solutionId){
     let my_exposeValueTypes = ['CSV_URI'];
     let my_users = [{id: 'TwoRavens', choosen: false, reason: ''}];
     return {solutionId: my_solutionId, inputs: my_inputs, exposeOutputs: my_exposeOutputs, exposeValueTypes: my_exposeValueTypes, users: my_users};
+}
+
+
+// {
+//     "fittedSolutionId": "solutionId_yztf3r",
+//     "inputs": [
+//         {
+//             "csvUri": "file://uri/to-a/csv"
+//         },
+//         {
+//             "datasetUri": "file://uri/to-a/dataset"
+//         }
+//     ],
+//     "exposeOutputs": [
+//         "steps.1.steps.4.produce"
+//     ],
+//     "exposeValueTypes": [
+//         "PICKLE_URI",
+//         "PLASMA_ID"
+//     ],
+//     "users": [
+//         {
+//             "id": "uuid of user",
+//             "choosen": true,
+//             "reason": "best solution"
+//         },
+//         {
+//             "id": "uuid of user",
+//             "choosen": false,
+//             "reason": ""
+//         }
+//     ]
+// }
+
+function CreateProduceDefinition(fsid){
+    let my_fittedSolutionId = fsid;
+    let my_dataseturi = 'file://' + datasetdocurl;
+    let my_inputs = [{dataset_uri: my_dataseturi}];
+    let my_exposeOutputs = [];  // Not sure about this.
+    let my_exposeValueTypes = ['CSV_URI']; // Not sure about this.
+    return {fittedSolutionId: my_fittedSolutionId, inputs: my_inputs, exposeOutputs: my_exposeOutputs, exposeValueTypes: my_exposeValueTypes};
 }
 
 function CreateScoreDefinition(res){
@@ -2461,7 +2460,8 @@ export async function estimate(btn) {
 
         estimateLadda.start(); // start spinner
         let res = await makeRequest(D3M_SVC_URL + '/SearchSolutions', CreatePipelineDefinition(valueKey, mytarget));
-        res && onPipelineCreate(res);
+        //res && onPipelineCreate(res);   // arguments were wrong, and this function no longer needed
+
     } else { // we are in IS_D3M_DOMAIN no swandive
         // rpc CreatePipelines(PipelineCreateRequest) returns (stream PipelineCreateResult) {}
         zPop();
@@ -2502,10 +2502,11 @@ export async function estimate(btn) {
 
             let searchFinished = false;
             let fitFinished = false;
-            let res3, res4, res5, res6;
+            let res3, res4;
             let oldCount = 0;
             let newCount = 0;
             let resizeTriggered = false;
+            let predPlotTriggered = false;
 
             let fitFlag = false;
 
@@ -2531,25 +2532,33 @@ export async function estimate(btn) {
                                 byId("btnSetx").click();   // Was "btnResults" - changing to simplify user experience for testing.
                             };
                             resizeTriggered = true;
-                               // this initializes the results windows using the first pipeline ID
-                        //     if(!swandive) {
-                        //         resultsplotinit(pipelineTable[0][1]);
-                        //     }
-                        };
+                        }
 
-                        let res10, res11;
+                        if(selectedPipeline === undefined){
+                            setSelectedPipeline(pipelineTable[0]['PipelineID']);
+                        }
+
+                        let res10, res11, res77, res5, res6, res8;
                         let scoreDetailsUrl;
 
-                        if(typeof solutionId != 'undefined'){
+                        if(typeof solutionId != 'undefined'){         // Find out when this happens
 
+                            // [1] Get the template language description of the pipeline solution
+                            res77 = await makeRequest(D3M_SVC_URL + '/DescribeSolution', {solutionId: solutionId});                            
+                            // Add pipeline descriptions to allPipelineInfo
+                            // More overwriting than is necessary here.
+                            allPipelineInfo[res4.data.id] = Object.assign(allPipelineInfo[res4.data.id], res4.data, res77.data);
+
+                            console.log("pipeline description here:")
+                            console.log(allPipelineInfo[res4.data.id].pipeline);
+
+                            // [2] Ask for a solution to be scored
                             res10 = await makeRequest(D3M_SVC_URL + '/ScoreSolution', CreateScoreDefinition(res4));
-                            //let scoreId = res10.data.requestId;
-                            //res11 = await makeRequest(D3M_SVC_URL + '/GetScoreSolutionResults', {requestId: scoreId});
-
+                            
                             if(typeof res10.data.requestId != 'undefined'){
                                 let scoreId = res10.data.requestId;
                                 res11 = await makeRequest(D3M_SVC_URL + '/GetScoreSolutionResults', {requestId: scoreId});
-                                scoreDetailsUrl = res11.data.details_url;  //responses.list[0].details_url;
+                                scoreDetailsUrl = res11.data.details_url;  
                             };
 
                             if(fitFlag){
@@ -2568,25 +2577,50 @@ export async function estimate(btn) {
                             let res12 = await updateRequest(scoreDetailsUrl);   // check
                             if(typeof res12.data.is_finished != 'undefined'){
                                 if(res12.data.is_finished){
-                                    console.log('finished scoring');
+                                    if(res12.data.responses.list.length > 0){   // need to understand why this comes back is.finished=true but also length=0
+                                        console.log('finished scoring');
+                                        let finalScoreUrl = res12.data.responses.list[0].details_url;
+                                        let res13 = await updateRequest(finalScoreUrl);
+                                        let myscore = res13.data.response.scores[0].value.raw.double.toPrecision(3);   // Makes a number of assumptions about how values are returned, also need to attempt to deal w multiple scores
+                                        let matchedPipeline = pipelineTable.find(candidate => candidate['PipelineID'] === parseInt(res4DataId, 10))
+                                        matchedPipeline['Score'] = String(myscore);
+                                        if(!predPlotTriggered){
+                                            console.log(pipelineTable);
+                                                byId("btnPredPlot").click();   // Was "btnResults" - changing to simplify user experience for testing.
+                                            predPlotTriggered = true;
+                                        };
+
+                                        //onPipelineCreate(res13, res4DataId);    // This function was getting shorter and shorter, and now just lives above.
+                                    } else {
+                                        console.log('finished scoring but broken');
+                                        let brokenPipeline = pipelineTable.find(candidate => candidate['PipelineID'] === parseInt(res4DataId, 10))
+                                        brokenPipeline['Score'] = 'no score';
+                                    };
+                                    pipelineTable = sortPipelineTable(pipelineTable);
                                     clearInterval(scoringIntervalId);
-                                    let finalScoreUrl = res12.data.responses.list[0].details_url;
-                                    let res13 = await updateRequest(finalScoreUrl);
-                                    onPipelineCreate(res13, res4DataId);  // arguments have changed
                                 };
                             };
                         }, 2700);
 
+                        let finalFittedId, finalFittedDetailsUrl;
                         if(fitFlag){
                             let fittingIntervalId = setInterval(async function() {
                                 let res7 = await updateRequest(fittedDetailsUrl);   // check
                                 if(typeof res7.data.is_finished != 'undefined'){
                                     if(res7.data.is_finished){
+                                        finalFittedDetailsUrl = res7.data.responses.list[0].details_url;
+                                        res8 = await updateRequest(finalFittedDetailsUrl);
+                                        finalFittedId = res8.data.response.fittedSolutionId;
+                                        console.log("finalfittedId:" + finalFittedId);
+
+                                        // PUT finalFittedId SOMEWHERE IT CAN BE FOUND : maybe allPipelineInfo
+
                                         clearInterval(fittingIntervalId);
                                     };
                                 };
-                            }, 2700);
+                            }, 500);
                         };
+
                     };
                     oldCount = newCount;
                 };
@@ -2975,7 +3009,7 @@ export async function makeRequest(url, data) {
     */
 
     if (!IS_D3M_DOMAIN){
-        estimateLadda.stop();    // estimateLadda is being stopped in onPipelineCreate in D3M
+        estimateLadda.stop();    // estimateLadda is being stopped somewhere else in D3M
     };
     return res;
 }
@@ -2989,9 +3023,8 @@ export function legend() {
 /**
    programmatically deselect every selected variable
 */
-export function erase() {
-    setLeftTab('Variables');
-
+export function erase(disc) {
+    setLeftTab(disc == 'Discovery' ? 'Discovery' : 'Variables');
     valueKey.forEach(function(element){
       if (zparams.zdv.concat(zparams.znom, zparams.zvars).includes(element))   // names start with varList now
         clickVar(element);
@@ -3002,16 +3035,7 @@ export function erase() {
 export let setLeftTab = (tab) => {
     leftTab = tab;
     updateLeftPanelWidth();
-
-    if (tab === "Discovery"){
-        probtable.length = 0;
-        for(let i = 0; i < disco.length; i++) {
-            let mypredictors = disco[i].predictors.join();
-            probtable.push([i, disco[i].target, mypredictors, disco[i].task, disco[i].metric]);
-        }
-
-        document.getElementById("discoveryInput").value=disco[0].description;
-    }
+    exploreVariate = tab === 'Discovery' ? 'Problem' : 'Univariate';
 };
 
 export let summary = {data: []};
@@ -3147,7 +3171,7 @@ export let hexToRgba = hex => {
 /**
    takes node and color and updates zparams
 */
-function setColors(n, c) {
+export function setColors(n, c) {
     if (n.strokeWidth == '1') {
         if (c == gr1Color){
             var tempindex = zparams.zgroup1.indexOf(n.name);
@@ -3434,23 +3458,21 @@ export function fakeClick() {
    EndSession(SessionContext) returns (Response) {}
 */
 export async function endsession() {
-    let table = document.getElementById("setxRight").getElementsByTagName('table')[0];
-    if(typeof table === 'undefined') {
+    if(Object.keys(allPipelineInfo).length === 0) {
         alert("No pipelines exist. Cannot mark problem as complete.");
         return;
     }
 
-    let tableposition = selectedPipeline['model'] + 1;  // no pipeline selected become NaN
-    if(isNaN(tableposition)){
-        tableposition = 1;
+    if (!selectedPipeline) {
+        alert("No pipeline selected. Cannot mark problem as complete.");
+        return;
     }
-    let selected = table.rows[tableposition].cells[0].innerHTML;  // was "none"; as default
 
     console.log("== this should be the selected solution ==");
-    console.log(allPipelineInfo[selected]);
-    console.log(allPipelineInfo[selected].response.solutionId);
+    console.log(allPipelineInfo[selectedPipeline]);
+    console.log(allPipelineInfo[selectedPipeline].response.solutionId);
 
-    let chosenSolutionId = allPipelineInfo[selected].response.solutionId;
+    let chosenSolutionId = allPipelineInfo[selectedPipeline].response.solutionId;
 
     // calling exportpipeline
     let end = await exportpipeline(chosenSolutionId);
@@ -3504,10 +3526,10 @@ export async function listpipelines() {
    rpc ExecutePipeline(PipelineExecuteRequest) returns (stream PipelineExecuteResult) {}
 */
 export async function executepipeline() {
-    let context = apiSession(zparams.zsessionid);
-    let tablerow = document.querySelector('#setxRight tr.item-select');
-    if(tablerow == null) {alert("Please select a pipeline to execute on."); return;}
-    let pipelineId=tablerow.firstChild.innerText;
+    if (!selectedPipeline) {
+        alert("Please select a pipeline to execute on.");
+        return;
+    }
 
     zPop();
     zparams.callHistory = callHistory;
@@ -3533,14 +3555,14 @@ export async function executepipeline() {
         data.push(mydata);
     }
 
-    let temp = {context, pipelineId, data};
-    temp = JSON.stringify(temp);
+    let context = apiSession(zparams.zsessionid);
+    let temp = JSON.stringify({context, selectedPipeline, data});
     console.log(temp);
-    let res = await makeRequest(D3M_SVC_URL + '/ExecutePipeline', {context, pipelineId, data});
+    let res = await makeRequest(D3M_SVC_URL + '/ExecutePipeline', {context, selectedPipeline, data});
     // I think we want to do this here, but will wait for ISI image to test against
-   // if(res.progressInfo=="COMPLETED") {
-        res && addPredictions(res);
-   // }
+    // if(res.progressInfo=="COMPLETED") {
+    res && addPredictions(res);
+    // }
 }
 
 function addPredictions(res) {
@@ -3657,16 +3679,96 @@ function setPebbleCharge(d){
 }
 
 /** needs doc */
-export function resultsplotinit(pid) {
+export async function resultsplotinit(pid) {
+
+    console.log("Plotting Results");
+    console.log(pid);                  // This is passed argument
+    console.log(selectedPipeline);     // This is global
+
+    let pipelineInfo = allPipelineInfo[pid];
+
+    if (!('predictedValues' in pipelineInfo)){
+        // Need to generate and store predicted values
+        let finalFittedId, finalFittedDetailsUrl, produceDetailsUrl, finalProduceDetailsUrl, hold3;
+        let res8, res55, res56, res58, res59;
+
+        let chosenSolutionId = allPipelineInfo[selectedPipeline].response.solutionId;
+        let res5 = await makeRequest(D3M_SVC_URL + '/FitSolution', CreateFitDefinition(chosenSolutionId));
+        let fittedId = res5.data.requestId;
+        let res6 = await makeRequest(D3M_SVC_URL + `/GetFitSolutionResults`, {requestId: fittedId});
+        let fittedDetailsUrl = res6.data.details_url;
+        let fittingfinished = false;                     // Flag for whether we have a fitted solution available yet to produce predicted values from.
+        let fittingIntervalId = setInterval(async function() {
+
+            // First get fitted solution
+            if(!fittingfinished){
+                let res7 = await updateRequest(fittedDetailsUrl);
+                if(typeof res7.data.is_finished != 'undefined'){
+                    if(res7.data.is_finished){
+                        finalFittedDetailsUrl = res7.data.responses.list[0].details_url;
+                        res8 = await updateRequest(finalFittedDetailsUrl);
+                        finalFittedId = res8.data.response.fittedSolutionId;
+                        console.log(finalFittedId);
+                        res55 = await makeRequest(D3M_SVC_URL + '/ProduceSolution', CreateProduceDefinition(finalFittedId));
+                        console.log("--Finished Fitting");
+                        console.log(res55);
+                        let produceId = res55.data.requestId;
+                        res56 = await makeRequest(D3M_SVC_URL + `/GetProduceSolutionResults`, {requestId: produceId});
+                        console.log("--Get Produce");
+                        console.log(res56);
+                        produceDetailsUrl = res56.data.details_url;
+                        fittingfinished = true;
+                    };
+                };
+            };
+
+            // Then produce predicted values from fitted solution
+            if(fittingfinished){
+                let res57 = await updateRequest(produceDetailsUrl);
+                if(typeof res57.data.is_finished != 'undefined'){
+                    if(res57.data.is_finished){
+                        finalProduceDetailsUrl = res57.data.responses.list[0].details_url;
+                        res58 = await updateRequest(finalProduceDetailsUrl);
+                        console.log("--Long Awaited Predictions:");
+                        let hold = res58.data.response.exposedOutputs;
+                        let hold2 = hold[Object.keys(hold)[0]];  // There's an issue getting ."outputs.0".csvUri directly.
+                        hold3 = hold2.csvUri;
+                        console.log(hold3);
+                        res59 = await makeRequest(D3M_SVC_URL + `/retrieve-output-data`, {data_pointer: hold3});
+                        console.log(res59);
+
+                        allPipelineInfo[pid].predictedValues = res59;
+
+                        clearInterval(fittingIntervalId);
+
+                        resultsplotgraph(pid);
+                    };
+                };
+            };
+        }, 100);
+
+    } else {
+        // Predicted values already stored and ready for graphing
+        console.log("Skipping creating predicted values");
+        resultsplotgraph(pid);
+    }; 
+
+};
+
+export function resultsplotgraph(pid){
+    let pipelineInfo = allPipelineInfo[pid];
+    console.log("pid:");
     console.log(pid);
-    pid = allPipelineInfo[pid];
-    let mydv = allPipelineInfo.rookpipe.depvar[0];         // When there are multiple CreatePipelines calls, then this only has values from latest value
+    let mydv = allPipelineInfo.rookpipe.depvar[0];          // When there are multiple CreatePipelines calls, then this only has values from latest value
+    console.log(mydv);
     let dvvalues = allPipelineInfo.rookpipe.dvvalues;       // When there are multiple CreatePipelines calls, then this only has values from latest value
-    // let predfile = pid.pipelineInfo.predictResultData.file_1;
 
-    if (pid.pipelineInfo.predictResultData.success == false) return;
+    // Terminate plot if predicted values not available
+    if (!('predictedValues' in pipelineInfo)) return;
+    if (pipelineInfo.predictedValues.success == false) return;
 
-    let allPreds = pid.pipelineInfo.predictResultData.data;
+
+    let allPreds = pipelineInfo.predictedValues.data;
     console.log(Object.keys(allPreds[1]));
     let predvals = [];
 
@@ -3686,8 +3788,14 @@ export function resultsplotinit(pid) {
 
     // only do this for classification tasks
     if(d3mTaskType[d3mProblemDescription.taskType][1] == "CLASSIFICATION") {
+        console.log("class plot");
+        console.log("actual:");
+        console.log(dvvalues);
+        console.log("predicted:");
+        console.log(predvals);
         genconfdata(dvvalues, predvals);
     } else {
+        console.log("resid plot");
         let xdata = "Actual";
         let ydata = "Predicted";
         scatter(dvvalues, predvals, xdata, ydata);
@@ -3748,7 +3856,7 @@ export function genconfdata (dvvalues, predvals) {
 
     // line up actuals and predicted, and increment mycounts at index where mypair has a match for the 'actual,predicted'
     for (let i = 0; i < dvvalues.length; i++) {
-        let temppair = dvvalues[i]+','+predvals[i];
+        let temppair = predvals[i]+','+dvvalues[i];
         let myindex = mypairs.indexOf(temppair);
         mycounts[myindex] += 1;
     }
@@ -3768,7 +3876,7 @@ export function confusionmatrix(matrixdata, classes) {
     d3.select("#setxLeftPlot").select("svg").remove();
 
     // adapted from this block: https://bl.ocks.org/arpitnarechania/dbf03d8ef7fffa446379d59db6354bac
-    let mainwidth = byId('main').clientWidth;
+    let mainwidth = byId('rightpanel').clientWidth; //byId('main').clientWidth;
     let mainheight = byId('main').clientHeight;
 
 
@@ -3780,15 +3888,15 @@ export function confusionmatrix(matrixdata, classes) {
     let condiv = document.createElement('div');
     condiv.id="confusioncontainer";
     condiv.style.display="inline-block";
-    condiv.style.width=+(mainwidth*.385)+'px';   // Need to not be hard coded
-    condiv.style.marginLeft='20px';
+    condiv.style.width=+(((mainwidth-50)*.7)-100)+'px';   // Need to not be hard coded
+    condiv.style.marginLeft='12px';
     condiv.style.height=+(mainheight)+'px';      // Need to not be hard coded
     condiv.style.float="left";
     byId('setxLeftPlot').appendChild(condiv);
 
     let legdiv = document.createElement('div');
     legdiv.id="confusionlegend";
-    legdiv.style.width=+(mainwidth*.05)+'px';    // Need to not be hard coded
+    legdiv.style.width=+(90)+'px';    // Need to not be hard coded
     legdiv.style.marginLeft='5px';               // Margin between confusion matrix container and legend container
     legdiv.style.height=+(mainheight)+'px';      // Need to not be hard coded
     legdiv.style.display="inline-block";
@@ -3798,6 +3906,7 @@ export function confusionmatrix(matrixdata, classes) {
 
 
     function Matrix(options) {
+
         let width = options.width,
         height = options.height,
         data = options.data,
@@ -3966,7 +4075,7 @@ export function confusionmatrix(matrixdata, classes) {
         svg.append("text")
         .attr("transform", "translate(" + (width / 2) + " ," + (0 - 10) + ")")
         .style("text-anchor", "middle")
-        .text("Predicted Class");
+        .text("Actual Class");
 
         svg.append("text")
         .attr("transform", "rotate(-90)")
@@ -3974,7 +4083,7 @@ export function confusionmatrix(matrixdata, classes) {
         .attr("x",0 - (height / 2))
         //.attr("dy", "1em")
         .style("text-anchor", "middle")
-        .text("Actual Class");
+        .text("Predicted Class");
 
         // this y is for the legend
         y = d3.scale.linear()
@@ -4057,7 +4166,7 @@ export function confusionmatrix(matrixdata, classes) {
            labels    : classes,
            start_color : '#ffffff',
            end_color : '#e67e22',
-           width : mainwidth * .33 + 25 - leftmarginguess,      // Width of confusion matrix table: Need to not be hard coded
+           width : ((mainwidth-50)*.7) - 100 - leftmarginguess -30,//     // Width of confusion matrix table: Beginning of this is #confusioncontainer.width, but this div doesn't always exist yet
            height : mainheight * .6,    // Need to not be hard coded
            widthLegend : mainwidth*.04,
            x_offset : 30
@@ -4066,6 +4175,32 @@ export function confusionmatrix(matrixdata, classes) {
     // not rendering this table for right now, left all the code in place though. maybe we use it eventually
     // var table = tabulate(computedData, ["F1", "PRECISION","RECALL","ACCURACY"]);
 }
+
+
+export function sortPipelineTable(pt){
+    let reverseSet = ["meanSquaredError", "rootMeanSquaredError", "rootMeanSquaredErrorAvg", "meanAbsoluteError"];  // array of metrics to sort low to high
+    let reverse = (reverseSet.indexOf(d3mProblemDescription.performanceMetrics[0].metric) > -1) ? -1 : 1;
+    if (reverse == -1){
+        resultsMetricDescription = "Smaller numbers are better fits"
+    }
+
+    pt = pt.sort(function(a,b){
+        if (a['Score']===b['Score']){
+            return(0)
+        } else if (a['Score']=="scoring"){
+            return(100)
+        } else if (b['Score']=="scoring") {
+            return(-100)
+        } else if (a['Score']=="no score"){
+            return(1000) 
+        } else if (b['Score']=="no score"){
+            return(-1000)
+        } else {
+            return (parseFloat(b['Score']) - parseFloat(a['Score'])) * reverse;
+        };
+    });
+    return pt;
+};
 
 /** needs doc */
 export function setxTable(features) {
@@ -4325,20 +4460,6 @@ export function record_user_metadata(){
       }
 }
 
-export function showPredPlot (btn) {
-    if(document.getElementById("setxLeftGen").style.display=="none")
-        return;
-    document.getElementById("setxLeftPlot").style.display="block";
-    document.getElementById("setxLeftGen").style.display="none";
-}
-
-export function showGenPreds (btn) {
-    if(document.getElementById("setxLeftPlot").style.display=="none")
-        return;
-    document.getElementById("setxLeftPlot").style.display="none";
-    document.getElementById("setxLeftGen").style.display="block";
-}
-
 function singlePlot(pred) {
     d3.select('#setxLeftTopRight').selectAll('svg').remove();
     let i = findNodeIndex(pred);
@@ -4365,15 +4486,25 @@ export function discovery(preprocess_file) {
     for (let i = 0; i < extract.length; i++) {
         names[i] = "Problem" + (i + 1);
         let current_target = extract[i]["target"];
+        let current_transform = extract[i]["transform"];
+        let current_subsetObs = extract[i]["subsetObs"];
+        let current_subsetFeats = extract[i]["subsetFeats"];
         let j = findNodeIndex(current_target);
         let node = allNodes[j];
         let current_predictors = extract[i]["predictors"];
         let current_task = node.plottype === "bar" ? 'classification' : 'regression';
         let current_rating = 3;
-        let current_description = current_target + " is predicted by " + current_predictors.join(" and ");
+        let current_description = "";
+        if(current_transform != 0){
+            current_description = "The combination of " + current_transform.split('=')[1] + " is predicted by " + current_predictors.join(" and ");
+        } else if (current_subsetObs != 0){
+            current_description = current_target + " is predicted by " + current_predictors.join(" and ") + " whenever " + current_subsetObs;
+        } else {
+            current_description = current_target + " is predicted by " + current_predictors.join(" and ");
+        };
         let current_metric = node.plottype === "bar" ? 'f1Macro' : 'meanSquaredError';
         let current_id = "problem" + (i+1);
-        let current_disco = {problem_id: current_id, system: "auto", meaningful: "no", target: current_target, predictors: current_predictors, task: current_task, rating: current_rating, description: current_description, metric: current_metric, };
+        let current_disco = {problem_id: current_id, system: "auto", meaningful: "no", target: current_target, predictors: current_predictors, transform: current_transform, subsetObs: current_subsetObs, subsetFeats: current_subsetFeats, task: current_task, rating: current_rating, description: current_description, metric: current_metric, };
         //jQuery.extend(true, current_disco, names);
         disco[i] = current_disco;
     };
@@ -4392,17 +4523,15 @@ export function discovery(preprocess_file) {
     return disco;
 }
 
-// This stores discovery problems
-export let probtable = [];
 
 export let selectedProblem;
-export let setSelectedProblem = (problem) => selectedProblem = problem;
+export function setSelectedProblem(prob) {selectedProblem = prob;}
 
 export let checkedDiscoveryProblems = new Set();
 export let setCheckedDiscoveryProblem = (status, problem) => {
     if (problem !== undefined) status ? checkedDiscoveryProblems.add(problem) : checkedDiscoveryProblems.delete(problem);
-    else checkedDiscoveryProblems = status ? new Set(probtable.map((problem) => problem[0])) : new Set();
-}
+    else checkedDiscoveryProblems = status ? new Set(disco.map(problem => problem.problem_id)) : new Set();
+};
 
 export async function submitDiscProb() {
     discoveryLadda.start();
@@ -4415,7 +4544,7 @@ export async function submitDiscProb() {
         outputCSV = outputCSV + disco[i].problem_id + ", \"" + disco[i].system + "\", \"" + disco[i].meaningful + "\"\n";
 
         // construct and write out the api call and problem description for each discovered problem
-        let problemApiCall = CreatePipelineDefinition(disco[i].predictors, disco[i].target, 10, disco[i]);
+        let problemApiCall = CreatePipelineDefinition(disco[i].predictors, [disco[i].target], 10, disco[i]);
         let problemProblemSchema = CreateProblemSchema(disco[i]);
         let filename_api = disco[i].problem_id + '/ss_api.json';  
         let filename_ps = disco[i].problem_id + '/schema.json';   
@@ -4441,14 +4570,10 @@ export async function submitDiscProb() {
     trigger("btnVariables", 'click');
 }
 
-export function saveDisc(btn) {
-    let table = document.getElementById("discoveryTable");
-    let newtext = document.getElementById("discoveryInput").value;
-    for (let i = 1, row; row = table.rows[i]; i++) { //skipping the header
-        if (row.className === 'item-select') {
-            disco[i-1].description = newtext;
-        }
-    }
+export function saveDisc() {
+    let problem = disco.find(problem => problem.problem_id === selectedProblem);
+    problem.description = document.getElementById("discoveryInput").value;
+    console.log(problem);
 }
 
 export async function endAllSearches() {
@@ -4472,3 +4597,72 @@ export async function stopAllSearches() {
         };
     };
 }
+
+/**
+ *  Function takes as input the pipeline template information (currently aux) and returns a valid pipline template in json. This json is to be inserted into SearchSolutions. e.g., problem = {...}, template = {...}, inputs = [dataset_uri]
+ */
+function makePipelineTemplate (aux) {
+    console.log(aux);
+    // aux.transform, aux.subsetFeats, aux.Obs are all by default 0. if not 0, which is set in preprocess, then steps should build the corresponding primitive call.
+    let inputs = [];
+    let outputs = [];
+    let steps = [];
+    return {inputs:inputs,outputs:outputs,steps:steps};
+    
+    // example inputs:
+    /*
+        "inputs": [
+        {
+            "name": "dataset"
+        }
+        ]
+    */
+    // example outputs:
+    /*
+        "outputs": [
+        {
+            "name": "dataset",
+            "data": "step.0.produce"
+        }
+        ]
+    */
+    // example steps:
+    /*
+        "steps": [
+                {
+                    "primitive": {
+                        "primitive": {
+                            "id": "id",
+                            "version": "version",
+                            "pythonPath": "python_path",
+                            "name": "name",
+                            "digest": "optional--some locally registered primitives might not have it"
+                        },
+                        "arguments": {
+                            "arg1": {
+                                "container": {
+                                    "data": "data reference"
+                                }
+                            }},
+                        "outputs": [
+                            {
+                                "id": "id for data ref"
+                            }
+                        ],
+                        "hyperparams": {
+                            "param 1": {
+                                "container": {
+                                    "data": "data reference"
+                                }
+                            }
+                        }
+                    }
+                }
+            ]
+    */
+}
+
+
+
+
+

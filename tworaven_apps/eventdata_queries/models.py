@@ -34,6 +34,12 @@ USERNAME = u'username'
 
 SEARCH_PARAMETERS = (NAME, DESC, USERNAME)
 
+NAME = u'name'
+DESC = u'description'
+USERNAME = u'username'
+
+SEARCH_PARAMETERS = (NAME, DESC, USERNAME)
+
 
 class EventDataSavedQuery(TimeStampedModel):
     """ Model to store queries"""

@@ -2,7 +2,6 @@ import os
 import shutil
 import random
 import string
-#from os.path import abspath, dirname, join
 
 import signal
 
@@ -10,29 +9,38 @@ import sys
 from fabric.api import local, task, settings
 import django
 import subprocess
-
 import re
 
 
-# Build paths inside the project like this: os.path.join(BASE_DIR, ...)
+# ----------------------------------------------------
+# Add this directory to the python system path
+# ----------------------------------------------------
 FAB_BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(FAB_BASE_DIR)
 
-if 'DJANGO_SETTINGS_MODULE' in os.environ:
-    pass    # use the existing environ variable
-elif FAB_BASE_DIR == '/srv/webapps/TwoRavens':
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE',
-                          'tworavensproject.settings.dev_container2')
-else:
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE',
-                          'tworavensproject.settings.local_settings')
+# ----------------------------------------------------
+# Set the DJANGO_SETTINGS_MODULE, if it's not already
+# ----------------------------------------------------
+KEY_DJANGO_SETTINGS_MODULE = 'DJANGO_SETTINGS_MODULE'
+if not KEY_DJANGO_SETTINGS_MODULE in os.environ:
+    if FAB_BASE_DIR == '/srv/webapps/TwoRavens':
+        os.environ.setdefault(KEY_DJANGO_SETTINGS_MODULE,
+                              'tworavensproject.settings.dev_container2')
+    else:
+        os.environ.setdefault(KEY_DJANGO_SETTINGS_MODULE,
+                              'tworavensproject.settings.local_settings')
 
+# ----------------------------------------------------
+# Django setup
+# ----------------------------------------------------
 try:
     django.setup()
 except Exception as e:
     print("WARNING: Can't configure Django. %s" % e)
 
-
+# ----------------------------------------------------
+# tasks, etc
+# ----------------------------------------------------
 def stop():
     """Kill any python/npm processes"""
     try:
@@ -165,126 +173,113 @@ def load_d3m_config(config_data_dir):
         print('> Failed to load D3M config.\n%s' % err_obj)
         return False
 
-@task
-def run_featurelabs_choose_config(choice_num=''):
-    """Deprecated. Pick a config from /ravens_volume and run FeatureLabs"""
-    run_ta2_choose_config(choice_num, ta2_name='FeatureLabs')
-
-#@task
-def run_isi_choose_config(choice_num=''):
-    """Deprecated. Pick a config from /ravens_volume and run ISI"""
-    run_ta2_choose_config(choice_num, ta2_name='ISI')
-
-def run_ta2_choose_config(choice_num='', ta2_name='ISI'):
-    """Deprecated. Pick a config from /ravens_volume and run a TA2"""
-    from os.path import join, isdir, isfile
-    from tworaven_apps.configurations.models_d3m import \
-        (D3M_SEARCH_CONFIG_NAME,)
-
-    ravens_dir = '/ravens_volume/test_data'
-    ravens_output_dir = '/ravens_volume/test_output'
-
-    # pull config files from ravens volume
-    config_choices = [x for x in os.listdir(ravens_dir)
-                      if isdir(join(ravens_dir, x)) and \
-                         isfile(join(ravens_dir, x, D3M_SEARCH_CONFIG_NAME))]
-
-    # pair each data directory with a number:
-    # [(1, 185_baseball), (2, 196_autoMpg), etc]
-    #
-    choice_pairs = [(idx, x) for idx, x in enumerate(config_choices, 1)]
-    if choice_num.isdigit():
-        choice_num = int(choice_num)
-        if choice_num in [x[0] for x in choice_pairs]:
-            data_dir_path = join(ravens_dir, choice_pairs[choice_num-1][1])
-            output_dir_path = join(ravens_output_dir, choice_pairs[choice_num-1][1])
-            if ta2_name == 'ISI':
-                #run_isi_ta2(data_dir_path, output_dir_path)
-                return
-            elif ta2_name == 'FeatureLabs':
-                run_featurelabs_ta2(data_dir_path, output_dir_path)
-                return
-            else:
-                print('\n--> Error: "%s" is not a ta2 choice\n' % ta2_name)
-        else:
-            print('\n--> Error: "%d" is not a valid choice\n' % choice_num)
-
-    print('-' * 40)
-    print('Listing config files in: %s' % ravens_dir)
-    print('-' * 40)
-    print('\nPlease run the fab command again using a config file number:\n')
-    for choice_pair in choice_pairs:
-        print('(%d) %s' % (choice_pair[0], choice_pair[1]))
-
-    print('\nExample: fab run_isi_choose_config:1')
-
 
 @task
-def run_featurelabs_ta2(data_dir_path, output_dir_path):
-    """inputs: data directory path, output directory path"""
-    from tworaven_apps.configurations.models_d3m import \
-        (D3M_SEARCH_CONFIG_NAME,)
-
-    if not os.path.isdir(data_dir_path):
-        print('ERROR: Data directory not found: %s' % data_dir_path)
-        return
-
-    config_file = os.path.join(data_dir_path, D3M_SEARCH_CONFIG_NAME)
-    if not os.path.isfile(config_file):
-        print('ERROR: config file not found: %s' % config_file)
-        return
-
-    if not os.path.isdir(output_dir_path):
-        os.makedirs(output_dir_path)
-        print('output directory created: %s' % output_dir_path)
-
-    load_d3m_config(data_dir_path)
-
+def stop_ta2_server():
+    """Stop any running docker container with the name "ta2_server" """
     print('-' * 40)
-    print('Run Feature Labs')
+    print('Stop any running TA2 servers -- docker container named "ta2_server"')
+    print('(may take a few seconds)')
     print('-' * 40)
+    with settings(warn_only=True):
+        result = local('docker stop ta2_server', capture=True)
+        if result.failed:
+            print('No docker container running with the name "ta2_server"\n')
 
-    docker_cmd = ('docker run --rm -t'
-                  ' --name ta2_server'
-                  ' -p 45042:45042'
-                  ' -e D3MPORT=45042'
-                  ' -e D3MTIMEOUT=60'
-                  ' -e D3MINPUTDIR={0}'
-                  ' -e D3MOUTPUTDIR={1}'
-                  ' -e D3MRUN=ta2ta3'
-                  ' -v {0}:/input'
-                  ' -v {1}:/output'
-                  ' -v /ravens_volume:/ravens_volume'
-                  ' registry.datadrivendiscovery.org/jkanter/mit-fl-ta2:stable'
-                  '').format(data_dir_path, output_dir_path)
-
-    print('Running command: %s' % docker_cmd)
-
-    local(docker_cmd)
-
-def run_isi_ta2(data_dir_path):
-    """syntax: `fab run_isi_ta2:[data_dir_path]`.` Also sets django D3M config"""
-    if not os.path.isdir(data_dir_path):
-        print('data dir path not found: %s' % data_dir_path)
-
-    print('-' * 40)
-    print('Django: Loading D3M config...')
-    print('-' * 40)
-    load_d3m_config(data_dir_path)
-
-    print('-' * 40)
-    print('Run ISI')
-    print('-' * 40)
-    docker_cmd = ('docker run -ti --rm -v /ravens_volume:/ravens_volume -e'
-                  ' "CONFIG_JSON_PATH=%s" -p 45042:45042 --name'
-                  ' goisi isi_ta2:stable') % (config_json_path)
-
-    print('Running command: %s' % docker_cmd)
-
-    local(docker_cmd)
+        result = local('docker rm ta2_server', capture=True)
+        if result.failed:
+            print('No docker container named "ta2_server"\n')
 
 @task
-def load_docker_ui_config(**kwargs):
+def run_ta2_stanford_with_config(choice_num=''):
+    """Pick a config from /ravens_volume and run the Standford TA2"""
+    from tworaven_apps.ta2_interfaces.ta2_dev_util import \
+            (TA2Helper, TA2_STANFORD)
+
+    resp = TA2Helper.run_ta2_with_dataset(\
+                TA2_STANFORD,
+                choice_num,
+                run_ta2_stanford_with_config.__name__)
+
+    if resp.success:
+        stop_ta2_server()
+
+        docker_cmd = resp.result_obj
+        print('-' * 40)
+        print('Run TA2 with command:')
+        print('-' * 40)
+        print(docker_cmd)
+        local(docker_cmd)
+    elif resp.err_msg:
+        print(resp.err_msg)
+
+@task
+def run_ta2_featurelabs_with_config(choice_num=''):
+    """Pick a config from /ravens_volume and run the FeatureLabs TA2"""
+    from tworaven_apps.ta2_interfaces.ta2_dev_util import \
+            (TA2Helper, TA2_FeatureLabs)
+
+    resp = TA2Helper.run_ta2_with_dataset(\
+                TA2_FeatureLabs,
+                choice_num,
+                run_ta2_featurelabs_with_config.__name__)
+
+    if resp.success:
+        stop_ta2_server()
+
+        docker_cmd = resp.result_obj
+        print('-' * 40)
+        print('Run TA2 with command:')
+        print('-' * 40)
+        print(docker_cmd)
+        local(docker_cmd)
+    elif resp.err_msg:
+        print(resp.err_msg)
+    #run_ta2_choose_config(choice_num, ta2_name=TA2_FeatureLabs)
+
+@task
+def run_ta2_brown_choose_config(choice_num=''):
+    """Pick a config from /ravens_volume and run Brown's TA2"""
+    from tworaven_apps.ta2_interfaces.ta2_dev_util import \
+            (TA2Helper, TA2_Brown)
+
+    resp = TA2Helper.run_ta2_with_dataset(\
+                TA2_Brown,
+                choice_num,
+                run_ta2_brown_choose_config.__name__)
+
+    if resp.success:
+        stop_ta2_server()
+
+        docker_cmd = resp.result_obj
+        print('Running command: %s' % docker_cmd)
+        local(docker_cmd)
+    elif resp.err_msg:
+        print(resp.err_msg)
+
+
+@task
+def run_ta2_isi_choose_config(choice_num=''):
+    """Pick a config from /ravens_volume and run ISI's TA2"""
+    from tworaven_apps.ta2_interfaces.ta2_dev_util import \
+            (TA2Helper, TA2_ISI)
+
+    resp = TA2Helper.run_ta2_with_dataset(\
+                TA2_ISI,
+                choice_num,
+                run_ta2_isi_choose_config.__name__)
+
+    if resp.success:
+        stop_ta2_server()
+
+        docker_cmd = resp.result_obj
+        print('Running command: %s' % docker_cmd)
+        local(docker_cmd)
+    elif resp.err_msg:
+        print(resp.err_msg)
+
+@task
+def load_docker_ui_config():
     """Load config pk=3, name 'Docker Default configuration'"""
     check_config()
 
@@ -295,8 +290,9 @@ def load_docker_ui_config(**kwargs):
     le_config.save()
 
     print('new config activated: ')
-    le_config.print_vals()
-
+    for k, val in le_config.__dict__.items():
+        if not k.startswith('_'):
+            print('     > %s: %s' % (k, val))
 
 
 @task
@@ -305,7 +301,7 @@ def check_config():
     from tworaven_apps.configurations.models import AppConfiguration
 
     config_cnt = AppConfiguration.objects.count()
-    if config_cnt < 5:
+    if config_cnt == 0:
         local(('python manage.py loaddata'
                ' tworaven_apps/configurations/fixtures/initial_configs.json'))
     else:
@@ -647,8 +643,6 @@ def celery_restart():
     celery_stop()
     celery_run()
 
-
-
 @task
 def compile_ta3ta2_api():
     """Compile the TA3TA2 grpc .proto files"""
@@ -668,9 +662,9 @@ def compile_ta3ta2_api():
 def clear_eventdata_queries():
     """Delete all eventdata queries objects"""
     from django.conf import settings
-    # if not settings.ALLOW_FAB_DELETE:
-    #     print('For testing! Only if ALLOW_FAB_DELETE settings is True')
-    #     return
+    if not settings.ALLOW_FAB_DELETE:
+        print('For testing! Task only available if ALLOW_FAB_DELETE = True')
+        return
 
     from tworaven_apps.eventdata_queries.models import EventDataSavedQuery
 
@@ -683,19 +677,39 @@ def clear_eventdata_queries():
     else:
         print('No EventData objects found.\n')
 
+@task
+def clear_ta2_stored_requests():
+    """Delete StoredResponse and StoredRequest objects"""
+    from django.conf import settings
+    if not settings.ALLOW_FAB_DELETE:
+        print('For testing! Task only available if ALLOW_FAB_DELETE = True')
+        return
+
+    from tworaven_apps.ta2_interfaces.models import StoredRequest, StoredResponse
+
+    for model_name in [StoredResponse, StoredRequest]:
+        mcnt = model_name.objects.count()
+        print('\n%d %s objects(s) found' % (mcnt, model_name.__name__))
+        if mcnt > 0:
+            for meta_obj in model_name.objects.all().order_by('-id'):
+                meta_obj.delete()
+            print('Deleted...')
+        else:
+            print('No %s objects found.\n' % (model_name.__name__,))
+
 
 @task
 def clear_archive_queries():
-    """Delete all eventdata queries objects"""
+    """Delete ArchiveQueryJob objects"""
     from django.conf import settings
-    # if not settings.ALLOW_FAB_DELETE:
-    #     print('For testing! Only if ALLOW_FAB_DELETE settings is True')
-    #     return
+    if not settings.ALLOW_FAB_DELETE:
+        print('For testing! Task only available if ALLOW_FAB_DELETE = True')
+        return
 
     from tworaven_apps.eventdata_queries.models import ArchiveQueryJob
 
     mcnt = ArchiveQueryJob.objects.count()
-    print('\n%d Eventdata archive Objects(s) found' % mcnt)
+    print('\n%d ArchiveQueryJob archive Objects(s) found' % mcnt)
     if mcnt > 0:
         for meta_obj in ArchiveQueryJob.objects.all().order_by('-id'):
             meta_obj.delete()

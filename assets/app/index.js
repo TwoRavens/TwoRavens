@@ -9,33 +9,36 @@ import m from 'mithril';
 
 import * as app from './app';
 import * as exp from './explore';
-import * as layout from './layout';
 import * as plots from './plots';
 import * as results from './results';
-import {elem, fadeIn, fadeOut} from './utils';
+import {fadeIn, fadeOut} from './utils';
 
 import Button from './views/PanelButton';
 import Subpanel from './views/Subpanel';
-
-import Table from '../common/app/views/Table';
+import Flowchart from './views/Flowchart';
 
 import * as common from '../common/app/common';
-import Panel from '../common/app/views/Panel';
-import MenuTabbed from '../common/app/views/MenuTabbed';
 import ButtonRadio from '../common/app/views/ButtonRadio';
 import Footer from '../common/app/views/Footer';
 import Header from '../common/app/views/Header';
-import PanelList from '../common/app/views/PanelList';
-import TextField from '../common/app/views/TextField';
-import Peek from '../common/app/views/Peek';
+import MenuTabbed from '../common/app/views/MenuTabbed';
 import Modal from '../common/app/views/Modal';
-
+import Panel from '../common/app/views/Panel';
+import PanelList from '../common/app/views/PanelList';
+import Peek from '../common/app/views/Peek';
+import Table from '../common/app/views/Table';
+import TextField from '../common/app/views/TextField';
+import TableJSON from './views/TableJSON';
 
 // EVENTDATA
 import Body_EventData from '../EventData/app/Body_EventData';
 import Peek_EventData from '../common-eventdata/views/Peek';
 import '../EventData/css/app.css'
 import '../EventData/app/app'
+
+let bold = (value) => m('div', {style: {'font-weight': 'bold', display: 'inline'}}, value);
+let italicize = (value) => m('div', {style: {'font-style': 'italic', display: 'inline'}}, value);
+let link = (url) => m('a', {href: url, style: {color: 'darkblue'}, target: '_blank', display: 'inline'}, url);
 
 let state = {
     pipelines: [],
@@ -45,7 +48,8 @@ let state = {
     }
 };
 
-let nodesExplore = null;
+let nodesExplore = [];
+let valueKey = app.valueKey;
 
 function setBackgroundColor(color) {
     return function() {
@@ -60,16 +64,28 @@ function leftpanel(mode) {
         return results.leftpanel(Object.keys(app.allPipelineInfo));
     }
 
+    let selectedDisco = app.disco.find(problem => problem.problem_id === app.selectedProblem);
+
     let discoveryAllCheck = m('input#discoveryAllCheck[type=checkbox]', {
         onclick: m.withAttr("checked", (checked) => app.setCheckedDiscoveryProblem(checked)),
-        checked: app.probtable.length === app.checkedDiscoveryProblems.size
+        checked: app.disco.length === app.checkedDiscoveryProblems.size
     });
-    let discoveryTableData = app.probtable.map((problem) => [...problem, m('input[type=checkbox]', {
-        onclick: m.withAttr("checked", (checked) => app.setCheckedDiscoveryProblem(checked, problem[0])),
-        checked: app.checkedDiscoveryProblems.has(problem[0])
-    })]);
 
-    let nodes = exploreMode ? nodesExplore || [] : app.nodes;
+    let discoveryTableData = app.disco.map(problem => [
+        problem.problem_id, // this is masked as the UID
+        m('input[type=checkbox]', {
+            onclick: m.withAttr("checked", (checked) => app.setCheckedDiscoveryProblem(checked, problem.problem_id)),
+            checked: app.checkedDiscoveryProblems.has(problem.problem_id)
+        }),
+        problem.target,
+        problem.predictors.join(', '),
+        problem.task,
+        problem.metric,
+        !!problem.subsetObs && problem.subsetObs,
+        !!problem.transform && problem.transform
+    ]);
+
+    let nodes = exploreMode ? nodesExplore : app.nodes;
 
     return m(Panel, {
         side: 'left',
@@ -104,26 +120,48 @@ function leftpanel(mode) {
                      popup: variable => app.popoverContent(app.findNodeIndex(variable, true)),
                      attrsItems: {'data-placement': 'right', 'data-original-title': 'Summary Statistics'}})]},
             {value: 'Discovery',
-             display: exploreMode ? 'none' : 'block',
+             display: 'block',
              contents: [
                  m(Table, {
                      id: 'discoveryTable',
-                     headers: ['Hidden_UID', 'Target', 'Predictors', 'Task', 'Metric', discoveryAllCheck],
+                     headers: ['problem_id', discoveryAllCheck, 'Target', 'Predictors', 'Task', 'Metric', 'Subset', 'Transform'],
                      data: discoveryTableData,
                      activeRow: app.selectedProblem,
                      onclick: app.setSelectedProblem,
                      showUID: false,
                      abbreviation: 40,
-                     attrsAll: {style: {height: '80%', overflow: 'auto', display: 'block', 'margin-right': '16px', 'margin-bottom': 0, 'max-width': (window.innerWidth - 90) + 'px'}}
+                     attrsAll: {
+                         style: {height: '80%', overflow: 'auto', display: 'block', 'margin-right': '16px', 'margin-bottom': 0, 'max-width': (window.innerWidth - 90) + 'px'}}
                  }),
                  m('textarea#discoveryInput[style=display:block; float: left; width: 100%; height:calc(20% - 35px); overflow: auto; background-color: white]', {
-                     value: app.disco[app.selectedProblem] === undefined ? '' : app.disco[app.selectedProblem].description
+                     value: selectedDisco === undefined ? '' : selectedDisco.description
                  }),
-                 m(Button, {id: 'btnSave', onclick:_=>app.saveDisc('btnSave'),title: 'Saves your revised problem description.'}, 'Save Desc.'),
-                 m(Button, {id: 'btnSubmitDisc', classes: 'btn-success', style: 'float: right', onclick:_=>app.submitDiscProb(), title: 'Submit all checked discovered problems.'}, 'Submit Disc. Probs.')]},
-            {value: 'Summary',
-             title: 'Select a variable from within the visualization in the center panel to view its summary statistics.',
-             display: 'none',
+                 m(Button, {id: 'btnSave', onclick: app.saveDisc, title: 'Saves your revised problem description.'}, 'Save Desc.'),
+                 m(Button, {id: 'btnSubmitDisc', classes: 'btn-success', style: 'float: right', onclick: app.submitDiscProb, title: 'Submit all checked discovered problems.'}, 'Submit Disc. Probs.'),
+                 m(Button, {id: 'btnModelProblem', classes: 'btn-default', style: 'float: right', onclick: _ => {
+                     m.route.set('/model');
+                     setTimeout(_ => {
+                         if (selectedDisco) {
+                             let {target, predictors} = selectedDisco;
+                             app.erase('Discovery');
+                             [target].concat(predictors).map(x => app.clickVar(x));
+                             predictors.forEach(x => {
+                                 let d = app.findNode(x);
+                                 app.setColors(d, app.gr1Color);
+                                 app.legend(app.gr1Color);
+                             });
+                             let d = app.findNode(target);
+                             app.setColors(d, app.dvColor);
+                             app.legend(app.dvColor);
+                             d.group1 = d.group2 = false;
+                             app.restart();
+                         }
+                     }, 500);
+                 }, title: 'Model problem'}, 'Model problem')
+             ]},
+         {value: 'Summary',
+          title: 'Select a variable from within the visualization in the center panel to view its summary statistics.',
+          display: 'none',
              contents: [
                  m('center',
                    m('b', app.summary.name),
@@ -152,10 +190,56 @@ let righttab = (id, task, title, probDesc) => m(PanelList, {
 });
 
 function rightpanel(mode) {
-    if (mode === 'results') return [];
-    if (mode === 'explore') return [];
+    if (mode === 'results') return; // returns undefined, which mithril ignores
+    if (mode === 'explore') return;
 
     // mode == null (model mode)
+
+    // only called if the pipeline flowchart is rendered
+    function pipelineFlowchartPrep(pipeline) {
+        let steps = pipeline.steps.map((pipeStep, i) => ({
+            key: 'Step ' + i,
+            color: common.grayColor,
+            // special coloring is not enabled for now
+            // color: {
+            //     'data': common.grayColor,
+            //     'byudml': common.dvColor,
+            //     'sklearn_wrap': common.csColor
+            // }[pipeStep.primitive.python_path.split('.')[2]] || common.grayColor,
+            summary: m(Table, {
+                id: 'pipelineFlowchartSummary' + i,
+                abbreviation: 40,
+                data: {
+                    // NOTE: I'm not sure if MIT-FL is to spec here, and if not, then this will break on other TAs
+                    'Name': pipeStep['primitive']['primitive'].name,
+                    'Method': pipeStep['primitive']['primitive']['pythonPath'].split('.').slice(-1)[0]
+                },
+                attrsAll: {style: {'margin-bottom': 0, padding: '1em'}}
+            }),
+            content: m(TableJSON, {
+                id: 'pipelineTableStep' + i,
+                abbreviation: 40,
+                data: pipeStep
+            })
+        }));
+
+        let inputs = 'inputs' in pipeline && m(Table, {
+            id: 'pipelineInputsTable',
+            data: pipeline.inputs,
+            attrsAll: {style: {'margin-bottom': 0, 'padding': '1em'}}
+        });
+        let outputs = 'outputs' in pipeline && m(Table, {
+            id: 'pipelineOutputsTable',
+            data: pipeline.outputs,
+            attrsAll: {style: {'margin-bottom': 0, 'padding': '1em'}}
+        });
+
+        return [
+            {color: common.csColor, key: 'Inputs', summary: inputs, content: inputs},
+            ...steps,
+            {color: common.csColor, key: 'Outputs', summary: outputs, content: outputs}
+        ]
+    }
 
     let sections = [
         // {value: 'Models',
@@ -172,42 +256,88 @@ function rightpanel(mode) {
          display: !app.swandive || app.IS_D3M_DOMAIN ? 'block' : 'none',
          idSuffix: 'Setx',
          contents: [
-             m('#setxRight[style=display:block; float: right; width: 25%; height:100%; background-color: white]',
-               app.pipelineTable ? m(Table, {
-                   id: 'pipelineTable',
-                   headers: app.pipelineHeader,
-                   data: app.pipelineTable,
-                   activeRow: app.selectedPipeline[app.currentMode],
-                   onclick: app.setSelectedPipeline,
-                   showUID: false,
-                   abbreviation: 20
-               }) : undefined),
-             m('#setxTop[style=display:block; float: left; width: 75%; height:10%; overflow: auto; background-color: white]',
-               m("button.btn.btn-default.btn-xs#btnPredPlot[type='button']", {
-                   onclick: () => app.showPredPlot('btnPredPlot'),
-                   style: {float: "left", "margin-left": "2%"}
-               }, "Prediction Summary"),
-               m("button.btn.btn-default.btn-xs#btnGenPreds[type='button']", {
-                   onclick: () => app.showGenPreds('btnGenPreds'),
-                   style: {float: "left", "margin-left": "2%"}
-               }, "Generate New Predictions")),
-             m('#setxLeftPlot[style=display:block; float: left; width: 75%; height:95%; overflow: auto; background-color: white]'),
-             m('#setxLeft[style=display:none; float: left; width: 75%; height:95%; overflow: auto; background-color: white]'),
-             m('#setxLeftGen[style=display:none; float: left; width: 75%; height:95%; overflow: auto; background-color: white]',
-               m('#setxLeftTop[style=display:block; float: left; width: 100%; height:50%; overflow: auto; background-color: white]',
-                 m('#setxLeftTopLeft[style=display:block; float: left; width: 30%; height:100%; overflow: auto; background-color: white]'),
-                 m('#setxLeftTopRight[style=display:block; float: left; width: 70%; height:100%; overflow: auto; background-color: white]')),
-               m('#setxLeftBottomLeft[style=display:block; float: left; width: 70%; height:50%; overflow: auto; background-color: white]'),
-               m('#setxLeftBottomRightTop[style=display:block; float: left; width: 30%; height:10%; overflow: auto; background-color: white]',
-                 m(Button,
-                   {id: 'btnExecutePipe',
-                    classes: 'btn-default.ladda-button[data-spinner-color=#000000][data-style=zoom-in]',
-                    onclick: () => app.executepipeline('btnExecutePipe'),
-                    style: `display:inline; float: left; margin-right: 10px`,
-                    title: 'Execute pipeline.'},
-                   m('span.ladda-label[style=pointer-events: none]', 'Execute Generation'))),
-               m('#setxLeftBottomRightBottom[style=display:block; float: left; width: 30%; height:40%; overflow: auto; background-color: white]'))
-         ]}
+             m('#setxRight[style=float: right; width: 30%; height: 100%; overflow:auto]',
+                 app.selectedPipeline && [
+                     bold('Score Metric: '), app.d3mProblemDescription.performanceMetrics[0].metric, m('br'),
+                     app.resultsMetricDescription
+                 ],
+                 app.pipelineTable.length !== 0 && m(Table, {
+                     id: 'pipelineTable',
+                     headers: app.pipelineHeader,
+                     data: app.pipelineTable,
+                     activeRow: app.selectedPipeline,
+                     onclick: app.setSelectedPipeline,
+                     abbreviation: 20,
+                     tableTags: m('colgroup',
+                         m('col', {span: 1}),
+                         m('col', {span: 1, width: '30%'}))
+                 })),
+             app.pipelineTable.length === 0 && "Use 'Solve This Problem' to create a list of pipelines. ",
+             app.selectedPipeline === undefined && 'Click a pipeline to explore results.',
+
+             app.selectedPipeline && m(ButtonRadio, {
+                 id: 'resultsButtonBar',
+                 attrsAll: {style: {width: 'auto'}},
+                 attrsButtons: {class: ['btn-sm'], style: {width: 'auto'}},
+                 onclick: app.setSelectedResultsMenu,
+                 activeSection: app.selectedResultsMenu,
+                 sections: [
+                     {value: 'Prediction Summary', id: 'btnPredPlot'},
+                     {value: 'Generate New Predictions', id: 'btnGenPreds'},
+                     {value: 'Visualize Pipeline', id: 'btnVisPipe'}
+                 ]
+             }),
+             m(`div#predictionSummary[style=display:${app.selectedResultsMenu === 'Prediction Summary' ? 'block' : 'none'};height:calc(100% - 30px); overflow: auto; width: 70%]`,
+                 m('#setxLeftPlot[style=float:left; background-color:white; overflow:auto;]'),
+                 m('#setxLeft[style=display:none; float: left; overflow: auto; background-color: white]'),
+             ),
+             m(`#setxLeftGen[style=display:${app.selectedResultsMenu === 'Generate New Predictions' ? 'block' : 'none'}; float: left; width: 70%; height:calc(100% - 30px); overflow: auto; background-color: white]`,
+                 m('#setxLeftTop[style=display:block; float: left; width: 100%; height:50%; overflow: auto; background-color: white]',
+                     m('#setxLeftTopLeft[style=display:block; float: left; width: 30%; height:100%; overflow: auto; background-color: white]'),
+                     m('#setxLeftTopRight[style=display:block; float: left; width: 70%; height:100%; overflow: auto; background-color: white]')),
+                 m('#setxLeftBottomLeft[style=display:block; float: left; width: 70%; height:50%; overflow: auto; background-color: white]'),
+                 m('#setxLeftBottomRightTop[style=display:block; float: left; width: 30%; height:10%; overflow: auto; background-color: white]',
+                     m(Button, {
+                         id: 'btnExecutePipe',
+                         classes: 'btn-default.ladda-button[data-spinner-color=#000000][data-style=zoom-in]',
+                         onclick: app.executepipeline,
+                         style: {
+                             display: app.selectedPipeline === undefined ? 'none' : 'block',
+                             float: 'left',
+                             'margin-right': '10px'
+                         },
+                         title: 'Execute pipeline'
+                     }, m('span.ladda-label[style=pointer-events: none]', 'Execute Generation'))),
+                 m('#setxLeftBottomRightBottom[style=display:block; float: left; width: 30%; height:40%; overflow: auto; background-color: white]')),
+             app.selectedResultsMenu === 'Visualize Pipeline' && app.selectedPipeline in app.allPipelineInfo && m('div', {
+                     style: {
+                         width: '70%',
+                         height: 'calc(100% - 30px)',
+                         overflow: 'auto'
+                     }
+                 },
+                 m('div', {style: {'font-weight': 'bold', 'margin': '1em'}}, 'Overview: '),
+                 m(TableJSON, {
+                     id: 'pipelineOverviewTable',
+                     data: Object.keys(app.allPipelineInfo[app.selectedPipeline].pipeline).reduce((out, entry) => {
+                         if (['inputs', 'steps', 'outputs'].indexOf(entry) === -1)
+                             out[entry] = app.allPipelineInfo[app.selectedPipeline].pipeline[entry];
+                         return out;
+                     }, {}),
+                     attrsAll: {
+                         style: {
+                             margin: '1em',
+                             width: 'calc(100% - 2em)',
+                             border: common.borderColor,
+                             'box-shadow': '0px 5px 5px rgba(0, 0, 0, .2)'
+                         }
+                     }
+                 }),
+                 m('div', {style: {'font-weight': 'bold', 'margin': '1em'}}, 'Steps: '),
+                 m(Flowchart, {steps: pipelineFlowchartPrep(app.allPipelineInfo[app.selectedPipeline].pipeline)})
+             )
+         ]
+        }
     ];
 
     return m(Panel, {
@@ -291,6 +421,12 @@ class Body {
                 let node = app.findNode(x);
                 node && expnodes.push(node);
             });
+            if (variate==="problem") {
+                let problem = app.disco.find(problem => problem.problem_id === app.selectedProblem);
+                return m('', [
+                m('#plot', {style: 'display: block', oncreate: _ => exp.plot([],"",problem)})
+                ]);
+            }
             if (!expnodes[0] && !expnodes[1]) {
                 return;
             }
@@ -340,11 +476,11 @@ class Body {
                 bivariate: 'aggbar area averagediff binnedscatter binnedtableheat box'
                     + ' groupedbar horizon interactivebarmean line scatter scattermatrix scattermeansd stackedbar step strip tableheat trellishist',
                 trivariate: 'bubbletri groupedbartri horizgroupbar scattertri bubbleqqq scatterqqq trellisscatterqqn heatmapnnq dotdashqqn tablebubblennq stackedbarnnn facetbox facetheatmap groupedbarnqq',
-                multi: 'binnedcrossfilter scattermatrix'
+                multiple: 'binnedcrossfilter scattermatrix'
             };
             let filtered = schemas[variate];
             if (variate === 'bivariate' || variate === 'trivariate') {
-                filtered = `${filtered} ${schemas.multi}`;
+                filtered = `${filtered} ${schemas.multiple}`;
             }
 
             let plot = expnodes[0] && expnodes[0].plottype === 'continuous' ? plots.density : plots.bars;
@@ -355,7 +491,8 @@ class Body {
                       return m("figure", {style: 'display: inline-block'}, [
                           m(`img#${x}_img[alt=${x}][height=140px][width=260px][src=/static/images/${x}.png]`, {
                               onclick: _ => exp.plot(expnodes, x),
-                              style: {border: "1px solid #ddd", "border-radius": "3px", padding: "5px", margin: "3%", cursor: "pointer"}
+                              style: exp.thumbsty(expnodes,x)
+//                              style: {border: "2px solid #ddd", "border-radius": "3px", padding: "5px", margin: "3%", cursor: "pointer"}
                           }),
                           m("figcaption", {style: {"text-align": "center"}}, plotMap[x])
                       ]);
@@ -366,60 +503,119 @@ class Body {
 
         let spaceBtn = (id, onclick, title, icon) =>
             m(`button#${id}.btn.btn-default`, {onclick, title}, glyph(icon, true));
+        let discovery = app.leftTab === 'Discovery';
 
         return m('main', [
             m(Modal),
             this.header(mode),
             this.footer(mode),
-            m(`#main.left`, {style: {overflow}},
+            m(`#main`, {style: {overflow}},
               m("#innercarousel.carousel-inner", {style: {height: '100%', overflow}},
                 explore_mode
-                && [exploreVars
-                    ? m('', {style},
+                && [variate === 'problem' ?
+                    m('', {style},
                         m('a', {onclick: _ => m.route.set('/explore')}, '<- back to variables'),
                         m('br'),
                         exploreVars)
+//                        JSON.stringify(app.disco[app.selectedProblem]))
+                    : exploreVars ?
+                    m('', {style},
+                      m('a', {onclick: _ => m.route.set('/explore')}, '<- back to variables'),
+                      m('br'),
+                      exploreVars)
                     : m('', {style},
                         m(ButtonRadio,
                           {id: 'exploreButtonBar',
-                           attrsAll: {style: {width: '400px'}, class: 'btn-sm'},
+                           attrsAll: {style: {width: '400px'}},
+                           attrsButtons: {class: ['btn-sm']},
                            onclick: x => {nodesExplore = []; app.setVariate(x)},
                            activeSection: app.exploreVariate,
-                           sections: [{value: 'Univariate'}, {value: 'Bivariate'}, {value: 'Trivariate'}, {value: 'Multiple'}]}),
+                           sections: discovery ? [{value: 'Problem'}] : [{value: 'Univariate'}, {value: 'Bivariate'}, {value: 'Trivariate'}, {value: 'Multiple'}]}),
                         m(Button, {
                             id: 'exploreGo',
+                            classes: 'btn-success',
                             onclick: _ => {
                                 let variate = app.exploreVariate.toLowerCase();
-                                let selected = nodesExplore.map(x => x.name);
+                                let selected = discovery ? [app.selectedProblem] : nodesExplore.map(x => x.name);
                                 let len = selected.length;
-                                if (variate === 'univariate' && len != 1 || variate === 'bivariate' && len != 2 || variate === 'trivariate' && len != 3 || variate === 'multiple' && len < 2) {
+                                if (variate === 'univariate' && len != 1
+                                    || variate === 'problem' && len != 1
+                                    || variate === 'bivariate' && len != 2
+                                    || variate === 'trivariate' && len != 3
+                                    || variate === 'multiple' && len < 2) {
                                     return;
                                 }
                                 m.route.set(`/explore/${variate}/${selected.join('/')}`);
                             }
                         }, 'go'),
                         m('br'),
-                        m('', {style: `display: flex; flex-direction: row; flex-wrap: wrap`}, app.valueKey.map(x => {
-                            let show = app.exploreVariate === 'Bivariate' || app.exploreVariate === 'Trivariate';
-                            let len = nodesExplore.length;
-                            let [n0, n1, n2] = nodesExplore;
-                            return m('span', {
-                                onclick: _ => app.clickVar(x, nodesExplore),
-                                style: {
-                                    'box-shadow': '3px 3px 7px rgba(0, 0, 0, 0.5)',
-                                    display: 'flex',
-                                    height: '250px',
-                                    margin: '1em',
-                                    width: '250px',
-                                    'align-items': 'center',
-                                    'background-color': app.hexToRgba(common[nodesExplore.map(x => x.name).includes(x) ? 'selVarColor' : 'varColor']),
-                                    'justify-content': 'center'
-                                }
-                            }, show && n0 && n0.name === x ? `${x} (x)`
-                                     : show && n1 && n1.name === x ? `${x} (y)`
-                                     : show && n2 && n2.name === x ? `${x} (z)`
-                                     : x);
-                        })))],
+                        m('', {style: 'display: flex; flex-direction: row; flex-wrap: wrap'},
+                          (discovery ? app.disco : valueKey).map((x, i) => {
+                              let selected = discovery ? x.problem_id === app.selectedProblem : nodesExplore.map(x => x.name).includes(x);
+                              let {predictors} = x;
+                              if (x.predictors) {
+                                  x = x.target;
+                              }
+                              let node = app.findNodeIndex(x, true);
+                              let show = app.exploreVariate === 'Bivariate' || app.exploreVariate === 'Trivariate';
+                              let [n0, n1, n2] = nodesExplore;
+                              return m('span', {
+                                  onclick:  _ => discovery ? app.setSelectedProblem(i) : app.clickVar(x, nodesExplore),
+                                  onmouseover: function() {
+                                      $(this).popover('toggle');
+                                      $('body div.popover')
+                                          .addClass('variables');
+                                      $('body div.popover div.popover-content')
+                                          .addClass('form-horizontal');
+                                  },
+                                  onmouseout: "$(this).popover('toggle');",
+                                  'data-container': 'body',
+                                  'data-content': node.labl || '<i>none provided</i>',
+                                  'data-html': 'true',
+                                  'data-original-title': 'Description',
+                                  'data-placement': 'top',
+                                  'data-toggle': 'popover',
+                                  'data-trigger': 'hover',
+                                  style: {
+                                      border: '1px solid rgba(0, 0, 0, .2)',
+                                      'border-radius': '5px',
+                                      'box-shadow': '0px 5px 10px rgba(0, 0, 0, .2)',
+                                      display: 'flex',
+                                      'flex-direction': 'column',
+                                      height: '250px',
+                                      margin: '1em',
+                                      width: '250px',
+                                      'align-items': 'center',
+                                      'background-color': app.hexToRgba(common[selected ? 'selVarColor' : 'varColor'])
+                                  }
+                              }, [m('', {
+                                  oninit() {
+                                      this.node = app.findNodeIndex(x, true);
+                                  },
+                                  oncreate(vnode) {
+                                      let plot = this.node.plottype === 'continuous' ? plots.densityNode : plots.barsNode;
+                                      plot(this.node, vnode.dom, 110, true);
+                                  },
+                                  onupdate(vnode) {
+                                      let node = app.findNodeIndex(x, true);
+                                      if (node != this.node) {
+                                          let plot = node.plottype === 'continuous' ? plots.densityNode : plots.barsNode;
+                                          plot(node, vnode.dom, 110, true);
+                                          this.node = node;
+                                      }
+                                  },
+                                  style: 'height: 65%'}),
+                                  m('', {style: 'margin: 1em'},
+                                    show && n0 && n0.name === x ? `${x} (x)`
+                                    : show && n1 && n1.name === x ? `${x} (y)`
+                                    : show && n2 && n2.name === x ? `${x} (z)`
+                                    : predictors ? [
+                                        m('b', x),
+                                        m('p', predictors.join(', '))]
+                                    : x)
+                                 ]);
+                          }))
+                       )],
                 m('svg#whitespace')),
               model_mode && m("#spacetools.spaceTool", {style: {right: app.panelWidth['right'], 'z-index': 16}},
                               m(`button#btnLock.btn.btn-default`, {
@@ -427,6 +623,16 @@ class Body {
                                   onclick: () => app.lockDescription(!app.locktoggle),
                                   title: 'Lock selection of problem description'
                               }, glyph(app.locktoggle ? 'lock' : 'pencil', true)),
+                              spaceBtn('btnAdd', async function() {
+                                  let rookpipe = await app.makeRequest(ROOK_SVC_URL + 'pipelineapp', app.zparams);
+                                  rookpipe.target = rookpipe.depvar[0];;
+                                  let {taskType, performanceMetrics} = app.d3mProblemDescription;
+                                  rookpipe.task = taskType;
+                                  rookpipe.metric = performanceMetrics[0].metric;
+                                  app.disco.push(rookpipe);
+                                  app.setLeftTab('Discovery');
+                                  m.redraw();
+                              }, 'Add model to problems.', 'plus'),
                               spaceBtn('btnJoin', _ => {
                                   let links = [];
                                   console.log("doing connect all");
@@ -524,8 +730,7 @@ class Body {
 
         return m(Header, {
             style: mode === 'explore' ? {'background-image': '-webkit-linear-gradient(top, #fff 0, rgb(227, 242, 254) 100%)'} : {}
-        }, [
-            m('#dataField.field[style=text-align: center]',
+        }, [m('#dataField.field[style=text-align: center]', [
             m('h4#dataName[style=display: inline-block; margin-right:2em; margin-top: 7px]',
               {onclick: _ => this.cite = this.citeHidden = !this.citeHidden,
                onmouseout: _ => this.citeHidden || (this.cite = false),
@@ -588,64 +793,45 @@ class Body {
                         transform(t.slice(0, t.length - 1), t[t.length - 1], typeTransform = false);
                     }
                 }
-            },
-                m('#transformations.transformTool',
-                    {title: 'Construct transformations of existing variables using valid R syntax. For example, assuming a variable named d, you can enter "log(d)" or "d^2".'},
-                    [transformation('transSel', ['a', 'b']),
-                        transformation('transList', app.transformList)])))]);
+            }),
+            m('#transformations.transformTool',
+              {title: 'Construct transformations of existing variables using valid R syntax. For example, assuming a variable named d, you can enter "log(d)" or "d^2".'},
+              [transformation('transSel', ['a', 'b']),
+               transformation('transList', app.transformList)])
+        ])]);
     }
 
     footer(mode) {
         return m(Footer, [
-            m(ButtonRadio,
-              {id: 'modeButtonBar',
-               attrsAll: {
-                   style: {'padding-top':'2px', width: '200px'}, class: 'navbar-left btn-sm'},
-               onclick: app.set_mode,
-               activeSection: mode || 'model',
-               // {value: 'Results', id: 'btnResultsMode'}] VJD: commenting out the results mode button since we don't have this yet
-               sections: [{value: 'Model'}, {value: 'Explore'}]}),
+            m(ButtonRadio, {
+                id: 'modeButtonBar',
+                attrsAll: {style: {margin: '2px', width: 'auto'}, class: 'navbar-left'},
+                // attrsButtons: {class: ['btn-sm']}, // if you'd like small buttons (btn-sm should be applied to individual buttons, not the entire component)
+                onclick: app.set_mode,
+                activeSection: mode || 'model',
+                // {value: 'Results', id: 'btnResultsMode'}] VJD: commenting out the results mode button since we don't have this yet
+                sections: [{value: 'Model'}, {value: 'Explore'}]
+            }),
             m("a#logID[href=somelink][target=_blank]", "Replication"),
             m("span[style=color:#337ab7]", " | "),
             // dev links...
             m("a[href='/dev-raven-links'][target=_blank]", "raven-links"),
-            // m("a[style=margin-right: 0.5em]", {onclick: app.record_user_metadata}, "record-metadata"),
             m("span[style=color:#337ab7]", " | "),
-            m("span[style=color:#337ab7]", "TA2: " + TA2_SERVER),
+            m("span[style=color:#337ab7]", `TA2: ${TA2_SERVER}`),
             m("span[style=color:#337ab7]", " | "),
-            m("span[style=color:#337ab7]", "TA3TA2 api: " + TA3TA2_API_VERSION),
-                        m('button.btn.btn-default', {
+            m("span[style=color:#337ab7]", `TA3TA2 api: ${TA3TA2_API_VERSION}`),
+            m('button.btn.btn-default', {
                 onclick: _ => window.open('#!/data', 'data'),
                 style: 'float: right; margin: 0.5em; margin-top: 2px'
             }, 'Peek')
         ]);
     }
-
-    modal() {
-        return m(".modal.fade[id='myModal'][role='dialog']",
-            m(".modal-dialog",
-                m(".modal-content", [
-                    m(".modal-header", [
-                        // m("button.close[data-dismiss='modal'][type='button']",
-                        // m.trust("&times;")),
-                        m("h4.modal-title", app.modalHeader)]),
-                    m(".modal-body",
-                        m("p", app.modalText)),
-                    m(".modal-footer",
-                      // m("button.btn.btn-default[data-dismiss='modal'][type='button']",{
-                      // onclick: () => app.reset}, app.modalButton))
-                    m("button.btn.btn-default[type='button']", {
-                        style: {display: app.modalBtnDisplay, float:'right'},
-                        onclick: () => eval(app.modalFunc)
-                    }, app.modalButton))
-                ])));
-    }
 }
 
 let exploreVars = {
     render(vnode) {
-        let {variate, var1, var2, var3} = vnode.attrs;
-        return m(Body, {mode: 'explore', variate, var1, var2, var3});
+        let {variate, var1, var2, var3, var4, var5} = vnode.attrs;
+        return m(Body, {mode: 'explore', variate, var1, var2, var3, var4, var5});
     }
 };
 
@@ -658,25 +844,26 @@ if (IS_EVENTDATA_DOMAIN) {
     });
 }
 else {
-
     m.route(document.body, '/model', {
-        '/model': {render: () => m(Body)},
-        '/explore': {
+        '/model': {
             onmatch() {
-                if (m.route.get() === '/model' && nodesExplore === null) {
-                    nodesExplore = [];
-                }
+                valueKey = app.valueKey;
             },
+            render: () => m(Body)
+        },
+        '/explore': {
             render: () => m(Body, {mode: 'explore'})
         },
         '/explore/:variate/:var1': exploreVars,
         '/explore/:variate/:var1/:var2': exploreVars,
         '/explore/:variate/:var1/:var2/:var3': exploreVars,
+        '/explore/:variate/:var1/:var2/:var3/:var4': exploreVars,
+        '/explore/:variate/:var1/:var2/:var3/:var4/:var5': exploreVars,
         /*'/results': {
-            onmatch() {
-                app.set_mode('results');
-                state.get_pipelines();
-                layout.init();
+          onmatch() {
+          app.set_mode('results');
+          state.get_pipelines();
+          layout.init();
             },
             render() {
                 return m(Body, {mode: 'results'});

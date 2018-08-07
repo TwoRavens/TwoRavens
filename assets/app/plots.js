@@ -1088,7 +1088,7 @@ export function barsSubset(node) {
         });
 }
 
-export function densityNode(node, obj, radius) {
+export function densityNode(node, obj, radius, explore) {
     var myname = node.name.toString().concat("nodeplot");
 
     d3.select(obj).selectAll("svg").remove();
@@ -1128,6 +1128,11 @@ export function densityNode(node, obj, radius) {
         .y0(height)
         .y1(d => y(d.y));
 
+    let {left, top} = margin;
+    if (explore) {
+        left = 40;
+        top = 60;
+    }
     var plotsvg = d3.select(obj)
         .insert("svg", ":first-child")
         .attr("x", -40) // NOTE: Not sure exactly why these numbers work, but these hardcoded values seem to position the plot inside g correctly.  this shouldn't be hardcoded in the future
@@ -1136,7 +1141,7 @@ export function densityNode(node, obj, radius) {
         .style("width", width)
         .style("height", height)
         .append("g")
-        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+        .attr("transform", "translate(" + left + "," + top + ")");
 
     plotsvg.append("path")
         .datum(data2)
@@ -1144,7 +1149,7 @@ export function densityNode(node, obj, radius) {
         .attr("d", area);
 }
 
-export function barsNode(node, obj, radius) {
+export function barsNode(node, obj, radius, explore) {
     var myname = node.name.toString().concat("nodeplot");
 
     d3.select(obj).selectAll("svg").remove();
@@ -1203,7 +1208,11 @@ export function barsNode(node, obj, radius) {
         .domain([0, maxY])
         .range([0, height]);
 
-    //Create SVG element
+    let {left, top} = margin;
+    if (explore) {
+        left = 40;
+        top = 60;
+    }
     var plotsvg = d3.select(obj)
         .insert("svg", ":first-child")
         .attr("x", -40)
@@ -1212,7 +1221,7 @@ export function barsNode(node, obj, radius) {
         .style("width", width) // set height to the height of #main.left
         .style("height", height)
         .append("g")
-        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+        .attr("transform", "translate(" + left + "," + top + ")");
 
     plotsvg.selectAll("rect")
         .data(yVals)

@@ -4,11 +4,13 @@ import hashlib
 from django.db import models
 from django.conf import settings
 from django.urls import reverse
+from django.utils.safestring import mark_safe
 
 import jsonfield
 
 from model_utils.models import TimeStampedModel
 from tworaven_apps.utils.basic_response import (ok_resp, err_resp)
+from tworaven_apps.utils.json_helper import json_dumps
 from tworaven_apps.ta2_interfaces.static_vals import CALLBACK_URL, DETAILS_URL
 
 STATUS_IN_PROGRESS = 'IN_PROGRESS'
@@ -133,15 +135,31 @@ class StoredRequest(TimeStampedModel):
         stored_request.is_finished = True
         if user_message:
             stored_request.user_message = user_message
+        else:
+            stored_request.user_message = "Call completed successfully."
 
         stored_request.save()
 
         return ok_resp(None)
 
+    def request_as_json(self):
+        """Display OrderedDict as JSON"""
+        if not self.request:
+            return '(n/a)'
+
+        json_info = json_dumps(self.request, indent=4)
+        if json_info.success:
+            json_str = '<pre>%s</pre>' % json_info.result_obj
+        else:
+            json_str = 'Error: %s' % json_info.err_msg
+
+        return mark_safe(json_str)
+
+
     def as_dict(self, short_version=False):
         """Return info as a dict"""
         attr_names = ('id', 'name', 'hash_id',
-                      'is_finished', 'status',
+                      'is_finished', 'status', 'user_message',
                       'workspace', 'request_type',
                       DETAILS_URL,
                       'request')
@@ -230,6 +248,32 @@ class StoredResponse(TimeStampedModel):
 
         return reverse('view_stored_response',
                        kwargs=dict(hash_id=self.hash_id))
+
+    def link_to_request(self):
+        """Admin link to request"""
+        if not self.stored_request:
+            return '(n/a)'
+
+        url_str = '<a href="%s">view request</a>' % \
+                  reverse('admin:ta2_interfaces_storedrequest_change',
+                          args=(self.stored_request.id,))
+
+        return mark_safe(url_str)
+
+
+    def response_as_json(self):
+        """Display OrderedDict as JSON"""
+        if not self.response:
+            return '(n/a)'
+
+        json_info = json_dumps(self.response, indent=4)
+        if json_info.success:
+            json_str = '<pre>%s</pre>' % json_info.result_obj
+        else:
+            json_str = 'Error: %s' % json_info.err_msg
+
+        return mark_safe(json_str)
+
 
     def as_dict(self, short_version=False):
         """Return info as a dict"""

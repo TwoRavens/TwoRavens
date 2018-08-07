@@ -1,5 +1,6 @@
 """Methods used by AppConfiguration"""
 import urllib.parse
+from os.path import abspath
 
 FILE_URI_PREFIX = 'file://'
 
@@ -9,12 +10,23 @@ def format_file_uri_to_path(file_uri):
     if not file_uri:
         return (None, "The file_uri must be specified")
 
+    norm_path_err = ('The file uri did not contain a normalized path.'
+                     '  e.g. it may have contained "../", etc')
+
     if not file_uri.lower().startswith(FILE_URI_PREFIX):
         # no file uri prefix found; assume that this is a file path
         # return "AS IS"
-        return (file_uri, None)
+        file_path = abspath(file_uri)
+        if not file_path == file_uri:
+            return (None, norm_path_err)
+        return (file_path, None)
 
-    return (urllib.parse.unquote(file_uri)[len(FILE_URI_PREFIX):], None)
+    file_path = urllib.parse.unquote(file_uri)[len(FILE_URI_PREFIX):]
+    norm_file_path = abspath(file_path)
+    if not norm_file_path == file_path:
+        return (None, norm_path_err)
+
+    return (file_path, None)
 
 
 def add_file_uri_to_path(filepath):

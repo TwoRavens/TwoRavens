@@ -150,3 +150,4 @@ class EventDataGetMetadataForm(forms.Form):
 
     def clean_datasets(self):
         return self.cleaned_data.get('datasets')
+

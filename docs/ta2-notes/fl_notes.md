@@ -1,6 +1,8 @@
 
 ## Run against the FL docker image
 
+Updated 7/17/2018.
+
 ## Get the FL docker image:
 
  - login is the same as gitlab credentials
@@ -24,38 +26,18 @@ Within a Terminal:
     ```
 1. Show a list of datasets to run FL
     ```
-    fab run_featurelabs_choose_config
+    fab run_ta2_featurelabs_with_config
     ```
 1. Choose a dataset:
     ```
-    fab run_featurelabs_choose_config:[number of chosen dataset]
+    fab run_ta2_featurelabs_with_config:[number of chosen dataset]
     ```
-    
+
+- *Note*: To stop the server:
+    ```
+    docker stop ta2_server
+    ```
+
 ## Run everything else....
 
-For each command below, **FIRST**:
-1. `cd` into the top-level `TwoRavens` directory
-1. `workon 2ravens`
-
-### Commands:
-
-1. Redis
-    ```
-    fab redis_run
-    ```
-    OR: 
-    ```
-    docker run --rm -p 6379:6379 -v /ravens_volume:/ravens_volume redis:4
-    ```
-1. Celery
-    ```
-    fab celery_run_with_ta2
-    ```
-1. Main app
-    ```
-    fab run_with_ta2
-    ```
-1. Rook
-    ```
-    fab run_rook
-    ```
+- Please follow the `ta3_run.md` instructions in this folder
