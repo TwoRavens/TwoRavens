@@ -1,0 +1,50 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v2.json",
+  "description": "A scatterplot.",
+  "data": {"url": "tworavensData"},
+  "layer": [
+    {
+      "mark": "point",
+  "encoding": {
+    "x": {"field": "tworavensX","type": "quantitative","axis": {"title": "tworavensX"}},
+    "y": {"field": "tworavensY","type": "quantitative","axis": {"title": "tworavensY"}}
+  }
+    },
+    {
+      "mark": {
+        "type": "rule",
+        "style": "boxWhisker"
+      },
+      "encoding": {
+        "y": {
+          "field": "tworavensX",
+          "type": "quantitative",
+          "aggregate":"min"
+        },
+        "y2": {
+          "field": "tworavensX",
+          "type": "quantitative",
+          "aggregate":"max"
+        },
+        "x": {
+          "field": "tworavensX",
+          "type": "quantitative",
+          "aggregate":"min"
+        },
+        "x2": {
+          "field": "tworavensX",
+          "type": "quantitative",
+          "aggregate":"max"
+        }
+      }
+    }
+  ]
+}
+
+
+
+
+
+
+
+

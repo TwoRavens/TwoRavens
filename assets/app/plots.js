@@ -1,7 +1,7 @@
 import {elem} from './utils';
 
 import vegaEmbed from 'vega-embed';
-import * as scatterSchema from './vega-schemas/scatter';
+import * as scatterPE from './vega-schemas/scatterPE';
 
 let d3Color = '#1f77b4'; // d3's default blue
 export let selVarColor = '#fa8072'; // d3.rgb("salmon");
@@ -1245,7 +1245,7 @@ export function scatter(x_Axis, y_Axis, x_Axis_name, y_Axis_name, id='#setxLeftP
         data[i] = {[x_Axis_name]:x_Axis[i], [y_Axis_name]:y_Axis[i]};
     }
     data = JSON.stringify(data);
-    let stringified = JSON.stringify(scatterSchema);
+    let stringified = JSON.stringify(scatterPE);
     stringified = stringified.replace(/tworavensY/g, y_Axis_name);
     stringified = stringified.replace(/tworavensX/g, x_Axis_name);
     stringified = stringified.replace("url", "values");
