@@ -96,15 +96,21 @@ class StoredRequest(TimeStampedModel):
 
     def get_absolute_url(self):
         """for the admin"""
-        return self.get_callback_url()
+        return self.get_callback_url(is_pretty=True)
 
-    def get_callback_url(self):
+    def get_callback_url(self, is_pretty=False):
         """Callback url for returning "as_dict" info"""
         if not self.id:
             return None
 
-        return reverse('view_stored_request',
-                       kwargs=dict(hash_id=self.hash_id))
+        callback_url = reverse('view_stored_request',
+                               kwargs=dict(hash_id=self.hash_id))
+
+        if is_pretty:
+            callback_url = '%s?pretty=True' % callback_url
+
+        return callback_url
+
 
     @staticmethod
     def set_error_status(stored_request_id, user_message=None, is_finished=True):
@@ -142,6 +148,10 @@ class StoredRequest(TimeStampedModel):
 
         return ok_resp(None)
 
+    def has_error_occurred(self):
+        """convenience method to check if status == STATUS_ERROR"""
+        return self.status == STATUS_ERROR
+
     def request_as_json(self):
         """Display OrderedDict as JSON"""
         if not self.request:
@@ -159,19 +169,22 @@ class StoredRequest(TimeStampedModel):
     def as_dict(self, short_version=False):
         """Return info as a dict"""
         attr_names = ('id', 'name', 'hash_id',
-                      'is_finished', 'status', 'user_message',
+                      'is_finished', 'is_error',
+                      'status', 'user_message',
                       'workspace', 'request_type',
                       DETAILS_URL,
                       'request')
 
         od = OrderedDict()
-        for val in attr_names:
-            if val == 'is_finished':
-                od[val] = self.is_finished
-            elif val == DETAILS_URL:
+        for key in attr_names:
+            if key == 'is_error':
+                od[key] = self.has_error_occurred()
+            elif key == 'is_finished':
+                od[key] = self.is_finished
+            elif key == DETAILS_URL:
                 od[DETAILS_URL] = self.get_callback_url()
             else:
-                od[val] = self.__dict__.get(val)
+                od[key] = self.__dict__.get(key)
         od['created'] = self.created.isoformat()
         od['modified'] = self.modified.isoformat()
 
@@ -239,15 +252,20 @@ class StoredResponse(TimeStampedModel):
 
     def get_absolute_url(self):
         """for the admin"""
-        return self.get_callback_url()
+        return self.get_callback_url(is_pretty=True)
 
-    def get_callback_url(self):
+    def get_callback_url(self, is_pretty=False):
         """Callback url for returning "as_dict" info"""
         if not self.id:
             return None
 
-        return reverse('view_stored_response',
-                       kwargs=dict(hash_id=self.hash_id))
+        callback_url = reverse('view_stored_response',
+                               kwargs=dict(hash_id=self.hash_id))
+
+        if is_pretty:
+            callback_url = '%s?pretty=True' % callback_url
+
+        return callback_url
 
     def link_to_request(self):
         """Admin link to request"""
@@ -277,18 +295,21 @@ class StoredResponse(TimeStampedModel):
 
     def as_dict(self, short_version=False):
         """Return info as a dict"""
-        attr_names = ('id', 'hash_id', 'is_success',
+        attr_names = ('id', 'hash_id',
+                      'is_success', 'is_error',
                       'status', 'sent_to_user',
                       DETAILS_URL)
 
         od = OrderedDict()
-        for val in attr_names:
-            if val == 'is_success':
-                od[val] = self.is_success
-            elif val == DETAILS_URL:
+        for key in attr_names:
+            if key == 'is_error':
+                od[key] = self.has_error_occurred()
+            elif key == 'is_success':
+                od[key] = self.is_success
+            elif key == DETAILS_URL:
                 od[DETAILS_URL] = self.get_callback_url()
             else:
-                od[val] = self.__dict__.get(val)
+                od[key] = self.__dict__.get(key)
         od['created'] = self.created.isoformat()
         od['modified'] = self.modified.isoformat()
 
@@ -300,6 +321,10 @@ class StoredResponse(TimeStampedModel):
         od['stored_request'] = self.stored_request.as_dict(short_version=True)
 
         return od
+
+    def has_error_occurred(self):
+        """convenience method to check if status == STATUS_ERROR"""
+        return self.status == STATUS_ERROR
 
 
     @staticmethod
