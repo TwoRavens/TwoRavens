@@ -3705,8 +3705,7 @@ export async function generatePredictions(pid, plotflag) {
             // First get fitted solution
             if(!fittingfinished){
                 let res7 = await updateRequest(fittedDetailsUrl);
-                
-                if(res7.success){//(typeof res7.data.is_finished != 'undefined'){
+                if(res7.success){  // was: (typeof res7.data.is_finished != 'undefined'){
                     if(res7.data.is_finished){
                         if(res7.data.is_error){
                             clearInterval(fittingIntervalId);
@@ -3718,11 +3717,9 @@ export async function generatePredictions(pid, plotflag) {
                                 console.log(finalFittedId);
                                 res55 = await makeRequest(D3M_SVC_URL + '/ProduceSolution', CreateProduceDefinition(finalFittedId));
                                 console.log("--Finished Fitting");
-                                console.log(res55);
                                 let produceId = res55.data.requestId;
                                 res56 = await makeRequest(D3M_SVC_URL + `/GetProduceSolutionResults`, {requestId: produceId});
                                 console.log("--Get Produce");
-                                console.log(res56);
                                 produceDetailsUrl = res56.data.details_url;
                                 fittingfinished = true;
                             } else {
@@ -3738,24 +3735,26 @@ export async function generatePredictions(pid, plotflag) {
             // Then produce predicted values from fitted solution
             if(fittingfinished){
                 let res57 = await updateRequest(produceDetailsUrl);
-                if(typeof res57.data.is_finished != 'undefined'){
+                if(res57.success){  // was: (typeof res57.data.is_finished != 'undefined'){
                     if(res57.data.is_finished){
-                        finalProduceDetailsUrl = res57.data.responses.list[0].details_url;
-                        res58 = await updateRequest(finalProduceDetailsUrl);
-                        console.log("--Long Awaited Predictions:");
-                        let hold = res58.data.response.exposedOutputs;
-                        let hold2 = hold[Object.keys(hold)[0]];  // There's an issue getting ."outputs.0".csvUri directly.
-                        hold3 = hold2.csvUri;
-                        console.log(hold3);
-                        res59 = await makeRequest(D3M_SVC_URL + `/retrieve-output-data`, {data_pointer: hold3});
-                        console.log(res59);
+                        if(res57.data.is_error){
+                            clearInterval(fittingIntervalId)
+                        }else{ 
+                            finalProduceDetailsUrl = res57.data.responses.list[0].details_url;
+                            res58 = await updateRequest(finalProduceDetailsUrl);
+                            console.log("--Long Awaited Predictions:");
+                            let hold = res58.data.response.exposedOutputs;
+                            let hold2 = hold[Object.keys(hold)[0]];  // There's an issue getting ."outputs.0".csvUri directly.
+                            hold3 = hold2.csvUri;
+                            console.log(hold3);
+                            res59 = await makeRequest(D3M_SVC_URL + `/retrieve-output-data`, {data_pointer: hold3});
+                            console.log(res59);
 
-                        allPipelineInfo[pid].predictedValues = res59;
-
-                        clearInterval(fittingIntervalId);
-
-                        if(plotflag){
-                            resultsplotgraph(pid);
+                            allPipelineInfo[pid].predictedValues = res59;
+                            clearInterval(fittingIntervalId);
+                            if(plotflag){
+                                resultsplotgraph(pid);
+                            };
                         };
                     };
                 };
