@@ -35,6 +35,7 @@ let transformData = {};
 let dataNode = [];
 let formulaList = [];
 let tableList =[];
+let toggle = "open";
 
 
 let data = [];
@@ -187,7 +188,7 @@ export default class Recode {
                                     m('button[type=button]',{onclick: calculate_bin},'Custom Bin'),                 
                                 ]),
                                 m("br"),
-                                m('div#tableBinDiv',{style :{'overflow-y': 'auto'}},[                                                                       
+                                m('div#tableBinDiv',{style :{'overflow-y': 'auto','height': '500px','padding':'10px','border-style':'solid','border-width': 'thin'}},[                                                                       
                                 ]),
                                 m("br"),
                                 m('button[type="submit"]',{id:'customRecodeBtn'}, 'Customize'),
@@ -210,7 +211,10 @@ export default class Recode {
                     m('div.container-fluid', {id: 'createDiv'},[
                         m('form#createNewForm',{ onsubmit: addValue},[
                         m('div.container-fluid', {id : 'div1' , style : {'display':'block','height': '220px','padding':'20px'}}, [
-                            m('button[type=button]',{'data-target':'#content', class:'btn btn-info btn-block', 'data-toggle':'collapse'},'New Variable'),
+                            m('button[type=button]',{'data-target':'#content', class:'btn btn-info btn-block', 'data-toggle':'collapse',onclick: toggleSign},[
+                                "New Variable  ",
+                                m('span#sign',{style:"font-size: 20px;"},'\u{2193}')
+                            ]),
                             m('div',{class:'collapse',id:"content",style:'margin:10px;'},[
                                 m('label',{ style : {'display':'inline-block', 'margin-right':'10px'}},'New Variable Name : '),
                                 m('input[type=text]', {id: 'newVar', placeholder: ' New Variable', style : {'display':'inline-block' , 'margin':'10px', 'width':'40%'}}),
@@ -349,7 +353,7 @@ function clickVar(elem) {
             var tableDiv =document.getElementById('tableBinDiv');
             var tbl = document.createElement('table')
             tbl.id = 'binTable'
-            tbl.className = "table table-bordered";
+            tbl.className = "table";
     
             
             for(var rownum = -1; rownum < dataNode.length;rownum++){
@@ -714,7 +718,6 @@ function recodeCreate(){
     $('#ordinalDiv').css('display','none');
     $('#binInfo').css('display','none');
     $('#customRecodeBtn').css('display','none');
-    $('#spanToggle').css('display','none');
     document.getElementById('customRecodeBtn').disabled = true;
 
     document.getElementById('btnOperations').disabled = 'disabled';
@@ -724,6 +727,7 @@ function recodeCreate(){
 
     setTimeout( function(){ 
         console.log(document.getElementById('varList').firstChild.click())
+        document.getElementById ("spanToggle").addEventListener ("click", toggleWidth, false);
       }  , 500 );
 
 
@@ -750,9 +754,6 @@ function recodeClick(){
     }
     document.getElementById('plot_a').innerHTML ="";
 
-    // var elem = document.getElementById('centralPanel');
-    // elem.style.display="none"
-
     var elem = document.getElementById('rightpanel');
     elem.style.display="block"
 
@@ -765,8 +766,6 @@ function recodeClick(){
     var elem = document.getElementById('formulaDiv');
     elem.style.display="none";
 
-    // var elem = document.getElementById('createTableDiv');
-    // elem.style.display="none";
     var elem = document.getElementById('formulaLink');
     elem.className = '';
     var elem = document.getElementById('createLink');
@@ -777,16 +776,11 @@ function recodeClick(){
 
 function formulaCreate(){
 
-    // var elem = document.getElementById('centralPanel');
-    // elem.style.display ='none';
     var elem = document.getElementById('createDiv');
     elem.style.display="none";
 
 }
 function formulaClick(){
-
-    // var elem = document.getElementById('centralPanel');
-    // elem.style.display ='none';
 
     var elem = document.getElementById('createDiv');
     elem.style.display="none";
@@ -797,9 +791,6 @@ function formulaClick(){
     for (var i = 0; i < list.length; i++ ) {
         list[i].setAttribute("style", "background:"+app.hexToRgba("#FA8072"));
     }
-
-    // var elem = document.getElementById('createTableDiv');
-    // elem.style.display="none";
     
     var elem = document.getElementById('rightpanel');
     elem.style.display="block"
@@ -920,7 +911,6 @@ function formulaClick(){
             .style("font-size","12px")
             .style("font-weight","bold");
         
-        // var data = [];
 
         if (isNaN(a) || a === 0) {
             var upper_limit = d3.max(xVals);
@@ -1410,9 +1400,6 @@ $(window).resize(function(){
     $('#rightpanel').css({
         'width':  (window.innerWidth - 300)+'px',
     });
-    // $('#centralPanel').css({
-    //     'width':  (window.innerWidth-25)+'px',
-    // });
     $('#tableDiv').css({
         'height': (window.innerHeight-150)+'px',
     });
@@ -1428,7 +1415,6 @@ function deleteNewVar(){
 
     console.log(document.getElementById('varDescriptionCreate').value)
 
-    document.getElementById("nominalDiv").setAttribute("style", "display:none");
     document.getElementById("createButton").setAttribute("style", "display:block");
     var elem = document.getElementById('submitButton');
     elem.style.visibility="hidden";
@@ -1437,4 +1423,28 @@ function deleteNewVar(){
     document.getElementById('nominalList').value = "";
     document.getElementById('varDescriptionCreate').value = "";
 
+}
+
+function toggleWidth(){
+    if(toggle === "open"){
+        $("#rightpanel").css({
+            'width':  (window.innerWidth - 50)+'px',
+        });
+        toggle = "close";
+    }else if(toggle == "close"){
+        toggle = "open";
+        $("#rightpanel").css({
+            'width':  (window.innerWidth - 300)+'px',
+        });
+    }
+    
+}
+
+function toggleSign(){
+    if(document.getElementById('sign').textContent === '\u{2193}'){
+        document.getElementById('sign').textContent = '\u{2191}'
+    }
+    else if(document.getElementById('sign').textContent === '\u{2191}'){
+        document.getElementById('sign').textContent = '\u{2193}'
+    }
 }
