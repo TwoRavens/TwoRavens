@@ -191,7 +191,7 @@ export default class Recode {
                                 m('div#tableBinDiv',{style :{'overflow-y': 'auto','height': '500px','padding':'10px','border-style':'solid','border-width': 'thin'}},[                                                                       
                                 ]),
                                 m("br"),
-                                m('button[type="submit"]',{id:'customRecodeBtn'}, 'Customize'),
+                                m('button[type=submit]',{id:'customRecodeBtn'}, 'Customize'),
                             ]),
                         ]),
                     ]),
@@ -211,7 +211,7 @@ export default class Recode {
                     m('div.container-fluid', {id: 'createDiv'},[
                         m('form#createNewForm',{ onsubmit: addValue},[
                         m('div.container-fluid', {id : 'div1' , style : {'display':'block','height': '220px','padding':'20px'}}, [
-                            m('button[type=button]',{'data-target':'#content', class:'btn btn-info btn-block', 'data-toggle':'collapse',onclick: toggleSign},[
+                            m('button[type=button]',{id:'toggleCollapse','data-target':'#content', class:'btn btn-info btn-block', 'data-toggle':'collapse',onclick: toggleSign},[
                                 "New Variable  ",
                                 m('span#sign',{style:"font-size: 20px;"},'\u{2193}')
                             ]),
@@ -335,7 +335,7 @@ function clickVar(elem) {
 
     if(document.getElementById('recodeLink').className === 'active'){
         
-        if(this.textContent !== currentVal){
+        // if(this.textContent !== currentVal){
             currentVal = this.textContent;
             document.getElementById('bin').value = "";
             document.getElementById('binInterval').value = "";
@@ -412,7 +412,7 @@ function clickVar(elem) {
                 $('#tableBinDiv').css('display', 'none  ');
                 bar_cross(node);
             }  
-        }
+        // }
     }
 
     else if(document.getElementById('formulaLink').className === 'active'){
@@ -451,7 +451,6 @@ function clickVar(elem) {
         }else{
             var pos = tableList.indexOf(currentVal);
             tableList.splice(pos, 1);
-            console.log($('#createTable tr')[0].childNodes[pos])
             for(var i = 0;i<= dataNode.length;i++){
                 $('#createTable tr')[i].childNodes[pos].remove();
             }
@@ -514,6 +513,7 @@ function formulaCalculate(elem){
     transformData.description =elem.target[2].value;
     transformData.transform_data = elem.target[1].value;
     localStorage.setItem('transformData',JSON.stringify(transformData));
+    location.reload();
 }
 
 function showTooltip(){
@@ -565,7 +565,11 @@ function showTooltip(){
     tooltip.style.padding= "5px";
     tooltip.style.zIndex= "9999";
     tooltip.style.backgroundColor= 'white';
-    
+
+    if(toggle === "close"){
+        document.getElementById ("spanToggle").click();
+        toggle = "open";
+    }
 }
 function hideTooltip(){
     var tooltip = document.getElementById('tooltip');
@@ -660,10 +664,8 @@ function createClick(){
     elem.className = 'active';
     $('#btnOperations').css('display', 'none');
     document.getElementById('leftpanelMenuButtonBarVariables').click();
-    document.getElementById('toggleLpanelicon').click();   
-    // document.getElementById("filterTableDiv").setAttribute("style", "display:block");
+    document.getElementById('toggleLpanelicon').click();
     document.getElementById("nominalDiv").setAttribute("style", "display:none");
-    // document.getElementById('btnOperations').style.visibility = 'visible';
     
     var elem = document.getElementById('formulaDiv');
     elem.style.display="none";
@@ -692,9 +694,12 @@ function createClick(){
     
    
     var first = document.getElementById('varList').firstChild.textContent
-    if(!tableData.includes(first)){
+    if(!tableList.includes(first)){
         document.getElementById('varList').firstChild.click()
     }
+    document.getElementById('toggleCollapse').click()
+    // toggleCollapse
+
    
     
 }
@@ -726,7 +731,7 @@ function recodeCreate(){
     tooltip.style.display = 'none'
 
     setTimeout( function(){ 
-        console.log(document.getElementById('varList').firstChild.click())
+        document.getElementById('varList').firstChild.click();
         document.getElementById ("spanToggle").addEventListener ("click", toggleWidth, false);
       }  , 500 );
 
@@ -771,7 +776,7 @@ function recodeClick(){
     var elem = document.getElementById('createLink');
     elem.className = '';
 
-    document.getElementById('varList').childNodes[0].click();
+    document.getElementById('varList').firstChild.click();
 }
 
 function formulaCreate(){
@@ -1244,6 +1249,7 @@ function formulaClick(){
         transformData.description = elem.target[1].value;
         transformData.transform_data = data;
         localStorage.setItem('transformData',JSON.stringify(transformData));
+        location.reload();
     }
     function equidistance(varName,bin) {
         document.getElementById('customRecodeBtn').disabled = false;
