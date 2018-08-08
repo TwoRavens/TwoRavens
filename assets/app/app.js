@@ -4602,7 +4602,7 @@ export async function endAllSearches() {
             res = await makeRequest(D3M_SVC_URL + '/EndSearchSolutions', {searchId: allsearchId[i]} );
         };
     };
-    allsearchId = [];
+    //allsearchId = [];
 }
 
 export async function stopAllSearches() {
