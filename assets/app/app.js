@@ -4619,17 +4619,27 @@ export async function stopAllSearches() {
  *  Function takes as input the pipeline template information (currently aux) and returns a valid pipline template in json. This json is to be inserted into SearchSolutions. e.g., problem = {...}, template = {...}, inputs = [dataset_uri]
  */
 function makePipelineTemplate (aux) {
+    console.log("this is aux for makePipelineTemplate:")
     console.log(aux);
     // aux.transform, aux.subsetFeats, aux.Obs are all by default 0. if not 0, which is set in preprocess, then steps should build the corresponding primitive call.
     
-    let ph = placeholderStep(); // this writes the placeholder object
-    let rc = primitiveStepRemoveColumns(aux); // this writes the primitive object to remove columns
-    
-    let inputs = [{name:"dataset"}];
-    let outputs = [{name:"dataset", data:"produce"}];
-    let steps = [rc,ph];
-    
-    return {inputs:inputs,outputs:outputs,steps:steps};
+    let inputs = [];
+    let outputs = [];
+    let steps = [];
+
+    if(typeof aux==="undefined") {    // This is how this is called by /SearchSolutions
+        return {inputs:inputs,outputs:outputs,steps:steps};
+
+    } else {                          // This is how this is called by Discovered Problems
+        let ph = placeholderStep(); // this writes the placeholder object
+        let rc = primitiveStepRemoveColumns(aux); // this writes the primitive object to remove columns
+        
+        inputs = [{name:"dataset"}];
+        outputs = [{name:"dataset", data:"produce"}];
+        steps = [rc,ph];
+        
+        return {inputs:inputs,outputs:outputs,steps:steps};
+    };
     
     // example template: leave here for reference
     /*
