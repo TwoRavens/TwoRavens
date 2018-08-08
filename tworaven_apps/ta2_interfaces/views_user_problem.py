@@ -6,7 +6,8 @@ from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
 from tworaven_apps.utils.view_helper import get_request_body_as_json
 from tworaven_apps.ta2_interfaces.user_problem_helper import UserProblemHelper
-from tworaven_apps.ta2_interfaces.util_user_problem import BasicProblemWriter
+from tworaven_apps.ta2_interfaces.util_data_writer import UtilDataWriter
+from tworaven_apps.ta2_interfaces.basic_problem_writer import BasicProblemWriter
 from tworaven_apps.ta2_interfaces.forms import \
     (SaveProblemForm,
      PROBLEM_REQ_FILENAME, PROBLEM_REQ_DATA)
@@ -52,6 +53,41 @@ def view_save_problem_form(request):
     return render(request,
                   'ta2_interfaces/view_save_problem_form.html',
                   info_dict)
+
+
+@csrf_exempt
+def view_store_ta2ta3_data(request):
+    """Initial step, store a file to the /output/temp_storage_root directory
+
+    (1) Data is sent as JSON
+    (2) Converted to .csv
+    (3) Saved in the "temp_storage_root" as specified in the search_config.json
+    """
+    req_info = get_request_body_as_json(request)
+    if not req_info.success:
+        user_msg = ('The request did not contain problem data')
+        return JsonResponse(get_json_error(user_msg))
+
+    req_json = req_info.result_obj
+
+    if not PROBLEM_REQ_DATA in req_json:
+        user_msg = ('The request did not a "%s" value') % PROBLEM_REQ_DATA
+        return JsonResponse(get_json_error(user_msg))
+
+    filename = None
+    if PROBLEM_REQ_FILENAME in req_json:
+        filename = req_json[PROBLEM_REQ_FILENAME]
+
+    udw = UtilDataWriter(req_json[PROBLEM_REQ_DATA],
+                         filename)
+
+    if udw.has_error():
+        return JsonResponse(get_json_error(udw.error_message))
+
+    info = get_json_success('file created!',
+                            data=udw.get_final_info())
+
+    return JsonResponse(info)
 
 
 @csrf_exempt

@@ -8,7 +8,7 @@ from django.urls import reverse
 from django.conf import settings
 from django.template.loader import render_to_string
 
-from tworaven_apps.ta2_interfaces.util_user_problem import \
+from tworaven_apps.ta2_interfaces.basic_problem_writer import \
     (BasicProblemWriter, ERR_MSG_UNEXPECTED_DIRECTORY,
      ERR_MSG_NO_FILENAME, ERR_MSG_NO_DATA)
 from tworaven_apps.utils.msg_helper import msgt
