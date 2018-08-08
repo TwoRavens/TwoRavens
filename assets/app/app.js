@@ -79,9 +79,9 @@ export let resultsMetricDescription = 'Larger numbers are better fits';
 export let allsearchId = [];            // List of all the searchId's created on searches
 
 export let currentMode = 'model';
-let is_explore_mode = false;
-let is_results_mode = false;
-let is_transform_mode = false;
+export let is_explore_mode = false;
+export let is_results_mode = false;
+export let is_transform_mode = false;
 
 export function set_mode(mode) {
     mode = mode ? mode.toLowerCase() : 'model';
@@ -138,7 +138,8 @@ export let rightTabExplore = 'Univariate';
 export let modelLeftPanelWidths = {
     'Variables': '300px',
     'Discovery': 'auto',
-    'Summary': '300px'
+    'Summary': '300px',
+    'Subset': '300px'
 };
 
 export let modelRightPanelWidths = {

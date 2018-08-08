@@ -7,22 +7,34 @@ import Button from '../../common/app/views/Button';
 import TextField from '../../common/app/views/TextField';
 
 import * as subset from '../../EventData/app/app';
+import * as transform from '../transform';
 import * as app from '../app';
 
-let setDefault = (obj, id, value) => {
-    obj[id] = obj[id] || value
-};
+let setDefault = (obj, id, value) => obj[id] = obj[id] || value;
+let warn = (text) => m('[style=color:#dc3545;display:inline-block;margin-left:1em;]', text);
 
 export default class AddSubset {
     oninit(vnode) {
         let {preferences} = vnode.attrs;
+
+        setDefault(subset.genericMetadata, app.selectedProblem, {subsets: {}});
+
         setDefault(preferences, 'columns', new Set());
+        setDefault(preferences, 'subsetType', transform.subsetTypes[0]);
+        setDefault(preferences, 'structure', 'Point');
         setDefault(preferences, 'subsetName', '');
         setDefault(preferences, 'pendingColumn', '')
     }
 
     view(vnode) {
         let {preferences, nodes} = vnode.attrs;
+
+        let requiredColumns = 1;
+        if (preferences['subsetType'] === 'Date' && preferences['structure'] === 'Interval') requiredColumns = 2;
+
+        let isSubset = preferences['subsetName'].length // has a name
+            && !(preferences.subsetName in subset.genericMetadata[app.selectedProblem]['subsets']) // name is not reused
+            && preferences['columns'].size === requiredColumns; // has correct number of columns
 
         return [
             m('[style=width:120px;display:inline-block;]', 'Subset Name'),
@@ -33,7 +45,7 @@ export default class AddSubset {
                 onblur: (value) => preferences.subsetName = value,
                 class: !preferences.subsetName.length && ['is-invalid'],
                 style: {width: 'auto', display: 'inline-block'}
-            }), m('br'),
+            }), preferences.subsetName in subset.genericMetadata[app.selectedProblem]['subsets'] && warn('cannot use the same name'), m('br'),
 
             m('[style=width:120px;display:inline-block;]', 'Subset Type'),
             m(ButtonRadio, {
@@ -41,14 +53,23 @@ export default class AddSubset {
                 attrsAll: {style: {width: 'auto'}},
                 onclick: (section) => preferences.subsetType = section,
                 activeSection: preferences.subsetType,
-                sections: [
-                    {value: 'Nominal'},
-                    {value: 'Continuous'},
-                    {value: 'Date'},
-                    {value: 'Coordinates'}
-                ],
-                attrsButtons: {style: {width: 'auto', margin: '1em 0'}},
+                sections: transform.subsetTypes.map(type => ({value: type})),
+                attrsButtons: {style: {width: 'auto', margin: '1em 0'}}
             }), m('br'),
+
+            preferences.subsetType === 'Date' && [
+                m('[style=width:120px;display:inline-block;]', 'Date Structure'),
+                m(ButtonRadio, {
+                id: 'subsetType',
+                attrsAll: {style: {width: 'auto'}},
+                onclick: (section) => preferences.structure = section,
+                activeSection: preferences.structure,
+                sections: [
+                    {value: 'Point', title: 'the record has a single timestamp'},
+                    {value: 'Interval', title: 'the record spans a time interval, using lower and upper columns'}
+                ],
+                attrsButtons: {style: {width: 'auto', margin: '1em 0'}}
+            }), m('br')],
 
             m('[style=width:120px;display:inline-block;]', m(Button, {
                     placeholder: 'column to use in transform',
@@ -72,8 +93,7 @@ export default class AddSubset {
                     class: preferences.columns.size === 0 && ['is-invalid'],
                     style: {display: 'inline-block', width: 'auto', margin: '0.5em 0'}
                 }
-            }), m('br'),
-
+            }), preferences['columns'].size !== requiredColumns && warn(preferences['columns'].size + ' of ' + requiredColumns + ' required columns'), m('br'),
             m('[style=width:120px;display:inline-block; margin: 1em 0]', 'Selected Columns'),
             m(ListTags, {
                 tags: [...preferences.columns],
@@ -82,10 +102,11 @@ export default class AddSubset {
 
             m(Button, {
                 id: 'createSubset',
+                disabled: !isSubset,
                 onclick: () => {
-                    setDefault(subset.genericMetadata, app.selectedProblem, {});
-                    setDefault(subset.genericMetadata[app.selectedProblem], 'subsets', {});
-                    subset.genericMetadata[app.selectedProblem]['subsets'][preferences.subsetName] = {
+                    if (!isSubset) return;
+
+                    let metadata = {
                         type: {
                             Nominal: 'categorical',
                             Continuous: 'continuous',
@@ -94,8 +115,12 @@ export default class AddSubset {
                         }[preferences.subsetType],
                         columns: [...preferences.columns]
                     };
+                    if (preferences['subsetType'] === 'Date') metadata['structure'] = preferences['structure'];
 
-                    setDefault(subset.genericMetadata[app.selectedProblem], 'columns', (nodes || []).map(node => node.name))
+                    subset.genericMetadata[app.selectedProblem]['subsets'][preferences.subsetName] = metadata;
+
+                    transform.setShowModalSubset(false);
+                    Object.keys(preferences).map(key => delete preferences[key]);
                 }
             }, 'Add Subset')
         ]

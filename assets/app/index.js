@@ -12,6 +12,7 @@ import * as exp from './explore';
 import * as plots from './plots';
 import * as results from './results';
 import * as transform from './transform';
+import * as subset from '../EventData/app/app';
 import {fadeIn, fadeOut} from './utils';
 
 import Button from './views/PanelButton';
@@ -61,34 +62,164 @@ function setBackgroundColor(color) {
 }
 
 function leftpanel(mode) {
-    let exploreMode = mode === 'explore';
 
     if (mode === 'results') {
         return results.leftpanel(Object.keys(app.allPipelineInfo));
     }
 
-    let selectedDisco = app.disco.find(problem => problem.problem_id === app.selectedProblem);
 
-    let discoveryAllCheck = m('input#discoveryAllCheck[type=checkbox]', {
-        onclick: m.withAttr("checked", (checked) => app.setCheckedDiscoveryProblem(checked)),
-        checked: app.disco.length === app.checkedDiscoveryProblems.size
-    });
+    let nodes = app.is_explore_mode ? nodesExplore : app.nodes;
 
-    let discoveryTableData = app.disco.map(problem => [
-        problem.problem_id, // this is masked as the UID
-        m('input[type=checkbox]', {
-            onclick: m.withAttr("checked", (checked) => app.setCheckedDiscoveryProblem(checked, problem.problem_id)),
-            checked: app.checkedDiscoveryProblems.has(problem.problem_id)
-        }),
-        problem.target,
-        problem.predictors.join(', '),
-        problem.task,
-        problem.metric,
-        !!problem.subsetObs && problem.subsetObs,
-        !!problem.transform && problem.transform
-    ]);
+    let leftpanelSections = [
+        {
+            value: 'Variables',
+            title: 'Click variable name to add or remove the variable pebble from the modeling space.',
+            contents: [
+                m(TextField, {
+                    id: 'searchVar',
+                    placeholder: 'Search variables and labels',
+                    oninput: app.searchVariables
+                }),
+                m(PanelList, {
+                    id: 'varList',
+                    items: app.valueKey,
+                    colors: {
+                        [app.hexToRgba(common.selVarColor)]: nodes.map(n => n.name),
+                        [app.hexToRgba(common.nomColor)]: app.zparams.znom,
+                        [app.hexToRgba(common.dvColor)]: app.is_explore_mode ? [] : app.zparams.zdv
+                    },
+                    classes: {'item-bordered': app.matchedVariables},
+                    callback: x => app.clickVar(x, nodes),
+                    popup: variable => app.popoverContent(app.findNodeIndex(variable, true)),
+                    attrsItems: {'data-placement': 'right', 'data-original-title': 'Summary Statistics'}})]
+        },
+        {
+            value: 'Summary',
+            title: 'Select a variable from within the visualization in the center panel to view its summary statistics.',
+            display: 'none',
+            contents: [
+                m('center',
+                    m('b', app.summary.name),
+                    m('br'),
+                    m('i', app.summary.labl)),
+                m('table', app.summary.data.map(tr => m('tr', tr.map(
+                    td => m('td',
+                        {onmouseover: setBackgroundColor('aliceblue'),
+                            onmouseout: setBackgroundColor('f9f9f9')},
+                        td)))))]
+        }
+    ];
 
-    let nodes = exploreMode ? nodesExplore : app.nodes;
+    if (app.currentMode !== 'transform') {
+
+        let selectedDisco = app.disco.find(problem => problem.problem_id === app.selectedProblem);
+
+        let discoveryAllCheck = m('input#discoveryAllCheck[type=checkbox]', {
+            onclick: m.withAttr("checked", (checked) => app.setCheckedDiscoveryProblem(checked)),
+            checked: app.disco.length === app.checkedDiscoveryProblems.size
+        });
+
+        let discoveryTableData = app.disco.map(problem => [
+            problem.problem_id, // this is masked as the UID
+            m('input[type=checkbox]', {
+                onclick: m.withAttr("checked", (checked) => app.setCheckedDiscoveryProblem(checked, problem.problem_id)),
+                checked: app.checkedDiscoveryProblems.has(problem.problem_id)
+            }),
+            problem.target,
+            problem.predictors.join(', '),
+            problem.task,
+            problem.metric,
+            !!problem.subsetObs && problem.subsetObs,
+            !!problem.transform && problem.transform
+        ]);
+
+        leftpanelSections.push({
+            value: 'Discovery',
+            display: 'block',
+            contents: [
+            m(Table, {
+                id: 'discoveryTable',
+                headers: ['problem_id', discoveryAllCheck, 'Target', 'Predictors', 'Task', 'Metric', 'Subset', 'Transform'],
+                data: discoveryTableData,
+                activeRow: app.selectedProblem,
+                onclick: app.setSelectedProblem,
+                showUID: false,
+                abbreviation: 40,
+                attrsAll: {
+                    style: {height: '80%', overflow: 'auto', display: 'block', 'margin-right': '16px', 'margin-bottom': 0, 'max-width': (window.innerWidth - 90) + 'px'}}
+            }),
+            m('textarea#discoveryInput[style=display:block; float: left; width: 100%; height:calc(20% - 35px); overflow: auto; background-color: white]', {
+                value: selectedDisco === undefined ? '' : selectedDisco.description
+            }),
+            m(Button, {id: 'btnSave', onclick: app.saveDisc, title: 'Saves your revised problem description.'}, 'Save Desc.'),
+            m(Button, {id: 'btnSubmitDisc', classes: 'btn-success', style: 'float: right', onclick: app.submitDiscProb, title: 'Submit all checked discovered problems.'}, 'Submit Disc. Probs.'),
+            m(Button, {id: 'btnModelProblem', classes: 'btn-default', style: 'float: right', onclick: _ => {
+                    m.route.set('/model');
+                    setTimeout(_ => {
+                        if (selectedDisco) {
+                            let {target, predictors} = selectedDisco;
+                            app.erase('Discovery');
+                            [target].concat(predictors).map(x => app.clickVar(x));
+                            predictors.forEach(x => {
+                                let d = app.findNode(x);
+                                app.setColors(d, app.gr1Color);
+                                app.legend(app.gr1Color);
+                            });
+                            let d = app.findNode(target);
+                            app.setColors(d, app.dvColor);
+                            app.legend(app.dvColor);
+                            d.group1 = d.group2 = false;
+                            app.restart();
+                        }
+                    }, 500);
+                }, title: 'Model problem'}, 'Model problem')
+        ]});
+    }
+
+    if (app.currentMode === 'transform') {
+
+        let userSubsets = app.selectedProblem in subset.genericMetadata
+            ? Object.keys(subset.genericMetadata[app.selectedProblem]['subsets'])
+            : [];
+
+        let popoverContentSubset = (subsetName) => {
+            let metadata = subset.genericMetadata[app.selectedProblem]['subsets'][subsetName];
+            if (!metadata) return;
+            let text = '<table class="table table-sm table-striped" style="margin-bottom:0"><tbody>';
+            let div = (name, val) =>
+                text += `<tr><th>${name}</th><td><p class="text-left">${val}</p></td></tr>`;
+
+            metadata['columns'].length && div('Columns', metadata['columns'].join(', '));
+            if ('type' in metadata) div('Type', metadata['type']);
+            if ('structure' in metadata) div('Structure', metadata['structure']);
+
+            return text + '</tbody></table>';
+        };
+
+        leftpanelSections.push({
+            value: 'Subsets',
+            title: 'Filter to data that matches conditions',
+            contents: [
+                m(Button, {
+                    id: 'btnAddSubset',
+                    onclick: () => transform.setShowModalSubset(true),
+                    style: {width: '100%'}
+                }, 'Add Subset'),
+                m(PanelList, {
+                    id: 'subsetList',
+                    items: userSubsets,
+                    colors: {[app.hexToRgba(common.selVarColor)]: [subset.selectedSubsetName]},
+                    popup: popoverContentSubset,
+                    callback: subset.setSelectedSubsetName,
+                    attrsItems: {
+                        'data-placement': 'right',
+                        'data-container': '#subsetList',
+                        'data-delay': 500
+                    }
+                })
+            ]
+        })
+    }
 
     return m(Panel, {
         side: 'left',
@@ -101,85 +232,7 @@ function leftpanel(mode) {
         attrsAll: {style: {height: 'calc(100% - 39px)'}},
         currentTab: app.leftTab,
         callback: app.setLeftTab,
-        sections: [
-            {value: 'Variables',
-             title: 'Click variable name to add or remove the variable pebble from the modeling space.',
-             contents: [
-                 m(TextField, {
-                     id: 'searchVar',
-                     placeholder: 'Search variables and labels',
-                     oninput: app.searchVariables
-                 }),
-                 app.currentMode === 'transform' && m(Button, {
-                     id: 'btnAddSubset',
-                     onclick: () => transform.setShowModalSubset(true)
-                 }, 'Add Subset'),
-                 m(PanelList, {
-                     id: 'varList',
-                     items: app.valueKey,
-                     colors: {
-                         [app.hexToRgba(common.selVarColor)]: nodes.map(n => n.name),
-                         [app.hexToRgba(common.nomColor)]: app.zparams.znom,
-                         [app.hexToRgba(common.dvColor)]: exploreMode ? [] : app.zparams.zdv
-                     },
-                     classes: {'item-bordered': app.matchedVariables},
-                     callback: x => app.clickVar(x, nodes),
-                     popup: variable => app.popoverContent(app.findNodeIndex(variable, true)),
-                     attrsItems: {'data-placement': 'right', 'data-original-title': 'Summary Statistics'}})]},
-            {value: 'Discovery',
-             display: 'block',
-             contents: [
-                 m(Table, {
-                     id: 'discoveryTable',
-                     headers: ['problem_id', discoveryAllCheck, 'Target', 'Predictors', 'Task', 'Metric', 'Subset', 'Transform'],
-                     data: discoveryTableData,
-                     activeRow: app.selectedProblem,
-                     onclick: app.setSelectedProblem,
-                     showUID: false,
-                     abbreviation: 40,
-                     attrsAll: {
-                         style: {height: '80%', overflow: 'auto', display: 'block', 'margin-right': '16px', 'margin-bottom': 0, 'max-width': (window.innerWidth - 90) + 'px'}}
-                 }),
-                 m('textarea#discoveryInput[style=display:block; float: left; width: 100%; height:calc(20% - 35px); overflow: auto; background-color: white]', {
-                     value: selectedDisco === undefined ? '' : selectedDisco.description
-                 }),
-                 m(Button, {id: 'btnSave', onclick: app.saveDisc, title: 'Saves your revised problem description.'}, 'Save Desc.'),
-                 m(Button, {id: 'btnSubmitDisc', classes: 'btn-success', style: 'float: right', onclick: app.submitDiscProb, title: 'Submit all checked discovered problems.'}, 'Submit Disc. Probs.'),
-                 m(Button, {id: 'btnModelProblem', classes: 'btn-default', style: 'float: right', onclick: _ => {
-                     m.route.set('/model');
-                     setTimeout(_ => {
-                         if (selectedDisco) {
-                             let {target, predictors} = selectedDisco;
-                             app.erase('Discovery');
-                             [target].concat(predictors).map(x => app.clickVar(x));
-                             predictors.forEach(x => {
-                                 let d = app.findNode(x);
-                                 app.setColors(d, app.gr1Color);
-                                 app.legend(app.gr1Color);
-                             });
-                             let d = app.findNode(target);
-                             app.setColors(d, app.dvColor);
-                             app.legend(app.dvColor);
-                             d.group1 = d.group2 = false;
-                             app.restart();
-                         }
-                     }, 500);
-                 }, title: 'Model problem'}, 'Model problem')
-             ]},
-         {value: 'Summary',
-          title: 'Select a variable from within the visualization in the center panel to view its summary statistics.',
-          display: 'none',
-             contents: [
-                 m('center',
-                   m('b', app.summary.name),
-                   m('br'),
-                   m('i', app.summary.labl)),
-                 m('table', app.summary.data.map(tr => m('tr', tr.map(
-                     td => m('td',
-                             {onmouseover: setBackgroundColor('aliceblue'),
-                              onmouseout: setBackgroundColor('f9f9f9')},
-                             td)))))]}
-        ]
+        sections: leftpanelSections
     }));
 }
 

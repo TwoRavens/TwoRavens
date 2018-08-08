@@ -12,6 +12,14 @@ svg {
     border-color: #dc3545;
 }
 
+div#subsetList.popover {
+    max-width: none;
+}
+
+div#subsetList .popover-content {
+    padding: 9px 0;
+}
+
 #subset {
   /*position: absolute;*/
   float:left;margin-right:.5em;

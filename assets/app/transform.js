@@ -88,3 +88,4 @@ function loadSubset(subset) {
     // data source is unknown!
 }
 
+export let subsetTypes = ['Nominal', 'Continuous', 'Date', 'Coordinates'];
