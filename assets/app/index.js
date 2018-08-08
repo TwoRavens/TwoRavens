@@ -221,8 +221,9 @@ function rightpanel(mode) {
     }
 
     let dropdown = (label, key, task) => {
+        let metric = key === 'performanceMetrics';
         let desc = app.d3mProblemDescription[key];
-        desc = key === 'performanceMetrics' ? desc[0].metric : desc;
+        desc = metric ? desc[0].metric : desc;
         return m('.dropdown', {style: 'padding: .5em'},
                  m('', m('label', label), m('br'),
                    app.locktoggle ? m('button.btn.btn-disabled', desc) : [
@@ -231,7 +232,7 @@ function rightpanel(mode) {
                        m('ul.dropdown-menu', {'aria-labelledby': key}, Object.keys(task)
                          .map(x => m('li', {
                              style: 'padding: 0.25em',
-                             onclick: _ => app.setD3mProblemDescription(key, x)
+                             onclick: _ => app.setD3mProblemDescription(key, metric ? [{metric: x}] : x)
                          }, x)))
                    ]));
     };
