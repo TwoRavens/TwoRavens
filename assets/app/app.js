@@ -4621,65 +4621,128 @@ export async function stopAllSearches() {
 function makePipelineTemplate (aux) {
     console.log(aux);
     // aux.transform, aux.subsetFeats, aux.Obs are all by default 0. if not 0, which is set in preprocess, then steps should build the corresponding primitive call.
-    let inputs = [];
-    let outputs = [];
-    let steps = [];
+    
+    let ph = placeholderStep(); // this writes the placeholder object
+    let rc = primitiveStepRemoveColumns([2,3,5]); // this writes the primitive object to remove columns
+    
+    let inputs = [{name:"dataset"}];
+    let outputs = [{name:"dataset", data:"produce"}];
+    let steps = [rc,ph];
+    
     return {inputs:inputs,outputs:outputs,steps:steps};
     
-    // example inputs:
+    // example template: leave here for reference
     /*
-        "inputs": [
-        {
-            "name": "dataset"
-        }
-        ]
-    */
-    // example outputs:
-    /*
-        "outputs": [
-        {
-            "name": "dataset",
-            "data": "step.0.produce"
-        }
-        ]
-    */
-    // example steps:
-    /*
-        "steps": [
+"template": {
+    "inputs": [
                 {
+                    "name": "dataset"
+                }
+            ],
+    "outputs": [
+                {
+                    "name": "dataset",
+                    "data": "produce"
+                }
+            ],
+    "steps": [
+    {
                     "primitive": {
-                        "primitive": {
-                            "id": "id",
-                            "version": "version",
-                            "pythonPath": "python_path",
-                            "name": "name",
-                            "digest": "optional--some locally registered primitives might not have it"
+                    "primitive": {
+                        "id": "2eeff053-395a-497d-88db-7374c27812e6",
+                    "version": "0.2.0",
+                    "python_path": "d3m.primitives.datasets.RemoveColumns",
+                    "name": "Column remover",
+                    "digest": "85b946aa6123354fe51a288c3be56aaca82e76d4071c1edc13be6f9e0e100144"
                         },
                         "arguments": {
-                            "arg1": {
+                            "inputs": {
                                 "container": {
-                                    "data": "data reference"
+                                    "data": "inputs.0"
                                 }
-                            }},
+                            }
+                        },
                         "outputs": [
                             {
-                                "id": "id for data ref"
+                                "id": "produce"
                             }
                         ],
                         "hyperparams": {
-                            "param 1": {
-                                "container": {
-                                    "data": "data reference"
-                                }
-                            }
-                        }
+                        "columns": {
+  "value": {
+    "data": {
+      "raw": {
+        "list": {
+          "items": [
+            {
+              "int64": "2"
+            },
+            {
+              "int64": "3"
+            },
+            {
+              "int64": "4"
+            },
+            {
+              "int64": "5"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+                           },
+                        "users": []
+                }},{
+                    "placeholder": {
+                        "inputs": [{"data":"steps.0.produce"}],
+                        "outputs": [{"id":"produce"}]
                     }
-                }
-            ]
-    */
+                }]}
+                    */
 }
 
+// function builds a placeholder step for pipeline
+function placeholderStep () {
+    let step = {inputs:[{data:"steps.0.produce"}],outputs:[{id:"produce"}]};
+    return {placeholder:step};
+}
 
+// function builds a step in a pipeline to remove indices
+function primitiveStepRemoveColumns (indices) {
 
-
+    function buildItems (indices) {
+        let items = [];
+        for(let i = 0; i<indices.length; i++) {
+            items[i] = {int64: indices[i].toString()};
+        }
+        return items;
+    }
+    
+    let id = "2eeff053-395a-497d-88db-7374c27812e6";
+    let version = "0.2.0";
+    let python_path = "d3m.primitives.datasets.RemoveColumns";
+    let name = "Column remover";
+    let digest = "85b946aa6123354fe51a288c3be56aaca82e76d4071c1edc13be6f9e0e100144";
+    let users = [];
+   
+    let hpitems = {items:buildItems(indices)};
+    let hplist = {list:hpitems};
+    let hpraw = {raw:hplist};
+    let hpdata = {data:hpraw};
+    let hpvalue = {value:hpdata};
+    let hyperparams = {columns:hpvalue};
+    
+    let primitive = {id:id, version:version, python_path:python_path, name:name, digest:digest}
+    
+    let argdata = {data:"inputs.0"};
+    let argcontainer = {container:argdata};
+    let parguments = {inputs:argcontainer};
+    
+    let outputs = [{id:"produce"}];
+   
+    let step = {primitive:primitive, arguments:parguments, outputs:outputs, hyperparams:hyperparams, users:users};
+    return {primitive:step};
+}
 
