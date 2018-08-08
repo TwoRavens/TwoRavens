@@ -1239,7 +1239,10 @@ export function barsNode(node, obj, radius, explore) {
 
 
 // Function takes as input an array of x values, array of y values, x axis name, y axis name, and a div id, and renders a scatterplot there
-export function scatter(x_Axis, y_Axis, x_Axis_name, y_Axis_name, id='#setxLeftPlot', dim = {width: 400, height: 300}) {
+export function scatter(x_Axis, y_Axis, x_Axis_name, y_Axis_name, id, dim, title) {
+    if(typeof id === 'undefined') id = '#setxLeftPlot';
+    if(typeof dim === 'undefined') dim = {width: 400, height: 300};
+    if(typeof title === 'undefined') title='Scatterplot';
     let data = [];
     for(let i = 0; i<x_Axis.length; i++) {
         data[i] = {[x_Axis_name]:x_Axis[i], [y_Axis_name]:y_Axis[i]};
@@ -1248,6 +1251,7 @@ export function scatter(x_Axis, y_Axis, x_Axis_name, y_Axis_name, id='#setxLeftP
     let stringified = JSON.stringify(scatterPE);
     stringified = stringified.replace(/tworavensY/g, y_Axis_name);
     stringified = stringified.replace(/tworavensX/g, x_Axis_name);
+    stringified = stringified.replace(/tworavensTitle/g, title);
     stringified = stringified.replace("url", "values");
     stringified = stringified.replace('"tworavensData"',data);
 

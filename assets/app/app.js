@@ -3814,7 +3814,8 @@ export function resultsplotgraph(pid){
         console.log("resid plot");
         let xdata = "Actual";
         let ydata = "Predicted";
-        scatter(dvvalues, predvals, xdata, ydata);
+        let mytitle = "Predicted V Actuals: Pipeline " + pid;
+        scatter(dvvalues, predvals, xdata, ydata, undefined, undefined, mytitle);
     }
 
     // add the list of predictors into setxLeftTopLeft

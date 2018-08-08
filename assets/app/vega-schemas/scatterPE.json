@@ -1,6 +1,7 @@
 {
   "$schema": "https://vega.github.io/schema/vega-lite/v2.json",
   "description": "A scatterplot.",
+  "title": "tworavensTitle",
   "data": {"url": "tworavensData"},
   "layer": [
     {
