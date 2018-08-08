@@ -5,15 +5,12 @@ import m from 'mithril'
 // Arbitrary attributes may be passed
 // ```
 // m(Button, {
-//     id: 'buttonID',
-//     text: 'Click Me!',
 //     onclick: () => console.log("buttonID was clicked"),
 //     })
 // ```
 
 export default class Button {
     view(vnode) {
-        let {id, text} = vnode.attrs;
-        return m(`#${id || 'btn' + text}.btn.btn-default`, vnode.attrs, text)
+        return m(`button.btn.btn-default`, vnode.attrs, vnode.children)
     }
 }

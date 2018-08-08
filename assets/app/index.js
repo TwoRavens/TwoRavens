@@ -11,11 +11,13 @@ import * as app from './app';
 import * as exp from './explore';
 import * as plots from './plots';
 import * as results from './results';
+import * as transform from './transform';
 import {fadeIn, fadeOut} from './utils';
 
 import Button from './views/PanelButton';
 import Subpanel from './views/Subpanel';
 import Flowchart from './views/Flowchart';
+import AddSubset from './views/AddSubset';
 
 import * as common from '../common/app/common';
 import ButtonRadio from '../common/app/views/ButtonRadio';
@@ -23,6 +25,7 @@ import Footer from '../common/app/views/Footer';
 import Header from '../common/app/views/Header';
 import MenuTabbed from '../common/app/views/MenuTabbed';
 import Modal from '../common/app/views/Modal';
+import ModalVanilla from '../common/app/views/ModalVanilla';
 import Panel from '../common/app/views/Panel';
 import PanelList from '../common/app/views/PanelList';
 import Peek from '../common/app/views/Peek';
@@ -107,6 +110,10 @@ function leftpanel(mode) {
                      placeholder: 'Search variables and labels',
                      oninput: app.searchVariables
                  }),
+                 app.currentMode === 'transform' && m(Button, {
+                     id: 'btnAddSubset',
+                     onclick: () => transform.setShowModalSubset(true)
+                 }, 'Add Subset'),
                  m(PanelList, {
                      id: 'varList',
                      items: app.valueKey,
@@ -192,6 +199,13 @@ let righttab = (id, task, title, probDesc) => m(PanelList, {
 function rightpanel(mode) {
     if (mode === 'results') return; // returns undefined, which mithril ignores
     if (mode === 'explore') return;
+
+    if (mode === 'transform') return m(Panel, {
+        side: 'right',
+        label: 'Transforms',
+        hover: true,
+        width: '300px',
+    }, transform.rightpanel());
 
     // mode == null (model mode)
 
@@ -507,10 +521,18 @@ class Body {
 
         return m('main', [
             m(Modal),
+            transform.showModalSubset && m(ModalVanilla, {
+                id: 'showAddSubset',
+                setDisplay: transform.setShowModalSubset,
+                contents: m(AddSubset, {
+                    preferences: transform.pendingSubsetPreferences,
+                    nodes: app.allNodes
+                })
+            }),
             this.header(mode),
             this.footer(mode),
             m(`#main`, {style: {overflow}},
-              m("#innercarousel.carousel-inner", {style: {height: '100%', overflow}},
+                m("#innercarousel.carousel-inner", {style: {height: '100%', overflow, display: app.currentMode === 'transform' ? 'none' : 'block'}},
                 explore_mode
                 && [variate === 'problem' ?
                     m('', {style},
@@ -669,9 +691,10 @@ class Body {
                                    ['dvButton', 'zdv', 'Dep Var'],
                                    ['nomButton', 'znom', 'Nom Var'],
                                    ['gr1Button', 'zgroup1', 'Group 1'],
-                                   ['gr2Button', 'zgroup2', 'Group 2']]}),
-              m(Subpanel, {title: "History"}),
-              leftpanel(mode),
+                                   ['gr2Button', 'zgroup2', 'Group 2']]
+                              }),
+                app.currentMode !== 'transform' && m(Subpanel, {title: "History"}),
+                leftpanel(mode),
               rightpanel(mode))
         ]);
     }
@@ -809,8 +832,9 @@ class Body {
                 // attrsButtons: {class: ['btn-sm']}, // if you'd like small buttons (btn-sm should be applied to individual buttons, not the entire component)
                 onclick: app.set_mode,
                 activeSection: mode || 'model',
+                attrsButtons: {style: {width: 'auto'}},
                 // {value: 'Results', id: 'btnResultsMode'}] VJD: commenting out the results mode button since we don't have this yet
-                sections: [{value: 'Model'}, {value: 'Explore'}]
+                sections: [{value: 'Model'}, {value: 'Explore'}, {value: 'Transform'}]
             }),
             m("a#logID[href=somelink][target=_blank]", "Replication"),
             m("span[style=color:#337ab7]", " | "),
@@ -853,6 +877,9 @@ else {
         },
         '/explore': {
             render: () => m(Body, {mode: 'explore'})
+        },
+        '/transform': {
+            render: () => m(Body, {mode: 'transform'})
         },
         '/explore/:variate/:var1': exploreVars,
         '/explore/:variate/:var1/:var2': exploreVars,

@@ -81,12 +81,14 @@ export let allsearchId = [];            // List of all the searchId's created on
 export let currentMode = 'model';
 let is_explore_mode = false;
 let is_results_mode = false;
+let is_transform_mode = false;
 
 export function set_mode(mode) {
     mode = mode ? mode.toLowerCase() : 'model';
 
     is_explore_mode = mode === 'explore';
     is_results_mode = mode === 'results';
+    is_transform_mode = mode === 'transform';
 
     if (currentMode !== mode) {
         updateRightPanelWidth();
@@ -98,7 +100,7 @@ export function set_mode(mode) {
 
     let ws = elem('#whitespace0');
     if (ws) {
-        ws.style.display = is_explore_mode ? 'none' : 'block';
+        ws.style.display = currentMode === 'model' ? 'none' : 'block';
     }
 }
 

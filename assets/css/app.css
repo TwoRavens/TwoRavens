@@ -8,6 +8,10 @@ svg {
   user-select: none;
 }
 
+.is-invalid {
+    border-color: #dc3545;
+}
+
 #subset {
   /*position: absolute;*/
   float:left;margin-right:.5em;
