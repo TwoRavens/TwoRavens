@@ -127,11 +127,11 @@ function leftpanel(mode) {
                              predictors.forEach(x => {
                                  let d = app.findNode(x);
                                  app.setColors(d, app.gr1Color);
-                                 app.legend(app.gr1Color);
+                                 app.legend();
                              });
                              let d = app.findNode(target);
                              app.setColors(d, app.dvColor);
-                             app.legend(app.dvColor);
+                             app.legend();
                              d.group1 = d.group2 = false;
                              app.restart();
                          }
