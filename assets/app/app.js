@@ -4623,7 +4623,7 @@ function makePipelineTemplate (aux) {
     // aux.transform, aux.subsetFeats, aux.Obs are all by default 0. if not 0, which is set in preprocess, then steps should build the corresponding primitive call.
     
     let ph = placeholderStep(); // this writes the placeholder object
-    let rc = primitiveStepRemoveColumns([2,3,5]); // this writes the primitive object to remove columns
+    let rc = primitiveStepRemoveColumns(aux); // this writes the primitive object to remove columns
     
     let inputs = [{name:"dataset"}];
     let outputs = [{name:"dataset", data:"produce"}];
@@ -4710,7 +4710,18 @@ function placeholderStep () {
 }
 
 // function builds a step in a pipeline to remove indices
-function primitiveStepRemoveColumns (indices) {
+function primitiveStepRemoveColumns (aux) {
+    let keep = aux.predictors;
+    typeof aux.target === 'string' ?  keep.push(aux.target): keep.concat(aux.target);
+
+    // looks like some TA2s need this, so we'll also keep it
+    keep.push("d3mIndex");
+    
+    let indices = [];
+    for(let i=0; i<valueKey.length; i++) {
+        if(keep.indexOf(valueKey[i]) > -1) continue;
+        indices.push(i);
+    }
 
     function buildItems (indices) {
         let items = [];
