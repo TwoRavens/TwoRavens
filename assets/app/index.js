@@ -401,7 +401,7 @@ class Body {
 
         if (mode != this.last_mode) {
             app.set_mode(mode);
-            app.setRightTab(IS_D3M_DOMAIN ? 'Task Type' : 'Models');
+            app.setRightTab(IS_D3M_DOMAIN ? 'Problem' : 'Models');
             app.restart && app.restart();
             this.last_mode = mode;
         }
@@ -608,7 +608,7 @@ class Body {
                           }))
                        )],
                 m('svg#whitespace')),
-              model_mode && m("#spacetools.spaceTool", {style: {right: app.panelWidth['right'], 'z-index': 16}},
+              model_mode && m("#spacetools.spaceTool", {style: {right: app.panelWidth.right, 'z-index': 16}},
                               spaceBtn('btnAdd', async function() {
                                   let rookpipe = await app.makeRequest(ROOK_SVC_URL + 'pipelineapp', app.zparams);
                                   rookpipe.target = rookpipe.depvar[0];
