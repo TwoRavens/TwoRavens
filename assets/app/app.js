@@ -4554,8 +4554,10 @@ export async function submitDiscProb() {
     console.log("This is disco");
     console.log(disco);
     let outputCSV = "problem_id, system, meaningful \n";
-
+    
     for(let i = 0; i < disco.length; i++) {
+        if(checkedDiscoveryProblems.has(disco[i].problem_id)) { disco[i].meaningful = "yes"; }
+                                  
         // build up the required .csv file line by line
         outputCSV = outputCSV + disco[i].problem_id + ", \"" + disco[i].system + "\", \"" + disco[i].meaningful + "\"\n";
 
