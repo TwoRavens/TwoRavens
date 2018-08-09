@@ -3707,20 +3707,49 @@ export async function generatePredictions(pid, plotflag) {
                 if(res7.success){  // was: (typeof res7.data.is_finished != 'undefined'){
                     if(res7.data.is_finished){
                         if(res7.data.is_error){
+                           console.log('fittedDetailsUrl request failed !!!!!!!!!!!!!!!')
+                           console.log('fittedDetailsUrl: '+ fittedDetailsUrl);
+                            console.log('res7 error: ' + JSON.stringify(res7));
                             clearInterval(fittingIntervalId);
                         }else{
                             finalFittedDetailsUrl = res7.data.responses.list[0].details_url;
                             res8 = await updateRequest(finalFittedDetailsUrl);
                             if(res8.success){
-                                finalFittedId = res8.data.response.fittedSolutionId;
-                                console.log(finalFittedId);
-                                res55 = await makeRequest(D3M_SVC_URL + '/ProduceSolution', CreateProduceDefinition(finalFittedId));
-                                console.log("--Finished Fitting");
-                                let produceId = res55.data.requestId;
-                                res56 = await makeRequest(D3M_SVC_URL + `/GetProduceSolutionResults`, {requestId: produceId});
-                                console.log("--Get Produce");
-                                produceDetailsUrl = res56.data.details_url;
-                                fittingfinished = true;
+                                if ((res8.data.is_finished)&&(res8.data.is_error)){
+                                  console.log('finalFittedDetailsUrl request failed !!!!!!!!!!!!!!!')
+                                  clearInterval(fittingIntervalId);
+                                }else if (res8.data.is_finished){
+                                    finalFittedId = res8.data.response.fittedSolutionId;
+                                    console.log(finalFittedId);
+
+                                    let produceSolutionParams = CreateProduceDefinition(finalFittedId);
+                                    res55 = await makeRequest(D3M_SVC_URL + '/ProduceSolution',
+                                                              produceSolutionParams);
+
+                                    if (res55.success){
+
+                                        let produceId = res55.data.requestId;
+                                        console.log("--Finished Fitting");
+
+                                        res56 = await makeRequest(D3M_SVC_URL + `/GetProduceSolutionResults`, {requestId: produceId});
+                                        if (res56.success){
+                                            // note, in this case "is_finished" will be false,
+                                            // for a streaming request
+                                            console.log("--Get GetProduceSolutionResults");
+                                            produceDetailsUrl = res56.data.details_url;
+                                            fittingfinished = true;
+                                        }else{
+                                          console.log('GetProduceSolutionResults request failed !!!!!!!!!!!!!!! ')
+                                          console.log('res56' + JSON.stringify(res56));
+                                          clearInterval(fittingIntervalId);
+                                        }
+                                    }else{
+                                      console.log('ProduceSolution request failed !!!!!!!!!!!!!!!');
+                                      console.log('produceSolutionParams' + JSON.stringify(produceSolutionParams));
+                                      console.log('res55' + JSON.stringify(res55));
+                                      clearInterval(fittingIntervalId);
+                                    }
+                                }
                             } else {
                                 clearInterval(fittingIntervalId);
                             };
@@ -4554,10 +4583,10 @@ export async function submitDiscProb() {
     console.log("This is disco");
     console.log(disco);
     let outputCSV = "problem_id, system, meaningful \n";
-    
+
     for(let i = 0; i < disco.length; i++) {
         if(checkedDiscoveryProblems.has(disco[i].problem_id)) { disco[i].meaningful = "yes"; }
-                                  
+
         // build up the required .csv file line by line
         outputCSV = outputCSV + disco[i].problem_id + ", \"" + disco[i].system + "\", \"" + disco[i].meaningful + "\"\n";
 
