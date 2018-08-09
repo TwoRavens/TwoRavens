@@ -3345,7 +3345,6 @@ export function setColors(n, c) {
 
 /** needs doc */
 export function borderState() {
-    console.log('border state');
     let set = (id, param, attrs) => {
         let el = byId(id);
         if (!el) {
