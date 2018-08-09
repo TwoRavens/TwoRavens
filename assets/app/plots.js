@@ -1133,7 +1133,7 @@ export function densityNode(node, obj, radius, explore) {
 
     let {left, top} = margin;
     if (explore) {
-        left = 40;
+        left = 5;
         top = 60;
     }
     var plotsvg = d3.select(obj)
@@ -1213,7 +1213,7 @@ export function barsNode(node, obj, radius, explore) {
 
     let {left, top} = margin;
     if (explore) {
-        left = 40;
+        left = 5;
         top = 60;
     }
     var plotsvg = d3.select(obj)

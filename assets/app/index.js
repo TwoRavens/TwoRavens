@@ -601,7 +601,7 @@ class Body {
                                       display: 'flex',
                                       'flex-direction': 'column',
                                       height: '250px',
-                                      margin: '1em',
+                                      margin: '.5em',
                                       width: '250px',
                                       'align-items': 'center',
                                       'background-color': app.hexToRgba(common[selected ? 'selVarColor' : 'varColor'])
