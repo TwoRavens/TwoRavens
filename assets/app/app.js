@@ -2487,7 +2487,22 @@ export async function estimate(btn) {
             estimated = true;
         } else {
             setxTable(rookpipe.predictors);
-            let res = await makeRequest(D3M_SVC_URL + '/SearchSolutions', CreatePipelineDefinition(rookpipe.predictors, rookpipe.depvar, 2));
+            let searchSolutionParmams = CreatePipelineDefinition(rookpipe.predictors,
+                                                                 rookpipe.depvar,
+                                                                 2)
+            let res = await makeRequest(D3M_SVC_URL + '/xSearchSolutions',
+                                        searchSolutionParmams);
+            console.log(JSON.stringify(res));
+            if ((res===undefined)||(!res.success)){
+              console.log('heh');
+              estimateLadda.stop();
+              let userMsg = 'SearchSolutions request Failed!';
+              if(res){
+                userMsg += ' ' + res.message;
+              }
+              alert(userMsg);
+              return;
+            }
             let searchId = res.data.searchId;
             let solutionId = "";
             let fittedId = "";
