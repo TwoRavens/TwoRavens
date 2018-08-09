@@ -68,7 +68,7 @@ function leftpanel(mode) {
 
     let discoveryTableData = app.disco.map(problem => [
         problem.problem_id, // this is masked as the UID
-        m('input[type=checkbox]', {
+        m('input[type=checkbox][style=float:left;width:100%]', {
             onclick: m.withAttr("checked", (checked) => app.setCheckedDiscoveryProblem(checked, problem.problem_id)),
             checked: app.checkedDiscoveryProblems.has(problem.problem_id),
             title: 'mark this problem as meaningful'
@@ -120,7 +120,7 @@ function leftpanel(mode) {
              contents: [
                  m(Table, {
                      id: 'discoveryTable',
-                     headers: ['problem_id', discoveryAllCheck, 'Target', 'Predictors', 'Task', 'Metric', 'Subset', 'Transform'],
+                     headers: ['problem_id', m('[style=text-align:center]', 'Meaningful', m('br'), discoveryAllCheck), 'Target', 'Predictors', 'Task', 'Metric', 'Subset', 'Transform'],
                      data: discoveryTableData,
                      activeRow: app.selectedProblem,
                      onclick: app.setSelectedProblem,
