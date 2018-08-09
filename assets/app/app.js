@@ -132,7 +132,7 @@ export let leftTabHidden = 'Variables'; // stores the tab user was in before sum
 export let subset = false;
 export let summaryHold = false;
 
-export let rightTab = 'Task Type'; // current tab in right panel
+export let rightTab = 'Problem'; // current tab in right panel
 export let rightTabExplore = 'Univariate';
 
 export let modelLeftPanelWidths = {
@@ -143,11 +143,9 @@ export let modelLeftPanelWidths = {
 };
 
 export let modelRightPanelWidths = {
-    'Models': '300px',
-    'Task Type': '300px',
-    'Subtype': '300px',
-    'Metrics': '300px',
-    'Results': '900px'
+    Problem: '300px',
+    // 'Set Covar.': '900px',
+    Results: '900px'
 };
 
 export let exploreRightPanelWidths = {
@@ -2547,7 +2545,7 @@ export async function estimate(btn) {
                         if(typeof solutionId != 'undefined'){         // Find out when this happens
 
                             // [1] Get the template language description of the pipeline solution
-                            res77 = await makeRequest(D3M_SVC_URL + '/DescribeSolution', {solutionId: solutionId});                            
+                            res77 = await makeRequest(D3M_SVC_URL + '/DescribeSolution', {solutionId: solutionId});
                             // Add pipeline descriptions to allPipelineInfo
                             // More overwriting than is necessary here.
                             allPipelineInfo[res4.data.id] = Object.assign(allPipelineInfo[res4.data.id], res4.data, res77.data);
@@ -2557,11 +2555,11 @@ export async function estimate(btn) {
 
                             // [2] Ask for a solution to be scored
                             res10 = await makeRequest(D3M_SVC_URL + '/ScoreSolution', CreateScoreDefinition(res4));
-                            
+
                             if(typeof res10.data.requestId != 'undefined'){
                                 let scoreId = res10.data.requestId;
                                 res11 = await makeRequest(D3M_SVC_URL + '/GetScoreSolutionResults', {requestId: scoreId});
-                                scoreDetailsUrl = res11.data.details_url;  
+                                scoreDetailsUrl = res11.data.details_url;
                             };
 
                             if(fitFlag){
@@ -3263,6 +3261,7 @@ export function setColors(n, c) {
 
 /** needs doc */
 export function borderState() {
+    console.log('border state');
     let set = (id, param, attrs) => {
         let el = byId(id);
         if (!el) {
@@ -3683,14 +3682,16 @@ function setPebbleCharge(d){
 
 /** needs doc */
 export async function resultsplotinit(pid) {
+    if (!('predictedValues' in allPipelineInfo[pid])){
+        generatePredictions(pid, true);                    // generate predicted values, and then plot
+    } else {
+        resultsplotgraph(pid);                             // predicted values already exist
+    };
+}
 
-    console.log("Plotting Results");
-    console.log(pid);                  // This is passed argument
-    console.log(selectedPipeline);     // This is global
+export async function generatePredictions(pid, plotflag) {
 
-    let pipelineInfo = allPipelineInfo[pid];
-
-    if (!('predictedValues' in pipelineInfo)){
+    if (!('predictedValues' in allPipelineInfo[pid])){
         // Need to generate and store predicted values
         let finalFittedId, finalFittedDetailsUrl, produceDetailsUrl, finalProduceDetailsUrl, hold3;
         let res8, res55, res56, res58, res59;
@@ -3706,55 +3707,69 @@ export async function resultsplotinit(pid) {
             // First get fitted solution
             if(!fittingfinished){
                 let res7 = await updateRequest(fittedDetailsUrl);
-                if(typeof res7.data.is_finished != 'undefined'){
+                if(res7.success){  // was: (typeof res7.data.is_finished != 'undefined'){
                     if(res7.data.is_finished){
-                        finalFittedDetailsUrl = res7.data.responses.list[0].details_url;
-                        res8 = await updateRequest(finalFittedDetailsUrl);
-                        finalFittedId = res8.data.response.fittedSolutionId;
-                        console.log(finalFittedId);
-                        res55 = await makeRequest(D3M_SVC_URL + '/ProduceSolution', CreateProduceDefinition(finalFittedId));
-                        console.log("--Finished Fitting");
-                        console.log(res55);
-                        let produceId = res55.data.requestId;
-                        res56 = await makeRequest(D3M_SVC_URL + `/GetProduceSolutionResults`, {requestId: produceId});
-                        console.log("--Get Produce");
-                        console.log(res56);
-                        produceDetailsUrl = res56.data.details_url;
-                        fittingfinished = true;
+                        if(res7.data.is_error){
+                            clearInterval(fittingIntervalId);
+                        }else{
+                            finalFittedDetailsUrl = res7.data.responses.list[0].details_url;
+                            res8 = await updateRequest(finalFittedDetailsUrl);
+                            if(res8.success){
+                                finalFittedId = res8.data.response.fittedSolutionId;
+                                console.log(finalFittedId);
+                                res55 = await makeRequest(D3M_SVC_URL + '/ProduceSolution', CreateProduceDefinition(finalFittedId));
+                                console.log("--Finished Fitting");
+                                let produceId = res55.data.requestId;
+                                res56 = await makeRequest(D3M_SVC_URL + `/GetProduceSolutionResults`, {requestId: produceId});
+                                console.log("--Get Produce");
+                                produceDetailsUrl = res56.data.details_url;
+                                fittingfinished = true;
+                            } else {
+                                clearInterval(fittingIntervalId);
+                            };
+                        };
                     };
+                } else {
+                    clearInterval();
                 };
             };
 
             // Then produce predicted values from fitted solution
             if(fittingfinished){
                 let res57 = await updateRequest(produceDetailsUrl);
-                if(typeof res57.data.is_finished != 'undefined'){
+                if(res57.success){  // was: (typeof res57.data.is_finished != 'undefined'){
                     if(res57.data.is_finished){
-                        finalProduceDetailsUrl = res57.data.responses.list[0].details_url;
-                        res58 = await updateRequest(finalProduceDetailsUrl);
-                        console.log("--Long Awaited Predictions:");
-                        let hold = res58.data.response.exposedOutputs;
-                        let hold2 = hold[Object.keys(hold)[0]];  // There's an issue getting ."outputs.0".csvUri directly.
-                        hold3 = hold2.csvUri;
-                        console.log(hold3);
-                        res59 = await makeRequest(D3M_SVC_URL + `/retrieve-output-data`, {data_pointer: hold3});
-                        console.log(res59);
+                        if(res57.data.is_error){
+                            clearInterval(fittingIntervalId)
+                        }else{
+                            finalProduceDetailsUrl = res57.data.responses.list[0].details_url;
+                            res58 = await updateRequest(finalProduceDetailsUrl);
+                            console.log("--Long Awaited Predictions:");
+                            let hold = res58.data.response.exposedOutputs;
+                            let hold2 = hold[Object.keys(hold)[0]];  // There's an issue getting ."outputs.0".csvUri directly.
+                            hold3 = hold2.csvUri;
+                            console.log(hold3);
+                            res59 = await makeRequest(D3M_SVC_URL + `/retrieve-output-data`, {data_pointer: hold3});
+                            console.log(res59);
 
-                        allPipelineInfo[pid].predictedValues = res59;
-
-                        clearInterval(fittingIntervalId);
-
-                        resultsplotgraph(pid);
+                            allPipelineInfo[pid].predictedValues = res59;
+                            clearInterval(fittingIntervalId);
+                            if(plotflag){
+                                resultsplotgraph(pid);
+                            };
+                        };
                     };
                 };
             };
-        }, 100);
+        }, 500);
 
     } else {
         // Predicted values already stored and ready for graphing
         console.log("Skipping creating predicted values");
-        resultsplotgraph(pid);
-    }; 
+        if(plotflag){
+            resultsplotgraph(pid);
+        };
+    };
 
 };
 
@@ -3801,7 +3816,8 @@ export function resultsplotgraph(pid){
         console.log("resid plot");
         let xdata = "Actual";
         let ydata = "Predicted";
-        scatter(dvvalues, predvals, xdata, ydata);
+        let mytitle = "Predicted V Actuals: Pipeline " + pid;
+        scatter(dvvalues, predvals, xdata, ydata, undefined, undefined, mytitle);
     }
 
     // add the list of predictors into setxLeftTopLeft
@@ -4195,7 +4211,7 @@ export function sortPipelineTable(pt){
         } else if (b['Score']=="scoring") {
             return(-100)
         } else if (a['Score']=="no score"){
-            return(1000) 
+            return(1000)
         } else if (b['Score']=="no score"){
             return(-1000)
         } else {
@@ -4541,16 +4557,18 @@ export async function submitDiscProb() {
     console.log("This is disco");
     console.log(disco);
     let outputCSV = "problem_id, system, meaningful \n";
-
+    
     for(let i = 0; i < disco.length; i++) {
+        if(checkedDiscoveryProblems.has(disco[i].problem_id)) { disco[i].meaningful = "yes"; }
+                                  
         // build up the required .csv file line by line
         outputCSV = outputCSV + disco[i].problem_id + ", \"" + disco[i].system + "\", \"" + disco[i].meaningful + "\"\n";
 
         // construct and write out the api call and problem description for each discovered problem
         let problemApiCall = CreatePipelineDefinition(disco[i].predictors, [disco[i].target], 10, disco[i]);
         let problemProblemSchema = CreateProblemSchema(disco[i]);
-        let filename_api = disco[i].problem_id + '/ss_api.json';  
-        let filename_ps = disco[i].problem_id + '/schema.json';   
+        let filename_api = disco[i].problem_id + '/ss_api.json';
+        let filename_ps = disco[i].problem_id + '/schema.json';
         let res1 = await makeRequest(D3M_SVC_URL + '/store-user-problem', {filename: filename_api, data: problemApiCall } );
         let res2 = await makeRequest(D3M_SVC_URL + '/store-user-problem', {filename: filename_ps, data: problemProblemSchema } );
     }
@@ -4589,7 +4607,7 @@ export async function endAllSearches() {
             res = await makeRequest(D3M_SVC_URL + '/EndSearchSolutions', {searchId: allsearchId[i]} );
         };
     };
-    allsearchId = [];
+    //allsearchId = [];
 }
 
 export async function stopAllSearches() {
@@ -4605,67 +4623,150 @@ export async function stopAllSearches() {
  *  Function takes as input the pipeline template information (currently aux) and returns a valid pipline template in json. This json is to be inserted into SearchSolutions. e.g., problem = {...}, template = {...}, inputs = [dataset_uri]
  */
 function makePipelineTemplate (aux) {
+    console.log("this is aux for makePipelineTemplate:")
     console.log(aux);
     // aux.transform, aux.subsetFeats, aux.Obs are all by default 0. if not 0, which is set in preprocess, then steps should build the corresponding primitive call.
+
     let inputs = [];
     let outputs = [];
     let steps = [];
-    return {inputs:inputs,outputs:outputs,steps:steps};
-    
-    // example inputs:
+
+    if(typeof aux==="undefined") {    // This is how this is called by /SearchSolutions
+        return {inputs:inputs,outputs:outputs,steps:steps};
+
+    } else {                          // This is how this is called by Discovered Problems
+        let ph = placeholderStep(); // this writes the placeholder object
+        let rc = primitiveStepRemoveColumns(aux); // this writes the primitive object to remove columns
+
+        inputs = [{name:"dataset"}];
+        outputs = [{name:"dataset", data:"produce"}];
+        steps = [rc,ph];
+
+        return {inputs:inputs,outputs:outputs,steps:steps};
+    };
+
+    // example template: leave here for reference
     /*
-        "inputs": [
-        {
-            "name": "dataset"
-        }
-        ]
-    */
-    // example outputs:
-    /*
-        "outputs": [
-        {
-            "name": "dataset",
-            "data": "step.0.produce"
-        }
-        ]
-    */
-    // example steps:
-    /*
-        "steps": [
+"template": {
+    "inputs": [
                 {
+                    "name": "dataset"
+                }
+            ],
+    "outputs": [
+                {
+                    "name": "dataset",
+                    "data": "produce"
+                }
+            ],
+    "steps": [
+    {
                     "primitive": {
-                        "primitive": {
-                            "id": "id",
-                            "version": "version",
-                            "pythonPath": "python_path",
-                            "name": "name",
-                            "digest": "optional--some locally registered primitives might not have it"
+                    "primitive": {
+                        "id": "2eeff053-395a-497d-88db-7374c27812e6",
+                    "version": "0.2.0",
+                    "python_path": "d3m.primitives.datasets.RemoveColumns",
+                    "name": "Column remover",
+                    "digest": "85b946aa6123354fe51a288c3be56aaca82e76d4071c1edc13be6f9e0e100144"
                         },
                         "arguments": {
-                            "arg1": {
+                            "inputs": {
                                 "container": {
-                                    "data": "data reference"
+                                    "data": "inputs.0"
                                 }
-                            }},
+                            }
+                        },
                         "outputs": [
                             {
-                                "id": "id for data ref"
+                                "id": "produce"
                             }
                         ],
                         "hyperparams": {
-                            "param 1": {
-                                "container": {
-                                    "data": "data reference"
-                                }
-                            }
-                        }
+                        "columns": {
+  "value": {
+    "data": {
+      "raw": {
+        "list": {
+          "items": [
+            {
+              "int64": "2"
+            },
+            {
+              "int64": "3"
+            },
+            {
+              "int64": "4"
+            },
+            {
+              "int64": "5"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+                           },
+                        "users": []
+                }},{
+                    "placeholder": {
+                        "inputs": [{"data":"steps.0.produce"}],
+                        "outputs": [{"id":"produce"}]
                     }
-                }
-            ]
-    */
+                }]}
+                    */
 }
 
+// function builds a placeholder step for pipeline
+function placeholderStep () {
+    let step = {inputs:[{data:"steps.0.produce"}],outputs:[{id:"produce"}]};
+    return {placeholder:step};
+}
 
+// function builds a step in a pipeline to remove indices
+function primitiveStepRemoveColumns (aux) {
+    let keep = aux.predictors;
+    typeof aux.target === 'string' ?  keep.push(aux.target): keep.concat(aux.target);
 
+    // looks like some TA2s need this, so we'll also keep it
+    keep.push("d3mIndex");
 
+    let indices = [];
+    for(let i=0; i<valueKey.length; i++) {
+        if(keep.indexOf(valueKey[i]) > -1) continue;
+        indices.push(i);
+    }
 
+    function buildItems (indices) {
+        let items = [];
+        for(let i = 0; i<indices.length; i++) {
+            items[i] = {int64: indices[i].toString()};
+        }
+        return items;
+    }
+
+    let id = "2eeff053-395a-497d-88db-7374c27812e6";
+    let version = "0.2.0";
+    let python_path = "d3m.primitives.datasets.RemoveColumns";
+    let name = "Column remover";
+    let digest = "85b946aa6123354fe51a288c3be56aaca82e76d4071c1edc13be6f9e0e100144";
+    let users = [];
+
+    let hpitems = {items:buildItems(indices)};
+    let hplist = {list:hpitems};
+    let hpraw = {raw:hplist};
+    let hpdata = {data:hpraw};
+    let hpvalue = {value:hpdata};
+    let hyperparams = {columns:hpvalue};
+
+    let primitive = {id:id, version:version, python_path:python_path, name:name, digest:digest}
+
+    let argdata = {data:"inputs.0"};
+    let argcontainer = {container:argdata};
+    let parguments = {inputs:argcontainer};
+
+    let outputs = [{id:"produce"}];
+
+    let step = {primitive:primitive, arguments:parguments, outputs:outputs, hyperparams:hyperparams, users:users};
+    return {primitive:step};
+}

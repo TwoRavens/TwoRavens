@@ -116,14 +116,16 @@ function leftpanel(mode) {
 
         let discoveryAllCheck = m('input#discoveryAllCheck[type=checkbox]', {
             onclick: m.withAttr("checked", (checked) => app.setCheckedDiscoveryProblem(checked)),
-            checked: app.disco.length === app.checkedDiscoveryProblems.size
+            checked: app.disco.length === app.checkedDiscoveryProblems.size,
+            title: `mark ${app.disco.length === app.checkedDiscoveryProblems.size ? 'no' : 'all'} problems as meaningful`
         });
 
         let discoveryTableData = app.disco.map(problem => [
             problem.problem_id, // this is masked as the UID
-            m('input[type=checkbox]', {
+            m('input[type=checkbox][style=width:100%]', {
                 onclick: m.withAttr("checked", (checked) => app.setCheckedDiscoveryProblem(checked, problem.problem_id)),
-                checked: app.checkedDiscoveryProblems.has(problem.problem_id)
+                checked: app.checkedDiscoveryProblems.has(problem.problem_id),
+                title: 'mark this problem as meaningful'
             }),
             problem.target,
             problem.predictors.join(', '),
@@ -137,43 +139,43 @@ function leftpanel(mode) {
             value: 'Discovery',
             display: 'block',
             contents: [
-            m(Table, {
-                id: 'discoveryTable',
-                headers: ['problem_id', discoveryAllCheck, 'Target', 'Predictors', 'Task', 'Metric', 'Subset', 'Transform'],
-                data: discoveryTableData,
-                activeRow: app.selectedProblem,
-                onclick: app.setSelectedProblem,
-                showUID: false,
-                abbreviation: 40,
-                attrsAll: {
-                    style: {height: '80%', overflow: 'auto', display: 'block', 'margin-right': '16px', 'margin-bottom': 0, 'max-width': (window.innerWidth - 90) + 'px'}}
-            }),
-            m('textarea#discoveryInput[style=display:block; float: left; width: 100%; height:calc(20% - 35px); overflow: auto; background-color: white]', {
-                value: selectedDisco === undefined ? '' : selectedDisco.description
-            }),
-            m(Button, {id: 'btnSave', onclick: app.saveDisc, title: 'Saves your revised problem description.'}, 'Save Desc.'),
-            m(Button, {id: 'btnSubmitDisc', classes: 'btn-success', style: 'float: right', onclick: app.submitDiscProb, title: 'Submit all checked discovered problems.'}, 'Submit Disc. Probs.'),
-            m(Button, {id: 'btnModelProblem', classes: 'btn-default', style: 'float: right', onclick: _ => {
-                    m.route.set('/model');
-                    setTimeout(_ => {
-                        if (selectedDisco) {
-                            let {target, predictors} = selectedDisco;
-                            app.erase('Discovery');
-                            [target].concat(predictors).map(x => app.clickVar(x));
-                            predictors.forEach(x => {
-                                let d = app.findNode(x);
-                                app.setColors(d, app.gr1Color);
-                                app.legend(app.gr1Color);
-                            });
-                            let d = app.findNode(target);
-                            app.setColors(d, app.dvColor);
-                            app.legend(app.dvColor);
-                            d.group1 = d.group2 = false;
-                            app.restart();
-                        }
-                    }, 500);
-                }, title: 'Model problem'}, 'Model problem')
-        ]});
+                m(Table, {
+                    id: 'discoveryTable',
+                    headers: ['problem_id', m('[style=text-align:center]', 'Meaningful', m('br'), discoveryAllCheck), 'Target', 'Predictors', 'Task', 'Metric', 'Subset', 'Transform'],
+                    data: discoveryTableData,
+                    activeRow: app.selectedProblem,
+                    onclick: app.setSelectedProblem,
+                    showUID: false,
+                    abbreviation: 40,
+                    attrsAll: {
+                        style: {height: '80%', overflow: 'auto', display: 'block', 'margin-right': '16px', 'margin-bottom': 0, 'max-width': (window.innerWidth - 90) + 'px'}}
+                }),
+                m('textarea#discoveryInput[style=display:block; float: left; width: 100%; height:calc(20% - 35px); overflow: auto; background-color: white]', {
+                    value: selectedDisco === undefined ? '' : selectedDisco.description
+                }),
+                m(Button, {id: 'btnSave', onclick: app.saveDisc, title: 'Saves your revised problem description.'}, 'Save Desc.'),
+                m(Button, {id: 'btnSubmitDisc', classes: 'btn-success', style: 'float: right', onclick: app.submitDiscProb, title: 'Submit all checked discovered problems.'}, 'Submit Disc. Probs.'),
+                m(Button, {id: 'btnModelProblem', classes: 'btn-default', style: 'float: right', onclick: _ => {
+                        m.route.set('/model');
+                        setTimeout(_ => {
+                            if (selectedDisco) {
+                                let {target, predictors} = selectedDisco;
+                                app.erase('Discovery');
+                                [target].concat(predictors).map(x => app.clickVar(x));
+                                predictors.forEach(x => {
+                                    let d = app.findNode(x);
+                                    app.setColors(d, app.gr1Color);
+                                    app.legend();
+                                });
+                                let d = app.findNode(target);
+                                app.setColors(d, app.dvColor);
+                                app.legend();
+                                d.group1 = d.group2 = false;
+                                app.restart();
+                            }
+                        }, 500);
+                    }, title: 'Model problem'}, 'Model problem')
+            ]});
     }
 
     if (app.currentMode === 'transform') {
@@ -305,20 +307,43 @@ function rightpanel(mode) {
             {color: common.csColor, key: 'Inputs', summary: inputs, content: inputs},
             ...steps,
             {color: common.csColor, key: 'Outputs', summary: outputs, content: outputs}
-        ]
+        ];
     }
 
+    let dropdown = (label, key, task) => {
+        let metric = key === 'performanceMetrics';
+        let desc = app.d3mProblemDescription[key];
+        desc = metric ? desc[0].metric : desc;
+        return m('.dropdown', {style: 'padding: .5em'},
+                 m('', m('label', label), m('br'),
+                   app.locktoggle ? m('button.btn.btn-disabled', desc) : [
+                       m('button.btn.btn-default.dropdown-toggle[data-toggle=dropdown]', {id: key},
+                         desc, m('span.caret')),
+                       m('ul.dropdown-menu', {'aria-labelledby': key}, Object.keys(task)
+                         .map(x => m('li', {
+                             style: 'padding: 0.25em',
+                             onclick: _ => app.setD3mProblemDescription(key, metric ? [{metric: x}] : x)
+                         }, x)))
+                   ]));
+    };
     let sections = [
         // {value: 'Models',
         //  display: app.IS_D3M_DOMAIN ? 'block' : 'none',
         //  contents: righttab('models')},
-        {value: 'Task Type',
+        {value: 'Problem',
          idSuffix: 'Type',
-         contents: righttab('types', app.d3mTaskType, 'Task', 'taskType')},
-        {value: 'Subtype',
-         contents: righttab('subtypes', app.d3mTaskSubtype, 'Task Subtype', 'taskSubtype')},
-        {value: 'Metrics',
-         contents: righttab('metrics', app.d3mMetrics, 'Metric', 'metric')},
+         contents: [
+             m(`button#btnLock.btn.btn-default`, {
+                 class: app.locktoggle ? 'active' : '',
+                 onclick: () => app.lockDescription(!app.locktoggle),
+                 title: 'Lock selection of problem description',
+                 style: 'float: right',
+             }, glyph(app.locktoggle ? 'lock' : 'pencil', true)),
+             m('', {style: 'float: left'},
+               dropdown('Task', 'taskType', app.d3mTaskType),
+               dropdown('Task Subtype', 'taskSubtype', app.d3mTaskSubtype),
+               dropdown('Metric', 'performanceMetrics', app.d3mMetrics))
+         ]},
         {value: 'Results',
          display: !app.swandive || app.IS_D3M_DOMAIN ? 'block' : 'none',
          idSuffix: 'Setx',
@@ -416,8 +441,6 @@ function rightpanel(mode) {
         id: 'rightpanelMenu',
         currentTab: app.rightTab,
         callback: app.setRightTab,
-        hoverBonus: 10,
-        selectWidth: 30,
         sections: sections,
         attrsAll: {style: {height: 'calc(100% - 39px)'}}
     }));
@@ -475,7 +498,7 @@ class Body {
 
         if (mode != this.last_mode) {
             app.set_mode(mode);
-            app.setRightTab(IS_D3M_DOMAIN ? 'Task Type' : 'Models');
+            app.setRightTab(IS_D3M_DOMAIN ? 'Problem' : 'Models');
             app.restart && app.restart();
             this.last_mode = mode;
         }
@@ -692,19 +715,25 @@ class Body {
                           }))
                        )],
                 m('svg#whitespace')),
-              model_mode && m("#spacetools.spaceTool", {style: {right: app.panelWidth['right'], 'z-index': 16}},
-                              m(`button#btnLock.btn.btn-default`, {
-                                  class: app.locktoggle ? 'active' : '',
-                                  onclick: () => app.lockDescription(!app.locktoggle),
-                                  title: 'Lock selection of problem description'
-                              }, glyph(app.locktoggle ? 'lock' : 'pencil', true)),
+              model_mode && m("#spacetools.spaceTool", {style: {right: app.panelWidth.right, 'z-index': 16}},
                               spaceBtn('btnAdd', async function() {
+                                  app.zPop();
                                   let rookpipe = await app.makeRequest(ROOK_SVC_URL + 'pipelineapp', app.zparams);
-                                  rookpipe.target = rookpipe.depvar[0];;
+                                  rookpipe.target = rookpipe.depvar[0];
                                   let {taskType, performanceMetrics} = app.d3mProblemDescription;
                                   rookpipe.task = taskType;
                                   rookpipe.metric = performanceMetrics[0].metric;
+                                  rookpipe.meaningful = "yes";
+                                  rookpipe.subsetObs = 0;
+                                  rookpipe.subsetFeats = 0;
+                                  rookpipe.transform = 0;
+                                  rookpipe.system = "user";
+                                  let problemId = app.disco.length + 1;
+                                  rookpipe.problem_id = "problem" + problemId;
+                                  console.log("pushing this:");
+                                  console.log(rookpipe);
                                   app.disco.push(rookpipe);
+                                    app.setSelectedProblem(app.disco.length - 1);
                                   app.setLeftTab('Discovery');
                                   m.redraw();
                               }, 'Add model to problems.', 'plus'),

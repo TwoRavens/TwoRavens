@@ -7,7 +7,9 @@ class StoredResponseAdminInline(admin.TabularInline):
     model = StoredResponse
     #fk_name = "orig_metadata"
     #exclude = ('response',)
-    readonly_fields = ('status', 'is_success',
+    search_fields = ['hash_id']
+
+    readonly_fields = ('status', 'is_finished',
                        'sent_to_user', 'hash_id',
                        'response',
                        'response_as_json',
@@ -24,14 +26,18 @@ class StoredResponseAdminInline(admin.TabularInline):
 class StoredRequestAdmin(admin.ModelAdmin):
     save_on_top = True
     inlines = (StoredResponseAdminInline,)
+    search_fields = ['hash_id']
+
     list_display = ('name',
                     'request_type',
                     'is_finished',
                     'status',
                     'user',
                     'workspace',
+                    'hash_id',
                     'created',
                     'modified')
+
     list_filter = ('is_finished',
                    'status',
                    'request_type')
@@ -46,9 +52,11 @@ class StoredRequestAdmin(admin.ModelAdmin):
               'is_finished',
               'status',
               'user',
+              'hash_id',
               'workspace',
               'request',
               'request_as_json',
+              'user_message',
               ('created', 'modified'),)
 
 admin.site.register(StoredRequest, StoredRequestAdmin)
@@ -58,11 +66,11 @@ class StoredResponseAdmin(admin.ModelAdmin):
     save_on_top = True
     list_display = ('stored_request',
                     'status',
-                    'is_success',
+                    'is_finished',
                     'sent_to_user',
                     'created',
                     'modified')
-    list_filter = ('is_success',
+    list_filter = ('is_finished',
                    'sent_to_user',
                    'status',
                    'stored_request__request_type')
@@ -76,7 +84,7 @@ class StoredResponseAdmin(admin.ModelAdmin):
     fields = ('stored_request',
               'link_to_request',
               'status',
-              ('is_success', 'sent_to_user'),
+              ('is_finished', 'sent_to_user'),
               'response',
               'response_as_json',
               'hash_id',
