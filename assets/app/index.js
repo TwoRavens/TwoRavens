@@ -608,9 +608,8 @@ class Body {
             this.header(mode),
             this.footer(mode),
             m(`#main`, {style: {overflow}},
-                m("#innercarousel.carousel-inner", {style: {height: '100%', overflow, display: app.currentMode === 'transform' ? 'none' : 'block'}},
-                explore_mode
-                && [variate === 'problem' ?
+                m("#innercarousel.carousel-inner", {style: {height: '100%', overflow, display: app.is_transform_mode ? 'none' : 'block'}},
+                explore_mode && [variate === 'problem' ?
                     m('', {style},
                         m('a', {onclick: _ => m.route.set('/explore')}, '<- back to variables'),
                         m('br'),
@@ -715,7 +714,7 @@ class Body {
                           }))
                        )],
                 m('svg#whitespace')),
-              model_mode && m("#spacetools.spaceTool", {style: {right: app.panelWidth.right, 'z-index': 16}},
+              model_mode && m("#spacetools.spaceTool", {style: {right: app.panelWidth.right, 'z-index': 16, top: '62px'}},
                               spaceBtn('btnAdd', async function() {
                                   app.zPop();
                                   let rookpipe = await app.makeRequest(ROOK_SVC_URL + 'pipelineapp', app.zparams);
