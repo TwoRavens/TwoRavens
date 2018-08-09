@@ -2542,7 +2542,7 @@ export async function estimate(btn) {
                         if(typeof solutionId != 'undefined'){         // Find out when this happens
 
                             // [1] Get the template language description of the pipeline solution
-                            res77 = await makeRequest(D3M_SVC_URL + '/DescribeSolution', {solutionId: solutionId});                            
+                            res77 = await makeRequest(D3M_SVC_URL + '/DescribeSolution', {solutionId: solutionId});
                             // Add pipeline descriptions to allPipelineInfo
                             // More overwriting than is necessary here.
                             allPipelineInfo[res4.data.id] = Object.assign(allPipelineInfo[res4.data.id], res4.data, res77.data);
@@ -2552,11 +2552,11 @@ export async function estimate(btn) {
 
                             // [2] Ask for a solution to be scored
                             res10 = await makeRequest(D3M_SVC_URL + '/ScoreSolution', CreateScoreDefinition(res4));
-                            
+
                             if(typeof res10.data.requestId != 'undefined'){
                                 let scoreId = res10.data.requestId;
                                 res11 = await makeRequest(D3M_SVC_URL + '/GetScoreSolutionResults', {requestId: scoreId});
-                                scoreDetailsUrl = res11.data.details_url;  
+                                scoreDetailsUrl = res11.data.details_url;
                             };
 
                             if(fitFlag){
@@ -3738,7 +3738,7 @@ export async function generatePredictions(pid, plotflag) {
                     if(res57.data.is_finished){
                         if(res57.data.is_error){
                             clearInterval(fittingIntervalId)
-                        }else{ 
+                        }else{
                             finalProduceDetailsUrl = res57.data.responses.list[0].details_url;
                             res58 = await updateRequest(finalProduceDetailsUrl);
                             console.log("--Long Awaited Predictions:");
@@ -3766,7 +3766,7 @@ export async function generatePredictions(pid, plotflag) {
         if(plotflag){
             resultsplotgraph(pid);
         };
-    }; 
+    };
 
 };
 
@@ -4208,7 +4208,7 @@ export function sortPipelineTable(pt){
         } else if (b['Score']=="scoring") {
             return(-100)
         } else if (a['Score']=="no score"){
-            return(1000) 
+            return(1000)
         } else if (b['Score']=="no score"){
             return(-1000)
         } else {
@@ -4564,8 +4564,8 @@ export async function submitDiscProb() {
         // construct and write out the api call and problem description for each discovered problem
         let problemApiCall = CreatePipelineDefinition(disco[i].predictors, [disco[i].target], 10, disco[i]);
         let problemProblemSchema = CreateProblemSchema(disco[i]);
-        let filename_api = disco[i].problem_id + '/ss_api.json';  
-        let filename_ps = disco[i].problem_id + '/schema.json';   
+        let filename_api = disco[i].problem_id + '/ss_api.json';
+        let filename_ps = disco[i].problem_id + '/schema.json';
         let res1 = await makeRequest(D3M_SVC_URL + '/store-user-problem', {filename: filename_api, data: problemApiCall } );
         let res2 = await makeRequest(D3M_SVC_URL + '/store-user-problem', {filename: filename_ps, data: problemProblemSchema } );
     }
@@ -4623,7 +4623,7 @@ function makePipelineTemplate (aux) {
     console.log("this is aux for makePipelineTemplate:")
     console.log(aux);
     // aux.transform, aux.subsetFeats, aux.Obs are all by default 0. if not 0, which is set in preprocess, then steps should build the corresponding primitive call.
-    
+
     let inputs = [];
     let outputs = [];
     let steps = [];
@@ -4634,14 +4634,14 @@ function makePipelineTemplate (aux) {
     } else {                          // This is how this is called by Discovered Problems
         let ph = placeholderStep(); // this writes the placeholder object
         let rc = primitiveStepRemoveColumns(aux); // this writes the primitive object to remove columns
-        
+
         inputs = [{name:"dataset"}];
         outputs = [{name:"dataset", data:"produce"}];
         steps = [rc,ph];
-        
+
         return {inputs:inputs,outputs:outputs,steps:steps};
     };
-    
+
     // example template: leave here for reference
     /*
 "template": {
@@ -4727,7 +4727,7 @@ function primitiveStepRemoveColumns (aux) {
 
     // looks like some TA2s need this, so we'll also keep it
     keep.push("d3mIndex");
-    
+
     let indices = [];
     for(let i=0; i<valueKey.length; i++) {
         if(keep.indexOf(valueKey[i]) > -1) continue;
@@ -4741,30 +4741,29 @@ function primitiveStepRemoveColumns (aux) {
         }
         return items;
     }
-    
+
     let id = "2eeff053-395a-497d-88db-7374c27812e6";
     let version = "0.2.0";
     let python_path = "d3m.primitives.datasets.RemoveColumns";
     let name = "Column remover";
     let digest = "85b946aa6123354fe51a288c3be56aaca82e76d4071c1edc13be6f9e0e100144";
     let users = [];
-   
+
     let hpitems = {items:buildItems(indices)};
     let hplist = {list:hpitems};
     let hpraw = {raw:hplist};
     let hpdata = {data:hpraw};
     let hpvalue = {value:hpdata};
     let hyperparams = {columns:hpvalue};
-    
+
     let primitive = {id:id, version:version, python_path:python_path, name:name, digest:digest}
-    
+
     let argdata = {data:"inputs.0"};
     let argcontainer = {container:argdata};
     let parguments = {inputs:argcontainer};
-    
+
     let outputs = [{id:"produce"}];
-   
+
     let step = {primitive:primitive, arguments:parguments, outputs:outputs, hyperparams:hyperparams, users:users};
     return {primitive:step};
 }
-

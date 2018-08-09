@@ -9,7 +9,7 @@ class StoredResponseAdminInline(admin.TabularInline):
     #exclude = ('response',)
     search_fields = ['hash_id']
 
-    readonly_fields = ('status', 'is_success',
+    readonly_fields = ('status', 'is_finished',
                        'sent_to_user', 'hash_id',
                        'response',
                        'response_as_json',
@@ -34,6 +34,7 @@ class StoredRequestAdmin(admin.ModelAdmin):
                     'status',
                     'user',
                     'workspace',
+                    'hash_id',
                     'created',
                     'modified')
 
@@ -65,11 +66,11 @@ class StoredResponseAdmin(admin.ModelAdmin):
     save_on_top = True
     list_display = ('stored_request',
                     'status',
-                    'is_success',
+                    'is_finished',
                     'sent_to_user',
                     'created',
                     'modified')
-    list_filter = ('is_success',
+    list_filter = ('is_finished',
                    'sent_to_user',
                    'status',
                    'stored_request__request_type')
@@ -83,7 +84,7 @@ class StoredResponseAdmin(admin.ModelAdmin):
     fields = ('stored_request',
               'link_to_request',
               'status',
-              ('is_success', 'sent_to_user'),
+              ('is_finished', 'sent_to_user'),
               'response',
               'response_as_json',
               'hash_id',
