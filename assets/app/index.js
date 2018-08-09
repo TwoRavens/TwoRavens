@@ -144,11 +144,11 @@ function leftpanel(mode) {
                              predictors.forEach(x => {
                                  let d = app.findNode(x);
                                  app.setColors(d, app.gr1Color);
-                                 app.legend(app.gr1Color);
+                                 app.legend();
                              });
                              let d = app.findNode(target);
                              app.setColors(d, app.dvColor);
-                             app.legend(app.dvColor);
+                             app.legend();
                              d.group1 = d.group2 = false;
                              app.restart();
                          }
@@ -234,20 +234,43 @@ function rightpanel(mode) {
             {color: common.csColor, key: 'Inputs', summary: inputs, content: inputs},
             ...steps,
             {color: common.csColor, key: 'Outputs', summary: outputs, content: outputs}
-        ]
+        ];
     }
 
+    let dropdown = (label, key, task) => {
+        let metric = key === 'performanceMetrics';
+        let desc = app.d3mProblemDescription[key];
+        desc = metric ? desc[0].metric : desc;
+        return m('.dropdown', {style: 'padding: .5em'},
+                 m('', m('label', label), m('br'),
+                   app.locktoggle ? m('button.btn.btn-disabled', desc) : [
+                       m('button.btn.btn-default.dropdown-toggle[data-toggle=dropdown]', {id: key},
+                         desc, m('span.caret')),
+                       m('ul.dropdown-menu', {'aria-labelledby': key}, Object.keys(task)
+                         .map(x => m('li', {
+                             style: 'padding: 0.25em',
+                             onclick: _ => app.setD3mProblemDescription(key, metric ? [{metric: x}] : x)
+                         }, x)))
+                   ]));
+    };
     let sections = [
         // {value: 'Models',
         //  display: app.IS_D3M_DOMAIN ? 'block' : 'none',
         //  contents: righttab('models')},
-        {value: 'Task Type',
+        {value: 'Problem',
          idSuffix: 'Type',
-         contents: righttab('types', app.d3mTaskType, 'Task', 'taskType')},
-        {value: 'Subtype',
-         contents: righttab('subtypes', app.d3mTaskSubtype, 'Task Subtype', 'taskSubtype')},
-        {value: 'Metrics',
-         contents: righttab('metrics', app.d3mMetrics, 'Metric', 'metric')},
+         contents: [
+             m(`button#btnLock.btn.btn-default`, {
+                 class: app.locktoggle ? 'active' : '',
+                 onclick: () => app.lockDescription(!app.locktoggle),
+                 title: 'Lock selection of problem description',
+                 style: 'float: right',
+             }, glyph(app.locktoggle ? 'lock' : 'pencil', true)),
+             m('', {style: 'float: left'},
+               dropdown('Task', 'taskType', app.d3mTaskType),
+               dropdown('Task Subtype', 'taskSubtype', app.d3mTaskSubtype),
+               dropdown('Metric', 'performanceMetrics', app.d3mMetrics))
+         ]},
         {value: 'Results',
          display: !app.swandive || app.IS_D3M_DOMAIN ? 'block' : 'none',
          idSuffix: 'Setx',
@@ -345,8 +368,6 @@ function rightpanel(mode) {
         id: 'rightpanelMenu',
         currentTab: app.rightTab,
         callback: app.setRightTab,
-        hoverBonus: 10,
-        selectWidth: 30,
         sections: sections,
         attrsAll: {style: {height: 'calc(100% - 39px)'}}
     }));
@@ -404,7 +425,7 @@ class Body {
 
         if (mode != this.last_mode) {
             app.set_mode(mode);
-            app.setRightTab(IS_D3M_DOMAIN ? 'Task Type' : 'Models');
+            app.setRightTab(IS_D3M_DOMAIN ? 'Problem' : 'Models');
             app.restart && app.restart();
             this.last_mode = mode;
         }
@@ -613,16 +634,11 @@ class Body {
                           }))
                        )],
                 m('svg#whitespace')),
-              model_mode && m("#spacetools.spaceTool", {style: {right: app.panelWidth['right'], 'z-index': 16}},
-                              m(`button#btnLock.btn.btn-default`, {
-                                  class: app.locktoggle ? 'active' : '',
-                                  onclick: () => app.lockDescription(!app.locktoggle),
-                                  title: 'Lock selection of problem description'
-                              }, glyph(app.locktoggle ? 'lock' : 'pencil', true)),
+              model_mode && m("#spacetools.spaceTool", {style: {right: app.panelWidth.right, 'z-index': 16}},
                               spaceBtn('btnAdd', async function() {
                                   app.zPop();
                                   let rookpipe = await app.makeRequest(ROOK_SVC_URL + 'pipelineapp', app.zparams);
-                                  rookpipe.target = rookpipe.depvar[0];;
+                                  rookpipe.target = rookpipe.depvar[0];
                                   let {taskType, performanceMetrics} = app.d3mProblemDescription;
                                   rookpipe.task = taskType;
                                   rookpipe.metric = performanceMetrics[0].metric;
@@ -636,7 +652,7 @@ class Body {
                                   console.log("pushing this:");
                                   console.log(rookpipe);
                                   app.disco.push(rookpipe);
-                                  console.log(app.disco);
+                                    app.setSelectedProblem(app.disco.length - 1);
                                   app.setLeftTab('Discovery');
                                   m.redraw();
                               }, 'Add model to problems.', 'plus'),

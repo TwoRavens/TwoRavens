@@ -130,7 +130,7 @@ export let leftTabHidden = 'Variables'; // stores the tab user was in before sum
 export let subset = false;
 export let summaryHold = false;
 
-export let rightTab = 'Task Type'; // current tab in right panel
+export let rightTab = 'Problem'; // current tab in right panel
 export let rightTabExplore = 'Univariate';
 
 export let modelLeftPanelWidths = {
@@ -140,11 +140,9 @@ export let modelLeftPanelWidths = {
 };
 
 export let modelRightPanelWidths = {
-    'Models': '300px',
-    'Task Type': '300px',
-    'Subtype': '300px',
-    'Metrics': '300px',
-    'Results': '900px'
+    Problem: '300px',
+    // 'Set Covar.': '900px',
+    Results: '900px'
 };
 
 export let exploreRightPanelWidths = {
@@ -3260,6 +3258,7 @@ export function setColors(n, c) {
 
 /** needs doc */
 export function borderState() {
+    console.log('border state');
     let set = (id, param, attrs) => {
         let el = byId(id);
         if (!el) {
