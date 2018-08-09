@@ -2487,13 +2487,38 @@ export async function estimate(btn) {
             estimated = true;
         } else {
             setxTable(rookpipe.predictors);
-            let res = await makeRequest(D3M_SVC_URL + '/SearchSolutions', CreatePipelineDefinition(rookpipe.predictors, rookpipe.depvar, 2));
+            let searchSolutionParmams = CreatePipelineDefinition(rookpipe.predictors,
+                                                                 rookpipe.depvar,
+                                                                 2)
+            let res = await makeRequest(D3M_SVC_URL + '/SearchSolutions',
+                                        searchSolutionParmams);
+            console.log(JSON.stringify(res));
+            if (res===undefined){
+              estimateLadda.stop();
+              return;
+            }else if(!res.success){
+              estimateLadda.stop();
+              alert('SearchSolutions request Failed! ' + res.message);
+              return;
+            }
+
             let searchId = res.data.searchId;
             let solutionId = "";
             let fittedId = "";
             allsearchId.push(searchId);
 
-            let res2 = await makeRequest(D3M_SVC_URL + '/GetSearchSolutionsResults', {searchId: searchId});
+            let res2 = await makeRequest(D3M_SVC_URL + '/GetSearchSolutionsResults',
+                                         {searchId: searchId});
+            if (!res2.success){
+                alert('Failed to get GetSearchSolutionsResults: ' + res2.message);
+                estimateLadda.stop();
+                return;
+            }else if (res2.data.is_error){
+                alert('Error with GetSearchSolutionsResults: ' + res2.data.user_msg);
+                estimateLadda.stop();
+                return;
+            }
+
             let searchDetailsUrl = res2.data.details_url;
             let fittedDetailsUrl = "";
             let solutionDetailsUrl = "";
@@ -2508,17 +2533,38 @@ export async function estimate(btn) {
 
             let fitFlag = false;
 
+            // Start polling for the searchDetailsUrl.  The response is a StoredRequest
+            //    e.g. /d3m-service/stored-request/{hash id}
+            //
             let refreshIntervalId = setInterval(async function() {
                 res3 = await updateRequest(searchDetailsUrl);                // silent equivalent makeRequest() with no data argument.  Also, should check whether best to be synchronous here.
+                if (!res3.success){
+                  estimateLadda.stop();
+                  alert('Retrieving StoredRequest failed. ' + res3.message);
+                  return;
+                } else if (res3.data.is_error){
+                  estimateLadda.stop();
+                  alert('StoredRequest has an error. ' + res3.data.user_msg);
+                  return;
+                }
+
                 newCount = res3.data.responses.count;
 
                 // Check if new pipeline to add and inspect
                 if(newCount>oldCount){
                     //for (var i = oldCount; i < newCount; i++) {       //  for statement if new items are pushed instead
-                    for (var i = 0; i < (newCount-oldCount); i++) {     //  instead, updates are at top of list
+                    pipelineLoop: for (var i = 0; i < (newCount-oldCount); i++) {     //  instead, updates are at top of list
                         //console.log(res3.data.responses.list[i].details_url);
                         solutionDetailsUrl = res3.data.responses.list[i].details_url;
                         res4 = await updateRequest(solutionDetailsUrl);
+                        if (!res4.success){
+                          alert('PLEASE CONTINUE. Debug: Detected StoredResponse error (unusual).\n' + res4.message);
+                          continue pipelineLoop; // continue to next iteration
+                        } else if (res4.data.is_error){
+                          alert('PLEASE CONTINUE. Debug: StoredResponse has an error (unusual)\n' + JSON.stringify(res4.data));
+                          continue pipelineLoop; // continue to next iteration
+                        }
+
                         let res4DataId = res4.data.id;
                         //console.log(res4);
                         solutionId = res4.data.response.solutionId;
@@ -2542,7 +2588,13 @@ export async function estimate(btn) {
                         if(typeof solutionId != 'undefined'){         // Find out when this happens
 
                             // [1] Get the template language description of the pipeline solution
-                            res77 = await makeRequest(D3M_SVC_URL + '/DescribeSolution', {solutionId: solutionId});
+                            res77 = await makeRequest(D3M_SVC_URL + '/DescribeSolution',
+                                                      {solutionId: solutionId});
+
+                            if(!res77.success){
+                                alert('PLEASE CONTINUE.  Debug: DescribeSolution failed. ' + res77.message);
+                                continue pipelineLoop; // continue to next iteration
+                            }
                             // Add pipeline descriptions to allPipelineInfo
                             // More overwriting than is necessary here.
                             allPipelineInfo[res4.data.id] = Object.assign(allPipelineInfo[res4.data.id], res4.data, res77.data);
@@ -2552,20 +2604,32 @@ export async function estimate(btn) {
 
                             // [2] Ask for a solution to be scored
                             res10 = await makeRequest(D3M_SVC_URL + '/ScoreSolution', CreateScoreDefinition(res4));
-
-                            if(typeof res10.data.requestId != 'undefined'){
+                            if(!res10.success){
+                                alert('PLEASE CONTINUE.  Debug: ScoreSolution failed. ' + res10.message);
+                                continue pipelineLoop; // continue to next iteration
+                            }else if(typeof res10.data.requestId != 'undefined'){
                                 let scoreId = res10.data.requestId;
                                 res11 = await makeRequest(D3M_SVC_URL + '/GetScoreSolutionResults', {requestId: scoreId});
                                 scoreDetailsUrl = res11.data.details_url;
+                            }else{
+                                alert('PLEASE CONTINUE.  Debug: ScoreSolution failed. ' + JSON.stringify(res10));
+                                continue pipelineLoop;
                             };
 
                             if(fitFlag){
-                                res5 = await makeRequest(D3M_SVC_URL + '/FitSolution', CreateFitDefinition(solutionId));
-                                if(typeof res5.data.requestId != 'undefined'){
+                                res5 = await makeRequest(D3M_SVC_URL + '/FitSolution',
+                                                         CreateFitDefinition(solutionId));
+                                if(!res5.success){
+                                     alert('PLEASE CONTINUE.  Debug: FitSolution failed. ' + res5.message);
+                                     continue pipelineLoop; // continue to next iteration
+                                }else if(typeof res5.data.requestId != 'undefined'){
                                     fittedId = res5.data.requestId;
                                     res6 = await makeRequest(D3M_SVC_URL + `/GetFitSolutionResults`, {requestId: fittedId});
                                     fittedDetailsUrl = res6.data.details_url;
-                                };
+                                }else{
+                                    alert('PLEASE CONTINUE.  Debug: FitSolution failed. ' + JSON.stringify(res5));
+                                    continue pipelineLoop;
+                                }
                             };
                         };
 
@@ -2573,6 +2637,11 @@ export async function estimate(btn) {
 
                         let scoringIntervalId = setInterval(async function() {
                             let res12 = await updateRequest(scoreDetailsUrl);   // check
+                            if(!res12.success){
+                              alert('PLEASE CONTINUE.  Debug: Get stored request failed. ' + res12.message);
+                              clearInterval(scoringIntervalId);
+                              return; // continue to next iteration
+                            }
                             if(typeof res12.data.is_finished != 'undefined'){
                                 if(res12.data.is_finished){
                                     if(res12.data.responses.list.length > 0){   // need to understand why this comes back is.finished=true but also length=0
@@ -2603,16 +2672,34 @@ export async function estimate(btn) {
                         let finalFittedId, finalFittedDetailsUrl;
                         if(fitFlag){
                             let fittingIntervalId = setInterval(async function() {
+
+                                // Retrieve a StoredRequest object: /d3m-service/stored-request
+                                //
                                 let res7 = await updateRequest(fittedDetailsUrl);   // check
+
+                                if(!res7.success){  // was: (typeof res7.data.is_finished != 'undefined'){
+                                    clearInterval(fittingIntervalId);
+                                    console.log("ERROR res7.message: " + res7.message);
+                                    return;
+                                }
+
                                 if(typeof res7.data.is_finished != 'undefined'){
-                                    if(res7.data.is_finished){
+                                    if(res7.data.is_error){
+                                      clearInterval(fittingIntervalId);
+                                      console.log("ERROR res7.data.is_error: " + JSON.stringify(res7.data));
+                                      return;
+                                    }else if(res7.data.is_finished){
                                         finalFittedDetailsUrl = res7.data.responses.list[0].details_url;
                                         res8 = await updateRequest(finalFittedDetailsUrl);
+                                        if(!res8.success){
+                                          clearInterval(fittingIntervalId);
+                                          console.log("ERROR res8.message: " + JSON.stringify(res8));
+                                          return;
+                                        }
                                         finalFittedId = res8.data.response.fittedSolutionId;
                                         console.log("finalfittedId:" + finalFittedId);
 
                                         // PUT finalFittedId SOMEWHERE IT CAN BE FOUND : maybe allPipelineInfo
-
                                         clearInterval(fittingIntervalId);
                                     };
                                 };
