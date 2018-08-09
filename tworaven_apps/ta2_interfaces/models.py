@@ -212,7 +212,7 @@ class StoredResponse(TimeStampedModel):
     stored_request = models.ForeignKey(StoredRequest,
                                        on_delete=models.CASCADE)
 
-    is_success = models.BooleanField(default=True)
+    is_finished = models.BooleanField(default=False)
 
     sent_to_user = models.BooleanField(\
                         help_text='Sent to the UI for user viewing',
@@ -239,6 +239,14 @@ class StoredResponse(TimeStampedModel):
         if not self.hash_id:
             hash_str = 'rsp-%s%s' % (self.id, self.created)
             self.hash_id = hashlib.sha224(hash_str.encode('utf-8')).hexdigest()
+
+        # Update the status
+        #
+        if self.status in (STATUS_COMPLETE, STATUS_ERROR):
+            self.is_finished = True
+        else:
+            self.is_finished = False
+
 
         super(StoredResponse, self).save(*args, **kwargs)
 
@@ -296,7 +304,7 @@ class StoredResponse(TimeStampedModel):
     def as_dict(self, short_version=False):
         """Return info as a dict"""
         attr_names = ('id', 'hash_id',
-                      'is_success', 'is_error',
+                      'is_finished', 'is_error',
                       'status', 'sent_to_user',
                       DETAILS_URL)
 
@@ -304,8 +312,6 @@ class StoredResponse(TimeStampedModel):
         for key in attr_names:
             if key == 'is_error':
                 od[key] = self.has_error_occurred()
-            elif key == 'is_success':
-                od[key] = self.is_success
             elif key == DETAILS_URL:
                 od[DETAILS_URL] = self.get_callback_url()
             else:
