@@ -4763,7 +4763,7 @@ export async function submitDiscProb() {
         byId("btnEstimate").classList.remove("btn-default");
         byId("btnEstimate").classList.add("btn-success");
     };
-    trigger("btnVariables", 'click');
+    //trigger("btnVariables", 'click');
 
     if(!problemDocExists){
         setModal("Your discovered problems have been submitted.", "Task Complete", true, false, false, location.reload);
@@ -4905,7 +4905,13 @@ function placeholderStep () {
 
 // function builds a step in a pipeline to remove indices
 function primitiveStepRemoveColumns (aux) {
-    let keep = aux.predictors;
+    console.log(aux.predictors);
+    //let keep = aux.predictors;  // This was being assigned by reference, not by value, thus changing the global disco table.
+    let keep = [];
+    for(let i=0; i<aux.predictors.length; i++) {
+        keep[i] = aux.predictors[i];
+    };
+    console.log(keep);
     typeof aux.target === 'string' ?  keep.push(aux.target): keep.concat(aux.target);
 
     // looks like some TA2s need this, so we'll also keep it
