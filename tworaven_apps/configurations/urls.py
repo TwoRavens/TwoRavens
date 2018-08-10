@@ -22,6 +22,10 @@ urlpatterns = (
         views.view_d3m_details_json_latest,
         name='view_d3m_details_json_latest'),
 
+    url(r'^d3m-config/json/eval/latest$',
+        views.view_d3m_details_json_eval_latest,
+        name='view_d3m_details_json_eval_latest'),
+
     url(r'^d3m-config/get-dataset-schema/json$',
         views.view_get_dataset_schema,
         name='view_get_dataset_schema'),
