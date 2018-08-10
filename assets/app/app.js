@@ -506,14 +506,13 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     }
 
     let d3m_config_url = "/config/d3m-config/json/latest";
-    let d3m_config_eval_url = "/config/d3m-config/json/eval/latest";
+    //let d3m_config_eval_url = "/config/d3m-config/json/eval/latest";
 
     // 1. Retrieve the configuration information
     let res = await m.request({
         method: "POST",
         url: d3m_config_url
     });
-    alert('FIX: use this url instead: ' + d3m_config_eval_url);
     console.log(res);
     datasetdocurl = res.dataset_schema;
 
@@ -529,7 +528,6 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
                         //id: configurations.id};
 
     d3mPS = "/config/d3m-config/get-problem-schema/json";
-    alert('FIX: No longer available in eval: ' + d3mPS);
     d3mDS = "/config/d3m-config/get-dataset-schema/json";
     console.log("Configurations: ", configurations);
     d3mPreprocess = pURL = `rook-custom/rook-files/${d3mDataName}/preprocess/preprocess.json`;
@@ -584,7 +582,10 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
 
     res = await m.request(d3mPS);
     console.log("prob schema data: ", res);
-
+    if (!res.success){
+      alert('problem schema not available: ' + res.message);
+      return
+    }
     mytarget = res.inputs.data[0].targets[0].colName; // easier way to access target name?
     mytargetindex = res.inputs.data[0].targets[0].colIndex; // easier way to access target name?
     if (typeof res.about.problemID !== 'undefined') {
