@@ -80,9 +80,9 @@ export function subsetCanvas() {
 }
 
 // if set, then the popup modal menu for constructing a new transform is displayed
-export let showModalSubset = false;
-export let setShowModalSubset = (state) => showModalSubset = state;
-export let pendingSubsetPreferences = {};
+export let showModalTransform = false;
+export let setShowModalTransform = (state) => showModalTransform = state;
+export let pendingTransformPreferences = {};
 
 function loadSubset(subset) {
     // data source is unknown!

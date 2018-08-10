@@ -18,7 +18,7 @@ import {fadeIn, fadeOut} from './utils';
 import Button from './views/PanelButton';
 import Subpanel from './views/Subpanel';
 import Flowchart from './views/Flowchart';
-import AddSubset from './views/AddSubset';
+import AddTransform from './views/AddTransform';
 
 import * as common from '../common/app/common';
 import ButtonRadio from '../common/app/views/ButtonRadio';
@@ -32,6 +32,7 @@ import PanelList from '../common/app/views/PanelList';
 import Peek from '../common/app/views/Peek';
 import Table from '../common/app/views/Table';
 import TextField from '../common/app/views/TextField';
+import Canvas from '../common/app/views/Canvas';
 import TableJSON from './views/TableJSON';
 
 // EVENTDATA
@@ -199,14 +200,13 @@ function leftpanel(mode) {
         };
 
         leftpanelSections.push({
-            value: 'Subsets',
-            title: 'Filter to data that matches conditions',
+            value: 'Transform',
             contents: [
                 m(Button, {
-                    id: 'btnAddSubset',
-                    onclick: () => transform.setShowModalSubset(true),
+                    id: 'btnAddStep',
+                    onclick: () => transform.setShowModalTransform(true),
                     style: {width: '100%'}
-                }, 'Add Subset'),
+                }, 'Add Step'),
                 m(PanelList, {
                     id: 'subsetList',
                     items: userSubsets,
@@ -597,18 +597,21 @@ class Body {
 
         return m('main', [
             m(Modal),
-            transform.showModalSubset && m(ModalVanilla, {
-                id: 'showAddSubset',
-                setDisplay: transform.setShowModalSubset,
-                contents: m(AddSubset, {
-                    preferences: transform.pendingSubsetPreferences,
+            transform.showModalTransform && m(ModalVanilla, {
+                id: 'modalAddTransform',
+                setDisplay: transform.setShowModalTransform,
+                contents: m(AddTransform, {
+                    preferences: transform.pendingTransformPreferences,
                     nodes: app.allNodes
                 })
             }),
             this.header(mode),
             this.footer(mode),
-            m(`#main`, {style: {overflow}},
-                m("#innercarousel.carousel-inner", {style: {height: '100%', overflow, display: app.is_transform_mode ? 'none' : 'block'}},
+            leftpanel(mode),
+            rightpanel(mode),
+            app.is_transform_mode && m(Canvas, transform.subsetCanvas()),
+            m(`#main`, {style: {overflow, display: app.is_transform_mode ? 'none' : 'block'}},
+                m("#innercarousel.carousel-inner", {style: {height: '100%', overflow}},
                 explore_mode && [variate === 'problem' ?
                     m('', {style},
                         m('a', {onclick: _ => m.route.set('/explore')}, '<- back to variables'),
@@ -774,9 +777,7 @@ class Body {
                                    ['gr1Button', 'zgroup1', 'Group 1'],
                                    ['gr2Button', 'zgroup2', 'Group 2']]
                               }),
-                app.currentMode !== 'transform' && m(Subpanel, {title: "History"}),
-                leftpanel(mode),
-              rightpanel(mode))
+                app.currentMode !== 'transform' && m(Subpanel, {title: "History"}))
         ]);
     }
 

@@ -164,7 +164,7 @@ export let panelWidth = {
 
 let updateRightPanelWidth = () => {
     if (is_explore_mode) {
-        return panelWidth.right = `calc(${common.panelMargin * 2}px + 16px)`;
+        return panelWidth.right = `calc(${common.panelMargin}*2 + 16px)`;
     }
 
     if (common.panelOpen['right']) {
@@ -173,14 +173,14 @@ let updateRightPanelWidth = () => {
             'explore': exploreRightPanelWidths[rightTabExplore]
         }[currentMode];
 
-        panelWidth['right'] = `calc(${common.panelMargin * 2}px + ${tempWidth})`;
+        panelWidth['right'] = `calc(${common.panelMargin}*2 + ${tempWidth})`;
     }
-    else panelWidth['right'] = `calc(${common.panelMargin * 2}px + 16px)`;
+    else panelWidth['right'] = `calc(${common.panelMargin}*2 + 16px)`;
 };
 let updateLeftPanelWidth = () => {
     if (common.panelOpen['left'])
-        panelWidth['left'] = `calc(${common.panelMargin * 2}px + ${modelLeftPanelWidths[leftTab]})`;
-    else panelWidth['left'] = `calc(${common.panelMargin * 2}px + 16px)`;
+        panelWidth['left'] = `calc(${common.panelMargin}*2 + ${modelLeftPanelWidths[leftTab]})`;
+    else panelWidth['left'] = `calc(${common.panelMargin}*2 + 16px)`;
 };
 
 updateRightPanelWidth();
