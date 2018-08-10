@@ -600,6 +600,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
 
     } else if (!res.success){                       // Task 1 is when res.success==false
         // This is a Task 1 assignment: no problem doc.
+        task2_finished = true;
         problemDocExists = false;
     } else {
         alert("Something Unusual happened reading problem schema.")
@@ -4763,6 +4764,11 @@ export async function submitDiscProb() {
         byId("btnEstimate").classList.add("btn-success");
     };
     trigger("btnVariables", 'click');
+
+    if(!problemDocExists){
+        setModal("Your discovered problems have been submitted.", "Task Complete", true, false, false, location.reload);
+    };
+
 }
 
 export function saveDisc() {
