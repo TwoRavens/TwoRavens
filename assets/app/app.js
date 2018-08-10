@@ -2272,9 +2272,7 @@ function CreateProblemDefinition(depvar, aux) {
                         columnName: my_target
                     }
                 ]}];
-        console.log(problem);
-        console.log("valueKey");
-        console.log(valueKey);
+
         return {problem: problem, inputs: inputs};
     } else { //creating pipeline data for problem discovery using aux inputs from disco line
 
@@ -4739,13 +4737,18 @@ export async function submitDiscProb() {
         // build up the required .csv file line by line
         outputCSV = outputCSV + disco[i].problem_id + ", \"" + disco[i].system + "\", \"" + disco[i].meaningful + "\"\n";
 
-        // construct and write out the api call and problem description for each discovered problem
-        let problemApiCall = CreatePipelineDefinition(disco[i].predictors, [disco[i].target], 10, disco[i]);
-        let problemProblemSchema = CreateProblemSchema(disco[i]);
-        let filename_api = disco[i].problem_id + '/ss_api.json';
-        let filename_ps = disco[i].problem_id + '/schema.json';
-        let res1 = await makeRequest(D3M_SVC_URL + '/store-user-problem', {filename: filename_api, data: problemApiCall } );
-        let res2 = await makeRequest(D3M_SVC_URL + '/store-user-problem', {filename: filename_ps, data: problemProblemSchema } );
+        if(disco[i].subsetObs ==0 && disco[i].transform==0){
+            // construct and write out the api call and problem description for each discovered problem
+            let problemApiCall = CreatePipelineDefinition(disco[i].predictors, [disco[i].target], 10, disco[i]);
+            let problemProblemSchema = CreateProblemSchema(disco[i]);
+            let filename_api = disco[i].problem_id + '/ss_api.json';
+            let filename_ps = disco[i].problem_id + '/schema.json';
+            let res1 = await makeRequest(D3M_SVC_URL + '/store-user-problem', {filename: filename_api, data: problemApiCall } );
+            let res2 = await makeRequest(D3M_SVC_URL + '/store-user-problem', {filename: filename_ps, data: problemProblemSchema } );
+        } else {
+            console.log('omitting:');
+            console.log(disco[i]);
+        };
     }
 
     // write the CSV file requested by NIST that describes properties of the solutions
@@ -4905,13 +4908,11 @@ function placeholderStep () {
 
 // function builds a step in a pipeline to remove indices
 function primitiveStepRemoveColumns (aux) {
-    console.log(aux.predictors);
     //let keep = aux.predictors;  // This was being assigned by reference, not by value, thus changing the global disco table.
     let keep = [];
     for(let i=0; i<aux.predictors.length; i++) {
         keep[i] = aux.predictors[i];
     };
-    console.log(keep);
     typeof aux.target === 'string' ?  keep.push(aux.target): keep.concat(aux.target);
 
     // looks like some TA2s need this, so we'll also keep it
