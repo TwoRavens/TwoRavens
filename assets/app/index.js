@@ -640,9 +640,16 @@ class Body {
                                   app.zPop();
                                   let rookpipe = await app.makeRequest(ROOK_SVC_URL + 'pipelineapp', app.zparams);
                                   rookpipe.target = rookpipe.depvar[0];
-                                  let {taskType, performanceMetrics} = app.d3mProblemDescription;
-                                  rookpipe.task = taskType;
-                                  rookpipe.metric = performanceMetrics[0].metric;
+                                  let myn = app.findNodeIndex(rookpipe.target, true);   
+                                  let currentTaskType = app.d3mProblemDescription.taskType;                                
+                                  let currentMetric = app.d3mProblemDescription.performanceMetrics[0].metric;
+                                  if (myn.nature == "nominal"){
+                                    rookpipe.task = currentTaskType === 'taskTypeUndefined' ? 'classification' : currentTaskType;
+                                    rookpipe.metric = currentMetric === 'metricUndefined' ? 'f1Macro' : currentMetric;
+                                  }else{
+                                    rookpipe.task = currentTaskType === 'taskTypeUndefined' ? 'regression' : currentTaskType;
+                                    rookpipe.metric = currentMetric === 'metricUndefined' ? 'meanSquaredError' : currentMetric;
+                                  };
                                   rookpipe.meaningful = "yes";
                                   rookpipe.subsetObs = 0;
                                   rookpipe.subsetFeats = 0;
