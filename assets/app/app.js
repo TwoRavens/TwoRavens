@@ -600,10 +600,9 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
 
 
     if(problemDocExists){
+        console.log("Task 2: Problem Doc Exists");
 
-        console.log("Problem Doc Exists");
-
-        // Note: There is no res.success field in this return
+        // Note: There is no res.success field in this return state
         // if (!res.success){             
         //   alert('problem schema not available: ' + res.message);
         //   return
@@ -642,19 +641,10 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         }
 
     }else{
-
-        console.log("No Problem Doc");
-
-        mytarget = "d3mIndex"; // THIS IS GOING TO GET OVERWRITTEN BY DISCO //res.inputs.data[0].targets[0].colName; // easier way to access target name?
-        mytargetindex = 0; //res.inputs.data[0].targets[0].colIndex; // easier way to access target name?
+        console.log("Task 1: No Problem Doc");
         d3mProblemDescription.id="Task1";
-        //d3mProblemDescription.version=res.about.problemVersion;
         d3mProblemDescription.name="Task1";
-        d3mProblemDescription.description = "Discovered Problems";
-        //d3mProblemDescription.taskType=res.about.taskType;
-        //d3mProblemDescription.taskSubtype=res.about.taskSubType;
-        //d3mProblemDescription.performanceMetrics = res.inputs.performanceMetrics;   // or? res.inputs.performanceMetrics[0].metric;
-    
+        d3mProblemDescription.description = "Discovered Problems";    
     };
 
 
@@ -869,13 +859,10 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     if(!swandive) {
         disco = discovery(res);
 
+        // Set target variable for center panel if no problemDoc exists to set this
         if(!problemDocExists){
-        
-            console.log("GOT HERE!")
             mytarget = disco[0].target; 
-            console.log(mytarget);         // Not clear if still used?
-            mytargetindex = valueKey.indexOf(mytarget) - 1;
-            console.log(mytargetindex);
+            mytargetindex = valueKey.indexOf(mytarget) - 1;  // Not clear if still used?
         };
 
         // Kick off discovery button as green for user guidance
