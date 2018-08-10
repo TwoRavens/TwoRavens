@@ -28,7 +28,6 @@ import PanelList from '../common/app/views/PanelList';
 import Peek from '../common/app/views/Peek';
 import Table from '../common/app/views/Table';
 import TextField from '../common/app/views/TextField';
-import TableJSON from './views/TableJSON';
 
 let bold = (value) => m('div', {style: {'font-weight': 'bold', display: 'inline'}}, value);
 let italicize = (value) => m('div', {style: {'font-style': 'italic', display: 'inline'}}, value);
@@ -206,16 +205,16 @@ function rightpanel(mode) {
                 id: 'pipelineFlowchartSummary' + i,
                 abbreviation: 40,
                 data: {
-                    // NOTE: I'm not sure if MIT-FL is to spec here, and if not, then this will break on other TAs
                     'Name': pipeStep['primitive']['primitive'].name,
                     'Method': pipeStep['primitive']['primitive']['pythonPath'].split('.').slice(-1)[0]
                 },
                 attrsAll: {style: {'margin-bottom': 0, padding: '1em'}}
             }),
-            content: m(TableJSON, {
+            content: m(Table, {
                 id: 'pipelineTableStep' + i,
                 abbreviation: 40,
-                data: pipeStep
+                data: pipeStep,
+                nest: true
             })
         }));
 
@@ -336,7 +335,7 @@ function rightpanel(mode) {
                      }
                  },
                  m('div', {style: {'font-weight': 'bold', 'margin': '1em'}}, 'Overview: '),
-                 m(TableJSON, {
+                 m(Table, {
                      id: 'pipelineOverviewTable',
                      data: Object.keys(app.allPipelineInfo[app.selectedPipeline].pipeline).reduce((out, entry) => {
                          if (['inputs', 'steps', 'outputs'].indexOf(entry) === -1)
@@ -350,7 +349,8 @@ function rightpanel(mode) {
                              border: common.borderColor,
                              'box-shadow': '0px 5px 5px rgba(0, 0, 0, .2)'
                          }
-                     }
+                     },
+                     nest: true
                  }),
                  m('div', {style: {'font-weight': 'bold', 'margin': '1em'}}, 'Steps: '),
                  m(Flowchart, {steps: pipelineFlowchartPrep(app.allPipelineInfo[app.selectedPipeline].pipeline)})
