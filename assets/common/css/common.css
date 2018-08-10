@@ -1,3 +1,9 @@
+.table-header-sticky {
+    position: sticky;
+    position: -webkit-sticky;
+    top: 0;
+}
+
 .navbar-default {
     height: 62px;
 }

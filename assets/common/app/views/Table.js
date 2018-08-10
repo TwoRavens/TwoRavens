@@ -1,14 +1,14 @@
 import m from 'mithril';
 
-import {selVarColor, mergeAttributes, menuColor} from "../common";
+import {selVarColor, mergeAttributes} from "../common";
 
 // Interface specification
 //
 // ```
 // m(Table, {
-//     id: id (String),
+//     id: id (string),
 //     headers: ['col1Header', 'col2Header'],
-//     data: [['row1col1', 'row1col2'], ['row2col1', 'row2col2']] or function
+//     data: [['row1col1', 'row1col2'], ['row2col1', 'row2col2']], or function
 //     activeRow: 'row1col1', (optional)
 //     onclick: (uid, colID) => console.log(uid + " row was clicked, column number " + colID + " was clicked"), (optional)
 //     showUID: true | false, (optional)
@@ -17,7 +17,8 @@ import {selVarColor, mergeAttributes, menuColor} from "../common";
 //     attrsRows: { apply attributes to each row }, (optional)
 //     attrsCells: { apply attributes to each cell } (optional)
 //     tableTags: [ m('colgroup', ...), m('caption', ...), m('tfoot', ...)]
-//     abbreviation: int
+//     abbreviation: (int),
+//     nest: (boolean)
 //     })
 // ```
 
@@ -33,9 +34,23 @@ import {selVarColor, mergeAttributes, menuColor} from "../common";
 // Table tags allows passing colgroups, captions, etc. into the table manually. Can be a single element or list
 
 // When abbreviation is set, strings are shortened to int number of characters
+
+// When nest is true, can pass json objects.
+// NOTE: do not pass mithril amongst the data argument when nest is true. m(...) are objects, so this component will attempt to tabularize them (and fail)
+
+
+let natives = new Set(['number', 'string', 'boolean']);
+let nestedStyle = {
+    style: {
+        background: 'rgba(0,0,0,.1)',
+        'box-shadow': '0px 5px 10px rgba(0, 0, 0, .2)',
+        margin: '10px 0'
+    }
+};
+
 export default class Table {
     view(vnode) {
-        let {id, data, headers, activeRow, onclick, showUID, abbreviation} = vnode.attrs;
+        let {id, data, headers, activeRow, onclick, showUID, abbreviation, nest} = vnode.attrs;
         // Interface custom attributes
         let {attrsAll, attrsRows, attrsCells, tableTags} = vnode.attrs;
 
@@ -53,8 +68,25 @@ export default class Table {
 
         showUID = showUID !== false; // Default is 'true'
 
-        // if abbreviation is not undefined, and string is too long, then shorten the string and add a tooltop
-        let abbreviate = (item) => {
+        let value = (item) => {
+            if (nest && Array.isArray(item)) {
+                return m(Table, {
+                    data: item.map((elem, i) => {
+                        if (natives.has(typeof elem)) return {"index": i, "value": elem};
+                        return elem;
+                    }),
+                    attrsAll: nestedStyle,
+                    abbreviation, attrsRows, attrsCells, nest
+                })
+            }
+            if (nest && typeof item === 'object')
+                return m(Table, {
+                    data: item,
+                    attrsAll: nestedStyle,
+                    abbreviation, attrsRows, attrsCells, nest
+                });
+
+            // if abbreviation is not undefined, and string is too long, then shorten the string and add a tooltip
             if (typeof(item) === 'string' && item.length > abbreviation) {
                 return m('div', {'data-toggle': 'tooltip', title: item},
                     item.substring(0, abbreviation - 3).trim() + '...')
@@ -62,22 +94,27 @@ export default class Table {
             else return item;
         };
 
+
         return m(`table.table#${id}`, mergeAttributes({style: {width: '100%'}}, attrsAll), [
             tableTags,
-            headers && m('tr', {style: {width: '100%', background: menuColor}}, [
-                ...(showUID ? headers : headers.slice(1)).map((header) => m('th', abbreviate(header)))
+            headers && m('thead', {style: {width: '100%'}}, [
+                ...(showUID ? headers : headers.slice(1)).map((header) => m('th.table-header-sticky', {
+                    // sticky css applied on `th` for chrome compatibility https://bugs.chromium.org/p/chromium/issues/detail?id=702927
+                    style: {'font-weight': 'bold', 'z-index': 5, background: 'rgba(173,173,173,0.4)'}
+                }, value(header)))
             ]),
 
             ...data.map((row, i) => {
+                    if (row === null || row === undefined) return;
+
                     // if a row is an Object of "header": "value" items, then convert to array with proper spacing
                     if (headers && !Array.isArray(row)) row = headers.map(header => row[header]);
 
                     return m('tr', mergeAttributes(
-                        i % 2 === 1 ? {style: {'background': '#fcfcfc'}} : {},
-                        row[0] === activeRow ? {style: {'background': selVarColor}} : {},
-                        attrsRows),
+                        i % 2 === 1 ? {style: {background: 'rgba(0,0,0,.02)'}} : {},
+                        row[0] === activeRow ? {style: {'background': selVarColor}} : {}, attrsRows),
                         row.filter((item, j) => j !== 0 || showUID).map((item, j) =>
-                            m('td', mergeAttributes(onclick ? {onclick: () => onclick(row[0], j)} : {}, attrsCells), abbreviate(item)))
+                            m('td', mergeAttributes(onclick ? {onclick: () => onclick(row[0], j)} : {}, attrsCells), value(item)))
                     )
                 }
             )]
