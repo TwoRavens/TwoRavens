@@ -22,8 +22,9 @@ from tworaven_apps.configurations.util_path_check import are_d3m_paths_valid,\
 
 KEY_DATASET_SCHEMA = 'dataset_schema'
 KEY_PROBLEM_SCHEMA = 'problem_schema'
+KEY_PROBLEM_ROOT = 'problem_root'
 
-D3M_FILE_ATTRIBUTES = (KEY_DATASET_SCHEMA, KEY_PROBLEM_SCHEMA)
+D3M_FILE_ATTRIBUTES = [KEY_DATASET_SCHEMA, KEY_PROBLEM_SCHEMA]
 
 D3M_DIR_USER_PROBLEMS_ROOT = 'user_problems_root'
 D3M_DIR_TEMP_STORAGE_ROOT = 'temp_storage_root'
@@ -32,11 +33,16 @@ D3M_DIR_TEMP_STORAGE_ROOT = 'temp_storage_root'
 OPTIONAL_DIR_OUTPUT_ROOT = 'root_output_directory'
 
 
-D3M_DIR_ATTRIBUTES = ('training_data_root', 'problem_root',
+D3M_DIR_ATTRIBUTES = ['training_data_root', KEY_PROBLEM_ROOT,
                       'pipeline_logs_root', 'executables_root',
-                      D3M_DIR_TEMP_STORAGE_ROOT, D3M_DIR_USER_PROBLEMS_ROOT)
-D3M_VALUE_ATTRIBUTES = ('timeout', 'cpus', 'ram')
-D3M_REQUIRED = D3M_FILE_ATTRIBUTES + ('training_data_root', 'problem_root')
+                      D3M_DIR_TEMP_STORAGE_ROOT, D3M_DIR_USER_PROBLEMS_ROOT]
+D3M_VALUE_ATTRIBUTES = ['timeout', 'cpus', 'ram']
+D3M_REQUIRED = D3M_FILE_ATTRIBUTES + ['training_data_root', KEY_PROBLEM_ROOT]
+
+# 8/9/2018 - D3M config change
+#
+D3M_REQUIRED.remove(KEY_PROBLEM_SCHEMA)
+D3M_REQUIRED.remove(KEY_PROBLEM_ROOT)
 
 # environment variable name to store a d3m config filepath for startup
 CONFIG_JSON_PATH = 'CONFIG_JSON_PATH'
@@ -161,7 +167,7 @@ class D3MConfiguration(TimeStampedModel):
         od = OrderedDict()
         d3m_attributes = D3M_FILE_ATTRIBUTES + \
                          D3M_DIR_ATTRIBUTES + \
-                         (OPTIONAL_DIR_OUTPUT_ROOT,)
+                         [OPTIONAL_DIR_OUTPUT_ROOT,]
         for name in d3m_attributes:
             val = self.__dict__.get(name, '(not set)')
             if val and isinstance(val, str):
@@ -256,7 +262,7 @@ class D3MConfiguration(TimeStampedModel):
         #
         d3m_config_attrs = D3M_FILE_ATTRIBUTES + \
                            D3M_DIR_ATTRIBUTES + \
-                           (OPTIONAL_DIR_OUTPUT_ROOT,)
+                           [OPTIONAL_DIR_OUTPUT_ROOT]
         for key in d3m_config_attrs:
             val = d3m_dict.get(key, '')
             d3m_config.__dict__[key] = val

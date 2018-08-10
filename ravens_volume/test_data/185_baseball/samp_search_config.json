@@ -1,0 +1,8 @@
+{
+ "dataset_schema": "/input/TRAIN/dataset_TRAIN/datasetDoc.json",
+ "training_data_root": "/input/TRAIN/dataset_TRAIN",
+ "pipeline_logs_root": "/output/pipelines",
+ "executables_root": "/output/executables",
+ "user_problems_root": "/output/user_problems",
+ "temp_storage_root": "/output/supporting_files"
+} 
