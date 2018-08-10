@@ -73,6 +73,7 @@ export function setVariate(variate) {
 
 export let task1_finished = false;
 export let task2_finished = false;
+export let problemDocExists = true;
 export let univariate_finished = false;
 export let resultsMetricDescription = 'Larger numbers are better fits';
 
@@ -513,6 +514,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         method: "POST",
         url: d3m_config_url
     });
+    console.log("this is config file:");
     console.log(res);
     datasetdocurl = res.dataset_schema;
 
@@ -537,6 +539,17 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     // ...and make a call to Hello to check TA2 is up.  If we get this far, data are guaranteed to exist for the frontend
 
     res = await m.request("/config/d3m-config/get-problem-data-file-info");
+
+    console.log("result from problem data file info:");
+    console.log(res);
+    if(res.success){
+        // This is a Task 2 assignment
+        task1_finished = true;
+    } else {
+        // This is a Task 1 assignment: no problem doc.
+        problemDocExists = false;
+    };
+
     // The result of this call is similar to below:
     // example:
     /*  {
@@ -580,43 +593,68 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     //  zparams.zd3mdata = d3mData = d3mRootPath+"/dataset_TRAIN/tables/learningData.csv";
     //  zparams.zd3mtarget = d3mRootPath+"/dataset_TRAIN/tables/learningData.csv";
 
-    res = await m.request(d3mPS);
-    console.log("prob schema data: ", res);
-    if (!res.success){
-      alert('problem schema not available: ' + res.message);
-      return
-    }
-    mytarget = res.inputs.data[0].targets[0].colName; // easier way to access target name?
-    mytargetindex = res.inputs.data[0].targets[0].colIndex; // easier way to access target name?
-    if (typeof res.about.problemID !== 'undefined') {
-        d3mProblemDescription.id=res.about.problemID;
-    }
-    if (typeof res.about.problemVersion !== 'undefined') {
-        d3mProblemDescription.version=res.about.problemVersion;
-    }
-    if (typeof res.about.problemName !== 'undefined') {
-        d3mProblemDescription.name=res.about.problemName;
-    }
-    if (typeof res.about.problemDescription !== 'undefined') {
-        d3mProblemDescription.description = res.about.problemDescription;
-    }
-    if (typeof res.about.taskType !== 'undefined') {
-        d3mProblemDescription.taskType=res.about.taskType;
-    }
-    if (typeof res.about.taskSubType !== 'undefined') {
-        d3mProblemDescription.taskSubtype=res.about.taskSubType;
-    }
-    if (typeof res.inputs.performanceMetrics[0].metric !== 'undefined') {
-        d3mProblemDescription.performanceMetrics = res.inputs.performanceMetrics;   // or? res.inputs.performanceMetrics[0].metric;
-    }
+    if(problemDocExists){
 
-    // making it case insensitive because the case seems to disagree all too often
-    if (failset.includes(d3mProblemDescription.taskType.toUpperCase())) {
-        if(IS_D3M_DOMAIN){
-          console.log('D3M WARNING: failset  task type found');
+        console.log("Problem Doc Exists");
+
+        res = await m.request(d3mPS);
+        console.log("prob schema data: ", res);
+
+        // Note: There is no res.success field in this return
+        // if (!res.success){             
+        //   alert('problem schema not available: ' + res.message);
+        //   return
+        // }
+
+        mytarget = res.inputs.data[0].targets[0].colName; // easier way to access target name?
+        mytargetindex = res.inputs.data[0].targets[0].colIndex; // easier way to access target name?
+        if (typeof res.about.problemID !== 'undefined') {
+            d3mProblemDescription.id=res.about.problemID;
         }
-        swandive = true;
-    }
+        if (typeof res.about.problemVersion !== 'undefined') {
+            d3mProblemDescription.version=res.about.problemVersion;
+        }
+        if (typeof res.about.problemName !== 'undefined') {
+            d3mProblemDescription.name=res.about.problemName;
+        }
+        if (typeof res.about.problemDescription !== 'undefined') {
+            d3mProblemDescription.description = res.about.problemDescription;
+        }
+        if (typeof res.about.taskType !== 'undefined') {
+            d3mProblemDescription.taskType=res.about.taskType;
+        }
+        if (typeof res.about.taskSubType !== 'undefined') {
+            d3mProblemDescription.taskSubtype=res.about.taskSubType;
+        }
+        if (typeof res.inputs.performanceMetrics[0].metric !== 'undefined') {
+            d3mProblemDescription.performanceMetrics = res.inputs.performanceMetrics;   // or? res.inputs.performanceMetrics[0].metric;
+        }
+
+        // making it case insensitive because the case seems to disagree all too often
+        if (failset.includes(d3mProblemDescription.taskType.toUpperCase())) {
+            if(IS_D3M_DOMAIN){
+              console.log('D3M WARNING: failset  task type found');
+            }
+            swandive = true;
+        }
+
+    }else{
+
+        console.log("No Problem Doc");
+
+        mytarget = "d3mIndex"; //res.inputs.data[0].targets[0].colName; // easier way to access target name?
+        mytargetindex = 0; //res.inputs.data[0].targets[0].colIndex; // easier way to access target name?
+        d3mProblemDescription.id="Task1";
+        //d3mProblemDescription.version=res.about.problemVersion;
+        d3mProblemDescription.name="Task1";
+        d3mProblemDescription.description = "Discovered Problems";
+        //d3mProblemDescription.taskType=res.about.taskType;
+        //d3mProblemDescription.taskSubtype=res.about.taskSubType;
+        //d3mProblemDescription.performanceMetrics = res.inputs.performanceMetrics;   // or? res.inputs.performanceMetrics[0].metric;
+    
+    };
+
+
 
     // 4. Read the data document and set 'datadocument'
     datadocument = await m.request(d3mDS);
@@ -766,6 +804,12 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
             endsession();
         }
     }
+
+
+    if(!problemDocExists){
+        console.log("GOT HERE!")
+
+    };
 
     console.log("is this preprocess?")
     console.log(res);
