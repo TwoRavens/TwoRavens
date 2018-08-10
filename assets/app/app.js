@@ -82,6 +82,8 @@ export let currentMode = 'model';
 let is_explore_mode = false;
 let is_results_mode = false;
 
+let exportCount = 0;
+
 export function set_mode(mode) {
     mode = mode ? mode.toLowerCase() : 'model';
 
@@ -352,9 +354,11 @@ export let setD3mProblemDescription = (key, value) => {
         }[key];
 
         if (lookup === undefined) return;
-        makeRequest(
-            D3M_SVC_URL + "/SetProblemDoc",
-            {replaceProblemSchemaField: {[key]: lookup[d3mProblemDescription[key]][1]}, context: apiSession(zparams.zsessionid)});
+
+        // Eventually should do something here.  But currently this is wrong API call, and most TA2's don't support the correct API call.
+        //makeRequest(
+        //    D3M_SVC_URL + "/SetProblemDoc",
+        //    {replaceProblemSchemaField: {[key]: lookup[d3mProblemDescription[key]][1]}, context: apiSession(zparams.zsessionid)});
     }
     else hopscotch.startTour(lockTour);
 }
@@ -4417,6 +4421,7 @@ export function setxTable(features) {
 // }
 
 export async function exportpipeline(pipelineId) {
+    exportCount++;
     let finalFittedId, finalFittedDetailsUrl;
     let res, res8;
 
@@ -4432,7 +4437,8 @@ export async function exportpipeline(pipelineId) {
                 res8 = await updateRequest(finalFittedDetailsUrl);
                 finalFittedId = res8.data.response.fittedSolutionId;
                 console.log(finalFittedId);
-                res = await makeRequest(D3M_SVC_URL + '/SolutionExport', {fittedSolutionId: finalFittedId, rank: 0.5})
+                let my_rank = 1.01 - 0.01*exportCount;   // ranks always get smaller each call
+                res = await makeRequest(D3M_SVC_URL + '/SolutionExport', {fittedSolutionId: finalFittedId, rank: my_rank});
 
                 // we need standardized status messages...
                 let mystatus = res.status;
