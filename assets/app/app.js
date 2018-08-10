@@ -505,11 +505,15 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         return;
     }
 
+    let d3m_config_url = "/config/d3m-config/json/latest";
+    let d3m_config_eval_url = "/config/d3m-config/json/eval/latest";
+
     // 1. Retrieve the configuration information
     let res = await m.request({
         method: "POST",
-        url: "/config/d3m-config/json/latest"
+        url: d3m_config_url
     });
+    alert('FIX: use this url instead: ' + d3m_config_eval_url);
     console.log(res);
     datasetdocurl = res.dataset_schema;
 
@@ -525,6 +529,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
                         //id: configurations.id};
 
     d3mPS = "/config/d3m-config/get-problem-schema/json";
+    alert('FIX: No longer available in eval: ' + d3mPS);
     d3mDS = "/config/d3m-config/get-dataset-schema/json";
     console.log("Configurations: ", configurations);
     d3mPreprocess = pURL = `rook-custom/rook-files/${d3mDataName}/preprocess/preprocess.json`;

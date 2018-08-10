@@ -8,8 +8,10 @@ from django.http import FileResponse
 from django.http import JsonResponse, HttpResponse, Http404
 from tworaven_apps.configurations.models_d3m import D3MConfiguration,\
     KEY_DATASET_SCHEMA, KEY_PROBLEM_SCHEMA, D3M_FILE_ATTRIBUTES
-from tworaven_apps.configurations.utils import get_latest_d3m_config,\
-    get_d3m_filepath, get_train_data_info
+from tworaven_apps.configurations.utils import \
+    (get_latest_d3m_config,
+     get_d3m_filepath,
+     get_train_data_info)
 
 # Create your views here.
 @csrf_exempt
@@ -53,7 +55,16 @@ def view_d3m_details_json(request, d3m_config_id):
 
 
 @csrf_exempt
-def view_d3m_details_json_latest(request):
+def view_d3m_details_json_eval_latest(request):
+    """For EVAL: Return the "latest" D3m configuration as JSON.
+    "latest" may be most recently added or a "default"
+    of some kind"""
+    return view_d3m_details_json_latest(request,
+                                        as_eval_dict=True)
+
+
+@csrf_exempt
+def view_d3m_details_json_latest(request, as_eval_dict=False):
     """Return the "latest" D3m configuration as JSON.
     "latest" may be most recently added or a "default"
     of some kind"""
@@ -66,12 +77,12 @@ def view_d3m_details_json_latest(request):
 
     if is_pretty is not False:   # return this as a formatted string?
         config_str = '<pre>%s<pre>' % \
-                        (json.dumps(d3m_config.to_dict(),
+                        (json.dumps(d3m_config.to_dict(as_eval_dict),
                                     indent=4))
         return HttpResponse(config_str)
 
     # return as JSON!
-    return JsonResponse(d3m_config.to_dict())
+    return JsonResponse(d3m_config.to_dict(as_eval_dict))
 
 @csrf_exempt
 def view_get_problem_schema(request, d3m_config_id=None):
