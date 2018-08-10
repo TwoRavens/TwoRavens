@@ -539,16 +539,8 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     // ...and make a call to Hello to check TA2 is up.  If we get this far, data are guaranteed to exist for the frontend
 
     res = await m.request("/config/d3m-config/get-problem-data-file-info");
-
     console.log("result from problem data file info:");
     console.log(res);
-    if(res.success){
-        // This is a Task 2 assignment
-        task1_finished = true;
-    } else {
-        // This is a Task 1 assignment: no problem doc.
-        problemDocExists = false;
-    };
 
     // The result of this call is similar to below:
     // example:
@@ -593,12 +585,23 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     //  zparams.zd3mdata = d3mData = d3mRootPath+"/dataset_TRAIN/tables/learningData.csv";
     //  zparams.zd3mtarget = d3mRootPath+"/dataset_TRAIN/tables/learningData.csv";
 
+
+    res = await m.request(d3mPS);
+    console.log("prob schema data: ", res);
+    if(typeof res.success=='undefined'){            // In Task 2 currently res.success does not exist in this state, so can't check res.success==true
+        // This is a Task 2 assignment
+        task1_finished = true;
+    } else if (!res.success){                       // Task 1 is when res.success==false
+        // This is a Task 1 assignment: no problem doc.
+        problemDocExists = false;
+    } else {
+        alert("Something Unusual happened reading problem schema.")
+    };
+
+
     if(problemDocExists){
 
         console.log("Problem Doc Exists");
-
-        res = await m.request(d3mPS);
-        console.log("prob schema data: ", res);
 
         // Note: There is no res.success field in this return
         // if (!res.success){             
