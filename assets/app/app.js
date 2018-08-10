@@ -645,7 +645,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
 
         console.log("No Problem Doc");
 
-        mytarget = "d3mIndex"; //res.inputs.data[0].targets[0].colName; // easier way to access target name?
+        mytarget = "d3mIndex"; // THIS IS GOING TO GET OVERWRITTEN BY DISCO //res.inputs.data[0].targets[0].colName; // easier way to access target name?
         mytargetindex = 0; //res.inputs.data[0].targets[0].colIndex; // easier way to access target name?
         d3mProblemDescription.id="Task1";
         //d3mProblemDescription.version=res.about.problemVersion;
@@ -809,11 +809,6 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     }
 
 
-    if(!problemDocExists){
-        console.log("GOT HERE!")
-
-    };
-
     console.log("is this preprocess?")
     console.log(res);
     console.log(preprocess);
@@ -873,6 +868,15 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     // Requires that `res` built in 8. above still exists.  Should make this better.
     if(!swandive) {
         disco = discovery(res);
+
+        if(!problemDocExists){
+        
+            console.log("GOT HERE!")
+            mytarget = disco[0].target; 
+            console.log(mytarget);         // Not clear if still used?
+            mytargetindex = valueKey.indexOf(mytarget) - 1;
+            console.log(mytargetindex);
+        };
 
         // Kick off discovery button as green for user guidance
         byId("btnDiscovery").classList.remove("btn-default");
