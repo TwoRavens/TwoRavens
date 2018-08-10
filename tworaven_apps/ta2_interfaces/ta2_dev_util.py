@@ -80,6 +80,7 @@ class TA2Helper(BasicErrCheck):
                           if isdir(join(RAVENS_DIR, x)) and \
                              isfile(join(RAVENS_DIR, x, D3M_SEARCH_CONFIG_NAME))]
 
+        config_choices.sort()
         # pair each data directory with a number:
         # [(1, 185_baseball), (2, 196_autoMpg), etc]
         #
