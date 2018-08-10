@@ -4037,7 +4037,7 @@ export function confusionmatrix(matrixdata, classes) {
     legdiv.style.display="inline-block";
     byId('setxLeftPlot').appendChild(legdiv);
 
-    var margin = {top: 30, right: 35, bottom: 0, left: leftmarginguess};    // Left margin needs not to be hardcoded, but responsive to maximum label length
+    var margin = {top: 50, right: 35, bottom: 0, left: leftmarginguess};    // Left margin needs not to be hardcoded, but responsive to maximum label length
 
 
     function Matrix(options) {
@@ -4049,7 +4049,8 @@ export function confusionmatrix(matrixdata, classes) {
         labelsData = options.labels,
         startColor = options.start_color,
         endColor = options.end_color,
-        xOffset = options.x_offset;
+        xOffset = options.x_offset,
+        pipelineId = options.pipelineId;
 
         let widthLegend = options.widthLegend;
 
@@ -4213,6 +4214,11 @@ export function confusionmatrix(matrixdata, classes) {
         .text("Actual Class");
 
         svg.append("text")
+        .attr("transform", "translate(" + (width / 2) + " ," + (0 - 30) + ")")
+        .style("text-anchor", "middle")
+        .text("Confusion Matrix: Pipeline " + pipelineId);
+
+        svg.append("text")
         .attr("transform", "rotate(-90)")
         .attr("y", (width + 15) )
         .attr("x",0 - (height / 2))
@@ -4304,7 +4310,8 @@ export function confusionmatrix(matrixdata, classes) {
            width : ((mainwidth-50)*.7) - 100 - leftmarginguess -30,//     // Width of confusion matrix table: Beginning of this is #confusioncontainer.width, but this div doesn't always exist yet
            height : mainheight * .6,    // Need to not be hard coded
            widthLegend : mainwidth*.04,
-           x_offset : 30
+           x_offset : 30,
+           pipelineId : selectedPipeline  // Note: cueing from global, not from passed through pid, because of number of functions to pass through value.
            });
 
     // not rendering this table for right now, left all the code in place though. maybe we use it eventually
