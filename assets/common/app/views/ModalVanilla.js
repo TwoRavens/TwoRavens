@@ -36,6 +36,7 @@ export default class ModalVanilla {
                 padding: '20px',
                 border: common.borderColor,
                 width: '80%',
+                transform: 'translateY(-50%)',
                 'box-shadow': '0 5px 20px rgba(0,0,0,.4)'
             },
             onclick: (e) => e.stopPropagation()

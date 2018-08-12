@@ -69,6 +69,30 @@ function leftpanel(mode) {
     }
 
 
+    let selectedDisco = app.disco.find(problem => problem.problem_id === app.selectedProblem);
+
+    let discoveryAllCheck = m('input#discoveryAllCheck[type=checkbox]', {
+        onclick: m.withAttr("checked", (checked) => app.setCheckedDiscoveryProblem(checked)),
+        checked: app.disco.length === app.checkedDiscoveryProblems.size,
+        title: `mark ${app.disco.length === app.checkedDiscoveryProblems.size ? 'no' : 'all'} problems as meaningful`
+    });
+
+    let discoveryTableData = app.disco.map(problem => [
+        problem.problem_id, // this is masked as the UID
+        m('input[type=checkbox][style=width:100%]', {
+            onclick: m.withAttr("checked", (checked) => app.setCheckedDiscoveryProblem(checked, problem.problem_id)),
+            checked: app.checkedDiscoveryProblems.has(problem.problem_id),
+            title: 'mark this problem as meaningful'
+        }),
+        problem.target,
+        problem.predictors.join(', '),
+        problem.task,
+        problem.metric,
+        !!problem.subsetObs && problem.subsetObs,
+        !!problem.transform && problem.transform
+    ]);
+
+
     let nodes = app.is_explore_mode ? nodesExplore : app.nodes;
 
     let leftpanelSections = [
@@ -95,48 +119,6 @@ function leftpanel(mode) {
                     attrsItems: {'data-placement': 'right', 'data-original-title': 'Summary Statistics'}})]
         },
         {
-            value: 'Summary',
-            title: 'Select a variable from within the visualization in the center panel to view its summary statistics.',
-            display: 'none',
-            contents: [
-                m('center',
-                    m('b', app.summary.name),
-                    m('br'),
-                    m('i', app.summary.labl)),
-                m('table', app.summary.data.map(tr => m('tr', tr.map(
-                    td => m('td',
-                        {onmouseover: setBackgroundColor('aliceblue'),
-                            onmouseout: setBackgroundColor('f9f9f9')},
-                        td)))))]
-        }
-    ];
-
-    if (app.currentMode !== 'transform') {
-
-        let selectedDisco = app.disco.find(problem => problem.problem_id === app.selectedProblem);
-
-        let discoveryAllCheck = m('input#discoveryAllCheck[type=checkbox]', {
-            onclick: m.withAttr("checked", (checked) => app.setCheckedDiscoveryProblem(checked)),
-            checked: app.disco.length === app.checkedDiscoveryProblems.size,
-            title: `mark ${app.disco.length === app.checkedDiscoveryProblems.size ? 'no' : 'all'} problems as meaningful`
-        });
-
-        let discoveryTableData = app.disco.map(problem => [
-            problem.problem_id, // this is masked as the UID
-            m('input[type=checkbox][style=width:100%]', {
-                onclick: m.withAttr("checked", (checked) => app.setCheckedDiscoveryProblem(checked, problem.problem_id)),
-                checked: app.checkedDiscoveryProblems.has(problem.problem_id),
-                title: 'mark this problem as meaningful'
-            }),
-            problem.target,
-            problem.predictors.join(', '),
-            problem.task,
-            problem.metric,
-            !!problem.subsetObs && problem.subsetObs,
-            !!problem.transform && problem.transform
-        ]);
-
-        leftpanelSections.push({
             value: 'Discovery',
             display: 'block',
             contents: [
@@ -176,52 +158,67 @@ function leftpanel(mode) {
                             }
                         }, 500);
                     }, title: 'Model problem'}, 'Model problem')
-            ]});
-    }
-
-    if (app.currentMode === 'transform') {
-
-        let userSubsets = app.selectedProblem in subset.genericMetadata
-            ? Object.keys(subset.genericMetadata[app.selectedProblem]['subsets'])
-            : [];
-
-        let popoverContentSubset = (subsetName) => {
-            let metadata = subset.genericMetadata[app.selectedProblem]['subsets'][subsetName];
-            if (!metadata) return;
-            let text = '<table class="table table-sm table-striped" style="margin-bottom:0"><tbody>';
-            let div = (name, val) =>
-                text += `<tr><th>${name}</th><td><p class="text-left">${val}</p></td></tr>`;
-
-            metadata['columns'].length && div('Columns', metadata['columns'].join(', '));
-            if ('type' in metadata) div('Type', metadata['type']);
-            if ('structure' in metadata) div('Structure', metadata['structure']);
-
-            return text + '</tbody></table>';
-        };
-
-        leftpanelSections.push({
-            value: 'Transform',
+            ]},
+        {
+            value: 'Summary',
+            title: 'Select a variable from within the visualization in the center panel to view its summary statistics.',
+            display: 'none',
             contents: [
-                m(Button, {
-                    id: 'btnAddStep',
-                    onclick: () => transform.setShowModalTransform(true),
-                    style: {width: '100%'}
-                }, 'Add Step'),
-                m(PanelList, {
-                    id: 'subsetList',
-                    items: userSubsets,
-                    colors: {[app.hexToRgba(common.selVarColor)]: [subset.selectedSubsetName]},
-                    popup: popoverContentSubset,
-                    callback: subset.setSelectedSubsetName,
-                    attrsItems: {
-                        'data-placement': 'right',
-                        'data-container': '#subsetList',
-                        'data-delay': 500
-                    }
-                })
-            ]
-        })
-    }
+                m('center',
+                    m('b', app.summary.name),
+                    m('br'),
+                    m('i', app.summary.labl)),
+                m('table', app.summary.data.map(tr => m('tr', tr.map(
+                    td => m('td',
+                        {onmouseover: setBackgroundColor('aliceblue'),
+                            onmouseout: setBackgroundColor('f9f9f9')},
+                        td)))))]
+        }
+    ];
+
+    // if (app.currentMode === 'transform') {
+    //
+    //     let userSubsets = app.selectedProblem in subset.genericMetadata
+    //         ? Object.keys(subset.genericMetadata[app.selectedProblem]['subsets'])
+    //         : [];
+    //
+    //     let popoverContentSubset = (subsetName) => {
+    //         let metadata = subset.genericMetadata[app.selectedProblem]['subsets'][subsetName];
+    //         if (!metadata) return;
+    //         let text = '<table class="table table-sm table-striped" style="margin-bottom:0"><tbody>';
+    //         let div = (name, val) =>
+    //             text += `<tr><th>${name}</th><td><p class="text-left">${val}</p></td></tr>`;
+    //
+    //         metadata['columns'].length && div('Columns', metadata['columns'].join(', '));
+    //         if ('type' in metadata) div('Type', metadata['type']);
+    //         if ('structure' in metadata) div('Structure', metadata['structure']);
+    //
+    //         return text + '</tbody></table>';
+    //     };
+    //
+    //     leftpanelSections.push({
+    //         value: 'Transform',
+    //         contents: [
+    //             m(Button, {
+    //                 id: 'btnAddStep',
+    //                 onclick: () => transform.setShowModalTransform(true),
+    //                 style: {width: '100%'}
+    //             }, 'Add Step'),
+    //             m(PanelList, {
+    //                 id: 'subsetList',
+    //                 items: userSubsets,
+    //                 colors: {[app.hexToRgba(common.selVarColor)]: [subset.selectedSubsetName]},
+    //                 popup: popoverContentSubset,
+    //                 callback: subset.setSelectedSubsetName,
+    //                 attrsItems: {
+    //                     'data-placement': 'right',
+    //                     'data-container': '#subsetList',
+    //                     'data-delay': 500
+    //                 }
+    //             })
+    //         ]
+    //     })
+    // }
 
     return m(Panel, {
         side: 'left',
@@ -597,11 +594,10 @@ class Body {
 
         return m('main', [
             m(Modal),
-            transform.modalTransform && m(ModalVanilla, {
+            transform.pendingConstraintMenu && m(ModalVanilla, {
                 id: 'modalAddTransform',
-                setDisplay: transform.setShowModalTransform,
+                setDisplay: () => transform.setPendingConstraintMenu(undefined),
                 contents: m(AddTransform, {
-                    stepType: transform.modalTransform,
                     nodes: app.allNodes,
                     preferences: transform.modalPreferences
                 })

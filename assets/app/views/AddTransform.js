@@ -18,39 +18,34 @@ export default class AddTransform {
         let {preferences} = attrs;
 
         setDefault(preferences, 'columns', new Set());
-        setDefault(preferences, 'subsetType', transform.subsetTypes[0]);
+        setDefault(preferences, 'constraintType', transform.constraintTypes[0]);
         setDefault(preferences, 'structure', 'Point');
         setDefault(preferences, 'pendingColumn', '');
     }
 
     view(vnode) {
-        let {stepType, nodes, preferences} = vnode.attrs;
-
-        let isValidSubset = () => {
-            let requiredColumns = 1;
-            if (preferences.subsetType === 'Date' && preferences.structure === 'Interval') requiredColumns = 2;
-            return preferences.columns.size === requiredColumns;
-        };
-
-        if (stepType === 'transform') return 'Build transformation menu';
+        let {nodes, preferences} = vnode.attrs;
+        let {name, step} = transform.pendingConstraintMenu;
 
         let requiredColumns = 1;
-        if (preferences.subsetType === 'Date' && preferences.structure === 'Interval') requiredColumns = 2;
+        if (preferences.constraintType === 'Date' && preferences.structure === 'Interval') requiredColumns = 2;
+
+        let isValid = preferences.columns.size === requiredColumns;
 
         let menu = [
-            m('h3', stepType),
-            m('[style=width:120px;display:inline-block;]', 'Subset Type'),
+            m('h4', 'Add ' + name + ' Constraint for Step ' + subset.transformPipeline.indexOf(step)),
+            m('[style=width:120px;display:inline-block;]', 'Constraint Type'),
             m(ButtonRadio, {
                 id: 'variableType',
                 attrsAll: {style: {width: 'auto'}},
-                onclick: (section) => preferences.subsetType = section,
-                activeSection: preferences.subsetType,
-                sections: transform.subsetTypes.map(type => ({value: type})),
+                onclick: (section) => preferences.constraintType = section,
+                activeSection: preferences.constraintType,
+                sections: transform.constraintTypes.map(type => ({value: type})),
                 attrsButtons: {style: {width: 'auto', margin: '1em 0'}}
             }), m('br')
         ];
 
-        if (preferences.subsetType === 'Date') menu.push([
+        if (preferences.constraintType === 'Date') menu.push([
             m('[style=width:120px;display:inline-block;]', 'Date Structure'),
             m(ButtonRadio, {
                 id: 'dateStructure',
@@ -67,7 +62,7 @@ export default class AddTransform {
         menu.push([
             m('[style=width:120px;display:inline-block;]', m(Button, {
                     disabled: !preferences.pendingColumn,
-                    title: 'subset with this column',
+                    title: 'constrain with this column',
                     style: {display: 'inline-block'},
                     onclick: () => {
                         preferences.columns.add(preferences.pendingColumn);
@@ -95,10 +90,10 @@ export default class AddTransform {
             }), m('br'),
 
             m(Button, {
-                id: 'createSubset',
-                disabled: !isValidSubset(0),
+                id: 'createConstraint',
+                disabled: !isValid,
                 onclick: () => {
-                    if (!isValidSubset(0)) return;
+                    if (!isValid) return;
 
                     let metadata = {
                         type: {
@@ -106,20 +101,21 @@ export default class AddTransform {
                             Continuous: 'continuous',
                             Date: 'date',
                             Coordinates: 'coordinates'
-                        }[preferences.subsetType],
+                        }[preferences.constraintType],
                         columns: [...preferences.columns]
                     };
-                    if (preferences.subsetType === 'Date') metadata['structure'] = preferences.structure;
+                    if (preferences.constraintType === 'Date') metadata['structure'] = preferences.structure;
 
                     setDefault(subset.genericMetadata, app.selectedProblem, {subsets: {}});
                     let subsetName = 'subset ' + Object.keys(subset.genericMetadata[app.selectedProblem]['subsets']).length;
 
                     subset.genericMetadata[app.selectedProblem]['subsets'][subsetName] = metadata;
 
-                    transform.setShowModalTransform(false);
+                    transform.setConstraintMenu(transform.pendingConstraintMenu);
+                    transform.setPendingConstraintMenu(undefined);
                     Object.keys(preferences).forEach(key => delete preferences[key]);
                 }
-            }, 'Add Subset')
+            }, 'Add Constraint')
         ]);
 
         return menu;

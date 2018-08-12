@@ -8,54 +8,67 @@ import CanvasCategoricalGrouped from "../EventData/app/canvases/CanvasCategorica
 import CanvasCoordinates from "../EventData/app/canvases/CanvasCoordinates";
 import Flowchart from "./views/Flowchart";
 
+import * as app from './app';
 import * as subset from "../EventData/app/app";
 import * as common from '../common/app/common';
-
-
-let transformPipeline = [];
 
 
 export function rightpanel() {
     let plus = m(`span.glyphicon.glyphicon-plus[style=color: #818181; font-size: 1em; pointer-events: none]`);
 
+    let currentStepNumber = subset.transformPipeline.indexOf((constraintMenu || {}).step);
+
     return [
         m(Flowchart, {
-            steps: transformPipeline.map((step, i) => {
+            steps: subset.transformPipeline.map((step, i) => {
                 let content;
 
                 if (step.type === 'subset') {
-                    content = [
+                    content = m('div', {style: {'text-align': 'left'}},
+                        m('h4', 'Subset'),
                         m(TreeQuery, {step}),
 
                         m(Button, {
                             id: 'btnAddConstraint',
-                            style: {float: 'left'},
-                            onclick: () => setShowModalTransform('subset')
+                            style: {margin: '0.5em'},
+                            onclick: () => setPendingConstraintMenu({name: 'Subset', step, id: i})
                         }, plus, ' Constraint'),
                         m(Button, {
                             id: 'btnAddGroup',
+                            style: {margin: '0.5em'},
                             disabled: step.abstractQuery.every(constraint => constraint.type !== 'subset'),
-                            style: {float: 'left'},
                             onclick: () => subset.addGroup(step.id, false)
                         }, plus, ' Group')
-                    ]
+                    )
                 }
 
                 if (step.type === 'aggregate') {
-                    content = []
+                    content = m('div', {style: {'text-align': 'left'}},
+                        m('h4', 'Aggregate'),
+                        m(Button, {
+                            id: 'btnAddUnitMeasure',
+                            style: {margin: '0.5em'},
+                            onclick: () => setPendingConstraintMenu({name: 'Aggregate Unit Measure', step})
+                        }, plus, ' Unit Measure'),
+                        m(Button, {
+                            id: 'btnAddAccumulator',
+                            style: {margin: '0.5em'},
+                            onclick: () => setPendingConstraintMenu({name: 'Aggregate Accumulator', step})
+                        }, plus, ' Accumulator')
+                    )
                 }
 
                 return {
                     key: 'Step ' + i,
-                    color: common.grayColor,
-                    summary: '',
+                    color: currentStepNumber === i ? common.selVarColor : common.grayColor,
                     content
                 };
             })
         }),
         m(Button, {
             id: 'btnAddSubset',
-            onclick: () => transformPipeline.push({
+            style: {margin: '0.5em'},
+            onclick: () => subset.transformPipeline.push({
                 type: 'subset',
                 abstractQuery: [],
                 id: 'subset',
@@ -66,7 +79,8 @@ export function rightpanel() {
         }, plus, ' Subset Step'),
         m(Button, {
             id: 'btnAddAggregate',
-            onclick: () => transformPipeline.push({
+            style: {margin: '0.5em'},
+            onclick: () => subset.transformPipeline.push({
                 type: 'aggregate',
                 measuresUnit: [],
                 measuresAccum: []
@@ -101,23 +115,39 @@ export function subsetCanvas() {
         'categorical_grouped': CanvasCategoricalGrouped,
         'coordinates': CanvasCoordinates
     }[subsetType], {
-        mode: subset.selectedMode,
-        subsetName: subset.selectedSubsetName,
-        data: subset.subsetData[subset.selectedSubsetName],
-        preferences: subset.subsetPreferences[subset.selectedSubsetName],
-        metadata: subset.genericMetadata[subset.selectedDataset]['subsets'][subset.selectedSubsetName],
-        redraw: subset.subsetRedraw[subset.selectedSubsetName],
-        setRedraw: (state) => subset.setSubsetRedraw(subset.selectedSubsetName, state)
+        mode: {
+            'Subset': 'subset',
+            'Aggregate Unit Measure': 'aggregate',
+            'Aggregate Accumulator': 'aggregate'
+        }[constraintMenu.name],
+        subsetName: constraintMenu.name,
+        data: constraintData,
+        preferences: constraintPreferences,
+        metadata: subset.genericMetadata[app.selectedProblem]['subsets'][constraintMenu.name],
+        redraw: subset.subsetRedraw[constraintMenu.name],
+        setRedraw: (state) => subset.setSubsetRedraw(constraintMenu.name, state)
     })
 }
 
+// when stage is clicked, preferences are shifted into the pipeline using this metadata {name: '', step}
+export let constraintMenu = {};
+export let setConstraintMenu = step => {
+    constraintMenu = step;
+    if (!constraintMenu) return;
+    subset.setSubsetRedraw(constraintMenu.name, true);
+};
+
+export let constraintPreferences = {};
+export let constraintData = {};
+
 // if set, then the popup modal menu for constructing a new transform is displayed
-export let modalTransform = false;
-export let setShowModalTransform = (state) => modalTransform = state;
-export let modalPreferences = {};
+export let pendingConstraintMenu = false;
+export let setPendingConstraintMenu = (state) => pendingConstraintMenu = state;
+
+export let modalPreferences = {}; // menu state within the modal
 
 function loadSubset(subset) {
     // data source is unknown!
 }
 
-export let subsetTypes = ['Nominal', 'Continuous', 'Date', 'Coordinates'];
+export let constraintTypes = ['Nominal', 'Continuous', 'Date', 'Coordinates'];
