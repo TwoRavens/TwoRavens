@@ -259,7 +259,7 @@ function rightpanel(mode) {
         side: 'right',
         label: 'Transforms',
         hover: true,
-        width: '300px',
+        width: '500px',
     }, transform.rightpanel());
 
     // mode == null (model mode)
@@ -597,12 +597,13 @@ class Body {
 
         return m('main', [
             m(Modal),
-            transform.showModalTransform && m(ModalVanilla, {
+            transform.modalTransform && m(ModalVanilla, {
                 id: 'modalAddTransform',
                 setDisplay: transform.setShowModalTransform,
                 contents: m(AddTransform, {
-                    preferences: transform.pendingTransformPreferences,
-                    nodes: app.allNodes
+                    stepType: transform.modalTransform,
+                    nodes: app.allNodes,
+                    preferences: transform.modalPreferences
                 })
             }),
             this.header(mode),

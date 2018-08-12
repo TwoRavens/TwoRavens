@@ -9,6 +9,7 @@ import CanvasCoordinates from "../EventData/app/canvases/CanvasCoordinates";
 import Flowchart from "./views/Flowchart";
 
 import * as subset from "../EventData/app/app";
+import * as common from '../common/app/common';
 
 
 let transformPipeline = [];
@@ -19,31 +20,37 @@ export function rightpanel() {
 
     return [
         m(Flowchart, {
-            steps: transformPipeline.map(step => {
+            steps: transformPipeline.map((step, i) => {
+                let content;
+
                 if (step.type === 'subset') {
-                    return [
+                    content = [
                         m(TreeQuery, {step}),
 
-                        m("#rightpanelButtonBar", {
-                                style: {
-                                    width: "calc(100% - 25px)",
-                                    position: "absolute",
-                                    bottom: '5px'
-                                }
-                            },
-                            m(Button, {
-                                id: 'btnAddConstraint',
-                                style: {float: 'left'},
-                                onclick: () => setShowModalTransform(true)
-                            }, plus, ' Constraint'),
-                            m(Button, {
-                                id: 'btnAddGroup',
-                                style: {float: 'left'},
-                                onclick: () => subset.addGroup(step.id, false)
-                            }, plus, 'Group')
-                        )
+                        m(Button, {
+                            id: 'btnAddConstraint',
+                            style: {float: 'left'},
+                            onclick: () => setShowModalTransform('subset')
+                        }, plus, ' Constraint'),
+                        m(Button, {
+                            id: 'btnAddGroup',
+                            disabled: step.abstractQuery.every(constraint => constraint.type !== 'subset'),
+                            style: {float: 'left'},
+                            onclick: () => subset.addGroup(step.id, false)
+                        }, plus, ' Group')
                     ]
                 }
+
+                if (step.type === 'aggregate') {
+                    content = []
+                }
+
+                return {
+                    key: 'Step ' + i,
+                    color: common.grayColor,
+                    summary: '',
+                    content
+                };
             })
         }),
         m(Button, {
@@ -105,9 +112,9 @@ export function subsetCanvas() {
 }
 
 // if set, then the popup modal menu for constructing a new transform is displayed
-export let showModalTransform = false;
-export let setShowModalTransform = (state) => showModalTransform = state;
-export let pendingTransformPreferences = {};
+export let modalTransform = false;
+export let setShowModalTransform = (state) => modalTransform = state;
+export let modalPreferences = {};
 
 function loadSubset(subset) {
     // data source is unknown!
