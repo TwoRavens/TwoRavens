@@ -43,6 +43,15 @@ export default class Body_EventData {
 
         app.resetPeek();
 
+        app.transformPipeline.push({
+            type: 'subset',
+            abstractQuery: [],
+            id: app.eventdataSubsetName,
+            nodeID: 1,
+            groupID: 1,
+            queryID: 1
+        });
+
         // Load the metadata for all available datasets
         m.request({
             url: app.eventdataURL + 'get-metadata',
@@ -155,6 +164,7 @@ export default class Body_EventData {
             'aggregate': app.aggregationData && app.aggregationData.length
         }[app.selectedMode];
 
+        let step = app.getTransformStep(app.eventdataSubsetName);
         return m(Footer, [
             tourBar,
             m("#recordBar", {style: {display: "inline-block", float: 'right'}}, [
@@ -162,7 +172,7 @@ export default class Body_EventData {
                 app.selectedMode !== 'home' && m(Button, {
                     class: 'btn-sm',
                     onclick: async () => {
-                        if ('subset' === app.selectedMode && app.abstractQuery.length === 0)
+                        if ('subset' === app.selectedMode && step.abstractQuery.length === 0)
                             tour.tourStartSaveQueryEmpty();
                         else if ('aggregate' === app.selectedMode && !app.eventMeasure)
                             tour.tourStartEventMeasure();
@@ -188,7 +198,7 @@ export default class Body_EventData {
                         'data-spinner-color': '#818181'
                     },
                     onclick: () => {
-                        if ('subset' === app.selectedMode && app.abstractQuery.length === 0)
+                        if ('subset' === app.selectedMode && step.abstractQuery.length === 0)
                             tour.tourStartSaveQueryEmpty();
                         else if ('aggregate' === app.selectedMode && !app.eventMeasure)
                             tour.tourStartEventMeasure();
@@ -432,7 +442,7 @@ export default class Body_EventData {
                         },
                         m("button.btn.btn-default[id='buttonAddGroup'][type='button']", {
                                 style: {"float": "left"},
-                                onclick: () => app.addGroup(false)
+                                onclick: () => app.addGroup('subset', false)
                             },
                             'Group'
                         ),
@@ -604,7 +614,7 @@ export default class Body_EventData {
                     'z-index': 100,
                     'box-shadow': 'rgba(0, 0, 0, 0.3) 0px 2px 3px'
                 },
-                onclick: app.addRule
+                onclick: () => app.addRule('subset')
             }, 'Stage'),
             m(Canvas, {
                 attrsAll: {

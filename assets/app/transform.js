@@ -1,45 +1,70 @@
 import m from 'mithril';
-import MenuHeaders from "../common-eventdata/views/MenuHeaders";
-import {TreeQuery, TreeVariables} from "../EventData/app/views/TreeSubset";
+import {TreeQuery} from "../EventData/app/views/TreeSubset";
 import Button from '../common/app/views/Button';
-import * as subset from "../EventData/app/app";
-import * as query from "../EventData/app/query";
 import CanvasDate from "../EventData/app/canvases/CanvasDate";
 import CanvasDyad from "../EventData/app/canvases/CanvasDyad";
 import CanvasCategorical from "../EventData/app/canvases/CanvasCategorical";
 import CanvasCategoricalGrouped from "../EventData/app/canvases/CanvasCategoricalGrouped";
 import CanvasCoordinates from "../EventData/app/canvases/CanvasCoordinates";
+import Flowchart from "./views/Flowchart";
 
+import * as subset from "../EventData/app/app";
+
+
+let transformPipeline = [];
 
 
 export function rightpanel() {
+    let plus = m(`span.glyphicon.glyphicon-plus[style=color: #818181; font-size: 1em; pointer-events: none]`);
+
     return [
-        m(MenuHeaders, {
-            id: 'querySummaryMenu',
-            attrsAll: {style: {height: 'calc(100% - 85px)', overflow: 'auto'}},
-            sections: [
-                {value: 'Variables', contents: m(TreeVariables)},
-                {value: 'Subsets', contents: m(TreeQuery)}
-            ]
-        }),
-        m("#rightpanelButtonBar", {
-                style: {
-                    width: "calc(100% - 25px)",
-                    position: "absolute",
-                    bottom: '5px'
+        m(Flowchart, {
+            steps: transformPipeline.map(step => {
+                if (step.type === 'subset') {
+                    return [
+                        m(TreeQuery, {step}),
+
+                        m("#rightpanelButtonBar", {
+                                style: {
+                                    width: "calc(100% - 25px)",
+                                    position: "absolute",
+                                    bottom: '5px'
+                                }
+                            },
+                            m(Button, {
+                                id: 'btnAddConstraint',
+                                style: {float: 'left'},
+                                onclick: () => setShowModalTransform(true)
+                            }, plus, ' Constraint'),
+                            m(Button, {
+                                id: 'btnAddGroup',
+                                style: {float: 'left'},
+                                onclick: () => subset.addGroup(step.id, false)
+                            }, plus, 'Group')
+                        )
+                    ]
                 }
-            },
-            m(Button, {
-                id: 'btnAddGroup',
-                style: {float: 'left'},
-                onclick: () => subset.addGroup(false)
-            }, 'Group'),
-            m(Button, {
-                id: 'btnUpdate',
-                style: {float: 'right'},
-                onclick: () => query.submitQuery()
-            }, 'Update')
-        )
+            })
+        }),
+        m(Button, {
+            id: 'btnAddSubset',
+            onclick: () => transformPipeline.push({
+                type: 'subset',
+                abstractQuery: [],
+                id: 'subset',
+                nodeID: 1,
+                groupID: 1,
+                queryID: 1
+            })
+        }, plus, ' Subset Step'),
+        m(Button, {
+            id: 'btnAddAggregate',
+            onclick: () => transformPipeline.push({
+                type: 'aggregate',
+                measuresUnit: [],
+                measuresAccum: []
+            })
+        }, plus, ' Aggregate Step')
     ]
 }
 

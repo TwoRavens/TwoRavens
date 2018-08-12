@@ -37,7 +37,7 @@ export default class CanvasCustom {
     view(vnode) {
         let {preferences} = vnode.attrs;
 
-        return (m("#canvasCustom", {style: {height: '100%', 'padding-top': panelMargin}},
+        return m("#canvasCustom", {style: {height: '100%', 'padding-top': panelMargin}},
             [
                 // Header
                 m(".panel-heading.text-left[id='subsetCustomLabel']", {
@@ -54,7 +54,8 @@ export default class CanvasCustom {
                         "display": "inline"
                     },
                     onclick: () => {
-                        preferences['text'] = JSON.stringify(query.buildSubset(app.abstractQuery), null, '  ');
+                        let step = app.getTransformStep(app.eventdataSubsetName);
+                        preferences['text'] = JSON.stringify(query.buildSubset(step.abstractQuery), null, '  ');
                         this.editor.setValue(preferences['text'] || '')
                     }
                 }, "Show All"),
@@ -79,6 +80,6 @@ export default class CanvasCustom {
                     }
                 })
             ]
-        ));
+        );
     }
 }

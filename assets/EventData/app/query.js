@@ -15,8 +15,9 @@ export async function submitQuery() {
 
     // Only construct and submit the query if new subsets have been added since last query
     let newSubsets = false;
-    for (let idx in app.abstractQuery) {
-        if (app.abstractQuery[idx].type !== 'query') {
+    let step = app.getTransformStep(app.eventdataSubsetName);
+    for (let idx in step.abstractQuery) {
+        if (step.abstractQuery[idx].type !== 'query') {
             newSubsets = true;
             break
         }
@@ -43,7 +44,7 @@ export async function submitQuery() {
     app.addGroup(true);
 
     // Add all nodes to selection
-    let nodeList = [...Array(app.nodeId).keys()];
+    let nodeList = [...Array(step.nodeId).keys()];
 
     let subsetTree = $('#subsetTree');
 
@@ -55,19 +56,10 @@ export async function submitQuery() {
     });
 
     // Redraw tree
-    app.setAbstractQuery(JSON.parse(subsetTree.tree('toJson')));
+    step.abstractQuery = JSON.parse(subsetTree.tree('toJson'));
     let state = subsetTree.tree('getState');
-    subsetTree.tree('loadData', app.abstractQuery);
+    subsetTree.tree('loadData', step.abstractQuery);
     subsetTree.tree('setState', state);
-
-    // TAGGED: LOCALSTORE
-    // // Store user preferences in local data
-    // localStorage.setItem('selectedVariables', JSON.stringify([...app.selectedVariables]));
-    //
-    // localStorage.setItem('abstractQuery', subsetTree.tree('toJson'));
-    // localStorage.setItem('nodeId', String(app.nodeId));
-    // localStorage.setItem('groupId', String(app.groupId));
-    // localStorage.setItem('queryId', String(app.queryId));
 }
 
 // Recursively traverse the tree in the right panel. For each node, call processNode
@@ -272,7 +264,8 @@ export function submitAggregation() {
         return;
     }
 
-    let query = JSON.stringify(buildAggregation(app.abstractQuery, app.subsetPreferences));
+    let step = app.getTransformStep(app.eventdataSubsetName);
+    let query = JSON.stringify(buildAggregation(step.abstractQuery, app.subsetPreferences));
     console.log("Aggregation Query: " + query);
 
     app.setLaddaSpinner('btnUpdate', true);
@@ -534,7 +527,7 @@ export function genericRealignment(alignment, inFormat, outFormat, data) {
 }
 
 // Take an abstract query for one dataset, and turn it into a query for another - with descriptive logs
-export function realignQuery(source, target) {
+export function realignQuery(step, source, target) {
     let log = [];
     let sourceSubsets = app.genericMetadata[source]['subsets'];
     let targetSubsets = app.genericMetadata[target]['subsets'];
@@ -655,7 +648,8 @@ export function realignQuery(source, target) {
 
         }).filter(branch => branch !== undefined) // prune subsets and groups that didn't transfer
     };
-    app.setAbstractQuery(realignBranch(app.abstractQuery));
+
+    step.abstractQuery = realignBranch(step.abstractQuery);
     return log;
 }
 

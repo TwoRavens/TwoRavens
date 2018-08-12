@@ -1,14 +1,15 @@
-import m from 'mithril';
-import {dateSort} from "./canvases/CanvasDate";
-
-import * as common from '../../common-eventdata/common';
-import * as query from './query';
-import {subset} from "../../app/app";
 import {saveAs} from 'file-saver/FileSaver';
+import m from 'mithril';
+import * as common from '../../common-eventdata/common';
+
+import {dateSort} from "./canvases/CanvasDate";
+import * as query from './query';
+
 export let eventdataURL = '/eventdata/api/';
 
 // TODO login
 export let username = 'TwoRavens';
+export let eventdataSubsetName = 'EventDataSubset';
 
 // ~~~~ GLOBAL STATE / MUTATORS ~~~
 // metadata for all available datasets and type formats
@@ -58,7 +59,8 @@ export let setSelectedDataset = (key) => {
 
         let subsetTree = $('#subsetTree');
         let state = subsetTree.tree('getState');
-        subsetTree.tree('loadData', abstractQuery);
+        let step = getTransformStep(eventdataSubsetName);
+        subsetTree.tree('loadData', step.abstractQuery);
         subsetTree.tree('setState', state);
         showAlignmentLog = true;
 
@@ -145,8 +147,8 @@ export let toggleSelectedVariable = (variable) => selectedVariables.has(variable
 export let variableSearch = '';
 export let setVariableSearch = (text) => variableSearch = text;
 
-export let abstractQuery = [];
-export let setAbstractQuery = (query) => abstractQuery = query;
+export let transformPipeline = [];
+export let getTransformStep = (stepID) => transformPipeline.find(step => step.id === stepID);
 
 export let aggregationData;
 export let setAggregationData = (data) => aggregationData = data;
@@ -267,8 +269,10 @@ async function updatePeek() {
 
     peekIsGetting = true;
 
+    let step = getTransformStep(eventdataSubsetName);
+
     let stagedSubsetData = [];
-    for (let child of abstractQuery) {
+    for (let child of step.abstractQuery) {
         if (child.type === 'query') {
             stagedSubsetData.push(child)
         }
@@ -364,10 +368,12 @@ export let loadSubset = async (subsetName, {includePending, recount, requireMatc
     // in case selectedDataset changes while Promises are resolving
     let dataset = selectedDataset;
 
+    let step = getTransformStep(eventdataSubsetName);
+
     // prep the query
     let stagedSubsetData = [];
     let pendingStage = [];
-    for (let child of abstractQuery) {
+    for (let child of step.abstractQuery) {
         if (child.type === 'query') stagedSubsetData.push(child);
         else pendingStage.push(child);
     }
@@ -546,10 +552,12 @@ export async function download(queryType, dataset, queryMongo) {
 
     let variables = selectedVariables.size === 0 ? genericMetadata[dataset]['columns'] : [...selectedVariables];
 
+    let step = getTransformStep(eventdataSubsetName);
+
     if (!queryMongo) {
         if (queryType === 'subset') {
             queryMongo = [
-                {"$match": query.buildSubset(abstractQuery)},
+                {"$match": query.buildSubset(step.abstractQuery)},
                 {
                     "$project": variables.reduce((out, variable) => {
                         out[variable] = 1;
@@ -559,7 +567,7 @@ export async function download(queryType, dataset, queryMongo) {
             ];
         }
         else if (queryType === 'aggregate')
-            queryMongo = query.buildAggregation(abstractQuery, subsetPreferences);
+            queryMongo = query.buildAggregation(step.abstractQuery, subsetPreferences);
     }
 
     console.log("Download Query: " + JSON.stringify(queryMongo));
@@ -586,17 +594,18 @@ export async function download(queryType, dataset, queryMongo) {
 }
 
 export function reset() {
+    let step = getTransformStep(eventdataSubsetName);
 
     let scorchTheEarth = () => {
-        abstractQuery.length = 0;
-        $('#subsetTree').tree('loadData', abstractQuery);
+        step.abstractQuery.length = 0;
+        $('#subsetTree').tree('loadData', step.abstractQuery);
 
         selectedVariables.clear();
         resetPeek();
 
-        nodeId = 1;
-        groupId = 1;
-        queryId = 1;
+        step.nodeId = 1;
+        step.groupId = 1;
+        step.queryId = 1;
 
         Object.keys(genericMetadata[selectedDataset]['subsets']).forEach(subset => {
             subsetPreferences[subset] = {};
@@ -605,7 +614,7 @@ export function reset() {
     };
 
     // suppress server queries from the reset button when the webpage is already reset
-    if (abstractQuery.length === 0) {
+    if (step.abstractQuery.length === 0) {
         scorchTheEarth();
         return;
     }
@@ -637,7 +646,7 @@ export let pad = (number, length) => '0'.repeat(length - String(number).length) 
 
 // This is the format of each node in the abstract query
 // {
-//     id: String(nodeId++),    // Node number with post-increment
+//     id: String(step.nodeId++),    // Node number with post-increment
 //     type: 'rule' || 'query' || 'group
 //     subset: 'date' || 'dyad' || 'categorical' || 'categorical_grouped' || 'coordinates' || 'custom' (if this.type === 'rule')
 //     name: '[title]',         // 'Subsets', 'Group #', '[Selection] Subset' or tag name
@@ -648,13 +657,6 @@ export let pad = (number, length) => '0'.repeat(length - String(number).length) 
 //     editable: true,          // If false, operation cannot be edited
 //     cancellable: false       // If exists and false, disable the delete button
 // }
-
-export let nodeId = 1;
-export let setNodeId = id => nodeId = id;
-export let groupId = 1;
-export let setGroupId = id => groupId = id;
-export let queryId = 1;
-export let setQueryId = id => queryId = id;
 
 function disableEditRecursive(node) {
     node.editable = false;
@@ -680,20 +682,22 @@ export function hideFirst(data) {
     return data;
 }
 
-export function addGroup(query = false) {
+export function addGroup(stepId, query = false) {
+    let step = transformPipeline.find(step => step.id === stepId);
+
     // When the query argument is set, groups will be included under a 'query group'
     let movedChildren = [];
     let removeIds = [];
 
     // If everything is deleted, then restart the ids
-    if (abstractQuery.length === 0) {
-        groupId = 1;
-        queryId = 1;
+    if (step.abstractQuery.length === 0) {
+        step.groupId = 1;
+        step.queryId = 1;
     }
 
     // Make list of children to be moved
-    for (let child_id in abstractQuery) {
-        let child = abstractQuery[child_id];
+    for (let child_id in step.abstractQuery) {
+        let child = step.abstractQuery[child_id];
 
         // Don't put groups inside groups! Only a drag can do that.
         if (!query && child.type === 'rule') {
@@ -712,45 +716,46 @@ export function addGroup(query = false) {
 
     // Delete elements from root directory that are moved
     for (let i = removeIds.length - 1; i >= 0; i--) {
-        abstractQuery.splice(removeIds[i], 1);
+        step.abstractQuery.splice(removeIds[i], 1);
     }
 
     if (query) {
         for (let child_id in movedChildren) {
             movedChildren[child_id] = disableEditRecursive(movedChildren[child_id]);
         }
-        abstractQuery.push({
-            id: String(nodeId++),
-            name: 'Query ' + String(queryId++),
+        step.abstractQuery.push({
+            id: step.id + '-' + String(step.nodeId++),
+            name: 'Query ' + String(step.queryId++),
             operation: 'and',
             editable: true,
             cancellable: true,
             type: 'query',
             children: movedChildren,
-            show_op: abstractQuery.length > 0
+            show_op: step.abstractQuery.length > 0
         });
     } else {
-        abstractQuery.push({
-            id: String(nodeId++),
-            name: 'Group ' + String(groupId++),
+        step.abstractQuery.push({
+            id: step.id + '-' + String(step.nodeId++),
+            name: 'Group ' + String(step.groupId++),
             operation: 'and',
             type: 'group',
             children: movedChildren,
-            show_op: abstractQuery.length > 0
+            show_op: step.abstractQuery.length > 0
         });
     }
 
-    hideFirst(abstractQuery);
+    hideFirst(step.abstractQuery);
     m.redraw();
 
     if (!query) {
         let qtree = $('#subsetTree');
-        qtree.tree('openNode', qtree.tree('getNodeById', nodeId - 1), true);
+        qtree.tree('openNode', qtree.tree('getNodeById', step.nodeId - 1), true);
     }
 }
 
-export function addRule() {
-    let preferences = getSubsetPreferences();
+export function addRule(stepId) {
+    let step = transformPipeline.find(step => step.id === stepId);
+    let preferences = getSubsetPreferences(step);
 
     // Don't add an empty preference
     if (Object.keys(preferences).length === 0) {
@@ -761,11 +766,11 @@ export function addRule() {
     common.setPanelOpen('right');
 
     // Don't show the boolean operator on the first element
-    if (abstractQuery.length === 0) {
+    if (step.abstractQuery.length === 0) {
         preferences['show_op'] = false;
     }
 
-    abstractQuery.push(preferences);
+    step.abstractQuery.push(preferences);
 
     m.redraw();
     let subsetTree = $('#subsetTree');
@@ -776,11 +781,11 @@ export function addRule() {
  * When a new rule is added, retrieve the preferences of the current subset panel
  * @returns {{}} : dictionary of preferences
  */
-function getSubsetPreferences() {
+function getSubsetPreferences(step) {
 
     if (selectedCanvas === 'Custom') {
         return {
-            id: String(nodeId++),
+            id: step.id + '-' + String(step.nodeId++),
             name: 'Custom Subset',
             type: 'rule',
             subset: 'custom',
@@ -797,7 +802,7 @@ function getSubsetPreferences() {
     if (subsetType === 'dyad') {
         // Make parent node
         let subset = {
-            id: String(nodeId++),
+            id: step.id + '-' + String(step.nodeId++),
             name: selectedSubsetName + ' Subset',
             operation: 'and',
             type: 'rule',
@@ -813,13 +818,13 @@ function getSubsetPreferences() {
 
             // Add each link to the parent node as another rule
             let link = {
-                id: String(nodeId++),
+                id: step.id + '-' + String(step.nodeId++),
                 name: 'Link ' + String(linkId),
                 show_op: linkId !== '0',
                 operation: 'or',
                 subset: 'link',
                 children: [{
-                    id: String(nodeId++),
+                    id: step.id + '-' + String(step.nodeId++),
                     name: Object.keys(metadata['tabs'])[0] + ': ' + filteredEdges[linkId].source.name,
                     show_op: false,
                     cancellable: true,
@@ -827,7 +832,7 @@ function getSubsetPreferences() {
                     subset: 'node',
                     column: metadata['tabs'][Object.keys(metadata['tabs'])[0]]['full']
                 }, {
-                    id: String(nodeId++),
+                    id: step.id + '-' + String(step.nodeId++),
                     name: Object.keys(metadata['tabs'])[1] + ': ' + filteredEdges[linkId].target.name,
                     show_op: false,
                     cancellable: true,
@@ -864,14 +869,14 @@ function getSubsetPreferences() {
         let monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "June",
             "July", "Aug", "Sep", "Oct", "Nov", "Dec"];
         return {
-            id: String(nodeId++),
+            id: step.id + '-' + String(step.nodeId++),
             name: selectedSubsetName + ' Subset',
             type: 'rule',
             subset: subsetType,
             structure: metadata['structure'],
             children: [
                 {
-                    id: String(nodeId++),
+                    id: step.id + '-' + String(step.nodeId++),
                     name: 'From: ' + monthNames[preferences['userLower'].getMonth()] + ' ' + preferences['userLower'].getDate() + ' ' + String(preferences['userLower'].getFullYear()),
                     fromDate: new Date(preferences['userLower'].getTime()),
                     cancellable: false,
@@ -879,7 +884,7 @@ function getSubsetPreferences() {
                     column: coerceArray(metadata['columns'])[0]
                 },
                 {
-                    id: String(nodeId++),
+                    id: step.id + '-' + String(step.nodeId++),
                     name: 'To:   ' + monthNames[preferences['userUpper'].getMonth()] + ' ' + preferences['userUpper'].getDate() + ' ' + String(preferences['userUpper'].getFullYear()),
                     toDate: new Date(preferences['userUpper'].getTime()),
                     cancellable: false,
@@ -895,7 +900,7 @@ function getSubsetPreferences() {
     if (['categorical', 'categorical_grouped'].indexOf(subsetType) !== -1) {
         // Make parent node
         let subset = {
-            id: String(nodeId++),
+            id: step.id + '-' + String(step.nodeId++),
             name: selectedSubsetName + ' Subset',
             operation: 'and',
             negate: 'false',
@@ -909,7 +914,7 @@ function getSubsetPreferences() {
         [...preferences['selections']]
             .sort((a, b) => typeof a === 'number' ? a - b : a.localeCompare(b))
             .forEach(selection => subset['children'].push({
-                id: String(nodeId++),
+                id: step.id + '-' + String(step.nodeId++),
                 name: String(selection),
                 show_op: false
             }));
@@ -928,7 +933,7 @@ function getSubsetPreferences() {
 
         // Make parent node
         let subset = {
-            id: String(nodeId++),
+            id: step.id + '-' + String(step.nodeId++),
             name: selectedSubsetName + ' Subset',
             operation: 'and',
             type: 'rule',
@@ -938,7 +943,7 @@ function getSubsetPreferences() {
         };
 
         let latitude = {
-            id: String(nodeId++),
+            id: step.id + '-' + String(step.nodeId++),
             name: 'Latitude',
             column: coerceArray(metadata['columns'])[0],
             // negate: 'false',
@@ -946,31 +951,30 @@ function getSubsetPreferences() {
         };
 
         latitude.children.push({
-            id: String(nodeId++),
+            id: step.id + '-' + String(step.nodeId++),
             name: valUpper > valLower ? valUpper : valLower
         });
 
         latitude.children.push({
-            id: String(nodeId++),
+            id: step.id + '-' + String(step.nodeId++),
             name: valUpper < valLower ? valUpper : valLower
         });
 
         let longitude = {
-            id: String(nodeId++),
+            id: step.id + '-' + String(step.nodeId++),
             name: 'Longitude',
             operation: 'and',
             column: coerceArray(metadata['columns'])[1],
-            // negate: 'false',
             children: []
         };
 
         longitude.children.push({
-            id: String(nodeId++),
+            id: step.id + '-' + String(step.nodeId++),
             name: valLeft > valRight ? valLeft : valRight
         });
 
         longitude.children.push({
-            id: String(nodeId++),
+            id: step.id + '-' + String(step.nodeId++),
             name: valLeft < valRight ? valLeft : valRight
         });
 

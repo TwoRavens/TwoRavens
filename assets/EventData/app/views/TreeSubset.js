@@ -39,12 +39,14 @@ export class TreeVariables {
 
 export class TreeQuery {
 
-    oncreate({dom}) {
+    oncreate({attrs, dom}) {
         // Create the query tree
         let subsetTree = $(dom);
 
+        let {step} = attrs;
+
         subsetTree.tree({
-            data: app.abstractQuery,
+            data: step.abstractQuery,
             saveState: true,
             dragAndDrop: true,
             autoOpen: true,
@@ -108,8 +110,8 @@ export class TreeQuery {
                 event.move_info.do_move();
 
                 // Save changes when an element is moved
-                app.setAbstractQuery(JSON.parse(subsetTree.tree('toJson')));
-                app.hideFirst(app.abstractQuery);
+                step.abstractQuery = JSON.parse(subsetTree.tree('toJson'));
+                app.hideFirst(step.abstractQuery);
                 m.redraw();
             }
         );
@@ -150,10 +152,11 @@ export class TreeQuery {
     }
 
     // when mithril updates this component, it redraws the tree with whatever the abstract query is
-    onupdate({dom}) {
+    onupdate({attrs, dom}) {
+        let {step} = attrs;
         let subsetTree = $(dom);
         let state = subsetTree.tree('getState');
-        subsetTree.tree('loadData', app.abstractQuery);
+        subsetTree.tree('loadData', step.abstractQuery);
         subsetTree.tree('setState', state);
     }
 
@@ -162,7 +165,6 @@ export class TreeQuery {
     }
 }
 
-// Define negation toggle, logic dropdown and delete button, as well as their callbacks
 function buttonNegate(id, state) {
     // This state is negated simply because the buttons are visually inverted. An active button appears inactive
     // This is due to css tomfoolery
@@ -182,7 +184,8 @@ window.callbackNegate = function (id, bool) {
 
     node.negate = bool;
 
-    app.setAbstractQuery(JSON.parse(subsetTree.tree('toJson')));
+    let stepID = id.split('-')[0];
+    app.getTransformStep(stepID).abstractQuery = JSON.parse(subsetTree.tree('toJson'));
     m.redraw();
 };
 
@@ -210,7 +213,10 @@ window.callbackOperator = function (id, operand) {
     if (('editable' in node && !node.editable) || node['type'] === 'query') return;
 
     node.operation = operand;
-    app.setAbstractQuery(JSON.parse(subsetTree.tree('toJson')));
+
+    let stepID = id.split('-')[0];
+    app.getTransformStep(stepID).abstractQuery = JSON.parse(subsetTree.tree('toJson'));
+
     m.redraw();
 };
 
@@ -232,8 +238,10 @@ window.callbackDelete = function (id) {
     } else {
         subsetTree.tree('removeNode', node);
 
-        app.setAbstractQuery(JSON.parse(subsetTree.tree('toJson')));
-        app.hideFirst(app.abstractQuery);
+        let step = app.getTransformStep(id.split('-')[0]);
+        step.abstractQuery = JSON.parse(subsetTree.tree('toJson'));
+
+        app.hideFirst(step.abstractQuery);
         m.redraw();
 
         if (node.type === 'query') {
@@ -244,10 +252,10 @@ window.callbackDelete = function (id) {
                 .filter(subset => subset !== app.selectedSubsetName)
                 .forEach(subset => delete app.subsetData[subset]);
 
-            if (app.abstractQuery.length === 0) {
-                app.setNodeId(1);
-                app.setGroupId(1);
-                app.setQueryId(1);
+            if (step.abstractQuery.length === 0) {
+                step.nodeId = 1;
+                step.groupId = 1;
+                step.queryId = 1;
             }
         }
     }

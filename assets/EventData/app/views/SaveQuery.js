@@ -2,7 +2,6 @@ import m from 'mithril';
 
 import * as app from '../app';
 import * as query from '../query';
-import ButtonRadio from "../../../common-eventdata/views/ButtonRadio";
 import Table from '../../../common-eventdata/views/Table';
 import TextField from '../../../common-eventdata/views/TextField'
 import Button from "../../../common-eventdata/views/Button";
@@ -10,8 +9,9 @@ import Button from "../../../common-eventdata/views/Button";
 export default class SaveQuery {
     oninit(vnode) {
 
+        let step = app.getTransformStep(app.eventdataSubsetName);
         let stagedSubsetData = [];
-        for (let child of app.abstractQuery) {
+        for (let child of step.abstractQuery) {
             if (child.type === 'query') {
                 stagedSubsetData.push(child)
             }
@@ -23,7 +23,7 @@ export default class SaveQuery {
                 ? app.genericMetadata[app.selectedDataset]['columns']
                 : [...app.selectedVariables];
             queryMongo = [
-                {"$match": query.buildSubset(app.abstractQuery)},
+                {"$match": query.buildSubset(step.abstractQuery)},
                 {
                     "$project": variables.reduce((out, variable) => {
                         out[variable] = 1;
@@ -55,6 +55,8 @@ export default class SaveQuery {
 
         let format = (text) => m('[style=margin-left:1em;text-align:left;word-break:break-all;width:100%]', text);
         let warn = (text) => m('[style=color:#dc3545;display:inline-block;margin-left:1em;]', text);
+
+        let step = app.getTransformStep(app.eventdataSubsetName);
 
         let tableData = {
             'Query Name': m(TextField, {
@@ -93,7 +95,7 @@ export default class SaveQuery {
                 preferences['result_count'] === 0 && warn('The query does not match any data.')]),
             'Query': format([
                 JSON.stringify(preferences['query']),
-                app.abstractQuery.filter(branch => branch.type !== 'query').length !== 0 && warn('Take note that subsets that are not grouped under a query are not included. Click update in the query summary to group them under a query.')])
+                step.abstractQuery.filter(branch => branch.type !== 'query').length !== 0 && warn('Take note that subsets that are not grouped under a query are not included. Click update in the query summary to group them under a query.')])
         };
 
         let invalids = {
