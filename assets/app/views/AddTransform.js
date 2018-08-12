@@ -7,7 +7,6 @@ import Button from '../../common/app/views/Button';
 
 import * as subset from '../../EventData/app/app';
 import * as transform from '../transform';
-import * as app from '../app';
 
 let setDefault = (obj, id, value) => obj[id] = obj[id] || value;
 let warn = (text) => m('[style=color:#dc3545;display:inline-block;margin-left:1em;]', text);
@@ -106,11 +105,7 @@ export default class AddTransform {
                     };
                     if (preferences.constraintType === 'Date') metadata['structure'] = preferences.structure;
 
-                    setDefault(subset.genericMetadata, app.selectedProblem, {subsets: {}});
-                    let subsetName = 'subset ' + Object.keys(subset.genericMetadata[app.selectedProblem]['subsets']).length;
-
-                    subset.genericMetadata[app.selectedProblem]['subsets'][subsetName] = metadata;
-
+                    transform.setConstraintMetadata(metadata);
                     transform.setConstraintMenu(transform.pendingConstraintMenu);
                     transform.setPendingConstraintMenu(undefined);
                     Object.keys(preferences).forEach(key => delete preferences[key]);

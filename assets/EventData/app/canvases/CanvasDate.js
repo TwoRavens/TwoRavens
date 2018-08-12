@@ -55,11 +55,11 @@ export function interpolate(data, date) {
 
 export default class CanvasDate {
     oncreate(vnode) {
-        let {subsetName, data, preferences} = vnode.attrs;
+        let {subsetName, data, preferences, setRedraw} = vnode.attrs;
         let minDate = data[0]['Date'];
         let maxDate = data[data.length - 1]['Date'];
 
-        $(`#fromDate${subsetName.replace(/[^A-Za-z0-9]/g, "")}`).datepicker({
+        $(`#fromDate`).datepicker({
             dateFormat: 'yy-mm-dd',
             changeYear: true,
             changeMonth: true,
@@ -70,7 +70,7 @@ export default class CanvasDate {
             orientation: top,
             onSelect: function () {
                 preferences['userLower'] = new Date($(this).datepicker('getDate').getTime());
-                let toDate = $(`#toDate${subsetName.replace(/[^A-Za-z0-9]/g, "")}`);
+                let toDate = $(`#toDate`);
                 toDate.datepicker('option', 'minDate', preferences['userLower']);
                 toDate.datepicker('option', 'defaultDate', maxDate);
                 toDate.datepicker('option', 'maxDate', maxDate);
@@ -79,16 +79,16 @@ export default class CanvasDate {
             },
             onClose: function () {
                 setTimeout(function () {
-                    $(`#toDate${subsetName.replace(/[^A-Za-z0-9]/g, "")}`).focus();
+                    $(`#toDate`).focus();
                 }, 100);
 
                 // Update plot, but don't reset slider
-                $(`#toDate${subsetName.replace(/[^A-Za-z0-9]/g, "")}`).datepicker("show");
+                $(`#toDate`).datepicker("show");
             }
         });
 
 
-        $(`#toDate${subsetName.replace(/[^A-Za-z0-9]/g, "")}`).datepicker({
+        $(`#toDate`).datepicker({
             changeYear: true,
             changeMonth: true,
             yearRange: minDate.getFullYear() + ':' + maxDate.getFullYear(),
@@ -120,7 +120,7 @@ export default class CanvasDate {
         let drawGraph = data.length > 1;
         let dataProcessed;
         if (redraw && drawGraph) {
-            setRedraw(subsetName, false);
+            setRedraw(false);
             let allDates = [...data.sort(dateSort)];
 
             preferences['userLower'] = preferences['userLower'] || data[0]['Date'];
@@ -189,7 +189,7 @@ export default class CanvasDate {
                                 preferences['userUpper'] = preferences['handleUpper'];
 
                                 // hard redraw plots
-                                setRedraw(subsetName, true);
+                                setRedraw(true);
                             }
                         }, "Bring Date from Slider"),
 
@@ -201,9 +201,9 @@ export default class CanvasDate {
                                 "margin-top": "10px"
                             }
                         }, "From:"),
-                        m(`input#fromDate${subsetName.replace(/[^A-Za-z0-9]/g, "")}.form-control[type='text']`, {
+                        m(`input#fromDate.form-control[type='text']`, {
                             onblur: function () {
-                                setRedraw(subsetName, true);
+                                setRedraw(true);
                             },
                             value: d3.timeFormat("%Y-%m-%d")(preferences['userLower'])
                         }),
@@ -216,8 +216,8 @@ export default class CanvasDate {
                                 "margin-top": "10px"
                             }
                         }, "To:"),
-                        m(`input#toDate${subsetName.replace(/[^A-Za-z0-9]/g, "")}.form-control[type='text']`, {
-                            onblur: () => setRedraw(subsetName, true),
+                        m(`input#toDate.form-control[type='text']`, {
+                            onblur: () => setRedraw(true),
                             value: d3.timeFormat("%Y-%m-%d")(preferences['userUpper'])
                         })
                     ]
@@ -253,12 +253,12 @@ export default class CanvasDate {
                         }
                     },
                     drawGraph && m(PlotDate, {
-                        id: 'dateSVG' + subsetName.replace(/[^A-Za-z0-9]/g, ""),
+                        id: 'dateSVG',
                         data: dataProcessed,
                         handles: [preferences['handleLower'], preferences['handleUpper']],
                         callbackHandles: setHandleDates,
                         dataProcessed,
-                        labelY: 'Monthy Frequency'
+                        labelY: 'Monthly Frequency'
                     })),
                 m("div",
                     {

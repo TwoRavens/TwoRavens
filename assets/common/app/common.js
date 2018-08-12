@@ -61,8 +61,8 @@ export function setPanelCallback(side, callback) {panelCallback[side] = callback
 
 // Number of pixels occluded by the panels. Left at zero if panels are hovering
 export let panelOcclusion = {
-    'left': 0,
-    'right': 0
+    'left': '0px',
+    'right': '0px'
 };
 export function setPanelOcclusion(side, state) {panelOcclusion[side] = state}
 

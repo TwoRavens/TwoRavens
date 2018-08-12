@@ -255,7 +255,7 @@ function rightpanel(mode) {
     if (mode === 'transform') return m(Panel, {
         side: 'right',
         label: 'Transforms',
-        hover: true,
+        hover: false,
         width: '500px',
     }, transform.rightpanel());
 
@@ -606,6 +606,21 @@ class Body {
             this.footer(mode),
             leftpanel(mode),
             rightpanel(mode),
+            m(Button, {
+                id: 'btnStage',
+                style: {
+                    display: app.currentMode === 'transform' && transform.constraintMenu ? 'block' : 'none',
+                    right: `calc(${common.panelOcclusion['right']} + 5px)`,
+                    bottom: `calc(${common.heightFooter} + ${common.panelMargin} + 6px)`,
+                    position: 'fixed',
+                    'z-index': 100,
+                    'box-shadow': 'rgba(0, 0, 0, 0.3) 0px 2px 3px'
+                },
+                onclick: () => {
+                    // to add a constraint, must provide the step to add it to, the menu preferences, and column/constraint type metadata
+                    subset.addConstraint(transform.constraintMenu.step, transform.constraintPreferences, transform.constraintMetadata)
+                }
+            }, 'Stage'),
             app.is_transform_mode && m(Canvas, transform.subsetCanvas()),
             m(`#main`, {style: {overflow, display: app.is_transform_mode ? 'none' : 'block'}},
                 m("#innercarousel.carousel-inner", {style: {height: '100%', overflow}},

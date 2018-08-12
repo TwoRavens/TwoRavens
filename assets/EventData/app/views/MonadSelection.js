@@ -2,7 +2,6 @@ import m from 'mithril';
 import {grayColor} from "../../../common-eventdata/common";
 import TextField from '../../../common-eventdata/views/TextField';
 import * as app from "../app";
-import * as query from '../query';
 import {entryContains} from '../canvases/CanvasDyad';
 
 let searchLag = 500;

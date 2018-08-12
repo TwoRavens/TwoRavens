@@ -8,7 +8,6 @@ import CanvasCategoricalGrouped from "../EventData/app/canvases/CanvasCategorica
 import CanvasCoordinates from "../EventData/app/canvases/CanvasCoordinates";
 import Flowchart from "./views/Flowchart";
 
-import * as app from './app';
 import * as subset from "../EventData/app/app";
 import * as common from '../common/app/common';
 
@@ -31,7 +30,7 @@ export function rightpanel() {
                         m(Button, {
                             id: 'btnAddConstraint',
                             style: {margin: '0.5em'},
-                            onclick: () => setPendingConstraintMenu({name: 'Subset', step, id: i})
+                            onclick: () => setPendingConstraintMenu({name: 'Subset', step})
                         }, plus, ' Constraint'),
                         m(Button, {
                             id: 'btnAddGroup',
@@ -123,11 +122,15 @@ export function subsetCanvas() {
         subsetName: constraintMenu.name,
         data: constraintData,
         preferences: constraintPreferences,
-        metadata: subset.genericMetadata[app.selectedProblem]['subsets'][constraintMenu.name],
+        metadata: constraintMetadata,
         redraw: subset.subsetRedraw[constraintMenu.name],
         setRedraw: (state) => subset.setSubsetRedraw(constraintMenu.name, state)
     })
 }
+
+// if set, then the popup modal menu for constructing a new transform is displayed {name: '', step}
+export let pendingConstraintMenu;
+export let setPendingConstraintMenu = (state) => pendingConstraintMenu = state;
 
 // when stage is clicked, preferences are shifted into the pipeline using this metadata {name: '', step}
 export let constraintMenu = {};
@@ -137,14 +140,18 @@ export let setConstraintMenu = step => {
     subset.setSubsetRedraw(constraintMenu.name, true);
 };
 
+// contains the constraint type, columns and (if needed) date structure, dyad tabs, group_by, etc.
+export let constraintMetadata = {};
+export let setConstraintMetadata = (meta) => constraintMetadata = meta;
+
+// contains the menu state (which nominal variables are selected, ranges, etc.)
 export let constraintPreferences = {};
+
+// contains the raw data used to draw the constraint menu
 export let constraintData = {};
 
-// if set, then the popup modal menu for constructing a new transform is displayed
-export let pendingConstraintMenu = false;
-export let setPendingConstraintMenu = (state) => pendingConstraintMenu = state;
-
-export let modalPreferences = {}; // menu state within the modal
+// menu state within the modal
+export let modalPreferences = {};
 
 function loadSubset(subset) {
     // data source is unknown!

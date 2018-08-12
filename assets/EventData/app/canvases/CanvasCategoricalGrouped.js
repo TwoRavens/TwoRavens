@@ -28,7 +28,7 @@ let getLabel = (format, key) => {
 
 export default class CanvasCategoricalGrouped {
     view(vnode) {
-        let {subsetName, data, metadata, preferences} = vnode.attrs;
+        let {data, metadata, preferences} = vnode.attrs;
 
         let masterColumn = app.coerceArray(metadata['columns'])[0];
         let masterFormat = app.genericMetadata[app.selectedDataset]['formats'][masterColumn];
@@ -181,7 +181,7 @@ export default class CanvasCategoricalGrouped {
 
                 Object.keys(preferences['plotted_subgroups']).map(subGroupName => graphContainer(subGroupName,
                     m(PlotBars, {
-                        id: ('barPlotSubGroup' + subsetName + subGroupName).replace(/[^A-Za-z0-9]/g, ""),
+                        id: ('barPlotSubGroup' + subGroupName).replace(/[^A-Za-z0-9]/g, ""),
                         margin: {top: 10, right: 30, bottom: 50, left: subGroupMaxChars[subGroupName] * 6 + 20},
                         data: subGroupData[subGroupName],
                         callbackBar: (bar) => preferences['selections'].has(bar.key)

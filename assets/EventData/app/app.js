@@ -4,6 +4,7 @@ import * as common from '../../common-eventdata/common';
 
 import {dateSort} from "./canvases/CanvasDate";
 import * as query from './query';
+import * as transform from "../../app/transform";
 
 export let eventdataURL = '/eventdata/api/';
 
@@ -753,12 +754,17 @@ export function addGroup(stepId, query = false) {
     }
 }
 
-export function addRule(stepId) {
-    let step = transformPipeline.find(step => step.id === stepId);
-    let preferences = getSubsetPreferences(step);
+/**
+ * Convert the subset panel state to an abstract query branch
+ * @param step: pipeline stepID
+ * @param preferences: menu state
+ * @param metadata: menu type, column names, etc.
+ */
+export function addConstraint(step, preferences, metadata) {
+    let abstractBranch = makeAbstractBranch(step, preferences, metadata);
 
-    // Don't add an empty preference
-    if (Object.keys(preferences).length === 0) {
+    // Don't add an empty constraint
+    if (Object.keys(abstractBranch).length === 0) {
         alert("No options have been selected. Please make a selection.");
         return;
     }
@@ -767,21 +773,17 @@ export function addRule(stepId) {
 
     // Don't show the boolean operator on the first element
     if (step.abstractQuery.length === 0) {
-        preferences['show_op'] = false;
+        abstractBranch['show_op'] = false;
     }
 
-    step.abstractQuery.push(preferences);
+    step.abstractQuery.push(abstractBranch);
 
     m.redraw();
     let subsetTree = $('#subsetTree');
-    subsetTree.tree('closeNode', subsetTree.tree('getNodeById', preferences['id']), false);
+    subsetTree.tree('closeNode', subsetTree.tree('getNodeById', abstractBranch['id']), false);
 }
 
-/**
- * When a new rule is added, retrieve the preferences of the current subset panel
- * @returns {{}} : dictionary of preferences
- */
-function getSubsetPreferences(step) {
+function makeAbstractBranch(step, preferences, metadata) {
 
     if (selectedCanvas === 'Custom') {
         return {
@@ -789,24 +791,18 @@ function getSubsetPreferences(step) {
             name: 'Custom Subset',
             type: 'rule',
             subset: 'custom',
-            custom: JSON.parse(canvasPreferences['Custom']['text'])
+            custom: JSON.parse(preferences['text'])
         }
     }
 
-    let data = subsetData[selectedSubsetName];
-    let metadata = genericMetadata[selectedDataset]['subsets'][selectedSubsetName];
-    let preferences = subsetPreferences[selectedSubsetName];
-
-    let subsetType = metadata['type'];
-
-    if (subsetType === 'dyad') {
+    if (metadata['type'] === 'dyad') {
         // Make parent node
         let subset = {
             id: step.id + '-' + String(step.nodeId++),
             name: selectedSubsetName + ' Subset',
             operation: 'and',
             type: 'rule',
-            subset: subsetType,
+            subset: metadata['type'],
             children: []
         };
 
@@ -850,20 +846,7 @@ function getSubsetPreferences(step) {
         return subset
     }
 
-    if (subsetType === 'date') {
-        let datemin = data[0]['Date'];
-        let datemax = data[data.length - 1]['Date'];
-
-        // If the dates have not been modified, force bring the date from the slider
-        if (preferences['userLower'] - datemin === 0 && preferences['userUpper'] - datemax === 0) {
-            if (preferences['userLower'] - preferences['handleLower'] === 0 &&
-                preferences['userUpper'] - preferences['handleUpper'] === 0) {
-                return {};
-            }
-
-            preferences['userLower'] = preferences['handleLower'];
-            preferences['userUpper'] = preferences['handleUpper'];
-        }
+    if (metadata['type'] === 'date') {
 
         // For mapping numerical months to strings in the child node name
         let monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "June",
@@ -872,7 +855,7 @@ function getSubsetPreferences(step) {
             id: step.id + '-' + String(step.nodeId++),
             name: selectedSubsetName + ' Subset',
             type: 'rule',
-            subset: subsetType,
+            subset: metadata['type'],
             structure: metadata['structure'],
             children: [
                 {
@@ -897,7 +880,7 @@ function getSubsetPreferences(step) {
         };
     }
 
-    if (['categorical', 'categorical_grouped'].indexOf(subsetType) !== -1) {
+    if (['categorical', 'categorical_grouped'].indexOf(metadata['type']) !== -1) {
         // Make parent node
         let subset = {
             id: step.id + '-' + String(step.nodeId++),
@@ -906,7 +889,7 @@ function getSubsetPreferences(step) {
             negate: 'false',
             column: coerceArray(metadata['columns'])[0],
             type: 'rule',
-            subset: subsetType,
+            subset: metadata['type'],
             children: []
         };
 
@@ -924,7 +907,7 @@ function getSubsetPreferences(step) {
         return subset
     }
 
-    if (subsetType === 'coordinates') {
+    if (metadata['type'] === 'coordinates') {
         let valLeft = parseFloat(document.getElementById('lonLeft').value);
         let valRight = parseFloat(document.getElementById('lonRight').value);
 
@@ -937,7 +920,7 @@ function getSubsetPreferences(step) {
             name: selectedSubsetName + ' Subset',
             operation: 'and',
             type: 'rule',
-            subset: subsetType,
+            subset: metadata['type'],
             // negate: 'false',
             children: []
         };
