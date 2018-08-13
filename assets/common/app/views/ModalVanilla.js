@@ -32,11 +32,10 @@ export default class ModalVanilla {
         }, m(`div#modalBox${id}`, {
             style: {
                 'background-color': common.menuColor,
-                margin: '15% auto',
+                margin: '5% auto 0 auto',
                 padding: '20px',
                 border: common.borderColor,
                 width: '80%',
-                transform: 'translateY(-50%)',
                 'box-shadow': '0 5px 20px rgba(0,0,0,.4)'
             },
             onclick: (e) => e.stopPropagation()

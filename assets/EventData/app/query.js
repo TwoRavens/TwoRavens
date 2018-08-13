@@ -64,39 +64,49 @@ export async function submitQuery() {
     subsetTree.tree('setState', state);
 }
 
+export let unaryFunctions = new Set([
+    'abs', 'ceil', 'exp', 'floor', 'ln', 'log', 'log10', 'sqrt', 'trunc', // math
+    'and', 'not', 'or', // logic
+    'trim', 'toLower', 'toUpper', // string
+    'toBool', 'toDouble', 'toInt', 'toString' // type
+]);
+export let binaryFunctions = new Set([
+    'add', 'divide', 'mod', 'multiply', 'pow', 'subtract', // math
+    'eq', 'gt', 'gte', 'lt', 'lte', 'ne', // comparison
+    'concat' // string
+]);
+
+export let unaryOperators = {
+    '+': 'add',
+    '-': 'subtract',
+    '~': 'not'
+};
+export let binaryOperators =  {
+    '+': 'add',
+    '/': 'divide',
+    '%': 'mod',
+    '*': 'multiply',
+    '^': 'pow',
+    '-': 'subtract'
+};
+
 // return a mongo projection from a string that describes a transformation
 // let examples = ['2 + numhits * sqrt(numwalks / 3)', 'strikes % 3', '~wonGame'];
 export function buildTransform(text, variables) {
-
-    let unaryFunctions = new Set(['abs', 'ceil', 'exp', 'floor', 'ln', 'log', 'log10', 'sqrt', 'trunc']);
-    let binaryFunctions = new Set(['add', 'divide', 'mod', 'multiply', 'pow', 'subtract']);
-
-    let unaryOperators = {
-        '+': 'add',
-        '-': 'subtract'
-    };
-    let binaryOperators =  {
-        '+': 'add',
-        '/': 'divide',
-        '%': 'mod',
-        '*': 'multiply',
-        '^': 'pow',
-        '-': 'subtract'
-    };
 
     let parse = tree => {
         if (tree.type === 'Literal') return tree.value;
 
         // Variables
         if (tree.type === 'Identifier') {
-            if (variables.has(tree.name)) return '$' + tree.name;
+            if (variables.has(tree.name)) return tree.name;
             throw 'Invalid variable';
         }
 
         // Functions
         if (tree.type === 'CallExpression') {
             if (unaryFunctions.has(tree.callee.name.toLowerCase()))
-                return {['$' + unaryOperators[tree.operator]]: parse(tree.arguments[0])};
+                return {['$' + tree.callee.name.toLowerCase()]: parse(tree.arguments[0])};
             if (binaryFunctions.has(tree.callee.name.toLowerCase()))
                 return {['$' + tree.callee.name.toLowerCase()]: tree.arguments.map(arg => parse(arg))};
             throw `Invalid function: ${tree.callee.name} with ${tree.arguments.length} arguments`;

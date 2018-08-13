@@ -2,11 +2,15 @@ import m from 'mithril';
 
 import ButtonRadio from '../../common/app/views/ButtonRadio';
 import TextFieldSuggestion from "../../common/app/views/TextFieldSuggestion";
+import TextField from "../../common/app/views/TextField";
 import ListTags from "../../common/app/views/ListTags";
 import Button from '../../common/app/views/Button';
+import PanelList from '../../common/app/views/PanelList';
+
 import {italicize} from '../index';
 
 import * as subset from '../../EventData/app/app';
+import * as query from '../../EventData/app/query';
 import * as transform from '../transform';
 
 let setDefault = (obj, id, value) => obj[id] = obj[id] || value;
@@ -16,17 +20,25 @@ let warn = (text) => m('[style=color:#dc3545;display:inline-block;margin-left:1e
 export default class AddTransform {
     oninit({attrs}) {
         let {preferences} = attrs;
+        let {name} = transform.pendingConstraintMenu;
 
-        setDefault(preferences, 'constraintType', transform.constraintTypes[0]);
-        setDefault(preferences, 'columns', new Set());
-        setDefault(preferences, 'pendingColumn', '');
+        if (name === 'Transform') {
+            setDefault(preferences, 'transformName', '');
+            setDefault(preferences, 'transformEquation', '');
+        }
 
-        // specific to certain constraints
-        setDefault(preferences, 'tabs', {
-            source: {full: '', pendingFilter: '', filters: new Set()},
-            target: {full: '', pendingFilter: '', filters: new Set()}
-        });
-        setDefault(preferences, 'structure', 'Point');
+        else {
+            setDefault(preferences, 'constraintType', transform.constraintTypes[0]);
+            setDefault(preferences, 'columns', new Set());
+            setDefault(preferences, 'pendingColumn', '');
+
+            // specific to certain constraints
+            setDefault(preferences, 'tabs', {
+                source: {full: '', pendingFilter: '', filters: new Set()},
+                target: {full: '', pendingFilter: '', filters: new Set()}
+            });
+            setDefault(preferences, 'structure', 'Point');
+        }
     }
 
     view(vnode) {
@@ -36,6 +48,88 @@ export default class AddTransform {
         let requiredColumns = 1;
         if (preferences.constraintType === 'Date' && preferences.structure === 'Interval') requiredColumns = 2;
         if (preferences.constraintType === 'Coordinates') requiredColumns = 2;
+
+        if (name === 'Transform') {
+
+            let style = {
+                width: '18%',
+                display: 'inline-block',
+                'vertical-align': 'top',
+                margin: '1%',
+                padding:'1em',
+                background:'rgba(0,0,0,0.05)',
+                'box-shadow': '0px 5px 5px rgba(0,0,0,.1)'
+            };
+
+            let transformQuery;
+            let transformError;
+
+            let vars = new Set((nodes || []).map(node => node.name));
+            try {
+                transformQuery = JSON.stringify(query.buildTransform(preferences.transformEquation, vars), null, 2);
+            }
+            catch (err) {
+                transformError = String(err)
+            }
+
+            return [
+                m('h4', 'Add ' + name + ' for Step ' + subset.transformPipeline.indexOf(step)),
+                m(TextField, {
+                    id: 'textFieldName',
+                    placeholder: 'Transformation Name',
+                    value: preferences.transformName,
+                    class: !preferences.transformName && ['is-invalid'],
+                    oninput: (value) => preferences.transformName = value,
+                    onblur: (value) => preferences.transformName = value,
+                    style: {width: '165px', display: 'inline-block'}
+                }), ' = ',
+                m(TextField, {
+                    id: 'textFieldEquation',
+                    placeholder: '1 + ' + nodes[0].name,
+                    class: !preferences.transformEquation && ['is-invalid'],
+                    oninput: (value) => preferences.transformEquation = value,
+                    onblur: (value) => preferences.transformEquation = value,
+                    style: {display: 'inline-block', width: 'calc(100% - 190px)'}
+                }), m('br'),
+                m('div', {style: {width: '100%'}}, transformQuery || warn(transformError)), m('br'),
+
+                m(Button, {
+                    id: 'btnAddTransform',
+                    disabled: !preferences.transformName || !transformQuery,
+                    onclick: () => {
+                        step.transforms.push({
+                            name: preferences.transformName,
+                            equation: preferences.transformEquation
+                        });
+                        transform.setPendingConstraintMenu(undefined);
+                    }
+                }, 'Add Transform'), m('br'),
+
+                m('div', {style},
+                    m('h4', {'margin-top': 0}, 'Variables'),
+                    m(PanelList, {id: 'varList', items: [...vars]})
+                ),
+                m('div', {style},
+                    m('h4',{'margin-top': 0}, 'Unary Functions'),
+                    m(PanelList, {id: 'unaryFunctionsList', items: [...query.unaryFunctions]})),
+                m('div', {style},
+                    m('h4',{'margin-top': 0}, 'Binary Functions'),
+                    m(PanelList, {id: 'binaryFunctionsList', items: [...query.binaryFunctions]})),
+                m('div', {style},
+                    m('h4',{'margin-top': 0}, 'Unary Operators'),
+                    m(PanelList, {
+                        id: 'unaryOperatorsList',
+                        items: Object.keys(query.unaryOperators).map(key => key + ' ' + query.unaryOperators[key])
+                    })),
+                m('div', {style},
+                    m('h4',{'margin-top': 0}, 'Binary Operators'),
+                    m(PanelList, {
+                        id: 'binaryOperatorsList',
+                        items: Object.keys(query.binaryOperators).map(key => key + ' ' + query.binaryOperators[key])
+                    }))
+            ]
+        }
+
 
         let isValid = true;
 
