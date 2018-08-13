@@ -65,15 +65,17 @@ export async function submitQuery() {
 }
 
 export let unaryFunctions = new Set([
-    'abs', 'ceil', 'exp', 'floor', 'ln', 'log', 'log10', 'sqrt', 'trunc', // math
+    'abs', 'ceil', 'exp', 'floor', 'ln', 'log10', 'sqrt', 'trunc', // math
     'and', 'not', 'or', // logic
     'trim', 'toLower', 'toUpper', // string
     'toBool', 'toDouble', 'toInt', 'toString' // type
 ]);
 export let binaryFunctions = new Set([
-    'add', 'divide', 'mod', 'multiply', 'pow', 'subtract', // math
+    'divide', 'log', 'mod', 'pow', 'subtract', // math
     'eq', 'gt', 'gte', 'lt', 'lte', 'ne', // comparison
-    'concat' // string
+]);
+export let variadicFunctions = new Set([
+    'add', 'multiply', 'concat' // any number of arguments
 ]);
 
 export let unaryOperators = {
@@ -94,40 +96,66 @@ export let binaryOperators =  {
 // let examples = ['2 + numhits * sqrt(numwalks / 3)', 'strikes % 3', '~wonGame'];
 export function buildTransform(text, variables) {
 
+    let usedTerms = {
+        variables: new Set(),
+        unaryFunctions: new Set(),
+        binaryFunctions: new Set(),
+        variadicFunctions: new Set(),
+        unaryOperators: new Set(),
+        binaryOperators: new Set()
+    };
+
     let parse = tree => {
         if (tree.type === 'Literal') return tree.value;
 
         // Variables
         if (tree.type === 'Identifier') {
-            if (variables.has(tree.name)) return tree.name;
-            throw 'Invalid variable';
+            if (variables.has(tree.name)) {
+                usedTerms.variables.add(tree.name);
+                return tree.name;
+            }
+            throw 'Invalid variable: ' + tree.name;
         }
 
         // Functions
         if (tree.type === 'CallExpression') {
-            if (unaryFunctions.has(tree.callee.name.toLowerCase()))
-                return {['$' + tree.callee.name.toLowerCase()]: parse(tree.arguments[0])};
-            if (binaryFunctions.has(tree.callee.name.toLowerCase()))
-                return {['$' + tree.callee.name.toLowerCase()]: tree.arguments.map(arg => parse(arg))};
+            if (unaryFunctions.has(tree.callee.name)) {
+                usedTerms.unaryFunctions.add(tree.callee.name);
+                return {['$' + tree.callee.name]: parse(tree.arguments[0])};
+            }
+            if (binaryFunctions.has(tree.callee.name) && tree.arguments.length === 2) {
+                usedTerms.binaryFunctions.add(tree.callee.name);
+                return {['$' + tree.callee.name]: tree.arguments.map(arg => parse(arg))};
+            }
+            if (variadicFunctions.has(tree.callee.name)) {
+                usedTerms.variadicFunctions.add(tree.callee.name);
+                return {['$' + tree.callee.name]: tree.arguments.map(arg => parse(arg))};
+            }
             throw `Invalid function: ${tree.callee.name} with ${tree.arguments.length} arguments`;
         }
 
         // Unary Operators
         if (tree.type === 'UnaryExpression') {
-            if (tree.operator in unaryOperators)
+            if (tree.operator in unaryOperators) {
+                usedTerms.unaryOperators.add(tree.operator);
                 return {['$' + unaryOperators[tree.operator]]: [parse(tree.argument)]};
+            }
             throw 'Invalid unary operator: ' + tree.operator;
         }
 
         // Binary Operators
         if (tree.type === 'BinaryExpression') {
-            if (tree.operator in binaryOperators)
+            if (tree.operator in binaryOperators) {
+                usedTerms.binaryOperators.add(tree.operator);
                 return {['$' + binaryOperators[tree.operator]]: [parse(tree.left), parse(tree.right)]};
+            }
             throw 'Invalid binary operator: ' + tree.operator;
         }
+
+        throw 'Unknown syntax: ' + tree.type;
     };
 
-    return parse(jsep(text));
+    return {query: parse(jsep(text)), usedTerms};
 }
 
 // Recursively traverse the tree in the right panel. For each node, call processNode

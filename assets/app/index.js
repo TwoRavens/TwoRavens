@@ -254,7 +254,7 @@ function rightpanel(mode) {
 
     if (mode === 'transform') return m(Panel, {
         side: 'right',
-        label: 'Transforms',
+        label: 'Pipeline',
         hover: false,
         width: '500px',
     }, transform.rightpanel());

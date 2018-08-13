@@ -36,18 +36,31 @@ export class TreeVariables {
     }
 }
 
-// I don't plan on rendering the entire function in the tree, just a quicky wrapper for listing transforms
 export class TreeTransform {
+    convertToJQTreeFormat(step) {
+        return step.transforms.map(transform => ({
+            id: step.id + '-' + transform.name,
+            name: transform.name + ' = ' + transform.equation,
+            cancellable: true,
+            show_op: false
+        }));
+    }
+
     oncreate({attrs, dom}) {
         let transformTree = $(dom);
         let {step} = attrs;
 
         transformTree.tree({
-            data: step.transforms,
+            data: this.convertToJQTreeFormat(step),
             saveState: true,
             dragAndDrop: false,
             autoOpen: false,
             selectable: false,
+            onCreateLi: function(node, $li) {
+                if (!('cancellable' in node) || (node['cancellable'] === true)) {
+                    $li.find('.jqtree-element').prepend(buttonDeleteTransform(node.id));
+                }
+            }
         })
     }
 
@@ -56,7 +69,7 @@ export class TreeTransform {
         let {step} = attrs;
         let subsetTree = $(dom);
         let state = subsetTree.tree('getState');
-        subsetTree.tree('loadData', step.transforms);
+        subsetTree.tree('loadData', this.convertToJQTreeFormat(step));
         subsetTree.tree('setState', state);
     }
 
@@ -64,6 +77,18 @@ export class TreeTransform {
         return m('div#transformTree')
     }
 }
+
+function buttonDeleteTransform(id) {
+    return `<button type='button' class='btn btn-default btn-xs' style='background:none;border:none;box-shadow:none;margin-top:2px;height:18px' onclick='callbackDeleteTransform("${id}")'><span class='glyphicon glyphicon-remove' style='color:#ADADAD'></span></button></div>`;
+}
+
+window.callbackDeleteTransform = function(id) {
+    let [stepId, transformationName] = id.split('-');
+    let step = app.getTransformStep(stepId);
+    step.transforms.splice(step.transforms.findIndex(transformation => transformation.name === transformationName), 1);
+
+    m.redraw();
+};
 
 
 export class TreeQuery {

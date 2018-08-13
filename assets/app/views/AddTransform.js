@@ -12,6 +12,7 @@ import {italicize} from '../index';
 import * as subset from '../../EventData/app/app';
 import * as query from '../../EventData/app/query';
 import * as transform from '../transform';
+import * as common from '../../common/app/common';
 
 let setDefault = (obj, id, value) => obj[id] = obj[id] || value;
 let warn = (text) => m('[style=color:#dc3545;display:inline-block;margin-left:1em;]', text);
@@ -25,6 +26,14 @@ export default class AddTransform {
         if (name === 'Transform') {
             setDefault(preferences, 'transformName', '');
             setDefault(preferences, 'transformEquation', '');
+            setDefault(preferences, 'usedTerms', {
+                variables: new Set(),
+                unaryFunctions: new Set(),
+                binaryFunctions: new Set(),
+                variadicFunctions: new Set(),
+                unaryOperators: new Set(),
+                binaryOperators: new Set()
+            })
         }
 
         else {
@@ -52,12 +61,12 @@ export default class AddTransform {
         if (name === 'Transform') {
 
             let style = {
-                width: '18%',
+                width: '14.666%',
                 display: 'inline-block',
                 'vertical-align': 'top',
                 margin: '1%',
-                padding:'1em',
-                background:'rgba(0,0,0,0.05)',
+                padding: '1em',
+                background: 'rgba(0,0,0,0.05)',
                 'box-shadow': '0px 5px 5px rgba(0,0,0,.1)'
             };
 
@@ -66,7 +75,9 @@ export default class AddTransform {
 
             let vars = new Set((nodes || []).map(node => node.name));
             try {
-                transformQuery = JSON.stringify(query.buildTransform(preferences.transformEquation, vars), null, 2);
+                let response = query.buildTransform(preferences.transformEquation, vars);
+                transformQuery = JSON.stringify(response.query, null, 2);
+                preferences.usedTerms = response.usedTerms;
             }
             catch (err) {
                 transformError = String(err)
@@ -78,7 +89,7 @@ export default class AddTransform {
                     id: 'textFieldName',
                     placeholder: 'Transformation Name',
                     value: preferences.transformName,
-                    class: !preferences.transformName && ['is-invalid'],
+                    class: (!preferences.transformName || preferences.transformName.match(/[ -]/)) && ['is-invalid'],
                     oninput: (value) => preferences.transformName = value,
                     onblur: (value) => preferences.transformName = value,
                     style: {width: '165px', display: 'inline-block'}
@@ -91,41 +102,71 @@ export default class AddTransform {
                     onblur: (value) => preferences.transformEquation = value,
                     style: {display: 'inline-block', width: 'calc(100% - 190px)'}
                 }), m('br'),
-                m('div', {style: {width: '100%'}}, transformQuery || warn(transformError)), m('br'),
+
+                preferences.transformName.match(/[ -]/) && warn('spaces and dashes are not permitted in the variable name'),
+
+                preferences.transformEquation && m('div', {style: {width: '100%'}},
+                    transformQuery || warn(transformError)), m('br'),
 
                 m(Button, {
                     id: 'btnAddTransform',
-                    disabled: !preferences.transformName || !transformQuery,
+                    disabled: !preferences.transformName || preferences.transformName.match(/[ -]/) || !transformQuery,
                     onclick: () => {
                         step.transforms.push({
                             name: preferences.transformName,
                             equation: preferences.transformEquation
                         });
                         transform.setPendingConstraintMenu(undefined);
+                        Object.keys(transform.modalPreferences).forEach(key => delete transform.modalPreferences[key]);
                     }
                 }, 'Add Transform'), m('br'),
 
                 m('div', {style},
                     m('h4', {'margin-top': 0}, 'Variables'),
-                    m(PanelList, {id: 'varList', items: [...vars]})
+                    m(PanelList, {
+                        id: 'varList',
+                        items: [...vars],
+                        colors: {[common.selVarColor]: [...preferences.usedTerms.variables]}
+                    })
                 ),
                 m('div', {style},
-                    m('h4',{'margin-top': 0}, 'Unary Functions'),
-                    m(PanelList, {id: 'unaryFunctionsList', items: [...query.unaryFunctions]})),
-                m('div', {style},
-                    m('h4',{'margin-top': 0}, 'Binary Functions'),
-                    m(PanelList, {id: 'binaryFunctionsList', items: [...query.binaryFunctions]})),
-                m('div', {style},
-                    m('h4',{'margin-top': 0}, 'Unary Operators'),
+                    m('h4', {'margin-top': 0}, 'Unary Functions'),
                     m(PanelList, {
-                        id: 'unaryOperatorsList',
-                        items: Object.keys(query.unaryOperators).map(key => key + ' ' + query.unaryOperators[key])
+                        id: 'unaryFunctionsList',
+                        items: [...query.unaryFunctions],
+                        colors: {[common.selVarColor]: [...preferences.usedTerms.unaryFunctions]}
                     })),
                 m('div', {style},
-                    m('h4',{'margin-top': 0}, 'Binary Operators'),
+                    m('h4', {'margin-top': 0}, 'Binary Functions'),
+                    m(PanelList, {
+                        id: 'binaryFunctionsList',
+                        items: [...query.binaryFunctions],
+                        colors: {[common.selVarColor]: [...preferences.usedTerms.binaryFunctions]}
+                    })),
+                m('div', {style},
+                    m('h4', {'margin-top': 0}, 'Variadic Functions'),
+                    m(PanelList, {
+                        id: 'variadicFunctionsList',
+                        items: [...query.variadicFunctions],
+                        colors: {[common.selVarColor]: [...preferences.usedTerms.variadicFunctions]}
+                    })),
+                m('div', {style},
+                    m('h4', {'margin-top': 0}, 'Unary Operators'),
+                    m(PanelList, {
+                        id: 'unaryOperatorsList',
+                        items: Object.keys(query.unaryOperators).map(key => key + ' ' + query.unaryOperators[key]),
+                        colors: {
+                            [common.selVarColor]: [...preferences.usedTerms.unaryOperators].map(key => key + ' ' + query.unaryOperators[key])
+                        }
+                    })),
+                m('div', {style},
+                    m('h4', {'margin-top': 0}, 'Binary Operators'),
                     m(PanelList, {
                         id: 'binaryOperatorsList',
-                        items: Object.keys(query.binaryOperators).map(key => key + ' ' + query.binaryOperators[key])
+                        items: Object.keys(query.binaryOperators).map(key => key + ' ' + query.binaryOperators[key]),
+                        colors: {
+                            [common.selVarColor]: [...preferences.usedTerms.binaryOperators].map(key => key + ' ' + query.binaryOperators[key])
+                        }
                     }))
             ]
         }

@@ -1,5 +1,5 @@
 import m from 'mithril';
-import {TreeQuery} from "../EventData/app/views/TreeSubset";
+import {TreeQuery, TreeTransform} from "../EventData/app/views/TreeSubset";
 import Button from '../common/app/views/Button';
 import CanvasDate from "../EventData/app/canvases/CanvasDate";
 import CanvasDyad from "../EventData/app/canvases/CanvasDyad";
@@ -57,6 +57,7 @@ export function rightpanel() {
                     content = m('div', {style: {'text-align': 'left'}},
                         deleteButton,
                         m('h4[style=font-size:16px;margin-left:0.5em]', 'Transformations'),
+                        m(TreeTransform, {step}),
 
                         subset.transformPipeline.length - 1 === i && m(Button, {
                             id: 'btnAddTransform',
