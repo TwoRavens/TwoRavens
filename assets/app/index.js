@@ -41,9 +41,9 @@ import Peek_EventData from '../common-eventdata/views/Peek';
 import '../EventData/css/app.css'
 import '../EventData/app/app'
 
-let bold = (value) => m('div', {style: {'font-weight': 'bold', display: 'inline'}}, value);
-let italicize = (value) => m('div', {style: {'font-style': 'italic', display: 'inline'}}, value);
-let link = (url) => m('a', {href: url, style: {color: 'darkblue'}, target: '_blank', display: 'inline'}, url);
+export let bold = (value) => m('div', {style: {'font-weight': 'bold', display: 'inline'}}, value);
+export let italicize = (value) => m('div', {style: {'font-style': 'italic', display: 'inline'}}, value);
+export let link = (url) => m('a', {href: url, style: {color: 'darkblue'}, target: '_blank', display: 'inline'}, url);
 
 let state = {
     pipelines: [],
@@ -606,10 +606,9 @@ class Body {
             this.footer(mode),
             leftpanel(mode),
             rightpanel(mode),
-            m(Button, {
+            app.is_transform_mode && transform.constraintMenu && m(Button, {
                 id: 'btnStage',
                 style: {
-                    display: app.currentMode === 'transform' && transform.constraintMenu ? 'block' : 'none',
                     right: `calc(${common.panelOcclusion['right']} + 5px)`,
                     bottom: `calc(${common.heightFooter} + ${common.panelMargin} + 6px)`,
                     position: 'fixed',

@@ -4,6 +4,7 @@ import ButtonRadio from '../../common/app/views/ButtonRadio';
 import TextFieldSuggestion from "../../common/app/views/TextFieldSuggestion";
 import ListTags from "../../common/app/views/ListTags";
 import Button from '../../common/app/views/Button';
+import {italicize} from '../index';
 
 import * as subset from '../../EventData/app/app';
 import * as transform from '../transform';
@@ -16,10 +17,16 @@ export default class AddTransform {
     oninit({attrs}) {
         let {preferences} = attrs;
 
-        setDefault(preferences, 'columns', new Set());
         setDefault(preferences, 'constraintType', transform.constraintTypes[0]);
-        setDefault(preferences, 'structure', 'Point');
+        setDefault(preferences, 'columns', new Set());
         setDefault(preferences, 'pendingColumn', '');
+
+        // specific to certain constraints
+        setDefault(preferences, 'tabs', {
+            source: {full: '', pendingFilter: '', filters: new Set()},
+            target: {full: '', pendingFilter: '', filters: new Set()}
+        });
+        setDefault(preferences, 'structure', 'Point');
     }
 
     view(vnode) {
@@ -28,8 +35,16 @@ export default class AddTransform {
 
         let requiredColumns = 1;
         if (preferences.constraintType === 'Date' && preferences.structure === 'Interval') requiredColumns = 2;
+        if (preferences.constraintType === 'Coordinates') requiredColumns = 2;
 
-        let isValid = preferences.columns.size === requiredColumns;
+        let isValid = true;
+
+        if (['Monad', 'Dyad'].indexOf(preferences.constraintType) === -1 && preferences.columns.size !== requiredColumns)
+            isValid = false;
+        if (preferences.constraintType === 'Monad' && !preferences.tabs.source.full.length)
+            isValid = false;
+        if (preferences.constraintType === 'Dyad' && Object.values(preferences.tabs).some(tab => !tab.full.length))
+            isValid = false;
 
         let menu = [
             m('h4', 'Add ' + name + ' Constraint for Step ' + subset.transformPipeline.indexOf(step)),
@@ -58,7 +73,60 @@ export default class AddTransform {
                 attrsButtons: {style: {width: 'auto', margin: '1em 0'}}
             }), m('br')]);
 
-        menu.push([
+        let tabMenu = (tab, name) => {
+            return m('div[style=margin:1em;padding:1em;background:rgba(0,0,0,0.05);box-shadow: 0px 5px 5px rgba(0,0,0,.1)]',
+                name && [m('h4[style=margin-bottom:0]', name), m('br')],
+                m('[style=width:120px;display:inline-block; margin: 1em 0]', 'Primary Column'),
+                m(TextFieldSuggestion, {
+                    id: 'fullSuggestionTextField',
+                    suggestions: (nodes || []).map(node => node.name),
+                    enforce: true,
+                    value: tab.full,
+                    oninput: (value) => tab.full = value,
+                    onblur: (value) => tab.full = value,
+                    attrsAll: {
+                        class: !tab.full.length && ['is-invalid'],
+                        style: {display: 'inline-block', width: 'auto', margin: '0.5em 0'}
+                    }
+                }), m('br'),
+
+                m('[style=width:120px;display:inline-block;]', m(Button, {
+                        disabled: !tab.pendingFilter,
+                        title: 'filter with this column',
+                        style: {display: 'inline-block'},
+                        onclick: () => {
+                            tab.filters.add(tab.pendingFilter);
+                            tab.pendingFilter = '';
+                        }
+                    },
+                    'Add Filter')),
+                m(TextFieldSuggestion, {
+                    id: 'filterSuggestionTextField',
+                    suggestions: (nodes || []).map(node => node.name),
+                    enforce: true,
+                    value: tab.pendingFilter,
+                    oninput: (value) => tab.pendingFilter = value,
+                    onblur: (value) => tab.pendingFilter = value,
+                    attrsAll: {
+                        style: {display: 'inline-block', width: 'auto', margin: '0.5em 0'}
+                    }
+                }),
+                italicize(' any number of filters'), m('br'),
+                m('[style=width:120px;display:inline-block; margin: 1em 0]', 'Selected Filters'),
+                m(ListTags, {
+                    tags: [...tab.filters],
+                    ondelete: (column) => tab.filters.delete(column),
+                }), m('br')
+            )
+        };
+
+        if (preferences.constraintType === 'Monad')
+            menu.push(tabMenu(preferences.tabs.source));
+
+        if (preferences.constraintType === 'Dyad')
+            menu.push(Object.keys(preferences.tabs).map(tab => tabMenu(preferences.tabs[tab], tab)));
+
+        if (['Monad', 'Dyad'].indexOf(preferences.constraintType) === -1) menu.push([
             m('[style=width:120px;display:inline-block;]', m(Button, {
                     disabled: !preferences.pendingColumn,
                     title: 'constrain with this column',
@@ -87,31 +155,55 @@ export default class AddTransform {
                 tags: [...preferences.columns],
                 ondelete: (column) => preferences.columns.delete(column),
             }), m('br'),
+        ]);
 
+        menu.push(
             m(Button, {
                 id: 'createConstraint',
                 disabled: !isValid,
                 onclick: () => {
                     if (!isValid) return;
 
+                    // build metadata structure that the eventdata canvases can read
                     let metadata = {
                         type: {
                             Nominal: 'categorical',
                             Continuous: 'continuous',
                             Date: 'date',
-                            Coordinates: 'coordinates'
+                            Coordinates: 'coordinates',
+                            Monad: 'monad',
+                            Dyad: 'dyad',
                         }[preferences.constraintType],
-                        columns: [...preferences.columns]
                     };
                     if (preferences.constraintType === 'Date') metadata['structure'] = preferences.structure;
 
+                    // handle column listings
+                    if (['Monad', 'Dyad'].indexOf(preferences.constraintType) === -1)
+                        metadata['columns'] = [...preferences.columns];
+
+                    if (preferences.constraintType === 'Monad') metadata['tabs'] = {
+                        monad: {
+                            full: preferences.tabs.source.full,
+                            filters: [...preferences.tabs.source.filters]
+                        }
+                    };
+
+                    if (preferences.constraintType === 'Dyad') metadata['tabs'] = Object.keys(preferences.tabs).reduce((out, tab) => {
+                        out[tab] = {
+                            full: preferences.tabs[tab].full,
+                            filters: [...preferences.tabs[tab].filters]
+                        };
+                        return out;
+                    }, {});
+
+                    console.log(metadata);
                     transform.setConstraintMetadata(metadata);
                     transform.setConstraintMenu(transform.pendingConstraintMenu);
                     transform.setPendingConstraintMenu(undefined);
                     Object.keys(preferences).forEach(key => delete preferences[key]);
                 }
             }, 'Add Constraint')
-        ]);
+        );
 
         return menu;
     }

@@ -19,21 +19,24 @@ export function rightpanel() {
 
     return [
         m(Flowchart, {
+            attrsAll: {style: {height: 'calc(100% - 87px)', overflow: 'auto'}},
             steps: subset.transformPipeline.map((step, i) => {
                 let content;
 
                 if (step.type === 'subset') {
                     content = m('div', {style: {'text-align': 'left'}},
-                        m('h4', 'Subset'),
+                        m('h4[style=font-size:16px]', 'Subset'),
                         m(TreeQuery, {step}),
 
                         m(Button, {
                             id: 'btnAddConstraint',
+                            class: ['btn-sm'],
                             style: {margin: '0.5em'},
                             onclick: () => setPendingConstraintMenu({name: 'Subset', step})
                         }, plus, ' Constraint'),
                         m(Button, {
                             id: 'btnAddGroup',
+                            class: ['btn-sm'],
                             style: {margin: '0.5em'},
                             disabled: step.abstractQuery.every(constraint => constraint.type !== 'subset'),
                             onclick: () => subset.addGroup(step.id, false)
@@ -43,14 +46,16 @@ export function rightpanel() {
 
                 if (step.type === 'aggregate') {
                     content = m('div', {style: {'text-align': 'left'}},
-                        m('h4', 'Aggregate'),
+                        m('h4[style=font-size:16px]', 'Aggregate'),
                         m(Button, {
                             id: 'btnAddUnitMeasure',
+                            class: ['btn-sm'],
                             style: {margin: '0.5em'},
                             onclick: () => setPendingConstraintMenu({name: 'Aggregate Unit Measure', step})
                         }, plus, ' Unit Measure'),
                         m(Button, {
                             id: 'btnAddAccumulator',
+                            class: ['btn-sm'],
                             style: {margin: '0.5em'},
                             onclick: () => setPendingConstraintMenu({name: 'Aggregate Accumulator', step})
                         }, plus, ' Accumulator')
@@ -89,7 +94,9 @@ export function rightpanel() {
 }
 
 export function subsetCanvas() {
-    if (subset.subsetData[subset.selectedSubsetName] === undefined) {
+    if (!constraintMenu) return;
+
+    if (constraintData === undefined) {
 
         if (!subset.isLoading[subset.selectedSubsetName])
             loadSubset(subset.selectedSubsetName);
@@ -123,17 +130,23 @@ export function subsetCanvas() {
         data: constraintData,
         preferences: constraintPreferences,
         metadata: constraintMetadata,
-        redraw: subset.subsetRedraw[constraintMenu.name],
-        setRedraw: (state) => subset.setSubsetRedraw(constraintMenu.name, state)
+        redraw, setRedraw
     })
 }
+
+// when set, the loading spiral is shown in the canvas
+export let isLoading = false;
+
+// when set, the next time the constraint menu is drawn, it will rebuild non-mithril elements (like plots)
+export let redraw = false;
+export let setRedraw = (state) => redraw = state;
 
 // if set, then the popup modal menu for constructing a new transform is displayed {name: '', step}
 export let pendingConstraintMenu;
 export let setPendingConstraintMenu = (state) => pendingConstraintMenu = state;
 
 // when stage is clicked, preferences are shifted into the pipeline using this metadata {name: '', step}
-export let constraintMenu = {};
+export let constraintMenu;
 export let setConstraintMenu = step => {
     constraintMenu = step;
     if (!constraintMenu) return;
@@ -148,7 +161,7 @@ export let setConstraintMetadata = (meta) => constraintMetadata = meta;
 export let constraintPreferences = {};
 
 // contains the raw data used to draw the constraint menu
-export let constraintData = {};
+export let constraintData;
 
 // menu state within the modal
 export let modalPreferences = {};
@@ -157,4 +170,4 @@ function loadSubset(subset) {
     // data source is unknown!
 }
 
-export let constraintTypes = ['Nominal', 'Continuous', 'Date', 'Coordinates'];
+export let constraintTypes = ['Nominal', 'Continuous', 'Date', 'Coordinates', 'Monad', 'Dyad'];
