@@ -9,7 +9,7 @@ svg {
 }
 
 .is-invalid {
-    border-color: #dc3545;
+    border-color: #dc3545 !important;
 }
 
 div#subsetList.popover {

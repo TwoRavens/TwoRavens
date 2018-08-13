@@ -14,8 +14,19 @@ import * as common from '../common/app/common';
 
 export function rightpanel() {
     let plus = m(`span.glyphicon.glyphicon-plus[style=color: #818181; font-size: 1em; pointer-events: none]`);
+    let warn = (text) => m('[style=color:#dc3545;display:inline-block;]', text);
 
     let currentStepNumber = subset.transformPipeline.indexOf((constraintMenu || {}).step);
+
+    let isEnabled = (stepType) => {
+        console.log(subset.transformPipeline);
+        if (!subset.transformPipeline.length) return true;
+        let finalStep = subset.transformPipeline.slice(-1)[0];
+
+        if (finalStep.type === stepType) return false;
+        if (finalStep.type === 'aggregate' && !finalStep.measuresAccum.length) return false;
+        return true;
+    };
 
     return [
         m(Flowchart, {
@@ -23,8 +34,28 @@ export function rightpanel() {
             steps: subset.transformPipeline.map((step, i) => {
                 let content;
 
+                let deleteButton = subset.transformPipeline.length - 1 === i && m(`div#stepDelete`, {
+                    onclick: () => {
+                        let removedStep = subset.transformPipeline.pop();
+                        if (constraintMenu && constraintMenu.step === removedStep) {
+                            constraintMenu = undefined;
+                            constraintPreferences = {};
+                            constraintMetadata = undefined;
+                        }
+                    },
+                    style: {
+                        display: 'inline-block',
+                        'margin-right': '1em',
+                        transform: 'scale(2, 2)',
+                        float: 'right',
+                        'font-weight': 'bold',
+                        'line-height': '14px'
+                    }
+                }, '×');
+
                 if (step.type === 'subset') {
                     content = m('div', {style: {'text-align': 'left'}},
+                        deleteButton,
                         m('h4[style=font-size:16px]', 'Subset'),
                         m(TreeQuery, {step}),
 
@@ -46,7 +77,9 @@ export function rightpanel() {
 
                 if (step.type === 'aggregate') {
                     content = m('div', {style: {'text-align': 'left'}},
+                        deleteButton,
                         m('h4[style=font-size:16px]', 'Aggregate'),
+                        !step.measuresAccum.length && [warn('must have accumulator to output data'), m('br')],
                         m(Button, {
                             id: 'btnAddUnitMeasure',
                             class: ['btn-sm'],
@@ -55,7 +88,7 @@ export function rightpanel() {
                         }, plus, ' Unit Measure'),
                         m(Button, {
                             id: 'btnAddAccumulator',
-                            class: ['btn-sm'],
+                            class: ['btn-sm' + (step.measuresAccum.length ? '' : ' is-invalid')],
                             style: {margin: '0.5em'},
                             onclick: () => setPendingConstraintMenu({name: 'Aggregate Accumulator', step})
                         }, plus, ' Accumulator')
@@ -71,6 +104,7 @@ export function rightpanel() {
         }),
         m(Button, {
             id: 'btnAddSubset',
+            disabled: !isEnabled('subset'),
             style: {margin: '0.5em'},
             onclick: () => subset.transformPipeline.push({
                 type: 'subset',
@@ -83,6 +117,7 @@ export function rightpanel() {
         }, plus, ' Subset Step'),
         m(Button, {
             id: 'btnAddAggregate',
+            disabled: !isEnabled('aggregate'),
             style: {margin: '0.5em'},
             onclick: () => subset.transformPipeline.push({
                 type: 'aggregate',
