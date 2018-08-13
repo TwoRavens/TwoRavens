@@ -47,7 +47,7 @@ export default class AddTransform {
             isValid = false;
 
         let menu = [
-            m('h4', 'Add ' + name + ' Constraint for Step ' + subset.transformPipeline.indexOf(step)),
+            m('h4', 'Add ' + name + ' for Step ' + subset.transformPipeline.indexOf(step)),
             m('[style=width:120px;display:inline-block;]', 'Constraint Type'),
             m(ButtonRadio, {
                 id: 'variableType',

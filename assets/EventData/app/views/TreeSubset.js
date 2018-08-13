@@ -36,6 +36,35 @@ export class TreeVariables {
     }
 }
 
+// I don't plan on rendering the entire function in the tree, just a quicky wrapper for listing transforms
+export class TreeTransform {
+    oncreate({attrs, dom}) {
+        let transformTree = $(dom);
+        let {step} = attrs;
+
+        transformTree.tree({
+            data: step.transforms,
+            saveState: true,
+            dragAndDrop: false,
+            autoOpen: false,
+            selectable: false,
+        })
+    }
+
+    // when mithril updates this component, it redraws the tree with whatever the abstract query is
+    onupdate({attrs, dom}) {
+        let {step} = attrs;
+        let subsetTree = $(dom);
+        let state = subsetTree.tree('getState');
+        subsetTree.tree('loadData', step.transforms);
+        subsetTree.tree('setState', state);
+    }
+
+    view() {
+        return m('div#transformTree')
+    }
+}
+
 
 export class TreeQuery {
 

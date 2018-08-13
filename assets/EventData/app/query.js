@@ -1,6 +1,8 @@
+import m from 'mithril';
+import jsep from 'jsep';
+
 import * as app from './app';
 import * as tour from './tour';
-import m from 'mithril';
 
 // functions for generating database queries
 // subset queries are built from the abstractQuery, which is managed in app.js
@@ -60,6 +62,62 @@ export async function submitQuery() {
     let state = subsetTree.tree('getState');
     subsetTree.tree('loadData', step.abstractQuery);
     subsetTree.tree('setState', state);
+}
+
+// return a mongo projection from a string that describes a transformation
+// let examples = ['2 + numhits * sqrt(numwalks / 3)', 'strikes % 3', '~wonGame'];
+export function buildTransform(text, variables) {
+
+    let unaryFunctions = new Set(['abs', 'ceil', 'exp', 'floor', 'ln', 'log', 'log10', 'sqrt', 'trunc']);
+    let binaryFunctions = new Set(['add', 'divide', 'mod', 'multiply', 'pow', 'subtract']);
+
+    let unaryOperators = {
+        '+': 'add',
+        '-': 'subtract'
+    };
+    let binaryOperators =  {
+        '+': 'add',
+        '/': 'divide',
+        '%': 'mod',
+        '*': 'multiply',
+        '^': 'pow',
+        '-': 'subtract'
+    };
+
+    let parse = tree => {
+        if (tree.type === 'Literal') return tree.value;
+
+        // Variables
+        if (tree.type === 'Identifier') {
+            if (variables.has(tree.name)) return '$' + tree.name;
+            throw 'Invalid variable';
+        }
+
+        // Functions
+        if (tree.type === 'CallExpression') {
+            if (unaryFunctions.has(tree.callee.name.toLowerCase()))
+                return {['$' + unaryOperators[tree.operator]]: parse(tree.arguments[0])};
+            if (binaryFunctions.has(tree.callee.name.toLowerCase()))
+                return {['$' + tree.callee.name.toLowerCase()]: tree.arguments.map(arg => parse(arg))};
+            throw `Invalid function: ${tree.callee.name} with ${tree.arguments.length} arguments`;
+        }
+
+        // Unary Operators
+        if (tree.type === 'UnaryExpression') {
+            if (tree.operator in unaryOperators)
+                return {['$' + unaryOperators[tree.operator]]: [parse(tree.argument)]};
+            throw 'Invalid unary operator: ' + tree.operator;
+        }
+
+        // Binary Operators
+        if (tree.type === 'BinaryExpression') {
+            if (tree.operator in binaryOperators)
+                return {['$' + binaryOperators[tree.operator]]: [parse(tree.left), parse(tree.right)]};
+            throw 'Invalid binary operator: ' + tree.operator;
+        }
+    };
+
+    return parse(jsep(text));
 }
 
 // Recursively traverse the tree in the right panel. For each node, call processNode

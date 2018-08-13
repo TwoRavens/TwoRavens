@@ -19,12 +19,12 @@ export function rightpanel() {
     let currentStepNumber = subset.transformPipeline.indexOf((constraintMenu || {}).step);
 
     let isEnabled = (stepType) => {
-        console.log(subset.transformPipeline);
         if (!subset.transformPipeline.length) return true;
         let finalStep = subset.transformPipeline.slice(-1)[0];
 
         if (finalStep.type === stepType) return false;
         if (finalStep.type === 'aggregate' && !finalStep.measuresAccum.length) return false;
+        if (finalStep.type === 'transform' && !finalStep.transforms.length) return false;
         return true;
     };
 
@@ -53,17 +53,31 @@ export function rightpanel() {
                     }
                 }, '×');
 
+                if (step.type === 'transform') {
+                    content = m('div', {style: {'text-align': 'left'}},
+                        deleteButton,
+                        m('h4[style=font-size:16px;margin-left:0.5em]', 'Transformations'),
+
+                        subset.transformPipeline.length - 1 === i && m(Button, {
+                            id: 'btnAddTransform',
+                            class: ['btn-sm'],
+                            style: {margin: '0.5em'},
+                            onclick: () => setPendingConstraintMenu({name: 'Transform', step})
+                        }, plus, ' Transform')
+                    )
+                }
+
                 if (step.type === 'subset') {
                     content = m('div', {style: {'text-align': 'left'}},
                         deleteButton,
-                        m('h4[style=font-size:16px]', 'Subset'),
+                        m('h4[style=font-size:16px;margin-left:0.5em]', 'Subset'),
                         m(TreeQuery, {step}),
 
                         m(Button, {
                             id: 'btnAddConstraint',
                             class: ['btn-sm'],
                             style: {margin: '0.5em'},
-                            onclick: () => setPendingConstraintMenu({name: 'Subset', step})
+                            onclick: () => setPendingConstraintMenu({name: 'Subset Constraint', step})
                         }, plus, ' Constraint'),
                         m(Button, {
                             id: 'btnAddGroup',
@@ -78,20 +92,22 @@ export function rightpanel() {
                 if (step.type === 'aggregate') {
                     content = m('div', {style: {'text-align': 'left'}},
                         deleteButton,
-                        m('h4[style=font-size:16px]', 'Aggregate'),
+                        m('h4[style=font-size:16px;margin-left:0.5em]', 'Aggregate'),
                         !step.measuresAccum.length && [warn('must have accumulator to output data'), m('br')],
-                        m(Button, {
-                            id: 'btnAddUnitMeasure',
-                            class: ['btn-sm'],
-                            style: {margin: '0.5em'},
-                            onclick: () => setPendingConstraintMenu({name: 'Aggregate Unit Measure', step})
-                        }, plus, ' Unit Measure'),
-                        m(Button, {
-                            id: 'btnAddAccumulator',
-                            class: ['btn-sm' + (step.measuresAccum.length ? '' : ' is-invalid')],
-                            style: {margin: '0.5em'},
-                            onclick: () => setPendingConstraintMenu({name: 'Aggregate Accumulator', step})
-                        }, plus, ' Accumulator')
+                        subset.transformPipeline.length - 1 === i && [
+                            m(Button, {
+                                id: 'btnAddUnitMeasure',
+                                class: ['btn-sm'],
+                                style: {margin: '0.5em'},
+                                onclick: () => setPendingConstraintMenu({name: 'Aggregate Unit Measure', step})
+                            }, plus, ' Unit Measure'),
+                            m(Button, {
+                                id: 'btnAddAccumulator',
+                                class: ['btn-sm' + (step.measuresAccum.length ? '' : ' is-invalid')],
+                                style: {margin: '0.5em'},
+                                onclick: () => setPendingConstraintMenu({name: 'Aggregate Accumulator', step})
+                            }, plus, ' Accumulator')
+                        ]
                     )
                 }
 
@@ -103,13 +119,25 @@ export function rightpanel() {
             })
         }),
         m(Button, {
+            id: 'btnAddTransform',
+            title: 'construct new columns',
+            disabled: !isEnabled('transform'),
+            style: {margin: '0.5em'},
+            onclick: () => subset.transformPipeline.push({
+                type: 'transform',
+                id: 'transform ' + subset.transformPipeline.length,
+                transforms: []
+            })
+        }, plus, ' Transform Step'),
+        m(Button, {
             id: 'btnAddSubset',
+            title: 'filter rows that match criteria',
             disabled: !isEnabled('subset'),
             style: {margin: '0.5em'},
             onclick: () => subset.transformPipeline.push({
                 type: 'subset',
                 abstractQuery: [],
-                id: 'subset',
+                id: 'subset ' + subset.transformPipeline.length,
                 nodeID: 1,
                 groupID: 1,
                 queryID: 1
@@ -117,10 +145,12 @@ export function rightpanel() {
         }, plus, ' Subset Step'),
         m(Button, {
             id: 'btnAddAggregate',
+            title: 'group rows that match criteria',
             disabled: !isEnabled('aggregate'),
             style: {margin: '0.5em'},
             onclick: () => subset.transformPipeline.push({
                 type: 'aggregate',
+                id: 'aggregate ' + subset.transformPipeline.length,
                 measuresUnit: [],
                 measuresAccum: []
             })
