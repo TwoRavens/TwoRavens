@@ -58,6 +58,10 @@ export default class AddTransform {
         if (preferences.constraintType === 'Date' && preferences.structure === 'Interval') requiredColumns = 2;
         if (preferences.constraintType === 'Coordinates') requiredColumns = 2;
 
+        let vars = new Set((nodes || []).map(node => node.name));
+        // simulate the pipeline until the n-1th step to determine available variables
+        let propagatedVariables = query.buildPipeline(subset.transformPipeline.slice(0, -1), vars)['variables'];
+
         if (name === 'Transform') {
 
             let style = {
@@ -73,7 +77,6 @@ export default class AddTransform {
             let transformQuery;
             let transformError;
 
-            let vars = new Set((nodes || []).map(node => node.name));
             try {
                 let response = query.buildTransform(preferences.transformEquation, vars);
                 transformQuery = JSON.stringify(response.query, null, 2);
@@ -125,7 +128,7 @@ export default class AddTransform {
                     m('h4', {'margin-top': 0}, 'Variables'),
                     m(PanelList, {
                         id: 'varList',
-                        items: [...vars],
+                        items: [...propagatedVariables],
                         colors: {[common.selVarColor]: [...preferences.usedTerms.variables]}
                     })
                 ),
@@ -214,7 +217,7 @@ export default class AddTransform {
                 m('[style=width:120px;display:inline-block; margin: 1em 0]', 'Primary Column'),
                 m(TextFieldSuggestion, {
                     id: 'fullSuggestionTextField',
-                    suggestions: (nodes || []).map(node => node.name),
+                    suggestions: [...propagatedVariables],
                     enforce: true,
                     value: tab.full,
                     oninput: (value) => tab.full = value,
@@ -237,7 +240,7 @@ export default class AddTransform {
                     'Add Filter')),
                 m(TextFieldSuggestion, {
                     id: 'filterSuggestionTextField',
-                    suggestions: (nodes || []).map(node => node.name),
+                    suggestions: [...propagatedVariables],
                     enforce: true,
                     value: tab.pendingFilter,
                     oninput: (value) => tab.pendingFilter = value,
@@ -274,7 +277,7 @@ export default class AddTransform {
                 'Add Column')),
             m(TextFieldSuggestion, {
                 id: 'columnSuggestionTextField',
-                suggestions: (nodes || []).map(node => node.name),
+                suggestions: [...propagatedVariables],
                 enforce: true,
                 value: preferences.pendingColumn,
                 oninput: (value) => preferences.pendingColumn = value,

@@ -23,24 +23,31 @@ import * as tour from './tour';
 // build*() functions are pure and return mongo queries
 // process*() functions are for constructing the subset query, relative to a specific node, group, or rule on the query tree
 
-export function buildPipeline(pipeline) {
+export function buildPipeline(pipeline, variables) {
     let compiled = [];
 
     pipeline.forEach(step => {
+
         if (step.type === 'transform') compiled.push({
             '$addFields': step.transforms.reduce((out, transformation) => {
-                out[transformation.name] = buildTransform(transformation['equation'])['query'];
-                out[transformation.name]['$comment'] = transformation['equation'];
+                out[transformation.name] = buildTransform(transformation.equation, variables)['query'];
+                out[transformation.name]['$comment'] = transformation.equation;
+                variables.add(transformation['name']);
                 return out;
-            })
+            }, {})
         });
+
         if (step.type === 'subset')
             compiled.push({'$match': buildSubset(step.abstractQuery, true)});
-        if (step.type === 'aggregate')
-            compiled = compiled.concat(buildAggregation(step.measuresUnit, step.measuresAccum)['pipeline']);
+
+        if (step.type === 'aggregate') {
+            let aggPrepped = buildAggregation(step.measuresUnit, step.measuresAccum);
+            compiled = compiled.concat(aggPrepped['pipeline']);
+            variables = new Set([...aggPrepped['columnsUnit'], ...aggPrepped['columnsAccum']])
+        }
     });
 
-    return compiled;
+    return {pipeline: compiled, variables};
 }
 
 export let unaryFunctions = new Set([
@@ -115,10 +122,9 @@ export function buildTransform(text, variables) {
 
         // Unary Operators
         if (tree.type === 'UnaryExpression') {
-            if (tree.operator in unaryOperators) {
-                usedTerms.unaryOperators.add(tree.operator);
-                return {['$' + unaryOperators[tree.operator]]: [parse(tree.argument)]};
-            }
+            if (tree.operator === '+') return parse(tree.argument);
+            if (tree.operator === '-') return {"$subtract": [0, parse(tree.argument)]};
+            if (tree.operator === '~') return {"$not": parse(tree.argument)};
             throw 'Invalid unary operator: ' + tree.operator;
         }
 
