@@ -3,7 +3,6 @@ import jsep from 'jsep';
 
 import * as app from './app';
 import * as tour from './tour';
-import {eventMeasure} from "./app";
 
 // PIPELINE DESCRIPTION
 // transform step: add new fields/columns/variables:
@@ -16,9 +15,6 @@ import {eventMeasure} from "./app";
 // {measuresUnit: [], measuresAccum: []}
 
 
-
-
-
 // functions for generating database queries
 // subset queries are built from the abstractQuery, which is managed in app.js
 // aggregation queries contain the subset query as the first stage in the pipeline. The second group stage pulls data from subsetPreferences
@@ -28,19 +24,23 @@ import {eventMeasure} from "./app";
 // process*() functions are for constructing the subset query, relative to a specific node, group, or rule on the query tree
 
 export function buildPipeline(pipeline) {
-    return pipeline.map(step => {
-        if (step.type === 'transform') {
-            return {
-                '$addFields': step.transforms.reduce((out, transformation) => {
-                    out[transformation.name] = buildTransform(transformation['equation'])['query'];
-                    out[transformation.name]['$comment'] = transformation['equation'];
-                    return out;
-                })
-            };
-        }
-        if (step.type === 'subset') return {'$match': buildSubset(step.abstractQuery, true)};
-        if (step.type === 'aggregate') return buildAggregation(unitMeasures, accumulators)
-    })
+    let compiled = [];
+
+    pipeline.forEach(step => {
+        if (step.type === 'transform') compiled.push({
+            '$addFields': step.transforms.reduce((out, transformation) => {
+                out[transformation.name] = buildTransform(transformation['equation'])['query'];
+                out[transformation.name]['$comment'] = transformation['equation'];
+                return out;
+            })
+        });
+        if (step.type === 'subset')
+            compiled.push({'$match': buildSubset(step.abstractQuery, true)});
+        if (step.type === 'aggregate')
+            compiled = compiled.concat(buildAggregation(step.measuresUnit, step.measuresAccum)['pipeline']);
+    });
+
+    return compiled;
 }
 
 export let unaryFunctions = new Set([
@@ -392,7 +392,7 @@ export function submitAggregation() {
     }
 
     let step = app.getTransformStep(app.eventdataSubsetName);
-    let query = JSON.stringify(buildAggregation(step.abstractQuery, app.subsetPreferences));
+    let query = JSON.stringify(buildAggregation(step.measuresUnit, step.measuresAccum));
     console.log("Aggregation Query: " + query);
 
     app.setLaddaSpinner('btnUpdate', true);
@@ -421,6 +421,12 @@ export function buildAggregation(unitMeasures, accumulations) {
     // event measure
     let event = {};
 
+    // monads/dyads require a melt after grouping
+    let dyadMeasureName;
+    let columnsDyad = [];
+    let columnsNonDyad = [];
+    let columnsAccum = [];
+
     // note that only aggregation transforms for unit-date, unit-dyad and event-categorical have been written.
     // To aggregate down to date events, for example, a new function would need to be added under ['event']['date'].
     let transforms = {
@@ -433,17 +439,21 @@ export function buildAggregation(unitMeasures, accumulations) {
                     'Yearly': '%Y'
                 }[data['unit']];
 
-                if (dateFormat) unit[data['measureName'] + '-' + data['unit']] = {
+                let columnName = data['measureName'] + '-' + data['unit'];
+                columnsNonDyad.push(columnName);
+
+                if (dateFormat) unit[columnName] = {
                     "$dateToString": {
                         "format": dateFormat,
                         "date": "$" + data['column']
                     }
                 };
 
+
                 else if (data['unit'] === 'Quarterly') {
                     // function takes a mongodb subquery and returns the subquery casted to a string
                     let toString = (query) => ({"$substr": [query, 0, -1]});
-                    unit[data['measureName'] + '-Quarterly'] = {
+                    unit[columnName] = {
                         '$concat': [
                             toString({'$year': '$' + data['column']}), '-',
                             toString({'$trunc': {'$divide': [{'$month': '$' + data['column']}, 4]}})
@@ -452,9 +462,14 @@ export function buildAggregation(unitMeasures, accumulations) {
                 }
             },
             'dyad': (data) => {
+                dyadMeasureName = data['measureName'];
                 data.children.map(link => {
                     let [leftChild, rightChild] = link.children;
-                    unit[data['measureName'].replace(/[$.-]/g, '') + '-' + leftChild.name.replace(/[$.-]/g, '') + '-' + rightChild.name.replace(/[$.-]/g, '')] = {
+
+                    let dyadName = data['measureName'].replace(/[$.-]/g, '') + '-' + leftChild.name.replace(/[$.-]/g, '') + '-' + rightChild.name.replace(/[$.-]/g, '');
+                    columnsDyad.push(dyadName);
+
+                    unit[dyadName] = {
                         '$and': [
                             {'$in': ['$' + leftChild.column, [...leftChild.actors]]},
                             {'$in': ['$' + rightChild.column, [...rightChild.actors]]}
@@ -464,18 +479,21 @@ export function buildAggregation(unitMeasures, accumulations) {
             }
         },
         'event': {
-            'categorical': (data, subset) => {
+            'categorical': (data) => {
+                let selections = new Set(data.children.map(child => child.name));
+                columnsAccum = columnsAccum.concat([...selections]);
+
                 let bins = {};
                 if ('alignment' in data) {
                     for (let equivalency of app.alignmentData[data['alignment']]) {
                         if (!(data['formatSource'] in equivalency && data['formatTarget'] in equivalency)) continue;
-                        if (!preferences[subset]['selections'].has(equivalency[data['formatSource']])) continue;
+                        if (!selections.has(equivalency[data['formatSource']])) continue;
 
                         if (!(equivalency[data['formatTarget']] in bins)) bins[equivalency[data['formatTarget']]] = new Set();
                         bins[equivalency[data['formatTarget']]].add(equivalency[data['formatSource']])
                     }
                 }
-                else for (let selection of preferences[subset]['selections']) bins[selection] = new Set([selection]);
+                else for (let selection of selections) bins[selection] = new Set([selection]);
 
                 for (let bin of Object.keys(bins)) {
                     if (bins[bin].size === 1) event[bin] = {
@@ -503,10 +521,55 @@ export function buildAggregation(unitMeasures, accumulations) {
         }
     };
 
+    let reformatter = [];
+    if (dyadMeasureName) {
+        let _id = columnsNonDyad.reduce((out_id, columnNonDyad) => {
+            out_id[columnNonDyad] = "$_id." + columnNonDyad;
+            return out_id;
+        }, {});
+
+        reformatter = [
+            {
+                "$facet": columnsDyad.reduce((facet, dyad) => { // build a pipeline for each dyad
+                    facet[dyad] = [
+                        {"$match": {["_id." + column]: true}},
+                        {
+                            "$group": columnsAccum.reduce((accumulators, columnAccum) => {
+                                accumulators[columnAccum] = {"$sum": "$" + columnAccum};
+                                return accumulators;
+                            }, {_id})
+                        },
+                        {"$addFields": Object.assign({[dyadMeasureName]: dyad}, _id)}
+                    ];
+                    return facet;
+                }, {})
+            },
+            {"$project": {"combine": {"$setUnion": columnsDyad.map(column => '$' + column)}}},
+            {"$unwind": "$combine"},
+            {"$replaceRoot": {"newRoot": "$combine"}},
+            {"$project": {"_id": 0}}
+        ];
+    }
+    else {
+        reformatter = [
+            {
+                "$addFields": columnsNonDyad.reduce((addFields, column) => {
+                    addFields[column] = '$_id.' + column;
+                    return addFields;
+                }, {})
+            },
+            {"$project": {"$_id": 0}}
+        ];
+    }
+
     unitMeasures.forEach(measure => transforms.unit[measure.type](measure));
     accumulations.forEach(measure => transforms.unit[measure.type](measure));
 
-    return {"$group": Object.assign({"_id": unit}, event)};
+    return {
+        pipeline: [{"$group": Object.assign({"_id": unit}, event)}].concat(reformatter),
+        columnsUnit: columnsNonDyad.concat(dyadMeasureName ? [dyadMeasureName] : []),
+        columnsAccum
+    };
 }
 
 // almost pure- the function mutates the argument
@@ -519,48 +582,7 @@ export function reformatAggregation(jsondata) {
 
     // reformat data for each unit measure
     headers.forEach(unit => {
-        if (app.genericMetadata[app.selectedDataset]['subsets'][unit]['type'] === 'dyad' && jsondata.length !== 0) {
-
-            let jsondataMerged = [];
-            let mergeAggEntry = (newEntry) => {
-                let matches = jsondataMerged.filter(entry => Object.keys(entry._id)
-                    .every(attribute => entry._id[attribute] === newEntry._id[attribute]));
-                if (matches.length === 1)
-                    Object.keys(matches[0])
-                        .filter(attribute => attribute !== '_id')
-                        .forEach(attribute => matches[0][attribute] += newEntry[attribute]);
-                else jsondataMerged.push(newEntry)
-            };
-
-            // aggregations over the dyad unit of analysis represent 'inclusion in a link' as a boolean flag in the group _id
-            // the _id is of the form "[subsetName]-[sourceNode]-[targetNode]": bool
-            let links = new Set(Object.keys(jsondata[0]._id)
-                .filter(id => id.split('-')[0] === unit.replace(/[$.-]/g, ''))
-                .map(id => id.slice(unit.replace(/[$.-]/g, '').length + 1)));
-
-            // create a record set, where the link name is flattened
-            links.forEach((link) => {
-                jsondata.forEach(entry => {
-                    // record must have the link defined
-                    if (!entry._id[unit.replace(/[$.-]/g, '') + '-' + link]) return;
-
-                    // filter out all _ids related to the current dyad subset
-                    let filteredId = Object.keys(entry._id)
-                        .filter(id => !(id.split('-')[0] === unit.replace(/[$.-]/g, '')))
-                        .reduce((out, key) => {
-                            out[key] = entry._id[key];
-                            return out;
-                        }, {});
-
-                    // add a new _id of the form "[subsetName]": "[sourceNode]-[targetNode]"
-                    let newId = Object.assign({[unit]: link}, filteredId);
-                    // newId occludes the _id key from the original record in the new object
-                    mergeAggEntry(Object.assign({}, entry, {_id: newId}))
-                })
-            });
-            jsondata = jsondataMerged;
-        }
-        else if (app.genericMetadata[app.selectedDataset]['subsets'][unit]['type'] === 'date' && jsondata.length !== 0) {
+        if (app.genericMetadata[app.selectedDataset]['subsets'][unit]['type'] === 'date' && jsondata.length !== 0) {
             // date ids are of the format: '[unit]-[dateFormat]'; grab the dateFormat from the id:
             let format = Object.keys(jsondata[0]._id).filter(id => id.split('-')[0] === unit)[0].split('-')[1];
 
