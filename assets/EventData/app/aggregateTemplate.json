@@ -1,0 +1,42 @@
+[
+  {
+    "$group": {
+      "_id": {
+        "classification1": {
+          "$eq": ["$A", 1]
+        },
+        "classification2": {
+          "$eq": ["$B", 1]
+        }
+      },
+      "countX": {"$sum": "$X"},
+      "countY": {"$sum": "$Y"}
+    }
+  },
+  {
+    "$facet": {
+      "classification1": [
+        {"$match": {"_id.classification1": true}},
+        {"$group": {"_id": null, "X": {"$sum": "$countX"}, "Y": {"$sum": "$countY"}}},
+        {"$addFields": {"name": "classification1"}}
+      ],
+      "classification2": [
+        {"$match": {"_id.classification2": true}},
+        {"$group": {"_id": null, "X": {"$sum": "$countX"}, "Y": {"$sum": "$countY"}}},
+        {"$addFields": {"name": "classification2"}}
+      ]
+    }
+  },
+  {
+    "$project": {"combine": {"$setUnion": ["$classification1", "$classification2"]}}
+  },
+  {
+    "$unwind": "$combine"
+  },
+  {
+    "$replaceRoot": {"newRoot": "$combine"}
+  },
+  {
+    "$project": {"_id": 0}
+  }
+]
