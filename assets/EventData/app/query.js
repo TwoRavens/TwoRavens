@@ -3,6 +3,21 @@ import jsep from 'jsep';
 
 import * as app from './app';
 import * as tour from './tour';
+import {eventMeasure} from "./app";
+
+// PIPELINE DESCRIPTION
+// transform step: add new fields/columns/variables:
+// {transforms: [{name: 'newName', equation: 'plaintext formula'}, ...]}
+
+// subset step: filter rows based on constraints
+// {abstractQuery: [JQTree representation of constraints], nodeId: int, groupId: int, queryId: int}
+
+// aggregate step: count number of ocurrences in bins
+// {measuresUnit: [], measuresAccum: []}
+
+
+
+
 
 // functions for generating database queries
 // subset queries are built from the abstractQuery, which is managed in app.js
@@ -11,6 +26,116 @@ import * as tour from './tour';
 // submit*() functions cause a state change/update the menus
 // build*() functions are pure and return mongo queries
 // process*() functions are for constructing the subset query, relative to a specific node, group, or rule on the query tree
+
+export function buildPipeline(pipeline) {
+    return pipeline.map(step => {
+        if (step.type === 'transform') {
+            return {
+                '$addFields': step.transforms.reduce((out, transformation) => {
+                    out[transformation.name] = buildTransform(transformation['equation'])['query'];
+                    out[transformation.name]['$comment'] = transformation['equation'];
+                    return out;
+                })
+            };
+        }
+        if (step.type === 'subset') return {'$match': buildSubset(step.abstractQuery, true)};
+        if (step.type === 'aggregate') return buildAggregation(unitMeasures, accumulators)
+    })
+}
+
+export let unaryFunctions = new Set([
+    'abs', 'ceil', 'exp', 'floor', 'ln', 'log10', 'sqrt', 'trunc', // math
+    'and', 'not', 'or', // logic
+    'trim', 'toLower', 'toUpper', // string
+    'toBool', 'toDouble', 'toInt', 'toString' // type
+]);
+export let binaryFunctions = new Set([
+    'divide', 'log', 'mod', 'pow', 'subtract', // math
+    'eq', 'gt', 'gte', 'lt', 'lte', 'ne', // comparison
+]);
+export let variadicFunctions = new Set([
+    'add', 'multiply', 'concat' // any number of arguments
+]);
+
+export let unaryOperators = {
+    '+': 'add',
+    '-': 'subtract',
+    '~': 'not'
+};
+export let binaryOperators = {
+    '+': 'add',
+    '/': 'divide',
+    '%': 'mod',
+    '*': 'multiply',
+    '^': 'pow',
+    '-': 'subtract'
+};
+
+// return a mongo projection from a string that describes a transformation
+// let examples = ['2 + numhits * sqrt(numwalks / 3)', 'strikes % 3', '~wonGame'];
+export function buildTransform(text, variables) {
+
+    let usedTerms = {
+        variables: new Set(),
+        unaryFunctions: new Set(),
+        binaryFunctions: new Set(),
+        variadicFunctions: new Set(),
+        unaryOperators: new Set(),
+        binaryOperators: new Set()
+    };
+
+    let parse = tree => {
+        if (tree.type === 'Literal') return tree.value;
+
+        // Variables
+        if (tree.type === 'Identifier') {
+            if (variables.has(tree.name)) {
+                usedTerms.variables.add(tree.name);
+                return tree.name;
+            }
+            throw 'Invalid variable: ' + tree.name;
+        }
+
+        // Functions
+        if (tree.type === 'CallExpression') {
+            if (unaryFunctions.has(tree.callee.name)) {
+                usedTerms.unaryFunctions.add(tree.callee.name);
+                return {['$' + tree.callee.name]: parse(tree['arguments'][0])};
+            }
+            if (binaryFunctions.has(tree.callee.name) && tree['arguments'].length === 2) {
+                usedTerms.binaryFunctions.add(tree.callee.name);
+                return {['$' + tree.callee.name]: tree['arguments'].map(arg => parse(arg))};
+            }
+            if (variadicFunctions.has(tree.callee.name)) {
+                usedTerms.variadicFunctions.add(tree.callee.name);
+                return {['$' + tree.callee.name]: tree['arguments'].map(arg => parse(arg))};
+            }
+            throw `Invalid function: ${tree.callee.name} with ${tree['arguments'].length} arguments`;
+        }
+
+        // Unary Operators
+        if (tree.type === 'UnaryExpression') {
+            if (tree.operator in unaryOperators) {
+                usedTerms.unaryOperators.add(tree.operator);
+                return {['$' + unaryOperators[tree.operator]]: [parse(tree.argument)]};
+            }
+            throw 'Invalid unary operator: ' + tree.operator;
+        }
+
+        // Binary Operators
+        if (tree.type === 'BinaryExpression') {
+            if (tree.operator in binaryOperators) {
+                usedTerms.binaryOperators.add(tree.operator);
+                return {['$' + binaryOperators[tree.operator]]: [parse(tree.left), parse(tree.right)]};
+            }
+            throw 'Invalid binary operator: ' + tree.operator;
+        }
+
+        throw 'Unknown syntax: ' + tree.type;
+    };
+
+    return {query: parse(jsep(text)), usedTerms};
+}
 
 
 export async function submitQuery() {
@@ -62,100 +187,6 @@ export async function submitQuery() {
     let state = subsetTree.tree('getState');
     subsetTree.tree('loadData', step.abstractQuery);
     subsetTree.tree('setState', state);
-}
-
-export let unaryFunctions = new Set([
-    'abs', 'ceil', 'exp', 'floor', 'ln', 'log10', 'sqrt', 'trunc', // math
-    'and', 'not', 'or', // logic
-    'trim', 'toLower', 'toUpper', // string
-    'toBool', 'toDouble', 'toInt', 'toString' // type
-]);
-export let binaryFunctions = new Set([
-    'divide', 'log', 'mod', 'pow', 'subtract', // math
-    'eq', 'gt', 'gte', 'lt', 'lte', 'ne', // comparison
-]);
-export let variadicFunctions = new Set([
-    'add', 'multiply', 'concat' // any number of arguments
-]);
-
-export let unaryOperators = {
-    '+': 'add',
-    '-': 'subtract',
-    '~': 'not'
-};
-export let binaryOperators =  {
-    '+': 'add',
-    '/': 'divide',
-    '%': 'mod',
-    '*': 'multiply',
-    '^': 'pow',
-    '-': 'subtract'
-};
-
-// return a mongo projection from a string that describes a transformation
-// let examples = ['2 + numhits * sqrt(numwalks / 3)', 'strikes % 3', '~wonGame'];
-export function buildTransform(text, variables) {
-
-    let usedTerms = {
-        variables: new Set(),
-        unaryFunctions: new Set(),
-        binaryFunctions: new Set(),
-        variadicFunctions: new Set(),
-        unaryOperators: new Set(),
-        binaryOperators: new Set()
-    };
-
-    let parse = tree => {
-        if (tree.type === 'Literal') return tree.value;
-
-        // Variables
-        if (tree.type === 'Identifier') {
-            if (variables.has(tree.name)) {
-                usedTerms.variables.add(tree.name);
-                return tree.name;
-            }
-            throw 'Invalid variable: ' + tree.name;
-        }
-
-        // Functions
-        if (tree.type === 'CallExpression') {
-            if (unaryFunctions.has(tree.callee.name)) {
-                usedTerms.unaryFunctions.add(tree.callee.name);
-                return {['$' + tree.callee.name]: parse(tree.arguments[0])};
-            }
-            if (binaryFunctions.has(tree.callee.name) && tree.arguments.length === 2) {
-                usedTerms.binaryFunctions.add(tree.callee.name);
-                return {['$' + tree.callee.name]: tree.arguments.map(arg => parse(arg))};
-            }
-            if (variadicFunctions.has(tree.callee.name)) {
-                usedTerms.variadicFunctions.add(tree.callee.name);
-                return {['$' + tree.callee.name]: tree.arguments.map(arg => parse(arg))};
-            }
-            throw `Invalid function: ${tree.callee.name} with ${tree.arguments.length} arguments`;
-        }
-
-        // Unary Operators
-        if (tree.type === 'UnaryExpression') {
-            if (tree.operator in unaryOperators) {
-                usedTerms.unaryOperators.add(tree.operator);
-                return {['$' + unaryOperators[tree.operator]]: [parse(tree.argument)]};
-            }
-            throw 'Invalid unary operator: ' + tree.operator;
-        }
-
-        // Binary Operators
-        if (tree.type === 'BinaryExpression') {
-            if (tree.operator in binaryOperators) {
-                usedTerms.binaryOperators.add(tree.operator);
-                return {['$' + binaryOperators[tree.operator]]: [parse(tree.left), parse(tree.right)]};
-            }
-            throw 'Invalid binary operator: ' + tree.operator;
-        }
-
-        throw 'Unknown syntax: ' + tree.type;
-    };
-
-    return {query: parse(jsep(text)), usedTerms};
 }
 
 // Recursively traverse the tree in the right panel. For each node, call processNode
@@ -383,85 +414,65 @@ export function submitAggregation() {
         .catch(app.laddaStopAll);
 }
 
-export function buildAggregation(tree, preferences) {
+export function buildAggregation(unitMeasures, accumulations) {
     // unit of measure
     let unit = {};
 
     // event measure
     let event = {};
 
-    let tempSubsets = app.genericMetadata[app.selectedDataset]['subsets'];
-
     // note that only aggregation transforms for unit-date, unit-dyad and event-categorical have been written.
     // To aggregate down to date events, for example, a new function would need to be added under ['event']['date'].
     let transforms = {
         'unit': {
-            'date': (subset) => {
+            'date': (data) => {
 
-                if (!preferences[subset]['aggregation'] || preferences[subset]['aggregation'] === 'None') return;
-
-                let dateColumn = app.coerceArray(tempSubsets[subset]['columns'])[0];
                 let dateFormat = {
                     'Weekly': '%Y-%V',
                     'Monthly': '%Y-%m',
                     'Yearly': '%Y'
-                }[preferences[subset]['aggregation']];
+                }[data['unit']];
 
-                if (dateFormat) unit[subset + '-' + preferences[subset]['aggregation']] = {
+                if (dateFormat) unit[data['measureName'] + '-' + data['unit']] = {
                     "$dateToString": {
                         "format": dateFormat,
-                        "date": "$" + dateColumn
+                        "date": "$" + data['column']
                     }
                 };
 
-                else if (preferences[subset]['aggregation'] === 'Quarterly') {
+                else if (data['unit'] === 'Quarterly') {
                     // function takes a mongodb subquery and returns the subquery casted to a string
                     let toString = (query) => ({"$substr": [query, 0, -1]});
-                    unit[subset + '-Quarterly'] = {
+                    unit[data['measureName'] + '-Quarterly'] = {
                         '$concat': [
-                            toString({'$year': '$' + dateColumn}), '-',
-                            toString({'$trunc': {'$divide': [{'$month': '$' + dateColumn}, 4]}})
+                            toString({'$year': '$' + data['column']}), '-',
+                            toString({'$trunc': {'$divide': [{'$month': '$' + data['column']}, 4]}})
                         ]
                     }
                 }
             },
-            'dyad': (subset) => {
-                if (!app.unitMeasure[subset] || !(subset in preferences) || !('edges' in preferences[subset])) return;
-
-                let [leftTab, rightTab] = Object.keys(tempSubsets[subset]['tabs']);
-                let filteredLinks = preferences[subset]['edges']
-                    .filter(link => link.source.tab === leftTab && link.target.tab === rightTab);
-
-                for (let idx in filteredLinks) {
-                    let link = filteredLinks[idx];
-                    let leftTabColumn = tempSubsets[subset]['tabs'][link.source.tab]['full'];
-                    let rightTabColumn = tempSubsets[subset]['tabs'][link.target.tab]['full'];
-                    unit[subset.replace(/[$.-]/g, '') + '-' + link.source.name.replace(/[$.-]/g, '') + '-' + link.target.name.replace(/[$.-]/g, '')] = {
+            'dyad': (data) => {
+                data.children.map(link => {
+                    let [leftChild, rightChild] = link.children;
+                    unit[data['measureName'].replace(/[$.-]/g, '') + '-' + leftChild.name.replace(/[$.-]/g, '') + '-' + rightChild.name.replace(/[$.-]/g, '')] = {
                         '$and': [
-                            {'$in': ['$' + leftTabColumn, [...link.source.selected]]},
-                            {'$in': ['$' + rightTabColumn, [...link.target.selected]]}
+                            {'$in': ['$' + leftChild.column, [...leftChild.actors]]},
+                            {'$in': ['$' + rightChild.column, [...rightChild.actors]]}
                         ]
                     }
-                }
+                });
             }
         },
         'event': {
-            'categorical': (subset) => {
-                if (app.eventMeasure !== subset) return;
-
-                let masterColumn = app.coerceArray(tempSubsets[subset]['columns'])[0];
-                let masterFormat = app.genericMetadata[app.selectedDataset]['formats'][masterColumn];
-                let masterAlignment = app.genericMetadata[app.selectedDataset]['alignments'][masterColumn];
-                let targetFormat = preferences[subset]['aggregation'];
-
+            'categorical': (data, subset) => {
                 let bins = {};
-                if (masterAlignment) {
-                    for (let equivalency of app.alignmentData[masterAlignment]) {
-                        if (!(masterFormat in equivalency && targetFormat in equivalency)) continue;
-                        if (!preferences[subset]['selections'].has(equivalency[masterFormat])) continue;
+                if ('alignment' in data) {
+                    for (let equivalency of app.alignmentData[data['alignment']]) {
+                        if (!(data['formatSource'] in equivalency && data['formatTarget'] in equivalency)) continue;
+                        if (!preferences[subset]['selections'].has(equivalency[data['formatSource']])) continue;
 
-                        if (!(equivalency[targetFormat] in bins)) bins[equivalency[targetFormat]] = new Set();
-                        bins[equivalency[targetFormat]].add(equivalency[masterFormat])
+                        if (!(equivalency[data['formatTarget']] in bins)) bins[equivalency[data['formatTarget']]] = new Set();
+                        bins[equivalency[data['formatTarget']]].add(equivalency[data['formatSource']])
                     }
                 }
                 else for (let selection of preferences[subset]['selections']) bins[selection] = new Set([selection]);
@@ -470,7 +481,7 @@ export function buildAggregation(tree, preferences) {
                     if (bins[bin].size === 1) event[bin] = {
                         "$sum": {
                             "$cond": [{
-                                "$eq": ["$" + masterColumn, [...bins[bin]][0]]
+                                "$eq": ["$" + data['column'], [...bins[bin]][0]]
                             }, 1, 0]
                         }
                     };
@@ -481,7 +492,7 @@ export function buildAggregation(tree, preferences) {
                                     "$map": {
                                         "input": [...bins[bin]],
                                         "as": "el",
-                                        "in": {"$eq": ["$$el", "$" + masterColumn]}
+                                        "in": {"$eq": ["$$el", "$" + data['column']]}
                                     }
                                 }
                             }, 1, 0]
@@ -492,18 +503,10 @@ export function buildAggregation(tree, preferences) {
         }
     };
 
-    // for each aggregation screen, apply modifications to the aggregation query
-    Object.keys(tempSubsets).forEach(subset => {
-        if (!('measures' in tempSubsets[subset])) return;
-        for (let measure of app.coerceArray(tempSubsets[subset]['measures']))
-            (transforms[measure][tempSubsets[subset]['type']] || Function)(subset);
-    });
+    unitMeasures.forEach(measure => transforms.unit[measure.type](measure));
+    accumulations.forEach(measure => transforms.unit[measure.type](measure));
 
-    let pipeline = [];
-    const subset = buildSubset(tree);
-    if (subset.length) pipeline.push({"$match": subset});
-    pipeline.push({"$group": Object.assign({"_id": unit}, event)});
-    return pipeline;
+    return {"$group": Object.assign({"_id": unit}, event)};
 }
 
 // almost pure- the function mutates the argument

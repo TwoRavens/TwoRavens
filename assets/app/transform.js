@@ -1,5 +1,5 @@
 import m from 'mithril';
-import {TreeQuery, TreeTransform} from "../EventData/app/views/TreeSubset";
+import {TreeQuery, TreeTransform, TreeAggregate} from "../EventData/app/views/TreeSubset";
 import Button from '../common/app/views/Button';
 import CanvasDate from "../EventData/app/canvases/CanvasDate";
 import CanvasDyad from "../EventData/app/canvases/CanvasDyad";
@@ -94,6 +94,16 @@ export function rightpanel() {
                     content = m('div', {style: {'text-align': 'left'}},
                         deleteButton,
                         m('h4[style=font-size:16px;margin-left:0.5em]', 'Aggregate'),
+
+                        step.measuresUnit.length !== 0 && [
+                            m('h5', 'Unit Measures'),
+                            m(TreeAggregate, {data: step.measuresUnit}),
+                        ],
+                        step.measuresAccum.length !== 0 && [
+                            m('h5', 'Unit Measures'),
+                            m(TreeAggregate, {data: step.measuresAccum}),
+                        ],
+
                         !step.measuresAccum.length && [warn('must have accumulator to output data'), m('br')],
                         subset.transformPipeline.length - 1 === i && [
                             m(Button, {
@@ -127,7 +137,7 @@ export function rightpanel() {
             onclick: () => subset.transformPipeline.push({
                 type: 'transform',
                 id: 'transform ' + subset.transformPipeline.length,
-                transforms: []
+                transforms: [] // transform name is used instead of nodeId
             })
         }, plus, ' Transform Step'),
         m(Button, {
@@ -153,7 +163,8 @@ export function rightpanel() {
                 type: 'aggregate',
                 id: 'aggregate ' + subset.transformPipeline.length,
                 measuresUnit: [],
-                measuresAccum: []
+                measuresAccum: [],
+                nodeId: 1 // both trees share the same nodeId counter
             })
         }, plus, ' Aggregate Step')
     ]
@@ -164,8 +175,7 @@ export function subsetCanvas() {
 
     if (constraintData === undefined) {
 
-        if (!subset.isLoading[subset.selectedSubsetName])
-            loadSubset(subset.selectedSubsetName);
+        if (!isLoading) loadSubset(constraintMenu);
 
         return m('#loading.loader', {
             style: {
@@ -177,16 +187,13 @@ export function subsetCanvas() {
         })
     }
 
-    let subsetType = subset.genericMetadata[subset.selectedDataset]['subsets'][subset.selectedSubsetName]['type'];
-
-
     return m({
         'date': CanvasDate,
         'dyad': CanvasDyad,
         'categorical': CanvasCategorical,
         'categorical_grouped': CanvasCategoricalGrouped,
         'coordinates': CanvasCoordinates
-    }[subsetType], {
+    }[constraintMetadata.type], {
         mode: {
             'Subset': 'subset',
             'Aggregate Unit Measure': 'aggregate',
@@ -232,7 +239,8 @@ export let constraintData;
 // menu state within the modal
 export let modalPreferences = {};
 
-function loadSubset(subset) {
+function loadSubset(menu) {
+    isLoading = true;
     // data source is unknown!
 }
 

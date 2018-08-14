@@ -15,7 +15,10 @@ export default class CanvasCategorical {
 
         let allData = {};
 
-        preferences['aggregation'] = preferences['aggregation'] || masterFormat;
+        // used for aggregation
+        preferences['alignment'] = masterAlignment;
+        preferences['aggregation'] = preferences['aggregation'] || masterFormat; // the format to accumulate to
+
         preferences['format'] = preferences['format'] || masterFormat;
         preferences['selections'] = preferences['selections'] || new Set();
 

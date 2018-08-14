@@ -109,7 +109,7 @@ export default class CanvasDate {
         let {mode, subsetName, data, preferences, redraw, setRedraw} = vnode.attrs;
         if (Object.keys(preferences).length === 0) this.oncreate(vnode);
 
-        preferences['aggregation'] = preferences['aggregation'] || 'None';
+        preferences['unit'] = preferences['unit'] || 'Weekly';
 
         let setHandleDates = (handles) => {
             preferences['handleLower'] = handles[0];
@@ -227,14 +227,9 @@ export default class CanvasDate {
                 id: 'dateAggregOption',
                 attrsAll: {style: {width: '80px'}},
                 vertical: true,
-                onclick: (aggregation) => {
-                    app.unitMeasure[subsetName] = aggregation !== 'None';
-                    preferences['aggregation'] = aggregation;
-                    app.setAggregationStaged(true);
-                },
-                activeSection: preferences['aggregation'],
+                onclick: (aggregation) => preferences['unit'] = aggregation,
+                activeSection: preferences['unit'],
                 sections: [
-                    {value: 'None'},
                     {value: 'Weekly'},
                     {value: 'Monthly'},
                     {value: 'Quarterly'},

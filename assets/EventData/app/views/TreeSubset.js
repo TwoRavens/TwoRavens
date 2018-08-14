@@ -314,3 +314,36 @@ window.callbackDelete = function (id) {
         }
     }
 };
+
+// this is reused for both unit and event measures (accumulations)
+export class TreeAggregate {
+
+    oncreate({attrs, dom}) {
+        let aggregateTree = $(dom);
+
+        aggregateTree.tree({
+            data: attrs.data,
+            saveState: true,
+            dragAndDrop: false,
+            autoOpen: false,
+            selectable: false,
+            onCreateLi: function(node, $li) {
+                if (!('cancellable' in node) || (node['cancellable'] === true)) {
+                    $li.find('.jqtree-element').prepend(buttonDeleteTransform(node.id));
+                }
+            }
+        })
+    }
+
+    // when mithril updates this component, it redraws the tree with whatever the abstract query is
+    onupdate({attrs, dom}) {
+        let aggregateTree = $(dom);
+        let state = aggregateTree.tree('getState');
+        aggregateTree.tree('loadData', attrs.data);
+        aggregateTree.tree('setState', state);
+    }
+
+    view() {
+        return m('div#aggregateTree')
+    }
+}

@@ -299,6 +299,9 @@ export default class AddTransform {
                 onclick: () => {
                     if (!isValid) return;
 
+                    if (name === 'Aggregate Unit Measure') preferences.measureType = 'unit';
+                    if (name === 'Aggregate Accumulator') preferences.measureType = 'accumulator';
+
                     // build metadata structure that the eventdata canvases can read
                     let metadata = {
                         type: {
