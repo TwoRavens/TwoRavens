@@ -4,7 +4,7 @@ import '../../../../node_modules/jqtree/tree.jquery.js';
 import '../../../../node_modules/jqtree/jqtree.css';
 import '../../pkgs/jqtree/jqtree.style.css';
 
-import * as query from "../query";
+import * as query from "../queryMongo";
 import * as app from "../app";
 
 
@@ -81,14 +81,6 @@ export class TreeTransform {
 function buttonDeleteTransform(id) {
     return `<button type='button' class='btn btn-default btn-xs' style='background:none;border:none;box-shadow:none;margin-top:2px;height:18px' onclick='callbackDeleteTransform("${id}")'><span class='glyphicon glyphicon-remove' style='color:#ADADAD'></span></button></div>`;
 }
-
-window.callbackDeleteTransform = function(id) {
-    let [stepId, transformationName] = id.split('-');
-    let step = app.getTransformStep(stepId);
-    step.transforms.splice(step.transforms.findIndex(transformation => transformation.name === transformationName), 1);
-
-    m.redraw();
-};
 
 
 export class TreeQuery {
@@ -229,20 +221,6 @@ function buttonNegate(id, state) {
     }
 }
 
-window.callbackNegate = function (id, bool) {
-    let subsetTree = $('#subsetTree');
-    let node = subsetTree.tree('getNodeById', id);
-
-    // don't permit change in negation on non-editable node
-    if ('editable' in node && !node.editable) return;
-
-    node.negate = bool;
-
-    let stepID = id.split('-')[0];
-    app.getTransformStep(stepID).abstractQuery = JSON.parse(subsetTree.tree('toJson'));
-    m.redraw();
-};
-
 function buttonOperator(id, state, canChange) {
     if (canChange) {
         if (state === 'and') {
@@ -261,59 +239,9 @@ function buttonOperator(id, state, canChange) {
     }
 }
 
-window.callbackOperator = function (id, operand) {
-    let subsetTree = $('#subsetTree');
-    let node = subsetTree.tree('getNodeById', id);
-    if (('editable' in node && !node.editable) || node['type'] === 'query') return;
-
-    node.operation = operand;
-
-    let stepID = id.split('-')[0];
-    app.getTransformStep(stepID).abstractQuery = JSON.parse(subsetTree.tree('toJson'));
-
-    m.redraw();
-};
-
 function buttonDelete(id) {
     return "<button type='button' class='btn btn-default btn-xs' style='background:none;border:none;box-shadow:none;float:right;margin-top:2px;height:18px' onclick='callbackDelete(" + String(id) + ")'><span class='glyphicon glyphicon-remove' style='color:#ADADAD'></span></button></div>";
 }
-
-// attached to window due to html injection in jqtree
-window.callbackDelete = function (id) {
-
-    let subsetTree = $('#subsetTree');
-    let node = subsetTree.tree('getNodeById', id);
-    if (node.type === 'query' && !confirm("You are deleting a query. This will return your subsetting to an earlier state."))
-        return;
-
-    // If deleting the last leaf in a branch, delete the branch
-    if (typeof node.parent.id !== 'undefined' && node.parent.children.length === 1) {
-        callbackDelete(node.parent.id);
-    } else {
-        subsetTree.tree('removeNode', node);
-
-        let step = app.getTransformStep(id.split('-')[0]);
-        step.abstractQuery = JSON.parse(subsetTree.tree('toJson'));
-
-        app.hideFirst(step.abstractQuery);
-        m.redraw();
-
-        if (node.type === 'query') {
-            app.loadSubset(app.selectedSubsetName, {recount: true});
-
-            // clear all subset data. Note this is intentionally mutating the object, not rebinding it
-            Object.keys(app.subsetData)
-                .filter(subset => subset !== app.selectedSubsetName)
-                .forEach(subset => delete app.subsetData[subset]);
-
-            if (step.abstractQuery.length === 0) {
-                step.nodeId = 1;
-                step.groupId = 1;
-                step.queryId = 1;
-            }
-        }
-    }
-};
 
 // this is reused for both unit and event measures (accumulations)
 export class TreeAggregate {

@@ -1,7 +1,7 @@
 import m from 'mithril';
 
 import * as app from './app';
-import * as query from './query';
+import * as query from './queryMongo';
 import * as tour from "./tour";
 
 import * as common from '../../common-eventdata/common';
@@ -50,6 +50,13 @@ export default class Body_EventData {
             nodeID: 1,
             groupID: 1,
             queryID: 1
+        });
+
+        app.transformPipeline.push({
+            type: 'aggregate',
+            measuresUnit: [],
+            measuresAccum: [],
+            nodeId: 1
         });
 
         // Load the metadata for all available datasets
@@ -179,7 +186,7 @@ export default class Body_EventData {
                         else {
                             if ('aggregate' === app.selectedMode && app.aggregationStaged) {
                                 app.setLaddaSpinner('btnSave');
-                                await query.submitAggregation();
+                                await app.submitAggregation();
                                 app.laddaStopAll();
                             }
                             app.setShowSaveQuery(true)
@@ -234,7 +241,7 @@ export default class Body_EventData {
                         if (tab['full'] in alignedColumns) return 'Aligned';
                         for (let filter of tab['filters']) if (filter in alignedColumns) return 'Aligned';
                     }
-                else for (let column of app.coerceArray(metadataSubsets[subsetName]['columns']))
+                else for (let column of metadataSubsets[subsetName]['columns'])
                     if (column in alignedColumns) return 'Aligned';
                 return 'Unaligned';
             };
@@ -438,17 +445,18 @@ export default class Body_EventData {
                             "bottom": '5px'
                         }
                     },
-                    m("button.btn.btn-default[id='buttonAddGroup'][type='button']", {
-                            style: {"float": "left"},
-                            onclick: () => app.addGroup('subset', false)
-                        },
-                        'Group'
-                    ),
+                    m(Button, {
+                        id: 'buttonAddGroup',
+                        style: {float: 'left'},
+                        onclick: () => app.addGroup('subset', false)
+                    }, 'Group'),
 
-                    m("button.btn.btn-default.ladda-button[data-spinner-color='#818181'][type='button']", {
+                    m(Button, {
                         id: 'btnUpdate',
+                        class: ['ladda-button'],
+                        'data-spinner-color': '#818181',
                         style: {float: 'right'},
-                        onclick: () => query.submitQuery() // wrap in anonymous function to ignore the mouseEvent
+                        onclick: () => app.submitQuery() // wrap in anonymous function to ignore the mouseEvent
                     }, 'Update')
                 ))
         }
@@ -479,13 +487,15 @@ export default class Body_EventData {
                     },
                     attrsAll: {style: {height: 'calc(100% - 78px)', overflow: 'auto'}}
                 }),
-                m("button.btn.btn-default.ladda-button[data-spinner-color='#818181'][type='button']", {
+
+                m(Button, {
                     id: 'btnUpdate',
-                    class: app.aggregationStaged && ['btn-success'],
+                    class: ['ladda-button'],
+                    'data-spinner-color': '#818181',
                     style: {float: 'right'},
                     onclick: () => {
                         app.setAggregationStaged(false);
-                        query.submitAggregation()
+                        app.submitAggregation()
                     }
                 }, 'Update'))
         }
@@ -496,7 +506,7 @@ export default class Body_EventData {
             if (app.subsetData[app.selectedSubsetName] === undefined) {
 
                 if (!app.isLoading[app.selectedSubsetName])
-                    app.loadSubset(app.selectedSubsetName);
+                    app.loadMenu(app.selectedSubsetName);
 
                 return m('#loading.loader', {
                     style: {

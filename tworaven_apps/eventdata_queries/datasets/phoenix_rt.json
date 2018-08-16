@@ -18,7 +18,7 @@
             "src_other_agent",
             "src_actor"
           ],
-          "token_length": 3
+          "full_token": "..."
         },
         "target": {
           "format": "phoenix",
@@ -28,8 +28,12 @@
             "tgt_other_agent",
             "tgt_actor"
           ],
-          "token_length": 3
+          "full_token": "..."
         }
+      },
+      "delimited": {
+        "src_other_agent": ";",
+        "tgt_other_agent": ";"
       }
     },
     "Action": {
@@ -134,10 +138,6 @@
     "month": "%m",
     "day": "%d",
     "year": "%Y"
-  },
-  "deconstruct": {
-    "src_other_agent": ";",
-    "tgt_other_agent": ";"
   },
   "citations": [
     {

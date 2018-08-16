@@ -1,6 +1,6 @@
 import m from 'mithril';
 import * as app from '../app';
-import * as query from '../query';
+import * as query from '../queryMongo';
 import * as tour from '../tour';
 import {panelMargin} from '../../../common-eventdata/common';
 

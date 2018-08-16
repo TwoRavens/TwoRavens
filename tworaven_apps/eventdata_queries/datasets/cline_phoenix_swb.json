@@ -19,7 +19,7 @@
             "source_agent",
             "source_others"
           ],
-          "token_length": 3
+          "full_token": "..."
         },
         "target": {
           "full": "target",
@@ -28,8 +28,12 @@
             "target_agent",
             "target_others"
           ],
-          "token_length": 3
+          "full_token": "..."
         }
+      },
+      "delimited": {
+        "source_others": ";",
+        "target_others": ";"
       }
     },
     "Action": {
@@ -132,10 +136,6 @@
     "month": "%m",
     "day": "%d",
     "year": "%Y"
-  },
-  "deconstruct": {
-    "source_others": ";",
-    "target_others": ";"
   },
   "citations": [
     {

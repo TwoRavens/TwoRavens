@@ -175,7 +175,7 @@ export function subsetCanvas() {
 
     if (constraintData === undefined) {
 
-        if (!isLoading) loadSubset(constraintMenu);
+        if (!isLoading) subset.loadMenu(constraintMenu, setIsLoading);
 
         return m('#loading.loader', {
             style: {
@@ -209,6 +209,7 @@ export function subsetCanvas() {
 
 // when set, the loading spiral is shown in the canvas
 export let isLoading = false;
+export let setIsLoading = (state) => isLoading = state;
 
 // when set, the next time the constraint menu is drawn, it will rebuild non-mithril elements (like plots)
 export let redraw = false;
@@ -238,10 +239,5 @@ export let constraintData;
 
 // menu state within the modal
 export let modalPreferences = {};
-
-function loadSubset(menu) {
-    isLoading = true;
-    // data source is unknown!
-}
 
 export let constraintTypes = ['Nominal', 'Continuous', 'Date', 'Coordinates', 'Monad', 'Dyad'];

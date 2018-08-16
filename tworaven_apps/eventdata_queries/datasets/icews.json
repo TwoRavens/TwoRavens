@@ -36,6 +36,10 @@
             "Target Country"
           ]
         }
+      },
+      "delimited": {
+        "Source Sectors Grouped": ",",
+        "Target Sectors Grouped": ","
       }
     },
     "Action": {
@@ -94,10 +98,6 @@
     "Event Date_constructed",
     "country_constructed"
   ],
-  "deconstruct": {
-    "Source Sectors Grouped": ",",
-    "Target Sectors Grouped": ","
-  },
   "alignments": {
     "Event Date_constructed": "date",
     "Latitude": "latitude",

@@ -1,7 +1,7 @@
 import m from 'mithril';
 
 import * as app from '../app';
-import * as query from '../query';
+import * as query from '../queryMongo';
 import Table from '../../../common-eventdata/views/Table';
 import TextField from '../../../common-eventdata/views/TextField'
 import Button from "../../../common-eventdata/views/Button";

@@ -1,8 +1,8 @@
-import m from 'mithril';
 import jsep from 'jsep';
 
 import * as app from './app';
-import * as tour from './tour';
+import {incrementMonth} from "./app";
+import {isSameMonth} from "./app";
 
 // PIPELINE DESCRIPTION
 // transform step: add new fields/columns/variables:
@@ -14,6 +14,9 @@ import * as tour from './tour';
 // aggregate step: count number of ocurrences in bins
 // {measuresUnit: [], measuresAccum: []}
 
+// menu step: mutate to a format that can be rendered in a menu
+// {name: 'Actor', type: 'dyad', step: [previous pipeline step]}
+
 
 // functions for generating database queries
 // subset queries are built from the abstractQuery, which is managed in app.js
@@ -23,7 +26,7 @@ import * as tour from './tour';
 // build*() functions are pure and return mongo queries
 // process*() functions are for constructing the subset query, relative to a specific node, group, or rule on the query tree
 
-export function buildPipeline(pipeline, variables) {
+export function buildPipeline(pipeline, variables = new Set()) {
     let compiled = [];
 
     pipeline.forEach(step => {
@@ -42,9 +45,13 @@ export function buildPipeline(pipeline, variables) {
 
         if (step.type === 'aggregate') {
             let aggPrepped = buildAggregation(step.measuresUnit, step.measuresAccum);
-            compiled = compiled.concat(aggPrepped['pipeline']);
+            compiled.push(...aggPrepped['pipeline']);
             variables = new Set([...aggPrepped['columnsUnit'], ...aggPrepped['columnsAccum']])
         }
+
+        if (step.type === 'menu')
+            compiled.push(...buildMenu(step))
+
     });
 
     return {pipeline: compiled, variables};
@@ -141,58 +148,6 @@ export function buildTransform(text, variables) {
     };
 
     return {query: parse(jsep(text)), usedTerms};
-}
-
-
-export async function submitQuery() {
-
-    // Only construct and submit the query if new subsets have been added since last query
-    let newSubsets = false;
-    let step = app.getTransformStep(app.eventdataSubsetName);
-    for (let idx in step.abstractQuery) {
-        if (step.abstractQuery[idx].type !== 'query') {
-            newSubsets = true;
-            break
-        }
-    }
-
-    if (!newSubsets) {
-        alert("Nothing has been staged yet! Stage your preferences before subset.");
-        return;
-    }
-
-    app.setLaddaSpinner('btnUpdate', true);
-
-    let subsetName = app.selectedSubsetName;
-
-    let success = await app.loadSubset(subsetName, {includePending: true, recount: true, requireMatch: true});
-    if (!success) return;
-
-    // clear all subset data. Note this is intentionally mutating the object, not rebinding it
-    Object.keys(app.subsetData)
-        .filter(subset => subset !== subsetName)
-        .forEach(subset => delete app.subsetData[subset]);
-
-    // True for adding a query group, all existing preferences are grouped under a 'query group'
-    app.addGroup(true);
-
-    // Add all nodes to selection
-    let nodeList = [...Array(step.nodeId).keys()];
-
-    let subsetTree = $('#subsetTree');
-
-    nodeList.forEach((node_id) => {
-        const node = subsetTree.tree("getNodeById", node_id);
-        if (!node) return;
-        subsetTree.tree("addToSelection", node);
-        if (node.type !== 'query') node.editable = false;
-    });
-
-    // Redraw tree
-    step.abstractQuery = JSON.parse(subsetTree.tree('toJson'));
-    let state = subsetTree.tree('getState');
-    subsetTree.tree('loadData', step.abstractQuery);
-    subsetTree.tree('setState', state);
 }
 
 // Recursively traverse the tree in the right panel. For each node, call processNode
@@ -391,35 +346,6 @@ function processRule(rule) {
     return rule_query;
 }
 
-export function submitAggregation() {
-    if (!app.eventMeasure) {
-        tour.tourStartEventMeasure();
-        return;
-    }
-
-    let step = app.getTransformStep(app.eventdataSubsetName);
-    let query = JSON.stringify(buildAggregation(step.measuresUnit, step.measuresAccum));
-    console.log("Aggregation Query: " + query);
-
-    app.setLaddaSpinner('btnUpdate', true);
-
-    app.getData({
-        host: app.genericMetadata[app.selectedDataset]['host'],
-        method: 'aggregate',
-        query: query,
-        dataset: app.selectedDataset
-    })
-        .then(reformatAggregation)
-        .then(({data, headersUnit, headersEvent}) => {
-            app.setAggregationData(data);
-            app.setAggregationHeadersUnit(headersUnit);
-            app.setAggregationHeadersEvent(headersEvent);
-        })
-        .then(() => app.setLaddaSpinner('btnUpdate', false))
-        .then(() => app.setAggregationStaged(false)).then(m.redraw)
-        .catch(app.laddaStopAll);
-}
-
 export function buildAggregation(unitMeasures, accumulations) {
     // unit of measure
     let unit = {};
@@ -487,7 +413,7 @@ export function buildAggregation(unitMeasures, accumulations) {
         'event': {
             'categorical': (data) => {
                 let selections = new Set(data.children.map(child => child.name));
-                columnsAccum = columnsAccum.concat([...selections]);
+                columnsAccum.push(...selections);
 
                 let bins = {};
                 if ('alignment' in data) {
@@ -644,6 +570,118 @@ export function reformatAggregation(jsondata) {
     }
 }
 
+// given a menu, return pipeline steps for collecting data
+export function buildMenu(menu, preferences = undefined) {
+    if (menu.type === 'dyad') {
+
+        let branches = new Set();
+        Object.keys(menu.tabs).forEach(tabName => {
+            branches.add({tab: tabName, type: 'full', column: menu.tabs[tabName].full});
+            menu.tabs[tabName].filters.forEach(filter => branches.add({tab: tabName, type: 'filter', column: filter}));
+        });
+
+        menu['delimited'] = menu['delimited'] || {};
+
+        return [
+            {
+                $facet: branches.reduce((facets, branch) => {
+
+                    let restriction = [];
+                    if (branch.type === 'full') {
+                        // must apply restrictions to only return full that matches filters
+                        restriction = [
+                            {
+                                $match: Object.keys(preferences.tabs[branch.tab].filters).reduce((out, column) => {
+                                    // if no selections are made, don't add a constraint on the column of the filter
+                                    if (preferences.tabs[branch.tab].filters[column].selected.size === 0) return out;
+
+                                    // must only match full values that match the filter
+                                    if (column in menu.delimited) out[column] = {
+                                        // PHOENIX example: match .*; any number of times, then one of the selected filters (AFG|MUS)
+                                        $regex: `^(.*${menu.delimited[column]})*(${[...preferences.tabs[branch.tab].filters[column].selected].join('|')})`,
+                                        $options: 'i' // insensitive to diacritics
+                                    };
+                                    else out[column] = {$in: [...preferences.tabs[branch.tab].filters[column].selected]};
+                                    return out;
+                                }, {})
+                            }
+                        ];
+                    }
+
+                    if (branch.type === 'filter' && branch.column in menu.delimited) {
+                        // must apply restrictions to deconstruct filters by delimiter
+                        restriction = [
+                            {$project: {[branch.column]: {$split: ['$' + branch.column, menu.delimited[branch.column]]}}},
+                            {$unwind: '$' + branch.column}
+                        ];
+                    }
+
+                    let getDistinct = [
+                        {$group: {_id: {[branch.column]: "$" + branch.column}}},
+                        {$group: {_id: null, [branch.column]: {"$push": "$_id." + branch.column}}}
+                    ];
+
+                    // restrict to filters and deconstruct delimiters as necessary, then get distinct values
+                    facets[Object.values(branch).join('-')] = [...restriction, ...getDistinct];
+                    return facets;
+                }, {})
+            }
+        ];
+    }
+
+    if (menu.type === 'date') {
+        return [
+            {
+                $group: {
+                    _id: {year: {$year: '$' + menu.column}, month: {$month: '$' + menu.column}},
+                    total: {$sum: 1}
+                }
+            },
+            {$project: {year: '$_id.year', month: '$_id.month', _id: 0, total: 1}},
+            {$match: {year: {$exists: true}, month: {$exists: true}}},
+            {$sort: {year: 1, month: 1}}
+        ];
+    }
+
+    if (['categorical', 'categorical_grouped'].indexOf(menu.type) !== -1) {
+        return [
+            {$group: {_id: {[format]: '$' + menu.column}, total: {$sum: 1}}},
+            {$project: {[format]: '$_id.' + format, _id: 0, total: 1}}
+        ]
+    }
+}
+
+// If there is a postProcessing step at the given key, it will return modified data. Otherwise return the data unmodified
+let defaultValue = (value) => ({get: (target, name) => target.hasOwnProperty(name) ? target[name] : value});
+export let menuPostProcess = new Proxy({
+    'dyad': (data) => Object.keys(data).reduce((out, branch) => {
+        let [tabName, columnType, column] = branch.split('-');
+        out[tabName] = out[tabName] || {filters: {}};
+
+        if (columnType === 'full') out[tabName].full = data[branch];
+        if (columnType === 'filter') out[tabName].filters[column] = data[branch];
+        return out;
+    }, {}),
+
+    'date': (data) => data
+        .map(entry => ({'Date': new Date(entry['year'], entry['month'] - 1, 0), 'Freq': entry.total}))
+        .reduce((out, entry) => {
+            if (out.length === 0) return [entry];
+            let tempDate = incrementMonth(out[out.length - 1]['Date']);
+
+            while (!isSameMonth(tempDate, entry['Date'])) {
+                out.push({Freq: 0, Date: new Date(tempDate)});
+                tempDate = incrementMonth(tempDate);
+            }
+            out.push(entry);
+            return (out);
+        }, [])
+
+}, defaultValue(data => data));
+
+// ~~~~~ END QUERY BUILDING ~~~~~
+// ~~~~~ BEGIN QUERY REALIGNMENT ~~~~~
+
 export function genericRealignment(alignment, inFormat, outFormat, data) {
     // TODO this is lossy one way. Not using it yet.
     let transform = alignment.reduce((out, equivalency) => {
@@ -730,8 +768,8 @@ export function realignQuery(step, source, target) {
             }
 
             if (branch.subset === 'categorical' || branch.subset === 'categorical_grouped') {
-                let sourceColumn = app.coerceArray(sourceSubsets[subsetName]['columns'])[0];
-                let targetColumn = app.coerceArray(targetSubsets[subsetName]['columns'])[0];
+                let sourceColumn = sourceSubsets[subsetName]['columns'][0];
+                let targetColumn = targetSubsets[subsetName]['columns'][0];
 
                 let sourceFormat = app.genericMetadata[source]['formats'][sourceColumn];
                 let targetFormat = app.genericMetadata[target]['formats'][targetColumn];
@@ -748,8 +786,8 @@ export function realignQuery(step, source, target) {
             }
 
             if (branch.subset === 'date') {
-                let sourceColumns = app.coerceArray(sourceSubsets[subsetName]['columns']);
-                let targetColumns = app.coerceArray(targetSubsets[subsetName]['columns']);
+                let sourceColumns = sourceSubsets[subsetName]['columns'];
+                let targetColumns = targetSubsets[subsetName]['columns'];
                 if (branch.children.some((handle, i) => handle['column'] !== targetColumns[i % targetColumns.length]))
                     log.push('Relabeled column intervals in ' + branch.name
                         + ' from ' + toVariableString(sourceColumns) + ' to ' + toVariableString(targetColumns) + '.');
@@ -804,8 +842,8 @@ export function realignPreferences(source, target) {
         }
 
         if (subsetType === 'categorical' || subsetType === 'categorical_grouped') {
-            let sourceColumn = app.coerceArray(sourceSubsets[subset]['columns'])[0];
-            let targetColumn = app.coerceArray(targetSubsets[subset]['columns'])[0];
+            let sourceColumn = sourceSubsets[subset]['columns'][0];
+            let targetColumn = targetSubsets[subset]['columns'][0];
 
             let sourceFormat = app.genericMetadata[source]['formats'][sourceColumn];
             let targetFormat = app.genericMetadata[target]['formats'][targetColumn];

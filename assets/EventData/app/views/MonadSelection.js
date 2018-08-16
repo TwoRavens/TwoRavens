@@ -23,7 +23,7 @@ export default class MonadSelection {
         this.waitForQuery++;
         m.redraw(); // since this.search is async, waitForQuery is incremented after the bound callback completes
 
-        await app.loadSubset(subsetName, {monadSearch: currentTab}).catch(failedUpdateMonadListing);
+        await app.loadMenu(subsetName, {monadSearch: currentTab}).catch(failedUpdateMonadListing);
         this.waitForQuery--;
     }
 

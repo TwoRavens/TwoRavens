@@ -30,7 +30,7 @@ export default class CanvasCategoricalGrouped {
     view(vnode) {
         let {data, metadata, preferences} = vnode.attrs;
 
-        let masterColumn = app.coerceArray(metadata['columns'])[0];
+        let masterColumn = metadata['columns'][0];
         let masterFormat = app.genericMetadata[app.selectedDataset]['formats'][masterColumn];
         let masterAlignment = app.genericMetadata[app.selectedDataset]['alignments'][masterColumn];
 

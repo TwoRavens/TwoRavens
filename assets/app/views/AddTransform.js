@@ -10,7 +10,7 @@ import PanelList from '../../common/app/views/PanelList';
 import {italicize} from '../index';
 
 import * as subset from '../../EventData/app/app';
-import * as query from '../../EventData/app/query';
+import * as query from '../../EventData/app/queryMongo';
 import * as transform from '../transform';
 import * as common from '../../common/app/common';
 
