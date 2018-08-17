@@ -180,12 +180,13 @@ export default class Recode {
                                     m('br'),
                                 ]),
                                 m('div',{id:'ordinalDiv',style :{'overflow': 'hidden'}},[
-                                    m('input[type=number]',{id:'bin',placeholder:'Number of bins'}),
+                                    m('input[type=text]',{id:'bin',placeholder:'Number of bins'}),
                                     m('button[type=button]',{onclick: equidistance_btn},'Equidistance'),
                                     m('button[type=button]',{onclick: equimass_btn},'Equimass'),
-                                    m('div',{id:'plot_a'}),                         
-                                    m('input[type=text]',{id: 'binInterval',style:{'display':'inline-block'},placeholder:'5,10,15,20'}),
                                     m('button[type=button]',{onclick: calculate_bin},'Custom Bin'),                 
+                                    m('div',{id:'plot_a'}),                         
+                                    // m('input[type=text]',{id: 'binInterval',style:{'display':'inline-block'},placeholder:'5,10,15,20'}),
+                                                    
                                 ]),
                                 m("br"),
                                 m('div#tableBinDiv',{style :{'overflow-y': 'auto','height': '500px','padding':'10px','border-style':'solid','border-width': 'thin'}},[                                                                       
@@ -238,21 +239,29 @@ export default class Recode {
                                 m('button[type="button"]' ,{id:'createButton',onclick: createNewCalculate,style:"float:left;"},'Create New Variable'),
                                 m('button[type="submit"]',{id:'submitButton'},'Add Values'),
                             ]),
-                            m('div#tableDiv',{style :{'display': 'block','width':'100%','height':(window.innerHeight-150)+'px' ,'overflow-y': 'auto','border-style': 'solid','border-width': 'thin'}},[
+                            m('div',{style:" width: 100%;height: 400px;border: 1px solid black;margin: 10px auto;background-color: white;position: relative;padding-top: 30px;"},[
+                                m('div',{style:" height: 40px; position: absolute;top: 0;right: 0;left: 0;"}),
+                                m('div#tableDiv',{style :"overflow-x: hidden;overflow-y: auto;height: 100%; text-align:center;"},[
                                 
-                                m('table.table.table-bordered',{id:'createTable',style:{ 'overflow': 'scroll'}},[
-                                    m('tr#colheader',[
-                                        (tableHeader.slice(1)).filter((header)=> filterVars.includes(header)).map((header) => m('th.col-xs-4',{style : {'border': '1px solid #ddd','text-align': 'center'}},header)),
+                                    m('table.table.table-fixed',{id:'createTable',style:{'height':(window.innerHeight-150)+'px','overflow-y': 'auto','border-style': 'solid','border-width': 'thin'}},[
+                                        m('thead',[
+                                            m('tr#colheader',[
+                                            (tableHeader.slice(1)).filter((header)=> filterVars.includes(header)).map((header) => m('th.col-xs-4',{style : {'border': '1px solid #ddd','text-align': 'center'}},header)),
+                                            ]),
+                                        ]),
+                                        m('tbody',[
+                                        tableData.map((row,i)=> m('tr#colValues',[
+                                            row.filter((item,j) => filterIndex.indexOf(j)>=0 ).map((item,j) => m('td',{style : {'border': '1px solid #ddd','text-align': 'center'}},item)),
+                                            
+                                        ],
+                                            
+                                        ))
+                                    ])                                                                        
                                         
-                                    ]),
-                                    tableData.map((row,i)=> m('tr#colValues',[
-                                        row.filter((item,j) => filterIndex.indexOf(j)>=0 ).map((item,j) => m('td',{style : {'border': '1px solid #ddd','text-align': 'center'}},item)),
-                                        
-                                    ],
-                                        
-                                    ))
-                                ])                                                                        
+                                    ])                                                                        
+                                ]),
                             ]),
+                            
 
                         ]),
                     ]),
@@ -326,19 +335,19 @@ function clickVar(elem) {
     document.getElementById('customRecodeBtn').disabled = true; 
     
     var list = document.getElementsByClassName('var');
-    for (var i = 0; i < list.length; i++ ) {
-        list[i].setAttribute("style", "background:"+app.hexToRgba("#FA8072"));
-    }
     document.getElementById(this.id).setAttribute("style", "background:"+app.hexToRgba("#28a4c9"));
             
     
 
     if(document.getElementById('recodeLink').className === 'active'){
         
-        // if(this.textContent !== currentVal){
+        for (var i = 0; i < list.length; i++ ) {
+            list[i].setAttribute("style", "background:"+app.hexToRgba("#FA8072"));
+        }
+        document.getElementById(this.id).setAttribute("style", "background:"+app.hexToRgba("#28a4c9"));
+        
             currentVal = this.textContent;
             document.getElementById('bin').value = "";
-            document.getElementById('binInterval').value = "";
 
             document.getElementById('customRecodeBtn').disabled = true;
             
@@ -412,12 +421,13 @@ function clickVar(elem) {
                 $('#tableBinDiv').css('display', 'none  ');
                 bar_cross(node);
             }  
-        // }
     }
 
     else if(document.getElementById('formulaLink').className === 'active'){
-        
-        // document.getElementById(this.id).setAttribute("style", "background:"+app.hexToRgba("#28a4c9"));
+        for (var i = 0; i < list.length; i++ ) {
+            list[i].setAttribute("style", "background:"+app.hexToRgba("#FA8072"));
+        }
+        document.getElementById(this.id).setAttribute("style", "background:"+app.hexToRgba("#28a4c9"));
         document.getElementById('leftpanelMenuButtonBarOperations').click();
 
         //Only those variables of type "numeric" could be used to build formula
@@ -441,7 +451,7 @@ function clickVar(elem) {
             $('#createNewForm').find('tr').each(function(){
                 var trow = $(this);   
                 if(iter == 0){
-                    trow.append('<th style ="border: 1px solid #ddd; text-align: center;">'+currentVal+'</th>');
+                    trow.append('<th style ="border: 1px solid #ddd; text-align:center "><div style ="margin:0 auto; width:0;"><div style="position: absolute;top: 0;line-height: 40px;padding-left: 5px;width: 100%;margin-left: -50%;text-align: center;border: none;">'+currentVal+'</div></div></th>');
                     iter++;
                 }else{
                     trow.append('<td style ="border: 1px solid #ddd;text-align: center;">'+ dataNode[iter-1]+'</td>');              
@@ -449,6 +459,7 @@ function clickVar(elem) {
                 }
             });
         }else{
+            document.getElementById(this.id).setAttribute("style", "background:"+app.hexToRgba("#FA8072"));
             var pos = tableList.indexOf(currentVal);
             tableList.splice(pos, 1);
             for(var i = 0;i<= dataNode.length;i++){
@@ -588,12 +599,11 @@ function createNewCalculate(){
 
         
         var iter = 0;
-    //createNewForm
     $('#createNewForm').find('tr').each(function(){
         var trow = $(this);
 
         if(iter == 0){
-            trow.append('<th style ="border: 1px solid #ddd; text-align: center;">'+document.getElementById('newVar').value +' <button id ="buttonDelete" type="button" style="float:right;"> <span style="color:red;">&#10060;</span></button> </th>');
+            trow.append('<th style ="border: 1px solid #ddd; text-align: center;"><div style ="margin:0 auto; width:0;"><div style="position: absolute;top: 0;line-height: 40px;padding-left: 5px;width: 100%;margin-left: -50%;text-align: center;border: none;">'+document.getElementById('newVar').value +' <button id ="buttonDelete" type="button" style="height:40px;"> <span style="color:red;">&#10060;</span></button></div></div></th>');
             iter++;
             tableList.push(document.getElementById('newVar').value);
             document.getElementById ("buttonDelete").addEventListener ("click", deleteNewVar, false);
@@ -630,7 +640,7 @@ function calculate_bin(){
     document.getElementById('customRecodeBtn').disabled = false;
 
         var method_name= "custom";
-        var bin = document.getElementById('binInterval').value.split(',').length;
+        var bin = document.getElementById('bin').value.split(',').length;
         console.log(bin)
         if(currentVal != "variable"){
             var node = dataDetails[currentVal];
@@ -697,8 +707,11 @@ function createClick(){
     if(!tableList.includes(first)){
         document.getElementById('varList').firstChild.click()
     }
+
+    for(var vari in tableList){
+        document.getElementById("varList"+tableList[vari]).setAttribute("style", "background:"+app.hexToRgba("#28a4c9"));
+    }
     document.getElementById('toggleCollapse').click()
-    // toggleCollapse
 
    
     
@@ -981,7 +994,7 @@ function formulaClick(){
                 data.push([d3.max(xVals),a-1]);
             }
             else if (method_name === 'custom'){
-                var intervals = document.getElementById('binInterval').value.split(',').map(function(x){return parseInt(x)}).sort();
+                var intervals = document.getElementById('bin').value.split(',').map(function(x){return parseInt(x)}).sort();
                 var upper_limit = d3.max(xVals);
                 var lower_limit = d3.min(xVals);
                 var diff = upper_limit - lower_limit;
@@ -1186,7 +1199,7 @@ function formulaClick(){
                 }
             }
             else if (method_name === 'custom'){
-                var intervals = document.getElementById('binInterval').value.split(',').sort();
+                var intervals = document.getElementById('bin').value.split(',').sort();
                 console.log('intervals');
                 console.log(intervals);
                 var upper_limit1 = maxX;
