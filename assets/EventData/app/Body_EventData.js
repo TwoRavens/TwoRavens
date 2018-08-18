@@ -417,7 +417,7 @@ export default class Body_EventData {
                     id: 'querySummaryMenu',
                     attrsAll: {style: {height: 'calc(100% - 85px)', overflow: 'auto'}},
                     sections: [
-                        {value: 'Variables', contents: m(TreeVariables)},
+                        {value: 'Variables', contents: app.selectedVariables.size ? m(TreeVariables) : m('div[style=font-style:italic]', 'Return all Variables')},
                         {value: 'Subsets', contents: m(TreeQuery)}
                     ]
                 }),
