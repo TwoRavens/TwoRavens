@@ -810,6 +810,8 @@ function getSubsetPreferences() {
             .filter(edge => edge.source.tab in metadata['tabs'] && edge.target.tab in metadata['tabs']);
 
         for (let linkId in filteredEdges) {
+            // when rev is set, then column names are switched
+            let reversed = filteredEdges[linkId].rev;
 
             // Add each link to the parent node as another rule
             let link = {
@@ -820,20 +822,20 @@ function getSubsetPreferences() {
                 subset: 'link',
                 children: [{
                     id: String(nodeId++),
-                    name: Object.keys(metadata['tabs'])[0] + ': ' + filteredEdges[linkId].source.name,
+                    name: Object.keys(metadata['tabs'])[reversed ? 1 : 0] + ': ' + filteredEdges[linkId].source.name,
                     show_op: false,
                     cancellable: true,
                     actors: [...filteredEdges[linkId].source.selected],
                     subset: 'node',
-                    column: metadata['tabs'][Object.keys(metadata['tabs'])[0]]['full']
+                    column: metadata['tabs'][Object.keys(metadata['tabs'])[reversed ? 1 : 0]]['full']
                 }, {
                     id: String(nodeId++),
-                    name: Object.keys(metadata['tabs'])[1] + ': ' + filteredEdges[linkId].target.name,
+                    name: Object.keys(metadata['tabs'])[reversed ? 0 : 1] + ': ' + filteredEdges[linkId].target.name,
                     show_op: false,
                     cancellable: true,
                     actors: [...filteredEdges[linkId].target.selected],
                     subset: 'node',
-                    column: metadata['tabs'][Object.keys(metadata['tabs'])[1]]['full']
+                    column: metadata['tabs'][Object.keys(metadata['tabs'])[reversed ? 0 : 1]]['full']
                 }]
             };
 
