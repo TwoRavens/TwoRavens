@@ -179,13 +179,13 @@ export default class Body_EventData {
 
                 app.selectedMode !== 'home' && m(Button, {
                     id: 'btnDownload',
+                    'data-style': 'zoom-in',
+                    'data-spinner-color': '#818181',
                     class: 'btn-sm ladda-button',
                     style: {
                         'margin-right': '6px',
                         'margin-top': '4px',
-                        'margin-left': '6px',
-                        'data-style': 'zoom-in',
-                        'data-spinner-color': '#818181'
+                        'margin-left': '6px'
                     },
                     onclick: () => {
                         if ('subset' === app.selectedMode && app.abstractQuery.length === 0)
@@ -435,10 +435,16 @@ export default class Body_EventData {
                         'Group'
                     ),
 
-                    m("button.btn.btn-default.ladda-button[data-spinner-color='#818181'][type='button']", {
+                    m("button.btn.btn-default.ladda-button[type='button']", {
                         id: 'btnUpdate',
+                        'data-style': 'zoom-in',
+                        'data-spinner-color': '#818181',
                         style: {float: 'right'},
-                        onclick: () => query.submitQuery() // wrap in anonymous function to ignore the mouseEvent
+                        onclick: async () => {
+                            app.setLaddaSpinner('btnUpdate', true);
+                            await query.submitQuery();
+                            app.laddaStopAll();
+                        }
                     }, 'Update')
                 )
             ])
@@ -471,13 +477,17 @@ export default class Body_EventData {
                     },
                     attrsAll: {style: {height: 'calc(100% - 78px)', overflow: 'auto'}}
                 }),
-                m("button.btn.btn-default.ladda-button[data-spinner-color='#818181'][type='button']", {
+                m("button.btn.btn-default.ladda-button[type='button']", {
                     id: 'btnUpdate',
+                    'data-style': 'zoom-in',
+                    'data-spinner-color': '#818181',
                     class: app.aggregationStaged && ['btn-success'],
                     style: {float: 'right'},
-                    onclick: () => {
+                    onclick: async () => {
                         app.setAggregationStaged(false);
-                        query.submitAggregation()
+                        app.setLaddaSpinner('btnUpdate', true);
+                        await query.submitAggregation();
+                        app.laddaStopAll();
                     }
                 }, 'Update')
             ])
