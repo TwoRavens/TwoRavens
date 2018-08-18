@@ -2,7 +2,9 @@ LOCAL SETUP STEPS:
 0. If on windows, use Ubuntu on a virtualbox to prevent this error:
       Cross-Origin Request Blocked: The Same Origin Policy disallows reading the remote resource at http://localhost:8000/custom/eventdataapp. (Reason: CORS header ‘Access-Control-Allow-Origin’ missing).
 
-1. Install mongodb
+1. Install mongodb. Queries are tested to work on version 3.6, but 4.0 should not break compatibility.
+    NOTE: for Ubuntu DO NOT do the obvious `sudo apt-get install mongo`, that package is unofficial. Use this link:
+    https://docs.mongodb.com/manual/administration/install-community/
 
 2. Start a mongo server. Server port is 27017 by default
      sudo service mongod start

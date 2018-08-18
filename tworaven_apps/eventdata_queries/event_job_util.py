@@ -21,6 +21,12 @@ from tworaven_apps.eventdata_queries.dataverse.get_dataset_file_info import GetD
 from tworaven_apps.eventdata_queries.mongo_retrieve_util2 import MongoRetrieveUtil2
 from bson.json_util import (loads, dumps)
 
+# query reformatting
+from bson.objectid import ObjectId
+from bson.int64 import Int64
+from datetime import datetime
+from dateutil import parser
+
 
 class EventJobUtil(object):
     """Convinence class for the eventdata queries """
@@ -320,6 +326,36 @@ class EventJobUtil(object):
 
         if method == 'distinct' and not distinct:
             return err_resp("the distinct method requires a 'keys' argument")
+
+        # replace extended query operators like $oid, $date and $numberLong with objects
+        def reformat(query):
+            # Aggregation formatting
+            if type(query) is list:
+                for stage in query:
+                    reformat(stage)
+                return
+
+            # Query formatting
+            for key in query:
+                if issubclass(type(query[key]), dict):
+                    # Convert strict oid tags into ObjectIds to allow id comparisons
+                    if '$oid' in query[key]:
+                        query[key] = ObjectId(query[key]['$oid'])
+                    # Convert date strings to datetime objects
+                    elif '$date' in query[key]:
+                        if type(query[key]['$date']) is dict and '$numberLong' in query[key]['$date']:
+                            query[key] = datetime.fromtimestamp(Int64(query[key]['$numberLong']))
+                        else:
+                            query[key] = parser.parse(query[key]['$date'])
+                    elif '$numberLong' in query[key]:
+                        query[key] = Int64(query[key]['$numberLong'])
+                    else:
+                        reformat(query[key])
+
+        try:
+            reformat(query)
+        except Exception as e:
+            return err_resp(str(e))
 
         # grab the method from the collection that matches the user query type (safe because it must match the form enum)
         try:

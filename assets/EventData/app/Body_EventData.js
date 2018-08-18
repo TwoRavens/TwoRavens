@@ -279,65 +279,64 @@ export default class Body_EventData {
                 side: 'left',
                 label: 'Data Selection',
                 hover: window.innerWidth < 1200,
-                width: '250px',
-                contents: m(MenuTabbed, {
-                    id: 'leftPanelMenu',
-                    callback: app.setLeftTabSubset,
-                    currentTab: app.leftTabSubset,
-                    attrsAll: {style: {height: 'calc(100% - 39px)'}},
-                    sections: [
-                        {
-                            value: 'Variables',
-                            title: 'Restrict by data column.',
-                            contents: [
-                                m(TextField, {
-                                    id: 'searchVariables',
-                                    placeholder: 'Search variables',
-                                    value: app.variableSearch,
-                                    oninput: app.setVariableSearch
-                                }),
-                                m(PanelList, {
-                                    id: 'variablesList',
-                                    items: app.genericMetadata[app.selectedDataset]['columns'].filter(col => col.includes(app.variableSearch)),
-                                    colors: {[common.selVarColor]: app.selectedVariables},
-                                    callback: app.toggleSelectedVariable,
-                                    attrsAll: {style: {height: 'calc(100% - 44px)', overflow: 'auto'}},
-                                    popup: popoverContentVariable,
-                                    attrsItems: {
-                                        'data-placement': 'right',
-                                        'data-container': '#variablesList'
-                                    }
-                                })
-                            ]
-                        },
-                        {
-                            value: 'Subsets',
-                            title: 'Restrict by contents of rows.',
-                            contents: m(MenuHeaders, {
-                                id: 'subsetsMenu',
-                                attrsAll: {style: {height: '100%', overflow: 'auto'}},
-                                sections: Object.keys(subsetLists)
-                                    .filter(key => subsetLists[key].length)
-                                    .map(key => ({
-                                        value: key + ' Subsets',
-                                        contents: m(PanelList, {
-                                            id: 'subsetsList' + key,
-                                            items: subsetLists[key],
-                                            colors: {[common.selVarColor]: app.selectedCanvas === 'Custom' ? ['Custom'] : [app.selectedSubsetName]},
-                                            callback: (subset) => (subset === 'Custom' ? app.setSelectedCanvas : app.setSelectedSubsetName)(subset),
-                                            popup: popoverContentSubset,
-                                            attrsItems: {
-                                                'data-placement': 'right',
-                                                'data-container': '#subsetsMenu',
-                                                'data-delay': 500
-                                            }
-                                        })
-                                    }))
+                width: '250px'
+            }, m(MenuTabbed, {
+                id: 'leftPanelMenu',
+                callback: app.setLeftTabSubset,
+                currentTab: app.leftTabSubset,
+                attrsAll: {style: {height: 'calc(100% - 39px)'}},
+                sections: [
+                    {
+                        value: 'Variables',
+                        title: 'Restrict by data column.',
+                        contents: [
+                            m(TextField, {
+                                id: 'searchVariables',
+                                placeholder: 'Search variables',
+                                value: app.variableSearch,
+                                oninput: app.setVariableSearch
+                            }),
+                            m(PanelList, {
+                                id: 'variablesList',
+                                items: app.genericMetadata[app.selectedDataset]['columns'].filter(col => col.includes(app.variableSearch)),
+                                colors: {[common.selVarColor]: app.selectedVariables},
+                                callback: app.toggleSelectedVariable,
+                                attrsAll: {style: {height: 'calc(100% - 44px)', overflow: 'auto'}},
+                                popup: popoverContentVariable,
+                                attrsItems: {
+                                    'data-placement': 'right',
+                                    'data-container': '#variablesList'
+                                }
                             })
-                        }
-                    ]
-                })
-            })
+                        ]
+                    },
+                    {
+                        value: 'Subsets',
+                        title: 'Restrict by contents of rows.',
+                        contents: m(MenuHeaders, {
+                            id: 'subsetsMenu',
+                            attrsAll: {style: {height: '100%', overflow: 'auto'}},
+                            sections: Object.keys(subsetLists)
+                                .filter(key => subsetLists[key].length)
+                                .map(key => ({
+                                    value: key + ' Subsets',
+                                    contents: m(PanelList, {
+                                        id: 'subsetsList' + key,
+                                        items: subsetLists[key],
+                                        colors: {[common.selVarColor]: app.selectedCanvas === 'Custom' ? ['Custom'] : [app.selectedSubsetName]},
+                                        callback: (subset) => (subset === 'Custom' ? app.setSelectedCanvas : app.setSelectedSubsetName)(subset),
+                                        popup: popoverContentSubset,
+                                        attrsItems: {
+                                            'data-placement': 'right',
+                                            'data-container': '#subsetsMenu',
+                                            'data-delay': 500
+                                        }
+                                    })
+                                }))
+                        })
+                    }
+                ]
+            }))
         }
 
         if (mode === 'aggregate') {
@@ -365,37 +364,36 @@ export default class Body_EventData {
                         // subtract header, spacer, spacer, scrollbar, table, and footer
                         height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${common.canvasScroll['horizontal'] ? common.scrollbarWidth : '0px'} - ${app.tableHeight} - ${common.heightFooter})`
                     }
-                },
-                contents: m(MenuHeaders, {
-                    id: 'aggregateMenu',
-                    attrsAll: {style: {height: 'calc(100% - 39px)', overflow: 'auto'}},
-                    sections: [
-                        {
-                            value: 'Unit of Measure',
-                            contents: m(PanelList, {
-                                items: aggregateKeys.filter(subset => tempDataset['subsets'][subset]['measures'].indexOf('unit') !== -1),
-                                id: 'UMList',
-                                colors: {[common.selVarColor]: app.selectedCanvas !== 'Results' ? [app.selectedSubsetName] : []},
-                                classes: {['item-bordered']: Object.keys(app.unitMeasure).filter(key => app.unitMeasure[key])},
-                                callback: app.setSelectedSubsetName
-                            })
-                        },
-                        {
-                            value: 'Event Measure',
-                            contents: m(PanelList, {
-                                items: aggregateKeys.filter(subset => tempDataset['subsets'][subset]['measures'].indexOf('event') !== -1),
-                                id: 'EMList',
-                                colors: {[common.selVarColor]: app.selectedCanvas !== 'Results' ? [app.selectedSubsetName] : []},
-                                classes: {['item-bordered']: [app.eventMeasure]},
-                                callback: (subset) => {
-                                    app.setEventMeasure(subset);
-                                    app.setSelectedSubsetName(subset);
-                                }
-                            })
-                        }
-                    ]
-                })
-            })
+                }
+            }, m(MenuHeaders, {
+                id: 'aggregateMenu',
+                attrsAll: {style: {height: 'calc(100% - 39px)', overflow: 'auto'}},
+                sections: [
+                    {
+                        value: 'Unit of Measure',
+                        contents: m(PanelList, {
+                            items: aggregateKeys.filter(subset => tempDataset['subsets'][subset]['measures'].indexOf('unit') !== -1),
+                            id: 'UMList',
+                            colors: {[common.selVarColor]: app.selectedCanvas !== 'Results' ? [app.selectedSubsetName] : []},
+                            classes: {['item-bordered']: Object.keys(app.unitMeasure).filter(key => app.unitMeasure[key])},
+                            callback: app.setSelectedSubsetName
+                        })
+                    },
+                    {
+                        value: 'Event Measure',
+                        contents: m(PanelList, {
+                            items: aggregateKeys.filter(subset => tempDataset['subsets'][subset]['measures'].indexOf('event') !== -1),
+                            id: 'EMList',
+                            colors: {[common.selVarColor]: app.selectedCanvas !== 'Results' ? [app.selectedSubsetName] : []},
+                            classes: {['item-bordered']: [app.eventMeasure]},
+                            callback: (subset) => {
+                                app.setEventMeasure(subset);
+                                app.setSelectedSubsetName(subset);
+                            }
+                        })
+                    }
+                ]
+            }))
         }
     }
 
@@ -413,38 +411,37 @@ export default class Body_EventData {
                 side: 'right',
                 label: 'Query Summary',
                 hover: window.innerWidth < 1200,
-                width: '250px',
-                contents: [
-                    m(MenuHeaders, {
-                        id: 'querySummaryMenu',
-                        attrsAll: {style: {height: 'calc(100% - 85px)', overflow: 'auto'}},
-                        sections: [
-                            {value: 'Variables', contents: m(TreeVariables)},
-                            {value: 'Subsets', contents: m(TreeQuery)}
-                        ]
-                    }),
-                    m("#rightpanelButtonBar", {
-                            style: {
-                                width: "calc(100% - 25px)",
-                                "position": "absolute",
-                                "bottom": '5px'
-                            }
+                width: '250px'
+            }, [
+                m(MenuHeaders, {
+                    id: 'querySummaryMenu',
+                    attrsAll: {style: {height: 'calc(100% - 85px)', overflow: 'auto'}},
+                    sections: [
+                        {value: 'Variables', contents: m(TreeVariables)},
+                        {value: 'Subsets', contents: m(TreeQuery)}
+                    ]
+                }),
+                m("#rightpanelButtonBar", {
+                        style: {
+                            width: "calc(100% - 25px)",
+                            "position": "absolute",
+                            "bottom": '5px'
+                        }
+                    },
+                    m("button.btn.btn-default[id='buttonAddGroup'][type='button']", {
+                            style: {"float": "left"},
+                            onclick: () => app.addGroup(false)
                         },
-                        m("button.btn.btn-default[id='buttonAddGroup'][type='button']", {
-                                style: {"float": "left"},
-                                onclick: () => app.addGroup(false)
-                            },
-                            'Group'
-                        ),
+                        'Group'
+                    ),
 
-                        m("button.btn.btn-default.ladda-button[data-spinner-color='#818181'][type='button']", {
-                            id: 'btnUpdate',
-                            style: {float: 'right'},
-                            onclick: () => query.submitQuery() // wrap in anonymous function to ignore the mouseEvent
-                        }, 'Update')
-                    )
-                ]
-            })
+                    m("button.btn.btn-default.ladda-button[data-spinner-color='#818181'][type='button']", {
+                        id: 'btnUpdate',
+                        style: {float: 'right'},
+                        onclick: () => query.submitQuery() // wrap in anonymous function to ignore the mouseEvent
+                    }, 'Update')
+                )
+            ])
         }
 
         if (mode === 'aggregate') {
@@ -459,32 +456,31 @@ export default class Body_EventData {
                         // subtract header, the two margins, scrollbar, table, and footer
                         height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${common.canvasScroll['horizontal'] ? common.scrollbarWidth : '0px'} - ${app.tableHeight} - ${common.heightFooter})`
                     }
-                },
-                contents: [
-                    m(PanelList, {
-                        id: 'resultsList',
-                        items: ['Line Plot'],
-                        colors: {[common.selVarColor]: app.selectedCanvas === 'Results' ? [app.selectedResult] : []},
-                        callback: (result) => {
-                            if (!app.aggregationData) {
-                                tour.tourStartAggregation();
-                                return;
-                            }
-                            app.setSelectedResult(result);
-                        },
-                        attrsAll: {style: {height: 'calc(100% - 78px)', overflow: 'auto'}}
-                    }),
-                    m("button.btn.btn-default.ladda-button[data-spinner-color='#818181'][type='button']", {
-                        id: 'btnUpdate',
-                        class: app.aggregationStaged && ['btn-success'],
-                        style: {float: 'right'},
-                        onclick: () => {
-                            app.setAggregationStaged(false);
-                            query.submitAggregation()
+                }
+            }, [
+                m(PanelList, {
+                    id: 'resultsList',
+                    items: ['Line Plot'],
+                    colors: {[common.selVarColor]: app.selectedCanvas === 'Results' ? [app.selectedResult] : []},
+                    callback: (result) => {
+                        if (!app.aggregationData) {
+                            tour.tourStartAggregation();
+                            return;
                         }
-                    }, 'Update')
-                ]
-            })
+                        app.setSelectedResult(result);
+                    },
+                    attrsAll: {style: {height: 'calc(100% - 78px)', overflow: 'auto'}}
+                }),
+                m("button.btn.btn-default.ladda-button[data-spinner-color='#818181'][type='button']", {
+                    id: 'btnUpdate',
+                    class: app.aggregationStaged && ['btn-success'],
+                    style: {float: 'right'},
+                    onclick: () => {
+                        app.setAggregationStaged(false);
+                        query.submitAggregation()
+                    }
+                }, 'Update')
+            ])
         }
     }
 

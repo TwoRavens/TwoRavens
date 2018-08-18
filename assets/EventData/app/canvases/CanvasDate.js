@@ -258,7 +258,7 @@ export default class CanvasDate {
                         handles: [preferences['handleLower'], preferences['handleUpper']],
                         callbackHandles: setHandleDates,
                         dataProcessed,
-                        labelY: 'Monthy Frequency'
+                        labelY: 'Monthly Frequency'
                     })),
                 m("div",
                     {

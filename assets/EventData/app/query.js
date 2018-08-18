@@ -156,7 +156,6 @@ function processRule(rule) {
     let rule_query = {};
 
     if (rule.subset === 'date') {
-
         let rule_query_inner = {};
         if (rule.structure === 'point') {
             let rule_query_inner = {};
@@ -165,11 +164,11 @@ function processRule(rule) {
                 column = child.column;
                 if ('fromDate' in child) {
                     child.fromDate = new Date(child.fromDate);
-                    rule_query_inner['$gte'] = {'$date': {'$numberLong': String(child.fromDate.getTime())}}
+                    rule_query_inner['$gte'] = {'$date': child.fromDate.toISOString().slice(0, 10)}
                 }
                 if ('toDate' in child) {
                     child.toDate = new Date(child.toDate);
-                    rule_query_inner['$lte'] = {'$date': {'$numberLong': String(child.toDate.getTime())}}
+                    rule_query_inner['$lte'] = {'$date': child.toDate.toISOString().slice(0, 10)}
                 }
             }
             rule_query[column] = rule_query_inner;
@@ -178,13 +177,13 @@ function processRule(rule) {
                 if ('fromDate' in child) {
                     child.fromDate = new Date(child.fromDate);
                     rule_query[child.column] = {
-                        '$gte': {'$date': {'$numberLong': String(child.fromDate.getTime())}}
+                        '$gte': {'$date': child.fromDate.toISOString().slice(0, 10)}
                     };
                 }
                 if ('toDate' in child) {
                     child.toDate = new Date(child.toDate);
                     rule_query[child.column] = {
-                        '$lte': {'$date': {'$numberLong': String(child.toDate.getTime())}}
+                        '$lte': {'$date': child.toDate.toISOString().slice(0, 10)}
                     };
                 }
             }
