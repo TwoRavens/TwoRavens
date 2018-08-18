@@ -394,7 +394,7 @@ export let loadSubset = async (subsetName, {includePending, recount, requireMatc
     }).then(setMetadata));
 
     // record count request
-    if (recount) promises.push(getData({
+    if (recount || totalSubsetRecords === undefined) promises.push(getData({
         host: genericMetadata[dataset]['host'],
         dataset: dataset,
         method: 'count',
@@ -402,7 +402,7 @@ export let loadSubset = async (subsetName, {includePending, recount, requireMatc
     }).then(count => {
         // intentionally breaks the entire downloading promise array and subsequent promise chain
         if (!count && requireMatch) throw 'no records matched';
-        totalSubsetRecords = data
+        totalSubsetRecords = count
     }));
 
     let config = genericMetadata[dataset]['subsets'][subsetName];
