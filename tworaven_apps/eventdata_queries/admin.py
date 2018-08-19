@@ -12,8 +12,9 @@ class EventDataSavedQueryAdmin(admin.ModelAdmin):
                     'result_count',
                     'created',
                     'modified',
-                    'dataset',
-                    'dataset_type')
+                    'collection_type',
+                    'collection_name',
+                    'save_to_dataverse')
 
     save_on_top = True
     readonly_fields = ('modified', 'created')

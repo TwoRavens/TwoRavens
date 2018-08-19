@@ -20,16 +20,16 @@ urlpatterns = [
 
     path(r'api/search',
          views.api_search,
-         name='api_search'),
-
-    re_path(r'api/upload-dataverse/get/(?P<query_id>[0-9]{1,10})$',
-            views.api_upload_to_dataverse,
-            name='api_upload_to_dataverse'),
-
-    re_path(r'api/publish-dataset/(?P<dataset_id>[0-9]{1,10})$',
-            views.api_publish_dataset,
-            name='api_publish_dataset'),
-
+         name='api_search'
+         ),
+    re_path(r'api/upload-dataverse/(?P<query_id>[0-9]{1,10})$',
+         views.api_upload_to_dataverse,
+         name='api_upload_to_dataverse'
+         ),
+    re_path(r'api/publish-dataset/(?P<query_id>[0-9]{1,10})$',
+         views.api_publish_dataset,
+         name='api_publish_dataset'
+         ),
     re_path(r'api/get-archive-query-object/get/(?P<query_id>[0-9]{1,10})$',
             views.api_get_archive_query_object,
             name='api_get_archive_query_object'),
