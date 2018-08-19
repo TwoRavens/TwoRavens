@@ -2,10 +2,10 @@ import m from 'mithril';
 
 import * as app from '../app';
 import * as query from '../query';
-import ButtonRadio from "../../../common-eventdata/views/ButtonRadio";
 import Table from '../../../common-eventdata/views/Table';
 import TextField from '../../../common-eventdata/views/TextField'
 import Button from "../../../common-eventdata/views/Button";
+// import ButtonRadio from '../../../common-eventdata/views/ButtonRadio';
 
 export default class SaveQuery {
     oninit(vnode) {
@@ -20,8 +20,8 @@ export default class SaveQuery {
         let queryMongo;
         if (app.selectedMode === 'subset') {
             let variables = app.selectedVariables.size === 0
-                ? app.genericMetadata[app.selectedDataset]['columns']
-                : [...app.selectedVariables];
+                ? [...app.genericMetadata[app.selectedDataset]['columns'], ...app.genericMetadata[app.selectedDataset]['columns_constructed']]
+                : [...app.selectedVariables, ...app.selectedConstructedVariables];
             queryMongo = [
                 {"$match": query.buildSubset(app.abstractQuery)},
                 {
@@ -44,7 +44,7 @@ export default class SaveQuery {
             'dataset_type': app.selectedMode,
             'result_count': {
                 'subset': app.totalSubsetRecords,
-                'aggregate': app.aggregationData.length
+                'aggregate': (app.aggregationData || []).length
             }[app.selectedMode]
         });
         // if (!('saved_to_dataverse' in preferences)) preferences['saved_to_dataverse'] = false;
@@ -97,7 +97,7 @@ export default class SaveQuery {
         };
 
         let invalids = {
-            'query': '{}',
+            'query': '',
             'username': '',
             'dataset': '',
             'dataset_type': '',

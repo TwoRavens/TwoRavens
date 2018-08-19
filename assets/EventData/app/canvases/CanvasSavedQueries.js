@@ -99,11 +99,14 @@ export default class CanvasSavedQueries {
                 },
                 m('h4', result['name'],
                     m(Button, {
+                        id: 'btnDownload' + result.id,
                         style: {margin: '0 0.25em', float: 'right'},
                         onclick: async (e) => {
                             e.stopPropagation();
+                            app.setLaddaSpinner('btnDownload' + result.id);
                             if (this.result !== result.id || !preferences['query']) await this.getQuery(preferences, result.id);
-                            app.download(result.dataset_type, result.dataset, preferences['query']);
+                            await app.download(result.dataset_type, result.dataset, preferences['query']);
+                            app.laddaStopAll();
                         }
                     }, 'Download')
                 ),

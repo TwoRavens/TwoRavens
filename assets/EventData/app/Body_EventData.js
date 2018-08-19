@@ -275,6 +275,12 @@ export default class Body_EventData {
                 return text + '</tbody></table>';
             };
 
+            let matchedVariables = app.genericMetadata[app.selectedDataset]['columns']
+                .filter(col => col.includes(app.variableSearch));
+
+            let matchedConstructedVariables = app.genericMetadata[app.selectedDataset]['columns_constructed']
+                .filter(col => col.includes(app.variableSearch));
+
             return m(Panel, {
                 side: 'left',
                 label: 'Data Selection',
@@ -296,18 +302,25 @@ export default class Body_EventData {
                                 value: app.variableSearch,
                                 oninput: app.setVariableSearch
                             }),
-                            m(PanelList, {
-                                id: 'variablesList',
-                                items: app.genericMetadata[app.selectedDataset]['columns'].filter(col => col.includes(app.variableSearch)),
-                                colors: {[common.selVarColor]: app.selectedVariables},
-                                callback: app.toggleSelectedVariable,
-                                attrsAll: {style: {height: 'calc(100% - 44px)', overflow: 'auto'}},
-                                popup: popoverContentVariable,
-                                attrsItems: {
-                                    'data-placement': 'right',
-                                    'data-container': '#variablesList'
-                                }
-                            })
+                            m('div', {style: {height: 'calc(100% - 44px)', overflow: 'auto'}},
+                                m(PanelList, {
+                                    id: 'variablesList',
+                                    items: matchedVariables,
+                                    colors: {[common.selVarColor]: app.selectedVariables},
+                                    callback: app.toggleSelectedVariable,
+                                    popup: popoverContentVariable,
+                                    attrsItems: {
+                                        'data-placement': 'right',
+                                        'data-container': '#variablesList'
+                                    }
+                                }),
+                                !!matchedConstructedVariables.length && m('h5', 'Constructed Variables'),
+                                m(PanelList, {
+                                    id: 'variablesConstructedList',
+                                    items: matchedConstructedVariables,
+                                    colors: {[common.selVarColor]: app.selectedConstructedVariables},
+                                    callback: app.toggleSelectedConstructedVariable
+                                }))
                         ]
                     },
                     {
@@ -417,8 +430,16 @@ export default class Body_EventData {
                     id: 'querySummaryMenu',
                     attrsAll: {style: {height: 'calc(100% - 85px)', overflow: 'auto'}},
                     sections: [
-                        {value: 'Variables', contents: app.selectedVariables.size ? m(TreeVariables) : m('div[style=font-style:italic]', 'Return all Variables')},
-                        {value: 'Subsets', contents: m(TreeQuery)}
+                        {
+                            value: 'Variables',
+                            contents: (app.selectedVariables.size + app.selectedConstructedVariables.size) // if there are any matches in either normal or constructed variables
+                                ? m(TreeVariables)
+                                : m('div[style=font-style:italic]', 'Return all Variables')
+                        },
+                        {
+                            value: 'Subsets',
+                            contents: m(TreeQuery)
+                        }
                     ]
                 }),
                 m("#rightpanelButtonBar", {

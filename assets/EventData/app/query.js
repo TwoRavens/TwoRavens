@@ -715,5 +715,6 @@ export function realignVariables(source, target) {
     if (equivalents.length !== 0) log.push('Selected equivalent variables: ' + String(equivalents));
 
     app.setSelectedVariables(newSelectedVariables);
+    app.setSelectedConstructedVariables(new Set());
     return log;
 }

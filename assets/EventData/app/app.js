@@ -5,6 +5,7 @@ import * as common from '../../common-eventdata/common';
 import * as query from './query';
 import {subset} from "../../app/app";
 import {saveAs} from 'file-saver/FileSaver';
+
 export let eventdataURL = '/eventdata/api/';
 
 // TODO login
@@ -94,6 +95,7 @@ export let variablesLog = [];
 
 // 'home', 'subset', 'aggregate'
 export let selectedMode = 'home';
+
 export function setSelectedMode(mode) {
     mode = mode.toLowerCase();
 
@@ -141,6 +143,12 @@ export let setSelectedVariables = (variables) => selectedVariables = variables;
 export let toggleSelectedVariable = (variable) => selectedVariables.has(variable)
     ? selectedVariables.delete(variable)
     : selectedVariables.add(variable);
+
+export let selectedConstructedVariables = new Set();
+export let setSelectedConstructedVariables = (variables) => selectedConstructedVariables = variables;
+export let toggleSelectedConstructedVariable = (variable) => selectedConstructedVariables.has(variable)
+    ? selectedConstructedVariables.delete(variable)
+    : selectedConstructedVariables.add(variable);
 
 export let variableSearch = '';
 export let setVariableSearch = (text) => variableSearch = text;
@@ -282,7 +290,10 @@ async function updatePeek() {
         peekSkip = 0;
     }
 
-    let projection = variables.reduce((out, entry) => {out[entry] = 1; return out;}, {});
+    let projection = variables.reduce((out, entry) => {
+        out[entry] = 1;
+        return out;
+    }, {});
     let peekQuery = [{$match: subsetQuery}, {$project: projection}, {$skip: peekSkip}, {$limit: peekBatchSize}];
 
     console.log("Peek Update");
@@ -315,6 +326,7 @@ async function updatePeek() {
     localStorage.setItem('peekTableHeaders' + peekId, JSON.stringify(variables));
     localStorage.setItem('peekTableData' + peekId, JSON.stringify(peekData));
 }
+
 window.addEventListener('storage', onStorageEvent);
 
 // ~~~~ GLOBAL FUNCTIONS ~~~~
@@ -355,7 +367,7 @@ export let getData = async body => m.request({
 });
 
 // download data for a subset
-export let loadSubset = async (subsetName, {includePending, recount, requireMatch, monadSearch}={}) => {
+export let loadSubset = async (subsetName, {includePending, recount, requireMatch, monadSearch} = {}) => {
     if (isLoading[subsetName] || subsetName === 'Custom') return;
     isLoading[subsetName] = true;
 
@@ -538,16 +550,23 @@ export let loadSubset = async (subsetName, {includePending, recount, requireMatc
     return true;
 };
 
+// this function makes many dirty assumptions about page state and is very touchy. Sorry for the headache. -Mike
 export async function download(queryType, dataset, queryMongo) {
 
+    console.log(queryMongo);
     // fall back to document state if args are not passed
     if (!queryType) queryType = selectedMode;
     if (!dataset) dataset = selectedDataset;
 
-    let variables = selectedVariables.size === 0 ? genericMetadata[dataset]['columns'] : [...selectedVariables];
+    let variables = [];
 
     if (!queryMongo) {
         if (queryType === 'subset') {
+
+            variables = selectedVariables.size === 0
+                ? [...genericMetadata[dataset]['columns'], genericMetadata[dataset]['columns_constructed']]
+                : [...selectedVariables, ...selectedConstructedVariables];
+            // when only the _id is ignored (_id: 0) then all other columns are returned (mongo behavior)
             queryMongo = [
                 {"$match": query.buildSubset(abstractQuery)},
                 {
@@ -561,6 +580,10 @@ export async function download(queryType, dataset, queryMongo) {
         else if (queryType === 'aggregate')
             queryMongo = query.buildAggregation(abstractQuery, subsetPreferences);
     }
+    // queryMongo is set when called from Saved Queries, but variables is unknown. Infer variables from the projection stage of the pipeline
+    // aggregation queries handle inferring variables from inside reformatAggregation, so this only applies to subset
+    else if (queryType === 'subset') variables =
+        Object.keys(queryMongo[queryMongo.length - 1]['$project']).filter(key => key !== '_id');
 
     console.log("Download Query: " + JSON.stringify(queryMongo));
 
@@ -572,15 +595,31 @@ export async function download(queryType, dataset, queryMongo) {
         query: JSON.stringify(queryMongo)
     }).catch(laddaStopAll);
 
-    // postprocess aggregate to reformat dates to YYYY-MM-DD and collapse the dyad boolean array
-    if (selectedMode === 'aggregate') {
-        ({data} = query.reformatAggregation(data));
-        variables = [...aggregationHeadersUnit, ...aggregationHeadersEvent];
+    if ('success' in data && !data.success) {
+        laddaStopAll();
+        alert("Download failed. " + data.message);
+        return;
     }
 
-    let text = data.map(record => variables.map(variable => record[variable] || '').join(',') + '\n');
-    let header = variables.join(',') + '\n';
-    let file = new File([header, ...text], 'EventData_' + selectedDataset + '.csv', {type: "text/plain;charset=utf-8"});
+    // postprocess aggregate to reformat dates to YYYY-MM-DD and collapse the dyad boolean array
+    if (selectedMode === 'aggregate') {
+        let headersUnit, headersEvent;
+        ({data, headersUnit, headersEvent} = query.reformatAggregation(data));
+        variables = [...headersUnit, ...headersEvent];
+    }
+
+    let text = data.map(record => variables.map(variable => {
+        if (typeof record[variable] === 'object' && '$date' in record[variable])
+            return new Date(record[variable]['$date']).toISOString().slice(0, 10);
+        return record[variable] || '';
+    }).join('\t') + '\n');
+
+    let header = variables.map(variable => {
+        if (variable.endsWith('_constructed')) return 'TwoRavens_' + variable.replace('_constructed', '');
+        return variable;
+    }).join('\t') + '\n';
+
+    let file = new File([header, ...text], 'EventDataSaved.csv', {type: "text/plain;charset=utf-8"});
     saveAs(file);
     laddaStopAll();
 }
