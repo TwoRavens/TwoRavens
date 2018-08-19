@@ -66,7 +66,10 @@ export default class Body_EventData {
             app.selectedDataset && !isHome && m("button#btnPeek.btn.btn-default", {
                 title: 'Display a data preview',
                 style: {margin: '.25em 1em'},
-                onclick: () => window.open('#!/data', 'data')
+                onclick: () => {
+                    window.open('#!/data', 'data');
+                    app.resetPeek();
+                }
             }, 'Data'),
 
             isHome && m(ButtonRadio, {

@@ -283,7 +283,9 @@ async function updatePeek() {
     }
     let subsetQuery = query.buildSubset(stagedSubsetData);
 
-    let variables = selectedVariables.size ? [...selectedVariables] : genericMetadata[selectedDataset]['columns'];
+    let variables = (selectedVariables.size + selectedConstructedVariables.size) === 0
+        ? [...genericMetadata[selectedDataset]['columns'], genericMetadata[selectedDataset]['columns_constructed']]
+        : [...selectedVariables, ...selectedConstructedVariables];
 
     if (JSON.stringify(variables) !== localStorage.getItem('peekTableHeaders' + peekId)) {
         peekData = [];
@@ -293,7 +295,7 @@ async function updatePeek() {
     let projection = variables.reduce((out, entry) => {
         out[entry] = 1;
         return out;
-    }, {});
+    }, {_id: 0});
     let peekQuery = [{$match: subsetQuery}, {$project: projection}, {$skip: peekSkip}, {$limit: peekBatchSize}];
 
     console.log("Peek Update");
@@ -303,13 +305,17 @@ async function updatePeek() {
         host: genericMetadata[selectedDataset]['host'],
         dataset: selectedDataset,
         method: 'aggregate',
-        query: peekQuery
+        query: JSON.stringify(peekQuery)
     };
 
     // cancel the request
     if (!peekIsGetting) return;
 
     let data = await getData(body);
+    data.forEach(record => variables.forEach(variable => {
+        if (typeof record[variable] === 'object' && '$date' in record[variable])
+            record[variable] = new Date(record[variable]['$date']).toISOString().slice(0, 10);
+    }));
 
     peekIsGetting = false;
 
@@ -563,7 +569,7 @@ export async function download(queryType, dataset, queryMongo) {
     if (!queryMongo) {
         if (queryType === 'subset') {
 
-            variables = selectedVariables.size === 0
+            variables = (selectedVariables.size + selectedConstructedVariables.size) === 0
                 ? [...genericMetadata[dataset]['columns'], genericMetadata[dataset]['columns_constructed']]
                 : [...selectedVariables, ...selectedConstructedVariables];
             // when only the _id is ignored (_id: 0) then all other columns are returned (mongo behavior)

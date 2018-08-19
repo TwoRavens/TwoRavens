@@ -100,10 +100,13 @@ export default class CanvasSavedQueries {
                 m('h4', result['name'],
                     m(Button, {
                         id: 'btnDownload' + result.id,
+                        'data-style': 'zoom-in',
+                        'data-spinner-color': '#818181',
+                        class: 'ladda-button',
                         style: {margin: '0 0.25em', float: 'right'},
                         onclick: async (e) => {
                             e.stopPropagation();
-                            app.setLaddaSpinner('btnDownload' + result.id);
+                            app.setLaddaSpinner('btnDownload' + result.id, true);
                             if (this.result !== result.id || !preferences['query']) await this.getQuery(preferences, result.id);
                             await app.download(result.dataset_type, result.dataset, preferences['query']);
                             app.laddaStopAll();
