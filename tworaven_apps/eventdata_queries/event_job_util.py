@@ -20,7 +20,6 @@ from tworaven_apps.eventdata_queries.dataverse.get_dataset_file_info import GetD
 from tworaven_apps.eventdata_queries.mongo_retrieve_util import MongoRetrieveUtil
 from tworaven_apps.eventdata_queries.generate_readme import GenerateReadMe
 
-from tworaven_apps.eventdata_queries.mongo_retrieve_util_simple import MongoRetrieveUtilSimple
 from bson.json_util import (loads, dumps)
 
 # query reformatting
@@ -347,77 +346,9 @@ class EventJobUtil(object):
         if method == 'distinct' and not distinct:
             return err_resp("the distinct method requires a 'keys' argument")
 
-        # replace extended query operators like $oid, $date and $numberLong with objects
-        def reformat(query):
-            # Aggregation formatting
-            if type(query) is list:
-                for stage in query:
-                    reformat(stage)
-                return
-
-            # Query formatting
-            for key in query:
-                if issubclass(type(query[key]), dict):
-                    # Convert strict oid tags into ObjectIds to allow id comparisons
-                    if '$oid' in query[key]:
-                        query[key] = ObjectId(query[key]['$oid'])
-                    # Convert date strings to datetime objects
-                    elif '$date' in query[key]:
-                        if type(query[key]['$date']) is dict and '$numberLong' in query[key]['$date']:
-                            query[key] = datetime.fromtimestamp(Int64(query[key]['$numberLong']))
-                        else:
-                            query[key] = parser.parse(query[key]['$date'])
-                    elif '$numberLong' in query[key]:
-                        query[key] = Int64(query[key]['$numberLong'])
-                    else:
-                        reformat(query[key])
-
-        try:
-            reformat(query)
-        except Exception as e:
-            return err_resp(str(e))
-
-        # grab the method from the collection that matches the user query type (safe because it must match the form enum)
-        try:
-            if host == 'TwoRavens':
-                retrieve_util = MongoRetrieveUtilSimple()
-                client = retrieve_util.get_mongo_client()
-
-                if retrieve_util.has_error():
-                    print("ERR making mongo")
-                    return err_resp(retrieve_util.get_error_message())
-
-                if collection not in client['event_data'].collection_names():
-                    return err_resp('%s is not a valid collection' % (collection,))
-
-                # execute query
-                if method == 'count':
-                    data = client['event_data'][collection].count(query)
-                elif method == 'find':
-                    data = client['event_data'][collection].find(query)
-                elif method == 'aggregate':
-                    data = client['event_data'][collection].aggregate(query)
-                elif method == 'distinct':
-                    data = client['event_data'][collection].find(query).distinct(distinct)
-
-                return ok_resp(json.loads(dumps(data)))
-
-            elif host == 'UTDallas':
-                url = settings.EVENTDATA_PRODUCTION_SERVER_ADDRESS + settings.EVENTDATA_SERVER_API_KEY + '&datasource=' + collection
-                if method == 'count':
-                    query = json.dumps([{'$match': query}, {'$count': "total"}])
-                    return ok_resp(json.loads(requests.get(url + '&aggregate=' + query))['data']['total'])
-                elif method == 'find':
-                    data = requests.get(url + '&query=' + query)
-                elif method == 'aggregate':
-                    data = requests.get(url + '&aggregate=' + query)
-                elif method == 'distinct':
-                    data = requests.get(url + '&query=' + query + '&unique=' + distinct)
-
-                return ok_resp(json.loads(data))
-
-        except Exception as e:
-            return err_resp(str(e))
+        retrieve_util = MongoRetrieveUtil(collection, query, method)
+        success, data = retrieve_util.run_query(distinct)
+        return ok_resp(data) if success else err_resp(data)
 
     @staticmethod
     def get_metadata(folder, names=None):
@@ -428,7 +359,7 @@ class EventJobUtil(object):
             # make sure name is in directory and has file extension
             names = [name + '.json' for name in names if name + '.json' in os.listdir(directory)]
         else:
-            names = os.listdir(directory)
+            names = sorted(os.listdir(directory))
 
         return {
             filename.replace('.json', ''): json.load(open(directory + os.sep + filename, 'r'), object_pairs_hook=OrderedDict) for filename in names
@@ -441,10 +372,10 @@ class EventJobUtil(object):
         query_obj = event_obj.as_dict()['query']
         query_id = event_obj.as_dict()['id']
         filename = '%s_%s.txt' % (str(query_id), str(collection_name))
-        obj = MongoRetrieveUtil(collection_name, query_obj)
+        obj = MongoRetrieveUtil(collection_name, query_obj, 'aggregate')
         success, mongo_obj = obj.run_query()
 
-        if not success:
+        if not mongo_obj:
             return err_resp(mongo_obj)
 
         json_dump = json.dumps(mongo_obj)

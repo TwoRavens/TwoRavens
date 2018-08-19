@@ -465,7 +465,7 @@ export let loadSubset = async (subsetName, {includePending, recount, requireMatc
                 promises.push(getData({
                     host: genericMetadata[dataset]['host'],
                     collection_name: dataset,
-                    method: 'distinct',
+                    method: 'find',
                     distinct: config['tabs'][tab]['full'],
                     query: JSON.stringify(monadQuery)
                 }).then(response => data[tab]['full'] = response));
@@ -474,7 +474,7 @@ export let loadSubset = async (subsetName, {includePending, recount, requireMatc
             if (!monadSearch) promises = promises.concat(config['tabs'][tab]['filters'].map(filter => getData({
                 host: genericMetadata[dataset]['host'],
                 collection_name: dataset,
-                method: 'distinct',
+                method: 'find',
                 distinct: filter,
                 query: JSON.stringify(subsetQuery)
             }).then(response => data[tab]['filters'][filter] = response)))

@@ -5,7 +5,7 @@ import * as query from '../query';
 import Table from '../../../common-eventdata/views/Table';
 import TextField from '../../../common-eventdata/views/TextField'
 import Button from "../../../common-eventdata/views/Button";
-// import ButtonRadio from '../../../common-eventdata/views/ButtonRadio';
+import ButtonRadio from '../../../common-eventdata/views/ButtonRadio';
 
 export default class SaveQuery {
     oninit(vnode) {
@@ -47,7 +47,7 @@ export default class SaveQuery {
                 'aggregate': (app.aggregationData || []).length
             }[app.selectedMode]
         });
-        // if (!('saved_to_dataverse' in preferences)) preferences['saved_to_dataverse'] = false;
+        if (!('save_to_dataverse' in preferences)) preferences['save_to_dataverse'] = false;
     }
 
     view(vnode) {
@@ -73,17 +73,17 @@ export default class SaveQuery {
                     preferences['description'] = value;
                 }
             }),
-            // 'Save to Dataverse': m(ButtonRadio, {
-            //     id: 'modeButtonBar',
-            //     attrsAll: {style: {width: 'auto', margin: '.25em 1em', float: 'left'}},
-            //     onclick: (value) => {
-            //         if (preferences['saved_to_dataverse'] === (value === 'true')) return;
-            //         preferences['saved_to_dataverse'] = value === 'true';
-            //         this.saved = false;
-            //     },
-            //     activeSection: (preferences['saved_to_dataverse'] || 'false') + '',
-            //     sections: [{value: 'true'}, {value: 'false'}]
-            // }),
+            'Save to Dataverse': m(ButtonRadio, {
+                id: 'modeButtonBar',
+                attrsAll: {style: {width: 'auto', margin: '.25em 1em', float: 'left'}},
+                onclick: (value) => {
+                    if (preferences['save_to_dataverse'] === (value === 'true')) return;
+                    preferences['save_to_dataverse'] = value === 'true';
+                    this.saved = false;
+                },
+                activeSection: (preferences['save_to_dataverse'] || 'false') + '',
+                sections: [{value: 'true'}, {value: 'false'}]
+            }),
             'Username': format([
                 preferences['username'],
                 preferences['username'] === undefined && warn('Please log in to save queries.')]),
@@ -102,6 +102,7 @@ export default class SaveQuery {
             'collection_name': '',
             'collection_type': '',
             'result_count': 0,
+            'save_to_dataverse': '',
             'name': '',
             'description': ''
         };
@@ -120,11 +121,23 @@ export default class SaveQuery {
                         data: preferences,
                         method: 'POST'
                     });
-                    if (response.success) {
-                        this.status = 'Saved as query ID ' + response.data.id;
-                        this.saved = true;
+                    if (!response.success) {
+                        this.status = response.message;
+                        return;
                     }
-                    else this.status = response.message;
+                    this.status = 'Saved as query ID ' + response.data.id;
+                    this.saved = true;
+
+                    if (!preferences['save_to_dataverse']) return;
+
+                    await m.request({
+                        url: 'eventdata/api/upload-dataverse/' + response.data.id,
+                        method: 'GET'
+                    });
+                    await m.request({
+                        url: 'eventdata/api/publish-dataset/' + response.data.id,
+                        method: 'GET'
+                    })
                 }
             }, this.saved ? 'Saved' : 'Save Query'),
             this.status && m('[style=display:inline-block;margin-left:1em;]', this.status),
