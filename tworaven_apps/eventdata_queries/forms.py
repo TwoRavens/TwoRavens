@@ -39,6 +39,7 @@ class EventDataSavedQueryForm(forms.Form):
         """
         query_str = self.cleaned_data.get('query')
 
+        print(query_str)
         try:
             dict_type = eval(query_str)
         except SyntaxError:
@@ -64,18 +65,18 @@ class EventDataSavedQueryForm(forms.Form):
 
         return res_count
 
-    def clean_dataset(self):
-        dataset_input = self.cleaned_data.get('collection_name')
+    def clean_collection_name(self):
+        collection_name = self.cleaned_data.get('collection_name')
 
-        return dataset_input
+        return collection_name
 
-    def clean_dataset_type(self):
-        dataset_type = self.cleaned_data.get('collection_type')
+    def clean_collection_type(self):
+        collection_type = self.cleaned_data.get('collection_type')
         print("type choces", list(TYPE_OPTIONS))
-        if dataset_type in TYPE_OPTIONS:
-            return dataset_type
+        if collection_type in TYPE_OPTIONS:
+            return collection_type
         else:
-            raise forms.ValidationError("The type input is not among subset or aggregate: %s" % dataset_type)
+            raise forms.ValidationError("The type input is not among subset or aggregate: %s" % collection_type)
 
 
     def clean_save_to_dataverse(self):
@@ -114,7 +115,7 @@ class EventDataGetDataForm(forms.Form):
     """ check if query submission parameters are ok"""
 
     host = forms.CharField(required=False, widget=forms.Textarea, initial=HOST_CHOICES[0])
-    dataset = forms.CharField(required=True, widget=forms.Textarea)
+    collection_name = forms.CharField(required=True, widget=forms.Textarea)
     method = forms.CharField(required=True, widget=forms.Textarea)
     query = forms.CharField(required=True, widget=forms.Textarea)
     distinct = forms.CharField(required=False, widget=forms.Textarea)
@@ -126,8 +127,8 @@ class EventDataGetDataForm(forms.Form):
         else:
             raise forms.ValidationError('The host is not among %s: %s' % (str(HOST_CHOICES), host))
 
-    def clean_dataset(self):
-        return self.cleaned_data.get('dataset')
+    def clean_collection_name(self):
+        return self.cleaned_data.get('collection_name')
 
     def clean_method(self):
         method = self.cleaned_data.get('method')
@@ -137,8 +138,6 @@ class EventDataGetDataForm(forms.Form):
             raise forms.ValidationError("The collection method is not among %s: %s" % (str(METHOD_CHOICES), method))
 
     def clean_query(self):
-        print("Query")
-        print(self.cleaned_data.get('query'))
         return json.loads(self.cleaned_data.get('query'))
 
     def clean_distinct(self):
@@ -150,7 +149,7 @@ class EventDataGetMetadataForm(forms.Form):
 
     alignments = forms.CharField(required=False, widget=forms.Textarea)
     formats = forms.CharField(required=False, widget=forms.Textarea)
-    datasets = forms.CharField(required=False, widget=forms.Textarea)
+    collections = forms.CharField(required=False, widget=forms.Textarea)
 
     def clean_alignments(self):
         return self.cleaned_data.get('alignments')
@@ -158,6 +157,6 @@ class EventDataGetMetadataForm(forms.Form):
     def clean_formats(self):
         return self.cleaned_data.get('formats')
 
-    def clean_datasets(self):
-        return self.cleaned_data.get('datasets')
+    def clean_collections(self):
+        return self.cleaned_data.get('collections')
 

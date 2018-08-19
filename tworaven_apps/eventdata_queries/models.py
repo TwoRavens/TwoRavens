@@ -34,12 +34,6 @@ USERNAME = u'username'
 
 SEARCH_PARAMETERS = (NAME, DESC, USERNAME)
 
-NAME = u'name'
-DESC = u'description'
-USERNAME = u'username'
-
-SEARCH_PARAMETERS = (NAME, DESC, USERNAME)
-
 
 class EventDataSavedQuery(TimeStampedModel):
     """ Model to store queries"""
@@ -132,7 +126,7 @@ class EventDataSavedQuery(TimeStampedModel):
                 arguments[k] = v
 
         result = EventDataSavedQuery.objects.values('id', 'name', 'username', 'description','result_count',
-                                                    'created', 'modified', 'dataset', 'dataset_type'
+                                                    'created', 'modified', 'collection_name', 'collection_type'
                                                     ).filter(**arguments).all()
 
         if not result:
@@ -144,7 +138,7 @@ class EventDataSavedQuery(TimeStampedModel):
     def get_all_fields_except_query_list(self):
         """ get all fields expect query"""
         result = EventDataSavedQuery.objects.values('id','name', 'username', 'description',
-                                                    'result_count', 'created', 'modified', 'dataset', 'dataset_type').all()
+                                                    'result_count', 'created', 'modified', 'collection_name', 'collection_type').all()
 
         if not result:
             return err_resp('could not get the object list')

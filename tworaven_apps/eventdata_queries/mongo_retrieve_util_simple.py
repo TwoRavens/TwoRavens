@@ -21,18 +21,11 @@ ERR_FAILED_DB_CONN = 'Could not connect to the Mongo database.'
 ERR_TOO_MANY_RESULTS = 'The query results were above the threshold to save to a file.'
 
 
-class MongoRetrieveUtil2(BasicErrCheck):
+class MongoRetrieveUtilSimple(BasicErrCheck):
     """
     Used for querying mongo
     """
-    def __init__(self, dbname, query):
-        """
-        dbname: name of the mongo database
-        query: query to run
-        """
-        self.dbname = dbname
-        self.query = query
-
+    def __init__(self):
         self.mongo_client = None
 
     def get_mongo_client(self):

@@ -30,10 +30,8 @@ export default class CanvasSavedQueries {
             return out;
         }, {});
 
-        let url = '/eventdata/api/' + (Object.keys(search).length === 0 ? 'list' : 'search');
-
         let response = await m.request({
-            url: url,
+            url: '/eventdata/api/' + (Object.keys(search).length === 0 ? 'list' : 'search'),
             data: search,
             method: 'POST'
         });
@@ -108,7 +106,7 @@ export default class CanvasSavedQueries {
                             e.stopPropagation();
                             app.setLaddaSpinner('btnDownload' + result.id, true);
                             if (this.result !== result.id || !preferences['query']) await this.getQuery(preferences, result.id);
-                            await app.download(result.dataset_type, result.dataset, preferences['query']);
+                            await app.download(result.collection_type, result.collection_name, preferences['query']);
                             app.laddaStopAll();
                         }
                     }, 'Download')
@@ -117,9 +115,9 @@ export default class CanvasSavedQueries {
                 this.result === result.id && [
                     m(Table, {
                         data: {
-                            'Dataset': result['dataset'],
+                            'Dataset': result['collection_name'],
                             'Result Count': result['result_count'],
-                            'Dataset Type': result['dataset_type'],
+                            'Dataset Type': result['collection_type'],
                             'Username': result['username'],
                             'Created': new Date(result['created']).toLocaleString(),
                             'Modified': new Date(result['modified']).toLocaleString(),

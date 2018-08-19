@@ -40,8 +40,8 @@ export default class SaveQuery {
         Object.assign(preferences, {
             'query': queryMongo,
             'username': app.username,
-            'dataset': app.selectedDataset,
-            'dataset_type': app.selectedMode,
+            'collection_name': app.selectedDataset,
+            'collection_type': app.selectedMode,
             'result_count': {
                 'subset': app.totalSubsetRecords,
                 'aggregate': (app.aggregationData || []).length
@@ -87,7 +87,7 @@ export default class SaveQuery {
             'Username': format([
                 preferences['username'],
                 preferences['username'] === undefined && warn('Please log in to save queries.')]),
-            'Dataset': format(preferences['dataset']),
+            'Dataset': format(preferences['collection_name']),
             'Result Count': format([
                 preferences['result_count'],
                 preferences['result_count'] === 0 && warn('The query does not match any data.')]),
@@ -99,8 +99,8 @@ export default class SaveQuery {
         let invalids = {
             'query': '',
             'username': '',
-            'dataset': '',
-            'dataset_type': '',
+            'collection_name': '',
+            'collection_type': '',
             'result_count': 0,
             'name': '',
             'description': ''

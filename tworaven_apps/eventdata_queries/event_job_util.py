@@ -20,7 +20,7 @@ from tworaven_apps.eventdata_queries.dataverse.get_dataset_file_info import GetD
 from tworaven_apps.eventdata_queries.mongo_retrieve_util import MongoRetrieveUtil
 from tworaven_apps.eventdata_queries.generate_readme import GenerateReadMe
 
-from tworaven_apps.eventdata_queries.mongo_retrieve_util2 import MongoRetrieveUtil2
+from tworaven_apps.eventdata_queries.mongo_retrieve_util_simple import MongoRetrieveUtilSimple
 from bson.json_util import (loads, dumps)
 
 # query reformatting
@@ -380,7 +380,7 @@ class EventJobUtil(object):
         # grab the method from the collection that matches the user query type (safe because it must match the form enum)
         try:
             if host == 'TwoRavens':
-                retrieve_util = MongoRetrieveUtil2(collection, query)
+                retrieve_util = MongoRetrieveUtilSimple()
                 client = retrieve_util.get_mongo_client()
 
                 if retrieve_util.has_error():

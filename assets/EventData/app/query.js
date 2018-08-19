@@ -280,7 +280,7 @@ export function submitAggregation() {
         host: app.genericMetadata[app.selectedDataset]['host'],
         method: 'aggregate',
         query: query,
-        dataset: app.selectedDataset
+        collection_name: app.selectedDataset
     })
         .then(reformatAggregation)
         .then(({data, headersUnit, headersEvent}) => {

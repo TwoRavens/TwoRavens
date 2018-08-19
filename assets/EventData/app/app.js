@@ -19,7 +19,7 @@ export let alignmentData = {};
 
 export let setMetadata = (data) => Object.keys(data).forEach(key =>
     Object.keys(data[key]).forEach(identifier => ({
-        'datasets': genericMetadata,
+        'collections': genericMetadata,
         'formats': formattingData,
         'alignments': alignmentData
     }[key][identifier] = data[key][identifier])));
@@ -303,7 +303,7 @@ async function updatePeek() {
 
     let body = {
         host: genericMetadata[selectedDataset]['host'],
-        dataset: selectedDataset,
+        collection_name: selectedDataset,
         method: 'aggregate',
         query: JSON.stringify(peekQuery)
     };
@@ -414,7 +414,7 @@ export let loadSubset = async (subsetName, {includePending, recount, requireMatc
     // record count request
     if (recount || totalSubsetRecords === undefined) promises.push(getData({
         host: genericMetadata[dataset]['host'],
-        dataset: dataset,
+        collection_name: dataset,
         method: 'count',
         query: JSON.stringify(subsetQuery)
     }).then(count => {
@@ -464,7 +464,7 @@ export let loadSubset = async (subsetName, {includePending, recount, requireMatc
 
                 promises.push(getData({
                     host: genericMetadata[dataset]['host'],
-                    dataset: dataset,
+                    collection_name: dataset,
                     method: 'distinct',
                     distinct: config['tabs'][tab]['full'],
                     query: JSON.stringify(monadQuery)
@@ -473,7 +473,7 @@ export let loadSubset = async (subsetName, {includePending, recount, requireMatc
 
             if (!monadSearch) promises = promises.concat(config['tabs'][tab]['filters'].map(filter => getData({
                 host: genericMetadata[dataset]['host'],
-                dataset: dataset,
+                collection_name: dataset,
                 method: 'distinct',
                 distinct: filter,
                 query: JSON.stringify(subsetQuery)
@@ -494,7 +494,7 @@ export let loadSubset = async (subsetName, {includePending, recount, requireMatc
 
         promises.push(getData({
             host: genericMetadata[dataset]['host'],
-            dataset: dataset,
+            collection_name: dataset,
             method: 'aggregate',
             query: JSON.stringify(dateQuery)
         }).then(response => data = response
@@ -524,7 +524,7 @@ export let loadSubset = async (subsetName, {includePending, recount, requireMatc
 
         promises.push(getData({
             host: genericMetadata[dataset]['host'],
-            dataset: dataset,
+            collection_name: dataset,
             method: 'aggregate',
             query: JSON.stringify(categoricalQuery)
         }).then(response => data = response))
@@ -596,7 +596,7 @@ export async function download(queryType, dataset, queryMongo) {
     setLaddaSpinner('btnDownload', true);
     let data = await getData({
         host: genericMetadata[dataset]['host'],
-        dataset: dataset,
+        collection_name: dataset,
         method: 'aggregate',
         query: JSON.stringify(queryMongo)
     }).catch(laddaStopAll);

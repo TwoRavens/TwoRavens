@@ -46,7 +46,7 @@ export default class Body_EventData {
         // Load the metadata for all available datasets
         m.request({
             url: app.eventdataURL + 'get-metadata',
-            data: {'datasets': null}, // no specific dataset passed, so it returns all
+            data: {'collections': null}, // no specific dataset passed, so it returns all
             method: 'POST'
         }).then(app.setMetadata).catch(app.laddaStopAll);
     }
