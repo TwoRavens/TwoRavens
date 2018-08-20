@@ -2682,7 +2682,7 @@ export async function estimate(btn) {
                                      continue pipelineLoop; // continue to next iteration
                                 }else if(typeof res5.data.requestId != 'undefined'){
                                     fittedId = res5.data.requestId;
-                                    res6 = await makeRequest(D3M_SVC_URL + `/GetFitSolutionResults`, {requestIdf: fittedId});
+                                    res6 = await makeRequest(D3M_SVC_URL + `/GetFitSolutionResults`, {requestId: fittedId});
                                     fittedDetailsUrl = res6.data.details_url;
                                 }else{
                                     alert('PLEASE CONTINUE.  Debug: FitSolution failed. ' + JSON.stringify(res5));
