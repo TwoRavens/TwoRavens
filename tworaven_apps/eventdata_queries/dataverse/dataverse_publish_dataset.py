@@ -66,13 +66,13 @@ class DataversePublishDataset(object):
         # Print the response
         # -------------------
         print('-' * 40)
-        print(r.json())
-        print(r.status_code)
+        # print(r.json())
+        # print(r.status_code)
         self.status_code = r.status_code
         if r.status_code == 200:
             self.res = r.json()
         else:
-            self.res = None
+            self.res = r.json()
 
     def return_status(self):
         if self.res is not None:

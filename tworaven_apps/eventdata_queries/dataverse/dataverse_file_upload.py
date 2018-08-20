@@ -96,7 +96,7 @@ class DataverseFileUpload(BasicErrCheck):
         if r.status_code == 200:
             self.res = r.json()
         else:
-            self.res = None
+            self.res = r.json()
 
     def update_file_content(self, input_type):
         """ update the files using the type"""

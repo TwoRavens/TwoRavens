@@ -22,32 +22,75 @@ class EventDataQueryAddTest(TestCase):
 
         user_obj = User.objects.get_or_create(username='dev_admin')[0]
         self.client.force_login(user_obj)
-        self.input_json1 = {"name": "query1",
-                       "description": "query1 desc",
-                       "username": "two ravens",
-                       "query": {"ads": "asd"},
-                       "result_count": 4,
-                            "dataset": "this is the dataset, should it be json ?",
-                            "dataset_type": "subset"
+        self.input_json1 = {
+   "name":"query_1",
+   "description":"query to get the data of year 1998",
+   "username":"two_ravens",
+   "query":[
+      {
+         "$match":{
+            "year":1998,
+            "target_root":"RUS",
+            "target_agent":"GOV"
+         }
+      },
+      {
+         "$count":"year_1998"
+      }
+   ],
+   "result_count":"4",
+   "collection_type":"aggregate",
+   "save_to_dataverse":True,
+   "collection_name":"cline_phoenix_fbis"
                             }
-        self.input_json2 = {"name": "query2",
-                       "description": "query2 desc",
-                       "username": "two ravens",
-                       "query": {"ads": "asd"},
-                       "result_count": 4,
-                        "dataset": "this is the dataset, should it be json ?",
-                            "dataset_type": "subset"}
+        self.input_json2 = {
+   "name":"query_2",
+   "description":"query to get the data of year 1998",
+   "username":"two_ravens",
+   "query":[
+      {
+         "$match":{
+            "year":1998,
+            "target_root":"RUS",
+            "target_agent":"GOV"
+         }
+      },
+      {
+         "$count":"year_1998"
+      }
+   ],
+   "result_count":"4",
+   "collection_type":"aggregate",
+   "save_to_dataverse":True,
+   "collection_name":"cline_phoenix_fbis"}
 
     def test_010_add_query(self):
         """(10) Test AddQuery"""
         msgt(self.test_010_add_query.__doc__)
         # url and info for call
         #
-        output_json = {'id': 1, 'name': 'query1', 'description': 'query1 desc',
-                       'username': 'two ravens', 'query': {'ads': 'asd'},
-                       'result_count': 4, 'created': '2018-06-25T19:04:23.277Z',
-                       'modified': '2018-06-25T19:04:23.277Z',  "dataset": "this is the dataset, should it be json ?",
-                            "dataset_type": "subset"}
+        output_json = {"id": 1,
+        "name": "query_1",
+        "description": "query to get the data of year 1998",
+        "username": "two_ravens",
+        "query": [
+            {
+                "$match": {
+                    "year": 1998,
+                    "target_root": "RUS",
+                    "target_agent": "GOV"
+                }
+            },
+            {
+                "$count": "year_1998"
+            }
+        ],
+        "result_count": "4",
+        "created": "2018-07-26T05:08:38.281Z",
+        "modified": "2018-07-26T05:08:38.281Z",
+        "collection_type": "aggregate",
+        "collection_name": "cline_phoenix_fbis",
+        "save_to_dataverse": True}
 
         url = reverse('api_add_query')
 
@@ -104,11 +147,12 @@ class EventDataQueryAddTest(TestCase):
         #
         json_resp = response_list.json()
         obj = json_resp['data']
+        print("--------------- data obj -------------", obj)
         # print('****json resp ****', json.loads(job)['data'])
         self.assertEqual(obj[0]['id'], 2)
         self.assertEqual(obj[1]['id'], 1)
-        self.assertEqual(obj[0]['name'], 'query2')
-        self.assertEqual(obj[1]['name'], 'query1')
+        self.assertEqual(obj[0]['name'], 'query_2')
+        self.assertEqual(obj[1]['name'], 'query_1')
 
     def test_030_retrieve_object(self):
         """(30) Test retrieval of particular object"""
@@ -134,26 +178,26 @@ class EventDataQueryAddTest(TestCase):
 
         obj = json_resp['data']
 
-        self.assertEqual(obj['name'], 'query1')
+        self.assertEqual(obj['name'], 'query_1')
 
     def test_040_search(self):
         """(40) Test for search """
         msgt(self.test_040_search.__doc__)
         search_json1 = {
-            "name": "query1",
-            "description": "query1 desc",
-            "username" : "two ravens"
+            "name": "query_1",
+            "description": "query to get the data of year 1998",
+            "username" : "two_ravens"
 
         }
         search_json2 = {
-            "name": "query2",
-            "description": "query2 desc"
+            "name": "query_2",
+            "description": "query to get the data of year 1998"
         }
         search_json3 = {
-            "name": "query1",
-            "description": "query1 desc1",
+            "name": "query_1",
+            "description": "query to get the data of year 1998",
             "username": "two ravens"
-        }
+        }   # this should not work as incorrect user name
 
         url = reverse('api_add_query')
 
@@ -186,14 +230,15 @@ class EventDataQueryAddTest(TestCase):
         # print("json res", response_list)
         # self.assertEqual(json.loads(response_list)['name'], 'query1')
         json_resp1 = response_search1.json()
-        self.assertEqual(json_resp1['data'][0]['name'], 'query1')
+        self.assertEqual(json_resp1['data'][0]['name'], 'query_1')
         self.assertEqual(json_resp1['data'][0]['id'], 1)
 
         json_resp2 = response_search2.json()
-        self.assertEqual(json_resp2['data'][0]['name'], 'query2')
+        self.assertEqual(json_resp2['data'][0]['name'], 'query_2')
         self.assertEqual(json_resp2['data'][0]['id'], 2)
 
         json_resp3 = response_search3.json()
+        print("-------------json response 3 -----------", json_resp3)
         self.assertEqual(json_resp3['success'], False)
         self.assertEqual(json_resp3['message'], 'list not retrieved')
 
