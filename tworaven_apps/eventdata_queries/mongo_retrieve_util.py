@@ -2,9 +2,13 @@
 Used to query a mongo database using a direct connection
 """
 import bson
+import json
+import requests
+from dateutil import parser
 from datetime import datetime
 from pprint import pprint
 from urllib.parse import quote_plus
+
 from pymongo import MongoClient
 from pymongo.errors import \
     (ConfigurationError, ConnectionFailure)
@@ -33,7 +37,7 @@ class MongoRetrieveUtil(BasicErrCheck):
     """
     Used for querying mongo
     """
-    def __init__(self, collection_name, query, method):
+    def __init__(self, collection_name, query, method, host='TwoRavens'):
         """
         dbname: name of the mongo database
         query: query to run
@@ -57,6 +61,8 @@ class MongoRetrieveUtil(BasicErrCheck):
                         query[key] = ObjectId(query[key]['$oid'])
                     # Convert date strings to datetime objects
                     elif '$date' in query[key]:
+                        if type(query[key]['$date']) is dict and host == 'UTDallas':
+                            query[key] = '$date(%s)' % (query[key]['$date'],) # attempt to work with this: https://github.com/Sayeedsalam/spec-event-data-server/blob/920c6b83f121587cfeedbb34516a1b8213ec6092/app_v2.py#L125
                         if type(query[key]['$date']) is dict and '$numberLong' in query[key]['$date']:
                             query[key] = datetime.fromtimestamp(Int64(query[key]['$numberLong']))
                         else:
@@ -71,10 +77,10 @@ class MongoRetrieveUtil(BasicErrCheck):
         except Exception as e:
             self.add_err_msg("Error reformatting query: %s" % (str(e),))
 
-
         self.collection_name = collection_name
         self.query = query
         self.method = method
+        self.host = host
 
         self.mongo_client = None
 
@@ -100,6 +106,18 @@ class MongoRetrieveUtil(BasicErrCheck):
         """run the query"""
         if self.has_error():
             return err_resp(self.get_error_message())
+
+        if self.host == 'UTDallas':
+            url = settings.EVENTDATA_PRODUCTION_SERVER_ADDRESS + settings.EVENTDATA_SERVER_API_KEY + '&datasource=' + self.collection_name
+
+            if self.method == 'count':
+                query = json.dumps([{'$match': self.query}, {'$count': "total"}])
+                return ok_resp(requests.get(url + '&aggregate=' + query).json()['data'][0]['total'])
+            elif self.method == 'find':
+                unique = '&unique=' + distinct if distinct else ''
+                return ok_resp(requests.get(url + '&query=' + json.dumps(self.query) + unique).json()['data'])
+            elif self.method == 'aggregate':
+                return ok_resp(requests.get(url + '&aggregate=' + json.dumps(self.query)).json()['data'])
 
         # ----------------------
         # get the client

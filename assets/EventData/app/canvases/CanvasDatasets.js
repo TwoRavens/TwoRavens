@@ -41,7 +41,7 @@ export default class CanvasDatasets {
                 width: '100%',
                 'margin-bottom': common.panelMargin
             }
-        }, Object.values(app.genericMetadata).map((dataset) => m('div', {
+        }, Object.values(app.genericMetadata).sort((a, b) => a.key.localeCompare(b.key)).map((dataset) => m('div', {
                 style: {
                     width: '100%',
                     background: this.dataset === dataset['key'] ? common.menuColor : '#f0f0f0',

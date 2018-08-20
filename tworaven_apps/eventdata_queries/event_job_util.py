@@ -1,6 +1,5 @@
 import os
 import json
-import requests
 import pandas as pd
 from django.conf import settings
 from collections import OrderedDict
@@ -346,7 +345,7 @@ class EventJobUtil(object):
         if method == 'distinct' and not distinct:
             return err_resp("the distinct method requires a 'keys' argument")
 
-        retrieve_util = MongoRetrieveUtil(collection, query, method)
+        retrieve_util = MongoRetrieveUtil(collection, query, method, host)
         success, data = retrieve_util.run_query(distinct)
         return ok_resp(data) if success else err_resp(data)
 
