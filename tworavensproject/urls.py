@@ -28,9 +28,7 @@ urlpatterns = [
 
     url(r'^api/', include('tworaven_apps.api_docs.urls')),
 
-    # social auth
-    #
-    url('auth-s/', include('social_django.urls', namespace='social')),
+    #url(r'^ta3-search/', include('tworaven_apps.ta3_search.urls')),
 
     url(r'^', include('tworaven_apps.content_pages.urls')),
 

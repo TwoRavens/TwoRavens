@@ -11,10 +11,6 @@ urlpatterns = (
         views.view_monitoring_alive,
         name='view_monitoring_alive'),
 
-    url(r'^privacy-policy$',
-        views.view_privacy_policy,
-        name='view_privacy_policy'),
-
     url(r'^test-callback$',
         views.view_test_callback,
         name='view_test_callback'),
