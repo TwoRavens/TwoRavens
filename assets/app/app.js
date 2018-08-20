@@ -4075,7 +4075,7 @@ export function confusionmatrix(matrixdata, classes) {
 
     let longest = classes.reduce(function (a, b) { return a.length > b.length ? a : b; });
     //console.log(longest);
-    let leftmarginguess = Math.max(longest.length * 8, 25);  // More correct answer is to make a span, put string inside span, then use jquery to get pixel width of span.
+    let leftmarginguess = Math.max(longest.length * 7, 25);  // More correct answer is to make a span, put string inside span, then use jquery to get pixel width of span.
 
 
     let condiv = document.createElement('div');
