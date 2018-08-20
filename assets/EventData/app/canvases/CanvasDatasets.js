@@ -3,6 +3,7 @@ import * as app from '../app';
 import * as common from '../../../common-eventdata/common';
 import Table from '../../../common-eventdata/views/Table';
 import ListTags from "../../../common-eventdata/views/ListTags";
+import Button from '../../../common-eventdata/views/Button';
 
 export default class CanvasDatasets {
     oninit() {
@@ -54,14 +55,29 @@ export default class CanvasDatasets {
             },
             m('h4', [
                 dataset['name'],
-                m('button.btn.btn-default[type="button"]', {
+                m(Button, {
+                    id: 'btnLoad' + dataset['name'],
                     style: {margin: '0 0.25em', float: 'right'},
                     onclick: () => {
                         app.setSelectedDataset(dataset['key']);
                         app.setSelectedMode('subset')
                     },
                     disabled: app.selectedDataset === dataset['key']
-                }, 'Load' + (app.selectedDataset === dataset['key'] ? 'ed' : ''))
+                }, 'Load' + (app.selectedDataset === dataset['key'] ? 'ed' : '')),
+                m(Button, {
+                    id: 'btnDownload' + dataset['key'],
+                    style: {margin: '0 0.25em', float: 'right'},
+                    onclick: async () => {
+                        if (!(confirm("Warning, this will download the entire dataset. It may take some time."))) return;
+                        app.setLaddaSpinner('btnDownload' + dataset['key'], true);
+                        let variables = [...app.genericMetadata[dataset.key]['columns'], ...app.genericMetadata[dataset.key]['columns_constructed']];
+                        let query = [
+                            {"$project": variables.reduce((out, variable) => {out[variable] = 1;return out;}, {_id: 0})}
+                        ];
+                        await app.download('subset', dataset['key'], query);
+                        app.laddaStopAll();
+                    }
+                }, 'Download')
             ]),
             dataset['description'],
             this.dataset === dataset['key'] && [
