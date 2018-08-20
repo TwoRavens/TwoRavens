@@ -90,6 +90,8 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'tworavensproject.urls'
 
+LOGIN_URL = reverse_lazy('home')    #'/auth/login/'
+
 LOGIN_REDIRECT_URL = 'home'
 
 TEMPLATES = [
@@ -133,9 +135,9 @@ DATABASES = {
 ALLOW_SOCIAL_AUTH = os.environ.get('ALLOW_SOCIAL_AUTH', True)
 
 AUTHENTICATION_BACKENDS = (
-    #'social_core.backends.github.GithubOAuth2',
+    'social_core.backends.github.GithubOAuth2',
     #'social_core.backends.google.GoogleOpenId',
-    'social_core.backends.google.GoogleOAuth2',
+    #'social_core.backends.google.GoogleOAuth2',
     #'social_core.backends.google.GoogleOAuth',
     #'social_core.backends.twitter.TwitterOAuth',
     #'social_core.backends.yahoo.YahooOpenId',
@@ -155,13 +157,13 @@ SOCIAL_AUTH_PIPELINE = (
     'social_core.pipeline.social_auth.associate_by_email',
 )
 
-#SOCIAL_AUTH_GITHUB_KEY = os.environ.get('SOCIAL_AUTH_GITHUB_KEY', 'not-set')
-#SOCIAL_AUTH_GITHUB_SECRET = os.environ.get('SOCIAL_AUTH_GITHUB_SECRET', 'not-set')
+SOCIAL_AUTH_GITHUB_KEY = os.environ.get('SOCIAL_AUTH_GITHUB_KEY', 'not-set')
+SOCIAL_AUTH_GITHUB_SECRET = os.environ.get('SOCIAL_AUTH_GITHUB_SECRET', 'not-set')
 
-SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = os.environ.get(\
-                            'SOCIAL_AUTH_GOOGLE_OAUTH2_KEY', 'not-set')
-SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = os.environ.get(\
-                            'SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET', 'not-set')
+#SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = os.environ.get(\
+#                            'SOCIAL_AUTH_GOOGLE_OAUTH2_KEY', 'not-set')
+#SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = os.environ.get(\
+#                            'SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET', 'not-set')
 
 # -------------------------------
 # End: Social Auth
@@ -199,7 +201,6 @@ CSRF_COOKIE_NAME = 'CSRF_2R'
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
 
-LOGIN_URL = reverse_lazy('home')    #'/auth/login/'
 
 STATIC_URL = '/static/'
 
