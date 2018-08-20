@@ -29,6 +29,8 @@ function onStorageEvent(e) {
     }
 }
 
+
+
 window.addEventListener('storage', onStorageEvent);
 
 function updatePeek() {
@@ -76,6 +78,8 @@ export let task2_finished = false;
 export let problemDocExists = true;
 export let univariate_finished = false;
 export let resultsMetricDescription = 'Larger numbers are better fits';
+
+export let testingmode = true;
 
 export let allsearchId = [];            // List of all the searchId's created on searches
 
@@ -2541,7 +2545,7 @@ export async function estimate(btn) {
             setxTable(rookpipe.predictors);
             let searchSolutionParmams = CreatePipelineDefinition(rookpipe.predictors,
                                                                  rookpipe.depvar,
-                                                                 2)
+                                                                 4)
             let res = await makeRequest(D3M_SVC_URL + '/SearchSolutions',
                                         searchSolutionParmams);
             console.log(JSON.stringify(res));
@@ -2596,7 +2600,9 @@ export async function estimate(btn) {
                   return;
                 } else if (res3.data.is_error){
                   estimateLadda.stop();
-                  alert('StoredRequest has an error. ' + res3.data.user_msg);
+                  if (!testingmode){
+                      alert('StoredRequest has an error. ' + res3.data.user_msg);
+                  };
                   return;
                 }
 
@@ -2676,7 +2682,7 @@ export async function estimate(btn) {
                                      continue pipelineLoop; // continue to next iteration
                                 }else if(typeof res5.data.requestId != 'undefined'){
                                     fittedId = res5.data.requestId;
-                                    res6 = await makeRequest(D3M_SVC_URL + `/GetFitSolutionResults`, {requestId: fittedId});
+                                    res6 = await makeRequest(D3M_SVC_URL + `/GetFitSolutionResults`, {requestIdf: fittedId});
                                     fittedDetailsUrl = res6.data.details_url;
                                 }else{
                                     alert('PLEASE CONTINUE.  Debug: FitSolution failed. ' + JSON.stringify(res5));
@@ -3108,7 +3114,9 @@ export async function updateRequest(url) {
     } catch(err) {
         end_ta3_search(false, err);
         cdb(err);
-        alert(`Error: call to ${url} failed`);
+        if (!testingmode){
+            alert(`Error: call to ${url} failed`);
+        };
     }
     return res;
 }
@@ -3129,7 +3137,9 @@ export async function makeRequest(url, data) {
     } catch(err) {
         end_ta3_search(false, err);
         cdb(err);
-        alert(`Error: call to ${url} failed`);
+        if (!testingmode){
+            alert(`Error: call to ${url} failed`);
+        };
     }
 
    /*
