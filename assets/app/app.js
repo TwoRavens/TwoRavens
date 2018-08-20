@@ -73,6 +73,7 @@ export function setVariate(variate) {
 
 export let task1_finished = false;
 export let task2_finished = false;
+export let problemDocExists = true;
 export let univariate_finished = false;
 export let resultsMetricDescription = 'Larger numbers are better fits';
 
@@ -82,6 +83,8 @@ export let currentMode = 'model';
 let is_explore_mode = false;
 let is_results_mode = false;
 let is_transform_mode = false;
+
+let exportCount = 0;
 
 export function set_mode(mode) {
     mode = mode ? mode.toLowerCase() : 'model';
@@ -132,7 +135,7 @@ export let leftTabHidden = 'Variables'; // stores the tab user was in before sum
 export let subset = false;
 export let summaryHold = false;
 
-export let rightTab = 'Task Type'; // current tab in right panel
+export let rightTab = 'Problem'; // current tab in right panel
 export let rightTabExplore = 'Univariate';
 
 export let modelLeftPanelWidths = {
@@ -142,11 +145,9 @@ export let modelLeftPanelWidths = {
 };
 
 export let modelRightPanelWidths = {
-    'Models': '300px',
-    'Task Type': '300px',
-    'Subtype': '300px',
-    'Metrics': '300px',
-    'Results': '900px'
+    Problem: '300px',
+    // 'Set Covar.': '900px',
+    Results: '900px'
 };
 
 export let exploreRightPanelWidths = {
@@ -356,9 +357,11 @@ export let setD3mProblemDescription = (key, value) => {
         }[key];
 
         if (lookup === undefined) return;
-        makeRequest(
-            D3M_SVC_URL + "/SetProblemDoc",
-            {replaceProblemSchemaField: {[key]: lookup[d3mProblemDescription[key]][1]}, context: apiSession(zparams.zsessionid)});
+
+        // Eventually should do something here.  But currently this is wrong API call, and most TA2's don't support the correct API call.
+        //makeRequest(
+        //    D3M_SVC_URL + "/SetProblemDoc",
+        //    {replaceProblemSchemaField: {[key]: lookup[d3mProblemDescription[key]][1]}, context: apiSession(zparams.zsessionid)});
     }
     else hopscotch.startTour(lockTour);
 }
@@ -505,11 +508,15 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         return;
     }
 
+    let d3m_config_url = "/config/d3m-config/json/latest";
+    //let d3m_config_eval_url = "/config/d3m-config/json/eval/latest";
+
     // 1. Retrieve the configuration information
     let res = await m.request({
         method: "POST",
-        url: "/config/d3m-config/json/latest"
+        url: d3m_config_url
     });
+    console.log("this is config file:");
     console.log(res);
     datasetdocurl = res.dataset_schema;
 
@@ -534,6 +541,9 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     // ...and make a call to Hello to check TA2 is up.  If we get this far, data are guaranteed to exist for the frontend
 
     res = await m.request("/config/d3m-config/get-problem-data-file-info");
+    console.log("result from problem data file info:");
+    console.log(res);
+
     // The result of this call is similar to below:
     // example:
     /*  {
@@ -579,38 +589,71 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
 
     res = await m.request(d3mPS);
     console.log("prob schema data: ", res);
+    if(typeof res.success=='undefined'){            // In Task 2 currently res.success does not exist in this state, so can't check res.success==true
+        // This is a Task 2 assignment
+        console.log("DID WE GET HERE?");
+        task1_finished = true;
+        byId("btnDiscovery").classList.remove("btn-success");
+        byId("btnDiscovery").classList.add("btn-default");
+        byId("btnSubmitDisc").classList.remove("btn-success");
+        byId("btnSubmitDisc").classList.add("btn-default");
+        byId("btnEstimate").classList.remove("btn-default");
+        byId("btnEstimate").classList.add("btn-success");
 
-    mytarget = res.inputs.data[0].targets[0].colName; // easier way to access target name?
-    mytargetindex = res.inputs.data[0].targets[0].colIndex; // easier way to access target name?
-    if (typeof res.about.problemID !== 'undefined') {
-        d3mProblemDescription.id=res.about.problemID;
-    }
-    if (typeof res.about.problemVersion !== 'undefined') {
-        d3mProblemDescription.version=res.about.problemVersion;
-    }
-    if (typeof res.about.problemName !== 'undefined') {
-        d3mProblemDescription.name=res.about.problemName;
-    }
-    if (typeof res.about.problemDescription !== 'undefined') {
-        d3mProblemDescription.description = res.about.problemDescription;
-    }
-    if (typeof res.about.taskType !== 'undefined') {
-        d3mProblemDescription.taskType=res.about.taskType;
-    }
-    if (typeof res.about.taskSubType !== 'undefined') {
-        d3mProblemDescription.taskSubtype=res.about.taskSubType;
-    }
-    if (typeof res.inputs.performanceMetrics[0].metric !== 'undefined') {
-        d3mProblemDescription.performanceMetrics = res.inputs.performanceMetrics;   // or? res.inputs.performanceMetrics[0].metric;
-    }
+    } else if (!res.success){                       // Task 1 is when res.success==false
+        // This is a Task 1 assignment: no problem doc.
+        task2_finished = true;
+        problemDocExists = false;
+    } else {
+        alert("Something Unusual happened reading problem schema.")
+    };
 
-    // making it case insensitive because the case seems to disagree all too often
-    if (failset.includes(d3mProblemDescription.taskType.toUpperCase())) {
-        if(IS_D3M_DOMAIN){
-          console.log('D3M WARNING: failset  task type found');
+    if(problemDocExists){
+        console.log("Task 2: Problem Doc Exists");
+
+        // Note: There is no res.success field in this return state
+        // if (!res.success){             
+        //   alert('problem schema not available: ' + res.message);
+        //   return
+        // }
+
+        mytarget = res.inputs.data[0].targets[0].colName; // easier way to access target name?
+        mytargetindex = res.inputs.data[0].targets[0].colIndex; // easier way to access target name?
+        if (typeof res.about.problemID !== 'undefined') {
+            d3mProblemDescription.id=res.about.problemID;
         }
-        swandive = true;
-    }
+        if (typeof res.about.problemVersion !== 'undefined') {
+            d3mProblemDescription.version=res.about.problemVersion;
+        }
+        if (typeof res.about.problemName !== 'undefined') {
+            d3mProblemDescription.name=res.about.problemName;
+        }
+        if (typeof res.about.problemDescription !== 'undefined') {
+            d3mProblemDescription.description = res.about.problemDescription;
+        }
+        if (typeof res.about.taskType !== 'undefined') {
+            d3mProblemDescription.taskType=res.about.taskType;
+        }
+        if (typeof res.about.taskSubType !== 'undefined') {
+            d3mProblemDescription.taskSubtype=res.about.taskSubType;
+        }
+        if (typeof res.inputs.performanceMetrics[0].metric !== 'undefined') {
+            d3mProblemDescription.performanceMetrics = res.inputs.performanceMetrics;   // or? res.inputs.performanceMetrics[0].metric;
+        }
+
+        // making it case insensitive because the case seems to disagree all too often
+        if (failset.includes(d3mProblemDescription.taskType.toUpperCase())) {
+            if(IS_D3M_DOMAIN){
+              console.log('D3M WARNING: failset  task type found');
+            }
+            swandive = true;
+        }
+    }else{
+        console.log("Task 1: No Problem Doc");
+        d3mProblemDescription.id="Task1";
+        d3mProblemDescription.name="Task1";
+        d3mProblemDescription.description = "Discovered Problems";    
+    };
 
     // 4. Read the data document and set 'datadocument'
     datadocument = await m.request(d3mDS);
@@ -761,6 +804,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         }
     }
 
+
     console.log("is this preprocess?")
     console.log(res);
     console.log(preprocess);
@@ -821,9 +865,17 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     if(!swandive) {
         disco = discovery(res);
 
+        // Set target variable for center panel if no problemDoc exists to set this
+        if(!problemDocExists){
+            mytarget = disco[0].target; 
+            mytargetindex = valueKey.indexOf(mytarget) - 1;  // Not clear if still used?
+        };
+
         // Kick off discovery button as green for user guidance
-        byId("btnDiscovery").classList.remove("btn-default");
-        byId("btnDiscovery").classList.add("btn-success"); // Would be better to attach this as a class at creation, but don't see where it is created
+        if(!task1_finished){
+            byId("btnDiscovery").classList.remove("btn-default");
+            byId("btnDiscovery").classList.add("btn-success"); // Would be better to attach this as a class at creation, but don't see where it is created
+        };
 
         console.log("disco:");
         console.log(disco);
@@ -2222,9 +2274,7 @@ function CreateProblemDefinition(depvar, aux) {
                         columnName: my_target
                     }
                 ]}];
-        console.log(problem);
-        console.log("valueKey");
-        console.log(valueKey);
+
         return {problem: problem, inputs: inputs};
     } else { //creating pipeline data for problem discovery using aux inputs from disco line
 
@@ -2491,13 +2541,38 @@ export async function estimate(btn) {
             estimated = true;
         } else {
             setxTable(rookpipe.predictors);
-            let res = await makeRequest(D3M_SVC_URL + '/SearchSolutions', CreatePipelineDefinition(rookpipe.predictors, rookpipe.depvar, 2));
+            let searchSolutionParmams = CreatePipelineDefinition(rookpipe.predictors,
+                                                                 rookpipe.depvar,
+                                                                 2)
+            let res = await makeRequest(D3M_SVC_URL + '/SearchSolutions',
+                                        searchSolutionParmams);
+            console.log(JSON.stringify(res));
+            if (res===undefined){
+              estimateLadda.stop();
+              return;
+            }else if(!res.success){
+              estimateLadda.stop();
+              alert('SearchSolutions request Failed! ' + res.message);
+              return;
+            }
+
             let searchId = res.data.searchId;
             let solutionId = "";
             let fittedId = "";
             allsearchId.push(searchId);
 
-            let res2 = await makeRequest(D3M_SVC_URL + '/GetSearchSolutionsResults', {searchId: searchId});
+            let res2 = await makeRequest(D3M_SVC_URL + '/GetSearchSolutionsResults',
+                                         {searchId: searchId});
+            if (!res2.success){
+                alert('Failed to get GetSearchSolutionsResults: ' + res2.message);
+                estimateLadda.stop();
+                return;
+            }else if (res2.data.is_error){
+                alert('Error with GetSearchSolutionsResults: ' + res2.data.user_msg);
+                estimateLadda.stop();
+                return;
+            }
+
             let searchDetailsUrl = res2.data.details_url;
             let fittedDetailsUrl = "";
             let solutionDetailsUrl = "";
@@ -2512,17 +2587,38 @@ export async function estimate(btn) {
 
             let fitFlag = false;
 
+            // Start polling for the searchDetailsUrl.  The response is a StoredRequest
+            //    e.g. /d3m-service/stored-request/{hash id}
+            //
             let refreshIntervalId = setInterval(async function() {
                 res3 = await updateRequest(searchDetailsUrl);                // silent equivalent makeRequest() with no data argument.  Also, should check whether best to be synchronous here.
+                if (!res3.success){
+                  estimateLadda.stop();
+                  alert('Retrieving StoredRequest failed. ' + res3.message);
+                  return;
+                } else if (res3.data.is_error){
+                  estimateLadda.stop();
+                  alert('StoredRequest has an error. ' + res3.data.user_msg);
+                  return;
+                }
+
                 newCount = res3.data.responses.count;
 
                 // Check if new pipeline to add and inspect
                 if(newCount>oldCount){
                     //for (var i = oldCount; i < newCount; i++) {       //  for statement if new items are pushed instead
-                    for (var i = 0; i < (newCount-oldCount); i++) {     //  instead, updates are at top of list
+                    pipelineLoop: for (var i = 0; i < (newCount-oldCount); i++) {     //  instead, updates are at top of list
                         //console.log(res3.data.responses.list[i].details_url);
                         solutionDetailsUrl = res3.data.responses.list[i].details_url;
                         res4 = await updateRequest(solutionDetailsUrl);
+                        if (!res4.success){
+                          alert('PLEASE CONTINUE. Debug: Detected StoredResponse error (unusual).\n' + res4.message);
+                          continue pipelineLoop; // continue to next iteration
+                        } else if (res4.data.is_error){
+                          alert('PLEASE CONTINUE. Debug: StoredResponse has an error (unusual)\n' + JSON.stringify(res4.data));
+                          continue pipelineLoop; // continue to next iteration
+                        }
+
                         let res4DataId = res4.data.id;
                         //console.log(res4);
                         solutionId = res4.data.response.solutionId;
@@ -2546,7 +2642,13 @@ export async function estimate(btn) {
                         if(typeof solutionId != 'undefined'){         // Find out when this happens
 
                             // [1] Get the template language description of the pipeline solution
-                            res77 = await makeRequest(D3M_SVC_URL + '/DescribeSolution', {solutionId: solutionId});                            
+                            res77 = await makeRequest(D3M_SVC_URL + '/DescribeSolution',
+                                                      {solutionId: solutionId});
+
+                            if(!res77.success){
+                                alert('PLEASE CONTINUE.  Debug: DescribeSolution failed. ' + res77.message);
+                                continue pipelineLoop; // continue to next iteration
+                            }
                             // Add pipeline descriptions to allPipelineInfo
                             // More overwriting than is necessary here.
                             allPipelineInfo[res4.data.id] = Object.assign(allPipelineInfo[res4.data.id], res4.data, res77.data);
@@ -2556,20 +2658,32 @@ export async function estimate(btn) {
 
                             // [2] Ask for a solution to be scored
                             res10 = await makeRequest(D3M_SVC_URL + '/ScoreSolution', CreateScoreDefinition(res4));
-                            
-                            if(typeof res10.data.requestId != 'undefined'){
+                            if(!res10.success){
+                                alert('PLEASE CONTINUE.  Debug: ScoreSolution failed. ' + res10.message);
+                                continue pipelineLoop; // continue to next iteration
+                            }else if(typeof res10.data.requestId != 'undefined'){
                                 let scoreId = res10.data.requestId;
                                 res11 = await makeRequest(D3M_SVC_URL + '/GetScoreSolutionResults', {requestId: scoreId});
-                                scoreDetailsUrl = res11.data.details_url;  
+                                scoreDetailsUrl = res11.data.details_url;
+                            }else{
+                                alert('PLEASE CONTINUE.  Debug: ScoreSolution failed. ' + JSON.stringify(res10));
+                                continue pipelineLoop;
                             };
 
                             if(fitFlag){
-                                res5 = await makeRequest(D3M_SVC_URL + '/FitSolution', CreateFitDefinition(solutionId));
-                                if(typeof res5.data.requestId != 'undefined'){
+                                res5 = await makeRequest(D3M_SVC_URL + '/FitSolution',
+                                                         CreateFitDefinition(solutionId));
+                                if(!res5.success){
+                                     alert('PLEASE CONTINUE.  Debug: FitSolution failed. ' + res5.message);
+                                     continue pipelineLoop; // continue to next iteration
+                                }else if(typeof res5.data.requestId != 'undefined'){
                                     fittedId = res5.data.requestId;
                                     res6 = await makeRequest(D3M_SVC_URL + `/GetFitSolutionResults`, {requestId: fittedId});
                                     fittedDetailsUrl = res6.data.details_url;
-                                };
+                                }else{
+                                    alert('PLEASE CONTINUE.  Debug: FitSolution failed. ' + JSON.stringify(res5));
+                                    continue pipelineLoop;
+                                }
                             };
                         };
 
@@ -2577,6 +2691,11 @@ export async function estimate(btn) {
 
                         let scoringIntervalId = setInterval(async function() {
                             let res12 = await updateRequest(scoreDetailsUrl);   // check
+                            if(!res12.success){
+                              alert('PLEASE CONTINUE.  Debug: Get stored request failed. ' + res12.message);
+                              clearInterval(scoringIntervalId);
+                              return; // continue to next iteration
+                            }
                             if(typeof res12.data.is_finished != 'undefined'){
                                 if(res12.data.is_finished){
                                     if(res12.data.responses.list.length > 0){   // need to understand why this comes back is.finished=true but also length=0
@@ -2607,16 +2726,34 @@ export async function estimate(btn) {
                         let finalFittedId, finalFittedDetailsUrl;
                         if(fitFlag){
                             let fittingIntervalId = setInterval(async function() {
+
+                                // Retrieve a StoredRequest object: /d3m-service/stored-request
+                                //
                                 let res7 = await updateRequest(fittedDetailsUrl);   // check
+
+                                if(!res7.success){  // was: (typeof res7.data.is_finished != 'undefined'){
+                                    clearInterval(fittingIntervalId);
+                                    console.log("ERROR res7.message: " + res7.message);
+                                    return;
+                                }
+
                                 if(typeof res7.data.is_finished != 'undefined'){
-                                    if(res7.data.is_finished){
+                                    if(res7.data.is_error){
+                                      clearInterval(fittingIntervalId);
+                                      console.log("ERROR res7.data.is_error: " + JSON.stringify(res7.data));
+                                      return;
+                                    }else if(res7.data.is_finished){
                                         finalFittedDetailsUrl = res7.data.responses.list[0].details_url;
                                         res8 = await updateRequest(finalFittedDetailsUrl);
+                                        if(!res8.success){
+                                          clearInterval(fittingIntervalId);
+                                          console.log("ERROR res8.message: " + JSON.stringify(res8));
+                                          return;
+                                        }
                                         finalFittedId = res8.data.response.fittedSolutionId;
                                         console.log("finalfittedId:" + finalFittedId);
 
                                         // PUT finalFittedId SOMEWHERE IT CAN BE FOUND : maybe allPipelineInfo
-
                                         clearInterval(fittingIntervalId);
                                     };
                                 };
@@ -3682,14 +3819,16 @@ function setPebbleCharge(d){
 
 /** needs doc */
 export async function resultsplotinit(pid) {
+    if (!('predictedValues' in allPipelineInfo[pid])){
+        generatePredictions(pid, true);                    // generate predicted values, and then plot
+    } else {
+        resultsplotgraph(pid);                             // predicted values already exist
+    };
+}
 
-    console.log("Plotting Results");
-    console.log(pid);                  // This is passed argument
-    console.log(selectedPipeline);     // This is global
+export async function generatePredictions(pid, plotflag) {
 
-    let pipelineInfo = allPipelineInfo[pid];
-
-    if (!('predictedValues' in pipelineInfo)){
+    if (!('predictedValues' in allPipelineInfo[pid])){
         // Need to generate and store predicted values
         let finalFittedId, finalFittedDetailsUrl, produceDetailsUrl, finalProduceDetailsUrl, hold3;
         let res8, res55, res56, res58, res59;
@@ -3705,55 +3844,98 @@ export async function resultsplotinit(pid) {
             // First get fitted solution
             if(!fittingfinished){
                 let res7 = await updateRequest(fittedDetailsUrl);
-                if(typeof res7.data.is_finished != 'undefined'){
+                if(res7.success){  // was: (typeof res7.data.is_finished != 'undefined'){
                     if(res7.data.is_finished){
-                        finalFittedDetailsUrl = res7.data.responses.list[0].details_url;
-                        res8 = await updateRequest(finalFittedDetailsUrl);
-                        finalFittedId = res8.data.response.fittedSolutionId;
-                        console.log(finalFittedId);
-                        res55 = await makeRequest(D3M_SVC_URL + '/ProduceSolution', CreateProduceDefinition(finalFittedId));
-                        console.log("--Finished Fitting");
-                        console.log(res55);
-                        let produceId = res55.data.requestId;
-                        res56 = await makeRequest(D3M_SVC_URL + `/GetProduceSolutionResults`, {requestId: produceId});
-                        console.log("--Get Produce");
-                        console.log(res56);
-                        produceDetailsUrl = res56.data.details_url;
-                        fittingfinished = true;
+                        if(res7.data.is_error){
+                           console.log('fittedDetailsUrl request failed !!!!!!!!!!!!!!!')
+                           console.log('fittedDetailsUrl: '+ fittedDetailsUrl);
+                            console.log('res7 error: ' + JSON.stringify(res7));
+                            clearInterval(fittingIntervalId);
+                        }else{
+                            finalFittedDetailsUrl = res7.data.responses.list[0].details_url;
+                            res8 = await updateRequest(finalFittedDetailsUrl);
+                            if(res8.success){
+                                if ((res8.data.is_finished)&&(res8.data.is_error)){
+                                  console.log('finalFittedDetailsUrl request failed !!!!!!!!!!!!!!!')
+                                  clearInterval(fittingIntervalId);
+                                }else if (res8.data.is_finished){
+                                    finalFittedId = res8.data.response.fittedSolutionId;
+                                    console.log(finalFittedId);
+
+                                    let produceSolutionParams = CreateProduceDefinition(finalFittedId);
+                                    res55 = await makeRequest(D3M_SVC_URL + '/ProduceSolution',
+                                                              produceSolutionParams);
+
+                                    if (res55.success){
+
+                                        let produceId = res55.data.requestId;
+                                        console.log("--Finished Fitting");
+
+                                        res56 = await makeRequest(D3M_SVC_URL + `/GetProduceSolutionResults`, {requestId: produceId});
+                                        if (res56.success){
+                                            // note, in this case "is_finished" will be false,
+                                            // for a streaming request
+                                            console.log("--Get GetProduceSolutionResults");
+                                            produceDetailsUrl = res56.data.details_url;
+                                            fittingfinished = true;
+                                        }else{
+                                          console.log('GetProduceSolutionResults request failed !!!!!!!!!!!!!!! ')
+                                          console.log('res56' + JSON.stringify(res56));
+                                          clearInterval(fittingIntervalId);
+                                        }
+                                    }else{
+                                      console.log('ProduceSolution request failed !!!!!!!!!!!!!!!');
+                                      console.log('produceSolutionParams' + JSON.stringify(produceSolutionParams));
+                                      console.log('res55' + JSON.stringify(res55));
+                                      clearInterval(fittingIntervalId);
+                                    }
+                                }
+                            } else {
+                                clearInterval(fittingIntervalId);
+                            };
+                        };
                     };
+                } else {
+                    clearInterval();
                 };
             };
 
             // Then produce predicted values from fitted solution
             if(fittingfinished){
                 let res57 = await updateRequest(produceDetailsUrl);
-                if(typeof res57.data.is_finished != 'undefined'){
+                if(res57.success){  // was: (typeof res57.data.is_finished != 'undefined'){
                     if(res57.data.is_finished){
-                        finalProduceDetailsUrl = res57.data.responses.list[0].details_url;
-                        res58 = await updateRequest(finalProduceDetailsUrl);
-                        console.log("--Long Awaited Predictions:");
-                        let hold = res58.data.response.exposedOutputs;
-                        let hold2 = hold[Object.keys(hold)[0]];  // There's an issue getting ."outputs.0".csvUri directly.
-                        hold3 = hold2.csvUri;
-                        console.log(hold3);
-                        res59 = await makeRequest(D3M_SVC_URL + `/retrieve-output-data`, {data_pointer: hold3});
-                        console.log(res59);
+                        if(res57.data.is_error){
+                            clearInterval(fittingIntervalId)
+                        }else{
+                            finalProduceDetailsUrl = res57.data.responses.list[0].details_url;
+                            res58 = await updateRequest(finalProduceDetailsUrl);
+                            console.log("--Long Awaited Predictions:");
+                            let hold = res58.data.response.exposedOutputs;
+                            let hold2 = hold[Object.keys(hold)[0]];  // There's an issue getting ."outputs.0".csvUri directly.
+                            hold3 = hold2.csvUri;
+                            console.log(hold3);
+                            res59 = await makeRequest(D3M_SVC_URL + `/retrieve-output-data`, {data_pointer: hold3});
+                            console.log(res59);
 
-                        allPipelineInfo[pid].predictedValues = res59;
-
-                        clearInterval(fittingIntervalId);
-
-                        resultsplotgraph(pid);
+                            allPipelineInfo[pid].predictedValues = res59;
+                            clearInterval(fittingIntervalId);
+                            if(plotflag){
+                                resultsplotgraph(pid);
+                            };
+                        };
                     };
                 };
             };
-        }, 100);
+        }, 500);
 
     } else {
         // Predicted values already stored and ready for graphing
         console.log("Skipping creating predicted values");
-        resultsplotgraph(pid);
-    }; 
+        if(plotflag){
+            resultsplotgraph(pid);
+        };
+    };
 
 };
 
@@ -3800,7 +3982,8 @@ export function resultsplotgraph(pid){
         console.log("resid plot");
         let xdata = "Actual";
         let ydata = "Predicted";
-        scatter(dvvalues, predvals, xdata, ydata);
+        let mytitle = "Predicted V Actuals: Pipeline " + pid;
+        scatter(dvvalues, predvals, xdata, ydata, undefined, undefined, mytitle);
     }
 
     // add the list of predictors into setxLeftTopLeft
@@ -3904,7 +4087,7 @@ export function confusionmatrix(matrixdata, classes) {
     legdiv.style.display="inline-block";
     byId('setxLeftPlot').appendChild(legdiv);
 
-    var margin = {top: 30, right: 35, bottom: 0, left: leftmarginguess};    // Left margin needs not to be hardcoded, but responsive to maximum label length
+    var margin = {top: 50, right: 35, bottom: 0, left: leftmarginguess};    // Left margin needs not to be hardcoded, but responsive to maximum label length
 
 
     function Matrix(options) {
@@ -3916,7 +4099,8 @@ export function confusionmatrix(matrixdata, classes) {
         labelsData = options.labels,
         startColor = options.start_color,
         endColor = options.end_color,
-        xOffset = options.x_offset;
+        xOffset = options.x_offset,
+        pipelineId = options.pipelineId;
 
         let widthLegend = options.widthLegend;
 
@@ -4080,6 +4264,11 @@ export function confusionmatrix(matrixdata, classes) {
         .text("Actual Class");
 
         svg.append("text")
+        .attr("transform", "translate(" + (width / 2) + " ," + (0 - 30) + ")")
+        .style("text-anchor", "middle")
+        .text("Confusion Matrix: Pipeline " + pipelineId);
+
+        svg.append("text")
         .attr("transform", "rotate(-90)")
         .attr("y", (width + 15) )
         .attr("x",0 - (height / 2))
@@ -4171,7 +4360,8 @@ export function confusionmatrix(matrixdata, classes) {
            width : ((mainwidth-50)*.7) - 100 - leftmarginguess -30,//     // Width of confusion matrix table: Beginning of this is #confusioncontainer.width, but this div doesn't always exist yet
            height : mainheight * .6,    // Need to not be hard coded
            widthLegend : mainwidth*.04,
-           x_offset : 30
+           x_offset : 30,
+           pipelineId : selectedPipeline  // Note: cueing from global, not from passed through pid, because of number of functions to pass through value.
            });
 
     // not rendering this table for right now, left all the code in place though. maybe we use it eventually
@@ -4194,7 +4384,7 @@ export function sortPipelineTable(pt){
         } else if (b['Score']=="scoring") {
             return(-100)
         } else if (a['Score']=="no score"){
-            return(1000) 
+            return(1000)
         } else if (b['Score']=="no score"){
             return(-1000)
         } else {
@@ -4288,6 +4478,7 @@ export function setxTable(features) {
 // }
 
 export async function exportpipeline(pipelineId) {
+    exportCount++;
     let finalFittedId, finalFittedDetailsUrl;
     let res, res8;
 
@@ -4303,7 +4494,8 @@ export async function exportpipeline(pipelineId) {
                 res8 = await updateRequest(finalFittedDetailsUrl);
                 finalFittedId = res8.data.response.fittedSolutionId;
                 console.log(finalFittedId);
-                res = await makeRequest(D3M_SVC_URL + '/SolutionExport', {fittedSolutionId: finalFittedId, rank: 0.5})
+                let my_rank = 1.01 - 0.01*exportCount;   // ranks always get smaller each call
+                res = await makeRequest(D3M_SVC_URL + '/SolutionExport', {fittedSolutionId: finalFittedId, rank: my_rank});
 
                 // we need standardized status messages...
                 let mystatus = res.status;
@@ -4542,16 +4734,23 @@ export async function submitDiscProb() {
     let outputCSV = "problem_id, system, meaningful \n";
 
     for(let i = 0; i < disco.length; i++) {
+        if(checkedDiscoveryProblems.has(disco[i].problem_id)) { disco[i].meaningful = "yes"; }
+
         // build up the required .csv file line by line
         outputCSV = outputCSV + disco[i].problem_id + ", \"" + disco[i].system + "\", \"" + disco[i].meaningful + "\"\n";
 
-        // construct and write out the api call and problem description for each discovered problem
-        let problemApiCall = CreatePipelineDefinition(disco[i].predictors, [disco[i].target], 10, disco[i]);
-        let problemProblemSchema = CreateProblemSchema(disco[i]);
-        let filename_api = disco[i].problem_id + '/ss_api.json';  
-        let filename_ps = disco[i].problem_id + '/schema.json';   
-        let res1 = await makeRequest(D3M_SVC_URL + '/store-user-problem', {filename: filename_api, data: problemApiCall } );
-        let res2 = await makeRequest(D3M_SVC_URL + '/store-user-problem', {filename: filename_ps, data: problemProblemSchema } );
+        if(disco[i].subsetObs ==0 && disco[i].transform==0){
+            // construct and write out the api call and problem description for each discovered problem
+            let problemApiCall = CreatePipelineDefinition(disco[i].predictors, [disco[i].target], 10, disco[i]);
+            let problemProblemSchema = CreateProblemSchema(disco[i]);
+            let filename_api = disco[i].problem_id + '/ss_api.json';
+            let filename_ps = disco[i].problem_id + '/schema.json';
+            let res1 = await makeRequest(D3M_SVC_URL + '/store-user-problem', {filename: filename_api, data: problemApiCall } );
+            let res2 = await makeRequest(D3M_SVC_URL + '/store-user-problem', {filename: filename_ps, data: problemProblemSchema } );
+        } else {
+            console.log('omitting:');
+            console.log(disco[i]);
+        };
     }
 
     // write the CSV file requested by NIST that describes properties of the solutions
@@ -4569,7 +4768,12 @@ export async function submitDiscProb() {
         byId("btnEstimate").classList.remove("btn-default");
         byId("btnEstimate").classList.add("btn-success");
     };
-    trigger("btnVariables", 'click');
+    //trigger("btnVariables", 'click');
+
+    if(!problemDocExists){
+        setModal("Your discovered problems have been submitted.", "Task Complete", true, false, false, location.reload);
+    };
+
 }
 
 export function saveDisc() {
@@ -4588,7 +4792,7 @@ export async function endAllSearches() {
             res = await makeRequest(D3M_SVC_URL + '/EndSearchSolutions', {searchId: allsearchId[i]} );
         };
     };
-    allsearchId = [];
+    //allsearchId = [];
 }
 
 export async function stopAllSearches() {
@@ -4604,67 +4808,154 @@ export async function stopAllSearches() {
  *  Function takes as input the pipeline template information (currently aux) and returns a valid pipline template in json. This json is to be inserted into SearchSolutions. e.g., problem = {...}, template = {...}, inputs = [dataset_uri]
  */
 function makePipelineTemplate (aux) {
+    console.log("this is aux for makePipelineTemplate:")
     console.log(aux);
     // aux.transform, aux.subsetFeats, aux.Obs are all by default 0. if not 0, which is set in preprocess, then steps should build the corresponding primitive call.
+
     let inputs = [];
     let outputs = [];
     let steps = [];
-    return {inputs:inputs,outputs:outputs,steps:steps};
-    
-    // example inputs:
+
+    if(typeof aux==="undefined") {    // This is how this is called by /SearchSolutions
+        return {inputs:inputs,outputs:outputs,steps:steps};
+
+    } else {                          // This is how this is called by Discovered Problems
+        let ph = placeholderStep(); // this writes the placeholder object
+        let rc = primitiveStepRemoveColumns(aux); // this writes the primitive object to remove columns
+
+        inputs = [{name:"dataset"}];
+        outputs = [{name:"dataset", data:"produce"}];
+        steps = [rc,ph];
+
+        return {inputs:inputs,outputs:outputs,steps:steps};
+    };
+
+    // example template: leave here for reference
     /*
-        "inputs": [
-        {
-            "name": "dataset"
-        }
-        ]
-    */
-    // example outputs:
-    /*
-        "outputs": [
-        {
-            "name": "dataset",
-            "data": "step.0.produce"
-        }
-        ]
-    */
-    // example steps:
-    /*
-        "steps": [
+"template": {
+    "inputs": [
                 {
+                    "name": "dataset"
+                }
+            ],
+    "outputs": [
+                {
+                    "name": "dataset",
+                    "data": "produce"
+                }
+            ],
+    "steps": [
+    {
                     "primitive": {
-                        "primitive": {
-                            "id": "id",
-                            "version": "version",
-                            "pythonPath": "python_path",
-                            "name": "name",
-                            "digest": "optional--some locally registered primitives might not have it"
+                    "primitive": {
+                        "id": "2eeff053-395a-497d-88db-7374c27812e6",
+                    "version": "0.2.0",
+                    "python_path": "d3m.primitives.datasets.RemoveColumns",
+                    "name": "Column remover",
+                    "digest": "85b946aa6123354fe51a288c3be56aaca82e76d4071c1edc13be6f9e0e100144"
                         },
                         "arguments": {
-                            "arg1": {
+                            "inputs": {
                                 "container": {
-                                    "data": "data reference"
+                                    "data": "inputs.0"
                                 }
-                            }},
+                            }
+                        },
                         "outputs": [
                             {
-                                "id": "id for data ref"
+                                "id": "produce"
                             }
                         ],
                         "hyperparams": {
-                            "param 1": {
-                                "container": {
-                                    "data": "data reference"
-                                }
-                            }
-                        }
+                        "columns": {
+  "value": {
+    "data": {
+      "raw": {
+        "list": {
+          "items": [
+            {
+              "int64": "2"
+            },
+            {
+              "int64": "3"
+            },
+            {
+              "int64": "4"
+            },
+            {
+              "int64": "5"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+                           },
+                        "users": []
+                }},{
+                    "placeholder": {
+                        "inputs": [{"data":"steps.0.produce"}],
+                        "outputs": [{"id":"produce"}]
                     }
-                }
-            ]
-    */
+                }]}
+                    */
 }
 
+// function builds a placeholder step for pipeline
+function placeholderStep () {
+    let step = {inputs:[{data:"steps.0.produce"}],outputs:[{id:"produce"}]};
+    return {placeholder:step};
+}
 
+// function builds a step in a pipeline to remove indices
+function primitiveStepRemoveColumns (aux) {
+    //let keep = aux.predictors;  // This was being assigned by reference, not by value, thus changing the global disco table.
+    let keep = [];
+    for(let i=0; i<aux.predictors.length; i++) {
+        keep[i] = aux.predictors[i];
+    };
+    typeof aux.target === 'string' ?  keep.push(aux.target): keep.concat(aux.target);
 
+    // looks like some TA2s need this, so we'll also keep it
+    keep.push("d3mIndex");
 
+    let indices = [];
+    for(let i=0; i<valueKey.length; i++) {
+        if(keep.indexOf(valueKey[i]) > -1) continue;
+        indices.push(i);
+    }
 
+    function buildItems (indices) {
+        let items = [];
+        for(let i = 0; i<indices.length; i++) {
+            items[i] = {int64: indices[i].toString()};
+        }
+        return items;
+    }
+
+    let id = "2eeff053-395a-497d-88db-7374c27812e6";
+    let version = "0.2.0";
+    let python_path = "d3m.primitives.datasets.RemoveColumns";
+    let name = "Column remover";
+    let digest = "85b946aa6123354fe51a288c3be56aaca82e76d4071c1edc13be6f9e0e100144";
+    let users = [];
+
+    let hpitems = {items:buildItems(indices)};
+    let hplist = {list:hpitems};
+    let hpraw = {raw:hplist};
+    let hpdata = {data:hpraw};
+    let hpvalue = {value:hpdata};
+    let hyperparams = {columns:hpvalue};
+
+    let primitive = {id:id, version:version, python_path:python_path, name:name, digest:digest}
+
+    let argdata = {data:"inputs.0"};
+    let argcontainer = {container:argdata};
+    let parguments = {inputs:argcontainer};
+
+    let outputs = [{id:"produce"}];
+
+    let step = {primitive:primitive, arguments:parguments, outputs:outputs, hyperparams:hyperparams, users:users};
+    return {primitive:step};
+}

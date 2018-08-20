@@ -1,0 +1,108 @@
+{
+  "about": {
+    "datasetID": "LL0_USER_EVAL_TASK1_186_braziltourism_dataset_TRAIN",
+    "datasetName": "LL0_186_braziltourism",
+    "description": "**Author**:   \n**Source**: Unknown -   \n**Please cite**:   \n\nanalcatdata    A collection of data sets used in the book \"Analyzing Categorical Data,\"\n                by Jeffrey S. Simonoff, Springer-Verlag, New York, 2003. The submission\n                consists of a zip file containing two versions of each of 84 data sets, \n                plus this README file. Each data set is given in comma-delimited ASCII\n                (.csv) form, and Microsoft Excel (.xls) form.\n \n NOTICE: These data sets may be used freely for scientific, educational and/or\n         noncommercial purposes, provided suitable acknowledgment is given (by citing\n         the above-named reference).\n \n Further details concerning the book, including information on statistical software\n (including sample S-PLUS/R and SAS code), are available at the web site\n \n             http://www.stern.nyu.edu/~jsimonof/AnalCatData\n\n\n Information about the dataset\n CLASSTYPE: nominal\n CLASSINDEX: last\n\n\n Note: Quotes, Single-Quotes and Backslashes were removed, Blanks replaced\n       with Underscores",
+    "citation": "\n\t\t\t\t@article{OpenML2013,\n\t\t\t\tauthor = {Vanschoren, Joaquin and van Rijn, Jan N. and Bischl, Bernd and Torgo, Luis},\n\t\t\t\ttitle = {OpenML: Networked Science in Machine Learning},\n\t\t\t\tjournal = {SIGKDD Explorations},\n\t\t\t\tvolume = {15},\n\t\t\t\tnumber = {2},\n\t\t\t\tyear = {2013},\n\t\t\t\tpages = {49--60},\n\t\t\t\turl = {http://doi.acm.org/10.1145/2641190.2641198},\n\t\t\t\tdoi = {10.1145/2641190.2641198},\n\t\t\t\tpublisher = {ACM},\n\t\t\t\taddress = {New York, NY, USA},\n\t\t\t\t}",
+    "license": "CC-BY license",
+    "source": "OpenML",
+    "sourceURI": "http://www.openml.org/d/186",
+    "approximateSize": "",
+    "datasetSchemaVersion": "3.1.1",
+    "redacted": false,
+    "datasetVersion": "1.0"
+  },
+  "dataResources": [
+    {
+      "resID": "0",
+      "resPath": "tables/learningData.csv",
+      "resType": "table",
+      "resFormat": [
+        "text/csv"
+      ],
+      "isCollection": false,
+      "columns": [
+        {
+          "colIndex": 0,
+          "colName": "d3mIndex",
+          "colType": "integer",
+          "role": [
+            "index"
+          ]
+        },
+        {
+          "colIndex": 1,
+          "colName": "Age",
+          "colType": "integer",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 2,
+          "colName": "Sex",
+          "colType": "categorical",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 3,
+          "colName": "Income",
+          "colType": "real",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 4,
+          "colName": "Travel_cost",
+          "colType": "real",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 5,
+          "colName": "Access_road",
+          "colType": "categorical",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 6,
+          "colName": "Active",
+          "colType": "categorical",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 7,
+          "colName": "Passive",
+          "colType": "categorical",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 8,
+          "colName": "Logged_income",
+          "colType": "real",
+          "role": [
+            "attribute"
+          ]
+        },
+        {
+          "colIndex": 9,
+          "colName": "Trips",
+          "colType": "categorical",
+          "role": [
+            "suggestedTarget"
+          ]
+        }
+      ]
+    }
+  ]
+}

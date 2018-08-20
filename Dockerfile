@@ -88,7 +88,7 @@ RUN fab init_db && \
 EXPOSE 8080
 
 # -------------------------------------
-# Copy the scripts: gce_start, d3m_start 
+# Copy the scripts: gce_start, d3m_start
 # -------------------------------------
 #COPY startup_script/ta3_search /usr/bin/ta3_search
 COPY startup_script/gce_start.sh /usr/bin/gce_start.sh

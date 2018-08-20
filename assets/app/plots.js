@@ -1,5 +1,8 @@
 import {elem} from './utils';
 
+import vegaEmbed from 'vega-embed';
+import * as scatterPE from './vega-schemas/scatterPE';
+
 let d3Color = '#1f77b4'; // d3's default blue
 export let selVarColor = '#fa8072'; // d3.rgb("salmon");
 
@@ -1130,7 +1133,7 @@ export function densityNode(node, obj, radius, explore) {
 
     let {left, top} = margin;
     if (explore) {
-        left = 40;
+        left = 5;
         top = 60;
     }
     var plotsvg = d3.select(obj)
@@ -1210,7 +1213,7 @@ export function barsNode(node, obj, radius, explore) {
 
     let {left, top} = margin;
     if (explore) {
-        left = 40;
+        left = 5;
         top = 60;
     }
     var plotsvg = d3.select(obj)
@@ -1234,7 +1237,30 @@ export function barsNode(node, obj, radius, explore) {
         .attr("fill", "#1f77b4");
 }
 
-export function scatter(x_Axis, y_Axis, x_Axis_name, y_Axis_name, id='#setxLeftPlot') {
+
+// Function takes as input an array of x values, array of y values, x axis name, y axis name, and a div id, and renders a scatterplot there
+export function scatter(x_Axis, y_Axis, x_Axis_name, y_Axis_name, id, dim, title) {
+    if(typeof id === 'undefined') id = '#setxLeftPlot';
+    if(typeof dim === 'undefined') dim = {width: 400, height: 300};
+    if(typeof title === 'undefined') title='Scatterplot';
+    let data = [];
+    for(let i = 0; i<x_Axis.length; i++) {
+        data[i] = {[x_Axis_name]:x_Axis[i], [y_Axis_name]:y_Axis[i]};
+    }
+    data = JSON.stringify(data);
+    let stringified = JSON.stringify(scatterPE);
+    stringified = stringified.replace(/tworavensY/g, y_Axis_name);
+    stringified = stringified.replace(/tworavensX/g, x_Axis_name);
+    stringified = stringified.replace(/tworavensTitle/g, title);
+    stringified = stringified.replace("url", "values");
+    stringified = stringified.replace('"tworavensData"',data);
+
+    let vegajson = JSON.parse(stringified);
+    vegaEmbed(id, vegajson, dim);
+}
+
+
+export function scatterOld(x_Axis, y_Axis, x_Axis_name, y_Axis_name, id='#setxLeftPlot') {
     d3.select(id).html("");
     d3.select(id).select("svg").remove();
 

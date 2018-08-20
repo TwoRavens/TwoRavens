@@ -31,7 +31,6 @@ import PanelList from '../common/app/views/PanelList';
 import Peek from '../common/app/views/Peek';
 import Table from '../common/app/views/Table';
 import TextField from '../common/app/views/TextField';
-import TableJSON from './views/TableJSON';
 
 // EVENTDATA
 import Body_EventData from '../EventData/app/Body_EventData';
@@ -71,14 +70,16 @@ function leftpanel(mode) {
 
     let discoveryAllCheck = m('input#discoveryAllCheck[type=checkbox]', {
         onclick: m.withAttr("checked", (checked) => app.setCheckedDiscoveryProblem(checked)),
-        checked: app.disco.length === app.checkedDiscoveryProblems.size
+        checked: app.disco.length === app.checkedDiscoveryProblems.size,
+        title: `mark ${app.disco.length === app.checkedDiscoveryProblems.size ? 'no' : 'all'} problems as meaningful`
     });
 
     let discoveryTableData = app.disco.map(problem => [
         problem.problem_id, // this is masked as the UID
-        m('input[type=checkbox]', {
+        m('input[type=checkbox][style=float:left;width:100%]', {
             onclick: m.withAttr("checked", (checked) => app.setCheckedDiscoveryProblem(checked, problem.problem_id)),
-            checked: app.checkedDiscoveryProblems.has(problem.problem_id)
+            checked: app.checkedDiscoveryProblems.has(problem.problem_id),
+            title: 'mark this problem as meaningful'
         }),
         problem.target,
         problem.predictors.join(', '),
@@ -131,7 +132,7 @@ function leftpanel(mode) {
              contents: [
                  m(Table, {
                      id: 'discoveryTable',
-                     headers: ['problem_id', discoveryAllCheck, 'Target', 'Predictors', 'Task', 'Metric', 'Subset', 'Transform'],
+                     headers: ['problem_id', m('[style=text-align:center]', 'Meaningful', m('br'), discoveryAllCheck), 'Target', 'Predictors', 'Task', 'Metric', 'Subset', 'Transform'],
                      data: discoveryTableData,
                      activeRow: app.selectedProblem,
                      onclick: app.setSelectedProblem,
@@ -155,11 +156,11 @@ function leftpanel(mode) {
                              predictors.forEach(x => {
                                  let d = app.findNode(x);
                                  app.setColors(d, app.gr1Color);
-                                 app.legend(app.gr1Color);
+                                 app.legend();
                              });
                              let d = app.findNode(target);
                              app.setColors(d, app.dvColor);
-                             app.legend(app.dvColor);
+                             app.legend();
                              d.group1 = d.group2 = false;
                              app.restart();
                          }
@@ -224,16 +225,16 @@ function rightpanel(mode) {
                 id: 'pipelineFlowchartSummary' + i,
                 abbreviation: 40,
                 data: {
-                    // NOTE: I'm not sure if MIT-FL is to spec here, and if not, then this will break on other TAs
                     'Name': pipeStep['primitive']['primitive'].name,
                     'Method': pipeStep['primitive']['primitive']['pythonPath'].split('.').slice(-1)[0]
                 },
                 attrsAll: {style: {'margin-bottom': 0, padding: '1em'}}
             }),
-            content: m(TableJSON, {
+            content: m(Table, {
                 id: 'pipelineTableStep' + i,
                 abbreviation: 40,
-                data: pipeStep
+                data: pipeStep,
+                nest: true
             })
         }));
 
@@ -252,20 +253,43 @@ function rightpanel(mode) {
             {color: common.csColor, key: 'Inputs', summary: inputs, content: inputs},
             ...steps,
             {color: common.csColor, key: 'Outputs', summary: outputs, content: outputs}
-        ]
+        ];
     }
 
+    let dropdown = (label, key, task) => {
+        let metric = key === 'performanceMetrics';
+        let desc = app.d3mProblemDescription[key];
+        desc = metric ? desc[0].metric : desc;
+        return m('.dropdown', {style: 'padding: .5em'},
+                 m('', m('label', label), m('br'),
+                   app.locktoggle ? m('button.btn.btn-disabled', desc) : [
+                       m('button.btn.btn-default.dropdown-toggle[data-toggle=dropdown]', {id: key},
+                         desc, m('span.caret')),
+                       m('ul.dropdown-menu', {'aria-labelledby': key}, Object.keys(task)
+                         .map(x => m('li', {
+                             style: 'padding: 0.25em',
+                             onclick: _ => app.setD3mProblemDescription(key, metric ? [{metric: x}] : x)
+                         }, x)))
+                   ]));
+    };
     let sections = [
         // {value: 'Models',
         //  display: app.IS_D3M_DOMAIN ? 'block' : 'none',
         //  contents: righttab('models')},
-        {value: 'Task Type',
+        {value: 'Problem',
          idSuffix: 'Type',
-         contents: righttab('types', app.d3mTaskType, 'Task', 'taskType')},
-        {value: 'Subtype',
-         contents: righttab('subtypes', app.d3mTaskSubtype, 'Task Subtype', 'taskSubtype')},
-        {value: 'Metrics',
-         contents: righttab('metrics', app.d3mMetrics, 'Metric', 'metric')},
+         contents: [
+             m(`button#btnLock.btn.btn-default`, {
+                 class: app.locktoggle ? 'active' : '',
+                 onclick: () => app.lockDescription(!app.locktoggle),
+                 title: 'Lock selection of problem description',
+                 style: 'float: right',
+             }, glyph(app.locktoggle ? 'lock' : 'pencil', true)),
+             m('', {style: 'float: left'},
+               dropdown('Task', 'taskType', app.d3mTaskType),
+               dropdown('Task Subtype', 'taskSubtype', app.d3mTaskSubtype),
+               dropdown('Metric', 'performanceMetrics', app.d3mMetrics))
+         ]},
         {value: 'Results',
          display: !app.swandive || app.IS_D3M_DOMAIN ? 'block' : 'none',
          idSuffix: 'Setx',
@@ -331,7 +355,7 @@ function rightpanel(mode) {
                      }
                  },
                  m('div', {style: {'font-weight': 'bold', 'margin': '1em'}}, 'Overview: '),
-                 m(TableJSON, {
+                 m(Table, {
                      id: 'pipelineOverviewTable',
                      data: Object.keys(app.allPipelineInfo[app.selectedPipeline].pipeline).reduce((out, entry) => {
                          if (['inputs', 'steps', 'outputs'].indexOf(entry) === -1)
@@ -345,7 +369,8 @@ function rightpanel(mode) {
                              border: common.borderColor,
                              'box-shadow': '0px 5px 5px rgba(0, 0, 0, .2)'
                          }
-                     }
+                     },
+                     nest: true
                  }),
                  m('div', {style: {'font-weight': 'bold', 'margin': '1em'}}, 'Steps: '),
                  m(Flowchart, {steps: pipelineFlowchartPrep(app.allPipelineInfo[app.selectedPipeline].pipeline)})
@@ -363,8 +388,6 @@ function rightpanel(mode) {
         id: 'rightpanelMenu',
         currentTab: app.rightTab,
         callback: app.setRightTab,
-        hoverBonus: 10,
-        selectWidth: 30,
         sections: sections,
         attrsAll: {style: {height: 'calc(100% - 39px)'}}
     }));
@@ -422,7 +445,7 @@ class Body {
 
         if (mode != this.last_mode) {
             app.set_mode(mode);
-            app.setRightTab(IS_D3M_DOMAIN ? 'Task Type' : 'Models');
+            app.setRightTab(IS_D3M_DOMAIN ? 'Problem' : 'Models');
             app.restart && app.restart();
             this.last_mode = mode;
         }
@@ -573,7 +596,8 @@ class Body {
                         m('br'),
                         m('', {style: 'display: flex; flex-direction: row; flex-wrap: wrap'},
                           (discovery ? app.disco : valueKey).map((x, i) => {
-                              let selected = discovery ? x.problem_id === app.selectedProblem : nodesExplore.map(x => x.name).includes(x);
+                              let {problem_id} = x;
+                              let selected = discovery ? problem_id === app.selectedProblem : nodesExplore.map(x => x.name).includes(x);
                               let {predictors} = x;
                               if (x.predictors) {
                                   x = x.target;
@@ -582,7 +606,7 @@ class Body {
                               let show = app.exploreVariate === 'Bivariate' || app.exploreVariate === 'Trivariate';
                               let [n0, n1, n2] = nodesExplore;
                               return m('span', {
-                                  onclick:  _ => discovery ? app.setSelectedProblem(i) : app.clickVar(x, nodesExplore),
+                                  onclick:  _ => discovery ? app.setSelectedProblem(problem_id) : app.clickVar(x, nodesExplore),
                                   onmouseover: function() {
                                       $(this).popover('toggle');
                                       $('body div.popover')
@@ -605,7 +629,7 @@ class Body {
                                       display: 'flex',
                                       'flex-direction': 'column',
                                       height: '250px',
-                                      margin: '1em',
+                                      margin: '.5em',
                                       width: '250px',
                                       'align-items': 'center',
                                       'background-color': app.hexToRgba(common[selected ? 'selVarColor' : 'varColor'])
@@ -639,19 +663,32 @@ class Body {
                           }))
                        )],
                 m('svg#whitespace')),
-              model_mode && m("#spacetools.spaceTool", {style: {right: app.panelWidth['right'], 'z-index': 16}},
-                              m(`button#btnLock.btn.btn-default`, {
-                                  class: app.locktoggle ? 'active' : '',
-                                  onclick: () => app.lockDescription(!app.locktoggle),
-                                  title: 'Lock selection of problem description'
-                              }, glyph(app.locktoggle ? 'lock' : 'pencil', true)),
+              model_mode && m("#spacetools.spaceTool", {style: {right: app.panelWidth.right, 'z-index': 16}},
                               spaceBtn('btnAdd', async function() {
+                                  app.zPop();
                                   let rookpipe = await app.makeRequest(ROOK_SVC_URL + 'pipelineapp', app.zparams);
-                                  rookpipe.target = rookpipe.depvar[0];;
-                                  let {taskType, performanceMetrics} = app.d3mProblemDescription;
-                                  rookpipe.task = taskType;
-                                  rookpipe.metric = performanceMetrics[0].metric;
+                                  rookpipe.target = rookpipe.depvar[0];
+                                  let myn = app.findNodeIndex(rookpipe.target, true);   
+                                  let currentTaskType = app.d3mProblemDescription.taskType;                                
+                                  let currentMetric = app.d3mProblemDescription.performanceMetrics[0].metric;
+                                  if (myn.nature == "nominal"){
+                                    rookpipe.task = currentTaskType === 'taskTypeUndefined' ? 'classification' : currentTaskType;
+                                    rookpipe.metric = currentMetric === 'metricUndefined' ? 'f1Macro' : currentMetric;
+                                  }else{
+                                    rookpipe.task = currentTaskType === 'taskTypeUndefined' ? 'regression' : currentTaskType;
+                                    rookpipe.metric = currentMetric === 'metricUndefined' ? 'meanSquaredError' : currentMetric;
+                                  };
+                                  rookpipe.meaningful = "yes";
+                                  rookpipe.subsetObs = 0;
+                                  rookpipe.subsetFeats = 0;
+                                  rookpipe.transform = 0;
+                                  rookpipe.system = "user";
+                                  let problemId = app.disco.length + 1;
+                                  rookpipe.problem_id = "problem" + problemId;
+                                  console.log("pushing this:");
+                                  console.log(rookpipe);
                                   app.disco.push(rookpipe);
+                                    app.setSelectedProblem(app.disco.length - 1);
                                   app.setLeftTab('Discovery');
                                   m.redraw();
                               }, 'Add model to problems.', 'plus'),
