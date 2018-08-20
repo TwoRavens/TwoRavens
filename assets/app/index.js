@@ -111,10 +111,6 @@ function leftpanel(mode) {
                      placeholder: 'Search variables and labels',
                      oninput: app.searchVariables
                  }),
-                 app.currentMode === 'transform' && m(Button, {
-                     id: 'btnAddSubset',
-                     onclick: () => transform.setShowModalSubset(true)
-                 }, 'Add Subset'),
                  m(PanelList, {
                      id: 'varList',
                      items: app.valueKey,
@@ -200,13 +196,6 @@ let righttab = (id, task, title, probDesc) => m(PanelList, {
 function rightpanel(mode) {
     if (mode === 'results') return; // returns undefined, which mithril ignores
     if (mode === 'explore') return;
-
-    if (mode === 'transform') return m(Panel, {
-        side: 'right',
-        label: 'Transforms',
-        hover: true,
-        width: '300px',
-    }, transform.rightpanel());
 
     // mode == null (model mode)
 
@@ -544,18 +533,10 @@ class Body {
 
         return m('main', [
             m(Modal),
-            transform.showModalSubset && m(ModalVanilla, {
-                id: 'showAddSubset',
-                setDisplay: transform.setShowModalSubset,
-                contents: m(AddSubset, {
-                    preferences: transform.pendingSubsetPreferences,
-                    nodes: app.allNodes
-                })
-            }),
             this.header(mode),
             this.footer(mode),
             m(`#main`, {style: {overflow}},
-                m("#innercarousel.carousel-inner", {style: {height: '100%', overflow, display: app.currentMode === 'transform' ? 'none' : 'block'}},
+              m("#innercarousel.carousel-inner", {style: {height: '100%', overflow}},
                 explore_mode
                 && [variate === 'problem' ?
                     m('', {style},
@@ -728,10 +709,9 @@ class Body {
                                    ['dvButton', 'zdv', 'Dep Var'],
                                    ['nomButton', 'znom', 'Nom Var'],
                                    ['gr1Button', 'zgroup1', 'Group 1'],
-                                   ['gr2Button', 'zgroup2', 'Group 2']]
-                              }),
-                app.currentMode !== 'transform' && m(Subpanel, {title: "History"}),
-                leftpanel(mode),
+                                   ['gr2Button', 'zgroup2', 'Group 2']]}),
+              m(Subpanel, {title: "History"}),
+              leftpanel(mode),
               rightpanel(mode))
         ]);
     }
@@ -871,7 +851,7 @@ class Body {
                 activeSection: mode || 'model',
                 attrsButtons: {style: {width: 'auto'}},
                 // {value: 'Results', id: 'btnResultsMode'}] VJD: commenting out the results mode button since we don't have this yet
-                sections: [{value: 'Model'}, {value: 'Explore'}, {value: 'Transform'}]
+                sections: [{value: 'Model'}, {value: 'Explore'}]
             }),
             m("a#logID[href=somelink][target=_blank]", "Replication"),
             m("span[style=color:#337ab7]", " | "),
@@ -914,9 +894,6 @@ else {
         },
         '/explore': {
             render: () => m(Body, {mode: 'explore'})
-        },
-        '/transform': {
-            render: () => m(Body, {mode: 'transform'})
         },
         '/explore/:variate/:var1': exploreVars,
         '/explore/:variate/:var1/:var2': exploreVars,

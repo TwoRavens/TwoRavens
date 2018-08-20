@@ -168,6 +168,25 @@ div.sidepanel div.panelbar span {
   background: #eee;
 }
 
+#main {
+    border:1px solid #ADADAD;
+    width: 100%;
+    height: calc(100% - 62px - 40px);
+    margin-top:62px;
+    position: fixed;
+    overflow: auto;
+}
+
+#ticker {
+    position: fixed;
+    height: 40px;
+    width: 100%;
+    background: #F9F9F9;
+    bottom: 0;
+    border-top: 1px solid #ADADAD;
+    z-index: 1000;
+}
+
 #spacetools {
     z-index: 17;
 }
@@ -193,7 +212,7 @@ div.sidepanel div.panelbar span {
     z-index:33;
     height:8%;
     width:14%;
-    right:200px; 
+    right:200px;
     top:14px;
     position:absolute;
 }
