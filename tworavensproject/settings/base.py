@@ -132,7 +132,7 @@ DATABASES = {
 # - Added 8/2018
 # https://python-social-auth.readthedocs.io/en/latest/configuration/django.html
 # -------------------------------
-ALLOW_SOCIAL_AUTH = os.environ.get('ALLOW_SOCIAL_AUTH', True)
+ALLOW_SOCIAL_AUTH = strtobool(os.environ.get('ALLOW_SOCIAL_AUTH', 'False')) 
 
 AUTHENTICATION_BACKENDS = (
     'social_core.backends.github.GithubOAuth2',
