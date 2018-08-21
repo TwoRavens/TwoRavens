@@ -41,7 +41,9 @@ sys.path.append(TA3TA2_API_DIR)
 # See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = '&1p0bkm1!)x49#g^fcqlwa8ds_p_r$x@c*+vrpveaq=dhr_rzu'
+SECRET_KEY = os.environ.get(\
+                'SECRET_KEY',
+                'please-set-a-secret-secret-key')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -132,7 +134,7 @@ DATABASES = {
 # - Added 8/2018
 # https://python-social-auth.readthedocs.io/en/latest/configuration/django.html
 # -------------------------------
-ALLOW_SOCIAL_AUTH = strtobool(os.environ.get('ALLOW_SOCIAL_AUTH', 'False')) 
+ALLOW_SOCIAL_AUTH = strtobool(os.environ.get('ALLOW_SOCIAL_AUTH', 'False'))
 
 AUTHENTICATION_BACKENDS = (
     'social_core.backends.github.GithubOAuth2',
@@ -283,3 +285,10 @@ EVENTDATA_PRODUCTION_SERVER_ADDRESS = os.environ.get('EVENTDATA_PRODUCTION_SERVE
 EVENTDATA_DEFAULT_API_KEY = 'api_key=CD75737EF4CAC292EE17B85AAE4B6'
 EVENTDATA_SERVER_API_KEY = os.environ.get('EVENTDATA_SERVER_API_KEY', EVENTDATA_DEFAULT_API_KEY)
 EVENTDATA_DB_NAME = os.environ.get('EVENTDATA_DB_NAME', 'event_data')
+
+
+# some deploy settings
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_BROWSER_XSS_FILTER = True
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True

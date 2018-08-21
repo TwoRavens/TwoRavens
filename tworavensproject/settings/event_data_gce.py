@@ -2,6 +2,11 @@ from .dev_container2 import *
 from distutils.util import strtobool
 import os
 
+DEBUG = False
+
+STATIC_ROOT = join('/ravens_volume', 'staticfiles')
+if not os.path.isdir(STATIC_ROOT):
+    os.makedirs(STATIC_ROOT)
 
 # -----------------------------------
 # use Google Cloud MySQL
