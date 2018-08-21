@@ -4,7 +4,7 @@ import os
 
 DEBUG = False
 
-STATIC_ROOT = join('/ravens_volume', 'staticfiles')
+STATIC_ROOT = join('/ravens_volume', 'staticfiles', 'static')
 if not os.path.isdir(STATIC_ROOT):
     os.makedirs(STATIC_ROOT)
 
