@@ -1,5 +1,5 @@
 import warnings
-
+from django.conf import settings
 from django.contrib.auth.views import LoginView
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import REDIRECT_FIELD_NAME
@@ -20,5 +20,6 @@ class LoginViewExtraContext(LoginView):
         #
         context['is_d3m_domain'] = app_config and app_config.is_d3m_domain()
         context['just_logged_out'] = 'just_logged_out' in self.request.GET
-        
+        context['ALLOW_SOCIAL_AUTH'] = settings.ALLOW_SOCIAL_AUTH
+
         return context

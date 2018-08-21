@@ -1,6 +1,7 @@
 from django.conf.urls import url
 from django.contrib import admin
 from django.urls import reverse
+from django.conf import settings
 from django.contrib.auth import views as auth_views
 from tworaven_apps.raven_auth import views, view_login #, get_extra_context
 
@@ -16,7 +17,7 @@ urlpatterns = [
         view_login.LoginViewExtraContext.as_view(),
         #view_login.login,
         #auth_views.login,
-        {'template_name': 'registration/login.html'},
+        dict(template_name='registration/login.html'),
         name='login'),
 
     url(r'^login/$',
