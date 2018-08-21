@@ -10,6 +10,10 @@ cd /var/webapps/TwoRavens
 #
 fab init_db
 
+# set the Site to eventdata.2ravens.org
+#
+fab set_eventdata_public_site
+
 # Make superuser and test user
 #
 fab create_django_superuser

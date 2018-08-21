@@ -677,6 +677,41 @@ def clear_eventdata_queries():
     else:
         print('No EventData objects found.\n')
 
+def set_django_site(domain, name):
+    """Update the current django Site object"""
+    assert domain, '"domain" must have a value'
+    assert name, '"name" must have a value'
+
+    from django.contrib.sites.models import Site
+    site = Site.objects.get_current()
+
+    site.domain = domain
+    site.name = name
+    site.save()
+
+    print('Site updated!')
+    print(' -- domain: ', site.domain)
+    print(' -- name: ', site.name)
+
+@task
+def set_dev_site():
+    """Set the current Site to '127.0.0.1:8080'"""
+    set_django_site('127.0.0.1:8080',
+                    '127.0.0.1:8080')
+
+@task
+def set_eventdata_public_site():
+    """Set the current Site to 'eventdata.2ravens.org'"""
+    set_django_site('eventdata.2ravens.org',
+                    'eventdata.2ravens.org')
+
+@task
+def set_2ravens_public_site():
+    """Set the current Site to '2ravens.org'"""
+    set_django_site('2ravens.org',
+                    '2ravens.org')
+
+
 @task
 def clear_ta2_stored_requests():
     """Delete StoredResponse and StoredRequest objects"""
