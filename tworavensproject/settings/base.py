@@ -61,6 +61,7 @@ INSTALLED_APPS = [
     'django.contrib.humanize',
     'django.contrib.staticfiles',
 
+    'social_django',    # social auth
     'tworaven_apps.raven_auth', # user model
     'tworaven_apps.workspaces', # save session state
 
@@ -89,6 +90,8 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'tworavensproject.urls'
 
+LOGIN_URL = reverse_lazy('home')    #'/auth/login/'
+
 LOGIN_REDIRECT_URL = 'home'
 
 TEMPLATES = [
@@ -98,6 +101,10 @@ TEMPLATES = [
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
+                # start: social auth
+                'social_django.context_processors.backends',
+                'social_django.context_processors.login_redirect',
+                # end: social auth
                 'django.template.context_processors.debug',
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
@@ -120,6 +127,47 @@ DATABASES = {
     }
 }
 
+# -------------------------------
+# Start: Social Auth
+# - Added 8/2018
+# https://python-social-auth.readthedocs.io/en/latest/configuration/django.html
+# -------------------------------
+ALLOW_SOCIAL_AUTH = strtobool(os.environ.get('ALLOW_SOCIAL_AUTH', 'False')) 
+
+AUTHENTICATION_BACKENDS = (
+    'social_core.backends.github.GithubOAuth2',
+    #'social_core.backends.google.GoogleOpenId',
+    #'social_core.backends.google.GoogleOAuth2',
+    #'social_core.backends.google.GoogleOAuth',
+    #'social_core.backends.twitter.TwitterOAuth',
+    #'social_core.backends.yahoo.YahooOpenId',
+    'django.contrib.auth.backends.ModelBackend',
+)
+SOCIAL_AUTH_URL_NAMESPACE = 'social'
+
+SOCIAL_AUTH_PIPELINE = (
+    'social_core.pipeline.social_auth.social_details',
+    'social_core.pipeline.social_auth.social_uid',
+    'social_core.pipeline.social_auth.social_user',
+    'social_core.pipeline.user.get_username',
+    'social_core.pipeline.user.create_user',
+    'social_core.pipeline.social_auth.associate_user',
+    'social_core.pipeline.social_auth.load_extra_data',
+    'social_core.pipeline.user.user_details',
+    'social_core.pipeline.social_auth.associate_by_email',
+)
+
+SOCIAL_AUTH_GITHUB_KEY = os.environ.get('SOCIAL_AUTH_GITHUB_KEY', 'not-set')
+SOCIAL_AUTH_GITHUB_SECRET = os.environ.get('SOCIAL_AUTH_GITHUB_SECRET', 'not-set')
+
+#SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = os.environ.get(\
+#                            'SOCIAL_AUTH_GOOGLE_OAUTH2_KEY', 'not-set')
+#SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = os.environ.get(\
+#                            'SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET', 'not-set')
+
+# -------------------------------
+# End: Social Auth
+# -------------------------------
 
 # Password validation
 # https://docs.djangoproject.com/en/1.11/ref/settings/#auth-password-validators
@@ -130,6 +178,7 @@ AUTH_PASSWORD_VALIDATORS = [
     dict(NAME='django.contrib.auth.password_validation.CommonPasswordValidator'),
     dict(NAME='django.contrib.auth.password_validation.NumericPasswordValidator'),
 ]
+
 
 
 # Internationalization
@@ -152,7 +201,6 @@ CSRF_COOKIE_NAME = 'CSRF_2R'
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
 
-LOGIN_URL = reverse_lazy('home')    #'/auth/login/'
 
 STATIC_URL = '/static/'
 

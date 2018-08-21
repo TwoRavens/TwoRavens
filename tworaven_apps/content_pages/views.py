@@ -57,7 +57,7 @@ def view_dev_raven_links(request):
     dinfo = dict(title="dev links")
 
     return render(request,
-                  'dev_raven_links.html',
+                  'content_pages/dev_raven_links.html',
                   dinfo)
 
 
@@ -116,6 +116,14 @@ def view_d3m_config_error_test(request):
 
     return render(request,
                   'content_pages/no_config_error.html',
+                  dinfo)
+
+def view_privacy_policy(request):
+    """Privacy policy"""
+    dinfo = dict(title='TwoRavens: Privacy Policy')
+
+    return render(request,
+                  'content_pages/privacy-policy.html',
                   dinfo)
 
 def view_err_500_test(request):

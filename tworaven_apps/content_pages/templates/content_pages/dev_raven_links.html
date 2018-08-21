@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% load static %}
+
+  {% block main_content %}
+  <div class="row">
+    <div class="col-12 col-md-6">
+
+      {% if user.is_authenticated %}
+      <div class="alert alert-info" role="alert">
+        Welcome, {{ user.username }}.
+      </div>
+      {% endif %}
+
+      <div class="card">
+        <div class="card-header">  <a href="{% url 'home' %}" class="navbar-brand"><img src="{% static "images/TwoRavens.png" %}" alt="TwoRavens" width="100" style="margin-left: 1em; margin-top: -0.5em;" /></a></div>
+        <div class="card-body">
+            <ul>
+              <li><a href="{% url 'home' %}">Two Ravens Main Workspace</a></li>
+              <li><a href="{% url 'admin:index' %}">Django admin</a></li>
+            </ul>
+        </div>
+      </div>
+      <br />
+
+      <!-- gRPC related -->
+      <div class="card">
+        <div class="card-header"><b>gRPC related</b></div>
+        <div class="card-body">
+            <ul>
+              <li><a href="{% url 'view_test_form' %}">gRPC test form</a></li>
+              <li><a href="{% url 'view_save_problem_form' %}">save problem test form</a></li>
+              <li><a href="{% url 'view_show_pipeline_steps' %}">Pipeline steps from DescribeSolution</a>
+                <br />(Note: May have stale data. To clear it:
+                <br /><code>fab clear_ta2_stored_requests</code>)</li>
+
+            </ul>
+        </div>
+      </div>
+      <br />
+      <!-- Health/Monitoring checks -->
+      <div class="card">
+        <div class="card-header"><b>Health/Monitoring checks</b></div>
+        <div class="card-body">
+          <ul>
+            <li><b>python app:</b> <a href="{% url 'view_monitoring_alive' %}">{% url 'view_monitoring_alive' %}</a></li>
+            </li>
+
+            <li><b>rook app:</b> <a href="{% url 'view_rook_route' 'healthcheckapp' %}">{% url 'view_rook_route' 'healthcheckapp' %}</a></li>
+            </li>
+          </ul>
+        </div>
+      </div>
+      <br />
+      <!-- Error pages -->
+      <div class="card">
+        <div class="card-header"><b>Error pages</b></div>
+        <div class="card-body">
+          <ul>
+            <li><a href="{% url 'view_no_domain_config_error_test' %}">App/UI config error (test page)</a>
+              <p>(normally triggered when in no AppConfiguration entries exist--e.g. app doesn't know which domain to use)</p></li>
+            <li><a href="{% url 'view_d3m_config_error_test' %}">D3M config error (test page)</a>
+              <p>(normally triggered when in D3M mode but no D3M configs are loaded)</p></li>
+
+            <hr />
+
+            <li><a href="/aint-nothing-here-404">404 trigger</a> (shows formatted page in production)</li>
+            <li><a href="{% url 'view_err_500_test' %}">500 trigger</a> (shows formatted page in production)</li>
+          </ul>
+        </div>
+      </div>
+    </div><!-- end: column -->
+    <!-- start: column -->
+    <div class="col-12 col-md-6">
+
+
+
+      <!-- D3M config info -->
+      <div class="card">
+        <div class="card-header"><b>D3M config info</b></div>
+        <div class="card-body">
+          <ul>
+            <li><a href="{% url 'view_d3m_list' %}">
+                  D3M configs in the database</a>
+                  <p>Includes API endpoints to retrieve JSON config info,
+                  dataset schema file contents, problem schema file contents, etc.</p>
+              </li>
+          </ul>
+        </div>
+      </div>
+      <br />
+      <!-- Registration related -->
+      <div class="card">
+        <div class="card-header"><b>Registration related</b></div>
+        <div class="card-body">
+          <ul>
+            <li><a href="{% url 'signup' %}">Sign Up</a></li>
+            <li><a href="{% url 'login' %}">Log in</a></li>
+            <li><a href="{% url 'logout' %}?next=/">Log out</a> (forwards to login)</li>
+            <li><a href="{% url 'password_reset' %}">Forgot password</a> (enter email)</li>
+            <li><a href="{% url 'password_reset_done' %}">Password reset instructions</a> (after submitting email)</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Test/in process -->
+      <br />
+      <div class="card">
+        <div class="card-header"><b>Test/in process</b></div>
+        <div class="card-body">
+          <ul>
+            <li><a href="{% url 'view_workspace_info' %}">view workspace info</a></li>
+          </ul>
+          <ul>
+            <li><a href="/static/pkgs/swagger-ui/dist/index.html?url={% url 'view_swagger_doc_v1' %}">swagger ui</a> </li>
+            <li><a href="{% url 'view_swagger_doc_v1' %}">swagger spec v1</a></li>
+
+          </ul>
+
+        </div>
+      </div>
+      <br />
+    </div><!-- end: column -->
+{% endblock %}
