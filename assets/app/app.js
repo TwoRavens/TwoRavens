@@ -2682,7 +2682,7 @@ export async function estimate(btn) {
                                      continue pipelineLoop; // continue to next iteration
                                 }else if(typeof res5.data.requestId != 'undefined'){
                                     fittedId = res5.data.requestId;
-                                    res6 = await makeRequest(D3M_SVC_URL + `/GetFitSolutionResults`, {requestIdf: fittedId});
+                                    res6 = await makeRequest(D3M_SVC_URL + `/GetFitSolutionResults`, {requestId: fittedId});
                                     fittedDetailsUrl = res6.data.details_url;
                                 }else{
                                     alert('PLEASE CONTINUE.  Debug: FitSolution failed. ' + JSON.stringify(res5));
@@ -4075,7 +4075,7 @@ export function confusionmatrix(matrixdata, classes) {
 
     let longest = classes.reduce(function (a, b) { return a.length > b.length ? a : b; });
     //console.log(longest);
-    let leftmarginguess = Math.max(longest.length * 8, 25);  // More correct answer is to make a span, put string inside span, then use jquery to get pixel width of span.
+    let leftmarginguess = Math.max(longest.length * 7, 25);  // More correct answer is to make a span, put string inside span, then use jquery to get pixel width of span.
 
 
     let condiv = document.createElement('div');
