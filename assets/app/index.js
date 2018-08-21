@@ -32,9 +32,6 @@ import PanelList from '../common/app/views/PanelList';
 import Peek from '../common/app/views/Peek';
 import Table from '../common/app/views/Table';
 import TextField from '../common/app/views/TextField';
-import Canvas from '../common/app/views/Canvas';
-import TableJSON from './views/TableJSON';
-
 // EVENTDATA
 import Body_EventData from '../EventData/app/Body_EventData';
 import Peek_EventData from '../common-eventdata/views/Peek';
@@ -95,131 +92,6 @@ function leftpanel(mode) {
 
     let nodes = app.is_explore_mode ? nodesExplore : app.nodes;
 
-    let leftpanelSections = [
-        {
-            value: 'Variables',
-            title: 'Click variable name to add or remove the variable pebble from the modeling space.',
-            contents: [
-                m(TextField, {
-                    id: 'searchVar',
-                    placeholder: 'Search variables and labels',
-                    oninput: app.searchVariables
-                }),
-                m(PanelList, {
-                    id: 'varList',
-                    items: app.valueKey,
-                    colors: {
-                        [app.hexToRgba(common.selVarColor)]: nodes.map(n => n.name),
-                        [app.hexToRgba(common.nomColor)]: app.zparams.znom,
-                        [app.hexToRgba(common.dvColor)]: app.is_explore_mode ? [] : app.zparams.zdv
-                    },
-                    classes: {'item-bordered': app.matchedVariables},
-                    callback: x => app.clickVar(x, nodes),
-                    popup: variable => app.popoverContent(app.findNodeIndex(variable, true)),
-                    attrsItems: {'data-placement': 'right', 'data-original-title': 'Summary Statistics'}})]
-        },
-        {
-            value: 'Discovery',
-            display: 'block',
-            contents: [
-                m(Table, {
-                    id: 'discoveryTable',
-                    headers: ['problem_id', m('[style=text-align:center]', 'Meaningful', m('br'), discoveryAllCheck), 'Target', 'Predictors', 'Task', 'Metric', 'Subset', 'Transform'],
-                    data: discoveryTableData,
-                    activeRow: app.selectedProblem,
-                    onclick: app.setSelectedProblem,
-                    showUID: false,
-                    abbreviation: 40,
-                    attrsAll: {
-                        style: {height: '80%', overflow: 'auto', display: 'block', 'margin-right': '16px', 'margin-bottom': 0, 'max-width': (window.innerWidth - 90) + 'px'}}
-                }),
-                m('textarea#discoveryInput[style=display:block; float: left; width: 100%; height:calc(20% - 35px); overflow: auto; background-color: white]', {
-                    value: selectedDisco === undefined ? '' : selectedDisco.description
-                }),
-                m(Button, {id: 'btnSave', onclick: app.saveDisc, title: 'Saves your revised problem description.'}, 'Save Desc.'),
-                m(Button, {id: 'btnSubmitDisc', classes: 'btn-success', style: 'float: right', onclick: app.submitDiscProb, title: 'Submit all checked discovered problems.'}, 'Submit Disc. Probs.'),
-                m(Button, {id: 'btnModelProblem', classes: 'btn-default', style: 'float: right', onclick: _ => {
-                        m.route.set('/model');
-                        setTimeout(_ => {
-                            if (selectedDisco) {
-                                let {target, predictors} = selectedDisco;
-                                app.erase('Discovery');
-                                [target].concat(predictors).map(x => app.clickVar(x));
-                                predictors.forEach(x => {
-                                    let d = app.findNode(x);
-                                    app.setColors(d, app.gr1Color);
-                                    app.legend();
-                                });
-                                let d = app.findNode(target);
-                                app.setColors(d, app.dvColor);
-                                app.legend();
-                                d.group1 = d.group2 = false;
-                                app.restart();
-                            }
-                        }, 500);
-                    }, title: 'Model problem'}, 'Model problem')
-            ]},
-        {
-            value: 'Summary',
-            title: 'Select a variable from within the visualization in the center panel to view its summary statistics.',
-            display: 'none',
-            contents: [
-                m('center',
-                    m('b', app.summary.name),
-                    m('br'),
-                    m('i', app.summary.labl)),
-                m('table', app.summary.data.map(tr => m('tr', tr.map(
-                    td => m('td',
-                        {onmouseover: setBackgroundColor('aliceblue'),
-                            onmouseout: setBackgroundColor('f9f9f9')},
-                        td)))))]
-        }
-    ];
-
-    // if (app.currentMode === 'transform') {
-    //
-    //     let userSubsets = app.selectedProblem in subset.genericMetadata
-    //         ? Object.keys(subset.genericMetadata[app.selectedProblem]['subsets'])
-    //         : [];
-    //
-    //     let popoverContentSubset = (subsetName) => {
-    //         let metadata = subset.genericMetadata[app.selectedProblem]['subsets'][subsetName];
-    //         if (!metadata) return;
-    //         let text = '<table class="table table-sm table-striped" style="margin-bottom:0"><tbody>';
-    //         let div = (name, val) =>
-    //             text += `<tr><th>${name}</th><td><p class="text-left">${val}</p></td></tr>`;
-    //
-    //         metadata['columns'].length && div('Columns', metadata['columns'].join(', '));
-    //         if ('type' in metadata) div('Type', metadata['type']);
-    //         if ('structure' in metadata) div('Structure', metadata['structure']);
-    //
-    //         return text + '</tbody></table>';
-    //     };
-    //
-    //     leftpanelSections.push({
-    //         value: 'Transform',
-    //         contents: [
-    //             m(Button, {
-    //                 id: 'btnAddStep',
-    //                 onclick: () => transform.setShowModalTransform(true),
-    //                 style: {width: '100%'}
-    //             }, 'Add Step'),
-    //             m(PanelList, {
-    //                 id: 'subsetList',
-    //                 items: userSubsets,
-    //                 colors: {[app.hexToRgba(common.selVarColor)]: [subset.selectedSubsetName]},
-    //                 popup: popoverContentSubset,
-    //                 callback: subset.setSelectedSubsetName,
-    //                 attrsItems: {
-    //                     'data-placement': 'right',
-    //                     'data-container': '#subsetList',
-    //                     'data-delay': 500
-    //                 }
-    //             })
-    //         ]
-    //     })
-    // }
-
     return m(Panel, {
         side: 'left',
         label: 'Data Selection',
@@ -231,7 +103,81 @@ function leftpanel(mode) {
         attrsAll: {style: {height: 'calc(100% - 39px)'}},
         currentTab: app.leftTab,
         callback: app.setLeftTab,
-        sections: leftpanelSections
+        sections: [
+            {value: 'Variables',
+             title: 'Click variable name to add or remove the variable pebble from the modeling space.',
+             contents: [
+                 m(TextField, {
+                     id: 'searchVar',
+                     placeholder: 'Search variables and labels',
+                     oninput: app.searchVariables
+                 }),
+                 m(PanelList, {
+                     id: 'varList',
+                     items: app.valueKey,
+                     colors: {
+                         [app.hexToRgba(common.selVarColor)]: nodes.map(n => n.name),
+                         [app.hexToRgba(common.nomColor)]: app.zparams.znom,
+                         [app.hexToRgba(common.dvColor)]: exploreMode ? [] : app.zparams.zdv
+                     },
+                     classes: {'item-bordered': app.matchedVariables},
+                     callback: x => app.clickVar(x, nodes),
+                     popup: variable => app.popoverContent(app.findNodeIndex(variable, true)),
+                     attrsItems: {'data-placement': 'right', 'data-original-title': 'Summary Statistics'}})]},
+            {value: 'Discovery',
+             display: 'block',
+             contents: [
+                 m(Table, {
+                     id: 'discoveryTable',
+                     headers: ['problem_id', m('[style=text-align:center]', 'Meaningful', m('br'), discoveryAllCheck), 'Target', 'Predictors', 'Task', 'Metric', 'Subset', 'Transform'],
+                     data: discoveryTableData,
+                     activeRow: app.selectedProblem,
+                     onclick: app.setSelectedProblem,
+                     showUID: false,
+                     abbreviation: 40,
+                     attrsAll: {
+                         style: {height: '80%', overflow: 'auto', display: 'block', 'margin-right': '16px', 'margin-bottom': 0, 'max-width': (window.innerWidth - 90) + 'px'}}
+                 }),
+                 m('textarea#discoveryInput[style=display:block; float: left; width: 100%; height:calc(20% - 35px); overflow: auto; background-color: white]', {
+                     value: selectedDisco === undefined ? '' : selectedDisco.description
+                 }),
+                 m(Button, {id: 'btnSave', onclick: app.saveDisc, title: 'Saves your revised problem description.'}, 'Save Desc.'),
+                 m(Button, {id: 'btnSubmitDisc', classes: 'btn-success', style: 'float: right', onclick: app.submitDiscProb, title: 'Submit all checked discovered problems.'}, 'Submit Disc. Probs.'),
+                 m(Button, {id: 'btnModelProblem', classes: 'btn-default', style: 'float: right', onclick: _ => {
+                     m.route.set('/model');
+                     setTimeout(_ => {
+                         if (selectedDisco) {
+                             let {target, predictors} = selectedDisco;
+                             app.erase('Discovery');
+                             [target].concat(predictors).map(x => app.clickVar(x));
+                             predictors.forEach(x => {
+                                 let d = app.findNode(x);
+                                 app.setColors(d, app.gr1Color);
+                                 app.legend();
+                             });
+                             let d = app.findNode(target);
+                             app.setColors(d, app.dvColor);
+                             app.legend();
+                             d.group1 = d.group2 = false;
+                             app.restart();
+                         }
+                     }, 500);
+                 }, title: 'Model problem'}, 'Model problem')
+             ]},
+         {value: 'Summary',
+          title: 'Select a variable from within the visualization in the center panel to view its summary statistics.',
+          display: 'none',
+             contents: [
+                 m('center',
+                   m('b', app.summary.name),
+                   m('br'),
+                   m('i', app.summary.labl)),
+                 m('table', app.summary.data.map(tr => m('tr', tr.map(
+                     td => m('td',
+                             {onmouseover: setBackgroundColor('aliceblue'),
+                              onmouseout: setBackgroundColor('f9f9f9')},
+                             td)))))]}
+        ]
     }));
 }
 
@@ -276,16 +222,16 @@ function rightpanel(mode) {
                 id: 'pipelineFlowchartSummary' + i,
                 abbreviation: 40,
                 data: {
-                    // NOTE: I'm not sure if MIT-FL is to spec here, and if not, then this will break on other TAs
                     'Name': pipeStep['primitive']['primitive'].name,
                     'Method': pipeStep['primitive']['primitive']['pythonPath'].split('.').slice(-1)[0]
                 },
                 attrsAll: {style: {'margin-bottom': 0, padding: '1em'}}
             }),
-            content: m(TableJSON, {
+            content: m(Table, {
                 id: 'pipelineTableStep' + i,
                 abbreviation: 40,
-                data: pipeStep
+                data: pipeStep,
+                nest: true
             })
         }));
 
@@ -406,7 +352,7 @@ function rightpanel(mode) {
                      }
                  },
                  m('div', {style: {'font-weight': 'bold', 'margin': '1em'}}, 'Overview: '),
-                 m(TableJSON, {
+                 m(Table, {
                      id: 'pipelineOverviewTable',
                      data: Object.keys(app.allPipelineInfo[app.selectedPipeline].pipeline).reduce((out, entry) => {
                          if (['inputs', 'steps', 'outputs'].indexOf(entry) === -1)
@@ -420,7 +366,8 @@ function rightpanel(mode) {
                              border: common.borderColor,
                              'box-shadow': '0px 5px 5px rgba(0, 0, 0, .2)'
                          }
-                     }
+                     },
+                     nest: true
                  }),
                  m('div', {style: {'font-weight': 'bold', 'margin': '1em'}}, 'Steps: '),
                  m(Flowchart, {steps: pipelineFlowchartPrep(app.allPipelineInfo[app.selectedPipeline].pipeline)})
@@ -662,7 +609,8 @@ class Body {
                         m('br'),
                         m('', {style: 'display: flex; flex-direction: row; flex-wrap: wrap'},
                           (discovery ? app.disco : valueKey).map((x, i) => {
-                              let selected = discovery ? x.problem_id === app.selectedProblem : nodesExplore.map(x => x.name).includes(x);
+                              let {problem_id} = x;
+                              let selected = discovery ? problem_id === app.selectedProblem : nodesExplore.map(x => x.name).includes(x);
                               let {predictors} = x;
                               if (x.predictors) {
                                   x = x.target;
@@ -671,7 +619,7 @@ class Body {
                               let show = app.exploreVariate === 'Bivariate' || app.exploreVariate === 'Trivariate';
                               let [n0, n1, n2] = nodesExplore;
                               return m('span', {
-                                  onclick:  _ => discovery ? app.setSelectedProblem(i) : app.clickVar(x, nodesExplore),
+                                  onclick:  _ => discovery ? app.setSelectedProblem(problem_id) : app.clickVar(x, nodesExplore),
                                   onmouseover: function() {
                                       $(this).popover('toggle');
                                       $('body div.popover')
@@ -694,7 +642,7 @@ class Body {
                                       display: 'flex',
                                       'flex-direction': 'column',
                                       height: '250px',
-                                      margin: '1em',
+                                      margin: '.5em',
                                       width: '250px',
                                       'align-items': 'center',
                                       'background-color': app.hexToRgba(common[selected ? 'selVarColor' : 'varColor'])
@@ -733,9 +681,16 @@ class Body {
                                   app.zPop();
                                   let rookpipe = await app.makeRequest(ROOK_SVC_URL + 'pipelineapp', app.zparams);
                                   rookpipe.target = rookpipe.depvar[0];
-                                  let {taskType, performanceMetrics} = app.d3mProblemDescription;
-                                  rookpipe.task = taskType;
-                                  rookpipe.metric = performanceMetrics[0].metric;
+                                  let myn = app.findNodeIndex(rookpipe.target, true);   
+                                  let currentTaskType = app.d3mProblemDescription.taskType;                                
+                                  let currentMetric = app.d3mProblemDescription.performanceMetrics[0].metric;
+                                  if (myn.nature == "nominal"){
+                                    rookpipe.task = currentTaskType === 'taskTypeUndefined' ? 'classification' : currentTaskType;
+                                    rookpipe.metric = currentMetric === 'metricUndefined' ? 'f1Macro' : currentMetric;
+                                  }else{
+                                    rookpipe.task = currentTaskType === 'taskTypeUndefined' ? 'regression' : currentTaskType;
+                                    rookpipe.metric = currentMetric === 'metricUndefined' ? 'meanSquaredError' : currentMetric;
+                                  };
                                   rookpipe.meaningful = "yes";
                                   rookpipe.subsetObs = 0;
                                   rookpipe.subsetFeats = 0;
@@ -778,16 +733,16 @@ class Body {
                               spaceBtn('btnDisconnect', _ => app.restart([]), 'Delete all connections between nodes', 'remove-circle'),
                               spaceBtn('btnForce', app.forceSwitch, 'Pin the variable pebbles to the page', 'pushpin'),
                               spaceBtn('btnEraser', app.erase, 'Wipe all variables from the modeling space', 'magnet')),
-              model_mode && m(Subpanel,
-                              {title: "Legend",
-                               buttons: [
-                                   ['timeButton', 'ztime', 'Time'],
-                                   ['csButton', 'zcross', 'Cross Sec'],
-                                   ['dvButton', 'zdv', 'Dep Var'],
-                                   ['nomButton', 'znom', 'Nom Var'],
-                                   ['gr1Button', 'zgroup1', 'Group 1'],
-                                   ['gr2Button', 'zgroup2', 'Group 2']]
-                              }),
+              model_mode && m(Subpanel, {
+                    title: "Legend",
+                    buttons: [
+                        ['timeButton', 'ztime', 'Time'],
+                        ['csButton', 'zcross', 'Cross Sec'],
+                        ['dvButton', 'zdv', 'Dep Var'],
+                        ['nomButton', 'znom', 'Nom Var'],
+                        ['gr1Button', 'zgroup1', 'Group 1'],
+                        ['gr2Button', 'zgroup2', 'Group 2']]
+                }),
                 app.currentMode !== 'transform' && m(Subpanel, {title: "History"}))
         ]);
     }
@@ -927,7 +882,7 @@ class Body {
                 activeSection: mode || 'model',
                 attrsButtons: {style: {width: 'auto'}},
                 // {value: 'Results', id: 'btnResultsMode'}] VJD: commenting out the results mode button since we don't have this yet
-                sections: [{value: 'Model'}, {value: 'Explore'}, {value: 'Transform'}]
+                sections: [{value: 'Model'}, {value: 'Explore'}]
             }),
             m("a#logID[href=somelink][target=_blank]", "Replication"),
             m("span[style=color:#337ab7]", " | "),

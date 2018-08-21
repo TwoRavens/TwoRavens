@@ -3,10 +3,7 @@ import m from 'mithril';
 import * as common from '../../common-eventdata/common';
 
 import * as query from './queryMongo';
-import {buildPipeline} from "./queryMongo";
 import * as tour from "./tour";
-import {buildAggregation} from "./queryMongo";
-import {reformatAggregation} from "./queryMongo";
 
 export let eventdataURL = '/eventdata/api/';
 
@@ -31,7 +28,7 @@ export let genericMetadata = {};
 
 export let setMetadata = (data) => Object.keys(data).forEach(key =>
     Object.keys(data[key]).forEach(identifier => ({
-        'datasets': genericMetadata,
+        'collections': genericMetadata,
         'formats': formattingData,
         'alignments': alignmentData
     }[key][identifier] = data[key][identifier])));
@@ -108,6 +105,7 @@ export let variablesLog = [];
 
 // 'home', 'subset', 'aggregate'
 export let selectedMode = 'home';
+
 export function setSelectedMode(mode) {
     mode = mode.toLowerCase();
 
@@ -155,6 +153,12 @@ export let setSelectedVariables = (variables) => selectedVariables = variables;
 export let toggleSelectedVariable = (variable) => selectedVariables.has(variable)
     ? selectedVariables.delete(variable)
     : selectedVariables.add(variable);
+
+export let selectedConstructedVariables = new Set();
+export let setSelectedConstructedVariables = (variables) => selectedConstructedVariables = variables;
+export let toggleSelectedConstructedVariable = (variable) => selectedConstructedVariables.has(variable)
+    ? selectedConstructedVariables.delete(variable)
+    : selectedConstructedVariables.add(variable);
 
 export let variableSearch = '';
 export let setVariableSearch = (text) => variableSearch = text;
@@ -288,14 +292,19 @@ async function updatePeek() {
     }
     let subsetQuery = query.buildSubset(stagedSubsetData);
 
-    let variables = selectedVariables.size ? [...selectedVariables] : genericMetadata[selectedDataset]['columns'];
+    let variables = (selectedVariables.size + selectedConstructedVariables.size) === 0
+        ? [...genericMetadata[selectedDataset]['columns'], genericMetadata[selectedDataset]['columns_constructed']]
+        : [...selectedVariables, ...selectedConstructedVariables];
 
     if (JSON.stringify(variables) !== localStorage.getItem('peekTableHeaders' + peekId)) {
         peekData = [];
         peekSkip = 0;
     }
 
-    let projection = variables.reduce((out, entry) => {out[entry] = 1; return out;}, {});
+    let projection = variables.reduce((out, entry) => {
+        out[entry] = 1;
+        return out;
+    }, {_id: 0});
     let peekQuery = [{$match: subsetQuery}, {$project: projection}, {$skip: peekSkip}, {$limit: peekBatchSize}];
 
     console.log("Peek Update");
@@ -303,15 +312,19 @@ async function updatePeek() {
 
     let body = {
         host: genericMetadata[selectedDataset]['host'],
-        dataset: selectedDataset,
+        collection_name: selectedDataset,
         method: 'aggregate',
-        query: peekQuery
+        query: JSON.stringify(peekQuery)
     };
 
     // cancel the request
     if (!peekIsGetting) return;
 
     let data = await getData(body);
+    data.forEach(record => variables.forEach(variable => {
+        if (typeof record[variable] === 'object' && '$date' in record[variable])
+            record[variable] = new Date(record[variable]['$date']).toISOString().slice(0, 10);
+    }));
 
     peekIsGetting = false;
 
@@ -328,6 +341,7 @@ async function updatePeek() {
     localStorage.setItem('peekTableHeaders' + peekId, JSON.stringify(variables));
     localStorage.setItem('peekTableData' + peekId, JSON.stringify(peekData));
 }
+
 window.addEventListener('storage', onStorageEvent);
 
 // ~~~~ GLOBAL FUNCTIONS ~~~~
@@ -376,7 +390,7 @@ export let loadMenu = async (menu, setIsLoading, {recount, requireMatch, monadSe
     let pipelineMenu = pipelinePreMenu.concat([menu]);
 
     // convert the pipeline to a mongo query
-    let compiled = buildPipeline(pipelineMenu)['pipeline'];
+    let compiled = query.buildPipeline(pipelineMenu)['pipeline'];
 
     console.log("Menu Query:");
     console.log(JSON.stringify(compiled));
@@ -404,15 +418,15 @@ export let loadMenu = async (menu, setIsLoading, {recount, requireMatch, monadSe
     }
 
     // record count request
-    if (recount) promises.push(getData({
+    if (recount || totalSubsetRecords === undefined) promises.push(getData({
         host: genericMetadata[dataset]['host'],
-        dataset: dataset,
+        collection_name: dataset,
         method: 'count',
         query: buildPipeline(pipelinePreMenu)['pipeline']
     }).then(count => {
         // intentionally breaks the entire downloading promise array and subsequent promise chain
         if (!count && requireMatch) throw 'no records matched';
-        totalSubsetRecords = data
+        totalSubsetRecords = count
     }));
 
     promises.push(getData({
@@ -447,7 +461,6 @@ export let loadMenu = async (menu, setIsLoading, {recount, requireMatch, monadSe
 
     return true;
 };
-
 
 export async function submitQuery() {
 
@@ -508,7 +521,7 @@ export function submitAggregation() {
     }
 
     let step = getTransformStep(eventdataAggregateName);
-    let query = JSON.stringify(buildAggregation(step.measuresUnit, step.measuresAccum));
+    let query = JSON.stringify(query.buildAggregation(step.measuresUnit, step.measuresAccum));
     console.log("Aggregation Query: " + query);
 
     setLaddaSpinner('btnUpdate', true);
@@ -519,7 +532,7 @@ export function submitAggregation() {
         query: query,
         dataset: selectedDataset
     })
-        .then(reformatAggregation)
+        .then(query.reformatAggregation)
         .then(({data, headersUnit, headersEvent}) => {
             setAggregationData(data);
             setAggregationHeadersUnit(headersUnit);
@@ -530,18 +543,25 @@ export function submitAggregation() {
         .catch(laddaStopAll);
 }
 
+// this function makes many dirty assumptions about page state and is very touchy. Sorry for the headache. -Mike
 export async function download(queryType, dataset, queryMongo) {
 
+    console.log(queryMongo);
     // fall back to document state if args are not passed
     if (!queryType) queryType = selectedMode;
     if (!dataset) dataset = selectedDataset;
 
-    let variables = selectedVariables.size === 0 ? genericMetadata[dataset]['columns'] : [...selectedVariables];
+    let variables = [];
 
     let step = getTransformStep(eventdataSubsetName);
 
     if (!queryMongo) {
         if (queryType === 'subset') {
+
+            variables = (selectedVariables.size + selectedConstructedVariables.size) === 0
+                ? [...genericMetadata[dataset]['columns'], genericMetadata[dataset]['columns_constructed']]
+                : [...selectedVariables, ...selectedConstructedVariables];
+            // when only the _id is ignored (_id: 0) then all other columns are returned (mongo behavior)
             queryMongo = [
                 {"$match": query.buildSubset(step.abstractQuery)},
                 {
@@ -555,26 +575,46 @@ export async function download(queryType, dataset, queryMongo) {
         else if (queryType === 'aggregate')
             queryMongo = query.buildAggregation(step.abstractQuery, subsetPreferences);
     }
+    // queryMongo is set when called from Saved Queries, but variables is unknown. Infer variables from the projection stage of the pipeline
+    // aggregation queries handle inferring variables from inside reformatAggregation, so this only applies to subset
+    else if (queryType === 'subset') variables =
+        Object.keys(queryMongo[queryMongo.length - 1]['$project']).filter(key => key !== '_id');
 
     console.log("Download Query: " + JSON.stringify(queryMongo));
 
     setLaddaSpinner('btnDownload', true);
     let data = await getData({
         host: genericMetadata[dataset]['host'],
-        dataset: dataset,
+        collection_name: dataset,
         method: 'aggregate',
         query: JSON.stringify(queryMongo)
     }).catch(laddaStopAll);
 
-    // postprocess aggregate to reformat dates to YYYY-MM-DD and collapse the dyad boolean array
-    if (selectedMode === 'aggregate') {
-        ({data} = query.reformatAggregation(data));
-        variables = [...aggregationHeadersUnit, ...aggregationHeadersEvent];
+    if ('success' in data && !data.success) {
+        laddaStopAll();
+        alert("Download failed. " + data.message);
+        return;
     }
 
-    let text = data.map(record => variables.map(variable => record[variable] || '').join(',') + '\n');
-    let header = variables.join(',') + '\n';
-    let file = new File([header, ...text], 'EventData_' + selectedDataset + '.csv', {type: "text/plain;charset=utf-8"});
+    // postprocess aggregate to reformat dates to YYYY-MM-DD and collapse the dyad boolean array
+    if (selectedMode === 'aggregate') {
+        let headersUnit, headersEvent;
+        ({data, headersUnit, headersEvent} = query.reformatAggregation(data));
+        variables = [...headersUnit, ...headersEvent];
+    }
+
+    let text = data.map(record => variables.map(variable => {
+        if (typeof record[variable] === 'object' && '$date' in record[variable])
+            return new Date(record[variable]['$date']).toISOString().slice(0, 10);
+        return record[variable] || '';
+    }).join('\t') + '\n');
+
+    let header = variables.map(variable => {
+        if (variable.endsWith('_constructed')) return 'TwoRavens_' + variable.replace('_constructed', '');
+        return variable;
+    }).join('\t') + '\n';
+
+    let file = new File([header, ...text], 'EventDataSaved.csv', {type: "text/plain;charset=utf-8"});
     saveAs(file);
     laddaStopAll();
 }
@@ -622,5 +662,3 @@ export let isSameMonth = (a, b) => a.getFullYear() === b.getFullYear() && a.getM
 
 // positive ints only
 export let pad = (number, length) => '0'.repeat(length - String(number).length) + number;
-
-

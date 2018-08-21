@@ -11,7 +11,7 @@ import * as app from "../app";
 export class TreeVariables {
     oncreate({dom}) {
         $(dom).tree({
-            data: [...app.selectedVariables].map(element => ({
+            data: [...app.selectedVariables, ...app.selectedConstructedVariables].map(element => ({
                 name: element,
                 cancellable: false,
                 show_op: false
@@ -24,7 +24,7 @@ export class TreeVariables {
     }
 
     onupdate({dom}) {
-        $(dom).tree('loadData', [...app.selectedVariables].map(element => ({
+        $(dom).tree('loadData', [...app.selectedVariables, ...app.selectedConstructedVariables].map(element => ({
             name: element,
             cancellable: false,
             show_op: false

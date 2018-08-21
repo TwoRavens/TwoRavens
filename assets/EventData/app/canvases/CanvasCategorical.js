@@ -62,7 +62,7 @@ export default class CanvasCategorical {
         // change the size of the graph based on the number of available plots
         let getShape = (format) => {
             if (Math.min(Object.keys(allData[format]).filter(key => allData[format][key]).length) > 25) return {
-                "height": 20 * Object.keys(allData[format]).length + 'px',
+                "height": 20 * Object.keys(allData[format]).filter(key => allData[format][key]).length + 'px',
                 "width": "calc(100% - 10px)"
             };
             if (Object.keys(allData).length === 1 || mode === 'aggregation') return {
@@ -99,7 +99,7 @@ export default class CanvasCategorical {
                             ? 'bar-selected'
                             : selections[key].some(_ => _)
                                 ? 'bar-some' : 'bar',
-                        title: data[key] + ' ' + title
+                        title: data[key] + ' ' + (title || 'Records')
                     }
                 });
 

@@ -351,7 +351,7 @@ def api_get_data(request):
 
     success, addquery_obj_err = EventJobUtil.get_data(
         json_req_obj['host'],
-        json_req_obj['dataset'],
+        json_req_obj['collection_name'],
         json_req_obj['method'],
         json.loads(json_req_obj['query']),
         json_req_obj.get('distinct', None))
@@ -373,4 +373,4 @@ def api_get_metadata(request):
     if not form.is_valid():
         return JsonResponse({"success": False, "message": "invalid input", "errors": form.errors})
     return JsonResponse(
-        {name: EventJobUtil.get_metadata(name, json_req_obj[name]) for name in ['datasets', 'formats', 'alignments'] if name in json_req_obj})
+        {name: EventJobUtil.get_metadata(name, json_req_obj[name]) for name in ['collections', 'formats', 'alignments'] if name in json_req_obj})

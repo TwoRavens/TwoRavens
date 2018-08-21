@@ -1,7 +1,6 @@
 import m from 'mithril';
 
 import * as app from './app';
-import * as query from './queryMongo';
 import * as tour from "./tour";
 
 import * as common from '../../common-eventdata/common';
@@ -62,7 +61,7 @@ export default class Body_EventData {
         // Load the metadata for all available datasets
         m.request({
             url: app.eventdataURL + 'get-metadata',
-            data: {'datasets': null}, // no specific dataset passed, so it returns all
+            data: {'collections': null}, // no specific dataset passed, so it returns all
             method: 'POST'
         }).then(app.setMetadata).catch(app.laddaStopAll);
     }
@@ -82,7 +81,10 @@ export default class Body_EventData {
             app.selectedDataset && !isHome && m("button#btnPeek.btn.btn-default", {
                 title: 'Display a data preview',
                 style: {margin: '.25em 1em'},
-                onclick: () => window.open('#!/data', 'data')
+                onclick: () => {
+                    window.open('#!/data', 'data');
+                    app.resetPeek();
+                }
             }, 'Data'),
 
             isHome && m(ButtonRadio, {
@@ -196,13 +198,13 @@ export default class Body_EventData {
 
                 app.selectedMode !== 'home' && m(Button, {
                     id: 'btnDownload',
+                    'data-style': 'zoom-in',
+                    'data-spinner-color': '#818181',
                     class: 'btn-sm ladda-button',
                     style: {
                         'margin-right': '6px',
                         'margin-top': '4px',
-                        'margin-left': '6px',
-                        'data-style': 'zoom-in',
-                        'data-spinner-color': '#818181'
+                        'margin-left': '6px'
                     },
                     onclick: () => {
                         if ('subset' === app.selectedMode && step.abstractQuery.length === 0)
@@ -292,6 +294,12 @@ export default class Body_EventData {
                 return text + '</tbody></table>';
             };
 
+            let matchedVariables = app.genericMetadata[app.selectedDataset]['columns']
+                .filter(col => col.includes(app.variableSearch));
+
+            let matchedConstructedVariables = app.genericMetadata[app.selectedDataset]['columns_constructed']
+                .filter(col => col.includes(app.variableSearch));
+
             return m(Panel, {
                 side: 'left',
                 label: 'Data Selection',
@@ -313,18 +321,25 @@ export default class Body_EventData {
                                 value: app.variableSearch,
                                 oninput: app.setVariableSearch
                             }),
-                            m(PanelList, {
-                                id: 'variablesList',
-                                items: app.genericMetadata[app.selectedDataset]['columns'].filter(col => col.includes(app.variableSearch)),
-                                colors: {[common.selVarColor]: app.selectedVariables},
-                                callback: app.toggleSelectedVariable,
-                                attrsAll: {style: {height: 'calc(100% - 44px)', overflow: 'auto'}},
-                                popup: popoverContentVariable,
-                                attrsItems: {
-                                    'data-placement': 'right',
-                                    'data-container': '#variablesList'
-                                }
-                            })
+                            m('div', {style: {height: 'calc(100% - 44px)', overflow: 'auto'}},
+                                m(PanelList, {
+                                    id: 'variablesList',
+                                    items: matchedVariables,
+                                    colors: {[common.selVarColor]: app.selectedVariables},
+                                    callback: app.toggleSelectedVariable,
+                                    popup: popoverContentVariable,
+                                    attrsItems: {
+                                        'data-placement': 'right',
+                                        'data-container': '#variablesList'
+                                    }
+                                }),
+                                !!matchedConstructedVariables.length && m('h5', 'Constructed Variables'),
+                                m(PanelList, {
+                                    id: 'variablesConstructedList',
+                                    items: matchedConstructedVariables,
+                                    colors: {[common.selVarColor]: app.selectedConstructedVariables},
+                                    callback: app.toggleSelectedConstructedVariable
+                                }))
                         ]
                     },
                     {
@@ -434,8 +449,16 @@ export default class Body_EventData {
                     id: 'querySummaryMenu',
                     attrsAll: {style: {height: 'calc(100% - 85px)', overflow: 'auto'}},
                     sections: [
-                        {value: 'Variables', contents: m(TreeVariables)},
-                        {value: 'Subsets', contents: m(TreeQuery)}
+                        {
+                            value: 'Variables',
+                            contents: (app.selectedVariables.size + app.selectedConstructedVariables.size) // if there are any matches in either normal or constructed variables
+                                ? m(TreeVariables)
+                                : m('div[style=font-style:italic]', 'Return all Variables')
+                        },
+                        {
+                            value: 'Subsets',
+                            contents: m(TreeQuery)
+                        }
                     ]
                 }),
                 m("#rightpanelButtonBar", {
@@ -453,10 +476,15 @@ export default class Body_EventData {
 
                     m(Button, {
                         id: 'btnUpdate',
-                        class: ['ladda-button'],
+                        class: 'ladda-button',
+                        'data-style': 'zoom-in',
                         'data-spinner-color': '#818181',
                         style: {float: 'right'},
-                        onclick: () => app.submitQuery() // wrap in anonymous function to ignore the mouseEvent
+                        onclick: async () => {
+                            app.setLaddaSpinner('btnUpdate', true);
+                            await app.submitQuery();
+                            app.laddaStopAll();
+                        }
                     }, 'Update')
                 ))
         }
@@ -490,12 +518,15 @@ export default class Body_EventData {
 
                 m(Button, {
                     id: 'btnUpdate',
-                    class: ['ladda-button'],
+                    class: app.aggregationStaged && ['btn-success'],
+                    'data-style': 'zoom-in',
                     'data-spinner-color': '#818181',
                     style: {float: 'right'},
-                    onclick: () => {
+                    onclick: async () => {
                         app.setAggregationStaged(false);
-                        app.submitAggregation()
+                        app.setLaddaSpinner('btnUpdate', true);
+                        await app.submitAggregation();
+                        app.laddaStopAll();
                     }
                 }, 'Update'))
         }

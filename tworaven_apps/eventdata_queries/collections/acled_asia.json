@@ -1,0 +1,132 @@
+{
+  "name": "ACLED Asia",
+  "key": "acled_asia",
+  "description": "Asian event data from the Armed Conflict Location & Event Data Project (ACLED).",
+  "interval": "2010 - 9 June 2018",
+  "codebook": "https://www.acleddata.com/wp-content/uploads/2017/12/ACLED_Codebook_2017FINAL.pdf",
+  "host": "TwoRavens",
+  "subsets": {
+    "Actor": {
+      "measures": [
+        "unit"
+      ],
+      "type": "dyad",
+      "tabs": {
+        "actor 1": {
+          "full": "ACTOR1",
+          "filters": [
+            "ASSOC_ACTOR_1",
+            "INTER1"
+          ]
+        },
+        "actor 2": {
+          "full": "ACTOR2",
+          "filters": [
+            "ASSOC_ACTOR_2",
+            "INTER2"
+          ]
+        }
+      }
+    },
+    "Action": {
+      "type": "categorical",
+      "measures": [
+        "event"
+      ],
+      "columns": [
+        "INTERACTION"
+      ]
+    },
+    "Date": {
+      "type": "date",
+      "measures": [
+        "unit"
+      ],
+      "structure": "point",
+      "columns": [
+        "EVENT_DATE_constructed"
+      ]
+    },
+    "Code Date": {
+      "type": "date",
+      "measures": [
+        "unit"
+      ],
+      "structure": "point",
+      "columns": [
+        "TIMESTAMP_constructed"
+      ]
+    },
+    "Location": {
+      "type": "categorical_grouped",
+      "group_by": "region",
+      "columns": [
+        "country_constructed"
+      ]
+    },
+    "Coordinates": {
+      "type": "coordinates",
+      "columns": [
+        "LATITUDE",
+        "LONGITUDE"
+      ]
+    }
+  },
+  "columns": [
+    "ISO",
+    "EVENT_ID_CNTY",
+    "EVENT_ID_NO_CNTY",
+    "EVENT_DATE",
+    "YEAR",
+    "TIME_PRECISION",
+    "EVENT_TYPE",
+    "ACTOR1",
+    "ASSOC_ACTOR_1",
+    "INTER1",
+    "ACTOR2",
+    "ASSOC_ACTOR_2",
+    "INTER2",
+    "INTERACTION",
+    "REGION",
+    "COUNTRY",
+    "ADMIN1",
+    "ADMIN2",
+    "ADMIN3",
+    "LOCATION",
+    "LATITUDE",
+    "LONGITUDE",
+    "GEO_PRECISION",
+    "SOURCE",
+    "SOURCE_SCALE",
+    "NOTES",
+    "FATALITIES",
+    "TIMESTAMP"
+  ],
+  "columns_constructed": [
+    "EVENT_DATE_constructed",
+    "TIMESTAMP_constructed",
+    "country_constructed"
+  ],
+  "alignments": {
+    "LATITUDE": "latitude",
+    "LONGITUDE": "longitude",
+    "EVENT_DATE_constructed": "date",
+    "country_constructed": "country"
+  },
+  "formats": {
+    "INTERACTION": "ACLED_interaction",
+    "INTER1": "ACLED_inter",
+    "INTER2": "ACLED_inter",
+    "country_constructed": "ISO-3",
+    "YEAR": "%Y"
+  },
+  "citations": [
+    {
+      "author": "The Armed Conflict Location & Event Data Project",
+      "year": "2018",
+      "title": "ASIA 1997-PRESENT",
+      "date": "June 9",
+      "url": "https://www.acleddata.com/data/"
+    }
+  ]
+}

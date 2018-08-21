@@ -187,11 +187,11 @@ TA2_TEST_SERVER_URL = os.environ.get('TA2_TEST_SERVER_URL', 'localhost:45042')
 TA3_GRPC_USER_AGENT = os.environ.get('TA3_GRPC_USER_AGENT', 'TwoRavens')
 
 # for non-streaming responses
-TA2_GRPC_FAST_TIMEOUT = 3 # seconds
-TA2_GRPC_SHORT_TIMEOUT = 60 # seconds
+TA2_GRPC_FAST_TIMEOUT = os.environ.get('TA2_GRPC_FAST_TIMEOUT', 15) # seconds
+TA2_GRPC_SHORT_TIMEOUT = os.environ.get('TA2_GRPC_SHORT_TIMEOUT', 60) # seconds
 
 # for streaming responses
-TA2_GRPC_LONG_TIMEOUT = 8 * 60 # 8 minutes
+TA2_GRPC_LONG_TIMEOUT = os.environ.get('TA2_GRPC_LONG_TIMEOUT', 8 * 60)  # 8 minutes
 
 # D3M - gRPC file uris
 MAX_EMBEDDABLE_FILE_SIZE = 1 * 500000
@@ -214,31 +214,19 @@ CELERY_RESULT_BACKEND = 'redis://%s:%d' % (REDIS_HOST, REDIS_PORT)
 # ---------------------------
 # EventData: depositing Dataverse data
 # ---------------------------
-DATAVERSE_SERVER = os.environ.get('DATAVERSE_SERVER',
-                                  'https://dataverse.harvard.edu')
-
-DATAVERSE_API_KEY = os.environ.get('DATAVERSE_API_KEY',
-                                   'some-key')
-DATASET_PERSISTENT_ID = os.environ.get(\
-                            'DATASET_PERSISTENT_ID',
-                            'doi%3A10.7910%2FDVN%2FSJWX4S')
-
-
+DATAVERSE_SERVER = os.environ.get('DATAVERSE_SERVER', 'https://demo.dataverse.org')
+DATAVERSE_API_KEY = os.environ.get('DATAVERSE_API_KEY', '58c0f743-16e9-4b32-987b-dbe3801be073')
+DATASET_PERSISTENT_ID = os.environ.get('DATASET_PERSISTENT_ID', 'doi:10.5072/FK2/BGPZC3')
+#  doi%3A10.7910%2FDVN%2FSJWX4S
 # -------------------------
 # EventData: mongo related
 # -------------------------
 EVENTDATA_PRODUCTION_MODE = os.environ.get('EVENTDATA_PRODUCTION_MODE', "no") == "yes"
 
-EVENTDATA_MONGO_DB_ADDRESS = os.environ.get(
-                        'EVENTDATA_MONGO_DB_ADDRESS',
-                        '127.0.0.1:27017')
+EVENTDATA_MONGO_DB_ADDRESS = os.environ.get('EVENTDATA_MONGO_DB_ADDRESS', '127.0.0.1:27017')
 
-EVENTDATA_MONGO_USERNAME = os.environ.get('EVENTDATA_MONGO_USERNAME',
-                                          'TwoRavens')
-
-EVENTDATA_MONGO_PASSWORD = os.environ.get('EVENTDATA_MONGO_PASSWORD',
-                                          '')
-
+EVENTDATA_MONGO_USERNAME = os.environ.get('EVENTDATA_MONGO_USERNAME', '')
+EVENTDATA_MONGO_PASSWORD = os.environ.get('EVENTDATA_MONGO_PASSWORD', '')
 
 EVENTDATA_PHOENIX_SERVER_ADDRESS = 'http://149.165.156.33:5002/api/data?'
 EVENTDATA_PRODUCTION_SERVER_ADDRESS = os.environ.get('EVENTDATA_PRODUCTION_SERVER_ADDRESS', EVENTDATA_PHOENIX_SERVER_ADDRESS)
@@ -246,3 +234,4 @@ EVENTDATA_PRODUCTION_SERVER_ADDRESS = os.environ.get('EVENTDATA_PRODUCTION_SERVE
 # API KEY, Load from ENV variable.  If it doesn't exist, use the default
 EVENTDATA_DEFAULT_API_KEY = 'api_key=CD75737EF4CAC292EE17B85AAE4B6'
 EVENTDATA_SERVER_API_KEY = os.environ.get('EVENTDATA_SERVER_API_KEY', EVENTDATA_DEFAULT_API_KEY)
+EVENTDATA_DB_NAME = os.environ.get('EVENTDATA_DB_NAME', 'event_data')
