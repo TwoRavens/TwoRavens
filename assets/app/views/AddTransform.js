@@ -60,7 +60,7 @@ export default class AddTransform {
 
         let vars = new Set((nodes || []).map(node => node.name));
         // simulate the pipeline until the n-1th step to determine available variables
-        let propagatedVariables = query.buildPipeline(subset.transformPipeline.slice(0, -1), vars)['variables'];
+        let propagatedVariables = query.buildPipeline(subset.abstractManipulations.slice(0, -1), vars)['variables'];
 
         if (name === 'Transform') {
 
@@ -87,7 +87,7 @@ export default class AddTransform {
             }
 
             return [
-                m('h4', 'Add ' + name + ' for Step ' + subset.transformPipeline.indexOf(step)),
+                m('h4', 'Add ' + name + ' for Step ' + subset.abstractManipulations.indexOf(step)),
                 m(TextField, {
                     id: 'textFieldName',
                     placeholder: 'Transformation Name',
@@ -185,7 +185,7 @@ export default class AddTransform {
             isValid = false;
 
         let menu = [
-            m('h4', 'Add ' + name + ' for Step ' + subset.transformPipeline.indexOf(step)),
+            m('h4', 'Add ' + name + ' for Step ' + subset.abstractManipulations.indexOf(step)),
             m('[style=width:120px;display:inline-block;]', 'Constraint Type'),
             m(ButtonRadio, {
                 id: 'variableType',

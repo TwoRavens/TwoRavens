@@ -4,6 +4,13 @@ import * as app from './app';
 import {incrementMonth} from "./app";
 import {isSameMonth} from "./app";
 
+
+// functions for generating database queries
+// subset queries are built typically built from abstractManipulations. An additional menu step may be added too
+
+// build*() functions are pure and return mongo queries. There is one per step type, and one for the overall pipeline
+// process*() functions are for constructing the subset query, relative to a specific node, group, or rule on the query tree
+
 // PIPELINE DESCRIPTION
 // transform step: add new fields/columns/variables:
 // {transforms: [{name: 'newName', equation: 'plaintext formula'}, ...]}
@@ -16,15 +23,6 @@ import {isSameMonth} from "./app";
 
 // menu step: mutate to a format that can be rendered in a menu
 // {name: 'Actor', type: 'dyad', step: [previous pipeline step]}
-
-
-// functions for generating database queries
-// subset queries are built from the abstractQuery, which is managed in app.js
-// aggregation queries contain the subset query as the first stage in the pipeline. The second group stage pulls data from subsetPreferences
-
-// submit*() functions cause a state change/update the menus
-// build*() functions are pure and return mongo queries
-// process*() functions are for constructing the subset query, relative to a specific node, group, or rule on the query tree
 
 export function buildPipeline(pipeline, variables = new Set()) {
     let compiled = [];
@@ -677,203 +675,3 @@ export let menuPostProcess = new Proxy({
         }, [])
 
 }, defaultValue(data => data));
-
-// ~~~~~ END QUERY BUILDING ~~~~~
-// ~~~~~ BEGIN QUERY REALIGNMENT ~~~~~
-
-export function genericRealignment(alignment, inFormat, outFormat, data) {
-    // TODO this is lossy one way. Not using it yet.
-    let transform = alignment.reduce((out, equivalency) => {
-        out[equivalency[inFormat]] = equivalency[outFormat];
-        return out;
-    }, {});
-    return [...new Set(data.map(point => transform[point]))];
-}
-
-// Take an abstract query for one dataset, and turn it into a query for another - with descriptive logs
-export function realignQuery(step, source, target) {
-    let log = [];
-    let sourceSubsets = app.genericMetadata[source]['subsets'];
-    let targetSubsets = app.genericMetadata[target]['subsets'];
-
-    let toVariableString = (variables) => String(variables.map(variable => variable.replace('_constructed', '')));
-
-    let realignBranch = (query) => {
-        return query.map(branch => {
-            if (branch.type !== 'rule') {
-                branch.children = realignBranch(branch.children);
-                if (branch.children.length === 0) {
-                    log.push('Removed ' + branch.name + ', because it has no children.');
-                    return;
-                }
-                return branch
-            }
-
-            let subsetName = branch.name.replace(' Subset', '');
-            if (!(subsetName in targetSubsets)) {
-                log.push('Removed ' + branch.name + ', because it does not have an alignment in ' + target + '.');
-                return;
-            }
-
-            if (branch.subset === 'dyad') {
-                let sourceTabs = Object.keys(sourceSubsets[subsetName]['tabs']);
-                let targetTabs = Object.keys(targetSubsets[subsetName]['tabs']);
-
-                // This is a bit of a shortcut
-                if (sourceTabs.some((_, i) => sourceTabs[i] !== targetTabs[i])) {
-                    log.push('Removed ' + branch.name + ', because the column formats are not comparable.');
-                    return;
-                }
-
-                let sourceFull = sourceTabs.map(tab => sourceSubsets[subsetName]['tabs'][tab]['full']);
-                let targetFull = targetTabs.map(tab => targetSubsets[subsetName]['tabs'][tab]['full']);
-
-                let sourceFormats = sourceFull.map(column => app.genericMetadata[source]['formats'][column]);
-                let targetFormats = targetFull.map(column => app.genericMetadata[target]['formats'][column]);
-
-                // if full column formats are already matching, then return
-                if ([sourceFormats, targetFormats].every(formats => formats.every(format => format)) // exists
-                    && [0, 1].every(i => sourceFormats[i] === targetFormats[i])) {                   // and equal
-                    return branch;
-                }
-
-                log.push('Removed ' + branch.name + ', because ' + String(sourceFormats) + ' are not comparable with ' + String(targetFormats));
-                return;
-
-                // actor alignments script is on hold
-                // // else if realignment can be achieved via filters
-                // let sourceFilters = sourceTabs.map(tab => sourceSubsets[subsetName]['tabs'][tab]['filters']);
-                // let targetFilters = targetTabs.map(tab => targetSubsets[subsetName]['tabs'][tab]['filters']);
-                //
-                // let sourceAlignment = app.genericMetadata[source]['alignments'][sourceFull];
-                // let targetAlignment = app.genericMetadata[target]['alignments'][targetFull];
-                //
-                // let relabelDyad = () => branch.children.forEach((monad, i) => monad['column'] = targetFull[i]);
-                // if (sourceFormats.every((format, i) => format === targetFormats[i])) {
-                //     relabelDyad();
-                //     log.push('Relabeled dyad columns in ' + branch.name + '.');
-                //     return branch;
-                // }
-                // else if ((!sourceAlignment || !targetAlignment || sourceAlignment !== targetAlignment)
-                //     && targetFormats.some((format, i) => format !== sourceFormats[i])) {
-                //     log.push('Removed ' + branch.name + ', because ' + String(sourceFormats) + ' are not comparable with ' + String(targetFormats))
-                //     return;
-                // }
-                //
-                // if (sourceAlignment && targetAlignment && sourceAlignment === targetAlignment) {
-                //     log.push('Realigned dyad columns in ' + branch.name + '.');
-                // }
-                // return branch;
-            }
-
-            if (branch.subset === 'categorical' || branch.subset === 'categorical_grouped') {
-                let sourceColumn = sourceSubsets[subsetName]['columns'][0];
-                let targetColumn = targetSubsets[subsetName]['columns'][0];
-
-                let sourceFormat = app.genericMetadata[source]['formats'][sourceColumn];
-                let targetFormat = app.genericMetadata[target]['formats'][targetColumn];
-
-                if (!sourceFormat || !targetFormat || sourceFormat !== targetFormat) {
-                    log.push('Removed ' + branch.name + ', because the column formats are not comparable.');
-                    return
-                }
-
-                if (branch.column !== targetColumn)
-                    log.push('Relabeled column in ' + branch.name + '.');
-                branch.column = targetColumn;
-                return branch;
-            }
-
-            if (branch.subset === 'date') {
-                let sourceColumns = sourceSubsets[subsetName]['columns'];
-                let targetColumns = targetSubsets[subsetName]['columns'];
-                if (branch.children.some((handle, i) => handle['column'] !== targetColumns[i % targetColumns.length]))
-                    log.push('Relabeled column intervals in ' + branch.name
-                        + ' from ' + toVariableString(sourceColumns) + ' to ' + toVariableString(targetColumns) + '.');
-
-                // the modular indexing is for handling conversions between point and interval date structures
-                branch.children.forEach((handle, i) => handle['column'] = targetColumns[i % targetColumns.length]);
-                return branch;
-            }
-
-
-            if (branch.subset === 'coordinates') {
-                let targetColumns = targetSubsets[subsetName]['columns'];
-                if (branch.children.some((orient, i) => orient['column'] !== targetColumns[i]))
-                    log.push('Relabeled columns in ' + branch.name + ' from ' + String(branch.children.map(child => child['column'])) + ' to ' + String(targetColumns));
-                branch.children.forEach((orient, i) => orient['column'] = targetColumns[i]);
-                return branch;
-            }
-
-            if (branch.subset === 'custom') {
-                log.push('Removed ' + branch.name + ', because custom queries do not have ontological alignments.');
-                return;
-            }
-
-        }).filter(branch => branch !== undefined) // prune subsets and groups that didn't transfer
-    };
-
-    step.abstractQuery = realignBranch(step.abstractQuery);
-    return log;
-}
-
-export function realignPreferences(source, target) {
-    let log = [];
-    let sourceSubsets = app.genericMetadata[source]['subsets'];
-    let targetSubsets = app.genericMetadata[target]['subsets'];
-
-    Object.keys(app.subsetPreferences).forEach(subset => {
-        if (Object.keys(app.subsetPreferences[subset]).length === 0) return;
-        if (!(subset in targetSubsets)) {
-            log.push(subset + ' is not available for ' + target + ', but subset preferences have been cached.');
-            return;
-        }
-
-        let subsetType = targetSubsets[subset]['type'];
-
-        if (subsetType === 'dyad') {
-            let sourceTabs = Object.keys(sourceSubsets[subset]['tabs']);
-            let targetTabs = Object.keys(targetSubsets[subset]['tabs']);
-            // This is a bit of a shortcut
-            if (sourceTabs.some((_, i) => sourceTabs[i] !== targetTabs[i])) {
-                log.push(subset + ' has a different alignment, so the groups and links from ' + source + ' have been cached and are not visible from ' + target + '.')
-            }
-        }
-
-        if (subsetType === 'categorical' || subsetType === 'categorical_grouped') {
-            let sourceColumn = sourceSubsets[subset]['columns'][0];
-            let targetColumn = targetSubsets[subset]['columns'][0];
-
-            let sourceFormat = app.genericMetadata[source]['formats'][sourceColumn];
-            let targetFormat = app.genericMetadata[target]['formats'][targetColumn];
-
-            if (!sourceFormat || !targetFormat || sourceFormat !== targetFormat) {
-                log.push('Cleared menu preferences in ' + subset + ', because the column formats are not comparable.');
-                app.subsetPreferences[subset] = {}
-            }
-        }
-    });
-    return log;
-}
-
-export function realignVariables(source, target) {
-    let log = [];
-    let newSelectedVariables = new Set();
-    app.selectedVariables.forEach(variable => {
-        if (!(variable in app.genericMetadata[source]['formats'])) {
-            log.push('De-selected ' + variable + ', because it has no recorded equivalent in ' + target + '.');
-            return;
-        }
-        Object.keys(app.genericMetadata[target]['formats']).forEach(targetVar => {
-            let targetFormat = app.genericMetadata[target]['formats'][targetVar];
-            if (targetFormat === app.genericMetadata[source]['formats'][variable])
-                newSelectedVariables.add(targetVar);
-        })
-    });
-    let equivalents = [...newSelectedVariables].filter(x => !app.selectedVariables.has(x));
-    if (equivalents.length !== 0) log.push('Selected equivalent variables: ' + String(equivalents));
-
-    app.setSelectedVariables(newSelectedVariables);
-    app.setSelectedConstructedVariables(new Set());
-    return log;
-}

@@ -12,8 +12,8 @@ export let username = 'TwoRavens';
 
 // ~~~~ GLOBAL STATE / MUTATORS ~~~
 
-export let transformPipeline = [];
-export let getTransformStep = (stepID) => transformPipeline.find(step => step.id === stepID);
+export let abstractManipulations = [];
+export let getTransformStep = (stepID) => abstractManipulations.find(step => step.id === stepID);
 
 export let formattingData = {};
 export let alignmentData = {};
@@ -385,7 +385,7 @@ export let getData = async body => m.request({
 export let loadMenu = async (menu, setIsLoading, {recount, requireMatch, monadSearch}={}) => { // the dict is for optional named arguments
 
     // get all pipeline steps before the menu
-    let pipelinePreMenu = transformPipeline.slice(0, transformPipeline.indexOf(menu.step) + 1);
+    let pipelinePreMenu = abstractManipulations.slice(0, abstractManipulations.indexOf(menu.step) + 1);
     // add one more step that represents any additional transformations needed to draw the menu
     let pipelineMenu = pipelinePreMenu.concat([menu]);
 

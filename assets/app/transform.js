@@ -16,11 +16,11 @@ export function rightpanel() {
     let plus = m(`span.glyphicon.glyphicon-plus[style=color: #818181; font-size: 1em; pointer-events: none]`);
     let warn = (text) => m('[style=color:#dc3545;display:inline-block;]', text);
 
-    let currentStepNumber = subset.transformPipeline.indexOf((constraintMenu || {}).step);
+    let currentStepNumber = subset.abstractManipulations.indexOf((constraintMenu || {}).step);
 
     let isEnabled = (stepType) => {
-        if (!subset.transformPipeline.length) return true;
-        let finalStep = subset.transformPipeline.slice(-1)[0];
+        if (!subset.abstractManipulations.length) return true;
+        let finalStep = subset.abstractManipulations.slice(-1)[0];
 
         if (finalStep.type === stepType) return false;
         if (finalStep.type === 'aggregate' && !finalStep.measuresAccum.length) return false;
@@ -31,12 +31,12 @@ export function rightpanel() {
     return [
         m(Flowchart, {
             attrsAll: {style: {height: 'calc(100% - 87px)', overflow: 'auto'}},
-            steps: subset.transformPipeline.map((step, i) => {
+            steps: subset.abstractManipulations.map((step, i) => {
                 let content;
 
-                let deleteButton = subset.transformPipeline.length - 1 === i && m(`div#stepDelete`, {
+                let deleteButton = subset.abstractManipulations.length - 1 === i && m(`div#stepDelete`, {
                     onclick: () => {
-                        let removedStep = subset.transformPipeline.pop();
+                        let removedStep = subset.abstractManipulations.pop();
                         if (constraintMenu && constraintMenu.step === removedStep) {
                             constraintMenu = undefined;
                             constraintPreferences = {};
@@ -59,7 +59,7 @@ export function rightpanel() {
                         m('h4[style=font-size:16px;margin-left:0.5em]', 'Transformations'),
                         m(TreeTransform, {step}),
 
-                        subset.transformPipeline.length - 1 === i && m(Button, {
+                        subset.abstractManipulations.length - 1 === i && m(Button, {
                             id: 'btnAddTransform',
                             class: ['btn-sm'],
                             style: {margin: '0.5em'},
@@ -105,7 +105,7 @@ export function rightpanel() {
                         ],
 
                         !step.measuresAccum.length && [warn('must have accumulator to output data'), m('br')],
-                        subset.transformPipeline.length - 1 === i && [
+                        subset.abstractManipulations.length - 1 === i && [
                             m(Button, {
                                 id: 'btnAddUnitMeasure',
                                 class: ['btn-sm'],
@@ -134,9 +134,9 @@ export function rightpanel() {
             title: 'construct new columns',
             disabled: !isEnabled('transform'),
             style: {margin: '0.5em'},
-            onclick: () => subset.transformPipeline.push({
+            onclick: () => subset.abstractManipulations.push({
                 type: 'transform',
-                id: 'transform ' + subset.transformPipeline.length,
+                id: 'transform ' + subset.abstractManipulations.length,
                 transforms: [] // transform name is used instead of nodeId
             })
         }, plus, ' Transform Step'),
@@ -145,10 +145,10 @@ export function rightpanel() {
             title: 'filter rows that match criteria',
             disabled: !isEnabled('subset'),
             style: {margin: '0.5em'},
-            onclick: () => subset.transformPipeline.push({
+            onclick: () => subset.abstractManipulations.push({
                 type: 'subset',
                 abstractQuery: [],
-                id: 'subset ' + subset.transformPipeline.length,
+                id: 'subset ' + subset.abstractManipulations.length,
                 nodeID: 1,
                 groupID: 1,
                 queryID: 1
@@ -159,9 +159,9 @@ export function rightpanel() {
             title: 'group rows that match criteria',
             disabled: !isEnabled('aggregate'),
             style: {margin: '0.5em'},
-            onclick: () => subset.transformPipeline.push({
+            onclick: () => subset.abstractManipulations.push({
                 type: 'aggregate',
-                id: 'aggregate ' + subset.transformPipeline.length,
+                id: 'aggregate ' + subset.abstractManipulations.length,
                 measuresUnit: [],
                 measuresAccum: [],
                 nodeId: 1 // both trees share the same nodeId counter

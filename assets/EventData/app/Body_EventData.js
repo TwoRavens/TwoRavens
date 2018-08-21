@@ -42,7 +42,7 @@ export default class Body_EventData {
 
         app.resetPeek();
 
-        app.transformPipeline.push({
+        app.abstractManipulations.push({
             type: 'subset',
             abstractQuery: [],
             id: app.eventdataSubsetName,
@@ -51,7 +51,7 @@ export default class Body_EventData {
             queryID: 1
         });
 
-        app.transformPipeline.push({
+        app.abstractManipulations.push({
             type: 'aggregate',
             measuresUnit: [],
             measuresAccum: [],
