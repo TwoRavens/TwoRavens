@@ -2,7 +2,8 @@ import {saveAs} from 'file-saver/FileSaver';
 import m from 'mithril';
 import * as common from '../../common-eventdata/common';
 
-import * as query from './queryMongo';
+import * as queryMongo from './queryMongo';
+import * as queryAbstract from './queryMongo';
 import * as tour from "./tour";
 
 export let eventdataURL = '/eventdata/api/';
@@ -21,7 +22,21 @@ export let alignmentData = {};
 // ~~~~ EVENTDATA STATE / MUTATORS ~~~
 // eventdata has a fixed pipeline of [Subset] -> [Aggregate]
 export let eventdataSubsetName = 'EventDataSubset';
-export let eventdataAggregateName = 'EventDataAggregate';
+export let eventdataSubsetCount = 0;
+
+export let pendingSubset = {
+    name: eventdataSubsetName + eventdataSubsetCount++,
+    abstractQuery: [],
+    nodeId: 1,
+    groupId: 1
+};
+
+export let eventdataAggregateStep = {
+    type: 'aggregate',
+    measuresUnit: [],
+    measuresAccum: [],
+    nodeId: 1
+};
 
 // metadata for all available eventdata datasets and type formats
 export let genericMetadata = {};
@@ -62,9 +77,9 @@ export let setSelectedDataset = (key) => {
         subsetData = {};
 
         // this modifies the abstract query, preferences, selected vars to be compatible with the new dataset
-        alignmentLog = query.realignQuery(previousSelectedDataset, selectedDataset);
-        preferencesLog = query.realignPreferences(previousSelectedDataset, selectedDataset);
-        variablesLog = query.realignVariables(previousSelectedDataset, selectedDataset);
+        alignmentLog = queryAbstract.realignQuery(previousSelectedDataset, selectedDataset);
+        preferencesLog = queryAbstract.realignPreferences(previousSelectedDataset, selectedDataset);
+        variablesLog = queryAbstract.realignVariables(previousSelectedDataset, selectedDataset);
 
         let subsetTree = $('#subsetTree');
         let state = subsetTree.tree('getState');
@@ -282,16 +297,6 @@ async function updatePeek() {
 
     peekIsGetting = true;
 
-    let step = getTransformStep(eventdataSubsetName);
-
-    let stagedSubsetData = [];
-    for (let child of step.abstractQuery) {
-        if (child.type === 'query') {
-            stagedSubsetData.push(child)
-        }
-    }
-    let subsetQuery = query.buildSubset(stagedSubsetData);
-
     let variables = (selectedVariables.size + selectedConstructedVariables.size) === 0
         ? [...genericMetadata[selectedDataset]['columns'], genericMetadata[selectedDataset]['columns_constructed']]
         : [...selectedVariables, ...selectedConstructedVariables];
@@ -301,30 +306,31 @@ async function updatePeek() {
         peekSkip = 0;
     }
 
-    let projection = variables.reduce((out, entry) => {
-        out[entry] = 1;
-        return out;
-    }, {_id: 0});
-    let peekQuery = [{$match: subsetQuery}, {$project: projection}, {$skip: peekSkip}, {$limit: peekBatchSize}];
+    let peekMenu = {
+        type: 'peek',
+        metadata: {
+            variables: variables,
+            skip: peekSkip,
+            limit: peekBatchSize
+        }
+    };
 
-    console.log("Peek Update");
-    console.log("Query: " + JSON.stringify(peekQuery));
+    let peekPipeline = queryMongo.buildPipeline([...abstractManipulations, peekMenu]);
+
+    console.log("Peek Query:");
+    console.log(JSON.stringify(peekPipeline));
 
     let body = {
         host: genericMetadata[selectedDataset]['host'],
         collection_name: selectedDataset,
         method: 'aggregate',
-        query: JSON.stringify(peekQuery)
+        query: JSON.stringify(peekPipeline)
     };
 
     // cancel the request
     if (!peekIsGetting) return;
 
     let data = await getData(body);
-    data.forEach(record => variables.forEach(variable => {
-        if (typeof record[variable] === 'object' && '$date' in record[variable])
-            record[variable] = new Date(record[variable]['$date']).toISOString().slice(0, 10);
-    }));
 
     peekIsGetting = false;
 
@@ -350,19 +356,16 @@ export let getSubsetMetadata = (dataset, subset) => {
     let subsetMetadata = genericMetadata[dataset]['subsets'][subset];
     if (!subsetMetadata) return;
 
-    let columns = subsetMetadata['columns'];
+    let columns = subsetMetadata['columns'] || [];
     if (subsetMetadata['type'] === 'dyad') Object.keys(subsetMetadata['tabs'])
         .forEach(tab => columns.push(subsetMetadata['tabs'][tab]['full'], ...subsetMetadata['tabs'][tab]['filters']));
-
     let alignments = columns
         .filter(column => column in genericMetadata[dataset]['alignments'])
         .map(column => genericMetadata[dataset]['alignments'][column]);
-
     let formats = columns
         .filter(column => column in genericMetadata[dataset]['formats'])
         .map(column => genericMetadata[dataset]['formats'][column]);
-
-    if (subsetMetadata['type'] === 'categorical')
+    if ('formats' in subsetMetadata)
         formats.push(...subsetMetadata['formats']);
 
     columns = [...new Set(columns)];
@@ -382,20 +385,15 @@ export let getData = async body => m.request({
 });
 
 // download data to display a menu
-export let loadMenu = async (menu, setIsLoading, {recount, requireMatch, monadSearch}={}) => { // the dict is for optional named arguments
+export let loadMenu = async (abstractPipeline, menu, setIsLoading, setRedraw, setData, {recount, requireMatch}={}) => { // the dict is for optional named arguments
 
-    // get all pipeline steps before the menu
-    let pipelinePreMenu = abstractManipulations.slice(0, abstractManipulations.indexOf(menu.step) + 1);
-    // add one more step that represents any additional transformations needed to draw the menu
-    let pipelineMenu = pipelinePreMenu.concat([menu]);
+    setIsLoading(true);
 
-    // convert the pipeline to a mongo query
-    let compiled = query.buildPipeline(pipelineMenu)['pipeline'];
+    // convert the pipeline to a mongo query. Note that passing menu extends the pipeline to collect menu data
+    let compiled = queryMongo.buildPipeline([...abstractPipeline, menu])['pipeline'];
 
     console.log("Menu Query:");
     console.log(JSON.stringify(compiled));
-
-    setIsLoading(true);
 
     let promises = [];
 
@@ -422,19 +420,22 @@ export let loadMenu = async (menu, setIsLoading, {recount, requireMatch, monadSe
         host: genericMetadata[dataset]['host'],
         collection_name: dataset,
         method: 'count',
-        query: buildPipeline(pipelinePreMenu)['pipeline']
+        query: queryMongo.buildPipeline(abstractPipeline)['pipeline']
     }).then(count => {
         // intentionally breaks the entire downloading promise array and subsequent promise chain
         if (!count && requireMatch) throw 'no records matched';
         totalSubsetRecords = count
     }));
 
+    let data;
     promises.push(getData({
         host: genericMetadata[dataset]['host'],
         dataset: dataset,
-        method: 'count',
+        method: 'aggregate',
         query: compiled
-    }).then(query.menuPostProcess[menu.type]));
+    })
+        .then(queryMongo.menuPostProcess[menu.type])
+        .then(response => data = response));
 
     let success = true;
     let onError = err => {
@@ -446,71 +447,47 @@ export let loadMenu = async (menu, setIsLoading, {recount, requireMatch, monadSe
     // wait until all requests have resolved
     await Promise.all(promises).catch(onError);
 
-    laddaStopAll();
-    isLoading[subsetName] = false;
+    if (success && data) {
+        console.log("Server returned:");
+        console.log(data);
 
-    if (dataset !== selectedDataset) return false;
-    if (!success) return false;
+        setIsLoading(false);
+        setData(data);
 
-    console.log("Server returned:");
-    console.log(data);
-
-    subsetData[subsetName] = data;
-    subsetRedraw[subsetName] = true;
-    m.redraw();
-
-    return true;
+        setRedraw(true);
+        m.redraw();
+    }
 };
 
-export async function submitQuery() {
+// locks a subset manipulation step as a 'query', relevant to eventdata only
+export async function submitSubset() {
 
-    // Only construct and submit the query if new subsets have been added since last query
-    let newSubsets = false;
-    let step = getTransformStep(eventdataSubsetName);
-    for (let idx in step.abstractQuery) {
-        if (step.abstractQuery[idx].type !== 'query') {
-            newSubsets = true;
-            break
-        }
-    }
+    abstractManipulations.push(pendingSubset);
+    pendingSubset = {
+        id: eventdataSubsetName + eventdataSubsetCount++,
+        abstractQuery: [],
+        nodeId: 1,
+        groupId: 1
+    };
 
-    if (!newSubsets) {
-        alert("Nothing has been staged yet! Stage your preferences before subset.");
-        return;
-    }
+    let newMenu = {
+        name: selectedSubsetName,
+        metadata: genericMetadata[selectedDataset]['subsets'][selectedSubsetName],
+        step: pendingSubset
+    };
 
-    setLaddaSpinner('btnUpdate', true);
-
-    let subsetName = selectedSubsetName;
-
-    let success = await loadMenu(subsetName, {includePending: true, recount: true, requireMatch: true});
-    if (!success) return;
-
-    // clear all subset data. Note this is intentionally mutating the object, not rebinding it
-    Object.keys(subsetData)
-        .filter(subset => subset !== subsetName)
-        .forEach(subset => delete subsetData[subset]);
-
-    // True for adding a query group, all existing preferences are grouped under a 'query group'
-    addGroup(true);
-
-    // Add all nodes to selection
-    let nodeList = [...Array(step.nodeId).keys()];
-
-    let subsetTree = $('#subsetTree');
-
-    nodeList.forEach((node_id) => {
-        const node = subsetTree.tree("getNodeById", node_id);
-        if (!node) return;
-        subsetTree.tree("addToSelection", node);
-        if (node.type !== 'query') node.editable = false;
-    });
-
-    // Redraw tree
-    step.abstractQuery = JSON.parse(subsetTree.tree('toJson'));
-    let state = subsetTree.tree('getState');
-    subsetTree.tree('loadData', step.abstractQuery);
-    subsetTree.tree('setState', state);
+    await loadMenu(
+        abstractManipulations, newMenu,
+        state => isLoading[selectedSubsetName] = state,
+        state => subsetRedraw[selectedSubsetName] = state,
+        data => {
+            // clear all other subset data. Note this is intentionally mutating the object, not rebinding it
+            Object.keys(subsetData)
+                .filter(subset => subset !== selectedSubsetName)
+                .forEach(subset => delete subsetData[subset]);
+            subsetData[selectedSubsetName] = data;
+        },
+        {recount: true, requireMatch: true});
 }
 
 
@@ -520,60 +497,41 @@ export function submitAggregation() {
         return;
     }
 
-    let step = getTransformStep(eventdataAggregateName);
-    let query = JSON.stringify(query.buildAggregation(step.measuresUnit, step.measuresAccum));
-    console.log("Aggregation Query: " + query);
+    loadMenu(abstractManipulations,
+        eventdataAggregateStep,
+        state => setLaddaSpinner('btnUpdate', state),
+        Function, // no forced redraws needed
+        data => aggregationData = data);
 
-    setLaddaSpinner('btnUpdate', true);
-
-    getData({
-        host: genericMetadata[selectedDataset]['host'],
-        method: 'aggregate',
-        query: query,
-        dataset: selectedDataset
-    })
-        .then(query.reformatAggregation)
-        .then(({data, headersUnit, headersEvent}) => {
-            setAggregationData(data);
-            setAggregationHeadersUnit(headersUnit);
-            setAggregationHeadersEvent(headersEvent);
-        })
-        .then(() => setLaddaSpinner('btnUpdate', false))
-        .then(() => setAggregationStaged(false)).then(m.redraw)
-        .catch(laddaStopAll);
+    // TODO check setting of aggregation headers (unit and event)
 }
 
 // this function makes many dirty assumptions about page state and is very touchy. Sorry for the headache. -Mike
-export async function download(queryType, dataset, queryMongo) {
+export async function download(queryType, dataset, query) {
 
-    console.log(queryMongo);
+    console.log(query);
     // fall back to document state if args are not passed
     if (!queryType) queryType = selectedMode;
     if (!dataset) dataset = selectedDataset;
 
     let variables = [];
 
-    let step = getTransformStep(eventdataSubsetName);
-
-    if (!queryMongo) {
+    if (!query) {
         if (queryType === 'subset') {
 
             variables = (selectedVariables.size + selectedConstructedVariables.size) === 0
                 ? [...genericMetadata[dataset]['columns'], genericMetadata[dataset]['columns_constructed']]
                 : [...selectedVariables, ...selectedConstructedVariables];
             // when only the _id is ignored (_id: 0) then all other columns are returned (mongo behavior)
-            queryMongo = [
-                {"$match": query.buildSubset(step.abstractQuery)},
-                {
-                    "$project": variables.reduce((out, variable) => {
-                        out[variable] = 1;
-                        return out;
-                    }, {'_id': 0})
-                }
-            ];
+            let menuDownload = {
+                type: 'menu',
+                metadata: {variables}
+            };
+
+            query = queryMongo.buildPipeline([...abstractManipulations, menuDownload])
         }
         else if (queryType === 'aggregate')
-            queryMongo = query.buildAggregation(step.abstractQuery, subsetPreferences);
+            query = queryMongo.buildPipeline([...abstractManipulations, aggregationStaged]);
     }
     // queryMongo is set when called from Saved Queries, but variables is unknown. Infer variables from the projection stage of the pipeline
     // aggregation queries handle inferring variables from inside reformatAggregation, so this only applies to subset

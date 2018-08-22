@@ -84,15 +84,24 @@ function buttonDeleteTransform(id) {
 
 
 export class TreeQuery {
+    selectAll(subsetTree, abstractQuery) {
+        if (Array.isArray(abstractQuery)) abstractQuery.forEach(element => this.selectAll(subsetTree, element));
+        if (typeof abstractQuery === 'object' && 'id' in abstractQuery) {
+            const node = subsetTree.tree("getNodeById", abstractQuery.id);
+            if (!node) return;
+            subsetTree.tree("addToSelection", node);
+            if ('children' in abstractQuery) this.selectAll(subsetTree, abstractQuery.children);
+        }
+    }
 
     oncreate({attrs, dom}) {
         // Create the query tree
         let subsetTree = $(dom);
 
-        let {step} = attrs;
+        let {data, selected} = attrs;
 
         subsetTree.tree({
-            data: step.abstractQuery,
+            data,
             saveState: true,
             dragAndDrop: true,
             autoOpen: true,
@@ -149,6 +158,8 @@ export class TreeQuery {
             }
         });
 
+        if (selected) this.selectAll();
+
         subsetTree.on(
             'tree.move',
             function (event) {
@@ -199,15 +210,16 @@ export class TreeQuery {
 
     // when mithril updates this component, it redraws the tree with whatever the abstract query is
     onupdate({attrs, dom}) {
-        let {step} = attrs;
+        let {step, selected} = attrs;
         let subsetTree = $(dom);
         let state = subsetTree.tree('getState');
         subsetTree.tree('loadData', step.abstractQuery);
         subsetTree.tree('setState', state);
+        if (selected) this.selectAll();
     }
 
-    view() {
-        return m('div#subsetTree')
+    view(vnode) {
+        return m('div#' + vnode.attrs.id)
     }
 }
 

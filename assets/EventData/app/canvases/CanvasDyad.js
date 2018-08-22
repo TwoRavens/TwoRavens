@@ -1,15 +1,16 @@
 import m from 'mithril';
-import {panelMargin} from '../../../common-eventdata/common';
+import {grayColor, panelMargin} from '../../../common-eventdata/common';
 import ButtonRadio from "../../../common-eventdata/views/ButtonRadio";
 import Button from "../../../common-eventdata/views/Button";
 import TextField from '../../../common-eventdata/views/TextField';
 
-import MonadSelection from '../views/MonadSelection';
 import PlotDyad from '../views/PlotDyad';
 import * as app from "../app";
 
 // Width of the dyad selection panel
 let selectionWidth = '400px';
+// milliseconds before sending a query request when searching
+let searchLag = 500;
 
 // determine if a particular dyad matches criteria
 export let entryContains = (entry, search, token_length) => {
@@ -64,59 +65,214 @@ export default class CanvasDyad {
         preferences['edges'] = preferences['edges'] || [];
         if (!(preferences['current_tab'] in Object.keys(metadata['tabs'])))
             preferences['current_tab'] = Object.keys(metadata['tabs'])[0];
+
+        this.defaultPageSize = 200;
+        this.waitForQuery = 0;
+        this.searchTimeout = null;
     }
 
+    async search(subsetName, currentTab, metadata) {
+
+        let failedUpdateMonadListing = () => {
+            console.warn("Network Issue: Update to monad listing failed");
+            this.waitForQuery--;
+        };
+
+        this.waitForQuery++;
+        m.redraw(); // makes the full list turn grey while waiting for the query to complete
+
+        let monadUpdate = {
+            type: 'menu',
+            metadata: Object.assign({}, metadata, {type: 'dyadSearch', currentTab}) // edit the metadata to be a search
+        };
+        await app.loadMenu(app.abstractManipulations, monadUpdate).catch(failedUpdateMonadListing);
+        this.waitForQuery--;
+    }
 
     view(vnode) {
         let {preferences, metadata, redraw, setRedraw} = vnode.attrs;
         if (!Object.keys(preferences).length) this.oninit(vnode);
 
         return m("#canvasDyad", {style: {height: `calc(100% - ${panelMargin})`}},
-            [
-                m("div#dyadSelectionDiv", {
-                    style: {
-                        float: "left",
-                        height: `calc(100% - ${panelMargin})`,
-                        width: selectionWidth,
-                        'margin-top': "10px"
-                    }
-                }, this.dyadSelection(vnode)),
-                m("div#dyadLinkDiv", {
+            m("div#dyadSelectionDiv", {
+                style: {
+                    float: "left",
+                    height: `calc(100% - ${panelMargin})`,
+                    width: selectionWidth,
+                    'margin-top': "10px"
+                }
+            }, this.dyadSelection(vnode)),
+            m("div#dyadLinkDiv", {
                     style: {
                         'margin-left': panelMargin,
                         'margin-top': panelMargin,
                         height: `calc(100% - ${panelMargin})`,
                         width: `calc(100% - ${selectionWidth} - ${panelMargin})`
                     }
-                }, [
-                    m("[id='linkTitle']",
-                        [
-                            m("h3#linkTitleLeft.panel-title.text-center",
-                                "Sources"
-                            ),
-                            m("h3#linkTitleRight.panel-title.text-center",
-                                "Targets"
-                            )
-                        ]
+                },
+                m("[id='linkTitle']",
+                    [
+                        m("h3#linkTitleLeft.panel-title.text-center",
+                            "Sources"
+                        ),
+                        m("h3#linkTitleRight.panel-title.text-center",
+                            "Targets"
+                        )
+                    ]
+                ),
+                m(PlotDyad, {
+                    id: 'dyadSVG',
+                    preferences: preferences,
+                    redraw: redraw,
+                    setRedraw: setRedraw,
+                    metadata: metadata
+                })),
+            m("div#dyadFormatDiv", {
+                style: {
+                    clear: 'both',
+                    height: '1px',
+                    overflow: 'hidden',
+                    'font-size': '0pt',
+                    'margin-top': '-1px'
+                }
+            })
+        );
+    }
+
+    // rendering the full and filter lists
+    monadSelection(vnode) {
+        let {subsetName, data, metadata, preferences} = vnode.attrs;
+        let dataMonad = data[preferences['current_tab']];
+        let preferencesMonad = preferences['tabs'][preferences['current_tab']];
+        let metadataMonad = metadata['tabs'][preferences['current_tab']];
+        let currentTab = preferences['current_tab'];
+
+        preferencesMonad['full_limit'] = preferencesMonad['full_limit'] || this.defaultPageSize;
+
+        let toggleFull = (entry) => preferencesMonad['node']['selected'].has(entry)
+            ? preferencesMonad['node']['selected'].delete(entry)
+            : preferencesMonad['node']['selected'].add(entry);
+
+        let toggleFilter = (filter, entry) => {
+            preferencesMonad['filters'][filter]['selected'].has(entry)
+                ? preferencesMonad['filters'][filter]['selected'].delete(entry)
+                : preferencesMonad['filters'][filter]['selected'].add(entry);
+
+            clearTimeout(this.searchTimeout);
+            this.searchTimeout = setTimeout(() => this.search(subsetName, currentTab, metadata), searchLag);
+        };
+
+        let popupAttributes = (column, value) => app.genericMetadata[app.selectedDataset]['formats'][column] && {
+            'data-container': 'body',
+            'data-toggle': 'popover',
+            'data-placement': 'right',
+            'data-trigger': 'hover',
+            'onmouseover': function (e) {
+                e.redraw = false;
+                let translation = (value === undefined || value === '')
+                    ? ''
+                    : 'token_length' in metadataMonad
+                        ? value.match(new RegExp(`.{${metadataMonad['token_length']}}`, 'g'))
+                            .map(token => app.formattingData[app.genericMetadata[app.selectedDataset]['formats'][column]][token] || '?').join(' ')
+                        : app.formattingData[app.genericMetadata[app.selectedDataset]['formats'][column]][value];
+                if (translation) {
+                    $(this).attr('data-content', translation);
+                    setTimeout(() => $(this).popover("show"), 200);
+                }
+            },
+            'onmouseout': function (e) {
+                e.redraw = false;
+                setTimeout(() => $(".popover").remove(), 200);
+            }
+        };
+
+        // I avoided the usual declarative filtering constructs here because this loop has a sweet early exit, usually around 100 elements
+        let getTopValues = () => {
+            let matches = [];
+            let idx = 0;
+            while (idx < dataMonad['full'].length && matches.length < preferencesMonad['full_limit']) {
+                let selectFilter = !preferencesMonad['show_selected'] || preferencesMonad['node']['selected'].has(dataMonad['full'][idx]);
+                let searchFilter = entryContains(dataMonad['full'][idx], preferencesMonad['search'], metadataMonad['token_length']);
+
+                if (selectFilter && searchFilter) matches.push(dataMonad['full'][idx]);
+                idx += 1;
+            }
+            return matches;
+        };
+
+        return [
+            m('#allEntries.monad-left',
+                m(TextField, {
+                    value: preferencesMonad['search'],
+                    placeholder: `Search ${metadataMonad['full']}`,
+                    oninput: (value) => preferencesMonad['search'] = value
+                }),
+                m('#searchListMonads.monad-full-list', {
+                        style: Object.assign({"text-align": "left"},
+                            this.waitForQuery && {'pointer-events': 'none', 'background': grayColor}),
+                        onscroll: () => {
+                            // don't apply infinite scrolling when monad list is empty
+                            if (dataMonad.length === 0) return;
+
+                            let container = document.querySelector('#searchListMonads');
+                            let scrollHeight = container.scrollHeight - container.scrollTop;
+                            if (scrollHeight < container.offsetHeight) preferencesMonad['full_limit'] += this.defaultPageSize;
+                        }
+                    },
+                    this.waitForQuery === 0 && getTopValues().map(entry =>
+                        m('div', popupAttributes(metadataMonad['full'], entry),
+                            m(`input.monad-chk[type=checkbox]`, {
+                                checked: preferencesMonad['node']['selected'].has(entry),
+                                onclick: () => toggleFull(entry)
+                            }),
+                            m('label', {onclick: () => toggleFull(entry)}, entry)))
+                )
+            ),
+            m('#actorRight.monad-right',
+
+                m(`button#clearAllActors.btn.btn-default.monad-clear[type='button']`, {
+                        title: 'Clear search text and filters',
+                        onclick: () => {
+                            preferencesMonad['search'] = '';
+                            Object.keys(preferencesMonad['filters']).map(filter => preferencesMonad['filters'][filter]['selected'] = new Set());
+                            clearTimeout(this.searchTimeout);
+                            this.searchTimeout = setTimeout(() => this.search(subsetName, currentTab, metadata), searchLag);
+                        }
+                    },
+                    "Clear All Filters"
+                ),
+                m('#actorFilter.monad-filter-list', {style: {"text-align": "left"}},
+                    m(`label.monad-show-selected-lbl.monad-chk-lbl[data-toggle='tooltip']`, {
+                            title: `Show selected ${metadataMonad['full']}`
+                        },
+                        m("input#monad-show-selected.monad-chk.monad-show-selected[name='actorShowSelected'][type='checkbox']", {
+                            checked: preferencesMonad['show_selected'],
+                            onchange: m.withAttr('checked', (state) => preferencesMonad['show_selected'] = state)
+                        }),
+                        "Show Selected"
                     ),
-                    m(PlotDyad, {
-                        id: 'dyadSVG',
-                        preferences: preferences,
-                        redraw: redraw,
-                        setRedraw: setRedraw,
-                        metadata: metadata
-                    })
-                ]),
-                m("div#dyadFormatDiv", {
-                    style: {
-                        clear: 'both',
-                        height: '1px',
-                        overflow: 'hidden',
-                        'font-size': '0pt',
-                        'margin-top': '-1px'
-                    }
-                })
-            ]);
+                    Object.keys(dataMonad['filters']).map(filter => [
+                        m(".separator"),
+                        m("button.filter-base" + (preferencesMonad['filters'][filter]['expanded'] ? '.filter-collapse' : '.filter-expand'), {
+                            onclick: () => preferencesMonad['filters'][filter]['expanded'] = !preferencesMonad['filters'][filter]['expanded']
+                        }),
+                        m("label.monad-filter-heading", {
+                            onclick: () => preferencesMonad['filters'][filter]['expanded'] = !preferencesMonad['filters'][filter]['expanded']
+                        }, m("b", filter)),
+                        preferencesMonad['filters'][filter]['expanded'] && dataMonad['filters'][filter]
+                            .filter(actor => actor.includes(preferencesMonad['search']))
+                            .map(actor => m('div',
+                                popupAttributes(filter, actor),
+                                m(`input.monad-chk[type=checkbox]`, {
+                                    checked: preferencesMonad['filters'][filter]['selected'].has(actor),
+                                    onclick: () => toggleFilter(filter, actor)
+                                }),
+                                m('label', {onclick: () => toggleFilter(filter, actor)}, actor)
+                            ))
+                    ])
+                )
+            )
+        ];
     }
 
     dyadSelection(vnode) {
@@ -165,13 +321,7 @@ export default class CanvasDyad {
             m("#fullContainer", m(`#dyadDiv.monad-content`, {
                     style: {height: mode === 'subset' ? '100%' : 'calc(100% - 25px)'}
                 },
-                m(MonadSelection, {
-                    subsetName: subsetName,
-                    data: data[preferences['current_tab']],
-                    preferences: preferences['tabs'][preferences['current_tab']],
-                    metadata: metadata['tabs'][preferences['current_tab']],
-                    currentTab: preferences['current_tab']
-                }),
+                this.monadSelection(vnode),
                 m(".monad-bottom",
                     m(Button, {
                         id: 'dyadSelectAll',
@@ -193,7 +343,8 @@ export default class CanvasDyad {
                             let tabPref = preferences['tabs'][preferences['current_tab']];
                             let tabMeta = metadata['tabs'][preferences['current_tab']];
                             tabPref['node']['selected'] = new Set([...tabPref['node']['selected']]
-                                .filter(entry => !entryContains(entry, tabPref['search'], tabMeta['token_length'])))},
+                                .filter(entry => !entryContains(entry, tabPref['search'], tabMeta['token_length'])))
+                        },
                         title: `Clears all ${preferences['tabs'][preferences['current_tab']]['node']['name']} that match the filter criteria`
                     }, 'Clear All'),
                     m(Button, {

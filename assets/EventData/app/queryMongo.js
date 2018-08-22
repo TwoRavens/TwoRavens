@@ -1,8 +1,7 @@
 import jsep from 'jsep';
 
 import * as app from './app';
-import {incrementMonth} from "./app";
-import {isSameMonth} from "./app";
+import {incrementMonth, isSameMonth} from './app';
 
 
 // functions for generating database queries
@@ -568,16 +567,43 @@ export function reformatAggregation(jsondata) {
 }
 
 // given a menu, return pipeline steps for collecting data
-export function buildMenu(menu, preferences = undefined) {
-    if (menu.type === 'dyad') {
+export function buildMenu(step) {
+    let {metadata} = step;
+
+
+    let makeMonadRestriction = (branch) => [
+        {
+            $match: Object.keys(metadata.tabs[branch.tab].filters).reduce((out, column) => {
+                // if no selections are made, don't add a constraint on the column of the filter
+                if (metadata.tabs[branch.tab].filters[column].selected.size === 0) return out;
+
+                // must only match full values that match the filter
+                if (column in metadata.delimited) out[column] = {
+                    // PHOENIX example: match .*; any number of times, then one of the selected filters (AFG|MUS)
+                    $regex: `^(.*${metadata.delimited[column]})*(${[...metadata.tabs[branch.tab].filters[column].selected].join('|')})`,
+                    $options: 'i' // insensitive to diacritics
+                };
+                else out[column] = {$in: [...metadata.tabs[branch.tab].filters[column].selected]};
+                return out;
+            }, {})
+        }
+    ];
+
+
+    if (metadata.type === 'dyadSearch') {
+        let branch = {tab: metadata.currentTab, type: 'full', column: metadata.tabs[metadata.currentTab].full};
+        return makeMonadRestriction(branch)
+    }
+
+    if (metadata.type === 'dyad') {
 
         let branches = new Set();
-        Object.keys(menu.tabs).forEach(tabName => {
-            branches.add({tab: tabName, type: 'full', column: menu.tabs[tabName].full});
-            menu.tabs[tabName].filters.forEach(filter => branches.add({tab: tabName, type: 'filter', column: filter}));
+        Object.keys(metadata.tabs).forEach(tabName => {
+            branches.add({tab: tabName, type: 'full', column: metadata.tabs[tabName].full});
+            metadata.tabs[tabName].filters.forEach(filter => branches.add({tab: tabName, type: 'filter', column: filter}));
         });
 
-        menu['delimited'] = menu['delimited'] || {};
+        metadata['delimited'] = metadata['delimited'] || {};
 
         return [
             {
@@ -586,29 +612,13 @@ export function buildMenu(menu, preferences = undefined) {
                     let restriction = [];
                     if (branch.type === 'full') {
                         // must apply restrictions to only return full that matches filters
-                        restriction = [
-                            {
-                                $match: Object.keys(preferences.tabs[branch.tab].filters).reduce((out, column) => {
-                                    // if no selections are made, don't add a constraint on the column of the filter
-                                    if (preferences.tabs[branch.tab].filters[column].selected.size === 0) return out;
-
-                                    // must only match full values that match the filter
-                                    if (column in menu.delimited) out[column] = {
-                                        // PHOENIX example: match .*; any number of times, then one of the selected filters (AFG|MUS)
-                                        $regex: `^(.*${menu.delimited[column]})*(${[...preferences.tabs[branch.tab].filters[column].selected].join('|')})`,
-                                        $options: 'i' // insensitive to diacritics
-                                    };
-                                    else out[column] = {$in: [...preferences.tabs[branch.tab].filters[column].selected]};
-                                    return out;
-                                }, {})
-                            }
-                        ];
+                        restriction = makeMonadRestriction(branch);
                     }
 
-                    if (branch.type === 'filter' && branch.column in menu.delimited) {
+                    if (branch.type === 'filter' && branch.column in metadata.delimited) {
                         // must apply restrictions to deconstruct filters by delimiter
                         restriction = [
-                            {$project: {[branch.column]: {$split: ['$' + branch.column, menu.delimited[branch.column]]}}},
+                            {$project: {[branch.column]: {$split: ['$' + branch.column, metadata.delimited[branch.column]]}}},
                             {$unwind: '$' + branch.column}
                         ];
                     }
@@ -626,26 +636,42 @@ export function buildMenu(menu, preferences = undefined) {
         ];
     }
 
-    if (menu.type === 'date') {
-        return [
-            {
-                $group: {
-                    _id: {year: {$year: '$' + menu.column}, month: {$month: '$' + menu.column}},
-                    total: {$sum: 1}
-                }
-            },
-            {$project: {year: '$_id.year', month: '$_id.month', _id: 0, total: 1}},
-            {$match: {year: {$exists: true}, month: {$exists: true}}},
-            {$sort: {year: 1, month: 1}}
-        ];
-    }
+    if (metadata.type === 'date') return [
+        {
+            $group: {
+                _id: {year: {$year: '$' + metadata.column}, month: {$month: '$' + metadata.column}},
+                total: {$sum: 1}
+            }
+        },
+        {$project: {year: '$_id.year', month: '$_id.month', _id: 0, total: 1}},
+        {$match: {year: {$exists: true}, month: {$exists: true}}},
+        {$sort: {year: 1, month: 1}}
+    ];
 
-    if (['categorical', 'categorical_grouped'].indexOf(menu.type) !== -1) {
-        return [
-            {$group: {_id: {[format]: '$' + menu.column}, total: {$sum: 1}}},
-            {$project: {[format]: '$_id.' + format, _id: 0, total: 1}}
-        ]
-    }
+    if (['categorical', 'categorical_grouped'].indexOf(metadata.type) !== -1) return [
+        {$group: {_id: {[format]: '$' + metadata.column}, total: {$sum: 1}}},
+        {$project: {[format]: '$_id.' + format, _id: 0, total: 1}}
+    ];
+
+    if (metadata.type === 'peek') return [
+        {
+            $project: step.variables.reduce((out, entry) => {
+                out[entry] = 1;
+                return out;
+            }, {_id: 0})
+        },
+        {$skip: metadata.skip},
+        {$limit: metadata.limit}
+    ];
+
+    if (metadata.type === 'download') return [
+        {
+            $project: metadata.variables.reduce((out, entry) => {
+                out[entry] = 1;
+                return out;
+            }, {_id: 0})
+        }
+    ]
 }
 
 // If there is a postProcessing step at the given key, it will return modified data. Otherwise return the data unmodified

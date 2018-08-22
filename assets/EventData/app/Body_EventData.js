@@ -1,6 +1,7 @@
 import m from 'mithril';
 
 import * as app from './app';
+import * as queryAbstract from './queryAbstract';
 import * as tour from "./tour";
 
 import * as common from '../../common-eventdata/common';
@@ -41,22 +42,6 @@ export default class Body_EventData {
         }
 
         app.resetPeek();
-
-        app.abstractManipulations.push({
-            type: 'subset',
-            abstractQuery: [],
-            id: app.eventdataSubsetName,
-            nodeID: 1,
-            groupID: 1,
-            queryID: 1
-        });
-
-        app.abstractManipulations.push({
-            type: 'aggregate',
-            measuresUnit: [],
-            measuresAccum: [],
-            nodeId: 1
-        });
 
         // Load the metadata for all available datasets
         m.request({
@@ -457,7 +442,20 @@ export default class Body_EventData {
                         },
                         {
                             value: 'Subsets',
-                            contents: m(TreeQuery)
+                            contents: [
+                                ...app.abstractManipulations.map((step, i) => m(TreeQuery, {
+                                    id: 'subsetTree' + step.id,
+                                    data: [{
+                                        name: 'Query ' + (i + 1),
+                                        id: 'Step-' + step.id,
+                                        children: step.abstractQuery,
+                                        operation: i && 'and',
+                                        type: 'query'
+                                    }],
+                                    selected: true
+                                })),
+                                m(TreeQuery, {id: 'subsetTreePending', step: app.pendingSubset})
+                            ]
                         }
                     ]
                 }),
@@ -469,9 +467,9 @@ export default class Body_EventData {
                         }
                     },
                     m(Button, {
-                        id: 'buttonAddGroup',
+                        id: 'btnAddGroup',
                         style: {float: 'left'},
-                        onclick: () => app.addGroup('subset', false)
+                        onclick: () => queryAbstract.addGroup(app.pendingSubset)
                     }, 'Group'),
 
                     m(Button, {
@@ -480,9 +478,10 @@ export default class Body_EventData {
                         'data-style': 'zoom-in',
                         'data-spinner-color': '#818181',
                         style: {float: 'right'},
+                        disabled: app.pendingSubset.abstractQuery.length === 0,
                         onclick: async () => {
                             app.setLaddaSpinner('btnUpdate', true);
-                            await app.submitQuery();
+                            await app.submitSubset();
                             app.laddaStopAll();
                         }
                     }, 'Update')
@@ -522,12 +521,7 @@ export default class Body_EventData {
                     'data-style': 'zoom-in',
                     'data-spinner-color': '#818181',
                     style: {float: 'right'},
-                    onclick: async () => {
-                        app.setAggregationStaged(false);
-                        app.setLaddaSpinner('btnUpdate', true);
-                        await app.submitAggregation();
-                        app.laddaStopAll();
-                    }
+                    onclick: () => app.submitAggregation()
                 }, 'Update'))
         }
     }
@@ -536,8 +530,17 @@ export default class Body_EventData {
         if (app.selectedCanvas === 'Subset') {
             if (app.subsetData[app.selectedSubsetName] === undefined) {
 
-                if (!app.isLoading[app.selectedSubsetName])
-                    app.loadMenu(app.selectedSubsetName);
+                if (!app.isLoading[app.selectedSubsetName]) {
+                    let newMenu = {
+                        name: app.selectedSubsetName,
+                        metadata: app.genericMetadata[app.selectedDataset]['subsets'][app.selectedSubsetName],
+                        step: app.pendingSubset
+                    };
+                    app.loadMenu(app.abstractManipulations, newMenu,
+                        state => app.isLoading[app.selectedSubsetName] = state,
+                        state => app.subsetRedraw[app.selectedSubsetName] = state,
+                        data => app.subsetData[app.selectedSubsetName] = data);
+                }
 
                 return m('#loading.loader', {
                     style: {
@@ -568,7 +571,6 @@ export default class Body_EventData {
             })
         }
 
-        // TODO add CanvasAnalysis
         app.canvasPreferences[app.selectedCanvas] = app.canvasPreferences[app.selectedCanvas] || {};
         return m({
             'About': CanvasAbout,
@@ -599,7 +601,7 @@ export default class Body_EventData {
             app.aggregationData ? m(Table, {
                 headers: [...app.aggregationHeadersUnit, ...app.aggregationHeadersEvent],
                 data: app.aggregationData
-            }) : "Select event measures, then click 'Update' to display aggregated data."
+            }) : m('div', {style: {margin: '1em'}}, "Select event measures, then click 'Update' to display aggregated data.")
         );
     }
 

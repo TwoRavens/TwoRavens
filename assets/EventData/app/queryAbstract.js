@@ -123,8 +123,7 @@ export function hideFirst(data) {
     return data;
 }
 
-export function addGroup(stepId, query = false) {
-    let step = abstractManipulations.find(step => step.id === stepId);
+export function addGroup(step) {
 
     // When the query argument is set, groups will be included under a 'query group'
     let movedChildren = [];
@@ -142,11 +141,6 @@ export function addGroup(stepId, query = false) {
 
         // Don't put groups inside groups! Only a drag can do that.
         if (!query && child.type === 'rule') {
-            movedChildren.push(child);
-            removeIds.push(child_id);
-
-            // A query grouping can, however put groups inside of groups.
-        } else if (query && child.type !== 'query') {
             movedChildren.push(child);
             removeIds.push(child_id);
         }
