@@ -23,4 +23,4 @@ fab load_d3m_config_from_env
 
 # (50) "Run web server.."
 printf "\n(50) Run web server.."
-python manage.py runserver 0.0.0.0:8080
+setsid python manage.py runserver 0.0.0.0:8080
