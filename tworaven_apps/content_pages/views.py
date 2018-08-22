@@ -6,6 +6,11 @@ from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
 from django.conf import settings
 
+from tworaven_apps.utils.view_helper import \
+    (get_request_body, get_request_body_as_json,
+     get_json_error,
+     get_json_success)
+
 from tworaven_apps.configurations.models import AppConfiguration
 from tworaven_apps.configurations.utils import get_latest_d3m_config
 from tworaven_apps.utils.view_helper import get_session_key
@@ -41,6 +46,9 @@ def view_pebbles_home(request):
 
     dinfo = dict(title='TwoRavens',
                  session_key=session_key,
+                 DEBUG=settings.DEBUG,
+                 ALLOW_SOCIAL_AUTH=settings.ALLOW_SOCIAL_AUTH,
+                 CSRF_COOKIE_NAME=settings.CSRF_COOKIE_NAME,
                  app_config=app_config.convert_to_dict(),
                  TA2_STATIC_TEST_MODE=settings.TA2_STATIC_TEST_MODE,
                  TA2_TEST_SERVER_URL=settings.TA2_TEST_SERVER_URL,
@@ -135,6 +143,28 @@ def view_monitoring_alive(request):
     """For kubernetes liveness check"""
     return JsonResponse(dict(status="ok",
                              message="TwoRavens python server up"))
+
+
+def view_test_csrf_required(request):
+    """for testing csrf call"""
+    req_body_info = get_request_body(request)
+    if not req_body_info.success:
+        return JsonResponse(get_json_error(req_body_info.err_msg))
+
+    # user info
+    #
+    user_msg = 'Sending back info from request body...'
+    user_info = dict(is_authenticated=request.user.is_authenticated,
+                     username='%s' % request.user)
+
+    # full data returned
+    #
+    data_info = dict(user_info=user_info,
+                     orig_data_as_text=req_body_info.result_obj)
+
+    return JsonResponse(get_json_success(\
+                            user_msg,
+                            data=data_info))
 
 
 @csrf_exempt
