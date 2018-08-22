@@ -568,22 +568,21 @@ export function reformatAggregation(jsondata) {
 
 // given a menu, return pipeline steps for collecting data
 export function buildMenu(step) {
-    let {metadata} = step;
-
+    let {metadata, preferences} = step;
 
     let makeMonadRestriction = (branch) => [
         {
             $match: Object.keys(metadata.tabs[branch.tab].filters).reduce((out, column) => {
                 // if no selections are made, don't add a constraint on the column of the filter
-                if (metadata.tabs[branch.tab].filters[column].selected.size === 0) return out;
+                if (preferences.tabs[branch.tab].filters[column].selected.size === 0) return out;
 
                 // must only match full values that match the filter
                 if (column in metadata.delimited) out[column] = {
                     // PHOENIX example: match .*; any number of times, then one of the selected filters (AFG|MUS)
-                    $regex: `^(.*${metadata.delimited[column]})*(${[...metadata.tabs[branch.tab].filters[column].selected].join('|')})`,
+                    $regex: `^(.*${metadata.delimited[column]})*(${[...preferences.tabs[branch.tab].filters[column].selected].join('|')})`,
                     $options: 'i' // insensitive to diacritics
                 };
-                else out[column] = {$in: [...metadata.tabs[branch.tab].filters[column].selected]};
+                else out[column] = {$in: [...preferences.tabs[branch.tab].filters[column].selected]};
                 return out;
             }, {})
         }
@@ -607,12 +606,13 @@ export function buildMenu(step) {
 
         return [
             {
-                $facet: branches.reduce((facets, branch) => {
+                $facet: [...branches].reduce((facets, branch) => {
 
                     let restriction = [];
                     if (branch.type === 'full') {
                         // must apply restrictions to only return full that matches filters
-                        restriction = makeMonadRestriction(branch);
+                        if ('tabs' in preferences) restriction = makeMonadRestriction(branch);
+                        else restriction = [];
                     }
 
                     if (branch.type === 'filter' && branch.column in metadata.delimited) {
@@ -625,13 +625,29 @@ export function buildMenu(step) {
 
                     let getDistinct = [
                         {$group: {_id: {[branch.column]: "$" + branch.column}}},
-                        {$group: {_id: null, [branch.column]: {"$push": "$_id." + branch.column}}}
+                        {$group: {_id: 0, values: {"$push": "$_id." + branch.column}}},
+                        {$project: {values: '$values', _id: 0}}
                     ];
 
                     // restrict to filters and deconstruct delimiters as necessary, then get distinct values
                     facets[Object.values(branch).join('-')] = [...restriction, ...getDistinct];
                     return facets;
                 }, {})
+            },
+            {
+                $project: [...branches].reduce((out, branch) => {
+                    let branchName = Object.values(branch).join('-');
+                    out[branchName] = {$arrayElemAt: ['$' + branchName, 0]};
+                    return out;
+                }, {_id: 0})
+            },
+            {
+                $project: [...branches].reduce((out, branch) => {
+                    let branchName = Object.values(branch).join('-');
+                    if (branch.type === 'full') out[branch.tab + '.full'] = '$' + Object.values(branch).join('-') + '.values';
+                    else out[Object.values(branch).join('.')] = '$' + branchName + '.values';
+                    return out;
+                }, {_id: 0})
             }
         ];
     }
@@ -639,7 +655,7 @@ export function buildMenu(step) {
     if (metadata.type === 'date') return [
         {
             $group: {
-                _id: {year: {$year: '$' + metadata.column}, month: {$month: '$' + metadata.column}},
+                _id: {year: {$year: '$' + metadata.columns[0]}, month: {$month: '$' + metadata.columns[0]}},
                 total: {$sum: 1}
             }
         },
@@ -649,8 +665,8 @@ export function buildMenu(step) {
     ];
 
     if (['categorical', 'categorical_grouped'].indexOf(metadata.type) !== -1) return [
-        {$group: {_id: {[format]: '$' + metadata.column}, total: {$sum: 1}}},
-        {$project: {[format]: '$_id.' + format, _id: 0, total: 1}}
+        {$group: {_id: {[metadata.columns[0]]: '$' + metadata.columns[0]}, total: {$sum: 1}}},
+        {$project: {[metadata.columns[0]]: '$_id.' + metadata.columns[0], _id: 0, total: 1}}
     ];
 
     if (metadata.type === 'peek') return [
@@ -677,14 +693,7 @@ export function buildMenu(step) {
 // If there is a postProcessing step at the given key, it will return modified data. Otherwise return the data unmodified
 let defaultValue = (value) => ({get: (target, name) => target.hasOwnProperty(name) ? target[name] : value});
 export let menuPostProcess = new Proxy({
-    'dyad': (data) => Object.keys(data).reduce((out, branch) => {
-        let [tabName, columnType, column] = branch.split('-');
-        out[tabName] = out[tabName] || {filters: {}};
-
-        if (columnType === 'full') out[tabName].full = data[branch];
-        if (columnType === 'filter') out[tabName].filters[column] = data[branch];
-        return out;
-    }, {}),
+    'dyad': data => data[0],
 
     'date': (data) => data
         .map(entry => ({'Date': new Date(entry['year'], entry['month'] - 1, 0), 'Freq': entry.total}))

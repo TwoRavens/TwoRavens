@@ -71,7 +71,7 @@ export default class CanvasDyad {
         this.searchTimeout = null;
     }
 
-    async search(subsetName, currentTab, metadata) {
+    async search(subsetName, currentTab, preferences, metadata) {
 
         let failedUpdateMonadListing = () => {
             console.warn("Network Issue: Update to monad listing failed");
@@ -83,7 +83,8 @@ export default class CanvasDyad {
 
         let monadUpdate = {
             type: 'menu',
-            metadata: Object.assign({}, metadata, {type: 'dyadSearch', currentTab}) // edit the metadata to be a search
+            metadata: Object.assign({}, metadata, {type: 'dyadSearch', currentTab}), // edit the metadata to be a search
+            preferences
         };
         await app.loadMenu(app.abstractManipulations, monadUpdate).catch(failedUpdateMonadListing);
         this.waitForQuery--;
@@ -159,7 +160,7 @@ export default class CanvasDyad {
                 : preferencesMonad['filters'][filter]['selected'].add(entry);
 
             clearTimeout(this.searchTimeout);
-            this.searchTimeout = setTimeout(() => this.search(subsetName, currentTab, metadata), searchLag);
+            this.searchTimeout = setTimeout(() => this.search(subsetName, currentTab, preferences, metadata), searchLag);
         };
 
         let popupAttributes = (column, value) => app.genericMetadata[app.selectedDataset]['formats'][column] && {
@@ -236,7 +237,7 @@ export default class CanvasDyad {
                             preferencesMonad['search'] = '';
                             Object.keys(preferencesMonad['filters']).map(filter => preferencesMonad['filters'][filter]['selected'] = new Set());
                             clearTimeout(this.searchTimeout);
-                            this.searchTimeout = setTimeout(() => this.search(subsetName, currentTab, metadata), searchLag);
+                            this.searchTimeout = setTimeout(() => this.search(subsetName, currentTab, preferences, metadata), searchLag);
                         }
                     },
                     "Clear All Filters"
@@ -251,7 +252,7 @@ export default class CanvasDyad {
                         }),
                         "Show Selected"
                     ),
-                    Object.keys(dataMonad['filters']).map(filter => [
+                    metadataMonad['filters'].map(filter => [
                         m(".separator"),
                         m("button.filter-base" + (preferencesMonad['filters'][filter]['expanded'] ? '.filter-collapse' : '.filter-expand'), {
                             onclick: () => preferencesMonad['filters'][filter]['expanded'] = !preferencesMonad['filters'][filter]['expanded']

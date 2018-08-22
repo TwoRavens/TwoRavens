@@ -315,22 +315,20 @@ async function updatePeek() {
         }
     };
 
-    let peekPipeline = queryMongo.buildPipeline([...abstractManipulations, peekMenu]);
+    let peekPipeline = queryMongo.buildPipeline([...abstractManipulations, peekMenu])['pipeline'];
 
     console.log("Peek Query:");
     console.log(JSON.stringify(peekPipeline));
 
-    let body = {
+    // cancel the request
+    if (!peekIsGetting) return;
+
+    let data = await getData({
         host: genericMetadata[selectedDataset]['host'],
         collection_name: selectedDataset,
         method: 'aggregate',
         query: JSON.stringify(peekPipeline)
-    };
-
-    // cancel the request
-    if (!peekIsGetting) return;
-
-    let data = await getData(body);
+    });
 
     peekIsGetting = false;
 
@@ -352,9 +350,8 @@ window.addEventListener('storage', onStorageEvent);
 
 // ~~~~ GLOBAL FUNCTIONS ~~~~
 export let getSubsetMetadata = (dataset, subset) => {
-
     let subsetMetadata = genericMetadata[dataset]['subsets'][subset];
-    if (!subsetMetadata) return;
+    if (!subsetMetadata) return {alignments: [], formats: [], columns: []};
 
     let columns = subsetMetadata['columns'] || [];
     if (subsetMetadata['type'] === 'dyad') Object.keys(subsetMetadata['tabs'])
@@ -420,7 +417,7 @@ export let loadMenu = async (abstractPipeline, menu, setIsLoading, setRedraw, se
         host: genericMetadata[dataset]['host'],
         collection_name: dataset,
         method: 'count',
-        query: queryMongo.buildPipeline(abstractPipeline)['pipeline']
+        query: JSON.stringify(queryMongo.buildPipeline(abstractPipeline)['pipeline'])
     }).then(count => {
         // intentionally breaks the entire downloading promise array and subsequent promise chain
         if (!count && requireMatch) throw 'no records matched';
@@ -430,11 +427,11 @@ export let loadMenu = async (abstractPipeline, menu, setIsLoading, setRedraw, se
     let data;
     promises.push(getData({
         host: genericMetadata[dataset]['host'],
-        dataset: dataset,
+        collection_name: dataset,
         method: 'aggregate',
-        query: compiled
+        query: JSON.stringify(compiled)
     })
-        .then(queryMongo.menuPostProcess[menu.type])
+        .then(queryMongo.menuPostProcess[menu.metadata.type])
         .then(response => data = response));
 
     let success = true;
@@ -471,9 +468,10 @@ export async function submitSubset() {
     };
 
     let newMenu = {
+        type: 'menu',
         name: selectedSubsetName,
         metadata: genericMetadata[selectedDataset]['subsets'][selectedSubsetName],
-        step: pendingSubset
+        preferences: subsetPreferences[selectedSubsetName]
     };
 
     await loadMenu(
@@ -528,10 +526,10 @@ export async function download(queryType, dataset, query) {
                 metadata: {variables}
             };
 
-            query = queryMongo.buildPipeline([...abstractManipulations, menuDownload])
+            query = queryMongo.buildPipeline([...abstractManipulations, menuDownload])['pipeline']
         }
         else if (queryType === 'aggregate')
-            query = queryMongo.buildPipeline([...abstractManipulations, aggregationStaged]);
+            query = queryMongo.buildPipeline([...abstractManipulations, aggregationStaged])['pipeline'];
     }
     // queryMongo is set when called from Saved Queries, but variables is unknown. Infer variables from the projection stage of the pipeline
     // aggregation queries handle inferring variables from inside reformatAggregation, so this only applies to subset

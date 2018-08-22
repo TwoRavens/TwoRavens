@@ -532,9 +532,10 @@ export default class Body_EventData {
 
                 if (!app.isLoading[app.selectedSubsetName]) {
                     let newMenu = {
+                        type: 'menu',
                         name: app.selectedSubsetName,
                         metadata: app.genericMetadata[app.selectedDataset]['subsets'][app.selectedSubsetName],
-                        step: app.pendingSubset
+                        preferences: app.subsetPreferences[app.selectedSubsetName]
                     };
                     app.loadMenu(app.abstractManipulations, newMenu,
                         state => app.isLoading[app.selectedSubsetName] = state,
@@ -656,7 +657,7 @@ export default class Body_EventData {
                     let preferences = app.subsetPreferences[app.selectedSubsetName];
                     if (app.selectedSubsetName === 'Custom') preferences = app.canvasPreferences['Custom'];
                     // add a constraint to the 'subset' pipeline step, given the menu state and menu metadata
-                    app.addConstraint(step, preferences, metadata);
+                    queryAbstract.addConstraint(step, preferences, metadata);
                 }
             }, 'Stage'),
             m(Canvas, {
