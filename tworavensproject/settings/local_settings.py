@@ -85,5 +85,5 @@ TA2_TEST_SERVER_URL = os.environ.get('TA2_TEST_SERVER_URL', 'localhost:45042')
 ALLOW_FAB_DELETE = True
 
 
-SOCIAL_AUTH_GITHUB_AUTH_EXTRA_ARGUMENTS = dict(\
-            redirect_uri='http://127.0.0.1:8080/oauth/complete/github/')
+#SOCIAL_AUTH_GITHUB_AUTH_EXTRA_ARGUMENTS = dict(\
+#            redirect_uri='http://127.0.0.1:8080/oauth/complete/github/')
