@@ -33,3 +33,13 @@ def test():
 
 if __name__ == '__main__':
     test()
+
+"""
+from django.conf import settings
+for val in settings._explicit_settings:
+    print(val, eval('settings.' + val))
+#    if not val.startswith('__'):
+        print(val, eval('settings.' + val))
+
+
+"""
