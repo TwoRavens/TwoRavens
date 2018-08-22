@@ -10,7 +10,7 @@ admin.site.site_title = ('TwoRavens Admin page')
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
 
-    url(r'^auth/', include('tworaven_apps.raven_auth.urls')),
+    url(r'^auth-local/', include('tworaven_apps.raven_auth.urls')),
 
     url(r'^workspaces/', include('tworaven_apps.workspaces.urls')),
 
@@ -30,7 +30,7 @@ urlpatterns = [
 
     # social auth
     #
-    url('auth-s/', include('social_django.urls', namespace='social')),
+    url('auth/', include('social_django.urls', namespace='social')),
 
     url(r'^', include('tworaven_apps.content_pages.urls')),
 

@@ -25,7 +25,7 @@ SESSION_COOKIE_NAME = os.environ.get('RAVENS_SESSION_COOKIE_NAME',
 # -----------------------------------
 GITHUB_REDIRECT_URI = os.environ.get(\
                         'GITHUB_REDIRECT_URI',
-                        'http://eventdata.2ravens.org/auth-s/complete/github/')
+                        'http://eventdata.2ravens.org/auth/complete/github/')
 
 SOCIAL_AUTH_GITHUB_AUTH_EXTRA_ARGUMENTS = dict(redirect_uri=GITHUB_REDIRECT_URI)
 

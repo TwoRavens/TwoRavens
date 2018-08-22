@@ -27,7 +27,7 @@ urlpatterns = [
 
     url(r'^logout/$',
         auth_views.LogoutView.as_view(\
-            **dict(next_page='/auth/login?just_logged_out')),
+            **dict(next_page='/auth-local/login?just_logged_out')),
         name='logout'),
 
     url(r'^test-state/$', views.test_state, name='test_state'),
