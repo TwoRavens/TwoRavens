@@ -11,7 +11,7 @@ def get_common_view_info(request):
 
     #info = dict()
     info = dict(is_authenticated=request.user.is_authenticated,
-                user=request.user)
+                username='%s' % request.user)
 
     return info
 
