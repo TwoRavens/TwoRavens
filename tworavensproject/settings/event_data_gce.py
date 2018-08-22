@@ -9,6 +9,8 @@ import os
 # -----------------------------------
 # Override some basic settings
 # -----------------------------------
+ALLOWED_HOSTS = ('.2ravens.org', )
+
 DEBUG = strtobool(os.environ.get('DEBUG', 'False'))
 
 # staticfiles served via nginx
@@ -19,6 +21,7 @@ if not os.path.isdir(STATIC_ROOT):
 
 SESSION_COOKIE_NAME = os.environ.get('RAVENS_SESSION_COOKIE_NAME',
                                      'gce_event_data')
+CSRF_COOKIE_NAME = 'gce_event_data_csrf'
 
 # -----------------------------------
 # Social Auth related for github login
