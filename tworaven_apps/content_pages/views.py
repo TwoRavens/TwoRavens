@@ -151,12 +151,17 @@ def view_test_csrf_required(request):
     if not req_body_info.success:
         return JsonResponse(get_json_error(req_body_info.err_msg))
 
+    # user info
+    #
     user_msg = 'Sending back info from request body...'
     user_info = dict(is_authenticated=request.user.is_authenticated,
                      username='%s' % request.user)
 
+    # full data returned
+    #
     data_info = dict(user_info=user_info,
                      orig_data_as_text=req_body_info.result_obj)
+
     return JsonResponse(get_json_success(\
                             user_msg,
                             data=data_info))
