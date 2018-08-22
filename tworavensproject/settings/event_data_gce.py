@@ -11,6 +11,10 @@ import os
 # -----------------------------------
 ALLOWED_HOSTS = ('*',) #('.2ravens.org', )
 
+# Use host forwarded from nginx
+#
+USE_X_FORWARDED_HOST = True
+
 DEBUG = strtobool(os.environ.get('DEBUG', 'False'))
 
 # staticfiles served via nginx
