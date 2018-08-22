@@ -30,13 +30,16 @@ urlpatterns = [
 
     # social auth
     #
-    url('auth-s/', include('social_django.urls', namespace='social')),
+    url('oauth/', include('social_django.urls', namespace='social')),
 
     url(r'^', include('tworaven_apps.content_pages.urls')),
 
-] + static(settings.STATIC_URL,
-           #document_root=settings.STATIC_ROOT)
-           document_root=settings.TEST_DIRECT_STATIC)
+]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.STATIC_URL,
+                          #document_root=settings.STATIC_ROOT)
+                          document_root=settings.TEST_DIRECT_STATIC)
 
 
 """

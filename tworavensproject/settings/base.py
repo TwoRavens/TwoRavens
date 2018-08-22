@@ -41,7 +41,9 @@ sys.path.append(TA3TA2_API_DIR)
 # See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = '&1p0bkm1!)x49#g^fcqlwa8ds_p_r$x@c*+vrpveaq=dhr_rzu'
+SECRET_KEY = os.environ.get(\
+                'SECRET_KEY',
+                'please-set-a-secret-secret-key')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -132,7 +134,7 @@ DATABASES = {
 # - Added 8/2018
 # https://python-social-auth.readthedocs.io/en/latest/configuration/django.html
 # -------------------------------
-ALLOW_SOCIAL_AUTH = strtobool(os.environ.get('ALLOW_SOCIAL_AUTH', 'False')) 
+ALLOW_SOCIAL_AUTH = strtobool(os.environ.get('ALLOW_SOCIAL_AUTH', 'False'))
 
 AUTHENTICATION_BACKENDS = (
     'social_core.backends.github.GithubOAuth2',
@@ -145,7 +147,7 @@ AUTHENTICATION_BACKENDS = (
 )
 SOCIAL_AUTH_URL_NAMESPACE = 'social'
 
-SOCIAL_AUTH_PIPELINE = (
+xSOCIAL_AUTH_PIPELINE = (
     'social_core.pipeline.social_auth.social_details',
     'social_core.pipeline.social_auth.social_uid',
     'social_core.pipeline.social_auth.social_user',
@@ -160,6 +162,7 @@ SOCIAL_AUTH_PIPELINE = (
 SOCIAL_AUTH_GITHUB_KEY = os.environ.get('SOCIAL_AUTH_GITHUB_KEY', 'not-set')
 SOCIAL_AUTH_GITHUB_SECRET = os.environ.get('SOCIAL_AUTH_GITHUB_SECRET', 'not-set')
 
+SOCIAL_AUTH_GITHUB_AUTH_EXTRA_ARGUMENTS = dict()
 #SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = os.environ.get(\
 #                            'SOCIAL_AUTH_GOOGLE_OAUTH2_KEY', 'not-set')
 #SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = os.environ.get(\
@@ -260,21 +263,26 @@ CELERY_BROKER_URL = 'redis://%s:%d' % (REDIS_HOST, REDIS_PORT)
 CELERY_RESULT_BACKEND = 'redis://%s:%d' % (REDIS_HOST, REDIS_PORT)
 
 # ---------------------------
-#  For depositing Dataverse data
+# EventData: depositing Dataverse data
 # ---------------------------
-DATAVERSE_SERVER = os.environ.get('DATAVERSE_SERVER', 'https://dataverse.harvard.edu')
+DATAVERSE_SERVER = os.environ.get('DATAVERSE_SERVER', 'https://demo.dataverse.org')
 DATAVERSE_API_KEY = os.environ.get('DATAVERSE_API_KEY', 'Get API Key from dataverse')
-DATASET_PERSISTENT_ID = os.environ.get('DATASET_PERSISTENT_ID', 'doi%3A10.7910%2FDVN%2FSJWX4S')
+DATASET_PERSISTENT_ID = os.environ.get('DATASET_PERSISTENT_ID', 'doi:10.5072/FK2/BGPZC3')
 
 # -------------------------
 # EventData: mongo related
 # -------------------------
-EVENTDATA_MONGO_DB_ADDRESS = os.environ.get(\
-                        'EVENTDATA_MONGO_DB_ADDRESS'\
-                        '127.0.0.1:27017')
+EVENTDATA_PRODUCTION_MODE = os.environ.get('EVENTDATA_PRODUCTION_MODE', "no") == "yes"
 
-EVENTDATA_MONGO_USERNAME = os.environ.get('EVENTDATA_MONGO_USERNAME',
-                                          'AdminEvent')
+EVENTDATA_MONGO_DB_ADDRESS = os.environ.get('EVENTDATA_MONGO_DB_ADDRESS', '127.0.0.1:27017')
 
-EVENTDATA_MONGO_PASSWORD = os.environ.get('EVENTDATA_MONGO_PASSWORD',
-                                          '')
+EVENTDATA_MONGO_USERNAME = os.environ.get('EVENTDATA_MONGO_USERNAME', '')
+EVENTDATA_MONGO_PASSWORD = os.environ.get('EVENTDATA_MONGO_PASSWORD', '')
+
+EVENTDATA_PHOENIX_SERVER_ADDRESS = 'http://149.165.156.33:5002/api/data?'
+EVENTDATA_PRODUCTION_SERVER_ADDRESS = os.environ.get('EVENTDATA_PRODUCTION_SERVER_ADDRESS', EVENTDATA_PHOENIX_SERVER_ADDRESS)
+
+# API KEY, Load from ENV variable.  If it doesn't exist, use the default
+EVENTDATA_DEFAULT_API_KEY = 'api_key=CD75737EF4CAC292EE17B85AAE4B6'
+EVENTDATA_SERVER_API_KEY = os.environ.get('EVENTDATA_SERVER_API_KEY', EVENTDATA_DEFAULT_API_KEY)
+EVENTDATA_DB_NAME = os.environ.get('EVENTDATA_DB_NAME', 'event_data')
