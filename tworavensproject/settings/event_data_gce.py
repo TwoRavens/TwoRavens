@@ -9,7 +9,7 @@ import os
 # -----------------------------------
 # Override some basic settings
 # -----------------------------------
-ALLOWED_HOSTS = ('.2ravens.org', )
+ALLOWED_HOSTS = ('*',) #('.2ravens.org', )
 
 DEBUG = strtobool(os.environ.get('DEBUG', 'False'))
 
