@@ -19,6 +19,10 @@ urlpatterns = (
         views.view_test_callback,
         name='view_test_callback'),
 
+    url(r'^test-csrf-required$',
+        views.view_test_csrf_required,
+        name='view_test_csrf_required'),
+
     url(r'^app-domain-config-error-test$',
         views.view_no_domain_config_error_test,
         name='view_no_domain_config_error_test'),

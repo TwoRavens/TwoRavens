@@ -649,8 +649,8 @@ class Body {
                                   app.zPop();
                                   let rookpipe = await app.makeRequest(ROOK_SVC_URL + 'pipelineapp', app.zparams);
                                   rookpipe.target = rookpipe.depvar[0];
-                                  let myn = app.findNodeIndex(rookpipe.target, true);   
-                                  let currentTaskType = app.d3mProblemDescription.taskType;                                
+                                  let myn = app.findNodeIndex(rookpipe.target, true);
+                                  let currentTaskType = app.d3mProblemDescription.taskType;
                                   let currentMetric = app.d3mProblemDescription.performanceMetrics[0].metric;
                                   if (myn.nature == "nominal"){
                                     rookpipe.task = currentTaskType === 'taskTypeUndefined' ? 'classification' : currentTaskType;
@@ -717,7 +717,7 @@ class Body {
     }
 
     header(mode) {
-        let userlinks = username === 'no logged in user' ? [
+        let userlinks = username === '' ? [
             {title: "Log in", url: login_url},
             {title: "Sign up", url: signup_url}
         ] : [{title: "Workspaces", url: workspaces_url},
