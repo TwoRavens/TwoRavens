@@ -149,18 +149,6 @@ def view_monitoring_alive(request):
                              message="TwoRavens python server up"))
 
 
-@csrf_exempt
-def view_test_csrf_exempt(request):
-    """for testing csrf exempt call"""
-    req_body_info = get_request_body(request)
-    if not req_body_info.success:
-        return JsonResponse(get_json_error(req_body_info.err_msg))
-
-    user_msg = 'Sending back info from request body...'
-    return JsonResponse(get_json_success(\
-                        user_msg,
-                        data=req_body_info.result_obj))
-
 def view_test_csrf_required(request):
     """for testing csrf call"""
     req_body_info = get_request_body(request)
