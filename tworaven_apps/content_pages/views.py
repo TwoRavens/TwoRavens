@@ -8,7 +8,6 @@ from django.conf import settings
 
 from tworaven_apps.utils.view_helper import \
     (get_request_body, get_request_body_as_json,
-     get_common_view_info,
      get_json_error,
      get_json_success)
 
@@ -54,9 +53,6 @@ def view_pebbles_home(request):
                  TA2_STATIC_TEST_MODE=settings.TA2_STATIC_TEST_MODE,
                  TA2_TEST_SERVER_URL=settings.TA2_TEST_SERVER_URL,
                  TA3_GRPC_USER_AGENT=settings.TA3_GRPC_USER_AGENT, TA3TA2_API_VERSION=TA3TA2Util.get_api_version())
-
-    for k, v in dinfo.items():
-        print(k, v)
 
     return render(request,
                   'index.html',
@@ -156,7 +152,10 @@ def view_test_csrf_required(request):
         return JsonResponse(get_json_error(req_body_info.err_msg))
 
     user_msg = 'Sending back info from request body...'
-    data_info = dict(user_info=get_common_view_info(request),
+    user_info = dict(is_authenticated=request.user.is_authenticated,
+                     username='%s' % request.user)
+
+    data_info = dict(user_info=user_info,
                      orig_data_as_text=req_body_info.result_obj)
     return JsonResponse(get_json_success(\
                             user_msg,
