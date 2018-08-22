@@ -1,3 +1,6 @@
+"""
+Settings for deployment on eventdata.2ravens.org
+"""
 from .dev_container2 import *
 from distutils.util import strtobool
 import os

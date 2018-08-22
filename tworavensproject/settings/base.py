@@ -147,7 +147,7 @@ AUTHENTICATION_BACKENDS = (
 )
 SOCIAL_AUTH_URL_NAMESPACE = 'social'
 
-SOCIAL_AUTH_PIPELINE = (
+xSOCIAL_AUTH_PIPELINE = (
     'social_core.pipeline.social_auth.social_details',
     'social_core.pipeline.social_auth.social_uid',
     'social_core.pipeline.social_auth.social_user',
