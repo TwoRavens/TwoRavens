@@ -13,7 +13,9 @@ from django.views.decorators.csrf import csrf_exempt
 from tworaven_apps.utils.view_helper import \
     (get_request_body_as_json,
      get_json_error,
-     get_json_success)
+     get_json_success,
+     get_common_view_info)
+from tworaven_apps.utils.json_helper import format_pretty_from_dict
 from tworaven_apps.utils.basic_response import (ok_resp,
                                                 err_resp,
                                                 err_resp_with_data)
@@ -26,18 +28,27 @@ from tworaven_apps.eventdata_queries.models import \
     (EventDataSavedQuery,)
 
 
-# Create your views here.
+def view_eventdata_api_info(request):
+    """List some API info, for developers"""
 
+    info = get_common_view_info(request)
+
+    return render(request,
+                  'eventdata/view_event_data_api_info.html',
+                  info)
 @csrf_exempt
-def api_add_query(request):
-    """add query to the db
-    Json input :
-    { "name":"query1",
-      "description":"query1 desc",
-      "username":"two ravens",
-      "query":" set data",
-      "result_count":"4"
-      }
+def api_add_event_data_query(request):
+    """
+    Add an EventDataSavedQuery to the database
+    Example Json included in the body of th request:
+        {
+           "name":"User entered query name",
+           "description":"In this query I am ...."
+           "query":[ "... mongo query, either list or dict ..." ],
+           "collection_name":"acled_africa",
+           "collection_type":"subset",
+           "result_count":161939,
+        }
     """
     if not request.user.is_authenticated:
         user_msg = 'You must be logged in.'
@@ -80,32 +91,35 @@ def api_add_query(request):
 
 
 @csrf_exempt
-def api_get_list(request):
-    """ return all the list"""
-    success, jobs = EventJobUtil.get_list_all()
-    # print(jobs)
-    if not success:
-        usr_msg = dict(success=False,
-                       message=get_json_error(jobs))
-        return JsonResponse(usr_msg)
+def api_get_event_data_queries(request):
+    """Return a list of queries for the current user"""
+    if not request.user.is_authenticated:
+        user_msg = 'You must be logged in.'
+        return JsonResponse(get_json_error(user_msg),
+                            status=403)
 
-    else:
-        job_list = []
-        for job in jobs:
-            # print("list : ",job)
-            job_list.append(job)
+    query_info = EventDataSavedQuery.get_query_list_for_user(request.user)
+    if not query_info.success:
+        return JsonResponse(get_json_error(query_info.err_msg))
 
-        usr_msg = dict(success=True,
-                       message='list retrieved',
-                       data=job_list)
+    user_msg = dict(success=True,
+                    message='list retrieved',
+                    data=query_info.result_obj)
 
-        return JsonResponse(usr_msg)
+    if 'pretty' in request.GET:
+        fmt_info = format_pretty_from_dict(user_msg)
+        if not fmt_info.success:
+            return JsonResponse(get_json_error(fmt_info.err_msg))
+
+        return HttpResponse('<pre>%s</pre>' % fmt_info.result_obj)
+
+    return JsonResponse(user_msg)
 
 
 @csrf_exempt
-def api_retrieve_object(request, job_id):
+def api_retrieve_event_data_query(request, query_id):
     """ get object by id"""
-    success, jobs = EventJobUtil.get_object_by_id(job_id)
+    success, jobs = EventJobUtil.get_object_by_id(query_id)
 
     if not success:
         usr_msg = dict(success=False,

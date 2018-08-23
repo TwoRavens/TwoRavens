@@ -92,7 +92,7 @@ class EventDataQueryAddTest(TestCase):
         "collection_name": "cline_phoenix_fbis",
         "save_to_dataverse": True}
 
-        url = reverse('api_add_query')
+        url = reverse('api_add_event_data_query')
 
         response = self.client.post(url,
                                     json.dumps(self.input_json1),
@@ -121,7 +121,7 @@ class EventDataQueryAddTest(TestCase):
         """(20) Test list all objects"""
         msgt(self.test_020_list.__doc__)
 
-        url = reverse('api_add_query')
+        url = reverse('api_add_event_data_query')
 
         response1 = self.client.post(url,
                                      json.dumps(self.input_json1),
@@ -137,7 +137,7 @@ class EventDataQueryAddTest(TestCase):
 
 
         # retrieve objects
-        url_list = reverse('api_get_list')
+        url_list = reverse('api_get_event_data_queries')
 
         response_list = self.client.get(url_list)
 
@@ -158,7 +158,7 @@ class EventDataQueryAddTest(TestCase):
         """(30) Test retrieval of particular object"""
         msgt(self.test_030_retrieve_object.__doc__)
 
-        url = reverse('api_add_query')
+        url = reverse('api_add_event_data_query')
 
         response = self.client.post(url, json.dumps(self.input_json1),
                                     content_type="application/json")
@@ -169,7 +169,7 @@ class EventDataQueryAddTest(TestCase):
 
         # get object
 
-        url_get_obj = reverse('api_retrieve_object', kwargs={'job_id': 1})
+        url_get_obj = reverse('api_retrieve_event_data_query', kwargs={'job_id': 1})
         response_list = self.client.get(url_get_obj)
         self.assertEqual(response_list.status_code, 200)
         # print("json res", response_list)
@@ -199,7 +199,7 @@ class EventDataQueryAddTest(TestCase):
             "username": "two ravens"
         }   # this should not work as incorrect user name
 
-        url = reverse('api_add_query')
+        url = reverse('api_add_event_data_query')
 
         response1 = self.client.post(url,
                                      json.dumps(self.input_json1),

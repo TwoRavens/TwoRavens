@@ -46,22 +46,22 @@ def json_dumps(data_dict, indent=None):
 
 def format_pretty_from_dict(info_dict, indent=4):
     """Load a string into JSON"""
-
-    try:
-        return True, json.dumps(info_dict, indent=indent)
-    except TypeError as ex_obj:
-        return False, '(Invalid JSON) ' + ex_obj
+    return json_dumps(info_dict, indent)
+    #try:
+    #    return ok_resp(json.dumps(info_dict, indent=indent))
+    #except TypeError as ex_obj:
+    #    return err_resp('(Invalid JSON) %s' % ex_obj)
 
 
 def format_pretty(json_string, indent=4):
-    """Load a string into JSON"""
+    """Load a string and return it as a formatted JSON string"""
 
-    try:
-        d = json.loads(json_string)
-    except TypeError:
-        return False, '(Invalid JSON) ' + json_string
+    json_info = json_loads(json_string)
+    if not json_info.success:
+        return err_resp(json_info.err_msg)
 
-    return True, json.dumps(d, indent=indent)
+    return json_dumps(json_info.result_obj, indent)
+
 
 
 def format_jsonfield_for_admin(json_dict, indent=4):

@@ -157,13 +157,14 @@ class EventDataSavedQuery(TimeStampedModel):
         else:
             return ok_resp(result)
 
-    def get_field_list_for_values(self):
+    @staticmethod
+    def get_field_list_for_values():
         """List of fields used for a queryset 'values' function"""
         return ['id', 'name', 'user__username',
-                'description','result_count',
-                'created', 'modified',
-                'collection_name',
-                'collection_type']
+                'description', 'result_count',
+                'collection_name', 'collection_type',
+                'hash_id',
+                'created', 'modified',]
 
 
     def get_filtered_objects(self, **kwargs):
@@ -174,25 +175,45 @@ class EventDataSavedQuery(TimeStampedModel):
                 arguments[k] = v
 
         result = EventDataSavedQuery.objects.values(\
-                     *self.get_field_list_for_values(),
+                      *EventDataSavedQuery.get_field_list_for_values()\
                      ).filter(**arguments).all()
 
-        if not result:
+        if result.count() == 0:
             return err_resp('could not get the object for the inputs')
 
-        else:
-            return ok_resp(result)
+        return ok_resp(result)
 
-    def get_all_fields_except_query_list(self):
+
+    @staticmethod
+    def get_query_list_for_user(user):
         """ get all fields expect query"""
-        result = EventDataSavedQuery.objects.values( \
-                     *self.get_field_list_for_values()).all()
+        if not isinstance(user, User):
+            user_msg = 'A user must be specified.'
+            return err_resp(user_msg)
 
-        if result.count() == 0:
+        if not user.is_active:
+            user_msg = 'The user is no longer active.'
+            return err_resp(user_msg)
+
+        orig_list = EventDataSavedQuery.objects.filter(\
+                     user=user\
+                    ).values(*EventDataSavedQuery.get_field_list_for_values()\
+                    ).all()
+
+        fmt_list = []
+        for item in orig_list:
+            item['user'] = item['user__username']
+            del item['user__username']
+            item['detail_url'] = reverse('api_retrieve_event_data_query',
+                                         kwargs=dict(query_id=item['id']))
+            fmt_list = item
+        print(orig_list[0])
+
+        if orig_list.count() == 0:
             err_msg = ('No EventDataSavedQuery objects found.')
             return err_resp(err_msg)
 
-        return ok_resp(result)
+        return ok_resp(list(orig_list))
 
 
     def queries_to_dataverse(self):

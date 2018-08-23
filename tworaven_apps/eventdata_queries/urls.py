@@ -6,17 +6,21 @@ urlpatterns = [
 
     # for adding query
     #
+    path(r'api/info-page',
+         views.view_eventdata_api_info,
+         name='view_eventdata_api_info'),
+
     path(r'api/add-query',
-         views.api_add_query,
-         name='api_add_query'),
+         views.api_add_event_data_query,
+         name='api_add_event_data_query'),
 
     path(r'api/list',
-         views.api_get_list,
-         name='api_get_list'),
+         views.api_get_event_data_queries,
+         name='api_get_event_data_queries'),
 
-    re_path(r'api/get/(?P<job_id>[0-9]{1,10})$',
-            views.api_retrieve_object,
-            name='api_retrieve_object'),
+    re_path(r'api/get/(?P<query_id>[0-9]{1,10})$',
+            views.api_retrieve_event_data_query,
+            name='api_retrieve_event_data_query'),
 
     path(r'api/search',
          views.api_search,
