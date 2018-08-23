@@ -30,8 +30,18 @@ from tworaven_apps.eventdata_queries.models import \
 
 def view_eventdata_api_info(request):
     """List some API info, for developers"""
+    if not request.user.is_authenticated:
+        pass
+        #user_msg = 'You must be logged in.'
+        #return HttpResponse(user_msg)
 
     info = get_common_view_info(request)
+
+    sample_saved_query = None
+    if request.user.is_authenticated:
+        sample_saved_query = EventDataSavedQuery.objects.filter(\
+                                user=request.user).first()
+    info['sample_saved_query'] = sample_saved_query
 
     return render(request,
                   'eventdata/view_event_data_api_info.html',
@@ -117,21 +127,38 @@ def api_get_event_data_queries(request):
 
 
 @csrf_exempt
-def api_retrieve_event_data_query(request, query_id):
-    """ get object by id"""
-    success, jobs = EventJobUtil.get_object_by_id(query_id)
+def api_retrieve_event_data_query(request, query_id=None):
+    """Retrieve a specific EventDataSavedQuery"""
+    if not request.user.is_authenticated:
+        user_msg = 'You must be logged in.'
+        return JsonResponse(get_json_error(user_msg),
+                            status=403)
 
-    if not success:
-        usr_msg = dict(success=False,
-                       message=get_json_error(jobs))
-        return JsonResponse(usr_msg)
+    if not query_id:
+        # shouldn't happen, just used to show plain url ...
+        user_msg = 'You must specify a query_id in the url.'
+        return JsonResponse(get_json_error(user_msg))
 
-    else:
-        usr_msg = dict(success=True,
-                       message='list retrieved',
-                       data=jobs.as_dict())
 
-        return JsonResponse(usr_msg)
+    query_info = EventJobUtil.get_by_id_and_user(\
+                                query_id,
+                                request.user)
+
+    if not query_info.success:
+        return JsonResponse(get_json_error(query_info.err_msg))
+
+    user_info = get_json_success('Query found!',
+                                 data=query_info.result_obj.as_dict())
+
+    if 'pretty' in request.GET:
+        fmt_info = format_pretty_from_dict(user_info)
+        if not fmt_info.success:
+            return JsonResponse(get_json_error(fmt_info.err_msg))
+
+        return HttpResponse('<pre>%s</pre>' % fmt_info.result_obj)
+
+
+    return JsonResponse(user_info)
 
 
 @csrf_exempt

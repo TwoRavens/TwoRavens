@@ -22,6 +22,10 @@ urlpatterns = [
             views.api_retrieve_event_data_query,
             name='api_retrieve_event_data_query'),
 
+    re_path(r'api/get/$',
+            views.api_retrieve_event_data_query,
+            name='api_retrieve_event_data_query_base'),
+
     path(r'api/search',
          views.api_search,
          name='api_search'),

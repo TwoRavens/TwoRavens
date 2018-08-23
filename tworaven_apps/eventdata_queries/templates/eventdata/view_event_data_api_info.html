@@ -4,6 +4,17 @@
   {% block main_content %}
   <div class="row">
     <div class="col-12 col-md-6">
+      {% include "content_pages/snippet_return_to_links.html" %}
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-12 col-md-6">
+      <h3>EventData API Notes</h3>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-12 col-md-6">
 
       {% if user.is_authenticated %}
       <div class="alert alert-info" role="alert">
@@ -49,7 +60,7 @@
           <li><b>Endpoint:</b>
               <code>{% url 'api_get_event_data_queries' %}</code></li>
           <li><b>Test:</b>
-              <a href="{% url 'api_get_event_data_queries' %}?pretty">{% url 'api_get_event_data_queries' %}</a>
+              <a href="{% url 'api_get_event_data_queries' %}?pretty">{% url 'api_get_event_data_queries' %}</a></li>
 
           <li><b>Method</b>: GET</li>
           <li><b>Notes</b>:
@@ -61,68 +72,62 @@
           <li><b>Example</b>:
             <br />
             <pre><code>
-{
-   "name": "User entered query name",
-   "description": "In this query I am ...."
-   "query": [ "... mongo query, either list or dict ..." ],
-   "collection_name": "acled_africa",
-   "collection_type": "subset",
-   "result_count": 161939,
-}
+  {
+      "success": true,
+      "message": "list retrieved",
+      "data": [
+          {
+              "id": 4,
+              "name": "q12",
+              "description": "adfg",
+              "result_count": 161939,
+              "collection_name": "acled_africa",
+              "collection_type": "subset",
+              "hash_id": "992d7264200e3c73220bf430cdc0cef5d5a1469eebbd727aa358b98b",
+              "created": "2018-08-23T21:39:28.067790+00:00",
+              "modified": "2018-08-23T21:39:28.077061+00:00",
+              "user": "dev_admin",
+              "detail_url": "/eventdata/api/get/4"
+          },
+          ...etc...
+      ]
+  }
         </code></pre>
           </li>
         </ul>
     </div>
   </div>
 
-      <br />
-      <!-- Health/Monitoring checks -->
-      <div class="card">
-        <div class="card-header"><b>Health/Monitoring checks</b></div>
-        <div class="card-body">
-          <ul>
-            <li><b>python app:</b> <a href="{% url 'view_monitoring_alive' %}">{% url 'view_monitoring_alive' %}</a></li>
-            </li>
-
-            <li><b>rook app:</b> <a href="{% url 'view_rook_route' 'healthcheckapp' %}">{% url 'view_rook_route' 'healthcheckapp' %}</a></li>
-            </li>
-          </ul>
-        </div>
-      </div>
-      <br />
-      <!-- Error pages -->
-      <div class="card">
-        <div class="card-header"><b>Error pages</b></div>
-        <div class="card-body">
-          <ul>
-            <li><a href="{% url 'view_no_domain_config_error_test' %}">App/UI config error (test page)</a>
-              <p>(normally triggered when in no AppConfiguration entries exist--e.g. app doesn't know which domain to use)</p></li>
-            <li><a href="{% url 'view_d3m_config_error_test' %}">D3M config error (test page)</a>
-              <p>(normally triggered when in D3M mode but no D3M configs are loaded)</p></li>
-
-            <hr />
-
-            <li><a href="/aint-nothing-here-404">404 trigger</a> (shows formatted page in production)</li>
-            <li><a href="{% url 'view_err_500_test' %}">500 trigger</a> (shows formatted page in production)</li>
-          </ul>
-        </div>
-      </div>
-    </div><!-- end: column -->
-    <!-- start: column -->
-    <div class="col-12 col-md-6">
+</div><!-- end: column -->
 
 
-
+<!-- start: column -->
+<div class="col-12 col-md-6">
       <!-- D3M config info -->
       <div class="card">
-        <div class="card-header"><b>D3M config info</b></div>
+        <div class="card-header"><b>Retrieve a single query for the logged in user</b></div>
         <div class="card-body">
           <ul>
-            <li><a href="{% url 'view_d3m_list' %}">
-                  D3M configs in the database</a>
-                  <p>Includes API endpoints to retrieve JSON config info,
-                  dataset schema file contents, problem schema file contents, etc.</p>
-              </li>
+            <li><b>Endpoint:</b>
+                <code>{% url 'api_retrieve_event_data_query_base' %}{query_id}</code></li>
+            {% if sample_saved_query %}
+            <li><b>Example:</b>
+                <a href="{% url 'api_retrieve_event_data_query' sample_saved_query.id %}?pretty">{% url 'api_retrieve_event_data_query' sample_saved_query.id %}</a>
+                  &nbsp; &nbsp; (live example)
+            </li>
+            {% else %}
+            <li><b>Example:</b>
+              <code>{% url 'api_retrieve_event_data_query_base' %}34</code>
+              &nbsp; &nbsp; (non-working)
+            </li>
+            {% endif %}
+            <li><b>Method</b>: GET</li>
+            <li><b>Notes</b>:
+              <ul>
+                <li>If not logged in, returns a `403` forbidden error</li>
+                <li>The query must be one saved by the logged in user</li>
+              </ul>
+            </li>
           </ul>
         </div>
       </div>

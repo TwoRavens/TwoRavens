@@ -120,7 +120,7 @@ class EventDataSavedQuery(TimeStampedModel):
         for attr_name in self.__dict__.keys():
 
             # check for attributes to skip...
-            if attr_name.startswith('_'):
+            if attr_name.startswith('_') or attr_name == 'query':
                 continue
 
             val = self.__dict__[attr_name]
@@ -133,6 +133,8 @@ class EventDataSavedQuery(TimeStampedModel):
                 od[attr_name] = val
             else:
                 od[attr_name] = val
+
+        od['query'] = self.query
 
         return od
 
@@ -200,6 +202,8 @@ class EventDataSavedQuery(TimeStampedModel):
                     ).values(*EventDataSavedQuery.get_field_list_for_values()\
                     ).all()
 
+        # Format the list including adding a detail url
+        #
         fmt_list = []
         for item in orig_list:
             item['user'] = item['user__username']

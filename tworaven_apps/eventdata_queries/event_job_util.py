@@ -33,35 +33,30 @@ from dateutil import parser
 
 
 class EventJobUtil(object):
-    """Convinence class for the eventdata queries """
+    """Convenience class for the eventdata queries """
     dataverse_server = settings.DATAVERSE_SERVER  # no trailing slash
     api_key = settings.DATAVERSE_API_KEY  # generated from kripanshu's account
     persistentId = settings.DATASET_PERSISTENT_ID  # doi or hdl of the dataset
 
 
     @staticmethod
-    def get_list_all():
-        """get all the jobs"""
-        job = EventDataSavedQuery()
-        success, get_list_obj = job.get_all_fields_except_query_list()
-
-        if success:
-            return ok_resp(get_list_obj)
-
-        else:
-            return err_resp(get_list_obj)
-
-    @staticmethod
-    def get_object_by_id(job_id):
+    def get_by_id_and_user(query_id, user):
         """get object by id"""
-        success, get_list_obj = EventDataSavedQuery.get_objects_by_id(job_id)
-        # print("event util obj", get_list_obj)
+        if not isinstance(user, User):
+            user_msg = 'A user was not specified'
+            return err_resp(user_msg)
 
-        if success:
-            return ok_resp(get_list_obj)
+        try:
+            saved_query = EventDataSavedQuery.objects.get(\
+                                pk=query_id,
+                                user=user)
+        except EventDataSavedQuery.DoesNotExist:
+            user_msg = ('A query was not found for the'
+                        ' given query_id and user')
+            return err_resp(user_msg)
 
-        else:
-            return err_resp(get_list_obj)
+        return ok_resp(saved_query)
+
 
     @staticmethod
     def search_object(**kwargs):
