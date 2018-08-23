@@ -51,6 +51,7 @@ class EventDataSavedQuery(TimeStampedModel):
     description = models.TextField(blank=True)
 
     user = models.ForeignKey(User,
+                             db_index=True,
                              on_delete=models.PROTECT)
 
     query = jsonfield.JSONField(blank=False,
@@ -80,7 +81,14 @@ class EventDataSavedQuery(TimeStampedModel):
         """order by creation date"""
         ordering = ('-created',)
         verbose_name_plural = 'Event data saved queries'
-        
+
+        # avoid a user saving dupe queries
+        #
+        unique_together = ('user',
+                           'collection_type',
+                           'collection_name',
+                           'query',)
+
     def __str__(self):
         """object repr"""
         # query_str = json.dumps(self.query, indent=4)
@@ -92,6 +100,7 @@ class EventDataSavedQuery(TimeStampedModel):
             return self.id
 
         return None
+
 
     def save(self, *args, **kwargs):
         """For any auto-created fields"""

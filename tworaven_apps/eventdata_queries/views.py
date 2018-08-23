@@ -1,7 +1,9 @@
-from django.shortcuts import render
 import json
+
+from django.shortcuts import render
 from collections import OrderedDict
 from django.shortcuts import render
+from django.db import IntegrityError
 from django.http import \
     (JsonResponse, HttpResponse,
      Http404, HttpResponseRedirect,
@@ -49,7 +51,9 @@ def api_add_query(request):
 
     # Validate form results
     #
-    frm = EventDataSavedQueryForm(json_info.result_obj)
+    event_data_info = json_info.result_obj
+    event_data_info['user'] = request.user.id
+    frm = EventDataSavedQueryForm(event_data_info)
 
     if not frm.is_valid():
         user_msg = dict(success=False,
@@ -60,8 +64,13 @@ def api_add_query(request):
     # Save the object
     #
     saved_query = EventDataSavedQuery(**frm.cleaned_data)
-    saved_query.user = request.user
-    saved_query.save()
+
+    try:
+        saved_query.save()
+    except IntegrityError:
+        # rare to get here--maybe simultaneous saves...
+        user_msg = EventDataSavedQueryForm.get_duplicate_record_error_msg()
+        return JsonResponse(get_json_error(user_msg))
 
     ok_info = get_json_success(\
                 'Query saved!',

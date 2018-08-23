@@ -14,6 +14,7 @@ class EventDataSavedQueryForm(forms.ModelForm):
     class Meta:
         model = EventDataSavedQuery
         fields = ['name',
+                  'user',
                   'description',
                   'query',
                   'result_count',
@@ -34,6 +35,49 @@ class EventDataSavedQueryForm(forms.ModelForm):
             raise forms.ValidationError(user_msg)
 
         return query_info
+
+
+    @staticmethod
+    def get_duplicate_record_error_msg():
+        """Return error message for breaking unique constraints"""
+        dupe_err_msg = ('You have already saved a query with this information.'
+                        ' (Same query, collection, and collection name.)')
+
+        return dupe_err_msg
+
+    def clean(self):
+        """Check is this unsaved model already exists"""
+
+        filter_params = {}
+        unique_key = ['user', 'collection_name', 'collection_type', 'query']
+        for key in unique_key:
+            filter_params[key] = self.cleaned_data[key]
+
+        # check 1
+        #
+        cnt = EventDataSavedQuery.objects.filter(**filter_params).count()
+        if cnt > 0:
+            # already exists, save will fail
+            #
+            self._errors["query"] = self.error_class(\
+                            [self.get_duplicate_record_error_msg()])
+            del self.cleaned_data["query"]
+
+        else:
+            # check 2
+            #
+            filter_params2 = dict(user=self.cleaned_data['user'],
+                                  name=self.cleaned_data['name'])
+
+            cnt2 = EventDataSavedQuery.objects.filter(**filter_params2).count()
+            if cnt2 > 0:
+                user_msg = ('You have already used this name.'
+                            ' Please use a different name for this query.')
+                self._errors["name"] = self.error_class(\
+                                            [user_msg])
+                del self.cleaned_data["name"]
+
+        return self.cleaned_data
 
 
 
