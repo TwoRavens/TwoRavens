@@ -1,20 +1,27 @@
-from django.db import models
+"""
+Models for saving EventData queries
+"""
 import json, jsonfield
 import decimal
+import hashlib
+from collections import OrderedDict
+from datetime import datetime
+
 from django.db import models
 from django.urls import reverse
 from django.conf import settings
 from django.utils.text import slugify
 from django.db import transaction
+from django.db.models import Q
+from django.utils.timesince import timesince as timesince_
+
+from model_utils.models import TimeStampedModel
 
 from tworaven_apps.raven_auth.models import User
-from collections import OrderedDict
 from tworaven_apps.utils.basic_response import (ok_resp,
                                                 err_resp,
                                                 err_resp_with_data)
-from django.db.models import Q
-# For the prototype, set the current schema for now...
-from model_utils.models import TimeStampedModel
+
 
 IN_PROCESS = u'PENDING'
 ERROR = u'FAILURE'
@@ -40,27 +47,42 @@ class EventDataSavedQuery(TimeStampedModel):
     """ Model to store queries"""
     name = models.CharField(blank=False,
                             max_length=255)
+
     description = models.TextField(blank=True)
-    username = models.CharField(blank=False,
-                                max_length=255)
-    query = jsonfield.JSONField(default=None,
-                                blank=False,
+
+    user = models.ForeignKey(User,
+                             on_delete=models.PROTECT)
+
+    query = jsonfield.JSONField(blank=False,
                                 load_kwargs=dict(object_pairs_hook=OrderedDict))
 
     result_count = models.IntegerField(default=-1)
-    created = models.DateTimeField(auto_now_add=True)
-    modified = models.DateTimeField(auto_now_add=True)
+
     collection_type = models.CharField(blank=False,
-                                    max_length=255,
-                                    choices=TYPE_CHOICES,
-                                    default=SUBSET)
-    collection_name = models.CharField(blank=False,max_length=255, default="mongo dataset")
-    save_to_dataverse = models.BooleanField(blank=True, default=False)
+                                       max_length=255,
+                                       choices=TYPE_CHOICES,
+                                       default=SUBSET)
+
+    collection_name = models.CharField(blank=False,
+                                       max_length=255,
+                                       default="mongo dataset")
+
+    save_to_dataverse = models.BooleanField(blank=True,
+                                            default=False)
+
+
+    hash_id = models.CharField(help_text='(auto-generated)',
+                               max_length=255,
+                               blank=True)
+
 
     class Meta:
+        """order by creation date"""
         ordering = ('-created',)
-
+        verbose_name_plural = 'Event data saved queries'
+        
     def __str__(self):
+        """object repr"""
         # query_str = json.dumps(self.query, indent=4)
         return self.name
 
@@ -72,6 +94,13 @@ class EventDataSavedQuery(TimeStampedModel):
         return None
 
     def save(self, *args, **kwargs):
+        """For any auto-created fields"""
+        if not self.id:
+            super(EventDataSavedQuery, self).save(*args, **kwargs)
+
+        if not self.hash_id:
+            hash_str = '%s %s' % (self.id, self.created)
+            self.hash_id = hashlib.sha224(hash_str.encode('utf-8')).hexdigest()
 
         super(EventDataSavedQuery, self).save(*args, **kwargs)
 
@@ -90,7 +119,7 @@ class EventDataSavedQuery(TimeStampedModel):
                 # this is a file field...
                 #
                 val = str(val)  # file path or empty string
-                if val == '':
+                if not val:
                     val = None
                 od[attr_name] = val
             else:
@@ -98,8 +127,8 @@ class EventDataSavedQuery(TimeStampedModel):
 
         return od
 
-
-    def get_all_objects(self):
+    @staticmethod
+    def get_all_objects():
         """return all objects"""
         result = EventDataSavedQuery.objects.all()
 
@@ -108,8 +137,8 @@ class EventDataSavedQuery(TimeStampedModel):
         else:
             return ok_resp(result)
 
-
-    def get_objects_by_id(self, job_id):
+    @staticmethod
+    def get_objects_by_id(job_id):
         """return object by id"""
         result = EventDataSavedQuery.objects.filter(id=job_id).first()
 
@@ -119,6 +148,15 @@ class EventDataSavedQuery(TimeStampedModel):
         else:
             return ok_resp(result)
 
+    def get_field_list_for_values(self):
+        """List of fields used for a queryset 'values' function"""
+        return ['id', 'name', 'user__username',
+                'description','result_count',
+                'created', 'modified',
+                'collection_name',
+                'collection_type']
+
+
     def get_filtered_objects(self, **kwargs):
         """get all the filtered objects"""
         arguments = {}
@@ -126,9 +164,9 @@ class EventDataSavedQuery(TimeStampedModel):
             if v:
                 arguments[k] = v
 
-        result = EventDataSavedQuery.objects.values('id', 'name', 'username', 'description','result_count',
-                                                    'created', 'modified', 'collection_name', 'collection_type'
-                                                    ).filter(**arguments).all()
+        result = EventDataSavedQuery.objects.values(\
+                     *self.get_field_list_for_values(),
+                     ).filter(**arguments).all()
 
         if not result:
             return err_resp('could not get the object for the inputs')
@@ -138,43 +176,58 @@ class EventDataSavedQuery(TimeStampedModel):
 
     def get_all_fields_except_query_list(self):
         """ get all fields expect query"""
-        result = EventDataSavedQuery.objects.values('id','name', 'username', 'description',
-                                                    'result_count', 'created', 'modified', 'collection_name', 'collection_type').all()
+        result = EventDataSavedQuery.objects.values( \
+                     *self.get_field_list_for_values()).all()
 
-        if not result:
-            return err_resp('could not get the object list')
+        if result.count() == 0:
+            err_msg = ('No EventDataSavedQuery objects found.')
+            return err_resp(err_msg)
 
-        else:
-            return ok_resp(result)
+        return ok_resp(result)
+
 
     def queries_to_dataverse(self):
         """ get list of all the queries to be saved to dataverse"""
         result = EventDataSavedQuery.objects.filter(save_to_dataverse=True)
 
-        if not result:
-            return err_resp('could not get the object list')
+        if result.count() == 0:
+            user_msg = ('No EventDataSavedQuery objects found that'
+                        ' have been saved to Dataverse')
+            return err_resp(user_msg)
 
-        else:
-            return ok_resp(result)
+        return ok_resp(result)
 
 
 
 class ArchiveQueryJob(TimeStampedModel):
     """archive query job"""
-    datafile_id = models.IntegerField(default=-1, unique=True)
+    datafile_id = models.IntegerField(\
+                        "Datverse file id",
+                        default=-1,
+                        unique=True)
+
     saved_query = models.ForeignKey(EventDataSavedQuery,
                                     on_delete=models.PROTECT)
+
     status = models.CharField(max_length=100,
                               choices=STATUS_CHOICES,
                               default=IN_PROCESS)
+
     is_finished = models.BooleanField(default=False)
+
     is_success = models.BooleanField(default=False)
+
     message = models.TextField(default=None)
-    created = models.DateTimeField(auto_now_add=True)
-    modified = models.DateTimeField(auto_now_add=True)
-    dataverse_response = jsonfield.JSONField(blank=True,
-                                             load_kwargs=dict(object_pairs_hook=OrderedDict))
+
+    dataverse_response = jsonfield.JSONField(\
+                            blank=True,
+                            load_kwargs=dict(object_pairs_hook=OrderedDict))
+
     archive_url = models.URLField(blank=True)
+
+    hash_id = models.CharField(help_text='(auto-generated)',
+                               max_length=255,
+                               blank=True)
 
     class Meta:
         ordering = ('-created',)
@@ -199,6 +252,13 @@ class ArchiveQueryJob(TimeStampedModel):
 
     def save(self, *args, **kwargs):
 
+        if not self.id:
+            super(ArchiveQueryJob, self).save(*args, **kwargs)
+
+        if not self.hash_id:
+            hash_str = '%s %s' % (self.id, self.created)
+            self.hash_id = hashlib.sha224(hash_str.encode('utf-8')).hexdigest()
+
         super(ArchiveQueryJob, self).save(*args, **kwargs)
 
     def as_dict(self):
@@ -216,7 +276,7 @@ class ArchiveQueryJob(TimeStampedModel):
                 # this is a file field...
                 #
                 val = str(val)  # file path or empty string
-                if val == '':
+                if not val:
                     val = None
                 od[attr_name] = val
             else:
@@ -225,24 +285,28 @@ class ArchiveQueryJob(TimeStampedModel):
 
         return od
 
-    def get_all_objects(self):
+    @staticmethod
+    def get_all_objects():
         """return all objects"""
         result = ArchiveQueryJob.objects.all()
 
-        if not result:
-            return err_resp('could not get the object list as %s' % result)
-        else:
-            return ok_resp(result)
+        if result.count() == 0:
+            user_msg = 'No ArchiveQueryJob objects found in the database.'
+            return err_resp(user_msg)
 
-    def get_objects_by_id(self, datafile_id):
+        return ok_resp(result)
+
+    @staticmethod
+    def get_objects_by_id(datafile_id):
         """return object by id"""
         result = ArchiveQueryJob.objects.filter(datafile_id=datafile_id).first()
 
         if not result:
-            return err_resp('could not get the object for id %s' % datafile_id)
+            user_msg = 'No ArchiveQueryJob for Datafile id: %s' % datafile_id
+            return err_resp(user_msg)
 
-        else:
-            return ok_resp(result)
+        return ok_resp(result)
+
 
     def get_filtered_objects(self, **kwargs):
         """get all the filtered objects"""
@@ -253,34 +317,64 @@ class ArchiveQueryJob(TimeStampedModel):
 
         result = ArchiveQueryJob.objects.filter(**arguments).all()
 
-        if not result:
-            return err_resp('could not get the object for the inputs')
+        if result.count() == 0:
+            user_msg = 'No ArchiveQueryJob objects found for this query'
+            return err_resp(user_msg)
 
         else:
             return ok_resp(result)
 
 
-class UserNotificationModel(TimeStampedModel):
-    """ it is to store all the notifications sent to user"""
+class UserNotification(TimeStampedModel):
+    """"it is to store all the notifications sent to user"""
 
-    user = models.ForeignKey(User, db_column='user', on_delete=models.DO_NOTHING)
-    message = models.CharField(blank=False, max_length=1255)
-    created = models.DateTimeField(auto_now_add=True)
-    modified = models.DateTimeField(auto_now_add=True)
-    read = models.BooleanField(blank=True, default=False)
-    archived_query = jsonfield.JSONField(default=None,
-                                blank=False,
-                                load_kwargs=dict(object_pairs_hook=OrderedDict))
+    recipient = models.ForeignKey(User,
+                                  on_delete=models.CASCADE)
 
+    unread = models.BooleanField(default=True,
+                                 db_index=True)
+
+    emailed = models.BooleanField(default=False, db_index=True)
+
+    message = models.TextField()
+
+    is_read = models.BooleanField(default=False)
+
+    archived_query = jsonfield.JSONField(\
+                        blank=False,
+                        load_kwargs=dict(object_pairs_hook=OrderedDict))
+
+    hash_id = models.CharField(help_text='(auto-generated)',
+                               max_length=255,
+                               blank=True)
     class Meta:
         ordering = ('-created',)
 
     def __str__(self):
         return '%s' % self.user.username
 
-    def save(self, *args, **kwargs):
 
-        super(UserNotificationModel, self).save(*args, **kwargs)
+    def timesince(self, current_time=None):
+        """
+        src: https://github.com/django-notifications/django-notifications/blob/master/notifications/models.py
+        Shortcut for the ``django.utils.timesince.timesince`` function of the
+        current timestamp.
+        """
+        if now is None:
+            current_time = datetime.now()
+        return timesince_(self.created, current_time)
+
+
+    def save(self, *args, **kwargs):
+        """Create auto-populated fields"""
+        if not self.id:
+            super(UserNotification, self).save(*args, **kwargs)
+
+        if not self.hash_id:
+            hash_str = '%s %s' % (self.id, self.created)
+            self.hash_id = hashlib.sha224(hash_str.encode('utf-8')).hexdigest()
+
+        super(UserNotification, self).save(*args, **kwargs)
 
     def as_dict(self):
         """convert into orederd dict"""
@@ -298,7 +392,7 @@ class UserNotificationModel(TimeStampedModel):
                 # this is a file field...
                 #
                 val = str(val)  # file path or empty string
-                if val == '':
+                if not val:
                     val = None
                 od[attr_name] = val
             else:
@@ -306,19 +400,21 @@ class UserNotificationModel(TimeStampedModel):
 
         return od
 
-    def get_all_objects(self):
+    @staticmethod
+    def get_all_objects():
         """return all objects"""
-        result = UserNotificationModel.objects.all()
+        result = UserNotification.objects.all()
 
-        if not result:
-            return err_resp('could not get the object list as %s' % result)
+        if result.count() == 0:
+            return err_resp('No UserNotification results found')
         else:
             return ok_resp(result)
 
 
-    def get_objects_by_id(self, user_key):
+    @staticmethod
+    def get_objects_by_id(user_key):
         """return object by id"""
-        result = UserNotificationModel.objects.filter(user=user_key).all()
+        result = UserNotification.objects.filter(user=user_key).all()
 
         if not result:
             return err_resp('could not get the object for id %s' % user_key)

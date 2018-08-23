@@ -20,7 +20,8 @@ from tworaven_apps.eventdata_queries.forms import (EventDataSavedQueryForm,
                                                    EventDataQueryFormSearch,
                                                    EventDataGetDataForm,
                                                    EventDataGetMetadataForm)
-from tworaven_apps.eventdata_queries.models import (SEARCH_PARAMETERS)
+from tworaven_apps.eventdata_queries.models import \
+    (EventDataSavedQuery,)
 
 
 # Create your views here.
@@ -36,32 +37,37 @@ def api_add_query(request):
       "result_count":"4"
       }
     """
-    success, json_req_obj = get_request_body_as_json(request)
+    if not request.user.is_authenticated:
+        user_msg = 'You must be logged in.'
+        return JsonResponse(get_json_error(user_msg),
+                            status=403)
+
+    json_info = get_request_body_as_json(request)
     # if json is not valid
-    if not success:
-        usr_msg = dict(success=False,
-                       error=get_json_error(json_req_obj))
-        return JsonResponse(usr_msg)
+    if not json_info.success:
+        return JsonResponse(get_json_error(json_info.err_msg))
 
-    # json is valid
-    # print("input json : ", json.dumps(json_req_obj))
-
-    frm = EventDataSavedQueryForm(json_req_obj)
+    # Validate form results
+    #
+    frm = EventDataSavedQueryForm(json_info.result_obj)
 
     if not frm.is_valid():
-        print(" frm error ")
         user_msg = dict(success=False,
                         message='Invalid input',
                         errors=frm.errors)
         return JsonResponse(user_msg)
 
-    # print('frm.cleaned_data', frm.cleaned_data)
-    success, addquery_obj_err = EventJobUtil.add_query_db(json_req_obj)
+    # Save the object
+    #
+    saved_query = EventDataSavedQuery(**frm.cleaned_data)
+    saved_query.user = request.user
+    saved_query.save()
 
-    if not success:
-        return JsonResponse(get_json_error(addquery_obj_err))
+    ok_info = get_json_success(\
+                'Query saved!',
+                data=saved_query.as_dict())
 
-    return JsonResponse(addquery_obj_err)
+    return JsonResponse(ok_info)
 
 
 @csrf_exempt
