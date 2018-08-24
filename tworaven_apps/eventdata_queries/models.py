@@ -221,8 +221,9 @@ class EventDataSavedQuery(TimeStampedModel):
                                          kwargs=dict(query_id=item['id']))
             fmt_list.append(item)
 
-        final_results = dict(count=len(fmt_list),
-                             query_list=fmt_list)
+        final_results = OrderedDict()
+        final_results['count'] = len(fmt_list)
+        final_results['query_list'] = fmt_list
 
         return ok_resp(final_results)
 

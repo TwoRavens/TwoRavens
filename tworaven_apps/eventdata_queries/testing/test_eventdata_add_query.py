@@ -213,7 +213,7 @@ class EventDataQueryAddTest(TestCase):
         self.assertEqual(response1.status_code, 200)
         self.assertEqual(response2.status_code, 200)
 
-        url_search = reverse('api_search')
+        url_search = reverse('api_search_event_data_queries')
 
         response_search1 = self.client.post(url_search, json.dumps(search_json1),
                                             content_type="application/json")

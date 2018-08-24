@@ -27,8 +27,8 @@ urlpatterns = [
             name='api_retrieve_event_data_query_base'),
 
     path(r'api/search',
-         views.api_search,
-         name='api_search'),
+         views.api_search_event_data_queries,
+         name='api_search_event_data_queries'),
 
     re_path(r'api/upload-dataverse/(?P<query_id>[0-9]{1,10})$',
             views.api_upload_to_dataverse,

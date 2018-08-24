@@ -92,8 +92,17 @@ class EventJobUtil(object):
                             (key,)
                 return err_resp(user_msg)
 
-        filters = {'description__icontains': json_search_info[SEARCH_KEY_DESCRIPTION],
-                   'name__icontains': json_search_info[SEARCH_KEY_NAME]}
+        filters = dict()
+        if SEARCH_KEY_DESCRIPTION in json_search_info:
+            filters['description__icontains'] = json_search_info[SEARCH_KEY_DESCRIPTION]
+
+        if SEARCH_KEY_NAME in json_search_info:
+            filters['name__icontains'] = json_search_info[SEARCH_KEY_NAME]
+
+        if not filters: # shouldn't happen b/c just checked
+            user_msg = 'Please enter at least 1 search term.'
+            return err_resp(user_msg)
+
 
         query_results = EventDataSavedQuery.get_query_list_for_user(\
                             user, **filters)
@@ -101,7 +110,11 @@ class EventJobUtil(object):
         if not query_results.success:
             return err_resp(query_results.err_msg)
 
-        return ok_resp(query_results.result_obj)
+
+        final_results = query_results.result_obj
+        final_results['search_params'] = json_search_info
+        final_results.move_to_end('search_params', last=False)
+        return ok_resp(final_results)
 
 
     @staticmethod

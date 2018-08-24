@@ -1,7 +1,7 @@
 import json
-
-from django.shortcuts import render
 from collections import OrderedDict
+
+from django.conf import settings
 from django.shortcuts import render
 from django.db import IntegrityError
 from django.http import \
@@ -46,6 +46,10 @@ def view_eventdata_api_info(request):
         sample_saved_query = EventDataSavedQuery.objects.filter(\
                                 user=request.user).first()
     info['sample_saved_query'] = sample_saved_query
+    info['SEARCH_PARAMETERS'] = SEARCH_PARAMETERS
+    info['SEARCH_KEY_NAME'] = SEARCH_KEY_NAME
+    info['SEARCH_KEY_DESCRIPTION'] = SEARCH_KEY_DESCRIPTION
+    info['CSRF_COOKIE_NAME'] = settings.CSRF_COOKIE_NAME
 
     return render(request,
                   'eventdata/view_event_data_api_info.html',
@@ -168,7 +172,7 @@ def api_retrieve_event_data_query(request, query_id=None):
 
 
 @csrf_exempt
-def api_search(request):
+def api_search_event_data_queries(request):
     """Search about models data ( query data )
     sample input : {
     "name":"query1",

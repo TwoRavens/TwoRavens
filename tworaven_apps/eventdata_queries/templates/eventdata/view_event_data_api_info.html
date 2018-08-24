@@ -1,6 +1,56 @@
 {% extends "base.html" %}
 {% load static %}
 
+{% block extra_js %}
+<script src="{% static "pkgs/bootstrap4/jquery-3.2.1.min.js" %}"></script>
+
+<script>
+// --------------------------
+// CSRF cookie
+// --------------------------
+const csrf_cookie_name = "{{ CSRF_COOKIE_NAME }}";
+
+function getCookie(key) {
+    var keyValue = document.cookie.match('(^|;) ?' + key + '=([^;]*)(;|$)');
+    return keyValue ? keyValue[2] : null;
+}
+
+{% if sample_saved_query %}
+// Request with custom header
+const someTestData = { {{SEARCH_KEY_NAME}}: "{{ sample_saved_query.name }}",};
+
+{% else %}
+const someTestData = { {{ SEARCH_KEY_NAME }}: "",
+                       {{ SEARCH_KEY_DESCRIPTION }}: ""};
+
+{% endif %}
+
+function makeTestSearch(){
+    $.ajax({
+        type: "POST",
+        contentType: "application/json",
+        url: '{% url "api_search_event_data_queries" %}',
+        data: JSON.stringify(someTestData),
+        dataType: 'json',
+        headers: { 'X-CSRFToken': getCookie(csrf_cookie_name)},
+        success: function(respData) {
+            console.log("SUCCESS: ", respData);
+            alert(JSON.stringify(respData));
+        },
+        error: function(e) {
+            console.log("ERROR: ", e);
+            alert(JSON.stringify(respData));
+        },
+        done: function(e) {
+            console.log('done...');
+            }
+      });
+  }
+// --------------------------
+// end: example/test function
+// --------------------------
+</script>
+{% endblock %}
   {% block main_content %}
   <div class="row">
     <div class="col-12 col-md-6">
@@ -124,6 +174,7 @@
           <ul>
             <li><b>Endpoint:</b>
                 <code>{% url 'api_retrieve_event_data_query_base' %}{query_id}</code></li>
+            <li><b>Method</b>: GET</li>
             {% if sample_saved_query %}
             <li><b>Example:</b>
                 <a href="{% url 'api_retrieve_event_data_query' sample_saved_query.id %}?pretty">{% url 'api_retrieve_event_data_query' sample_saved_query.id %}</a>
@@ -135,7 +186,6 @@
               &nbsp; &nbsp; (non-working)
             </li>
             {% endif %}
-            <li><b>Method</b>: GET</li>
             <li><b>Notes</b>:
               <ul>
                 <li>If not logged in, returns a `403` forbidden error</li>
@@ -150,14 +200,29 @@
       <br />
       <!-- Registration related -->
       <div class="card">
-        <div class="card-header"><b>Registration related</b></div>
+        <div class="card-header"><b>Search a user's queries</b></div>
         <div class="card-body">
           <ul>
-            <li><a href="{% url 'signup' %}">Sign Up</a></li>
-            <li><a href="{% url 'login' %}">Log in</a></li>
-            <li><a href="{% url 'logout' %}?next=/">Log out</a> (forwards to login)</li>
-            <li><a href="{% url 'password_reset' %}">Forgot password</a> (enter email)</li>
-            <li><a href="{% url 'password_reset_done' %}">Password reset instructions</a> (after submitting email)</li>
+            <li><b>Endpoint:</b>
+                <code>{% url 'api_search_event_data_queries' %}</code></li>
+            <li><b>Method</b>: POST</li>
+            <li><b>Example:</b>
+
+                <a href="#" onclick="javascript:makeTestSearch()">Run a search</a>
+                  &nbsp; &nbsp; (live example)
+            </li>
+            <li><b>Notes</b>:
+              <ul>
+                <li>Search parameters:
+                    {% for param in SEARCH_PARAMETERS %}
+                    <code><b>{{ param }}</b></code>{% if not forloop.last %}, {% endif %}
+                    {% endfor %}
+                </li>
+                <li>Only queries are shown for the logged in user</li>
+              </ul>
+            </li>
+            <li><b>Examples</b>:
+                Same output as <a href="#list-user-queries"><b>List a User's Queries</b></a>
           </ul>
         </div>
       </div>
