@@ -13,7 +13,10 @@ from tworaven_apps.utils.view_helper import \
 from tworaven_apps.utils.basic_response import (ok_resp,
                                                 err_resp,
                                                 err_resp_with_data)
-from tworaven_apps.eventdata_queries.models import (EventDataSavedQuery, ArchiveQueryJob, UserNotificationModel, IN_PROCESS, ERROR, COMPLETE)
+from tworaven_apps.eventdata_queries.models import \
+    (EventDataSavedQuery, ArchiveQueryJob, UserNotification,
+     SEARCH_PARAMETERS, SEARCH_KEY_NAME, SEARCH_KEY_DESCRIPTION,
+     IN_PROCESS, ERROR, COMPLETE)
 from tworaven_apps.eventdata_queries.dataverse.temporary_file_maker import TemporaryFileMaker
 from tworaven_apps.eventdata_queries.dataverse.dataverse_publish_dataset import DataversePublishDataset
 from tworaven_apps.eventdata_queries.dataverse.dataverse_list_files_dataset import ListFilesInDataset
@@ -33,80 +36,96 @@ from dateutil import parser
 
 
 class EventJobUtil(object):
-    """Convinence class for the eventdata queries """
+    """Convenience class for the eventdata queries """
     dataverse_server = settings.DATAVERSE_SERVER  # no trailing slash
     api_key = settings.DATAVERSE_API_KEY  # generated from kripanshu's account
     persistentId = settings.DATASET_PERSISTENT_ID  # doi or hdl of the dataset
 
-    @staticmethod
-    def add_query_db(query_info):
-        """ add the query to db"""
-
-        job = EventDataSavedQuery(**query_info)
-
-        job.save()
-        # return True,"All good"
-        print("job :", job.as_dict())
-        if job.id:
-            """no error"""
-            usr_dict = dict(success=True,
-                            message="query saved",
-                            data=job.as_dict())
-            return ok_resp(usr_dict)
-        else:
-            """error"""
-            usr_dict = dict(success=False,
-                            message="failed to save query",
-                            id=job.id)
-            return err_resp(usr_dict)
-
 
     @staticmethod
-    def get_list_all():
-        """get all the jobs"""
-        job = EventDataSavedQuery()
-        success, get_list_obj = job.get_all_fields_except_query_list()
-
-        if success:
-            return ok_resp(get_list_obj)
-
-        else:
-            return err_resp(get_list_obj)
-
-    @staticmethod
-    def get_object_by_id(job_id):
+    def get_by_id_and_user(query_id, user):
         """get object by id"""
-        job = EventDataSavedQuery()
-        success, get_list_obj = job.get_objects_by_id(job_id)
-        # print("event util obj", get_list_obj)
+        if not isinstance(user, User):
+            user_msg = 'A user was not specified'
+            return err_resp(user_msg)
 
-        if success:
-            return ok_resp(get_list_obj)
+        try:
+            saved_query = EventDataSavedQuery.objects.get(\
+                                pk=query_id,
+                                user=user)
+        except EventDataSavedQuery.DoesNotExist:
+            user_msg = ('A query was not found for the'
+                        ' given query id and user')
+            return err_resp(user_msg)
 
-        else:
-            return err_resp(get_list_obj)
+        return ok_resp(saved_query)
 
-    @staticmethod
-    def search_object(**kwargs):
-        """ return objects on the basis of request json"""
-
-        job = EventDataSavedQuery()
-        success, get_filtered_obj = job.get_filtered_objects(**kwargs)
-        # print("list of objects", get_filtered_obj)
-
-        if success:
-            return ok_resp(get_filtered_obj)
-
-        else:
-            return err_resp(get_filtered_obj)
 
     @staticmethod
-    def get_query_from_object(query_id):
+    def search_objects(user, json_search_info):
+        """Search for EventDataSavedQuery objects saved by the given user"""
+        if not isinstance(json_search_info, dict):
+            user_msg = ('Expected a the search info to be a python dict'
+                        ' (unusual error)')
+            return err_resp(user_msg)
+
+        if not json_search_info:
+            user_msg = 'Please enter at least 1 search term.'
+            return err_resp(user_msg)
+
+        if not isinstance(user, User):
+            user_msg = 'A user was not specified'
+            return err_resp(user_msg)
+
+        # Make sure the search parameters are valid
+        #
+        for key, val in json_search_info.items():
+            if key not in SEARCH_PARAMETERS:
+                user_msg = ('"%s" is not a valid search parameter.'
+                            ' Valid parameters: %s') % \
+                            (key, ', '.join(SEARCH_PARAMETERS))
+                return err_resp(user_msg)
+
+            if not val:
+                user_msg = ('A value is needed for the search'
+                            ' parameter "%s"') % \
+                            (key,)
+                return err_resp(user_msg)
+
+        filters = dict()
+        if SEARCH_KEY_DESCRIPTION in json_search_info:
+            filters['description__icontains'] = json_search_info[SEARCH_KEY_DESCRIPTION]
+
+        if SEARCH_KEY_NAME in json_search_info:
+            filters['name__icontains'] = json_search_info[SEARCH_KEY_NAME]
+
+        if not filters: # shouldn't happen b/c just checked
+            user_msg = 'Please enter at least 1 search term.'
+            return err_resp(user_msg)
+
+
+        query_results = EventDataSavedQuery.get_query_list_for_user(\
+                            user, **filters)
+
+        if not query_results.success:
+            return err_resp(query_results.err_msg)
+
+
+        final_results = query_results.result_obj
+        final_results['search_params'] = json_search_info
+        final_results.move_to_end('search_params', last=False)
+        return ok_resp(final_results)
+
+
+    @staticmethod
+    def get_query_from_object(query_id, user):
         """ return query obj"""
+        return get_json_error('temp disabled!!')
+
         print('-' * 40)
         print('getting object for query_id %s' % query_id)
         print('-' * 40)
-        success, event_obj = EventJobUtil.get_object_by_id(query_id)
+        success, event_obj = EventJobUtil.get_by_id_and_user(query_id, user)
 
         if not success:
             return get_json_error(event_obj)
@@ -184,17 +203,18 @@ class EventJobUtil(object):
             except ArchiveQueryJob.DoesNotExist:
                 search_obj = None
             if search_obj is None:
-                succ, add_archive = EventJobUtil.add_archive_query_job(datafile_id=file_id,
-                                                                       saved_query=saved_query,
-                                                                       status=COMPLETE,
-                                                                       is_finished=True,
-                                                                       is_success=True,
-                                                                       message='query result successfully created',
-                                                                       dataverse_response=d,
-                                                                       archive_url=file_url)
-                if not succ:
-                    has_error = True
-                    error_list.append('Could not add the object with file id %s' % file_id)
+                succ, add_archive = EventJobUtil.add_archive_query_job(\
+                    datafile_id=file_id,
+                    saved_query=saved_query,
+                    status=COMPLETE,
+                    is_finished=True,
+                    is_success=True,
+                    message='query result successfully created',
+                    dataverse_response=d,
+                    archive_url=file_url)
+            if not succ:
+                has_error = True
+                error_list.append('Could not add the object with file id %s' % file_id)
             else:
                 has_error = True
                 error_list.append('Object with file ID %s already exists' % file_id)
@@ -206,41 +226,6 @@ class EventJobUtil(object):
         else:
             return ok_resp(ok_response)
 
-        # print(""" files has been successfully uploaded to dataverse, saving to database  EventDataSavedQuery""")
-        # now upload to ARCHIVE
-        # succ, res_obj = temp_file_obj.return_status()
-        # print("res po", res_obj)
-        # if not succ:
-        #     return err_resp(res_obj)
-        # else:
-        #
-        # try:
-        #     saved_query = EventDataSavedQuery.objects.get(id=query_id)
-        #
-        # except ValueError:
-        #     return err_resp('Could not retrieve query for id %s' % query_id)
-        #
-        # try:
-        #     datafile_id = res_status['data']['files'][0]['dataFile']['id']
-        #
-        # except ValueError:
-        #     return err_resp('Could not retrieve datafile id for query_id %s' % query_id)
-        #
-        # url_input = 'https://dataverse.harvard.edu/file.xhtml?fileId=' + str(datafile_id) + '&version=DRAFT'
-        #
-        # succ, add_archive = EventJobUtil.add_archive_query_job(datafile_id=int(datafile_id),
-        #                                                        saved_query=saved_query,
-        #                                                        status='complete',
-        #                                                        is_finished=True,
-        #                                                        is_success=True,
-        #                                                        message='query result successfully created',
-        #                                                        dataverse_response=r,
-        #                                                        archive_url=url_input)
-        #
-        # if not succ:
-        #     return err_resp(add_archive)
-        # else:
-        #     return ok_resp(add_archive)
 
     @staticmethod
     def add_archive_query_job(**kwargs):
@@ -265,23 +250,9 @@ class EventJobUtil(object):
 
 
     @staticmethod
-    def get_archive_query_object(datafile_id):
-        """ get the data for datafile_id object"""
-        job = ArchiveQueryJob()
-        success, get_list_obj = job.get_objects_by_id(datafile_id)
-        # print("event util obj", get_list_obj)
-
-        if success:
-            return ok_resp(get_list_obj)
-
-        else:
-            return err_resp(get_list_obj)
-
-    @staticmethod
     def get_all_archive_query_objects():
         """ get list of all objects"""
-        job = ArchiveQueryJob()
-        success, get_list_obj = job.get_all_objects()
+        success, get_list_obj = ArchiveQueryJob.get_all_objects()
 
         if success:
             return ok_resp(get_list_obj)
@@ -304,26 +275,6 @@ class EventJobUtil(object):
         else:
             print("message from dataverse publish success ", res)
             return ok_resp(res)
-        #     success, res_info = job2.return_status()
-        #     # print("Res : ********* : ", res_info)
-        #     if success:
-        #         job_archive = ArchiveQueryJob()
-        #         for d in res_info['data']['latestVersion']['files']:
-        #             # print("*******")
-        #             file_id = d['dataFile']['id']
-        #             file_url = d['dataFile']['pidURL']
-        #             success, archive_job = job_archive.get_objects_by_id(file_id)
-        #             if success:
-        #                 archive_job.archive_url = file_url
-        #                 archive_job.save()
-        #                 return ok_resp(res)
-        #             else:
-        #                 return err_resp(archive_job)
-        #     else:
-        #         return err_resp(res_info)
-        #
-        # else:
-        #     return err_resp(res)
 
     @staticmethod
     def get_dataverse_files(version_id):
@@ -361,8 +312,7 @@ class EventJobUtil(object):
     @staticmethod
     def get_archive_query_object(datafile_id):
         """ get the data for datafile_id object"""
-        job = ArchiveQueryJob()
-        success, get_list_obj = job.get_objects_by_id(datafile_id)
+        success, get_list_obj = ArchiveQueryJob.get_objects_by_id(datafile_id)
         print("event util obj", get_list_obj)
 
         if success:
@@ -374,8 +324,7 @@ class EventJobUtil(object):
     @staticmethod
     def get_all_archive_query_objects():
         """ get list of all objects"""
-        job = ArchiveQueryJob()
-        success, get_list_obj = job.get_all_objects()
+        success, get_list_obj = ArchiveQueryJob.get_all_objects()
 
         if success:
             return ok_resp(get_list_obj)
@@ -396,12 +345,11 @@ class EventJobUtil(object):
             success, res_info = job2.return_status()
             print("Res : ********* : ", res_info)
             if success:
-                job_archive = ArchiveQueryJob()
                 for d in res_info['data']['latestVersion']['files']:
                     print("*******")
                     file_id = d['dataFile']['id']
                     file_url = d['dataFile']['pidURL']
-                    success, archive_job = job_archive.get_objects_by_id(file_id)
+                    success, archive_job = ArchiveQueryJob.get_objects_by_id(file_id)
                     if success:
                         archive_job.archive_url = file_url
                         archive_job.save()
@@ -520,7 +468,7 @@ class EventJobUtil(object):
                           message=message,
                           read=False,
                           archived_query=query)
-        user_notify = UserNotificationModel(**input_data)
+        user_notify = UserNotification(**input_data)
         user_notify.save()
 
         if user_notify.id:
