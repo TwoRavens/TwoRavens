@@ -106,8 +106,8 @@ export default class CanvasSavedQueries {
                             e.stopPropagation();
                             app.setLaddaSpinner('btnDownload' + result.id, true);
                             if (this.result !== result.id || !preferences['query']) await this.getQuery(preferences, result.id);
-                            await app.download(result.collection_type, result.collection_name, preferences['query']);
-                            app.laddaStopAll();
+                            await app.download(result.collection_name, JSON.stringify(preferences['query']))
+                                .finally(() => app.setLaddaSpinner('btnDownload' + result.id, false));
                         }
                     }, 'Download')
                 ),

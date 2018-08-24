@@ -1,35 +1,34 @@
 import * as app from "./app";
 import m from "mithril";
 
+import * as common from '../../common-eventdata/common';
+
 // Edit tree (typically called from JQtree)
 
 window.callbackDeleteTransform = function(id) {
     let [stepId, transformationName] = id.split('-');
-    let step = app.getTransformStep(stepId);
+    let step = [...app.abstractManipulations, app.pendingSubset].find(step => step.id === Number(stepId));
     step.transforms.splice(step.transforms.findIndex(transformation => transformation.name === transformationName), 1);
 
     m.redraw();
 };
 
 window.callbackOperator = function (id, operand) {
-    let subsetTree = $('#subsetTree');
+    let stepId = id.split('-')[0];
+    let subsetTree = $('#subsetTree' + stepId);
     let node = subsetTree.tree('getNodeById', id);
     if (('editable' in node && !node.editable) || node['type'] === 'query') return;
 
     node.operation = operand;
-
-    let stepID = id.split('-')[0];
-    app.getTransformStep(stepID).abstractQuery = JSON.parse(subsetTree.tree('toJson'));
-
+    let step = [...app.abstractManipulations, app.pendingSubset].find(step => step.id === Number(stepId));
+    step.abstractQuery = JSON.parse(subsetTree.tree('toJson'));
     m.redraw();
 };
 
-
-
 // attached to window due to html injection in jqtree
-window.callbackDelete = function (id) {
-
-    let subsetTree = $('#subsetTree');
+window.callbackDelete = async function (id) {
+    let stepId = id.split('-')[0];
+    let subsetTree = $('#subsetTree' + stepId);
     let node = subsetTree.tree('getNodeById', id);
     if (node.type === 'query' && !confirm("You are deleting a query. This will return your subsetting to an earlier state."))
         return;
@@ -40,32 +39,34 @@ window.callbackDelete = function (id) {
     } else {
         subsetTree.tree('removeNode', node);
 
-        let step = app.getTransformStep(id.split('-')[0]);
+        let step = [...app.abstractManipulations, app.pendingSubset].find(step => step.id === Number(stepId));
         step.abstractQuery = JSON.parse(subsetTree.tree('toJson'));
 
         hideFirst(step.abstractQuery);
         m.redraw();
 
         if (node.type === 'query') {
-            app.loadMenu(app.selectedSubsetName, {recount: true});
+            app.abstractManipulations.splice(app.abstractManipulations.indexOf(step), 1);
+            let newMenu = {
+                type: 'menu',
+                name: app.selectedSubsetName,
+                metadata: app.genericMetadata[app.selectedDataset]['subsets'][app.selectedSubsetName],
+                preferences: app.subsetPreferences[app.selectedSubsetName]
+            };
+            await app.loadMenuEventData(app.abstractManipulations, newMenu, {recount: true});
 
             // clear all subset data. Note this is intentionally mutating the object, not rebinding it
             Object.keys(app.subsetData)
                 .filter(subset => subset !== app.selectedSubsetName)
                 .forEach(subset => delete app.subsetData[subset]);
-
-            if (step.abstractQuery.length === 0) {
-                step.nodeId = 1;
-                step.groupId = 1;
-                step.queryId = 1;
-            }
         }
     }
 };
 
 
 window.callbackNegate = function (id, bool) {
-    let subsetTree = $('#subsetTree');
+    let stepId = id.split('-')[0];
+    let subsetTree = $('#subsetTree' + stepId);
     let node = subsetTree.tree('getNodeById', id);
 
     // don't permit change in negation on non-editable node
@@ -73,8 +74,8 @@ window.callbackNegate = function (id, bool) {
 
     node.negate = bool;
 
-    let stepID = id.split('-')[0];
-    app.getTransformStep(stepID).abstractQuery = JSON.parse(subsetTree.tree('toJson'));
+    let step = [...app.abstractManipulations, app.pendingSubset].find(step => step.id === Number(stepId));
+    step.abstractQuery = JSON.parse(subsetTree.tree('toJson'));
     m.redraw();
 };
 
@@ -159,7 +160,7 @@ export function addGroup(step) {
             movedChildren[child_id] = disableEditRecursive(movedChildren[child_id]);
         }
         step.abstractQuery.push({
-            id: step.id + '-' + String(step.nodeId++),
+            id: String(step.id) + '-' + String(step.nodeId++),
             name: 'Query ' + String(step.queryId++),
             operation: 'and',
             editable: true,
@@ -170,7 +171,7 @@ export function addGroup(step) {
         });
     } else {
         step.abstractQuery.push({
-            id: step.id + '-' + String(step.nodeId++),
+            id: String(step.id) + '-' + String(step.nodeId++),
             name: 'Group ' + String(step.groupId++),
             operation: 'and',
             type: 'group',
@@ -183,19 +184,19 @@ export function addGroup(step) {
     m.redraw();
 
     if (!query) {
-        let qtree = $('#subsetTree');
+        let qtree = $('#subsetTree' + String(step.id));
         qtree.tree('openNode', qtree.tree('getNodeById', step.nodeId - 1), true);
     }
 }
 
 /**
  * @param step: pipeline stepID
+ * @param name: name displayed on constraint in menu
  * @param preferences: menu state
  * @param metadata: menu type, column names, etc.
  */
-export function addConstraint(step, preferences, metadata) {
-    let abstractBranch = makeAbstractBranch(step, preferences, metadata);
-
+export function addConstraint(step, name, preferences, metadata) {
+    let abstractBranch = makeAbstractBranch(step, name, preferences, metadata);
     // Don't add an empty constraint
     if (Object.keys(abstractBranch).length === 0) {
         alert("No options have been selected. Please make a selection.");
@@ -214,7 +215,7 @@ export function addConstraint(step, preferences, metadata) {
         step.abstractQuery.push(abstractBranch);
 
         m.redraw();
-        let subsetTree = $('#subsetTree');
+        let subsetTree = $('#subsetTree' + app.eventdataSubsetCount); // the pending tree
         subsetTree.tree('closeNode', subsetTree.tree('getNodeById', abstractBranch['id']), false);
     }
 
@@ -226,11 +227,11 @@ export function addConstraint(step, preferences, metadata) {
 }
 
 // Convert the subset panel state to an abstract query branch
-function makeAbstractBranch(step, preferences, metadata) {
+function makeAbstractBranch(step, name, preferences, metadata) {
 
-    if (selectedCanvas === 'Custom') {
+    if (name === 'Custom') {
         return {
-            id: step.id + '-' + String(step.nodeId++),
+            id: String(step.id) + '-' + String(step.nodeId++),
             name: 'Custom Subset',
             type: 'rule',
             subset: 'custom',
@@ -241,8 +242,8 @@ function makeAbstractBranch(step, preferences, metadata) {
     if (metadata['type'] === 'dyad') {
         // Make parent node
         let subset = {
-            id: step.id + '-' + String(step.nodeId++),
-            name: selectedSubsetName + ' Subset',
+            id: String(step.id) + '-' + String(step.nodeId++),
+            name: name,
             operation: 'and',
             type: 'rule',
             subset: metadata['type'],
@@ -257,13 +258,13 @@ function makeAbstractBranch(step, preferences, metadata) {
 
             // Add each link to the parent node as another rule
             let link = {
-                id: step.id + '-' + String(step.nodeId++),
+                id: String(step.id) + '-' + String(step.nodeId++),
                 name: 'Link ' + String(linkId),
                 show_op: linkId !== '0',
                 operation: 'or',
                 subset: 'link',
                 children: [{
-                    id: step.id + '-' + String(step.nodeId++),
+                    id: String(step.id) + '-' + String(step.nodeId++),
                     name: Object.keys(metadata['tabs'])[0] + ': ' + filteredEdges[linkId].source.name,
                     show_op: false,
                     cancellable: true,
@@ -271,7 +272,7 @@ function makeAbstractBranch(step, preferences, metadata) {
                     subset: 'node',
                     column: metadata['tabs'][Object.keys(metadata['tabs'])[0]]['full']
                 }, {
-                    id: step.id + '-' + String(step.nodeId++),
+                    id: String(step.id) + '-' + String(step.nodeId++),
                     name: Object.keys(metadata['tabs'])[1] + ': ' + filteredEdges[linkId].target.name,
                     show_op: false,
                     cancellable: true,
@@ -293,7 +294,7 @@ function makeAbstractBranch(step, preferences, metadata) {
 
         if (step['type'] === 'aggregate') {
             return {
-                id: step.id + '-' + String(step.nodeId++),
+                id: String(step.id) + '-' + String(step.nodeId++),
                 name: 'Date (' + preferences['measure'] + ')', // what jqtree shows
                 measureName: metadata['name'], // the name of the subset menu. In Eventdata comes from dataset configs, in TwoRavens it is autogenerated
                 subset: 'date',
@@ -307,14 +308,14 @@ function makeAbstractBranch(step, preferences, metadata) {
         let monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "June",
             "July", "Aug", "Sep", "Oct", "Nov", "Dec"];
         return {
-            id: step.id + '-' + String(step.nodeId++),
-            name: selectedSubsetName + ' Subset',
+            id: String(step.id) + '-' + String(step.nodeId++),
+            name: name,
             type: 'rule',
             subset: metadata['type'],
             structure: metadata['structure'],
             children: [
                 {
-                    id: step.id + '-' + String(step.nodeId++),
+                    id: String(step.id) + '-' + String(step.nodeId++),
                     name: 'From: ' + monthNames[preferences['userLower'].getMonth()] + ' ' + preferences['userLower'].getDate() + ' ' + String(preferences['userLower'].getFullYear()),
                     fromDate: new Date(preferences['userLower'].getTime()),
                     cancellable: false,
@@ -322,7 +323,7 @@ function makeAbstractBranch(step, preferences, metadata) {
                     column: metadata['columns'][0]
                 },
                 {
-                    id: step.id + '-' + String(step.nodeId++),
+                    id: String(step.id) + '-' + String(step.nodeId++),
                     name: 'To:   ' + monthNames[preferences['userUpper'].getMonth()] + ' ' + preferences['userUpper'].getDate() + ' ' + String(preferences['userUpper'].getFullYear()),
                     toDate: new Date(preferences['userUpper'].getTime()),
                     cancellable: false,
@@ -338,8 +339,8 @@ function makeAbstractBranch(step, preferences, metadata) {
     if (['categorical', 'categorical_grouped'].indexOf(metadata['type']) !== -1) {
         // Make parent node
         let subset = {
-            id: step.id + '-' + String(step.nodeId++),
-            name: selectedSubsetName + ' Subset',
+            id: String(step.id) + '-' + String(step.nodeId++),
+            name: name,
             operation: 'and',
             negate: 'false',
             column: metadata['columns'][0],
@@ -355,7 +356,7 @@ function makeAbstractBranch(step, preferences, metadata) {
         [...preferences['selections']]
             .sort((a, b) => typeof a === 'number' ? a - b : a.localeCompare(b))
             .forEach(selection => subset['children'].push({
-                id: step.id + '-' + String(step.nodeId++),
+                id: String(step.id) + '-' + String(step.nodeId++),
                 name: String(selection),
                 show_op: false
             }));
@@ -374,8 +375,8 @@ function makeAbstractBranch(step, preferences, metadata) {
 
         // Make parent node
         let subset = {
-            id: step.id + '-' + String(step.nodeId++),
-            name: selectedSubsetName + ' Subset',
+            id: String(step.id) + '-' + String(step.nodeId++),
+            name: name,
             operation: 'and',
             type: 'rule',
             subset: metadata['type'],
@@ -384,7 +385,7 @@ function makeAbstractBranch(step, preferences, metadata) {
         };
 
         let latitude = {
-            id: step.id + '-' + String(step.nodeId++),
+            id: String(step.id) + '-' + String(step.nodeId++),
             name: 'Latitude',
             column: metadata['columns'][0],
             // negate: 'false',
@@ -392,17 +393,17 @@ function makeAbstractBranch(step, preferences, metadata) {
         };
 
         latitude.children.push({
-            id: step.id + '-' + String(step.nodeId++),
+            id: String(step.id) + '-' + String(step.nodeId++),
             name: valUpper > valLower ? valUpper : valLower
         });
 
         latitude.children.push({
-            id: step.id + '-' + String(step.nodeId++),
+            id: String(step.id) + '-' + String(step.nodeId++),
             name: valUpper < valLower ? valUpper : valLower
         });
 
         let longitude = {
-            id: step.id + '-' + String(step.nodeId++),
+            id: String(step.id) + '-' + String(step.nodeId++),
             name: 'Longitude',
             operation: 'and',
             column: metadata['columns'][1],
@@ -410,12 +411,12 @@ function makeAbstractBranch(step, preferences, metadata) {
         };
 
         longitude.children.push({
-            id: step.id + '-' + String(step.nodeId++),
+            id: String(step.id) + '-' + String(step.nodeId++),
             name: valLeft > valRight ? valLeft : valRight
         });
 
         longitude.children.push({
-            id: step.id + '-' + String(step.nodeId++),
+            id: String(step.id) + '-' + String(step.nodeId++),
             name: valLeft < valRight ? valLeft : valRight
         });
 

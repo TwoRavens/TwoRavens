@@ -570,28 +570,74 @@ export function reformatAggregation(jsondata) {
 export function buildMenu(step) {
     let {metadata, preferences} = step;
 
-    let makeMonadRestriction = (branch) => [
+    let makeBranches = branches => [
         {
-            $match: Object.keys(metadata.tabs[branch.tab].filters).reduce((out, column) => {
-                // if no selections are made, don't add a constraint on the column of the filter
-                if (preferences.tabs[branch.tab].filters[column].selected.size === 0) return out;
+            $facet: [...branches].reduce((facets, branch) => {
 
-                // must only match full values that match the filter
-                if (column in metadata.delimited) out[column] = {
-                    // PHOENIX example: match .*; any number of times, then one of the selected filters (AFG|MUS)
-                    $regex: `^(.*${metadata.delimited[column]})*(${[...preferences.tabs[branch.tab].filters[column].selected].join('|')})`,
-                    $options: 'i' // insensitive to diacritics
-                };
-                else out[column] = {$in: [...preferences.tabs[branch.tab].filters[column].selected]};
-                return out;
+                let restriction = [];
+                if (branch.type === 'full') {
+                    // must apply restrictions to only return full that matches filters
+                    if ('tabs' in preferences) restriction = [
+                        {
+                            $match: metadata.tabs[branch.tab].filters.reduce((out, column) => {
+                                // if no selections are made, don't add a constraint on the column of the filter
+                                if (preferences.tabs[branch.tab].filters[column].selected.size === 0) return out;
+
+                                // must only match full values that match the filter
+                                if ('delimited' in metadata && column in metadata.delimited) out[column] = {
+                                    // PHOENIX example: match .*; any number of times, then one of the selected filters (AFG|MUS)
+                                    $regex: `^(.*${metadata.delimited[column]})*(${[...preferences.tabs[branch.tab].filters[column].selected].join('|')})`,
+                                    $options: 'i' // insensitive to diacritics
+                                };
+                                else out[column] = {$in: [...preferences.tabs[branch.tab].filters[column].selected]};
+                                return out;
+                            }, {})
+                        }
+                    ];
+                    else restriction = [];
+                }
+
+                if (branch.type === 'filter' && 'delimited' in metadata && branch.column in metadata.delimited) {
+                    // must apply restrictions to deconstruct filters by delimiter
+                    restriction = [
+                        {$project: {[branch.column]: {$split: ['$' + branch.column, metadata.delimited[branch.column]]}}},
+                        {$unwind: '$' + branch.column}
+                    ];
+                }
+
+                let getDistinct = [
+                    {$group: {_id: {[branch.column]: "$" + branch.column}}},
+                    {$sort: {['_id.' + branch.column]: 1}},
+                    {$group: {_id: 0, values: {"$push": "$_id." + branch.column}}},
+                    {$project: {values: '$values', _id: 0}}
+                ];
+
+                // restrict to filters and deconstruct delimiters as necessary, then get distinct values
+                facets[Object.values(branch).join('-')] = [...restriction, ...getDistinct];
+                return facets;
             }, {})
+        },
+        {
+            $project: [...branches].reduce((out, branch) => {
+                let branchName = Object.values(branch).join('-');
+                out[branchName] = {$arrayElemAt: ['$' + branchName, 0]};
+                return out;
+            }, {_id: 0})
+        },
+        {
+            $project: [...branches].reduce((out, branch) => {
+                let branchName = Object.values(branch).join('-');
+                if (branch.type === 'full') out[branch.tab + '.full'] = '$' + Object.values(branch).join('-') + '.values';
+                else out[branch.tab + '.filters.' + branch.column] = '$' + branchName + '.values';
+                return out;
+            }, {_id: 0})
         }
     ];
 
 
     if (metadata.type === 'dyadSearch') {
         let branch = {tab: metadata.currentTab, type: 'full', column: metadata.tabs[metadata.currentTab].full};
-        return makeMonadRestriction(branch)
+        return makeBranches([branch])
     }
 
     if (metadata.type === 'dyad') {
@@ -599,57 +645,14 @@ export function buildMenu(step) {
         let branches = new Set();
         Object.keys(metadata.tabs).forEach(tabName => {
             branches.add({tab: tabName, type: 'full', column: metadata.tabs[tabName].full});
-            metadata.tabs[tabName].filters.forEach(filter => branches.add({tab: tabName, type: 'filter', column: filter}));
+            metadata.tabs[tabName].filters.forEach(filter => branches.add({
+                tab: tabName,
+                type: 'filter',
+                column: filter
+            }));
         });
 
-        metadata['delimited'] = metadata['delimited'] || {};
-
-        return [
-            {
-                $facet: [...branches].reduce((facets, branch) => {
-
-                    let restriction = [];
-                    if (branch.type === 'full') {
-                        // must apply restrictions to only return full that matches filters
-                        if ('tabs' in preferences) restriction = makeMonadRestriction(branch);
-                        else restriction = [];
-                    }
-
-                    if (branch.type === 'filter' && branch.column in metadata.delimited) {
-                        // must apply restrictions to deconstruct filters by delimiter
-                        restriction = [
-                            {$project: {[branch.column]: {$split: ['$' + branch.column, metadata.delimited[branch.column]]}}},
-                            {$unwind: '$' + branch.column}
-                        ];
-                    }
-
-                    let getDistinct = [
-                        {$group: {_id: {[branch.column]: "$" + branch.column}}},
-                        {$group: {_id: 0, values: {"$push": "$_id." + branch.column}}},
-                        {$project: {values: '$values', _id: 0}}
-                    ];
-
-                    // restrict to filters and deconstruct delimiters as necessary, then get distinct values
-                    facets[Object.values(branch).join('-')] = [...restriction, ...getDistinct];
-                    return facets;
-                }, {})
-            },
-            {
-                $project: [...branches].reduce((out, branch) => {
-                    let branchName = Object.values(branch).join('-');
-                    out[branchName] = {$arrayElemAt: ['$' + branchName, 0]};
-                    return out;
-                }, {_id: 0})
-            },
-            {
-                $project: [...branches].reduce((out, branch) => {
-                    let branchName = Object.values(branch).join('-');
-                    if (branch.type === 'full') out[branch.tab + '.full'] = '$' + Object.values(branch).join('-') + '.values';
-                    else out[Object.values(branch).join('.')] = '$' + branchName + '.values';
-                    return out;
-                }, {_id: 0})
-            }
-        ];
+        return makeBranches([...branches]);
     }
 
     if (metadata.type === 'date') return [
@@ -671,7 +674,7 @@ export function buildMenu(step) {
 
     if (metadata.type === 'peek') return [
         {
-            $project: step.variables.reduce((out, entry) => {
+            $project: metadata.variables.reduce((out, entry) => {
                 out[entry] = 1;
                 return out;
             }, {_id: 0})
@@ -687,7 +690,11 @@ export function buildMenu(step) {
                 return out;
             }, {_id: 0})
         }
-    ]
+    ];
+
+    if (metadata.type === 'count') return [{
+        $count: 'total'
+    }]
 }
 
 // If there is a postProcessing step at the given key, it will return modified data. Otherwise return the data unmodified

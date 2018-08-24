@@ -21,11 +21,11 @@ export let alignmentData = {};
 
 // ~~~~ EVENTDATA STATE / MUTATORS ~~~
 // eventdata has a fixed pipeline of [Subset] -> [Aggregate]
-export let eventdataSubsetName = 'EventDataSubset';
 export let eventdataSubsetCount = 0;
 
 export let pendingSubset = {
-    name: eventdataSubsetName + eventdataSubsetCount++,
+    type: 'subset',
+    id: eventdataSubsetCount++,
     abstractQuery: [],
     nodeId: 1,
     groupId: 1
@@ -33,6 +33,7 @@ export let pendingSubset = {
 
 export let eventdataAggregateStep = {
     type: 'aggregate',
+    id: 'eventdataAggregate',
     measuresUnit: [],
     measuresAccum: [],
     nodeId: 1
@@ -298,7 +299,7 @@ async function updatePeek() {
     peekIsGetting = true;
 
     let variables = (selectedVariables.size + selectedConstructedVariables.size) === 0
-        ? [...genericMetadata[selectedDataset]['columns'], genericMetadata[selectedDataset]['columns_constructed']]
+        ? [...genericMetadata[selectedDataset]['columns'], ...genericMetadata[selectedDataset]['columns_constructed']]
         : [...selectedVariables, ...selectedConstructedVariables];
 
     if (JSON.stringify(variables) !== localStorage.getItem('peekTableHeaders' + peekId)) {
@@ -307,8 +308,9 @@ async function updatePeek() {
     }
 
     let peekMenu = {
-        type: 'peek',
+        type: 'menu',
         metadata: {
+            type: 'peek',
             variables: variables,
             skip: peekSkip,
             limit: peekBatchSize
@@ -382,15 +384,16 @@ export let getData = async body => m.request({
 });
 
 // download data to display a menu
-export let loadMenu = async (abstractPipeline, menu, setIsLoading, setRedraw, setData, {recount, requireMatch}={}) => { // the dict is for optional named arguments
+export let loadMenu = async (abstractPipeline, menu, {recount, requireMatch}={}) => { // the dict is for optional named arguments
 
-    setIsLoading(true);
+    // the coordinates menu does not use data, so just return
+    if (menu.type === 'menu' && menu.metadata.type === 'coordinates') return [];
 
     // convert the pipeline to a mongo query. Note that passing menu extends the pipeline to collect menu data
-    let compiled = queryMongo.buildPipeline([...abstractPipeline, menu])['pipeline'];
+    let compiled = JSON.stringify(queryMongo.buildPipeline([...abstractPipeline, menu])['pipeline']);
 
     console.log("Menu Query:");
-    console.log(JSON.stringify(compiled));
+    console.log(compiled);
 
     let promises = [];
 
@@ -413,23 +416,31 @@ export let loadMenu = async (abstractPipeline, menu, setIsLoading, setRedraw, se
     }
 
     // record count request
-    if (recount || totalSubsetRecords === undefined) promises.push(getData({
-        host: genericMetadata[dataset]['host'],
-        collection_name: dataset,
-        method: 'count',
-        query: JSON.stringify(queryMongo.buildPipeline(abstractPipeline)['pipeline'])
-    }).then(count => {
-        // intentionally breaks the entire downloading promise array and subsequent promise chain
-        if (!count && requireMatch) throw 'no records matched';
-        totalSubsetRecords = count
-    }));
+    if (recount || totalSubsetRecords === undefined) {
+        let countMenu = {type: 'menu', metadata: {type: 'count'}};
+        let compiled = JSON.stringify(queryMongo.buildPipeline([...abstractPipeline, countMenu])['pipeline']);
+
+        console.log("Count Query:");
+        console.log(compiled);
+
+        promises.push(getData({
+            host: genericMetadata[dataset]['host'],
+            collection_name: dataset,
+            method: 'aggregate',
+            query: compiled
+        }).then(response => {
+            // intentionally breaks the entire downloading promise array and subsequent promise chain
+            if (!response[0].total && requireMatch) throw 'no records matched';
+            totalSubsetRecords = response[0].total
+        }));
+    }
 
     let data;
     promises.push(getData({
         host: genericMetadata[dataset]['host'],
         collection_name: dataset,
         method: 'aggregate',
-        query: JSON.stringify(compiled)
+        query: compiled
     })
         .then(queryMongo.menuPostProcess[menu.metadata.type])
         .then(response => data = response));
@@ -447,25 +458,25 @@ export let loadMenu = async (abstractPipeline, menu, setIsLoading, setRedraw, se
     if (success && data) {
         console.log("Server returned:");
         console.log(data);
-
-        setIsLoading(false);
-        setData(data);
-
-        setRedraw(true);
-        m.redraw();
+        return data;
     }
 };
 
+export async function loadMenuEventData(abstractPipeline, menu, {recount, requireMatch}={}) {
+    isLoading[menu.name] = true;
+
+    let data = await loadMenu(abstractPipeline, menu, {recount, requireMatch});
+    if (data) {
+        subsetData[menu.name] = data;
+        isLoading[menu.name] = false;
+        subsetRedraw[menu.name] = true;
+        m.redraw();
+    }
+    return Boolean(data);
+}
+
 // locks a subset manipulation step as a 'query', relevant to eventdata only
 export async function submitSubset() {
-
-    abstractManipulations.push(pendingSubset);
-    pendingSubset = {
-        id: eventdataSubsetName + eventdataSubsetCount++,
-        abstractQuery: [],
-        nodeId: 1,
-        groupId: 1
-    };
 
     let newMenu = {
         type: 'menu',
@@ -474,96 +485,60 @@ export async function submitSubset() {
         preferences: subsetPreferences[selectedSubsetName]
     };
 
-    await loadMenu(
-        abstractManipulations, newMenu,
-        state => isLoading[selectedSubsetName] = state,
-        state => subsetRedraw[selectedSubsetName] = state,
-        data => {
-            // clear all other subset data. Note this is intentionally mutating the object, not rebinding it
-            Object.keys(subsetData)
-                .filter(subset => subset !== selectedSubsetName)
-                .forEach(subset => delete subsetData[subset]);
-            subsetData[selectedSubsetName] = data;
-        },
-        {recount: true, requireMatch: true});
+    let success = await loadMenuEventData([...abstractManipulations, pendingSubset], newMenu, {recount: true, requireMatch: true});
+    if (success) {
+        abstractManipulations.push(pendingSubset);
+        pendingSubset = {
+            type: 'subset',
+            id: eventdataSubsetCount++,
+            abstractQuery: [],
+            nodeId: 1,
+            groupId: 1
+        };
+
+        // clear all other subset data. Note this is intentionally mutating the object, not rebinding it
+        Object.keys(subsetData)
+            .filter(subset => subset !== newMenu.name)
+            .forEach(subset => delete subsetData[subset]);
+        m.redraw();
+    }
 }
 
 
-export function submitAggregation() {
+export async function submitAggregation() {
     if (!eventMeasure) {
         tour.tourStartEventMeasure();
         return;
     }
 
-    loadMenu(abstractManipulations,
-        eventdataAggregateStep,
-        state => setLaddaSpinner('btnUpdate', state),
-        Function, // no forced redraws needed
-        data => aggregationData = data);
+    setLaddaSpinner('btnUpdate', true);
+
+    let data = await loadMenu(abstractManipulations, eventdataAggregateStep);
+
+    if (data) aggregationData = data;
+    setLaddaSpinner('btnUpdate', false);
 
     // TODO check setting of aggregation headers (unit and event)
 }
 
-// this function makes many dirty assumptions about page state and is very touchy. Sorry for the headache. -Mike
-export async function download(queryType, dataset, query) {
+export async function download(collection_name, query) {
 
+    console.log("Download Query:");
     console.log(query);
-    // fall back to document state if args are not passed
-    if (!queryType) queryType = selectedMode;
-    if (!dataset) dataset = selectedDataset;
 
-    let variables = [];
-
-    if (!query) {
-        if (queryType === 'subset') {
-
-            variables = (selectedVariables.size + selectedConstructedVariables.size) === 0
-                ? [...genericMetadata[dataset]['columns'], genericMetadata[dataset]['columns_constructed']]
-                : [...selectedVariables, ...selectedConstructedVariables];
-            // when only the _id is ignored (_id: 0) then all other columns are returned (mongo behavior)
-            let menuDownload = {
-                type: 'menu',
-                metadata: {variables}
-            };
-
-            query = queryMongo.buildPipeline([...abstractManipulations, menuDownload])['pipeline']
-        }
-        else if (queryType === 'aggregate')
-            query = queryMongo.buildPipeline([...abstractManipulations, aggregationStaged])['pipeline'];
-    }
-    // queryMongo is set when called from Saved Queries, but variables is unknown. Infer variables from the projection stage of the pipeline
-    // aggregation queries handle inferring variables from inside reformatAggregation, so this only applies to subset
-    else if (queryType === 'subset') variables =
-        Object.keys(queryMongo[queryMongo.length - 1]['$project']).filter(key => key !== '_id');
-
-    console.log("Download Query: " + JSON.stringify(queryMongo));
-
-    setLaddaSpinner('btnDownload', true);
     let data = await getData({
-        host: genericMetadata[dataset]['host'],
-        collection_name: dataset,
+        host: genericMetadata[collection_name].host,
         method: 'aggregate',
-        query: JSON.stringify(queryMongo)
-    }).catch(laddaStopAll);
+        collection_name,
+        query
+    });
 
-    if ('success' in data && !data.success) {
-        laddaStopAll();
-        alert("Download failed. " + data.message);
-        return;
-    }
+    let variables = [...data.reduce((out, record) => {
+        Object.keys(record).forEach(variable => out.add(variable));
+        return out;
+    }, new Set())];
 
-    // postprocess aggregate to reformat dates to YYYY-MM-DD and collapse the dyad boolean array
-    if (selectedMode === 'aggregate') {
-        let headersUnit, headersEvent;
-        ({data, headersUnit, headersEvent} = query.reformatAggregation(data));
-        variables = [...headersUnit, ...headersEvent];
-    }
-
-    let text = data.map(record => variables.map(variable => {
-        if (typeof record[variable] === 'object' && '$date' in record[variable])
-            return new Date(record[variable]['$date']).toISOString().slice(0, 10);
-        return record[variable] || '';
-    }).join('\t') + '\n');
+    let text = data.map(record => variables.map(variable => record[variable] || '').join('\t') + '\n');
 
     let header = variables.map(variable => {
         if (variable.endsWith('_constructed')) return 'TwoRavens_' + variable.replace('_constructed', '');
@@ -572,22 +547,24 @@ export async function download(queryType, dataset, query) {
 
     let file = new File([header, ...text], 'EventDataSaved.csv', {type: "text/plain;charset=utf-8"});
     saveAs(file);
-    laddaStopAll();
 }
 
-export function reset() {
-    let step = getTransformStep(eventdataSubsetName);
+export async function reset() {
 
     let scorchTheEarth = () => {
-        step.abstractQuery.length = 0;
-        $('#subsetTree').tree('loadData', step.abstractQuery);
+        abstractManipulations.length = 0;
 
         selectedVariables.clear();
         resetPeek();
 
-        step.nodeId = 1;
-        step.groupId = 1;
-        step.queryId = 1;
+        eventdataSubsetCount = 0;
+        pendingSubset = {
+            type: 'subset',
+            id: eventdataSubsetCount++,
+            abstractQuery: [],
+            nodeId: 1,
+            groupId: 1
+        };
 
         Object.keys(genericMetadata[selectedDataset]['subsets']).forEach(subset => {
             subsetPreferences[subset] = {};
@@ -596,7 +573,7 @@ export function reset() {
     };
 
     // suppress server queries from the reset button when the webpage is already reset
-    if (step.abstractQuery.length === 0) {
+    if (abstractManipulations.length === 0) {
         scorchTheEarth();
         return;
     }
@@ -605,7 +582,23 @@ export function reset() {
 
     for (let member in subsetData) delete subsetData[member];
     scorchTheEarth();
-    loadMenu(selectedSubsetName, {recount: true});
+
+    let newMenu = {
+        type: 'menu',
+        name: selectedSubsetName,
+        metadata: genericMetadata[selectedDataset]['subsets'][selectedSubsetName],
+        preferences: subsetPreferences[selectedSubsetName]
+    };
+
+    isLoading[selectedSubsetName] = true;
+    let cachedSubsetName = selectedSubsetName; // if the user changes the subset while loading
+
+    let data = await loadMenu(selectedSubsetName, newMenu, {recount: true});
+    if (data) {
+        isLoading[cachedSubsetName] = false;
+        subsetRedraw[cachedSubsetName] = true;
+        subsetData[cachedSubsetName] = data;
+    }
 }
 
 // we must be very particular about how months get incremented, to handle leap years etc.

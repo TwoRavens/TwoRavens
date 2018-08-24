@@ -4,7 +4,8 @@ import '../../../../node_modules/jqtree/tree.jquery.js';
 import '../../../../node_modules/jqtree/jqtree.css';
 import '../../pkgs/jqtree/jqtree.style.css';
 
-import * as query from "../queryMongo";
+import * as queryMongo from "../queryMongo";
+import * as queryAbstract from '../queryAbstract';
 import * as app from "../app";
 
 
@@ -56,7 +57,7 @@ export class TreeTransform {
             dragAndDrop: false,
             autoOpen: false,
             selectable: false,
-            onCreateLi: function(node, $li) {
+            onCreateLi: function (node, $li) {
                 if (!('cancellable' in node) || (node['cancellable'] === true)) {
                     $li.find('.jqtree-element').prepend(buttonDeleteTransform(node.id));
                 }
@@ -84,13 +85,13 @@ function buttonDeleteTransform(id) {
 
 
 export class TreeQuery {
-    selectAll(subsetTree, abstractQuery) {
-        if (Array.isArray(abstractQuery)) abstractQuery.forEach(element => this.selectAll(subsetTree, element));
+    selectAll(subsetTree, abstractQuery, state) {
+        if (Array.isArray(abstractQuery)) abstractQuery.forEach(element => this.selectAll(subsetTree, element, state));
         if (typeof abstractQuery === 'object' && 'id' in abstractQuery) {
             const node = subsetTree.tree("getNodeById", abstractQuery.id);
             if (!node) return;
-            subsetTree.tree("addToSelection", node);
-            if ('children' in abstractQuery) this.selectAll(subsetTree, abstractQuery.children);
+            state ? subsetTree.tree("addToSelection", node) : subsetTree.tree('removeFromSelection', node);
+            if ('children' in abstractQuery) this.selectAll(subsetTree, abstractQuery.children, state);
         }
     }
 
@@ -98,10 +99,18 @@ export class TreeQuery {
         // Create the query tree
         let subsetTree = $(dom);
 
-        let {data, selected} = attrs;
+        let {step, isQuery} = attrs;
+        this.isQuery = isQuery;
 
         subsetTree.tree({
-            data,
+            data: isQuery
+                ? [{
+                    name: 'Query ' + step.id,
+                    id: step.id + '-root',
+                    children: step.abstractQuery,
+                    type: 'query'
+                }]
+                : step.abstractQuery,
             saveState: true,
             dragAndDrop: true,
             autoOpen: true,
@@ -158,7 +167,7 @@ export class TreeQuery {
             }
         });
 
-        if (selected) this.selectAll();
+        if (isQuery) this.selectAll();
 
         subsetTree.on(
             'tree.move',
@@ -168,7 +177,7 @@ export class TreeQuery {
 
                 // Save changes when an element is moved
                 step.abstractQuery = JSON.parse(subsetTree.tree('toJson'));
-                app.hideFirst(step.abstractQuery);
+                queryAbstract.hideFirst(step.abstractQuery);
                 m.redraw();
             }
         );
@@ -186,7 +195,7 @@ export class TreeQuery {
                 }
 
                 if (event.node.hasChildren()) {
-                    $('#subsetTree').tree('toggle', event.node);
+                    subsetTree.tree('toggle', event.node);
                 }
             }
         );
@@ -194,7 +203,7 @@ export class TreeQuery {
         subsetTree.bind(
             'tree.dblclick',
             function (event) {
-                let tempQuery = query.buildSubset([event.node]);
+                let tempQuery = queryMongo.buildSubset([event.node]);
                 if ($.isEmptyObject(tempQuery)) {
                     alert("\"" + event.node.name + "\" is too specific to parse into a query.");
                 } else {
@@ -210,16 +219,28 @@ export class TreeQuery {
 
     // when mithril updates this component, it redraws the tree with whatever the abstract query is
     onupdate({attrs, dom}) {
-        let {step, selected} = attrs;
+        let {step, isQuery} = attrs;
         let subsetTree = $(dom);
         let state = subsetTree.tree('getState');
-        subsetTree.tree('loadData', step.abstractQuery);
+        let data = isQuery
+            ? [{
+                name: 'Query ' + step.id,
+                id: step.id + '-root',
+                children: step.abstractQuery,
+                type: 'query'
+            }]
+            : step.abstractQuery;
+
+        subsetTree.tree('loadData', data);
+        if (isQuery !== this.isQuery) {
+            this.isQuery = isQuery;
+            this.selectAll(subsetTree, data, this.isQuery);
+        }
         subsetTree.tree('setState', state);
-        if (selected) this.selectAll();
     }
 
     view(vnode) {
-        return m('div#' + vnode.attrs.id)
+        return m('div#subsetTree' + vnode.attrs.step.id)
     }
 }
 
@@ -227,9 +248,9 @@ function buttonNegate(id, state) {
     // This state is negated simply because the buttons are visually inverted. An active button appears inactive
     // This is due to css tomfoolery
     if (!state) {
-        return '<button id="boolToggle" class="btn btn-default btn-xs" type="button" data-toggle="button" aria-pressed="true" onclick="callbackNegate(' + id + ', true)">not</button> '
+        return '<button id="boolToggle" class="btn btn-default btn-xs" type="button" data-toggle="button" aria-pressed="true" onclick="callbackNegate(' + "'" + id + "'" + ', true)">not</button> '
     } else {
-        return '<button id="boolToggle" class="btn btn-default btn-xs active" type="button" data-toggle="button" aria-pressed="true" onclick="callbackNegate(' + id + ', false)">not</button> '
+        return '<button id="boolToggle" class="btn btn-default btn-xs active" type="button" data-toggle="button" aria-pressed="true" onclick="callbackNegate(' + "'" + id + "'" + ', false)">not</button> '
     }
 }
 
@@ -237,10 +258,10 @@ function buttonOperator(id, state, canChange) {
     if (canChange) {
         if (state === 'and') {
             // language=HTML
-            return `<button class="btn btn-default btn-xs active" style="width:33px" type="button" data-toggle="button" aria-pressed="true" onclick="callbackOperator(${id}, 'or')">and</button> `
+            return `<button class="btn btn-default btn-xs active" style="width:33px" type="button" data-toggle="button" aria-pressed="true" onclick="callbackOperator('${id}', 'or')">and</button> `
         } else {
             // language=HTML
-            return `<button class="btn btn-default btn-xs active" style="width:33px" type="button" data-toggle="button" aria-pressed="true" onclick="callbackOperator(${id}, 'and')">or</button> `
+            return `<button class="btn btn-default btn-xs active" style="width:33px" type="button" data-toggle="button" aria-pressed="true" onclick="callbackOperator('${id}', 'and')">or</button> `
         }
     } else {
         if (state === 'and') {
@@ -252,7 +273,7 @@ function buttonOperator(id, state, canChange) {
 }
 
 function buttonDelete(id) {
-    return "<button type='button' class='btn btn-default btn-xs' style='background:none;border:none;box-shadow:none;float:right;margin-top:2px;height:18px' onclick='callbackDelete(" + String(id) + ")'><span class='glyphicon glyphicon-remove' style='color:#ADADAD'></span></button></div>";
+    return "<button type='button' class='btn btn-default btn-xs' style='background:none;border:none;box-shadow:none;float:right;margin-top:2px;height:18px' onclick='callbackDelete(" + '"' +  String(id) + '"' + ")'><span class='glyphicon glyphicon-remove' style='color:#ADADAD'></span></button></div>";
 }
 
 // this is reused for both unit and event measures (accumulations)
@@ -267,7 +288,7 @@ export class TreeAggregate {
             dragAndDrop: false,
             autoOpen: false,
             selectable: false,
-            onCreateLi: function(node, $li) {
+            onCreateLi: function (node, $li) {
                 if (!('cancellable' in node) || (node['cancellable'] === true)) {
                     $li.find('.jqtree-element').prepend(buttonDeleteTransform(node.id));
                 }

@@ -6,6 +6,7 @@ import TextField from '../../../common-eventdata/views/TextField';
 
 import PlotDyad from '../views/PlotDyad';
 import * as app from "../app";
+import {setIsLoading} from "../../../app/transform";
 
 // Width of the dyad selection panel
 let selectionWidth = '400px';
@@ -83,11 +84,15 @@ export default class CanvasDyad {
 
         let monadUpdate = {
             type: 'menu',
+            name: subsetName,
             metadata: Object.assign({}, metadata, {type: 'dyadSearch', currentTab}), // edit the metadata to be a search
             preferences
         };
-        await app.loadMenu(app.abstractManipulations, monadUpdate).catch(failedUpdateMonadListing);
+        let data = await app.loadMenu(app.abstractManipulations, monadUpdate); // .catch(failedUpdateMonadListing);
+        data[0][currentTab].full = data[0][currentTab].full || [];
+        app.subsetData[subsetName][currentTab].full = data[0][currentTab].full;
         this.waitForQuery--;
+        m.redraw();
     }
 
     view(vnode) {
@@ -261,7 +266,7 @@ export default class CanvasDyad {
                             onclick: () => preferencesMonad['filters'][filter]['expanded'] = !preferencesMonad['filters'][filter]['expanded']
                         }, m("b", filter)),
                         preferencesMonad['filters'][filter]['expanded'] && dataMonad['filters'][filter]
-                            .filter(actor => actor.includes(preferencesMonad['search']))
+                            .filter(actor => actor && actor.includes(preferencesMonad['search']))
                             .map(actor => m('div',
                                 popupAttributes(filter, actor),
                                 m(`input.monad-chk[type=checkbox]`, {

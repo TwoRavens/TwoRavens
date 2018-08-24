@@ -2,6 +2,7 @@ import m from 'mithril';
 
 import * as app from './app';
 import * as queryAbstract from './queryAbstract';
+import * as queryMongo from './queryMongo';
 import * as tour from "./tour";
 
 import * as common from '../../common-eventdata/common';
@@ -32,6 +33,7 @@ import CanvasResults from "./canvases/CanvasResults";
 
 import SaveQuery from "./views/SaveQuery";
 import {TreeQuery, TreeVariables} from "./views/TreeSubset";
+import {pendingSubset} from "./app";
 
 export default class Body_EventData {
 
@@ -191,12 +193,36 @@ export default class Body_EventData {
                         'margin-top': '4px',
                         'margin-left': '6px'
                     },
-                    onclick: () => {
-                        if ('subset' === app.selectedMode && step.abstractQuery.length === 0)
-                            tour.tourStartSaveQueryEmpty();
-                        else if ('aggregate' === app.selectedMode && !app.eventMeasure)
-                            tour.tourStartEventMeasure();
-                        else app.download();
+                    onclick: async () => {
+                        if ('subset' === app.selectedMode) {
+                            if (app.abstractManipulations.length === 0) {
+                                tour.tourStartSaveQueryEmpty();
+                                return;
+                            }
+                            let downloadStep = {
+                                type: 'menu',
+                                metadata: {
+                                    variables: (app.selectedVariables.size + app.selectedConstructedVariables.size) === 0
+                                        ? [...app.genericMetadata[app.selectedDataset]['columns'], app.genericMetadata[app.selectedDataset]['columns_constructed']]
+                                        : [...app.selectedVariables, ...app.selectedConstructedVariables]
+                                }
+                            };
+                            let compiled = queryMongo.buildPipeline([...app.abstractManipulations, downloadStep]);
+                            app.setLaddaSpinner('btnDownload', true);
+                            await app.download(app.selectedDataset, JSON.stringify(compiled))
+                                .finally(() => app.setLaddaSpinner('btnDownload', false));
+
+                        }
+                        if ('aggregate' === app.selectedMode) {
+                            if (app.eventdataAggregateStep.measuresAccum.length === 0) {
+                                tour.tourStartEventMeasure();
+                                return;
+                            }
+                            let compiled = queryMongo.buildPipeline([...app.abstractManipulations, app.eventdataAggregateStep]);
+                            app.setLaddaSpinner('btnDownload', true);
+                            await app.download(app.selectedDataset, JSON.stringify(compiled))
+                                .finally(() => app.setLaddaSpinner('btnDownload', false));
+                        }
                     }
                 }, m("span.ladda-label", "Download")),
 
@@ -443,18 +469,8 @@ export default class Body_EventData {
                         {
                             value: 'Subsets',
                             contents: [
-                                ...app.abstractManipulations.map((step, i) => m(TreeQuery, {
-                                    id: 'subsetTree' + step.id,
-                                    data: [{
-                                        name: 'Query ' + (i + 1),
-                                        id: 'Step-' + step.id,
-                                        children: step.abstractQuery,
-                                        operation: i && 'and',
-                                        type: 'query'
-                                    }],
-                                    selected: true
-                                })),
-                                m(TreeQuery, {id: 'subsetTreePending', step: app.pendingSubset})
+                                ...app.abstractManipulations.map(step => m(TreeQuery, {isQuery: true, step})),
+                                m(TreeQuery, {step: app.pendingSubset})
                             ]
                         }
                     ]
@@ -482,7 +498,10 @@ export default class Body_EventData {
                         onclick: async () => {
                             app.setLaddaSpinner('btnUpdate', true);
                             await app.submitSubset();
-                            app.laddaStopAll();
+                            app.setLaddaSpinner('btnUpdate', false);
+
+                            // weird hack, unsetting ladda unsets the disabled attribute. But it should still be disabled
+                            document.getElementById('btnUpdate').disabled = app.pendingSubset.abstractQuery.length === 0;
                         }
                     }, 'Update')
                 ))
@@ -521,7 +540,7 @@ export default class Body_EventData {
                     'data-style': 'zoom-in',
                     'data-spinner-color': '#818181',
                     style: {float: 'right'},
-                    onclick: () => app.submitAggregation()
+                    onclick: app.submitAggregation
                 }, 'Update'))
         }
     }
@@ -537,10 +556,8 @@ export default class Body_EventData {
                         metadata: app.genericMetadata[app.selectedDataset]['subsets'][app.selectedSubsetName],
                         preferences: app.subsetPreferences[app.selectedSubsetName]
                     };
-                    app.loadMenu(app.abstractManipulations, newMenu,
-                        state => app.isLoading[app.selectedSubsetName] = state,
-                        state => app.subsetRedraw[app.selectedSubsetName] = state,
-                        data => app.subsetData[app.selectedSubsetName] = data);
+
+                    app.loadMenuEventData(app.abstractManipulations, newMenu);
                 }
 
                 return m('#loading.loader', {
@@ -652,12 +669,15 @@ export default class Body_EventData {
                     'box-shadow': 'rgba(0, 0, 0, 0.3) 0px 2px 3px'
                 },
                 onclick: () => {
-                    let step = app.getTransformStep('subset');
                     let metadata = app.genericMetadata[app.selectedDataset]['subsets'][app.selectedSubsetName];
                     let preferences = app.subsetPreferences[app.selectedSubsetName];
-                    if (app.selectedSubsetName === 'Custom') preferences = app.canvasPreferences['Custom'];
+                    let name = app.selectedSubsetName + ' Subset';
+                    if (app.selectedCanvas === 'Custom') {
+                        preferences = app.canvasPreferences['Custom'];
+                        name = 'Custom Subset';
+                    }
                     // add a constraint to the 'subset' pipeline step, given the menu state and menu metadata
-                    queryAbstract.addConstraint(step, preferences, metadata);
+                    queryAbstract.addConstraint(app.pendingSubset, name, preferences, metadata);
                 }
             }, 'Stage'),
             m(Canvas, {

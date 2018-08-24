@@ -142,7 +142,7 @@ export default class CanvasCategorical {
         };
 
         return m("#canvasCategorical", {style: {height: '100%', 'padding-top': panelMargin, width: `calc(100% + ${common.panelMargin})`}},
-            mode === 'aggregate' && metadata['formats'].length > 1 && m(ButtonRadio, {
+            mode === 'aggregate' && 'formats' in metadata && metadata['formats'].length > 1 && m(ButtonRadio, {
                 id: 'aggregationFormat',
                 onclick: (format) => preferences['aggregation'] = format,
                 activeSection: preferences['aggregation'],
