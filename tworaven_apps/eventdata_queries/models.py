@@ -83,13 +83,6 @@ class EventDataSavedQuery(TimeStampedModel):
         ordering = ('-created',)
         verbose_name_plural = 'Event data saved queries'
 
-        # avoid a user saving dupe queries
-        #
-        unique_together = ('user',
-                           'collection_type',
-                           'collection_name',
-                           'query',)
-
     def __str__(self):
         """object repr"""
         # query_str = json.dumps(self.query, indent=4)
