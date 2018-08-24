@@ -80,30 +80,6 @@ class EventDataSavedQueryForm(forms.ModelForm):
         return self.cleaned_data
 
 
-
-class EventDataQueryFormSearch(forms.Form):
-    """ to check if search parameters are ok"""
-
-    name = forms.CharField(required=False, label='Name')
-    description = forms.CharField(required=False, widget=forms.Textarea)
-    username = forms.CharField(required=False, label='UserName')
-
-    def clean_name(self):
-        name = self.cleaned_data.get('name')
-
-        return name
-
-    def clean_username(self):
-        username = self.cleaned_data.get('username')
-
-        return username
-
-    def clean_description(self):
-        desc = self.cleaned_data.get('description')
-
-        return desc
-
-
 class EventDataGetDataForm(forms.Form):
     """ check if query submission parameters are ok"""
 

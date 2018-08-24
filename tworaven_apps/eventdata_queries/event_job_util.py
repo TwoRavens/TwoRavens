@@ -13,7 +13,10 @@ from tworaven_apps.utils.view_helper import \
 from tworaven_apps.utils.basic_response import (ok_resp,
                                                 err_resp,
                                                 err_resp_with_data)
-from tworaven_apps.eventdata_queries.models import (EventDataSavedQuery, ArchiveQueryJob, UserNotification, IN_PROCESS, ERROR, COMPLETE)
+from tworaven_apps.eventdata_queries.models import \
+    (EventDataSavedQuery, ArchiveQueryJob, UserNotification,
+     SEARCH_PARAMETERS, SEARCH_KEY_NAME, SEARCH_KEY_DESCRIPTION,
+     IN_PROCESS, ERROR, COMPLETE)
 from tworaven_apps.eventdata_queries.dataverse.temporary_file_maker import TemporaryFileMaker
 from tworaven_apps.eventdata_queries.dataverse.dataverse_publish_dataset import DataversePublishDataset
 from tworaven_apps.eventdata_queries.dataverse.dataverse_list_files_dataset import ListFilesInDataset
@@ -59,18 +62,47 @@ class EventJobUtil(object):
 
 
     @staticmethod
-    def search_object(**kwargs):
-        """ return objects on the basis of request json"""
+    def search_objects(user, json_search_info):
+        """Search for EventDataSavedQuery objects saved by the given user"""
+        if not isinstance(json_search_info, dict):
+            user_msg = ('Expected a the search info to be a python dict'
+                        ' (unusual error)')
+            return err_resp(user_msg)
 
-        job = EventDataSavedQuery()
-        success, get_filtered_obj = job.get_filtered_objects(**kwargs)
-        # print("list of objects", get_filtered_obj)
+        if not json_search_info:
+            user_msg = 'Please enter at least 1 search term.'
+            return err_resp(user_msg)
 
-        if success:
-            return ok_resp(get_filtered_obj)
+        if not isinstance(user, User):
+            user_msg = 'A user was not specified'
+            return err_resp(user_msg)
 
-        else:
-            return err_resp(get_filtered_obj)
+        # Make sure the search parameters are valid
+        #
+        for key, val in json_search_info.items():
+            if key not in SEARCH_PARAMETERS:
+                user_msg = ('"%s" is not a valid search parameter.'
+                            ' Valid parameters: %s') % \
+                            (key, ', '.join(SEARCH_PARAMETERS))
+                return err_resp(user_msg)
+
+            if not val:
+                user_msg = ('A value is needed for the search'
+                            ' parameter "%s"') % \
+                            (key,)
+                return err_resp(user_msg)
+
+        filters = {'description__icontains': json_search_info[SEARCH_KEY_DESCRIPTION],
+                   'name__icontains': json_search_info[SEARCH_KEY_NAME]}
+
+        query_results = EventDataSavedQuery.get_query_list_for_user(\
+                            user, **filters)
+
+        if not query_results.success:
+            return err_resp(query_results.err_msg)
+
+        return ok_resp(query_results.result_obj)
+
 
     @staticmethod
     def get_query_from_object(query_id):

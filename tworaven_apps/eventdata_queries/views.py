@@ -20,12 +20,13 @@ from tworaven_apps.utils.basic_response import (ok_resp,
                                                 err_resp,
                                                 err_resp_with_data)
 from tworaven_apps.eventdata_queries.event_job_util import EventJobUtil
-from tworaven_apps.eventdata_queries.forms import (EventDataSavedQueryForm,
-                                                   EventDataQueryFormSearch,
-                                                   EventDataGetDataForm,
-                                                   EventDataGetMetadataForm)
+from tworaven_apps.eventdata_queries.forms import \
+            (EventDataSavedQueryForm,
+             EventDataGetDataForm,
+             EventDataGetMetadataForm)
 from tworaven_apps.eventdata_queries.models import \
-    (EventDataSavedQuery,)
+    (EventDataSavedQuery,
+     SEARCH_PARAMETERS, SEARCH_KEY_NAME, SEARCH_KEY_DESCRIPTION)
 
 
 def view_eventdata_api_info(request):
@@ -37,6 +38,9 @@ def view_eventdata_api_info(request):
 
     info = get_common_view_info(request)
 
+    # For showing an actual EventDataSavedQuery
+    #   ... if one is available
+    #
     sample_saved_query = None
     if request.user.is_authenticated:
         sample_saved_query = EventDataSavedQuery.objects.filter(\
@@ -46,6 +50,8 @@ def view_eventdata_api_info(request):
     return render(request,
                   'eventdata/view_event_data_api_info.html',
                   info)
+
+
 @csrf_exempt
 def api_add_event_data_query(request):
     """
@@ -169,79 +175,35 @@ def api_search(request):
     "description":"query desc",
     "username":"tworavens"
     }
-
     """
-    success, json_req_obj = get_request_body_as_json(request)
-    # if json is not valid
-    if not success:
-        usr_msg = dict(success=False,
-                       error=get_json_error(json_req_obj))
-        return JsonResponse(usr_msg)
+    if not request.user.is_authenticated:
+        user_msg = 'You must be logged in.'
+        return JsonResponse(get_json_error(user_msg),
+                            status=403)
+
+    json_info = get_request_body_as_json(request)
+    if not json_info.success:
+        return JsonResponse(get_json_error(json_info.err_msg))
 
     # check if json is empty
-    count = 0
-    for key in json_req_obj:
-        if count > 1:
-            # avoid a long running loop
-            break
-        count += 1
-    if count == 0:
-        user_msg = dict(success=False,
-                        message='Invalid Input',
-                        errors='zero parameters given')
-        return JsonResponse(user_msg)
+    #
+    json_data = json_info.result_obj
 
-    # check if input contains correct search parameters
-    for key in json_req_obj:
-        if key not in SEARCH_PARAMETERS:
-            user_msg = dict(success=False,
-                            message='Invalid Input',
-                            errors=' %s in not valid input, Valid input is among %s' % (key, SEARCH_PARAMETERS))
-            return JsonResponse(user_msg)
+    search_results = EventJobUtil.search_objects(request.user, json_data)
+    if not search_results.success:
+        return JsonResponse(get_json_error(search_results.err_msg))
 
-    # check if the form is valid
-    frm = EventDataQueryFormSearch(json_req_obj)
+    user_info = get_json_success('results found!',
+                                 data=search_results.result_obj)
+    if 'pretty' in request.GET:
+        fmt_info = format_pretty_from_dict(user_info)
+        if not fmt_info.success:
+            return JsonResponse(get_json_error(fmt_info.err_msg))
 
-    if not frm.is_valid():
-        print(" frm error ")
-        user_msg = dict(success=False,
-                        message='Invalid input',
-                        errors=frm.errors)
-        return JsonResponse(user_msg)
+        return HttpResponse('<pre>%s</pre>' % fmt_info.result_obj)
 
-    if 'name' not in frm.cleaned_data:
-        name = None
-    else:
-        name = frm.cleaned_data['name']
 
-    if 'description' not in frm.cleaned_data:
-        description = None
-    else:
-        description = frm.cleaned_data['description']
-
-    if 'username' not in frm.cleaned_data:
-        username = None
-    else:
-        username = frm.cleaned_data['username']
-
-    filters = {'description__icontains': description,
-               'name__icontains': name,
-               'username': username}
-
-    success, get_list_obj = EventJobUtil.search_object(**filters)
-    job_list = []
-    if success:
-        for job in get_list_obj:
-            job_list.append(job)
-        user_msg = dict(success=True,
-                        message='list retrieved',
-                        data=job_list)
-        return JsonResponse(user_msg)
-    else:
-        user_msg = dict(success=False,
-                        message='list not retrieved',
-                        error=get_json_error(get_list_obj))
-        return JsonResponse(user_msg)
+    return JsonResponse(user_info)
 
 
 @csrf_exempt

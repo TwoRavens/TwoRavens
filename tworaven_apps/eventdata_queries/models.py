@@ -30,17 +30,18 @@ STATUS_STATES = (IN_PROCESS, ERROR, COMPLETE)
 SUBSET = u'subset'
 AGGREGATE = u'aggregate'
 TYPE_OPTIONS = (SUBSET, AGGREGATE)
-TYPE_CHOICES = [(x,x) for x in TYPE_OPTIONS]
+TYPE_CHOICES = [(x, x) for x in TYPE_OPTIONS]
 STATUS_CHOICES = [(x, x) for x in STATUS_STATES]
 METHOD_CHOICES = (u'find', u'aggregate', u'count')  # the valid mongodb collection methods
 HOST_CHOICES = (u'TwoRavens', 'UTDallas')
 
 # Create your models here.
-NAME = u'name'
-DESC = u'description'
-USERNAME = u'username'
+SEARCH_KEY_NAME = u'name'
+SEARCH_KEY_DESCRIPTION = u'description'
+#SEARCH_KEY_USERNAME = u'username'
 
-SEARCH_PARAMETERS = (NAME, DESC, USERNAME)
+SEARCH_PARAMETERS = (SEARCH_KEY_NAME,
+                     SEARCH_KEY_DESCRIPTION,)   # USERNAME)
 
 
 class EventDataSavedQuery(TimeStampedModel):
@@ -187,7 +188,7 @@ class EventDataSavedQuery(TimeStampedModel):
 
 
     @staticmethod
-    def get_query_list_for_user(user):
+    def get_query_list_for_user(user, **additional_filters):
         """ get all fields expect query"""
         if not isinstance(user, User):
             user_msg = 'A user must be specified.'
@@ -199,25 +200,31 @@ class EventDataSavedQuery(TimeStampedModel):
 
         orig_list = EventDataSavedQuery.objects.filter(\
                      user=user\
-                    ).values(*EventDataSavedQuery.get_field_list_for_values()\
-                    ).all()
+                    )
+        if additional_filters:
+            orig_list = orig_list.filter(**additional_filters)
+
+        orig_list = orig_list.values(\
+                        *EventDataSavedQuery.get_field_list_for_values())
+
+        if orig_list.count() == 0:
+            err_msg = ('No saved queries found.')
+            return err_resp(err_msg)
 
         # Format the list including adding a detail url
         #
         fmt_list = []
         for item in orig_list:
-            item['user'] = item['user__username']
+            item['username'] = item['user__username']
             del item['user__username']
             item['detail_url'] = reverse('api_retrieve_event_data_query',
                                          kwargs=dict(query_id=item['id']))
-            fmt_list = item
-        print(orig_list[0])
+            fmt_list.append(item)
 
-        if orig_list.count() == 0:
-            err_msg = ('No EventDataSavedQuery objects found.')
-            return err_resp(err_msg)
+        final_results = dict(count=len(fmt_list),
+                             query_list=fmt_list)
 
-        return ok_resp(list(orig_list))
+        return ok_resp(final_results)
 
 
     def queries_to_dataverse(self):

@@ -52,10 +52,12 @@
             </ul>
         </div>
       </div>
+      <a name="list-user-queries"></a>
 
       <br />
       <div class="card">
-        <div class="card-header"><b>List a User's Queries</b></div>
+        <div class="card-header"><b>List a User's Queries</b>
+        </div>
         <div class="card-body">
           <li><b>Endpoint:</b>
               <code>{% url 'api_get_event_data_queries' %}</code></li>
@@ -69,31 +71,43 @@
               <li>Returns queries saved by the logged in user</li>
             </ul>
           </li>
-          <li><b>Example</b>:
+          <li><b>Example 1</b>:
             <br />
             <pre><code>
   {
-      "success": true,
-      "message": "list retrieved",
-      "data": [
-          {
-              "id": 4,
-              "name": "q12",
-              "description": "adfg",
-              "result_count": 161939,
-              "collection_name": "acled_africa",
-              "collection_type": "subset",
-              "hash_id": "992d7264200e3c73220bf430cdc0cef5d5a1469eebbd727aa358b98b",
-              "created": "2018-08-23T21:39:28.067790+00:00",
-              "modified": "2018-08-23T21:39:28.077061+00:00",
-              "user": "dev_admin",
-              "detail_url": "/eventdata/api/get/4"
-          },
-          ...etc...
-      ]
+    "success": true,
+    "message": "list retrieved",
+    "data": {
+        "count": 4,
+        "query_list": [
+            {
+                "id": 4,
+                "name": "q12",
+                "description": "adfg",
+                "result_count": 161939,
+                "collection_name": "acled_africa",
+                "collection_type": "subset",
+                "hash_id": "992d7264200e3c73220bf430cdc0cef5d5a1469eebbd727aa358b98b",
+                "created": "2018-08-23T21:39:28.067790+00:00",
+                "modified": "2018-08-23T21:39:28.077061+00:00",
+                "username": "dev_admin",
+                "detail_url": "/eventdata/api/get/4"
+            },
+            ...etc...
+        ]
+    }
   }
         </code></pre>
           </li>
+          <li><b>Example 2</b>:
+            <br />
+            <pre><code>
+  {
+     "success":false,
+     "message":"No saved queries found."
+  }
+            </code></pre>
+
         </ul>
     </div>
   </div>
@@ -128,6 +142,8 @@
                 <li>The query must be one saved by the logged in user</li>
               </ul>
             </li>
+            <li><b>Examples</b>:
+                Same output as <a href="#list-user-queries"><b>List a User's Queries</b></a>
           </ul>
         </div>
       </div>
