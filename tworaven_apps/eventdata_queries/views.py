@@ -135,6 +135,36 @@ def api_get_event_data_queries(request):
 
     return JsonResponse(user_msg)
 
+@csrf_exempt
+def api_delete_event_data_query(request, query_id=None):
+    """Delete a EventDataSavedQuery.
+    Checks that the logged in user owns the query"""
+    if not request.user.is_authenticated:
+        user_msg = 'You must be logged in.'
+        return JsonResponse(get_json_error(user_msg),
+                            status=403)
+
+    if not query_id:
+        # shouldn't happen, just used to show plain url ...
+        user_msg = 'You must specify a query_id in the url.'
+        return JsonResponse(get_json_error(user_msg))
+
+    query_info = EventJobUtil.get_by_id_and_user(\
+                                query_id,
+                                request.user)
+
+    if not query_info.success:
+        return JsonResponse(get_json_error(query_info.err_msg))
+
+    saved_query = query_info.result_obj
+    try:
+        saved_query.delete()
+    except IntegrityError as ex_obj:
+        user_obj = 'Failed to delete query. Error: %s' % ex_obj
+        return JsonResponse(get_json_error(user_obj))
+
+    return JsonResponse(get_json_success('Query deleted'))
+
 
 @csrf_exempt
 def api_retrieve_event_data_query(request, query_id=None):
@@ -213,7 +243,8 @@ def api_search_event_data_queries(request):
 @csrf_exempt
 def api_upload_to_dataverse(request, query_id):
     """ get query id to upload to dataverse"""
-
+    return JsonResponse(get_json_error('temporarily disabled'))
+    """
     success, res_obj = EventJobUtil.get_query_from_object(query_id)
     if success:
         user_msg = dict(data=res_obj)
@@ -221,7 +252,7 @@ def api_upload_to_dataverse(request, query_id):
     else:
         user_msg = dict(error=get_json_error(res_obj))
         return JsonResponse(user_msg)
-
+    """
 
 @csrf_exempt
 def api_publish_dataset(request, dataset_id):

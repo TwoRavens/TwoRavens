@@ -99,7 +99,7 @@
           // test url: just sends back your POSTed data
           const test_csrf_url = "{% url 'view_test_csrf_required' %}";
 
-          {% if DEBUG %}
+          {#% if DEBUG %#}
           // --------------------------
           // start: example/test function (only appears in DEBUG mode)
           // --------------------------
@@ -133,9 +133,9 @@
                 });
             }
           // --------------------------
-          // end: example/test function 
+          // end: example/test function
           // --------------------------
-          {% endif %}
+          {#% endif %#}
     </script>
   {% endblock %}
 

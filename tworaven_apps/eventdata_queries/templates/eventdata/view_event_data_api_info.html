@@ -32,7 +32,7 @@ function makeTestSearch(){
         url: '{% url "api_search_event_data_queries" %}',
         data: JSON.stringify(someTestData),
         dataType: 'json',
-        headers: { 'X-CSRFToken': getCookie(csrf_cookie_name)},
+        //headers: { 'X-CSRFToken': getCookie(csrf_cookie_name)},
         success: function(respData) {
             console.log("SUCCESS: ", respData);
             alert(JSON.stringify(respData));
@@ -157,7 +157,7 @@ function makeTestSearch(){
      "message":"No saved queries found."
   }
             </code></pre>
-
+          </li>
         </ul>
     </div>
   </div>
@@ -198,7 +198,7 @@ function makeTestSearch(){
         </div>
       </div>
       <br />
-      <!-- Registration related -->
+
       <div class="card">
         <div class="card-header"><b>Search a user's queries</b></div>
         <div class="card-body">
@@ -223,26 +223,50 @@ function makeTestSearch(){
             </li>
             <li><b>Examples</b>:
                 Same output as <a href="#list-user-queries"><b>List a User's Queries</b></a>
+            </li>
+
           </ul>
         </div>
       </div>
-
-      <!-- Test/in process -->
       <br />
       <div class="card">
-        <div class="card-header"><b>Test/in process</b></div>
+        <div class="card-header"><b>Delete a saved query</b></div>
         <div class="card-body">
           <ul>
-            <li><a href="{% url 'view_workspace_info' %}">view workspace info</a></li>
-          </ul>
-          <ul>
-            <li><a href="/static/pkgs/swagger-ui/dist/index.html?url={% url 'view_swagger_doc_v1' %}">swagger ui</a> </li>
-            <li><a href="{% url 'view_swagger_doc_v1' %}">swagger spec v1</a></li>
+            <li><b>Endpoint:</b>
+                <br />exampe query
+                <code>{% url 'api_delete_event_data_query_base' %}{query_id}</code>
+            </li>
+            <li><b>Method</b>: GET</li>
+            <li><b>Notes</b>:
+              <ul>
+                <li>The query must have been saved by the logged in user
+                  or it will not be deleted.  A 'no query found' message
+                  will be given.
+                </li>
+              </ul></li>
+              <li><b>Example 1</b>:
+                <br />
+                <pre><code>
+  {
+     "success":false,
+     "message": "Query deleted."
+  }
+                </code></pre>
+              </li>
 
+            <li><b>Example 2</b>:
+              <br />
+              <pre><code>
+  {
+     "success":false,
+     "message": "A query was not found for the given query id and user."
+  }
+              </code></pre>
+            </li>
           </ul>
-
         </div>
       </div>
-      <br />
+
     </div><!-- end: column -->
 {% endblock %}

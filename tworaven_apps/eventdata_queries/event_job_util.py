@@ -55,7 +55,7 @@ class EventJobUtil(object):
                                 user=user)
         except EventDataSavedQuery.DoesNotExist:
             user_msg = ('A query was not found for the'
-                        ' given query_id and user')
+                        ' given query id and user')
             return err_resp(user_msg)
 
         return ok_resp(saved_query)
@@ -118,12 +118,14 @@ class EventJobUtil(object):
 
 
     @staticmethod
-    def get_query_from_object(query_id):
+    def get_query_from_object(query_id, user):
         """ return query obj"""
+        return get_json_error('temp disabled!!')
+
         print('-' * 40)
         print('getting object for query_id %s' % query_id)
         print('-' * 40)
-        success, event_obj = EventJobUtil.get_object_by_id(query_id)
+        success, event_obj = EventJobUtil.get_by_id_and_user(query_id, user)
 
         if not success:
             return get_json_error(event_obj)
@@ -201,17 +203,18 @@ class EventJobUtil(object):
             except ArchiveQueryJob.DoesNotExist:
                 search_obj = None
             if search_obj is None:
-                succ, add_archive = EventJobUtil.add_archive_query_job(datafile_id=file_id,
-                                                                       saved_query=saved_query,
-                                                                       status=COMPLETE,
-                                                                       is_finished=True,
-                                                                       is_success=True,
-                                                                       message='query result successfully created',
-                                                                       dataverse_response=d,
-                                                                       archive_url=file_url)
-                if not succ:
-                    has_error = True
-                    error_list.append('Could not add the object with file id %s' % file_id)
+                succ, add_archive = EventJobUtil.add_archive_query_job(\
+                    datafile_id=file_id,
+                    saved_query=saved_query,
+                    status=COMPLETE,
+                    is_finished=True,
+                    is_success=True,
+                    message='query result successfully created',
+                    dataverse_response=d,
+                    archive_url=file_url)
+            if not succ:
+                has_error = True
+                error_list.append('Could not add the object with file id %s' % file_id)
             else:
                 has_error = True
                 error_list.append('Object with file ID %s already exists' % file_id)
@@ -223,41 +226,6 @@ class EventJobUtil(object):
         else:
             return ok_resp(ok_response)
 
-        # print(""" files has been successfully uploaded to dataverse, saving to database  EventDataSavedQuery""")
-        # now upload to ARCHIVE
-        # succ, res_obj = temp_file_obj.return_status()
-        # print("res po", res_obj)
-        # if not succ:
-        #     return err_resp(res_obj)
-        # else:
-        #
-        # try:
-        #     saved_query = EventDataSavedQuery.objects.get(id=query_id)
-        #
-        # except ValueError:
-        #     return err_resp('Could not retrieve query for id %s' % query_id)
-        #
-        # try:
-        #     datafile_id = res_status['data']['files'][0]['dataFile']['id']
-        #
-        # except ValueError:
-        #     return err_resp('Could not retrieve datafile id for query_id %s' % query_id)
-        #
-        # url_input = 'https://dataverse.harvard.edu/file.xhtml?fileId=' + str(datafile_id) + '&version=DRAFT'
-        #
-        # succ, add_archive = EventJobUtil.add_archive_query_job(datafile_id=int(datafile_id),
-        #                                                        saved_query=saved_query,
-        #                                                        status='complete',
-        #                                                        is_finished=True,
-        #                                                        is_success=True,
-        #                                                        message='query result successfully created',
-        #                                                        dataverse_response=r,
-        #                                                        archive_url=url_input)
-        #
-        # if not succ:
-        #     return err_resp(add_archive)
-        # else:
-        #     return ok_resp(add_archive)
 
     @staticmethod
     def add_archive_query_job(**kwargs):

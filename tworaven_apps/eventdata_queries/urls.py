@@ -18,6 +18,14 @@ urlpatterns = [
          views.api_get_event_data_queries,
          name='api_get_event_data_queries'),
 
+    re_path(r'api/delete/(?P<query_id>[0-9]{1,10})$',
+            views.api_delete_event_data_query,
+            name='api_delete_event_data_query'),
+
+    re_path(r'api/delete/$',
+            views.api_delete_event_data_query,
+            name='api_delete_event_data_query_base'),
+
     re_path(r'api/get/(?P<query_id>[0-9]{1,10})$',
             views.api_retrieve_event_data_query,
             name='api_retrieve_event_data_query'),
