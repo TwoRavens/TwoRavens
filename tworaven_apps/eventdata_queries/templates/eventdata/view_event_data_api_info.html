@@ -82,6 +82,12 @@ function makeTestSearch(){
               <li><b>Notes</b>:
                 <ul>
                   <li>If not logged in, returns a `403` forbidden error</li>
+                  <li>An individual user cannot use the same <code>name</code> twice
+                    for a saved query.  See the details returned in the error messages.</li>
+                    <li>An individual user cannot save a query more than once that has the same:
+                     <code>query</code>,  <code>collection</code>, and  <code>collection_name</code>.
+                     See the details returned in the error messages.</li>
+
                   <li>Saved under the name of the logged in user</li>
                   <li>Any extra fields sent in the request are ignored.  e.g. the older "username" will not trigger an error, simply be ignored.</li>
                 </ul>
@@ -213,6 +219,7 @@ function makeTestSearch(){
             </li>
             <li><b>Notes</b>:
               <ul>
+                <li>If not logged in, returns a `403` forbidden error</li>
                 <li>Search parameters:
                     {% for param in SEARCH_PARAMETERS %}
                     <code><b>{{ param }}</b></code>{% if not forloop.last %}, {% endif %}
@@ -240,6 +247,7 @@ function makeTestSearch(){
             <li><b>Method</b>: GET</li>
             <li><b>Notes</b>:
               <ul>
+                <li>If not logged in, returns a `403` forbidden error</li>
                 <li>The query must have been saved by the logged in user
                   or it will not be deleted.  A 'no query found' message
                   will be given.
