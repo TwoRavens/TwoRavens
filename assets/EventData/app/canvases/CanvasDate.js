@@ -11,14 +11,6 @@ import ButtonRadio from '../../../common-eventdata/views/ButtonRadio';
 import PlotDate from '../views/PlotDate';
 import * as app from '../app';
 
-export function dateSort(a, b) {
-    if (a['Date'] === b['Date']) {
-        return 0;
-    }
-    else {
-        return (a['Date'] < b['Date']) ? -1 : 1;
-    }
-}
 
 export function interpolate(data, date) {
     let allDatesInt = [];
@@ -109,7 +101,7 @@ export default class CanvasDate {
         let {mode, subsetName, data, preferences, redraw, setRedraw} = vnode.attrs;
         if (Object.keys(preferences).length === 0) this.oncreate(vnode);
 
-        preferences['unit'] = preferences['unit'] || 'Weekly';
+        preferences['measure'] = preferences['measure'] || 'Monthly';
 
         let setHandleDates = (handles) => {
             preferences['handleLower'] = handles[0];
@@ -121,7 +113,7 @@ export default class CanvasDate {
         let dataProcessed;
         if (redraw && drawGraph) {
             setRedraw(false);
-            let allDates = [...data.sort(dateSort)];
+            let allDates = [...data.sort(app.dateSort)];
 
             preferences['userLower'] = preferences['userLower'] || data[0]['Date'];
             preferences['userUpper'] = preferences['userUpper'] || data[data.length - 1]['Date'];
@@ -165,7 +157,7 @@ export default class CanvasDate {
                 allDates.push(interpolatedMax);
             }
 
-            allDates = allDates.sort(dateSort);
+            allDates = allDates.sort(app.dateSort);
 
             dataProcessed = {
                 "#ADADAD": allDates,
@@ -227,8 +219,8 @@ export default class CanvasDate {
                 id: 'dateAggregOption',
                 attrsAll: {style: {width: '80px'}},
                 vertical: true,
-                onclick: (aggregation) => preferences['unit'] = aggregation,
-                activeSection: preferences['unit'],
+                onclick: (aggregation) => preferences['measure'] = aggregation,
+                activeSection: preferences['measure'],
                 sections: [
                     {value: 'Weekly'},
                     {value: 'Monthly'},

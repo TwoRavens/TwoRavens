@@ -1,8 +1,6 @@
 import jsep from 'jsep';
 
 import * as app from './app';
-import {incrementMonth, isSameMonth} from './app';
-
 
 // functions for generating database queries
 // subset queries are built typically built from abstractManipulations. An additional menu step may be added too
@@ -21,7 +19,7 @@ import {incrementMonth, isSameMonth} from './app';
 // {measuresUnit: [], measuresAccum: []}
 
 // menu step: mutate to a format that can be rendered in a menu
-// {name: 'Actor', type: 'dyad', step: [previous pipeline step]}
+// {name: 'Actor', type: 'dyad', preferences: {...}, metadata: {...}}
 
 export function buildPipeline(pipeline, variables = new Set()) {
     let compiled = [];
@@ -355,38 +353,66 @@ export function buildAggregation(unitMeasures, accumulations) {
     let columnsNonDyad = [];
     let columnsAccum = [];
 
+    // relevant for a date unit measure, this is used to rebuild date objects after the grouping stage
+    let dateTransforms = {};
+
     // note that only aggregation transforms for unit-date, unit-dyad and event-categorical have been written.
     // To aggregate down to date events, for example, a new function would need to be added under ['event']['date'].
     let transforms = {
         'unit': {
             'date': (data) => {
-
                 let dateFormat = {
-                    'Weekly': '%Y-%V',
+                    'Weekly': '%G-%V',
                     'Monthly': '%Y-%m',
                     'Yearly': '%Y'
-                }[data['unit']];
-
-                let columnName = data['measureName'] + '-' + data['unit'];
-                columnsNonDyad.push(columnName);
-
-                if (dateFormat) unit[columnName] = {
-                    "$dateToString": {
-                        "format": dateFormat,
-                        "date": "$" + data['column']
-                    }
-                };
+                }[data['measure']];
 
 
-                else if (data['unit'] === 'Quarterly') {
+                if (dateFormat) {
+                    // transform into string for grouping
+                    unit[data['column']] = {
+                        $dateToString: {
+                            format: dateFormat,
+                            date: "$" + data['column']
+                        }
+                    };
+                    // transform back out of string afterwards
+                    if (data['measure'] === 'Weekly') dateTransforms[data['column']] = {
+                        $dateFromString: {
+                            format: dateFormat,
+                            dateString: '$_id.' + data['column']
+                        }
+                    };
+                    if (data['measure'] === 'Monthly' || data['measure'] === 'Yearly') dateTransforms[data['column']] = {
+                        $dateFromString: {
+                            format: '%Y-%m-%d',
+                            dateString: {
+                                $concat: ['$_id.' + data['column'], {
+                                    'Monthly': '-01',
+                                    'Yearly': '-01-01'
+                                }[data['measure']]]
+                            }
+                        }
+                    };
+                }
+
+
+                else if (data['measure'] === 'Quarterly') {
                     // function takes a mongodb subquery and returns the subquery casted to a string
-                    let toString = (query) => ({"$substr": [query, 0, -1]});
-                    unit[columnName] = {
-                        '$concat': [
-                            toString({'$year': '$' + data['column']}), '-',
-                            toString({'$trunc': {'$divide': [{'$month': '$' + data['column']}, 4]}})
+                    let toString = (query) => ({$substr: [query, 0, -1]});
+                    unit[data['column']] = {
+                        $concat: [
+                            toString({$year: '$' + data['column']}), '-',
+                            toString({$trunc: {$divide: [{$month: '$' + data['column']}, 4]}})
                         ]
-                    }
+                    };
+                    dateTransforms[data['column']] = {
+                        $dateFromParts: {
+                            year: {$toInt: {$arrayElemAt: [{$split: ['$_id.' + data['column'], '-']}, 0]}},
+                            month: {$multiply: [{$toInt: {$arrayElemAt: [{$split: ['$_id.' + data['column'], '-']}, 1]}}, 4]},
+                            day: 1
+                        }
+                    };
                 }
             },
             'dyad': (data) => {
@@ -398,21 +424,21 @@ export function buildAggregation(unitMeasures, accumulations) {
                     columnsDyad.push(dyadName);
 
                     unit[dyadName] = {
-                        '$and': [
-                            {'$in': ['$' + leftChild.column, [...leftChild.actors]]},
-                            {'$in': ['$' + rightChild.column, [...rightChild.actors]]}
+                        $and: [
+                            {$in: ['$' + leftChild.column, [...leftChild.actors]]},
+                            {$in: ['$' + rightChild.column, [...rightChild.actors]]}
                         ]
                     }
                 });
             }
         },
-        'event': {
+        'accumulator': {
             'categorical': (data) => {
                 let selections = new Set(data.children.map(child => child.name));
                 columnsAccum.push(...selections);
 
                 let bins = {};
-                if ('alignment' in data) {
+                if ('alignment' in data && data['alignment']) {
                     for (let equivalency of app.alignmentData[data['alignment']]) {
                         if (!(data['formatSource'] in equivalency && data['formatTarget'] in equivalency)) continue;
                         if (!selections.has(equivalency[data['formatSource']])) continue;
@@ -425,20 +451,20 @@ export function buildAggregation(unitMeasures, accumulations) {
 
                 for (let bin of Object.keys(bins)) {
                     if (bins[bin].size === 1) event[bin] = {
-                        "$sum": {
-                            "$cond": [{
-                                "$eq": ["$" + data['column'], [...bins[bin]][0]]
+                        $sum: {
+                            $cond: [{
+                                $eq: ["$" + data['column'], [...bins[bin]][0]]
                             }, 1, 0]
                         }
                     };
                     else event[bin] = {
-                        "$sum": {
-                            "$cond": [{
-                                "$anyElementTrue": {
-                                    "$map": {
-                                        "input": [...bins[bin]],
-                                        "as": "el",
-                                        "in": {"$eq": ["$$el", "$" + data['column']]}
+                        $sum: {
+                            $cond: [{
+                                $anyElementTrue: {
+                                    $map: {
+                                        input: [...bins[bin]],
+                                        as: "el",
+                                        in: {$eq: ["$$el", "$" + data['column']]}
                                     }
                                 }
                             }, 1, 0]
@@ -449,6 +475,9 @@ export function buildAggregation(unitMeasures, accumulations) {
         }
     };
 
+    unitMeasures.forEach(measure => transforms.unit[measure.subset](measure));
+    accumulations.forEach(measure => transforms.accumulator[measure.subset](measure));
+
     let reformatter = [];
     if (dyadMeasureName) {
         let _id = columnsNonDyad.reduce((out_id, columnNonDyad) => {
@@ -458,40 +487,44 @@ export function buildAggregation(unitMeasures, accumulations) {
 
         reformatter = [
             {
-                "$facet": columnsDyad.reduce((facet, dyad) => { // build a pipeline for each dyad
+                $facet: columnsDyad.reduce((facet, dyad) => { // build a pipeline for each dyad
                     facet[dyad] = [
-                        {"$match": {["_id." + column]: true}},
+                        {$match: {["_id." + column]: true}},
                         {
-                            "$group": columnsAccum.reduce((accumulators, columnAccum) => {
-                                accumulators[columnAccum] = {"$sum": "$" + columnAccum};
+                            $group: columnsAccum.reduce((accumulators, columnAccum) => {
+                                accumulators[columnAccum] = {$sum: "$" + columnAccum};
                                 return accumulators;
                             }, {_id})
                         },
-                        {"$addFields": Object.assign({[dyadMeasureName]: dyad}, _id)}
+                        {$addFields: Object.assign({[dyadMeasureName]: dyad}, _id, dateTransforms)}
                     ];
                     return facet;
                 }, {})
             },
-            {"$project": {"combine": {"$setUnion": columnsDyad.map(column => '$' + column)}}},
-            {"$unwind": "$combine"},
-            {"$replaceRoot": {"newRoot": "$combine"}},
-            {"$project": {"_id": 0}}
+            {$project: {combine: {$setUnion: columnsDyad.map(column => '$' + column)}}},
+            {$unwind: "$combine"},
+            {$replaceRoot: {newRoot: "$combine"}},
+            {$project: {_id: 0}}
         ];
     }
-    else {
+    else if (columnsNonDyad.length) {
+        console.log(dateTransforms);
+        console.log('columnsNonDyad has length')
         reformatter = [
             {
-                "$addFields": columnsNonDyad.reduce((addFields, column) => {
+                $addFields: Object.assign(columnsNonDyad.reduce((addFields, column) => {
                     addFields[column] = '$_id.' + column;
                     return addFields;
-                }, {})
+                }, {}), dateTransforms)
             },
-            {"$project": {"$_id": 0}}
+            {$project: {_id: 0}}
         ];
     }
-
-    unitMeasures.forEach(measure => transforms.unit[measure.type](measure));
-    accumulations.forEach(measure => transforms.unit[measure.type](measure));
+    else if (Object.keys(dateTransforms).length) {
+        console.log("using dateTransforms");
+        reformatter = [{$addFields: dateTransforms}, {$project: {_id: 0}}];
+    }
+    else reformatter = [{$project: {_id: 0}}];
 
     return {
         pipeline: [{"$group": Object.assign({"_id": unit}, event)}].concat(reformatter),
@@ -704,13 +737,14 @@ export let menuPostProcess = new Proxy({
 
     'date': (data) => data
         .map(entry => ({'Date': new Date(entry['year'], entry['month'] - 1, 0), 'Freq': entry.total}))
+        .sort(app.dateSort)
         .reduce((out, entry) => {
             if (out.length === 0) return [entry];
-            let tempDate = incrementMonth(out[out.length - 1]['Date']);
+            let tempDate = app.incrementMonth(out[out.length - 1]['Date']);
 
-            while (!isSameMonth(tempDate, entry['Date'])) {
+            while (!app.isSameMonth(tempDate, entry['Date'])) {
                 out.push({Freq: 0, Date: new Date(tempDate)});
-                tempDate = incrementMonth(tempDate);
+                tempDate = app.incrementMonth(tempDate);
             }
             out.push(entry);
             return (out);

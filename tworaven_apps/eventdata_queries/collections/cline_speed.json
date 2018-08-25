@@ -14,234 +14,182 @@
     },
     "Posthoc": {
       "type": "categorical",
-      "measures": [
-        "event"
-      ],
+      "measureType": "accumulator",
       "columns": [
         "posthoc"
       ]
     },
     "Link Type": {
       "type": "categorical",
-      "measures": [
-        "event"
-      ],
+      "measureType": "accumulator",
       "columns": [
         "LINK_TYPE"
       ]
     },
     "Location Type": {
       "type": "categorical",
-      "measures": [
-        "event"
-      ],
+      "measureType": "accumulator",
       "columns": [
         "LOC_TYPE"
       ]
     },
     "Political Expression Type": {
       "type": "categorical",
-      "measures": [
-        "event"
-      ],
+      "measureType": "accumulator",
       "columns": [
         "PE_TYPE"
       ]
     },
     "Reduced Political Expression Type": {
       "type": "categorical",
-      "measures": [
-        "event"
-      ],
+      "measureType": "accumulator",
       "columns": [
         "EXP_TYPE"
       ]
     },
     "Symbolic Event Type": {
       "type": "categorical",
-      "measures": [
-        "event"
-      ],
+      "measureType": "accumulator",
       "columns": [
         "SYM_TYPE"
       ]
     },
     "Advocated Violence": {
       "type": "categorical",
-      "measures": [
-        "event"
-      ],
+      "measureType": "accumulator",
       "columns": [
         "AD_VIOL"
       ]
     },
     "Advocated Tactics": {
       "type": "categorical",
-      "measures": [
-        "event"
-      ],
+      "measureType": "accumulator",
       "columns": [
         "AD_TACT"
       ]
     },
     "Attack Type": {
       "type": "categorical",
-      "measures": [
-        "event"
-      ],
+      "measureType": "accumulator",
       "columns": [
         "ATK_TYPE"
       ]
     },
     "Disruptive State Act Type Broad": {
       "type": "categorical",
-      "measures": [
-        "event"
-      ],
+      "measureType": "accumulator",
       "columns": [
         "DSA_TYPE"
       ]
     },
     "Disruptive State Act Type": {
       "type": "categorical",
-      "measures": [
-        "event"
-      ],
+      "measureType": "accumulator",
       "columns": [
         "STAT_ACT"
       ]
     },
     "Victim Effect": {
       "type": "categorical",
-      "measures": [
-        "event"
-      ],
+      "measureType": "accumulator",
       "columns": [
         "victim_effect"
       ]
     },
     "Weapon": {
       "type": "categorical",
-      "measures": [
-        "event"
-      ],
+      "measureType": "accumulator",
       "columns": [
         "weapon"
       ]
     },
     "Property Damaged": {
       "type": "categorical",
-      "measures": [
-        "event"
-      ],
+      "measureType": "accumulator",
       "columns": [
         "property_damaged"
       ]
     },
     "Property Owner": {
       "type": "categorical",
-      "measures": [
-        "event"
-      ],
+      "measureType": "accumulator",
       "columns": [
         "property_owner"
       ]
     },
     "Geopolitical Entity Type": {
       "type": "categorical",
-      "measures": [
-        "event"
-      ],
+      "measureType": "accumulator",
       "columns": [
         "GP_TYPE"
       ]
     },
     "Initiator Type Known": {
       "type": "categorical",
-      "measures": [
-        "event"
-      ],
+      "measureType": "accumulator",
       "columns": [
         "KNOW_INI"
       ]
     },
     "Initiator Type": {
       "type": "categorical",
-      "measures": [
-        "event"
-      ],
+      "measureType": "accumulator",
       "columns": [
         "INI_TYPE"
       ]
     },
     "Target Type": {
       "type": "categorical",
-      "measures": [
-        "event"
-      ],
+      "measureType": "accumulator",
       "columns": [
         "TAR_TYPE"
       ]
     },
     "Victim Type": {
       "type": "categorical",
-      "measures": [
-        "event"
-      ],
+      "measureType": "accumulator",
       "columns": [
         "VIC_TYPE"
       ]
     },
     "Non-government Initiator Type": {
       "type": "categorical",
-      "measures": [
-        "event"
-      ],
+      "measureType": "accumulator",
       "columns": [
         "NGOV_I1"
       ]
     },
     "Government Initiator Type": {
       "type": "categorical",
-      "measures": [
-        "event"
-      ],
+      "measureType": "accumulator",
       "columns": [
         "GOV_I1"
       ]
     },
     "Level of Government Initiator": {
       "type": "categorical",
-      "measures": [
-        "event"
-      ],
+      "measureType": "accumulator",
       "columns": [
         "G_LVL_I"
       ]
     },
     "Level of Government Target": {
       "type": "categorical",
-      "measures": [
-        "event"
-      ],
+      "measureType": "accumulator",
       "columns": [
         "G_LVL_T"
       ]
     },
     "Level of Government Victim": {
       "type": "categorical",
-      "measures": [
-        "event"
-      ],
+      "measureType": "accumulator",
       "columns": [
         "G_LVL_V"
       ]
     },
     "Code Date": {
       "type": "date",
-      "measures": [
-        "unit"
-      ],
+      "measureType": "unit",
       "structure": "point",
       "columns": [
         "CODE_DATE_constructed"
@@ -249,9 +197,7 @@
     },
     "Publish Date": {
       "type": "date",
-      "measures": [
-        "unit"
-      ],
+      "measureType": "unit",
       "structure": "point",
       "columns": [
         "PUB_DATE_constructed"
@@ -259,9 +205,7 @@
     },
     "Date": {
       "type": "date",
-      "measures": [
-        "unit"
-      ],
+      "measureType": "unit",
       "structure": "point",
       "columns": [
         "AVERAGE_DATE_constructed"
@@ -269,9 +213,7 @@
     },
     "Earliest/Latest Date": {
       "type": "date",
-      "measures": [
-        "unit"
-      ],
+      "measureType": "unit",
       "structure": "interval",
       "columns": [
         "JUL_END_DATE_constructed",
@@ -280,9 +222,7 @@
     },
     "Precise Date": {
       "type": "date",
-      "measures": [
-        "unit"
-      ],
+      "measureType": "unit",
       "structure": "interval",
       "columns": [
         "JUL_PED_constructed",
@@ -291,9 +231,7 @@
     },
     "Estimated Date": {
       "type": "date",
-      "measures": [
-        "unit"
-      ],
+      "measureType": "unit",
       "structure": "interval",
       "columns": [
         "JUL_EED_constructed",

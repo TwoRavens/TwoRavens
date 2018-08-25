@@ -122,7 +122,6 @@ export default class CanvasCategorical {
                         data: plotData,
                         callbackBar: (bar) => {
                             let target_state = bar.class === 'bar-some' || bar.class === 'bar';
-                            if (mode === 'aggregate') app.setAggregationStaged(true);
 
                             if (masterAlignment) {
                                 app.alignmentData[masterAlignment]

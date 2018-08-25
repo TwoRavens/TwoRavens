@@ -8,9 +8,7 @@
   "subsets": {
     "Date": {
       "type": "date",
-      "measures": [
-        "unit"
-      ],
+      "measureType": "unit",
       "structure": "point",
       "columns": [
         "Event Date_constructed"
@@ -18,9 +16,7 @@
     },
     "Actor": {
       "type": "dyad",
-      "measures": [
-        "unit"
-      ],
+      "measureType": "unit",
       "tabs": {
         "source": {
           "full": "Source Name",
@@ -43,9 +39,7 @@
       }
     },
     "Action": {
-      "measures": [
-        "event"
-      ],
+      "measureType": "accumulator",
       "type": "categorical",
       "formats": [
         "CAMEO",

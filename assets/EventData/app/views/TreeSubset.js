@@ -83,7 +83,6 @@ function buttonDeleteTransform(id) {
     return `<button type='button' class='btn btn-default btn-xs' style='background:none;border:none;box-shadow:none;margin-top:2px;height:18px' onclick='callbackDeleteTransform("${id}")'><span class='glyphicon glyphicon-remove' style='color:#ADADAD'></span></button></div>`;
 }
 
-
 export class TreeQuery {
     selectAll(subsetTree, abstractQuery, state) {
         if (Array.isArray(abstractQuery)) abstractQuery.forEach(element => this.selectAll(subsetTree, element, state));
@@ -290,10 +289,19 @@ export class TreeAggregate {
             selectable: false,
             onCreateLi: function (node, $li) {
                 if (!('cancellable' in node) || (node['cancellable'] === true)) {
-                    $li.find('.jqtree-element').prepend(buttonDeleteTransform(node.id));
+                    $li.find('.jqtree-element').prepend(buttonDeleteAggregation(node.id));
                 }
             }
-        })
+        });
+
+        aggregateTree.on(
+            'tree.click',
+            function (event) {
+                if (event.node.hasChildren()) {
+                    aggregateTree.tree('toggle', event.node);
+                }
+            }
+        );
     }
 
     // when mithril updates this component, it redraws the tree with whatever the abstract query is
@@ -304,7 +312,11 @@ export class TreeAggregate {
         aggregateTree.tree('setState', state);
     }
 
-    view() {
-        return m('div#aggregateTree')
+    view(vnode) {
+        return m('div#aggregateTree' + vnode.attrs.id)
     }
+}
+
+function buttonDeleteAggregation(id) {
+    return `<button type='button' class='btn btn-default btn-xs' style='background:none;border:none;box-shadow:none;margin-top:2px;float:right;height:18px' onclick='callbackDeleteAggregation("${id}")'><span class='glyphicon glyphicon-remove' style='color:#ADADAD'></span></button></div>`;
 }

@@ -282,29 +282,11 @@ export default class CanvasDyad {
     }
 
     dyadSelection(vnode) {
-        let {mode, subsetName, data, metadata, preferences, setRedraw} = vnode.attrs;
+        let {mode, data, metadata, preferences, setRedraw} = vnode.attrs;
         return [
             m(".panel-heading.text-center[id='dyadSelectionTitle']", {style: {"padding-bottom": "5px"}},
                 m("[id='dyadPanelTitleDiv']",
-                    m("h3.panel-title", {style: {'padding-top': '2px', 'padding-bottom': '2px'}}, "Dyad Selection")),
-                mode === 'aggregate' && [
-                    m("[id='dyadAggToggleDiv']", {
-                            style: {
-                                "position": "relative",
-                                "top": "-2px"
-                            }
-                        },
-                        m("label.agg-chk-lbl",
-                            m('input#aggregDyadSelect.agg-chk[type=checkbox]', {
-                                onclick: m.withAttr("checked", (state) => {
-                                    if (mode === 'aggregate') app.setAggregationStaged(true);
-                                    app.unitMeasure[subsetName] = state
-                                }),
-                                checked: app.unitMeasure[subsetName]
-                            }),
-                            "Use in aggregation"
-                        ))
-                ]
+                    m("h3.panel-title", {style: {'padding-top': '2px', 'padding-bottom': '2px'}}, "Dyad Selection"))
             ),
             m(ButtonRadio, {
                 id: 'dyadTab',
@@ -324,15 +306,12 @@ export default class CanvasDyad {
                 style: {"width": "calc(100% - 10px)", 'margin-left': '5px', 'margin-bottom': 0, 'height': '22px'}
             }),
 
-            m("#fullContainer", m(`#dyadDiv.monad-content`, {
-                    style: {height: mode === 'subset' ? '100%' : 'calc(100% - 25px)'}
-                },
+            m("#fullContainer", m(`#dyadDiv.monad-content`,
                 this.monadSelection(vnode),
                 m(".monad-bottom",
                     m(Button, {
                         id: 'dyadSelectAll',
                         onclick: () => {
-                            if (mode === 'aggregate') app.setAggregationStaged(true);
                             let tabPref = preferences['tabs'][preferences['current_tab']];
                             let tabMeta = metadata['tabs'][preferences['current_tab']];
                             if (tabPref['show_selected']) return;

@@ -7,9 +7,7 @@
   "host": "TwoRavens",
   "subsets": {
     "Actor": {
-      "measures": [
-        "unit"
-      ],
+      "measureType": "unit",
       "type": "dyad",
       "tabs": {
         "actor 1": {
@@ -30,18 +28,14 @@
     },
     "Action": {
       "type": "categorical",
-      "measures": [
-        "event"
-      ],
+      "measureType": "accumulator",
       "columns": [
         "INTERACTION"
       ]
     },
     "Date": {
       "type": "date",
-      "measures": [
-        "unit"
-      ],
+      "measureType": "unit",
       "structure": "point",
       "columns": [
         "EVENT_DATE_constructed"
@@ -49,9 +43,7 @@
     },
     "Code Date": {
       "type": "date",
-      "measures": [
-        "unit"
-      ],
+      "measureType": "unit",
       "structure": "point",
       "columns": [
         "TIMESTAMP_constructed"

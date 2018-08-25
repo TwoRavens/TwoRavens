@@ -97,11 +97,16 @@ export let setSelectedDataset = (key) => {
         subsetPreferences[subset] = subsetPreferences[subset] || {};
     });
 
-    Object.keys(unitMeasure).forEach(unit => {
-        if (!(unit in genericMetadata[selectedDataset]['subsets']) || !('measure' in genericMetadata[selectedDataset]['subsets'][unit]))
-            delete unitMeasure[unit];
+    eventdataAggregateStep.measuresUnit.forEach((measure, i) => {
+        if (!(measure.subsetName in genericMetadata[selectedDataset]['subsets']) || genericMetadata[selectedDataset]['subsets'][measure.subsetName].measureType !== measure.measureType)
+            eventdataAggregateStep.measuresUnit.splice(i, 1);
     });
-    setEventMeasure(undefined);
+
+    eventdataAggregateStep.measuresAccum.forEach((measure, i) => {
+        if (!(measure.subsetName in genericMetadata[selectedDataset]['subsets']) || genericMetadata[selectedDataset]['subsets'][measure.subsetName].measureType !== measure.measureType)
+            eventdataAggregateStep.measuresUnit.splice(i, 1);
+    });
+
     aggregationHeadersUnit = [];
     aggregationHeadersEvent = [];
     aggregationData = undefined;
@@ -128,15 +133,14 @@ export function setSelectedMode(mode) {
     if (mode === selectedMode) return;
 
     let subsetKeys = Object.keys(genericMetadata[selectedDataset]['subsets']);
-    let aggregateKeys = subsetKeys.filter(subset => 'measures' in genericMetadata[selectedDataset]['subsets'][subset]);
 
     // Some canvases only exist in certain modes. Fall back to default if necessary.
     if (mode === 'home' && selectedCanvas !== selectedCanvasHome)
         setSelectedCanvas(selectedCanvasHome);
     if (mode === 'subset' && (selectedCanvas !== 'Subset' || subsetKeys.indexOf(selectedSubsetName) === -1))
         setSelectedSubsetName(subsetKeys[0]);
-    if (mode === 'aggregate' && (selectedCanvas !== 'Subset' || aggregateKeys.indexOf(selectedSubsetName) === -1))
-        setSelectedSubsetName(aggregateKeys[0]);
+    if (mode === 'aggregate' && (selectedCanvas !== 'Subset' || genericMetadata[selectedDataset]['subsets'][selectedSubsetName]['measureType'] === undefined))
+        setSelectedSubsetName(Object.keys(genericMetadata[selectedDataset]['subsets']).find(subset => 'measureType' in genericMetadata[selectedDataset]['subsets'][subset]));
 
     selectedMode = mode;
 
@@ -187,11 +191,6 @@ export let setAggregationHeadersUnit = (headersUnit) => aggregationHeadersUnit =
 
 export let aggregationHeadersEvent = [];
 export let setAggregationHeadersEvent = (headersEvent) => aggregationHeadersEvent = headersEvent || [];
-
-export let unitMeasure = {};
-
-export let eventMeasure; // string
-export let setEventMeasure = (measure) => eventMeasure = measure;
 
 export let showSaveQuery = false;
 export let setShowSaveQuery = (state) => showSaveQuery = state;
@@ -386,6 +385,8 @@ export let getData = async body => m.request({
 // download data to display a menu
 export let loadMenu = async (abstractPipeline, menu, {recount, requireMatch}={}) => { // the dict is for optional named arguments
 
+    console.log(menu);
+
     // the coordinates menu does not use data, so just return
     if (menu.type === 'menu' && menu.metadata.type === 'coordinates') return [];
 
@@ -400,7 +401,7 @@ export let loadMenu = async (abstractPipeline, menu, {recount, requireMatch}={})
     // in case selectedDataset changes while Promises are resolving
     let dataset = selectedDataset;
 
-    if (IS_EVENTDATA_DOMAIN) {
+    if (IS_EVENTDATA_DOMAIN && menu.type !== 'aggregate') {
         // metadata request
         let {alignments, formats} = getSubsetMetadata(selectedDataset, menu.name);
         alignments = [...new Set(alignments)].filter(alignment => !(alignment in alignmentData));
@@ -442,7 +443,7 @@ export let loadMenu = async (abstractPipeline, menu, {recount, requireMatch}={})
         method: 'aggregate',
         query: compiled
     })
-        .then(queryMongo.menuPostProcess[menu.metadata.type])
+        .then(menu.type === 'menu' ? queryMongo.menuPostProcess[menu.metadata.type] : _=>_)
         .then(response => data = response));
 
     let success = true;
@@ -506,7 +507,7 @@ export async function submitSubset() {
 
 
 export async function submitAggregation() {
-    if (!eventMeasure) {
+    if (!eventdataAggregateStep.measuresAccum.length) {
         tour.tourStartEventMeasure();
         return;
     }
@@ -514,10 +515,10 @@ export async function submitAggregation() {
     setLaddaSpinner('btnUpdate', true);
 
     let data = await loadMenu(abstractManipulations, eventdataAggregateStep);
-
     if (data) aggregationData = data;
     setLaddaSpinner('btnUpdate', false);
 
+    m.redraw()
     // TODO check setting of aggregation headers (unit and event)
 }
 
@@ -611,3 +612,12 @@ export let isSameMonth = (a, b) => a.getFullYear() === b.getFullYear() && a.getM
 
 // positive ints only
 export let pad = (number, length) => '0'.repeat(length - String(number).length) + number;
+
+export function dateSort(a, b) {
+    if (a['Date'] === b['Date']) {
+        return 0;
+    }
+    else {
+        return (a['Date'] < b['Date']) ? -1 : 1;
+    }
+}
