@@ -98,7 +98,7 @@ export default class CanvasDate {
     }
 
     view(vnode) {
-        let {mode, subsetName, data, preferences, redraw, setRedraw} = vnode.attrs;
+        let {mode, data, preferences, redraw, setRedraw} = vnode.attrs;
         if (Object.keys(preferences).length === 0) this.oncreate(vnode);
 
         preferences['measure'] = preferences['measure'] || 'Monthly';
@@ -121,15 +121,24 @@ export default class CanvasDate {
             preferences['handleLower'] = preferences['handleLower'] || data[0]['Date'];
             preferences['handleUpper'] = preferences['handleUpper'] || data[data.length - 1]['Date'];
 
+            preferences['minDate'] = data[0]['Date'];
+            preferences['maxDate'] = data[data.length - 1]['Date'];
+
             // make sure the handles are valid when switching datasets
-            let minDate = data[0]['Date'];
-            let maxDate = data[data.length - 1]['Date'];
-            if (minDate > preferences['userLower']) {
-                preferences['userLower'] = new Date(minDate);
+            if (preferences['userLower'] < preferences['minDate']) {
+                preferences['userLower'] = new Date(preferences['minDate']);
                 preferences['handleLower'] = preferences['userLower']
             }
-            if (maxDate < preferences['userUpper']) {
-                preferences['userUpper'] = new Date(maxDate);
+            if (preferences['userLower'] > preferences['maxDate']) {
+                preferences['userLower'] = new Date(preferences['minDate']);
+                preferences['handleLower'] = preferences['userLower']
+            }
+            if (preferences['userUpper'] > preferences['maxDate']) {
+                preferences['userUpper'] = new Date(preferences['maxDate']);
+                preferences['handleUpper'] = preferences['userUpper']
+            }
+            if (preferences['userUpper'] < preferences['minDate']) {
+                preferences['userUpper'] = new Date(preferences['maxDate']);
                 preferences['handleUpper'] = preferences['userUpper']
             }
 

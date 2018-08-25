@@ -294,6 +294,7 @@ function makeAbstractBranch(step, name, preferences, metadata) {
                 children: [{
                     id: String(step.id) + '-' + String(step.nodeId++) + measureId,
                     name: Object.keys(metadata['tabs'])[0] + ': ' + filteredEdges[linkId].source.name,
+                    aggregationName: filteredEdges[linkId].source.name,
                     show_op: false,
                     cancellable: true,
                     actors: [...filteredEdges[linkId].source.selected],
@@ -302,6 +303,7 @@ function makeAbstractBranch(step, name, preferences, metadata) {
                 }, {
                     id: String(step.id) + '-' + String(step.nodeId++) + measureId,
                     name: Object.keys(metadata['tabs'])[1] + ': ' + filteredEdges[linkId].target.name,
+                    aggregationName: filteredEdges[linkId].target.name,
                     show_op: false,
                     cancellable: true,
                     actors: [...filteredEdges[linkId].target.selected],
@@ -323,12 +325,23 @@ function makeAbstractBranch(step, name, preferences, metadata) {
         if (step['type'] === 'aggregate') {
             return {
                 id: String(step.id) + '-' + String(step.nodeId++) + measureId,
-                name: 'Date (' + preferences['measure'] + ')', // what jqtree shows
+                name: 'Date (' + preferences['measure'] + ') ' + metadata['columns'][0], // what jqtree shows
                 subset: 'date',
                 cancellable: true,
                 measure: preferences['measure'],
                 column: metadata['columns'][0]
             }
+        }
+
+        // If the dates have not been modified, force bring the date from the slider
+        if (preferences['userLower'] - preferences['minDate'] === 0 && preferences['userUpper'] - preferences['maxDate'] === 0) {
+            if (preferences['userLower'] - preferences['handleLower'] === 0 &&
+                preferences['userUpper'] - preferences['handleUpper'] === 0) {
+                return {};
+            }
+
+            preferences['userLower'] = preferences['handleLower'];
+            preferences['userUpper'] = preferences['handleUpper'];
         }
 
         // For mapping numerical months to strings in the child node name
@@ -371,9 +384,9 @@ function makeAbstractBranch(step, name, preferences, metadata) {
             operation: 'and',
             negate: 'false',
             column: metadata['columns'][0],
-            formatSource: metadata['format'],
-            formatTarget: preferences['aggregate'],
-            alignment: metadata['alignment'],
+            formatSource: preferences['format'],
+            formatTarget: preferences['aggregation'],
+            alignment: preferences['alignment'],
             type: 'rule',
             subset: metadata['type'],
             children: []

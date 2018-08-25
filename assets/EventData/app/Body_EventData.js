@@ -159,7 +159,6 @@ export default class Body_EventData {
             'aggregate': app.aggregationData && app.aggregationData.length
         }[app.selectedMode];
 
-        let step = app.getTransformStep(app.eventdataSubsetName);
         return m(Footer, [
             tourBar,
             m("#recordBar", {style: {display: "inline-block", float: 'right'}}, [
@@ -167,7 +166,7 @@ export default class Body_EventData {
                 app.selectedMode !== 'home' && m(Button, {
                     class: 'btn-sm',
                     onclick: async () => {
-                        if ('subset' === app.selectedMode && step.abstractQuery.length === 0)
+                        if ('subset' === app.selectedMode && app.abstractManipulations.length === 0)
                             tour.tourStartSaveQueryEmpty();
                         else if ('aggregate' === app.selectedMode && !app.eventdataAggregateStep.measuresAccum.length)
                             tour.tourStartEventMeasure();
@@ -605,7 +604,10 @@ export default class Body_EventData {
                     "overflow-x": "auto"
                 }
             },
-            app.aggregationData ? m(Table, {data: app.aggregationData})
+            app.aggregationData ? m(Table, {
+                    headers: [...app.aggregationHeadersUnit, ...app.aggregationHeadersEvent],
+                    data: app.aggregationData
+                })
                 : m('div', {style: {margin: '1em'}}, "Select event measures, then click 'Update' to display aggregated data.")
         );
     }

@@ -23,6 +23,8 @@ import * as app from './app';
 
 export function buildPipeline(pipeline, variables = new Set()) {
     let compiled = [];
+    let units; // store unit measures separately
+    let accumulators;
 
     pipeline.forEach(step => {
 
@@ -41,7 +43,9 @@ export function buildPipeline(pipeline, variables = new Set()) {
         if (step.type === 'aggregate') {
             let aggPrepped = buildAggregation(step.measuresUnit, step.measuresAccum);
             compiled.push(...aggPrepped['pipeline']);
-            variables = new Set([...aggPrepped['columnsUnit'], ...aggPrepped['columnsAccum']])
+            variables = new Set([...aggPrepped['units'], ...aggPrepped['accumulators']]);
+            units = new Set(aggPrepped['units']);
+            accumulators = new Set(aggPrepped['accumulators']);
         }
 
         if (step.type === 'menu')
@@ -49,7 +53,7 @@ export function buildPipeline(pipeline, variables = new Set()) {
 
     });
 
-    return {pipeline: compiled, variables};
+    return {pipeline: compiled, variables, units, accumulators};
 }
 
 export let unaryFunctions = new Set([
@@ -367,6 +371,7 @@ export function buildAggregation(unitMeasures, accumulations) {
                     'Yearly': '%Y'
                 }[data['measure']];
 
+                columnsNonDyad.push(data['column']);
 
                 if (dateFormat) {
                     // transform into string for grouping
@@ -416,11 +421,11 @@ export function buildAggregation(unitMeasures, accumulations) {
                 }
             },
             'dyad': (data) => {
-                dyadMeasureName = data['measureName'];
                 data.children.map(link => {
                     let [leftChild, rightChild] = link.children;
+                    dyadMeasureName = leftChild.column + '-' + rightChild.column;
 
-                    let dyadName = data['measureName'].replace(/[$.-]/g, '') + '-' + leftChild.name.replace(/[$.-]/g, '') + '-' + rightChild.name.replace(/[$.-]/g, '');
+                    let dyadName = leftChild.aggregationName.replace(/[$.-]/g, '') + '-' + rightChild.aggregationName.replace(/[$.-]/g, '');
                     columnsDyad.push(dyadName);
 
                     unit[dyadName] = {
@@ -435,7 +440,6 @@ export function buildAggregation(unitMeasures, accumulations) {
         'accumulator': {
             'categorical': (data) => {
                 let selections = new Set(data.children.map(child => child.name));
-                columnsAccum.push(...selections);
 
                 let bins = {};
                 if ('alignment' in data && data['alignment']) {
@@ -450,14 +454,15 @@ export function buildAggregation(unitMeasures, accumulations) {
                 else for (let selection of selections) bins[selection] = new Set([selection]);
 
                 for (let bin of Object.keys(bins)) {
-                    if (bins[bin].size === 1) event[bin] = {
+                    columnsAccum.push(data['column'] + '-' + bin);
+                    if (bins[bin].size === 1) event[data['column'] + '-' + bin] = {
                         $sum: {
                             $cond: [{
                                 $eq: ["$" + data['column'], [...bins[bin]][0]]
                             }, 1, 0]
                         }
                     };
-                    else event[bin] = {
+                    else event[data['column'] + '-' + bin] = {
                         $sum: {
                             $cond: [{
                                 $anyElementTrue: {
@@ -489,7 +494,7 @@ export function buildAggregation(unitMeasures, accumulations) {
             {
                 $facet: columnsDyad.reduce((facet, dyad) => { // build a pipeline for each dyad
                     facet[dyad] = [
-                        {$match: {["_id." + column]: true}},
+                        {$match: {["_id." + dyad]: true}},
                         {
                             $group: columnsAccum.reduce((accumulators, columnAccum) => {
                                 accumulators[columnAccum] = {$sum: "$" + columnAccum};
@@ -508,8 +513,6 @@ export function buildAggregation(unitMeasures, accumulations) {
         ];
     }
     else if (columnsNonDyad.length) {
-        console.log(dateTransforms);
-        console.log('columnsNonDyad has length')
         reformatter = [
             {
                 $addFields: Object.assign(columnsNonDyad.reduce((addFields, column) => {
@@ -520,83 +523,20 @@ export function buildAggregation(unitMeasures, accumulations) {
             {$project: {_id: 0}}
         ];
     }
-    else if (Object.keys(dateTransforms).length) {
-        console.log("using dateTransforms");
-        reformatter = [{$addFields: dateTransforms}, {$project: {_id: 0}}];
-    }
     else reformatter = [{$project: {_id: 0}}];
 
+    let columnsUnit = columnsNonDyad.concat(dyadMeasureName ? [dyadMeasureName] : []);
+
+    let sortPipeline = columnsUnit.length ? [{$sort: columnsUnit.reduce((out, column) => {
+        out[column] = 1;
+        return out;
+    }, {})}] : [];
+
     return {
-        pipeline: [{"$group": Object.assign({"_id": unit}, event)}].concat(reformatter),
-        columnsUnit: columnsNonDyad.concat(dyadMeasureName ? [dyadMeasureName] : []),
-        columnsAccum
+        pipeline: [{"$group": Object.assign({"_id": unit}, event)}, ...reformatter, ...sortPipeline],
+        units: columnsUnit,
+        accumulators: columnsAccum
     };
-}
-
-// almost pure- the function mutates the argument
-export function reformatAggregation(jsondata) {
-    console.log(jsondata);
-    if (jsondata.length === 0) return {data: jsondata, headers: []};
-
-    // get all unique subset names from the _id object. usage of Set is to remove repeated dyad keys
-    let headers = new Set(Object.keys(jsondata[0]._id).map(id => id.split('-')[0]));
-
-    // reformat data for each unit measure
-    headers.forEach(unit => {
-        if (app.genericMetadata[app.selectedDataset]['subsets'][unit]['type'] === 'date' && jsondata.length !== 0) {
-            // date ids are of the format: '[unit]-[dateFormat]'; grab the dateFormat from the id:
-            let format = Object.keys(jsondata[0]._id).filter(id => id.split('-')[0] === unit)[0].split('-')[1];
-
-            jsondata.forEach(entry => {
-                    if (entry._id[unit + '-' + format] === undefined) return;
-                    entry._id[unit] = {
-                        'Weekly': dateStr => {
-                            let [year, week] = dateStr.split('-');
-                            let date = new Date(new Date(year, 0).setDate(week * 7));
-                            return date.toISOString().slice(0, 10);
-                        },
-                        'Monthly': (dateStr) => dateStr + '-01',
-                        'Yearly': (dateStr) => dateStr + '-01-01',
-                        'Quarterly': (dateStr) => {
-                            let [year, quarter] = dateStr.split('-');
-                            return year + '-' + app.pad(quarter * 3, 2) + '-01'; // weak typing '2' * 2 = 4
-                        },
-                    }[format](entry._id[unit + '-' + format]);
-                    delete entry._id[unit + '-' + format];
-                }
-            )
-        }
-    });
-    // NOTE: compute before mutating/flattening jsondata below
-    let events = Object.keys(jsondata[0])
-        .filter(key => key !== '_id')
-        .sort((a, b) => typeof a === 'number' ? a - b : a.localeCompare(b));
-
-    // flatten unit of analysis _id into root object, and sort by order of unit headers
-    jsondata = jsondata.map(entry => {
-        // because R stringifies {"0": 452, "1": 513} as [452, 513]
-        if (Array.isArray(entry)) entry = Object.assign({}, entry);
-
-        let {_id} = entry;
-        delete entry._id;
-        Object.assign(entry, _id);
-        return entry;
-    }).sort((a, b) => {
-        for (let header of headers) {
-            if (!(header in a) || !(header in b)) continue;
-            let compare = {
-                'number': () => a[header] - b[header],
-                'string': () => a[header].localeCompare(b[header])
-            }[typeof a[header]]();
-            if (compare) return compare;
-        }
-    });
-
-    return {
-        data: jsondata,
-        headersUnit: [...headers],
-        headersEvent: [...events]
-    }
 }
 
 // given a menu, return pipeline steps for collecting data
@@ -613,6 +553,7 @@ export function buildMenu(step) {
                     if ('tabs' in preferences) restriction = [
                         {
                             $match: metadata.tabs[branch.tab].filters.reduce((out, column) => {
+                                if (!(branch.tab in preferences.tabs)) return out;
                                 // if no selections are made, don't add a constraint on the column of the filter
                                 if (preferences.tabs[branch.tab].filters[column].selected.size === 0) return out;
 

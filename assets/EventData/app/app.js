@@ -3,7 +3,7 @@ import m from 'mithril';
 import * as common from '../../common-eventdata/common';
 
 import * as queryMongo from './queryMongo';
-import * as queryAbstract from './queryMongo';
+import * as queryAbstract from './queryAbstract';
 import * as tour from "./tour";
 
 export let eventdataURL = '/eventdata/api/';
@@ -78,17 +78,21 @@ export let setSelectedDataset = (key) => {
         subsetData = {};
 
         // this modifies the abstract query, preferences, selected vars to be compatible with the new dataset
-        alignmentLog = queryAbstract.realignQuery(previousSelectedDataset, selectedDataset);
+        alignmentLog = queryAbstract.realignQuery(pendingSubset, previousSelectedDataset, selectedDataset);
         preferencesLog = queryAbstract.realignPreferences(previousSelectedDataset, selectedDataset);
         variablesLog = queryAbstract.realignVariables(previousSelectedDataset, selectedDataset);
 
-        let subsetTree = $('#subsetTree');
-        let state = subsetTree.tree('getState');
-        let step = getTransformStep(eventdataSubsetName);
-        subsetTree.tree('loadData', step.abstractQuery);
-        subsetTree.tree('setState', state);
-        showAlignmentLog = true;
+        abstractManipulations.map(step => {
 
+            alignmentLog.push(...queryAbstract.realignQuery(step, previousSelectedDataset, selectedDataset));
+
+            let subsetTree = $('#subsetTree' + step.id);
+            let state = subsetTree.tree('getState');
+            subsetTree.tree('loadData', step.abstractQuery);
+            subsetTree.tree('setState', state);
+        });
+
+        showAlignmentLog = true;
         totalSubsetRecords = undefined;
     }
 
@@ -515,11 +519,15 @@ export async function submitAggregation() {
     setLaddaSpinner('btnUpdate', true);
 
     let data = await loadMenu(abstractManipulations, eventdataAggregateStep);
-    if (data) aggregationData = data;
+    if (data) {
+        aggregationData = data;
+        let {units, accumulators} = queryMongo.buildPipeline([...abstractManipulations, eventdataAggregateStep]);
+        aggregationHeadersUnit = [...units];
+        aggregationHeadersEvent = [...accumulators];
+    }
     setLaddaSpinner('btnUpdate', false);
 
     m.redraw()
-    // TODO check setting of aggregation headers (unit and event)
 }
 
 export async function download(collection_name, query) {
@@ -566,6 +574,18 @@ export async function reset() {
             nodeId: 1,
             groupId: 1
         };
+
+        eventdataAggregateStep = {
+            type: 'aggregate',
+            id: 'eventdataAggregate',
+            measuresUnit: [],
+            measuresAccum: [],
+            nodeId: 1
+        };
+
+        aggregationData = undefined;
+        aggregationHeadersEvent = undefined;
+        aggregationHeadersUnit = undefined;
 
         Object.keys(genericMetadata[selectedDataset]['subsets']).forEach(subset => {
             subsetPreferences[subset] = {};
