@@ -6,7 +6,6 @@ import TextField from '../../../common-eventdata/views/TextField';
 
 import PlotDyad from '../views/PlotDyad';
 import * as app from "../app";
-import {setIsLoading} from "../../../app/transform";
 
 // Width of the dyad selection panel
 let selectionWidth = '400px';
@@ -14,12 +13,12 @@ let selectionWidth = '400px';
 let searchLag = 500;
 
 // determine if a particular dyad matches criteria
-export let entryContains = (entry, search, token_length) => {
+export let entryContains = (entry, search, token) => {
     if (search.length === 0) return true;
-    if (token_length) {
+    if (token) {
         const tags = search
             .replace(/[\-\[\]\/\{\}\(\)\*\+\?\\\^\$\|]/g, ".")
-            .match(new RegExp(`.{${token_length}}`, 'g')) || [];
+            .match(new RegExp(token, 'g')) || [];
         return new RegExp(tags.map(tag => `(?=^(...)*${tag})`).join('') + ".*", 'i').test(entry);
     }
     return entry.match(new RegExp('.*' + search.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&") + '.*', 'i'));
@@ -88,7 +87,7 @@ export default class CanvasDyad {
             metadata: Object.assign({}, metadata, {type: 'dyadSearch', currentTab}), // edit the metadata to be a search
             preferences
         };
-        let data = await app.loadMenu(app.abstractManipulations, monadUpdate); // .catch(failedUpdateMonadListing);
+        let data = await app.loadMenu(app.abstractManipulations, monadUpdate).catch(failedUpdateMonadListing);
         data[0][currentTab].full = data[0][currentTab].full || [];
         app.subsetData[subsetName][currentTab].full = data[0][currentTab].full;
         this.waitForQuery--;
@@ -177,8 +176,8 @@ export default class CanvasDyad {
                 e.redraw = false;
                 let translation = (value === undefined || value === '')
                     ? ''
-                    : 'token_length' in metadataMonad
-                        ? value.match(new RegExp(`.{${metadataMonad['token_length']}}`, 'g'))
+                    : 'full_token' in metadataMonad
+                        ? value.match(new RegExp(metadataMonad['full_token'], 'g'))
                             .map(token => app.formattingData[app.genericMetadata[app.selectedDataset]['formats'][column]][token] || '?').join(' ')
                         : app.formattingData[app.genericMetadata[app.selectedDataset]['formats'][column]][value];
                 if (translation) {
@@ -198,7 +197,7 @@ export default class CanvasDyad {
             let idx = 0;
             while (idx < dataMonad['full'].length && matches.length < preferencesMonad['full_limit']) {
                 let selectFilter = !preferencesMonad['show_selected'] || preferencesMonad['node']['selected'].has(dataMonad['full'][idx]);
-                let searchFilter = entryContains(dataMonad['full'][idx], preferencesMonad['search'], metadataMonad['token_length']);
+                let searchFilter = entryContains(dataMonad['full'][idx], preferencesMonad['search'], metadataMonad['full_token']);
 
                 if (selectFilter && searchFilter) matches.push(dataMonad['full'][idx]);
                 idx += 1;
@@ -318,7 +317,7 @@ export default class CanvasDyad {
                             tabPref['node']['selected'] = new Set([
                                 ...tabPref['node']['selected'],
                                 ...data[preferences['current_tab']]['full']
-                                    .filter(entry => entryContains(entry, tabPref['search'], tabMeta['token_length']))]);
+                                    .filter(entry => entryContains(entry, tabPref['search'], tabMeta['full_token']))]);
                         },
                         title: `Selects all ${preferences['tabs'][preferences['current_tab']]['node']['name']}s that match the filter criteria`
                     }, 'Select All'),
@@ -328,7 +327,7 @@ export default class CanvasDyad {
                             let tabPref = preferences['tabs'][preferences['current_tab']];
                             let tabMeta = metadata['tabs'][preferences['current_tab']];
                             tabPref['node']['selected'] = new Set([...tabPref['node']['selected']]
-                                .filter(entry => !entryContains(entry, tabPref['search'], tabMeta['token_length'])))
+                                .filter(entry => !entryContains(entry, tabPref['search'], tabMeta['full_token'])))
                         },
                         title: `Clears all ${preferences['tabs'][preferences['current_tab']]['node']['name']} that match the filter criteria`
                     }, 'Clear All'),
