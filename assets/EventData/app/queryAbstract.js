@@ -244,11 +244,46 @@ export function addConstraint(step, name, preferences, metadata) {
         subsetTree.tree('closeNode', subsetTree.tree('getNodeById', abstractBranch['id']), false);
     }
 
-    if (step.type === 'aggregate' && metadata.measureType === 'unit')
-        step.measuresUnit.push(abstractBranch);
+    if (step.type === 'aggregate' && metadata.measureType === 'unit'){
+        let columnsTemp = []; // only used for informative alerts
+        let duplicate = step.measuresUnit.findIndex(unit => {
+            if (unit.subset !== abstractBranch.subset) return false;
 
-    if (step.type === 'aggregate' && metadata.measureType === 'accumulator')
-        step.measuresAccum.push(abstractBranch);
+            if (unit.subset === 'date' && unit.column === abstractBranch.column){
+                columnsTemp = [unit.column];
+                return true;
+            }
+            if (unit.subset === 'dyad' && unit.columns.join() === abstractBranch.columns.join()) {
+                columnsTemp = unit.columns;
+                return true;
+            }
+            return false;
+        });
+
+        if (duplicate !== -1) {
+            if (confirm(`Replace duplicated event measure? (${abstractBranch.subset}: ${columnsTemp.join(', ')})`))
+                step.measuresUnit[duplicate] = abstractBranch;
+            else return;
+        }
+        else step.measuresUnit.push(abstractBranch);
+    }
+
+    if (step.type === 'aggregate' && metadata.measureType === 'accumulator') {
+        let duplicate = step.measuresAccum.findIndex(accumulator =>
+            accumulator.column === abstractBranch.column &&
+            accumulator.formatTarget === abstractBranch.formatTarget);
+
+        if (duplicate !== -1) {
+            alert('Combined new selections with an existing event measure.');
+            let colNames = new Set(step.measuresAccum[duplicate].children.map(child => child.name));
+
+            step.measuresAccum[duplicate].children = [
+                ...step.measuresAccum[duplicate].children,
+                ...abstractBranch.children.filter(pendingCol => !colNames.has(pendingCol.name))
+            ]
+        }
+        else step.measuresAccum.push(abstractBranch);
+    }
 }
 
 // Convert the subset panel state to an abstract query branch
@@ -274,7 +309,8 @@ function makeAbstractBranch(step, name, preferences, metadata) {
             name: name,
             operation: 'and',
             type: 'rule',
-            subset: metadata['type'],
+            columns: Object.keys(metadata.tabs).map(tab => metadata.tabs[tab].full),
+            subset: 'dyad',
             children: []
         };
 
@@ -377,10 +413,14 @@ function makeAbstractBranch(step, name, preferences, metadata) {
     }
 
     if (['categorical', 'categorical_grouped'].indexOf(metadata['type']) !== -1) {
+        // if aggregating, add the target format in the name
+        let aggFormat = (step.type === 'aggregate' && 'aggregation' in preferences)
+            ? ` (${preferences['aggregation']})` : '';
+
         // Make parent node
         let subset = {
             id: String(step.id) + '-' + String(step.nodeId++) + measureId,
-            name: name,
+            name: name + aggFormat,
             operation: 'and',
             negate: 'false',
             column: metadata['columns'][0],
@@ -468,15 +508,6 @@ function makeAbstractBranch(step, name, preferences, metadata) {
 }
 
 //  ~~~~ begin abstract query realignment ~~~~
-
-export function genericRealignment(alignment, inFormat, outFormat, data) {
-    // TODO this is lossy one way. Not using it yet.
-    let transform = alignment.reduce((out, equivalency) => {
-        out[equivalency[inFormat]] = equivalency[outFormat];
-        return out;
-    }, {});
-    return [...new Set(data.map(point => transform[point]))];
-}
 
 // Take an abstract query for one dataset, and turn it into a query for another - with descriptive logs
 export function realignQuery(step, source, target) {

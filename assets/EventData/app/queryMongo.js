@@ -23,8 +23,9 @@ import * as app from './app';
 
 export function buildPipeline(pipeline, variables = new Set()) {
     let compiled = [];
-    let units; // store unit measures separately
-    let accumulators;
+
+    // need to know which variables are unit measures and which are accumulators. Also describe the unit variables with labels
+    let units, accumulators, labels;
 
     pipeline.forEach(step => {
 
@@ -46,14 +47,16 @@ export function buildPipeline(pipeline, variables = new Set()) {
             variables = new Set([...aggPrepped['units'], ...aggPrepped['accumulators']]);
             units = new Set(aggPrepped['units']);
             accumulators = new Set(aggPrepped['accumulators']);
+            labels = aggPrepped['labels'];
         }
+        else [units, accumulators, labels] = [undefined, undefined, undefined];
 
         if (step.type === 'menu')
             compiled.push(...buildMenu(step))
 
     });
 
-    return {pipeline: compiled, variables, units, accumulators};
+    return {pipeline: compiled, variables, units, accumulators, labels};
 }
 
 export let unaryFunctions = new Set([
@@ -351,6 +354,8 @@ export function buildAggregation(unitMeasures, accumulations) {
     // event measure
     let event = {};
 
+    let labels = {};
+
     // monads/dyads require a melt after grouping
     let dyadMeasureName;
     let columnsDyad = [];
@@ -372,6 +377,8 @@ export function buildAggregation(unitMeasures, accumulations) {
                 }[data['measure']];
 
                 columnsNonDyad.push(data['column']);
+                labels['date'] = labels['date'] || [];
+                labels['date'].push(data['column']);
 
                 if (dateFormat) {
                     // transform into string for grouping
@@ -435,6 +442,9 @@ export function buildAggregation(unitMeasures, accumulations) {
                         ]
                     }
                 });
+
+                labels['dyad'] = labels['dyad'] || [];
+                labels['dyad'].push(dyadMeasureName);
             }
         },
         'accumulator': {
@@ -535,7 +545,8 @@ export function buildAggregation(unitMeasures, accumulations) {
     return {
         pipeline: [{"$group": Object.assign({"_id": unit}, event)}, ...reformatter, ...sortPipeline],
         units: columnsUnit,
-        accumulators: columnsAccum
+        accumulators: columnsAccum,
+        labels
     };
 }
 

@@ -205,7 +205,7 @@ export default class Body_EventData {
                                         : [...app.selectedVariables, ...app.selectedConstructedVariables]
                                 }
                             };
-                            let compiled = queryMongo.buildPipeline([...app.abstractManipulations, downloadStep]);
+                            let compiled = queryMongo.buildPipeline([...app.abstractManipulations, downloadStep])['pipeline'];
                             app.setLaddaSpinner('btnDownload', true);
                             await app.download(app.selectedDataset, JSON.stringify(compiled))
                                 .finally(() => app.setLaddaSpinner('btnDownload', false));
@@ -216,7 +216,7 @@ export default class Body_EventData {
                                 tour.tourStartEventMeasure();
                                 return;
                             }
-                            let compiled = queryMongo.buildPipeline([...app.abstractManipulations, app.eventdataAggregateStep]);
+                            let compiled = queryMongo.buildPipeline([...app.abstractManipulations, app.eventdataAggregateStep])['pipeline'];
                             app.setLaddaSpinner('btnDownload', true);
                             await app.download(app.selectedDataset, JSON.stringify(compiled))
                                 .finally(() => app.setLaddaSpinner('btnDownload', false));
@@ -382,7 +382,7 @@ export default class Body_EventData {
 
         if (mode === 'aggregate') {
 
-            let allPlots = ['Line Plot'];
+            let allPlots = ['Time Series'];
 
             return m(Panel, {
                 id: 'leftPanelMenu',

@@ -85,7 +85,7 @@ export default class CanvasCategorical {
 
             let total = keepKeys.map(key => data[key]).reduce((total, value) => total + value);
 
-            let plotData = keepKeys.sort()
+            let plotData = keepKeys
                 .map((key) => {
                     let title = app.formattingData[format][key];
                     if (Array.isArray(app.formattingData[format][key])) title = title[0];

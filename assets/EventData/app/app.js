@@ -113,6 +113,7 @@ export let setSelectedDataset = (key) => {
 
     aggregationHeadersUnit = [];
     aggregationHeadersEvent = [];
+    aggregationHeadersLabels = [];
     aggregationData = undefined;
 
     resetPeek();
@@ -188,13 +189,9 @@ export let variableSearch = '';
 export let setVariableSearch = (text) => variableSearch = text;
 
 export let aggregationData;
-export let setAggregationData = (data) => aggregationData = data;
-
 export let aggregationHeadersUnit = [];
-export let setAggregationHeadersUnit = (headersUnit) => aggregationHeadersUnit = headersUnit || [];
-
 export let aggregationHeadersEvent = [];
-export let setAggregationHeadersEvent = (headersEvent) => aggregationHeadersEvent = headersEvent || [];
+export let aggregationHeadersLabels = {};
 
 export let showSaveQuery = false;
 export let setShowSaveQuery = (state) => showSaveQuery = state;
@@ -518,12 +515,15 @@ export async function submitAggregation() {
 
     setLaddaSpinner('btnUpdate', true);
 
+    let cachedPipeline = queryMongo.buildPipeline([...abstractManipulations, eventdataAggregateStep]);
+
     let data = await loadMenu(abstractManipulations, eventdataAggregateStep);
     if (data) {
         aggregationData = data;
-        let {units, accumulators} = queryMongo.buildPipeline([...abstractManipulations, eventdataAggregateStep]);
+        let {units, accumulators, labels} = cachedPipeline;
         aggregationHeadersUnit = [...units];
         aggregationHeadersEvent = [...accumulators];
+        aggregationHeadersLabels = labels;
     }
     setLaddaSpinner('btnUpdate', false);
 
@@ -584,8 +584,9 @@ export async function reset() {
         };
 
         aggregationData = undefined;
-        aggregationHeadersEvent = undefined;
-        aggregationHeadersUnit = undefined;
+        aggregationHeadersEvent = [];
+        aggregationHeadersUnit = [];
+        aggregationHeadersLabels = [];
 
         Object.keys(genericMetadata[selectedDataset]['subsets']).forEach(subset => {
             subsetPreferences[subset] = {};
