@@ -249,13 +249,13 @@ export default class CanvasDyad {
                 ),
                 m('#actorFilter.monad-filter-list', {style: {"text-align": "left"}},
                     m(`label.monad-show-selected-lbl.monad-chk-lbl[data-toggle='tooltip']`, {
-                            title: `Show selected ${metadataMonad['full']}`
+                            title: `only show selected ${metadataMonad['full']}`
                         },
                         m("input#monad-show-selected.monad-chk.monad-show-selected[name='actorShowSelected'][type='checkbox']", {
                             checked: preferencesMonad['show_selected'],
                             onchange: m.withAttr('checked', (state) => preferencesMonad['show_selected'] = state)
                         }),
-                        "Show Selected"
+                        "Only Show Selected"
                     ),
                     metadataMonad['filters'].map(filter => [
                         m(".separator"),

@@ -100,16 +100,17 @@ export class TreeQuery {
 
         let {step, isQuery} = attrs;
         this.isQuery = isQuery;
+        let data = isQuery
+            ? [{
+                name: 'Query ' + step.id,
+                id: step.id + '-root',
+                children: step.abstractQuery,
+                type: 'query'
+            }]
+            : step.abstractQuery;
 
         subsetTree.tree({
-            data: isQuery
-                ? [{
-                    name: 'Query ' + step.id,
-                    id: step.id + '-root',
-                    children: step.abstractQuery,
-                    type: 'query'
-                }]
-                : step.abstractQuery,
+            data,
             saveState: true,
             dragAndDrop: true,
             autoOpen: true,
@@ -166,7 +167,7 @@ export class TreeQuery {
             }
         });
 
-        if (isQuery) this.selectAll();
+        this.selectAll(subsetTree, data, isQuery);
 
         subsetTree.on(
             'tree.move',
@@ -234,8 +235,11 @@ export class TreeQuery {
         if (isQuery !== this.isQuery) {
             this.isQuery = isQuery;
             this.selectAll(subsetTree, data, this.isQuery);
+
+            data[0].children.forEach(child => queryAbstract.disableEditRecursive(child));
+            m.redraw();
         }
-        subsetTree.tree('setState', state);
+        else subsetTree.tree('setState', state);
     }
 
     view(vnode) {

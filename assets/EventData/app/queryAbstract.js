@@ -5,7 +5,7 @@ import * as common from '../../common-eventdata/common';
 
 // Edit tree (typically called from JQtree)
 
-window.callbackDeleteTransform = function(id) {
+window.callbackDeleteTransform = function (id) {
     let [stepId, transformationName] = id.split('-');
     let step = [...app.abstractManipulations, app.pendingSubset].find(step => step.id === Number(stepId));
     step.transforms.splice(step.transforms.findIndex(transformation => transformation.name === transformationName), 1);
@@ -13,7 +13,7 @@ window.callbackDeleteTransform = function(id) {
     m.redraw();
 };
 
-window.callbackDeleteAggregation = function(id) {
+window.callbackDeleteAggregation = function (id) {
     let [stepId, nodeId, measureId] = id.split('-');
 
     let step = [...app.abstractManipulations, app.eventdataAggregateStep]
@@ -95,7 +95,10 @@ window.callbackNegate = function (id, bool) {
     let node = subsetTree.tree('getNodeById', id);
 
     // don't permit change in negation on non-editable node
-    if ('editable' in node && !node.editable) return;
+    if ('editable' in node && !node.editable) {
+        m.redraw(); // This visually resets the button to where it was
+        return;
+    }
 
     node.negate = bool;
 
@@ -125,7 +128,7 @@ window.callbackNegate = function (id, bool) {
 // }
 
 
-function disableEditRecursive(node) {
+export function disableEditRecursive(node) {
     node.editable = false;
     node.cancellable = false;
     if ('children' in node) {
@@ -166,7 +169,7 @@ export function addGroup(step) {
         let child = step.abstractQuery[child_id];
 
         // Don't put groups inside groups! Only a drag can do that.
-        if (!query && child.type === 'rule') {
+        if (child.type === 'rule') {
             movedChildren.push(child);
             removeIds.push(child_id);
         }
@@ -180,38 +183,20 @@ export function addGroup(step) {
         step.abstractQuery.splice(removeIds[i], 1);
     }
 
-    if (query) {
-        for (let child_id in movedChildren) {
-            movedChildren[child_id] = disableEditRecursive(movedChildren[child_id]);
-        }
-        step.abstractQuery.push({
-            id: String(step.id) + '-' + String(step.nodeId++),
-            name: 'Query ' + String(step.queryId++),
-            operation: 'and',
-            editable: true,
-            cancellable: true,
-            type: 'query',
-            children: movedChildren,
-            show_op: step.abstractQuery.length > 0
-        });
-    } else {
-        step.abstractQuery.push({
-            id: String(step.id) + '-' + String(step.nodeId++),
-            name: 'Group ' + String(step.groupId++),
-            operation: 'and',
-            type: 'group',
-            children: movedChildren,
-            show_op: step.abstractQuery.length > 0
-        });
-    }
+    step.abstractQuery.push({
+        id: String(step.id) + '-' + String(step.nodeId++),
+        name: 'Group ' + String(step.groupId++),
+        operation: 'and',
+        type: 'group',
+        children: movedChildren,
+        show_op: step.abstractQuery.length > 0
+    });
 
     hideFirst(step.abstractQuery);
     m.redraw();
 
-    if (!query) {
-        let qtree = $('#subsetTree' + String(step.id));
-        qtree.tree('openNode', qtree.tree('getNodeById', step.nodeId - 1), true);
-    }
+    let qtree = $('#subsetTree' + String(step.id));
+    qtree.tree('openNode', qtree.tree('getNodeById', step.nodeId - 1), true);
 }
 
 /**
@@ -244,12 +229,12 @@ export function addConstraint(step, name, preferences, metadata) {
         subsetTree.tree('closeNode', subsetTree.tree('getNodeById', abstractBranch['id']), false);
     }
 
-    if (step.type === 'aggregate' && metadata.measureType === 'unit'){
+    if (step.type === 'aggregate' && metadata.measureType === 'unit') {
         let columnsTemp = []; // only used for informative alerts
         let duplicate = step.measuresUnit.findIndex(unit => {
             if (unit.subset !== abstractBranch.subset) return false;
 
-            if (unit.subset === 'date' && unit.column === abstractBranch.column){
+            if (unit.subset === 'date' && unit.column === abstractBranch.column) {
                 columnsTemp = [unit.column];
                 return true;
             }
@@ -292,7 +277,7 @@ function makeAbstractBranch(step, name, preferences, metadata) {
     // if an aggregation branch, then this adds the measure to the node id, so that when a node is deleted, it knows which tree to remove from
     let measureId = step.type === 'aggregate' ? '-' + metadata.measureType : '';
 
-    if (name === 'Custom') {
+    if (name === 'Custom Subset') {
         return {
             id: String(step.id) + '-' + String(step.nodeId++),
             name: 'Custom Subset',

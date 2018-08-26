@@ -432,7 +432,7 @@ export let loadMenu = async (abstractPipeline, menu, {recount, requireMatch}={})
             query: compiled
         }).then(response => {
             // intentionally breaks the entire downloading promise array and subsequent promise chain
-            if (!response[0].total && requireMatch) throw 'no records matched';
+            if (!response.length && requireMatch) throw 'no records matched';
             totalSubsetRecords = response[0].total
         }));
     }

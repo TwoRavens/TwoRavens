@@ -46,16 +46,20 @@ class MongoRetrieveUtil(BasicErrCheck):
 
         # replace extended query operators like $oid, $date and $numberLong with objects
         def reformat(query):
-            if type(query) is list:
+            if issubclass(type(query), list):
                 for stage in query:
                     reformat(stage)
                 return
 
-            if not issubclass(type(query), dict):
-                return
+            if issubclass(type(query), dict):
+                for key in query:
+                    if issubclass(type(query[key]), list):
+                        for stage in query[key]:
+                            reformat(stage)
+                        return;
+                    if not issubclass(type(query[key]), dict):
+                        continue;
 
-            for key in query:
-                if issubclass(type(query[key]), dict):
                     # Convert strict oid tags into ObjectIds to allow id comparisons
                     if '$oid' in query[key]:
                         query[key] = ObjectId(query[key]['$oid'])

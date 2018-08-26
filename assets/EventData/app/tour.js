@@ -2,6 +2,7 @@ import hopscotch from 'hopscotch';
 import '../pkgs/hopscotch/hopscotch.style.css'
 import * as common from '../../common-eventdata/common';
 import m from 'mithril';
+import '../../../node_modules/ace-builds/src-min-noconflict/ace.js';
 
 export function tourStartGeneral() {
     hopscotch.endTour(false);
@@ -365,8 +366,7 @@ let customTour = {
 
 
 export function tourStartCustomExamples() {
-    console.log("Callback success");
-    console.log(editor);
+    editor = ace.edit("subsetCustomEditor");
     hopscotch.endTour(false);
     hopscotch.startTour(customExampleTour);
 }
@@ -406,6 +406,7 @@ let example_actor = `{
   "<CAMEO>": {"$in": ["022", "0314"]}
 }`;
 
+let editor;
 let customExampleTour = {
     id: "subset-custom-tour-example",
     showPrevButton: true,
