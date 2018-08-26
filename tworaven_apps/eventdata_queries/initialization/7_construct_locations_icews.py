@@ -13,13 +13,13 @@ batch = 100
 
 def format_coordinate(document):
     mapname = {
-        "REV_Address": "address_constructed",
-        "REV_City": "city_constructed",
-        "REV_CountryCode": "country_constructed",
-        "REV_Postal": "postal_constructed",
-        "REV_PostalExt": "postal_ext_constructed",
-        "REV_Region": "region_constructed",
-        "REV_Subregion": "subregion_constructed"
+        "REV_Address": "TwoRavens_address",
+        "REV_City": "TwoRavens_city",
+        "REV_CountryCode": "TwoRavens_country",
+        "REV_Postal": "TwoRavens_postal",
+        "REV_PostalExt": "TwoRavens_postal_ext",
+        "REV_Region": "TwoRavens_region",
+        "REV_Subregion": "TwoRavens_subregion"
     }
     return {mapname[key]: document['attributes'][key] for key in
             set(mapname.keys()) & set(document['attributes'].keys())}
@@ -27,13 +27,13 @@ def format_coordinate(document):
 
 def format_placename(document):
     mapname = {
-        "City": "city_constructed",
-        "Country": "country_constructed",
-        "LangCode": "language_constructed",
-        "Region": "region_constructed",
-        "Score": "score_constructed",
-        "Subregion": "subregion_constructed",
-        "Territory": "territory_constructed"
+        "City": "TwoRavens_city",
+        "Country": "TwoRavens_country",
+        "LangCode": "TwoRavens_language",
+        "Region": "TwoRavens_region",
+        "Score": "TwoRavens_score",
+        "Subregion": "TwoRavens_subregion",
+        "Territory": "TwoRavens_territory"
     }
     return {mapname[key]: document['attributes'][key] for key in
             set(mapname.keys()) & set(document['attributes'].keys())}
@@ -45,10 +45,10 @@ for collection in ['icews']:
     count = 0
 
     for document in db[collection].aggregate([{"$match": {"$and": [
-            {"region_constructed": {"$exists": 0}},
-            {"subregion_constructed": {"$exists": 0}},
-            {"city_constructed": {"$exists": 0}},
-            {"address_constructed": {"$exists": 0}}
+            {"TwoRavens_region": {"$exists": 0}},
+            {"TwoRavens_subregion": {"$exists": 0}},
+            {"TwoRavens_city": {"$exists": 0}},
+            {"TwoRavens_address": {"$exists": 0}}
         ]}}]).batch_size(batch):
 
         # Show status

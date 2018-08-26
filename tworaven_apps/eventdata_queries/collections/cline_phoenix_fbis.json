@@ -52,14 +52,14 @@
       "measureType": "unit",
       "structure": "point",
       "columns": [
-        "story_date_constructed"
+        "TwoRavens_story_date"
       ]
     },
     "Location": {
       "type": "categorical_grouped",
       "group_by": "region",
       "columns": [
-        "country_constructed"
+        "TwoRavens_country"
       ]
     },
     "Coordinates": {
@@ -97,8 +97,14 @@
     "year"
   ],
   "columns_constructed": [
-    "story_date_constructed",
-    "country_constructed"
+    "TwoRavens_story_date",
+    "TwoRavens_country",
+    "TwoRavens_address",
+    "TwoRavens_city",
+    "TwoRavens_postal",
+    "TwoRavens_postal_ext",
+    "TwoRavens_region",
+    "TwoRavens_subregion"
   ],
   "alignments": {
     "code": "action",
@@ -108,10 +114,10 @@
     "source_root": "country",
     "target_agent": "sector",
     "target_root": "country",
-    "story_date_constructed": "date",
+    "TwoRavens_story_date": "date",
     "lat": "latitude",
     "lon": "longitude",
-    "country_constructed": "country"
+    "TwoRavens_country": "country"
   },
   "formats": {
     "code": "CAMEO",
@@ -125,7 +131,7 @@
     "target_agent": "phoenix",
     "target_root": "ISO-3",
     "target_others": "phoenix",
-    "country_constructed": "ISO-3",
+    "TwoRavens_country": "ISO-3",
     "goldstein": "goldstein",
     "month": "%m",
     "day": "%d",

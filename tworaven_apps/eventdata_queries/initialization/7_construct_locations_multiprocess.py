@@ -13,13 +13,13 @@ batch = 5
 def format_coordinate(document):
 
     mapname = {
-        "REV_Address": "address_constructed",
-        "REV_City": "city_constructed",
-        "REV_CountryCode": "country_constructed",
-        "REV_Postal": "postal_constructed",
-        "REV_PostalExt": "postal_ext_constructed",
-        "REV_Region": "region_constructed",
-        "REV_Subregion": "subregion_constructed"
+        "REV_Address": "TwoRavens_address",
+        "REV_City": "TwoRavens_city",
+        "REV_CountryCode": "TwoRavens_country",
+        "REV_Postal": "TwoRavens_postal",
+        "REV_PostalExt": "TwoRavens_postal_ext",
+        "REV_Region": "TwoRavens_region",
+        "REV_Subregion": "TwoRavens_subregion"
     }
     return {mapname[key]: document['attributes'][key] for key in
             set(mapname.keys()) & set(document['attributes'].keys())}
@@ -27,13 +27,13 @@ def format_coordinate(document):
 
 def format_placename(document):
     mapname = {
-        "City": "city_constructed",
-        "Country": "country_constructed",
-        "LangCode": "language_constructed",
-        "Region": "region_constructed",
-        "Score": "score_constructed",
-        "Subregion": "subregion_constructed",
-        "Territory": "territory_constructed"
+        "City": "TwoRavens_city",
+        "Country": "TwoRavens_country",
+        "LangCode": "TwoRavens_language",
+        "Region": "TwoRavens_region",
+        "Score": "TwoRavens_score",
+        "Subregion": "TwoRavens_subregion",
+        "Territory": "TwoRavens_territory"
     }
     return {mapname[key]: document['attributes'][key] for key in
             set(mapname.keys()) & set(document['attributes'].keys())}
@@ -59,7 +59,7 @@ def process_partition(locations, partition, db):
                     db[collection].update_many(query, {"$set": new_data}, upsert=False)
 
         else:
-            for collection in ['acled_africa', 'acled_middle_east', 'acled_asia']:
+            for collection in db.collection_names():
                 if collection == 'icews':
                     docname = {'Country': 'Country', 'Region': 'District', 'Subregion': 'Province', 'City': 'City'}
                 elif 'acled' in collection:

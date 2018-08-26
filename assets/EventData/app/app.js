@@ -549,12 +549,8 @@ export async function download(collection_name, query) {
 
     let text = data.map(record => variables.map(variable => record[variable] || '').join('\t') + '\n');
 
-    let header = variables.map(variable => {
-        if (variable.endsWith('_constructed')) return 'TwoRavens_' + variable.replace('_constructed', '');
-        return variable;
-    }).join('\t') + '\n';
-
-    let file = new File([header, ...text], 'EventDataSaved.csv', {type: "text/plain;charset=utf-8"});
+    let header = [...variables].join('\t') + '\n';
+    let file = new File([header, ...text], `EventData_${collection_name}.tsv`, {type: "text/plain;charset=utf-8"});
     saveAs(file);
 }
 

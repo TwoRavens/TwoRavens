@@ -11,7 +11,7 @@
       "measureType": "unit",
       "structure": "point",
       "columns": [
-        "Event Date_constructed"
+        "TwoRavens_Event Date"
       ]
     },
     "Actor": {
@@ -55,7 +55,7 @@
       "type": "categorical_grouped",
       "group_by": "region",
       "columns": [
-        "country_constructed"
+        "TwoRavens_country"
       ]
     },
     "Coordinates": {
@@ -89,21 +89,27 @@
     "Target Sectors"
   ],
   "columns_constructed": [
-    "Event Date_constructed",
-    "country_constructed"
+    "TwoRavens_Event Date",
+    "TwoRavens_country",
+    "TwoRavens_address",
+    "TwoRavens_city",
+    "TwoRavens_postal",
+    "TwoRavens_postal_ext",
+    "TwoRavens_region",
+    "TwoRavens_subregion"
   ],
   "alignments": {
-    "Event Date_constructed": "date",
+    "TwoRavens_Event Date": "date",
     "Latitude": "latitude",
     "Longitude": "longitude",
     "CAMEO Code": "action",
-    "country_constructed": "country"
+    "TwoRavens_country": "country"
   },
   "formats": {
     "Source Sectors": "icews",
     "Target Sectors": "icews",
     "CAMEO Code": "CAMEO",
-    "country_constructed": "ISO-3"
+    "TwoRavens_country": "ISO-3"
   },
   "citations": [
     {

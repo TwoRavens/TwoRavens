@@ -62,7 +62,13 @@ export default class CanvasDyad {
             }
         });
 
-        preferences['edges'] = preferences['edges'] || [];
+        preferences['edges'] = preferences['edges'] || [{
+            source: preferences['nodes'][0],
+            target: preferences['nodes'][1],
+            rev: false,
+            dup: false
+        }];
+
         if (!(preferences['current_tab'] in Object.keys(metadata['tabs'])))
             preferences['current_tab'] = Object.keys(metadata['tabs'])[0];
 

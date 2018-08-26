@@ -192,7 +192,7 @@
       "measureType": "unit",
       "structure": "point",
       "columns": [
-        "CODE_DATE_constructed"
+        "TwoRavens_CODE_DATE"
       ]
     },
     "Publish Date": {
@@ -200,7 +200,7 @@
       "measureType": "unit",
       "structure": "point",
       "columns": [
-        "PUB_DATE_constructed"
+        "TwoRavens_PUB_DATE"
       ]
     },
     "Date": {
@@ -208,7 +208,7 @@
       "measureType": "unit",
       "structure": "point",
       "columns": [
-        "AVERAGE_DATE_constructed"
+        "TwoRavens_AVERAGE_DATE"
       ]
     },
     "Earliest/Latest Date": {
@@ -216,8 +216,8 @@
       "measureType": "unit",
       "structure": "interval",
       "columns": [
-        "JUL_END_DATE_constructed",
-        "JUL_START_DATE_constructed"
+        "TwoRavens_JUL_END_DATE",
+        "TwoRavens_JUL_START_DATE"
       ]
     },
     "Precise Date": {
@@ -225,8 +225,8 @@
       "measureType": "unit",
       "structure": "interval",
       "columns": [
-        "JUL_PED_constructed",
-        "JUL_PSD_constructed"
+        "TwoRavens_JUL_PED",
+        "TwoRavens_JUL_PSD"
       ]
     },
     "Estimated Date": {
@@ -234,15 +234,15 @@
       "measureType": "unit",
       "structure": "interval",
       "columns": [
-        "JUL_EED_constructed",
-        "JUL_LED_constructed"
+        "TwoRavens_JUL_EED",
+        "TwoRavens_JUL_LED"
       ]
     },
     "Location": {
       "type": "categorical_grouped",
       "group_by": "region",
       "columns": [
-        "country_constructed"
+        "TwoRavens_country"
       ]
     },
     "Coordinates": {
@@ -362,22 +362,28 @@
     "property_owner"
   ],
   "columns_constructed": [
-    "CODE_DATE_constructed",
-    "PUB_DATE_constructed",
-    "AVERAGE_DATE_constructed",
-    "JUL_END_DATE_constructed",
-    "JUL_START_DATE_constructed",
-    "JUL_PED_constructed",
-    "JUL_PSD_constructed",
-    "JUL_EED_constructed",
-    "JUL_LED_constructed",
-    "country_constructed"
+    "TwoRavens_CODE_DATE",
+    "TwoRavens_PUB_DATE",
+    "TwoRavens_AVERAGE_DATE",
+    "TwoRavens_JUL_END_DATE",
+    "TwoRavens_JUL_START_DATE",
+    "TwoRavens_JUL_PED",
+    "TwoRavens_JUL_PSD",
+    "TwoRavens_JUL_EED",
+    "TwoRavens_JUL_LED",
+    "TwoRavens_country",
+    "TwoRavens_address",
+    "TwoRavens_city",
+    "TwoRavens_postal",
+    "TwoRavens_postal_ext",
+    "TwoRavens_region",
+    "TwoRavens_subregion"
   ],
   "alignments": {
-    "AVERAGE_DATE_constructed": "date",
+    "TwoRavens_AVERAGE_DATE": "date",
     "GP7": "latitude",
     "GP8": "longitude",
-    "country_constructed": "country"
+    "TwoRavens_country": "country"
   },
   "formats": {
     "cowcode": "cowcode",
@@ -408,7 +414,7 @@
     "VIC_TYPE": "SPEED_vic_type",
     "victim_effect": "SPEED_victim_effect",
     "weapon": "SPEED_weapon",
-    "country_constructed": "ISO-3",
+    "TwoRavens_country": "ISO-3",
     "month": "%m",
     "day": "%d",
     "year": "%Y"

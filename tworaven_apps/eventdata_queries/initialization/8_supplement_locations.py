@@ -10,7 +10,7 @@ db = mongo_client.event_data
 
 batch = 100
 
-query = [{"$match": {"country_constructed": {"$exists": 0}}}]
+query = [{"$match": {"TwoRavens_country": {"$exists": 0}}}]
 
 with open(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'alignments', 'location.json'))) as locfile:
     alignment = json.load(locfile)
@@ -28,14 +28,14 @@ for collection in ['icews']: # db.collection_names():
             if 'cowcode' in document and document['cowcode'] in cowcodes:
                 db[collection].update_one(
                     {'_id': document['_id']},
-                    {'$set': {"country_constructed": cowcodes[document['cowcode']]}})
+                    {'$set': {"TwoRavens_country": cowcodes[document['cowcode']]}})
 
     elif 'cline' in collection:
         for document in db[collection].aggregate(query).batch_size(batch):
             if 'countryname' in document:
                 db[collection].update_one(
                     {'_id': document['_id']},
-                    {'$set': {'country_constructed': document['countryname']}})
+                    {'$set': {'TwoRavens_country': document['countryname']}})
 
     elif 'acled' in collection:
         UNM49 = {}
@@ -47,7 +47,7 @@ for collection in ['icews']: # db.collection_names():
             if 'ISO' in document and document['ISO'].zfill(3) in UNM49:
                 db[collection].update_one(
                     {'_id': document['_id']},
-                    {'$set': {"country_constructed": UNM49[document['ISO'].zfill(3)]}})
+                    {'$set': {"TwoRavens_country": UNM49[document['ISO'].zfill(3)]}})
 
     elif 'icews' == collection:
         placename = {}
@@ -65,4 +65,4 @@ for collection in ['icews']: # db.collection_names():
             if 'Country' in document and document['Country'] in placename:
                 db[collection].update_one(
                     {'_id': document['_id']},
-                    {'$set': {"country_constructed": placename[document['Country']]}})
+                    {'$set': {"TwoRavens_country": placename[document['Country']]}})

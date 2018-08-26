@@ -342,7 +342,7 @@ export default class Body_EventData {
                                         'data-container': '#variablesList'
                                     }
                                 }),
-                                !!matchedConstructedVariables.length && m('h5', 'Constructed Variables'),
+                                m('h5', 'TwoRavens Standardized'),
                                 m(PanelList, {
                                     id: 'variablesConstructedList',
                                     items: matchedConstructedVariables,

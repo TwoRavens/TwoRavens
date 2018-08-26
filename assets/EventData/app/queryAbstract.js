@@ -500,7 +500,7 @@ export function realignQuery(step, source, target) {
     let sourceSubsets = app.genericMetadata[source]['subsets'];
     let targetSubsets = app.genericMetadata[target]['subsets'];
 
-    let toVariableString = (variables) => String(variables.map(variable => variable.replace('_constructed', '')));
+    let toVariableString = (variables) => String(variables.map(variable => variable.replace('TwoRavens_', '')));
 
     let realignBranch = (query) => {
         return query.map(branch => {
