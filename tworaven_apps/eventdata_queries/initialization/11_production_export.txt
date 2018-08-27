@@ -33,3 +33,6 @@ cd dbs/
 
 # restore databases
 mongorestore -u AdminEvent -p [PASSWORD] -d event_data --archive=[COLLECTION] --authenticationDatabase admin --gzip
+
+# don't forget to upload the tsv files for direct download
+scp ./tworaven_apps/eventdata_queries/initialization/temp/* eventuser@178.128.144.175:EventData/

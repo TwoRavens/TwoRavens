@@ -7,7 +7,8 @@ LOCAL SETUP STEPS:
     https://docs.mongodb.com/manual/administration/install-community/
 
 2. Start a mongo server. Server port is 27017 by default
-     sudo service mongod start
+     run `mongod` or if that doesn't work, `sudo service mongod start`
+     If you get an error about `/data/db`, then create the folder `/data/db` in the root directory.
 
 3. Create a new database using the mongoimport utility in the mongo bin (via cmd from ~/TwoRavens/)
      Import statements are in ./1_mongoimports.txt
@@ -19,25 +20,17 @@ LOCAL SETUP STEPS:
       c. Return all data from the phoenix_events table
            db.cline_speed.find({})
 
-5. Construct date and location columns. Follow the filename steps in this folder.
+4. Construct date and location columns. Follow the filename steps in this folder.
      Note that mongod must be running, and pymongo must be installed in your python interpreter. Python 3 features were used.
      Note the data for constructing location columns is stored in a mongoexport file that is not in this repository.
+     If you are just doing a local setup, then skip scripts 3-7 and just run 8.
+     Scripts 3-6 are for constructing arcgis locations, and 7 is for applying them to your datasets.
+     Step 8 will fill in missing country fields from steps 3-7, but is sufficient alone to be able to run a local setup.
 
-6. Start a local R server to make this file available here:
-     http://localhost:8000/custom/eventdatasubsetapp
+5. Run 'fab run_eventdata_dev' to get Django running. Requests for data pass through endpoints in `/tworavens_apps/eventdata_queries/`
 
-     4a. Install/run R, to enter R prompt
-      b. Run source('rooksource.R') to start R server
-         Note: Rook, the R package that runs the R server, does not seem to recognize file updates,
-               so the server must be restarted after each edit.
-      c. The mongolite package has some prerequisites - `https://jeroen.github.io/mongolite/`
-
-7. Submit query from local python server via eventdata web gui. This script will return the subsetted data
-
-8. If you still have problems, try to permit CORS on your browser. This doesn't seem to work on Windows
+6. If you still have problems, try to permit CORS on your browser. This doesn't seem to work on Windows
      7a. Google Chrome: start with terminal argument
             google-chrome --disable-web-security
       b. Mozilla Firefox: in about:config settings
             security.fileuri.strict_origin_policy - set to False
-NOTE: Use quit() to close the R server. Otherwise the ports will not correctly be released.
-      If you use Rstudio, modify the IDE config so that it won't share the same port as the R server
