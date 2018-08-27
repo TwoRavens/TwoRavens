@@ -64,19 +64,10 @@ export default class CanvasDatasets {
                     },
                     disabled: app.selectedDataset === dataset['key']
                 }, 'Load' + (app.selectedDataset === dataset['key'] ? 'ed' : '')),
-                m(Button, {
+                'download' in dataset && m(Button, {
                     id: 'btnDownload' + dataset['key'],
                     style: {margin: '0 0.25em', float: 'right'},
-                    onclick: async () => {
-                        if (!(confirm("Warning, this will download the entire dataset. It may take some time."))) return;
-                        app.setLaddaSpinner('btnDownload' + dataset['key'], true);
-                        let variables = [...app.genericMetadata[dataset.key]['columns'], ...app.genericMetadata[dataset.key]['columns_constructed']];
-                        let query = [
-                            {"$project": variables.reduce((out, variable) => {out[variable] = 1;return out;}, {_id: 0})}
-                        ];
-                        await app.download('subset', dataset['key'], query);
-                        app.laddaStopAll();
-                    }
+                    onclick: () => window.open(dataset['download'], '_blank')
                 }, 'Download')
             ]),
             dataset['description'],

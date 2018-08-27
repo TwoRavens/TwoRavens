@@ -4,6 +4,7 @@
   "description": "Data sourced from The Social, Political and Economic Event Database Project and made available by the Cline Center for Advanced Social Research.",
   "interval": "1979 - 2015",
   "codebook": "https://uofi.app.box.com/s/z8le27b1l8qwjdzm80g5izpnzq92hnlb",
+  "download": "https://uofi.box.com/s/70cm8q6wusywxx7jxen8ron09nzndz8r",
   "host": "TwoRavens",
   "subsets": {
     "Event Type": {

@@ -4,6 +4,7 @@
   "description": "Data sourced from the New York Times and collected by the Cline Center for Advanced Social Research.",
   "interval": "1945 - 2005",
   "codebook": "https://uofi.app.box.com/s/bmh9i39m6bf0vhnuebtf3ak3j6uxy2le",
+  "download": "https://uofi.box.com/s/mj98jkku3b0yb11vekwjmydw8kiomdjn",
   "host": "TwoRavens",
   "subsets": {
     "Actor": {

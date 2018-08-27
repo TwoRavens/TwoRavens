@@ -1,7 +1,7 @@
 import m from 'mithril';
 
 import * as app from '../app';
-import * as query from '../queryMongo';
+import * as queryMongo from '../queryMongo';
 import Table from '../../../common-eventdata/views/Table';
 import TextField from '../../../common-eventdata/views/TextField'
 import Button from "../../../common-eventdata/views/Button";
@@ -10,36 +10,26 @@ import ButtonRadio from '../../../common-eventdata/views/ButtonRadio';
 export default class SaveQuery {
     oninit(vnode) {
 
-        let step = app.getTransformStep(app.eventdataSubsetName);
-        let stagedSubsetData = [];
-        for (let child of step.abstractQuery) {
-            if (child.type === 'query') {
-                stagedSubsetData.push(child)
-            }
+        let query;
+        if (app.selectedMode === 'subset') {
+            let projectStep = {
+                type: 'menu',
+                metadata: {
+                    variables: (app.selectedVariables.size + app.selectedConstructedVariables.size) === 0
+                        ? [...app.genericMetadata[app.selectedDataset]['columns'], app.genericMetadata[app.selectedDataset]['columns_constructed']]
+                        : [...app.selectedVariables, ...app.selectedConstructedVariables]
+                }
+            };
+            query = queryMongo.buildPipeline(app.abstractManipulations, projectStep)['pipeline'];
         }
 
-        let queryMongo;
-        if (app.selectedMode === 'subset') {
-            let variables = app.selectedVariables.size === 0
-                ? [...app.genericMetadata[app.selectedDataset]['columns'], ...app.genericMetadata[app.selectedDataset]['columns_constructed']]
-                : [...app.selectedVariables, ...app.selectedConstructedVariables];
-            queryMongo = [
-                {"$match": query.buildSubset(step.abstractQuery)},
-                {
-                    "$project": variables.reduce((out, variable) => {
-                        out[variable] = 1;
-                        return out;
-                    }, {'_id': 0})
-                }
-            ];
-        }
-        else if (app.selectedMode === 'aggregate')
-            queryMongo = query.buildAggregation(stagedSubsetData, app.subsetPreferences);
+        if (app.selectedMode === 'aggregate')
+            query = queryMongo.buildPipeline(app.abstractManipulations, app.eventdataAggregateStep)['pipeline'];
 
         let {preferences} = vnode.attrs;
         // set the static preferences upon initialization
         Object.assign(preferences, {
-            'query': queryMongo,
+            'query': query,
             'username': app.username,
             'collection_name': app.selectedDataset,
             'collection_type': app.selectedMode,
@@ -56,8 +46,6 @@ export default class SaveQuery {
 
         let format = (text) => m('[style=margin-left:1em;text-align:left;word-break:break-all;width:100%]', text);
         let warn = (text) => m('[style=color:#dc3545;display:inline-block;margin-left:1em;]', text);
-
-        let step = app.getTransformStep(app.eventdataSubsetName);
 
         let tableData = {
             'Query Name': m(TextField, {
@@ -96,7 +84,7 @@ export default class SaveQuery {
                 preferences['result_count'] === 0 && warn('The query does not match any data.')]),
             'Query': format([
                 JSON.stringify(preferences['query']),
-                step.abstractQuery.filter(branch => branch.type !== 'query').length !== 0 && warn('Take note that subsets that are not grouped under a query are not included. Click update in the query summary to group them under a query.')])
+                app.pendingSubset.abstractQuery.length !== 0 && warn('Take note that subsets that are not grouped under a query are not included. Click update in the query summary to group them under a query.')])
         };
 
         let invalids = {
@@ -130,17 +118,24 @@ export default class SaveQuery {
                     }
                     this.status = 'Saved as query ID ' + response.data.id;
                     this.saved = true;
+                    m.redraw();
 
                     if (!preferences['save_to_dataverse']) return;
 
-                    await m.request({
+                    response = await m.request({
                         url: 'eventdata/api/upload-dataverse/' + response.data.id,
                         method: 'GET'
                     });
-                    await m.request({
+                    this.status = response.message;
+                    m.redraw();
+                    if (!response.success) return;
+
+                    response = await m.request({
                         url: 'eventdata/api/publish-dataset/' + response.data.id,
                         method: 'GET'
-                    })
+                    });
+                    this.status = response.message;
+                    m.redraw();
                 }
             }, this.saved ? 'Saved' : 'Save Query'),
             this.status && m('[style=display:inline-block;margin-left:1em;]', this.status),
