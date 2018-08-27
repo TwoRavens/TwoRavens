@@ -335,6 +335,52 @@ def run_with_ta2():
     run(external_ta2=True)
 
 @task
+def load_eventdata_dev():
+    """Load the AppConfiguration for EventData dev"""
+    from tworaven_apps.configurations.models import AppConfiguration
+
+    check_config()  # make sure config file is loaded
+
+    le_config = AppConfiguration.objects.get(pk=4)  # let it blow up if not found...
+    le_config.is_active = True
+    le_config.save()
+
+    print('new config activated: ')
+    le_config.print_vals()
+
+@task
+def run_eventdata_dev():
+    """Set the UI mode to EventData with .js using a local rook url"""
+    init_db()
+
+    load_eventdata_dev()
+
+    run()
+
+@task
+def load_eventdata_prod():
+    """Load the AppConfiguration for EventData prod"""
+    from tworaven_apps.configurations.models import AppConfiguration
+
+    check_config()  # make sure config file is loaded
+
+    le_config = AppConfiguration.objects.get(pk=5)   # let it blow up if not found...
+    le_config.is_active = True
+    le_config.save()
+
+    print('new config activated: ')
+    le_config.print_vals()
+
+@task
+def run_eventdata_prod():
+    """Set the UI mode to EventData with .js using a local rook url"""
+    init_db()
+
+    load_eventdata_prod()
+
+    run()
+
+@task
 def run(**kwargs):
     """Run the django dev server and webpack--webpack watches the assets directory and rebuilds when appTwoRavens changes
 
@@ -630,6 +676,41 @@ def clear_eventdata_queries():
         print('Deleted...')
     else:
         print('No EventData objects found.\n')
+
+def set_django_site(domain, name):
+    """Update the current django Site object"""
+    assert domain, '"domain" must have a value'
+    assert name, '"name" must have a value'
+
+    from django.contrib.sites.models import Site
+    site = Site.objects.get_current()
+
+    site.domain = domain
+    site.name = name
+    site.save()
+
+    print('Site updated!')
+    print(' -- domain: ', site.domain)
+    print(' -- name: ', site.name)
+
+@task
+def set_dev_site():
+    """Set the current Site to '127.0.0.1:8080'"""
+    set_django_site('127.0.0.1:8080',
+                    '127.0.0.1:8080')
+
+@task
+def set_eventdata_public_site():
+    """Set the current Site to 'eventdata.2ravens.org'"""
+    set_django_site('eventdata.2ravens.org',
+                    'eventdata.2ravens.org')
+
+@task
+def set_2ravens_public_site():
+    """Set the current Site to '2ravens.org'"""
+    set_django_site('2ravens.org',
+                    '2ravens.org')
+
 
 @task
 def clear_ta2_stored_requests():
