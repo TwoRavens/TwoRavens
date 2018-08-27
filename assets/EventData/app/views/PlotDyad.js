@@ -383,10 +383,6 @@ export default class PlotDyad {
                 dup: !!foundLink
             });
 
-            // enable aggregation on dyads by default
-            if (!(app.selectedSubsetName in app.unitMeasure))
-                app.unitMeasure[app.selectedSubsetName] = true;
-
             this.updateAll(vnode);
             this.resetMouseVars(vnode);
 

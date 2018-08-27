@@ -26,8 +26,7 @@ export default class CanvasResults {
     oninit(vnode) {
         let {preferences} = vnode.attrs;
 
-        let actorHeaders = app.aggregationHeadersUnit
-            .filter(header => app.genericMetadata[app.selectedDataset]['subsets'][header]['type'] === 'dyad');
+        let actorHeaders = 'dyad' in app.aggregationHeadersLabels ? app.aggregationHeadersLabels['dyad'] : [];
 
         if (!('filter' in preferences)) {
             preferences['filters'] = {};
@@ -41,8 +40,10 @@ export default class CanvasResults {
         let {preferences, setRedraw} = vnode.attrs;
         // choose which plot to draw via "app.selectedResult"
 
-        let actorHeaders = app.aggregationHeadersUnit.filter(header =>
-            app.genericMetadata[app.selectedDataset]['subsets'][header]['type'] === 'dyad');
+        if (!('date' in app.aggregationHeadersLabels) || app.aggregationHeadersLabels['date'].length !== 1)
+            return m('h4', 'There must be one date measure to visualize a time series.');
+
+        let actorHeaders = 'dyad' in app.aggregationHeadersLabels ? app.aggregationHeadersLabels['dyad'] : [];
 
         return m('div#canvasResults', {
                 style: {
@@ -99,20 +100,19 @@ export default class CanvasResults {
         let width = Math.max(window.innerWidth
             - document.getElementById('leftpanel').getBoundingClientRect().width
             - document.getElementById('rightpanel').getBoundingClientRect().width
-            - 40 - 133, 400);
+            - Math.max(...app.aggregationHeadersUnit.map(col => col.length)) * 4 - 133, 400);
         let height = Math.max(window.innerHeight
             - document.getElementById('aggregDataOutput').getBoundingClientRect().height
             - 40 - 153, 400);
 
         let vegaSchema;
-        if (app.aggregationHeadersUnit.length === 1
-            && app.genericMetadata[app.selectedDataset]['subsets'][app.aggregationHeadersUnit[0]]['type'] === 'date') {
+        if (app.aggregationHeadersUnit.length === 1 && 'date' in app.aggregationHeadersLabels) {
             vegaSchema = {
                 "$schema": "https://vega.github.io/schema/vega-lite/v2.0.json",
                 "data": {"values": melt(app.aggregationData, app.aggregationHeadersUnit)},
                 "mark": "line",
                 "encoding": {
-                    "x": {"field": "Date", "type": "temporal", "axis": {"format": "%Y-%m-%d"}},
+                    "x": {"field": app.aggregationHeadersLabels['date'][0], "type": "temporal", "axis": {"format": "%Y-%m-%d"}},
                     "y": {"field": "value", "type": "quantitative"},
                     "color": {"field": "variable", "type": "nominal"}
                 }
@@ -121,7 +121,7 @@ export default class CanvasResults {
         else {
             let isUnitMelt = app.aggregationHeadersUnit.indexOf(preferences['melt']) !== -1;
 
-            let factors = isUnitMelt ? app.aggregationHeadersUnit : ['Date', preferences['melt']];
+            let factors = isUnitMelt ? app.aggregationHeadersUnit : [app.aggregationHeadersLabels['date'][0], preferences['melt']];
             let processed = melt(app.aggregationData, factors);
 
             if (isUnitMelt) {
@@ -134,7 +134,7 @@ export default class CanvasResults {
                     "data": {"values": processed},
                     "mark": "line",
                     "encoding": {
-                        "x": {"field": "Date", "type": "temporal", "axis": {"format": "%Y-%m-%d"}},
+                        "x": {"field": app.aggregationHeadersLabels['date'][0], "type": "temporal", "axis": {"format": "%Y-%m-%d"}},
                         "y": {"field": "value", "type": "quantitative"},
                         "color": {"field": "variable", "type": "nominal"}
                     }
@@ -142,14 +142,14 @@ export default class CanvasResults {
             }
             else {
                 // filter to one event measure
-                processed = processed.filter(point => point['variable'] === 'Actor'); // note this 'Actor' is hardcoded
+                processed = processed.filter(point => point['variable'] === app.aggregationHeadersLabels['dyad'][0]);
 
                 vegaSchema = {
                     "$schema": "https://vega.github.io/schema/vega-lite/v2.0.json",
                     "data": {"values": processed},
                     "mark": "line",
                     "encoding": {
-                        "x": {"field": "Date", "type": "temporal", "axis": {"format": "%Y-%m-%d"}},
+                        "x": {"field": app.aggregationHeadersLabels['date'][0], "type": "temporal", "axis": {"format": "%Y-%m-%d"}},
                         "y": {"field": preferences['melt'], "type": "quantitative"},
                         "color": {"field": "value", "type": "nominal"}
                     }

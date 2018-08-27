@@ -32,7 +32,7 @@ export default class ModalVanilla {
         }, m(`div#modalBox${id}`, {
             style: {
                 'background-color': common.menuColor,
-                margin: '15% auto',
+                margin: '5% auto 0 auto',
                 padding: '20px',
                 border: common.borderColor,
                 width: '80%',

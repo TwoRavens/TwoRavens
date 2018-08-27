@@ -12,12 +12,13 @@ import * as exp from './explore';
 import * as plots from './plots';
 import * as results from './results';
 import * as transform from './transform';
+import * as subset from '../EventData/app/app';
 import {fadeIn, fadeOut} from './utils';
 
 import Button from './views/PanelButton';
 import Subpanel from './views/Subpanel';
 import Flowchart from './views/Flowchart';
-import AddSubset from './views/AddSubset';
+import AddTransform from './views/AddTransform';
 
 import * as common from '../common/app/common';
 import ButtonRadio from '../common/app/views/ButtonRadio';
@@ -31,16 +32,15 @@ import PanelList from '../common/app/views/PanelList';
 import Peek from '../common/app/views/Peek';
 import Table from '../common/app/views/Table';
 import TextField from '../common/app/views/TextField';
-
 // EVENTDATA
 import Body_EventData from '../EventData/app/Body_EventData';
 import Peek_EventData from '../common-eventdata/views/Peek';
 import '../EventData/css/app.css'
 import '../EventData/app/app'
 
-let bold = (value) => m('div', {style: {'font-weight': 'bold', display: 'inline'}}, value);
-let italicize = (value) => m('div', {style: {'font-style': 'italic', display: 'inline'}}, value);
-let link = (url) => m('a', {href: url, style: {color: 'darkblue'}, target: '_blank', display: 'inline'}, url);
+export let bold = (value) => m('div', {style: {'font-weight': 'bold', display: 'inline'}}, value);
+export let italicize = (value) => m('div', {style: {'font-style': 'italic', display: 'inline'}}, value);
+export let link = (url) => m('a', {href: url, style: {color: 'darkblue'}, target: '_blank', display: 'inline'}, url);
 
 let state = {
     pipelines: [],
@@ -60,11 +60,11 @@ function setBackgroundColor(color) {
 }
 
 function leftpanel(mode) {
-    let exploreMode = mode === 'explore';
 
     if (mode === 'results') {
         return results.leftpanel(Object.keys(app.allPipelineInfo));
     }
+
 
     let selectedDisco = app.disco.find(problem => problem.problem_id === app.selectedProblem);
 
@@ -76,7 +76,7 @@ function leftpanel(mode) {
 
     let discoveryTableData = app.disco.map(problem => [
         problem.problem_id, // this is masked as the UID
-        m('input[type=checkbox][style=float:left;width:100%]', {
+        m('input[type=checkbox][style=width:100%]', {
             onclick: m.withAttr("checked", (checked) => app.setCheckedDiscoveryProblem(checked, problem.problem_id)),
             checked: app.checkedDiscoveryProblems.has(problem.problem_id),
             title: 'mark this problem as meaningful'
@@ -89,7 +89,8 @@ function leftpanel(mode) {
         !!problem.transform && problem.transform
     ]);
 
-    let nodes = exploreMode ? nodesExplore : app.nodes;
+
+    let nodes = app.is_explore_mode ? nodesExplore : app.nodes;
 
     return m(Panel, {
         side: 'left',
@@ -196,6 +197,13 @@ let righttab = (id, task, title, probDesc) => m(PanelList, {
 function rightpanel(mode) {
     if (mode === 'results') return; // returns undefined, which mithril ignores
     if (mode === 'explore') return;
+
+    if (mode === 'transform') return m(Panel, {
+        side: 'right',
+        label: 'Pipeline',
+        hover: false,
+        width: '500px',
+    }, transform.rightpanel());
 
     // mode == null (model mode)
 
@@ -533,12 +541,36 @@ class Body {
 
         return m('main', [
             m(Modal),
+            transform.pendingConstraintMenu && m(ModalVanilla, {
+                id: 'modalAddTransform',
+                setDisplay: () => transform.setPendingConstraintMenu(undefined),
+                contents: m(AddTransform, {
+                    nodes: app.allNodes,
+                    preferences: transform.modalPreferences
+                })
+            }),
             this.header(mode),
             this.footer(mode),
-            m(`#main`, {style: {overflow}},
-              m("#innercarousel.carousel-inner", {style: {height: '100%', overflow}},
-                explore_mode
-                && [variate === 'problem' ?
+            leftpanel(mode),
+            rightpanel(mode),
+            app.is_transform_mode && transform.constraintMenu && m(Button, {
+                id: 'btnStage',
+                style: {
+                    right: `calc(${common.panelOcclusion['right']} + 5px)`,
+                    bottom: `calc(${common.heightFooter} + ${common.panelMargin} + 6px)`,
+                    position: 'fixed',
+                    'z-index': 100,
+                    'box-shadow': 'rgba(0, 0, 0, 0.3) 0px 2px 3px'
+                },
+                onclick: () => {
+                    // to add a constraint, must provide the step to add it to, the menu preferences, and column/constraint type metadata
+                    subset.addConstraint(transform.constraintMenu.step, transform.constraintPreferences, transform.constraintMetadata)
+                }
+            }, 'Stage'),
+            app.is_transform_mode && m(Canvas, transform.subsetCanvas()),
+            m(`#main`, {style: {overflow, display: app.is_transform_mode ? 'none' : 'block'}},
+                m("#innercarousel.carousel-inner", {style: {height: '100%', overflow}},
+                explore_mode && [variate === 'problem' ?
                     m('', {style},
                         m('a', {onclick: _ => m.route.set('/explore')}, '<- back to variables'),
                         m('br'),
@@ -644,7 +676,7 @@ class Body {
                           }))
                        )],
                 m('svg#whitespace')),
-              model_mode && m("#spacetools.spaceTool", {style: {right: app.panelWidth.right, 'z-index': 16}},
+              model_mode && m("#spacetools.spaceTool", {style: {right: app.panelWidth.right, 'z-index': 16, top: '62px'}},
                               spaceBtn('btnAdd', async function() {
                                   app.zPop();
                                   let rookpipe = await app.makeRequest(ROOK_SVC_URL + 'pipelineapp', app.zparams);
@@ -701,18 +733,17 @@ class Body {
                               spaceBtn('btnDisconnect', _ => app.restart([]), 'Delete all connections between nodes', 'remove-circle'),
                               spaceBtn('btnForce', app.forceSwitch, 'Pin the variable pebbles to the page', 'pushpin'),
                               spaceBtn('btnEraser', app.erase, 'Wipe all variables from the modeling space', 'magnet')),
-              model_mode && m(Subpanel,
-                              {title: "Legend",
-                               buttons: [
-                                   ['timeButton', 'ztime', 'Time'],
-                                   ['csButton', 'zcross', 'Cross Sec'],
-                                   ['dvButton', 'zdv', 'Dep Var'],
-                                   ['nomButton', 'znom', 'Nom Var'],
-                                   ['gr1Button', 'zgroup1', 'Group 1'],
-                                   ['gr2Button', 'zgroup2', 'Group 2']]}),
-              m(Subpanel, {title: "History"}),
-              leftpanel(mode),
-              rightpanel(mode))
+              model_mode && m(Subpanel, {
+                    title: "Legend",
+                    buttons: [
+                        ['timeButton', 'ztime', 'Time'],
+                        ['csButton', 'zcross', 'Cross Sec'],
+                        ['dvButton', 'zdv', 'Dep Var'],
+                        ['nomButton', 'znom', 'Nom Var'],
+                        ['gr1Button', 'zgroup1', 'Group 1'],
+                        ['gr2Button', 'zgroup2', 'Group 2']]
+                }),
+                app.currentMode !== 'transform' && m(Subpanel, {title: "History"}))
         ]);
     }
 
@@ -894,6 +925,9 @@ else {
         },
         '/explore': {
             render: () => m(Body, {mode: 'explore'})
+        },
+        '/transform': {
+            render: () => m(Body, {mode: 'transform'})
         },
         '/explore/:variate/:var1': exploreVars,
         '/explore/:variate/:var1/:var2': exploreVars,

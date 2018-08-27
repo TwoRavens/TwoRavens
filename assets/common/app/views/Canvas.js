@@ -1,5 +1,5 @@
-import m from 'mithril'
-import {callOnResize, mergeAttributes, panelOcclusion, heightFooter, heightHeader, scrollBarChanged} from "../common";
+import m from 'mithril';
+import {mergeAttributes, panelOcclusion, heightFooter, heightHeader, scrollBarChanged} from "../common";
 
 // Interface specification
 
@@ -18,12 +18,13 @@ import {callOnResize, mergeAttributes, panelOcclusion, heightFooter, heightHeade
 export default class Canvas {
     oncreate() {
         // Redraw if scroll bar status has changed
-        callOnResize(() => {if (scrollBarChanged()) m.redraw()});
+        window.addEventListener('resize', () => {if (scrollBarChanged()) m.redraw()});
     }
 
     view(vnode) {
         let {attrsAll} = vnode.attrs;
-        return m('div#canvas', mergeAttributes({
+        return m('div', mergeAttributes({
+            id: 'canvas',
             style: {
                 width: '100%',
                 height: `calc(100% - ${heightHeader} - ${heightFooter})`,

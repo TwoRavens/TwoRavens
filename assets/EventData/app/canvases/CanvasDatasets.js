@@ -23,7 +23,7 @@ export default class CanvasDatasets {
         let markup = (key) => ({"title": italicize, "note": quote, "url": link}[key] || (_ => _));
         let format = (citation) => Object.keys(citation).map(key => [markup(key)(citation[key]), '. ']);
 
-        let columnFilter = (columns) => columns.map(column => column.replace('_constructed', ''));
+        let columnFilter = (columns) => columns.map(column => column.replace('TwoRavens_', ''));
 
         let tempDataset = this.dataset ? app.genericMetadata[this.dataset] : {};
 

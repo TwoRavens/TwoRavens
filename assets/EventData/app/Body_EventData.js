@@ -1,7 +1,8 @@
 import m from 'mithril';
 
 import * as app from './app';
-import * as query from './query';
+import * as queryAbstract from './queryAbstract';
+import * as queryMongo from './queryMongo';
 import * as tour from "./tour";
 
 import * as common from '../../common-eventdata/common';
@@ -31,7 +32,7 @@ import CanvasCustom from "./canvases/CanvasCustom";
 import CanvasResults from "./canvases/CanvasResults";
 
 import SaveQuery from "./views/SaveQuery";
-import {TreeQuery, TreeVariables} from "./views/TreeSubset";
+import {TreeAggregate, TreeQuery, TreeVariables} from "./views/TreeSubset";
 
 export default class Body_EventData {
 
@@ -165,14 +166,14 @@ export default class Body_EventData {
                 app.selectedMode !== 'home' && m(Button, {
                     class: 'btn-sm',
                     onclick: async () => {
-                        if ('subset' === app.selectedMode && app.abstractQuery.length === 0)
+                        if ('subset' === app.selectedMode && app.abstractManipulations.length === 0)
                             tour.tourStartSaveQueryEmpty();
-                        else if ('aggregate' === app.selectedMode && !app.eventMeasure)
+                        else if ('aggregate' === app.selectedMode && !app.eventdataAggregateStep.measuresAccum.length)
                             tour.tourStartEventMeasure();
                         else {
                             if ('aggregate' === app.selectedMode && app.aggregationStaged) {
                                 app.setLaddaSpinner('btnSave');
-                                await query.submitAggregation();
+                                await app.submitAggregation();
                                 app.laddaStopAll();
                             }
                             app.setShowSaveQuery(true)
@@ -190,12 +191,36 @@ export default class Body_EventData {
                         'margin-top': '4px',
                         'margin-left': '6px'
                     },
-                    onclick: () => {
-                        if ('subset' === app.selectedMode && app.abstractQuery.length === 0)
-                            tour.tourStartSaveQueryEmpty();
-                        else if ('aggregate' === app.selectedMode && !app.eventMeasure)
-                            tour.tourStartEventMeasure();
-                        else app.download();
+                    onclick: async () => {
+                        if ('subset' === app.selectedMode) {
+                            if (app.abstractManipulations.length === 0) {
+                                tour.tourStartSaveQueryEmpty();
+                                return;
+                            }
+                            let downloadStep = {
+                                type: 'menu',
+                                metadata: {
+                                    variables: (app.selectedVariables.size + app.selectedConstructedVariables.size) === 0
+                                        ? [...app.genericMetadata[app.selectedDataset]['columns'], app.genericMetadata[app.selectedDataset]['columns_constructed']]
+                                        : [...app.selectedVariables, ...app.selectedConstructedVariables]
+                                }
+                            };
+                            let compiled = queryMongo.buildPipeline([...app.abstractManipulations, downloadStep])['pipeline'];
+                            app.setLaddaSpinner('btnDownload', true);
+                            await app.download(app.selectedDataset, JSON.stringify(compiled))
+                                .finally(() => app.setLaddaSpinner('btnDownload', false));
+
+                        }
+                        if ('aggregate' === app.selectedMode) {
+                            if (app.eventdataAggregateStep.measuresAccum.length === 0) {
+                                tour.tourStartEventMeasure();
+                                return;
+                            }
+                            let compiled = queryMongo.buildPipeline([...app.abstractManipulations, app.eventdataAggregateStep])['pipeline'];
+                            app.setLaddaSpinner('btnDownload', true);
+                            await app.download(app.selectedDataset, JSON.stringify(compiled))
+                                .finally(() => app.setLaddaSpinner('btnDownload', false));
+                        }
                     }
                 }, m("span.ladda-label", "Download")),
 
@@ -227,7 +252,7 @@ export default class Body_EventData {
                         if (tab['full'] in alignedColumns) return 'Aligned';
                         for (let filter of tab['filters']) if (filter in alignedColumns) return 'Aligned';
                     }
-                else for (let column of app.coerceArray(metadataSubsets[subsetName]['columns']))
+                else for (let column of metadataSubsets[subsetName]['columns'])
                     if (column in alignedColumns) return 'Aligned';
                 return 'Unaligned';
             };
@@ -317,7 +342,7 @@ export default class Body_EventData {
                                         'data-container': '#variablesList'
                                     }
                                 }),
-                                !!matchedConstructedVariables.length && m('h5', 'Constructed Variables'),
+                                m('h5', 'TwoRavens Standardized'),
                                 m(PanelList, {
                                     id: 'variablesConstructedList',
                                     items: matchedConstructedVariables,
@@ -357,17 +382,7 @@ export default class Body_EventData {
 
         if (mode === 'aggregate') {
 
-            let timeSeries = false;
-            for (let subset of Object.keys(app.unitMeasure)) {
-                if (app.genericMetadata[app.selectedDataset]['subsets'][subset]['type'] === 'date') {
-                    timeSeries = true;
-                    break;
-                }
-            }
-            let tempDataset = app.genericMetadata[app.selectedDataset];
-
-            let aggregateKeys = Object.keys(app.genericMetadata[app.selectedDataset]['subsets'])
-                .filter(subset => 'measures' in app.genericMetadata[app.selectedDataset]['subsets'][subset]);
+            let allPlots = ['Time Series'];
 
             return m(Panel, {
                 id: 'leftPanelMenu',
@@ -386,26 +401,42 @@ export default class Body_EventData {
                 attrsAll: {style: {height: 'calc(100% - 39px)', overflow: 'auto'}},
                 sections: [
                     {
-                        value: 'Unit of Measure',
+                        value: 'Unit Measures',
                         contents: m(PanelList, {
-                            items: aggregateKeys.filter(subset => tempDataset['subsets'][subset]['measures'].indexOf('unit') !== -1),
+                            items: Object.keys(app.genericMetadata[app.selectedDataset]['subsets'])
+                                .filter(subset => app.genericMetadata[app.selectedDataset]['subsets'][subset].measureType === 'unit'),
                             id: 'UMList',
                             colors: {[common.selVarColor]: app.selectedCanvas !== 'Results' ? [app.selectedSubsetName] : []},
-                            classes: {['item-bordered']: Object.keys(app.unitMeasure).filter(key => app.unitMeasure[key])},
                             callback: app.setSelectedSubsetName
                         })
                     },
                     {
-                        value: 'Event Measure',
+                        value: 'Event Measures',
                         contents: m(PanelList, {
-                            items: aggregateKeys.filter(subset => tempDataset['subsets'][subset]['measures'].indexOf('event') !== -1),
+                            items: Object.keys(app.genericMetadata[app.selectedDataset]['subsets'])
+                                .filter(subset => app.genericMetadata[app.selectedDataset]['subsets'][subset].measureType === 'accumulator'),
                             id: 'EMList',
                             colors: {[common.selVarColor]: app.selectedCanvas !== 'Results' ? [app.selectedSubsetName] : []},
-                            classes: {['item-bordered']: [app.eventMeasure]},
-                            callback: (subset) => {
-                                app.setEventMeasure(subset);
-                                app.setSelectedSubsetName(subset);
-                            }
+                            callback: app.setSelectedSubsetName
+                        })
+                    },
+                    {
+                        value: 'Results',
+                        contents: m(PanelList, {
+                            id: 'resultsList',
+                            items: allPlots,
+                            colors: {
+                                [common.grayColor]: app.aggregationData ? [] : allPlots,
+                                [common.selVarColor]: app.selectedCanvas === 'Results' ? [app.selectedResult] : []
+                            },
+                            callback: (result) => {
+                                if (!app.aggregationData) {
+                                    tour.tourStartAggregation();
+                                    return;
+                                }
+                                app.setSelectedResult(result);
+                            },
+                            attrsAll: {style: {height: 'calc(100% - 78px)', overflow: 'auto'}}
                         })
                     }
                 ]
@@ -419,111 +450,103 @@ export default class Body_EventData {
         if (mode === 'home') {
             common.setPanelOcclusion('left', window.innerWidth < 1200 ? `calc(${common.panelMargin}*2)` : '250px');
             common.setPanelOcclusion('right', window.innerWidth < 1200 ? `calc(${common.panelMargin}*2)` : '250px');
+            return;
         }
 
-        if (mode === 'subset') {
-            return m(Panel, {
+        return m(Panel, {
                 id: 'rightPanelMenu',
                 side: 'right',
                 label: 'Query Summary',
-                hover: window.innerWidth < 1200,
-                width: '250px'
-            }, [
-                m(MenuHeaders, {
-                    id: 'querySummaryMenu',
-                    attrsAll: {style: {height: 'calc(100% - 85px)', overflow: 'auto'}},
-                    sections: [
-                        {
-                            value: 'Variables',
-                            contents: (app.selectedVariables.size + app.selectedConstructedVariables.size) // if there are any matches in either normal or constructed variables
-                                ? m(TreeVariables)
-                                : m('div[style=font-style:italic]', 'Return all Variables')
-                        },
-                        {
-                            value: 'Subsets',
-                            contents: m(TreeQuery)
-                        }
-                    ]
-                }),
-                m("#rightpanelButtonBar", {
-                        style: {
-                            width: "calc(100% - 25px)",
-                            "position": "absolute",
-                            "bottom": '5px'
-                        }
-                    },
-                    m("button.btn.btn-default[id='buttonAddGroup'][type='button']", {
-                            style: {"float": "left"},
-                            onclick: () => app.addGroup(false)
-                        },
-                        'Group'
-                    ),
-
-                    m("button.btn.btn-default.ladda-button[type='button']", {
-                        id: 'btnUpdate',
-                        'data-style': 'zoom-in',
-                        'data-spinner-color': '#818181',
-                        style: {float: 'right'},
-                        onclick: async () => {
-                            app.setLaddaSpinner('btnUpdate', true);
-                            await query.submitQuery();
-                            app.laddaStopAll();
-                        }
-                    }, 'Update')
-                )
-            ])
-        }
-
-        if (mode === 'aggregate') {
-            return m(Panel, {
-                id: 'rightPanelMenu',
-                side: 'right',
-                label: 'Results',
                 hover: window.innerWidth < 1200,
                 width: '250px',
                 attrsAll: {
                     style: {
                         // subtract header, the two margins, scrollbar, table, and footer
-                        height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${common.canvasScroll['horizontal'] ? common.scrollbarWidth : '0px'} - ${app.tableHeight} - ${common.heightFooter})`
+                        height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${common.canvasScroll['horizontal'] ? common.scrollbarWidth : '0px'} - ${app.selectedMode === 'aggregate' ? app.tableHeight : '0px'} - ${common.heightFooter})`
                     }
                 }
-            }, [
-                m(PanelList, {
-                    id: 'resultsList',
-                    items: ['Line Plot'],
-                    colors: {[common.selVarColor]: app.selectedCanvas === 'Results' ? [app.selectedResult] : []},
-                    callback: (result) => {
-                        if (!app.aggregationData) {
-                            tour.tourStartAggregation();
-                            return;
-                        }
-                        app.setSelectedResult(result);
+            },
+            m(MenuHeaders, {
+                id: 'querySummaryMenu',
+                attrsAll: {style: {height: 'calc(100% - 85px)', overflow: 'auto'}},
+                sections: [
+                    {
+                        value: 'Subsets',
+                        contents: (app.abstractManipulations.length + app.pendingSubset.abstractQuery.length) ? [
+                            ...app.abstractManipulations.map(step => m(TreeQuery, {isQuery: true, step})),
+                            m(TreeQuery, {step: app.pendingSubset})
+                        ] : m('div[style=font-style:italic]', 'Match all records')
                     },
-                    attrsAll: {style: {height: 'calc(100% - 78px)', overflow: 'auto'}}
-                }),
-                m("button.btn.btn-default.ladda-button[type='button']", {
+                    app.selectedMode === 'subset' && {
+                        value: 'Variables',
+                        contents: (app.selectedVariables.size + app.selectedConstructedVariables.size) // if there are any matches in either normal or constructed variables
+                            ? m(TreeVariables)
+                            : m('div[style=font-style:italic]', 'Return all Variables')
+                    },
+                    app.selectedMode === 'aggregate' && {
+                        value: 'Unit Measures',
+                        contents: app.eventdataAggregateStep.measuresUnit.length
+                            ? m(TreeAggregate, {id: app.eventdataAggregateStep.id + 'unit', data: app.eventdataAggregateStep.measuresUnit})
+                            : m('div[style=font-style:italic]', 'No unit measures')
+                    },
+                    app.selectedMode === 'aggregate' && {
+                        value: 'Event Measures',
+                        contents: app.eventdataAggregateStep.measuresAccum.length
+                            ? m(TreeAggregate, {id: app.eventdataAggregateStep.id + 'accumulator', data: app.eventdataAggregateStep.measuresAccum})
+                            : m('div[style=font-style:italic]', 'An event measure is required')
+                    }
+                ]
+            }),
+            m("#rightpanelButtonBar", {
+                    style: {
+                        width: "calc(100% - 25px)",
+                        "position": "absolute",
+                        "bottom": '5px'
+                    }
+                },
+                app.selectedMode === 'subset' && m(Button, {
+                    id: 'btnAddGroup',
+                    style: {float: 'left'},
+                    onclick: () => queryAbstract.addGroup(app.pendingSubset)
+                }, 'Group'),
+
+                m(Button, {
                     id: 'btnUpdate',
+                    class: 'ladda-button',
                     'data-style': 'zoom-in',
                     'data-spinner-color': '#818181',
-                    class: app.aggregationStaged && ['btn-success'],
                     style: {float: 'right'},
+                    disabled: app.selectedMode === 'subset'
+                        ? app.pendingSubset.abstractQuery.length === 0
+                        : !app.aggregationStaged || app.eventdataAggregateStep.measuresAccum.length === 0,
                     onclick: async () => {
-                        app.setAggregationStaged(false);
                         app.setLaddaSpinner('btnUpdate', true);
-                        await query.submitAggregation();
-                        app.laddaStopAll();
+                        await {'subset': app.submitSubset, 'aggregate': app.submitAggregation}[app.selectedMode]();
+                        app.setLaddaSpinner('btnUpdate', false);
+
+                        // weird hack, unsetting ladda unsets the disabled attribute. But it should still be disabled
+                        if (app.selectedMode === 'subset')
+                            document.getElementById('btnUpdate').disabled = app.pendingSubset.abstractQuery.length === 0;
                     }
                 }, 'Update')
-            ])
-        }
+            ))
+
     }
 
     canvasContent() {
         if (app.selectedCanvas === 'Subset') {
             if (app.subsetData[app.selectedSubsetName] === undefined) {
 
-                if (!app.isLoading[app.selectedSubsetName])
-                    app.loadSubset(app.selectedSubsetName);
+                if (!app.isLoading[app.selectedSubsetName]) {
+                    let newMenu = {
+                        type: 'menu',
+                        name: app.selectedSubsetName,
+                        metadata: app.genericMetadata[app.selectedDataset]['subsets'][app.selectedSubsetName],
+                        preferences: app.subsetPreferences[app.selectedSubsetName]
+                    };
+
+                    app.loadMenuEventData(app.abstractManipulations, newMenu);
+                }
 
                 return m('#loading.loader', {
                     style: {
@@ -554,7 +577,6 @@ export default class Body_EventData {
             })
         }
 
-        // TODO add CanvasAnalysis
         app.canvasPreferences[app.selectedCanvas] = app.canvasPreferences[app.selectedCanvas] || {};
         return m({
             'About': CanvasAbout,
@@ -583,9 +605,10 @@ export default class Body_EventData {
                 }
             },
             app.aggregationData ? m(Table, {
-                headers: [...app.aggregationHeadersUnit, ...app.aggregationHeadersEvent],
-                data: app.aggregationData
-            }) : "Select event measures, then click 'Update' to display aggregated data."
+                    headers: [...app.aggregationHeadersUnit, ...app.aggregationHeadersEvent],
+                    data: app.aggregationData
+                })
+                : m('div', {style: {margin: '1em'}}, "Select event measures, then click 'Update' to display aggregated data.")
         );
     }
 
@@ -627,14 +650,31 @@ export default class Body_EventData {
             m(Button, {
                 id: 'btnStage',
                 style: {
-                    display: app.selectedMode === 'subset' ? 'block' : 'none',
+                    display: app.selectedMode === 'home' ? 'none' : 'block',
                     right: `calc(${common.panelOcclusion['right'] || '275px'} + 5px)`,
-                    bottom: `calc(${common.heightFooter} + ${common.panelMargin} + 6px)`,
+                    bottom: `calc(${common.heightFooter} + ${common.panelMargin} + 6px + ${app.selectedMode === 'aggregate' ? app.tableHeight : '0px'})`,
                     position: 'fixed',
                     'z-index': 100,
                     'box-shadow': 'rgba(0, 0, 0, 0.3) 0px 2px 3px'
                 },
-                onclick: app.addRule
+                onclick: () => {
+                    let metadata = app.genericMetadata[app.selectedDataset]['subsets'][app.selectedSubsetName];
+                    let preferences = app.subsetPreferences[app.selectedSubsetName];
+                    let name = app.selectedSubsetName + (app.selectedMode === 'subset' ? ' Subset' : '');
+                    if (app.selectedCanvas === 'Custom') {
+                        preferences = app.canvasPreferences['Custom'];
+                        name = 'Custom Subset';
+                    }
+
+                    let step = {
+                        'subset': app.pendingSubset,
+                        'aggregate': app.eventdataAggregateStep
+                    }[app.selectedMode];
+                    app.setAggregationStaged(true);
+
+                    // add a constraint to either the 'pendingSubset' or 'eventdataAggregateStep' pipeline step, given the menu state and menu metadata
+                    queryAbstract.addConstraint(step, name, preferences, metadata);
+                }
             }, 'Stage'),
             m(Canvas, {
                 attrsAll: {

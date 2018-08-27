@@ -8,9 +8,7 @@
   "subsets": {
     "Actor": {
       "type": "dyad",
-      "measures": [
-        "unit"
-      ],
+      "measureType": "unit",
       "tabs": {
         "actor 1": {
           "full": "ACTOR1",
@@ -30,38 +28,32 @@
     },
     "Action": {
       "type": "categorical",
-      "measures": [
-        "event"
-      ],
+      "measureType": "accumulator",
       "columns": [
         "INTERACTION"
       ]
     },
     "Date": {
       "type": "date",
-      "measures": [
-        "unit"
-      ],
+      "measureType": "unit",
       "structure": "point",
       "columns": [
-        "EVENT_DATE_constructed"
+        "TwoRavens_EVENT_DATE"
       ]
     },
     "Code Date": {
       "type": "date",
-      "measures": [
-        "unit"
-      ],
+      "measureType": "unit",
       "structure": "point",
       "columns": [
-        "TIMESTAMP_constructed"
+        "TwoRavens_TIMESTAMP"
       ]
     },
     "Location": {
       "type": "categorical_grouped",
       "group_by": "region",
       "columns": [
-        "country_constructed"
+        "TwoRavens_country"
       ]
     },
     "Coordinates": {
@@ -103,21 +95,27 @@
     "TIMESTAMP"
   ],
   "columns_constructed": [
-    "EVENT_DATE_constructed",
-    "TIMESTAMP_constructed",
-    "country_constructed"
+    "TwoRavens_EVENT_DATE",
+    "TwoRavens_TIMESTAMP",
+    "TwoRavens_country",
+    "TwoRavens_city",
+    "TwoRavens_subregion",
+    "TwoRavens_region",
+    "TwoRavens_language",
+    "TwoRavens_score",
+    "TwoRavens_territory"
   ],
   "alignments": {
     "LATITUDE": "latitude",
     "LONGITUDE": "longitude",
-    "EVENT_DATE_constructed": "date",
-    "country_constructed": "country"
+    "TwoRavens_EVENT_DATE": "date",
+    "TwoRavens_country": "country"
   },
   "formats": {
     "INTERACTION": "ACLED_interaction",
     "INTER1": "ACLED_inter",
     "INTER2": "ACLED_inter",
-    "country_constructed": "ISO-3",
+    "TwoRavens_country": "ISO-3",
     "YEAR": "%Y"
   },
   "citations": [

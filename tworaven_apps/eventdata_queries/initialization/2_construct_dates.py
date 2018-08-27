@@ -20,11 +20,11 @@ def remove_header():
 def date_cline_phoenix():
     for collection in ['cline_phoenix_nyt', 'cline_phoenix_swb', 'cline_phoenix_fbis']:
         print('Processing: ' + collection)
-        for document in db[collection].find({'story_date_constructed': {"$exists": 0}}):
+        for document in db[collection].find({'TwoRavens_story_date': {"$exists": 0}}):
             try:
                 db[collection].update(
                     {'_id': document['_id']},
-                    {'$set': {'story_date_constructed': datetime.datetime.strptime(document['story_date'], '%m/%d/%Y')}}
+                    {'$set': {'TwoRavens_story_date': datetime.datetime.strptime(document['story_date'], '%m/%d/%Y')}}
                 )
             except KeyError:
                 pass
@@ -32,20 +32,20 @@ def date_cline_phoenix():
 
 def date_cline_speed():
     origin = datetime.datetime.strptime('01/01/1945', "%m/%d/%Y")  # taken from footer note 1 within codebook
-    for document in db.cline_speed.find({'AVERAGE_DATE_constructed': {"$exists": 0}}):
+    for document in db.cline_speed.find({'TwoRavens_AVERAGE_DATE': {"$exists": 0}}):
         fields = {
-            'CODE_DATE_constructed': datetime.datetime(document['CODE_YEAR'], document['CODE_MONTH'], document['CODE_DAY']),
-            'PUB_DATE_constructed': datetime.datetime(document['PUB_YEAR'], document['PUB_MON'], document['PUB_DATE'])
+            'TwoRavens_CODE_DATE': datetime.datetime(document['CODE_YEAR'], document['CODE_MONTH'], document['CODE_DAY']),
+            'TwoRavens_PUB_DATE': datetime.datetime(document['PUB_YEAR'], document['PUB_MON'], document['PUB_DATE'])
         }
 
         for column in ['JUL_END_DATE', 'JUL_START_DATE', 'JUL_PED', 'JUL_PSD', 'JUL_EED', 'JUL_LED']:
             if column in document:
-                fields[column + '_constructed'] = origin + datetime.timedelta(days=document[column])
+                fields['TwoRavens_' + column] = origin + datetime.timedelta(days=document[column])
 
         day = 1 if 'day' not in document else document['day']
         month = 1 if 'month' not in document else document['month']
         if 'year' in document:
-            fields['AVERAGE_DATE_constructed'] = datetime.datetime(document['year'], month, day)
+            fields['TwoRavens_AVERAGE_DATE'] = datetime.datetime(document['year'], month, day)
 
         db.cline_speed.update(
             {'_id': document['_id']},
@@ -56,22 +56,22 @@ def date_cline_speed():
 def date_acled():
     for collection in ['acled_africa', 'acled_middle_east', 'acled_asia']:
         print('Processing: ' + collection)
-        for document in db[collection].find({'EVENT_DATE_constructed': {"$exists": 0}}):
+        for document in db[collection].find({'TwoRavens_EVENT_DATE': {"$exists": 0}}):
             db[collection].update(
                 {'_id': document['_id']},
                 {'$set': {
-                    'EVENT_DATE_constructed': datetime.datetime.strptime(document['EVENT_DATE'], '%m/%d/%Y') ,
-                    'TIMESTAMP_constructed': datetime.datetime.fromtimestamp(document['TIMESTAMP'])
+                    'TwoRavens_EVENT_DATE': datetime.datetime.strptime(document['EVENT_DATE'], '%m/%d/%Y') ,
+                    'TwoRavens_TIMESTAMP': datetime.datetime.fromtimestamp(document['TIMESTAMP'])
                 }
             })
 
 
 def date_icews():
-    for document in db.icews.find({'Event Date_constructed': {"$exists": 0}}):
+    for document in db.icews.find({'TwoRavens_Event Date': {"$exists": 0}}):
         try:
             db.icews.update(
                 {'_id': document['_id']},
-                {'$set': {'Event Date_constructed': datetime.datetime.strptime(document['Event Date'], '%Y-%m-%d')}}
+                {'$set': {'TwoRavens_Event Date': datetime.datetime.strptime(document['Event Date'], '%Y-%m-%d')}}
             )
         except Exception as err:
             print(err)

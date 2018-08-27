@@ -9,13 +9,16 @@ export default class CanvasCategorical {
     view(vnode) {
         let {mode, data, metadata, preferences} = vnode.attrs;
 
-        let masterColumn = app.coerceArray(metadata['columns'])[0];
+        let masterColumn = metadata['columns'][0];
         let masterFormat = app.genericMetadata[app.selectedDataset]['formats'][masterColumn];
         let masterAlignment = app.genericMetadata[app.selectedDataset]['alignments'][masterColumn];
 
         let allData = {};
 
-        preferences['aggregation'] = preferences['aggregation'] || masterFormat;
+        // used for aggregation
+        preferences['alignment'] = masterAlignment;
+        preferences['aggregation'] = preferences['aggregation'] || masterFormat; // the format to accumulate to
+
         preferences['format'] = preferences['format'] || masterFormat;
         preferences['selections'] = preferences['selections'] || new Set();
 
@@ -23,18 +26,17 @@ export default class CanvasCategorical {
         let allSelected = {};
 
         let flattenedData = data.reduce((out, entry) => {
-            if (entry[masterFormat])
-                out[entry[masterFormat]] = entry['total'];
+            if (metadata.columns[0] in entry) out[entry[metadata.columns[0]]] = entry['total'];
             return out;
         }, {});
 
         if (masterAlignment) {
-            app.coerceArray(metadata['formats']).forEach(format => {
+            metadata['formats'].forEach(format => {
                 allData[format] = {};
                 allSelected[format] = {};
             });
             app.alignmentData[masterAlignment].forEach(equivalency => {
-                app.coerceArray(metadata['formats']).forEach(format => {
+                metadata['formats'].forEach(format => {
                     let isSet = preferences['selections'].has(equivalency[masterFormat]);
                     if (equivalency[format] in allSelected[format])
                         allSelected[format][equivalency[format]].push(isSet);
@@ -83,7 +85,7 @@ export default class CanvasCategorical {
 
             let total = keepKeys.map(key => data[key]).reduce((total, value) => total + value);
 
-            let plotData = keepKeys.sort()
+            let plotData = keepKeys
                 .map((key) => {
                     let title = app.formattingData[format][key];
                     if (Array.isArray(app.formattingData[format][key])) title = title[0];
@@ -120,7 +122,6 @@ export default class CanvasCategorical {
                         data: plotData,
                         callbackBar: (bar) => {
                             let target_state = bar.class === 'bar-some' || bar.class === 'bar';
-                            if (mode === 'aggregate') app.setAggregationStaged(true);
 
                             if (masterAlignment) {
                                 app.alignmentData[masterAlignment]
@@ -140,11 +141,11 @@ export default class CanvasCategorical {
         };
 
         return m("#canvasCategorical", {style: {height: '100%', 'padding-top': panelMargin, width: `calc(100% + ${common.panelMargin})`}},
-            mode === 'aggregate' && app.coerceArray(metadata['formats']).length > 1 && m(ButtonRadio, {
+            mode === 'aggregate' && 'formats' in metadata && metadata['formats'].length > 1 && m(ButtonRadio, {
                 id: 'aggregationFormat',
                 onclick: (format) => preferences['aggregation'] = format,
                 activeSection: preferences['aggregation'],
-                sections: app.coerceArray(metadata['formats']).map(format => ({value: format})),
+                sections: metadata['formats'].map(format => ({value: format})),
                 attrsAll: {"style": {"width": "auto", 'margin': '1em'}}
             }),
             m("#SVGbin", {

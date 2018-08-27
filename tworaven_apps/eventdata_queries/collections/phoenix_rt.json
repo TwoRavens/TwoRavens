@@ -7,9 +7,7 @@
   "subsets": {
     "Actor": {
       "type": "dyad",
-      "measures": [
-        "unit"
-      ],
+      "measureType": "unit",
       "tabs": {
         "source": {
           "full": "source",
@@ -18,7 +16,7 @@
             "src_other_agent",
             "src_actor"
           ],
-          "token_length": 3
+          "full_token": "..."
         },
         "target": {
           "format": "phoenix",
@@ -28,15 +26,17 @@
             "tgt_other_agent",
             "tgt_actor"
           ],
-          "token_length": 3
+          "full_token": "..."
         }
+      },
+      "delimited": {
+        "src_other_agent": ";",
+        "tgt_other_agent": ";"
       }
     },
     "Action": {
       "type": "categorical",
-      "measures": [
-        "event"
-      ],
+      "measureType": "accumulator",
       "formats": [
         "CAMEO",
         "root_code",
@@ -49,9 +49,7 @@
     },
     "Date": {
       "type": "date",
-      "measures": [
-        "unit"
-      ],
+      "measureType": "unit",
       "structure": "point",
       "columns": [
         "date8_val"
@@ -134,10 +132,6 @@
     "month": "%m",
     "day": "%d",
     "year": "%Y"
-  },
-  "deconstruct": {
-    "src_other_agent": ";",
-    "tgt_other_agent": ";"
   },
   "citations": [
     {

@@ -83,9 +83,9 @@ export let resultsMetricDescription = 'Larger numbers are better fits';
 export let allsearchId = [];            // List of all the searchId's created on searches
 
 export let currentMode = 'model';
-let is_explore_mode = false;
-let is_results_mode = false;
-let is_transform_mode = false;
+export let is_explore_mode = false;
+export let is_results_mode = false;
+export let is_transform_mode = false;
 
 let exportCount = 0;
 
@@ -144,7 +144,8 @@ export let rightTabExplore = 'Univariate';
 export let modelLeftPanelWidths = {
     'Variables': '300px',
     'Discovery': 'auto',
-    'Summary': '300px'
+    'Summary': '300px',
+    'Subset': '300px'
 };
 
 export let modelRightPanelWidths = {
@@ -169,7 +170,7 @@ export let panelWidth = {
 
 let updateRightPanelWidth = () => {
     if (is_explore_mode) {
-        return panelWidth.right = `calc(${common.panelMargin * 2}px + 16px)`;
+        return panelWidth.right = `calc(${common.panelMargin}*2 + 16px)`;
     }
 
     if (common.panelOpen['right']) {
@@ -178,14 +179,14 @@ let updateRightPanelWidth = () => {
             'explore': exploreRightPanelWidths[rightTabExplore]
         }[currentMode];
 
-        panelWidth['right'] = `calc(${common.panelMargin * 2}px + ${tempWidth})`;
+        panelWidth['right'] = `calc(${common.panelMargin}*2 + ${tempWidth})`;
     }
-    else panelWidth['right'] = `calc(${common.panelMargin * 2}px + 16px)`;
+    else panelWidth['right'] = `calc(${common.panelMargin}*2 + 16px)`;
 };
 let updateLeftPanelWidth = () => {
     if (common.panelOpen['left'])
-        panelWidth['left'] = `calc(${common.panelMargin * 2}px + ${modelLeftPanelWidths[leftTab]})`;
-    else panelWidth['left'] = `calc(${common.panelMargin * 2}px + 16px)`;
+        panelWidth['left'] = `calc(${common.panelMargin}*2 + ${modelLeftPanelWidths[leftTab]})`;
+    else panelWidth['left'] = `calc(${common.panelMargin}*2 + 16px)`;
 };
 
 updateRightPanelWidth();

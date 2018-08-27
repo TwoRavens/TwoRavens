@@ -14,297 +14,235 @@
     },
     "Posthoc": {
       "type": "categorical",
-      "measures": [
-        "event"
-      ],
+      "measureType": "accumulator",
       "columns": [
         "posthoc"
       ]
     },
     "Link Type": {
       "type": "categorical",
-      "measures": [
-        "event"
-      ],
+      "measureType": "accumulator",
       "columns": [
         "LINK_TYPE"
       ]
     },
     "Location Type": {
       "type": "categorical",
-      "measures": [
-        "event"
-      ],
+      "measureType": "accumulator",
       "columns": [
         "LOC_TYPE"
       ]
     },
     "Political Expression Type": {
       "type": "categorical",
-      "measures": [
-        "event"
-      ],
+      "measureType": "accumulator",
       "columns": [
         "PE_TYPE"
       ]
     },
     "Reduced Political Expression Type": {
       "type": "categorical",
-      "measures": [
-        "event"
-      ],
+      "measureType": "accumulator",
       "columns": [
         "EXP_TYPE"
       ]
     },
     "Symbolic Event Type": {
       "type": "categorical",
-      "measures": [
-        "event"
-      ],
+      "measureType": "accumulator",
       "columns": [
         "SYM_TYPE"
       ]
     },
     "Advocated Violence": {
       "type": "categorical",
-      "measures": [
-        "event"
-      ],
+      "measureType": "accumulator",
       "columns": [
         "AD_VIOL"
       ]
     },
     "Advocated Tactics": {
       "type": "categorical",
-      "measures": [
-        "event"
-      ],
+      "measureType": "accumulator",
       "columns": [
         "AD_TACT"
       ]
     },
     "Attack Type": {
       "type": "categorical",
-      "measures": [
-        "event"
-      ],
+      "measureType": "accumulator",
       "columns": [
         "ATK_TYPE"
       ]
     },
     "Disruptive State Act Type Broad": {
       "type": "categorical",
-      "measures": [
-        "event"
-      ],
+      "measureType": "accumulator",
       "columns": [
         "DSA_TYPE"
       ]
     },
     "Disruptive State Act Type": {
       "type": "categorical",
-      "measures": [
-        "event"
-      ],
+      "measureType": "accumulator",
       "columns": [
         "STAT_ACT"
       ]
     },
     "Victim Effect": {
       "type": "categorical",
-      "measures": [
-        "event"
-      ],
+      "measureType": "accumulator",
       "columns": [
         "victim_effect"
       ]
     },
     "Weapon": {
       "type": "categorical",
-      "measures": [
-        "event"
-      ],
+      "measureType": "accumulator",
       "columns": [
         "weapon"
       ]
     },
     "Property Damaged": {
       "type": "categorical",
-      "measures": [
-        "event"
-      ],
+      "measureType": "accumulator",
       "columns": [
         "property_damaged"
       ]
     },
     "Property Owner": {
       "type": "categorical",
-      "measures": [
-        "event"
-      ],
+      "measureType": "accumulator",
       "columns": [
         "property_owner"
       ]
     },
     "Geopolitical Entity Type": {
       "type": "categorical",
-      "measures": [
-        "event"
-      ],
+      "measureType": "accumulator",
       "columns": [
         "GP_TYPE"
       ]
     },
     "Initiator Type Known": {
       "type": "categorical",
-      "measures": [
-        "event"
-      ],
+      "measureType": "accumulator",
       "columns": [
         "KNOW_INI"
       ]
     },
     "Initiator Type": {
       "type": "categorical",
-      "measures": [
-        "event"
-      ],
+      "measureType": "accumulator",
       "columns": [
         "INI_TYPE"
       ]
     },
     "Target Type": {
       "type": "categorical",
-      "measures": [
-        "event"
-      ],
+      "measureType": "accumulator",
       "columns": [
         "TAR_TYPE"
       ]
     },
     "Victim Type": {
       "type": "categorical",
-      "measures": [
-        "event"
-      ],
+      "measureType": "accumulator",
       "columns": [
         "VIC_TYPE"
       ]
     },
     "Non-government Initiator Type": {
       "type": "categorical",
-      "measures": [
-        "event"
-      ],
+      "measureType": "accumulator",
       "columns": [
         "NGOV_I1"
       ]
     },
     "Government Initiator Type": {
       "type": "categorical",
-      "measures": [
-        "event"
-      ],
+      "measureType": "accumulator",
       "columns": [
         "GOV_I1"
       ]
     },
     "Level of Government Initiator": {
       "type": "categorical",
-      "measures": [
-        "event"
-      ],
+      "measureType": "accumulator",
       "columns": [
         "G_LVL_I"
       ]
     },
     "Level of Government Target": {
       "type": "categorical",
-      "measures": [
-        "event"
-      ],
+      "measureType": "accumulator",
       "columns": [
         "G_LVL_T"
       ]
     },
     "Level of Government Victim": {
       "type": "categorical",
-      "measures": [
-        "event"
-      ],
+      "measureType": "accumulator",
       "columns": [
         "G_LVL_V"
       ]
     },
     "Code Date": {
       "type": "date",
-      "measures": [
-        "unit"
-      ],
+      "measureType": "unit",
       "structure": "point",
       "columns": [
-        "CODE_DATE_constructed"
+        "TwoRavens_CODE_DATE"
       ]
     },
     "Publish Date": {
       "type": "date",
-      "measures": [
-        "unit"
-      ],
+      "measureType": "unit",
       "structure": "point",
       "columns": [
-        "PUB_DATE_constructed"
+        "TwoRavens_PUB_DATE"
       ]
     },
     "Date": {
       "type": "date",
-      "measures": [
-        "unit"
-      ],
+      "measureType": "unit",
       "structure": "point",
       "columns": [
-        "AVERAGE_DATE_constructed"
+        "TwoRavens_AVERAGE_DATE"
       ]
     },
     "Earliest/Latest Date": {
       "type": "date",
-      "measures": [
-        "unit"
-      ],
+      "measureType": "unit",
       "structure": "interval",
       "columns": [
-        "JUL_END_DATE_constructed",
-        "JUL_START_DATE_constructed"
+        "TwoRavens_JUL_END_DATE",
+        "TwoRavens_JUL_START_DATE"
       ]
     },
     "Precise Date": {
       "type": "date",
-      "measures": [
-        "unit"
-      ],
+      "measureType": "unit",
       "structure": "interval",
       "columns": [
-        "JUL_PED_constructed",
-        "JUL_PSD_constructed"
+        "TwoRavens_JUL_PED",
+        "TwoRavens_JUL_PSD"
       ]
     },
     "Estimated Date": {
       "type": "date",
-      "measures": [
-        "unit"
-      ],
+      "measureType": "unit",
       "structure": "interval",
       "columns": [
-        "JUL_EED_constructed",
-        "JUL_LED_constructed"
+        "TwoRavens_JUL_EED",
+        "TwoRavens_JUL_LED"
       ]
     },
     "Location": {
       "type": "categorical_grouped",
       "group_by": "region",
       "columns": [
-        "country_constructed"
+        "TwoRavens_country"
       ]
     },
     "Coordinates": {
@@ -424,22 +362,28 @@
     "property_owner"
   ],
   "columns_constructed": [
-    "CODE_DATE_constructed",
-    "PUB_DATE_constructed",
-    "AVERAGE_DATE_constructed",
-    "JUL_END_DATE_constructed",
-    "JUL_START_DATE_constructed",
-    "JUL_PED_constructed",
-    "JUL_PSD_constructed",
-    "JUL_EED_constructed",
-    "JUL_LED_constructed",
-    "country_constructed"
+    "TwoRavens_CODE_DATE",
+    "TwoRavens_PUB_DATE",
+    "TwoRavens_AVERAGE_DATE",
+    "TwoRavens_JUL_END_DATE",
+    "TwoRavens_JUL_START_DATE",
+    "TwoRavens_JUL_PED",
+    "TwoRavens_JUL_PSD",
+    "TwoRavens_JUL_EED",
+    "TwoRavens_JUL_LED",
+    "TwoRavens_country",
+    "TwoRavens_address",
+    "TwoRavens_city",
+    "TwoRavens_postal",
+    "TwoRavens_postal_ext",
+    "TwoRavens_region",
+    "TwoRavens_subregion"
   ],
   "alignments": {
-    "AVERAGE_DATE_constructed": "date",
+    "TwoRavens_AVERAGE_DATE": "date",
     "GP7": "latitude",
     "GP8": "longitude",
-    "country_constructed": "country"
+    "TwoRavens_country": "country"
   },
   "formats": {
     "cowcode": "cowcode",
@@ -470,7 +414,7 @@
     "VIC_TYPE": "SPEED_vic_type",
     "victim_effect": "SPEED_victim_effect",
     "weapon": "SPEED_weapon",
-    "country_constructed": "ISO-3",
+    "TwoRavens_country": "ISO-3",
     "month": "%m",
     "day": "%d",
     "year": "%Y"

@@ -1,7 +1,7 @@
 # for performance, add some indices to ICEWS locally
 mongo
 use event_data
-db.icews.createIndex({"Source Name": 1, "Target Name": 1, "CAMEO Code": 1, "Event Date_constructed": 1}, {"name": "Actor"})
+db.icews.createIndex({"Source Name": 1, "Target Name": 1, "CAMEO Code": 1, "TwoRavens_Event Date": 1}, {"name": "Actor"})
 db.icews.createIndex({"Target Name": 1})
 db.icews.createIndex({"Source Country": 1, "Source Name": 1})
 db.icews.createIndex({"Target Country": 1, "Target Name": 1})
@@ -33,3 +33,6 @@ cd dbs/
 
 # restore databases
 mongorestore -u AdminEvent -p [PASSWORD] -d event_data --archive=[COLLECTION] --authenticationDatabase admin --gzip
+
+# don't forget to upload the tsv files for direct download
+scp ./tworaven_apps/eventdata_queries/initialization/temp/* eventuser@178.128.144.175:EventData/
