@@ -18,6 +18,7 @@
   "dependencies": {
     "hopscotch": "^0.3.1",
     "http-server": "^0.10.0",
+    "latex-parser": "^0.6.2",
     "mithril": "^1.1.1",
     "npm": "^6.1.0",
     "vega": "^4.0.0-rc.3",
