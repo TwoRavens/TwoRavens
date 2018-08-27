@@ -4,6 +4,7 @@
   "description": "Event data consisting of coded interactions between socio-political actors (i.e., cooperative or hostile actions between individuals, groups, sectors and nation states).",
   "interval": "1995 - Sep. 2016",
   "codebook": "https://dataverse.harvard.edu/file.xhtml?fileId=2548466&version=RELEASED&version=.0",
+  "download": "https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/28075",
   "host": "TwoRavens",
   "subsets": {
     "Date": {

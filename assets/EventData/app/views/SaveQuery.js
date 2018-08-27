@@ -118,17 +118,24 @@ export default class SaveQuery {
                     }
                     this.status = 'Saved as query ID ' + response.data.id;
                     this.saved = true;
+                    m.redraw();
 
                     if (!preferences['save_to_dataverse']) return;
 
-                    await m.request({
+                    response = await m.request({
                         url: 'eventdata/api/upload-dataverse/' + response.data.id,
                         method: 'GET'
                     });
-                    await m.request({
+                    this.status = response.message;
+                    m.redraw();
+                    if (!response.success) return;
+
+                    response = await m.request({
                         url: 'eventdata/api/publish-dataset/' + response.data.id,
                         method: 'GET'
-                    })
+                    });
+                    this.status = response.message;
+                    m.redraw();
                 }
             }, this.saved ? 'Saved' : 'Save Query'),
             this.status && m('[style=display:inline-block;margin-left:1em;]', this.status),

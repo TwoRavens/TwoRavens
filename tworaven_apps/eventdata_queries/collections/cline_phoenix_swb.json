@@ -4,6 +4,7 @@
   "description": "Data sourced from the BBC Summary of World Broadcasts and collected by the Cline Center for Advanced Social Research.",
   "interval": "1979 - 2015",
   "codebook": "https://uofi.app.box.com/s/bmh9i39m6bf0vhnuebtf3ak3j6uxy2le",
+  "download": "https://uofi.box.com/s/zp4mppzcpdvgs82rzwpme13xt6z4hq6j",
   "host": "TwoRavens",
   "subsets": {
     "Actor": {
