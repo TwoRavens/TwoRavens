@@ -2,99 +2,129 @@ import json, jsonfield
 from collections import OrderedDict
 from django import forms
 from django.conf import settings
-from tworaven_apps.eventdata_queries.models import (EventDataSavedQuery, ArchiveQueryJob)
-from tworaven_apps.eventdata_queries.models import (AGGREGATE, SUBSET, TYPE_OPTIONS, TYPE_CHOICES)
+from tworaven_apps.eventdata_queries.models import \
+    (EventDataSavedQuery, ArchiveQueryJob,
+     AGGREGATE, SUBSET,
+     TYPE_OPTIONS, TYPE_CHOICES,
+     METHOD_CHOICES, HOST_CHOICES)
 
-class EventDataSavedQueryForm(forms.Form):
+class EventDataSavedQueryForm(forms.ModelForm):
     """ form for event data queries"""
 
-    name = forms.CharField(required=True, label='Name')
-    description = forms.CharField(widget=forms.Textarea)
-    username = forms.CharField(required=True, label='UserName')
-    query = forms.CharField(widget=forms.Textarea)
-    result_count = forms.IntegerField(required=True, label='result_count')
-    dataset = forms.CharField(widget=forms.Textarea)
-    dataset_type = forms.CharField(required=True, initial=SUBSET)
-
-    def clean_name(self):
-        name = self.cleaned_data.get('name')
-
-        return name
-
-    def clean_username(self):
-        username = self.cleaned_data.get('username')
-
-        return username
-
-    def clean_description(self):
-        desc = self.cleaned_data.get('description')
-
-        return desc
+    class Meta:
+        model = EventDataSavedQuery
+        fields = ['name',
+                  'user',
+                  'description',
+                  'query',
+                  'result_count',
+                  'collection_name',
+                  'collection_type']
 
     def clean_query(self):
         """
         - passed to the form as a string but it we want it as an OrderedDict
             - e.g. input: "OrderedDict([('ads', 'asd')])"
         """
-        query_str = self.cleaned_data.get('query')
+        query_info = self.cleaned_data.get('query')
 
-        try:
-            dict_type = eval(query_str)
-        except SyntaxError:
-            raise forms.ValidationError("The query is invalid: %s" % query_str)
-        except NameError:
-            raise forms.ValidationError("The query is invalid: %s" % query_str)
+        if not isinstance(query_info, (list, dict)):
+            user_msg = ('The query was invalid'
+                        ' (not a list or object): %s') % \
+                        (query_info,)
+            raise forms.ValidationError(user_msg)
 
-        if isinstance(dict_type, dict):
-            print("dict type ")
-            return dict_type
+        return query_info
+
+
+    @staticmethod
+    def get_duplicate_record_error_msg():
+        """Return error message for breaking unique constraints"""
+        dupe_err_msg = ('You have already saved a query with this information.'
+                        ' (Same query, collection, and collection name.)')
+
+        return dupe_err_msg
+
+    def clean(self):
+        """Check is this unsaved model already exists"""
+
+        filter_params = {}
+        unique_key = ['user', 'collection_name', 'collection_type', 'query']
+        for key in unique_key:
+            filter_params[key] = self.cleaned_data[key]
+
+        # check 1
+        #
+        cnt = EventDataSavedQuery.objects.filter(**filter_params).count()
+        if cnt > 0:
+            # already exists, save will fail
+            #
+            self._errors["query"] = self.error_class(\
+                            [self.get_duplicate_record_error_msg()])
+            del self.cleaned_data["query"]
+
         else:
-            try:
-                print("non dict type")
-                non_dict_type = json.dumps(query_str)
-                return non_dict_type
-            except SyntaxError:
-                raise forms.ValidationError("The query is invalid and non_dict type: %s" % query_str)
-            except NameError:
-                raise forms.ValidationError("The query is invalid and non dict type: %s" % query_str)
+            # check 2
+            #
+            filter_params2 = dict(user=self.cleaned_data['user'],
+                                  name=self.cleaned_data['name'])
 
-    def clean_result_count(self):
-        res_count = self.cleaned_data.get('result_count')
+            cnt2 = EventDataSavedQuery.objects.filter(**filter_params2).count()
+            if cnt2 > 0:
+                user_msg = ('You have already used this name.'
+                            ' Please use a different name for this query.')
+                self._errors["name"] = self.error_class(\
+                                            [user_msg])
+                del self.cleaned_data["name"]
 
-        return res_count
+        return self.cleaned_data
 
-    def clean_dataset(self):
-        dataset_input = self.cleaned_data.get('dataset')
 
-        return dataset_input
+class EventDataGetDataForm(forms.Form):
+    """ check if query submission parameters are ok"""
 
-    def clean_dataset_type(self):
-        dataset_type = self.cleaned_data.get('dataset_type')
-        print("type choces", list(TYPE_OPTIONS))
-        if dataset_type in TYPE_OPTIONS:
-            return dataset_type
+    host = forms.CharField(required=False, widget=forms.Textarea, initial=HOST_CHOICES[0])
+    collection_name = forms.CharField(required=True, widget=forms.Textarea)
+    method = forms.CharField(required=True, widget=forms.Textarea)
+    query = forms.CharField(required=True, widget=forms.Textarea)
+    distinct = forms.CharField(required=False, widget=forms.Textarea)
+
+    def clean_host(self):
+        host = self.cleaned_data.get('host')
+        if host in HOST_CHOICES:
+            return host
         else:
-            raise forms.ValidationError("The type input is not among subset or aggregate: %s" % dataset_type)
+            raise forms.ValidationError('The host is not among %s: %s' % (str(HOST_CHOICES), host))
+
+    def clean_collection_name(self):
+        return self.cleaned_data.get('collection_name')
+
+    def clean_method(self):
+        method = self.cleaned_data.get('method')
+        if method in METHOD_CHOICES:
+            return method
+        else:
+            raise forms.ValidationError("The collection method is not among %s: %s" % (str(METHOD_CHOICES), method))
+
+    def clean_query(self):
+        return json.loads(self.cleaned_data.get('query'))
+
+    def clean_distinct(self):
+        return self.cleaned_data.get('distinct')
 
 
-class EventDataQueryFormSearch(forms.Form):
-    """ to check if search parameters are ok"""
+class EventDataGetMetadataForm(forms.Form):
+    """ check if metadata parameters are ok"""
 
-    name = forms.CharField(required=False, label='Name')
-    description = forms.CharField(required=False, widget=forms.Textarea)
-    username = forms.CharField(required=False, label='UserName')
+    alignments = forms.CharField(required=False, widget=forms.Textarea)
+    formats = forms.CharField(required=False, widget=forms.Textarea)
+    collections = forms.CharField(required=False, widget=forms.Textarea)
 
-    def clean_name(self):
-        name = self.cleaned_data.get('name')
+    def clean_alignments(self):
+        return self.cleaned_data.get('alignments')
 
-        return name
+    def clean_formats(self):
+        return self.cleaned_data.get('formats')
 
-    def clean_username(self):
-        username = self.cleaned_data.get('username')
-
-        return username
-
-    def clean_description(self):
-        desc = self.cleaned_data.get('description')
-
-        return desc
+    def clean_collections(self):
+        return self.cleaned_data.get('collections')

@@ -1,0 +1,131 @@
+{
+  "name": "ACLED Africa",
+  "key": "acled_africa",
+  "description": "African event data from the Armed Conflict Location & Event Data Project (ACLED).",
+  "interval": "1997 - 9 June 2018",
+  "codebook": "https://www.acleddata.com/wp-content/uploads/2017/12/ACLED_Codebook_2017FINAL.pdf",
+  "download": "https://www.acleddata.com/download/2909/",
+  "host": "TwoRavens",
+  "subsets": {
+    "Actor": {
+      "measureType": "unit",
+      "type": "dyad",
+      "tabs": {
+        "actor 1": {
+          "full": "ACTOR1",
+          "filters": [
+            "ASSOC_ACTOR_1",
+            "INTER1"
+          ]
+        },
+        "actor 2": {
+          "full": "ACTOR2",
+          "filters": [
+            "ASSOC_ACTOR_2",
+            "INTER2"
+          ]
+        }
+      }
+    },
+    "Action": {
+      "type": "categorical",
+      "measureType": "accumulator",
+      "columns": [
+        "INTERACTION"
+      ]
+    },
+    "Date": {
+      "type": "date",
+      "measureType": "unit",
+      "structure": "point",
+      "columns": [
+        "TwoRavens_EVENT_DATE"
+      ]
+    },
+    "Code Date": {
+      "type": "date",
+      "measureType": "unit",
+      "structure": "point",
+      "columns": [
+        "TwoRavens_TIMESTAMP"
+      ]
+    },
+    "Location": {
+      "type": "categorical_grouped",
+      "group_by": "region",
+      "columns": [
+        "TwoRavens_country"
+      ]
+    },
+    "Coordinates": {
+      "type": "coordinates",
+      "columns": [
+        "LATITUDE",
+        "LONGITUDE"
+      ]
+    }
+  },
+  "columns": [
+    "ISO",
+    "EVENT_ID_CNTY",
+    "EVENT_ID_NO_CNTY",
+    "EVENT_DATE",
+    "YEAR",
+    "TIME_PRECISION",
+    "EVENT_TYPE",
+    "ACTOR1",
+    "ASSOC_ACTOR_1",
+    "INTER1",
+    "ACTOR2",
+    "ASSOC_ACTOR_2",
+    "INTER2",
+    "INTERACTION",
+    "REGION",
+    "COUNTRY",
+    "ADMIN1",
+    "ADMIN2",
+    "ADMIN3",
+    "LOCATION",
+    "LATITUDE",
+    "LONGITUDE",
+    "GEO_PRECISION",
+    "SOURCE",
+    "SOURCE_SCALE",
+    "NOTES",
+    "FATALITIES",
+    "TIMESTAMP"
+  ],
+  "columns_constructed": [
+    "TwoRavens_EVENT_DATE",
+    "TwoRavens_TIMESTAMP",
+    "TwoRavens_country",
+    "TwoRavens_city",
+    "TwoRavens_subregion",
+    "TwoRavens_region",
+    "TwoRavens_language",
+    "TwoRavens_score",
+    "TwoRavens_territory"
+  ],
+  "alignments": {
+    "LATITUDE": "latitude",
+    "LONGITUDE": "longitude",
+    "TwoRavens_EVENT_DATE": "date",
+    "TwoRavens_country": "country"
+  },
+  "formats": {
+    "INTERACTION": "ACLED_interaction",
+    "INTER1": "ACLED_inter",
+    "INTER2": "ACLED_inter",
+    "TwoRavens_country": "ISO-3",
+    "YEAR": "%Y"
+  },
+  "citations": [
+    {
+      "author": "The Armed Conflict Location & Event Data Project",
+      "year": "2018",
+      "title": "AFRICA 1997-PRESENT",
+      "date": "June 9",
+      "url": "https://www.acleddata.com/data/"
+    }
+  ]
+}

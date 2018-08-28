@@ -1,10 +1,9 @@
 import m from 'mithril';
 
 import Panel from './views/Panel';
-import Button, {when} from './views/PanelButton';
+import {when} from './views/PanelButton';
 import Dropdown from '../common/app/views/Dropdown';
 import List from './views/PanelList';
-import Search from './views/Search';
 
 export function leftpanel(pipelines) {
     return m(Panel, {

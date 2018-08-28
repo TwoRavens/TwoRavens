@@ -29,7 +29,7 @@ export default class Flowchart {
                 }, bold(key)),
                 m('td', {
                     style: {width: 'calc(100% - 2em)'}
-                }, this.key === key ? content : summary)
+                }, (this.key === key || !summary) ? content : summary)
             )
         );
 

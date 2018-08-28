@@ -1,3 +1,6 @@
+/*
+  Main TwoRavens mithril app
+*/
 import hopscotch from 'hopscotch';
 import m from 'mithril';
 
@@ -29,8 +32,6 @@ function onStorageEvent(e) {
     }
 }
 
-
-
 window.addEventListener('storage', onStorageEvent);
 
 function updatePeek() {
@@ -56,8 +57,8 @@ function updatePeek() {
 }
 
 function resetPeek() {
-    peekSkip = 0;
     peekData = [];
+    peekSkip = 0;
 
     peekAllDataReceived = false;
     peekIsGetting = false;
@@ -79,13 +80,12 @@ export let problemDocExists = true;
 export let univariate_finished = false;
 export let resultsMetricDescription = 'Larger numbers are better fits';
 
-export let testingmode = true;
-
 export let allsearchId = [];            // List of all the searchId's created on searches
 
 export let currentMode = 'model';
-let is_explore_mode = false;
-let is_results_mode = false;
+export let is_explore_mode = false;
+export let is_results_mode = false;
+export let is_transform_mode = false;
 
 let exportCount = 0;
 
@@ -94,6 +94,7 @@ export function set_mode(mode) {
 
     is_explore_mode = mode === 'explore';
     is_results_mode = mode === 'results';
+    is_transform_mode = mode === 'transform';
 
     if (currentMode !== mode) {
         updateRightPanelWidth();
@@ -105,7 +106,7 @@ export function set_mode(mode) {
 
     let ws = elem('#whitespace0');
     if (ws) {
-        ws.style.display = is_explore_mode ? 'none' : 'block';
+        ws.style.display = currentMode === 'model' ? 'none' : 'block';
     }
 }
 
@@ -143,7 +144,8 @@ export let rightTabExplore = 'Univariate';
 export let modelLeftPanelWidths = {
     'Variables': '300px',
     'Discovery': 'auto',
-    'Summary': '300px'
+    'Summary': '300px',
+    'Subset': '300px'
 };
 
 export let modelRightPanelWidths = {
@@ -168,7 +170,7 @@ export let panelWidth = {
 
 let updateRightPanelWidth = () => {
     if (is_explore_mode) {
-        return panelWidth.right = `calc(${common.panelMargin * 2}px + 16px)`;
+        return panelWidth.right = `calc(${common.panelMargin}*2 + 16px)`;
     }
 
     if (common.panelOpen['right']) {
@@ -177,14 +179,14 @@ let updateRightPanelWidth = () => {
             'explore': exploreRightPanelWidths[rightTabExplore]
         }[currentMode];
 
-        panelWidth['right'] = `calc(${common.panelMargin * 2}px + ${tempWidth})`;
+        panelWidth['right'] = `calc(${common.panelMargin}*2 + ${tempWidth})`;
     }
-    else panelWidth['right'] = `calc(${common.panelMargin * 2}px + 16px)`;
+    else panelWidth['right'] = `calc(${common.panelMargin}*2 + 16px)`;
 };
 let updateLeftPanelWidth = () => {
     if (common.panelOpen['left'])
-        panelWidth['left'] = `calc(${common.panelMargin * 2}px + ${modelLeftPanelWidths[leftTab]})`;
-    else panelWidth['left'] = `calc(${common.panelMargin * 2}px + 16px)`;
+        panelWidth['left'] = `calc(${common.panelMargin}*2 + ${modelLeftPanelWidths[leftTab]})`;
+    else panelWidth['left'] = `calc(${common.panelMargin}*2 + 16px)`;
 };
 
 updateRightPanelWidth();
@@ -614,7 +616,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         console.log("Task 2: Problem Doc Exists");
 
         // Note: There is no res.success field in this return state
-        // if (!res.success){             
+        // if (!res.success){
         //   alert('problem schema not available: ' + res.message);
         //   return
         // }
@@ -654,7 +656,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         console.log("Task 1: No Problem Doc");
         d3mProblemDescription.id="Task1";
         d3mProblemDescription.name="Task1";
-        d3mProblemDescription.description = "Discovered Problems";    
+        d3mProblemDescription.description = "Discovered Problems";
     };
 
     // 4. Read the data document and set 'datadocument'
@@ -869,7 +871,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
 
         // Set target variable for center panel if no problemDoc exists to set this
         if(!problemDocExists){
-            mytarget = disco[0].target; 
+            mytarget = disco[0].target;
             mytargetindex = valueKey.indexOf(mytarget) - 1;  // Not clear if still used?
         };
 
@@ -2545,7 +2547,7 @@ export async function estimate(btn) {
             setxTable(rookpipe.predictors);
             let searchSolutionParmams = CreatePipelineDefinition(rookpipe.predictors,
                                                                  rookpipe.depvar,
-                                                                 4)
+                                                                 2)
             let res = await makeRequest(D3M_SVC_URL + '/SearchSolutions',
                                         searchSolutionParmams);
             console.log(JSON.stringify(res));
@@ -2600,9 +2602,7 @@ export async function estimate(btn) {
                   return;
                 } else if (res3.data.is_error){
                   estimateLadda.stop();
-                  if (!testingmode){
-                      alert('StoredRequest has an error. ' + res3.data.user_msg);
-                  };
+                  alert('StoredRequest has an error. ' + res3.data.user_msg);
                   return;
                 }
 
@@ -3114,9 +3114,7 @@ export async function updateRequest(url) {
     } catch(err) {
         end_ta3_search(false, err);
         cdb(err);
-        if (!testingmode){
-            alert(`Error: call to ${url} failed`);
-        };
+        alert(`Error: call to ${url} failed`);
     }
     return res;
 }
@@ -3137,9 +3135,7 @@ export async function makeRequest(url, data) {
     } catch(err) {
         end_ta3_search(false, err);
         cdb(err);
-        if (!testingmode){
-            alert(`Error: call to ${url} failed`);
-        };
+        alert(`Error: call to ${url} failed`);
     }
 
    /*
@@ -4075,7 +4071,7 @@ export function confusionmatrix(matrixdata, classes) {
 
     let longest = classes.reduce(function (a, b) { return a.length > b.length ? a : b; });
     //console.log(longest);
-    let leftmarginguess = Math.max(longest.length * 7, 25);  // More correct answer is to make a span, put string inside span, then use jquery to get pixel width of span.
+    let leftmarginguess = Math.max(longest.length * 8, 25);  // More correct answer is to make a span, put string inside span, then use jquery to get pixel width of span.
 
 
     let condiv = document.createElement('div');

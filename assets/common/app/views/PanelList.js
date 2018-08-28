@@ -6,7 +6,7 @@ import {mergeAttributes, varColor} from '../common';
 //         id: 'id of container',
 //         items: ['Clickable 1', 'Clickable 2', 'Clickable 3'],
 //
-//         colors: { app.selVarColor: ['Clickable 1'] }, (optional)
+//         colors: { transform.selVarColor: ['Clickable 1'] }, (optional)
 //         classes: { 'item-lineout': ['Clickable 1', 'Clickable 3'] }, (optional)
 //
 //         callback: (item) => console.log(item + " clicked."),

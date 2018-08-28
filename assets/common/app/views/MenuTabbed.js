@@ -1,6 +1,5 @@
-import m from 'mithril'
+import m from 'mithril';
 import ButtonRadio from "./ButtonRadio";
-import {mergeAttributes} from "../common";
 
 // ```
 // m(MenuTabbed, {

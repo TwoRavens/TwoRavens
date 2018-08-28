@@ -1,9 +1,10 @@
 ## This is a configuration file for Rook apps
 
-## Define modes
 
-# Use production mode if env variable ROOK_USE_PRODUCTION_MODE = "yes"
-#
+
+# ----------------------------------------------
+# Variables used for TwoRavens (non-eventdata)
+# ----------------------------------------------
 production <- identical(Sys.getenv(x='ROOK_USE_PRODUCTION_MODE', unset="no"), "yes")
 
 #print(paste("production: ", production, sep=""))
