@@ -113,10 +113,9 @@ export default class SaveQuery {
                         data: preferences,
                         method: 'POST'
                     });
-
+                    this.errors = response.errors;
                     if (!response.success) {
                         this.status = response.message;
-                        this.errors = response.errors;
                         return;
                     }
                     this.status = 'Saved as query ID ' + response.data.id;
@@ -130,9 +129,9 @@ export default class SaveQuery {
                         method: 'GET'
                     });
                     this.status = response.message;
+                    this.errors = response.errors;
                     m.redraw();
                     if (!response.success) {
-                        this.errors = response.errors;
                         return;
                     }
 
@@ -141,9 +140,7 @@ export default class SaveQuery {
                         method: 'GET'
                     }).catch(err => this.status = err);
                     this.status = response.message;
-                    if (!response.success) {
-                        this.errors = response.errors;
-                    }
+                    this.errors = response.errors;
                     m.redraw();
                 }
             }, this.saved ? 'Saved' : 'Save Query'),
