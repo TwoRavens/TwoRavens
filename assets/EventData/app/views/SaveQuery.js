@@ -15,16 +15,17 @@ export default class SaveQuery {
             let projectStep = {
                 type: 'menu',
                 metadata: {
+                    type: 'download',
                     variables: (app.selectedVariables.size + app.selectedConstructedVariables.size) === 0
-                        ? [...app.genericMetadata[app.selectedDataset]['columns'], app.genericMetadata[app.selectedDataset]['columns_constructed']]
+                        ? [...app.genericMetadata[app.selectedDataset]['columns'], ...app.genericMetadata[app.selectedDataset]['columns_constructed']]
                         : [...app.selectedVariables, ...app.selectedConstructedVariables]
                 }
             };
-            query = queryMongo.buildPipeline(app.abstractManipulations, projectStep)['pipeline'];
+            query = queryMongo.buildPipeline([...app.abstractManipulations, projectStep])['pipeline'];
         }
 
         if (app.selectedMode === 'aggregate')
-            query = queryMongo.buildPipeline(app.abstractManipulations, app.eventdataAggregateStep)['pipeline'];
+            query = queryMongo.buildPipeline([...app.abstractManipulations, app.eventdataAggregateStep])['pipeline'];
 
         let {preferences} = vnode.attrs;
         // set the static preferences upon initialization
@@ -111,7 +112,8 @@ export default class SaveQuery {
                         url: '/eventdata/api/add-query',
                         data: preferences,
                         method: 'POST'
-                    });
+                    }).catch(err => this.status = err);
+                    
                     if (!response.success) {
                         this.status = response.message;
                         return;
@@ -125,7 +127,7 @@ export default class SaveQuery {
                     response = await m.request({
                         url: 'eventdata/api/upload-dataverse/' + response.data.id,
                         method: 'GET'
-                    });
+                    }).catch(err => this.status = err);
                     this.status = response.message;
                     m.redraw();
                     if (!response.success) return;
@@ -133,12 +135,13 @@ export default class SaveQuery {
                     response = await m.request({
                         url: 'eventdata/api/publish-dataset/' + response.data.id,
                         method: 'GET'
-                    });
+                    }).catch(err => this.status = err);
                     this.status = response.message;
                     m.redraw();
                 }
             }, this.saved ? 'Saved' : 'Save Query'),
             this.status && m('[style=display:inline-block;margin-left:1em;]', this.status),
-            m(Table, {id: 'saveQueryTable', data: tableData}))
+            m(Table, {id: 'saveQueryTable', data: tableData})
+        )
     }
 }

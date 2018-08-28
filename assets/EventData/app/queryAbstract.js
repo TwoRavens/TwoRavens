@@ -42,7 +42,10 @@ window.callbackOperator = function (id, operand) {
     let stepId = id.split('-')[0];
     let subsetTree = $('#subsetTree' + stepId);
     let node = subsetTree.tree('getNodeById', id);
-    if (('editable' in node && !node.editable) || node['type'] === 'query') return;
+    if (('editable' in node && !node.editable) || node['type'] === 'query') {
+        m.redraw(); // This visually resets the button to where it was
+        return;
+    }
 
     node.operation = operand;
     let step = [...app.abstractManipulations, app.pendingSubset].find(step => step.id === Number(stepId));

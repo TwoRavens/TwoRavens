@@ -227,7 +227,7 @@ export default class CanvasDyad {
 
                             let container = document.querySelector('#searchListMonads');
                             let scrollHeight = container.scrollHeight - container.scrollTop;
-                            if (scrollHeight < container.offsetHeight) preferencesMonad['full_limit'] += this.defaultPageSize;
+                            if (scrollHeight < container.offsetHeight + 100) preferencesMonad['full_limit'] += this.defaultPageSize;
                         }
                     },
                     this.waitForQuery === 0 && getTopValues().map(entry =>
@@ -245,6 +245,7 @@ export default class CanvasDyad {
                         title: 'Clear search text and filters',
                         onclick: () => {
                             preferencesMonad['search'] = '';
+                            preferencesMonad['show_selected'] = false;
                             Object.keys(preferencesMonad['filters']).map(filter => preferencesMonad['filters'][filter]['selected'] = new Set());
                             clearTimeout(this.searchTimeout);
                             this.searchTimeout = setTimeout(() => this.search(subsetName, currentTab, preferences, metadata), searchLag);
@@ -287,7 +288,7 @@ export default class CanvasDyad {
     }
 
     dyadSelection(vnode) {
-        let {mode, data, metadata, preferences, setRedraw} = vnode.attrs;
+        let {data, metadata, preferences, setRedraw} = vnode.attrs;
         return [
             m(".panel-heading.text-center[id='dyadSelectionTitle']", {style: {"padding-bottom": "5px"}},
                 m("[id='dyadPanelTitleDiv']",
@@ -295,7 +296,10 @@ export default class CanvasDyad {
             ),
             m(ButtonRadio, {
                 id: 'dyadTab',
-                onclick: (tab) => preferences['current_tab'] = tab,
+                onclick: (tab) => {
+                    preferences['current_tab'] = tab;
+                    setRedraw(true);
+                },
                 activeSection: preferences['current_tab'],
                 sections: Object.keys(metadata['tabs']).map(entry => ({value: entry})),
                 attrsAll: {"style": {"width": "calc(100% - 10px)", 'margin-left': '5px'}}

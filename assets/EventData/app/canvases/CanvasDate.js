@@ -47,7 +47,7 @@ export function interpolate(data, date) {
 
 export default class CanvasDate {
     oncreate(vnode) {
-        let {subsetName, data, preferences, setRedraw} = vnode.attrs;
+        let {data, preferences, setRedraw} = vnode.attrs;
         let minDate = data[0]['Date'];
         let maxDate = data[data.length - 1]['Date'];
 
@@ -73,6 +73,8 @@ export default class CanvasDate {
                 setTimeout(function () {
                     $(`#toDate`).focus();
                 }, 100);
+                setRedraw(true);
+                m.redraw();
 
                 // Update plot, but don't reset slider
                 $(`#toDate`).datepicker("show");
@@ -91,6 +93,7 @@ export default class CanvasDate {
             orientation: top,
             onSelect: function () {
                 preferences['userUpper'] = new Date($(this).datepicker('getDate').getTime());
+                setRedraw(true);
                 m.redraw();
                 // todatestring = datemaxUser.getFullYear() + "" + ('0' + (datemaxUser.getMonth() + 1)).slice(-2) + "" + ('0' + datemaxUser.getDate()).slice(-2);
             }

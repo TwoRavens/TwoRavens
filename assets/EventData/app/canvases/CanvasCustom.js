@@ -54,8 +54,7 @@ export default class CanvasCustom {
                         "display": "inline"
                     },
                     onclick: () => {
-                        let step = app.getTransformStep(app.eventdataSubsetName);
-                        preferences['text'] = JSON.stringify(query.buildSubset(step.abstractQuery), null, '  ');
+                        preferences['text'] = JSON.stringify(query.buildSubset(app.pendingSubset.abstractQuery), null, '  ');
                         this.editor.setValue(preferences['text'] || '')
                     }
                 }, "Show All"),

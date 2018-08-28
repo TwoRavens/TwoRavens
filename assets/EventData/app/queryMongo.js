@@ -25,6 +25,7 @@ export function buildPipeline(pipeline, variables = new Set()) {
     let compiled = [];
 
     // need to know which variables are unit measures and which are accumulators. Also describe the unit variables with labels
+    // only returned if the last step in the pipeline is an aggregation
     let units, accumulators, labels;
 
     pipeline.forEach(step => {

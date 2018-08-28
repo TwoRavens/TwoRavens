@@ -522,8 +522,8 @@ let unitMeasureTour = {
     steps: [
         {
             title: "Event Measure",
-            content: "Aggregation requires one event measure! Click an event measure to select it. The selected event measure will have a black border.",
-            target: "headerEvent_Measure",
+            content: "Aggregation requires at least one event measure! Make some selections, then stage, and try again.",
+            target: "headerEvent_Measures",
             placement: "right"
         }
     ]

@@ -172,11 +172,12 @@ export default class Body_EventData {
                             tour.tourStartEventMeasure();
                         else {
                             if ('aggregate' === app.selectedMode && app.aggregationStaged) {
-                                app.setLaddaSpinner('btnSave');
+                                app.setLaddaSpinner('btnSave', true);
                                 await app.submitAggregation();
-                                app.laddaStopAll();
+                                app.setLaddaSpinner('btnSave', false);
                             }
-                            app.setShowSaveQuery(true)
+                            app.setShowSaveQuery(true);
+                            m.redraw();
                         }
                     }, style: {'margin-top': '4px'}
                 }, 'Save'),
@@ -200,8 +201,9 @@ export default class Body_EventData {
                             let downloadStep = {
                                 type: 'menu',
                                 metadata: {
+                                    type: 'download',
                                     variables: (app.selectedVariables.size + app.selectedConstructedVariables.size) === 0
-                                        ? [...app.genericMetadata[app.selectedDataset]['columns'], app.genericMetadata[app.selectedDataset]['columns_constructed']]
+                                        ? [...app.genericMetadata[app.selectedDataset]['columns'], ...app.genericMetadata[app.selectedDataset]['columns_constructed']]
                                         : [...app.selectedVariables, ...app.selectedConstructedVariables]
                                 }
                             };
@@ -472,10 +474,13 @@ export default class Body_EventData {
                 sections: [
                     {
                         value: 'Subsets',
-                        contents: (app.abstractManipulations.length + app.pendingSubset.abstractQuery.length) ? [
+                        contents: (app.abstractManipulations.length + (app.selectedMode === 'subset' ? app.pendingSubset.abstractQuery.length : 0)) ? [
                             ...app.abstractManipulations.map(step => m(TreeQuery, {isQuery: true, step})),
                             m(TreeQuery, {step: app.pendingSubset})
-                        ] : m('div[style=font-style:italic]', 'Match all records')
+                        ] : [
+                            m('div[style=font-style:italic]', 'Match all records'),
+                            app.pendingSubset.abstractQuery.length !== 0 && m('div[style=font-style:italic]', 'Some pending constraints are hidden. Update from subset menu to apply them.')
+                        ]
                     },
                     app.selectedMode === 'subset' && {
                         value: 'Variables',
@@ -545,6 +550,7 @@ export default class Body_EventData {
                         preferences: app.subsetPreferences[app.selectedSubsetName]
                     };
 
+                    // cannot await for promise resolution from here in the mithril vdom, so I moved the misc wrappings for menu loading into its own function
                     app.loadMenuEventData(app.abstractManipulations, newMenu);
                 }
 
