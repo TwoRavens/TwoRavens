@@ -1,5 +1,7 @@
 import m from 'mithril';
 
+import {glyph} from "../../app";
+
 import * as app from './app';
 import * as queryAbstract from './queryAbstract';
 import * as queryMongo from './queryMongo';
@@ -53,6 +55,14 @@ export default class Body_EventData {
     }
 
     header() {
+
+        let userlinks = username === '' ? [
+            {title: "Log in", url: login_url},
+            {title: "Sign up", url: signup_url}
+        ] : [{title: "Workspaces", url: workspaces_url},
+            {title: "Settings", url: settings_url},
+            {title: "Links", url: devlinks_url},
+            {title: "Logout", url: logout_url}];
 
         let attrsInterface = {style: {width: 'auto'}};
         let isHome = app.selectedCanvas === app.selectedCanvasHome;
@@ -111,7 +121,13 @@ export default class Body_EventData {
                     {value: 'Subset', id: 'btnSubsetMode', attrsInterface: {style: {'width': 'auto'}}},
                     {value: 'Aggregate', attrsInterface: {style: {'width': 'auto'}}}
                 ] : [])
-            })
+            }),
+            
+            m('.dropdown[style=float: right; padding-right: 1em]',
+                m('#drop.button.btn[type=button][data-toggle=dropdown][aria-haspopup=true][aria-expanded=false]',
+                    [isAuthenticated ? username : m('div[style=font-style:oblique]', 'not logged in'), " ", glyph('triangle-bottom')]),
+                m('ul.dropdown-menu[role=menu][aria-labelledby=drop]',
+                    userlinks.map(link => m('a[style=padding: 0.5em]', {href: link.url}, link.title, m('br'))))),
         );
     }
 
@@ -165,6 +181,10 @@ export default class Body_EventData {
 
                 app.selectedMode !== 'home' && m(Button, {
                     class: 'btn-sm',
+                    title: isAuthenticated
+                        ? 'save your constructed ' + app.selectedMode
+                        : 'must be logged in to save ' + app.selectedMode,
+                    disabled: !isAuthenticated,
                     onclick: async () => {
                         if ('subset' === app.selectedMode && app.abstractManipulations.length === 0)
                             tour.tourStartSaveQueryEmpty();
@@ -184,6 +204,10 @@ export default class Body_EventData {
 
                 app.selectedMode !== 'home' && m(Button, {
                     id: 'btnDownload',
+                    title: isAuthenticated
+                        ? 'download your constructed ' + app.selectedMode
+                        : 'must be logged in to download ' + app.selectedMode,
+                    disabled: !isAuthenticated,
                     'data-style': 'zoom-in',
                     'data-spinner-color': '#818181',
                     class: 'btn-sm ladda-button',

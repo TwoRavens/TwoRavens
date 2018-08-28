@@ -390,7 +390,7 @@ function rightpanel(mode) {
     }));
 }
 
-let glyph = (icon, unstyled) =>
+export let glyph = (icon, unstyled) =>
     m(`span.glyphicon.glyphicon-${icon}` + (unstyled ? '' : '[style=color: #818181; font-size: 1em; pointer-events: none]'));
 
 class Body {

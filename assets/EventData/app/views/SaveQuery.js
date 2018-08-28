@@ -31,7 +31,7 @@ export default class SaveQuery {
         // set the static preferences upon initialization
         Object.assign(preferences, {
             'query': query,
-            'username': app.username,
+            'username': username,
             'collection_name': app.selectedDataset,
             'collection_type': app.selectedMode,
             'result_count': {
@@ -46,7 +46,7 @@ export default class SaveQuery {
         let {preferences} = vnode.attrs;
 
         let format = (text) => m('[style=margin-left:1em;text-align:left;word-break:break-all;width:100%]', text);
-        let warn = (text) => m('[style=color:#dc3545;display:inline-block;margin-left:1em;]', text);
+        let warn = (text) => m('[style=color:#dc3545;display:inline-block;margin-left:1em;margin-right:0.5em]', text);
 
         let tableData = {
             'Query Name': m(TextField, {
@@ -78,7 +78,7 @@ export default class SaveQuery {
             }),
             'Username': format([
                 preferences['username'],
-                preferences['username'] === undefined && warn('Please log in to save queries.')]),
+                !isAuthenticated && warn('Please log in to save queries.')]),
             'Dataset': format(preferences['collection_name']),
             'Result Count': format([
                 preferences['result_count'],
@@ -112,10 +112,11 @@ export default class SaveQuery {
                         url: '/eventdata/api/add-query',
                         data: preferences,
                         method: 'POST'
-                    }).catch(err => this.status = err);
-                    
+                    });
+
                     if (!response.success) {
                         this.status = response.message;
+                        this.errors = response.errors;
                         return;
                     }
                     this.status = 'Saved as query ID ' + response.data.id;
@@ -127,20 +128,29 @@ export default class SaveQuery {
                     response = await m.request({
                         url: 'eventdata/api/upload-dataverse/' + response.data.id,
                         method: 'GET'
-                    }).catch(err => this.status = err);
+                    });
                     this.status = response.message;
                     m.redraw();
-                    if (!response.success) return;
+                    if (!response.success) {
+                        this.errors = response.errors;
+                        return;
+                    }
 
                     response = await m.request({
                         url: 'eventdata/api/publish-dataset/' + response.data.id,
                         method: 'GET'
                     }).catch(err => this.status = err);
                     this.status = response.message;
+                    if (!response.success) {
+                        this.errors = response.errors;
+                    }
                     m.redraw();
                 }
             }, this.saved ? 'Saved' : 'Save Query'),
-            this.status && m('[style=display:inline-block;margin-left:1em;]', this.status),
+            this.status && m('[style=display:inline-block;margin-left:1em;]', this.status), m('br'),
+            this.errors && m('div[style=margin:1em]', Object.keys(this.errors).map(field => [
+                warn(`Error related to ${field}: `), this.errors[field].join(' '), m('br')
+            ])),
             m(Table, {id: 'saveQueryTable', data: tableData})
         )
     }

@@ -8,9 +8,6 @@ import * as tour from "./tour";
 
 export let eventdataURL = '/eventdata/api/';
 
-// TODO login
-export let username = 'TwoRavens';
-
 // ~~~~ GLOBAL STATE / MUTATORS ~~~
 
 export let abstractManipulations = [];
