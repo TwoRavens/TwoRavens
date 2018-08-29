@@ -612,6 +612,8 @@ export async function reset() {
         subsetRedraw[cachedSubsetName] = true;
         subsetData[cachedSubsetName] = data;
     }
+    setLaddaSpinner('btnReset', false);
+    m.redraw();
 }
 
 // we must be very particular about how months get incremented, to handle leap years etc.
