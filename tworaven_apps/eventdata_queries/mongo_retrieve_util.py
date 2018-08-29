@@ -142,7 +142,7 @@ class MongoRetrieveUtil(BasicErrCheck):
 
         # set the database
         db = mongo_client[settings.EVENTDATA_DB_NAME]
-        print('db chosen: ', settings.EVENTDATA_DB_NAME)
+        #print('db chosen: ', settings.EVENTDATA_DB_NAME)
 
         # ----------------------
         # choose the collection
@@ -218,7 +218,7 @@ class MongoRetrieveUtil(BasicErrCheck):
             self.add_err_msg('Failed to connect to Mongo: %s' % err_obj)
             return
 
-        print(self.mongo_client.database_names())
+        #print(self.mongo_client.database_names())
 
         return self.mongo_client
 """
