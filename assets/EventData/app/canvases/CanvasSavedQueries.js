@@ -36,7 +36,7 @@ export default class CanvasSavedQueries {
             method: 'POST'
         });
 
-        if (response.success) preferences['results'] = response.data;
+        if (response.success) preferences['results'] = response.data.query_list;
         else preferences['results'] = [];
     }
 
@@ -60,12 +60,17 @@ export default class CanvasSavedQueries {
         let link = (url) => m('a', {href: url, style: {color: 'darkblue'}, target: '_blank', display: 'inline'}, url);
         let italicize = (value) => m('div', {style: {'font-style': 'italic', display: 'inline'}}, value);
 
+        if (!isAuthenticated) {
+            return m('#canvasSavedQueries', {
+                style: {'margin-top': common.panelMargin, 'margin-bottom': common.panelMargin}
+            }, m('h4', 'You must be logged in to view your saved queries.'))
+        }
+
+
         return m('#canvasSavedQueries', {
-                style: {
-                    'margin-top': common.panelMargin, 'margin-bottom': common.panelMargin
-                }
+                style: {'margin-top': common.panelMargin, 'margin-bottom': common.panelMargin}
             },
-            ['name', 'description', 'username'].map(searchType =>
+            ['name', 'description'].map(searchType =>
                 m('div',
                     m(`label#labelSearch${searchType}`, {
                         for: 'search' + searchType,
@@ -130,7 +135,7 @@ export default class CanvasSavedQueries {
                     }),
                     preferences['query'] && [
                         bold("Query:"), m('br'),
-                        m('div', {style: {'word-break':'break-all'}}, JSON.stringify(preferences['query']))
+                        m('div', {style: {'word-break': 'break-all'}}, JSON.stringify(preferences['query']))
                     ]
                 ])
             )
