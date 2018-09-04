@@ -26,7 +26,7 @@ import Modal from '../common/app/views/Modal';
 import Panel from '../common/app/views/Panel';
 import PanelList from '../common/app/views/PanelList';
 import Peek from '../common/app/views/Peek';
-import LaTeXTable from '../common/app/views/LaTeXTable';
+import DataTable from '../common/app/views/DataTable';
 import Table from '../common/app/views/Table';
 import TextField from '../common/app/views/TextField';
 
@@ -893,5 +893,5 @@ m.route(document.body, '/model', {
         }
     },*/
     '/data': Peek,
-    '/test': LaTeXTable,
+    '/test': DataTable,
 });
