@@ -152,7 +152,7 @@ export default class CanvasDyad {
 
     // rendering the full and filter lists
     monadSelection(vnode) {
-        let {subsetName, data, metadata, preferences} = vnode.attrs;
+        let {subsetName, data, metadata, preferences, formats} = vnode.attrs;
         let dataMonad = data[preferences['current_tab']];
         let preferencesMonad = preferences['tabs'][preferences['current_tab']];
         let metadataMonad = metadata['tabs'][preferences['current_tab']];
@@ -173,7 +173,7 @@ export default class CanvasDyad {
             this.searchTimeout = setTimeout(() => this.search(subsetName, currentTab, preferences, metadata), searchLag);
         };
 
-        let popupAttributes = (column, value) => app.genericMetadata[app.selectedDataset]['formats'][column] && {
+        let popupAttributes = (column, value) => formats[column] && {
             'data-container': 'body',
             'data-toggle': 'popover',
             'data-placement': 'right',
@@ -184,8 +184,8 @@ export default class CanvasDyad {
                     ? ''
                     : 'full_token' in metadataMonad
                         ? value.match(new RegExp(metadataMonad['full_token'], 'g'))
-                            .map(token => app.formattingData[app.genericMetadata[app.selectedDataset]['formats'][column]][token] || '?').join(' ')
-                        : app.formattingData[app.genericMetadata[app.selectedDataset]['formats'][column]][value];
+                            .map(token => app.formattingData[formats[column]][token] || '?').join(' ')
+                        : app.formattingData[formats[column]][value];
                 if (translation) {
                     $(this).attr('data-content', translation);
                     setTimeout(() => $(this).popover("show"), 200);

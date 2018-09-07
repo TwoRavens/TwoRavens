@@ -68,6 +68,7 @@ export let unaryFunctions = new Set([
 export let binaryFunctions = new Set([
     'divide', 'log', 'mod', 'pow', 'subtract', // math
     'eq', 'gt', 'gte', 'lt', 'lte', 'ne', // comparison
+    'dateFromString'
 ]);
 export let variadicFunctions = new Set([
     'add', 'multiply', 'concat' // any number of arguments
@@ -85,6 +86,12 @@ export let binaryOperators = {
     '*': 'multiply',
     '^': 'pow',
     '-': 'subtract'
+};
+
+export let dateStringFormats = {
+    "%d": "Day of Month (2 digits, zero padded) 01-31",
+    "%m": "Month (2 digits, zero padded) 01-12",
+    "%Y": "Year (4 digits, zero padded) 0000-9999"
 };
 
 // return a mongo projection from a string that describes a transformation

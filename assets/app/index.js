@@ -18,7 +18,7 @@ import {fadeIn, fadeOut} from './utils';
 import Button from './views/PanelButton';
 import Subpanel from './views/Subpanel';
 import Flowchart from './views/Flowchart';
-import AddTransform from './views/AddTransform';
+import CanvasTransform from '../EventData/app/canvases/CanvasTransform';
 
 import * as common from '../common/app/common';
 import ButtonRadio from '../common/app/views/ButtonRadio';
@@ -544,7 +544,7 @@ class Body {
             transform.pendingConstraintMenu && m(ModalVanilla, {
                 id: 'modalAddTransform',
                 setDisplay: () => transform.setPendingConstraintMenu(undefined),
-                contents: m(AddTransform, {
+                contents: m(CanvasTransform, {
                     nodes: app.allNodes,
                     preferences: transform.modalPreferences
                 })

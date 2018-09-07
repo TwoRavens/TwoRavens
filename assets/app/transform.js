@@ -10,6 +10,7 @@ import Flowchart from "./views/Flowchart";
 
 import * as subset from "../EventData/app/app";
 import * as common from '../common/app/common';
+import * as queryAbstract from '../EventData/app/queryAbstract';
 
 
 export function rightpanel() {
@@ -63,7 +64,7 @@ export function rightpanel() {
                             id: 'btnAddTransform',
                             class: ['btn-sm'],
                             style: {margin: '0.5em'},
-                            onclick: () => setPendingConstraintMenu({name: 'Transform', step})
+                            onclick: () => setPendingConstraintMenu({type: 'transform', step})
                         }, plus, ' Transform')
                     )
                 }
@@ -78,14 +79,14 @@ export function rightpanel() {
                             id: 'btnAddConstraint',
                             class: ['btn-sm'],
                             style: {margin: '0.5em'},
-                            onclick: () => setPendingConstraintMenu({name: 'Subset Constraint', step})
+                            onclick: () => setPendingConstraintMenu({type: 'subset', step})
                         }, plus, ' Constraint'),
                         m(Button, {
                             id: 'btnAddGroup',
                             class: ['btn-sm'],
                             style: {margin: '0.5em'},
                             disabled: step.abstractQuery.every(constraint => constraint.type !== 'subset'),
-                            onclick: () => subset.addGroup(step.id, false)
+                            onclick: () => queryAbstract.addGroup(step)
                         }, plus, ' Group')
                     )
                 }
@@ -110,14 +111,14 @@ export function rightpanel() {
                                 id: 'btnAddUnitMeasure',
                                 class: ['btn-sm'],
                                 style: {margin: '0.5em'},
-                                onclick: () => setPendingConstraintMenu({name: 'Aggregate Unit Measure', step})
+                                onclick: () => setPendingConstraintMenu({type: 'unit measure', step})
                             }, plus, ' Unit Measure'),
                             m(Button, {
-                                id: 'btnAddAccumulator',
+                                id: 'btnAddEventMeasure',
                                 class: ['btn-sm' + (step.measuresAccum.length ? '' : ' is-invalid')],
                                 style: {margin: '0.5em'},
-                                onclick: () => setPendingConstraintMenu({name: 'Aggregate Accumulator', step})
-                            }, plus, ' Accumulator')
+                                onclick: () => setPendingConstraintMenu({type: 'event measure', step})
+                            }, plus, ' Event Measure')
                         ]
                     )
                 }

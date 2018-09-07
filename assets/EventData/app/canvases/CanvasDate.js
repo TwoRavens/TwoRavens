@@ -47,7 +47,7 @@ export function interpolate(data, date) {
 
 export default class CanvasDate {
     oncreate(vnode) {
-        let {subsetName, data, preferences, setRedraw} = vnode.attrs;
+        let {data, preferences} = vnode.attrs;
         let minDate = data[0]['Date'];
         let maxDate = data[data.length - 1]['Date'];
 
@@ -239,35 +239,34 @@ export default class CanvasDate {
             }))
         ];
 
-        return (m("#canvasDate", {style: {'height': '100%', 'width': '100%', 'padding-top': panelMargin}},
-            [
-                m("[id='dateSVGdiv']", {
-                        style: {
-                            "height": "550px",
-                            "width": "500px",
-                            "display": "inline-block"
-                        }
-                    },
-                    drawGraph && m(PlotDate, {
-                        id: 'dateSVG',
-                        data: dataProcessed,
-                        handles: [preferences['handleLower'], preferences['handleUpper']],
-                        callbackHandles: setHandleDates,
-                        dataProcessed,
-                        labelY: 'Monthly Frequency'
-                    })),
-                m("div",
-                    {
-                        style: {
-                            "display": "inline-block",
-                            "vertical-align": "top",
-                            "width": "20%",
-                            "margin": "20px"
-                        }
-                    },
-                    rightMenu
-                )
-            ]
-        ));
+        return m("#canvasDate", {style: {'height': '100%', 'width': '100%', 'padding-top': panelMargin}},
+
+            m("[id='dateSVGdiv']", {
+                    style: {
+                        "height": "550px",
+                        "width": "500px",
+                        "display": "inline-block"
+                    }
+                },
+                drawGraph && m(PlotDate, {
+                    id: 'dateSVG',
+                    data: dataProcessed,
+                    handles: [preferences['handleLower'], preferences['handleUpper']],
+                    callbackHandles: setHandleDates,
+                    dataProcessed,
+                    labelY: 'Monthly Frequency'
+                })),
+            m("div",
+                {
+                    style: {
+                        "display": "inline-block",
+                        "vertical-align": "top",
+                        "width": "20%",
+                        "margin": "20px"
+                    }
+                },
+                rightMenu
+            )
+        );
     }
 }

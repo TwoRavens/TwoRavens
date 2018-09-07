@@ -7,19 +7,19 @@ import ButtonRadio from "../../../common-eventdata/views/ButtonRadio";
 
 export default class CanvasCategorical {
     view(vnode) {
-        let {mode, data, metadata, preferences} = vnode.attrs;
+        let {mode, data, metadata, preferences, formats, alignments} = vnode.attrs;
 
         let masterColumn = metadata['columns'][0];
-        let masterFormat = app.genericMetadata[app.selectedDataset]['formats'][masterColumn];
-        let masterAlignment = app.genericMetadata[app.selectedDataset]['alignments'][masterColumn];
+        let format = (formats || {})[masterColumn];
+        let alignment = (alignments || {})[masterColumn];
 
         let allData = {};
 
         // used for aggregation
-        preferences['alignment'] = masterAlignment;
-        preferences['aggregation'] = preferences['aggregation'] || masterFormat; // the format to accumulate to
+        preferences['alignment'] = alignment;
+        preferences['aggregation'] = preferences['aggregation'] || format; // the format to accumulate to
 
-        preferences['format'] = preferences['format'] || masterFormat;
+        preferences['format'] = preferences['format'] || format;
         preferences['selections'] = preferences['selections'] || new Set();
 
         if (data.length === 0) return 'No data from "' + masterColumn + '" is matched.';
@@ -30,14 +30,14 @@ export default class CanvasCategorical {
             return out;
         }, {});
 
-        if (masterAlignment) {
+        if (alignment) {
             metadata['formats'].forEach(format => {
                 allData[format] = {};
                 allSelected[format] = {};
             });
-            app.alignmentData[masterAlignment].forEach(equivalency => {
+            app.alignmentData[alignment].forEach(equivalency => {
                 metadata['formats'].forEach(format => {
-                    let isSet = preferences['selections'].has(equivalency[masterFormat]);
+                    let isSet = preferences['selections'].has(equivalency[format]);
                     if (equivalency[format] in allSelected[format])
                         allSelected[format][equivalency[format]].push(isSet);
                     else
@@ -45,16 +45,16 @@ export default class CanvasCategorical {
 
                     allData[format][equivalency[format]] =
                         (allData[format][equivalency[format]] || 0) +     // preserve the existing value, or 0 if new
-                        (flattenedData[equivalency[masterFormat]] || 0)   // add the equivalent sum from the data, or 0 if no data matched
+                        (flattenedData[equivalency[format]] || 0)   // add the equivalent sum from the data, or 0 if no data matched
 
                 })
             })
-        } else if (masterFormat) {
-            allData[masterFormat] = {};
-            allSelected[masterFormat] = {};
-            Object.keys(app.formattingData[masterFormat]).forEach(key => {
-                allSelected[masterFormat][key] = [preferences['selections'].has(key)];
-                allData[masterFormat][key] = flattenedData[key] || 0
+        } else if (format) {
+            allData[format] = {};
+            allSelected[format] = {};
+            Object.keys(app.formattingData[format]).forEach(key => {
+                allSelected[format][key] = [preferences['selections'].has(key)];
+                allData[format][key] = flattenedData[key] || 0
             })
         }
 
@@ -123,8 +123,8 @@ export default class CanvasCategorical {
                         callbackBar: (bar) => {
                             let target_state = bar.class === 'bar-some' || bar.class === 'bar';
 
-                            if (masterAlignment) {
-                                app.alignmentData[masterAlignment]
+                            if (alignment) {
+                                app.alignmentData[alignment]
                                     .filter(equivalency => equivalency[format] === bar.key)
                                     .forEach(equivalency => target_state
                                         ? preferences['selections'].add(equivalency[preferences['format']])

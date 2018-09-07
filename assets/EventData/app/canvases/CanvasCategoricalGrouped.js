@@ -28,14 +28,14 @@ let getLabel = (format, key) => {
 
 export default class CanvasCategoricalGrouped {
     view(vnode) {
-        let {data, metadata, preferences} = vnode.attrs;
+        let {data, metadata, preferences, formats, alignments} = vnode.attrs;
 
         let masterColumn = metadata['columns'][0];
-        let masterFormat = app.genericMetadata[app.selectedDataset]['formats'][masterColumn];
-        let masterAlignment = app.genericMetadata[app.selectedDataset]['alignments'][masterColumn];
+        let format = (formats || {})[masterColumn];
+        let alignment = (alignments || {})[masterColumn];
 
         preferences['selections'] = preferences['selections'] || new Set();
-        preferences['format'] = preferences['format'] || masterFormat;
+        preferences['format'] = preferences['format'] || format;
         preferences['plotted_subgroups'] = preferences['plotted_subgroups'] || {};
         if (!('plotted_grouped' in preferences)) preferences['plotted_grouped'] = true;
 
@@ -51,9 +51,9 @@ export default class CanvasCategoricalGrouped {
 
         let subGroupPrep = {};
 
-        app.alignmentData[masterAlignment].forEach(equivalency => {
-            if (!(masterFormat in equivalency) || !(equivalency[masterFormat] in flattenedData)) return;
-            let isSet = preferences['selections'].has(equivalency[masterFormat]);
+        app.alignmentData[alignment].forEach(equivalency => {
+            if (!(format in equivalency) || !(equivalency[format] in flattenedData)) return;
+            let isSet = preferences['selections'].has(equivalency[format]);
             if (equivalency[metadata['group_by']] in groupSelected)
                 groupSelected[equivalency[metadata['group_by']]].push(isSet);
             else
@@ -61,15 +61,15 @@ export default class CanvasCategoricalGrouped {
 
             groupPrep[equivalency[metadata['group_by']]] =
                 (groupPrep[equivalency[metadata['group_by']]] || 0) +  // preserve the existing value, or 0 if new
-                (flattenedData[equivalency[masterFormat]] || 0);       // add the equivalent sum from the data, or 0 if no data matched
+                (flattenedData[equivalency[format]] || 0);       // add the equivalent sum from the data, or 0 if no data matched
 
             subGroupPrep[equivalency[metadata['group_by']]] = {};
         });
 
-        app.alignmentData[masterAlignment].forEach(equivalency => {
-            if (!(masterFormat in equivalency)) return;
-            if (equivalency[masterFormat] in flattenedData)
-                subGroupPrep[equivalency[metadata['group_by']]][equivalency[masterFormat]] = flattenedData[equivalency[masterFormat]]
+        app.alignmentData[alignment].forEach(equivalency => {
+            if (!(format in equivalency)) return;
+            if (equivalency[format] in flattenedData)
+                subGroupPrep[equivalency[metadata['group_by']]][equivalency[format]] = flattenedData[equivalency[format]]
         });
 
         let totalRecords = Object.values(groupPrep).reduce((total, entry) => total + entry);
@@ -91,7 +91,7 @@ export default class CanvasCategoricalGrouped {
                 key: category,
                 value: subGroupPrep[subGroupName][category] / groupPrep[subGroupName],
                 'class': preferences['selections'].has(category) ? 'bar-selected' : 'bar',
-                title: subGroupPrep[subGroupName][category] + ' ' + category + ' ' + getLabel(masterFormat, category)
+                title: subGroupPrep[subGroupName][category] + ' ' + category + ' ' + getLabel(format, category)
             })));
 
         let groupMaxChars = Object.keys(groupPrep).reduce((max, entry) => Math.max(max, entry.length), 0);
@@ -275,7 +275,7 @@ export default class CanvasCategoricalGrouped {
                         },
                         [...preferences['selections']].map(code => m('.selected-entry', {
                             onclick: () => preferences['selections'].delete(code)
-                        }, code + ' ' + getLabel(masterFormat, code)))
+                        }, code + ' ' + getLabel(format, code)))
                     )
                 ]
             )
