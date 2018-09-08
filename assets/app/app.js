@@ -4691,6 +4691,9 @@ export function discovery(preprocess_file) {
         let current_rating = 3;
         let current_description = "";
         if(current_transform != 0){
+            console.log("TEST");
+            console.log(current_transform);
+
             current_description = "The combination of " + current_transform.split('=')[1] + " is predicted by " + current_predictors.join(" and ");
         } else if (current_subsetObs != 0){
             current_description = current_target + " is predicted by " + current_predictors.join(" and ") + " whenever " + current_subsetObs;

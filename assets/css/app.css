@@ -186,9 +186,9 @@ div.sidepanel div.panelbar span {
 }
 
 #main {
-    border:1px solid #ADADAD;
+    border-top:1px solid #ADADAD;
     width: 100%;
-    height: calc(100% - 62px - 40px);
+    height: calc(100% - 62px - 42px);
     margin-top:62px;
     position: fixed;
     overflow: auto;

@@ -118,7 +118,7 @@ function leftpanel(mode) {
                      colors: {
                          [app.hexToRgba(common.selVarColor)]: nodes.map(n => n.name),
                          [app.hexToRgba(common.nomColor)]: app.zparams.znom,
-                         [app.hexToRgba(common.dvColor)]: exploreMode ? [] : app.zparams.zdv
+                         [app.hexToRgba(common.dvColor)]: app.is_explore_mode ? [] : app.zparams.zdv
                      },
                      classes: {'item-bordered': app.matchedVariables},
                      callback: x => app.clickVar(x, nodes),
@@ -676,7 +676,7 @@ class Body {
                           }))
                        )],
                 m('svg#whitespace')),
-              model_mode && m("#spacetools.spaceTool", {style: {right: app.panelWidth.right, 'z-index': 16, top: '62px'}},
+              model_mode && m("#spacetools.spaceTool", {style: {right: app.panelWidth.right, 'z-index': 16}},
                               spaceBtn('btnAdd', async function() {
                                   app.zPop();
                                   let rookpipe = await app.makeRequest(ROOK_SVC_URL + 'pipelineapp', app.zparams);
