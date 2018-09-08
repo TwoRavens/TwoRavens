@@ -39,9 +39,13 @@ after_success:
     docker push tworavens/ravens-main:develop;
     fi
   - if [ "$TRAVIS_BRANCH" == "EventData_generalization" ]; then
+    cd setup/nginx/;
+    docker build -f ./Dockerfile-eventdata -t tworavens/eventdata-ravens-nginx:latest .;
+    cd ../../;
     docker build -f ./Dockerfile-eventdata -t tworavens/eventdata-ravens-main:latest .;
     docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
     docker push tworavens/eventdata-ravens-main:latest;
+    docker push tworavens/eventdata-ravens-nginx:latest;
     fi  #
   # send report to coveralls
   #

@@ -1,23 +1,27 @@
 from django.contrib import admin
-from tworaven_apps.eventdata_queries.models import (EventDataSavedQuery, ArchiveQueryJob, UserNotificationModel)
-# Register your models here.
+from tworaven_apps.eventdata_queries.models import \
+    (EventDataSavedQuery,
+     ArchiveQueryJob,
+     UserNotification)
 
 
 class EventDataSavedQueryAdmin(admin.ModelAdmin):
     list_display = ('id',
                     'name',
+                    'user',
                     'description',
-                    'username',
-                    'query',
                     'result_count',
-                    'created',
-                    'modified',
                     'collection_type',
                     'collection_name',
-                    'save_to_dataverse')
+                    'save_to_dataverse',
+                    'created',
+                    'modified',)
 
+    list_filter = ('collection_type',
+                   'collection_name',
+                   'user')
     save_on_top = True
-    readonly_fields = ('modified', 'created')
+    readonly_fields = ('collection_type', 'modified', 'created')
 
 
 admin.site.register(EventDataSavedQuery, EventDataSavedQueryAdmin)
@@ -42,17 +46,16 @@ class ArchiveQueryJobAdmin(admin.ModelAdmin):
 
 admin.site.register(ArchiveQueryJob, ArchiveQueryJobAdmin)
 
-class UserNotificationModelAdmin(admin.ModelAdmin):
-        list_display = ('user',
-                        'message',
-                        'archived_query',
-                        'created',
-                        'modified',
-                        'read'
-                        )
+class UserNotificationAdmin(admin.ModelAdmin):
+    list_display = ('recipient',
+                    'unread',
+                    'message',
+                    'archived_query',
+                    'created',
+                    'modified')
 
-        save_on_top = True
-        readonly_fields = ('created','modified')
+    save_on_top = True
+    readonly_fields = ('created', 'modified')
 
 
-admin.site.register(UserNotificationModel, UserNotificationModelAdmin)
+admin.site.register(UserNotification, UserNotificationAdmin)

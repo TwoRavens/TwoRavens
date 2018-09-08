@@ -3,6 +3,7 @@
   "key": "phoenix_rt",
   "description": "A real-time Phoenix-coded event dataset constructed at The University of Texas at Dallas.",
   "interval": "Oct. 2017 - present",
+  "download": "http://eventdata.utdallas.edu/data.html",
   "host": "UTDallas",
   "subsets": {
     "Actor": {

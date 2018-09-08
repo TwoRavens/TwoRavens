@@ -8,13 +8,9 @@ import * as tour from "./tour";
 
 export let eventdataURL = '/eventdata/api/';
 
-// TODO login
-export let username = 'TwoRavens';
-
 // ~~~~ GLOBAL STATE / MUTATORS ~~~
 
 export let abstractManipulations = [];
-export let getTransformStep = (stepID) => abstractManipulations.find(step => step.id === stepID);
 
 export let formattingData = {};
 export let alignmentData = {};
@@ -108,7 +104,7 @@ export let setSelectedDataset = (key) => {
 
     eventdataAggregateStep.measuresAccum.forEach((measure, i) => {
         if (!(measure.subsetName in genericMetadata[selectedDataset]['subsets']) || genericMetadata[selectedDataset]['subsets'][measure.subsetName].measureType !== measure.measureType)
-            eventdataAggregateStep.measuresUnit.splice(i, 1);
+            eventdataAggregateStep.measuresAccum.splice(i, 1);
     });
 
     aggregationHeadersUnit = [];
@@ -163,6 +159,7 @@ export let selectedSubsetName;
 export let setSelectedSubsetName = (subset) => {
     setSelectedCanvas('Subset');
     selectedSubsetName = subset;
+    setSubsetRedraw(subset, true);
 };
 
 let canvasTypes = ['Datasets', 'Saved Queries', 'Subset', 'Custom', 'Results', 'Analysis'];
@@ -385,8 +382,6 @@ export let getData = async body => m.request({
 
 // download data to display a menu
 export let loadMenu = async (abstractPipeline, menu, {recount, requireMatch}={}) => { // the dict is for optional named arguments
-
-    console.log(menu);
 
     // the coordinates menu does not use data, so just return
     if (menu.type === 'menu' && menu.metadata.type === 'coordinates') return [];
@@ -617,6 +612,8 @@ export async function reset() {
         subsetRedraw[cachedSubsetName] = true;
         subsetData[cachedSubsetName] = data;
     }
+    setLaddaSpinner('btnReset', false);
+    m.redraw();
 }
 
 // we must be very particular about how months get incremented, to handle leap years etc.

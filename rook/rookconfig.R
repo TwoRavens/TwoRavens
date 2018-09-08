@@ -7,7 +7,7 @@
 # ----------------------------------------------
 production <- identical(Sys.getenv(x='ROOK_USE_PRODUCTION_MODE', unset="no"), "yes")
 
-print(paste("production: ", production, sep=""))
+#print(paste("production: ", production, sep=""))
 
 
 d3m_mode <- TRUE
@@ -33,7 +33,7 @@ if (nchar(PREPROCESS_OUTPUT_PATH)==0){
 if(substring(PREPROCESS_OUTPUT_PATH, nchar(PREPROCESS_OUTPUT_PATH)) != "/"){
 	 PREPROCESS_OUTPUT_PATH <- paste(PREPROCESS_OUTPUT_PATH, "/", sep="")
 }
-print(paste("PREPROCESS_OUTPUT_PATH: ", PREPROCESS_OUTPUT_PATH, sep=""))
+#print(paste("PREPROCESS_OUTPUT_PATH: ", PREPROCESS_OUTPUT_PATH, sep=""))
 
 # -------------------------------------
 # end: rook output file path

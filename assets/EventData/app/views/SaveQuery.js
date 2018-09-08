@@ -15,22 +15,23 @@ export default class SaveQuery {
             let projectStep = {
                 type: 'menu',
                 metadata: {
+                    type: 'download',
                     variables: (app.selectedVariables.size + app.selectedConstructedVariables.size) === 0
-                        ? [...app.genericMetadata[app.selectedDataset]['columns'], app.genericMetadata[app.selectedDataset]['columns_constructed']]
+                        ? [...app.genericMetadata[app.selectedDataset]['columns'], ...app.genericMetadata[app.selectedDataset]['columns_constructed']]
                         : [...app.selectedVariables, ...app.selectedConstructedVariables]
                 }
             };
-            query = queryMongo.buildPipeline(app.abstractManipulations, projectStep)['pipeline'];
+            query = queryMongo.buildPipeline([...app.abstractManipulations, projectStep])['pipeline'];
         }
 
         if (app.selectedMode === 'aggregate')
-            query = queryMongo.buildPipeline(app.abstractManipulations, app.eventdataAggregateStep)['pipeline'];
+            query = queryMongo.buildPipeline([...app.abstractManipulations, app.eventdataAggregateStep])['pipeline'];
 
         let {preferences} = vnode.attrs;
         // set the static preferences upon initialization
         Object.assign(preferences, {
             'query': query,
-            'username': app.username,
+            'username': username,
             'collection_name': app.selectedDataset,
             'collection_type': app.selectedMode,
             'result_count': {
@@ -45,7 +46,7 @@ export default class SaveQuery {
         let {preferences} = vnode.attrs;
 
         let format = (text) => m('[style=margin-left:1em;text-align:left;word-break:break-all;width:100%]', text);
-        let warn = (text) => m('[style=color:#dc3545;display:inline-block;margin-left:1em;]', text);
+        let warn = (text) => m('[style=color:#dc3545;display:inline-block;margin-left:1em;margin-right:0.5em]', text);
 
         let tableData = {
             'Query Name': m(TextField, {
@@ -77,7 +78,7 @@ export default class SaveQuery {
             }),
             'Username': format([
                 preferences['username'],
-                preferences['username'] === undefined && warn('Please log in to save queries.')]),
+                !isAuthenticated && warn('Please log in to save queries.')]),
             'Dataset': format(preferences['collection_name']),
             'Result Count': format([
                 preferences['result_count'],
@@ -112,6 +113,7 @@ export default class SaveQuery {
                         data: preferences,
                         method: 'POST'
                     });
+                    this.errors = response.errors;
                     if (!response.success) {
                         this.status = response.message;
                         return;
@@ -127,18 +129,26 @@ export default class SaveQuery {
                         method: 'GET'
                     });
                     this.status = response.message;
+                    this.errors = response.errors;
                     m.redraw();
-                    if (!response.success) return;
+                    if (!response.success) {
+                        return;
+                    }
 
                     response = await m.request({
                         url: 'eventdata/api/publish-dataset/' + response.data.id,
                         method: 'GET'
-                    });
+                    }).catch(err => this.status = err);
                     this.status = response.message;
+                    this.errors = response.errors;
                     m.redraw();
                 }
             }, this.saved ? 'Saved' : 'Save Query'),
-            this.status && m('[style=display:inline-block;margin-left:1em;]', this.status),
-            m(Table, {id: 'saveQueryTable', data: tableData}))
+            this.status && m('[style=display:inline-block;margin-left:1em;]', this.status), m('br'),
+            this.errors && m('div[style=margin:1em]', Object.keys(this.errors).map(field => [
+                warn(`Error related to ${field}: `), this.errors[field].join(' '), m('br')
+            ])),
+            m(Table, {id: 'saveQueryTable', data: tableData})
+        )
     }
 }

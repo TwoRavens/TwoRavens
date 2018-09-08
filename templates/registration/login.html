@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title_block %}Login{% endblock %}
 
@@ -33,6 +34,7 @@
     {% endif %}
 
     {% if not user.is_authenticated %}
+
     <form method="post" action="{% url 'login' %}">
       {% csrf_token %}
 
@@ -46,9 +48,37 @@
         <div class="col-6 text-right">
           <button type="submit" class="btn btn-primary">Login</button>
         </div>
+      </div>
     </form>
-    {% endif %}
 
+      {% if ALLOW_SOCIAL_AUTH %}
+          <div class="row">
+            <div class="col-12">
+            <hr />
+            <div class="text-center">
+                <p>Alternate login:</p>
+
+            <!-- github auth -->
+            <a href="{% url "social:begin" "github" %}" class="btn xbtn-light btn-outline-secondary" style="text-decoration:none;">
+              <img src="{% static "images/sign-in/github/GitHub-Mark-32px.png" %}" alt="Sign in with Github" />
+               <img src="{% static "images/sign-in/github/GitHub_Logo.png" %}" width="60" alt="Sign in with Github" /></a>
+
+            {% comment %}
+            <!-- google auth -->
+            <br /><a href="{% url "social:begin" "google-oauth2" %}">
+              <img src="{% static "images/sign-in/google/btn_google_signin_dark_normal_web.png" %}" alt="Sign in with Google" /></a>
+            {% endcomment %}
+            </div>
+          </div>
+      {% endif %}
+
+    {% endif %}
+    <div class="row">
+      <div class="col-12">
+        <br /><br />
+        <br /><br />&nbsp;
+      </div>
+    </div>
   </div>
 </div>
 {% endblock %}

@@ -32,8 +32,7 @@ class RoutineDataverseCheck(BasicErrCheck):
     def dataverse_check(self):
         """user query_id to get the data"""
         # get all the objects in the archive query
-        job = ArchiveQueryJob()
-        success, query_list = job.get_all_objects()
+        success, query_list = ArchiveQueryJob.get_all_objects()
         if not success:
             self.query_error = True
             self.error_list.append(query_list)
@@ -79,9 +78,3 @@ class RoutineDataverseCheck(BasicErrCheck):
                             archive_query_datafile_list=self.query_list,
                             message='Check the missing files')
             return err_resp(user_res)
-
-
-
-
-
-
