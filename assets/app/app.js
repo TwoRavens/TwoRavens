@@ -2036,6 +2036,7 @@ function updateNode(id, nodes) {
  every time a variable in leftpanel is clicked, nodes updates and background color changes
  */
 export function clickVar(elem, $nodes) {
+    console.log(" selected element and type ", elem, "\n", nodes )
     if (is_explore_mode && $nodes && !$nodes.map(x => x.name).includes(elem)) {
         let max = exploreVariate === 'Univariate' ? 1
             : exploreVariate === 'Bivariate' ? 2
@@ -4727,7 +4728,22 @@ export function discovery(preprocess_file) {
 
 
 export let selectedProblem;
-export function setSelectedProblem(prob) {selectedProblem = prob;}
+export function setSelectedProblem(prob) {selectedProblem = prob;
+let problem = disco.find(problem => problem.problem_id === selectedProblem);
+if(problem.system === "user"){
+    console.log("It is user")
+    d3.select("#btnDelete")
+        .classed("btn btn-danger disabled", false)
+        .classed("btn btn-danger", true);
+
+}else if(problem.system === "auto"){
+    console.log("It is auto")
+    d3.select("#btnDelete")
+        .classed("btn btn-danger", false)
+        .classed("btn btn-danger disabled", true);
+
+}
+}
 
 export let checkedDiscoveryProblems = new Set();
 export let setCheckedDiscoveryProblem = (status, problem) => {
@@ -4788,6 +4804,23 @@ export function saveDisc() {
     let problem = disco.find(problem => problem.problem_id === selectedProblem);
     problem.description = document.getElementById("discoveryInput").value;
     console.log(problem);
+}
+
+export function deleteProblem(preproess_id, version, problem_id) {
+    console.log("Delete problem clicked")
+    m.request({
+        method: "POST",
+        url: "http://127.0.0.1:4354/preprocess/problem-section-delete",
+        data: {
+            "preprocessId" : preproess_id,
+            "version": version,
+            "problem_id" : problem_id
+        }
+    })
+        .then(function(result) {
+            console.log(result)
+        })
+
 }
 
 export async function endAllSearches() {
@@ -4966,4 +4999,28 @@ function primitiveStepRemoveColumns (aux) {
 
     let step = {primitive:primitive, arguments:parguments, outputs:outputs, hyperparams:hyperparams, users:users};
     return {primitive:step};
+}
+
+
+export function addProblem(preprocess_id, version, description, result){
+    let api_response = ""
+    m.request({
+        method: "POST",
+        url: "http://127.0.0.1:4354/preprocess/problem-section", // should be changed later
+        data: {
+            "preprocessId":preprocess_id,
+            "version":version,
+            "problems":[{
+                "description": description,
+                    "results":result
+            }
+            ]
+        }
+    })
+        .then(function(result) {
+            // console.log("response from API",result);
+            api_response = result;
+        })
+
+    return api_response;
 }

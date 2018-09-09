@@ -41,6 +41,10 @@ let state = {
     }
 };
 
+
+// adding problem_id and version for Preprocess API part
+let problem_id = 1;
+let version = 1;
 let nodesExplore = [];
 let valueKey = app.valueKey;
 
@@ -132,11 +136,13 @@ function leftpanel(mode) {
                      value: selectedDisco === undefined ? '' : selectedDisco.description
                  }),
                  m(Button, {id: 'btnSave', onclick: app.saveDisc, title: 'Saves your revised problem description.'}, 'Save Desc.'),
+                 m(Button, {id: 'btnDelete', classes: 'btn-danger disabled', style: 'float:right', onclick: _ => {setTimeout(_ => {let deleteProbleAPI = app.deleteProblem(problem_id, version, 'id_000003') }, 500);}, title: 'Delete the user created problem'}, 'Delete Problem.'),
                  m(Button, {id: 'btnSubmitDisc', classes: 'btn-success', style: 'float: right', onclick: app.submitDiscProb, title: 'Submit all checked discovered problems.'}, 'Submit Disc. Probs.'),
                  m(Button, {id: 'btnModelProblem', classes: 'btn-default', style: 'float: right', onclick: _ => {
                      m.route.set('/model');
                      setTimeout(_ => {
                          if (selectedDisco) {
+                             console.log("THis is selected disco", selectedDisco)
                              let {target, predictors} = selectedDisco;
                              app.erase('Discovery');
                              [target].concat(predictors).map(x => app.clickVar(x));
@@ -641,9 +647,10 @@ class Body {
                                   let rookpipe = await app.makeRequest(ROOK_SVC_URL + 'pipelineapp', app.zparams);
                                   rookpipe.target = rookpipe.depvar[0];
                                   let myn = app.findNodeIndex(rookpipe.target, true);
+
                                   let currentTaskType = app.d3mProblemDescription.taskType;
                                   let currentMetric = app.d3mProblemDescription.performanceMetrics[0].metric;
-                                  if (myn.nature == "nominal"){
+                                  if (myn.nature === "nominal"){
                                     rookpipe.task = currentTaskType === 'taskTypeUndefined' ? 'classification' : currentTaskType;
                                     rookpipe.metric = currentMetric === 'metricUndefined' ? 'f1Macro' : currentMetric;
                                   }else{
@@ -657,7 +664,13 @@ class Body {
                                   rookpipe.system = "user";
                                   let problemId = app.disco.length + 1;
                                   rookpipe.problem_id = "problem" + problemId;
-                                  console.log("pushing this:");
+                                  // setting preprocessId for now
+                                  let preprocessId = 1;
+                                  let version = 1;
+                                  let problem_result = {};
+                                  // this is where Problem ADD API call to the function will be made
+                                  let addProblemAPI = app.addProblem(preprocessId, version, rookpipe, problem_result);
+                                  console.log("API RESPONSE: ",addProblemAPI );
                                   console.log(rookpipe);
                                   app.disco.push(rookpipe);
                                     app.setSelectedProblem(app.disco.length - 1);
