@@ -82,31 +82,33 @@ export let resultsMetricDescription = 'Larger numbers are better fits';
 
 export let allsearchId = [];            // List of all the searchId's created on searches
 
-export let currentMode = 'model';
+export let currentMode;
+export let is_model_mode = true;
 export let is_explore_mode = false;
 export let is_results_mode = false;
-export let is_transform_mode = false;
+export let is_manipulate_mode = false;
 
 let exportCount = 0;
 
 export function set_mode(mode) {
     mode = mode ? mode.toLowerCase() : 'model';
 
+    is_model_mode = mode === 'model'
     is_explore_mode = mode === 'explore';
     is_results_mode = mode === 'results';
-    is_transform_mode = mode === 'transform';
+    is_manipulate_mode = mode === 'manipulate';
 
     if (currentMode !== mode) {
-        updateRightPanelWidth();
-        updateLeftPanelWidth();
-
         currentMode = mode;
         m.route.set('/' + mode);
+        restart && restart();
+        updateRightPanelWidth();
+        updateLeftPanelWidth();
     }
 
     let ws = elem('#whitespace0');
     if (ws) {
-        ws.style.display = currentMode === 'model' ? 'none' : 'block';
+        ws.style.display = is_explore_mode ? 'none' : 'block';
     }
 }
 
@@ -4681,24 +4683,24 @@ export function discovery(preprocess_file) {
     let disco = [];
     let names = [];
     let vars = Object.keys(preprocess);
+
     for (let i = 0; i < extract.length; i++) {
         names[i] = "Problem" + (i + 1);
+
         let current_target = extract[i]["target"];
         let current_transform = extract[i]["transform"];
         let current_subsetObs = extract[i]["subsetObs"];
         let current_subsetFeats = extract[i]["subsetFeats"];
+
         let j = findNodeIndex(current_target);
         let node = allNodes[j];
         let current_predictors = extract[i]["predictors"];
         let current_task = node.plottype === "bar" ? 'classification' : 'regression';
         let current_rating = 3;
         let current_description = "";
-        if(current_transform != 0){
-            console.log("TEST");
-            console.log(current_transform);
-
+        if (current_transform && current_transform != 0){
             current_description = "The combination of " + current_transform.split('=')[1] + " is predicted by " + current_predictors.join(" and ");
-        } else if (current_subsetObs != 0){
+        } else if (current_subsetObs && current_subsetObs != 0){
             current_description = current_target + " is predicted by " + current_predictors.join(" and ") + " whenever " + current_subsetObs;
         } else {
             current_description = current_target + " is predicted by " + current_predictors.join(" and ");

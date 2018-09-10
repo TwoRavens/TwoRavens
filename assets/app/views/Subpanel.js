@@ -18,7 +18,6 @@ class Subpanel {
             style: {
                 display: legend && z.ztime.length + z.zcross.length + z.zdv.length + z.znom.length || !legend && app.logArray.length > 0 ? 'block' : 'none',
                 [side]: app.panelWidth[side],
-                bottom: '40px',
                 overflow: 'hidden'
             }},
                  m(".panel-heading",

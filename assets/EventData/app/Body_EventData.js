@@ -647,6 +647,11 @@ export default class Body_EventData {
     view(vnode) {
         let {mode} = vnode.attrs;
 
+        // after calling m.route.set, the params for mode, variate, vars don't update in the first redraw.
+        // checking window.location.href is a workaround, permits changing mode from url bar
+        if (window.location.href.includes(mode) && mode !== app.selectedMode)
+            app.setSelectedMode(mode);
+
         let logLength = app.alignmentLog.length + app.preferencesLog.length + app.variablesLog.length;
         return m('main#EventData',
 

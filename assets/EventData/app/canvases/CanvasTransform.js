@@ -6,7 +6,7 @@ import PanelList from '../../../common/app/views/PanelList';
 
 import * as app from '../app';
 import * as query from '../queryMongo';
-import * as transform from '../../../app/transform';
+import * as transform from '../../../app/manipulate';
 import * as common from '../../../common/app/common';
 
 let setDefault = (obj, id, value) => obj[id] = obj[id] || value;

@@ -11,14 +11,15 @@ import * as app from './app';
 import * as exp from './explore';
 import * as plots from './plots';
 import * as results from './results';
-import * as transform from './transform';
-import * as subset from '../EventData/app/app';
+
+import * as manipulate from './manipulate';
+import * as queryAbstract from '../EventData/app/queryAbstract';
+
 import {fadeIn, fadeOut} from './utils';
 
 import Button from './views/PanelButton';
 import Subpanel from './views/Subpanel';
 import Flowchart from './views/Flowchart';
-import CanvasTransform from '../EventData/app/canvases/CanvasTransform';
 
 import * as common from '../common/app/common';
 import ButtonRadio from '../common/app/views/ButtonRadio';
@@ -26,12 +27,13 @@ import Footer from '../common/app/views/Footer';
 import Header from '../common/app/views/Header';
 import MenuTabbed from '../common/app/views/MenuTabbed';
 import Modal from '../common/app/views/Modal';
-import ModalVanilla from '../common/app/views/ModalVanilla';
 import Panel from '../common/app/views/Panel';
 import PanelList from '../common/app/views/PanelList';
 import Peek from '../common/app/views/Peek';
 import Table from '../common/app/views/Table';
 import TextField from '../common/app/views/TextField';
+import Canvas from "../common/app/views/Canvas";
+
 // EVENTDATA
 import Body_EventData from '../EventData/app/Body_EventData';
 import Peek_EventData from '../common-eventdata/views/Peek';
@@ -51,7 +53,6 @@ let state = {
 };
 
 let nodesExplore = [];
-let valueKey = app.valueKey;
 
 function setBackgroundColor(color) {
     return function() {
@@ -198,12 +199,12 @@ function rightpanel(mode) {
     if (mode === 'results') return; // returns undefined, which mithril ignores
     if (mode === 'explore') return;
 
-    if (mode === 'transform') return m(Panel, {
+    if (mode === 'manipulate') return m(Panel, {
         side: 'right',
         label: 'Pipeline',
         hover: false,
         width: '500px',
-    }, transform.rightpanel());
+    }, manipulate.rightpanel());
 
     // mode == null (model mode)
 
@@ -394,16 +395,13 @@ export let glyph = (icon, unstyled) =>
     m(`span.glyphicon.glyphicon-${icon}` + (unstyled ? '' : '[style=color: #818181; font-size: 1em; pointer-events: none]'));
 
 class Body {
-    oninit(vnode) {
-        if (vnode.attrs.mode) {
-            m.route.set('/model');
-            vnode.attrs.mode = null;
-        };
-        this.about = false;
-        this.usertasks = false;
+    oninit() {
+        app.setRightTab(IS_D3M_DOMAIN ? 'Problem' : 'Models');
+        console.log("forcing model");
+        app.set_mode('model');
+
         this.cite = false;
         this.citeHidden = false;
-        this.last_mode = null;
     }
 
     oncreate() {
@@ -431,24 +429,15 @@ class Body {
     }
 
     view(vnode) {
-        let vnodeVals = Object.values(vnode.attrs);
-        let mode = vnodeVals[0];
-        let variate = vnodeVals[1];
-        let vars = vnodeVals.slice(2);
-        let expnodes = [];
-        let model_mode = !mode;
-        let explore_mode = mode === 'explore';
-        let results_mode = mode === 'results';
+        let {mode, variate, vars} = vnode.attrs;
 
-        if (mode != this.last_mode) {
+        // after calling m.route.set, the params for mode, variate, vars don't update in the first redraw.
+        // checking window.location.href is a workaround, permits changing mode from url bar
+        if (window.location.href.includes(mode) && mode !== app.currentMode)
             app.set_mode(mode);
-            app.setRightTab(IS_D3M_DOMAIN ? 'Problem' : 'Models');
-            app.restart && app.restart();
-            this.last_mode = mode;
-        }
 
-        let overflow = explore_mode ? 'auto' : 'hidden';
-        let style = `position: absolute; left: ${app.panelWidth.left}; top: 0; margin-top: 10px`;
+        let expnodes = [];
+        vars = vars ? vars.split('/') : [];
 
         let exploreVars = (() => {
             vars.forEach(x => {
@@ -538,22 +527,16 @@ class Body {
         let spaceBtn = (id, onclick, title, icon) =>
             m(`button#${id}.btn.btn-default`, {onclick, title}, glyph(icon, true));
         let discovery = app.leftTab === 'Discovery';
+        let overflow = app.is_explore_mode ? 'auto' : 'hidden';
+        let style = `position: absolute; left: ${app.panelWidth.left}; top: 0; margin-top: 10px`;
 
         return m('main', [
             m(Modal),
-            transform.pendingConstraintMenu && m(ModalVanilla, {
-                id: 'modalAddTransform',
-                setDisplay: () => transform.setPendingConstraintMenu(undefined),
-                contents: m(CanvasTransform, {
-                    nodes: app.allNodes,
-                    preferences: transform.modalPreferences
-                })
-            }),
-            this.header(mode),
-            this.footer(mode),
-            leftpanel(mode),
-            rightpanel(mode),
-            app.is_transform_mode && transform.constraintMenu && m(Button, {
+            this.header(app.currentMode),
+            this.footer(app.currentMode),
+            leftpanel(app.currentMode),
+            rightpanel(app.currentMode),
+            app.is_manipulate_mode && manipulate.constraintMenu && m(Button, {
                 id: 'btnStage',
                 style: {
                     right: `calc(${common.panelOcclusion['right']} + 5px)`,
@@ -563,14 +546,17 @@ class Body {
                     'box-shadow': 'rgba(0, 0, 0, 0.3) 0px 2px 3px'
                 },
                 onclick: () => {
-                    // to add a constraint, must provide the step to add it to, the menu preferences, and column/constraint type metadata
-                    subset.addConstraint(transform.constraintMenu.step, transform.constraintPreferences, transform.constraintMetadata)
+                    queryAbstract.addConstraint(
+                        manipulate.constraintMenu.step,  // the step the user is currently editing
+                        manipulate.constraintPreferences,  // the menu state for the constraint the user currently editing
+                        manipulate.constraintMetadata  // info used to draw the menu (variables, menu type)
+                    )
                 }
             }, 'Stage'),
-            app.is_transform_mode && m(Canvas, transform.subsetCanvas()),
-            m(`#main`, {style: {overflow, display: app.is_transform_mode ? 'none' : 'block'}},
+            app.is_manipulate_mode && m(Canvas, manipulate.subsetCanvas()),
+            m(`#main`, {style: {overflow, display: app.is_manipulate_mode ? 'none' : 'block'}},
                 m("#innercarousel.carousel-inner", {style: {height: '100%', overflow}},
-                explore_mode && [variate === 'problem' ?
+                app.is_explore_mode && [variate === 'problem' ?
                     m('', {style},
                         m('a', {onclick: _ => m.route.set('/explore')}, '<- back to variables'),
                         m('br'),
@@ -608,7 +594,7 @@ class Body {
                         }, 'go'),
                         m('br'),
                         m('', {style: 'display: flex; flex-direction: row; flex-wrap: wrap'},
-                          (discovery ? app.disco : valueKey).map((x, i) => {
+                          (discovery ? app.disco : app.valueKey).map((x, i) => {
                               let {problem_id} = x;
                               let selected = discovery ? problem_id === app.selectedProblem : nodesExplore.map(x => x.name).includes(x);
                               let {predictors} = x;
@@ -676,7 +662,7 @@ class Body {
                           }))
                        )],
                 m('svg#whitespace')),
-              model_mode && m("#spacetools.spaceTool", {style: {right: app.panelWidth.right, 'z-index': 16}},
+              app.is_model_mode && m("#spacetools.spaceTool", {style: {right: app.panelWidth.right, 'z-index': 16}},
                               spaceBtn('btnAdd', async function() {
                                   app.zPop();
                                   let rookpipe = await app.makeRequest(ROOK_SVC_URL + 'pipelineapp', app.zparams);
@@ -708,7 +694,7 @@ class Body {
                               spaceBtn('btnJoin', _ => {
                                   let links = [];
                                   console.log("doing connect all");
-                                  if (explore_mode) {
+                                  if (app.is_explore_mode) {
                                       for (let node of app.nodes) {
                                           for (let node1 of app.nodes) {
                                               if (node !== node1 && links.filter(l => l.target === node1 && l.source === node).length === 0) {
@@ -733,7 +719,7 @@ class Body {
                               spaceBtn('btnDisconnect', _ => app.restart([]), 'Delete all connections between nodes', 'remove-circle'),
                               spaceBtn('btnForce', app.forceSwitch, 'Pin the variable pebbles to the page', 'pushpin'),
                               spaceBtn('btnEraser', app.erase, 'Wipe all variables from the modeling space', 'magnet')),
-              model_mode && m(Subpanel, {
+              app.is_model_mode && m(Subpanel, {
                     title: "Legend",
                     buttons: [
                         ['timeButton', 'ztime', 'Time'],
@@ -743,7 +729,7 @@ class Body {
                         ['gr1Button', 'zgroup1', 'Group 1'],
                         ['gr2Button', 'zgroup2', 'Group 2']]
                 }),
-                app.currentMode !== 'transform' && m(Subpanel, {title: "History"}))
+                app.currentMode !== 'manipulate' && m(Subpanel, {title: "History"}))
         ]);
     }
 
@@ -816,7 +802,7 @@ class Body {
                   [username, " ", glyph('triangle-bottom')]),
                 m('ul.dropdown-menu[role=menu][aria-labelledby=drop]',
                   userlinks.map(link => m('a[style=padding: 0.5em]', {href: link.url}, link.title, m('br'))))),
-              mode ? null : navBtn('btnEstimate.btn-default', 2, 1, app.estimate, m("span.ladda-label", mode === 'explore' ? 'Explore' : 'Solve This Problem'), '150px'),
+              mode !== 'model' ? null : navBtn('btnEstimate.btn-default', 2, 1, app.estimate, m("span.ladda-label", mode === 'explore' ? 'Explore' : 'Solve This Problem'), '150px'),
               m('div.btn-group[role=group][aria-label="..."]', {style:{"float":"right", "margin-left": "2em"}},
                 navBtnGroup('btnTA2.btn-default', _ => hopscotch.startTour(app.mytour, 0), ['Help Tour ', glyph('road')]),
                 navBtnGroup('btnTA2.btn-default', _ => app.helpmaterials('video'), ['Video ', glyph('expand')]),
@@ -882,7 +868,7 @@ class Body {
                 activeSection: mode || 'model',
                 attrsButtons: {style: {width: 'auto'}},
                 // {value: 'Results', id: 'btnResultsMode'}] VJD: commenting out the results mode button since we don't have this yet
-                sections: [{value: 'Model'}, {value: 'Explore'}]
+                sections: [{value: 'Model'}, {value: 'Explore'}, {value: 'Manipulate'}]
             }),
             m("a#logID[href=somelink][target=_blank]", "Replication"),
             m("span[style=color:#337ab7]", " | "),
@@ -900,40 +886,17 @@ class Body {
     }
 }
 
-let exploreVars = {
-    render(vnode) {
-        let {variate, var1, var2, var3, var4, var5} = vnode.attrs;
-        return m(Body, {mode: 'explore', variate, var1, var2, var3, var4, var5});
-    }
-};
-
 if (IS_EVENTDATA_DOMAIN) {
     m.route(document.body, '/home', {
-        '/home': {render: () => m(Body_EventData, {mode: 'home'})},
-        '/subset': {render: () => m(Body_EventData, {mode: 'subset'})},
-        '/aggregate': {render: () => m(Body_EventData, {mode: 'aggregate'})},
-        '/data': {render: () => m(Peek_EventData, {id: 'eventdata', image: '/static/images/TwoRavens.png'})}
+        '/data': {render: () => m(Peek_EventData, {id: 'eventdata', image: '/static/images/TwoRavens.png'})},
+        '/:mode': Body_EventData
     });
 }
 else {
     m.route(document.body, '/model', {
-        '/model': {
-            onmatch() {
-                valueKey = app.valueKey;
-            },
-            render: () => m(Body)
-        },
-        '/explore': {
-            render: () => m(Body, {mode: 'explore'})
-        },
-        '/transform': {
-            render: () => m(Body, {mode: 'transform'})
-        },
-        '/explore/:variate/:var1': exploreVars,
-        '/explore/:variate/:var1/:var2': exploreVars,
-        '/explore/:variate/:var1/:var2/:var3': exploreVars,
-        '/explore/:variate/:var1/:var2/:var3/:var4': exploreVars,
-        '/explore/:variate/:var1/:var2/:var3/:var4/:var5': exploreVars,
+        '/explore/:variate/:vars...': Body,
+        '/:mode': Body
+
         /*'/results': {
           onmatch() {
           app.set_mode('results');
@@ -944,6 +907,5 @@ else {
                 return m(Body, {mode: 'results'});
             }
         },*/
-        '/data': Peek
     });
 }
