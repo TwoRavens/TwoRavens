@@ -82,15 +82,15 @@ let xtable = String.raw`
 
 export default {
     view(_vnode) {
-        let el = document.createElement('html');
-        el.innerHTML = stargazer;
+        let html = document.createElement('html');
+        html.innerHTML = stargazer;
         let els = (el, tag) => el.getElementsByTagName(tag);
-        let push = (arr, x) => arr.push(x.innerText.trim());
+        let push = (arr, el) => arr.push(el.innerText.trim());
         let headers = [];
-        for (let th of els(el, 'th'))
+        for (let th of els(html, 'th'))
             push(headers, th);
         let data = [];
-        for (let tr of els(el, 'tr')) {
+        for (let tr of els(html, 'tr')) {
             let row = [];
             for (let td of els(tr, 'td'))
                 push(row, td);
