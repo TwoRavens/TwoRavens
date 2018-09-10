@@ -84,14 +84,16 @@ export default {
     view(_vnode) {
         let el = document.createElement('html');
         el.innerHTML = stargazer;
+        let els = (el, tag) => el.getElementsByTagName(tag);
+        let push = (arr, x) => arr.push(x.innerText.trim());
         let headers = [];
-        for (let th of el.getElementsByTagName('th'))
-            headers.push(th.innerText.trim());
+        for (let th of els(el, 'th'))
+            push(headers, th);
         let data = [];
-        for (let tr of el.getElementsByTagName('tr')) {
+        for (let tr of els(el, 'tr')) {
             let row = [];
-            for (let td of tr.getElementsByTagName('td'))
-                row.push(td.innerText.trim());
+            for (let td of els(tr, 'td'))
+                push(row, td);
             if (row.join('') !== '') data.push(row);
         }
         return m(Table, {id: 'datatable', headers, data});
