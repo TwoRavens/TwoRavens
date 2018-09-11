@@ -13,7 +13,9 @@ import * as plots from './plots';
 import * as results from './results';
 
 import * as manipulate from './manipulate';
+import * as subset from '../EventData/app/app';
 import * as queryAbstract from '../EventData/app/queryAbstract';
+import * as queryMongo from '../EventData/app/queryMongo';
 
 import {fadeIn, fadeOut} from './utils';
 
@@ -33,7 +35,6 @@ import Peek from '../common/app/views/Peek';
 import Table from '../common/app/views/Table';
 import TextField from '../common/app/views/TextField';
 import Canvas from "../common/app/views/Canvas";
-
 // EVENTDATA
 import Body_EventData from '../EventData/app/Body_EventData';
 import Peek_EventData from '../common-eventdata/views/Peek';
@@ -107,7 +108,7 @@ function leftpanel(mode) {
         sections: [
             {value: 'Variables',
              title: 'Click variable name to add or remove the variable pebble from the modeling space.',
-             contents: [
+             contents: app.is_manipulate_mode && !manipulate.constraintMenu ? undefined : [
                  m(TextField, {
                      id: 'searchVar',
                      placeholder: 'Search variables and labels',
@@ -115,14 +116,22 @@ function leftpanel(mode) {
                  }),
                  m(PanelList, {
                      id: 'varList',
-                     items: app.valueKey,
-                     colors: {
+                     items: app.is_manipulate_mode
+                         ? [...queryMongo.buildPipeline(
+                             subset.abstractManipulations.slice(subset.abstractManipulations.indexOf(manipulate.constraintMenu.step)),
+                             new Set(app.valueKey))['variables']]
+                         : app.valueKey,
+                     colors: app.is_manipulate_mode ? {
+                         [app.hexToRgba(common.selVarColor)]: (manipulate.constraintMenu || {}).columns || []
+                     } : {
                          [app.hexToRgba(common.selVarColor)]: nodes.map(n => n.name),
                          [app.hexToRgba(common.nomColor)]: app.zparams.znom,
                          [app.hexToRgba(common.dvColor)]: app.is_explore_mode ? [] : app.zparams.zdv
                      },
                      classes: {'item-bordered': app.matchedVariables},
-                     callback: x => app.clickVar(x, nodes),
+                     callback: x => app.is_manipulate_mode
+                         ? manipulate.setSelectedVariable(x)
+                         : app.clickVar(x, nodes),
                      popup: variable => app.popoverContent(app.findNodeIndex(variable, true)),
                      attrsItems: {'data-placement': 'right', 'data-original-title': 'Summary Statistics'}})]},
             {value: 'Discovery',
@@ -202,7 +211,7 @@ function rightpanel(mode) {
     if (mode === 'manipulate') return m(Panel, {
         side: 'right',
         label: 'Pipeline',
-        hover: false,
+        hover: true,
         width: '500px',
     }, manipulate.rightpanel());
 
@@ -397,7 +406,6 @@ export let glyph = (icon, unstyled) =>
 class Body {
     oninit() {
         app.setRightTab(IS_D3M_DOMAIN ? 'Problem' : 'Models');
-        console.log("forcing model");
         app.set_mode('model');
 
         this.cite = false;
@@ -539,7 +547,7 @@ class Body {
             app.is_manipulate_mode && manipulate.constraintMenu && m(Button, {
                 id: 'btnStage',
                 style: {
-                    right: `calc(${common.panelOcclusion['right']} + 5px)`,
+                    right: `calc(${common.panelOpen['right'] ? '500' : '16'}px + ${common.panelMargin}*2)`,
                     bottom: `calc(${common.heightFooter} + ${common.panelMargin} + 6px)`,
                     position: 'fixed',
                     'z-index': 100,

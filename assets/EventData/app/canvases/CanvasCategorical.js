@@ -1,6 +1,5 @@
 import * as app from '../app';
 import * as common from '../../../common-eventdata/common'
-import {panelMargin} from '../../../common-eventdata/common'
 import m from 'mithril';
 import PlotBars from "../views/PlotBars";
 import ButtonRadio from "../../../common-eventdata/views/ButtonRadio";
@@ -140,7 +139,7 @@ export default class CanvasCategorical {
             );
         };
 
-        return m("#canvasCategorical", {style: {height: '100%', 'padding-top': panelMargin, width: `calc(100% + ${common.panelMargin})`}},
+        return m("#canvasCategorical", {style: {height: '100%', 'padding-top': common.panelMargin, width: `calc(100% + ${common.panelMargin})`}},
             mode === 'aggregate' && 'formats' in metadata && metadata['formats'].length > 1 && m(ButtonRadio, {
                 id: 'aggregationFormat',
                 onclick: (format) => preferences['aggregation'] = format,

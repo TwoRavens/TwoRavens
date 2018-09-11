@@ -6,7 +6,6 @@ import PanelList from '../../../common/app/views/PanelList';
 
 import * as app from '../app';
 import * as query from '../queryMongo';
-import * as transform from '../../../app/manipulate';
 import * as common from '../../../common/app/common';
 
 let setDefault = (obj, id, value) => obj[id] = obj[id] || value;
@@ -30,12 +29,13 @@ export default class CanvasTransform {
     }
 
     view(vnode) {
-        let {nodes, preferences} = vnode.attrs;
-        let {name, step} = transform.pendingConstraintMenu;
+        let {preferences, variables, metadata} = vnode.attrs;
+        let {name, step} = metadata;
 
-        let vars = new Set((nodes || []).map(node => node.name));
         // simulate the pipeline until the n-1th step to determine available variables
-        let propagatedVariables = query.buildPipeline(app.abstractManipulations.slice(0, -1), vars)['variables'];
+        let propagatedVariables = query.buildPipeline(
+            app.abstractManipulations.slice(0, -1),
+            new Set(variables))['variables'];
 
         let style = {
             width: '14.666%',
@@ -51,7 +51,7 @@ export default class CanvasTransform {
         let transformError;
 
         try {
-            let response = query.buildTransform(preferences.transformEquation, vars);
+            let response = query.buildTransform(preferences.transformEquation, new Set(variables));
             transformQuery = JSON.stringify(response.query, null, 2);
             preferences.usedTerms = response.usedTerms;
         }
@@ -72,7 +72,7 @@ export default class CanvasTransform {
             }), ' = ',
             m(TextField, {
                 id: 'textFieldEquation',
-                placeholder: '1 + ' + nodes[0].name,
+                placeholder: '1 + ' + variables[0],
                 class: !preferences.transformEquation && ['is-invalid'],
                 oninput: (value) => preferences.transformEquation = value,
                 onblur: (value) => preferences.transformEquation = value,
@@ -92,8 +92,6 @@ export default class CanvasTransform {
                         name: preferences.transformName,
                         equation: preferences.transformEquation
                     });
-                    transform.setPendingConstraintMenu(undefined);
-                    Object.keys(transform.modalPreferences).forEach(key => delete transform.modalPreferences[key]);
                 }
             }, 'Add Transform'), m('br'),
 
