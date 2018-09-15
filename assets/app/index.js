@@ -160,7 +160,7 @@ function leftpanel(mode) {
                              app.setColors(d, app.dvColor);
                              app.legend();
                              d.group1 = d.group2 = false;
-                             app.callSolver(selectedDisco);
+
                              app.restart();
                          }
                      }, 500);
@@ -673,17 +673,21 @@ class Body {
                                   // setting preprocessId for now
                                   let preprocessId = 1;
                                   let version = 1;
-                                  let problem_result = {};
-                                  // this is where Problem ADD API call to the function will be made
-                                  let addProblemAPI = app.addProblem(preprocessId, version, rookpipe, problem_result);
-                                  console.log("API RESPONSE: ",addProblemAPI );
-                                  console.log(rookpipe);
 
 
                                   app.disco.push(rookpipe);
                                   console.log("my disco ", app.disco.indexOf(rookpipe))
                                     app.setSelectedProblem(app.disco.length - 1);
                                   app.setLeftTab('Discovery');
+                                  console.log("This is rookpipe ",rookpipe);
+                                  // this is where Problem ADD API call to the function will be made
+                                  let problem_result = {};
+                                  let app_solver_result = app.callSolver(selectedDisco);
+                                  console.log("app solver result")
+                                  problem_result = app_solver_result
+                                  let addProblemAPI = app.addProblem(preprocessId, version, rookpipe, problem_result);
+                                  console.log("API RESPONSE: ",addProblemAPI );
+
                                   m.redraw();
                               }, 'Add model to problems.', 'plus'),
                               spaceBtn('btnJoin', _ => {

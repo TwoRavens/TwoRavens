@@ -21,6 +21,7 @@ ROOK_APP_NAMES = [('ZELIG_APP', 'zeligapp', 'zeligapp'),    # run models
                   ('PIPELINE_APP', 'pipelineapp', 'pipelineapp'), # format pipeline
                   ('EXPLORE_APP', 'exploreapp', 'exploreapp'),
                   ('PLOTDATA_APP', 'plotdataapp', 'plotdataapp'),
+                  ('SOLVER_APP', 'solverapp', 'solverapp'),
                   ('TREE_APP', 'treeapp', 'treeapp'),
                   (HEALTH_CHECK_APP, 'healthcheckapp', 'healthcheckapp'), # healthcheckapp
                  ]
