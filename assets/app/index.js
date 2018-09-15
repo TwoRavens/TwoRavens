@@ -136,7 +136,12 @@ function leftpanel(mode) {
                      value: selectedDisco === undefined ? '' : selectedDisco.description
                  }),
                  m(Button, {id: 'btnSave', onclick: app.saveDisc, title: 'Saves your revised problem description.'}, 'Save Desc.'),
-                 m(Button, {id: 'btnDelete', classes: 'btn-danger disabled', style: 'float:right', onclick: _ => {setTimeout(_ => {let deleteProbleAPI = app.deleteProblem(problem_id, version, 'id_000003') }, 500);}, title: 'Delete the user created problem'}, 'Delete Problem.'),
+                 m(Button, {id: 'btnDelete', classes: 'btn-danger disabled', style: 'float:right', onclick: _ => {setTimeout(_ => {
+                     let deleteProbleAPI = app.deleteProblem(problem_id, version, 'id_000003');
+                     console.log("have to delete this ", selectedDisco)
+                         app.deleteFromDisc(selectedDisco)
+
+                     }, 500);}, title: 'Delete the user created problem'}, 'Delete Problem.'),
                  m(Button, {id: 'btnSubmitDisc', classes: 'btn-success', style: 'float: right', onclick: app.submitDiscProb, title: 'Submit all checked discovered problems.'}, 'Submit Disc. Probs.'),
                  m(Button, {id: 'btnModelProblem', classes: 'btn-default', style: 'float: right', onclick: _ => {
                      m.route.set('/model');
@@ -155,6 +160,7 @@ function leftpanel(mode) {
                              app.setColors(d, app.dvColor);
                              app.legend();
                              d.group1 = d.group2 = false;
+                             app.callSolver(selectedDisco);
                              app.restart();
                          }
                      }, 500);
@@ -672,7 +678,10 @@ class Body {
                                   let addProblemAPI = app.addProblem(preprocessId, version, rookpipe, problem_result);
                                   console.log("API RESPONSE: ",addProblemAPI );
                                   console.log(rookpipe);
+
+
                                   app.disco.push(rookpipe);
+                                  console.log("my disco ", app.disco.indexOf(rookpipe))
                                     app.setSelectedProblem(app.disco.length - 1);
                                   app.setLeftTab('Discovery');
                                   m.redraw();

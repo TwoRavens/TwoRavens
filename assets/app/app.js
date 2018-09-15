@@ -4800,6 +4800,15 @@ export async function submitDiscProb() {
 
 }
 
+export function deleteFromDisc(discov){
+    var index = disco.indexOf(discov);
+    console.log("index of disco to be deleted", index)
+    if (index > -1) {
+        disco.splice(index, 1);
+    }
+
+}
+
 export function saveDisc() {
     let problem = disco.find(problem => problem.problem_id === selectedProblem);
     problem.description = document.getElementById("discoveryInput").value;
@@ -5023,4 +5032,15 @@ export function addProblem(preprocess_id, version, description, result){
         })
 
     return api_response;
+}
+
+
+// takes as input problem in the form of a "discovered problem" (can also be user-defined), calls rooksolver, and returns result
+export async function callSolver (prob) {
+    let temp = JSON.stringify(prob);
+    console.log(temp);
+    let zd3mdata = zparams.zd3mdata;
+    let jsonout = {prob, zd3mdata};
+    let json = await makeRequest(ROOK_SVC_URL + 'solverapp', jsonout);
+    console.log(json);
 }
