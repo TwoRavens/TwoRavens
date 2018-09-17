@@ -128,3 +128,40 @@ class EventDataGetMetadataForm(forms.Form):
 
     def clean_collections(self):
         return self.cleaned_data.get('collections')
+
+
+class EventDataGetManipulationForm(forms.Form):
+    """ check if query submission parameters are ok"""
+
+    collection_name = forms.CharField(required=True, widget=forms.Textarea)
+    method = forms.CharField(required=True, widget=forms.Textarea)
+    query = forms.CharField(required=True, widget=forms.Textarea)
+    distinct = forms.CharField(required=False, widget=forms.Textarea)
+    datafile = forms.CharField(required=False, widget=forms.Textarea)
+    reload = forms.BooleanField(required=False)
+    export = forms.BooleanField(required=False)
+
+    def clean_collection_name(self):
+        return self.cleaned_data.get('collection_name')
+
+    def clean_method(self):
+        method = self.cleaned_data.get('method')
+        if method in METHOD_CHOICES:
+            return method
+        else:
+            raise forms.ValidationError("The collection method is not among %s: %s" % (str(METHOD_CHOICES), method))
+
+    def clean_query(self):
+        return json.loads(self.cleaned_data.get('query'))
+
+    def clean_distinct(self):
+        return self.cleaned_data.get('distinct')
+
+    def clean_datafile(self):
+        return self.cleaned_data.get('datafile')
+
+    def clean_reload(self):
+        return self.cleaned_data.get('reload')
+
+    def clean_export(self):
+        return self.cleaned_data.get('export')

@@ -1,4 +1,5 @@
 import json
+import os
 from collections import OrderedDict
 
 from django.conf import settings
@@ -23,7 +24,8 @@ from tworaven_apps.eventdata_queries.event_job_util import EventJobUtil
 from tworaven_apps.eventdata_queries.forms import \
             (EventDataSavedQueryForm,
              EventDataGetDataForm,
-             EventDataGetMetadataForm)
+             EventDataGetMetadataForm,
+             EventDataGetManipulationForm)
 from tworaven_apps.eventdata_queries.models import \
     (EventDataSavedQuery,
      SEARCH_PARAMETERS, SEARCH_KEY_NAME, SEARCH_KEY_DESCRIPTION)
@@ -403,11 +405,12 @@ def api_get_data(request):
         return JsonResponse({"success": False, "message": "invalid input", "errors": form.errors})
 
     success, addquery_obj_err = EventJobUtil.get_data(
-        json_req_obj['host'],
+        settings.EVENTDATA_DB_NAME,
         json_req_obj['collection_name'],
         json_req_obj['method'],
         json.loads(json_req_obj['query']),
-        json_req_obj.get('distinct', None))
+        json_req_obj.get('distinct', None),
+        json_req_obj.get('host', None))
 
     return JsonResponse({'success': success, 'data': addquery_obj_err} if success else get_json_error(addquery_obj_err))
 
@@ -427,3 +430,49 @@ def api_get_metadata(request):
         return JsonResponse({"success": False, "message": "invalid input", "errors": form.errors})
     return JsonResponse(
         {name: EventJobUtil.get_metadata(name, json_req_obj[name]) for name in ['collections', 'formats', 'alignments'] if name in json_req_obj})
+
+
+@csrf_exempt
+def api_get_manipulations(request):
+    """ apply manipulations to a dataset"""
+
+    success, json_req_obj = get_request_body_as_json(request)
+
+    if not success:
+        return JsonResponse({"success": False, "error": get_json_error(json_req_obj)})
+
+    # check if data is valid
+    form = EventDataGetManipulationForm(json_req_obj)
+    if not form.is_valid():
+        return JsonResponse({"success": False, "message": "invalid input", "errors": form.errors})
+
+    # ensure the dataset is present
+    EventJobUtil.import_dataset(
+        settings.TWORAVENS_DB_NAME,
+        json_req_obj['collection_name'],
+        datafile=json_req_obj.get('datafile', None),
+        reload=json_req_obj.get('reload', None))
+
+    # apply the manipulations
+    success, results_obj_err = EventJobUtil.get_data(
+        settings.TWORAVENS_DB_NAME,
+        settings.PREFIX + json_req_obj['collection_name'],
+        json_req_obj['method'],
+        json.loads(json_req_obj['query']),
+        distinct=json_req_obj.get('distinct', None))
+
+    if not success:
+        return JsonResponse(get_json_error(results_obj_err))
+
+    if json_req_obj.get('export', False):
+        success, results_obj_err = EventJobUtil.export_dataset(
+            TWORAVENS_DB_NAME,
+            settings.PREFIX + json_req_obj['collection_name'],
+            results_obj_err)
+
+    return JsonResponse({'success': success, 'data': results_obj_err } if success else get_json_error(results_obj_err))
+
+
+@csrf_exempt
+def api_import_dataset(collection):
+    return EventJobUtil.import_dataset(TWORAVENS_DB_NAME, collection)

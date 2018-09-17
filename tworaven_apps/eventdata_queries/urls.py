@@ -66,4 +66,12 @@ urlpatterns = [
          views.api_get_metadata,
          name='api_get_metadata'),
 
+    path(r'api/get-manipulations',
+         views.api_get_manipulations,
+         name='api_get_manipulations'),
+
+    path(r'api/import-dataset',
+             views.api_import_dataset,
+             name='api_import_dataset'),
+
 ]

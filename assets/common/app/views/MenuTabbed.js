@@ -60,7 +60,7 @@ export default class MenuTabbed {
                 hoverBonus: hoverBonus,
                 selectWidth: selectWidth
             }),
-            sections.map((section) => m(`div#tab${section['idSuffix'] || section['value']}`, {
+            sections.filter(_=>_).map((section) => m(`div#tab${section['idSuffix'] || section['value']}`, {
                 style: {
                     display: section['value'] === currentTab ? 'block' : 'none',
                     height: 'calc(100% - 39px)',

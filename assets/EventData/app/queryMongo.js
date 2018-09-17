@@ -261,23 +261,32 @@ function processRule(rule) {
                     rule_query_inner['$lte'] = {'$date': child.toDate.toISOString().slice(0, 10)}
                 }
             }
-            rule_query[column] = rule_query_inner;
+            rule_query[column] = {$or: [rule_query_inner, {column: {$exists: 0}}]};
         } else if (rule.structure === 'interval') {
-            for (let child of rule.children) {
-                if ('fromDate' in child) {
-                    child.fromDate = new Date(child.fromDate);
-                    rule_query[child.column] = {
-                        '$gte': {'$date': child.fromDate.toISOString().slice(0, 10)}
-                    };
-                }
-                if ('toDate' in child) {
-                    child.toDate = new Date(child.toDate);
-                    rule_query[child.column] = {
-                        '$lte': {'$date': child.toDate.toISOString().slice(0, 10)}
-                    };
-                }
+            let or = [];
+            for (let column of rule.children.map(child => child.column)) {
+                or.push({[column]: {$exists: 0}});
+                or.push({
+                    [column]: rule.children.reduce((out, child) => {
+                        let side = 'fromDate' in child ? 'fromDate' : 'toDate';
+                        out[side === 'fromDate' ? '$gte' : '$lte'] = {
+                            '$date': child[side].toISOString().slice(0, 10)
+                        }
+                    }, {})
+                });
             }
+            rule_query = or;
         }
+    }
+
+    if (rule.subset === 'continuous') {
+        let rule_query_inner = {};
+
+        rule_query[rule.column] = rule.children.reduce((out, child) => {
+            if ('fromLabel' in child) out['$gte'] = child.fromLabel;
+            if ('toLabel' in child) out['$lte'] = child.toLabel;
+            return out;
+        }, {});
     }
 
     if (['categorical', 'categorical_grouped'].indexOf(rule.subset) !== -1) {
@@ -660,9 +669,20 @@ export function buildMenu(step) {
         {$sort: {year: 1, month: 1}}
     ];
 
-    if (['categorical', 'categorical_grouped'].indexOf(metadata.type) !== -1) return [
+    if (['discrete', 'categorical', 'categorical_grouped'].indexOf(metadata.type) !== -1) return [
         {$group: {_id: {[metadata.columns[0]]: '$' + metadata.columns[0]}, total: {$sum: 1}}},
         {$project: {[metadata.columns[0]]: '$_id.' + metadata.columns[0], _id: 0, total: 1}}
+    ];
+
+    if (metadata.type === 'continuous') return [
+        {
+            $bucketAuto: {
+                groupBy: '$' + metadata.columns[0],
+                buckets: 100
+            }
+        },
+        {$project: {_id: 0, bin: '$_id.min', count: 1}},
+        {$sort: {bin: 1}}
     ];
 
     if (metadata.type === 'peek') return [
@@ -696,18 +716,18 @@ export let menuPostProcess = new Proxy({
     'dyad': data => data[0],
 
     'date': (data) => data
-        .map(entry => ({'Date': new Date(entry['year'], entry['month'] - 1, 0), 'Freq': entry.total}))
+        .map(entry => ({'Label': new Date(entry['year'], entry['month'] - 1, 0), 'Freq': entry.total}))
         .sort(app.dateSort)
         .reduce((out, entry) => {
             if (out.length === 0) return [entry];
-            let tempDate = app.incrementMonth(out[out.length - 1]['Date']);
+            let tempDate = app.incrementMonth(out[out.length - 1]['Label']);
 
             while (!app.isSameMonth(tempDate, entry['Date'])) {
-                out.push({Freq: 0, Date: new Date(tempDate)});
+                out.push({Freq: 0, Label: new Date(tempDate)});
                 tempDate = app.incrementMonth(tempDate);
             }
             out.push(entry);
             return (out);
-        }, [])
+        }, []),
 
 }, defaultValue(data => data));

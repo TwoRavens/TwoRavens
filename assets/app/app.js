@@ -2144,7 +2144,6 @@ export function zPop() {
 // when selected, the key/value [mode]: [pipelineID] is set.
 export let selectedPipeline;
 export let setSelectedPipeline = result => {
-    console.log("JUST DID THIS");
     selectedPipeline = result;
     if (currentMode === 'model') resultsplotinit(result);
 }

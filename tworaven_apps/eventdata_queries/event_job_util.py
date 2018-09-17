@@ -1,10 +1,10 @@
 import os
+import csv
 import json
 import pandas as pd
 from django.conf import settings
 from collections import OrderedDict
 
-from django.conf import settings
 from django.http import HttpResponse, JsonResponse
 from tworaven_apps.utils.view_helper import \
     (get_request_body_as_json,
@@ -16,7 +16,7 @@ from tworaven_apps.utils.basic_response import (ok_resp,
 from tworaven_apps.eventdata_queries.models import \
     (EventDataSavedQuery, ArchiveQueryJob, UserNotification,
      SEARCH_PARAMETERS, SEARCH_KEY_NAME, SEARCH_KEY_DESCRIPTION,
-     IN_PROCESS, ERROR, COMPLETE)
+     IN_PROCESS, ERROR, COMPLETE, DATA_PARTITIONS)
 from tworaven_apps.eventdata_queries.dataverse.temporary_file_maker import TemporaryFileMaker
 from tworaven_apps.eventdata_queries.dataverse.dataverse_publish_dataset import DataversePublishDataset
 from tworaven_apps.eventdata_queries.dataverse.dataverse_list_files_dataset import ListFilesInDataset
@@ -374,40 +374,14 @@ class EventJobUtil(object):
             return err_resp(res)
 
     @staticmethod
-    def get_data(host, collection, method, query, distinct=None):
-        """ return data from mongo"""
-
-        if method == 'distinct' and not distinct:
-            return err_resp("the distinct method requires a 'keys' argument")
-
-        retrieve_util = MongoRetrieveUtil(collection, query, method, host)
-        success, data = retrieve_util.run_query(distinct)
-        return ok_resp(data) if success else err_resp(data)
-
-    @staticmethod
-    def get_metadata(folder, names=None):
-        # `folder` is not a user-defined value
-        directory = os.path.join(os.getcwd(), 'tworaven_apps', 'eventdata_queries', folder)
-
-        if names:
-            # make sure name is in directory and has file extension
-            names = [name + '.json' for name in names if name + '.json' in os.listdir(directory)]
-        else:
-            names = sorted(os.listdir(directory))
-
-        return {
-            filename.replace('.json', ''): json.load(open(directory + os.sep + filename, 'r'), object_pairs_hook=OrderedDict) for filename in names
-        }
-
-    @staticmethod
     def upload_query_result(event_obj):
         """ upload query result to dataverse"""
         collection_name = event_obj.as_dict()['collection_name']
         query_obj = event_obj.as_dict()['query']
         query_id = event_obj.as_dict()['id']
         filename = '%s_%s.txt' % (str(query_id), str(collection_name))
-        obj = MongoRetrieveUtil(collection_name, query_obj, 'aggregate')
-        success, mongo_obj = obj.run_query()
+        obj = MongoRetrieveUtil(settings.EVENTDATA_DB_NAME, collection_name)
+        success, mongo_obj = obj.run_query(query_obj, 'aggregate')
 
         if not mongo_obj:
             return err_resp(mongo_obj)
@@ -483,3 +457,85 @@ class EventJobUtil(object):
                             message="failed to save query",
                             id=user_notify.id)
             return err_resp(usr_dict)
+
+
+    @staticmethod
+    def get_metadata(folder, names=None):
+        # `folder` is not a user-defined value
+        directory = os.path.join(os.getcwd(), 'tworaven_apps', 'eventdata_queries', folder)
+
+        if names:
+            # make sure name is in directory and has file extension
+            names = [name + '.json' for name in names if name + '.json' in os.listdir(directory)]
+        else:
+            names = sorted(os.listdir(directory))
+
+        return {
+            filename.replace('.json', ''): json.load(open(directory + os.sep + filename, 'r'), object_pairs_hook=OrderedDict) for filename in names
+        }
+
+
+    @staticmethod
+    def get_data(database, collection, method, query, distinct=None, host=None):
+        """ return data from mongo"""
+
+        if method == 'distinct' and not distinct:
+            return err_resp("the distinct method requires a 'keys' argument")
+
+        retrieve_util = MongoRetrieveUtil(database, collection, host)
+        success, data = retrieve_util.run_query(query, method, distinct)
+        return ok_resp(data) if success else err_resp(data)
+
+
+    @staticmethod
+    def import_dataset(database, collection, datafile, reload=False):
+        """upload dataset to mongo"""
+
+        retrieve_util = MongoRetrieveUtil(database, collection)
+        db = retrieve_util.get_mongo_client()[database]
+
+        # upload dataset if it does not exist
+        if settings.PREFIX + collection in db.list_collection_names():
+            if reload:
+                db[settings.PREFIX + collection].drop()
+            else:
+                return ok_resp(settings.PREFIX + collection)
+
+        if not os.path.exists(settings.BASE_DIR, 'ravens_volume', 'test_data', collection):
+            return err_resp(collection + ' not found')
+
+        for partition in DATA_PARTITIONS:
+            with open(os.path.join(settings.BASE_DIR, 'ravens_volume', 'test_data', collection, partition, 'dataset_' + partition, 'tables', 'learningData.csv'), 'r') as csv_file:
+                csv_reader = csv.reader(csv_file, delimiter=',')
+                columns = next(csv_reader)
+                for observation in csv_reader:
+                    db[settings.PREFIX + collection].insert_one({
+                        **{col: val for col, val in zip(columns, observation)},
+                        **{"TwoRavens_partition": partition}
+                    })
+
+        return ok_resp({'collection': settings.PREFIX + collection})
+
+
+    @staticmethod
+    def export_dataset(database, collection, data):
+
+        folderpath = os.path.join(settings.BASE_DIR, 'ravens_volume', 'manipulation_data', collection, 'TRAIN', 'tables')
+        filepath = os.path.join(folderpath, 'learningData.csv')
+
+        if not os.path.exists(outpath):
+            os.makedirs(outpath)
+
+        if os.path.exists(filepath):
+            os.remove(filepath)
+
+        with open(filepath, 'w') as outfile:
+            writer = csv.writer(outfile, delimiter='\t')
+            columns = [i for i in Object.keys(data[0])]
+
+            writer.writerow(columns)
+            for document in data:
+                writer.writerow([document[key] if key in document else '' for key in columns])
+
+        return ok_resp(filepath)
+

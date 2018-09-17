@@ -97,7 +97,7 @@ function leftpanel(mode) {
     return m(Panel, {
         side: 'left',
         label: 'Data Selection',
-        hover: true,
+        hover: !app.is_manipulate_mode,
         width: app.modelLeftPanelWidths[app.leftTab],
         attrsAll: {style: {'z-index': 101}}
     }, m(MenuTabbed, {
@@ -122,7 +122,7 @@ function leftpanel(mode) {
                              new Set(app.valueKey))['variables']]
                          : app.valueKey,
                      colors: app.is_manipulate_mode ? {
-                         [app.hexToRgba(common.selVarColor)]: (manipulate.constraintMenu || {}).columns || []
+                         [app.hexToRgba(common.selVarColor)]: (manipulate.constraintMetadata || {}).columns || []
                      } : {
                          [app.hexToRgba(common.selVarColor)]: nodes.map(n => n.name),
                          [app.hexToRgba(common.nomColor)]: app.zparams.znom,
@@ -133,7 +133,15 @@ function leftpanel(mode) {
                          ? manipulate.setSelectedVariable(x)
                          : app.clickVar(x, nodes),
                      popup: variable => app.popoverContent(app.findNodeIndex(variable, true)),
-                     attrsItems: {'data-placement': 'right', 'data-original-title': 'Summary Statistics'}})]},
+                     attrsItems: {'data-placement': 'right', 'data-original-title': 'Summary Statistics'}}),
+                 app.is_manipulate_mode && m("h5", 'Menu Type'),
+                 app.is_manipulate_mode && m(ButtonRadio, {
+                     id: 'subsetTypeButtonBar',
+                     onclick: manipulate.setConstraintType,
+                     activeSection: manipulate.constraintMetadata.type,
+                     sections: ['continuous', 'discrete'].map(type => ({value: type}))
+                 })
+             ]},
             {value: 'Discovery',
              display: 'block',
              contents: [
@@ -867,6 +875,12 @@ class Body {
     }
 
     footer(mode) {
+
+        let manipulateRecordCount = {
+            'subset': subset.totalSubsetRecords,
+            'aggregate': subset.aggregationData && subset.aggregationData.length
+        }[(subset.abstractManipulations[subset.abstractManipulations.length - 1] || {}).type];
+
         return m(Footer, [
             m(ButtonRadio, {
                 id: 'modeButtonBar',
@@ -889,7 +903,16 @@ class Body {
             m('button.btn.btn-default', {
                 onclick: _ => window.open('#!/data', 'data'),
                 style: 'float: right; margin: 0.5em; margin-top: 2px'
-            }, 'Peek')
+            }, 'Peek'),
+            // Manipulate Record Count
+            app.is_manipulate_mode && manipulateRecordCount !== undefined && m("span.label.label-default#recordCount", {
+                style: {
+                    float: 'right',
+                    "margin-left": "5px",
+                    "margin-top": "10px",
+                    "margin-right": "2em"
+                }
+            }, manipulateRecordCount + ' Records')
         ]);
     }
 }

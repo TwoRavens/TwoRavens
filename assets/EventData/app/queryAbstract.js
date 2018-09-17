@@ -344,6 +344,56 @@ function makeAbstractBranch(step, name, preferences, metadata) {
         return subset
     }
 
+    if (metadata['type'] === 'continuous') {
+
+        if (step['type'] === 'aggregate') {
+            return {
+                id: String(step.id) + '-' + String(step.nodeId++) + measureId,
+                name: 'Continuous (' + preferences['measure'] + ' bins) ' + metadata['columns'][0], // what jqtree shows
+                subset: 'continuous',
+                cancellable: true,
+                measure: preferences['measure'],
+                column: metadata['columns'][0]
+            }
+        }
+
+        // If the dates have not been modified, force bring the date from the slider
+        if (preferences['userLower'] - preferences['minLabel'] === 0 && preferences['userUpper'] - preferences['maxLabel'] === 0) {
+            if (preferences['userLower'] - preferences['handleLower'] === 0 &&
+                preferences['userUpper'] - preferences['handleUpper'] === 0) {
+                return {};
+            }
+
+            preferences['userLower'] = preferences['handleLower'];
+            preferences['userUpper'] = preferences['handleUpper'];
+        }
+
+        return {
+            id: String(step.id) + '-' + String(step.nodeId++) + measureId,
+            name: name,
+            type: 'rule',
+            subset: metadata['type'],
+            column: metadata['columns'][0],
+            children: [
+                {
+                    id: String(step.id) + '-' + String(step.nodeId++) + measureId,
+                    name: 'From: ' + preferences['userLower'],
+                    fromLabel: preferences['userLower'],
+                    cancellable: false,
+                    show_op: false
+                },
+                {
+                    id: String(step.id) + '-' + String(step.nodeId++) + measureId,
+                    name: 'To:   ' + preferences['userUpper'],
+                    toDate: preferences['userUpper'],
+                    cancellable: false,
+                    show_op: false
+                }
+            ],
+            operation: 'and'
+        };
+    }
+
     if (metadata['type'] === 'date') {
 
         if (step['type'] === 'aggregate') {

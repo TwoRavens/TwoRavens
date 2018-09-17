@@ -8,8 +8,11 @@ export default class CanvasCategorical {
     view(vnode) {
         let {mode, data, metadata, preferences, formats, alignments} = vnode.attrs;
 
+        console.log(data);
+        console.log(metadata);
+        console.log(preferences);
         let masterColumn = metadata['columns'][0];
-        let format = (formats || {})[masterColumn];
+        let format = (formats || {})[masterColumn] || masterColumn;
         let alignment = (alignments || {})[masterColumn];
 
         let allData = {};
@@ -51,11 +54,19 @@ export default class CanvasCategorical {
         } else if (format) {
             allData[format] = {};
             allSelected[format] = {};
-            Object.keys(app.formattingData[format]).forEach(key => {
+            if (format in app.formattingData) Object.keys(app.formattingData[format]).forEach(key => {
                 allSelected[format][key] = [preferences['selections'].has(key)];
-                allData[format][key] = flattenedData[key] || 0
+                allData[format][key] = flattenedData[key] || 0;
+            });
+
+            else data.forEach(point => {
+                allSelected[format][point[format]] = [preferences['selections'].has(point[format])];
+                allData[format][point[format]] = flattenedData[point[format]] || 0;
             })
+
         }
+        console.log("alldata");
+        console.log(allData);
 
         // change the size of the graph based on the number of available plots
         let getShape = (format) => {
@@ -86,8 +97,8 @@ export default class CanvasCategorical {
 
             let plotData = keepKeys
                 .map((key) => {
-                    let title = app.formattingData[format][key];
-                    if (Array.isArray(app.formattingData[format][key])) title = title[0];
+                    let title = (app.formattingData[format] || {})[key];
+                    if (Array.isArray(title)) title = title[0];
                     else if (title !== undefined && typeof title === 'object') title = title['name'];
 
                     return {

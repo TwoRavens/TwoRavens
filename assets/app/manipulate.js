@@ -1,15 +1,13 @@
 import m from 'mithril';
 import {TreeAggregate, TreeQuery, TreeTransform} from '../EventData/app/views/TreeSubset';
 import Button from '../common/app/views/Button';
-import CanvasDate from '../EventData/app/canvases/CanvasDate';
-import CanvasDyad from '../EventData/app/canvases/CanvasDyad';
+import CanvasContinuous from '../EventData/app/canvases/CanvasContinuous';
 import CanvasCategorical from '../EventData/app/canvases/CanvasCategorical';
-import CanvasCategoricalGrouped from '../EventData/app/canvases/CanvasCategoricalGrouped';
-import CanvasCoordinates from '../EventData/app/canvases/CanvasCoordinates';
 import CanvasTransform from '../EventData/app/canvases/CanvasTransform';
 import Flowchart from './views/Flowchart';
 
 import * as subset from "../EventData/app/app";
+import {eventdataURL} from "../EventData/app/app";
 import * as app from './app';
 import * as common from '../common/app/common';
 import * as queryAbstract from '../EventData/app/queryAbstract';
@@ -184,18 +182,17 @@ class PipelineFlowchart {
 }
 
 export function subsetCanvas() {
-    if (!constraintMenu) return;
 
-    if (constraintData === undefined) {
-        return m('#loading.loader', {
-            style: {
-                margin: 'auto',
-                position: 'relative',
-                top: '40%',
-                transform: 'translateY(-50%)'
-            }
-        })
-    }
+    if (isLoading) m('#loading.loader', {
+        style: {
+            margin: 'auto',
+            position: 'relative',
+            top: '40%',
+            transform: 'translateY(-50%)'
+        }
+    });
+
+    if (!constraintMenu || !constraintData || !constraintMetadata) return;
 
     if (constraintMenu.type === 'transform') return m(CanvasTransform, {
         preferences: constraintPreferences,
@@ -206,11 +203,8 @@ export function subsetCanvas() {
     });
 
     return m({
-        'date': CanvasDate,
-        'dyad': CanvasDyad,
-        'categorical': CanvasCategorical,
-        'categorical_grouped': CanvasCategoricalGrouped,
-        'coordinates': CanvasCoordinates
+        'continuous': CanvasContinuous,
+        'discrete': CanvasCategorical
     }[constraintMetadata.type], {
         mode: {
             'subset': 'subset',
@@ -241,13 +235,19 @@ export let constraintMenu;
 // };
 export let setConstraintMenu = (menu) => {
     constraintMenu = menu;
-    if (Object.keys(constraintMetadata).length !== 0) loadMenuManipulations();
+    constraintMetadata = constraintMetadata || {};
+    if (!constraintMetadata.columns) {
+        let variable = app.allNodes[0];
+        constraintMetadata.columns = [variable.name];
+        constraintMetadata.type = variable.interval;
+    }
+    if (constraintMetadata && Object.keys(constraintMetadata).length !== 0) loadMenuManipulations();
 };
 
 export let constraintMetadata = {};
 // let constraintMetadataExample = {
 //     // may contain additional keys like 'group_by' or 'structure'
-//     type: 'categorical' || 'date' || 'continuous',
+//     type: 'continuous' || 'discrete',
 //     columns: ['column_1', 'column_2']
 // };
 
@@ -265,22 +265,105 @@ export let setConstraintStep = step => {
 };
 
 export let setSelectedVariable = column => {
-    if (constraintMetadata.columns[0] === column) return;
+    if ('columns' in constraintMetadata && constraintMetadata.columns[0] === column) return;
     constraintMetadata.columns = [column];
     loadMenuManipulations();
 };
 
+
+export let getData = async body => m.request({
+    url: eventdataURL + 'get-manipulations',
+    method: 'POST',
+    data: body
+}).then(response => {
+    if (!response.success) throw response;
+    return response.data;
+});
+
+// download data to display a menu
+export let loadMenu = async (abstractPipeline, menu, {recount, requireMatch}={}) => { // the dict is for optional named arguments
+
+    console.log(abstractPipeline);
+    console.log(menu);
+
+    // convert the pipeline to a mongo query. Note that passing menu extends the pipeline to collect menu data
+    let compiled = JSON.stringify(queryMongo.buildPipeline([...abstractPipeline, menu])['pipeline']);
+
+    console.log("Menu Query:");
+    console.log(compiled);
+
+    let promises = [];
+
+    // collection/dataset name
+    let dataset = app.domainIdentifier.name;
+    // location of the dataset csv
+    let datafile = app.zparams.zd3mdata;
+
+    // record count request
+    if (recount || subset.totalSubsetRecords === undefined) {
+        let countMenu = {type: 'menu', metadata: {type: 'count'}};
+        let compiled = JSON.stringify(queryMongo.buildPipeline([...abstractPipeline, countMenu])['pipeline']);
+
+        console.log("Count Query:");
+        console.log(compiled);
+
+        promises.push(getData({
+            datafile: datafile,
+            collection_name: dataset,
+            method: 'aggregate',
+            query: compiled
+        }).then(response => {
+            // intentionally breaks the entire downloading promise array and subsequent promise chain
+            if (!response.length && requireMatch) throw 'no records matched';
+            subset.setTotalSubsetRecords(response[0].total);
+        }));
+    }
+
+    let data;
+    promises.push(getData({
+        datafile: datafile,
+        collection_name: dataset,
+        method: 'aggregate',
+        query: compiled
+    })
+        .then(menu.type === 'menu' ? queryMongo.menuPostProcess[menu.metadata.type] : _=>_)
+        .then(response => data = response));
+
+    let success = true;
+    let onError = err => {
+        if (err === 'no records matched') alert("No records match your subset. Plots will not be updated.");
+        else console.error(err);
+        success = false;
+    };
+
+    // wait until all requests have resolved
+    await Promise.all(promises).catch(onError);
+
+    if (success && data) {
+        console.log("Server returned:");
+        console.log(data);
+        return data;
+    }
+};
+
+
 // manipulations mode is for global dataset edits
 let loadMenuManipulations = async () => {
+    // make sure basic properties are present
+    if (!constraintMetadata || !['type', 'columns'].every(attr => attr in constraintMetadata)) return;
     isLoading = true;
+
     let newMenu = {
         type: 'menu',
         metadata: constraintMetadata,
         preferences: constraintPreferences
     };
-    constraintData = await subset.loadMenu(subset.abstractManipulations, newMenu);
+    console.log(subset.abstractManipulations);
+
+    constraintData = await loadMenu(subset.abstractManipulations, newMenu);
     isLoading = false;
     redraw = true;
+    m.redraw();
 };
 
 // in model mode, there are different pipelines for each problem
@@ -291,7 +374,7 @@ let loadMenuD3M = async () => {
         metadata: constraintMetadata,
         preferences: constraintPreferences
     };
-    constraintData = await subset.loadMenu(problemManipulations[app.selectedProblem], newMenu);
+    constraintData = await loadMenu(problemManipulations[app.selectedProblem], newMenu);
     isLoading = false;
     redraw = true;
 };
@@ -301,8 +384,6 @@ export let constraintPreferences = {};
 
 // contains the raw data used to draw the constraint menu
 export let constraintData;
-
-export let constraintTypes = ['Nominal', 'Continuous', 'Date', 'Coordinates', 'Monad', 'Dyad'];
 
 // every problem gets its own pipeline, each value is structured like an abstractManipulations list
 export let problemManipulations = {};

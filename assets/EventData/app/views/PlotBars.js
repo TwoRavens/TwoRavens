@@ -2,6 +2,8 @@ import m from 'mithril';
 import * as d3 from "d3";
 import * as common from '../../../common-eventdata/common';
 
+import '../../css/plotBars.css';
+
 // m(PlotBars, {
 //     data: [..., { "key": "A", "value": 23, "class": "bar" }],
 //     orientation: "horizontal" or "vertical",

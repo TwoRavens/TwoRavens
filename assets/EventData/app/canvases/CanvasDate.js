@@ -8,7 +8,7 @@ import '../../../../node_modules/jquery-ui-dist/jquery-ui.theme.min.css'
 
 import {panelMargin} from "../../../common-eventdata/common";
 import ButtonRadio from '../../../common-eventdata/views/ButtonRadio';
-import PlotDate from '../views/PlotDate';
+import PlotContinuous from '../views/PlotContinuous';
 import * as app from '../app';
 
 
@@ -251,7 +251,7 @@ export default class CanvasDate {
                         "display": "inline-block"
                     }
                 },
-                drawGraph && m(PlotDate, {
+                drawGraph && m(PlotContinuous, {
                     id: 'dateSVG',
                     data: dataProcessed,
                     handles: [preferences['handleLower'], preferences['handleUpper']],

@@ -44,10 +44,10 @@ preprocess.app <- function(env){
 	if(!warning){
 		mydataloc <- preprocessParams$data
 
-    if(length(mydataloc) == 0){ # rewrite to check for data file?
-			warning <- TRUE
-			result<-list(warning="No data location.")
-		}
+        if(length(mydataloc) == 0){ # rewrite to check for data file?
+                warning <- TRUE
+                result<-list(warning="No data location.")
+        }
 	}
 
     if(!warning){

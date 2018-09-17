@@ -204,6 +204,7 @@ export let setSelectedResult = (result) => {
 
 // number of records matched by the staged subset
 export let totalSubsetRecords;
+export let setTotalSubsetRecords = count => totalSubsetRecords = count;
 
 export let laddaSpinners = {};
 export let setLaddaSpinner = (id, state) => {
@@ -635,3 +636,7 @@ export function dateSort(a, b) {
         return (a['Date'] < b['Date']) ? -1 : 1;
     }
 }
+
+export let anySort = (a, b) => typeof a['Label'] === 'number'
+    ? a['Label'] - b['Label']
+    : a['Label'].localeCompare(b['Label']);

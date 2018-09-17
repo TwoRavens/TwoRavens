@@ -63,28 +63,6 @@ main#EventData .graph-config {
 main#EventData .item-bordered {
     border: solid #000000;
 }
-/* bar plot */
-main#EventData .bar {
-    fill: steelblue;
-    cursor: pointer;
-}
-main#EventData .bar:hover {
-    stroke: #000000;
-}
-main#EventData .bar-selected {
-    fill: #419641;
-    cursor: pointer;
-}
-main#EventData .bar-selected:hover {
-    stroke: #000000;
-}
-main#EventData .bar-some {
-    fill: url(#plotBarsStripes);
-    cursor: pointer;
-}
-main#EventData .bar-some:hover {
-    stroke: #000000;
-}
 main#EventData .required-form {
     border-color: #dc3545;
 }
