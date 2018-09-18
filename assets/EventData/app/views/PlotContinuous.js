@@ -48,8 +48,14 @@ export default class PlotContinuous {
 
         // The  range needs to be transformed to image width. Range defined here, domain defined below
         // Range of X:
-        let x = d3.scaleTime().range([0, width]).domain([min, max]);
-        let x2 = d3.scaleTime().range([0, width]).domain(x.domain());
+        let x, x2;
+        if (typeof min === 'object') {
+            x = d3.scaleTime().range([0, width]).domain([min, max]);
+            x2 = d3.scaleTime().range([0, width]).domain(x.domain());
+        } else {
+            x = d3.scaleLinear().range([0, width]).domain([min, max]);
+            x2 = d3.scaleLinear().range([0, width]).domain(x.domain());
+        }
         let y = d3.scaleLinear().range([height, 0]).domain([0, freqmax]);
         let y2 = d3.scaleLinear().range([height2, 0]).domain(y.domain());
 
@@ -121,7 +127,7 @@ export default class PlotContinuous {
                 .scale(width / (s[1] - s[0]))
                 .translate(-s[0], 0));
 
-            callbackHandles(s.map(x2.invert).map(x => new (x.getTime())));
+            callbackHandles(s.map(x2.invert));
         }
 
         function zoomed() {

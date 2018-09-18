@@ -84,17 +84,6 @@ export default class CanvasTransform {
             preferences.transformEquation && m('div', {style: {width: '100%'}},
                 transformQuery || warn(transformError)), m('br'),
 
-            m(Button, {
-                id: 'btnAddTransform',
-                disabled: !preferences.transformName || preferences.transformName.match(/[ -]/) || !transformQuery,
-                onclick: () => {
-                    step.transforms.push({
-                        name: preferences.transformName,
-                        equation: preferences.transformEquation
-                    });
-                }
-            }, 'Add Transform'), m('br'),
-
             m('div', {style},
                 m('h4', {'margin-top': 0}, 'Variables'),
                 m(PanelList, {

@@ -74,8 +74,8 @@ export class TreeTransform {
         subsetTree.tree('setState', state);
     }
 
-    view() {
-        return m('div#transformTree')
+    view({attrs}) {
+        return m('div#transformTree' + attrs.id)
     }
 }
 

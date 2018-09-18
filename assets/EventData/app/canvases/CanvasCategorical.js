@@ -8,9 +8,6 @@ export default class CanvasCategorical {
     view(vnode) {
         let {mode, data, metadata, preferences, formats, alignments} = vnode.attrs;
 
-        console.log(data);
-        console.log(metadata);
-        console.log(preferences);
         let masterColumn = metadata['columns'][0];
         let format = (formats || {})[masterColumn] || masterColumn;
         let alignment = (alignments || {})[masterColumn];
@@ -63,10 +60,7 @@ export default class CanvasCategorical {
                 allSelected[format][point[format]] = [preferences['selections'].has(point[format])];
                 allData[format][point[format]] = flattenedData[point[format]] || 0;
             })
-
         }
-        console.log("alldata");
-        console.log(allData);
 
         // change the size of the graph based on the number of available plots
         let getShape = (format) => {

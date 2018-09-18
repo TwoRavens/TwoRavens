@@ -15,7 +15,7 @@ import * as app from '../app';
 export function interpolate(data, date) {
     let allDatesInt = [];
     for (let entry of data) {
-        allDatesInt.push(entry['Date'])
+        allDatesInt.push(entry['Label'])
     }
 
     let lower = allDatesInt[0];
@@ -34,11 +34,11 @@ export function interpolate(data, date) {
     let upperFreq = data[data.length - 1]['Freq'];
 
     for (let candidate of data) {
-        if (candidate['Date'] === lower) lowerFreq = candidate['Freq'];
-        if (candidate['Date'] === upper) upperFreq = candidate['Freq'];
+        if (candidate['Label'] === lower) lowerFreq = candidate['Freq'];
+        if (candidate['Label'] === upper) upperFreq = candidate['Freq'];
     }
 
-    let interval_lower = upper.getTime() - lower.getTime();
+    let interval_lower = date.getTime() - lower.getTime();
     let timespan = upper.getTime() - lower.getTime();
 
     let weight = interval_lower / timespan;
@@ -48,8 +48,8 @@ export function interpolate(data, date) {
 export default class CanvasDate {
     oncreate(vnode) {
         let {data, preferences, setRedraw} = vnode.attrs;
-        let minDate = data[0]['Date'];
-        let maxDate = data[data.length - 1]['Date'];
+        let minDate = data[0]['Label'];
+        let maxDate = data[data.length - 1]['Label'];
 
         $(`#fromDate`).datepicker({
             dateFormat: 'yy-mm-dd',
@@ -107,6 +107,8 @@ export default class CanvasDate {
         preferences['measure'] = preferences['measure'] || 'Monthly';
 
         let setHandleDates = (handles) => {
+            handles = handles.map(x => new Date(x));
+
             preferences['handleLower'] = handles[0];
             preferences['handleUpper'] = handles[1];
         };
@@ -116,16 +118,16 @@ export default class CanvasDate {
         let dataProcessed;
         if (redraw && drawGraph) {
             setRedraw(false);
-            let allDates = [...data.sort(app.dateSort)];
+            let allDates = [...data.sort(app.comparableSort)];
 
-            preferences['userLower'] = preferences['userLower'] || data[0]['Date'];
-            preferences['userUpper'] = preferences['userUpper'] || data[data.length - 1]['Date'];
+            preferences['userLower'] = preferences['userLower'] || data[0]['Label'];
+            preferences['userUpper'] = preferences['userUpper'] || data[data.length - 1]['Label'];
 
-            preferences['handleLower'] = preferences['handleLower'] || data[0]['Date'];
-            preferences['handleUpper'] = preferences['handleUpper'] || data[data.length - 1]['Date'];
+            preferences['handleLower'] = preferences['handleLower'] || data[0]['Label'];
+            preferences['handleUpper'] = preferences['handleUpper'] || data[data.length - 1]['Label'];
 
-            preferences['minDate'] = data[0]['Date'];
-            preferences['maxDate'] = data[data.length - 1]['Date'];
+            preferences['minDate'] = data[0]['Label'];
+            preferences['maxDate'] = data[data.length - 1]['Label'];
 
             // make sure the handles are valid when switching datasets
             if (preferences['userLower'] < preferences['minDate']) {
@@ -150,7 +152,7 @@ export default class CanvasDate {
                 return row.Date >= preferences['userLower'] && row.Date <= preferences['userUpper'];
             });
 
-            if (preferences['userLower'] !== data[0]['Date']) {
+            if (preferences['userLower'] !== data[0]['Label']) {
                 let interpolatedMin = {
                     "Date": preferences['userLower'],
                     "Freq": interpolate(allDates, preferences['userLower'])
@@ -160,7 +162,7 @@ export default class CanvasDate {
                 allDates.push(interpolatedMin);
             }
 
-            if (preferences['userUpper'] !== data[data.length - 1]['Date']) {
+            if (preferences['userUpper'] !== data[data.length - 1]['Label']) {
                 let interpolatedMax = {
                     "Date": preferences['userUpper'],
                     "Freq": interpolate(allDates, preferences['userUpper'])
@@ -169,7 +171,7 @@ export default class CanvasDate {
                 allDates.push(interpolatedMax);
             }
 
-            allDates = allDates.sort(app.dateSort);
+            allDates = allDates.sort(app.comparableSort);
 
             dataProcessed = {
                 "#ADADAD": allDates,

@@ -130,7 +130,7 @@ function leftpanel(mode) {
                      },
                      classes: {'item-bordered': app.matchedVariables},
                      callback: x => app.is_manipulate_mode
-                         ? manipulate.setSelectedVariable(x)
+                         ? manipulate.setConstraintColumn(x)
                          : app.clickVar(x, nodes),
                      popup: variable => app.popoverContent(app.findNodeIndex(variable, true)),
                      attrsItems: {'data-placement': 'right', 'data-original-title': 'Summary Statistics'}}),

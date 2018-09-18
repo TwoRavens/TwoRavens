@@ -18,7 +18,7 @@ main#EventData .loader {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
 }
-main#EventData .zoom {
+.zoom {
     cursor: move;
     fill: none;
     pointer-events: all;

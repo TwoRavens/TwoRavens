@@ -31,10 +31,10 @@ export default class PlotBars {
         let height = bound.height - margin.top - margin.bottom;
 
         let x = d3.scaleBand()
-            .rangeRound([0, horizontal ? width : height])
+            .range([0, horizontal ? width : height])
             .padding(0.1).domain(data.map(d => d.key));
         let y = d3.scaleLinear()
-            .rangeRound(horizontal ? [height, 0] : [0, width])
+            .range(horizontal ? [height, 0] : [0, width])
             .domain([0, d3.max(data, d => d.value)]);
 
         // tooltip

@@ -628,15 +628,14 @@ export let isSameMonth = (a, b) => a.getFullYear() === b.getFullYear() && a.getM
 // positive ints only
 export let pad = (number, length) => '0'.repeat(length - String(number).length) + number;
 
-export function dateSort(a, b) {
-    if (a['Date'] === b['Date']) {
-        return 0;
-    }
-    else {
-        return (a['Date'] < b['Date']) ? -1 : 1;
-    }
-}
+export let anySort = (a, b) => {
+    if (a === undefined || b === undefined) return 0;
+    if (typeof a['Label'] === 'number') return a['Label'] - b['Label'];
+    if (typeof a['Label'] === 'string') a['Label'].localeCompare(b['Label']);
+    return comparableSort(a, b);
+};
 
-export let anySort = (a, b) => typeof a['Label'] === 'number'
-    ? a['Label'] - b['Label']
-    : a['Label'].localeCompare(b['Label']);
+export function comparableSort(a, b) {
+    if (a['Label'] === b['Label']) return 0;
+    return (a['Label'] < b['Label']) ? -1 : 1;
+}

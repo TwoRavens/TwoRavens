@@ -4,6 +4,7 @@ import json
 import pandas as pd
 from django.conf import settings
 from collections import OrderedDict
+from dateutil import parser
 
 from django.http import HttpResponse, JsonResponse
 from tworaven_apps.utils.view_helper import \
@@ -491,6 +492,26 @@ class EventJobUtil(object):
     def import_dataset(database, collection, datafile, reload=False):
         """upload dataset to mongo"""
 
+        def type_infer(value):
+            if value.lower() in ['', 'nan', 'null', 'na']:
+                return None
+            try:
+                return int(value)
+            except ValueError:
+                pass
+
+            try:
+                return float(value)
+            except ValueError:
+                pass
+
+            try:
+                return parser.parse(value)
+            except ValueError:
+                pass
+
+            return value
+
         retrieve_util = MongoRetrieveUtil(database, collection)
         db = retrieve_util.get_mongo_client()[database]
 
@@ -501,18 +522,16 @@ class EventJobUtil(object):
             else:
                 return ok_resp(settings.PREFIX + collection)
 
-        if not os.path.exists(settings.BASE_DIR, 'ravens_volume', 'test_data', collection):
+        if not os.path.exists(datafile):
             return err_resp(collection + ' not found')
 
-        for partition in DATA_PARTITIONS:
-            with open(os.path.join(settings.BASE_DIR, 'ravens_volume', 'test_data', collection, partition, 'dataset_' + partition, 'tables', 'learningData.csv'), 'r') as csv_file:
-                csv_reader = csv.reader(csv_file, delimiter=',')
-                columns = next(csv_reader)
-                for observation in csv_reader:
-                    db[settings.PREFIX + collection].insert_one({
-                        **{col: val for col, val in zip(columns, observation)},
-                        **{"TwoRavens_partition": partition}
-                    })
+        with open(datafile, 'r') as csv_file:
+            csv_reader = csv.reader(csv_file, delimiter=',')
+            columns = next(csv_reader)
+            for observation in csv_reader:
+                db[settings.PREFIX + collection].insert_one({
+                    col: type_infer(val) for col, val in zip(columns, observation)
+                })
 
         return ok_resp({'collection': settings.PREFIX + collection})
 

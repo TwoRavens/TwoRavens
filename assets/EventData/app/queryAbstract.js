@@ -218,12 +218,18 @@ export function addConstraint(step, name, preferences, metadata) {
 
     common.setPanelOpen('right');
 
+    if (step.type === 'transform') {
+        step.transforms.push(abstractBranch);
+
+        m.redraw();
+        let transformTree = $('#transformTree' + step.)
+    }
+
     if (step.type === 'subset') {
 
         // Don't show the boolean operator on the first element
-        if (step.abstractQuery.length === 0) {
+        if (step.abstractQuery.length === 0)
             abstractBranch['show_op'] = false;
-        }
 
         step.abstractQuery.push(abstractBranch);
 

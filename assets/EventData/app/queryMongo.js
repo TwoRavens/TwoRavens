@@ -674,16 +674,25 @@ export function buildMenu(step) {
         {$project: {[metadata.columns[0]]: '$_id.' + metadata.columns[0], _id: 0, total: 1}}
     ];
 
-    if (metadata.type === 'continuous') return [
-        {
-            $bucketAuto: {
-                groupBy: '$' + metadata.columns[0],
-                buckets: 100
-            }
-        },
-        {$project: {_id: 0, bin: '$_id.min', count: 1}},
-        {$sort: {bin: 1}}
-    ];
+    if (metadata.type === 'continuous') {
+        let boundaries = Array(metadata.buckets + 1).fill(0).map((arr, i) => metadata.min + i * (metadata.max - metadata.min) / metadata.buckets);
+        boundaries[boundaries.length - 1] += 1; // the upper bound is exclusive
+        return [
+            {
+                $bucket: {
+                    boundaries,
+                    groupBy: '$' + metadata.columns[0],
+                    default: 'ignore',
+                    output: {
+                        Freq: {$sum: 1}
+                    }
+                }
+            },
+            {$match: {_id: {$ne: 'ignore'}}},
+            {$project: {_id: 0, Label: {$add: ['$_id', (metadata.max - metadata.min) / metadata.buckets / 2]}, Freq: 1}},
+            {$sort: {Label: 1}}
+        ];
+    }
 
     if (metadata.type === 'peek') return [
         {
@@ -717,7 +726,7 @@ export let menuPostProcess = new Proxy({
 
     'date': (data) => data
         .map(entry => ({'Label': new Date(entry['year'], entry['month'] - 1, 0), 'Freq': entry.total}))
-        .sort(app.dateSort)
+        .sort(app.comparableSort)
         .reduce((out, entry) => {
             if (out.length === 0) return [entry];
             let tempDate = app.incrementMonth(out[out.length - 1]['Label']);
@@ -728,6 +737,5 @@ export let menuPostProcess = new Proxy({
             }
             out.push(entry);
             return (out);
-        }, []),
-
+        }, [])
 }, defaultValue(data => data));

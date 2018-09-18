@@ -236,12 +236,11 @@ export let constraintMenu;
 export let setConstraintMenu = (menu) => {
     constraintMenu = menu;
     constraintMetadata = constraintMetadata || {};
-    if (!constraintMetadata.columns) {
-        let variable = app.allNodes[0];
-        constraintMetadata.columns = [variable.name];
-        constraintMetadata.type = variable.interval;
-    }
-    if (constraintMetadata && Object.keys(constraintMetadata).length !== 0) loadMenuManipulations();
+    if (!constraintMetadata.columns)
+        setConstraintColumn(app.allNodes[0].name, {suppress: true});
+
+    if (constraintMenu.type !== 'transform' && constraintMetadata && Object.keys(constraintMetadata).length !== 0)
+        loadMenuManipulations();
 };
 
 export let constraintMetadata = {};
@@ -249,27 +248,42 @@ export let constraintMetadata = {};
 //     // may contain additional keys like 'group_by' or 'structure'
 //     type: 'continuous' || 'discrete',
 //     columns: ['column_1', 'column_2']
-// };
+// }
 
-
-export let setConstraintType = type => {
-    if (constraintMetadata.type === type) return;
-    constraintMetadata.type = type;
-    loadMenuManipulations();
-};
-
-export let setConstraintStep = step => {
-    if (constraintMetadata.type === step) return;
-    constraintMetadata.type = step;
-    loadMenuManipulations();
-};
-
-export let setSelectedVariable = column => {
-    if ('columns' in constraintMetadata && constraintMetadata.columns[0] === column) return;
+export let setConstraintColumn = (column, {suppress}={}) => {
+    if ('columns' in constraintMetadata && constraintMetadata.columns[0] === column) suppress = true;
     constraintMetadata.columns = [column];
-    loadMenuManipulations();
+
+    let node = app.findNodeIndex(constraintMetadata.columns[0], true);
+    let type = node.nature === 'nominal' ? 'discrete' : 'continuous';
+    setConstraintType(type, {suppress: true});
+
+    constraintPreferences = {};
+    constraintData = undefined;
+    if (!suppress) loadMenuManipulations();
 };
 
+export let setConstraintType = (type, {suppress}={}) => {
+    if (constraintMetadata.type === type) suppress = true;
+    constraintMetadata.type = type;
+
+    if (constraintMetadata.type === 'continuous') {
+        let node = app.findNodeIndex(constraintMetadata.columns[0], true);
+        console.log('node');
+        console.log(node);
+        constraintMetadata.max = parseFloat(node.max);
+        constraintMetadata.min = parseFloat(node.min);
+        constraintMetadata.buckets = 100;
+
+        if (isNaN(constraintMetadata.max)) {
+            alert(`A density plot cannot be drawn for the discrete variable ${column}.`);
+            constraintMetadata.type = 'discrete';
+        }
+    }
+    constraintPreferences = {};
+    constraintData = undefined;
+    if (!suppress) loadMenuManipulations();
+};
 
 export let getData = async body => m.request({
     url: eventdataURL + 'get-manipulations',

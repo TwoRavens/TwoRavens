@@ -32,8 +32,8 @@ export function interpolate(data, label) {
         if (candidate['Label'] === upper) upperFreq = candidate['Freq'];
     }
 
-    let interval_lower = upper.getTime() - lower.getTime();
-    let timespan = upper.getTime() - lower.getTime();
+    let interval_lower = label - lower;
+    let timespan = upper - lower;
 
     let weight = interval_lower / timespan;
     return (1 - weight) * lowerFreq + weight * upperFreq;
@@ -42,7 +42,7 @@ export function interpolate(data, label) {
 export default class CanvasContinuous {
 
     view(vnode) {
-        let {mode, data, preferences, redraw, setRedraw} = vnode.attrs;
+        let {mode, data, metadata, preferences, redraw, setRedraw} = vnode.attrs;
 
         preferences['measure'] = preferences['measure'] || 'Monthly';
 
@@ -56,6 +56,10 @@ export default class CanvasContinuous {
         let dataProcessed;
         if (redraw && drawGraph) {
             setRedraw(false);
+
+            data.unshift({Freq: data[0].Freq, Label: metadata.min});
+            data.push({Freq: data[data.length - 1].Freq, Label: metadata.max});
+
             let allLabels = [...data.sort(app.anySort)];
 
             preferences['userLower'] = preferences['userLower'] || data[0]['Label'];
