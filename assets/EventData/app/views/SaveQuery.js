@@ -10,6 +10,8 @@ import ButtonRadio from '../../../common-eventdata/views/ButtonRadio';
 export default class SaveQuery {
     oninit(vnode) {
 
+        let {pipeline, preferences} = vnode.attrs;
+
         let query;
         if (app.selectedMode === 'subset') {
             let projectStep = {
@@ -21,13 +23,12 @@ export default class SaveQuery {
                         : [...app.selectedVariables, ...app.selectedConstructedVariables]
                 }
             };
-            query = queryMongo.buildPipeline([...app.abstractManipulations, projectStep])['pipeline'];
+            query = queryMongo.buildPipeline([...pipeline, projectStep])['pipeline'];
         }
 
         if (app.selectedMode === 'aggregate')
-            query = queryMongo.buildPipeline([...app.abstractManipulations, app.eventdataAggregateStep])['pipeline'];
+            query = queryMongo.buildPipeline([...pipeline, app.looseSteps['eventdataAggregate']])['pipeline'];
 
-        let {preferences} = vnode.attrs;
         // set the static preferences upon initialization
         Object.assign(preferences, {
             'query': query,
@@ -85,7 +86,7 @@ export default class SaveQuery {
                 preferences['result_count'] === 0 && warn('The query does not match any data.')]),
             'Query': format([
                 JSON.stringify(preferences['query']),
-                app.pendingSubset.abstractQuery.length !== 0 && warn('Take note that subsets that are not grouped under a query are not included. Click update in the query summary to group them under a query.')])
+                app.looseSteps['pendingSubset'].abstractQuery.length !== 0 && warn('Take note that subsets that are not grouped under a query are not included. Click update in the query summary to group them under a query.')])
         };
 
         let invalids = {

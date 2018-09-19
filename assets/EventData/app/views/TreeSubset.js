@@ -38,9 +38,9 @@ export class TreeVariables {
 }
 
 export class TreeTransform {
-    convertToJQTreeFormat(step) {
+    convertToJQTreeFormat(pipelineId, step) {
         return step.transforms.map(transform => ({
-            id: step.id + '-' + transform.name,
+            id: pipelineId + '-' + step.id + '-' + transform.name,
             name: transform.name + ' = ' + transform.equation,
             cancellable: true,
             show_op: false
@@ -49,10 +49,10 @@ export class TreeTransform {
 
     oncreate({attrs, dom}) {
         let transformTree = $(dom);
-        let {step} = attrs;
+        let {pipelineId, step} = attrs;
 
         transformTree.tree({
-            data: this.convertToJQTreeFormat(step),
+            data: this.convertToJQTreeFormat(pipelineId, step),
             saveState: true,
             dragAndDrop: false,
             autoOpen: false,
@@ -67,15 +67,15 @@ export class TreeTransform {
 
     // when mithril updates this component, it redraws the tree with whatever the abstract query is
     onupdate({attrs, dom}) {
-        let {step} = attrs;
+        let {pipelineId, step} = attrs;
         let subsetTree = $(dom);
         let state = subsetTree.tree('getState');
-        subsetTree.tree('loadData', this.convertToJQTreeFormat(step));
+        subsetTree.tree('loadData', this.convertToJQTreeFormat(pipelineId, step));
         subsetTree.tree('setState', state);
     }
 
-    view({attrs}) {
-        return m('div#transformTree' + attrs.id)
+    view() {
+        return m('div#transformTree')
     }
 }
 
@@ -242,8 +242,9 @@ export class TreeQuery {
         else subsetTree.tree('setState', state);
     }
 
-    view(vnode) {
-        return m('div#subsetTree' + vnode.attrs.step.id)
+    view({attrs}) {
+        let {pipelineId, step} = attrs;
+        return m('div#subsetTree' + pipelineId + step.id)
     }
 }
 

@@ -7,7 +7,6 @@ import CanvasTransform from '../EventData/app/canvases/CanvasTransform';
 import Flowchart from './views/Flowchart';
 
 import * as subset from "../EventData/app/app";
-import {eventdataURL} from "../EventData/app/app";
 import * as app from './app';
 import * as common from '../common/app/common';
 import * as queryAbstract from '../EventData/app/queryAbstract';
@@ -16,12 +15,15 @@ import * as queryMongo from "../EventData/app/queryMongo";
 
 // looks funny, but this isolates the flowchart so that it can be embedded in model mode with different pipelines
 export function rightpanel() {
-    return m(PipelineFlowchart, {pipeline: subset.abstractManipulations})
+    return m(PipelineFlowchart, {pipelineId: app.domainIdentifier.name})
 }
 
 class PipelineFlowchart {
     view(vnode) {
-        let {pipeline} = vnode.attrs;
+        let {pipelineId} = vnode.attrs;
+
+        if (!(pipelineId in subset.manipulations)) subset.manipulations[pipelineId] = [];
+        let pipeline = subset.manipulations[pipelineId];
 
         let plus = m(`span.glyphicon.glyphicon-plus[style=color: #818181; font-size: 1em; pointer-events: none]`);
         let warn = (text) => m('[style=color:#dc3545;display:inline-block;]', text);
@@ -49,8 +51,8 @@ class PipelineFlowchart {
                             let removedStep = pipeline.pop();
                             if (constraintMenu && constraintMenu.step === removedStep) {
                                 constraintMenu = undefined;
-                                constraintMetadata = {};
-                                constraintPreferences = {};
+                                Object.keys(constraintMetadata).forEach(key => delete constraintMetadata[key]);
+                                Object.keys(constraintPreferences).forEach(key => delete constraintPreferences[key]);
                             }
                         },
                         style: {
@@ -67,7 +69,7 @@ class PipelineFlowchart {
                         content = m('div', {style: {'text-align': 'left'}},
                             deleteButton,
                             m('h4[style=font-size:16px;margin-left:0.5em]', 'Transformations'),
-                            m(TreeTransform, {step}),
+                            m(TreeTransform, {pipelineId, step}),
 
                             pipeline.length - 1 === i && m(Button, {
                                 id: 'btnAddTransform',
@@ -82,7 +84,7 @@ class PipelineFlowchart {
                         content = m('div', {style: {'text-align': 'left'}},
                             deleteButton,
                             m('h4[style=font-size:16px;margin-left:0.5em]', 'Subset'),
-                            m(TreeQuery, {step}),
+                            m(TreeQuery, {pipelineId, step}),
 
                             m(Button, {
                                 id: 'btnAddConstraint',
@@ -95,7 +97,7 @@ class PipelineFlowchart {
                                 class: ['btn-sm'],
                                 style: {margin: '0.5em'},
                                 disabled: step.abstractQuery.every(constraint => constraint.type !== 'subset'),
-                                onclick: () => queryAbstract.addGroup(step)
+                                onclick: () => queryAbstract.addGroup(pipelineId, step)
                             }, plus, ' Group')
                         )
                     }
@@ -107,11 +109,11 @@ class PipelineFlowchart {
 
                             step.measuresUnit.length !== 0 && [
                                 m('h5', 'Unit Measures'),
-                                m(TreeAggregate, {data: step.measuresUnit}),
+                                m(TreeAggregate, {id: pipelineId + step.id + 'unit', data: step.measuresUnit}),
                             ],
                             step.measuresAccum.length !== 0 && [
-                                m('h5', 'Unit Measures'),
-                                m(TreeAggregate, {data: step.measuresAccum}),
+                                m('h5', 'Accumulators'),
+                                m(TreeAggregate, {id: pipelineId + step.id + 'accumulator', data: step.measuresAccum}),
                             ],
 
                             !step.measuresAccum.length && [warn('must have accumulator to output data'), m('br')],
@@ -159,9 +161,9 @@ class PipelineFlowchart {
                     type: 'subset',
                     abstractQuery: [],
                     id: 'subset ' + pipeline.length,
-                    nodeID: 1,
-                    groupID: 1,
-                    queryID: 1
+                    nodeId: 1,
+                    groupId: 1,
+                    queryId: 1
                 })
             }, plus, ' Subset Step'),
             m(Button, {
@@ -181,7 +183,8 @@ class PipelineFlowchart {
     }
 }
 
-export function subsetCanvas() {
+export function manipulateCanvas(pipelineId) {
+    let pipeline = subset.manipulations[pipelineId];
 
     if (isLoading) m('#loading.loader', {
         style: {
@@ -192,15 +195,17 @@ export function subsetCanvas() {
         }
     });
 
-    if (!constraintMenu || !constraintData || !constraintMetadata) return;
+    if (!constraintMenu) return;
 
     if (constraintMenu.type === 'transform') return m(CanvasTransform, {
+        pipeline,
         preferences: constraintPreferences,
-        metadata: constraintMetadata,
         variables: [...queryMongo.buildPipeline(
-            subset.abstractManipulations.slice(subset.abstractManipulations.indexOf(constraintMenu.step)),
+            pipeline.slice(pipeline.indexOf(constraintMenu.step)),
             new Set(app.valueKey))['variables']]
     });
+
+    if (!constraintData || !constraintMetadata) return;
 
     return m({
         'continuous': CanvasContinuous,
@@ -211,6 +216,7 @@ export function subsetCanvas() {
             'unit measure': 'aggregate',
             'event measure': 'aggregate'
         }[constraintMenu.type],
+        pipeline,
         subsetName: constraintMenu.name,
         data: constraintData,
         preferences: constraintPreferences,
@@ -235,11 +241,12 @@ export let constraintMenu;
 // };
 export let setConstraintMenu = (menu) => {
     constraintMenu = menu;
-    constraintMetadata = constraintMetadata || {};
+    if (constraintMenu === undefined || constraintMenu.type === 'transform') return;
+
     if (!constraintMetadata.columns)
         setConstraintColumn(app.allNodes[0].name, {suppress: true});
 
-    if (constraintMenu.type !== 'transform' && constraintMetadata && Object.keys(constraintMetadata).length !== 0)
+    if (Object.keys(constraintMetadata).length !== 0)
         loadMenuManipulations();
 };
 
@@ -258,7 +265,7 @@ export let setConstraintColumn = (column, {suppress}={}) => {
     let type = node.nature === 'nominal' ? 'discrete' : 'continuous';
     setConstraintType(type, {suppress: true});
 
-    constraintPreferences = {};
+    Object.keys(constraintPreferences).forEach(key => delete constraintPreferences[key]);
     constraintData = undefined;
     if (!suppress) loadMenuManipulations();
 };
@@ -266,11 +273,8 @@ export let setConstraintColumn = (column, {suppress}={}) => {
 export let setConstraintType = (type, {suppress}={}) => {
     if (constraintMetadata.type === type) suppress = true;
     constraintMetadata.type = type;
-
     if (constraintMetadata.type === 'continuous') {
         let node = app.findNodeIndex(constraintMetadata.columns[0], true);
-        console.log('node');
-        console.log(node);
         constraintMetadata.max = parseFloat(node.max);
         constraintMetadata.min = parseFloat(node.min);
         constraintMetadata.buckets = 100;
@@ -280,13 +284,13 @@ export let setConstraintType = (type, {suppress}={}) => {
             constraintMetadata.type = 'discrete';
         }
     }
-    constraintPreferences = {};
+    Object.keys(constraintPreferences).forEach(key => delete constraintPreferences[key]);
     constraintData = undefined;
     if (!suppress) loadMenuManipulations();
 };
 
 export let getData = async body => m.request({
-    url: eventdataURL + 'get-manipulations',
+    url: subset.eventdataURL + 'get-manipulations',
     method: 'POST',
     data: body
 }).then(response => {
@@ -296,9 +300,6 @@ export let getData = async body => m.request({
 
 // download data to display a menu
 export let loadMenu = async (abstractPipeline, menu, {recount, requireMatch}={}) => { // the dict is for optional named arguments
-
-    console.log(abstractPipeline);
-    console.log(menu);
 
     // convert the pipeline to a mongo query. Note that passing menu extends the pipeline to collect menu data
     let compiled = JSON.stringify(queryMongo.buildPipeline([...abstractPipeline, menu])['pipeline']);
@@ -372,9 +373,8 @@ let loadMenuManipulations = async () => {
         metadata: constraintMetadata,
         preferences: constraintPreferences
     };
-    console.log(subset.abstractManipulations);
 
-    constraintData = await loadMenu(subset.abstractManipulations, newMenu);
+    constraintData = await loadMenu(subset.manipulations[app.domainIdentifier.name], newMenu);
     isLoading = false;
     redraw = true;
     m.redraw();
@@ -398,6 +398,3 @@ export let constraintPreferences = {};
 
 // contains the raw data used to draw the constraint menu
 export let constraintData;
-
-// every problem gets its own pipeline, each value is structured like an abstractManipulations list
-export let problemManipulations = {};

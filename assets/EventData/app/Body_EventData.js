@@ -35,6 +35,7 @@ import CanvasResults from "./canvases/CanvasResults";
 
 import SaveQuery from "./views/SaveQuery";
 import {TreeAggregate, TreeQuery, TreeVariables} from "./views/TreeSubset";
+import {eventdataSubsetCount} from "./app";
 
 export default class Body_EventData {
 
@@ -43,6 +44,25 @@ export default class Body_EventData {
             m.route.set('/home');
             vnode.attrs.mode = 'home';
         }
+
+        // all eventdata manipulations stored in one manipulations key
+        app.manipulations['eventdata'] = [];
+
+        app.looseSteps['pendingSubset'] = {
+            type: 'subset',
+            id: 0,
+            abstractQuery: [],
+            nodeId: 1,
+            groupId: 1
+        };
+
+        app.looseSteps['eventdataAggregate'] = {
+            type: 'aggregate',
+            id: 'eventdataAggregate',
+            measuresUnit: [],
+            measuresAccum: [],
+            nodeId: 1
+        };
 
         app.resetPeek();
 
@@ -186,9 +206,9 @@ export default class Body_EventData {
                         : 'must be logged in to save ' + app.selectedMode,
                     disabled: !isAuthenticated,
                     onclick: async () => {
-                        if ('subset' === app.selectedMode && app.abstractManipulations.length === 0)
+                        if ('subset' === app.selectedMode && app.manipulations.eventdata.length === 0)
                             tour.tourStartSaveQueryEmpty();
-                        else if ('aggregate' === app.selectedMode && !app.eventdataAggregateStep.measuresAccum.length)
+                        else if ('aggregate' === app.selectedMode && !app.looseSteps['eventdataAggregate'].measuresAccum.length)
                             tour.tourStartEventMeasure();
                         else {
                             if ('aggregate' === app.selectedMode && app.aggregationStaged) {
@@ -218,7 +238,7 @@ export default class Body_EventData {
                     },
                     onclick: async () => {
                         if ('subset' === app.selectedMode) {
-                            if (app.abstractManipulations.length === 0) {
+                            if (app.manipulations.eventdata.length === 0) {
                                 tour.tourStartSaveQueryEmpty();
                                 return;
                             }
@@ -231,18 +251,18 @@ export default class Body_EventData {
                                         : [...app.selectedVariables, ...app.selectedConstructedVariables]
                                 }
                             };
-                            let compiled = queryMongo.buildPipeline([...app.abstractManipulations, downloadStep])['pipeline'];
+                            let compiled = queryMongo.buildPipeline([...app.manipulations.eventdata, downloadStep])['pipeline'];
                             app.setLaddaSpinner('btnDownload', true);
                             await app.download(app.selectedDataset, JSON.stringify(compiled))
                                 .finally(() => app.setLaddaSpinner('btnDownload', false));
 
                         }
                         if ('aggregate' === app.selectedMode) {
-                            if (app.eventdataAggregateStep.measuresAccum.length === 0) {
+                            if (app.looseSteps['eventdataAggregate'].measuresAccum.length === 0) {
                                 tour.tourStartEventMeasure();
                                 return;
                             }
-                            let compiled = queryMongo.buildPipeline([...app.abstractManipulations, app.eventdataAggregateStep])['pipeline'];
+                            let compiled = queryMongo.buildPipeline([...app.manipulations.eventdata, app.looseSteps['eventdataAggregate']])['pipeline'];
                             app.setLaddaSpinner('btnDownload', true);
                             await app.download(app.selectedDataset, JSON.stringify(compiled))
                                 .finally(() => app.setLaddaSpinner('btnDownload', false));
@@ -498,12 +518,12 @@ export default class Body_EventData {
                 sections: [
                     {
                         value: 'Subsets',
-                        contents: (app.abstractManipulations.length + (app.selectedMode === 'subset' ? app.pendingSubset.abstractQuery.length : 0)) ? [
-                            ...app.abstractManipulations.map(step => m(TreeQuery, {isQuery: true, step})),
-                            m(TreeQuery, {step: app.pendingSubset})
+                        contents: (app.manipulations.eventdata.length + (app.selectedMode === 'subset' ? app.looseSteps['pendingSubset'].abstractQuery.length : 0)) ? [
+                            ...app.manipulations.eventdata.map(step => m(TreeQuery, {isQuery: true, step})),
+                            m(TreeQuery, {step: app.looseSteps['pendingSubset']})
                         ] : [
                             m('div[style=font-style:italic]', 'Match all records'),
-                            app.pendingSubset.abstractQuery.length !== 0 && m('div[style=font-style:italic]', 'Some pending constraints are hidden. Update from subset menu to apply them.')
+                            app.looseSteps['pendingSubset'].abstractQuery.length !== 0 && m('div[style=font-style:italic]', 'Some pending constraints are hidden. Update from subset menu to apply them.')
                         ]
                     },
                     app.selectedMode === 'subset' && {
@@ -514,14 +534,14 @@ export default class Body_EventData {
                     },
                     app.selectedMode === 'aggregate' && {
                         value: 'Unit Measures',
-                        contents: app.eventdataAggregateStep.measuresUnit.length
-                            ? m(TreeAggregate, {id: app.eventdataAggregateStep.id + 'unit', data: app.eventdataAggregateStep.measuresUnit})
+                        contents: app.looseSteps['eventdataAggregate'].measuresUnit.length
+                            ? m(TreeAggregate, {id: app.looseSteps['eventdataAggregate'].id + 'unit', data: app.looseSteps['eventdataAggregate'].measuresUnit})
                             : m('div[style=font-style:italic]', 'No unit measures')
                     },
                     app.selectedMode === 'aggregate' && {
                         value: 'Event Measures',
-                        contents: app.eventdataAggregateStep.measuresAccum.length
-                            ? m(TreeAggregate, {id: app.eventdataAggregateStep.id + 'accumulator', data: app.eventdataAggregateStep.measuresAccum})
+                        contents: app.looseSteps['eventdataAggregate'].measuresAccum.length
+                            ? m(TreeAggregate, {id: app.looseSteps['eventdataAggregate'].id + 'accumulator', data: app.looseSteps['eventdataAggregate'].measuresAccum})
                             : m('div[style=font-style:italic]', 'An event measure is required')
                     }
                 ]
@@ -536,7 +556,7 @@ export default class Body_EventData {
                 app.selectedMode === 'subset' && m(Button, {
                     id: 'btnAddGroup',
                     style: {float: 'left'},
-                    onclick: () => queryAbstract.addGroup(app.pendingSubset)
+                    onclick: () => queryAbstract.addGroup('eventdata', app.looseSteps['pendingSubset'])
                 }, 'Group'),
 
                 m(Button, {
@@ -546,8 +566,8 @@ export default class Body_EventData {
                     'data-spinner-color': '#818181',
                     style: {float: 'right'},
                     disabled: app.selectedMode === 'subset'
-                        ? app.pendingSubset.abstractQuery.length === 0
-                        : !app.aggregationStaged || app.eventdataAggregateStep.measuresAccum.length === 0,
+                        ? app.looseSteps['pendingSubset'].abstractQuery.length === 0
+                        : !app.aggregationStaged || app.looseSteps['eventdataAggregate'].measuresAccum.length === 0,
                     onclick: async () => {
                         app.setLaddaSpinner('btnUpdate', true);
                         await {'subset': app.submitSubset, 'aggregate': app.submitAggregation}[app.selectedMode]();
@@ -555,7 +575,7 @@ export default class Body_EventData {
 
                         // weird hack, unsetting ladda unsets the disabled attribute. But it should still be disabled
                         if (app.selectedMode === 'subset')
-                            document.getElementById('btnUpdate').disabled = app.pendingSubset.abstractQuery.length === 0;
+                            document.getElementById('btnUpdate').disabled = app.looseSteps['pendingSubset'].abstractQuery.length === 0;
                     }
                 }, 'Update')
             ))
@@ -575,7 +595,7 @@ export default class Body_EventData {
                     };
 
                     // cannot await for promise resolution from here in the mithril vdom, so I moved the misc wrappings for menu loading into its own function
-                    app.loadMenuEventData(app.abstractManipulations, newMenu);
+                    app.loadMenuEventData(app.manipulations.eventdata, newMenu);
                 }
 
                 return m('#loading.loader', {
@@ -618,6 +638,7 @@ export default class Body_EventData {
             'Results': CanvasResults
         }[app.selectedCanvas], {
             mode: app.selectedMode,
+            pipeline: app.manipulations.eventdata,
             preferences: app.canvasPreferences[app.selectedCanvas],
             redraw: app.canvasRedraw[app.selectedCanvas],
             setRedraw: (state) => app.setCanvasRedraw(app.selectedCanvas, state)
@@ -658,7 +679,7 @@ export default class Body_EventData {
             app.showSaveQuery && app.selectedMode !== 'Home' && m(ModalVanilla, {
                 id: 'SaveQuery',
                 setDisplay: app.setShowSaveQuery,
-                contents: m(SaveQuery, {preferences: app.saveQuery[app.selectedMode]})
+                contents: m(SaveQuery, {pipeline: app.manipulations.eventdata, preferences: app.saveQuery[app.selectedMode]})
             }),
 
             app.showAlignmentLog && logLength !== 0 && m(ModalVanilla, {
@@ -704,13 +725,13 @@ export default class Body_EventData {
                     }
 
                     let step = {
-                        'subset': app.pendingSubset,
-                        'aggregate': app.eventdataAggregateStep
+                        'subset': app.looseSteps['pendingSubset'],
+                        'aggregate': app.looseSteps['eventdataAggregate']
                     }[app.selectedMode];
                     app.setAggregationStaged(true);
 
-                    // add a constraint to either the 'pendingSubset' or 'eventdataAggregateStep' pipeline step, given the menu state and menu metadata
-                    queryAbstract.addConstraint(step, name, preferences, metadata);
+                    // add a constraint to either the 'pendingSubset' or 'eventdataAggregate' pipeline step, given the menu state and menu metadata
+                    queryAbstract.addConstraint('eventdata', step, preferences, metadata, name);
                 }
             }, 'Stage'),
             m(Canvas, {

@@ -25,20 +25,15 @@ export default class CanvasTransform {
             variadicFunctions: new Set(),
             unaryOperators: new Set(),
             binaryOperators: new Set()
-        })
+        });
+        setDefault(preferences, 'isValid', false);
     }
 
     view(vnode) {
-        let {preferences, variables, metadata} = vnode.attrs;
-        let {name, step} = metadata;
-
-        // simulate the pipeline until the n-1th step to determine available variables
-        let propagatedVariables = query.buildPipeline(
-            app.abstractManipulations.slice(0, -1),
-            new Set(variables))['variables'];
+        let {preferences, variables} = vnode.attrs;
 
         let style = {
-            width: '14.666%',
+            width: '18%',
             display: 'inline-block',
             'vertical-align': 'top',
             margin: '1%',
@@ -54,13 +49,17 @@ export default class CanvasTransform {
             let response = query.buildTransform(preferences.transformEquation, new Set(variables));
             transformQuery = JSON.stringify(response.query, null, 2);
             preferences.usedTerms = response.usedTerms;
+            preferences.isValid = true;
         }
         catch (err) {
-            transformError = String(err)
+            transformError = String(err);
+            preferences.isValid = false;
         }
 
+        if (preferences.transformName.match(/[ -]/) || preferences.transformEquation === '')
+            preferences.isValid = false;
+
         return m("#canvasTransform", {style: {'height': '100%', 'width': '100%', 'padding-top': common.panelMargin}},
-            m('h4', 'Add ' + name + ' for Step ' + app.abstractManipulations.indexOf(step)),
             m(TextField, {
                 id: 'textFieldName',
                 placeholder: 'Transformation Name',
@@ -84,14 +83,6 @@ export default class CanvasTransform {
             preferences.transformEquation && m('div', {style: {width: '100%'}},
                 transformQuery || warn(transformError)), m('br'),
 
-            m('div', {style},
-                m('h4', {'margin-top': 0}, 'Variables'),
-                m(PanelList, {
-                    id: 'varList',
-                    items: [...propagatedVariables],
-                    colors: {[common.selVarColor]: [...preferences.usedTerms.variables]}
-                })
-            ),
             m('div', {style},
                 m('h4', {'margin-top': 0}, 'Unary Functions'),
                 m(PanelList, {

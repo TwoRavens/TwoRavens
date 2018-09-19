@@ -10,30 +10,17 @@ export let eventdataURL = '/eventdata/api/';
 
 // ~~~~ GLOBAL STATE / MUTATORS ~~~
 
-export let abstractManipulations = [];
+export let manipulations = {};
+
+// Holds steps like the pending subset or aggregation in eventdata. They aren't part of a pipeline, but still rendered somewhere
+export let looseSteps = {};
 
 export let formattingData = {};
 export let alignmentData = {};
 
 // ~~~~ EVENTDATA STATE / MUTATORS ~~~
 // eventdata has a fixed pipeline of [Subset] -> [Aggregate]
-export let eventdataSubsetCount = 0;
-
-export let pendingSubset = {
-    type: 'subset',
-    id: eventdataSubsetCount++,
-    abstractQuery: [],
-    nodeId: 1,
-    groupId: 1
-};
-
-export let eventdataAggregateStep = {
-    type: 'aggregate',
-    id: 'eventdataAggregate',
-    measuresUnit: [],
-    measuresAccum: [],
-    nodeId: 1
-};
+export let eventdataSubsetCount = 1;
 
 // metadata for all available eventdata datasets and type formats
 export let genericMetadata = {};
@@ -74,11 +61,11 @@ export let setSelectedDataset = (key) => {
         subsetData = {};
 
         // this modifies the abstract query, preferences, selected vars to be compatible with the new dataset
-        alignmentLog = queryAbstract.realignQuery(pendingSubset, previousSelectedDataset, selectedDataset);
+        alignmentLog = queryAbstract.realignQuery(looseSteps['pendingSubset'], previousSelectedDataset, selectedDataset);
         preferencesLog = queryAbstract.realignPreferences(previousSelectedDataset, selectedDataset);
         variablesLog = queryAbstract.realignVariables(previousSelectedDataset, selectedDataset);
 
-        abstractManipulations.map(step => {
+        manipulations.eventdata.map(step => {
 
             alignmentLog.push(...queryAbstract.realignQuery(step, previousSelectedDataset, selectedDataset));
 
@@ -97,14 +84,14 @@ export let setSelectedDataset = (key) => {
         subsetPreferences[subset] = subsetPreferences[subset] || {};
     });
 
-    eventdataAggregateStep.measuresUnit.forEach((measure, i) => {
+    looseSteps['eventdataAggregate'].measuresUnit.forEach((measure, i) => {
         if (!(measure.subsetName in genericMetadata[selectedDataset]['subsets']) || genericMetadata[selectedDataset]['subsets'][measure.subsetName].measureType !== measure.measureType)
-            eventdataAggregateStep.measuresUnit.splice(i, 1);
+            looseSteps['eventdataAggregate'].measuresUnit.splice(i, 1);
     });
 
-    eventdataAggregateStep.measuresAccum.forEach((measure, i) => {
+    looseSteps['eventdataAggregate'].measuresAccum.forEach((measure, i) => {
         if (!(measure.subsetName in genericMetadata[selectedDataset]['subsets']) || genericMetadata[selectedDataset]['subsets'][measure.subsetName].measureType !== measure.measureType)
-            eventdataAggregateStep.measuresAccum.splice(i, 1);
+            looseSteps['eventdataAggregate'].measuresAccum.splice(i, 1);
     });
 
     aggregationHeadersUnit = [];
@@ -315,7 +302,7 @@ async function updatePeek() {
         }
     };
 
-    let peekPipeline = queryMongo.buildPipeline([...abstractManipulations, peekMenu])['pipeline'];
+    let peekPipeline = queryMongo.buildPipeline([...manipulations.eventdata, peekMenu])['pipeline'];
 
     console.log("Peek Query:");
     console.log(JSON.stringify(peekPipeline));
@@ -483,10 +470,10 @@ export async function submitSubset() {
         preferences: subsetPreferences[selectedSubsetName]
     };
 
-    let success = await loadMenuEventData([...abstractManipulations, pendingSubset], newMenu, {recount: true, requireMatch: true});
+    let success = await loadMenuEventData([...manipulations.eventdata, looseSteps['pendingSubset']], newMenu, {recount: true, requireMatch: true});
     if (success) {
-        abstractManipulations.push(pendingSubset);
-        pendingSubset = {
+        manipulations.eventdata.push(looseSteps['pendingSubset']);
+        looseSteps['pendingSubset'] = {
             type: 'subset',
             id: eventdataSubsetCount++,
             abstractQuery: [],
@@ -504,16 +491,16 @@ export async function submitSubset() {
 
 
 export async function submitAggregation() {
-    if (!eventdataAggregateStep.measuresAccum.length) {
+    if (!looseSteps['eventdataAggregate'].measuresAccum.length) {
         tour.tourStartEventMeasure();
         return;
     }
 
     setLaddaSpinner('btnUpdate', true);
 
-    let cachedPipeline = queryMongo.buildPipeline([...abstractManipulations, eventdataAggregateStep]);
+    let cachedPipeline = queryMongo.buildPipeline([...manipulations.eventdata, looseSteps['eventdataAggregate']]);
 
-    let data = await loadMenu(abstractManipulations, eventdataAggregateStep);
+    let data = await loadMenu(manipulations.eventdata, looseSteps['eventdataAggregate']);
     if (data) {
         aggregationData = data;
         let {units, accumulators, labels} = cachedPipeline;
@@ -553,13 +540,13 @@ export async function download(collection_name, query) {
 export async function reset() {
 
     let scorchTheEarth = () => {
-        abstractManipulations.length = 0;
+        manipulations.eventdata.length = 0;
 
         selectedVariables.clear();
         resetPeek();
 
         eventdataSubsetCount = 0;
-        pendingSubset = {
+        looseSteps['pendingSubset'] = {
             type: 'subset',
             id: eventdataSubsetCount++,
             abstractQuery: [],
@@ -567,7 +554,7 @@ export async function reset() {
             groupId: 1
         };
 
-        eventdataAggregateStep = {
+        looseSteps['eventdataAggregate'] = {
             type: 'aggregate',
             id: 'eventdataAggregate',
             measuresUnit: [],
@@ -587,7 +574,7 @@ export async function reset() {
     };
 
     // suppress server queries from the reset button when the webpage is already reset
-    if (abstractManipulations.length === 0) {
+    if (manipulations.eventdata.length === 0) {
         scorchTheEarth();
         return;
     }

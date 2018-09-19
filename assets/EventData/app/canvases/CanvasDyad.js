@@ -77,7 +77,7 @@ export default class CanvasDyad {
         this.searchTimeout = null;
     }
 
-    async search(subsetName, currentTab, preferences, metadata) {
+    async search(pipeline, subsetName, currentTab, preferences, metadata) {
 
         let failedUpdateMonadListing = () => {
             console.warn("Network Issue: Update to monad listing failed");
@@ -93,7 +93,7 @@ export default class CanvasDyad {
             metadata: Object.assign({}, metadata, {type: 'dyadSearch', currentTab}), // edit the metadata to be a search
             preferences
         };
-        let data = await app.loadMenu(app.abstractManipulations, monadUpdate).catch(failedUpdateMonadListing);
+        let data = await app.loadMenu(pipeline, monadUpdate).catch(failedUpdateMonadListing);
         data[0][currentTab].full = data[0][currentTab].full || [];
         app.subsetData[subsetName][currentTab].full = data[0][currentTab].full;
         this.waitForQuery--;
@@ -152,7 +152,7 @@ export default class CanvasDyad {
 
     // rendering the full and filter lists
     monadSelection(vnode) {
-        let {subsetName, data, metadata, preferences, formats} = vnode.attrs;
+        let {subsetName, data, metadata, preferences, formats, pipeline} = vnode.attrs;
         let dataMonad = data[preferences['current_tab']];
         let preferencesMonad = preferences['tabs'][preferences['current_tab']];
         let metadataMonad = metadata['tabs'][preferences['current_tab']];
@@ -170,7 +170,7 @@ export default class CanvasDyad {
                 : preferencesMonad['filters'][filter]['selected'].add(entry);
 
             clearTimeout(this.searchTimeout);
-            this.searchTimeout = setTimeout(() => this.search(subsetName, currentTab, preferences, metadata), searchLag);
+            this.searchTimeout = setTimeout(() => this.search(pipeline, subsetName, currentTab, preferences, metadata), searchLag);
         };
 
         let popupAttributes = (column, value) => formats[column] && {
@@ -248,7 +248,7 @@ export default class CanvasDyad {
                             preferencesMonad['show_selected'] = false;
                             Object.keys(preferencesMonad['filters']).map(filter => preferencesMonad['filters'][filter]['selected'] = new Set());
                             clearTimeout(this.searchTimeout);
-                            this.searchTimeout = setTimeout(() => this.search(subsetName, currentTab, preferences, metadata), searchLag);
+                            this.searchTimeout = setTimeout(() => this.search(pipeline, subsetName, currentTab, preferences, metadata), searchLag);
                         }
                     },
                     "Clear All Filters"

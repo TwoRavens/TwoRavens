@@ -67,7 +67,6 @@ function leftpanel(mode) {
         return results.leftpanel(Object.keys(app.allPipelineInfo));
     }
 
-
     let selectedDisco = app.disco.find(problem => problem.problem_id === app.selectedProblem);
 
     let discoveryAllCheck = m('input#discoveryAllCheck[type=checkbox]', {
@@ -118,7 +117,7 @@ function leftpanel(mode) {
                      id: 'varList',
                      items: app.is_manipulate_mode
                          ? [...queryMongo.buildPipeline(
-                             subset.abstractManipulations.slice(subset.abstractManipulations.indexOf(manipulate.constraintMenu.step)),
+                             subset.manipulations[app.domainIdentifier.name].slice(subset.manipulations[app.domainIdentifier.name].indexOf(manipulate.constraintMenu.step)),
                              new Set(app.valueKey))['variables']]
                          : app.valueKey,
                      colors: app.is_manipulate_mode ? {
@@ -134,13 +133,15 @@ function leftpanel(mode) {
                          : app.clickVar(x, nodes),
                      popup: variable => app.popoverContent(app.findNodeIndex(variable, true)),
                      attrsItems: {'data-placement': 'right', 'data-original-title': 'Summary Statistics'}}),
-                 app.is_manipulate_mode && m("h5", 'Menu Type'),
-                 app.is_manipulate_mode && m(ButtonRadio, {
-                     id: 'subsetTypeButtonBar',
-                     onclick: manipulate.setConstraintType,
-                     activeSection: manipulate.constraintMetadata.type,
-                     sections: ['continuous', 'discrete'].map(type => ({value: type}))
-                 })
+                 app.is_manipulate_mode && manipulate.constraintMenu && ['subset', 'event measure', 'unit measure'].indexOf(manipulate.constraintMenu.type) !== -1 && [
+                     m("h5", 'Menu Type'),
+                     m(ButtonRadio, {
+                         id: 'subsetTypeButtonBar',
+                         onclick: manipulate.setConstraintType,
+                         activeSection: manipulate.constraintMetadata.type,
+                         sections: ['continuous', 'discrete'].map(type => ({value: type}))
+                     })
+                 ]
              ]},
             {value: 'Discovery',
              display: 'block',
@@ -563,13 +564,17 @@ class Body {
                 },
                 onclick: () => {
                     queryAbstract.addConstraint(
+                        app.domainIdentifier.name,  // the pipeline identifier
                         manipulate.constraintMenu.step,  // the step the user is currently editing
                         manipulate.constraintPreferences,  // the menu state for the constraint the user currently editing
-                        manipulate.constraintMetadata  // info used to draw the menu (variables, menu type)
-                    )
+                        manipulate.constraintMetadata,  // info used to draw the menu (variables, menu type),
+                        manipulate.constraintMetadata.type || '' + (manipulate.constraintMenu.type === 'subset' ? ' Subset' : '')
+                    );
+                    // clear the constraint menu
+                    manipulate.setConstraintMenu(undefined);
                 }
             }, 'Stage'),
-            app.is_manipulate_mode && m(Canvas, manipulate.subsetCanvas()),
+            app.is_manipulate_mode && m(Canvas, manipulate.manipulateCanvas(app.domainIdentifier.name)),
             m(`#main`, {style: {overflow, display: app.is_manipulate_mode ? 'none' : 'block'}},
                 m("#innercarousel.carousel-inner", {style: {height: '100%', overflow}},
                 app.is_explore_mode && [variate === 'problem' ?
@@ -876,10 +881,12 @@ class Body {
 
     footer(mode) {
 
-        let manipulateRecordCount = {
+        let manipulateRecordCount;
+        let pipeline = subset.manipulations[(app.domainIdentifier || {}).name];
+        if (pipeline) manipulateRecordCount = {
             'subset': subset.totalSubsetRecords,
             'aggregate': subset.aggregationData && subset.aggregationData.length
-        }[(subset.abstractManipulations[subset.abstractManipulations.length - 1] || {}).type];
+        }[(pipeline[pipeline.length - 1] || {}).type];
 
         return m(Footer, [
             m(ButtonRadio, {
