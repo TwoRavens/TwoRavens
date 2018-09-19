@@ -12,6 +12,8 @@ import * as common from '../common/app/common';
 import * as queryAbstract from '../EventData/app/queryAbstract';
 import * as queryMongo from "../EventData/app/queryMongo";
 
+// dataset name from app.domainIdentifier.name
+// variable names from app.valueKey
 
 // looks funny, but this isolates the flowchart so that it can be embedded in model mode with different pipelines
 export function rightpanel() {
@@ -239,15 +241,33 @@ export let constraintMenu;
 //         // varies depending on step type, which is either 'transform', 'subset' or 'aggregate'
 //     },
 // };
-export let setConstraintMenu = (menu) => {
+export let setConstraintMenu = async (menu) => {
+    let updateVariableMetadata = !constraintMenu || menu && constraintMenu.step !== menu.step;
+
     constraintMenu = menu;
+    Object.keys(constraintPreferences).forEach(key => delete constraintPreferences[key]);
+
+    if (updateVariableMetadata) {
+        let pipeline = subset.manipulations[app.domainIdentifier.name];
+
+        let summaryStep = {
+            type: 'menu',
+            metadata: {
+                type: 'summary',
+                variables: [...queryMongo.buildPipeline(
+                    pipeline.slice(0, pipeline.indexOf(constraintMenu.step)),
+                    new Set(app.valueKey))['variables']]  // get the variables present at this point in the pipeline
+            }
+        };
+        variableMetadata = await loadMenu(pipeline.slice(0, pipeline.indexOf(constraintMenu.step)), summaryStep);
+    }
+
     if (constraintMenu === undefined || constraintMenu.type === 'transform') return;
 
     if (!constraintMetadata.columns)
         setConstraintColumn(app.allNodes[0].name, {suppress: true});
 
-    if (Object.keys(constraintMetadata).length !== 0)
-        loadMenuManipulations();
+    loadMenuManipulations();
 };
 
 export let constraintMetadata = {};
@@ -261,8 +281,7 @@ export let setConstraintColumn = (column, {suppress}={}) => {
     if ('columns' in constraintMetadata && constraintMetadata.columns[0] === column) suppress = true;
     constraintMetadata.columns = [column];
 
-    let node = app.findNodeIndex(constraintMetadata.columns[0], true);
-    let type = node.nature === 'nominal' ? 'discrete' : 'continuous';
+    let type = variableMetadata[column].types.indexOf('string') !== -1 ? 'discrete' : 'continuous';
     setConstraintType(type, {suppress: true});
 
     Object.keys(constraintPreferences).forEach(key => delete constraintPreferences[key]);
@@ -274,13 +293,14 @@ export let setConstraintType = (type, {suppress}={}) => {
     if (constraintMetadata.type === type) suppress = true;
     constraintMetadata.type = type;
     if (constraintMetadata.type === 'continuous') {
-        let node = app.findNodeIndex(constraintMetadata.columns[0], true);
-        constraintMetadata.max = parseFloat(node.max);
-        constraintMetadata.min = parseFloat(node.min);
-        constraintMetadata.buckets = 100;
+        let varMeta = variableMetadata[constraintMetadata.columns[0]];
 
-        if (isNaN(constraintMetadata.max)) {
-            alert(`A density plot cannot be drawn for the discrete variable ${column}.`);
+        constraintMetadata.max = varMeta.max;
+        constraintMetadata.min = varMeta.min;
+        constraintMetadata.buckets = Math.min(Math.max(10, varMeta.valid / 10), 100);
+
+        if (varMeta.types.indexOf('string') !== -1) {
+            alert(`A density plot cannot be drawn for the nominal variable ${column}.`);
             constraintMetadata.type = 'discrete';
         }
     }
@@ -302,7 +322,7 @@ export let getData = async body => m.request({
 export let loadMenu = async (abstractPipeline, menu, {recount, requireMatch}={}) => { // the dict is for optional named arguments
 
     // convert the pipeline to a mongo query. Note that passing menu extends the pipeline to collect menu data
-    let compiled = JSON.stringify(queryMongo.buildPipeline([...abstractPipeline, menu])['pipeline']);
+    let compiled = JSON.stringify(queryMongo.buildPipeline([...abstractPipeline, menu], new Set(app.valueKey))['pipeline']);
 
     console.log("Menu Query:");
     console.log(compiled);
@@ -317,7 +337,7 @@ export let loadMenu = async (abstractPipeline, menu, {recount, requireMatch}={})
     // record count request
     if (recount || subset.totalSubsetRecords === undefined) {
         let countMenu = {type: 'menu', metadata: {type: 'count'}};
-        let compiled = JSON.stringify(queryMongo.buildPipeline([...abstractPipeline, countMenu])['pipeline']);
+        let compiled = JSON.stringify(queryMongo.buildPipeline([...abstractPipeline, countMenu], new Set(app.valueKey))['pipeline']);
 
         console.log("Count Query:");
         console.log(compiled);
@@ -374,7 +394,7 @@ let loadMenuManipulations = async () => {
         preferences: constraintPreferences
     };
 
-    constraintData = await loadMenu(subset.manipulations[app.domainIdentifier.name], newMenu);
+    constraintData = await loadMenu(subset.manipulations[app.domainIdentifier.name].slice(0, -1), newMenu);
     isLoading = false;
     redraw = true;
     m.redraw();
@@ -388,7 +408,7 @@ let loadMenuD3M = async () => {
         metadata: constraintMetadata,
         preferences: constraintPreferences
     };
-    constraintData = await loadMenu(problemManipulations[app.selectedProblem], newMenu);
+    constraintData = await loadMenu(problemManipulations[app.selectedProblem].slice(0, -1), newMenu);
     isLoading = false;
     redraw = true;
 };
@@ -398,3 +418,14 @@ export let constraintPreferences = {};
 
 // contains the raw data used to draw the constraint menu
 export let constraintData;
+
+// stores avg, min, max, valids, etc. for intermediate steps in a manipulations pipeline
+export let variableMetadata = {};
+
+export let variableSearch = '';
+export let setVariableSearch = term => variableSearch = term.toLowerCase();
+export let variableSort = (a, b) => {
+    [a, b] = [a.toLowerCase(), b.toLowerCase()];
+    if (a.includes(variableSearch) === b.includes(variableSearch)) return a.localeCompare(b);
+    return a.includes(variableSearch) ? -1 : 1;
+};

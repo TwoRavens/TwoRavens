@@ -30,10 +30,9 @@ export function buildPipeline(pipeline, variables = new Set()) {
 
     pipeline.forEach(step => {
 
-        if (step.type === 'transform') compiled.push({
+        if (step.type === 'transform' && step.transforms.length) compiled.push({
             '$addFields': step.transforms.reduce((out, transformation) => {
                 out[transformation.name] = buildTransform(transformation.equation, variables)['query'];
-                out[transformation.name]['$comment'] = transformation.equation;
                 variables.add(transformation['name']);
                 return out;
             }, {})
@@ -115,7 +114,7 @@ export function buildTransform(text, variables) {
         if (tree.type === 'Identifier') {
             if (variables.has(tree.name)) {
                 usedTerms.variables.add(tree.name);
-                return tree.name;
+                return '$' + tree.name;
             }
             throw 'Invalid variable: ' + tree.name;
         }
@@ -716,7 +715,36 @@ export function buildMenu(step) {
 
     if (metadata.type === 'count') return [{
         $count: 'total'
-    }]
+    }];
+
+    if (metadata.type === 'summary') return [
+        {
+            $group: metadata.variables.reduce((out, variable) => {
+                out[variable + '-mean'] = {$avg: '$' + variable};
+                out[variable + '-max'] = {$max: '$' + variable};
+                out[variable + '-min'] = {$min: '$' + variable};
+                out[variable + '-sd'] = {$stdDevPop: '$' + variable};
+                out[variable + '-valid'] = {$sum: {$cond: [{$ne: ['$' + variable, undefined]}, 1, 0]}};
+                out[variable + '-invalid'] = {$sum: {$cond: [{$ne: ['$' + variable, undefined]}, 0, 1]}};
+                out[variable + '-types'] = {$addToSet: {$type: '$' + variable}};
+                return out;
+            }, {_id: 0})
+        },
+        {
+            $project: metadata.variables.reduce((out, variable) => {
+                out[variable] = {
+                    mean: '$' + variable + '-mean',
+                    max: '$' + variable + '-max',
+                    min: '$' + variable + '-min',
+                    sd: '$' + variable + '-sd',
+                    valid: '$' + variable + '-valid',
+                    invalid: '$' + variable + '-invalid',
+                    types: '$' + variable + '-types'
+                };
+                return out;
+            }, {_id: 0})
+        }
+    ];
 }
 
 // If there is a postProcessing step at the given key, it will return modified data. Otherwise return the data unmodified
@@ -737,5 +765,7 @@ export let menuPostProcess = new Proxy({
             }
             out.push(entry);
             return (out);
-        }, [])
+        }, []),
+
+    'summary': data => data[0]
 }, defaultValue(data => data));

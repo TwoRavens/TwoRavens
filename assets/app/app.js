@@ -3217,32 +3217,33 @@ function varSummary(d) {
 
 }
 
-export let popoverContent = d => {
-    if(swandive)
-        return;
+export let popoverContent = node => {
+    if (swandive || !node) return;
+
     let text = '<table class="table table-sm table-striped" style="margin:-10px;"><tbody>';
     let [rint, prec] = [d3.format('r'), (val, int) => (+val).toPrecision(int).toString()];
     let div = (field, name, val) => {
-        if (field != 'NA') text += `<tr><th>${name}</th><td><p class="text-left" style="height:10px;">${val || field}</p></td></tr>`;
+        if ((field != 'NA' && ((field && !isNaN(field)) || (val && !isNaN(val)))))
+            text += `<tr><th>${name}</th><td><p class="text-left" style="height:10px;">${val || field}</p></td></tr>`;
     };
-    d.labl != '' && div(d.labl, 'Label');
-    div(d.mean, 'Mean', priv && d.meanCI ?
-        `${prec(d.mean, 2)} (${prec(d.meanCI.lowerBound, 2)} - ${prec(d.meanCI.upperBound, 2)})` :
-        prec(d.mean, 4));
-    div(d.median, 'Median', prec(d.median, 4));
-    div(d.mode, 'Most Freq');
-    div(d.freqmode, 'Occurrences',  rint(d.freqmode));
-    div(d.mid, 'Median Freq');
-    div(d.freqmid, 'Occurrences', rint(d.freqmid));
-    div(d.fewest, 'Least Freq');
-    div(d.freqfewest, 'Occurrences', rint(d.freqfewest));
-    div(d.sd, 'Stand Dev', prec(d.sd, 4));
-    div(d.max, 'Maximum', prec(d.max, 4));
-    div(d.min, 'Minimum', prec(d.min, 4));
-    div(d.invalid, 'Invalid', rint(d.invalid));
-    div(d.valid, 'Valid', rint(d.valid));
-    div(d.uniques, 'Uniques', rint(d.uniques));
-    div(d.herfindahl, 'Herfindahl', prec(d.herfindahl, 4));
+    node.labl != '' && div(node.labl, 'Label');
+    div(node.mean, 'Mean', priv && node.meanCI ?
+        `${prec(node.mean, 2)} (${prec(node.meanCI.lowerBound, 2)} - ${prec(node.meanCI.upperBound, 2)})` :
+        prec(node.mean, 4));
+    div(node.median, 'Median', prec(node.median, 4));
+    div(node.mode, 'Most Freq');
+    div(node.freqmode, 'Occurrences',  rint(node.freqmode));
+    div(node.mid, 'Median Freq');
+    div(node.freqmid, 'Occurrences', rint(node.freqmid));
+    div(node.fewest, 'Least Freq');
+    div(node.freqfewest, 'Occurrences', rint(node.freqfewest));
+    div(node.sd, 'Stand Dev', prec(node.sd, 4));
+    div(node.max, 'Maximum', prec(node.max, 4));
+    div(node.min, 'Minimum', prec(node.min, 4));
+    div(node.invalid, 'Invalid', rint(node.invalid));
+    div(node.valid, 'Valid', rint(node.valid));
+    div(node.uniques, 'Uniques', rint(node.uniques));
+    div(node.herfindahl, 'Herfindahl', prec(node.herfindahl, 4));
     return text + '</tbody></table>';
 }
 

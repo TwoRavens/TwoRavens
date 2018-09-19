@@ -40,6 +40,7 @@ import Body_EventData from '../EventData/app/Body_EventData';
 import Peek_EventData from '../common-eventdata/views/Peek';
 import '../EventData/css/app.css'
 import '../EventData/app/app'
+import {constraintMetadata} from "./manipulate";
 
 export let bold = (value) => m('div', {style: {'font-weight': 'bold', display: 'inline'}}, value);
 export let italicize = (value) => m('div', {style: {'font-style': 'italic', display: 'inline'}}, value);
@@ -90,8 +91,81 @@ function leftpanel(mode) {
         !!problem.transform && problem.transform
     ]);
 
-
     let nodes = app.is_explore_mode ? nodesExplore : app.nodes;
+
+    // search box, variable list
+    let variableTab;
+
+    if (app.is_manipulate_mode && app.domainIdentifier && subset.manipulations[app.domainIdentifier.name]) {
+        let pipeline = subset.manipulations[app.domainIdentifier.name];
+
+        let baseVariables = app.allNodes.map(node => node.name);
+
+        let variables = (manipulate.constraintMenu
+            ? [...queryMongo.buildPipeline(pipeline.slice(pipeline.indexOf(manipulate.constraintMenu.step)),
+                new Set(baseVariables))['variables']]
+            : baseVariables).sort(manipulate.variableSort);
+
+        variableTab = {
+            value: 'Variables',
+            contents: !manipulate.constraintMenu ? undefined : [
+                m(TextField, {
+                    id: 'searchVar',
+                    placeholder: 'Search variables',
+                    oninput: manipulate.setVariableSearch
+                }),
+                m(PanelList, {
+                    id: 'varList',
+                    items: variables,
+                    colors: manipulate.constraintMenu.type === 'transform' && manipulate.constraintPreferences.usedTerms
+                        ? {[common.selVarColor]: [...manipulate.constraintPreferences.usedTerms.variables]}
+                        : {[app.hexToRgba(common.selVarColor)]: (manipulate.constraintMetadata || {}).columns || []},
+                    classes: {
+                        'item-bordered': variables.filter(variable =>
+                            manipulate.variableSearch !== '' && variable.toLowerCase().includes(manipulate.variableSearch))
+                    },
+                    callback: manipulate.constraintMenu.type !== 'transform'
+                        ? x => manipulate.setConstraintColumn(x)
+                        : _ => _,
+                    popup: variable => app.popoverContent(manipulate.variableMetadata[variable]),
+                    attrsItems: {'data-placement': 'right', 'data-original-title': 'Summary Statistics'}
+                }),
+                manipulate.constraintMenu.type !== 'transform' && [
+                    m("h5", 'Menu Type'),
+                    m(ButtonRadio, {
+                        id: 'subsetTypeButtonBar',
+                        onclick: manipulate.setConstraintType,
+                        activeSection: manipulate.constraintMetadata.type,
+                        sections: ['continuous', 'discrete'].map(type => ({value: type}))
+                    })
+                ]
+            ]
+        };
+    }
+    else variableTab = {
+        value: 'Variables',
+        title: 'Click variable name to add or remove the variable pebble from the modeling space.',
+        contents: [
+            m(TextField, {
+                id: 'searchVar',
+                placeholder: 'Search variables and labels',
+                oninput: app.searchVariables
+            }),
+            m(PanelList, {
+                id: 'varList',
+                items: app.valueKey,
+                colors: {
+                    [app.hexToRgba(common.selVarColor)]: nodes.map(n => n.name),
+                    [app.hexToRgba(common.nomColor)]: app.zparams.znom,
+                    [app.hexToRgba(common.dvColor)]: app.is_explore_mode ? [] : app.zparams.zdv
+                },
+                classes: {'item-bordered': app.matchedVariables},
+                callback: x => app.clickVar(x, nodes),
+                popup: variable => app.popoverContent(app.findNodeIndex(variable, true)),
+                attrsItems: {'data-placement': 'right', 'data-original-title': 'Summary Statistics'}
+            })
+        ]
+    };
 
     return m(Panel, {
         side: 'left',
@@ -105,44 +179,7 @@ function leftpanel(mode) {
         currentTab: app.leftTab,
         callback: app.setLeftTab,
         sections: [
-            {value: 'Variables',
-             title: 'Click variable name to add or remove the variable pebble from the modeling space.',
-             contents: app.is_manipulate_mode && !manipulate.constraintMenu ? undefined : [
-                 m(TextField, {
-                     id: 'searchVar',
-                     placeholder: 'Search variables and labels',
-                     oninput: app.searchVariables
-                 }),
-                 m(PanelList, {
-                     id: 'varList',
-                     items: app.is_manipulate_mode
-                         ? [...queryMongo.buildPipeline(
-                             subset.manipulations[app.domainIdentifier.name].slice(subset.manipulations[app.domainIdentifier.name].indexOf(manipulate.constraintMenu.step)),
-                             new Set(app.valueKey))['variables']]
-                         : app.valueKey,
-                     colors: app.is_manipulate_mode ? {
-                         [app.hexToRgba(common.selVarColor)]: (manipulate.constraintMetadata || {}).columns || []
-                     } : {
-                         [app.hexToRgba(common.selVarColor)]: nodes.map(n => n.name),
-                         [app.hexToRgba(common.nomColor)]: app.zparams.znom,
-                         [app.hexToRgba(common.dvColor)]: app.is_explore_mode ? [] : app.zparams.zdv
-                     },
-                     classes: {'item-bordered': app.matchedVariables},
-                     callback: x => app.is_manipulate_mode
-                         ? manipulate.setConstraintColumn(x)
-                         : app.clickVar(x, nodes),
-                     popup: variable => app.popoverContent(app.findNodeIndex(variable, true)),
-                     attrsItems: {'data-placement': 'right', 'data-original-title': 'Summary Statistics'}}),
-                 app.is_manipulate_mode && manipulate.constraintMenu && ['subset', 'event measure', 'unit measure'].indexOf(manipulate.constraintMenu.type) !== -1 && [
-                     m("h5", 'Menu Type'),
-                     m(ButtonRadio, {
-                         id: 'subsetTypeButtonBar',
-                         onclick: manipulate.setConstraintType,
-                         activeSection: manipulate.constraintMetadata.type,
-                         sections: ['continuous', 'discrete'].map(type => ({value: type}))
-                     })
-                 ]
-             ]},
+            variableTab,
             {value: 'Discovery',
              display: 'block',
              contents: [

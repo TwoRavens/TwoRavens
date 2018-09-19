@@ -49,6 +49,8 @@ export default class CanvasTransform {
             let response = query.buildTransform(preferences.transformEquation, new Set(variables));
             transformQuery = JSON.stringify(response.query, null, 2);
             preferences.usedTerms = response.usedTerms;
+            // make the leftpanel variable list update if in d3m. In d3m the leftpanel reads the preferences to highlight variables
+            if (!preferences.isValid) m.redraw();
             preferences.isValid = true;
         }
         catch (err) {
