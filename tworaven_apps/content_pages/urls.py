@@ -11,9 +11,17 @@ urlpatterns = (
         views.view_monitoring_alive,
         name='view_monitoring_alive'),
 
+    url(r'^privacy-policy$',
+        views.view_privacy_policy,
+        name='view_privacy_policy'),
+
     url(r'^test-callback$',
         views.view_test_callback,
         name='view_test_callback'),
+
+    url(r'^test-csrf-required$',
+        views.view_test_csrf_required,
+        name='view_test_csrf_required'),
 
     url(r'^app-domain-config-error-test$',
         views.view_no_domain_config_error_test,
