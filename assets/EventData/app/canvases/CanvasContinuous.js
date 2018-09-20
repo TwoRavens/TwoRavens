@@ -44,7 +44,7 @@ export default class CanvasContinuous {
     view(vnode) {
         let {mode, data, metadata, preferences, redraw, setRedraw} = vnode.attrs;
 
-        preferences['measure'] = preferences['measure'] || 'Monthly';
+        preferences['measure'] = preferences['measure'] || metadata.buckets;
 
         let setHandles = (handles) => {
             preferences['handleLower'] = handles[0];

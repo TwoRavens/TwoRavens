@@ -288,7 +288,7 @@ function processRule(rule) {
         }, {});
     }
 
-    if (['categorical', 'categorical_grouped'].indexOf(rule.subset) !== -1) {
+    if (['discrete', 'categorical', 'categorical_grouped'].indexOf(rule.subset) !== -1) {
         let rule_query_inner = [];
         for (let child of rule.children) {
             rule_query_inner.push(child.name);
@@ -727,6 +727,7 @@ export function buildMenu(step) {
                 out[variable + '-valid'] = {$sum: {$cond: [{$ne: ['$' + variable, undefined]}, 1, 0]}};
                 out[variable + '-invalid'] = {$sum: {$cond: [{$ne: ['$' + variable, undefined]}, 0, 1]}};
                 out[variable + '-types'] = {$addToSet: {$type: '$' + variable}};
+                out[variable + '-uniques'] = {$addToSet: '$' + variable};
                 return out;
             }, {_id: 0})
         },
@@ -739,7 +740,8 @@ export function buildMenu(step) {
                     sd: '$' + variable + '-sd',
                     valid: '$' + variable + '-valid',
                     invalid: '$' + variable + '-invalid',
-                    types: '$' + variable + '-types'
+                    types: '$' + variable + '-types',
+                    uniques: {$size: '$' + variable + '-uniques'}
                 };
                 return out;
             }, {_id: 0})

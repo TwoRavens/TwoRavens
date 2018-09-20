@@ -7,7 +7,9 @@ import * as common from '../../common-eventdata/common';
 
 window.callbackDeleteTransform = function (id) {
     let [pipelineId, stepId, transformationName] = id.split('-');
-    let step = [...app.manipulations[pipelineId], ...Object.values(app.looseSteps)].find(step => step.id === Number(stepId) || stepId);
+
+    let step = [...app.manipulations[pipelineId], ...Object.values(app.looseSteps)]
+        .find(candidate => candidate.id === (Number(stepId) || stepId));
     step.transforms.splice(step.transforms.findIndex(transformation => transformation.name === transformationName), 1);
 
     m.redraw();
@@ -51,7 +53,7 @@ window.callbackOperator = function (id, operand) {
     }
 
     node.operation = operand;
-    let step = [...app.manipulations[pipelineId], ...Object.values(app.looseSteps)].find(step => step.id === Number(stepId) || stepId);
+    let step = [...app.manipulations[pipelineId], ...Object.values(app.looseSteps)].find(step => step.id === (Number(stepId) || stepId));
     step.abstractQuery = JSON.parse(subsetTree.tree('toJson'));
     m.redraw();
 };
@@ -70,7 +72,7 @@ window.callbackDelete = async function (id) {
     } else {
         subsetTree.tree('removeNode', node);
 
-        let step = [...app.manipulations[pipelineId], ...Object.values(app.looseSteps)].find(step => step.id === Number(stepId) || stepId);
+        let step = [...app.manipulations[pipelineId], ...Object.values(app.looseSteps)].find(step => step.id === (Number(stepId) || stepId));
         step.abstractQuery = JSON.parse(subsetTree.tree('toJson'));
 
         hideFirst(step.abstractQuery);
@@ -108,7 +110,7 @@ window.callbackNegate = function (id, bool) {
 
     node.negate = bool;
 
-    let step = [...app.manipulations[pipelineId], ...Object.values(app.looseSteps)].find(step => step.id === Number(stepId) || stepId);
+    let step = [...app.manipulations[pipelineId], ...Object.values(app.looseSteps)].find(step => step.id === (Number(stepId) || stepId));
     step.abstractQuery = JSON.parse(subsetTree.tree('toJson'));
     m.redraw();
 };
@@ -412,7 +414,7 @@ function makeAbstractBranch(pipelineId, step, preferences, metadata, name) {
                 {
                     id: String(pipelineId) + '-' + String(step.id) + '-' + String(step.nodeId++) + measureId,
                     name: 'To:   ' + preferences['userUpper'],
-                    toDate: preferences['userUpper'],
+                    toLabel: preferences['userUpper'],
                     cancellable: false,
                     show_op: false
                 }
@@ -477,7 +479,7 @@ function makeAbstractBranch(pipelineId, step, preferences, metadata, name) {
         };
     }
 
-    if (['categorical', 'categorical_grouped'].indexOf(metadata['type']) !== -1) {
+    if (['discrete', 'categorical', 'categorical_grouped'].indexOf(metadata['type']) !== -1) {
         // if aggregating, add the target format in the name
         let aggFormat = (step.type === 'aggregate' && 'aggregation' in preferences)
             ? ` (${preferences['aggregation']})` : '';

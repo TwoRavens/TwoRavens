@@ -40,7 +40,6 @@ import Body_EventData from '../EventData/app/Body_EventData';
 import Peek_EventData from '../common-eventdata/views/Peek';
 import '../EventData/css/app.css'
 import '../EventData/app/app'
-import {constraintMetadata} from "./manipulate";
 
 export let bold = (value) => m('div', {style: {'font-weight': 'bold', display: 'inline'}}, value);
 export let italicize = (value) => m('div', {style: {'font-style': 'italic', display: 'inline'}}, value);
@@ -102,7 +101,7 @@ function leftpanel(mode) {
         let baseVariables = app.allNodes.map(node => node.name);
 
         let variables = (manipulate.constraintMenu
-            ? [...queryMongo.buildPipeline(pipeline.slice(pipeline.indexOf(manipulate.constraintMenu.step)),
+            ? [...queryMongo.buildPipeline(pipeline.slice(0, pipeline.indexOf(manipulate.constraintMenu.step)),
                 new Set(baseVariables))['variables']]
             : baseVariables).sort(manipulate.variableSort);
 
@@ -130,7 +129,7 @@ function leftpanel(mode) {
                     popup: variable => app.popoverContent(manipulate.variableMetadata[variable]),
                     attrsItems: {'data-placement': 'right', 'data-original-title': 'Summary Statistics'}
                 }),
-                manipulate.constraintMenu.type !== 'transform' && [
+                manipulate.constraintMenu.type !== 'transform' && manipulate.constraintMetadata.type !== 'date' && [
                     m("h5", 'Menu Type'),
                     m(ButtonRadio, {
                         id: 'subsetTypeButtonBar',
@@ -600,12 +599,16 @@ class Body {
                     'box-shadow': 'rgba(0, 0, 0, 0.3) 0px 2px 3px'
                 },
                 onclick: () => {
+
+                    let name = manipulate.constraintMenu.type === 'transform' ? ''
+                        : manipulate.constraintMetadata.type  + ': ' + manipulate.constraintMetadata.columns[0];
+
                     queryAbstract.addConstraint(
                         app.domainIdentifier.name,  // the pipeline identifier
                         manipulate.constraintMenu.step,  // the step the user is currently editing
                         manipulate.constraintPreferences,  // the menu state for the constraint the user currently editing
                         manipulate.constraintMetadata,  // info used to draw the menu (variables, menu type),
-                        manipulate.constraintMetadata.type || '' + (manipulate.constraintMenu.type === 'subset' ? ' Subset' : '')
+                        name
                     );
                     // clear the constraint menu
                     manipulate.setConstraintMenu(undefined);

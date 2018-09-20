@@ -2,6 +2,7 @@ import m from 'mithril';
 import {TreeAggregate, TreeQuery, TreeTransform} from '../EventData/app/views/TreeSubset';
 import Button from '../common/app/views/Button';
 import CanvasContinuous from '../EventData/app/canvases/CanvasContinuous';
+import CanvasDate from '../EventData/app/canvases/CanvasDate';
 import CanvasCategorical from '../EventData/app/canvases/CanvasCategorical';
 import CanvasTransform from '../EventData/app/canvases/CanvasTransform';
 import Flowchart from './views/Flowchart';
@@ -32,12 +33,11 @@ class PipelineFlowchart {
 
         let currentStepNumber = pipeline.indexOf((constraintMenu || {}).step);
 
-        let isEnabled = (stepType) => {
+        let isEnabled = () => {
             if (!pipeline.length) return true;
             let finalStep = pipeline.slice(-1)[0];
-
-            if (finalStep.type === stepType) return false;
             if (finalStep.type === 'aggregate' && !finalStep.measuresAccum.length) return false;
+            if (finalStep.type === 'subset' && !finalStep.abstractQuery.length) return false;
             if (finalStep.type === 'transform' && !finalStep.transforms.length) return false;
             return true;
         };
@@ -72,8 +72,8 @@ class PipelineFlowchart {
                             deleteButton,
                             m('h4[style=font-size:16px;margin-left:0.5em]', 'Transformations'),
                             m(TreeTransform, {pipelineId, step}),
-
-                            pipeline.length - 1 === i && m(Button, {
+                            // Enable to only show button if last element: pipeline.length - 1 === i &&
+                            m(Button, {
                                 id: 'btnAddTransform',
                                 class: ['btn-sm'],
                                 style: {margin: '0.5em'},
@@ -98,7 +98,7 @@ class PipelineFlowchart {
                                 id: 'btnAddGroup',
                                 class: ['btn-sm'],
                                 style: {margin: '0.5em'},
-                                disabled: step.abstractQuery.every(constraint => constraint.type !== 'subset'),
+                                disabled: !step.abstractQuery.filter(constraint => constraint.type === 'rule').length,
                                 onclick: () => queryAbstract.addGroup(pipelineId, step)
                             }, plus, ' Group')
                         )
@@ -119,7 +119,8 @@ class PipelineFlowchart {
                             ],
 
                             !step.measuresAccum.length && [warn('must have accumulator to output data'), m('br')],
-                            pipeline.length - 1 === i && [
+                            // Enable to only show button if last element: pipeline.length - 1 === i &&
+                            [
                                 m(Button, {
                                     id: 'btnAddUnitMeasure',
                                     class: ['btn-sm'],
@@ -146,7 +147,7 @@ class PipelineFlowchart {
             m(Button, {
                 id: 'btnAddTransform',
                 title: 'construct new columns',
-                disabled: !isEnabled('transform'),
+                disabled: !isEnabled(),
                 style: {margin: '0.5em'},
                 onclick: () => pipeline.push({
                     type: 'transform',
@@ -157,7 +158,7 @@ class PipelineFlowchart {
             m(Button, {
                 id: 'btnAddSubset',
                 title: 'filter rows that match criteria',
-                disabled: !isEnabled('subset'),
+                disabled: !isEnabled(),
                 style: {margin: '0.5em'},
                 onclick: () => pipeline.push({
                     type: 'subset',
@@ -171,7 +172,7 @@ class PipelineFlowchart {
             m(Button, {
                 id: 'btnAddAggregate',
                 title: 'group rows that match criteria',
-                disabled: !isEnabled('aggregate'),
+                disabled: !isEnabled(),
                 style: {margin: '0.5em'},
                 onclick: () => pipeline.push({
                     type: 'aggregate',
@@ -211,7 +212,8 @@ export function manipulateCanvas(pipelineId) {
 
     return m({
         'continuous': CanvasContinuous,
-        'discrete': CanvasCategorical
+        'discrete': CanvasCategorical,
+        'date': CanvasDate
     }[constraintMetadata.type], {
         mode: {
             'subset': 'subset',
@@ -247,25 +249,39 @@ export let setConstraintMenu = async (menu) => {
     constraintMenu = menu;
     Object.keys(constraintPreferences).forEach(key => delete constraintPreferences[key]);
 
-    if (updateVariableMetadata) {
-        let pipeline = subset.manipulations[app.domainIdentifier.name];
+    if (constraintMenu === undefined) return;
 
+    let pipeline = subset.manipulations[app.domainIdentifier.name];
+    let variables = [...queryMongo.buildPipeline(
+        pipeline.slice(0, pipeline.indexOf(constraintMenu.step)),
+        new Set(app.valueKey))['variables']];  // get the variables present at this point in the pipeline
+
+    if (updateVariableMetadata) {
         let summaryStep = {
             type: 'menu',
             metadata: {
                 type: 'summary',
-                variables: [...queryMongo.buildPipeline(
-                    pipeline.slice(0, pipeline.indexOf(constraintMenu.step)),
-                    new Set(app.valueKey))['variables']]  // get the variables present at this point in the pipeline
+                variables
             }
         };
-        variableMetadata = await loadMenu(pipeline.slice(0, pipeline.indexOf(constraintMenu.step)), summaryStep);
+        let candidatevariableData = await loadMenu(pipeline.slice(0, pipeline.indexOf(constraintMenu.step)), summaryStep, {recount: true});
+        if (candidatevariableData) variableMetadata = candidatevariableData;
+        else {
+            alert('The pipeline at this stage matches no records. Delete constraints to match more records.');
+            constraintMenu = undefined;
+            m.redraw();
+            return;
+        }
     }
 
-    if (constraintMenu === undefined || constraintMenu.type === 'transform') return;
+    if (constraintMenu.type === 'transform') return;
 
-    if (!constraintMetadata.columns)
-        setConstraintColumn(app.allNodes[0].name, {suppress: true});
+    // select a random variable none selected yet, or previously selected variable no longer available
+    let variable = !constraintMetadata.columns || variables.indexOf(constraintMetadata.columns[0]) === -1
+        ? variables[Math.floor(Math.random() * variables.length)]
+        : constraintMetadata.columns[0];
+
+    setConstraintColumn(variable, {suppress: true});
 
     loadMenuManipulations();
 };
@@ -281,15 +297,30 @@ export let setConstraintColumn = (column, {suppress}={}) => {
     if ('columns' in constraintMetadata && constraintMetadata.columns[0] === column) suppress = true;
     constraintMetadata.columns = [column];
 
-    let type = variableMetadata[column].types.indexOf('string') !== -1 ? 'discrete' : 'continuous';
-    setConstraintType(type, {suppress: true});
+    setConstraintType(undefined, {suppress: true, infer: true});
 
     Object.keys(constraintPreferences).forEach(key => delete constraintPreferences[key]);
     constraintData = undefined;
     if (!suppress) loadMenuManipulations();
 };
 
-export let setConstraintType = (type, {suppress}={}) => {
+
+// call with infer: true to guess the most appropriate constraint type based on variableMetadata
+export let setConstraintType = (type, {suppress, infer}={}) => {
+
+    if (infer) {
+        let column = constraintMetadata.columns[0];
+
+        // initial inference based on data type
+        type = variableMetadata[column].types.indexOf('string') !== -1 ? 'discrete' : 'continuous';
+
+        // force date type if possible
+        if (variableMetadata[column].types.indexOf('date') !== -1) type = 'date';
+
+        // switch to discrete if there is a small number of unique values
+        if (type === 'continuous' && variableMetadata[column].uniques <= 10) type = 'discrete';
+    }
+
     if (constraintMetadata.type === type) suppress = true;
     constraintMetadata.type = type;
     if (constraintMetadata.type === 'continuous') {
@@ -297,10 +328,15 @@ export let setConstraintType = (type, {suppress}={}) => {
 
         constraintMetadata.max = varMeta.max;
         constraintMetadata.min = varMeta.min;
-        constraintMetadata.buckets = Math.min(Math.max(10, varMeta.valid / 10), 100);
+        constraintMetadata.buckets = Math.min(Math.max(10, Math.floor(varMeta.valid / 10)), 100);
 
         if (varMeta.types.indexOf('string') !== -1) {
-            alert(`A density plot cannot be drawn for the nominal variable ${column}.`);
+            alert(`A density plot cannot be drawn for the nominal variable ${column}. Switching to discrete.`);
+            constraintMetadata.type = 'discrete';
+        }
+
+        if (varMeta.max === varMeta.min) {
+            alert(`The max and min are the same in ${column}. Switching to discrete.`);
             constraintMetadata.type = 'discrete';
         }
     }
@@ -348,9 +384,11 @@ export let loadMenu = async (abstractPipeline, menu, {recount, requireMatch}={})
             method: 'aggregate',
             query: compiled
         }).then(response => {
+            let total = (response[0] || {}).total || 0;
+
             // intentionally breaks the entire downloading promise array and subsequent promise chain
-            if (!response.length && requireMatch) throw 'no records matched';
-            subset.setTotalSubsetRecords(response[0].total);
+            if (total === 0 && requireMatch) throw 'no records matched';
+            subset.setTotalSubsetRecords(total);
         }));
     }
 
@@ -368,6 +406,7 @@ export let loadMenu = async (abstractPipeline, menu, {recount, requireMatch}={})
     let onError = err => {
         if (err === 'no records matched') alert("No records match your subset. Plots will not be updated.");
         else console.error(err);
+        alert(err.message);
         success = false;
     };
 
