@@ -30,7 +30,7 @@ export default class CanvasResults {
 
         if (!('filter' in preferences)) {
             preferences['filters'] = {};
-            actorHeaders.forEach(actorHeader => preferences['filters'][actorHeader] = app.aggregationData[0][actorHeader]);
+            actorHeaders.forEach(actorHeader => preferences['filters'][actorHeader] = app.tableData[0][actorHeader]);
         }
 
         preferences['melt'] = actorHeaders.length ? actorHeaders[0] : 'event';
@@ -56,7 +56,7 @@ export default class CanvasResults {
             // if there are actors, then user picks how to melt the data
             actorHeaders.length !== 0 && m(ButtonRadio, {
                 id: 'btnMelt',
-                sections: [...actorHeaders, ...app.aggregationHeadersEvent].map(header => ({value: header})),
+                sections: [...actorHeaders, ...app.tableHeadersEvent].map(header => ({value: header})),
                 activeSection: preferences['melt'],
                 onclick: melt => {
                     preferences['melt'] = melt;
@@ -65,9 +65,9 @@ export default class CanvasResults {
                 attrsAll: {style: {width: 'auto'}}
             }),
 
-            app.aggregationHeadersUnit.indexOf(preferences['melt']) !== -1 && actorHeaders.map(actorHeader => m(ButtonRadio, {
+            app.tableHeaders.indexOf(preferences['melt']) !== -1 && actorHeaders.map(actorHeader => m(ButtonRadio, {
                 id: 'btnFilter' + actorHeader,
-                sections: [...app.aggregationData.reduce((out, entry) => {
+                sections: [...app.tableData.reduce((out, entry) => {
                     out.add(entry[actorHeader]);
                     return out
                 }, new Set())]
@@ -100,16 +100,16 @@ export default class CanvasResults {
         let width = Math.max(window.innerWidth
             - document.getElementById('leftpanel').getBoundingClientRect().width
             - document.getElementById('rightpanel').getBoundingClientRect().width
-            - Math.max(...app.aggregationHeadersUnit.map(col => col.length)) * 4 - 133, 400);
+            - Math.max(...app.tableHeaders.map(col => col.length)) * 4 - 133, 400);
         let height = Math.max(window.innerHeight
             - document.getElementById('aggregDataOutput').getBoundingClientRect().height
             - 40 - 153, 400);
 
         let vegaSchema;
-        if (app.aggregationHeadersUnit.length === 1 && 'date' in app.aggregationHeadersLabels) {
+        if (app.tableHeaders.length === 1 && 'date' in app.aggregationHeadersLabels) {
             vegaSchema = {
                 "$schema": "https://vega.github.io/schema/vega-lite/v2.0.json",
-                "data": {"values": melt(app.aggregationData, app.aggregationHeadersUnit)},
+                "data": {"values": melt(app.tableData, app.tableHeaders)},
                 "mark": "line",
                 "encoding": {
                     "x": {"field": app.aggregationHeadersLabels['date'][0], "type": "temporal", "axis": {"format": "%Y-%m-%d"}},
@@ -119,10 +119,10 @@ export default class CanvasResults {
             };
         }
         else {
-            let isUnitMelt = app.aggregationHeadersUnit.indexOf(preferences['melt']) !== -1;
+            let isUnitMelt = app.tableHeaders.indexOf(preferences['melt']) !== -1;
 
-            let factors = isUnitMelt ? app.aggregationHeadersUnit : [app.aggregationHeadersLabels['date'][0], preferences['melt']];
-            let processed = melt(app.aggregationData, factors);
+            let factors = isUnitMelt ? app.tableHeaders : [app.aggregationHeadersLabels['date'][0], preferences['melt']];
+            let processed = melt(app.tableData, factors);
 
             if (isUnitMelt) {
                 // filter to one group of actors

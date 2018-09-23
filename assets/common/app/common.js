@@ -4,7 +4,7 @@ export let aboutText = 'TwoRavens v0.1 "Dallas" -- The Norse god Odin had two ta
 
 export let panelMargin = '10px';
 export let heightHeader = '62px';
-export let heightFooter = '40px';
+export let heightFooter = '44px';
 
 export let menuColor = '#f9f9f9';
 export let borderColor = '1px solid #adadad';

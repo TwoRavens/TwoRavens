@@ -67,6 +67,9 @@ function leftpanel(mode) {
         return results.leftpanel(Object.keys(app.allPipelineInfo));
     }
 
+    if (mode === 'manipulate')
+        return manipulate.leftpanel();
+
     let selectedDisco = app.disco.find(problem => problem.problem_id === app.selectedProblem);
 
     let discoveryAllCheck = m('input#discoveryAllCheck[type=checkbox]', {
@@ -92,80 +95,6 @@ function leftpanel(mode) {
 
     let nodes = app.is_explore_mode ? nodesExplore : app.nodes;
 
-    // search box, variable list
-    let variableTab;
-
-    if (app.is_manipulate_mode && app.domainIdentifier && subset.manipulations[app.domainIdentifier.name]) {
-        let pipeline = subset.manipulations[app.domainIdentifier.name];
-
-        let baseVariables = app.allNodes.map(node => node.name);
-
-        let variables = (manipulate.constraintMenu
-            ? [...queryMongo.buildPipeline(pipeline.slice(0, pipeline.indexOf(manipulate.constraintMenu.step)),
-                new Set(baseVariables))['variables']]
-            : baseVariables).sort(manipulate.variableSort);
-
-        variableTab = {
-            value: 'Variables',
-            contents: !manipulate.constraintMenu ? undefined : [
-                m(TextField, {
-                    id: 'searchVar',
-                    placeholder: 'Search variables',
-                    oninput: manipulate.setVariableSearch
-                }),
-                m(PanelList, {
-                    id: 'varList',
-                    items: variables,
-                    colors: manipulate.constraintMenu.type === 'transform' && manipulate.constraintPreferences.usedTerms
-                        ? {[common.selVarColor]: [...manipulate.constraintPreferences.usedTerms.variables]}
-                        : {[app.hexToRgba(common.selVarColor)]: (manipulate.constraintMetadata || {}).columns || []},
-                    classes: {
-                        'item-bordered': variables.filter(variable =>
-                            manipulate.variableSearch !== '' && variable.toLowerCase().includes(manipulate.variableSearch))
-                    },
-                    callback: manipulate.constraintMenu.type !== 'transform'
-                        ? x => manipulate.setConstraintColumn(x)
-                        : _ => _,
-                    popup: variable => app.popoverContent(manipulate.variableMetadata[variable]),
-                    attrsItems: {'data-placement': 'right', 'data-original-title': 'Summary Statistics'}
-                }),
-                manipulate.constraintMenu.type !== 'transform' && manipulate.constraintMetadata.type !== 'date' && [
-                    m("h5", 'Menu Type'),
-                    m(ButtonRadio, {
-                        id: 'subsetTypeButtonBar',
-                        onclick: manipulate.setConstraintType,
-                        activeSection: manipulate.constraintMetadata.type,
-                        sections: ['continuous', 'discrete'].map(type => ({value: type}))
-                    })
-                ]
-            ]
-        };
-    }
-    else variableTab = {
-        value: 'Variables',
-        title: 'Click variable name to add or remove the variable pebble from the modeling space.',
-        contents: [
-            m(TextField, {
-                id: 'searchVar',
-                placeholder: 'Search variables and labels',
-                oninput: app.searchVariables
-            }),
-            m(PanelList, {
-                id: 'varList',
-                items: app.valueKey,
-                colors: {
-                    [app.hexToRgba(common.selVarColor)]: nodes.map(n => n.name),
-                    [app.hexToRgba(common.nomColor)]: app.zparams.znom,
-                    [app.hexToRgba(common.dvColor)]: app.is_explore_mode ? [] : app.zparams.zdv
-                },
-                classes: {'item-bordered': app.matchedVariables},
-                callback: x => app.clickVar(x, nodes),
-                popup: variable => app.popoverContent(app.findNodeIndex(variable, true)),
-                attrsItems: {'data-placement': 'right', 'data-original-title': 'Summary Statistics'}
-            })
-        ]
-    };
-
     return m(Panel, {
         side: 'left',
         label: 'Data Selection',
@@ -178,7 +107,30 @@ function leftpanel(mode) {
         currentTab: app.leftTab,
         callback: app.setLeftTab,
         sections: [
-            variableTab,
+            {
+                value: 'Variables',
+                title: 'Click variable name to add or remove the variable pebble from the modeling space.',
+                contents: [
+                    m(TextField, {
+                        id: 'searchVar',
+                        placeholder: 'Search variables and labels',
+                        oninput: app.searchVariables
+                    }),
+                    m(PanelList, {
+                        id: 'varList',
+                        items: app.valueKey,
+                        colors: {
+                            [app.hexToRgba(common.selVarColor)]: nodes.map(n => n.name),
+                            [app.hexToRgba(common.nomColor)]: app.zparams.znom,
+                            [app.hexToRgba(common.dvColor)]: app.is_explore_mode ? [] : app.zparams.zdv
+                        },
+                        classes: {'item-bordered': app.matchedVariables},
+                        callback: x => app.clickVar(x, nodes),
+                        popup: variable => app.popoverContent(app.findNodeIndex(variable, true)),
+                        attrsItems: {'data-placement': 'right', 'data-original-title': 'Summary Statistics'}
+                    })
+                ]
+            },
             {value: 'Discovery',
              display: 'block',
              contents: [
@@ -252,13 +204,7 @@ let righttab = (id, task, title, probDesc) => m(PanelList, {
 function rightpanel(mode) {
     if (mode === 'results') return; // returns undefined, which mithril ignores
     if (mode === 'explore') return;
-
-    if (mode === 'manipulate') return m(Panel, {
-        side: 'right',
-        label: 'Pipeline',
-        hover: true,
-        width: '500px',
-    }, manipulate.rightpanel());
+    if (mode === 'manipulate') return manipulate.rightpanel();
 
     // mode == null (model mode)
 
@@ -589,32 +535,7 @@ class Body {
             this.footer(app.currentMode),
             leftpanel(app.currentMode),
             rightpanel(app.currentMode),
-            app.is_manipulate_mode && manipulate.constraintMenu && m(Button, {
-                id: 'btnStage',
-                style: {
-                    right: `calc(${common.panelOpen['right'] ? '500' : '16'}px + ${common.panelMargin}*2)`,
-                    bottom: `calc(${common.heightFooter} + ${common.panelMargin} + 6px)`,
-                    position: 'fixed',
-                    'z-index': 100,
-                    'box-shadow': 'rgba(0, 0, 0, 0.3) 0px 2px 3px'
-                },
-                onclick: () => {
-
-                    let name = manipulate.constraintMenu.type === 'transform' ? ''
-                        : manipulate.constraintMetadata.type  + ': ' + manipulate.constraintMetadata.columns[0];
-
-                    queryAbstract.addConstraint(
-                        app.domainIdentifier.name,  // the pipeline identifier
-                        manipulate.constraintMenu.step,  // the step the user is currently editing
-                        manipulate.constraintPreferences,  // the menu state for the constraint the user currently editing
-                        manipulate.constraintMetadata,  // info used to draw the menu (variables, menu type),
-                        name
-                    );
-                    // clear the constraint menu
-                    manipulate.setConstraintMenu(undefined);
-                }
-            }, 'Stage'),
-            app.is_manipulate_mode && m(Canvas, manipulate.manipulateCanvas(app.domainIdentifier.name)),
+            app.is_manipulate_mode && manipulate.menu(),
             m(`#main`, {style: {overflow, display: app.is_manipulate_mode ? 'none' : 'block'}},
                 m("#innercarousel.carousel-inner", {style: {height: '100%', overflow}},
                 app.is_explore_mode && [variate === 'problem' ?
@@ -925,7 +846,7 @@ class Body {
         let pipeline = subset.manipulations[(app.domainIdentifier || {}).name];
         if (pipeline) manipulateRecordCount = {
             'subset': subset.totalSubsetRecords,
-            'aggregate': subset.aggregationData && subset.aggregationData.length
+            'aggregate': subset.tableData && subset.tableData.length
         }[(pipeline[pipeline.length - 1] || {}).type];
 
         return m(Footer, [

@@ -71,7 +71,10 @@ export let binaryFunctions = new Set([
     'dateFromString'
 ]);
 export let variadicFunctions = new Set([
-    'add', 'multiply', 'concat' // any number of arguments
+    'add', 'multiply',
+    'max', 'min', 'avg',
+    'stdDevPop', 'stdDevSamp',
+    'concat' // any number of arguments
 ]);
 
 export let unaryOperators = {
@@ -288,7 +291,7 @@ function processRule(rule) {
         }, {});
     }
 
-    if (['discrete', 'categorical', 'categorical_grouped'].indexOf(rule.subset) !== -1) {
+    if (['discrete', 'discrete_grouped'].indexOf(rule.subset) !== -1) {
         let rule_query_inner = [];
         for (let child of rule.children) {
             rule_query_inner.push(child.name);
@@ -378,10 +381,11 @@ export function buildAggregation(unitMeasures, accumulations) {
     let columnsNonDyad = [];
     let columnsAccum = [];
 
-    // relevant for a date unit measure, this is used to rebuild date objects after the grouping stage
-    let dateTransforms = {};
+    // relevant for a date and continuous unit measures
+    // this is used to rebuild date objects and continuous bin boundaries after the grouping stage
+    let postTransforms = {};
 
-    // note that only aggregation transforms for unit-date, unit-dyad and event-categorical have been written.
+    // note that only aggregation transforms for unit-date, unit-dyad and accumulator-discrete have been written.
     // To aggregate down to date events, for example, a new function would need to be added under ['event']['date'].
     let transforms = {
         'unit': {
@@ -405,13 +409,13 @@ export function buildAggregation(unitMeasures, accumulations) {
                         }
                     };
                     // transform back out of string afterwards
-                    if (data['measure'] === 'Weekly') dateTransforms[data['column']] = {
+                    if (data['measure'] === 'Weekly') postTransforms[data['column']] = {
                         $dateFromString: {
                             format: dateFormat,
                             dateString: '$_id.' + data['column']
                         }
                     };
-                    if (data['measure'] === 'Monthly' || data['measure'] === 'Yearly') dateTransforms[data['column']] = {
+                    if (data['measure'] === 'Monthly' || data['measure'] === 'Yearly') postTransforms[data['column']] = {
                         $dateFromString: {
                             format: '%Y-%m-%d',
                             dateString: {
@@ -434,7 +438,7 @@ export function buildAggregation(unitMeasures, accumulations) {
                             toString({$trunc: {$divide: [{$month: '$' + data['column']}, 4]}})
                         ]
                     };
-                    dateTransforms[data['column']] = {
+                    postTransforms[data['column']] = {
                         $dateFromParts: {
                             year: {$toInt: {$arrayElemAt: [{$split: ['$_id.' + data['column'], '-']}, 0]}},
                             month: {$multiply: [{$toInt: {$arrayElemAt: [{$split: ['$_id.' + data['column'], '-']}, 1]}}, 4]},
@@ -461,10 +465,29 @@ export function buildAggregation(unitMeasures, accumulations) {
 
                 labels['dyad'] = labels['dyad'] || [];
                 labels['dyad'].push(dyadMeasureName);
-            }
+            },
+            'continuous': (data) => {
+                columnsNonDyad.push(data['column']);
+
+                unit[data['column']] = {
+                    $toInt: {
+                        $divide: [
+                            {$subtract: ['$' + data['column'], data['min']]},
+                            (data['max'] - data['min']) / data['measure']
+                        ]
+                    }
+                };
+
+                postTransforms[data['column']] = {
+                    $add: [
+                        data['min'],
+                        {$multiply: ['$_id.' + data['column'], (data['max'] - data['min']) / data['measure']]}
+                    ]
+                }
+            },
         },
         'accumulator': {
-            'categorical': (data) => {
+            'discrete': (data) => {
                 let selections = new Set(data.children.map(child => child.name));
 
                 let bins = {};
@@ -510,13 +533,14 @@ export function buildAggregation(unitMeasures, accumulations) {
     accumulations.forEach(measure => transforms.accumulator[measure.subset](measure));
 
     let reformatter = [];
+
     if (dyadMeasureName) {
         let _id = columnsNonDyad.reduce((out_id, columnNonDyad) => {
             out_id[columnNonDyad] = "$_id." + columnNonDyad;
             return out_id;
         }, {});
 
-        reformatter = [
+        reformatter = reformatter.concat([
             {
                 $facet: columnsDyad.reduce((facet, dyad) => { // build a pipeline for each dyad
                     facet[dyad] = [
@@ -527,29 +551,28 @@ export function buildAggregation(unitMeasures, accumulations) {
                                 return accumulators;
                             }, {_id})
                         },
-                        {$addFields: Object.assign({[dyadMeasureName]: dyad}, _id, dateTransforms)}
+                        {$addFields: Object.assign({[dyadMeasureName]: dyad}, _id, postTransforms)}
                     ];
                     return facet;
                 }, {})
             },
             {$project: {combine: {$setUnion: columnsDyad.map(column => '$' + column)}}},
             {$unwind: "$combine"},
-            {$replaceRoot: {newRoot: "$combine"}},
-            {$project: {_id: 0}}
-        ];
+            {$replaceRoot: {newRoot: "$combine"}}
+        ]);
     }
     else if (columnsNonDyad.length) {
-        reformatter = [
+        reformatter = reformatter.concat([
             {
                 $addFields: Object.assign(columnsNonDyad.reduce((addFields, column) => {
                     addFields[column] = '$_id.' + column;
                     return addFields;
-                }, {}), dateTransforms)
-            },
-            {$project: {_id: 0}}
-        ];
+                }, {}), postTransforms)
+            }
+        ]);
     }
-    else reformatter = [{$project: {_id: 0}}];
+
+    reformatter.push({$project: {_id: 0}});
 
     let columnsUnit = columnsNonDyad.concat(dyadMeasureName ? [dyadMeasureName] : []);
 
@@ -668,7 +691,7 @@ export function buildMenu(step) {
         {$sort: {year: 1, month: 1}}
     ];
 
-    if (['discrete', 'categorical', 'categorical_grouped'].indexOf(metadata.type) !== -1) return [
+    if (['discrete', 'discrete_grouped'].indexOf(metadata.type) !== -1) return [
         {$group: {_id: {[metadata.columns[0]]: '$' + metadata.columns[0]}, total: {$sum: 1}}},
         {$project: {[metadata.columns[0]]: '$_id.' + metadata.columns[0], _id: 0, total: 1}}
     ];
@@ -695,7 +718,7 @@ export function buildMenu(step) {
 
     if (metadata.type === 'peek') return [
         {
-            $project: metadata.variables.reduce((out, entry) => {
+            $project: (metadata.variables || []).reduce((out, entry) => {
                 out[entry] = 1;
                 return out;
             }, {_id: 0})

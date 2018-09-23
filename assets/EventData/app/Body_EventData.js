@@ -25,17 +25,16 @@ import CanvasAbout from "./canvases/CanvasAbout";
 import CanvasDatasets from "./canvases/CanvasDatasets";
 import CanvasSavedQueries from "./canvases/CanvasSavedQueries";
 
-import CanvasCategorical from "./canvases/CanvasCategorical";
+import CanvasDiscrete from "./canvases/CanvasDiscrete";
 import CanvasDyad from "./canvases/CanvasDyad";
 import CanvasDate from "./canvases/CanvasDate";
-import CanvasCategoricalGrouped from "./canvases/CanvasCategoricalGrouped";
+import CanvasDiscreteGrouped from "./canvases/CanvasDiscreteGrouped";
 import CanvasCoordinates from "./canvases/CanvasCoordinates";
 import CanvasCustom from "./canvases/CanvasCustom";
 import CanvasResults from "./canvases/CanvasResults";
 
 import SaveQuery from "./views/SaveQuery";
 import {TreeAggregate, TreeQuery, TreeVariables} from "./views/TreeSubset";
-import {eventdataSubsetCount} from "./app";
 
 export default class Body_EventData {
 
@@ -167,8 +166,8 @@ export default class Body_EventData {
             let tours = {
                 'dyad': tour.tourStartDyad,
                 'date': tour.tourStartDate,
-                'categorical': tour.tourStartCategorical,
-                'categorical_grouped': tour.tourStartCategoricalGrouped,
+                'discrete': tour.tourStartDiscrete,
+                'discrete_grouped': tour.tourStartDiscreteGrouped,
                 'coordinates': tour.tourStartCoordinates,
                 'custom': tour.tourStartCustom
             };
@@ -192,10 +191,10 @@ export default class Body_EventData {
 
         let recordCount = {
             'subset': app.totalSubsetRecords,
-            'aggregate': app.aggregationData && app.aggregationData.length
+            'aggregate': app.tableData && app.tableData.length
         }[app.selectedMode];
 
-        return m(Footer, [
+        return m(Footer,
             tourBar,
             m("#recordBar", {style: {display: "inline-block", float: 'right'}}, [
 
@@ -279,7 +278,7 @@ export default class Body_EventData {
                     }
                 }, recordCount + ' Records')
             ]),
-        ]);
+        );
     }
 
     leftpanel(mode) {
@@ -472,11 +471,11 @@ export default class Body_EventData {
                             id: 'resultsList',
                             items: allPlots,
                             colors: {
-                                [common.grayColor]: app.aggregationData ? [] : allPlots,
+                                [common.grayColor]: app.tableData ? [] : allPlots,
                                 [common.selVarColor]: app.selectedCanvas === 'Results' ? [app.selectedResult] : []
                             },
                             callback: (result) => {
-                                if (!app.aggregationData) {
+                                if (!app.tableData) {
                                     tour.tourStartAggregation();
                                     return;
                                 }
@@ -613,8 +612,8 @@ export default class Body_EventData {
             return m({
                 'date': CanvasDate,
                 'dyad': CanvasDyad,
-                'categorical': CanvasCategorical,
-                'categorical_grouped': CanvasCategoricalGrouped,
+                'discrete': CanvasDiscrete,
+                'discrete_grouped': CanvasDiscreteGrouped,
                 'coordinates': CanvasCoordinates
             }[subsetType], {
                 mode: app.selectedMode,
@@ -657,9 +656,9 @@ export default class Body_EventData {
                     "overflow-x": "auto"
                 }
             },
-            app.aggregationData ? m(Table, {
-                    headers: [...app.aggregationHeadersUnit, ...app.aggregationHeadersEvent],
-                    data: app.aggregationData
+            app.tableData ? m(Table, {
+                    headers: [...app.tableHeaders, ...app.tableHeadersEvent],
+                    data: app.tableData
                 })
                 : m('div', {style: {margin: '1em'}}, "Select event measures, then click 'Update' to display aggregated data.")
         );

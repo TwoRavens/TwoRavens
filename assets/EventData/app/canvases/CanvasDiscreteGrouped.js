@@ -26,7 +26,7 @@ let getLabel = (format, key) => {
 // plotted_subgroups - if not undefined, then the specific subplot is drawn. If set, then the plot is open
 // selections - set of selected categories
 
-export default class CanvasCategoricalGrouped {
+export default class CanvasDiscreteGrouped {
     view(vnode) {
         let {data, metadata, preferences, formats, alignments} = vnode.attrs;
 
@@ -121,7 +121,7 @@ export default class CanvasCategoricalGrouped {
                 shown && graph
             );
 
-        return m("#canvasCategoricalGrouped", {style: {'padding-top': common.panelMargin}},
+        return m("#canvasDiscreteGrouped", {style: {'padding-top': common.panelMargin}},
             m("#graphContainer[tabindex='0']", {
                     style: {
                         "outline": "none",

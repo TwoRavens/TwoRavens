@@ -37,7 +37,7 @@ export default class SaveQuery {
             'collection_type': app.selectedMode,
             'result_count': {
                 'subset': app.totalSubsetRecords,
-                'aggregate': (app.aggregationData || []).length
+                'aggregate': (app.tableData || []).length
             }[app.selectedMode]
         });
         if (!('save_to_dataverse' in preferences)) preferences['save_to_dataverse'] = false;

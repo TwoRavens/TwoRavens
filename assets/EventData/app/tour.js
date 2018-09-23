@@ -195,13 +195,13 @@ let dateTour = {
     ]
 };
 
-export function tourStartCategorical() {
+export function tourStartDiscrete() {
     hopscotch.endTour(false);
-    hopscotch.startTour(categoricalTour);
+    hopscotch.startTour(discreteTour);
 }
 
-let categoricalTour = {
-    id: "subset-categorical-tour",
+let discreteTour = {
+    id: "subset-discrete-tour",
     showPrevButton: true,
     nextOnTargetClick: true,
     steps: [,
@@ -236,13 +236,13 @@ let categoricalTour = {
     ]
 };
 
-export function tourStartCategoricalGrouped() {
+export function tourStartDiscreteGrouped() {
     hopscotch.endTour(false);
-    hopscotch.startTour(categoricalGroupedTour);
+    hopscotch.startTour(discreteGroupedTour);
 }
 
-let categoricalGroupedTour = {
-    id: "subset-categorical-grouped-tour",
+let discreteGroupedTour = {
+    id: "subset-discrete-grouped-tour",
     showPrevButton: true,
     nextOnTargetClick: true,
     steps: [

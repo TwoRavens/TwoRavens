@@ -1,11 +1,19 @@
 import m from 'mithril';
 import {TreeAggregate, TreeQuery, TreeTransform} from '../EventData/app/views/TreeSubset';
-import Button from '../common/app/views/Button';
 import CanvasContinuous from '../EventData/app/canvases/CanvasContinuous';
 import CanvasDate from '../EventData/app/canvases/CanvasDate';
-import CanvasCategorical from '../EventData/app/canvases/CanvasCategorical';
+import CanvasDiscrete from '../EventData/app/canvases/CanvasDiscrete';
 import CanvasTransform from '../EventData/app/canvases/CanvasTransform';
+
 import Flowchart from './views/Flowchart';
+
+import Button from '../common/app/views/Button';
+import TextField from "../common/app/views/TextField";
+import PanelList from "../common/app/views/PanelList";
+import ButtonRadio from "../common/app/views/ButtonRadio";
+import Panel from "../common/app/views/Panel";
+import Table from "../common/app/views/Table";
+import Canvas from "../common/app/views/Canvas";
 
 import * as subset from "../EventData/app/app";
 import * as app from './app';
@@ -16,9 +24,200 @@ import * as queryMongo from "../EventData/app/queryMongo";
 // dataset name from app.domainIdentifier.name
 // variable names from app.valueKey
 
-// looks funny, but this isolates the flowchart so that it can be embedded in model mode with different pipelines
+export function menu() {
+
+    return [
+        // stage button
+        constraintMenu && m(Button, {
+            id: 'btnStage',
+            style: {
+                right: `calc(${common.panelOpen['right'] ? '500' : '16'}px + ${common.panelMargin}*2)`,
+                bottom: `calc(${common.heightFooter} + ${common.panelMargin} + 6px + ${subset.tableData ? subset.tableHeight : '0px'})`,
+                position: 'fixed',
+                'z-index': 100,
+                'box-shadow': 'rgba(0, 0, 0, 0.3) 0px 2px 3px'
+            },
+            onclick: () => {
+                let name = constraintMenu.type === 'transform' ? ''
+                    : constraintMetadata.type  + ': ' + constraintMetadata.columns[0];
+
+                let success = queryAbstract.addConstraint(
+                    app.domainIdentifier.name,  // the pipeline identifier
+                    constraintMenu.step,  // the step the user is currently editing
+                    constraintPreferences,  // the menu state for the constraint the user currently editing
+                    constraintMetadata,  // info used to draw the menu (variables, menu type),
+                    name
+                );
+
+                // clear the constraint menu
+                if (success) {
+                    setConstraintMenu(undefined);
+                    common.setPanelOpen('right');
+                    updatePreviewTable({reset: true});
+                }
+            }
+        }, 'Stage'),
+
+        m(Canvas, {
+            attrsAll: {style: {height: `calc(100% - ${common.heightHeader} - ${subset.tableData ? subset.tableHeight : '0px'} - ${common.heightFooter})`}}
+        }, canvas(app.domainIdentifier.name)),
+        subset.tableData && previewTable()
+    ];
+}
+
+export function canvas(pipelineId) {
+    let pipeline = subset.manipulations[pipelineId];
+
+    if (isLoading) m('#loading.loader', {
+        style: {
+            margin: 'auto',
+            position: 'relative',
+            top: '40%',
+            transform: 'translateY(-50%)'
+        }
+    });
+
+    if (!constraintMenu) return;
+
+    if (constraintMenu.type === 'transform') return m(CanvasTransform, {
+        pipeline,
+        preferences: constraintPreferences,
+        variables: [...queryMongo.buildPipeline(
+            pipeline.slice(pipeline.indexOf(constraintMenu.step)),
+            new Set(app.valueKey))['variables']]
+    });
+
+    if (!constraintData || !constraintMetadata) return;
+
+    return m({
+        'continuous': CanvasContinuous,
+        'discrete': CanvasDiscrete,
+        'date': CanvasDate
+    }[constraintMetadata.type], {
+        mode: {
+            'subset': 'subset',
+            'unit': 'aggregate',
+            'accumulator': 'aggregate'
+        }[constraintMenu.type],
+        pipeline,
+        subsetName: constraintMenu.name,
+        data: constraintData,
+        preferences: constraintPreferences,
+        metadata: constraintMetadata,
+        redraw, setRedraw
+    })
+}
+
+export function previewTable() {
+    return m("[id='previewTable']", {
+            style: {
+                "position": "fixed",
+                "bottom": common.heightFooter,
+                "height": subset.tableHeight,
+                "width": "100%",
+                "border-top": "1px solid #ADADAD",
+                "overflow-y": "scroll",
+                "overflow-x": "auto",
+                'z-index': 100
+            },
+            onscroll: () => {
+                // don't apply infinite scrolling when list is empty
+                if (subset.tableData === 0) return;
+
+                let container = document.querySelector('#previewTable');
+                let scrollHeight = container.scrollHeight - container.scrollTop;
+                if (scrollHeight < container.offsetHeight + 100) updatePreviewTable();
+            }
+        },
+        m(Table, {
+            // headers: [...subset.tableHeaders, ...subset.tableHeadersEvent],
+            data: subset.tableData || []
+        })
+    );
+}
+
+export function leftpanel() {
+    if (!app.domainIdentifier || !subset.manipulations[app.domainIdentifier.name] || !constraintMenu)
+        return;
+
+    let pipeline = subset.manipulations[app.domainIdentifier.name];
+    let baseVariables = app.allNodes.map(node => node.name);
+
+    let variables = (constraintMenu
+        ? [...queryMongo.buildPipeline(pipeline.slice(0, pipeline.indexOf(constraintMenu.step)),
+            new Set(baseVariables))['variables']]
+        : baseVariables).sort(variableSort);
+
+    if (constraintMenu.type === 'accumulator') variables = variables.filter(column => inferType(column) === 'discrete');
+    if (constraintMenu.type === 'unit') variables = variables.filter(column => inferType(column) !== 'discrete');
+
+    return m(Panel, {
+            side: 'left',
+            label: 'Constraint Configuration',
+            hover: !app.is_manipulate_mode,
+            width: app.modelLeftPanelWidths[app.leftTab],
+            attrsAll: {
+                style: {
+                    'z-index': 101,
+                    // subtract header, spacer, spacer, scrollbar, table, and footer
+                    height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${subset.tableData ? subset.tableHeight : '0px'} - ${common.heightFooter})`
+                }
+            }
+        },
+        constraintMenu.type !== 'transform' && constraintMetadata.type !== 'date' && [
+            m(ButtonRadio, {
+                id: 'subsetTypeButtonBar',
+                onclick: setConstraintType,
+                activeSection: constraintMetadata.type,
+                sections: ['continuous', 'discrete'].map(type => ({value: type}))
+            })
+        ],
+        m(TextField, {
+            id: 'searchVar',
+            placeholder: 'Search variables',
+            oninput: setVariableSearch
+        }),
+        m(PanelList, {
+            id: 'varList',
+            items: variables,
+            colors: constraintMenu.type === 'transform' && constraintPreferences.usedTerms
+                ? {[common.selVarColor]: [...constraintPreferences.usedTerms.variables]}
+                : {[app.hexToRgba(common.selVarColor)]: (constraintMetadata || {}).columns || []},
+            classes: {
+                'item-bordered': variables.filter(variable =>
+                    variableSearch !== '' && variable.toLowerCase().includes(variableSearch))
+            },
+            callback: constraintMenu.type !== 'transform'
+                ? x => setConstraintColumn(x)
+                : x => constraintPreferences.insert(x),
+            popup: variable => app.popoverContent(variableMetadata[variable]),
+            attrsItems: {'data-placement': 'right', 'data-original-title': 'Summary Statistics'},
+            attrsAll: {
+                style: {
+                    height: 'calc(100% - 116px)',
+                    overflow: 'auto'
+                }
+            }
+        })
+    )
+}
+
+
 export function rightpanel() {
-    return m(PipelineFlowchart, {pipelineId: app.domainIdentifier.name})
+
+    return m(Panel, {
+        side: 'right',
+        label: 'Pipeline',
+        hover: true,
+        width: '500px',
+        attrsAll: {
+            style: {
+                'z-index': 101,
+                // subtract header, spacer, spacer, scrollbar, table, and footer
+                height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${subset.tableData ? subset.tableHeight : '0px'} - ${common.heightFooter})`
+            }
+        }
+    }, m(PipelineFlowchart, {pipelineId: app.domainIdentifier.name}));
 }
 
 class PipelineFlowchart {
@@ -114,7 +313,7 @@ class PipelineFlowchart {
                                 m(TreeAggregate, {id: pipelineId + step.id + 'unit', data: step.measuresUnit}),
                             ],
                             step.measuresAccum.length !== 0 && [
-                                m('h5', 'Accumulators'),
+                                m('h5', 'Column Accumulations'),
                                 m(TreeAggregate, {id: pipelineId + step.id + 'accumulator', data: step.measuresAccum}),
                             ],
 
@@ -125,14 +324,14 @@ class PipelineFlowchart {
                                     id: 'btnAddUnitMeasure',
                                     class: ['btn-sm'],
                                     style: {margin: '0.5em'},
-                                    onclick: () => setConstraintMenu({type: 'unit measure', step})
+                                    onclick: () => setConstraintMenu({type: 'unit', step})
                                 }, plus, ' Unit Measure'),
                                 m(Button, {
-                                    id: 'btnAddEventMeasure',
+                                    id: 'btnAddAccumulator',
                                     class: ['btn-sm' + (step.measuresAccum.length ? '' : ' is-invalid')],
                                     style: {margin: '0.5em'},
-                                    onclick: () => setConstraintMenu({type: 'event measure', step})
-                                }, plus, ' Event Measure')
+                                    onclick: () => setConstraintMenu({type: 'accumulator', step})
+                                }, plus, ' Accumulator')
                             ]
                         )
                     }
@@ -186,49 +385,6 @@ class PipelineFlowchart {
     }
 }
 
-export function manipulateCanvas(pipelineId) {
-    let pipeline = subset.manipulations[pipelineId];
-
-    if (isLoading) m('#loading.loader', {
-        style: {
-            margin: 'auto',
-            position: 'relative',
-            top: '40%',
-            transform: 'translateY(-50%)'
-        }
-    });
-
-    if (!constraintMenu) return;
-
-    if (constraintMenu.type === 'transform') return m(CanvasTransform, {
-        pipeline,
-        preferences: constraintPreferences,
-        variables: [...queryMongo.buildPipeline(
-            pipeline.slice(pipeline.indexOf(constraintMenu.step)),
-            new Set(app.valueKey))['variables']]
-    });
-
-    if (!constraintData || !constraintMetadata) return;
-
-    return m({
-        'continuous': CanvasContinuous,
-        'discrete': CanvasCategorical,
-        'date': CanvasDate
-    }[constraintMetadata.type], {
-        mode: {
-            'subset': 'subset',
-            'unit measure': 'aggregate',
-            'event measure': 'aggregate'
-        }[constraintMenu.type],
-        pipeline,
-        subsetName: constraintMenu.name,
-        data: constraintData,
-        preferences: constraintPreferences,
-        metadata: constraintMetadata,
-        redraw, setRedraw
-    })
-}
-
 // when set, the loading spiral is shown in the canvas
 export let isLoading = false;
 
@@ -238,22 +394,27 @@ export let setRedraw = state => redraw = state;
 
 export let constraintMenu;
 // let constraintMenuExample = {
-//     name: 'Subset' || 'Unit Measure' || 'Event Measure',
+//     type: 'transform' || 'subset' || 'unit' || 'accumulator',
 //     step: {
 //         // varies depending on step type, which is either 'transform', 'subset' or 'aggregate'
 //     },
 // };
-export let setConstraintMenu = async (menu) => {
-    let updateVariableMetadata = !constraintMenu || menu && constraintMenu.step !== menu.step;
 
-    constraintMenu = menu;
+// WARNING: this is a fragile function
+export let setConstraintMenu = async (menu) => {
+    let updateVariableMetadata = !constraintMenu || (menu || {}).step !== constraintMenu.step;
+
     Object.keys(constraintPreferences).forEach(key => delete constraintPreferences[key]);
 
-    if (constraintMenu === undefined) return;
+    if (menu === undefined) {
+        constraintMenu = menu;
+        updatePreviewTable({reset: true});
+        return;
+    }
 
     let pipeline = subset.manipulations[app.domainIdentifier.name];
     let variables = [...queryMongo.buildPipeline(
-        pipeline.slice(0, pipeline.indexOf(constraintMenu.step)),
+        pipeline.slice(0, pipeline.indexOf(menu.step)),
         new Set(app.valueKey))['variables']];  // get the variables present at this point in the pipeline
 
     if (updateVariableMetadata) {
@@ -264,17 +425,31 @@ export let setConstraintMenu = async (menu) => {
                 variables
             }
         };
-        let candidatevariableData = await loadMenu(pipeline.slice(0, pipeline.indexOf(constraintMenu.step)), summaryStep, {recount: true});
+        let candidatevariableData = await loadMenu(pipeline.slice(0, pipeline.indexOf(menu.step)), summaryStep, {recount: true});
         if (candidatevariableData) variableMetadata = candidatevariableData;
         else {
             alert('The pipeline at this stage matches no records. Delete constraints to match more records.');
             constraintMenu = undefined;
+            updatePreviewTable({reset: true});
             m.redraw();
             return;
         }
     }
 
-    if (constraintMenu.type === 'transform') return;
+    constraintMenu = menu;
+    common.setPanelOpen('right', false);
+
+    if (constraintMenu.step.type === 'aggregate')
+        constraintMetadata.measureType = menu.type;
+
+    if (constraintMenu.step.type === 'transform') {
+        updatePreviewTable({reset: true});
+        m.redraw();
+        return;
+    }
+
+    if (constraintMenu.type === 'accumulator') variables = variables.filter(column => inferType(column) === 'discrete');
+    if (constraintMenu.type === 'unit') variables = variables.filter(column => inferType(column) !== 'discrete');
 
     // select a random variable none selected yet, or previously selected variable no longer available
     let variable = !constraintMetadata.columns || variables.indexOf(constraintMetadata.columns[0]) === -1
@@ -284,6 +459,7 @@ export let setConstraintMenu = async (menu) => {
     setConstraintColumn(variable, {suppress: true});
 
     loadMenuManipulations();
+    updatePreviewTable({reset: true});
 };
 
 export let constraintMetadata = {};
@@ -297,29 +473,26 @@ export let setConstraintColumn = (column, {suppress}={}) => {
     if ('columns' in constraintMetadata && constraintMetadata.columns[0] === column) suppress = true;
     constraintMetadata.columns = [column];
 
-    setConstraintType(undefined, {suppress: true, infer: true});
+    setConstraintType(inferType(column), {suppress: true});
 
     Object.keys(constraintPreferences).forEach(key => delete constraintPreferences[key]);
     constraintData = undefined;
     if (!suppress) loadMenuManipulations();
 };
 
+export let inferType = variable => {
+    // initial inference based on data type
+    let type = variableMetadata[variable].types.indexOf('string') !== -1 ? 'discrete' : 'continuous';
 
-// call with infer: true to guess the most appropriate constraint type based on variableMetadata
-export let setConstraintType = (type, {suppress, infer}={}) => {
+    // force date type if possible
+    if (variableMetadata[variable].types.indexOf('date') !== -1) type = 'date';
 
-    if (infer) {
-        let column = constraintMetadata.columns[0];
+    // switch to discrete if there is a small number of unique values
+    if (type === 'continuous' && variableMetadata[variable].uniques <= 10) type = 'discrete';
+    return type;
+};
 
-        // initial inference based on data type
-        type = variableMetadata[column].types.indexOf('string') !== -1 ? 'discrete' : 'continuous';
-
-        // force date type if possible
-        if (variableMetadata[column].types.indexOf('date') !== -1) type = 'date';
-
-        // switch to discrete if there is a small number of unique values
-        if (type === 'continuous' && variableMetadata[column].uniques <= 10) type = 'discrete';
-    }
+export let setConstraintType = (type, {suppress}={}) => {
 
     if (constraintMetadata.type === type) suppress = true;
     constraintMetadata.type = type;
@@ -468,3 +641,39 @@ export let variableSort = (a, b) => {
     if (a.includes(variableSearch) === b.includes(variableSearch)) return a.localeCompare(b);
     return a.includes(variableSearch) ? -1 : 1;
 };
+
+
+export let updatePreviewTable = async ({reset}={}) => {
+
+    if (reset || !constraintMenu) {
+        previewSkip = 0;
+        subset.setTableData(undefined);
+    }
+
+    if (!constraintMenu || (subset.tableData || []).length - previewSkip < 0) return;
+
+    let previewMenu = {
+        type: 'menu',
+        metadata: {
+            type: 'peek',
+            skip: previewSkip,
+            limit: previewBatchSize
+        }
+    };
+    previewSkip += previewBatchSize;
+
+    let pipeline = subset.manipulations[app.domainIdentifier.name];
+    let data = await loadMenu(
+        pipeline.slice(0, pipeline.indexOf(stage => stage === constraintMenu.step)),
+        previewMenu
+    );
+
+    if (data.length) {
+        subset.setTableData((subset.tableData || []).concat(data));
+        m.redraw();
+    }
+};
+
+// for the data preview at the bottom of the page
+let previewSkip = 0;
+let previewBatchSize = 100;

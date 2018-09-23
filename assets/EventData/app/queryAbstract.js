@@ -125,7 +125,7 @@ window.callbackNegate = function (id, bool) {
 // {
 //     id: String(step.nodeId++),    // Node number with post-increment
 //     type: 'rule' || 'query' || 'group
-//     subset: 'date' || 'dyad' || 'categorical' || 'categorical_grouped' || 'coordinates' || 'custom' (if this.type === 'rule')
+//     subset: 'date' || 'dyad' || 'discrete' || 'discrete_grouped' || 'coordinates' || 'custom' (if this.type === 'rule')
 //     name: '[title]',         // 'Subsets', 'Group #', '[Selection] Subset' or tag name
 //     show_op: true,           // If true, show operation menu element
 //     operation: 'and',        // Stores preference of operation menu element
@@ -222,13 +222,13 @@ export function addConstraint(pipelineId, step, preferences, metadata, name) {
     // Don't add an empty constraint
     if (Object.keys(abstractBranch).length === 0) {
         alert("No options have been selected. Please make a selection.");
-        return;
+        return false;
     }
 
     // Don't add an invalid constraint
     if ('error' in abstractBranch) {
         alert(abstractBranch.error);
-        return;
+        return false;
     }
 
     common.setPanelOpen('right');
@@ -270,7 +270,7 @@ export function addConstraint(pipelineId, step, preferences, metadata, name) {
         if (duplicate !== -1) {
             if (confirm(`Replace duplicated event measure? (${abstractBranch.subset}: ${columnsTemp.join(', ')})`))
                 step.measuresUnit[duplicate] = abstractBranch;
-            else return;
+            else return false;
         }
         else step.measuresUnit.push(abstractBranch);
     }
@@ -291,6 +291,7 @@ export function addConstraint(pipelineId, step, preferences, metadata, name) {
         }
         else step.measuresAccum.push(abstractBranch);
     }
+    return true;
 }
 
 // Convert the subset panel state to an abstract query branch
@@ -298,6 +299,8 @@ function makeAbstractBranch(pipelineId, step, preferences, metadata, name) {
 
     if (step.type === 'transform') {
         if (!preferences.isValid) return {error: 'The specified transformation is not valid.'};
+        if (step.transforms.some(transform => transform.name === preferences.transformName))
+            return {error: 'The specified transform name has already been used.'};
 
         // reads the CanvasTransform menu state, this branch gets added to the transform step
         return {
@@ -382,7 +385,9 @@ function makeAbstractBranch(pipelineId, step, preferences, metadata, name) {
                 subset: 'continuous',
                 cancellable: true,
                 measure: preferences['measure'],
-                column: metadata['columns'][0]
+                column: metadata['columns'][0],
+                min: preferences['minLabel'],
+                max: preferences['maxLabel']
             }
         }
 
@@ -479,7 +484,7 @@ function makeAbstractBranch(pipelineId, step, preferences, metadata, name) {
         };
     }
 
-    if (['discrete', 'categorical', 'categorical_grouped'].indexOf(metadata['type']) !== -1) {
+    if (['discrete', 'discrete_grouped'].indexOf(metadata['type']) !== -1) {
         // if aggregating, add the target format in the name
         let aggFormat = (step.type === 'aggregate' && 'aggregation' in preferences)
             ? ` (${preferences['aggregation']})` : '';
@@ -652,7 +657,7 @@ export function realignQuery(step, source, target) {
                 // return branch;
             }
 
-            if (branch.subset === 'categorical' || branch.subset === 'categorical_grouped') {
+            if (branch.subset === 'discrete' || branch.subset === 'discrete_grouped') {
                 let sourceColumn = sourceSubsets[subsetName]['columns'][0];
                 let targetColumn = targetSubsets[subsetName]['columns'][0];
 
@@ -726,7 +731,7 @@ export function realignPreferences(source, target) {
             }
         }
 
-        if (subsetType === 'categorical' || subsetType === 'categorical_grouped') {
+        if (subsetType === 'discrete' || subsetType === 'discrete_grouped') {
             let sourceColumn = sourceSubsets[subset]['columns'][0];
             let targetColumn = targetSubsets[subset]['columns'][0];
 

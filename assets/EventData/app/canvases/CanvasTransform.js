@@ -1,16 +1,21 @@
 import m from 'mithril';
 
 import TextField from "../../../common/app/views/TextField";
-import Button from '../../../common/app/views/Button';
 import PanelList from '../../../common/app/views/PanelList';
-
-import * as app from '../app';
 import * as query from '../queryMongo';
 import * as common from '../../../common/app/common';
 
 let setDefault = (obj, id, value) => obj[id] = obj[id] || value;
 let warn = (text) => m('[style=color:#dc3545;display:inline-block;margin-left:1em;]', text);
 
+let usedTermDefaults = () => ({
+    variables: new Set(),
+    unaryFunctions: new Set(),
+    binaryFunctions: new Set(),
+    variadicFunctions: new Set(),
+    unaryOperators: new Set(),
+    binaryOperators: new Set()
+});
 
 export default class CanvasTransform {
     oninit({attrs}) {
@@ -18,15 +23,21 @@ export default class CanvasTransform {
 
         setDefault(preferences, 'transformName', '');
         setDefault(preferences, 'transformEquation', '');
-        setDefault(preferences, 'usedTerms', {
-            variables: new Set(),
-            unaryFunctions: new Set(),
-            binaryFunctions: new Set(),
-            variadicFunctions: new Set(),
-            unaryOperators: new Set(),
-            binaryOperators: new Set()
-        });
+        setDefault(preferences, 'usedTerms', usedTermDefaults());
         setDefault(preferences, 'isValid', false);
+        setDefault(preferences, 'cursorPosition', 0);
+
+        preferences.insert = (value, atCursor) => {
+
+            if (!atCursor && preferences.transformEquation.indexOf('@*') !== -1)
+                preferences.transformEquation = preferences.transformEquation.replace('@*', value + ', @*');
+            else if (!atCursor && preferences.transformEquation.indexOf('@') !== -1)
+                preferences.transformEquation = preferences.transformEquation.replace('@', value);
+            else preferences.transformEquation =
+                    preferences.transformEquation.slice(0, preferences.cursorPosition) + value +
+                    preferences.transformEquation.slice(preferences.cursorPosition);
+            document.getElementById('textFieldEquation').focus();
+        }
     }
 
     view(vnode) {
@@ -47,10 +58,13 @@ export default class CanvasTransform {
 
         try {
             let response = query.buildTransform(preferences.transformEquation, new Set(variables));
-            transformQuery = JSON.stringify(response.query, null, 2);
+            transformQuery = JSON.stringify(response.query);
             preferences.usedTerms = response.usedTerms;
             // make the leftpanel variable list update if in d3m. In d3m the leftpanel reads the preferences to highlight variables
-            if (!preferences.isValid) m.redraw();
+            if (!preferences.isValid) {
+                preferences.isValid = true;
+                m.redraw();
+            }
             preferences.isValid = true;
         }
         catch (err) {
@@ -58,7 +72,9 @@ export default class CanvasTransform {
             preferences.isValid = false;
         }
 
-        if (preferences.transformName.match(/[ -]/) || preferences.transformEquation === '')
+        if (preferences.transformEquation === '') preferences.usedTerms = usedTermDefaults();
+
+        if (preferences.transformName.match(/[ -]/) || preferences.transformName === '' || preferences.transformEquation === '')
             preferences.isValid = false;
 
         return m("#canvasTransform", {style: {'height': '100%', 'width': '100%', 'padding-top': common.panelMargin}},
@@ -74,37 +90,49 @@ export default class CanvasTransform {
             m(TextField, {
                 id: 'textFieldEquation',
                 placeholder: '1 + ' + variables[0],
+                value: preferences.transformEquation,
                 class: !preferences.transformEquation && ['is-invalid'],
-                oninput: (value) => preferences.transformEquation = value,
-                onblur: (value) => preferences.transformEquation = value,
+                oninput: value => {
+                    preferences.transformEquation = value;
+                    preferences.cursorPosition = document.getElementById('textFieldEquation').selectionStart;
+                },
+                onblur: value => {
+                    preferences.transformEquation = value;
+                    preferences.cursorPosition = document.getElementById('textFieldEquation').selectionStart;
+                },
                 style: {display: 'inline-block', width: 'calc(100% - 190px)'}
             }), m('br'),
 
             preferences.transformName.match(/[ -]/) && warn('spaces and dashes are not permitted in the variable name'),
 
-            preferences.transformEquation && m('div', {style: {width: '100%'}},
-                transformQuery || warn(transformError)), m('br'),
+            preferences.transformEquation && [
+                transformQuery && m('div#transformQuery', {style: {width: '100%'}}, transformQuery),
+                !transformQuery && m('div#transformError', {style: {width: '100%'}}, warn(transformError))
+            ], m('br'),
 
             m('div', {style},
                 m('h4', {'margin-top': 0}, 'Unary Functions'),
                 m(PanelList, {
                     id: 'unaryFunctionsList',
                     items: [...query.unaryFunctions],
-                    colors: {[common.selVarColor]: [...preferences.usedTerms.unaryFunctions]}
+                    colors: {[common.selVarColor]: [...preferences.usedTerms.unaryFunctions]},
+                    callback: value => preferences.insert(value + '(@)')
                 })),
             m('div', {style},
                 m('h4', {'margin-top': 0}, 'Binary Functions'),
                 m(PanelList, {
                     id: 'binaryFunctionsList',
                     items: [...query.binaryFunctions],
-                    colors: {[common.selVarColor]: [...preferences.usedTerms.binaryFunctions]}
+                    colors: {[common.selVarColor]: [...preferences.usedTerms.binaryFunctions]},
+                    callback: value => preferences.insert(value + '(@, @)')
                 })),
             m('div', {style},
                 m('h4', {'margin-top': 0}, 'Variadic Functions'),
                 m(PanelList, {
                     id: 'variadicFunctionsList',
                     items: [...query.variadicFunctions],
-                    colors: {[common.selVarColor]: [...preferences.usedTerms.variadicFunctions]}
+                    colors: {[common.selVarColor]: [...preferences.usedTerms.variadicFunctions]},
+                    callback: value => preferences.insert(value + '(@*)')
                 })),
             m('div', {style},
                 m('h4', {'margin-top': 0}, 'Unary Operators'),
@@ -113,7 +141,8 @@ export default class CanvasTransform {
                     items: Object.keys(query.unaryOperators).map(key => key + ' ' + query.unaryOperators[key]),
                     colors: {
                         [common.selVarColor]: [...preferences.usedTerms.unaryOperators].map(key => key + ' ' + query.unaryOperators[key])
-                    }
+                    },
+                    callback: value => preferences.insert(' ' + value.split(' ')[0] + '@', true)
                 })),
             m('div', {style},
                 m('h4', {'margin-top': 0}, 'Binary Operators'),
@@ -122,7 +151,8 @@ export default class CanvasTransform {
                     items: Object.keys(query.binaryOperators).map(key => key + ' ' + query.binaryOperators[key]),
                     colors: {
                         [common.selVarColor]: [...preferences.usedTerms.binaryOperators].map(key => key + ' ' + query.binaryOperators[key])
-                    }
+                    },
+                    callback: value => preferences.insert(' ' + value.split(' ')[0] + ' ', true)
                 }))
         );
     }

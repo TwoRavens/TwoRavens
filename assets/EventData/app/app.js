@@ -38,7 +38,7 @@ export let subsetData = {};
 // if selectedSubsetName: true, then the loading symbol is displayed instead of the menu
 export let isLoading = {};
 
-// contains state for redrawing a canvas/subset (in a categorical_grouped subset it contains selected categories, graphed groupings, and open/closed states)
+// contains state for redrawing a canvas/subset (in a discrete_grouped subset it contains selected categories, graphed groupings, and open/closed states)
 export let subsetPreferences = {};
 export let subsetRedraw = {};  // if selectedSubsetName: true, then elements outside the mithril redraw are rebuilt. Typically d3 plots.
 export let setSubsetRedraw = (subset, value) => subsetRedraw[subset] = value || false;
@@ -94,10 +94,10 @@ export let setSelectedDataset = (key) => {
             looseSteps['eventdataAggregate'].measuresAccum.splice(i, 1);
     });
 
-    aggregationHeadersUnit = [];
-    aggregationHeadersEvent = [];
+    tableHeaders = [];
+    tableHeadersEvent = [];
     aggregationHeadersLabels = [];
-    aggregationData = undefined;
+    tableData = undefined;
 
     resetPeek();
 };
@@ -172,10 +172,17 @@ export let toggleSelectedConstructedVariable = (variable) => selectedConstructed
 export let variableSearch = '';
 export let setVariableSearch = (text) => variableSearch = text;
 
-export let aggregationData;
-export let aggregationHeadersUnit = [];
-export let aggregationHeadersEvent = [];
+export let tableData;
+export let setTableData = data => tableData = data;
+
+export let tableHeaders = [];
+export let setTableHeaders = headers => tableHeaders = headers;
+
+export let tableHeadersEvent = [];
+export let setTableHeadersEvent = headers => tableHeadersEvent= headers;
+
 export let aggregationHeadersLabels = {};
+export let setAggregationHeadersLabels = labels => aggregationHeadersLabels = labels;
 
 export let showSaveQuery = false;
 export let setShowSaveQuery = (state) => showSaveQuery = state;
@@ -502,10 +509,10 @@ export async function submitAggregation() {
 
     let data = await loadMenu(manipulations.eventdata, looseSteps['eventdataAggregate']);
     if (data) {
-        aggregationData = data;
+        tableData = data;
         let {units, accumulators, labels} = cachedPipeline;
-        aggregationHeadersUnit = [...units];
-        aggregationHeadersEvent = [...accumulators];
+        tableHeaders = [...units];
+        tableHeadersEvent = [...accumulators];
         aggregationHeadersLabels = labels;
     }
     setLaddaSpinner('btnUpdate', false);
@@ -562,9 +569,9 @@ export async function reset() {
             nodeId: 1
         };
 
-        aggregationData = undefined;
-        aggregationHeadersEvent = [];
-        aggregationHeadersUnit = [];
+        tableData = undefined;
+        tableHeadersEvent = [];
+        tableHeaders = [];
         aggregationHeadersLabels = [];
 
         Object.keys(genericMetadata[selectedDataset]['subsets']).forEach(subset => {

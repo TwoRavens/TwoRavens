@@ -44,7 +44,7 @@ export default class CanvasContinuous {
     view(vnode) {
         let {mode, data, metadata, preferences, redraw, setRedraw} = vnode.attrs;
 
-        preferences['measure'] = preferences['measure'] || metadata.buckets;
+        if (preferences['measure'] === undefined) preferences['measure'] = metadata.buckets;
 
         let setHandles = (handles) => {
             preferences['handleLower'] = handles[0];
@@ -171,12 +171,27 @@ export default class CanvasContinuous {
                     ]
                 )
             ),
-            mode === 'aggregate' && m('#labelAggreg', m(TextField, {
+            mode === 'aggregate' && m("label[for='discreteAggreg'][id='discreteAggregLab']", {
+                style: {
+                    "text-align": "left",
+                    "width": "100%",
+                    "margin-top": "10px"
+                }
+            }, "Bin Count:"),
+            mode === 'aggregate' && m('#discreteAggreg', m(TextField, {
                 id: 'labelAggregOption',
+                class: preferences.error && ['is-invalid'],
                 attrsAll: {style: {width: '80px'}},
-                placeholder: 'integer number of equivalent bins to aggregate into',
-                onclick: aggregation => {
-                    if (parseInt(aggregation)) preferences['measure'] = parseInt(aggregation);
+                title: 'integer number of linearly spaced bins to aggregate into',
+                oninput: aggregation => {
+                    if (aggregation.length === 0) {
+                        preferences['measure'] = '';
+                        preferences.error = true;
+                    }
+                    if (parseInt(aggregation) > 0) {
+                        preferences['measure'] = Math.min(parseInt(aggregation), 10000);
+                        preferences.error = false;
+                    }
                 },
                 value: preferences['measure']
             }))
