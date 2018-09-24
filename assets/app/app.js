@@ -590,10 +590,10 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     //  zparams.zd3mtarget = d3mRootPath+"/dataset_TRAIN/tables/learningData.csv";
 
     res = await m.request(d3mPS);
-    console.log("prob schema data: ", res);
+    // console.log("prob schema data: ", res);
     if(typeof res.success=='undefined'){            // In Task 2 currently res.success does not exist in this state, so can't check res.success==true
         // This is a Task 2 assignment
-        console.log("DID WE GET HERE?");
+        // console.log("DID WE GET HERE?");
         task1_finished = true;
         byId("btnDiscovery").classList.remove("btn-success");
         byId("btnDiscovery").classList.add("btn-default");
@@ -614,7 +614,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         console.log("Task 2: Problem Doc Exists");
 
         // Note: There is no res.success field in this return state
-        // if (!res.success){             
+        // if (!res.success){
         //   alert('problem schema not available: ' + res.message);
         //   return
         // }
@@ -654,7 +654,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         console.log("Task 1: No Problem Doc");
         d3mProblemDescription.id="Task1";
         d3mProblemDescription.name="Task1";
-        d3mProblemDescription.description = "Discovered Problems";    
+        d3mProblemDescription.description = "Discovered Problems";
     };
 
     // 4. Read the data document and set 'datadocument'
@@ -869,7 +869,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
 
         // Set target variable for center panel if no problemDoc exists to set this
         if(!problemDocExists){
-            mytarget = disco[0].target; 
+            mytarget = disco[0].target;
             mytargetindex = valueKey.indexOf(mytarget) - 1;  // Not clear if still used?
         };
 
@@ -879,8 +879,31 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
             byId("btnDiscovery").classList.add("btn-success"); // Would be better to attach this as a class at creation, but don't see where it is created
         };
 
-        console.log("disco:");
-        console.log(disco);
+
+
+
+        // send the all problems to metadata and also perform app solver on theme
+        console.log("my_disco:");
+        let solver_res = []
+        let problem_sent = []
+        for(let i=0; i<disco.length; i++){
+          solver_res.push(await callSolver(disco[i]));
+        }
+        console.log("solver +++++", solver_res[0])
+        for(let j=0; j<disco.length; j++){
+          let val = {
+            "description":disco[j],
+            "result":solver_res[j]
+          }
+
+          problem_sent.push(val);
+        }
+
+        console.log("problem to be sent ", problem_sent)
+        let preprocess_id = 1
+        let version = 1
+        // let api_res = addProblem(preprocess_id, version, problem_sent)
+        // console.log("ADD PROBLEM API RESPONSE ", api_res)
     }
 
     // 11. Call layout() and start up
@@ -4711,6 +4734,7 @@ export function discovery(preprocess_file) {
         //jQuery.extend(true, current_disco, names);
         disco[i] = current_disco;
     };
+    console.log("This is the treasure disco ", disco)
     /* Problem Array of the Form:
         [1: {problem_id: "problem 1",
             system: "auto",
@@ -4729,7 +4753,9 @@ export function discovery(preprocess_file) {
 
 export let selectedProblem;
 export function setSelectedProblem(prob) {selectedProblem = prob;
-let problem = disco.find(problem => problem.problem_id === selectedProblem);
+
+let problem = disco.find(problem => problem.problem_id === prob);
+console.log("Selected problem ", problem)
 if(problem.system === "user"){
     console.log("It is user")
     d3.select("#btnDelete")
@@ -5011,7 +5037,7 @@ function primitiveStepRemoveColumns (aux) {
 }
 
 
-export function addProblem(preprocess_id, version, description, result){
+export function addProblem(preprocess_id, version, problem_sent){
     let api_response = ""
     m.request({
         method: "POST",
@@ -5019,11 +5045,7 @@ export function addProblem(preprocess_id, version, description, result){
         data: {
             "preprocessId":preprocess_id,
             "version":version,
-            "problems":[{
-                "description": description,
-                    "results":result
-            }
-            ]
+            "problems":problem_sent
         }
     })
         .then(function(result) {
@@ -5042,5 +5064,13 @@ export async function callSolver (prob) {
     let zd3mdata = zparams.zd3mdata;
     let jsonout = {prob, zd3mdata};
     let json = await makeRequest(ROOK_SVC_URL + 'solverapp', jsonout);
-    console.log(json);
+    var promise1 = Promise.resolve(json);
+
+        promise1.then(function(value) {
+        console.log(" THis is the solver app response",value);
+        return value;
+          // expected output: Array [1, 2, 3]
+        });
+
+
 }

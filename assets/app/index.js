@@ -62,6 +62,7 @@ function leftpanel(mode) {
     }
 
     let selectedDisco = app.disco.find(problem => problem.problem_id === app.selectedProblem);
+  // console.log("this is selected Disco," , selectedDisco)
 
     let discoveryAllCheck = m('input#discoveryAllCheck[type=checkbox]', {
         onclick: m.withAttr("checked", (checked) => app.setCheckedDiscoveryProblem(checked)),
@@ -147,7 +148,7 @@ function leftpanel(mode) {
                      m.route.set('/model');
                      setTimeout(_ => {
                          if (selectedDisco) {
-                             console.log("THis is selected disco", selectedDisco)
+                             // console.log("THis is selected disco", selectedDisco)
                              let {target, predictors} = selectedDisco;
                              app.erase('Discovery');
                              [target].concat(predictors).map(x => app.clickVar(x));
@@ -649,14 +650,13 @@ class Body {
                 m('svg#whitespace')),
               model_mode && m("#spacetools.spaceTool", {style: {right: app.panelWidth.right, 'z-index': 16}},
                               spaceBtn('btnAdd', async function() {
-                                  app.zPop();
+                                app.zPop();
                                   let rookpipe = await app.makeRequest(ROOK_SVC_URL + 'pipelineapp', app.zparams);
                                   rookpipe.target = rookpipe.depvar[0];
                                   let myn = app.findNodeIndex(rookpipe.target, true);
-
                                   let currentTaskType = app.d3mProblemDescription.taskType;
                                   let currentMetric = app.d3mProblemDescription.performanceMetrics[0].metric;
-                                  if (myn.nature === "nominal"){
+                                  if (myn.nature == "nominal"){
                                     rookpipe.task = currentTaskType === 'taskTypeUndefined' ? 'classification' : currentTaskType;
                                     rookpipe.metric = currentMetric === 'metricUndefined' ? 'f1Macro' : currentMetric;
                                   }else{
@@ -670,22 +670,28 @@ class Body {
                                   rookpipe.system = "user";
                                   let problemId = app.disco.length + 1;
                                   rookpipe.problem_id = "problem" + problemId;
-                                  // setting preprocessId for now
-                                  let preprocessId = 1;
-                                  let version = 1;
-
-
+                                  console.log("pushing this:");
+                                  console.log(rookpipe);
                                   app.disco.push(rookpipe);
-                                  console.log("my disco ", app.disco.indexOf(rookpipe))
-                                    app.setSelectedProblem(app.disco.length - 1);
+                                    app.setSelectedProblem(rookpipe.problem_id);
                                   app.setLeftTab('Discovery');
                                   console.log("This is rookpipe ",rookpipe);
                                   // this is where Problem ADD API call to the function will be made
                                   let problem_result = {};
+                                  let preprocess_id = 1;
+                                  let version =1;
+                                  let selectedDisco = app.disco.find(problem => problem.problem_id === rookpipe.problem_id);
+                                  // console.log("this is selected Disco," , selectedDisco)
                                   let app_solver_result = app.callSolver(selectedDisco);
                                   console.log("app solver result")
                                   problem_result = app_solver_result
-                                  let addProblemAPI = app.addProblem(preprocessId, version, rookpipe, problem_result);
+                                  let problem_section= []
+                                  let val = {
+                                    "description":rookpipe,
+                                    "result": problem_result
+                                  }
+                                  problem_section.push(val)
+                                  let addProblemAPI = app.addProblem(preprocess_id, version, problem_section);
                                   console.log("API RESPONSE: ",addProblemAPI );
 
                                   m.redraw();

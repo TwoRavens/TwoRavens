@@ -168,14 +168,18 @@ preprocess<-function(hostname=NULL, fileid=NULL, testdata=NULL, types=NULL, file
 
     if(!identical(mycor,0)){
         mydisco<-disco(names(mydata2), mycor, n=3)
+
+        # Add problems that use discovered splits and constructed variables
+        mydisco2 <- tryCatch(disco2(mydata2, top=3), error=function(e) NULL)
+        mydisco3 <- tryCatch(disco3(mydata2, top=3), error=function(e) NULL)
+        mydisco <- c(mydisco, mydisco2, mydisco3) 
+        cat("Successfully completed problem discovery \n") 
+
     }else{
         mydisco<-NULL
+        cat("Problem discovery aborted\n") 
     }
 
-    # Add problems that use discovered splits and constructed variables
-    mydisco <- c(mydisco, disco2(mydata2, top=3), disco3(mydata2, top=3)) 
-
-    cat("Successfully completed problem discovery \n") 
 
     datasetLevelInfo[["covarianceMatrix"]] <- mycov
     datasetLevelInfo[["discovery"]] <- mydisco
@@ -186,6 +190,9 @@ preprocess<-function(hostname=NULL, fileid=NULL, testdata=NULL, types=NULL, file
     largehold<- list(dataset=datasetLevelInfo, variables=hold)
     
     jsonHold<-rjson:::toJSON(largehold)
+
+    #print("NOTHING GOING TO FINISH")
+    #stop()
     
     return(jsonHold)
 }

@@ -59,7 +59,7 @@ solver.app <- function(env) {
     mydata <- read.csv(dataurl)
 
 
-    if(task=="regression") {
+    if(task=="regression" || task=="classification") {
         tryCatch({
         modeldata <<- list()
 
@@ -84,6 +84,8 @@ solver.app <- function(env) {
         },
         error = function(err) {
         result <<- list(warning=paste("error: ", err))
+        print("result ---- ")
+        print(result)
         })
   }
 
