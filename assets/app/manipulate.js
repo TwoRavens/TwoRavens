@@ -24,7 +24,7 @@ import * as queryMongo from "../EventData/app/queryMongo";
 // dataset name from app.domainIdentifier.name
 // variable names from app.valueKey
 
-export function menu() {
+export function menu(compoundPipeline, pipelineId) {
 
     return [
         // stage button
@@ -42,7 +42,7 @@ export function menu() {
                     : constraintMetadata.type  + ': ' + constraintMetadata.columns[0];
 
                 let success = queryAbstract.addConstraint(
-                    app.domainIdentifier.name,  // the pipeline identifier
+                    pipelineId,
                     constraintMenu.step,  // the step the user is currently editing
                     constraintPreferences,  // the menu state for the constraint the user currently editing
                     constraintMetadata,  // info used to draw the menu (variables, menu type),
@@ -53,20 +53,18 @@ export function menu() {
                 if (success) {
                     setConstraintMenu(undefined);
                     common.setPanelOpen('right');
-                    updatePreviewTable({reset: true});
                 }
             }
         }, 'Stage'),
 
         m(Canvas, {
             attrsAll: {style: {height: `calc(100% - ${common.heightHeader} - ${subset.tableData ? subset.tableHeight : '0px'} - ${common.heightFooter})`}}
-        }, canvas(app.domainIdentifier.name)),
-        subset.tableData && previewTable()
+        }, canvas(pipelineId)),
+        previewTable(compoundPipeline)
     ];
 }
 
-export function canvas(pipelineId) {
-    let pipeline = subset.manipulations[pipelineId];
+export function canvas(compoundPipeline) {
 
     if (isLoading) m('#loading.loader', {
         style: {
@@ -80,10 +78,10 @@ export function canvas(pipelineId) {
     if (!constraintMenu) return;
 
     if (constraintMenu.type === 'transform') return m(CanvasTransform, {
-        pipeline,
+        pipeline: compoundPipeline,
         preferences: constraintPreferences,
         variables: [...queryMongo.buildPipeline(
-            pipeline.slice(pipeline.indexOf(constraintMenu.step)),
+            constraintMenu.pipeline.slice(constraintMenu.pipeline.indexOf(constraintMenu.step)),
             new Set(app.valueKey))['variables']]
     });
 
@@ -99,7 +97,7 @@ export function canvas(pipelineId) {
             'unit': 'aggregate',
             'accumulator': 'aggregate'
         }[constraintMenu.type],
-        pipeline,
+        pipeline: compoundPipeline,
         subsetName: constraintMenu.name,
         data: constraintData,
         preferences: constraintPreferences,
@@ -108,7 +106,12 @@ export function canvas(pipelineId) {
     })
 }
 
-export function previewTable() {
+export function previewTable(pipeline) {
+    if (!subset.tableData) {
+        updatePreviewTable('reset', pipeline);
+        return;
+    }
+
     return m("[id='previewTable']", {
             style: {
                 "position": "fixed",
@@ -118,7 +121,8 @@ export function previewTable() {
                 "border-top": "1px solid #ADADAD",
                 "overflow-y": "scroll",
                 "overflow-x": "auto",
-                'z-index': 100
+                'z-index': 100,
+                'background': 'rgba(255,255,255,.6)'
             },
             onscroll: () => {
                 // don't apply infinite scrolling when list is empty
@@ -126,7 +130,7 @@ export function previewTable() {
 
                 let container = document.querySelector('#previewTable');
                 let scrollHeight = container.scrollHeight - container.scrollTop;
-                if (scrollHeight < container.offsetHeight + 100) updatePreviewTable();
+                if (scrollHeight < container.offsetHeight + 100) updatePreviewTable('more', pipeline);
             }
         },
         m(Table, {
@@ -137,19 +141,8 @@ export function previewTable() {
 }
 
 export function leftpanel() {
-    if (!app.domainIdentifier || !subset.manipulations[app.domainIdentifier.name] || !constraintMenu)
+    if (!app.domainIdentifier || !constraintMenu)
         return;
-
-    let pipeline = subset.manipulations[app.domainIdentifier.name];
-    let baseVariables = app.allNodes.map(node => node.name);
-
-    let variables = (constraintMenu
-        ? [...queryMongo.buildPipeline(pipeline.slice(0, pipeline.indexOf(constraintMenu.step)),
-            new Set(baseVariables))['variables']]
-        : baseVariables).sort(variableSort);
-
-    if (constraintMenu.type === 'accumulator') variables = variables.filter(column => inferType(column) === 'discrete');
-    if (constraintMenu.type === 'unit') variables = variables.filter(column => inferType(column) !== 'discrete');
 
     return m(Panel, {
             side: 'left',
@@ -164,10 +157,26 @@ export function leftpanel() {
                 }
             }
         },
-        constraintMenu.type !== 'transform' && constraintMetadata.type !== 'date' && [
+        varList()
+    )
+}
+
+export function varList() {
+    let baseVariables = app.allNodes.map(node => node.name);
+
+    let variables = (constraintMenu
+        ? [...queryMongo.buildPipeline(constraintMenu.pipeline.slice(0, constraintMenu.pipeline.indexOf(constraintMenu.step)),
+            new Set(baseVariables))['variables']]
+        : baseVariables).sort(variableSort);
+
+    if (constraintMenu.type === 'accumulator') variables = variables.filter(column => inferType(column) === 'discrete');
+    if (constraintMenu.type === 'unit') variables = variables.filter(column => inferType(column) !== 'discrete');
+
+    return [
+        constraintMenu.type === 'subset' && constraintMetadata.type !== 'date' && variableMetadata[constraintMetadata['columns'][0]]['types'].indexOf('string') === -1 && [
             m(ButtonRadio, {
                 id: 'subsetTypeButtonBar',
-                onclick: setConstraintType,
+                onclick: type => setConstraintType(type, constraintMenu.pipeline),
                 activeSection: constraintMetadata.type,
                 sections: ['continuous', 'discrete'].map(type => ({value: type}))
             })
@@ -188,8 +197,8 @@ export function leftpanel() {
                     variableSearch !== '' && variable.toLowerCase().includes(variableSearch))
             },
             callback: constraintMenu.type !== 'transform'
-                ? x => setConstraintColumn(x)
-                : x => constraintPreferences.insert(x),
+                ? variable => setConstraintColumn(variable, constraintMenu.pipeline)
+                : variable => constraintPreferences.insert(variable),
             popup: variable => app.popoverContent(variableMetadata[variable]),
             attrsItems: {'data-placement': 'right', 'data-original-title': 'Summary Statistics'},
             attrsAll: {
@@ -199,17 +208,21 @@ export function leftpanel() {
                 }
             }
         })
-    )
+    ]
 }
 
 
+// hardcoded to manipulations mode
 export function rightpanel() {
+
+    if (!('name' in app.domainIdentifier)) return;
+    if (!(app.domainIdentifier.name in subset.manipulations)) subset.manipulations[app.domainIdentifier.name] = [];
 
     return m(Panel, {
         side: 'right',
         label: 'Pipeline',
         hover: true,
-        width: '500px',
+        width: app.modelRightPanelWidths['Manipulate'],
         attrsAll: {
             style: {
                 'z-index': 101,
@@ -217,12 +230,18 @@ export function rightpanel() {
                 height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${subset.tableData ? subset.tableHeight : '0px'} - ${common.heightFooter})`
             }
         }
-    }, m(PipelineFlowchart, {pipelineId: app.domainIdentifier.name}));
+    }, m(PipelineFlowchart, {
+        compoundPipeline: subset.manipulations[app.domainIdentifier.name],
+        pipelineId: app.domainIdentifier.name,
+        editable: true
+    }));
 }
 
-class PipelineFlowchart {
+export class PipelineFlowchart {
     view(vnode) {
-        let {pipelineId} = vnode.attrs;
+        // compoundPipeline is used for queries
+        // pipelineId is edited and passed into the trees
+        let {compoundPipeline, pipelineId, editable} = vnode.attrs;
 
         if (!(pipelineId in subset.manipulations)) subset.manipulations[pipelineId] = [];
         let pipeline = subset.manipulations[pipelineId];
@@ -247,7 +266,7 @@ class PipelineFlowchart {
                 steps: pipeline.map((step, i) => {
                     let content;
 
-                    let deleteButton = pipeline.length - 1 === i && m(`div#stepDelete`, {
+                    let deleteButton = editable && pipeline.length - 1 === i && m(`div#stepDelete`, {
                         onclick: () => {
                             let removedStep = pipeline.pop();
                             if (constraintMenu && constraintMenu.step === removedStep) {
@@ -270,13 +289,13 @@ class PipelineFlowchart {
                         content = m('div', {style: {'text-align': 'left'}},
                             deleteButton,
                             m('h4[style=font-size:16px;margin-left:0.5em]', 'Transformations'),
-                            m(TreeTransform, {pipelineId, step}),
+                            m(TreeTransform, {pipelineId, step, editable}),
                             // Enable to only show button if last element: pipeline.length - 1 === i &&
-                            m(Button, {
+                            editable && m(Button, {
                                 id: 'btnAddTransform',
                                 class: ['btn-sm'],
                                 style: {margin: '0.5em'},
-                                onclick: () => setConstraintMenu({type: 'transform', step})
+                                onclick: () => setConstraintMenu({type: 'transform', step, pipeline: compoundPipeline})
                             }, plus, ' Transform')
                         )
                     }
@@ -285,21 +304,23 @@ class PipelineFlowchart {
                         content = m('div', {style: {'text-align': 'left'}},
                             deleteButton,
                             m('h4[style=font-size:16px;margin-left:0.5em]', 'Subset'),
-                            m(TreeQuery, {pipelineId, step}),
+                            m(TreeQuery, {pipelineId, step, editable}),
 
-                            m(Button, {
-                                id: 'btnAddConstraint',
-                                class: ['btn-sm'],
-                                style: {margin: '0.5em'},
-                                onclick: () => setConstraintMenu({type: 'subset', step})
-                            }, plus, ' Constraint'),
-                            m(Button, {
-                                id: 'btnAddGroup',
-                                class: ['btn-sm'],
-                                style: {margin: '0.5em'},
-                                disabled: !step.abstractQuery.filter(constraint => constraint.type === 'rule').length,
-                                onclick: () => queryAbstract.addGroup(pipelineId, step)
-                            }, plus, ' Group')
+                            editable && [
+                                m(Button, {
+                                    id: 'btnAddConstraint',
+                                    class: ['btn-sm'],
+                                    style: {margin: '0.5em'},
+                                    onclick: () => setConstraintMenu({type: 'subset', step, pipeline: compoundPipeline})
+                                }, plus, ' Constraint'),
+                                m(Button, {
+                                    id: 'btnAddGroup',
+                                    class: ['btn-sm'],
+                                    style: {margin: '0.5em'},
+                                    disabled: !step.abstractQuery.filter(constraint => constraint.type === 'rule').length,
+                                    onclick: () => queryAbstract.addGroup(pipelineId, step)
+                                }, plus, ' Group')
+                            ]
                         )
                     }
 
@@ -310,27 +331,35 @@ class PipelineFlowchart {
 
                             step.measuresUnit.length !== 0 && [
                                 m('h5', 'Unit Measures'),
-                                m(TreeAggregate, {id: pipelineId + step.id + 'unit', data: step.measuresUnit}),
+                                m(TreeAggregate, {
+                                    id: pipelineId + step.id + 'unit',
+                                    data: step.measuresUnit,
+                                    editable
+                                }),
                             ],
                             step.measuresAccum.length !== 0 && [
                                 m('h5', 'Column Accumulations'),
-                                m(TreeAggregate, {id: pipelineId + step.id + 'accumulator', data: step.measuresAccum}),
+                                m(TreeAggregate, {
+                                    id: pipelineId + step.id + 'accumulator',
+                                    data: step.measuresAccum,
+                                    editable
+                                }),
                             ],
 
                             !step.measuresAccum.length && [warn('must have accumulator to output data'), m('br')],
                             // Enable to only show button if last element: pipeline.length - 1 === i &&
-                            [
+                            editable && [
                                 m(Button, {
                                     id: 'btnAddUnitMeasure',
                                     class: ['btn-sm'],
                                     style: {margin: '0.5em'},
-                                    onclick: () => setConstraintMenu({type: 'unit', step})
+                                    onclick: () => setConstraintMenu({type: 'unit', step, pipeline: compoundPipeline})
                                 }, plus, ' Unit Measure'),
                                 m(Button, {
                                     id: 'btnAddAccumulator',
                                     class: ['btn-sm' + (step.measuresAccum.length ? '' : ' is-invalid')],
                                     style: {margin: '0.5em'},
-                                    onclick: () => setConstraintMenu({type: 'accumulator', step})
+                                    onclick: () => setConstraintMenu({type: 'accumulator', step, pipeline: compoundPipeline})
                                 }, plus, ' Accumulator')
                             ]
                         )
@@ -343,44 +372,46 @@ class PipelineFlowchart {
                     };
                 })
             }),
-            m(Button, {
-                id: 'btnAddTransform',
-                title: 'construct new columns',
-                disabled: !isEnabled(),
-                style: {margin: '0.5em'},
-                onclick: () => pipeline.push({
-                    type: 'transform',
-                    id: 'transform ' + pipeline.length,
-                    transforms: [] // transform name is used instead of nodeId
-                })
-            }, plus, ' Transform Step'),
-            m(Button, {
-                id: 'btnAddSubset',
-                title: 'filter rows that match criteria',
-                disabled: !isEnabled(),
-                style: {margin: '0.5em'},
-                onclick: () => pipeline.push({
-                    type: 'subset',
-                    abstractQuery: [],
-                    id: 'subset ' + pipeline.length,
-                    nodeId: 1,
-                    groupId: 1,
-                    queryId: 1
-                })
-            }, plus, ' Subset Step'),
-            m(Button, {
-                id: 'btnAddAggregate',
-                title: 'group rows that match criteria',
-                disabled: !isEnabled(),
-                style: {margin: '0.5em'},
-                onclick: () => pipeline.push({
-                    type: 'aggregate',
-                    id: 'aggregate ' + pipeline.length,
-                    measuresUnit: [],
-                    measuresAccum: [],
-                    nodeId: 1 // both trees share the same nodeId counter
-                })
-            }, plus, ' Aggregate Step')
+            editable && [
+                m(Button, {
+                    id: 'btnAddTransform',
+                    title: 'construct new columns',
+                    disabled: !isEnabled(),
+                    style: {margin: '0.5em'},
+                    onclick: () => pipeline.push({
+                        type: 'transform',
+                        id: 'transform ' + pipeline.length,
+                        transforms: [] // transform name is used instead of nodeId
+                    })
+                }, plus, ' Transform Step'),
+                m(Button, {
+                    id: 'btnAddSubset',
+                    title: 'filter rows that match criteria',
+                    disabled: !isEnabled(),
+                    style: {margin: '0.5em'},
+                    onclick: () => pipeline.push({
+                        type: 'subset',
+                        abstractQuery: [],
+                        id: 'subset ' + pipeline.length,
+                        nodeId: 1,
+                        groupId: 1,
+                        queryId: 1
+                    })
+                }, plus, ' Subset Step'),
+                m(Button, {
+                    id: 'btnAddAggregate',
+                    title: 'group rows that match criteria',
+                    disabled: !isEnabled(),
+                    style: {margin: '0.5em'},
+                    onclick: () => pipeline.push({
+                        type: 'aggregate',
+                        id: 'aggregate ' + pipeline.length,
+                        measuresUnit: [],
+                        measuresAccum: [],
+                        nodeId: 1 // both trees share the same nodeId counter
+                    })
+                }, plus, ' Aggregate Step')
+            ]
         ]
     }
 }
@@ -404,17 +435,21 @@ export let constraintMenu;
 export let setConstraintMenu = async (menu) => {
     let updateVariableMetadata = !constraintMenu || (menu || {}).step !== constraintMenu.step;
 
+    if (!app.is_manipulate_mode) {
+        app.setLeftTab('Variables');
+        common.setPanelOpen('left');
+    }
+
     Object.keys(constraintPreferences).forEach(key => delete constraintPreferences[key]);
 
     if (menu === undefined) {
         constraintMenu = menu;
-        updatePreviewTable({reset: true});
+        updatePreviewTable('clear');
         return;
     }
 
-    let pipeline = subset.manipulations[app.domainIdentifier.name];
     let variables = [...queryMongo.buildPipeline(
-        pipeline.slice(0, pipeline.indexOf(menu.step)),
+        menu.pipeline.slice(0, menu.pipeline.indexOf(menu.step)),
         new Set(app.valueKey))['variables']];  // get the variables present at this point in the pipeline
 
     if (updateVariableMetadata) {
@@ -425,12 +460,12 @@ export let setConstraintMenu = async (menu) => {
                 variables
             }
         };
-        let candidatevariableData = await loadMenu(pipeline.slice(0, pipeline.indexOf(menu.step)), summaryStep, {recount: true});
+        let candidatevariableData = await loadMenu(menu.pipeline.slice(0, menu.pipeline.indexOf(menu.step)), summaryStep, {recount: true});
         if (candidatevariableData) variableMetadata = candidatevariableData;
         else {
             alert('The pipeline at this stage matches no records. Delete constraints to match more records.');
             constraintMenu = undefined;
-            updatePreviewTable({reset: true});
+            updatePreviewTable('clear');
             m.redraw();
             return;
         }
@@ -439,14 +474,8 @@ export let setConstraintMenu = async (menu) => {
     constraintMenu = menu;
     common.setPanelOpen('right', false);
 
-    if (constraintMenu.step.type === 'aggregate')
-        constraintMetadata.measureType = menu.type;
-
-    if (constraintMenu.step.type === 'transform') {
-        updatePreviewTable({reset: true});
-        m.redraw();
-        return;
-    }
+    if (constraintMenu.step.type === 'aggregate') constraintMetadata.measureType = menu.type;
+    if (constraintMenu.step.type === 'transform') {m.redraw(); return;}
 
     if (constraintMenu.type === 'accumulator') variables = variables.filter(column => inferType(column) === 'discrete');
     if (constraintMenu.type === 'unit') variables = variables.filter(column => inferType(column) !== 'discrete');
@@ -456,10 +485,9 @@ export let setConstraintMenu = async (menu) => {
         ? variables[Math.floor(Math.random() * variables.length)]
         : constraintMetadata.columns[0];
 
-    setConstraintColumn(variable, {suppress: true});
+    setConstraintColumn(variable, menu.pipeline);
 
-    loadMenuManipulations();
-    updatePreviewTable({reset: true});
+    loadMenuManipulations(menu.pipeline);
 };
 
 export let constraintMetadata = {};
@@ -469,15 +497,15 @@ export let constraintMetadata = {};
 //     columns: ['column_1', 'column_2']
 // }
 
-export let setConstraintColumn = (column, {suppress}={}) => {
-    if ('columns' in constraintMetadata && constraintMetadata.columns[0] === column) suppress = true;
+export let setConstraintColumn = (column, pipeline) => {
+    if ('columns' in constraintMetadata && constraintMetadata.columns[0] === column) pipeline = undefined;
     constraintMetadata.columns = [column];
 
-    setConstraintType(inferType(column), {suppress: true});
+    setConstraintType(inferType(column));
 
     Object.keys(constraintPreferences).forEach(key => delete constraintPreferences[key]);
     constraintData = undefined;
-    if (!suppress) loadMenuManipulations();
+    if (pipeline) loadMenuManipulations(pipeline);
 };
 
 export let inferType = variable => {
@@ -492,9 +520,9 @@ export let inferType = variable => {
     return type;
 };
 
-export let setConstraintType = (type, {suppress}={}) => {
+export let setConstraintType = (type, pipeline) => {
 
-    if (constraintMetadata.type === type) suppress = true;
+    if (constraintMetadata.type === type) pipeline = undefined;
     constraintMetadata.type = type;
     if (constraintMetadata.type === 'continuous') {
         let varMeta = variableMetadata[constraintMetadata.columns[0]];
@@ -515,7 +543,7 @@ export let setConstraintType = (type, {suppress}={}) => {
     }
     Object.keys(constraintPreferences).forEach(key => delete constraintPreferences[key]);
     constraintData = undefined;
-    if (!suppress) loadMenuManipulations();
+    if (pipeline) loadMenuManipulations(pipeline);
 };
 
 export let getData = async body => m.request({
@@ -528,10 +556,10 @@ export let getData = async body => m.request({
 });
 
 // download data to display a menu
-export let loadMenu = async (abstractPipeline, menu, {recount, requireMatch}={}) => { // the dict is for optional named arguments
+export let loadMenu = async (pipeline, menu, {recount, requireMatch}={}) => { // the dict is for optional named arguments
 
     // convert the pipeline to a mongo query. Note that passing menu extends the pipeline to collect menu data
-    let compiled = JSON.stringify(queryMongo.buildPipeline([...abstractPipeline, menu], new Set(app.valueKey))['pipeline']);
+    let compiled = JSON.stringify(queryMongo.buildPipeline([...pipeline, menu], new Set(app.valueKey))['pipeline']);
 
     console.log("Menu Query:");
     console.log(compiled);
@@ -546,7 +574,7 @@ export let loadMenu = async (abstractPipeline, menu, {recount, requireMatch}={})
     // record count request
     if (recount || subset.totalSubsetRecords === undefined) {
         let countMenu = {type: 'menu', metadata: {type: 'count'}};
-        let compiled = JSON.stringify(queryMongo.buildPipeline([...abstractPipeline, countMenu], new Set(app.valueKey))['pipeline']);
+        let compiled = JSON.stringify(queryMongo.buildPipeline([...pipeline, countMenu], new Set(app.valueKey))['pipeline']);
 
         console.log("Count Query:");
         console.log(compiled);
@@ -595,7 +623,7 @@ export let loadMenu = async (abstractPipeline, menu, {recount, requireMatch}={})
 
 
 // manipulations mode is for global dataset edits
-let loadMenuManipulations = async () => {
+let loadMenuManipulations = async (pipeline) => {
     // make sure basic properties are present
     if (!constraintMetadata || !['type', 'columns'].every(attr => attr in constraintMetadata)) return;
     isLoading = true;
@@ -606,23 +634,10 @@ let loadMenuManipulations = async () => {
         preferences: constraintPreferences
     };
 
-    constraintData = await loadMenu(subset.manipulations[app.domainIdentifier.name].slice(0, -1), newMenu);
+    constraintData = await loadMenu(pipeline.slice(0, -1), newMenu);
     isLoading = false;
     redraw = true;
     m.redraw();
-};
-
-// in model mode, there are different pipelines for each problem
-let loadMenuD3M = async () => {
-    isLoading = true;
-    let newMenu = {
-        type: 'menu',
-        metadata: constraintMetadata,
-        preferences: constraintPreferences
-    };
-    constraintData = await loadMenu(problemManipulations[app.selectedProblem].slice(0, -1), newMenu);
-    isLoading = false;
-    redraw = true;
 };
 
 // contains the menu state (which nominal variables are selected, ranges, etc.)
@@ -643,14 +658,15 @@ export let variableSort = (a, b) => {
 };
 
 
-export let updatePreviewTable = async ({reset}={}) => {
+export let updatePreviewTable = async (option, pipeline) => {
 
-    if (reset || !constraintMenu) {
+    if (option === 'clear' || option === 'reset') {
         previewSkip = 0;
         subset.setTableData(undefined);
     }
 
-    if (!constraintMenu || (subset.tableData || []).length - previewSkip < 0) return;
+    if (previewIsLoading || option === 'clear' || pipeline === undefined || (subset.tableData || []).length - previewSkip < 0)
+        return;
 
     let previewMenu = {
         type: 'menu',
@@ -662,18 +678,24 @@ export let updatePreviewTable = async ({reset}={}) => {
     };
     previewSkip += previewBatchSize;
 
-    let pipeline = subset.manipulations[app.domainIdentifier.name];
+    previewIsLoading = true;
     let data = await loadMenu(
-        pipeline.slice(0, pipeline.indexOf(stage => stage === constraintMenu.step)),
+        constraintMenu
+            ? pipeline.slice(0, pipeline.indexOf(stage => stage === constraintMenu.step))
+            : pipeline,
         previewMenu
     );
 
-    if (data.length) {
-        subset.setTableData((subset.tableData || []).concat(data));
-        m.redraw();
-    }
+    if (data.length === 0 && option === 'reset')
+        alert('The pipeline at this stage matches no records. Delete constraints to match more records.');
+
+    subset.setTableData((subset.tableData || []).concat(data));
+    previewIsLoading = false;
+    m.redraw();
+
 };
 
 // for the data preview at the bottom of the page
 let previewSkip = 0;
 let previewBatchSize = 100;
+let previewIsLoading = false;

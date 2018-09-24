@@ -74,7 +74,7 @@ export default class CanvasTransform {
 
         if (preferences.transformEquation === '') preferences.usedTerms = usedTermDefaults();
 
-        if (preferences.transformName.match(/[ -]/) || preferences.transformName === '' || preferences.transformEquation === '')
+        if (preferences.transformName === ''  || preferences.transformName.match(/[ -]/) || preferences.transformEquation === '')
             preferences.isValid = false;
 
         return m("#canvasTransform", {style: {'height': '100%', 'width': '100%', 'padding-top': common.panelMargin}},

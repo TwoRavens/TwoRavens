@@ -38,21 +38,21 @@ export class TreeVariables {
 }
 
 export class TreeTransform {
-    convertToJQTreeFormat(pipelineId, step) {
+    convertToJQTreeFormat(pipelineId, step, editable) {
         return step.transforms.map(transform => ({
             id: pipelineId + '-' + step.id + '-' + transform.name,
             name: transform.name + ' = ' + transform.equation,
-            cancellable: true,
+            cancellable: editable,
             show_op: false
         }));
     }
 
     oncreate({attrs, dom}) {
         let transformTree = $(dom);
-        let {pipelineId, step} = attrs;
+        let {pipelineId, step, editable} = attrs;
 
         transformTree.tree({
-            data: this.convertToJQTreeFormat(pipelineId, step),
+            data: this.convertToJQTreeFormat(pipelineId, step, editable),
             saveState: true,
             dragAndDrop: false,
             autoOpen: false,
@@ -67,10 +67,10 @@ export class TreeTransform {
 
     // when mithril updates this component, it redraws the tree with whatever the abstract query is
     onupdate({attrs, dom}) {
-        let {pipelineId, step} = attrs;
+        let {pipelineId, step, editable} = attrs;
         let subsetTree = $(dom);
         let state = subsetTree.tree('getState');
-        subsetTree.tree('loadData', this.convertToJQTreeFormat(pipelineId, step));
+        subsetTree.tree('loadData', this.convertToJQTreeFormat(pipelineId, step, editable));
         subsetTree.tree('setState', state);
     }
 
@@ -98,7 +98,7 @@ export class TreeQuery {
         // Create the query tree
         let subsetTree = $(dom);
 
-        let {step, isQuery} = attrs;
+        let {step, isQuery, editable} = attrs;
         this.isQuery = isQuery;
         let data = isQuery
             ? [{
@@ -126,7 +126,7 @@ export class TreeQuery {
                     let canChange = node.type !== 'query' && !node.editable;
                     $li.find('.jqtree-element').prepend(buttonOperator(node.id, node.operation, canChange));
                 }
-                if (!('cancellable' in node) || (node['cancellable'] === true)) {
+                if (editable && !('cancellable' in node) || (node['cancellable'] === true)) {
                     $li.find('.jqtree-element').append(buttonDelete(node.id));
                 }
                 // Set a left margin on the first element of a leaf
@@ -135,6 +135,8 @@ export class TreeQuery {
                 }
             },
             onCanMove: function (node) {
+                if (!editable) return false;
+
                 // Cannot move nodes in uneditable queries
                 if ('editable' in node && !node.editable) return false;
 
@@ -293,7 +295,7 @@ export class TreeAggregate {
             autoOpen: false,
             selectable: false,
             onCreateLi: function (node, $li) {
-                if (!('cancellable' in node) || (node['cancellable'] === true)) {
+                if (attrs.editable && !('cancellable' in node) || (node['cancellable'] === true)) {
                     $li.find('.jqtree-element').prepend(buttonDeleteAggregation(node.id));
                 }
             }

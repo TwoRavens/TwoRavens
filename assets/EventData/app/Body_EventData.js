@@ -518,8 +518,8 @@ export default class Body_EventData {
                     {
                         value: 'Subsets',
                         contents: (app.manipulations.eventdata.length + (app.selectedMode === 'subset' ? app.looseSteps['pendingSubset'].abstractQuery.length : 0)) ? [
-                            ...app.manipulations.eventdata.map(step => m(TreeQuery, {isQuery: true, step})),
-                            m(TreeQuery, {step: app.looseSteps['pendingSubset']})
+                            ...app.manipulations.eventdata.map(step => m(TreeQuery, {isQuery: true, step, editable: false})),
+                            m(TreeQuery, {step: app.looseSteps['pendingSubset'], editable: true})
                         ] : [
                             m('div[style=font-style:italic]', 'Match all records'),
                             app.looseSteps['pendingSubset'].abstractQuery.length !== 0 && m('div[style=font-style:italic]', 'Some pending constraints are hidden. Update from subset menu to apply them.')
@@ -534,13 +534,21 @@ export default class Body_EventData {
                     app.selectedMode === 'aggregate' && {
                         value: 'Unit Measures',
                         contents: app.looseSteps['eventdataAggregate'].measuresUnit.length
-                            ? m(TreeAggregate, {id: app.looseSteps['eventdataAggregate'].id + 'unit', data: app.looseSteps['eventdataAggregate'].measuresUnit})
+                            ? m(TreeAggregate, {
+                                id: app.looseSteps['eventdataAggregate'].id + 'unit',
+                                data: app.looseSteps['eventdataAggregate'].measuresUnit,
+                                editable: true
+                            })
                             : m('div[style=font-style:italic]', 'No unit measures')
                     },
                     app.selectedMode === 'aggregate' && {
                         value: 'Event Measures',
                         contents: app.looseSteps['eventdataAggregate'].measuresAccum.length
-                            ? m(TreeAggregate, {id: app.looseSteps['eventdataAggregate'].id + 'accumulator', data: app.looseSteps['eventdataAggregate'].measuresAccum})
+                            ? m(TreeAggregate, {
+                                id: app.looseSteps['eventdataAggregate'].id + 'accumulator',
+                                data: app.looseSteps['eventdataAggregate'].measuresAccum,
+                                editable: true
+                            })
                             : m('div[style=font-style:italic]', 'An event measure is required')
                     }
                 ]

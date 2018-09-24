@@ -14,8 +14,6 @@ import * as results from './results';
 
 import * as manipulate from './manipulate';
 import * as subset from '../EventData/app/app';
-import * as queryAbstract from '../EventData/app/queryAbstract';
-import * as queryMongo from '../EventData/app/queryMongo';
 
 import {fadeIn, fadeOut} from './utils';
 
@@ -34,7 +32,7 @@ import PanelList from '../common/app/views/PanelList';
 import Peek from '../common/app/views/Peek';
 import Table from '../common/app/views/Table';
 import TextField from '../common/app/views/TextField';
-import Canvas from "../common/app/views/Canvas";
+import MenuHeaders from "../common/app/views/MenuHeaders";
 // EVENTDATA
 import Body_EventData from '../EventData/app/Body_EventData';
 import Peek_EventData from '../common-eventdata/views/Peek';
@@ -63,9 +61,8 @@ function setBackgroundColor(color) {
 
 function leftpanel(mode) {
 
-    if (mode === 'results') {
+    if (mode === 'results')
         return results.leftpanel(Object.keys(app.allPipelineInfo));
-    }
 
     if (mode === 'manipulate')
         return manipulate.leftpanel();
@@ -98,19 +95,27 @@ function leftpanel(mode) {
     return m(Panel, {
         side: 'left',
         label: 'Data Selection',
-        hover: !app.is_manipulate_mode,
+        hover: !(app.is_manipulate_mode || app.rightTab === 'Manipulate'),
         width: app.modelLeftPanelWidths[app.leftTab],
-        attrsAll: {style: {'z-index': 101}}
+        attrsAll: {
+            style: {
+                'z-index': 101,
+                height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${app.rightTab === 'Manipulate' && subset.tableData ? subset.tableHeight : '0px'} - ${common.heightFooter})`
+            }
+        }
     }, m(MenuTabbed, {
         id: 'leftpanelMenu',
         attrsAll: {style: {height: 'calc(100% - 39px)'}},
         currentTab: app.leftTab,
         callback: app.setLeftTab,
         sections: [
-            {
+            (app.rightTab !== 'Manipulate' || manipulate.constraintMenu) && {
                 value: 'Variables',
                 title: 'Click variable name to add or remove the variable pebble from the modeling space.',
-                contents: [
+                contents: app.rightTab === 'Manipulate' ? [
+                    m('h5', 'Constraint Type'),
+                    manipulate.varList()
+                ] : [
                     m(TextField, {
                         id: 'searchVar',
                         placeholder: 'Search variables and labels',
@@ -132,7 +137,6 @@ function leftpanel(mode) {
                 ]
             },
             {value: 'Discovery',
-             display: 'block',
              contents: [
                  m(Table, {
                      id: 'discoveryTable',
@@ -156,7 +160,7 @@ function leftpanel(mode) {
                          if (selectedDisco) {
                              let {target, predictors} = selectedDisco;
                              app.erase('Discovery');
-                             [target].concat(predictors).map(x => app.clickVar(x));
+                             [target, ...predictors].map(x => app.clickVar(x));
                              predictors.forEach(x => {
                                  let d = app.findNode(x);
                                  app.setColors(d, app.gr1Color);
@@ -270,6 +274,14 @@ function rightpanel(mode) {
                          }, x)))
                    ]));
     };
+
+    if (app.selectedProblem) {
+        if (!(app.domainIdentifier.name in subset.manipulations)) subset.manipulations[app.domainIdentifier.name] = [];
+
+        let combinedId = app.domainIdentifier.name + app.selectedProblem;
+        if (!(combinedId in subset.manipulations)) subset.manipulations[combinedId] = [];
+    }
+
     let sections = [
         // {value: 'Models',
         //  display: app.IS_D3M_DOMAIN ? 'block' : 'none',
@@ -288,6 +300,32 @@ function rightpanel(mode) {
                dropdown('Task Subtype', 'taskSubtype', app.d3mTaskSubtype),
                dropdown('Metric', 'performanceMetrics', app.d3mMetrics))
          ]},
+        app.selectedProblem && {
+            value: 'Manipulate',
+            title: 'Apply transformations and subsets to a problem',
+            contents: m(MenuHeaders, {
+                id: 'aggregateMenu',
+                attrsAll: {style: {height: 'calc(100% - 39px)', overflow: 'auto'}},
+                sections: [
+                    subset.manipulations[app.domainIdentifier.name] && {
+                        value: 'Dataset Pipeline',
+                        contents: m(manipulate.PipelineFlowchart, {
+                            compoundPipeline: subset.manipulations[app.domainIdentifier.name],
+                            pipelineId: app.domainIdentifier.name,
+                            editable: false
+                        })
+                    },
+                    {
+                        value: 'Problem Pipeline',
+                        contents: m(manipulate.PipelineFlowchart, {
+                            compoundPipeline: [...subset.manipulations[app.domainIdentifier.name], ...subset.manipulations[app.domainIdentifier.name + app.selectedProblem]],
+                            pipelineId: app.domainIdentifier.name + app.selectedProblem,
+                            editable: true
+                        })
+                    }
+                ]
+            })
+        },
         {value: 'Results',
          display: !app.swandive || app.IS_D3M_DOMAIN ? 'block' : 'none',
          idSuffix: 'Setx',
@@ -381,7 +419,13 @@ function rightpanel(mode) {
         side: 'right',
         label: 'Model Selection',
         hover: true,
-        width: app.modelRightPanelWidths[app.rightTab]
+        width: app.modelRightPanelWidths[app.rightTab],
+        attrsAll: {
+            style: {
+                'z-index': 101,
+                height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${app.rightTab === 'Manipulate' && subset.tableData ? subset.tableHeight : '0px'} - ${common.heightFooter})`
+            }
+        }
     }, m(MenuTabbed, {
         id: 'rightpanelMenu',
         currentTab: app.rightTab,
@@ -529,14 +573,21 @@ class Body {
         let overflow = app.is_explore_mode ? 'auto' : 'hidden';
         let style = `position: absolute; left: ${app.panelWidth.left}; top: 0; margin-top: 10px`;
 
+        if (app.domainIdentifier && !(app.domainIdentifier.name) in subset.manipulations)
+            subset.manipulations[app.domainIdentifier.name] = [];
+
         return m('main', [
             m(Modal),
             this.header(app.currentMode),
             this.footer(app.currentMode),
             leftpanel(app.currentMode),
             rightpanel(app.currentMode),
-            app.is_manipulate_mode && manipulate.menu(),
-            m(`#main`, {style: {overflow, display: app.is_manipulate_mode ? 'none' : 'block'}},
+
+            (app.is_manipulate_mode || app.rightTab === 'Manipulate') && manipulate.menu(
+                subset.manipulations[app.domainIdentifier.name], // the complete pipeline to build menus with
+                app.domainIdentifier.name),  // the identifier for which pipeline to edit
+
+            m(`#main`, {style: {overflow, display: app.is_manipulate_mode || (app.rightTab === 'Manipulate' && manipulate.constraintMenu) ? 'none' : 'block'}},
                 m("#innercarousel.carousel-inner", {style: {height: '100%', overflow}},
                 app.is_explore_mode && [variate === 'problem' ?
                     m('', {style},
@@ -709,7 +760,8 @@ class Body {
                         ['dvButton', 'zdv', 'Dep Var'],
                         ['nomButton', 'znom', 'Nom Var'],
                         ['gr1Button', 'zgroup1', 'Group 1'],
-                        ['gr2Button', 'zgroup2', 'Group 2']]
+                        ['gr2Button', 'zgroup2', 'Group 2']],
+                    attrsStyle: {bottom: app.rightTab === 'Manipulate' ? `calc(${subset.tableHeight} + 23px)` : '0px'}
                 }),
                 app.currentMode !== 'manipulate' && m(Subpanel, {title: "History"}))
         ]);

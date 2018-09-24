@@ -31,13 +31,13 @@ export default class MenuTabbed {
         let visibleButtons = [];
         let invisibleButtons = [];
         for (let section of sections) {
+            if (!section) continue;
             if (section['display'] === 'none') invisibleButtons.push(section);
             else {
                 section['onclick'] = () => callback(section['value']);
                 visibleButtons.push(section);
             }
             // Automatically build the id
-
             section['id'] = 'btn' + (section['idSuffix'] || section['value']);
         }
 

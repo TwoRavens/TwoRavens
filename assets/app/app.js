@@ -152,6 +152,7 @@ export let modelLeftPanelWidths = {
 
 export let modelRightPanelWidths = {
     Problem: '300px',
+    Manipulate: '485px',
     // 'Set Covar.': '900px',
     Results: '900px'
 };
