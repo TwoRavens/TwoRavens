@@ -907,7 +907,7 @@ function loadResult(){
   for(let j=0; j<disco.length; j++){
     let prob_name = disco[j].description.problem_id;
     console.log("problem_id check " , prob_name)
-    if(problems_in_preprocess.includes(prob_name)){ console.log("Problem already exists in preprocess", prob_name)// do nothing }
+    if(problems_in_preprocess.includes(prob_name)){ console.log("Problem already exists in preprocess", prob_name)}// do nothing }
     else{let val = {
       "description":disco[j],
       "result":solver_res[j]

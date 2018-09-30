@@ -38,6 +38,10 @@ solver.app <- function(env) {
   if (is.null(dataurl)) {
     return(send(list(warning="No data url.")))
   }
+  description <- everything$prob$description
+  if (is.null(description)) {
+      return(send(list(warning="No description.")))
+  }
 
     task <- everything$prob$task
     if (is.null(task)) {
@@ -77,7 +81,7 @@ solver.app <- function(env) {
         actualvalues <- d[,target]
 
         if (class(fit)=="lm") {
-            return(send(list(fittedvalues=fittedvalues, actualvalues=actualvalues)))
+            return(send(list(data=d, description=description, dependent_variable=target, predictors=predictors,  task=task, predictor_values=list(fittedvalues=fittedvalues, actualvalues=actualvalues))))
         } else {
             return(send(list(warning="No model estimated.")))
         }
