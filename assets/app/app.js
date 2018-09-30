@@ -782,7 +782,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     let read = res => {
         priv = res.dataset.private || priv;
         Object.keys(res.variables).forEach(k => preprocess[k] = res.variables[k]);
-        Object.keys(res.problems).forEach(k => problems_in_preprocess[k] = res.problems[k].description.problem_id); // storing all the problem id's present in preprocess
+        if("problems" in res){Object.keys(res.problems).forEach(k => problems_in_preprocess[k] = res.problems[k].description.problem_id);} // storing all the problem id's present in preprocess
         return res;
     };
     try {
