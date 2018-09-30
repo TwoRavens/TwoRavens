@@ -19,6 +19,11 @@ let peekData = [];
 let peekAllDataReceived = false;
 let peekIsGetting = false;
 
+
+let solver_res = []
+let problem_sent = []
+let problems_in_preprocess = []
+
 function onStorageEvent(e) {
     if (e.key !== 'peekMore' || peekIsGetting) return;
 
@@ -777,6 +782,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     let read = res => {
         priv = res.dataset.private || priv;
         Object.keys(res.variables).forEach(k => preprocess[k] = res.variables[k]);
+        Object.keys(res.problems).forEach(k => problems_in_preprocess[k] = res.problems[k].description.problem_id); // storing all the problem id's present in preprocess
         return res;
     };
     try {
@@ -813,6 +819,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
 
     // 9. Build allNodes[] using preprocessed information
     let vars = Object.keys(preprocess);
+    // console.log("preprocess vars ", vars)
     // temporary values for hold that correspond to histogram bins
     hold = [.6, .2, .9, .8, .1, .3, .4];
     for (let i = 0; i < vars.length; i++) {
@@ -879,38 +886,42 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
             byId("btnDiscovery").classList.add("btn-success"); // Would be better to attach this as a class at creation, but don't see where it is created
         };
 
-
-
+for(let i=0; i<disco.length; i++){
+  callSolver(disco[i]);
+}
 
         // send the all problems to metadata and also perform app solver on theme
-        console.log("my_disco:");
-        let solver_res = []
-        let problem_sent = []
-        for(let i=0; i<disco.length; i++){
-          solver_res.push(await callSolver(disco[i]));
-        }
-        console.log("solver +++++", solver_res[0])
-        for(let j=0; j<disco.length; j++){
-          let val = {
-            "description":disco[j],
-            "result":solver_res[j]
-          }
 
-          problem_sent.push(val);
-        }
-
-        console.log("problem to be sent ", problem_sent)
-        let preprocess_id = 1
-        let version = 1
-        // let api_res = addProblem(preprocess_id, version, problem_sent)
-        // console.log("ADD PROBLEM API RESPONSE ", api_res)
     }
 
     // 11. Call layout() and start up
     layout(false, true);
     IS_D3M_DOMAIN ? zPop() : dataDownload();
+
+    setTimeout(loadResult,10000);
 }
 
+
+
+function loadResult(){
+  for(let j=0; j<disco.length; j++){
+    let prob_name = disco[j].description.problem_id;
+    console.log("problem_id check " , prob_name)
+    if(problems_in_preprocess.includes(prob_name)){ console.log("Problem already exists in preprocess", prob_name)// do nothing }
+    else{let val = {
+      "description":disco[j],
+      "result":solver_res[j]
+    }
+
+    problem_sent.push(val);
+  }
+}
+  console.log("problem to be sent ", problem_sent)
+  let preprocess_id = 1
+  let version = 1
+  let api_res = addProblem(preprocess_id, version, problem_sent)
+  console.log("ADD PROBLEM/RESULT API RESPONSE ", api_res)
+}
 /**
    called on app start
    @param {string} fileid
@@ -919,6 +930,8 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
    @param {string} dataurl
    @param {string} apikey
 */
+
+
 export function main(fileid, hostname, ddiurl, dataurl, apikey) {
     if (PRODUCTION && fileid === '') {
         let msg = 'Error: No fileid has been provided.';
@@ -5060,14 +5073,15 @@ export function addProblem(preprocess_id, version, problem_sent){
 // takes as input problem in the form of a "discovered problem" (can also be user-defined), calls rooksolver, and returns result
 export async function callSolver (prob) {
     let temp = JSON.stringify(prob);
-    console.log(temp);
+    // console.log(temp);
     let zd3mdata = zparams.zd3mdata;
     let jsonout = {prob, zd3mdata};
     let json = await makeRequest(ROOK_SVC_URL + 'solverapp', jsonout);
     var promise1 = Promise.resolve(json);
 
         promise1.then(function(value) {
-        console.log(" THis is the solver app response",value);
+        // console.log(" THis is the solver app response",value);
+        solver_res.push(value)
         return value;
           // expected output: Array [1, 2, 3]
         });
