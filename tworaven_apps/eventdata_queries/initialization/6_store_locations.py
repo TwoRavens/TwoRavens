@@ -3,7 +3,7 @@ from pymongo import MongoClient
 import json
 import glob
 
-path_files = './locations_*_coded.json'
+path_files = './arcgis_filtered/*_rev.json'
 
 mongo_client = MongoClient(host='localhost', port=27017)  # Default port
 db = mongo_client.event_data
@@ -28,7 +28,7 @@ def get_identifiers(meta):
 for file in glob.glob(path_files):
     with open(file, 'r') as infile:
         for location in json.load(infile)['features']:
-            locations.arcgis.update_one(
+            locations.arcgis2.update_one(
                 get_identifiers(location),
                 {'$set': {**purify(location), **get_identifiers(location)}},
                 upsert=True)
