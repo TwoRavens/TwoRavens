@@ -32,7 +32,7 @@ export function menu(compoundPipeline, pipelineId) {
             id: 'btnStage',
             style: {
                 right: `calc(${common.panelOpen['right'] ? '500' : '16'}px + ${common.panelMargin}*2)`,
-                bottom: `calc(${common.heightFooter} + ${common.panelMargin} + 6px + ${subset.tableData ? subset.tableHeight : '0px'})`,
+                bottom: `calc(${common.heightFooter} + ${common.panelMargin} + 6px + ${subset.tableData ? tableSize : '0px'})`,
                 position: 'fixed',
                 'z-index': 100,
                 'box-shadow': 'rgba(0, 0, 0, 0.3) 0px 2px 3px'
@@ -58,7 +58,7 @@ export function menu(compoundPipeline, pipelineId) {
         }, 'Stage'),
 
         m(Canvas, {
-            attrsAll: {style: {height: `calc(100% - ${common.heightHeader} - ${subset.tableData ? subset.tableHeight : '0px'} - ${common.heightFooter})`}}
+            attrsAll: {style: {height: `calc(100% - ${common.heightHeader} - ${common.heightFooter})`}}
         }, canvas(pipelineId)),
         previewTable(compoundPipeline)
     ];
@@ -108,6 +108,7 @@ export function canvas(compoundPipeline) {
 
 export function previewTable(pipeline) {
     if (!subset.tableData) {
+        subset.setTableData([]);
         updatePreviewTable('reset', pipeline);
         return;
     }
@@ -116,7 +117,7 @@ export function previewTable(pipeline) {
             style: {
                 "position": "fixed",
                 "bottom": common.heightFooter,
-                "height": subset.tableHeight,
+                "height": tableSize,
                 "width": "100%",
                 "border-top": "1px solid #ADADAD",
                 "overflow-y": "scroll",
@@ -126,15 +127,28 @@ export function previewTable(pipeline) {
             },
             onscroll: () => {
                 // don't apply infinite scrolling when list is empty
-                if (subset.tableData === 0) return;
+                if (subset.tableData.length === 0) return;
 
                 let container = document.querySelector('#previewTable');
                 let scrollHeight = container.scrollHeight - container.scrollTop;
                 if (scrollHeight < container.offsetHeight + 100) updatePreviewTable('more', pipeline);
             }
         },
+        m('#horizontalDrag', {
+            style: {
+                position: 'absolute',
+                top: '-4px',
+                left: 0,
+                right: 0,
+                height: '12px',
+                cursor: 'h-resize',
+                'z-index': 1000
+            },
+            onmousedown: resizeMenu
+        }),
         m(Table, {
             // headers: [...subset.tableHeaders, ...subset.tableHeadersEvent],
+            id: 'previewTable',
             data: subset.tableData || []
         })
     );
@@ -147,13 +161,13 @@ export function leftpanel() {
     return m(Panel, {
             side: 'left',
             label: 'Constraint Configuration',
-            hover: !app.is_manipulate_mode,
-            width: app.modelLeftPanelWidths[app.leftTab],
+            hover: false,
+            width: '300px',
             attrsAll: {
                 style: {
                     'z-index': 101,
                     // subtract header, spacer, spacer, scrollbar, table, and footer
-                    height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${subset.tableData ? subset.tableHeight : '0px'} - ${common.heightFooter})`
+                    height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${subset.tableData ? tableSize : '0px'} - ${common.heightFooter})`
                 }
             }
         },
@@ -227,7 +241,7 @@ export function rightpanel() {
             style: {
                 'z-index': 101,
                 // subtract header, spacer, spacer, scrollbar, table, and footer
-                height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${subset.tableData ? subset.tableHeight : '0px'} - ${common.heightFooter})`
+                height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${subset.tableData ? tableSize : '0px'} - ${common.heightFooter})`
             }
         }
     }, m(PipelineFlowchart, {
@@ -241,7 +255,7 @@ export class PipelineFlowchart {
     view(vnode) {
         // compoundPipeline is used for queries
         // pipelineId is edited and passed into the trees
-        let {compoundPipeline, pipelineId, editable} = vnode.attrs;
+        let {compoundPipeline, pipelineId, editable, aggregate} = vnode.attrs;
 
         if (!(pipelineId in subset.manipulations)) subset.manipulations[pipelineId] = [];
         let pipeline = subset.manipulations[pipelineId];
@@ -398,7 +412,7 @@ export class PipelineFlowchart {
                         queryId: 1
                     })
                 }, plus, ' Subset Step'),
-                m(Button, {
+                aggregate !== false && m(Button, {
                     id: 'btnAddAggregate',
                     title: 'group rows that match criteria',
                     disabled: !isEnabled(),
@@ -657,6 +671,19 @@ export let variableSort = (a, b) => {
     return a.includes(variableSearch) ? -1 : 1;
 };
 
+export function formatPrecision(value) {
+    if (isNaN(value)) return value;
+
+    let precision = 4;
+
+    // convert to Number
+    value *= 1;
+    // determine number of digits in value
+    let digits = Math.max(Math.floor(Math.log10(Math.abs(Number(String(value).replace(/[^0-9]/g, ''))))), 0) + 1;
+
+    if (digits <= precision || precision === 0) return value;
+    return value.toPrecision(precision);
+}
 
 export let updatePreviewTable = async (option, pipeline) => {
 
@@ -668,12 +695,20 @@ export let updatePreviewTable = async (option, pipeline) => {
     if (previewIsLoading || option === 'clear' || pipeline === undefined || (subset.tableData || []).length - previewSkip < 0)
         return;
 
+    let variables = [];
+
+    if (app.is_model_mode && app.selectedProblem) {
+        let problem = app.disco.find(entry => entry.problem_id === app.selectedProblem);
+        variables = [...problem.predictors, problem.target];
+    }
+
     let previewMenu = {
         type: 'menu',
         metadata: {
             type: 'peek',
             skip: previewSkip,
-            limit: previewBatchSize
+            limit: previewBatchSize,
+            variables
         }
     };
     previewSkip += previewBatchSize;
@@ -689,13 +724,40 @@ export let updatePreviewTable = async (option, pipeline) => {
     if (data.length === 0 && option === 'reset')
         alert('The pipeline at this stage matches no records. Delete constraints to match more records.');
 
+    data = data.map(record => Object.keys(record).reduce((out, entry) => {
+        out[entry] = typeof record[entry] === 'number' ? formatPrecision(record[entry]) : record[entry];
+        return out;
+    }, {}));
     subset.setTableData((subset.tableData || []).concat(data));
     previewIsLoading = false;
     m.redraw();
-
 };
 
 // for the data preview at the bottom of the page
 let previewSkip = 0;
 let previewBatchSize = 100;
 let previewIsLoading = false;
+
+// window resizing
+let isResizingMenu = false;
+export let tableSize = `calc(20% + ${common.heightFooter})`;
+export let resizeMenu = (e) => {
+    isResizingMenu = true;
+    document.body.classList.add('no-select');
+    resizeMenuTick(e);
+};
+
+let resizeMenuTick = (e) => {
+    let percent = (1 - e.clientY / app.byId(app.is_manipulate_mode ? 'canvas' : 'main').clientHeight) * 100;
+    tableSize = `calc(${Math.max(percent, 0)}% + ${common.heightFooter})`;
+    m.redraw();
+};
+
+document.onmousemove = (e) => isResizingMenu && resizeMenuTick(e);
+
+document.onmouseup = () => {
+    if (isResizingMenu) {
+        isResizingMenu = false;
+        document.body.classList.remove('no-select');
+    }
+};

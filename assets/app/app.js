@@ -5,6 +5,11 @@ import hopscotch from 'hopscotch';
 import m from 'mithril';
 
 import * as common from "../common/app/common";
+
+// this contains an object of abstract descriptions of pipelines of manipulations
+import {manipulations} from "../EventData/app/app";
+import {updatePreviewTable} from './manipulate';
+
 import {setModal} from '../common/app/views/Modal';
 
 import {bars, barsNode, barsSubset, density, densityNode, scatter, selVarColor} from './plots.js';
@@ -105,6 +110,9 @@ export function set_mode(mode) {
         updateRightPanelWidth();
         updateLeftPanelWidth();
     }
+
+    // cause the peek table to redraw
+    updatePreviewTable('clear');
 
     let ws = elem('#whitespace0');
     if (ws) {
@@ -4729,7 +4737,51 @@ export function discovery(preprocess_file) {
 
 
 export let selectedProblem;
-export function setSelectedProblem(prob) {selectedProblem = prob;}
+export function setSelectedProblem(problemId) {
+    if (selectedProblem === problemId) return;
+    selectedProblem = problemId;
+
+    let pipelineId = domainIdentifier.name + problemId;
+
+    if (!(pipelineId in manipulations)) {
+        let problem = disco.find(entry => entry.problem_id === selectedProblem);
+        let pipeline = [];
+
+        if (problem['subsetObs']) {
+            pipeline.push({
+                type: 'subset',
+                id: 'subset ' + pipeline.length,
+                abstractQuery: [{
+                    id: String(pipelineId) + '-' + String(0) + '-' + String(1),
+                    name: problem['subsetObs'],
+                    show_op: false,
+                    cancellable: true,
+                    subset: 'automated'
+                }],
+                nodeId: 2,
+                groupId: 1
+            })
+
+        }
+
+        if (problem['transform']) {
+            let [variable, transform] = problem['transform'].split('=').map(_=>_.trim());
+            pipeline.push({
+                type: 'transform',
+                transforms: [{
+                    name: variable,
+                    equation: transform
+                }],
+                id: 'transform ' + pipeline.length,
+            })
+        }
+
+        manipulations[pipelineId] = pipeline;
+
+        // cause the peek table to redraw
+        updatePreviewTable('clear');
+    }
+}
 
 export let checkedDiscoveryProblems = new Set();
 export let setCheckedDiscoveryProblem = (status, problem) => {

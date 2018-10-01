@@ -115,7 +115,7 @@ export function buildTransform(text, variables) {
 
         // Variables
         if (tree.type === 'Identifier') {
-            if (variables.has(tree.name)) {
+            if (!variables || variables.has(tree.name)) {
                 usedTerms.variables.add(tree.name);
                 return '$' + tree.name;
             }
@@ -279,6 +279,14 @@ function processRule(rule) {
             }
             rule_query = or;
         }
+    }
+
+    if (rule.subset === 'automated') {
+        let operators = {'>=': '$gte', '>': '$gt', '<=': '$lte', '<': '$lt', '==': '$eq', '!=': '$ne'};
+        let operatorRegex = new RegExp(`(${Object.keys(operators).join('|')})`);
+
+        let [variable, constraint, condition] = rule.name.split(operatorRegex).map(_=>_.trim());
+        rule_query[variable] = {[operators[constraint]]: buildTransform(condition)['query']}
     }
 
     if (rule.subset === 'continuous') {

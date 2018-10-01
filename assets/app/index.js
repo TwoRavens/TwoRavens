@@ -74,8 +74,12 @@ function leftpanel(mode) {
         checked: app.disco.length === app.checkedDiscoveryProblems.size,
         title: `mark ${app.disco.length === app.checkedDiscoveryProblems.size ? 'no' : 'all'} problems as meaningful`
     });
+    let discoveryHeaders = [
+        'problem_id', m('[style=text-align:center]', 'Meaningful', m('br'), discoveryAllCheck),
+        'Target', 'Predictors', 'Task', 'Metric', 'Subset', 'Transform'
+    ];
 
-    let discoveryTableData = app.disco.map(problem => [
+    let formatProblem = (problem => [
         problem.problem_id, // this is masked as the UID
         m('input[type=checkbox][style=width:100%]', {
             onclick: m.withAttr("checked", (checked) => app.setCheckedDiscoveryProblem(checked, problem.problem_id)),
@@ -100,7 +104,7 @@ function leftpanel(mode) {
         attrsAll: {
             style: {
                 'z-index': 101,
-                height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${app.rightTab === 'Manipulate' && subset.tableData ? subset.tableHeight : '0px'} - ${common.heightFooter})`
+                height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${app.is_model_mode && app.rightTab === 'Manipulate' && subset.tableData ? manipulate.tableSize: '0px'} - ${common.heightFooter})`
             }
         }
     }, m(MenuTabbed, {
@@ -109,10 +113,10 @@ function leftpanel(mode) {
         currentTab: app.leftTab,
         callback: app.setLeftTab,
         sections: [
-            (app.rightTab !== 'Manipulate' || manipulate.constraintMenu) && {
+            (!(app.is_model_mode && app.rightTab === 'Manipulate') || manipulate.constraintMenu) && {
                 value: 'Variables',
                 title: 'Click variable name to add or remove the variable pebble from the modeling space.',
-                contents: app.rightTab === 'Manipulate' ? [
+                contents: app.is_model_mode && app.rightTab === 'Manipulate' ? [
                     m('h5', 'Constraint Type'),
                     manipulate.varList()
                 ] : [
@@ -136,58 +140,94 @@ function leftpanel(mode) {
                     })
                 ]
             },
-            {value: 'Discovery',
-             contents: [
-                 m(Table, {
-                     id: 'discoveryTable',
-                     headers: ['problem_id', m('[style=text-align:center]', 'Meaningful', m('br'), discoveryAllCheck), 'Target', 'Predictors', 'Task', 'Metric', 'Subset', 'Transform'],
-                     data: discoveryTableData,
-                     activeRow: app.selectedProblem,
-                     onclick: app.setSelectedProblem,
-                     showUID: false,
-                     abbreviation: 40,
-                     attrsAll: {
-                         style: {height: '80%', overflow: 'auto', display: 'block', 'margin-right': '16px', 'margin-bottom': 0, 'max-width': (window.innerWidth - 90) + 'px'}}
-                 }),
-                 m('textarea#discoveryInput[style=display:block; float: left; width: 100%; height:calc(20% - 35px); overflow: auto; background-color: white]', {
-                     value: selectedDisco === undefined ? '' : selectedDisco.description
-                 }),
-                 m(Button, {id: 'btnSave', onclick: app.saveDisc, title: 'Saves your revised problem description.'}, 'Save Desc.'),
-                 m(Button, {id: 'btnSubmitDisc', classes: 'btn-success', style: 'float: right', onclick: app.submitDiscProb, title: 'Submit all checked discovered problems.'}, 'Submit Disc. Probs.'),
-                 m(Button, {id: 'btnModelProblem', classes: 'btn-default', style: 'float: right', onclick: _ => {
-                     m.route.set('/model');
-                     setTimeout(_ => {
-                         if (selectedDisco) {
-                             let {target, predictors} = selectedDisco;
-                             app.erase('Discovery');
-                             [target, ...predictors].map(x => app.clickVar(x));
-                             predictors.forEach(x => {
-                                 let d = app.findNode(x);
-                                 app.setColors(d, app.gr1Color);
-                                 app.legend();
-                             });
-                             let d = app.findNode(target);
-                             app.setColors(d, app.dvColor);
-                             app.legend();
-                             d.group1 = d.group2 = false;
-                             app.restart();
-                         }
-                     }, 500);
-                 }, title: 'Model problem'}, 'Model problem')
-             ]},
-         {value: 'Summary',
-          title: 'Select a variable from within the visualization in the center panel to view its summary statistics.',
-          display: 'none',
-             contents: [
-                 m('center',
-                   m('b', app.summary.name),
-                   m('br'),
-                   m('i', app.summary.labl)),
-                 m('table', app.summary.data.map(tr => m('tr', tr.map(
-                     td => m('td',
-                             {onmouseover: setBackgroundColor('aliceblue'),
-                              onmouseout: setBackgroundColor('f9f9f9')},
-                             td)))))]}
+            {
+                value: 'Discovery',
+                contents: [
+                    m('div#discoveryTablesContainer', {
+                            style: {
+                                height: '80%',
+                                overflow: 'auto',
+                                display: 'block',
+                                'margin-bottom': 0,
+                                'max-width': (window.innerWidth - 90) + 'px'
+                            }
+                        },
+                        app.selectedProblem !== undefined && [
+                            m('h4', 'Current Problem'),
+                            m(Table, {
+                                id: 'discoveryTableManipulations',
+                                headers: discoveryHeaders,
+                                data: [formatProblem(selectedDisco)],
+                                activeRow: app.selectedProblem,
+                                showUID: false,
+                                abbreviation: 40
+                            }),
+                            m('h4', 'All Problems')
+                        ],
+                        m(Table, {
+                            id: 'discoveryTable',
+                            headers: ['problem_id', m('[style=text-align:center]', 'Meaningful', m('br'), discoveryAllCheck), 'Target', 'Predictors', 'Task', 'Metric', 'Subset', 'Transform'],
+                            data: app.disco.map(formatProblem),
+                            activeRow: app.selectedProblem,
+                            onclick: problemId => {
+                                app.setSelectedProblem(problemId);
+                                let problem = app.disco.find(problem => problem.problem_id === app.selectedProblem);
+                                m.route.set('/model');
+                                setTimeout(_ => {
+                                    if (!problem) return;
+
+                                    let {target, predictors} = problem;
+                                    app.erase('Discovery');
+                                    [target, ...predictors].map(x => app.clickVar(x));
+                                    predictors.forEach(x => {
+                                        let d = app.findNode(x);
+                                        app.setColors(d, app.gr1Color);
+                                        app.legend();
+                                    });
+                                    let d = app.findNode(target);
+                                    app.setColors(d, app.dvColor);
+                                    app.legend();
+                                    d.group1 = d.group2 = false;
+                                    app.restart();
+                                }, 500);
+                            },
+                            showUID: false,
+                            abbreviation: 40
+                        })),
+                    m('textarea#discoveryInput[style=display:block; float: left; width: 100%; height:calc(20% - 35px); overflow: auto; background-color: white]', {
+                        value: selectedDisco === undefined ? '' : selectedDisco.description
+                    }),
+                    m(Button, {
+                        id: 'btnSave',
+                        onclick: app.saveDisc,
+                        title: 'Saves your revised problem description.'
+                    }, 'Save Desc.'),
+                    m(Button, {
+                        id: 'btnSubmitDisc',
+                        classes: 'btn-success',
+                        style: 'float: right',
+                        onclick: app.submitDiscProb,
+                        title: 'Submit all checked discovered problems.'
+                    }, 'Submit Disc. Probs.')
+                ]
+            },
+            {
+                value: 'Summary',
+                title: 'Select a variable from within the visualization in the center panel to view its summary statistics.',
+                display: 'none',
+                contents: [
+                    m('center',
+                        m('b', app.summary.name),
+                        m('br'),
+                        m('i', app.summary.labl)),
+                    m('table', app.summary.data.map(tr => m('tr', tr.map(
+                        td => m('td',
+                            {
+                                onmouseover: setBackgroundColor('aliceblue'),
+                                onmouseout: setBackgroundColor('f9f9f9')
+                            },
+                            td)))))]
+            }
         ]
     }));
 }
@@ -305,7 +345,7 @@ function rightpanel(mode) {
             title: 'Apply transformations and subsets to a problem',
             contents: m(MenuHeaders, {
                 id: 'aggregateMenu',
-                attrsAll: {style: {height: 'calc(100% - 39px)', overflow: 'auto'}},
+                attrsAll: {style: {height: '100%', overflow: 'auto'}},
                 sections: [
                     subset.manipulations[app.domainIdentifier.name] && {
                         value: 'Dataset Pipeline',
@@ -320,7 +360,8 @@ function rightpanel(mode) {
                         contents: m(manipulate.PipelineFlowchart, {
                             compoundPipeline: [...subset.manipulations[app.domainIdentifier.name], ...subset.manipulations[app.domainIdentifier.name + app.selectedProblem]],
                             pipelineId: app.domainIdentifier.name + app.selectedProblem,
-                            editable: true
+                            editable: true,
+                            aggregate: false
                         })
                     }
                 ]
@@ -423,7 +464,7 @@ function rightpanel(mode) {
         attrsAll: {
             style: {
                 'z-index': 101,
-                height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${app.rightTab === 'Manipulate' && subset.tableData ? subset.tableHeight : '0px'} - ${common.heightFooter})`
+                height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${app.is_model_mode && app.rightTab === 'Manipulate' && subset.tableData ? manipulate.tableSize: '0px'} - ${common.heightFooter})`
             }
         }
     }, m(MenuTabbed, {
@@ -576,6 +617,9 @@ class Body {
         if (app.domainIdentifier && !(app.domainIdentifier.name) in subset.manipulations)
             subset.manipulations[app.domainIdentifier.name] = [];
 
+        let problemPipeline = app.is_model_mode && app.selectedProblem
+            ? [...subset.manipulations[app.domainIdentifier.name + app.selectedProblem], ] : [];
+
         return m('main', [
             m(Modal),
             this.header(app.currentMode),
@@ -583,8 +627,8 @@ class Body {
             leftpanel(app.currentMode),
             rightpanel(app.currentMode),
 
-            (app.is_manipulate_mode || app.rightTab === 'Manipulate') && manipulate.menu(
-                subset.manipulations[app.domainIdentifier.name], // the complete pipeline to build menus with
+            (app.is_manipulate_mode || (app.is_model_mode && app.rightTab === 'Manipulate')) && manipulate.menu(
+                [...subset.manipulations[app.domainIdentifier.name], ...problemPipeline], // the complete pipeline to build menus with
                 app.domainIdentifier.name),  // the identifier for which pipeline to edit
 
             m(`#main`, {style: {overflow, display: app.is_manipulate_mode || (app.rightTab === 'Manipulate' && manipulate.constraintMenu) ? 'none' : 'block'}},
@@ -761,7 +805,7 @@ class Body {
                         ['nomButton', 'znom', 'Nom Var'],
                         ['gr1Button', 'zgroup1', 'Group 1'],
                         ['gr2Button', 'zgroup2', 'Group 2']],
-                    attrsStyle: {bottom: app.rightTab === 'Manipulate' ? `calc(${subset.tableHeight} + 23px)` : '0px'}
+                    attrsStyle: {bottom: app.rightTab === 'Manipulate' ? `calc(${manipulate.tableSize} + 23px)` : '0px'}
                 }),
                 app.currentMode !== 'manipulate' && m(Subpanel, {title: "History"}))
         ]);

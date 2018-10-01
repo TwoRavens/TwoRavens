@@ -100,7 +100,7 @@ export default class Table {
             headers && m('thead', {style: {width: '100%'}}, [
                 ...(showUID ? headers : headers.slice(1)).map((header) => m('th.table-header-sticky', {
                     // sticky css applied on `th` for chrome compatibility https://bugs.chromium.org/p/chromium/issues/detail?id=702927
-                    style: {'font-weight': 'bold', 'z-index': 5, background: 'rgba(173,173,173,0.4)'}
+                    style: {'font-weight': 'bold', 'z-index': 5, background: 'rgba(173,173,173,0.6)'}
                 }, value(header)))
             ]),
 

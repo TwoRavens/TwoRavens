@@ -12,6 +12,14 @@ svg {
     border-color: #dc3545 !important;
 }
 
+/* this prevents selections to content. Applied to body when dragging ui elements */
+.no-select {
+    -webkit-user-select: none;  /* Chrome all / Safari all */
+    -moz-user-select: none;     /* Firefox all */
+    -ms-user-select: none;      /* IE 10+ */
+    user-select: none;          /* Likely future */
+}
+
 div#subsetList.popover {
     max-width: none;
 }
