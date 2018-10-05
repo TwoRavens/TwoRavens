@@ -442,9 +442,12 @@ def api_get_manipulations(request):
         return JsonResponse({"success": False, "error": get_json_error(json_req_obj)})
 
     # check if data is valid
-    form = EventDataGetManipulationForm(json_req_obj)
-    if not form.is_valid():
-        return JsonResponse({"success": False, "message": "invalid input", "errors": form.errors})
+    try:
+        form = EventDataGetManipulationForm(json_req_obj)
+        if not form.is_valid():
+            return JsonResponse({"success": False, "message": "invalid input", "errors": form.errors})
+    except json.decoder.JSONDecodeError as err:
+        return JsonResponse({"success": False, "message": str(err)})
 
     # ensure the dataset is present
     EventJobUtil.import_dataset(
@@ -466,7 +469,7 @@ def api_get_manipulations(request):
 
     if json_req_obj.get('export', False):
         success, results_obj_err = EventJobUtil.export_dataset(
-            TWORAVENS_DB_NAME,
+            settings.TWORAVENS_DB_NAME,
             settings.PREFIX + json_req_obj['collection_name'],
             results_obj_err)
 
@@ -475,4 +478,4 @@ def api_get_manipulations(request):
 
 @csrf_exempt
 def api_import_dataset(collection):
-    return EventJobUtil.import_dataset(TWORAVENS_DB_NAME, collection)
+    return EventJobUtil.import_dataset(settings.TWORAVENS_DB_NAME, collection)

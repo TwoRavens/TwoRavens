@@ -244,7 +244,7 @@ export default class Body_EventData {
                             let downloadStep = {
                                 type: 'menu',
                                 metadata: {
-                                    type: 'download',
+                                    type: 'data',
                                     variables: (app.selectedVariables.size + app.selectedConstructedVariables.size) === 0
                                         ? [...app.genericMetadata[app.selectedDataset]['columns'], ...app.genericMetadata[app.selectedDataset]['columns_constructed']]
                                         : [...app.selectedVariables, ...app.selectedConstructedVariables]

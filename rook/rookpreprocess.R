@@ -79,13 +79,14 @@ preprocess.app <- function(env){
 
             if(d3m_mode) {                                       # Note presently this entire app is only ever called in d3m mode, but we might generalize its function
                 mydataloc <- check_ext(mydataloc)
-               
+                delimiter <- if ("delimiter" %in% names(preprocessParams)) preprocessParams$delimiter else ','
+
                 #mydataloc2 <- paste("../",mydataloc,sep="")
                 #mytargetloc <- paste("../",mytargetloc,sep="")
                 if( identical(tools::file_ext(mydataloc), "csv" ) ){
-                    mydata <- read.csv(mydataloc, check.names = FALSE)
+                    mydata <- read.csv(mydataloc, sep=delimiter, check.names = FALSE)
                 } else if (identical(tools::file_ext(mydataloc), "gz" )){
-                    mydata <- read.csv(gzfile(mydataloc), check.names = FALSE)
+                    mydata <- read.csv(gzfile(mydataloc), sep=delimiter, check.names = FALSE)
                 } else {
                     warning <- TRUE
                     return<-list(warning="Data file extension not recognized as .csv or .gz")
@@ -120,7 +121,7 @@ preprocess.app <- function(env){
         dir.create(rook_output_preprocess, recursive = TRUE)
     }
 
-    outloc <- paste(rook_output_preprocess, "preprocess.json", sep="")
+    outloc <- if ('target' %in% names(preprocessParams)) preprocessParams$target else paste(rook_output_preprocess, "preprocess.json", sep="")
     outdata <- paste(rook_output_data, merge_name,sep="")
 
     print(outloc)

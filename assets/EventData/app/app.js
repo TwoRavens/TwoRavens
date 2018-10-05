@@ -302,7 +302,7 @@ async function updatePeek() {
     let peekMenu = {
         type: 'menu',
         metadata: {
-            type: 'peek',
+            type: 'data',
             variables: variables,
             skip: peekSkip,
             limit: peekBatchSize
@@ -421,9 +421,10 @@ export let loadMenu = async (abstractPipeline, menu, {recount, requireMatch}={})
             method: 'aggregate',
             query: compiled
         }).then(response => {
+            let count = queryMongo.menuPostProcess['count'](response);
             // intentionally breaks the entire downloading promise array and subsequent promise chain
-            if (!response.length && requireMatch) throw 'no records matched';
-            totalSubsetRecords = response[0].total
+            if (!count && requireMatch) throw 'no records matched';
+            totalSubsetRecords = count
         }));
     }
 

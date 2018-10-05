@@ -7,6 +7,7 @@ import '../../pkgs/jqtree/jqtree.style.css';
 import * as queryMongo from "../queryMongo";
 import * as queryAbstract from '../queryAbstract';
 import * as app from "../app";
+import * as manipulate from "../../../app/manipulate";
 
 
 export class TreeVariables {
@@ -180,6 +181,7 @@ export class TreeQuery {
                 // Save changes when an element is moved
                 step.abstractQuery = JSON.parse(subsetTree.tree('toJson'));
                 queryAbstract.hideFirst(step.abstractQuery);
+                manipulate.setPendingHardManipulation(true);
                 m.redraw();
             }
         );
@@ -205,15 +207,17 @@ export class TreeQuery {
         subsetTree.bind(
             'tree.dblclick',
             function (event) {
-                let tempQuery = queryMongo.buildSubset([event.node]);
-                if ($.isEmptyObject(tempQuery)) {
-                    alert("\"" + event.node.name + "\" is too specific to parse into a query.");
-                } else {
-                    app.canvasPreferences['Custom'] = app.canvasPreferences['Custom'] || {};
-                    app.canvasPreferences['Custom']['text'] = JSON.stringify(tempQuery, null, '\t');
-                    app.canvasRedraw['Custom'] = true;
-                    app.setSelectedCanvas("Custom");
-                    m.redraw()
+                if (IS_EVENTDATA_DOMAIN) {
+                    let tempQuery = queryMongo.buildSubset([event.node]);
+                    if ($.isEmptyObject(tempQuery)) {
+                        alert("\"" + event.node.name + "\" is too specific to parse into a query.");
+                    } else {
+                        app.canvasPreferences['Custom'] = app.canvasPreferences['Custom'] || {};
+                        app.canvasPreferences['Custom']['text'] = JSON.stringify(tempQuery, null, '\t');
+                        app.canvasRedraw['Custom'] = true;
+                        app.setSelectedCanvas("Custom");
+                        m.redraw()
+                    }
                 }
             }
         );

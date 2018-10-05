@@ -724,25 +724,21 @@ export function buildMenu(step) {
         ];
     }
 
-    if (metadata.type === 'peek') return [
-        {
-            $project: (metadata.variables || []).reduce((out, entry) => {
-                out[entry] = 1;
-                return out;
-            }, {_id: 0})
-        },
-        {$skip: metadata.skip},
-        {$limit: metadata.limit}
-    ];
+    if (metadata.type === 'data') {
+        let subset = [];
+        if (metadata.skip) subset.push({$skip: metadata.skip});
+        if (metadata.limit) subset.push({$limit: metadata.limit});
 
-    if (metadata.type === 'download') return [
-        {
-            $project: metadata.variables.reduce((out, entry) => {
-                out[entry] = 1;
-                return out;
-            }, {_id: 0})
-        }
-    ];
+        return [
+            {
+                $project: (metadata.variables || []).reduce((out, entry) => {
+                    out[entry] = 1;
+                    return out;
+                }, {_id: 0})
+            },
+            ...subset
+        ];
+    }
 
     if (metadata.type === 'count') return [{
         $count: 'total'
@@ -800,5 +796,7 @@ export let menuPostProcess = new Proxy({
             return (out);
         }, []),
 
-    'summary': data => data[0]
+    'summary': data => data[0],
+
+    'count': data => data.length ? data[0].total : 0
 }, defaultValue(data => data));

@@ -20,6 +20,13 @@ import * as app from './app';
 import * as common from '../common/app/common';
 import * as queryAbstract from '../EventData/app/queryAbstract';
 import * as queryMongo from "../EventData/app/queryMongo";
+import {disco} from "./app";
+import {discovery} from "./app";
+import {problemDocExists} from "./app";
+import {valueKey} from "./app";
+import {task1_finished} from "./app";
+import {byId} from "./app";
+import {setMytarget} from "./app";
 
 // dataset name from app.domainIdentifier.name
 // variable names from app.valueKey
@@ -51,7 +58,10 @@ export function menu(compoundPipeline, pipelineId) {
 
                 // clear the constraint menu
                 if (success) {
+                    if (app.is_manipulate_mode) setPendingHardManipulation(true);
+
                     setConstraintMenu(undefined);
+                    if (app.is_manipulate_mode) pendingHardManipulation = true;
                     common.setPanelOpen('right');
                 }
             }
@@ -283,6 +293,7 @@ export class PipelineFlowchart {
                     let deleteButton = editable && pipeline.length - 1 === i && m(`div#stepDelete`, {
                         onclick: () => {
                             let removedStep = pipeline.pop();
+                            if (app.is_manipulate_mode) setPendingHardManipulation(true);
                             if (constraintMenu && constraintMenu.step === removedStep) {
                                 constraintMenu = undefined;
                                 Object.keys(constraintMetadata).forEach(key => delete constraintMetadata[key]);
@@ -332,7 +343,10 @@ export class PipelineFlowchart {
                                     class: ['btn-sm'],
                                     style: {margin: '0.5em'},
                                     disabled: !step.abstractQuery.filter(constraint => constraint.type === 'rule').length,
-                                    onclick: () => queryAbstract.addGroup(pipelineId, step)
+                                    onclick: () => {
+                                        if (app.is_manipulate_mode) setPendingHardManipulation(true);
+                                        queryAbstract.addGroup(pipelineId, step);
+                                    }
                                 }, plus, ' Group')
                             ]
                         )
@@ -432,6 +446,18 @@ export class PipelineFlowchart {
 
 // when set, the loading spiral is shown in the canvas
 export let isLoading = false;
+
+export let pendingHardManipulation = false;
+export let setPendingHardManipulation = state => {
+    if (!app.is_manipulate_mode) return;
+    if (!pendingHardManipulation && state) {
+        setTimeout(alert('The dataset has changed. New problems will be inferred and any existing problem pipelines erased.'), 100);
+        Object.keys(subset.manipulations)
+            .filter(key => key !== app.domainIdentifier.name)
+            .forEach(key => delete subset.manipulations[key])
+    }
+    pendingHardManipulation = state;
+};
 
 // when set, the constraint menu will rebuild non-mithril elements (like plots) on the next redraw
 export let redraw = false;
@@ -654,6 +680,85 @@ let loadMenuManipulations = async (pipeline) => {
     m.redraw();
 };
 
+export let rebuildPreprocess = async () => {
+
+    let menuDownload = {
+        type: 'menu',
+        metadata: {
+            type: 'data'
+        }
+    };
+
+    let compiled = JSON.stringify(queryMongo.buildPipeline(
+        [...subset.manipulations[app.domainIdentifier.name], menuDownload],
+        new Set(app.valueKey))['pipeline']);
+
+    let dataPath = await getData({
+        datafile: app.zparams.zd3mdata,
+        collection_name: app.domainIdentifier.name,
+        method: 'aggregate',
+        query: compiled,
+        export: true
+    });
+
+    let targetPath = dataPath.split('/').slice(0, dataPath.split('/').length - 1).join('/') + '/preprocess.json';
+    console.log("DATA PATHS");
+    console.log(dataPath);
+    console.log(targetPath);
+
+    let response = await m.request({
+        method: 'POST',
+        url: ROOK_SVC_URL + 'preprocessapp',
+        data: {
+            data: dataPath,
+            target: targetPath,
+            datastub: app.configurations.name,
+            delimiter: '\t'
+        }
+    });
+
+    console.log("preprocess response");
+    console.log(response);
+
+    if (!response) {
+        console.log('preprocess failed');
+        alert('preprocess failed. ending user session.');
+        app.endsession();
+        return;
+    }
+
+    // update state with new preprocess metadata
+    response.dataset.private !== undefined && app.setPriv(response.dataset.private);
+
+    app.setPreprocess(response.variables);
+    app.setValueKey(Object.keys(response.variables));
+    app.setAllNodes(app.valueKey.map((variable, i) => jQuery.extend(true, {
+        id: i,
+        reflexive: false,
+        name: variable,
+        labl: 'no label',
+        data: [5, 15, 20, 0, 5, 15, 20],
+        count: [.6, .2, .9, .8, .1, .3, .4],
+        nodeCol: common.colors(i),
+        baseCol: common.colors(i),
+        strokeColor: common.selVarColor,
+        strokeWidth: "1",
+        subsetplot: false,
+        subsetrange: ["", ""],
+        setxplot: false,
+        setxvals: ["", ""],
+        grayout: false,
+        group1: false,
+        group2: false,
+        forefront: false
+    }, app.preprocess[variable])));
+
+    app.setDisco(app.discovery(response));
+    app.setMytarget(disco[0].target);
+
+    setPendingHardManipulation(false);
+};
+
 // contains the menu state (which nominal variables are selected, ranges, etc.)
 export let constraintPreferences = {};
 
@@ -705,7 +810,7 @@ export let updatePreviewTable = async (option, pipeline) => {
     let previewMenu = {
         type: 'menu',
         metadata: {
-            type: 'peek',
+            type: 'data',
             skip: previewSkip,
             limit: previewBatchSize,
             variables

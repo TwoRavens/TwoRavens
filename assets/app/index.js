@@ -79,7 +79,7 @@ function leftpanel(mode) {
         'Target', 'Predictors', 'Task', 'Metric', 'Subset', 'Transform'
     ];
 
-    let formatProblem = (problem => [
+    let formatProblem = problem => [
         problem.problem_id, // this is masked as the UID
         m('input[type=checkbox][style=width:100%]', {
             onclick: m.withAttr("checked", (checked) => app.setCheckedDiscoveryProblem(checked, problem.problem_id)),
@@ -92,7 +92,7 @@ function leftpanel(mode) {
         problem.metric,
         !!problem.subsetObs && problem.subsetObs,
         !!problem.transform && problem.transform
-    ]);
+    ];
 
     let nodes = app.is_explore_mode ? nodesExplore : app.nodes;
 

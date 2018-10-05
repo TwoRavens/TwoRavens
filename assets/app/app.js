@@ -8,7 +8,8 @@ import * as common from "../common/app/common";
 
 // this contains an object of abstract descriptions of pipelines of manipulations
 import {manipulations} from "../EventData/app/app";
-import {updatePreviewTable} from './manipulate';
+import * as manipulate from './manipulate';
+import * as queryMongo from '../EventData/app/queryMongo';
 
 import {setModal} from '../common/app/views/Modal';
 
@@ -104,6 +105,9 @@ export function set_mode(mode) {
     is_manipulate_mode = mode === 'manipulate';
 
     if (currentMode !== mode) {
+        if (mode === 'model' && manipulate.pendingHardManipulation)
+            manipulate.rebuildPreprocess();
+
         currentMode = mode;
         m.route.set('/' + mode);
         restart && restart();
@@ -112,7 +116,7 @@ export function set_mode(mode) {
     }
 
     // cause the peek table to redraw
-    updatePreviewTable('clear');
+    manipulate.updatePreviewTable('clear');
 
     let ws = elem('#whitespace0');
     if (ws) {
@@ -214,7 +218,9 @@ let transformVar = '';
 // var list for each space contain variables in original data
 // plus trans in that space
 let trans = [];
-let preprocess = {}; // hold pre-processed data
+export let preprocess = {}; // hold pre-processed data
+export let setPreprocess = data => preprocess = data;
+
 let spaces = [];
 
 // layout function constants
@@ -234,6 +240,7 @@ export let myspace = 0;
 export let forcetoggle = ["true"];
 export let locktoggle = true;
 let priv = true;
+export let setPriv = state => priv = state;
 
 // swandive is our graceful fail for d3m
 // swandive set to true if task is in failset
@@ -273,12 +280,23 @@ export let zparams = {
     zusername: ''
 };
 
+// list of variable strings (same as Object.keys(preprocess))
+export let valueKey = [];
+export let setValueKey = keys => valueKey = keys;
+
+// list of discovered problem objects
 export let disco = [];
+export let setDisco = data => disco = data;
+
+// list of force diagram node objects
+export let allNodes = [];
+export let setAllNodes = data => allNodes = data;
 
 export let modelCount = 0;
-export let valueKey = [];
-export let allNodes = [];
+
+// list of result objects for one problem
 export let allResults = [];
+
 export let nodes = [];
 export let links = [];
 let mods = {};
@@ -286,8 +304,10 @@ let estimated = false;
 let rightClickLast = false;
 let selInteract = false;
 export let callHistory = []; // transform and subset calls
-let mytarget = '';
-let mytargetindex = '';
+
+// targeted variable name
+export let mytarget = '';
+export let setMytarget = target => mytarget = target;
 
 export let configurations = {};
 let datadocument = {};
@@ -633,7 +653,6 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         // }
 
         mytarget = res.inputs.data[0].targets[0].colName; // easier way to access target name?
-        mytargetindex = res.inputs.data[0].targets[0].colIndex; // easier way to access target name?
         if (typeof res.about.problemID !== 'undefined') {
             d3mProblemDescription.id=res.about.problemID;
         }
@@ -883,7 +902,6 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         // Set target variable for center panel if no problemDoc exists to set this
         if(!problemDocExists){
             mytarget = disco[0].target;
-            mytargetindex = valueKey.indexOf(mytarget) - 1;  // Not clear if still used?
         };
 
         // Kick off discovery button as green for user guidance
@@ -4779,7 +4797,7 @@ export function setSelectedProblem(problemId) {
         manipulations[pipelineId] = pipeline;
 
         // cause the peek table to redraw
-        updatePreviewTable('clear');
+        manipulate.updatePreviewTable('clear');
     }
 }
 

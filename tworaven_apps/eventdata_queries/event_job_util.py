@@ -542,15 +542,15 @@ class EventJobUtil(object):
         folderpath = os.path.join(settings.BASE_DIR, 'ravens_volume', 'manipulation_data', collection, 'TRAIN', 'tables')
         filepath = os.path.join(folderpath, 'learningData.csv')
 
-        if not os.path.exists(outpath):
-            os.makedirs(outpath)
+        if not os.path.exists(folderpath):
+            os.makedirs(folderpath)
 
         if os.path.exists(filepath):
             os.remove(filepath)
 
         with open(filepath, 'w') as outfile:
             writer = csv.writer(outfile, delimiter='\t')
-            columns = [i for i in Object.keys(data[0])]
+            columns = [i for i in data[0]]
 
             writer.writerow(columns)
             for document in data:

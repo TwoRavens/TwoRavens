@@ -2,6 +2,7 @@ import * as app from "./app";
 import m from "mithril";
 
 import * as common from '../../common-eventdata/common';
+import * as manipulate from '../../app/manipulate';
 
 // Edit tree (typically called from JQtree)
 
@@ -12,6 +13,7 @@ window.callbackDeleteTransform = function (id) {
         .find(candidate => candidate.id === (Number(stepId) || stepId));
     step.transforms.splice(step.transforms.findIndex(transformation => transformation.name === transformationName), 1);
 
+    if (!IS_EVENTDATA_DOMAIN) manipulate.setPendingHardManipulation(true);
     m.redraw();
 };
 
@@ -35,9 +37,10 @@ window.callbackDeleteAggregation = function (id) {
         callbackDeleteAggregation(node.parent.id);
     } else {
         aggregationTree.tree('removeNode', node);
-    }
 
-    m.redraw();
+        if (!IS_EVENTDATA_DOMAIN) manipulate.setPendingHardManipulation(true);
+        m.redraw();
+    }
 };
 
 window.callbackOperator = function (id, operand) {
@@ -55,6 +58,8 @@ window.callbackOperator = function (id, operand) {
     node.operation = operand;
     let step = [...app.manipulations[pipelineId], ...Object.values(app.looseSteps)].find(step => step.id === (Number(stepId) || stepId));
     step.abstractQuery = JSON.parse(subsetTree.tree('toJson'));
+
+    if (!IS_EVENTDATA_DOMAIN) manipulate.setPendingHardManipulation(true);
     m.redraw();
 };
 
@@ -76,6 +81,8 @@ window.callbackDelete = async function (id) {
         step.abstractQuery = JSON.parse(subsetTree.tree('toJson'));
 
         hideFirst(step.abstractQuery);
+        if (!IS_EVENTDATA_DOMAIN) manipulate.setPendingHardManipulation(true);
+
         m.redraw();
 
         if (node.type === 'query') {
@@ -112,6 +119,8 @@ window.callbackNegate = function (id, bool) {
 
     let step = [...app.manipulations[pipelineId], ...Object.values(app.looseSteps)].find(step => step.id === (Number(stepId) || stepId));
     step.abstractQuery = JSON.parse(subsetTree.tree('toJson'));
+
+    if (!IS_EVENTDATA_DOMAIN) manipulate.setPendingHardManipulation(true);
     m.redraw();
 };
 
