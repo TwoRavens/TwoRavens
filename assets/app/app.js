@@ -1,6 +1,6 @@
 import hopscotch from 'hopscotch';
 import m from 'mithril';
-
+import *  as dataTable from '../common/app/views/DataTable';
 import * as common from "../common/app/common";
 import {setModal} from '../common/app/views/Modal';
 
@@ -4777,12 +4777,21 @@ export function discovery(preprocess_file) {
     return disco;
 }
 
+export function modelSelectionResults(problem, result){
+console.log("we have problem data", problem)
+console.log("we have result ", result)
+// get data according to design
+dataTable.stargazer = ""
+}
 
 export let selectedProblem;
 export function setSelectedProblem(prob) {selectedProblem = prob;
 
 let problem = disco.find(problem => problem.problem_id === prob);
-console.log("Selected problem ", problem)
+solver_res = []
+callSolver(problem)
+setTimeout(modelSelectionResults(problem, solver_res),1000);
+
 if(problem.system === "user"){
     console.log("It is user")
     d3.select("#btnDelete")
