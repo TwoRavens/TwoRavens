@@ -1,7 +1,7 @@
 ##
 ##  rooksolver.r
 ##
-
+library(stargazer)
 
 send <- function(res) {
   res <- jsonlite:::toJSON(res)
@@ -74,14 +74,14 @@ solver.app <- function(env) {
         d <- na.omit(d)
         print(colnames(d))
         fit <- lm(formula(paste(target,"~",paste(predictors, collapse="+"))),data=d)
-
+        stargazer_lm <- stargazer(fit, type="html")
         jsonfit <- jsonlite::serializeJSON(fit)
 
         fittedvalues <- fit$fitted.values
         actualvalues <- d[,target]
 
         if (class(fit)=="lm") {
-            return(send(list(data=d, description=description, dependent_variable=target, predictors=predictors,  task=task, predictor_values=list(fittedvalues=fittedvalues, actualvalues=actualvalues))))
+            return(send(list(data=d, description=description, dependent_variable=target, predictors=predictors,  task=task, stargazer= stargazer_lm, predictor_values=list(fittedvalues=fittedvalues, actualvalues=actualvalues))))
         } else {
             return(send(list(warning="No model estimated.")))
         }

@@ -899,17 +899,31 @@ for(let i=0; i<disco.length; i++){
     IS_D3M_DOMAIN ? zPop() : dataDownload();
 
     setTimeout(loadResult,10000);
+    problem_sent = [];
 }
 
 
 
-function loadResult(){
-  for(let j=0; j<disco.length; j++){
-    let prob_name = disco[j].description.problem_id;
-    console.log("problem_id check " , prob_name)
+export function loadResult(my_disco){
+  if(my_disco == undefined){
+    console.log("my_disco is not defined")
+    my_disco = disco
+  }
+console.log("my_disco is ", my_disco)
+console.log(my_disco.length);
+  for(let j=0; j<my_disco.length; j++){
+
+
+    let prob_name = my_disco[j].description.problem_id;
+    if(prob_name == undefined){
+      prob_name = my_disco[j].problem_id;
+    }
+    // console.log("problem_id check " , prob_name)
     if(problems_in_preprocess.includes(prob_name)){ console.log("Problem already exists in preprocess", prob_name)}// do nothing }
-    else{let val = {
-      "description":disco[j],
+    else{
+      // problem_sent = []
+      let val = {
+      "description":my_disco[j],
       "result":solver_res[j]
     }
 

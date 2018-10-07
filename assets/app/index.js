@@ -682,17 +682,16 @@ class Body {
                                   let version =1;
                                   let selectedDisco = app.disco.find(problem => problem.problem_id === rookpipe.problem_id);
                                   // console.log("this is selected Disco," , selectedDisco)
+                                  // app.problem_sent = []
+                                  // app.solver_res = []
                                   let app_solver_result = app.callSolver(selectedDisco);
-                                  console.log("app solver result")
-                                  problem_result = app_solver_result
-                                  let problem_section= []
-                                  let val = {
-                                    "description":rookpipe,
-                                    "result": problem_result
-                                  }
-                                  problem_section.push(val)
-                                  let addProblemAPI = app.addProblem(preprocess_id, version, problem_section);
-                                  console.log("API RESPONSE: ",addProblemAPI );
+                                  console.log("app selectedDisco ", selectedDisco)
+                                  app.solver_res = app_solver_result
+                                  let my_disco = []
+                                  my_disco.push(selectedDisco)
+                                  app.loadResult(my_disco)
+                                  // let addProblemAPI = app.addProblem(preprocess_id, version, problem_section);
+                                  // console.log("API RESPONSE: ",addProblemAPI );
 
                                   m.redraw();
                               }, 'Add model to problems.', 'plus'),
