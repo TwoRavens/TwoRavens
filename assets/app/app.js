@@ -1387,6 +1387,34 @@ export function layout(v, v2) {
     // this is to detect a click in the whitespace, but not on a pebble
     let outsideClick = false;
 
+    let redrawPebble = pebble => {
+        // nullity check for when reintroducing variable from variable list
+        if (pebble === null) return;
+        let data = pebble.__data__;
+
+        let radius = setPebbleRadius(data);
+        if (data.plottype == 'continuous') densityNode(data, pebble, setPebbleRadius(data));
+        else if (data.plottype == 'bar') barsNode(data, pebble, setPebbleRadius(data));
+
+        d3.select(pebble.querySelector("[id^='pebbleLabel']")).style('font-size', radius * .175 + 7 + 'px')  // proportional scaling would be 14 / 40, but I added y-intercept at 7
+        d3.select(pebble.querySelector("[id^='dvArc']")).attr("d", arc3(radius))
+        d3.select(pebble.querySelector("[id^='nomArc']")).attr("d", arc4(radius))
+        d3.select(pebble.querySelector("[id^='grArc']")).attr("d", arc1(radius))
+        d3.select(pebble.querySelector("[id^='gr1indicator']")).attr("d", arcInd1(radius))
+        d3.select(pebble.querySelector("[id^='gr2indicator']")).attr("d", arcInd2(radius))
+
+        if (!data.forefront && data.name !== selectedPebble) {
+            fillThis(pebble.querySelector('[id^=grArc]'), 0, 100, 500);
+            fill(data, "grText", 0, 100, 500);
+            fillThis(pebble.querySelector('[id^=dvArc]'), 0, 100, 500);
+            fill(data, "dvText", 0, 100, 500);
+            fillThis(pebble.querySelector('[id^=nomArc]'), 0, 100, 500);
+            fill(data, "nomText", 0, 100, 500);
+            fill(data, "gr1indicator", 0, 100, 500);
+            fill(data, "gr2indicator", 0, 100, 500);
+        }
+    }
+
     // update graph (called when needed)
     restart = function($links) {
         if (is_results_mode) {
@@ -1450,6 +1478,9 @@ export function layout(v, v2) {
         // circle (node) group
         circle = circle.data(nodes, x => x.id);
 
+        // remove handles and make sure pebbles are properly sized when restart is called
+        circle[0].forEach(redrawPebble)
+
         // update existing nodes (reflexive & selected visual states)
         // d3.rgb is the function adjusting the color here
         circle.selectAll('circle')
@@ -1471,26 +1502,6 @@ export function layout(v, v2) {
 
         let append = (str, attr) => x => str + x[attr || 'id'];
 
-        let redrawPebbles = () => {
-            g[0].forEach((pebble) => {
-                // nullity check for when reintroducing variable from variable list
-                if (pebble === null) return;
-
-                let data = pebble.__data__;
-                let radius = setPebbleRadius(data);
-
-                if (data.plottype == 'continuous') densityNode(data, pebble, setPebbleRadius(data));
-                else if (data.plottype == 'bar') barsNode(data, pebble, setPebbleRadius(data));
-
-                d3.select(pebble.querySelector("[id^='pebbleLabel']")).style('font-size', radius * .175 + 7 + 'px')  // proportional scaling would be 14 / 40, but I added y-intercept at 7
-                d3.select(pebble.querySelector("[id^='dvArc']")).attr("d", arc3(radius))
-                d3.select(pebble.querySelector("[id^='nomArc']")).attr("d", arc4(radius))
-                d3.select(pebble.querySelector("[id^='grArc']")).attr("d", arc1(radius))
-                d3.select(pebble.querySelector("[id^='gr1indicator']")).attr("d", arcInd1(radius))
-                d3.select(pebble.querySelector("[id^='gr2indicator']")).attr("d", arcInd2(radius))
-            })
-        }
-
         g.append("path").each(function(d) {
             let radius = setPebbleRadius(d);
             d3.select(this)
@@ -1511,6 +1522,7 @@ export function layout(v, v2) {
                 })
                 .on('mouseout', function(d) {
                     d.forefront = false;
+                    if (d.name === selectedPebble) return;
                     setTimeout(() => {
                         fillThis(this, 0, 100, 500);
                         fill(d, 'dvText', 0, 100, 500);
@@ -1521,7 +1533,6 @@ export function layout(v, v2) {
                     legend(dvColor);
                     d.group1 = d.group2 = false;
                     selectedPebble = d.name;
-                    redrawPebbles();
                     restart();
                 });
         })
@@ -1557,6 +1568,7 @@ export function layout(v, v2) {
                 .on('mouseout', function (d) {
                     if (d.defaultNumchar == "character") return;
                     d.forefront = false;
+                    if (d.name === selectedPebble) return;
                     setTimeout(() => {
                         fillThis(this, 0, 100, 500);
                         fill(d, "nomText", 0, 100, 500);
@@ -1567,7 +1579,6 @@ export function layout(v, v2) {
                     setColors(d, nomColor);
                     legend(nomColor);
                     selectedPebble = d.name;
-                    redrawPebbles();
                     restart();
                 });
         });
@@ -1603,6 +1614,7 @@ export function layout(v, v2) {
                 })
                 .on('mouseout', function (d) {
                     d.forefront = false;
+                    if (d.name === selectedPebble) return;
                     setTimeout(() => {
                         fill(d, "gr1indicator", 0, 100, 500);
                         fill(d, "gr2indicator", 0, 100, 500);
@@ -1615,7 +1627,6 @@ export function layout(v, v2) {
                     setColors(d, gr1Color);
                     legend(gr1Color);
                     selectedPebble = d.name;
-                    redrawPebbles();
                     restart();
                 });
         });
@@ -1641,6 +1652,7 @@ export function layout(v, v2) {
                 })
                 .on('mouseout', function (d) {
                     d.forefront = false;
+                    if (d.name === selectedPebble) return;
                     setTimeout(() => {
                         fillThis(this, 0, 100, 500);
                         fill(d, "grArc", 0, 100, 500);
@@ -1652,7 +1664,6 @@ export function layout(v, v2) {
                     setColors(d, gr1Color);
                     legend(gr1Color);
                     selectedPebble = d.name;
-                    redrawPebbles();
                     restart();
                 });
         });
@@ -1678,6 +1689,7 @@ export function layout(v, v2) {
                 })
                 .on('mouseout', function (d) {
                     d.forefront = false;
+                    if (d.name === selectedPebble) return;
                     setTimeout(() => {
                         fillThis(this, 0, 100, 500);
                         fill(d, "grArc", 0, 100, 500);
@@ -1689,7 +1701,6 @@ export function layout(v, v2) {
                     setColors(d, gr2Color);
                     legend(gr2Color);
                     selectedPebble = d.name;
-                    redrawPebbles();
                     restart();
                 });
         });
@@ -1719,7 +1730,7 @@ export function layout(v, v2) {
             .on('click', function(d) {
                 selectedPebble = d.name;
                 outsideClick = false;
-                redrawPebbles();
+                restart();
             })
             .on('contextmenu', function(d) {
                 // right click on node
@@ -1850,9 +1861,12 @@ export function layout(v, v2) {
                 setTimeout(() => {
                     hoverPebble = undefined;
 
-                    if (selectedPebble) varSummary(allNodes.filter((node) => node.name === selectedPebble)[0]);
+                    if (selectedPebble) varSummary(allNodes.find((node) => node.name === selectedPebble));
                     else setLeftTab(leftTabHidden);
-                    'csArc csText timeArc timeText dvArc dvText nomArc nomText grArc grText'.split(' ').map(x => fill(d, x, 0, 100, 500));
+
+                    if (selectedPebble !== d.name)
+                        'csArc csText timeArc timeText dvArc dvText nomArc nomText grArc grText'.split(' ').map(x => fill(d, x, 0, 100, 500));
+
                     m.redraw();
                 }, hoverTimeout)
             });
