@@ -844,44 +844,30 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     console.log(preprocess);
 
     // 9. Build allNodes[] using preprocessed information
-    let vars = Object.keys(preprocess);
-    // temporary values for hold that correspond to histogram bins
-    hold = [.6, .2, .9, .8, .1, .3, .4];
-    for (let i = 0; i < vars.length; i++) {
-        // valueKey[i] = vars[i].attributes.name.nodeValue;
-        // lablArray[i] = varsXML[i].getElementsByTagName("labl").length == 0 ?
-        // "no label" :
-        // varsXML[i].getElementsByTagName("labl")[0].childNodes[0].nodeValue;
-        // let datasetcount = d3.layout.histogram()
-        //     .bins(barnumber).frequency(false)
-        //     ([0, 0, 0, 0, 0]);
-        valueKey[i] = vars[i];
-        lablArray[i] = "no label";
-        // contains all the preprocessed data we have for the variable, as well as UI data pertinent to that variable,
-        // such as setx values (if the user has selected them) and pebble coordinates
-        let obj = {
-            id: i,
-            reflexive: false,
-            name: valueKey[i],
-            labl: lablArray[i],
-            data: [5, 15, 20, 0, 5, 15, 20],
-            count: hold,
-            nodeCol: colors(i),
-            baseCol: colors(i),
-            strokeColor: selVarColor,
-            strokeWidth: "1",
-            subsetplot: false,
-            subsetrange: ["", ""],
-            setxplot: false,
-            setxvals: ["", ""],
-            grayout: false,
-            group1: false,
-            group2: false,
-            forefront: false
-        };
-        jQuery.extend(true, obj, preprocess[valueKey[i]]);
-        allNodes.push(obj);
-    }
+    // contains all the preprocessed data we have for the variable, as well as UI data pertinent to that variable,
+    // such as setx values (if the user has selected them) and pebble coordinates
+    setValueKey(Object.keys(preprocess));
+    setAllNodes(valueKey.map((variable, i) => jQuery.extend(true, {
+        id: i,
+        reflexive: false,
+        name: variable,
+        labl: 'no label',
+        data: [5, 15, 20, 0, 5, 15, 20],
+        count: [.6, .2, .9, .8, .1, .3, .4],  // temporary values for hold that correspond to histogram bins
+        nodeCol: colors(i),
+        baseCol: colors(i),
+        strokeColor: selVarColor,
+        strokeWidth: "1",
+        subsetplot: false,
+        subsetrange: ["", ""],
+        setxplot: false,
+        setxvals: ["", ""],
+        grayout: false,
+        group1: false,
+        group2: false,
+        forefront: false
+    }, preprocess[variable])))
+
 
     // 10. Add datadocument information to allNodes (when in IS_D3M_DOMAIN)
     if(!swandive) {
