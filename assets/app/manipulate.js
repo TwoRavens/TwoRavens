@@ -866,3 +866,34 @@ document.onmouseup = () => {
         document.body.classList.remove('no-select');
     }
 };
+
+export async function getDatasetUrl(problem) {
+    let problemStep = {
+        type: 'menu',
+        metadata: {
+            type: 'data',
+            variables: [...problem.predictors, problem.target]
+        }
+    };
+
+    let pipeline = [
+        ...(subset.manipulations[app.domainIdentifier.name] || []),
+        ...(subset.manipulations[app.domainIdentifier.name + problem.problem_id]),
+        problemStep
+    ];
+
+    let compiled = queryMongo.buildPipeline(pipeline, Object.keys(app.preprocess))['pipeline'];
+
+    // collection/dataset name
+    let dataset = app.domainIdentifier.name;
+    // location of the dataset csv
+    let datafile = app.zparams.zd3mdata;
+
+    return await getData({
+        datafile: datafile,
+        collection_name: dataset,
+        method: 'aggregate',
+        query: compiled,
+        export: true
+    });
+}
