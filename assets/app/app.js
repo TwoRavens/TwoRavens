@@ -210,14 +210,6 @@ updateLeftPanelWidth();
 common.setPanelCallback('right', updateRightPanelWidth);
 common.setPanelCallback('left', updateLeftPanelWidth);
 
-// transformation toolbar options
-let t, typeTransform;
-export let transformList = 'log(d) exp(d) d^2 sqrt(d) interact(d,e)'.split(' ');
-let transformVar = '';
-
-// var list for each space contain variables in original data
-// plus trans in that space
-let trans = [];
 export let preprocess = {}; // hold pre-processed data
 export let setPreprocess = data => preprocess = data;
 
@@ -1828,10 +1820,6 @@ export function layout(v, v2) {
                     setLeftTab('Summary');
                     varSummary(d);
 
-                    byId('transformations').setAttribute('style', 'display:block');
-                    byId("transSel").selectedIndex = d.id;
-                    transformVar = valueKey[d.id];
-
                     m.redraw();
 
                     if (!d.forefront) return;
@@ -1868,40 +1856,6 @@ export function layout(v, v2) {
                     m.redraw();
                 }, hoverTimeout)
             });
-
-        // the transformation variable list is silently updated as pebbles are added/removed
-        d3.select("#transSel")
-            .selectAll('li')
-            .remove();
-
-        d3.select("#transSel")
-            .selectAll('li')
-            .data(nodes.map(x => x.name)) // set to variables in model space as they're added
-            .enter()
-            .append("li")
-            .text(d => d);
-
-        if(!IS_D3M_DOMAIN) {
-            document.querySelectorAll('#transSel li').forEach(x => x.onclick(function(evt) {
-                // if 'interaction' is the selected function, don't show the function list again
-                let tInput = byId('tInput');
-                if (selInteract) {
-                    let n = tInput.value.concat(this.textContent);
-                    tInput.value = n;
-                    evt.stopPropagation();
-                    let t = transParse(n = n);
-                    if (!t) return;
-                    fadeOut(this.parentNode, 100);
-                    transform(n = t.slice(0, t.length - 1), t = t[t.length - 1], typeTransform = false);
-                    return;
-                }
-
-                tInput.value = this.textContent;
-                fadeOut(this.parentNode, 100);
-                fadeOut('#transList', 100);
-                evt.stopPropagation();
-            }));
-        };
 
         // remove old nodes
         circle.exit().remove();
@@ -1956,13 +1910,6 @@ export function layout(v, v2) {
         .attr('width', width)
         .on('mousedown', function() {mousedown(this);})
         .on('mouseup', function() {mouseup(this);});
-
-    d3.select(window)
-        .on('click', () => {
-            // all clicks will bubble here unless event.stopPropagation()
-            fadeOut('#transList', 100);
-            fadeOut('#transSel', 100);
-        });
 
     restart(); // initializes force.layout()
     fakeClick();
@@ -2896,224 +2843,6 @@ function viz(mym) {
     m.redraw();
 }
 
-/**
-   parses the transformation input.
-   variable names are often nested inside one another, e.g., ethwar, war, wars, and so this is handled
-*/
-function transParse(n) {
-    var out2 = [];
-    var t2 = n;
-    var k2 = 0;
-    var subMe2 = "_transvar".concat(k2);
-    var indexed = [];
-
-    // out2 is all matched variables, indexed is an array, each element is an object that contains the matched variables starting index and finishing index.  e.g., n="wars+2", out2=[war, wars], indexed=[{0,2},{0,3}]
-    for (var i in valueKey) {
-        var m2 = n.match(valueKey[i]);
-        if (m2 != null)
-            out2.push(m2[0]);
-
-        var re = new RegExp(valueKey[i], "g");
-        var s = n.search(re);
-        if (s != -1)
-            indexed.push({from: s, to: s + valueKey[i].length});
-    }
-
-    // nested loop not good, but indexed is not likely to be very large.
-    // if a variable is nested, it is removed from out2
-    // notice, loop is backwards so that index changes don't affect the splice
-    cdb("indexed ", indexed);
-    for (var i = indexed.length - 1; i > -1; i--) {
-        for (var j = indexed.length - 1; j > -1; j--) {
-            if (i === j)
-                continue;
-            if ((indexed[i].from >= indexed[j].from) & (indexed[i].to <= indexed[j].to)) {
-                cdb(i, " is nested in ", j);
-                del(out2, i);
-            }
-        }
-    }
-
-    for (var i in out2) {
-        t2 = t2.replace(out2[i], subMe2); //something that'll never be a variable name
-        k2 = k2 + 1;
-        subMe2 = "_transvar".concat(k2);
-    }
-
-    if (out2.length > 0) {
-        out2.push(t2);
-        cdb("new out ", out2);
-        return (out2);
-    } else {
-        alert("No variable name found. Perhaps check your spelling?");
-        return null;
-    }
-}
-
-/**
-   n = name of column/node
-   t = selected transformation
-*/
-async function transform(n, t, typeTransform) {
-    if (downloadIncomplete()) {
-        return;
-    }
-
-    if (!typeTransform)
-        t = t.replace("+", "_plus_"); // can't send the plus operator
-
-    cdb('name of col: ' + n);
-    cdb('transformation: ' + t);
-
-    var btn = byId('btnEstimate');
-
-    // find the node by name
-    var myn = findNodeIndex(n[0], true);
-
-    if (typeof myn === "undefined") {
-        myn = findNodeIndex(n, true);
-    }
-
-    var outtypes = {
-        varnamesTypes: n,
-        interval: myn.interval,
-        numchar: myn.numchar,
-        nature: myn.nature,
-        binary: myn.binary
-    };
-
-    cdb(myn);
-    // if typeTransform but we already have the metadata
-    if (typeTransform) {
-        if (myn.nature == "nominal" & typeof myn.plotvalues !== "undefined") {
-            myn.plottype = "bar";
-            barsNode(myn);
-            panelPlots();
-            return;
-        } else if (myn.nature != "nominal" & typeof myn.plotx !== "undefined") {
-            myn.plottype = "continuous";
-            densityNode(myn);
-            panelPlots();
-            return;
-        }
-    }
-
-    estimateLadda.start(); // start spinner
-    let json = await makeRequest(
-        ROOK_SVC_URL + 'transformapp',
-        {zdataurl: dataurl,
-         zvars: myn.name,
-         zsessionid: zparams.zsessionid,
-         transform: t,
-         callHistory: callHistory,
-         typeTransform: typeTransform,
-         typeStuff: outtypes});
-    if (!json) {
-        return;
-    }
-
-    // Is this a typeTransform?
-    if (json.typeTransform[0]) {
-        // Yes. We're updating an existing node
-        d3.json(json.url, (err, data) => {
-            if (err)
-                return console.warn(err);
-            let node;
-            for (let key in data) {
-                node = findNodeIndex(key, true);
-		            if (!node)
-		                continue;
-                jQuery.extend(true, node, data[key]);
-                node.plottype === "continuous" ? densityNode(node) :
-                    node.plottype === "bar" ? barsNode(node) : null;
-            }
-            fakeClick();
-            panelPlots();
-            node && cdb(node);
-        });
-    } else {
-        /* No, we have a new node here--e.g. the transformed column
-           example response: {
-           "call":["t_year_2"],
-           "url":["data/preprocessSubset_BACCBC78-7DD9-4482-B31D-6EB01C3A0C95.txt"],
-           "trans":["year","_transvar0^2"],
-           "typeTransform":[false]
-           }
-        */
-        callHistory.push({
-            func: "transform",
-            zvars: n,
-            transform: t
-        });
-
-        var subseted = false;
-        var rCall = [];
-
-        rCall[0] = json.call;
-        var newVar = rCall[0][0];
-
-        trans.push(newVar);
-
-        // Read the preprocess file containing values
-        // for the transformed variable
-        //
-        d3.json(json.url, function(error, json) {
-            if (error) return console.warn(error);
-
-            var jsondata = getVariableData(json);
-
-            for (var key in jsondata) {
-                var myIndex = findNodeIndex(key);
-                if (typeof myIndex !== "undefined") {
-                    alert("Invalid transformation: this variable name already exists.");
-                    return;
-                }
-                // add transformed variable to the current space
-                var i = allNodes.length;  // get new index
-                var obj1 = {
-                    id: i,
-                    reflexive: false,
-                    name: key,
-                    labl: "transformlabel",
-                    data: [5, 15, 20, 0, 5, 15, 20],
-                    count: [.6, .2, .9, .8, .1, .3, .4],
-                    nodeCol: colors(i),
-                    baseCol: colors(i),
-                    strokeColor: selVarColor,
-                    strokeWidth: "1",
-                    subsetplot: false,
-                    subsetrange: ["", ""],
-                    setxplot: false,
-                    setxvals: ["", ""],
-                    grayout: false,
-                    defaultInterval: jsondata[key].interval,
-                    defaultNumchar: jsondata[key].numchar,
-                    defaultNature: jsondata[key].nature,
-                    defaultBinary: jsondata[key].binary
-                };
-
-                jQuery.extend(true, obj1, jsondata[key]);
-                allNodes.push(obj1);
-
-                valueKey.push(newVar);
-                nodes.push(allNodes[i]);
-                fakeClick();
-                panelPlots();
-
-                if (allNodes[i].plottype === "continuous") {
-                    densityNode(allNodes[i]);
-                } else if (allNodes[i].plottype === "bar") {
-                    barsNode(allNodes[i]);
-                }
-
-                m.redraw();
-            }
-        });
-
-        showLog('transform', rCall);
-    }
-}
-
 export async function updateRequest(url) {
     //console.log('url:', url);
     //console.log('POST:', data);
@@ -3361,7 +3090,6 @@ export function setColors(n, c) {
             zparams[key].push(n.name);
             if (key == 'znom') {
                 findNodeIndex(n.name, true).nature = "nominal";
-                transform(n.name, t = null, typeTransform = true);
             }
             if (key == 'zdv'){                                              // remove group memberships from dv's
                 if(n.group1){
@@ -3384,13 +3112,11 @@ export function setColors(n, c) {
             zparamsReset(n.name);
             if (nomColor == c && zparams.znom.includes(n.name)) {
                 findNodeIndex(n.name, true).nature = findNodeIndex(n.name, true).defaultNature;
-                transform(n.name, t = null, typeTransform = true);
             }
         } else { // deselecting time, cs, dv, nom AND changing it to time, cs, dv, nom
             zparamsReset(n.name);
             if (nomColor == n.strokeColor && zparams.znom.includes(n.name)) {
                 findNodeIndex(n.name, true).nature = findNodeIndex(n.name, true).defaultNature;
-                transform(n.name, t = null, typeTransform = true);
             }
             n.strokeColor = c;
             if (dvColor == c){
@@ -3410,7 +3136,6 @@ export function setColors(n, c) {
             else if (nomColor == c) {
                 zparams.znom.push(n.name);
                 findNodeIndex(n.name, true).nature = "nominal";
-                transform(n.name, t = null, typeTransform = true);
             }
         }
     }

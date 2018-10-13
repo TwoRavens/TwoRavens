@@ -837,31 +837,6 @@ class Body {
             args);
         let navBtn1 = (id, onclick, args, title) => _navBtn(
             `${id}.btn-default[title=${title}]`, 2, 0, onclick, args);
-        let transformation = (id, list) => m(
-            `ul#${id}`,
-            {style: {display: 'none', 'background-color': app.varColor},
-             onclick: function(evt) {
-                 let tInput = app.byId('tInput');
-
-                 // if interact is selected, show variable list again
-                 if (this.textContent === 'interact(d,e)') {
-                     tInput.value = tvar.concat('*');
-                     selInteract = true;
-                     fadeOut(this.parentNode, 100);
-                     fadeIn('#transSel', 100);
-                     evt.stopPropagation();
-                     return;
-                 }
-
-                 let tvar = tInput.value;
-                 let tfunc = this.textContent.replace("d", "_transvar0");
-                 let tcall = this.textContent.replace("d", tvar);
-                 tInput.value = tcall;
-                 fadeOut(this.parentNode, 100);
-                 evt.stopPropagation();
-                 transform(tvar, tfunc, typeTransform = false);
-             }},
-            list.map(x => m('li', x)));
 
         return m(Header, {
             style: mode === 'explore' ? {'background-image': '-webkit-linear-gradient(top, #fff 0, rgb(227, 242, 254) 100%)'} : {}
@@ -886,53 +861,7 @@ class Body {
                 navBtnGroup('btnTA2.btn-default', _ => app.helpmaterials('video'), ['Video ', glyph('expand')]),
                 navBtnGroup('btnTA2.btn-default', _ => app.helpmaterials('manual'), ['Manual ', glyph('book')])),
               navBtn1("btnReset", app.reset, glyph('repeat'), 'Reset'),
-              navBtn1('btnEndSession', app.endsession, m("span.ladda-label", 'Mark Problem Finished'), 'Mark Problem Finished')),
-            m('#tInput', {
-                style: {display: 'none'},
-                onclick: _ => {
-                    let transSel = app.byId('transSel');
-                    // if variable list is displayed when input is clicked...
-                    if (transSel.style.display !== 'none') {
-                        fadeOut(transSel, 100);
-                        return false;
-                    }
-
-                    let transList = app.byId('transList');
-                    // if function list is displayed when input is clicked...
-                    if (transList.style.display !== 'none') {
-                        fadeOut(transList, 100);
-                        return false;
-                    }
-
-                    // highlight the text
-                    //let pos = this.offset();
-                    //pos.top += this.offsetWidth();
-                    fadeIn(transSel, 100);
-                    return false;
-                },
-                keyup: evt => {
-                    let transSel = app.byId('transSel');
-                    let transList = app.byId('transList');
-                    if (transSel.style.display !== 'none') {
-                        fadeOut(transSel, 100);
-                    } else if (transList.style.display !== 'none') {
-                        fadeOut(transList, 100);
-                    }
-
-                    if (evt.keyCode == 13) { // keyup on Enter
-                        let t = transParse(app.byId('tInput').value);
-                        if (!t) {
-                            return;
-                        }
-
-                        transform(t.slice(0, t.length - 1), t[t.length - 1], typeTransform = false);
-                    }
-                }
-            }),
-            m('#transformations.transformTool',
-              {title: 'Construct transformations of existing variables using valid R syntax. For example, assuming a variable named d, you can enter "log(d)" or "d^2".'},
-              [transformation('transSel', ['a', 'b']),
-               transformation('transList', app.transformList)])
+              navBtn1('btnEndSession', app.endsession, m("span.ladda-label", 'Mark Problem Finished'), 'Mark Problem Finished'))
         ])]);
     }
 
