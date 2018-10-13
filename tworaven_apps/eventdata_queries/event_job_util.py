@@ -538,15 +538,15 @@ class EventJobUtil(object):
 
     @staticmethod
     def export_dataset(database, collection, data):
-
         folderpath = os.path.join(settings.BASE_DIR, 'ravens_volume', 'manipulation_data', collection, 'TRAIN', 'tables')
-        filepath = os.path.join(folderpath, 'learningData.csv')
 
         if not os.path.exists(folderpath):
             os.makedirs(folderpath)
 
-        if os.path.exists(filepath):
-            os.remove(filepath)
+        extension = 1;
+        while os.path.exists(os.path.join(folderpath, 'learningData' + str(extension) + '.csv')):
+            extension += 1
+        filepath = os.path.join(folderpath, 'learningData' + str(extension) + '.csv')
 
         with open(filepath, 'w') as outfile:
             writer = csv.writer(outfile, delimiter='\t')
