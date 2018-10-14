@@ -78,6 +78,29 @@ function leftpanel(mode) {
         'Target', 'Predictors', 'Task', 'Metric', 'Subset', 'Transform'
     ];
 
+    let discoveryClick = problemId => {
+        app.setSelectedProblem(problemId);
+        let problem = app.disco.find(problem => problem.problem_id === app.selectedProblem);
+        m.route.set('/model');
+        setTimeout(() => {
+            if (!problem) return;
+
+            let {target, predictors} = problem;
+            app.erase('Discovery');
+            [target, ...predictors].map(x => app.clickVar(x));
+            predictors.forEach(x => {
+                let d = app.findNode(x);
+                app.setColors(d, app.gr1Color);
+                app.legend();
+            });
+            let d = app.findNode(target);
+            app.setColors(d, app.dvColor);
+            app.legend();
+            d.group1 = d.group2 = false;
+            app.restart();
+        }, 500);
+    };
+
     let formatProblem = problem => [
         problem.problem_id, // this is masked as the UID
         m('input[type=checkbox][style=width:100%]', {
@@ -166,30 +189,12 @@ function leftpanel(mode) {
                         m(Table, {
                             id: 'discoveryTable',
                             headers: ['problem_id', m('[style=text-align:center]', 'Meaningful', m('br'), discoveryAllCheck), 'Target', 'Predictors', 'Task', 'Metric', 'Subset', 'Transform'],
-                            data: app.disco.map(formatProblem),
+                            data: [
+                                ...app.disco.filter(prob => prob.system === 'user'),
+                                ...app.disco.filter(prob => prob.system === 'auto')
+                            ].map(formatProblem),
                             activeRow: app.selectedProblem,
-                            onclick: problemId => {
-                                app.setSelectedProblem(problemId);
-                                let problem = app.disco.find(problem => problem.problem_id === app.selectedProblem);
-                                m.route.set('/model');
-                                setTimeout(_ => {
-                                    if (!problem) return;
-
-                                    let {target, predictors} = problem;
-                                    app.erase('Discovery');
-                                    [target, ...predictors].map(x => app.clickVar(x));
-                                    predictors.forEach(x => {
-                                        let d = app.findNode(x);
-                                        app.setColors(d, app.gr1Color);
-                                        app.legend();
-                                    });
-                                    let d = app.findNode(target);
-                                    app.setColors(d, app.dvColor);
-                                    app.legend();
-                                    d.group1 = d.group2 = false;
-                                    app.restart();
-                                }, 500);
-                            },
+                            onclick: discoveryClick,
                             showUID: false,
                             abbreviation: 40
                         })),
@@ -877,12 +882,12 @@ class Body {
             m(ButtonRadio, {
                 id: 'modeButtonBar',
                 attrsAll: {style: {margin: '2px', width: 'auto'}, class: 'navbar-left'},
-                // attrsButtons: {class: ['btn-sm']}, // if you'd like small buttons (btn-sm should be applied to individual buttons, not the entire component)
                 onclick: app.set_mode,
                 activeSection: mode || 'model',
-                attrsButtons: {style: {width: 'auto'}},
-                // {value: 'Results', id: 'btnResultsMode'}] VJD: commenting out the results mode button since we don't have this yet
-                sections: [{value: 'Model'}, {value: 'Explore'}, {value: 'Manipulate'}]
+                sections: [{value: 'Model'}, {value: 'Explore'}, {value: 'Manipulate'}],
+
+                // attrsButtons: {class: ['btn-sm']}, // if you'd like small buttons (btn-sm should be applied to individual buttons, not the entire component)
+                attrsButtons: {style: {width: 'auto'}}
             }),
             m("a#logID[href=somelink][target=_blank]", "Replication"),
             m("span[style=color:#337ab7]", " | "),

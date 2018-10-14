@@ -181,7 +181,7 @@ export class TreeQuery {
                 // Save changes when an element is moved
                 step.abstractQuery = JSON.parse(subsetTree.tree('toJson'));
                 queryAbstract.hideFirst(step.abstractQuery);
-                manipulate.setPendingHardManipulation(true);
+                manipulate.setQueryUpdated(true);
                 m.redraw();
             }
         );

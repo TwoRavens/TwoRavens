@@ -13,7 +13,7 @@ window.callbackDeleteTransform = function (id) {
         .find(candidate => candidate.id === (Number(stepId) || stepId));
     step.transforms.splice(step.transforms.findIndex(transformation => transformation.name === transformationName), 1);
 
-    if (!IS_EVENTDATA_DOMAIN) manipulate.setPendingHardManipulation(true);
+    if (!IS_EVENTDATA_DOMAIN) manipulate.setQueryUpdated(true);
     m.redraw();
 };
 
@@ -38,7 +38,7 @@ window.callbackDeleteAggregation = function (id) {
     } else {
         aggregationTree.tree('removeNode', node);
 
-        if (!IS_EVENTDATA_DOMAIN) manipulate.setPendingHardManipulation(true);
+        if (!IS_EVENTDATA_DOMAIN) manipulate.setQueryUpdated(true);
         m.redraw();
     }
 };
@@ -59,7 +59,7 @@ window.callbackOperator = function (id, operand) {
     let step = [...app.manipulations[pipelineId], ...Object.values(app.looseSteps)].find(step => step.id === (Number(stepId) || stepId));
     step.abstractQuery = JSON.parse(subsetTree.tree('toJson'));
 
-    if (!IS_EVENTDATA_DOMAIN) manipulate.setPendingHardManipulation(true);
+    if (!IS_EVENTDATA_DOMAIN) manipulate.setQueryUpdated(true);
     m.redraw();
 };
 
@@ -81,7 +81,7 @@ window.callbackDelete = async function (id) {
         step.abstractQuery = JSON.parse(subsetTree.tree('toJson'));
 
         hideFirst(step.abstractQuery);
-        if (!IS_EVENTDATA_DOMAIN) manipulate.setPendingHardManipulation(true);
+        if (!IS_EVENTDATA_DOMAIN) manipulate.setQueryUpdated(true);
 
         m.redraw();
 
@@ -120,7 +120,7 @@ window.callbackNegate = function (id, bool) {
     let step = [...app.manipulations[pipelineId], ...Object.values(app.looseSteps)].find(step => step.id === (Number(stepId) || stepId));
     step.abstractQuery = JSON.parse(subsetTree.tree('toJson'));
 
-    if (!IS_EVENTDATA_DOMAIN) manipulate.setPendingHardManipulation(true);
+    if (!IS_EVENTDATA_DOMAIN) manipulate.setQueryUpdated(true);
     m.redraw();
 };
 

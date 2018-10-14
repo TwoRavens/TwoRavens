@@ -52,10 +52,8 @@ export function menu(compoundPipeline, pipelineId) {
 
                 // clear the constraint menu
                 if (success) {
-                    if (app.is_manipulate_mode) setPendingHardManipulation(true);
-
                     setConstraintMenu(undefined);
-                    if (app.is_manipulate_mode) pendingHardManipulation = true;
+                    setQueryUpdated(true);
                     common.setPanelOpen('right');
                 }
             }
@@ -287,7 +285,7 @@ export class PipelineFlowchart {
                     let deleteButton = editable && pipeline.length - 1 === i && m(`div#stepDelete`, {
                         onclick: () => {
                             let removedStep = pipeline.pop();
-                            if (app.is_manipulate_mode) setPendingHardManipulation(true);
+                            setQueryUpdated(true);
                             if (constraintMenu && constraintMenu.step === removedStep) {
                                 constraintMenu = undefined;
                                 Object.keys(constraintMetadata).forEach(key => delete constraintMetadata[key]);
@@ -338,7 +336,7 @@ export class PipelineFlowchart {
                                     style: {margin: '0.5em'},
                                     disabled: !step.abstractQuery.filter(constraint => constraint.type === 'rule').length,
                                     onclick: () => {
-                                        if (app.is_manipulate_mode) setPendingHardManipulation(true);
+                                        setQueryUpdated(true);
                                         queryAbstract.addGroup(pipelineId, step);
                                     }
                                 }, plus, ' Group')
@@ -457,16 +455,39 @@ let datasetChangedTour = {
 };
 
 export let pendingHardManipulation = false;
-export let setPendingHardManipulation = state => {
-    if (!app.is_manipulate_mode) return;
-    if (!pendingHardManipulation && state) {
-        setTimeout(alert('The dataset has changed. New problems will be inferred and any existing problem pipelines erased.'), 100);
-        hopscotch.startTour(datasetChangedTour, 0);
-        Object.keys(subset.manipulations)
-            .filter(key => key !== app.domainIdentifier.name)
-            .forEach(key => delete subset.manipulations[key])
+// called when a query is updated
+export let setQueryUpdated = state => {
+    if (app.is_manipulate_mode) {
+        if (!pendingHardManipulation && state) {
+            hopscotch.startTour(datasetChangedTour, 0);
+            Object.keys(subset.manipulations)
+                .filter(key => key !== app.domainIdentifier.name)
+                .forEach(key => delete subset.manipulations[key])
+        }
+        pendingHardManipulation = state;
     }
-    pendingHardManipulation = state;
+    else {
+        let problem = app.disco.find(prob => prob.problem_id === app.selectedProblem);
+
+        // promote the problem to a user problem
+        if (problem.system === 'auto') {
+            problem = JSON.parse(JSON.stringify(problem));
+            problem.problem_id = problem.problem_id + 'user';
+            problem.system = 'user';
+            problem.provenance = app.selectedProblem;
+            app.disco.push(problem);
+
+            subset.manipulations[problem.problem_id]
+                = subset.manipulations[app.domainIdentifier.name + app.selectedProblem];
+            delete subset.manipulations[app.domainIdentifier.name + app.selectedProblem];
+
+            app.setSelectedProblem(app.selectedProblem);
+            app.setSelectedProblem(problem.problem_id);
+        }
+
+        let transformVars = getTransformVariables(subset.manipulations[app.domainIdentifier.name + app.selectedProblem] || []);
+        problem.predictors = [...new Set([...problem.predictors, ...transformVars])];
+    }
 };
 
 // when set, the constraint menu will rebuild non-mithril elements (like plots) on the next redraw
@@ -769,7 +790,7 @@ export let rebuildPreprocess = async () => {
     app.setDisco(app.discovery(response));
     app.setMytarget(app.disco[0].target);
 
-    setPendingHardManipulation(false);
+    setQueryUpdated(false);
 };
 
 // contains the menu state (which nominal variables are selected, ranges, etc.)
@@ -883,7 +904,7 @@ document.onmouseup = () => {
     }
 };
 
-export async function getDatasetUrl(problem) {
+export async function buildDatasetUrl(problem) {
     let problemStep = {
         type: 'menu',
         metadata: {
@@ -913,3 +934,9 @@ export async function getDatasetUrl(problem) {
         export: true
     });
 }
+
+let getTransformVariables = pipeline => pipeline.reduce((out, step) => {
+    if (step.type !== 'transform') return out;
+    step.transforms.forEach(transform => out.add(transform.name))
+    return out;
+}, new Set());

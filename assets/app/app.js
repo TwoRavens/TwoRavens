@@ -1972,6 +1972,33 @@ export function findNode(name) {
 /** needs doc */
 function updateNode(id, nodes) {
     let node = findNode(id);
+
+    if (node === undefined) {
+        let i = 0;
+        while (nodes.find(tempNode => tempNode.id === i)) i++;
+
+        node = {
+            id: i,
+            reflexive: false,
+            name: id,
+            labl: 'no label',
+            data: [5, 15, 20, 0, 5, 15, 20],
+            count: [.6, .2, .9, .8, .1, .3, .4],  // temporary values for hold that correspond to histogram bins
+            nodeCol: colors(i),
+            baseCol: colors(i),
+            strokeColor: selVarColor,
+            strokeWidth: "1",
+            subsetplot: false,
+            subsetrange: ["", ""],
+            setxplot: false,
+            setxvals: ["", ""],
+            grayout: false,
+            group1: false,
+            group2: false,
+            forefront: false
+        }
+    }
+
     if (node.grayout) {
         return false;
     }
@@ -2925,7 +2952,7 @@ export function legend() {
 */
 export function erase(disc) {
     setLeftTab(disc == 'Discovery' ? 'Discovery' : 'Variables');
-    valueKey.forEach(function(element){
+    nodes.map(node => node.name).forEach(function(element){
       if (zparams.zdv.concat(zparams.znom, zparams.zvars).includes(element))   // names start with varList now
         clickVar(element);
     });
