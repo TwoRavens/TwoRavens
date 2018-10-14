@@ -20,13 +20,7 @@ import * as app from './app';
 import * as common from '../common/app/common';
 import * as queryAbstract from '../EventData/app/queryAbstract';
 import * as queryMongo from "../EventData/app/queryMongo";
-import {disco} from "./app";
-import {discovery} from "./app";
-import {problemDocExists} from "./app";
-import {valueKey} from "./app";
-import {task1_finished} from "./app";
-import {byId} from "./app";
-import {setMytarget} from "./app";
+import hopscotch from 'hopscotch';
 
 // dataset name from app.domainIdentifier.name
 // variable names from app.valueKey
@@ -447,11 +441,27 @@ export class PipelineFlowchart {
 // when set, the loading spiral is shown in the canvas
 export let isLoading = false;
 
+let datasetChangedTour = {
+    id: "changed_dataset",
+    i18n: {doneBtn:'Ok'},
+    showCloseButton: true,
+    scrollDuration: 300,
+    steps: [
+        {
+            target: 'btnModel',
+            placement: 'top',
+            title: 'Dataset Changed',
+            content: 'The dataset has changed. Upon switching back to model mode, new problems will be inferred and any existing problem pipelines will be erased.'
+        }
+    ]
+};
+
 export let pendingHardManipulation = false;
 export let setPendingHardManipulation = state => {
     if (!app.is_manipulate_mode) return;
     if (!pendingHardManipulation && state) {
         setTimeout(alert('The dataset has changed. New problems will be inferred and any existing problem pipelines erased.'), 100);
+        hopscotch.startTour(datasetChangedTour, 0);
         Object.keys(subset.manipulations)
             .filter(key => key !== app.domainIdentifier.name)
             .forEach(key => delete subset.manipulations[key])
@@ -753,8 +763,11 @@ export let rebuildPreprocess = async () => {
         forefront: false
     }, app.preprocess[variable])));
 
+    app.restart();
+    hopscotch.endTour();
+
     app.setDisco(app.discovery(response));
-    app.setMytarget(disco[0].target);
+    app.setMytarget(app.disco[0].target);
 
     setPendingHardManipulation(false);
 };
