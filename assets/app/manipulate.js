@@ -33,7 +33,7 @@ export function menu(compoundPipeline, pipelineId) {
             id: 'btnStage',
             style: {
                 right: `calc(${common.panelOpen['right'] ? '500' : '16'}px + ${common.panelMargin}*2)`,
-                bottom: `calc(${common.heightFooter} + ${common.panelMargin} + 6px + ${subset.tableData ? tableSize : '0px'})`,
+                bottom: `calc(${common.heightFooter} + ${common.panelMargin} + 6px + ${showTable && subset.tableData ? tableSize : '0px'})`,
                 position: 'fixed',
                 'z-index': 100,
                 'box-shadow': 'rgba(0, 0, 0, 0.3) 0px 2px 3px'
@@ -64,7 +64,7 @@ export function menu(compoundPipeline, pipelineId) {
         m(Canvas, {
             attrsAll: {style: {height: `calc(100% - ${common.heightHeader} - ${common.heightFooter})`}}
         }, canvas(pipelineId)),
-        previewTable(compoundPipeline)
+        showTable && previewTable(compoundPipeline)
     ];
 }
 
@@ -111,7 +111,7 @@ export function canvas(compoundPipeline) {
 }
 
 export function previewTable(pipeline) {
-    if (!subset.tableData) {
+    if (showTable && !subset.tableData) {
         subset.setTableData([]);
         updatePreviewTable('reset', pipeline);
         return;
@@ -171,7 +171,7 @@ export function leftpanel() {
                 style: {
                     'z-index': 101,
                     // subtract header, spacer, spacer, scrollbar, table, and footer
-                    height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${subset.tableData ? tableSize : '0px'} - ${common.heightFooter})`
+                    height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${showTable && subset.tableData ? tableSize : '0px'} - ${common.heightFooter})`
                 }
             }
         },
@@ -245,7 +245,7 @@ export function rightpanel() {
             style: {
                 'z-index': 101,
                 // subtract header, spacer, spacer, scrollbar, table, and footer
-                height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${subset.tableData ? tableSize : '0px'} - ${common.heightFooter})`
+                height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${showTable && subset.tableData ? tableSize : '0px'} - ${common.heightFooter})`
             }
         }
     }, m(PipelineFlowchart, {
@@ -864,6 +864,9 @@ export let resizeMenu = (e) => {
     document.body.classList.add('no-select');
     resizeMenuTick(e);
 };
+
+export let showTable = true;
+export let setShowTable = state => showTable = state;
 
 let resizeMenuTick = (e) => {
     let percent = (1 - e.clientY / app.byId(app.is_manipulate_mode ? 'canvas' : 'main').clientHeight) * 100;

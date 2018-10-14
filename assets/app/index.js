@@ -15,14 +15,13 @@ import * as results from './results';
 import * as manipulate from './manipulate';
 import * as subset from '../EventData/app/app';
 
-import {fadeIn, fadeOut} from './utils';
-
-import Button from './views/PanelButton';
+import PanelButton from './views/PanelButton';
 import Subpanel from './views/Subpanel';
 import Flowchart from './views/Flowchart';
 
 import * as common from '../common/app/common';
 import ButtonRadio from '../common/app/views/ButtonRadio';
+import Button from '../common/app/views/Button';
 import Footer from '../common/app/views/Footer';
 import Header from '../common/app/views/Header';
 import MenuTabbed from '../common/app/views/MenuTabbed';
@@ -104,7 +103,7 @@ function leftpanel(mode) {
         attrsAll: {
             style: {
                 'z-index': 101,
-                height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${app.is_model_mode && app.rightTab === 'Manipulate' && subset.tableData ? manipulate.tableSize: '0px'} - ${common.heightFooter})`
+                height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${app.is_model_mode && app.rightTab === 'Manipulate' && manipulate.showTable && subset.tableData ? manipulate.tableSize: '0px'} - ${common.heightFooter})`
             }
         }
     }, m(MenuTabbed, {
@@ -197,12 +196,12 @@ function leftpanel(mode) {
                     m('textarea#discoveryInput[style=display:block; float: left; width: 100%; height:calc(20% - 35px); overflow: auto; background-color: white]', {
                         value: selectedDisco === undefined ? '' : selectedDisco.description
                     }),
-                    m(Button, {
+                    m(PanelButton, {
                         id: 'btnSave',
                         onclick: app.saveDisc,
                         title: 'Saves your revised problem description.'
                     }, 'Save Desc.'),
-                    m(Button, {
+                    m(PanelButton, {
                         id: 'btnSubmitDisc',
                         classes: 'btn-success',
                         style: 'float: right',
@@ -412,7 +411,7 @@ function rightpanel(mode) {
                      m('#setxLeftTopRight[style=display:block; float: left; width: 70%; height:100%; overflow: auto; background-color: white]')),
                  m('#setxLeftBottomLeft[style=display:block; float: left; width: 70%; height:50%; overflow: auto; background-color: white]'),
                  m('#setxLeftBottomRightTop[style=display:block; float: left; width: 30%; height:10%; overflow: auto; background-color: white]',
-                     m(Button, {
+                     m(PanelButton, {
                          id: 'btnExecutePipe',
                          classes: 'btn-default.ladda-button[data-spinner-color=#000000][data-style=zoom-in]',
                          onclick: app.executepipeline,
@@ -464,7 +463,7 @@ function rightpanel(mode) {
         attrsAll: {
             style: {
                 'z-index': 101,
-                height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${app.is_model_mode && app.rightTab === 'Manipulate' && subset.tableData ? manipulate.tableSize: '0px'} - ${common.heightFooter})`
+                height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${app.is_model_mode && app.rightTab === 'Manipulate' && manipulate.showTable && subset.tableData ? manipulate.tableSize: '0px'} - ${common.heightFooter})`
             }
         }
     }, m(MenuTabbed, {
@@ -652,7 +651,7 @@ class Body {
                            onclick: x => {nodesExplore = []; app.setVariate(x)},
                            activeSection: app.exploreVariate,
                            sections: discovery ? [{value: 'Problem'}] : [{value: 'Univariate'}, {value: 'Bivariate'}, {value: 'Trivariate'}, {value: 'Multiple'}]}),
-                        m(Button, {
+                        m(PanelButton, {
                             id: 'exploreGo',
                             classes: 'btn-success',
                             onclick: _ => {
@@ -805,7 +804,7 @@ class Body {
                         ['nomButton', 'znom', 'Nom Var'],
                         ['gr1Button', 'zgroup1', 'Group 1'],
                         ['gr2Button', 'zgroup2', 'Group 2']],
-                    attrsStyle: {bottom: app.rightTab === 'Manipulate' ? `calc(${manipulate.tableSize} + 23px)` : '0px'}
+                    attrsStyle: {bottom: app.rightTab === 'Manipulate' ? `calc(${manipulate.showTable ? manipulate.tableSize : '0px'} + 23px)` : '0px'}
                 }),
                 app.currentMode !== 'manipulate' && m(Subpanel, {title: "History"}))
         ]);
@@ -893,10 +892,12 @@ class Body {
             m("span[style=color:#337ab7]", `TA2: ${TA2_SERVER}`),
             m("span[style=color:#337ab7]", " | "),
             m("span[style=color:#337ab7]", `TA3TA2 api: ${TA3TA2_API_VERSION}`),
-            m('button.btn.btn-default', {
-                onclick: _ => window.open('#!/data', 'data'),
-                style: 'float: right; margin: 0.5em; margin-top: 2px'
-            }, 'Peek'),
+            m('div.btn.btn-group', {style: 'float: right; padding: 0px'},
+                m(Button, {
+                    class: manipulate.showTable && ['active'],
+                    onclick: _ => manipulate.setShowTable(!manipulate.showTable)
+                }, 'Peek'),
+                m(Button, {onclick: _ => window.open('#!/data', 'data')}, glyph('new-window'))),
             // Manipulate Record Count
             app.is_manipulate_mode && manipulateRecordCount !== undefined && m("span.label.label-default#recordCount", {
                 style: {
@@ -919,7 +920,8 @@ if (IS_EVENTDATA_DOMAIN) {
 else {
     m.route(document.body, '/model', {
         '/explore/:variate/:vars...': Body,
-        '/:mode': Body
+        '/data': {render: () => m(Peek, {id: 'tworavens', image: '/static/images/TwoRavens.png'})},
+        '/:mode': Body,
 
         /*'/results': {
           onmatch() {
