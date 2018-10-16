@@ -454,7 +454,7 @@ function rightpanel(mode) {
                      nest: true
                  }),
                  m('div', {style: {'font-weight': 'bold', 'margin': '1em'}}, 'Steps: '),
-                 m(Flowchart, {steps: pipelineFlowchartPrep(app.allPipelineInfo[app.selectedPipeline].pipeline)})
+                 m(Flowchart, {labelWidth: '5em', steps: pipelineFlowchartPrep(app.allPipelineInfo[app.selectedPipeline].pipeline)})
              )
          ]
         }

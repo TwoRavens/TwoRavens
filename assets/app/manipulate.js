@@ -279,6 +279,7 @@ export class PipelineFlowchart {
         return [
             m(Flowchart, {
                 attrsAll: {style: {height: 'calc(100% - 87px)', overflow: 'auto'}},
+                labelWidth: '5em',
                 steps: pipeline.map((step, i) => {
                     let content;
 
@@ -937,6 +938,6 @@ export async function buildDatasetUrl(problem) {
 
 let getTransformVariables = pipeline => pipeline.reduce((out, step) => {
     if (step.type !== 'transform') return out;
-    step.transforms.forEach(transform => out.add(transform.name))
+    step.transforms.forEach(transform => out.add(transform.name));
     return out;
 }, new Set());

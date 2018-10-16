@@ -3,7 +3,7 @@ import * as common from '../../common/app/common';
 
 export default class Flowchart {
     view(vnode) {
-        let {steps, attrsAll} = vnode.attrs;
+        let {steps, labelWidth, attrsAll} = vnode.attrs;
         let bold = (value) => m('div', {style: {'font-weight': 'bold', display: 'inline'}}, value);
 
         let makeCard = ({key, color, content, summary}) => m('table', {
@@ -23,7 +23,7 @@ export default class Flowchart {
                         background: color,
                         height: '100%',
                         padding: '1em',
-                        width: 0, // makes div width wrap content
+                        width: labelWidth || 0, // by default, 0 makes div width wrap content
                         'border-right': common.borderColor
                     }
                 }, bold(key)),
