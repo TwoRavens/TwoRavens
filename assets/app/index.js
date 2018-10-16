@@ -372,7 +372,7 @@ function rightpanel(mode) {
             })
         },
         {value: 'Results',
-         display: !app.swandive || app.IS_D3M_DOMAIN ? 'block' : 'none',
+         display: !app.swandive || IS_D3M_DOMAIN ? 'block' : 'none',
          idSuffix: 'Setx',
          contents: [
              m('#setxRight[style=float: right; width: 30%; height: 100%; overflow:auto]',
@@ -454,7 +454,10 @@ function rightpanel(mode) {
                      nest: true
                  }),
                  m('div', {style: {'font-weight': 'bold', 'margin': '1em'}}, 'Steps: '),
-                 m(Flowchart, {labelWidth: '5em', steps: pipelineFlowchartPrep(app.allPipelineInfo[app.selectedPipeline].pipeline)})
+                 m(Flowchart, {
+                     labelWidth: '5em',
+                     steps: pipelineFlowchartPrep(app.allPipelineInfo[app.selectedPipeline].pipeline)
+                 })
              )
          ]
         }

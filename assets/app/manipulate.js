@@ -23,7 +23,15 @@ import * as queryMongo from "../EventData/app/queryMongo";
 import hopscotch from 'hopscotch';
 
 // dataset name from app.domainIdentifier.name
-// variable names from app.valueKey
+// variable names from the keys of the initial preprocess variables object
+
+
+// stores all variable data from preprocess on initial page load
+// when hard manipulations are applied, app.preprocess is overwritten,
+// but additional hard manipulations and pipeline construction still needs the original preprocess variables
+let variablesInitial;
+export let setVariablesInitial = vars => variablesInitial = vars;
+
 
 export function menu(compoundPipeline, pipelineId) {
 
@@ -178,12 +186,11 @@ export function leftpanel() {
 }
 
 export function varList() {
-    let baseVariables = app.allNodes.map(node => node.name);
 
     let variables = (constraintMenu
         ? [...queryMongo.buildPipeline(constraintMenu.pipeline.slice(0, constraintMenu.pipeline.indexOf(constraintMenu.step)),
-            new Set(baseVariables))['variables']]
-        : baseVariables).sort(variableSort);
+            new Set(Object.keys(variablesInitial)))['variables']]
+        : Object.keys(variablesInitial)).sort(variableSort);
 
     if (constraintMenu.type === 'accumulator') variables = variables.filter(column => inferType(column) === 'discrete');
     if (constraintMenu.type === 'unit') variables = variables.filter(column => inferType(column) !== 'discrete');
@@ -232,7 +239,6 @@ export function varList() {
 export function rightpanel() {
 
     if (!('name' in app.domainIdentifier)) return;
-    if (!(app.domainIdentifier.name in subset.manipulations)) subset.manipulations[app.domainIdentifier.name] = [];
 
     return m(Panel, {
         side: 'right',
@@ -522,7 +528,7 @@ export let setConstraintMenu = async (menu) => {
 
     let variables = [...queryMongo.buildPipeline(
         menu.pipeline.slice(0, menu.pipeline.indexOf(menu.step)),
-        new Set(app.valueKey))['variables']];  // get the variables present at this point in the pipeline
+        new Set(Object.keys(variablesInitial)))['variables']];  // get the variables present at this point in the pipeline
 
     if (updateVariableMetadata) {
         let summaryStep = {
@@ -631,7 +637,8 @@ export let getData = async body => m.request({
 export let loadMenu = async (pipeline, menu, {recount, requireMatch}={}) => { // the dict is for optional named arguments
 
     // convert the pipeline to a mongo query. Note that passing menu extends the pipeline to collect menu data
-    let compiled = JSON.stringify(queryMongo.buildPipeline([...pipeline, menu], new Set(app.valueKey))['pipeline']);
+    let compiled = JSON.stringify(queryMongo.buildPipeline([...pipeline, menu],
+        new Set(Object.keys(variablesInitial)))['pipeline']);
 
     console.log("Menu Query:");
     console.log(compiled);
@@ -646,7 +653,7 @@ export let loadMenu = async (pipeline, menu, {recount, requireMatch}={}) => { //
     // record count request
     if (recount || subset.totalSubsetRecords === undefined) {
         let countMenu = {type: 'menu', metadata: {type: 'count'}};
-        let compiled = JSON.stringify(queryMongo.buildPipeline([...pipeline, countMenu], new Set(app.valueKey))['pipeline']);
+        let compiled = JSON.stringify(queryMongo.buildPipeline([...pipeline, countMenu], new Set(Object.keys(variablesInitial)))['pipeline']);
 
         console.log("Count Query:");
         console.log(compiled);
@@ -723,7 +730,7 @@ export let rebuildPreprocess = async () => {
 
     let compiled = JSON.stringify(queryMongo.buildPipeline(
         [...subset.manipulations[app.domainIdentifier.name], menuDownload],
-        new Set(app.valueKey))['pipeline']);
+        new Set(Object.keys(variablesInitial)))['pipeline']);
 
     let dataPath = await getData({
         datafile: app.zparams.zd3mdata,

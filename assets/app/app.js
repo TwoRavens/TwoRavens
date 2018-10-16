@@ -115,6 +115,13 @@ export function set_mode(mode) {
         updateLeftPanelWidth();
     }
 
+    if (currentMode === 'manipulate' && !(domainIdentifier.name in manipulations)) {
+        manipulations[domainIdentifier.name] = [];
+        
+        // save the variables from initial page load
+        manipulate.setVariablesInitial(preprocess);
+    }
+
     // cause the peek table to redraw
     manipulate.updatePreviewTable('clear');
 
