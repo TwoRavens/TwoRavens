@@ -8,6 +8,7 @@ from tworaven_apps.eventdata_queries.models import \
      TYPE_OPTIONS, TYPE_CHOICES,
      METHOD_CHOICES, HOST_CHOICES)
 
+
 class EventDataSavedQueryForm(forms.ModelForm):
     """ form for event data queries"""
 
@@ -31,11 +32,10 @@ class EventDataSavedQueryForm(forms.ModelForm):
         if not isinstance(query_info, (list, dict)):
             user_msg = ('The query was invalid'
                         ' (not a list or object): %s') % \
-                        (query_info,)
+                       (query_info,)
             raise forms.ValidationError(user_msg)
 
         return query_info
-
 
     @staticmethod
     def get_duplicate_record_error_msg():
@@ -59,8 +59,8 @@ class EventDataSavedQueryForm(forms.ModelForm):
         if cnt > 0:
             # already exists, save will fail
             #
-            self._errors["query"] = self.error_class(\
-                            [self.get_duplicate_record_error_msg()])
+            self._errors["query"] = self.error_class( \
+                [self.get_duplicate_record_error_msg()])
             del self.cleaned_data["query"]
 
         else:
@@ -73,8 +73,8 @@ class EventDataSavedQueryForm(forms.ModelForm):
             if cnt2 > 0:
                 user_msg = ('You have already used this name.'
                             ' Please use a different name for this query.')
-                self._errors["name"] = self.error_class(\
-                                            [user_msg])
+                self._errors["name"] = self.error_class( \
+                    [user_msg])
                 del self.cleaned_data["name"]
 
         return self.cleaned_data

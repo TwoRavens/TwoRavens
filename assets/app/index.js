@@ -897,6 +897,11 @@ class Body {
             m("span[style=color:#337ab7]", `TA2: ${TA2_SERVER}`),
             m("span[style=color:#337ab7]", " | "),
             m("span[style=color:#337ab7]", `TA3TA2 api: ${TA3TA2_API_VERSION}`),
+            m(Button, {
+                id: 'datasetConsoleLogUrl',
+                onclick: async () =>
+                    console.log(await manipulate.buildDatasetUrl(app.disco.find(prob => prob.problem_id === app.selectedProblem)))
+            }, 'LOG DATASET URL'),
             m('div.btn.btn-group', {style: 'float: right; padding: 0px'},
                 m(Button, {
                     class: manipulate.showTable && ['active'],

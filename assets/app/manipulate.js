@@ -930,7 +930,7 @@ export async function buildDatasetUrl(problem) {
         datafile: datafile,
         collection_name: dataset,
         method: 'aggregate',
-        query: compiled,
+        query: JSON.stringify(compiled),
         export: true
     });
 }
