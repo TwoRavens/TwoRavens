@@ -371,7 +371,31 @@ function rightpanel(mode) {
                  m(Flowchart, {steps: pipelineFlowchartPrep(app.allPipelineInfo[app.selectedPipeline].pipeline)})
              )
          ]
-        }
+       },{
+       value: 'Discovery',
+        idSuffix: 'disc',
+        contents: [
+          m(ButtonRadio, {
+              id: 'discoveryButtonBar',
+              attrsAll: {style: {'margin-left':'5%',width: 'auto'}},
+              attrsButtons: {class: ['btn-sm'], style: { padding:'0.5em',width:'auto'}},
+              onclick: app.setSelectedDiscoverySolutionMenu,
+              activeSection: app.selectedDiscoverySolutionMenu,
+              sections: [
+                  {value: 'Prediction Data', id: 'btnPredData'},
+                  {value: 'Solution Plot', id: 'btnSolPlot'}
+              ]
+          }),
+           m('div', {style: {'font-weight': 'bold', 'margin': '1em', 'height': '100%', 'float':'right', 'width': '50%' }},
+          m(DataTable, {data: ''})),
+          m(`div#predictionData[style=display:${app.selectedDiscoverySolutionMenu === 'Prediction Data' ? 'block' : 'none'};height:"90%"; overflow: auto; width: 50%, 'float':'left']`,
+            m('#setPredictionDataLeft[style=display:block; float: left; width: 100%; height:100%; margin:1em; overflow: auto; background-color: white]')
+          ),
+          m(`div#solutionPlot[style=display:${app.selectedDiscoverySolutionMenu === 'Solution Plot' ? 'block' : 'none'};height:"90%"; overflow: auto; width: 50%, 'float':'left']`,
+                m('#setPredictionSolutionPlot[style=display:block; float: left; width: 100%; height:100%; overflow: auto; background-color: black]')
+          )
+        ]}
+
     ];
 
     return m(Panel, {
@@ -925,5 +949,5 @@ m.route(document.body, '/model', {
         }
     },*/
     '/data': Peek,
-    '/test': DataTable,
+    // '/test': DataTable,
 });

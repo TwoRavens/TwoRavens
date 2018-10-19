@@ -1,5 +1,4 @@
 import m from 'mithril';
-
 import Table from './Table';
 
 /*
@@ -80,10 +79,12 @@ let xtable = String.raw`
    </table>
 `;
 
-export default {
-    view(_vnode) {
+export  default {
+    view(vnode) {
         let html = document.createElement('html');
-        html.innerHTML = stargazer;
+        html.innerHTML = vnode.attrs.data;
+        console.log("vnode data : ")
+        console.log(vnode.attrs.data)
         let els = (el, tag) => el.getElementsByTagName(tag);
         let push = (arr, el) => arr.push(el.innerText.trim());
         let headers = [];
@@ -96,6 +97,8 @@ export default {
                 push(row, td);
             if (row.join('') !== '') data.push(row);
         }
-        return m(Table, {id: 'datatable', headers, data});
+        return m(Table, {id: 'datatable', headers, data, attrsAll: {
+            style: {height: '100%', overflow: 'auto', display: 'block', border: '1px solid #ddd', margin:'1em', padding: '1em',
+            'text-align': 'left', 'box-shadow': '0px 5px 5px rgba(0, 0, 0, .2)'}}});
     }
 };

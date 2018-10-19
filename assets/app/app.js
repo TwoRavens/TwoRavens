@@ -21,7 +21,9 @@ let peekIsGetting = false;
 
 
 let solver_res = []
+let solver_res_user = []
 let problem_sent = []
+let problem_sent_user = []
 let problems_in_preprocess = []
 
 function onStorageEvent(e) {
@@ -154,7 +156,8 @@ export let modelLeftPanelWidths = {
 export let modelRightPanelWidths = {
     Problem: '300px',
     // 'Set Covar.': '900px',
-    Results: '900px'
+    Results: '900px',
+    Discovery:'900px'
 };
 
 export let exploreRightPanelWidths = {
@@ -813,9 +816,9 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     }
 
 
-    console.log("is this preprocess?")
-    console.log(res);
-    console.log(preprocess);
+    // console.log("is this preprocess?")
+    // console.log(res);
+    // console.log(preprocess);
 
     // 9. Build allNodes[] using preprocessed information
     let vars = Object.keys(preprocess);
@@ -2199,6 +2202,8 @@ export let setSelectedPipeline = result => {
 export let selectedResultsMenu;
 export let setSelectedResultsMenu = result => selectedResultsMenu = result;
 
+export let selectedDiscoverySolutionMenu;
+export let setSelectedDiscoverySolutionMenu = result => selectedDiscoverySolutionMenu = result;
 
 // No longer used:
 // Update table when pipeline is fitted
@@ -3175,12 +3180,12 @@ export async function updateRequest(url) {
 
 
 export async function makeRequest(url, data) {
-    console.log('url:', url);
-    console.log('POST:', data);
+    // console.log('url:', url);
+    // console.log('POST:', data);
     let res;
     try {
         res = await m.request(url, {method: 'POST', data: data});
-        console.log('response:', res);
+        // console.log('response:', res);
         if (Object.keys(res)[0] === 'warning') {
             alert('Warning: ' + res.warning);
             end_ta3_search(false, res.warning);
@@ -4046,6 +4051,7 @@ export function resultsplotgraph(pid){
     }
 
     // add the list of predictors into setxLeftTopLeft
+
     d3.select("#setxLeftTopLeft").selectAll("p")
         .data(allPipelineInfo.rookpipe.predictors)                    // When there are multiple CreatePipelines calls, then this only has values from latest value
         .enter()
@@ -4777,20 +4783,92 @@ export function discovery(preprocess_file) {
     return disco;
 }
 
-export function modelSelectionResults(problem, result){
+
+export let stargazer = ""
+export function modelSelectionResults(problem){
 console.log("we have problem data", problem)
-console.log("we have result ", result)
-// get data according to design
-dataTable.stargazer = ""
+solver_res = []
+callSolver(problem);
+// setTimeout(console.log("we have results data", my_results),10000)
+setTimeout(makeDataDiscovery,1000)
+setTimeout(makeDiscoverySolutionPlot,1000)
+
+}
+
+export function makeDataDiscovery(){
+d3.select("#setPredictionDataLeft").html("");
+d3.select("#setPredictionDataLeft").select("svg").remove();
+let in_data = [
+{"name":"Dependent Variable : ", "value":solver_res[0]['dependent_variable']},
+{"name":"Predictors : ", "value":solver_res[0]['predictors']},
+{"name":"Description : ", "value":solver_res[0]['description']},
+{"name":"Task : ", "value":solver_res[0]['task']},
+
+]
+  function tabulate(data, columns) {
+		var table = d3.select('#setPredictionDataLeft').append('table')
+		var thead = table.append('thead')
+		var	tbody = table.append('tbody');
+
+		// append the header row
+		thead.append('tr')
+		  .selectAll('th')
+		  .data(columns).enter()
+		  .append('th')
+		    .text(function (column) { return column; })
+        .style('background-color','#ED7E71')
+        ;
+
+		// create a row for each object in the data
+		var rows = tbody.selectAll('tr')
+		  .data(data)
+		  .enter()
+		  .append('tr');
+
+		// create a cell in each row for each column
+		var cells = rows.selectAll('td')
+		  .data(function (row) {
+		    return columns.map(function (column) {
+		      return {column: column, value: row[column]};
+		    });
+		  })
+		  .enter()
+		  .append('td')
+		    .text(function (d) { return d.value; })
+        .style('border-bottom','1px solid #ddd');
+
+	  return table;
+	}
+
+	// render the table(s)
+	tabulate(in_data, ['name', 'value']); // 2 column table
+
+}
+export function makeDiscoverySolutionPlot(){
+  d3.select("#setPredictionSolutionPlot").html("");
+  d3.select("#setPredictionSolutionPlot").select("svg").remove();
+
+}
+export function makeDataDiscoveryTable(){
+  console.log("Here we bring our table")
+  stargazer = solver_res[0]['stargazer']
+  d3.select("#setDataTable").html("");
+
+
+}
+
+export function buildDatasetURL(problem) {
+  // returns data URL with manipulations
 }
 
 export let selectedProblem;
 export function setSelectedProblem(prob) {selectedProblem = prob;
 
 let problem = disco.find(problem => problem.problem_id === prob);
-solver_res = []
-callSolver(problem)
-setTimeout(modelSelectionResults(problem, solver_res),1000);
+// solver_res = []
+// callSolver(problem)
+// setTimeout(modelSelectionResults(problem, solver_res),1000);
+
 
 if(problem.system === "user"){
     console.log("It is user")
@@ -4805,12 +4883,16 @@ if(problem.system === "user"){
         .classed("btn btn-danger disabled", true);
 
 }
+
+modelSelectionResults(problem)
 }
 
 export let checkedDiscoveryProblems = new Set();
 export let setCheckedDiscoveryProblem = (status, problem) => {
     if (problem !== undefined) status ? checkedDiscoveryProblems.add(problem) : checkedDiscoveryProblems.delete(problem);
     else checkedDiscoveryProblems = status ? new Set(disco.map(problem => problem.problem_id)) : new Set();
+          // modelSelectionResults(problem)
+
 };
 
 export async function submitDiscProb() {
