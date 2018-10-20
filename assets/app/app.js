@@ -1987,8 +1987,14 @@ export function findNode(name) {
 }
 
 /** needs doc */
+//
 function updateNode(id, nodes) {
-    let node = findNode(id);
+
+    let node = allNodes.find(node => node.name === id) || nodes.find(node => node.name === id);
+    if (id === 'Hall_of_fame_runs') {
+        console.warn('#debug node');
+        console.log(node);
+    }
 
     if (node === undefined) {
         let i = 0;
@@ -2969,10 +2975,7 @@ export function legend() {
 */
 export function erase(disc) {
     setLeftTab(disc == 'Discovery' ? 'Discovery' : 'Variables');
-    nodes.map(node => node.name).forEach(function(element){
-      if (zparams.zdv.concat(zparams.znom, zparams.zvars).includes(element))   // names start with varList now
-        clickVar(element);
-    });
+    nodes.map(node => node.name).forEach(name => clickVar(name, nodes));
 }
 
 /** needs doc */
@@ -2982,10 +2985,13 @@ export let setLeftTab = (tab) => {
     exploreVariate = tab === 'Discovery' ? 'Problem' : 'Univariate';
 };
 
+// formats data for the hidden summary tab in the leftpanel
 export let summary = {data: []};
 
-/** needs doc */
+// d is a node from allNodes or nodes
+// updated the summary variable
 function varSummary(d) {
+    if (!d) return;
     let t1 = 'Mean:, Median:, Most Freq:, Occurrences:, Median Freq:, Occurrences:, Least Freq:, Occurrences:, Std Dev:, Minimum:, Maximum:, Invalid:, Valid:, Uniques:, Herfindahl'.split(', ');
 
     d3.select('#tabSummary')
@@ -4523,15 +4529,40 @@ export function discovery(preprocess_file) {
 }
 
 
+// when a problem is clicked
+// let discoveryTimeout;
+export let discoveryClick = problemId => {
+    setSelectedProblem(problemId);
+    let problem = disco.find(problem => problem.problem_id === selectedProblem);
+    m.route.set('/model');
+
+    if (!problem) return;
+
+    let {target, predictors} = problem;
+    erase('Discovery');
+    [target, ...predictors].map(x => clickVar(x));
+    predictors.forEach(predictor => {
+        let node = nodes.find(node => node.name === predictor);
+        setColors(node, gr1Color);
+        legend();
+    });
+    let nodeTarget = findNode(target);
+    setColors(nodeTarget, dvColor);
+    legend();
+    nodeTarget.group1 = nodeTarget.group2 = false;
+    restart();
+};
+
+
 export let selectedProblem;
 export function setSelectedProblem(problemId) {
     if (selectedProblem === problemId) return;
     selectedProblem = problemId;
 
     let pipelineId = domainIdentifier.name + problemId;
+    let problem = disco.find(entry => entry.problem_id === selectedProblem);
 
-    if (!(pipelineId in manipulations)) {
-        let problem = disco.find(entry => entry.problem_id === selectedProblem);
+    if (!('pipelineId' in problem)) {
         let pipeline = [];
 
         if (problem['subsetObs']) {
@@ -4548,7 +4579,6 @@ export function setSelectedProblem(problemId) {
                 nodeId: 2,
                 groupId: 1
             })
-
         }
 
         if (problem['transform']) {
@@ -4561,6 +4591,7 @@ export function setSelectedProblem(problemId) {
                 }],
                 id: 'transform ' + pipeline.length,
             })
+            problem.predictors.push(variable);
         }
 
         problem.pipelineId = pipelineId;

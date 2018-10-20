@@ -485,31 +485,35 @@ export let setQueryUpdated = state => {
     if (!app.is_manipulate_mode) {
         let problem = app.disco.find(prob => prob.problem_id === app.selectedProblem);
 
-        console.log('found problem')
-        console.log(problem);
-
         // promote the problem to a user problem if it is a system problem
         if (problem.system === 'auto') {
-            console.log('creating new problem');
 
             problem = jQuery.extend(true, {}, problem);  // deep copy of system problem
             problem.problem_id = problem.problem_id + 'user';
             problem.system = 'user';
             problem.provenance = app.selectedProblem;
+            problem.predictorsInitial = problem.predictors;  // the predictor list will be edited to include transformed variables
 
             subset.manipulations[app.domainIdentifier.name + problem.problem_id]
                 = jQuery.extend(true, [], subset.manipulations[problem.pipelineId]);
             problem.pipelineId = app.domainIdentifier.name + problem.problem_id;
 
             app.disco.push(problem);
-            console.log('new problem');
-            console.log(problem);
+
             app.setSelectedProblem(app.selectedProblem);
             app.setSelectedProblem(problem.problem_id);
         }
 
-        let transformVars = getTransformVariables(getProblemPipeline(app.selectedProblem) || []);
-        problem.predictors = [...new Set([...problem.predictors, ...transformVars])];
+        let problemPipeline = getProblemPipeline(app.selectedProblem) || [];
+
+        let transformVars = getTransformVariables(problemPipeline);
+        problem.predictors = [...new Set([...problem.predictorsInitial, ...transformVars])];
+        problem.subsetFeats = getSubsetString(problemPipeline);
+        problem.transform = getTransformString(problemPipeline);
+
+        // if the predictors changed, then redraw the force diagram
+        if (app.nodes.length !== problem.predictors.length || app.nodes.some(node => !problem.predictors.includes(node.name)))
+            app.discoveryClick(app.selectedProblem);
     }
 };
 
@@ -973,8 +977,22 @@ export async function buildDatasetUrl(problem) {
     });
 }
 
-let getTransformVariables = pipeline => pipeline.reduce((out, step) => {
+export let getTransformVariables = pipeline => pipeline.reduce((out, step) => {
     if (step.type !== 'transform') return out;
     step.transforms.forEach(transform => out.add(transform.name));
     return out;
 }, new Set());
+
+export let getTransformString = pipeline => pipeline
+    .filter(step => step.type === 'transform')
+    .map(step => step.transforms.map(transform => `${transform.name} = ${transform.equation}`).join(', '))
+    .join(', ');
+
+export let getSubsetString = pipeline => pipeline
+    .filter(step => step.type === 'subset')
+    .map(stringifySubset)
+    .join(', ');
+
+let stringifySubset = query => {
+    return 'test';
+};

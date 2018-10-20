@@ -67,6 +67,8 @@ function leftpanel(mode) {
         return manipulate.leftpanel();
 
     let selectedDisco = app.disco.find(problem => problem.problem_id === app.selectedProblem);
+    let transformVars = app.selectedProblem && 'pipelineId' in selectedDisco && selectedDisco.pipelineId in subset.manipulations
+        ? [...manipulate.getTransformVariables(subset.manipulations[selectedDisco.pipelineId])] : [];
 
     let discoveryAllCheck = m('input#discoveryAllCheck[type=checkbox]', {
         onclick: m.withAttr("checked", (checked) => app.setCheckedDiscoveryProblem(checked)),
@@ -74,32 +76,13 @@ function leftpanel(mode) {
         title: `mark ${app.disco.length === app.checkedDiscoveryProblems.size ? 'no' : 'all'} problems as meaningful`
     });
     let discoveryHeaders = [
-        'problem_id', m('[style=text-align:center]', 'Meaningful', m('br'), discoveryAllCheck),
+        'problem_id',
+        m('[style=text-align:center]', 'Meaningful', m('br'), discoveryAllCheck),
+        app.disco.some(prob => prob.system === 'user') ? 'User' : '',
         'Target', 'Predictors', 'Task', 'Metric', 'Subset', 'Transform'
     ];
 
-    let discoveryClick = problemId => {
-        app.setSelectedProblem(problemId);
-        let problem = app.disco.find(problem => problem.problem_id === app.selectedProblem);
-        m.route.set('/model');
-        setTimeout(() => {
-            if (!problem) return;
 
-            let {target, predictors} = problem;
-            app.erase('Discovery');
-            [target, ...predictors].map(x => app.clickVar(x));
-            predictors.forEach(x => {
-                let d = app.findNode(x);
-                app.setColors(d, app.gr1Color);
-                app.legend();
-            });
-            let d = app.findNode(target);
-            app.setColors(d, app.dvColor);
-            app.legend();
-            d.group1 = d.group2 = false;
-            app.restart();
-        }, 500);
-    };
 
     let formatProblem = problem => [
         problem.problem_id, // this is masked as the UID
@@ -108,6 +91,7 @@ function leftpanel(mode) {
             checked: app.checkedDiscoveryProblems.has(problem.problem_id),
             title: 'mark this problem as meaningful'
         }),
+        problem.system === 'user' && m('div[title="User created problem"]', glyph('user')),
         problem.target,
         problem.predictors.join(', '),
         problem.task,
@@ -126,6 +110,7 @@ function leftpanel(mode) {
         attrsAll: {
             style: {
                 'z-index': 101,
+                background: 'rgb(249, 249, 249, .5)', // TODO this makes the leftpanel partially transparent, check with Vito
                 height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${app.is_model_mode && app.rightTab === 'Manipulate' && manipulate.showTable && subset.tableData ? manipulate.tableSize: '0px'} - ${common.heightFooter})`
             }
         }
@@ -149,7 +134,7 @@ function leftpanel(mode) {
                     }),
                     m(PanelList, {
                         id: 'varList',
-                        items: app.valueKey,
+                        items: app.valueKey.concat(transformVars),
                         colors: {
                             [app.hexToRgba(common.selVarColor)]: nodes.map(n => n.name),
                             [app.hexToRgba(common.nomColor)]: app.zparams.znom,
@@ -174,27 +159,27 @@ function leftpanel(mode) {
                                 'max-width': (window.innerWidth - 90) + 'px'
                             }
                         },
-                        app.selectedProblem !== undefined && [
-                            m('h4', 'Current Problem'),
-                            m(Table, {
-                                id: 'discoveryTableManipulations',
-                                headers: discoveryHeaders,
-                                data: [formatProblem(selectedDisco)],
-                                activeRow: app.selectedProblem,
-                                showUID: false,
-                                abbreviation: 40
-                            }),
-                            m('h4', 'All Problems')
-                        ],
+                        // app.selectedProblem !== undefined && [
+                        //     m('h4', 'Current Problem'),
+                        //     m(Table, {
+                        //         id: 'discoveryTableManipulations',
+                        //         headers: discoveryHeaders,
+                        //         data: [formatProblem(selectedDisco)],
+                        //         activeRow: app.selectedProblem,
+                        //         showUID: false,
+                        //         abbreviation: 40
+                        //     }),
+                        //     m('h4', 'All Problems')
+                        // ],
                         m(Table, {
                             id: 'discoveryTable',
-                            headers: ['problem_id', m('[style=text-align:center]', 'Meaningful', m('br'), discoveryAllCheck), 'Target', 'Predictors', 'Task', 'Metric', 'Subset', 'Transform'],
+                            headers: discoveryHeaders,
                             data: [
                                 ...app.disco.filter(prob => prob.system === 'user'),
-                                ...app.disco.filter(prob => prob.system === 'auto')
+                                ...app.disco.filter(prob => prob.system !== 'user')
                             ].map(formatProblem),
                             activeRow: app.selectedProblem,
-                            onclick: discoveryClick,
+                            onclick: app.discoveryClick,
                             showUID: false,
                             abbreviation: 40
                         })),
