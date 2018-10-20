@@ -99,6 +99,16 @@ let exportCount = 0;
 export function set_mode(mode) {
     mode = mode ? mode.toLowerCase() : 'model';
 
+    // remove empty steps when leaving manipulate mode
+    if ((domainIdentifier || {}).name in manipulations && is_manipulate_mode && mode !== 'manipulate') {
+        manipulations[domainIdentifier.name] = manipulations[domainIdentifier.name].filter(step => {
+            if (step.type === 'transform' && step.transforms.length === 0) return false;
+            if (step.type === 'subset' && step.abstractQuery.length === 0) return false;
+            if (step.type === 'aggregate' && step.measuresAccum.length === 0) return false;
+            return true;
+        });
+    }
+
     is_model_mode = mode === 'model'
     is_explore_mode = mode === 'explore';
     is_results_mode = mode === 'results';
@@ -117,7 +127,7 @@ export function set_mode(mode) {
 
     if (currentMode === 'manipulate' && !(domainIdentifier.name in manipulations)) {
         manipulations[domainIdentifier.name] = [];
-        
+
         // save the variables from initial page load
         manipulate.setVariablesInitial(preprocess);
     }
@@ -4553,6 +4563,7 @@ export function setSelectedProblem(problemId) {
             })
         }
 
+        problem.pipelineId = pipelineId;
         manipulations[pipelineId] = pipeline;
 
         // cause the peek table to redraw

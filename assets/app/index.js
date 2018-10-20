@@ -351,7 +351,7 @@ function rightpanel(mode) {
                 id: 'aggregateMenu',
                 attrsAll: {style: {height: '100%', overflow: 'auto'}},
                 sections: [
-                    subset.manipulations[app.domainIdentifier.name] && {
+                    (subset.manipulations[app.domainIdentifier.name] || []).length !== 0 && {
                         value: 'Dataset Pipeline',
                         contents: m(manipulate.PipelineFlowchart, {
                             compoundPipeline: subset.manipulations[app.domainIdentifier.name],
@@ -621,11 +621,11 @@ class Body {
         let overflow = app.is_explore_mode ? 'auto' : 'hidden';
         let style = `position: absolute; left: ${app.panelWidth.left}; top: 0; margin-top: 10px`;
 
-        if (app.domainIdentifier && !(app.domainIdentifier.name) in subset.manipulations)
+        if (app.domainIdentifier && !(app.domainIdentifier.name in subset.manipulations))
             subset.manipulations[app.domainIdentifier.name] = [];
 
-        let problemPipeline = app.is_model_mode && app.selectedProblem
-            ? [...subset.manipulations[app.domainIdentifier.name + app.selectedProblem], ] : [];
+        let problem = app.disco.find(prob => prob.problem_id === app.selectedProblem);
+        let problemPipeline = app.is_model_mode && (manipulate.getProblemPipeline(app.selectedProblem) || []);
 
         return m('main', [
             m(Modal),
@@ -636,7 +636,7 @@ class Body {
 
             (app.is_manipulate_mode || (app.is_model_mode && app.rightTab === 'Manipulate')) && manipulate.menu(
                 [...subset.manipulations[app.domainIdentifier.name], ...problemPipeline], // the complete pipeline to build menus with
-                app.domainIdentifier.name),  // the identifier for which pipeline to edit
+                app.is_model_mode ? problem.pipelineId : app.domainIdentifier.name),  // the identifier for which pipeline to edit
 
             m(`#main`, {style: {overflow, display: app.is_manipulate_mode || (app.rightTab === 'Manipulate' && manipulate.constraintMenu) ? 'none' : 'block'}},
                 m("#innercarousel.carousel-inner", {style: {height: '100%', overflow}},

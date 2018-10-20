@@ -21,6 +21,7 @@ import * as common from '../common/app/common';
 import * as queryAbstract from '../EventData/app/queryAbstract';
 import * as queryMongo from "../EventData/app/queryMongo";
 import hopscotch from 'hopscotch';
+import {manipulations} from "../EventData/app/app";
 
 // dataset name from app.domainIdentifier.name
 // variable names from the keys of the initial preprocess variables object
@@ -48,7 +49,7 @@ export function menu(compoundPipeline, pipelineId) {
             },
             onclick: () => {
                 let name = constraintMenu.type === 'transform' ? ''
-                    : constraintMetadata.type  + ': ' + constraintMetadata.columns[0];
+                    : constraintMetadata.type + ': ' + constraintMetadata.columns[0];
 
                 let success = queryAbstract.addConstraint(
                     pipelineId,
@@ -386,7 +387,11 @@ export class PipelineFlowchart {
                                     id: 'btnAddAccumulator',
                                     class: ['btn-sm' + (step.measuresAccum.length ? '' : ' is-invalid')],
                                     style: {margin: '0.5em'},
-                                    onclick: () => setConstraintMenu({type: 'accumulator', step, pipeline: compoundPipeline})
+                                    onclick: () => setConstraintMenu({
+                                        type: 'accumulator',
+                                        step,
+                                        pipeline: compoundPipeline
+                                    })
                                 }, plus, ' Accumulator')
                             ]
                         )
@@ -448,7 +453,7 @@ export let isLoading = false;
 
 let datasetChangedTour = {
     id: "changed_dataset",
-    i18n: {doneBtn:'Ok'},
+    i18n: {doneBtn: 'Ok'},
     showCloseButton: true,
     scrollDuration: 300,
     steps: [
@@ -464,6 +469,8 @@ let datasetChangedTour = {
 export let pendingHardManipulation = false;
 // called when a query is updated
 export let setQueryUpdated = state => {
+
+    // the first time we have an edit to the hard manipulations:
     if (app.is_manipulate_mode) {
         if (!pendingHardManipulation && state) {
             hopscotch.startTour(datasetChangedTour, 0);
@@ -473,28 +480,46 @@ export let setQueryUpdated = state => {
         }
         pendingHardManipulation = state;
     }
-    else {
+
+    // if we have an edit to the problem manipulations
+    if (!app.is_manipulate_mode) {
         let problem = app.disco.find(prob => prob.problem_id === app.selectedProblem);
 
-        // promote the problem to a user problem
+        console.log('found problem')
+        console.log(problem);
+
+        // promote the problem to a user problem if it is a system problem
         if (problem.system === 'auto') {
-            problem = JSON.parse(JSON.stringify(problem));
+            console.log('creating new problem');
+
+            problem = jQuery.extend(true, {}, problem);  // deep copy of system problem
             problem.problem_id = problem.problem_id + 'user';
             problem.system = 'user';
             problem.provenance = app.selectedProblem;
+
+            subset.manipulations[app.domainIdentifier.name + problem.problem_id]
+                = jQuery.extend(true, [], subset.manipulations[problem.pipelineId]);
+            problem.pipelineId = app.domainIdentifier.name + problem.problem_id;
+
             app.disco.push(problem);
-
-            subset.manipulations[problem.problem_id]
-                = subset.manipulations[app.domainIdentifier.name + app.selectedProblem];
-            delete subset.manipulations[app.domainIdentifier.name + app.selectedProblem];
-
+            console.log('new problem');
+            console.log(problem);
             app.setSelectedProblem(app.selectedProblem);
             app.setSelectedProblem(problem.problem_id);
         }
 
-        let transformVars = getTransformVariables(subset.manipulations[app.domainIdentifier.name + app.selectedProblem] || []);
+        let transformVars = getTransformVariables(getProblemPipeline(app.selectedProblem) || []);
         problem.predictors = [...new Set([...problem.predictors, ...transformVars])];
     }
+};
+
+export let getProblemPipeline = problemId => {
+    let problem = app.disco.find(prob => prob.problem_id === problemId);
+    if (!problem) return;
+    if (!('pipelineId' in problem)) problem.pipelineId = app.domainIdentifier.name + problemId;
+    if (!(problem.pipelineId in subset.manipulations)) subset.manipulations[problem.pipelineId] = [];
+
+    return subset.manipulations[problem.pipelineId];
 };
 
 // when set, the constraint menu will rebuild non-mithril elements (like plots) on the next redraw
@@ -553,7 +578,10 @@ export let setConstraintMenu = async (menu) => {
     common.setPanelOpen('right', false);
 
     if (constraintMenu.step.type === 'aggregate') constraintMetadata.measureType = menu.type;
-    if (constraintMenu.step.type === 'transform') {m.redraw(); return;}
+    if (constraintMenu.step.type === 'transform') {
+        m.redraw();
+        return;
+    }
 
     if (constraintMenu.type === 'accumulator') variables = variables.filter(column => inferType(column) === 'discrete');
     if (constraintMenu.type === 'unit') variables = variables.filter(column => inferType(column) !== 'discrete');
@@ -634,7 +662,9 @@ export let getData = async body => m.request({
 });
 
 // download data to display a menu
-export let loadMenu = async (pipeline, menu, {recount, requireMatch}={}) => { // the dict is for optional named arguments
+export let loadMenu = async (pipeline, menu, {recount, requireMatch} = {}) => { // the dict is for optional named arguments
+
+    if (!variablesInitial) setVariablesInitial(app.preprocess);
 
     // convert the pipeline to a mongo query. Note that passing menu extends the pipeline to collect menu data
     let compiled = JSON.stringify(queryMongo.buildPipeline([...pipeline, menu],
@@ -679,7 +709,7 @@ export let loadMenu = async (pipeline, menu, {recount, requireMatch}={}) => { //
         method: 'aggregate',
         query: compiled
     })
-        .then(menu.type === 'menu' ? queryMongo.menuPostProcess[menu.metadata.type] : _=>_)
+        .then(menu.type === 'menu' ? queryMongo.menuPostProcess[menu.metadata.type] : _ => _)
         .then(response => data = response));
 
     let success = true;
