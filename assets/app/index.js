@@ -39,7 +39,6 @@ import Body_EventData from '../EventData/app/Body_EventData';
 import Peek_EventData from '../common-eventdata/views/Peek';
 import '../EventData/css/app.css'
 import '../EventData/app/app'
-import {getPipeline} from "./manipulate";
 
 export let bold = (value) => m('div', {style: {'font-weight': 'bold', display: 'inline'}}, value);
 export let italicize = (value) => m('div', {style: {'font-style': 'italic', display: 'inline'}}, value);
@@ -126,10 +125,10 @@ function leftpanel(mode) {
         currentTab: app.leftTab,
         callback: app.setLeftTab,
         sections: [
-            (!(app.is_model_mode && app.rightTab === 'Manipulate') || manipulate.constraintMenu) && {
+            {
                 value: 'Variables',
                 title: 'Click variable name to add or remove the variable pebble from the modeling space.',
-                contents: app.is_model_mode && app.rightTab === 'Manipulate' ? [
+                contents: app.is_model_mode && app.rightTab === 'Manipulate' && manipulate.constraintMenu ? [
                     m('h5', 'Constraint Type'),
                     manipulate.varList()
                 ] : [
@@ -916,7 +915,7 @@ class Body {
     }
 
     peekTable() {
-        let pipeline = getPipeline(app.is_model_mode && app.selectedProblem);
+        let pipeline = manipulate.getPipeline(app.is_model_mode && app.selectedProblem);
         if (app.peekInlineShown && !app.peekData) app.resetPeek(pipeline);
 
         return m('div#previewTable', {

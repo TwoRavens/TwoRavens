@@ -12,7 +12,6 @@ import TextField from "../common/app/views/TextField";
 import PanelList from "../common/app/views/PanelList";
 import ButtonRadio from "../common/app/views/ButtonRadio";
 import Panel from "../common/app/views/Panel";
-import Table from "../common/app/views/Table";
 import Canvas from "../common/app/views/Canvas";
 
 import * as subset from "../EventData/app/app";
