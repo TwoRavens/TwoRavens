@@ -4799,10 +4799,10 @@ export function makeDataDiscovery(){
 d3.select("#setPredictionDataLeft").html("");
 d3.select("#setPredictionDataLeft").select("svg").remove();
 let in_data = [
-{"name":"Dependent Variable : ", "value":solver_res[0]['dependent_variable']},
-{"name":"Predictors : ", "value":solver_res[0]['predictors']},
-{"name":"Description : ", "value":solver_res[0]['description']},
-{"name":"Task : ", "value":solver_res[0]['task']},
+{"Variable":"Dependent Variable : ", "Data":solver_res[0]['dependent_variable']},
+{"Variable":"Predictors : ", "Data":solver_res[0]['predictors']},
+{"Variable":"Description : ", "Data":solver_res[0]['description']},
+{"Variable":"Task : ", "Data":solver_res[0]['task']},
 
 ]
   function tabulate(data, columns) {
@@ -4841,7 +4841,7 @@ let in_data = [
 	}
 
 	// render the table(s)
-	tabulate(in_data, ['name', 'value']); // 2 column table
+	tabulate(in_data, ['Variable', 'Data']); // 2 column table
 
 }
 export function makeDiscoverySolutionPlot(){

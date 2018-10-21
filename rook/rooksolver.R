@@ -74,7 +74,7 @@ solver.app <- function(env) {
         d <- na.omit(d)
         print(colnames(d))
         fit <- lm(formula(paste(target,"~",paste(predictors, collapse="+"))),data=d)
-        stargazer_lm <- paste(stargazer(fit, type="html"),collapse="")
+        stargazer_lm <- paste(stargazer(fit, type="html"), collapse="")
         jsonfit <- jsonlite::serializeJSON(fit)
 
         fittedvalues <- fit$fitted.values
