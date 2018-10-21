@@ -3,6 +3,7 @@ import '../pkgs/bootstrap/css/bootstrap-theme.min.css';
 import '../pkgs/Ladda/dist/ladda-themeless.min.css';
 import '../../node_modules/hopscotch/dist/css/hopscotch.css';
 
+
 import hopscotch from 'hopscotch';
 
 import m from 'mithril';
@@ -29,6 +30,7 @@ import Modal from '../common/app/views/Modal';
 import Panel from '../common/app/views/Panel';
 import PanelList from '../common/app/views/PanelList';
 import Peek from '../common/app/views/Peek';
+import DataTable from '../common/app/views/DataTable';
 import Table from '../common/app/views/Table';
 import TextField from '../common/app/views/TextField';
 import MenuHeaders from "../common/app/views/MenuHeaders";
@@ -50,6 +52,10 @@ let state = {
     }
 };
 
+
+// adding problem_id and version for Preprocess API part
+let problem_id = 1;
+let version = 1;
 let nodesExplore = [];
 
 function setBackgroundColor(color) {
@@ -67,6 +73,8 @@ function leftpanel(mode) {
         return manipulate.leftpanel();
 
     let selectedDisco = app.disco.find(problem => problem.problem_id === app.selectedProblem);
+
+
     let transformVars = app.selectedProblem && 'pipelineId' in selectedDisco && selectedDisco.pipelineId in subset.manipulations
         ? [...manipulate.getTransformVariables(subset.manipulations[selectedDisco.pipelineId])] : [];
 
@@ -186,6 +194,16 @@ function leftpanel(mode) {
                     m('textarea#discoveryInput[style=display:block; float: left; width: 100%; height:calc(20% - 35px); overflow: auto; background-color: white]', {
                         value: selectedDisco === undefined ? '' : selectedDisco.description
                     }),
+                m(Button, {
+                    id: 'btnDelete',
+                    classes: (selectedDisco || {}).system === 'auto' && 'btn-danger disabled',
+                    style: 'float:right',
+                    onclick: _ => {setTimeout(_ => {
+                        let deleteProbleAPI = app.deleteProblem(problem_id, version, 'id_000003');
+                        console.log("have to delete this ", selectedDisco)
+                        app.deleteFromDisc(selectedDisco)
+
+                    }, 500);}, title: 'Delete the user created problem'}, 'Delete Problem.'),
                     m(PanelButton, {
                         id: 'btnSave',
                         onclick: app.saveDisc,
@@ -445,7 +463,31 @@ function rightpanel(mode) {
                  })
              )
          ]
-        }
+       },{
+       value: 'Discovery',
+        idSuffix: 'disc',
+        contents: [
+          m(ButtonRadio, {
+              id: 'discoveryButtonBar',
+              attrsAll: {style: {'margin-left':'5%',width: 'auto'}},
+              attrsButtons: {class: ['btn-sm'], style: { padding:'0.5em',width:'auto'}},
+              onclick: app.setSelectedDiscoverySolutionMenu,
+              activeSection: app.selectedDiscoverySolutionMenu,
+              sections: [
+                  {value: 'Prediction Data', id: 'btnPredData'},
+                  {value: 'Solution Plot', id: 'btnSolPlot'}
+              ]
+          }),
+           m('div', {style: {'font-weight': 'bold', 'margin': '1em', 'height': '100%', 'float':'right', 'width': '50%' }},
+          m(DataTable, {data: ''})),
+          m(`div#predictionData[style=display:${app.selectedDiscoverySolutionMenu === 'Prediction Data' ? 'block' : 'none'};height:"90%"; overflow: auto; width: 50%, 'float':'left']`,
+            m('#setPredictionDataLeft[style=display:block; float: left; width: 100%; height:100%; margin-top:1em; overflow: auto; background-color: white]')
+          ),
+          m(`div#solutionPlot[style=display:${app.selectedDiscoverySolutionMenu === 'Solution Plot' ? 'block' : 'none'};height:"90%"; overflow: auto; width: 50%, 'float':'left']`,
+                m('#setPredictionSolutionPlot[style=display:block; float: left; width: 100%; height:100%; overflow: auto; background-color: black]')
+          )
+        ]}
+
     ];
 
     return m(Panel, {
@@ -733,7 +775,7 @@ class Body {
                 m('svg#whitespace')),
               app.is_model_mode && m("#spacetools.spaceTool", {style: {right: app.panelWidth.right, 'z-index': 16}},
                               spaceBtn('btnAdd', async function() {
-                                  app.zPop();
+                                app.zPop();
                                   let rookpipe = await app.makeRequest(ROOK_SVC_URL + 'pipelineapp', app.zparams);
                                   rookpipe.target = rookpipe.depvar[0];
                                   let myn = app.findNodeIndex(rookpipe.target, true);
@@ -756,8 +798,26 @@ class Body {
                                   console.log("pushing this:");
                                   console.log(rookpipe);
                                   app.disco.push(rookpipe);
-                                    app.setSelectedProblem(app.disco.length - 1);
+                                    app.setSelectedProblem(rookpipe.problem_id);
                                   app.setLeftTab('Discovery');
+                                  console.log("This is rookpipe ",rookpipe);
+                                  // this is where Problem ADD API call to the function will be made
+                                  let problem_result = {};
+                                  let preprocess_id = 1;
+                                  let version =1;
+                                  let selectedDisco = app.disco.find(problem => problem.problem_id === rookpipe.problem_id);
+                                  // console.log("this is selected Disco," , selectedDisco)
+                                  // app.problem_sent = []
+                                  // app.solver_res = []
+                                  let app_solver_result = app.callSolver(selectedDisco);
+                                  console.log("app selectedDisco ", selectedDisco)
+                                  app.solver_res = app_solver_result
+                                  let my_disco = []
+                                  my_disco.push(selectedDisco)
+                                  app.loadResult(my_disco)
+                                  // let addProblemAPI = app.addProblem(preprocess_id, version, problem_section);
+                                  // console.log("API RESPONSE: ",addProblemAPI );
+
                                   m.redraw();
                               }, 'Add model to problems.', 'plus'),
                               spaceBtn('btnJoin', _ => {
@@ -933,3 +993,4 @@ else {
         },*/
     });
 }
+
