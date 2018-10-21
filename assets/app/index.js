@@ -39,6 +39,7 @@ import Body_EventData from '../EventData/app/Body_EventData';
 import Peek_EventData from '../common-eventdata/views/Peek';
 import '../EventData/css/app.css'
 import '../EventData/app/app'
+import {getPipeline} from "./manipulate";
 
 export let bold = (value) => m('div', {style: {'font-weight': 'bold', display: 'inline'}}, value);
 export let italicize = (value) => m('div', {style: {'font-style': 'italic', display: 'inline'}}, value);
@@ -73,10 +74,7 @@ function leftpanel(mode) {
         return manipulate.leftpanel();
 
     let selectedDisco = app.disco.find(problem => problem.problem_id === app.selectedProblem);
-
-
-    let transformVars = app.selectedProblem && 'pipelineId' in selectedDisco && selectedDisco.pipelineId in subset.manipulations
-        ? [...manipulate.getTransformVariables(subset.manipulations[selectedDisco.pipelineId])] : [];
+    let transformVars = [...manipulate.getTransformVariables(manipulate.getProblemPipeline(app.selectedProblem) || [])];
 
     let discoveryAllCheck = m('input#discoveryAllCheck[type=checkbox]', {
         onclick: m.withAttr("checked", (checked) => app.setCheckedDiscoveryProblem(checked)),
@@ -119,7 +117,7 @@ function leftpanel(mode) {
             style: {
                 'z-index': 101,
                 background: 'rgb(249, 249, 249, .5)', // TODO this makes the leftpanel partially transparent, check with Vito
-                height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${app.is_model_mode && app.rightTab === 'Manipulate' && manipulate.showTable && subset.tableData ? manipulate.tableSize: '0px'} - ${common.heightFooter})`
+                height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${app.peekInlineShown ? app.peekInlineHeight: '0px'} - ${common.heightFooter})`
             }
         }
     }, m(MenuTabbed, {
@@ -196,7 +194,7 @@ function leftpanel(mode) {
                     }),
                 m(Button, {
                     id: 'btnDelete',
-                    classes: (selectedDisco || {}).system === 'auto' && 'btn-danger disabled',
+                    disabled: !selectedDisco || selectedDisco.system === 'auto',
                     style: 'float:right',
                     onclick: _ => {setTimeout(_ => {
                         let deleteProbleAPI = app.deleteProblem(problem_id, version, 'id_000003');
@@ -323,9 +321,9 @@ function rightpanel(mode) {
     };
 
     if (app.selectedProblem) {
-        if (!(app.domainIdentifier.name in subset.manipulations)) subset.manipulations[app.domainIdentifier.name] = [];
+        if (!(app.configurations.name in subset.manipulations)) subset.manipulations[app.configurations.name] = [];
 
-        let combinedId = app.domainIdentifier.name + app.selectedProblem;
+        let combinedId = app.configurations.name + app.selectedProblem;
         if (!(combinedId in subset.manipulations)) subset.manipulations[combinedId] = [];
     }
 
@@ -354,19 +352,19 @@ function rightpanel(mode) {
                 id: 'aggregateMenu',
                 attrsAll: {style: {height: '100%', overflow: 'auto'}},
                 sections: [
-                    (subset.manipulations[app.domainIdentifier.name] || []).length !== 0 && {
+                    (subset.manipulations[app.configurations.name] || []).length !== 0 && {
                         value: 'Dataset Pipeline',
                         contents: m(manipulate.PipelineFlowchart, {
-                            compoundPipeline: subset.manipulations[app.domainIdentifier.name],
-                            pipelineId: app.domainIdentifier.name,
+                            compoundPipeline: subset.manipulations[app.configurations.name],
+                            pipelineId: app.configurations.name,
                             editable: false
                         })
                     },
                     {
                         value: 'Problem Pipeline',
                         contents: m(manipulate.PipelineFlowchart, {
-                            compoundPipeline: [...subset.manipulations[app.domainIdentifier.name], ...subset.manipulations[app.domainIdentifier.name + app.selectedProblem]],
-                            pipelineId: app.domainIdentifier.name + app.selectedProblem,
+                            compoundPipeline: [...subset.manipulations[app.configurations.name], ...subset.manipulations[app.configurations.name + app.selectedProblem]],
+                            pipelineId: app.configurations.name + app.selectedProblem,
                             editable: true,
                             aggregate: false
                         })
@@ -498,7 +496,7 @@ function rightpanel(mode) {
         attrsAll: {
             style: {
                 'z-index': 101,
-                height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${app.is_model_mode && app.rightTab === 'Manipulate' && manipulate.showTable && subset.tableData ? manipulate.tableSize: '0px'} - ${common.heightFooter})`
+                height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${app.peekInlineShown ? app.peekInlineHeight: '0px'} - ${common.heightFooter})`
             }
         }
     }, m(MenuTabbed, {
@@ -516,7 +514,7 @@ export let glyph = (icon, unstyled) =>
 class Body {
     oninit() {
         app.setRightTab(IS_D3M_DOMAIN ? 'Problem' : 'Models');
-        app.set_mode('model');
+        if (m.route.get() !== '/data') app.set_mode('model');
 
         this.cite = false;
         this.citeHidden = false;
@@ -648,11 +646,10 @@ class Body {
         let overflow = app.is_explore_mode ? 'auto' : 'hidden';
         let style = `position: absolute; left: ${app.panelWidth.left}; top: 0; margin-top: 10px`;
 
-        if (app.domainIdentifier && !(app.domainIdentifier.name in subset.manipulations))
-            subset.manipulations[app.domainIdentifier.name] = [];
+        if (app.domainIdentifier && !(app.configurations.name in subset.manipulations))
+            subset.manipulations[app.configurations.name] = [];
 
         let problem = app.disco.find(prob => prob.problem_id === app.selectedProblem);
-        let problemPipeline = app.is_model_mode && (manipulate.getProblemPipeline(app.selectedProblem) || []);
 
         return m('main', [
             m(Modal),
@@ -662,8 +659,9 @@ class Body {
             rightpanel(app.currentMode),
 
             (app.is_manipulate_mode || (app.is_model_mode && app.rightTab === 'Manipulate')) && manipulate.menu(
-                [...subset.manipulations[app.domainIdentifier.name], ...problemPipeline], // the complete pipeline to build menus with
-                app.is_model_mode ? problem.pipelineId : app.domainIdentifier.name),  // the identifier for which pipeline to edit
+                manipulate.getPipeline(app.selectedProblem), // the complete pipeline to build menus with
+                app.is_model_mode ? problem.pipelineId : app.configurations.name),  // the identifier for which pipeline to edit
+            app.peekInlineShown && this.peekTable(),
 
             m(`#main`, {style: {overflow, display: app.is_manipulate_mode || (app.rightTab === 'Manipulate' && manipulate.constraintMenu) ? 'none' : 'block'}},
                 m("#innercarousel.carousel-inner", {style: {height: '100%', overflow}},
@@ -857,7 +855,7 @@ class Body {
                         ['nomButton', 'znom', 'Nom Var'],
                         ['gr1Button', 'zgroup1', 'Group 1'],
                         ['gr2Button', 'zgroup2', 'Group 2']],
-                    attrsStyle: {bottom: app.rightTab === 'Manipulate' ? `calc(${manipulate.showTable ? manipulate.tableSize : '0px'} + 23px)` : '0px'}
+                    attrsStyle: {bottom: `calc(${app.peekInlineShown ? app.peekInlineHeight + ' + 23px' : '0px'})`}
                 }),
                 app.currentMode !== 'manipulate' && m(Subpanel, {title: "History"}))
         ]);
@@ -917,6 +915,55 @@ class Body {
         ])]);
     }
 
+    peekTable() {
+        let pipeline = getPipeline(app.is_model_mode && app.selectedProblem);
+        if (app.peekInlineShown && !app.peekData) app.resetPeek(pipeline);
+
+        return m('div#previewTable', {
+                style: {
+                    "position": "fixed",
+                    "bottom": common.heightFooter,
+                    "height": app.peekInlineHeight,
+                    "width": "100%",
+                    "border-top": "1px solid #ADADAD",
+                    "overflow-y": "scroll",
+                    "overflow-x": "auto",
+                    'z-index': 100,
+                    'background': 'rgba(255,255,255,.6)'
+                },
+                onscroll: () => {
+                    // don't apply infinite scrolling when list is empty
+                    if (app.peekData.length === 0) return;
+
+                    let container = document.querySelector('#previewTable');
+                    let scrollHeight = container.scrollHeight - container.scrollTop;
+                    if (scrollHeight < container.offsetHeight + 100) app.updatePeek(pipeline);
+                }
+            },
+            m('#horizontalDrag', {
+                style: {
+                    position: 'absolute',
+                    top: '-4px',
+                    left: 0,
+                    right: 0,
+                    height: '12px',
+                    cursor: 'h-resize',
+                    'z-index': 1000
+                },
+                onmousedown: (e) => {
+                    app.setPeekInlineIsResizing(true);
+                    document.body.classList.add('no-select');
+                    app.peekMouseMove(e);
+                }
+            }),
+            m(Table, {
+                // headers: [...subset.tableHeaders, ...subset.tableHeadersEvent],
+                id: 'previewTable',
+                data: app.peekData || []
+            })
+        );
+    }
+
     footer(mode) {
 
         let manipulateRecordCount;
@@ -952,8 +999,8 @@ class Body {
             }, 'LOG DATASET URL'),
             m('div.btn.btn-group', {style: 'float: right; padding: 0px'},
                 m(Button, {
-                    class: manipulate.showTable && ['active'],
-                    onclick: _ => manipulate.setShowTable(!manipulate.showTable)
+                    class: app.peekInlineShown && ['active'],
+                    onclick: () => app.setPeekInlineShown(!app.peekInlineShown)
                 }, 'Peek'),
                 m(Button, {onclick: _ => window.open('#!/data', 'data')}, glyph('new-window'))),
             // Manipulate Record Count
@@ -978,7 +1025,7 @@ if (IS_EVENTDATA_DOMAIN) {
 else {
     m.route(document.body, '/model', {
         '/explore/:variate/:vars...': Body,
-        '/data': {render: () => m(Peek, {id: 'tworavens', image: '/static/images/TwoRavens.png'})},
+        '/data': {render: () => m(Peek, {id: app.peekId, image: '/static/images/TwoRavens.png'})},
         '/:mode': Body,
 
         /*'/results': {

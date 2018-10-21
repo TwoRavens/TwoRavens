@@ -1,11 +1,17 @@
-import m from 'mithril'
+import m from 'mithril';
 
 import Header from './Header';
 import Table from './Table';
 import Canvas from './Canvas';
-import * as common from "../common";
+import {heightHeader} from "../common";
 
 // widget for displaying a full-page data preview
+// Handle all logic for loading and preparing the data from within your app.
+// There is code at the bottom of this file that belongs in the app you're implementing the preview for.
+
+// ```
+// m(Peek, {image: src image for header})
+// ```
 
 // localstorage entries:
 
@@ -18,35 +24,49 @@ import * as common from "../common";
 // peekMore: boolean set by peek when the bottom of the page is scrolled to
 
 export default class Peek {
-    oncreate() {
-        window.addEventListener('storage', (e) => onStorageEvent(this, e));
-        document.getElementById('canvas').addEventListener('scroll', onScrollEvent);
+    oncreate(vnode) {
+        let {id} = vnode.attrs;
+        window.addEventListener('storage', (e) => onStorageEvent(this, id, e));
+        document.getElementById('canvas' + id).addEventListener('scroll', () => onScrollEvent(id));
     }
 
-    oninit() {
-        this.header = localStorage.getItem('peekHeader') || '';
-        this.tableHeaders = JSON.parse(localStorage.getItem('peekTableHeaders')) || [];
-        this.tableData = JSON.parse(localStorage.getItem('peekTableData')) || [];
+    oninit(vnode) {
+        let {id} = vnode.attrs;
+        this.header = localStorage.getItem('peekHeader' + id) || '';
+        this.tableHeaders = JSON.parse(localStorage.getItem('peekTableHeaders' + id)) || [];
+        this.tableData = JSON.parse(localStorage.getItem('peekTableData' + id)) || [];
 
         if (this.tableData.length === 0) {
-            localStorage.removeItem('peekMore');
-            localStorage.setItem('peekMore', 'true');
+            console.log("SENDING UPDATE")
+            localStorage.removeItem('peekMore' + id);
+            localStorage.setItem('peekMore' + id, 'true');
         }
     }
 
-    view() {
+    view(vnode) {
+        let {id, image} = vnode.attrs;
+
         return [
-            m(Header, [
+            m(Header, {image}, [
                 m('div', {style: {'flex-grow': 1}}),
                 m("h4", m("span#headerLabel.label.label-default", this.header)),
                 m('div', {style: {'flex-grow': 1}}),
             ]),
             m(Canvas, {
-                    attrsAll: {style: {'margin-top': common.heightHeader + 'px', height: `calc(100% - ${common.heightHeader}px)`}}
+                    attrsAll: {
+                        id: 'canvas' + id,
+                        style: {
+                            'padding-left': 0,
+                            'padding-right': 0,
+                            'margin-top': heightHeader + 'px',
+                            height: `calc(100% - ${heightHeader})`
+                        }
+                    }
                 }, m(Table, {
-                    id: 'peekTable',
+                    id: 'peekTable' + id,
                     headers: this.tableHeaders,
                     data: this.tableData,
+                    abbreviation: 25,
                     attrsAll: {style: {overflow: 'auto'}}
                 })
             )
@@ -54,46 +74,45 @@ export default class Peek {
     }
 }
 
-function onScrollEvent() {
-    let canvas = document.getElementById('canvas');
+let onScrollEvent = (id) => {
+    let canvas = document.getElementById('canvas' + id);
     if (canvas.scrollTop + canvas.clientHeight === canvas.scrollHeight) {
-        localStorage.removeItem('peekMore');
-        localStorage.setItem('peekMore', 'true');
+        localStorage.removeItem('peekMore' + id);
+        localStorage.setItem('peekMore' + id, 'true');
     }
-}
+};
 
-function onStorageEvent (peek, e) {
-    if (e.key !== 'peekTableData') return;
+let onStorageEvent = (peek, id, e) => {
+    if (e.key !== 'peekTableData' + id) return;
 
-    peek.header = localStorage.getItem('peekHeader');
-    peek.tableHeaders = JSON.parse(localStorage.getItem('peekTableHeaders')) || [];
-    peek.tableData = JSON.parse(localStorage.getItem('peekTableData')) || [];
+    peek.header = localStorage.getItem('peekHeader' + id);
+    peek.tableHeaders = JSON.parse(localStorage.getItem('peekTableHeaders' + id)) || [];
+    peek.tableData = JSON.parse(localStorage.getItem('peekTableData' + id)) || [];
 
-    if (peek.tableData.length === 0) localStorage.setItem('peekMore', 'true');
+    if (peek.tableData.length === 0) localStorage.setItem('peekMore' + id, 'true');
     m.redraw();
-}
+};
 
 // Adapt the following code in your codebase to update the Peek tab
 
 /*
+// this keeps the localstorage tags unique, so that, for example, peek for D3M is separate from EventData
+let peekId = 'myName'
+
 let peekBatchSize = 100;
 let peekSkip = 0;
 let peekData = [];
-
 let peekAllDataReceived = false;
 let peekIsGetting = false;
-
 function onStorageEvent(e) {
-    if (e.key !== 'peekMore' || peekIsGetting) return;
-
-    if (localStorage.getItem('peekMore') === 'true' && !peekAllDataReceived) {
-        localStorage.setItem('peekMore', 'false');
+    if (e.key !== 'peekMore' + peekId || peekIsGetting) return;
+    if (localStorage.getItem('peekMore' + peekId) === 'true' && !peekAllDataReceived) {
+        localStorage.setItem('peekMore'  + peekId, 'false');
         peekIsGetting = true;
         updatePeek();
     }
 }
 window.addEventListener('storage', onStorageEvent);
-
 function updatePeek() {
     m.request({
         method: 'POST',
@@ -105,28 +124,21 @@ function updatePeek() {
     }).then((response) => {
         // stop blocking new requests
         peekIsGetting = false;
-
         let newData = response['data'];
-
         // start blocking new requests until peekReset() is called
         if (newData.length === 0) peekAllDataReceived = true;
-
         peekData = peekData.concat(newData);
         peekSkip += newData.length;
-
-        localStorage.setItem('peekTableHeaders', JSON.stringify(headers));
-        localStorage.setItem('peekTableData', JSON.stringify(peekData));
+        localStorage.setItem('peekTableHeaders' + peekId, JSON.stringify(headers));
+        localStorage.setItem('peekTableData' + peekId, JSON.stringify(peekData));
     });
 }
-
 function resetPeek() {
     peekSkip = 0;
     peekData = [];
-
     peekAllDataReceived = false;
     peekIsGetting = false;
-
     // provoke a redraw from the peek menu
-    localStorage.removeItem('peekTableData');
+    localStorage.removeItem('peekTableData' + peekId);
 }
 */

@@ -79,12 +79,10 @@ let xtable = String.raw`
    </table>
 `;
 
-export  default {
+export default {
     view(vnode) {
         let html = document.createElement('html');
         html.innerHTML = vnode.attrs.data;
-        console.log("vnode data : ")
-        console.log(vnode.attrs.data)
         let els = (el, tag) => el.getElementsByTagName(tag);
         let push = (arr, el) => arr.push(el.innerText.trim());
         let headers = [];

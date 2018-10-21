@@ -21,9 +21,8 @@ import * as common from '../common/app/common';
 import * as queryAbstract from '../EventData/app/queryAbstract';
 import * as queryMongo from "../EventData/app/queryMongo";
 import hopscotch from 'hopscotch';
-import {manipulations} from "../EventData/app/app";
 
-// dataset name from app.domainIdentifier.name
+// dataset name from app.configurations.name
 // variable names from the keys of the initial preprocess variables object
 
 
@@ -42,7 +41,7 @@ export function menu(compoundPipeline, pipelineId) {
             id: 'btnStage',
             style: {
                 right: `calc(${common.panelOpen['right'] ? '500' : '16'}px + ${common.panelMargin}*2)`,
-                bottom: `calc(${common.heightFooter} + ${common.panelMargin} + 6px + ${showTable && subset.tableData ? tableSize : '0px'})`,
+                bottom: `calc(${common.heightFooter} + ${common.panelMargin} + 6px + ${app.peekInlineShown && app.peekData ? app.peekInlineHeight : '0px'})`,
                 position: 'fixed',
                 'z-index': 100,
                 'box-shadow': 'rgba(0, 0, 0, 0.3) 0px 2px 3px'
@@ -70,8 +69,7 @@ export function menu(compoundPipeline, pipelineId) {
 
         m(Canvas, {
             attrsAll: {style: {height: `calc(100% - ${common.heightHeader} - ${common.heightFooter})`}}
-        }, canvas(pipelineId)),
-        showTable && previewTable(compoundPipeline)
+        }, canvas(pipelineId))
     ];
 }
 
@@ -117,54 +115,6 @@ export function canvas(compoundPipeline) {
     })
 }
 
-export function previewTable(pipeline) {
-    if (showTable && !subset.tableData) {
-        subset.setTableData([]);
-        updatePreviewTable('reset', pipeline);
-        return;
-    }
-
-    return m("[id='previewTable']", {
-            style: {
-                "position": "fixed",
-                "bottom": common.heightFooter,
-                "height": tableSize,
-                "width": "100%",
-                "border-top": "1px solid #ADADAD",
-                "overflow-y": "scroll",
-                "overflow-x": "auto",
-                'z-index': 100,
-                'background': 'rgba(255,255,255,.6)'
-            },
-            onscroll: () => {
-                // don't apply infinite scrolling when list is empty
-                if (subset.tableData.length === 0) return;
-
-                let container = document.querySelector('#previewTable');
-                let scrollHeight = container.scrollHeight - container.scrollTop;
-                if (scrollHeight < container.offsetHeight + 100) updatePreviewTable('more', pipeline);
-            }
-        },
-        m('#horizontalDrag', {
-            style: {
-                position: 'absolute',
-                top: '-4px',
-                left: 0,
-                right: 0,
-                height: '12px',
-                cursor: 'h-resize',
-                'z-index': 1000
-            },
-            onmousedown: resizeMenu
-        }),
-        m(Table, {
-            // headers: [...subset.tableHeaders, ...subset.tableHeadersEvent],
-            id: 'previewTable',
-            data: subset.tableData || []
-        })
-    );
-}
-
 export function leftpanel() {
     if (!app.domainIdentifier || !constraintMenu)
         return;
@@ -178,7 +128,7 @@ export function leftpanel() {
                 style: {
                     'z-index': 101,
                     // subtract header, spacer, spacer, scrollbar, table, and footer
-                    height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${showTable && subset.tableData ? tableSize : '0px'} - ${common.heightFooter})`
+                    height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${app.peekInlineShown && app.peekData ? app.peekInlineHeight : '0px'} - ${common.heightFooter})`
                 }
             }
         },
@@ -250,12 +200,12 @@ export function rightpanel() {
             style: {
                 'z-index': 101,
                 // subtract header, spacer, spacer, scrollbar, table, and footer
-                height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${showTable && subset.tableData ? tableSize : '0px'} - ${common.heightFooter})`
+                height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${app.peekInlineShown && app.peekData ? app.peekInlineHeight : '0px'} - ${common.heightFooter})`
             }
         }
     }, m(PipelineFlowchart, {
-        compoundPipeline: subset.manipulations[app.domainIdentifier.name],
-        pipelineId: app.domainIdentifier.name,
+        compoundPipeline: getPipeline(),
+        pipelineId: app.configurations.name,
         editable: true
     }));
 }
@@ -266,7 +216,6 @@ export class PipelineFlowchart {
         // pipelineId is edited and passed into the trees
         let {compoundPipeline, pipelineId, editable, aggregate} = vnode.attrs;
 
-        if (!(pipelineId in subset.manipulations)) subset.manipulations[pipelineId] = [];
         let pipeline = subset.manipulations[pipelineId];
 
         let plus = m(`span.glyphicon.glyphicon-plus[style=color: #818181; font-size: 1em; pointer-events: none]`);
@@ -475,7 +424,7 @@ export let setQueryUpdated = state => {
         if (!pendingHardManipulation && state) {
             hopscotch.startTour(datasetChangedTour, 0);
             Object.keys(subset.manipulations)
-                .filter(key => key !== app.domainIdentifier.name)
+                .filter(key => key !== app.configurations.name)
                 .forEach(key => delete subset.manipulations[key])
         }
         pendingHardManipulation = state;
@@ -484,6 +433,7 @@ export let setQueryUpdated = state => {
     // if we have an edit to the problem manipulations
     if (!app.is_manipulate_mode) {
         let problem = app.disco.find(prob => prob.problem_id === app.selectedProblem);
+        if (!problem) return;
 
         // promote the problem to a user problem if it is a system problem
         if (problem.system === 'auto') {
@@ -494,9 +444,9 @@ export let setQueryUpdated = state => {
             problem.provenance = app.selectedProblem;
             problem.predictorsInitial = problem.predictors;  // the predictor list will be edited to include transformed variables
 
-            subset.manipulations[app.domainIdentifier.name + problem.problem_id]
+            subset.manipulations[app.configurations.name + problem.problem_id]
                 = jQuery.extend(true, [], subset.manipulations[problem.pipelineId]);
-            problem.pipelineId = app.domainIdentifier.name + problem.problem_id;
+            problem.pipelineId = app.configurations.name + problem.problem_id;
 
             app.disco.push(problem);
 
@@ -517,13 +467,19 @@ export let setQueryUpdated = state => {
     }
 };
 
+// returns the fragment of a pipeline representing a problem
 export let getProblemPipeline = problemId => {
     let problem = app.disco.find(prob => prob.problem_id === problemId);
     if (!problem) return;
-    if (!('pipelineId' in problem)) problem.pipelineId = app.domainIdentifier.name + problemId;
+    if (!('pipelineId' in problem)) problem.pipelineId = app.configurations.name + problemId;
     if (!(problem.pipelineId in subset.manipulations)) subset.manipulations[problem.pipelineId] = [];
 
     return subset.manipulations[problem.pipelineId];
+};
+
+export let getPipeline = (problemId) => {
+    if (!(app.configurations.name in subset.manipulations)) subset.manipulations[app.configurations.name] = [];
+    return [...subset.manipulations[app.configurations.name], ...(getProblemPipeline(problemId) || [])];
 };
 
 // when set, the constraint menu will rebuild non-mithril elements (like plots) on the next redraw
@@ -551,9 +507,11 @@ export let setConstraintMenu = async (menu) => {
 
     if (menu === undefined) {
         constraintMenu = menu;
-        updatePreviewTable('clear');
+        app.resetPeek();
         return;
     }
+
+    if (!variablesInitial) setVariablesInitial(app.preprocess);
 
     let variables = [...queryMongo.buildPipeline(
         menu.pipeline.slice(0, menu.pipeline.indexOf(menu.step)),
@@ -572,7 +530,7 @@ export let setConstraintMenu = async (menu) => {
         else {
             alert('The pipeline at this stage matches no records. Delete constraints to match more records.');
             constraintMenu = undefined;
-            updatePreviewTable('clear');
+            app.resetPeek();
             m.redraw();
             return;
         }
@@ -657,7 +615,7 @@ export let setConstraintType = (type, pipeline) => {
 };
 
 export let getData = async body => m.request({
-    url: subset.eventdataURL + 'get-manipulations',
+    url: subset.eventdataURL + 'get-data',
     method: 'POST',
     data: body
 }).then(response => {
@@ -680,7 +638,7 @@ export let loadMenu = async (pipeline, menu, {recount, requireMatch} = {}) => { 
     let promises = [];
 
     // collection/dataset name
-    let dataset = app.domainIdentifier.name;
+    let dataset = app.configurations.name;
     // location of the dataset csv
     let datafile = app.zparams.zd3mdata;
 
@@ -763,21 +721,18 @@ export let rebuildPreprocess = async () => {
     };
 
     let compiled = JSON.stringify(queryMongo.buildPipeline(
-        [...subset.manipulations[app.domainIdentifier.name], menuDownload],
+        [...getPipeline(), menuDownload],
         new Set(Object.keys(variablesInitial)))['pipeline']);
 
     let dataPath = await getData({
         datafile: app.zparams.zd3mdata,
-        collection_name: app.domainIdentifier.name,
+        collection_name: app.configurations.name,
         method: 'aggregate',
         query: compiled,
         export: true
     });
 
     let targetPath = dataPath.split('/').slice(0, dataPath.split('/').length - 1).join('/') + '/preprocess.json';
-    console.log("DATA PATHS");
-    console.log(dataPath);
-    console.log(targetPath);
 
     let response = await m.request({
         method: 'POST',
@@ -831,6 +786,7 @@ export let rebuildPreprocess = async () => {
 
     app.setDisco(app.discovery(response));
     app.setMytarget(app.disco[0].target);
+    app.setSelectedProblem(undefined);
 
     setQueryUpdated(false);
 };
@@ -852,100 +808,6 @@ export let variableSort = (a, b) => {
     return a.includes(variableSearch) ? -1 : 1;
 };
 
-export function formatPrecision(value) {
-    if (isNaN(value)) return value;
-
-    let precision = 4;
-
-    // convert to Number
-    value *= 1;
-    // determine number of digits in value
-    let digits = Math.max(Math.floor(Math.log10(Math.abs(Number(String(value).replace(/[^0-9]/g, ''))))), 0) + 1;
-
-    if (digits <= precision || precision === 0) return value;
-    return value.toPrecision(precision);
-}
-
-export let updatePreviewTable = async (option, pipeline) => {
-
-    if (option === 'clear' || option === 'reset') {
-        previewSkip = 0;
-        subset.setTableData(undefined);
-    }
-
-    if (previewIsLoading || option === 'clear' || pipeline === undefined || (subset.tableData || []).length - previewSkip < 0)
-        return;
-
-    let variables = [];
-
-    if (app.is_model_mode && app.selectedProblem) {
-        let problem = app.disco.find(entry => entry.problem_id === app.selectedProblem);
-        variables = [...problem.predictors, problem.target];
-    }
-
-    let previewMenu = {
-        type: 'menu',
-        metadata: {
-            type: 'data',
-            skip: previewSkip,
-            limit: previewBatchSize,
-            variables
-        }
-    };
-    previewSkip += previewBatchSize;
-
-    previewIsLoading = true;
-    let data = await loadMenu(
-        constraintMenu
-            ? pipeline.slice(0, pipeline.indexOf(stage => stage === constraintMenu.step))
-            : pipeline,
-        previewMenu
-    );
-
-    if (data.length === 0 && option === 'reset')
-        alert('The pipeline at this stage matches no records. Delete constraints to match more records.');
-
-    data = data.map(record => Object.keys(record).reduce((out, entry) => {
-        out[entry] = typeof record[entry] === 'number' ? formatPrecision(record[entry]) : record[entry];
-        return out;
-    }, {}));
-    subset.setTableData((subset.tableData || []).concat(data));
-    previewIsLoading = false;
-    m.redraw();
-};
-
-// for the data preview at the bottom of the page
-let previewSkip = 0;
-let previewBatchSize = 100;
-let previewIsLoading = false;
-
-// window resizing
-let isResizingMenu = false;
-export let tableSize = `calc(20% + ${common.heightFooter})`;
-export let resizeMenu = (e) => {
-    isResizingMenu = true;
-    document.body.classList.add('no-select');
-    resizeMenuTick(e);
-};
-
-export let showTable = true;
-export let setShowTable = state => showTable = state;
-
-let resizeMenuTick = (e) => {
-    let percent = (1 - e.clientY / app.byId(app.is_manipulate_mode ? 'canvas' : 'main').clientHeight) * 100;
-    tableSize = `calc(${Math.max(percent, 0)}% + ${common.heightFooter})`;
-    m.redraw();
-};
-
-document.onmousemove = (e) => isResizingMenu && resizeMenuTick(e);
-
-document.onmouseup = () => {
-    if (isResizingMenu) {
-        isResizingMenu = false;
-        document.body.classList.remove('no-select');
-    }
-};
-
 export async function buildDatasetUrl(problem) {
     let problemStep = {
         type: 'menu',
@@ -955,22 +817,11 @@ export async function buildDatasetUrl(problem) {
         }
     };
 
-    let pipeline = [
-        ...(subset.manipulations[app.domainIdentifier.name] || []),
-        ...(subset.manipulations[app.domainIdentifier.name + problem.problem_id]),
-        problemStep
-    ];
-
-    let compiled = queryMongo.buildPipeline(pipeline, Object.keys(app.preprocess))['pipeline'];
-
-    // collection/dataset name
-    let dataset = app.domainIdentifier.name;
-    // location of the dataset csv
-    let datafile = app.zparams.zd3mdata;
+    let compiled = queryMongo.buildPipeline([...getPipeline(problem.problem_id), problemStep], Object.keys(variablesInitial))['pipeline'];
 
     return await getData({
-        datafile: datafile,
-        collection_name: dataset,
+        datafile: app.zparams.zd3mdata,  // location of the dataset csv
+        collection_name: app.configurations.name,
         method: 'aggregate',
         query: JSON.stringify(compiled),
         export: true
@@ -993,6 +844,8 @@ export let getSubsetString = pipeline => pipeline
     .map(stringifySubset)
     .join(', ');
 
+
+// TODO Shoeboxam
 let stringifySubset = query => {
     return 'test';
 };

@@ -58,17 +58,20 @@ urlpatterns = [
             views.api_get_files_list,
             name='api_get_files_list'),
 
-    path(r'api/get-data',
-         views.api_get_data,
-         name='api_get_data'),
+    # tied to the eventdata database
+    path(r'api/get-eventdata',
+         views.api_get_eventdata,
+         name='api_get_eventdata'),
 
+    # formats, alignments and eventdata dataset configs
     path(r'api/get-metadata',
          views.api_get_metadata,
          name='api_get_metadata'),
 
-    path(r'api/get-manipulations',
-         views.api_get_manipulations,
-         name='api_get_manipulations'),
+    # general api to access TwoRavens data
+    path(r'api/get-data',
+         views.api_get_data,
+         name='api_get_data'),
 
     path(r'api/import-dataset',
              views.api_import_dataset,

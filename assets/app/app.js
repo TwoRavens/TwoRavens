@@ -15,19 +15,121 @@ import {setModal} from '../common/app/views/Modal';
 
 import {bars, barsNode, barsSubset, density, densityNode, scatter, selVarColor} from './plots.js';
 import {elem, fadeOut} from './utils';
+import {loadMenu} from "./manipulate";
+import {constraintMenu} from "./manipulate";
 
 //-------------------------------------------------
 // NOTE: global variables are now set in the index.html file.
 //    Developers, see /template/index.html
 //-------------------------------------------------
 
-let peekBatchSize = 100;
-let peekSkip = 0;
-let peekData = [];
 
-let peekAllDataReceived = false;
-let peekIsGetting = false;
+// ~~~~~ PEEK ~~~~~
+// for the second-window data preview
+window.addEventListener('storage', (e) => {
+    if (e.key !== 'peekMore' + peekId || peekIsLoading) return;
+    if (localStorage.getItem('peekMore' + peekId) !== 'true' || peekIsExhausted) return;
+    localStorage.setItem('peekMore' + peekId, 'false');
+    updatePeek(manipulate.getPipeline(selectedProblem));
+});
 
+// for the draggable within-window data preview
+window.addEventListener('mousemove', (e) => peekMouseMove(e));  // please don't remove the anonymous wrapper
+window.addEventListener('mouseup', (e) => peekMouseUp(e));
+
+export let peekMouseMove = (e) => {
+    if (!peekInlineIsResizing) return;
+    let percent = (1 - e.clientY / byId(is_manipulate_mode ? 'canvas' : 'main').clientHeight) * 100;
+    peekInlineHeight = `calc(${Math.max(percent, 0)}% + ${common.heightFooter})`;
+    m.redraw();
+};
+
+export let peekMouseUp = () => {
+    if (!peekInlineIsResizing) return;
+    peekInlineIsResizing = false;
+    document.body.classList.remove('no-select');
+}
+
+export let peekData;
+export let peekId = 'tworavens';
+
+let peekLimit = 100;  // how many records to load at a time
+let peekSkip = 0;  // how many records have already been loaded
+
+let peekIsExhausted = false;  // if all data has been retrieved, this prevents attempting to load more records
+let peekIsLoading = false;  // if a request is currently being made for more data, block additional requests
+
+export let peekInlineHeight = `calc(20% + ${common.heightFooter})`; // updated by the drag event listener
+export let setPeekInlineHeight = height => peekInlineHeight = height;
+
+// set when inline peek table is being resized/dragged
+export let peekInlineIsResizing = false;
+export let setPeekInlineIsResizing = state => peekInlineIsResizing = state;
+
+// true if within-page data preview is enabled
+export let peekInlineShown = false;
+export let setPeekInlineShown = state => peekInlineShown = state;
+
+export async function resetPeek(pipeline) {
+    peekData = undefined;
+    peekSkip = 0;
+    peekIsExhausted = false;
+    localStorage.setItem('peekTableHeaders' + peekId, JSON.stringify([]));
+    localStorage.setItem('peekTableData' + peekId, JSON.stringify([]));
+
+    if (pipeline) await updatePeek(pipeline);
+    else peekIsLoading = false;
+}
+
+export async function updatePeek(pipeline) {
+
+    if (peekIsLoading || peekIsExhausted || pipeline === undefined)
+        return;
+
+    peekIsLoading = true;
+    let variables = [];
+
+    if (is_model_mode && selectedProblem) {
+        let problem = disco.find(entry => entry.problem_id === selectedProblem);
+        variables = [...problem.predictors, problem.target];
+    }
+
+    let previewMenu = {
+        type: 'menu',
+        metadata: {
+            type: 'data',
+            skip: peekSkip,
+            limit: peekLimit,
+            variables
+        }
+    };
+
+    let data = await loadMenu(
+        constraintMenu
+            ? pipeline.slice(0, pipeline.indexOf(stage => stage === constraintMenu.step))
+            : pipeline,
+        previewMenu
+    );
+
+    peekSkip += data.length;
+
+    if (data.length + (peekData || []).length === 0)
+        alert('The pipeline at this stage matches no records. Delete constraints to match more records.');
+
+    data = data.map(record => Object.keys(record).reduce((out, entry) => {
+        out[entry] = typeof record[entry] === 'number' ? formatPrecision(record[entry]) : record[entry];
+        return out;
+    }, {}));
+
+    peekData = (peekData || []).concat(data);
+
+    localStorage.setItem('peekTableHeaders' + peekId, JSON.stringify(Object.keys(data[0])));
+    localStorage.setItem('peekTableData' + peekId, JSON.stringify(peekData));
+
+    // stop blocking new requests
+    peekIsLoading = false;
+    m.redraw();
+};
 
 let solver_res = []
 let solver_res_user = []
@@ -35,52 +137,6 @@ let problem_sent = []
 let problem_sent_user = []
 let problems_in_preprocess = []
 
-function onStorageEvent(e) {
-    if (e.key !== 'peekMore' || peekIsGetting) return;
-
-    if (localStorage.getItem('peekMore') === 'true' && !peekAllDataReceived) {
-        localStorage.setItem('peekMore', 'false');
-        peekIsGetting = true;
-        updatePeek();
-    }
-}
-
-window.addEventListener('storage', onStorageEvent);
-
-function updatePeek() {
-    m.request(`rook-custom/rook-files/${configurations.name}/data/trainData.tsv`, {
-        deserialize: x => x.split('\n').map(y => y.split('\t'))
-    }).then(data => {
-        // simulate only loading some of the data... by just deleting all the other data
-        let headers = data[0].map(x => x.replace(/"/g, ''));
-        let newData = data.slice(peekSkip + 1, peekSkip + 1 + peekBatchSize);
-
-        // stop blocking new requests
-        peekIsGetting = false;
-
-        // start blocking new requests until peekReset() is called
-        if (newData.length === 0) peekAllDataReceived = true;
-
-        peekData = peekData.concat(newData);
-        peekSkip += newData.length;
-
-        localStorage.setItem('peekTableHeaders', JSON.stringify(headers));
-        localStorage.setItem('peekTableData', JSON.stringify(peekData));
-    });
-}
-
-function resetPeek() {
-    peekData = [];
-    peekSkip = 0;
-
-    peekAllDataReceived = false;
-    peekIsGetting = false;
-
-    // provoke a redraw from the peek menu
-    localStorage.removeItem('peekTableData');
-}
-
-resetPeek();
 
 export let exploreVariate = 'Univariate';
 export function setVariate(variate) {
@@ -132,15 +188,8 @@ export function set_mode(mode) {
         updateLeftPanelWidth();
     }
 
-    if (currentMode === 'manipulate' && !(domainIdentifier.name in manipulations)) {
-        manipulations[domainIdentifier.name] = [];
-
-        // save the variables from initial page load
-        manipulate.setVariablesInitial(preprocess);
-    }
-
     // cause the peek table to redraw
-    manipulate.updatePreviewTable('clear');
+    resetPeek();
 
     let ws = elem('#whitespace0');
     if (ws) {
@@ -763,7 +812,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
     d3.select("#dataName").html(dataname);
     // put dataset name, from meta-data, into page title
     d3.select("title").html("TwoRavens " + dataname);
-    localStorage.setItem('peekHeader', "TwoRavens " + dataname);
+    localStorage.setItem('peekHeader' + peekId, "TwoRavens " + dataname);
 
     // if swandive, we have to set valueKey here so that left panel can populate.
     if (swandive) {
@@ -933,11 +982,8 @@ for(let i=0; i<disco.length; i++){
 
 export function loadResult(my_disco){
   if(my_disco == undefined){
-    console.log("my_disco is not defined")
     my_disco = disco
   }
-console.log("my_disco is ", my_disco)
-console.log(my_disco.length);
   for(let j=0; j<my_disco.length; j++){
 
 
@@ -2115,7 +2161,6 @@ function updateNode(id, nodes) {
  every time a variable in leftpanel is clicked, nodes updates and background color changes
  */
 export function clickVar(elem, $nodes) {
-    console.log(" selected element and type ", elem, "\n", nodes )
     if (is_explore_mode && $nodes && !$nodes.map(x => x.name).includes(elem)) {
         let max = exploreVariate === 'Univariate' ? 1
             : exploreVariate === 'Bivariate' ? 2
@@ -4568,7 +4613,6 @@ export function discovery(preprocess_file) {
         //jQuery.extend(true, current_disco, names);
         disco[i] = current_disco;
     };
-    console.log("This is the treasure disco ", disco)
     /* Problem Array of the Form:
         [1: {problem_id: "problem 1",
             system: "auto",
@@ -4611,7 +4655,8 @@ export let discoveryClick = problemId => {
 
 export let selectedProblem;
 export function setSelectedProblem(problemId) {
-    if (selectedProblem === problemId) return;
+    if (selectedProblem === problemId) return; // ignore if already set
+
     selectedProblem = problemId;
 
     if (selectedProblem === undefined) return;
@@ -4653,16 +4698,14 @@ export function setSelectedProblem(problemId) {
 
         problem.pipelineId = pipelineId;
         manipulations[pipelineId] = pipeline;
-
-        // cause the peek table to redraw
-        manipulate.updatePreviewTable('clear');
     }
+
+    resetPeek();
     modelSelectionResults(problem)
 }
 
 export let stargazer = ""
 export function modelSelectionResults(problem){
-    console.log("we have problem data", problem)
     solver_res = []
     callSolver(problem);
 // setTimeout(console.log("we have results data", my_results),10000)
@@ -4998,7 +5041,6 @@ function primitiveStepRemoveColumns (aux) {
     return {primitive:step};
 }
 
-
 export function addProblem(preprocess_id, version, problem_sent){
     let api_response = ""
     m.request({
@@ -5028,12 +5070,23 @@ export async function callSolver (prob) {
     let json = await makeRequest(ROOK_SVC_URL + 'solverapp', jsonout);
     var promise1 = Promise.resolve(json);
 
-        promise1.then(function(value) {
+    promise1.then(function (value) {
         // console.log(" THis is the solver app response",value);
         solver_res.push(value)
         return value;
-          // expected output: Array [1, 2, 3]
-        });
+        // expected output: Array [1, 2, 3]
+    });
+}
 
+// pretty precision formatting- null and undefined are NaN, attempt to parse strings to float
+// if valid number, returns a Number at less than or equal to precision (trailing decimal zeros are ignored)
+export function formatPrecision(value, precision=4) {
+    if (value === null) return NaN;
+    let numeric = value * 1;
+    if (isNaN(numeric)) return value;
 
+    // determine number of digits in value
+    let digits = Math.max(Math.floor(Math.log10(Math.abs(Number(String(numeric).replace(/[^0-9]/g, ''))))), 0) + 1;
+
+    return (digits <= precision || precision === 0) ? numeric : numeric.toPrecision(precision) * 1
 }

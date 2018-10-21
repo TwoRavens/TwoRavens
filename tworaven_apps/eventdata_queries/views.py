@@ -377,8 +377,8 @@ def api_get_files_list(request, version_id):
 
 
 @csrf_exempt
-def api_get_data(request):
-    """ get data from query"""
+def api_get_eventdata(request):
+    """ general api to get event data"""
 
     success, json_req_obj = get_request_body_as_json(request)
 
@@ -420,8 +420,8 @@ def api_get_metadata(request):
 
 
 @csrf_exempt
-def api_get_manipulations(request):
-    """ apply manipulations to a dataset"""
+def api_get_data(request):
+    """ general api to access TwoRavens data"""
 
     success, json_req_obj = get_request_body_as_json(request)
 

@@ -367,7 +367,7 @@ export let getSubsetMetadata = (dataset, subset) => {
 };
 
 export let getData = async body => m.request({
-    url: eventdataURL + 'get-data',
+    url: eventdataURL + 'get-eventdata',
     method: 'POST',
     data: body
 }).then(response => {
