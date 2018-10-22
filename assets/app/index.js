@@ -414,7 +414,7 @@ function rightpanel(mode) {
          display: !app.swandive || IS_D3M_DOMAIN ? 'block' : 'none',
          idSuffix: 'Setx',
          contents: [
-             m('#setxRight[style=float: right; width: 30%; height: 100%; overflow:auto]',
+             m('#setxRight[style=float: right; width: 28%; height: 100%; overflow:auto; margin-right: 1em]',
                  app.selectedPipeline && [
                      bold('Score Metric: '), app.d3mProblemDescription.performanceMetrics[0].metric, m('br'),
                      app.resultsMetricDescription
@@ -442,7 +442,9 @@ function rightpanel(mode) {
                  sections: [
                      {value: 'Prediction Summary', id: 'btnPredPlot'},
                      {value: 'Generate New Predictions', id: 'btnGenPreds'},
-                     {value: 'Visualize Pipeline', id: 'btnVisPipe'}
+                     {value: 'Visualize Pipeline', id: 'btnVisPipe'},
+                     {value: 'Prediction Data', id: 'btnPredData'},
+                     {value: 'Solution Table', id: 'btnSolTable'}
                  ]
              }),
              m(`div#predictionSummary[style=display:${app.selectedResultsMenu === 'Prediction Summary' ? 'block' : 'none'};height:calc(100% - 30px); overflow: auto; width: 70%]`,
@@ -497,33 +499,38 @@ function rightpanel(mode) {
                      labelWidth: '5em',
                      steps: pipelineFlowchartPrep(app.allPipelineInfo[app.selectedPipeline].pipeline)
                  })
+             ),
+             m(`div#predictionData[style=display:${app.selectedResultsMenu === 'Prediction Data' ? 'block' : 'none'};height:calc(100% - 30px); overflow: auto; width: 70%]`,
+               m('#setPredictionDataLeft[style=display:block; width: 100%; height:100%; margin-top:1em; overflow: auto; background-color: white; padding : 1em; margin-top: 1em]')
+             ),
+             m(`div#solutionTable[style=display:${app.selectedResultsMenu === 'Solution Table' ? 'block' : 'none'};height:calc(100% - 30px); overflow: auto; width: 70%, padding : 1em]`,
+                   m(DataTable, {data: app.stargazer})
              )
-         ]
-       },{
-       value: 'Discovery',
-        idSuffix: 'disc',
-        contents: [
-          m(ButtonRadio, {
-              id: 'discoveryButtonBar',
-              attrsAll: {style: {'margin-left':'5%',width: 'auto'}},
-              attrsButtons: {class: ['btn-sm'], style: { padding:'0.5em',width:'auto'}},
-              onclick: app.setSelectedDiscoverySolutionMenu,
-              activeSection: app.selectedDiscoverySolutionMenu,
-              sections: [
-                  {value: 'Prediction Data', id: 'btnPredData'},
-                  {value: 'Solution Plot', id: 'btnSolPlot'}
-              ]
-          }),
-           m('div', {style: {'font-weight': 'bold', 'margin': '1em', 'height': '100%', 'float':'right', 'width': '50%' }},
-          m(DataTable, {data: app.stargazer})),
-          m(`div#predictionData[style=display:${app.selectedDiscoverySolutionMenu === 'Prediction Data' ? 'block' : 'none'};height:"90%"; overflow: auto; width: 50%, 'float':'left']`,
-            m('#setPredictionDataLeft[style=display:block; float: left; width: 100%; height:100%; margin-top:1em; overflow: auto; background-color: white]')
-          ),
-          m(`div#solutionPlot[style=display:${app.selectedDiscoverySolutionMenu === 'Solution Plot' ? 'block' : 'none'};height:"90%"; overflow: auto; width: 50%, 'float':'left']`,
-                m('#setPredictionSolutionPlot[style=display:block; float: left; width: 100%; height:100%; overflow: auto; background-color: black]')
-          )
-        ]}
-
+         ]}
+       // },{
+       // value: 'Discovery',
+       //  idSuffix: 'disc',
+       //  contents: [
+       //    m(ButtonRadio, {
+       //        id: 'discoveryButtonBar',
+       //        attrsAll: {style: {'margin-left':'5%',width: 'auto'}},
+       //        attrsButtons: {class: ['btn-sm'], style: { padding:'0.5em',width:'auto'}},
+       //        onclick: app.setSelectedDiscoverySolutionMenu,
+       //        activeSection: app.selectedDiscoverySolutionMenu,
+       //        sections: [
+       //            {value: 'Prediction Data', id: 'btnPredData'},
+       //            {value: 'Solution Plot', id: 'btnSolPlot'}
+       //        ]
+       //    }),
+       //     m('div', {style: {'font-weight': 'bold', 'margin': '1em', 'height': '100%', 'float':'right', 'width': '50%' }},
+       //    m(DataTable, {data: app.stargazer})),
+       //    m(`div#predictionData[style=display:${app.selectedDiscoverySolutionMenu === 'Prediction Data' ? 'block' : 'none'};height:"90%"; overflow: auto; width: 50%, 'float':'left']`,
+       //      m('#setPredictionDataLeft[style=display:block; float: left; width: 100%; height:100%; margin-top:1em; overflow: auto; background-color: white]')
+       //    ),
+       //    m(`div#solutionPlot[style=display:${app.selectedDiscoverySolutionMenu === 'Solution Plot' ? 'block' : 'none'};height:"90%"; overflow: auto; width: 50%, 'float':'left']`,
+       //          m('#setPredictionSolutionPlot[style=display:block; float: left; width: 100%; height:100%; overflow: auto; background-color: black]')
+       //    )
+       //  ]}
     ];
 
     return m(Panel, {

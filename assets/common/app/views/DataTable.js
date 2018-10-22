@@ -1,6 +1,7 @@
 import m from 'mithril';
 import Table from './Table';
 
+import {selVarColor, mergeAttributes} from "../common";
 /*
 library(stargazer)
 data(cars)
@@ -95,8 +96,10 @@ export default {
                 push(row, td);
             if (row.join('') !== '') data.push(row);
         }
-        return m(Table, {id: 'datatable', headers, data, attrsAll: {
-            style: {height: '100%', overflow: 'auto', display: 'block', border: '1px solid #ddd', margin:'1em', padding: '1em',
-            'text-align': 'left', 'box-shadow': '0px 5px 5px rgba(0, 0, 0, .2)'}}});
+        return m(Table, {id: 'datatable',attrsAll: {data: headers, style:{border: '1px solid #FF5733', background: selVarColor}}, data,
+         attrsAll: {
+            style: {width: '90%', height: '100%', overflow: 'auto', display: 'block', border: '1px solid #ddd', margin:'1em', padding: '1em',
+            'text-align': 'left', 'box-shadow': '0px 5px 10px rgba(0, 0, 0, .2)', background: 'rgba(0,0,0,.1)'}}
+          });
     }
 };
