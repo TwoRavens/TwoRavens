@@ -476,7 +476,7 @@ function rightpanel(mode) {
               ]
           }),
            m('div', {style: {'font-weight': 'bold', 'margin': '1em', 'height': '100%', 'float':'right', 'width': '50%' }},
-          m(DataTable, {data: ''})),
+          m(DataTable, {data: app.stargazer})),
           m(`div#predictionData[style=display:${app.selectedDiscoverySolutionMenu === 'Prediction Data' ? 'block' : 'none'};height:"90%"; overflow: auto; width: 50%, 'float':'left']`,
             m('#setPredictionDataLeft[style=display:block; float: left; width: 100%; height:100%; margin-top:1em; overflow: auto; background-color: white]')
           ),
@@ -1039,4 +1039,3 @@ else {
         },*/
     });
 }
-
