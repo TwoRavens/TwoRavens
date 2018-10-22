@@ -119,8 +119,9 @@ export function leftpanel() {
             hover: false,
             width: '300px',
             attrsAll: {
+                onclick: () => app.setFocusedPanel('left'),
                 style: {
-                    'z-index': 101,
+                    'z-index': 100 + (app.focusedPanel === 'left'),
                     // subtract header, spacer, spacer, scrollbar, table, and footer
                     height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${app.peekInlineShown && app.peekData ? app.peekInlineHeight : '0px'} - ${common.heightFooter})`
                 }
@@ -191,8 +192,9 @@ export function rightpanel() {
         hover: true,
         width: app.modelRightPanelWidths['Manipulate'],
         attrsAll: {
+            onclick: () => app.setFocusedPanel('right'),
             style: {
-                'z-index': 101,
+                'z-index': 100 + (app.focusedPanel === 'right'),
                 // subtract header, spacer, spacer, scrollbar, table, and footer
                 height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${app.peekInlineShown && app.peekData ? app.peekInlineHeight : '0px'} - ${common.heightFooter})`
             }

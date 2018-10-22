@@ -278,6 +278,10 @@ let updateLeftPanelWidth = () => {
     else panelWidth['left'] = `calc(${common.panelMargin}*2 + 16px)`;
 };
 
+// minor quality of life, the focused panel gets +1 to the z-index. Set whenever a panel is clicked
+export let focusedPanel = 'left';
+export let setFocusedPanel = side => focusedPanel = side;
+
 updateRightPanelWidth();
 updateLeftPanelWidth();
 
@@ -288,10 +292,6 @@ export let preprocess = {}; // hold pre-processed data
 export let setPreprocess = data => preprocess = data;
 
 let spaces = [];
-
-// layout function constants
-const layoutAdd = "add";
-const layoutMove = "move";
 
 // radius of circle
 export const RADIUS = 40;
@@ -370,6 +370,9 @@ let estimated = false;
 let rightClickLast = false;
 let selInteract = false;
 export let callHistory = []; // transform and subset calls
+
+// stores the target on page load
+export let mytargetdefault = '';
 
 // targeted variable name
 export let mytarget = '';
@@ -718,7 +721,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         //   return
         // }
 
-        mytarget = res.inputs.data[0].targets[0].colName; // easier way to access target name?
+        mytargetdefault = res.inputs.data[0].targets[0].colName; // easier way to access target name?
         if (typeof res.about.problemID !== 'undefined') {
             d3mProblemDescription.id=res.about.problemID;
         }
@@ -937,11 +940,8 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
 
     // 10. Add datadocument information to allNodes (when in IS_D3M_DOMAIN)
     if(!swandive) {
-        let datavars = datadocument_columns;
-        datavars.forEach((v, i) => {
-            let myi = findNodeIndex(v.colName);
-            allNodes[myi] = Object.assign(allNodes[myi], {d3mDescription: v});
-        });
+        console.log(datadocument_columns);
+        datadocument_columns.forEach(v => findNode(v.colName).d3mDescription = v);
         console.log("all nodes:");
         console.log(allNodes);
     }
@@ -1101,6 +1101,9 @@ function zparamsReset(text) {
 }
 
 export function setup_svg(svg) {
+    // clear old elements before setting up the force diagram
+    svg.html('');
+
     svg.append("svg:defs").append("svg:marker")
         .attr("id", "group1-arrow")
         .attr('viewBox', '0 -5 15 15')
@@ -1202,45 +1205,41 @@ export function setup_svg(svg) {
     return [line, line2, visbackground, vis2background, vis, vis2, drag_line, path, circle];
 }
 
-/** needs doc */
-export function layout(v, v2) {
+
+// layout function constants
+const layoutAdd = "add";
+const layoutMove = "move";
+
+export function layout(layoutConstant, v2) {
     var myValues = [];
     nodes = [];
     links = [];
 
     var [line, line2, visbackground, vis2background, vis, vis2, drag_line, path, circle] = setup_svg(svg);
 
-    if (v == layoutAdd || v == layoutMove) {
-        for (var j = 0; j < zparams.zvars.length; j++) {
-            var ii = findNodeIndex(zparams.zvars[j]);
-            if (allNodes[ii].grayout)
-                continue;
-            nodes.push(allNodes[ii]);
-            var selectMe = zparams.zvars[j].replace(/\W/g, "_");
-            selectMe = "#".concat(selectMe);
-            d3.select(selectMe).style('background-color', () => hexToRgba(nodes[j].strokeColor));
-        }
+    if (layoutConstant == layoutAdd || layoutConstant == layoutMove) {
+        zparams.zvars.forEach(variable => {
+            let foundNode = findNode(variable);
+            if (!foundNode.grayout) nodes.push(foundNode);
+        })
 
-        for (var j = 0; j < zparams.zedges.length; j++) {
-            var mysrc = nodeIndex(zparams.zedges[j][0]);
-            var mytgt = nodeIndex(zparams.zedges[j][1]);
+        zparams.zedges.forEach(edge => {
             links.push({
-                source: nodes[mysrc],
-                target: nodes[mytgt],
+                source: findNodeIndex(edge[0]),
+                target: findNodeIndex(edge[1]),
                 left: false,
                 right: true
-            });
-        }
+            })
+        })
     } else {
         if(IS_D3M_DOMAIN) {
-            //nodes = [findNode(mytarget)];               // Only add dependent variable on startup
-            nodes = allNodes.slice(1,allNodes.length);    // Add all but first variable on startup (assumes 0 position is d3m index variable)
-            for (let j = 0; j < nodes.length; j++) { //populate zvars array
-                if (nodes[j].name != mytarget) {
-                    nodes[j].group1 = true;
-                    zparams.zgroup1.push(nodes[j].name);  // write all names (except d3m index and the dependent variable) to zgroup1 array
-                };
-            };
+            mytarget = mytargetdefault;
+            nodes = allNodes.slice(1,allNodes.length);  // Add all but first variable on startup (assumes 0 position is d3m index variable)
+            nodes.forEach(node => node.group1 = node.name !== mytarget)
+            // update zparams
+            zparams.zvars = nodes.map(node => node.name);
+            zparams.zgroup1 = nodes.filter(node => node.name !== mytarget).map(node => node.name);
+
         } else if (allNodes.length > 2) {
             nodes = [allNodes[0], allNodes[1], allNodes[2]];
             links = [{
@@ -1272,7 +1271,7 @@ export function layout(v, v2) {
 
     panelPlots(); // after nodes is populated, add subset and (if !IS_D3M_DOMAIN) setx panels
 
-    var force = d3.layout.force()
+    let force = d3.layout.force()
         .nodes(nodes)
         .links(links)
         .size([width, height])
@@ -1302,11 +1301,9 @@ export function layout(v, v2) {
         function findcoords(findnames,allnames,coords,lengthen){
             var fcoords = new Array(findnames.length);   // found coordinates
             var addlocation = 0;
-            if(findnames.length>0){
-                for (var j = 0; j < findnames.length; j++) {
-                    addlocation = allnames.indexOf(findnames[j]);
-                    fcoords[j] = coords[addlocation];
-                };
+            for (var j = 0; j < findnames.length; j++) {
+                addlocation = allnames.indexOf(findnames[j]);
+                fcoords[j] = coords[addlocation];
             };
 
             if(lengthen){
@@ -1349,6 +1346,7 @@ export function layout(v, v2) {
         };
 
         var coords = nodes.map(function(d) {  return [ d.x, d.y]; });
+
         var gr1coords = findcoords(zparams.zgroup1, zparams.zvars, coords, true);
         var gr2coords = findcoords(zparams.zgroup2, zparams.zvars, coords, true);
         var depcoords = findcoords(zparams.zdv, zparams.zvars, coords, false);
@@ -2042,13 +2040,12 @@ export function layout(v, v2) {
     restart(); // initializes force.layout()
     fakeClick();
 
-    if(v2 & IS_D3M_DOMAIN) {
+    if(v2 && IS_D3M_DOMAIN) {
         var click_ev = document.createEvent("MouseEvents");
         // initialize the event
         click_ev.initEvent("click", true /* bubble */, true /* cancelable */);
         // trigger the event
-        let clickID = "dvArc"+findNodeIndex(mytarget);
-        byId(clickID).dispatchEvent(click_ev);
+        byId("dvArc" + findNodeIndex(mytarget)).dispatchEvent(click_ev);
 
         // The dispatched click sets the leftpanel. This switches the panel back on page load
         selectedPebble = undefined;
@@ -2062,25 +2059,14 @@ function find($nodes, name) {
         if ($nodes[i].name == name) return $nodes[i].id;
 }
 
-/**
- returns id
- */
-export function findNodeIndex(name, whole) {
-    for (let node of allNodes)
-        if (node.name === name) return whole ? node : node.id;
+// returns index of node in allNodes by node name
+export function findNodeIndex(name) {
+    return allNodes.findIndex(node => node.name === name)
 }
 
-/** needs doc */
-function nodeIndex(nodeName) {
-    for (let i in nodes)
-        if (nodes[i].name === nodeName) return i;
-}
-
-/** needs doc */
+// return node in allNodes by node name
 export function findNode(name) {
-    for (let n of allNodes)
-        if (n.name === name)
-            return n;
+    return allNodes.find(node => node.name === name);
 }
 
 /** needs doc */
@@ -3073,7 +3059,7 @@ export function erase(disc) {
     nodes.map(node => node.name).forEach(name => clickVar(name, nodes));
 }
 
-/** needs doc */
+// call with a tab name to change the left tab in model mode
 export let setLeftTab = (tab) => {
     leftTab = tab;
     updateLeftPanelWidth();
@@ -3084,9 +3070,13 @@ export let setLeftTab = (tab) => {
 export let summary = {data: []};
 
 // d is a node from allNodes or nodes
-// updated the summary variable
+// updates the summary variable, which is rendered in the hidden summary tab in the leftpanel;
 function varSummary(d) {
-    if (!d) return;
+    if (!d) {
+        summary = {data: []};
+        return;
+    }
+
     let t1 = 'Mean:, Median:, Most Freq:, Occurrences:, Median Freq:, Occurrences:, Least Freq:, Occurrences:, Std Dev:, Minimum:, Maximum:, Invalid:, Valid:, Uniques:, Herfindahl'.split(', ');
 
     d3.select('#tabSummary')
@@ -3248,7 +3238,7 @@ export function setColors(n, c) {
             zparams[key] = Array.isArray(zparams[key]) ? zparams[key] : [];
             zparams[key].push(n.name);
             if (key == 'znom') {
-                findNodeIndex(n.name, true).nature = "nominal";
+                findNode(n.name).nature = "nominal";
             }
             if (key == 'zdv'){                                              // remove group memberships from dv's
                 if(n.group1){
@@ -3270,23 +3260,23 @@ export function setColors(n, c) {
             n.nodeCol = colors(n.id);
             zparamsReset(n.name);
             if (nomColor == c && zparams.znom.includes(n.name)) {
-                findNodeIndex(n.name, true).nature = findNodeIndex(n.name, true).defaultNature;
+                findNode(n.name).nature = findNode(n.name).defaultNature;
             }
         } else { // deselecting time, cs, dv, nom AND changing it to time, cs, dv, nom
             zparamsReset(n.name);
             if (nomColor == n.strokeColor && zparams.znom.includes(n.name)) {
-                findNodeIndex(n.name, true).nature = findNodeIndex(n.name, true).defaultNature;
+                findNode(n.name).nature = findNode(n.name).defaultNature;
             }
             n.strokeColor = c;
             if (dvColor == c){
                 var dvname = n.name;
                 zparams.zdv.push(dvname);
                 if(n.group1){ // remove group memberships from dv's
-                    ngroup1 = false;
+                    n.group1 = false;
                     del(zparams.zgroup1, -1, dvname);
                 };
                 if(n.group2){
-                    ngroup2 = false;
+                    n.group2 = false;
                     del(zparams.zgroup2, -1, dvname);
                 };
             }
@@ -3294,7 +3284,7 @@ export function setColors(n, c) {
             else if (timeColor == c) zparams.ztime.push(n.name);
             else if (nomColor == c) {
                 zparams.znom.push(n.name);
-                findNodeIndex(n.name, true).nature = "nominal";
+                findNode(n.name).nature = "nominal";
             }
         }
     }
@@ -3583,14 +3573,14 @@ export async function executepipeline() {
     for(let i =0; i<zparams.zvars.length; i++) {
         let mydata = [];
         mydata[0] = zparams.zvars[i];
-        let mymean = allNodes[findNodeIndex(zparams.zvars[i])].mean;
+        let mymean = findNode(zparams.zvars[i]).mean;
         if(zparams.zsetx[i][0]=="") {
             mydata[1]=mymean;
         } else if(zparams.zsetx[i][0]!=mymean){
             mydata[1]=zparams.zsetx[i][0];
         }
         if(zparams.zsetx[i][1]=="") {
-            mydata[2]=allNodes[findNodeIndex(zparams.zvars[i])].mean;
+            mydata[2]= findNode(zparams.zvars[i]).mean;
         } else if(zparams.zsetx[i][1]!=mymean){
             mydata[2]=zparams.zsetx[i][1];
         }
@@ -4580,7 +4570,7 @@ export function discovery(preprocess_file) {
             return `The combination of ${prob.transform.split('=')[1]} is predicted by ${prob.predictors.join(" and ")}`;
         if (prob.subset && prob.subsetObs != 0)
             return `${prob.predictors} is predicted by ${prob.predictors.join(" and ")} whenever ${prob.subsetObs}`;
-        return `${prob.target} is predicted by ${prob.predictors.slice(0, -1).join(", ")}, and ${prob.predictors[prob.predictors.length - 1]}`;
+        return `${prob.target} is predicted by ${prob.predictors.slice(0, -1).join(", ")} ${prob.predictors.length > 1 ? 'and ' : ''}${prob.predictors[prob.predictors.length - 1]}`;
     }
 
     return preprocess_file.dataset.discovery.map((prob, i) => ({
@@ -4592,8 +4582,8 @@ export function discovery(preprocess_file) {
         transform: prob.transform,
         subsetObs: prob.subsetObs,
         subsetFeats: prob.subsetFeats,
-        metric: allNodes[findNodeIndex(prob.target)].plottype === "bar" ? 'f1Macro' : 'meanSquaredError',
-        task: allNodes[findNodeIndex(prob.target)].plottype === "bar" ? 'classification' : 'regression',
+        metric: findNode(prob.target).plottype === "bar" ? 'f1Macro' : 'meanSquaredError',
+        task: findNode(prob.target).plottype === "bar" ? 'classification' : 'regression',
         subTask: Object.keys(d3mTaskSubtype)[0],
         rating: 3,
         meaningful: "no"

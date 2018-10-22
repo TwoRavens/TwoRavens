@@ -39,7 +39,7 @@ import MenuHeaders from "../common/app/views/MenuHeaders";
 import Body_EventData from '../EventData/app/Body_EventData';
 import Peek_EventData from '../common-eventdata/views/Peek';
 import '../EventData/css/app.css'
-import '../EventData/app/app'
+import '../EventData/app/app';
 
 export let bold = (value) => m('div', {style: {'font-weight': 'bold', display: 'inline'}}, value);
 export let italicize = (value) => m('div', {style: {'font-style': 'italic', display: 'inline'}}, value);
@@ -91,31 +91,28 @@ function leftpanel(mode) {
     ];
 
 
-
-    let formatProblem = problem => {
-        let hasPipeline = !!problem.subsetObs || !!problem.transform || (!!problem.pipelineId && manipulate.getPipeline(problem.problem_id).length !== 0);
-
-        return [
-            problem.problem_id, // this is masked as the UID
-            m('input[type=checkbox][style=width:100%]', {
-                onclick: m.withAttr("checked", (checked) => app.setCheckedDiscoveryProblem(checked, problem.problem_id)),
-                checked: app.checkedDiscoveryProblems.has(problem.problem_id),
-                title: 'mark this problem as meaningful'
-            }),
-            problem.system === 'user' && m('div[title="User created problem"]', glyph('user')),
-            problem.target,
-            problem.predictors.join(', '),
-            problem.task,
-            problem.subTask === 'taskSubtypeUndefined' ? '' : problem.subTask, // ignore taskSubtypeUndefined
-            problem.metric,
-            hasPipeline && m('div[style=width:100%;text-align:center]', m(Button, {
+    let formatProblem = problem => [
+        problem.problem_id, // this is masked as the UID
+        m('input[type=checkbox][style=width:100%]', {
+            onclick: m.withAttr("checked", (checked) => app.setCheckedDiscoveryProblem(checked, problem.problem_id)),
+            checked: app.checkedDiscoveryProblems.has(problem.problem_id),
+            title: `mark ${problem.problem_id} as meaningful`
+        }),
+        problem.system === 'user' && m('div[title="user created problem"]', glyph('user')),
+        problem.target,
+        problem.predictors.join(', '),
+        problem.task,
+        problem.subTask === 'taskSubtypeUndefined' ? '' : problem.subTask, // ignore taskSubtypeUndefined
+        problem.metric,
+        (!!problem.subsetObs || !!problem.transform || (!!problem.pipelineId && manipulate.getPipeline(problem.problem_id).length !== 0)) && m(
+            'div[style=width:100%;text-align:center]', m(Button, {
+                title: `view manipulations for ${problem.problem_id}`,
                 onclick: () => {
                     app.setRightTab('Manipulate');
                     common.setPanelOpen('right');
                 }
-            }, 'view'))
-        ];
-    };
+            }, 'View'))
+    ];
 
     let nodes = app.is_explore_mode ? nodesExplore : app.nodes;
 
@@ -125,8 +122,9 @@ function leftpanel(mode) {
         hover: !(app.is_manipulate_mode || app.rightTab === 'Manipulate'),
         width: app.modelLeftPanelWidths[app.leftTab],
         attrsAll: {
+            onclick: () => app.setFocusedPanel('left'),
             style: {
-                'z-index': 101,
+                'z-index': 100 + (app.focusedPanel === 'left'),
                 background: 'rgb(249, 249, 249, .8)',
                 height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${app.peekInlineShown ? app.peekInlineHeight: '0px'} - ${common.heightFooter})`
             }
@@ -159,7 +157,7 @@ function leftpanel(mode) {
                         },
                         classes: {'item-bordered': app.matchedVariables},
                         callback: x => app.clickVar(x, nodes),
-                        popup: variable => app.popoverContent(app.findNodeIndex(variable, true)),
+                        popup: variable => app.popoverContent(app.findNode(variable)),
                         attrsItems: {'data-placement': 'right', 'data-original-title': 'Summary Statistics'}
                     })
                 ]
@@ -177,7 +175,26 @@ function leftpanel(mode) {
                             }
                         },
                         app.selectedProblem !== undefined && [
-                            m('h4', 'Current Problem'),
+                            m('h4', ['Current Problem', m(`div#deselectProblem`, {
+                                onclick: () => {
+                                    app.erase('Discovery');
+                                    app.setSelectedProblem(undefined);
+                                    app.layout();
+                                    let targetNode = app.findNode(app.mytarget);
+                                    if (targetNode.strokeColor !== app.dvColor)
+                                        app.setColors(targetNode, app.dvColor);
+                                    app.restart();
+                                },
+                                title: 'deselect problem',
+                                style: {
+                                    display: 'inline-block',
+                                    'margin-right': '1em',
+                                    transform: 'scale(1.5, 1.5)',
+                                    float: 'right',
+                                    'font-weight': 'bold',
+                                    'line-height': '14px'
+                                }
+                            }, '×')]),
                             m(Table, {
                                 id: 'discoveryTableManipulations',
                                 headers: discoveryHeaders,
@@ -364,9 +381,6 @@ function rightpanel(mode) {
                         disabled: app.locktoggle
                     })
                 )
-                    // dropdown('Task', 'taskType', app.d3mTaskType),
-                    // dropdown('Task Subtype', 'taskSubtype', app.d3mTaskSubtype),
-                    // dropdown('Metric', 'performanceMetrics', app.d3mMetrics))
             ]
         },
         app.selectedProblem && {
@@ -376,7 +390,7 @@ function rightpanel(mode) {
                 id: 'aggregateMenu',
                 attrsAll: {style: {height: '100%', overflow: 'auto'}},
                 sections: [
-                    (subset.manipulations[app.configurations.name] || []).length !== 0 && {
+                    manipulate.getPipeline().length !== 0 && {
                         value: 'Dataset Pipeline',
                         contents: m(manipulate.PipelineFlowchart, {
                             compoundPipeline: manipulate.getPipeline(),
@@ -518,8 +532,9 @@ function rightpanel(mode) {
         hover: true,
         width: app.modelRightPanelWidths[app.rightTab],
         attrsAll: {
+            onclick: () => app.setFocusedPanel('right'),
             style: {
-                'z-index': 101,
+                'z-index': 100 + (app.focusedPanel === 'right'),
                 height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${app.peekInlineShown ? app.peekInlineHeight: '0px'} - ${common.heightFooter})`
             }
         }
@@ -538,7 +553,7 @@ export let glyph = (icon, unstyled) =>
 class Body {
     oninit() {
         app.setRightTab(IS_D3M_DOMAIN ? 'Problem' : 'Models');
-        if (m.route.get() !== '/data') app.set_mode('model');
+        app.set_mode('model');
 
         this.cite = false;
         this.citeHidden = false;
@@ -729,7 +744,7 @@ class Body {
                               if (x.predictors) {
                                   x = x.target;
                               }
-                              let node = app.findNodeIndex(x, true);
+                              let node = app.findNode(x);
                               let show = app.exploreVariate === 'Bivariate' || app.exploreVariate === 'Trivariate';
                               let [n0, n1, n2] = nodesExplore;
                               return m('span', {
@@ -763,14 +778,14 @@ class Body {
                                   }
                               }, [m('', {
                                   oninit() {
-                                      this.node = app.findNodeIndex(x, true);
+                                      this.node = app.findNode(x);
                                   },
                                   oncreate(vnode) {
                                       let plot = this.node.plottype === 'continuous' ? plots.densityNode : plots.barsNode;
                                       plot(this.node, vnode.dom, 110, true);
                                   },
                                   onupdate(vnode) {
-                                      let node = app.findNodeIndex(x, true);
+                                      let node = app.findNode(x);
                                       if (node != this.node) {
                                           let plot = node.plottype === 'continuous' ? plots.densityNode : plots.barsNode;
                                           plot(node, vnode.dom, 110, true);
@@ -795,7 +810,7 @@ class Body {
                                 app.zPop();
                                   let rookpipe = await app.makeRequest(ROOK_SVC_URL + 'pipelineapp', app.zparams);
                                   rookpipe.target = rookpipe.depvar[0];
-                                  let myn = app.findNodeIndex(rookpipe.target, true);
+                                  let myn = app.findNode(rookpipe.target);
                                   let currentTaskType = app.d3mProblemDescription.taskType;
                                   let currentMetric = app.d3mProblemDescription.performanceMetrics[0].metric;
                                   if (myn.nature == "nominal"){
@@ -985,13 +1000,6 @@ class Body {
 
     footer(mode) {
 
-        let manipulateRecordCount;
-        let pipeline = subset.manipulations[(app.domainIdentifier || {}).name];
-        if (pipeline) manipulateRecordCount = {
-            'subset': subset.totalSubsetRecords,
-            'aggregate': subset.tableData && subset.tableData.length
-        }[(pipeline[pipeline.length - 1] || {}).type];
-
         return m(Footer, [
             m(ButtonRadio, {
                 id: 'modeButtonBar',
@@ -1021,16 +1029,15 @@ class Body {
                     class: app.peekInlineShown && ['active'],
                     onclick: () => app.setPeekInlineShown(!app.peekInlineShown)
                 }, 'Peek'),
-                m(Button, {onclick: _ => window.open('#!/data', 'data')}, glyph('new-window'))),
-            // Manipulate Record Count
-            app.is_manipulate_mode && manipulateRecordCount !== undefined && m("span.label.label-default#recordCount", {
+                m(Button, {onclick: () => window.open('#!/data', 'data')}, glyph('new-window'))),
+            subset.totalSubsetRecords !== undefined && m("span.label.label-default#recordCount", {
                 style: {
                     float: 'right',
                     "margin-left": "5px",
                     "margin-top": "10px",
                     "margin-right": "2em"
                 }
-            }, manipulateRecordCount + ' Records')
+            }, subset.totalSubsetRecords + ' Records')
         ]);
     }
 }

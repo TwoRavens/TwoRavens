@@ -1664,9 +1664,9 @@ export async function plot(plotNodes, plottype="", problem={}) {
     let jsonarr = [];
     
     if(plotNodes.length===0) {
-        myy = app.findNodeIndex(problem.target,true);
+        myy = app.findNode(problem.target);
         for (var i=0; i<problem["predictors"].length; i++) {
-            myx[i] = app.findNodeIndex(problem.predictors[i],true);
+            myx[i] = app.findNode(problem.predictors[i]);
         }
     } else {
         myx[0] = "oneshot"; // necessary to work out the looping

@@ -48,7 +48,8 @@ export default class Panel {
                 position: 'fixed',
                 top: `calc(${heightHeader} + ${panelMargin})`,
                 [side]: `calc(${(side === 'right' && canvasScroll['vertical'] ? scrollbarWidth : 0)}px + ${panelMargin})`,
-                'z-index': 100
+                'z-index': 100,
+                'box-shadow': 'rgba(0, 0, 0, .2) 0px 3px 10px'
             }
         }, attrsAll), [
             // Panel handle
