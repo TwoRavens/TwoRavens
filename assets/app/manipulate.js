@@ -68,11 +68,11 @@ export function menu(compoundPipeline, pipelineId) {
 
         m(Canvas, {
             attrsAll: {style: {height: `calc(100% - ${common.heightHeader} - ${common.heightFooter})`}}
-        }, canvas())
+        }, canvas(compoundPipeline))
     ];
 }
 
-function canvas() {
+function canvas(compoundPipeline) {
 
     if (isLoading) m('#loading.loader', {
         style: {
@@ -85,7 +85,9 @@ function canvas() {
 
     if (!constraintMenu) return;
 
-    if (constraintMenu.type === 'transform') return m(CanvasTransform, {preferences: constraintPreferences});
+    let variables = queryMongo.buildPipeline(compoundPipeline, Object.keys(variablesInitial))['variables'];
+
+    if (constraintMenu.type === 'transform') return m(CanvasTransform, {preferences: constraintPreferences, variables});
 
     if (!constraintData || !constraintMetadata) return;
 
@@ -434,18 +436,8 @@ export let setQueryUpdated = async state => {
         // promote the problem to a user problem if it is a system problem
         if (problem.system === 'auto') {
 
-            problem = jQuery.extend(true, {}, problem);  // deep copy of system problem
-            problem.problem_id = problem.problem_id + 'user';
-            problem.system = 'user';
-            problem.provenance = app.selectedProblem;
-            problem.predictorsInitial = problem.predictors;  // the predictor list will be edited to include transformed variables
-
-            subset.manipulations[app.configurations.name + problem.problem_id]
-                = subset.manipulations[problem.pipelineId];
-            delete subset.manipulations[problem.pipelineId];
-
-            problem.pipelineId = app.configurations.name + problem.problem_id;
-
+            problem = app.getProblemCopy(app.selectedProblem);
+            problem.predictorsInitial = [...problem.predictors]; // the predictor list will be edited to include transformed variables
             app.disco.push(problem);
 
             // these three lines force the rightpanel to flush the flowchart and completely rebuild it
@@ -467,6 +459,8 @@ export let setQueryUpdated = async state => {
         // if the predictors changed, then redraw the force diagram
         if (app.nodes.length !== problem.predictors.length || app.nodes.some(node => !problem.predictors.includes(node.name)))
             app.discoveryClick(app.selectedProblem);
+
+        app.resetPeek();
     }
 };
 

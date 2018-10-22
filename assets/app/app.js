@@ -4575,40 +4575,30 @@ function singlePlot(pred) {
 
 export function discovery(preprocess_file) {
 
-    // console.log("entering disco");
-    let extract = preprocess_file.dataset.discovery;
-    // console.log(extract);
-    let disco = [];
-    let names = [];
-    let vars = Object.keys(preprocess);
+    let makeDescription = (prob) => {
+        if (prob.transform && prob.transform != 0)
+            return `The combination of ${prob.transform.split('=')[1]} is predicted by ${prob.predictors.join(" and ")}`;
+        if (prob.subset && prob.subsetObs != 0)
+            return `${prob.predictors} is predicted by ${prob.predictors.join(" and ")} whenever ${prob.subsetObs}`;
+        return `${prob.target} is predicted by ${prob.predictors.slice(0, -1).join(", ")}, and ${prob.predictors[prob.predictors.length - 1]}`;
+    }
 
-    for (let i = 0; i < extract.length; i++) {
-        names[i] = "Problem" + (i + 1);
+    return preprocess_file.dataset.discovery.map((prob, i) => ({
+        problem_id: "problem" + (i+1),
+        system: "auto",
+        description: makeDescription(prob),
+        target: prob.target,
+        predictors: prob.predictors,
+        transform: prob.transform,
+        subsetObs: prob.subsetObs,
+        subsetFeats: prob.subsetFeats,
+        metric: allNodes[findNodeIndex(prob.target)].plottype === "bar" ? 'f1Macro' : 'meanSquaredError',
+        task: allNodes[findNodeIndex(prob.target)].plottype === "bar" ? 'classification' : 'regression',
+        subTask: Object.keys(d3mTaskSubtype)[0],
+        rating: 3,
+        meaningful: "no"
+    }))
 
-        let current_target = extract[i]["target"];
-        let current_transform = extract[i]["transform"];
-        let current_subsetObs = extract[i]["subsetObs"];
-        let current_subsetFeats = extract[i]["subsetFeats"];
-
-        let j = findNodeIndex(current_target);
-        let node = allNodes[j];
-        let current_predictors = extract[i]["predictors"];
-        let current_task = node.plottype === "bar" ? 'classification' : 'regression';
-        let current_rating = 3;
-        let current_description = "";
-        if (current_transform && current_transform != 0){
-            current_description = "The combination of " + current_transform.split('=')[1] + " is predicted by " + current_predictors.join(" and ");
-        } else if (current_subsetObs && current_subsetObs != 0){
-            current_description = current_target + " is predicted by " + current_predictors.join(" and ") + " whenever " + current_subsetObs;
-        } else {
-            current_description = current_target + " is predicted by " + current_predictors.join(" and ");
-        };
-        let current_metric = node.plottype === "bar" ? 'f1Macro' : 'meanSquaredError';
-        let current_id = "problem" + (i+1);
-        let current_disco = {problem_id: current_id, system: "auto", meaningful: "no", target: current_target, predictors: current_predictors, transform: current_transform, subsetObs: current_subsetObs, subsetFeats: current_subsetFeats, task: current_task, rating: current_rating, description: current_description, metric: current_metric, };
-        //jQuery.extend(true, current_disco, names);
-        disco[i] = current_disco;
-    };
     /* Problem Array of the Form:
         [1: {problem_id: "problem 1",
             system: "auto",
@@ -4621,7 +4611,6 @@ export function discovery(preprocess_file) {
             metric: "meanSquaredError"
         },2:{...}]
     */
-    return disco;
 }
 
 // when a problem is clicked
@@ -4698,6 +4687,23 @@ export function setSelectedProblem(problemId) {
 
     resetPeek();
     modelSelectionResults(problem);
+}
+
+export function getProblemCopy(problemId) {
+    let problem = jQuery.extend(true, {}, disco.find(prob => prob.problem_id === problemId));  // deep copy of original
+
+    problem.system = 'user';
+    problem.problem_id = problemId + 'user';
+    problem.provenance = problemId;
+
+    if (problem.pipelineId in manipulations) {
+        manipulations[problem.pipelineId + 'user']
+            = manipulations[problem.pipelineId];
+        delete manipulations[problem.pipelineId];
+        problem.pipelineId = problem.pipelineId + 'user';
+    }
+
+    return problem;
 }
 
 export let stargazer = ""

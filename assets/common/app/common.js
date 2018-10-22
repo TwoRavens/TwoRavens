@@ -31,11 +31,6 @@ export let selVarColor = '#fa8072'; // d3.rgb("salmon");
 
 // Global features
 
-// stores all functions to be called on window resize
-export let onResize = [];
-export let callOnResize = (resize) => onResize.push(resize);
-window.onresize = () => onResize.map((resize) => resize());
-
 export let panelOpen = {
     'left': true,
     'right': true
