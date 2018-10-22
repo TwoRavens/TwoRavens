@@ -22,6 +22,8 @@ urlpatterns = [
 
     url(r'^d3m-service/', include('tworaven_apps.ta2_interfaces.urls')),
 
+    url(r'^ws-test/', include('tworaven_apps.ws_test.urls')),
+
     #url(r'^data/', include('tworaven_apps.test_data.urls')),
 
     #url(r'^ravens_volume/', include('tworaven_apps.test_data.urls')),

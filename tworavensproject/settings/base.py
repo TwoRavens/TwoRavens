@@ -63,6 +63,10 @@ INSTALLED_APPS = [
     'django.contrib.humanize',
     'django.contrib.staticfiles',
 
+    'channels', # django channels
+
+    'tworaven_apps.ws_test', # websocket test
+
     'social_django',    # social auth
     'tworaven_apps.raven_auth', # user model
     'tworaven_apps.workspaces', # save session state
@@ -78,6 +82,18 @@ INSTALLED_APPS = [
     # webpack!
     'webpack_loader',
 ]
+
+# Channels
+ASGI_APPLICATION = "tworavensproject.routing.application"
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [('127.0.0.1', 6379)],
+        },
+    },
+}
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
