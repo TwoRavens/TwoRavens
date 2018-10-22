@@ -4765,8 +4765,13 @@ export function makeDataDiscovery(){
 
 }
 export function makeDiscoverySolutionPlot(){
-  d3.select("#setPredictionSolutionPlot").html("");
-  d3.select("#setPredictionSolutionPlot").select("svg").remove();
+  console.log("resid plot");
+  let xdata = "Actual";
+  let ydata = "Predicted";
+  let mytitle = "Predicted V Actuals: Pipeline ";
+  let dvvalues = solver_res[0]['predictor_values']['actualvalues']
+  let predvals = solver_res[0]['predictor_values']['fittedvalues']
+  scatter(dvvalues, predvals, xdata, ydata, undefined, undefined, mytitle);
 
 }
 export function makeDataDiscoveryTable(){
