@@ -41,7 +41,7 @@ export class TreeVariables {
 export class TreeTransform {
     convertToJQTreeFormat(pipelineId, step, editable) {
         return step.transforms.map(transform => ({
-            id: pipelineId + '-' + step.id + '-' + transform.name,
+            id: transform.name,
             name: transform.name + ' = ' + transform.equation,
             cancellable: editable,
             show_op: false
@@ -60,7 +60,7 @@ export class TreeTransform {
             selectable: false,
             onCreateLi: function (node, $li) {
                 if (!('cancellable' in node) || (node['cancellable'] === true)) {
-                    $li.find('.jqtree-element').prepend(buttonDeleteTransform(node.id));
+                    $li.find('.jqtree-element').prepend(buttonDeleteTransform(pipelineId, step.id, node.id));
                 }
             }
         })
@@ -80,8 +80,8 @@ export class TreeTransform {
     }
 }
 
-function buttonDeleteTransform(id) {
-    return `<button type='button' class='btn btn-default btn-xs' style='background:none;border:none;box-shadow:none;margin-top:2px;height:18px' onclick='callbackDeleteTransform("${id}")'><span class='glyphicon glyphicon-remove' style='color:#ADADAD'></span></button></div>`;
+function buttonDeleteTransform(pipelineId, step, id) {
+    return `<button type='button' class='btn btn-default btn-xs' style='background:none;border:none;box-shadow:none;margin-top:2px;height:18px' onclick='callbackDeleteTransform("${pipelineId}", "${step}", "${id}")'><span class='glyphicon glyphicon-remove' style='color:#ADADAD'></span></button></div>`;
 }
 
 export class TreeQuery {
@@ -99,7 +99,7 @@ export class TreeQuery {
         // Create the query tree
         let subsetTree = $(dom);
 
-        let {step, isQuery, editable} = attrs;
+        let {pipelineId, step, isQuery, editable} = attrs;
         this.isQuery = isQuery;
         let data = isQuery
             ? [{
@@ -121,14 +121,14 @@ export class TreeQuery {
             onCreateLi: function (node, $li) {
 
                 if ('negate' in node) {
-                    $li.find('.jqtree-element').prepend(buttonNegate(node.id, node.negate));
+                    $li.find('.jqtree-element').prepend(buttonNegate(pipelineId, step.id, node.id, node.negate));
                 }
                 if ((!('show_op' in node) || ('show_op' in node && node.show_op)) && 'operation' in node) {
                     let canChange = node.type !== 'query' && !node.editable;
-                    $li.find('.jqtree-element').prepend(buttonOperator(node.id, node.operation, canChange));
+                    $li.find('.jqtree-element').prepend(buttonOperator(pipelineId, step.id, node.id, node.operation, canChange));
                 }
                 if (editable && !('cancellable' in node) || (node['cancellable'] === true)) {
-                    $li.find('.jqtree-element').append(buttonDelete(node.id));
+                    $li.find('.jqtree-element').append(buttonDelete(pipelineId, step.id, node.id));
                 }
                 // Set a left margin on the first element of a leaf
                 if (node.children.length === 0) {
@@ -254,42 +254,43 @@ export class TreeQuery {
     }
 }
 
-function buttonNegate(id, state) {
+function buttonNegate(pipelineId, stepId, nodeId, state) {
     // This state is negated simply because the buttons are visually inverted. An active button appears inactive
     // This is due to css tomfoolery
     if (!state) {
-        return '<button id="boolToggle" class="btn btn-default btn-xs" type="button" data-toggle="button" aria-pressed="true" onclick="callbackNegate(' + "'" + id + "'" + ', true)">not</button> '
+        return `<button id="boolToggle" class="btn btn-default btn-xs" type="button" data-toggle="button" aria-pressed="true" onclick="callbackNegate('${pipelineId}', '${stepId}', '${nodeId}', true)">not</button>`
     } else {
-        return '<button id="boolToggle" class="btn btn-default btn-xs active" type="button" data-toggle="button" aria-pressed="true" onclick="callbackNegate(' + "'" + id + "'" + ', false)">not</button> '
+        return `<button id="boolToggle" class="btn btn-default btn-xs active" type="button" data-toggle="button" aria-pressed="true" onclick="callbackNegate('${pipelineId}', '${stepId}', '${nodeId}', false)">not</button>`
     }
 }
 
-function buttonOperator(id, state, canChange) {
+function buttonOperator(pipelineId, stepId, nodeId, state, canChange) {
     if (canChange) {
         if (state === 'and') {
             // language=HTML
-            return `<button class="btn btn-default btn-xs active" style="width:33px" type="button" data-toggle="button" aria-pressed="true" onclick="callbackOperator('${id}', 'or')">and</button> `
+            return `<button class="btn btn-default btn-xs active" style="width:33px" type="button" data-toggle="button" aria-pressed="true" onclick="callbackOperator('${pipelineId}', '${stepId}', '${nodeId}', 'or')">and</button> `
         } else {
             // language=HTML
-            return `<button class="btn btn-default btn-xs active" style="width:33px" type="button" data-toggle="button" aria-pressed="true" onclick="callbackOperator('${id}', 'and')">or</button> `
+            return `<button class="btn btn-default btn-xs active" style="width:33px" type="button" data-toggle="button" aria-pressed="true" onclick="callbackOperator('${pipelineId}', '${stepId}', '${nodeId}', 'and')">or</button> `
         }
     } else {
         if (state === 'and') {
-            return '<button class="btn btn-default btn-xs active" style="width:33px;background:none" type="button" data-toggle="button" aria-pressed="true">and</button> '
+            return `<button class="btn btn-default btn-xs active" style="width:33px;background:none" type="button" data-toggle="button" aria-pressed="true">and</button>`
         } else {
-            return '<button class="btn btn-default btn-xs active" style="width:33px;background:none" type="button" data-toggle="button" aria-pressed="true">or</button> '
+            return `<button class="btn btn-default btn-xs active" style="width:33px;background:none" type="button" data-toggle="button" aria-pressed="true">or</button>`
         }
     }
 }
 
-function buttonDelete(id) {
-    return "<button type='button' class='btn btn-default btn-xs' style='background:none;border:none;box-shadow:none;float:right;margin-top:2px;height:18px' onclick='callbackDelete(" + '"' +  String(id) + '"' + ")'><span class='glyphicon glyphicon-remove' style='color:#ADADAD'></span></button></div>";
+function buttonDelete(pipelineId, stepId, nodeId) {
+    return `<button type='button' class='btn btn-default btn-xs' style='background:none;border:none;box-shadow:none;float:right;margin-top:2px;height:18px' onclick='callbackDelete("${pipelineId}", "${stepId}", "${nodeId}")'><span class='glyphicon glyphicon-remove' style='color:#ADADAD'></span></button></div>`;
 }
 
 // this is reused for both unit and event measures (accumulations)
 export class TreeAggregate {
 
     oncreate({attrs, dom}) {
+        let {pipelineId, stepId} = attrs;
         let aggregateTree = $(dom);
 
         aggregateTree.tree({
@@ -300,7 +301,7 @@ export class TreeAggregate {
             selectable: false,
             onCreateLi: function (node, $li) {
                 if (attrs.editable && !('cancellable' in node) || (node['cancellable'] === true)) {
-                    $li.find('.jqtree-element').prepend(buttonDeleteAggregation(node.id));
+                    $li.find('.jqtree-element').prepend(buttonDeleteAggregation(pipelineId, stepId, node.id));
                 }
             }
         });
@@ -324,10 +325,11 @@ export class TreeAggregate {
     }
 
     view(vnode) {
-        return m('div#aggregateTree' + vnode.attrs.id)
+        let {pipelineId, stepId, measure} = vnode.attrs;
+        return m('div#aggregateTree' + pipelineId + stepId + measure)
     }
 }
 
-function buttonDeleteAggregation(id) {
-    return `<button type='button' class='btn btn-default btn-xs' style='background:none;border:none;box-shadow:none;margin-top:2px;float:right;height:18px' onclick='callbackDeleteAggregation("${id}")'><span class='glyphicon glyphicon-remove' style='color:#ADADAD'></span></button></div>`;
+function buttonDeleteAggregation(pipelineId, stepId, nodeId) {
+    return `<button type='button' class='btn btn-default btn-xs' style='background:none;border:none;box-shadow:none;margin-top:2px;float:right;height:18px' onclick='callbackDeleteAggregation("${pipelineId}", "${stepId}", "${nodeId}")'><span class='glyphicon glyphicon-remove' style='color:#ADADAD'></span></button></div>`;
 }

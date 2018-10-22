@@ -319,13 +319,6 @@ function rightpanel(mode) {
                    ]));
     };
 
-    if (app.selectedProblem) {
-        if (!(app.configurations.name in subset.manipulations)) subset.manipulations[app.configurations.name] = [];
-
-        let combinedId = app.configurations.name + app.selectedProblem;
-        if (!(combinedId in subset.manipulations)) subset.manipulations[combinedId] = [];
-    }
-
     let sections = [
         // {value: 'Models',
         //  display: app.IS_D3M_DOMAIN ? 'block' : 'none',
@@ -354,7 +347,7 @@ function rightpanel(mode) {
                     (subset.manipulations[app.configurations.name] || []).length !== 0 && {
                         value: 'Dataset Pipeline',
                         contents: m(manipulate.PipelineFlowchart, {
-                            compoundPipeline: subset.manipulations[app.configurations.name],
+                            compoundPipeline: manipulate.getPipeline(),
                             pipelineId: app.configurations.name,
                             editable: false
                         })
@@ -362,8 +355,8 @@ function rightpanel(mode) {
                     {
                         value: 'Problem Pipeline',
                         contents: m(manipulate.PipelineFlowchart, {
-                            compoundPipeline: [...subset.manipulations[app.configurations.name], ...subset.manipulations[app.configurations.name + app.selectedProblem]],
-                            pipelineId: app.configurations.name + app.selectedProblem,
+                            compoundPipeline: manipulate.getPipeline(app.selectedProblem),
+                            pipelineId: app.disco.find(prob => prob.problem_id === app.selectedProblem).pipelineId,
                             editable: true,
                             aggregate: false
                         })
@@ -645,11 +638,6 @@ class Body {
         let overflow = app.is_explore_mode ? 'auto' : 'hidden';
         let style = `position: absolute; left: ${app.panelWidth.left}; top: 0; margin-top: 10px`;
 
-        if (app.domainIdentifier && !(app.configurations.name in subset.manipulations))
-            subset.manipulations[app.configurations.name] = [];
-
-        let problem = app.disco.find(prob => prob.problem_id === app.selectedProblem);
-
         return m('main', [
             m(Modal),
             this.header(app.currentMode),
@@ -659,7 +647,7 @@ class Body {
 
             (app.is_manipulate_mode || (app.is_model_mode && app.rightTab === 'Manipulate')) && manipulate.menu(
                 manipulate.getPipeline(app.selectedProblem), // the complete pipeline to build menus with
-                app.is_model_mode ? problem.pipelineId : app.configurations.name),  // the identifier for which pipeline to edit
+                app.configurations.name + (app.is_model_mode ? app.selectedProblem : '')),  // the identifier for which pipeline to edit
             app.peekInlineShown && this.peekTable(),
 
             m(`#main`, {style: {overflow, display: app.is_manipulate_mode || (app.rightTab === 'Manipulate' && manipulate.constraintMenu) ? 'none' : 'block'}},

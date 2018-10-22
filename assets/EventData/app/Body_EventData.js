@@ -535,7 +535,10 @@ export default class Body_EventData {
                         value: 'Unit Measures',
                         contents: app.looseSteps['eventdataAggregate'].measuresUnit.length
                             ? m(TreeAggregate, {
-                                id: app.looseSteps['eventdataAggregate'].id + 'unit',
+                                pipelineId: app.looseSteps['eventdataAggregate'].id,
+                                stepId: '',
+                                measure: 'unit',
+                                // id: app.looseSteps['eventdataAggregate'].id + 'unit',
                                 data: app.looseSteps['eventdataAggregate'].measuresUnit,
                                 editable: true
                             })
@@ -545,7 +548,9 @@ export default class Body_EventData {
                         value: 'Event Measures',
                         contents: app.looseSteps['eventdataAggregate'].measuresAccum.length
                             ? m(TreeAggregate, {
-                                id: app.looseSteps['eventdataAggregate'].id + 'accumulator',
+                                pipelineId: app.looseSteps['eventdataAggregate'].id,
+                                stepId: '',
+                                measure: 'accumulator',
                                 data: app.looseSteps['eventdataAggregate'].measuresAccum,
                                 editable: true
                             })

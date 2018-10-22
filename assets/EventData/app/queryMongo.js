@@ -23,6 +23,7 @@ import * as app from './app';
 
 export function buildPipeline(pipeline, variables = new Set()) {
     let compiled = [];
+    variables = new Set(variables);
 
     // need to know which variables are unit measures and which are accumulators. Also describe the unit variables with labels
     // only returned if the last step in the pipeline is an aggregation
@@ -299,7 +300,7 @@ function processRule(rule) {
         }, {});
     }
 
-    if (['discrete', 'discrete_grouped'].indexOf(rule.subset) !== -1) {
+    if (['discrete', 'discrete_grouped'].includes(rule.subset)) {
         let rule_query_inner = [];
         for (let child of rule.children) {
             rule_query_inner.push(child.name);
@@ -699,7 +700,7 @@ export function buildMenu(step) {
         {$sort: {year: 1, month: 1}}
     ];
 
-    if (['discrete', 'discrete_grouped'].indexOf(metadata.type) !== -1) return [
+    if (['discrete', 'discrete_grouped'].includes(metadata.type)) return [
         {$group: {_id: {[metadata.columns[0]]: '$' + metadata.columns[0]}, total: {$sum: 1}}},
         {$project: {[metadata.columns[0]]: '$_id.' + metadata.columns[0], _id: 0, total: 1}}
     ];

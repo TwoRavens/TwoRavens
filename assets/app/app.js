@@ -2088,10 +2088,6 @@ export function findNode(name) {
 function updateNode(id, nodes) {
 
     let node = allNodes.find(node => node.name === id) || nodes.find(node => node.name === id);
-    if (id === 'Hall_of_fame_runs') {
-        console.warn('#debug node');
-        console.log(node);
-    }
 
     if (node === undefined) {
         let i = 0;
@@ -4701,7 +4697,7 @@ export function setSelectedProblem(problemId) {
     }
 
     resetPeek();
-    modelSelectionResults(problem)
+    modelSelectionResults(problem);
 }
 
 export let stargazer = ""
