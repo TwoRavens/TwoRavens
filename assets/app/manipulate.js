@@ -68,11 +68,11 @@ export function menu(compoundPipeline, pipelineId) {
 
         m(Canvas, {
             attrsAll: {style: {height: `calc(100% - ${common.heightHeader} - ${common.heightFooter})`}}
-        }, canvas(pipelineId))
+        }, canvas(compoundPipeline))
     ];
 }
 
-export function canvas(compoundPipeline) {
+function canvas(compoundPipeline) {
 
     if (isLoading) m('#loading.loader', {
         style: {
@@ -85,13 +85,9 @@ export function canvas(compoundPipeline) {
 
     if (!constraintMenu) return;
 
-    if (constraintMenu.type === 'transform') return m(CanvasTransform, {
-        pipeline: compoundPipeline,
-        preferences: constraintPreferences,
-        variables: [...queryMongo.buildPipeline(
-            constraintMenu.pipeline.slice(constraintMenu.pipeline.indexOf(constraintMenu.step)),
-            new Set(app.valueKey))['variables']]
-    });
+    let variables = queryMongo.buildPipeline(compoundPipeline, Object.keys(variablesInitial))['variables'];
+
+    if (constraintMenu.type === 'transform') return m(CanvasTransform, {preferences: constraintPreferences, variables});
 
     if (!constraintData || !constraintMetadata) return;
 
@@ -105,7 +101,6 @@ export function canvas(compoundPipeline) {
             'unit': 'aggregate',
             'accumulator': 'aggregate'
         }[constraintMenu.type],
-        pipeline: compoundPipeline,
         subsetName: constraintMenu.name,
         data: constraintData,
         preferences: constraintPreferences,
@@ -139,7 +134,7 @@ export function varList() {
 
     let variables = (constraintMenu
         ? [...queryMongo.buildPipeline(constraintMenu.pipeline.slice(0, constraintMenu.pipeline.indexOf(constraintMenu.step)),
-            new Set(Object.keys(variablesInitial)))['variables']]
+            Object.keys(variablesInitial))['variables']]
         : Object.keys(variablesInitial)).sort(variableSort);
 
     if (constraintMenu.type === 'accumulator') variables = variables.filter(column => inferType(column) === 'discrete');
@@ -308,7 +303,9 @@ export class PipelineFlowchart {
                             step.measuresUnit.length !== 0 && [
                                 m('h5', 'Unit Measures'),
                                 m(TreeAggregate, {
-                                    id: pipelineId + step.id + 'unit',
+                                    pipelineId,
+                                    stepId: step.id,
+                                    measure: 'unit',
                                     data: step.measuresUnit,
                                     editable
                                 }),
@@ -316,7 +313,9 @@ export class PipelineFlowchart {
                             step.measuresAccum.length !== 0 && [
                                 m('h5', 'Column Accumulations'),
                                 m(TreeAggregate, {
-                                    id: pipelineId + step.id + 'accumulator',
+                                    pipelineId,
+                                    stepId: step.id,
+                                    measure: 'unit',
                                     data: step.measuresAccum,
                                     editable
                                 }),
@@ -416,7 +415,7 @@ let datasetChangedTour = {
 
 export let pendingHardManipulation = false;
 // called when a query is updated
-export let setQueryUpdated = state => {
+export let setQueryUpdated = async state => {
 
     // the first time we have an edit to the hard manipulations:
     if (app.is_manipulate_mode) {
@@ -437,19 +436,16 @@ export let setQueryUpdated = state => {
         // promote the problem to a user problem if it is a system problem
         if (problem.system === 'auto') {
 
-            problem = jQuery.extend(true, {}, problem);  // deep copy of system problem
-            problem.problem_id = problem.problem_id + 'user';
-            problem.system = 'user';
-            problem.provenance = app.selectedProblem;
-            problem.predictorsInitial = problem.predictors;  // the predictor list will be edited to include transformed variables
-
-            subset.manipulations[app.configurations.name + problem.problem_id]
-                = jQuery.extend(true, [], subset.manipulations[problem.pipelineId]);
-            problem.pipelineId = app.configurations.name + problem.problem_id;
-
+            problem = app.getProblemCopy(app.selectedProblem);
+            problem.predictorsInitial = [...problem.predictors]; // the predictor list will be edited to include transformed variables
             app.disco.push(problem);
 
-            app.setSelectedProblem(app.selectedProblem);
+            // these three lines force the rightpanel to flush the flowchart and completely rebuild it
+            // this causes the buttons embedded inside the trees to get rebuilt with proper pipelineIds
+            app.setSelectedProblem(undefined);
+            m.redraw();
+            await new Promise(_ => setTimeout(_, 100));
+
             app.setSelectedProblem(problem.problem_id);
         }
 
@@ -457,12 +453,14 @@ export let setQueryUpdated = state => {
 
         let transformVars = getTransformVariables(problemPipeline);
         problem.predictors = [...new Set([...problem.predictorsInitial, ...transformVars])];
-        problem.subsetFeats = getSubsetString(problemPipeline);
+        problem.subsetObs = getSubsetString(problemPipeline);
         problem.transform = getTransformString(problemPipeline);
 
         // if the predictors changed, then redraw the force diagram
         if (app.nodes.length !== problem.predictors.length || app.nodes.some(node => !problem.predictors.includes(node.name)))
             app.discoveryClick(app.selectedProblem);
+
+        app.resetPeek();
     }
 };
 
@@ -514,7 +512,7 @@ export let setConstraintMenu = async (menu) => {
 
     let variables = [...queryMongo.buildPipeline(
         menu.pipeline.slice(0, menu.pipeline.indexOf(menu.step)),
-        new Set(Object.keys(variablesInitial)))['variables']];  // get the variables present at this point in the pipeline
+        Object.keys(variablesInitial))['variables']];  // get the variables present at this point in the pipeline
 
     if (updateVariableMetadata) {
         let summaryStep = {
@@ -629,7 +627,7 @@ export let loadMenu = async (pipeline, menu, {recount, requireMatch} = {}) => { 
 
     // convert the pipeline to a mongo query. Note that passing menu extends the pipeline to collect menu data
     let compiled = JSON.stringify(queryMongo.buildPipeline([...pipeline, menu],
-        new Set(Object.keys(variablesInitial)))['pipeline']);
+        Object.keys(variablesInitial))['pipeline']);
 
     console.log("Menu Query:");
     console.log(compiled);
@@ -644,7 +642,7 @@ export let loadMenu = async (pipeline, menu, {recount, requireMatch} = {}) => { 
     // record count request
     if (recount || subset.totalSubsetRecords === undefined) {
         let countMenu = {type: 'menu', metadata: {type: 'count'}};
-        let compiled = JSON.stringify(queryMongo.buildPipeline([...pipeline, countMenu], new Set(Object.keys(variablesInitial)))['pipeline']);
+        let compiled = JSON.stringify(queryMongo.buildPipeline([...pipeline, countMenu], Object.keys(variablesInitial))['pipeline']);
 
         console.log("Count Query:");
         console.log(compiled);
@@ -721,7 +719,7 @@ export let rebuildPreprocess = async () => {
 
     let compiled = JSON.stringify(queryMongo.buildPipeline(
         [...getPipeline(), menuDownload],
-        new Set(Object.keys(variablesInitial)))['pipeline']);
+        Object.keys(variablesInitial))['pipeline']);
 
     let dataPath = await getData({
         datafile: app.zparams.zd3mdata,
@@ -846,5 +844,10 @@ export let getSubsetString = pipeline => pipeline
 
 // TODO Shoeboxam
 let stringifySubset = query => {
-    return 'test';
+    if (Array.isArray(query)) return query.map(stringifySubset).join(',');
+    if (typeof query === 'object') {
+        if (query.type === 'rule') {
+            // if (query.)
+        }
+    }
 };

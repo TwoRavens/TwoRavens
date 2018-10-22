@@ -23,6 +23,7 @@ import Flowchart from './views/Flowchart';
 import * as common from '../common/app/common';
 import ButtonRadio from '../common/app/views/ButtonRadio';
 import Button from '../common/app/views/Button';
+import Dropdown from '../common/app/views/Dropdown';
 import Footer from '../common/app/views/Footer';
 import Header from '../common/app/views/Header';
 import MenuTabbed from '../common/app/views/MenuTabbed';
@@ -84,26 +85,37 @@ function leftpanel(mode) {
         'problem_id',
         m('[style=text-align:center]', 'Meaningful', m('br'), discoveryAllCheck),
         app.disco.some(prob => prob.system === 'user') ? 'User' : '',
-        'Target', 'Predictors', 'Task', 'Metric', 'Subset', 'Transform'
+        'Target', 'Predictors', 'Task',
+        app.disco.some(prob => prob.subTask !== 'taskSubtypeUndefined') ? 'Subtask' : '',
+        'Metric', 'Manipulations'
     ];
 
 
 
-    let formatProblem = problem => [
-        problem.problem_id, // this is masked as the UID
-        m('input[type=checkbox][style=width:100%]', {
-            onclick: m.withAttr("checked", (checked) => app.setCheckedDiscoveryProblem(checked, problem.problem_id)),
-            checked: app.checkedDiscoveryProblems.has(problem.problem_id),
-            title: 'mark this problem as meaningful'
-        }),
-        problem.system === 'user' && m('div[title="User created problem"]', glyph('user')),
-        problem.target,
-        problem.predictors.join(', '),
-        problem.task,
-        problem.metric,
-        !!problem.subsetObs && problem.subsetObs,
-        !!problem.transform && problem.transform
-    ];
+    let formatProblem = problem => {
+        let hasPipeline = !!problem.subsetObs || !!problem.transform || (!!problem.pipelineId && manipulate.getPipeline(problem.problem_id).length !== 0);
+
+        return [
+            problem.problem_id, // this is masked as the UID
+            m('input[type=checkbox][style=width:100%]', {
+                onclick: m.withAttr("checked", (checked) => app.setCheckedDiscoveryProblem(checked, problem.problem_id)),
+                checked: app.checkedDiscoveryProblems.has(problem.problem_id),
+                title: 'mark this problem as meaningful'
+            }),
+            problem.system === 'user' && m('div[title="User created problem"]', glyph('user')),
+            problem.target,
+            problem.predictors.join(', '),
+            problem.task,
+            problem.subTask === 'taskSubtypeUndefined' ? '' : problem.subTask, // ignore taskSubtypeUndefined
+            problem.metric,
+            hasPipeline && m('div[style=width:100%;text-align:center]', m(Button, {
+                onclick: () => {
+                    app.setRightTab('Manipulate');
+                    common.setPanelOpen('right');
+                }
+            }, 'view'))
+        ];
+    };
 
     let nodes = app.is_explore_mode ? nodesExplore : app.nodes;
 
@@ -115,7 +127,7 @@ function leftpanel(mode) {
         attrsAll: {
             style: {
                 'z-index': 101,
-                background: 'rgb(249, 249, 249, .5)', // TODO this makes the leftpanel partially transparent, check with Vito
+                background: 'rgb(249, 249, 249, .8)',
                 height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${app.peekInlineShown ? app.peekInlineHeight: '0px'} - ${common.heightFooter})`
             }
         }
@@ -164,22 +176,22 @@ function leftpanel(mode) {
                                 'max-width': (window.innerWidth - 90) + 'px'
                             }
                         },
-                        // app.selectedProblem !== undefined && [
-                        //     m('h4', 'Current Problem'),
-                        //     m(Table, {
-                        //         id: 'discoveryTableManipulations',
-                        //         headers: discoveryHeaders,
-                        //         data: [formatProblem(selectedDisco)],
-                        //         activeRow: app.selectedProblem,
-                        //         showUID: false,
-                        //         abbreviation: 40
-                        //     }),
-                        //     m('h4', 'All Problems')
-                        // ],
+                        app.selectedProblem !== undefined && [
+                            m('h4', 'Current Problem'),
+                            m(Table, {
+                                id: 'discoveryTableManipulations',
+                                headers: discoveryHeaders,
+                                data: [formatProblem(selectedDisco)],
+                                activeRow: app.selectedProblem,
+                                showUID: false,
+                                abbreviation: 40
+                            }),
+                            m('h4', 'All Problems')
+                        ],
                         m(Table, {
                             id: 'discoveryTable',
                             headers: discoveryHeaders,
-                            data: [
+                            data: [ // I would sort system via (a, b) => a.system === b.system ? 0 : a.system === 'user' ? -1 : 1, but javascript sort isn't stable
                                 ...app.disco.filter(prob => prob.system === 'user'),
                                 ...app.disco.filter(prob => prob.system !== 'user')
                             ].map(formatProblem),
@@ -236,19 +248,6 @@ function leftpanel(mode) {
     }));
 }
 
-let righttab = (id, task, title, probDesc) => m(PanelList, {
-    id: id,
-    items: Object.keys(task || {}),
-    colors: {[app.hexToRgba(common.selVarColor)]: [app.d3mProblemDescription[probDesc]]},
-    classes: {
-        'item-lineout': Object.keys(task || {})
-            .filter(item => app.locktoggle && item !== app.d3mProblemDescription[probDesc])
-    },
-    callback: (value) => app.setD3mProblemDescription(probDesc, value),
-    popup: v => task[v][1],
-    attrsItems: {'data-placement': 'top', 'data-original-title': title + ' Description'}
-});
-
 function rightpanel(mode) {
     if (mode === 'results') return; // returns undefined, which mithril ignores
     if (mode === 'explore') return;
@@ -302,48 +301,74 @@ function rightpanel(mode) {
         ];
     }
 
-    let dropdown = (label, key, task) => {
-        let metric = key === 'performanceMetrics';
-        let desc = app.d3mProblemDescription[key];
-        desc = metric ? desc[0].metric : desc;
-        return m('.dropdown', {style: 'padding: .5em'},
-                 m('', m('label', label), m('br'),
-                   app.locktoggle ? m('button.btn.btn-disabled', desc) : [
-                       m('button.btn.btn-default.dropdown-toggle[data-toggle=dropdown]', {id: key},
-                         desc, m('span.caret')),
-                       m('ul.dropdown-menu', {'aria-labelledby': key}, Object.keys(task)
-                         .map(x => m('li', {
-                             style: 'padding: 0.25em',
-                             onclick: _ => app.setD3mProblemDescription(key, metric ? [{metric: x}] : x)
-                         }, x)))
-                   ]));
-    };
-
-    if (app.selectedProblem) {
-        if (!(app.configurations.name in subset.manipulations)) subset.manipulations[app.configurations.name] = [];
-
-        let combinedId = app.configurations.name + app.selectedProblem;
-        if (!(combinedId in subset.manipulations)) subset.manipulations[combinedId] = [];
-    }
+    let selectedProblem = app.disco.find(prob => prob.problem_id === app.selectedProblem);
 
     let sections = [
         // {value: 'Models',
         //  display: app.IS_D3M_DOMAIN ? 'block' : 'none',
         //  contents: righttab('models')},
-        {value: 'Problem',
-         idSuffix: 'Type',
-         contents: [
-             m(`button#btnLock.btn.btn-default`, {
-                 class: app.locktoggle ? 'active' : '',
-                 onclick: () => app.lockDescription(!app.locktoggle),
-                 title: 'Lock selection of problem description',
-                 style: 'float: right',
-             }, glyph(app.locktoggle ? 'lock' : 'pencil', true)),
-             m('', {style: 'float: left'},
-               dropdown('Task', 'taskType', app.d3mTaskType),
-               dropdown('Task Subtype', 'taskSubtype', app.d3mTaskSubtype),
-               dropdown('Metric', 'performanceMetrics', app.d3mMetrics))
-         ]},
+        app.selectedProblem && {
+            value: 'Problem',
+            idSuffix: 'Type',
+            contents: [
+                m(`button#btnLock.btn.btn-default`, {
+                    class: app.locktoggle ? 'active' : '',
+                    onclick: () => app.lockDescription(!app.locktoggle),
+                    title: 'Lock selection of problem description',
+                    style: 'float: right',
+                }, glyph(app.locktoggle ? 'lock' : 'pencil', true)),
+                m('', {style: 'float: left'},
+                    m(Dropdown, {
+                        id: 'taskType',
+                        items: Object.keys(app.d3mTaskType),
+                        activeItem: selectedProblem.task,
+                        onclickChild: child => {
+                            if (selectedProblem.system === 'auto') {
+                                selectedProblem = app.getProblemCopy(app.selectedProblem);
+                                app.disco.push(selectedProblem);
+                                app.setSelectedProblem(selectedProblem.problem_id);
+                            }
+                            selectedProblem.task = child;
+                        },
+                        style: {'margin-bottom': '1em'},
+                        disabled: app.locktoggle
+                    }),
+                    m(Dropdown, {
+                        id: 'taskSubType',
+                        items: Object.keys(app.d3mTaskSubtype),
+                        activeItem: selectedProblem.subTask,
+                        onclickChild: child => {
+                            if (selectedProblem.system === 'auto') {
+                                selectedProblem = app.getProblemCopy(app.selectedProblem);
+                                app.disco.push(selectedProblem);
+                                app.setSelectedProblem(selectedProblem.problem_id);
+                            }
+                            selectedProblem.subTask = child;
+                        },
+                        style: {'margin-bottom': '1em'},
+                        disabled: app.locktoggle
+                    }),
+                    m(Dropdown, {
+                        id: 'performanceMetrics',
+                        items: Object.keys(app.d3mMetrics),
+                        activeItem: selectedProblem.metric,
+                        onclickChild: child => {
+                            if (selectedProblem.system === 'auto') {
+                                selectedProblem = app.getProblemCopy(app.selectedProblem);
+                                app.disco.push(selectedProblem);
+                                app.setSelectedProblem(selectedProblem.problem_id);
+                            }
+                            selectedProblem.metric = child;
+                        },
+                        style: {'margin-bottom': '1em'},
+                        disabled: app.locktoggle
+                    })
+                )
+                    // dropdown('Task', 'taskType', app.d3mTaskType),
+                    // dropdown('Task Subtype', 'taskSubtype', app.d3mTaskSubtype),
+                    // dropdown('Metric', 'performanceMetrics', app.d3mMetrics))
+            ]
+        },
         app.selectedProblem && {
             value: 'Manipulate',
             title: 'Apply transformations and subsets to a problem',
@@ -354,7 +379,7 @@ function rightpanel(mode) {
                     (subset.manipulations[app.configurations.name] || []).length !== 0 && {
                         value: 'Dataset Pipeline',
                         contents: m(manipulate.PipelineFlowchart, {
-                            compoundPipeline: subset.manipulations[app.configurations.name],
+                            compoundPipeline: manipulate.getPipeline(),
                             pipelineId: app.configurations.name,
                             editable: false
                         })
@@ -362,8 +387,8 @@ function rightpanel(mode) {
                     {
                         value: 'Problem Pipeline',
                         contents: m(manipulate.PipelineFlowchart, {
-                            compoundPipeline: [...subset.manipulations[app.configurations.name], ...subset.manipulations[app.configurations.name + app.selectedProblem]],
-                            pipelineId: app.configurations.name + app.selectedProblem,
+                            compoundPipeline: manipulate.getPipeline(app.selectedProblem),
+                            pipelineId: app.disco.find(prob => prob.problem_id === app.selectedProblem).pipelineId,
                             editable: true,
                             aggregate: false
                         })
@@ -652,11 +677,6 @@ class Body {
         let overflow = app.is_explore_mode ? 'auto' : 'hidden';
         let style = `position: absolute; left: ${app.panelWidth.left}; top: 0; margin-top: 10px`;
 
-        if (app.domainIdentifier && !(app.configurations.name in subset.manipulations))
-            subset.manipulations[app.configurations.name] = [];
-
-        let problem = app.disco.find(prob => prob.problem_id === app.selectedProblem);
-
         return m('main', [
             m(Modal),
             this.header(app.currentMode),
@@ -666,7 +686,7 @@ class Body {
 
             (app.is_manipulate_mode || (app.is_model_mode && app.rightTab === 'Manipulate')) && manipulate.menu(
                 manipulate.getPipeline(app.selectedProblem), // the complete pipeline to build menus with
-                app.is_model_mode ? problem.pipelineId : app.configurations.name),  // the identifier for which pipeline to edit
+                app.configurations.name + (app.is_model_mode ? app.selectedProblem : '')),  // the identifier for which pipeline to edit
             app.peekInlineShown && this.peekTable(),
 
             m(`#main`, {style: {overflow, display: app.is_manipulate_mode || (app.rightTab === 'Manipulate' && manipulate.constraintMenu) ? 'none' : 'block'}},
