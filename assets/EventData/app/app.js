@@ -1,4 +1,4 @@
-import {saveAs} from 'file-saver/FileSaver';
+import * as fileSaver from 'file-saver';
 import m from 'mithril';
 import * as common from '../../common-eventdata/common';
 
@@ -125,7 +125,7 @@ export function setSelectedMode(mode) {
     // Some canvases only exist in certain modes. Fall back to default if necessary.
     if (mode === 'home' && selectedCanvas !== selectedCanvasHome)
         setSelectedCanvas(selectedCanvasHome);
-    if (mode === 'subset' && (selectedCanvas !== 'Subset' || subsetKeys.indexOf(selectedSubsetName) === -1))
+    if (mode === 'subset' && (selectedCanvas !== 'Subset' || !subsetKeys.includes(selectedSubsetName)))
         setSelectedSubsetName(subsetKeys[0]);
     if (mode === 'aggregate' && (selectedCanvas !== 'Subset' || genericMetadata[selectedDataset]['subsets'][selectedSubsetName]['measureType'] === undefined))
         setSelectedSubsetName(Object.keys(genericMetadata[selectedDataset]['subsets']).find(subset => 'measureType' in genericMetadata[selectedDataset]['subsets'][subset]));
@@ -153,7 +153,7 @@ let canvasTypes = ['Datasets', 'Saved Queries', 'Subset', 'Custom', 'Results', '
 export let selectedCanvas = 'Datasets';
 export let selectedCanvasHome = selectedCanvas;
 export let setSelectedCanvas = (canvasKey) => {
-    if (['About', 'Datasets', 'Saved Queries'].indexOf(canvasKey) !== -1) selectedCanvasHome = canvasKey;
+    if (['About', 'Datasets', 'Saved Queries'].includes(canvasKey)) selectedCanvasHome = canvasKey;
     selectedCanvas = canvasKey;
 };
 
@@ -542,7 +542,7 @@ export async function download(collection_name, query) {
 
     let header = [...variables].join('\t') + '\n';
     let file = new File([header, ...text], `EventData_${collection_name}.tsv`, {type: "text/plain;charset=utf-8"});
-    saveAs(file);
+    fileSaver.saveAs(file);
 }
 
 export async function reset() {
