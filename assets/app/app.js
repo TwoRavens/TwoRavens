@@ -4707,6 +4707,7 @@ export function modelSelectionResults(problem){
 // setTimeout(console.log("we have results data", my_results),10000)
     setTimeout(makeDataDiscovery,1000)
     setTimeout(makeDiscoverySolutionPlot,1000)
+    setTimeout(makeDataDiscoveryTable,1000)
 
 }
 
@@ -4767,7 +4768,7 @@ export function makeDiscoverySolutionPlot(){
 export function makeDataDiscoveryTable(){
   console.log("Here we bring our table")
   stargazer = solver_res[0]['stargazer']
-  d3.select("#setDataTable").html("");
+  // d3.select("#setDataTable").html("");
 
 
 }
