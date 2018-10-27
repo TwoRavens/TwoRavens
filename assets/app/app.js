@@ -132,6 +132,7 @@ export async function updatePeek(pipeline) {
 };
 
 let solver_res = []
+export let setSolver_res = res => solver_res = res;
 let solver_res_user = []
 let problem_sent = []
 let problem_sent_user = []
@@ -940,7 +941,6 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
 
     // 10. Add datadocument information to allNodes (when in IS_D3M_DOMAIN)
     if(!swandive) {
-        console.log(datadocument_columns);
         datadocument_columns.forEach(v => findNode(v.colName).d3mDescription = v);
         console.log("all nodes:");
         console.log(allNodes);
@@ -980,34 +980,25 @@ for(let i=0; i<disco.length; i++){
 
 
 
-export function loadResult(my_disco){
-  if(my_disco == undefined){
-    my_disco = disco
-  }
-  for(let j=0; j<my_disco.length; j++){
+export function loadResult(my_disco) {
 
+    (my_disco || disco).forEach((problem, i) => {
 
-    let prob_name = my_disco[j].description.problem_id;
-    if(prob_name == undefined){
-      prob_name = my_disco[j].problem_id;
-    }
-    // console.log("problem_id check " , prob_name)
-    if(problems_in_preprocess.includes(prob_name)){ console.log("Problem already exists in preprocess", prob_name)}// do nothing }
-    else{
-      // problem_sent = []
-      let val = {
-      "description":my_disco[j],
-      "result":solver_res[j]
-    }
+        let prob_name = (problem.description || {}).problem_id || problem.problem_id;
 
-    problem_sent.push(val);
-  }
-}
-  console.log("problem to be sent ", problem_sent)
-  let preprocess_id = 1
-  let version = 1
-  let api_res = addProblem(preprocess_id, version, problem_sent)
-  console.log("ADD PROBLEM/RESULT API RESPONSE ", api_res)
+        if (problems_in_preprocess.includes(prob_name))
+            console.log("Problem already exists in preprocess", prob_name);
+        else problem_sent.push({
+            "description": problem,
+            "result": solver_res[i]
+        });
+    })
+
+    console.log("problem to be sent ", problem_sent)
+    let preprocess_id = 1
+    let version = 1
+    let api_res = addProblem(preprocess_id, version, problem_sent)
+    console.log("ADD PROBLEM/RESULT API RESPONSE ", api_res)
 }
 /**
    called on app start
@@ -1218,19 +1209,13 @@ export function layout(layoutConstant, v2) {
     var [line, line2, visbackground, vis2background, vis, vis2, drag_line, path, circle] = setup_svg(svg);
 
     if (layoutConstant == layoutAdd || layoutConstant == layoutMove) {
-        zparams.zvars.forEach(variable => {
-            let foundNode = findNode(variable);
-            if (!foundNode.grayout) nodes.push(foundNode);
-        })
-
-        zparams.zedges.forEach(edge => {
-            links.push({
-                source: findNodeIndex(edge[0]),
-                target: findNodeIndex(edge[1]),
-                left: false,
-                right: true
-            })
-        })
+        nodes = zparams.zvars.map(findNode).filter(node => !node.grayout)
+        links = zparams.zedges.map(edge => ({
+            source: findNodeIndex(edge[0]),
+            target: findNodeIndex(edge[1]),
+            left: false,
+            right: true
+        }));
     } else {
         if(IS_D3M_DOMAIN) {
             mytarget = mytargetdefault;
@@ -4636,10 +4621,9 @@ export function setSelectedProblem(problemId) {
 
     if (selectedProblem === undefined) return;
 
-    let pipelineId = domainIdentifier.name + problemId;
     let problem = disco.find(entry => entry.problem_id === selectedProblem);
 
-    if (!('pipelineId' in problem)) {
+    if (!(problemId in manipulations)) {
         let pipeline = [];
 
         if (problem['subsetObs']) {
@@ -4647,7 +4631,7 @@ export function setSelectedProblem(problemId) {
                 type: 'subset',
                 id: 'subset ' + pipeline.length,
                 abstractQuery: [{
-                    id: String(pipelineId) + '-' + String(0) + '-' + String(1),
+                    id: String(problemId) + '-' + String(0) + '-' + String(1),
                     name: problem['subsetObs'],
                     show_op: false,
                     cancellable: true,
@@ -4671,8 +4655,7 @@ export function setSelectedProblem(problemId) {
             problem.predictors.push(variable);
         }
 
-        problem.pipelineId = pipelineId;
-        manipulations[pipelineId] = pipeline;
+        manipulations[problemId] = pipeline;
     }
 
     resetPeek();
@@ -4682,16 +4665,17 @@ export function setSelectedProblem(problemId) {
 export function getProblemCopy(problemId) {
     let problem = jQuery.extend(true, {}, disco.find(prob => prob.problem_id === problemId));  // deep copy of original
 
-    problem.system = 'user';
-    problem.problem_id = problemId + 'user';
-    problem.provenance = problemId;
+    let offset = 1;
+    while (disco.find(prob => prob.problem_id === problemId + 'user' + offset)) offset = offset + 1;
 
-    if (problem.pipelineId in manipulations) {
-        manipulations[problem.pipelineId + 'user']
-            = manipulations[problem.pipelineId];
-        delete manipulations[problem.pipelineId];
-        problem.pipelineId = problem.pipelineId + 'user';
-    }
+    Object.assign(problem, {
+        problem_id: problemId + 'user' + offset,
+        provenance: problemId,
+        system: 'user'
+    })
+
+    if (problemId in manipulations)
+        manipulations[problem.problem_id] = jQuery.extend(true, [], manipulations[problemId]);
 
     return problem;
 }

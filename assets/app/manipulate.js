@@ -439,6 +439,8 @@ export let setQueryUpdated = async state => {
         if (problem.system === 'auto') {
 
             problem = app.getProblemCopy(app.selectedProblem);
+            // this will force the automatic pipeline to get rebuilt without user edits
+            delete subset.manipulations[app.selectedProblem];
             problem.predictorsInitial = [...problem.predictors]; // the predictor list will be edited to include transformed variables
             app.disco.push(problem);
 
@@ -455,7 +457,6 @@ export let setQueryUpdated = async state => {
 
         let transformVars = getTransformVariables(problemPipeline);
         problem.predictors = [...new Set([...problem.predictorsInitial, ...transformVars])];
-        problem.subsetObs = getSubsetString(problemPipeline);
         problem.transform = getTransformString(problemPipeline);
 
         // if the predictors changed, then redraw the force diagram
@@ -470,10 +471,9 @@ export let setQueryUpdated = async state => {
 export let getProblemPipeline = problemId => {
     let problem = app.disco.find(prob => prob.problem_id === problemId);
     if (!problem) return;
-    if (!('pipelineId' in problem)) problem.pipelineId = app.configurations.name + problemId;
-    if (!(problem.pipelineId in subset.manipulations)) subset.manipulations[problem.pipelineId] = [];
+    if (!(problem.problem_id in subset.manipulations)) subset.manipulations[problem.problem_id] = [];
 
-    return subset.manipulations[problem.pipelineId];
+    return subset.manipulations[problem.problem_id];
 };
 
 export let getPipeline = (problemId) => {
@@ -837,19 +837,3 @@ export let getTransformString = pipeline => pipeline
     .filter(step => step.type === 'transform')
     .map(step => step.transforms.map(transform => `${transform.name} = ${transform.equation}`).join(', '))
     .join(', ');
-
-export let getSubsetString = pipeline => pipeline
-    .filter(step => step.type === 'subset')
-    .map(stringifySubset)
-    .join(', ');
-
-
-// TODO Shoeboxam
-let stringifySubset = query => {
-    if (Array.isArray(query)) return query.map(stringifySubset).join(',');
-    if (typeof query === 'object') {
-        if (query.type === 'rule') {
-            // if (query.)
-        }
-    }
-};

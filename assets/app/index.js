@@ -40,6 +40,7 @@ import Body_EventData from '../EventData/app/Body_EventData';
 import Peek_EventData from '../common-eventdata/views/Peek';
 import '../EventData/css/app.css'
 import '../EventData/app/app';
+import {manipulations} from "../EventData/app/app";
 
 export let bold = (value) => m('div', {style: {'font-weight': 'bold', display: 'inline'}}, value);
 export let italicize = (value) => m('div', {style: {'font-style': 'italic', display: 'inline'}}, value);
@@ -104,8 +105,10 @@ function leftpanel(mode) {
         problem.task,
         problem.subTask === 'taskSubtypeUndefined' ? '' : problem.subTask, // ignore taskSubtypeUndefined
         problem.metric,
-        (!!problem.subsetObs || !!problem.transform || (!!problem.pipelineId && manipulate.getPipeline(problem.problem_id).length !== 0)) && m(
+        // the view manipulations button
+        (!!problem.subsetObs || !!problem.transform || (subset.manipulations[problem.problem_id] || []).length !== 0) && m(
             'div[style=width:100%;text-align:center]', m(Button, {
+                disabled: problem.problem_id === app.selectedProblem && app.rightTab === 'Manipulate' && common.panelOpen['right'],
                 title: `view manipulations for ${problem.problem_id}`,
                 onclick: () => {
                     app.setRightTab('Manipulate');
@@ -402,7 +405,7 @@ function rightpanel(mode) {
                         value: 'Problem Pipeline',
                         contents: m(manipulate.PipelineFlowchart, {
                             compoundPipeline: manipulate.getPipeline(app.selectedProblem),
-                            pipelineId: app.disco.find(prob => prob.problem_id === app.selectedProblem).pipelineId,
+                            pipelineId: app.disco.find(prob => prob.problem_id === app.selectedProblem).problem_id,
                             editable: true,
                             aggregate: false
                         })
@@ -813,81 +816,79 @@ class Body {
                        )],
                 m('svg#whitespace')),
               app.is_model_mode && m("#spacetools.spaceTool", {style: {right: app.panelWidth.right, 'z-index': 16}},
-                              spaceBtn('btnAdd', async function() {
-                                app.zPop();
-                                  let rookpipe = await app.makeRequest(ROOK_SVC_URL + 'pipelineapp', app.zparams);
-                                  rookpipe.target = rookpipe.depvar[0];
-                                  let myn = app.findNode(rookpipe.target);
-                                  let currentTaskType = app.d3mProblemDescription.taskType;
-                                  let currentMetric = app.d3mProblemDescription.performanceMetrics[0].metric;
-                                  if (myn.nature == "nominal"){
-                                    rookpipe.task = currentTaskType === 'taskTypeUndefined' ? 'classification' : currentTaskType;
-                                    rookpipe.metric = currentMetric === 'metricUndefined' ? 'f1Macro' : currentMetric;
-                                  }else{
-                                    rookpipe.task = currentTaskType === 'taskTypeUndefined' ? 'regression' : currentTaskType;
-                                    rookpipe.metric = currentMetric === 'metricUndefined' ? 'meanSquaredError' : currentMetric;
-                                  };
-                                  rookpipe.meaningful = "yes";
-                                  rookpipe.subsetObs = 0;
-                                  rookpipe.subsetFeats = 0;
-                                  rookpipe.transform = 0;
-                                  rookpipe.system = "user";
-                                  let problemId = app.disco.length + 1;
-                                  rookpipe.problem_id = "problem" + problemId;
-                                  console.log("pushing this:");
-                                  console.log(rookpipe);
-                                  app.disco.push(rookpipe);
-                                    app.setSelectedProblem(rookpipe.problem_id);
-                                  app.setLeftTab('Discovery');
-                                  console.log("This is rookpipe ",rookpipe);
-                                  // this is where Problem ADD API call to the function will be made
-                                  let problem_result = {};
-                                  let preprocess_id = 1;
-                                  let version =1;
-                                  let selectedDisco = app.disco.find(problem => problem.problem_id === rookpipe.problem_id);
-                                  // console.log("this is selected Disco," , selectedDisco)
-                                  // app.problem_sent = []
-                                  // app.solver_res = []
-                                  let app_solver_result = app.callSolver(selectedDisco);
-                                  console.log("app selectedDisco ", selectedDisco)
-                                  app.solver_res = app_solver_result
-                                  let my_disco = []
-                                  my_disco.push(selectedDisco)
-                                  app.loadResult(my_disco)
-                                  // let addProblemAPI = app.addProblem(preprocess_id, version, problem_section);
-                                  // console.log("API RESPONSE: ",addProblemAPI );
+                spaceBtn('btnAdd', async function () {
+                    app.zPop();
 
-                                  m.redraw();
-                              }, 'Add model to problems.', 'plus'),
-                              spaceBtn('btnJoin', _ => {
-                                  let links = [];
-                                  console.log("doing connect all");
-                                  if (app.is_explore_mode) {
-                                      for (let node of app.nodes) {
-                                          for (let node1 of app.nodes) {
-                                              if (node !== node1 && links.filter(l => l.target === node1 && l.source === node).length === 0) {
-                                                  links.push({left: false, right: false, target: node, source: node1});
-                                              }
-                                          }
-                                      }
-                                  } else {
-                                      let dvs = app.nodes.filter(n => app.zparams.zdv.includes(n.name));
-                                      let nolink = app.zparams.zdv.concat(app.zparams.zgroup1).concat(app.zparams.zgroup2);
-                                      let ivs = app.nodes.filter(n => !nolink.includes(n.name));
+                    let oldProblem = app.disco.find(prob => prob.problem_id === app.selectedProblem);
+                    let newProblem = await app.makeRequest(ROOK_SVC_URL + 'pipelineapp', app.zparams);
 
-                                      links = dvs.map(dv => ivs.map(iv => ({
-                                          left: true,
-                                          right: false,
-                                          target: iv,
-                                          source: dv
-                                      })));
-                                  }
-                                  app.restart([].concat(...links));
-                              }, 'Make all possible connections between nodes', 'link'),
-                              spaceBtn('btnDisconnect', _ => app.restart([]), 'Delete all connections between nodes', 'remove-circle'),
-                              spaceBtn('btnForce', app.forceSwitch, 'Pin the variable pebbles to the page', 'pushpin'),
-                              spaceBtn('btnEraser', app.erase, 'Wipe all variables from the modeling space', 'magnet')),
-              app.is_model_mode && m(Subpanel, {
+                    let currentTaskType = app.d3mProblemDescription.taskType;
+                    let currentMetric = app.d3mProblemDescription.performanceMetrics[0].metric;
+
+                    Object.assign(newProblem, {
+                        problem_id: 'problem' + (app.disco.length + 1),
+                        system: 'user',
+                        meaningful: 'yes',
+                        target: newProblem.depvar[0],
+                        subsetObs: oldProblem.subsetObs,
+                        subsetFeats: oldProblem.subsetFeats,
+                        transform: oldProblem.transform
+                    });
+
+                    if (oldProblem.problem_id in subset.manipulations)
+                        manipulations[newProblem.problem_id]
+                            = jQuery.extend(true, [], manipulations[oldProblem.problem_id]);
+
+                    if (app.findNode(newProblem.target).nature === "nominal") {
+                        newProblem.task = currentTaskType === 'taskTypeUndefined' ? 'classification' : currentTaskType;
+                        newProblem.metric = currentMetric === 'metricUndefined' ? 'f1Macro' : currentMetric;
+                    } else {
+                        newProblem.task = currentTaskType === 'taskTypeUndefined' ? 'regression' : currentTaskType;
+                        newProblem.metric = currentMetric === 'metricUndefined' ? 'meanSquaredError' : currentMetric;
+                    }
+
+                    console.log("pushing this new problem to discovered problems:");
+                    console.log(newProblem);
+
+                    app.disco.push(newProblem);
+                    app.setSelectedProblem(newProblem.problem_id);
+                    app.setLeftTab('Discovery');
+                    await app.callSolver(newProblem);
+                    app.loadResult([newProblem]);
+                    // let addProblemAPI = app.addProblem(preprocess_id, version, problem_section);
+                    // console.log("API RESPONSE: ",addProblemAPI );
+
+                    m.redraw();
+                }, 'add model to problems', 'plus'),
+                spaceBtn('btnJoin', _ => {
+                    let links = [];
+                    console.log("doing connect all");
+                    if (app.is_explore_mode) {
+                        for (let node of app.nodes) {
+                            for (let node1 of app.nodes) {
+                                if (node !== node1 && links.filter(l => l.target === node1 && l.source === node).length === 0) {
+                                    links.push({left: false, right: false, target: node, source: node1});
+                                }
+                            }
+                        }
+                    } else {
+                        let dvs = app.nodes.filter(n => app.zparams.zdv.includes(n.name));
+                        let nolink = app.zparams.zdv.concat(app.zparams.zgroup1).concat(app.zparams.zgroup2);
+                        let ivs = app.nodes.filter(n => !nolink.includes(n.name));
+
+                        links = dvs.map(dv => ivs.map(iv => ({
+                            left: true,
+                            right: false,
+                            target: iv,
+                            source: dv
+                        })));
+                    }
+                    app.restart([].concat(...links));
+                }, 'Make all possible connections between nodes', 'link'),
+                spaceBtn('btnDisconnect', _ => app.restart([]), 'Delete all connections between nodes', 'remove-circle'),
+                spaceBtn('btnForce', app.forceSwitch, 'Pin the variable pebbles to the page', 'pushpin'),
+                spaceBtn('btnEraser', app.erase, 'Wipe all variables from the modeling space', 'magnet')),
+                app.is_model_mode && m(Subpanel, {
                     title: "Legend",
                     buttons: [
                         ['timeButton', 'ztime', 'Time'],
