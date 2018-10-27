@@ -100,14 +100,14 @@ export default class Table {
                         return elem;
                     }),
                     attrsAll: nestedStyle,
-                    abbreviation, attrsRows, attrsCells, nest
+                    abbreviation, attrsRows, attrsCells, nest, sortable
                 })
             }
             if (nest && typeof item === 'object')
                 return m(Table, {
                     data: item,
                     attrsAll: nestedStyle,
-                    abbreviation, attrsRows, attrsCells, nest
+                    abbreviation, attrsRows, attrsCells, nest, sortable
                 });
 
             // if abbreviation is not undefined, and string is too long, then shorten the string and add a tooltip
@@ -150,7 +150,9 @@ export default class Table {
 
 
 let omniSort = (a, b) => {
-    if (a === undefined || b === undefined || a === b) return 0;
+    if (a === undefined && b !== undefined) return -1;
+    if (b === undefined && a !== undefined) return 1;
+    if (a === b) return 0;
     if (typeof a === 'number') return (a - b);
     if (typeof a === 'string') return  (a.localeCompare(b));
     return ((a < b) ? -1 : 1);

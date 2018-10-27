@@ -68,11 +68,17 @@ export class TreeTransform {
 
     // when mithril updates this component, it redraws the tree with whatever the abstract query is
     onupdate({attrs, dom}) {
-        let {pipelineId, step, editable} = attrs;
-        let subsetTree = $(dom);
-        let state = subsetTree.tree('getState');
-        subsetTree.tree('loadData', this.convertToJQTreeFormat(pipelineId, step, editable));
-        subsetTree.tree('setState', state);
+        let {pipelineId, step, editable, redraw, setRedraw} = attrs;
+        let transformTree = $(dom);
+        if (redraw) {
+            setRedraw(false);
+            transformTree.tree('destroy');
+            this.oncreate({attrs, dom});
+            return;
+        }
+        let state = transformTree.tree('getState');
+        transformTree.tree('loadData', this.convertToJQTreeFormat(pipelineId, step, editable));
+        transformTree.tree('setState', state);
     }
 
     view() {
@@ -225,8 +231,15 @@ export class TreeQuery {
 
     // when mithril updates this component, it redraws the tree with whatever the abstract query is
     onupdate({attrs, dom}) {
-        let {step, isQuery} = attrs;
+        let {step, isQuery, redraw, setRedraw} = attrs;
+
         let subsetTree = $(dom);
+        if (redraw) {
+            setRedraw(false);
+            subsetTree.tree('destroy');
+            this.oncreate({attrs, dom});
+            return;
+        }
         let state = subsetTree.tree('getState');
         let data = isQuery
             ? [{
@@ -318,9 +331,17 @@ export class TreeAggregate {
 
     // when mithril updates this component, it redraws the tree with whatever the abstract query is
     onupdate({attrs, dom}) {
+        let {data, redraw, setRedraw} = attrs;
         let aggregateTree = $(dom);
+        if (redraw) {
+            setRedraw(false);
+            aggregateTree.tree('destroy');
+            this.oncreate({attrs, dom});
+            return;
+        }
+
         let state = aggregateTree.tree('getState');
-        aggregateTree.tree('loadData', attrs.data);
+        aggregateTree.tree('loadData', data);
         aggregateTree.tree('setState', state);
     }
 

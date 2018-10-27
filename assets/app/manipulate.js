@@ -259,7 +259,7 @@ export class PipelineFlowchart {
                         content = m('div', {style: {'text-align': 'left'}},
                             deleteButton,
                             m('h4[style=font-size:16px;margin-left:0.5em]', 'Transformations'),
-                            m(TreeTransform, {pipelineId, step, editable}),
+                            m(TreeTransform, {pipelineId, step, editable, redraw, setRedraw}),
                             // Enable to only show button if last element: pipeline.length - 1 === i &&
                             editable && m(Button, {
                                 id: 'btnAddTransform',
@@ -274,7 +274,7 @@ export class PipelineFlowchart {
                         content = m('div', {style: {'text-align': 'left'}},
                             deleteButton,
                             m('h4[style=font-size:16px;margin-left:0.5em]', 'Subset'),
-                            m(TreeQuery, {pipelineId, step, editable}),
+                            m(TreeQuery, {pipelineId, step, editable, redraw, setRedraw}),
 
                             editable && [
                                 m(Button, {
@@ -309,7 +309,8 @@ export class PipelineFlowchart {
                                     stepId: step.id,
                                     measure: 'unit',
                                     data: step.measuresUnit,
-                                    editable
+                                    editable,
+                                    redraw, setRedraw
                                 }),
                             ],
                             step.measuresAccum.length !== 0 && [
@@ -319,7 +320,8 @@ export class PipelineFlowchart {
                                     stepId: step.id,
                                     measure: 'unit',
                                     data: step.measuresAccum,
-                                    editable
+                                    editable,
+                                    redraw, setRedraw
                                 }),
                             ],
 
@@ -434,6 +436,8 @@ export let setQueryUpdated = async state => {
     if (!app.is_manipulate_mode) {
         let problem = app.disco.find(prob => prob.problem_id === app.selectedProblem);
         if (!problem) return;
+        console.warn('#debug problem');
+        console.log(problem);
 
         // promote the problem to a user problem if it is a system problem
         if (problem.system === 'auto') {
@@ -444,11 +448,7 @@ export let setQueryUpdated = async state => {
             problem.predictorsInitial = [...problem.predictors]; // the predictor list will be edited to include transformed variables
             app.disco.push(problem);
 
-            // these three lines force the rightpanel to flush the flowchart and completely rebuild it
-            // this causes the buttons embedded inside the trees to get rebuilt with proper pipelineIds
-            app.setSelectedProblem(undefined);
-            m.redraw();
-            await new Promise(_ => setTimeout(_, 100));
+            redraw = true;
 
             app.setSelectedProblem(problem.problem_id);
         }
@@ -456,8 +456,8 @@ export let setQueryUpdated = async state => {
         let problemPipeline = getProblemPipeline(app.selectedProblem) || [];
 
         let transformVars = getTransformVariables(problemPipeline);
-        problem.predictors = [...new Set([...problem.predictorsInitial, ...transformVars])];
         problem.transform = getTransformString(problemPipeline);
+        problem.predictors = [...new Set([...problem.predictorsInitial, ...transformVars])];
 
         // if the predictors changed, then redraw the force diagram
         if (app.nodes.length !== problem.predictors.length || app.nodes.some(node => !problem.predictors.includes(node.name)))
