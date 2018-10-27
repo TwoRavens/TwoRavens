@@ -18,7 +18,8 @@ import {selVarColor, mergeAttributes} from "../common";
 //     attrsCells: { apply attributes to each cell } (optional)
 //     tableTags: [ m('colgroup', ...), m('caption', ...), m('tfoot', ...)]
 //     abbreviation: (int),
-//     nest: (boolean)
+//     nest: (boolean),
+//     sortable: (boolean)
 //     })
 // ```
 
@@ -38,6 +39,7 @@ import {selVarColor, mergeAttributes} from "../common";
 // When nest is true, can pass json objects.
 // NOTE: do not pass mithril amongst the data argument when nest is true. m(...) are objects, so this component will attempt to tabularize them (and fail)
 
+// When sortable is true, clicking on a header will sort the data by that column
 
 let natives = new Set(['number', 'string', 'boolean']);
 let nestedStyle = {
@@ -50,7 +52,7 @@ let nestedStyle = {
 
 export default class Table {
     view(vnode) {
-        let {id, data, headers, activeRow, onclick, showUID, abbreviation, nest} = vnode.attrs;
+        let {id, data, headers, activeRow, onclick, showUID, abbreviation, nest, sortable} = vnode.attrs;
         // Interface custom attributes
         let {attrsAll, attrsRows, attrsCells, tableTags} = vnode.attrs;
 
@@ -68,7 +70,29 @@ export default class Table {
 
         showUID = showUID !== false; // Default is 'true'
 
-        let value = (item) => {
+        let sortIcon = header => {
+            if (!sortable || header !== this.sortHeader) return header;
+            return m('[style=text-align:center]', header, m('br'),
+                m(`span.glyphicon.glyphicon-chevron-${this.sortDescending ? 'up' : 'down'}[style=color: #818181; font-size: 1em; pointer-events: none]`));
+        };
+
+        let valueHeader = header => m('th.table-header-sticky', {
+            // sticky css applied on `th` for chrome compatibility https://bugs.chromium.org/p/chromium/issues/detail?id=702927
+            style: {'font-weight': 'bold', 'z-index': 5, background: 'rgba(173,173,173,0.8)', padding: '0 .5em'},
+            onclick: () => {
+                if (!sortable) return;
+                if (header === this.sortHeader) {
+                    if (!this.sortDescending) this.sortDescending = true;
+                    else {
+                        this.sortDescending = undefined;
+                        this.sortHeader = undefined;
+                    }
+                }
+                else this.sortHeader = header
+            }
+        }, sortIcon(value(header)));
+
+        let value = item => {
             if (nest && Array.isArray(item)) {
                 return m(Table, {
                     data: item.map((elem, i) => {
@@ -94,14 +118,16 @@ export default class Table {
             else return item;
         };
 
+        if (this.sortHeader) {
+            let index = data.some(row => !Array.isArray(row)) ? this.sortHeader : headers.indexOf(this.sortHeader);
+            data = data.sort((a, b) => omniSort(a[index], b[index]));
+            if (this.sortDescending) data = data.reverse();
+        }
 
         return m(`table.table#${id}`, mergeAttributes({style: {width: '100%'}}, attrsAll), [
             tableTags,
             headers && m('thead', {style: {width: '100%'}}, [
-                ...(showUID ? headers : headers.slice(1)).map((header) => m('th.table-header-sticky', {
-                    // sticky css applied on `th` for chrome compatibility https://bugs.chromium.org/p/chromium/issues/detail?id=702927
-                    style: {'font-weight': 'bold', 'z-index': 5, background: 'rgba(173,173,173,0.6)'}
-                }, value(header)))
+                ...(showUID ? headers : headers.slice(1)).map(valueHeader)
             ]),
 
             ...data.map((row, i) => {
@@ -121,3 +147,11 @@ export default class Table {
         );
     };
 }
+
+
+let omniSort = (a, b) => {
+    if (a === undefined || b === undefined || a === b) return 0;
+    if (typeof a === 'number') return (a - b);
+    if (typeof a === 'string') return  (a.localeCompare(b));
+    return ((a < b) ? -1 : 1);
+};

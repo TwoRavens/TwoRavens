@@ -218,7 +218,8 @@ function leftpanel(mode) {
                             activeRow: app.selectedProblem,
                             onclick: app.discoveryClick,
                             showUID: false,
-                            abbreviation: 40
+                            abbreviation: 40,
+                            sortable: true
                         })),
                     m('textarea#discoveryInput[style=display:block; float: left; width: 100%; height:calc(20% - 35px); overflow: auto; background-color: white]', {
                         value: selectedDisco === undefined ? '' : selectedDisco.description
@@ -704,7 +705,7 @@ class Body {
 
             (app.is_manipulate_mode || (app.is_model_mode && app.rightTab === 'Manipulate')) && manipulate.menu(
                 manipulate.getPipeline(app.selectedProblem), // the complete pipeline to build menus with
-                app.configurations.name + (app.is_model_mode ? app.selectedProblem : '')),  // the identifier for which pipeline to edit
+                app.is_model_mode ? app.selectedProblem : app.configurations.name),  // the identifier for which pipeline to edit
             app.peekInlineShown && this.peekTable(),
 
             m(`#main`, {style: {overflow, display: app.is_manipulate_mode || (app.rightTab === 'Manipulate' && manipulate.constraintMenu) ? 'none' : 'block'}},

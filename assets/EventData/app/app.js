@@ -626,7 +626,7 @@ export let pad = (number, length) => '0'.repeat(length - String(number).length) 
 export let anySort = (a, b) => {
     if (a === undefined || b === undefined) return 0;
     if (typeof a['Label'] === 'number') return a['Label'] - b['Label'];
-    if (typeof a['Label'] === 'string') a['Label'].localeCompare(b['Label']);
+    if (typeof a['Label'] === 'string') return a['Label'].localeCompare(b['Label']);
     return comparableSort(a, b);
 };
 
