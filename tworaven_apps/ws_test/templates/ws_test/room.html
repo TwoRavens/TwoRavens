@@ -13,12 +13,14 @@
 <script>
     var roomName = {{ room_name_json }};
 
-    var chatSocket = new WebSocket(
-        'ws://' + window.location.host +
-        '/ws/chat/' + roomName + '/');
+    var wsLink = 'ws://' + window.location.host +
+                 '/ws/chat/' + roomName + '/'
+    console.log(wsLink);
+    var chatSocket = new WebSocket(wsLink);
 
     chatSocket.onmessage = function(e) {
         var data = JSON.parse(e.data);
+        console.log('data:' + JSON.stringify(data));
         var message = data['message'];
         document.querySelector('#chat-log').value += (message + '\n');
     };
@@ -37,6 +39,7 @@
     document.querySelector('#chat-message-submit').onclick = function(e) {
         var messageInputDom = document.querySelector('#chat-message-input');
         var message = messageInputDom.value;
+        console.log('sending message: ' + message);
         chatSocket.send(JSON.stringify({
             'message': message
         }));

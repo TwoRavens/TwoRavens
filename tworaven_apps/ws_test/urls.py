@@ -4,7 +4,8 @@ from django.conf.urls import url
 from . import views
 
 urlpatterns = [
-    url(r'^$', views.index, name='index'),
+    url(r'alarm-ok', views.view_alarm, name='view_alarm'),
     url(r'^(?P<room_name>[^/]+)/$', views.room, name='room'),
+    url(r'^$', views.index, name='index'),
 
 ]

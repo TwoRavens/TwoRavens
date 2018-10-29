@@ -48,6 +48,13 @@ def stream_and_store_results(raven_json_str, stored_request_id,
         StoredRequest.set_error_status(stored_request_id, err_msg)
         return
 
+    # ---------------------------------------------
+    # test: send responses back to any open WebSockets
+    from channels.layers import get_channel_layer
+    from asgiref.sync import async_to_sync
+    from tworaven_apps.ws_test.consumers import ROOM_GROUP_NAME
+    # -----------------------------------------------
+
     # --------------------------------
     # Send the gRPC request
     # --------------------------------
@@ -72,6 +79,16 @@ def stream_and_store_results(raven_json_str, stored_request_id,
                                 stored_request_id,
                                 response=msg_json_info.result_obj)
             msg_cnt += 1
+
+
+            # -----------------------------------------------
+            # test: send responses back to any open WebSockets
+            # ---------------------------------------------
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(ROOM_GROUP_NAME, {
+                'type': 'chat_message',
+                'message': str(msg_json_info.result_obj)})
+            # -----------------------------------------------
 
             print('msg received #%d' % msg_cnt)
 
