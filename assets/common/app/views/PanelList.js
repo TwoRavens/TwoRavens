@@ -27,7 +27,9 @@ export default class PanelList {
 
         // set alternate background-color if defined
         let viewColor = {};
-        for (let color in colors || []) for (let item of colors[color]) viewColor[item] = color;
+        for (let color in colors || [])
+            for (let item of colors[color])
+                viewColor[item] = color;
 
         // invert the class -> item object
         let viewClass = {};

@@ -825,20 +825,32 @@ class Body {
                     spaceBtn('btnForce', app.forceSwitch, 'Pin the variable pebbles to the page', 'pushpin'),
                     spaceBtn('btnEraser', app.erase, 'Wipe all variables from the modeling space', 'magnet')
                 ]),
-                app.is_model_mode && m(Subpanel, {
-                    title: "Legend",
-                    buttons: [
-                        ['timeButton', 'ztime', 'Time'],
-                        ['csButton', 'zcross', 'Cross Sec'],
-                        ['dvButton', 'zdv', 'Dep Var'],
-                        ['nomButton', 'znom', 'Nom Var'],
-                        ['gr1Button', 'zgroup1', 'Group 1'],
-                        ['gr2Button', 'zgroup2', 'Group 2']],
-                    attrsStyle: {bottom: `calc(${app.peekInlineShown ? app.peekInlineHeight + ' + 23px' : '0px'})`}
-                }),
                 app.currentMode !== 'manipulate' && m(Subpanel, {title: "History"}),
+
+                (app.zparams.ztime.length + app.zparams.zcross.length + app.zparams.zdv.length + app.zparams.znom.length) && m(Subpanel2, {
+                    id: 'legend', header: 'Legend', class: 'legend',
+                    style: {
+                        right: app.panelWidth['right'],
+                        bottom: `calc(${common.panelMargin} + ${app.peekInlineShown ? app.peekInlineHeight + ' + 23px' : '0px'})`,
+                        position: 'absolute',
+                        width: '150px'
+                    }
+                }, [
+                    ['timeButton', 'ztime', 'Time', app.dvColor, 'white', 1],
+                    ['csButton', 'zcross', 'Cross Sec', app.csColor, 'white', 1],
+                    ['dvButton', 'zdv', 'Dep Var', app.timeColor, 'white', 1],
+                    ['nomButton', 'znom', 'Nom Var', app.nomColor, 'white', 1],
+                    ['gr1Button', 'zgroup1', 'Group 1', app.gr1Color, app.gr1Color, 0],
+                    ['gr2Button', 'zgroup2', 'Group 2', app.gr2Color, app.gr2Color, 0]
+                ].map(btn =>
+                    m(`#${btn[0]}.${app.zparams[btn[1]].length === 0 ? "hide" : "show"}[style=width:100% !important]`,
+                        m(".rectColor[style=display:inline-block]", m("svg[style=width: 20px; height: 20px]",
+                            m(`circle[cx=10][cy=10][fill=${btn[4]}][fill-opacity=0.6][r=9][stroke=${btn[3]}][stroke-opacity=${btn[5]}][stroke-width=2]`))),
+                        m(".rectLabel[style=display:inline-block;vertical-align:text-bottom;margin-left:.5em]", btn[2])))
+                ),
+
                 subset.manipulations[app.selectedProblem] && m(Subpanel2, {
-                    id: 'subpanelTest',
+                    id: 'subsetSubpanel',
                     header: 'Subsets',
                     style: {
                         left: app.panelWidth['left'],

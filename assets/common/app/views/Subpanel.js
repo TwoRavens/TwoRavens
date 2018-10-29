@@ -22,7 +22,7 @@ export default class Subpanel {
                         'href': `#${id}Body`,
                         onclick: () => this.show = !this.show
                     }))),
-            m(`div#${id}Body.panel-collapse.collapse.in`, m('div.panel-body', this.show && children))
+            m(`div#${id}Body.panel-collapse.collapse.in`, m('div.panel-body', children))
         );
     }
 }
