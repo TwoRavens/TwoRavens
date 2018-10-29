@@ -518,6 +518,7 @@ function makeAbstractBranch(step, preferences, metadata, name) {
             .forEach(selection => subset['children'].push({
                 id: String(step.nodeId++) + measureId,
                 name: String(selection),
+                value: selection,
                 show_op: false
             }));
 

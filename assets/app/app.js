@@ -56,8 +56,8 @@ export let peekId = 'tworavens';
 let peekLimit = 100;  // how many records to load at a time
 let peekSkip = 0;  // how many records have already been loaded
 
-let peekIsExhausted = false;  // if all data has been retrieved, this prevents attempting to load more records
-let peekIsLoading = false;  // if a request is currently being made for more data, block additional requests
+export let peekIsExhausted = false;  // if all data has been retrieved, this prevents attempting to load more records
+export let peekIsLoading = false;  // if a request is currently being made for more data, block additional requests
 
 export let peekInlineHeight = `calc(20% + ${common.heightFooter})`; // updated by the drag event listener
 export let setPeekInlineHeight = height => peekInlineHeight = height;
@@ -115,6 +115,12 @@ export async function updatePeek(pipeline) {
 
     if (data.length + (peekData || []).length === 0)
         alert('The pipeline at this stage matches no records. Delete constraints to match more records.');
+
+    if (data.length === 0) {
+        peekIsExhausted = true;
+        peekIsLoading = false;
+        return;
+    }
 
     data = data.map(record => Object.keys(record).reduce((out, entry) => {
         out[entry] = typeof record[entry] === 'number' ? formatPrecision(record[entry]) : record[entry];

@@ -36,7 +36,7 @@ export default class CanvasDiscrete {
             });
             app.alignmentData[alignment].forEach(equivalency => {
                 metadata['formats'].forEach(format => {
-                    let isSet = preferences['selections'].has(String(equivalency[format]));
+                    let isSet = preferences['selections'].has(equivalency[format]);
                     if (equivalency[format] in allSelected[format])
                         allSelected[format][equivalency[format]].push(isSet);
                     else
@@ -52,12 +52,12 @@ export default class CanvasDiscrete {
             allData[format] = {};
             allSelected[format] = {};
             if (format in app.formattingData) Object.keys(app.formattingData[format]).forEach(key => {
-                allSelected[format][key] = [preferences['selections'].has(String(key))];
+                allSelected[format][key] = [preferences['selections'].has(key)];
                 allData[format][key] = flattenedData[key] || 0;
             });
 
             else data.forEach(point => {
-                allSelected[format][point[format]] = [preferences['selections'].has(String(point[format]))];
+                allSelected[format][point[format]] = [preferences['selections'].has(point[format])];
                 allData[format][point[format]] = flattenedData[point[format]] || 0;
             })
         }
@@ -78,16 +78,16 @@ export default class CanvasDiscrete {
             };
         };
 
-        let createPlot = (format, data, selections) => {
+        let createPlot = (format, dataView, selections) => {
             let maxCharacters = 0;
 
             // resize left margin to keep labels within svg. If greater than 25 keys, then ignore zero-value keys
-            let keepZeros = Object.keys(data).length <= 25;
-            let keepKeys = Object.keys(data)
-                .filter(key => key !== 'undefined' && (keepZeros || data[key] !== 0));
+            let keepZeros = Object.keys(dataView).length <= 25;
+            let keepKeys = Object.keys(dataView)
+                .filter(key => key !== 'undefined' && (keepZeros || dataView[key] !== 0));
             keepKeys.forEach(entry => maxCharacters = Math.max(entry.length, maxCharacters));
 
-            let total = keepKeys.map(key => data[key]).reduce((total, value) => total + value);
+            let total = keepKeys.map(key => dataView[key]).reduce((total, value) => total + value);
 
             let plotData = keepKeys
                 .map(key => {
@@ -97,12 +97,12 @@ export default class CanvasDiscrete {
 
                     return {
                         key: key,
-                        value: data[key] / total,
+                        value: dataView[key] / total,
                         'class': selections[key].every(_ => _)
                             ? 'bar-selected'
                             : selections[key].some(_ => _)
                                 ? 'bar-some' : 'bar',
-                        title: data[key] + ' ' + (title || 'Records')
+                        title: dataView[key] + ' ' + (title || 'Records')
                     }
                 });
 
@@ -125,6 +125,11 @@ export default class CanvasDiscrete {
                         margin: {top: 10, right: 30, bottom: 50, left: maxCharacters * 6 + 20},
                         data: plotData,
                         callbackBar: (bar) => {
+                            if (parseFloat(bar.key)) {
+                                let foundRecord = data.find(record => String(record[metadata.columns[0]]) === bar.key);
+                                if (foundRecord[metadata.columns[0]] !== undefined) bar.key = foundRecord[metadata.columns[0]];
+                            }
+
                             let target_state = bar.class === 'bar-some' || bar.class === 'bar';
 
                             if (alignment) {

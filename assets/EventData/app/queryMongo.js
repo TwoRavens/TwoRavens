@@ -303,7 +303,7 @@ function processRule(rule) {
     if (['discrete', 'discrete_grouped'].includes(rule.subset)) {
         let rule_query_inner = [];
         for (let child of rule.children) {
-            rule_query_inner.push(child.name);
+            rule_query_inner.push(child.value);
         }
 
         rule_query_inner = {'$in': rule_query_inner};

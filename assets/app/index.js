@@ -920,7 +920,7 @@ class Body {
 
     peekTable() {
         let pipeline = manipulate.getPipeline(app.is_model_mode && app.selectedProblem);
-        if (app.peekInlineShown && !app.peekData) app.resetPeek(pipeline);
+        if (app.peekInlineShown && !app.peekData && !app.peekIsExhausted) app.resetPeek(pipeline);
 
         return m('div#previewTable', {
                 style: {
