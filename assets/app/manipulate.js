@@ -436,8 +436,6 @@ export let setQueryUpdated = async state => {
     if (!app.is_manipulate_mode) {
         let problem = app.disco.find(prob => prob.problem_id === app.selectedProblem);
         if (!problem) return;
-        console.warn('#debug problem');
-        console.log(problem);
 
         // promote the problem to a user problem if it is a system problem
         if (problem.system === 'auto') {
@@ -452,6 +450,8 @@ export let setQueryUpdated = async state => {
 
             app.setSelectedProblem(problem.problem_id);
         }
+
+        if (!problem.predictorsInitial) problem.predictorsInitial = problem.predictors;
 
         let problemPipeline = getProblemPipeline(app.selectedProblem) || [];
 

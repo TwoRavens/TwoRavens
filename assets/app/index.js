@@ -35,12 +35,12 @@ import DataTable from '../common/app/views/DataTable';
 import Table from '../common/app/views/Table';
 import TextField from '../common/app/views/TextField';
 import MenuHeaders from "../common/app/views/MenuHeaders";
+import Subpanel2 from '../common/app/views/Subpanel';
 // EVENTDATA
 import Body_EventData from '../EventData/app/Body_EventData';
 import Peek_EventData from '../common-eventdata/views/Peek';
 import '../EventData/css/app.css'
 import '../EventData/app/app';
-import {manipulations} from "../EventData/app/app";
 
 export let bold = (value) => m('div', {style: {'font-weight': 'bold', display: 'inline'}}, value);
 export let italicize = (value) => m('div', {style: {'font-style': 'italic', display: 'inline'}}, value);
@@ -696,6 +696,8 @@ class Body {
         let overflow = app.is_explore_mode ? 'auto' : 'hidden';
         let style = `position: absolute; left: ${app.panelWidth.left}; top: 0; margin-top: 10px`;
 
+        let problem = app.selectedProblem && app.disco.find(prob => prob.problem_id === app.selectedProblem);
+
         return m('main', [
             m(Modal),
             this.header(app.currentMode),
@@ -816,79 +818,13 @@ class Body {
                           }))
                        )],
                 m('svg#whitespace')),
-              app.is_model_mode && m("#spacetools.spaceTool", {style: {right: app.panelWidth.right, 'z-index': 16}},
-                spaceBtn('btnAdd', async function () {
-                    app.zPop();
-
-                    let oldProblem = app.disco.find(prob => prob.problem_id === app.selectedProblem);
-                    let newProblem = await app.makeRequest(ROOK_SVC_URL + 'pipelineapp', app.zparams);
-
-                    let currentTaskType = app.d3mProblemDescription.taskType;
-                    let currentMetric = app.d3mProblemDescription.performanceMetrics[0].metric;
-
-                    Object.assign(newProblem, {
-                        problem_id: 'problem' + (app.disco.length + 1),
-                        system: 'user',
-                        meaningful: 'yes',
-                        target: newProblem.depvar[0],
-                        subsetObs: oldProblem.subsetObs,
-                        subsetFeats: oldProblem.subsetFeats,
-                        transform: oldProblem.transform
-                    });
-
-                    if (oldProblem.problem_id in subset.manipulations)
-                        manipulations[newProblem.problem_id]
-                            = jQuery.extend(true, [], manipulations[oldProblem.problem_id]);
-
-                    if (app.findNode(newProblem.target).nature === "nominal") {
-                        newProblem.task = currentTaskType === 'taskTypeUndefined' ? 'classification' : currentTaskType;
-                        newProblem.metric = currentMetric === 'metricUndefined' ? 'f1Macro' : currentMetric;
-                    } else {
-                        newProblem.task = currentTaskType === 'taskTypeUndefined' ? 'regression' : currentTaskType;
-                        newProblem.metric = currentMetric === 'metricUndefined' ? 'meanSquaredError' : currentMetric;
-                    }
-
-                    console.log("pushing this new problem to discovered problems:");
-                    console.log(newProblem);
-
-                    app.disco.push(newProblem);
-                    app.setSelectedProblem(newProblem.problem_id);
-                    app.setLeftTab('Discovery');
-                    await app.callSolver(newProblem);
-                    app.loadResult([newProblem]);
-                    // let addProblemAPI = app.addProblem(preprocess_id, version, problem_section);
-                    // console.log("API RESPONSE: ",addProblemAPI );
-
-                    m.redraw();
-                }, 'add model to problems', 'plus'),
-                spaceBtn('btnJoin', _ => {
-                    let links = [];
-                    console.log("doing connect all");
-                    if (app.is_explore_mode) {
-                        for (let node of app.nodes) {
-                            for (let node1 of app.nodes) {
-                                if (node !== node1 && links.filter(l => l.target === node1 && l.source === node).length === 0) {
-                                    links.push({left: false, right: false, target: node, source: node1});
-                                }
-                            }
-                        }
-                    } else {
-                        let dvs = app.nodes.filter(n => app.zparams.zdv.includes(n.name));
-                        let nolink = app.zparams.zdv.concat(app.zparams.zgroup1).concat(app.zparams.zgroup2);
-                        let ivs = app.nodes.filter(n => !nolink.includes(n.name));
-
-                        links = dvs.map(dv => ivs.map(iv => ({
-                            left: true,
-                            right: false,
-                            target: iv,
-                            source: dv
-                        })));
-                    }
-                    app.restart([].concat(...links));
-                }, 'Make all possible connections between nodes', 'link'),
-                spaceBtn('btnDisconnect', _ => app.restart([]), 'Delete all connections between nodes', 'remove-circle'),
-                spaceBtn('btnForce', app.forceSwitch, 'Pin the variable pebbles to the page', 'pushpin'),
-                spaceBtn('btnEraser', app.erase, 'Wipe all variables from the modeling space', 'magnet')),
+                app.is_model_mode && m("#spacetools.spaceTool", {style: {right: app.panelWidth.right, 'z-index': 16}}, [
+                    spaceBtn('btnAdd', app.addProblemFromForceDiagram, 'add model to problems', 'plus'),
+                    spaceBtn('btnJoin', app.connectAllForceDiagram, 'Make all possible connections between nodes', 'link'),
+                    spaceBtn('btnDisconnect', () => app.restart([]), 'Delete all connections between nodes', 'remove-circle'),
+                    spaceBtn('btnForce', app.forceSwitch, 'Pin the variable pebbles to the page', 'pushpin'),
+                    spaceBtn('btnEraser', app.erase, 'Wipe all variables from the modeling space', 'magnet')
+                ]),
                 app.is_model_mode && m(Subpanel, {
                     title: "Legend",
                     buttons: [
@@ -900,7 +836,19 @@ class Body {
                         ['gr2Button', 'zgroup2', 'Group 2']],
                     attrsStyle: {bottom: `calc(${app.peekInlineShown ? app.peekInlineHeight + ' + 23px' : '0px'})`}
                 }),
-                app.currentMode !== 'manipulate' && m(Subpanel, {title: "History"}))
+                app.currentMode !== 'manipulate' && m(Subpanel, {title: "History"}),
+                subset.manipulations[app.selectedProblem] && m(Subpanel2, {
+                    id: 'subpanelTest',
+                    header: 'Subsets',
+                    style: {
+                        left: app.panelWidth['left'],
+                        top: common.panelMargin,
+                        position: 'absolute'
+                    }
+                }, subset.manipulations[app.selectedProblem]
+                    .filter(step => step.type === 'subset')
+                    .map(step => m('div', step.id)))
+            )
         ]);
     }
 

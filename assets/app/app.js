@@ -4588,6 +4588,79 @@ export function discovery(preprocess_file) {
     */
 }
 
+// creates a new problem from the force diagram problem space and adds to disco
+export async function addProblemFromForceDiagram() {
+    zPop();
+
+    let oldProblem = disco.find(prob => prob.problem_id === selectedProblem);
+    let newProblem = jQuery.extend(true, {
+            problem_id: 'problem' + (disco.length + 1),
+            system: 'user',
+            meaningful: 'yes',
+            transform: 0,
+            subsetObs: 0,
+            subsetFeats: 0,
+        },
+        oldProblem || {},
+        await makeRequest(ROOK_SVC_URL + 'pipelineapp', zparams));
+
+    newProblem.target = newProblem.depvar[0];
+
+    let currentTaskType = d3mProblemDescription.taskType;
+    let currentMetric = d3mProblemDescription.performanceMetrics[0].metric;
+
+    if (findNode(newProblem.target).nature === "nominal") {
+        newProblem.task = currentTaskType === 'taskTypeUndefined' ? 'classification' : currentTaskType;
+        newProblem.metric = currentMetric === 'metricUndefined' ? 'f1Macro' : currentMetric;
+    } else {
+        newProblem.task = currentTaskType === 'taskTypeUndefined' ? 'regression' : currentTaskType;
+        newProblem.metric = currentMetric === 'metricUndefined' ? 'meanSquaredError' : currentMetric;
+    }
+
+    if ((oldProblem || {}).problem_id in manipulations)
+        manipulations[newProblem.problem_id]
+            = jQuery.extend(true, [], manipulations[oldProblem.problem_id]);
+
+    console.log("pushing new problem to discovered problems:");
+    console.log(newProblem);
+
+    disco.push(newProblem);
+    setSelectedProblem(newProblem.problem_id);
+    setLeftTab('Discovery');
+    await callSolver(newProblem);
+    loadResult([newProblem]);
+    // let addProblemAPI = app.addProblem(preprocess_id, version, problem_section);
+    // console.log("API RESPONSE: ",addProblemAPI );
+
+    m.redraw();
+}
+
+export function connectAllForceDiagram() {
+    let links = [];
+    if (is_explore_mode) {
+        for (let node of nodes) {
+            for (let node1 of nodes) {
+                if (node !== node1 && links.filter(l => l.target === node1 && l.source === node).length === 0) {
+                    links.push({left: false, right: false, target: node, source: node1});
+                }
+            }
+        }
+    } else {
+        let dvs = nodes.filter(n => zparams.zdv.includes(n.name));
+        let nolink = zparams.zdv.concat(zparams.zgroup1).concat(zparams.zgroup2);
+        let ivs = nodes.filter(n => !nolink.includes(n.name));
+
+        links = dvs.map(dv => ivs.map(iv => ({
+            left: true,
+            right: false,
+            target: iv,
+            source: dv
+        })));
+    }
+    restart([...links]);
+}
+
+
 // when a problem is clicked
 // let discoveryTimeout;
 export let discoveryClick = problemId => {
