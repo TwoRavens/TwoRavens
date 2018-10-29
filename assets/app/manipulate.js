@@ -165,9 +165,9 @@ export function varList() {
                 'item-bordered': variables.filter(variable =>
                     variableSearch !== '' && variable.toLowerCase().includes(variableSearch))
             },
-            callback: constraintMenu.type !== 'transform'
-                ? variable => setConstraintColumn(variable, constraintMenu.pipeline)
-                : variable => constraintPreferences.insert(variable),
+            callback: constraintMenu.type === 'transform'
+                ? variable => constraintPreferences.insert(variable)
+                : variable => setConstraintColumn(variable, constraintMenu.pipeline),
             popup: variable => app.popoverContent(variableMetadata[variable]),
             attrsItems: {'data-placement': 'right', 'data-original-title': 'Summary Statistics'},
             attrsAll: {
@@ -565,7 +565,7 @@ export let constraintMetadata = {};
 // }
 
 export let setConstraintColumn = (column, pipeline) => {
-    if ('columns' in constraintMetadata && constraintMetadata.columns[0] === column) pipeline = undefined;
+    if ('columns' in constraintMetadata && constraintMetadata.columns[0] === column) return;
     constraintMetadata.columns = [column];
 
     setConstraintType(inferType(column));

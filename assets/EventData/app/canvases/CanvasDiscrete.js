@@ -36,7 +36,7 @@ export default class CanvasDiscrete {
             });
             app.alignmentData[alignment].forEach(equivalency => {
                 metadata['formats'].forEach(format => {
-                    let isSet = preferences['selections'].has(equivalency[format]);
+                    let isSet = preferences['selections'].has(String(equivalency[format]));
                     if (equivalency[format] in allSelected[format])
                         allSelected[format][equivalency[format]].push(isSet);
                     else
@@ -52,12 +52,12 @@ export default class CanvasDiscrete {
             allData[format] = {};
             allSelected[format] = {};
             if (format in app.formattingData) Object.keys(app.formattingData[format]).forEach(key => {
-                allSelected[format][key] = [preferences['selections'].has(key)];
+                allSelected[format][key] = [preferences['selections'].has(String(key))];
                 allData[format][key] = flattenedData[key] || 0;
             });
 
             else data.forEach(point => {
-                allSelected[format][point[format]] = [preferences['selections'].has(point[format])];
+                allSelected[format][point[format]] = [preferences['selections'].has(String(point[format]))];
                 allData[format][point[format]] = flattenedData[point[format]] || 0;
             })
         }
@@ -90,7 +90,7 @@ export default class CanvasDiscrete {
             let total = keepKeys.map(key => data[key]).reduce((total, value) => total + value);
 
             let plotData = keepKeys
-                .map((key) => {
+                .map(key => {
                     let title = (app.formattingData[format] || {})[key];
                     if (Array.isArray(title)) title = title[0];
                     else if (title !== undefined && typeof title === 'object') title = title['name'];
