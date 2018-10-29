@@ -125,9 +125,10 @@ export default class CanvasDiscrete {
                         margin: {top: 10, right: 30, bottom: 50, left: maxCharacters * 6 + 20},
                         data: plotData,
                         callbackBar: (bar) => {
-                            if (parseFloat(bar.key)) {
+                            if (!isNaN(parseFloat(bar.key))) {
                                 let foundRecord = data.find(record => String(record[metadata.columns[0]]) === bar.key);
-                                if (foundRecord[metadata.columns[0]] !== undefined) bar.key = foundRecord[metadata.columns[0]];
+                                if (foundRecord && foundRecord[metadata.columns[0]] !== undefined)
+                                    bar.key = foundRecord[metadata.columns[0]];
                             }
 
                             let target_state = bar.class === 'bar-some' || bar.class === 'bar';

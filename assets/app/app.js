@@ -987,7 +987,6 @@ for(let i=0; i<disco.length; i++){
 
 
 export function loadResult(my_disco) {
-
     (my_disco || disco).forEach((problem, i) => {
 
         let prob_name = (problem.description || {}).problem_id || problem.problem_id;
@@ -1003,8 +1002,7 @@ export function loadResult(my_disco) {
     console.log("problem to be sent ", problem_sent)
     let preprocess_id = 1
     let version = 1
-    let api_res = addProblem(preprocess_id, version, problem_sent)
-    console.log("ADD PROBLEM/RESULT API RESPONSE ", api_res)
+    addProblem(preprocess_id, version, problem_sent).then(api_res => console.log("ADD PROBLEM/RESULT API RESPONSE ", api_res))
 }
 /**
    called on app start
@@ -4600,15 +4598,17 @@ export async function addProblemFromForceDiagram() {
 
     let oldProblem = disco.find(prob => prob.problem_id === selectedProblem);
     let newProblem = jQuery.extend(true, {
-            problem_id: 'problem' + (disco.length + 1),
-            system: 'user',
-            meaningful: 'yes',
             transform: 0,
             subsetObs: 0,
-            subsetFeats: 0,
+            subsetFeats: 0
         },
         oldProblem || {},
-        await makeRequest(ROOK_SVC_URL + 'pipelineapp', zparams));
+        await makeRequest(ROOK_SVC_URL + 'pipelineapp', zparams),
+        {
+            problem_id: 'problem' + (disco.length + 1),
+            system: 'user',
+            meaningful: 'yes'
+        });
 
     newProblem.target = newProblem.depvar[0];
 
@@ -4833,8 +4833,6 @@ export function makeDataDiscoveryTable(){
   console.log("Here we bring our table")
   stargazer = solver_res[0]['stargazer']
   // d3.select("#setDataTable").html("");
-
-
 }
 
 export let checkedDiscoveryProblems = new Set();
@@ -5102,23 +5100,16 @@ function primitiveStepRemoveColumns (aux) {
     return {primitive:step};
 }
 
-export function addProblem(preprocess_id, version, problem_sent){
-    let api_response = ""
-    m.request({
-        method: "POST",
-        url: "http://127.0.0.1:4354/preprocess/problem-section", // should be changed later
-        data: {
-            "preprocessId":preprocess_id,
-            "version":version,
-            "problems":problem_sent
-        }
-    })
-        .then(function(result) {
-            // console.log("response from API",result);
-            api_response = result;
-        })
-
-    return api_response;
+export async function addProblem(preprocess_id, version, problem_sent){
+    // return await m.request({
+    //     method: "POST",
+    //     url: "http://127.0.0.1:4354/preprocess/problem-section", // should be changed later
+    //     data: {
+    //         "preprocessId": preprocess_id,
+    //         "version": version,
+    //         "problems": problem_sent
+    //     }
+    // })
 }
 
 

@@ -434,10 +434,8 @@ function rightpanel(mode) {
                          m('col', {span: 1}),
                          m('col', {span: 1, width: '30%'}))
                  })),
-             app.pipelineTable.length === 0 && "Use 'Solve This Problem' to create a list of pipelines. ",
-             app.selectedPipeline === undefined && 'Click a pipeline to explore results.',
 
-             app.selectedPipeline && m(ButtonRadio, {
+             m(ButtonRadio, {
                  id: 'resultsButtonBar',
                  attrsAll: {style: {width: 'auto'}},
                  attrsButtons: {class: ['btn-sm'], style: {width: 'auto'}},
@@ -508,7 +506,7 @@ function rightpanel(mode) {
                m('#setPredictionDataLeft[style=display:block; width: 100%; height:100%; margin-top:1em; overflow: auto; background-color: white; padding : 1em; margin-top: 1em]')
              ),
              m(`div#solutionTable[style=display:${app.selectedResultsMenu === 'Solution Table' ? 'block' : 'none'};height:calc(100% - 30px); overflow: auto; width: 70%, padding : 1em]`,
-                   m(DataTable, {data: app.stargazer})
+                   selectedProblem && m(DataTable, {data: app.stargazer, variable: selectedProblem.target})
              )
          ]}
        // },{

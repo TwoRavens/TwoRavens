@@ -462,7 +462,7 @@ export let setQueryUpdated = async state => {
         // if the predictors changed, then redraw the force diagram
         if (app.nodes.length !== problem.predictors.length || app.nodes.some(node => !problem.predictors.includes(node.name)))
             app.discoveryClick(app.selectedProblem);
-        
+
         subset.setTotalSubsetRecords(undefined);
         app.resetPeek();
     }

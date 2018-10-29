@@ -96,10 +96,26 @@ export default {
                 push(row, td);
             if (row.join('') !== '') data.push(row);
         }
-        return m(Table, {id: 'datatable',attrsAll: {data: headers, style:{border: '1px solid #FF5733', background: selVarColor}}, data,
-         attrsAll: {
-            style: {width: '90%', height: '100%', overflow: 'auto', display: 'block', border: '1px solid #ddd', margin:'1em', padding: '1em',
-            'text-align': 'left', 'box-shadow': '0px 5px 10px rgba(0, 0, 0, .2)', background: 'rgba(0,0,0,.1)'}}
-          });
+
+        return m(Table, {
+            id: 'datatable',
+            data: data.slice(2, data.length),
+            headers: ['', `Dependent Variable: ${vnode.attrs.variable}`],
+            // attrsAll: {data: headers, style: {border: '1px solid #FF5733', background: selVarColor}},
+            attrsAll: {
+                style: {
+                    width: '90%',
+                    height: '100%',
+                    overflow: 'auto',
+                    display: 'block',
+                    border: '1px solid #ddd',
+                    margin: '1em',
+                    padding: '1em',
+                    'text-align': 'left',
+                    'box-shadow': '0px 5px 10px rgba(0, 0, 0, .2)',
+                    background: 'rgba(0,0,0,.1)'
+                }
+            }
+        });
     }
 };
