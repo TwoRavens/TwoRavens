@@ -2,6 +2,7 @@
 send a gRPC command that has streaming results
 capture the results in the db as StoredResponse objects
 """
+from datetime import datetime
 from django.conf import settings
 
 from tworaven_apps.utils.json_helper import json_loads
@@ -10,6 +11,13 @@ from tworaven_apps.ta2_interfaces.ta2_connection import TA2Connection
 from tworaven_apps.ta2_interfaces.models import \
     (StoredRequest, StoredResponse)
 from tworavensproject.celery import celery_app
+
+# ---------------------------------------------
+# test: send responses back to any open WebSockets
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+from tworaven_apps.ws_test.consumers import CHAT_MESSAGE_TYPE #ROOM_GROUP_NAME
+# -----------------------------------------------
 
 import grpc
 import core_pb2
@@ -20,7 +28,7 @@ from google.protobuf.json_format import \
 
 @celery_app.task
 def stream_and_store_results(raven_json_str, stored_request_id,
-                             grpc_req_obj_name, grpc_call_name):
+                             grpc_req_obj_name, grpc_call_name, **kwargs):
     """Make the grpc call which has a streaming response
 
     grpc_req_obj_name: "core_pb2.GetSearchSolutionsResultsRequest", etc
@@ -30,6 +38,11 @@ def stream_and_store_results(raven_json_str, stored_request_id,
     if err_msg:
         StoredRequest.set_error_status(stored_request_id, err_msg)
         return
+
+    # optional: used to stream messages back to client via channels
+    #
+    websocket_id = kwargs.get('websocket_id', None)
+    print('websocket_id', websocket_id)
 
     #
     grpc_req_obj = eval(grpc_req_obj_name)
@@ -48,12 +61,6 @@ def stream_and_store_results(raven_json_str, stored_request_id,
         StoredRequest.set_error_status(stored_request_id, err_msg)
         return
 
-    # ---------------------------------------------
-    # test: send responses back to any open WebSockets
-    from channels.layers import get_channel_layer
-    from asgiref.sync import async_to_sync
-    from tworaven_apps.ws_test.consumers import ROOM_GROUP_NAME
-    # -----------------------------------------------
 
     # --------------------------------
     # Send the gRPC request
@@ -85,9 +92,22 @@ def stream_and_store_results(raven_json_str, stored_request_id,
             # test: send responses back to any open WebSockets
             # ---------------------------------------------
             channel_layer = get_channel_layer()
-            async_to_sync(channel_layer.group_send)(ROOM_GROUP_NAME, {
-                'type': 'chat_message',
-                'message': str(msg_json_info.result_obj)})
+
+            if websocket_id:
+                print('send it to the group!')
+
+                msg_dict = dict(msg_type=grpc_req_obj_name,
+                                timestamp=datetime.now().strftime('%Y-%m-%dT%H:%M:%S'),
+                                message='it worked!',
+                                msg_cnt=msg_cnt,
+                                success=True,
+                                data=msg_json_info.result_obj)
+
+                async_to_sync(channel_layer.group_send)(\
+                        websocket_id,
+                        dict(type=CHAT_MESSAGE_TYPE,
+                             message=msg_dict))
+
             # -----------------------------------------------
 
             print('msg received #%d' % msg_cnt)

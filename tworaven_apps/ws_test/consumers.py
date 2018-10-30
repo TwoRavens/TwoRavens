@@ -3,13 +3,16 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 import json
 
 ROOM_GROUP_NAME = 'kiwi'
+CHAT_MESSAGE_TYPE = 'chat_message'
 
 
 class ChatConsumer(AsyncWebsocketConsumer):
 
     async def connect(self):
         self.room_name = self.scope['url_route']['kwargs']['room_name']
-        self.room_group_name = ROOM_GROUP_NAME #'chat_%s' % self.room_name
+        self.room_group_name = self.room_name
+
+        #self.room_group_name = ROOM_GROUP_NAME #'chat_%s' % self.room_name
 
 
         print('connect.room_name: ', self.room_name)
@@ -21,6 +24,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             self.channel_name
         )
 
+        print('connection made!')
         await self.accept()
 
     async def disconnect(self, close_code):
@@ -40,10 +44,12 @@ class ChatConsumer(AsyncWebsocketConsumer):
         print('room_group_name: ', self.room_group_name)
 
         # Send message to room group
+        #text_data_json['type'] = 'chat_message'
+
         await self.channel_layer.group_send(
             self.room_group_name,
             {
-                'type': 'chat_message',
+                'type': CHAT_MESSAGE_TYPE,
                 'message': message
             }
         )
@@ -54,7 +60,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
         # Send message to WebSocket
         await self.send(text_data=json.dumps({
-            'message': message       
+            'message': message
         }))
 
 """

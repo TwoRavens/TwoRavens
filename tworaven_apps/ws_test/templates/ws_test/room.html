@@ -1,4 +1,5 @@
 <!-- chat/templates/chat/room.html -->
+{% load static %}
 <!DOCTYPE html>
 <html>
 <head>
@@ -7,9 +8,15 @@
 </head>
 <body>
     <textarea id="chat-log" cols="100" rows="20"></textarea><br/>
+    <div id="chat-list">
+      <ul>
+      </ul>
+    </div>
     <input id="chat-message-input" type="text" size="100"/><br/>
     <input id="chat-message-submit" type="button" value="Send"/>
 </body>
+<script src="{% static "pkgs/bootstrap4/jquery-3.2.1.min.js" %}"></script>
+
 <script>
     var roomName = {{ room_name_json }};
 
@@ -23,6 +30,9 @@
         console.log('data:' + JSON.stringify(data));
         var message = data['message'];
         document.querySelector('#chat-log').value += (message + '\n');
+
+        $("#chat-list ul").prepend('<li>' + message '</li>');
+
     };
 
     chatSocket.onclose = function(e) {
