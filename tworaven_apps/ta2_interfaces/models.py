@@ -111,6 +111,20 @@ class StoredRequest(TimeStampedModel):
 
         return callback_url
 
+    @staticmethod
+    def get_callback_url_via_id(stored_request_id):
+        """For returning the callback url with only the id"""
+        assert stored_request_id, 'A stored_request_id is required'
+
+        try:
+            stored_request = StoredRequest.objects.get(pk=stored_request_id)
+        except StoredRequest.DoesNotExist:
+            return err_resp('Failed to find Stored Request')
+
+        return ok_resp(stored_request.get_callback_url())
+
+
+
 
     @staticmethod
     def set_error_status(stored_request_id, user_message=None, is_finished=True):
@@ -275,6 +289,19 @@ class StoredResponse(TimeStampedModel):
 
         return callback_url
 
+    @staticmethod
+    def get_callback_url_via_id(stored_response_id):
+        """For returning the callback url with only the id"""
+        assert stored_response_id, 'A stored_response_id is required'
+
+        try:
+            stored_response = StoredResponse.objects.get(pk=stored_response_id)
+        except StoredResponse.DoesNotExist:
+            return err_resp('Failed to find StoredResponse')
+
+        return ok_resp(stored_response.get_callback_url())
+
+
     def link_to_request(self):
         """Admin link to request"""
         if not self.stored_request:
@@ -362,4 +389,4 @@ class StoredResponse(TimeStampedModel):
 
         stored_response.save()
 
-        return ok_resp(None)
+        return ok_resp(stored_response)

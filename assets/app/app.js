@@ -614,7 +614,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         console.log("Task 2: Problem Doc Exists");
 
         // Note: There is no res.success field in this return state
-        // if (!res.success){             
+        // if (!res.success){
         //   alert('problem schema not available: ' + res.message);
         //   return
         // }
@@ -654,7 +654,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
         console.log("Task 1: No Problem Doc");
         d3mProblemDescription.id="Task1";
         d3mProblemDescription.name="Task1";
-        d3mProblemDescription.description = "Discovered Problems";    
+        d3mProblemDescription.description = "Discovered Problems";
     };
 
     // 4. Read the data document and set 'datadocument'
@@ -869,7 +869,7 @@ async function load(hold, lablArray, d3mRootPath, d3mDataName, d3mPreprocess, d3
 
         // Set target variable for center panel if no problemDoc exists to set this
         if(!problemDocExists){
-            mytarget = disco[0].target; 
+            mytarget = disco[0].target;
             mytargetindex = valueKey.indexOf(mytarget) - 1;  // Not clear if still used?
         };
 
@@ -2563,7 +2563,7 @@ export async function estimate(btn) {
             let fittedId = "";
             allsearchId.push(searchId);
 
-            let res2 = await makeRequest(D3M_SVC_URL + '/GetSearchSolutionsResults',
+          let res2 = await makeRequest(D3M_SVC_URL + '/GetSearchSolutionsResults',
                                          {searchId: searchId});
             if (!res2.success){
                 alert('Failed to get GetSearchSolutionsResults: ' + res2.message);

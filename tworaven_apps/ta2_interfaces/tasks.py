@@ -10,6 +10,7 @@ from tworaven_apps.utils.proto_util import message_to_json
 from tworaven_apps.ta2_interfaces.ta2_connection import TA2Connection
 from tworaven_apps.ta2_interfaces.models import \
     (StoredRequest, StoredResponse)
+from tworaven_apps.ta2_interfaces.websocket_message import WebsocketMessage
 from tworavensproject.celery import celery_app
 
 # ---------------------------------------------
@@ -42,7 +43,7 @@ def stream_and_store_results(raven_json_str, stored_request_id,
     # optional: used to stream messages back to client via channels
     #
     websocket_id = kwargs.get('websocket_id', None)
-    print('websocket_id', websocket_id)
+
 
     #
     grpc_req_obj = eval(grpc_req_obj_name)
@@ -70,6 +71,14 @@ def stream_and_store_results(raven_json_str, stored_request_id,
         for reply in grpc_rpc_call_function(\
                 req, timeout=settings.TA2_GRPC_LONG_TIMEOUT):
 
+            msg_cnt += 1
+
+            stored_response_url = None
+            stored_resp = None
+
+            # for sending websocket messages
+            channel_layer = get_channel_layer()
+
             # Save the stored response
             #
             msg_json_str = message_to_json(reply)
@@ -77,36 +86,63 @@ def stream_and_store_results(raven_json_str, stored_request_id,
             msg_json_info = json_loads(msg_json_str)
             if not msg_json_info.success:
                 print('PROBLEM HERE TO LOG!')
+                ws_msg = WebsocketMessage.get_fail_message(\
+                        grpc_call_name,
+                        'failed to store response: %s' % \
+                          msg_json_info.err_msg,
+                        msg_cnt=msg_cnt)
+                async_to_sync(channel_layer.group_send)(\
+                        websocket_id,
+                        dict(type=CHAT_MESSAGE_TYPE,
+                             message=ws_msg.as_dict()))
+                continue
                 #StoredRequest.set_error_status(\
                 #            stored_request_id,
                 #            msg_json_info.err_msg,
                 #            is_finished=False)
             else:
-                StoredResponse.add_response(\
+                stored_resp_info = StoredResponse.add_response(\
                                 stored_request_id,
                                 response=msg_json_info.result_obj)
-            msg_cnt += 1
+
+                if stored_resp_info.success:
+                    stored_resp = stored_resp_info.result_obj
+                    stored_response_url = stored_resp.get_callback_url()
+                else:
+                    ws_msg = WebsocketMessage.get_fail_message(\
+                            grpc_call_name,
+                            'failed to store response: %s' % \
+                              stored_resp_info.err_msg,
+                            msg_cnt=msg_cnt)
+
+                    async_to_sync(channel_layer.group_send)(\
+                            websocket_id,
+                            dict(type=CHAT_MESSAGE_TYPE,
+                                 message=ws_msg.as_dict()))
+                    continue
 
 
             # -----------------------------------------------
             # test: send responses back to any open WebSockets
             # ---------------------------------------------
-            channel_layer = get_channel_layer()
-
             if websocket_id:
                 print('send it to the group!')
 
-                msg_dict = dict(msg_type=grpc_req_obj_name,
-                                timestamp=datetime.now().strftime('%Y-%m-%dT%H:%M:%S'),
-                                message='it worked!',
-                                msg_cnt=msg_cnt,
-                                success=True,
-                                data=msg_json_info.result_obj)
+                ws_msg = WebsocketMessage.get_success_message(\
+                                    grpc_call_name,
+                                    'it worked',
+                                    msg_cnt=msg_cnt,
+                                    data=msg_json_info.result_obj,
+                                    request_id=stored_request_id,
+                                    stored_response_url=stored_response_url)
+
+                print('ws_msg', ws_msg)
+                print('ws_msg', ws_msg.as_dict())
 
                 async_to_sync(channel_layer.group_send)(\
                         websocket_id,
                         dict(type=CHAT_MESSAGE_TYPE,
-                             message=msg_dict))
+                             message=ws_msg.as_dict()))
 
             # -----------------------------------------------
 
