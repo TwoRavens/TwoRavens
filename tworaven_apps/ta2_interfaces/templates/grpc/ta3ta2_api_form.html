@@ -154,17 +154,23 @@
       if (message['success']){
         var header_msg = '<b>Msg #: </b>' + message['msg_cnt'] +
           '<br /><b>timestamp: </b>' + message['timestamp'] +
-          '<br /><b>type: </b>' + message['msg_type']
+          '<br /><b>type: </b>' + message['msg_type'] +
           '<br /><b>user_message: </b>' + message['user_message'];
 
         if (message['additional_info']){
           header_msg += '<br /><b>additional_info: </b>' + JSON.stringify(message['additional_info']);
         }
-        var user_msg = formatOutputTextBox(message['data']);
+        var user_msg = '<b>data: </b><br />' + formatOutputTextBox(message['data']);
 
         $("#streaming-response").prepend(cardWrap(header_msg, user_msg) + '<br />');
       }else{
-        $("#streaming-response ul").prepend('<li>' + message['timestamp'] + '<br />' + message['message'] +  '<hr /></li>');
+        var header_msg = '<b>Msg #: </b>' + message['msg_cnt'] +
+          '<br /><b>timestamp: </b>' + message['timestamp'] +
+          '<br /><b>type: </b>' + message['msg_type'] +
+          '<br /><b>user_message: </b>' + message['user_message'];
+
+        $("#streaming-response").prepend(cardWrap(header_msg, 'Error encountered') + '<br />');
+
       }
 
       //document.querySelector('#streaming-response').value += (message + '\n');

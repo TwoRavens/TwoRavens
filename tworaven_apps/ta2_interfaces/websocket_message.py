@@ -4,6 +4,11 @@ Basic class to hold a single streaming message returned by a TA2
 from datetime import datetime
 from collections import OrderedDict
 
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+from tworaven_apps.ws_test.consumers import CHAT_MESSAGE_TYPE
+
+
 class WebsocketMessage(object):
     """Basic message sent back via a websocket"""
     def __init__(self, msg_type, success, user_message, msg_cnt=None, data=None, **kwargs):
@@ -16,6 +21,16 @@ class WebsocketMessage(object):
         self.data = data    # e.g. python OrderedDict
         self.timestamp = datetime.now()
         self.additional_args = kwargs
+
+
+    def send_message(self, websocket_id):
+        """Send the message over a websocket"""
+        channel_layer = get_channel_layer()
+
+        async_to_sync(channel_layer.group_send)(\
+                websocket_id,
+                dict(type=CHAT_MESSAGE_TYPE,
+                     message=self.as_dict()))
 
     @staticmethod
     def get_success_message(msg_type, user_message, msg_cnt=None, data=None, **kwargs):
@@ -43,7 +58,7 @@ class WebsocketMessage(object):
                  'user_message', 'data']
         for item in attrs:
             val = self.__dict__.get(item, None)
-            if not val:
+            if val is None:
                 continue
 
             if item == 'timestamp':
