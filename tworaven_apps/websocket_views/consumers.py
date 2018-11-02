@@ -68,7 +68,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 #
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
-from tworaven_apps.ws_test.consumers import ROOM_GROUP_NAME
+from tworaven_apps.websocket_views.consumers import ROOM_GROUP_NAME
 
 def send_msg(m):
     channel_layer = get_channel_layer()

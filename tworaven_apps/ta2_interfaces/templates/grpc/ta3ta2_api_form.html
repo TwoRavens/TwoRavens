@@ -141,7 +141,7 @@
   //  - receives streaming response messages
   // ----------------------------------------------
   var wsLink = 'ws://' + window.location.host +
-                 '/ws/chat/{{ USERNAME }}/'
+                 '/ws/connect/{{ USERNAME }}/'
   console.log('connection made: ' + wsLink);
   var chatSocket = new WebSocket(wsLink);
 

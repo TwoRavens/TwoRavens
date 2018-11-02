@@ -134,8 +134,8 @@ def stream_and_store_results(raven_json_str, stored_request_id,
                                     data=msg_json_info.result_obj,
                                     request_id=stored_request_id,
                                     stored_response_url=stored_response_url)
-                print('ws_msg', ws_msg)
-                print('ws_msg', ws_msg.as_dict())
+                print('ws_msg: %s' % ws_msg)
+                #print('ws_msg', ws_msg.as_dict())
 
                 ws_msg.send_message(websocket_id)
 

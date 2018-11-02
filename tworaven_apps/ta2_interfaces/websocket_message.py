@@ -6,7 +6,7 @@ from collections import OrderedDict
 
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
-from tworaven_apps.ws_test.consumers import CHAT_MESSAGE_TYPE
+from tworaven_apps.websocket_views.consumers import CHAT_MESSAGE_TYPE
 
 
 class WebsocketMessage(object):
@@ -22,6 +22,9 @@ class WebsocketMessage(object):
         self.timestamp = datetime.now()
         self.additional_args = kwargs
 
+    def __repr__(self):
+        """print representation"""
+        return '%s (success: %s)' % (self.msg_type, self.success)
 
     def send_message(self, websocket_id):
         """Send the message over a websocket"""

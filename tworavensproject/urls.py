@@ -22,7 +22,7 @@ urlpatterns = [
 
     url(r'^d3m-service/', include('tworaven_apps.ta2_interfaces.urls')),
 
-    url(r'^ws-test/', include('tworaven_apps.ws_test.urls')),
+    url(r'^ws-views/', include('tworaven_apps.websocket_views.urls')),
 
     #url(r'^data/', include('tworaven_apps.test_data.urls')),
 

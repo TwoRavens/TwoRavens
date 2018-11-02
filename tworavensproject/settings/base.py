@@ -65,7 +65,7 @@ INSTALLED_APPS = [
 
     'channels', # django channels
 
-    'tworaven_apps.ws_test', # websocket test
+    'tworaven_apps.websocket_views', # websocket support
 
     'social_django',    # social auth
     'tworaven_apps.raven_auth', # user model
