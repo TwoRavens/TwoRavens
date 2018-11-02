@@ -92,11 +92,18 @@ def view_score_solutions(request):
                         call_type='GetScoreSolutionResults',
                         request_msg=req_body_info.result_obj)
 
+
     # Let's call the TA2!
     #
+
+    # websocket id: trying username for now, may change this in the future
+    #
+    websocket_id = user_info.result_obj.username
+
     search_info = get_score_solutions_results(\
                                     req_body_info.result_obj,
-                                    user_info.result_obj)
+                                    user_info.result_obj,
+                                    websocket_id=websocket_id)
 
     #print('search_info', search_info)
     if not search_info.success:
@@ -138,9 +145,15 @@ def view_fit_solution_results(request):
 
     # Let's call the TA2!
     #
+
+    # websocket id: trying username for now, may change this in the future
+    #
+    websocket_id = user_info.result_obj.username
+
     search_info = get_fit_solution_results(\
                                     req_body_info.result_obj,
-                                    user_info.result_obj)
+                                    user_info.result_obj,
+                                    websocket_id=websocket_id)
 
     #print('search_info', search_info)
     if not search_info.success:
@@ -183,9 +196,15 @@ def view_get_produce_solution_results(request):
 
     # Let's call the TA2!
     #
+
+    # websocket id: trying username for now, may change this in the future
+    #
+    websocket_id = user_info.result_obj.username
+
     search_info = get_produce_solution_results(\
                                     req_body_info.result_obj,
-                                    user_info.result_obj)
+                                    user_info.result_obj,
+                                    websocket_id=websocket_id)
 
     #print('search_info', search_info)
     if not search_info.success:
