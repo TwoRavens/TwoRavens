@@ -62,8 +62,6 @@ solver.app <- function(env) {
 
     mydata <- read.csv(dataurl)
 
-
-    if(task=="regression" || task=="classification") {
         tryCatch({
         modeldata <<- list()
 
@@ -73,15 +71,23 @@ solver.app <- function(env) {
         ## listwise deleting
         d <- na.omit(d)
         print(colnames(d))
+        if(task=="regression")
+        {
         fit <- lm(formula(paste(target,"~",paste(predictors, collapse="+"))),data=d)
+        model_type <- "Linear Model"
+      }else if(task=="classification"){
+        fit <- glm(formula(paste(target,"~",paste(predictors, collapse="+"))),data=d, family="binomial")
+        model_type <- "Generalized Linear Model"
+      }
+
         stargazer_lm <- paste(stargazer(fit, type="html"), collapse="")
         jsonfit <- jsonlite::serializeJSON(fit)
 
         fittedvalues <- fit$fitted.values
         actualvalues <- d[,target]
 
-        if (class(fit)=="lm") {
-            return(send(list(data=d, description=description, dependent_variable=target, predictors=predictors,  task=task, stargazer= stargazer_lm, predictor_values=list(fittedvalues=fittedvalues, actualvalues=actualvalues))))
+        if (class(fit)=="lm" || class(fit)=="glm") {
+            return(send(list(data=d, description=description, dependent_variable=target, predictors=predictors,  task=task, model_type = model_type, stargazer= stargazer_lm, predictor_values=list(fittedvalues=fittedvalues, actualvalues=actualvalues))))
         } else {
             return(send(list(warning="No model estimated.")))
         }
@@ -91,7 +97,7 @@ solver.app <- function(env) {
         print("result ---- ")
         print(result)
         })
-  }
+
 
 
 

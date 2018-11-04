@@ -981,7 +981,7 @@ for(let i=0; i<disco.length; i++){
     IS_D3M_DOMAIN ? zPop() : dataDownload();
 
     setTimeout(loadResult,10000);
-    problem_sent = [];
+    problem_sent.length = 0;
 }
 
 
@@ -1002,7 +1002,7 @@ export function loadResult(my_disco) {
     console.log("problem to be sent ", problem_sent)
     let preprocess_id = 1
     let version = 1
-    addProblem(preprocess_id, version, problem_sent).then(api_res => console.log("ADD PROBLEM/RESULT API RESPONSE ", api_res))
+    addProblem(preprocess_id, version).then(api_res => console.log("ADD PROBLEM/RESULT API RESPONSE ", api_res))
 }
 /**
    called on app start
@@ -4611,6 +4611,7 @@ export async function addProblemFromForceDiagram() {
         });
 
     newProblem.target = newProblem.depvar[0];
+    newProblem.description = newProblem.target+" is predicted by "+newProblem.predictors;
 
     let currentTaskType = d3mProblemDescription.taskType;
     let currentMetric = d3mProblemDescription.performanceMetrics[0].metric;
@@ -4763,7 +4764,7 @@ export let stargazer = ""
 export function modelSelectionResults(problem){
     solver_res = []
     callSolver(problem);
-// setTimeout(console.log("we have results data", my_results),10000)
+    setTimeout(console.log("callSolver response : ", solver_res),1000)
     setTimeout(makeDataDiscovery,1000)
     setTimeout(makeDiscoverySolutionPlot,1000)
     setTimeout(makeDataDiscoveryTable,1000)
@@ -4778,6 +4779,7 @@ export function makeDataDiscovery(){
         {"Variable":"Predictors : ", "Data":solver_res[0]['predictors']},
         {"Variable":"Description : ", "Data":solver_res[0]['description']},
         {"Variable":"Task : ", "Data":solver_res[0]['task']},
+        {"Variable":"Model : ", "Data":solver_res[0]['model_type']}
     ]
 
     function tabulate(data, columns) {
@@ -4791,7 +4793,7 @@ export function makeDataDiscovery(){
 		  .data(columns).enter()
 		  .append('th')
 		    .text(function (column) { return column; })
-        .style('background-color','#ED7E71')
+        .style('background-color','rgba(0, 0, 0, .2)')
         ;
 
 		// create a row for each object in the data
@@ -4830,7 +4832,7 @@ export function makeDiscoverySolutionPlot(){
 
 }
 export function makeDataDiscoveryTable(){
-  console.log("Here we bring our table")
+  // console.log("Here we bring our table")
   stargazer = solver_res[0]['stargazer']
   // d3.select("#setDataTable").html("");
 }
@@ -5100,7 +5102,7 @@ function primitiveStepRemoveColumns (aux) {
     return {primitive:step};
 }
 
-export async function addProblem(preprocess_id, version, problem_sent){
+export async function addProblem(preprocess_id, version){
     // return await m.request({
     //     method: "POST",
     //     url: "http://127.0.0.1:4354/preprocess/problem-section", // should be changed later
@@ -5110,6 +5112,7 @@ export async function addProblem(preprocess_id, version, problem_sent){
     //         "problems": problem_sent
     //     }
     // })
+problem_sent.length = 0;
 }
 
 
