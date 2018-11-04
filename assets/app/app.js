@@ -4762,7 +4762,7 @@ export function getProblemCopy(problemId) {
 
 export let stargazer = ""
 export function modelSelectionResults(problem){
-    solver_res = []
+    // solver_res = []
     callSolver(problem);
     setTimeout(console.log("callSolver response : ", solver_res),1000)
     setTimeout(makeDataDiscovery,1000)
@@ -5120,6 +5120,7 @@ problem_sent.length = 0;
 export async function callSolver (prob) {
     let temp = JSON.stringify(prob);
     // console.log(temp);
+    solver_res.length = 0;
     let zd3mdata = zparams.zd3mdata;
     let jsonout = {prob, zd3mdata};
     let json = await makeRequest(ROOK_SVC_URL + 'solverapp', jsonout);
