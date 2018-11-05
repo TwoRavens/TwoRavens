@@ -4760,18 +4760,14 @@ export function getProblemCopy(problemId) {
     return problem;
 }
 
-const buildDatasetUrl = (problem) => {
-
-};
-
 export let stargazer = ""
 export function modelSelectionResults(problem){
     // solver_res = []
     callSolver(problem);
-    setTimeout(console.log("callSolver response : ", solver_res),1000)
-    setTimeout(makeDataDiscovery,1000)
-    setTimeout(makeDiscoverySolutionPlot,1000)
-    setTimeout(makeDataDiscoveryTable,1000)
+    setTimeout(console.log("callSolver response : ", solver_res),2000)
+    setTimeout(makeDataDiscovery,2000)
+    setTimeout(makeDiscoverySolutionPlot,2000)
+    setTimeout(makeDataDiscoveryTable,2000)
 
 }
 
@@ -5116,7 +5112,6 @@ export async function addProblem(preprocess_id, version){
     //         "problems": problem_sent
     //     }
     // })
-console.log("Problem sent : ", problem_sent)
 problem_sent.length = 0;
 }
 
@@ -5126,7 +5121,16 @@ export async function callSolver (prob) {
     let temp = JSON.stringify(prob);
     // console.log(temp);
     solver_res.length = 0;
-    let zd3mdata = zparams.zd3mdata;
+    let zd3mdata = "";
+    if(prob.problem_id in manipulations && manipulations[prob.problem_id].length>0){
+      zd3mdata = await manipulate.buildDatasetUrl(prob);
+      console.log("zd3mdata from manipulation", zd3mdata);
+    }else
+     {
+      zd3mdata = zparams.zd3mdata;
+      console.log("zd3mdata default", zd3mdata);
+    }
+
     let jsonout = {prob, zd3mdata};
     let json = await makeRequest(ROOK_SVC_URL + 'solverapp', jsonout);
     var promise1 = Promise.resolve(json);
@@ -5135,7 +5139,6 @@ export async function callSolver (prob) {
         // console.log(" THis is the solver app response",value);
         solver_res.push(value)
         return value;
-        // expected output: Array [1, 2, 3]
     });
 }
 
