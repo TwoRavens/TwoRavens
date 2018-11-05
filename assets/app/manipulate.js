@@ -522,6 +522,7 @@ export let setConstraintMenu = async (menu) => {
         menu.pipeline.slice(0, menu.pipeline.indexOf(menu.step)),
         Object.keys(variablesInitial))['variables']];  // get the variables present at this point in the pipeline
 
+    // variable metadata
     if (updateVariableMetadata) {
         let summaryStep = {
             type: 'menu',
@@ -558,8 +559,7 @@ export let setConstraintMenu = async (menu) => {
         ? variables[Math.floor(Math.random() * variables.length)]
         : constraintMetadata.columns[0];
 
-    setConstraintColumn(variable, menu.pipeline);
-
+    setConstraintColumn(variable);
     loadMenuManipulations(menu.pipeline);
 };
 
@@ -648,7 +648,7 @@ export let loadMenu = async (pipeline, menu, {recount, requireMatch} = {}) => { 
     let datafile = app.zparams.zd3mdata;
 
     // record count request
-    if (recount || totalSubsetRecords === undefined) {
+    if (recount) {
         let countMenu = {type: 'menu', metadata: {type: 'count'}};
         let compiled = JSON.stringify(queryMongo.buildPipeline([...pipeline, countMenu], Object.keys(variablesInitial))['pipeline']);
 

@@ -76,7 +76,6 @@ export async function resetPeek(pipeline) {
     localStorage.setItem('peekTableData' + peekId, JSON.stringify([]));
 
     if (pipeline) await updatePeek(pipeline);
-    else peekIsLoading = false;
 }
 
 export async function updatePeek(pipeline) {
@@ -4685,7 +4684,7 @@ export let discoveryClick = problemId => {
     });
     let nodeTarget = findNode(target);
     setColors(nodeTarget, dvColor);
-    legend();
+    // legend();
     nodeTarget.group1 = nodeTarget.group2 = false;
     restart();
 };
