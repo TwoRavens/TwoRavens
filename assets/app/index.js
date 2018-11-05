@@ -418,7 +418,7 @@ function rightpanel(mode) {
          display: !app.swandive || IS_D3M_DOMAIN ? 'block' : 'none',
          idSuffix: 'Setx',
          contents: [
-             m('#setxRight[style=float: right; width: 28%; height: 100%; overflow:auto; margin-right: 1em]',
+             m('#setxRight[style=float: right; width: 23%; height: 100%; overflow:auto; margin-right: 1px]',
                  app.selectedPipeline && [
                      bold('Score Metric: '), app.d3mProblemDescription.performanceMetrics[0].metric, m('br'),
                      app.resultsMetricDescription
@@ -445,7 +445,7 @@ function rightpanel(mode) {
                      {value: 'Prediction Summary', id: 'btnPredPlot'},
                      {value: 'Generate New Predictions', id: 'btnGenPreds'},
                      {value: 'Visualize Pipeline', id: 'btnVisPipe'},
-                     {value: 'Prediction Data', id: 'btnPredData'},
+                     {value: 'Prediction Description', id: 'btnPredData'},
                      {value: 'Solution Table', id: 'btnSolTable'}
                  ]
              }),
@@ -502,7 +502,7 @@ function rightpanel(mode) {
                      steps: pipelineFlowchartPrep(app.allPipelineInfo[app.selectedPipeline].pipeline)
                  })
              ),
-             m(`div#predictionData[style=display:${app.selectedResultsMenu === 'Prediction Data' ? 'block' : 'none'};height:calc(100% - 30px); overflow: auto; width: 70%]`,
+             m(`div#predictionData[style=display:${app.selectedResultsMenu === 'Prediction Description' ? 'block' : 'none'};height:calc(100% - 30px); overflow: auto; width: 70%]`,
                m('#setPredictionDataLeft[style=display:block; width: 100%; height:100%; margin-top:1em; overflow: auto; background-color: white; padding : 1em; margin-top: 1em]')
              ),
              m(`div#solutionTable[style=display:${app.selectedResultsMenu === 'Solution Table' ? 'block' : 'none'};height:calc(100% - 30px); overflow: auto; width: 70%, padding : 1em]`,

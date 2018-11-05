@@ -999,7 +999,7 @@ export function loadResult(my_disco) {
         });
     })
 
-    console.log("problem to be sent ", problem_sent)
+    // console.log("problem to be sent ", problem_sent.splice())
     let preprocess_id = 1
     let version = 1
     addProblem(preprocess_id, version).then(api_res => console.log("ADD PROBLEM/RESULT API RESPONSE ", api_res))
@@ -4760,6 +4760,10 @@ export function getProblemCopy(problemId) {
     return problem;
 }
 
+const buildDatasetUrl = (problem) => {
+
+};
+
 export let stargazer = ""
 export function modelSelectionResults(problem){
     // solver_res = []
@@ -5112,6 +5116,7 @@ export async function addProblem(preprocess_id, version){
     //         "problems": problem_sent
     //     }
     // })
+console.log("Problem sent : ", problem_sent)
 problem_sent.length = 0;
 }
 
