@@ -458,12 +458,17 @@ export let setQueryUpdated = async state => {
         let transformVars = getTransformVariables(problemPipeline);
         problem.transform = getTransformString(problemPipeline);
         problem.predictors = [...new Set([...problem.predictorsInitial, ...transformVars])];
+        problem.pending = true;
 
         // if the predictors changed, then redraw the force diagram
         if (app.nodes.length !== problem.predictors.length || app.nodes.some(node => !problem.predictors.includes(node.name)))
             app.discoveryClick(app.selectedProblem);
 
-        subset.setTotalSubsetRecords(undefined);
+        let countMenu = {type: 'menu', metadata: {type: 'count'}};
+        loadMenu([...getPipeline(), ...problemPipeline], countMenu).then(count => {
+            setTotalSubsetRecords(count);
+            m.redraw();
+        });
         app.resetPeek();
     }
 };
@@ -643,7 +648,7 @@ export let loadMenu = async (pipeline, menu, {recount, requireMatch} = {}) => { 
     let datafile = app.zparams.zd3mdata;
 
     // record count request
-    if (recount || subset.totalSubsetRecords === undefined) {
+    if (recount || totalSubsetRecords === undefined) {
         let countMenu = {type: 'menu', metadata: {type: 'count'}};
         let compiled = JSON.stringify(queryMongo.buildPipeline([...pipeline, countMenu], Object.keys(variablesInitial))['pipeline']);
 
@@ -660,7 +665,7 @@ export let loadMenu = async (pipeline, menu, {recount, requireMatch} = {}) => { 
 
             // intentionally breaks the entire downloading promise array and subsequent promise chain
             if (total === 0 && requireMatch) throw 'no records matched';
-            subset.setTotalSubsetRecords(total);
+            setTotalSubsetRecords(total);
         }));
     }
 
@@ -807,6 +812,9 @@ export let variableSort = (a, b) => {
     if (a.includes(variableSearch) === b.includes(variableSearch)) return a.localeCompare(b);
     return a.includes(variableSearch) ? -1 : 1;
 };
+
+export let totalSubsetRecords;
+export let setTotalSubsetRecords = records => totalSubsetRecords = records;
 
 export async function buildDatasetUrl(problem) {
     let problemStep = {

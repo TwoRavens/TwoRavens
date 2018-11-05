@@ -15,8 +15,6 @@ import {setModal} from '../common/app/views/Modal';
 
 import {bars, barsNode, barsSubset, density, densityNode, scatter, selVarColor} from './plots.js';
 import {elem, fadeOut} from './utils';
-import {loadMenu} from "./manipulate";
-import {constraintMenu} from "./manipulate";
 
 //-------------------------------------------------
 // NOTE: global variables are now set in the index.html file.
@@ -104,9 +102,9 @@ export async function updatePeek(pipeline) {
         }
     };
 
-    let data = await loadMenu(
-        constraintMenu
-            ? pipeline.slice(0, pipeline.indexOf(stage => stage === constraintMenu.step))
+    let data = await manipulate.loadMenu(
+        manipulate.constraintMenu
+            ? pipeline.slice(0, pipeline.indexOf(stage => stage === manipulate.constraintMenu.step))
             : pipeline,
         previewMenu
     );
@@ -4699,6 +4697,8 @@ export function setSelectedProblem(problemId) {
 
     selectedProblem = problemId;
 
+    // remove old staged problems
+    disco = disco.filter(entry => entry.problem_id === selectedProblem || !entry.staged);
     if (selectedProblem === undefined) return;
 
     let problem = disco.find(entry => entry.problem_id === selectedProblem);
@@ -4737,6 +4737,13 @@ export function setSelectedProblem(problemId) {
 
         manipulations[problemId] = pipeline;
     }
+
+    let countMenu = {type: 'menu', metadata: {type: 'count'}};
+    let subsetMenu = [...manipulate.getPipeline(), ...manipulate.getProblemPipeline(selectedProblem) || []];
+    manipulate.loadMenu(subsetMenu, countMenu).then(count => {
+        manipulate.setTotalSubsetRecords(count);
+        m.redraw();
+    });
 
     resetPeek();
     modelSelectionResults(problem);
