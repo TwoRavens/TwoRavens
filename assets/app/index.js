@@ -178,26 +178,35 @@ function leftpanel(mode) {
                             }
                         },
                         app.selectedProblem !== undefined && [
-                            m('h4', ['Current Problem', m(`div#deselectProblem`, {
-                                onclick: () => {
-                                    app.erase('Discovery');
-                                    app.setSelectedProblem(undefined);
-                                    app.layout();
-                                    let targetNode = app.findNode(app.mytarget);
-                                    if (targetNode.strokeColor !== app.dvColor)
-                                        app.setColors(targetNode, app.dvColor);
-                                    app.restart();
-                                },
-                                title: 'deselect problem',
-                                style: {
-                                    display: 'inline-block',
-                                    'margin-right': '1em',
-                                    transform: 'scale(1.5, 1.5)',
-                                    float: 'right',
-                                    'font-weight': 'bold',
-                                    'line-height': '14px'
-                                }
-                            }, '×')]),
+                            m('h4', [
+                                'Current Problem',
+                                m(`div#deselectProblem`, {
+                                    onclick: () => {
+                                        app.erase('Discovery');
+                                        app.setSelectedProblem(undefined);
+                                        app.layout();
+                                        let targetNode = app.findNode(app.mytarget);
+                                        if (targetNode.strokeColor !== app.dvColor)
+                                            app.setColors(targetNode, app.dvColor);
+                                        app.restart();
+                                    },
+                                    title: 'deselect problem',
+                                    style: {
+                                        display: 'inline-block',
+                                        'margin-right': '1em',
+                                        transform: 'scale(1.5, 1.5)',
+                                        float: 'right',
+                                        'font-weight': 'bold',
+                                        'line-height': '14px'
+                                    }
+                                }, '×'),
+                                selectedDisco.pending && m(Button, {
+                                    id: 'saveProblemBtn',
+                                    onclick: () => delete selectedDisco['pending'],
+                                    title: 'save problem',
+                                    style: {float: 'right', margin: '-.5em 1em 0 0'}
+                                }, 'Save Problem')
+                            ]),
                             m(Table, {
                                 id: 'discoveryTableManipulations',
                                 headers: discoveryHeaders,
@@ -214,7 +223,7 @@ function leftpanel(mode) {
                             data: [ // I would sort system via (a, b) => a.system === b.system ? 0 : a.system === 'user' ? -1 : 1, but javascript sort isn't stable
                                 ...app.disco.filter(prob => prob.system === 'user'),
                                 ...app.disco.filter(prob => prob.system !== 'user')
-                            ].map(formatProblem),
+                            ].filter(prob => !prob.pending).map(formatProblem),
                             activeRow: app.selectedProblem,
                             onclick: app.discoveryClick,
                             showUID: false,
@@ -325,9 +334,6 @@ function rightpanel(mode) {
     let selectedProblem = app.disco.find(prob => prob.problem_id === app.selectedProblem);
 
     let sections = [
-        // {value: 'Models',
-        //  display: app.IS_D3M_DOMAIN ? 'block' : 'none',
-        //  contents: righttab('models')},
         app.selectedProblem && {
             value: 'Problem',
             idSuffix: 'Type',
@@ -346,6 +352,7 @@ function rightpanel(mode) {
                         onclickChild: child => {
                             if (selectedProblem.system === 'auto') {
                                 selectedProblem = app.getProblemCopy(app.selectedProblem);
+                                selectedProblem.pending = true;
                                 app.disco.push(selectedProblem);
                                 app.setSelectedProblem(selectedProblem.problem_id);
                             }
@@ -361,6 +368,7 @@ function rightpanel(mode) {
                         onclickChild: child => {
                             if (selectedProblem.system === 'auto') {
                                 selectedProblem = app.getProblemCopy(app.selectedProblem);
+                                selectedProblem.pending = true;
                                 app.disco.push(selectedProblem);
                                 app.setSelectedProblem(selectedProblem.problem_id);
                             }
@@ -376,6 +384,7 @@ function rightpanel(mode) {
                         onclickChild: child => {
                             if (selectedProblem.system === 'auto') {
                                 selectedProblem = app.getProblemCopy(app.selectedProblem);
+                                selectedProblem.pending = true;
                                 app.disco.push(selectedProblem);
                                 app.setSelectedProblem(selectedProblem.problem_id);
                             }
@@ -847,7 +856,7 @@ class Body {
                         m(".rectLabel[style=display:inline-block;vertical-align:text-bottom;margin-left:.5em]", btn[2])))
                 ),
 
-                subset.manipulations[app.selectedProblem] && m(Subpanel2, {
+                (subset.manipulations[app.selectedProblem] || []).filter(step => step.type === 'subset').length !== 0 && m(Subpanel2, {
                     id: 'subsetSubpanel',
                     header: 'Subsets',
                     style: {
@@ -857,7 +866,8 @@ class Body {
                     }
                 }, subset.manipulations[app.selectedProblem]
                     .filter(step => step.type === 'subset')
-                    .map(step => m('div', step.id)))
+                    .map(step => m('div', step.id))
+                    .concat([`Size: ${problem.predictors.length}×${manipulate.totalSubsetRecords}`]))
             )
         ]);
     }
@@ -997,14 +1007,14 @@ class Body {
                     onclick: () => app.setPeekInlineShown(!app.peekInlineShown)
                 }, 'Peek'),
                 m(Button, {onclick: () => window.open('#!/data', 'data')}, glyph('new-window'))),
-            subset.totalSubsetRecords !== undefined && m("span.label.label-default#recordCount", {
+            manipulate.totalSubsetRecords !== undefined && m("span.label.label-default#recordCount", {
                 style: {
                     float: 'right',
                     "margin-left": "5px",
                     "margin-top": "10px",
                     "margin-right": "2em"
                 }
-            }, subset.totalSubsetRecords + ' Records')
+            }, manipulate.totalSubsetRecords + ' Records')
         ]);
     }
 }
