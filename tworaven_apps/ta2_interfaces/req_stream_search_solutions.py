@@ -18,7 +18,7 @@ import core_pb2
 from google.protobuf.json_format import \
     (Parse, ParseError)
 
-def get_search_solutions_results(raven_json_str, user_obj):
+def get_search_solutions_results(raven_json_str, user_obj, websocket_id=None):
     """
     Send a GetSearchSolutionsResultsRequest to the GetSearchSolutionsResults command
     """
@@ -81,6 +81,7 @@ def get_search_solutions_results(raven_json_str, user_obj):
     stream_and_store_results.delay(raven_json_str,
                                    stored_request.id,
                                    'core_pb2.GetSearchSolutionsResultsRequest',
-                                   'GetSearchSolutionsResults')
+                                   'GetSearchSolutionsResults',
+                                   websocket_id=websocket_id)
 
     return ok_resp(stored_request.as_dict())

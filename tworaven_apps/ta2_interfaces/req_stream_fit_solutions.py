@@ -20,7 +20,7 @@ from google.protobuf.json_format import \
     (Parse, ParseError)
 
 
-def get_fit_solution_results(raven_json_str, user_obj):
+def get_fit_solution_results(raven_json_str, user_obj, websocket_id=None):
     """
     Send a GetFitSolutionResultsRequest to the GetFitSolutionResults command
     """
@@ -83,6 +83,7 @@ def get_fit_solution_results(raven_json_str, user_obj):
     stream_and_store_results.delay(raven_json_str,
                                    stored_request.id,
                                    'core_pb2.GetFitSolutionResultsRequest',
-                                   'GetFitSolutionResults')
+                                   'GetFitSolutionResults',
+                                   websocket_id=websocket_id)
 
     return ok_resp(stored_request.as_dict())
