@@ -9,11 +9,6 @@ django-webpack-loader==0.5.0
 jsonfield==2.0.2
 requests==2.18.4
 
-# django channels
-#
-channels==2.1.5
-
-
 # fabric for dev: to run npm and test server with one command
 #
 Fabric3==1.13.1.post1
@@ -37,6 +32,11 @@ Jinja2==2.10
 # for eventdata
 #
 pandas==0.22.0
+
+# django channels
+#
+channels==2.1.5
+channels_redis==2.3.1
 
 # pymongo
 #
